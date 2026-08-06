@@ -1,0 +1,268 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # The safety gate runs FIRST and everything else depends on it. A tree that
+  # leaks private identity should never reach the point of being built or
+  # tested — the interesting failure here is disclosure, not a broken build.
+  safety:
+    name: publish safety
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0 # gitleaks scans full history, not just the diff
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+
+      # Repository secrets are unavailable to pull requests from forks. Rather
+      # than fail those runs, the gate drops to PARTIAL mode: structural rules
+      # and secret detection still apply, identity checks are skipped, and the
+      # output says so loudly. A maintainer re-runs FULL mode before merge.
+      - name: Materialise denylist
+        id: denylist
+        env:
+          DENYLIST_B64: ${{ secrets.PUBLIC_SAFETY_DENYLIST_B64 }}
+        run: |
+          if [ -n "$DENYLIST_B64" ]; then
+            printf '%s' "$DENYLIST_B64" | base64 -d > "$RUNNER_TEMP/denylist.json"
+            echo "PUBLIC_SAFETY_DENYLIST=$RUNNER_TEMP/denylist.json" >> "$GITHUB_ENV"
+            echo "mode=FULL" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning title=Partial safety scan::No denylist available (expected for fork pull requests). Identity checks are skipped."
+            echo "mode=PARTIAL" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: check-public-safety
+        run: node scripts/check-public-safety.mjs . --allow-changelogs
+
+      # On anything that is not a fork pull request the denylist must be
+      # present. This turns a missing or misnamed secret into a visible failure
+      # instead of a quietly weakened gate on the trunk.
+      - name: Require FULL mode on trunk and internal PRs
+        if: github.event.pull_request.head.repo.fork != true
+        run: node scripts/check-public-safety.mjs . --allow-changelogs --require-denylist
+
+      # A commit message is exactly as public and exactly as permanent as any
+      # file it changes — editing a later commit does not remove it from
+      # history. This never existed until a real incident proved the gap: the
+      # tree and the tarball both had a scanner, the commit message never did.
+      #
+      # inputs from GitHub event context are passed through env:, never
+      # interpolated directly into the script body — a PR title is
+      # attacker-controlled on a fork PR, same reasoning as publish.yml's
+      # input sanitisation.
+      - name: check-commit-messages
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BEFORE_SHA: ${{ github.event.before }}
+          IS_FORK: ${{ github.event.pull_request.head.repo.fork }}
+        run: |
+          set -e
+          if [ -n "$BASE_SHA" ]; then
+            range="$BASE_SHA..$HEAD_SHA"
+            extra=(--title "$PR_TITLE")
+          else
+            # A push event's `before` SHA is all zeros on a branch's first
+            # push (nothing to diff against) — fall back to just the tip
+            # commit rather than passing an invalid range.
+            if [ -z "$BEFORE_SHA" ] || [ "$BEFORE_SHA" = "0000000000000000000000000000000000000000" ]; then
+              range="${GITHUB_SHA}~1..${GITHUB_SHA}"
+            else
+              range="$BEFORE_SHA..$GITHUB_SHA"
+            fi
+            extra=()
+          fi
+          if [ "$IS_FORK" = "true" ]; then
+            node scripts/check-commit-messages.mjs "$range" "${extra[@]}"
+          else
+            node scripts/check-commit-messages.mjs "$range" "${extra[@]}" --require-denylist
+          fi
+
+      - name: gate regression tests
+        run: node scripts/test-gates.mjs
+
+      # Grades the denylist rules themselves, which requires the real denylist
+      # content — forks never see it, so this only runs where one is available.
+      - name: denylist quality
+        if: github.event.pull_request.head.repo.fork != true
+        run: node scripts/check-denylist-quality.mjs
+
+      - name: Redact denylist
+        if: always()
+        run: rm -f "$RUNNER_TEMP/denylist.json"
+
+      # gitleaks the TOOL is open source; gitleaks-action the WRAPPER requires a
+      # paid licence for organisation-owned repositories and fails the run
+      # without one. This repository is org-owned, so we invoke the binary
+      # directly instead of depending on the wrapper's licence requirement.
+      #
+      # Pinned by version AND sha256: an unpinned download in a security gate
+      # means the thing verifying the build is itself unverified.
+      - name: gitleaks (full history)
+        env:
+          GITLEAKS_VERSION: 8.30.1
+          GITLEAKS_SHA256: 551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+        run: |
+          set -euo pipefail
+          tarball="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -sSfL -o "$RUNNER_TEMP/$tarball" \
+            "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${tarball}"
+          echo "${GITLEAKS_SHA256}  $RUNNER_TEMP/$tarball" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/$tarball" -C "$RUNNER_TEMP" gitleaks
+          # --redact so a hit reports its location without reprinting the secret
+          # into a public build log. --log-opts=--all covers every ref, not just
+          # the checked-out branch: history is the point of this scan.
+          "$RUNNER_TEMP/gitleaks" detect \
+            --source . \
+            --redact \
+            --no-banner \
+            --log-opts=--all \
+            --exit-code 1
+
+  scope:
+    name: scope drift
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+      - run: node scripts/set-scope.mjs --check
+
+  # Neither check here reads the denylist — both derive everything (package
+  # names, exports, README claims) from the tree itself — so this runs
+  # unconditionally, including on fork PRs, unlike the identity-scanning jobs.
+  prose:
+    name: prose quality (README parity, contamination classes)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+      - name: README parity (per package)
+        run: |
+          set -e
+          shopt -s nullglob
+          pkgs=(packages/*/)
+          if [ ${#pkgs[@]} -eq 0 ]; then
+            echo "no packages/* yet — nothing to check"
+            exit 0
+          fi
+          for pkg in "${pkgs[@]}"; do
+            node scripts/check-readme-parity.mjs "${pkg%/}"
+          done
+      - name: contamination classes (per package)
+        run: |
+          set -e
+          shopt -s nullglob
+          pkgs=(packages/*/)
+          if [ ${#pkgs[@]} -eq 0 ]; then
+            echo "no packages/* yet — nothing to check"
+            exit 0
+          fi
+          for pkg in "${pkgs[@]}"; do
+            node scripts/check-contamination-classes.mjs "${pkg%/}"
+          done
+
+  build:
+    name: build and test
+    needs: [safety, scope]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      # Build first. dist/ is gitignored, so a fresh checkout has none, and
+      # a package with a real internal dependency (gates on catalog and
+      # policy, release on gates) only has its .d.ts once that dependency
+      # has been compiled. Running typecheck before build works only while
+      # every package has zero internal dependencies, and silently stops
+      # working the moment one gains its first -- so build stays first.
+      - run: npm run build
+      - run: npm run typecheck
+      - run: npm test
+
+  # The tree scan in the `safety` job never sees dist/: it is gitignored and
+  # only comes into existence via `npm run build`, yet it ships to consumers
+  # because each package's `files` field includes it. A secret or identity
+  # string that only appears in compiled output would sail through `safety`
+  # untouched. So this job builds first and then scans the actual tarball
+  # that `npm publish` would produce — the same check the publish workflow
+  # runs, run here too so the gate fires on every PR, not just at publish
+  # time when it is much more expensive to unwind.
+  artifact:
+    name: artifact safety (tarball)
+    needs: [safety, scope]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      # Same materialisation as the `safety` job above: FULL mode when the
+      # secret is available, PARTIAL (no --require-denylist) on fork PRs that
+      # cannot read it.
+      - name: Materialise denylist
+        id: denylist
+        env:
+          DENYLIST_B64: ${{ secrets.PUBLIC_SAFETY_DENYLIST_B64 }}
+        run: |
+          if [ -n "$DENYLIST_B64" ]; then
+            printf '%s' "$DENYLIST_B64" | base64 -d > "$RUNNER_TEMP/denylist.json"
+            echo "PUBLIC_SAFETY_DENYLIST=$RUNNER_TEMP/denylist.json" >> "$GITHUB_ENV"
+            echo "mode=FULL" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning title=Partial safety scan::No denylist available (expected for fork pull requests). Identity checks are skipped."
+            echo "mode=PARTIAL" >> "$GITHUB_OUTPUT"
+          fi
+
+      - run: npm run build
+
+      # Loop over every package directory so newly added packages get scanned
+      # automatically — nothing here needs updating when packages/ grows.
+      - name: check-artifact-safety (per package)
+        run: |
+          set -e
+          shopt -s nullglob
+          pkgs=(packages/*/)
+          if [ ${#pkgs[@]} -eq 0 ]; then
+            echo "no packages/* yet — nothing to check"
+            exit 0
+          fi
+          for pkg in "${pkgs[@]}"; do
+            pkg="${pkg%/}"
+            if [ "${{ github.event.pull_request.head.repo.fork }}" = "true" ]; then
+              node scripts/check-artifact-safety.mjs "$pkg"
+            else
+              node scripts/check-artifact-safety.mjs "$pkg" --require-denylist
+            fi
+          done
+
+      - name: Redact denylist
+        if: always()
+        run: rm -f "$RUNNER_TEMP/denylist.json"

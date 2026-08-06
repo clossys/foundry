@@ -1,0 +1,6 @@
+{
+  "$comment": "THE ONE PLACE THE PUBLISHING SCOPE IS SET. Change `scope` here, then run `node scripts/set-scope.mjs` to propagate it to every package.json name, every import in docs and source comments, and the workspace README. Nothing else in this repository should hardcode a scope.",
+  "scope": "@vespeneventures",
+  "registry": "https://npm.pkg.github.com",
+  "status": "vespeneventures is a dedicated GitHub organization created to own this repository and its packages, and nothing else. Registry is GitHub Packages, chosen deliberately even though it requires a read:packages token to install (including for public readers with no other relationship to this org) — see docs/DECISIONS.md for the trade-off and what moving to npmjs later costs (a config change, not a rewrite: see set-scope.mjs and this file's `registry` field)."
+}

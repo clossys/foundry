@@ -1,0 +1,22 @@
+node_modules/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+*.tgz
+
+# Never commit these — the safety gate refuses them too, this is the first line
+# of defence rather than the last.
+.env
+.env.*
+!.env.example
+.npmrc
+*.pem
+*.key
+
+.DS_Store
+
+# Agent worktrees and local tooling state — never part of the published tree.
+# The safety gate refuses a committed .claude/ regardless of this entry; this
+# just keeps it from being staged by an unscoped `git add` in the first place.
+.claude/

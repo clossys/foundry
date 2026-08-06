@@ -1,0 +1,23 @@
+import type { PolicyBinding } from "./types.js";
+
+/**
+ * This package's own mechanism, demonstrated on itself: a binding to the
+ * sha256 digest of `packages/policy/LICENSE` as it exists in this
+ * repository right now. `policyId: "self:license"` marks it as
+ * self-referential rather than a binding to any external document.
+ *
+ * The digest below was computed once, from the real file
+ * (`shasum -a 256 LICENSE`), and hardcoded here exactly like any other
+ * `PolicyBinding` would be committed — this package does not read its own
+ * LICENSE at import time to produce it, because a `PolicyBinding` is a
+ * static commitment, not a live computation. `src/self-host.test.ts` reads
+ * the live file at test time and calls `verifyBinding` against it, so this
+ * constant only stays correct as long as the file's bytes don't change out
+ * from under it — which is exactly the property the whole package exists to
+ * make checkable.
+ */
+export const OWN_LICENSE_BINDING: PolicyBinding = {
+  policyId: "self:license",
+  digestAlgorithm: "sha256",
+  digest: "6ddaee99b49e12fbb935212ff047634e6cb1d95d3dc8f9f84855ef8fb28e11b3",
+};
