@@ -411,6 +411,31 @@ html:not([data-brand-bound])::before {
   --ui-density-row:                var(--spacing-3xl, 48px);
 
   /* ════════════════════════════════════════════════════════════════
+   * UI · ICON (4 · the render contract for @vespeneventures/ui's Icon
+   * atom — no Tailwind namespace. sm/md/lg ALIAS the same three
+   * --spacing-* steps @vespeneventures/ui's own glyph data already
+   * rendered at (16/24/32px) before this family existed — coherent with
+   * the padding scale by default, the same alias-with-fallback shape
+   * --ui-density-* above already uses, while still overridable
+   * independently of spacing (rebind one of these three without moving
+   * the padding scale everything else reads from). Deliberately three
+   * steps, not a free-standing pixel scale of their own: three is what
+   * evidence supports (see this package's CHANGELOG.md) and a
+   * fourth/fifth step is easy to add later without a breaking rename,
+   * unlike shrinking an over-eager scale back down. --ui-icon-stroke is
+   * this family's one LITERAL (non-alias) member: the glyph data itself
+   * has no token to read for its stroke weight, so a brand that wants a
+   * lighter/heavier icon voice had no lever to pull at all — unlike the
+   * three size steps, a stroke weight is a real, brandable design
+   * decision (the same category as --radius-default), not a value that
+   * should track another scale.
+   * ════════════════════════════════════════════════════════════════ */
+  --ui-icon-sm:                    var(--spacing-lg, 16px);
+  --ui-icon-md:                    var(--spacing-xl, 24px);
+  --ui-icon-lg:                    var(--spacing-2xl, 32px);
+  --ui-icon-stroke:                2;
+
+  /* ════════════════════════════════════════════════════════════════
    * RADIUS (5 · Tailwind `--radius-*` namespace)
    * ════════════════════════════════════════════════════════════════ */
   --radius-sharp:                 0px;

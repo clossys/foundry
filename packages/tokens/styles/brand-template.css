@@ -153,6 +153,11 @@
 
   /* ─── LAYOUT (1 optional) ────────────────────────────────────────── */
   /* --ui-layout-sidebar-w: 256px; */
+
+  /* ─── ICON (1 optional — the Icon atom's stroke weight; the three
+       icon SIZE steps alias the spacing scale and are not brand slots,
+       the same call the density tokens above already make) ─────────── */
+  /* --ui-icon-stroke: 2; */
 }
 
 

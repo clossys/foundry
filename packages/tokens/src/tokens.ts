@@ -2,7 +2,7 @@
  * The token catalog: every custom property this package declares in
  * `styles/tokens.css`, as data. This file is the JS/TS half of the package;
  * `styles/tokens.css` is the CSS half. Both are hand-authored and both are
- * meant to describe the exact same 150 tokens — a test in this package
+ * meant to describe the exact same 154 tokens — a test in this package
  * (`parity.test.ts`) parses `styles/tokens.css` and asserts its custom
  * property names and values match this file entry-for-entry, in both
  * directions. That test is what keeps this file honest; nothing generates
@@ -35,7 +35,7 @@
  */
 
 /**
- * The 25 semantic groups the 150 tokens fall into. Each maps to exactly one
+ * The 26 semantic groups the 154 tokens fall into. Each maps to exactly one
  * CSS custom property prefix — see `FAMILY_PREFIX` in `parity.test.ts` (and
  * the README's naming table) for the concrete mapping.
  */
@@ -56,6 +56,7 @@ export type TokenFamily =
   | "width"
   | "layout"
   | "density"
+  | "icon"
   | "radius"
   | "border"
   | "elevation"
@@ -266,6 +267,13 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--ui-density-gap": { property: "--ui-density-gap", family: "density", value: "var(--spacing-lg, 16px)", brandable: false, themeDependent: false },
   "--ui-density-row": { property: "--ui-density-row", family: "density", value: "var(--spacing-3xl, 48px)", brandable: false, themeDependent: false },
 
+  // ── UI · ICON (Icon atom render contract — sm/md/lg alias spacing,
+  //    -stroke is the one literal, brandable member) ──────────────────
+  "--ui-icon-sm": { property: "--ui-icon-sm", family: "icon", value: "var(--spacing-lg, 16px)", brandable: false, themeDependent: false },
+  "--ui-icon-md": { property: "--ui-icon-md", family: "icon", value: "var(--spacing-xl, 24px)", brandable: false, themeDependent: false },
+  "--ui-icon-lg": { property: "--ui-icon-lg", family: "icon", value: "var(--spacing-2xl, 32px)", brandable: false, themeDependent: false },
+  "--ui-icon-stroke": { property: "--ui-icon-stroke", family: "icon", value: "2", brandable: true, themeDependent: false },
+
   // ── RADIUS (Tailwind `--radius-*` namespace) ───────────────────────
   "--radius-sharp": { property: "--radius-sharp", family: "radius", value: "0px", brandable: false, themeDependent: false },
   "--radius-subtle": { property: "--radius-subtle", family: "radius", value: "2px", brandable: false, themeDependent: false },
@@ -324,7 +332,7 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--ui-alpha-disabled": { property: "--ui-alpha-disabled", family: "alpha", value: "0.5", brandable: false, themeDependent: false },
 };
 
-/** The 25 semantic families, in the order they appear in the README's reference table. */
+/** The 26 semantic families, in the order they appear in the README's reference table. */
 export const TOKEN_FAMILIES: readonly TokenFamily[] = [
   "surface",
   "ink",
@@ -342,6 +350,7 @@ export const TOKEN_FAMILIES: readonly TokenFamily[] = [
   "width",
   "layout",
   "density",
+  "icon",
   "radius",
   "border",
   "elevation",

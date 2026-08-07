@@ -3,6 +3,74 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.0] - Unreleased
+
+### Added
+
+- **`Icon` atom** — the glyph render contract (size, colour, accessibility)
+  this package previously had no atom for. Accepts either `glyph`
+  (structured `IconNode` data — the shape `@vespeneventures/ui/icons` ships)
+  or `children` (raw SVG elements/a component), mutually exclusive at the
+  type level. Colour always inherits `currentColor` (no `color`/`fill`/
+  `stroke` prop); size reads `@vespeneventures/tokens`' new `--ui-icon-sm`/
+  `-md`/`-lg` tokens (`0.5.0`); stroke weight reads the new
+  `--ui-icon-stroke` token, applied via `style` (not the `strokeWidth`
+  attribute) for reliable `var()` resolution. Accessibility is a
+  discriminated union — `decorative: true` XOR a required `label` — ported
+  from this scope's own pre-merge, standalone `icons` package's own
+  `IconAccessibilityProps`; `src/atoms/internal/icon-contract.check.tsx`
+  proves both this union and the `glyph`/`children` union fail to compile
+  when violated, and does so in a file `tsc` actually checks (`*.check.tsx`,
+  not `*.test.tsx` — see that file's header comment and issue #24 for why
+  the distinction matters: a `@ts-expect-error` in a test file is
+  transpiled, never type-checked, by this package's toolchain). No
+  `<Icon name="..."/>` registry — `glyph`/`children` are ordinary slots,
+  this package's own "Slots beat mode props" rule applied one level
+  further.
+- **`@vespeneventures/ui/icons`** — a new subpath shipping 32 `IconNode`
+  glyph-data exports (`AlertTriangle` … `XCircle`, no `Icon` suffix — see
+  README.md "Naming convention" for why the suffix was dropped), folded in
+  from this scope's now-deleted standalone `icons` package (`0.1.0`,
+  never published). Pure data: no React import, no rendering
+  logic, `sideEffects: false`; `src/icons/tree-shake.test.ts` (adapted from
+  that package's own test, with a new bundle-output marker — a bare
+  identifier collides for three renamed pairs under the no-suffix
+  convention, see that file's header comment) proves importing one glyph
+  bundles exactly that glyph, measured against real `esbuild` output, not
+  assumed. `src/icons/icons.test.ts` checks the data's own shape (32
+  entries, unique names, well-formed `[tag, attrs]` tuples). Curation
+  evidence (how the 32 were chosen), the Lucide→this-package rename table,
+  and the refresh procedure against a newer Lucide release all carried over
+  into README.md, "Icon glyph data"; `THIRD-PARTY-NOTICES.md` (Lucide ISC +
+  Feather MIT) carried over too and is in this package's published `files`
+  list, verified present in a real `npm pack` listing before this PR.
+  `src/ladder.test.ts` gained a new describe block: `icons` is a pure-data
+  leaf BELOW `atoms` (even more foundational than `atoms` itself) — nothing
+  under `src/icons/` may import from anywhere else in this package, and
+  `atoms` may import `icons` (proven by a real edge: `atoms/Icon.tsx`
+  imports the `IconNode` type, type-only, from `icons/types.ts`).
+- `@vespeneventures/tokens` peer + dev range bumped `^0.4.0` → `^0.5.0` in
+  the same change (a caret range on a `0.x` package is patch-only, so the
+  old range would not have matched tokens' `0.5.0` and the workspace link
+  would 404 against the registry) — needed for the new `--ui-icon-*`
+  tokens `Icon` reads.
+- `esbuild` added as a `devDependency` (carried over from the pre-merge
+  icons package, for `src/icons/tree-shake.test.ts`).
+
+### Changed
+
+- **This scope's standalone `icons` package is retired.** Its glyph
+  data lives at `@vespeneventures/ui/icons` now (see above); its render
+  contract lives at `@vespeneventures/ui/atoms`' new `Icon`. The package
+  itself, its `packages/icons/` directory, and its workspace entry are all
+  removed from this repository. It was never published beyond `0.1.0`
+  internal review, so there is no deprecation notice to issue on the
+  registry.
+- README.md: the "no bundled icon set" claim under "What's deliberately
+  not here" → "Shell" is narrowed to what's still true (`Shell` doesn't
+  assign icons to nav items on a consumer's behalf) now that this package
+  as a whole does ship a glyph set elsewhere.
+
 ## [0.2.0] - Unreleased
 
 ### Added

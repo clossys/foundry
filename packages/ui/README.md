@@ -6,25 +6,39 @@ built on top of tokens, one rung at a time. The full shape — every rung now
 shipped — is:
 
 ```
-tokens → atoms → blocks → views     (content: transient, many, fills slots)
-                    ↘      shell    (frame: persistent, one, provides slots)
-                    ↘      charts   (a distinct domain, not layout: marks + scales)
+tokens → icons → atoms → blocks → views     (content: transient, many, fills slots)
+                             ↘      shell    (frame: persistent, one, provides slots)
+                             ↘      charts   (a distinct domain, not layout: marks + scales)
 ```
 
-`atoms`, `blocks`, `views`, `shell`, and `charts` all ship today. See
-"Placement rules" below for what distinguishes the four ladder rungs and
-how a new component gets assigned to one; see "Charts" below for why that
-layer is a sibling of `shell`/`views` rather than a fifth rung — the same
-"frame vs. content" question doesn't apply to it at all, because a chart is
-neither.
+`atoms`, `blocks`, `views`, `shell`, and `charts` all ship today, alongside
+`icons` — pure glyph DATA sitting BELOW `atoms`, not a sixth rung of content
+(see "Icon glyph data" below for the full reasoning; the short version: a
+`[tag, attrs]` tuple has no rendering logic and depends on nothing else in
+this package, so it sits even more foundational than `atoms` itself, the
+same way `tokens` sits below all of `ui`). See "Placement rules" below for
+what distinguishes the four ladder rungs and how a new component gets
+assigned to one; see "Charts" below for why that layer is a sibling of
+`shell`/`views` rather than a fifth rung — the same "frame vs. content"
+question doesn't apply to it at all, because a chart is neither.
 
+- **`icons`** — glyph data only, no components: 32 `IconNode` exports
+  (`AlertTriangle`, `BookOpen`, `Box`, `Building2`, `Calendar`, `Check`,
+  `CheckCircle`, `ChevronDown`, `ChevronLeft`, `ChevronRight`, `ChevronUp`,
+  `Clock`, `CreditCard`, `ExternalLink`, `FileText`, `Folder`, `Grid3x3`,
+  `Home`, `Info`, `List`, `Lock`, `Monitor`, `Moon`, `Plug`, `Receipt`,
+  `Search`, `Settings`, `Sun`, `User`, `Users`, `X`, `XCircle`) — each a
+  `ReadonlyArray<readonly [tag: string, attrs: Record<string, string>]>`,
+  meant to be passed to the `Icon` atom's `glyph` prop. See "Icon glyph
+  data" below.
 - **`atoms`** — single-purpose: composes no other atom, or its parts are
-  homogeneous repeats rather than named regions. Thirty ship, the complete
-  set for this layer: `Button`, `TextField`, `Badge`, `Card`, `Breadcrumb`,
-  `Link`, `Checkbox`, `Switch`, `Select`, `Textarea`, `Avatar`, `Spinner`,
-  `Menu`, `Dialog`, `Tabs`, `Table`, `Field`, `Skeleton`, `Tooltip`, `Banner`,
-  `RadioGroup`, `Popover`, `DateField`, `ComboBox`, `SearchField`,
-  `FileTrigger`, `Disclosure`, `ProgressBar`, `Separator`, `Chip`.
+  homogeneous repeats rather than named regions. Thirty-one ship, the
+  complete set for this layer: `Button`, `Icon`, `TextField`, `Badge`,
+  `Card`, `Breadcrumb`, `Link`, `Checkbox`, `Switch`, `Select`, `Textarea`,
+  `Avatar`, `Spinner`, `Menu`, `Dialog`, `Tabs`, `Table`, `Field`,
+  `Skeleton`, `Tooltip`, `Banner`, `RadioGroup`, `Popover`, `DateField`,
+  `ComboBox`, `SearchField`, `FileTrigger`, `Disclosure`, `ProgressBar`,
+  `Separator`, `Chip`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
   with a real job on a page. Twelve ship: `PageHeader`, `EmptyState`,
@@ -56,11 +70,14 @@ may import an atom or a block, never the reverse. `shell` is a peer of
 `views` (both build on `atoms`/`blocks`; neither imports the other) rather
 than another rung above it — see "Views" below. `charts` is a second,
 narrower sibling: it may import `atoms`, and nothing else in this package
-imports from it. `src/ladder.test.ts` enforces every one of these
+imports from it. `icons` sits at the very bottom: `atoms` may import
+`icons` (and does — `atoms/Icon.tsx` imports the `IconNode` type from
+`icons/types.ts`), and nothing under `icons/` may import from anywhere
+else in this package. `src/ladder.test.ts` enforces every one of these
 directions structurally, not just by convention: it scans every file under
-`src/atoms/`, `src/blocks/`, `src/views/`, `src/shell/`, and `src/charts/`
-for an import referencing a layer it isn't allowed to reach, and fails the
-build if it finds one.
+`src/atoms/`, `src/blocks/`, `src/views/`, `src/shell/`, `src/charts/`, and
+`src/icons/` for an import referencing a layer it isn't allowed to reach,
+and fails the build if it finds one.
 
 ```bash
 npm install @vespeneventures/ui \
@@ -320,6 +337,85 @@ function SaveButton() {
 `"primary"`). `size`: `"sm" | "md" | "lg"` (default `"md"`). Accepts every
 prop react-aria-components' own `Button` does — `isDisabled`, `onPress`,
 `type`, and so on.
+
+### `Icon`
+
+```tsx
+import { Icon } from "@vespeneventures/ui/atoms";
+import { Clock } from "@vespeneventures/ui/icons";
+
+function LastUpdated({ label }: { label: string }) {
+  return (
+    <span>
+      <Icon glyph={Clock} decorative /> {label}
+    </span>
+  );
+}
+
+function SearchTrigger() {
+  return <Icon glyph={Clock} label="Search" />;
+}
+```
+
+The render CONTRACT for an icon — size, colour, accessibility — applied to
+either structured glyph DATA (`glyph`, the shape `@vespeneventures/ui/icons`
+ships) or arbitrary `children` (raw SVG elements, or a component that
+renders them, for a one-off brand mark). Exactly one of the two is required
+at the type level; supplying both, or neither, is a compile error, not a
+silent default — see "Accessibility" below for the identical enforcement
+shape applied to `decorative`/`label`.
+
+**No name lookup.** There is no `<Icon name="clock" />` string-keyed
+registry — a NAME string would itself be a mode prop in disguise, making
+`Icon` responsible for knowing every glyph a caller might ever want, the
+same unbounded-growth failure "Placement rules" → "Slots beat mode props"
+above describes for a structural mode prop. `glyph`/`children` are ordinary
+`ReactNode`-shaped slots instead: a consumer's own glyph — vendored from
+`@vespeneventures/ui/icons`, hand-copied from a design tool, or a whole
+custom brand mark — is a first-class input with no extension mechanism to
+learn, the same way `Menu`'s `trigger` or `PageHeader`'s `actions` already
+are.
+
+**Colour** always inherits `currentColor` — there is no `color`/`fill`/
+`stroke` prop (`IconProps` `Omit`s those keys from the SVG props it
+otherwise forwards), so passing one is a compile-time error, not a
+silently-ignored prop. Set CSS `color` on the icon itself or an ancestor
+instead, the same mechanism `Spinner` and `Skeleton` already use above.
+
+**Size** (`size`: `"sm" | "md" | "lg"`, default `"md"`) reads
+`@vespeneventures/tokens`' `--ui-icon-sm`/`-md`/`-lg` tokens (`16px`/
+`24px`/`32px` by default), each with a literal pixel fallback so `Icon`
+still renders at a sensible size even in a project that hasn't imported
+`@vespeneventures/tokens/tokens.css`. **Stroke weight** reads
+`--ui-icon-stroke` (default `2`) the same way — a real brand lever (the
+token is `brandable: true`, the same category as `--radius-default`), not
+a per-instance prop: there is no `strokeWidth`/`width`/`height` prop either,
+for the same "the token is the only lever" reason colour has none.
+
+**Accessibility** is enforced at compile time, ported from this scope's
+own pre-merge, standalone `icons` package's own contract:
+
+```tsx
+// Decorative — adds no information beyond text already next to it.
+<Icon glyph={Clock} decorative />
+
+// Meaningful — the ONLY signal of what this is. Carries an accessible name.
+<Icon glyph={Clock} label="Last updated 3 hours ago" />
+
+// Compile error: TypeScript rejects this before it ever reaches a browser.
+// <Icon glyph={Clock} />
+```
+
+`decorative: true` and `label` are mutually exclusive (also a compile
+error together). `src/atoms/internal/icon-contract.check.tsx` is a small
+file, compiled by the same `tsc` run as everything else in this package
+(unlike a `*.test.tsx` file — see that file's own header comment, and
+issue #24, for why that distinction matters here), that fails the build if
+either the accessibility contract or the `glyph`/`children` content
+contract ever regresses.
+
+`className`/`style` merge with `Icon`'s own defaults the same way every
+other atom's do — a consumer's value always wins on conflict.
 
 ### `TextField`
 
@@ -2372,14 +2468,213 @@ built against, a 9th series does not get a generated color; fold the tail
 into an "Other" series, or facet into separate charts, before reaching
 this layer.
 
+## Icon glyph data (`@vespeneventures/ui/icons`)
+
+```tsx
+import { Icon } from "@vespeneventures/ui/atoms";
+import { Search } from "@vespeneventures/ui/icons";
+
+<Icon glyph={Search} label="Search" />;
+```
+
+32 `IconNode` exports — plain data, no components, no rendering logic of
+any kind. See "Icon" (above, under "Atoms") for the render contract that
+consumes this data; this section covers the data itself: where it came
+from, how the 32 were chosen, and how to keep it current.
+
+### A subpath of `ui`, not a separate package
+
+This glyph set shipped for a while as this scope's own standalone `icons`
+package, at the same layer as `@vespeneventures/tokens` —
+deliberately, not a `ui` subpath, specifically so a consumer who wanted
+only icons (a marketing site, a docs page, anything with no interactive
+components) never had to accept `ui`'s own dependency graph
+(`react-aria-components`, `tailwind-merge`) just to reach them.
+
+That reasoning doesn't survive being checked against how ES module
+bundlers actually behave, once the render CONTRACT (this package's own
+`Icon` atom) is what a consumer needs alongside the data anyway: `ui` is
+`"sideEffects": false`, and `@vespeneventures/ui/icons` ships one ES module
+per glyph — importing `Search` from it bundles exactly `Search`, the same
+elimination `src/icons/tree-shake.test.ts` measures against a real
+bundler's OUTPUT, not assumed. An unimported `ui/icons` costs an unrelated
+`ui` consumer zero bytes, the identical reasoning that already justifies
+`@vespeneventures/ui/charts` living inside this package rather than as its
+own. The dependency-weight argument the standalone package's own README
+made for keeping icons separate does not hold up under that same scrutiny —
+it is not repeated here.
+
+**The argument that DOES hold, and is why this data is still vendored
+rather than a direct `lucide-react` dependency:** insulation from upstream
+renaming and churn. This set already crossed one Lucide rename in the
+version it's pinned at — four of its 32 names resolve to a Lucide glyph
+published under a *different* name in the pinned release (`AlertTriangle`
+→ `triangle-alert`, `Home` → `house`, `CheckCircle` → `circle-check-big`,
+`XCircle` → `circle-x`; see "Third-party notices" below for the full
+table). A direct dependency on `lucide-react` would mean either following
+Lucide's own renames as they happen (churn a consumer of THIS package never
+asked for) or pinning a `lucide-react` version directly (which still drifts
+from whatever else in a consumer's own tree might depend on a newer one).
+Vendoring the path data once, under this package's own stable names, means
+this set's 32 names never move under a consumer's feet regardless of what
+Lucide does next — Lucide itself has moved on to 1.30 already; this data
+stays pinned at 1.23.0 until a deliberate refresh (see below).
+
+### How the 32 were chosen
+
+The standing instruction for this program is explicit: don't build a
+design asset just because an existing consumer repo happens to use it — an
+icon that shows up in exactly one consumer is that consumer's domain
+vocabulary, not a shared primitive. The method here is the same one
+earlier rounds of this program used for components: compute the actual
+intersection of what independent consumers use, and treat an icon that
+appears in every one of them as the strong candidate.
+
+Three independent icon registries were inspected (read-only reference
+material, not a dependency of this package and not named here beyond this
+evidence summary):
+
+- Two full-featured, `lucide`-based UI icon registries maintained by two
+  separate consumer products. One is a full superset of the other's shared
+  baseline — **186 of 186** names in the smaller registry's non-domain
+  baseline appear, byte-identical by name, in the larger one. That 186-name
+  baseline was itself already a historical existing-wins merge across three
+  prior per-product registries, so this comparison is really evidence from
+  several products converging on one vocabulary, not two.
+- One independently hand-drawn, non-`lucide` SVG icon set (31 names, its
+  own bespoke paths, built by a team with no knowledge of the `lucide`-based
+  registries above) from a third, unrelated product's demo application.
+
+Matching the third set against the 186-name baseline required semantic
+matching rather than exact string matching — its names and glyphs differ
+(`"doc"` vs. `"file-text"`, `"gear"` vs. `"settings"`, `"card"` vs.
+`"credit-card"`), since it wasn't built with the other two in mind. **26 of
+its 31 icons** matched a concept already in the 186-name baseline this way —
+strong independent corroboration that the baseline vocabulary really is
+common-UI, not an artifact of two products sharing lineage.
+
+From that 3-way intersection, this set excludes anything that reads as
+decorative or domain-flavored rather than structural chrome even though it
+technically intersected — `sparkle` (a brand/delight accent, not
+interactive chrome), `target` ("goals," a marketing concept), `cpu`
+(infrastructure-specific), and a handful of fuzzy matches that only worked
+by treating two visually distinct concepts as "close enough" (`coins` vs. a
+generic dollar sign, `bank` vs. a generic building, `exchange` vs. a
+generic left-right arrow). What's left is 22 icons.
+
+That 3-way intersection already happens to fully cover two families this
+repository's own other packages commit to elsewhere, worth calling out as
+corroboration rather than coincidence: `@vespeneventures/tokens`' README
+documents a three-state theme toggle (`"system" | "light" | "dark"`), and
+`Sun`/`Moon`/`Monitor` — all three of its canonical icons — are already in
+the 22. `@vespeneventures/tokens` also ships exactly four status colors
+(`success`/`warning`/`danger`/`info`), already exposed as a `variant` prop
+on this package's own `Banner`/`Badge` atoms, and two of the four —
+`Info` (`info`) and `AlertTriangle` (`warning`) — are already in the 22 as
+well. The other two color-family members are NOT in the 22 (neither
+consumer registry with the narrow, independent 31-icon set had a matching
+concept), but the same internal-consistency reasoning that explains why the
+first two survived intersection argues for completing the family rather
+than shipping it two-fifths done: `CheckCircle` (success) and `XCircle`
+(danger) are added as this set's one small, individually-justified tier
+beyond the raw intersection number.
+
+A second, separate tier addresses the universal interaction primitives this
+package's own atoms currently stand in for with plain text: `Select` and
+`ComboBox` render a literal `▾` character instead of a chevron icon, and
+`Chip`/`Banner` render a literal `×` instead of a close icon — deliberately
+(see those atoms' own sections above; migrating them to `Icon` is explicit
+follow-up work, not this data set's job). `ChevronDown`/`ChevronUp`/
+`ChevronLeft`/`ChevronRight` and `X` are the real glyphs those placeholders
+stand in for — present in both full `lucide`-based registries (2-way
+evidence), and individually justified by a real, named call site in this
+repository rather than intersection alone. `Check`, `Search` (the exact
+concept `SearchField` is named after), and `ExternalLink` complete this
+tier on the same "present in both full registries, and an unambiguous
+interaction primitive rather than domain vocabulary" basis.
+
+22 (3-way intersection) + 2 (status-family completion) + 8 (interaction
+primitives) = **32** — the exact number every count in this section and
+every test in `src/icons/` checks against; nothing was added and then
+quietly dropped to make the arithmetic round.
+
+Bias throughout was toward leaving an icon OUT rather than in: every name
+above either survived a genuine 3-way intersection, completes a family this
+repository's own `tokens`/`ui` packages already committed to most of, or
+replaces a real, named placeholder already living in this package's own
+source. Nothing shipped here exists because exactly one consumer happened
+to want it.
+
+### Naming convention
+
+No `Icon` suffix (`Clock`, not `ClockIcon`) — two reasons, both deliberate:
+
+1. **These are data, not components.** The suffix-free package this data
+   was vendored from (`lucide-react`) exports its own icons the same way
+   (`Search`, `Settings`, no suffix) — matching that convention means a
+   consumer already familiar with Lucide's names recognizes these
+   immediately, while the shape difference (`const Clock: IconNode = [...]`
+   here vs. a component there) stays unambiguous from the type alone; a
+   `ClockIcon` name, by contrast, reads as "this is a renderable thing,"
+   which risks a consumer reaching for `<Clock />` directly instead of
+   `<Icon glyph={Clock} .../>`.
+2. It shortens the common call site: `<Icon glyph={Clock} label="..." />`
+   instead of the redundant `<Icon glyph={ClockIcon} label="..." />`.
+
+The one place this convention has a real cost, not just a stylistic one:
+three of the 32 names are now a literal prefix of another (`Check` of
+`CheckCircle`, `User` of `Users`, `X` of `XCircle`) — a collision the old
+`*Icon`-suffixed names happened to avoid (`UserIcon` is not a contiguous
+substring of `UsersIcon`, because the plural's extra `s` sits between
+them). `src/icons/tree-shake.test.ts`'s own header comment covers the
+concrete consequence (a bare-identifier bundle marker doesn't work for
+these three pairs) and the fix used instead.
+
+### Third-party notices
+
+The 32 glyphs here are visually derived from [Lucide](https://lucide.dev)
+(ISC License) and, for a subset of those, [Feather](https://feathericons.com)
+(MIT License) before that — this package does not depend on `lucide-react`
+at runtime (see "A subpath of `ui`, not a separate package" above), but the
+SVG path data was copied from it, pinned at Lucide **1.23.0**. Full
+attribution, the rename table, and both license texts:
+[THIRD-PARTY-NOTICES.md](./THIRD-PARTY-NOTICES.md) — required reading
+before touching `scripts/icon-source-data.json`, and shipped in this
+package's published tarball (`package.json`'s `files` list) alongside
+`LICENSE`, since both licenses require the notice accompany distribution,
+not just live in this repository.
+
+### Refreshing the data
+
+`scripts/generate-icons.mjs` reads `scripts/icon-source-data.json` and
+writes one `src/icons/<Name>.ts` file per entry plus `src/icons/index.ts` —
+mechanically regenerable, never hand-edited (every generated file says so
+in its own header comment). To pull a newer Lucide release for an existing
+name: find its current kebab-case name in the target version (check
+THIRD-PARTY-NOTICES.md's rename table first), copy its `<svg>` children
+into `icon-source-data.json` as `[tag, { ...attrs }]` tuples, update the
+pinned-version references in THIRD-PARTY-NOTICES.md and this package's
+CHANGELOG.md, then run `node scripts/generate-icons.mjs` and `npm test`
+— `src/icons/icons.test.ts` and `src/icons/tree-shake.test.ts` both
+re-verify the regenerated data. See `scripts/generate-icons.mjs`'s own
+header comment for the full procedure, including adding a genuinely new
+name (follow "How the 32 were chosen" above first — this set is curated,
+not a grab-bag).
+
 ## API
 
 | Export | Kind | Description |
 | --- | --- | --- |
+| `AlertTriangle`, `BookOpen`, `Box`, `Building2`, `Calendar`, `Check`, `CheckCircle`, `ChevronDown`, `ChevronLeft`, `ChevronRight`, `ChevronUp`, `Clock`, `CreditCard`, `ExternalLink`, `FileText`, `Folder`, `Grid3x3`, `Home`, `Info`, `List`, `Lock`, `Monitor`, `Moon`, `Plug`, `Receipt`, `Search`, `Settings`, `Sun`, `User`, `Users`, `X`, `XCircle` | data | The 32 shipped icon glyphs, each an `IconNode` — see "Icon glyph data" above. |
 | `Button` | component | Pressable action built on react-aria-components' `Button`. |
 | `ButtonProps` | type | Props for `Button`: `variant`, `size`, plus everything react-aria-components' own `Button` accepts. |
 | `ButtonVariant` | type | `"primary" \| "secondary" \| "ghost" \| "danger"`. |
 | `ButtonSize` | type | `"sm" \| "md" \| "lg"`. |
+| `Icon` | component | The glyph render contract: size, colour, accessibility, applied to either `glyph` (structured `IconNode` data) or `children` (raw SVG/a component). |
+| `IconProps` | type | `IconAccessibilityProps & { glyph: IconNode; children?: undefined } \| { glyph?: undefined; children: ReactNode } & { size?: IconSize; className?: string; style?: CSSProperties } & Omit<SVGProps<SVGSVGElement>, ...>`. |
+| `IconSize` | type | `"sm" \| "md" \| "lg"`. |
+| `IconAccessibilityProps` | type | The `{ decorative: true } \| { label: string }` discriminated union. |
+| `IconNode` | type | `ReadonlyArray<readonly [tag: string, attrs: Record<string, string>]>` — also re-exported from `@vespeneventures/ui/icons`. |
 | `TextField` | component | Labeled single-line text input built on react-aria-components' `TextField` + `Label` + `Input` + `FieldError`. |
 | `TextFieldProps` | type | Props for `TextField`: `label`, `description`, `errorMessage`, `placeholder`, `className`, `inputClassName`, plus everything react-aria-components' own `TextField` accepts. |
 | `Badge` | component | Small status/label pill. Plain markup — not interactive, composes no other atom. |
@@ -2610,12 +2905,12 @@ two tests are worth calling out specifically:
 
 ## What's deliberately not here
 
-**Atoms:** thirty ship, and this is the FINAL rung of this layer — `Button`,
-`TextField`, `Badge`, `Card`, `Breadcrumb`, `Link`, `Checkbox`, `Switch`,
-`Select`, `Textarea`, `Avatar`, `Spinner`, `Menu`, `Dialog`, `Tabs`, `Table`,
-`Field`, `Skeleton`, `Tooltip`, `Banner`, `RadioGroup`, `Popover`,
-`DateField`, `ComboBox`, `SearchField`, `FileTrigger`, `Disclosure`,
-`ProgressBar`, `Separator`, `Chip`. No `Modal` exposed as a public atom of
+**Atoms:** thirty-one ship, and this is the FINAL rung of this layer —
+`Button`, `Icon`, `TextField`, `Badge`, `Card`, `Breadcrumb`, `Link`,
+`Checkbox`, `Switch`, `Select`, `Textarea`, `Avatar`, `Spinner`, `Menu`,
+`Dialog`, `Tabs`, `Table`, `Field`, `Skeleton`, `Tooltip`, `Banner`,
+`RadioGroup`, `Popover`, `DateField`, `ComboBox`, `SearchField`,
+`FileTrigger`, `Disclosure`, `ProgressBar`, `Separator`, `Chip`. No `Modal` exposed as a public atom of
 its own beyond what `Dialog` and `Popover` already compose internally —
 that gets added here only once something real needs a bare modal overlay
 with neither `Dialog`'s fixed trigger/content shape nor `Popover`'s
@@ -2647,7 +2942,11 @@ could pre-assemble without being wrong for most consumers.
 
 **Shell:** `Shell` ships five slots (`Header`, `SideNav`, `Main`, `Rail`,
 `Footer`) and nothing else — no `SiteHeader`/`AppHeader`/`AppFooter`
-block, no nav-item component, no bundled icon set. Headers and navigation
+block, no nav-item component, and no PER-ITEM icon assignment of its own
+(that's still true even though this package as a whole now ships a glyph
+set at `./icons` — `Shell` doesn't reach for it on a consumer's behalf; a
+consumer picks and places an `Icon` in whichever slot needs one, same as
+any other atom). Headers and navigation
 are where brand and product-specific structure live; a consumer composes
 those from atoms and passes them into the relevant slot (see "Shell" →
 "How differing chrome is handled" above). No modal/dialog manager and no
