@@ -682,6 +682,101 @@ try {
       `exit was ${rEmptyPkgDir.code}`,
     );
   }
+
+  // ------------------------ root README parity: subpath claims (CHECK D)
+  // A row's PACKAGE NAME can be exactly right (passing every check above)
+  // while its PROSE lies about that package's shape. This is issue #28's
+  // actual historical defect, reproduced structurally: the real
+  // @vespeneventures/ui row named the right package and said
+  // "`blocks` and `views` are a planned future subpath, not built yet"
+  // long after both had shipped as real `exports` keys.
+  console.log("\n# check-root-readme-parity: subpath claims contradicting real exports (CHECK D)");
+  {
+    const dir = join(work, "root-readme-subpaths");
+    mkdirSync(join(dir, "packages", "gamma"), { recursive: true });
+    writeFileSync(
+      join(dir, "packages", "gamma", "package.json"),
+      JSON.stringify(
+        {
+          name: `${FIXTURE_SCOPE}/gamma`,
+          version: "1.0.0",
+          exports: {
+            ".": { types: "./dist/index.d.ts", import: "./dist/index.js" },
+            "./atoms": { types: "./dist/atoms/index.d.ts", import: "./dist/atoms/index.js" },
+            "./blocks": { types: "./dist/blocks/index.d.ts", import: "./dist/blocks/index.js" },
+          },
+        },
+        null,
+        2,
+      ) + "\n",
+    );
+
+    function writeGammaReadme(description) {
+      writeFileSync(
+        join(dir, "README.md"),
+        ["## Packages", "", "| Package | What it does |", "| --- | --- |", `| \`${FIXTURE_SCOPE}/gamma\` | ${description} |`, ""].join("\n"),
+      );
+    }
+
+    // D1 (positive): an explicit `./name` mention that isn't a real key in
+    // this package's own "exports" — the row documents a subpath that does
+    // not exist, the root-README mirror of check-readme-parity's CHECK C.
+    writeGammaReadme("Ships \`./atoms\` and \`./blocks\`, plus \`./nonexistent\` for legacy imports.");
+    const nonexistent = run("node", [ROOT_README, dir]);
+    check(
+      "D1: catches an explicit ./subpath mention that is not a real exports key",
+      nonexistent.code === 1 && nonexistent.out.includes("./nonexistent"),
+      `exit ${nonexistent.code}: ${nonexistent.out.slice(0, 300)}`,
+    );
+
+    // D2 (negative, the historical shape): a BARE word identical to a real
+    // subpath name, in the same clause as a curated "doesn't exist yet"
+    // phrase, while that subpath actually IS a real key. This is the exact
+    // shape of the real @vespeneventures/ui defect, reproduced with a
+    // synthetic package and a synthetic subpath name.
+    writeGammaReadme("Ships the \`atoms\` layer only; \`blocks\` is a planned future subpath, not built yet.");
+    const falseAbsence = run("node", [ROOT_README, dir]);
+    check(
+      "D2: catches a bare mention of a REAL subpath negated by a curated 'not built yet' phrase (issue #28's actual historical shape)",
+      falseAbsence.code === 1 && falseAbsence.out.includes('describes "blocks"'),
+      `exit ${falseAbsence.code}: ${falseAbsence.out.slice(0, 300)}`,
+    );
+
+    // Precision: the negation phrase sits in a LATER clause than a
+    // correctly-described real subpath in the same cell. The clause-scoped
+    // match must not cross-contaminate — `atoms` is truthfully described as
+    // shipped and must not be flagged just because `blocks` is falsely
+    // negated two clauses later in the same row.
+    check(
+      "D2 is clause-scoped: a truthfully-described subpath earlier in the same cell is not flagged by a later clause's negation",
+      !falseAbsence.out.includes('describes "atoms"'),
+      `atoms was incorrectly flagged: ${falseAbsence.out.slice(0, 300)}`,
+    );
+
+    // Sanity (real coverage): the same real subpaths, truthfully described
+    // with no negation phrase anywhere, passes — proving D1/D2 read the
+    // real "exports" map and the real README prose rather than flagging
+    // unconditionally once a negation-shaped fixture exists.
+    writeGammaReadme("Ships \`./atoms\` and \`./blocks\`, the two layers this package has today.");
+    const clean = run("node", [ROOT_README, dir]);
+    check(
+      "sanity: truthfully describing real subpaths with no negation phrase passes",
+      clean.code === 0,
+      `exit ${clean.code}: ${clean.out.slice(0, 300)}`,
+    );
+
+    // A negation phrase near a BARE word that is not a real subpath name at
+    // all (ordinary prose) must never be flagged — CHECK D only fires when
+    // the negated word is identical to a verified real "exports" key, never
+    // as a general "this sentence sounds negative" scan.
+    writeGammaReadme("The changelog format is not built yet for this package.");
+    const ordinaryProse = run("node", [ROOT_README, dir]);
+    check(
+      "a negation phrase near ordinary prose (no real-subpath-named word involved) is not flagged",
+      ordinaryProse.code === 0,
+      `exit ${ordinaryProse.code}: ${ordinaryProse.out.slice(0, 300)}`,
+    );
+  }
 } finally {
   rmSync(work, { recursive: true, force: true });
 }
