@@ -4,14 +4,28 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 /**
- * The ladder invariant: atoms → blocks → views, each rung may only import
- * DOWN the ladder, never up. `blocks/` importing `atoms/` (e.g. `PageHeader`
- * pulling in `Button`) is correct and expected — that's the whole point of
- * a block. The reverse — an atom reaching up into `blocks/` — is a layering
- * violation: it would mean the simplest layer depends on the thing built out
- * of it, which breaks the ladder's whole reason for existing (a consumer who
- * only needs atoms could no longer take just atoms without pulling in every
- * block too, and a change to a block could ripple back down into atoms).
+ * The ladder invariant: atoms → blocks → views → shell, each rung may only
+ * import DOWN the ladder, never up — with `shell` as the one deliberate
+ * exception to "down" meaning "earlier in that list" (see below). `blocks/`
+ * importing `atoms/` (e.g. `PageHeader` pulling in `Button`) is correct and
+ * expected — that's the whole point of a block. The reverse — an atom
+ * reaching up into `blocks/` — is a layering violation: it would mean the
+ * simplest layer depends on the thing built out of it, which breaks the
+ * ladder's whole reason for existing (a consumer who only needs atoms could
+ * no longer take just atoms without pulling in every block too, and a
+ * change to a block could ripple back down into atoms).
+ *
+ * `shell` is the frame `views` fill, not another rung of CONTENT above
+ * `views` — see this package's README, "Placement rules" and the ladder
+ * diagram at the top. Structurally that makes it a peer of `views` that is
+ * allowed to import both `atoms` and `blocks` (a `Shell.Header` slot is
+ * commonly filled with atoms the same way a block is), while `views` (once
+ * it exists) must never import `shell` — a view fills a slot `shell`
+ * provides; it doesn't get to reach into the frame that's rendering it.
+ * `shell` importing `views` is equally forbidden, for the same reason
+ * `blocks` importing `atoms` is fine but not the reverse: `shell` is
+ * lower/more foundational than the content it frames, even though it's
+ * listed last in the diagram.
  *
  * This is enforced here structurally — reading real files and checking real
  * import specifiers — rather than left as a comment or a code-review
@@ -19,7 +33,7 @@ import { describe, expect, it } from "vitest";
  * moment someone adds an import under time pressure, and nothing else in
  * this package's toolchain (TypeScript, ESLint, the token-parity test) would
  * catch a `../blocks/...` import landing inside `atoms/`. It compiles clean:
- * both directories live in the same package, so TypeScript's module
+ * every directory here lives in the same package, so TypeScript's module
  * resolution has no opinion about which direction is allowed.
  *
  * Deliberately dependency-free: a regex over each file's import/require
@@ -32,6 +46,7 @@ import { describe, expect, it } from "vitest";
 const srcDir = dirname(fileURLToPath(import.meta.url));
 const atomsDir = join(srcDir, "atoms");
 const blocksDir = join(srcDir, "blocks");
+const shellDir = join(srcDir, "shell");
 
 function collectSourceFiles(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
@@ -94,35 +109,102 @@ function findViolations(dir: string, forbiddenLayer: string): Violation[] {
   return violations;
 }
 
-describe("ladder invariant: atoms → blocks → views (down only, never up)", () => {
+// A single enforcement case: `dir` must contain no import referencing the
+// `forbiddenLayer` path segment. `why` explains the reason for THIS specific
+// pair of directories, so a failure message is legible on its own, without
+// having to go re-read the big comment at the top of this file.
+function expectNoImportsOf(dir: string, dirLabel: string, forbiddenLayer: string, why: string) {
+  const violations = findViolations(dir, forbiddenLayer);
+  if (violations.length > 0) {
+    const report = violations.map((v) => `  ${v.file}: imports "${v.specifier}"`).join("\n");
+    throw new Error(
+      `${violations.length} ladder violation(s): ${dirLabel} must never import from ${forbiddenLayer}/.\n` +
+        `The ladder is atoms → blocks → views, with shell as the frame views fill — each rung\n` +
+        `(and shell) may only import DOWN toward something more foundational than itself, never\n` +
+        `up toward something built out of it. ${why}\n${report}`,
+    );
+  }
+  expect(violations).toEqual([]);
+}
+
+describe("ladder invariant: atoms → blocks → views, shell as the frame views fill (down only, never up)", () => {
   it("no file under src/atoms/ imports from blocks/", () => {
-    const violations = findViolations(atomsDir, "blocks");
-    if (violations.length > 0) {
-      const report = violations.map((v) => `  ${v.file}: imports "${v.specifier}"`).join("\n");
-      throw new Error(
-        `${violations.length} ladder violation(s): an atom must never import from blocks/.\n` +
-          `The ladder is atoms → blocks → views — each rung composes the one below it, never\n` +
-          `the one above. An atom depending on a block would mean the simplest layer depends\n` +
-          `on something built out of itself.\n${report}`,
-      );
-    }
-    expect(violations).toEqual([]);
+    expectNoImportsOf(
+      atomsDir,
+      "an atom",
+      "blocks",
+      "An atom depending on a block would mean the simplest layer depends on something built out of itself.",
+    );
+  });
+
+  it("no file under src/atoms/ imports from views/", () => {
+    expectNoImportsOf(
+      atomsDir,
+      "an atom",
+      "views",
+      "Views are wired-up content built from blocks and atoms; an atom depending on one would be even further backwards than an atom depending on a block.",
+    );
+  });
+
+  it("no file under src/atoms/ imports from shell/", () => {
+    expectNoImportsOf(
+      atomsDir,
+      "an atom",
+      "shell",
+      "Shell is the persistent frame content is rendered INSIDE of; an atom — the most foundational content primitive — must never depend on the frame around it.",
+    );
+  });
+
+  it("no file under src/blocks/ imports from views/", () => {
+    expectNoImportsOf(
+      blocksDir,
+      "a block",
+      "views",
+      "A view is a block (or set of blocks) wired to real data and routing; a block depending on a view would be circular.",
+    );
+  });
+
+  it("no file under src/blocks/ imports from shell/", () => {
+    expectNoImportsOf(
+      blocksDir,
+      "a block",
+      "shell",
+      "Shell is the frame content is rendered inside of; a block must never depend on the frame around it, the same reason an atom must not.",
+    );
+  });
+
+  it("no file under src/shell/ imports from views/", () => {
+    expectNoImportsOf(
+      shellDir,
+      "shell",
+      "views",
+      "Shell PROVIDES the slots a view fills; a view is content rendered inside shell, so shell depending on one would be exactly backwards — the frame would depend on what's framed.",
+    );
+  });
+
+  it("sanity (permitted direction): shell/ DOES import from atoms/, and the scan finds it — proving the scan inspects real code rather than passing on zero coverage, and confirming this direction is the permitted one (no assertion here forbids it)", () => {
+    // Deliberately the mirror image of the enforcement tests above: same
+    // `findViolations` helper, same regex, pointed the other way. If it
+    // found nothing here, that would mean either shell secretly reaches
+    // atoms through some path this regex can't see (a blind scan is worse
+    // than no scan) or — more likely if shell ever stopped composing atoms
+    // at all (`Shell`'s skip link uses token-derived classes; `Toaster`'s
+    // close control is this package's own `Button` atom) — the ladder's
+    // "shell may import atoms and blocks" rule would have lost its reason
+    // to exist. Either way, a passing "no violations" test above proves
+    // nothing on its own without this count also being nonzero.
+    const shellImportingAtoms = findViolations(shellDir, "atoms");
+    expect(shellImportingAtoms.length).toBeGreaterThan(0);
+    // The critical difference from the enforcement tests: nothing here
+    // asserts this list is empty. Shell importing atoms (or blocks, not
+    // separately asserted here since this package's shell layer doesn't
+    // currently compose a block — nothing requires it to) is correct and
+    // expected — this test would only fail if the scan itself is broken,
+    // never because of what it found.
   });
 
   it("sanity (reverse direction): blocks/ DOES import from atoms/, and the scan finds it — proving the scan inspects real code rather than passing on zero coverage, and confirming this direction is the permitted one (no assertion here forbids it)", () => {
-    // Deliberately the mirror image of the enforcement test above: same
-    // `findViolations` helper, same regex, pointed the other way. If it
-    // found nothing here, that would mean either every block secretly
-    // reaches atoms through some path this regex can't see (a blind scan is
-    // worse than no scan) or — more likely if this package's blocks ever
-    // stopped composing atoms at all — the ladder itself would have lost
-    // its reason to exist. Either way, a passing "no violations" test above
-    // proves nothing on its own without this count also being nonzero.
     const blocksImportingAtoms = findViolations(blocksDir, "atoms");
     expect(blocksImportingAtoms.length).toBeGreaterThan(0);
-    // The critical difference from the enforcement test: nothing here
-    // asserts this list is empty. Blocks importing atoms is correct and
-    // expected — this test would only fail if the scan is broken, never
-    // because of what it found.
   });
 });

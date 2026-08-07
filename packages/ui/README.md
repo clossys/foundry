@@ -3,15 +3,15 @@
 React components styled with [@vespeneventures/tokens](https://github.com/vespeneventures/foundry/tree/main/packages/tokens)'
 design tokens, via Tailwind CSS v4. This package ships a component ladder
 built on top of tokens, one rung at a time. The full intended shape —
-including two rungs that aren't built yet — is:
+including one rung that isn't built yet — is:
 
 ```
 tokens → atoms → blocks → views     (content: transient, many, fills slots)
                     ↘      shell    (frame: persistent, one, provides slots)
 ```
 
-`atoms` and `blocks` ship today. `views` and `shell` are **planned, not yet
-shipped** — no code, exports, or placeholder files for either exist in this
+`atoms`, `blocks`, and `shell` ship today. `views` is **planned, not yet
+shipped** — no code, exports, or placeholder files for it exist in this
 package yet. See "Placement rules" below for what distinguishes all four
 rungs and how a new component gets assigned to one.
 
@@ -26,9 +26,12 @@ rungs and how a new component gets assigned to one.
   routing. Content: transient and many-per-app, it fills the slots the
   shell provides. (`DataTable` and `DetailView` are a deliberate follow-up,
   not part of this package yet.)
-- **`shell`** *(planned)* — the persistent frame around content (nav,
-  layout chrome) that provides the slots `views` fill. One per app;
-  survives route changes that swap out the view underneath it.
+- **`shell`** — the persistent frame around content (nav, layout chrome)
+  that provides the slots content fills. One per app; survives route
+  changes that swap out the content underneath it. `Shell` ships with five
+  slots (`Header`, `SideNav`, `Main`, `Rail`, `Footer`); `Toaster` — a
+  runtime service, not itself a rung of this ladder — ships alongside it.
+  See "Shell" below.
 
 A rung may only import DOWN the ladder — a block may import an atom, never
 the reverse. `src/ladder.test.ts` enforces that structurally, not just by
@@ -606,6 +609,216 @@ way any other section heading would. `icon` and `action` are both optional
 slots; not every empty state has a recovery action (an empty inbox that's
 empty because there's genuinely nothing to do has nowhere to send you).
 
+## Shell
+
+`atoms` and `blocks` are **content**: a `Button`, a `PageHeader`, a list of
+`Card`s — whatever fills the page for the route currently on screen. `shell`
+is the **frame** that content is rendered inside of. The two differ on three
+axes:
+
+| | Content (`atoms`, `blocks`, `views`) | `shell` |
+| --- | --- | --- |
+| Lifetime | remounts on every route change | persists across navigation |
+| Cardinality | many per app | exactly one per app |
+| Direction | fills a slot | provides the slots |
+
+In a Next.js App Router application this maps directly onto the framework's
+own two file types: `shell` lives in `layout.tsx` (rendered once, wrapping
+every route below it); content lives in `page.tsx` (rendered fresh per
+route). That mapping is the entire reason this is a separate layer rather
+than one more block: if a *page* mounted the frame instead of a *layout*,
+the frame would remount on every navigation — collapsing side-navigation
+open/closed state, resetting a scroll position mid-list, and discarding any
+toast that was queued a moment before the user clicked a link.
+
+### `Shell`
+
+```tsx
+// app/layout.tsx
+import { Shell } from "@vespeneventures/ui/shell";
+import { Link } from "@vespeneventures/ui/atoms";
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <Shell>
+      <Shell.Header>
+        <strong>Acme</strong>
+      </Shell.Header>
+      <Shell.SideNav>
+        <Link href="/prompts" variant="standalone">Prompts</Link>
+        <Link href="/evals" variant="standalone">Evals</Link>
+      </Shell.SideNav>
+      <Shell.Main>{children}</Shell.Main>
+      <Shell.Rail>
+        <p>Context for the current record.</p>
+      </Shell.Rail>
+      <Shell.Footer>
+        <small>© Acme</small>
+      </Shell.Footer>
+    </Shell>
+  );
+}
+```
+
+```tsx
+// app/prompts/page.tsx — content: remounts per route, fills Shell.Main
+import { PageHeader } from "@vespeneventures/ui/blocks";
+
+export default function PromptsPage() {
+  return <PageHeader title="Prompts" />;
+}
+```
+
+`Shell.Main` is the only required slot; `Header`, `SideNav`, `Rail`, and
+`Footer` are all optional, and each renders the correct landmark element
+(`<header>`, `<nav>`, `<main>`, `<aside>`, `<footer>`) — there is exactly
+one `<main>` per `Shell`, and it's the one `Shell.Main` renders. An absent
+slot leaves no trace at all: its element simply isn't in the DOM, so there's
+no empty grid track or leftover spacing where it would have been. Slots can
+be written in any JSX order and still render in the correct visual
+position, since each places itself into a named area of `Shell`'s own CSS
+Grid rather than relying on source order.
+
+`Shell` also renders a skip-to-content link — the first focusable element on
+the page, visually hidden until it receives keyboard focus — so a keyboard
+user landing on any route can jump straight past the header and side
+navigation to that route's actual content.
+
+`Shell.SideNav` is sized to `--ui-layout-sidebar-w` from the `tablet`
+breakpoint up, and collapses — CSS-only, no JavaScript breakpoint state — to
+the narrower `--ui-layout-sidebar-rail-w` icon-rail width below it.
+`Shell.Rail` hides entirely below the `desktop` breakpoint. Both are plain
+Tailwind responsive variants generated from this package's own breakpoint
+tokens.
+
+#### How differing chrome is handled
+
+`Shell` takes **no `variant`/`mode` prop.** A marketing route group, a
+signed-in member area, and a staff/admin area with three structurally
+different headers and navigation are not three values of a prop — they're
+three different slot fillings, declared in three different `layout.tsx`
+files:
+
+```tsx
+// app/(marketing)/layout.tsx
+<Shell>
+  <Shell.Header><MarketingNav /></Shell.Header>
+  <Shell.Main>{children}</Shell.Main>
+</Shell>
+
+// app/(member)/layout.tsx
+<Shell>
+  <Shell.Header><AccountMenu /></Shell.Header>
+  <Shell.SideNav><MemberNav /></Shell.SideNav>
+  <Shell.Main>{children}</Shell.Main>
+</Shell>
+
+// app/(staff)/layout.tsx
+<Shell>
+  <Shell.Header><StaffToolbar /></Shell.Header>
+  <Shell.SideNav><StaffNav /></Shell.SideNav>
+  <Shell.Main>{children}</Shell.Main>
+  <Shell.Rail><AuditLog /></Shell.Rail>
+</Shell>
+```
+
+`MarketingNav`, `AccountMenu`, `MemberNav`, `StaffToolbar`, `StaffNav`, and
+`AuditLog` are each the CONSUMER's own composition of atoms — this package
+ships no `SiteHeader`/`AppHeader` block. A header is where brand lives, and
+shipping a pre-built one would recreate, one layer up, exactly the
+`mode`-prop failure "Placement rules" above warns against: a single
+component slowly accreting a named mode for every consumer's structural
+divergence, with every combination of those modes untested. Three headers
+in three files share no code that can break that way, because there's no
+shared code to break.
+
+### `Toaster` and `toast`
+
+A toast stack is a **runtime service**, not a layout component (see
+"Placement rules" → "Does it have a portal, a queue, and an imperative
+API?" above) — it doesn't occupy a `Shell` slot, and there is no
+`Shell.Toaster`. It ships from this same `/shell` subpath anyway, for one
+reason: its lifetime requirement is identical to `Shell`'s. A toast queued a
+moment before a navigation has to survive that navigation, the same reason
+`Shell` itself has to live in `layout.tsx` rather than `page.tsx`.
+
+Mount `<Toaster />` once, anywhere in the same tree as `<Shell>` — its
+on-screen position is fixed and independent of where in the React tree it's
+rendered, since it portals straight to `document.body`:
+
+```tsx
+// app/layout.tsx
+import { Shell, Toaster } from "@vespeneventures/ui/shell";
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <Shell>
+      <Shell.Main>{children}</Shell.Main>
+      <Toaster />
+    </Shell>
+  );
+}
+```
+
+Then, from anywhere — an event handler, a data-fetching effect, any code
+with no JSX in it at all:
+
+```tsx
+import { toast } from "@vespeneventures/ui/shell";
+
+async function save() {
+  try {
+    await saveDraft();
+    toast.success("Saved");
+  } catch {
+    toast.error("Failed to save", { description: "Check your connection and try again." });
+  }
+}
+```
+
+`toast.success(...)`, `toast.error(...)`, `toast.warning(...)`, and
+`toast.info(...)` each add one toast in that status and return a
+`ToastHandle` (`{ id, dismiss() }`) the caller can use to close it early
+in response to a later event. A plain `toast(...)` call is also
+`info`-variant — there's no fifth, "neutral" status token to back a
+variant-less style. Every variant is styled from this package's real status
+tokens (`status-success`, `status-danger`, `status-info`, `status-warning`,
+and each one's `-tint`/`-text` companion).
+
+Each toast auto-dismisses after 5 seconds by default; pass `{ timeout: N }`
+for a different duration, or `{ timeout: null }` for a toast that stays
+until the user or code closes it. The countdown pauses for as long as the
+toast viewport has mouse hover OR keyboard focus anywhere inside it, and
+resumes when both end. Every toast is dismissible by keyboard — tab to its
+close button, then Enter or Space. A `danger` toast's content is an
+assertive live region (`role="alert"`, `aria-live="assertive"`); every
+other variant is polite (`role="status"`, `aria-live="polite"`) — an error
+should interrupt a screen reader user the way an alert does; a success
+confirmation shouldn't interrupt at all.
+
+Built on react-aria-components' `ToastRegion`/`Toast`/`ToastContent` (its
+own `UNSTABLE_*` naming for a still-evolving API surface, not a sign the
+behavior itself is unreliable) for portal rendering, focus management, and
+the pause-on-hover-or-focus behavior described above — none of that is
+reimplemented here. One thing IS overridden: react-aria-components' own
+`ToastContent` always renders `role="alert"` regardless of variant, which
+would make even a `success` toast interrupt a screen reader user; `Toaster`
+supplies its own `role`/`aria-live` per variant instead, for the reason
+above.
+
+### File-tree shape
+
+```
+app/
+  layout.tsx          ← Shell + Toaster (persistent frame)
+  (member)/
+    layout.tsx         ← a different Shell.Header/SideNav slot filling
+    prompts/
+      page.tsx          ← content, fills Shell.Main, remounts per route
+    evals/
+      page.tsx
+```
+
 ## API
 
 | Export | Kind | Description |
@@ -650,6 +863,21 @@ empty because there's genuinely nothing to do has nowhere to send you).
 | `PageHeaderProps` | type | Props for `PageHeader`: `title`, `description`, `actions`, `breadcrumb`, plus every native `<header>` attribute. |
 | `EmptyState` | component | Zero-item placeholder: icon slot, title, description, action slot. |
 | `EmptyStateProps` | type | Props for `EmptyState`: `icon`, `title`, `description`, `action`, plus every native `<div>` attribute. |
+| `Shell` | component | The persistent application frame. Carries `Shell.Header`, `Shell.SideNav`, `Shell.Main`, `Shell.Rail`, `Shell.Footer`. |
+| `ShellProps` | type | Props for `Shell`: `children` (any subset of the five slots above, in any order), plus every native `<div>` attribute. |
+| `ShellHeaderProps` | type | Props for `Shell.Header`: `children`, plus every native `<header>` attribute. |
+| `ShellSideNavProps` | type | Props for `Shell.SideNav`: `children`, plus every native `<nav>` attribute (including `aria-label`, default `"Primary"`). |
+| `ShellMainProps` | type | Props for `Shell.Main`: `children`, plus every native `<main>` attribute except `id` (fixed, for the skip link). |
+| `ShellRailProps` | type | Props for `Shell.Rail`: `children`, plus every native `<aside>` attribute. |
+| `ShellFooterProps` | type | Props for `Shell.Footer`: `children`, plus every native `<footer>` attribute. |
+| `Toaster` | component | The toast viewport — mount once, anywhere in the same tree as `Shell`. |
+| `ToasterProps` | type | Props for `Toaster`: `aria-label` (default `"Notifications"`), `className`. |
+| `toast` | value | Imperative toast API: `toast(title, options?)`, `toast.success`/`.error`/`.warning`/`.info`, `toast.dismiss`, `toast.dismissAll`. |
+| `ToastFunction` | type | The callable shape of `toast` itself. |
+| `ToastHandle` | type | Returned by every `toast(...)` call: `{ id, dismiss() }`. |
+| `ToastOptions` | type | Options for `toast(...)`: `description`, `timeout` (ms, or `null` to disable auto-dismiss), `onClose`. |
+| `ToastRecord` | type | The queued shape of one toast: `title`, `description?`, `variant`. |
+| `ToastVariant` | type | `"success" \| "danger" \| "info" \| "warning"`. |
 
 ## Tests
 
@@ -658,25 +886,33 @@ Beyond render/interaction/keyboard/ARIA tests per atom (`Button.test.tsx`,
 `Breadcrumb.test.tsx`, `Link.test.tsx`, `Checkbox.test.tsx`,
 `Switch.test.tsx`, `Select.test.tsx`, `Textarea.test.tsx`, `Avatar.test.tsx`,
 `Spinner.test.tsx`, `Menu.test.tsx`), per block (`PageHeader.test.tsx`,
-`EmptyState.test.tsx`), and the `tailwind-merge` regression tests described
+`EmptyState.test.tsx`), per shell component (`Shell.test.tsx`,
+`Toaster.test.tsx`), and the `tailwind-merge` regression tests described
 above (`internal/cx.test.ts`), two tests are worth calling out specifically:
 
-- **`token-parity.test.ts`** scans every atom's AND every block's source for
-  token-derived Tailwind classes (`bg-*`, `text-*`, `border-*`, `rounded-*`,
-  ...) and raw `var(--ui-*)`/`var(--color-*)` reads, and asserts every
-  single one resolves to a real entry in `@vespeneventures/tokens`' own
-  `TOKENS` export — imported from the real package, not a hand-copied list.
-  Without this, a typo like `bg-surface-elevated` (there is no such token —
-  the real name is `surface-raised`) would compile clean and render with
-  zero applied background, with no error anywhere to explain why. This is
-  the same failure mode as a missing `@source` line above, just at the
-  level of a single class name instead of the whole build.
-- **`ladder.test.ts`** scans every file under `src/atoms/` for an import
-  specifier that references `blocks/`, and fails the build if it finds one
-  — the ladder invariant (atoms → blocks → views, down only) enforced
+- **`token-parity.test.ts`** scans every atom's, block's, AND shell
+  component's source (everything under `src/`) for token-derived Tailwind
+  classes (`bg-*`, `text-*`, `border-*`, `rounded-*`, ...) and raw
+  `var(--ui-*)`/`var(--color-*)` reads, and asserts every single one
+  resolves to a real entry in `@vespeneventures/tokens`' own `TOKENS`
+  export — imported from the real package, not a hand-copied list. Without
+  this, a typo like `bg-surface-elevated` (there is no such token — the
+  real name is `surface-raised`) would compile clean and render with zero
+  applied background, with no error anywhere to explain why. This is the
+  same failure mode as a missing `@source` line above, just at the level of
+  a single class name instead of the whole build.
+- **`ladder.test.ts`** scans every file under `src/atoms/`, `src/blocks/`,
+  and `src/shell/` for import specifiers that climb UP the ladder, and
+  fails the build if it finds one — the ladder invariant (`atoms` → `blocks`
+  → `views`, with `shell` as the frame `views` fill, down only) enforced
   structurally rather than left as a comment that can silently drift. It
-  also runs the same scan in reverse, over `src/blocks/`, as a sanity check:
-  blocks importing atoms is real, expected, and correctly NOT flagged.
+  checks every forbidden direction: an atom importing `blocks/`, `views/`,
+  or `shell/`; a block importing `views/` or `shell/`; and `shell` importing
+  `views/`. It also runs the same scan for the PERMITTED directions
+  (`blocks` importing `atoms`; `shell` importing `atoms`) as a sanity
+  check — proving the scan inspects real code rather than passing on zero
+  coverage, without asserting those lists are empty, since importing atoms
+  is correct and expected in both places.
 
 ## What's deliberately not here
 
@@ -693,11 +929,18 @@ as a standalone public atom a consumer could reach for on its own.)
 
 **Views:** no `views` subpath yet. Planned, not shipped — the package is
 structured so it can be added later as a sibling export without
-restructuring `atoms` or `blocks`.
+restructuring `atoms`, `blocks`, or `shell`.
 
-**Shell:** no `shell` subpath yet either. Also planned, not shipped, and
-not on the same track as `views` — see the layer diagram at the top of
-this README.
+**Shell:** `Shell` ships five slots (`Header`, `SideNav`, `Main`, `Rail`,
+`Footer`) and nothing else — no `SiteHeader`/`AppHeader`/`AppFooter`
+block, no nav-item component, no bundled icon set. Headers and navigation
+are where brand and product-specific structure live; a consumer composes
+those from atoms and passes them into the relevant slot (see "Shell" →
+"How differing chrome is handled" above). No modal/dialog manager and no
+command palette either, despite both being named as runtime-service
+examples in "Placement rules" above alongside the toast stack that DOES
+ship — added only once something real needs them, the same policy this
+README states for atoms and blocks.
 
 ## Requirements
 

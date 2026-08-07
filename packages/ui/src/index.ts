@@ -53,3 +53,19 @@ export type {
 
 export { PageHeader, EmptyState } from "./blocks/index.js";
 export type { PageHeaderProps, EmptyStateProps } from "./blocks/index.js";
+
+export { Shell, Toaster, toast } from "./shell/index.js";
+export type {
+  ShellProps,
+  ShellHeaderProps,
+  ShellSideNavProps,
+  ShellMainProps,
+  ShellRailProps,
+  ShellFooterProps,
+  ToasterProps,
+  ToastFunction,
+  ToastHandle,
+  ToastOptions,
+  ToastRecord,
+  ToastVariant,
+} from "./shell/index.js";
