@@ -54,6 +54,7 @@ const atomsDir = join(srcDir, "atoms");
 const blocksDir = join(srcDir, "blocks");
 const viewsDir = join(srcDir, "views");
 const shellDir = join(srcDir, "shell");
+const chartsDir = join(srcDir, "charts");
 
 function collectSourceFiles(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
@@ -232,5 +233,48 @@ describe("ladder invariant: atoms → blocks → views, shell as the frame views
   it("sanity (reverse direction): blocks/ DOES import from atoms/, and the scan finds it — proving the scan inspects real code rather than passing on zero coverage, and confirming this direction is the permitted one (no assertion here forbids it)", () => {
     const blocksImportingAtoms = findViolations(blocksDir, "atoms");
     expect(blocksImportingAtoms.length).toBeGreaterThan(0);
+  });
+});
+
+/**
+ * `charts` (`@vespeneventures/ui/charts`) is a second, SEPARATE sibling to
+ * `views`/`shell` — not another rung of the atoms → blocks → views ladder,
+ * and not folded into `shell`'s own "frame content is rendered inside of"
+ * relationship either. Charts are a distinct domain with their own
+ * primitives (marks, scales, a plot coordinate space), the same reasoning
+ * this package's README gives for why `shell` sits beside `views` rather
+ * than above it. The rule is deliberately narrower than shell's: `charts`
+ * may import `atoms` (its `cx` helper), and NOTHING — not atoms, not
+ * blocks, not views, not shell — imports from `charts`. There is no
+ * "charts may import blocks" the way `shell` may: nothing here has needed
+ * a block yet, and keeping the rule narrow until something does is safer
+ * than pre-authorizing a direction nothing uses.
+ */
+describe("ladder invariant: charts is a sibling layer (may import atoms; nothing imports from charts)", () => {
+  it("no file under src/atoms/ imports from charts/", () => {
+    expectNoImportsOf(atomsDir, "an atom", "charts", "An atom is the most foundational content primitive; it must never depend on a sibling domain layer built on top of it.");
+  });
+
+  it("no file under src/blocks/ imports from charts/", () => {
+    expectNoImportsOf(blocksDir, "a block", "charts", "Charts is a sibling domain to blocks, not something blocks composes — a block needing chart-shaped content should render a chart NEXT TO itself, not import one.");
+  });
+
+  it("no file under src/views/ imports from charts/", () => {
+    expectNoImportsOf(viewsDir, "a view", "charts", "Same sibling relationship as blocks -> charts, one layer up.");
+  });
+
+  it("no file under src/shell/ imports from charts/", () => {
+    expectNoImportsOf(shellDir, "shell", "charts", "Shell is the frame; charts is sibling content rendered inside a view, not something the frame itself depends on.");
+  });
+
+  it("no file under src/charts/ imports from blocks/, views/, or shell/", () => {
+    expectNoImportsOf(chartsDir, "charts", "blocks", "Charts stays a small, dependency-free primitive layer — it may read atoms/internal helpers, but reaching up into blocks would pull in composed UI a chart mark has no business depending on.");
+    expectNoImportsOf(chartsDir, "charts", "views", "Views are wired-up content built partly FROM charts (a view may render a chart); charts depending on views would be circular.");
+    expectNoImportsOf(chartsDir, "charts", "shell", "Shell is the frame a chart (like any other content) is rendered inside of; charts depending on shell would be exactly backwards.");
+  });
+
+  it("sanity (permitted direction): charts/ DOES import from atoms/, and the scan finds it — proving the scan inspects real code rather than passing on zero coverage", () => {
+    const chartsImportingAtoms = findViolations(chartsDir, "atoms");
+    expect(chartsImportingAtoms.length).toBeGreaterThan(0);
   });
 });

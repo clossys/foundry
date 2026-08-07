@@ -243,7 +243,14 @@ const ANY_RECORD_MAP_RE = /const\s+([A-Za-z_]+)\s*:\s*Record</g;
  * must be either scanned or named here, so a new map cannot quietly
  * escape both.
  */
-const KNOWN_NON_CLASS_MAPS = new Set(["TREND_GLYPH", "TREND_LABEL"]);
+const KNOWN_NON_CLASS_MAPS = new Set([
+  "TREND_GLYPH",
+  "TREND_LABEL",
+  // charts/internal/chart-vars.ts — slot-number -> fallback-hex lookups fed
+  // into a `var(--token, <fallback>)` string, never used as a class name.
+  "CHART_CATEGORICAL_FALLBACK",
+  "CHART_SEQUENTIAL_FALLBACK",
+]);
 
 function extractCandidateClasses(code: string): Set<string> {
   const chunks: string[] = [];

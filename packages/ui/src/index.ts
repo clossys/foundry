@@ -158,3 +158,18 @@ export type {
   ToastRecord,
   ToastVariant,
 } from "./shell/index.js";
+
+export { ChartFrame, BarChart, LineChart, Sparkline } from "./charts/index.js";
+export type {
+  ChartFrameProps,
+  ChartMargin,
+  ChartAxisTick,
+  ChartLegendItem,
+  ChartTableSpec,
+  PlotArea,
+  BarChartProps,
+  BarChartSeries,
+  LineChartProps,
+  LineChartSeries,
+  SparklineProps,
+} from "./charts/index.js";

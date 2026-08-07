@@ -69,25 +69,71 @@ export function relativeLuminance(rgb: readonly [number, number, number]): numbe
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
+const HEX_RE = /^#?([0-9a-fA-F]{6})$/;
+
+/** sRGB gamma-encoded channel [0,1] -> linear channel [0,1] (the inverse of the encode step `oklchToLinearSRGB` never needs, since it stays in linear space throughout). */
+function srgbChannelToLinear(c: number): number {
+  return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+}
+
 /**
- * The relative luminance of `value` (a CSS value containing `oklch(...)`),
- * compositing it over `backgroundValue` first if it carries an alpha < 1
- * (standard "source over" alpha compositing, done in LINEAR space — the
- * same space `oklchToLinearSRGB` already returns). `backgroundValue` is
+ * Parse a bare 6-digit hex color (`#2a78d6` or `2a78d6`) to LINEAR sRGB —
+ * the same output shape `oklchToLinearSRGB` produces, so both feed the same
+ * `relativeLuminance`/compositing path below. Added alongside the existing
+ * `oklch()`-only path so this module can score the chart-color family
+ * (`--color-chart-categorical-*`, `-sequential-*`, and the diverging poles
+ * — all validated hex, per the dataviz skill's palette convention) with
+ * the same real math as every other token, rather than eyeballing it or
+ * standing up a second, parallel contrast module.
+ */
+export function hexToLinearSRGB(hex: string): readonly [number, number, number] {
+  const match = hex.match(HEX_RE);
+  if (!match) {
+    throw new Error(`hexToLinearSRGB: not a 6-digit hex color: ${JSON.stringify(hex)}`);
+  }
+  const int = Number.parseInt(match[1]!, 16);
+  const r = ((int >> 16) & 0xff) / 255;
+  const g = ((int >> 8) & 0xff) / 255;
+  const b = (int & 0xff) / 255;
+  return [srgbChannelToLinear(r), srgbChannelToLinear(g), srgbChannelToLinear(b)];
+}
+
+/**
+ * Parse either shape of color value this package ships: an `oklch(...)`
+ * function (every non-chart token) or a bare 6-digit hex (the chart-color
+ * family). Alpha is only expressible via `oklch(... / A)` today — no
+ * chart token ships an alpha hex — so a hex match always reports `A: 1`.
+ */
+function parseColorToLinearSRGB(value: string): { readonly rgb: readonly [number, number, number]; readonly A: number } {
+  if (value.includes("oklch(")) {
+    const parsed = parseOklch(value);
+    return { rgb: oklchToLinearSRGB(parsed), A: parsed.A };
+  }
+  const hexMatch = value.match(HEX_RE);
+  if (hexMatch) {
+    return { rgb: hexToLinearSRGB(hexMatch[0]), A: 1 };
+  }
+  throw new Error(`parseColorToLinearSRGB: value is neither oklch(...) nor a 6-digit hex: ${JSON.stringify(value)}`);
+}
+
+/**
+ * The relative luminance of `value` (a CSS value containing either
+ * `oklch(...)` or a bare 6-digit hex color), compositing it over
+ * `backgroundValue` first if it carries an alpha < 1 (standard "source
+ * over" alpha compositing, done in LINEAR space — the same space
+ * `oklchToLinearSRGB`/`hexToLinearSRGB` both return). `backgroundValue` is
  * required whenever `value`'s alpha is not 1; omit it only for an opaque
  * color, where no compositing step is needed.
  */
 export function luminanceOf(value: string, backgroundValue?: string): number {
-  const fg = parseOklch(value);
-  const fgRgb = oklchToLinearSRGB(fg);
-  if (fg.A >= 1) return relativeLuminance(fgRgb);
+  const fg = parseColorToLinearSRGB(value);
+  if (fg.A >= 1) return relativeLuminance(fg.rgb);
   if (backgroundValue === undefined) {
     throw new Error(`luminanceOf: ${JSON.stringify(value)} has alpha < 1 and needs a backgroundValue to composite over`);
   }
-  const bg = parseOklch(backgroundValue);
-  const bgRgb = oklchToLinearSRGB(bg);
+  const bg = parseColorToLinearSRGB(backgroundValue);
   const composited: [number, number, number] = [0, 1, 2].map(
-    (i) => fg.A * fgRgb[i]! + (1 - fg.A) * bgRgb[i]!,
+    (i) => fg.A * fg.rgb[i]! + (1 - fg.A) * bg.rgb[i]!,
   ) as [number, number, number];
   return relativeLuminance(composited);
 }

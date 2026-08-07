@@ -3,6 +3,34 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.0] - Unreleased
+
+### Added
+
+- **`charts` layer**: a new `./charts` subpath export, sibling to
+  `./atoms`/`./blocks`/`./views`/`./shell` rather than another rung of the
+  atoms → blocks → views ladder — `charts` may import `atoms`; nothing
+  else in this package imports from `charts` (`src/ladder.test.ts`
+  extended accordingly). Four components, dependency-free SVG (no
+  charting library dependency): `ChartFrame` (shared plot/axes/grid/
+  legend/table container), `BarChart`, `LineChart`, `Sparkline`. Every
+  mark reads color through `@vespeneventures/tokens`' new chart-color
+  family (`--color-chart-*`, that package's `0.4.0`) via
+  `charts/internal/chart-vars.ts`; scale math lives in
+  `charts/internal/scale.ts` (`linearScale`, `bandScale`, `timeScale`,
+  `niceTicks`) — both `internal/` and unexported from `charts/index.ts`,
+  the same convention `atoms/internal/cx.ts`/`ui-vars.ts` already set.
+  One axis always (no dual-axis option on `BarChart`/`LineChart`); color
+  follows the entity's array position, never its rank; a legend appears
+  only for 2+ series; every chart (including `Sparkline`) ships a
+  table-view fallback; every chart except `Sparkline` ships a hover layer
+  (crosshair + shared tooltip on `LineChart`, per-mark tooltip on
+  `BarChart`) reachable identically on keyboard focus.
+- `@vespeneventures/tokens` peer + dev range bumped `^0.3.0` → `^0.4.0` in
+  the same change (a caret range on a `0.x` package is patch-only, so the
+  old range would not have matched tokens' `0.4.0` and the workspace link
+  would 404 against the registry).
+
 ## [0.1.0] - Unreleased
 
 ### Added
