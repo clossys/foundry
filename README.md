@@ -22,6 +22,8 @@ for the full account.
 | [`@vespeneventures/catalog`](packages/catalog) | Walks a workspace's `packages/` directory and reports what exists, what could not be read, and whether the real dependency graph — read from each package's own `dependencies`/`peerDependencies` — has cycles or missing internal packages. |
 | [`@vespeneventures/gates`](packages/gates) | Orchestrates `catalog` and `policy` into one call, a deterministic build order, and the `foundry-check` CLI. |
 | [`@vespeneventures/release`](packages/release) | Proves a package is actually installable: packs the real tarball, installs it into a genuinely isolated directory, and imports every subpath it claims to export. |
+| [`@vespeneventures/tokens`](packages/tokens) | Design tokens for web interfaces: CSS custom properties plus typed JS values, with a brand-binding layer so an interface never ships silently unbranded. |
+| [`@vespeneventures/ui`](packages/ui) | React components styled with `@vespeneventures/tokens` via Tailwind CSS v4. Ships the `atoms` layer only (`Button`, `TextField`, `Badge`, `Card`); `blocks` and `views` are a planned future subpath, not built yet. |
 
 Each package's own README has the full API and the reasoning behind it.
 
