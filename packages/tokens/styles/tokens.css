@@ -1,0 +1,323 @@
+/* ════════════════════════════════════════════════════════════════════
+ * @vespeneventures/tokens · tokens.css
+ * ────────────────────────────────────────────────────────────────────
+ * PRIMITIVES — the first of three layers. Every value below is a neutral
+ * greyscale default — nothing here presumes a brand. That is deliberate:
+ * an interface that imports only this file renders in visible greyscale,
+ * which is the signal that the brand-binding layer hasn't happened yet.
+ * See the dev-mode badge rule below, and the "No brand binding" banner
+ * it renders.
+ *
+ * THE THREE-LAYER CONTRACT
+ *
+ *   @import "@vespeneventures/tokens/tokens.css";   -- primitives, this file
+ *   @import "./brand.css";                           -- brand binding, yours
+ *   @import "./extensions.css";                      -- consumer extensions, optional
+ *
+ * The second layer is your own file, started from
+ * `@vespeneventures/tokens/brand-template.css`, that overrides the tokens
+ * below under `:root[data-brand-bound]`. The third layer is anything
+ * genuinely specific to your project that doesn't belong in a shared
+ * vocabulary — give it its own prefix, don't smuggle it in here.
+ *
+ * NAMING RULE — every property below falls into exactly one of two cases:
+ *
+ *   1. Tailwind v4 has a `@theme` namespace for this kind of value —
+ *      `--color-*`, `--text-*`, `--font-*`, `--tracking-*`, `--spacing-*`,
+ *      `--radius-*`, `--ease-*`, `--breakpoint-*`. The name matches that
+ *      namespace exactly, unprefixed, so `styles/theme.css` (optional) can
+ *      wire it straight into Tailwind and generate a matching utility —
+ *      `--color-surface-raised` becomes `bg-surface-raised`.
+ *   2. Tailwind has no namespace for it — z-index, elevation, motion
+ *      duration, layout widths, density, ring, border width, disabled
+ *      alpha. These carry a `--ui-` prefix instead, so they can't collide
+ *      with a consumer's own custom properties the way an unprefixed name
+ *      could. Read these with a plain `var(--ui-z-modal)`; nothing here
+ *      generates a Tailwind utility class.
+ *
+ * ADMISSION TEST — a value is a token here only if it clears both:
+ *   (a) it names a distinct semantic ROLE, never a raw value
+ *       (`surface-raised`, never `grey-100`), and
+ *   (b) it cannot be produced in one step from another token below via
+ *       `rgba()`/`color-mix()`/`clamp()`/`calc()`.
+ * A value that fails either test isn't missing — it's a composition. See
+ * "Deriving a value" in the README for the patterns this covers (a
+ * translucent variant, a fluid font size, a scaled spacing step, and so on).
+ *
+ * This file works completely on its own, with no build tool and no
+ * Tailwind: every rule below is a plain CSS custom property, readable with
+ * `var(--color-surface-raised)` in any stylesheet. Tailwind (`theme.css`)
+ * is an optional second step, never a requirement.
+ * ════════════════════════════════════════════════════════════════════ */
+
+
+/* ─── DEV-MODE DISCIPLINE BADGE ──────────────────────────────────────
+ * Declares no custom property — pure UI. Visible the moment this file is
+ * imported without a brand binding layer on top of it, so an unbranded
+ * render never quietly passes for "done." Disappears the instant a
+ * consumer sets `data-brand-bound` on <html> (see brand-template.css). */
+html:not([data-brand-bound])::before {
+  content: "No brand binding — rendering greyscale primitives. See @vespeneventures/tokens/brand-template.css";
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 99999;
+  background: #2a2a2a;
+  color: #f5f5f5;
+  padding: 4px 10px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+  max-width: 60ch;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+:root {
+
+  /* ════════════════════════════════════════════════════════════════
+   * COLOR · SURFACE (7 · depth model — brandable)
+   * ════════════════════════════════════════════════════════════════ */
+  --color-surface-base:           oklch(0.9702 0 0);   /* page ground */
+  --color-surface-sunken:         oklch(0.9401 0 0);   /* below base: wells, banded sections, inputs */
+  --color-surface-raised:         oklch(1 0 0);         /* above base: cards, modals, popovers */
+  --color-surface-inverse:        oklch(0.2178 0 0);    /* dark plate within a light theme */
+  --color-surface-inverse-raised: oklch(0.285 0 0);     /* raised content within --color-surface-inverse */
+  --color-surface-aside:          oklch(0.9612 0 0);    /* right-rail panel */
+  --color-surface-selected:       oklch(0.4748 0 0 / 0.1); /* selected-row/option wash */
+
+  /* ════════════════════════════════════════════════════════════════
+   * COLOR · INK (7 · text on surfaces)
+   * ════════════════════════════════════════════════════════════════ */
+  --color-ink-primary:            oklch(0.2178 0 0);
+  --color-ink-secondary:          oklch(0.36 0 0);
+  --color-ink-muted:              oklch(0.5658 0 0);    /* must hit WCAG AA on --color-surface-base */
+  --color-ink-link:                oklch(0.36 0 0);
+  --color-ink-on-inverse:          oklch(0.9702 0 0);
+  --color-ink-on-inverse-muted:    oklch(0.7763 0 0);
+  /* Label ink on an accent-filled control (primary button, checked control).
+   * Aliases --color-ink-on-inverse rather than shipping its own value: the
+   * label on an accent fill and the label on the inverse plate are usually
+   * the same ink, and this alias means overriding one brand slot in your
+   * brand.css keeps both in sync automatically. */
+  --color-ink-on-accent:           var(--color-ink-on-inverse, oklch(0.9702 0 0));
+
+  /* ════════════════════════════════════════════════════════════════
+   * COLOR · LINE (3 · hairlines and dividers)
+   * ════════════════════════════════════════════════════════════════ */
+  --color-line-base:              oklch(0.8761 0 0);
+  --color-line-strong:            oklch(0.7763 0 0);
+  --color-line-on-inverse:        oklch(0.9702 0 0 / 0.14);
+
+  /* ════════════════════════════════════════════════════════════════
+   * COLOR · ACCENT (5 · the interactive brand color)
+   * ════════════════════════════════════════════════════════════════ */
+  --color-accent:                 oklch(0.4748 0 0);
+  --color-accent-text:            oklch(0.36 0 0);
+  --color-accent-hover:           oklch(0.36 0 0);
+  --color-accent-tint:            oklch(0.4748 0 0 / 0.1);
+  --color-accent-on-inverse:      oklch(0.7763 0 0);
+
+  /* ════════════════════════════════════════════════════════════════
+   * COLOR · STATUS (12 · 4 states x {color, text, tint})
+   * A status banner of any kind: background --color-status-X-tint,
+   * foreground --color-ink-primary.
+   * ════════════════════════════════════════════════════════════════ */
+  --color-status-success:         oklch(0.6268 0 0);
+  --color-status-success-text:    oklch(0.4748 0 0);
+  --color-status-success-tint:    oklch(0.6268 0 0 / 0.1);
+  --color-status-warning:         oklch(0.4495 0 0);
+  --color-status-warning-text:    oklch(0.36 0 0);
+  --color-status-warning-tint:    oklch(0.4495 0 0 / 0.12);
+  --color-status-danger:          oklch(0.285 0 0);
+  --color-status-danger-text:     oklch(0.2178 0 0);
+  --color-status-danger-tint:     oklch(0.285 0 0 / 0.12);
+  --color-status-info:            oklch(0.5658 0 0);
+  --color-status-info-text:       oklch(0.4748 0 0);
+  --color-status-info-tint:       oklch(0.5658 0 0 / 0.08);
+
+  /* ════════════════════════════════════════════════════════════════
+   * COLOR · NEUTRAL (11 · fixed greyscale ramp, not brand-bound)
+   * ════════════════════════════════════════════════════════════════ */
+  --color-neutral-50:             oklch(0.9702 0 0);
+  --color-neutral-100:            oklch(0.9401 0 0);
+  --color-neutral-200:            oklch(0.8761 0 0);
+  --color-neutral-300:            oklch(0.7763 0 0);
+  --color-neutral-400:            oklch(0.6334 0 0);
+  --color-neutral-500:            oklch(0.5658 0 0);
+  --color-neutral-600:            oklch(0.4748 0 0);
+  --color-neutral-700:            oklch(0.36 0 0);
+  --color-neutral-800:            oklch(0.285 0 0);
+  --color-neutral-900:            oklch(0.2178 0 0);
+  --color-neutral-950:            oklch(0.1684 0 0);
+
+  /* ════════════════════════════════════════════════════════════════
+   * COLOR · OVERLAY (3 · Modal/Popover/Menu/Tooltip/Toast surface bundle)
+   * An overlay atom composes against its own --color-overlay-* role
+   * rather than reaching into --color-surface-raised directly, so the
+   * overlay vocabulary stays legible and independently rebindable.
+   * These are aliases: rebinding --color-surface-raised / --color-line-base
+   * in your brand.css re-brands these automatically, no restatement needed.
+   * ════════════════════════════════════════════════════════════════ */
+  --color-overlay-surface:        var(--color-surface-raised, oklch(1 0 0));
+  --color-overlay-border:         var(--color-line-base, oklch(0.8761 0 0));
+  --color-overlay-scrim:          oklch(0 0 0 / 0.4);
+
+  /* ════════════════════════════════════════════════════════════════
+   * COLOR · SKELETON (1 · loading-state fill)
+   * ════════════════════════════════════════════════════════════════ */
+  --color-skeleton-fill:          var(--color-surface-sunken, oklch(0.9401 0 0));
+
+  /* ════════════════════════════════════════════════════════════════
+   * TEXT (13 · fixed font-size ramp — pair with your own line-height
+   * or Tailwind's `leading-*` scale; this package doesn't bundle one,
+   * see the README)
+   * ════════════════════════════════════════════════════════════════ */
+  --text-display-xl:              72px;
+  --text-display-l:               56px;
+  --text-display-m:               40px;
+  --text-h0:                      32px;
+  --text-h1:                      28px;
+  --text-h2:                      18px;
+  --text-h3:                      14px;
+  --text-body-l:                  17px;
+  --text-body:                    15px;
+  --text-body-s:                  13px;
+  --text-blockquote:              22px;
+  --text-caption:                 12px;
+  --text-code-block:              13px;
+
+  /* ════════════════════════════════════════════════════════════════
+   * FONT (3 · system stacks — brandable, expected to be overridden)
+   * ════════════════════════════════════════════════════════════════ */
+  --font-display:                 system-ui, ui-sans-serif, -apple-system, "Segoe UI", sans-serif;
+  --font-body:                    ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono:                    ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* ════════════════════════════════════════════════════════════════
+   * TRACKING (4 · fixed letter-spacing role scale)
+   * ════════════════════════════════════════════════════════════════ */
+  --tracking-tight:               -0.01em;  /* large display/headings */
+  --tracking-meta:                0.06em;   /* dates, counts, mono metadata */
+  --tracking-nav:                 0.12em;   /* nav links, tabs, badges */
+  --tracking-label:               0.18em;   /* section labels, mono caps */
+
+  /* ════════════════════════════════════════════════════════════════
+   * SPACING (10 · 4px-rooted scale, t-shirt names — deliberately NOT
+   * numbered 1-10, which would silently override Tailwind's own default
+   * numeric spacing scale (p-4, gap-2, ...) the moment theme.css loads)
+   * ════════════════════════════════════════════════════════════════ */
+  --spacing-xs:                   4px;
+  --spacing-sm:                   8px;
+  --spacing-md:                   12px;
+  --spacing-lg:                   16px;
+  --spacing-xl:                   24px;
+  --spacing-2xl:                  32px;
+  --spacing-3xl:                  48px;
+  --spacing-4xl:                  64px;
+  --spacing-5xl:                  96px;
+  --spacing-6xl:                  128px;
+
+  /* ════════════════════════════════════════════════════════════════
+   * UI · WIDTH (4 · content max-widths — no Tailwind namespace)
+   * ════════════════════════════════════════════════════════════════ */
+  --ui-width-content-max:         64rem;
+  --ui-width-prose-max:           48rem;
+  --ui-width-wide-max:            72rem;
+  --ui-width-page-padding-x:      clamp(16px, 4vw, 48px);
+
+  /* ════════════════════════════════════════════════════════════════
+   * UI · LAYOUT (3 · chrome dimensions — no Tailwind namespace)
+   * ════════════════════════════════════════════════════════════════ */
+  --ui-layout-sidebar-w:          256px;   /* expanded left nav */
+  --ui-layout-sidebar-rail-w:     64px;    /* collapsed icon-only nav */
+  --ui-layout-aside-w:            320px;   /* right-rail panel */
+
+  /* ════════════════════════════════════════════════════════════════
+   * UI · DENSITY (3 · comfortable-mode defaults — no Tailwind namespace)
+   * ════════════════════════════════════════════════════════════════ */
+  --ui-density-pad:               var(--spacing-xl, 24px);
+  --ui-density-gap:                var(--spacing-lg, 16px);
+  --ui-density-row:                var(--spacing-3xl, 48px);
+
+  /* ════════════════════════════════════════════════════════════════
+   * RADIUS (5 · Tailwind `--radius-*` namespace)
+   * ════════════════════════════════════════════════════════════════ */
+  --radius-sharp:                 0px;
+  --radius-s:                     2px;
+  --radius-default:               3px;     /* brandable — the one radius most brands change */
+  --radius-control:               6px;
+  --radius-pill:                  999px;
+
+  /* ════════════════════════════════════════════════════════════════
+   * UI · BORDER (1 · no Tailwind namespace)
+   * ════════════════════════════════════════════════════════════════ */
+  --ui-border-hairline:           1px;
+
+  /* ════════════════════════════════════════════════════════════════
+   * UI · ELEVATION (3 · no shadows beyond a hairline — no Tailwind namespace)
+   * ════════════════════════════════════════════════════════════════ */
+  --ui-elevation-none:            none;
+  --ui-elevation-raised:          0 1px 0 var(--color-line-base, oklch(0.8761 0 0));
+  --ui-elevation-floating:        0 8px 24px rgba(0, 0, 0, 0.10);
+
+  /* ════════════════════════════════════════════════════════════════
+   * UI · RING (2 · focus + on-inverse rings — no Tailwind namespace)
+   * ════════════════════════════════════════════════════════════════ */
+  --ui-ring-focus:                0 0 0 2px var(--color-accent, oklch(0.4748 0 0));
+  --ui-ring-on-inverse:           0 0 0 1px rgba(245, 245, 245, 0.12);
+
+  /* ════════════════════════════════════════════════════════════════
+   * UI · DURATION (6 · no Tailwind namespace)
+   * ════════════════════════════════════════════════════════════════ */
+  --ui-duration-instant:          80ms;
+  --ui-duration-fast:             160ms;
+  --ui-duration-default:          240ms;
+  --ui-duration-deliberate:       500ms;
+  --ui-duration-flash:            1200ms;
+  /* Overlay open/close reads as the same "fast" tier as hover/reveal, under
+   * its own role name so overlay CSS never reaches past its own vocabulary. */
+  --ui-duration-overlay:          var(--ui-duration-fast, 160ms);
+
+  /* ════════════════════════════════════════════════════════════════
+   * EASING (6 · Tailwind `--ease-*` namespace)
+   * ════════════════════════════════════════════════════════════════ */
+  --ease-default:                 cubic-bezier(.2, 0, 0, 1);
+  --ease-decelerate:              cubic-bezier(0, 0, .2, 1);
+  --ease-accelerate:              cubic-bezier(.4, 0, 1, 1);
+  --ease-bounce:                  cubic-bezier(.2, .8, .2, 1);
+  --ease-enter:                   var(--ease-decelerate, cubic-bezier(0, 0, .2, 1));
+  --ease-exit:                    var(--ease-accelerate, cubic-bezier(.4, 0, 1, 1));
+
+  /* ════════════════════════════════════════════════════════════════
+   * UI · Z-INDEX (9 · layering ladder — no Tailwind namespace)
+   * ════════════════════════════════════════════════════════════════ */
+  --ui-z-base:                    0;
+  --ui-z-sticky:                  10;
+  --ui-z-shell:                   20;
+  --ui-z-aside:                   30;
+  --ui-z-notice:                  40;
+  --ui-z-modal:                   50;
+  --ui-z-toast:                   60;
+  --ui-z-palette:                 70;
+  --ui-z-tooltip:                 80;
+
+  /* ════════════════════════════════════════════════════════════════
+   * BREAKPOINT (6 · Tailwind `--breakpoint-*` namespace)
+   * ════════════════════════════════════════════════════════════════ */
+  --breakpoint-mobile:            375px;
+  --breakpoint-mobile-lg:         480px;
+  --breakpoint-tablet:            768px;
+  --breakpoint-tablet-lg:         1024px;
+  --breakpoint-desktop:           1280px;
+  --breakpoint-wide:              1440px;
+
+  /* ════════════════════════════════════════════════════════════════
+   * UI · ALPHA (1 · no Tailwind namespace)
+   * ════════════════════════════════════════════════════════════════ */
+  --ui-alpha-disabled:            0.5;
+}
