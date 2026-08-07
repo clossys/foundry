@@ -10,7 +10,21 @@
  * exactly what `./atoms/index.js` and `./blocks/index.js` export, nothing
  * more.
  */
-export { Button, TextField, Badge, Card, Breadcrumb } from "./atoms/index.js";
+export {
+  Button,
+  TextField,
+  Badge,
+  Card,
+  Breadcrumb,
+  Link,
+  Checkbox,
+  Switch,
+  Select,
+  Textarea,
+  Avatar,
+  Spinner,
+  Menu,
+} from "./atoms/index.js";
 export type {
   ButtonProps,
   ButtonSize,
@@ -21,6 +35,20 @@ export type {
   CardProps,
   BreadcrumbProps,
   BreadcrumbItemProps,
+  LinkProps,
+  LinkVariant,
+  CheckboxProps,
+  SwitchProps,
+  SelectProps,
+  SelectOption,
+  TextareaProps,
+  AvatarProps,
+  AvatarSize,
+  SpinnerProps,
+  SpinnerSize,
+  MenuProps,
+  MenuItemProps,
+  MenuSeparatorProps,
 } from "./atoms/index.js";
 
 export { PageHeader, EmptyState } from "./blocks/index.js";

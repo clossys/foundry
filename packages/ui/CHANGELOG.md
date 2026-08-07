@@ -23,3 +23,12 @@ All notable changes to this package are documented here. Format follows
 - `./blocks` subpath export, alongside `./atoms`.
 - `src/ladder.test.ts`: structurally enforces that `atoms/` never imports
   from `blocks/`.
+- Eight more atoms — `Link`, `Checkbox`, `Switch`, `Select`, `Textarea`,
+  `Avatar`, `Spinner`, `Menu` — bringing the `atoms` layer to thirteen
+  components. `Link`, `Checkbox`, `Switch`, `Select`, and `Textarea` are
+  built on the matching `react-aria-components` primitive, the same way
+  `Button`/`TextField` are; `Menu` builds on `MenuTrigger`/`Menu`/
+  `MenuItem`/`Popover` for its open/close, arrow-key navigation, and
+  disabled-item handling. `Avatar` and `Spinner` are plain markup, like
+  `Badge`/`Card` — neither is interactive, so neither needs a
+  react-aria-components primitive.
