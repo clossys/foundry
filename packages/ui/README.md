@@ -22,10 +22,14 @@ rungs and how a new component gets assigned to one.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
   with a real job on a page. Two ship: `PageHeader`, `EmptyState`.
-- **`views`** *(planned)* — a block or set of blocks wired to real data and
-  routing. Content: transient and many-per-app, it fills the slots the
-  shell provides. (`DataTable` and `DetailView` are a deliberate follow-up,
-  not part of this package yet.)
+- **`views`** *(planned)* — a whole page's composition, where a second one
+  on the same page would be incoherent. Content: transient, it fills the
+  slot the shell provides. Deliberately a short list — page structure
+  encodes what a product is, so most pages are the consumer's own
+  composition of blocks. Only genuinely product-neutral pages (an error
+  page, an authentication page) are worth shipping. (`DataTable` and
+  `DetailView` are follow-ups, and by test 3 they are **blocks**, not
+  views — a page can hold two of either.)
 - **`shell`** — the persistent frame around content (nav, layout chrome)
   that provides the slots content fills. One per app; survives route
   changes that swap out the content underneath it. `Shell` ships with five
@@ -76,7 +80,28 @@ aren't interchangeable that way — each is a different kind of thing, and
 the component's job is specifically to keep those different kinds apart.
 That's a block.
 
-**3. Does it have a portal, a queue, and an imperative API?** A toast
+**3. Can one page contain two of them?** This is what separates a **block**
+from a **view**. If a page could reasonably show two of the thing at once —
+two lists side by side, two forms on a settings page, three summary panels
+in a row — it's a region of a page, so it's a **block**. If a second one on
+the same page is incoherent, because the component *is* the page, it's a
+**view**: a page can't have two 404s, and a sign-in page either is one or
+isn't.
+
+The consequence is that genuine views are rare, and that's correct rather
+than a gap. A page's structure encodes what a product actually is, so most
+page-level composition belongs to the consumer, assembled from blocks.
+Only pages that are genuinely product-neutral — an error page, an
+authentication page — are the same shape everywhere and worth shipping as
+views. Shipping a view for something like a list page would mean
+pre-assembling the exact thing a consumer is supposed to compose, and
+every consumer whose layout differs would immediately need an escape
+hatch — which is the variant-rule failure below, one rung up.
+
+Size is not the test. A data table is large and intricate and is still a
+block, because a page can hold two of them.
+
+**4. Does it have a portal, a queue, and an imperative API?** A toast
 stack, a modal manager, a global tooltip layer — anything that renders
 outside the normal component tree, queues its own items, and is driven by
 an imperative call rather than by props in the render tree — is a
