@@ -77,6 +77,7 @@ const COLLISION = join(scriptDir, "check-name-collision.mjs");
 const CONTAM = join(scriptDir, "check-contamination-classes.mjs");
 const QUALITY = join(scriptDir, "check-denylist-quality.mjs");
 const SET_SCOPE = join(scriptDir, "set-scope.mjs");
+const ROOT_README = join(scriptDir, "check-root-readme-parity.mjs");
 
 let passed = 0;
 const failures = [];
@@ -798,6 +799,206 @@ try {
       "a genuinely clean, fully-checkable tree still exits 0",
       cleanResult.code === 0,
       `expected exit 0, got ${cleanResult.code}: ${cleanResult.out}`,
+    );
+  }
+
+  // ------------------------------------------ root README parity (issue #28)
+  console.log("\n# check-root-readme-parity: root README vs packages/");
+  {
+    const dir = join(work, "root-readme");
+    const packagesDir = join(dir, "packages");
+    mkdirSync(join(packagesDir, "alpha"), { recursive: true });
+    mkdirSync(join(packagesDir, "beta"), { recursive: true });
+    writeFileSync(join(packagesDir, "alpha", "package.json"), JSON.stringify({ name: `${FIXTURE_SCOPE}/alpha`, version: "1.0.0" }, null, 2) + "\n");
+    writeFileSync(join(packagesDir, "beta", "package.json"), JSON.stringify({ name: `${FIXTURE_SCOPE}/beta`, version: "1.0.0" }, null, 2) + "\n");
+
+    function writeReadme(rows) {
+      writeFileSync(
+        join(dir, "README.md"),
+        ["## Packages", "", "| Package | What it does |", "| --- | --- |", ...rows, ""].join("\n"),
+      );
+    }
+
+    // Sanity (real coverage): a table naming every real package passes, and
+    // it does so because the scan actually walked packages/alpha and
+    // packages/beta and read their real names — not because the fixture has
+    // nothing to check. The next case mutates this exact fixture and shows
+    // the same run catches the drift, which is what proves the pass above
+    // wasn't just zero coverage in disguise.
+    writeReadme([`| \`${FIXTURE_SCOPE}/alpha\` | does alpha things |`, `| \`${FIXTURE_SCOPE}/beta\` | does beta things |`]);
+    const complete = run("node", [ROOT_README, dir]);
+    check(
+      "sanity: a table naming every real package passes, proving the scan reads real packages/ content rather than passing on zero coverage",
+      complete.code === 0,
+      `exit ${complete.code}: ${complete.out.slice(0, 300)}`,
+    );
+
+    // Same fixture, beta's row removed — structurally the same shape as
+    // issue #28's actual defect (@vespeneventures/voice and
+    // @vespeneventures/strategy had no row at all).
+    writeReadme([`| \`${FIXTURE_SCOPE}/alpha\` | does alpha things |`]);
+    const missing = run("node", [ROOT_README, dir]);
+    check(
+      "catches a real package missing its README row",
+      missing.code === 1 && missing.out.includes(`${FIXTURE_SCOPE}/beta`),
+      `exit ${missing.code}: ${missing.out.slice(0, 300)}`,
+    );
+
+    // Mirror-image drift: a row names a package that no longer exists under
+    // packages/ at all (removed from disk, never removed from the table).
+    writeReadme([
+      `| \`${FIXTURE_SCOPE}/alpha\` | does alpha things |`,
+      `| \`${FIXTURE_SCOPE}/beta\` | does beta things |`,
+      `| \`${FIXTURE_SCOPE}/retired\` | doesn't exist anymore |`,
+    ]);
+    const stale = run("node", [ROOT_README, dir]);
+    check(
+      "catches a README row naming a package that no longer exists under packages/",
+      stale.code === 1 && stale.out.includes(`${FIXTURE_SCOPE}/retired`),
+      `exit ${stale.code}: ${stale.out.slice(0, 300)}`,
+    );
+
+    // Fail-closed cases below. None of these may exit 0, and none may print
+    // anything that reads as a pass — "could not check" and "checked and it
+    // was fine" sharing an exit code is exactly how issue #28 survived.
+    const passLooking = /\bOK\b|\bPASS\b/;
+
+    const noHeading = join(work, "root-readme-no-heading");
+    mkdirSync(join(noHeading, "packages", "alpha"), { recursive: true });
+    writeFileSync(join(noHeading, "packages", "alpha", "package.json"), JSON.stringify({ name: `${FIXTURE_SCOPE}/alpha` }) + "\n");
+    writeFileSync(join(noHeading, "README.md"), "# a README with no Packages heading at all\n");
+    const rNoHeading = run("node", [ROOT_README, noHeading]);
+    check("fails closed when README has no Packages heading", rNoHeading.code === 2, `exit was ${rNoHeading.code}`);
+    check(
+      "does not print a passing-looking result when it could not locate the table",
+      !passLooking.test(rNoHeading.out),
+      `output looked like a pass: ${rNoHeading.out.slice(0, 200)}`,
+    );
+
+    const noTable = join(work, "root-readme-no-table");
+    mkdirSync(join(noTable, "packages", "alpha"), { recursive: true });
+    writeFileSync(join(noTable, "packages", "alpha", "package.json"), JSON.stringify({ name: `${FIXTURE_SCOPE}/alpha` }) + "\n");
+    writeFileSync(join(noTable, "README.md"), "## Packages\n\nprose, no table here.\n");
+    const rNoTable = run("node", [ROOT_README, noTable]);
+    check("fails closed when the Packages section has no parseable table (zero rows)", rNoTable.code === 2, `exit was ${rNoTable.code}`);
+    check(
+      "does not print a passing-looking result over zero parsed rows",
+      !passLooking.test(rNoTable.out),
+      `output looked like a pass: ${rNoTable.out.slice(0, 200)}`,
+    );
+
+    const noPackagesDir = join(work, "root-readme-no-packages-dir");
+    mkdirSync(noPackagesDir, { recursive: true });
+    writeFileSync(join(noPackagesDir, "README.md"), "## Packages\n\n| Package | What it does |\n| --- | --- |\n");
+    const rNoPkgDir = run("node", [ROOT_README, noPackagesDir]);
+    check("fails closed when packages/ does not exist", rNoPkgDir.code === 2, `exit was ${rNoPkgDir.code}`);
+
+    const emptyPackagesDir = join(work, "root-readme-empty-packages-dir");
+    mkdirSync(join(emptyPackagesDir, "packages"), { recursive: true });
+    writeFileSync(
+      join(emptyPackagesDir, "README.md"),
+      "## Packages\n\n| Package | What it does |\n| --- | --- |\n| `@x/y` | thing |\n",
+    );
+    const rEmptyPkgDir = run("node", [ROOT_README, emptyPackagesDir]);
+    check(
+      "fails closed when packages/ has no real (scoped-named) package to compare against",
+      rEmptyPkgDir.code === 2,
+      `exit was ${rEmptyPkgDir.code}`,
+    );
+  }
+
+  // ------------------------ root README parity: subpath claims (CHECK D)
+  // A row's PACKAGE NAME can be exactly right (passing every check above)
+  // while its PROSE lies about that package's shape. This is issue #28's
+  // actual historical defect, reproduced structurally: the real
+  // @vespeneventures/ui row named the right package and said
+  // "`blocks` and `views` are a planned future subpath, not built yet"
+  // long after both had shipped as real `exports` keys.
+  console.log("\n# check-root-readme-parity: subpath claims contradicting real exports (CHECK D)");
+  {
+    const dir = join(work, "root-readme-subpaths");
+    mkdirSync(join(dir, "packages", "gamma"), { recursive: true });
+    writeFileSync(
+      join(dir, "packages", "gamma", "package.json"),
+      JSON.stringify(
+        {
+          name: `${FIXTURE_SCOPE}/gamma`,
+          version: "1.0.0",
+          exports: {
+            ".": { types: "./dist/index.d.ts", import: "./dist/index.js" },
+            "./atoms": { types: "./dist/atoms/index.d.ts", import: "./dist/atoms/index.js" },
+            "./blocks": { types: "./dist/blocks/index.d.ts", import: "./dist/blocks/index.js" },
+          },
+        },
+        null,
+        2,
+      ) + "\n",
+    );
+
+    function writeGammaReadme(description) {
+      writeFileSync(
+        join(dir, "README.md"),
+        ["## Packages", "", "| Package | What it does |", "| --- | --- |", `| \`${FIXTURE_SCOPE}/gamma\` | ${description} |`, ""].join("\n"),
+      );
+    }
+
+    // D1 (positive): an explicit `./name` mention that isn't a real key in
+    // this package's own "exports" — the row documents a subpath that does
+    // not exist, the root-README mirror of check-readme-parity's CHECK C.
+    writeGammaReadme("Ships \`./atoms\` and \`./blocks\`, plus \`./nonexistent\` for legacy imports.");
+    const nonexistent = run("node", [ROOT_README, dir]);
+    check(
+      "D1: catches an explicit ./subpath mention that is not a real exports key",
+      nonexistent.code === 1 && nonexistent.out.includes("./nonexistent"),
+      `exit ${nonexistent.code}: ${nonexistent.out.slice(0, 300)}`,
+    );
+
+    // D2 (negative, the historical shape): a BARE word identical to a real
+    // subpath name, in the same clause as a curated "doesn't exist yet"
+    // phrase, while that subpath actually IS a real key. This is the exact
+    // shape of the real @vespeneventures/ui defect, reproduced with a
+    // synthetic package and a synthetic subpath name.
+    writeGammaReadme("Ships the \`atoms\` layer only; \`blocks\` is a planned future subpath, not built yet.");
+    const falseAbsence = run("node", [ROOT_README, dir]);
+    check(
+      "D2: catches a bare mention of a REAL subpath negated by a curated 'not built yet' phrase (issue #28's actual historical shape)",
+      falseAbsence.code === 1 && falseAbsence.out.includes('describes "blocks"'),
+      `exit ${falseAbsence.code}: ${falseAbsence.out.slice(0, 300)}`,
+    );
+
+    // Precision: the negation phrase sits in a LATER clause than a
+    // correctly-described real subpath in the same cell. The clause-scoped
+    // match must not cross-contaminate — `atoms` is truthfully described as
+    // shipped and must not be flagged just because `blocks` is falsely
+    // negated two clauses later in the same row.
+    check(
+      "D2 is clause-scoped: a truthfully-described subpath earlier in the same cell is not flagged by a later clause's negation",
+      !falseAbsence.out.includes('describes "atoms"'),
+      `atoms was incorrectly flagged: ${falseAbsence.out.slice(0, 300)}`,
+    );
+
+    // Sanity (real coverage): the same real subpaths, truthfully described
+    // with no negation phrase anywhere, passes — proving D1/D2 read the
+    // real "exports" map and the real README prose rather than flagging
+    // unconditionally once a negation-shaped fixture exists.
+    writeGammaReadme("Ships \`./atoms\` and \`./blocks\`, the two layers this package has today.");
+    const clean = run("node", [ROOT_README, dir]);
+    check(
+      "sanity: truthfully describing real subpaths with no negation phrase passes",
+      clean.code === 0,
+      `exit ${clean.code}: ${clean.out.slice(0, 300)}`,
+    );
+
+    // A negation phrase near a BARE word that is not a real subpath name at
+    // all (ordinary prose) must never be flagged — CHECK D only fires when
+    // the negated word is identical to a verified real "exports" key, never
+    // as a general "this sentence sounds negative" scan.
+    writeGammaReadme("The changelog format is not built yet for this package.");
+    const ordinaryProse = run("node", [ROOT_README, dir]);
+    check(
+      "a negation phrase near ordinary prose (no real-subpath-named word involved) is not flagged",
+      ordinaryProse.code === 0,
+      `exit ${ordinaryProse.code}: ${ordinaryProse.out.slice(0, 300)}`,
     );
   }
 } finally {
