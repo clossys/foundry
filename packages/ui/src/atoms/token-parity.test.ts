@@ -1,27 +1,95 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
+import { createRequire } from "node:module";
 import { dirname, extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { __unstable__loadDesignSystem } from "tailwindcss";
 import { TOKENS } from "@vespeneventures/tokens";
 
 /**
  * The highest-value test in this package (see the README's "Tests"
- * section). Every atom AND block styles with Tailwind classes generated
- * from @vespeneventures/tokens, and separately with a handful of raw
- * `var(--ui-*)` reads for tokens that have no Tailwind namespace. Neither
- * of those is checked by TypeScript — a class name and a `var()` argument
- * are both just strings to the compiler. A typo like `bg-surface-elevated`
- * (no such token; the real name is `surface-raised`) would compile clean,
- * render with zero applied background, and produce no error anywhere —
- * this is the only thing that would catch it, because it is the only
- * check that imports the real token catalog and asks "does this name
- * actually exist" rather than "does this parse".
+ * section). Every atom, block, AND shell component styles with Tailwind
+ * classes generated from @vespeneventures/tokens, and separately with a
+ * handful of raw `var(--ui-*)` reads for tokens that have no Tailwind
+ * namespace. Neither of those is checked by TypeScript — a class name and a
+ * `var()` argument are both just strings to the compiler. A typo like
+ * `bg-surface-elevated` (no such token; the real name is `surface-raised`)
+ * would compile clean, render with zero applied background, and produce no
+ * error anywhere — this is the only thing that catches it.
  *
- * Scoped at `src/` (this file's parent), not just `src/atoms/`, so the same
- * protection covers `src/blocks/` too — a block styles with the same
- * token-derived classes an atom does, and a typo there is exactly as
- * invisible to the compiler. This file still lives under `src/atoms/`
- * rather than at `src/` directly; only the directory it walks changed.
+ * ── WHY THIS FILE WAS REDESIGNED ──────────────────────────────────────
+ *
+ * The previous version of this file was a hand-maintained regex: it matched
+ * `\b(prefix)-(suffix)\b` for a fixed list of prefixes it knew were
+ * token-derived (`bg-`, `text-`, `border-`, `rounded-`, ...), then checked
+ * `suffix` against @vespeneventures/tokens' own `TOKENS` export. Anything
+ * that wasn't a token — including Tailwind's OWN built-in vocabulary that
+ * happens to share a prefix with a token family — had to be hand-enumerated
+ * in an `ALLOWED_SUFFIXES` allow-list to avoid being rejected as invented.
+ * That list drifted every time a legitimate Tailwind utility didn't happen
+ * to be on it yet, and each drift forced a real workaround into shipped
+ * code rather than a test fix: `EmptyState` dropped `text-center` for a
+ * flex-only centering approach; `Shell` moved `border-b`/`mx-auto`/
+ * `text-inherit`/`bg-transparent` into inline `style`; `Shell` abandoned
+ * the `--ui-border-hairline` token for a hardcoded `"1px"` (the token's own
+ * PROPERTY NAME contains the substring `border-hairline`, which the old
+ * class-scanning regex matched as if it were an unresolved `border-hairline`
+ * utility); and, most recently, `Table` and `Tabs` reached for a raw
+ * `style` `borderCollapse`/inset `box-shadow` in place of `border-collapse`
+ * and `border-b-2` — Tailwind border-WIDTH utilities that don't map to any
+ * token this package owns, so the allow-list never grew an entry for them
+ * either. Enumerating "every suffix Tailwind ships that isn't a token" is
+ * trying to hand-copy another tool's entire vocabulary; it will always be
+ * one utility behind.
+ *
+ * The fix here isn't a bigger list. It's asking Tailwind itself whether a
+ * class is real, by literally compiling it — `tailwindcss`'s own
+ * `__unstable__loadDesignSystem` JS API (a `devDependency` of this
+ * package already), fed this package's own token CSS
+ * (`@vespeneventures/tokens/theme.css`), the same way a consumer's real
+ * build would. `designSystem.candidatesToCss(candidates)` returns, per
+ * candidate, either a real CSS rule or `null` for "Tailwind has no idea
+ * what this is" — variants (`hover:`, `not-last:`, custom breakpoints like
+ * `desktop:`), arbitrary values (`shadow-[var(--ui-elevation-raised)]`,
+ * `grid-cols-[auto_minmax(0,1fr)_auto]`), and Tailwind's own reserved
+ * vocabulary (`sr-only`, `border-collapse`, `border-b-2`, text-align
+ * keywords, ...) all resolve correctly with ZERO hand-maintained list,
+ * because the compiler that will actually render this package's CSS is the
+ * one answering the question, not a regex trying to predict its output.
+ * This has zero false positives BY CONSTRUCTION — every one of the six
+ * utilities in the paragraph above compiles clean here — while still
+ * catching a genuinely invented token class exactly as before: an unknown
+ * candidate produces no CSS anywhere, the same failure mode a browser would
+ * actually hit.
+ *
+ * The one thing Tailwind's compiler *can't* police is this package's own
+ * token vocabulary — `shadow-[var(--ui-elevation-raised)]` compiles to a
+ * real `box-shadow` declaration whether or not `--ui-elevation-raised`
+ * exists as a real @vespeneventures/tokens entry, because from Tailwind's
+ * point of view an arbitrary-value `var()` argument is just an opaque
+ * string. That's exactly the class of bug the raw `var(--ui-*)` /
+ * `var(--color-*)` scan below still exists for — it runs across the same
+ * raw source text, so it independently catches a bad token name whether it
+ * appears in a plain `style` object OR inside a Tailwind arbitrary value
+ * like the one above. The two checks are complementary, not redundant:
+ * Tailwind is the oracle for "is this a real utility"; `TOKENS` is the
+ * oracle for "does this custom property actually exist".
+ *
+ * A second, structural side-effect of the redesign: the previous version
+ * had to defend against a raw `var()` read's PROPERTY NAME leaking into the
+ * class-name scan (`--ui-border-hairline` contains the substring
+ * `border-hairline`, which its prefix/suffix regex read as an attempted
+ * `border-hairline` utility) by blanking out every custom-property name in
+ * a scratch copy of the source before running the class regex over it. That
+ * whole class of bug is gone here, not patched: candidate CLASSES are only
+ * ever extracted from three syntactic positions — a `className="..."` JSX
+ * attribute, the arguments of a `cx(...)` call, and the string values of a
+ * `Record<Variant, string>` "variant map" object literal (see
+ * `extractCandidateClasses` below) — none of which a bare `var(--ui-*, ...)`
+ * string assigned to its own constant (see `internal/ui-vars.ts`,
+ * `shell/internal/shell-vars.ts`) ever appears inside. There is no text for
+ * a property name to "leak into", because nothing here scans arbitrary
+ * text for class-shaped substrings anymore.
  */
 
 const srcDir = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -46,124 +114,192 @@ function stripComments(src: string): string {
   return src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
 }
 
-// Tailwind utility prefixes this package actually uses, and which
-// @vespeneventures/tokens family/namespace each maps to. `text-` is
-// deliberately checked against BOTH `--color-*` (text color, e.g.
-// `text-ink-primary`) and `--text-*` (font size, e.g. `text-h2`) — Tailwind
-// itself disambiguates the same prefix by which theme namespace the suffix
-// resolves in, so this test does the same.
-const PREFIX_CANDIDATE_FAMILIES: Record<string, (suffix: string) => string[]> = {
-  bg: (s) => [`--color-${s}`],
-  text: (s) => [`--color-${s}`, `--text-${s}`],
-  border: (s) => [`--color-${s}`],
-  rounded: (s) => [`--radius-${s}`],
-  tracking: (s) => [`--tracking-${s}`],
-  font: (s) => [`--font-${s}`],
-  gap: (s) => [`--spacing-${s}`],
-  p: (s) => [`--spacing-${s}`],
-  px: (s) => [`--spacing-${s}`],
-  py: (s) => [`--spacing-${s}`],
-  pt: (s) => [`--spacing-${s}`],
-  pb: (s) => [`--spacing-${s}`],
-  pl: (s) => [`--spacing-${s}`],
-  pr: (s) => [`--spacing-${s}`],
-  m: (s) => [`--spacing-${s}`],
-  mx: (s) => [`--spacing-${s}`],
-  my: (s) => [`--spacing-${s}`],
-};
+// ── Class-candidate extraction ──────────────────────────────────────────
+//
+// Deliberately three narrow syntactic positions, not "every quoted string
+// in the file": a generic scan would also catch `gridArea: "header"` and
+// `role={isError ? "alert" : "status"}` (both real strings in this
+// package's source, neither a Tailwind class) and reject them as invented
+// classes. Scoping to where this package ACTUALLY writes class lists avoids
+// that without needing a second allow-list to exempt non-class strings —
+// the same lesson the redesign above applies to Tailwind's own vocabulary,
+// applied here to this package's own non-class string literals.
 
-// `\b(prefix)-(suffix)\b`, where suffix is letters/digits/hyphens starting
-// with a letter (excludes Tailwind's plain numeric scale, e.g. `p-4`,
-// which this package never uses and which isn't token-derived anyway).
-const CLASS_RE = new RegExp(
-  `\\b(${Object.keys(PREFIX_CANDIDATE_FAMILIES).join("|")})-([a-zA-Z][a-zA-Z0-9-]*)\\b`,
-  "g",
-);
+/** A plain `className="..."` / `className='...'` JSX attribute. */
+const CLASSNAME_ATTR_RE = /\bclassName\s*=\s*"([^"]*)"|\bclassName\s*=\s*'([^']*)'/g;
 
-// Raw `var(--...)` reads — the case-2 tokens (`--ui-*`) plus any direct
-// `--color-*` read used as a fallback chain. Captures the property name
-// whether or not a fallback follows.
-const VAR_RE = /var\(\s*(--[a-zA-Z0-9-]+)\s*(?:,|\))/g;
+/**
+ * `typeof className === "function" ? className(renderProps) : className` —
+ * the consumer-`style`/`className`-merging pattern `Button`, `Link`,
+ * `Switch`, and `Checkbox` all share — sits INSIDE several of this
+ * package's `cx(...)` calls (as one of the ternary's branches), and its
+ * `"function"` string literal is not a class, it's a JS `typeof` comparison.
+ * Stripped out before the quoted-string scan below runs over a `cx(...)`
+ * call's argument text, the same way `stripComments` removes prose before
+ * either scan runs — a targeted fix for a real, narrow idiom, not a second
+ * hand-maintained exemption list.
+ */
+const TYPEOF_COMPARISON_RE = /\btypeof\s+[\w.]+\s*(?:===|!==|==|!=)\s*"[^"]*"/g;
 
-// A CSS custom-property name (`--ui-border-hairline`, `--color-line-base`,
-// ...), wherever it appears in source — inside a `var(...)` call, a plain
-// string, a template literal. VAR_RE already extracts and resolves these
-// on their own terms; CLASS_RE must never also see them, because a name
-// like `--ui-border-hairline` CONTAINS the substring `border-hairline`,
-// which matches CLASS_RE's own `\b(prefix)-(suffix)\b` shape (prefix
-// "border", suffix "hairline") even though it names no Tailwind class at
-// all. This is exactly what forced `Shell`'s hairline border width to a
-// hardcoded `"1px"` instead of `var(--ui-border-hairline, 1px)` — the
-// token read, once restored to source, false-positived as an unresolved
-// `border-hairline` class. Blanking out every custom-property name (same
-// length, so match offsets in the blanked copy still line up with the
-// original for anything that needs them) before running CLASS_RE keeps
-// the two scans from colliding, without weakening either: VAR_RE still
-// runs against the untouched source.
-const CUSTOM_PROPERTY_RE = /--[a-zA-Z][a-zA-Z0-9-]*/g;
-
-function blankCustomProperties(code: string): string {
-  return code.replace(CUSTOM_PROPERTY_RE, (m) => " ".repeat(m.length));
+function stripTypeofComparisons(text: string): string {
+  return text.replace(TYPEOF_COMPARISON_RE, " ");
 }
 
-// Suffixes Tailwind v4 itself ships for these prefixes, independent of any
-// `@theme` scale — real utility classes this package doesn't own and never
-// will, so a class using one is never a token-derived class and must be
-// skipped rather than checked against TOKENS. Every entry below was
-// confirmed against a real `@tailwindcss/cli@4.3.3` compile (a scratch
-// project outside this repo, `npx @tailwindcss/cli` with each candidate
-// class in a scanned source file, reading the emitted CSS rule) rather than
-// assumed from documentation — Tailwind's actual reserved set is narrower
-// than it looks in places (e.g. `p-auto`/`gap-auto`/any spacing prefix's
-// `-full` do NOT compile to anything; only `m`/`mx`/`my`'s `auto` and
-// every listed prefix's `px` do).
-//
-// This list intentionally reuses the same universal color keywords and
-// border reserved suffixes `../../tokens/src/tailwind-builtin-collision.test.ts`
-// already researched and verified for its own (opposite-direction) check —
-// see that file's `RESERVED_FAMILIES.text`/`.font` — so the two tests never
-// disagree about what Tailwind owns.
-const UNIVERSAL_COLOR_KEYWORDS = ["inherit", "current", "transparent", "black", "white"];
+/**
+ * Every top-level string/template literal inside `text` — used against a
+ * `cx(...)` call's own argument text (so it sees every branch of a
+ * ternary, e.g. `Menu.Item`'s `isDestructive ? "..." : "..."`) and against
+ * a variant map's object body. Not scoped to comma-separated top-level
+ * arguments specifically: a literal can appear at any nesting depth inside
+ * a `cx(...)` call (a ternary, a `&&`), and every one of those branches is
+ * a real candidate class list whenever it's the one selected at runtime.
+ */
+const QUOTED_STRING_RE = /"([^"]*)"|'([^']*)'|`([^`]*)`/g;
 
-const ALLOWED_SUFFIXES: Record<string, readonly string[]> = {
-  text: [
-    "left", "center", "right", "justify", "start", "end", // text-align
-    "wrap", "nowrap", "balance", "pretty", // text-wrap
-    "ellipsis", "clip", // text-overflow
-    ...UNIVERSAL_COLOR_KEYWORDS, // text-color shorthands
-  ],
-  bg: [...UNIVERSAL_COLOR_KEYWORDS],
-  border: [
-    ...UNIVERSAL_COLOR_KEYWORDS,
-    // Side / logical-direction border utilities (border-width + -style,
-    // never a color) — confirmed generated for all eight.
-    "b", "t", "l", "r", "x", "y", "s", "e",
-    // border-style keywords — confirmed generated for all six.
-    "solid", "dashed", "dotted", "double", "hidden", "none",
-  ],
-  // Confirmed generated; nothing else in the radius namespace is.
-  rounded: ["none", "full"],
-  // Tailwind's own font-weight scale — a namespace this package deliberately
-  // does not own (see the README's naming rule: `--font-*` is font-FAMILY
-  // here, never weight). Confirmed generated for all nine.
-  font: ["thin", "extralight", "light", "normal", "medium", "semibold", "bold", "extrabold", "black"],
-  // Spacing prefixes: `px` (literal 1px) compiles for every one of them.
-  // `auto` compiles ONLY for margin (`m`/`mx`/`my`) — confirmed NOT
-  // generated for any padding or gap prefix. `full` does not compile for
-  // ANY spacing prefix (unlike `rounded-full` or `w-full`) and is
-  // deliberately omitted here for that reason.
-  gap: ["px"],
-  p: ["px"],
-  px: ["px"],
-  py: ["px"],
-  pt: ["px"],
-  pb: ["px"],
-  pl: ["px"],
-  pr: ["px"],
-  m: ["px", "auto"],
-  mx: ["px", "auto"],
-  my: ["px", "auto"],
-};
+function stringLiteralsIn(text: string): string[] {
+  const out: string[] = [];
+  for (const match of text.matchAll(QUOTED_STRING_RE)) {
+    out.push(match[1] ?? match[2] ?? match[3] ?? "");
+  }
+  return out;
+}
+
+/**
+ * Finds every call to `calleeName(...)` and returns each call's full
+ * argument text, quote- and nesting-aware. A plain regex can't do this on
+ * its own: `cx("grid-cols-[auto_minmax(0,1fr)_auto]", className)` has
+ * PARENTHESES inside its own string literal (`minmax(0,1fr)`), so a naive
+ * "count parens" scan would think the call ends early. This walks the
+ * source character-by-character, tracking whether it's currently inside a
+ * quoted string (parens inside a string never affect nesting depth) and
+ * only counting `(`/`)` outside of one — the minimum needed to find the
+ * TRUE matching close-paren, without pulling in a real parser for it (this
+ * package has none, the same reason `ladder.test.ts` stays regex-based —
+ * see its own header comment).
+ */
+function extractCallArgs(code: string, calleeName: string): string[] {
+  const args: string[] = [];
+  const calleeRe = new RegExp(`\\b${calleeName}\\s*\\(`, "g");
+  for (const match of code.matchAll(calleeRe)) {
+    const start = match.index + match[0].length;
+    let depth = 1;
+    let i = start;
+    let quote: string | null = null;
+    while (i < code.length && depth > 0) {
+      const ch = code[i];
+      if (quote) {
+        if (ch === "\\") {
+          i += 2;
+          continue;
+        }
+        if (ch === quote) quote = null;
+      } else if (ch === '"' || ch === "'" || ch === "`") {
+        quote = ch;
+      } else if (ch === "(") {
+        depth++;
+      } else if (ch === ")") {
+        depth--;
+      }
+      i++;
+    }
+    args.push(code.slice(start, i - 1));
+  }
+  return args;
+}
+
+/**
+ * A "variant map": `const XXX_CLASSES: Record<SomeVariant, string> = {...}`
+ * (or, for `Avatar`'s size map, `Record<AvatarSize, { box: string; text:
+ * string }>` — a nested object, still string-valued throughout). Every
+ * atom's variant styling in this package is one of these, keyed by variant
+ * name, looked up by a computed expression (`VARIANT_CLASSES[variant]`)
+ * that a static scan can't resolve — so this reads the map's own DECLARATION
+ * instead of trying to follow the reference into `cx(...)`. `[^=]*` (not
+ * `[^={]*`) deliberately allows a `{` inside the type parameter itself
+ * (`Avatar`'s nested object type) — the type annotation never contains a
+ * bare `=`, so a lazy match up to the first one still lands on the real
+ * assignment.
+ */
+const VARIANT_MAP_RE = /:\s*Record<[^=]*>\s*=\s*\{([\s\S]*?)\n\};/g;
+
+function extractCandidateClasses(code: string): Set<string> {
+  const chunks: string[] = [];
+
+  for (const match of code.matchAll(CLASSNAME_ATTR_RE)) {
+    chunks.push(match[1] ?? match[2] ?? "");
+  }
+  for (const args of extractCallArgs(code, "cx")) {
+    chunks.push(...stringLiteralsIn(stripTypeofComparisons(args)));
+  }
+  for (const match of code.matchAll(VARIANT_MAP_RE)) {
+    chunks.push(...stringLiteralsIn(match[1] ?? ""));
+  }
+
+  const classes = new Set<string>();
+  for (const chunk of chunks) {
+    for (const token of chunk.split(/\s+/)) {
+      if (token) classes.add(token);
+    }
+  }
+  return classes;
+}
+
+// ── Raw var(--...) read validation — unchanged in approach ─────────────
+//
+// Tailwind can't validate these (see the header comment above): a
+// `var(--anything)` argument, whether written as a plain `style` value or
+// tucked inside a Tailwind arbitrary value, is opaque to Tailwind's
+// compiler. This stays a list-based check against the real `TOKENS` export,
+// run over each file's full, UNMODIFIED source — nothing here needs to
+// dodge the class-name scan the way the old version's blanking pass did,
+// because (per the header comment) the class scan no longer looks at
+// arbitrary text at all.
+const VAR_RE = /var\(\s*(--[a-zA-Z0-9-]+)\s*(?:,|\))/g;
+
+// ── Compile Tailwind once, using this package's real token CSS ─────────
+//
+// `require.resolve` (via `createRequire`, since this file is ESM) rather
+// than a hardcoded path: this package, `@vespeneventures/tokens`, and
+// `tailwindcss` are all real npm dependencies resolved through the normal
+// module graph (an npm workspace symlink in this monorepo, a real
+// `node_modules` install for an external consumer of this package) — using
+// Node's own resolver is what makes this the same "real build" a consumer
+// would get, not a path that only happens to work in this repository's
+// layout. `tailwindcss`'s bare specifier needs one explicit rewrite to
+// `tailwindcss/index.css`: `@import "tailwindcss"` in a real build resolves
+// through that package's own `exports` map's `style` CONDITION, which
+// Node's plain CJS `require.resolve` (no loader for a `style` export
+// condition exists) can't follow on its own — every other specifier this
+// package imports (`@vespeneventures/tokens/theme.css`, and that file's own
+// relative `./tokens.css`) already names its `.css` file explicitly, so no
+// such rewrite is needed for them.
+const require = createRequire(import.meta.url);
+
+async function loadStylesheet(id: string, base: string) {
+  let resolved: string;
+  if (id.startsWith(".") || id.startsWith("/")) {
+    resolved = require.resolve(id, { paths: [base] });
+  } else if (id === "tailwindcss") {
+    resolved = require.resolve("tailwindcss/index.css");
+  } else {
+    resolved = require.resolve(id);
+  }
+  return { path: resolved, base: dirname(resolved), content: readFileSync(resolved, "utf8") };
+}
+
+const TOKEN_CSS_ENTRY = [
+  '@import "tailwindcss";',
+  '@import "@vespeneventures/tokens/theme.css";',
+].join("\n");
+
+// One compile for the whole file, not one per class: `candidatesToCss`
+// accepts the full candidate list at once and is the only Tailwind call
+// this file makes — see the README's "Tests" section for why that matters
+// for keeping this fast.
+const designSystem = await __unstable__loadDesignSystem(TOKEN_CSS_ENTRY, {
+  base: srcDir,
+  loadStylesheet,
+});
 
 interface Finding {
   file: string;
@@ -175,30 +311,22 @@ interface Finding {
 const findings: Finding[] = [];
 const sourceFiles = collectSourceFiles(srcDir);
 
+const allCandidateClasses = new Set<string>();
+const classesByFile = new Map<string, Set<string>>();
+const varsByFile = new Map<string, string[]>();
+
 for (const file of sourceFiles) {
-  const code = stripComments(readFileSync(file, "utf8"));
+  const raw = readFileSync(file, "utf8");
+  const code = stripComments(raw);
   const relFile = file.slice(srcDir.length + 1);
-  const codeForClassScan = blankCustomProperties(code);
 
-  for (const match of codeForClassScan.matchAll(CLASS_RE)) {
-    const [full, prefix, suffix] = match;
-    if (ALLOWED_SUFFIXES[prefix as string]?.includes(suffix as string)) {
-      continue;
-    }
-    const candidates = PREFIX_CANDIDATE_FAMILIES[prefix as string]!(suffix as string);
-    const resolved = candidates.some((property) => property in TOKENS);
-    if (!resolved) {
-      findings.push({
-        file: relFile,
-        kind: "class",
-        text: full,
-        reason: `no token matches any of: ${candidates.join(", ")}`,
-      });
-    }
-  }
+  const classes = extractCandidateClasses(code);
+  classesByFile.set(file, classes);
+  for (const c of classes) allCandidateClasses.add(c);
 
-  for (const match of code.matchAll(VAR_RE)) {
-    const property = match[1] as string;
+  const vars = [...code.matchAll(VAR_RE)].map((match) => match[1] as string);
+  varsByFile.set(file, vars);
+  for (const property of vars) {
     if (!(property in TOKENS)) {
       findings.push({
         file: relFile,
@@ -210,30 +338,77 @@ for (const file of sourceFiles) {
   }
 }
 
-describe("token parity: every token-derived class and var() read resolves to a real token", () => {
+// One compiler call for every candidate across every file, then a map
+// lookup per file below — the compile is the expensive part, and it only
+// happens once regardless of how many files or classes there are.
+const candidateList = [...allCandidateClasses];
+const compiledResults = designSystem.candidatesToCss(candidateList);
+const invalidClasses = new Set(
+  candidateList.filter((_, i) => compiledResults[i] === null),
+);
+
+for (const [file, classes] of classesByFile) {
+  const relFile = file.slice(srcDir.length + 1);
+  for (const className of classes) {
+    if (invalidClasses.has(className)) {
+      findings.push({
+        file: relFile,
+        kind: "class",
+        text: className,
+        reason: "Tailwind compiled this to no CSS rule at all — not a real utility, not a token-derived class",
+      });
+    }
+  }
+}
+
+describe("token parity: every Tailwind class and var() read resolves against a real compile", () => {
   it("found at least one Tailwind class to check (sanity — a passing test with zero coverage proves nothing)", () => {
-    const totalClassesChecked = sourceFiles.reduce((n, file) => {
-      const code = blankCustomProperties(stripComments(readFileSync(file, "utf8")));
-      return n + [...code.matchAll(CLASS_RE)].length;
-    }, 0);
-    expect(totalClassesChecked).toBeGreaterThan(10);
+    expect(allCandidateClasses.size).toBeGreaterThan(10);
   });
 
   it("found at least one raw var(--ui-*) read to check", () => {
-    const totalVarsChecked = sourceFiles.reduce((n, file) => {
-      const code = stripComments(readFileSync(file, "utf8"));
-      return n + [...code.matchAll(VAR_RE)].length;
-    }, 0);
+    const totalVarsChecked = [...varsByFile.values()].reduce((n, vars) => n + vars.length, 0);
     expect(totalVarsChecked).toBeGreaterThan(0);
   });
 
-  it("every token-derived Tailwind class and var() read resolves to a real @vespeneventures/tokens entry", () => {
+  it("every className/cx()/variant-map class resolves to a real Tailwind rule, and every var() read resolves to a real token", () => {
     if (findings.length > 0) {
       const report = findings
         .map((f) => `  ${f.file}: ${f.kind} "${f.text}" — ${f.reason}`)
         .join("\n");
-      throw new Error(`${findings.length} unresolved token reference(s):\n${report}`);
+      throw new Error(`${findings.length} unresolved reference(s):\n${report}`);
     }
     expect(findings).toEqual([]);
+  });
+
+  /**
+   * A permanent regression guard for the exact failure this file was
+   * redesigned to fix, independent of what today's real components happen
+   * to use — checked directly against the compiled design system, not by
+   * scanning any file. If a future Tailwind upgrade ever stopped
+   * recognizing one of these, this fails with a clear "which utility"
+   * signal instead of a contributor rediscovering it by hand a fifth time.
+   */
+  it("compiles every utility that previously forced a workaround, and still rejects an invented token class", () => {
+    const previouslyRejectedButLegitimate = [
+      "text-center", // EmptyState — was deleted for a flex-only centering approach
+      "mx-auto", // Shell.Main — was moved to inline `marginInline: "auto"`
+      "text-inherit", // was moved to inline `style`
+      "bg-transparent", // was moved to inline `style`
+      "border-collapse", // Table — was `style={{ borderCollapse: "collapse" }}`
+      "border-b-2", // Tabs — was an inset box-shadow standing in for a real border
+      "border-b-0", // was avoided via a `not-last:` variant instead
+    ];
+    const invented = ["bg-surface-elevated"]; // no such token — the real name is `surface-raised`
+
+    const results = designSystem.candidatesToCss([...previouslyRejectedButLegitimate, ...invented]);
+
+    previouslyRejectedButLegitimate.forEach((className, i) => {
+      expect(results[i], `expected "${className}" to compile to a real rule`).not.toBeNull();
+    });
+    invented.forEach((className, i) => {
+      const result = results[previouslyRejectedButLegitimate.length + i];
+      expect(result, `expected invented class "${className}" to produce no rule`).toBeNull();
+    });
   });
 });

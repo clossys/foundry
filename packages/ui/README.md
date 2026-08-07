@@ -16,10 +16,10 @@ package yet. See "Placement rules" below for what distinguishes all four
 rungs and how a new component gets assigned to one.
 
 - **`atoms`** — single-purpose: composes no other atom, or its parts are
-  homogeneous repeats rather than named regions. Sixteen ship: `Button`,
+  homogeneous repeats rather than named regions. Twenty-two ship: `Button`,
   `TextField`, `Badge`, `Card`, `Breadcrumb`, `Link`, `Checkbox`, `Switch`,
   `Select`, `Textarea`, `Avatar`, `Spinner`, `Menu`, `Dialog`, `Tabs`,
-  `Table`.
+  `Table`, `Field`, `Skeleton`, `Tooltip`, `Banner`, `RadioGroup`, `Popover`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
   with a real job on a page. Two ship: `PageHeader`, `EmptyState`.
@@ -190,34 +190,44 @@ costs nothing; a missing one costs every component's styling.
 
 - **`react-aria-components`** — every interactive atom (`Button`,
   `TextField`, `Link`, `Checkbox`, `Switch`, `Select`, `Textarea`, `Menu`,
-  `Dialog`, `Tabs`, `Table`) is built on its primitives rather than a
-  hand-rolled `<button>`/`<input>`/`<a>`. It supplies keyboard interaction
-  (Enter/Space activation, focus management, arrow-key navigation), the
-  ARIA attributes a screen reader needs (`aria-invalid`, `aria-describedby`
-  linking an input to its error text, label association, `role="menu"`/
-  `aria-checked`/`aria-expanded` and the rest), and disabled-state
-  semantics — the kind of behavior that is easy to get subtly wrong by hand
-  and hard to notice is wrong without a screen reader or a keyboard-only
-  pass. `Badge`, `Card`, `Avatar`, and `Spinner` compose no other atom and
-  aren't interactive, so they're plain markup — there's no
-  react-aria-components primitive for any of them. `Breadcrumb`, `Select`,
-  and `Menu` build on it for their collection components specifically:
-  `Breadcrumbs`/`Breadcrumb`/`Link` supply correct nav semantics and
-  automatic `aria-current` placement; `Select`/`ListBox`/`ListBoxItem`/
-  `Popover` supply a listbox's open/close, typeahead, and selection
-  behavior; `MenuTrigger`/`Menu`/`MenuItem`/`Popover` supply a menu's
-  open/close, arrow-key navigation, and disabled-item skipping. `Dialog`
-  builds on `DialogTrigger`/`ModalOverlay`/`Modal`/`Dialog`/`Heading` for a
-  focus-trapped, scroll-locked, Escape-to-dismiss overlay with automatic
-  focus restoration; `Tabs` builds on `Tabs`/`TabList`/`Tab`/`TabPanel` for
-  roving-tabindex arrow-key navigation between panels; `Table` builds on
+  `Dialog`, `Tabs`, `Table`, `Tooltip`, `RadioGroup`, `Popover`) is built on
+  its primitives rather than a hand-rolled `<button>`/`<input>`/`<a>`. It
+  supplies keyboard interaction (Enter/Space activation, focus management,
+  arrow-key navigation), the ARIA attributes a screen reader needs
+  (`aria-invalid`, `aria-describedby` linking an input to its error text,
+  label association, `role="menu"`/`aria-checked`/`aria-expanded` and the
+  rest), and disabled-state semantics — the kind of behavior that is easy to
+  get subtly wrong by hand and hard to notice is wrong without a screen
+  reader or a keyboard-only pass. `Badge`, `Card`, `Avatar`, `Spinner`,
+  `Skeleton`, and `Banner` compose no other atom and aren't interactive, so
+  they're plain markup — there's no react-aria-components primitive for any
+  of them; `Field` renders no react-aria-components primitive of its own
+  either, since the whole point of it is wrapping a control that doesn't
+  have one. `Breadcrumb`, `Select`, and `Menu` build on it for their
+  collection components specifically: `Breadcrumbs`/`Breadcrumb`/`Link`
+  supply correct nav semantics and automatic `aria-current` placement;
+  `Select`/`ListBox`/`ListBoxItem`/`Popover` supply a listbox's open/close,
+  typeahead, and selection behavior; `MenuTrigger`/`Menu`/`MenuItem`/
+  `Popover` supply a menu's open/close, arrow-key navigation, and
+  disabled-item skipping. `Dialog` builds on `DialogTrigger`/`ModalOverlay`/
+  `Modal`/`Dialog`/`Heading` for a focus-trapped, scroll-locked,
+  Escape-to-dismiss overlay with automatic focus restoration; `Popover`
+  builds on that same `DialogTrigger`/`Dialog` pairing with an anchored,
+  scrim-less `Popover` standing in for `Dialog`'s centered
+  `ModalOverlay`+`Modal`; `Tabs` builds on `Tabs`/`TabList`/`Tab`/`TabPanel`
+  for roving-tabindex arrow-key navigation between panels; `Table` builds on
   `Table`/`TableHeader`/`TableBody`/`Column`/`Row`/`Cell` for real grid
   semantics, sorting, and row selection (including the indeterminate
   select-all state, via this package's own `Checkbox` atom — see `Table`'s
-  own section below). None of that behavior is reimplemented here — it
-  would be easy to get subtly wrong hand-rolled, which is the whole reason
-  this package leans on react-aria-components for every interactive atom
-  rather than building any of it from scratch.
+  own section below); `Tooltip` builds on `TooltipTrigger`/`Tooltip` for
+  hover-AND-focus opening, Escape-to-dismiss, and the warm-up/cool-down
+  delay between tooltips shown in quick succession; `RadioGroup` builds on
+  `RadioGroup`/`Radio` for roving-tabindex arrow-key navigation between
+  options and `role="radiogroup"`/`role="radio"`/`aria-checked` wiring.
+  None of that behavior is reimplemented here — it would be easy to get
+  subtly wrong hand-rolled, which is the whole reason this package leans on
+  react-aria-components for every interactive atom rather than building any
+  of it from scratch.
 - **`tailwind-merge`** — every atom accepts a `className` prop, and a
   consumer's value has to reliably win over this package's own default
   classes. Two Tailwind utilities that set the same CSS property have
@@ -793,6 +803,185 @@ above for why that's the ladder's explicitly-permitted direction (a
 sibling atom, not a `blocks/` import) rather than an exception carved out
 for it.
 
+### `Field`
+
+```tsx
+import { Field } from "@vespeneventures/ui/atoms";
+
+function SignatureField() {
+  return (
+    <Field label="Signature" description="Draw your signature below.">
+      {(fieldProps) => <SignaturePad {...fieldProps} />}
+    </Field>
+  );
+}
+```
+
+The general form of the label/description/error surface `TextField`
+bundles with its own `<input>` — for a control this package doesn't ship an
+atom for (a third-party rich-text editor, a `<canvas>`-based signature pad,
+any future control not yet built here). `children` is a render prop, not a
+fixed element cloned via `React.cloneElement`: an arbitrary control has no
+guaranteed prop shape a blind clone could safely merge into, so `Field`
+hands the control's own author exactly the id/`aria-describedby`/
+`aria-invalid`/`aria-required` values to spread themselves, in their own
+code, onto whichever element actually needs them — the same function-prop
+shape `Dialog`'s children and `Table.Body`'s `renderEmptyState` already use
+in this package. Id generation uses React's own `useId()`, since `Field`
+renders no react-aria-components primitive of its own to generate one for
+free the way every other field atom here does.
+
+### `Skeleton`
+
+```tsx
+import { Skeleton } from "@vespeneventures/ui/atoms";
+
+function LoadingPromptCard() {
+  return (
+    <div className="flex flex-col gap-sm">
+      <Skeleton shape="circle" className="h-10 w-10" aria-label="Loading prompt" />
+      <Skeleton shape="text" />
+      <Skeleton shape="block" className="h-24" />
+    </div>
+  );
+}
+```
+
+A loading placeholder, styled with `--color-skeleton-fill` (the token named
+specifically for this purpose). `shape`: `"text" | "block" | "circle"`
+(default `"text"`) — a text-height line, a container-filling block, or an
+`Avatar`-shaped circle. Every `Skeleton` is `aria-hidden="true"` by default
+(purely decorative); provide `aria-label` on the ONE `Skeleton` that stands
+in for a whole loading region (not on every piece inside it) and it renders
+`role="status"`/`aria-busy="true"` instead, announcing itself the same way
+`Spinner`'s own optional `label` does.
+
+### `Tooltip`
+
+```tsx
+import { Tooltip, Button } from "@vespeneventures/ui/atoms";
+
+function InfoTooltip() {
+  return (
+    <Tooltip trigger={<Button aria-label="Why is this required?">?</Button>}>
+      Required for tax purposes.
+    </Tooltip>
+  );
+}
+```
+
+A short description of another element, shown on hover AND keyboard focus
+by default — built on react-aria-components' `TooltipTrigger` + `Tooltip`,
+which supply the `aria-describedby` wiring, Escape-to-dismiss, and a
+"warm up"/"cool down" delay between tooltips shown in quick succession.
+`trigger` must be a react-aria-components-aware element (this package's own
+`Button`, or react-aria-components' own) — the same requirement `Menu`'s and
+`Dialog`'s own `trigger` slot document, since the open/hover/focus behavior
+is wired on via context, not by cloning arbitrary props onto whatever's
+passed in. `placement`: any react-aria-components `Placement` (default
+`"top"`). `triggerAction`: `"focus"` restricts opening to keyboard focus
+only, never hover — react-aria-components' own trigger-mode prop, renamed
+here to avoid colliding with this component's own `trigger` (the element),
+the identical collision `Menu`'s `triggerAction` already resolves the same
+way.
+
+### `Banner`
+
+```tsx
+import { Banner } from "@vespeneventures/ui/atoms";
+
+function TrialEndingBanner({ onDismiss }: { onDismiss: () => void }) {
+  return (
+    <Banner variant="warning" onDismiss={onDismiss}>
+      Your trial ends in 3 days.
+    </Banner>
+  );
+}
+```
+
+A persistent inline message region — not a toast (see `@vespeneventures/ui/shell`'s
+`Toaster`): this renders exactly where it sits in the page's render tree,
+not through a portal or a queue. `variant`: `"info" | "success" | "warning" |
+"danger"` (default `"info"`) — the same four status tokens `toast(...)`'s
+variants and `Badge`'s status variants already share. `role`/`aria-live`
+follow severity: `danger` is an assertive `role="alert"`; every other
+variant is a polite `role="status"`, the identical severity-to-live-region
+mapping `Toaster`'s own `ToasterContent` already uses. `onDismiss` is
+optional — supplying it renders a dismiss control, but `Banner` never
+removes itself from the tree on its own; the caller decides whether/when it
+stops rendering.
+
+### `RadioGroup`
+
+```tsx
+import { RadioGroup } from "@vespeneventures/ui/atoms";
+
+function DeliverySpeedField() {
+  return (
+    <RadioGroup label="Delivery speed" defaultValue="standard">
+      <RadioGroup.Radio value="standard">Standard</RadioGroup.Radio>
+      <RadioGroup.Radio value="express" description="Arrives in 2 days.">
+        Express
+      </RadioGroup.Radio>
+      <RadioGroup.Radio value="overnight" isDisabled>
+        Overnight (unavailable in your area)
+      </RadioGroup.Radio>
+    </RadioGroup>
+  );
+}
+```
+
+`Select`'s sibling for a small, fixed set of mutually-exclusive options that
+should stay visible side by side rather than living behind a closed
+trigger. Built on react-aria-components' `RadioGroup` + `Radio`, which
+supply roving-tabindex arrow-key navigation between enabled options,
+Space to select the focused one, and the `role="radiogroup"`/`role="radio"`/
+`aria-checked` wiring a screen reader needs. `label`, `description`, and
+`errorMessage` follow the same convention `TextField`'s and `Select`'s own
+do. `children` is composable JSX (`RadioGroup.Radio`s), not a data array
+like `Select`'s `options`: a visible set of options routinely differs
+option-by-option (a per-option `description`, a disabled option) in a way
+that reads more naturally as hand-written markup, the same reasoning
+`Menu`'s and `Tabs`' own JSX-children shape already follow.
+
+### `Popover`
+
+```tsx
+import { Popover, Button } from "@vespeneventures/ui/atoms";
+
+function FiltersPopover() {
+  return (
+    <Popover trigger={<Button variant="secondary">Filters</Button>}>
+      {({ close }) => (
+        <div className="flex flex-col gap-sm">
+          <p>Filter controls go here.</p>
+          <Button onPress={close}>Apply</Button>
+        </div>
+      )}
+    </Popover>
+  );
+}
+```
+
+The general anchored-overlay primitive — an arbitrary panel of content,
+positioned relative to a trigger, for anything `Menu`/`Select`/`Tooltip`'s
+own specific content shapes don't already fit (a filter panel with several
+controls, a small inline form). Built on react-aria-components'
+`DialogTrigger` + `Popover` + `Dialog` — the same composition this
+package's own `Dialog` atom uses, with an anchored, scrim-less `Popover`
+standing in for `Dialog`'s centered `ModalOverlay`+`Modal`. Supplies a
+focus trap, automatic focus-move into the content on open, focus
+restoration to `trigger` on close, Escape to dismiss, and dismissal on any
+outside click (always — an anchored popover with no scrim has no OTHER way
+to signal "click away to close"). `placement` (default `"bottom"`) and
+`offset` (default `8`) control positioning; `children` may be a function
+receiving `{ close }`, the same shape `Dialog`'s own children accept. While
+open, everything outside the popover is `aria-hidden` — the same choice
+`Menu`'s and `Select`'s own popovers already make, not overridden here with
+react-aria-components' `isNonModal` escape hatch (reserved, per its own
+docs, for components "designed to handle this situation carefully", which a
+general-purpose overlay primitive is not).
+
 ## Blocks
 
 A block owns the internal layout of multiple named regions — regions that
@@ -1127,6 +1316,22 @@ app/
 | `TableCellProps` | type | Props for `Table.Cell`: `children`, `className`, `style`, plus everything react-aria-components' own `Cell` accepts. |
 | `TableSelectAllCheckboxProps` | type | Props for `Table.SelectAllCheckbox`: `aria-label` (default `"Select all rows"`), `className`. |
 | `TableSelectionCheckboxProps` | type | Props for `Table.SelectionCheckbox`: `aria-label` (default `"Select row"`), `className`. |
+| `Field` | component | Label/description/error wrapper for a control this package doesn't ship an atom for. `children` is a render prop receiving `FieldRenderProps` to spread onto that control. |
+| `FieldProps` | type | Props for `Field`: `label`, `description`, `errorMessage`, `isInvalid`, `isRequired`, `children`, `className`, `style`. |
+| `FieldRenderProps` | type | The `{ id, "aria-describedby"?, "aria-invalid"?, "aria-required"? }` shape `Field`'s `children` render prop receives. |
+| `Skeleton` | component | Loading placeholder. Plain markup — not interactive, composes no other atom. |
+| `SkeletonProps` | type | Props for `Skeleton`: `shape`, `aria-label`, plus every native `<div>` attribute except `children`/`role`. |
+| `SkeletonShape` | type | `"text" \| "block" \| "circle"`. |
+| `Tooltip` | component | Hover/focus description built on react-aria-components' `TooltipTrigger`/`Tooltip`. |
+| `TooltipProps` | type | Props for `Tooltip`: `trigger`, `children`, `triggerAction`, `placement`, `className`, plus most of react-aria-components' own `TooltipTrigger` props. |
+| `Banner` | component | Persistent inline message region built over the status tokens. |
+| `BannerProps` | type | Props for `Banner`: `variant`, `children`, `onDismiss`, `dismissLabel`, `className`, `style`, plus every native `<div>` attribute except `role`/`children`. |
+| `BannerVariant` | type | `"info" \| "success" \| "warning" \| "danger"`. |
+| `RadioGroup` | component | Single-choice control over a visible set of options, built on react-aria-components' `RadioGroup`/`Radio`. Carries `RadioGroup.Radio`. |
+| `RadioGroupProps` | type | Props for `RadioGroup`: `label`, `description`, `errorMessage`, `children`, `className`, plus most of react-aria-components' own `RadioGroup` props. |
+| `RadioGroupRadioProps` | type | Props for `RadioGroup.Radio`: `children`, `description`, `className`, plus everything react-aria-components' own `Radio` accepts. |
+| `Popover` | component | The general anchored-overlay primitive built on react-aria-components' `DialogTrigger`/`Popover`/`Dialog`. |
+| `PopoverProps` | type | Props for `Popover`: `trigger`, `children` (may be a function receiving `{ close }`), `placement`, `offset`, `className`, `style`, plus most of react-aria-components' own `DialogTrigger` props. |
 | `PageHeader` | component | Page banner: breadcrumb slot, title, description, actions slot. |
 | `PageHeaderProps` | type | Props for `PageHeader`: `title`, `description`, `actions`, `breadcrumb`, plus every native `<header>` attribute. |
 | `EmptyState` | component | Zero-item placeholder: icon slot, title, description, action slot. |
@@ -1154,31 +1359,41 @@ Beyond render/interaction/keyboard/ARIA tests per atom (`Button.test.tsx`,
 `Breadcrumb.test.tsx`, `Link.test.tsx`, `Checkbox.test.tsx`,
 `Switch.test.tsx`, `Select.test.tsx`, `Textarea.test.tsx`, `Avatar.test.tsx`,
 `Spinner.test.tsx`, `Menu.test.tsx`, `Dialog.test.tsx`, `Tabs.test.tsx`,
-`Table.test.tsx`), per block (`PageHeader.test.tsx`, `EmptyState.test.tsx`),
-per shell component (`Shell.test.tsx`, `Toaster.test.tsx`), and the
-`tailwind-merge` regression tests described above (`internal/cx.test.ts`),
-two tests are worth calling out specifically:
+`Table.test.tsx`, `Field.test.tsx`, `Skeleton.test.tsx`, `Tooltip.test.tsx`,
+`Banner.test.tsx`, `RadioGroup.test.tsx`, `Popover.test.tsx`), per block
+(`PageHeader.test.tsx`, `EmptyState.test.tsx`), per shell component
+(`Shell.test.tsx`, `Toaster.test.tsx`), and the `tailwind-merge` regression
+tests described above (`internal/cx.test.ts`), two tests are worth calling
+out specifically:
 
 - **`token-parity.test.ts`** scans every atom's, block's, AND shell
-  component's source (everything under `src/`) for token-derived Tailwind
-  classes (`bg-*`, `text-*`, `border-*`, `rounded-*`, ...) and raw
-  `var(--ui-*)`/`var(--color-*)` reads, and asserts every single one
-  resolves to a real entry in `@vespeneventures/tokens`' own `TOKENS`
-  export — imported from the real package, not a hand-copied list. Without
-  this, a typo like `bg-surface-elevated` (there is no such token — the
-  real name is `surface-raised`) would compile clean and render with zero
-  applied background, with no error anywhere to explain why. This is the
-  same failure mode as a missing `@source` line above, just at the level of
-  a single class name instead of the whole build. A per-prefix allow-list
-  (`ALLOWED_SUFFIXES` in the test file) skips Tailwind's own non-token
-  keywords — alignment/wrap/overflow keywords and universal color keywords
-  under `text-`, the same colors plus directional/style keywords under
-  `border-`, `none`/`full` under `rounded-`, the font-weight scale under
-  `font-`, and `px`/`auto` under the spacing prefixes — each verified
-  against a real `@tailwindcss/cli@4.3.3` compile, not assumed from
-  documentation. An unknown suffix that isn't in that list and isn't a real
-  token still fails the build; only Tailwind's own reserved names are
-  exempt.
+  component's source (everything under `src/`) for candidate Tailwind
+  classes — extracted from a `className="..."` JSX attribute, a `cx(...)`
+  call's arguments, and a `Record<Variant, string>` "variant map" object
+  literal, the three shapes this package actually writes class lists in —
+  and for raw `var(--ui-*)`/`var(--color-*)` reads. Every extracted class is
+  compiled for real, against this package's own token CSS, using
+  `tailwindcss`'s own `__unstable__loadDesignSystem` JS API: a class that
+  produces no CSS rule at all is invented, exactly the way a browser would
+  discover the same typo, rather than pattern-matched against a
+  hand-maintained list of prefixes and suffixes. Every `var()` read is
+  separately checked against a real entry in `@vespeneventures/tokens`' own
+  `TOKENS` export — imported from the real package, not a hand-copied list,
+  since an opaque `var(...)` argument inside an otherwise-valid Tailwind
+  arbitrary value (`shadow-[var(--ui-elevation-raised)]`) compiles clean
+  either way and needs its own check. Without both halves, a typo like
+  `bg-surface-elevated` (there is no such token — the real name is
+  `surface-raised`) would compile clean and render with zero applied
+  background, with no error anywhere to explain why — the same failure mode
+  as a missing `@source` line above, just at the level of a single class
+  name instead of the whole build. Compiling the real thing, rather than a
+  regex guessing at what Tailwind's own vocabulary looks like, is what lets
+  this catch that typo with zero false positives on Tailwind's OWN reserved
+  utilities (`border-collapse`, `border-b-2`, `text-center`, `mx-auto`,
+  `text-inherit`, `bg-transparent`, and everything else Tailwind ships) —
+  see the test file's own header comment for the four real workarounds this
+  approach let this package undo, and how the previous, allow-list-based
+  version of this check forced them in the first place.
 - **`ladder.test.ts`** scans every file under `src/atoms/`, `src/blocks/`,
   and `src/shell/` for import specifiers that climb UP the ladder, and
   fails the build if it finds one — the ladder invariant (`atoms` → `blocks`
@@ -1194,14 +1409,14 @@ two tests are worth calling out specifically:
 
 ## What's deliberately not here
 
-**Atoms:** sixteen ship — `Button`, `TextField`, `Badge`, `Card`,
+**Atoms:** twenty-two ship — `Button`, `TextField`, `Badge`, `Card`,
 `Breadcrumb`, `Link`, `Checkbox`, `Switch`, `Select`, `Textarea`, `Avatar`,
-`Spinner`, `Menu`, `Dialog`, `Tabs`, `Table`. No `Tooltip`, `Radio`, or a
-`Popover`/`Modal` exposed as a public atom of its own — those get added
-here only once something real needs them, not speculatively. (`Popover`
-is already used internally, inside `Select` and `Menu`; `Modal`/
-`ModalOverlay` inside `Dialog`; that's not the same as shipping either as
-a standalone public atom a consumer could reach for on its own.)
+`Spinner`, `Menu`, `Dialog`, `Tabs`, `Table`, `Field`, `Skeleton`, `Tooltip`,
+`Banner`, `RadioGroup`, `Popover`. No `Modal` exposed as a public atom of
+its own beyond what `Dialog` and `Popover` already compose internally —
+that gets added here only once something real needs a bare modal overlay
+with neither `Dialog`'s fixed trigger/content shape nor `Popover`'s
+anchored one, not speculatively.
 
 **Blocks:** only `PageHeader`, `EmptyState` ship. `DataTable` (built on
 `Table`'s primitives) and `ConfirmDialog` (built on `Dialog`) are

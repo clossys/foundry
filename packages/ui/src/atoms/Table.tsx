@@ -58,16 +58,8 @@ function TableRoot({ children, className, style, ...rest }: TableProps) {
   return (
     <AriaTable
       {...rest}
-      className={cx("w-full text-body text-ink-primary outline-none", className)}
-      // `border-collapse` has no Tailwind-class equivalent this package
-      // owns a token for, and the bare Tailwind utility of that name would
-      // false-positive `token-parity.test.ts` (it reads any `border-<x>`
-      // as an attempted `--color-<x>` reference — see that file's own
-      // comment on the `border-b`/`border-t` side-utility overload for the
-      // same shape of collision). A plain camelCase style property sidesteps
-      // the scan entirely rather than extending its allow-list for one call
-      // site.
-      style={{ borderCollapse: "collapse", ...style }}
+      className={cx("w-full border-collapse text-body text-ink-primary outline-none", className)}
+      style={style}
     >
       {children}
     </AriaTable>
@@ -156,16 +148,11 @@ function TableRow<T extends object>({ className, style, ...rest }: TableRowProps
       className={(renderProps) =>
         cx(
           // `not-last:border-b`, not a plain `border-b` plus `last:border-b-0`
-          // to remove it again: `border-b-0` is a border-WIDTH utility (an
-          // explicit `0`), a different Tailwind namespace than the bare
-          // `border-b` SIDE utility this file's other borders use, and one
-          // `token-parity.test.ts` doesn't allow-list (see `Table`'s own
-          // `border-collapse` comment above for the same shape of
-          // collision). `not-last:` conditionally applying the side utility
-          // in the first place — the same pattern `Breadcrumb.Item` already
-          // uses for its `not-last:after:content-['/']` separator — reaches
-          // the same "every row but the last gets a divider" result without
-          // ever needing the width variant at all.
+          // to remove it again: one positive condition reaches the same
+          // "every row but the last gets a divider" result as a positive
+          // class plus an override undoing it on the last row, with less to
+          // read — the same pattern `Breadcrumb.Item` already uses for its
+          // `not-last:after:content-['/']` separator.
           "not-last:border-b border-line-base outline-none",
           renderProps.isSelected ? "bg-surface-selected" : "",
           renderProps.isDisabled ? "text-ink-muted" : "",
