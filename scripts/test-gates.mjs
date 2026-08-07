@@ -76,6 +76,7 @@ const ARTIFACT = join(scriptDir, "check-artifact-safety.mjs");
 const COLLISION = join(scriptDir, "check-name-collision.mjs");
 const CONTAM = join(scriptDir, "check-contamination-classes.mjs");
 const QUALITY = join(scriptDir, "check-denylist-quality.mjs");
+const TYPECHECKED = join(scriptDir, "check-typechecked-assertions.mjs");
 
 let passed = 0;
 const failures = [];
@@ -575,6 +576,152 @@ try {
       `paths-confined entry (index 2) was flagged for breadth — confinement should bound the blast radius`,
     );
     check("check-denylist-quality exits 1 when quality findings exist", r.code === 1, `exit was ${r.code}`);
+  }
+
+  // ------------------------------------------- check-typechecked-assertions (issue #24)
+  console.log("\n# check-typechecked-assertions — inert type-level assertions (issue #24)");
+  {
+    const dir = join(work, "typechecked-assertions");
+    mkdirSync(dir, { recursive: true });
+
+    // A minimal but real tsconfig, shaped exactly like every package's own
+    // (see packages/*/tsconfig.json): `**/*.test.ts` excluded from
+    // `include`, which is the entire mechanism this gate exists to police.
+    const FIXTURE_TSCONFIG = JSON.stringify(
+      {
+        compilerOptions: {
+          target: "ES2022",
+          module: "ESNext",
+          moduleResolution: "Bundler",
+          strict: true,
+          skipLibCheck: true,
+          outDir: "./dist",
+          rootDir: "./src",
+          noEmit: true,
+        },
+        include: ["src/**/*"],
+        exclude: ["node_modules", "dist", "**/*.test.ts"],
+      },
+      null,
+      2,
+    );
+
+    function makeFixturePackage(name) {
+      const pkgDir = join(dir, name);
+      mkdirSync(join(pkgDir, "src"), { recursive: true });
+      writeFileSync(join(pkgDir, "package.json"), JSON.stringify({ name: `${FIXTURE_SCOPE}/${name}`, version: "1.0.0" }));
+      writeFileSync(join(pkgDir, "tsconfig.json"), FIXTURE_TSCONFIG);
+      return pkgDir;
+    }
+
+    // Happy path: a real `@ts-expect-error` living in a *.check.ts file (the
+    // convention this gate is meant to protect) -- tsc actually compiles it,
+    // so it must pass clean.
+    {
+      const pkgDir = makeFixturePackage("happy");
+      writeFileSync(join(pkgDir, "src", "index.ts"), "export const x = 1;\n");
+      mkdirSync(join(pkgDir, "src", "internal"), { recursive: true });
+      writeFileSync(
+        join(pkgDir, "src", "internal", "contract.check.ts"),
+        '// @ts-expect-error -- fixture: a real, compiled contract check\nconst wrong: number = "not a number";\n',
+      );
+      const r = run("node", [TYPECHECKED, pkgDir, "--json"]);
+      let report;
+      try { report = JSON.parse(r.out); } catch { report = null; }
+      check("passes a real assertion inside a *.check.ts file tsc compiles", r.code === 0 && report?.ok === true, `exit ${r.code}: ${r.out.slice(0, 300)}`);
+      check("counts the real assertion as protected, not a finding", report?.findings?.length === 0, `expected zero findings, got ${JSON.stringify(report?.findings)}`);
+    }
+
+    // The core regression: the exact same directive shape, but living in a
+    // *.test.ts file -- tsc never compiles it, so it must be caught.
+    {
+      const pkgDir = makeFixturePackage("inert");
+      writeFileSync(join(pkgDir, "src", "index.ts"), "export const x = 1;\n");
+      writeFileSync(
+        join(pkgDir, "src", "index.test.ts"),
+        [
+          'import { describe, it } from "vitest";',
+          'describe("x", () => {',
+          '  it("is inert", () => {',
+          "    // @ts-expect-error -- fixture: this directive is inert, index.test.ts is excluded from tsc",
+          '    const wrong: number = "not a number";',
+          "  });",
+          "});",
+          "",
+        ].join("\n"),
+      );
+      const r = run("node", [TYPECHECKED, pkgDir, "--json"]);
+      let report;
+      try { report = JSON.parse(r.out); } catch { report = null; }
+      check("catches a @ts-expect-error planted in a *.test.ts file", r.code === 1 && report?.ok === false, `exit ${r.code}: ${r.out.slice(0, 300)}`);
+      check(
+        "names the exact inert file and line",
+        (report?.findings ?? []).some((f) => f.file === "src/index.test.ts" && f.line === 4),
+        `expected a finding at src/index.test.ts:4, got ${JSON.stringify(report?.findings)}`,
+      );
+    }
+
+    // A comment that merely TALKS ABOUT the directive (backtick-quoted,
+    // mid-sentence) must not be mistaken for the directive itself -- the
+    // same shape as this repo's own packages/ui/src/atoms/Icon.test.tsx.
+    // Regression guard for the gate's own false-positive rate.
+    {
+      const pkgDir = makeFixturePackage("prose");
+      writeFileSync(join(pkgDir, "src", "index.ts"), "export const x = 1;\n");
+      writeFileSync(
+        join(pkgDir, "src", "index.test.ts"),
+        [
+          'import { it } from "vitest";',
+          'it("mentions the directive without using it", () => {',
+          "  // `@ts-expect-error` written here would be inert -- this comment",
+          "  // just explains that, it is not itself a directive.",
+          "  const ok: number = 1;",
+          "});",
+          "",
+        ].join("\n"),
+      );
+      const r = run("node", [TYPECHECKED, pkgDir, "--json"]);
+      let report;
+      try { report = JSON.parse(r.out); } catch { report = null; }
+      check("does not flag prose that only mentions @ts-expect-error", r.code === 0 && report?.ok === true, `exit ${r.code}: ${r.out.slice(0, 300)}`);
+    }
+
+    // Fail-closed: every way this gate can fail to determine an answer must
+    // exit 2, never share an exit code with a real pass (0) or finding (1).
+    {
+      const missingTsconfig = join(dir, "missing-tsconfig");
+      mkdirSync(join(missingTsconfig, "src"), { recursive: true });
+      writeFileSync(join(missingTsconfig, "package.json"), '{"name":"x"}');
+      writeFileSync(join(missingTsconfig, "src", "index.ts"), "export const x = 1;\n");
+      const r1 = run("node", [TYPECHECKED, missingTsconfig]);
+      check("fails closed when tsconfig.json is missing", r1.code === 2, `exit was ${r1.code}`);
+
+      const missingSrc = join(dir, "missing-src");
+      mkdirSync(missingSrc, { recursive: true });
+      writeFileSync(join(missingSrc, "package.json"), '{"name":"x"}');
+      writeFileSync(join(missingSrc, "tsconfig.json"), FIXTURE_TSCONFIG);
+      const r2 = run("node", [TYPECHECKED, missingSrc]);
+      check("fails closed when src/ is missing", r2.code === 2, `exit was ${r2.code}`);
+
+      const brokenTsconfig = join(dir, "broken-tsconfig");
+      mkdirSync(join(brokenTsconfig, "src"), { recursive: true });
+      writeFileSync(join(brokenTsconfig, "package.json"), '{"name":"x"}');
+      writeFileSync(join(brokenTsconfig, "tsconfig.json"), "not valid json");
+      writeFileSync(join(brokenTsconfig, "src", "index.ts"), "export const x = 1;\n");
+      const r3 = run("node", [TYPECHECKED, brokenTsconfig]);
+      check("fails closed when tsconfig.json does not parse", r3.code === 2, `exit was ${r3.code}`);
+
+      const emptySrc = join(dir, "empty-src");
+      mkdirSync(join(emptySrc, "src"), { recursive: true });
+      writeFileSync(join(emptySrc, "package.json"), '{"name":"x"}');
+      writeFileSync(join(emptySrc, "tsconfig.json"), FIXTURE_TSCONFIG);
+      const r4 = run("node", [TYPECHECKED, emptySrc]);
+      check("fails closed when tsc resolves zero files under src/", r4.code === 2, `exit was ${r4.code}`);
+
+      for (const r of [r1, r2, r3, r4]) {
+        check("a fail-closed case never prints a bare PASS", !/^check-typechecked-assertions: OK\.$/m.test(r.out), "a fail-closed case's output looked like a pass");
+      }
+    }
   }
 } finally {
   rmSync(work, { recursive: true, force: true });
