@@ -33,7 +33,7 @@ const THUMB_BASE = "h-3.5 w-3.5 rounded-pill bg-surface-raised transition-transf
  * this is its own component built on react-aria-components' own `Switch`
  * rather than a `Checkbox` with different styling.
  */
-export function Switch({ children, className, ...rest }: SwitchProps) {
+export function Switch({ children, className, style, ...rest }: SwitchProps) {
   return (
     <AriaSwitch
       {...rest}
@@ -45,6 +45,7 @@ export function Switch({ children, className, ...rest }: SwitchProps) {
       }
       style={(renderProps) => ({
         opacity: renderProps.isDisabled ? UI_ALPHA_DISABLED : undefined,
+        ...(typeof style === "function" ? style(renderProps) : style),
       })}
     >
       {(renderProps) => (

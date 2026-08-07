@@ -900,7 +900,16 @@ above (`internal/cx.test.ts`), two tests are worth calling out specifically:
   real name is `surface-raised`) would compile clean and render with zero
   applied background, with no error anywhere to explain why. This is the
   same failure mode as a missing `@source` line above, just at the level of
-  a single class name instead of the whole build.
+  a single class name instead of the whole build. A per-prefix allow-list
+  (`ALLOWED_SUFFIXES` in the test file) skips Tailwind's own non-token
+  keywords — alignment/wrap/overflow keywords and universal color keywords
+  under `text-`, the same colors plus directional/style keywords under
+  `border-`, `none`/`full` under `rounded-`, the font-weight scale under
+  `font-`, and `px`/`auto` under the spacing prefixes — each verified
+  against a real `@tailwindcss/cli@4.3.3` compile, not assumed from
+  documentation. An unknown suffix that isn't in that list and isn't a real
+  token still fails the build; only Tailwind's own reserved names are
+  exempt.
 - **`ladder.test.ts`** scans every file under `src/atoms/`, `src/blocks/`,
   and `src/shell/` for import specifiers that climb UP the ladder, and
   fails the build if it finds one — the ladder invariant (`atoms` → `blocks`

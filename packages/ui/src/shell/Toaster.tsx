@@ -125,11 +125,10 @@ function ToasterItem({ toast: queuedToast }: { toast: QueuedToast<ToastRecord> }
       </ToasterContent>
       {/*
         Plain `variant="ghost"` — its default `text-ink-primary`, not this
-        toast's own status color. `Button` sets its own `style` prop
-        unconditionally (a `(renderProps) => {...}` function, in
-        `Button.tsx`), so a `style` passed in here would be silently
-        dropped rather than merged with it; matching the glyph's color to
-        the variant isn't worth reaching around that.
+        toast's own status color. Matching the glyph's color to the variant
+        would need either a fifth `Button` variant just for this one glyph
+        or a `style` override on the color — not worth it for a "×" that
+        already reads clearly in the default ink color.
       */}
       <Button slot="close" variant="ghost" size="sm" className="shrink-0 px-xs py-xs">
         <span aria-hidden="true">×</span>

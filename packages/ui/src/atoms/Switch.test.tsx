@@ -18,6 +18,22 @@ describe("Switch", () => {
     expect(label?.className).not.toContain("gap-sm");
   });
 
+  it("forwards a consumer style prop, and the consumer's conflicting property wins the merge", () => {
+    render(
+      <Switch isDisabled style={{ opacity: 0.42, marginTop: "8px" }}>
+        Email notifications
+      </Switch>,
+    );
+    const toggle = screen.getByRole("switch", { name: "Email notifications" });
+    const label = toggle.closest("label") as HTMLLabelElement;
+    // The component's own disabled-state opacity would otherwise apply here
+    // (see UI_ALPHA_DISABLED in Switch.tsx) — the consumer's explicit value
+    // must win instead of being silently dropped.
+    expect(label.style.opacity).toBe("0.42");
+    // A non-conflicting property the component never sets must survive too.
+    expect(label.style.marginTop).toBe("8px");
+  });
+
   it("toggles on click and on Space, starting unchecked by default", async () => {
     const onChange = vi.fn();
     const user = userEvent.setup();

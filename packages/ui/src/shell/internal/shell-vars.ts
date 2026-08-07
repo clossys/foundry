@@ -61,30 +61,26 @@ export const UI_Z_TOAST = "var(--ui-z-toast, 60)";
 /**
  * Hairline divider width, shared by every single-edge border `Shell`'s
  * chrome regions draw (`Header`'s bottom edge, `Footer`'s top edge,
- * `SideNav`'s right edge, `Rail`'s left edge). Applied via inline
- * `border*Width`/`border*Color` rather than a Tailwind directional class
- * (`border-b`, `border-r`, ...): this package's own token-parity check
- * reads ANY `border-<suffix>` utility as a color-token reference (Tailwind
- * overloads the `border-` prefix for width, style, AND color — the same
- * reason `Menu.tsx`'s separator avoids `border-t`/`border-b` for its `<hr>`,
- * see the comment there), and `<suffix>` here would be `b`/`r`/`l`/`t` —
- * not a real token, a false positive the check would otherwise reject the
- * build over.
+ * `SideNav`'s right edge, `Rail`'s left edge). Border WIDTH stays a raw
+ * `var()` read applied via inline style rather than a Tailwind class: there
+ * is no `@theme` namespace for border-width in Tailwind v4 (see
+ * `@vespeneventures/tokens`' naming rule — border width is a "case 2",
+ * `--ui-`-prefixed token for exactly that reason), so a Tailwind class can
+ * only ever reach Tailwind's own hardcoded `1px`, never this token's actual
+ * value. Border STYLE and COLOR, unlike width, map onto real token families
+ * (`--color-line-base`) and are applied as ordinary Tailwind classes
+ * (`border-b border-line-base`, etc.) on each region in `Shell.tsx`.
  *
- * The literal `1px` below, not a `var(--ui-border-hairline, 1px)` read:
- * that token's own PROPERTY NAME contains the substring `border-hairline`,
- * which the same token-parity check's class-name scan matches as if it
- * were a `border-hairline` Tailwind utility (an unrelated false positive —
- * a raw `var()` read's property name isn't a class name at all, but the
- * check's regex doesn't know that and finds the substring anyway). Hairline
- * width is, in practice, exactly as stable a value as `1px` for the reason
- * the token itself is `brandable: false` in `@vespeneventures/tokens` — a
- * brand can restyle every color here, never this.
+ * This used to be hardcoded to the literal `"1px"` instead of reading the
+ * token: `--ui-border-hairline`'s own PROPERTY NAME contains the substring
+ * `border-hairline`, which `token-parity.test.ts`'s class-name scan used to
+ * match as if it were a `border-hairline` Tailwind utility — a false
+ * positive, since a raw `var()` read's property name isn't a class name at
+ * all. That check now blanks out custom-property names before scanning for
+ * classes (see `blankCustomProperties` there), so the real token read is
+ * restored here.
  */
-export const UI_BORDER_HAIRLINE = "1px";
-
-/** Paired with `UI_BORDER_HAIRLINE` — see its own comment for why this isn't the `border-line-base` Tailwind class. */
-export const UI_COLOR_LINE_BASE = "var(--color-line-base, oklch(0.8761 0 0))";
+export const UI_BORDER_HAIRLINE = "var(--ui-border-hairline, 1px)";
 
 /**
  * Stacking for the skip-to-content link while focused. Needs to sit above

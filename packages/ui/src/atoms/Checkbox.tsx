@@ -44,7 +44,7 @@ const BOX_BASE =
  * both `isIndeterminate` (some rows selected) and `isSelected` (all rows
  * selected) from its own selection state.
  */
-export function Checkbox({ children, className, ...rest }: CheckboxProps) {
+export function Checkbox({ children, className, style, ...rest }: CheckboxProps) {
   return (
     <AriaCheckbox
       {...rest}
@@ -56,6 +56,7 @@ export function Checkbox({ children, className, ...rest }: CheckboxProps) {
       }
       style={(renderProps) => ({
         opacity: renderProps.isDisabled ? UI_ALPHA_DISABLED : undefined,
+        ...(typeof style === "function" ? style(renderProps) : style),
       })}
     >
       {(renderProps) => (

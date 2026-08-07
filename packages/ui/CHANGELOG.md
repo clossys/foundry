@@ -54,3 +54,23 @@ All notable changes to this package are documented here. Format follows
   import `views/`. `shell/` importing `atoms/` (and `blocks/`, though
   nothing under `shell/` currently does) remains permitted, the same
   direction `blocks/` importing `atoms/` already was.
+
+### Fixed
+
+- `token-parity.test.ts` no longer false-positives on Tailwind's own
+  non-token utility keywords (`text-center`, `border-b`, `mx-auto`,
+  `text-inherit`, `bg-transparent`, and more — see the new
+  `ALLOWED_SUFFIXES` allow-list, verified against a real
+  `@tailwindcss/cli@4.3.3` compile) or on a token's own property name
+  containing a Tailwind-class-shaped substring (`--ui-border-hairline`
+  matching as if it were a `border-hairline` class). Both false positives
+  had forced real workarounds: `EmptyState` had dropped `text-center` for
+  a flex-only centering approach, `Shell` had moved several classes into
+  inline `style`, and — the most serious instance — `Shell` had abandoned
+  the `--ui-border-hairline` token entirely for a hardcoded `"1px"`. All
+  three are restored.
+- `Button`, `Switch`, and `Checkbox` no longer silently drop a
+  consumer-supplied `style` prop. Each set `style` unconditionally via a
+  render-prop function; a `style` object or function passed by a consumer
+  is now merged in, with the consumer's values winning on conflict — the
+  same precedence `className` already had via `cx`/`tailwind-merge`.

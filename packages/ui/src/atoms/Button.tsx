@@ -44,9 +44,14 @@ const SIZE_CLASSES: Record<ButtonSize, string> = {
  *
  * `className` is merged with `tailwind-merge` (via the internal `cx`
  * helper), so a conflicting utility passed by the consumer always wins
- * over this component's own defaults.
+ * over this component's own defaults. `style` is merged the same way: this
+ * component's own disabled-opacity/focus-ring styles apply first, then the
+ * consumer's own `style` (object or render-prop function, matching
+ * react-aria-components' own `style` shape) is spread on top, so a
+ * property the consumer sets always wins over this component's default for
+ * that same property.
  */
-export function Button({ variant = "primary", size = "md", className, ...rest }: ButtonProps) {
+export function Button({ variant = "primary", size = "md", className, style, ...rest }: ButtonProps) {
   return (
     <AriaButton
       {...rest}
@@ -61,6 +66,7 @@ export function Button({ variant = "primary", size = "md", className, ...rest }:
       style={(renderProps) => ({
         opacity: renderProps.isDisabled ? UI_ALPHA_DISABLED : undefined,
         boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined,
+        ...(typeof style === "function" ? style(renderProps) : style),
       })}
     />
   );
