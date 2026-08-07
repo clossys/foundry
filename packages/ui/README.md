@@ -15,10 +15,12 @@ rules" below for what distinguishes all four rungs and how a new component
 gets assigned to one.
 
 - **`atoms`** — single-purpose: composes no other atom, or its parts are
-  homogeneous repeats rather than named regions. Twenty-two ship: `Button`,
-  `TextField`, `Badge`, `Card`, `Breadcrumb`, `Link`, `Checkbox`, `Switch`,
-  `Select`, `Textarea`, `Avatar`, `Spinner`, `Menu`, `Dialog`, `Tabs`,
-  `Table`, `Field`, `Skeleton`, `Tooltip`, `Banner`, `RadioGroup`, `Popover`.
+  homogeneous repeats rather than named regions. Thirty ship, the complete
+  set for this layer: `Button`, `TextField`, `Badge`, `Card`, `Breadcrumb`,
+  `Link`, `Checkbox`, `Switch`, `Select`, `Textarea`, `Avatar`, `Spinner`,
+  `Menu`, `Dialog`, `Tabs`, `Table`, `Field`, `Skeleton`, `Tooltip`, `Banner`,
+  `RadioGroup`, `Popover`, `DateField`, `ComboBox`, `SearchField`,
+  `FileTrigger`, `Disclosure`, `ProgressBar`, `Separator`, `Chip`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
   with a real job on a page. Twelve ship: `PageHeader`, `EmptyState`,
@@ -197,8 +199,9 @@ costs nothing; a missing one costs every component's styling.
 
 - **`react-aria-components`** — every interactive atom (`Button`,
   `TextField`, `Link`, `Checkbox`, `Switch`, `Select`, `Textarea`, `Menu`,
-  `Dialog`, `Tabs`, `Table`, `Tooltip`, `RadioGroup`, `Popover`) is built on
-  its primitives rather than a hand-rolled `<button>`/`<input>`/`<a>`. It
+  `Dialog`, `Tabs`, `Table`, `Tooltip`, `RadioGroup`, `Popover`, `DateField`,
+  `ComboBox`, `SearchField`, `FileTrigger`, `Disclosure`, `ProgressBar`) is
+  built on its primitives rather than a hand-rolled `<button>`/`<input>`/`<a>`. It
   supplies keyboard interaction (Enter/Space activation, focus management,
   arrow-key navigation), the ARIA attributes a screen reader needs
   (`aria-invalid`, `aria-describedby` linking an input to its error text,
@@ -230,11 +233,42 @@ costs nothing; a missing one costs every component's styling.
   hover-AND-focus opening, Escape-to-dismiss, and the warm-up/cool-down
   delay between tooltips shown in quick succession; `RadioGroup` builds on
   `RadioGroup`/`Radio` for roving-tabindex arrow-key navigation between
-  options and `role="radiogroup"`/`role="radio"`/`aria-checked` wiring.
-  None of that behavior is reimplemented here — it would be easy to get
-  subtly wrong hand-rolled, which is the whole reason this package leans on
+  options and `role="radiogroup"`/`role="radio"`/`aria-checked` wiring;
+  `DateField` builds on `DateField`/`DateInput`/`DateSegment` for
+  per-segment keyboard editing, auto-advance between segments, and
+  locale-correct segment order; `ComboBox` builds on `ComboBox`/`Input`/
+  `Button`/`Popover`/`ListBox`/`ListBoxItem` for live filtering plus every
+  behavior `Select` already gets from the same underlying popover/listbox
+  shape; `SearchField` builds on `SearchField`/`Input`/`Button` for
+  `type="search"` semantics, a clear button wired through context, and
+  Escape-to-clear; `FileTrigger` builds on `FileTrigger` for OS file-picker
+  access from an arbitrary pressable trigger; `Disclosure` builds on
+  `Disclosure`/`DisclosurePanel` for `aria-expanded`/`aria-controls` wiring
+  and keeping collapsed content in the DOM (toggling `hidden`, not
+  mounting/unmounting); `ProgressBar` builds on `ProgressBar` for
+  `role="progressbar"`/`aria-valuenow`/`aria-valuetext` wiring, including
+  correctly omitting `aria-valuenow` while indeterminate. `Chip`'s remove
+  control is react-aria-components' own `Button` (unstyled, no props of its
+  own beyond `onPress`/`aria-label`), for the same Enter/Space/focus-visible
+  handling every other interactive control here gets; `Separator` builds on
+  `Separator` for a real `<hr>` (horizontal) or `role="separator"` `<div>`
+  (vertical) rather than a `<div>` styled to look like a rule. None of that
+  behavior is reimplemented here — it would be easy to get subtly wrong
+  hand-rolled, which is the whole reason this package leans on
   react-aria-components for every interactive atom rather than building any
   of it from scratch.
+- **`@internationalized/date`** — `DateField`'s `value`/`defaultValue` are
+  react-stately `DateValue`s (a `CalendarDate`, `CalendarDateTime`, or
+  `ZonedDateTime`), not a native JS `Date` or an ISO string: a plain `Date`
+  has no way to represent "just a date" without smuggling in a timezone,
+  which is exactly the ambiguity a calendar-aware type exists to avoid.
+  react-aria-components' own date primitives are built around this type
+  internally regardless of whether a consumer ever imports the package
+  directly — but constructing an initial or controlled value at all
+  (`parseDate("2024-01-15")`, `new CalendarDate(2024, 1, 15)`) means a
+  consumer of `DateField` needs it too, so it ships here as a real
+  `dependencies` entry rather than staying an unlisted transitive of
+  `react-aria-components`.
 - **`tailwind-merge`** — every atom accepts a `className` prop, and a
   consumer's value has to reliably win over this package's own default
   classes. Two Tailwind utilities that set the same CSS property have
@@ -988,6 +1022,246 @@ open, everything outside the popover is `aria-hidden` — the same choice
 react-aria-components' `isNonModal` escape hatch (reserved, per its own
 docs, for components "designed to handle this situation carefully", which a
 general-purpose overlay primitive is not).
+
+### `DateField`
+
+```tsx
+import { DateField } from "@vespeneventures/ui/atoms";
+import { CalendarDate } from "@internationalized/date";
+
+function StartDateField() {
+  return (
+    <DateField
+      label="Start date"
+      description="When the plan begins."
+      defaultValue={new CalendarDate(2024, 1, 15)}
+      onChange={(date) => setStartDate(date)}
+    />
+  );
+}
+```
+
+Segmented, keyboard-editable date entry — the same label/description/error
+surface `TextField` bundles with its own `<input>`, for a date value
+instead of free text. Built on react-aria-components' `DateField` +
+`DateInput` + `DateSegment`, which render each unit (month/day/year, and
+time units for a `granularity` finer than `"day"`) as its own focusable
+segment, with arrow-key increment/decrement per segment, automatic advance
+to the next segment on a complete entry, and locale-correct segment order
+and separators.
+
+`value`/`defaultValue` are react-stately `DateValue`s (`CalendarDate`,
+`CalendarDateTime`, or `ZonedDateTime`) from `@internationalized/date`, not
+a native JS `Date` — see "Why these dependencies" above for why that
+package ships as a real dependency of this one rather than an unlisted
+transitive of `react-aria-components`.
+
+A full `DatePicker` (this field plus a calendar-grid popover) was
+considered and deliberately NOT built instead: react-aria-components' own
+`DatePicker` composes a `Calendar` internally, and `Calendar` isn't one of
+this package's atoms (see "What's deliberately not here") — shipping
+`DatePicker` would mean building that calendar grid as an unavoidable side
+effect of a component this package wasn't asked for. `DateField` alone —
+direct keyboard entry, no calendar — is already complete on its own.
+
+### `ComboBox`
+
+```tsx
+import { ComboBox } from "@vespeneventures/ui/atoms";
+
+function AssigneeField() {
+  return (
+    <ComboBox
+      label="Assignee"
+      placeholder="Search people"
+      options={people.map((p) => ({ id: p.id, label: p.name }))}
+      onChange={(id) => setAssignee(id)}
+    />
+  );
+}
+```
+
+A searchable, filterable single-choice field — `Select`'s sibling for an
+option set too large to scan as a closed list. Built on
+react-aria-components' `ComboBox` composed with its OWN `Input`, `Button`,
+`Popover`, and `ListBox`/`ListBoxItem` (not this package's own `Button`
+atom — see "Atoms compose no other atom" below). `options` is a plain array
+(`{ id, label, isDisabled?, textValue? }`), the same shape `Select`'s own
+`options` uses, passed to react-aria-components as `defaultItems` so its
+built-in language-sensitive "contains" filter narrows the list as the user
+types; a consumer can supply their own `defaultFilter` for a different
+match strategy.
+
+### `SearchField`
+
+```tsx
+import { SearchField } from "@vespeneventures/ui/atoms";
+
+function PromptSearch() {
+  return <SearchField label="Search prompts" onChange={(value) => setQuery(value)} />;
+}
+```
+
+A search input with a built-in clear affordance — `TextField`'s sibling for
+a query that's typed and then cleared. Built on react-aria-components'
+`SearchField` + `Input` + `Button`, which supply a real `type="search"`
+input (native OS chrome a plain `type="text"` never gets), a clear button
+wired entirely through context (its `aria-label`, its `onPress`, and its
+conditional presence — this component only decides WHEN to render it,
+based on the field's own `isEmpty` render-prop state), and Escape clearing
+the field.
+
+### `FileTrigger`
+
+```tsx
+import { FileTrigger, Button } from "@vespeneventures/ui/atoms";
+
+function AttachmentPicker() {
+  return (
+    <FileTrigger acceptedFileTypes={["image/png", "image/jpeg"]} onSelect={(files) => handleFiles(files)}>
+      <Button variant="secondary">Choose photo</Button>
+    </FileTrigger>
+  );
+}
+```
+
+File selection wired onto an arbitrary pressable trigger — react-aria-
+components' own `FileTrigger`, which manages a permanently-hidden
+`<input type="file">`, resets its value before every open (so picking the
+SAME file twice in a row still fires `onSelect` a second time), and wires
+`acceptedFileTypes`/`allowsMultiple`/`defaultCamera`. Deliberately unstyled
+beyond that — it has no visual surface of its own; every visible
+affordance, including any disabled state, belongs to whichever trigger
+element (this package's own `Button`, as above, or react-aria-components'
+own) the consumer supplies. `className` is deliberately NOT accepted here,
+unlike every other atom in this package — see `FileTrigger.tsx`'s own doc
+comment for why accepting it would be a silent no-op.
+
+Deliberately out of scope: upload progress, drag-and-drop, and any preview
+of the selected files. `onSelect` hands back the browser's own `FileList`
+and stops there — a block built on top of this (and this package's own
+`ProgressBar`, for upload progress) owns the rest.
+
+### `Disclosure`
+
+```tsx
+import { Disclosure } from "@vespeneventures/ui/atoms";
+
+function AdvancedOptions() {
+  return (
+    <Disclosure title="Advanced options">
+      <p>Extra configuration goes here.</p>
+    </Disclosure>
+  );
+}
+```
+
+A single expandable/collapsible section of content. Built on
+react-aria-components' `Disclosure` + `DisclosurePanel` — both ship at the
+`react-aria-components@1.20.0` version this package installs, so no
+`<details>`-based fallback was needed. Between them these supply
+`aria-expanded` on the trigger and `aria-controls` pointing at the panel's
+id (with `aria-labelledby` the other direction), toggling on Enter/Space in
+addition to a click, and keeping the panel's content in the DOM at all
+times (toggling its `hidden` attribute rather than mounting/unmounting).
+The trigger is react-aria-components' own `Button`, given `slot="trigger"`
+— not this package's own `Button` atom, the same layering reasoning
+`Select`'s and `ComboBox`'s own sections above document.
+
+### `ProgressBar`
+
+```tsx
+import { ProgressBar } from "@vespeneventures/ui/atoms";
+
+function UploadProgress({ percentComplete }: { percentComplete: number }) {
+  return <ProgressBar label="Uploading" value={percentComplete} />;
+}
+
+function ProcessingIndicator() {
+  return <ProgressBar label="Processing" isIndeterminate />;
+}
+```
+
+Determinate and indeterminate progress. Built on react-aria-components' own
+`ProgressBar` for `role="progressbar"`/`aria-valuenow`/`aria-valuemin`/
+`aria-valuemax`/`aria-valuetext` wiring — including correctly OMITTING
+`aria-valuenow` entirely while `isIndeterminate`, per the ARIA spec, rather
+than reporting a value that doesn't exist. `value`/`minValue`/`maxValue`
+(0/100 by default) pass straight through; `label` is required and rendered
+via react-aria-components' own `Label`, reading `ProgressBar`'s context the
+same way `TextField`'s own `Label` does.
+
+### `Separator`
+
+```tsx
+import { Separator } from "@vespeneventures/ui/atoms";
+
+function SectionDivider() {
+  return <Separator />;
+}
+
+function ToolbarDivider() {
+  return <Separator orientation="vertical" decorative />;
+}
+```
+
+A visual divider between two groups of content. Built on react-aria-
+components' own `Separator`, which renders a real `<hr>` for the default
+horizontal orientation (an implicit `role="separator"` from the element
+itself) and a `<div role="separator" aria-orientation="vertical">` for the
+vertical one. `decorative` (default `false`) marks a separator as purely
+visual — `aria-hidden`, removing it from the accessibility tree regardless
+of role — for a divider with no real content boundary to announce (a
+hairline between two icons in a toolbar, say). `Menu.Separator` (see
+`Menu` above) builds on this same primitive for the menu-specific case of a
+divider between item groups; this is the general one, for anywhere else a
+rule is needed.
+
+### `Chip`
+
+```tsx
+import { Chip } from "@vespeneventures/ui/atoms";
+
+function TeamFilter({ teams, onRemove }: { teams: string[]; onRemove: (team: string) => void }) {
+  return (
+    <div className="flex flex-wrap gap-xs">
+      {teams.map((team) => (
+        <Chip key={team} onRemove={() => onRemove(team)} removeLabel={`Remove ${team}`}>
+          {team}
+        </Chip>
+      ))}
+    </div>
+  );
+}
+```
+
+A removable label — distinct from `Badge`, which is purely static. Under
+this package's own "does the variant change the SET of named regions?"
+test (see "Placement rules" above, the variant rule), `Chip` and `Badge`
+are two different components rather than one with a `removable` prop:
+`Badge` has exactly one region (the label); `Chip` has two — a label region
+AND a remove-affordance region, each doing a different job — so the region
+SET differs, a structural difference rather than a purely visual one.
+
+Still ships as an ATOM, not a block, despite having two simultaneously-
+visible regions: the label and the remove control are one small,
+indivisible interactive unit — removing the chip removes the whole thing,
+label included — the same way `Checkbox`'s box + label text, or `Switch`'s
+track + thumb + label, already stay one atom despite each having multiple
+visually distinct parts. Neither is an independently composable named
+region the way `PageHeader`'s title/description/actions are (see
+"Placement rules", test 2).
+
+`onRemove` and `removeLabel` are enforced together at the TYPE level, not
+just documented: `removeLabel` is required whenever `onRemove` is supplied.
+"Remove" alone never says WHICH chip it removes to a screen reader user
+tabbing through several at once — the accessible name has to identify the
+chip (`"Remove Engineering"`), not just the action. Omit `onRemove`
+entirely for a label-only chip with no remove affordance at all. The remove
+control is react-aria-components' own `Button` (not this package's own
+`Button` atom, the same layering reasoning `Select`'s and `Disclosure`'s
+own sections already document), for the same keyboard/focus-visible
+handling every other interactive control in this package gets.
 
 ## Blocks
 
@@ -1984,6 +2258,23 @@ app/
 | `RadioGroupRadioProps` | type | Props for `RadioGroup.Radio`: `children`, `description`, `className`, plus everything react-aria-components' own `Radio` accepts. |
 | `Popover` | component | The general anchored-overlay primitive built on react-aria-components' `DialogTrigger`/`Popover`/`Dialog`. |
 | `PopoverProps` | type | Props for `Popover`: `trigger`, `children` (may be a function receiving `{ close }`), `placement`, `offset`, `className`, `style`, plus most of react-aria-components' own `DialogTrigger` props. |
+| `DateField` | component | Segmented, keyboard-editable date entry built on react-aria-components' `DateField`/`DateInput`/`DateSegment`. |
+| `DateFieldProps` | type | Props for `DateField`: `label`, `description`, `errorMessage`, `className`, `inputClassName`, plus everything react-aria-components' own `DateField` accepts (`value`/`defaultValue` as `@internationalized/date` `DateValue`s). |
+| `ComboBox` | component | Searchable/filterable single-choice field built on react-aria-components' `ComboBox`/`Input`/`Button`/`Popover`/`ListBox`/`ListBoxItem`. |
+| `ComboBoxProps` | type | Props for `ComboBox`: `label`, `description`, `errorMessage`, `placeholder`, `options`, `className`, `inputClassName`, plus everything react-aria-components' own `ComboBox` accepts. |
+| `ComboBoxOption` | type | One option: `id`, `label`, `isDisabled?`, `textValue?`. |
+| `SearchField` | component | Search input with a built-in clear affordance, built on react-aria-components' `SearchField`/`Input`/`Button`. |
+| `SearchFieldProps` | type | Props for `SearchField`: `label`, `description`, `errorMessage`, `placeholder`, `className`, `inputClassName`, plus everything react-aria-components' own `SearchField` accepts. |
+| `FileTrigger` | component | File selection wired onto an arbitrary pressable trigger, built on react-aria-components' `FileTrigger`. |
+| `FileTriggerProps` | type | Props for `FileTrigger`: `children` (the pressable trigger), plus everything react-aria-components' own `FileTrigger` accepts (`acceptedFileTypes`, `allowsMultiple`, `onSelect`, ...). No `className` — see `FileTrigger.tsx`'s own doc comment for why. |
+| `Disclosure` | component | A single expandable/collapsible section, built on react-aria-components' `Disclosure`/`DisclosurePanel`. |
+| `DisclosureProps` | type | Props for `Disclosure`: `title`, `children`, `className`, plus most of react-aria-components' own `Disclosure` props. |
+| `ProgressBar` | component | Determinate/indeterminate progress built on react-aria-components' own `ProgressBar`. |
+| `ProgressBarProps` | type | Props for `ProgressBar`: `label`, `className`, plus everything react-aria-components' own `ProgressBar` accepts (`value`, `minValue`, `maxValue`, `isIndeterminate`, ...). |
+| `Separator` | component | Visual divider built on react-aria-components' own `Separator`. |
+| `SeparatorProps` | type | Props for `Separator`: `orientation`, `decorative`, `className`, `style`, plus most of react-aria-components' own `Separator` props. |
+| `Chip` | component | A removable label: a label region plus a remove-affordance region. Distinct from `Badge`, which is static. |
+| `ChipProps` | type | Props for `Chip`: `children`, `isDisabled`, `className`, `style`, plus `onRemove`/`removeLabel` (typed together — `removeLabel` is required whenever `onRemove` is supplied). |
 | `PageHeader` | component | Page banner: breadcrumb slot, title, description, actions slot. |
 | `PageHeaderProps` | type | Props for `PageHeader`: `title`, `description`, `actions`, `breadcrumb`, plus every native `<header>` attribute. |
 | `EmptyState` | component | Zero-item placeholder: icon slot, title, description, action slot. |
@@ -2045,7 +2336,10 @@ Beyond render/interaction/keyboard/ARIA tests per atom (`Button.test.tsx`,
 `Switch.test.tsx`, `Select.test.tsx`, `Textarea.test.tsx`, `Avatar.test.tsx`,
 `Spinner.test.tsx`, `Menu.test.tsx`, `Dialog.test.tsx`, `Tabs.test.tsx`,
 `Table.test.tsx`, `Field.test.tsx`, `Skeleton.test.tsx`, `Tooltip.test.tsx`,
-`Banner.test.tsx`, `RadioGroup.test.tsx`, `Popover.test.tsx`), per block
+`Banner.test.tsx`, `RadioGroup.test.tsx`, `Popover.test.tsx`,
+`DateField.test.tsx`, `ComboBox.test.tsx`, `SearchField.test.tsx`,
+`FileTrigger.test.tsx`, `Disclosure.test.tsx`, `ProgressBar.test.tsx`,
+`Separator.test.tsx`, `Chip.test.tsx`), per block
 (`PageHeader.test.tsx`, `EmptyState.test.tsx`, `DataTable.test.tsx`,
 `DetailView.test.tsx`, `Pagination.test.tsx`, `Stat.test.tsx`,
 `Form.test.tsx`, `FieldGroup.test.tsx`, `ConfirmDialog.test.tsx`,
@@ -2106,14 +2400,23 @@ out specifically:
 
 ## What's deliberately not here
 
-**Atoms:** twenty-two ship — `Button`, `TextField`, `Badge`, `Card`,
-`Breadcrumb`, `Link`, `Checkbox`, `Switch`, `Select`, `Textarea`, `Avatar`,
-`Spinner`, `Menu`, `Dialog`, `Tabs`, `Table`, `Field`, `Skeleton`, `Tooltip`,
-`Banner`, `RadioGroup`, `Popover`. No `Modal` exposed as a public atom of
+**Atoms:** thirty ship, and this is the FINAL rung of this layer — `Button`,
+`TextField`, `Badge`, `Card`, `Breadcrumb`, `Link`, `Checkbox`, `Switch`,
+`Select`, `Textarea`, `Avatar`, `Spinner`, `Menu`, `Dialog`, `Tabs`, `Table`,
+`Field`, `Skeleton`, `Tooltip`, `Banner`, `RadioGroup`, `Popover`,
+`DateField`, `ComboBox`, `SearchField`, `FileTrigger`, `Disclosure`,
+`ProgressBar`, `Separator`, `Chip`. No `Modal` exposed as a public atom of
 its own beyond what `Dialog` and `Popover` already compose internally —
 that gets added here only once something real needs a bare modal overlay
 with neither `Dialog`'s fixed trigger/content shape nor `Popover`'s
-anchored one, not speculatively.
+anchored one, not speculatively. `Slider`, `Calendar`, `NumberField`,
+`Toolbar`, and `Accordion` are all deliberately NOT here either — each is a
+real, plausible future atom, but none was asked for by this rung; `Calendar`
+in particular is why `DateField` ships alone rather than as a full
+`DatePicker` (see `DateField`'s own section above) — adding it
+speculatively, just because a related component shipped, is the exact
+un-bounded growth this package's own "variant rule" warns against one level
+up. They get added here only once something real needs them.
 
 **Blocks:** twelve ship — `PageHeader`, `EmptyState`, `DataTable`,
 `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`,

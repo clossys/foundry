@@ -4,10 +4,12 @@
  * atom is single-purpose: it either composes no other atom (`Button`,
  * `TextField`, `Badge`, `Card`, `Checkbox`, `Switch`, `Select`, `Textarea`,
  * `Avatar`, `Spinner`, `Dialog`, `Field`, `Skeleton`, `Tooltip`, `Banner`,
- * `Popover`), or its parts are homogeneous repeats rather than named regions
- * (`Breadcrumb`, `Menu`, `Tabs`, `RadioGroup` — a trail of interchangeable
- * crumbs, a list of interchangeable actions, a row of interchangeable tabs,
- * a set of interchangeable options — not a set of distinct slots). See this
+ * `Popover`, `DateField`, `ComboBox`, `SearchField`, `FileTrigger`,
+ * `Disclosure`, `ProgressBar`, `Separator`, `Chip`), or its parts are
+ * homogeneous repeats rather than named regions (`Breadcrumb`, `Menu`,
+ * `Tabs`, `RadioGroup` — a trail of interchangeable crumbs, a list of
+ * interchangeable actions, a row of interchangeable tabs, a set of
+ * interchangeable options — not a set of distinct slots). See this
  * package's README, "Placement rules", for the block/atom test this ladder
  * is built on. Anything that owns MULTIPLE NAMED regions (a title region, a
  * description region, an actions region — each different in kind, not
@@ -19,6 +21,10 @@
  * sub-components) — see `Table.tsx`'s own doc comment for why that's the
  * ladder's explicitly-allowed direction (a sibling atom, not a `blocks/`
  * import) rather than an exception to it.
+ *
+ * Thirty ship as of this file. This is the FINAL rung of the atoms layer —
+ * see the README's "What's deliberately not here" for what was left out on
+ * purpose (`Slider`, `Calendar`, `NumberField`, `Toolbar`, `Accordion`, ...).
  */
 
 export { Button } from "./Button.js";
@@ -95,3 +101,27 @@ export type { RadioGroupProps, RadioGroupRadioProps } from "./RadioGroup.js";
 
 export { Popover } from "./Popover.js";
 export type { PopoverProps } from "./Popover.js";
+
+export { DateField } from "./DateField.js";
+export type { DateFieldProps } from "./DateField.js";
+
+export { ComboBox } from "./ComboBox.js";
+export type { ComboBoxProps, ComboBoxOption } from "./ComboBox.js";
+
+export { SearchField } from "./SearchField.js";
+export type { SearchFieldProps } from "./SearchField.js";
+
+export { FileTrigger } from "./FileTrigger.js";
+export type { FileTriggerProps } from "./FileTrigger.js";
+
+export { Disclosure } from "./Disclosure.js";
+export type { DisclosureProps } from "./Disclosure.js";
+
+export { ProgressBar } from "./ProgressBar.js";
+export type { ProgressBarProps } from "./ProgressBar.js";
+
+export { Separator } from "./Separator.js";
+export type { SeparatorProps } from "./Separator.js";
+
+export { Chip } from "./Chip.js";
+export type { ChipProps } from "./Chip.js";

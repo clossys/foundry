@@ -99,6 +99,48 @@ All notable changes to this package are documented here. Format follows
   `Popover`/`Dialog` — the general anchored-overlay primitive, for content
   shapes `Menu`/`Select`/`Tooltip`'s own specific popovers don't already
   cover.
+- Eight final atoms — `DateField`, `ComboBox`, `SearchField`, `FileTrigger`,
+  `Disclosure`, `ProgressBar`, `Separator`, `Chip` — completing the `atoms`
+  layer at thirty components. `DateField` builds on react-aria-components'
+  `DateField`/`DateInput`/`DateSegment` for segmented, keyboard-editable date
+  entry (per-segment increment/decrement, auto-advance, locale-correct
+  order); its `value`/`defaultValue` are `@internationalized/date`
+  `DateValue`s, which is why that package is now a real `dependencies`
+  entry of this one, not merely an unlisted transitive of
+  react-aria-components. A full `DatePicker` was considered and deliberately
+  not built instead — it would require a `Calendar` atom this package
+  doesn't ship. `ComboBox` builds on react-aria-components' `ComboBox`
+  composed with its own `Input`/`Button`/`Popover`/`ListBox`/`ListBoxItem`
+  for a searchable, filterable single-choice field over a large option set,
+  using the same `options` array shape `Select` already established.
+  `SearchField` builds on `SearchField`/`Input`/`Button` for a search input
+  with real `type="search"` semantics, a clear button wired through
+  context, and Escape-to-clear. `FileTrigger` builds on react-aria-
+  components' own `FileTrigger` for OS file-picker access from an arbitrary
+  pressable trigger; it deliberately does not accept `className` (react-
+  aria-components' own implementation hardcodes the hidden input's
+  `className` to `""`, discarding whatever is passed) and deliberately
+  excludes upload progress, drag-and-drop, and file previews — a block's
+  job. `Disclosure` builds on `Disclosure`/`DisclosurePanel` (both shipped
+  in the `react-aria-components@1.20.0` already installed, so no
+  `<details>` fallback was needed) for a single expandable/collapsible
+  section with correct `aria-expanded`/`aria-controls` wiring and content
+  that stays in the DOM (toggling `hidden`) rather than mounting/
+  unmounting. `ProgressBar` builds on react-aria-components' own
+  `ProgressBar` for determinate and indeterminate progress, correctly
+  omitting `aria-valuenow` while indeterminate. `Separator` builds on
+  react-aria-components' own `Separator` for horizontal/vertical dividers,
+  plus a `decorative` prop (using react-aria-components' `render` escape
+  hatch, since neither `filterDOMProps`'s nor `useSeparator`'s own allowlist
+  ever forwards a passed `aria-hidden` prop onto the rendered element) for a
+  purely visual divider hidden from assistive tech. `Chip` is a removable
+  label — a label region plus a remove-affordance region — shipped as a
+  distinct component from `Badge` (which is static, one region only) rather
+  than a `removable` variant of it, per this package's own "does the
+  variant change the SET of named regions?" rule; its remove control is
+  react-aria-components' own `Button`, and `removeLabel` is required at the
+  TYPE level whenever `onRemove` is supplied, so every chip's remove control
+  gets an accessible name that identifies WHICH chip it removes.
 
 ### Changed
 
