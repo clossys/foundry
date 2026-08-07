@@ -3,7 +3,10 @@
 //
 //   node scripts/check-contamination-classes.mjs <dir> [--json] [--class N]
 //
-// Exit 0 = clean. Exit 1 = findings (any high or medium). Exit 2 = cannot run.
+// Exit 0 = clean. Exit 1 = findings (any high or medium). Exit 2 = cannot run
+// (an unreadable directory, or — see CLASS 4 below — a case that genuinely
+// could not be resolved either way, such as CLASS 4 needing git history a
+// shallow checkout can't provide).
 //
 // scripts/check-public-safety.mjs matches STRINGS: a person's name, a product,
 // a domain, an internal path. It is a denylist, and a denylist can only refuse
@@ -66,6 +69,23 @@
 //   entry — is still wrong regardless of whether the name is historical or
 //   entirely fabricated: either way, following that instruction fails
 //   today, which is the actual defect this class exists to catch.
+//
+//   The history read is only load-bearing for ONE shape: a same-scope name
+//   OUTSIDE a live instruction that isn't currently published. That's the
+//   one case a live-vs-prose context test alone cannot resolve — a
+//   genuinely retired name and a wholly fabricated one read identically in
+//   prose, so telling them apart needs an actual record of what this repo
+//   once shipped. A SHALLOW git checkout (GitHub Actions' default,
+//   `fetch-depth: 1`) makes that record silently truncated rather than
+//   absent — `git log` still succeeds, it just can't see the commit where a
+//   long-retired package was ever added. Reporting "no historical names
+//   found" as if that were a confident, reliable answer would make a
+//   shallow CI checkout treat every retired package the same as a
+//   fabricated one — the exact bug #27 exists to fix, just relocated to a
+//   clone-depth setting instead of a missing feature. So this class asks
+//   git whether its own checkout IS shallow before trusting `historicalNames`
+//   at all, and reports "cannot verify" (a third outcome, see
+//   `indeterminate` below) rather than quietly guessing wrong when it is.
 //
 // CLASS 5 — internal architecture layer/tier framing.
 //   "Layer 0 — the upstream truth", "Resource-tier", "generic-core only".
@@ -214,7 +234,7 @@ const publishedNames = loadPublishedPackageNames();
 // The set of package names this repository has EVER published, including
 // ones since retired — read from git history, not hand-maintained. A name
 // that appears as some `packages/*/package.json`'s "name" field in ANY
-// commit reachable from HEAD was, at some point, a real thing this repo
+// commit reachable from any ref was, at some point, a real thing this repo
 // shipped; a CHANGELOG entry recording ITS OWN removal is not a leak, it's
 // the whole point of a CHANGELOG (see docs/PUBLISHING.md and GH issue #27).
 // Deliberately not a hardcoded "retired" list: the moment a package is
@@ -223,8 +243,27 @@ const publishedNames = loadPublishedPackageNames();
 // of a name in this set is actually fine still depends on WHERE it appears
 // — see isInstallInstruction/isDependencyEntry below — a retired package is
 // exactly as uninstallable as one that never existed.
+//
+// `reliable` matters as much as `names`. A SHALLOW clone (GitHub Actions'
+// default `fetch-depth: 1`, unless a job opts into full history the way the
+// `safety` job's gitleaks step already does) makes `git log` succeed with
+// almost no history at all — no error to catch, just a quietly wrong
+// answer. Truncated history is indistinguishable from "this name was never
+// real" using `names` alone, so the caller is told explicitly whether the
+// history behind `names` can be trusted, and treats "cannot tell" as its
+// own outcome rather than silently reporting whichever of the two labels
+// happens to come out of a false negative.
 function loadHistoricalPackageNames(ownRepoRoot) {
-  const names = new Set();
+  const unreliable = { names: new Set(), reliable: false };
+  let shallow;
+  try {
+    shallow = execFileSync("git", ["-C", ownRepoRoot, "rev-parse", "--is-shallow-repository"], {
+      encoding: "utf8",
+    }).trim();
+  } catch {
+    return unreliable; // no git binary, or not a git checkout at all
+  }
+  if (shallow !== "false") return unreliable; // "true" (truncated), or any unexpected answer
   let log;
   try {
     log = execFileSync(
@@ -233,19 +272,16 @@ function loadHistoricalPackageNames(ownRepoRoot) {
       { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
     );
   } catch {
-    // No git binary, not a git checkout, or the command otherwise failed —
-    // degrade to "no historical names known" rather than crash. This is
-    // strictly conservative, not a fail-open: without history, a genuinely
-    // retired name just gets treated the same as a foreign one (flagged for
-    // a human to look at again), never the reverse of a foreign name being
-    // waved through as if it were historical.
-    return names;
+    return unreliable; // full clone confirmed, but the log command itself still failed
   }
+  const names = new Set();
   const nameLineRe = /^[+-]\s*"name"\s*:\s*"([^"]+)"/gm;
   for (const m of log.matchAll(nameLineRe)) names.add(m[1]);
-  return names;
+  return { names, reliable: true };
 }
-const historicalNames = loadHistoricalPackageNames(resolve(dirname(fileURLToPath(import.meta.url)), ".."));
+const { names: historicalNames, reliable: historicalNamesReliable } = loadHistoricalPackageNames(
+  resolve(dirname(fileURLToPath(import.meta.url)), ".."),
+);
 
 // The scope this SCANNED package itself publishes under, e.g. `@thecalvinhung`
 // — read from the scanned directory's own package.json `name`, never
@@ -276,6 +312,27 @@ function report(cls, severity, file, line, snippet, detail) {
     class: cls,
     className: CLASS_NAMES[cls],
     severity,
+    file: relative(rootAbs, file),
+    line,
+    snippet: snippet.trim().slice(0, 100),
+    detail,
+  });
+}
+
+// A THIRD outcome, distinct from both "findings" (a real defect) and a clean
+// run (nothing to report): a case this run genuinely could not resolve
+// either way, because it needed information (reliable git history) that
+// wasn't available. Kept as its own list rather than folded into `findings`
+// with some severity — the run-level exit code below reads this list first
+// and, if it's non-empty, exits 2 regardless of what `findings` says. A gate
+// with only pass/fail states silently turns "could not check" into
+// whichever of the two it happens to degrade toward; this is the explicit
+// third state so that never happens here.
+const indeterminate = [];
+function reportIndeterminate(cls, file, line, snippet, detail) {
+  indeterminate.push({
+    class: cls,
+    className: CLASS_NAMES[cls],
     file: relative(rootAbs, file),
     line,
     snippet: snippet.trim().slice(0, 100),
@@ -457,8 +514,27 @@ function checkClass4(file, lines) {
       // instruction, is legitimate history — a CHANGELOG naming what it
       // just removed, a comment explaining what moved where. Nothing to
       // flag. Inside a live instruction it's flagged below regardless,
-      // same as a name that was never real.
-      if (everPublished && !liveInstruction) continue;
+      // same as a name that was never real — installing it fails today
+      // either way, so THIS branch never needs to know whether the history
+      // behind `everPublished` can be trusted.
+      if (!liveInstruction) {
+        if (everPublished) continue;
+        if (!historicalNamesReliable) {
+          // The only case that genuinely needs history: a non-live,
+          // non-instruction reference. Without reliable history this run
+          // cannot tell "a real package we retired" from "always
+          // fabricated" — those look identical in prose — so this is not a
+          // clean pass and not a confident finding either.
+          reportIndeterminate(
+            4,
+            file,
+            i + 1,
+            text,
+            `names "${cleaned}" in prose, and this run cannot verify whether this repo ever published it — its own git history is unreliable here (a shallow clone, or no usable checkout). A full-history run is required to tell a legitimate reference to a retired package from a foreign one.`,
+          );
+          continue;
+        }
+      }
       const stale = staleOssName(base);
       if (stale) {
         report(4, "medium", file, i + 1, text, `names "${cleaned}" — stale reference to the pre-"-oss" name; the package now publishes as "${stale}" (see README)`);
@@ -614,15 +690,34 @@ if (wants(5)) {
 // -------------------------------------------------------------------- report
 
 if (flags.has("--json")) {
-  console.log(JSON.stringify({ root: rootAbs, repoRoot, scanned: scanFiles.length, findings }, null, 2));
-  process.exit(findings.length ? 1 : 0);
+  console.log(
+    JSON.stringify({ root: rootAbs, repoRoot, scanned: scanFiles.length, findings, indeterminate }, null, 2),
+  );
+  process.exit(indeterminate.length ? 2 : findings.length ? 1 : 0);
 }
 
 console.log(`check-contamination-classes: scanned ${scanFiles.length} files under ${rootAbs}`);
 console.log(`repo root: ${repoRoot}`);
 console.log("");
 
-if (!findings.length) {
+// Indeterminate cases are checked, and reported, BEFORE the pass/fail
+// verdict below — a run that could not resolve every case is neither a
+// clean PASS nor an ordinary FAIL; it is its own outcome (exit 2), same as
+// the walker's unreadable-directory case above. Any concrete findings are
+// still printed in full underneath, so a human has the complete picture,
+// but the exit code reports the ambiguity, not whichever of pass/fail
+// happens to be more numerous.
+if (indeterminate.length) {
+  console.log(`## COULD NOT VERIFY — ${indeterminate.length} case(s)`);
+  for (const f of indeterminate) {
+    console.log(`  CLASS ${f.class} — ${f.file}:${f.line}`);
+    console.log(`      ${f.detail}`);
+    console.log(`      > ${f.snippet}`);
+  }
+  console.log("");
+}
+
+if (!findings.length && !indeterminate.length) {
   console.log("PASS — no contamination-class findings.");
   process.exit(0);
 }
@@ -639,6 +734,14 @@ for (let cls = 1; cls <= 6; cls++) {
     console.log(`      > ${f.snippet}`);
   }
   console.log("");
+}
+
+if (indeterminate.length) {
+  console.log(
+    `CANNOT VERIFY — ${indeterminate.length} case(s) this run could not resolve (see above)` +
+      (findings.length ? `, plus ${findings.length} confirmed finding(s) across ${new Set(findings.map((f) => f.class)).size} class(es).` : "."),
+  );
+  process.exit(2);
 }
 
 console.log("## summary");

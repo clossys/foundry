@@ -753,6 +753,95 @@ try {
     check("exits 1 overall (the foreign + install-instruction findings still fail the gate)", r.code === 1, `exit was ${r.code}`);
   }
 
+  // --------------- check-contamination-classes CLASS 4: shallow clones fail closed
+  // CLASS 4's git-history read for "did this repo ever publish that name" is
+  // silently WRONG, not absent, on a shallow checkout: `git log` still
+  // succeeds, it just can't see the commit where a retired package was ever
+  // added. GitHub Actions' default checkout is shallow (fetch-depth 1) --
+  // exactly the environment the previous case above never actually tested,
+  // since this suite's own worktree always has full history. This case
+  // builds a real shallow clone (local, via `file://`, so no network) of a
+  // SYNTHETIC source repo the suite fully controls, so it pins the fix
+  // against the actual failure mode rather than this worktree's incidental
+  // full history.
+  console.log("\n# check-contamination-classes CLASS 4: fails closed on a shallow clone, not a silent wrong answer");
+  {
+    const srcRepo = join(work, "class4-shallow-src");
+    mkdirSync(join(srcRepo, "packages", "probe-lib"), { recursive: true });
+    mkdirSync(join(srcRepo, "scripts"), { recursive: true });
+    // The script reads git history rooted at wherever IT ITSELF lives (see
+    // loadHistoricalPackageNames), so a real copy of it has to actually live
+    // inside this synthetic repo to pick up ITS history instead of the real
+    // repo's -- copying the file, not just referencing CONTAM's real path.
+    cpSync(CONTAM, join(srcRepo, "scripts", "check-contamination-classes.mjs"));
+    writeFileSync(
+      join(srcRepo, "packages", "probe-lib", "package.json"),
+      JSON.stringify({ name: `${FIXTURE_SCOPE}/probe-lib`, version: "1.0.0" }, null, 2) + "\n",
+    );
+    run("git", ["-C", srcRepo, "init", "-q"]);
+    gitCommit(srcRepo, "add probe-lib");
+    run("git", ["-C", srcRepo, "rm", "-q", "-r", "packages/probe-lib"]); // retire it
+    gitCommit(srcRepo, "retire probe-lib");
+    const fullScript = join(srcRepo, "scripts", "check-contamination-classes.mjs");
+
+    const shallowClone = join(work, "class4-shallow-clone");
+    run("git", ["clone", "--depth", "1", `file://${srcRepo}`, shallowClone]);
+    const shallowScript = join(shallowClone, "scripts", "check-contamination-classes.mjs");
+
+    const fixtureDir = join(work, "class4-shallow-fixture");
+    mkdirSync(fixtureDir, { recursive: true });
+    writeFileSync(join(fixtureDir, "package.json"), JSON.stringify({ name: `${FIXTURE_SCOPE}/probe`, version: "1.0.0" }, null, 2) + "\n");
+    writeFileSync(join(fixtureDir, "CHANGELOG.md"), `## 0.2.0\n- Removed \`${FIXTURE_SCOPE}/probe-lib\`.\n`);
+
+    function parseReport(out) {
+      try {
+        return JSON.parse(out);
+      } catch {
+        return { findings: [], indeterminate: [] };
+      }
+    }
+
+    // Sanity anchor: the SAME fixture, checked by the SAME script content
+    // but from the un-cloned, full-history source repo, passes clean --
+    // proves clone depth is the only variable in the shallow case below,
+    // not some other difference between the two invocations.
+    const fullRun = run("node", [fullScript, fixtureDir, "--class", "4", "--json"]);
+    const fullReport = parseReport(fullRun.out);
+    check(
+      "sanity: the same CHANGELOG, checked with full history, passes clean",
+      fullRun.code === 0 && (fullReport.findings ?? []).length === 0 && (fullReport.indeterminate ?? []).length === 0,
+      `exit ${fullRun.code}: ${fullRun.out.slice(0, 300)}`,
+    );
+
+    const shallowRun = run("node", [shallowScript, fixtureDir, "--class", "4", "--json"]);
+    const shallowReport = parseReport(shallowRun.out);
+    check(
+      "a shallow clone (fetch-depth 1) fails CLOSED (exit 2) on the same CHANGELOG -- neither a silent pass nor a false flag",
+      shallowRun.code === 2,
+      `exit was ${shallowRun.code}: ${shallowRun.out.slice(0, 300)}`,
+    );
+    check(
+      "the shallow-clone run reports the case as indeterminate, not as a confirmed finding either way",
+      (shallowReport.indeterminate ?? []).some((f) => f.file === "CHANGELOG.md") && (shallowReport.findings ?? []).length === 0,
+      `report: ${JSON.stringify(shallowReport).slice(0, 300)}`,
+    );
+
+    // The one case that never needed history at all -- a live install
+    // instruction for a name that isn't currently live -- must still
+    // resolve determinately (exit 1) even from the SAME shallow clone.
+    const instructionFixture = join(work, "class4-shallow-instruction-fixture");
+    mkdirSync(instructionFixture, { recursive: true });
+    writeFileSync(join(instructionFixture, "package.json"), JSON.stringify({ name: `${FIXTURE_SCOPE}/probe`, version: "1.0.0" }, null, 2) + "\n");
+    writeFileSync(join(instructionFixture, "install.md"), `\`\`\`\nnpm install ${FIXTURE_SCOPE}/probe-lib\n\`\`\`\n`);
+    const instructionRun = run("node", [shallowScript, instructionFixture, "--class", "4", "--json"]);
+    const instructionReport = parseReport(instructionRun.out);
+    check(
+      "an install-instruction case still resolves determinately (exit 1) from the same shallow clone -- it never needed history",
+      instructionRun.code === 1 && (instructionReport.indeterminate ?? []).length === 0,
+      `exit ${instructionRun.code}: ${instructionRun.out.slice(0, 300)}`,
+    );
+  }
+
   // ---------------------------------------------------- check-readme-parity
   console.log("\n# check-readme-parity: README vs. real exports");
   {
