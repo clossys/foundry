@@ -1,0 +1,76 @@
+{
+  "name": "@vespeneventures/icons",
+  "version": "0.1.0",
+  "private": false,
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "README.md",
+    "LICENSE",
+    "THIRD-PARTY-NOTICES.md"
+  ],
+  "sideEffects": false,
+  "description": "A small, evidence-picked set of UI icons for @vespeneventures/tokens-based interfaces: currentColor, token-scale sizing, an accessibility contract enforced at compile time, and a createIcon() seam for adding your own without forking.",
+  "keywords": [
+    "icons",
+    "svg",
+    "design-system",
+    "react",
+    "accessibility",
+    "typescript"
+  ],
+  "author": "Calvin Hung",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vespeneventures/foundry.git",
+    "directory": "packages/icons"
+  },
+  "bugs": {
+    "url": "https://github.com/vespeneventures/foundry/issues"
+  },
+  "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/icons#readme",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "generate": "node scripts/generate-icons.mjs"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "@vespeneventures/tokens": "^0.4.0"
+  },
+  "devDependencies": {
+    "@vespeneventures/tokens": "^0.4.0",
+    "@testing-library/jest-dom": "^7.0.0",
+    "@testing-library/react": "^16.3.2",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "esbuild": "^0.24.0",
+    "jsdom": "^26.1.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "typescript": "~6.0.0",
+    "vitest": "^4.1.9"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  }
+}
