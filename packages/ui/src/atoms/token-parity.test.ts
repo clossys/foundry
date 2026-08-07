@@ -6,8 +6,8 @@ import { TOKENS } from "@vespeneventures/tokens";
 
 /**
  * The highest-value test in this package (see the README's "Tests"
- * section). Every atom styles with Tailwind classes generated from
- * @vespeneventures/tokens, and separately with a handful of raw
+ * section). Every atom AND block styles with Tailwind classes generated
+ * from @vespeneventures/tokens, and separately with a handful of raw
  * `var(--ui-*)` reads for tokens that have no Tailwind namespace. Neither
  * of those is checked by TypeScript — a class name and a `var()` argument
  * are both just strings to the compiler. A typo like `bg-surface-elevated`
@@ -16,9 +16,15 @@ import { TOKENS } from "@vespeneventures/tokens";
  * this is the only thing that would catch it, because it is the only
  * check that imports the real token catalog and asks "does this name
  * actually exist" rather than "does this parse".
+ *
+ * Scoped at `src/` (this file's parent), not just `src/atoms/`, so the same
+ * protection covers `src/blocks/` too — a block styles with the same
+ * token-derived classes an atom does, and a typo there is exactly as
+ * invisible to the compiler. This file still lives under `src/atoms/`
+ * rather than at `src/` directly; only the directory it walks changed.
  */
 
-const atomsDir = dirname(fileURLToPath(import.meta.url));
+const srcDir = dirname(dirname(fileURLToPath(import.meta.url)));
 
 function collectSourceFiles(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
@@ -87,11 +93,11 @@ interface Finding {
 }
 
 const findings: Finding[] = [];
-const sourceFiles = collectSourceFiles(atomsDir);
+const sourceFiles = collectSourceFiles(srcDir);
 
 for (const file of sourceFiles) {
   const code = stripComments(readFileSync(file, "utf8"));
-  const relFile = file.slice(atomsDir.length + 1);
+  const relFile = file.slice(srcDir.length + 1);
 
   for (const match of code.matchAll(CLASS_RE)) {
     const [full, prefix, suffix] = match;

@@ -5,7 +5,7 @@
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
-  "description": "React components for @vespeneventures/tokens: an atoms layer built on react-aria-components for behavior and accessibility, styled with Tailwind utility classes generated from the tokens themselves.",
+  "description": "React components for @vespeneventures/tokens: atoms and blocks layers built on react-aria-components for behavior and accessibility, styled with Tailwind utility classes generated from the tokens themselves.",
   "keywords": [
     "react",
     "components",
@@ -32,6 +32,10 @@
     "./atoms": {
       "types": "./dist/atoms/index.d.ts",
       "import": "./dist/atoms/index.js"
+    },
+    "./blocks": {
+      "types": "./dist/blocks/index.d.ts",
+      "import": "./dist/blocks/index.js"
     }
   },
   "files": [
