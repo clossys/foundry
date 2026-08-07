@@ -2,18 +2,17 @@
 
 React components styled with [@vespeneventures/tokens](https://github.com/vespeneventures/foundry/tree/main/packages/tokens)'
 design tokens, via Tailwind CSS v4. This package ships a component ladder
-built on top of tokens, one rung at a time. The full intended shape —
-including one rung that isn't built yet — is:
+built on top of tokens, one rung at a time. The full shape — every rung now
+shipped — is:
 
 ```
 tokens → atoms → blocks → views     (content: transient, many, fills slots)
                     ↘      shell    (frame: persistent, one, provides slots)
 ```
 
-`atoms`, `blocks`, and `shell` ship today. `views` is **planned, not yet
-shipped** — no code, exports, or placeholder files for it exist in this
-package yet. See "Placement rules" below for what distinguishes all four
-rungs and how a new component gets assigned to one.
+`atoms`, `blocks`, `views`, and `shell` all ship today. See "Placement
+rules" below for what distinguishes all four rungs and how a new component
+gets assigned to one.
 
 - **`atoms`** — single-purpose: composes no other atom, or its parts are
   homogeneous repeats rather than named regions. Twenty-two ship: `Button`,
@@ -22,15 +21,17 @@ rungs and how a new component gets assigned to one.
   `Table`, `Field`, `Skeleton`, `Tooltip`, `Banner`, `RadioGroup`, `Popover`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
-  with a real job on a page. Two ship: `PageHeader`, `EmptyState`.
-- **`views`** *(planned)* — a whole page's composition, where a second one
-  on the same page would be incoherent. Content: transient, it fills the
-  slot the shell provides. Deliberately a short list — page structure
-  encodes what a product is, so most pages are the consumer's own
-  composition of blocks. Only genuinely product-neutral pages (an error
-  page, an authentication page) are worth shipping. (`DataTable` and
-  `DetailView` are follow-ups, and by test 3 they are **blocks**, not
-  views — a page can hold two of either.)
+  with a real job on a page. Six ship: `PageHeader`, `EmptyState`,
+  `DataTable`, `DetailView`, `Pagination`, `Stat`.
+- **`views`** — a whole page's composition, where a second one on the same
+  page would be incoherent. Content: transient, it fills the slot the shell
+  provides. Deliberately a short list — page structure encodes what a
+  product is, so most pages are the consumer's own composition of blocks.
+  Only genuinely product-neutral pages are worth shipping. Two ship:
+  `ErrorView`, `AuthView`. (`DataTable` and `DetailView` ship as **blocks**,
+  not views, by test 3 below — a page can hold two of either. See "Views"
+  below for the full reasoning, including why `ListView` and `FormView` are
+  deliberately not here either.)
 - **`shell`** — the persistent frame around content (nav, layout chrome)
   that provides the slots content fills. One per app; survives route
   changes that swap out the content underneath it. `Shell` ships with five
@@ -38,10 +39,14 @@ rungs and how a new component gets assigned to one.
   runtime service, not itself a rung of this ladder — ships alongside it.
   See "Shell" below.
 
-A rung may only import DOWN the ladder — a block may import an atom, never
-the reverse. `src/ladder.test.ts` enforces that structurally, not just by
-convention: it scans every file under `src/atoms/` for an import referencing
-`blocks/` and fails the build if it finds one.
+A rung may only import DOWN the ladder — a block may import an atom, a view
+may import an atom or a block, never the reverse. `shell` is a peer of
+`views` (both build on `atoms`/`blocks`; neither imports the other) rather
+than another rung above it — see "Views" below. `src/ladder.test.ts`
+enforces every one of these directions structurally, not just by
+convention: it scans every file under `src/atoms/`, `src/blocks/`,
+`src/views/`, and `src/shell/` for an import referencing a layer it isn't
+allowed to reach, and fails the build if it finds one.
 
 ```bash
 npm install @vespeneventures/ui \
@@ -411,9 +416,9 @@ function SelectAllRows({ isAllSelected, isSomeSelected, onToggle }: {
 `isIndeterminate` is presentational only — react-aria-components' own
 contract, not this component's addition: it doesn't change `isSelected`, so
 a select-all checkbox like the one above is still responsible for setting
-both from its own row-selection state. This is the state a `DataTable`
-select-all checkbox needs and the reason `Checkbox` was prioritized for this
-expansion.
+both from its own row-selection state. This is the state `DataTable`'s own
+select-all checkbox needs — see `DataTable` under "Blocks" below — and the
+reason `Checkbox` was prioritized ahead of it.
 
 ### `Switch`
 
@@ -739,14 +744,14 @@ function PromptRunsTable({ rows }: { rows: PromptRun[] }) {
 ```
 
 Table PRIMITIVES — `Table`, `Table.Header`, `Table.Column`, `Table.Body`,
-`Table.Row`, `Table.Cell` — not a finished data grid. This is the
-substrate a consumer assembles a real table from, the same way
-react-aria-components' own docs compose them: no `columns`/`rows` data
-props, no built-in pagination, filtering, or toolbar. `DataTable` — that
-finished, opinionated assembly — is a **block** built on top of these
-primitives (a page can hold two data tables, so by this package's own
-"can one page contain two of them" test it's a block, not a view); it's a
-deliberate follow-up, not started here.
+`Table.Row`, `Table.Cell` — not a finished data grid on their own. This is
+the substrate `DataTable` (see "Blocks" below) assembles a real table
+from, the same way react-aria-components' own docs compose them: no
+`columns`/`rows` data props, no built-in pagination, filtering, or toolbar
+at this layer. `DataTable` — that finished, opinionated assembly — is a
+**block** built on top of these primitives (a page can hold two data
+tables, so by this package's own "can one page contain two of them" test
+it's a block, not a view).
 
 Built on react-aria-components' `Table`/`TableHeader`/`TableBody`/
 `Column`/`Row`/`Cell`, which supply real `<table>`/`<thead>`/`<tbody>`/
@@ -1048,12 +1053,328 @@ way any other section heading would. `icon` and `action` are both optional
 slots; not every empty state has a recovery action (an empty inbox that's
 empty because there's genuinely nothing to do has nowhere to send you).
 
+### `DataTable`
+
+```tsx
+import { DataTable, Pagination, type DataTableColumn } from "@vespeneventures/ui/blocks";
+import { useState } from "react";
+import type { Key, SortDescriptor } from "react-aria-components";
+
+interface PromptRun {
+  id: string;
+  name: string;
+  runs: number;
+}
+
+const COLUMNS: DataTableColumn<PromptRun>[] = [
+  { id: "name", header: "Name", cell: (row) => row.name, isRowHeader: true, allowsSorting: true },
+  { id: "runs", header: "Runs", cell: (row) => row.runs, allowsSorting: true },
+];
+
+function PromptRunsTable({ rows }: { rows: PromptRun[] }) {
+  const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>();
+  const [selectedKeys, setSelectedKeys] = useState<"all" | Set<Key>>(new Set());
+  const [page, setPage] = useState(1);
+
+  return (
+    <DataTable
+      aria-label="Prompt runs"
+      columns={COLUMNS}
+      rows={rows}
+      rowKey={(row) => row.id}
+      sortDescriptor={sortDescriptor}
+      onSortChange={setSortDescriptor}
+      selectionMode="multiple"
+      selectedKeys={selectedKeys}
+      onSelectionChange={setSelectedKeys}
+      emptyStateTitle="No prompt runs yet"
+      footer={<Pagination page={page} pageCount={10} onPageChange={setPage} />}
+## Views
+
+A view is a whole PAGE's composition — test 3 from "Placement rules" above,
+repeated here because it's the one that defines this layer: **can one page
+contain two of them?** If yes, it's a region of a page, so it's a block
+(`PageHeader`, `EmptyState`, or a future `DataTable`). If a second one on
+the same page would be incoherent — because the component *is* the page —
+it's a view. There is no such thing as half a 404 page, and a sign-in page
+either is one or isn't.
+
+**Only two ship: `ErrorView` and `AuthView`.** This is deliberate, not an
+oversight, and the list is meant to stay this short. A page's structure
+encodes what a product actually *is* — a `/prompts` list page, a
+`/settings` page, a dashboard — and that structure is close to always the
+consumer's own composition of blocks, not something this package could
+usefully pre-assemble without either being wrong for most consumers or
+growing an escape hatch for every one it's wrong for (the same
+variant-prop failure mode "Placement rules" warns about, one layer up).
+`ErrorView` and `AuthView` ship because they're the rare exception: an
+error page and an authentication page are the same shape in every product
+that has them at all — nobody's 404 page or sign-in page is structurally
+special to their product the way their dashboard is.
+
+**Explicitly not shipped: `ListView`, `FormView`, `DashboardView`, or
+anything shaped like them.** Run each through test 3: a page can hold two
+lists side by side, or two forms on a settings page, or three summary
+panels in a dashboard — every one of those is a **block**, the same test
+that keeps `DataTable` (built on `Table`'s primitives) and `DetailView` out
+of this layer and in the block layer's follow-up list instead (see "What's
+deliberately not here" below). Shipping any of them as a view would mean
+pre-assembling the exact thing a consumer is supposed to compose from
+blocks — and the moment one consumer's list page needed a toolbar the
+"shipped" `ListView` didn't have, they'd need an escape hatch, and the
+prop/variant surface would start absorbing every future consumer's
+divergence the same way a bad `mode` prop does on a single component.
+
+Both views below take no router of any kind: every navigable action is a
+plain `ReactNode` slot (`action`, `secondaryAction`), so a consumer passes
+their own router's link/button rather than either view importing or
+assuming one.
+
+### `ErrorView`
+
+```tsx
+import { ErrorView } from "@vespeneventures/ui/views";
+import { Button } from "@vespeneventures/ui/atoms";
+
+function NotFoundPage() {
+  return (
+    <ErrorView
+      status={404}
+      title="Page not found"
+      description="The page you're looking for doesn't exist or has moved."
+      action={<Button onPress={() => goHome()}>Go home</Button>}
+      details={<code>request id: 8f2a-91c0</code>}
+    />
+  );
+}
+```
+
+The finished, opinionated data grid `Table`'s own section above deliberately
+doesn't provide: five regions that differ in kind — an optional `toolbar`
+slot, the grid itself (built on `Table`'s primitives), an empty-state
+region (reusing `EmptyState` rather than reimplementing it), a loading
+region, and an optional `footer` slot for something like `Pagination` — is
+what makes this a **block**, not an atom (see "Placement rules", test 2).
+A page can hold two `DataTable`s side by side, which is what makes it a
+block and not a view (test 3) despite being the largest, most intricate
+component this package ships.
+
+**Controlled only, deliberately.** `sortDescriptor`/`onSortChange`,
+`selectedKeys`/`onSelectionChange`, and pagination (via the `footer` slot)
+all come from props with change callbacks — `DataTable` never re-sorts,
+re-selects, or re-paginates `rows` itself, and never fetches data or owns
+any async state of its own. Welding the grid to one specific data-fetching
+shape (a particular pagination style, a particular cache) would make it
+useless to every consumer whose data layer works differently; a consumer
+owns the actual sorting/filtering/paging of `rows` and passes the already-
+correct slice back in, the same reason `Table`'s own primitives take no
+`columns`/`rows` data props at all.
+
+`columns` and `rows` are plain data — `{ id, header, cell, allowsSorting?,
+isRowHeader?, width? }` per column, `rowKey` deriving each row's own key —
+rather than JSX, so a data-driven grid never needs to hand-write a
+`Table.Column`/`Table.Cell` per field. `selectionMode="multiple"` renders
+`Table.SelectAllCheckbox`/`Table.SelectionCheckbox` as a leading column,
+including the indeterminate select-all state for a partial selection, the
+same wiring `Table`'s own section above describes; `selectionMode="none"`
+(the default) renders no selection column at all.
+
+`isLoading` renders `loadingRowCount` (default 5) skeleton placeholder rows
+in place of `rows`, for a consumer's own fetch in flight — `DataTable`
+never tracks that state itself, it only reads the prop. This should read
+`Skeleton` cells from this package's own atoms layer; as of this block's
+own PR, no `Skeleton` atom ships yet (a concurrent branch may add one), so
+the loading state uses a plain `animate-pulse` placeholder div instead.
+Swapping that placeholder for a real `Skeleton` atom, once one exists, is
+a deliberate follow-up.
+
+### `DetailView`
+
+```tsx
+import { DetailView } from "@vespeneventures/ui/blocks";
+import { Badge, Button } from "@vespeneventures/ui/atoms";
+
+function OrderDetail({ order }: { order: { id: string; owner: string; status: string; notes: string } }) {
+  return (
+    <DetailView
+      title={`Order #${order.id}`}
+      actions={<Button variant="secondary">Edit</Button>}
+      fields={[
+        { label: "Owner", value: order.owner },
+        { label: "Status", value: <Badge variant="success">{order.status}</Badge> },
+        { label: "Notes", value: order.notes, span: 2 },
+      ]}
+A full-page error state — 404, 500, 403, or any other whole-page failure.
+Composes `blocks/EmptyState` rather than reimplementing it: `title`,
+`description`, and `action` are passed straight through to it. `status`
+(required, `ReactNode` — a number or a string) renders as real text content
+in the page's own `<h1>`, never as styling alone (a background image, an
+icon-font glyph, a CSS counter) — a screen reader user, and anyone who
+searches the rendered page for "404", needs the code to actually be there
+as text. `EmptyState`'s own `title` renders as an `<h2>` one level below
+it, so a page built from `ErrorView` has exactly one top-level heading (the
+status) with the error's description sitting under it — the same
+title/subtitle heading structure a `PageHeader` gives an ordinary page.
+`details` is an optional slot for diagnostic content (a request id, a
+correlation id, a stack trace), rendered inside a native `<details>`,
+collapsed by default: for the rare visitor who needs to report the error,
+not the page's primary reading order.
+
+### `AuthView`
+
+```tsx
+import { AuthView } from "@vespeneventures/ui/views";
+import { Link } from "@vespeneventures/ui/atoms";
+
+function SignInPage() {
+  return (
+    <AuthView
+      brand={<img src="/logo.svg" alt="Acme" />}
+      heading="Sign in"
+      description="Welcome back."
+      form={<MyProductsOwnSignInForm />}
+      secondaryAction={<Link href="/signup">Don't have an account? Sign up</Link>}
+      footnote={<>By continuing you agree to our <Link href="/terms">Terms</Link>.</>}
+    />
+  );
+}
+```
+
+Label/value presentation of a single record — three regions that differ in
+kind (an optional title, the field list itself, an optional actions row).
+A page can hold two `DetailView`s (e.g. two related records, or a
+before/after comparison of the same one), which is what makes it a block
+rather than a view.
+
+Fields render inside a real `<dl>`, one `<div>` per field wrapping a
+`<dt>`/`<dd>` pair — a label paired with its value IS a term and its
+definition, exactly what those elements mean, so a screen reader can
+navigate the list pair-by-pair. `value` is a `ReactNode`, not a plain
+string, so a consumer renders its own date/currency/badge formatting
+rather than this block reformatting a string on the consumer's behalf (the
+`Badge` in the example above). `span: 2` spans a field across both columns
+of the block's own two-column field grid.
+
+**Responsive:** fields stack in a single column below the `tablet`
+breakpoint and lay out two-up from `tablet` up — a plain Tailwind
+responsive variant generated from this package's own `--breakpoint-tablet`
+token, no JS breakpoint state, the same pattern `Shell.SideNav`'s own
+responsive collapse uses (see "Shell" below).
+
+`title` is optional: a consumer already showing the record's name via
+`PageHeader` (e.g. `PageHeader title="Order #1042"`) can omit this block's
+own title region rather than repeating the same text twice.
+
+### `Pagination`
+
+```tsx
+import { Pagination } from "@vespeneventures/ui/blocks";
+import { useState } from "react";
+
+function PromptsPagination({ totalPrompts }: { totalPrompts: number }) {
+  const [page, setPage] = useState(1);
+  const pageSize = 25;
+  return (
+    <Pagination
+      page={page}
+      pageCount={Math.max(Math.ceil(totalPrompts / pageSize), 1)}
+      onPageChange={setPage}
+      totalItems={totalPrompts}
+      pageSize={pageSize}
+    />
+  );
+}
+```
+
+Page navigation — a range summary, the page controls themselves, and an
+optional page-size selector (built on the `Select` atom, rendered only when
+both `pageSizeOptions` and `onPageSizeChange` are given), three regions
+that differ in kind. A page can hold two `Pagination`s (two independent
+lists side by side), which is what makes it a block rather than a view.
+
+**Controlled only:** `page`/`pageCount` are props, and every navigation —
+a page number, "next", "previous" — is reported through `onPageChange`
+rather than applied internally, so this composes into whatever paging
+mechanism a consumer's data layer already has (offset, cursor, or
+otherwise), the same reason `DataTable` above never paginates its own
+`rows`.
+
+Wrapped in a real `<nav aria-label="Pagination">` landmark (override the
+label via the same `aria-label` prop for a page with more than one
+`Pagination`), the current page carries `aria-current="page"`, and every
+control is a real `<button>` (this package's own `Button` atom) — there is
+nowhere for a page control in a controlled component like this one to
+navigate to as a URL, so a link styled to look like a button would be the
+wrong element regardless of styling. A large `pageCount` truncates to
+`1 … 4 5 6 … 20` rather than a flat row of every page number, via
+`siblingCount` (default `1`) page numbers shown on each side of the
+current page.
+
+Omit `totalItems`/`pageSize` for a plain "Page X of Y" range summary;
+provide both for "Showing 11–20 of 42".
+
+### `Stat`
+
+```tsx
+import { Stat } from "@vespeneventures/ui/blocks";
+
+function ActiveUsersStat() {
+  return (
+    <Stat
+      label="Monthly active users"
+      value="2,481"
+      delta="+12%"
+      trend="up"
+      description="vs. last 30 days"
+    />
+  );
+}
+```
+
+A single metric — a label, the value itself, an optional delta/trend, and
+an optional description, regions that differ in kind. A page routinely
+holds several `Stat`s in a row (a metrics dashboard, a summary strip above
+a table), which is exactly why this is a block and not a view, and not an
+atom either: `label` and `value` play different roles (a metric's name vs.
+its measurement), not a homogeneous repeat.
+
+`trend` (`"up" | "down" | "neutral"`, default `"neutral"`) drives the
+delta's status-token color, but never color ALONE: an aria-hidden glyph
+(`▲`/`▼`/`→`, a different shape per direction, not just a different color)
+plus screen-reader-only text (`"Increase"`/`"Decrease"`/`"No change"`) both
+carry the same direction independently of color, so the delta reads
+correctly for a colorblind viewer, on a greyscale screen, or through a
+screen reader with no color channel at all.
+A full-page authentication shell — sign-in, sign-up, password reset, email
+verification. A centered card (built on `atoms/Card`) with five named
+regions: `brand`, `heading` (+ optional `description`), the `form` slot,
+`secondaryAction`, and `footnote`. `heading` (required) renders as the
+page's `<h1>`; `form` (required) is rendered exactly as given, with no
+wrapper.
+
+**`AuthView` implements no authentication of any kind** — no provider, no
+form state, no field validation, no submit handling. It renders whatever
+`ReactNode` is passed to `form` exactly as given, the same one-way slot
+boundary `Dialog`'s `trigger` and `EmptyState`'s `action` already
+establish. This is deliberate and non-negotiable: auth providers differ per
+product (a magic link here, a password-plus-OAuth flow there, a passkey
+flow somewhere else), and a shared UI package that tried to absorb any one
+of them would immediately need an escape hatch for every other one — the
+same structural-difference-through-a-mode-prop failure "Placement rules"
+warns against, just scoped to authentication instead of visual styling.
+Composing that shape stays entirely the consumer's own job.
+
+`AuthView` also ships no `BrandLockup` — `brand` is a plain slot, for the
+same reason `Shell` ships no `SiteHeader`/`AppHeader` (see "Shell" below):
+a brand mark is per-product, and a pre-built one would recreate the
+`mode`-prop failure one layer up.
+
 ## Shell
 
-`atoms` and `blocks` are **content**: a `Button`, a `PageHeader`, a list of
-`Card`s — whatever fills the page for the route currently on screen. `shell`
-is the **frame** that content is rendered inside of. The two differ on three
-axes:
+`atoms`, `blocks`, and `views` are **content**: a `Button`, a `PageHeader`,
+an `ErrorView` — whatever fills the page for the route currently on screen.
+`shell` is the **frame** that content is rendered inside of. The two differ
+on three axes:
 
 | | Content (`atoms`, `blocks`, `views`) | `shell` |
 | --- | --- | --- |
@@ -1336,6 +1657,22 @@ app/
 | `PageHeaderProps` | type | Props for `PageHeader`: `title`, `description`, `actions`, `breadcrumb`, plus every native `<header>` attribute. |
 | `EmptyState` | component | Zero-item placeholder: icon slot, title, description, action slot. |
 | `EmptyStateProps` | type | Props for `EmptyState`: `icon`, `title`, `description`, `action`, plus every native `<div>` attribute. |
+| `DataTable` | component | Controlled data grid built on `Table`'s primitives: toolbar slot, the grid itself, empty state, loading state, footer slot. |
+| `DataTableProps` | type | Props for `DataTable`: `aria-label`, `columns`, `rows`, `rowKey`, `sortDescriptor`, `onSortChange`, `selectionMode`, `selectedKeys`, `onSelectionChange`, `isLoading`, `loadingRowCount`, `emptyStateTitle`, `emptyStateDescription`, `emptyStateAction`, `toolbar`, `footer`, `className`, `style`. |
+| `DataTableColumn` | type | One column definition: `id`, `header`, `cell(row)`, `allowsSorting?`, `isRowHeader?`, `width?`. |
+| `DataTableSelectionMode` | type | `"none" \| "single" \| "multiple"`. |
+| `DetailView` | component | Label/value presentation of a single record: title slot, a `<dl>` field list, actions slot. |
+| `DetailViewProps` | type | Props for `DetailView`: `title`, `fields`, `actions`, `className`, `style`, plus every native `<section>` attribute. |
+| `DetailViewField` | type | One field: `label`, `value` (`ReactNode`), `span?` (`1 \| 2`). |
+| `Pagination` | component | Page navigation: range summary, page controls, optional page-size selector. |
+| `PaginationProps` | type | Props for `Pagination`: `page`, `pageCount`, `onPageChange`, `totalItems`, `pageSize`, `pageSizeOptions`, `onPageSizeChange`, `siblingCount`, `className`, `style`, plus every native `<nav>` attribute. |
+| `Stat` | component | A single metric: label, value, optional delta/trend, optional description. |
+| `StatProps` | type | Props for `Stat`: `label`, `value`, `delta`, `trend`, `description`, `className`, `style`, plus every native `<div>` attribute. |
+| `StatTrend` | type | `"up" \| "down" \| "neutral"`. |
+| `ErrorView` | component | Full-page error state (404/500/403/...). Composes `EmptyState`; status conveyed as text in the page's own `<h1>`. |
+| `ErrorViewProps` | type | Props for `ErrorView`: `status`, `title`, `description`, `action`, `details`, plus every native `<div>` attribute. |
+| `AuthView` | component | Full-page authentication shell. Centered card with `brand`/`heading`/`description`/`form`/`secondaryAction`/`footnote` slots. Implements no authentication itself. |
+| `AuthViewProps` | type | Props for `AuthView`: `brand`, `heading`, `description`, `form`, `secondaryAction`, `footnote`, plus every native `<div>` attribute. |
 | `Shell` | component | The persistent application frame. Carries `Shell.Header`, `Shell.SideNav`, `Shell.Main`, `Shell.Rail`, `Shell.Footer`. |
 | `ShellProps` | type | Props for `Shell`: `children` (any subset of the five slots above, in any order), plus every native `<div>` attribute. |
 | `ShellHeaderProps` | type | Props for `Shell.Header`: `children`, plus every native `<header>` attribute. |
@@ -1361,7 +1698,9 @@ Beyond render/interaction/keyboard/ARIA tests per atom (`Button.test.tsx`,
 `Spinner.test.tsx`, `Menu.test.tsx`, `Dialog.test.tsx`, `Tabs.test.tsx`,
 `Table.test.tsx`, `Field.test.tsx`, `Skeleton.test.tsx`, `Tooltip.test.tsx`,
 `Banner.test.tsx`, `RadioGroup.test.tsx`, `Popover.test.tsx`), per block
-(`PageHeader.test.tsx`, `EmptyState.test.tsx`), per shell component
+(`PageHeader.test.tsx`, `EmptyState.test.tsx`, `DataTable.test.tsx`,
+`DetailView.test.tsx`, `Pagination.test.tsx`, `Stat.test.tsx`), per view
+(`ErrorView.test.tsx`, `AuthView.test.tsx`), per shell component
 (`Shell.test.tsx`, `Toaster.test.tsx`), and the `tailwind-merge` regression
 tests described above (`internal/cx.test.ts`), two tests are worth calling
 out specifically:
@@ -1395,17 +1734,25 @@ out specifically:
   approach let this package undo, and how the previous, allow-list-based
   version of this check forced them in the first place.
 - **`ladder.test.ts`** scans every file under `src/atoms/`, `src/blocks/`,
-  and `src/shell/` for import specifiers that climb UP the ladder, and
-  fails the build if it finds one — the ladder invariant (`atoms` → `blocks`
-  → `views`, with `shell` as the frame `views` fill, down only) enforced
-  structurally rather than left as a comment that can silently drift. It
-  checks every forbidden direction: an atom importing `blocks/`, `views/`,
-  or `shell/`; a block importing `views/` or `shell/`; and `shell` importing
-  `views/`. It also runs the same scan for the PERMITTED directions
-  (`blocks` importing `atoms`; `shell` importing `atoms`) as a sanity
-  check — proving the scan inspects real code rather than passing on zero
-  coverage, without asserting those lists are empty, since importing atoms
-  is correct and expected in both places.
+  `src/views/`, and `src/shell/` for import specifiers that climb UP the
+  ladder, and fails the build if it finds one — the ladder invariant
+  (`atoms` → `blocks` → `views`, with `shell` as the frame `views` fill,
+  down only) enforced structurally rather than left as a comment that can
+  silently drift. It checks every forbidden direction: an atom importing
+  `blocks/`, `views/`, or `shell/`; a block importing `views/` or `shell/`;
+  `shell` importing `views/`; and `views` importing `shell/` — the mirror
+  image of that last one, making `views` and `shell` mutually exclusive
+  peers that both build on `atoms`/`blocks` without depending on each
+  other. It also runs the same scan for the PERMITTED directions (`blocks`
+  importing `atoms`; `views` importing `atoms`; `views` importing `blocks`;
+  `shell` importing `atoms`) as a sanity check — proving the scan inspects
+  real code rather than passing on zero coverage, without asserting those
+  lists are empty, since importing atoms (and, for `views`, blocks too) is
+  correct and expected in every one of those places. Verified by hand, not
+  just by the sanity checks: a temporary import from `views/` into
+  `blocks/index.ts` was added, confirmed to fail the corresponding
+  enforcement test, then reverted — proof the check fails closed rather
+  than passing vacuously.
 
 ## What's deliberately not here
 
@@ -1418,15 +1765,20 @@ that gets added here only once something real needs a bare modal overlay
 with neither `Dialog`'s fixed trigger/content shape nor `Popover`'s
 anchored one, not speculatively.
 
-**Blocks:** only `PageHeader`, `EmptyState` ship. `DataTable` (built on
-`Table`'s primitives) and `ConfirmDialog` (built on `Dialog`) are
-deliberate follow-ups, not started here — see those atoms' own sections
-above for exactly where each one's scope stops and the block layer's
-starts. `DetailView` is a further follow-up, also not started.
+**Blocks:** `PageHeader`, `EmptyState`, `DataTable`, `DetailView`,
+`Pagination`, and `Stat` ship. `ConfirmDialog` (built on `Dialog`) is a
+deliberate follow-up, not started here — see `Dialog`'s own section above
+for exactly where its scope stops and the block layer's starts. No
+`Toolbar`/`FilterBar` block either: `DataTable`'s own `toolbar` slot is
+deliberately a plain `ReactNode`, not a second block with an opinion about
+what a toolbar contains.
 
-**Views:** no `views` subpath yet. Planned, not shipped — the package is
-structured so it can be added later as a sibling export without
-restructuring `atoms`, `blocks`, or `shell`.
+**Views:** only `ErrorView`, `AuthView` ship, and the list is meant to stay
+this short — see "Views" above for the full reasoning. `ListView`,
+`FormView`, and `DashboardView` are deliberately NOT here: by test 3, a
+page can hold two lists, two forms, or several summary panels at once, so
+each of those is a block a consumer composes, not a view this package
+could pre-assemble without being wrong for most consumers.
 
 **Shell:** `Shell` ships five slots (`Header`, `SideNav`, `Main`, `Rail`,
 `Footer`) and nothing else — no `SiteHeader`/`AppHeader`/`AppFooter`

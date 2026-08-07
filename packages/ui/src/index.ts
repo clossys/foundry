@@ -85,8 +85,22 @@ export type {
   PopoverProps,
 } from "./atoms/index.js";
 
-export { PageHeader, EmptyState } from "./blocks/index.js";
-export type { PageHeaderProps, EmptyStateProps } from "./blocks/index.js";
+export { PageHeader, EmptyState, DataTable, DetailView, Pagination, Stat } from "./blocks/index.js";
+export type {
+  PageHeaderProps,
+  EmptyStateProps,
+  DataTableProps,
+  DataTableColumn,
+  DataTableSelectionMode,
+  DetailViewProps,
+  DetailViewField,
+  PaginationProps,
+  StatProps,
+  StatTrend,
+} from "./blocks/index.js";
+
+export { ErrorView, AuthView } from "./views/index.js";
+export type { ErrorViewProps, AuthViewProps } from "./views/index.js";
 
 export { Shell, Toaster, toast } from "./shell/index.js";
 export type {

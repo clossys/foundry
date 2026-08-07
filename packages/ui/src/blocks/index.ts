@@ -17,3 +17,15 @@ export type { PageHeaderProps } from "./PageHeader.js";
 
 export { EmptyState } from "./EmptyState.js";
 export type { EmptyStateProps } from "./EmptyState.js";
+
+export { DataTable } from "./DataTable.js";
+export type { DataTableProps, DataTableColumn, DataTableSelectionMode } from "./DataTable.js";
+
+export { DetailView } from "./DetailView.js";
+export type { DetailViewProps, DetailViewField } from "./DetailView.js";
+
+export { Pagination } from "./Pagination.js";
+export type { PaginationProps } from "./Pagination.js";
+
+export { Stat } from "./Stat.js";
+export type { StatProps, StatTrend } from "./Stat.js";
