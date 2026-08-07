@@ -1370,6 +1370,46 @@ function PromptRunsTable({ rows }: { rows: PromptRun[] }) {
 }
 ```
 
+The finished, opinionated data grid `Table`'s own section above deliberately
+doesn't provide: five regions that differ in kind — an optional `toolbar`
+slot, the grid itself (built on `Table`'s primitives), an empty-state
+region (reusing `EmptyState` rather than reimplementing it), a loading
+region, and an optional `footer` slot for something like `Pagination` — is
+what makes this a **block**, not an atom (see "Placement rules", test 2).
+A page can hold two `DataTable`s side by side, which is what makes it a
+block and not a view (test 3) despite being the largest, most intricate
+component this package ships.
+
+**Controlled only, deliberately.** `sortDescriptor`/`onSortChange`,
+`selectedKeys`/`onSelectionChange`, and pagination (via the `footer` slot)
+all come from props with change callbacks — `DataTable` never re-sorts,
+re-selects, or re-paginates `rows` itself, and never fetches data or owns
+any async state of its own. Welding the grid to one specific data-fetching
+shape (a particular pagination style, a particular cache) would make it
+useless to every consumer whose data layer works differently; a consumer
+owns the actual sorting/filtering/paging of `rows` and passes the already-
+correct slice back in, the same reason `Table`'s own primitives take no
+`columns`/`rows` data props at all.
+
+`columns` and `rows` are plain data — `{ id, header, cell, allowsSorting?,
+isRowHeader?, width? }` per column, `rowKey` deriving each row's own key —
+rather than JSX, so a data-driven grid never needs to hand-write a
+`Table.Column`/`Table.Cell` per field. `selectionMode="multiple"` renders
+`Table.SelectAllCheckbox`/`Table.SelectionCheckbox` as a leading column,
+including the indeterminate select-all state for a partial selection, the
+same wiring `Table`'s own section above describes; `selectionMode="none"`
+(the default) renders no selection column at all.
+
+`isLoading` renders `loadingRowCount` (default 5) skeleton placeholder rows
+in place of `rows`, for a consumer's own fetch in flight — `DataTable`
+never tracks that state itself, it only reads the prop. This should read
+`Skeleton` cells from this package's own atoms layer; as of this block's
+own PR, no `Skeleton` atom ships yet (a concurrent branch may add one), so
+the loading state uses a plain `animate-pulse` placeholder div instead.
+Swapping that placeholder for a real `Skeleton` atom, once one exists, is
+a deliberate follow-up.
+
+
 ### `Form`
 
 ```tsx
@@ -1754,44 +1794,21 @@ function NotFoundPage() {
 }
 ```
 
-The finished, opinionated data grid `Table`'s own section above deliberately
-doesn't provide: five regions that differ in kind — an optional `toolbar`
-slot, the grid itself (built on `Table`'s primitives), an empty-state
-region (reusing `EmptyState` rather than reimplementing it), a loading
-region, and an optional `footer` slot for something like `Pagination` — is
-what makes this a **block**, not an atom (see "Placement rules", test 2).
-A page can hold two `DataTable`s side by side, which is what makes it a
-block and not a view (test 3) despite being the largest, most intricate
-component this package ships.
-
-**Controlled only, deliberately.** `sortDescriptor`/`onSortChange`,
-`selectedKeys`/`onSelectionChange`, and pagination (via the `footer` slot)
-all come from props with change callbacks — `DataTable` never re-sorts,
-re-selects, or re-paginates `rows` itself, and never fetches data or owns
-any async state of its own. Welding the grid to one specific data-fetching
-shape (a particular pagination style, a particular cache) would make it
-useless to every consumer whose data layer works differently; a consumer
-owns the actual sorting/filtering/paging of `rows` and passes the already-
-correct slice back in, the same reason `Table`'s own primitives take no
-`columns`/`rows` data props at all.
-
-`columns` and `rows` are plain data — `{ id, header, cell, allowsSorting?,
-isRowHeader?, width? }` per column, `rowKey` deriving each row's own key —
-rather than JSX, so a data-driven grid never needs to hand-write a
-`Table.Column`/`Table.Cell` per field. `selectionMode="multiple"` renders
-`Table.SelectAllCheckbox`/`Table.SelectionCheckbox` as a leading column,
-including the indeterminate select-all state for a partial selection, the
-same wiring `Table`'s own section above describes; `selectionMode="none"`
-(the default) renders no selection column at all.
-
-`isLoading` renders `loadingRowCount` (default 5) skeleton placeholder rows
-in place of `rows`, for a consumer's own fetch in flight — `DataTable`
-never tracks that state itself, it only reads the prop. This should read
-`Skeleton` cells from this package's own atoms layer; as of this block's
-own PR, no `Skeleton` atom ships yet (a concurrent branch may add one), so
-the loading state uses a plain `animate-pulse` placeholder div instead.
-Swapping that placeholder for a real `Skeleton` atom, once one exists, is
-a deliberate follow-up.
+A full-page error state — 404, 500, 403, or any other whole-page failure.
+Composes `blocks/EmptyState` rather than reimplementing it: `title`,
+`description`, and `action` are passed straight through to it. `status`
+(required, `ReactNode` — a number or a string) renders as real text content
+in the page's own `<h1>`, never as styling alone (a background image, an
+icon-font glyph, a CSS counter) — a screen reader user, and anyone who
+searches the rendered page for "404", needs the code to actually be there
+as text. `EmptyState`'s own `title` renders as an `<h2>` one level below
+it, so a page built from `ErrorView` has exactly one top-level heading (the
+status) with the error's description sitting under it — the same
+title/subtitle heading structure a `PageHeader` gives an ordinary page.
+`details` is an optional slot for diagnostic content (a request id, a
+correlation id, a stack trace), rendered inside a native `<details>`,
+collapsed by default: for the rare visitor who needs to report the error,
+not the page's primary reading order.
 
 ### `DetailView`
 
@@ -1809,37 +1826,6 @@ function OrderDetail({ order }: { order: { id: string; owner: string; status: st
         { label: "Status", value: <Badge variant="success">{order.status}</Badge> },
         { label: "Notes", value: order.notes, span: 2 },
       ]}
-A full-page error state — 404, 500, 403, or any other whole-page failure.
-Composes `blocks/EmptyState` rather than reimplementing it: `title`,
-`description`, and `action` are passed straight through to it. `status`
-(required, `ReactNode` — a number or a string) renders as real text content
-in the page's own `<h1>`, never as styling alone (a background image, an
-icon-font glyph, a CSS counter) — a screen reader user, and anyone who
-searches the rendered page for "404", needs the code to actually be there
-as text. `EmptyState`'s own `title` renders as an `<h2>` one level below
-it, so a page built from `ErrorView` has exactly one top-level heading (the
-status) with the error's description sitting under it — the same
-title/subtitle heading structure a `PageHeader` gives an ordinary page.
-`details` is an optional slot for diagnostic content (a request id, a
-correlation id, a stack trace), rendered inside a native `<details>`,
-collapsed by default: for the rare visitor who needs to report the error,
-not the page's primary reading order.
-
-### `AuthView`
-
-```tsx
-import { AuthView } from "@vespeneventures/ui/views";
-import { Link } from "@vespeneventures/ui/atoms";
-
-function SignInPage() {
-  return (
-    <AuthView
-      brand={<img src="/logo.svg" alt="Acme" />}
-      heading="Sign in"
-      description="Welcome back."
-      form={<MyProductsOwnSignInForm />}
-      secondaryAction={<Link href="/signup">Don't have an account? Sign up</Link>}
-      footnote={<>By continuing you agree to our <Link href="/terms">Terms</Link>.</>}
     />
   );
 }
@@ -1869,6 +1855,51 @@ responsive collapse uses (see "Shell" below).
 `title` is optional: a consumer already showing the record's name via
 `PageHeader` (e.g. `PageHeader title="Order #1042"`) can omit this block's
 own title region rather than repeating the same text twice.
+
+
+### `AuthView`
+
+```tsx
+import { AuthView } from "@vespeneventures/ui/views";
+import { Link } from "@vespeneventures/ui/atoms";
+
+function SignInPage() {
+  return (
+    <AuthView
+      brand={<img src="/logo.svg" alt="Acme" />}
+      heading="Sign in"
+      description="Welcome back."
+      form={<MyProductsOwnSignInForm />}
+      secondaryAction={<Link href="/signup">Don't have an account? Sign up</Link>}
+      footnote={<>By continuing you agree to our <Link href="/terms">Terms</Link>.</>}
+    />
+  );
+}
+```
+
+A full-page authentication shell — sign-in, sign-up, password reset, email
+verification. A centered card (built on `atoms/Card`) with five named
+regions: `brand`, `heading` (+ optional `description`), the `form` slot,
+`secondaryAction`, and `footnote`. `heading` (required) renders as the
+page's `<h1>`; `form` (required) is rendered exactly as given, with no
+wrapper.
+
+**`AuthView` implements no authentication of any kind** — no provider, no
+form state, no field validation, no submit handling. It renders whatever
+`ReactNode` is passed to `form` exactly as given, the same one-way slot
+boundary `Dialog`'s `trigger` and `EmptyState`'s `action` already
+establish. This is deliberate and non-negotiable: auth providers differ per
+product (a magic link here, a password-plus-OAuth flow there, a passkey
+flow somewhere else), and a shared UI package that tried to absorb any one
+of them would immediately need an escape hatch for every other one — the
+same structural-difference-through-a-mode-prop failure "Placement rules"
+warns against, just scoped to authentication instead of visual styling.
+Composing that shape stays entirely the consumer's own job.
+
+`AuthView` also ships no `BrandLockup` — `brand` is a plain slot, for the
+same reason `Shell` ships no `SiteHeader`/`AppHeader` (see "Shell" below):
+a brand mark is per-product, and a pre-built one would recreate the
+`mode`-prop failure one layer up.
 
 ### `Pagination`
 
