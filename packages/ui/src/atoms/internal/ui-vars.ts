@@ -39,3 +39,18 @@ export const UI_ELEVATION_FLOATING = "var(--ui-elevation-floating, 0 8px 24px rg
  * a dialog, since it can be opened from inside one.
  */
 export const UI_Z_POPOVER = "var(--ui-z-modal, 50)";
+
+/**
+ * Stacking context for `Dialog`'s scrim and surface — the same
+ * `--ui-z-modal` token `UI_Z_POPOVER` above already reads, and
+ * deliberately so: a `Select`/`Menu` opened from inside an open `Dialog`
+ * must paint above it, and pinning both to one shared level (rather than
+ * inventing a higher one for `Dialog`) is what `UI_Z_POPOVER`'s own doc
+ * comment already commits to — a popover belongs at the modal level
+ * "even when it isn't a dialog, since it can be opened from inside one."
+ * Later DOM order (the popover portals in after the dialog that opened it)
+ * settles the tie in the correct direction at equal z-index. A separate
+ * constant, not a re-export of `UI_Z_POPOVER` under a second name, so each
+ * call site's own name says what it's actually stacking.
+ */
+export const UI_Z_MODAL = "var(--ui-z-modal, 50)";

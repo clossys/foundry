@@ -24,6 +24,9 @@ export {
   Avatar,
   Spinner,
   Menu,
+  Dialog,
+  Tabs,
+  Table,
 } from "./atoms/index.js";
 export type {
   ButtonProps,
@@ -49,6 +52,21 @@ export type {
   MenuProps,
   MenuItemProps,
   MenuSeparatorProps,
+  DialogProps,
+  DialogSize,
+  DialogHeadingProps,
+  TabsProps,
+  TabsListProps,
+  TabsTabProps,
+  TabsPanelProps,
+  TableProps,
+  TableHeaderProps,
+  TableColumnProps,
+  TableBodyProps,
+  TableRowProps,
+  TableCellProps,
+  TableSelectAllCheckboxProps,
+  TableSelectionCheckboxProps,
 } from "./atoms/index.js";
 
 export { PageHeader, EmptyState } from "./blocks/index.js";

@@ -3,14 +3,21 @@
  * ladder (atoms → blocks → views; atoms and blocks both ship so far). An
  * atom is single-purpose: it either composes no other atom (`Button`,
  * `TextField`, `Badge`, `Card`, `Checkbox`, `Switch`, `Select`, `Textarea`,
- * `Avatar`, `Spinner`), or its parts are homogeneous repeats rather than
- * named regions (`Breadcrumb`, `Menu` — a trail of interchangeable crumbs,
- * a list of interchangeable actions — not a set of distinct slots). See
- * this package's README, "Placement rules", for the block/atom test this
- * ladder is built on. Anything that owns MULTIPLE NAMED regions (a title
- * region, a description region, an actions region — each different in
- * kind, not just repeated) belongs one layer up, in
- * `@vespeneventures/ui/blocks`, not here.
+ * `Avatar`, `Spinner`, `Dialog`), or its parts are homogeneous repeats
+ * rather than named regions (`Breadcrumb`, `Menu`, `Tabs` — a trail of
+ * interchangeable crumbs, a list of interchangeable actions, a row of
+ * interchangeable tabs — not a set of distinct slots). See this package's
+ * README, "Placement rules", for the block/atom test this ladder is built
+ * on. Anything that owns MULTIPLE NAMED regions (a title region, a
+ * description region, an actions region — each different in kind, not
+ * just repeated) belongs one layer up, in `@vespeneventures/ui/blocks`,
+ * not here.
+ *
+ * `Table` is the one atom here that composes another atom of its own
+ * (`Checkbox`, for its `SelectAllCheckbox`/`SelectionCheckbox`
+ * sub-components) — see `Table.tsx`'s own doc comment for why that's the
+ * ladder's explicitly-allowed direction (a sibling atom, not a `blocks/`
+ * import) rather than an exception to it.
  */
 
 export { Button } from "./Button.js";
@@ -51,3 +58,21 @@ export type { SpinnerProps, SpinnerSize } from "./Spinner.js";
 
 export { Menu } from "./Menu.js";
 export type { MenuProps, MenuItemProps, MenuSeparatorProps } from "./Menu.js";
+
+export { Dialog } from "./Dialog.js";
+export type { DialogProps, DialogSize, DialogHeadingProps } from "./Dialog.js";
+
+export { Tabs } from "./Tabs.js";
+export type { TabsProps, TabsListProps, TabsTabProps, TabsPanelProps } from "./Tabs.js";
+
+export { Table } from "./Table.js";
+export type {
+  TableProps,
+  TableHeaderProps,
+  TableColumnProps,
+  TableBodyProps,
+  TableRowProps,
+  TableCellProps,
+  TableSelectAllCheckboxProps,
+  TableSelectionCheckboxProps,
+} from "./Table.js";
