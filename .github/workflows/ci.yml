@@ -148,11 +148,22 @@ jobs:
   # Neither check here reads the denylist — both derive everything (package
   # names, exports, README claims) from the tree itself — so this runs
   # unconditionally, including on fork PRs, unlike the identity-scanning jobs.
+  #
+  # contamination-classes' CLASS 4 also reads this checkout's own git
+  # history (which same-scope package names this repo has EVER published,
+  # including retired ones — see scripts/check-contamination-classes.mjs and
+  # GH issue #27) to tell a CHANGELOG naming a real retired package apart
+  # from one naming something that was never real. A default checkout is
+  # SHALLOW (fetch-depth 1), which makes that history silently truncated
+  # rather than absent, so this needs the same full-history checkout the
+  # `safety` job's gitleaks step already requires, not just node/npm.
   prose:
     name: prose quality (README parity, contamination classes)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0 # contamination-classes CLASS 4 reads full package-name history
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 20
