@@ -2,10 +2,12 @@ import { defineConfig } from "vitest/config";
 
 /**
  * Per-package vitest config for @vespeneventures/copy.
- * Plain Node environment. `scan.test.ts` and `cli.test.ts` do real
- * filesystem I/O, but only against a per-test `mkdtemp` temp directory (see
- * those files' own setup) — never a real repository path — so this stays
- * hermetic without any special config.
+ * Plain Node environment. `types.ts` and `schema.ts` do zero I/O;
+ * `checker.ts` does zero I/O either (it only calls `@vespeneventures/voice`'s
+ * `checkCopy`, itself pure). `registry.ts` is this package's one deliberate
+ * I/O surface, and its tests are hermetic for that reason: every fixture is
+ * written to its own `mkdtemp` directory under the OS temp dir, never a real
+ * path in this repository, and nothing here makes a network call.
  */
 export default defineConfig({
   test: {
