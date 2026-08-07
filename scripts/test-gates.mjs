@@ -79,6 +79,7 @@ const QUALITY = join(scriptDir, "check-denylist-quality.mjs");
 const TYPECHECKED = join(scriptDir, "check-typechecked-assertions.mjs");
 
 let passed = 0;
+let skipped = 0;
 const failures = [];
 
 function run(cmd, args, opts = {}) {
@@ -579,14 +580,33 @@ try {
   }
 
   // ------------------------------------------- check-typechecked-assertions (issue #24)
+  //
+  // HERMETIC BY CONSTRUCTION: this gate's whole job is to shell out to a real
+  // `tsc` binary, but the `safety` CI job that runs `check:gates` never runs
+  // `npm ci` -- every script under scripts/ is zero-dependency Node
+  // specifically so those gates can run with no install at all. Calling the
+  // real toolchain from THIS suite would violate that on the spot. Every
+  // case below instead points the gate at FOUNDRY_TYPECHECK_TSC_OVERRIDE, a
+  // tiny stub tsc (a `#!/usr/bin/env node` script this suite writes and
+  // chmods executable) that prints a scripted file list and exits with a
+  // scripted code -- so what's under test is this gate's own parsing and
+  // set-comparison logic, pinned against a known answer, never a real
+  // compiler. A separate, single case further down (gated on a real tsc
+  // actually being present, loudly SKIPped otherwise) proves the stub isn't
+  // lying about what real tsc would say.
   console.log("\n# check-typechecked-assertions — inert type-level assertions (issue #24)");
   {
     const dir = join(work, "typechecked-assertions");
     mkdirSync(dir, { recursive: true });
+    let stubCounter = 0;
 
     // A minimal but real tsconfig, shaped exactly like every package's own
     // (see packages/*/tsconfig.json): `**/*.test.ts` excluded from
     // `include`, which is the entire mechanism this gate exists to police.
+    // Its CONTENT is cosmetic for the stubbed cases below (the stub, not a
+    // real tsc, decides what "compiled" means for them) but it still has to
+    // exist as a file, since the gate checks for that before ever invoking
+    // tsc.
     const FIXTURE_TSCONFIG = JSON.stringify(
       {
         compilerOptions: {
@@ -614,29 +634,61 @@ try {
       return pkgDir;
     }
 
+    // Writes an executable stand-in for `tsc -p ... --listFilesOnly`: prints
+    // `files` (already-absolute paths) one per line to stdout, then exits
+    // `exitCode`. Real tsc's own --listFilesOnly output is exactly this
+    // shape (a newline-separated file list, nothing else on success), so
+    // this is a faithful stand-in for what this gate actually parses, not a
+    // simplification of it.
+    function makeStubTsc({ files = [], exitCode = 0, stderr = "" } = {}) {
+      const stubPath = join(dir, `tsc-stub-${stubCounter++}.mjs`);
+      const lines = [
+        "#!/usr/bin/env node",
+        `const files = ${JSON.stringify(files)};`,
+        "for (const f of files) process.stdout.write(f + \"\\n\");",
+        stderr ? `process.stderr.write(${JSON.stringify(stderr)});` : "",
+        `process.exit(${exitCode});`,
+        "",
+      ];
+      writeFileSync(stubPath, lines.join("\n"));
+      chmodSync(stubPath, 0o755);
+      return stubPath;
+    }
+
+    function runWithStub(pkgDir, stubPath, extraArgs = []) {
+      return run("node", [TYPECHECKED, pkgDir, ...extraArgs], {
+        env: { ...process.env, FOUNDRY_TYPECHECK_TSC_OVERRIDE: stubPath },
+      });
+    }
+
     // Happy path: a real `@ts-expect-error` living in a *.check.ts file (the
-    // convention this gate is meant to protect) -- tsc actually compiles it,
-    // so it must pass clean.
+    // convention this gate is meant to protect). The stub reports it as
+    // compiled -- exactly what real tsc would say, since *.check.ts falls
+    // outside every package's own **/*.test.ts(x) exclude -- so it must
+    // pass clean.
     {
       const pkgDir = makeFixturePackage("happy");
-      writeFileSync(join(pkgDir, "src", "index.ts"), "export const x = 1;\n");
+      const indexPath = join(pkgDir, "src", "index.ts");
+      writeFileSync(indexPath, "export const x = 1;\n");
       mkdirSync(join(pkgDir, "src", "internal"), { recursive: true });
-      writeFileSync(
-        join(pkgDir, "src", "internal", "contract.check.ts"),
-        '// @ts-expect-error -- fixture: a real, compiled contract check\nconst wrong: number = "not a number";\n',
-      );
-      const r = run("node", [TYPECHECKED, pkgDir, "--json"]);
+      const checkPath = join(pkgDir, "src", "internal", "contract.check.ts");
+      writeFileSync(checkPath, '// @ts-expect-error -- fixture: a real, compiled contract check\nconst wrong: number = "not a number";\n');
+      const stub = makeStubTsc({ files: [indexPath, checkPath] });
+      const r = runWithStub(pkgDir, stub, ["--json"]);
       let report;
       try { report = JSON.parse(r.out); } catch { report = null; }
-      check("passes a real assertion inside a *.check.ts file tsc compiles", r.code === 0 && report?.ok === true, `exit ${r.code}: ${r.out.slice(0, 300)}`);
+      check("passes a real assertion the stub reports as compiled", r.code === 0 && report?.ok === true, `exit ${r.code}: ${r.out.slice(0, 300)}`);
       check("counts the real assertion as protected, not a finding", report?.findings?.length === 0, `expected zero findings, got ${JSON.stringify(report?.findings)}`);
     }
 
-    // The core regression: the exact same directive shape, but living in a
-    // *.test.ts file -- tsc never compiles it, so it must be caught.
+    // The core regression: the exact same directive shape, but the stub
+    // reports it as NOT compiled -- exactly what real tsc would say for a
+    // *.test.ts file, since every package's tsconfig excludes it -- so it
+    // must be caught.
     {
       const pkgDir = makeFixturePackage("inert");
-      writeFileSync(join(pkgDir, "src", "index.ts"), "export const x = 1;\n");
+      const indexPath = join(pkgDir, "src", "index.ts");
+      writeFileSync(indexPath, "export const x = 1;\n");
       writeFileSync(
         join(pkgDir, "src", "index.test.ts"),
         [
@@ -650,10 +702,13 @@ try {
           "",
         ].join("\n"),
       );
-      const r = run("node", [TYPECHECKED, pkgDir, "--json"]);
+      // index.test.ts deliberately absent from the stub's file list -- the
+      // stand-in for tsc excluding it, same as a real tsconfig would.
+      const stub = makeStubTsc({ files: [indexPath] });
+      const r = runWithStub(pkgDir, stub, ["--json"]);
       let report;
       try { report = JSON.parse(r.out); } catch { report = null; }
-      check("catches a @ts-expect-error planted in a *.test.ts file", r.code === 1 && report?.ok === false, `exit ${r.code}: ${r.out.slice(0, 300)}`);
+      check("catches a @ts-expect-error the stub reports as NOT compiled", r.code === 1 && report?.ok === false, `exit ${r.code}: ${r.out.slice(0, 300)}`);
       check(
         "names the exact inert file and line",
         (report?.findings ?? []).some((f) => f.file === "src/index.test.ts" && f.line === 4),
@@ -664,10 +719,13 @@ try {
     // A comment that merely TALKS ABOUT the directive (backtick-quoted,
     // mid-sentence) must not be mistaken for the directive itself -- the
     // same shape as this repo's own packages/ui/src/atoms/Icon.test.tsx.
-    // Regression guard for the gate's own false-positive rate.
+    // Regression guard for the gate's own false-positive rate. The stub's
+    // file list is irrelevant here (no marker exists to misjudge either
+    // way), so it just needs to be non-empty and valid.
     {
       const pkgDir = makeFixturePackage("prose");
-      writeFileSync(join(pkgDir, "src", "index.ts"), "export const x = 1;\n");
+      const indexPath = join(pkgDir, "src", "index.ts");
+      writeFileSync(indexPath, "export const x = 1;\n");
       writeFileSync(
         join(pkgDir, "src", "index.test.ts"),
         [
@@ -680,7 +738,8 @@ try {
           "",
         ].join("\n"),
       );
-      const r = run("node", [TYPECHECKED, pkgDir, "--json"]);
+      const stub = makeStubTsc({ files: [indexPath] });
+      const r = runWithStub(pkgDir, stub, ["--json"]);
       let report;
       try { report = JSON.parse(r.out); } catch { report = null; }
       check("does not flag prose that only mentions @ts-expect-error", r.code === 0 && report?.ok === true, `exit ${r.code}: ${r.out.slice(0, 300)}`);
@@ -688,13 +747,18 @@ try {
 
     // Fail-closed: every way this gate can fail to determine an answer must
     // exit 2, never share an exit code with a real pass (0) or finding (1).
+    const failClosedRuns = [];
     {
+      // Missing tsconfig.json / missing src/ die BEFORE this gate ever looks
+      // at a tsc binary (real or stubbed) -- no override needed, and these
+      // stay hermetic in every environment on their own.
       const missingTsconfig = join(dir, "missing-tsconfig");
       mkdirSync(join(missingTsconfig, "src"), { recursive: true });
       writeFileSync(join(missingTsconfig, "package.json"), '{"name":"x"}');
       writeFileSync(join(missingTsconfig, "src", "index.ts"), "export const x = 1;\n");
       const r1 = run("node", [TYPECHECKED, missingTsconfig]);
       check("fails closed when tsconfig.json is missing", r1.code === 2, `exit was ${r1.code}`);
+      failClosedRuns.push(r1);
 
       const missingSrc = join(dir, "missing-src");
       mkdirSync(missingSrc, { recursive: true });
@@ -702,24 +766,153 @@ try {
       writeFileSync(join(missingSrc, "tsconfig.json"), FIXTURE_TSCONFIG);
       const r2 = run("node", [TYPECHECKED, missingSrc]);
       check("fails closed when src/ is missing", r2.code === 2, `exit was ${r2.code}`);
+      failClosedRuns.push(r2);
 
+      // Stub exits non-zero, the same shape a real tsc hitting an
+      // unparseable tsconfig.json would (see the real-tsc integration case
+      // below for that exact scenario against the genuine binary).
       const brokenTsconfig = join(dir, "broken-tsconfig");
       mkdirSync(join(brokenTsconfig, "src"), { recursive: true });
       writeFileSync(join(brokenTsconfig, "package.json"), '{"name":"x"}');
       writeFileSync(join(brokenTsconfig, "tsconfig.json"), "not valid json");
       writeFileSync(join(brokenTsconfig, "src", "index.ts"), "export const x = 1;\n");
-      const r3 = run("node", [TYPECHECKED, brokenTsconfig]);
-      check("fails closed when tsconfig.json does not parse", r3.code === 2, `exit was ${r3.code}`);
+      const brokenStub = makeStubTsc({ exitCode: 1, stderr: "tsconfig.json(1,1): error TS1005: fixture parse failure\n" });
+      const r3 = runWithStub(brokenTsconfig, brokenStub);
+      check("fails closed when tsc exits non-zero (e.g. an unparseable tsconfig)", r3.code === 2, `exit was ${r3.code}`);
+      failClosedRuns.push(r3);
 
+      // Stub exits 0 but reports zero files under src/ -- the shape a real
+      // tsconfig with an include pattern matching nothing would produce.
       const emptySrc = join(dir, "empty-src");
       mkdirSync(join(emptySrc, "src"), { recursive: true });
       writeFileSync(join(emptySrc, "package.json"), '{"name":"x"}');
       writeFileSync(join(emptySrc, "tsconfig.json"), FIXTURE_TSCONFIG);
-      const r4 = run("node", [TYPECHECKED, emptySrc]);
+      const emptyStub = makeStubTsc({ files: [] });
+      const r4 = runWithStub(emptySrc, emptyStub);
       check("fails closed when tsc resolves zero files under src/", r4.code === 2, `exit was ${r4.code}`);
+      failClosedRuns.push(r4);
 
-      for (const r of [r1, r2, r3, r4]) {
+      // The exact path CI's `safety` job exercises for real: no override,
+      // and (in that job) no `node_modules/.bin/tsc` at all. Reproduced here
+      // by pointing the override at a path that does not exist, which hits
+      // the identical `!existsSync(tscBin)` branch the real no-install
+      // environment hits -- deterministic and hermetic either way.
+      const noTscBinary = join(dir, "no-tsc-binary");
+      mkdirSync(join(noTscBinary, "src"), { recursive: true });
+      writeFileSync(join(noTscBinary, "package.json"), '{"name":"x"}');
+      writeFileSync(join(noTscBinary, "tsconfig.json"), FIXTURE_TSCONFIG);
+      writeFileSync(join(noTscBinary, "src", "index.ts"), "export const x = 1;\n");
+      const nonexistentTscPath = join(dir, "nonexistent", "tsc");
+      const r5 = run("node", [TYPECHECKED, noTscBinary], {
+        env: { ...process.env, FOUNDRY_TYPECHECK_TSC_OVERRIDE: nonexistentTscPath },
+      });
+      check("fails closed when the tsc binary itself is missing", r5.code === 2 && /no tsc binary/.test(r5.out), `exit ${r5.code}: ${r5.out.slice(0, 200)}`);
+      failClosedRuns.push(r5);
+
+      for (const r of failClosedRuns) {
         check("a fail-closed case never prints a bare PASS", !/^check-typechecked-assertions: OK\.$/m.test(r.out), "a fail-closed case's output looked like a pass");
+      }
+    }
+  }
+
+  // ---------------------------- check-typechecked-assertions: real-tsc integration
+  //
+  // Everything above pins this gate's OWN logic against a scripted stub. This
+  // case is the other half: it proves the stub's contract (files it reports
+  // as compiled are treated as protected, files it omits are treated as
+  // inert) is what a REAL tsc actually does, not just what the stub claims.
+  // Gated on a real tsc binary being present, since this suite otherwise has
+  // to stay runnable with zero installs (see the header above this
+  // sub-section). If it's absent, this SKIPs loudly -- printed unconditionally,
+  // counted separately from pass/fail -- rather than being silently omitted,
+  // which would be exactly the "looks green, checks nothing" failure class
+  // this whole batch of issues is about.
+  console.log("\n# check-typechecked-assertions — real tsc integration (proves the stub isn't lying)");
+  {
+    const realTscBin = join(repoRoot, "node_modules", ".bin", "tsc");
+    if (!existsSync(realTscBin)) {
+      skipped++;
+      console.log(
+        `  SKIP real-tsc integration case — no tsc binary at ${realTscBin} (this environment has no ` +
+          `npm ci; exactly what CI's \`safety\` job looks like). The hermetic stub-based cases above still ` +
+          `cover this gate's own logic. Re-run \`node scripts/test-gates.mjs\` after \`npm ci\` (e.g. CI's ` +
+          `\`build\` job, or a normal local \`npm run check\`) to actually exercise this case.`,
+      );
+    } else {
+      const dir = join(work, "typechecked-assertions-real");
+      mkdirSync(dir, { recursive: true });
+
+      // The real tsconfig shape every package in this repo actually ships,
+      // not the stub-only fixture above -- this is what makes the case an
+      // integration test of the real convention, not another unit test.
+      const REAL_TSCONFIG = JSON.stringify(
+        {
+          compilerOptions: {
+            target: "ES2022",
+            module: "ESNext",
+            moduleResolution: "Bundler",
+            strict: true,
+            skipLibCheck: true,
+            outDir: "./dist",
+            rootDir: "./src",
+            noEmit: true,
+          },
+          include: ["src/**/*"],
+          exclude: ["node_modules", "dist", "**/*.test.ts"],
+        },
+        null,
+        2,
+      );
+
+      function makeRealFixture(name) {
+        const pkgDir = join(dir, name);
+        mkdirSync(join(pkgDir, "src"), { recursive: true });
+        writeFileSync(join(pkgDir, "package.json"), JSON.stringify({ name: `${FIXTURE_SCOPE}/${name}`, version: "1.0.0" }));
+        writeFileSync(join(pkgDir, "tsconfig.json"), REAL_TSCONFIG);
+        return pkgDir;
+      }
+
+      // No FOUNDRY_TYPECHECK_TSC_OVERRIDE set -- this invokes the gate's
+      // default code path, the real node_modules/.bin/tsc, exactly as
+      // production does.
+      {
+        const pkgDir = makeRealFixture("real-happy");
+        writeFileSync(join(pkgDir, "src", "index.ts"), "export const x = 1;\n");
+        mkdirSync(join(pkgDir, "src", "internal"), { recursive: true });
+        writeFileSync(
+          join(pkgDir, "src", "internal", "contract.check.ts"),
+          '// @ts-expect-error -- fixture: a real, compiled contract check\nconst wrong: number = "not a number";\n',
+        );
+        const r = run("node", [TYPECHECKED, pkgDir, "--json"]);
+        let report;
+        try { report = JSON.parse(r.out); } catch { report = null; }
+        check("[real tsc] passes a real assertion actually compiled by tsc", r.code === 0 && report?.ok === true, `exit ${r.code}: ${r.out.slice(0, 300)}`);
+      }
+
+      {
+        const pkgDir = makeRealFixture("real-inert");
+        writeFileSync(join(pkgDir, "src", "index.ts"), "export const x = 1;\n");
+        writeFileSync(
+          join(pkgDir, "src", "index.test.ts"),
+          [
+            'import { describe, it } from "vitest";',
+            'describe("x", () => {',
+            '  it("is inert", () => {',
+            "    // @ts-expect-error -- fixture: this directive is inert, index.test.ts is excluded from tsc",
+            '    const wrong: number = "not a number";',
+            "  });",
+            "});",
+            "",
+          ].join("\n"),
+        );
+        const r = run("node", [TYPECHECKED, pkgDir, "--json"]);
+        let report;
+        try { report = JSON.parse(r.out); } catch { report = null; }
+        check(
+          "[real tsc] catches a @ts-expect-error real tsc actually excludes",
+          r.code === 1 && report?.ok === false && (report?.findings ?? []).some((f) => f.file === "src/index.test.ts"),
+          `exit ${r.code}: ${r.out.slice(0, 300)}`,
+        );
       }
     }
   }
@@ -727,5 +920,8 @@ try {
   rmSync(work, { recursive: true, force: true });
 }
 
-console.log(`\n${failures.length ? "FAIL" : "PASS"} — ${passed} assertion(s) passed, ${failures.length} failed.`);
+console.log(
+  `\n${failures.length ? "FAIL" : "PASS"} — ${passed} assertion(s) passed, ${failures.length} failed` +
+    (skipped ? `, ${skipped} skipped (see SKIP line(s) above — not counted as passing).` : `.`),
+);
 process.exit(failures.length ? 1 : 0);

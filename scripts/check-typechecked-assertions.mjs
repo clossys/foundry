@@ -64,7 +64,12 @@
 //     for a real package; treated as a sign this gate broke, not as green).
 // None of these share an exit code with a real pass (0) or a real finding
 // (1) — see check-gates.mjs's own fail-closed cases for the same principle
-// applied to the safety gates.
+// applied to the safety gates. All five are exercised in test-gates.mjs
+// hermetically (see FOUNDRY_TYPECHECK_TSC_OVERRIDE above), including "no
+// tsc binary": that is a real path CI exercises directly, since the
+// `safety` job runs check:gates with no `npm ci` and therefore no tsc
+// installed at all — this gate hitting exactly that and refusing to guess
+// is correct, expected behaviour there, not a bug to route around.
 //
 // WHAT COUNTS AS A "TYPE-LEVEL ASSERTION"
 // ------------------------------------------
@@ -126,7 +131,16 @@ try {
 
 // ------------------------------------------------------- resolve the compiled set
 
-const tscBin = join(repoRoot, "node_modules", ".bin", "tsc");
+// FOUNDRY_TYPECHECK_TSC_OVERRIDE is a test-only injection seam: it lets
+// scripts/test-gates.mjs point this gate at a stub tsc binary so its
+// regression tests stay hermetic (see check-gates.mjs's own header — every
+// script under scripts/ has to run with zero dependencies, because the
+// `safety` CI job runs `check:gates` with no `npm ci` at all). It is never
+// set in a real invocation, where the whole point is to ask the REAL
+// installed tsc, not a stand-in for it.
+const tscBin = process.env.FOUNDRY_TYPECHECK_TSC_OVERRIDE
+  ? resolve(process.env.FOUNDRY_TYPECHECK_TSC_OVERRIDE)
+  : join(repoRoot, "node_modules", ".bin", "tsc");
 if (!existsSync(tscBin)) {
   die(`no tsc binary at ${tscBin} — run npm install first; refusing to guess what tsc would compile`);
 }
