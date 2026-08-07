@@ -20,11 +20,22 @@ content. Four different products can depend on this package and state four
 completely different missions, markets, and facts — nothing here decides
 what any of them says.
 
-**What ships here:** Zod schemas (`FactSchema`, `MissionSchema`,
-`PositioningSchema`, `MarketSchema`, `AudienceSchema`, `RoadmapItemSchema`),
-a typed reader (`readStrategy`) that loads and validates a consumer's own
-strategy directory, and a facts-traceability gate (`checkFactsTraceability`)
-that scans prose and copy for claims that don't trace back to a real fact.
+**What ships here:** hand-rolled, dependency-free entity validators
+(`validateFact`, `validateMission`, `validatePositioning`, `validateMarket`,
+`validateAudience`, `validateRoadmapItem`, and their whole-file `*s`/`*Items`
+counterparts), a typed reader (`readStrategy`) that loads and validates a
+consumer's own strategy directory, and a facts-traceability gate
+(`checkFactsTraceability`) that scans prose and copy for claims that don't
+trace back to a real fact.
+
+Validation here is hand-rolled on purpose, not built on a schema library:
+`@vespeneventures/catalog`, `@vespeneventures/policy`, and
+`@vespeneventures/tokens` all ship with **zero** runtime dependencies, and
+this package's own pitch — "pure data + validation, safe to install" — is
+only really true if installing it doesn't also mean resolving a schema
+library's own major version into a consumer's tree. `validation.ts` follows
+`@vespeneventures/policy`'s own `validate.ts` precedent: plain type guards
+over `unknown`, an accumulated issue list, never throws.
 
 **What does not ship here:** any real company's mission, vision, values,
 positioning, market sizing, audience research, roadmap, or facts. Every
@@ -59,7 +70,7 @@ console.log(bundle.facts.length, "facts loaded");
 ```
 
 `readStrategy` never throws. Anything that could not be turned into usable
-data — a missing `facts.json`, invalid JSON, a schema violation — is
+data — a missing `facts.json`, invalid JSON, a shape violation — is
 recorded into `bundle.issues` and reflected in `bundle.complete`, the same
 discipline `@vespeneventures/catalog`'s `buildCatalog` holds to for its own
 `Catalog.skipped`. `complete` is `true` only when `facts.json` itself
@@ -210,19 +221,35 @@ same in a report).
 
 ### Entities (`schema.ts`)
 
+Every `validate*` function has the same shape: `(value: unknown) =>
+{ ok: true; value: T } | { ok: false; issues: ValidationIssue[] }` (see
+`ValidationResult`/`Validator` in "Validation primitives" below). None of
+them throw.
+
 | Export | Kind | Purpose |
 | --- | --- | --- |
-| `FactSchema` | Zod schema | One `Fact`: `key`, `label`, `value`, optional `unit`/`asOf`/`verifiedBy`/`aliases`, required `source` and `lastUpdatedAt`. |
-| `FactsFileSchema` | Zod schema | The whole contents of a `facts.json` file — `Fact[]`, additionally rejecting a duplicate `key`. |
-| `MoneySchema` | Zod schema | `{ amount: number; currency: string }` — an ISO 4217 code. A monetary `Fact.value` is always this shape, never a bare number. |
-| `MissionSchema` | Zod schema | `{ statement, vision, values: OperatingValue[] }`. |
-| `OperatingValueSchema` | Zod schema | `{ name, rule }` — one operating value; `rule` is the decision it forces when two paths look equally good. |
-| `PositioningSchema` | Zod schema | The classic positioning-statement fields: `productName`, `category`, `forWhom`, `weAre`, `unlike`, `reasonToBelieve`. |
-| `MarketSchema` / `MarketsFileSchema` | Zod schema | One market / an array of markets. `factRefs?: string[]` names `Fact.key`s this market's sizing claims trace to (not cross-validated by the schema itself). |
-| `AudienceSchema` / `AudiencesFileSchema` | Zod schema | One audience / an array of audiences. `painPoints?: string[]`, `factRefs?: string[]`. |
-| `RoadmapItemSchema` / `RoadmapFileSchema` | Zod schema | One roadmap item / an array of them. `status` is the closed vocabulary `RoadmapStatusSchema`. |
-| `RoadmapStatusSchema` | Zod schema | `"now" \| "next" \| "later" \| "shipped"`. |
-| `Fact`, `Money`, `Mission`, `OperatingValue`, `Positioning`, `Market`, `Audience`, `RoadmapItem`, `RoadmapStatus` | types | `z.infer` of the schemas above. |
+| `validateFact(value)` | function | One `Fact`: `key`, `label`, `value`, optional `unit`/`asOf`/`verifiedBy`/`aliases`, required `source` and `lastUpdatedAt`. |
+| `validateFacts(value)` | function | The whole contents of a `facts.json` file — `Fact[]`, additionally rejecting a duplicate `key`. |
+| `validateMoney(value)` | function | `{ amount: number; currency: string }` — an ISO 4217 code. A monetary `Fact.value` is always this shape, never a bare number. |
+| `validateMission(value)` | function | `{ statement, vision, values: OperatingValue[] }`. |
+| `validatePositioning(value)` | function | The classic positioning-statement fields: `productName`, `category`, `forWhom`, `weAre`, `unlike`, `reasonToBelieve`. |
+| `validateMarket(value)` / `validateMarkets(value)` | function | One market / an array of markets. `factRefs?: string[]` names `Fact.key`s this market's sizing claims trace to (not cross-checked against a live facts set here). |
+| `validateAudience(value)` / `validateAudiences(value)` | function | One audience / an array of audiences. `painPoints?: string[]`, `factRefs?: string[]`. |
+| `validateRoadmapItem(value)` / `validateRoadmapItems(value)` | function | One roadmap item / an array of them. `status` is the closed vocabulary in `ROADMAP_STATUSES`. |
+| `ROADMAP_STATUSES` | const | `readonly RoadmapStatus[]` — `["now", "next", "later", "shipped"]`, in the order a new status would be added. Mirrors `@vespeneventures/policy`'s own `DIGEST_ALGORITHMS`. |
+| `Fact`, `Money`, `Mission`, `OperatingValue`, `Positioning`, `Market`, `Audience`, `RoadmapItem`, `RoadmapStatus` | types | Plain TypeScript interfaces/unions — the shape each `validate*` function above checks and returns on success. |
+
+### Validation primitives (`validation.ts`)
+
+The shared, dependency-free primitives every validator above is built
+from — most consumers never need these directly, but they're exported for
+anyone extending this package with their own entity.
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `ValidationIssue` | type | `{ path: string; message: string }` — one thing a validator found wrong. `path` is absolute, e.g. `"values[0].rule"`, or `"(root)"` for a whole-value shape problem. |
+| `ValidationResult<T>` | type | `{ ok: true; value: T } \| { ok: false; issues: ValidationIssue[] }`. |
+| `Validator<T>` | type | `(value: unknown) => ValidationResult<T>` — the shape every exported `validate*` function above satisfies, and the type `reader.ts` accepts internally. |
 
 ### Reader (`reader.ts`)
 
@@ -269,8 +296,7 @@ without ever deciding what should happen next.
 
 ## Requirements
 
-Node 20+. ESM only. Runtime dependency: `zod` (schema definition and
-validation — the entity contract this package exists to ship).
+Node 20+. ESM only. No runtime dependencies.
 
 ## Licence
 

@@ -24,12 +24,12 @@
     "LICENSE"
   ],
   "sideEffects": false,
-  "description": "Upstream strategy machinery, not content: Zod-schema'd entities (facts, mission, positioning, markets, audiences, roadmap) plus a typed reader that loads and validates a consumer's own strategy directory, and a facts-traceability gate that scans prose and copy for numeric/superlative claims and fails when one cannot be traced back to a facts.json entry. This package ships the schema and the checker; every consumer authors its own values.",
+  "description": "Upstream strategy machinery, not content: hand-rolled, dependency-free entity validators (facts, mission, positioning, markets, audiences, roadmap) plus a typed reader that loads and validates a consumer's own strategy directory, and a facts-traceability gate that scans prose and copy for numeric/superlative claims and fails when one cannot be traced back to a facts.json entry. This package ships the schema and the checker; every consumer authors its own values.",
   "keywords": [
     "strategy",
     "facts",
     "traceability",
-    "zod",
+    "validation",
     "gate",
     "typescript"
   ],
@@ -45,9 +45,6 @@
   "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/strategy#readme",
   "engines": {
     "node": ">=20"
-  },
-  "dependencies": {
-    "zod": "^3.23.8"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

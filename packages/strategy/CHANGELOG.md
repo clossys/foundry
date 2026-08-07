@@ -7,12 +7,19 @@ All notable changes to this package are documented here. Format follows
 
 ### Added
 
-- Initial release. Zod entity schemas — `FactSchema`/`FactsFileSchema`,
-  `MoneySchema`, `MissionSchema`/`OperatingValueSchema`,
-  `PositioningSchema`, `MarketSchema`/`MarketsFileSchema`,
-  `AudienceSchema`/`AudiencesFileSchema`, `RoadmapItemSchema`/
-  `RoadmapFileSchema`/`RoadmapStatusSchema` — machinery only, no real
-  strategy content ships in this package.
+- Initial release. Hand-rolled, dependency-free entity validators —
+  `validateFact`/`validateFacts`, `validateMoney`,
+  `validateMission`/`validateMission`'s `OperatingValue` items,
+  `validatePositioning`, `validateMarket`/`validateMarkets`,
+  `validateAudience`/`validateAudiences`,
+  `validateRoadmapItem`/`validateRoadmapItems`/`ROADMAP_STATUSES` —
+  machinery only, no real strategy content ships in this package. Built on
+  a small shared primitive layer (`validation.ts`) rather than a schema
+  library, following `@vespeneventures/policy`'s own `validate.ts`
+  precedent (plain type guards over `unknown`, an accumulated issue list,
+  never throws) — this package ships **zero runtime dependencies**, the
+  same as `@vespeneventures/catalog`, `@vespeneventures/policy`, and
+  `@vespeneventures/tokens`.
 - `readStrategy(root)`: a typed reader that loads and validates a
   consumer's own `strategy/` directory. Never throws; records anything it
   could not turn into usable data into `StrategyBundle.issues`, the same

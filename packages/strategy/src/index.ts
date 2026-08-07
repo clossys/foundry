@@ -4,12 +4,12 @@
  * This package ships two halves, and the second is what justifies the
  * first:
  *
- *   1. SCHEMA + READERS. Zod-schema'd entities (`Fact`, `Mission`,
- *      `Positioning`, `Market`, `Audience`, `RoadmapItem` — see
- *      `schema.ts`) plus `readStrategy` (`reader.ts`), a typed reader that
- *      loads and validates a consumer's real strategy directory. Pure data
- *      and validation, except `readStrategy` itself, which is this
- *      package's one deliberate I/O surface.
+ *   1. SCHEMA + READERS. Hand-rolled, dependency-free entity validators
+ *      (`Fact`, `Mission`, `Positioning`, `Market`, `Audience`,
+ *      `RoadmapItem` — see `schema.ts`) plus `readStrategy` (`reader.ts`),
+ *      a typed reader that loads and validates a consumer's real strategy
+ *      directory. Pure data and validation, except `readStrategy` itself,
+ *      which is this package's one deliberate I/O surface.
  *
  *   2. THE FACTS GATE. `checkFactsTraceability` (`facts-gate.ts`) scans
  *      prose (and copy in source) for numeric and superlative claims and
@@ -27,19 +27,18 @@
  */
 
 export {
-  AudienceSchema,
-  AudiencesFileSchema,
-  FactSchema,
-  FactsFileSchema,
-  MarketSchema,
-  MarketsFileSchema,
-  MissionSchema,
-  MoneySchema,
-  OperatingValueSchema,
-  PositioningSchema,
-  RoadmapFileSchema,
-  RoadmapItemSchema,
-  RoadmapStatusSchema,
+  ROADMAP_STATUSES,
+  validateAudience,
+  validateAudiences,
+  validateFact,
+  validateFacts,
+  validateMarket,
+  validateMarkets,
+  validateMission,
+  validateMoney,
+  validatePositioning,
+  validateRoadmapItem,
+  validateRoadmapItems,
 } from "./schema.js";
 export type {
   Audience,
@@ -70,3 +69,5 @@ export type {
 
 export { scanStrategyDirectory } from "./scan.js";
 export type { ScanOptions } from "./scan.js";
+
+export type { ValidationIssue, ValidationResult, Validator } from "./validation.js";

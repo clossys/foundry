@@ -11,12 +11,12 @@
  * Expected directory shape, every file optional except `facts.json`:
  *
  *   strategy/
- *     facts.json        required — FactsFileSchema (array of Fact)
- *     mission.json       optional — MissionSchema
- *     positioning.json   optional — PositioningSchema
- *     markets.json        optional — MarketsFileSchema (array of Market)
- *     audiences.json       optional — AudiencesFileSchema (array of Audience)
- *     roadmap.json          optional — RoadmapFileSchema (array of RoadmapItem)
+ *     facts.json        required — validateFacts (array of Fact)
+ *     mission.json       optional — validateMission
+ *     positioning.json   optional — validatePositioning
+ *     markets.json        optional — validateMarkets (array of Market)
+ *     audiences.json       optional — validateAudiences (array of Audience)
+ *     roadmap.json          optional — validateRoadmapItems (array of RoadmapItem)
  *
  * `facts.json` is singled out as required because it is this package's
  * whole reason to exist: `checkFactsTraceability` (see `facts-gate.ts`) has
@@ -29,14 +29,13 @@
 
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { ZodError, ZodSchema } from "zod";
 import {
-  AudiencesFileSchema,
-  FactsFileSchema,
-  MarketsFileSchema,
-  MissionSchema,
-  PositioningSchema,
-  RoadmapFileSchema,
+  validateAudiences,
+  validateFacts,
+  validateMarkets,
+  validateMission,
+  validatePositioning,
+  validateRoadmapItems,
   type Audience,
   type Fact,
   type Market,
@@ -44,6 +43,7 @@ import {
   type Positioning,
   type RoadmapItem,
 } from "./schema.js";
+import { summarizeIssues, type Validator } from "./validation.js";
 
 /**
  * Why one file did not become usable data. `"unreadable"` is a real I/O
@@ -61,7 +61,7 @@ export interface StrategyReadIssue {
   /** Which file this issue is about, relative to the strategy root, e.g. "facts.json". */
   file: string;
   reason: StrategyReadIssueReason;
-  /** Human-readable detail: the I/O error message, the JSON parse error, or the Zod issue summary. */
+  /** Human-readable detail: the I/O error message, the JSON parse error, or the validator's issue summary. */
   detail: string;
 }
 
@@ -91,7 +91,7 @@ export interface StrategyBundle {
 
 function readJsonFile<T>(
   path: string,
-  schema: ZodSchema<T>,
+  validate: Validator<T>,
 ): { ok: true; value: T } | { ok: false; issue: StrategyReadIssue } {
   const relLabel = path; // caller passes an already-relative label for messages
   let raw: string;
@@ -112,17 +112,11 @@ function readJsonFile<T>(
       issue: { file: relLabel, reason: "unparseable", detail: error instanceof Error ? error.message : String(error) },
     };
   }
-  const result = schema.safeParse(parsed);
-  if (!result.success) {
-    return { ok: false, issue: { file: relLabel, reason: "invalid-schema", detail: summarizeZodError(result.error) } };
+  const result = validate(parsed);
+  if (!result.ok) {
+    return { ok: false, issue: { file: relLabel, reason: "invalid-schema", detail: summarizeIssues(result.issues) } };
   }
-  return { ok: true, value: result.data };
-}
-
-function summarizeZodError(error: ZodError): string {
-  return error.issues
-    .map((issue) => `${issue.path.length ? issue.path.join(".") : "(root)"}: ${issue.message}`)
-    .join("; ");
+  return { ok: true, value: result.value };
 }
 
 /**
@@ -140,7 +134,7 @@ export function readStrategy(root: string): StrategyBundle {
   if (!existsSync(factsPath)) {
     issues.push({ file: "facts.json", reason: "missing-required", detail: "facts.json does not exist under the strategy root" });
   } else {
-    const result = readJsonFile(factsPath, FactsFileSchema);
+    const result = readJsonFile(factsPath, validateFacts);
     if (result.ok) {
       facts = result.value;
     } else {
@@ -148,20 +142,20 @@ export function readStrategy(root: string): StrategyBundle {
     }
   }
 
-  function readOptional<T>(fileName: string, schema: ZodSchema<T>): T | undefined {
+  function readOptional<T>(fileName: string, validate: Validator<T>): T | undefined {
     const path = join(root, fileName);
     if (!existsSync(path)) return undefined;
-    const result = readJsonFile(path, schema);
+    const result = readJsonFile(path, validate);
     if (result.ok) return result.value;
     issues.push({ ...result.issue, file: fileName });
     return undefined;
   }
 
-  const mission = readOptional("mission.json", MissionSchema);
-  const positioning = readOptional("positioning.json", PositioningSchema);
-  const markets = readOptional("markets.json", MarketsFileSchema);
-  const audiences = readOptional("audiences.json", AudiencesFileSchema);
-  const roadmap = readOptional("roadmap.json", RoadmapFileSchema);
+  const mission = readOptional("mission.json", validateMission);
+  const positioning = readOptional("positioning.json", validatePositioning);
+  const markets = readOptional("markets.json", validateMarkets);
+  const audiences = readOptional("audiences.json", validateAudiences);
+  const roadmap = readOptional("roadmap.json", validateRoadmapItems);
 
   return {
     root,
