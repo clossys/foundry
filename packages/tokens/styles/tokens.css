@@ -248,7 +248,7 @@ html:not([data-brand-bound])::before {
    * RADIUS (5 · Tailwind `--radius-*` namespace)
    * ════════════════════════════════════════════════════════════════ */
   --radius-sharp:                 0px;
-  --radius-s:                     2px;
+  --radius-subtle:                2px;
   --radius-default:               3px;     /* brandable — the one radius most brands change */
   --radius-control:               6px;
   --radius-pill:                  999px;

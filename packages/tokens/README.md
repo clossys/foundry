@@ -112,6 +112,23 @@ whether it's a color, font size, font family, letter-spacing, spacing step,
 radius, easing curve, or breakpoint first — if so, it's case 1, name it in
 Tailwind's namespace. Everything else is case 2 — name it `--ui-<family>-<role>`.
 
+### Case 1 names must not shadow a Tailwind builtin
+
+Sitting inside a real Tailwind `@theme` namespace (case 1, above) means
+`theme.css` generates a matching utility class automatically — but
+Tailwind ALSO hardcodes a small, fixed set of utility-class suffixes
+within `--radius-*`, `--spacing-*`, `--text-*`, and `--font-*` that are
+produced by their own dedicated utility function, independent of the
+`@theme` scale (radius's logical/physical corner names and `none`/`full`;
+spacing's `px`/`auto`/`full`; text's alignment/wrap/overflow/color
+keywords; font's weight keywords). A token whose suffix matches one of
+those names collides with Tailwind's own builtin utility of the same
+name — silently: nothing errors, but the compiled CSS is wrong (see
+CHANGELOG.md's `--radius-s` → `--radius-subtle` entry for the concrete,
+compiled-CSS evidence). `src/tailwind-builtin-collision.test.ts` enforces
+this for every token in this package and fails the build if a new token's
+suffix collides with one of Tailwind's reserved names.
+
 ## Tailwind is optional
 
 `tokens.css` is a complete token system with zero framework requirement —
@@ -208,7 +225,7 @@ cleanly" below for why.
 | --- | --- | --- |
 | `--spacing-xs` ... `--spacing-6xl` (10 steps: `4px`, `8px`, `12px`, `16px`, `24px`, `32px`, `48px`, `64px`, `96px`, `128px`) | fixed 4px-rooted scale | no |
 | `--radius-sharp` | `0px` | no |
-| `--radius-s` | `2px` | no |
+| `--radius-subtle` | `2px` | no |
 | `--radius-default` | `3px` | **yes** |
 | `--radius-control` | `6px` | no |
 | `--radius-pill` | `999px` | no |

@@ -145,7 +145,7 @@
 
   /* ── RADIUS ───────────────────────────────────────────────────── */
   --radius-sharp:                  var(--radius-sharp, 0px);
-  --radius-s:                      var(--radius-s, 2px);
+  --radius-subtle:                 var(--radius-subtle, 2px);
   --radius-default:                var(--radius-default, 3px);
   --radius-control:                var(--radius-control, 6px);
   --radius-pill:                   var(--radius-pill, 999px);
