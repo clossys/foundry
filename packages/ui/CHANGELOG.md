@@ -13,3 +13,11 @@ All notable changes to this package are documented here. Format follows
   `react-aria-components` for behavior/accessibility and styled with
   Tailwind utility classes generated from `@vespeneventures/tokens`.
 - `./atoms` subpath export only; no root export.
+- The `blocks` layer: `PageHeader`, `Breadcrumb`, `EmptyState`. Each
+  composes atoms and/or layout through `ReactNode` slots rather than a
+  `mode`/`variant` prop. `Breadcrumb` builds on
+  `react-aria-components`' `Breadcrumbs`/`Breadcrumb`/`Link` collection
+  components for nav semantics and automatic `aria-current` placement.
+- `./blocks` subpath export, alongside `./atoms`.
+- `src/ladder.test.ts`: structurally enforces that `atoms/` never imports
+  from `blocks/`.
