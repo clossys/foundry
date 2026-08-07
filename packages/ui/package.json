@@ -36,6 +36,10 @@
     "./blocks": {
       "types": "./dist/blocks/index.d.ts",
       "import": "./dist/blocks/index.js"
+    },
+    "./shell": {
+      "types": "./dist/shell/index.d.ts",
+      "import": "./dist/shell/index.js"
     }
   },
   "files": [

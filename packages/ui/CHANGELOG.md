@@ -32,3 +32,25 @@ All notable changes to this package are documented here. Format follows
   disabled-item handling. `Avatar` and `Spinner` are plain markup, like
   `Badge`/`Card` — neither is interactive, so neither needs a
   react-aria-components primitive.
+- The `shell` layer: `Shell`, the persistent application frame (`Header`,
+  `SideNav`, `Main`, `Rail`, `Footer` slots — every one but `Main`
+  optional, and correct with none of them: no empty grid track, no
+  phantom spacing), plus its skip-to-content link. Slots, never a
+  `mode`/`variant` prop, for structurally different chrome. `SideNav`
+  collapses to an icon-rail width below the `tablet` breakpoint and `Rail`
+  hides entirely below `desktop`, both CSS-only.
+- `Toaster` and the imperative `toast` API (`toast.success`/`.error`/
+  `.warning`/`.info`, plain `toast(...)`, each returning a dismiss
+  handle) — a runtime service, not a rung of the atoms → blocks → views
+  ladder, shipped alongside `shell` because its lifetime requirement is
+  identical. Built on react-aria-components' `ToastRegion`/`Toast`/
+  `ToastContent` for portal rendering, focus management, and pausing on
+  hover/focus; overrides `ToastContent`'s always-assertive default so only
+  `danger` toasts are an assertive live region (`role="alert"`) — every
+  other variant is polite (`role="status"`).
+- `./shell` subpath export, alongside `./atoms` and `./blocks`.
+- `src/ladder.test.ts` extended: no file under `src/atoms/` or
+  `src/blocks/` may import `views/` or `shell/`, and `shell/` may never
+  import `views/`. `shell/` importing `atoms/` (and `blocks/`, though
+  nothing under `shell/` currently does) remains permitted, the same
+  direction `blocks/` importing `atoms/` already was.
