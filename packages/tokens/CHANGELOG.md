@@ -3,6 +3,45 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.5.0] - Unreleased
+
+### Added
+
+- **Icon sizing tokens** (`--ui-icon-*`, 4 tokens, new `icon` family):
+  `--ui-icon-sm`/`-md`/`-lg` (`16px`/`24px`/`32px`) plus `--ui-icon-stroke`
+  (`2`) — the render contract for `@vespeneventures/ui`'s new `Icon` atom.
+  The three size steps are **aliases** of `--spacing-lg`/`-xl`/`-2xl`,
+  following the exact `var(--spacing-x, <fallback>)` shape `--ui-density-*`
+  already established: coherent with the padding scale by default (an icon
+  next to `md`-density padding sizes itself from the same vocabulary,
+  automatically), independently reboundable without moving the padding
+  scale everything else reads from. Three steps, not a free-standing pixel
+  scale and not more than three: the one consumer of icon sizing that
+  existed before this token family shipped exactly three (`sm`/`md`/`lg` at
+  16/24/32px), so three is the evidence-backed count — a fourth/fifth step
+  is a non-breaking future addition if a real need shows up, unlike
+  shrinking an over-eager scale back down later.
+  `src/naming.test.ts`'s `UI_NAMESPACE_PREFIX` table gained an `icon` entry
+  so the new family is checked by the same naming-coverage test as every
+  other `--ui-*` family; `--ui-icon-*` doesn't intersect any of the four
+  Tailwind-namespaced families `src/tailwind-builtin-collision.test.ts`
+  checks (it has no Tailwind `@theme` namespace at all, the same as every
+  other `--ui-*` token), so that test needed no new coverage — verified by
+  temporarily removing the `icon` entry from `naming.test.ts` and confirming
+  the naming-coverage tests fail red before restoring it.
+- **`--ui-icon-stroke` — a stroke-width token, argued for rather than
+  assumed.** The glyph data this token pairs with (see
+  `@vespeneventures/ui`'s new `./icons` subpath) is authored at a single
+  fixed stroke weight with no lever a consumer could pull to make an icon
+  set read lighter or heavier to match a brand's voice — the same kind of
+  gap `--radius-default` exists to close for corner rounding. Unlike the
+  three size steps, this is a LITERAL value, not an alias (there is no
+  existing "stroke" scale to alias onto), and it is `brandable: true` — a
+  brand identity choice in the same category as `--radius-default`, not a
+  structural constant like `--ui-border-hairline`. `styles/brand-template.css`
+  gained an optional (commented) slot for it; no dark-mode slot, since
+  stroke weight is theme-invariant the same way `--radius-default` is.
+
 ## [0.4.0] - Unreleased
 
 ### Added

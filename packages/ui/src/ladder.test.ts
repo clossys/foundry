@@ -55,6 +55,7 @@ const blocksDir = join(srcDir, "blocks");
 const viewsDir = join(srcDir, "views");
 const shellDir = join(srcDir, "shell");
 const chartsDir = join(srcDir, "charts");
+const iconsDir = join(srcDir, "icons");
 
 function collectSourceFiles(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
@@ -276,5 +277,58 @@ describe("ladder invariant: charts is a sibling layer (may import atoms; nothing
   it("sanity (permitted direction): charts/ DOES import from atoms/, and the scan finds it — proving the scan inspects real code rather than passing on zero coverage", () => {
     const chartsImportingAtoms = findViolations(chartsDir, "atoms");
     expect(chartsImportingAtoms.length).toBeGreaterThan(0);
+  });
+});
+
+/**
+ * `icons` (`@vespeneventures/ui/icons`) is a pure-DATA leaf sitting BELOW
+ * `atoms` — even more foundational than `atoms` itself, not a sibling
+ * domain the way `charts` is. Every file under `src/icons/` exports a plain
+ * `IconNode` (`ReadonlyArray<readonly [tag: string, attrs: Record<string,
+ * string>]>`) with no rendering logic, no React import, and no dependency
+ * on anything else in this package — the render CONTRACT (size, colour,
+ * accessibility) lives in `atoms/Icon.tsx` instead (see that file's own
+ * "Why a render contract lives here" note). The permitted direction is
+ * therefore the mirror image of every other rule in this file: `atoms` may
+ * import `icons` (never the reverse), and nothing under `icons/` may import
+ * from ANY other layer in this package, including `atoms` — a glyph-data
+ * module reaching up into `atoms/` would mean the single most foundational
+ * layer in this package depends on something built out of it, the same
+ * "backwards" failure `ladder.test.ts`'s very first rule (`atoms` must
+ * never import `blocks/`) exists to catch, just one rung further down.
+ */
+describe("ladder invariant: icons is a pure-data leaf below atoms (atoms may import icons; icons imports nothing from ui)", () => {
+  it("no file under src/icons/ imports from atoms/", () => {
+    expectNoImportsOf(
+      iconsDir,
+      "icons",
+      "atoms",
+      "icons is pure glyph DATA below atoms, the single most foundational layer in this package; a glyph module depending on atoms would be exactly backwards.",
+    );
+  });
+
+  it("no file under src/icons/ imports from blocks/", () => {
+    expectNoImportsOf(iconsDir, "icons", "blocks", "Same reasoning as icons -> atoms, one layer further up.");
+  });
+
+  it("no file under src/icons/ imports from views/", () => {
+    expectNoImportsOf(iconsDir, "icons", "views", "Same reasoning as icons -> atoms, further up still.");
+  });
+
+  it("no file under src/icons/ imports from shell/", () => {
+    expectNoImportsOf(iconsDir, "icons", "shell", "Shell is the frame content is rendered inside of; icons depending on shell would be exactly backwards, the same reason atoms must not.");
+  });
+
+  it("no file under src/icons/ imports from charts/", () => {
+    expectNoImportsOf(iconsDir, "icons", "charts", "Charts is a sibling domain built partly on atoms; icons sits below atoms and must never depend on a layer built on top of it.");
+  });
+
+  it("sanity (permitted direction): atoms/ DOES import from icons/, and the scan finds it — proving the scan inspects real code rather than passing on zero coverage, and confirming this direction is the permitted one (no assertion here forbids it)", () => {
+    // `atoms/Icon.tsx` imports `IconNode` (a type-only import, erased at
+    // compile time) from `icons/types.ts` — the one real, non-contrived
+    // `atoms -> icons` edge in this package, single-sourcing the tuple
+    // shape rather than maintaining two independently-typed copies of it.
+    const atomsImportingIcons = findViolations(atomsDir, "icons");
+    expect(atomsImportingIcons.length).toBeGreaterThan(0);
   });
 });

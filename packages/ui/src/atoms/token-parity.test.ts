@@ -250,6 +250,10 @@ const KNOWN_NON_CLASS_MAPS = new Set([
   // into a `var(--token, <fallback>)` string, never used as a class name.
   "CHART_CATEGORICAL_FALLBACK",
   "CHART_SEQUENTIAL_FALLBACK",
+  // atoms/Icon.tsx — size -> `var(--ui-icon-*, <fallback>)` string lookup,
+  // read via `style.width`/`style.height`, never a Tailwind class name (the
+  // same reason `CHART_*_FALLBACK` above is non-class, not a scan gap).
+  "SIZE_VARS",
 ]);
 
 function extractCandidateClasses(code: string): Set<string> {

@@ -41,6 +41,7 @@ const UI_NAMESPACE_PREFIX: Record<string, string> = {
   width: "--ui-width-",
   layout: "--ui-layout-",
   density: "--ui-density-",
+  icon: "--ui-icon-",
   border: "--ui-border-",
   elevation: "--ui-elevation-",
   ring: "--ui-ring-",

@@ -30,6 +30,9 @@
 export { Button } from "./Button.js";
 export type { ButtonProps, ButtonSize, ButtonVariant } from "./Button.js";
 
+export { Icon } from "./Icon.js";
+export type { IconProps, IconSize, IconAccessibilityProps, IconNode } from "./Icon.js";
+
 export { TextField } from "./TextField.js";
 export type { TextFieldProps } from "./TextField.js";
 

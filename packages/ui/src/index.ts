@@ -7,11 +7,13 @@
  * names are reachable from one place for internal tooling (see
  * `scripts/check-readme-parity.mjs` in the repository root, which reads
  * `src/index.ts` as every package's canonical export list); it re-exports
- * exactly what `./atoms/index.js` and `./blocks/index.js` export, nothing
- * more.
+ * exactly what `./atoms/index.js`, `./icons/index.js`, `./blocks/index.js`,
+ * `./views/index.js`, `./shell/index.js`, and `./charts/index.js` each
+ * export, nothing more.
  */
 export {
   Button,
+  Icon,
   TextField,
   Badge,
   Card,
@@ -46,6 +48,10 @@ export type {
   ButtonProps,
   ButtonSize,
   ButtonVariant,
+  IconProps,
+  IconSize,
+  IconAccessibilityProps,
+  IconNode,
   TextFieldProps,
   BadgeProps,
   BadgeVariant,
@@ -173,3 +179,38 @@ export type {
   LineChartSeries,
   SparklineProps,
 } from "./charts/index.js";
+
+export {
+  AlertTriangle,
+  BookOpen,
+  Box,
+  Building2,
+  Calendar,
+  Check,
+  CheckCircle,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  Clock,
+  CreditCard,
+  ExternalLink,
+  FileText,
+  Folder,
+  Grid3x3,
+  Home,
+  Info,
+  List,
+  Lock,
+  Monitor,
+  Moon,
+  Plug,
+  Receipt,
+  Search,
+  Settings,
+  Sun,
+  User,
+  Users,
+  X,
+  XCircle,
+} from "./icons/index.js";
