@@ -33,6 +33,14 @@ export {
   Banner,
   RadioGroup,
   Popover,
+  DateField,
+  ComboBox,
+  SearchField,
+  FileTrigger,
+  Disclosure,
+  ProgressBar,
+  Separator,
+  Chip,
 } from "./atoms/index.js";
 export type {
   ButtonProps,
@@ -83,6 +91,15 @@ export type {
   RadioGroupProps,
   RadioGroupRadioProps,
   PopoverProps,
+  DateFieldProps,
+  ComboBoxProps,
+  ComboBoxOption,
+  SearchFieldProps,
+  FileTriggerProps,
+  DisclosureProps,
+  ProgressBarProps,
+  SeparatorProps,
+  ChipProps,
 } from "./atoms/index.js";
 
 export { PageHeader, EmptyState, DataTable, DetailView, Pagination, Stat } from "./blocks/index.js";
