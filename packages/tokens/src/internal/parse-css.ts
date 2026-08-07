@@ -47,6 +47,59 @@ export function parseRootDeclarations(css: string): Map<string, string> {
 }
 
 /**
+ * Extract every `--custom-property: value;` declaration from the block
+ * whose selector, verbatim, is exactly `selector` — used for the two dark
+ * blocks (`:root:not([data-theme="light"])`, `:root[data-theme="dark"]`,
+ * and their `[data-brand-bound]` counterparts in `brand-template.css`),
+ * which `parseRootDeclarations` above cannot reach since it only ever
+ * matches the bare literal `:root`.
+ *
+ * Matching is a plain substring search for `selector` followed by
+ * (optional whitespace and) `{`, not a regex — CSS selectors are full of
+ * regex metacharacters (`[`, `]`, `"`, `(`, `)`, `:`) that would otherwise
+ * need escaping. Because several of this package's real selectors are
+ * textual PREFIXES of one another (`:root[data-brand-bound]` is a prefix
+ * of `:root[data-brand-bound][data-theme="dark"]`), a match only counts if
+ * the very next non-whitespace character after `selector` is `{` — a
+ * prefix hit where the next character is `[` or `:` is skipped and the
+ * search continues. Works whether the block sits at the top level or
+ * nested inside `@media { ... }`: this function locates the selector's own
+ * block directly, so it never needs to know about (or parse) the wrapper.
+ * Like `parseRootDeclarations`, it assumes no nested braces inside the
+ * block — true for every block this package declares.
+ */
+export function parseDeclarationsForSelector(css: string, selector: string): Map<string, string> {
+  const cleaned = stripComments(css);
+  let searchFrom = 0;
+  for (;;) {
+    const idx = cleaned.indexOf(selector, searchFrom);
+    if (idx === -1) {
+      throw new Error(`parseDeclarationsForSelector: selector ${JSON.stringify(selector)} not found in CSS`);
+    }
+    let i = idx + selector.length;
+    while (i < cleaned.length && /\s/.test(cleaned[i]!)) i++;
+    if (cleaned[i] === "{") {
+      const openBrace = i;
+      const closeBrace = cleaned.indexOf("}", openBrace);
+      if (closeBrace === -1) {
+        throw new Error(`parseDeclarationsForSelector: unterminated block for ${JSON.stringify(selector)}`);
+      }
+      const body = cleaned.slice(openBrace + 1, closeBrace);
+      const declarations = new Map<string, string>();
+      const declRe = /(--[a-zA-Z0-9-]+)\s*:\s*([^;]*);/g;
+      for (const match of body.matchAll(declRe)) {
+        declarations.set(match[1]!, match[2]!.trim());
+      }
+      return declarations;
+    }
+    // `selector` matched here only as a prefix of a longer selector
+    // (e.g. `:root[data-brand-bound]` inside `:root[data-brand-bound][data-theme="dark"]`)
+    // — not a real match. Keep scanning for the next occurrence.
+    searchFrom = idx + 1;
+  }
+}
+
+/**
  * Every custom-property name (`--...`) that appears ANYWHERE in `css`,
  * including inside comments — used to check that a token's name shows up
  * somewhere in `brand-template.css` (live or as a commented-out optional

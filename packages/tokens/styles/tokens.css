@@ -48,6 +48,76 @@
  * Tailwind: every rule below is a plain CSS custom property, readable with
  * `var(--color-surface-raised)` in any stylesheet. Tailwind (`theme.css`)
  * is an optional second step, never a requirement.
+ *
+ * DARK MODE — mechanism, and the invariant/dependent split
+ *
+ * This file's `:root { ... }` block below is the LIGHT default. Below it,
+ * two more blocks carry the DARK values for the subset of tokens whose
+ * role actually changes with theme:
+ *
+ *   :root { ... }                                        -- light, above
+ *
+ *   @media (prefers-color-scheme: dark) {
+ *     :root:not([data-theme="light"]) { ... }             -- OS says dark
+ *   }
+ *
+ *   :root[data-theme="dark"] { ... }                       -- explicit override
+ *
+ * Both signals, both directions: with no `data-theme` attribute, the OS
+ * `prefers-color-scheme` decides. `data-theme="dark"` forces dark even on
+ * a light OS. `data-theme="light"` forces light even on a dark OS — the
+ * `:not([data-theme="light"])` guard on the media-query block is what
+ * makes that last case work: it keeps the OS-dark rule from ever matching
+ * once a consumer has explicitly opted into light, so the plain (light)
+ * `:root` block is the only declaration left standing. A consumer with a
+ * theme toggle stamps `data-theme` on `<html>`; see the README for the
+ * wiring.
+ *
+ * The two dark blocks are written out in full rather than shared through
+ * one deduped list — correctness beats DRY here. A cascade this easy to
+ * get silently wrong (see `src/dark-mode-cascade.test.ts`) is not the
+ * place to add a build step or a preprocessor just to avoid repeating
+ * ~35 lines twice; `src/theme-parity.test.ts` is what actually keeps the
+ * two blocks identical, by parsing both and diffing them — not the reader's
+ * eye.
+ *
+ * WHICH TOKENS GET A DARK VALUE — the invariant/dependent split
+ *
+ * Only tokens whose semantic ROLE is theme-dependent get a line in the
+ * dark blocks: colors, and `--ui-elevation-*` (a shadow is a color choice —
+ * `rgba(0, 0, 0, 0.10)` reads as a soft shadow on a light surface and as
+ * nothing at all on a dark one). Every structural scale — spacing, radius,
+ * z-index, motion duration, easing, breakpoints, font sizes, tracking,
+ * layout widths, density, border width — is theme-INVARIANT and
+ * deliberately does not appear in either dark block; `src/tokens.ts` marks
+ * this explicitly per token (`themeDependent`), and
+ * `src/theme-parity.test.ts` asserts both directions: every
+ * theme-dependent token has a value in both dark blocks, and no
+ * theme-invariant token appears in either.
+ *
+ * Two more exceptions worth naming, both intentional:
+ *   - A handful of color tokens are themselves ALIASES of another color
+ *     token via `var(--color-x, ...)` (`--color-ink-on-accent`,
+ *     `--color-overlay-surface`, `--color-overlay-border`,
+ *     `--color-skeleton-fill`, and `--ui-elevation-raised`, which reads
+ *     `--color-line-base` the same way). An alias's specified value never
+ *     changes between themes — only the token it POINTS to does — so
+ *     re-declaring the alias in the dark blocks would be a no-op at best
+ *     and a drift hazard at worst. These are marked `themeDependent: false`
+ *     in `src/tokens.ts` even though they are colors, for the same reason
+ *     they are marked `brandable: false`: the value flows through
+ *     automatically.
+ *   - `--color-neutral-*` (11 steps) STAYS ABSOLUTE rather than inverting.
+ *     This was a deliberate call, not an oversight — both directions are
+ *     defensible, so it is written down rather than picked silently. The
+ *     neutral ramp is a raw swatch scale, not a semantic role (see the
+ *     README's "What didn't translate cleanly" section on why it
+ *     intentionally shares Tailwind's own `gray-50`...`gray-950`-shaped
+ *     naming): Tailwind's own default gray scale does not invert itself
+ *     in dark mode either, and a consumer already reaches for
+ *     `--color-surface-*`/`--color-ink-*` — which DO flip — for anything
+ *     that should read differently by theme. A raw `--color-neutral-100`
+ *     reference keeps meaning "the same light-grey swatch" in both themes.
  * ════════════════════════════════════════════════════════════════════ */
 
 
@@ -85,7 +155,11 @@ html:not([data-brand-bound])::before {
   --color-surface-base:           oklch(0.9702 0 0);   /* page ground */
   --color-surface-sunken:         oklch(0.9401 0 0);   /* below base: wells, banded sections, inputs */
   --color-surface-raised:         oklch(1 0 0);         /* above base: cards, modals, popovers */
-  --color-surface-inverse:        oklch(0.2178 0 0);    /* dark plate within a light theme */
+  --color-surface-inverse:        oklch(0.2178 0 0);    /* the OPPOSITE-polarity plate: a dark plate in
+                                                            a light theme. In dark mode this token flips
+                                                            to a LIGHT plate instead — see the dark-mode
+                                                            block below — and --color-ink-on-inverse flips
+                                                            with it, the same way it does here. */
   --color-surface-inverse-raised: oklch(0.285 0 0);     /* raised content within --color-surface-inverse */
   --color-surface-aside:          oklch(0.9612 0 0);    /* right-rail panel */
   --color-surface-selected:       oklch(0.4748 0 0 / 0.1); /* selected-row/option wash */
@@ -95,7 +169,12 @@ html:not([data-brand-bound])::before {
    * ════════════════════════════════════════════════════════════════ */
   --color-ink-primary:            oklch(0.2178 0 0);
   --color-ink-secondary:          oklch(0.36 0 0);
-  --color-ink-muted:              oklch(0.5658 0 0);    /* must hit WCAG AA on --color-surface-base */
+  --color-ink-muted:              oklch(0.54 0 0);      /* must hit WCAG AA on --color-surface-base —
+                                                            was oklch(0.5658 0 0): src/contrast.test.ts
+                                                            measured that at 4.17:1, below the 4.5:1 this
+                                                            token's own comment promises. Darkened to the
+                                                            minimum change that clears AA with margin
+                                                            (4.64:1); see CHANGELOG.md. */
   --color-ink-link:                oklch(0.36 0 0);
   --color-ink-on-inverse:          oklch(0.9702 0 0);
   --color-ink-on-inverse-muted:    oklch(0.7763 0 0);
@@ -137,11 +216,22 @@ html:not([data-brand-bound])::before {
   --color-status-danger-text:     oklch(0.2178 0 0);
   --color-status-danger-tint:     oklch(0.285 0 0 / 0.12);
   --color-status-info:            oklch(0.5658 0 0);
-  --color-status-info-text:       oklch(0.4748 0 0);
+  --color-status-info-text:       oklch(0.52 0 0);      /* was oklch(0.5658 0 0): src/contrast.test.ts
+                                                            measured this against --color-status-info-tint
+                                                            at 3.91:1 — below the 4.5:1 the other three
+                                                            status -text/-tint pairs already clear.
+                                                            Darkened to the minimum change that clears AA
+                                                            with margin (4.75:1); see CHANGELOG.md. */
   --color-status-info-tint:       oklch(0.5658 0 0 / 0.08);
 
   /* ════════════════════════════════════════════════════════════════
    * COLOR · NEUTRAL (11 · fixed greyscale ramp, not brand-bound)
+   * STAYS ABSOLUTE across themes — deliberately, see the dark-mode
+   * section of this file's header comment. --color-neutral-50 means
+   * "the same light-grey swatch" whether the page is in light or dark
+   * mode; it does not invert to become the darkest step. A token whose
+   * appearance SHOULD flip with theme is a --color-surface-*/--color-ink-*
+   * role, not a raw --color-neutral-* reference.
    * ════════════════════════════════════════════════════════════════ */
   --color-neutral-50:             oklch(0.9702 0 0);
   --color-neutral-100:            oklch(0.9401 0 0);
@@ -320,4 +410,147 @@ html:not([data-brand-bound])::before {
    * UI · ALPHA (1 · no Tailwind namespace)
    * ════════════════════════════════════════════════════════════════ */
   --ui-alpha-disabled:            0.5;
+}
+
+
+/* ════════════════════════════════════════════════════════════════════
+ * DARK · OS PREFERENCE
+ * ────────────────────────────────────────────────────────────────────
+ * Applies when the OS/browser prefers dark AND the consumer has not
+ * forced light with `data-theme="light"`. The `:not(...)` guard is load
+ * bearing: without it, this block and the plain `:root { ... }` above
+ * would both apply with no way for an explicit `data-theme="light"` to
+ * win, since it would still be `prefers-color-scheme: dark` at the OS
+ * level. See this file's header comment for the full cascade and the
+ * invariant/dependent split; see src/tokens.ts for the same split
+ * expressed as data (`themeDependent`), and src/theme-parity.test.ts /
+ * src/dark-mode-cascade.test.ts for what enforces both.
+ * ════════════════════════════════════════════════════════════════════ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+
+    /* ── COLOR · SURFACE ────────────────────────────────────────── */
+    --color-surface-base:           oklch(0.19 0 0);
+    --color-surface-sunken:         oklch(0.15 0 0);
+    --color-surface-raised:         oklch(0.26 0 0);
+    --color-surface-inverse:        oklch(0.96 0 0);      /* flips: light plate in a dark theme */
+    --color-surface-inverse-raised: oklch(1 0 0);
+    --color-surface-aside:          oklch(0.165 0 0);
+    --color-surface-selected:       oklch(0.9702 0 0 / 0.1);
+
+    /* ── COLOR · INK ────────────────────────────────────────────── */
+    --color-ink-primary:            oklch(0.97 0 0);      /* flips: near-black to near-white */
+    --color-ink-secondary:          oklch(0.82 0 0);
+    --color-ink-muted:              oklch(0.66 0 0);
+    --color-ink-link:               oklch(0.86 0 0);
+    --color-ink-on-inverse:         oklch(0.2178 0 0);    /* flips with --color-surface-inverse */
+    --color-ink-on-inverse-muted:   oklch(0.42 0 0);
+
+    /* ── COLOR · LINE ───────────────────────────────────────────── */
+    --color-line-base:              oklch(0.30 0 0);
+    --color-line-strong:            oklch(0.40 0 0);
+    --color-line-on-inverse:        oklch(0.2178 0 0 / 0.14); /* flips with --color-surface-inverse */
+
+    /* ── COLOR · ACCENT ─────────────────────────────────────────── */
+    --color-accent:                 oklch(0.62 0 0);
+    --color-accent-text:            oklch(0.74 0 0);
+    --color-accent-hover:           oklch(0.70 0 0);
+    --color-accent-tint:            oklch(0.62 0 0 / 0.18);
+    --color-accent-on-inverse:      oklch(0.42 0 0);
+
+    /* ── COLOR · STATUS — raised lightness, not the light-mode value ─
+     * (each stays recognisable as its own role; see this file's header
+     * comment and CHANGELOG.md) ─────────────────────────────────── */
+    --color-status-success:         oklch(0.72 0 0);
+    --color-status-success-text:    oklch(0.80 0 0);
+    --color-status-success-tint:    oklch(0.70 0 0 / 0.16);
+    --color-status-warning:         oklch(0.62 0 0);
+    --color-status-warning-text:    oklch(0.82 0 0);
+    --color-status-warning-tint:    oklch(0.62 0 0 / 0.18);
+    --color-status-danger:          oklch(0.60 0 0);
+    --color-status-danger-text:     oklch(0.86 0 0);
+    --color-status-danger-tint:     oklch(0.60 0 0 / 0.20);
+    --color-status-info:            oklch(0.66 0 0);
+    --color-status-info-text:       oklch(0.80 0 0);
+    --color-status-info-tint:       oklch(0.68 0 0 / 0.16);
+
+    /* ── COLOR · NEUTRAL — absent on purpose: stays absolute, see the
+     * header comment. Aliases (--color-ink-on-accent, --color-overlay-*,
+     * --color-skeleton-fill, --ui-elevation-raised) are also absent on
+     * purpose: they inherit their dark appearance automatically through
+     * the token they reference. ──────────────────────────────────── */
+
+    /* ── COLOR · OVERLAY (only the non-alias member) ─────────────── */
+    --color-overlay-scrim:          oklch(0 0 0 / 0.6);
+
+    /* ── UI · ELEVATION (only the member with a literal color; see
+     * header comment for why -none/-raised are absent) ─────────────
+     * A near-black shadow at 10% is a soft edge on a light surface and
+     * nothing at all on a dark one — this needed its own dark value, not
+     * a var() that would inherit one automatically. */
+    --ui-elevation-floating:        0 8px 24px rgba(0, 0, 0, 0.6);
+  }
+}
+
+
+/* ════════════════════════════════════════════════════════════════════
+ * DARK · EXPLICIT OVERRIDE
+ * ────────────────────────────────────────────────────────────────────
+ * Applies whenever `data-theme="dark"` is set, regardless of what the OS
+ * prefers — this is what lets a consumer's own theme toggle force dark
+ * on a light-OS device. Same 35 tokens, same values, as the media-query
+ * block above; src/theme-parity.test.ts asserts the two blocks are
+ * identical, so nothing but that test needs to be trusted to keep them
+ * in sync as this file changes.
+ * ════════════════════════════════════════════════════════════════════ */
+:root[data-theme="dark"] {
+
+  /* ── COLOR · SURFACE ──────────────────────────────────────────── */
+  --color-surface-base:           oklch(0.19 0 0);
+  --color-surface-sunken:         oklch(0.15 0 0);
+  --color-surface-raised:         oklch(0.26 0 0);
+  --color-surface-inverse:        oklch(0.96 0 0);
+  --color-surface-inverse-raised: oklch(1 0 0);
+  --color-surface-aside:          oklch(0.165 0 0);
+  --color-surface-selected:       oklch(0.9702 0 0 / 0.1);
+
+  /* ── COLOR · INK ──────────────────────────────────────────────── */
+  --color-ink-primary:            oklch(0.97 0 0);
+  --color-ink-secondary:          oklch(0.82 0 0);
+  --color-ink-muted:              oklch(0.66 0 0);
+  --color-ink-link:               oklch(0.86 0 0);
+  --color-ink-on-inverse:         oklch(0.2178 0 0);
+  --color-ink-on-inverse-muted:   oklch(0.42 0 0);
+
+  /* ── COLOR · LINE ─────────────────────────────────────────────── */
+  --color-line-base:              oklch(0.30 0 0);
+  --color-line-strong:            oklch(0.40 0 0);
+  --color-line-on-inverse:        oklch(0.2178 0 0 / 0.14);
+
+  /* ── COLOR · ACCENT ───────────────────────────────────────────── */
+  --color-accent:                 oklch(0.62 0 0);
+  --color-accent-text:            oklch(0.74 0 0);
+  --color-accent-hover:           oklch(0.70 0 0);
+  --color-accent-tint:            oklch(0.62 0 0 / 0.18);
+  --color-accent-on-inverse:      oklch(0.42 0 0);
+
+  /* ── COLOR · STATUS ───────────────────────────────────────────── */
+  --color-status-success:         oklch(0.72 0 0);
+  --color-status-success-text:    oklch(0.80 0 0);
+  --color-status-success-tint:    oklch(0.70 0 0 / 0.16);
+  --color-status-warning:         oklch(0.62 0 0);
+  --color-status-warning-text:    oklch(0.82 0 0);
+  --color-status-warning-tint:    oklch(0.62 0 0 / 0.18);
+  --color-status-danger:          oklch(0.60 0 0);
+  --color-status-danger-text:     oklch(0.86 0 0);
+  --color-status-danger-tint:     oklch(0.60 0 0 / 0.20);
+  --color-status-info:            oklch(0.66 0 0);
+  --color-status-info-text:       oklch(0.80 0 0);
+  --color-status-info-tint:       oklch(0.68 0 0 / 0.16);
+
+  /* ── COLOR · OVERLAY (only the non-alias member) ─────────────────── */
+  --color-overlay-scrim:          oklch(0 0 0 / 0.6);
+
+  /* ── UI · ELEVATION (only the member with a literal color) ───────── */
+  --ui-elevation-floating:        0 8px 24px rgba(0, 0, 0, 0.6);
 }
