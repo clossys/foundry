@@ -220,7 +220,30 @@ function extractCallArgs(code: string, calleeName: string): string[] {
  * bare `=`, so a lazy match up to the first one still lands on the real
  * assignment.
  */
-const VARIANT_MAP_RE = /:\s*Record<[^=]*>\s*=\s*\{([\s\S]*?)\n\};/g;
+const VARIANT_MAP_RE = /const\s+[A-Za-z_]*CLASSES\s*:\s*Record<[^=]*>\s*=\s*\{([\s\S]*?)\n\};/g;
+
+/**
+ * Every `Record<...>` map declaration, with its name — used by the coverage
+ * assertion below, NOT by class extraction.
+ */
+const ANY_RECORD_MAP_RE = /const\s+([A-Za-z_]+)\s*:\s*Record</g;
+
+/**
+ * Maps that are deliberately NOT class lists, and so are deliberately not
+ * scanned. Each entry is a promise that the map holds something else —
+ * `Stat`'s trend indicators hold a glyph and a label, because encoding
+ * direction by colour alone fails accessibility, so the glyph and the
+ * words are the non-colour channel.
+ *
+ * This list exists so that skipping a map is a DELIBERATE act. The class
+ * extractor above only reads maps named `*CLASSES`, which is precise but
+ * would otherwise fail open: a class map named `BUTTON_STYLES` would
+ * silently never be checked, and a typo inside it would ship. The
+ * assertion that consumes this list closes that hole — every `Record` map
+ * must be either scanned or named here, so a new map cannot quietly
+ * escape both.
+ */
+const KNOWN_NON_CLASS_MAPS = new Set(["TREND_GLYPH", "TREND_LABEL"]);
 
 function extractCandidateClasses(code: string): Set<string> {
   const chunks: string[] = [];
@@ -410,5 +433,42 @@ describe("token parity: every Tailwind class and var() read resolves against a r
       const result = results[previouslyRejectedButLegitimate.length + i];
       expect(result, `expected invented class "${className}" to produce no rule`).toBeNull();
     });
+  });
+
+  /**
+   * Closes the fail-open hole in the class extractor. It only reads maps
+   * named `*CLASSES`, which is precise — but on its own it would mean a
+   * class map named anything else is silently never checked, and a typo
+   * inside it ships unnoticed. A test that quietly stops covering things
+   * is worse than no test, because it still reads as green.
+   *
+   * So: every `Record<...>` map in the source must be either scanned
+   * (named `*CLASSES`) or explicitly listed as a known non-class map.
+   * Adding a map that is neither fails here, and the fix is to name it
+   * correctly or declare why it holds something other than classes.
+   */
+  it("every Record map is either scanned as classes or explicitly declared non-class", () => {
+    const unaccounted: string[] = [];
+
+    for (const file of sourceFiles) {
+      const code = stripComments(readFileSync(file, "utf8"));
+      for (const match of code.matchAll(ANY_RECORD_MAP_RE)) {
+        const name = match[1] as string;
+        if (name.includes("CLASSES")) continue;
+        if (KNOWN_NON_CLASS_MAPS.has(name)) continue;
+        unaccounted.push(`  ${file.slice(srcDir.length + 1)}: ${name}`);
+      }
+    }
+
+    if (unaccounted.length > 0) {
+      throw new Error(
+        `${unaccounted.length} Record map(s) neither scanned nor declared non-class:\n` +
+          `${unaccounted.join("\n")}\n\n` +
+          `A map holding Tailwind classes must be named *CLASSES so the parity ` +
+          `check reads it. A map holding anything else must be added to ` +
+          `KNOWN_NON_CLASS_MAPS, which documents what it holds instead.`,
+      );
+    }
+    expect(unaccounted).toEqual([]);
   });
 });
