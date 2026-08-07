@@ -27,7 +27,7 @@
 // change. Deleting a KNOWN-GAP case without fixing the underlying rule is how a
 // known hole becomes an unknown one.
 
-import { mkdtempSync, rmSync, mkdirSync, writeFileSync, cpSync, existsSync, chmodSync, readdirSync } from "node:fs";
+import { mkdtempSync, rmSync, mkdirSync, writeFileSync, readFileSync, cpSync, existsSync, chmodSync, readdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { execFileSync } from "node:child_process";
@@ -76,6 +76,8 @@ const ARTIFACT = join(scriptDir, "check-artifact-safety.mjs");
 const COLLISION = join(scriptDir, "check-name-collision.mjs");
 const CONTAM = join(scriptDir, "check-contamination-classes.mjs");
 const QUALITY = join(scriptDir, "check-denylist-quality.mjs");
+const SET_SCOPE = join(scriptDir, "set-scope.mjs");
+const ROOT_README = join(scriptDir, "check-root-readme-parity.mjs");
 
 let passed = 0;
 const failures = [];
@@ -1000,6 +1002,429 @@ try {
     writeFileSync(join(missing, "src", "index.ts"), "export const Foo = 1;\n");
     const missingRun = run("node", [READMEPARITY, missing]);
     check("aborts (exit 2) when README.md is absent", missingRun.code === 2, `exit was ${missingRun.code}`);
+  }
+
+  // ---------------------------- set-scope: scope rename, not name capture (issue #9)
+  console.log("\n# set-scope: a third-party name sharing a first-party package name (issue #9)");
+  {
+    // set-scope.mjs resolves its own repo root from its own file location
+    // (dirname(import.meta.url) + ".."), not from a CLI argument like the
+    // other gates take — so exercising it hermetically means giving it its
+    // own fixture repo, with its own copy of the script, rather than pointing
+    // it at a fixture directory the way SAFETY/ARTIFACT/CONTAM are pointed.
+    const dir = join(work, "set-scope-names");
+    mkdirSync(join(dir, "packages", "ui"), { recursive: true });
+    mkdirSync(join(dir, "scripts"), { recursive: true });
+    cpSync(SET_SCOPE, join(dir, "scripts", "set-scope.mjs"));
+    writeFileSync(
+      join(dir, "package-scope.json"),
+      JSON.stringify({ scope: "@fixture-first-party", registry: "https://example.invalid" }, null, 2) + "\n",
+    );
+    writeFileSync(
+      join(dir, "packages", "ui", "package.json"),
+      JSON.stringify({ name: "@fixture-first-party/ui", version: "1.0.0" }, null, 2) + "\n",
+    );
+    // The whole point: a THIRD-PARTY package whose local name ("ui") happens
+    // to collide with a package we own, sitting in a lockfile-shaped file —
+    // exactly the shape of the real corruption (@vitest/ui, in
+    // package-lock.json's own peerDependencies, rewritten to
+    // @vespeneventures/ui). Nothing here carries our declared scope.
+    writeFileSync(
+      join(dir, "package-lock.json"),
+      JSON.stringify({ packages: { "node_modules/@some-other-vendor/ui": { peerDependencies: { "@some-other-vendor/ui": "4.1.10" } } } }, null, 2) + "\n",
+    );
+    gitInit(dir);
+
+    const before = readFileSync(join(dir, "package-lock.json"), "utf8");
+    const check1 = run("node", [join(dir, "scripts", "set-scope.mjs"), "--check"], { cwd: dir });
+    check(
+      "--check does not flag a third-party name sharing a first-party package name",
+      check1.code === 0,
+      `expected exit 0, got ${check1.code}: ${check1.out}`,
+    );
+
+    // Also run the rewrite for real (no --check) and confirm the file on disk
+    // is byte-for-byte unchanged — --check passing is not enough on its own,
+    // since a bug in --check's own logic could mask a bug in the rewrite.
+    run("node", [join(dir, "scripts", "set-scope.mjs")], { cwd: dir });
+    const after = readFileSync(join(dir, "package-lock.json"), "utf8");
+    check(
+      "the rewrite itself never touches the third-party reference",
+      after === before,
+      "package-lock.json changed even though nothing in it carries our declared scope",
+    );
+    check(
+      "the third-party scope is still intact",
+      after.includes("@some-other-vendor/ui") && !after.includes("@fixture-first-party/ui\":") ,
+      `expected @some-other-vendor/ui to survive untouched, got: ${after}`,
+    );
+  }
+
+  // --------------------------- set-scope: walk skips gitignored paths (issue #25)
+  console.log("\n# set-scope: walk never descends into gitignored paths, e.g. .claude/ (issue #25)");
+  {
+    const dir = join(work, "set-scope-gitignore");
+    mkdirSync(join(dir, "packages", "probe"), { recursive: true });
+    mkdirSync(join(dir, "scripts"), { recursive: true });
+    cpSync(SET_SCOPE, join(dir, "scripts", "set-scope.mjs"));
+    writeFileSync(join(dir, ".gitignore"), ".claude/\n");
+    writeFileSync(
+      join(dir, "package-scope.json"),
+      JSON.stringify({ scope: "@fixture-old-scope", registry: "https://example.invalid" }, null, 2) + "\n",
+    );
+    writeFileSync(
+      join(dir, "packages", "probe", "package.json"),
+      JSON.stringify({ name: "@fixture-old-scope/probe", version: "1.0.0" }, null, 2) + "\n",
+    );
+    // A file sitting inside a gitignored directory — modelling another
+    // agent's live, uncommitted worktree under .claude/ — that legitimately
+    // carries the declared scope and so WOULD be rewritten by a scope rename
+    // if the walk ever reached it. gitInit's `git add -A` will not stage
+    // this: .gitignore already excludes .claude/, exactly like the real repo.
+    mkdirSync(join(dir, ".claude", "worktrees", "foreign-session", "packages", "probe"), { recursive: true });
+    writeFileSync(
+      join(dir, ".claude", "worktrees", "foreign-session", "packages", "probe", "package.json"),
+      JSON.stringify({ name: "@fixture-old-scope/probe", version: "1.0.0" }, null, 2) + "\n",
+    );
+    gitInit(dir);
+
+    const r = run("node", [join(dir, "scripts", "set-scope.mjs"), "--scope", "@fixture-new-scope"], { cwd: dir });
+    check("a real scope rename still exits cleanly", r.code === 0, `exit was ${r.code}: ${r.out}`);
+
+    const tracked = readFileSync(join(dir, "packages", "probe", "package.json"), "utf8");
+    check(
+      "the rename still applies to a tracked, non-ignored file",
+      tracked.includes("@fixture-new-scope/probe"),
+      `tracked package.json was not renamed: ${tracked}`,
+    );
+
+    const foreign = readFileSync(
+      join(dir, ".claude", "worktrees", "foreign-session", "packages", "probe", "package.json"),
+      "utf8",
+    );
+    check(
+      "a file inside a gitignored directory (.claude/) is left untouched",
+      foreign.includes("@fixture-old-scope/probe") && !foreign.includes("@fixture-new-scope"),
+      `expected the foreign worktree's file to be untouched by the rename, got: ${foreign}`,
+    );
+
+    // This case is deliberately only exercised via --scope, not bare --check:
+    // with the scope-anchored regex (issue #9's fix), bare --check's tree-wide
+    // rewrite maps @declaredScope/x to @declaredScope/x -- an identity
+    // transform regardless of what walk() returns -- so .claude/'s contents
+    // cannot affect a bare --check's outcome at all, by construction, not
+    // because walk() is untested. The --scope rename is the only operation
+    // where walk() reaching .claude/ has any observable effect (writing into
+    // a foreign worktree), which is exactly what this case pins.
+  }
+
+  // ------------------- set-scope: bare --check must not be vacuous (regression)
+  //
+  // The bug this section exists to pin: with no --scope override, line ~42's
+  // nextScope defaults to config.scope, and oldScope (read a few lines later)
+  // is also config.scope -- the same string. The tree-wide rewrite's replace
+  // then maps every match to itself, `changed` is always empty, and a version
+  // of this script that relied on `changed` alone for --check's verdict would
+  // report a clean pass on ANY tree, forever, including one where every
+  // package name is wrong -- CI's `check:scope` step runs exactly this bare
+  // form. The structural check (reading each packages/*/package.json's own
+  // `name` directly) is what actually closes this.
+  console.log("\n# set-scope: bare --check (no --scope) still catches a wrong-scope package name");
+  {
+    const dir = join(work, "set-scope-vacuous-check");
+    mkdirSync(join(dir, "packages", "ui"), { recursive: true });
+    mkdirSync(join(dir, "scripts"), { recursive: true });
+    cpSync(SET_SCOPE, join(dir, "scripts", "set-scope.mjs"));
+    writeFileSync(
+      join(dir, "package-scope.json"),
+      JSON.stringify({ scope: "@real", registry: "https://example.invalid" }, null, 2) + "\n",
+    );
+    // Wrong scope, hand-typed. This never carried the declared scope to begin
+    // with, so the text-rewrite regex (anchored on @real/, issue #9's fix)
+    // never even matches it -- it is invisible to the rewrite/check path by
+    // construction, which is exactly why the structural check has to exist.
+    writeFileSync(
+      join(dir, "packages", "ui", "package.json"),
+      JSON.stringify({ name: "@wrong/ui", version: "1.0.0" }, null, 2) + "\n",
+    );
+    gitInit(dir);
+
+    const r = run("node", [join(dir, "scripts", "set-scope.mjs"), "--check"], { cwd: dir });
+    check(
+      "bare --check fails when a package's own name carries the wrong scope",
+      r.code === 1,
+      `expected exit 1, got ${r.code}: ${r.out}`,
+    );
+    check(
+      "the failure names the offending package and its actual (wrong) name",
+      /packages\/ui\/package\.json/.test(r.out) && /@wrong\/ui/.test(r.out),
+      `expected the finding to name packages/ui/package.json and @wrong/ui, got: ${r.out}`,
+    );
+  }
+
+  // --------------------------- set-scope: structural check fails closed (issue #9 review)
+  console.log("\n# set-scope: the structural check fails closed, never green on \"could not check\"");
+  {
+    // "Could not check" (packages/ missing or empty) must exit 2, not 0 --
+    // silently passing over zero packages is the same shape of bug (a check
+    // that can never fail) this file was just fixed for, one layer up.
+    const zeroDir = join(work, "set-scope-zero-packages");
+    mkdirSync(join(zeroDir, "scripts"), { recursive: true });
+    cpSync(SET_SCOPE, join(zeroDir, "scripts", "set-scope.mjs"));
+    writeFileSync(
+      join(zeroDir, "package-scope.json"),
+      JSON.stringify({ scope: "@real", registry: "https://example.invalid" }, null, 2) + "\n",
+    );
+    // No packages/ directory at all.
+    gitInit(zeroDir);
+    const zeroResult = run("node", [join(zeroDir, "scripts", "set-scope.mjs"), "--check"], { cwd: zeroDir });
+    check(
+      "zero packages under packages/ exits 2, not 0",
+      zeroResult.code === 2,
+      `expected exit 2, got ${zeroResult.code}: ${zeroResult.out}`,
+    );
+
+    // A package.json that exists but has no "name" field: also "could not
+    // check", also exit 2 -- never silently skipped as if it matched.
+    const noNameDir = join(work, "set-scope-missing-name");
+    mkdirSync(join(noNameDir, "packages", "ui"), { recursive: true });
+    mkdirSync(join(noNameDir, "scripts"), { recursive: true });
+    cpSync(SET_SCOPE, join(noNameDir, "scripts", "set-scope.mjs"));
+    writeFileSync(
+      join(noNameDir, "package-scope.json"),
+      JSON.stringify({ scope: "@real", registry: "https://example.invalid" }, null, 2) + "\n",
+    );
+    writeFileSync(join(noNameDir, "packages", "ui", "package.json"), JSON.stringify({ version: "1.0.0" }, null, 2) + "\n");
+    gitInit(noNameDir);
+    const noNameResult = run("node", [join(noNameDir, "scripts", "set-scope.mjs"), "--check"], { cwd: noNameDir });
+    check(
+      'a package.json with no "name" field exits 2, not 0',
+      noNameResult.code === 2,
+      `expected exit 2, got ${noNameResult.code}: ${noNameResult.out}`,
+    );
+
+    // Contrast: a genuinely clean, fully-checkable tree still exits 0 — the
+    // fail-closed cases above are about ambiguity, not about the gate being
+    // generally trigger-happy.
+    const cleanDir = join(work, "set-scope-clean-for-contrast");
+    mkdirSync(join(cleanDir, "packages", "ui"), { recursive: true });
+    mkdirSync(join(cleanDir, "scripts"), { recursive: true });
+    cpSync(SET_SCOPE, join(cleanDir, "scripts", "set-scope.mjs"));
+    writeFileSync(
+      join(cleanDir, "package-scope.json"),
+      JSON.stringify({ scope: "@real", registry: "https://example.invalid" }, null, 2) + "\n",
+    );
+    writeFileSync(
+      join(cleanDir, "packages", "ui", "package.json"),
+      JSON.stringify({ name: "@real/ui", version: "1.0.0" }, null, 2) + "\n",
+    );
+    gitInit(cleanDir);
+    const cleanResult = run("node", [join(cleanDir, "scripts", "set-scope.mjs"), "--check"], { cwd: cleanDir });
+    check(
+      "a genuinely clean, fully-checkable tree still exits 0",
+      cleanResult.code === 0,
+      `expected exit 0, got ${cleanResult.code}: ${cleanResult.out}`,
+    );
+  }
+
+  // ------------------------------------------ root README parity (issue #28)
+  console.log("\n# check-root-readme-parity: root README vs packages/");
+  {
+    const dir = join(work, "root-readme");
+    const packagesDir = join(dir, "packages");
+    mkdirSync(join(packagesDir, "alpha"), { recursive: true });
+    mkdirSync(join(packagesDir, "beta"), { recursive: true });
+    writeFileSync(join(packagesDir, "alpha", "package.json"), JSON.stringify({ name: `${FIXTURE_SCOPE}/alpha`, version: "1.0.0" }, null, 2) + "\n");
+    writeFileSync(join(packagesDir, "beta", "package.json"), JSON.stringify({ name: `${FIXTURE_SCOPE}/beta`, version: "1.0.0" }, null, 2) + "\n");
+
+    function writeReadme(rows) {
+      writeFileSync(
+        join(dir, "README.md"),
+        ["## Packages", "", "| Package | What it does |", "| --- | --- |", ...rows, ""].join("\n"),
+      );
+    }
+
+    // Sanity (real coverage): a table naming every real package passes, and
+    // it does so because the scan actually walked packages/alpha and
+    // packages/beta and read their real names — not because the fixture has
+    // nothing to check. The next case mutates this exact fixture and shows
+    // the same run catches the drift, which is what proves the pass above
+    // wasn't just zero coverage in disguise.
+    writeReadme([`| \`${FIXTURE_SCOPE}/alpha\` | does alpha things |`, `| \`${FIXTURE_SCOPE}/beta\` | does beta things |`]);
+    const complete = run("node", [ROOT_README, dir]);
+    check(
+      "sanity: a table naming every real package passes, proving the scan reads real packages/ content rather than passing on zero coverage",
+      complete.code === 0,
+      `exit ${complete.code}: ${complete.out.slice(0, 300)}`,
+    );
+
+    // Same fixture, beta's row removed — structurally the same shape as
+    // issue #28's actual defect (@vespeneventures/voice and
+    // @vespeneventures/strategy had no row at all).
+    writeReadme([`| \`${FIXTURE_SCOPE}/alpha\` | does alpha things |`]);
+    const missing = run("node", [ROOT_README, dir]);
+    check(
+      "catches a real package missing its README row",
+      missing.code === 1 && missing.out.includes(`${FIXTURE_SCOPE}/beta`),
+      `exit ${missing.code}: ${missing.out.slice(0, 300)}`,
+    );
+
+    // Mirror-image drift: a row names a package that no longer exists under
+    // packages/ at all (removed from disk, never removed from the table).
+    writeReadme([
+      `| \`${FIXTURE_SCOPE}/alpha\` | does alpha things |`,
+      `| \`${FIXTURE_SCOPE}/beta\` | does beta things |`,
+      `| \`${FIXTURE_SCOPE}/retired\` | doesn't exist anymore |`,
+    ]);
+    const stale = run("node", [ROOT_README, dir]);
+    check(
+      "catches a README row naming a package that no longer exists under packages/",
+      stale.code === 1 && stale.out.includes(`${FIXTURE_SCOPE}/retired`),
+      `exit ${stale.code}: ${stale.out.slice(0, 300)}`,
+    );
+
+    // Fail-closed cases below. None of these may exit 0, and none may print
+    // anything that reads as a pass — "could not check" and "checked and it
+    // was fine" sharing an exit code is exactly how issue #28 survived.
+    const passLooking = /\bOK\b|\bPASS\b/;
+
+    const noHeading = join(work, "root-readme-no-heading");
+    mkdirSync(join(noHeading, "packages", "alpha"), { recursive: true });
+    writeFileSync(join(noHeading, "packages", "alpha", "package.json"), JSON.stringify({ name: `${FIXTURE_SCOPE}/alpha` }) + "\n");
+    writeFileSync(join(noHeading, "README.md"), "# a README with no Packages heading at all\n");
+    const rNoHeading = run("node", [ROOT_README, noHeading]);
+    check("fails closed when README has no Packages heading", rNoHeading.code === 2, `exit was ${rNoHeading.code}`);
+    check(
+      "does not print a passing-looking result when it could not locate the table",
+      !passLooking.test(rNoHeading.out),
+      `output looked like a pass: ${rNoHeading.out.slice(0, 200)}`,
+    );
+
+    const noTable = join(work, "root-readme-no-table");
+    mkdirSync(join(noTable, "packages", "alpha"), { recursive: true });
+    writeFileSync(join(noTable, "packages", "alpha", "package.json"), JSON.stringify({ name: `${FIXTURE_SCOPE}/alpha` }) + "\n");
+    writeFileSync(join(noTable, "README.md"), "## Packages\n\nprose, no table here.\n");
+    const rNoTable = run("node", [ROOT_README, noTable]);
+    check("fails closed when the Packages section has no parseable table (zero rows)", rNoTable.code === 2, `exit was ${rNoTable.code}`);
+    check(
+      "does not print a passing-looking result over zero parsed rows",
+      !passLooking.test(rNoTable.out),
+      `output looked like a pass: ${rNoTable.out.slice(0, 200)}`,
+    );
+
+    const noPackagesDir = join(work, "root-readme-no-packages-dir");
+    mkdirSync(noPackagesDir, { recursive: true });
+    writeFileSync(join(noPackagesDir, "README.md"), "## Packages\n\n| Package | What it does |\n| --- | --- |\n");
+    const rNoPkgDir = run("node", [ROOT_README, noPackagesDir]);
+    check("fails closed when packages/ does not exist", rNoPkgDir.code === 2, `exit was ${rNoPkgDir.code}`);
+
+    const emptyPackagesDir = join(work, "root-readme-empty-packages-dir");
+    mkdirSync(join(emptyPackagesDir, "packages"), { recursive: true });
+    writeFileSync(
+      join(emptyPackagesDir, "README.md"),
+      "## Packages\n\n| Package | What it does |\n| --- | --- |\n| `@x/y` | thing |\n",
+    );
+    const rEmptyPkgDir = run("node", [ROOT_README, emptyPackagesDir]);
+    check(
+      "fails closed when packages/ has no real (scoped-named) package to compare against",
+      rEmptyPkgDir.code === 2,
+      `exit was ${rEmptyPkgDir.code}`,
+    );
+  }
+
+  // ------------------------ root README parity: subpath claims (CHECK D)
+  // A row's PACKAGE NAME can be exactly right (passing every check above)
+  // while its PROSE lies about that package's shape. This is issue #28's
+  // actual historical defect, reproduced structurally: the real
+  // @vespeneventures/ui row named the right package and said
+  // "`blocks` and `views` are a planned future subpath, not built yet"
+  // long after both had shipped as real `exports` keys.
+  console.log("\n# check-root-readme-parity: subpath claims contradicting real exports (CHECK D)");
+  {
+    const dir = join(work, "root-readme-subpaths");
+    mkdirSync(join(dir, "packages", "gamma"), { recursive: true });
+    writeFileSync(
+      join(dir, "packages", "gamma", "package.json"),
+      JSON.stringify(
+        {
+          name: `${FIXTURE_SCOPE}/gamma`,
+          version: "1.0.0",
+          exports: {
+            ".": { types: "./dist/index.d.ts", import: "./dist/index.js" },
+            "./atoms": { types: "./dist/atoms/index.d.ts", import: "./dist/atoms/index.js" },
+            "./blocks": { types: "./dist/blocks/index.d.ts", import: "./dist/blocks/index.js" },
+          },
+        },
+        null,
+        2,
+      ) + "\n",
+    );
+
+    function writeGammaReadme(description) {
+      writeFileSync(
+        join(dir, "README.md"),
+        ["## Packages", "", "| Package | What it does |", "| --- | --- |", `| \`${FIXTURE_SCOPE}/gamma\` | ${description} |`, ""].join("\n"),
+      );
+    }
+
+    // D1 (positive): an explicit `./name` mention that isn't a real key in
+    // this package's own "exports" — the row documents a subpath that does
+    // not exist, the root-README mirror of check-readme-parity's CHECK C.
+    writeGammaReadme("Ships \`./atoms\` and \`./blocks\`, plus \`./nonexistent\` for legacy imports.");
+    const nonexistent = run("node", [ROOT_README, dir]);
+    check(
+      "D1: catches an explicit ./subpath mention that is not a real exports key",
+      nonexistent.code === 1 && nonexistent.out.includes("./nonexistent"),
+      `exit ${nonexistent.code}: ${nonexistent.out.slice(0, 300)}`,
+    );
+
+    // D2 (negative, the historical shape): a BARE word identical to a real
+    // subpath name, in the same clause as a curated "doesn't exist yet"
+    // phrase, while that subpath actually IS a real key. This is the exact
+    // shape of the real @vespeneventures/ui defect, reproduced with a
+    // synthetic package and a synthetic subpath name.
+    writeGammaReadme("Ships the \`atoms\` layer only; \`blocks\` is a planned future subpath, not built yet.");
+    const falseAbsence = run("node", [ROOT_README, dir]);
+    check(
+      "D2: catches a bare mention of a REAL subpath negated by a curated 'not built yet' phrase (issue #28's actual historical shape)",
+      falseAbsence.code === 1 && falseAbsence.out.includes('describes "blocks"'),
+      `exit ${falseAbsence.code}: ${falseAbsence.out.slice(0, 300)}`,
+    );
+
+    // Precision: the negation phrase sits in a LATER clause than a
+    // correctly-described real subpath in the same cell. The clause-scoped
+    // match must not cross-contaminate — `atoms` is truthfully described as
+    // shipped and must not be flagged just because `blocks` is falsely
+    // negated two clauses later in the same row.
+    check(
+      "D2 is clause-scoped: a truthfully-described subpath earlier in the same cell is not flagged by a later clause's negation",
+      !falseAbsence.out.includes('describes "atoms"'),
+      `atoms was incorrectly flagged: ${falseAbsence.out.slice(0, 300)}`,
+    );
+
+    // Sanity (real coverage): the same real subpaths, truthfully described
+    // with no negation phrase anywhere, passes — proving D1/D2 read the
+    // real "exports" map and the real README prose rather than flagging
+    // unconditionally once a negation-shaped fixture exists.
+    writeGammaReadme("Ships \`./atoms\` and \`./blocks\`, the two layers this package has today.");
+    const clean = run("node", [ROOT_README, dir]);
+    check(
+      "sanity: truthfully describing real subpaths with no negation phrase passes",
+      clean.code === 0,
+      `exit ${clean.code}: ${clean.out.slice(0, 300)}`,
+    );
+
+    // A negation phrase near a BARE word that is not a real subpath name at
+    // all (ordinary prose) must never be flagged — CHECK D only fires when
+    // the negated word is identical to a verified real "exports" key, never
+    // as a general "this sentence sounds negative" scan.
+    writeGammaReadme("The changelog format is not built yet for this package.");
+    const ordinaryProse = run("node", [ROOT_README, dir]);
+    check(
+      "a negation phrase near ordinary prose (no real-subpath-named word involved) is not flagged",
+      ordinaryProse.code === 0,
+      `exit ${ordinaryProse.code}: ${ordinaryProse.out.slice(0, 300)}`,
+    );
   }
 } finally {
   rmSync(work, { recursive: true, force: true });
