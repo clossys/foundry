@@ -85,7 +85,20 @@ export type {
   PopoverProps,
 } from "./atoms/index.js";
 
-export { PageHeader, EmptyState, DataTable, DetailView, Pagination, Stat } from "./blocks/index.js";
+export {
+  PageHeader,
+  EmptyState,
+  DataTable,
+  DetailView,
+  Pagination,
+  Stat,
+  Form,
+  FieldGroup,
+  ConfirmDialog,
+  Toolbar,
+  NavGrid,
+  SectionHeader,
+} from "./blocks/index.js";
 export type {
   PageHeaderProps,
   EmptyStateProps,
@@ -97,6 +110,17 @@ export type {
   PaginationProps,
   StatProps,
   StatTrend,
+  FormProps,
+  FormError,
+  FieldGroupProps,
+  FieldGroupLayout,
+  ConfirmDialogProps,
+  ConfirmDialogTone,
+  ToolbarProps,
+  NavGridProps,
+  NavGridItem,
+  SectionHeaderProps,
+  SectionHeaderLevel,
 } from "./blocks/index.js";
 
 export { ErrorView, AuthView } from "./views/index.js";

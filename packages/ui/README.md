@@ -21,8 +21,10 @@ gets assigned to one.
   `Table`, `Field`, `Skeleton`, `Tooltip`, `Banner`, `RadioGroup`, `Popover`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
-  with a real job on a page. Six ship: `PageHeader`, `EmptyState`,
-  `DataTable`, `DetailView`, `Pagination`, `Stat`.
+  with a real job on a page. Twelve ship: `PageHeader`, `EmptyState`,
+  `DataTable`, `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`,
+  `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader` — the last six
+  complete this layer (see "Blocks" below).
 - **`views`** — a whole page's composition, where a second one on the same
   page would be incoherent. Content: transient, it fills the slot the shell
   provides. Deliberately a short list — page structure encodes what a
@@ -661,7 +663,7 @@ trigger, open shows the dialog), not a layout of simultaneously-visible
 named regions. `ConfirmDialog` — `Dialog` composed with a fixed heading +
 message + Confirm/Cancel `Button`s — IS that kind of layout (three regions
 that differ in kind, always visible together once open), which makes it a
-block by the same test; it's a deliberate follow-up, not shipped here.
+block by the same test; see "Blocks" below.
 
 ### `Tabs`
 
@@ -1089,6 +1091,335 @@ function PromptRunsTable({ rows }: { rows: PromptRun[] }) {
       onSelectionChange={setSelectedKeys}
       emptyStateTitle="No prompt runs yet"
       footer={<Pagination page={page} pageCount={10} onPageChange={setPage} />}
+    />
+  );
+}
+```
+
+### `Form`
+
+```tsx
+import { Form, FieldGroup } from "@vespeneventures/ui/blocks";
+import { TextField, Button } from "@vespeneventures/ui/atoms";
+import { useState } from "react";
+
+function ProfileForm() {
+  const [errors, setErrors] = useState<{ fieldId: string; message: string }[]>([]);
+
+  return (
+    <Form
+      heading="Profile"
+      errors={errors}
+      onSubmit={(e) => {
+        e.preventDefault();
+        setErrors([{ fieldId: "email", message: "Enter a valid email address." }]);
+      }}
+      actions={<Button type="submit">Save</Button>}
+    >
+      <TextField id="email" label="Email" />
+    </Form>
+  );
+}
+```
+
+A form's own layout: an optional heading region, the fields region
+(`children`), an error-summary region, and an actions region — four
+regions that differ in kind, and a page can hold two `Form`s (two
+independent forms on one settings page), which is what makes this a block
+rather than a view.
+
+**Implements no validation logic or form state, deliberately.**
+react-aria-components already carries validation through each field's own
+`isInvalid`/`validationErrors`, and most real consumers layer a form
+library of their own choice (React Hook Form, Formik, TanStack Form, ...)
+on top of that. A shared UI package that tried to own validation would
+have to pick one of those, and every consumer using a different one would
+immediately need an escape hatch — the same structural-difference-through-
+a-mode-prop failure this README's variant rule warns against, just scoped
+to a form library instead of visual styling. `Form` provides three things
+only: the region layout, the error-summary region, and native `onSubmit`
+passthrough — nothing about *when* a field is invalid or *what* makes it
+so.
+
+**The error summary is this component's real accessibility value.** A
+sighted user scanning a long form after a failed submit can see which
+fields turned red; a screen-reader user tabbing field-by-field cannot
+discover that without visiting every one. `errors` (an array of
+`{ fieldId, message }`) renders a summary region the moment it's non-empty:
+`role="alert"` plus a programmatic focus move onto the region itself (via
+a `tabIndex={-1}` ref), so it's both announced and immediately reachable by
+keyboard — a screen reader user lands directly on the list of what's
+wrong instead of discovering it field-by-field. Each entry is a real
+`<a href="#fieldId">`, linking it to the actual invalid control (a
+consumer-supplied `id`, matching react-aria-components' own convention of
+applying a supplied `id` to the field's real control, not a wrapper); a
+click or Enter on that link moves focus straight to the field.
+
+`errors` is controlled: `Form` tracks no validation state of its own, so a
+NEW array reference is the only "a submission just failed" signal it has
+— that's what triggers the focus move, keyed on `errors`' own identity
+rather than a derived count. A consumer must not construct an equivalent
+new array on every unrelated render, or the summary steals focus back on
+every one of those too.
+
+### `FieldGroup`
+
+```tsx
+import { FieldGroup } from "@vespeneventures/ui/blocks";
+import { TextField } from "@vespeneventures/ui/atoms";
+
+function ShippingAddressGroup() {
+  return (
+    <FieldGroup
+      legend="Shipping address"
+      description="Used for delivery only."
+      layout="multi"
+    >
+      <TextField label="Street" />
+      <TextField label="City" />
+    </FieldGroup>
+  );
+}
+```
+
+A related set of fields under a shared legend — a shipping address's
+street/city/zip, a payment method's card fields, grouped distinctly from
+the rest of the form they sit in. Three regions that differ in kind (the
+legend, an optional description, the fields themselves), and a single
+`Form` routinely holds more than one `FieldGroup` (billing address AND
+shipping address on the same checkout form), which is what makes this a
+block rather than a view.
+
+**Renders a real `<fieldset>`/`<legend>` pair, not `role="group"` +
+`aria-labelledby`.** `<fieldset>` is the native HTML mechanism built for
+exactly this: grouping a set of form controls under one shared,
+programmatically-associated label. Every mainstream screen reader already
+announces the legend as context the moment focus lands on ANY control
+inside, automatically, with no id to generate and wire up by hand the way
+`aria-labelledby` would need. `role="group"` is the right tool when the
+grouped content ISN'T form controls (a `<fieldset>` may only contain form
+controls and phrasing content) — that restriction costs nothing here,
+since every `FieldGroup` child is a field by definition. The one native
+`<fieldset>` cost — browser default chrome (a border, extra padding, a
+shrink-to-fit `min-width` that can overflow a flex/grid ancestor) — is
+reset to zero, so this renders as plain layout, not a visible box of its
+own.
+
+`layout`: `"single" | "multi"` (default `"single"`). The region set —
+legend, description, fields — is identical either way; only the fields'
+own grid layout changes (one column, or two from the `tablet` breakpoint
+up), which is what makes this a legitimate prop rather than two separate
+components under this README's variant rule.
+
+### `ConfirmDialog`
+
+```tsx
+import { ConfirmDialog } from "@vespeneventures/ui/blocks";
+import { Button } from "@vespeneventures/ui/atoms";
+
+function DeletePromptButton() {
+  return (
+    <ConfirmDialog
+      trigger={<Button variant="danger">Delete</Button>}
+      heading="Delete this prompt?"
+      message="This can't be undone."
+      tone="destructive"
+      confirmLabel="Delete"
+      onConfirm={() => deletePrompt()}
+    />
+  );
+}
+```
+
+A confirmation prompt built on the `Dialog` atom: a heading region, a
+message region, and an actions region (Cancel/Confirm) — three regions
+that always render together and differ in kind, which is what makes this
+a block rather than an atom. `Dialog` itself deliberately stops short of
+this fixed shape — see its own section above for exactly where its scope
+ends and this block's begins.
+
+Composable the same way `Dialog` is: a `trigger` slot, open/close either
+uncontrolled or controlled via `isOpen`/`onOpenChange` (both inherited
+from `Dialog`). **No imperative `confirm()` API of any kind** — that would
+give this a portal-independent queue and an imperative call outside the
+render tree, exactly what this README's placement rules call a runtime
+service (test 4), not a layout component. A consumer renders
+`<ConfirmDialog trigger={...} .../>` in place, the same as any other
+block.
+
+**Destructive confirmations never rely on colour alone.** `tone`
+(`"neutral" | "destructive"`, default `"neutral"`) controls the confirm
+button's `danger` styling, but the ACTION label (`confirmLabel`) is what
+actually names the irreversible action — a generic "Confirm" reddened by
+`variant="danger"` tells a colorblind user, a screen reader, or anyone on
+a greyscale screen nothing a sighted user with color vision doesn't
+already get for free from the red fill alone. Naming the action in
+`confirmLabel` ("Delete", "Remove") is what carries the same meaning
+through every one of those channels, the same reasoning `Stat`'s trend
+glyph/screen-reader-text pairing above documents for colour-coded
+direction, applied here to a button's label instead of an icon.
+
+**Default focus lands on Cancel for a destructive confirmation, on Confirm
+otherwise.** Actions render Cancel-then-Confirm, and each `Button`
+requests initial dialog focus via react-aria's own documented mechanism
+for it (`autoFocus`, which the dialog's `FocusScope` honors over its own
+default of focusing the first tabbable element). For `tone="destructive"`,
+an errant Enter press the instant the dialog opens is a real risk for a
+keyboard user who fired the trigger with Enter/Space and has residual
+"activate" momentum — it must land on the SAFER action, so Cancel gets it;
+the cost of one extra keypress to actually delete something is far lower
+than the cost of an accidental irreversible action. For the default
+`"neutral"` tone that risk doesn't apply (nothing is lost by confirming),
+so Confirm gets initial focus instead — the same "Enter activates the
+primary action" expectation an ordinary OK/Cancel dialog already sets.
+
+### `Toolbar`
+
+```tsx
+import { Toolbar } from "@vespeneventures/ui/blocks";
+import { Button, TextField } from "@vespeneventures/ui/atoms";
+
+function PromptsToolbar() {
+  return (
+    <Toolbar
+      aria-label="Prompts"
+      leading={<Button variant="secondary">Bulk actions</Button>}
+      search={<TextField label="Filter" aria-label="Filter prompts" />}
+      trailing={<Button>New prompt</Button>}
+    />
+  );
+}
+```
+
+An action bar above content — typically above a `DataTable` (via its own
+`toolbar` slot) or any other list/grid region. Three regions that differ
+in kind (leading actions, a search/filter control, trailing actions), and
+a page can hold two `Toolbar`s (two independent lists, each with its own
+toolbar, side by side), which is what makes this a block rather than a
+view.
+
+**Built on react-aria-components' own `Toolbar` primitive**, which this
+package's installed version (`react-aria-components@1.20.0`) ships — so
+this uses it rather than hand-rolling `role="toolbar"` and arrow-key
+handling from scratch. Its underlying `useToolbar` hook supplies real
+roving focus via a focus manager that walks every focusable descendant in
+DOM order: Left/Right (or Up/Down when `orientation` is `"vertical"`) move
+focus between them, respecting RTL automatically, and Tab moves focus OUT
+of the whole toolbar in one step (jumping internal focus to the first/last
+control, then letting the browser's own Tab handling continue from there)
+rather than tabbing through every control one at a time — the same "one
+Tab stop for the whole control, arrow keys move within it" shape `Tabs`'
+own `TabList`/`Tab` and `RadioGroup`'s own roving-tabindex already
+establish elsewhere in this package. None of that is reimplemented here:
+any real focusable element placed in `leading`, `search`, or `trailing`
+(this package's own `Button`, `TextField`, `Select`, `Menu`, or anything
+else) is automatically part of that navigation with no per-child wiring
+required.
+
+`role="toolbar"` requires its own accessible name; `aria-label` defaults
+to `"Toolbar"` and should be overridden by a consumer with more than one
+`Toolbar` on a page, the same `aria-label` default pattern `Pagination`'s
+own `"Pagination"` already follows. Wraps at narrow widths: the outer
+region is `flex flex-wrap`, and `search` grows to fill the space between
+`leading` and `trailing`, falling onto its own row rather than overflowing
+once the three regions no longer fit on one line.
+
+### `NavGrid`
+
+```tsx
+import { NavGrid } from "@vespeneventures/ui/blocks";
+
+function SettingsHub() {
+  return (
+    <NavGrid
+      heading="Settings"
+      items={[
+        { id: "billing", title: "Billing", description: "Plan and invoices.", href: "/settings/billing" },
+        { id: "invite", title: "Invite teammates", onSelect: () => openInviteDialog() },
+      ]}
+    />
+  );
+}
+```
+
+A grid of navigation cards — an app's "hub" page linking out to its own
+sections, a settings landing page's category tiles. An optional heading
+and the card grid itself: two regions that differ in kind, and a page can
+hold two `NavGrid`s (two separate card groupings under two headings),
+which is what makes this a block rather than a view.
+
+**Each card is a real `<a>` or `<button>`, not a `<div>` with an
+`onClick`.** `items` is a discriminated union: an item with `href` renders
+via this package's own `Link` atom (`variant="standalone"` — the variant
+this README's own `Link` section already documents for exactly this case,
+"a link that IS the whole clickable unit on its own... a nav item"); an
+item with `onSelect` renders via this package's own `Button` atom
+(`variant="ghost"`). `href`/`onSelect` are mutually exclusive at the type
+level, not just by convention. `icon`, `title`, and `description` are all
+rendered INSIDE that single element (not a wrapping `<div>` around a
+smaller link), so clicking or tabbing to anywhere on the card — not just
+the title text — activates it; `icon` is `aria-hidden`, decorative
+reinforcement for a title that's already the card's real accessible name.
+
+Cards lay out one per row on narrow viewports, two from the `tablet`
+breakpoint, three from `desktop` — a plain Tailwind responsive grid
+generated from this package's own breakpoint tokens, no JS breakpoint
+state, the same pattern `DetailView`'s own responsive field grid uses.
+
+### `SectionHeader`
+
+```tsx
+import { SectionHeader } from "@vespeneventures/ui/blocks";
+import { Button } from "@vespeneventures/ui/atoms";
+
+function NotificationsSection() {
+  return (
+    <>
+      <SectionHeader
+        eyebrow="Beta"
+        title="Notifications"
+        description="Control how you're notified about activity."
+        actions={<Button variant="secondary">Reset to defaults</Button>}
+      />
+      {/* section content */}
+    </>
+  );
+}
+```
+
+A heading for a section WITHIN a page — as opposed to `PageHeader`, which
+announces the page itself. Up to four regions that differ in kind (an
+optional eyebrow, the title, an optional description, an optional actions
+slot), and — unlike `PageHeader`, which appears once per page — a single
+page routinely holds several `SectionHeader`s (one per section of a long
+settings page, one per card in a dashboard). That "can one page hold two
+of them?" difference (test 3) is what makes this its own block rather
+than a `variant`/`mode` on `PageHeader`: the two are never
+interchangeable, so collapsing them into one component with a prop for
+"which kind" would be exactly the structural-difference-through-a-mode-
+prop failure the variant rule above warns against. `SectionHeader.tsx`
+shares no code with `PageHeader.tsx` — the visual rhyme between the two
+is coincidental resemblance, not a factored-out implementation either
+would break if the other changed.
+
+`level`: `2 | 3 | 4 | 5 | 6` (default `2`) — which heading element `title`
+renders as. Real and settable, not fixed: a page's document outline has
+to stay unbroken no matter how deep a `SectionHeader` sits (one directly
+under a `PageHeader`'s own `<h1>` needs the default `level={2}`; a
+`SectionHeader` for a subsection of THAT section needs `level={3}`, and
+so on). Getting this wrong — hardcoding one level, or styling a `<div>`
+to merely look like a heading — is invisible to a sighted user and breaks
+heading-by-heading screen-reader navigation for everyone else.
+
+Renders a plain `<div>`, not a `<header>` the way `PageHeader` does:
+`PageHeader` is a page-level singleton, where `<header>` correctly
+registers as the page's one `banner` landmark. `SectionHeader` is neither
+— it's repeatable, and a bare top-level `<header>` for each one would
+register a SECOND `banner` landmark on the page, which isn't valid
+document structure. The real structure a `SectionHeader` needs to provide
+comes from its heading element (`level`, above), not from a landmark
+role.
+
 ## Views
 
 A view is a whole PAGE's composition — test 3 from "Placement rules" above,
@@ -1669,6 +2000,23 @@ app/
 | `Stat` | component | A single metric: label, value, optional delta/trend, optional description. |
 | `StatProps` | type | Props for `Stat`: `label`, `value`, `delta`, `trend`, `description`, `className`, `style`, plus every native `<div>` attribute. |
 | `StatTrend` | type | `"up" \| "down" \| "neutral"`. |
+| `Form` | component | Form layout: optional heading, fields region, error-summary region (focused/announced on failure), actions region. No validation logic. |
+| `FormProps` | type | Props for `Form`: `heading`, `children`, `errors`, `actions`, `onSubmit`, `className`, `style`, plus every native `<form>` attribute. |
+| `FormError` | type | One error-summary entry: `fieldId`, `message`. |
+| `FieldGroup` | component | A related set of fields under a shared `<fieldset>`/`<legend>`: legend, optional description, the fields. |
+| `FieldGroupProps` | type | Props for `FieldGroup`: `legend`, `description`, `layout`, `children`, `className`, `style`, plus every native `<fieldset>` attribute. |
+| `FieldGroupLayout` | type | `"single" \| "multi"`. |
+| `ConfirmDialog` | component | Confirmation prompt built on `Dialog`: heading, message, Cancel/Confirm actions. Focus defaults to Cancel for `tone="destructive"`. |
+| `ConfirmDialogProps` | type | Props for `ConfirmDialog`: `trigger`, `heading`, `message`, `confirmLabel`, `cancelLabel`, `tone`, `onConfirm`, `onCancel`, `className`, `style`, plus most of `Dialog`'s own props. |
+| `ConfirmDialogTone` | type | `"neutral" \| "destructive"`. |
+| `Toolbar` | component | Action bar built on react-aria-components' own `Toolbar`: leading actions, search/filter slot, trailing actions, with real roving-focus arrow-key navigation. |
+| `ToolbarProps` | type | Props for `Toolbar`: `leading`, `search`, `trailing`, `className`, `style`, plus most of react-aria-components' own `Toolbar` props (`orientation`, `aria-label`, ...). |
+| `NavGrid` | component | Grid of navigation cards: optional heading, the card grid. Each card is a real `<a>` or `<button>`. |
+| `NavGridProps` | type | Props for `NavGrid`: `heading`, `items`, `className`, `style`. |
+| `NavGridItem` | type | One card, as data: `id`, `title`, `description?`, `icon?`, and either `href` or `onSelect` (mutually exclusive). |
+| `SectionHeader` | component | Heading for a section within a page (as opposed to the whole-page `PageHeader`): eyebrow, title, description, actions slot. `level` picks its heading element. |
+| `SectionHeaderProps` | type | Props for `SectionHeader`: `eyebrow`, `title`, `description`, `actions`, `level`, `className`, `style`, plus every native `<div>` attribute. |
+| `SectionHeaderLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
 | `ErrorView` | component | Full-page error state (404/500/403/...). Composes `EmptyState`; status conveyed as text in the page's own `<h1>`. |
 | `ErrorViewProps` | type | Props for `ErrorView`: `status`, `title`, `description`, `action`, `details`, plus every native `<div>` attribute. |
 | `AuthView` | component | Full-page authentication shell. Centered card with `brand`/`heading`/`description`/`form`/`secondaryAction`/`footnote` slots. Implements no authentication itself. |
@@ -1699,7 +2047,9 @@ Beyond render/interaction/keyboard/ARIA tests per atom (`Button.test.tsx`,
 `Table.test.tsx`, `Field.test.tsx`, `Skeleton.test.tsx`, `Tooltip.test.tsx`,
 `Banner.test.tsx`, `RadioGroup.test.tsx`, `Popover.test.tsx`), per block
 (`PageHeader.test.tsx`, `EmptyState.test.tsx`, `DataTable.test.tsx`,
-`DetailView.test.tsx`, `Pagination.test.tsx`, `Stat.test.tsx`), per view
+`DetailView.test.tsx`, `Pagination.test.tsx`, `Stat.test.tsx`,
+`Form.test.tsx`, `FieldGroup.test.tsx`, `ConfirmDialog.test.tsx`,
+`Toolbar.test.tsx`, `NavGrid.test.tsx`, `SectionHeader.test.tsx`), per view
 (`ErrorView.test.tsx`, `AuthView.test.tsx`), per shell component
 (`Shell.test.tsx`, `Toaster.test.tsx`), and the `tailwind-merge` regression
 tests described above (`internal/cx.test.ts`), two tests are worth calling
@@ -1765,13 +2115,15 @@ that gets added here only once something real needs a bare modal overlay
 with neither `Dialog`'s fixed trigger/content shape nor `Popover`'s
 anchored one, not speculatively.
 
-**Blocks:** `PageHeader`, `EmptyState`, `DataTable`, `DetailView`,
-`Pagination`, and `Stat` ship. `ConfirmDialog` (built on `Dialog`) is a
-deliberate follow-up, not started here — see `Dialog`'s own section above
-for exactly where its scope stops and the block layer's starts. No
-`Toolbar`/`FilterBar` block either: `DataTable`'s own `toolbar` slot is
-deliberately a plain `ReactNode`, not a second block with an opinion about
-what a toolbar contains.
+**Blocks:** twelve ship — `PageHeader`, `EmptyState`, `DataTable`,
+`DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`,
+`Toolbar`, `NavGrid`, `SectionHeader` — completing this layer. No
+`FilterBar` block:
+`DataTable`'s own `toolbar` slot (and `Toolbar`'s own `search` slot) are
+deliberately plain `ReactNode`s, not a block with its own opinion about
+what a filter bar contains — a consumer composes filter controls from
+this package's own atoms (`Select`, `TextField`, `Popover`) directly into
+whichever slot fits.
 
 **Views:** only `ErrorView`, `AuthView` ship, and the list is meant to stay
 this short — see "Views" above for the full reasoning. `ListView`,
