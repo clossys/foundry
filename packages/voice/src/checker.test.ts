@@ -239,8 +239,8 @@ describe("checkCopy — waivers", () => {
 
   it("rejects a waiver missing a reason, as waiver:invalid, and does not apply it", () => {
     // Empty string is type-valid (still a `string`) but runtime-invalid --
-    // this is exactly the gap the runtime check exists to close, so no
-    // @ts-expect-error is expected here.
+    // this is exactly the gap the runtime check exists to close, so this
+    // case needs no type-level suppression of any kind.
     const report = checkCopy(makeRecord(), "Our revolutionary new dashboard changes everything.", {
       waivers: [{ rule: "glossary:forbidden-term", match: "revolutionary", reason: "" }],
     });
@@ -252,14 +252,22 @@ describe("checkCopy — waivers", () => {
 });
 
 describe("checkCopy — caller-input errors (thrown, not reported as findings)", () => {
+  // Both cases below call `checkCopy` with a value its own type signature
+  // already rules out, on purpose, to prove the RUNTIME guard also rejects
+  // what a JS caller (or a `.ts` caller that casts past the types) could
+  // still pass in. That's a genuine assertion, but not a type-level one --
+  // there's no compile-time contract being tested here, only a runtime
+  // guard -- so the wrong-typed value is force-cast, not suppressed with a
+  // `@ts-expect-error`. A directive would (a) assert nothing real (this
+  // file is a `*.test.ts`, never compiled by `tsc` -- see issue #24) and
+  // (b) misleadingly imply a type contract is under test here, when the
+  // `.toThrow` below is the entire point.
   it("throws for non-string copy", () => {
-    // @ts-expect-error -- intentionally wrong type
-    expect(() => checkCopy(makeRecord(), 12345)).toThrow(TypeError);
+    expect(() => checkCopy(makeRecord(), 12345 as unknown as string)).toThrow(TypeError);
   });
 
   it("throws for a null or non-object record", () => {
-    // @ts-expect-error -- intentionally wrong type
-    expect(() => checkCopy(null, "some copy")).toThrow(TypeError);
+    expect(() => checkCopy(null as unknown as VoiceRecord, "some copy")).toThrow(TypeError);
   });
 });
 

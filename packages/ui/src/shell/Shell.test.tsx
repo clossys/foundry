@@ -95,10 +95,17 @@ describe("Shell", () => {
   });
 
   it("Shell.Main ignores a consumer-supplied id — the skip link depends on the real one", () => {
+    // `id` isn't a real ShellMainProps field — see shell/internal/shell-
+    // contract.check.tsx for the compile-time half of this contract, which
+    // `tsc` actually checks (a `@ts-expect-error` here in a `*.test.tsx`
+    // file would be inert; see issue #24). This runtime half only needs to
+    // prove that even a caller who forces one past the type system (a `.js`
+    // consumer, or one that casts) still can't make it through, so the prop
+    // is passed via an untyped spread rather than a suppression directive.
+    const forcedId = { id: "consumer-chosen-id" } as Record<string, unknown>;
     render(
       <Shell>
-        {/* @ts-expect-error — `id` is deliberately not in ShellMainProps */}
-        <Shell.Main id="consumer-chosen-id">Content</Shell.Main>
+        <Shell.Main {...forcedId}>Content</Shell.Main>
       </Shell>,
     );
     const main = screen.getByRole("main");
