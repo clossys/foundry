@@ -54,6 +54,28 @@ All notable changes to this package are documented here. Format follows
   import `views/`. `shell/` importing `atoms/` (and `blocks/`, though
   nothing under `shell/` currently does) remains permitted, the same
   direction `blocks/` importing `atoms/` already was.
+- Three more atoms — `Dialog`, `Tabs`, `Table` — bringing the `atoms` layer
+  to sixteen components. `Dialog` builds on react-aria-components'
+  `DialogTrigger`/`ModalOverlay`/`Modal`/`Dialog`/`Heading` for a modal
+  overlay with a focus trap, focus restoration on close, Escape-to-dismiss,
+  and a page scroll lock, plus a `size` prop and a composable
+  `Dialog.Heading` sub-component that wires the dialog's `aria-labelledby`.
+  `Tabs` builds on `Tabs`/`TabList`/`Tab`/`TabPanel` for roving-tabindex
+  arrow-key navigation between panels, via `Tabs.List`, `Tabs.Tab`, and
+  `Tabs.Panel` sub-components. `Table` ships compositional table
+  primitives — `Table.Header`, `Table.Column`, `Table.Body`, `Table.Row`,
+  `Table.Cell` — built on `Table`/`TableHeader`/`TableBody`/`Column`/`Row`/
+  `Cell`, with `sortDescriptor`/`onSortChange` sorting and
+  `selectionMode`/`selectedKeys` row selection passed straight through;
+  `Table.SelectAllCheckbox` and `Table.SelectionCheckbox` reuse this
+  package's own `Checkbox` atom (via react-aria-components'
+  `slot="selection"`) for the selection column, including the
+  indeterminate select-all state — the one place in this package where an
+  atom composes another atom, which `ladder.test.ts` and the README both
+  confirm is the explicitly-permitted direction (a sibling atom, not a
+  `blocks/` import). `DataTable` and `ConfirmDialog` — the finished,
+  opinionated assemblies built on `Table`'s and `Dialog`'s primitives —
+  remain deliberate follow-ups, not shipped here.
 
 ### Fixed
 

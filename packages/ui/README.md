@@ -16,9 +16,10 @@ package yet. See "Placement rules" below for what distinguishes all four
 rungs and how a new component gets assigned to one.
 
 - **`atoms`** — single-purpose: composes no other atom, or its parts are
-  homogeneous repeats rather than named regions. Thirteen ship: `Button`,
+  homogeneous repeats rather than named regions. Sixteen ship: `Button`,
   `TextField`, `Badge`, `Card`, `Breadcrumb`, `Link`, `Checkbox`, `Switch`,
-  `Select`, `Textarea`, `Avatar`, `Spinner`, `Menu`.
+  `Select`, `Textarea`, `Avatar`, `Spinner`, `Menu`, `Dialog`, `Tabs`,
+  `Table`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
   with a real job on a page. Two ship: `PageHeader`, `EmptyState`.
@@ -188,25 +189,35 @@ costs nothing; a missing one costs every component's styling.
 ## Why these dependencies
 
 - **`react-aria-components`** — every interactive atom (`Button`,
-  `TextField`, `Link`, `Checkbox`, `Switch`, `Select`, `Textarea`, `Menu`) is
-  built on its primitives rather than a hand-rolled
-  `<button>`/`<input>`/`<a>`. It supplies keyboard interaction (Enter/Space
-  activation, focus management, arrow-key navigation), the ARIA attributes a
-  screen reader needs (`aria-invalid`, `aria-describedby` linking an input
-  to its error text, label association, `role="menu"`/`aria-checked`/
-  `aria-expanded` and the rest), and disabled-state semantics — the kind of
-  behavior that is easy to get subtly wrong by hand and hard to notice is
-  wrong without a screen reader or a keyboard-only pass. `Badge`, `Card`,
-  `Avatar`, and `Spinner` compose no other atom and aren't interactive, so
-  they're plain markup — there's no react-aria-components primitive for any
-  of them. `Breadcrumb`, `Select`, and `Menu` build on it for their
-  collection components specifically: `Breadcrumbs`/`Breadcrumb`/`Link`
-  supply correct nav semantics and automatic `aria-current` placement;
-  `Select`/`ListBox`/`ListBoxItem`/`Popover` supply a listbox's open/close,
-  typeahead, and selection behavior; `MenuTrigger`/`Menu`/`MenuItem`/
-  `Popover` supply a menu's open/close, arrow-key navigation, and
-  disabled-item skipping — all behavior that would be easy to get subtly
-  wrong hand-rolled, and none of it reimplemented here.
+  `TextField`, `Link`, `Checkbox`, `Switch`, `Select`, `Textarea`, `Menu`,
+  `Dialog`, `Tabs`, `Table`) is built on its primitives rather than a
+  hand-rolled `<button>`/`<input>`/`<a>`. It supplies keyboard interaction
+  (Enter/Space activation, focus management, arrow-key navigation), the
+  ARIA attributes a screen reader needs (`aria-invalid`, `aria-describedby`
+  linking an input to its error text, label association, `role="menu"`/
+  `aria-checked`/`aria-expanded` and the rest), and disabled-state
+  semantics — the kind of behavior that is easy to get subtly wrong by hand
+  and hard to notice is wrong without a screen reader or a keyboard-only
+  pass. `Badge`, `Card`, `Avatar`, and `Spinner` compose no other atom and
+  aren't interactive, so they're plain markup — there's no
+  react-aria-components primitive for any of them. `Breadcrumb`, `Select`,
+  and `Menu` build on it for their collection components specifically:
+  `Breadcrumbs`/`Breadcrumb`/`Link` supply correct nav semantics and
+  automatic `aria-current` placement; `Select`/`ListBox`/`ListBoxItem`/
+  `Popover` supply a listbox's open/close, typeahead, and selection
+  behavior; `MenuTrigger`/`Menu`/`MenuItem`/`Popover` supply a menu's
+  open/close, arrow-key navigation, and disabled-item skipping. `Dialog`
+  builds on `DialogTrigger`/`ModalOverlay`/`Modal`/`Dialog`/`Heading` for a
+  focus-trapped, scroll-locked, Escape-to-dismiss overlay with automatic
+  focus restoration; `Tabs` builds on `Tabs`/`TabList`/`Tab`/`TabPanel` for
+  roving-tabindex arrow-key navigation between panels; `Table` builds on
+  `Table`/`TableHeader`/`TableBody`/`Column`/`Row`/`Cell` for real grid
+  semantics, sorting, and row selection (including the indeterminate
+  select-all state, via this package's own `Checkbox` atom — see `Table`'s
+  own section below). None of that behavior is reimplemented here — it
+  would be easy to get subtly wrong hand-rolled, which is the whole reason
+  this package leans on react-aria-components for every interactive atom
+  rather than building any of it from scratch.
 - **`tailwind-merge`** — every atom accepts a `className` prop, and a
   consumer's value has to reliably win over this package's own default
   classes. Two Tailwind utilities that set the same CSS property have
@@ -568,6 +579,220 @@ both "on" at once — closed shows only the trigger, open shows only the
 popover — the same single-control-with-two-states shape as `Select` (also
 an atom here), not a layout of multiple simultaneous named regions.
 
+### `Dialog`
+
+```tsx
+import { Dialog } from "@vespeneventures/ui/atoms";
+import { Button } from "@vespeneventures/ui/atoms";
+
+function SettingsDialog() {
+  return (
+    <Dialog trigger={<Button variant="secondary">Settings</Button>}>
+      <Dialog.Heading>Settings</Dialog.Heading>
+      <p>Configure your workspace preferences here.</p>
+    </Dialog>
+  );
+}
+```
+
+A modal dialog, opened from a `trigger` slot — the same composable shape
+`Menu` uses (a trigger plus content, rather than a fixed prop shape). Built
+on react-aria-components' `DialogTrigger` + `ModalOverlay` + `Modal` +
+`Dialog`, which supply everything a modal overlay needs to be safe to use:
+a focus trap (Tab/Shift+Tab never leave the dialog while it's open), focus
+restoration to the trigger when it closes, Escape to dismiss (always —
+never gated behind any prop this component exposes), and a page-level
+scroll lock for as long as the dialog is open. None of it reimplemented
+here.
+
+`size`: `"sm" | "md" | "lg"` (default `"md"`), controlling the dialog
+surface's max width. A legitimate prop rather than three separate
+components under this package's variant rule: the region set — one dialog
+surface, one scrim — is identical at every size; only the width changes.
+
+`Dialog.Heading` wraps react-aria-components' own `Heading`, rendered into
+the internal `"title"` slot `Dialog` provides. That slot is what wires the
+dialog's `aria-labelledby` to this heading's own generated id — the reason
+a `Dialog` needs no separate `aria-label`/`title` prop of its own, the same
+way `Menu` needs no `aria-label` because its trigger already supplies one.
+Omit `Dialog.Heading` and the dialog falls back to being labelled by its
+TRIGGER's own accessible text instead (react-aria-components' documented
+fallback for a title-less dialog) — valid, but usually the wrong name (it
+announces the button that opened the dialog, not what the dialog itself
+is), so every dialog with real title text should render one.
+
+`children` may also be a function, receiving `{ close }` — react-aria-components'
+own `Dialog` children shape — for a footer control that closes the dialog
+imperatively without threading `isOpen` state back out to wherever the
+trigger is rendered:
+
+```tsx
+<Dialog trigger={<Button variant="secondary">Delete account</Button>}>
+  {({ close }) => (
+    <>
+      <Dialog.Heading>Delete account?</Dialog.Heading>
+      <p>This can't be undone.</p>
+      <Button variant="danger" onPress={() => { deleteAccount(); close(); }}>
+        Delete
+      </Button>
+    </>
+  )}
+</Dialog>
+```
+
+`Dialog` ships as an atom, not a block, for the same reason `Menu` does:
+its trigger and its content are never both "on" at once (closed shows the
+trigger, open shows the dialog), not a layout of simultaneously-visible
+named regions. `ConfirmDialog` — `Dialog` composed with a fixed heading +
+message + Confirm/Cancel `Button`s — IS that kind of layout (three regions
+that differ in kind, always visible together once open), which makes it a
+block by the same test; it's a deliberate follow-up, not shipped here.
+
+### `Tabs`
+
+```tsx
+import { Tabs } from "@vespeneventures/ui/atoms";
+
+function PromptSections() {
+  return (
+    <Tabs>
+      <Tabs.List aria-label="Prompt sections">
+        <Tabs.Tab id="details">Details</Tabs.Tab>
+        <Tabs.Tab id="history">History</Tabs.Tab>
+        <Tabs.Tab id="settings" isDisabled>
+          Settings
+        </Tabs.Tab>
+      </Tabs.List>
+      <Tabs.Panel id="details">Details content.</Tabs.Panel>
+      <Tabs.Panel id="history">History content.</Tabs.Panel>
+      <Tabs.Panel id="settings">Settings content.</Tabs.Panel>
+    </Tabs>
+  );
+}
+```
+
+Tabbed navigation between panels of content, composed from `Tabs.List`
+(containing `Tabs.Tab`s) and one `Tabs.Panel` per tab. Built on
+react-aria-components' `Tabs` + `TabList` + `Tab` + `TabPanel`, which
+supply roving-tabindex focus management (only the selected tab sits in the
+page's Tab sequence; the rest are reached with the arrow keys, not Tab),
+Left/Right arrow-key navigation with wraparound, Home/End jumping to the
+first/last enabled tab, disabled tabs skipped entirely during arrow
+navigation (never just visually dimmed, the same as `Menu`'s disabled
+items), and the `aria-selected`/`aria-controls`/`aria-labelledby` wiring
+between each tab and its panel — none of it reimplemented here. A
+`Tabs.Tab`'s `id` must match the `id` of the `Tabs.Panel` it controls;
+react-aria-components derives the ARIA pairing from that shared id.
+
+`Tabs` ships as an atom, not a block: its `Tabs.Tab` children are a
+homogeneous repeat — any tab plays the same role as any other, a label
+that selects a panel — the same shape as `Breadcrumb`'s crumbs, not a set
+of regions that differ in kind. See "Placement rules" above, test 2 (the
+tab-bar example is called out there by name). `Tabs.List` needs its own
+`aria-label` (or `aria-labelledby`) when a page has more than one tab
+list, the same way `Breadcrumb`'s `<nav>` does — there's no sensible
+default, since "Tabs" describes every tab list equally badly.
+
+### `Table`
+
+```tsx
+import { Table } from "@vespeneventures/ui/atoms";
+
+interface PromptRun {
+  id: string;
+  name: string;
+  runs: number;
+}
+
+function PromptRunsTable({ rows }: { rows: PromptRun[] }) {
+  return (
+    <Table aria-label="Prompt runs">
+      <Table.Header>
+        <Table.Column id="name" isRowHeader allowsSorting>
+          Name
+        </Table.Column>
+        <Table.Column id="runs" allowsSorting>
+          Runs
+        </Table.Column>
+      </Table.Header>
+      <Table.Body>
+        {rows.map((row) => (
+          <Table.Row key={row.id} id={row.id}>
+            <Table.Cell>{row.name}</Table.Cell>
+            <Table.Cell>{row.runs}</Table.Cell>
+          </Table.Row>
+        ))}
+      </Table.Body>
+    </Table>
+  );
+}
+```
+
+Table PRIMITIVES — `Table`, `Table.Header`, `Table.Column`, `Table.Body`,
+`Table.Row`, `Table.Cell` — not a finished data grid. This is the
+substrate a consumer assembles a real table from, the same way
+react-aria-components' own docs compose them: no `columns`/`rows` data
+props, no built-in pagination, filtering, or toolbar. `DataTable` — that
+finished, opinionated assembly — is a **block** built on top of these
+primitives (a page can hold two data tables, so by this package's own
+"can one page contain two of them" test it's a block, not a view); it's a
+deliberate follow-up, not started here.
+
+Built on react-aria-components' `Table`/`TableHeader`/`TableBody`/
+`Column`/`Row`/`Cell`, which supply real `<table>`/`<thead>`/`<tbody>`/
+`<th>`/`<tr>`/`<td>` semantics (this renders as an actual HTML table, not
+a `role="grid"` `<div>` soup); grid-style keyboard navigation (arrow keys
+in every direction between cells, plus Home/End and Ctrl+Home/End); and,
+via props passed straight through on `Table` itself, sorting
+(`sortDescriptor`/`onSortChange`, `Table.Column`'s `allowsSorting`) and row
+selection (`selectionMode`/`selectedKeys`/`onSelectionChange`). None of it
+reimplemented here.
+
+```tsx
+<Table
+  aria-label="Prompt runs"
+  sortDescriptor={sortDescriptor}
+  onSortChange={setSortDescriptor}
+  selectionMode="multiple"
+  selectedKeys={selectedKeys}
+  onSelectionChange={setSelectedKeys}
+>
+  <Table.Header>
+    <Table.Column>
+      <Table.SelectAllCheckbox />
+    </Table.Column>
+    <Table.Column id="name" isRowHeader allowsSorting>
+      Name
+    </Table.Column>
+  </Table.Header>
+  <Table.Body>
+    {rows.map((row) => (
+      <Table.Row key={row.id} id={row.id}>
+        <Table.Cell>
+          <Table.SelectionCheckbox />
+        </Table.Cell>
+        <Table.Cell>{row.name}</Table.Cell>
+      </Table.Row>
+    ))}
+  </Table.Body>
+</Table>
+```
+
+`Table.SelectAllCheckbox` (place inside a `Table.Column`) and
+`Table.SelectionCheckbox` (place inside a `Table.Cell`, one per
+`Table.Row`) are thin wrappers that render this package's own `Checkbox`
+atom with `slot="selection"` — react-aria-components' `Table` provides
+`isSelected`/`isIndeterminate`/`onChange` for exactly that slot, computed
+from the real selection state, so neither wrapper reads or recomputes any
+of it. `Checkbox` already supports the `isIndeterminate` state a
+select-all control needs (see `Checkbox`'s own section above) — reusing it
+here, rather than a second hand-rolled checkbox, is exactly what that
+support was built for. This makes `Table` the one atom in this package
+that composes ANOTHER atom of its own; see "Atoms compose no other atom"
+above for why that's the ladder's explicitly-permitted direction (a
+sibling atom, not a `blocks/` import) rather than an exception carved out
+for it.
+
 ## Blocks
 
 A block owns the internal layout of multiple named regions — regions that
@@ -884,6 +1109,24 @@ app/
 | `MenuProps` | type | Props for `Menu`: `trigger`, `children`, `triggerAction`, `className`, `popoverClassName`, plus most of react-aria-components' own `MenuTrigger` props. |
 | `MenuItemProps` | type | Props for `Menu.Item`: `children`, `isDestructive`, `className`, plus everything react-aria-components' own `MenuItem` accepts. |
 | `MenuSeparatorProps` | type | Props for `Menu.Separator`: `className`. |
+| `Dialog` | component | Modal dialog built on react-aria-components' `DialogTrigger`/`ModalOverlay`/`Modal`/`Dialog`. Carries `Dialog.Heading`. |
+| `DialogProps` | type | Props for `Dialog`: `trigger`, `children` (may be a function receiving `{ close }`), `size`, `isDismissable`, `className`, `style`, `overlayClassName`, plus most of react-aria-components' own `DialogTrigger` props. |
+| `DialogSize` | type | `"sm" \| "md" \| "lg"`. |
+| `DialogHeadingProps` | type | Props for `Dialog.Heading`: `children`, `className`, `level`, plus everything react-aria-components' own `Heading` accepts. |
+| `Tabs` | component | Tabbed navigation built on react-aria-components' `Tabs`/`TabList`/`Tab`/`TabPanel`. Carries `Tabs.List`, `Tabs.Tab`, `Tabs.Panel`. |
+| `TabsProps` | type | Props for `Tabs`: `children`, `className`, plus most of react-aria-components' own `Tabs` props. |
+| `TabsListProps` | type | Props for `Tabs.List`: `children`, `className`, plus most of react-aria-components' own `TabList` props (including `aria-label`). |
+| `TabsTabProps` | type | Props for `Tabs.Tab`: `children`, `className`, `style`, `id`, `isDisabled`, plus everything react-aria-components' own `Tab` accepts. |
+| `TabsPanelProps` | type | Props for `Tabs.Panel`: `children`, `className`, `id`, plus everything react-aria-components' own `TabPanel` accepts. |
+| `Table` | component | Table primitives built on react-aria-components' `Table`/`TableHeader`/`TableBody`/`Column`/`Row`/`Cell`. Carries `Table.Header`, `Table.Column`, `Table.Body`, `Table.Row`, `Table.Cell`, `Table.SelectAllCheckbox`, `Table.SelectionCheckbox`. |
+| `TableProps` | type | Props for `Table`: `children`, `className`, `style`, plus react-aria-components' own `Table` props (`aria-label`, `sortDescriptor`, `onSortChange`, `selectionMode`, `selectedKeys`, `onSelectionChange`, ...). |
+| `TableHeaderProps` | type | Props for `Table.Header`: `children` (`Table.Column`s), `className`, plus react-aria-components' own `TableHeader` props. |
+| `TableColumnProps` | type | Props for `Table.Column`: `children`, `className`, `style`, `id`, `allowsSorting`, `isRowHeader`, plus everything react-aria-components' own `Column` accepts. |
+| `TableBodyProps` | type | Props for `Table.Body`: `children` (`Table.Row`s), `className`, plus react-aria-components' own `TableBody` props (including `renderEmptyState`). |
+| `TableRowProps` | type | Props for `Table.Row`: `children` (`Table.Cell`s), `className`, `style`, `id`, plus everything react-aria-components' own `Row` accepts. |
+| `TableCellProps` | type | Props for `Table.Cell`: `children`, `className`, `style`, plus everything react-aria-components' own `Cell` accepts. |
+| `TableSelectAllCheckboxProps` | type | Props for `Table.SelectAllCheckbox`: `aria-label` (default `"Select all rows"`), `className`. |
+| `TableSelectionCheckboxProps` | type | Props for `Table.SelectionCheckbox`: `aria-label` (default `"Select row"`), `className`. |
 | `PageHeader` | component | Page banner: breadcrumb slot, title, description, actions slot. |
 | `PageHeaderProps` | type | Props for `PageHeader`: `title`, `description`, `actions`, `breadcrumb`, plus every native `<header>` attribute. |
 | `EmptyState` | component | Zero-item placeholder: icon slot, title, description, action slot. |
@@ -910,10 +1153,11 @@ Beyond render/interaction/keyboard/ARIA tests per atom (`Button.test.tsx`,
 `TextField.test.tsx`, `Badge.test.tsx`, `Card.test.tsx`,
 `Breadcrumb.test.tsx`, `Link.test.tsx`, `Checkbox.test.tsx`,
 `Switch.test.tsx`, `Select.test.tsx`, `Textarea.test.tsx`, `Avatar.test.tsx`,
-`Spinner.test.tsx`, `Menu.test.tsx`), per block (`PageHeader.test.tsx`,
-`EmptyState.test.tsx`), per shell component (`Shell.test.tsx`,
-`Toaster.test.tsx`), and the `tailwind-merge` regression tests described
-above (`internal/cx.test.ts`), two tests are worth calling out specifically:
+`Spinner.test.tsx`, `Menu.test.tsx`, `Dialog.test.tsx`, `Tabs.test.tsx`,
+`Table.test.tsx`), per block (`PageHeader.test.tsx`, `EmptyState.test.tsx`),
+per shell component (`Shell.test.tsx`, `Toaster.test.tsx`), and the
+`tailwind-merge` regression tests described above (`internal/cx.test.ts`),
+two tests are worth calling out specifically:
 
 - **`token-parity.test.ts`** scans every atom's, block's, AND shell
   component's source (everything under `src/`) for token-derived Tailwind
@@ -950,16 +1194,20 @@ above (`internal/cx.test.ts`), two tests are worth calling out specifically:
 
 ## What's deliberately not here
 
-**Atoms:** thirteen ship — `Button`, `TextField`, `Badge`, `Card`,
+**Atoms:** sixteen ship — `Button`, `TextField`, `Badge`, `Card`,
 `Breadcrumb`, `Link`, `Checkbox`, `Switch`, `Select`, `Textarea`, `Avatar`,
-`Spinner`, `Menu`. No `Dialog`, `Tooltip`, `Tabs`, `Radio`, or a `Popover`
-exposed as a public atom of its own — those get added here only once
-something real needs them, not speculatively. (`Popover` is already used
-internally, inside `Select` and `Menu`; that's not the same as shipping it
-as a standalone public atom a consumer could reach for on its own.)
+`Spinner`, `Menu`, `Dialog`, `Tabs`, `Table`. No `Tooltip`, `Radio`, or a
+`Popover`/`Modal` exposed as a public atom of its own — those get added
+here only once something real needs them, not speculatively. (`Popover`
+is already used internally, inside `Select` and `Menu`; `Modal`/
+`ModalOverlay` inside `Dialog`; that's not the same as shipping either as
+a standalone public atom a consumer could reach for on its own.)
 
-**Blocks:** only `PageHeader`, `EmptyState` ship. `DataTable` and
-`DetailView` are a deliberate follow-up pass, not started here.
+**Blocks:** only `PageHeader`, `EmptyState` ship. `DataTable` (built on
+`Table`'s primitives) and `ConfirmDialog` (built on `Dialog`) are
+deliberate follow-ups, not started here — see those atoms' own sections
+above for exactly where each one's scope stops and the block layer's
+starts. `DetailView` is a further follow-up, also not started.
 
 **Views:** no `views` subpath yet. Planned, not shipped — the package is
 structured so it can be added later as a sibling export without
