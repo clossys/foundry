@@ -27,7 +27,7 @@
 // change. Deleting a KNOWN-GAP case without fixing the underlying rule is how a
 // known hole becomes an unknown one.
 
-import { mkdtempSync, rmSync, mkdirSync, writeFileSync, cpSync, existsSync, chmodSync, readdirSync } from "node:fs";
+import { mkdtempSync, rmSync, mkdirSync, writeFileSync, readFileSync, cpSync, existsSync, chmodSync, readdirSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { execFileSync } from "node:child_process";
@@ -76,6 +76,7 @@ const ARTIFACT = join(scriptDir, "check-artifact-safety.mjs");
 const COLLISION = join(scriptDir, "check-name-collision.mjs");
 const CONTAM = join(scriptDir, "check-contamination-classes.mjs");
 const QUALITY = join(scriptDir, "check-denylist-quality.mjs");
+const SET_SCOPE = join(scriptDir, "set-scope.mjs");
 
 let passed = 0;
 const failures = [];
@@ -575,6 +576,111 @@ try {
       `paths-confined entry (index 2) was flagged for breadth — confinement should bound the blast radius`,
     );
     check("check-denylist-quality exits 1 when quality findings exist", r.code === 1, `exit was ${r.code}`);
+  }
+
+  // ---------------------------- set-scope: scope rename, not name capture (issue #9)
+  console.log("\n# set-scope: a third-party name sharing a first-party package name (issue #9)");
+  {
+    // set-scope.mjs resolves its own repo root from its own file location
+    // (dirname(import.meta.url) + ".."), not from a CLI argument like the
+    // other gates take — so exercising it hermetically means giving it its
+    // own fixture repo, with its own copy of the script, rather than pointing
+    // it at a fixture directory the way SAFETY/ARTIFACT/CONTAM are pointed.
+    const dir = join(work, "set-scope-names");
+    mkdirSync(join(dir, "packages", "ui"), { recursive: true });
+    mkdirSync(join(dir, "scripts"), { recursive: true });
+    cpSync(SET_SCOPE, join(dir, "scripts", "set-scope.mjs"));
+    writeFileSync(
+      join(dir, "package-scope.json"),
+      JSON.stringify({ scope: "@fixture-first-party", registry: "https://example.invalid" }, null, 2) + "\n",
+    );
+    writeFileSync(
+      join(dir, "packages", "ui", "package.json"),
+      JSON.stringify({ name: "@fixture-first-party/ui", version: "1.0.0" }, null, 2) + "\n",
+    );
+    // The whole point: a THIRD-PARTY package whose local name ("ui") happens
+    // to collide with a package we own, sitting in a lockfile-shaped file —
+    // exactly the shape of the real corruption (@vitest/ui, in
+    // package-lock.json's own peerDependencies, rewritten to
+    // @vespeneventures/ui). Nothing here carries our declared scope.
+    writeFileSync(
+      join(dir, "package-lock.json"),
+      JSON.stringify({ packages: { "node_modules/@some-other-vendor/ui": { peerDependencies: { "@some-other-vendor/ui": "4.1.10" } } } }, null, 2) + "\n",
+    );
+    gitInit(dir);
+
+    const before = readFileSync(join(dir, "package-lock.json"), "utf8");
+    const check1 = run("node", [join(dir, "scripts", "set-scope.mjs"), "--check"], { cwd: dir });
+    check(
+      "--check does not flag a third-party name sharing a first-party package name",
+      check1.code === 0,
+      `expected exit 0, got ${check1.code}: ${check1.out}`,
+    );
+
+    // Also run the rewrite for real (no --check) and confirm the file on disk
+    // is byte-for-byte unchanged — --check passing is not enough on its own,
+    // since a bug in --check's own logic could mask a bug in the rewrite.
+    run("node", [join(dir, "scripts", "set-scope.mjs")], { cwd: dir });
+    const after = readFileSync(join(dir, "package-lock.json"), "utf8");
+    check(
+      "the rewrite itself never touches the third-party reference",
+      after === before,
+      "package-lock.json changed even though nothing in it carries our declared scope",
+    );
+    check(
+      "the third-party scope is still intact",
+      after.includes("@some-other-vendor/ui") && !after.includes("@fixture-first-party/ui\":") ,
+      `expected @some-other-vendor/ui to survive untouched, got: ${after}`,
+    );
+  }
+
+  // --------------------------- set-scope: walk skips gitignored paths (issue #25)
+  console.log("\n# set-scope: walk never descends into gitignored paths, e.g. .claude/ (issue #25)");
+  {
+    const dir = join(work, "set-scope-gitignore");
+    mkdirSync(join(dir, "packages", "probe"), { recursive: true });
+    mkdirSync(join(dir, "scripts"), { recursive: true });
+    cpSync(SET_SCOPE, join(dir, "scripts", "set-scope.mjs"));
+    writeFileSync(join(dir, ".gitignore"), ".claude/\n");
+    writeFileSync(
+      join(dir, "package-scope.json"),
+      JSON.stringify({ scope: "@fixture-old-scope", registry: "https://example.invalid" }, null, 2) + "\n",
+    );
+    writeFileSync(
+      join(dir, "packages", "probe", "package.json"),
+      JSON.stringify({ name: "@fixture-old-scope/probe", version: "1.0.0" }, null, 2) + "\n",
+    );
+    // A file sitting inside a gitignored directory — modelling another
+    // agent's live, uncommitted worktree under .claude/ — that legitimately
+    // carries the declared scope and so WOULD be rewritten by a scope rename
+    // if the walk ever reached it. gitInit's `git add -A` will not stage
+    // this: .gitignore already excludes .claude/, exactly like the real repo.
+    mkdirSync(join(dir, ".claude", "worktrees", "foreign-session", "packages", "probe"), { recursive: true });
+    writeFileSync(
+      join(dir, ".claude", "worktrees", "foreign-session", "packages", "probe", "package.json"),
+      JSON.stringify({ name: "@fixture-old-scope/probe", version: "1.0.0" }, null, 2) + "\n",
+    );
+    gitInit(dir);
+
+    const r = run("node", [join(dir, "scripts", "set-scope.mjs"), "--scope", "@fixture-new-scope"], { cwd: dir });
+    check("a real scope rename still exits cleanly", r.code === 0, `exit was ${r.code}: ${r.out}`);
+
+    const tracked = readFileSync(join(dir, "packages", "probe", "package.json"), "utf8");
+    check(
+      "the rename still applies to a tracked, non-ignored file",
+      tracked.includes("@fixture-new-scope/probe"),
+      `tracked package.json was not renamed: ${tracked}`,
+    );
+
+    const foreign = readFileSync(
+      join(dir, ".claude", "worktrees", "foreign-session", "packages", "probe", "package.json"),
+      "utf8",
+    );
+    check(
+      "a file inside a gitignored directory (.claude/) is left untouched",
+      foreign.includes("@fixture-old-scope/probe") && !foreign.includes("@fixture-new-scope"),
+      `expected the foreign worktree's file to be untouched by the rename, got: ${foreign}`,
+    );
   }
 } finally {
   rmSync(work, { recursive: true, force: true });
