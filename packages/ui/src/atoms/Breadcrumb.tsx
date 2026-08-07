@@ -5,7 +5,7 @@ import {
   Link as AriaLink,
   type BreadcrumbsProps as AriaBreadcrumbsProps,
 } from "react-aria-components";
-import { cx } from "../atoms/internal/cx.js";
+import { cx } from "./internal/cx.js";
 
 export interface BreadcrumbProps
   extends Omit<AriaBreadcrumbsProps<object>, "children" | "className"> {
@@ -32,7 +32,7 @@ export interface BreadcrumbProps
  *
  * Wrapped in a real `<nav>` landmark: react-aria-components' `Breadcrumbs`
  * renders only the `<ol>` and applies its `aria-label` there, not a
- * `role="navigation"` element, so this block supplies the `<nav>` itself —
+ * `role="navigation"` element, so this component supplies the `<nav>` itself —
  * without it, the trail is an unlabeled list, not a landmark a screen
  * reader user can jump to.
  *

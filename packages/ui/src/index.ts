@@ -10,7 +10,7 @@
  * exactly what `./atoms/index.js` and `./blocks/index.js` export, nothing
  * more.
  */
-export { Button, TextField, Badge, Card } from "./atoms/index.js";
+export { Button, TextField, Badge, Card, Breadcrumb } from "./atoms/index.js";
 export type {
   ButtonProps,
   ButtonSize,
@@ -19,12 +19,9 @@ export type {
   BadgeProps,
   BadgeVariant,
   CardProps,
-} from "./atoms/index.js";
-
-export { PageHeader, Breadcrumb, EmptyState } from "./blocks/index.js";
-export type {
-  PageHeaderProps,
   BreadcrumbProps,
   BreadcrumbItemProps,
-  EmptyStateProps,
-} from "./blocks/index.js";
+} from "./atoms/index.js";
+
+export { PageHeader, EmptyState } from "./blocks/index.js";
+export type { PageHeaderProps, EmptyStateProps } from "./blocks/index.js";

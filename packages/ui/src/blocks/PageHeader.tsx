@@ -12,7 +12,7 @@ export interface PageHeaderProps extends Omit<HTMLAttributes<HTMLElement>, "titl
    */
   actions?: ReactNode;
   /**
-   * Slot for a `Breadcrumb` block (or any `ReactNode`), rendered above the
+   * Slot for a `Breadcrumb` atom (or any `ReactNode`), rendered above the
    * title. Not required — a top-level page has nowhere to link back to.
    */
   breadcrumb?: ReactNode;
