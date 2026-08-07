@@ -2,9 +2,18 @@
 // check-denylist-quality — assert properties of the REAL denylist without ever
 // echoing a term.
 //
-//   node scripts/check-denylist-quality.mjs [--denylist <file>] [--json]
+//   node scripts/check-denylist-quality.mjs [--denylist <file>] [--scope-config <file>] [--json]
 //
 // Exit 0 = the denylist is well-formed. Exit 1 = quality findings. Exit 2 = cannot run.
+//
+// Beyond pattern shape (boundary-anchoring, separator-optionality), this also
+// checks two structural properties end to end:
+//   - self-scope (issue #1): a term must not match this repo's own configured
+//     scope or a package name published under it — see "self-scope loading"
+//     below, which is why --scope-config exists alongside --denylist.
+//   - self-containment (issue #2): a term's `why`/`boundaryJustification`
+//     text must never contain another term's literal value — see the
+//     "self-containment" section near the bottom.
 //
 // WHY THIS IS SEPARATE FROM test-gates.mjs
 // ----------------------------------------
@@ -25,9 +34,10 @@
 // so the output is safe in a CI log. It is the one check that cannot be written
 // as a fixture, because its subject is the live data.
 
-import { readFileSync, existsSync } from "node:fs";
-import { join } from "node:path";
+import { readFileSync, existsSync, readdirSync } from "node:fs";
+import { join, dirname } from "node:path";
 import { homedir } from "node:os";
+import { fileURLToPath } from "node:url";
 
 const argv = process.argv.slice(2);
 const flags = new Set(argv.filter((a) => a.startsWith("--")));
@@ -58,7 +68,112 @@ if (!Array.isArray(denylist.terms) || denylist.terms.length === 0) {
   process.exit(2);
 }
 
+// ------------------------------------------------------- self-scope loading
+
+// A denylist term that matches this repository's own configured publishing
+// scope, or one of the package names published under it, is almost
+// certainly a self-reference rather than a real leak signal (issue #1): it
+// was built from evidence that happened to include this repo's own scope or
+// package names, and nothing caught that before merge — a real incident
+// produced 276 hits across 59 files, every one a legitimate self-reference.
+// Left unflagged that term is a dead trap either way it gets used
+// downstream: check-public-safety.mjs either ignores it in practice (a
+// pattern nobody bothered to keep, so why have it) or enforces it (which
+// flags every legitimate mention of this repo's own scope, making the gate
+// unusable on its own source).
+//
+// package-scope.json is this repository's single source of truth for the
+// scope — see that file's own $comment. This script takes no directory
+// argument the way check-public-safety.mjs does (it always inspects the
+// ambient denylist, not a scanned tree), so its location relative to
+// package-scope.json is the fixed repo layout: scripts/check-denylist-quality.mjs
+// sits one level under the repo root, the same fixed relationship
+// test-gates.mjs relies on for its own `repoRoot`. --scope-config overrides
+// that default for hermetic testing — the same escape hatch
+// check-public-safety.mjs offers via its own --scope-config flag.
+//
+// Missing or unparseable scope config is treated exactly like a missing or
+// unparseable denylist above: FAILURE (exit 2), never a quiet skip. A skip
+// here would mean this script can report PASS having never actually run the
+// one check issue #1 asks for — "could not check" and "checked, and it was
+// fine" must never share an exit code.
+const scriptDir = dirname(fileURLToPath(import.meta.url));
+const scopeConfigPath = flagValue("--scope-config") ?? join(scriptDir, "..", "package-scope.json");
+
+let scopeConfig;
+try {
+  scopeConfig = JSON.parse(readFileSync(scopeConfigPath, "utf8"));
+} catch (error) {
+  console.error(
+    `check-denylist-quality: cannot load the scope configuration needed for the self-scope check (${scopeConfigPath}): ` +
+      `${error.code === "ENOENT" ? "not found" : error.message}\n` +
+      `  set --scope-config <file> to point at package-scope.json (or an equivalent fixture).\n` +
+      `  Refusing to report a pass from a scan that never checked terms against this repo's own scope.`,
+  );
+  process.exit(2);
+}
+if (typeof scopeConfig.scope !== "string" || !scopeConfig.scope.trim()) {
+  console.error(
+    `check-denylist-quality: ${scopeConfigPath} has no non-empty \`scope\` string — cannot run the self-scope check.`,
+  );
+  process.exit(2);
+}
+
+// Every package.json under packages/*, resolved relative to wherever the
+// scope config was found — in the real repo that is packages/ at the repo
+// root; in a test fixture it is whatever sibling directory the fixture set
+// up next to its synthetic package-scope.json. A package.json that is
+// absent or fails to parse is skipped rather than aborting the whole gate:
+// widening self-scope coverage is this check's job, not re-validating every
+// manifest (check-public-safety.mjs and the build already do that).
+const packagesDir = join(dirname(scopeConfigPath), "packages");
+const packageNames = [];
+if (existsSync(packagesDir)) {
+  for (const entry of readdirSync(packagesDir, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue;
+    try {
+      const manifest = JSON.parse(readFileSync(join(packagesDir, entry.name, "package.json"), "utf8"));
+      if (typeof manifest.name === "string" && manifest.name) packageNames.push(manifest.name);
+    } catch {
+      // no package.json here, or it doesn't parse — not this check's job to flag that.
+    }
+  }
+}
+
+// Several renderings of the same identity, same reasoning as the
+// separator-optional check below: the scope and each package name appear
+// both with and without the leading "@" (prose vs. an npm-scope-shaped
+// token), and a term is checked against all of them.
+const selfScopeCandidates = new Set();
+const addSelfScopeCandidate = (s) => {
+  if (!s) return;
+  selfScopeCandidates.add(s);
+  if (s.startsWith("@")) selfScopeCandidates.add(s.slice(1));
+};
+addSelfScopeCandidate(scopeConfig.scope);
+for (const name of packageNames) addSelfScopeCandidate(name);
+
+// Literal core, with regex machinery removed first. Without stripping the
+// escape classes, `\b` leaves a stray "b" that reads as a literal chunk and
+// silently changes the chunk count — which is how an earlier version of this
+// script skipped the exact term the audit had already proven was leaky.
+// Factored out (rather than inline in the forEach below) because the
+// self-containment check (issue #2) needs the same literal reconstruction
+// for terms it never compiles a RegExp for.
+function literalChunksOf(pattern) {
+  const literalOf = (p) =>
+    p
+      .replace(/\\[bBdDwWsSnrt]/g, " ") // escape classes, not literals
+      .replace(/\\([.\-_/@])/g, "$1") // escaped literals -> themselves
+      .replace(/\[[^\]]*\]/g, " ") // character classes
+      .replace(/[(){}|?*+^$]/g, " "); // grouping and quantifiers
+  return literalOf(pattern)
+    .split(/[^A-Za-z0-9]+/)
+    .filter((c) => c.length >= 3);
+}
+
 const findings = [];
+const selfScopeAcknowledged = [];
 const acknowledged = [];
 const note = (index, why, rule, detail, severity = "medium") =>
   findings.push({ index, why, rule, detail, severity });
@@ -96,20 +211,7 @@ denylist.terms.forEach((term, index) => {
     note(index, label, "non-empty", "pattern matches the empty string — it will match every line", "critical");
   }
 
-  // Literal core, with regex machinery removed first. Without stripping the
-  // escape classes, `\b` leaves a stray "b" that reads as a literal chunk and
-  // silently changes the chunk count — which is how an earlier version of this
-  // script skipped the exact term the audit had already proven was leaky.
-  const literalOf = (p) =>
-    p
-      .replace(/\\[bBdDwWsSnrt]/g, " ") // escape classes, not literals
-      .replace(/\\([.\-_/@])/g, "$1") // escaped literals -> themselves
-      .replace(/\[[^\]]*\]/g, " ") // character classes
-      .replace(/[(){}|?*+^$]/g, " "); // grouping and quantifiers
-
-  const literalChunks = literalOf(pattern)
-    .split(/[^A-Za-z0-9]+/)
-    .filter((c) => c.length >= 3);
+  const literalChunks = literalChunksOf(pattern);
 
   // 3a. Word-boundary anchoring. A `\b`-anchored pattern matches the term as a
   //     standalone word and MISSES it inside a longer token — which is exactly
@@ -168,9 +270,42 @@ denylist.terms.forEach((term, index) => {
   } else if (!["critical", "high", "medium", "low"].includes(severity)) {
     note(index, label, "severity-known", `severity ${JSON.stringify(severity)} is not a known rank`, "medium");
   }
+
+  // 5. Self-scope (issue #1). A term whose pattern matches this repository's
+  //    own configured scope, or a package name published under it, is almost
+  //    certainly a self-reference dragged in from the evidence that produced
+  //    it — see the setup above for the incident this reproduces.
+  //    `selfScopeJustification` is the explicit, at-add-time override the
+  //    issue asks for: a documented reason a term legitimately needs to
+  //    match the repo's own scope anyway. Same shape as `boundaryJustification`
+  //    above — a decision a human already made, recorded rather than
+  //    re-litigated on every run, but still visible in the ACKNOWLEDGED list.
+  let selfScopeHit = false;
+  for (const candidate of selfScopeCandidates) {
+    re.lastIndex = 0;
+    if (re.test(candidate)) {
+      selfScopeHit = true;
+      break;
+    }
+  }
+  if (selfScopeHit) {
+    if (term.selfScopeJustification) {
+      selfScopeAcknowledged.push({ index, why: label, note: term.selfScopeJustification });
+    } else {
+      note(
+        index,
+        label,
+        "self-scope",
+        "matches this repository's own configured scope or a package name published under it — almost " +
+          "certainly a self-reference, not a real leak signal; either fix the pattern or add " +
+          "`selfScopeJustification` if this is a deliberate, reviewed exception",
+        "high",
+      );
+    }
+  }
 });
 
-// 5. Every neutralize entry is an exception to a rule, so each one must be
+// 6. Every neutralize entry is an exception to a rule, so each one must be
 //    justified and, unless it is genuinely global in nature, path-confined.
 (denylist.neutralize ?? []).forEach((entry, index) => {
   const why = entry.why ?? entry.note ?? null;
@@ -203,12 +338,67 @@ denylist.terms.forEach((term, index) => {
   }
 });
 
+// 7. Self-containment (issue #2). A term's own `why`/`boundaryJustification`
+//    text must never contain another term's literal value. Those fields are
+//    printed verbatim by this very script (see the header) — they are what a
+//    human reads most closely when reviewing the denylist, so a leak there
+//    is the worst place for one: the file whose entire job is defining what
+//    must stay secret becomes the place secrets leak in plaintext. A real
+//    incident put an actual term value in a `why` field and it rode straight
+//    into public CI logs until caught by hand.
+//
+//    Compared as the literal, separator-free compound of each OTHER term's
+//    pattern (the same reconstruction the separator-optional check above
+//    uses) against the field text with its own separators stripped too —
+//    that catches "acme-corp", "acme corp", and "acme.corp" all landing on
+//    the same normalized needle, which is the realistic range of ways a
+//    value gets typed into hand-written prose. Never printed: only the
+//    finding's term index and field name are reported, exactly like every
+//    other check in this file.
+//
+//    A single short, generic literal chunk (e.g. a 3-letter fragment) is
+//    excluded — it would false-positive on ordinary English inside
+//    unrelated `why` text constantly, and training reviewers to ignore this
+//    finding is worse than the narrow gap it would close. A compound of two
+//    or more chunks, or one distinctive chunk of real length, is what an
+//    actual identity term reduces to.
+function selfContainmentValueOf(pattern) {
+  const chunks = literalChunksOf(pattern ?? "");
+  if (chunks.length === 0) return null;
+  if (chunks.length === 1 && chunks[0].length < 6) return null;
+  return chunks.join("").toLowerCase();
+}
+
+const termCompounds = denylist.terms.map((t) => selfContainmentValueOf(t.pattern));
+
+denylist.terms.forEach((term, containerIndex) => {
+  for (const field of ["why", "boundaryJustification"]) {
+    const text = term[field];
+    if (!text) continue;
+    const normalized = text.replace(/[^A-Za-z0-9]+/g, "").toLowerCase();
+    termCompounds.forEach((compound, sourceIndex) => {
+      if (!compound || sourceIndex === containerIndex) return;
+      if (normalized.includes(compound)) {
+        note(
+          containerIndex,
+          term.why ?? "(no why)",
+          "self-containment",
+          `\`${field}\` text contains another term's literal value as a substring — the file meant to define ` +
+            "what is secret leaks it in plaintext to the human reading this field",
+          "critical",
+        );
+      }
+    });
+  }
+});
+
 const summary = {
   denylistVersion: denylist.version ?? null,
   termCount: denylist.terms.length,
   neutralizeCount: (denylist.neutralize ?? []).length,
   findings,
   acknowledged,
+  selfScopeAcknowledged,
 };
 
 if (flags.has("--json")) {
@@ -230,8 +420,19 @@ if (acknowledged.length) {
   console.log("");
 }
 
+if (selfScopeAcknowledged.length) {
+  console.log(`ACKNOWLEDGED — ${selfScopeAcknowledged.length} self-scope exception(s), documented and not failing:`);
+  for (const a of selfScopeAcknowledged) {
+    console.log(`  term #${a.index} (${a.why}): ${a.note}`);
+  }
+  console.log("");
+}
+
 if (!findings.length) {
-  console.log("PASS — every term compiles, is non-empty, is graded, and covers its separator-free form.");
+  console.log(
+    "PASS — every term compiles, is non-empty, is graded, covers its separator-free form, stays clear of this " +
+      "repo's own scope, and no `why`/`boundaryJustification` text contains another term's value.",
+  );
   process.exit(0);
 }
 
