@@ -1,31 +1,53 @@
 /**
- * Zod schemas and inferred types for @vespeneventures/voice's four entities:
- * voice rules, a glossary entry, a claim, and the `VoiceRecord` that binds
- * them together for one consumer. Pure data and validation — no I/O, no
- * React, no network. See the package README for why each shape looks the
- * way it does, and for which parts of it `checker.ts` can and cannot
- * mechanically evaluate.
+ * Plain TypeScript types for @vespeneventures/voice's four entities: voice
+ * rules, a glossary entry, a claim, and the `VoiceRecord` that binds them
+ * together for one consumer. Pure data — no validation logic lives here
+ * (see `schema.ts`) and no I/O.
  *
- * This file ships no example content of a real voice. Every default here is
- * either empty or a structural placeholder — filling in an actual person
- * rule, glossary, or claims register is a consumer's job, the same split
- * @vespeneventures/tokens draws between `tokens.css` (neutral machinery)
- * and a consumer's own `brand.css` (real values). See "The single most
- * important constraint" in the README.
+ * No runtime schema library. That follows this repository's own
+ * precedent: `@vespeneventures/catalog`, `@vespeneventures/policy`, and
+ * `@vespeneventures/tokens` all ship zero runtime dependencies; only
+ * `@vespeneventures/ui` carries any, and only because it wraps React
+ * primitives it genuinely cannot hand-roll. `@vespeneventures/voice`'s
+ * entire job is dependency-free data shape validation — the same job
+ * `@vespeneventures/policy`'s `validate.ts` already does, in plain type
+ * guards, for a smaller shape. `schema.ts` follows that file's pattern
+ * closely rather than pulling in a schema library (and its own major-
+ * version churn, a real cost for a *public* package's consumers) for what
+ * one file of type guards already covers.
+ *
+ * This file ships no example content of a real voice. Every field here is
+ * either required-and-generic or a structural placeholder — filling in an
+ * actual person rule, glossary, or claims register is a consumer's job,
+ * the same split `@vespeneventures/tokens` draws between `tokens.css`
+ * (neutral machinery) and a consumer's own `brand.css` (real values). See
+ * "The single most important constraint" in the README.
  */
-
-import { z } from "zod";
 
 // ---------------------------------------------------------------------------
 // Voice rules — tone, person, tense, formality
 // ---------------------------------------------------------------------------
+
+/** Descriptive only. Never mechanically checked — see README. */
+export type FormalityLevel = "casual" | "neutral" | "formal";
+
+/**
+ * The valid `FormalityLevel` values, in declaration order — exported as a
+ * list, mirroring `@vespeneventures/policy`'s `DIGEST_ALGORITHMS`, so
+ * `schema.ts` never hardcodes them as a second, separately-maintained
+ * literal check.
+ */
+export const FORMALITY_LEVELS: readonly FormalityLevel[] = ["casual", "neutral", "formal"];
 
 /**
  * A "person" rule, e.g. "always address the reader as you, never refer to
  * the product/company as I". `description` is for humans — it is never
  * parsed. `forbiddenPronouns` is the ONLY part of this rule the checker
  * actually evaluates: a plain list of pronouns that, if they appear in
- * copy, contradict the rule. Matched case-insensitively, whole-word only.
+ * copy, contradict the rule. Matched case-insensitively, whole-word only —
+ * except a single-letter, uppercase entry (e.g. `"I"`), which `checker.ts`
+ * matches case-sensitively so it cannot collide with an unrelated
+ * lowercase letter (a roman numeral, a loop variable in quoted code).
  *
  * This is deliberately a word list, not a `"first" | "second" | "third"`
  * enum the checker tries to infer grammar from. A word list is auditable —
@@ -33,25 +55,22 @@ import { z } from "zod";
  * mechanism the glossary check already uses, rather than a second,
  * differently-shaped piece of pseudo-grammar logic.
  */
-export const PersonRuleSchema = z.object({
-  description: z.string().min(1),
-  forbiddenPronouns: z.array(z.string().min(1)).default([]),
-});
+export interface PersonRule {
+  description: string;
+  forbiddenPronouns: string[];
+}
 
 /**
- * A "tense" rule. Same shape and same honesty as `PersonRuleSchema`:
+ * A "tense" rule. Same shape and same honesty as `PersonRule`:
  * `forbiddenMarkers` is a plain word list (e.g. `["will", "shall"]` to
  * steer away from future-tense promises), not an attempt at real
  * grammatical tense parsing — see the README's "what this checker does not
  * attempt" section for why that line is drawn here.
  */
-export const TenseRuleSchema = z.object({
-  description: z.string().min(1),
-  forbiddenMarkers: z.array(z.string().min(1)).default([]),
-});
-
-/** Descriptive only. Never mechanically checked — see README. */
-export const FormalityLevelSchema = z.enum(["casual", "neutral", "formal"]);
+export interface TenseRule {
+  description: string;
+  forbiddenMarkers: string[];
+}
 
 /**
  * The full rules block of a `VoiceRecord`. `person` and `tense` are
@@ -60,19 +79,22 @@ export const FormalityLevelSchema = z.enum(["casual", "neutral", "formal"]);
  * the checker never reads them. See README, "Be honest about what is and
  * is not mechanically checkable."
  */
-export const VoiceRulesSchema = z.object({
-  person: PersonRuleSchema,
-  tense: TenseRuleSchema,
-  formality: FormalityLevelSchema,
+export interface VoiceRules {
+  person: PersonRule;
+  tense: TenseRule;
+  formality: FormalityLevel;
   /** Free-text tone descriptors, e.g. `["warm", "direct", "no jargon"]`. */
-  tone: z.array(z.string().min(1)).default([]),
-});
+  tone: string[];
+}
 
 // ---------------------------------------------------------------------------
 // Glossary — forbidden / preferred terms
 // ---------------------------------------------------------------------------
 
-export const GlossaryStatusSchema = z.enum(["forbidden", "preferred"]);
+export type GlossaryStatus = "forbidden" | "preferred";
+
+/** The valid `GlossaryStatus` values, in declaration order. See `FORMALITY_LEVELS`'s doc comment for why this is a list, not a repeated literal check. */
+export const GLOSSARY_STATUSES: readonly GlossaryStatus[] = ["forbidden", "preferred"];
 
 /**
  * One glossary entry. Only `status: "forbidden"` entries are ever actively
@@ -81,16 +103,16 @@ export const GlossaryStatusSchema = z.enum(["forbidden", "preferred"]);
  * require real synonym/paraphrase detection, which this package does not
  * attempt and will not claim to).
  */
-export const GlossaryEntrySchema = z.object({
-  term: z.string().min(1),
-  status: GlossaryStatusSchema,
+export interface GlossaryEntry {
+  term: string;
+  status: GlossaryStatus;
   /** Required — a forbidden or preferred term with no stated reason is not auditable. */
-  reason: z.string().min(1),
+  reason: string;
   /** Suggested replacement, shown in a finding's message when `status` is `"forbidden"`. */
-  alternative: z.string().min(1).optional(),
+  alternative?: string;
   /** Default `false` — most house-style terms are meant to be caught regardless of capitalization. */
-  caseSensitive: z.boolean().default(false),
-});
+  caseSensitive: boolean;
+}
 
 // ---------------------------------------------------------------------------
 // Claims register
@@ -103,24 +125,24 @@ export const GlossaryEntrySchema = z.object({
  * seam", for why it is a plain opaque string and never a typed import.
  *
  * `matchPhrases` are the literal, verbatim phrases the checker searches
- * copy for to decide this claim is being made. When omitted, the checker
+ * copy for to decide this claim is being made. When empty, the checker
  * falls back to searching for `text` itself. Matching is literal and
  * case-insensitive — a paraphrase of the claim that never uses one of
  * these phrases is not detected. See README's limits section.
  */
-export const ClaimSchema = z.object({
-  id: z.string().min(1),
+export interface Claim {
+  id: string;
   /** Human-readable statement of the claim, for the register itself and as the default match phrase. */
-  text: z.string().min(1),
-  matchPhrases: z.array(z.string().min(1)).default([]),
+  text: string;
+  matchPhrases: string[];
   /**
    * Opaque plain-string reference into a consumer's own facts registry.
    * Never validated by this package — see README, "The `factRef` seam".
    */
-  factRef: z.string().min(1).optional(),
+  factRef?: string;
   /** Default `true`: most claims in a register are there because they need backing. */
-  requiresSupport: z.boolean().default(true),
-});
+  requiresSupport: boolean;
+}
 
 // ---------------------------------------------------------------------------
 // VoiceRecord — one consumer's bound values
@@ -132,21 +154,12 @@ export const ClaimSchema = z.object({
  * package — foundry ships the schema this conforms to, never a real
  * instance of it. See README, "The single most important constraint".
  */
-export const VoiceRecordSchema = z.object({
-  id: z.string().min(1),
-  rules: VoiceRulesSchema,
-  glossary: z.array(GlossaryEntrySchema).default([]),
-  claims: z.array(ClaimSchema).default([]),
-});
-
-export type PersonRule = z.infer<typeof PersonRuleSchema>;
-export type TenseRule = z.infer<typeof TenseRuleSchema>;
-export type FormalityLevel = z.infer<typeof FormalityLevelSchema>;
-export type VoiceRules = z.infer<typeof VoiceRulesSchema>;
-export type GlossaryStatus = z.infer<typeof GlossaryStatusSchema>;
-export type GlossaryEntry = z.infer<typeof GlossaryEntrySchema>;
-export type Claim = z.infer<typeof ClaimSchema>;
-export type VoiceRecord = z.infer<typeof VoiceRecordSchema>;
+export interface VoiceRecord {
+  id: string;
+  rules: VoiceRules;
+  glossary: GlossaryEntry[];
+  claims: Claim[];
+}
 
 // ---------------------------------------------------------------------------
 // Findings — shared shape, mirroring @vespeneventures/policy's own `Finding`
@@ -159,7 +172,7 @@ export type VoiceRecord = z.infer<typeof VoiceRecordSchema>;
  * caller already handling one kind of finding in this repo's ecosystem
  * does not need a second mental model for this package's. Defined fresh
  * here, not imported: this package has zero runtime dependency on
- * `@vespeneventures/policy`, on purpose (see README, "Dependencies").
+ * `@vespeneventures/policy`, on purpose (see README, "Requirements").
  */
 export interface VoiceFinding {
   /** Stable identifier for the rule that produced this finding, e.g. `"glossary:forbidden-term"`. */

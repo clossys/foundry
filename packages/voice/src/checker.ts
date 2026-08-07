@@ -110,6 +110,28 @@ function countMatches(haystack: string, term: string, caseSensitive: boolean): n
 }
 
 /**
+ * `true` for a single uppercase letter — `"I"`, but not `"we"`, `"Will"`,
+ * or `"i"`. `person`/`tense` word lists have no per-entry `caseSensitive`
+ * field the way glossary entries do (see README's tables), so this is the
+ * one automatic exception to their otherwise-uniform case-insensitive
+ * matching: a bare `"I"` matched case-insensitively would also fire on any
+ * stray lowercase `"i"` (a roman numeral, a loop variable in quoted code)
+ * that is not the first-person pronoun at all — a real, common false
+ * positive for the single most common `forbiddenPronouns` entry there is.
+ * Matching a single uppercase letter case-sensitively closes that specific
+ * gap without losing sentence-initial-capitalization tolerance for every
+ * multi-letter entry (`"we"` still needs to match `"We"`).
+ */
+function isSingleUppercaseLetter(term: string): boolean {
+  return term.length === 1 && term >= "A" && term <= "Z";
+}
+
+/** Case sensitivity `checkCopy` uses for one `person`/`tense` word-list entry — see `isSingleUppercaseLetter`. */
+function markerCaseSensitivity(term: string): boolean {
+  return isSingleUppercaseLetter(term);
+}
+
+/**
  * Registry-level audit, independent of any copy: which claims in `claims`
  * require support (`requiresSupport: true`, the default) but carry no
  * `factRef`. Useful as a standalone "is this claims register itself
@@ -194,7 +216,7 @@ export function checkCopy(record: VoiceRecord, copy: string, options: VoiceCheck
     } else {
       ran.push("person");
       for (const pronoun of record.rules.person.forbiddenPronouns) {
-        const count = countMatches(copy, pronoun, false);
+        const count = countMatches(copy, pronoun, markerCaseSensitivity(pronoun));
         if (count > 0) {
           rawFindings.push({
             rule: "person:forbidden-pronoun",
@@ -212,7 +234,7 @@ export function checkCopy(record: VoiceRecord, copy: string, options: VoiceCheck
     } else {
       ran.push("tense");
       for (const marker of record.rules.tense.forbiddenMarkers) {
-        const count = countMatches(copy, marker, false);
+        const count = countMatches(copy, marker, markerCaseSensitivity(marker));
         if (count > 0) {
           rawFindings.push({
             rule: "tense:forbidden-marker",

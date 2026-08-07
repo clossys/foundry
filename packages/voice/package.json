@@ -21,14 +21,13 @@
     "LICENSE"
   ],
   "sideEffects": false,
-  "description": "The verbal contract: a Zod-schema'd vocabulary for voice rules (person, tense, formality, tone), a glossary of forbidden/preferred terms, and a claims register — plus a checker that scans a piece of copy against it. This package ships the machinery, never anyone's actual voice; each consumer binds its own rules, glossary, and claims, the same split @vespeneventures/tokens uses for brand.css.",
+  "description": "The verbal contract: a plain-TypeScript vocabulary for voice rules (person, tense, formality, tone), a glossary of forbidden/preferred terms, and a claims register — plus a checker that scans a piece of copy against it. This package ships the machinery, never anyone's actual voice; each consumer binds its own rules, glossary, and claims, the same split @vespeneventures/tokens uses for brand.css.",
   "keywords": [
     "voice",
     "tone",
     "glossary",
     "claims",
     "content-checker",
-    "zod",
     "typescript"
   ],
   "author": "Calvin Hung",
@@ -43,9 +42,6 @@
   "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/voice#readme",
   "engines": {
     "node": ">=20"
-  },
-  "dependencies": {
-    "zod": "^4.4.3"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

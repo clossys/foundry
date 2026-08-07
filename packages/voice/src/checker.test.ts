@@ -117,14 +117,26 @@ describe("checkCopy — person dimension", () => {
     expect(report.skipped.some((s) => s.dimension === "person")).toBe(true);
   });
 
-  it("documented known limitation: case-insensitive matching cannot tell the pronoun 'I' from a bare lowercase 'i'", () => {
+  it("matches the pronoun 'I' case-sensitively, so a bare lowercase 'i' is NOT a false positive", () => {
     const record = makeRecord({
       rules: { ...makeRecord().rules, person: { description: "no first-person singular", forbiddenPronouns: ["I"] } },
     });
-    // "i" here is not the pronoun at all -- a plausible false positive this
-    // package's README explicitly calls out rather than hiding.
-    const report = checkCopy(record, "Track hours in 15-minute increments, from i to iv.");
-    expect(report.findings.some((f) => f.rule === "person:forbidden-pronoun" && f.path === "I")).toBe(true);
+    // "i" here is not the pronoun at all -- a plausible false positive a
+    // naive case-insensitive match would produce. It must not fire.
+    const clean = checkCopy(record, "Track hours in 15-minute increments, from i to iv.");
+    expect(clean.findings.some((f) => f.rule === "person:forbidden-pronoun")).toBe(false);
+
+    // The real pronoun, capitalized, still fires.
+    const dirty = checkCopy(record, "I built this for you.");
+    expect(dirty.findings.some((f) => f.rule === "person:forbidden-pronoun" && f.path === "I")).toBe(true);
+  });
+
+  it("still matches a multi-letter pronoun regardless of sentence-initial capitalization", () => {
+    const record = makeRecord({
+      rules: { ...makeRecord().rules, person: { description: "no first-person plural", forbiddenPronouns: ["we"] } },
+    });
+    const report = checkCopy(record, "We built this for you.");
+    expect(report.findings.some((f) => f.rule === "person:forbidden-pronoun" && f.path === "we")).toBe(true);
   });
 });
 

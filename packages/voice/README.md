@@ -26,9 +26,9 @@ this argument; this package's version of it is the same argument, one
 layer over:
 
 ```
-VoiceRecordSchema     machinery      the shape every voice must conform to, this package
-your voice record      binding        your rules, your glossary, your claims, your own repo
-your copy               consumer layer  the actual writing this checker evaluates
+the VoiceRecord shape   machinery      types.ts + schema.ts, this package
+your voice record        binding        your rules, your glossary, your claims, your own repo
+your copy                 consumer layer  the actual writing this checker evaluates
 ```
 
 ## Two halves, and the second justifies the first
@@ -39,10 +39,13 @@ fields that were all mechanically re-derivable from data already present
 elsewhere, so its own checks could never produce a real finding. So this
 package ships two halves on purpose:
 
-1. **The schema** (`src/types.ts`, `src/schema.ts`) — Zod-schema'd entities
-   for a voice's rules, glossary, and claims register, plus
-   `validateVoiceRecordShape`/`parseVoiceRecord` to check candidate data
-   against it. Pure data and validation. No React, no IO, no network.
+1. **The schema** (`src/types.ts`, `src/schema.ts`) — plain TypeScript
+   types for a voice's rules, glossary, and claims register, plus
+   `validateVoiceRecordShape`/`parseVoiceRecord` (hand-rolled type-guard
+   validators, in the style of `@vespeneventures/policy`'s own
+   `validate.ts` — see "Requirements" for why this package carries no
+   schema-library dependency) to check candidate data against it. Pure
+   data and validation. No React, no IO, no network.
 2. **The checker** (`src/checker.ts`) — `checkCopy`, which actually reads
    the schema it's given and reports real violations in a real piece of
    copy. This is what proves the schema is not decoration.
@@ -104,8 +107,13 @@ lists rather than any grammar/NLP guesswork:
   `"we"` and copy contains "we", that's a finding; that's the entire
   mechanism. This is deliberately the same mechanism the glossary check
   uses, not a second, differently-shaped piece of pseudo-grammar logic.
-  Genuine grammatical tense parsing is not attempted — see "What it does
-  not attempt" below.
+  Matching is case-insensitive, with one automatic exception: a single
+  uppercase letter (in practice, `"I"`) is matched case-sensitively, so a
+  `forbiddenPronouns: ["I"]` rule does not also fire on a stray lowercase
+  `"i"` (a roman numeral, a loop variable in quoted code) that isn't the
+  pronoun at all — see `checker.ts`'s `isSingleUppercaseLetter`. Genuine
+  grammatical tense parsing is not attempted — see "What it does not
+  attempt" below.
 - **Unsupported claims.** Each `claims` entry with `requiresSupport: true`
   (the default) and no `factRef` is checked against the copy: if the
   claim's `text` (or one of its `matchPhrases`, when given) appears
@@ -138,14 +146,11 @@ honest scope:
   the same word appearing inside a quotation, a customer testimonial, or
   code.** Word-boundary matching cannot tell those apart; see "False
   positives and the waiver escape hatch" below for the intended way to
-  handle a legitimate exception.
-- **A bare, case-insensitive `"I"` in `forbiddenPronouns` will also match a
-  stray lowercase `"i"`** that is not the first-person pronoun at all (a
-  roman numeral, a loop variable in quoted code, etc.) — case-insensitive
-  matching cannot tell them apart. If that risk matters for a given voice,
-  express the rule as a `caseSensitive: true` glossary entry instead of a
-  `rules.person.forbiddenPronoun`, since the glossary already supports
-  per-term case sensitivity and uses the exact same matching mechanism.
+  handle a legitimate exception. (The one deliberate, narrow exception to
+  this general limit is the single-uppercase-letter case-sensitivity rule
+  described above, which closes the one specific instance of this gap —
+  `"I"` vs. a stray `"i"` — that was common enough, and cheap enough to
+  fix precisely, to be worth a special case rather than a documented limit.)
 
 ## The `factRef` seam
 
@@ -203,10 +208,12 @@ with one boolean read, the same discipline that package holds to.
 
 Word-boundary matching over free-text copy will produce false positives —
 a forbidden term quoted from a customer review, a claim phrase that shows
-up inside a direct quotation, a stray lowercase `"i"`. A checker that fires
-constantly on legitimate copy gets disabled entirely, which is worse than
-never having shipped it. `checkCopy`'s second `options` argument accepts
-`waivers`, an explicit, narrowly-scoped, auditable exception mechanism:
+up inside a direct quotation, a tense marker used as an unrelated part of
+speech ("will" the noun, not "will" the auxiliary verb). A checker that
+fires constantly on legitimate copy gets disabled entirely, which is worse
+than never having shipped it. `checkCopy`'s second `options` argument
+accepts `waivers`, an explicit, narrowly-scoped, auditable exception
+mechanism:
 
 ```ts
 checkCopy(acmeVoice, copy, {
@@ -238,24 +245,18 @@ checkCopy(acmeVoice, copy, {
 | --- | --- | --- |
 | `checkCopy(record, copy, options?)` | function | The checker. Reports `VoiceFinding`s for forbidden glossary terms, forbidden person/tense markers, and unsupported claims found in `copy`. Pure — no I/O. Throws a plain `TypeError` for a non-string `copy` or non-object `record` (a caller-input problem, not a finding). Fails closed on empty copy and on unconfigured dimensions — see "Fails closed" above. Returns a `VoiceCheckReport`. |
 | `auditClaimsRegister(claims)` | function | Pure, copy-free audit of a `Claim[]`: one `"claim:missing-fact-ref"` warning per claim that requires support (`requiresSupport: true`, the default) but has no `factRef`. `[]` for an empty register — an empty claims register is not itself a defect. |
-| `validateVoiceRecordShape(value)` | function | Runs `VoiceRecordSchema.safeParse(value)` and turns any issues into `VoiceFinding[]` (`rule: "schema:<dotted.path>"`, always `"error"` severity). `[]` means `value` is a well-formed `VoiceRecord`. Never throws, on any input. |
-| `parseVoiceRecord(value)` | function | Same validation as `validateVoiceRecordShape`, but throws a plain `Error` (listing every issue) instead of returning findings — for a fail-fast config-loading call site. Returns a `VoiceRecord` (with schema defaults applied) on success. |
-| `VoiceRecordSchema` | Zod schema | The top-level schema: `{ id, rules, glossary, claims }`. What a consumer's whole bound voice must conform to. |
-| `VoiceRulesSchema` | Zod schema | `{ person, tense, formality, tone }` — see `PersonRuleSchema`/`TenseRuleSchema`/`FormalityLevelSchema`. |
-| `PersonRuleSchema` | Zod schema | `{ description: string, forbiddenPronouns: string[] }`. `description` is for humans; `forbiddenPronouns` is the only part `checkCopy` evaluates. |
-| `TenseRuleSchema` | Zod schema | `{ description: string, forbiddenMarkers: string[] }`. Same shape and same honesty as `PersonRuleSchema` — see "What it deliberately does not attempt". |
-| `FormalityLevelSchema` | Zod schema | `z.enum(["casual", "neutral", "formal"])`. Descriptive only; never read by `checkCopy`. |
-| `GlossaryEntrySchema` | Zod schema | `{ term, status, reason, alternative?, caseSensitive }`. See `GlossaryStatusSchema`. |
-| `GlossaryStatusSchema` | Zod schema | `z.enum(["forbidden", "preferred"])`. Only `"forbidden"` entries are actively scanned for — see "What `checkCopy` actually catches". |
-| `ClaimSchema` | Zod schema | `{ id, text, matchPhrases, factRef?, requiresSupport }`. See "The `factRef` seam". |
-| `VoiceRecord` | type | `z.infer<typeof VoiceRecordSchema>`. |
-| `VoiceRules` | type | `z.infer<typeof VoiceRulesSchema>`. |
-| `PersonRule` | type | `z.infer<typeof PersonRuleSchema>`. |
-| `TenseRule` | type | `z.infer<typeof TenseRuleSchema>`. |
-| `FormalityLevel` | type | `z.infer<typeof FormalityLevelSchema>`. |
-| `GlossaryEntry` | type | `z.infer<typeof GlossaryEntrySchema>`. |
-| `GlossaryStatus` | type | `z.infer<typeof GlossaryStatusSchema>`. |
-| `Claim` | type | `z.infer<typeof ClaimSchema>`. |
+| `validateVoiceRecordShape(value)` | function | Hand-rolled structural validation (plain `typeof`/shape checks, no schema library — see "Requirements"), in the style of `@vespeneventures/policy`'s `validateBindingShape`. Returns a `VoiceFinding[]` with descriptive rule ids (`"id-shape"`, `"glossary-status-shape"`, `"claim-fact-ref-shape"`, etc. — see `schema.ts` for the full list), always `"error"` severity. `[]` means `value` is a well-formed `VoiceRecord`, once defaults are applied. Never throws, on any input. |
+| `parseVoiceRecord(value)` | function | Same validation as `validateVoiceRecordShape`, but throws a plain `Error` (listing every issue) instead of returning findings — for a fail-fast config-loading call site. Returns a `VoiceRecord` with this schema's defaults applied (`glossary: []`, `claims: []`, `tone: []`, `forbiddenPronouns: []`, `forbiddenMarkers: []`, `matchPhrases: []`, `caseSensitive: false`, `requiresSupport: true`) on success. |
+| `FORMALITY_LEVELS` | constant | `readonly FormalityLevel[]` — `["casual", "neutral", "formal"]`, in declaration order. Exported as a list (mirroring `@vespeneventures/policy`'s `DIGEST_ALGORITHMS`) so `schema.ts` never hardcodes these as a second, separately-maintained literal check. |
+| `GLOSSARY_STATUSES` | constant | `readonly GlossaryStatus[]` — `["forbidden", "preferred"]`, in declaration order. Same reasoning as `FORMALITY_LEVELS`. |
+| `VoiceRecord` | type | `{ id, rules, glossary, claims }`. What a consumer's whole bound voice must conform to. |
+| `VoiceRules` | type | `{ person, tense, formality, tone }` — see `PersonRule`/`TenseRule`/`FormalityLevel`. |
+| `PersonRule` | type | `{ description: string, forbiddenPronouns: string[] }`. `description` is for humans; `forbiddenPronouns` is the only part `checkCopy` evaluates. |
+| `TenseRule` | type | `{ description: string, forbiddenMarkers: string[] }`. Same shape and same honesty as `PersonRule` — see "What it deliberately does not attempt". |
+| `FormalityLevel` | type | `"casual" \| "neutral" \| "formal"`. Descriptive only; never read by `checkCopy`. |
+| `GlossaryEntry` | type | `{ term, status, reason, alternative?, caseSensitive }`. See `GlossaryStatus`. |
+| `GlossaryStatus` | type | `"forbidden" \| "preferred"`. Only `"forbidden"` entries are actively scanned for — see "What `checkCopy` actually catches". |
+| `Claim` | type | `{ id, text, matchPhrases, factRef?, requiresSupport }`. See "The `factRef` seam". |
 | `VoiceFinding` | type | `{ rule, severity: "error" \| "warning", message, path? }` — deliberately the same shape as `@vespeneventures/policy`'s own `Finding`, defined fresh here (this package has zero runtime dependency on `policy`). |
 | `VoiceCheckReport` | type | `{ findings, waived, skipped, ran, complete }` — what `checkCopy` returns. `complete` is `true` exactly when `skipped` is empty. |
 | `VoiceCheckOptions` | type | `{ waivers?: VoiceCheckWaiver[] }` — `checkCopy`'s third argument. |
@@ -277,9 +278,20 @@ tool's job, the same way `@vespeneventures/gates`' README draws its own
 
 ## Requirements
 
-Node 20+. ESM only. Runtime dependencies: `zod` (`^4.4.3`) — the schema
-library every entity in this package is defined with. No other runtime
-dependencies; in particular, zero dependency on `@vespeneventures/policy`,
+Node 20+. ESM only. **No runtime dependencies.** This follows this
+repository's own precedent, not just a preference: `@vespeneventures/catalog`,
+`@vespeneventures/policy`, and `@vespeneventures/tokens` all ship zero
+runtime dependencies; only `@vespeneventures/ui` carries any, and only
+because it wraps React primitives it genuinely cannot hand-roll. This
+package's entire job is dependency-free data validation — `schema.ts`
+hand-rolls that validation with plain type guards, in the style of
+`@vespeneventures/policy`'s own `validate.ts`, rather than reaching for a
+schema library. That matters more than usual for a *public* package: this
+package's only consumers are external installers, and a schema-library
+dependency would force every one of them onto that library's major
+version (or a duplicate install, if their own code already depends on a
+different one) for the sake of validating a handful of nested objects. In
+particular, zero dependency on `@vespeneventures/policy`,
 `@vespeneventures/tokens`, or any `strategy` package, despite this
 README's comparisons to all three.
 

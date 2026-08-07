@@ -6,16 +6,7 @@
  * package deliberately does not import from.
  */
 
-export {
-  PersonRuleSchema,
-  TenseRuleSchema,
-  FormalityLevelSchema,
-  VoiceRulesSchema,
-  GlossaryStatusSchema,
-  GlossaryEntrySchema,
-  ClaimSchema,
-  VoiceRecordSchema,
-} from "./types.js";
+export { FORMALITY_LEVELS, GLOSSARY_STATUSES } from "./types.js";
 export type {
   PersonRule,
   TenseRule,
