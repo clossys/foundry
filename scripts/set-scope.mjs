@@ -8,11 +8,24 @@
 // and rewriting mechanically means renaming the scope is a one-line edit plus
 // this script, not a 30-file find-and-replace done by hand.
 //
-// --check re-runs the same rewrite without writing anything, and fails if any
-// file would still change. Since the rewrite only ever touches references
-// that already carry the declared scope (see the scopedRef comment below),
-// that in practice means: a --scope rename was applied only partially — some
-// references updated, some missed — and committed that way.
+// --check does two things, and the second one is load-bearing:
+//
+// 1. Re-runs the tree-wide rewrite without writing, and fails if any file
+//    would still change. Since the rewrite only touches references that
+//    already carry the declared scope, that in practice only fires when a
+//    --scope rename was applied partially — some references updated, some
+//    missed — and committed that way. With no --scope override (the form
+//    CI actually runs), oldScope and nextScope are the same string, so this
+//    half is a no-op by construction: it can never have anything to catch.
+// 2. Verifies the real invariant directly against reality: every package
+//    under packages/ actually has the declared scope, read from each
+//    package's own package.json — not inferred from whether some rewrite
+//    would happen to touch it. This is what actually catches a package
+//    hand-edited to the wrong scope, and it is fail-closed: anything that
+//    prevents checking (packages/ missing or empty, a package.json that
+//    won't read or parse, one with no `name` field) exits 2, distinct from
+//    both a clean pass (0) and a real finding (1) — "could not check" must
+//    never be mistaken for "checked and fine".
 
 import { readFileSync, writeFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative, extname, dirname } from "node:path";
@@ -133,15 +146,106 @@ for (const file of walk(repoRoot)) {
   }
 }
 
+// ------------------------------------------------------- structural verification
+//
+// The rewrite/check above answers "does anything under the declared scope
+// still need rewriting" — with no --scope override that question is
+// tautologically "no" (oldScope === nextScope), so it can never be the only
+// thing --check does. The actual invariant this repo needs held — every
+// package it publishes carries the declared scope — is checked here
+// directly against packages/*/package.json, not inferred from text.
+//
+// Enumerating packages/ here is a deliberate, fail-closed choice, not the
+// same thing as the old packages/-may-not-exist bootstrap guard the
+// rewrite regex no longer needs (see the scopedRef comment above): that
+// guard existed to avoid a *crash* by silently treating "missing" as
+// "nothing to do". Here, "missing" or "empty" is exactly the case that must
+// NOT silently pass — a scope gate that reports clean while checking zero
+// packages is the same shape of bug this file was just fixed for, one
+// layer up.
+const packagesDir = join(repoRoot, "packages");
+let packageDirs;
+try {
+  packageDirs = readdirSync(packagesDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name);
+} catch (err) {
+  console.error(`set-scope: could not read packages/ (${err.code ?? err.message}) — cannot verify anything is correctly scoped.`);
+  process.exit(2);
+}
+if (packageDirs.length === 0) {
+  console.error("set-scope: packages/ contains zero packages — nothing to verify. Refusing to report a pass that checked nothing.");
+  process.exit(2);
+}
+
+const scopeFindings = [];
+for (const name of packageDirs) {
+  const pkgJsonPath = join(packagesDir, name, "package.json");
+  const pkgJsonRel = relative(repoRoot, pkgJsonPath);
+  let raw;
+  try {
+    raw = readFileSync(pkgJsonPath, "utf8");
+  } catch (err) {
+    console.error(`set-scope: could not read ${pkgJsonRel}: ${err.code ?? err.message}`);
+    process.exit(2);
+  }
+  let pkgJson;
+  try {
+    pkgJson = JSON.parse(raw);
+  } catch (err) {
+    console.error(`set-scope: could not parse ${pkgJsonRel}: ${err.message}`);
+    process.exit(2);
+  }
+  if (typeof pkgJson.name !== "string" || pkgJson.name.length === 0) {
+    console.error(`set-scope: ${pkgJsonRel} has no "name" field to check`);
+    process.exit(2);
+  }
+  const slash = pkgJson.name.indexOf("/");
+  const actualScope = slash > 0 ? pkgJson.name.slice(0, slash) : null;
+  if (actualScope !== nextScope) {
+    scopeFindings.push(`  ${pkgJsonRel}: name is "${pkgJson.name}", expected the "${nextScope}" scope`);
+  }
+}
+
+// A tempting addition here: flag any @declaredScope/<name> reference in the
+// tree where <name> isn't a real packages/ directory — that direction is
+// safe from the issue #9 false-positive class (nobody else can publish into
+// our own namespace, so a mismatch can never be someone else's package),
+// and would catch a typo'd or stale internal reference. Tried it, and threw
+// it out on real evidence, not speculation: it flagged
+// `packages/catalog/src/types.ts`'s own doc comment
+// (`@vespeneventures/catalog.` — a sentence-ending period the name-char
+// class happily consumed) and, more importantly, docs/DECISIONS.md's
+// section 4, which *deliberately* documents `@vespeneventures/contract` —
+// a package removed on purpose, discussed by name on purpose, as the
+// worked example of exactly this failure mode ("a check that can never
+// fail is not a check"). A gate that can't tell a live typo from
+// intentional history about a dead package is not safe to fail a build on;
+// unlike the structural check below, "is this text a real reference or a
+// historical footnote" isn't answerable from the text alone.
+const findings = [...scopeFindings];
+
 if (check) {
-  if (changed.length) {
-    console.error(`set-scope --check: ${changed.length} file(s) do not match the declared scope ${nextScope}:`);
-    for (const f of changed) console.error(`  ${f}`);
+  if (changed.length || findings.length) {
+    if (changed.length) {
+      console.error(`set-scope --check: ${changed.length} file(s) do not match the declared scope ${nextScope}:`);
+      for (const f of changed) console.error(`  ${f}`);
+    }
+    if (findings.length) {
+      console.error(`set-scope --check: ${findings.length} scope-integrity finding(s):`);
+      for (const f of findings) console.error(f);
+    }
     console.error(`\nrun: node scripts/set-scope.mjs`);
     process.exit(1);
   }
-  console.log(`set-scope --check: every first-party reference uses ${nextScope}.`);
+  console.log(`set-scope --check: every first-party reference uses ${nextScope}, and every package under packages/ is correctly scoped.`);
   process.exit(0);
+}
+
+if (findings.length) {
+  console.error(`set-scope: ${findings.length} scope-integrity finding(s) remain after rewriting — refusing to declare success:`);
+  for (const f of findings) console.error(f);
+  process.exit(1);
 }
 
 if (scopeArgIndex >= 0 && nextScope !== config.scope) {
