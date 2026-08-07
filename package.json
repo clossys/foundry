@@ -21,7 +21,7 @@
     "check:scope": "node scripts/set-scope.mjs --check",
     "check:denylist": "node scripts/check-denylist-quality.mjs",
     "check:gates": "node scripts/test-gates.mjs",
-    "check:readme": "for p in packages/*/; do [ -d \"$p\" ] || continue; node scripts/check-readme-parity.mjs \"$p\" || exit 1; done",
+    "check:readme": "node scripts/check-root-readme-parity.mjs . && for p in packages/*/; do [ -d \"$p\" ] || continue; node scripts/check-readme-parity.mjs \"$p\" || exit 1; done",
     "check:contamination": "for p in packages/*/; do [ -d \"$p\" ] || continue; node scripts/check-contamination-classes.mjs \"$p\" || exit 1; done",
     "check:typechecked-assertions": "for p in packages/*/; do [ -d \"$p\" ] || continue; node scripts/check-typechecked-assertions.mjs \"$p\" || exit 1; done",
     "//check-builds-first": "build runs before typecheck for the same reason ci.yml does it in that order: dist/ is gitignored, so on a fresh clone a package's internal dependency has no .d.ts until it has been compiled. Without this a contributor's first `npm run check` fails on a clean checkout even though nothing is wrong.",
