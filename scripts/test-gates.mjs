@@ -576,6 +576,328 @@ try {
     );
     check("check-denylist-quality exits 1 when quality findings exist", r.code === 1, `exit was ${r.code}`);
   }
+
+  // ====================================================================
+  // GH issue #3: test-gates.mjs never exercised check-commit-messages.mjs
+  // or check-readme-parity.mjs at all, so a regression in either shipped
+  // silently. Kept as one block at the end so a concurrent edit anywhere
+  // above only needs a trivial merge.
+  // ====================================================================
+
+  const READMEPARITY = join(scriptDir, "check-readme-parity.mjs");
+  const COMMITMSG = join(scriptDir, "check-commit-messages.mjs");
+
+  function gitCommit(dir, message) {
+    run("git", ["-C", dir, "add", "-A"]);
+    run("git", ["-C", dir, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", message]);
+    return run("git", ["-C", dir, "rev-parse", "HEAD"]).out.trim();
+  }
+
+  // -------------------------------------------------- check-commit-messages
+  console.log("\n# check-commit-messages: identity terms in commit message text");
+  {
+    const dir = join(work, "commit-messages");
+    mkdirSync(dir, { recursive: true });
+    run("git", ["-C", dir, "init", "-q"]);
+    writeFileSync(join(dir, "seed.txt"), "seed\n");
+    const hash0 = gitCommit(dir, "initial commit\n\nNothing interesting here.");
+
+    writeFileSync(join(dir, "a.txt"), "a\n");
+    const leaky = gitCommit(dir, "Refactor the widget\n\nAccidentally mentions acme-corp in the body.");
+
+    // A GitHub squash-merge-shaped Co-authored-by trailer carrying the term
+    // only inside the machine-generated attribution line — must NOT trip
+    // the gate (see check-commit-messages.mjs's own reasoning for the one
+    // narrow exemption it makes).
+    writeFileSync(join(dir, "b.txt"), "b\n");
+    const trailerOnly = gitCommit(
+      dir,
+      "Fix the sprocket\n\nCo-authored-by: acme-corp-bot <12345+acme-corp-bot@users.noreply.github.com>",
+    );
+
+    // The same identity term, hand-written, in a Co-authored-by-shaped line
+    // that is NOT the exact GitHub noreply form — must still be caught. A
+    // human typing an identity into a commit message is not exempt.
+    writeFileSync(join(dir, "c.txt"), "c\n");
+    const handWritten = gitCommit(
+      dir,
+      "Polish the gizmo\n\nCo-authored-by: A Contributor <person@acme-corp-real.example>",
+    );
+
+    writeFileSync(join(dir, "d.txt"), "d\n");
+    const clean = gitCommit(dir, "Docs tweak, nothing sensitive here.");
+
+    // Each case below scans a range holding exactly ONE commit (that
+    // commit's own parent..itself), rather than one shared range covering
+    // all four. `git log --format=` inserts its own newline terminator
+    // after every entry but the last, which lands on the FRONT of the next
+    // entry's hash once split on our embedded NUL byte -- so only the
+    // newest commit in a multi-commit range gets a clean, uncorrupted short
+    // hash out of check-commit-messages.mjs today (a real, separately
+    // filed defect; a per-commit range is the hermetic way to assert
+    // detection correctness without also pinning that known-broken label
+    // formatting).
+    const leakyRun = run("node", [COMMITMSG, `${hash0}..${leaky}`, ...DL, "--require-denylist"], { cwd: dir });
+    check("flags a commit whose message body carries a denylisted term", leakyRun.code === 1, `exit was ${leakyRun.code}: ${leakyRun.out.slice(0, 200)}`);
+    check(
+      `names the offending commit (${leaky.slice(0, 12)}) in the finding`,
+      leakyRun.out.includes(leaky.slice(0, 12)),
+      `no finding for the leaky commit: ${leakyRun.out.slice(0, 200)}`,
+    );
+
+    const trailerRun = run("node", [COMMITMSG, `${leaky}..${trailerOnly}`, ...DL, "--require-denylist"], { cwd: dir });
+    check(
+      "does NOT flag a commit whose only occurrence is inside a GitHub Co-authored-by trailer",
+      trailerRun.code === 0,
+      `the trailer-exempt commit was flagged — the exemption regressed. exit ${trailerRun.code}: ${trailerRun.out.slice(0, 200)}`,
+    );
+
+    const handWrittenRun = run("node", [COMMITMSG, `${trailerOnly}..${handWritten}`, ...DL, "--require-denylist"], { cwd: dir });
+    check(
+      "flags a hand-written Co-authored-by line with a real domain",
+      handWrittenRun.code === 1 && handWrittenRun.out.includes(handWritten.slice(0, 12)),
+      `a non-GitHub-shaped Co-authored-by line escaped the scan — the exemption is too broad. exit ${handWrittenRun.code}: ${handWrittenRun.out.slice(0, 200)}`,
+    );
+
+    const cleanRun = run("node", [COMMITMSG, `${handWritten}..${clean}`, ...DL, "--require-denylist"], { cwd: dir });
+    check("does not flag a clean commit", cleanRun.code === 0, `exit was ${cleanRun.code}: ${cleanRun.out.slice(0, 200)}`);
+
+    // Sanity: a single combined range spanning all four commits still
+    // scans all of them (proves multi-commit ranges are walked in full,
+    // not just the single-commit ranges exercised above) and still nets
+    // exactly the two real findings (leaky + handWritten) — total finding
+    // COUNT is unaffected by the label-formatting defect noted above, only
+    // the printed hash text is.
+    const range = `${hash0}..${clean}`;
+    const r = run("node", [COMMITMSG, range, ...DL, "--require-denylist"], { cwd: dir });
+    check("fails when the combined range contains any offending commit", r.code === 1, `exit was ${r.code}`);
+    check(
+      "reports scanning all 4 commits in range",
+      /scanned 4 item/.test(r.out),
+      `expected "scanned 4 item(s)", got: ${r.out.slice(0, 200)}`,
+    );
+    const findingCount = (r.out.match(/\[high\] commit/g) ?? []).length;
+    check("finds exactly the 2 real identity findings across the combined range", findingCount === 2, `expected 2 findings, got ${findingCount}: ${r.out.slice(0, 300)}`);
+
+    const titleClean = run("node", [COMMITMSG, "--title", "A perfectly ordinary PR title", ...DL, "--require-denylist"], { cwd: dir });
+    check("a clean --title alone passes", titleClean.code === 0, `exit was ${titleClean.code}`);
+
+    const titleLeaky = run("node", [COMMITMSG, "--title", "Mentions acme-corp in the title", ...DL, "--require-denylist"], { cwd: dir });
+    check("a leaky --title alone fails", titleLeaky.code === 1, `exit was ${titleLeaky.code}`);
+
+    const noDenylistEnv = { ...process.env };
+    delete noDenylistEnv.PUBLIC_SAFETY_DENYLIST;
+    const partial = run("node", [COMMITMSG, range], { cwd: dir, env: noDenylistEnv });
+    check(
+      "PARTIAL mode (no denylist) exits 0 without scanning for identity",
+      partial.code === 0 && /PARTIAL/.test(partial.out),
+      `exit ${partial.code}: ${partial.out.slice(0, 200)}`,
+    );
+
+    const requirePartial = run("node", [COMMITMSG, range, "--require-denylist", "--denylist", "/nonexistent/dl.json"], { cwd: dir });
+    check("--require-denylist exits 2 when the denylist cannot be loaded", requirePartial.code === 2, `exit was ${requirePartial.code}`);
+
+    const badRange = run("node", [COMMITMSG, "not-a-real-rev..also-not-real", ...DL, "--require-denylist"], { cwd: dir });
+    check("a bad git rev-range fails closed (exit 2), not a silent 0-commit pass", badRange.code === 2, `exit was ${badRange.code}`);
+  }
+
+  // ------------------------- check-contamination-classes CLASS 4 (issue #27)
+  // GH issue #27's own suggested-direction text asks for exactly this case:
+  // "a fixture naming a retired package in a CHANGELOG should pass, while a
+  // genuinely foreign scoped name should still fail." Deliberately exercised
+  // against THIS repo's real history rather than a synthetic one:
+  // check-contamination-classes.mjs reads its "ever published" name set from
+  // git history rooted at wherever the SCRIPT FILE itself lives (see its own
+  // loadHistoricalPackageNames), which is always the real checkout here, not
+  // a fixture directory -- so faking that history would mean faking the
+  // whole repo. @vespeneventures/icons was really published and really
+  // retired (#23, #26), so it's the one real, permanent fact this fix can be
+  // pinned against, the same way the "distblind"/"structure" cases above
+  // already lean on this repo's real package-scope.json rather than a
+  // synthetic stand-in.
+  console.log("\n# check-contamination-classes CLASS 4: retired-but-real vs. genuinely foreign scoped names");
+  {
+    const dir = join(work, "contam-class4-retired");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "@vespeneventures/probe", version: "1.0.0" }, null, 2) + "\n");
+    writeFileSync(
+      join(dir, "CHANGELOG.md"),
+      "## 0.1.0\n- Removed `@vespeneventures/icons`; its glyphs now ship at `@vespeneventures/ui/icons`.\n",
+    );
+    writeFileSync(join(dir, "foreign.md"), "See `@vespeneventures/totally-made-up-thing-nobody-shipped` for details.\n");
+    writeFileSync(join(dir, "install-retired.md"), "```\nnpm install @vespeneventures/icons\n```\n");
+
+    const r = run("node", [CONTAM, dir, "--class", "4", "--json"]);
+    let report;
+    try {
+      report = JSON.parse(r.out);
+    } catch {
+      report = { findings: [] };
+    }
+    const hit = (f) => (report.findings ?? []).some((x) => x.file === f);
+    check(
+      "a CHANGELOG naming a real, retired package in prose is NOT flagged",
+      !hit("CHANGELOG.md"),
+      `CHANGELOG.md was flagged: ${JSON.stringify(report.findings)}`,
+    );
+    check(
+      "a genuinely foreign scoped name is still flagged (proves the fix didn't just stop checking)",
+      hit("foreign.md"),
+      `foreign.md was not flagged: ${JSON.stringify(report.findings)}`,
+    );
+    check(
+      "an npm-install instruction for that SAME retired package is still flagged -- retired is not installable",
+      hit("install-retired.md"),
+      `install-retired.md was not flagged: ${JSON.stringify(report.findings)}`,
+    );
+    check("exits 1 overall (the foreign + install-instruction findings still fail the gate)", r.code === 1, `exit was ${r.code}`);
+  }
+
+  // ---------------------------------------------------- check-readme-parity
+  console.log("\n# check-readme-parity: README vs. real exports");
+  {
+    const dir = join(work, "readme-parity");
+
+    function writePackage(name, indexTs, readmeMd) {
+      const pkgDir = join(dir, name);
+      mkdirSync(join(pkgDir, "src"), { recursive: true });
+      writeFileSync(
+        join(pkgDir, "package.json"),
+        JSON.stringify({ name: `${FIXTURE_SCOPE}/${name}`, version: "1.0.0", private: false }, null, 2) + "\n",
+      );
+      writeFileSync(join(pkgDir, "src", "index.ts"), indexTs);
+      writeFileSync(join(pkgDir, "README.md"), readmeMd);
+      return pkgDir;
+    }
+
+    function parseJson(out) {
+      try {
+        return JSON.parse(out);
+      } catch {
+        return { findings: [] };
+      }
+    }
+
+    // Happy path: every export documented, table entries real, examples use
+    // the real package name.
+    const clean = writePackage(
+      "clean",
+      `export const Foo = 1;\nexport type Bar = string;\n`,
+      [
+        "# clean",
+        "",
+        "```ts",
+        `import { Foo } from "${FIXTURE_SCOPE}/clean";`,
+        "```",
+        "",
+        "## API",
+        "",
+        "| Export | Type |",
+        "| --- | --- |",
+        "| `Foo` | number |",
+        "",
+        "Also exports the `Bar` type.",
+        "",
+      ].join("\n"),
+    );
+    const okRun = run("node", [READMEPARITY, clean, "--json"]);
+    check("passes a README that fully documents real exports", okRun.code === 0, `exit ${okRun.code}: ${okRun.out.slice(0, 300)}`);
+
+    // CHECK A: a real VALUE export that appears nowhere in the README.
+    const undocumented = writePackage(
+      "undocumented",
+      `export const Foo = 1;\nexport const Baz = 2;\n`,
+      ["# undocumented", "", "Only mentions `Foo`.", ""].join("\n"),
+    );
+    const undocRun = run("node", [READMEPARITY, undocumented, "--json"]);
+    const undocReport = parseJson(undocRun.out);
+    check(
+      "CHECK A flags a value export missing from README entirely",
+      undocRun.code === 1 && (undocReport.findings ?? []).some((f) => f.check === "A" && f.severity === "high" && /Baz/.test(f.message)),
+      `exit ${undocRun.code}: ${undocRun.out.slice(0, 300)}`,
+    );
+
+    // Sanity for CHECK A's severity split: an undocumented TYPE-only export
+    // is still recorded as a finding (proves the scan actually inspected
+    // real exports, rather than passing on zero coverage) but is "low"
+    // severity and must NOT fail the gate on its own.
+    const typeOnly = writePackage(
+      "type-only",
+      // The parser only recognises the barrel re-export shape used
+      // throughout this repo's real packages (`export type { X }`), not a
+      // direct `export type X = ...` alias declaration — matching
+      // src/index.ts in every real package here.
+      `type Ghost = string;\nexport const Foo = 1;\nexport type { Ghost };\n`,
+      ["# type-only", "", "Mentions `Foo` only.", ""].join("\n"),
+    );
+    const typeOnlyRun = run("node", [READMEPARITY, typeOnly, "--json"]);
+    const typeOnlyReport = parseJson(typeOnlyRun.out);
+    check(
+      "an undocumented TYPE export is recorded as a low-severity finding",
+      (typeOnlyReport.findings ?? []).some((f) => f.check === "A" && f.severity === "low" && /Ghost/.test(f.message)),
+      `findings: ${JSON.stringify(typeOnlyReport.findings)}`,
+    );
+    check("a lone low-severity finding does not fail the gate", typeOnlyRun.code === 0, `exit was ${typeOnlyRun.code}`);
+
+    // CHECK B: a copy-pasteable import/install line naming the WRONG
+    // package under the same scope.
+    const wrongName = writePackage(
+      "wrong-name",
+      `export const Foo = 1;\n`,
+      [
+        "# wrong-name",
+        "",
+        "```ts",
+        `import { Foo } from "${FIXTURE_SCOPE}/not-this-package";`,
+        "```",
+        "",
+        "Mentions `Foo`.",
+        "",
+      ].join("\n"),
+    );
+    const wrongNameRun = run("node", [READMEPARITY, wrongName, "--json"]);
+    const wrongNameReport = parseJson(wrongNameRun.out);
+    check(
+      "CHECK B flags an import example naming the wrong package under this scope",
+      wrongNameRun.code === 1 && (wrongNameReport.findings ?? []).some((f) => f.check === "B" && /not-this-package/.test(f.message)),
+      `exit ${wrongNameRun.code}: ${wrongNameRun.out.slice(0, 300)}`,
+    );
+
+    // CHECK C: the API table documents an export that does not exist.
+    const phantom = writePackage(
+      "phantom",
+      `export const Foo = 1;\n`,
+      [
+        "# phantom",
+        "",
+        "Mentions `Foo`.",
+        "",
+        "## API",
+        "",
+        "| Export | Type |",
+        "| --- | --- |",
+        "| `Foo` | number |",
+        "| `Ghost` | number |",
+        "",
+      ].join("\n"),
+    );
+    const phantomRun = run("node", [READMEPARITY, phantom, "--json"]);
+    const phantomReport = parseJson(phantomRun.out);
+    check(
+      "CHECK C flags an API table row for an export that doesn't exist",
+      phantomRun.code === 1 && (phantomReport.findings ?? []).some((f) => f.check === "C" && /Ghost/.test(f.message)),
+      `exit ${phantomRun.code}: ${phantomRun.out.slice(0, 300)}`,
+    );
+
+    // Fail-closed: a package directory missing a required file must abort
+    // (exit 2), never report a silent pass.
+    const missing = join(dir, "missing-readme");
+    mkdirSync(join(missing, "src"), { recursive: true });
+    writeFileSync(join(missing, "package.json"), JSON.stringify({ name: `${FIXTURE_SCOPE}/missing-readme` }) + "\n");
+    writeFileSync(join(missing, "src", "index.ts"), "export const Foo = 1;\n");
+    const missingRun = run("node", [READMEPARITY, missing]);
+    check("aborts (exit 2) when README.md is absent", missingRun.code === 2, `exit was ${missingRun.code}`);
+  }
 } finally {
   rmSync(work, { recursive: true, force: true });
 }
