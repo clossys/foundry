@@ -210,7 +210,7 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
 
   // ── RADIUS (Tailwind `--radius-*` namespace) ───────────────────────
   "--radius-sharp": { property: "--radius-sharp", family: "radius", value: "0px", brandable: false },
-  "--radius-s": { property: "--radius-s", family: "radius", value: "2px", brandable: false },
+  "--radius-subtle": { property: "--radius-subtle", family: "radius", value: "2px", brandable: false },
   "--radius-default": { property: "--radius-default", family: "radius", value: "3px", brandable: true },
   "--radius-control": { property: "--radius-control", family: "radius", value: "6px", brandable: false },
   "--radius-pill": { property: "--radius-pill", family: "radius", value: "999px", brandable: false },
