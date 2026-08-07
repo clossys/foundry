@@ -76,6 +76,57 @@ All notable changes to this package are documented here. Format follows
   `blocks/` import). `DataTable` and `ConfirmDialog` — the finished,
   opinionated assemblies built on `Table`'s and `Dialog`'s primitives —
   remain deliberate follow-ups, not shipped here.
+- Six more atoms — `Field`, `Skeleton`, `Tooltip`, `Banner`, `RadioGroup`,
+  `Popover` — bringing the `atoms` layer to twenty-two components. `Field`
+  is the general label/description/error wrapper `TextField` bundles for
+  the text-entry case, for a control this package doesn't ship an atom for;
+  its `children` is a render prop (not `React.cloneElement`) receiving the
+  generated id and ARIA wiring to spread onto whatever control it wraps.
+  `Skeleton` is a loading placeholder (`shape`: `"text" | "block" |
+  "circle"`) styled with `--color-skeleton-fill`, with the same
+  "decorative unless it's the one accessible loading signal"
+  `aria-hidden`/`role="status"` split `Spinner`'s own `label` prop already
+  uses. `Tooltip` builds on react-aria-components' `TooltipTrigger`/
+  `Tooltip` for hover-AND-focus opening, Escape-to-dismiss, and the
+  warm-up/cool-down delay between tooltips shown in quick succession.
+  `Banner` is a persistent inline message region (not a toast) over the
+  same four status tokens `toast(...)` and `Badge` already share, with
+  `role`/`aria-live` following severity the same way `Toaster`'s own
+  `ToasterContent` does. `RadioGroup` builds on react-aria-components'
+  `RadioGroup`/`Radio` for roving-tabindex arrow-key navigation between a
+  visible set of mutually-exclusive options, via a composable
+  `RadioGroup.Radio` sub-component. `Popover` builds on `DialogTrigger`/
+  `Popover`/`Dialog` — the general anchored-overlay primitive, for content
+  shapes `Menu`/`Select`/`Tooltip`'s own specific popovers don't already
+  cover.
+
+### Changed
+
+- `token-parity.test.ts` redesigned: candidate Tailwind classes (from a
+  `className="..."` attribute, a `cx(...)` call's arguments, or a
+  `Record<Variant, string>` variant map) are now compiled for real against
+  this package's own token CSS, via `tailwindcss`'s own
+  `__unstable__loadDesignSystem` JS API, instead of matched against a
+  hand-maintained per-prefix allow-list of Tailwind's own reserved
+  keywords. The allow-list approach had already needed one round of fixes
+  (see `0.1.0`'s "Fixed" entry above) and still rejected `border-collapse`
+  and `border-b-2`/`border-b-0` the moment `Table` and `Tabs` needed them,
+  forcing a `style`-based `borderCollapse` and an inset `box-shadow`
+  standing in for a real border in place of both. Compiling the real thing
+  has zero false positives by construction — verified against all six
+  utilities this package has now had rejected across two rounds — while
+  still catching an invented token class (`bg-surface-elevated`) exactly as
+  before. The raw `var(--ui-*)`/`var(--color-*)` check stays list-based
+  against `TOKENS`, since Tailwind can't validate those; scoping the class
+  scan to the three syntactic shapes above (rather than any class-shaped
+  substring anywhere in a file) also structurally eliminates the previous
+  version's `--ui-border-hairline`-contains-`border-hairline` collision,
+  with no blanking pass needed to work around it.
+- `Table`'s `border-collapse` and `Tabs`' selected-tab underline restored to
+  real Tailwind classes (`border-collapse`; `border-b-2` with a
+  transparent/accent border color, always applied to avoid a 2px layout
+  shift on selection) now that the redesigned `token-parity.test.ts` no
+  longer rejects either.
 
 - The `views` layer: `ErrorView`, `AuthView` — the final rung of this
   package's component ladder (`atoms` → `blocks` → `views`, with `shell` as

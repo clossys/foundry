@@ -3,12 +3,13 @@
  * ladder (atoms → blocks → views; atoms and blocks both ship so far). An
  * atom is single-purpose: it either composes no other atom (`Button`,
  * `TextField`, `Badge`, `Card`, `Checkbox`, `Switch`, `Select`, `Textarea`,
- * `Avatar`, `Spinner`, `Dialog`), or its parts are homogeneous repeats
- * rather than named regions (`Breadcrumb`, `Menu`, `Tabs` — a trail of
- * interchangeable crumbs, a list of interchangeable actions, a row of
- * interchangeable tabs — not a set of distinct slots). See this package's
- * README, "Placement rules", for the block/atom test this ladder is built
- * on. Anything that owns MULTIPLE NAMED regions (a title region, a
+ * `Avatar`, `Spinner`, `Dialog`, `Field`, `Skeleton`, `Tooltip`, `Banner`,
+ * `Popover`), or its parts are homogeneous repeats rather than named regions
+ * (`Breadcrumb`, `Menu`, `Tabs`, `RadioGroup` — a trail of interchangeable
+ * crumbs, a list of interchangeable actions, a row of interchangeable tabs,
+ * a set of interchangeable options — not a set of distinct slots). See this
+ * package's README, "Placement rules", for the block/atom test this ladder
+ * is built on. Anything that owns MULTIPLE NAMED regions (a title region, a
  * description region, an actions region — each different in kind, not
  * just repeated) belongs one layer up, in `@vespeneventures/ui/blocks`,
  * not here.
@@ -76,3 +77,21 @@ export type {
   TableSelectAllCheckboxProps,
   TableSelectionCheckboxProps,
 } from "./Table.js";
+
+export { Field } from "./Field.js";
+export type { FieldProps, FieldRenderProps } from "./Field.js";
+
+export { Skeleton } from "./Skeleton.js";
+export type { SkeletonProps, SkeletonShape } from "./Skeleton.js";
+
+export { Tooltip } from "./Tooltip.js";
+export type { TooltipProps } from "./Tooltip.js";
+
+export { Banner } from "./Banner.js";
+export type { BannerProps, BannerVariant } from "./Banner.js";
+
+export { RadioGroup } from "./RadioGroup.js";
+export type { RadioGroupProps, RadioGroupRadioProps } from "./RadioGroup.js";
+
+export { Popover } from "./Popover.js";
+export type { PopoverProps } from "./Popover.js";

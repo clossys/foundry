@@ -54,3 +54,13 @@ export const UI_Z_POPOVER = "var(--ui-z-modal, 50)";
  * call site's own name says what it's actually stacking.
  */
 export const UI_Z_MODAL = "var(--ui-z-modal, 50)";
+
+/**
+ * Stacking context for `Tooltip` — the highest member of the z-index family,
+ * above `Dialog`/`Popover`'s shared `--ui-z-modal` layer. A tooltip has to
+ * paint above whatever it's describing even when that trigger sits inside an
+ * open `Dialog` or `Popover`, since either can contain a control (an
+ * icon-only `Button`, say) whose accessible name still needs a hover/focus
+ * tooltip.
+ */
+export const UI_Z_TOOLTIP = "var(--ui-z-tooltip, 80)";

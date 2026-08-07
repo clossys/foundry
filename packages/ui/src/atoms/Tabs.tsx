@@ -67,32 +67,24 @@ function TabsTab({ children, className, style, ...rest }: TabsTabProps) {
       {...rest}
       className={(renderProps) =>
         cx(
-          "cursor-default px-md py-sm text-body-s font-body text-ink-muted outline-none transition-colors disabled:cursor-not-allowed",
-          renderProps.isSelected ? "text-ink-primary" : "",
+          // `border-b-2`, always applied (not just while selected), with
+          // its color switching between transparent and the accent color:
+          // holding the 2px track open at every state avoids a 2px height
+          // jump when a tab becomes selected — the layout consequence of
+          // reaching for `border-b-2` only conditionally would be, since an
+          // element with no bottom border and one with a 2px-wide
+          // transparent bottom border occupy different heights, even though
+          // both paint nothing.
+          "cursor-default border-b-2 px-md py-sm text-body-s font-body text-ink-muted outline-none transition-colors disabled:cursor-not-allowed",
+          renderProps.isSelected ? "border-accent text-ink-primary" : "border-transparent",
           className,
         )
       }
-      style={(renderProps) => {
-        // The selected indicator is an inset `box-shadow`, not a
-        // `border-b-2` utility class: `border-b-2` is a border-WIDTH
-        // utility (an explicit `2`), a different Tailwind namespace than
-        // the bare `border-b` SIDE utility `Tabs.List`'s own divider uses,
-        // and one `token-parity.test.ts` doesn't allow-list — see `Table`'s
-        // `border-collapse` comment for the same shape of collision. A raw
-        // `var(--color-accent, ...)` read here is exactly the "no Tailwind
-        // namespace, raw var() only" case this package's other atoms
-        // already use `internal/ui-vars.ts` for, just inlined once rather
-        // than promoted to a shared constant for a single call site.
-        const underline = renderProps.isSelected
-          ? "inset 0 -2px 0 0 var(--color-accent, oklch(0.4748 0 0))"
-          : undefined;
-        const ring = renderProps.isFocusVisible ? UI_RING_FOCUS : undefined;
-        return {
-          opacity: renderProps.isDisabled ? UI_ALPHA_DISABLED : undefined,
-          boxShadow: [ring, underline].filter(Boolean).join(", ") || undefined,
-          ...style,
-        };
-      }}
+      style={(renderProps) => ({
+        opacity: renderProps.isDisabled ? UI_ALPHA_DISABLED : undefined,
+        boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined,
+        ...style,
+      })}
     >
       {children}
     </AriaTab>
