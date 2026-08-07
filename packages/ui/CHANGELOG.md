@@ -219,3 +219,64 @@ All notable changes to this package are documented here. Format follows
   render-prop function; a `style` object or function passed by a consumer
   is now merged in, with the consumer's values winning on conflict — the
   same precedence `className` already had via `cx`/`tailwind-merge`.
+
+### Added
+
+- Six more blocks — `Form`, `FieldGroup`, `ConfirmDialog`, `Toolbar`,
+  `NavGrid`, `SectionHeader` — completing the `blocks` layer at twelve
+  components. `Form`
+  is a form's own layout (an optional heading, the fields region, an
+  error-summary region, an actions region) and implements NO validation
+  logic or form state of its own: react-aria-components already carries
+  per-field validation, and most consumers layer their own form library
+  on top, so a shared component that tried to own either would need an
+  escape hatch for every consumer using a different one. Its error
+  summary is the real accessibility payoff — `role="alert"` plus a
+  programmatic focus move onto the region itself the moment a new,
+  non-empty `errors` array is passed, with each entry a real
+  `<a href="#fieldId">` linking straight to its field. `FieldGroup` groups
+  a related set of fields under a real `<fieldset>`/`<legend>` pair (not
+  `role="group"`/`aria-labelledby` — see its own README section for why),
+  with a `layout` prop (`"single" | "multi"`) for the fields' own grid.
+  `ConfirmDialog` is `Dialog` composed with a fixed heading/message/
+  Cancel-Confirm-actions shape — the deliberate follow-up `Dialog`'s own
+  section already called out; `tone="destructive"` never relies on colour
+  alone (the confirm button's own label, not just its `danger` styling,
+  is what has to name the action), and default focus lands on Cancel for
+  a destructive confirmation (the safer action) versus Confirm otherwise.
+  It implements no imperative `confirm()` API — a `trigger` slot, exactly
+  like `Dialog`. `Toolbar` builds on react-aria-components' own `Toolbar`
+  primitive (shipped in the installed `react-aria-components@1.20.0`) for
+  real roving-focus arrow-key navigation between `leading`/`search`/
+  `trailing` slot contents, rather than a hand-rolled `role="toolbar"`.
+  `NavGrid` renders a responsive grid of navigation cards from
+  `{ id, title, description?, icon?, href? | onSelect? }` data; each card
+  is a real `<a>` (this package's own `Link`, `variant="standalone"`) or
+  `<button>` (`Button`, `variant="ghost"`) — never a `<div>` with an
+  `onClick` — with the whole card, not just the title, as the click/
+  keyboard target. `SectionHeader` is a heading for a section WITHIN a
+  page — eyebrow, title, description, actions slot — distinct from the
+  once-per-page `PageHeader`: a page routinely holds several
+  `SectionHeader`s, which is what makes it its own block rather than a
+  `PageHeader` variant (test 3). `level` (`2 | 3 | 4 | 5 | 6`, default
+  `2`) picks which heading element `title` renders as, so a page's
+  document outline stays unbroken regardless of how deeply a
+  `SectionHeader` is nested; it renders a plain `<div>`, not a `<header>`,
+  since a bare top-level `<header>` per instance would register a second
+  `banner` landmark per section — invalid document structure for a block
+  a page can hold several of.
+- `token-parity.test.ts`'s `KNOWN_NON_CLASS_MAPS` is unchanged by this
+  release — none of the six new blocks introduce a `Record<...,
+  string>` map that isn't a `*CLASSES` variant map.
+
+### Known issues
+
+- `Link` (an atom, out of scope for this PR) applies `outline-none` in its
+  base class but no replacement focus-visible styling of any kind, unlike
+  `Button`/`TextField`/every other interactive atom here — a keyboard user
+  tabbing to any `Link` (including inside `Breadcrumb`, and now inside
+  `NavGrid`'s own `href` cards) gets no visible focus indicator at all.
+  `NavGrid` works around this locally by adding its own
+  `focus:shadow-[var(--ui-ring-focus)]` to the card's `className`; `Form`'s
+  error-summary links do the same. The underlying atom bug is unfixed —
+  flagged here for whoever owns `src/atoms/Link.tsx` next.
