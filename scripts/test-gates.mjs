@@ -1001,6 +1001,298 @@ try {
       `exit ${ordinaryProse.code}: ${ordinaryProse.out.slice(0, 300)}`,
     );
   }
+
+  // ============================================================
+  // Everything below this line is a clearly separate block appended for
+  // GH issues #1 and #2. Kept isolated at the end on purpose: other work
+  // also appends to this file, and a self-contained block here keeps any
+  // merge conflict trivial.
+  // ============================================================
+
+  // -------------------------- denylist quality: self-scope (issue #1) -----
+  console.log("\n# denylist quality — self-scope (a term matching this repo's own scope/package names)");
+  {
+    // A synthetic scope config + one synthetic package, structurally
+    // identical to the real package-scope.json + packages/*/package.json
+    // layout but under a scope that appears in no real denylist term.
+    const scopeDir = join(work, "self-scope-fixture");
+    mkdirSync(join(scopeDir, "packages", "gadget"), { recursive: true });
+    const scopeConfigPath = join(scopeDir, "package-scope.json");
+    writeFileSync(scopeConfigPath, JSON.stringify({ scope: "@widgetco-fixture", registry: "https://example.invalid" }));
+    writeFileSync(
+      join(scopeDir, "packages", "gadget", "package.json"),
+      JSON.stringify({ name: "@widgetco-fixture/gadget", version: "1.0.0" }),
+    );
+
+    const runQuality = (denylistObj, extraArgs = []) => {
+      const p = join(scopeDir, `dl-${Math.random().toString(36).slice(2)}.json`);
+      writeFileSync(p, JSON.stringify(denylistObj));
+      const r = run("node", [QUALITY, "--denylist", p, "--scope-config", scopeConfigPath, "--json", ...extraArgs]);
+      let report;
+      try {
+        report = JSON.parse(r.out);
+      } catch {
+        report = null;
+      }
+      return { ...r, report };
+    };
+
+    // Violation: the term's pattern matches the fixture's own scope string.
+    const scopeHit = runQuality({
+      version: "t",
+      terms: [{ pattern: "widgetco-fixture", why: "synthetic self-scope violation (scope string)", severity: "high" }],
+    });
+    check(
+      "flags a term matching this repo's own configured scope",
+      scopeHit.code === 1 && (scopeHit.report?.findings ?? []).some((f) => f.rule === "self-scope" && f.index === 0),
+      `expected a self-scope finding at index 0, got ${JSON.stringify(scopeHit.report?.findings)}`,
+    );
+
+    // Violation, different source: the term's pattern matches a PACKAGE NAME
+    // under the scope, not the bare scope string itself — proves coverage
+    // isn't limited to the one obvious candidate (the incident this
+    // reproduces was 59 files of package-NAME hits, not just the scope).
+    const packageHit = runQuality({
+      version: "t",
+      terms: [{ pattern: "widgetco-fixture/gadget", why: "synthetic self-scope violation (package name)", severity: "high" }],
+    });
+    check(
+      "flags a term matching a package name published under this repo's own scope",
+      packageHit.code === 1 && (packageHit.report?.findings ?? []).some((f) => f.rule === "self-scope" && f.index === 0),
+      `expected a self-scope finding at index 0, got ${JSON.stringify(packageHit.report?.findings)}`,
+    );
+
+    // Sanity (real coverage, not zero coverage): an unrelated term over the
+    // SAME fixture does not trip self-scope — proving the prior two cases
+    // failed because of what they matched, not because this fixture flags
+    // everything indiscriminately.
+    const clean = runQuality({
+      version: "t",
+      terms: [{ pattern: "unrelatedthing", why: "synthetic unrelated term", severity: "high" }],
+    });
+    check(
+      "sanity: an unrelated term over the same scope fixture is NOT flagged for self-scope, and the scan finds nothing — proving the self-scope check inspects the actual candidate set rather than failing everything",
+      clean.code === 0 && !(clean.report?.findings ?? []).some((f) => f.rule === "self-scope"),
+      `expected no self-scope finding, got ${JSON.stringify(clean.report?.findings)}`,
+    );
+
+    // Coverage reporting (audit finding): the candidate-set size is reported
+    // unconditionally, not just implied by a pass/fail. This fixture has
+    // exactly one package under packages/*, so the count is pinned exactly —
+    // a regression that silently drops package-name coverage (e.g. a typo'd
+    // packagesDir) would still report SOME candidates (the bare scope) and
+    // pass every other check here without this explicit count.
+    check(
+      "self-scope coverage reports the exact candidate/package counts for this fixture (1 package under packages/*)",
+      clean.report?.selfScopeCoverage?.packageNamesFound === 1 &&
+        clean.report?.selfScopeCoverage?.scopeAndPackageCandidates === 4,
+      `expected packageNamesFound:1, scopeAndPackageCandidates:4, got ${JSON.stringify(clean.report?.selfScopeCoverage)}`,
+    );
+
+    // The documented, at-add-time override: selfScopeJustification turns the
+    // match into an ACKNOWLEDGED entry rather than a failing finding.
+    // Pattern covers both the separated and compound form of its own literal
+    // (optional hyphen) so this case isolates the self-scope acknowledgement
+    // from the unrelated separator-optional pattern-shape finding.
+    const justified = runQuality({
+      version: "t",
+      terms: [
+        {
+          pattern: "widgetco-?fixture",
+          why: "synthetic self-scope, deliberately justified",
+          severity: "high",
+          selfScopeJustification: "synthetic: deliberate, reviewed exception for this fixture",
+        },
+      ],
+    });
+    check(
+      "selfScopeJustification acknowledges the match instead of failing",
+      justified.code === 0 &&
+        !(justified.report?.findings ?? []).some((f) => f.rule === "self-scope") &&
+        (justified.report?.selfScopeAcknowledged ?? []).some((a) => a.index === 0),
+      `expected an acknowledged self-scope entry and no failing finding, got ${JSON.stringify(justified.report)}`,
+    );
+
+    // ---------------------------------------------- fail-closed: self-scope
+    // "Could not check" and "checked, and it was fine" must never share an
+    // exit code — same standard the denylist-loading fail-closed cases hold
+    // check-public-safety.mjs to.
+    const missingScopeConfig = run("node", [
+      QUALITY,
+      "--denylist",
+      (() => {
+        const p = join(scopeDir, "dl-missing-scope.json");
+        writeFileSync(p, JSON.stringify({ version: "t", terms: [{ pattern: "unrelatedthing", why: "x", severity: "high" }] }));
+        return p;
+      })(),
+      "--scope-config",
+      join(scopeDir, "does-not-exist.json"),
+    ]);
+    check(
+      "fails closed (exit 2) when the scope config cannot be loaded",
+      missingScopeConfig.code === 2,
+      `exit was ${missingScopeConfig.code}: ${missingScopeConfig.out.slice(0, 300)}`,
+    );
+
+    const noScopeField = join(scopeDir, "no-scope-field.json");
+    writeFileSync(noScopeField, JSON.stringify({ registry: "https://example.invalid" }));
+    const badScopeConfig = run("node", [
+      QUALITY,
+      "--denylist",
+      join(scopeDir, "dl-missing-scope.json"),
+      "--scope-config",
+      noScopeField,
+    ]);
+    check(
+      "fails closed (exit 2) when the scope config has no `scope` string",
+      badScopeConfig.code === 2,
+      `exit was ${badScopeConfig.code}: ${badScopeConfig.out.slice(0, 300)}`,
+    );
+  }
+
+  // ---------------------- denylist quality: self-containment (issue #2) ---
+  console.log("\n# denylist quality — self-containment (a term's why/boundaryJustification leaking another term's value)");
+  {
+    const containDir = join(work, "self-containment-fixture");
+    mkdirSync(containDir, { recursive: true });
+    // Reuse the same harmless scope fixture shape from above so this block
+    // never depends on the earlier one's temp files still existing.
+    const scopeConfigPath = join(containDir, "package-scope.json");
+    writeFileSync(scopeConfigPath, JSON.stringify({ scope: "@containment-fixture-scope", registry: "https://example.invalid" }));
+
+    const runQuality = (denylistObj) => {
+      const p = join(containDir, `dl-${Math.random().toString(36).slice(2)}.json`);
+      writeFileSync(p, JSON.stringify(denylistObj));
+      const r = run("node", [QUALITY, "--denylist", p, "--scope-config", scopeConfigPath, "--json"]);
+      let report;
+      try {
+        report = JSON.parse(r.out);
+      } catch {
+        report = null;
+      }
+      return { ...r, report };
+    };
+
+    // Violation: term #1's `why` literally contains term #0's value
+    // ("acmecorp" — single-word compound so this case isolates
+    // self-containment from the separator-optional pattern-shape check
+    // above, which is a different finding about a different property).
+    const whyLeak = runQuality({
+      version: "t",
+      terms: [
+        { pattern: "acmecorp", why: "synthetic sibling product", severity: "high" },
+        { pattern: "zetaindustries", why: "this description mentions acmecorp by name, which it must not", severity: "medium" },
+      ],
+    });
+    check(
+      "flags a `why` field that contains another term's literal value",
+      whyLeak.code === 1 &&
+        (whyLeak.report?.findings ?? []).some((f) => f.rule === "self-containment" && f.index === 1),
+      `expected a self-containment finding at index 1, got ${JSON.stringify(whyLeak.report?.findings)}`,
+    );
+
+    // Violation via the other field this rule covers: boundaryJustification.
+    const boundaryLeak = runQuality({
+      version: "t",
+      terms: [
+        { pattern: "acmecorp", why: "synthetic sibling product", severity: "high" },
+        {
+          pattern: "\\bzetaindustries\\b",
+          why: "synthetic ordinary compound word",
+          severity: "medium",
+          boundaryJustification: "kept anchored on purpose — also mentions acmecorp here, which it must not",
+        },
+      ],
+    });
+    check(
+      "flags a `boundaryJustification` field that contains another term's literal value",
+      boundaryLeak.code === 1 &&
+        (boundaryLeak.report?.findings ?? []).some((f) => f.rule === "self-containment" && f.index === 1),
+      `expected a self-containment finding at index 1, got ${JSON.stringify(boundaryLeak.report?.findings)}`,
+    );
+
+    // Sanity (real coverage, not zero coverage): swapping which term's text
+    // carries the leak moves the flagged index with it — proving the check
+    // is actually comparing content pairwise, not hardcoded to one index.
+    const swapped = runQuality({
+      version: "t",
+      terms: [
+        { pattern: "zetaindustries", why: "this description mentions acmecorp by name, which it must not", severity: "medium" },
+        { pattern: "acmecorp", why: "synthetic sibling product", severity: "high" },
+      ],
+    });
+    check(
+      "sanity: the flagged index follows the leak, not a fixed position — proving the scan inspects real content rather than passing on zero coverage",
+      swapped.code === 1 && (swapped.report?.findings ?? []).some((f) => f.rule === "self-containment" && f.index === 0),
+      `expected a self-containment finding at index 0, got ${JSON.stringify(swapped.report?.findings)}`,
+    );
+
+    // Clean: two terms whose text never references each other's value.
+    const clean = runQuality({
+      version: "t",
+      terms: [
+        { pattern: "acmecorp", why: "synthetic sibling product", severity: "high" },
+        { pattern: "zetaindustries", why: "synthetic unrelated product, no overlap with anything else here", severity: "medium" },
+      ],
+    });
+    check(
+      "does not flag terms whose why text never contains another term's value",
+      clean.code === 0 && !(clean.report?.findings ?? []).some((f) => f.rule === "self-containment"),
+      `expected no self-containment finding, got ${JSON.stringify(clean.report?.findings)}`,
+    );
+
+    // ---------------------------------------------- coverage exclusion (audit)
+    // Regression for the audit finding: a term whose pattern is a short
+    // opaque handle (a single literal chunk under the 6-char threshold) is
+    // excluded from the SOURCE side of the comparison on purpose — but that
+    // exclusion must be REPORTED, never silent. Reproduced here with
+    // invented values (never the real denylist): term #1 is the short
+    // handle, term #2's `why` embeds it verbatim — the exact leak shape
+    // issue #2 exists to catch, and the exact shape that must NOT read as
+    // "self-containment ran and found nothing."
+    const excludedLeak = runQuality({
+      version: "t",
+      terms: [
+        { pattern: "qz7mx", why: "synthetic short opaque handle, sub-threshold on purpose", severity: "critical" },
+        { pattern: "unrelatedfiller", why: "this description mentions the handle qz7mx by name, which it must not", severity: "high" },
+      ],
+    });
+    check(
+      "a sub-threshold term's value leaking into another term's why is NOT raised as a self-containment finding (the excluded case, not a false negative fix)",
+      !(excludedLeak.report?.findings ?? []).some((f) => f.rule === "self-containment"),
+      `expected no self-containment finding for the excluded source, got ${JSON.stringify(excludedLeak.report?.findings)}`,
+    );
+    check(
+      "...but that exclusion IS reported, by index and reason, so the miss is visible rather than silent",
+      (excludedLeak.report?.selfContainmentExcluded ?? []).some((e) => e.index === 0),
+      `expected selfContainmentExcluded to name index 0, got ${JSON.stringify(excludedLeak.report?.selfContainmentExcluded)}`,
+    );
+    check(
+      "the exclusion alone does not fail the run (would be noise on legitimate short terms)",
+      excludedLeak.code === 0,
+      `exit was ${excludedLeak.code}, expected 0 — an excluded term should not fail the run by itself`,
+    );
+
+    // The coverage line is unconditional: present even when nothing is
+    // excluded, so "zero excluded" and "the field was never computed" are
+    // also distinguishable.
+    check(
+      "selfContainmentExcluded is present (as an empty array) even when nothing is excluded",
+      Array.isArray(clean.report?.selfContainmentExcluded) && clean.report.selfContainmentExcluded.length === 0,
+      `expected an empty selfContainmentExcluded array, got ${JSON.stringify(clean.report?.selfContainmentExcluded)}`,
+    );
+
+    // self-scope coverage is reported unconditionally too (audited for the
+    // same shape): every query in this block used a scope fixture with no
+    // packages/ directory, so packageNamesFound must read 0 rather than
+    // being silently absent from the report.
+    check(
+      "self-scope coverage counts are reported even when zero packages were found under packages/*",
+      clean.report?.selfScopeCoverage?.packageNamesFound === 0 &&
+        typeof clean.report?.selfScopeCoverage?.scopeAndPackageCandidates === "number",
+      `expected selfScopeCoverage.packageNamesFound === 0, got ${JSON.stringify(clean.report?.selfScopeCoverage)}`,
+    );
+  }
 } finally {
   rmSync(work, { recursive: true, force: true });
 }
