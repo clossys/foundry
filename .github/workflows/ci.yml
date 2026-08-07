@@ -212,6 +212,13 @@ jobs:
       # every package has zero internal dependencies, and silently stops
       # working the moment one gains its first -- so build stays first.
       - run: npm run build
+      # Asks each package's own tsc which files it actually compiles, then
+      # fails if a @ts-expect-error/@ts-ignore/expectTypeOf/assertType lives
+      # outside that set — i.e. in a *.test.ts(x) file, where it would be
+      # inert (issue #24). Lives here, not in the dependency-free `prose`
+      # job above, because it shells out to the real `tsc` binary and needs
+      # `npm ci` to have run first.
+      - run: npm run check:typechecked-assertions
       - run: npm run typecheck
       - run: npm test
 
