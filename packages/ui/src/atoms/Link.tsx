@@ -3,6 +3,7 @@ import {
   type LinkProps as AriaLinkProps,
 } from "react-aria-components";
 import { cx } from "./internal/cx.js";
+import { UI_RING_FOCUS } from "./internal/ui-vars.js";
 
 export type LinkVariant = "default" | "muted" | "standalone";
 
@@ -48,7 +49,7 @@ const VARIANT_CLASSES: Record<LinkVariant, string> = {
  * </Link>
  * ```
  */
-export function Link({ variant = "default", className, ...rest }: LinkProps) {
+export function Link({ variant = "default", className, style, ...rest }: LinkProps) {
   return (
     <AriaLink
       {...rest}
@@ -59,6 +60,17 @@ export function Link({ variant = "default", className, ...rest }: LinkProps) {
           typeof className === "function" ? className(renderProps) : className,
         )
       }
+      // BASE sets `outline-none`, which removes the browser's own focus
+      // ring. Something must put one back, or keyboard focus on a link is
+      // invisible — a WCAG 2.4.7 failure, and a silent one, since nothing
+      // about the rendered markup looks wrong. Every other interactive
+      // atom pairs `outline-none` with this same token-driven ring on
+      // `isFocusVisible`; this one did not, so a keyboard user tabbing
+      // through a page had no idea where they were.
+      style={(renderProps) => ({
+        boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined,
+        ...(typeof style === "function" ? style(renderProps) : style),
+      })}
     />
   );
 }

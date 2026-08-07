@@ -85,4 +85,30 @@ describe("Link", () => {
     const standaloneClass = screen.getByRole("link").className;
     expect(new Set([defaultClass, mutedClass, standaloneClass]).size).toBe(3);
   });
+  /**
+   * BASE sets `outline-none`, stripping the browser's own focus ring. If
+   * nothing replaces it, keyboard focus on a link is invisible — WCAG
+   * 2.4.7, and a silent failure: the markup looks correct, the tests pass,
+   * and only a keyboard user ever finds out. This asserts the replacement
+   * exists rather than trusting that it does.
+   */
+  it("shows a visible focus ring on keyboard focus", async () => {
+    const user = userEvent.setup();
+    render(<Link href="/prompts">Prompts</Link>);
+    const link = screen.getByRole("link");
+
+    expect(link.style.boxShadow).toBe("");
+    await user.tab();
+    expect(link).toHaveFocus();
+    expect(link.style.boxShadow).not.toBe("");
+  });
+
+  it("lets a consumer's own style win over the focus ring", () => {
+    render(
+      <Link href="/x" style={{ boxShadow: "none" }}>
+        X
+      </Link>,
+    );
+    expect(screen.getByRole("link").style.boxShadow).toBe("none");
+  });
 });
