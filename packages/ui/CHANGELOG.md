@@ -77,6 +77,36 @@ All notable changes to this package are documented here. Format follows
   opinionated assemblies built on `Table`'s and `Dialog`'s primitives —
   remain deliberate follow-ups, not shipped here.
 
+- The `views` layer: `ErrorView`, `AuthView` — the final rung of this
+  package's component ladder (`atoms` → `blocks` → `views`, with `shell` as
+  the frame `views` fill), and deliberately a short one. `ErrorView` is a
+  full-page error state (404, 500, 403); it composes `blocks/EmptyState`
+  rather than reimplementing it, renders the status code as real text in
+  the page's own `<h1>`, and takes an optional `details` slot rendered
+  inside a native `<details>`, collapsed by default. `AuthView` is a
+  full-page authentication shell (sign-in, sign-up, reset, verify): a
+  centered card, built on `atoms/Card`, with named `brand`/`heading`/
+  `form`/`secondaryAction`/`footnote` slots. `AuthView` implements no
+  authentication of any kind — no provider, no form state, no validation,
+  no submit handling — it renders the consumer-supplied `form` slot exactly
+  as given, the same one-way boundary `Dialog`'s `trigger` slot and
+  `EmptyState`'s `action` slot already establish. `ListView`, `FormView`,
+  and `DashboardView` are deliberately NOT shipped: by this package's own
+  "can one page contain two of them?" test (README, "Placement rules",
+  test 3), a page can hold two lists or two forms side by side, so those
+  are blocks a consumer composes, not views this package pre-assembles.
+- `./views` subpath export, alongside `./atoms`, `./blocks`, and `./shell`.
+- `src/ladder.test.ts` extended for the complete ruleset: `views` may
+  import `atoms` and `blocks` (proven by two new sanity checks, the same
+  shape as the existing `blocks`-imports-`atoms` and `shell`-imports-`atoms`
+  ones); no file under `src/views/` may import `shell/` — the mirror image
+  of `shell/` never importing `views/`, making `views` and `shell` mutually
+  exclusive peers that both build on `atoms`/`blocks` without depending on
+  each other. Verified by hand that the new `views`-importing-`shell` check
+  actually fails closed: a temporary import from `views/` into `blocks/`
+  was added, confirmed to fail the corresponding existing test, then
+  reverted.
+
 ### Fixed
 
 - `token-parity.test.ts` no longer false-positives on Tailwind's own

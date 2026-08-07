@@ -15,17 +15,23 @@ import { describe, expect, it } from "vitest";
  * no longer take just atoms without pulling in every block too, and a
  * change to a block could ripple back down into atoms).
  *
+ * `views` may import `atoms` and `blocks` — the same "down only" direction
+ * `blocks` importing `atoms` already established (`ErrorView` pulls in
+ * `blocks/EmptyState`; `AuthView` pulls in `atoms/Card`). Nothing may import
+ * FROM `views` at all: it is the top of the ladder.
+ *
  * `shell` is the frame `views` fill, not another rung of CONTENT above
  * `views` — see this package's README, "Placement rules" and the ladder
  * diagram at the top. Structurally that makes it a peer of `views` that is
  * allowed to import both `atoms` and `blocks` (a `Shell.Header` slot is
- * commonly filled with atoms the same way a block is), while `views` (once
- * it exists) must never import `shell` — a view fills a slot `shell`
- * provides; it doesn't get to reach into the frame that's rendering it.
- * `shell` importing `views` is equally forbidden, for the same reason
- * `blocks` importing `atoms` is fine but not the reverse: `shell` is
- * lower/more foundational than the content it frames, even though it's
- * listed last in the diagram.
+ * commonly filled with atoms the same way a block is), while `views` must
+ * never import `shell` — a view fills a slot `shell` provides; it doesn't
+ * get to reach into the frame that's rendering it. `shell` importing `views`
+ * is equally forbidden, for the same reason `blocks` importing `atoms` is
+ * fine but not the reverse: `shell` is lower/more foundational than the
+ * content it frames, even though it's listed last in the diagram. The two
+ * directions together make `views` and `shell` mutually exclusive peers,
+ * both built on `atoms`/`blocks`, neither depending on the other.
  *
  * This is enforced here structurally — reading real files and checking real
  * import specifiers — rather than left as a comment or a code-review
@@ -46,6 +52,7 @@ import { describe, expect, it } from "vitest";
 const srcDir = dirname(fileURLToPath(import.meta.url));
 const atomsDir = join(srcDir, "atoms");
 const blocksDir = join(srcDir, "blocks");
+const viewsDir = join(srcDir, "views");
 const shellDir = join(srcDir, "shell");
 
 function collectSourceFiles(dir: string, out: string[] = []): string[] {
@@ -180,6 +187,25 @@ describe("ladder invariant: atoms → blocks → views, shell as the frame views
       "views",
       "Shell PROVIDES the slots a view fills; a view is content rendered inside shell, so shell depending on one would be exactly backwards — the frame would depend on what's framed.",
     );
+  });
+
+  it("no file under src/views/ imports from shell/", () => {
+    expectNoImportsOf(
+      viewsDir,
+      "a view",
+      "shell",
+      "Shell is the frame a view fills a slot of, the same mutual exclusion as shell never importing views (above) read from the other side — shell is lower/more foundational than the content it frames, even though it's listed last in the ladder diagram, so a view reaching into it would be exactly backwards.",
+    );
+  });
+
+  it("sanity (permitted direction): views/ DOES import from atoms/, and the scan finds it — proving the scan inspects real code rather than passing on zero coverage, and confirming this direction is the permitted one (no assertion here forbids it)", () => {
+    const viewsImportingAtoms = findViolations(viewsDir, "atoms");
+    expect(viewsImportingAtoms.length).toBeGreaterThan(0);
+  });
+
+  it("sanity (permitted direction): views/ DOES import from blocks/, and the scan finds it — proving the scan inspects real code rather than passing on zero coverage, and confirming this direction is the permitted one (no assertion here forbids it)", () => {
+    const viewsImportingBlocks = findViolations(viewsDir, "blocks");
+    expect(viewsImportingBlocks.length).toBeGreaterThan(0);
   });
 
   it("sanity (permitted direction): shell/ DOES import from atoms/, and the scan finds it — proving the scan inspects real code rather than passing on zero coverage, and confirming this direction is the permitted one (no assertion here forbids it)", () => {
