@@ -83,6 +83,9 @@ export type {
   StatTrend,
 } from "./blocks/index.js";
 
+export { ErrorView, AuthView } from "./views/index.js";
+export type { ErrorViewProps, AuthViewProps } from "./views/index.js";
+
 export { Shell, Toaster, toast } from "./shell/index.js";
 export type {
   ShellProps,
