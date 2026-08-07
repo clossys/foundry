@@ -113,7 +113,7 @@
 
   /* ─── RADIUS (1 required — the scale itself is fixed) ───────────
    * 0px sharp / 3px standard / 14px+ rounded — --radius-default is the
-   * one radius token most brands change; --radius-sharp/-s/-control/-pill
+   * one radius token most brands change; --radius-sharp/-subtle/-control/-pill
    * stay as shipped. */
   --radius-default:                ;
 
