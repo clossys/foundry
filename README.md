@@ -23,7 +23,9 @@ for the full account.
 | [`@vespeneventures/gates`](packages/gates) | Orchestrates `catalog` and `policy` into one call, a deterministic build order, and the `foundry-check` CLI. |
 | [`@vespeneventures/release`](packages/release) | Proves a package is actually installable: packs the real tarball, installs it into a genuinely isolated directory, and imports every subpath it claims to export. |
 | [`@vespeneventures/tokens`](packages/tokens) | Design tokens for web interfaces: CSS custom properties plus typed JS values, with a brand-binding layer so an interface never ships silently unbranded. |
-| [`@vespeneventures/ui`](packages/ui) | React components styled with `@vespeneventures/tokens` via Tailwind CSS v4. Ships the `atoms` layer only (`Button`, `TextField`, `Badge`, `Card`); `blocks` and `views` are a planned future subpath, not built yet. |
+| [`@vespeneventures/ui`](packages/ui) | React components styled with `@vespeneventures/tokens` via Tailwind CSS v4: 31 atoms, 12 blocks, 4 charts, 2 views, a shell layer, and 32 icon glyphs, across six subpath exports (`./atoms`, `./charts`, `./blocks`, `./views`, `./shell`, `./icons`) — deliberately no root `.` export, so every import names its layer. |
+| [`@vespeneventures/voice`](packages/voice) | The verbal contract: a vocabulary for voice rules (person, tense, formality, tone), a glossary of forbidden/preferred terms, and a claims register, plus a checker that scans a piece of copy against them. Ships the machinery only; each consumer binds its own rules, glossary, and claims. |
+| [`@vespeneventures/strategy`](packages/strategy) | Upstream strategy machinery, not content: dependency-free validators for facts, mission, positioning, markets, audiences, and roadmap, plus a facts-traceability gate that fails a numeric or superlative claim in prose that isn't traceable back to a `facts.json` entry. Ships the schema and checker; every consumer authors its own values. |
 
 Each package's own README has the full API and the reasoning behind it.
 

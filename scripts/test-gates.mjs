@@ -76,6 +76,7 @@ const ARTIFACT = join(scriptDir, "check-artifact-safety.mjs");
 const COLLISION = join(scriptDir, "check-name-collision.mjs");
 const CONTAM = join(scriptDir, "check-contamination-classes.mjs");
 const QUALITY = join(scriptDir, "check-denylist-quality.mjs");
+const ROOT_README = join(scriptDir, "check-root-readme-parity.mjs");
 
 let passed = 0;
 const failures = [];
@@ -575,6 +576,111 @@ try {
       `paths-confined entry (index 2) was flagged for breadth — confinement should bound the blast radius`,
     );
     check("check-denylist-quality exits 1 when quality findings exist", r.code === 1, `exit was ${r.code}`);
+  }
+
+  // ------------------------------------------ root README parity (issue #28)
+  console.log("\n# check-root-readme-parity: root README vs packages/");
+  {
+    const dir = join(work, "root-readme");
+    const packagesDir = join(dir, "packages");
+    mkdirSync(join(packagesDir, "alpha"), { recursive: true });
+    mkdirSync(join(packagesDir, "beta"), { recursive: true });
+    writeFileSync(join(packagesDir, "alpha", "package.json"), JSON.stringify({ name: `${FIXTURE_SCOPE}/alpha`, version: "1.0.0" }, null, 2) + "\n");
+    writeFileSync(join(packagesDir, "beta", "package.json"), JSON.stringify({ name: `${FIXTURE_SCOPE}/beta`, version: "1.0.0" }, null, 2) + "\n");
+
+    function writeReadme(rows) {
+      writeFileSync(
+        join(dir, "README.md"),
+        ["## Packages", "", "| Package | What it does |", "| --- | --- |", ...rows, ""].join("\n"),
+      );
+    }
+
+    // Sanity (real coverage): a table naming every real package passes, and
+    // it does so because the scan actually walked packages/alpha and
+    // packages/beta and read their real names — not because the fixture has
+    // nothing to check. The next case mutates this exact fixture and shows
+    // the same run catches the drift, which is what proves the pass above
+    // wasn't just zero coverage in disguise.
+    writeReadme([`| \`${FIXTURE_SCOPE}/alpha\` | does alpha things |`, `| \`${FIXTURE_SCOPE}/beta\` | does beta things |`]);
+    const complete = run("node", [ROOT_README, dir]);
+    check(
+      "sanity: a table naming every real package passes, proving the scan reads real packages/ content rather than passing on zero coverage",
+      complete.code === 0,
+      `exit ${complete.code}: ${complete.out.slice(0, 300)}`,
+    );
+
+    // Same fixture, beta's row removed — structurally the same shape as
+    // issue #28's actual defect (@vespeneventures/voice and
+    // @vespeneventures/strategy had no row at all).
+    writeReadme([`| \`${FIXTURE_SCOPE}/alpha\` | does alpha things |`]);
+    const missing = run("node", [ROOT_README, dir]);
+    check(
+      "catches a real package missing its README row",
+      missing.code === 1 && missing.out.includes(`${FIXTURE_SCOPE}/beta`),
+      `exit ${missing.code}: ${missing.out.slice(0, 300)}`,
+    );
+
+    // Mirror-image drift: a row names a package that no longer exists under
+    // packages/ at all (removed from disk, never removed from the table).
+    writeReadme([
+      `| \`${FIXTURE_SCOPE}/alpha\` | does alpha things |`,
+      `| \`${FIXTURE_SCOPE}/beta\` | does beta things |`,
+      `| \`${FIXTURE_SCOPE}/retired\` | doesn't exist anymore |`,
+    ]);
+    const stale = run("node", [ROOT_README, dir]);
+    check(
+      "catches a README row naming a package that no longer exists under packages/",
+      stale.code === 1 && stale.out.includes(`${FIXTURE_SCOPE}/retired`),
+      `exit ${stale.code}: ${stale.out.slice(0, 300)}`,
+    );
+
+    // Fail-closed cases below. None of these may exit 0, and none may print
+    // anything that reads as a pass — "could not check" and "checked and it
+    // was fine" sharing an exit code is exactly how issue #28 survived.
+    const passLooking = /\bOK\b|\bPASS\b/;
+
+    const noHeading = join(work, "root-readme-no-heading");
+    mkdirSync(join(noHeading, "packages", "alpha"), { recursive: true });
+    writeFileSync(join(noHeading, "packages", "alpha", "package.json"), JSON.stringify({ name: `${FIXTURE_SCOPE}/alpha` }) + "\n");
+    writeFileSync(join(noHeading, "README.md"), "# a README with no Packages heading at all\n");
+    const rNoHeading = run("node", [ROOT_README, noHeading]);
+    check("fails closed when README has no Packages heading", rNoHeading.code === 2, `exit was ${rNoHeading.code}`);
+    check(
+      "does not print a passing-looking result when it could not locate the table",
+      !passLooking.test(rNoHeading.out),
+      `output looked like a pass: ${rNoHeading.out.slice(0, 200)}`,
+    );
+
+    const noTable = join(work, "root-readme-no-table");
+    mkdirSync(join(noTable, "packages", "alpha"), { recursive: true });
+    writeFileSync(join(noTable, "packages", "alpha", "package.json"), JSON.stringify({ name: `${FIXTURE_SCOPE}/alpha` }) + "\n");
+    writeFileSync(join(noTable, "README.md"), "## Packages\n\nprose, no table here.\n");
+    const rNoTable = run("node", [ROOT_README, noTable]);
+    check("fails closed when the Packages section has no parseable table (zero rows)", rNoTable.code === 2, `exit was ${rNoTable.code}`);
+    check(
+      "does not print a passing-looking result over zero parsed rows",
+      !passLooking.test(rNoTable.out),
+      `output looked like a pass: ${rNoTable.out.slice(0, 200)}`,
+    );
+
+    const noPackagesDir = join(work, "root-readme-no-packages-dir");
+    mkdirSync(noPackagesDir, { recursive: true });
+    writeFileSync(join(noPackagesDir, "README.md"), "## Packages\n\n| Package | What it does |\n| --- | --- |\n");
+    const rNoPkgDir = run("node", [ROOT_README, noPackagesDir]);
+    check("fails closed when packages/ does not exist", rNoPkgDir.code === 2, `exit was ${rNoPkgDir.code}`);
+
+    const emptyPackagesDir = join(work, "root-readme-empty-packages-dir");
+    mkdirSync(join(emptyPackagesDir, "packages"), { recursive: true });
+    writeFileSync(
+      join(emptyPackagesDir, "README.md"),
+      "## Packages\n\n| Package | What it does |\n| --- | --- |\n| `@x/y` | thing |\n",
+    );
+    const rEmptyPkgDir = run("node", [ROOT_README, emptyPackagesDir]);
+    check(
+      "fails closed when packages/ has no real (scoped-named) package to compare against",
+      rEmptyPkgDir.code === 2,
+      `exit was ${rEmptyPkgDir.code}`,
+    );
   }
 } finally {
   rmSync(work, { recursive: true, force: true });
