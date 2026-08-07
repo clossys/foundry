@@ -231,7 +231,112 @@ sentence — is a real, mechanically-checkable bug, not a formatting
 concern, so `validateCopyRecordShape` reports it as
 `"placeholder-missing-from-text"`.
 
+## The copy scanner and gate
+
+Registering copy by hand only works if every user-facing string actually
+gets registered. `scanCopySourceTree` walks a real source tree and extracts
+every string/template literal that looks like user-facing copy — as
+opposed to a class name, an import specifier, an object key, an
+`aria-*`/`data-*` attribute, an enum/variant token, or a developer-facing
+diagnostic (`console.error`, `throw new Error(...)`). `checkCopyTraceability`
+is the pure gate that checks every extracted candidate against a
+`CopyRecord`: it either matches a registered entry's `text` (compared by
+STATIC SHAPE, every `{name}`/`${...}` interpolation collapsed to the same
+sentinel on both sides, so a source expression's actual content and a
+registered entry's placeholder names never need to agree — source code
+carries JS template syntax while a registry entry carries this package's
+`{name}` convention, and only structure can match across that boundary) or
+carries a `copy:<id>` comment on its own line citing a real entry — anything
+else is reported as untraced.
+
+```ts
+import { checkCopyTraceability, readCopyRecord, scanCopySourceTree } from "@vespeneventures/copy";
+
+const scan = scanCopySourceTree("./src"); // .ts, .tsx, .js, .jsx by default
+const { record } = readCopyRecord("./content/copy.json");
+const result = checkCopyTraceability(scan.candidates, scan.citations, record!, scan.filesScanned);
+
+for (const finding of result.findings) {
+  console.error(`[${finding.rule}] ${finding.file}:${finding.line} — ${finding.message}`);
+}
+if (result.findings.length > 0) process.exitCode = 1;
+```
+
+`checkCopyTraceability` is pure — it takes already-extracted
+`CopyCandidate[]`/`Citation[]` and an already-loaded `CopyRecord`, does no
+I/O, and never throws on any input shape. `scanCopySourceTree` is the I/O
+half (and, unlike `@vespeneventures/strategy`'s own `scan.ts`/gate split,
+also the hard-analysis half — see `scan.ts`'s own doc comment for why
+finding which literals are copy is a problem about source text, not about a
+file tree). **Fails closed**: an unreadable directory or file throws rather
+than being silently treated as empty.
+
+### What the scanner does not catch
+
+- **Raw JSX text nodes** (`<span>Hello</span>` — a bare word between tags,
+  never inside a quote at all). The scanner only finds STRING and TEMPLATE
+  LITERALS, which have unambiguous lexical boundaries a hand-rolled
+  character scanner can find reliably; a text node's boundary needs real
+  JSX parsing to get right in general.
+- **A fully general regex-vs-division disambiguation** for a bare `/`. If
+  the scanner's heuristic desyncs badly enough that quote balance goes
+  wrong by end of file, the file is reported as a parse failure and
+  contributes zero candidates — never silently mis-scanned.
+- **Full escape-sequence decoding.** Only the common escapes are unescaped
+  for matching/reporting; an exotic escape (`\u{1F600}`, `\x41`) may be
+  very slightly off in the reported text.
+
+Every excluded literal, skipped file, and parse failure is counted and
+reported by reason (`ScanResult.excluded`/`skippedByDesign`/`parseFailures`)
+— never silently dropped, matching this package's "fails closed" discipline
+for the registry half above.
+
+### Citations and the escape hatch
+
+Same two-marker convention `@vespeneventures/strategy`'s facts gate uses,
+checked on the same line as the candidate (an HTML comment, a block
+comment, a JSX comment, or a line comment all work):
+
+- `copy:<id>` — cites a real entry in the `CopyRecord` by its `id`. Traces
+  the candidate on that line. Citing an id that does **not** exist is
+  itself a finding (`unknown-copy-citation`) — a rotted or misspelled id
+  can't silently satisfy the gate.
+- `copy-gate:ignore` — suppresses the candidate on that line without
+  requiring a citation. Recorded into `result.ignored`, never silently.
+
+```tsx
+const label = "Legacy placeholder copy"; // copy-gate:ignore
+const heading = "Showing results"; // copy:search.heading
+```
+
+### The `copy-check` CLI
+
+```bash
+npx copy-check ./content/copy.json ./src
+```
+
+```
+Usage: copy-check <record-file> [scan-dir] [options]
+
+  record-file    Path to a CopyRecord JSON file (see this README's frozen contract above). Required.
+  scan-dir       Directory to scan for user-facing string/template literals. Defaults to the current working directory.
+
+Options:
+  --help         Print this message and exit 0.
+```
+
+Exit codes — the same three-state contract `@vespeneventures/strategy`'s
+`strategy-facts-check` and `@vespeneventures/gates`' `foundry-check` use:
+
+| Code | Meaning |
+| --- | --- |
+| `0` | Ran cleanly: the copy record loaded, at least one file was actually scanned, zero findings. |
+| `1` | Ran cleanly, at least one finding (an unregistered copy candidate, or a citation to a copy id that does not exist). |
+| `2` | **Could not run** — bad input, the copy record missing/unreadable/invalid, the scan directory does not exist, the walk matched zero files, every matched file failed to tokenize, or an unreadable directory during the walk. Never conflated with `0`: a gate that reports "clean" after failing to actually check anything is worse than no gate at all. |
+
 ## API
+
+### Registry (`types.ts`, `schema.ts`, `registry.ts`, `checker.ts`)
 
 | Export | Kind | Purpose |
 | --- | --- | --- |
@@ -253,6 +358,35 @@ concern, so `validateCopyRecordShape` reports it as
 | `CopyRecordFinding` | type | A `VoiceFinding` plus an optional `entryId` — `undefined` for a record-level finding (an invalid record/voice record, or zero entries), set for a finding that came from one specific entry's `checkCopy` run. What `CopyRecordCheckReport.findings` holds. |
 | `CopyRecordWaivedFinding` | type | A `CopyRecordFinding` plus the `VoiceCheckWaiver` that covered it — mirrors `@vespeneventures/voice`'s `WaivedVoiceFinding`. What `CopyRecordCheckReport.waived` holds. |
 | `VoiceRecord`, `VoiceCheckReport`, `VoiceCheckWaiver`, `VoiceFinding` | re-exported | From `@vespeneventures/voice`, so a caller building or reading a `checkCopyRecord` call never needs a direct dependency on `voice` just for the types its own signature and report shape use — mirrors `@vespeneventures/gates`' own re-export of `@vespeneventures/catalog`/`policy` types for the same reason. |
+
+### Scanner (`scan.ts`)
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `scanCopySourceTree(root, options?)` | function | Walks `root` and extracts every string/template literal that looks like user-facing copy from each matching file (default extensions `.ts`, `.tsx`, `.js`, `.jsx`) into a `ScanResult`. **Fails closed** — throws rather than silently skipping an unreadable directory or file. |
+| `extractCopyCandidates(content, filePath)` | function | Pure — no I/O. The classification half `scanCopySourceTree` calls per file: tokenizes `content` and sorts every literal into a copy candidate or an excluded literal, with a stated reason. Exported so a test (or a consumer with its own file-gathering, e.g. only the files touched by a diff) can exercise it directly against source text, without a real directory walk. |
+| `PLACEHOLDER_SENTINEL` | const | The private-use-area code point every `${...}` interpolation (and, in `copy-gate.ts`, every `CopyEntry.text` `{name}` placeholder) is collapsed to before two literals' shapes are compared. Exported for a consumer normalizing text the same way outside `checkCopyTraceability`. |
+| `ScanOptions` | type | `{ extensions?: string[]; skipDirs?: string[] }` — `skipDirs` defaults to `node_modules`, `.git`, `dist`, `build`, `coverage`. |
+| `ScanResult` | type | `{ filesScanned, candidates, excluded, citations, skippedByDesign, parseFailures }` — what `scanCopySourceTree` returns. `filesScanned` is the count `cli.ts` requires to be `> 0` for a clean pass. |
+| `CopyCandidate` | type | `{ file, line, kind, raw, normalized, placeholderCount, citedIds, hasIgnoreMarker }` — one string/template literal `scanCopySourceTree` decided is in-scope. One entry of `ScanResult.candidates`. |
+| `ExcludedLiteral` | type | `{ file, line, raw, reason }` — one literal deliberately excluded from `candidates`, and why. One entry of `ScanResult.excluded`. |
+| `ExclusionReason` | type | `"import-or-require-specifier" \| "object-or-destructuring-key" \| "type-or-interface-context" \| "aria-or-data-attribute-value" \| "denylisted-attribute-or-prop-value" \| "classname-builder-argument" \| "developer-diagnostic-argument" \| "no-letters" \| "enum-or-token-shaped"`. |
+| `Citation` | type | `{ file, line, id }` — one `copy:<id>` marker found anywhere in a scanned file, independent of whether a candidate shares its line. One entry of `ScanResult.citations`. |
+| `SkippedFile` | type | `{ file, reason: "test-or-check-file" }` — a file matched by extension but never tokenized at all (`*.test.ts(x)`, `*.spec.ts(x)`, `*.check.ts(x)`, `*.d.ts`). One entry of `ScanResult.skippedByDesign`. |
+| `ParseFailure` | type | `{ file, detail }` — a file that was read but could not be reliably tokenized (unbalanced quote/comment/regex state at EOF). Contributes zero candidates. One entry of `ScanResult.parseFailures`. |
+
+### Gate (`copy-gate.ts`)
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `checkCopyTraceability(candidates, citations, record, filesScanned)` | function | Pure. Evaluates every `candidate` against `record` — matched by registered text shape or a valid `copy:<id>` citation — and every `citation` against `record`'s real ids. Never throws. Returns a `CopyGateResult`. |
+| `CopyGateResult` | type | `{ findings: CopyGateFinding[]; ignored: CopyGateIgnored[]; filesScanned: number; candidatesScanned: number; matched: number }`. |
+| `CopyGateFinding` | type | `{ rule: CopyGateRule; severity: "error"; file; line; message; snippet }`. |
+| `CopyGateRule` | type | `"unregistered-copy" \| "unknown-copy-citation"`. |
+| `CopyGateIgnored` | type | `{ file; line; snippet }` — one candidate suppressed via `copy-gate:ignore`. |
+
+The `copy-check` CLI (`bin`, built from `cli.ts`) is documented in its own
+section above.
 
 ## Non-goal: resolving `factRef`
 
