@@ -16,8 +16,9 @@ package yet. See "Placement rules" below for what distinguishes all four
 rungs and how a new component gets assigned to one.
 
 - **`atoms`** — single-purpose: composes no other atom, or its parts are
-  homogeneous repeats rather than named regions. Five ship: `Button`,
-  `TextField`, `Badge`, `Card`, `Breadcrumb`.
+  homogeneous repeats rather than named regions. Thirteen ship: `Button`,
+  `TextField`, `Badge`, `Card`, `Breadcrumb`, `Link`, `Checkbox`, `Switch`,
+  `Select`, `Textarea`, `Avatar`, `Spinner`, `Menu`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
   with a real job on a page. Two ship: `PageHeader`, `EmptyState`.
@@ -159,19 +160,25 @@ costs nothing; a missing one costs every component's styling.
 ## Why these dependencies
 
 - **`react-aria-components`** — every interactive atom (`Button`,
-  `TextField`) is built on its primitives rather than a hand-rolled
-  `<button>`/`<input>`. It supplies keyboard interaction (Enter/Space
-  activation, focus management), the ARIA attributes a screen reader needs
-  (`aria-invalid`, `aria-describedby` linking an input to its error text,
-  label association), and disabled-state semantics — the kind of behavior
-  that is easy to get subtly wrong by hand and hard to notice is wrong
-  without a screen reader or a keyboard-only pass. `Badge` and `Card`
-  compose no other atom and aren't interactive, so they're plain markup —
-  there's no react-aria-components primitive for either. The `Breadcrumb`
-  atom builds on it the same way, for the same reason: its `Breadcrumbs` /
-  `Breadcrumb` / `Link` collection components supply correct nav semantics
-  and automatic `aria-current` placement that would be easy to get subtly
-  wrong hand-rolled.
+  `TextField`, `Link`, `Checkbox`, `Switch`, `Select`, `Textarea`, `Menu`) is
+  built on its primitives rather than a hand-rolled
+  `<button>`/`<input>`/`<a>`. It supplies keyboard interaction (Enter/Space
+  activation, focus management, arrow-key navigation), the ARIA attributes a
+  screen reader needs (`aria-invalid`, `aria-describedby` linking an input
+  to its error text, label association, `role="menu"`/`aria-checked`/
+  `aria-expanded` and the rest), and disabled-state semantics — the kind of
+  behavior that is easy to get subtly wrong by hand and hard to notice is
+  wrong without a screen reader or a keyboard-only pass. `Badge`, `Card`,
+  `Avatar`, and `Spinner` compose no other atom and aren't interactive, so
+  they're plain markup — there's no react-aria-components primitive for any
+  of them. `Breadcrumb`, `Select`, and `Menu` build on it for their
+  collection components specifically: `Breadcrumbs`/`Breadcrumb`/`Link`
+  supply correct nav semantics and automatic `aria-current` placement;
+  `Select`/`ListBox`/`ListBoxItem`/`Popover` supply a listbox's open/close,
+  typeahead, and selection behavior; `MenuTrigger`/`Menu`/`MenuItem`/
+  `Popover` supply a menu's open/close, arrow-key navigation, and
+  disabled-item skipping — all behavior that would be easy to get subtly
+  wrong hand-rolled, and none of it reimplemented here.
 - **`tailwind-merge`** — every atom accepts a `className` prop, and a
   consumer's value has to reliably win over this package's own default
   classes. Two Tailwind utilities that set the same CSS property have
@@ -302,6 +309,237 @@ built from a `.Item` sub-component: its items are a homogeneous repeat (any
 crumb plays the same role as any other) rather than a set of regions that
 differ in kind. See "Placement rules" above.
 
+### `Link`
+
+```tsx
+import { Link } from "@vespeneventures/ui/atoms";
+
+function PromptsLink() {
+  return (
+    <Link href="/prompts" variant="default">
+      Prompts
+    </Link>
+  );
+}
+```
+
+`variant`: `"default" | "muted" | "standalone"` (default `"default"`).
+`default` reads as inline text (colored, underlined on hover) — the right
+choice inside a sentence or paragraph. `muted` is lower-emphasis, for
+secondary chrome that shouldn't compete with primary content. `standalone`
+is for a link that IS the whole clickable unit on its own (a card title, a
+nav item), where a permanent underline would read as noise.
+
+Renders a real `<a href="...">` by default. A consumer whose app uses a
+router with its own link component can render that instead via
+react-aria-components' own `render` prop, rather than a bespoke `as` prop of
+this component's own:
+
+```tsx
+<Link href="/prompts" render={(props) => <RouterLink {...props} to="/prompts" />}>
+  Prompts
+</Link>
+```
+
+### `Checkbox`
+
+```tsx
+import { Checkbox } from "@vespeneventures/ui/atoms";
+
+function SelectAllRows({ isAllSelected, isSomeSelected, onToggle }: {
+  isAllSelected: boolean;
+  isSomeSelected: boolean;
+  onToggle: (isSelected: boolean) => void;
+}) {
+  return (
+    <Checkbox isSelected={isAllSelected} isIndeterminate={isSomeSelected} onChange={onToggle}>
+      Select all
+    </Checkbox>
+  );
+}
+```
+
+`isIndeterminate` is presentational only — react-aria-components' own
+contract, not this component's addition: it doesn't change `isSelected`, so
+a select-all checkbox like the one above is still responsible for setting
+both from its own row-selection state. This is the state a `DataTable`
+select-all checkbox needs and the reason `Checkbox` was prioritized for this
+expansion.
+
+### `Switch`
+
+```tsx
+import { Switch } from "@vespeneventures/ui/atoms";
+
+function EmailNotificationsToggle() {
+  return <Switch onChange={(isOn) => save(isOn)}>Email notifications</Switch>;
+}
+```
+
+Semantically distinct from `Checkbox` even though both toggle a boolean: a
+switch takes effect immediately (turning a setting on/off), while a
+checkbox marks a pending selection that typically waits for a separate
+submit/save action. `role="switch"` (not `role="checkbox"`) is what
+communicates that to assistive tech, which is why this is its own component
+rather than `Checkbox` with different styling.
+
+### `Select`
+
+```tsx
+import { Select } from "@vespeneventures/ui/atoms";
+
+function FavoriteFruitField() {
+  return (
+    <Select
+      label="Favorite fruit"
+      description="Used for the weekly snack order."
+      placeholder="Pick one"
+      options={[
+        { id: "apple", label: "Apple" },
+        { id: "banana", label: "Banana" },
+        { id: "cherry", label: "Cherry", isDisabled: true },
+      ]}
+      onChange={(id) => setFavoriteFruit(id)}
+    />
+  );
+}
+```
+
+A labeled dropdown of mutually-exclusive options — the same label/
+description/error surface as `TextField`, for a closed, single-choice set
+instead of free text. `options` is a plain array (`{ id, label, isDisabled?,
+textValue? }`) rather than JSX children: a select's option set is close to
+always already data, rather than something a consumer hand-writes as
+markup. Built on react-aria-components' `Select` + `Button` (its OWN
+`Button`, not this package's atom — see "Atoms compose no other atom"
+below) + `Popover` + `ListBox`/`ListBoxItem`, which supply opening on click
+or ArrowUp/ArrowDown/Enter/Space, closing on Escape or an outside click,
+arrow-key navigation that skips disabled options, typeahead, and the
+`aria-expanded`/`aria-haspopup`/`role="listbox"` wiring a screen reader
+needs.
+
+### `Textarea`
+
+```tsx
+import { Textarea } from "@vespeneventures/ui/atoms";
+
+function DescriptionField() {
+  return (
+    <Textarea
+      label="Description"
+      description="Markdown supported."
+      rows={6}
+      placeholder="What is this prompt for?"
+    />
+  );
+}
+```
+
+`TextField`'s sibling for content that runs longer than one line — the same
+label/description/error surface, built the same way on
+react-aria-components' `TextField` + `Label` + `TextArea` + `FieldError`. A
+separate component from `TextField` rather than a `multiline` prop on it:
+the two render different DOM elements (`<textarea>` vs `<input>`) with
+different native behavior, a structural difference rather than a purely
+visual one (see the README's "variant rule").
+
+### `Avatar`
+
+```tsx
+import { Avatar } from "@vespeneventures/ui/atoms";
+
+function UserAvatar() {
+  return <Avatar src={user.imageUrl} alt={user.fullName} size="md" />;
+}
+```
+
+`size`: `"sm" | "md" | "lg"` (default `"md"`). Shows the image at `src`; if
+`src` is omitted, or the image fails to load, falls back to initials
+derived from `alt`. Not interactive and composes no other atom — plain
+markup, like `Badge`/`Card`.
+
+### `Spinner`
+
+```tsx
+import { Spinner } from "@vespeneventures/ui/atoms";
+
+function LoadingPrompts() {
+  return <Spinner label="Loading prompts" size="md" />;
+}
+```
+
+`size`: `"sm" | "md" | "lg"` (default `"md"`). Plain SVG using
+`currentColor`, so it inherits whatever text color is already in effect at
+its render site (correct by default inside a colored `Button`, with no
+`variant` prop of its own to keep in sync with the parent's). `label` is
+optional: provide it when the spinner is itself the only signal that
+something is loading — it then renders `role="status"` with that as its
+accessible name. Omit it when the spinner is purely decorative (e.g. next
+to a button's own "Saving…" text, which already announces the state) — it
+then renders `aria-hidden="true"` instead.
+
+### `Menu`
+
+```tsx
+import { Menu } from "@vespeneventures/ui/atoms";
+import { Button } from "@vespeneventures/ui/atoms";
+
+function RowActionsMenu() {
+  return (
+    <Menu trigger={<Button variant="ghost">Actions</Button>}>
+      <Menu.Item onAction={() => edit()}>Edit</Menu.Item>
+      <Menu.Item onAction={() => duplicate()}>Duplicate</Menu.Item>
+      <Menu.Separator />
+      <Menu.Item onAction={() => remove()} isDestructive>
+        Delete
+      </Menu.Item>
+    </Menu>
+  );
+}
+```
+
+A dropdown menu of actions, opened from a `trigger` slot. Built on
+react-aria-components' `MenuTrigger` + `Menu` + `MenuItem` + `Popover` — the
+most involved composition in this package, for the same reason it was
+built last: opening on click or ArrowUp/ArrowDown/Enter/Space, closing on
+Escape/an outside click/selecting an item, arrow-key navigation that skips
+disabled items entirely (never just visually dimmed), typeahead, and the
+`role="menu"`/`role="menuitem"`/`aria-expanded`/`aria-haspopup` wiring —
+none of it reimplemented here.
+
+`Menu.Item` takes an `isDestructive` prop for actions like "Delete" —
+danger-colored styling, purely visual, doesn't change keyboard/selection
+behavior. `Menu.Separator` is a visual divider between item groups.
+
+There is deliberately no `aria-label` prop on `Menu` itself:
+react-aria-components' `MenuTrigger` always wires the menu's
+`aria-labelledby` to the trigger element, and per the ARIA accessible-name
+computation, `aria-labelledby` on an element always wins over an
+`aria-label` on that same element — a hypothetical `aria-label` prop here
+would render into the DOM but never actually be announced. Give the
+TRIGGER its own accessible name instead (visible text, or `aria-label` for
+an icon-only trigger) and the menu inherits it automatically through that
+same link:
+
+```tsx
+<Menu trigger={<Button aria-label="More actions">⋯</Button>}>
+  <Menu.Item onAction={() => edit()}>Edit</Menu.Item>
+</Menu>
+```
+
+`Menu` composes no other atom of its own, even though its `trigger` slot is
+commonly filled with this package's own `Button` atom by a consumer (as
+above): that's the consumer's own composition, in their code, the same way
+a `Button` can be passed into `PageHeader`'s `actions` slot without
+`PageHeader` importing `Button` itself.
+
+`Menu` ships as an atom, not a block, despite composing a trigger and a
+list of items: unlike `PageHeader`'s simultaneously-visible title/
+description/actions regions, `Menu`'s trigger and its item list are never
+both "on" at once — closed shows only the trigger, open shows only the
+popover — the same single-control-with-two-states shape as `Select` (also
+an atom here), not a layout of multiple simultaneous named regions.
+
 ## Blocks
 
 A block owns the internal layout of multiple named regions — regions that
@@ -386,6 +624,28 @@ empty because there's genuinely nothing to do has nowhere to send you).
 | `Breadcrumb` | component | Breadcrumb trail built on react-aria-components' `Breadcrumbs`/`Breadcrumb`/`Link`. Carries `Breadcrumb.Item`. An atom: its items are a homogeneous repeat, not distinct named regions. |
 | `BreadcrumbProps` | type | Props for `Breadcrumb`: `children`, `className`, `aria-label`, plus react-aria-components' own `Breadcrumbs` props. |
 | `BreadcrumbItemProps` | type | Props for `Breadcrumb.Item`: `href`, `children`, `className`. |
+| `Link` | component | Navigable link built on react-aria-components' `Link`. |
+| `LinkProps` | type | Props for `Link`: `variant`, plus everything react-aria-components' own `Link` accepts (including `render`, for a custom/router link element). |
+| `LinkVariant` | type | `"default" \| "muted" \| "standalone"`. |
+| `Checkbox` | component | Checkbox with indeterminate support, built on react-aria-components' `Checkbox`. |
+| `CheckboxProps` | type | Props for `Checkbox`: `children` (the visible label), plus everything react-aria-components' own `Checkbox` accepts (including `isIndeterminate`). |
+| `Switch` | component | On/off toggle built on react-aria-components' `Switch`. |
+| `SwitchProps` | type | Props for `Switch`: `children` (the visible label), plus everything react-aria-components' own `Switch` accepts. |
+| `Select` | component | Labeled single-choice dropdown built on react-aria-components' `Select`/`Button`/`Popover`/`ListBox`/`ListBoxItem`. |
+| `SelectProps` | type | Props for `Select`: `label`, `description`, `errorMessage`, `placeholder`, `options`, `className`, `triggerClassName`, plus everything react-aria-components' own `Select` accepts. |
+| `SelectOption` | type | One option: `id`, `label`, `isDisabled?`, `textValue?`. |
+| `Textarea` | component | Labeled multi-line text input built on react-aria-components' `TextField` + `Label` + `TextArea` + `FieldError`. |
+| `TextareaProps` | type | Props for `Textarea`: `label`, `description`, `errorMessage`, `placeholder`, `rows`, `className`, `textareaClassName`, plus everything react-aria-components' own `TextField` accepts. |
+| `Avatar` | component | Person/thing picture with an initials fallback. Plain markup — not interactive, composes no other atom. |
+| `AvatarProps` | type | Props for `Avatar`: `alt`, `src`, `size`, plus every native `<span>` attribute except `children`. |
+| `AvatarSize` | type | `"sm" \| "md" \| "lg"`. |
+| `Spinner` | component | Indeterminate loading indicator. Plain SVG — not interactive, composes no other atom. |
+| `SpinnerProps` | type | Props for `Spinner`: `size`, `label`, plus every native `<svg>` attribute except `className`/`children`. |
+| `SpinnerSize` | type | `"sm" \| "md" \| "lg"`. |
+| `Menu` | component | Dropdown menu built on react-aria-components' `MenuTrigger`/`Menu`/`MenuItem`/`Popover`. Carries `Menu.Item` and `Menu.Separator`. |
+| `MenuProps` | type | Props for `Menu`: `trigger`, `children`, `triggerAction`, `className`, `popoverClassName`, plus most of react-aria-components' own `MenuTrigger` props. |
+| `MenuItemProps` | type | Props for `Menu.Item`: `children`, `isDestructive`, `className`, plus everything react-aria-components' own `MenuItem` accepts. |
+| `MenuSeparatorProps` | type | Props for `Menu.Separator`: `className`. |
 | `PageHeader` | component | Page banner: breadcrumb slot, title, description, actions slot. |
 | `PageHeaderProps` | type | Props for `PageHeader`: `title`, `description`, `actions`, `breadcrumb`, plus every native `<header>` attribute. |
 | `EmptyState` | component | Zero-item placeholder: icon slot, title, description, action slot. |
@@ -395,7 +655,9 @@ empty because there's genuinely nothing to do has nowhere to send you).
 
 Beyond render/interaction/keyboard/ARIA tests per atom (`Button.test.tsx`,
 `TextField.test.tsx`, `Badge.test.tsx`, `Card.test.tsx`,
-`Breadcrumb.test.tsx`), per block (`PageHeader.test.tsx`,
+`Breadcrumb.test.tsx`, `Link.test.tsx`, `Checkbox.test.tsx`,
+`Switch.test.tsx`, `Select.test.tsx`, `Textarea.test.tsx`, `Avatar.test.tsx`,
+`Spinner.test.tsx`, `Menu.test.tsx`), per block (`PageHeader.test.tsx`,
 `EmptyState.test.tsx`), and the `tailwind-merge` regression tests described
 above (`internal/cx.test.ts`), two tests are worth calling out specifically:
 
@@ -418,10 +680,13 @@ above (`internal/cx.test.ts`), two tests are worth calling out specifically:
 
 ## What's deliberately not here
 
-**Atoms:** only `Button`, `TextField`, `Badge`, `Card`, `Breadcrumb` ship.
-No `Checkbox`, `Switch`, `Spinner`, `Separator`, or anything else that
-isn't one of these five — an atom is added here only once something real
-needs it, not speculatively.
+**Atoms:** thirteen ship — `Button`, `TextField`, `Badge`, `Card`,
+`Breadcrumb`, `Link`, `Checkbox`, `Switch`, `Select`, `Textarea`, `Avatar`,
+`Spinner`, `Menu`. No `Dialog`, `Tooltip`, `Tabs`, `Radio`, or a `Popover`
+exposed as a public atom of its own — those get added here only once
+something real needs them, not speculatively. (`Popover` is already used
+internally, inside `Select` and `Menu`; that's not the same as shipping it
+as a standalone public atom a consumer could reach for on its own.)
 
 **Blocks:** only `PageHeader`, `EmptyState` ship. `DataTable` and
 `DetailView` are a deliberate follow-up pass, not started here.
