@@ -52,6 +52,21 @@
 //   packages/*/package.json at run time — never hardcoded — so this class
 //   never needs to know a real internal name to catch one.
 //
+//   A same-scope name that ISN'T currently live has two very different
+//   explanations, and this class tells them apart by CONTEXT rather than by
+//   a hand-maintained list of "retired" names (the same reasoning CLASS 1
+//   uses real path resolution instead of a list of "known dangling docs",
+//   and CLASS 4's own import-specifier check already uses below): a name
+//   this repo genuinely once published — read from git history at run time,
+//   same self-maintaining discipline as the live list above — mentioned in
+//   ordinary prose (a CHANGELOG entry recording its own removal, a comment
+//   explaining what moved where) is a legitimate, permanent fact about this
+//   repo's own history, not a leak. The same name sitting in a LIVE
+//   INSTRUCTION — an `npm install`-shaped command, a manifest dependency
+//   entry — is still wrong regardless of whether the name is historical or
+//   entirely fabricated: either way, following that instruction fails
+//   today, which is the actual defect this class exists to catch.
+//
 // CLASS 5 — internal architecture layer/tier framing.
 //   "Layer 0 — the upstream truth", "Resource-tier", "generic-core only".
 //   Even with every proper noun scrubbed, this vocabulary describes the
@@ -74,6 +89,7 @@
 import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
 import { join, relative, extname, resolve, dirname, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import { execFileSync } from "node:child_process";
 
 const argv = process.argv.slice(2);
 const flags = new Set(argv.filter((a) => a.startsWith("--")));
@@ -194,6 +210,42 @@ function loadPublishedPackageNames() {
   return names;
 }
 const publishedNames = loadPublishedPackageNames();
+
+// The set of package names this repository has EVER published, including
+// ones since retired — read from git history, not hand-maintained. A name
+// that appears as some `packages/*/package.json`'s "name" field in ANY
+// commit reachable from HEAD was, at some point, a real thing this repo
+// shipped; a CHANGELOG entry recording ITS OWN removal is not a leak, it's
+// the whole point of a CHANGELOG (see docs/PUBLISHING.md and GH issue #27).
+// Deliberately not a hardcoded "retired" list: the moment a package is
+// deleted, git already knows it used to exist, so there is nothing for a
+// human to remember to update, and nothing to go stale. Whether a mention
+// of a name in this set is actually fine still depends on WHERE it appears
+// — see isInstallInstruction/isDependencyEntry below — a retired package is
+// exactly as uninstallable as one that never existed.
+function loadHistoricalPackageNames(ownRepoRoot) {
+  const names = new Set();
+  let log;
+  try {
+    log = execFileSync(
+      "git",
+      ["-C", ownRepoRoot, "log", "--all", "-p", "--", "packages/*/package.json"],
+      { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
+    );
+  } catch {
+    // No git binary, not a git checkout, or the command otherwise failed —
+    // degrade to "no historical names known" rather than crash. This is
+    // strictly conservative, not a fail-open: without history, a genuinely
+    // retired name just gets treated the same as a foreign one (flagged for
+    // a human to look at again), never the reverse of a foreign name being
+    // waved through as if it were historical.
+    return names;
+  }
+  const nameLineRe = /^[+-]\s*"name"\s*:\s*"([^"]+)"/gm;
+  for (const m of log.matchAll(nameLineRe)) names.add(m[1]);
+  return names;
+}
+const historicalNames = loadHistoricalPackageNames(resolve(dirname(fileURLToPath(import.meta.url)), ".."));
 
 // The scope this SCANNED package itself publishes under, e.g. `@thecalvinhung`
 // — read from the scanned directory's own package.json `name`, never
@@ -363,6 +415,25 @@ function isImportSpecifier(line, matchIndex) {
   return IMPORT_OPEN_RE.test(line.slice(0, matchIndex));
 }
 
+// A line that reads as a copy-pasteable package-manager install/add command.
+// Whether the named package is entirely fabricated or a real one this repo
+// retired, running this line fails today — that's the live instruction the
+// original README-install-command case (GH issue #27) needs to keep failing.
+const INSTALL_COMMAND_RE = /\b(?:npm|npx|pnpm|yarn|bun)\s+(?:install|i|add|dlx|create|exec)\b/i;
+function isInstallInstruction(line) {
+  return INSTALL_COMMAND_RE.test(line);
+}
+
+// A line shaped like a manifest dependency entry — `"@scope/name": "^1.2.3"`
+// — whether it's sitting in a real package.json (not in SCAN_EXT, so never
+// actually reached this way today) or copy-pasted into a README code fence
+// showing one. Same reasoning as an install command: this is an instruction
+// to depend on the name, not prose describing it.
+const DEPENDENCY_ENTRY_RE = /["']@[\w.-]+\/[\w.-]+["']\s*:\s*["'][^"']*["']/;
+function isDependencyEntry(line) {
+  return DEPENDENCY_ENTRY_RE.test(line);
+}
+
 function checkClass4(file, lines) {
   lines.forEach((text, i) => {
     if (ADOPTER_PHRASE_RE.test(text)) {
@@ -380,9 +451,19 @@ function checkClass4(file, lines) {
       if (isImportSpecifier(text, m.index)) continue; // a real dependency, not prose
       const base = `${segments[0]}/${segments[1]}`;
       if (publishedNames.has(base)) continue; // exact match to something this repo actually publishes
+      const liveInstruction = isInstallInstruction(text) || isDependencyEntry(text);
+      const everPublished = historicalNames.has(base);
+      // A name this repo genuinely once shipped, mentioned OUTSIDE a live
+      // instruction, is legitimate history — a CHANGELOG naming what it
+      // just removed, a comment explaining what moved where. Nothing to
+      // flag. Inside a live instruction it's flagged below regardless,
+      // same as a name that was never real.
+      if (everPublished && !liveInstruction) continue;
       const stale = staleOssName(base);
       if (stale) {
         report(4, "medium", file, i + 1, text, `names "${cleaned}" — stale reference to the pre-"-oss" name; the package now publishes as "${stale}" (see README)`);
+      } else if (liveInstruction && everPublished) {
+        report(4, "high", file, i + 1, text, `names "${cleaned}" as something to install or depend on — this repo retired that package; it is not installable today`);
       } else {
         report(4, "high", file, i + 1, text, `names "${cleaned}" — not one of the packages published from this repo`);
       }
