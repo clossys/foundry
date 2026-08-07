@@ -24,6 +24,7 @@ const TAILWIND_NAMESPACE_PREFIX: Record<string, string> = {
   line: "--color-line-",
   accent: "--color-accent-",
   status: "--color-status-",
+  chart: "--color-chart-",
   neutral: "--color-neutral-",
   overlay: "--color-overlay-",
   skeleton: "--color-skeleton-",

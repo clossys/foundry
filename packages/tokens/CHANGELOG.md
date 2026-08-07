@@ -3,6 +3,44 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.4.0] - Unreleased
+
+### Added
+
+- **Chart tokens** (`--color-chart-*`, 22 tokens, new `chart` family):
+  chrome (`-surface`, `-grid`, `-axis`, `-axis-label`), an 8-slot
+  **categorical** palette (real, validated hues — this package's one
+  deliberate exception to its own greyscale-by-default rule, since
+  categorical hue is data encoding, not brand expression), a 7-step
+  **sequential** ramp (one hue, light→dark, deliberately absolute across
+  themes like `--color-neutral-*`), and a 3-slot **diverging** pair (the
+  categorical blue/red slots as poles, aliased to `--color-line-base` for
+  the neutral midpoint — never a hue at the midpoint). The categorical
+  palette was validated with the dataviz method's `validate_palette.js`
+  against this package's own real chart surfaces (`--color-chart-surface`:
+  `#ffffff` light / `#242424` dark) for both modes — lightness band,
+  chroma floor, CVD separation (adjacent and first-three-slots all-pairs),
+  the normal-vision floor, and contrast vs. surface; full reports live in
+  the introducing PR. `src/contrast.test.ts` gained a `chart chrome &
+  categorical marks vs chart-surface` block extending the same real
+  OKLCH/hex → WCAG math to this family (`internal/color.ts` gained hex
+  support alongside its existing `oklch()` parsing).
+- `chart` added to the family lists `excluded-names.test.ts` and
+  `naming.test.ts` check — `chart` had been on the FORMER's exclusion list
+  since this package's creation, on the premise that chart colors would
+  ship from a separate charts package; that premise changed with this
+  release, so the exclusion changed with it (see that test's own comment).
+
+### Changed
+
+- **BREAKING for consumers on `@vespeneventures/ui` < `0.2.0`:** this
+  package now ships 150 tokens (was 128); the dark-block token count grew
+  from 35 to 44. A caret range on a `0.x` package is patch-only
+  (`^0.3.0` does NOT match `0.4.0`), so any consumer pinning
+  `@vespeneventures/tokens` at `^0.3.0` needs that range bumped to
+  `^0.4.0` in the same change that adopts these tokens — `@vespeneventures/ui`
+  made that bump (peer + dev range) in its own `0.2.0`.
+
 ## [0.3.0] - Unreleased
 
 ### Added

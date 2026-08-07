@@ -52,6 +52,11 @@ interface Theme {
   readonly dangerTint: string;
   readonly infoText: string;
   readonly infoTint: string;
+  readonly chartSurface: string;
+  readonly chartAxisLabel: string;
+  readonly chartAxis: string;
+  readonly chartGrid: string;
+  readonly categorical: readonly string[];
 }
 
 function themeFrom(map: Map<string, string>, name: string): Theme {
@@ -75,6 +80,17 @@ function themeFrom(map: Map<string, string>, name: string): Theme {
     dangerTint: value(map, "--color-status-danger-tint"),
     infoText: value(map, "--color-status-info-text"),
     infoTint: value(map, "--color-status-info-tint"),
+    // --color-chart-surface / -axis / -axis-label are all `var(--other, ...)`
+    // ALIASES in tokens.css (see its "CHART · CHROME" comment) with no
+    // literal value of their own — the same shape as --color-ink-on-accent
+    // above, resolved the same way: read the token the alias points AT
+    // directly, which is what a real cascade would compute.
+    chartSurface: value(map, "--color-surface-raised"),
+    chartAxisLabel: value(map, "--color-ink-muted"),
+    chartAxis: value(map, "--color-line-strong"),
+    // --color-chart-grid IS a literal (see tokens.css) — read directly.
+    chartGrid: value(map, "--color-chart-grid"),
+    categorical: [1, 2, 3, 4, 5, 6, 7, 8].map((n) => value(map, `--color-chart-categorical-${n}`)),
   };
 }
 
@@ -139,6 +155,65 @@ describe.each(THEMES)("contrast — $name theme", (theme) => {
     ])("%s-text / %s-tint", (_status, pair) => {
       const [text, tint] = pair();
       expect(contrastRatio(text, tint, theme.surfaceBase)).toBeGreaterThanOrEqual(AA);
+    });
+  });
+
+  /**
+   * Chart chrome and the categorical palette, checked against
+   * `--color-chart-surface` specifically (NOT `--color-surface-base`) —
+   * a chart plots on its own surface role, which resolves to
+   * `--color-surface-raised` in both themes (see tokens.css's "CHART ·
+   * CHROME" comment), not necessarily the page ground. This is the same
+   * OKLCH/hex -> WCAG math as every check above, extended to cover the
+   * hex-valued chart-color family (see `internal/color.ts`'s hex-parsing
+   * addition) rather than a second, parallel contrast method.
+   */
+  describe("chart chrome & categorical marks vs chart-surface", () => {
+    it("chart-axis-label (muted axis/tick text) on chart-surface: AA-large", () => {
+      expect(contrastRatio(theme.chartAxisLabel, theme.chartSurface)).toBeGreaterThanOrEqual(AA_LARGE);
+    });
+
+    it("chart-axis reads more present than chart-grid (the axis/baseline is not just another gridline)", () => {
+      const axisContrast = contrastRatio(theme.chartAxis, theme.chartSurface);
+      const gridContrast = contrastRatio(theme.chartGrid, theme.chartSurface);
+      expect(axisContrast).toBeGreaterThan(gridContrast);
+    });
+
+    it("chart-grid is visible but recessive against chart-surface (distinct from the surface, well under text-AA weight)", () => {
+      const gridContrast = contrastRatio(theme.chartGrid, theme.chartSurface);
+      expect(gridContrast).toBeGreaterThan(1.01);
+      expect(gridContrast).toBeLessThan(AA_LARGE);
+    });
+
+    /**
+     * Mirrors validate_palette.js's own "Contrast vs surface" check (see
+     * this token family's introducing PR for the full PASS/WARN report),
+     * run here as a permanent regression pin rather than a one-time
+     * paste: slots 3/4/5 (aqua/yellow/magenta) sit below the 3:1 mark-
+     * contrast floor on the LIGHT chart surface specifically — a known,
+     * accepted WARN under the palette method's "relief rule" (legal only
+     * because @vespeneventures/ui's chart layer ships mandatory direct
+     * labels/legend + a table-view fallback for every chart, never color
+     * alone). The dark palette's steps were chosen to clear 3:1 outright,
+     * so it has no WARN slots. If a future edit moves a slot in/out of
+     * this list without also re-running validate_palette.js, this test
+     * is what catches the drift.
+     */
+    const WARN_SLOTS_BY_THEME: Readonly<Record<string, readonly number[]>> = {
+      light: [3, 4, 5],
+      dark: [],
+    };
+    it("every categorical slot either clears the 3:1 mark-contrast floor, or is a documented WARN slot (relief = labels/table, never color alone)", () => {
+      const warnSlots = new Set(WARN_SLOTS_BY_THEME[theme.name] ?? []);
+      theme.categorical.forEach((hex, i) => {
+        const slot = i + 1;
+        const ratio = contrastRatio(hex, theme.chartSurface);
+        if (warnSlots.has(slot)) {
+          expect(ratio, `categorical-${slot} (${hex}) was expected to still sit in the documented WARN band`).toBeLessThan(AA_LARGE);
+        } else {
+          expect(ratio, `categorical-${slot} (${hex}) fell below the 3:1 mark-contrast floor and is not a documented WARN slot`).toBeGreaterThanOrEqual(AA_LARGE);
+        }
+      });
     });
   });
 });

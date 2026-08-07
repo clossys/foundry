@@ -263,6 +263,82 @@ html:not([data-brand-bound])::before {
   --color-skeleton-fill:          var(--color-surface-sunken, oklch(0.9401 0 0));
 
   /* ════════════════════════════════════════════════════════════════
+   * COLOR · CHART (22 · chart-specific color vocabulary — categorical,
+   * sequential, diverging, and chrome. See the README's "Chart colors"
+   * section for the full rationale; this header covers the naming only.
+   * ════════════════════════════════════════════════════════════════ */
+
+  /* ── CHART · CHROME (4) — plot surface, gridline, axis line, axis-
+   * label ink. Three of the four are ALIASES of an existing brandable
+   * role: chart chrome carries the same visual weight as ordinary UI
+   * chrome, so rebinding --color-surface-raised / --color-line-strong /
+   * --color-ink-muted in brand.css re-brands these automatically — the
+   * same reason --color-overlay-border above aliases --color-line-base
+   * instead of shipping its own value. Only --color-chart-grid is a
+   * literal: a gridline must sit one step lighter than the axis
+   * (--color-chart-axis, itself the same weight as --color-line-strong),
+   * and no existing token already names that exact recessive step. It
+   * is deliberately `brandable: false` in src/tokens.ts, the same call
+   * this file makes for --color-neutral-* above: a chart gridline stays
+   * a fixed, recessive neutral regardless of brand, not a brand slot. */
+  --color-chart-surface:            var(--color-surface-raised, oklch(1 0 0));
+  --color-chart-grid:               oklch(0.91 0 0);
+  --color-chart-axis:               var(--color-line-strong, oklch(0.7763 0 0));
+  --color-chart-axis-label:         var(--color-ink-muted, oklch(0.54 0 0));
+
+  /* ── CHART · CATEGORICAL (8) — THE ONE DELIBERATE EXCEPTION to this
+   * file's greyscale-by-default rule. Every other color token in this
+   * package ships a neutral default so brand binding is FORCED, never
+   * assumed — but a categorical hue is not brand expression, it is data
+   * encoding: a categorical chart rendered in greyscale is not
+   * "unbranded", it is unreadable, because series IDENTITY is carried
+   * by hue and nothing else. So these 8 slots ship real, validated hues
+   * from day one, and are `brandable: false` in src/tokens.ts on
+   * purpose — a brand is not expected to override them, the same way
+   * it is not expected to override --color-neutral-*. Fixed order,
+   * assigned in sequence, NEVER cycled: a 9th series folds into "Other"
+   * or facets into small multiples, it does not get a generated 9th
+   * hue. Validated with the dataviz skill's validate_palette.js against
+   * this package's own real chart surfaces (--color-chart-surface:
+   * #ffffff light / #242424 dark, i.e. --color-surface-raised in each
+   * theme) — full PASS/WARN reports live in this token family's
+   * introducing PR description, not restated here since a comment can't
+   * be re-run the way `npm run test` can. */
+  --color-chart-categorical-1:      #2a78d6;  /* blue */
+  --color-chart-categorical-2:      #eb6834;  /* orange */
+  --color-chart-categorical-3:      #1baf7a;  /* aqua */
+  --color-chart-categorical-4:      #eda100;  /* yellow */
+  --color-chart-categorical-5:      #e87ba4;  /* magenta */
+  --color-chart-categorical-6:      #008300;  /* green */
+  --color-chart-categorical-7:      #4a3aa7;  /* violet */
+  --color-chart-categorical-8:      #e34948;  /* red */
+
+  /* ── CHART · SEQUENTIAL (7) — a single hue (the same blue as
+   * categorical slot 1) stepped light->dark for magnitude. STAYS
+   * ABSOLUTE across themes — the same deliberate call --color-neutral-*
+   * makes above, for the same reason: "step 100" means the same
+   * lightest-blue swatch regardless of theme, a position in a fixed
+   * range rather than a surface-relative UI role that should invert. */
+  --color-chart-sequential-100:     #cde2fb;
+  --color-chart-sequential-200:     #9ec5f4;
+  --color-chart-sequential-300:     #6da7ec;
+  --color-chart-sequential-400:     #3987e5;
+  --color-chart-sequential-500:     #256abf;
+  --color-chart-sequential-600:     #184f95;
+  --color-chart-sequential-700:     #0d366b;
+
+  /* ── CHART · DIVERGING (3) — two poles that read as opposite (this
+   * package's own categorical blue and red slots, ALIASED so they can
+   * never drift from the validated categorical values) plus a NEUTRAL
+   * GRAY midpoint — never a hue at the midpoint, so "the middle" always
+   * reads as "nothing" rather than a third color competing with the
+   * two poles. The midpoint aliases --color-line-base: achromatic
+   * (oklch chroma 0), so it can never accidentally pick up a hue. */
+  --color-chart-diverging-negative: var(--color-chart-categorical-8, #e34948);
+  --color-chart-diverging-positive: var(--color-chart-categorical-1, #2a78d6);
+  --color-chart-diverging-neutral:  var(--color-line-base, oklch(0.8761 0 0));
+
+  /* ════════════════════════════════════════════════════════════════
    * TEXT (13 · fixed font-size ramp — pair with your own line-height
    * or Tailwind's `leading-*` scale; this package doesn't bundle one,
    * see the README)
@@ -489,6 +565,25 @@ html:not([data-brand-bound])::before {
      * nothing at all on a dark one — this needed its own dark value, not
      * a var() that would inherit one automatically. */
     --ui-elevation-floating:        0 8px 24px rgba(0, 0, 0, 0.6);
+
+    /* ── COLOR · CHART — only the two literal members. --color-chart-
+     * surface/-axis/-axis-label and the whole DIVERGING group are
+     * ALIASES (inherit their dark appearance through the token they
+     * point to); the SEQUENTIAL ramp is deliberately absolute, the same
+     * as --color-neutral-*. Only --color-chart-grid and the 8
+     * CATEGORICAL slots are literal values that actually change here —
+     * the categorical dark steps are their OWN selected set (validated
+     * separately against this package's dark chart surface #242424),
+     * never an automatic flip of the light hexes above. */
+    --color-chart-grid:             oklch(0.32 0 0);
+    --color-chart-categorical-1:    #3987e5;
+    --color-chart-categorical-2:    #d95926;
+    --color-chart-categorical-3:    #199e70;
+    --color-chart-categorical-4:    #c98500;
+    --color-chart-categorical-5:    #d55181;
+    --color-chart-categorical-6:    #008300;
+    --color-chart-categorical-7:    #9085e9;
+    --color-chart-categorical-8:    #e66767;
   }
 }
 
@@ -553,4 +648,16 @@ html:not([data-brand-bound])::before {
 
   /* ── UI · ELEVATION (only the member with a literal color) ───────── */
   --ui-elevation-floating:        0 8px 24px rgba(0, 0, 0, 0.6);
+
+  /* ── COLOR · CHART (only the two literal members — see the media-
+   * query dark block above for the full explanation) ──────────────── */
+  --color-chart-grid:             oklch(0.32 0 0);
+  --color-chart-categorical-1:    #3987e5;
+  --color-chart-categorical-2:    #d95926;
+  --color-chart-categorical-3:    #199e70;
+  --color-chart-categorical-4:    #c98500;
+  --color-chart-categorical-5:    #d55181;
+  --color-chart-categorical-6:    #008300;
+  --color-chart-categorical-7:    #9085e9;
+  --color-chart-categorical-8:    #e66767;
 }

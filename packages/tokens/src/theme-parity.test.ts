@@ -21,9 +21,9 @@ const tokensDarkExplicit = parseDeclarationsForSelector(tokensCss, DARK_EXPLICIT
  * The other half of the dark-mode contract (see `src/dark-mode-cascade.test.ts`
  * for the cascade/specificity half): `src/tokens.ts`'s `themeDependent` flag
  * and `styles/tokens.css`'s two dark blocks are two independently-maintained
- * descriptions of the same 35-token split, exactly the way `src/tokens.ts`
+ * descriptions of the same 44-token split, exactly the way `src/tokens.ts`
  * and the light `:root` block are two independent descriptions of the same
- * 128 tokens (see `parity.test.ts`). Nothing generates one from the other,
+ * 150 tokens (see `parity.test.ts`). Nothing generates one from the other,
  * so this is what actually keeps them in sync, checked in both directions:
  * every `themeDependent: true` token has a value in BOTH dark blocks, and
  * no `themeDependent: false` token appears in EITHER — an invariant token
@@ -69,10 +69,10 @@ describe("tokens.css dark blocks <-> src/tokens.ts `themeDependent` parity", () 
     expect(wronglyInExplicit).toEqual([]);
   });
 
-  it("the dark blocks declare exactly the 35 tokens this package's design marks theme-dependent", () => {
-    expect(tokensDarkMedia.size).toBe(35);
-    expect(tokensDarkExplicit.size).toBe(35);
-    expect(Object.values(TOKENS).filter((def) => def.themeDependent).length).toBe(35);
+  it("the dark blocks declare exactly the 44 tokens this package's design marks theme-dependent", () => {
+    expect(tokensDarkMedia.size).toBe(44);
+    expect(tokensDarkExplicit.size).toBe(44);
+    expect(Object.values(TOKENS).filter((def) => def.themeDependent).length).toBe(44);
   });
 });
 

@@ -8,11 +8,15 @@ shipped — is:
 ```
 tokens → atoms → blocks → views     (content: transient, many, fills slots)
                     ↘      shell    (frame: persistent, one, provides slots)
+                    ↘      charts   (a distinct domain, not layout: marks + scales)
 ```
 
-`atoms`, `blocks`, `views`, and `shell` all ship today. See "Placement
-rules" below for what distinguishes all four rungs and how a new component
-gets assigned to one.
+`atoms`, `blocks`, `views`, `shell`, and `charts` all ship today. See
+"Placement rules" below for what distinguishes the four ladder rungs and
+how a new component gets assigned to one; see "Charts" below for why that
+layer is a sibling of `shell`/`views` rather than a fifth rung — the same
+"frame vs. content" question doesn't apply to it at all, because a chart is
+neither.
 
 - **`atoms`** — single-purpose: composes no other atom, or its parts are
   homogeneous repeats rather than named regions. Thirty ship, the complete
@@ -42,15 +46,21 @@ gets assigned to one.
   slots (`Header`, `SideNav`, `Main`, `Rail`, `Footer`); `Toaster` — a
   runtime service, not itself a rung of this ladder — ships alongside it.
   See "Shell" below.
+- **`charts`** — dependency-free SVG chart primitives: `ChartFrame` (the
+  shared plot/axes/grid/legend/table container), `BarChart`, `LineChart`,
+  and `Sparkline`. A sibling of `shell`, not a sixth rung of the ladder —
+  see "Charts" below.
 
 A rung may only import DOWN the ladder — a block may import an atom, a view
 may import an atom or a block, never the reverse. `shell` is a peer of
 `views` (both build on `atoms`/`blocks`; neither imports the other) rather
-than another rung above it — see "Views" below. `src/ladder.test.ts`
-enforces every one of these directions structurally, not just by
-convention: it scans every file under `src/atoms/`, `src/blocks/`,
-`src/views/`, and `src/shell/` for an import referencing a layer it isn't
-allowed to reach, and fails the build if it finds one.
+than another rung above it — see "Views" below. `charts` is a second,
+narrower sibling: it may import `atoms`, and nothing else in this package
+imports from it. `src/ladder.test.ts` enforces every one of these
+directions structurally, not just by convention: it scans every file under
+`src/atoms/`, `src/blocks/`, `src/views/`, `src/shell/`, and `src/charts/`
+for an import referencing a layer it isn't allowed to reach, and fails the
+build if it finds one.
 
 ```bash
 npm install @vespeneventures/ui \
@@ -2215,6 +2225,153 @@ app/
       page.tsx
 ```
 
+## Charts
+
+Dependency-free SVG chart primitives — no charting library is a dependency
+of this package. Every mark is hand-drawn SVG, positioned by this package's
+own small internal scale helpers, reading color exclusively through
+`@vespeneventures/tokens`' chart-color family (`--color-chart-*`, added in
+that package's `0.4.0`) so every chart follows the active theme the same
+way every other token-driven surface in this package does.
+
+`charts` is a **sibling** of `shell`, not a rung of the `atoms → blocks →
+views` ladder — the same reasoning "Shell" above gives for why `shell`
+sits beside `views` rather than above it applies here too, one layer
+further: a chart is neither persistent frame nor route content, it's a
+different domain of primitive entirely (marks, scales, a plot coordinate
+space) built directly on `atoms`. `charts` may import from `atoms` (its
+`cx` class-merge helper); nothing in `atoms`, `blocks`, `views`, or `shell`
+imports from `charts` — see `src/ladder.test.ts`.
+
+**Non-negotiables every component here follows:**
+
+- **One axis, always.** No component in this layer accepts a second
+  y-scale. Two measures of different magnitude are two charts, never one
+  chart with a second axis.
+- **Color follows the entity, never its rank.** Every series gets a color
+  from `@vespeneventures/tokens`' fixed-order categorical palette, an
+  explicit `color` per series always winning outright. By default a
+  series' color is its position in the `series` array — which, on its
+  own, is exactly the anti-pattern this rule warns about the moment a
+  consumer filters `series` down to a subset, since removing an entry
+  shifts everyone after it. Pass the stable, full `colorDomain` prop
+  (`BarChart`/`LineChart` both accept it — the complete set of possible
+  series names, known before any filtering) and each name's position in
+  THAT list picks its slot instead, so filtering never repaints a
+  survivor.
+- **A legend appears for two or more series, never for one** (the title
+  already names a single series) — `ChartFrame` enforces this itself, so
+  no chart in this layer can accidentally ship a one-swatch legend box.
+- **A table-view fallback ships with every chart**, `Sparkline` included —
+  a `<details><summary>View as table</summary>` holding the same data as
+  an ordinary HTML `<table>`, always reachable, never gated behind a
+  screen reader or a hover.
+- **A hover layer ships on every chart except `Sparkline`** — a crosshair
+  + shared tooltip readout on `LineChart`, a per-mark tooltip on
+  `BarChart` — with the same detail reachable on keyboard focus as on
+  pointer hover.
+
+### `ChartFrame`
+
+The shared container `BarChart` and `LineChart` both compose: plot area,
+axes, grid, an optional legend, an accessible SVG `<title>`/`<desc>`, and
+the table-view fallback. Only reached for directly when composing a new
+chart type this package doesn't ship; `BarChart`/`LineChart`/`Sparkline`
+below are the components most consumers actually render.
+
+```tsx
+import { ChartFrame } from "@vespeneventures/ui/charts";
+
+<ChartFrame
+  title="Monthly signups"
+  table={{ headers: ["Month", "Signups"], rows: [["Jan", 12], ["Feb", 18]] }}
+>
+  {(plot) => (
+    // marks, positioned against `plot.x` / `plot.y` / `plot.width` / `plot.height`
+    <rect x={plot.x} y={plot.y} width={20} height={plot.height} fill="var(--color-chart-categorical-1)" />
+  )}
+</ChartFrame>
+```
+
+### `BarChart`
+
+Categorical magnitude — one bar per category, grouped by series when
+there's more than one:
+
+```tsx
+import { BarChart } from "@vespeneventures/ui/charts";
+
+<BarChart
+  title="Revenue vs. cost"
+  categories={["Jan", "Feb", "Mar"]}
+  series={[
+    { name: "Revenue", values: [120, 150, 170] },
+    { name: "Cost", values: [80, 90, 95] },
+  ]}
+/>
+```
+
+Bars are capped at 24px thick with a 2px surface-color gap between
+adjacent bars/segments, a 4px rounded data-end and a square baseline —
+never a border drawn around a bar to separate it. Each bar carries a
+native SVG `<title>` (a real hover tooltip) and is independently
+keyboard-focusable with an equivalent `aria-label`. 2–4 series additionally
+get a direct value label at the last category's cluster; more than 4
+series relies on the legend + per-bar tooltip + table instead, so the
+chart doesn't turn into a number on every point.
+
+### `LineChart`
+
+Change over time — one line per series, sharing one x scale and one y
+scale:
+
+```tsx
+import { LineChart } from "@vespeneventures/ui/charts";
+
+<LineChart
+  title="Daily active users"
+  x={[new Date("2026-01-01"), new Date("2026-01-02"), new Date("2026-01-03")]}
+  series={[{ name: "DAU", values: [1200, 1350, 1290] }]}
+/>
+```
+
+`x` accepts either `Date`s (a real time scale) or plain numbers (a linear
+index scale) — `LineChart` picks the right one from the first entry. Lines
+are drawn 2px with round joins/caps; the current end of each line carries
+an 8px marker with a 2px surface-color ring so it stays legible crossing
+another line. Moving the pointer over the plot (or moving keyboard focus
+onto it and pressing the arrow keys) shows a crosshair at the nearest x
+position plus a readout listing every series' value there — the pointer
+never has to land exactly on a line to read it.
+
+### `Sparkline`
+
+A bare inline trend — no axes, no grid, no legend, and (the one exception
+in this layer) no hover layer, meant to sit inline in running text or a
+stat tile at a size too small for a crosshair to make sense:
+
+```tsx
+import { Sparkline } from "@vespeneventures/ui/charts";
+
+<Sparkline title="7-day signups trend" values={[12, 18, 15, 22, 19, 25, 21]} />
+```
+
+Still ships its table-view fallback — that requirement has no exception —
+collapsed behind the same `<details>` pattern `ChartFrame` uses, so it
+costs no layout space until opened.
+
+### The categorical palette, and what happens past 8 series
+
+Every series gets its color from `@vespeneventures/tokens`' fixed-order
+categorical palette (8 slots, validated for color-vision-deficiency
+separation — see that package's README), assigned by the series' position
+in the array, never generated or cycled. Passing more than 8 series to
+`BarChart` or `LineChart` drops everything past the 8th and logs a
+`console.warn` naming the cut — per the dataviz method this palette was
+built against, a 9th series does not get a generated color; fold the tail
+into an "Other" series, or facet into separate charts, before reaching
+this layer.
+
 ## API
 
 | Export | Kind | Description |
@@ -2358,6 +2515,21 @@ app/
 | `ToastOptions` | type | Options for `toast(...)`: `description`, `timeout` (ms, or `null` to disable auto-dismiss), `onClose`. |
 | `ToastRecord` | type | The queued shape of one toast: `title`, `description?`, `variant`. |
 | `ToastVariant` | type | `"success" \| "danger" \| "info" \| "warning"`. |
+| `ChartFrame` | component | The shared plot/axes/grid/legend/table container `BarChart` and `LineChart` compose. |
+| `ChartFrameProps` | type | Props for `ChartFrame`: `title`, `description`, `width`, `height`, `margin`, `xTicks`, `yTicks`, `legend`, `table` (required), `className`, `style`, `children` (render prop receiving the resolved `PlotArea`). |
+| `ChartMargin` | type | `{ top, right, bottom, left }`, all `number`. |
+| `ChartAxisTick` | type | `{ position, label }` — a pre-scaled pixel position plus its label. |
+| `ChartLegendItem` | type | `{ label, color }`. |
+| `ChartTableSpec` | type | `{ headers, rows }` — the table-view fallback's data. |
+| `PlotArea` | type | `{ x, y, width, height }` — the plot rectangle passed to `ChartFrame`'s `children` render prop. |
+| `BarChart` | component | Categorical magnitude: one bar per category, grouped by series. |
+| `BarChartProps` | type | Props for `BarChart`: `categories`, `series`, `colorDomain`, `title`, `description`, `width`, `height`, `valueFormat`, `className`, `style`. |
+| `BarChartSeries` | type | `{ name, values, color? }`. |
+| `LineChart` | component | Change over time: one line per series, one shared x/y scale, a crosshair + tooltip hover layer. |
+| `LineChartProps` | type | Props for `LineChart`: `x`, `series`, `colorDomain`, `title`, `description`, `width`, `height`, `valueFormat`, `xFormat`, `className`, `style`. |
+| `LineChartSeries` | type | `{ name, values, color? }`. |
+| `Sparkline` | component | A bare inline trend — no axes/grid/legend/hover, still ships a table-view fallback. |
+| `SparklineProps` | type | Props for `Sparkline`: `values`, `title`, `width`, `height`, `color`, `valueFormat`, `className`, `style`. |
 
 ## Tests
 
@@ -2376,9 +2548,13 @@ Beyond render/interaction/keyboard/ARIA tests per atom (`Button.test.tsx`,
 `Form.test.tsx`, `FieldGroup.test.tsx`, `ConfirmDialog.test.tsx`,
 `Toolbar.test.tsx`, `NavGrid.test.tsx`, `SectionHeader.test.tsx`), per view
 (`ErrorView.test.tsx`, `AuthView.test.tsx`), per shell component
-(`Shell.test.tsx`, `Toaster.test.tsx`), and the `tailwind-merge` regression
-tests described above (`internal/cx.test.ts`), two tests are worth calling
-out specifically:
+(`Shell.test.tsx`, `Toaster.test.tsx`), per chart component
+(`ChartFrame.test.tsx`, `BarChart.test.tsx`, `LineChart.test.tsx`,
+`Sparkline.test.tsx`, plus `internal/scale.test.ts` and
+`internal/chart-vars.test.ts` for the scale-boundary and
+categorical-color-assignment math underneath them), and the
+`tailwind-merge` regression tests described above (`internal/cx.test.ts`),
+two tests are worth calling out specifically:
 
 - **`token-parity.test.ts`** scans every atom's, block's, AND shell
   component's source (everything under `src/`) for candidate Tailwind
@@ -2409,25 +2585,28 @@ out specifically:
   approach let this package undo, and how the previous, allow-list-based
   version of this check forced them in the first place.
 - **`ladder.test.ts`** scans every file under `src/atoms/`, `src/blocks/`,
-  `src/views/`, and `src/shell/` for import specifiers that climb UP the
-  ladder, and fails the build if it finds one — the ladder invariant
-  (`atoms` → `blocks` → `views`, with `shell` as the frame `views` fill,
-  down only) enforced structurally rather than left as a comment that can
-  silently drift. It checks every forbidden direction: an atom importing
-  `blocks/`, `views/`, or `shell/`; a block importing `views/` or `shell/`;
-  `shell` importing `views/`; and `views` importing `shell/` — the mirror
-  image of that last one, making `views` and `shell` mutually exclusive
-  peers that both build on `atoms`/`blocks` without depending on each
-  other. It also runs the same scan for the PERMITTED directions (`blocks`
-  importing `atoms`; `views` importing `atoms`; `views` importing `blocks`;
-  `shell` importing `atoms`) as a sanity check — proving the scan inspects
-  real code rather than passing on zero coverage, without asserting those
-  lists are empty, since importing atoms (and, for `views`, blocks too) is
-  correct and expected in every one of those places. Verified by hand, not
-  just by the sanity checks: a temporary import from `views/` into
-  `blocks/index.ts` was added, confirmed to fail the corresponding
-  enforcement test, then reverted — proof the check fails closed rather
-  than passing vacuously.
+  `src/views/`, `src/shell/`, and `src/charts/` for import specifiers that
+  climb UP the ladder (or, for `charts`, out of its narrow sibling lane),
+  and fails the build if it finds one — the ladder invariant (`atoms` →
+  `blocks` → `views`, with `shell` as the frame `views` fill and `charts`
+  as a second, narrower sibling, down only) enforced structurally rather
+  than left as a comment that can silently drift. It checks every
+  forbidden direction: an atom importing `blocks/`, `views/`, `shell/`, or
+  `charts/`; a block importing `views/`, `shell/`, or `charts/`; `shell`
+  importing `views/` or `charts/`; `views` importing `shell/` or `charts/`
+  — the last two making `views` and `shell` mutually exclusive peers that
+  both build on `atoms`/`blocks` without depending on each other; and
+  `charts` importing `blocks/`, `views/`, or `shell/`. It also runs the
+  same scan for the PERMITTED directions (`blocks` importing `atoms`;
+  `views` importing `atoms`; `views` importing `blocks`; `shell` importing
+  `atoms`; `charts` importing `atoms`) as a sanity check — proving the
+  scan inspects real code rather than passing on zero coverage, without
+  asserting those lists are empty, since importing atoms (and, for
+  `views`, blocks too) is correct and expected in every one of those
+  places. Verified by hand, not just by the sanity checks: a temporary
+  import from `views/` into `blocks/index.ts` was added, confirmed to fail
+  the corresponding enforcement test, then reverted — proof the check
+  fails closed rather than passing vacuously.
 
 ## What's deliberately not here
 
@@ -2477,9 +2656,21 @@ examples in "Placement rules" above alongside the toast stack that DOES
 ship — added only once something real needs them, the same policy this
 README states for atoms and blocks.
 
+**Charts:** four ship — `ChartFrame`, `BarChart`, `LineChart`, `Sparkline`
+— no `PieChart`/`DonutChart` (part-to-whole reads reliably only up to
+about six segments and a bar communicates the same comparison more
+precisely at any count — see the dataviz reference's anti-patterns list),
+no `ScatterChart`/`Heatmap` (neither was asked for by this rung), and
+deliberately **no dual-axis option on `BarChart`/`LineChart`** — that
+omission is not a gap to fill later, it's the one hard rule this layer
+does not bend on. No charting library is a dependency, and the scale/color
+helpers under `charts/internal/` stay unexported — this ships four
+components, not a general-purpose numerical or color library (see
+`atoms/internal/cx.ts`/`ui-vars.ts` for the same precedent one layer down).
+
 ## Requirements
 
-Node 20+. React 18+. Tailwind CSS v4. `@vespeneventures/tokens` ^0.1.0.
+Node 20+. React 18+. Tailwind CSS v4. `@vespeneventures/tokens` ^0.4.0.
 
 ## Licence
 

@@ -15,13 +15,20 @@ const styleFiles = ["tokens.css", "theme.css", "brand-template.css"].map((name) 
  * This package deliberately excludes a set of token families that belong
  * to a specific product, not to a general-purpose token vocabulary: naming
  * a product's own wordmark, its trust/provenance/agent vocabulary, texture
- * (grain/noise), eyebrow labels, system banners, marketing page sections, a
- * button typography axis, and a whole chart-color family (which belongs in
- * a separate charts package). This test asserts none of those ever leak
+ * (grain/noise), eyebrow labels, system banners, marketing page sections,
+ * and a button typography axis. This test asserts none of those ever leak
  * back in as a hyphen-delimited segment of a real custom property name —
  * scoped to token NAMES specifically, not prose, since several of these
  * are ordinary English words (`section`, `button`) that legitimately
  * appear in documentation sentences.
+ *
+ * `chart` was on this list until this package grew a real chart-color
+ * family (`--color-chart-*` — see styles/tokens.css's "COLOR · CHART"
+ * section): the original cut was "charts belong in a separate charts
+ * package"; that decision changed, so the exclusion had to change with
+ * it. Removing an entry here is a deliberate, reviewed exception, not a
+ * loophole — see this package's CHANGELOG.md for the entry that added
+ * the chart-color family back.
  */
 const EXCLUDED_SEGMENTS = [
   "wordmark",
@@ -34,7 +41,6 @@ const EXCLUDED_SEGMENTS = [
   "banner",
   "section",
   "button",
-  "chart",
 ];
 
 function segmentsOf(customPropertyName: string): string[] {

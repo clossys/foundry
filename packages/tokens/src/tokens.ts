@@ -2,7 +2,7 @@
  * The token catalog: every custom property this package declares in
  * `styles/tokens.css`, as data. This file is the JS/TS half of the package;
  * `styles/tokens.css` is the CSS half. Both are hand-authored and both are
- * meant to describe the exact same 128 tokens — a test in this package
+ * meant to describe the exact same 150 tokens — a test in this package
  * (`parity.test.ts`) parses `styles/tokens.css` and asserts its custom
  * property names and values match this file entry-for-entry, in both
  * directions. That test is what keeps this file honest; nothing generates
@@ -35,7 +35,7 @@
  */
 
 /**
- * The 24 semantic groups the 128 tokens fall into. Each maps to exactly one
+ * The 25 semantic groups the 150 tokens fall into. Each maps to exactly one
  * CSS custom property prefix — see `FAMILY_PREFIX` in `parity.test.ts` (and
  * the README's naming table) for the concrete mapping.
  */
@@ -45,6 +45,7 @@ export type TokenFamily =
   | "line"
   | "accent"
   | "status"
+  | "chart"
   | "neutral"
   | "overlay"
   | "skeleton"
@@ -69,7 +70,7 @@ export type TokenFamily =
 export interface TokenDefinition {
   /** The full CSS custom property name, including the leading `--`. */
   readonly property: string;
-  /** Which of the 24 semantic groups this token belongs to. */
+  /** Which of the 25 semantic groups this token belongs to. */
   readonly family: TokenFamily;
   /** The value declared for this property in `styles/tokens.css`'s `:root` block. */
   readonly value: string;
@@ -102,7 +103,7 @@ export interface TokenDefinition {
 }
 
 /**
- * All 128 tokens, keyed by their CSS custom property name. A `Record` rather
+ * All 150 tokens, keyed by their CSS custom property name. A `Record` rather
  * than an array because the natural question from JS — "what is
  * `--color-surface-raised` set to?" — is a lookup, not a scan.
  */
@@ -150,6 +151,45 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--color-status-info": { property: "--color-status-info", family: "status", value: "oklch(0.5658 0 0)", brandable: true, themeDependent: true },
   "--color-status-info-text": { property: "--color-status-info-text", family: "status", value: "oklch(0.52 0 0)", brandable: true, themeDependent: true },
   "--color-status-info-tint": { property: "--color-status-info-tint", family: "status", value: "oklch(0.5658 0 0 / 0.08)", brandable: true, themeDependent: true },
+
+  // ── COLOR · CHART · CHROME (aliases inherit brand automatically; only
+  //    --color-chart-grid is a literal, and it is deliberately fixed —
+  //    not brandable, the same call made for --color-neutral-* below) ──
+  "--color-chart-surface": { property: "--color-chart-surface", family: "chart", value: "var(--color-surface-raised, oklch(1 0 0))", brandable: false, themeDependent: false },
+  "--color-chart-grid": { property: "--color-chart-grid", family: "chart", value: "oklch(0.91 0 0)", brandable: false, themeDependent: true },
+  "--color-chart-axis": { property: "--color-chart-axis", family: "chart", value: "var(--color-line-strong, oklch(0.7763 0 0))", brandable: false, themeDependent: false },
+  "--color-chart-axis-label": { property: "--color-chart-axis-label", family: "chart", value: "var(--color-ink-muted, oklch(0.54 0 0))", brandable: false, themeDependent: false },
+
+  // ── COLOR · CHART · CATEGORICAL (8 · THE ONE DELIBERATE EXCEPTION to
+  //    this package's greyscale-by-default rule — real, validated hues,
+  //    not brandable, fixed order, never cycled; see styles/tokens.css's
+  //    header comment above these entries for the full rationale) ─────
+  "--color-chart-categorical-1": { property: "--color-chart-categorical-1", family: "chart", value: "#2a78d6", brandable: false, themeDependent: true },
+  "--color-chart-categorical-2": { property: "--color-chart-categorical-2", family: "chart", value: "#eb6834", brandable: false, themeDependent: true },
+  "--color-chart-categorical-3": { property: "--color-chart-categorical-3", family: "chart", value: "#1baf7a", brandable: false, themeDependent: true },
+  "--color-chart-categorical-4": { property: "--color-chart-categorical-4", family: "chart", value: "#eda100", brandable: false, themeDependent: true },
+  "--color-chart-categorical-5": { property: "--color-chart-categorical-5", family: "chart", value: "#e87ba4", brandable: false, themeDependent: true },
+  "--color-chart-categorical-6": { property: "--color-chart-categorical-6", family: "chart", value: "#008300", brandable: false, themeDependent: true },
+  "--color-chart-categorical-7": { property: "--color-chart-categorical-7", family: "chart", value: "#4a3aa7", brandable: false, themeDependent: true },
+  "--color-chart-categorical-8": { property: "--color-chart-categorical-8", family: "chart", value: "#e34948", brandable: false, themeDependent: true },
+
+  // ── COLOR · CHART · SEQUENTIAL (7 · one hue, light->dark; stays
+  //    absolute across themes, the same deliberate call --color-neutral-*
+  //    makes below) ──────────────────────────────────────────────────
+  "--color-chart-sequential-100": { property: "--color-chart-sequential-100", family: "chart", value: "#cde2fb", brandable: false, themeDependent: false },
+  "--color-chart-sequential-200": { property: "--color-chart-sequential-200", family: "chart", value: "#9ec5f4", brandable: false, themeDependent: false },
+  "--color-chart-sequential-300": { property: "--color-chart-sequential-300", family: "chart", value: "#6da7ec", brandable: false, themeDependent: false },
+  "--color-chart-sequential-400": { property: "--color-chart-sequential-400", family: "chart", value: "#3987e5", brandable: false, themeDependent: false },
+  "--color-chart-sequential-500": { property: "--color-chart-sequential-500", family: "chart", value: "#256abf", brandable: false, themeDependent: false },
+  "--color-chart-sequential-600": { property: "--color-chart-sequential-600", family: "chart", value: "#184f95", brandable: false, themeDependent: false },
+  "--color-chart-sequential-700": { property: "--color-chart-sequential-700", family: "chart", value: "#0d366b", brandable: false, themeDependent: false },
+
+  // ── COLOR · CHART · DIVERGING (3 · two poles aliased to the
+  //    categorical blue/red slots + a neutral gray midpoint aliased to
+  //    --color-line-base — never a hue at the midpoint) ──────────────
+  "--color-chart-diverging-negative": { property: "--color-chart-diverging-negative", family: "chart", value: "var(--color-chart-categorical-8, #e34948)", brandable: false, themeDependent: false },
+  "--color-chart-diverging-positive": { property: "--color-chart-diverging-positive", family: "chart", value: "var(--color-chart-categorical-1, #2a78d6)", brandable: false, themeDependent: false },
+  "--color-chart-diverging-neutral": { property: "--color-chart-diverging-neutral", family: "chart", value: "var(--color-line-base, oklch(0.8761 0 0))", brandable: false, themeDependent: false },
 
   // ── COLOR · NEUTRAL (fixed greyscale ramp — not brand-bound) ─────────
   "--color-neutral-50": { property: "--color-neutral-50", family: "neutral", value: "oklch(0.9702 0 0)", brandable: false, themeDependent: false },
@@ -284,13 +324,14 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--ui-alpha-disabled": { property: "--ui-alpha-disabled", family: "alpha", value: "0.5", brandable: false, themeDependent: false },
 };
 
-/** The 24 semantic families, in the order they appear in the README's reference table. */
+/** The 25 semantic families, in the order they appear in the README's reference table. */
 export const TOKEN_FAMILIES: readonly TokenFamily[] = [
   "surface",
   "ink",
   "line",
   "accent",
   "status",
+  "chart",
   "neutral",
   "overlay",
   "skeleton",
