@@ -651,6 +651,19 @@ try {
       `expected no self-scope finding, got ${JSON.stringify(clean.report?.findings)}`,
     );
 
+    // Coverage reporting (audit finding): the candidate-set size is reported
+    // unconditionally, not just implied by a pass/fail. This fixture has
+    // exactly one package under packages/*, so the count is pinned exactly —
+    // a regression that silently drops package-name coverage (e.g. a typo'd
+    // packagesDir) would still report SOME candidates (the bare scope) and
+    // pass every other check here without this explicit count.
+    check(
+      "self-scope coverage reports the exact candidate/package counts for this fixture (1 package under packages/*)",
+      clean.report?.selfScopeCoverage?.packageNamesFound === 1 &&
+        clean.report?.selfScopeCoverage?.scopeAndPackageCandidates === 4,
+      `expected packageNamesFound:1, scopeAndPackageCandidates:4, got ${JSON.stringify(clean.report?.selfScopeCoverage)}`,
+    );
+
     // The documented, at-add-time override: selfScopeJustification turns the
     // match into an ACKNOWLEDGED entry rather than a failing finding.
     // Pattern covers both the separated and compound form of its own literal
@@ -801,6 +814,58 @@ try {
       "does not flag terms whose why text never contains another term's value",
       clean.code === 0 && !(clean.report?.findings ?? []).some((f) => f.rule === "self-containment"),
       `expected no self-containment finding, got ${JSON.stringify(clean.report?.findings)}`,
+    );
+
+    // ---------------------------------------------- coverage exclusion (audit)
+    // Regression for the audit finding: a term whose pattern is a short
+    // opaque handle (a single literal chunk under the 6-char threshold) is
+    // excluded from the SOURCE side of the comparison on purpose — but that
+    // exclusion must be REPORTED, never silent. Reproduced here with
+    // invented values (never the real denylist): term #1 is the short
+    // handle, term #2's `why` embeds it verbatim — the exact leak shape
+    // issue #2 exists to catch, and the exact shape that must NOT read as
+    // "self-containment ran and found nothing."
+    const excludedLeak = runQuality({
+      version: "t",
+      terms: [
+        { pattern: "qz7mx", why: "synthetic short opaque handle, sub-threshold on purpose", severity: "critical" },
+        { pattern: "unrelatedfiller", why: "this description mentions the handle qz7mx by name, which it must not", severity: "high" },
+      ],
+    });
+    check(
+      "a sub-threshold term's value leaking into another term's why is NOT raised as a self-containment finding (the excluded case, not a false negative fix)",
+      !(excludedLeak.report?.findings ?? []).some((f) => f.rule === "self-containment"),
+      `expected no self-containment finding for the excluded source, got ${JSON.stringify(excludedLeak.report?.findings)}`,
+    );
+    check(
+      "...but that exclusion IS reported, by index and reason, so the miss is visible rather than silent",
+      (excludedLeak.report?.selfContainmentExcluded ?? []).some((e) => e.index === 0),
+      `expected selfContainmentExcluded to name index 0, got ${JSON.stringify(excludedLeak.report?.selfContainmentExcluded)}`,
+    );
+    check(
+      "the exclusion alone does not fail the run (would be noise on legitimate short terms)",
+      excludedLeak.code === 0,
+      `exit was ${excludedLeak.code}, expected 0 — an excluded term should not fail the run by itself`,
+    );
+
+    // The coverage line is unconditional: present even when nothing is
+    // excluded, so "zero excluded" and "the field was never computed" are
+    // also distinguishable.
+    check(
+      "selfContainmentExcluded is present (as an empty array) even when nothing is excluded",
+      Array.isArray(clean.report?.selfContainmentExcluded) && clean.report.selfContainmentExcluded.length === 0,
+      `expected an empty selfContainmentExcluded array, got ${JSON.stringify(clean.report?.selfContainmentExcluded)}`,
+    );
+
+    // self-scope coverage is reported unconditionally too (audited for the
+    // same shape): every query in this block used a scope fixture with no
+    // packages/ directory, so packageNamesFound must read 0 rather than
+    // being silently absent from the report.
+    check(
+      "self-scope coverage counts are reported even when zero packages were found under packages/*",
+      clean.report?.selfScopeCoverage?.packageNamesFound === 0 &&
+        typeof clean.report?.selfScopeCoverage?.scopeAndPackageCandidates === "number",
+      `expected selfScopeCoverage.packageNamesFound === 0, got ${JSON.stringify(clean.report?.selfScopeCoverage)}`,
     );
   }
 } finally {

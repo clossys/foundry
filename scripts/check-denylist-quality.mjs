@@ -357,19 +357,43 @@ denylist.terms.forEach((term, index) => {
 //    other check in this file.
 //
 //    A single short, generic literal chunk (e.g. a 3-letter fragment) is
-//    excluded — it would false-positive on ordinary English inside
-//    unrelated `why` text constantly, and training reviewers to ignore this
-//    finding is worse than the narrow gap it would close. A compound of two
-//    or more chunks, or one distinctive chunk of real length, is what an
-//    actual identity term reduces to.
+//    excluded from the SOURCE side — it would false-positive on ordinary
+//    English inside unrelated `why` text constantly, and training reviewers
+//    to ignore this finding is worse than the narrow gap it would close. A
+//    compound of two or more chunks, or one distinctive chunk of real
+//    length, is what an actual identity term reduces to.
+//
+//    THAT EXCLUSION MUST NEVER BE SILENT. A short opaque handle is not a
+//    rare edge case — it is one of the likeliest shapes for a thing that
+//    genuinely is a secret, and "excluded from comparison" and "compared
+//    and found clean" must never look the same in the output. So every
+//    excluded term is collected in `selfContainmentExcluded` below and
+//    reported unconditionally — on a PASS as much as a FAIL, in --json as
+//    much as plain text — by index and reason, never by value. It does NOT
+//    fail the run by itself: failing on a short term nobody can safely
+//    lengthen would be noise, and noise is exactly what trains reviewers to
+//    stop reading gate output (same reasoning `boundaryJustification` and
+//    `selfScopeJustification` already rest on elsewhere in this file). The
+//    excluded term is still checked as a possible TARGET (its own why/
+//    boundaryJustification text is still scanned for every other term's
+//    value) — only its own value is too short to safely search FOR.
 function selfContainmentValueOf(pattern) {
   const chunks = literalChunksOf(pattern ?? "");
-  if (chunks.length === 0) return null;
-  if (chunks.length === 1 && chunks[0].length < 6) return null;
-  return chunks.join("").toLowerCase();
+  if (chunks.length === 0) {
+    return { compound: null, excludeReason: "pattern produced no literal chunks of length >= 3 (pure regex machinery, or an empty pattern) — nothing to search for" };
+  }
+  if (chunks.length === 1 && chunks[0].length < 6) {
+    return { compound: null, excludeReason: "pattern reduces to a single literal chunk shorter than 6 characters — excluded as a leak SOURCE to avoid flagging ordinary English constantly" };
+  }
+  return { compound: chunks.join("").toLowerCase(), excludeReason: null };
 }
 
-const termCompounds = denylist.terms.map((t) => selfContainmentValueOf(t.pattern));
+const selfContainmentExcluded = [];
+const termCompounds = denylist.terms.map((t, i) => {
+  const { compound, excludeReason } = selfContainmentValueOf(t.pattern);
+  if (excludeReason) selfContainmentExcluded.push({ index: i, why: t.why ?? "(no why)", reason: excludeReason });
+  return compound;
+});
 
 denylist.terms.forEach((term, containerIndex) => {
   for (const field of ["why", "boundaryJustification"]) {
@@ -399,6 +423,8 @@ const summary = {
   findings,
   acknowledged,
   selfScopeAcknowledged,
+  selfScopeCoverage: { scopeAndPackageCandidates: selfScopeCandidates.size, packageNamesFound: packageNames.length },
+  selfContainmentExcluded,
 };
 
 if (flags.has("--json")) {
@@ -411,6 +437,39 @@ console.log(
     `${summary.termCount} term(s), ${summary.neutralizeCount} neutralize entr(ies)`,
 );
 console.log("(terms are never printed; findings are identified by index and purpose)\n");
+
+// Coverage lines below are printed UNCONDITIONALLY — on a clean PASS exactly
+// as on a FAIL — because the failure this whole file exists to close is a
+// check that silently narrows what it looks at and reports the narrowed
+// result as a full pass. "Checked and clean" and "not checked" must stay
+// visually distinguishable no matter which way the run comes out.
+
+console.log(
+  `self-scope coverage: checked every term against ${summary.selfScopeCoverage.scopeAndPackageCandidates} candidate(s) ` +
+    `(this repo's scope plus ${summary.selfScopeCoverage.packageNamesFound} package name(s) found under packages/*).`,
+);
+if (summary.selfScopeCoverage.packageNamesFound === 0) {
+  console.log(
+    "  !! no packages/*/package.json found — self-scope coverage is the bare scope string only, not this repo's " +
+      "published package names. Confirm that's expected (a fresh checkout before any packages) before trusting this scan.",
+  );
+}
+console.log("");
+
+if (selfContainmentExcluded.length) {
+  console.log(
+    `SELF-CONTAINMENT COVERAGE — ${selfContainmentExcluded.length} of ${summary.termCount} term(s) EXCLUDED as a leak ` +
+      "SOURCE (their own pattern produced no comparable literal value) — these were NOT compared against other terms' " +
+      "prose; they are still checked as a possible TARGET. This does not fail the run by itself — see the comment above " +
+      "`selfContainmentValueOf` for why — but it must never be mistaken for \"compared and found clean\":",
+  );
+  for (const e of selfContainmentExcluded) {
+    console.log(`  term #${e.index} (${e.why}): ${e.reason}`);
+  }
+  console.log("");
+} else {
+  console.log("self-containment coverage: every term's pattern produced a comparable literal value; full source-side coverage.\n");
+}
 
 if (acknowledged.length) {
   console.log(`ACKNOWLEDGED — ${acknowledged.length} boundary-anchoring exception(s), documented and not failing:`);
@@ -431,7 +490,8 @@ if (selfScopeAcknowledged.length) {
 if (!findings.length) {
   console.log(
     "PASS — every term compiles, is non-empty, is graded, covers its separator-free form, stays clear of this " +
-      "repo's own scope, and no `why`/`boundaryJustification` text contains another term's value.",
+      "repo's own scope, and no `why`/`boundaryJustification` text contains another term's value (see coverage " +
+      "notes above for what that PASS does and does not include).",
   );
   process.exit(0);
 }
