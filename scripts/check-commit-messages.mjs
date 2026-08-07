@@ -160,7 +160,29 @@ if (range) {
     // %x00 as a record separator, %x01 as a hash/message separator — neither
     // byte occurs in valid UTF-8 commit text, so this can't be confused by
     // pathological commit content.
-    raw = execFileSync("git", ["log", range, "--format=%H%x01%B%x00"], {
+    //
+    // %x00 goes at the FRONT of the format, not the back — this is load-
+    // bearing, not stylistic. `--format=` is shorthand for `tformat:`, and
+    // per git-log(1), tformat always appends its own terminating "\n" after
+    // each commit's expansion UNLESS the format string itself ends in %n.
+    // Ours ends in %B (the free-form commit body), so that automatic
+    // newline always fires, on every commit, and there is no way to opt out
+    // of it while still ending the format in %B. A format of
+    // `%H%x01%B%x00` puts git's extra "\n" AFTER our own %x00 terminator —
+    // i.e. at the START of the next record once we split on \0 — which
+    // silently prepends a stray "\n" onto every hash but the first (git logs
+    // newest-first, so in practice: every hash but the newest commit's).
+    // That corrupted hash still slices to a "plausible" 12-char label, so
+    // nothing downstream ever complains; it's just wrong, silently, forever.
+    //
+    // Putting %x00 first instead sidesteps the collision entirely rather
+    // than cleaning up after it: git's auto-appended "\n" now lands after
+    // %B, i.e. inside the CURRENT record's own message text (as harmless
+    // trailing whitespace — %B already normally ends in one), never in
+    // front of the NEXT record's %H. The hash is therefore always the first
+    // thing after a \0, full stop, regardless of what git glues onto the
+    // tail end of the previous entry.
+    raw = execFileSync("git", ["log", range, "--format=%x00%H%x01%B"], {
       encoding: "utf8",
       maxBuffer: 64 * 1024 * 1024,
     });
@@ -170,10 +192,27 @@ if (range) {
     console.error(`check-commit-messages: failed to read git log for range "${range}": ${error.message}`);
     process.exit(2);
   }
+  // The very first character of `raw` is the leading %x00 of the first
+  // record, so split() always yields an empty leading element — drop it.
+  // Everything after that is a real record; there is no trailing-empty
+  // case to filter here the way a %x00-as-terminator scheme would need,
+  // since nothing follows the last record's own trailing "\n".
   const records = raw.split("\0").filter((r) => r.length > 0);
   for (const record of records) {
     const sep = record.indexOf("\x01");
-    if (sep === -1) continue;
+    if (sep === -1) {
+      // A record with no %x01 separator means the git-log output didn't
+      // match the shape this parser assumes — fail CLOSED rather than
+      // `continue`-ing past it. Silently dropping an unparseable record
+      // would let a commit skip the identity scan entirely while the gate
+      // still reports success, which is worse than not scanning at all:
+      // it would look exactly like a clean pass.
+      console.error(
+        `check-commit-messages: malformed git-log record while parsing range "${range}" ` +
+          `(no \\x01 hash/message separator found) — refusing to silently drop it from the scan.`
+      );
+      process.exit(2);
+    }
     const hash = record.slice(0, sep);
     const message = record.slice(sep + 1);
     items.push({ label: `commit ${hash.slice(0, 12)}`, text: message });

@@ -77,6 +77,7 @@ const COLLISION = join(scriptDir, "check-name-collision.mjs");
 const CONTAM = join(scriptDir, "check-contamination-classes.mjs");
 const QUALITY = join(scriptDir, "check-denylist-quality.mjs");
 const SET_SCOPE = join(scriptDir, "set-scope.mjs");
+const COMMIT_MESSAGES = join(scriptDir, "check-commit-messages.mjs");
 
 let passed = 0;
 const failures = [];
@@ -798,6 +799,73 @@ try {
       "a genuinely clean, fully-checkable tree still exits 0",
       cleanResult.code === 0,
       `expected exit 0, got ${cleanResult.code}: ${cleanResult.out}`,
+    );
+  }
+
+  // ----------------- check-commit-messages: hash label survives a real MULTI-commit range
+  //
+  // The bug this guards against is invisible on a single commit — that's
+  // exactly how it hid. `git log --format=%H%x01%B%x00` (the pre-fix format)
+  // relies on %x00 as a record terminator, but `--format=` implies
+  // `tformat:`, which always appends its OWN trailing "\n" after each
+  // commit's expansion unless the format ends in %n. This one ends in %B, so
+  // that automatic newline always fires — landing right after our %x00, i.e.
+  // at the front of the NEXT record once split on \0. Every hash but the
+  // newest commit's comes out prefixed with a stray "\n", which still slices
+  // to a plausible-looking 12-character label, so nothing downstream ever
+  // complains. A single-commit range never exercises the "next record"
+  // boundary at all, so it can't catch this — which is precisely why this
+  // case builds a real fixture repo with three commits and checks every one
+  // of them, not just the tip.
+  console.log("\n# check-commit-messages: reported hash label is correct across a multi-commit range");
+  {
+    const dir = join(work, "commit-messages-multi");
+    mkdirSync(dir, { recursive: true });
+    run("git", ["-C", dir, "init", "-q"]);
+    run("git", ["-C", dir, "config", "user.email", "t@t"]);
+    run("git", ["-C", dir, "config", "user.name", "t"]);
+    // Every commit's message carries a synthetic denylist term (see
+    // SYNTH_DENYLIST above) so every commit produces a finding, and every
+    // finding's label is printed — that's the only way this gate ever
+    // surfaces a hash to compare against reality.
+    const commitMessages = [
+      "first change: mentions acme-corp",
+      "second change: mentions acme-corp",
+      "third change: mentions acme-corp",
+    ];
+    for (let i = 0; i < commitMessages.length; i++) {
+      writeFileSync(join(dir, `file-${i}.txt`), `content ${i}\n`);
+      run("git", ["-C", dir, "add", "-A"]);
+      run("git", ["-C", dir, "commit", "-qm", commitMessages[i]]);
+    }
+    const trueHashes = run("git", ["-C", dir, "log", "--format=%H"])
+      .out.trim()
+      .split("\n")
+      .filter((h) => h.length > 0);
+    check("fixture actually produced 3 commits", trueHashes.length === 3, `got ${trueHashes.length}: ${trueHashes.join(",")}`);
+
+    const r = run("node", [COMMIT_MESSAGES, "HEAD", ...DL, "--require-denylist"], { cwd: dir });
+    check(
+      "gate reports FAIL (every commit's message matches the synthetic denylist term)",
+      r.code === 1,
+      `expected exit 1, got ${r.code}: ${r.out}`,
+    );
+    for (const trueHash of trueHashes) {
+      const want = trueHash.slice(0, 12);
+      check(
+        `label for commit ${want} matches its real hash, not a corrupted one`,
+        r.out.includes(`commit ${want}:`),
+        `expected "commit ${want}:" in output, got:\n${r.out}`,
+      );
+    }
+    // The corruption specifically glues a literal "\n" onto the front of the
+    // hash — assert that never appears anywhere in a "commit " label line,
+    // which is a more direct way of saying "no hash was split across two
+    // printed lines."
+    check(
+      "no commit label contains an embedded newline",
+      !/commit \n/.test(r.out),
+      `found a "commit \\n..." label in output:\n${r.out}`,
     );
   }
 } finally {
