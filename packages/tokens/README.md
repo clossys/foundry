@@ -72,6 +72,88 @@ framework that renders `<html>` on the server (Next.js, Remix, SvelteKit),
 set the attribute in your root layout/template, not in client JS — otherwise
 the badge flashes on every load before your JS runs.
 
+## Dark mode
+
+Every theme-dependent token ships both a light default and a dark
+override. The mechanism follows both signals, in both directions —
+OS preference by default, with an explicit override that always wins:
+
+```css
+:root { /* light — the default, nothing to opt into */ }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { /* dark, when the OS prefers it */ }
+}
+
+:root[data-theme="dark"] { /* dark, forced, regardless of the OS */ }
+```
+
+With no `data-theme` attribute anywhere, the page follows the OS/browser's
+`prefers-color-scheme`. Wiring a theme toggle is one attribute:
+
+```js
+// "system" | "light" | "dark"
+function applyTheme(theme) {
+  if (theme === "system") {
+    document.documentElement.removeAttribute("data-theme");
+  } else {
+    document.documentElement.setAttribute("data-theme", theme);
+  }
+}
+```
+
+`data-theme="dark"` forces dark even when the OS is light; `data-theme="light"`
+forces light even when the OS is dark — the `:not([data-theme="light"])`
+guard on the media-query block is what makes that last case work, by
+keeping the OS-dark rule from ever matching once light has been chosen
+explicitly. If you use a server-rendering framework, set the attribute
+in your root layout (not client JS only) for the same reason the
+brand-binding badge note above does: otherwise the wrong theme flashes
+before your JS runs.
+
+**If you have a `brand.css`:** it needs dark bindings too, in the same
+shape — see `brand-template.css`'s own two dark blocks and the "What a
+brand needs to add" note in CHANGELOG.md. Skipping them doesn't error;
+it silently ships a branded light theme next to an unbranded, greyscale
+dark theme.
+
+### Which tokens have a dark value
+
+Only theme-dependent ones: colors, and `--ui-elevation-*` (a shadow reads
+as a color choice, and reads differently on a dark surface). Every
+structural scale — spacing, radius, z-index, motion duration, easing,
+breakpoint, font size, tracking, layout width, density, border width —
+is theme-invariant and never appears in a dark block; `src/tokens.ts`'s
+`TokenDefinition.themeDependent` field records this per token, and a test
+(`src/theme-parity.test.ts`) enforces it against the real CSS in both
+directions.
+
+Two tokens worth calling out specifically:
+
+- **`--color-surface-inverse` flips polarity by theme.** In light mode it
+  is a dark plate; in dark mode it becomes a light plate.
+  `--color-ink-on-inverse` flips with it (near-white ink becomes
+  near-black ink), so text on the inverse surface stays legible in both
+  themes without a consumer doing anything extra.
+- **`--color-neutral-*` stays absolute.** `--color-neutral-50` means "the
+  same light-grey swatch" in both themes; it does not become the darkest
+  step in dark mode. This is a deliberate choice (both directions are
+  defensible — see `styles/tokens.css`'s header comment for the
+  reasoning), matching how Tailwind's own default gray scale doesn't
+  invert either. Reach for `--color-surface-*`/`--color-ink-*` — which DO
+  flip — for anything that should read differently by theme.
+
+### Contrast is enforced, not assumed
+
+`src/contrast.test.ts` computes real WCAG contrast ratios for the key
+ink-on-surface and status-text-on-tint pairs, in both themes, via a
+proper `oklch()` -> linear-sRGB -> relative-luminance conversion — not an
+approximation from the lightness channel, which is not a reliable proxy
+for contrast once chroma is involved. It asserts AA (4.5:1) for
+body-level text and AA-large (3:1) for secondary/large text. A palette
+change that looks plausible but drops a pair below its bar fails this
+test, not a human doing final review by eye.
+
 ### The three-layer contract
 
 ```

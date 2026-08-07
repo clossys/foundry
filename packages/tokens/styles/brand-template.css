@@ -47,6 +47,34 @@
  *   3. OPTIONAL slots are commented out. Uncomment and fill in only the
  *      ones your brand actually needs; every one you leave alone keeps
  *      its tokens.css default.
+ *
+ * A BRAND NOW NEEDS LIGHT AND DARK BINDINGS
+ *
+ * tokens.css ships both a light default and a dark override for every
+ * theme-dependent token (see its header comment). A brand that only fills
+ * in the block below gets a correctly BRANDED light theme and an
+ * unbranded, greyscale-primitives dark theme the moment a consumer's OS
+ * or `data-theme="dark"` switches over — silently, because nothing about
+ * that is invalid CSS. Below the required block are two more, in the same
+ * shape tokens.css itself uses:
+ *
+ *   :root[data-brand-bound] { ... }                          -- light, below
+ *
+ *   @media (prefers-color-scheme: dark) {
+ *     :root[data-brand-bound]:not([data-theme="light"]) { ... }
+ *   }
+ *
+ *   :root[data-brand-bound][data-theme="dark"] { ... }
+ *
+ * Only the 33 tokens tokens.css itself marks BOTH brandable and
+ * theme-dependent need a value in the two dark blocks: every SURFACE,
+ * INK (except the ink-on-accent alias), LINE, and ACCENT token, and all
+ * 12 STATUS tokens. FONT and RADIUS stay in the light block only — a
+ * typeface or a corner radius is a brand decision, not a theme one, so
+ * the same value serves both themes and needs no restating.
+ * `src/dark-mode-cascade.test.ts` in this package verifies the resulting
+ * specificity actually resolves the way the comments above claim, against
+ * the real selectors below, rather than asking you to take it on faith.
  * ════════════════════════════════════════════════════════════════════ */
 
 
@@ -125,4 +153,117 @@
 
   /* ─── LAYOUT (1 optional) ────────────────────────────────────────── */
   /* --ui-layout-sidebar-w: 256px; */
+}
+
+
+/* ════════════════════════════════════════════════════════════════════
+ * DARK · OS PREFERENCE
+ * ────────────────────────────────────────────────────────────────────
+ * Same 33 required slots as the light block above — every SURFACE, INK
+ * (except the `-on-accent` alias, which inherits), LINE, ACCENT, and
+ * STATUS token — filled in with this brand's dark values. See
+ * tokens.css's header comment for why the `:not([data-theme="light"])`
+ * guard is load-bearing, not decorative.
+ * ════════════════════════════════════════════════════════════════════ */
+@media (prefers-color-scheme: dark) {
+  :root[data-brand-bound]:not([data-theme="light"]) {
+
+    /* ─── SURFACE (7 required) ─────────────────────────────────── */
+    --color-surface-base:            ;
+    --color-surface-sunken:          ;
+    --color-surface-raised:          ;
+    --color-surface-inverse:         ;
+    --color-surface-inverse-raised:  ;
+    --color-surface-aside:           ;
+    --color-surface-selected:        ;
+
+    /* ─── INK (6 required) ─────────────────────────────────────── */
+    --color-ink-primary:             ;
+    --color-ink-secondary:           ;
+    --color-ink-muted:               ;
+    --color-ink-link:                ;
+    --color-ink-on-inverse:          ;
+    --color-ink-on-inverse-muted:    ;
+
+    /* ─── LINE (3 required) ────────────────────────────────────── */
+    --color-line-base:               ;
+    --color-line-strong:             ;
+    --color-line-on-inverse:         ;
+
+    /* ─── ACCENT (5 required) ──────────────────────────────────── */
+    --color-accent:                  ;
+    --color-accent-text:             ;
+    --color-accent-hover:            ;
+    --color-accent-tint:             ;
+    --color-accent-on-inverse:       ;
+
+    /* ─── STATUS (12 required) ─────────────────────────────────── */
+    --color-status-success:          ;
+    --color-status-success-text:     ;
+    --color-status-success-tint:     ;
+    --color-status-warning:          ;
+    --color-status-warning-text:     ;
+    --color-status-warning-tint:     ;
+    --color-status-danger:           ;
+    --color-status-danger-text:      ;
+    --color-status-danger-tint:      ;
+    --color-status-info:             ;
+    --color-status-info-text:        ;
+    --color-status-info-tint:        ;
+  }
+}
+
+
+/* ════════════════════════════════════════════════════════════════════
+ * DARK · EXPLICIT OVERRIDE
+ * ────────────────────────────────────────────────────────────────────
+ * Same 33 slots, same values, as the media-query block above — forces
+ * this brand's dark theme even on a light-OS device. Keep the two dark
+ * blocks identical; nothing enforces that for a brand's own file the way
+ * `src/theme-parity.test.ts` does for this package's own tokens.css.
+ * ════════════════════════════════════════════════════════════════════ */
+:root[data-brand-bound][data-theme="dark"] {
+
+  /* ─── SURFACE (7 required) ───────────────────────────────────── */
+  --color-surface-base:            ;
+  --color-surface-sunken:          ;
+  --color-surface-raised:          ;
+  --color-surface-inverse:         ;
+  --color-surface-inverse-raised:  ;
+  --color-surface-aside:           ;
+  --color-surface-selected:        ;
+
+  /* ─── INK (6 required) ───────────────────────────────────────── */
+  --color-ink-primary:             ;
+  --color-ink-secondary:           ;
+  --color-ink-muted:               ;
+  --color-ink-link:                ;
+  --color-ink-on-inverse:          ;
+  --color-ink-on-inverse-muted:    ;
+
+  /* ─── LINE (3 required) ──────────────────────────────────────── */
+  --color-line-base:               ;
+  --color-line-strong:             ;
+  --color-line-on-inverse:         ;
+
+  /* ─── ACCENT (5 required) ────────────────────────────────────── */
+  --color-accent:                  ;
+  --color-accent-text:             ;
+  --color-accent-hover:            ;
+  --color-accent-tint:             ;
+  --color-accent-on-inverse:       ;
+
+  /* ─── STATUS (12 required) ───────────────────────────────────── */
+  --color-status-success:          ;
+  --color-status-success-text:     ;
+  --color-status-success-tint:     ;
+  --color-status-warning:          ;
+  --color-status-warning-text:     ;
+  --color-status-warning-tint:     ;
+  --color-status-danger:           ;
+  --color-status-danger-text:      ;
+  --color-status-danger-tint:      ;
+  --color-status-info:             ;
+  --color-status-info-text:        ;
+  --color-status-info-tint:        ;
 }
