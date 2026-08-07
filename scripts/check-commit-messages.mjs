@@ -172,10 +172,15 @@ if (range) {
   }
   const records = raw.split("\0").filter((r) => r.length > 0);
   for (const record of records) {
-    const sep = record.indexOf("\x01");
+    // `--format=` is shorthand for `tformat:`; since the format string doesn't
+    // end in %n, git appends its own newline after each entry in addition to
+    // the %x00 we asked for. That glues a leading "\n" onto every record but
+    // the first after the split above — strip it before slicing out the hash.
+    const clean = record.replace(/^\r?\n/, "");
+    const sep = clean.indexOf("\x01");
     if (sep === -1) continue;
-    const hash = record.slice(0, sep);
-    const message = record.slice(sep + 1);
+    const hash = clean.slice(0, sep);
+    const message = clean.slice(sep + 1);
     items.push({ label: `commit ${hash.slice(0, 12)}`, text: message });
   }
   if (records.length === 0) {

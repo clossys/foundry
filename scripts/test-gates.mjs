@@ -629,14 +629,12 @@ try {
 
     // Each case below scans a range holding exactly ONE commit (that
     // commit's own parent..itself), rather than one shared range covering
-    // all four. `git log --format=` inserts its own newline terminator
-    // after every entry but the last, which lands on the FRONT of the next
-    // entry's hash once split on our embedded NUL byte -- so only the
-    // newest commit in a multi-commit range gets a clean, uncorrupted short
-    // hash out of check-commit-messages.mjs today (a real, separately
-    // filed defect; a per-commit range is the hermetic way to assert
-    // detection correctness without also pinning that known-broken label
-    // formatting).
+    // all four, so each detection case is asserted in isolation. (A
+    // multi-commit range used to corrupt the printed hash for every commit
+    // but the newest -- `git log --format=` appends its own newline
+    // terminator after every entry but the last, which landed on the FRONT
+    // of the next entry's hash once split on our embedded NUL byte. That's
+    // fixed now; see the combined-range hash checks below.)
     const leakyRun = run("node", [COMMITMSG, `${hash0}..${leaky}`, ...DL, "--require-denylist"], { cwd: dir });
     check("flags a commit whose message body carries a denylisted term", leakyRun.code === 1, `exit was ${leakyRun.code}: ${leakyRun.out.slice(0, 200)}`);
     check(
@@ -665,9 +663,7 @@ try {
     // Sanity: a single combined range spanning all four commits still
     // scans all of them (proves multi-commit ranges are walked in full,
     // not just the single-commit ranges exercised above) and still nets
-    // exactly the two real findings (leaky + handWritten) — total finding
-    // COUNT is unaffected by the label-formatting defect noted above, only
-    // the printed hash text is.
+    // exactly the two real findings (leaky + handWritten).
     const range = `${hash0}..${clean}`;
     const r = run("node", [COMMITMSG, range, ...DL, "--require-denylist"], { cwd: dir });
     check("fails when the combined range contains any offending commit", r.code === 1, `exit was ${r.code}`);
@@ -678,6 +674,24 @@ try {
     );
     const findingCount = (r.out.match(/\[high\] commit/g) ?? []).length;
     check("finds exactly the 2 real identity findings across the combined range", findingCount === 2, `expected 2 findings, got ${findingCount}: ${r.out.slice(0, 300)}`);
+
+    // Regression for the newline-corruption bug: in this combined range
+    // `clean` is the newest commit and both flagged commits (leaky,
+    // handWritten) are NOT the newest, so `git log --format=`'s extra
+    // newline terminator would have glued a leading "\n" onto their hash
+    // after the %x00 split, corrupting the printed 12-char short hash
+    // (e.g. `commit \n2ea250d75e` instead of the real 12 hex chars). Assert
+    // the exact, uncorrupted label for each so this can't regress silently.
+    check(
+      `combined range prints the real, uncorrupted 12-char hash for non-newest flagged commit ${leaky.slice(0, 12)}`,
+      r.out.includes(`commit ${leaky.slice(0, 12)}`),
+      `expected "commit ${leaky.slice(0, 12)}" in the combined-range output, got: ${r.out.slice(0, 400)}`,
+    );
+    check(
+      `combined range prints the real, uncorrupted 12-char hash for non-newest flagged commit ${handWritten.slice(0, 12)}`,
+      r.out.includes(`commit ${handWritten.slice(0, 12)}`),
+      `expected "commit ${handWritten.slice(0, 12)}" in the combined-range output, got: ${r.out.slice(0, 400)}`,
+    );
 
     const titleClean = run("node", [COMMITMSG, "--title", "A perfectly ordinary PR title", ...DL, "--require-denylist"], { cwd: dir });
     check("a clean --title alone passes", titleClean.code === 0, `exit was ${titleClean.code}`);
