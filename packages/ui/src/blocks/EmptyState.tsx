@@ -40,7 +40,7 @@ export function EmptyState({
     <div
       {...rest}
       className={cx(
-        "flex flex-col items-center justify-center gap-sm p-2xl",
+        "flex flex-col justify-center gap-sm p-2xl text-center",
         className,
       )}
     >

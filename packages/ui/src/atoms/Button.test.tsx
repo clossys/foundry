@@ -60,6 +60,21 @@ describe("Button", () => {
     expect(onPress).not.toHaveBeenCalled();
   });
 
+  it("forwards a consumer style prop, and the consumer's conflicting property wins the merge", () => {
+    render(
+      <Button isDisabled style={{ opacity: 0.42, marginTop: "8px" }}>
+        Save
+      </Button>,
+    );
+    const button = screen.getByRole("button", { name: "Save" });
+    // The component's own disabled-state opacity would otherwise apply here
+    // (see VARIANT_CLASSES/UI_ALPHA_DISABLED in Button.tsx) — the consumer's
+    // explicit value must win instead of being silently dropped.
+    expect(button.style.opacity).toBe("0.42");
+    // A non-conflicting property the component never sets must survive too.
+    expect(button.style.marginTop).toBe("8px");
+  });
+
   it("supports all four variants without throwing and applies distinct classes", () => {
     const { rerender } = render(<Button variant="primary">X</Button>);
     const primaryClass = screen.getByRole("button").className;

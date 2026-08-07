@@ -18,6 +18,22 @@ describe("Checkbox", () => {
     expect(label?.className).not.toContain("gap-sm");
   });
 
+  it("forwards a consumer style prop, and the consumer's conflicting property wins the merge", () => {
+    render(
+      <Checkbox isDisabled style={{ opacity: 0.42, marginTop: "8px" }}>
+        Select all
+      </Checkbox>,
+    );
+    const checkbox = screen.getByRole("checkbox", { name: "Select all" });
+    const label = checkbox.closest("label") as HTMLLabelElement;
+    // The component's own disabled-state opacity would otherwise apply here
+    // (see UI_ALPHA_DISABLED in Checkbox.tsx) — the consumer's explicit
+    // value must win instead of being silently dropped.
+    expect(label.style.opacity).toBe("0.42");
+    // A non-conflicting property the component never sets must survive too.
+    expect(label.style.marginTop).toBe("8px");
+  });
+
   it("toggles on click and on Space", async () => {
     const onChange = vi.fn();
     const user = userEvent.setup();

@@ -85,6 +85,86 @@ const CLASS_RE = new RegExp(
 // whether or not a fallback follows.
 const VAR_RE = /var\(\s*(--[a-zA-Z0-9-]+)\s*(?:,|\))/g;
 
+// A CSS custom-property name (`--ui-border-hairline`, `--color-line-base`,
+// ...), wherever it appears in source — inside a `var(...)` call, a plain
+// string, a template literal. VAR_RE already extracts and resolves these
+// on their own terms; CLASS_RE must never also see them, because a name
+// like `--ui-border-hairline` CONTAINS the substring `border-hairline`,
+// which matches CLASS_RE's own `\b(prefix)-(suffix)\b` shape (prefix
+// "border", suffix "hairline") even though it names no Tailwind class at
+// all. This is exactly what forced `Shell`'s hairline border width to a
+// hardcoded `"1px"` instead of `var(--ui-border-hairline, 1px)` — the
+// token read, once restored to source, false-positived as an unresolved
+// `border-hairline` class. Blanking out every custom-property name (same
+// length, so match offsets in the blanked copy still line up with the
+// original for anything that needs them) before running CLASS_RE keeps
+// the two scans from colliding, without weakening either: VAR_RE still
+// runs against the untouched source.
+const CUSTOM_PROPERTY_RE = /--[a-zA-Z][a-zA-Z0-9-]*/g;
+
+function blankCustomProperties(code: string): string {
+  return code.replace(CUSTOM_PROPERTY_RE, (m) => " ".repeat(m.length));
+}
+
+// Suffixes Tailwind v4 itself ships for these prefixes, independent of any
+// `@theme` scale — real utility classes this package doesn't own and never
+// will, so a class using one is never a token-derived class and must be
+// skipped rather than checked against TOKENS. Every entry below was
+// confirmed against a real `@tailwindcss/cli@4.3.3` compile (a scratch
+// project outside this repo, `npx @tailwindcss/cli` with each candidate
+// class in a scanned source file, reading the emitted CSS rule) rather than
+// assumed from documentation — Tailwind's actual reserved set is narrower
+// than it looks in places (e.g. `p-auto`/`gap-auto`/any spacing prefix's
+// `-full` do NOT compile to anything; only `m`/`mx`/`my`'s `auto` and
+// every listed prefix's `px` do).
+//
+// This list intentionally reuses the same universal color keywords and
+// border reserved suffixes `../../tokens/src/tailwind-builtin-collision.test.ts`
+// already researched and verified for its own (opposite-direction) check —
+// see that file's `RESERVED_FAMILIES.text`/`.font` — so the two tests never
+// disagree about what Tailwind owns.
+const UNIVERSAL_COLOR_KEYWORDS = ["inherit", "current", "transparent", "black", "white"];
+
+const ALLOWED_SUFFIXES: Record<string, readonly string[]> = {
+  text: [
+    "left", "center", "right", "justify", "start", "end", // text-align
+    "wrap", "nowrap", "balance", "pretty", // text-wrap
+    "ellipsis", "clip", // text-overflow
+    ...UNIVERSAL_COLOR_KEYWORDS, // text-color shorthands
+  ],
+  bg: [...UNIVERSAL_COLOR_KEYWORDS],
+  border: [
+    ...UNIVERSAL_COLOR_KEYWORDS,
+    // Side / logical-direction border utilities (border-width + -style,
+    // never a color) — confirmed generated for all eight.
+    "b", "t", "l", "r", "x", "y", "s", "e",
+    // border-style keywords — confirmed generated for all six.
+    "solid", "dashed", "dotted", "double", "hidden", "none",
+  ],
+  // Confirmed generated; nothing else in the radius namespace is.
+  rounded: ["none", "full"],
+  // Tailwind's own font-weight scale — a namespace this package deliberately
+  // does not own (see the README's naming rule: `--font-*` is font-FAMILY
+  // here, never weight). Confirmed generated for all nine.
+  font: ["thin", "extralight", "light", "normal", "medium", "semibold", "bold", "extrabold", "black"],
+  // Spacing prefixes: `px` (literal 1px) compiles for every one of them.
+  // `auto` compiles ONLY for margin (`m`/`mx`/`my`) — confirmed NOT
+  // generated for any padding or gap prefix. `full` does not compile for
+  // ANY spacing prefix (unlike `rounded-full` or `w-full`) and is
+  // deliberately omitted here for that reason.
+  gap: ["px"],
+  p: ["px"],
+  px: ["px"],
+  py: ["px"],
+  pt: ["px"],
+  pb: ["px"],
+  pl: ["px"],
+  pr: ["px"],
+  m: ["px", "auto"],
+  mx: ["px", "auto"],
+  my: ["px", "auto"],
+};
+
 interface Finding {
   file: string;
   kind: "class" | "var";
@@ -98,9 +178,13 @@ const sourceFiles = collectSourceFiles(srcDir);
 for (const file of sourceFiles) {
   const code = stripComments(readFileSync(file, "utf8"));
   const relFile = file.slice(srcDir.length + 1);
+  const codeForClassScan = blankCustomProperties(code);
 
-  for (const match of code.matchAll(CLASS_RE)) {
+  for (const match of codeForClassScan.matchAll(CLASS_RE)) {
     const [full, prefix, suffix] = match;
+    if (ALLOWED_SUFFIXES[prefix as string]?.includes(suffix as string)) {
+      continue;
+    }
     const candidates = PREFIX_CANDIDATE_FAMILIES[prefix as string]!(suffix as string);
     const resolved = candidates.some((property) => property in TOKENS);
     if (!resolved) {
@@ -129,7 +213,7 @@ for (const file of sourceFiles) {
 describe("token parity: every token-derived class and var() read resolves to a real token", () => {
   it("found at least one Tailwind class to check (sanity — a passing test with zero coverage proves nothing)", () => {
     const totalClassesChecked = sourceFiles.reduce((n, file) => {
-      const code = stripComments(readFileSync(file, "utf8"));
+      const code = blankCustomProperties(stripComments(readFileSync(file, "utf8")));
       return n + [...code.matchAll(CLASS_RE)].length;
     }, 0);
     expect(totalClassesChecked).toBeGreaterThan(10);

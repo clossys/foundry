@@ -2,7 +2,6 @@ import type { HTMLAttributes, ReactNode } from "react";
 import { cx } from "../atoms/internal/cx.js";
 import {
   UI_BORDER_HAIRLINE,
-  UI_COLOR_LINE_BASE,
   UI_LAYOUT_ASIDE_W,
   UI_WIDTH_CONTENT_MAX,
   UI_WIDTH_PAGE_PADDING_X,
@@ -136,14 +135,12 @@ function ShellHeader({ children, className, style, ...rest }: ShellHeaderProps) 
   return (
     <header
       {...rest}
-      className={cx("bg-surface-raised py-sm", className)}
+      className={cx("bg-surface-raised py-sm border-b border-line-base", className)}
       style={{
         gridArea: "header",
         position: "relative",
         zIndex: UI_Z_SHELL,
         borderBottomWidth: UI_BORDER_HAIRLINE,
-        borderBottomStyle: "solid",
-        borderBottomColor: UI_COLOR_LINE_BASE,
         ...style,
       }}
     >
@@ -173,7 +170,7 @@ function ShellSideNav({ children, className, style, ...rest }: ShellSideNavProps
       aria-label="Primary"
       {...rest}
       className={cx(
-        "min-h-0 overflow-y-auto overflow-x-hidden py-lg",
+        "min-h-0 overflow-y-auto overflow-x-hidden py-lg border-r border-line-base",
         // Literal arbitrary-value classes, not `shell-vars.ts` constants:
         // Tailwind's build-time scanner needs this exact text in the
         // source file to generate the `tablet:` media query; a JS
@@ -187,8 +184,6 @@ function ShellSideNav({ children, className, style, ...rest }: ShellSideNavProps
         position: "relative",
         zIndex: UI_Z_SHELL,
         borderRightWidth: UI_BORDER_HAIRLINE,
-        borderRightStyle: "solid",
-        borderRightColor: UI_COLOR_LINE_BASE,
         ...style,
       }}
     >
@@ -223,8 +218,8 @@ function ShellMain({ children, className, style, tabIndex, ...rest }: ShellMainP
       style={{ gridArea: "main", ...style }}
     >
       <div
-        className="w-full"
-        style={{ maxWidth: UI_WIDTH_CONTENT_MAX, paddingInline: UI_WIDTH_PAGE_PADDING_X, marginInline: "auto" }}
+        className="w-full mx-auto"
+        style={{ maxWidth: UI_WIDTH_CONTENT_MAX, paddingInline: UI_WIDTH_PAGE_PADDING_X }}
       >
         {children}
       </div>
@@ -248,15 +243,16 @@ function ShellRail({ children, className, style, ...rest }: ShellRailProps) {
   return (
     <aside
       {...rest}
-      className={cx("hidden min-h-0 overflow-y-auto bg-surface-aside py-lg desktop:block", className)}
+      className={cx(
+        "hidden min-h-0 overflow-y-auto bg-surface-aside py-lg desktop:block border-l border-line-base",
+        className,
+      )}
       style={{
         gridArea: "rail",
         width: UI_LAYOUT_ASIDE_W,
         position: "relative",
         zIndex: UI_Z_ASIDE,
         borderLeftWidth: UI_BORDER_HAIRLINE,
-        borderLeftStyle: "solid",
-        borderLeftColor: UI_COLOR_LINE_BASE,
         ...style,
       }}
     >
@@ -274,14 +270,12 @@ function ShellFooter({ children, className, style, ...rest }: ShellFooterProps) 
   return (
     <footer
       {...rest}
-      className={cx("bg-surface-raised py-sm", className)}
+      className={cx("bg-surface-raised py-sm border-t border-line-base", className)}
       style={{
         gridArea: "footer",
         position: "relative",
         zIndex: UI_Z_SHELL,
         borderTopWidth: UI_BORDER_HAIRLINE,
-        borderTopStyle: "solid",
-        borderTopColor: UI_COLOR_LINE_BASE,
         ...style,
       }}
     >
