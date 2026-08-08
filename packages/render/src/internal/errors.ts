@@ -54,6 +54,16 @@
  *     token role absent from `@vespeneventures/tokens`' `TOKENS` registry
  *     (checked after `flattenTokens()`), the same "never a silent fallback
  *     colour" discipline `internal/tokens.ts` itself holds to.
+ *
+ * One more member was appended for `./slides` (a `SlidesDeckInput` whose
+ * slides don't all agree on `meta.aspect` — see `src/slides/
+ * renderSlidesDeck.ts` for the full reasoning):
+ *
+ *   - `"inconsistent-deck-aspect"` — `renderSlidesDeck` was given a deck
+ *     whose slides don't all declare the same `SlidesMeta.aspect`. A deck
+ *     is one fixed canvas rendered repeatedly; a per-slide aspect change
+ *     mid-deck has no sensible single canvas size, so this is refused
+ *     rather than silently rendered at (say) the first slide's aspect.
  */
 export type RenderErrorReason =
   | "unknown-template"
@@ -68,7 +78,8 @@ export type RenderErrorReason =
   | "invalid-token-ref"
   | "missing-layout"
   | "missing-custom-page-size"
-  | "unknown-style-role";
+  | "unknown-style-role"
+  | "inconsistent-deck-aspect";
 
 export class RenderError extends Error {
   readonly reason: RenderErrorReason;
