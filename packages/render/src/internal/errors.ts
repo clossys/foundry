@@ -33,6 +33,28 @@
  *   - `"invalid-token-ref"` — `resolveTokenRef` was given malformed
  *     `var(...)` syntax (unbalanced parentheses, or no property name).
  *
+ * The next three were added alongside `./print` (`src/print/`), which reuses
+ * `"wrong-channel"`, `"resolution-failed"`, and `"empty-output"` above for
+ * the situations they already describe (see `renderPrintDocument.ts`'s own
+ * doc comment for exactly how each maps), and needed exactly three genuinely
+ * new ones:
+ *
+ *   - `"missing-layout"` — `doc.layout` is absent or malformed on a
+ *     `channel: "print"` document. `@vespeneventures/compose`'s own frozen
+ *     contract requires a `LayoutSpec` for `print`/`slides`/`image` (see its
+ *     `types.ts`, `LayoutSpec`'s doc comment) — this is a stronger, earlier
+ *     refusal than letting `resolveDocument` silently treat a missing
+ *     layout as zero slots and fail with the less specific
+ *     `"resolution-failed"`.
+ *   - `"missing-custom-page-size"` — `doc.meta.pageSize === "Custom"` and no
+ *     explicit page dimensions were supplied. `PrintMeta` itself has no
+ *     width/height field for `"Custom"`; `./print` refuses to default to A4
+ *     rather than risk a print run at the wrong trim size.
+ *   - `"unknown-style-role"` — a `StyleBinding.color`/`.background` names a
+ *     token role absent from `@vespeneventures/tokens`' `TOKENS` registry
+ *     (checked after `flattenTokens()`), the same "never a silent fallback
+ *     colour" discipline `internal/tokens.ts` itself holds to.
+ *
  * One more member was appended for `./slides` (a `SlidesDeckInput` whose
  * slides don't all agree on `meta.aspect` — see `src/slides/
  * renderSlidesDeck.ts` for the full reasoning):
@@ -54,6 +76,9 @@ export type RenderErrorReason =
   | "unknown-token-ref"
   | "token-ref-cycle"
   | "invalid-token-ref"
+  | "missing-layout"
+  | "missing-custom-page-size"
+  | "unknown-style-role"
   | "inconsistent-deck-aspect";
 
 export class RenderError extends Error {

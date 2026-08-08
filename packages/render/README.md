@@ -4,11 +4,13 @@ Renderers built against `@vespeneventures/compose`'s `ComposeDocument`
 contract — one subpath per output channel. `./web` resolves a web
 `ComposeDocument`'s `bindings` into the named `@vespeneventures/ui` view
 and emits framework-agnostic head metadata (title, description, canonical,
-robots, keywords, OpenGraph, Twitter card, and escaped JSON-LD). `./image`
-and `./slides` (this document) render a fixed canvas with
-absolutely-positioned slots — one canvas for `./image`, an ordered
-sequence of the same canvas for `./slides` — as self-contained SVG.
-`./email` and `./print` are the same shape, built later, by later agents,
+robots, keywords, OpenGraph, Twitter card, and escaped JSON-LD). `./email`
+renders a table-based, inline-styled HTML email plus its plain-text
+alternative. `./print` resolves a print `ComposeDocument`'s `bindings` AND
+`layout` into a deterministic, paged-media HTML+CSS document string.
+`./image` and `./slides` render a fixed canvas with absolutely-positioned
+slots — one canvas for `./image`, an ordered sequence of the same canvas
+for `./slides` — as self-contained SVG. All five are the same shape,
 against the same `ComposeDocument`.
 
 ```bash
@@ -377,6 +379,219 @@ Refusal is the same three-reason shape `./web` already documents above:
 `"empty-output"` (every bound slot matched a real slot key, but
 `resolveCopy` did not produce real text for all of them). `./email`
 introduces no new `RenderErrorReason` members.
+## `./print`
+
+`renderPrintDocument` takes a `channel: "print"` `ComposeDocument` and
+returns `{ html, page }`: `html` is a complete, standalone paged-media
+HTML+CSS document string, and `page` is the page geometry/metadata the
+render actually used.
+
+```ts
+import { renderPrintDocument } from "@vespeneventures/render/print";
+
+const doc = {
+  id: "acme-flyer",
+  channel: "print",
+  template: "Flyer",
+  meta: {
+    channel: "print",
+    pageSize: "A4",
+    orientation: "portrait",
+    margins: { top: "20mm", right: "15mm", bottom: "20mm", left: "15mm" },
+    bleed: "3mm",
+    cropMarks: true,
+    dpi: 300,
+  },
+  layout: {
+    slots: [
+      { key: "headline", element: "heading", frame: { x: 0, y: 0.15, w: 1, h: 0.15 }, required: true, align: "center" },
+      { key: "body", element: "body", frame: { x: 0.1, y: 0.35, w: 0.8, h: 0.4 }, vAlign: "middle" },
+    ],
+  },
+  bindings: [
+    { slot: "headline", value: "Grand Opening" },
+    { slot: "body", value: "Join us for the launch event." },
+  ],
+};
+
+const { html, page } = renderPrintDocument(doc);
+// html — a full "<!doctype html>...</html>" string. Hand it to a browser's
+// print pipeline, or to a downstream rasterizer/PDF tool.
+// page — { pageSize: "A4", orientation: "portrait", width: "210mm", height: "297mm", dpi: 300 }
+```
+
+### The key architectural decision: paged HTML+CSS, never a PDF
+
+`renderPrintDocument` emits a deterministic, paged-media HTML document —
+it does not shell out to Puppeteer, does not embed a headless browser, and
+does not produce PDF bytes itself. Two reasons, both load-bearing:
+
+1. **A PDF golden test asserts nothing meaningful.** This package's whole
+   testing bar (see `../web/golden-render.test.ts`'s own doc comment, and
+   `src/print/golden-render.test.ts` here) is a golden test that asserts
+   the EXACT emitted output, byte for byte. A PDF is a binary blob with
+   embedded fonts, compression, and object-offset tables that shift on
+   every trivial change — there is no meaningful byte-for-byte assertion
+   to write against one. An HTML+CSS string is plain, deterministic text:
+   the exact same golden-test discipline `./web` already proves works
+   applies to `./print` unchanged.
+2. **A headless-browser dependency is a cost this package doesn't need to
+   pay.** Puppeteer alone is on the order of 300MB (a bundled Chromium
+   download) for every consumer of this package, including ones who only
+   ever import `./web` or a future `./slides`. This package's own
+   precedent (see "The package shape" above) is that a heavy,
+   channel-specific dependency is an optional peer, installed only by a
+   consumer who actually calls that channel — but even an *optional*
+   300MB peer is a cost a print consumer whose real job is "produce an
+   HTML string" should not have to accept. Rasterizing this HTML into a
+   real PDF (with Puppeteer, Prince, `wkhtmltopdf`, or any other tool) is
+   a downstream caller's decision to make, with the dependency weight that
+   entails — not this package's.
+
+`renderPrintDocument`'s contract is exactly "a string a browser's print
+pipeline renders correctly" — nothing about pagination, rasterization, or
+PDF generation is this function's job.
+
+### `pageSize: "Custom"` with no explicit dimensions is an ERROR, not a default
+
+`@vespeneventures/compose`'s frozen `PrintMeta` (`types.ts`) can express
+exactly three `pageSize` states: `"A4"`, `"Letter"`, or `"Custom"` — and
+`"Custom"` carries no width/height field of its own. `renderPrintDocument`
+refuses to render a `"Custom"` document unless the caller supplies
+`options.customPageSize: { width, height }` (two CSS lengths):
+
+```ts
+renderPrintDocument(doc); // throws RenderError("missing-custom-page-size", ...)
+renderPrintDocument(doc, { customPageSize: { width: "148mm", height: "210mm" } }); // OK
+```
+
+There is deliberately no silent fallback to A4 here. A4 and a custom trim
+size are different physical objects; defaulting one to the other is not a
+convenience, it's the exact failure this whole function exists to prevent
+— someone printing 500 copies at the wrong trim size, discovering it only
+after the print run, with no error anywhere in the pipeline that produced
+it.
+
+### `@page`, driven by `PrintMeta` — the real CSS Paged Media syntax
+
+`internal/page.ts` builds the `@page { ... }` rule from CSS Paged Media
+Module Level 3's own `size`/`bleed`/`marks` descriptors
+(<https://www.w3.org/TR/css-page-3/>):
+
+- **`size`** — `size:A4 portrait;` / `size:letter landscape;` for a named
+  page size (CSS's own keyword for Letter is lowercase `letter`; A4's is
+  `A4`), or `size:<width> <height>;` (two raw lengths, no orientation
+  keyword) for `"Custom"` — the formal grammar's `<length>{1,2}` and
+  `<page-size> || [ portrait | landscape ]` are separate alternatives, so
+  an explicit length pair can never be paired with a `portrait`/`landscape`
+  keyword. A custom page is therefore rendered exactly as the caller
+  oriented it (a landscape custom page passes `{ width: "297mm", height:
+  "210mm" }`) — `meta.orientation` is never read for `"Custom"`.
+- **`margin-top`/`margin-right`/`margin-bottom`/`margin-left`** — from
+  `meta.margins`, emitted as four separate declarations rather than a
+  shorthand, for an unambiguous one-to-one mapping from the contract's own
+  four named fields.
+- **`bleed`** — `meta.bleed` (a CSS length) becomes `bleed:<value>;`
+  verbatim. Per the spec's own text, `bleed` "only has effect if the value
+  of `marks` is `crop`" — a `bleed` with no `cropMarks` is harmless, inert
+  CSS, not a bug this renderer guards against.
+- **`marks`** — `meta.cropMarks: true` becomes `marks:crop;`.
+
+### Bleed and crop marks are metadata for prepress tooling, not a rasterizer
+
+`meta.bleed`/`meta.cropMarks` only ever reach the `@page` rule's own
+`bleed`/`marks` descriptors — this package makes no attempt to draw crop
+marks itself, resize the `.page` box to include a bleed margin, or
+otherwise simulate what a real print/prepress pipeline does with those
+descriptors. That's the correct division of labour: `@page`'s `bleed`/
+`marks` are exactly the CSS vocabulary print tooling already knows how to
+read, and reimplementing that reading here would be exactly the kind of
+"a rule every renderer must independently remember" issue #43 already
+warned this whole package about, one layer up.
+
+### `meta.dpi` is metadata, not behaviour
+
+`meta.dpi` is carried straight through into the returned `page.dpi` —
+`renderPrintDocument` never reads it to change anything about the emitted
+HTML (there is no `dpi`-driven scaling, no resolution-dependent geometry).
+It exists for a downstream rasterizer that DOES need a target resolution
+(rendering this HTML to a bitmap or a print-quality PDF), and this
+function's only job regarding it is to not lose it on the way through.
+
+### Geometry survives here — unlike `./web`
+
+`./web` never reads `SlotSpec.frame` at all: every slot there is rendered
+with a fixed full-canvas placeholder, because a flowed web page has no
+coordinate system a `Frame` could describe (see
+`src/web/internal/webTemplates.ts`'s own doc comment). A print PAGE is a
+fixed physical canvas, so `./print` is the first channel in this package
+where `Frame` means something real: `doc.layout.slots[].frame` — a 0..1
+fraction of the page's PRINTABLE area (the page minus its margins) — is
+converted via `@vespeneventures/compose`'s own `frameToPercent` into an
+absolutely-positioned percentage box (`left`/`top`/`width`/`height`).
+`internal/document.ts` positions the page's content box (`.page-content`)
+inset by `meta.margins` from the page's own edges using CSS's own
+over-constrained `position:absolute` + all-four-insets resolution — no
+`calc()`, no unit arithmetic on this package's part — so every slot's
+percentage resolves against exactly "the page, minus its margins," which
+is what makes `Frame`'s own "0..1 fraction of the canvas" promise true for
+print specifically.
+
+### Colours: flattened to literal hex, even though a browser's print pipeline supports `oklch()`/`var()`
+
+Unlike `./email` (which targets clients with zero `oklch()`/custom-property
+support at all), a real browser's print pipeline DOES understand both. So
+flattening every colour through the shared `internal/tokens.ts`'s
+`flattenTokens()` here is a genuine decision, not an inherited necessity —
+and the argument for it is: this HTML is a paged-media document meant to
+be **printed, or turned into a PDF**, and the tooling that performs that
+step is frequently **not** a browser at all — prepress software, a
+PDF-rasterizing library embedded inside a print pipeline, a
+`wkhtmltopdf`-shaped headless renderer — much of which has
+patchy-to-nonexistent `oklch()`/custom-property support. A flattened
+document (literal `#rrggbb` everywhere) is safe in both a browser and a
+non-browser print pipeline; a `var()`/`oklch()`-bearing one is only safe in
+the former. `SlotSpec.style.color`/`.background` and
+`LayoutSpec.background.color`/`.background` are resolved this way — see
+`internal/style.ts`, and "Found but not fixed" below for what's
+deliberately not resolved yet.
+
+### Page-break control
+
+Every rendered slot gets `break-inside:avoid;page-break-inside:avoid;` by
+default (the modern CSS Fragmentation Module Level 3 property, paired with
+the legacy CSS 2.1 one for older engines/prepress tooling) — a heading or a
+stat splitting mid-way across a page boundary is almost never intentional
+in a print document. `RenderPrintOptions.allowBreakInside` (a list of slot
+keys) opts specific slots out of that default; `breakBefore`/`breakAfter`
+(also slot-key lists) force a slot to start a fresh page
+(`break-before:page;page-break-before:always;`) or be immediately followed
+by one (`break-after:page;page-break-after:always;`).
+
+### Refusal paths — never a silent partial page
+
+| `RenderError.reason` | When |
+| --- | --- |
+| `"wrong-channel"` | `doc.channel` (or `doc.meta.channel`) isn't `"print"`. |
+| `"missing-layout"` | `doc.layout` is absent or malformed — `compose`'s own contract requires a `LayoutSpec` for `print`. |
+| `"missing-custom-page-size"` | `doc.meta.pageSize === "Custom"` with no (or blank) `options.customPageSize`. |
+| `"resolution-failed"` | `@vespeneventures/compose`'s `resolveDocument` reports `ok: false` — a required slot has no binding, a binding targets an unknown slot, or nothing matched. |
+| `"empty-output"` | `resolveDocument` succeeded but `@vespeneventures/compose`'s `resolveCopy` reports `ok: false` — some matched slot's `copyId` never resolved to real text. `./print` reuses `resolveCopy` rather than hand-rolling a second check — see `compose`'s own `resolve-copy.ts` doc comment and issue #43. |
+| `"unknown-style-role"` | A `style.color`/`.background` (slot or page-level) names a token role that isn't in `@vespeneventures/tokens`' `TOKENS` registry. |
+
+### Found but not fixed
+
+`StyleBinding.border`, `.typography`, and `.weight` are NOT resolved by
+`renderPrintDocument` — only `.color` and `.background` are. `border`
+would need a width/style this frozen contract has no field for, and
+`typography`/`weight` name a composite type-scale role this package has no
+registry mapping for yet. Inventing an unfounded mapping for any of the
+three risks exactly the failure `internal/tokens.ts`'s own doc comment
+warns against for colour — "a plausible-looking wrong" value is worse than
+an unhandled field that says so in code (`src/print/internal/style.ts`).
+This is flagged here, not silently shipped, so whoever adds real
+border/typography support next knows it's a real gap, not an oversight
+nobody noticed.
 ## `./image` and `./slides` — a fixed canvas with absolutely-positioned slots
 
 `./image` and `./slides` are one problem solved once: `ImageMeta` describes
@@ -482,6 +697,18 @@ expressible against `compose`'s frozen `ComposeDocument` type.
 | `RenderEmailOptions` | type | `{ layout?: LayoutSpec; lookup?: CopyLookup; brand?: Record<string, string> }`. `renderEmailDocument`'s second argument — see "The geometry problem" above for `layout`, `@vespeneventures/compose`'s own `CopyLookup` for `lookup`, and `internal/tokens.ts`'s `flattenTokens` for `brand`. |
 | `EmailRenderResult` | type | `{ html: string; text: string; subject: string; preheader: string; warnings: RenderWarning[] }`. What `renderEmailDocument` returns. |
 | `RenderWarning` | type | `{ code: "slots-stacked" \| "slot-width-lost"; message: string; slots: string[] }`. Every real geometry-fidelity loss `renderEmailDocument` had to accept — see "The geometry problem" above. |
+### `./print`
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `renderPrintDocument(doc, options?)` | function | Resolves a `channel: "print"` `ComposeDocument`'s `bindings` against its own `doc.layout`, and its `copyId`s via `options.resolveCopyId`, into a complete, standalone paged-media HTML+CSS document string. Returns `{ html, page }`. Throws `RenderError` — never silently renders an incomplete page — for a non-print document, a missing/malformed layout, `"Custom"` with no dimensions, a resolution failure, unresolved required text, or an unknown style-token role. See "`./print`" above for the full picture. |
+| `RenderError` | class | The same `RenderError` `./web` exports — `extends Error`, `reason: RenderErrorReason`. |
+| `RenderErrorReason` | type | The same package-wide closed set `./web` exports — see `internal/errors.ts`. `renderPrintDocument` itself only ever throws `"wrong-channel"`, `"missing-layout"`, `"missing-custom-page-size"`, `"resolution-failed"`, `"empty-output"`, or `"unknown-style-role"` — see "Refusal paths" above. |
+| `CopyResolver` | type | `(copyId: string) => string \| undefined`. `./print`'s own declaration of the same shape `./web`'s `CopyResolver` uses — see `src/print/types.ts`'s own doc comment for why it's a separate declaration, not a shared import. |
+| `CustomPageSize` | type | `{ width: string; height: string }`. `options.customPageSize`'s shape — required when `doc.meta.pageSize === "Custom"`. |
+| `RenderPrintOptions` | type | `{ resolveCopyId?, customPageSize?, tokenOverrides?, breakBefore?, breakAfter?, allowBreakInside? }`. `renderPrintDocument`'s second argument — see "`./print`" above for each field. |
+| `RenderPrintResult` | type | `{ html: string; page: PrintPageInfo }`. What `renderPrintDocument` returns. |
+| `PrintPageInfo` | type | `{ pageSize, orientation, width, height, dpi? }` — the page geometry/metadata this render actually used; `width`/`height` are the resolved physical dimensions (a named size's real size, or `options.customPageSize` verbatim), and `dpi` is carried through from `meta.dpi` unchanged, present only when supplied. |
 ### `./image`
 
 | Export | Kind | Purpose |
@@ -508,15 +735,18 @@ expressible against `compose`'s frozen `ComposeDocument` type.
 ## Requirements
 
 Node 20+. ESM only. No root `.` export — import from
-`@vespeneventures/render/web`, `/email`, `/image`, or `/slides` (and,
-later, `/print`). `@vespeneventures/compose` and `@vespeneventures/tokens`
-are real dependencies; `react`, `react-dom`, and `@vespeneventures/ui` are
+`@vespeneventures/render/web`, `/email`, `/print`, `/image`, or
+`/slides`. `@vespeneventures/compose` and `@vespeneventures/tokens` are
+real dependencies; `react`, `react-dom`, and `@vespeneventures/ui` are
 optional peer dependencies of this package as a whole — because npm has no
 per-subpath peer dependencies, but in practice all three are required to
-use `./web`. NONE of them are needed by `./email`, `./image`, or
-`./slides`: `./email` builds its HTML as a plain string, and `./image` and
-`./slides` emit SVG as a plain string, all three with zero new
-dependencies of their own. See "The package shape" above for the full
+use `./web`. NONE of them are needed by `./email`, `./print`, `./image`,
+or `./slides`: `./email` and `./print` build their HTML as a plain string,
+and `./image` and `./slides` emit SVG as a plain string, all four with
+zero new dependencies of their own. Every heavy dependency this package
+carries is scoped to `./web` alone. See "The package shape" above for the
+full reasoning, and for the pattern the next channel should follow for its
+own heavy dependencies.
 reasoning, and for the pattern the next channel should follow for its own
 heavy dependencies.
 

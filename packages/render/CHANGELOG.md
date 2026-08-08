@@ -224,3 +224,68 @@ All notable changes to this package are documented here. Format follows
   - No new `RenderErrorReason` members — `./email` reuses
     `"wrong-channel"`, `"resolution-failed"`, and `"empty-output"`
     unchanged from `./web`'s own set.
+- **`./print`** (`src/print/`): `renderPrintDocument(doc, options?)` —
+  resolves a `channel: "print"` `ComposeDocument`'s `bindings` (against
+  `doc.layout` directly — print has no template registry the way `./web`
+  does, since `compose`'s own contract requires `layout` on every print
+  document) into a deterministic, paged-media HTML+CSS document string.
+  Returns `{ html, page }`. Zero new dependencies, peer or otherwise —
+  every heavy dependency this package carries (`react`/`react-dom`/
+  `@vespeneventures/ui`) is scoped to `./web` alone; `./print` needs only
+  `@vespeneventures/compose`'s `resolveDocument`/`resolveCopy`/
+  `frameToPercent`, already real dependencies of this whole package.
+  - **Paged HTML+CSS, never a PDF, never a headless browser** — the
+    key architectural decision this channel is built on. A PDF golden
+    test asserts nothing meaningful (a binary blob with no stable
+    byte-for-byte diff); a headless-browser dependency (Puppeteer,
+    ~300MB) is a cost no consumer of this package should have to pay for
+    "produce an HTML string." Rasterizing/printing this HTML to an
+    actual PDF is a downstream caller's job. See the README, "The key
+    architectural decision".
+  - **`pageSize: "Custom"` with no explicit dimensions is an ERROR, not
+    a default** — `RenderPrintOptions.customPageSize: { width, height }`
+    is required whenever `doc.meta.pageSize === "Custom"` (`PrintMeta`
+    itself carries no dimensions for that state); `renderPrintDocument`
+    throws `RenderError("missing-custom-page-size", ...)` rather than
+    silently falling back to A4.
+  - **`@page`, driven by `PrintMeta`** (`internal/page.ts`): the real CSS
+    Paged Media Module Level 3 `size`/`margin-*`/`bleed`/`marks`
+    descriptors — named-size + orientation keyword for A4/Letter
+    (`size:A4 portrait;`), raw length pair for `"Custom"` (the CSS
+    grammar cannot pair explicit lengths with an orientation keyword).
+  - **Geometry survives here — unlike `./web`**: a print page is a fixed
+    physical canvas, so `SlotSpec.frame` (a 0..1 fraction of the page's
+    printable area) is converted via `@vespeneventures/compose`'s own
+    `frameToPercent` into an absolutely-positioned percentage box
+    (`internal/geometry.ts`), inset from the page's own edges by
+    `meta.margins` with no `calc()`/unit arithmetic
+    (`internal/document.ts`).
+  - **Colours flattened to literal hex, argued explicitly rather than
+    inherited**: even though a browser's print pipeline DOES support
+    `oklch()`/`var()` (unlike `./email`'s target), `SlotSpec.style.color`/
+    `.background` and `LayoutSpec.background`'s same two fields are
+    resolved through the shared `internal/tokens.ts`'s `flattenTokens()`
+    (`internal/style.ts`) — because the tooling that turns this HTML into
+    a printed page or a PDF is frequently not a browser at all, and a
+    flattened document is safe in both. `.border`/`.typography`/`.weight`
+    are deliberately NOT resolved yet — see the README, "Found but not
+    fixed".
+  - **Page-break control**: every slot defaults to
+    `break-inside:avoid;page-break-inside:avoid;` (modern CSS
+    Fragmentation Module Level 3 property paired with the legacy CSS 2.1
+    one); `RenderPrintOptions.allowBreakInside`/`breakBefore`/
+    `breakAfter` (slot-key lists) opt out of that default or force a
+    fresh page before/after a slot.
+  - **Refusal paths, never a silent partial page**: `"wrong-channel"`,
+    `"missing-layout"`, `"missing-custom-page-size"` (all new — see
+    `internal/errors.ts`'s `RenderErrorReason`, which grew exactly these
+    three members plus `"unknown-style-role"`), `"resolution-failed"` and
+    `"empty-output"` (reused from `./web`'s own vocabulary — the latter
+    via `@vespeneventures/compose`'s `resolveCopy`, the exact fix issue
+    #43 shipped so every renderer stops hand-rolling this check).
+  - **Golden-output tests** (`src/print/golden-render.test.ts`): two real
+    `ComposeDocument` fixtures (an A4 flyer with bleed/crop
+    marks/background/break-after/vAlign, and a `"Custom"`-sized landscape
+    business card with HTML-escaped text) asserted against their exact
+    emitted HTML string, byte for byte — the same bar `./web`'s own
+    golden test is built against.
