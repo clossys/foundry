@@ -183,11 +183,31 @@ const result = resolveDocument(doc, doc.layout!);
 if (!result.ok) {
   console.error(`missing required slots: ${result.missingRequired.join(", ") || "(none)"}`);
   console.error(`bindings with no matching slot: ${result.unknownBindings.length}`);
+  console.error(`malformed bindings: ${result.bindingFindings.map((f) => f.message).join("; ") || "(none)"}`);
   process.exit(2);
 }
 for (const { key, spec, binding } of result.resolved) {
   // spec.frame, spec.element, spec.style — what to draw and where.
   // binding.copyId / binding.value — what to draw it with.
+}
+```
+
+Then, turning those matched bindings into actual text once a caller has a
+real `copyId -> text` lookup (see issue #43: `resolveDocument` alone can
+tell you a binding is *shape-valid*, never whether its `copyId` resolves
+to real content — that's this second pass's job):
+
+```ts
+import { resolveCopy } from "@vespeneventures/compose";
+
+const copyResult = resolveCopy(result, (copyId) => myCopyRegistry.get(copyId)?.text);
+if (!copyResult.ok) {
+  console.error(`unresolved copy ids: ${copyResult.unresolvedCopyIds.join(", ") || "(none)"}`);
+  console.error(`slots this pass could not decide on at all: ${copyResult.unchecked.join(", ") || "(none)"}`);
+  process.exit(2);
+}
+for (const { key, text, source } of copyResult.texts) {
+  // key — the slot; text — the final, non-empty string; source — "literal" or "copy".
 }
 ```
 
@@ -216,6 +236,45 @@ a document whose bindings matched zero slots in the layout are each `ok:
 false`, never a silent clean pass on having resolved nothing. See
 `resolve.ts`'s own doc comment, and `resolveDocument`'s entry in the API
 table below, for the exact rule.
+
+### Issue #43: a matched binding that produces no actual text
+
+The same failure mode reappeared one layer deeper, filed as issue #43:
+`resolveDocument` treated a binding as resolved the moment its `slot`
+matched a real `SlotSpec.key`, without ever asking whether the binding
+itself carried anything to render. A binding with neither `copyId` nor
+`value` — or with both, or with a `value` that was empty or
+whitespace-only — came back `ok: true`, resolved, clean, and every
+renderer built against this package would have had to reinvent the same
+strengthening locally (`@vespeneventures/render`'s `web` renderer already
+had to, before this fix — see its own `RenderError("empty-output", ...)`).
+
+The fix reuses `validate.ts`'s own `validateSlotBindingShape` — the exact
+function `validateComposeDocument` already calls per binding — rather
+than hand-rolling a second, parallel "is this binding well-formed" check
+that could drift from it. `resolveDocument` now runs every binding that
+matched a real slot through that same check and surfaces the result as
+`ResolveResult.bindingFindings: ComposeFinding[]`; any `severity: "error"`
+entry there forces `ok: false`, the same way `missingRequired` and
+`unknownBindings` already do. While fixing this, a real gap in
+`validateSlotBindingShape` itself came to light: its `binding-value-shape`
+rule accepted a whitespace-only `value` (`"   "`) because it only checked
+`.length > 0`, not whether the string held any real content — fixed
+alongside this issue, since a whitespace `value` is exactly the kind of
+"resolved to nothing" case this bar exists to catch.
+
+Whether a `copyId` string actually resolves to real text — as opposed to
+merely being a well-formed string — is a different question, one
+`resolveDocument` still can't answer (it has no copy dictionary; see "The
+`copyId` seam" below). That's `resolveCopy`'s job: given a `ResolveResult`
+and a caller-supplied `CopyLookup`, it turns every matched, well-formed
+binding into real text, and holds itself to the identical bar — `ok: true`
+only when at least one slot actually resolved to text AND no `copyId`
+came back unresolved AND nothing was left in the explicit third state,
+`unchecked` (for a binding this pass couldn't even attempt to decide on,
+a `lookup` that isn't a function, or a `lookup` call that threw). See
+`resolve-copy.ts`'s own doc comment for the fuller argument, and its
+entry in the API table below.
 
 ## Validation beyond the contract's literal wording — flagged explicitly
 
@@ -255,19 +314,24 @@ against this package's judgment calls, not just its types.
 | `ComposeDocument` | type | `{ id, channel, meta, template, bindings, layout? }`. The whole document this package exists to type and validate. |
 | `ComposeFinding` | type | `{ rule, severity: "error" \| "warning", message, path? }` — deliberately the same shape as `@vespeneventures/copy`'s `CopyFinding` and `@vespeneventures/policy`'s `Finding`. What `validateComposeDocument` returns. |
 | `ResolvedSlot` | type | `{ key, spec, binding }` — one slot a `LayoutSpec` declares that also has a matching `SlotBinding`. One entry of `ResolveResult.resolved`. |
-| `ResolveResult` | type | `{ ok, missingRequired, unknownBindings, resolved }` — what `resolveDocument` returns. See "The bar" above for exactly what `ok` means. |
+| `ResolveResult` | type | `{ ok, missingRequired, unknownBindings, resolved, bindingFindings }` — what `resolveDocument` returns. See "The bar" and "Issue #43" above for exactly what `ok` means. |
+| `CopyLookup` | type | `(copyId: string) => string \| undefined`. A caller-supplied `copyId -> text` lookup — `resolveCopy`'s second argument. |
+| `ResolvedText` | type | `{ key, text, source: "literal" \| "copy", copyId? }` — one slot `resolveCopy` turned into real text. One entry of `CopyResolveResult.texts`. |
+| `CopyResolveResult` | type | `{ ok, texts, unresolvedCopyIds, unchecked, literalCount, lookupCount }` — what `resolveCopy` returns. See "Issue #43" above and `resolve-copy.ts`'s own doc comment for exactly what `ok` and `unchecked` mean. |
 
 ### Validation (`validate.ts`)
 
 | Export | Kind | Purpose |
 | --- | --- | --- |
-| `validateComposeDocument(value)` | function | Hand-rolled structural validation of a candidate `ComposeDocument` — no schema library. Enforces the channel/`meta` discriminant agrees; `layout` present exactly when the channel requires it and absent exactly when forbidden; every `SlotBinding` has exactly one of `copyId`/`value`; every `Frame` is within 0..1, has nonzero area, and fits inside the canvas (see "Validation beyond the contract's literal wording" above); `EmailMeta.preheader` is at most 140 characters; `ImageMeta.width`/`height` are positive; every `SlotSpec.key` is unique within a `LayoutSpec`. Returns a `ComposeFinding[]`; `[]` means `value` is a well-formed `ComposeDocument`. Never throws, on any input. |
+| `validateComposeDocument(value)` | function | Hand-rolled structural validation of a candidate `ComposeDocument` — no schema library. Enforces the channel/`meta` discriminant agrees; `layout` present exactly when the channel requires it and absent exactly when forbidden; every `SlotBinding` has exactly one of `copyId`/`value`, and when present each is a non-empty, non-whitespace-only string; every `Frame` is within 0..1, has nonzero area, and fits inside the canvas (see "Validation beyond the contract's literal wording" above); `EmailMeta.preheader` is at most 140 characters; `ImageMeta.width`/`height` are positive; every `SlotSpec.key` is unique within a `LayoutSpec`. Returns a `ComposeFinding[]`; `[]` means `value` is a well-formed `ComposeDocument`. Never throws, on any input. |
+| `validateSlotBindingShape(value, path)` | function | The per-binding half of `validateComposeDocument` above (rules `binding-shape`/`binding-slot-shape`/`binding-source-exclusive`/`binding-copy-id-shape`/`binding-value-shape`), exported so `resolve.ts`'s `resolveDocument` can reuse it rather than re-implementing the same rule — see issue #43. Not part of the package's `index.ts` public surface; imported directly from `./validate.js` within this package. |
 
-### Resolution (`resolve.ts`)
+### Resolution (`resolve.ts`, `resolve-copy.ts`)
 
 | Export | Kind | Purpose |
 | --- | --- | --- |
-| `resolveDocument(doc, layout)` | function | Matches `doc.bindings` against `layout.slots`. A binding whose `slot` matches no real slot is collected into `unknownBindings`; a `required: true` slot with no matching binding is collected into `missingRequired`; every real match becomes one `ResolvedSlot` in `resolved`. `layout` is a separate argument from `doc.layout` because `web`/`email` documents carry no `layout` at all — a caller resolving one of those supplies the real slot list its template defines from wherever that lives (a `@vespeneventures/ui` view's props, in practice). `ok` is `true` only when `resolved.length > 0` and both `missingRequired`/`unknownBindings` are empty — see "The bar" above. |
+| `resolveDocument(doc, layout)` | function | Matches `doc.bindings` against `layout.slots`. A binding whose `slot` matches no real slot is collected into `unknownBindings`; a `required: true` slot with no matching binding is collected into `missingRequired`; every real match becomes one `ResolvedSlot` in `resolved`, and is also run through `validateSlotBindingShape`, with any finding collected into `bindingFindings`. `layout` is a separate argument from `doc.layout` because `web`/`email` documents carry no `layout` at all — a caller resolving one of those supplies the real slot list its template defines from wherever that lives (a `@vespeneventures/ui` view's props, in practice). `ok` is `true` only when `resolved.length > 0`, `missingRequired`/`unknownBindings` are both empty, AND `bindingFindings` has no `severity: "error"` entry — see "The bar" and "Issue #43" above. |
+| `resolveCopy(result, lookup)` | function | The second resolution pass: turns `result.resolved` (from `resolveDocument`) into actual `ResolvedText[]` via a caller-supplied `CopyLookup`. A literal `value` resolves without ever calling `lookup`. A `copyId` is looked up; `undefined`/`""`/whitespace-only is UNRESOLVED (collected into `unresolvedCopyIds`, never a fallback to the `copyId` or slot key). A binding with no source, or two conflicting ones, a non-function `lookup`, or a `lookup` call that throws, lands the affected slot key in `unchecked` — an explicit third state that forces `ok: false` on its own, same as the other two lists. `ok` is `true` only when `texts.length > 0` AND `unresolvedCopyIds` is empty AND `unchecked` is empty. See "Issue #43" above and `resolve-copy.ts`'s own doc comment. |
 
 ### Unit conversion (`frame.ts`)
 
