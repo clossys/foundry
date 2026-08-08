@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   validateAudience,
+  validateBrandAttribute,
+  validateBrandAttributes,
+  validateBrandEssence,
   validateFact,
   validateFacts,
   validateMarket,
@@ -167,5 +170,88 @@ describe("validateMarket / validateAudience / validateRoadmapItem", () => {
     expect(
       validateRoadmapItem({ id: "sso", title: "Single sign-on", status: "someday", description: "SAML-based SSO." }).ok,
     ).toBe(false);
+  });
+});
+
+describe("validateBrandEssence", () => {
+  it("accepts a well-formed essence", () => {
+    expect(validateBrandEssence({ statement: "Precision engineering for teams who cannot afford to guess." }).ok).toBe(true);
+  });
+
+  it("rejects a statement under the minimum length", () => {
+    expect(validateBrandEssence({ statement: "Fast." }).ok).toBe(false);
+  });
+
+  it("rejects a non-object input", () => {
+    expect(validateBrandEssence("Widgetronic is precise.").ok).toBe(false);
+    expect(validateBrandEssence(null).ok).toBe(false);
+  });
+});
+
+describe("validateBrandAttribute", () => {
+  const base = {
+    name: "Precise",
+    description: "Every public claim we make is checkable against a real source.",
+    evidence: {
+      basis: "Every number in our marketing traces to a fact.json entry, enforced by this package's own facts gate in CI.",
+    },
+  };
+
+  it("accepts a well-formed attribute with prose-only evidence", () => {
+    expect(validateBrandAttribute(base).ok).toBe(true);
+  });
+
+  it("accepts evidence carrying an optional factRef alongside basis", () => {
+    const result = validateBrandAttribute({
+      ...base,
+      evidence: { ...base.evidence, factRef: "facts-gate-coverage" },
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.evidence.factRef).toBe("facts-gate-coverage");
+    }
+  });
+
+  it("rejects evidence with no basis at all", () => {
+    expect(validateBrandAttribute({ ...base, evidence: {} }).ok).toBe(false);
+  });
+
+  it("rejects evidence whose basis is too short to be more than a vibe", () => {
+    expect(validateBrandAttribute({ ...base, evidence: { basis: "trust us" } }).ok).toBe(false);
+  });
+
+  it("rejects an attribute missing the evidence field entirely", () => {
+    const { evidence: _evidence, ...rest } = base;
+    expect(validateBrandAttribute(rest).ok).toBe(false);
+  });
+
+  it("rejects a non-object input", () => {
+    expect(validateBrandAttribute("Precise").ok).toBe(false);
+  });
+});
+
+describe("validateBrandAttributes", () => {
+  it("accepts an array of well-formed attributes", () => {
+    const result = validateBrandAttributes([
+      {
+        name: "Precise",
+        description: "Every claim is checkable.",
+        evidence: { basis: "Enforced by the facts-traceability gate in CI on every pull request." },
+      },
+      {
+        name: "Direct",
+        description: "Copy states things plainly.",
+        evidence: { basis: "House voice glossary forbids hedging phrases like 'we believe' and 'we think'." },
+      },
+    ]);
+    expect(result.ok).toBe(true);
+  });
+
+  it("accepts an empty array — no attributes authored yet is not itself a shape error", () => {
+    expect(validateBrandAttributes([]).ok).toBe(true);
+  });
+
+  it("rejects a non-array", () => {
+    expect(validateBrandAttributes({}).ok).toBe(false);
   });
 });

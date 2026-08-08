@@ -3,6 +3,51 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.0] - Unreleased
+
+### Added
+
+- The brand layer, absorbed here after a standalone `brand` package was
+  planned and cancelled: stripped of what `strategy` already owned
+  (`Mission.values: OperatingValue[]` is already brand values — see that
+  entity's own doc comment), a separate package would have shipped as a
+  thin record with no reader, the same shape as this repository's retired
+  `icons` package.
+  - `validateBrandEssence`: `{ statement }` — the irreducible one-line
+    statement of what the brand is. Hand-rolled, same validation style as
+    every other entity in `schema.ts`.
+  - `validateBrandAttribute`/`validateBrandAttributes`: `{ name,
+    description, evidence: { basis, factRef? } }`. `evidence.basis` is
+    required prose — what actually makes the attribute true, not a vibe.
+    `evidence.factRef` is an optional, opaque string naming a `Fact.key`,
+    the same seam `@vespeneventures/voice`'s `Claim.factRef` and this
+    package's own `Market.factRefs`/`Audience.factRefs` already use.
+  - `validateBrandDerivation`/`validateBrandDerivations`
+    (`brand-derivation.ts`): `{ attribute, tokenSlots: string[],
+    voiceRules: string[], rationale }` — what a `BrandAttribute` implies
+    for named visual token slots and named voice rules. `tokenSlots` and
+    `voiceRules` are plain strings, never a typed import of
+    `@vespeneventures/tokens` or `@vespeneventures/voice` — this package
+    keeps its **zero runtime dependencies**. Rejects a derivation naming
+    neither a slot nor a rule.
+  - `checkBrandCoverage(brandableSlots, derivations)`: pure, two-directional
+    coverage checker — every brandable slot has a derivation behind it,
+    and no derivation names a slot that doesn't exist — mirroring
+    `@vespeneventures/tokens`' own `brand-coverage.test.ts`. Because this
+    package cannot import `tokens`, `brandableSlots` is caller-supplied;
+    see the README's "The brand layer" for the seam. **Fails closed** on
+    either an empty `brandableSlots` or an empty `derivations`
+    (`ok: false`, with an explicit `reason`) — never a silent, vacuous
+    pass when there was nothing to check.
+  - `readStrategy` now loads brand from disk alongside every other entity:
+    `brand-essence.json` (a `BrandEssence`), `brand-attributes.json` (a
+    `BrandAttribute[]`), `brand-derivations.json` (a `BrandDerivation[]`),
+    exposed as `StrategyBundle.brandEssence`/`brandAttributes`/
+    `brandDerivations`. All three are optional in exactly the sense
+    `mission.json`/`positioning.json` already are — absent is not an
+    issue, present-but-invalid is, and `StrategyBundle.complete` accounts
+    for all three identically to every other file this reader loads.
+
 ## [0.1.0] - Unreleased
 
 ### Added
