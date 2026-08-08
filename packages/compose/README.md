@@ -1,10 +1,11 @@
 # @vespeneventures/compose
 
 The join point where `@vespeneventures/ui`'s visual vocabulary meets
-`@vespeneventures/copy`'s verbal one, plus everything a specific output
-channel needs to know. A `ComposeDocument` is the document that says: *this
-template, these slots filled from these copy ids, targeting this channel,
-with this metadata.*
+`@vespeneventures/copy`'s verbal one and `@vespeneventures/assets`'s
+visual-registry one, plus everything a specific output channel needs to
+know. A `ComposeDocument` is the document that says: *this template, these
+slots filled from these copy ids, asset ids, or literal values, targeting
+this channel, with this metadata.*
 
 ```bash
 npm install @vespeneventures/compose
@@ -38,20 +39,22 @@ plain type guards, in the style of `@vespeneventures/strategy`'s
 this package's entire job is dependency-free data validation, and a
 package four other packages depend on should not force every one of them
 onto one schema library's major version. This package also carries **no
-dependency on `@vespeneventures/ui` or `@vespeneventures/copy`
-themselves** — see "The `copyId` seam" and "The `template` seam" below for
-why the coupling to both is a plain string convention, never an import.
+dependency on `@vespeneventures/ui`, `@vespeneventures/copy`, or
+`@vespeneventures/assets` themselves** — see "The `copyId` seam", "The
+`assetId` seam", and "The `template` seam" below for why the coupling to
+all three is a plain string convention, never an import.
 
 ## The frozen contract
 
 ```ts
 type Channel = "web" | "email" | "print" | "slides" | "image";
 
-/** Content going into a named slot. Exactly one of copyId | value. */
+/** Content going into a named slot. Exactly one of copyId | value | assetId. */
 interface SlotBinding {
   slot: string;
   copyId?: string;   // id into a CopyRecord — plain string, no code dependency on the copy package
   value?: string;    // literal, for content that isn't registry-owned
+  assetId?: string;  // id into an AssetRecord — plain string, no code dependency on the assets package
 }
 
 /** Fractions of the canvas, 0..1. Never px, never inches. */
@@ -138,6 +141,20 @@ package works whether or not `copy` is installed at all, and resolving a
 visibility into both this package's documents and a real `CopyRecord`,
 which this package deliberately does not have.
 
+### The `assetId` seam
+
+`SlotBinding.assetId` (0.3.0) is the identical seam, one binding field
+over: a **plain string**, never a typed import of
+`@vespeneventures/assets`. Added to close the gap `ElementKind`'s
+`"image"`/`"logo"` members left open since this package's first release —
+until 0.3.0, `SlotBinding` could only ever carry text (`copyId`/`value`),
+so an `"image"`/`"logo"` slot could only ever render as a styled word.
+Resolving an `assetId` against a real `AssetRecord` is a later gate's job
+(`resolveAssets`, or a renderer's own lookup) — one with visibility into
+both this package's documents and a real `AssetRecord`, which this
+package deliberately does not have. See "The `copyId` seam" above; this
+is that argument, restated for images instead of words.
+
 ### The `template` seam
 
 `ComposeDocument.template` is likewise a **plain string** — a
@@ -211,6 +228,32 @@ for (const { key, text, source } of copyResult.texts) {
 }
 ```
 
+`resolveCopy` never treats an `assetId` binding as failed text — it
+defers those slot keys into `copyResult.deferredToAssets`, and a document
+made entirely of images can still report `copyResult.ok: true`. The
+symmetric companion, `resolveAssets`, resolves the `assetId` bindings
+`resolveCopy` deferred, given a real `assetId -> asset` lookup:
+
+```ts
+import { resolveAssets } from "@vespeneventures/compose";
+
+const assetResult = resolveAssets(result, (assetId) => myAssetRegistry.get(assetId));
+if (!assetResult.ok) {
+  console.error(`unresolved asset ids: ${assetResult.unresolvedAssetIds.join(", ") || "(none)"}`);
+  console.error(`slots this pass could not decide on at all: ${assetResult.unchecked.join(", ") || "(none)"}`);
+  process.exit(2);
+}
+for (const { key, assetId, asset } of assetResult.assets) {
+  // key — the slot; assetId — what was looked up; asset — whatever the lookup returned (opaque to this package).
+}
+```
+
+Both functions take the SAME `ResolveResult` from `resolveDocument` and
+each independently defers the other's bindings — neither needs to run
+before the other, and a caller with a text-only or asset-only document
+only needs to call the one function it actually needs. A mixed document
+combines both: `resolveCopy(result, copyLookup).ok && resolveAssets(result, assetLookup).ok`.
+
 Converting a `Frame`'s 0..1 fractions into the unit a specific renderer
 actually needs:
 
@@ -268,13 +311,35 @@ merely being a well-formed string — is a different question, one
 `resolveDocument` still can't answer (it has no copy dictionary; see "The
 `copyId` seam" below). That's `resolveCopy`'s job: given a `ResolveResult`
 and a caller-supplied `CopyLookup`, it turns every matched, well-formed
-binding into real text, and holds itself to the identical bar — `ok: true`
-only when at least one slot actually resolved to text AND no `copyId`
+`copyId`/`value` binding into real text, and holds itself to the
+identical bar — `ok: true` only when at least one slot actually resolved
+to text OR was legitimately deferred to asset resolution, AND no `copyId`
 came back unresolved AND nothing was left in the explicit third state,
 `unchecked` (for a binding this pass couldn't even attempt to decide on,
 a `lookup` that isn't a function, or a `lookup` call that threw). See
 `resolve-copy.ts`'s own doc comment for the fuller argument, and its
-entry in the API table below.
+entry in the API table below. `resolveAssets` is `resolveCopy`'s
+symmetric companion for `assetId` bindings — see "Usage" above.
+
+### `binding-source-exclusive`: exactly one of three, since 0.3.0
+
+Adding `assetId` turned this rule from exactly-one-of-two into
+exactly-one-of-three, which is a strictly harder rule to get right — the
+old "both present / neither present" binary check does not cover every
+bad combination once there are three fields, not two. The full truth
+table `validate.ts` is built against (P = present, meaning
+`!== undefined`; emptiness of a present field is a separate rule):
+
+| `copyId` | `value` | `assetId` | count | `binding-source-exclusive` fires? |
+| --- | --- | --- | --- | --- |
+| P | – | – | 1 | no |
+| – | P | – | 1 | no |
+| – | – | P | 1 | no |
+| P | P | – | 2 | **yes** |
+| P | – | P | 2 | **yes** |
+| – | P | P | 2 | **yes** |
+| P | P | P | 3 | **yes** |
+| – | – | – | 0 | **yes** |
 
 ## Validation beyond the contract's literal wording — flagged explicitly
 
@@ -297,7 +362,7 @@ against this package's judgment calls, not just its types.
 | --- | --- | --- |
 | `Channel` | type | `"web" \| "email" \| "print" \| "slides" \| "image"`. The closed vocabulary of output targets. |
 | `CHANNELS` | const | `Channel`'s own members as a runtime array — `["web", "email", "print", "slides", "image"]`. |
-| `SlotBinding` | type | `{ slot, copyId?, value? }`. Content going into a named slot; exactly one of `copyId`/`value`. |
+| `SlotBinding` | type | `{ slot, copyId?, value?, assetId? }`. Content going into a named slot; exactly one of `copyId`/`value`/`assetId` (0.3.0 — see "`binding-source-exclusive`: exactly one of three" above). |
 | `Frame` | type | `{ x, y, w, h }`, each a fraction 0..1 of the canvas. |
 | `Rect` | type | `{ x, y, w, h }` in a concrete unit (percent or inches) — what `frameToPercent`/`frameToInches` return. A distinct type from `Frame` so a converted value can never be mistaken for one still in the 0..1 fractional space. |
 | `ElementKind` | type | `"heading" \| "subheading" \| "body" \| "eyebrow" \| "label" \| "stat" \| "list" \| "image" \| "logo" \| "button" \| "divider" \| "fill"`. |
@@ -317,21 +382,25 @@ against this package's judgment calls, not just its types.
 | `ResolveResult` | type | `{ ok, missingRequired, unknownBindings, resolved, bindingFindings }` — what `resolveDocument` returns. See "The bar" and "Issue #43" above for exactly what `ok` means. |
 | `CopyLookup` | type | `(copyId: string) => string \| undefined`. A caller-supplied `copyId -> text` lookup — `resolveCopy`'s second argument. |
 | `ResolvedText` | type | `{ key, text, source: "literal" \| "copy", copyId? }` — one slot `resolveCopy` turned into real text. One entry of `CopyResolveResult.texts`. |
-| `CopyResolveResult` | type | `{ ok, texts, unresolvedCopyIds, unchecked, literalCount, lookupCount }` — what `resolveCopy` returns. See "Issue #43" above and `resolve-copy.ts`'s own doc comment for exactly what `ok` and `unchecked` mean. |
+| `CopyResolveResult` | type | `{ ok, texts, unresolvedCopyIds, unchecked, deferredToAssets, literalCount, lookupCount }` — what `resolveCopy` returns. `deferredToAssets` (0.3.0) lists slot keys whose only source is `assetId` — deliberately not counted as failed text. See "Issue #43" above and `resolve-copy.ts`'s own doc comment for exactly what `ok` and `unchecked` mean. |
+| `AssetLookup` | type | `(assetId: string) => unknown`. A caller-supplied `assetId -> asset` lookup — `resolveAssets`'s second argument. Returns `unknown`, not a typed `AssetEntry` — this package stays zero-dependency; see `resolve-assets.ts`'s own doc comment, "Why this function does not know what an asset looks like". |
+| `ResolvedAsset` | type | `{ key, assetId, asset }` — one slot `resolveAssets` turned into a real asset. `asset` is whatever the lookup returned, opaque to this package. One entry of `AssetResolveResult.assets`. |
+| `AssetResolveResult` | type | `{ ok, assets, unresolvedAssetIds, unchecked, deferredToCopy }` — what `resolveAssets` returns (0.3.0). Mirrors `CopyResolveResult` field-for-field; `deferredToCopy` lists slot keys whose source is `copyId`/`value`, deliberately not counted as failed assets. |
 
 ### Validation (`validate.ts`)
 
 | Export | Kind | Purpose |
 | --- | --- | --- |
 | `validateComposeDocument(value)` | function | Hand-rolled structural validation of a candidate `ComposeDocument` — no schema library. Enforces the channel/`meta` discriminant agrees; `layout` present exactly when the channel requires it and absent exactly when forbidden; every `SlotBinding` has exactly one of `copyId`/`value`, and when present each is a non-empty, non-whitespace-only string; every `Frame` is within 0..1, has nonzero area, and fits inside the canvas (see "Validation beyond the contract's literal wording" above); `EmailMeta.preheader` is at most 140 characters; `ImageMeta.width`/`height` are positive; every `SlotSpec.key` is unique within a `LayoutSpec`. Returns a `ComposeFinding[]`; `[]` means `value` is a well-formed `ComposeDocument`. Never throws, on any input. |
-| `validateSlotBindingShape(value, path)` | function | The per-binding half of `validateComposeDocument` above (rules `binding-shape`/`binding-slot-shape`/`binding-source-exclusive`/`binding-copy-id-shape`/`binding-value-shape`), exported so `resolve.ts`'s `resolveDocument` can reuse it rather than re-implementing the same rule — see issue #43. Not part of the package's `index.ts` public surface; imported directly from `./validate.js` within this package. |
+| `validateSlotBindingShape(value, path)` | function | The per-binding half of `validateComposeDocument` above (rules `binding-shape`/`binding-slot-shape`/`binding-source-exclusive`/`binding-copy-id-shape`/`binding-value-shape`/`binding-asset-id-shape`), exported so `resolve.ts`'s `resolveDocument` can reuse it rather than re-implementing the same rule — see issue #43. `binding-source-exclusive` is exactly-one-of-three as of 0.3.0 — see the truth table above. Not part of the package's `index.ts` public surface; imported directly from `./validate.js` within this package. |
 
-### Resolution (`resolve.ts`, `resolve-copy.ts`)
+### Resolution (`resolve.ts`, `resolve-copy.ts`, `resolve-assets.ts`)
 
 | Export | Kind | Purpose |
 | --- | --- | --- |
-| `resolveDocument(doc, layout)` | function | Matches `doc.bindings` against `layout.slots`. A binding whose `slot` matches no real slot is collected into `unknownBindings`; a `required: true` slot with no matching binding is collected into `missingRequired`; every real match becomes one `ResolvedSlot` in `resolved`, and is also run through `validateSlotBindingShape`, with any finding collected into `bindingFindings`. `layout` is a separate argument from `doc.layout` because `web`/`email` documents carry no `layout` at all — a caller resolving one of those supplies the real slot list its template defines from wherever that lives (a `@vespeneventures/ui` view's props, in practice). `ok` is `true` only when `resolved.length > 0`, `missingRequired`/`unknownBindings` are both empty, AND `bindingFindings` has no `severity: "error"` entry — see "The bar" and "Issue #43" above. |
-| `resolveCopy(result, lookup)` | function | The second resolution pass: turns `result.resolved` (from `resolveDocument`) into actual `ResolvedText[]` via a caller-supplied `CopyLookup`. A literal `value` resolves without ever calling `lookup`. A `copyId` is looked up; `undefined`/`""`/whitespace-only is UNRESOLVED (collected into `unresolvedCopyIds`, never a fallback to the `copyId` or slot key). A binding with no source, or two conflicting ones, a non-function `lookup`, or a `lookup` call that throws, lands the affected slot key in `unchecked` — an explicit third state that forces `ok: false` on its own, same as the other two lists. `ok` is `true` only when `texts.length > 0` AND `unresolvedCopyIds` is empty AND `unchecked` is empty. See "Issue #43" above and `resolve-copy.ts`'s own doc comment. |
+| `resolveDocument(doc, layout)` | function | Matches `doc.bindings` against `layout.slots`. A binding whose `slot` matches no real slot is collected into `unknownBindings`; a `required: true` slot with no matching binding is collected into `missingRequired`; every real match becomes one `ResolvedSlot` in `resolved`, and is also run through `validateSlotBindingShape`, with any finding collected into `bindingFindings`. `layout` is a separate argument from `doc.layout` because `web`/`email` documents carry no `layout` at all — a caller resolving one of those supplies the real slot list its template defines from wherever that lives (a `@vespeneventures/ui` view's props, in practice). `ok` is `true` only when `resolved.length > 0`, `missingRequired`/`unknownBindings` are both empty, AND `bindingFindings` has no `severity: "error"` entry — see "The bar" and "Issue #43" above. Unchanged by the `assetId` seam — this function does not distinguish a `copyId` binding from an `assetId` one; that split happens one pass later. |
+| `resolveCopy(result, lookup)` | function | The second resolution pass: turns `result.resolved` (from `resolveDocument`) into actual `ResolvedText[]` via a caller-supplied `CopyLookup`. A literal `value` resolves without ever calling `lookup`. A `copyId` is looked up; `undefined`/`""`/whitespace-only is UNRESOLVED (collected into `unresolvedCopyIds`, never a fallback to the `copyId` or slot key). A binding whose only source is `assetId` is DEFERRED into `deferredToAssets` — never treated as failed text (0.3.0). A binding with no source, or two/three conflicting ones, a non-function `lookup`, or a `lookup` call that throws, lands the affected slot key in `unchecked` — an explicit third state that forces `ok: false` on its own, same as the other lists. `ok` is `true` only when `unresolvedCopyIds` is empty AND `unchecked` is empty AND (`texts.length > 0` OR `deferredToAssets.length > 0`). See "Issue #43" above and `resolve-copy.ts`'s own doc comment. |
+| `resolveAssets(result, lookup)` | function | (0.3.0) The symmetric companion to `resolveCopy`: turns `result.resolved` into actual `ResolvedAsset[]` via a caller-supplied `AssetLookup`. An `assetId` is looked up; `undefined`/`null` is UNRESOLVED (collected into `unresolvedAssetIds`). A binding whose only source is `copyId`/`value` is DEFERRED into `deferredToCopy` — never treated as a failed asset lookup. A binding with no source, two/three conflicting ones, a non-function `lookup`, or a `lookup` call that throws, lands in `unchecked`. `ok` is `true` only when `unresolvedAssetIds` is empty AND `unchecked` is empty AND `assets.length > 0` — a document with no `assetId` bindings correctly reports `ok: false` here, the intended counterpart to `resolveCopy` reporting `ok: true` for an asset-only document. See `resolve-assets.ts`'s own doc comment. |
 
 ### Unit conversion (`frame.ts`)
 
@@ -354,10 +423,11 @@ against this package's judgment calls, not just its types.
 Node 20+. ESM only. **Zero runtime dependencies** — matching
 `@vespeneventures/catalog`, `@vespeneventures/policy`,
 `@vespeneventures/tokens`, and `@vespeneventures/voice`'s own precedent.
-No dependency on `@vespeneventures/ui` or `@vespeneventures/copy` either,
-despite this README's comparisons to both — see "The `copyId` seam" and
-"The `template` seam" above for why both couplings are opaque string
-conventions, not imports.
+No dependency on `@vespeneventures/ui`, `@vespeneventures/copy`, or
+`@vespeneventures/assets` either, despite this README's comparisons to
+all three — see "The `copyId` seam", "The `assetId` seam", and "The
+`template` seam" above for why every coupling is an opaque string
+convention, not an import.
 
 ## Licence
 

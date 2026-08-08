@@ -3,6 +3,77 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.0] - Unreleased
+
+### Added
+
+- **`SlotBinding.assetId?: string`** (`src/types.ts`) — the missing visual
+  half of the `copyId` seam. `ElementKind`'s `"image"`/`"logo"` members
+  have existed since this package's first release, but `SlotBinding`
+  could only ever carry text (`copyId`/`value`), so every renderer built
+  against those kinds could only render a styled word. `assetId` is a
+  plain, opaque string seam into a `@vespeneventures/assets`
+  `AssetRecord` — deliberately **not** an import of that package; this
+  package remains zero-dependency, and works whether or not `assets` is
+  installed. See the README, "The `assetId` seam".
+- **`resolveAssets`** (`src/resolve-assets.ts`) — the symmetric companion
+  to `resolveCopy`, added alongside `assetId`. Takes the same
+  `ResolveResult` `resolveCopy` does and turns matched `assetId` bindings
+  into actual assets via a caller-supplied `AssetLookup: (assetId:
+  string) => unknown`. Same discipline as `resolveCopy`: a non-function
+  `lookup`, a `lookup` that throws, or one that returns `undefined`/`null`
+  all land the affected slot in `unchecked` and force `ok: false` — never
+  a silent pass. A binding whose source is `copyId`/`value` instead of
+  `assetId` is deferred into `deferredToCopy`, never treated as a failed
+  asset lookup.
+
+### Changed
+
+- **`binding-source-exclusive` is now exactly-one-of-THREE**
+  (`src/validate.ts`), not exactly-one-of-two. `SlotBinding` gaining
+  `assetId` meant the old "both present / neither present" binary check
+  no longer covered every bad combination — a binding with `copyId` AND
+  `assetId` (and no `value`) previously passed this rule entirely, since
+  neither the old `copyIdPresent === valuePresent` comparison nor
+  anything else in that check ever looked at a third field. Rewritten to
+  count how many of `copyId`/`value`/`assetId` are present and require
+  exactly 1, covering every one of the 8 possible presence combinations
+  (3 valid, 5 invalid) — see `validate.ts`'s own doc comment for the full
+  truth table. New rule: `"binding-asset-id-shape"`, mirroring
+  `binding-copy-id-shape`, for a present-but-empty `assetId`.
+- **`resolveCopy` no longer treats an `assetId`-only binding as failed
+  text** (`src/resolve-copy.ts`). Before this change, a binding with no
+  `copyId`/`value` — which, before 0.3.0, meant EVERY `assetId` binding,
+  since `assetId` did not exist — landed in `unchecked`, forcing
+  `CopyResolveResult.ok: false`. Left unchanged, this would have made
+  every document containing so much as one image report a resolution
+  failure the moment a renderer started honoring `assetId`. `resolveCopy`
+  now recognizes "exactly one source present, and it is `assetId`" as its
+  own case and records it into a new `CopyResolveResult.deferredToAssets:
+  string[]` field, contributing to neither `texts` nor `unchecked`.
+  `ok`'s formula changed to match: `true` when `unresolvedCopyIds` and
+  `unchecked` are both empty AND (`texts.length > 0` OR
+  `deferredToAssets.length > 0`) — so a document made entirely of assets
+  is `ok: true` from `resolveCopy`'s own point of view, while a
+  `resolved` list that is empty, or that contains only unresolvable
+  bindings, still reports `ok: false`. Every existing call site (a
+  document with only `copyId`/`value` bindings, `deferredToAssets` always
+  `[]`) is unaffected — this is a strictly additive behavior change,
+  confirmed by re-running this package's and `@vespeneventures/render`'s
+  full test suites unmodified.
+
+### Migration notes for `render` and any other consumer
+
+- Bump the `@vespeneventures/compose` dependency range from `~0.2.0` to
+  `~0.3.0` — this is a real minor bump (new field, new export, a
+  strictly-additive validation change), and npm `0.x` ranges are
+  patch-only: neither `~0.2.0` nor `^0.2.0` resolves `0.3.0`.
+- No renderer changes are required or made in this release. Every
+  existing document (no `assetId` bindings) resolves identically to
+  0.2.0; `resolveCopy(...).ok` is unchanged for any document that has
+  none. Emitting real image elements from a resolved `assetId` binding is
+  deliberately left to a follow-up change, one renderer at a time.
+
 ## [0.2.0] - Unreleased
 
 ### Fixed

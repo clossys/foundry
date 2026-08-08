@@ -35,9 +35,11 @@ export const CHANNELS = ["web", "email", "print", "slides", "image"] as const sa
 // ---------------------------------------------------------------------------
 
 /**
- * Content going into a named slot. Exactly one of `copyId`/`value` must be
- * set — never both, never neither; see `validate.ts`'s
- * `"binding-source-exclusive"` rule.
+ * Content going into a named slot. Exactly one of `copyId`/`value`/
+ * `assetId` must be set — never two, never all three, never none; see
+ * `validate.ts`'s `"binding-source-exclusive"` rule (as of 0.3.0, an
+ * exactly-one-of-THREE check, not exactly-one-of-two — see that rule's own
+ * doc comment for the full truth table).
  */
 export interface SlotBinding {
   /** The `SlotSpec.key` this binding fills. */
@@ -55,6 +57,22 @@ export interface SlotBinding {
   copyId?: string;
   /** A literal string, for content that isn't registry-owned. */
   value?: string;
+  /**
+   * A plain string id into an `AssetRecord` — deliberately **not** an
+   * import of `@vespeneventures/assets`. Added in 0.3.0 to close the gap
+   * `ElementKind`'s `"image"`/`"logo"` members left open since this
+   * package's first release: until now `SlotBinding` could only carry
+   * text, so an `"image"`/`"logo"` slot could only ever render as a styled
+   * word. Same seam as `copyId`, one binding field over: the coupling is
+   * an opaque string convention, not a code import, so `compose` works
+   * whether or not `@vespeneventures/assets` is even installed, and
+   * resolving an `assetId` against a real `AssetRecord` is a later gate's
+   * job — one with visibility into both sides, which this package
+   * deliberately does not have. See `resolve-assets.ts`'s `resolveAssets`
+   * for the resolution half of this seam, and the README, "The `assetId`
+   * seam".
+   */
+  assetId?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -288,10 +306,15 @@ export interface ResolvedSlot {
  * matched binding is itself shape-valid — see `bindingFindings` below. An
  * empty `layout`, an empty `bindings` list, a document that matched no
  * slots at all, or a binding that matched a slot but is malformed (no
- * source of text, two conflicting sources, an empty/whitespace-only
- * `value`, an empty `copyId`) is each `ok: false` — never a silent clean
- * pass on having resolved nothing, or on having resolved to something
- * unusable. See `resolve.ts`'s own doc comment for the fuller argument.
+ * source at all, two or three conflicting sources, an empty/whitespace-only
+ * `value`, an empty `copyId`, an empty `assetId`) is each `ok: false` —
+ * never a silent clean pass on having resolved nothing, or on having
+ * resolved to something unusable. See `resolve.ts`'s own doc comment for
+ * the fuller argument. `resolveDocument` itself does not distinguish a
+ * `copyId` binding from an `assetId` one — that split happens one pass
+ * later, in `resolve-copy.ts`'s `resolveCopy` and `resolve-assets.ts`'s
+ * `resolveAssets`, each of which reads `resolved`/`bindingFindings` from
+ * here and picks out only the bindings relevant to its own job.
  */
 export interface ResolveResult {
   ok: boolean;
@@ -308,11 +331,13 @@ export interface ResolveResult {
    * have reported for that binding, reused rather than re-implemented, so
    * `resolveDocument` and `validateComposeDocument` can never quietly
    * drift apart on what counts as a well-formed `SlotBinding`. Catches a
-   * binding with neither `copyId` nor `value` (`binding-source-exclusive`),
-   * one with both (`binding-source-exclusive`), an empty `copyId`
-   * (`binding-copy-id-shape`), and an empty or whitespace-only `value`
-   * (`binding-value-shape`). Always `severity: "error"` in practice — see
-   * `ComposeFinding`'s own doc comment. Any entry here forces
+   * binding with none of `copyId`/`value`/`assetId` set, one with two or
+   * all three set (`binding-source-exclusive` — see `validate.ts` for the
+   * full exactly-one-of-three truth table), an empty `copyId`
+   * (`binding-copy-id-shape`), an empty or whitespace-only `value`
+   * (`binding-value-shape`), and an empty `assetId`
+   * (`binding-asset-id-shape`). Always `severity: "error"` in practice —
+   * see `ComposeFinding`'s own doc comment. Any entry here forces
    * `ok: false`; never silently dropped.
    */
   bindingFindings: ComposeFinding[];

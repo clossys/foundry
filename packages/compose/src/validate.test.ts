@@ -150,22 +150,82 @@ describe("validateComposeDocument — root fields", () => {
   });
 });
 
-describe("validateComposeDocument — SlotBinding: exactly one of copyId/value", () => {
-  it("flags a binding with neither copyId nor value", () => {
-    const findings = validateComposeDocument({ ...validWeb, bindings: [{ slot: "heading" }] });
-    const finding = findings.find((f) => f.rule === "binding-source-exclusive");
-    expect(finding).toMatchObject({ severity: "error", path: "bindings.0" });
-    expect(finding?.message).toContain("neither");
+describe("validateComposeDocument — SlotBinding: exactly one of copyId/value/assetId (0.3.0 — exactly-one-of-THREE)", () => {
+  // The full truth table validate.ts's own top comment documents: three
+  // exactly-one-present combinations must NEVER fire binding-source-exclusive,
+  // the other five (three two-present pairs, one three-present, one
+  // zero-present) always must.
+
+  it("EXACTLY-ONE 1/3: copyId alone does not fire binding-source-exclusive", () => {
+    const findings = validateComposeDocument({ ...validWeb, bindings: [{ slot: "heading", copyId: "home.heading" }] });
+    expect(findings.some((f) => f.rule === "binding-source-exclusive")).toBe(false);
   });
 
-  it("flags a binding with both copyId and value", () => {
+  it("EXACTLY-ONE 2/3: value alone does not fire binding-source-exclusive", () => {
+    const findings = validateComposeDocument({ ...validWeb, bindings: [{ slot: "heading", value: "literal" }] });
+    expect(findings.some((f) => f.rule === "binding-source-exclusive")).toBe(false);
+  });
+
+  it("EXACTLY-ONE 3/3: assetId alone does not fire binding-source-exclusive", () => {
+    const findings = validateComposeDocument({ ...validWeb, bindings: [{ slot: "heading", assetId: "marketing.hero" }] });
+    expect(findings.some((f) => f.rule === "binding-source-exclusive")).toBe(false);
+  });
+
+  it("TWO-PRESENT 1/3: copyId + value fires binding-source-exclusive (2 are present)", () => {
     const findings = validateComposeDocument({
       ...validWeb,
       bindings: [{ slot: "heading", copyId: "home.heading", value: "literal too" }],
     });
     const finding = findings.find((f) => f.rule === "binding-source-exclusive");
     expect(finding).toMatchObject({ severity: "error", path: "bindings.0" });
-    expect(finding?.message).toContain("both");
+    expect(finding?.message).toContain("2 are present");
+  });
+
+  it("TWO-PRESENT 2/3: copyId + assetId fires binding-source-exclusive", () => {
+    const findings = validateComposeDocument({
+      ...validWeb,
+      bindings: [{ slot: "heading", copyId: "home.heading", assetId: "marketing.hero" }],
+    });
+    const finding = findings.find((f) => f.rule === "binding-source-exclusive");
+    expect(finding).toMatchObject({ severity: "error", path: "bindings.0" });
+    expect(finding?.message).toContain("2 are present");
+  });
+
+  it("TWO-PRESENT 3/3: value + assetId fires binding-source-exclusive", () => {
+    const findings = validateComposeDocument({
+      ...validWeb,
+      bindings: [{ slot: "heading", value: "literal", assetId: "marketing.hero" }],
+    });
+    const finding = findings.find((f) => f.rule === "binding-source-exclusive");
+    expect(finding).toMatchObject({ severity: "error", path: "bindings.0" });
+    expect(finding?.message).toContain("2 are present");
+  });
+
+  it("THREE-PRESENT: copyId + value + assetId fires binding-source-exclusive (3 are present)", () => {
+    const findings = validateComposeDocument({
+      ...validWeb,
+      bindings: [{ slot: "heading", copyId: "home.heading", value: "literal too", assetId: "marketing.hero" }],
+    });
+    const finding = findings.find((f) => f.rule === "binding-source-exclusive");
+    expect(finding).toMatchObject({ severity: "error", path: "bindings.0" });
+    expect(finding?.message).toContain("3 are present");
+  });
+
+  it("NONE-PRESENT: a binding with none of copyId/value/assetId fires binding-source-exclusive", () => {
+    const findings = validateComposeDocument({ ...validWeb, bindings: [{ slot: "heading" }] });
+    const finding = findings.find((f) => f.rule === "binding-source-exclusive");
+    expect(finding).toMatchObject({ severity: "error", path: "bindings.0" });
+    expect(finding?.message).toContain("none are present");
+  });
+
+  it("flags an empty assetId with binding-asset-id-shape", () => {
+    const findings = validateComposeDocument({ ...validWeb, bindings: [{ slot: "heading", assetId: "" }] });
+    // empty assetId means it's `!== undefined` but empty — presentCount
+    // still counts it as "present" (source-exclusive is satisfied, exactly
+    // one field set), and binding-asset-id-shape catches the emptiness
+    // separately.
+    expect(findings.some((f) => f.rule === "binding-source-exclusive")).toBe(false);
+    expect(hasRule(findings, "binding-asset-id-shape", "bindings.0.assetId")).toBe(true);
   });
 
   it("flags a missing/empty slot with binding-slot-shape", () => {

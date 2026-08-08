@@ -210,15 +210,47 @@ function validateFrameShape(value: unknown, path: string): ComposeFinding[] {
 
 /**
  * Rule: binding-shape, binding-slot-shape, binding-source-exclusive,
- * binding-copy-id-shape, binding-value-shape.
+ * binding-copy-id-shape, binding-value-shape, binding-asset-id-shape.
  *
  * Exported (not just used internally by `validateComposeDocument`)
  * because `resolve.ts`'s `resolveDocument` reuses this exact function to
  * check the shape of each binding it is about to resolve — see its own
  * doc comment and issue #43. `resolveDocument` deliberately does not
- * hand-roll a second, drifting copy of "exactly one of copyId/value,
- * whichever is present non-empty" — this is the one place that rule
- * lives.
+ * hand-roll a second, drifting copy of "exactly one of copyId/value/
+ * assetId, whichever is present non-empty" — this is the one place that
+ * rule lives.
+ *
+ * `binding-source-exclusive` — EXACTLY ONE OF THREE, as of 0.3.0.
+ * -----------------------------------------------------------------
+ * Before 0.3.0 this was exactly-one-of-two (`copyId`/`value`). Adding
+ * `assetId` (`types.ts`'s `SlotBinding.assetId`, the seam into a
+ * `@vespeneventures/assets` `AssetRecord`) turned it into
+ * exactly-one-of-three, which is a strictly harder rule to get right: the
+ * "both present" / "neither present" binary check above no longer covers
+ * every bad combination once there are three fields, not two, to be
+ * present or absent. The full truth table this function is built against
+ * (P = present, meaning `!== undefined`; a present-but-empty string still
+ * counts as "present" here — emptiness is `binding-copy-id-shape`/
+ * `binding-value-shape`/`binding-asset-id-shape`'s job, not this rule's):
+ *
+ *   copyId  value  assetId  | count | binding-source-exclusive fires?
+ *   ------  -----  -------  | ----- | --------------------------------
+ *     P       -       -     |   1   | no  (exactly one — copyId)
+ *     -       P       -     |   1   | no  (exactly one — value)
+ *     -       -       P     |   1   | no  (exactly one — assetId)
+ *     P       P       -     |   2   | yes (two present)
+ *     P       -       P     |   2   | yes (two present)
+ *     -       P       P     |   2   | yes (two present)
+ *     P       P       P     |   3   | yes (three present)
+ *     -       -       -     |   0   | yes (none present)
+ *
+ * Implemented by counting how many of the three are present, rather than
+ * three separate pairwise comparisons — a pairwise reading (`copyId ===
+ * value`, `value === assetId`, ...) is exactly the kind of hand-rolled
+ * logic that gets one combination wrong when a third field is added to a
+ * rule that was written for two; counting sidesteps that class of bug
+ * entirely and reads directly as "the rule this file's own name says it
+ * enforces".
  */
 export function validateSlotBindingShape(value: unknown, path: string): ComposeFinding[] {
   if (!isPlainObject(value)) {
@@ -228,6 +260,7 @@ export function validateSlotBindingShape(value: unknown, path: string): ComposeF
   const slot = value.slot;
   const copyId = value.copyId;
   const val = value.value;
+  const assetId = value.assetId;
 
   const findings: ComposeFinding[] = [];
 
@@ -242,14 +275,17 @@ export function validateSlotBindingShape(value: unknown, path: string): ComposeF
 
   const copyIdPresent = copyId !== undefined;
   const valuePresent = val !== undefined;
+  const assetIdPresent = assetId !== undefined;
+  const presentCount = [copyIdPresent, valuePresent, assetIdPresent].filter(Boolean).length;
 
-  if (copyIdPresent === valuePresent) {
+  if (presentCount !== 1) {
     findings.push({
       rule: "binding-source-exclusive",
       severity: "error",
-      message: copyIdPresent
-        ? `${path} must set exactly one of copyId/value, but both are present.`
-        : `${path} must set exactly one of copyId/value, but neither is present.`,
+      message:
+        presentCount === 0
+          ? `${path} must set exactly one of copyId/value/assetId, but none are present.`
+          : `${path} must set exactly one of copyId/value/assetId, but ${presentCount} are present.`,
       path,
     });
   }
@@ -269,6 +305,15 @@ export function validateSlotBindingShape(value: unknown, path: string): ComposeF
       severity: "error",
       message: `${path}.value must be a non-empty, non-whitespace-only string when present, got ${describe(val)}.`,
       path: `${path}.value`,
+    });
+  }
+
+  if (assetIdPresent && !isNonEmptyString(assetId)) {
+    findings.push({
+      rule: "binding-asset-id-shape",
+      severity: "error",
+      message: `${path}.assetId must be a non-empty string when present, got ${describe(assetId)}.`,
+      path: `${path}.assetId`,
     });
   }
 
@@ -618,8 +663,8 @@ function validateMetaFieldsForChannel(meta: Record<string, unknown>, channel: Ch
  *
  * Checks, in full: `id` non-empty; `channel` one of the five known
  * channels; `template` non-empty; `bindings` an array, each entry's own
- * shape (`slot` non-empty, exactly one of `copyId`/`value`, whichever is
- * present non-empty); `meta`'s `channel` field agrees with the document's
+ * shape (`slot` non-empty, exactly one of `copyId`/`value`/`assetId`,
+ * whichever is present non-empty); `meta`'s `channel` field agrees with the document's
  * own `channel` AND `meta`'s own fields match whichever channel `meta`
  * itself claims to be (so a document with a `channel`/`meta.channel`
  * mismatch gets two distinct findings — one for the mismatch, one for

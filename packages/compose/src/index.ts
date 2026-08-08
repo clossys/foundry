@@ -15,12 +15,18 @@
  *   2. VALIDATION (`validate.ts`) — `validateComposeDocument`, hand-rolled
  *      shape validation in the style of `@vespeneventures/strategy`'s
  *      `validation.ts` and `@vespeneventures/copy`'s `schema.ts`.
- *   3. RESOLUTION (`resolve.ts`, `resolve-copy.ts`) — `resolveDocument`,
- *      matching a document's bindings against a real layout's slots
- *      (reusing `validate.ts`'s own binding-shape checks so a malformed
- *      binding can never resolve `ok: true` — see issue #43), and
- *      `resolveCopy`, the second pass that turns those matched bindings
- *      into actual text via a caller-supplied `CopyLookup`.
+ *   3. RESOLUTION (`resolve.ts`, `resolve-copy.ts`, `resolve-assets.ts`) —
+ *      `resolveDocument`, matching a document's bindings against a real
+ *      layout's slots (reusing `validate.ts`'s own binding-shape checks
+ *      so a malformed binding can never resolve `ok: true` — see issue
+ *      #43); `resolveCopy`, the second pass that turns matched
+ *      `copyId`/`value` bindings into actual text via a caller-supplied
+ *      `CopyLookup`; and `resolveAssets`, its symmetric companion (added
+ *      0.3.0) that turns matched `assetId` bindings into actual assets
+ *      via a caller-supplied `AssetLookup`. Each of the latter two defers
+ *      the other's bindings rather than treating them as failures — see
+ *      `resolve-copy.ts`'s own top comment, "Asset bindings are not
+ *      failed text".
  *   4. UNIT CONVERSION AND SMALL HELPERS (`frame.ts`, `slots.ts`) — the
  *      two conversions renderers need out of a `Frame`, plus small
  *      read-only lookups over a `LayoutSpec`'s `slots`.
@@ -55,6 +61,9 @@ export { resolveDocument } from "./resolve.js";
 
 export { resolveCopy } from "./resolve-copy.js";
 export type { CopyLookup, CopyResolveResult, ResolvedText } from "./resolve-copy.js";
+
+export { resolveAssets } from "./resolve-assets.js";
+export type { AssetLookup, AssetResolveResult, ResolvedAsset } from "./resolve-assets.js";
 
 export { frameToInches, frameToPercent } from "./frame.js";
 export type { CanvasInches } from "./frame.js";

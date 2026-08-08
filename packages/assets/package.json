@@ -1,6 +1,6 @@
 {
-  "name": "@vespeneventures/compose",
-  "version": "0.3.0",
+  "name": "@vespeneventures/assets",
+  "version": "0.1.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -13,6 +13,9 @@
       "import": "./dist/index.js"
     }
   },
+  "bin": {
+    "assets-check": "./dist/cli.js"
+  },
   "files": [
     "dist",
     "src",
@@ -21,24 +24,24 @@
     "LICENSE"
   ],
   "sideEffects": false,
-  "description": "The join point where @vespeneventures/ui's visual vocabulary meets @vespeneventures/copy's verbal one, plus everything a specific output channel needs to know: a ComposeDocument names a template, binds its slots to copy ids or literal values, targets a Channel, and carries that channel's own metadata. Pure types, validation, and slot-resolution functions only — this package never renders anything and never imports React, a schema library, @vespeneventures/ui, or @vespeneventures/copy.",
+  "description": "The visual-registry layer over @vespeneventures/compose's SlotBinding.assetId seam: a schema for registering a consumer's own images as addressable, versioned, reviewable entries (AssetEntry/AssetRecord), a reader that loads a consumer's real registry file, and a coverage check that reports referenced-but-unregistered and registered-but-unreferenced asset ids. This package ships no actual images and never calls a generation API — every entry a consumer registers is that consumer's own asset.",
   "keywords": [
+    "assets",
+    "images",
     "compose",
-    "layout",
-    "template",
-    "content-model",
+    "content-checker",
     "typescript"
   ],
   "author": "Calvin Hung",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/vespeneventures/foundry.git",
-    "directory": "packages/compose"
+    "directory": "packages/assets"
   },
   "bugs": {
     "url": "https://github.com/vespeneventures/foundry/issues"
   },
-  "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/compose#readme",
+  "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/assets#readme",
   "engines": {
     "node": ">=20"
   },
