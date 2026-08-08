@@ -87,3 +87,33 @@ All notable changes to this package are documented here. Format follows
   `foundry-check` use: `0` clean, `1` findings, `2` could not run —
   explicitly covering "the copy record is missing or invalid" and "the
   scan matched zero files" as `2`, never a silent `0`.
+- **JSX text nodes** (fixes #37): `scanCopySourceTree`/`extractCopyCandidates`
+  now extract raw JSX text (`<span>Hello</span>`'s `Hello`) in `.tsx`/`.jsx`
+  files, not just string/template literals — closing the gap that let a
+  JSX-heavy consumer (`@vespeneventures/ui` in this repo) read as a clean
+  scan while carrying entirely untracked copy. Mixed content across an
+  element boundary becomes separate candidates (never concatenated, never
+  dropping the tail); `{expression}` children (including a `{/* JSX
+  comment */}`) are code, not text; common named and every numeric JSX
+  entity is decoded; whitespace-only and punctuation-only text runs are
+  excluded the same way a decorative literal already was; a `<` that is
+  really a generic type argument or a comparison is never mistaken for
+  JSX. What the scanner genuinely cannot resolve — an unclosed element, an
+  unterminated attribute value/expression, JSX nesting past a depth safety
+  bound — is reported via a new `ScanResult.unchecked` field, never
+  silently dropped.
+- **`ScanResult.unchecked` / `UncheckedItem`** (new): the explicit
+  third-state accounting for a construct the scanner recognized but could
+  not classify. `checkCopyTraceability` (`src/copy-gate.ts`) now takes a
+  required 5th argument (`unchecked: UncheckedItem[]`) and passes it
+  straight through onto `CopyGateResult.unchecked`, unmodified — this is a
+  breaking signature change from the initial (unpublished) `0.1.0` shape,
+  taken now rather than after a real release. `copy-check` (`cli.ts`)
+  returns exit code `2` — "could not run [fully]" — whenever `unchecked`
+  is non-empty, even with zero traceability findings: a JSX construct the
+  scanner could not examine is the same "could not check" shape a parse
+  failure or zero-files-scanned already are, just at finer grain, so it
+  gets the same answer. Every real finding is still printed first; a
+  non-empty `unchecked` list only refuses to let the run read as clean.
+- `CopyCandidate.kind` widened from `"string" | "template"` to
+  `"string" | "template" | "jsx-text"`.
