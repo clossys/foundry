@@ -22,8 +22,9 @@
  * RESOLUTION AND SLOT PAINTING — SHARED WITH `./slides`
  * ---------------------------------------------------------
  * The actual "resolve `doc.bindings` against `doc.layout`, via
- * `resolveDocument` then `resolveCopy` (never hand-rolled — see
- * `@vespeneventures/compose`'s own `resolve-copy.ts`, "the #43 gap"), then
+ * `resolveDocument` then `resolveCopy`/`resolveDocumentAssets` (never
+ * hand-rolled — see `@vespeneventures/compose`'s own `resolve-copy.ts`,
+ * "the #43 gap", and this package's own `../internal/assets.ts`), then
  * paint every resolvable slot" pipeline lives in `resolveCanvasLayout.ts`,
  * shared verbatim with `./slides` (a slide is the same kind of canvas,
  * rendered once per array entry — see this package's README). This file's
@@ -32,7 +33,12 @@
  * `<svg>` attributes (`engine.ts`'s `computeCanvasDimensions`), and emit
  * `ImageMeta.alt` as `<title>` plus `role="img"`/`aria-label` — a
  * `SlidesMeta` has no `alt` equivalent, which is exactly why this
- * wrapping isn't itself part of the shared pipeline.
+ * wrapping isn't itself part of the shared pipeline. `options
+ * .resolveAssetId` (see `./types.ts`) is passed straight through to
+ * `resolveCanvasLayout` unchanged — this file has no `assetId`-specific
+ * logic of its own beyond that pass-through; every actual resolution,
+ * validation, and refusal rule lives in `resolveCanvasLayout.ts` and
+ * `renderSlots.ts`.
  */
 
 import type { ComposeDocument, ImageMeta } from "@vespeneventures/compose";

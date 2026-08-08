@@ -17,6 +17,7 @@ export { RenderError } from "../internal/errors.js";
 export type { RenderErrorReason } from "../internal/errors.js";
 
 export type {
+  AssetResolver,
   CopyResolver,
   RenderWebOptions,
   RenderWebResult,

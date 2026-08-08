@@ -106,7 +106,7 @@ describe("refusal: empty-output", () => {
     expect(caught).toBeInstanceOf(RenderError);
     expect((caught as RenderError).reason).toBe("empty-output");
     expect((caught as RenderError).message).toBe(
-      'renderEmailDocument resolved document "x" against its layout, but not every bound slot produced real text: copyId(s) that did not resolve to real text: missing.copy. Rendering would silently ship an incomplete email, which this function refuses to do.',
+      'renderEmailDocument resolved document "x" against its layout, but not every bound slot produced real content: copyId(s) that did not resolve to real text: missing.copy. Rendering would silently ship an incomplete email, which this function refuses to do.',
     );
   });
 
@@ -120,6 +120,95 @@ describe("refusal: empty-output", () => {
     };
 
     expect(() => renderEmailDocument(doc, { layout: SINGLE_SLOT_LAYOUT, lookup: () => undefined })).toThrow(RenderError);
+  });
+});
+
+describe("refusal: assetId problems (never a blank box)", () => {
+  const assetDoc: ComposeDocument = {
+    id: "x",
+    channel: "email",
+    template: "T",
+    meta: { channel: "email", subject: "s", preheader: "p" },
+    bindings: [{ slot: "a", assetId: "marketing.hero" }],
+  };
+
+  it("throws RenderError('empty-output') for an unresolved assetId — no assetLookup given at all", () => {
+    try {
+      renderEmailDocument(assetDoc, { layout: SINGLE_SLOT_LAYOUT });
+      expect.unreachable();
+    } catch (error) {
+      expect(error).toBeInstanceOf(RenderError);
+      expect((error as RenderError).reason).toBe("empty-output");
+      expect((error as Error).message).toContain("marketing.hero");
+    }
+  });
+
+  it("throws RenderError('empty-output') when assetLookup returns undefined for a bound assetId", () => {
+    expect(() =>
+      renderEmailDocument(assetDoc, { layout: SINGLE_SLOT_LAYOUT, assetLookup: () => undefined }),
+    ).toThrow(RenderError);
+  });
+
+  it("throws RenderError('empty-output') when assetLookup throws — caught and reported, never propagated raw", () => {
+    try {
+      renderEmailDocument(assetDoc, {
+        layout: SINGLE_SLOT_LAYOUT,
+        assetLookup: () => {
+          throw new Error("registry down");
+        },
+      });
+      expect.unreachable();
+    } catch (error) {
+      expect(error).toBeInstanceOf(RenderError);
+      expect((error as RenderError).reason).toBe("empty-output");
+      expect((error as Error).message).toContain("could not even attempt to resolve: a");
+    }
+  });
+
+  it("throws RenderError('empty-output') when assetLookup is not a function", () => {
+    try {
+      // Deliberately wrong-typed input — cast, not `@ts-expect-error`; a
+      // *.test.ts file isn't part of this package's real tsc build, so
+      // that directive would be inert and never actually checked.
+      renderEmailDocument(assetDoc, { layout: SINGLE_SLOT_LAYOUT, assetLookup: 42 as unknown as () => unknown });
+      expect.unreachable();
+    } catch (error) {
+      expect((error as RenderError).reason).toBe("empty-output");
+    }
+  });
+
+  it("throws RenderError('empty-output') when assetLookup resolves to a value missing the required src/width/height/alt shape", () => {
+    try {
+      renderEmailDocument(assetDoc, { layout: SINGLE_SLOT_LAYOUT, assetLookup: () => ({ nope: true }) });
+      expect.unreachable();
+    } catch (error) {
+      expect((error as RenderError).reason).toBe("empty-output");
+      expect((error as Error).message).toContain("marketing.hero");
+    }
+  });
+});
+
+describe("before/after: an asset-only document — the empty-output bug this task fixes", () => {
+  const assetOnlyDoc: ComposeDocument = {
+    id: "asset-only",
+    channel: "email",
+    template: "T",
+    meta: { channel: "email", subject: "s", preheader: "p" },
+    bindings: [{ slot: "a", assetId: "marketing.hero" }],
+  };
+  const asset = { id: "marketing.hero", src: "https://cdn.example/hero.png", width: 600, height: 300, alt: "A hero shot" };
+
+  it("BEFORE (still true without an assetLookup): throws — nothing was resolved", () => {
+    expect(() => renderEmailDocument(assetOnlyDoc, { layout: SINGLE_SLOT_LAYOUT })).toThrow(RenderError);
+  });
+
+  it("AFTER: a document made ENTIRELY of assetId bindings renders successfully — never a false empty-output", () => {
+    const { html, text } = renderEmailDocument(assetOnlyDoc, {
+      layout: SINGLE_SLOT_LAYOUT,
+      assetLookup: (assetId) => (assetId === "marketing.hero" ? asset : undefined),
+    });
+    expect(html).toContain('<img src="https://cdn.example/hero.png" alt="A hero shot" width="600" height="300"');
+    expect(text).toBe("A hero shot\n");
   });
 });
 

@@ -119,6 +119,89 @@ describe("golden: AuthView", () => {
   });
 });
 
+describe("golden: assetId — a real <img>, byte for byte, alt text and intrinsic dimensions included", () => {
+  const asset = { id: "marketing.logo", src: "https://cdn.example/logo.svg", width: 120, height: 40, alt: "Acme logo" };
+
+  const doc: ComposeDocument = {
+    id: "acme-signin-with-logo",
+    channel: "web",
+    template: "AuthView",
+    meta: { channel: "web", title: "Sign in — Acme", description: "Sign in to your Acme account." },
+    bindings: [
+      { slot: "brand", assetId: "marketing.logo" },
+      { slot: "heading", value: "Sign in" },
+      { slot: "form", value: "email + password form" },
+    ],
+  };
+
+  it("renders AuthView's brand slot as a real <img>, exact bytes, React's own automatic image preload included", () => {
+    const { element } = renderWebDocument(doc, {
+      resolveAssetId: (assetId) => (assetId === "marketing.logo" ? asset : undefined),
+    });
+    const html = renderToStaticMarkup(element);
+
+    expect(html).toBe(
+      '<link rel="preload" as="image" href="https://cdn.example/logo.svg"/>' +
+        '<div class="flex min-h-dvh flex-col items-center justify-center gap-lg p-xl">' +
+        '<div class="flex justify-center">' +
+        '<img src="https://cdn.example/logo.svg" alt="Acme logo" width="120" height="40"/>' +
+        "</div>" +
+        '<div class="rounded-control bg-surface-raised p-lg flex w-full max-w-sm flex-col gap-lg" ' +
+        'style="box-shadow:var(--ui-elevation-raised, 0 1px 0 var(--color-line-base, oklch(0.8761 0 0)))">' +
+        '<div class="flex flex-col gap-xs text-center">' +
+        '<h1 class="text-h1 font-display text-ink-primary">Sign in</h1>' +
+        "</div>" +
+        "email + password form" +
+        "</div>" +
+        "</div>",
+    );
+  });
+
+  it("a mixed document — some slots via value, one via assetId — renders both kinds in one pass", () => {
+    const mixedDoc: ComposeDocument = {
+      ...doc,
+      bindings: [
+        { slot: "brand", assetId: "marketing.logo" },
+        { slot: "heading", value: "Sign in" },
+        { slot: "description", copyId: "auth.signin.description" },
+        { slot: "form", value: "email + password form" },
+      ],
+    };
+    const { element } = renderWebDocument(mixedDoc, {
+      resolveAssetId: (assetId) => (assetId === "marketing.logo" ? asset : undefined),
+      resolveCopyId: (copyId) => (copyId === "auth.signin.description" ? "Welcome back." : undefined),
+    });
+    const html = renderToStaticMarkup(element);
+    expect(html).toContain('<img src="https://cdn.example/logo.svg" alt="Acme logo" width="120" height="40"/>');
+    expect(html).toContain("<h1");
+    expect(html).toContain("Sign in");
+    expect(html).toContain("Welcome back.");
+    expect(html).toContain("email + password form");
+  });
+
+  it("src/alt escaping — a src/alt containing \", ', <, &, and </script> never breaks out of the <img> attribute (React's own JSX attribute escaping)", () => {
+    const hostileAsset = {
+      id: "marketing.logo",
+      src: `https://cdn.example/logo.svg?q="'<&></script>`,
+      width: 10,
+      height: 10,
+      alt: `Acme "Logo" & <Co> </script>`,
+    };
+    const { element } = renderWebDocument(doc, {
+      resolveAssetId: () => hostileAsset,
+    });
+    const html = renderToStaticMarkup(element);
+
+    expect(html).toContain(
+      'src="https://cdn.example/logo.svg?q=&quot;&#x27;&lt;&amp;&gt;&lt;/script&gt;"',
+    );
+    expect(html).toContain('alt="Acme &quot;Logo&quot; &amp; &lt;Co&gt; &lt;/script&gt;"');
+    // The raw payload never survives anywhere in the emitted document.
+    expect(html.includes('q="\'<&>')).toBe(false);
+    expect(html.includes("</script>alert")).toBe(false);
+  });
+});
+
 describe("golden: JSON-LD escaping — the </script> XSS case", () => {
   it("escapes a </script> sequence inside JSON-LD content so it can never terminate the real <script> tag", () => {
     const jsonLdEntry = {

@@ -7,6 +7,7 @@
 
 import { describe, expect, it } from "vitest";
 import type { ComposeDocument } from "@vespeneventures/compose";
+import { RenderError } from "../internal/errors.js";
 import { renderSlidesDeck } from "./renderSlidesDeck.js";
 import type { SlidesDeckInput } from "./types.js";
 
@@ -128,6 +129,70 @@ describe("golden: 4:3 canvas convention", () => {
     expect(result.width).toBe(1024);
     expect(result.height).toBe(768);
     expect(result.slides[0]!.svg).toContain('viewBox="0 0 1024 768"');
+  });
+});
+
+describe("golden: assetId — a slide with an image, byte for byte", () => {
+  const titleSlide: ComposeDocument = {
+    id: "title",
+    channel: "slides",
+    template: "title-slide",
+    meta: { channel: "slides", aspect: "16:9" },
+    layout: {
+      background: { background: "--color-surface-base" },
+      slots: [
+        { key: "title", element: "heading", frame: { x: 0.1, y: 0.15, w: 0.8, h: 0.15 }, required: true, align: "center" },
+        { key: "hero", element: "image", frame: { x: 0.2, y: 0.35, w: 0.6, h: 0.5 } },
+      ],
+    },
+    bindings: [
+      { slot: "title", value: "Product Launch" },
+      { slot: "hero", assetId: "marketing.hero" },
+    ],
+  };
+  const asset = { id: "marketing.hero", src: "https://cdn.example/hero.png", width: 1152, height: 540, alt: "Product shot" };
+
+  it("renders the exact expected SVG, byte for byte — a mixed slide (text title + asset hero image)", () => {
+    const result = renderSlidesDeck({ id: "d", slides: [titleSlide] }, { resolveAssetId: (id) => (id === "marketing.hero" ? asset : undefined) });
+
+    expect(result.slides[0]!.svg).toBe(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">' +
+        "<title>title</title>" +
+        '<rect x="0" y="0" width="1920" height="1080" fill="#f5f5f5" />' +
+        `<g data-slot="title"><text x="960" y="184.4" font-size="28" font-family="${FONT_DISPLAY_XML}" fill="#111111" text-anchor="middle">` +
+        '<tspan x="960" dy="0">Product Launch</tspan></text></g>' +
+        '<g data-slot="hero"><image x="384" y="378" width="1152" height="540" href="https://cdn.example/hero.png" ' +
+        'preserveAspectRatio="xMidYMid slice" aria-label="Product shot"><title>Product shot</title></image></g>' +
+        "</svg>",
+    );
+    expect(result.warnings).toEqual([]);
+  });
+
+  it("refuses (empty-output) the WHOLE deck when one slide's assetId is unresolved — naming the offending slide", () => {
+    try {
+      renderSlidesDeck({ id: "d", slides: [titleSlide] });
+      expect.unreachable();
+    } catch (error) {
+      expect((error as RenderError).reason).toBe("empty-output");
+      expect((error as RenderError).message).toContain('slide 0 (id="title")');
+      expect((error as RenderError).message).toContain("marketing.hero");
+    }
+  });
+
+  it("BEFORE/AFTER: a slide made ENTIRELY of assetId bindings (no background even) renders successfully once resolved", () => {
+    const assetOnlySlide: ComposeDocument = {
+      id: "asset-only-slide",
+      channel: "slides",
+      template: "t",
+      meta: { channel: "slides", aspect: "16:9" },
+      layout: { slots: [{ key: "hero", element: "image", frame: { x: 0, y: 0, w: 1, h: 1 } }] },
+      bindings: [{ slot: "hero", assetId: "marketing.hero" }],
+    };
+    // BEFORE: without a resolver, still correctly throws (nothing resolved).
+    expect(() => renderSlidesDeck({ id: "d", slides: [assetOnlySlide] })).toThrow(RenderError);
+    // AFTER: once resolved, the asset-only slide renders — never a false empty-output.
+    const result = renderSlidesDeck({ id: "d", slides: [assetOnlySlide] }, { resolveAssetId: () => asset });
+    expect(result.slides[0]!.svg).toContain('href="https://cdn.example/hero.png"');
   });
 });
 

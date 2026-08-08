@@ -224,6 +224,70 @@ describe("refusal paths", () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────
+// assetId refusal paths — never a blank box, even for one slide in a deck
+// ─────────────────────────────────────────────────────────────────────────
+
+describe("assetId refusal paths", () => {
+  function assetSlide(id: string): ComposeDocument {
+    return {
+      id,
+      channel: "slides",
+      template: "t",
+      meta: { channel: "slides", aspect: "16:9" },
+      layout: { slots: [{ key: "hero", element: "image", frame: { x: 0, y: 0, w: 1, h: 1 } }] },
+      bindings: [{ slot: "hero", assetId: "marketing.hero" }],
+    };
+  }
+
+  it("REFUSES (empty-output) an unresolved assetId — no resolveAssetId given at all", () => {
+    const deck: SlidesDeckInput = { id: "d", slides: [assetSlide("s1")] };
+    try {
+      renderSlidesDeck(deck);
+      expect.unreachable();
+    } catch (error) {
+      expect(error).toBeInstanceOf(RenderError);
+      expect((error as RenderError).reason).toBe("empty-output");
+      expect((error as RenderError).message).toContain("marketing.hero");
+    }
+  });
+
+  it("REFUSES (empty-output) when resolveAssetId throws — caught and reported, never propagated raw", () => {
+    const deck: SlidesDeckInput = { id: "d", slides: [assetSlide("s1")] };
+    try {
+      renderSlidesDeck(deck, {
+        resolveAssetId: () => {
+          throw new Error("registry down");
+        },
+      });
+      expect.unreachable();
+    } catch (error) {
+      expect((error as RenderError).reason).toBe("empty-output");
+    }
+  });
+
+  it("REFUSES (empty-output) when resolveAssetId resolves to a value missing the required shape", () => {
+    const deck: SlidesDeckInput = { id: "d", slides: [assetSlide("s1")] };
+    try {
+      renderSlidesDeck(deck, { resolveAssetId: () => ({ nope: true }) });
+      expect.unreachable();
+    } catch (error) {
+      expect((error as RenderError).reason).toBe("empty-output");
+    }
+  });
+
+  it("a good slide followed by a bad-asset slide fails the WHOLE deck, naming the second slide", () => {
+    const deck: SlidesDeckInput = { id: "d", slides: [slide("good"), assetSlide("bad-asset")] };
+    try {
+      renderSlidesDeck(deck);
+      expect.unreachable();
+    } catch (error) {
+      expect((error as RenderError).reason).toBe("empty-output");
+      expect((error as RenderError).message).toContain('slide 1 (id="bad-asset")');
+    }
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────
 // Warnings roll up per slide, prefixed with the slide id
 // ─────────────────────────────────────────────────────────────────────────
 

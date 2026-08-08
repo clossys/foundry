@@ -85,6 +85,84 @@ describe("renderWebDocument — refuses a document that resolves nothing", () =>
   });
 });
 
+describe("renderWebDocument — assetId refusal paths (never a blank box)", () => {
+  const assetDoc: ComposeDocument = {
+    id: "acme-signin",
+    channel: "web",
+    template: "AuthView",
+    meta: { channel: "web", title: "Sign in", description: "d" },
+    bindings: [
+      { slot: "brand", assetId: "marketing.logo" },
+      { slot: "heading", value: "Sign in" },
+      { slot: "form", value: "form" },
+    ],
+  };
+
+  it("throws RenderError('empty-output') for an unresolved assetId — no resolveAssetId given at all", () => {
+    try {
+      renderWebDocument(assetDoc);
+      expect.unreachable();
+    } catch (error) {
+      expect(error).toBeInstanceOf(RenderError);
+      expect((error as RenderError).reason).toBe("empty-output");
+      expect((error as Error).message).toContain("marketing.logo");
+    }
+  });
+
+  it("throws RenderError('empty-output') when resolveAssetId returns undefined for a bound assetId", () => {
+    try {
+      renderWebDocument(assetDoc, { resolveAssetId: () => undefined });
+      expect.unreachable();
+    } catch (error) {
+      expect((error as RenderError).reason).toBe("empty-output");
+      expect((error as Error).message).toContain("marketing.logo");
+    }
+  });
+
+  it("throws RenderError('empty-output') when resolveAssetId throws — the failure is caught and reported, never propagated raw", () => {
+    try {
+      renderWebDocument(assetDoc, {
+        resolveAssetId: () => {
+          throw new Error("registry unavailable");
+        },
+      });
+      expect.unreachable();
+    } catch (error) {
+      expect(error).toBeInstanceOf(RenderError);
+      expect((error as RenderError).reason).toBe("empty-output");
+      expect((error as Error).message).toContain("brand");
+    }
+  });
+
+  it("throws RenderError('empty-output') when resolveAssetId is not a function", () => {
+    try {
+      // Deliberately wrong-typed input — cast, not `@ts-expect-error`; a
+      // *.test.ts file isn't part of this package's real tsc build, so
+      // that directive would be inert and never actually checked.
+      renderWebDocument(assetDoc, { resolveAssetId: "not-a-function" as unknown as () => unknown });
+      expect.unreachable();
+    } catch (error) {
+      expect((error as RenderError).reason).toBe("empty-output");
+    }
+  });
+
+  it("throws RenderError('empty-output') when resolveAssetId resolves to a value missing the required src/width/height/alt shape", () => {
+    try {
+      renderWebDocument(assetDoc, { resolveAssetId: () => ({ nope: true }) });
+      expect.unreachable();
+    } catch (error) {
+      expect((error as RenderError).reason).toBe("empty-output");
+      expect((error as Error).message).toContain("marketing.logo");
+    }
+  });
+
+  it("an unresolved assetId on an OPTIONAL slot is STILL fatal — never a silent omission the way an optional copyId is", () => {
+    // "brand" is optional in AuthView's own layout — proves assets get a
+    // strictly stronger bar than text, per this file's own doc comment.
+    expect(() => renderWebDocument(assetDoc, { resolveAssetId: () => undefined })).toThrow(RenderError);
+  });
+});
+
 describe("renderWebDocument — other refusals", () => {
   it("throws RenderError('unknown-template') for a template this package does not know", () => {
     const doc: ComposeDocument = { ...baseErrorDoc, template: "DashboardView" };

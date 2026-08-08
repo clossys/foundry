@@ -45,18 +45,47 @@
  * status code, or (for `AuthView`) its whole form — a silent empty page
  * wearing a "successfully resolved" badge. So after `resolveDocument`
  * succeeds, this function additionally requires every REQUIRED slot to
- * have resolved to non-empty text, and throws `RenderError("empty-output",
+ * have resolved to non-empty content, and throws `RenderError("empty-output",
  * ...)` if even one didn't. This is a deliberate strengthening beyond what
  * `resolveDocument` itself checks, flagged here the same way `compose`'s
  * own README flags its `frame-out-of-bounds` strengthening — not a change
  * to any contract shape, a stricter reading of what "resolved" has to mean
  * for a render to actually be safe to ship.
+ *
+ * IMAGES: A SLOT CAN NOW RESOLVE TO A REAL `<img>`, NOT JUST STYLED TEXT
+ * -------------------------------------------------------------------------
+ * `SlotBinding.assetId` (`@vespeneventures/compose` 0.3.0) is this
+ * package's second content source, alongside `copyId`/`value` — see
+ * `../internal/assets.ts` for the shared resolution/validation machinery
+ * every channel uses. A slot bound via `assetId` never falls through to
+ * `resolveBindingText` (which only ever reads `copyId`/`value` — an
+ * `assetId`-only binding has neither); instead its resolved,
+ * shape-validated `RenderAsset` becomes a real `<img src alt width
+ * height>` element, filling `content[key]` exactly like a resolved string
+ * does — `WebTemplate.build`'s `Record<string, ReactNode>` parameter
+ * already accepts either, no template registry change required.
+ *
+ * ASSETS GET A STRICTER BAR THAN OPTIONAL TEXT
+ * -------------------------------------------------
+ * An unresolved OPTIONAL `copyId`/`value` binding silently drops (see
+ * above) — this channel's own long-standing, deliberate leniency. An
+ * `assetId` binding that fails to resolve into a real, paintable asset
+ * (unresolved, wrong-shaped, or a broken lookup) does NOT get that same
+ * leniency, REQUIRED or not: this function throws `RenderError
+ * ("empty-output", ...)` the moment `../internal/assets.ts`'s
+ * `hasAssetProblems` is true for ANY bound asset slot. "An unresolved asset
+ * id must never render a blank box or a placeholder" (this package's own
+ * task brief) — silently omitting a broken image slot the way an optional
+ * caption silently omits is exactly that: a page that LOOKS complete but
+ * is quietly missing content nobody asked to have dropped.
  */
 
 import { resolveDocument } from "@vespeneventures/compose";
 import type { ComposeDocument, WebMeta } from "@vespeneventures/compose";
 import type { ReactNode } from "react";
+import { createElement } from "react";
 import { RenderError } from "../internal/errors.js";
+import { describeAssetProblems, hasAssetProblems, resolveDocumentAssets } from "../internal/assets.js";
 import { buildWebHeadMetadata } from "./headMetadata.js";
 import { getWebTemplate, listWebTemplateNames } from "./internal/webTemplates.js";
 import type { RenderWebOptions, RenderWebResult } from "./types.js";
@@ -98,8 +127,31 @@ export function renderWebDocument(doc: ComposeDocument, options: RenderWebOption
     );
   }
 
+  // Never hand-rolled — see ../internal/assets.ts's own top comment and
+  // this file's own doc comment, "Assets get a stricter bar than optional
+  // text": ANY problem here is fatal, regardless of which slot(s) it hit.
+  const assetsResolution = resolveDocumentAssets(result, options.resolveAssetId);
+  if (hasAssetProblems(assetsResolution)) {
+    throw new RenderError(
+      "empty-output",
+      `renderWebDocument resolved document "${doc.id}" against template "${doc.template}", but at least one assetId binding did not produce a real asset: ${describeAssetProblems(assetsResolution).join("; ")}. Rendering would silently ship a page with a broken or missing image, which this function refuses to do.`,
+    );
+  }
+
   const content: Record<string, ReactNode> = {};
   for (const { key, binding } of result.resolved) {
+    if (binding.assetId !== undefined && binding.assetId.length > 0) {
+      const asset = assetsResolution.byKey.get(key);
+      if (asset !== undefined) {
+        content[key] = createElement("img", {
+          src: asset.src,
+          alt: asset.alt,
+          width: asset.width,
+          height: asset.height,
+        });
+      }
+      continue;
+    }
     const text = resolveBindingText(binding, options.resolveCopyId);
     if (text !== undefined && text.length > 0) {
       content[key] = text;
@@ -114,7 +166,7 @@ export function renderWebDocument(doc: ComposeDocument, options: RenderWebOption
   if (unresolvedRequired.length > 0) {
     throw new RenderError(
       "empty-output",
-      `renderWebDocument resolved document "${doc.id}" against template "${doc.template}", but required slot(s) [${unresolvedRequired.join(", ")}] produced no text — every copyId binding must resolve via options.resolveCopyId, and every value binding must be non-empty. Rendering would silently ship an incomplete page, which this function refuses to do.`,
+      `renderWebDocument resolved document "${doc.id}" against template "${doc.template}", but required slot(s) [${unresolvedRequired.join(", ")}] produced no content — every copyId binding must resolve via options.resolveCopyId, every value binding must be non-empty, and every assetId binding must resolve via options.resolveAssetId. Rendering would silently ship an incomplete page, which this function refuses to do.`,
     );
   }
 

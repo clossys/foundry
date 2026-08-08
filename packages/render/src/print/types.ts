@@ -38,6 +38,25 @@ import type { PrintMeta } from "@vespeneventures/compose";
 export type CopyResolver = (copyId: string) => string | undefined;
 
 // ---------------------------------------------------------------------------
+// AssetResolver — the assetId seam, resolved the same way ./web resolves it
+// ---------------------------------------------------------------------------
+
+/**
+ * Resolves a `SlotBinding.assetId` into a real asset — the identical seam
+ * `CopyResolver` draws for `copyId`, one binding field over, and the same
+ * local (not cross-channel-imported) declaration this file's own top
+ * comment explains for `CopyResolver`. Same shape as `@vespeneventures/
+ * compose`'s own `AssetLookup`: returns `unknown` on purpose — whatever
+ * comes back is validated into a real, paintable `RenderAsset` by
+ * `../internal/assets.ts`'s `resolveDocumentAssets` before this channel
+ * ever uses it (see `renderPrintDocument.ts`). Returns `undefined`/`null`
+ * for an id the resolver has no asset for — UNRESOLVED, which this
+ * channel's own resolution bar treats exactly like an unresolved `copyId`:
+ * fatal, never a silently omitted or blank image.
+ */
+export type AssetResolver = (assetId: string) => unknown;
+
+// ---------------------------------------------------------------------------
 // CustomPageSize — the escape hatch PrintMeta itself doesn't carry
 // ---------------------------------------------------------------------------
 
@@ -68,6 +87,8 @@ export interface CustomPageSize {
 export interface RenderPrintOptions {
   /** See {@link CopyResolver}. Omit when every binding in the document uses `value`, never `copyId` — every `copyId` binding is then treated as unresolved. */
   resolveCopyId?: CopyResolver;
+  /** See {@link AssetResolver}. Omit when no binding in the document uses `assetId` — every `assetId` binding is then treated as unresolved, which is always fatal for this channel (see `renderPrintDocument.ts`). */
+  resolveAssetId?: AssetResolver;
   /** Required when `doc.meta.pageSize === "Custom"`; ignored otherwise. See {@link CustomPageSize}. */
   customPageSize?: CustomPageSize;
   /** Brand token overrides, passed straight through to `@vespeneventures/tokens`'s `flattenTokens(overrides)` (via the shared `internal/tokens.ts`). Omit to render with every token at its own default value. */

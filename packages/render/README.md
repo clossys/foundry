@@ -172,6 +172,97 @@ contract since that package's first release, but read by nobody until this
 module existed — is now the one field of `StyleBinding` every non-web
 channel resolves.
 
+## Shared internals — `SlotBinding.assetId`, resolved into a real image
+
+`@vespeneventures/compose` 0.3.0 added `SlotBinding.assetId` and
+`resolveAssets` — the identical seam `copyId`/`resolveCopy` already draws,
+one binding field over, for `ElementKind`'s `"image"`/`"logo"` members.
+Before this package's own asset support, an `"image"`/`"logo"` slot could
+only ever render as styled words (or, for `./image`/`./slides`
+specifically, a resolved TEXT string treated as a bare `<image href>` URL
+— see "Found but not fixed" below). Every channel now resolves `assetId`
+into a real image, through one shared module: `src/internal/assets.ts`.
+
+```ts
+interface RenderAsset {
+  src: string;
+  width: number;
+  height: number;
+  alt: string;
+  mimeType?: string;
+}
+```
+
+Structurally the same shape `@vespeneventures/assets`' `AssetEntry`
+exposes — but this package does NOT depend on that package, not even for
+a type (the identical "opaque seam, not a code import" reasoning
+`@vespeneventures/compose`'s own `resolve-assets.ts` gives for
+`AssetLookup` itself: `AssetLookup`'s return type is `unknown`, since
+`compose` has no way to know what an asset looks like). `resolveDocumentAssets(result, lookup)`:
+
+1. Calls `@vespeneventures/compose`'s own `resolveAssets` — never
+   hand-rolled (this repository's issue #43: "a rule every renderer must
+   independently remember is a rule one of them will forget").
+2. Validates whatever `lookup(assetId)` returned into a real `RenderAsset`
+   — hand-rolled `typeof`/shape checks, the same discipline
+   `@vespeneventures/assets`' own `schema.ts` holds to. A resolved value
+   missing `src`/a positive `width`/a positive `height`/a non-blank `alt`
+   is `invalid` — exactly as fatal as an unresolved `assetId`, never
+   silently coerced or partially used.
+
+Every channel's option is named after that channel's own existing
+`copyId`-resolver convention:
+
+| Channel | Option | Type |
+| --- | --- | --- |
+| `./web` | `resolveAssetId` | `AssetResolver` (`(assetId: string) => unknown`, declared locally) |
+| `./email` | `assetLookup` | `@vespeneventures/compose`'s own `AssetLookup` |
+| `./print` | `resolveAssetId` | `AssetResolver` (declared locally, same reasoning as `./web`'s `CopyResolver`) |
+| `./image` / `./slides` | `resolveAssetId` | `@vespeneventures/compose`'s own `AssetLookup` |
+
+**Assets get a stricter refusal bar than optional text, on every
+channel.** `./email`/`./print` already required every bound slot (not just
+`required: true` ones) to resolve; `./web`/`./image`/`./slides` are more
+lenient for TEXT (an unresolved optional `copyId` silently drops with a
+warning, never a throw) but hold `assetId` to the SAME strict bar
+`./email`/`./print` already use for everything: an unresolved, wrong-
+shaped, or broken-lookup `assetId` binding is **always** fatal
+(`RenderError("empty-output", ...)`), required or not. "An unresolved
+asset id must never render a blank box or a placeholder" — silently
+omitting a broken image the way an optional caption silently omits would
+be exactly that: output that LOOKS complete but is quietly missing content
+nobody asked to have dropped.
+
+**`alt` always reaches the output.** `RenderAsset.alt` is required (see
+above); every channel emits it — `./web`'s `<img alt>`, `./email`'s `<img
+alt>`, `./print`'s `<img alt>`, `./image`/`./slides`' `<image aria-label>`
+PLUS a `<title>` child (SVG's own native accessible-name mechanism,
+redundant with `aria-label` on purpose — some assistive tech reads one but
+not the other).
+
+**`src` is opaque, emitted verbatim, escaped for its own output context.**
+This package never fetches `src`, never reads it from a filesystem, and
+never inlines it as a data URI — it is a caller-supplied string from a
+registry (typically `@vespeneventures/assets`), and this package's only
+job is to escape it correctly for wherever it lands: React's own attribute
+escaping for `./web`, `escapeHtml` for `./email`, `escapeHtmlAttr` for
+`./print`, `escapeXml` for `./image`/`./slides`.
+
+**Intrinsic dimensions vs. frame-fitted, per channel's own geometry.**
+`./web`/`./email` have no coordinate system (every slot uses a full-canvas
+placeholder — see "Only plain text ever fills a slot" below) so both emit
+the asset's own INTRINSIC `width`/`height` as `<img>` attributes, to avoid
+layout shift. `./print` HAS a real coordinate system, so an asset slot is
+positioned by `SlotSpec.frame` exactly like a text slot, with
+`object-fit:contain` on the `<img>` so a mismatched aspect ratio never
+distorts. `./image`/`./slides` also position by `frame`, and additionally
+choose `preserveAspectRatio` per `ElementKind` — `"logo"` gets `xMidYMid
+meet` (letterboxed, never cropped), `"image"` gets `xMidYMid slice`
+(filled, cropped) — and push a non-fatal warning whenever the asset's own
+aspect ratio disagrees with its frame's, staying silent when they agree.
+See "`./image` and `./slides`" below, "Aspect ratio: never distorted,
+sometimes warned about."
+
 ## Usage
 
 ```ts
@@ -722,6 +813,45 @@ rasterizer and no `oklch()` support, so every color this package emits is
 a literal, never `oklch(...)` and never `var(--...)`. See the "Shared
 internals" section below for the module itself.
 
+### Images — `assetId`, resolved to `<image>`, never distorted
+
+An `"image"`/`"logo"` slot bound via `assetId` (see "Shared internals —
+`SlotBinding.assetId`" above) resolves to a real, shape-validated
+`RenderAsset`, positioned by `frame` exactly like a text slot:
+
+```
+<image x= y= width= height= href="..." preserveAspectRatio="..." aria-label="...">
+  <title>...</title>
+</image>
+```
+
+`asset.alt` reaches BOTH a `<title>` child and an `aria-label` attribute —
+redundant on purpose (some assistive tech reads one, not the other).
+`preserveAspectRatio` is chosen per `ElementKind`, never `"none"` (SVG's
+only setting that actually distorts, and this package never uses it):
+
+- **`"logo"`** — `xMidYMid meet`: fits inside the frame, letterboxed. A
+  wordmark with its edges cropped off is a worse outcome than one with
+  visible empty space around it.
+- **`"image"`** — `xMidYMid slice`: fills the frame, cropped. The
+  conventional behaviour for a photographic/hero-style image, where
+  letterbox bars read as more obviously broken than a crop.
+
+Neither setting distorts — but a frame whose aspect ratio disagrees with
+the asset's own still means real content is being cropped or letterboxed
+away from what the layout asked for. `renderSlotsToSvg` compares the two
+ratios (an ABSOLUTE difference beyond a small float-noise epsilon) and
+pushes a non-fatal warning into the result's `warnings` array whenever
+they disagree — silent when they agree, so the warning is trustworthy
+signal, not noise that fires on every render regardless of input.
+
+A slot bound via `copyId`/`value` instead of `assetId` (no matching
+`RenderAsset`) falls back to the PRE-`assetId` behaviour: the resolved
+TEXT is treated as a bare image URL (`renderLegacyTextMediaSlot`) — no
+`alt`, no aspect-ratio awareness. Kept for a caller with no
+`@vespeneventures/assets`-shaped registry at all; prefer `assetId`
+whenever accessible, non-distorting output matters.
+
 ### `./slides`' input shape — an ordered array of real `ComposeDocument`s
 
 `renderSlidesDeck` takes a `SlidesDeckInput`: `{ id, slides:
@@ -752,8 +882,9 @@ expressible against `compose`'s frozen `ComposeDocument` type.
 | `RenderError` | class | `extends Error`. Every failure `renderWebDocument` throws is one of these. Carries `reason: RenderErrorReason` alongside the usual `message`. |
 | `RenderErrorReason` | type | The closed set of reasons `RenderError` is ever thrown for, ACROSS every channel this package ships (`RenderError` is shared — see `internal/errors.ts`). `renderWebDocument` itself only ever throws `"unknown-template" \| "wrong-channel" \| "resolution-failed" \| "empty-output"` (see the table above); the other six members (`"invalid-oklch"`, `"non-brandable-override"`, `"unknown-token-override"`, `"unknown-token-ref"`, `"token-ref-cycle"`, `"invalid-token-ref"`) belong to `internal/tokens.ts`'s token-flattening helpers — see "Shared internals" below — which `./web` doesn't currently call, but the type is exported whole rather than narrowed per subpath. |
 | `CopyResolver` | type | `(copyId: string) => string \| undefined`. The shape `options.resolveCopyId` must have. See "The `copyId` seam" above. |
-| `RenderWebOptions` | type | `{ resolveCopyId?: CopyResolver }`. `renderWebDocument`'s second argument. |
-| `RenderWebResult` | type | `{ element: ReactNode; head: WebHeadMetadata }`. What `renderWebDocument` returns. |
+| `AssetResolver` | type | `(assetId: string) => unknown`. The shape `options.resolveAssetId` must have — see "Shared internals — `SlotBinding.assetId`" above. Whatever it returns is validated into a real `RenderAsset` before use; an unresolved, wrong-shaped, or broken-lookup `assetId` is ALWAYS fatal. |
+| `RenderWebOptions` | type | `{ resolveCopyId?: CopyResolver; resolveAssetId?: AssetResolver }`. `renderWebDocument`'s second argument. |
+| `RenderWebResult` | type | `{ element: ReactNode; head: WebHeadMetadata }`. What `renderWebDocument` returns — `element` may now contain a real `<img>` for an `assetId`-bound slot (e.g. `AuthView`'s `brand`). |
 | `WebHeadMetadata` | type | `{ title, description, canonical?, robots?, keywords?, openGraph?, twitter?, jsonLd: string[] }`. Plain, JSON-serialisable, framework-agnostic — see "Head metadata" above. `jsonLd` is always an array (empty when `WebMeta.jsonLd` was absent), never `undefined`. |
 | `WebOpenGraphMetadata` | type | `{ title?, description?, image?, type? }`. `WebHeadMetadata.openGraph`'s shape — the same fields as `@vespeneventures/compose`'s `WebMeta.og`, renamed for clarity in a public, non-`compose`-typed API. |
 | `WebTwitterMetadata` | type | `{ card?: "summary" \| "summary_large_image", site? }`. `WebHeadMetadata.twitter`'s shape. |
@@ -765,7 +896,7 @@ expressible against `compose`'s frozen `ComposeDocument` type.
 | `renderEmailDocument(doc, options?)` | function | Resolves a `channel: "email"` `ComposeDocument`'s `bindings` (via `@vespeneventures/compose`'s `resolveDocument`/`resolveCopy`) into a complete, self-contained, table-based HTML document plus its plain-text alternative. Returns `{ html, text, subject, preheader, warnings }`. Throws `RenderError` for a non-email document, a resolution failure, or any bound slot that resolved to no real text. See "`./email` — email is not a small web page" above. |
 | `RenderError` | class | The same class `./web` exports — see that table entry above. |
 | `RenderErrorReason` | type | The same shared type `./web` exports — see that table entry above. `./email` throws `"wrong-channel"`, `"resolution-failed"`, or `"empty-output"` from its own resolution pipeline, plus `"unknown-style-role"` when a slot's `style.typography` names an unknown or non-size token role (see "Shared internals" above, `internal/typography.ts`). |
-| `RenderEmailOptions` | type | `{ layout?: LayoutSpec; lookup?: CopyLookup; brand?: Record<string, string> }`. `renderEmailDocument`'s second argument — see "The geometry problem" above for `layout`, `@vespeneventures/compose`'s own `CopyLookup` for `lookup`, and `internal/tokens.ts`'s `flattenTokens` for `brand`. |
+| `RenderEmailOptions` | type | `{ layout?: LayoutSpec; lookup?: CopyLookup; assetLookup?: AssetLookup; brand?: Record<string, string> }`. `renderEmailDocument`'s second argument — see "The geometry problem" above for `layout`, `@vespeneventures/compose`'s own `CopyLookup`/`AssetLookup` for `lookup`/`assetLookup`, and `internal/tokens.ts`'s `flattenTokens` for `brand`. An `assetId`-bound slot becomes an `<img>` row joining the same ordered stack as text — see "Shared internals — `SlotBinding.assetId`" above. |
 | `EmailRenderResult` | type | `{ html: string; text: string; subject: string; preheader: string; warnings: RenderWarning[] }`. What `renderEmailDocument` returns. |
 | `RenderWarning` | type | `{ code: "slots-stacked" \| "slot-width-lost"; message: string; slots: string[] }`. Every real geometry-fidelity loss `renderEmailDocument` had to accept — see "The geometry problem" above. |
 ### `./print`
@@ -776,8 +907,9 @@ expressible against `compose`'s frozen `ComposeDocument` type.
 | `RenderError` | class | The same `RenderError` `./web` exports — `extends Error`, `reason: RenderErrorReason`. |
 | `RenderErrorReason` | type | The same package-wide closed set `./web` exports — see `internal/errors.ts`. `renderPrintDocument` itself only ever throws `"wrong-channel"`, `"missing-layout"`, `"missing-custom-page-size"`, `"resolution-failed"`, `"empty-output"`, or `"unknown-style-role"` — see "Refusal paths" above. |
 | `CopyResolver` | type | `(copyId: string) => string \| undefined`. `./print`'s own declaration of the same shape `./web`'s `CopyResolver` uses — see `src/print/types.ts`'s own doc comment for why it's a separate declaration, not a shared import. |
+| `AssetResolver` | type | `(assetId: string) => unknown`. `./print`'s own declaration of the same shape `./web`'s `AssetResolver` uses. An `assetId`-bound slot becomes an `<img>` positioned by the slot's own frame, `object-fit:contain` so a mismatched aspect ratio never distorts — see "Images — `assetId`" above. |
 | `CustomPageSize` | type | `{ width: string; height: string }`. `options.customPageSize`'s shape — required when `doc.meta.pageSize === "Custom"`. |
-| `RenderPrintOptions` | type | `{ resolveCopyId?, customPageSize?, tokenOverrides?, breakBefore?, breakAfter?, allowBreakInside? }`. `renderPrintDocument`'s second argument — see "`./print`" above for each field. |
+| `RenderPrintOptions` | type | `{ resolveCopyId?, resolveAssetId?, customPageSize?, tokenOverrides?, breakBefore?, breakAfter?, allowBreakInside? }`. `renderPrintDocument`'s second argument — see "`./print`" above for each field. |
 | `RenderPrintResult` | type | `{ html: string; page: PrintPageInfo }`. What `renderPrintDocument` returns. |
 | `PrintPageInfo` | type | `{ pageSize, orientation, width, height, dpi? }` — the page geometry/metadata this render actually used; `width`/`height` are the resolved physical dimensions (a named size's real size, or `options.customPageSize` verbatim), and `dpi` is carried through from `meta.dpi` unchanged, present only when supplied. |
 ### `./image`
@@ -785,7 +917,7 @@ expressible against `compose`'s frozen `ComposeDocument` type.
 | Export | Kind | Purpose |
 | --- | --- | --- |
 | `renderImageDocument(doc, options?)` | function | Resolves a `channel: "image"` `ComposeDocument`'s `bindings` against `doc.layout`, then emits a self-contained SVG string sized to `ImageMeta.width`/`height` (scaled per `ImageMeta.scale`). Returns `RenderImageResult`. Throws `RenderError` for a non-`image` document, a missing/failed-to-resolve layout, or a required slot that resolved to no text — see "A document that resolves to nothing is an error" (the same three-reason bar `./web` uses: `"wrong-channel"`, `"resolution-failed"`, `"empty-output"`). |
-| `RenderImageOptions` | type | `{ resolveCopyId?: CopyLookup; tokenOverrides?: Record<string,string> }`. `resolveCopyId` is `@vespeneventures/compose`'s own `CopyLookup` shape (this package calls `resolveCopy` directly — never a hand-rolled equivalent, see "The #43 gap" in `resolveCanvasLayout.ts`). `tokenOverrides` flows straight into `internal/tokens.ts`'s `flattenTokens`. |
+| `RenderImageOptions` | type | `{ resolveCopyId?: CopyLookup; resolveAssetId?: AssetLookup; tokenOverrides?: Record<string,string> }`. `resolveCopyId`/`resolveAssetId` are `@vespeneventures/compose`'s own `CopyLookup`/`AssetLookup` shapes (this package calls `resolveCopy`/`resolveAssets` directly — never a hand-rolled equivalent, see "The #43 gap" in `resolveCanvasLayout.ts`). `tokenOverrides` flows straight into `internal/tokens.ts`'s `flattenTokens`. An `"image"`/`"logo"` slot bound via `resolveAssetId` renders a real, alt-bearing, aspect-ratio-aware `<image>` — see "Images — `assetId`" above. |
 | `RenderImageResult` | type | `{ svg, requestedFormat, width, height, viewBox: { width, height }, scale, warnings }`. `svg` is the complete document; `requestedFormat` is `ImageMeta.format` as asked (this function always emits SVG regardless — see "Architectural decision" above); `width`/`height` are the emitted `<svg>` attributes (`logical * scale`); `viewBox` is always the LOGICAL, unscaled size; `warnings` never blocks a render but is never silently dropped either (overflow truncations, omitted optional slots, the rasterization notice when `requestedFormat !== "svg"`). |
 | `wrapText`, `escapeXml`, `frameToCanvasRect`, `computeCanvasDimensions`, `resolveColorRole` | functions | The shared canvas engine — see "The `image`/`slides` architecture" above. Exported for `./slides` to import (and for any caller who wants the same primitives directly). Font-size/font-family resolution (`internal/typography.ts`'s `resolveElementTypography`/`resolveElementFontFamily`) is used internally by `renderSlots.ts` but not re-exported from this subpath — see "Shared internals" above for that module directly. |
 | `RenderError` / `RenderErrorReason` | class / type | Shared with every other channel — see `./web`'s own API table. |
@@ -796,7 +928,7 @@ expressible against `compose`'s frozen `ComposeDocument` type.
 | --- | --- | --- |
 | `renderSlidesDeck(deck, options?)` | function | Resolves and renders every slide in a `SlidesDeckInput`, one self-contained SVG per slide, all sharing one fixed canvas derived from `SlidesMeta.aspect` (`16:9` -> 1920x1080, `4:3` -> 1024x768). Returns `RenderSlidesResult`. A failing slide (wrong channel, failed resolution, empty required output) throws `RenderError` for the WHOLE deck, naming the offending slide's index and id — see `renderSlidesDeck.ts`, "One failing slide fails the whole deck". An inconsistent `aspect` across slides throws the new `"inconsistent-deck-aspect"` reason. |
 | `SlidesDeckInput` | type | `{ id, slides: ComposeDocument[], notes?: Record<string,string> }` — see "`./slides`' input shape" above. |
-| `RenderSlidesOptions` | type | `{ resolveCopyId?: CopyLookup; tokenOverrides?: Record<string,string> }` — identical shape to `RenderImageOptions`, applied uniformly to every slide. |
+| `RenderSlidesOptions` | type | `{ resolveCopyId?: CopyLookup; resolveAssetId?: AssetLookup; tokenOverrides?: Record<string,string> }` — identical shape to `RenderImageOptions`, applied uniformly to every slide. A slide with a broken `assetId` fails the WHOLE deck, exactly like a failed `resolveCopyId` already does. |
 | `RenderedSlide` | type | `{ id, index, svg, notes?, warnings }` — one slide's own result; `index` is its position in `SlidesDeckInput.slides`, carried straight through. |
 | `RenderSlidesResult` | type | `{ slides: RenderedSlide[], width, height, aspect, unknownNoteKeys, warnings }`. `unknownNoteKeys` lists every `notes` key matching no slide id — reported, never dropped, never thrown. `warnings` flattens every slide's own warnings, each prefixed `slide "<id>": `. |
 | `canvasForAspect(aspect)` | function | `SlidesMeta.aspect` -> `{ width, height }` — the fixed, documented two-entry table (`src/slides/canvas.ts`). |

@@ -167,6 +167,102 @@ describe("refusal paths", () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────
+// assetId — refusal paths (never a blank box) and the before/after proof
+// ─────────────────────────────────────────────────────────────────────────
+
+describe("assetId refusal paths (never a blank box)", () => {
+  const assetDoc: ComposeDocument = {
+    id: "acme-hero",
+    channel: "image",
+    template: "og-card",
+    meta: { channel: "image", width: 400, height: 200, format: "svg", alt: "Acme hero" },
+    layout: { slots: [{ key: "hero", element: "image", frame: { x: 0, y: 0, w: 1, h: 1 } }] },
+    bindings: [{ slot: "hero", assetId: "marketing.hero" }],
+  };
+
+  it("REFUSES (empty-output) an unresolved assetId — no resolveAssetId given at all", () => {
+    try {
+      renderImageDocument(assetDoc);
+      expect.unreachable();
+    } catch (error) {
+      expect(error).toBeInstanceOf(RenderError);
+      expect((error as RenderError).reason).toBe("empty-output");
+      expect((error as RenderError).message).toContain("marketing.hero");
+    }
+  });
+
+  it("REFUSES (empty-output) when resolveAssetId returns undefined for a bound assetId", () => {
+    expect(() => renderImageDocument(assetDoc, { resolveAssetId: () => undefined })).toThrow(RenderError);
+  });
+
+  it("REFUSES (empty-output) when resolveAssetId throws — caught and reported, never propagated raw", () => {
+    try {
+      renderImageDocument(assetDoc, {
+        resolveAssetId: () => {
+          throw new Error("registry down");
+        },
+      });
+      expect.unreachable();
+    } catch (error) {
+      expect(error).toBeInstanceOf(RenderError);
+      expect((error as RenderError).reason).toBe("empty-output");
+      expect((error as RenderError).message).toContain("could not even attempt to resolve: hero");
+    }
+  });
+
+  it("REFUSES (empty-output) when resolveAssetId is not a function", () => {
+    // Deliberately wrong-typed input — cast, not `@ts-expect-error`; a
+    // *.test.ts file isn't part of this package's real tsc build, so that
+    // directive would be inert and never actually checked.
+    expect(() => renderImageDocument(assetDoc, { resolveAssetId: "nope" as unknown as () => unknown })).toThrow(RenderError);
+  });
+
+  it("REFUSES (empty-output) when resolveAssetId resolves to a value missing the required src/width/height/alt shape", () => {
+    try {
+      renderImageDocument(assetDoc, { resolveAssetId: () => ({ nope: true }) });
+      expect.unreachable();
+    } catch (error) {
+      expect((error as RenderError).reason).toBe("empty-output");
+      expect((error as RenderError).message).toContain("marketing.hero");
+    }
+  });
+
+  it("an unresolved assetId on a non-required slot is STILL fatal — no leniency the way an optional copyId gets", () => {
+    expect(() => renderImageDocument(assetDoc, { resolveAssetId: () => undefined })).toThrow(RenderError);
+  });
+});
+
+describe("before/after: an asset-only document — the empty-output bug this task fixes", () => {
+  const assetOnlyDoc: ComposeDocument = {
+    id: "asset-only-image",
+    channel: "image",
+    template: "T",
+    meta: { channel: "image", width: 400, height: 200, format: "svg", alt: "A" },
+    layout: { slots: [{ key: "hero", element: "image", frame: { x: 0, y: 0, w: 1, h: 1 } }] },
+    bindings: [{ slot: "hero", assetId: "marketing.hero" }],
+  };
+  const asset = { id: "marketing.hero", src: "https://cdn.example/hero.png", width: 800, height: 400, alt: "Storefront photo" };
+
+  it("BEFORE (still true without resolveAssetId): throws empty-output — nothing was resolved", () => {
+    try {
+      renderImageDocument(assetOnlyDoc);
+      expect.unreachable();
+    } catch (error) {
+      expect((error as RenderError).reason).toBe("empty-output");
+    }
+  });
+
+  it("AFTER: a document made ENTIRELY of assetId bindings renders successfully — never a false empty-output", () => {
+    const result = renderImageDocument(assetOnlyDoc, {
+      resolveAssetId: (assetId) => (assetId === "marketing.hero" ? asset : undefined),
+    });
+    expect(result.svg).toContain('href="https://cdn.example/hero.png"');
+    expect(result.svg).toContain("Storefront photo");
+    expect(result.warnings).toEqual([]);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────
 // Non-fatal warnings — optional slot that matched but produced no text
 // ─────────────────────────────────────────────────────────────────────────
 
@@ -180,7 +276,7 @@ describe("optional-slot warnings (non-fatal)", () => {
     });
     const result = renderImageDocument(doc);
     expect(result.svg).not.toContain("eyebrow.unresolvable");
-    expect(result.warnings.some((w) => w.includes('slot "eyebrow"') && w.includes("no text"))).toBe(true);
+    expect(result.warnings.some((w) => w.includes('slot "eyebrow"') && w.includes("no content"))).toBe(true);
   });
 });
 

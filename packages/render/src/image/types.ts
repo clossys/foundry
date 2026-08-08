@@ -1,4 +1,4 @@
-import type { CopyLookup, ImageMeta } from "@vespeneventures/compose";
+import type { AssetLookup, CopyLookup, ImageMeta } from "@vespeneventures/compose";
 
 // ---------------------------------------------------------------------------
 // RenderImageOptions / RenderImageResult
@@ -13,6 +13,16 @@ export interface RenderImageOptions {
    * treated as unresolved.
    */
   resolveCopyId?: CopyLookup;
+  /**
+   * Resolves a `SlotBinding.assetId` into a real asset — the exact
+   * `AssetLookup` shape `@vespeneventures/compose`'s own `resolveAssets`
+   * takes. Omit when no binding in the document uses `assetId`; every
+   * `assetId` binding is then treated as unresolved, which is ALWAYS fatal
+   * for this channel (see `resolveCanvasLayout.ts`'s own doc comment,
+   * "Assets get a stricter bar than optional text") — unlike an unresolved
+   * OPTIONAL `copyId`, which only produces a non-fatal warning.
+   */
+  resolveAssetId?: AssetLookup;
   /**
    * Passed straight through to `internal/tokens.ts`'s `flattenTokens` — a
    * caller with a real brand's token overrides supplies them here so every

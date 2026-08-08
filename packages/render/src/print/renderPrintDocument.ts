@@ -50,6 +50,20 @@
  * | `"empty-output"` | `resolveDocument` succeeded, but `@vespeneventures/compose`'s `resolveCopy` reports `ok: false` — some matched slot's `copyId` never resolved to real text (no `options.resolveCopyId` was given, it returned `undefined`, or a binding had two conflicting sources). Reused from `./web`'s own vocabulary rather than invented fresh — the two situations are the same shape: a document that LOOKS resolved but produces no real content for at least one matched slot. **This is `resolveCopy`, not a hand-rolled second check** — see `@vespeneventures/compose`'s own `resolve-copy.ts` doc comment and issue #43: "a rule every renderer must independently remember is a rule one of them will forget." |
  * | `"unknown-style-role"` | A `SlotSpec.style.color`/`.background`/`.typography` (or `doc.layout.background.color`/`.background`) names a token role absent from `@vespeneventures/tokens`' `TOKENS` registry, or (for `.typography` specifically) a role that exists but does not resolve to a pixel font-size — see `internal/style.ts`. |
  *
+ * IMAGES: `assetId` BINDINGS PAINT AN `<img>`, POSITIONED LIKE ANY OTHER SLOT
+ * -------------------------------------------------------------------------------
+ * `SlotBinding.assetId` (`@vespeneventures/compose` 0.3.0) resolves via the
+ * shared `../internal/assets.ts`'s `resolveDocumentAssets` — never
+ * hand-rolled, the identical `resolveCopy` reuse this file's own doc
+ * comment already documents for text, one binding field over. Print HAS a
+ * real coordinate system (unlike `./web`/`./email`), so an asset slot is
+ * positioned EXACTLY like a text slot: `spec.frame` -> the same
+ * `frameToPercent`-derived absolute box, via `internal/slot.ts`'s
+ * `buildImageSlotHtml`. This channel holds the identical "no leniency, any
+ * problem is fatal" bar for assets that `./email` and `./web`'s own
+ * `assetId` handling do — see `hasAssetProblems` below — regardless of
+ * whether the failing slot happens to be `required`.
+ *
  * COLOURS ARE FLATTENED TO LITERAL HEX, ON PURPOSE
  * ----------------------------------------------------
  * A browser's print pipeline DOES understand `oklch()` and CSS custom
@@ -72,10 +86,11 @@
 import { resolveCopy, resolveDocument } from "@vespeneventures/compose";
 import type { ComposeDocument, PrintMeta, ResolvedSlot } from "@vespeneventures/compose";
 import { RenderError } from "../internal/errors.js";
+import { describeAssetProblems, hasAssetProblems, resolveDocumentAssets } from "../internal/assets.js";
 import { flattenTokens } from "../internal/tokens.js";
 import { buildHtmlDocument } from "./internal/document.js";
 import { buildPageAtRuleCss, resolvePageBox } from "./internal/page.js";
-import { buildSlotHtml } from "./internal/slot.js";
+import { buildImageSlotHtml, buildSlotHtml } from "./internal/slot.js";
 import { resolveStyleColors } from "./internal/style.js";
 import type { RenderPrintOptions, RenderPrintResult } from "./types.js";
 
@@ -121,34 +136,52 @@ export function renderPrintDocument(doc: ComposeDocument, options: RenderPrintOp
 
   const lookup = options.resolveCopyId ?? (() => undefined);
   const copyResult = resolveCopy(result, lookup);
-  if (!copyResult.ok) {
+
+  // Never hand-rolled — see this file's own top comment, "Images: assetId
+  // bindings paint an <img>".
+  const assetsResolution = resolveDocumentAssets(result, options.resolveAssetId);
+
+  if (!copyResult.ok || hasAssetProblems(assetsResolution)) {
     const parts: string[] = [];
     if (copyResult.unresolvedCopyIds.length > 0) parts.push(`copyId(s) that resolved to no text: ${copyResult.unresolvedCopyIds.join(", ")}`);
     if (copyResult.unchecked.length > 0) parts.push(`slot(s) with no usable, unambiguous source of text: ${copyResult.unchecked.join(", ")}`);
-    if (parts.length === 0) parts.push("no slot produced any text");
+    parts.push(...describeAssetProblems(assetsResolution));
+    if (parts.length === 0) parts.push("no slot produced any content");
     throw new RenderError(
       "empty-output",
       `renderPrintDocument resolved document "${doc.id}" against its layout, but at least one matched slot ` +
-        `produced no real text: ${parts.join("; ")}. Rendering would silently ship an incomplete page, which this ` +
+        `produced no real content: ${parts.join("; ")}. Rendering would silently ship an incomplete page, which this ` +
         `function refuses to do.`,
     );
   }
 
   const textByKey = new Map(copyResult.texts.map((t) => [t.key, t.text]));
+  const assetByKey = assetsResolution.byKey;
   const specByKey = new Map<string, ResolvedSlot["spec"]>(result.resolved.map((r) => [r.key, r.spec]));
 
   const flat = flattenTokens(options.tokenOverrides);
 
   // Multiple bindings can target the same slot key (resolveDocument doesn't
   // pick a winner — see its own doc comment) — render each real slot once;
-  // `textByKey`/`specByKey`, both plain `Map`s keyed by slot key, naturally
-  // keep the LAST resolved binding for a duplicate key, the same
-  // last-write-wins default a caller who wants different behaviour (a
+  // `textByKey`/`assetByKey`/`specByKey`, all plain `Map`s keyed by slot
+  // key, naturally keep the LAST resolved binding for a duplicate key, the
+  // same last-write-wins default a caller who wants different behaviour (a
   // hard error on a collision, first-write-wins) can detect for themselves
   // by grouping `result.resolved` on `key` before calling this function.
   const orderedKeys = [...new Set(result.resolved.map((r) => r.key))];
 
-  const slotsHtml = orderedKeys.map((key) => buildSlotHtml(specByKey.get(key)!, textByKey.get(key)!, flat, options)).join("");
+  // Joined by SLOT KEY, never by array position — see ../internal/assets.ts
+  // and ./email's renderEmailDocument.ts for the identical reasoning. Given
+  // the refusal check above passed, every key here has EITHER a text entry
+  // OR a valid asset entry.
+  const slotsHtml = orderedKeys
+    .map((key) => {
+      const spec = specByKey.get(key)!;
+      const asset = assetByKey.get(key);
+      if (asset !== undefined) return buildImageSlotHtml(spec, asset, options);
+      return buildSlotHtml(spec, textByKey.get(key)!, flat, options);
+    })
+    .join("");
 
   const { color: pageColor, backgroundColor: pageBackgroundColor } = resolveStyleColors(layout.background, "<page>", flat);
 
