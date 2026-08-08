@@ -92,6 +92,57 @@ range on a 0.x package is patch-only in name but has, in practice, let a
 breaking pre-1.0 minor bump through unnoticed and broken this repository's
 CI more than once. A tilde range is the deliberate, narrower choice here.
 
+**`@vespeneventures/tokens` is a real (non-peer) dependency, for the same
+reason `compose` is.** Unlike `react`/`react-dom`/`@vespeneventures/ui` —
+which only `./web` needs, hence the optional-peer treatment above — EVERY
+channel this package ships or will ship needs a way to turn a design
+token into a literal color, because none of them (a browser aside) can
+read an `oklch()` cascade: email has no CSS custom properties at all,
+and `./image`/`./slides` emit SVG. There is no channel for which
+`@vespeneventures/tokens` is optional the way `react` genuinely is for
+`./print`, so it is not behind `peerDependenciesMeta.optional` — it is a
+plain dependency, installed for every consumer of this package regardless
+of which subpath(s) they import. Pinned `~0.5.0` (the real, installed
+`@vespeneventures/tokens` version at the time this dependency was added),
+tilde rather than caret for the identical reason `compose`'s pin is
+tilde: `tokens` is pre-1.0, and this repository's own convention treats a
+caret range on a 0.x package as patch-only in name only — it has let a
+breaking pre-1.0 minor bump through unnoticed before. See "Shared
+internals" below for what this dependency buys: `internal/tokens.ts`'s
+`flattenTokens`/`oklchToHex`/`resolveTokenRef`.
+
+## Shared internals — `@vespeneventures/tokens`, flattened for a channel with no CSS cascade
+
+`src/internal/tokens.ts` is not part of `./web`'s (or any channel's)
+public API — it is a plain module under `src/internal/`, imported by
+relative path from whichever channel needs it — but every channel this
+package grows needs the thing it does, so it is documented here rather
+than in a subpath's own README section.
+
+`@vespeneventures/tokens`' `TOKENS` registry declares its 154 color
+entries as CSS `oklch(...)` strings, meant to be read through a real CSS
+custom-property cascade in a browser. That is exactly backwards for a
+channel with no cascade and no `oklch()` support at all:
+
+- **email** — no client supports `oklch()`, and none support CSS custom
+  properties, so every color a template emits has to be a literal hex
+  inlined on the element itself;
+- **`./image`/`./slides`** — output is SVG for a rasterizer, which has
+  neither `oklch()` nor a `var()` cascade either.
+
+Three exports answer that, in order of how they compose:
+
+| Export | Purpose |
+| --- | --- |
+| `oklchToHex(css)` | A real OKLCH -> OKLab -> linear sRGB -> gamma-encoded sRGB -> `#rrggbb`/`#rrggbbaa` conversion — not an approximation, not a lookup table. Handles `L`/`C` as a number or percentage, `H` as a number or `none`, and alpha. **Out-of-gamut input is gamut-mapped by reducing chroma toward 0** (binary search, holding lightness and hue fixed) until the color lands inside sRGB, never by clamping each channel independently — a per-channel clip silently produces a different, often wrong-hued color with no signal anything went wrong, which is exactly the failure this function is built to avoid. Throws `RenderError("invalid-oklch", ...)` for anything unparseable; never returns a fallback color. |
+| `flattenTokens(overrides?)` | Every `TOKENS` entry, override applied where one is given, fully resolved: every `var()` reference chased to its literal value (including one embedded inside a composite value, like a resolved box-shadow), every `oklch(...)` occurrence converted through `oklchToHex`. An override naming a slot outside `TOKENS`, or a slot whose `brandable` is `false`, throws (`"unknown-token-override"` / `"non-brandable-override"`) rather than being silently accepted or silently ignored. |
+| `resolveTokenRef(value, flat)` | Resolves `var(--name)` / `var(--name, fallback)` references — including chains, and multiple references in one string — against an already-flattened map. Detects cycles and throws (`"token-ref-cycle"`) rather than looping forever; an unresolvable reference with no fallback throws (`"unknown-token-ref"`). |
+
+All three throw the same `RenderError` this package already ships (see
+"A document that resolves to nothing is an error", below) — `internal/errors.ts`'s
+`RenderErrorReason` union grew six new members for this module; see that
+file's own doc comment for the full list and when each fires.
+
 ## Usage
 
 ```ts
@@ -258,7 +309,7 @@ pipeline.
 | `buildWebHeadMetadata(meta)` | function | The `WebMeta` → `WebHeadMetadata` half of `renderWebDocument`, exposed standalone for a caller who already has a `WebMeta` and wants just the head, without a full `ComposeDocument`. |
 | `listWebTemplateNames()` | function | Every template name this package's web renderer currently knows — `["AuthView", "ErrorView"]` — so a caller can validate a `template` string, or build a picker UI, without hardcoding the list. |
 | `RenderError` | class | `extends Error`. Every failure `renderWebDocument` throws is one of these. Carries `reason: RenderErrorReason` alongside the usual `message`. |
-| `RenderErrorReason` | type | `"unknown-template" \| "wrong-channel" \| "resolution-failed" \| "empty-output"` — the closed set of reasons `RenderError` is ever thrown for. See the table above. |
+| `RenderErrorReason` | type | The closed set of reasons `RenderError` is ever thrown for, ACROSS every channel this package ships (`RenderError` is shared — see `internal/errors.ts`). `renderWebDocument` itself only ever throws `"unknown-template" \| "wrong-channel" \| "resolution-failed" \| "empty-output"` (see the table above); the other six members (`"invalid-oklch"`, `"non-brandable-override"`, `"unknown-token-override"`, `"unknown-token-ref"`, `"token-ref-cycle"`, `"invalid-token-ref"`) belong to `internal/tokens.ts`'s token-flattening helpers — see "Shared internals" below — which `./web` doesn't currently call, but the type is exported whole rather than narrowed per subpath. |
 | `CopyResolver` | type | `(copyId: string) => string \| undefined`. The shape `options.resolveCopyId` must have. See "The `copyId` seam" above. |
 | `RenderWebOptions` | type | `{ resolveCopyId?: CopyResolver }`. `renderWebDocument`'s second argument. |
 | `RenderWebResult` | type | `{ element: ReactNode; head: WebHeadMetadata }`. What `renderWebDocument` returns. |
@@ -270,8 +321,8 @@ pipeline.
 
 Node 20+. ESM only. No root `.` export — import from
 `@vespeneventures/render/web` (and, later, `/email`, `/print`, `/slides`,
-`/image`). `@vespeneventures/compose` is a real dependency; `react`,
-`react-dom`, and `@vespeneventures/ui` are optional peer dependencies of
+`/image`). `@vespeneventures/compose` and `@vespeneventures/tokens` are
+real dependencies; `react`, `react-dom`, and `@vespeneventures/ui` are optional peer dependencies of
 this package as a whole — because npm has no per-subpath peer
 dependencies, but in practice all three are required to use `./web`. See
 "The package shape" above for the full reasoning, and for the pattern the
