@@ -1,12 +1,15 @@
 # @vespeneventures/render
 
 Renderers built against `@vespeneventures/compose`'s `ComposeDocument`
-contract — one subpath per output channel. Ships `./web` first: resolves a
-web `ComposeDocument`'s `bindings` into the named `@vespeneventures/ui`
-view and emits framework-agnostic head metadata (title, description,
-canonical, robots, keywords, OpenGraph, Twitter card, and escaped
-JSON-LD). `./email`, `./print`, `./slides`, and `./image` are the same
-shape, built later, by later agents, against the same `ComposeDocument`.
+contract — one subpath per output channel. `./web` resolves a web
+`ComposeDocument`'s `bindings` into the named `@vespeneventures/ui` view
+and emits framework-agnostic head metadata (title, description, canonical,
+robots, keywords, OpenGraph, Twitter card, and escaped JSON-LD). `./image`
+and `./slides` (this document) render a fixed canvas with
+absolutely-positioned slots — one canvas for `./image`, an ordered
+sequence of the same canvas for `./slides` — as self-contained SVG.
+`./email` and `./print` are the same shape, built later, by later agents,
+against the same `ComposeDocument`.
 
 ```bash
 npm install @vespeneventures/render
@@ -299,6 +302,83 @@ wants a real form (or any other rich node) in that slot composes
 `@vespeneventures/ui`'s `AuthView` directly, outside this document
 pipeline.
 
+## `./image` and `./slides` — a fixed canvas with absolutely-positioned slots
+
+`./image` and `./slides` are one problem solved once: `ImageMeta` describes
+one canvas (`width`/`height`, optionally `scale`d for retina output) and
+`SlidesMeta` describes a deck, which is nothing more than an ORDERED
+SEQUENCE of the same kind of canvas (one fixed size per `aspect`, `16:9` ->
+1920x1080 or `4:3` -> 1024x768). Both channels place a `LayoutSpec`'s
+`SlotSpec`s at their `Frame`'s absolute position on that canvas. So the
+geometry math, the text-wrapping heuristic, and the XML-escaping rules are
+built exactly ONCE, in `src/image/engine.ts` and `src/image/
+resolveCanvasLayout.ts`, and `src/slides/` imports them directly rather
+than re-deriving any of it — see `engine.ts`'s own top comment for exactly
+which two files this is and why they live under `src/image/` rather than
+`src/internal/`.
+
+### Architectural decision: SVG, never raster bytes
+
+Neither channel ever produces PNG/JPEG/WebP bytes, and neither ever will.
+SVG is a deterministic STRING — a golden test can assert the exact emitted
+bytes, exactly as `src/web/golden-render.test.ts` already does for HTML.
+Raster output is an opaque binary blob no test can meaningfully assert
+against ("it didn't crash" is not a correctness check), and every
+rasterizer (a headless browser, `sharp`, `canvas`, `pptxgenjs`) is a
+heavyweight native dependency this package's zero-new-dependencies rule
+rules out. `ImageMeta.format` may ask for `"png"`/`"jpeg"`/`"webp"` —
+`renderImageDocument` still emits SVG, and says so honestly:
+`RenderImageResult.requestedFormat` carries the caller's original ask, and
+`RenderImageResult.warnings` carries an explicit note that rasterizing the
+returned SVG to that format is the CALLER's job. Neither function ever
+silently pretends to have produced a raster image it didn't.
+
+### Text wrapping — the hard part, and how this package handles it
+
+SVG 1.1 has no automatic text reflow: a long string in a narrow slot runs
+straight past the frame's edge with no complaint from any renderer. This
+package implements DETERMINISTIC LINE BREAKING (`src/image/engine.ts`'s
+`wrapText`) using a fixed average-character-width-per-`em` constant
+(`0.55em`, tuned for a generic sans-serif font) rather than a real
+font-metrics dependency — deliberately: the task this package was built
+against rules one out. When even the wrapped text needs more lines than
+the slot's frame height allows at its element kind's font size, the tail
+is truncated with a trailing ellipsis AND reported — every renderer
+(`renderImageDocument`, `renderSlidesDeck`) returns the overflow as a
+named warning (`slot "<key>" ... text overflowed its frame ... and was
+truncated`), never silently. See `wrapText`'s own doc comment for the
+accuracy limits this approximation carries (narrow/wide glyphs, non-Latin
+scripts, no kerning/ligatures).
+
+### Colors — always a literal hex, via `internal/tokens.ts`
+
+A `StyleBinding`'s `color`/`background`/`border` fields are token ROLE
+NAMES (e.g. `"--color-ink-primary"`), resolved through
+`internal/tokens.ts`'s `flattenTokens`/`resolveTokenRef` (`engine.ts`'s
+`resolveColorRole`) into a literal `#rrggbb[aa]` string before it ever
+reaches the emitted SVG — SVG has no CSS custom-property cascade in a
+rasterizer and no `oklch()` support, so every color this package emits is
+a literal, never `oklch(...)` and never `var(--...)`. See the "Shared
+internals" section below for the module itself.
+
+### `./slides`' input shape — an ordered array of real `ComposeDocument`s
+
+`renderSlidesDeck` takes a `SlidesDeckInput`: `{ id, slides:
+ComposeDocument[], notes?: Record<string, string> }` — a plain, ORDERED
+array of real, individually-valid `channel: "slides"` `ComposeDocument`s
+(array index IS deck order, never inferred from `id` or any other implicit
+signal), plus deck-wide speaker notes. `SlidesMeta.notes` is typed
+`Record<string, string>` KEYED BY SLIDE ID — structurally deck-wide data —
+so this package reads notes from `SlidesDeckInput.notes`, the deck-level
+input, never from any individual slide document's own `meta.notes`. A
+notes key naming no slide in the deck is reported in
+`RenderSlidesResult.unknownNoteKeys` (almost always a renamed slide and a
+lost speaker note) — never dropped, and never thrown either: it doesn't
+block an otherwise-good render. See `renderSlidesDeck.ts`'s own doc
+comment, "Deciding the input shape", for why the alternative the task
+brief itself named ("one document with multiple layouts") isn't actually
+expressible against `compose`'s frozen `ComposeDocument` type.
+
 ## API
 
 ### `./web`
@@ -317,16 +397,42 @@ pipeline.
 | `WebOpenGraphMetadata` | type | `{ title?, description?, image?, type? }`. `WebHeadMetadata.openGraph`'s shape — the same fields as `@vespeneventures/compose`'s `WebMeta.og`, renamed for clarity in a public, non-`compose`-typed API. |
 | `WebTwitterMetadata` | type | `{ card?: "summary" \| "summary_large_image", site? }`. `WebHeadMetadata.twitter`'s shape. |
 
+### `./image`
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `renderImageDocument(doc, options?)` | function | Resolves a `channel: "image"` `ComposeDocument`'s `bindings` against `doc.layout`, then emits a self-contained SVG string sized to `ImageMeta.width`/`height` (scaled per `ImageMeta.scale`). Returns `RenderImageResult`. Throws `RenderError` for a non-`image` document, a missing/failed-to-resolve layout, or a required slot that resolved to no text — see "A document that resolves to nothing is an error" (the same three-reason bar `./web` uses: `"wrong-channel"`, `"resolution-failed"`, `"empty-output"`). |
+| `RenderImageOptions` | type | `{ resolveCopyId?: CopyLookup; tokenOverrides?: Record<string,string> }`. `resolveCopyId` is `@vespeneventures/compose`'s own `CopyLookup` shape (this package calls `resolveCopy` directly — never a hand-rolled equivalent, see "The #43 gap" in `resolveCanvasLayout.ts`). `tokenOverrides` flows straight into `internal/tokens.ts`'s `flattenTokens`. |
+| `RenderImageResult` | type | `{ svg, requestedFormat, width, height, viewBox: { width, height }, scale, warnings }`. `svg` is the complete document; `requestedFormat` is `ImageMeta.format` as asked (this function always emits SVG regardless — see "Architectural decision" above); `width`/`height` are the emitted `<svg>` attributes (`logical * scale`); `viewBox` is always the LOGICAL, unscaled size; `warnings` never blocks a render but is never silently dropped either (overflow truncations, omitted optional slots, the rasterization notice when `requestedFormat !== "svg"`). |
+| `wrapText`, `escapeXml`, `frameToCanvasRect`, `computeCanvasDimensions`, `resolveColorRole` | functions | The shared canvas engine — see "The `image`/`slides` architecture" above. Exported for `./slides` to import (and for any caller who wants the same primitives directly). |
+| `DEFAULT_FONT_SIZE_PX`, `DEFAULT_FONT_FAMILY` | consts | The fixed, documented per-`ElementKind` font-size table and generic font stack this package renders text with — see `engine.ts`'s own doc comment for why there's no real typography-token lookup yet. |
+| `RenderError` / `RenderErrorReason` | class / type | Shared with every other channel — see `./web`'s own API table. |
+
+### `./slides`
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `renderSlidesDeck(deck, options?)` | function | Resolves and renders every slide in a `SlidesDeckInput`, one self-contained SVG per slide, all sharing one fixed canvas derived from `SlidesMeta.aspect` (`16:9` -> 1920x1080, `4:3` -> 1024x768). Returns `RenderSlidesResult`. A failing slide (wrong channel, failed resolution, empty required output) throws `RenderError` for the WHOLE deck, naming the offending slide's index and id — see `renderSlidesDeck.ts`, "One failing slide fails the whole deck". An inconsistent `aspect` across slides throws the new `"inconsistent-deck-aspect"` reason. |
+| `SlidesDeckInput` | type | `{ id, slides: ComposeDocument[], notes?: Record<string,string> }` — see "`./slides`' input shape" above. |
+| `RenderSlidesOptions` | type | `{ resolveCopyId?: CopyLookup; tokenOverrides?: Record<string,string> }` — identical shape to `RenderImageOptions`, applied uniformly to every slide. |
+| `RenderedSlide` | type | `{ id, index, svg, notes?, warnings }` — one slide's own result; `index` is its position in `SlidesDeckInput.slides`, carried straight through. |
+| `RenderSlidesResult` | type | `{ slides: RenderedSlide[], width, height, aspect, unknownNoteKeys, warnings }`. `unknownNoteKeys` lists every `notes` key matching no slide id — reported, never dropped, never thrown. `warnings` flattens every slide's own warnings, each prefixed `slide "<id>": `. |
+| `canvasForAspect(aspect)` | function | `SlidesMeta.aspect` -> `{ width, height }` — the fixed, documented two-entry table (`src/slides/canvas.ts`). |
+| `RenderError` / `RenderErrorReason` | class / type | Shared with every other channel. |
+
 ## Requirements
 
 Node 20+. ESM only. No root `.` export — import from
-`@vespeneventures/render/web` (and, later, `/email`, `/print`, `/slides`,
-`/image`). `@vespeneventures/compose` and `@vespeneventures/tokens` are
-real dependencies; `react`, `react-dom`, and `@vespeneventures/ui` are optional peer dependencies of
-this package as a whole — because npm has no per-subpath peer
-dependencies, but in practice all three are required to use `./web`. See
-"The package shape" above for the full reasoning, and for the pattern the
-next channel should follow for its own heavy dependencies.
+`@vespeneventures/render/web`, `/image`, or `/slides` (and, later,
+`/email`, `/print`). `@vespeneventures/compose` and
+`@vespeneventures/tokens` are real dependencies; `react`, `react-dom`, and
+`@vespeneventures/ui` are optional peer dependencies of this package as a
+whole — because npm has no per-subpath peer dependencies, but in practice
+all three are required to use `./web`. `./image` and `./slides` need NONE
+of those three peers — they emit SVG as a plain string, with zero new
+dependencies of their own. See "The package shape" above for the full
+reasoning, and for the pattern the next channel should follow for its own
+heavy dependencies.
 
 ## Licence
 

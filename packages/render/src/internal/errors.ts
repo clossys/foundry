@@ -32,6 +32,16 @@
  *     loops back on a name already being resolved.
  *   - `"invalid-token-ref"` — `resolveTokenRef` was given malformed
  *     `var(...)` syntax (unbalanced parentheses, or no property name).
+ *
+ * One more member was appended for `./slides` (a `SlidesDeckInput` whose
+ * slides don't all agree on `meta.aspect` — see `src/slides/
+ * renderSlidesDeck.ts` for the full reasoning):
+ *
+ *   - `"inconsistent-deck-aspect"` — `renderSlidesDeck` was given a deck
+ *     whose slides don't all declare the same `SlidesMeta.aspect`. A deck
+ *     is one fixed canvas rendered repeatedly; a per-slide aspect change
+ *     mid-deck has no sensible single canvas size, so this is refused
+ *     rather than silently rendered at (say) the first slide's aspect.
  */
 export type RenderErrorReason =
   | "unknown-template"
@@ -43,7 +53,8 @@ export type RenderErrorReason =
   | "unknown-token-override"
   | "unknown-token-ref"
   | "token-ref-cycle"
-  | "invalid-token-ref";
+  | "invalid-token-ref"
+  | "inconsistent-deck-aspect";
 
 export class RenderError extends Error {
   readonly reason: RenderErrorReason;

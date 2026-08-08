@@ -7,6 +7,59 @@ All notable changes to this package are documented here. Format follows
 
 ### Added
 
+- **`./image` and `./slides`** (`src/image/`, `src/slides/`): render a
+  fixed canvas with absolutely-positioned slots — one canvas for
+  `./image`, an ordered sequence of the same canvas for `./slides` — as
+  self-contained SVG. Never raster bytes: `ImageMeta.format` may ask for
+  `"png"`/`"jpeg"`/`"webp"`, but both channels always emit SVG and say so
+  honestly in their result (`requestedFormat` plus a warning that
+  rasterization is the caller's own job) — see the README, "Architectural
+  decision: SVG, never raster bytes".
+  - **`renderImageDocument(doc, options?)`** — resolves a
+    `channel: "image"` `ComposeDocument` against `doc.layout` (via
+    `@vespeneventures/compose`'s `resolveDocument` then `resolveCopy` —
+    never hand-rolled, closing the exact #43 gap that function exists to
+    close) and emits SVG sized to `ImageMeta.width`/`height`, scaled per
+    `ImageMeta.scale` (`viewBox` stays at LOGICAL units; only the emitted
+    `width`/`height` attributes scale — the standard retina-SVG shape,
+    asserted in a golden test). `ImageMeta.alt` is emitted as `<title>`
+    plus `role="img"`/`aria-label`. Throws `RenderError` (`"wrong-channel"`,
+    `"resolution-failed"`, `"empty-output"` — all reused from `./web`'s own
+    set, no new reasons needed for this channel) rather than silently
+    rendering an incomplete image.
+  - **`renderSlidesDeck(deck, options?)`** — takes a `SlidesDeckInput`
+    (`{ id, slides: ComposeDocument[], notes?: Record<string,string> }`):
+    a plain, ORDERED array of real `channel: "slides"` `ComposeDocument`s
+    (array index is deck order, never inferred) plus deck-wide speaker
+    notes keyed by slide id. Canvas size is fixed by `SlidesMeta.aspect`:
+    `16:9` -> 1920x1080, `4:3` -> 1024x768. A notes key matching no slide
+    is reported in `unknownNoteKeys` (never dropped, never thrown — it
+    doesn't block an otherwise-good render); a failing slide (wrong
+    channel, failed resolution, empty required output, or an aspect that
+    disagrees with the rest of the deck — the new
+    `"inconsistent-deck-aspect"` reason) fails the WHOLE deck, naming the
+    offending slide's index/id.
+  - **The shared canvas engine** (`src/image/engine.ts`,
+    `src/image/resolveCanvasLayout.ts`, `src/image/renderSlots.ts`) — built
+    once for `./image`, imported directly by `./slides` rather than
+    duplicated: `frameToCanvasRect` (reuses `@vespeneventures/compose`'s
+    `frameToInches`, which is unit-agnostic in practice), `wrapText`
+    (deterministic line-breaking via a documented average-character-width
+    approximation — no font-metrics dependency; overflow is always
+    reported as a named warning, never silent), `escapeXml` (all five
+    XML-significant characters; `>` escaping neutralizes a literal `]]>`
+    as a byproduct), and `resolveColorRole` (every color resolves to a
+    literal hex via `internal/tokens.ts` — never `oklch(...)`, never
+    `var(--...)`). Deliberately placed under `src/image/`, not
+    `src/internal/` — see `engine.ts`'s own top comment for why, and this
+    package's PR description for the "candidate for later extraction"
+    note.
+  - `internal/errors.ts`'s `RenderErrorReason` union grew one member:
+    `"inconsistent-deck-aspect"` (a `SlidesDeckInput` whose slides don't
+    all declare the same `SlidesMeta.aspect`).
+  - Zero new dependencies. Package-wide `"exports"` grew `"./image"` and
+    `"./slides"` entries alongside `"./web"`.
+
 - Initial release: `@vespeneventures/render`, renderers built against
   `@vespeneventures/compose`'s `ComposeDocument` contract, one subpath per
   output channel. Ships `./web` first; `./email`, `./print`, `./slides`,

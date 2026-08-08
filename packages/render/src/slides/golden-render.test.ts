@@ -1,0 +1,146 @@
+/**
+ * Golden-output tests for `./slides` — same bar as `./image`'s own
+ * `golden-render.test.ts` and `src/web/golden-render.test.ts`: the EXACT
+ * emitted SVG string per slide, byte for byte. Every number asserted below
+ * is hand-computed and restated in this package's PR description.
+ */
+
+import { describe, expect, it } from "vitest";
+import type { ComposeDocument } from "@vespeneventures/compose";
+import { renderSlidesDeck } from "./renderSlidesDeck.js";
+import type { SlidesDeckInput } from "./types.js";
+
+describe("golden: a two-slide 16:9 deck with notes", () => {
+  const titleSlide: ComposeDocument = {
+    id: "title",
+    channel: "slides",
+    template: "title-slide",
+    meta: { channel: "slides", aspect: "16:9" },
+    layout: {
+      background: { background: "--color-surface-base" },
+      slots: [
+        { key: "title", element: "heading", frame: { x: 0.1, y: 0.4, w: 0.8, h: 0.2 }, required: true, style: { color: "--color-ink-primary" }, align: "center" },
+        { key: "subtitle", element: "subheading", frame: { x: 0.1, y: 0.6, w: 0.8, h: 0.1 }, style: { color: "--color-ink-secondary" }, align: "center" },
+      ],
+    },
+    bindings: [
+      { slot: "title", value: "Acme Quarterly Review" },
+      { slot: "subtitle", value: "Q3 2026" },
+    ],
+  };
+  const closingSlide: ComposeDocument = {
+    id: "closing",
+    channel: "slides",
+    template: "closing-slide",
+    meta: { channel: "slides", aspect: "16:9" },
+    layout: {
+      slots: [{ key: "title", element: "heading", frame: { x: 0.1, y: 0.45, w: 0.8, h: 0.15 }, required: true, align: "center" }],
+    },
+    bindings: [{ slot: "title", value: "Thank you" }],
+  };
+  const deck: SlidesDeckInput = {
+    id: "acme-q3-review",
+    slides: [titleSlide, closingSlide],
+    notes: { title: "Welcome everyone warmly.", closing: "Open the floor for questions." },
+  };
+
+  it("16:9 -> 1920x1080 canvas, stated as this file's own convention", () => {
+    const result = renderSlidesDeck(deck);
+    expect(result.width).toBe(1920);
+    expect(result.height).toBe(1080);
+    expect(result.aspect).toBe("16:9");
+  });
+
+  it("slide 0 renders the exact expected SVG, byte for byte", () => {
+    const result = renderSlidesDeck(deck);
+    expect(result.slides[0]!.svg).toBe(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">' +
+        "<title>title</title>" +
+        '<rect x="0" y="0" width="1920" height="1080" fill="#f5f5f5" />' +
+        '<g data-slot="title"><text x="960" y="464" font-size="40" font-family="sans-serif" fill="#1a1a1a" text-anchor="middle">' +
+        '<tspan x="960" dy="0">Acme Quarterly Review</tspan></text></g>' +
+        '<g data-slot="subtitle"><text x="960" y="670.4" font-size="28" font-family="sans-serif" fill="#3d3d3d" text-anchor="middle">' +
+        '<tspan x="960" dy="0">Q3 2026</tspan></text></g>' +
+        "</svg>",
+    );
+  });
+
+  it("slide 1 renders the exact expected SVG, byte for byte", () => {
+    const result = renderSlidesDeck(deck);
+    expect(result.slides[1]!.svg).toBe(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">' +
+        "<title>closing</title>" +
+        '<g data-slot="title"><text x="960" y="518" font-size="40" font-family="sans-serif" fill="#111111" text-anchor="middle">' +
+        '<tspan x="960" dy="0">Thank you</tspan></text></g>' +
+        "</svg>",
+    );
+  });
+
+  it("HAND-COMPUTED: title slot {x:0.1,y:0.4,w:0.8,h:0.2} on 1920x1080 -> x=192,y=432,w=1536,h=216; align:center -> anchor x = 192+1536/2 = 960; baseline = 432 + 40*0.8 = 464", () => {
+    const result = renderSlidesDeck(deck);
+    expect(result.slides[0]!.svg).toContain('x="960" y="464"');
+  });
+
+  it("HAND-COMPUTED: subtitle slot {x:0.1,y:0.6,w:0.8,h:0.1} on 1920x1080 -> y=648; baseline = 648 + 28*0.8 = 670.4", () => {
+    const result = renderSlidesDeck(deck);
+    expect(result.slides[0]!.svg).toContain('y="670.4"');
+  });
+
+  it("carries deck-wide notes through to each matching slide, keyed by slide id", () => {
+    const result = renderSlidesDeck(deck);
+    expect(result.slides[0]!.notes).toBe("Welcome everyone warmly.");
+    expect(result.slides[1]!.notes).toBe("Open the floor for questions.");
+    expect(result.unknownNoteKeys).toEqual([]);
+  });
+
+  it("deck order matches SlidesDeckInput.slides array order, explicitly", () => {
+    const result = renderSlidesDeck(deck);
+    expect(result.slides.map((s) => s.id)).toEqual(["title", "closing"]);
+    expect(result.slides.map((s) => s.index)).toEqual([0, 1]);
+  });
+
+  it("no oklch() or var(--...) survives in either slide's emitted SVG", () => {
+    const result = renderSlidesDeck(deck);
+    for (const s of result.slides) {
+      expect(s.svg).not.toMatch(/oklch\(/i);
+      expect(s.svg).not.toMatch(/var\(--/);
+    }
+  });
+});
+
+describe("golden: 4:3 canvas convention", () => {
+  it("4:3 -> 1024x768", () => {
+    const slide: ComposeDocument = {
+      id: "s1",
+      channel: "slides",
+      template: "t",
+      meta: { channel: "slides", aspect: "4:3" },
+      layout: { slots: [{ key: "title", element: "heading", frame: { x: 0, y: 0, w: 1, h: 1 }, required: true }] },
+      bindings: [{ slot: "title", value: "x" }],
+    };
+    const result = renderSlidesDeck({ id: "d", slides: [slide] });
+    expect(result.width).toBe(1024);
+    expect(result.height).toBe(768);
+    expect(result.slides[0]!.svg).toContain('viewBox="0 0 1024 768"');
+  });
+});
+
+describe("golden: unknown notes key is reported, not dropped, and the deck still renders", () => {
+  it("reports an orphaned note key in unknownNoteKeys without throwing", () => {
+    const slide: ComposeDocument = {
+      id: "real-slide",
+      channel: "slides",
+      template: "t",
+      meta: { channel: "slides", aspect: "16:9" },
+      layout: { slots: [{ key: "title", element: "heading", frame: { x: 0, y: 0, w: 1, h: 1 }, required: true }] },
+      bindings: [{ slot: "title", value: "x" }],
+    };
+    const result = renderSlidesDeck({
+      id: "d",
+      slides: [slide],
+      notes: { "real-slide": "kept", "old-renamed-slide-id": "lost note" },
+    });
+    expect(result.unknownNoteKeys).toEqual(["old-renamed-slide-id"]);
+    expect(result.slides).toHaveLength(1);
+  });
+});

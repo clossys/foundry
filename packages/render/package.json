@@ -31,6 +31,14 @@
     "./web": {
       "types": "./dist/web/index.d.ts",
       "import": "./dist/web/index.js"
+    },
+    "./image": {
+      "types": "./dist/image/index.d.ts",
+      "import": "./dist/image/index.js"
+    },
+    "./slides": {
+      "types": "./dist/slides/index.d.ts",
+      "import": "./dist/slides/index.js"
     }
   },
   "files": [
