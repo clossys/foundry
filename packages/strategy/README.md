@@ -1,10 +1,11 @@
 # @vespeneventures/strategy
 
-Upstream strategy machinery: mission, positioning, markets, audiences, and
-roadmap, plus `facts` — the single place every number and named claim a
-product states publicly should trace back to. This package ships the
-schema, a typed reader, and a facts-traceability gate. It does not ship
-anyone's actual mission statement, market sizing, or numbers.
+Upstream strategy machinery: mission, positioning, markets, audiences,
+roadmap, and brand, plus `facts` — the single place every number and named
+claim a product states publicly should trace back to. This package ships
+the schema, a typed reader, a facts-traceability gate, and a brand-coverage
+checker. It does not ship anyone's actual mission statement, market
+sizing, numbers, or brand attributes.
 
 ```bash
 npm install @vespeneventures/strategy
@@ -22,11 +23,14 @@ what any of them says.
 
 **What ships here:** hand-rolled, dependency-free entity validators
 (`validateFact`, `validateMission`, `validatePositioning`, `validateMarket`,
-`validateAudience`, `validateRoadmapItem`, and their whole-file `*s`/`*Items`
+`validateAudience`, `validateRoadmapItem`, `validateBrandEssence`,
+`validateBrandAttribute`, and their whole-file `*s`/`*Items`/`*Attributes`
 counterparts), a typed reader (`readStrategy`) that loads and validates a
-consumer's own strategy directory, and a facts-traceability gate
+consumer's own strategy directory, a facts-traceability gate
 (`checkFactsTraceability`) that scans prose and copy for claims that don't
-trace back to a real fact.
+trace back to a real fact, and a brand-coverage checker
+(`checkBrandCoverage`) that verifies a brand's `BrandDerivation`s fully
+account for a consumer's brandable token slots, in both directions.
 
 Validation here is hand-rolled on purpose, not built on a schema library:
 `@vespeneventures/catalog`, `@vespeneventures/policy`, and
@@ -38,9 +42,23 @@ library's own major version into a consumer's tree. `validation.ts` follows
 over `unknown`, an accumulated issue list, never throws.
 
 **What does not ship here:** any real company's mission, vision, values,
-positioning, market sizing, audience research, roadmap, or facts. Every
-example in this README and in this package's own tests is a fictional
-product ("Widgetronic") invented for illustration.
+positioning, market sizing, audience research, roadmap, facts, brand
+essence, brand attributes, or brand derivations. Every example in this
+README and in this package's own tests is a fictional product
+("Widgetronic") invented for illustration.
+
+### Why brand lives here, not in its own package
+
+A standalone `brand` package was planned and cancelled. Once the content
+this package already owns is set aside — `Mission`'s `values:
+OperatingValue[]` is already brand values (its own doc comment: "the
+decision this value forces when two paths look equally good. Operational,
+not a slogan.") — a separate `brand` package would have been a thin record
+with no reader: exactly the shape of this repository's own retired `icons`
+package. `BrandEssence` and `BrandAttribute` (below) are siblings of
+`OperatingValue` for the same reason `Mission`, `Positioning`, `Market`,
+`Audience`, and `RoadmapItem` are: one small, hand-rolled, dependency-free
+schema family, all validated the same way.
 
 ## Directory shape a consumer authors
 
@@ -217,6 +235,110 @@ prose against) and a scan that matched zero files (nothing was actually
 scanned — "found nothing wrong" and "checked nothing" must never look the
 same in a report).
 
+## The brand layer
+
+Two entities, plus a derivation, plus a checker — the same shape the facts
+gate above uses (schema, then something that makes the schema worth
+having).
+
+```ts
+interface BrandEssence {
+  statement: string; // one line, present tense — what the brand IS
+}
+
+interface BrandAttribute {
+  name: string;
+  description: string;
+  evidence: {
+    basis: string;     // REQUIRED — the actual reason this is true, not a vibe
+    factRef?: string;  // OPTIONAL — a Fact.key, when the basis is fact-shaped
+  };
+}
+```
+
+### Why `evidence` has two fields, not one
+
+`evidence.basis` is required prose: a decision, a build choice, an observed
+pattern, a founder's stated rule — whatever actually makes the attribute
+true. It's required because an attribute with no basis at all is exactly a
+vibe: a word chosen because it sounds good. `evidence.factRef` is an
+optional, opaque string naming a `Fact.key` — the same seam
+`@vespeneventures/voice`'s `Claim.factRef` and this package's own
+`Market.factRefs`/`Audience.factRefs` already use: a plain string, never
+validated against a real `facts.json` here, never a typed import.
+
+A `factRef`-only design would force every brand attribute to be backed by
+a registered fact, corrupting the facts registry with entries invented
+only to satisfy this schema. A `basis`-only design would accept a
+well-written vibe with nothing checkable behind it — the exact failure
+this entity exists to rule out. Requiring `basis` always, and allowing
+`factRef` as an additional pointer into the one registry this package can
+actually check something against, gets real evidence every time and
+traceable evidence whenever that's honestly possible.
+
+### `BrandDerivation` — turning an attribute into an obligation
+
+A `BrandAttribute` is a record. `BrandDerivation` is what makes it earn its
+keep: what a given attribute implies for named visual token slots and
+named voice rules.
+
+```ts
+interface BrandDerivation {
+  attribute: string;     // a BrandAttribute.name, by plain string
+  tokenSlots: string[];  // CSS custom property names, e.g. "--color-accent-primary"
+  voiceRules: string[];  // a consumer's own voice rule ids
+  rationale: string;     // what about the attribute forces these slots/rules
+}
+```
+
+`tokenSlots` and `voiceRules` are named by **plain string only** — this
+package never depends on the tokens or voice packages of this
+scope. That mirrors the `factRef` seam above and keeps all three packages
+decoupled: a consumer that has never touched brand tokens can still
+install `strategy` without resolving the tokens package's own dependency
+tree. A derivation must name at least one `tokenSlots` or `voiceRules`
+entry — one naming neither implies nothing, and isn't a derivation.
+
+### `checkBrandCoverage` — the seam, and both directions
+
+```ts
+import { checkBrandCoverage } from "@vespeneventures/strategy";
+
+// TOKENS comes from the consumer's own tokens dependency — NOT imported by
+// this package. See the paragraph below for why.
+const brandableSlots = Object.values(TOKENS)
+  .filter((def) => def.brandable)
+  .map((def) => def.property);
+
+const result = checkBrandCoverage(brandableSlots, derivations);
+if (!result.ok) {
+  console.error(result.reason, result.slotsMissingDerivation, result.unknownSlotsInDerivations);
+}
+```
+
+Because this package cannot import `tokens` to look up which slots are
+brandable, `checkBrandCoverage` takes that list as its first argument. This
+is a deliberate seam, not a missing feature: the caller — a consumer
+repository that depends on both `strategy` and `tokens`, or a later
+cross-package gate with visibility into both — is the one place that can
+close it for real.
+
+The check itself runs in **both directions**, exactly like
+`@vespeneventures/tokens`' own `brand-coverage.test.ts`:
+
+1. Every slot in `brandableSlots` is named by at least one derivation's
+   `tokenSlots` (`result.slotsMissingDerivation` otherwise).
+2. Every slot named by some derivation's `tokenSlots` is actually in
+   `brandableSlots` (`result.unknownSlotsInDerivations` otherwise — a
+   stale or typo'd reference).
+
+**Fails closed on both degenerate inputs**, never a vacuous pass: an empty
+`brandableSlots` (`reason: "no-slots-provided"`) or an empty `derivations`
+(`reason: "no-derivations-provided"`) is `ok: false`, and `slotsChecked` /
+`derivationsChecked` are always present in the result — specifically so
+"zero things were checked" can never be mistaken for "everything checked
+out clean" by a caller that only glances at `ok`.
+
 ## API
 
 ### Entities (`schema.ts`)
@@ -237,7 +359,9 @@ them throw.
 | `validateAudience(value)` / `validateAudiences(value)` | function | One audience / an array of audiences. `painPoints?: string[]`, `factRefs?: string[]`. |
 | `validateRoadmapItem(value)` / `validateRoadmapItems(value)` | function | One roadmap item / an array of them. `status` is the closed vocabulary in `ROADMAP_STATUSES`. |
 | `ROADMAP_STATUSES` | const | `readonly RoadmapStatus[]` — `["now", "next", "later", "shipped"]`, in the order a new status would be added. Mirrors `@vespeneventures/policy`'s own `DIGEST_ALGORITHMS`. |
-| `Fact`, `Money`, `Mission`, `OperatingValue`, `Positioning`, `Market`, `Audience`, `RoadmapItem`, `RoadmapStatus` | types | Plain TypeScript interfaces/unions — the shape each `validate*` function above checks and returns on success. |
+| `validateBrandEssence(value)` | function | `{ statement }` — the irreducible one-line statement of what the brand is. |
+| `validateBrandAttribute(value)` / `validateBrandAttributes(value)` | function | One brand attribute / an array of them. `evidence: { basis: string; factRef?: string }` — see "The brand layer" above for why both fields exist. |
+| `Fact`, `Money`, `Mission`, `OperatingValue`, `Positioning`, `Market`, `Audience`, `RoadmapItem`, `RoadmapStatus`, `BrandEssence`, `BrandAttribute`, `BrandEvidence` | types | Plain TypeScript interfaces/unions — the shape each `validate*` function above checks and returns on success. |
 
 ### Validation primitives (`validation.ts`)
 
@@ -284,6 +408,16 @@ anyone extending this package with their own entity.
 The `strategy-facts-check` CLI (`bin`, built from `cli.ts`) is documented in
 its own section above.
 
+### Brand derivation and coverage (`brand-derivation.ts`)
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `validateBrandDerivation(value)` / `validateBrandDerivations(value)` | function | One `BrandDerivation` / an array of them. Rejects a derivation naming neither a `tokenSlots` nor a `voiceRules` entry. |
+| `checkBrandCoverage(brandableSlots, derivations)` | function | Pure. Checks, in both directions, whether `derivations` fully accounts for `brandableSlots`. Fails closed (`ok: false`) on either input being empty — see "The brand layer" above. Never throws. |
+| `BrandDerivation` | type | `{ attribute, tokenSlots: string[], voiceRules: string[], rationale }`. |
+| `BrandCoverageResult` | type | `{ ok, slotsChecked, derivationsChecked, slotsMissingDerivation: string[], unknownSlotsInDerivations: string[], reason? }`. |
+| `BrandCoverageFailureReason` | type | `"no-slots-provided" \| "no-derivations-provided" \| "coverage-gap"`. |
+
 ## Non-goal: what this package never derives
 
 This package answers "does this fact exist and does this claim trace to
@@ -293,6 +427,16 @@ kit). That is a presentation concern for whatever a consumer builds on top;
 `checkFactsTraceability` deliberately stops at "traced or not", the same
 way `@vespeneventures/policy`'s `verifyBinding` stops at "matches or not"
 without ever deciding what should happen next.
+
+`checkBrandCoverage` draws the identical line: it answers "does a
+derivation exist for this slot, and does every named slot actually exist"
+— nothing about whether a `tokenSlots` name is spelled correctly against a
+REAL `@vespeneventures/tokens` release, whether a `voiceRules` id resolves
+to a real `@vespeneventures/voice` glossary entry, or what value either
+should actually be bound to. Resolving those names against the real
+packages they name is a later, cross-package gate's job — one with
+visibility into `tokens` and/or `voice` that this package deliberately does
+not have. See "The brand layer" above for the seam.
 
 ## Requirements
 

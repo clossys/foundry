@@ -438,3 +438,136 @@ export function validateRoadmapItems(value: unknown): ValidationResult<RoadmapIt
   const items = requireArrayOf(value, "(root)", issues, readRoadmapItem);
   return items !== undefined ? { ok: true, value: items } : { ok: false, issues };
 }
+
+// -------------------------------------------------------------------- brand
+
+/**
+ * The irreducible one-line statement of what the brand IS — distinct from
+ * `Mission.statement` (why the *product* exists, present tense) and
+ * `Positioning.weAre` (how it's framed against a category and a
+ * competitor). `BrandEssence` is the thing every `BrandAttribute` below
+ * ultimately has to be consistent with: an attribute that contradicts the
+ * essence is a defect in the brand itself, not something this validator
+ * can catch (it checks shape, never cross-entity consistency of meaning).
+ *
+ * Kept to a single required field on purpose, the same restraint
+ * `Positioning` applies by staying a fixed madlib rather than free text: a
+ * brand essence that needs bullet points or sub-clauses to explain itself
+ * has already drifted into positioning or values, both of which already
+ * have their own entities above (`Positioning`, `Mission.values`).
+ */
+export interface BrandEssence {
+  /** One line, present tense — the same register as `Mission.statement`. */
+  statement: string;
+}
+
+function readBrandEssence(value: unknown, path: string, issues: ValidationIssue[]): BrandEssence | undefined {
+  const start = issues.length;
+  if (!isPlainObject(value)) {
+    pushIssue(issues, path, "must be an object shaped { statement: string }");
+    return undefined;
+  }
+  const statement = requireString(value.statement, `${path}.statement`, issues, { minLength: 10 });
+  if (issues.length > start) return undefined;
+  return { statement: statement as string };
+}
+
+/** Validates a `BrandEssence` document. */
+export function validateBrandEssence(value: unknown): ValidationResult<BrandEssence> {
+  const issues: ValidationIssue[] = [];
+  const essence = readBrandEssence(value, "(root)", issues);
+  return essence !== undefined ? { ok: true, value: essence } : { ok: false, issues };
+}
+
+/**
+ * What makes a `BrandAttribute` real rather than an assertion. Two fields,
+ * for two different reasons:
+ *
+ *   - `basis` (REQUIRED, free prose) — the actual reason this attribute is
+ *     true: a decision, a build choice, an observed customer pattern, a
+ *     founder's stated rule. Required, not optional, because an attribute
+ *     with no `basis` at all is exactly a vibe — a word picked because it
+ *     sounds good, with nothing behind it. `minLength: 10` mirrors
+ *     `OperatingValue.rule`'s own bar: long enough that "because it's
+ *     true" cannot satisfy it.
+ *   - `factRef` (OPTIONAL, opaque string) — when the basis happens to be a
+ *     tracked, checkable number or claim, this names the `Fact.key` it
+ *     traces to. This is the exact seam `@vespeneventures/voice`'s
+ *     `Claim.factRef` already uses, and the same discipline this very
+ *     file's `Market.factRefs`/`Audience.factRefs` already follow: a
+ *     plain, optional string, never validated against a real `facts.json`
+ *     here (this package does no cross-entity lookup at validation time —
+ *     see `Market`'s own doc comment above) and never a typed import.
+ *
+ * WHY BOTH, NOT ONE OR THE OTHER: a `factRef`-only design would force every
+ * brand attribute to be backed by a registered fact, but plenty of
+ * legitimate evidence for a brand attribute isn't fact-shaped at all — a
+ * design decision, a support policy, a founder's stated rule for breaking
+ * ties — and forcing it into a fabricated `Fact` would corrupt the facts
+ * registry with entries invented only to satisfy this schema, undermining
+ * the exact traceability `checkFactsTraceability` exists to protect. A
+ * `basis`-only design (prose, no seam at all) would accept a well-written
+ * vibe: prose can be persuasive and still cite nothing checkable, which is
+ * the specific failure this whole entity exists to rule out. Requiring
+ * `basis` always, and allowing `factRef` as an additional, optional pointer
+ * into the one registry this package can actually check something
+ * against, gets real evidence in every case and traceable evidence in
+ * every case where that's honestly possible.
+ */
+export interface BrandEvidence {
+  basis: string;
+  factRef?: string;
+}
+
+function readBrandEvidence(value: unknown, path: string, issues: ValidationIssue[]): BrandEvidence | undefined {
+  const start = issues.length;
+  if (!isPlainObject(value)) {
+    pushIssue(issues, path, "must be an object shaped { basis: string; factRef?: string }");
+    return undefined;
+  }
+  const basis = requireString(value.basis, `${path}.basis`, issues, { minLength: 10 });
+  const factRef = optionalString(value.factRef, `${path}.factRef`, issues, { minLength: 1 });
+  if (issues.length > start) return undefined;
+  return { basis: basis as string, factRef };
+}
+
+/**
+ * One trait the brand is known for, or is deliberately building toward.
+ * Structurally a sibling of `OperatingValue` above: same package, same
+ * hand-rolled validation discipline, same job of making a strategy
+ * document mechanically checkable instead of just prose. Where
+ * `OperatingValue.rule` forces a decision, `BrandAttribute.evidence`
+ * forces a citation — see `BrandEvidence`'s own doc comment for why.
+ */
+export interface BrandAttribute {
+  name: string;
+  description: string;
+  evidence: BrandEvidence;
+}
+
+function readBrandAttribute(value: unknown, path: string, issues: ValidationIssue[]): BrandAttribute | undefined {
+  const start = issues.length;
+  if (!isPlainObject(value)) {
+    pushIssue(issues, path, "must be an object");
+    return undefined;
+  }
+  const name = requireString(value.name, `${path}.name`, issues, { minLength: 1 });
+  const description = requireString(value.description, `${path}.description`, issues, { minLength: 1 });
+  const evidence = readBrandEvidence(value.evidence, `${path}.evidence`, issues);
+  if (issues.length > start) return undefined;
+  return { name: name as string, description: description as string, evidence: evidence as BrandEvidence };
+}
+
+/** Validates a single `BrandAttribute`. */
+export function validateBrandAttribute(value: unknown): ValidationResult<BrandAttribute> {
+  const issues: ValidationIssue[] = [];
+  const attribute = readBrandAttribute(value, "(root)", issues);
+  return attribute !== undefined ? { ok: true, value: attribute } : { ok: false, issues };
+}
+
+/** Validates the whole contents of a `brand-attributes.json` file: an array of `BrandAttribute`. */
+export function validateBrandAttributes(value: unknown): ValidationResult<BrandAttribute[]> {
+  const issues: ValidationIssue[] = [];
+  const attributes = requireArrayOf(value, "(root)", issues, readBrandAttribute);
+  return attributes !== undefined ? { ok: true, value: attributes } : { ok: false, issues };
+}
