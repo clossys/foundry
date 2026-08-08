@@ -141,7 +141,7 @@ function stripCommentsPreservingLines(css: string): string {
 }
 
 /**
- * A properly-closed `/* ... *\/` comment is fully consumed by
+ * A properly-closed `/* ... *\/` comment is fully matched and blanked out by
  * `stripCommentsPreservingLines`'s regex above — the ONLY way a literal
  * `/*` can still be present afterward is a comment that never closes: the
  * regex is non-greedy up to the NEAREST following `*\/`, wherever it is in
