@@ -136,3 +136,49 @@ describe("main — real runs", () => {
     expect(main([recordFile, scanDir])).toBe(0);
   });
 });
+
+describe("main — JSX text nodes (issue #37)", () => {
+  it("reproduces issue #37's exact repro: a .tsx file that is nothing but unregistered JSX text now returns 1, not a silent 0", () => {
+    const recordFile = writeRecord({ id: "t", entries: [] });
+    writeFileSync(join(scanDir, "Widget.tsx"), "export const Widget = () => <p>No results found</p>;\n");
+    expect(main([recordFile, scanDir])).toBe(1);
+  });
+
+  it("a registered JSX text node returns 0", () => {
+    const recordFile = writeRecord({
+      id: "t",
+      entries: [{ id: "widget.no-results", text: "No results found", context: "Widget — empty state" }],
+    });
+    writeFileSync(join(scanDir, "Widget.tsx"), "export const Widget = () => <p>No results found</p>;\n");
+    expect(main([recordFile, scanDir])).toBe(0);
+  });
+
+  it("a copy:<id> citation traces a JSX text node exactly like a string literal", () => {
+    const recordFile = writeRecord(validRecord);
+    writeFileSync(
+      join(scanDir, "Widget.tsx"),
+      "export const Widget = () => <p>Ad-hoc phrasing</p>; // copy:pagination.no-results\n",
+    );
+    expect(main([recordFile, scanDir])).toBe(0);
+  });
+
+  it("a non-empty `unchecked` list returns 2, even with zero traceability findings — 'could not check' is never a silent pass", () => {
+    const recordFile = writeRecord(validRecord);
+    // Unclosed JSX element — a real construct the scanner cannot fully
+    // resolve, not a bad-input error.
+    writeFileSync(join(scanDir, "Widget.tsx"), "export const Widget = () => <div>\n  <p>No results</p>\n");
+    const errorSpy = vi.spyOn(console, "error");
+    expect(main([recordFile, scanDir])).toBe(2);
+    const printed = errorSpy.mock.calls.map((c) => c.join(" ")).join("\n");
+    expect(printed).toMatch(/unclosed-jsx-element/);
+  });
+
+  it("unchecked wins over 0 even when the only real candidate traces cleanly", () => {
+    const recordFile = writeRecord({
+      id: "t",
+      entries: [{ id: "widget.hello", text: "Hello", context: "Widget" }],
+    });
+    writeFileSync(join(scanDir, "Widget.tsx"), "export const Widget = () => <div>\n  <p>Hello</p>\n");
+    expect(main([recordFile, scanDir])).toBe(2);
+  });
+});

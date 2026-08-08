@@ -301,6 +301,81 @@ wants a real form (or any other rich node) in that slot composes
 `@vespeneventures/ui`'s `AuthView` directly, outside this document
 pipeline.
 
+## `./email` — email is not a small web page
+
+```ts
+import { renderEmailDocument } from "@vespeneventures/render/email";
+
+const { html, text, subject, preheader, warnings } = renderEmailDocument(doc, {
+  layout,   // the real, positioned LayoutSpec your template defines — omit if you have none
+  lookup: (copyId) => myCopyRegistry.get(copyId)?.text,
+  brand: { "--color-accent": "oklch(0.55 0.18 250)" },
+});
+```
+
+`./web` renders into a real DOM a real browser lays out. Email has none of
+that: no CSS custom properties, no `oklch()`, no flexbox/grid, and no way
+to place anything at an absolute position — every client forces a linear,
+top-to-bottom flow of full-width blocks. `renderEmailDocument` is built
+around that constraint rather than around approximating a web page:
+
+- **Table-based layout, MSO conditional comments, a hidden preheader.**
+  The emitted `html` is a complete document: `<table role="presentation"
+  cellpadding="0" cellspacing="0" border="0">` throughout, a ~600px
+  content table centered inside a full-width wrapper, a `<!--[if mso]>`
+  ghost table so Outlook's desktop renderer centers it too, and a
+  `display:none` preheader block (`EmailMeta.preheader`, escaped, padded
+  with invisible `&zwnj;&nbsp;` filler) immediately after `<body>` so an
+  inbox preview pane can't scavenge real body text into its preview line.
+- **Every color/size/font is a literal value.** No email client reads a
+  `var()` cascade or `oklch()`, so every value substituted into the
+  document comes from this package's shared `internal/tokens.ts`
+  `flattenTokens` — literal hex, literal `px`, literal font stacks. A
+  font-family token's CSS-standard double-quoted family name (`"Segoe
+  UI"`) is rewritten to single quotes first, since it lands inside a
+  double-quoted `style="..."` HTML attribute.
+- **The geometry problem.** `LayoutSpec.slots`' `frame` is an ABSOLUTE
+  canvas position — meaningless once nothing can be positioned. This
+  channel degrades a `frame` to exactly the one thing email can express:
+  an ORDERING hint. Every resolved slot is sorted by `frame.y`, then
+  `frame.x`, into one vertical stack of table rows — and every real loss
+  that causes (two side-by-side slots now stacked one after another; a
+  slot narrower than the full canvas now rendering full width) is named
+  in the result's `warnings: RenderWarning[]`, never silently absorbed. A
+  document with no `options.layout` at all — the common case; see
+  `@vespeneventures/compose`'s own `LayoutSpec` doc comment on why an
+  `email`-channel `ComposeDocument` is forbidden from carrying one on
+  `doc.layout` itself — degrades one step further, to plain binding
+  order, with zero warnings: there is no real geometry to lose when none
+  was ever supplied.
+- **Resolution reuses `@vespeneventures/compose` directly** —
+  `resolveDocument` to match `bindings` against a real slot list, then
+  `resolveCopy` to turn those matches into actual text via a
+  caller-supplied `lookup`. This channel does not hand-roll a second
+  copyId-resolution path; see `compose`'s own `resolve-copy.ts`, written
+  precisely so no renderer in this ecosystem has to.
+- **A stricter resolution bar than `./web`'s.** `./web` only requires
+  slots marked `required: true` to resolve; a bound-but-unresolved
+  optional slot silently drops. `./email` requires ALL of them — the same
+  `resolveCopy` call this channel makes already reports `ok: false` the
+  moment even one bound slot fails to produce real text, and this
+  function refuses to render rather than ship a half-empty message. See
+  `renderEmailDocument.ts`'s own doc comment for the full reasoning.
+- **The plain-text alternative is derived from the same resolved text as
+  the HTML** — never by stripping tags off the HTML this package already
+  built. One shared, ordered list of `{ key, text }` feeds both outputs,
+  so they can only ever differ in formatting, never in content.
+- **`options.brand`** is the exact override object
+  `internal/tokens.ts`'s `flattenTokens` accepts, passed straight
+  through — the same brand-override shape `./web` will eventually expose
+  too, once it has a reason to read token colors at all.
+
+Refusal is the same three-reason shape `./web` already documents above:
+`"wrong-channel"` (`doc.channel`/`doc.meta.channel` isn't `"email"`),
+`"resolution-failed"` (`resolveDocument` itself reports `ok: false`), and
+`"empty-output"` (every bound slot matched a real slot key, but
+`resolveCopy` did not produce real text for all of them). `./email`
+introduces no new `RenderErrorReason` members.
 ## `./print`
 
 `renderPrintDocument` takes a `channel: "print"` `ComposeDocument` and
@@ -533,6 +608,16 @@ nobody noticed.
 | `WebOpenGraphMetadata` | type | `{ title?, description?, image?, type? }`. `WebHeadMetadata.openGraph`'s shape — the same fields as `@vespeneventures/compose`'s `WebMeta.og`, renamed for clarity in a public, non-`compose`-typed API. |
 | `WebTwitterMetadata` | type | `{ card?: "summary" \| "summary_large_image", site? }`. `WebHeadMetadata.twitter`'s shape. |
 
+### `./email`
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `renderEmailDocument(doc, options?)` | function | Resolves a `channel: "email"` `ComposeDocument`'s `bindings` (via `@vespeneventures/compose`'s `resolveDocument`/`resolveCopy`) into a complete, self-contained, table-based HTML document plus its plain-text alternative. Returns `{ html, text, subject, preheader, warnings }`. Throws `RenderError` for a non-email document, a resolution failure, or any bound slot that resolved to no real text. See "`./email` — email is not a small web page" above. |
+| `RenderError` | class | The same class `./web` exports — see that table entry above. |
+| `RenderErrorReason` | type | The same shared type `./web` exports — see that table entry above. `./email` only ever throws `"wrong-channel"`, `"resolution-failed"`, or `"empty-output"`. |
+| `RenderEmailOptions` | type | `{ layout?: LayoutSpec; lookup?: CopyLookup; brand?: Record<string, string> }`. `renderEmailDocument`'s second argument — see "The geometry problem" above for `layout`, `@vespeneventures/compose`'s own `CopyLookup` for `lookup`, and `internal/tokens.ts`'s `flattenTokens` for `brand`. |
+| `EmailRenderResult` | type | `{ html: string; text: string; subject: string; preheader: string; warnings: RenderWarning[] }`. What `renderEmailDocument` returns. |
+| `RenderWarning` | type | `{ code: "slots-stacked" \| "slot-width-lost"; message: string; slots: string[] }`. Every real geometry-fidelity loss `renderEmailDocument` had to accept — see "The geometry problem" above. |
 ### `./print`
 
 | Export | Kind | Purpose |
@@ -549,18 +634,19 @@ nobody noticed.
 ## Requirements
 
 Node 20+. ESM only. No root `.` export — import from
-`@vespeneventures/render/web` or `@vespeneventures/render/print` (and,
-later, `/email`, `/slides`, `/image`). `@vespeneventures/compose` and
+`@vespeneventures/render/web`, `/email`, or `/print` (and, later,
+`/slides`, `/image`). `@vespeneventures/compose` and
 `@vespeneventures/tokens` are real dependencies; `react`, `react-dom`, and
 `@vespeneventures/ui` are optional peer dependencies of this package as a
 whole — because npm has no per-subpath peer dependencies, but in practice
-all three are required to use `./web`. `./print` needs none of them —
-zero new dependencies, peer or otherwise: everything it uses
+all three are required to use `./web`. NONE of them are needed by
+`./email` or `./print`: `./email` builds its HTML as a plain string, and
+`./print` adds zero new dependencies of its own — everything it uses
 (`resolveDocument`, `resolveCopy`, `frameToPercent`) already ships from
-`@vespeneventures/compose`, and every heavy dependency this whole package
-does carry is scoped to `./web` alone. See "The package shape" above for
-the full reasoning, and for the pattern the next channel should follow for
-its own heavy dependencies.
+`@vespeneventures/compose`. Every heavy dependency this package carries is
+scoped to `./web` alone. See "The package shape" above for the full
+reasoning, and for the pattern the next channel should follow for its own
+heavy dependencies.
 
 ## Licence
 
