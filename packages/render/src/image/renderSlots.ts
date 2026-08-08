@@ -33,9 +33,8 @@
  */
 
 import type { LayoutSpec, SlotSpec, StyleBinding } from "@vespeneventures/compose";
+import { resolveElementFontFamily, resolveElementTypography } from "../internal/typography.js";
 import {
-  DEFAULT_FONT_FAMILY,
-  DEFAULT_FONT_SIZE_PX,
   escapeXml,
   frameToCanvasRect,
   resolveColorRole,
@@ -110,7 +109,16 @@ function renderTextSlot(
   flat: ReadonlyMap<string, string>,
   warnings: string[],
 ): string {
-  const fontSizePx = DEFAULT_FONT_SIZE_PX[spec.element];
+  // RESOLVED, never the deleted placeholder table: `style.typography`
+  // overrides the ElementKind default when present (see `../internal/
+  // typography.ts`'s own doc comment); either way, `fontSizePx` below is
+  // the REAL token value, so `wrapText`'s line-breaking and this slot's
+  // own overflow warning both reflect the size actually painted, not a
+  // stale hardcoded number that would silently mis-measure wrapping and
+  // report the wrong font-size in an overflow warning.
+  const typography = resolveElementTypography(spec.element, spec.style, `slot "${spec.key}"`, flat);
+  const fontSizePx = typography.px;
+  const fontFamily = resolveElementFontFamily(spec.element, flat);
   const lineHeightPx = fontSizePx * LINE_HEIGHT_MULTIPLIER;
   const color = resolveColorRole(spec.style?.color, flat, FALLBACK_TEXT_HEX);
   const wrapped = wrapText(text, { fontSizePx, widthPx: rect.w, heightPx: rect.h, lineHeightMultiplier: LINE_HEIGHT_MULTIPLIER });
@@ -134,7 +142,7 @@ function renderTextSlot(
 
   return (
     `<g data-slot="${escapeXml(spec.key)}">${background}` +
-    `<text x="${x}" y="${firstY}" font-size="${fontSizePx}" font-family="${DEFAULT_FONT_FAMILY}" fill="${color}" text-anchor="${anchor}">${tspans}</text>` +
+    `<text x="${x}" y="${firstY}" font-size="${fontSizePx}" font-family="${escapeXml(fontFamily)}" fill="${color}" text-anchor="${anchor}">${tspans}</text>` +
     "</g>"
   );
 }

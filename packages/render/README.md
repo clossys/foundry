@@ -148,6 +148,30 @@ All three throw the same `RenderError` this package already ships (see
 `RenderErrorReason` union grew six new members for this module; see that
 file's own doc comment for the full list and when each fires.
 
+## Shared internals — `@vespeneventures/tokens`' typography scale, resolved per `ElementKind`
+
+`src/internal/typography.ts` is `internal/tokens.ts`'s sibling: colour has
+`flattenTokens`/`resolveTokenRef`; font size and family have this module.
+`@vespeneventures/tokens` DOES ship a real typography scale — 13 `text`
+tokens (`--text-caption` through `--text-display-xl`), 3 `font` tokens
+(family stacks), 4 `tracking` tokens (letter-spacing) — and every
+non-web channel (`./email`, `./print`, `./image`, `./slides`) now resolves
+real values from it, rather than each independently guessing or (in
+`./print`'s case, before this module existed) emitting no typography at
+all.
+
+| Export | Purpose |
+| --- | --- |
+| `ELEMENT_TYPOGRAPHY_ROLE` | The default `ElementKind` -> `--text-*` size-role mapping. Every value is asserted, in `typography.test.ts`, to be a real key in `TOKENS` — a token rename that isn't mirrored here fails that test loudly rather than shipping a font-size of `undefined`. |
+| `ELEMENT_FONT_FAMILY_ROLE` | The default `ElementKind` -> `--font-*` family-role mapping (`--font-display` for `heading`/`subheading`/`stat`/`logo`, `--font-body` for everything else). No `StyleBinding` field overrides this per slot. |
+| `resolveElementTypography(element, style, ownerDescription, flat)` | The one entry point every channel calls: `style?.typography` (a token role name) overrides `ELEMENT_TYPOGRAPHY_ROLE[element]` when present. Returns `{ role, css, px }` — `css` is the literal token value (`"28px"`), `px` is that value parsed to a bare number, for `./image`/`./slides`' geometry math. Throws `RenderError("unknown-style-role", ...)` for a role (default OR override) absent from `flat`, or one that resolves to something that isn't a `"<number>px"` string — never a silent fallback size. |
+| `resolveElementFontFamily(element, flat)` | `ELEMENT_FONT_FAMILY_ROLE[element]`, resolved to the raw literal family-stack string. Embedding it safely into a double-quoted HTML attribute (`./email`, `./print`) or an XML attribute (`./image`, `./slides`) is each caller's own job — see `./email`'s `readEmailToken`, `./print`'s `toAttributeSafeCss`, and `./image`'s `escapeXml`. |
+
+`StyleBinding.typography` — accepted by `@vespeneventures/compose`'s frozen
+contract since that package's first release, but read by nobody until this
+module existed — is now the one field of `StyleBinding` every non-web
+channel resolves.
+
 ## Usage
 
 ```ts
@@ -333,10 +357,18 @@ around that constraint rather than around approximating a web page:
 - **Every color/size/font is a literal value.** No email client reads a
   `var()` cascade or `oklch()`, so every value substituted into the
   document comes from this package's shared `internal/tokens.ts`
-  `flattenTokens` — literal hex, literal `px`, literal font stacks. A
-  font-family token's CSS-standard double-quoted family name (`"Segoe
-  UI"`) is rewritten to single quotes first, since it lands inside a
-  double-quoted `style="..."` HTML attribute.
+  `flattenTokens` (colour) and `internal/typography.ts` (font size/family)
+  — literal hex, literal `px`, literal font stacks. A font-family token's
+  CSS-standard double-quoted family name (`"Segoe UI"`) is rewritten to
+  single quotes first, since it lands inside a double-quoted `style="..."`
+  HTML attribute.
+- **Font size follows `SlotSpec.element`'s `ElementKind`, overridable per
+  slot.** Each `ElementKind` has a real default `--text-*` size role
+  (`internal/typography.ts`'s `ELEMENT_TYPOGRAPHY_ROLE`) — `heading` at
+  `--text-h1`, `body` at `--text-body`, and so on. `SlotSpec.style.
+  typography` (a token role name) overrides that default when present; an
+  unknown or non-size role throws `RenderError("unknown-style-role", ...)`
+  rather than silently falling back.
 - **The geometry problem.** `LayoutSpec.slots`' `frame` is an ABSOLUTE
   canvas position — meaningless once nothing can be positioned. This
   channel degrades a `frame` to exactly the one thing email can express:
@@ -556,6 +588,18 @@ the former. `SlotSpec.style.color`/`.background` and
 `internal/style.ts`, and "Found but not fixed" below for what's
 deliberately not resolved yet.
 
+### Typography: every slot gets a resolved font size/family, always
+
+Unlike colour (optional — a slot with no `style.color` simply inherits the
+page's own), typography is never omitted: every slot's `<div>` gets a
+literal `font-family`/`font-size` declaration, resolved via the shared
+`internal/typography.ts` (see "Shared internals" above) — `SlotSpec.
+element`'s `ElementKind` default (`ELEMENT_TYPOGRAPHY_ROLE`/
+`ELEMENT_FONT_FAMILY_ROLE`), overridden by `style.typography` (a token
+role name) when present. Before this was wired in, `./print` emitted no
+typography at all, leaving font size/family to whatever default the
+receiving browser or print pipeline happened to pick.
+
 ### Page-break control
 
 Every rendered slot gets `break-inside:avoid;page-break-inside:avoid;` by
@@ -577,21 +621,22 @@ by one (`break-after:page;page-break-after:always;`).
 | `"missing-custom-page-size"` | `doc.meta.pageSize === "Custom"` with no (or blank) `options.customPageSize`. |
 | `"resolution-failed"` | `@vespeneventures/compose`'s `resolveDocument` reports `ok: false` — a required slot has no binding, a binding targets an unknown slot, or nothing matched. |
 | `"empty-output"` | `resolveDocument` succeeded but `@vespeneventures/compose`'s `resolveCopy` reports `ok: false` — some matched slot's `copyId` never resolved to real text. `./print` reuses `resolveCopy` rather than hand-rolling a second check — see `compose`'s own `resolve-copy.ts` doc comment and issue #43. |
-| `"unknown-style-role"` | A `style.color`/`.background` (slot or page-level) names a token role that isn't in `@vespeneventures/tokens`' `TOKENS` registry. |
+| `"unknown-style-role"` | A `style.color`/`.background`/`.typography` (slot or page-level) names a token role that isn't in `@vespeneventures/tokens`' `TOKENS` registry, or (for `.typography` specifically) a role that exists but doesn't resolve to a pixel font-size. |
 
 ### Found but not fixed
 
-`StyleBinding.border`, `.typography`, and `.weight` are NOT resolved by
-`renderPrintDocument` — only `.color` and `.background` are. `border`
-would need a width/style this frozen contract has no field for, and
-`typography`/`weight` name a composite type-scale role this package has no
-registry mapping for yet. Inventing an unfounded mapping for any of the
-three risks exactly the failure `internal/tokens.ts`'s own doc comment
-warns against for colour — "a plausible-looking wrong" value is worse than
-an unhandled field that says so in code (`src/print/internal/style.ts`).
-This is flagged here, not silently shipped, so whoever adds real
-border/typography support next knows it's a real gap, not an oversight
-nobody noticed.
+`StyleBinding.border` and `.weight` are still NOT resolved by
+`renderPrintDocument` — only `.color`, `.background`, and (as of this
+package's typography work) `.typography` are. `border` would need a
+width/style this frozen contract has no field for, and `weight` names a
+font-weight scale `@vespeneventures/tokens` doesn't ship at all (it has a
+`text` size scale and a `font` family scale — see "Shared internals" above
+— but no `weight` family). Inventing an unfounded mapping for either risks
+exactly the failure `internal/tokens.ts`'s own doc comment warns against
+for colour — "a plausible-looking wrong" value is worse than an unhandled
+field that says so in code (`src/print/internal/style.ts`). This is
+flagged here, not silently shipped, so whoever adds real border/weight
+support next knows it's a real gap, not an oversight nobody noticed.
 ## `./image` and `./slides` — a fixed canvas with absolutely-positioned slots
 
 `./image` and `./slides` are one problem solved once: `ImageMeta` describes
@@ -639,6 +684,32 @@ named warning (`slot "<key>" ... text overflowed its frame ... and was
 truncated`), never silently. See `wrapText`'s own doc comment for the
 accuracy limits this approximation carries (narrow/wide glyphs, non-Latin
 scripts, no kerning/ligatures).
+
+**The font size `wrapText` measures against is always the RESOLVED one.**
+`renderSlots.ts` resolves each slot's real font size (via `internal/
+typography.ts` — see "Shared internals" above; `ElementKind` default,
+overridden by `style.typography` when present) BEFORE calling `wrapText`,
+so wrapping and overflow warnings reflect the size actually painted onto
+the SVG. This used to not be true: a now-deleted `DEFAULT_FONT_SIZE_PX`
+placeholder table (with a doc comment that falsely claimed "no real
+typography token to resolve instead") fed `wrapText` a made-up number that
+could silently disagree with reality — see `engine.test.ts`'s own
+"PROOF" test for a concrete fixture where the placeholder size and the
+real token size disagree on whether the text overflows at all.
+
+### Typography — resolved font size/family, via `internal/typography.ts`
+
+`SlotSpec.element`'s `ElementKind` selects a default `--text-*`/`--font-*`
+role (`internal/typography.ts`'s `ELEMENT_TYPOGRAPHY_ROLE`/
+`ELEMENT_FONT_FAMILY_ROLE`); `SlotSpec.style.typography` (a token role
+name) overrides the size role when present. Both resolve to literal
+values — `font-size` as a bare number matching the token's own pixel value
+(`"28px"` -> `28`), `font-family` XML-entity-escaped via `escapeXml` (the
+token's own family-stack string carries embedded double quotes, e.g.
+`"Segoe UI"`, which must not break the surrounding SVG attribute) — before
+either reaches the emitted `<text>` element. An unknown or non-size
+`style.typography` role throws `RenderError("unknown-style-role", ...)`,
+never a silent fallback to the `ElementKind` default.
 
 ### Colors — always a literal hex, via `internal/tokens.ts`
 
@@ -693,7 +764,7 @@ expressible against `compose`'s frozen `ComposeDocument` type.
 | --- | --- | --- |
 | `renderEmailDocument(doc, options?)` | function | Resolves a `channel: "email"` `ComposeDocument`'s `bindings` (via `@vespeneventures/compose`'s `resolveDocument`/`resolveCopy`) into a complete, self-contained, table-based HTML document plus its plain-text alternative. Returns `{ html, text, subject, preheader, warnings }`. Throws `RenderError` for a non-email document, a resolution failure, or any bound slot that resolved to no real text. See "`./email` — email is not a small web page" above. |
 | `RenderError` | class | The same class `./web` exports — see that table entry above. |
-| `RenderErrorReason` | type | The same shared type `./web` exports — see that table entry above. `./email` only ever throws `"wrong-channel"`, `"resolution-failed"`, or `"empty-output"`. |
+| `RenderErrorReason` | type | The same shared type `./web` exports — see that table entry above. `./email` throws `"wrong-channel"`, `"resolution-failed"`, or `"empty-output"` from its own resolution pipeline, plus `"unknown-style-role"` when a slot's `style.typography` names an unknown or non-size token role (see "Shared internals" above, `internal/typography.ts`). |
 | `RenderEmailOptions` | type | `{ layout?: LayoutSpec; lookup?: CopyLookup; brand?: Record<string, string> }`. `renderEmailDocument`'s second argument — see "The geometry problem" above for `layout`, `@vespeneventures/compose`'s own `CopyLookup` for `lookup`, and `internal/tokens.ts`'s `flattenTokens` for `brand`. |
 | `EmailRenderResult` | type | `{ html: string; text: string; subject: string; preheader: string; warnings: RenderWarning[] }`. What `renderEmailDocument` returns. |
 | `RenderWarning` | type | `{ code: "slots-stacked" \| "slot-width-lost"; message: string; slots: string[] }`. Every real geometry-fidelity loss `renderEmailDocument` had to accept — see "The geometry problem" above. |
@@ -716,8 +787,7 @@ expressible against `compose`'s frozen `ComposeDocument` type.
 | `renderImageDocument(doc, options?)` | function | Resolves a `channel: "image"` `ComposeDocument`'s `bindings` against `doc.layout`, then emits a self-contained SVG string sized to `ImageMeta.width`/`height` (scaled per `ImageMeta.scale`). Returns `RenderImageResult`. Throws `RenderError` for a non-`image` document, a missing/failed-to-resolve layout, or a required slot that resolved to no text — see "A document that resolves to nothing is an error" (the same three-reason bar `./web` uses: `"wrong-channel"`, `"resolution-failed"`, `"empty-output"`). |
 | `RenderImageOptions` | type | `{ resolveCopyId?: CopyLookup; tokenOverrides?: Record<string,string> }`. `resolveCopyId` is `@vespeneventures/compose`'s own `CopyLookup` shape (this package calls `resolveCopy` directly — never a hand-rolled equivalent, see "The #43 gap" in `resolveCanvasLayout.ts`). `tokenOverrides` flows straight into `internal/tokens.ts`'s `flattenTokens`. |
 | `RenderImageResult` | type | `{ svg, requestedFormat, width, height, viewBox: { width, height }, scale, warnings }`. `svg` is the complete document; `requestedFormat` is `ImageMeta.format` as asked (this function always emits SVG regardless — see "Architectural decision" above); `width`/`height` are the emitted `<svg>` attributes (`logical * scale`); `viewBox` is always the LOGICAL, unscaled size; `warnings` never blocks a render but is never silently dropped either (overflow truncations, omitted optional slots, the rasterization notice when `requestedFormat !== "svg"`). |
-| `wrapText`, `escapeXml`, `frameToCanvasRect`, `computeCanvasDimensions`, `resolveColorRole` | functions | The shared canvas engine — see "The `image`/`slides` architecture" above. Exported for `./slides` to import (and for any caller who wants the same primitives directly). |
-| `DEFAULT_FONT_SIZE_PX`, `DEFAULT_FONT_FAMILY` | consts | The fixed, documented per-`ElementKind` font-size table and generic font stack this package renders text with — see `engine.ts`'s own doc comment for why there's no real typography-token lookup yet. |
+| `wrapText`, `escapeXml`, `frameToCanvasRect`, `computeCanvasDimensions`, `resolveColorRole` | functions | The shared canvas engine — see "The `image`/`slides` architecture" above. Exported for `./slides` to import (and for any caller who wants the same primitives directly). Font-size/font-family resolution (`internal/typography.ts`'s `resolveElementTypography`/`resolveElementFontFamily`) is used internally by `renderSlots.ts` but not re-exported from this subpath — see "Shared internals" above for that module directly. |
 | `RenderError` / `RenderErrorReason` | class / type | Shared with every other channel — see `./web`'s own API table. |
 
 ### `./slides`

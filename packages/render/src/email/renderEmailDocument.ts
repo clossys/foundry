@@ -144,6 +144,7 @@ export function renderEmailDocument(doc: ComposeDocument, options: RenderEmailOp
     frame: slot.spec.frame,
     element: slot.spec.element,
     text: copyResult.texts[i]!.text,
+    ...(slot.spec.style !== undefined ? { style: slot.spec.style } : {}),
   }));
 
   // Last-write-wins on duplicate slot keys — see this file's own doc

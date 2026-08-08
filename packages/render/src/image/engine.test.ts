@@ -122,6 +122,26 @@ describe("wrapText", () => {
   it("returns no lines for empty/whitespace-only input", () => {
     expect(wrapText("   ", { fontSizePx: 16, widthPx: 200, heightPx: 200 })).toEqual({ lines: [], overflowed: false });
   });
+
+  it("PROOF: the deleted DEFAULT_FONT_SIZE_PX placeholder (heading=40px) and the real resolved token (--text-h1=28px) produce genuinely different wrapping outcomes for the identical text/frame — this is exactly the class of bug this task's fix corrects: overflow warnings computed at the wrong font size are simply wrong, not just cosmetically off", () => {
+    const text = "Ship faster with Acme today";
+    const widthPx = 250;
+    const heightPx = 110;
+
+    // At the OLD placeholder size (40px), each character is wider, so
+    // fewer fit per line -> 3 lines are needed, but only 2 fit in
+    // heightPx=110 at 40px*1.2 line-height -> overflow, truncated.
+    const atOldPlaceholderSize = wrapText(text, { fontSizePx: 40, widthPx, heightPx });
+    expect(atOldPlaceholderSize.overflowed).toBe(true);
+    expect(atOldPlaceholderSize.lines).toEqual(["Ship faster", "with Acme…"]);
+
+    // At the REAL --text-h1 token value (28px), the same text fits in 2
+    // lines, and heightPx=110 comfortably fits 3 lines at 28px*1.2 line
+    // height -> no overflow at all.
+    const atRealTokenSize = wrapText(text, { fontSizePx: 28, widthPx, heightPx });
+    expect(atRealTokenSize.overflowed).toBe(false);
+    expect(atRealTokenSize.lines).toEqual(["Ship faster with", "Acme today"]);
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────
