@@ -66,3 +66,43 @@ All notable changes to this package are documented here. Format follows
   otherwise try to compile `@vespeneventures/render/web` (which imports
   `@vespeneventures/ui/views`, which imports `@vespeneventures/tokens`)
   before either had a `dist/` yet.
+- **Shared foundation for every channel: `src/internal/tokens.ts`** —
+  flattens `@vespeneventures/tokens`' `TOKENS` registry (154 entries,
+  colors declared as CSS `oklch(...)`) into literal, email-and-SVG-safe
+  values, so `./email`, `./image`, and `./slides` (none of which can read
+  an `oklch()` cascade or a `var()` custom property) don't each build this
+  independently:
+  - `oklchToHex(css)` — a real OKLCH -> OKLab -> linear-sRGB ->
+    gamma-encoded-sRGB -> `#rrggbb`/`#rrggbbaa` conversion. Out-of-gamut
+    input is gamut-mapped by binary-searching the largest in-gamut chroma
+    (holding lightness and hue fixed), never by clamping each channel
+    independently — the latter silently produces a plausible-looking
+    wrong color. Throws `RenderError("invalid-oklch", ...)` for anything
+    unparseable.
+  - `flattenTokens(overrides?)` — every `TOKENS` entry resolved to a
+    literal value: an override wins over the default, every `var()`
+    reference (including chains, and ones embedded inside a composite
+    value like a resolved box-shadow) is fully resolved, and every
+    `oklch(...)` occurrence is converted through `oklchToHex`. An
+    override naming an unknown slot, or a non-`brandable` one, throws
+    (`"unknown-token-override"` / `"non-brandable-override"`) rather than
+    being silently ignored or silently accepted.
+  - `resolveTokenRef(value, flat)` — resolves `var(--name)` /
+    `var(--name, fallback)` references (including chains and multiple
+    references in one string) against an already-flattened map. Detects
+    cycles and throws (`"token-ref-cycle"`) rather than looping forever;
+    an unresolvable reference with no fallback throws
+    (`"unknown-token-ref"`).
+  - `internal/errors.ts`'s `RenderErrorReason` union grew six members for
+    this module: `"invalid-oklch"`, `"non-brandable-override"`,
+    `"unknown-token-override"`, `"unknown-token-ref"`, `"token-ref-cycle"`,
+    `"invalid-token-ref"`.
+  - `@vespeneventures/tokens` (`~0.5.0`) is now a real (non-peer,
+    non-optional) dependency — every channel needs it, unlike
+    `react`/`react-dom`/`@vespeneventures/ui`, which only `./web` does.
+    See the README, "Shared internals" and the tokens-dependency note
+    alongside the `compose` one.
+  - Not part of `./web`'s (or any subpath's) public API — a plain module
+    under `src/internal/`, imported by relative path from whichever
+    channel needs it, per this package's own "shared internals live in
+    `src/internal/`" convention.
