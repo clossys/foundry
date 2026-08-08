@@ -263,3 +263,61 @@ describe("slot geometry", () => {
     expect(result.svg).toContain('x="480" y="540" width="960" height="270"');
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────
+// StyleBinding.typography — overrides the ElementKind default, never a
+// silent fallback for an unknown role. See ../internal/typography.ts.
+// ─────────────────────────────────────────────────────────────────────────
+
+describe("StyleBinding.typography overrides the ElementKind default font size", () => {
+  it("a \"body\" element (default --text-body=15px) with style.typography=\"--text-display-xl\" (72px) renders at 72px, not 15px", () => {
+    const doc: ComposeDocument = {
+      id: "typography-override",
+      channel: "image",
+      template: "T",
+      meta: { channel: "image", width: 800, height: 400, format: "svg", alt: "override check" },
+      layout: {
+        slots: [
+          { key: "plain", element: "body", frame: { x: 0, y: 0, w: 1, h: 0.5 }, required: true },
+          {
+            key: "hero",
+            element: "body",
+            frame: { x: 0, y: 0.5, w: 1, h: 0.5 },
+            required: true,
+            style: { typography: "--text-display-xl" },
+          },
+        ],
+      },
+      bindings: [
+        { slot: "plain", value: "Plain body text" },
+        { slot: "hero", value: "Hero body text" },
+      ],
+    };
+
+    const result = renderImageDocument(doc);
+    expect(result.svg).toContain('data-slot="plain"><text x="0" y="12" font-size="15"');
+    expect(result.svg).toContain('data-slot="hero"><text x="0" y="257.6" font-size="72"');
+  });
+
+  it("an unknown style.typography role throws RenderError(\"unknown-style-role\"), never a silent fallback to the ElementKind default size", () => {
+    const doc: ComposeDocument = {
+      id: "typography-unknown-role",
+      channel: "image",
+      template: "T",
+      meta: { channel: "image", width: 800, height: 400, format: "svg", alt: "unknown role check" },
+      layout: {
+        slots: [{ key: "s", element: "body", frame: { x: 0, y: 0, w: 1, h: 1 }, required: true, style: { typography: "--text-does-not-exist" } }],
+      },
+      bindings: [{ slot: "s", value: "text" }],
+    };
+
+    try {
+      renderImageDocument(doc);
+      expect.unreachable("should have thrown");
+    } catch (error) {
+      expect(error).toBeInstanceOf(RenderError);
+      expect((error as RenderError).reason).toBe("unknown-style-role");
+      expect((error as RenderError).message).toContain("--text-does-not-exist");
+    }
+  });
+});

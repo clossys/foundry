@@ -32,10 +32,22 @@
  * in the PR description as a candidate for later extraction into its own
  * `src/internal/canvas.ts` once all channels have landed and a single
  * coordinated edit is safe.
+ *
+ * TYPOGRAPHY LIVES IN `../internal/typography.ts`, NOT HERE
+ * -------------------------------------------------------------
+ * This file used to carry its own `DEFAULT_FONT_SIZE_PX`/`DEFAULT_FONT_FAMILY`
+ * placeholder table, with a doc comment claiming there was "no real
+ * typography token to resolve instead." That claim was false —
+ * `@vespeneventures/tokens` ships a full `--text-*`/`--font-*` scale — and
+ * the table has been deleted. `./renderSlots.ts` (this engine's other half)
+ * now resolves real font size/family per slot via `../internal/
+ * typography.ts`'s `resolveElementTypography`/`resolveElementFontFamily`,
+ * the same shared resolver `./email` and `./print` use, built on top of
+ * this same `flattenTokens`/`resolveTokenRef` re-exported below.
  */
 
 import { frameToInches } from "@vespeneventures/compose";
-import type { ElementKind, Frame } from "@vespeneventures/compose";
+import type { Frame } from "@vespeneventures/compose";
 import { flattenTokens, resolveTokenRef } from "../internal/tokens.js";
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -265,39 +277,6 @@ export function wrapText(text: string, options: TextWrapOptions): TextWrapResult
 
   return { lines: visible, overflowed: true };
 }
-
-// ─────────────────────────────────────────────────────────────────────────
-// Default font sizes per ElementKind — a fixed, documented scale
-// ─────────────────────────────────────────────────────────────────────────
-
-/**
- * `@vespeneventures/tokens` has no font-size/typography scale — only
- * colors (see `internal/tokens.ts`'s own top comment) — and `StyleBinding`
- * carries `typography` only as an opaque token ROLE NAME with nothing in
- * this ecosystem yet to resolve it against. So this module picks one fixed,
- * documented pixel size per `ElementKind`, applied uniformly across every
- * `./image`/`./slides` document. This is a deliberate simplification, not a
- * typography system: a caller wanting real brand typography sizes should
- * treat this table as a placeholder default, safe to override once a real
- * type-scale token exists to replace it.
- */
-export const DEFAULT_FONT_SIZE_PX: Record<ElementKind, number> = {
-  heading: 40,
-  subheading: 28,
-  body: 16,
-  eyebrow: 13,
-  label: 14,
-  stat: 56,
-  list: 16,
-  image: 16,
-  logo: 16,
-  button: 16,
-  divider: 16,
-  fill: 16,
-};
-
-/** A generic, dependency-free font stack — see `DEFAULT_FONT_SIZE_PX`'s own doc comment for why this module has no real typography token to resolve instead. */
-export const DEFAULT_FONT_FAMILY = "sans-serif";
 
 // ─────────────────────────────────────────────────────────────────────────
 // Token-role color resolution — always a literal hex, never oklch()/var()

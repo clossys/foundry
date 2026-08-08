@@ -13,6 +13,14 @@ import { describe, expect, it } from "vitest";
 import type { ComposeDocument } from "@vespeneventures/compose";
 import { renderImageDocument } from "./renderImageDocument.js";
 
+// `@vespeneventures/tokens`' real `--font-display`/`--font-body` literals,
+// XML-attribute-escaped (their embedded `"Segoe UI"` double quotes become
+// `&quot;`) — see `../internal/typography.ts`'s `resolveElementFontFamily`
+// and `escapeXml`. Declared once here so a token wording change updates
+// every golden string below in one place, not N independent ones.
+const FONT_DISPLAY_XML = 'system-ui, ui-sans-serif, -apple-system, &quot;Segoe UI&quot;, sans-serif';
+const FONT_BODY_XML = 'ui-sans-serif, system-ui, -apple-system, &quot;Segoe UI&quot;, sans-serif';
+
 describe("golden: a real OG-card-shaped image document", () => {
   const doc: ComposeDocument = {
     id: "acme-og-card",
@@ -41,9 +49,9 @@ describe("golden: a real OG-card-shaped image document", () => {
       '<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-label="Acme — build faster">' +
         "<title>Acme — build faster</title>" +
         '<rect x="0" y="0" width="1200" height="630" fill="#f5f5f5" />' +
-        '<g data-slot="eyebrow"><text x="96" y="73.4" font-size="13" font-family="sans-serif" fill="#3d3d3d" text-anchor="start">' +
+        `<g data-slot="eyebrow"><text x="96" y="72.6" font-size="12" font-family="${FONT_BODY_XML}" fill="#3d3d3d" text-anchor="start">` +
         '<tspan x="96" dy="0">Product update</tspan></text></g>' +
-        '<g data-slot="headline"><text x="96" y="170.6" font-size="40" font-family="sans-serif" fill="#1a1a1a" text-anchor="start">' +
+        `<g data-slot="headline"><text x="96" y="161" font-size="28" font-family="${FONT_DISPLAY_XML}" fill="#1a1a1a" text-anchor="start">` +
         '<tspan x="96" dy="0">Ship faster with Acme</tspan></text></g>' +
         '<g data-slot="divider"><line x1="96" y1="541.8" x2="1104" y2="541.8" stroke="#cccccc" stroke-width="1" /></g>' +
         "</svg>",
@@ -51,15 +59,15 @@ describe("golden: a real OG-card-shaped image document", () => {
     expect(result.warnings).toEqual([]);
   });
 
-  it("HAND-COMPUTED geometry: eyebrow slot {x:0.08,y:0.1,w:0.6,h:0.08} on 1200x630 -> x=96,y=63,w=720,h=50.4 (first baseline = 63 + 13*0.8 = 73.4)", () => {
+  it("HAND-COMPUTED geometry: eyebrow slot {x:0.08,y:0.1,w:0.6,h:0.08} on 1200x630 -> x=96,y=63,w=720,h=50.4; \"eyebrow\" resolves to --text-caption=12px (ELEMENT_TYPOGRAPHY_ROLE) -> first baseline = 63 + 12*0.8 = 72.6", () => {
     const result = renderImageDocument(doc);
     expect(result.svg).toContain('<tspan x="96" dy="0">Product update</tspan>');
-    expect(result.svg).toContain('y="73.4"');
+    expect(result.svg).toContain('y="72.6"');
   });
 
-  it("HAND-COMPUTED geometry: headline slot {x:0.08,y:0.22,w:0.84,h:0.4} on 1200x630 -> x=96,y=138.6 (first baseline = 138.6 + 40*0.8 = 170.6)", () => {
+  it("HAND-COMPUTED geometry: headline slot {x:0.08,y:0.22,w:0.84,h:0.4} on 1200x630 -> x=96,y=138.6; \"heading\" resolves to --text-h1=28px -> first baseline = 138.6 + 28*0.8 = 161", () => {
     const result = renderImageDocument(doc);
-    expect(result.svg).toContain('y="170.6"');
+    expect(result.svg).toContain('y="161"');
   });
 
   it("HAND-COMPUTED geometry: divider slot {x:0.08,y:0.85,w:0.84,h:0.02} on 1200x630 -> x1=96, x2=96+1008=1104, y=535.5+6.3=541.8", () => {
@@ -125,7 +133,7 @@ describe("golden: XML escaping — the nasty-character fixture", () => {
       '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200" viewBox="0 0 400 200" role="img" ' +
         'aria-label="&lt;alt&gt; &amp; &quot;quote&quot; &apos;apos&apos; ]]&gt;">' +
         "<title>&lt;alt&gt; &amp; &quot;quote&quot; &apos;apos&apos; ]]&gt;</title>" +
-        '<g data-slot="body"><text x="0" y="12.8" font-size="16" font-family="sans-serif" fill="#111111" text-anchor="start">' +
+        `<g data-slot="body"><text x="0" y="12" font-size="15" font-family="${FONT_BODY_XML}" fill="#111111" text-anchor="start">` +
         '<tspan x="0" dy="0">&lt;b&gt;&amp;&quot;&apos;&quot;&lt;/b&gt; ]]&gt; end</tspan></text></g>' +
         "</svg>",
     );
@@ -156,13 +164,13 @@ describe("golden: overflow — a deliberately long string in a narrow, short slo
     expect(result.svg).toBe(
       '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="200" viewBox="0 0 400 200" role="img" aria-label="overflow fixture">' +
         "<title>overflow fixture</title>" +
-        '<g data-slot="cramped"><text x="40" y="32.8" font-size="16" font-family="sans-serif" fill="#111111" text-anchor="start">' +
+        `<g data-slot="cramped"><text x="40" y="32" font-size="15" font-family="${FONT_BODY_XML}" fill="#111111" text-anchor="start">` +
         '<tspan x="40" dy="0">This is …</tspan></text></g>' +
         "</svg>",
     );
 
     expect(result.warnings).toEqual([
-      'slot "cramped" (element "body") text overflowed its frame at font-size 16px and was truncated — see wrapText in src/image/engine.ts for the wrapping heuristic and its accuracy limits.',
+      'slot "cramped" (element "body") text overflowed its frame at font-size 15px and was truncated — see wrapText in src/image/engine.ts for the wrapping heuristic and its accuracy limits.',
     ]);
   });
 });

@@ -11,6 +11,13 @@ import { describe, expect, it } from "vitest";
 import type { ComposeDocument } from "@vespeneventures/compose";
 import { renderPrintDocument } from "./renderPrintDocument.js";
 
+// The real `@vespeneventures/tokens` `--font-display`/`--font-body`
+// literals, rewritten single-quote-safe for embedding in a double-quoted
+// HTML `style="..."` attribute — see `internal/style.ts`'s own
+// `toAttributeSafeCss`.
+const FONT_DISPLAY_ATTR = "system-ui, ui-sans-serif, -apple-system, 'Segoe UI', sans-serif";
+const FONT_BODY_ATTR = "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif";
+
 describe("golden: A4 flyer — bleed, crop marks, page background, style roles, break-after, vAlign", () => {
   const doc: ComposeDocument = {
     id: "acme-flyer",
@@ -74,15 +81,15 @@ describe("golden: A4 flyer — bleed, crop marks, page background, style roles, 
         'style="position:relative;width:210mm;height:297mm;background-color:#f5f5f5">' +
         '<div class="page-content" style="position:absolute;top:20mm;right:15mm;bottom:20mm;left:15mm">' +
         '<div class="slot" data-slot="logo" data-element="logo" ' +
-        'style="position:absolute;left:0%;top:0%;width:30%;height:10%;break-inside:avoid;page-break-inside:avoid">' +
+        `style="position:absolute;left:0%;top:0%;width:30%;height:10%;font-family:${FONT_DISPLAY_ATTR};font-size:18px;break-inside:avoid;page-break-inside:avoid">` +
         "ACME</div>" +
         '<div class="slot" data-slot="headline" data-element="heading" ' +
-        "style=\"position:absolute;left:0%;top:15%;width:100%;height:15%;text-align:center;color:#1a1a1a;" +
+        `style="position:absolute;left:0%;top:15%;width:100%;height:15%;text-align:center;font-family:${FONT_DISPLAY_ATTR};font-size:28px;color:#1a1a1a;` +
         'break-inside:avoid;page-break-inside:avoid;break-after:page;page-break-after:always">' +
         "Grand Opening</div>" +
         '<div class="slot" data-slot="body" data-element="body" ' +
-        'style="position:absolute;left:10%;top:35%;width:80%;height:40%;display:flex;flex-direction:column;' +
-        'justify-content:center;break-inside:avoid;page-break-inside:avoid">' +
+        `style="position:absolute;left:10%;top:35%;width:80%;height:40%;display:flex;flex-direction:column;` +
+        `justify-content:center;font-family:${FONT_BODY_ATTR};font-size:15px;break-inside:avoid;page-break-inside:avoid">` +
         "Join us for the launch event.</div>" +
         "</div>" +
         "</div>" +
@@ -134,7 +141,7 @@ describe("golden: Custom-sized landscape business card — no bleed/marks/backgr
         '<div class="page" data-template="BusinessCard" style="position:relative;width:3.5in;height:2in">' +
         '<div class="page-content" style="position:absolute;top:0;right:0;bottom:0;left:0">' +
         '<div class="slot" data-slot="name" data-element="heading" ' +
-        'style="position:absolute;left:5%;top:10%;width:90%;height:30%;break-inside:avoid;page-break-inside:avoid">' +
+        `style="position:absolute;left:5%;top:10%;width:90%;height:30%;font-family:${FONT_DISPLAY_ATTR};font-size:28px;break-inside:avoid;page-break-inside:avoid">` +
         "Jane &amp; &lt;Doe&gt;</div>" +
         "</div>" +
         "</div>" +

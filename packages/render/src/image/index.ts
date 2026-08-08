@@ -19,13 +19,5 @@ export type { RenderErrorReason } from "../internal/errors.js";
 
 export type { RenderImageOptions, RenderImageResult } from "./types.js";
 
-export {
-  computeCanvasDimensions,
-  escapeXml,
-  frameToCanvasRect,
-  resolveColorRole,
-  wrapText,
-  DEFAULT_FONT_FAMILY,
-  DEFAULT_FONT_SIZE_PX,
-} from "./engine.js";
+export { computeCanvasDimensions, escapeXml, frameToCanvasRect, resolveColorRole, wrapText } from "./engine.js";
 export type { CanvasDimensions, CanvasPixelSize, PixelRect, TextWrapOptions, TextWrapResult } from "./engine.js";

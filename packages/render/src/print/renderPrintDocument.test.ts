@@ -163,6 +163,36 @@ describe("renderPrintDocument — refusal paths", () => {
     expect(error.reason).toBe("unknown-style-role");
     expect(error.message).toContain("<page>");
   });
+
+  it("REFUSES (unknown-style-role) a slot style.typography naming a token role that does not exist — never a silent fallback to the ElementKind default size", () => {
+    const doc = baseDoc({
+      layout: {
+        slots: [
+          { key: "title", element: "heading", frame: { x: 0, y: 0, w: 1, h: 0.2 }, required: true, style: { typography: "--text-not-real" } },
+        ],
+      },
+      bindings: [{ slot: "title", value: "Hello" }],
+    });
+    const error = thrown(() => renderPrintDocument(doc));
+    expect(error.reason).toBe("unknown-style-role");
+    expect(error.message).toContain("--text-not-real");
+  });
+});
+
+describe("renderPrintDocument — StyleBinding.typography overrides the ElementKind default", () => {
+  it("a \"body\" element (default --text-body=15px) with style.typography=\"--text-display-xl\" (72px) emits font-size:72px, not 15px", () => {
+    const doc = baseDoc({
+      layout: {
+        slots: [
+          { key: "body", element: "body", frame: { x: 0, y: 0, w: 1, h: 1 }, required: true, style: { typography: "--text-display-xl" } },
+        ],
+      },
+      bindings: [{ slot: "body", value: "Hero copy" }],
+    });
+    const { html } = renderPrintDocument(doc);
+    expect(html).toContain("font-size:72px");
+    expect(html).not.toContain("font-size:15px");
+  });
 });
 
 describe("renderPrintDocument — successful render, structural properties", () => {
