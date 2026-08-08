@@ -48,7 +48,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@vespeneventures/compose": "~0.1.0",
+    "@vespeneventures/compose": "~0.2.0",
     "@vespeneventures/tokens": "~0.5.0"
   },
   "peerDependencies": {

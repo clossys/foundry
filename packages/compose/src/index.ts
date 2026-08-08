@@ -15,8 +15,12 @@
  *   2. VALIDATION (`validate.ts`) — `validateComposeDocument`, hand-rolled
  *      shape validation in the style of `@vespeneventures/strategy`'s
  *      `validation.ts` and `@vespeneventures/copy`'s `schema.ts`.
- *   3. RESOLUTION (`resolve.ts`) — `resolveDocument`, matching a
- *      document's bindings against a real layout's slots.
+ *   3. RESOLUTION (`resolve.ts`, `resolve-copy.ts`) — `resolveDocument`,
+ *      matching a document's bindings against a real layout's slots
+ *      (reusing `validate.ts`'s own binding-shape checks so a malformed
+ *      binding can never resolve `ok: true` — see issue #43), and
+ *      `resolveCopy`, the second pass that turns those matched bindings
+ *      into actual text via a caller-supplied `CopyLookup`.
  *   4. UNIT CONVERSION AND SMALL HELPERS (`frame.ts`, `slots.ts`) — the
  *      two conversions renderers need out of a `Frame`, plus small
  *      read-only lookups over a `LayoutSpec`'s `slots`.
@@ -48,6 +52,9 @@ export { CHANNELS, ELEMENT_KINDS } from "./types.js";
 export { validateComposeDocument } from "./validate.js";
 
 export { resolveDocument } from "./resolve.js";
+
+export { resolveCopy } from "./resolve-copy.js";
+export type { CopyLookup, CopyResolveResult, ResolvedText } from "./resolve-copy.js";
 
 export { frameToInches, frameToPercent } from "./frame.js";
 export type { CanvasInches } from "./frame.js";

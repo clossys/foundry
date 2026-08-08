@@ -284,11 +284,14 @@ export interface ResolvedSlot {
 /**
  * What `resolveDocument` returns. `ok` is `true` only when resolution
  * actually found something: every required slot was bound, every binding
- * matched a real slot, AND at least one slot was actually resolved. An
- * empty `layout`, an empty `bindings` list, or a document that matched no
- * slots at all is `ok: false` — never a silent clean pass on having
- * resolved nothing. See `resolve.ts`'s own doc comment for the fuller
- * argument.
+ * matched a real slot, at least one slot was actually resolved, AND every
+ * matched binding is itself shape-valid — see `bindingFindings` below. An
+ * empty `layout`, an empty `bindings` list, a document that matched no
+ * slots at all, or a binding that matched a slot but is malformed (no
+ * source of text, two conflicting sources, an empty/whitespace-only
+ * `value`, an empty `copyId`) is each `ok: false` — never a silent clean
+ * pass on having resolved nothing, or on having resolved to something
+ * unusable. See `resolve.ts`'s own doc comment for the fuller argument.
  */
 export interface ResolveResult {
   ok: boolean;
@@ -298,4 +301,19 @@ export interface ResolveResult {
   unknownBindings: SlotBinding[];
   /** Every slot that resolved cleanly: a real `SlotSpec` paired with the `SlotBinding` that fills it. */
   resolved: ResolvedSlot[];
+  /**
+   * `validate.ts`'s own `validateSlotBindingShape` findings, run against
+   * every binding that matched a real slot (i.e. every binding behind an
+   * entry in `resolved`) — the same check `validateComposeDocument` would
+   * have reported for that binding, reused rather than re-implemented, so
+   * `resolveDocument` and `validateComposeDocument` can never quietly
+   * drift apart on what counts as a well-formed `SlotBinding`. Catches a
+   * binding with neither `copyId` nor `value` (`binding-source-exclusive`),
+   * one with both (`binding-source-exclusive`), an empty `copyId`
+   * (`binding-copy-id-shape`), and an empty or whitespace-only `value`
+   * (`binding-value-shape`). Always `severity: "error"` in practice — see
+   * `ComposeFinding`'s own doc comment. Any entry here forces
+   * `ok: false`; never silently dropped.
+   */
+  bindingFindings: ComposeFinding[];
 }

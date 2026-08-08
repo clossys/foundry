@@ -87,7 +87,7 @@ but the shape they'll follow is already live in `./web` today:
 `react`/`ui`: every current and future channel needs `compose`'s
 `ComposeDocument` type and `resolveDocument` function, so it belongs in
 `dependencies`, not behind a per-channel peer. It is pinned with a
-**tilde** range (`~0.1.0`), not caret: `compose` is pre-1.0, and a caret
+**tilde** range (`~0.2.0`), not caret: `compose` is pre-1.0, and a caret
 range on a 0.x package is patch-only in name but has, in practice, let a
 breaking pre-1.0 minor bump through unnoticed and broken this repository's
 CI more than once. A tilde range is the deliberate, narrower choice here.
