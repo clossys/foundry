@@ -1,6 +1,6 @@
 {
   "name": "@vespeneventures/voice",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -11,17 +11,19 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    }
+    },
+    "./voice-record.template.jsonc": "./templates/voice-record.template.jsonc"
   },
   "files": [
     "dist",
     "src",
     "!src/**/*.test.ts",
+    "templates",
     "README.md",
     "LICENSE"
   ],
   "sideEffects": false,
-  "description": "The verbal contract: a plain-TypeScript vocabulary for voice rules (person, tense, formality, tone), a glossary of forbidden/preferred terms, and a claims register — plus a checker that scans a piece of copy against it. This package ships the machinery, never anyone's actual voice; each consumer binds its own rules, glossary, and claims, the same split @vespeneventures/tokens uses for brand.css.",
+  "description": "The verbal contract: a plain-TypeScript vocabulary for voice rules (person, tense, formality, tone), a glossary of forbidden/preferred terms, and a claims register — plus a checker that scans a piece of copy against it and reports whether it's still an unbound copy of the shipped template. This package ships the machinery, never anyone's actual voice; each consumer binds its own rules, glossary, and claims, the same split @vespeneventures/tokens uses for brand.css.",
   "keywords": [
     "voice",
     "tone",

@@ -3,7 +3,10 @@
 The verbal contract: the exact peer of `@vespeneventures/tokens`, one layer
 over. Tokens is the visual contract — what things look like. Voice is the
 verbal contract — how things sound. Same layer, same shape, same
-machinery-vs-values split.
+machinery-vs-values split — now including that package's other half too:
+a template a consumer copies and fills in, a two-way coverage test that
+keeps the template honest, and an unbound signal so a voice can't ship
+silently unbranded the way an interface can't ship silently unstyled.
 
 ```bash
 npm install @vespeneventures/voice
@@ -13,23 +16,111 @@ npm install @vespeneventures/voice
 
 **foundry ships the machinery; each consumer repo ships its own values.**
 Four different products can have four different voices. This package ships
-a schema, validators, and a checker — never anyone's actual voice.
+a schema, validators, a template, and a checker — never anyone's actual
+voice.
 
 There is no example voice content shipped in `src/` beyond obviously
 fictional fixtures inside `*.test.ts` files (a placeholder called "Acme",
-never a real company, product, person, or domain). Binding a real voice —
-real forbidden words, real claims, a real tone — is a consumer repo's job,
-the same way `@vespeneventures/tokens` ships a neutral greyscale contract
-and leaves the real colors to a consumer's own `brand.css`. See that
-package's README, "The three-layer contract", for the fuller version of
-this argument; this package's version of it is the same argument, one
-layer over:
+never a real company, product, person, or domain), and the one template
+this package does ship (`voice-record.template.jsonc`) fills every slot
+with a loud, structural placeholder — never a plausible-looking example
+value; see "The template" below for why that distinction matters. Binding a
+real voice — real forbidden words, real claims, a real tone — is a consumer
+repo's job, the same way `@vespeneventures/tokens` ships a neutral
+greyscale contract and leaves the real colors to a consumer's own
+`brand.css`. See that package's README, "The three-layer contract", for the
+fuller version of this argument; this package's version of it is the same
+argument, one layer over:
 
 ```
 the VoiceRecord shape   machinery      types.ts + schema.ts, this package
-your voice record        binding        your rules, your glossary, your claims, your own repo
+voice-record.template.jsonc  binding template  fields.ts's bindable slots, blank — this package
+your voice record        binding value  your rules, your glossary, your claims, your own repo
 your copy                 consumer layer  the actual writing this checker evaluates
 ```
+
+## The bindable/fixed split
+
+The line falls the same place `@vespeneventures/tokens`' `brandable: boolean`
+draws it, but between two FILES here rather than within one:
+
+- **Rule KINDS — fixed, shipped once in `src/types.ts`, never a
+  fill-in-the-blank.** That a voice has exactly a `person` rule and a
+  `tense` rule and nothing else; that `formality` is one of exactly three
+  values (`FormalityLevel`) and a glossary entry's `status` is one of
+  exactly two (`GlossaryStatus`); that a claim has exactly
+  `id`/`text`/`matchPhrases`/`factRef`/`requiresSupport` and no more
+  fields. Every consumer gets the identical shape, forever — the same role
+  `tokens.css`'s namespace/family structure plays.
+- **Rule VALUES — bindable, consumer-owned, catalogued in `src/fields.ts`'s
+  `VOICE_FIELDS` and present in `voice-record.template.jsonc`.** Which
+  pronouns are forbidden, which tense markers, which terms are forbidden or
+  preferred and why, which claims are registered and whether each needs a
+  fact — the actual data that fills the fixed shape above, one consumer's
+  own.
+
+**A finding, not an assumption:** unlike `tokens.css`, where only 42 of 154
+declared tokens are `brandable: true` (the rest — spacing, the type ramp,
+z-index, duration, easing, breakpoints — stay their shipped value for every
+brand), **every single entry in `VOICE_FIELDS` is `bindable: true`.** There
+is no `VoiceRecord` field that ships a working default and is meant to stay
+that value across every voice; `VoiceRecord` IS the consumer-owned binding
+layer in its entirety, the same way nothing in `brand-template.css` is
+"shipped, leave it alone" either. The fixed half of this package's contract
+isn't a subset of `VoiceRecord`'s own fields at all — it's the type system
+that shapes them, in a different file, checked by `tsc` rather than by a
+runtime `bindable` flag. `src/fields.ts`'s header comment has the full
+account of why the split runs there instead of inside one flat namespace.
+
+## The template
+
+`voice-record.template.jsonc` is `VoiceRecord`'s analog of
+`brand-template.css`: copy it, fill it in, never ship it unedited.
+
+```bash
+cp node_modules/@vespeneventures/voice/voice-record.template.jsonc \
+   src/voice/acme-app.voice.jsonc
+```
+
+**Format: JSONC, not plain JSON or a `.ts` literal.** JSON alone can't carry
+the fill-in-the-blank commentary a template like this needs to be usable —
+`brand-template.css`'s value comes largely from its per-slot comments, and
+this package's template needs the same. A `.ts` module could carry comments
+too, but would need to export a real (if partial) `VoiceRecord`-shaped
+value, forcing every placeholder to already satisfy the type checker —
+`formality` couldn't hold a loud sentinel string, only a real
+`FormalityLevel`. JSONC keeps the file inert, human-and-machine-readable
+data (a consumer's own tooling, or a non-JS pipeline, can read it without
+touching this package's TypeScript at all) while still allowing exactly the
+annotated, human-facing style `brand-template.css` uses.
+`src/internal/parse-template.ts` hand-rolls the (string-aware) comment
+stripping this needs, the same call `@vespeneventures/tokens` makes for
+its own CSS parsing rather than adding a dependency for it.
+
+Only the nine bindable slots from `VOICE_FIELDS` appear: `id`,
+`rules.person.description`, `rules.person.forbiddenPronouns`,
+`rules.tense.description`, `rules.tense.forbiddenMarkers`,
+`rules.formality`, `rules.tone`, `glossary` (one example entry), and
+`claims` (one example entry). Every fixed rule-KIND field name
+(`person`/`tense`/`formality`/`tone` as keys, `status`'s two values, a
+claim's five field names) appears only as real, valid structure — never as
+something to fill in.
+
+## A two-way coverage test
+
+`src/field-coverage.test.ts` is the direct port of `@vespeneventures/tokens`'
+own `src/brand-coverage.test.ts`, run against `VOICE_FIELDS` and the real
+template file instead of `TOKENS` and `brand-template.css`:
+
+1. Every field marked `bindable: true` in `VOICE_FIELDS` appears in
+   `voice-record.template.jsonc`.
+2. The template names no field this package doesn't declare — catches a
+   stale or typo'd slot (a renamed field whose old path was never removed)
+   that would otherwise be harmless JSON and go unnoticed.
+3. No `bindable: false` field is present in the template — currently
+   vacuous (every entry is `bindable: true`, see "The bindable/fixed
+   split" above), kept anyway so the day a field IS ever added as
+   `bindable: false`, this assertion is already meaningful.
 
 ## Two halves, and the second justifies the first
 
@@ -184,11 +275,11 @@ piece of copy make an unsupported claim".
 
 ## Fails closed
 
-Two situations that could otherwise look like "nothing was wrong" are
-instead surfaced as an explicit, visible incompleteness — never as a
-silent, empty-`findings` pass. This repository's own history has more than
-one gate that looked clean only because it never ran; this package does
-not repeat that:
+Three situations that could otherwise look like "nothing was wrong" are
+instead surfaced as an explicit, visible incompleteness or an explicit,
+unmissable error — never as a silent, empty-`findings` pass. This
+repository's own history has more than one gate that looked clean only
+because it never ran; this package does not repeat that:
 
 - **Empty (or whitespace-only) `copy`.** All four dimensions are recorded
   in `skipped`, not run — `findings` is `[]` for a reason `report.complete`
@@ -198,11 +289,65 @@ not repeat that:
   `skipped` with its own reason, rather than silently contributing zero
   findings to what would otherwise read as a clean run. Other, configured
   dimensions still run normally in the same call.
+- **`record` is still (partly) an unedited copy of the template.** See
+  "The unbound signal" below — this one produces its own unwaivable error
+  finding, not merely an entry in `skipped`.
 
 `report.complete` is `true` exactly when `report.skipped` is empty —
 mirroring `@vespeneventures/gates`' `FoundationReport.complete` — so a
 caller can ask "did this report actually check everything it could have"
 with one boolean read, the same discipline that package holds to.
+`report.bound` is the analogous read for the third case.
+
+## The unbound signal
+
+`@vespeneventures/tokens` has a visual answer to "did anyone bind this
+yet": import only `tokens.css` and the page renders in visible grey, plus a
+literal dev-mode badge (`html:not([data-brand-bound])::before`), until
+`data-brand-bound` is set. Copy has no pixels to fall back to — there's no
+"render this text in grey" — so this package's answer is the honest analog
+for data instead of paint: **every bindable slot in
+`voice-record.template.jsonc` is filled with one specific, loud, exported
+sentinel, `TEMPLATE_PLACEHOLDER` (`"REPLACE_ME__VOICE_TEMPLATE_PLACEHOLDER"`,
+from `fields.ts`), never a plausible-looking example value.** A
+plausible-looking placeholder (a real-sounding pronoun, a real-sounding
+claim) is exactly what would let an unbound voice happen to pass — it would
+be indistinguishable from a deliberately-authored record that just happens
+to match the example. A structurally unmistakable one can't be.
+
+`checkCopy` scans every string reachable in `record` — recursively, the
+same way it scans `copy` — for exact equality with `TEMPLATE_PLACEHOLDER`.
+Two things happen if it finds even one, both unconditionally, whether or
+not `copy` is even given:
+
+1. `report.bound` is `false`.
+2. An `"error"`-severity `"voice:unbound-placeholder"` finding is pushed
+   into `report.findings` for **each** slot still carrying it — not merely
+   a flag a caller has to remember to check separately.
+
+**Why the finding, not just the boolean:** this package's own Usage example
+above already tells every caller to do
+`if (report.findings.some(f => f.severity === "error")) process.exitCode = 1;`.
+An unbound record fails that exact, pre-existing, idiomatic check on its
+own — no second code path to add, no way to accidentally ship a build that
+only checked `report.complete` and missed `report.bound`. This is the
+deliberate design choice, and the reason it's a design choice rather than
+an assumption: an unbound voice must never look like a bound one that
+happens to pass, and the only way to guarantee that against a caller who
+does the bare minimum (checks `findings` for an error) is to make the
+unbound signal show up exactly there.
+
+**Why it cannot be waived.** `"voice:unbound-placeholder"` findings are
+kept out of the waiver-matching loop entirely — supplying a waiver with
+`rule: "voice:unbound-placeholder"` does nothing (and is itself reported as
+`"waiver:unused"`, since it genuinely never matches). Every other finding
+this function produces is a judgment call a reviewer can legitimately
+override with a reason (a forbidden term quoted from a review, a claim
+phrase inside a testimonial); an unbound record isn't a judgment call, it's
+a structural precondition, the same category as the `TypeError`s `checkCopy`
+throws for a non-string `copy` or non-object `record` — also not waivable.
+Allowing a waiver to remove this finding would reopen the exact gap this
+whole mechanism exists to close.
 
 ## False positives and the waiver escape hatch
 
@@ -243,12 +388,14 @@ checkCopy(acmeVoice, copy, {
 
 | Export | Kind | Purpose |
 | --- | --- | --- |
-| `checkCopy(record, copy, options?)` | function | The checker. Reports `VoiceFinding`s for forbidden glossary terms, forbidden person/tense markers, and unsupported claims found in `copy`. Pure — no I/O. Throws a plain `TypeError` for a non-string `copy` or non-object `record` (a caller-input problem, not a finding). Fails closed on empty copy and on unconfigured dimensions — see "Fails closed" above. Returns a `VoiceCheckReport`. |
+| `checkCopy(record, copy, options?)` | function | The checker. Reports `VoiceFinding`s for forbidden glossary terms, forbidden person/tense markers, unsupported claims found in `copy`, and — unconditionally, regardless of `copy` — any bindable field of `record` still carrying `TEMPLATE_PLACEHOLDER` (`"voice:unbound-placeholder"`, unwaivable). Pure — no I/O. Throws a plain `TypeError` for a non-string `copy` or non-object `record` (a caller-input problem, not a finding). Fails closed on empty copy, on unconfigured dimensions, and on an unbound `record` — see "Fails closed" and "The unbound signal" above. Returns a `VoiceCheckReport`. |
 | `auditClaimsRegister(claims)` | function | Pure, copy-free audit of a `Claim[]`: one `"claim:missing-fact-ref"` warning per claim that requires support (`requiresSupport: true`, the default) but has no `factRef`. `[]` for an empty register — an empty claims register is not itself a defect. |
 | `validateVoiceRecordShape(value)` | function | Hand-rolled structural validation (plain `typeof`/shape checks, no schema library — see "Requirements"), in the style of `@vespeneventures/policy`'s `validateBindingShape`. Returns a `VoiceFinding[]` with descriptive rule ids (`"id-shape"`, `"glossary-status-shape"`, `"claim-fact-ref-shape"`, etc. — see `schema.ts` for the full list), always `"error"` severity. `[]` means `value` is a well-formed `VoiceRecord`, once defaults are applied. Never throws, on any input. |
 | `parseVoiceRecord(value)` | function | Same validation as `validateVoiceRecordShape`, but throws a plain `Error` (listing every issue) instead of returning findings — for a fail-fast config-loading call site. Returns a `VoiceRecord` with this schema's defaults applied (`glossary: []`, `claims: []`, `tone: []`, `forbiddenPronouns: []`, `forbiddenMarkers: []`, `matchPhrases: []`, `caseSensitive: false`, `requiresSupport: true`) on success. |
 | `FORMALITY_LEVELS` | constant | `readonly FormalityLevel[]` — `["casual", "neutral", "formal"]`, in declaration order. Exported as a list (mirroring `@vespeneventures/policy`'s `DIGEST_ALGORITHMS`) so `schema.ts` never hardcodes these as a second, separately-maintained literal check. |
 | `GLOSSARY_STATUSES` | constant | `readonly GlossaryStatus[]` — `["forbidden", "preferred"]`, in declaration order. Same reasoning as `FORMALITY_LEVELS`. |
+| `VOICE_FIELDS` | constant | `Readonly<Record<string, VoiceFieldDefinition>>` — every runtime field path a `VoiceRecord` instance carries, each `bindable: true`. See "The bindable/fixed split" and `src/fields.ts`'s header comment. |
+| `TEMPLATE_PLACEHOLDER` | constant | `"REPLACE_ME__VOICE_TEMPLATE_PLACEHOLDER"` — the exact sentinel `voice-record.template.jsonc` fills every bindable slot with, and the value `checkCopy` scans `record` for. See "The unbound signal". |
 | `VoiceRecord` | type | `{ id, rules, glossary, claims }`. What a consumer's whole bound voice must conform to. |
 | `VoiceRules` | type | `{ person, tense, formality, tone }` — see `PersonRule`/`TenseRule`/`FormalityLevel`. |
 | `PersonRule` | type | `{ description: string, forbiddenPronouns: string[] }`. `description` is for humans; `forbiddenPronouns` is the only part `checkCopy` evaluates. |
@@ -258,9 +405,10 @@ checkCopy(acmeVoice, copy, {
 | `GlossaryStatus` | type | `"forbidden" \| "preferred"`. Only `"forbidden"` entries are actively scanned for — see "What `checkCopy` actually catches". |
 | `Claim` | type | `{ id, text, matchPhrases, factRef?, requiresSupport }`. See "The `factRef` seam". |
 | `VoiceFinding` | type | `{ rule, severity: "error" \| "warning", message, path? }` — deliberately the same shape as `@vespeneventures/policy`'s own `Finding`, defined fresh here (this package has zero runtime dependency on `policy`). |
-| `VoiceCheckReport` | type | `{ findings, waived, skipped, ran, complete }` — what `checkCopy` returns. `complete` is `true` exactly when `skipped` is empty. |
+| `VoiceFieldDefinition` | type | `{ path, bindable, description }` — one entry of `VOICE_FIELDS`. The `TokenDefinition` analog. |
+| `VoiceCheckReport` | type | `{ findings, waived, skipped, ran, complete, bound }` — what `checkCopy` returns. `complete` is `true` exactly when `skipped` is empty; `bound` is `true` exactly when `record` carried no `TEMPLATE_PLACEHOLDER` value. |
 | `VoiceCheckOptions` | type | `{ waivers?: VoiceCheckWaiver[] }` — `checkCopy`'s third argument. |
-| `VoiceCheckWaiver` | type | `{ rule, match, reason }` — one explicit, auditable exception. See "False positives and the waiver escape hatch". |
+| `VoiceCheckWaiver` | type | `{ rule, match, reason }` — one explicit, auditable exception. See "False positives and the waiver escape hatch". Cannot target `"voice:unbound-placeholder"` — see "The unbound signal". |
 | `WaivedVoiceFinding` | type | A `VoiceFinding` plus the `VoiceCheckWaiver` that covered it. What `report.waived` holds. |
 | `VoiceCheckDimension` | type | `"glossary" \| "person" \| "tense" \| "claims"`. |
 | `VoiceDimensionSkip` | type | `{ dimension, reason }` — one entry of `report.skipped`. |
