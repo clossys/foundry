@@ -828,9 +828,15 @@ function tokenize(content: string, isJsxFile: boolean): TokenizeResult {
         staticParts.push(unescape(current));
         current = "";
         placeholderCount++;
+        // THIS interpolation's own `${`, not the enclosing template
+        // literal's `startLine` — a multi-line template can carry the
+        // `${` many lines past its own opening backtick, and a message
+        // claiming "starting at line X" must report where the thing it
+        // names actually starts.
+        const interpolationStartLine = line;
         const next = skipInterpolation(j + 2);
         if (next === -1) {
-          literalFailure = `unterminated \${...} interpolation starting at line ${startLine}`;
+          literalFailure = `unterminated \${...} interpolation starting at line ${interpolationStartLine}`;
           return -1;
         }
         j = next;
@@ -1022,7 +1028,7 @@ function tokenize(content: string, isJsxFile: boolean): TokenizeResult {
    * deliberate exception to "never silently drop". Returns the index one
    * past the matching closing tag's `>`.
    */
-  function scanJsxChildren(pos: number, tagName: string, depth: number): number {
+  function scanJsxChildren(pos: number, tagName: string, depth: number, openLine: number): number {
     let j = pos;
     let runStart = j;
     let runStartLine = line;
@@ -1045,10 +1051,16 @@ function tokenize(content: string, isJsxFile: boolean): TokenizeResult {
             k++;
           }
           if (k >= n) {
+            // `openLine` — the line of THIS element's own opening `<`,
+            // threaded in from `tryScanJsxElement` — not `runStartLine`
+            // (wherever the last child text run happened to start,
+            // which drifts arbitrarily far from the element's actual
+            // start the more children it has). A message claiming a
+            // position it did not compute is worse than no message.
             pushUnchecked(
-              runStartLine,
+              openLine,
               "unclosed-jsx-element",
-              `"<${tagName}>" (opened before line ${runStartLine}) has no matching closing tag before end of file`,
+              `"<${tagName}>" opened at line ${openLine} has no matching closing tag before end of file`,
             );
             return n;
           }
@@ -1060,7 +1072,11 @@ function tokenize(content: string, isJsxFile: boolean): TokenizeResult {
           // only be a nested element or a closing tag by JSX's own
           // grammar — unlike the top-level case, there is no legitimate
           // "actually this was TypeScript, not JSX" explanation here, so
-          // this genuinely is worth surfacing.
+          // this genuinely is worth surfacing. `line` here is accurate —
+          // `tryScanJsxElement` restores it to this exact position
+          // before returning null (see its own `backtrack`) — so this
+          // is the TRUE line of this `<`, not wherever its failed
+          // attempt gave up.
           pushUnchecked(
             line,
             "unrecognized-jsx-child",
@@ -1078,12 +1094,13 @@ function tokenize(content: string, isJsxFile: boolean): TokenizeResult {
       }
       if (cj === "{") {
         flush();
+        const exprStartLine = line; // THIS expression child's own `{`, not wherever the failed scan below gives up
         const end = skipJsxExpressionContainer(j + 1, depth);
         if (end === -1) {
           pushUnchecked(
-            line,
+            exprStartLine,
             "malformed-jsx-expression",
-            `"{...}" expression child starting at line ${line}, inside "<${tagName}>", never closed`,
+            `"{...}" expression child starting at line ${exprStartLine}, inside "<${tagName}>", never closed`,
           );
           return n;
         }
@@ -1101,12 +1118,14 @@ function tokenize(content: string, isJsxFile: boolean): TokenizeResult {
     }
     // Reached EOF still inside this element's children — flush whatever
     // text was collected (this element WAS committed as real JSX, so that
-    // text is trustworthy) and report the missing closing tag.
+    // text is trustworthy) and report the missing closing tag, at ITS
+    // OWN opening line (`openLine`), not wherever the scan happened to
+    // reach EOF.
     flush();
     pushUnchecked(
-      runStartLine,
+      openLine,
       "unclosed-jsx-element",
-      `"<${tagName}>" (opened before line ${runStartLine}) has no matching closing tag before end of file`,
+      `"<${tagName}>" opened at line ${openLine} has no matching closing tag before end of file`,
     );
     return n;
   }
@@ -1126,15 +1145,72 @@ function tokenize(content: string, isJsxFile: boolean): TokenizeResult {
    * opening-tag HEAD is found (a valid `>` or `/>`), this function is
    * committed: any failure from that point on (an unterminated attribute
    * value, an unclosed element) is real, reportable ambiguity, recorded
-   * via `pushUnchecked` — see `scanJsxChildren` and the two `pushUnchecked`
+   * via `pushUnchecked` — see `scanJsxChildren` and the `pushUnchecked`
    * call sites below.
+   *
+   * BACKTRACKING IS STATEFUL, so `backtrack()` restores every bit of
+   * shared state a failed attempt may have mutated before returning
+   * `null` — `line`, plus the shared `literals`/`jsxTexts`/`unchecked`
+   * arrays, truncated back to their lengths at entry. This matters for
+   * two independent reasons, both found in review (see this package's
+   * PR history for the concrete repro):
+   *
+   *   1. LINE NUMBERS. Once this function has consumed any whitespace
+   *      containing a newline (or delegated to `skipJsxExpressionContainer`
+   *      for an attribute value, which can span many lines), the shared
+   *      `line` counter has advanced past this element's own start. A
+   *      caller that reads `line` AFTER such a failure — to build an
+   *      `unchecked` message, or because the caller (the main loop) is
+   *      about to reprocess `pos + 1` onward as ordinary JS — would
+   *      either report the WRONG line (the failure/give-up position, not
+   *      the construct's actual start — the bug this comment exists to
+   *      prevent from coming back) or DOUBLE-COUNT every newline this
+   *      attempt already saw once (the main loop's own `\n` handling
+   *      would increment `line` again for the exact same characters when
+   *      it re-walks them from `pos + 1`), corrupting every subsequent
+   *      line number for the REST OF THE FILE.
+   *   2. DUPLICATE CANDIDATES. An attribute string/template value that
+   *      parses successfully (via `scanStringLiteral`/
+   *      `skipJsxExpressionContainer`) before a LATER attribute in the
+   *      same tag fails pushes a real entry onto `literals`/`jsxTexts`.
+   *      Backtracking without removing it, then letting the caller
+   *      reprocess the same source text as ordinary JS, would rediscover
+   *      that same literal a second time — a silent duplicate candidate.
+   *
+   * Restoring all four pieces of state makes "return null and let the
+   * caller reprocess from `pos + 1`" fully safe regardless of how far
+   * into a tag this function got before failing — the `unchecked` entry
+   * for the failure itself is pushed AFTER `backtrack()` runs, so it
+   * alone survives.
    */
   function tryScanJsxElement(pos: number, depth: number): number | null {
+    const entryLine = line;
+    const entryLiteralsCount = literals.length;
+    const entryJsxTextsCount = jsxTexts.length;
+    const entryUncheckedCount = unchecked.length;
+
+    function backtrack(): null {
+      line = entryLine;
+      literals.length = entryLiteralsCount;
+      jsxTexts.length = entryJsxTextsCount;
+      unchecked.length = entryUncheckedCount;
+      return null;
+    }
+
     if (depth > MAX_JSX_DEPTH) {
+      // backtrack() FIRST (a no-op here — nothing has been consumed yet
+      // at this depth-exceeded check, which runs before any parsing —
+      // but ordering it this way, identically to every other call site
+      // below, means this can never again accidentally truncate its OWN
+      // pushUnchecked call the way an earlier version of this fix did:
+      // backtrack() resets `unchecked.length` to its value at function
+      // entry, so pushing BEFORE calling it would silently erase the
+      // very entry just pushed).
+      backtrack();
       pushUnchecked(
-        line,
+        entryLine,
         "jsx-depth-exceeded",
-        `JSX nesting exceeded ${MAX_JSX_DEPTH} levels near line ${line} — scanning of this subtree was abandoned`,
+        `JSX nesting exceeded ${MAX_JSX_DEPTH} levels near line ${entryLine} — scanning of this subtree was abandoned`,
       );
       return null;
     }
@@ -1150,7 +1226,7 @@ function tokenize(content: string, isJsxFile: boolean): TokenizeResult {
       while (j < n && /[A-Za-z0-9_$.:-]/.test(content[j] as string)) j++;
       tagName = content.slice(start, j);
     } else {
-      return null; // `<=`, `< `, `<<`, a stray `<` — not JSX
+      return backtrack(); // `<=`, `< `, `<<`, a stray `<` — not JSX
     }
 
     let selfClosing = false;
@@ -1160,7 +1236,7 @@ function tokenize(content: string, isJsxFile: boolean): TokenizeResult {
           if (content[j] === "\n") line++;
           j++;
         }
-        if (j >= n) return null; // ran off the end before the head ever closed — not committed, silently not-JSX
+        if (j >= n) return backtrack(); // ran off the end before the head ever closed — not committed, silently not-JSX
 
         const cj = content[j] as string;
         if (cj === "/" && content[j + 1] === ">") {
@@ -1173,13 +1249,18 @@ function tokenize(content: string, isJsxFile: boolean): TokenizeResult {
           break;
         }
         if (cj === "{") {
-          // spread attribute: {...expr}
+          // spread attribute: {...expr}. `spreadStartLine` — THIS
+          // attribute's own `{`, captured before the (possibly
+          // multi-line) scan below — is what gets reported, never
+          // wherever that scan gave up.
+          const spreadStartLine = line;
           const end = skipJsxExpressionContainer(j + 1, depth);
           if (end === -1) {
+            backtrack();
             pushUnchecked(
-              line,
+              spreadStartLine,
               "malformed-jsx-tag",
-              `spread attribute on "<${tagName}>" starting at line ${line} never closed`,
+              `spread attribute on "<${tagName}>" starting at line ${spreadStartLine} never closed`,
             );
             return null;
           }
@@ -1197,6 +1278,9 @@ function tokenize(content: string, isJsxFile: boolean): TokenizeResult {
               k++;
             }
             const vc = content[k];
+            // `valueStartLine` — THIS attribute value's own opening
+            // quote/`{`, not wherever a multi-line scan below gives up.
+            const valueStartLine = line;
             if (vc === '"' || vc === "'") {
               // Scanned via `scanStringLiteral` (not skipped inline) so
               // this attribute value produces a real `Literal` — see
@@ -1208,10 +1292,11 @@ function tokenize(content: string, isJsxFile: boolean): TokenizeResult {
               // silently swallowed as opaque tag-head text.
               const end = scanStringLiteral(k);
               if (end === -1) {
+                backtrack();
                 pushUnchecked(
-                  line,
+                  valueStartLine,
                   "malformed-jsx-tag",
-                  `an attribute value on "<${tagName}>" starting at line ${line} was never terminated`,
+                  `an attribute value on "<${tagName}>" starting at line ${valueStartLine} was never terminated`,
                 );
                 return null;
               }
@@ -1219,28 +1304,29 @@ function tokenize(content: string, isJsxFile: boolean): TokenizeResult {
             } else if (vc === "{") {
               const end = skipJsxExpressionContainer(k + 1, depth);
               if (end === -1) {
+                backtrack();
                 pushUnchecked(
-                  line,
+                  valueStartLine,
                   "malformed-jsx-tag",
-                  `an attribute expression value on "<${tagName}>" starting at line ${line} never closed`,
+                  `an attribute expression value on "<${tagName}>" starting at line ${valueStartLine} never closed`,
                 );
                 return null;
               }
               j = end;
             } else {
-              return null; // `name=` followed by neither a quote nor `{` — not valid JSX attribute syntax
+              return backtrack(); // `name=` followed by neither a quote nor `{` — not valid JSX attribute syntax
             }
           } else {
             j = k; // boolean attribute, no value
           }
           continue;
         }
-        return null; // e.g. the `,` in TSX's `<T,>(x: T) => x` — not committed, silently not-JSX
+        return backtrack(); // e.g. the `,` in TSX's `<T,>(x: T) => x` — not committed, silently not-JSX
       }
     }
 
     if (selfClosing) return j;
-    return scanJsxChildren(j, isFragment ? "" : tagName, depth);
+    return scanJsxChildren(j, isFragment ? "" : tagName, depth, entryLine);
   }
 
   while (i < n) {

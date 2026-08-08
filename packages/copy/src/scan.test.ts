@@ -428,7 +428,7 @@ describe("extractCopyCandidates — JSX text nodes (issue #37)", () => {
     const { candidates, unchecked } = extractCopyCandidates(src, "Widget.tsx");
     expect(candidates).toEqual([expect.objectContaining({ kind: "jsx-text", normalized: "Hello" })]);
     expect(unchecked).toHaveLength(1);
-    expect(unchecked[0]).toMatchObject({ file: "Widget.tsx", kind: "unclosed-jsx-element" });
+    expect(unchecked[0]).toMatchObject({ file: "Widget.tsx", kind: "unclosed-jsx-element", line: 1 });
   });
 
   it("an unbalanced {expression} child is reported via `unchecked` — text found before it is kept", () => {
@@ -436,7 +436,7 @@ describe("extractCopyCandidates — JSX text nodes (issue #37)", () => {
     const { candidates, unchecked } = extractCopyCandidates(src, "Widget.tsx");
     expect(candidates).toEqual([expect.objectContaining({ kind: "jsx-text", normalized: "Count:" })]);
     expect(unchecked).toHaveLength(1);
-    expect(unchecked[0]).toMatchObject({ file: "Widget.tsx", kind: "malformed-jsx-expression" });
+    expect(unchecked[0]).toMatchObject({ file: "Widget.tsx", kind: "malformed-jsx-expression", line: 1 });
   });
 
   it("an unterminated JSX attribute EXPRESSION value is reported via `unchecked`, not a silent parse success", () => {
@@ -452,6 +452,70 @@ describe("extractCopyCandidates — JSX text nodes (issue #37)", () => {
     expect(unchecked.some((u) => u.kind === "malformed-jsx-tag")).toBe(true);
   });
 
+  // Regression: an `unchecked` entry must report the line the offending
+  // construct actually STARTS on, never wherever the scanner gave up
+  // (EOF, or the far end of a multi-line scan). Reporting a give-up
+  // position as if it were a start position is worse than saying
+  // nothing — in a large file it sends a reader to the wrong place
+  // entirely. Fixture: the broken construct is on line 4 of a 5-line
+  // file; the scanner only discovers the failure at EOF (line 5), so a
+  // naive "read `line` at failure time" implementation reports line 6
+  // (one past EOF) instead of 4.
+  it("`unchecked[].line` and the message text report the construct's own start line, not the scanner's give-up position", () => {
+    const src = "const a = 1;\nconst b = 2;\nconst c = 3;\nexport const A = () => <div attr={oops>Text</div>;\nconst d = 4;\n";
+    const { unchecked } = extractCopyCandidates(src, "Broken.tsx");
+    expect(unchecked).toHaveLength(1);
+    expect(unchecked[0]?.line).toBe(4);
+    expect(unchecked[0]?.detail).toContain("starting at line 4");
+    expect(unchecked[0]?.detail).not.toMatch(/line 5|line 6/);
+  });
+
+  // Same class of bug, the "unclosed element" shape: the element's own
+  // opening line must be reported, not wherever a long run of children
+  // happened to leave off before EOF (which, for a real multi-line
+  // component, can be dozens of lines away from the actual open tag).
+  it("an unclosed element far from EOF still reports its OWN opening line, not a drifted position near EOF", () => {
+    const src =
+      "const el = (\n" + // line 1
+      "  <div>\n" + // line 2 — <div> opens here
+      "    <p>First</p>\n" + // line 3
+      "    <p>Second</p>\n" + // line 4
+      "    <p>Third</p>\n"; // line 5 — file ends here, still inside <div>, no closing tag
+    const { unchecked } = extractCopyCandidates(src, "Widget.tsx");
+    expect(unchecked).toEqual([expect.objectContaining({ kind: "unclosed-jsx-element", line: 2 })]);
+  });
+
+  // Regression: backtracking out of a failed JSX attempt must not leave
+  // stray state behind. An earlier, successfully-parsed attribute value
+  // in the SAME (ultimately failed) tag must not be double-counted once
+  // the scanner backs out and reprocesses the same text as ordinary JS.
+  it("a failed JSX attempt does not duplicate an earlier attribute's literal candidate after backtracking", () => {
+    const src = 'const el = <div a="first value" b={neverCloses>Text</div>;\nconst real = "Real copy after the break";\n';
+    const { candidates, unchecked } = extractCopyCandidates(src, "Broken.tsx");
+    const firstValueHits = candidates.filter((c) => c.normalized === "first value");
+    expect(firstValueHits).toHaveLength(1); // not duplicated
+    expect(candidates.some((c) => c.normalized === "Real copy after the break" && c.line === 2)).toBe(true);
+    expect(unchecked).toHaveLength(1);
+  });
+
+  // Regression: a failed JSX attempt that consumed one or more newlines
+  // (skipping whitespace between attributes, or scanning a multi-line
+  // attribute expression) before backtracking must not leave the shared
+  // line counter double-incremented — every real candidate found AFTER
+  // the break must still land on its true, correct line number.
+  it("line numbers after a multi-line failed JSX attempt are not corrupted by backtracking", () => {
+    const src =
+      "const el = <div\n" + // line 1
+      '  a="val"\n' + // line 2
+      "  b={neverCloses>Text</div>;\n" + // line 3 — b's `{` is here
+      'const real = "Real copy on line 4";\n'; // line 4
+    const { candidates, unchecked } = extractCopyCandidates(src, "Broken.tsx");
+    expect(candidates).toEqual([
+      expect.objectContaining({ normalized: "Real copy on line 4", line: 4 }),
+    ]);
+    expect(unchecked).toEqual([expect.objectContaining({ kind: "malformed-jsx-tag", line: 3 })]);
+  });
+
   it("TSX generic-arrow-function syntax is silently treated as not-JSX — no unchecked noise", () => {
     const src = "const identity = <T,>(x: T): T => x;\n";
     const { candidates, excluded, unchecked } = extractCopyCandidates(src, "Widget.tsx");
@@ -465,6 +529,34 @@ describe("extractCopyCandidates — JSX text nodes (issue #37)", () => {
     const src = `const el = ${"<div>".repeat(depth)}${"</div>".repeat(depth)};\n`;
     const { unchecked } = extractCopyCandidates(src, "Widget.tsx");
     expect(unchecked.some((u) => u.kind === "jsx-depth-exceeded")).toBe(true);
+  });
+});
+
+describe("extractCopyCandidates — parseFailure position claims (issue #37 follow-up review)", () => {
+  // Same "report where the construct actually starts" discipline applies
+  // to `parseFailure` messages, not just `unchecked` entries. A
+  // multi-line template literal's `${...}` interpolation can sit many
+  // lines past the template's own opening backtick — the message must
+  // name the INTERPOLATION's own start line, not the enclosing
+  // template's.
+  it("an unterminated ${...} interpolation reports its OWN start line, not the enclosing template literal's", () => {
+    const src = "const s = `line one\nline two\nline three ${neverCloses;\n";
+    const { parseFailure } = extractCopyCandidates(src, "x.ts");
+    expect(parseFailure).toBeDefined();
+    expect(parseFailure).toContain("starting at line 3");
+    expect(parseFailure).not.toContain("starting at line 1");
+  });
+
+  it("an unterminated template literal itself still reports its own (correct) start line", () => {
+    const src = "const s = `line one\nline two\nnever closes;\n";
+    const { parseFailure } = extractCopyCandidates(src, "x.ts");
+    expect(parseFailure).toContain("starting at line 1");
+  });
+
+  it("an unterminated string reports its own start line (unaffected — strings never span lines)", () => {
+    const src = 'const a = 1;\nconst b = 2;\nconst s = "never closes;\n';
+    const { parseFailure } = extractCopyCandidates(src, "x.ts");
+    expect(parseFailure).toContain("starting at line 3");
   });
 });
 
