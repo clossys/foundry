@@ -32,6 +32,10 @@
       "types": "./dist/web/index.d.ts",
       "import": "./dist/web/index.js"
     },
+    "./email": {
+      "types": "./dist/email/index.d.ts",
+      "import": "./dist/email/index.js"
+    },
     "./image": {
       "types": "./dist/image/index.d.ts",
       "import": "./dist/image/index.js"

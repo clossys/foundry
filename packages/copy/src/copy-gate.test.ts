@@ -23,7 +23,7 @@ describe("checkCopyTraceability", () => {
       id: "test",
       entries: [{ id: "pagination.no-results", text: "No results", context: "Pagination — empty state" }],
     };
-    const result = checkCopyTraceability(candidates, citations, record, 1);
+    const result = checkCopyTraceability(candidates, citations, record, 1, []);
     expect(result.findings).toEqual([]);
     expect(result.matched).toBe(1);
     expect(result.candidatesScanned).toBe(1);
@@ -45,14 +45,14 @@ describe("checkCopyTraceability", () => {
         },
       ],
     };
-    const result = checkCopyTraceability(candidates, citations, record, 1);
+    const result = checkCopyTraceability(candidates, citations, record, 1, []);
     expect(result.findings).toEqual([]);
     expect(result.matched).toBe(1);
   });
 
   it("a candidate with no matching entry and no citation is an unregistered-copy finding", () => {
     const { candidates, citations } = candidatesFor('const x = "Totally new copy";\n');
-    const result = checkCopyTraceability(candidates, citations, emptyRecord, 1);
+    const result = checkCopyTraceability(candidates, citations, emptyRecord, 1, []);
     expect(result.findings).toHaveLength(1);
     expect(result.findings[0]).toMatchObject({ rule: "unregistered-copy", file: "x.ts", line: 1 });
     expect(result.matched).toBe(0);
@@ -66,14 +66,14 @@ describe("checkCopyTraceability", () => {
       id: "test",
       entries: [{ id: "pagination.no-results", text: "No results", context: "Pagination — empty state" }],
     };
-    const result = checkCopyTraceability(candidates, citations, record, 1);
+    const result = checkCopyTraceability(candidates, citations, record, 1, []);
     expect(result.findings).toEqual([]);
     expect(result.matched).toBe(1);
   });
 
   it("a copy:<id> citation to an id that does not exist in the record is its own finding — never a silent bypass", () => {
     const { candidates, citations } = candidatesFor('const x = "Some copy"; // copy:no.such.id\n');
-    const result = checkCopyTraceability(candidates, citations, emptyRecord, 1);
+    const result = checkCopyTraceability(candidates, citations, emptyRecord, 1, []);
     const rules = result.findings.map((f) => f.rule).sort();
     expect(rules).toEqual(["unknown-copy-citation", "unregistered-copy"]);
   });
@@ -81,7 +81,7 @@ describe("checkCopyTraceability", () => {
   it("a stray copy:<id> citation on a line with no candidate at all is still flagged if the id doesn't exist", () => {
     const { candidates, citations } = candidatesFor("// copy:some.rotted.id\nconst x = 1;\n");
     expect(candidates).toEqual([]); // nothing traceable on that line
-    const result = checkCopyTraceability(candidates, citations, emptyRecord, 1);
+    const result = checkCopyTraceability(candidates, citations, emptyRecord, 1, []);
     expect(result.findings).toEqual([
       expect.objectContaining({ rule: "unknown-copy-citation", line: 1 }),
     ]);
@@ -89,15 +89,15 @@ describe("checkCopyTraceability", () => {
 
   it("copy-gate:ignore suppresses a finding into `ignored`, never silently drops it", () => {
     const { candidates, citations } = candidatesFor('const x = "Not registered yet"; // copy-gate:ignore\n');
-    const result = checkCopyTraceability(candidates, citations, emptyRecord, 1);
+    const result = checkCopyTraceability(candidates, citations, emptyRecord, 1, []);
     expect(result.findings).toEqual([]);
     expect(result.ignored).toEqual([{ file: "x.ts", line: 1, snippet: '"Not registered yet"' }]);
   });
 
   it("an empty entries array is valid input — every candidate is simply untraced, never a thrown error", () => {
     const { candidates, citations } = candidatesFor('const x = "Anything at all";\n');
-    expect(() => checkCopyTraceability(candidates, citations, emptyRecord, 1)).not.toThrow();
-    const result = checkCopyTraceability(candidates, citations, emptyRecord, 1);
+    expect(() => checkCopyTraceability(candidates, citations, emptyRecord, 1, [])).not.toThrow();
+    const result = checkCopyTraceability(candidates, citations, emptyRecord, 1, []);
     expect(result.findings).toHaveLength(1);
   });
 
@@ -113,10 +113,33 @@ describe("checkCopyTraceability", () => {
       [...a.citations, ...b.citations],
       record,
       2,
+      [],
     );
     expect(result.matched).toBe(1);
     expect(result.findings).toEqual([expect.objectContaining({ file: "b.ts" })]);
     expect(result.candidatesScanned).toBe(2);
     expect(result.filesScanned).toBe(2);
+  });
+
+  it("passes `unchecked` straight through onto the result, unmodified — see scan.ts's UncheckedItem", () => {
+    const { candidates, citations } = candidatesFor('const x = "No results";\n');
+    const record: CopyRecord = {
+      id: "test",
+      entries: [{ id: "pagination.no-results", text: "No results", context: "Pagination — empty state" }],
+    };
+    const unchecked = [{ file: "Widget.tsx", line: 4, kind: "unclosed-jsx-element", detail: "test fixture" }];
+    const result = checkCopyTraceability(candidates, citations, record, 1, unchecked);
+    expect(result.unchecked).toEqual(unchecked);
+    // Passing through `unchecked` never changes findings/matched — the two
+    // concerns are independent; only `cli.ts` decides what a non-empty
+    // `unchecked` list means for an overall exit code.
+    expect(result.findings).toEqual([]);
+    expect(result.matched).toBe(1);
+  });
+
+  it("an empty `unchecked` list round-trips as empty, not omitted", () => {
+    const { candidates, citations } = candidatesFor('const x = "Anything";\n');
+    const result = checkCopyTraceability(candidates, citations, emptyRecord, 1, []);
+    expect(result.unchecked).toEqual([]);
   });
 });

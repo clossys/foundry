@@ -159,3 +159,68 @@ All notable changes to this package are documented here. Format follows
     under `src/internal/`, imported by relative path from whichever
     channel needs it, per this package's own "shared internals live in
     `src/internal/`" convention.
+- **`./email`** (`src/email/`): `renderEmailDocument(doc, options?)` —
+  resolves a `channel: "email"` `ComposeDocument`'s `bindings` into a
+  complete, self-contained, table-based HTML document plus a
+  deterministically-derived plain-text alternative, returning
+  `{ html, text, subject, preheader, warnings }`. Zero new runtime
+  dependencies, and no `react`/`@vespeneventures/ui` peer at all — email
+  HTML is built as a plain string (`src/email/internal/emailDocument.ts`),
+  following this package's own "prefer zero new dependencies" guidance.
+  - **Uses `@vespeneventures/compose`'s `resolveDocument`/`resolveCopy`
+    directly** — no hand-rolled copyId resolution (see `compose`'s own
+    `resolve-copy.ts`, written specifically so every renderer in this
+    ecosystem shares one answer to issue #43 rather than re-deriving it).
+  - **The geometry problem, made visible, not hidden**: `LayoutSpec.slots`'
+    `frame` is an absolute canvas position email cannot express at all —
+    every slot degrades to a single vertical stack, ordered by `frame.y`
+    then `frame.x` (`src/email/internal/geometry.ts`). Every real loss of
+    fidelity that causes — two side-by-side slots now stacked, a
+    less-than-full-width slot now rendering full width — is reported in
+    the result's `warnings: RenderWarning[]`, never silently absorbed. A
+    document with no `options.layout` at all (the common case for
+    `EmailMeta`-bearing documents — see `compose`'s own `LayoutSpec` doc
+    comment) degrades further, to binding order with zero warnings, since
+    there is no real geometry to lose in the first place.
+  - **A strengthened resolution bar versus `./web`**: `./web` only
+    requires slots marked `required: true` to resolve; `./email` requires
+    `resolveCopy`'s own `ok` flag — EVERY bound slot must resolve to real
+    text, `required` or not — treating anything less as
+    `RenderError("empty-output", ...)`. Flagged explicitly in
+    `renderEmailDocument.ts`'s own doc comment as a deliberate,
+    channel-specific strengthening, not an oversight.
+  - **Duplicate-slot-key policy**: `resolveDocument` deliberately does not
+    pick a winner when more than one binding targets the same slot key
+    (see its own doc comment). `./email`'s policy: last write wins — every
+    binding is still resolved and validated, but only the last-encountered
+    text is emitted, once, at that slot's row position.
+  - **Every color/size/font a literal value** — no CSS custom properties,
+    no `oklch()`, ever, anywhere in the emitted HTML — via this package's
+    shared `internal/tokens.ts` `flattenTokens`, read through
+    `src/email/internal/styles.ts`'s per-`ElementKind` style map.
+    Font-family token values (which quote multi-word names the standard
+    CSS way, e.g. `"Segoe UI"`) are rewritten to single quotes before
+    substitution, since the surrounding `style="..."` HTML attribute is
+    itself double-quoted.
+  - **MSO conditional comments**: a ghost centering `<table>` plus
+    `<o:OfficeDocumentSettings>` for Outlook's Word-based rendering
+    engine, and `mso-line-height-rule:exactly` on every text cell.
+  - **A hidden preheader** (`src/email/internal/escapeHtml.ts`'s
+    `buildHiddenPreheaderContent`): the real, escaped `EmailMeta.preheader`
+    text followed by 20 `&zwnj;&nbsp;` filler pairs, so an inbox preview
+    pane can't scavenge real body text into the preview line.
+  - **All resolved text HTML-escaped** (`escapeHtml`) before it ever
+    reaches the emitted document — `&`/`<`/`>`/`"`/`'`, `&` first so
+    nothing is double-escaped.
+  - **The plain-text alternative is derived from the same resolved texts
+    as the HTML** (`src/email/internal/plainText.ts`), never by stripping
+    tags off the HTML output — one shared source of truth, so the two
+    parts cannot silently drift apart.
+  - **Golden-output tests** (`src/email/golden-render.test.ts`): a real
+    `ComposeDocument` rendered end to end, asserted against the exact
+    emitted HTML string, plus an explicit `<script>alert(1)</script>`
+    escaping fixture and a regex assertion that no `oklch(` or `var(--`
+    ever survives into the output.
+  - No new `RenderErrorReason` members — `./email` reuses
+    `"wrong-channel"`, `"resolution-failed"`, and `"empty-output"`
+    unchanged from `./web`'s own set.

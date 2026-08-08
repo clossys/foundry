@@ -235,8 +235,9 @@ concern, so `validateCopyRecordShape` reports it as
 
 Registering copy by hand only works if every user-facing string actually
 gets registered. `scanCopySourceTree` walks a real source tree and extracts
-every string/template literal that looks like user-facing copy — as
-opposed to a class name, an import specifier, an object key, an
+every string/template literal, AND — in a `.tsx`/`.jsx` file — every raw
+JSX text node (`<span>Hello</span>`'s `Hello`), that looks like user-facing
+copy — as opposed to a class name, an import specifier, an object key, an
 `aria-*`/`data-*` attribute, an enum/variant token, or a developer-facing
 diagnostic (`console.error`, `throw new Error(...)`). `checkCopyTraceability`
 is the pure gate that checks every extracted candidate against a
@@ -254,12 +255,13 @@ import { checkCopyTraceability, readCopyRecord, scanCopySourceTree } from "@vesp
 
 const scan = scanCopySourceTree("./src"); // .ts, .tsx, .js, .jsx by default
 const { record } = readCopyRecord("./content/copy.json");
-const result = checkCopyTraceability(scan.candidates, scan.citations, record!, scan.filesScanned);
+const result = checkCopyTraceability(scan.candidates, scan.citations, record!, scan.filesScanned, scan.unchecked);
 
 for (const finding of result.findings) {
   console.error(`[${finding.rule}] ${finding.file}:${finding.line} — ${finding.message}`);
 }
-if (result.findings.length > 0) process.exitCode = 1;
+if (result.unchecked.length > 0) process.exitCode = 2; // see "Exit codes" below — never let this read as a pass
+else if (result.findings.length > 0) process.exitCode = 1;
 ```
 
 `checkCopyTraceability` is pure — it takes already-extracted
@@ -271,13 +273,37 @@ finding which literals are copy is a problem about source text, not about a
 file tree). **Fails closed**: an unreadable directory or file throws rather
 than being silently treated as empty.
 
+### JSX text nodes
+
+`<span>Hello</span>`'s `Hello` — a bare word between tags, never inside a
+quote at all — is found too, in a `.tsx`/`.jsx` file (a `.ts`/`.js` file is
+never scanned for JSX). This closed a real gap: `@vespeneventures/ui` in
+this same repo is entirely JSX, so a scanner that only understood string/
+template literals reported a clean pass over files that were, in large
+part, untracked user-facing copy (see issue #37). The tractable core is
+exactly what it sounds like — text between the `>` that closes an opening
+tag and the next `<` — with the same care this package's string/template
+handling already takes: mixed content (`<p>Hello <strong>there</strong>
+friend</p>`) becomes separate candidates, never concatenated across an
+element boundary and never dropping the tail; `{expression}` children
+(including a `{/* JSX comment */}`) are code, not text, and are skipped;
+common named (`&amp;`, `&nbsp;`, ...) and every numeric (`&#8212;`,
+`&#x2014;`) JSX entity is decoded; whitespace-only text between sibling
+tags is dropped without even being counted (ordinary indentation, not
+authored content); a punctuation/symbol-only text run is excluded the same
+way a decorative string literal already was. A `<` that is really a
+generic type argument (`Map<string, string>`) or a comparison (`a < b`) is
+never mistaken for JSX — see `scan.ts`'s own doc comment, "JSX TEXT NODES",
+for exactly how.
+
+What the scanner genuinely cannot resolve — an unclosed element, an
+unterminated attribute value or expression, JSX nesting deep enough to
+trip a safety bound — is reported via `ScanResult.unchecked`, never
+silently dropped. See "Exit codes" below for what a non-empty `unchecked`
+list means for `copy-check`.
+
 ### What the scanner does not catch
 
-- **Raw JSX text nodes** (`<span>Hello</span>` — a bare word between tags,
-  never inside a quote at all). The scanner only finds STRING and TEMPLATE
-  LITERALS, which have unambiguous lexical boundaries a hand-rolled
-  character scanner can find reliably; a text node's boundary needs real
-  JSX parsing to get right in general.
 - **A fully general regex-vs-division disambiguation** for a bare `/`. If
   the scanner's heuristic desyncs badly enough that quote balance goes
   wrong by end of file, the file is reported as a parse failure and
@@ -285,10 +311,15 @@ than being silently treated as empty.
 - **Full escape-sequence decoding.** Only the common escapes are unescaped
   for matching/reporting; an exotic escape (`\u{1F600}`, `\x41`) may be
   very slightly off in the reported text.
+- **An unrecognized named JSX entity** (something outside the common set
+  `&amp;`/`&lt;`/`&gt;`/`&quot;`/`&apos;`/`&nbsp;`/a handful of
+  typographic entities) is left verbatim in the candidate's text, not
+  guessed at.
 
-Every excluded literal, skipped file, and parse failure is counted and
-reported by reason (`ScanResult.excluded`/`skippedByDesign`/`parseFailures`)
-— never silently dropped, matching this package's "fails closed" discipline
+Every excluded literal, skipped file, parse failure, and unresolved JSX
+construct is counted and reported by reason
+(`ScanResult.excluded`/`skippedByDesign`/`parseFailures`/`unchecked`) —
+never silently dropped, matching this package's "fails closed" discipline
 for the registry half above.
 
 ### Citations and the escape hatch
@@ -330,9 +361,9 @@ Exit codes — the same three-state contract `@vespeneventures/strategy`'s
 
 | Code | Meaning |
 | --- | --- |
-| `0` | Ran cleanly: the copy record loaded, at least one file was actually scanned, zero findings. |
-| `1` | Ran cleanly, at least one finding (an unregistered copy candidate, or a citation to a copy id that does not exist). |
-| `2` | **Could not run** — bad input, the copy record missing/unreadable/invalid, the scan directory does not exist, the walk matched zero files, every matched file failed to tokenize, or an unreadable directory during the walk. Never conflated with `0`: a gate that reports "clean" after failing to actually check anything is worse than no gate at all. |
+| `0` | Ran cleanly: the copy record loaded, at least one file was actually scanned, zero findings, and `unchecked` is empty. |
+| `1` | Ran cleanly, at least one finding (an unregistered copy candidate, or a citation to a copy id that does not exist), and `unchecked` is empty. |
+| `2` | **Could not run** — bad input, the copy record missing/unreadable/invalid, the scan directory does not exist, the walk matched zero files, every matched file failed to tokenize, an unreadable directory during the walk, OR at least one `ScanResult.unchecked` entry: a JSX construct the scanner recognized but could not reliably classify. That last case is not a `1`-severity finding — it means part of an otherwise-matched file was never actually examined, the same "could not check" shape `parseFailures`/zero-files-scanned already are, just at finer grain. Every real finding is still printed first; `unchecked` only refuses to let the run read as clean or fully accounted-for. Never conflated with `0`: a gate that reports "clean" after failing to actually check everything is worse than no gate at all. |
 
 ## API
 
@@ -363,24 +394,25 @@ Exit codes — the same three-state contract `@vespeneventures/strategy`'s
 
 | Export | Kind | Purpose |
 | --- | --- | --- |
-| `scanCopySourceTree(root, options?)` | function | Walks `root` and extracts every string/template literal that looks like user-facing copy from each matching file (default extensions `.ts`, `.tsx`, `.js`, `.jsx`) into a `ScanResult`. **Fails closed** — throws rather than silently skipping an unreadable directory or file. |
-| `extractCopyCandidates(content, filePath)` | function | Pure — no I/O. The classification half `scanCopySourceTree` calls per file: tokenizes `content` and sorts every literal into a copy candidate or an excluded literal, with a stated reason. Exported so a test (or a consumer with its own file-gathering, e.g. only the files touched by a diff) can exercise it directly against source text, without a real directory walk. |
+| `scanCopySourceTree(root, options?)` | function | Walks `root` and extracts every string/template literal, and (in a `.tsx`/`.jsx` file) every JSX text node, that looks like user-facing copy from each matching file (default extensions `.ts`, `.tsx`, `.js`, `.jsx`) into a `ScanResult`. **Fails closed** — throws rather than silently skipping an unreadable directory or file. |
+| `extractCopyCandidates(content, filePath)` | function | Pure — no I/O. The classification half `scanCopySourceTree` calls per file: tokenizes `content` and sorts every literal/JSX text node into a copy candidate or an excluded literal, with a stated reason; `filePath`'s extension (`.tsx`/`.jsx` vs. anything else) decides whether JSX scanning runs at all. Exported so a test (or a consumer with its own file-gathering, e.g. only the files touched by a diff) can exercise it directly against source text, without a real directory walk. |
 | `PLACEHOLDER_SENTINEL` | const | The private-use-area code point every `${...}` interpolation (and, in `copy-gate.ts`, every `CopyEntry.text` `{name}` placeholder) is collapsed to before two literals' shapes are compared. Exported for a consumer normalizing text the same way outside `checkCopyTraceability`. |
 | `ScanOptions` | type | `{ extensions?: string[]; skipDirs?: string[] }` — `skipDirs` defaults to `node_modules`, `.git`, `dist`, `build`, `coverage`. |
-| `ScanResult` | type | `{ filesScanned, candidates, excluded, citations, skippedByDesign, parseFailures }` — what `scanCopySourceTree` returns. `filesScanned` is the count `cli.ts` requires to be `> 0` for a clean pass. |
-| `CopyCandidate` | type | `{ file, line, kind, raw, normalized, placeholderCount, citedIds, hasIgnoreMarker }` — one string/template literal `scanCopySourceTree` decided is in-scope. One entry of `ScanResult.candidates`. |
-| `ExcludedLiteral` | type | `{ file, line, raw, reason }` — one literal deliberately excluded from `candidates`, and why. One entry of `ScanResult.excluded`. |
-| `ExclusionReason` | type | `"import-or-require-specifier" \| "object-or-destructuring-key" \| "type-or-interface-context" \| "aria-or-data-attribute-value" \| "denylisted-attribute-or-prop-value" \| "classname-builder-argument" \| "developer-diagnostic-argument" \| "no-letters" \| "enum-or-token-shaped"`. |
+| `ScanResult` | type | `{ filesScanned, candidates, excluded, citations, skippedByDesign, parseFailures, unchecked }` — what `scanCopySourceTree` returns. `filesScanned` is the count `cli.ts` requires to be `> 0` for a clean pass. `unchecked` is never omitted — empty is the ordinary, expected outcome for a well-formed file. |
+| `CopyCandidate` | type | `{ file, line, kind: "string" \| "template" \| "jsx-text", raw, normalized, placeholderCount, citedIds, hasIgnoreMarker }` — one string/template literal or JSX text node `scanCopySourceTree` decided is in-scope. `"jsx-text"` has no quote/backtick delimiters in `raw` — it is the JSX-whitespace-collapsed, entity-decoded text itself. One entry of `ScanResult.candidates`. |
+| `ExcludedLiteral` | type | `{ file, line, raw, reason }` — one literal or JSX text run deliberately excluded from `candidates`, and why. One entry of `ScanResult.excluded`. |
+| `ExclusionReason` | type | `"import-or-require-specifier" \| "object-or-destructuring-key" \| "type-or-interface-context" \| "aria-or-data-attribute-value" \| "denylisted-attribute-or-prop-value" \| "classname-builder-argument" \| "developer-diagnostic-argument" \| "no-letters" \| "enum-or-token-shaped"`. The last one, `"enum-or-token-shaped"`, is never applied to a `"jsx-text"` candidate — see "JSX text nodes" above. |
 | `Citation` | type | `{ file, line, id }` — one `copy:<id>` marker found anywhere in a scanned file, independent of whether a candidate shares its line. One entry of `ScanResult.citations`. |
 | `SkippedFile` | type | `{ file, reason: "test-or-check-file" }` — a file matched by extension but never tokenized at all (`*.test.ts(x)`, `*.spec.ts(x)`, `*.check.ts(x)`, `*.d.ts`). One entry of `ScanResult.skippedByDesign`. |
 | `ParseFailure` | type | `{ file, detail }` — a file that was read but could not be reliably tokenized (unbalanced quote/comment/regex state at EOF). Contributes zero candidates. One entry of `ScanResult.parseFailures`. |
+| `UncheckedItem` | type | `{ file, line, kind, detail }` — one JSX construct the scanner recognized but could not reliably classify (an unclosed element, an unterminated attribute value/expression, JSX nesting past the depth safety bound, ...). One entry of `ScanResult.unchecked`. |
 
 ### Gate (`copy-gate.ts`)
 
 | Export | Kind | Purpose |
 | --- | --- | --- |
-| `checkCopyTraceability(candidates, citations, record, filesScanned)` | function | Pure. Evaluates every `candidate` against `record` — matched by registered text shape or a valid `copy:<id>` citation — and every `citation` against `record`'s real ids. Never throws. Returns a `CopyGateResult`. |
-| `CopyGateResult` | type | `{ findings: CopyGateFinding[]; ignored: CopyGateIgnored[]; filesScanned: number; candidatesScanned: number; matched: number }`. |
+| `checkCopyTraceability(candidates, citations, record, filesScanned, unchecked)` | function | Pure. Evaluates every `candidate` against `record` — matched by registered text shape or a valid `copy:<id>` citation — and every `citation` against `record`'s real ids. `unchecked` (see `ScanResult.unchecked`) is required and passed straight through onto the result, unmodified. Never throws. Returns a `CopyGateResult`. |
+| `CopyGateResult` | type | `{ findings: CopyGateFinding[]; ignored: CopyGateIgnored[]; filesScanned: number; candidatesScanned: number; matched: number; unchecked: UncheckedItem[] }`. |
 | `CopyGateFinding` | type | `{ rule: CopyGateRule; severity: "error"; file; line; message; snippet }`. |
 | `CopyGateRule` | type | `"unregistered-copy" \| "unknown-copy-citation"`. |
 | `CopyGateIgnored` | type | `{ file; line; snippet }` — one candidate suppressed via `copy-gate:ignore`. |
