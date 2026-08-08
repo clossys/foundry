@@ -5,6 +5,21 @@ All notable changes to this package are documented here. Format follows
 
 ## [0.1.0] - Unreleased
 
+### Changed
+
+- `dependencies["@vespeneventures/voice"]` bumped `~0.1.0` -> `~0.2.0`.
+  `voice` 0.2.0 added a template, a `VOICE_FIELDS` bindable/fixed catalog,
+  and an unbound-placeholder signal on `checkCopy`'s report — a `~0.x.0`
+  range is patch-only, so the old range stopped resolving the workspace
+  copy the moment `voice` crossed a minor version, which `npm ci` (unlike
+  a dev tree with `node_modules` already linked from a prior install)
+  catches immediately by reaching for the public registry and 404ing,
+  since these packages are private on GitHub Packages. Checked this
+  package's own test suite and fixtures against the new
+  `"voice:unbound-placeholder"` finding: every `VoiceRecord` fixture here
+  uses real (non-placeholder) values, so `checkCopyRecord`'s behavior is
+  unchanged — this is a pure compatibility-range fix, not a functional one.
+
 ### Added
 
 - Initial release: the vocabulary layer over `@vespeneventures/voice`'s
