@@ -21,7 +21,7 @@
  * `../golden-render.test.ts` possible at all.
  */
 
-import type { ElementKind } from "@vespeneventures/compose";
+import type { ElementKind, StyleBinding } from "@vespeneventures/compose";
 import { buildHiddenPreheaderContent, escapeHtml } from "./escapeHtml.js";
 import type { EmailPalette } from "./styles.js";
 import { readEmailToken, tdStyleForElement } from "./styles.js";
@@ -30,6 +30,8 @@ export interface EmailDocumentEntry {
   key: string;
   element: ElementKind;
   text: string;
+  /** The resolved slot's own `SlotSpec.style`, if it had one — read only for `style.typography` today (see `tdStyleForElement`'s own doc comment). */
+  style?: StyleBinding;
 }
 
 export interface BuildEmailHtmlInput {
@@ -41,7 +43,7 @@ export interface BuildEmailHtmlInput {
 
 /** One resolved slot's `<tr><td>...</td></tr>` row. `escapeHtml` is the ONLY thing standing between a slot's resolved text and this document's markup — see that module's own doc comment for exactly what it defends against. */
 function buildRow(entry: EmailDocumentEntry, palette: EmailPalette): string {
-  const style = tdStyleForElement(entry.element, palette);
+  const style = tdStyleForElement(entry.element, palette, entry.style, `slot "${entry.key}"`);
   return `<tr><td style="${style}">${escapeHtml(entry.text)}</td></tr>`;
 }
 

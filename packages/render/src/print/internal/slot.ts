@@ -1,8 +1,22 @@
 /**
  * One resolved `SlotSpec` + its text -> one absolutely-positioned `<div>`.
- * Combines this channel's three collaborators: `geometry.ts` for
- * frame->percent placement, `style.ts` for token-role->hex colour, and
- * `escape.ts` for safe text/attribute embedding.
+ * Combines this channel's collaborators: `geometry.ts` for frame->percent
+ * placement, `style.ts` for token-role->hex colour AND (see
+ * `resolveStyleTypography`) token-role->literal `font-size`/`font-family`,
+ * and `escape.ts` for safe text/attribute embedding.
+ *
+ * EVERY SLOT GETS A RESOLVED FONT SIZE/FAMILY, ALWAYS
+ * -----------------------------------------------------
+ * Unlike colour (`style.color`/`.background`, both optional — a slot with
+ * neither simply inherits whatever the page's own `color` is), typography
+ * is NEVER omitted: `resolveStyleTypography` always returns a real
+ * `fontSize`/`fontFamily`, because every `ElementKind` has a real default
+ * role in `../../internal/typography.ts`'s `ELEMENT_TYPOGRAPHY_ROLE`/
+ * `ELEMENT_FONT_FAMILY_ROLE`. Before this was wired in, `./print` emitted NO
+ * typography at all, leaving every slot's size/family to whatever default
+ * the receiving browser or print pipeline happened to pick — silently
+ * ignoring the design system's own type scale exactly the way `./image`/
+ * `./slides`' now-deleted `DEFAULT_FONT_SIZE_PX` placeholder table did.
  *
  * PAGE-BREAK CONTROL
  * -------------------
@@ -25,7 +39,7 @@ import type { SlotSpec } from "@vespeneventures/compose";
 import type { RenderPrintOptions } from "../types.js";
 import { escapeHtmlAttr, escapeHtmlText } from "./escape.js";
 import { frameToPercentStrings } from "./geometry.js";
-import { resolveStyleColors } from "./style.js";
+import { resolveStyleColors, resolveStyleTypography } from "./style.js";
 
 const ALIGN_TO_TEXT_ALIGN: Record<NonNullable<SlotSpec["align"]>, string> = {
   start: "start",
@@ -69,6 +83,7 @@ export function buildSlotHtml(
 ): string {
   const { left, top, width, height } = frameToPercentStrings(spec.frame);
   const { color, backgroundColor } = resolveStyleColors(spec.style, `slot "${spec.key}"`, flat);
+  const { fontSize, fontFamily } = resolveStyleTypography(spec.element, spec.style, `slot "${spec.key}"`, flat);
 
   const styleParts = [
     "position:absolute",
@@ -78,6 +93,8 @@ export function buildSlotHtml(
     `height:${height}%`,
     ...(spec.vAlign !== undefined ? ["display:flex", "flex-direction:column", `justify-content:${VALIGN_TO_JUSTIFY_CONTENT[spec.vAlign]}`] : []),
     ...(spec.align !== undefined ? [`text-align:${ALIGN_TO_TEXT_ALIGN[spec.align]}`] : []),
+    `font-family:${fontFamily}`,
+    `font-size:${fontSize}`,
     ...(color !== undefined ? [`color:${color}`] : []),
     ...(backgroundColor !== undefined ? [`background-color:${backgroundColor}`] : []),
     ...breakDeclarations(spec.key, options),

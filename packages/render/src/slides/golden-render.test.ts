@@ -10,6 +10,12 @@ import type { ComposeDocument } from "@vespeneventures/compose";
 import { renderSlidesDeck } from "./renderSlidesDeck.js";
 import type { SlidesDeckInput } from "./types.js";
 
+// See `../image/golden-render.test.ts`'s own identical constants — the
+// real, XML-attribute-escaped `--font-display`/`--font-body` literals this
+// shared `../image/engine.ts`+`renderSlots.ts` pipeline now emits for every
+// `./image`/`./slides` text slot.
+const FONT_DISPLAY_XML = 'system-ui, ui-sans-serif, -apple-system, &quot;Segoe UI&quot;, sans-serif';
+
 describe("golden: a two-slide 16:9 deck with notes", () => {
   const titleSlide: ComposeDocument = {
     id: "title",
@@ -57,9 +63,9 @@ describe("golden: a two-slide 16:9 deck with notes", () => {
       '<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">' +
         "<title>title</title>" +
         '<rect x="0" y="0" width="1920" height="1080" fill="#f5f5f5" />' +
-        '<g data-slot="title"><text x="960" y="464" font-size="40" font-family="sans-serif" fill="#1a1a1a" text-anchor="middle">' +
+        `<g data-slot="title"><text x="960" y="454.4" font-size="28" font-family="${FONT_DISPLAY_XML}" fill="#1a1a1a" text-anchor="middle">` +
         '<tspan x="960" dy="0">Acme Quarterly Review</tspan></text></g>' +
-        '<g data-slot="subtitle"><text x="960" y="670.4" font-size="28" font-family="sans-serif" fill="#3d3d3d" text-anchor="middle">' +
+        `<g data-slot="subtitle"><text x="960" y="662.4" font-size="18" font-family="${FONT_DISPLAY_XML}" fill="#3d3d3d" text-anchor="middle">` +
         '<tspan x="960" dy="0">Q3 2026</tspan></text></g>' +
         "</svg>",
     );
@@ -70,20 +76,20 @@ describe("golden: a two-slide 16:9 deck with notes", () => {
     expect(result.slides[1]!.svg).toBe(
       '<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">' +
         "<title>closing</title>" +
-        '<g data-slot="title"><text x="960" y="518" font-size="40" font-family="sans-serif" fill="#111111" text-anchor="middle">' +
+        `<g data-slot="title"><text x="960" y="508.4" font-size="28" font-family="${FONT_DISPLAY_XML}" fill="#111111" text-anchor="middle">` +
         '<tspan x="960" dy="0">Thank you</tspan></text></g>' +
         "</svg>",
     );
   });
 
-  it("HAND-COMPUTED: title slot {x:0.1,y:0.4,w:0.8,h:0.2} on 1920x1080 -> x=192,y=432,w=1536,h=216; align:center -> anchor x = 192+1536/2 = 960; baseline = 432 + 40*0.8 = 464", () => {
+  it("HAND-COMPUTED: title slot {x:0.1,y:0.4,w:0.8,h:0.2} on 1920x1080 -> x=192,y=432,w=1536,h=216; align:center -> anchor x = 192+1536/2 = 960; \"heading\" resolves to --text-h1=28px -> baseline = 432 + 28*0.8 = 454.4", () => {
     const result = renderSlidesDeck(deck);
-    expect(result.slides[0]!.svg).toContain('x="960" y="464"');
+    expect(result.slides[0]!.svg).toContain('x="960" y="454.4"');
   });
 
-  it("HAND-COMPUTED: subtitle slot {x:0.1,y:0.6,w:0.8,h:0.1} on 1920x1080 -> y=648; baseline = 648 + 28*0.8 = 670.4", () => {
+  it("HAND-COMPUTED: subtitle slot {x:0.1,y:0.6,w:0.8,h:0.1} on 1920x1080 -> y=648; \"subheading\" resolves to --text-h2=18px -> baseline = 648 + 18*0.8 = 662.4", () => {
     const result = renderSlidesDeck(deck);
-    expect(result.slides[0]!.svg).toContain('y="670.4"');
+    expect(result.slides[0]!.svg).toContain('y="662.4"');
   });
 
   it("carries deck-wide notes through to each matching slide, keyed by slide id", () => {

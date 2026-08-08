@@ -5,6 +5,85 @@ All notable changes to this package are documented here. Format follows
 
 ## [0.1.0] - Unreleased
 
+### Changed
+
+- `@vespeneventures/tokens` dependency range bumped `~0.5.0` -> `~0.6.0`:
+  that package's `0.6.0` is a MINOR release (a `0.x` caret/tilde range is
+  patch-only, so the old range would not have matched it) adding
+  `checkBrandFileCoverage`/`readBrandCss` — this package does not use
+  either new export in its own source, but `src/internal/
+  tokens-brand-file-coverage-agreement.test.ts` (new) imports
+  `checkBrandFileCoverage` from `@vespeneventures/tokens` to assert it
+  agrees with this package's own `flattenTokens` on the non-brandable-
+  override and unknown-slot rules, run against every real non-brandable
+  token in `TOKENS`.
+
+### Fixed
+
+- **Every non-web channel now resolves REAL typography from
+  `@vespeneventures/tokens`, and `StyleBinding.typography` finally does
+  something.** `@vespeneventures/tokens` ships a full typography scale (13
+  `text` size tokens, 3 `font` family tokens, 4 `tracking` tokens) that,
+  before this change, two of this package's four non-web channels ignored
+  entirely:
+  - `./print` emitted **no** `font-size`/`font-family` at all — every slot
+    inherited whatever default the receiving browser or print pipeline
+    happened to pick.
+  - `./image`/`./slides` used a hand-picked, undocumented
+    `DEFAULT_FONT_SIZE_PX` pixel table (and a generic `"sans-serif"`
+    family) whose own doc comment falsely claimed there was "no real
+    typography token to resolve instead" — there was; nobody had wired it
+    up.
+  - `./email` was already reading real `--text-*`/`--font-*` token values
+    per `ElementKind`, but never looked at `StyleBinding.typography` at
+    all — a document that set it got silently ignored.
+  - `StyleBinding.typography` (`@vespeneventures/compose`'s frozen
+    contract) was accepted since that package's first release and read by
+    NOBODY, anywhere in this package.
+- **New shared module: `src/internal/typography.ts`** — `internal/
+  tokens.ts`'s sibling for typography. `resolveElementTypography(element,
+  style, ownerDescription, flat)` is the one entry point every channel
+  now calls: `style?.typography` (a token role name) overrides a
+  documented `ELEMENT_TYPOGRAPHY_ROLE[element]` default when present,
+  resolved via the SAME `flattenTokens`/`resolveTokenRef` every other
+  token lookup in this package uses — no second, parallel token-reading
+  path. `resolveElementFontFamily(element, flat)` does the same for
+  `ELEMENT_FONT_FAMILY_ROLE`. Every entry in both maps is asserted, in
+  `typography.test.ts`, to be a real key in `@vespeneventures/tokens`'
+  `TOKENS` registry — a token rename that isn't mirrored here now fails
+  that test loudly instead of shipping a font-size of `undefined`.
+- **Never a silent fallback size** — the same discipline `internal/
+  tokens.ts` already holds for colour: an unknown or non-pixel-size
+  `style.typography` role throws `RenderError("unknown-style-role", ...)`
+  (the reason already used for an unknown `.color`/`.background` role in
+  `./print` — reused here rather than adding a new one), never a
+  plausible-looking wrong font size.
+- **`./image`/`./slides`**: `engine.ts`'s `DEFAULT_FONT_SIZE_PX` and
+  `DEFAULT_FONT_FAMILY` are DELETED (a **breaking change** to this
+  package's own `./image` subpath export surface — both consts are no
+  longer exported; this package has zero external consumers today, so
+  nothing downstream breaks). `renderSlots.ts` now resolves real
+  size/family per slot, and — this is the part a test alone wouldn't
+  catch — passes the RESOLVED size into `wrapText`, so text-wrapping and
+  overflow warnings reflect the size actually painted rather than a stale
+  placeholder number. Every golden SVG fixture's `font-size`/`font-family`
+  changed accordingly (`heading` 40px -> 28px, `body`/`list`/`button`/
+  `fill` 16px -> 15px, `eyebrow` 13px -> 12px, `subheading`/`logo` 28px ->
+  18px, `"sans-serif"` -> the real `--font-display`/`--font-body` stacks,
+  XML-entity-escaped).
+- **`./print`**: every slot's `<div>` now gets a real, resolved
+  `font-family`/`font-size` declaration (`internal/style.ts`'s new
+  `resolveStyleTypography`) — previously literally absent from the
+  emitted CSS. Both golden HTML fixtures' `style="..."` attributes
+  changed accordingly.
+- **`./email`**: `SlotSpec.style` now flows through the previously
+  style-blind `GeometryEntry`/`EmailDocumentEntry` pipeline so
+  `style.typography` can override `tdStyleForElement`'s per-`ElementKind`
+  default size; the default mapping itself is unchanged (still exactly
+  the size/family pairing this channel shipped with), so every existing
+  golden HTML fixture's bytes are unchanged — this is additive, not a
+  behavior change for a document that never set `style.typography`.
+
 ### Added
 
 - **`./image` and `./slides`** (`src/image/`, `src/slides/`): render a
