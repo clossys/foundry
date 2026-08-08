@@ -70,6 +70,7 @@ describe("resolveCopy — FIXTURE: an unresolvable lookup result must not be tre
       texts: [],
       unresolvedCopyIds: ["missing.id"],
       unchecked: [],
+      deferredToAssets: [],
       literalCount: 0,
       lookupCount: 0,
     });
@@ -106,6 +107,7 @@ describe("resolveCopy — FIXTURE: ok is true ONLY when texts.length > 0 AND unr
       texts: [],
       unresolvedCopyIds: [],
       unchecked: [],
+      deferredToAssets: [],
       literalCount: 0,
       lookupCount: 0,
     });
@@ -139,6 +141,7 @@ describe("resolveCopy — FIXTURE: lookup is not a function", () => {
       texts: [],
       unresolvedCopyIds: [],
       unchecked: ["heading", "body"],
+      deferredToAssets: [],
       literalCount: 0,
       lookupCount: 0,
     });
@@ -221,5 +224,64 @@ describe("resolveCopy — literalCount / lookupCount", () => {
     const copyResult = resolveCopy(result, () => "Resolved Heading");
     expect(copyResult.literalCount).toBe(1); // "body"
     expect(copyResult.lookupCount).toBe(1); // "heading"
+  });
+});
+
+describe("resolveCopy — 0.3.0: an assetId binding is deferred, never treated as failed text", () => {
+  it("a binding whose only source is assetId lands in deferredToAssets, not texts or unchecked, and lookup is never called for it", () => {
+    const lookup = vi.fn(() => "should not be used");
+    const result = resultOf([
+      { key: "heading", spec: twoSlotLayout.slots[0], binding: { slot: "heading", assetId: "marketing.hero" } },
+    ]);
+    const copyResult = resolveCopy(result, lookup);
+    expect(copyResult.deferredToAssets).toEqual(["heading"]);
+    expect(copyResult.texts).toEqual([]);
+    expect(copyResult.unchecked).toEqual([]);
+    expect(copyResult.unresolvedCopyIds).toEqual([]);
+    expect(lookup).not.toHaveBeenCalled();
+  });
+
+  it("PROOF: a document made entirely of assetId bindings resolves ok: true from resolveCopy's own point of view", () => {
+    const result = resultOf([
+      { key: "heading", spec: twoSlotLayout.slots[0], binding: { slot: "heading", assetId: "marketing.hero" } },
+      { key: "body", spec: twoSlotLayout.slots[1], binding: { slot: "body", assetId: "marketing.footer-logo" } },
+    ]);
+    const copyResult = resolveCopy(result, () => "should never be called");
+    expect(copyResult.deferredToAssets).toEqual(["heading", "body"]);
+    expect(copyResult.texts).toEqual([]);
+    expect(copyResult.ok).toBe(true);
+  });
+
+  it("PROOF (counterpart): a resolved list that is entirely empty is still ok: false — deferral alone does not manufacture a pass out of nothing", () => {
+    const copyResult = resolveCopy(resultOf([]), () => "unused");
+    expect(copyResult.deferredToAssets).toEqual([]);
+    expect(copyResult.texts).toEqual([]);
+    expect(copyResult.ok).toBe(false);
+  });
+
+  it("a mixed document (one copyId, one assetId) resolves ok: true when the copyId resolves", () => {
+    const result = resultOf([
+      { key: "heading", spec: twoSlotLayout.slots[0], binding: { slot: "heading", copyId: "one-pager.heading" } },
+      { key: "body", spec: twoSlotLayout.slots[1], binding: { slot: "body", assetId: "marketing.hero" } },
+    ]);
+    const copyResult = resolveCopy(result, () => "Real Heading Text");
+    expect(copyResult.texts).toHaveLength(1);
+    expect(copyResult.deferredToAssets).toEqual(["body"]);
+    expect(copyResult.ok).toBe(true);
+  });
+
+  it("an empty assetId does not count as a legitimate single source — sourceCount still counts it as present, so a SECOND field present is what actually fires ambiguity; assetId alone (even empty) alone is not ambiguous and is deferred", () => {
+    // Mirrors validate.ts's own reading: presentCount treats `!== undefined`
+    // as "present" regardless of emptiness — binding-asset-id-shape (not
+    // binding-source-exclusive) is what would flag the empty string itself.
+    // resolveCopy does not re-run shape validation; it only asks "is this
+    // the single present source", so an empty assetId alone still defers.
+    const result = resultOf([{ key: "heading", spec: twoSlotLayout.slots[0], binding: { slot: "heading", assetId: "" } }]);
+    const copyResult = resolveCopy(result, () => "unused");
+    // hasAssetId requires non-empty, so an empty assetId is NOT counted as
+    // a present source by resolveCopy's own hasAssetId — this binding has
+    // zero sources from resolveCopy's point of view, so it is unchecked.
+    expect(copyResult.unchecked).toEqual(["heading"]);
+    expect(copyResult.deferredToAssets).toEqual([]);
   });
 });

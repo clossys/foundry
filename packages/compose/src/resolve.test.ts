@@ -92,7 +92,7 @@ describe("resolveDocument — issue #43: a binding that matched a slot but produ
     const finding = result.bindingFindings.find((f) => f.rule === "binding-source-exclusive");
     expect(finding).toBeDefined();
     expect(finding?.severity).toBe("error");
-    expect(finding?.message).toContain("neither");
+    expect(finding?.message).toContain("none are present");
   });
 
   it("FIXTURE: a binding with BOTH copyId and value (ambiguous) — reports ok: false via bindingFindings", () => {
@@ -106,7 +106,7 @@ describe("resolveDocument — issue #43: a binding that matched a slot but produ
     const finding = result.bindingFindings.find((f) => f.rule === "binding-source-exclusive");
     expect(finding).toBeDefined();
     expect(finding?.severity).toBe("error");
-    expect(finding?.message).toContain("both");
+    expect(finding?.message).toContain("2 are present");
   });
 
   it("FIXTURE: value: \"\" (empty string) — reports ok: false via bindingFindings", () => {
