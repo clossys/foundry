@@ -23,11 +23,23 @@
  *       invalid, the scan directory does not exist, the walk matched zero
  *       files, every matched file failed to tokenize (so, despite files
  *       matching, zero were actually scanned), an unreadable directory
- *       during the walk, or an unexpected exception. Kept strictly
- *       distinct from 1 — a gate that reports "clean" after failing to run
- *       is worse than no gate at all. This is the explicit third state
- *       this gate is built around: "could not check" must never be
- *       reported as a pass.
+ *       during the walk, an unexpected exception, OR — as of the JSX
+ *       text-node scanning added for issue #37 — at least one
+ *       `ScanResult.unchecked` entry: a JSX construct the scanner
+ *       recognized but could not reliably classify. That last case lands
+ *       here, not as a `1`-severity finding, deliberately: `unchecked`
+ *       means a REGION of an otherwise-matched, otherwise-parseable file
+ *       was never actually examined for copy — the exact same shape of
+ *       problem `parseFailures`/`filesScanned === 0` already are, just at
+ *       finer grain (part of one file, rather than a whole file), so it
+ *       gets the same answer they do. Every real finding is still printed
+ *       first (see `printGateReport`) — `unchecked` does not suppress
+ *       what WAS learned, it just refuses to let that partial picture
+ *       read as "clean" the way a bare exit `0` would. Kept strictly
+ *       distinct from 1 — a gate that reports "clean" after failing to
+ *       run, OR after only partially running, is worse than no gate at
+ *       all. This is the explicit third state this gate is built around:
+ *       "could not check" must never be reported as a pass.
  */
 
 import { existsSync, realpathSync, statSync } from "node:fs";
@@ -138,6 +150,19 @@ function printScanAccounting(scan: ScanResult): void {
     console.error(`${scan.parseFailures.length} file(s) could NOT be parsed and were NOT scanned for copy:`);
     for (const p of scan.parseFailures) console.error(`  ${p.file}: ${p.detail}`);
   }
+
+  // JSX constructs the scanner recognized but could not classify — the
+  // same "could not check" severity as a parse failure (console.error,
+  // not console.log), because it means the same thing: some part of a
+  // matched file was never actually examined for copy. `main()` below is
+  // what turns a non-empty list here into exit code 2 — see its own doc
+  // comment for why.
+  if (scan.unchecked.length > 0) {
+    console.error(
+      `${scan.unchecked.length} JSX construct(s) recognized but NOT reliably classified — coverage for these is incomplete:`,
+    );
+    for (const u of scan.unchecked) console.error(`  [${u.kind}] ${u.file}:${u.line}  ${u.detail}`);
+  }
 }
 
 function printGateReport(result: CopyGateResult): void {
@@ -216,8 +241,17 @@ export function main(argv: string[]): number {
     return 2;
   }
 
-  const result = checkCopyTraceability(scan.candidates, scan.citations, read.record, scan.filesScanned);
+  const result = checkCopyTraceability(scan.candidates, scan.citations, read.record, scan.filesScanned, scan.unchecked);
   printGateReport(result);
+
+  // `unchecked` wins over everything else in the exit-code decision — see
+  // this file's own top doc comment for why it is a `2`, not a `1`: it
+  // means part of a matched file was never actually examined, which is
+  // "could not run [fully]", not "ran and found something wrong". Every
+  // finding was still printed above, so nothing real is hidden — this
+  // only refuses to let the run as a whole read as clean or as
+  // fully-accounted-for.
+  if (result.unchecked.length > 0) return 2;
 
   return result.findings.length > 0 ? 1 : 0;
 }
