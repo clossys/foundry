@@ -19,6 +19,9 @@ export type {
   VoiceFinding,
 } from "./types.js";
 
+export { VOICE_FIELDS, TEMPLATE_PLACEHOLDER } from "./fields.js";
+export type { VoiceFieldDefinition } from "./fields.js";
+
 export { validateVoiceRecordShape, parseVoiceRecord } from "./schema.js";
 
 export { checkCopy, auditClaimsRegister } from "./checker.js";

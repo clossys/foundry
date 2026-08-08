@@ -1,6 +1,6 @@
 {
-  "name": "@vespeneventures/voice",
-  "version": "0.2.0",
+  "name": "@vespeneventures/ledger",
+  "version": "0.1.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -11,39 +11,43 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    },
-    "./voice-record.template.jsonc": "./templates/voice-record.template.jsonc"
+    }
+  },
+  "bin": {
+    "ledger-check": "./dist/cli.js"
   },
   "files": [
     "dist",
     "src",
     "!src/**/*.test.ts",
-    "templates",
     "README.md",
     "LICENSE"
   ],
   "sideEffects": false,
-  "description": "The verbal contract: a plain-TypeScript vocabulary for voice rules (person, tense, formality, tone), a glossary of forbidden/preferred terms, and a claims register — plus a checker that scans a piece of copy against it and reports whether it's still an unbound copy of the shipped template. This package ships the machinery, never anyone's actual voice; each consumer binds its own rules, glossary, and claims, the same split @vespeneventures/tokens uses for brand.css.",
+  "description": "The return path: an append-only record of what was published, to which channel, when, derived from which revision of strategy, citing which facts — and a drift checker that answers whether a cited fact still holds, without ever importing @vespeneventures/strategy. Records outcomes and makes them attributable; carries no opinion about whether an outcome is good and writes nothing back automatically.",
   "keywords": [
-    "voice",
-    "tone",
-    "glossary",
-    "claims",
-    "content-checker",
+    "ledger",
+    "append-only",
+    "attribution",
+    "drift",
+    "content-addressed",
     "typescript"
   ],
   "author": "Calvin Hung",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/vespeneventures/foundry.git",
-    "directory": "packages/voice"
+    "directory": "packages/ledger"
   },
   "bugs": {
     "url": "https://github.com/vespeneventures/foundry/issues"
   },
-  "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/voice#readme",
+  "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/ledger#readme",
   "engines": {
     "node": ">=20"
+  },
+  "dependencies": {
+    "@vespeneventures/policy": "~0.1.0"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
