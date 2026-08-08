@@ -19,6 +19,38 @@
  * contract field with no `SlidesMeta` equivalent), while `./slides` adds
  * nothing extra per slide — so the two channels' own top-level functions
  * each build their own `<svg>` wrapper around this function's `markup`.
+ *
+ * TOTAL LOSS IS A FAILURE, NOT A WARNING — EVEN WHEN NO SLOT IS `required`
+ * -----------------------------------------------------------------------
+ * A single optional slot whose binding never produces text is PARTIAL loss:
+ * it is omitted, reported as a warning, and the render proceeds — the rest
+ * of the canvas still means something. But when EVERY resolved binding in
+ * the whole document fails to produce text, "the rest of the canvas" is
+ * nothing: without a required-slot check to catch it (a document can
+ * legally have zero `required: true` slots), this used to fall straight
+ * through both the required-slot check above AND the per-slot warning loop
+ * below, returning a syntactically valid but entirely blank `<svg>` as a
+ * SUCCESS. That is exactly the failure this package's own "never silent"
+ * bar exists to catch — the same rule `@vespeneventures/compose`'s own
+ * `resolveDocument` enforces by refusing `ok: true` when `resolved.length
+ * === 0` (see its doc comment, "THE BAR THIS FILE IS BUILT AGAINST"):
+ * "resolved nothing" and "resolved cleanly" must never look the same to a
+ * caller that only checks whether the call threw.
+ *
+ * The precise rule this function applies, stated once so it never has to
+ * be reverse-engineered from behavior: after resolution, if NOT ONE
+ * resolved binding produced usable text (`textByKey.size === 0`) AND the
+ * layout declares NO canvas-level `background` (`layout.background.
+ * background`), there is nothing left to paint at all, and this function
+ * throws `RenderError("empty-output", ...)` naming the document and every
+ * omitted slot. A document with a real `background` but no text slots is
+ * NOT empty by this rule — a background-only canvas is legitimate,
+ * deliberate content, not an accidental total loss, and rendering ONE such
+ * document must never throw just because it happens to have no text in
+ * it. This is deliberately NOT "count the `<text>` elements in the
+ * output" — that would conflate a rendering detail (how many DOM nodes a
+ * slot happens to produce) with the real question (did resolution produce
+ * anything a caller asked for).
  */
 
 import { requiredSlotKeys, resolveCopy, resolveDocument } from "@vespeneventures/compose";
@@ -82,8 +114,23 @@ export function resolveCanvasLayout(
     );
   }
 
-  const warnings: string[] = [];
   const attemptedKeys = new Set(result.resolved.map((r) => r.key));
+
+  // TOTAL LOSS, NOT PARTIAL — see this file's own top comment. A layout
+  // with a real canvas-level background is never "empty" even with zero
+  // resolved text slots; a layout with no background AND zero resolved
+  // text slots has nothing left to paint at all.
+  const flat = buildFlatTokenMap(options.tokenOverrides);
+  const backgroundFill = layout.background?.background !== undefined ? resolveColorRole(layout.background.background, flat, "none") : undefined;
+
+  if (textByKey.size === 0 && backgroundFill === undefined) {
+    throw new RenderError(
+      "empty-output",
+      `resolved document "${doc.id}" against its layout, but every matched slot produced no usable text (unresolved copyId(s), or empty/ambiguous binding(s)) and the layout declares no background — there is nothing left to render. Omitted slot(s): ${[...attemptedKeys].join(", ")}.`,
+    );
+  }
+
+  const warnings: string[] = [];
   for (const key of attemptedKeys) {
     if (!textByKey.has(key) && !required.includes(key)) {
       warnings.push(
@@ -92,11 +139,9 @@ export function resolveCanvasLayout(
     }
   }
 
-  const flat = buildFlatTokenMap(options.tokenOverrides);
   const { markup: slotsMarkup, overflowWarnings } = renderSlotsToSvg(layout, textByKey, canvas, flat);
   warnings.push(...overflowWarnings);
 
-  const backgroundFill = layout.background?.background !== undefined ? resolveColorRole(layout.background.background, flat, "none") : undefined;
   const backgroundRect =
     backgroundFill !== undefined ? `<rect x="0" y="0" width="${canvas.width}" height="${canvas.height}" fill="${backgroundFill}" />` : "";
 

@@ -117,6 +117,53 @@ describe("refusal paths", () => {
     });
     expect(() => renderImageDocument(doc, { resolveCopyId: () => undefined })).toThrow(RenderError);
   });
+
+  it("empty output: EVERY slot fails to resolve and NONE is required — total loss, not partial — must throw, not return a blank canvas", () => {
+    // The exact fixture from the coordinator's report: a single, non-required
+    // slot whose copyId resolves to "" (empty string — treated as
+    // unresolved by resolveCopy). No slot is required, so the old
+    // required-only check never fired, and no layout.background was given
+    // either, so there is nothing left to render at all.
+    const doc: ComposeDocument = {
+      id: "i2",
+      channel: "image",
+      template: "T",
+      meta: { channel: "image", width: 100, height: 100, format: "svg", alt: "A" },
+      bindings: [{ slot: "s", copyId: "m" }],
+      layout: { slots: [{ key: "s", element: "body", frame: { x: 0, y: 0, w: 1, h: 1 } }] },
+    };
+
+    try {
+      renderImageDocument(doc, { resolveCopyId: () => "" });
+      expect.unreachable("should have thrown empty-output — a document with zero renderable content must never return a blank canvas as a success");
+    } catch (error) {
+      expect(error).toBeInstanceOf(RenderError);
+      expect((error as RenderError).reason).toBe("empty-output");
+      expect((error as RenderError).message).toContain("i2");
+      expect((error as RenderError).message).toContain("s");
+    }
+  });
+
+  it("CONTROL: a document with only a background and no text slots is NOT empty — must still render, never throw", () => {
+    // Distinguishes the new check from a naive "did anything resolve"
+    // count: a background-only canvas is legitimate, deliberate content,
+    // not an accidental total loss.
+    const doc: ComposeDocument = {
+      id: "background-only",
+      channel: "image",
+      template: "T",
+      meta: { channel: "image", width: 100, height: 100, format: "svg", alt: "A" },
+      bindings: [{ slot: "s", copyId: "m" }],
+      layout: {
+        background: { background: "--color-surface-base" },
+        slots: [{ key: "s", element: "body", frame: { x: 0, y: 0, w: 1, h: 1 } }],
+      },
+    };
+
+    const result = renderImageDocument(doc, { resolveCopyId: () => "" });
+    expect(result.svg).toContain("<rect");
+    expect(result.warnings.some((w) => w.includes('slot "s"'))).toBe(true);
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────

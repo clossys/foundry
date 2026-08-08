@@ -167,6 +167,60 @@ describe("refusal paths", () => {
       expect((error as RenderError).message).toContain("requires a layout");
     }
   });
+
+  it("empty output: a SINGLE slide with a non-required slot that fails to resolve, and no other slide, renders blank — must throw, not return a blank slide", () => {
+    // Level 1: one slide, entirely blank (no `required` slot to catch it,
+    // no background) — shares resolveCanvasLayout with ./image, so the
+    // same fix applies here. See resolveCanvasLayout.ts's own doc comment.
+    const blankSlide = slide("blank", "16:9", {
+      layout: { slots: [{ key: "title", element: "heading", frame: { x: 0, y: 0, w: 1, h: 1 } }] }, // NOT required
+      bindings: [{ slot: "title", copyId: "unresolvable" }],
+    });
+    const deck: SlidesDeckInput = { id: "d", slides: [blankSlide] };
+    try {
+      renderSlidesDeck(deck, { resolveCopyId: () => undefined });
+      expect.unreachable("should have thrown empty-output — a blank slide must never render as a success");
+    } catch (error) {
+      expect(error).toBeInstanceOf(RenderError);
+      expect((error as RenderError).reason).toBe("empty-output");
+      expect((error as RenderError).message).toContain('slide 0 (id="blank")');
+    }
+  });
+
+  it("empty output: EVERY slide in a multi-slide deck renders blank — the whole deck must throw (at the first blank slide), never return a deck of blank slides", () => {
+    // Level 2: the whole-deck case. `renderSlidesDeck` already fails the
+    // whole deck on the FIRST failing slide (see "one failing slide fails
+    // the whole deck" in this file's own top comment) — since every slide
+    // here is individually blank, that same per-slide throw fires on slide
+    // 0 before slide 1 is ever reached, so a deck can never come back with
+    // every slide silently blank.
+    const blankLayout = { slots: [{ key: "title", element: "heading" as const, frame: { x: 0, y: 0, w: 1, h: 1 } }] };
+    const blank1 = slide("blank-1", "16:9", { layout: blankLayout, bindings: [{ slot: "title", copyId: "unresolvable" }] });
+    const blank2 = slide("blank-2", "16:9", { layout: blankLayout, bindings: [{ slot: "title", copyId: "unresolvable" }] });
+    const deck: SlidesDeckInput = { id: "d", slides: [blank1, blank2] };
+    try {
+      renderSlidesDeck(deck, { resolveCopyId: () => undefined });
+      expect.unreachable("should have thrown empty-output");
+    } catch (error) {
+      expect(error).toBeInstanceOf(RenderError);
+      expect((error as RenderError).reason).toBe("empty-output");
+      expect((error as RenderError).message).toContain('slide 0 (id="blank-1")');
+    }
+  });
+
+  it("CONTROL: a slide with only a background and no text slots is NOT empty — must still render, never throw", () => {
+    const backgroundOnlySlide = slide("bg-only", "16:9", {
+      layout: {
+        background: { background: "--color-surface-base" },
+        slots: [{ key: "title", element: "heading", frame: { x: 0, y: 0, w: 1, h: 1 } }],
+      },
+      bindings: [{ slot: "title", copyId: "unresolvable" }],
+    });
+    const deck: SlidesDeckInput = { id: "d", slides: [backgroundOnlySlide] };
+    const result = renderSlidesDeck(deck, { resolveCopyId: () => undefined });
+    expect(result.slides[0]!.svg).toContain("<rect");
+    expect(result.slides[0]!.warnings.some((w) => w.includes('slot "title"'))).toBe(true);
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────
