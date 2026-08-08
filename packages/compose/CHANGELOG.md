@@ -3,6 +3,56 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.0] - Unreleased
+
+### Fixed
+
+- **Issue #43**: `resolveDocument` reported `ok: true` for a binding that
+  matched a real slot key but produced no actual text — a binding with
+  neither `copyId` nor `value`, with both, or with an empty/whitespace-only
+  `value`, all resolved "successfully". `@vespeneventures/render`'s `web`
+  renderer already had to work around this locally with its own
+  `RenderError("empty-output", ...)`; four more renderers were about to
+  each reinvent the same strengthening. `resolveDocument` now runs every
+  binding that matched a real slot through `validate.ts`'s own
+  `validateSlotBindingShape` (the same per-binding check
+  `validateComposeDocument` already uses — reused, not re-implemented) and
+  surfaces the result as the new `ResolveResult.bindingFindings:
+  ComposeFinding[]`. Any `severity: "error"` entry there now forces
+  `ok: false`, the same way `missingRequired`/`unknownBindings` already do.
+- **`validate.ts`'s `binding-value-shape` rule accepted a
+  whitespace-only `value`** (`"   "`) — found while fixing #43. The rule
+  only checked `.length > 0`, so a `value` that was all whitespace passed
+  as if it were real copy. Fixed with a dedicated
+  `isNonEmptyNonWhitespaceString` check, scoped to `binding-value-shape`
+  only (the package's other `isNonEmptyString` uses are unchanged).
+
+### Added
+
+- **`resolveCopy`** (`src/resolve-copy.ts`) — the second resolution pass:
+  turns the slots `resolveDocument` already matched into actual text, via
+  a caller-supplied `CopyLookup: (copyId: string) => string | undefined`.
+  A literal `value` resolves without ever calling `lookup`. A `copyId` is
+  looked up; `undefined`, `""`, or a whitespace-only result is UNRESOLVED
+  — never a fallback to the `copyId`, the slot key, or an empty string.
+  A binding with no source of text, one with two conflicting sources, a
+  non-function `lookup`, and a `lookup` call that throws, all land the
+  affected slot in the new `unchecked` field — an explicit third state,
+  distinct from both "resolved" and "resolved to nothing", that alone
+  forces `ok: false` (this repo's standing rule: a check that "could not
+  check" must never be indistinguishable from a pass). `ok` is `true`
+  only when `texts.length > 0` AND `unresolvedCopyIds` is empty AND
+  `unchecked` is empty. New exports: `resolveCopy`, `CopyLookup`,
+  `ResolvedText`, `CopyResolveResult`.
+
+### Changed
+
+- `ResolveResult` gained `bindingFindings: ComposeFinding[]` (see
+  "Fixed" above). Existing consumers reading only `ok`,
+  `missingRequired`, `unknownBindings`, or `resolved` are unaffected; a
+  consumer that previously constructed a full `ResolveResult` literal
+  (e.g. in a test) needs to add the new field.
+
 ## [0.1.0] - Unreleased
 
 ### Added

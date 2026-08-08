@@ -54,6 +54,20 @@ function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.length > 0;
 }
 
+/**
+ * Stricter than `isNonEmptyString`: also rejects a string that is
+ * non-empty but entirely whitespace (`"   "`, `"\n\t"`). Used only for
+ * `SlotBinding.value` (see `binding-value-shape` below) — a whitespace-only
+ * `value` satisfies `isNonEmptyString` (`.length > 0`) but is not real
+ * copy: it renders as blank text while looking, to `isNonEmptyString`
+ * alone, exactly like a real one-word value. This is the gap issue #43
+ * was filed against for `resolveDocument`; the same gap existed here, one
+ * layer up, in the validator `resolveDocument` is being taught to reuse.
+ */
+function isNonEmptyNonWhitespaceString(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
 function isOneOf<T extends string | number>(value: unknown, list: readonly T[]): value is T {
   return (list as readonly unknown[]).includes(value);
 }
@@ -194,8 +208,19 @@ function validateFrameShape(value: unknown, path: string): ComposeFinding[] {
 
 // --------------------------------------------------------------- SlotBinding
 
-// Rule: binding-shape, binding-slot-shape, binding-source-exclusive, binding-copy-id-shape, binding-value-shape
-function validateSlotBindingShape(value: unknown, path: string): ComposeFinding[] {
+/**
+ * Rule: binding-shape, binding-slot-shape, binding-source-exclusive,
+ * binding-copy-id-shape, binding-value-shape.
+ *
+ * Exported (not just used internally by `validateComposeDocument`)
+ * because `resolve.ts`'s `resolveDocument` reuses this exact function to
+ * check the shape of each binding it is about to resolve — see its own
+ * doc comment and issue #43. `resolveDocument` deliberately does not
+ * hand-roll a second, drifting copy of "exactly one of copyId/value,
+ * whichever is present non-empty" — this is the one place that rule
+ * lives.
+ */
+export function validateSlotBindingShape(value: unknown, path: string): ComposeFinding[] {
   if (!isPlainObject(value)) {
     return [{ rule: "binding-shape", severity: "error", message: `${path} must be an object.`, path }];
   }
@@ -238,11 +263,11 @@ function validateSlotBindingShape(value: unknown, path: string): ComposeFinding[
     });
   }
 
-  if (valuePresent && !isNonEmptyString(val)) {
+  if (valuePresent && !isNonEmptyNonWhitespaceString(val)) {
     findings.push({
       rule: "binding-value-shape",
       severity: "error",
-      message: `${path}.value must be a non-empty string when present, got ${describe(val)}.`,
+      message: `${path}.value must be a non-empty, non-whitespace-only string when present, got ${describe(val)}.`,
       path: `${path}.value`,
     });
   }

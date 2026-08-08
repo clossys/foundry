@@ -71,7 +71,81 @@ describe("resolveDocument — THE BAR: resolving nothing is never a clean pass",
 
   it("reports ok: false for a document with both an empty layout and an empty bindings list — the maximally-empty case", () => {
     const result = resolveDocument({ ...baseDoc, bindings: [] }, { slots: [] });
-    expect(result).toEqual({ ok: false, missingRequired: [], unknownBindings: [], resolved: [] });
+    expect(result).toEqual({
+      ok: false,
+      missingRequired: [],
+      unknownBindings: [],
+      resolved: [],
+      bindingFindings: [],
+    });
+  });
+});
+
+describe("resolveDocument — issue #43: a binding that matched a slot but produces no actual text must not be ok: true", () => {
+  it("FIXTURE: a binding with neither copyId nor value — reports ok: false via bindingFindings, not a silent ok: true", () => {
+    const doc: ComposeDocument = { ...baseDoc, bindings: [{ slot: "heading" }, { slot: "body", value: "ok" }] };
+    const result = resolveDocument(doc, twoSlotLayout);
+    // The binding still matched a real slot key, so it's still in `resolved` —
+    // resolveDocument narrows nothing out of `resolved`, it flags instead.
+    expect(result.resolved).toHaveLength(2);
+    expect(result.ok).toBe(false);
+    const finding = result.bindingFindings.find((f) => f.rule === "binding-source-exclusive");
+    expect(finding).toBeDefined();
+    expect(finding?.severity).toBe("error");
+    expect(finding?.message).toContain("neither");
+  });
+
+  it("FIXTURE: a binding with BOTH copyId and value (ambiguous) — reports ok: false via bindingFindings", () => {
+    const doc: ComposeDocument = {
+      ...baseDoc,
+      bindings: [{ slot: "heading", copyId: "one-pager.heading", value: "A literal too" }, { slot: "body", value: "ok" }],
+    };
+    const result = resolveDocument(doc, twoSlotLayout);
+    expect(result.resolved).toHaveLength(2);
+    expect(result.ok).toBe(false);
+    const finding = result.bindingFindings.find((f) => f.rule === "binding-source-exclusive");
+    expect(finding).toBeDefined();
+    expect(finding?.severity).toBe("error");
+    expect(finding?.message).toContain("both");
+  });
+
+  it("FIXTURE: value: \"\" (empty string) — reports ok: false via bindingFindings", () => {
+    const doc: ComposeDocument = { ...baseDoc, bindings: [{ slot: "heading", copyId: "x" }, { slot: "body", value: "" }] };
+    const result = resolveDocument(doc, twoSlotLayout);
+    expect(result.ok).toBe(false);
+    expect(result.bindingFindings.some((f) => f.rule === "binding-value-shape")).toBe(true);
+  });
+
+  it("FIXTURE: value: \"   \" (whitespace-only) — reports ok: false via bindingFindings, not a clean pass", () => {
+    const doc: ComposeDocument = { ...baseDoc, bindings: [{ slot: "heading", copyId: "x" }, { slot: "body", value: "   " }] };
+    const result = resolveDocument(doc, twoSlotLayout);
+    expect(result.ok).toBe(false);
+    const finding = result.bindingFindings.find((f) => f.rule === "binding-value-shape");
+    expect(finding).toBeDefined();
+    expect(finding?.path).toBe("bindings.1.value");
+  });
+
+  it("FIXTURE: copyId: \"\" (empty string) — reports ok: false via bindingFindings", () => {
+    const doc: ComposeDocument = { ...baseDoc, bindings: [{ slot: "heading", copyId: "" }, { slot: "body", value: "ok" }] };
+    const result = resolveDocument(doc, twoSlotLayout);
+    expect(result.ok).toBe(false);
+    expect(result.bindingFindings.some((f) => f.rule === "binding-copy-id-shape")).toBe(true);
+  });
+
+  it("a well-formed binding (copyId only, or value only) reports no bindingFindings and can be ok: true", () => {
+    const result = resolveDocument(baseDoc, twoSlotLayout);
+    expect(result.bindingFindings).toEqual([]);
+    expect(result.ok).toBe(true);
+  });
+
+  it("a binding matching an UNKNOWN slot is never run through bindingFindings — it's already reported via unknownBindings", () => {
+    // A malformed binding (neither copyId nor value) targeting a slot that
+    // doesn't exist in the layout at all must not ALSO produce a
+    // bindingFindings entry — that would double-report the same input.
+    const result = resolveDocument({ ...baseDoc, bindings: [{ slot: "does-not-exist" }] }, twoSlotLayout);
+    expect(result.unknownBindings).toEqual([{ slot: "does-not-exist" }]);
+    expect(result.bindingFindings).toEqual([]);
+    expect(result.ok).toBe(false); // still false — missingRequired + unknownBindings alone already force it
   });
 });
 

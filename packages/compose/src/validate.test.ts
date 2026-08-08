@@ -183,6 +183,11 @@ describe("validateComposeDocument — SlotBinding: exactly one of copyId/value",
     expect(hasRule(findings, "binding-value-shape", "bindings.0.value")).toBe(true);
   });
 
+  it("FIXTURE — issue #43 follow-up: flags a whitespace-only value with binding-value-shape (not real copy, but .length > 0)", () => {
+    const findings = validateComposeDocument({ ...validWeb, bindings: [{ slot: "heading", value: "   \n\t  " }] });
+    expect(hasRule(findings, "binding-value-shape", "bindings.0.value")).toBe(true);
+  });
+
   it("accepts a well-formed binding with only copyId, and one with only value", () => {
     const findings = validateComposeDocument({
       ...validWeb,
