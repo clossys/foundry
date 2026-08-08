@@ -3,6 +3,76 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.6.0] - Unreleased
+
+### Added
+
+- **`checkBrandCoverage` — this package is now self-closing, the same shape
+  every sibling contract package in this ecosystem already ships.**
+  Previously this package shipped a vocabulary (`TOKENS`) and a template
+  (`styles/brand-template.css`) with no way for a consumer to check whether
+  their OWN real `brand.css` actually filled the template in correctly.
+  `checkBrandCoverage(declarations, options?)` is a pure function taking
+  already-parsed custom-property declarations and reporting: every
+  `brandable: true` slot with no real (non-empty) declared value
+  (`uncovered-brandable-slot`), every declaration naming a slot absent from
+  `TOKENS` — almost always a typo (`unknown-slot`), and every declaration
+  targeting a `brandable: false` structural slot — the same rule
+  `@vespeneventures/render`'s `flattenTokens` already enforces by throwing
+  (`non-brandable-override`), plus an explicit `unchecked` list for any
+  declaration key it cannot even classify. `ok` is `true` only when
+  something was actually checked and the result is completely clean — a
+  `declarations` object with zero entries can never read as a pass.
+  `src/check-brand-coverage.test.ts` includes a dedicated agreement suite in
+  `@vespeneventures/render`'s own test tree
+  (`src/internal/tokens-brand-coverage-agreement.test.ts`, added alongside
+  this release, since `@vespeneventures/tokens` cannot depend on
+  `@vespeneventures/render` without a cycle) verifying `checkBrandCoverage`
+  and `flattenTokens` agree on every non-brandable slot and on a typo'd slot
+  name, by running the SAME override object through both and comparing
+  outcomes.
+- **`readBrandCss` / `parseBrandDeclarations`** — a small, hand-written,
+  zero-runtime-dependency CSS reader that parses a real `.css` file's (or
+  CSS text's) custom-property declarations: a bare `:root { ... }`, multiple
+  selectors, comments, arbitrarily nested `@media`/`@supports`/`@layer`
+  blocks, and multi-line declaration values. Anything it cannot resolve —
+  an unterminated rule, a malformed declaration — is recorded into an
+  `unchecked` list with a line number and detail, never silently dropped.
+  `readBrandCss(path)` does the file I/O; `parseBrandDeclarations(css)` is
+  the pure half, for CSS text already in hand.
+- **`tokens-brand-check` CLI** (new `bin` entry) — wires `readBrandCss` and
+  `checkBrandCoverage` into an installable CLI with the same three-state
+  exit-code contract `@vespeneventures/copy`'s `copy-check` and
+  `@vespeneventures/strategy`'s `strategy-facts-check` use: `0` clean, `1`
+  at least one finding, `2` could not run (missing/unreadable file, or a
+  region that could not be parsed) — "could not check" is never reported as
+  a pass. Run `npx tokens-brand-check <brand-css-file>`.
+
+### Note
+
+Running `tokens-brand-check` against this package's OWN
+`styles/brand-template.css` reports all 42 brandable slots as
+`uncovered-brandable-slot` — 37 because every required slot's value is
+intentionally left blank in the shipped template, and 5 because every
+optional slot is intentionally left commented out. This is the expected,
+honest result for an unfilled template, not a defect in the template: see
+this package's own `brand-coverage.test.ts`, which already asserts (by a
+different method — checking that every brandable token's NAME appears
+somewhere in the file, live or commented) that the template's slot NAMES are
+complete. `checkBrandCoverage` checks a stronger claim — real, non-empty
+VALUES — which the template, being a template, cannot satisfy by
+construction. A consumer's own filled-in `brand.css` is what this check is
+built to run against.
+
+**BREAKING for consumers on `@vespeneventures/render` < `0.1.0`'s or
+`@vespeneventures/ui` < `0.3.0`'s existing `~0.5.0`/`^0.5.0` ranges:** a
+caret/tilde range on a `0.x` package is patch-only (`~0.5.0`/`^0.5.0` do NOT
+match `0.6.0`), so both this repository's own `@vespeneventures/render` and
+`@vespeneventures/ui` had their `@vespeneventures/tokens` range bumped to
+`~0.6.0`/`^0.6.0` in the same change that introduces this release — the
+same discipline the `0.4.0` chart-tokens release and the `0.5.0` icon-tokens
+release both already document here.
+
 ## [0.5.0] - Unreleased
 
 ### Added
