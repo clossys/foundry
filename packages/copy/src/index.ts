@@ -47,7 +47,17 @@ export type {
 export type { VoiceCheckReport, VoiceCheckWaiver, VoiceFinding, VoiceRecord } from "@vespeneventures/voice";
 
 export { extractCopyCandidates, PLACEHOLDER_SENTINEL, scanCopySourceTree } from "./scan.js";
-export type { Citation, CopyCandidate, ExcludedLiteral, ExclusionReason, ParseFailure, ScanOptions, ScanResult, SkippedFile } from "./scan.js";
+export type {
+  Citation,
+  CopyCandidate,
+  ExcludedLiteral,
+  ExclusionReason,
+  ParseFailure,
+  ScanOptions,
+  ScanResult,
+  SkippedFile,
+  UncheckedItem,
+} from "./scan.js";
 
 export { checkCopyTraceability } from "./copy-gate.js";
 export type { CopyGateFinding, CopyGateIgnored, CopyGateResult, CopyGateRule } from "./copy-gate.js";

@@ -225,6 +225,341 @@ describe("extractCopyCandidates — calibrated against real code in this reposit
   });
 });
 
+describe("extractCopyCandidates — JSX text nodes (issue #37)", () => {
+  it("a plain JSX text node is one candidate, trimmed", () => {
+    const src = "const el = <p>Hello world</p>;\n";
+    const { candidates, excluded, unchecked } = extractCopyCandidates(src, "Widget.tsx");
+    expect(excluded).toEqual([]);
+    expect(unchecked).toEqual([]);
+    expect(candidates).toHaveLength(1);
+    expect(candidates[0]).toMatchObject({
+      kind: "jsx-text",
+      raw: "Hello world",
+      normalized: "Hello world",
+      placeholderCount: 0,
+      line: 1,
+    });
+  });
+
+  it("mixed content: text runs across an element boundary are separate candidates, tail not lost", () => {
+    const src = "const el = <p>Hello <strong>there</strong> friend</p>;\n";
+    const { candidates, unchecked } = extractCopyCandidates(src, "Widget.tsx");
+    expect(unchecked).toEqual([]);
+    expect(candidates.map((c) => c.normalized)).toEqual(["Hello", "there", "friend"]);
+  });
+
+  it("a multi-line, prettier-wrapped text node collapses onto JSX's own whitespace rule", () => {
+    const src = "const el = (\n  <p>\n    Hello\n    world\n  </p>\n);\n";
+    const { candidates } = extractCopyCandidates(src, "Widget.tsx");
+    expect(candidates).toHaveLength(1);
+    expect(candidates[0]?.normalized).toBe("Hello world");
+  });
+
+  it("an {expression} child is skipped as code, not text — the surrounding text runs are still found", () => {
+    const src = "const el = <p>Count: {count}</p>;\n";
+    const { candidates, unchecked } = extractCopyCandidates(src, "Widget.tsx");
+    expect(unchecked).toEqual([]);
+    expect(candidates).toHaveLength(1);
+    expect(candidates[0]?.normalized).toBe("Count:");
+  });
+
+  it("a string literal INSIDE a {expression} child is still found, via the ordinary literal path", () => {
+    const src = 'const el = <p>{isEmpty ? "No results" : "Has results"}</p>;\n';
+    const { candidates, unchecked } = extractCopyCandidates(src, "Widget.tsx");
+    expect(unchecked).toEqual([]);
+    const kinds = candidates.map((c) => ({ kind: c.kind, normalized: c.normalized }));
+    expect(kinds).toEqual(
+      expect.arrayContaining([
+        { kind: "string", normalized: "No results" },
+        { kind: "string", normalized: "Has results" },
+      ]),
+    );
+  });
+
+  it("nested JSX inside an expression child is resolved — its own text nodes are found too", () => {
+    const src = "const el = <div>{show && <span>Now visible</span>}</div>;\n";
+    const { candidates, unchecked } = extractCopyCandidates(src, "Widget.tsx");
+    expect(unchecked).toEqual([]);
+    expect(candidates.some((c) => c.kind === "jsx-text" && c.normalized === "Now visible")).toBe(true);
+  });
+
+  it("JSX entities: named (&amp;) and numeric (&#8212;, &nbsp;) are decoded", () => {
+    // "10&#8212;20" alone decodes to "10—20" — digits and a dash, no
+    // \p{L} letters at all — which is correctly excluded as no-letters
+    // (rule #8's JSX-text analogue), same as a bare glyph string literal
+    // would be. " units"/"items" keeps each fixture a real candidate.
+    const src =
+      "const a = <p>Terms &amp; Conditions</p>;\n" +
+      "const b = <p>10&#8212;20 units</p>;\n" +
+      "const c = <p>10&nbsp;items</p>;\n";
+    const { candidates } = extractCopyCandidates(src, "Widget.tsx");
+    const texts = candidates.map((c) => c.normalized);
+    expect(texts).toContain("Terms & Conditions");
+    expect(texts).toContain("10—20 units");
+    expect(texts).toContain("10 items"); // &nbsp; -> an ordinary space, not U+00A0 — see NAMED_JSX_ENTITIES' own doc comment
+  });
+
+  it("an unrecognized named entity is left verbatim, not guessed at or dropped", () => {
+    const src = "const el = <p>Look &foobar; here</p>;\n";
+    const { candidates } = extractCopyCandidates(src, "Widget.tsx");
+    expect(candidates[0]?.normalized).toBe("Look &foobar; here");
+  });
+
+  it("whitespace-only text between sibling tags is not copy, and is never even counted as excluded", () => {
+    const src = "const el = (\n  <div>\n    <span>Label</span>\n  </div>\n);\n";
+    const { candidates, excluded, unchecked } = extractCopyCandidates(src, "Widget.tsx");
+    expect(unchecked).toEqual([]);
+    expect(candidates).toHaveLength(1);
+    expect(candidates[0]?.normalized).toBe("Label");
+    expect(excluded).toEqual([]); // no "no-letters" noise from pure indentation
+  });
+
+  it("a punctuation/symbol-only text run (a bare em dash) is excluded as no-letters, and IS counted", () => {
+    const src = "const el = (\n  <div>\n    <span>Label</span>\n    <span>—</span>\n  </div>\n);\n";
+    const { candidates, excluded } = extractCopyCandidates(src, "Widget.tsx");
+    expect(candidates.map((c) => c.normalized)).toEqual(["Label"]);
+    expect(excluded).toEqual([{ file: "Widget.tsx", line: 4, raw: "—", reason: "no-letters" }]);
+  });
+
+  it("the enum/token-shaped heuristic (a bare lowercase word) does NOT apply to JSX text — unlike a string literal", () => {
+    const src = "const el = <Badge>new</Badge>;\n";
+    const { candidates, excluded } = extractCopyCandidates(src, "Widget.tsx");
+    expect(excluded).toEqual([]);
+    expect(candidates).toHaveLength(1);
+    expect(candidates[0]?.normalized).toBe("new");
+  });
+
+  it("a {/* JSX comment */} is not text and produces no candidate, and does not merge the text on either side", () => {
+    const src = "const el = <p>Hello{/* TODO: revisit */}world</p>;\n";
+    const { candidates, unchecked } = extractCopyCandidates(src, "Widget.tsx");
+    expect(unchecked).toEqual([]);
+    expect(candidates.map((c) => c.normalized)).toEqual(["Hello", "world"]);
+  });
+
+  it("a copy:<id> citation on a JSX text node's own line is attached exactly like a literal candidate's", () => {
+    const src = "const el = <p>No results found</p>; // copy:pagination.no-results\n";
+    const { candidates, citations } = extractCopyCandidates(src, "Widget.tsx");
+    expect(candidates).toHaveLength(1);
+    expect(candidates[0]?.citedIds).toEqual(["pagination.no-results"]);
+    expect(citations).toEqual([{ file: "Widget.tsx", line: 1, id: "pagination.no-results" }]);
+  });
+
+  it("a copy-gate:ignore marker on a JSX text node's own line is attached exactly like a literal candidate's", () => {
+    const src = "const el = <p>Not yet registered</p>; // copy-gate:ignore\n";
+    const { candidates } = extractCopyCandidates(src, "Widget.tsx");
+    expect(candidates[0]?.hasIgnoreMarker).toBe(true);
+  });
+
+  it("a self-closing element contributes no text candidate", () => {
+    const src = 'const el = <br className="mt-sm" />;\n';
+    const { candidates, excluded } = extractCopyCandidates(src, "Widget.tsx");
+    expect(candidates).toEqual([]);
+    expect(excluded).toEqual([{ file: "Widget.tsx", line: 1, raw: '"mt-sm"', reason: "denylisted-attribute-or-prop-value" }]);
+  });
+
+  it("a JSX attribute value still goes through the SAME classification as before JSX-awareness existed", () => {
+    const src = '<Button variant="ghost" size="sm" aria-label="Previous page" isDisabled={isFirstPage} />;\n';
+    const { candidates, excluded } = extractCopyCandidates(src, "Widget.tsx");
+    expect(candidates).toEqual([]);
+    const reasons = excluded.map((e) => e.reason).sort();
+    expect(reasons).toEqual(
+      ["aria-or-data-attribute-value", "denylisted-attribute-or-prop-value", "denylisted-attribute-or-prop-value"].sort(),
+    );
+  });
+
+  // ------------------------------------------------- false-positive traps
+
+  it("does NOT fire inside a .ts file with no JSX at all", () => {
+    const src = "const el = <p>Hello world</p>;\n";
+    const { candidates } = extractCopyCandidates(src, "plain.ts");
+    expect(candidates).toEqual([]);
+  });
+
+  it("does NOT fire inside a .js file with no JSX at all", () => {
+    const src = "const el = <p>Hello world</p>;\n";
+    const { candidates } = extractCopyCandidates(src, "plain.js");
+    expect(candidates).toEqual([]);
+  });
+
+  it("does NOT fire on a string literal containing '>' and '<' — the string branch already consumed it", () => {
+    const src = 'const s = "a > b < c";\n';
+    const { candidates, unchecked } = extractCopyCandidates(src, "Widget.tsx");
+    expect(unchecked).toEqual([]);
+    expect(candidates).toEqual([{
+      file: "Widget.tsx",
+      line: 1,
+      kind: "string",
+      raw: '"a > b < c"',
+      normalized: "a > b < c",
+      placeholderCount: 0,
+      citedIds: [],
+      hasIgnoreMarker: false,
+    }]);
+  });
+
+  it("does NOT fire on a generic type parameter (Map<string, string>)", () => {
+    const src = "type X = Map<string, string>;\nconst m: Map<string, string> = new Map();\n";
+    const { candidates, excluded, unchecked } = extractCopyCandidates(src, "Widget.tsx");
+    expect(candidates).toEqual([]);
+    expect(excluded).toEqual([]);
+    expect(unchecked).toEqual([]);
+  });
+
+  it("does NOT fire on a comparison expression (a < b && c > d)", () => {
+    const src = "const ok = a < b && c > d;\n";
+    const { candidates, excluded, unchecked } = extractCopyCandidates(src, "Widget.tsx");
+    expect(candidates).toEqual([]);
+    expect(excluded).toEqual([]);
+    expect(unchecked).toEqual([]);
+  });
+
+  it("does NOT fire on '<'/'>' inside a regex literal, and subsequent real copy is still found", () => {
+    const src = 'const re = /<[^>]+>/;\nconst copy = "Real copy after a regex";\n';
+    const { candidates, unchecked } = extractCopyCandidates(src, "Widget.tsx");
+    expect(unchecked).toEqual([]);
+    expect(candidates).toHaveLength(1);
+    expect(candidates[0]).toMatchObject({ kind: "string", normalized: "Real copy after a regex" });
+  });
+
+  // ---------------------------------------------------------- unchecked
+
+  it("an unclosed JSX element is reported via `unchecked`, not silently dropped — text found before the break is kept", () => {
+    const src = "const el = <div>\n  <p>Hello</p>\n";
+    const { candidates, unchecked } = extractCopyCandidates(src, "Widget.tsx");
+    expect(candidates).toEqual([expect.objectContaining({ kind: "jsx-text", normalized: "Hello" })]);
+    expect(unchecked).toHaveLength(1);
+    expect(unchecked[0]).toMatchObject({ file: "Widget.tsx", kind: "unclosed-jsx-element", line: 1 });
+  });
+
+  it("an unbalanced {expression} child is reported via `unchecked` — text found before it is kept", () => {
+    const src = "const el = <p>Count: {count</p>\nconst x = 1;\n";
+    const { candidates, unchecked } = extractCopyCandidates(src, "Widget.tsx");
+    expect(candidates).toEqual([expect.objectContaining({ kind: "jsx-text", normalized: "Count:" })]);
+    expect(unchecked).toHaveLength(1);
+    expect(unchecked[0]).toMatchObject({ file: "Widget.tsx", kind: "malformed-jsx-expression", line: 1 });
+  });
+
+  it("an unterminated JSX attribute EXPRESSION value is reported via `unchecked`, not a silent parse success", () => {
+    // (An unterminated QUOTED attribute string is a slightly different
+    // case: it always cascades into a whole-file `parseFailure` instead
+    // — see this file's "does NOT commit" reasoning in `tryScanJsxElement`'s
+    // own doc comment. This fixture exercises the `{expr}` attribute-value
+    // path, which fails in isolation without taking the rest of the file
+    // down with it.)
+    const src = "const el = <p title={neverClosed>Hello</p>;\n";
+    const { unchecked, parseFailure } = extractCopyCandidates(src, "Widget.tsx");
+    expect(parseFailure).toBeUndefined();
+    expect(unchecked.some((u) => u.kind === "malformed-jsx-tag")).toBe(true);
+  });
+
+  // Regression: an `unchecked` entry must report the line the offending
+  // construct actually STARTS on, never wherever the scanner gave up
+  // (EOF, or the far end of a multi-line scan). Reporting a give-up
+  // position as if it were a start position is worse than saying
+  // nothing — in a large file it sends a reader to the wrong place
+  // entirely. Fixture: the broken construct is on line 4 of a 5-line
+  // file; the scanner only discovers the failure at EOF (line 5), so a
+  // naive "read `line` at failure time" implementation reports line 6
+  // (one past EOF) instead of 4.
+  it("`unchecked[].line` and the message text report the construct's own start line, not the scanner's give-up position", () => {
+    const src = "const a = 1;\nconst b = 2;\nconst c = 3;\nexport const A = () => <div attr={oops>Text</div>;\nconst d = 4;\n";
+    const { unchecked } = extractCopyCandidates(src, "Broken.tsx");
+    expect(unchecked).toHaveLength(1);
+    expect(unchecked[0]?.line).toBe(4);
+    expect(unchecked[0]?.detail).toContain("starting at line 4");
+    expect(unchecked[0]?.detail).not.toMatch(/line 5|line 6/);
+  });
+
+  // Same class of bug, the "unclosed element" shape: the element's own
+  // opening line must be reported, not wherever a long run of children
+  // happened to leave off before EOF (which, for a real multi-line
+  // component, can be dozens of lines away from the actual open tag).
+  it("an unclosed element far from EOF still reports its OWN opening line, not a drifted position near EOF", () => {
+    const src =
+      "const el = (\n" + // line 1
+      "  <div>\n" + // line 2 — <div> opens here
+      "    <p>First</p>\n" + // line 3
+      "    <p>Second</p>\n" + // line 4
+      "    <p>Third</p>\n"; // line 5 — file ends here, still inside <div>, no closing tag
+    const { unchecked } = extractCopyCandidates(src, "Widget.tsx");
+    expect(unchecked).toEqual([expect.objectContaining({ kind: "unclosed-jsx-element", line: 2 })]);
+  });
+
+  // Regression: backtracking out of a failed JSX attempt must not leave
+  // stray state behind. An earlier, successfully-parsed attribute value
+  // in the SAME (ultimately failed) tag must not be double-counted once
+  // the scanner backs out and reprocesses the same text as ordinary JS.
+  it("a failed JSX attempt does not duplicate an earlier attribute's literal candidate after backtracking", () => {
+    const src = 'const el = <div a="first value" b={neverCloses>Text</div>;\nconst real = "Real copy after the break";\n';
+    const { candidates, unchecked } = extractCopyCandidates(src, "Broken.tsx");
+    const firstValueHits = candidates.filter((c) => c.normalized === "first value");
+    expect(firstValueHits).toHaveLength(1); // not duplicated
+    expect(candidates.some((c) => c.normalized === "Real copy after the break" && c.line === 2)).toBe(true);
+    expect(unchecked).toHaveLength(1);
+  });
+
+  // Regression: a failed JSX attempt that consumed one or more newlines
+  // (skipping whitespace between attributes, or scanning a multi-line
+  // attribute expression) before backtracking must not leave the shared
+  // line counter double-incremented — every real candidate found AFTER
+  // the break must still land on its true, correct line number.
+  it("line numbers after a multi-line failed JSX attempt are not corrupted by backtracking", () => {
+    const src =
+      "const el = <div\n" + // line 1
+      '  a="val"\n' + // line 2
+      "  b={neverCloses>Text</div>;\n" + // line 3 — b's `{` is here
+      'const real = "Real copy on line 4";\n'; // line 4
+    const { candidates, unchecked } = extractCopyCandidates(src, "Broken.tsx");
+    expect(candidates).toEqual([
+      expect.objectContaining({ normalized: "Real copy on line 4", line: 4 }),
+    ]);
+    expect(unchecked).toEqual([expect.objectContaining({ kind: "malformed-jsx-tag", line: 3 })]);
+  });
+
+  it("TSX generic-arrow-function syntax is silently treated as not-JSX — no unchecked noise", () => {
+    const src = "const identity = <T,>(x: T): T => x;\n";
+    const { candidates, excluded, unchecked } = extractCopyCandidates(src, "Widget.tsx");
+    expect(candidates).toEqual([]);
+    expect(excluded).toEqual([]);
+    expect(unchecked).toEqual([]);
+  });
+
+  it("JSX nesting deep enough to trip the depth safety bound is reported via `unchecked`, never a crash or a hang", () => {
+    const depth = 205;
+    const src = `const el = ${"<div>".repeat(depth)}${"</div>".repeat(depth)};\n`;
+    const { unchecked } = extractCopyCandidates(src, "Widget.tsx");
+    expect(unchecked.some((u) => u.kind === "jsx-depth-exceeded")).toBe(true);
+  });
+});
+
+describe("extractCopyCandidates — parseFailure position claims (issue #37 follow-up review)", () => {
+  // Same "report where the construct actually starts" discipline applies
+  // to `parseFailure` messages, not just `unchecked` entries. A
+  // multi-line template literal's `${...}` interpolation can sit many
+  // lines past the template's own opening backtick — the message must
+  // name the INTERPOLATION's own start line, not the enclosing
+  // template's.
+  it("an unterminated ${...} interpolation reports its OWN start line, not the enclosing template literal's", () => {
+    const src = "const s = `line one\nline two\nline three ${neverCloses;\n";
+    const { parseFailure } = extractCopyCandidates(src, "x.ts");
+    expect(parseFailure).toBeDefined();
+    expect(parseFailure).toContain("starting at line 3");
+    expect(parseFailure).not.toContain("starting at line 1");
+  });
+
+  it("an unterminated template literal itself still reports its own (correct) start line", () => {
+    const src = "const s = `line one\nline two\nnever closes;\n";
+    const { parseFailure } = extractCopyCandidates(src, "x.ts");
+    expect(parseFailure).toContain("starting at line 1");
+  });
+
+  it("an unterminated string reports its own start line (unaffected — strings never span lines)", () => {
+    const src = 'const a = 1;\nconst b = 2;\nconst s = "never closes;\n';
+    const { parseFailure } = extractCopyCandidates(src, "x.ts");
+    expect(parseFailure).toContain("starting at line 3");
+  });
+});
+
 describe("scanCopySourceTree", () => {
   let dir: string;
 

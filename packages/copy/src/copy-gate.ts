@@ -51,7 +51,7 @@
  *     different, later gate.
  */
 
-import { PLACEHOLDER_SENTINEL, type Citation, type CopyCandidate } from "./scan.js";
+import { PLACEHOLDER_SENTINEL, type Citation, type CopyCandidate, type UncheckedItem } from "./scan.js";
 import type { CopyRecord } from "./types.js";
 
 export type CopyGateRule = "unregistered-copy" | "unknown-copy-citation";
@@ -83,6 +83,18 @@ export interface CopyGateResult {
   candidatesScanned: number;
   /** Candidates that matched a registered entry's text shape or a valid `copy:<id>` citation. */
   matched: number;
+  /**
+   * Echoed straight from `ScanResult.unchecked` (see `scan.ts`) —
+   * constructs the scanner recognized as JSX-shaped but could not
+   * classify. This is passed through UNCHANGED, never filtered or
+   * summarized away: a caller that reads `findings` and ignores this
+   * field can end up exactly where issue #37 started — reporting a clean
+   * result over a file part of which was never actually examined.
+   * `cli.ts` is the one that turns a non-empty list here into something
+   * an operator cannot miss; see its own doc comment for exactly where
+   * that lands in the exit-code contract.
+   */
+  unchecked: UncheckedItem[];
 }
 
 /** The same `{name}` brace-delimited placeholder convention `schema.ts` checks `CopyEntry.text` against — collapsed here to the identical sentinel `scan.ts` uses for a source literal's `${...}` interpolations, so the two sides compare as the same shape regardless of what name either side chose. */
@@ -118,13 +130,18 @@ function buildCopyIndex(record: CopyRecord): CopyIndex {
  * array that is empty is valid input (every candidate will simply be
  * untraced), and a `CopyCandidate[]`/`Citation[]` produced from any file
  * content — however unusual — is evaluated with no assumption about its
- * shape beyond what `scan.ts`'s own types already guarantee.
+ * shape beyond what `scan.ts`'s own types already guarantee. `unchecked`
+ * is required, not optional, and passed straight through onto
+ * `CopyGateResult.unchecked` unmodified — a caller cannot construct a
+ * `CopyGateResult` from this function while accidentally forgetting that
+ * field exists.
  */
 export function checkCopyTraceability(
   candidates: CopyCandidate[],
   citations: Citation[],
   record: CopyRecord,
   filesScanned: number,
+  unchecked: UncheckedItem[],
 ): CopyGateResult {
   const index = buildCopyIndex(record);
   const findings: CopyGateFinding[] = [];
@@ -169,10 +186,12 @@ export function checkCopyTraceability(
       message:
         candidate.kind === "template"
           ? `template literal ${candidate.raw} does not match any registered copy entry's text (shape-compared, interpolations ignored), and carries no valid "copy:<id>" citation`
-          : `string ${candidate.raw} does not match any registered copy entry's text, and carries no valid "copy:<id>" citation`,
+          : candidate.kind === "jsx-text"
+            ? `JSX text "${candidate.raw}" does not match any registered copy entry's text, and carries no valid "copy:<id>" citation`
+            : `string ${candidate.raw} does not match any registered copy entry's text, and carries no valid "copy:<id>" citation`,
       snippet: snippetOf(candidate.raw),
     });
   }
 
-  return { findings, ignored, filesScanned, candidatesScanned: candidates.length, matched };
+  return { findings, ignored, filesScanned, candidatesScanned: candidates.length, matched, unchecked };
 }
