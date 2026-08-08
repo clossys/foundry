@@ -1,0 +1,64 @@
+# Changelog
+
+All notable changes to this package are documented here. Format follows
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+
+## [0.1.0] - Unreleased
+
+### Added
+
+- Initial release. `PublicationEntry`/`FactCitation`/`Ledger` (`types.ts`):
+  the return-path entity — what was published, to which channel, when,
+  derived from which revision of strategy, citing which facts, each fact
+  bound to its value at publication time via a
+  `@vespeneventures/policy` `PolicyBinding` reused directly, not
+  reimplemented. No score, threshold, or verdict field anywhere — this
+  package records outcomes and makes them attributable; it carries no
+  opinion about whether an outcome is good.
+- `validateEntry`/`validateLedger` (`schema.ts`): hand-rolled shape
+  validation, the same style every other package in this foundation uses
+  (plain type guards over `unknown`, an accumulated `LedgerFinding[]`,
+  never throws), including a `PolicyBinding`-shape check delegated
+  straight to `@vespeneventures/policy`'s own `validateBindingShape` and a
+  `"citation-policy-id-mismatch"` rule enforcing that a citation's
+  `valueBinding.policyId` always equals its `factRef`.
+- `canonicalizeValue`/`citeFact` (`fact.ts`): deterministic
+  (key-order-independent) serialization of a JSON-serializable fact value,
+  plus the one sanctioned way to build a `FactCitation` — computes a
+  digest of a fact's canonicalized value via `@vespeneventures/policy`'s
+  own `computeDigest`. This package's first real use of `policy` outside
+  `policy` itself.
+- `appendEntry` (`append.ts`): the one sanctioned, in-process way to grow
+  a `Ledger`. Throws on a malformed entry or a reused id rather than
+  overwriting; returns a new, deep-frozen array, leaving the input
+  ledger and every existing entry in it untouched. No `updateEntry` or
+  `removeEntry` export exists anywhere in this package — that omission is
+  the point, not a gap.
+- `checkAppendOnly` (`append-only-gate.ts`): the at-rest complement to
+  `appendEntry` — a pure diff between two serialized ledger snapshots
+  (e.g. a checked-in JSON file's contents before/after a pull request)
+  that fails closed on any entry removed, reordered, or mutated, using
+  `canonicalizeValue` so a harmless JSON-key-order round-trip is never
+  mistaken for a real change.
+- `checkLedgerDrift` (`drift.ts`): the drift checker — for each fact a
+  ledger cites, compares its recorded value-digest against a
+  caller-supplied current value via `@vespeneventures/policy`'s own
+  `verifyBinding`, all without this package ever importing
+  `@vespeneventures/strategy`. Fails closed in three distinct, separately
+  tested ways: an invalid ledger, an empty ledger, and a non-empty ledger
+  where zero citations could actually be compared to a current value —
+  each reports `ok: false` with its own named finding, and
+  `entriesChecked`/`citationsChecked`/`citationsUnchecked`/
+  `citationsDrifted` are always present so "checked nothing" can never be
+  mistaken for "checked everything, found nothing wrong."
+- `ledger-check` CLI (`bin`), wired to this repository's usual
+  three-state exit-code contract: `0` clean (something was checked,
+  nothing drifted), `1` at least one cited fact has drifted, `2` could
+  not run (bad input, invalid JSON, an invalid or empty ledger, or
+  nothing could be checked) — explicitly distinguishing "found a real
+  problem" from "could not check" at the exit-code level, not just in the
+  printed report.
+
+Zero runtime dependencies beyond `@vespeneventures/policy`, pinned with a
+tilde range (`~0.1.0`), never a caret — a caret range on a `0.x` package is
+patch-only under semver and has broken this repository's CI twice before.
