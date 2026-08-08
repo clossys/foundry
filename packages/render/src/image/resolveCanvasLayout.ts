@@ -39,28 +39,57 @@
  *
  * The precise rule this function applies, stated once so it never has to
  * be reverse-engineered from behavior: after resolution, if NOT ONE
- * resolved binding produced usable text (`textByKey.size === 0`) AND the
- * layout declares NO canvas-level `background` (`layout.background.
- * background`), there is nothing left to paint at all, and this function
- * throws `RenderError("empty-output", ...)` naming the document and every
- * omitted slot. A document with a real `background` but no text slots is
+ * resolved binding produced usable content — no text AND no resolved asset
+ * (`textByKey.size === 0 && assetByKey.size === 0`) — AND the layout
+ * declares NO canvas-level `background` (`layout.background.background`),
+ * there is nothing left to paint at all, and this function throws
+ * `RenderError("empty-output", ...)` naming the document and every omitted
+ * slot. A document with a real `background` but no text/asset slots is
  * NOT empty by this rule — a background-only canvas is legitimate,
  * deliberate content, not an accidental total loss, and rendering ONE such
- * document must never throw just because it happens to have no text in
- * it. This is deliberately NOT "count the `<text>` elements in the
- * output" — that would conflate a rendering detail (how many DOM nodes a
- * slot happens to produce) with the real question (did resolution produce
- * anything a caller asked for).
+ * document must never throw just because it happens to have no text or
+ * images in it. This is deliberately NOT "count the `<text>`/`<image>`
+ * elements in the output" — that would conflate a rendering detail (how
+ * many DOM nodes a slot happens to produce) with the real question (did
+ * resolution produce anything a caller asked for).
+ *
+ * THIS RULE USED TO ONLY LOOK AT TEXT — THAT WAS THE BUG
+ * -------------------------------------------------------------
+ * Before this file called `resolveDocumentAssets`, `textByKey` was the
+ * ONLY content this function ever knew about — a document made entirely of
+ * `assetId` bindings had `textByKey.size === 0` (every one of its slots is
+ * legitimately `resolveCopy`'s `deferredToAssets`, never `texts`) and no
+ * `layout.background` either, so this function threw `"empty-output"` for
+ * a document that was never actually empty: `./image` was refusing to
+ * render the exact shape of document `@vespeneventures/compose` 0.3.0
+ * exists to make possible. Fixed by checking `assetByKey.size` alongside
+ * `textByKey.size` everywhere this file asks "did anything resolve" — see
+ * `resolveImageDocument.test.ts`'s (and `../image/renderImageDocument.test
+ * .ts`'s) asset-only fixtures for the before/after.
+ *
+ * ASSETS GET A STRICTER BAR THAN OPTIONAL TEXT
+ * -------------------------------------------------
+ * An unresolved OPTIONAL text slot is a WARNING here, never fatal (see the
+ * loop below). An `assetId` binding that fails to resolve into a real,
+ * paintable asset does NOT get that leniency, required or not — this
+ * function throws the moment `../internal/assets.ts`'s `hasAssetProblems`
+ * is true for ANY bound asset slot, the identical bar `./web`/`./email`/
+ * `./print` all hold `assetId` bindings to. "An unresolved asset id must
+ * never render a blank box or a placeholder" (this package's own task
+ * brief).
  */
 
 import { requiredSlotKeys, resolveCopy, resolveDocument } from "@vespeneventures/compose";
-import type { ComposeDocument, CopyLookup, LayoutSpec } from "@vespeneventures/compose";
+import type { AssetLookup, ComposeDocument, CopyLookup, LayoutSpec } from "@vespeneventures/compose";
 import { RenderError } from "../internal/errors.js";
+import { describeAssetProblems, hasAssetProblems, resolveDocumentAssets } from "../internal/assets.js";
 import { buildFlatTokenMap, resolveColorRole, type CanvasPixelSize } from "./engine.js";
 import { renderSlotsToSvg } from "./renderSlots.js";
 
 export interface ResolveCanvasLayoutOptions {
   resolveCopyId?: CopyLookup;
+  /** See `@vespeneventures/compose`'s own `AssetLookup`. Omit when no binding in the document uses `assetId` — every `assetId` binding is then treated as unresolved, which is always fatal for this pipeline (see this file's own top comment, "Assets get a stricter bar than optional text"). */
+  resolveAssetId?: AssetLookup;
   tokenOverrides?: Record<string, string>;
 }
 
@@ -102,15 +131,27 @@ export function resolveCanvasLayout(
   const lookup = options.resolveCopyId ?? ((): undefined => undefined);
   const copyResult = resolveCopy(result, lookup);
 
-  const textByKey = new Map<string, string>();
-  for (const t of copyResult.texts) textByKey.set(t.key, t.text);
-
-  const required = requiredSlotKeys(layout);
-  const missingRequiredText = required.filter((key) => !textByKey.has(key));
-  if (missingRequiredText.length > 0) {
+  // Never hand-rolled — see this file's own top comment, "Assets get a
+  // stricter bar than optional text". ANY problem here is fatal,
+  // regardless of which slot(s) it hit or whether they're required.
+  const assetsResolution = resolveDocumentAssets(result, options.resolveAssetId);
+  if (hasAssetProblems(assetsResolution)) {
     throw new RenderError(
       "empty-output",
-      `resolved document "${doc.id}" against its layout, but required slot(s) [${missingRequiredText.join(", ")}] produced no text — every copyId binding must resolve via options.resolveCopyId, and every value binding must be non-empty. Rendering would silently ship an incomplete canvas, which this function refuses to do.`,
+      `resolved document "${doc.id}" against its layout, but at least one assetId binding did not produce a real asset: ${describeAssetProblems(assetsResolution).join("; ")}. Rendering would silently ship a canvas with a broken or missing image, which this function refuses to do.`,
+    );
+  }
+
+  const textByKey = new Map<string, string>();
+  for (const t of copyResult.texts) textByKey.set(t.key, t.text);
+  const assetByKey = assetsResolution.byKey;
+
+  const required = requiredSlotKeys(layout);
+  const missingRequiredContent = required.filter((key) => !textByKey.has(key) && !assetByKey.has(key));
+  if (missingRequiredContent.length > 0) {
+    throw new RenderError(
+      "empty-output",
+      `resolved document "${doc.id}" against its layout, but required slot(s) [${missingRequiredContent.join(", ")}] produced no content — every copyId binding must resolve via options.resolveCopyId, every value binding must be non-empty, and every assetId binding must resolve via options.resolveAssetId. Rendering would silently ship an incomplete canvas, which this function refuses to do.`,
     );
   }
 
@@ -118,29 +159,29 @@ export function resolveCanvasLayout(
 
   // TOTAL LOSS, NOT PARTIAL — see this file's own top comment. A layout
   // with a real canvas-level background is never "empty" even with zero
-  // resolved text slots; a layout with no background AND zero resolved
-  // text slots has nothing left to paint at all.
+  // resolved text/asset slots; a layout with no background AND zero
+  // resolved content has nothing left to paint at all.
   const flat = buildFlatTokenMap(options.tokenOverrides);
   const backgroundFill = layout.background?.background !== undefined ? resolveColorRole(layout.background.background, flat, "none") : undefined;
 
-  if (textByKey.size === 0 && backgroundFill === undefined) {
+  if (textByKey.size === 0 && assetByKey.size === 0 && backgroundFill === undefined) {
     throw new RenderError(
       "empty-output",
-      `resolved document "${doc.id}" against its layout, but every matched slot produced no usable text (unresolved copyId(s), or empty/ambiguous binding(s)) and the layout declares no background — there is nothing left to render. Omitted slot(s): ${[...attemptedKeys].join(", ")}.`,
+      `resolved document "${doc.id}" against its layout, but every matched slot produced no usable content (unresolved copyId(s)/assetId(s), or empty/ambiguous binding(s)) and the layout declares no background — there is nothing left to render. Omitted slot(s): ${[...attemptedKeys].join(", ")}.`,
     );
   }
 
   const warnings: string[] = [];
   for (const key of attemptedKeys) {
-    if (!textByKey.has(key) && !required.includes(key)) {
+    if (!textByKey.has(key) && !assetByKey.has(key) && !required.includes(key)) {
       warnings.push(
-        `slot "${key}" matched a binding but produced no text (unresolved copyId, or an empty/ambiguous binding) and was omitted from the render.`,
+        `slot "${key}" matched a binding but produced no content (unresolved copyId, or an empty/ambiguous binding) and was omitted from the render.`,
       );
     }
   }
 
-  const { markup: slotsMarkup, overflowWarnings } = renderSlotsToSvg(layout, textByKey, canvas, flat);
-  warnings.push(...overflowWarnings);
+  const { markup: slotsMarkup, warnings: slotWarnings } = renderSlotsToSvg(layout, textByKey, assetByKey, canvas, flat);
+  warnings.push(...slotWarnings);
 
   const backgroundRect =
     backgroundFill !== undefined ? `<rect x="0" y="0" width="${canvas.width}" height="${canvas.height}" fill="${backgroundFill}" />` : "";

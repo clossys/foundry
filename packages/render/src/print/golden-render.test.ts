@@ -156,3 +156,89 @@ describe("golden: Custom-sized landscape business card — no bleed/marks/backgr
     expect(html).toContain("Jane &amp; &lt;Doe&gt;");
   });
 });
+
+describe("golden: assetId — an <img> positioned by the slot's frame, exactly like a text slot", () => {
+  const doc: ComposeDocument = {
+    id: "acme-flyer-hero",
+    channel: "print",
+    template: "Flyer",
+    meta: {
+      channel: "print",
+      pageSize: "A4",
+      orientation: "portrait",
+      margins: { top: "20mm", right: "20mm", bottom: "20mm", left: "20mm" },
+    },
+    layout: {
+      slots: [
+        { key: "title", element: "heading", frame: { x: 0, y: 0, w: 1, h: 0.2 }, required: true },
+        { key: "hero", element: "image", frame: { x: 0.1, y: 0.25, w: 0.8, h: 0.4 } },
+      ],
+    },
+    bindings: [
+      { slot: "title", value: "Grand Opening" },
+      { slot: "hero", assetId: "marketing.hero" },
+    ],
+  };
+  const asset = { id: "marketing.hero", src: "https://cdn.example/hero.png", width: 800, height: 400, alt: "Storefront photo" };
+
+  it("renders the exact expected HTML, byte for byte — object-fit:contain so a mismatched aspect ratio never distorts", () => {
+    const { html } = renderPrintDocument(doc, {
+      resolveAssetId: (assetId) => (assetId === "marketing.hero" ? asset : undefined),
+    });
+
+    expect(html).toBe(
+      "<!doctype html>" +
+        '<html lang="en">' +
+        "<head>" +
+        '<meta charset="utf-8">' +
+        "<title>acme-flyer-hero</title>" +
+        "<style>" +
+        "@page{size:A4 portrait;margin-top:20mm;margin-right:20mm;margin-bottom:20mm;margin-left:20mm;}" +
+        "*{box-sizing:border-box;}html,body{margin:0;padding:0;}" +
+        "</style>" +
+        "</head>" +
+        "<body>" +
+        '<div class="page" data-template="Flyer" style="position:relative;width:210mm;height:297mm">' +
+        '<div class="page-content" style="position:absolute;top:20mm;right:20mm;bottom:20mm;left:20mm">' +
+        '<div class="slot" data-slot="title" data-element="heading" ' +
+        `style="position:absolute;left:0%;top:0%;width:100%;height:20%;font-family:${FONT_DISPLAY_ATTR};font-size:28px;break-inside:avoid;page-break-inside:avoid">` +
+        "Grand Opening</div>" +
+        '<div class="slot" data-slot="hero" data-element="image" ' +
+        'style="position:absolute;left:10%;top:25%;width:80%;height:40%;break-inside:avoid;page-break-inside:avoid">' +
+        '<img src="https://cdn.example/hero.png" alt="Storefront photo" style="width:100%;height:100%;object-fit:contain;display:block" />' +
+        "</div>" +
+        "</div>" +
+        "</div>" +
+        "</body>" +
+        "</html>",
+    );
+  });
+
+  it("src/alt escaping — a src/alt containing \", ', <, &, and </script> is escaped, never breaking out of the <img> attribute", () => {
+    const hostileAsset = {
+      id: "marketing.hero",
+      src: `https://cdn.example/hero.png?q="'<&></script>`,
+      width: 10,
+      height: 10,
+      alt: `A "storefront" & <sign> </script>`,
+    };
+    const { html } = renderPrintDocument(doc, { resolveAssetId: () => hostileAsset });
+
+    // print's escapeHtmlAttr escapes &, <, >, " (not ' — safe as-is inside a
+    // double-quoted HTML attribute, the same convention this channel's
+    // own escape.ts documents) — see this test's own assertions below for
+    // exactly what that means for a src containing a raw apostrophe.
+    expect(html).toContain('src="https://cdn.example/hero.png?q=&quot;\'&lt;&amp;&gt;&lt;/script&gt;"');
+    expect(html).toContain('alt="A &quot;storefront&quot; &amp; &lt;sign&gt; &lt;/script&gt;"');
+    expect(html.includes('q="\'<&>')).toBe(false);
+    expect(html.includes("</script>alert")).toBe(false);
+  });
+
+  it("a mixed document — text and asset slots on the same page — both render", () => {
+    const { html } = renderPrintDocument(doc, {
+      resolveAssetId: (assetId) => (assetId === "marketing.hero" ? asset : undefined),
+    });
+    expect(html).toContain(">Grand Opening<");
+    expect(html).toContain('<img src="https://cdn.example/hero.png"');
+  });
+});

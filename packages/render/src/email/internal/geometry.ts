@@ -42,6 +42,7 @@
  */
 
 import type { ElementKind, Frame, SlotSpec, StyleBinding } from "@vespeneventures/compose";
+import type { RenderAsset } from "../../internal/assets.js";
 import type { RenderWarning } from "../types.js";
 
 /** The placeholder every synthetic (no-real-layout) slot shares — see this file's top comment. Never read for ordering or warnings; only present so `SlotSpec`/`resolveDocument` type-check. */
@@ -80,13 +81,33 @@ export function buildSyntheticLayout(bindings: ReadonlyArray<{ slot: unknown }>)
   return { slots };
 }
 
-/** One slot's content plus the `Frame` it was positioned at — what {@link orderEntries}/{@link buildGeometryWarnings} operate on. `style`, when the resolved slot's own `SlotSpec.style` carried one, flows straight through untouched here — this module only ever reads/reorders on `frame`; it is `internal/styles.ts`'s `tdStyleForElement` that actually resolves `style.typography` (and, `style.color`/`.background`/etc. once/if this channel grows to resolve those too — see that file's own doc comment for what it resolves today). */
+/**
+ * One slot's content plus the `Frame` it was positioned at — what
+ * {@link orderEntries}/{@link buildGeometryWarnings} operate on. `style`,
+ * when the resolved slot's own `SlotSpec.style` carried one, flows straight
+ * through untouched here — this module only ever reads/reorders on
+ * `frame`; it is `internal/styles.ts`'s `tdStyleForElement` that actually
+ * resolves `style.typography` (and, `style.color`/`.background`/etc.
+ * once/if this channel grows to resolve those too — see that file's own
+ * doc comment for what it resolves today).
+ *
+ * `text` is ALWAYS populated, even for an `asset`-bearing entry — see
+ * `renderEmailDocument.ts`'s own doc comment: it holds the asset's own
+ * `alt` text there, which is what `internal/plainText.ts`'s
+ * `buildPlainText` emits for that row (a `text/plain` message has no
+ * markup to embed an image into; the alt text is the only meaningful
+ * representation of "there was a picture here"). `asset`, when present,
+ * is what `internal/emailDocument.ts`'s `buildRow` actually paints — an
+ * `<img>` row instead of an escaped-text row — and always wins over `text`
+ * for the HTML output specifically.
+ */
 export interface GeometryEntry {
   key: string;
   frame: Frame;
   text: string;
   element: ElementKind;
   style?: StyleBinding;
+  asset?: RenderAsset;
 }
 
 /**

@@ -36,6 +36,7 @@
  */
 
 import type { SlotSpec } from "@vespeneventures/compose";
+import type { RenderAsset } from "../../internal/assets.js";
 import type { RenderPrintOptions } from "../types.js";
 import { escapeHtmlAttr, escapeHtmlText } from "./escape.js";
 import { frameToPercentStrings } from "./geometry.js";
@@ -103,5 +104,47 @@ export function buildSlotHtml(
   return (
     `<div class="slot" data-slot="${escapeHtmlAttr(spec.key)}" data-element="${escapeHtmlAttr(spec.element)}" ` +
     `style="${styleParts.join(";")}">${escapeHtmlText(text)}</div>`
+  );
+}
+
+/**
+ * Builds one `<div class="slot">` for an `assetId`-resolved slot — an
+ * `<img>` positioned by `spec.frame`, EXACTLY the same `left`/`top`/`width`/
+ * `height` percentage placement and page-break declarations
+ * {@link buildSlotHtml} gives a text slot (see this package's task brief:
+ * "positioned by the slot's frame, same as text slots"). No typography is
+ * resolved here (there is no text to size) and no `style.color`/
+ * `.background` either — those are text/fill concerns `StyleBinding`
+ * documents for a text-shaped slot, not an image.
+ *
+ * `object-fit:contain` is the deliberate choice for HOW the asset fills a
+ * frame whose aspect ratio may not match the asset's own intrinsic one:
+ * `contain` letterboxes (never crops, never stretches) rather than the
+ * `<img>` element's own default behaviour of stretching to fill its box
+ * exactly — an `<img>` with an explicit `width`/`height` and no
+ * `object-fit` WOULD silently distort a mismatched-aspect asset, precisely
+ * the failure this package's own task brief calls out. `width:100%;
+ * height:100%` make the image fill its already-percent-positioned parent
+ * `<div>` (the `.page-content` percentage box `frameToPercentStrings`
+ * already computed), so `object-fit:contain` is resolving against exactly
+ * the same box a text slot's own frame occupies.
+ *
+ * `asset.src`/`asset.alt` are escaped via {@link escapeHtmlAttr} — the
+ * same attribute-escaping every other attribute value in this channel
+ * uses (`data-slot`, `data-template`) — never trusted verbatim: `src` is
+ * an opaque, caller-supplied string this function never fetches, inlines,
+ * or otherwise inspects beyond escaping it safely for this HTML attribute
+ * context (see `escape.ts`'s own doc comment).
+ */
+export function buildImageSlotHtml(spec: SlotSpec, asset: RenderAsset, options: BreakOptions): string {
+  const { left, top, width, height } = frameToPercentStrings(spec.frame);
+
+  const styleParts = ["position:absolute", `left:${left}%`, `top:${top}%`, `width:${width}%`, `height:${height}%`, ...breakDeclarations(spec.key, options)];
+
+  return (
+    `<div class="slot" data-slot="${escapeHtmlAttr(spec.key)}" data-element="${escapeHtmlAttr(spec.element)}" ` +
+    `style="${styleParts.join(";")}">` +
+    `<img src="${escapeHtmlAttr(asset.src)}" alt="${escapeHtmlAttr(asset.alt)}" style="width:100%;height:100%;object-fit:contain;display:block" />` +
+    "</div>"
   );
 }

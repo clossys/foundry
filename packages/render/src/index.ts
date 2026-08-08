@@ -20,6 +20,7 @@ export {
 } from "./web/index.js";
 export type {
   RenderErrorReason,
+  AssetResolver,
   CopyResolver,
   RenderWebOptions,
   RenderWebResult,

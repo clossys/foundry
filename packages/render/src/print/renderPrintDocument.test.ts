@@ -179,6 +179,99 @@ describe("renderPrintDocument — refusal paths", () => {
   });
 });
 
+describe("renderPrintDocument — assetId refusal paths (never a blank box)", () => {
+  const assetDoc: ComposeDocument = {
+    id: "flyer-hero",
+    channel: "print",
+    template: "Flyer",
+    meta: {
+      channel: "print",
+      pageSize: "A4",
+      orientation: "portrait",
+      margins: { top: "20mm", right: "20mm", bottom: "20mm", left: "20mm" },
+    },
+    layout: {
+      slots: [{ key: "hero", element: "image", frame: { x: 0, y: 0, w: 1, h: 1 } }],
+    },
+    bindings: [{ slot: "hero", assetId: "marketing.hero" }],
+  };
+
+  it("REFUSES (empty-output) an unresolved assetId — no resolveAssetId given at all", () => {
+    const error = thrown(() => renderPrintDocument(assetDoc));
+    expect(error.reason).toBe("empty-output");
+    expect(error.message).toContain("marketing.hero");
+  });
+
+  it("REFUSES (empty-output) when resolveAssetId returns undefined for a bound assetId", () => {
+    const error = thrown(() => renderPrintDocument(assetDoc, { resolveAssetId: () => undefined }));
+    expect(error.reason).toBe("empty-output");
+  });
+
+  it("REFUSES (empty-output) when resolveAssetId throws — caught and reported, never propagated raw", () => {
+    const error = thrown(() =>
+      renderPrintDocument(assetDoc, {
+        resolveAssetId: () => {
+          throw new Error("registry down");
+        },
+      }),
+    );
+    expect(error.reason).toBe("empty-output");
+    expect(error.message).toContain("could not even attempt to resolve: hero");
+  });
+
+  it("REFUSES (empty-output) when resolveAssetId is not a function", () => {
+    // Deliberately wrong-typed input — cast, not `@ts-expect-error`; a
+    // *.test.ts file isn't part of this package's real tsc build, so that
+    // directive would be inert and never actually checked.
+    const error = thrown(() => renderPrintDocument(assetDoc, { resolveAssetId: "nope" as unknown as () => unknown }));
+    expect(error.reason).toBe("empty-output");
+  });
+
+  it("REFUSES (empty-output) when resolveAssetId resolves to a value missing the required src/width/height/alt shape", () => {
+    const error = thrown(() => renderPrintDocument(assetDoc, { resolveAssetId: () => ({ nope: true }) }));
+    expect(error.reason).toBe("empty-output");
+    expect(error.message).toContain("marketing.hero");
+  });
+
+  it("an unresolved assetId on a NON-required slot is still fatal — assets get no leniency at all", () => {
+    // "hero" above is not `required: true` — proves this channel's
+    // existing "every bound slot must resolve" bar already covers assets
+    // with no extra leniency to remove (see renderPrintDocument.ts's own
+    // doc comment).
+    expect(() => renderPrintDocument(assetDoc, { resolveAssetId: () => undefined })).toThrow(RenderError);
+  });
+});
+
+describe("before/after: an asset-only print document — the empty-output bug this task fixes", () => {
+  const assetOnlyDoc: ComposeDocument = {
+    id: "asset-only-flyer",
+    channel: "print",
+    template: "Flyer",
+    meta: {
+      channel: "print",
+      pageSize: "A4",
+      orientation: "portrait",
+      margins: { top: "20mm", right: "20mm", bottom: "20mm", left: "20mm" },
+    },
+    layout: {
+      slots: [{ key: "hero", element: "image", frame: { x: 0, y: 0, w: 1, h: 1 } }],
+    },
+    bindings: [{ slot: "hero", assetId: "marketing.hero" }],
+  };
+  const asset = { id: "marketing.hero", src: "https://cdn.example/hero.png", width: 800, height: 400, alt: "Storefront photo" };
+
+  it("BEFORE (still true without resolveAssetId): throws — nothing was resolved", () => {
+    expect(() => renderPrintDocument(assetOnlyDoc)).toThrow(RenderError);
+  });
+
+  it("AFTER: a document made ENTIRELY of assetId bindings renders successfully — never a false empty-output", () => {
+    const { html } = renderPrintDocument(assetOnlyDoc, {
+      resolveAssetId: (assetId) => (assetId === "marketing.hero" ? asset : undefined),
+    });
+    expect(html).toContain('<img src="https://cdn.example/hero.png" alt="Storefront photo"');
+  });
+});
+
 describe("renderPrintDocument — StyleBinding.typography overrides the ElementKind default", () => {
   it("a \"body\" element (default --text-body=15px) with style.typography=\"--text-display-xl\" (72px) emits font-size:72px, not 15px", () => {
     const doc = baseDoc({

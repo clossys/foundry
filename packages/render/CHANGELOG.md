@@ -5,6 +5,106 @@ All notable changes to this package are documented here. Format follows
 
 ## [0.1.0] - Unreleased
 
+### Added
+
+- **Every channel now actually renders `SlotBinding.assetId` as a real
+  image, not styled words.** `@vespeneventures/compose` 0.3.0 added the
+  `assetId` seam and `resolve-assets.ts`'s `resolveAssets`; this release
+  is where all five renderers (`./web`, `./email`, `./print`, `./image`,
+  `./slides`) actually consume it:
+  - **New shared module: `src/internal/assets.ts`** — `internal/
+    tokens.ts`/`internal/typography.ts`'s sibling for assets.
+    `resolveDocumentAssets(result, lookup)` wraps `@vespeneventures/
+    compose`'s own `resolveAssets` (never hand-rolled — issue #43) and
+    validates whatever a caller's `AssetLookup` hands back into a real,
+    paintable `RenderAsset` (`{ src, width, height, alt, mimeType? }`),
+    structurally the same shape `@vespeneventures/assets`' `AssetEntry`
+    exposes but with no dependency on that package. `hasAssetProblems`/
+    `describeAssetProblems` give every channel one shared refusal-message
+    vocabulary.
+  - **`./web`** — `RenderWebOptions.resolveAssetId` (`AssetResolver`). An
+    `assetId`-bound slot becomes a real `<img src alt width height>`
+    (intrinsic dimensions, to avoid layout shift) — `AuthView`'s `brand`
+    slot is the first real consumer.
+  - **`./email`** — `RenderEmailOptions.assetLookup` (`@vespeneventures/
+    compose`'s own `AssetLookup`). An `assetId`-bound slot becomes an
+    `<img>` row joining the same ordered vertical stack as text —
+    explicit `width`/`height` HTML ATTRIBUTES (not just CSS — Outlook
+    needs attributes), `border="0"`, `display:block`.
+  - **`./print`** — `RenderPrintOptions.resolveAssetId` (`AssetResolver`).
+    An `assetId`-bound slot becomes an `<img>` positioned by the slot's
+    frame exactly like a text slot, with `object-fit:contain` so a
+    mismatched intrinsic aspect ratio never distorts.
+  - **`./image`/`./slides`** — `RenderImageOptions`/`RenderSlidesOptions
+    .resolveAssetId` (`@vespeneventures/compose`'s own `AssetLookup`,
+    shared through `resolveCanvasLayout.ts`). An `assetId`-bound
+    `"image"`/`"logo"` slot becomes `<image href= x= y= width= height=
+    preserveAspectRatio=>`, with `asset.alt` carried in BOTH a `<title>`
+    child and an `aria-label` attribute. `"logo"` uses `xMidYMid meet`
+    (letterboxed, never cropped); `"image"` uses `xMidYMid slice` (filled,
+    cropped) — neither ever DISTORTS (SVG's `preserveAspectRatio` only
+    distorts at `"none"`, never used here) — and a mismatch between the
+    asset's own aspect ratio and its frame's pushes a non-fatal warning,
+    silent when they agree. The pre-existing (untested)
+    `MEDIA_ELEMENT_KINDS` text-as-URL fallback (`renderLegacyTextMediaSlot`)
+    is kept for a caller with no asset registry at all, but an
+    `assetId`-resolved asset always wins when both are somehow present for
+    one slot (they can't be — a binding has exactly one source).
+  - **`alt` always reaches the output, on every channel** — dropped alt
+    text is treated as a bug, not an edge case, matching
+    `@vespeneventures/assets`' own `AssetEntry.alt` being required.
+  - **An unresolved, wrong-shaped, or broken-lookup `assetId` binding is
+    ALWAYS fatal** (`RenderError("empty-output", ...)`), regardless of
+    whether the slot is `required` — a stricter bar than this package's
+    existing per-channel leniency for an unresolved OPTIONAL `copyId`.
+    "An unresolved asset id must never render a blank box or a
+    placeholder."
+  - **`src` is emitted verbatim, escaped for its own output context, never
+    fetched, inlined, or otherwise interpreted** — an opaque string from
+    the caller's own asset registry, exactly like `@vespeneventures/
+    assets`' own contract promises.
+
+### Fixed
+
+- **`./image`/`./slides` no longer throw `"empty-output"` for a document
+  made ENTIRELY of `assetId` bindings.** Before this release,
+  `resolveCanvasLayout.ts`'s "did anything resolve" check only ever looked
+  at resolved TEXT (`textByKey.size === 0`) — an asset-only document
+  legitimately has zero text (every one of its slots is `resolveCopy`'s
+  own `deferredToAssets`, never `texts`), so this channel refused to
+  render the exact shape of document `@vespeneventures/compose` 0.3.0
+  exists to make possible. Fixed by checking resolved ASSETS
+  (`assetByKey.size`) everywhere this file asks "did anything resolve" —
+  see `resolveCanvasLayout.ts`'s own doc comment for the full before/after
+  reasoning.
+- **`./email` no longer crashes (`Cannot read properties of undefined
+  (reading 'text')`) on a document mixing `copyId`/`value` and `assetId`
+  bindings.** `renderEmailDocument.ts` used to zip `result.resolved[i]`
+  against `copyResult.texts[i]` BY ARRAY POSITION — correct only when
+  every bound slot resolves through `resolveCopy` (true before `assetId`
+  existed), and silently wrong (or an outright crash on `undefined`) the
+  moment a document has even one `assetId` binding, since `resolveCopy`'s
+  own `texts` array omits `deferredToAssets` entries entirely. Fixed by
+  joining `copyResult.texts` and the new `resolveDocumentAssets` result BY
+  SLOT KEY (`Map`), which cannot misalign this way.
+- **`./print` no longer crashes (`Cannot read properties of undefined
+  (reading 'replace')`) on the identical asset-binding shape**, for the
+  identical reason: `renderPrintDocument.ts` assumed `textByKey.get(key)!`
+  was always defined for every resolved slot key, which stopped being true
+  the moment a slot resolved via `assetId` instead of `copyId`/`value`.
+  Fixed the same way — `assetByKey` is checked first, per slot key, before
+  falling back to `textByKey`.
+- **`./web` no longer silently drops an `assetId`-bound slot with no
+  visible error.** Before this release, `renderWebDocument`'s content loop
+  only ever read `binding.copyId`/`.value` — an `assetId`-only binding has
+  neither, so the slot silently produced no content and the page rendered
+  as if the binding had never existed at all, with no throw and no
+  warning. This is arguably the worst of the five channels' pre-existing
+  behaviours: a document that LOOKS like it resolved correctly but is
+  quietly missing an image nobody asked to have dropped. Fixed by routing
+  `assetId` bindings through `../internal/assets.ts` and refusing
+  (`RenderError("empty-output", ...)`) whenever one fails to resolve.
+
 ### Changed
 
 - `@vespeneventures/tokens` dependency range bumped `~0.5.0` -> `~0.6.0`:

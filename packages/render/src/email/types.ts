@@ -1,4 +1,4 @@
-import type { CopyLookup, LayoutSpec } from "@vespeneventures/compose";
+import type { AssetLookup, CopyLookup, LayoutSpec } from "@vespeneventures/compose";
 
 // ---------------------------------------------------------------------------
 // RenderWarning — the geometry loss report
@@ -47,6 +47,16 @@ export interface RenderEmailOptions {
   layout?: LayoutSpec;
   /** See `@vespeneventures/compose`'s own `CopyLookup`. Omitted entirely (rather than passed as `undefined`) is treated the same as a lookup that resolves nothing — every `copyId` binding is then unresolved, which fails this function's own resolution bar (see `renderEmailDocument.ts`). */
   lookup?: CopyLookup;
+  /**
+   * See `@vespeneventures/compose`'s own `AssetLookup` — the identical seam
+   * `lookup` draws for `copyId`, one binding field over. Omitted entirely is
+   * treated the same as a lookup that resolves nothing — every `assetId`
+   * binding is then unresolved, which is ALWAYS fatal for this channel (see
+   * `renderEmailDocument.ts`'s own doc comment: email's existing "every
+   * bound slot must resolve" bar already covers assets too, with no extra
+   * leniency to remove).
+   */
+  assetLookup?: AssetLookup;
   /** A `flattenTokens` override map (`@vespeneventures/tokens`' brand-override shape) — passed straight through to `internal/styles.ts`'s `buildEmailPalette`. Omit to render with the unbranded default token values. */
   brand?: Record<string, string>;
 }

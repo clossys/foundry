@@ -1,4 +1,4 @@
-import type { ComposeDocument, CopyLookup, SlidesMeta } from "@vespeneventures/compose";
+import type { AssetLookup, ComposeDocument, CopyLookup, SlidesMeta } from "@vespeneventures/compose";
 
 // ---------------------------------------------------------------------------
 // SlidesDeckInput — the input shape decision this package makes
@@ -45,6 +45,8 @@ export interface SlidesDeckInput {
 export interface RenderSlidesOptions {
   /** See `RenderImageOptions.resolveCopyId` (`../image/types.ts`) — the identical `CopyLookup` shape, applied uniformly to every slide in the deck. */
   resolveCopyId?: CopyLookup;
+  /** See `RenderImageOptions.resolveAssetId` (`../image/types.ts`) — the identical `AssetLookup` shape, applied uniformly to every slide in the deck. An unresolved `assetId` binding is ALWAYS fatal (see `../image/resolveCanvasLayout.ts`'s own doc comment), so one slide with a broken image fails the whole deck exactly like a failed `resolveCopyId` already does — see `renderSlidesDeck.ts`, "one failing slide fails the whole deck". */
+  resolveAssetId?: AssetLookup;
   /** See `RenderImageOptions.tokenOverrides` — applied uniformly to every slide in the deck, so a whole deck renders against one consistent brand. */
   tokenOverrides?: Record<string, string>;
 }

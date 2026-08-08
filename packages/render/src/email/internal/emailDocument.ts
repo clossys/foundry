@@ -22,6 +22,7 @@
  */
 
 import type { ElementKind, StyleBinding } from "@vespeneventures/compose";
+import type { RenderAsset } from "../../internal/assets.js";
 import { buildHiddenPreheaderContent, escapeHtml } from "./escapeHtml.js";
 import type { EmailPalette } from "./styles.js";
 import { readEmailToken, tdStyleForElement } from "./styles.js";
@@ -32,6 +33,13 @@ export interface EmailDocumentEntry {
   text: string;
   /** The resolved slot's own `SlotSpec.style`, if it had one — read only for `style.typography` today (see `tdStyleForElement`'s own doc comment). */
   style?: StyleBinding;
+  /**
+   * When present, this entry came from an `assetId` binding — `buildRow`
+   * paints an `<img>` for it instead of `text` (`text` is still populated,
+   * with the asset's own `alt`, for `internal/plainText.ts` — see
+   * `../internal/geometry.ts`'s own `GeometryEntry` doc comment).
+   */
+  asset?: RenderAsset;
 }
 
 export interface BuildEmailHtmlInput {
@@ -41,10 +49,37 @@ export interface BuildEmailHtmlInput {
   palette: EmailPalette;
 }
 
-/** One resolved slot's `<tr><td>...</td></tr>` row. `escapeHtml` is the ONLY thing standing between a slot's resolved text and this document's markup — see that module's own doc comment for exactly what it defends against. */
+/**
+ * One resolved asset slot's `<img>` tag. Every attribute Outlook's
+ * Word-based rendering engine needs is emitted as a real HTML ATTRIBUTE,
+ * never CSS alone (see this package's task brief: "Outlook needs
+ * attributes") — `width`/`height` as bare-number attributes (the asset's
+ * own INTRINSIC pixel dimensions; email has no frame/geometry concept for
+ * an image to be sized against, the same reason `./web`'s own `<img>`
+ * emits intrinsic dimensions rather than any layout size) plus
+ * `border="0"` (some clients draw a default border around a linked/broken
+ * image without it) and `display:block` (removes the few pixels of
+ * baseline whitespace an inline `<img>` otherwise picks up beneath it,
+ * consistent with this channel's own full-width block-stack model). `src`
+ * is an OPAQUE string from the caller's asset registry — this function
+ * never fetches it, never inlines it, and never inspects it beyond
+ * escaping it exactly like every other untrusted string this channel
+ * emits (`escapeHtml` — see that module's own doc comment for exactly what
+ * it defends against, including a `src`/`alt` containing a raw `"` or
+ * `</script...` sequence).
+ */
+function buildImageTag(asset: RenderAsset): string {
+  return (
+    `<img src="${escapeHtml(asset.src)}" alt="${escapeHtml(asset.alt)}" width="${asset.width}" height="${asset.height}" ` +
+    `border="0" style="display:block" />`
+  );
+}
+
+/** One resolved slot's `<tr><td>...</td></tr>` row — an `<img>` (via {@link buildImageTag}) when `entry.asset` is present, escaped text otherwise. `escapeHtml` is the ONLY thing standing between a slot's resolved text/asset fields and this document's markup — see that module's own doc comment for exactly what it defends against. */
 function buildRow(entry: EmailDocumentEntry, palette: EmailPalette): string {
   const style = tdStyleForElement(entry.element, palette, entry.style, `slot "${entry.key}"`);
-  return `<tr><td style="${style}">${escapeHtml(entry.text)}</td></tr>`;
+  const content = entry.asset !== undefined ? buildImageTag(entry.asset) : escapeHtml(entry.text);
+  return `<tr><td style="${style}">${content}</td></tr>`;
 }
 
 /**

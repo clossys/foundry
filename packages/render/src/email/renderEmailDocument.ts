@@ -71,11 +71,48 @@
  *      ordered/deduplicated entries) for `text` — see that module's own
  *      doc comment for why deriving both from one shared list, rather
  *      than stripping tags off `html`, is load-bearing.
+ *
+ * IMAGES: `assetId` BINDINGS JOIN THE SAME ORDERED ROW STACK AS TEXT
+ * -----------------------------------------------------------------------
+ * `SlotBinding.assetId` (`@vespeneventures/compose` 0.3.0) resolves via
+ * `../internal/assets.ts`'s `resolveDocumentAssets` — never hand-rolled,
+ * same reasoning as step 4 above, one binding field over. Email has no
+ * absolute positioning at all (see step 7): an image slot is just another
+ * full-width row in the vertical stack, positioned by `frame.y`/`frame.x`
+ * exactly like a text row, painted as an `<img>` instead of escaped text
+ * (`internal/emailDocument.ts`'s `buildRow`). Because `resolveCopy` and
+ * `resolveDocumentAssets` each independently pick out only the bindings
+ * that are their own job (deferring the other's — see `@vespeneventures/
+ * compose`'s own `resolve-copy.ts`/`resolve-assets.ts`), the two passes'
+ * result arrays are NOT the same length as `result.resolved` whenever the
+ * document mixes both kinds — so this function joins them by SLOT KEY
+ * (`Map`), never by array position. A prior version of this file zipped
+ * `result.resolved[i]` against `copyResult.texts[i]` positionally, which
+ * silently misaligned (or crashed on `undefined`) the moment a document
+ * had even one `assetId` binding — exactly the "renders wrong content, or
+ * nothing, without saying so" failure this whole package refuses
+ * everywhere else. Key-based lookup cannot misalign this way.
+ *
+ * SAME "NO LENIENCY" BAR AS TEXT — AN ASSET-ONLY DOCUMENT IS NOT EMPTY
+ * -----------------------------------------------------------------------
+ * Step 5 above already holds every bound TEXT slot to a stricter bar than
+ * `./web`'s (no leniency for "optional"). Assets get the identical
+ * treatment, for the identical reason: `hasAssetProblems` forces a refusal
+ * the moment ANY `assetId` binding fails to resolve into a real, paintable
+ * asset. The other half of that same discipline is the fix this file
+ * exists to prove: a document made ENTIRELY of `assetId` bindings (zero
+ * `copyId`/`value` anywhere) must still render — `resolveCopy`'s own `ok`
+ * already reports `true` for that shape (see its doc comment,
+ * "`deferredToAssets`"), so the old bug here was never `resolveCopy`
+ * itself; it was this file's positional zip silently producing zero rows
+ * (or throwing on `undefined`) for a document `resolveCopy` correctly said
+ * was fine.
  */
 
 import { resolveCopy, resolveDocument } from "@vespeneventures/compose";
 import type { ComposeDocument, EmailMeta } from "@vespeneventures/compose";
 import { RenderError } from "../internal/errors.js";
+import { describeAssetProblems, hasAssetProblems, resolveDocumentAssets } from "../internal/assets.js";
 import { buildEmailHtml } from "./internal/emailDocument.js";
 import { buildGeometryWarnings, buildSyntheticLayout, orderEntries } from "./internal/geometry.js";
 import type { GeometryEntry } from "./internal/geometry.js";
@@ -118,7 +155,12 @@ export function renderEmailDocument(doc: ComposeDocument, options: RenderEmailOp
 
   const lookup = options.lookup ?? (() => undefined);
   const copyResult = resolveCopy(result, lookup);
-  if (!copyResult.ok) {
+
+  // Never hand-rolled — see this file's own top comment, "Images: assetId
+  // bindings join the same ordered row stack as text".
+  const assetsResolution = resolveDocumentAssets(result, options.assetLookup);
+
+  if (!copyResult.ok || hasAssetProblems(assetsResolution)) {
     const parts: string[] = [];
     if (copyResult.unresolvedCopyIds.length > 0) {
       parts.push(`copyId(s) that did not resolve to real text: ${copyResult.unresolvedCopyIds.join(", ")}`);
@@ -126,33 +168,53 @@ export function renderEmailDocument(doc: ComposeDocument, options: RenderEmailOp
     if (copyResult.unchecked.length > 0) {
       parts.push(`slot(s) resolveCopy could not even attempt to resolve: ${copyResult.unchecked.join(", ")}`);
     }
-    if (copyResult.texts.length === 0 && parts.length === 0) {
-      parts.push("no slot produced any text at all");
+    parts.push(...describeAssetProblems(assetsResolution));
+    if (parts.length === 0) {
+      parts.push("no slot produced any content at all");
     }
     throw new RenderError(
       "empty-output",
-      `renderEmailDocument resolved document "${doc.id}" against its layout, but not every bound slot produced real text: ${parts.join("; ")}. Rendering would silently ship an incomplete email, which this function refuses to do.`,
+      `renderEmailDocument resolved document "${doc.id}" against its layout, but not every bound slot produced real content: ${parts.join("; ")}. Rendering would silently ship an incomplete email, which this function refuses to do.`,
     );
   }
 
-  // `copyResult.texts` is aligned 1:1, same order, with `result.resolved` —
-  // guaranteed by `resolveCopy`'s own iteration (see its doc comment) AND
-  // by `copyResult.ok` above, which requires zero skipped entries. Safe to
-  // zip by index.
-  const zipped: GeometryEntry[] = result.resolved.map((slot, i) => ({
-    key: slot.key,
-    frame: slot.spec.frame,
-    element: slot.spec.element,
-    text: copyResult.texts[i]!.text,
-    ...(slot.spec.style !== undefined ? { style: slot.spec.style } : {}),
-  }));
+  // Joined by SLOT KEY, never by array position — see this file's own top
+  // comment for why a positional zip against either `copyResult.texts` or
+  // `assetsResolution.byKey` alone is wrong the moment a document mixes
+  // both content kinds (each pass's own result array omits the other
+  // pass's slots entirely). Given the refusal check just above passed,
+  // every entry in `result.resolved` is guaranteed to have EITHER a text
+  // entry OR a valid asset entry — `resolveDocument`'s own
+  // binding-source-exclusivity check (already enforced before this
+  // function ever calls `resolveCopy`/`resolveDocumentAssets`) means each
+  // binding has EXACTLY one of `copyId`/`value`/`assetId`, and each of
+  // those two passes only ever fails to place a slot it actually owns into
+  // its own "resolved" bucket via a problem this function has already
+  // refused on.
+  const textByKey = new Map(copyResult.texts.map((t) => [t.key, t.text]));
+  const assetByKey = assetsResolution.byKey;
+
+  const zipped: GeometryEntry[] = [];
+  for (const slot of result.resolved) {
+    const asset = assetByKey.get(slot.key);
+    const text = asset !== undefined ? asset.alt : textByKey.get(slot.key);
+    if (text === undefined) continue; // Unreachable given the refusal check above — see this block's own comment.
+    zipped.push({
+      key: slot.key,
+      frame: slot.spec.frame,
+      element: slot.spec.element,
+      text,
+      ...(asset !== undefined ? { asset } : {}),
+      ...(slot.spec.style !== undefined ? { style: slot.spec.style } : {}),
+    });
+  }
 
   // Last-write-wins on duplicate slot keys — see this file's own doc
   // comment, point 6. `Map.set` on an already-present key updates its
   // value without moving its position, so the FIRST occurrence's position
   // is kept (irrelevant here since every occurrence of one key shares the
   // same `SlotSpec`, hence the same `frame`) while the LAST occurrence's
-  // text wins.
+  // content wins.
   const deduped = new Map<string, GeometryEntry>();
   for (const entry of zipped) deduped.set(entry.key, entry);
   const entries = [...deduped.values()];

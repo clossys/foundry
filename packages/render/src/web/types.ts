@@ -34,12 +34,46 @@ import type { ReactNode } from "react";
 export type CopyResolver = (copyId: string) => string | undefined;
 
 // ---------------------------------------------------------------------------
+// AssetResolver — the assetId seam, resolved the same way copyId is
+// ---------------------------------------------------------------------------
+
+/**
+ * Resolves a `SlotBinding.assetId` into a real asset — the identical seam
+ * `CopyResolver` draws for `copyId`, one binding field over. Same shape as
+ * `@vespeneventures/compose`'s own `AssetLookup` (`(assetId: string) =>
+ * unknown`), declared locally here rather than imported, for the same
+ * reason `CopyResolver` is its own local declaration and not `compose`'s
+ * `CopyLookup` — see `RenderWebOptions`'s own doc comment history for why
+ * this package's `./web` and `./print` channels keep their own small type
+ * declarations rather than a cross-channel import.
+ *
+ * Returns `unknown` on purpose: a caller might hand back a real
+ * `@vespeneventures/assets` `AssetEntry`, a bare object literal built for a
+ * test, or anything else with the right shape — `renderWebDocument` (via
+ * `../internal/assets.ts`'s `resolveDocumentAssets`) validates whatever
+ * comes back into a real, paintable `RenderAsset` (`src`/`width`/`height`/
+ * `alt`) before ever using it, and refuses to render rather than trust an
+ * unchecked shape. Returns `undefined`/`null` for an id the resolver has no
+ * asset for — treated as UNRESOLVED, never as a signal to render a blank
+ * image.
+ */
+export type AssetResolver = (assetId: string) => unknown;
+
+// ---------------------------------------------------------------------------
 // RenderWebOptions / RenderWebResult
 // ---------------------------------------------------------------------------
 
 export interface RenderWebOptions {
   /** See {@link CopyResolver}. Omit when every binding in the document uses `value`, never `copyId`. */
   resolveCopyId?: CopyResolver;
+  /**
+   * See {@link AssetResolver}. Omit when no binding in the document uses
+   * `assetId` — every `assetId` binding is then treated as unresolved,
+   * which is fatal for that binding (see `renderWebDocument.ts`'s own doc
+   * comment on why an unresolved asset is never silently omitted the way an
+   * unresolved OPTIONAL text binding is).
+   */
+  resolveAssetId?: AssetResolver;
 }
 
 /** What `renderWebDocument` returns: the two things a web `ComposeDocument` renders to. See `renderWebDocument.ts`'s own doc comment. */

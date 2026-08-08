@@ -101,6 +101,100 @@ describe("golden: a simple four-slot welcome email", () => {
   });
 });
 
+describe("golden: assetId — an <img> row, byte for byte, joining the same ordered stack as text", () => {
+  const layout: LayoutSpec = {
+    slots: [
+      { key: "heading", element: "heading", frame: { x: 0, y: 0, w: 1, h: 0.1 }, required: true },
+      { key: "hero", element: "image", frame: { x: 0, y: 0.1, w: 1, h: 0.4 } },
+    ],
+  };
+  const doc: ComposeDocument = {
+    id: "acme-hero-email",
+    channel: "email",
+    template: "T",
+    meta: { channel: "email", subject: "S", preheader: "P" },
+    bindings: [
+      { slot: "heading", value: "Big news" },
+      { slot: "hero", assetId: "marketing.hero" },
+    ],
+  };
+  const asset = { id: "marketing.hero", src: "https://cdn.example/hero.png", width: 600, height: 300, alt: "A hero shot" };
+
+  it("renders the exact expected HTML, byte for byte — an <img> row with explicit width/height ATTRIBUTES, border=0, display:block", () => {
+    const { html } = renderEmailDocument(doc, {
+      layout,
+      assetLookup: (assetId) => (assetId === "marketing.hero" ? asset : undefined),
+    });
+
+    expect(html).toContain(
+      '<tr><td style="font-family:ui-sans-serif, system-ui, -apple-system, \'Segoe UI\', sans-serif;font-size:13px;font-weight:400;line-height:1.4;color:#6f6f6f;mso-line-height-rule:exactly;margin:0;text-align:center;padding:16px 24px;">' +
+        '<img src="https://cdn.example/hero.png" alt="A hero shot" width="600" height="300" border="0" style="display:block" />' +
+        "</td></tr>",
+    );
+  });
+
+  it("the plain-text alternative carries the asset's own alt text for that row", () => {
+    const { text } = renderEmailDocument(doc, {
+      layout,
+      assetLookup: (assetId) => (assetId === "marketing.hero" ? asset : undefined),
+    });
+    expect(text).toBe("Big news\n\nA hero shot\n");
+  });
+
+  it("src/alt escaping — a src/alt containing \", ', <, &, and </script> is escaped, never breaking out of the <img> attribute", () => {
+    const hostileAsset = {
+      id: "marketing.hero",
+      src: `https://cdn.example/hero.png?q="'<&></script>`,
+      width: 10,
+      height: 10,
+      alt: `Say "hi" & <bye> </script>`,
+    };
+    const { html } = renderEmailDocument(doc, { layout, assetLookup: () => hostileAsset });
+
+    expect(html).toContain(
+      'src="https://cdn.example/hero.png?q=&quot;&#39;&lt;&amp;&gt;&lt;/script&gt;"',
+    );
+    expect(html).toContain('alt="Say &quot;hi&quot; &amp; &lt;bye&gt; &lt;/script&gt;"');
+    expect(html.includes('q="\'<&>')).toBe(false);
+    expect(html.includes("</script>alert")).toBe(false);
+  });
+});
+
+describe("golden: a mixed document — text and asset slots in one email", () => {
+  it("renders a text row, an image row, and a second text row, in frame order", () => {
+    const layout: LayoutSpec = {
+      slots: [
+        { key: "eyebrow", element: "eyebrow", frame: { x: 0, y: 0, w: 1, h: 0.05 } },
+        { key: "hero", element: "image", frame: { x: 0, y: 0.05, w: 1, h: 0.4 } },
+        { key: "body", element: "body", frame: { x: 0, y: 0.45, w: 1, h: 0.2 }, required: true },
+      ],
+    };
+    const doc: ComposeDocument = {
+      id: "acme-mixed",
+      channel: "email",
+      template: "T",
+      meta: { channel: "email", subject: "S", preheader: "P" },
+      bindings: [
+        { slot: "eyebrow", value: "ACME" },
+        { slot: "hero", assetId: "marketing.hero" },
+        { slot: "body", copyId: "welcome.body" },
+      ],
+    };
+    const asset = { id: "marketing.hero", src: "https://cdn.example/hero.png", width: 600, height: 300, alt: "A hero shot" };
+
+    const { html, text } = renderEmailDocument(doc, {
+      layout,
+      lookup: (copyId) => (copyId === "welcome.body" ? "Glad you're here." : undefined),
+      assetLookup: (assetId) => (assetId === "marketing.hero" ? asset : undefined),
+    });
+
+    expect(html.indexOf(">ACME<")).toBeGreaterThan(-1);
+    expect(html.indexOf('<img src="https://cdn.example/hero.png"')).toBeGreaterThan(html.indexOf(">ACME<"));
+    expect(html.indexOf(">Glad you&#39;re here.<")).toBeGreaterThan(html.indexOf('<img src="https://cdn.example/hero.png"'));
+    expect(text).toBe("ACME\n\nA hero shot\n\nGlad you're here.\n");
+  });
+});
+
 describe("golden: HTML-escaping — the <script> injection case", () => {
   it("escapes <script>, &, \", and > inside a resolved slot's text, and leaves the plain-text alternative unescaped", () => {
     const layout: LayoutSpec = {
