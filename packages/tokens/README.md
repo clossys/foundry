@@ -425,13 +425,13 @@ wants a token's name or default value without parsing CSS.
 | `TOKEN_FAMILIES` | const | `readonly TokenFamily[]` — the 24 semantic families, in the order they appear in the "Token reference" section above. |
 | `TokenDefinition` | type | `{ property, family, value, brandable }` — one entry of `TOKENS`. |
 | `TokenFamily` | type | The union of the 24 family name strings (`"surface"`, `"ink"`, ... `"alpha"`). |
-| `checkBrandCoverage` | function | `(declarations, options?) => BrandCoverageReport` — checks a brand's already-parsed custom-property declarations against `TOKENS`. See "Checking a real brand.css", below. |
-| `BrandCoverageCheckOptions` | type | `{ tokens? }` — `checkBrandCoverage`'s second argument. |
-| `BrandCoverageReport` | type | `{ ok, declarationsChecked, brandableSlotsChecked, findings, unchecked, reason? }` — `checkBrandCoverage`'s return shape. |
-| `BrandCoverageFinding` | type | `{ rule, slot, message }` — one entry of `BrandCoverageReport.findings`. |
-| `BrandCoverageFindingRule` | type | `"uncovered-brandable-slot" \| "unknown-slot" \| "non-brandable-override"`. |
-| `BrandCoverageUnchecked` | type | `{ key, reason }` — a declaration key `checkBrandCoverage` could not classify at all. |
-| `BrandCoverageFailureReason` | type | `"nothing-to-check" \| "coverage-gap"` — why `BrandCoverageReport.ok` is `false`, when it is. |
+| `checkBrandFileCoverage` | function | `(declarations, options?) => BrandFileCoverageReport` — checks a brand's already-parsed custom-property declarations against `TOKENS`. See "Checking a real brand.css", below. |
+| `BrandFileCoverageCheckOptions` | type | `{ tokens? }` — `checkBrandFileCoverage`'s second argument. |
+| `BrandFileCoverageReport` | type | `{ ok, declarationsChecked, brandableSlotsChecked, findings, unchecked, reason? }` — `checkBrandFileCoverage`'s return shape. |
+| `BrandFileCoverageFinding` | type | `{ rule, slot, message }` — one entry of `BrandFileCoverageReport.findings`. |
+| `BrandFileCoverageFindingRule` | type | `"uncovered-brandable-slot" \| "unknown-slot" \| "non-brandable-override"`. |
+| `BrandFileCoverageUnchecked` | type | `{ key, reason }` — a declaration key `checkBrandFileCoverage` could not classify at all. |
+| `BrandFileCoverageFailureReason` | type | `"nothing-to-check" \| "coverage-gap"` — why `BrandFileCoverageReport.ok` is `false`, when it is. |
 | `readBrandCss` | function | `(path) => BrandCssReadResult` — reads and parses a real `.css` file's custom-property declarations. See "Checking a real brand.css", below. |
 | `parseBrandDeclarations` | function | `(css) => ParsedBrandCss` — the pure, no-I/O half of `readBrandCss`, for CSS text already in hand. |
 | `BrandCssReadResult` | type | `{ path, declarations, unchecked, issues, complete }` — `readBrandCss`'s return shape. |
@@ -458,15 +458,15 @@ contract package in this ecosystem ships (`@vespeneventures/voice`'s
 `@vespeneventures/strategy`'s `checkFactsTraceability`):
 
 ```ts
-import { checkBrandCoverage, readBrandCss } from "@vespeneventures/tokens";
+import { checkBrandFileCoverage, readBrandCss } from "@vespeneventures/tokens";
 
 const { declarations, unchecked } = readBrandCss("src/styles/brand.css");
-const report = checkBrandCoverage(declarations);
+const report = checkBrandFileCoverage(declarations);
 
 console.log(report.ok); // true only if every brandable slot has a real value, no typo'd slot name, no override of a structural slot, and nothing was left unparsed
 ```
 
-`checkBrandCoverage` reports three kinds of finding — every `brandable: true`
+`checkBrandFileCoverage` reports three kinds of finding — every `brandable: true`
 slot with no real (non-empty) declared value, every declaration naming a
 slot this package does not recognize (almost always a typo), and every
 declaration targeting a structural (`brandable: false`) slot, which
@@ -474,12 +474,22 @@ declaration targeting a structural (`brandable: false`) slot, which
 an `unchecked` list for anything it was handed but could not even classify.
 `ok` is `true` only when something was actually checked AND the result is
 completely clean; a `declarations` object with zero entries can never read as
-a pass. `readBrandCss` is the file-reading half: a small, hand-written,
-zero-dependency CSS reader (see `parseBrandDeclarations` for the pure,
-no-I/O version) that understands `:root { ... }`, multiple selectors,
-comments, `@media` blocks, and multi-line declarations — anything it cannot
-parse is reported in `unchecked`, a line and a detail, never silently
-dropped.
+a pass (nor can an unreadable/unparseable file — see "CLI", below, for the
+exit-code side of that). `readBrandCss` is the file-reading half: a small,
+hand-written, zero-dependency CSS reader (see `parseBrandDeclarations` for
+the pure, no-I/O version) that understands `:root { ... }`, multiple
+selectors, comments, `@media` blocks, and multi-line declarations — anything
+it cannot parse (including an unterminated comment, which a real browser
+would treat as swallowing everything after it) is reported in `unchecked`, a
+line and a detail, never silently dropped and never allowed to produce a
+false pass.
+
+Not to be confused with `@vespeneventures/strategy`'s own, differently-scoped
+`checkBrandCoverage`, which checks whether a `BrandDerivation[]` (a strategy
+artifact) accounts for every brandable slot BY NAME — a layer up from this
+one, which checks a real CSS FILE's actual declarations. See
+`checkBrandFileCoverage`'s own doc comment in `src/check-brand-file-coverage.ts`
+for the full distinction.
 
 ### CLI
 
@@ -487,7 +497,7 @@ dropped.
 npx tokens-brand-check src/styles/brand.css
 ```
 
-`tokens-brand-check` wires `readBrandCss` and `checkBrandCoverage` together
+`tokens-brand-check` wires `readBrandCss` and `checkBrandFileCoverage` together
 into an installable CLI with the same three-state exit-code contract this
 ecosystem's other gates use: `0` clean, `1` at least one finding, `2` could
 not run (the file is missing/unreadable, or some part of it could not be

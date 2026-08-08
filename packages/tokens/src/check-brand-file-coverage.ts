@@ -1,25 +1,25 @@
 /**
- * `checkBrandCoverage` — the check every sibling contract package in this
- * repository ships and this one, until now, did not: `@vespeneventures/voice`
- * has `checkCopy`, `@vespeneventures/copy` has `checkCopyTraceability`,
- * `@vespeneventures/strategy` has `checkFactsTraceability` (and its own,
- * differently-shaped `checkBrandCoverage` — see "NAME COLLISION" below),
- * `@vespeneventures/compose` has `validateComposeDocument`. This package
- * shipped `TOKENS` — a vocabulary — and `styles/brand-template.css` — a
- * template — with nothing that answers "did a consumer's real brand.css
- * actually fill in the template correctly, and did they typo a slot name
- * while doing it?" `src/brand-coverage.test.ts` answers that question only
- * for THIS package's own `styles/brand-template.css`; a consumer who copies
- * that template into their own project and edits it has no equivalent way to
- * ask the same question about their own file. This module is that equivalent,
+ * `checkBrandFileCoverage` — the check every sibling contract package in
+ * this repository ships and this one, until now, did not:
+ * `@vespeneventures/voice` has `checkCopy`, `@vespeneventures/copy` has
+ * `checkCopyTraceability`, `@vespeneventures/strategy` has
+ * `checkFactsTraceability`, `@vespeneventures/compose` has
+ * `validateComposeDocument`. This package shipped `TOKENS` — a vocabulary —
+ * and `styles/brand-template.css` — a template — with nothing that answers
+ * "did a consumer's real brand.css actually fill in the template correctly,
+ * and did they typo a slot name while doing it?" `src/brand-coverage.test.ts`
+ * answers that question only for THIS package's own
+ * `styles/brand-template.css`; a consumer who copies that template into
+ * their own project and edits it has no equivalent way to ask the same
+ * question about their own file. This module is that equivalent,
  * generalized to run against caller-supplied data instead of one fixed file
  * this package ships.
  *
  * THE INPUT SHAPE — WHY `Record<string, string>`, NOT A CSS STRING
  * -------------------------------------------------------------------
- * `checkBrandCoverage` takes already-parsed custom-property declarations
- * (`--property-name` -> its declared value, as text), not raw CSS. Two
- * reasons, both arguments for keeping this function pure:
+ * `checkBrandFileCoverage` takes already-parsed custom-property
+ * declarations (`--property-name` -> its declared value, as text), not raw
+ * CSS. Two reasons, both arguments for keeping this function pure:
  *
  *   1. PARSING CSS IS A SEPARATE CONCERN WITH ITS OWN FAILURE MODE. A real
  *      `.css` file can contain constructs this package's hand-rolled reader
@@ -39,27 +39,29 @@
  *      `flattenTokens(overrides)` (see "AGREEMENT WITH `flattenTokens`"
  *      below) — the exact same shape, not a coincidence.
  *
- * NAME COLLISION WITH `@vespeneventures/strategy`'s `checkBrandCoverage`
- * ---------------------------------------------------------------------
- * `@vespeneventures/strategy` already exports a function with this exact
- * name, checking a different thing: whether a `BrandDerivation[]` (a
- * strategy artifact naming token slots and voice rules by plain string —
- * see that package's `brand-derivation.ts`) accounts for every brandable
- * slot BY NAME, with no ability to look up `@vespeneventures/tokens` itself
- * (that package takes zero runtime dependencies, on purpose — see its own
- * header comment for why). This function checks something one layer more
- * concrete: whether a REAL CSS file's declarations account for every
- * brandable slot, typo-free, using the real `TOKENS` registry this package
- * owns. The two are complementary, not redundant — `strategy`'s version
- * asks "did the brand STRATEGY account for this slot", this one asks "did
- * the brand CSS actually declare it" — but the identical name across two
- * published packages a consumer might both depend on is a real, deliberate
- * ambiguity risk, flagged here rather than silently shipped. Retitling
- * either function is out of scope for this change (this package cannot
- * rename `strategy`'s export, and matching the name the task's own brief
- * specifies for this one is what keeps this package's shape consistent
- * with its siblings' `check<Noun>` naming convention — see `checkCopy`,
- * `checkCopyTraceability`, `checkFactsTraceability`).
+ * WHY THIS IS `checkBrandFileCoverage`, NOT `checkBrandCoverage`
+ * -------------------------------------------------------------------
+ * `@vespeneventures/strategy` already exports a function literally named
+ * `checkBrandCoverage`, checking a different thing: whether a
+ * `BrandDerivation[]` (a strategy artifact naming token slots and voice
+ * rules by plain string — see that package's `brand-derivation.ts`)
+ * accounts for every brandable slot BY NAME, with no ability to look up
+ * `@vespeneventures/tokens` itself (that package takes zero runtime
+ * dependencies, on purpose — see its own header comment for why). This
+ * function checks something one layer more concrete: whether a REAL CSS
+ * file's declarations account for every brandable slot, typo-free, using
+ * the real `TOKENS` registry this package owns. The two are complementary,
+ * not redundant — `strategy`'s version asks "did the brand STRATEGY account
+ * for this slot", this one asks "did the brand FILE actually declare it" —
+ * but an identical name across two published packages a consumer might both
+ * depend on would be a real ambiguity risk in a single pipeline, so this
+ * one is named for the layer it actually checks (a CSS FILE's declarations,
+ * not a strategy document's derivations) rather than reusing the name.
+ * `strategy`'s export is unaffected — it shipped first and already has
+ * consumers; this package's own export had none, so the free fix belongs
+ * here. If you are looking for "does my BrandDerivation strategy account
+ * for every token slot", that is `@vespeneventures/strategy`'s
+ * `checkBrandCoverage`, not this function.
  *
  * THE THREE FINDING KINDS, AND WHY EACH ONE IS A FINDING NOT A SILENT SKIP
  * -------------------------------------------------------------------------
@@ -111,12 +113,13 @@
  * would be worse than either one alone — a brand override that this
  * function calls clean but `flattenTokens` then throws on (or vice versa)
  * is exactly the kind of drift a consumer discovers in production, not in
- * CI. `src/check-brand-coverage.test.ts`'s
- * `"agrees with @vespeneventures/render's flattenTokens"` block asserts
- * this directly: for every non-brandable token and for a deliberately
- * typo'd slot name, it feeds the SAME override object to both this
- * function and `flattenTokens`, and asserts one throws the matching
- * `RenderError` reason exactly when the other reports the matching
+ * CI. `packages/render/src/internal/tokens-brand-file-coverage-agreement.test.ts`
+ * (in `@vespeneventures/render`, not here — see that file's own header
+ * comment for why the cross-check has to live on that side of the
+ * dependency edge) asserts this directly: for every non-brandable token and
+ * for a deliberately typo'd slot name, it feeds the SAME override object to
+ * both this function and `flattenTokens`, and asserts one throws the
+ * matching `RenderError` reason exactly when the other reports the matching
  * finding rule — not by inspecting either implementation, but by running
  * both against the same input and comparing outcomes.
  *
@@ -151,16 +154,19 @@
  * being checked against declares at least one brandable slot, true for the
  * real `TOKENS` — naturally produces one `uncovered-brandable-slot` finding
  * per brandable slot, which already fails `ok` on its own. See this file's
- * test suite, "the empty-declarations case", for this asserted directly.
+ * test suite, "the empty-declarations case", for this asserted directly —
+ * and covered end to end, with a genuinely full brand file, by "a
+ * genuinely clean run", which is what proves `ok: true` is actually
+ * reachable, not just that failure is.
  */
 
 import { TOKENS, type TokenDefinition } from "./tokens.js";
 
-/** Why one `BrandCoverageFinding` was reported. See this file's header comment for the full reasoning behind each. */
-export type BrandCoverageFindingRule = "uncovered-brandable-slot" | "unknown-slot" | "non-brandable-override";
+/** Why one `BrandFileCoverageFinding` was reported. See this file's header comment for the full reasoning behind each. */
+export type BrandFileCoverageFindingRule = "uncovered-brandable-slot" | "unknown-slot" | "non-brandable-override";
 
-export interface BrandCoverageFinding {
-  rule: BrandCoverageFindingRule;
+export interface BrandFileCoverageFinding {
+  rule: BrandFileCoverageFindingRule;
   /** The CSS custom-property name this finding is about, e.g. `"--color-surface-base"`. */
   slot: string;
   /** Human-readable explanation, safe to print directly in a CLI report. */
@@ -168,7 +174,7 @@ export interface BrandCoverageFinding {
 }
 
 /** One `declarations` key that could not even be classified — see this file's header comment, "THE THREE FINDING KINDS". */
-export interface BrandCoverageUnchecked {
+export interface BrandFileCoverageUnchecked {
   key: string;
   reason: string;
 }
@@ -183,22 +189,22 @@ export interface BrandCoverageUnchecked {
  * CLOSED". `"coverage-gap"` covers every other non-`ok` case: at least one
  * real finding or unchecked entry.
  */
-export type BrandCoverageFailureReason = "nothing-to-check" | "coverage-gap";
+export type BrandFileCoverageFailureReason = "nothing-to-check" | "coverage-gap";
 
-export interface BrandCoverageReport {
+export interface BrandFileCoverageReport {
   ok: boolean;
   /** `Object.keys(declarations).length` — always present, including when `declarations` is `{}`. See this file's header comment, "FAILS CLOSED". */
   declarationsChecked: number;
   /** The number of `brandable: true` entries in the token registry checked against (the real `TOKENS` unless `options.tokens` overrides it) — always present, for the same reason as `declarationsChecked`. */
   brandableSlotsChecked: number;
-  findings: BrandCoverageFinding[];
+  findings: BrandFileCoverageFinding[];
   /** See this file's header comment, "THE THREE FINDING KINDS" — a fourth, distinct bucket for a `declarations` key this function could not even classify. */
-  unchecked: BrandCoverageUnchecked[];
+  unchecked: BrandFileCoverageUnchecked[];
   /** Present exactly when `ok` is `false`. */
-  reason?: BrandCoverageFailureReason;
+  reason?: BrandFileCoverageFailureReason;
 }
 
-export interface BrandCoverageCheckOptions {
+export interface BrandFileCoverageCheckOptions {
   /**
    * The token registry to check `declarations` against. Defaults to this
    * package's own `TOKENS`. Exposed as an option — not hardwired — for two
@@ -228,12 +234,14 @@ const CUSTOM_PROPERTY_NAME_RE = /^--[a-zA-Z0-9-]+$/;
  * non-brandable-override rule `@vespeneventures/render`'s `flattenTokens`
  * already enforces. Pure: no I/O, never throws, and makes no assumption
  * about how `declarations` was produced beyond the type signature. See
- * this file's header comment for the full design rationale.
+ * this file's header comment for the full design rationale, including why
+ * this is named `checkBrandFileCoverage` rather than reusing
+ * `@vespeneventures/strategy`'s own, differently-scoped `checkBrandCoverage`.
  */
-export function checkBrandCoverage(
+export function checkBrandFileCoverage(
   declarations: Record<string, string>,
-  options: BrandCoverageCheckOptions = {},
-): BrandCoverageReport {
+  options: BrandFileCoverageCheckOptions = {},
+): BrandFileCoverageReport {
   const tokens = options.tokens ?? TOKENS;
 
   const declarationsChecked = Object.keys(declarations).length;
@@ -242,8 +250,8 @@ export function checkBrandCoverage(
     .map((def) => def.property);
   const brandableSlotsChecked = brandableSlots.length;
 
-  const findings: BrandCoverageFinding[] = [];
-  const unchecked: BrandCoverageUnchecked[] = [];
+  const findings: BrandFileCoverageFinding[] = [];
+  const unchecked: BrandFileCoverageUnchecked[] = [];
 
   // Every declared slot with a real (non-empty) value, classified as
   // brandable-and-known — the set direction 1 (coverage) below is measured

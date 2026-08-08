@@ -10,7 +10,7 @@ All notable changes to this package are documented here. Format follows
 - `@vespeneventures/tokens` dependency range bumped `^0.5.0` -> `^0.6.0`
   (peer and dev) — that package's `0.6.0` is a MINOR release (a `0.x`
   caret range is patch-only, so the old range would not have matched it)
-  adding `checkBrandCoverage`/`readBrandCss`/the `tokens-brand-check` CLI;
+  adding `checkBrandFileCoverage`/`readBrandCss`/the `tokens-brand-check` CLI;
   this package does not use any of the three, but the range must still
   move in lockstep — see `@vespeneventures/tokens`' own CHANGELOG.
 

@@ -18,7 +18,7 @@
  * THE BRAND-COVERAGE CHECK. `TOKENS` and `styles/brand-template.css` are a
  * vocabulary and a template — neither one, by itself, can tell a consumer
  * whether their own real `brand.css` actually filled in the template
- * correctly. `checkBrandCoverage` closes that gap, the same "self-closing
+ * correctly. `checkBrandFileCoverage` closes that gap, the same "self-closing
  * package" shape every sibling contract package in this repository ships
  * (`@vespeneventures/voice`'s `checkCopy`, `@vespeneventures/copy`'s
  * `checkCopyTraceability`, `@vespeneventures/strategy`'s
@@ -30,26 +30,33 @@
  * structural (non-brandable) slot — the same rule
  * `@vespeneventures/render`'s `flattenTokens` already enforces by throwing.
  * `tokens-brand-check` (`src/cli.ts`, installed as a `bin`) wires
- * `readBrandCss` and `checkBrandCoverage` into a CLI with the same
+ * `readBrandCss` and `checkBrandFileCoverage` into a CLI with the same
  * three-state exit-code contract `copy-check`/`strategy-facts-check` use:
  * 0 clean, 1 findings, 2 could not run. `cli.ts` itself is intentionally
  * NOT re-exported here — matching `@vespeneventures/copy` and
  * `@vespeneventures/strategy`'s own `index.ts`, a CLI's `main`/argv
  * handling is not library surface, only its `bin` entry is.
+ *
+ * Named `checkBrandFileCoverage`, not `checkBrandCoverage` —
+ * `@vespeneventures/strategy` already exports a `checkBrandCoverage`
+ * checking a different thing (a `BrandDerivation[]`'s coverage of token
+ * slots by name, not a real CSS file's declarations); see
+ * `check-brand-file-coverage.ts`'s own header comment for the full
+ * distinction.
  */
 
 export type { TokenDefinition, TokenFamily } from "./tokens.js";
 export { TOKENS, TOKEN_FAMILIES } from "./tokens.js";
 
-export { checkBrandCoverage } from "./check-brand-coverage.js";
+export { checkBrandFileCoverage } from "./check-brand-file-coverage.js";
 export type {
-  BrandCoverageCheckOptions,
-  BrandCoverageFailureReason,
-  BrandCoverageFinding,
-  BrandCoverageFindingRule,
-  BrandCoverageReport,
-  BrandCoverageUnchecked,
-} from "./check-brand-coverage.js";
+  BrandFileCoverageCheckOptions,
+  BrandFileCoverageFailureReason,
+  BrandFileCoverageFinding,
+  BrandFileCoverageFindingRule,
+  BrandFileCoverageReport,
+  BrandFileCoverageUnchecked,
+} from "./check-brand-file-coverage.js";
 
 export { parseBrandDeclarations, readBrandCss } from "./read-brand-css.js";
 export type {

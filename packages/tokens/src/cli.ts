@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * `tokens-brand-check` — the CLI for `checkBrandCoverage`. Presentation
+ * `tokens-brand-check` — the CLI for `checkBrandFileCoverage`. Presentation
  * only: parse argv, read the brand CSS file (`read-brand-css.ts`), run the
- * pure gate (`check-brand-coverage.ts`), print a report — every
+ * pure gate (`check-brand-file-coverage.ts`), print a report — every
  * uncovered/typo/non-brandable finding AND every unparseable region, never
  * just a pass/fail line — and pick an exit code. Matches
  * `@vespeneventures/copy`'s `copy-check` and `@vespeneventures/strategy`'s
@@ -22,7 +22,7 @@
  *       — the same discipline `copy-check` holds `ScanResult.unchecked` to
  *       — at least one region of the file this reader recognized as
  *       CSS-shaped but could not resolve into a real declaration, OR a
- *       `declarations` key `checkBrandCoverage` itself could not classify.
+ *       `declarations` key `checkBrandFileCoverage` itself could not classify.
  *       Kept strictly distinct from `1`: a gate that reports "clean" after
  *       failing to fully read a file is worse than no gate at all. This is
  *       the explicit third state this gate is built around: "could not
@@ -34,7 +34,7 @@
 import { existsSync, realpathSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { checkBrandCoverage, type BrandCoverageReport } from "./check-brand-coverage.js";
+import { checkBrandFileCoverage, type BrandFileCoverageReport } from "./check-brand-file-coverage.js";
 import { readBrandCss, type BrandCssReadResult } from "./read-brand-css.js";
 
 const USAGE = `Usage: tokens-brand-check <brand-css-file> [options]
@@ -105,7 +105,7 @@ function printReadAccounting(read: BrandCssReadResult): void {
   }
 }
 
-function printCoverageReport(result: BrandCoverageReport): void {
+function printCoverageReport(result: BrandFileCoverageReport): void {
   console.log(
     `${result.declarationsChecked} declaration(s) checked against ${result.brandableSlotsChecked} brandable token slot(s).`,
   );
@@ -160,7 +160,7 @@ export function main(argv: string[]): number {
 
   printReadAccounting(read);
 
-  const result = checkBrandCoverage(read.declarations);
+  const result = checkBrandFileCoverage(read.declarations);
   printCoverageReport(result);
 
   // An unparsed region of the FILE (`read.unchecked`) or an unclassified

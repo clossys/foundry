@@ -1,6 +1,6 @@
 /**
  * `parseBrandDeclarations` and `readBrandCss` — the I/O and parsing half
- * that makes `checkBrandCoverage` (`check-brand-coverage.ts`) usable
+ * that makes `checkBrandFileCoverage` (`check-brand-file-coverage.ts`) usable
  * against a REAL file on disk, not just a hand-built `Record` in a test.
  * Mirrors the split every sibling package in this repository draws between
  * a pure parser and a caller-facing file reader:
@@ -60,7 +60,7 @@
  *          package has no opinion about at all — every custom-property
  *          declaration found anywhere is reported, regardless of which
  *          selector it sits under; deciding whether that selector is one a
- *          brand SHOULD be using is `checkBrandCoverage`'s job, not this
+ *          brand SHOULD be using is `checkBrandFileCoverage`'s job, not this
  *          reader's).
  *   3. Inside a flat body, `(--[a-zA-Z0-9-]+)\s*:\s*([^;]*?)\s*(;|$)` finds
  *      every declaration. The value group is non-greedy up to the next
@@ -95,11 +95,18 @@
  *     finds a terminating `;` before the block's own end (which, for a
  *     value, cannot happen inside a body already isolated by matched
  *     braces — the one case this actually catches in practice is a
- *     malformed declaration missing its colon entirely).
+ *     malformed declaration missing its colon entirely);
+ *   - an unterminated `/* ... *\/` comment — see
+ *     `truncateAtUnterminatedComment`'s own doc comment for why this is
+ *     load-bearing rather than cosmetic: everything from an unclosed `/*`
+ *     to the end of the file is comment content in a real browser, so
+ *     treating it as scannable CSS (the earlier version of this reader's
+ *     actual bug) can silently report a slot as covered by a declaration
+ *     the browser will never see at all.
  *
  * A file with ZERO declarations and ZERO unchecked entries (a genuinely
  * empty, comment-only, or rule-free CSS file) is not an error at the
- * reader level — `checkBrandCoverage` is where "zero declarations" earns
+ * reader level — `checkBrandFileCoverage` is where "zero declarations" earns
  * its own set of findings (see that file's header comment, "FAILS
  * CLOSED"), not here.
  */
@@ -119,7 +126,7 @@ export interface ParsedBrandCss {
    * its value text, trimmed. Last declaration wins for a property declared
    * more than once — see this file's header comment for why that
    * simplification is fine for this reader's purpose. An empty string is a
-   * real, valid result for a value here (`--x: ;`) — `checkBrandCoverage`,
+   * real, valid result for a value here (`--x: ;`) — `checkBrandFileCoverage`,
    * not this reader, decides what an empty value means for coverage.
    */
   declarations: Record<string, string>;
@@ -131,6 +138,45 @@ function stripCommentsPreservingLines(css: string): string {
   return css.replace(/\/\*[\s\S]*?\*\//g, (comment) =>
     comment.replace(/[^\n]/g, " "),
   );
+}
+
+/**
+ * A properly-closed `/* ... *\/` comment is fully consumed by
+ * `stripCommentsPreservingLines`'s regex above — the ONLY way a literal
+ * `/*` can still be present afterward is a comment that never closes: the
+ * regex is non-greedy up to the NEAREST following `*\/`, wherever it is in
+ * the rest of the file, so if no `*\/` exists anywhere after some `/*`,
+ * that `/*` is guaranteed unterminated, full stop — not merely "far from
+ * its closing marker."
+ *
+ * A real browser has no such thing as an unterminated comment recovering
+ * partway through a file: once `/*` opens with no matching `*\/`, EVERY
+ * remaining byte of the stylesheet — every selector, every declaration,
+ * every subsequent `}` — is comment content, silently discarded. The
+ * earlier version of this reader got this exactly backwards: it treated
+ * anything after an unclosed `/*` as ordinary, scannable CSS, which meant
+ * a brand author who wrote `/* --color-surface-base: #fff;` and forgot
+ * the closing `*\/` had that declaration extracted as LIVE — reported as
+ * covered by `checkBrandFileCoverage` — when a real browser would ignore it
+ * entirely. A checker reporting a slot as bound when the browser will
+ * never apply it is a false PASS, the exact failure mode this package's
+ * whole design brief exists to refuse.
+ *
+ * The fix: find the first `/*` still present after comment-stripping (by
+ * the reasoning above, there can be at most one — everything from it to
+ * the end of `cleaned` is unterminated-comment content), blank out
+ * EVERYTHING from that point to the end of the text (preserving
+ * newlines, exactly like a real comment would — see
+ * `stripCommentsPreservingLines`), and report where it started. The
+ * caller (`parseBrandDeclarations`) turns that into an `unchecked` entry,
+ * so a run with an unterminated comment can never exit clean — see
+ * `cli.ts`'s exit-code discipline.
+ */
+function truncateAtUnterminatedComment(cleaned: string): { text: string; unterminatedAt: number } {
+  const idx = cleaned.indexOf("/*");
+  if (idx === -1) return { text: cleaned, unterminatedAt: -1 };
+  const truncated = cleaned.slice(0, idx) + cleaned.slice(idx).replace(/[^\n]/g, " ");
+  return { text: truncated, unterminatedAt: idx };
 }
 
 /** 1-indexed line number of `index` within `text`. */
@@ -311,9 +357,17 @@ function scanBlocks(
  * to a real file first just to parse it.
  */
 export function parseBrandDeclarations(css: string): ParsedBrandCss {
-  const cleaned = stripCommentsPreservingLines(css);
+  const commentsStripped = stripCommentsPreservingLines(css);
+  const { text: cleaned, unterminatedAt } = truncateAtUnterminatedComment(commentsStripped);
   const declarations: Record<string, string> = {};
   const unchecked: BrandCssUnchecked[] = [];
+  if (unterminatedAt !== -1) {
+    unchecked.push({
+      line: lineAt(cleaned, unterminatedAt),
+      detail:
+        `unterminated comment ("/*" with no matching "*/") — in a real browser, everything from here to the end of the file is comment content and does not exist; nothing after this point was scanned for declarations`,
+    });
+  }
   scanBlocks(cleaned, 0, cleaned.length, declarations, unchecked);
   return { declarations, unchecked };
 }

@@ -115,6 +115,47 @@ describe("parseBrandDeclarations — never drops what it cannot parse", () => {
     expect(unchecked).toHaveLength(1);
     expect(unchecked[0]!.line).toBe(3);
   });
+
+  it("an unterminated comment does NOT yield a declaration from inside it, and IS reported as unchecked — regression for the false-pass a real browser would never produce", () => {
+    // Exact repro: everything from "/*" onward has no closing "*/", so a
+    // real browser treats the rest of the file — including the
+    // "declaration" and the closing "}" — as comment content that does not
+    // exist. The pre-fix version of this reader extracted
+    // "--color-surface-base": "#fff" as a live declaration here and
+    // reported zero `unchecked` — a silent false PASS: a consumer who
+    // forgot the closing "*/" would have been told the slot was covered
+    // when the browser ignores it entirely.
+    const { declarations, unchecked } = parseBrandDeclarations(
+      ":root { /* --color-surface-base: #fff; }",
+    );
+    expect(declarations).toEqual({});
+    expect(unchecked.length).toBeGreaterThan(0);
+    expect(unchecked.some((u) => u.detail.includes("unterminated comment"))).toBe(true);
+  });
+
+  it("mirror case: an unterminated comment starting MID-VALUE is caught the same way", () => {
+    const { declarations, unchecked } = parseBrandDeclarations(
+      ":root {\n  --accent: red /* oops, forgot to close\n}\n",
+    );
+    expect(declarations).toEqual({});
+    expect(unchecked.some((u) => u.detail.includes("unterminated comment"))).toBe(true);
+  });
+
+  it("mirror case: a comment mid-value that IS properly terminated parses the declaration normally (no false negative)", () => {
+    const { declarations, unchecked } = parseBrandDeclarations(
+      ":root { --accent: red /* TODO: pick real brand red */; }",
+    );
+    expect(declarations).toEqual({ "--accent": "red" });
+    expect(unchecked).toEqual([]);
+  });
+
+  it("mirror case: a correctly-terminated comment containing a literal `}` does not confuse brace matching", () => {
+    const { declarations, unchecked } = parseBrandDeclarations(
+      ":root { /* a comment with a } inside it */ --color-accent: red; }",
+    );
+    expect(declarations).toEqual({ "--color-accent": "red" });
+    expect(unchecked).toEqual([]);
+  });
 });
 
 describe("readBrandCss — file I/O wrapper", () => {

@@ -10,13 +10,13 @@ All notable changes to this package are documented here. Format follows
 - `@vespeneventures/tokens` dependency range bumped `~0.5.0` -> `~0.6.0`:
   that package's `0.6.0` is a MINOR release (a `0.x` caret/tilde range is
   patch-only, so the old range would not have matched it) adding
-  `checkBrandCoverage`/`readBrandCss` — this package does not use either
-  new export in its own source, but `src/internal/
-  tokens-brand-coverage-agreement.test.ts` (new) imports
-  `checkBrandCoverage` from `@vespeneventures/tokens` to assert it agrees
-  with this package's own `flattenTokens` on the non-brandable-override and
-  unknown-slot rules, run against every real non-brandable token in
-  `TOKENS`.
+  `checkBrandFileCoverage`/`readBrandCss` — this package does not use
+  either new export in its own source, but `src/internal/
+  tokens-brand-file-coverage-agreement.test.ts` (new) imports
+  `checkBrandFileCoverage` from `@vespeneventures/tokens` to assert it
+  agrees with this package's own `flattenTokens` on the non-brandable-
+  override and unknown-slot rules, run against every real non-brandable
+  token in `TOKENS`.
 
 ### Added
 

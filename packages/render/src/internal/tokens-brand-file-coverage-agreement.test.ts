@@ -1,17 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { checkBrandCoverage, TOKENS } from "@vespeneventures/tokens";
+import { checkBrandFileCoverage, TOKENS } from "@vespeneventures/tokens";
 
 import { RenderError } from "./errors.js";
 import { flattenTokens } from "./tokens.js";
 
 /**
- * `@vespeneventures/tokens`' `checkBrandCoverage` and this package's own
+ * `@vespeneventures/tokens`' `checkBrandFileCoverage` and this package's own
  * `flattenTokens` are two independent implementations of the SAME rule —
  * a brand override may only ever target a `brandable: true` slot that
  * really exists in `TOKENS` — enforced two different ways: `flattenTokens`
  * THROWS a `RenderError` (it is a resolver, not a checker: it must refuse
  * to produce output rather than silently accept a bad override), while
- * `checkBrandCoverage` REPORTS a finding (it is a checker, meant to run
+ * `checkBrandFileCoverage` REPORTS a finding (it is a checker, meant to run
  * over an entire brand file and surface every problem at once, not stop at
  * the first one). Two checks in one repository disagreeing about which
  * slots a brand is allowed to touch would be worse than either one alone —
@@ -33,7 +33,7 @@ import { flattenTokens } from "./tokens.js";
  * package's own test suite is for) — the point here is strictly the
  * cross-package agreement.
  */
-describe("checkBrandCoverage (@vespeneventures/tokens) agrees with flattenTokens (this package) on the non-brandable-override rule", () => {
+describe("checkBrandFileCoverage (@vespeneventures/tokens) agrees with flattenTokens (this package) on the non-brandable-override rule", () => {
   const nonBrandableSlots = Object.values(TOKENS)
     .filter((def) => !def.brandable)
     .map((def) => def.property);
@@ -42,7 +42,7 @@ describe("checkBrandCoverage (@vespeneventures/tokens) agrees with flattenTokens
     expect(nonBrandableSlots.length).toBeGreaterThan(0);
   });
 
-  it.each(nonBrandableSlots)("every non-brandable slot %s: flattenTokens throws, checkBrandCoverage finds", (slot) => {
+  it.each(nonBrandableSlots)("every non-brandable slot %s: flattenTokens throws, checkBrandFileCoverage finds", (slot) => {
     const overrides = { [slot]: "red" };
 
     let thrown: unknown;
@@ -54,12 +54,12 @@ describe("checkBrandCoverage (@vespeneventures/tokens) agrees with flattenTokens
     expect(thrown).toBeInstanceOf(RenderError);
     expect((thrown as RenderError).reason).toBe("non-brandable-override");
 
-    const report = checkBrandCoverage(overrides);
+    const report = checkBrandFileCoverage(overrides);
     const finding = report.findings.find((f) => f.slot === slot);
     expect(finding?.rule).toBe("non-brandable-override");
   });
 
-  it("a typo'd/unknown slot: flattenTokens throws unknown-token-override, checkBrandCoverage reports unknown-slot", () => {
+  it("a typo'd/unknown slot: flattenTokens throws unknown-token-override, checkBrandFileCoverage reports unknown-slot", () => {
     const overrides = { "--color-surfac-base": "red" }; // deliberate typo, matches no real token
 
     let thrown: unknown;
@@ -71,17 +71,17 @@ describe("checkBrandCoverage (@vespeneventures/tokens) agrees with flattenTokens
     expect(thrown).toBeInstanceOf(RenderError);
     expect((thrown as RenderError).reason).toBe("unknown-token-override");
 
-    const report = checkBrandCoverage(overrides);
+    const report = checkBrandFileCoverage(overrides);
     const finding = report.findings.find((f) => f.slot === "--color-surfac-base");
     expect(finding?.rule).toBe("unknown-slot");
   });
 
-  it("a real brandable slot: flattenTokens accepts it, checkBrandCoverage never flags it as non-brandable/unknown", () => {
+  it("a real brandable slot: flattenTokens accepts it, checkBrandFileCoverage never flags it as non-brandable/unknown", () => {
     const overrides = { "--color-surface-base": "oklch(0.5 0 0)" };
 
     expect(() => flattenTokens(overrides)).not.toThrow();
 
-    const report = checkBrandCoverage(overrides);
+    const report = checkBrandFileCoverage(overrides);
     const badFinding = report.findings.find(
       (f) => f.slot === "--color-surface-base" && (f.rule === "non-brandable-override" || f.rule === "unknown-slot"),
     );
