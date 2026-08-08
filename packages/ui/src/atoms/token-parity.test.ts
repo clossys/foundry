@@ -254,6 +254,10 @@ const KNOWN_NON_CLASS_MAPS = new Set([
   // read via `style.width`/`style.height`, never a Tailwind class name (the
   // same reason `CHART_*_FALLBACK` above is non-class, not a scan gap).
   "SIZE_VARS",
+  // token-gate.ts — StyleCandidateKind -> human-readable report label
+  // ("hex color", "arbitrary-value class", ...), interpolated into a
+  // TokenGateFinding's `message` string, never a Tailwind class name.
+  "KIND_LABEL",
 ]);
 
 function extractCandidateClasses(code: string): Set<string> {

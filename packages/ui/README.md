@@ -2903,6 +2903,46 @@ two tests are worth calling out specifically:
   the corresponding enforcement test, then reverted — proof the check
   fails closed rather than passing vacuously.
 
+## Token-purity gate (`@vespeneventures/ui/gate`, `ui-token-check`)
+
+`@vespeneventures/copy` ships a scanner gate that proves every user-facing
+string in a source tree is registered. Before this release, this package
+had no equivalent for the VISUAL half of the same contract: a hardcoded
+`#3b82f6` or `padding: 13px` anywhere in `ui` was invisible in exactly the
+way an unregistered string used to be. This package now ships that mirror,
+deliberately kept OUT of the component ladder barrel (`src/index.ts`) and
+its `"."` export — it is tooling, not a component — reachable instead from
+its own subpath and an installable CLI:
+
+- **`scanStyleSources(root, options?)`** (from `@vespeneventures/ui/gate`)
+  walks a real source tree and extracts every hardcoded styling literal: a
+  hex color (`#rgb`/`#rrggbb`/`#rrggbbaa`), an `rgb()`/`rgba()`/`hsl()`/
+  `hsla()`/`oklch()`/`oklab()`/`lab()`/`lch()` color function, a raw CSS
+  length (`13px`, `1.5rem`, `2em`, ...), or a Tailwind arbitrary-value
+  class (`bg-[#3b82f6]`, `p-[13px]`, `w-[var(--x,64px)]`). A legitimate
+  Tailwind TOKEN class (`text-ink-primary`, `bg-surface-base`, `p-4`,
+  `z-10`, `rounded-control`) is never a candidate — it carries a NAME, not
+  a hardcoded value, so it never matches any extraction pattern in the
+  first place. Zero runtime dependencies, matching `@vespeneventures/copy`'s
+  own scanner (this repository's CI `safety` job runs gate scripts with no
+  `npm ci`) — see `src/style-scan.ts`'s own header for the full boundary
+  reasoning, including exactly what is reported as `unchecked` rather than
+  silently skipped.
+- **`checkTokenPurity(candidates, tokens, filesScanned, unchecked)`** (from
+  the same subpath) is the pure gate: every candidate is a finding unless
+  it is explicitly waived (`// token-gate:ignore` on its own source line,
+  mirroring `copy-gate:ignore` exactly) or — the one legitimate exception —
+  a Tailwind arbitrary-value class that is a bare `var(--custom-property)`
+  reference with no fallback, the documented "no Tailwind namespace, raw
+  `var()` only" escape hatch `atoms/internal/ui-vars.ts` describes. See
+  `src/token-gate.ts`'s own header for why a `var(--x, <fallback>)` pattern
+  is still a finding even when deliberate and documented.
+- **`ui-token-check [scan-dir]`** is the installable CLI, with the same
+  three-state exit contract every gate CLI in this repository uses: `0`
+  clean, `1` findings, `2` could not run — `2` also covers a non-empty
+  `unchecked` list, the same "could not check must never read as a pass"
+  discipline `copy-check` holds to.
+
 ## What's deliberately not here
 
 **Atoms:** thirty-one ship, and this is the FINAL rung of this layer —
