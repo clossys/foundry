@@ -1,7 +1,8 @@
 /**
  * Typography and color for each `ElementKind`, as LITERAL inline `style="
  * ..."` strings — the email-specific consumer of this package's shared
- * `internal/tokens.ts`.
+ * `internal/tokens.ts` (colour) and `internal/typography.ts` (font size and
+ * family).
  *
  * WHY EVERY VALUE HERE MUST BE LITERAL
  * ---------------------------------------
@@ -20,27 +21,37 @@
  * A small, fixed subset of `@vespeneventures/tokens`' 154-entry registry —
  * just the roles an email needs: ink (heading/body/muted/on-accent text),
  * surface (page/card background), line (dividers), accent (buttons,
- * eyebrows), plus `--font-display`/`--font-body` and the `--text-*` size
- * scale and `--spacing-*` scale, all of which are ALREADY literal
- * (`"15px"`, not `"var(...)"` or `"oklch(...)"`) in `TOKENS` itself, so
- * `flattenTokens` passes them through unchanged — see that function's own
- * doc comment, step 4, "a value with none [no `oklch(...)`] is returned
- * unchanged."
+ * eyebrows), plus the `--spacing-*` scale (already literal, e.g. `"15px"`,
+ * not `"var(...)"` or `"oklch(...)"`, in `TOKENS` itself, so `flattenTokens`
+ * passes it through unchanged — see that function's own doc comment, step
+ * 4, "a value with none [no `oklch(...)`] is returned unchanged"). Font
+ * size and family are resolved separately, through `internal/
+ * typography.ts` — see below.
  *
- * PER-ELEMENT-KIND STYLE, NOT PER-SLOT
- * -----------------------------------------
+ * PER-ELEMENT-KIND STYLE, WITH A PER-SLOT TYPOGRAPHY OVERRIDE
+ * -----------------------------------------------------------------
  * `SlotBinding` carries only a `copyId`/`value` string — no font, no
  * color, no size (see `@vespeneventures/compose`'s own README, "Only
  * plain text ever fills a slot", the same rule `./web`'s own
- * `renderWebDocument.ts` documents). The one piece of visual information
- * a resolved slot DOES carry is its `SlotSpec.element: ElementKind` — so
- * this file's whole job is a fixed mapping from that closed 12-member
- * vocabulary to a literal, email-safe style, applied uniformly regardless
- * of which specific document is being rendered.
+ * `renderWebDocument.ts` documents). A resolved slot's OTHER two pieces of
+ * visual information are its `SlotSpec.element: ElementKind` — this file's
+ * `ELEMENT_STYLES` fixed mapping, applied uniformly regardless of which
+ * specific document is being rendered — and, optionally, its
+ * `SlotSpec.style: StyleBinding`. Of `StyleBinding`'s fields, this file
+ * resolves exactly one: `.typography`, via `../../internal/typography.ts`'s
+ * `resolveElementTypography` — when present, it OVERRIDES `element`'s own
+ * default `--text-*` size role (see that module's own doc comment for the
+ * full resolution rule, including its `"unknown-style-role"` refusal for an
+ * unknown or non-size role). `.color`/`.background`/`.border`/`.weight` are
+ * not resolved here — this channel's own fixed `colorToken` per
+ * `ElementKind` already covers color, and `.border`/`.weight` have the same
+ * "no founded mapping exists yet" gap `../../print/internal/style.ts`
+ * documents for itself.
  */
 
-import type { ElementKind } from "@vespeneventures/compose";
+import type { ElementKind, StyleBinding } from "@vespeneventures/compose";
 import { flattenTokens } from "../../internal/tokens.js";
+import { ELEMENT_FONT_FAMILY_ROLE, resolveElementTypography } from "../../internal/typography.js";
 
 /** `flattenTokens`'s output, cached — every color/size/font this file (and `renderEmailDocument.ts`, for the body/wrapper chrome) reads is looked up from this single flattened map, built once per render via {@link buildEmailPalette}. */
 export type EmailPalette = ReadonlyMap<string, string>;
@@ -78,10 +89,8 @@ export function readEmailToken(palette: EmailPalette, name: string): string {
   return value.replace(/"/g, "'");
 }
 
-/** One `ElementKind`'s literal, email-safe presentation. */
+/** One `ElementKind`'s literal, email-safe presentation — everything EXCEPT font size (resolved per-slot via `../../internal/typography.ts`, since `style.typography` can override it) and font family (still fixed per `ElementKind`, via `ELEMENT_FONT_FAMILY_ROLE` — see this file's own top comment for why `StyleBinding` has no family-override field at all). */
 interface EmailElementStyle {
-  fontToken: string;
-  sizeToken: string;
   weight: string;
   colorToken: string;
   lineHeight: string;
@@ -93,45 +102,53 @@ interface EmailElementStyle {
 }
 
 const ELEMENT_STYLES: Record<ElementKind, EmailElementStyle> = {
-  heading: { fontToken: "--font-display", sizeToken: "--text-h1", weight: "700", colorToken: "--color-ink-primary", lineHeight: "1.25" },
-  subheading: { fontToken: "--font-display", sizeToken: "--text-h2", weight: "700", colorToken: "--color-ink-primary", lineHeight: "1.3" },
-  stat: { fontToken: "--font-display", sizeToken: "--text-display-m", weight: "700", colorToken: "--color-ink-primary", lineHeight: "1.2" },
-  eyebrow: { fontToken: "--font-body", sizeToken: "--text-caption", weight: "700", colorToken: "--color-accent", lineHeight: "1.4", textTransform: "uppercase", letterSpacing: "0.08em" },
-  label: { fontToken: "--font-body", sizeToken: "--text-body-s", weight: "600", colorToken: "--color-ink-secondary", lineHeight: "1.4" },
-  body: { fontToken: "--font-body", sizeToken: "--text-body", weight: "400", colorToken: "--color-ink-secondary", lineHeight: "1.6" },
-  list: { fontToken: "--font-body", sizeToken: "--text-body", weight: "400", colorToken: "--color-ink-secondary", lineHeight: "1.6" },
-  image: { fontToken: "--font-body", sizeToken: "--text-body-s", weight: "400", colorToken: "--color-ink-muted", lineHeight: "1.4", textAlign: "center" },
-  logo: { fontToken: "--font-display", sizeToken: "--text-h2", weight: "700", colorToken: "--color-ink-primary", lineHeight: "1.3", textAlign: "center" },
-  button: { fontToken: "--font-body", sizeToken: "--text-body", weight: "600", colorToken: "--color-ink-on-accent", lineHeight: "1.4", textAlign: "center", backgroundToken: "--color-accent" },
-  divider: { fontToken: "--font-body", sizeToken: "--text-body-s", weight: "400", colorToken: "--color-ink-muted", lineHeight: "1.4" },
-  fill: { fontToken: "--font-body", sizeToken: "--text-body", weight: "400", colorToken: "--color-ink-secondary", lineHeight: "1.6" },
+  heading: { weight: "700", colorToken: "--color-ink-primary", lineHeight: "1.25" },
+  subheading: { weight: "700", colorToken: "--color-ink-primary", lineHeight: "1.3" },
+  stat: { weight: "700", colorToken: "--color-ink-primary", lineHeight: "1.2" },
+  eyebrow: { weight: "700", colorToken: "--color-accent", lineHeight: "1.4", textTransform: "uppercase", letterSpacing: "0.08em" },
+  label: { weight: "600", colorToken: "--color-ink-secondary", lineHeight: "1.4" },
+  body: { weight: "400", colorToken: "--color-ink-secondary", lineHeight: "1.6" },
+  list: { weight: "400", colorToken: "--color-ink-secondary", lineHeight: "1.6" },
+  image: { weight: "400", colorToken: "--color-ink-muted", lineHeight: "1.4", textAlign: "center" },
+  logo: { weight: "700", colorToken: "--color-ink-primary", lineHeight: "1.3", textAlign: "center" },
+  button: { weight: "600", colorToken: "--color-ink-on-accent", lineHeight: "1.4", textAlign: "center", backgroundToken: "--color-accent" },
+  divider: { weight: "400", colorToken: "--color-ink-muted", lineHeight: "1.4" },
+  fill: { weight: "400", colorToken: "--color-ink-secondary", lineHeight: "1.6" },
 };
 
-/** The literal `style="..."` attribute VALUE (no surrounding quotes) for one resolved slot's `<td>`, built from `element`'s fixed presentation in {@link ELEMENT_STYLES} and `palette`. Always includes `mso-line-height-rule:exactly` — Outlook's Word rendering engine otherwise applies its own line-height heuristic instead of the literal one this file sets, one of the `mso-` properties this channel's own task brief calls out by name. `"divider"` additionally gets a literal top border in `--color-line-base`; `"button"` additionally gets a literal background, horizontal padding, and border-radius, all resolved through `palette` the same as every color/size here. */
-export function tdStyleForElement(element: ElementKind, palette: EmailPalette): string {
-  const style = ELEMENT_STYLES[element];
+/** The literal `style="..."` attribute VALUE (no surrounding quotes) for one resolved slot's `<td>`, built from `element`'s fixed presentation in {@link ELEMENT_STYLES}, `palette`, and (for font size only) `style?.typography`. Always includes `mso-line-height-rule:exactly` — Outlook's Word rendering engine otherwise applies its own line-height heuristic instead of the literal one this file sets, one of the `mso-` properties this channel's own task brief calls out by name. `"divider"` additionally gets a literal top border in `--color-line-base`; `"button"` additionally gets a literal background, horizontal padding, and border-radius, all resolved through `palette` the same as every color/size here. `ownerDescription` (e.g. `slot "headline"`) names what `style` belongs to, for `resolveElementTypography`'s own thrown message if `style.typography` names an unknown or non-size role. */
+export function tdStyleForElement(
+  element: ElementKind,
+  palette: EmailPalette,
+  style: StyleBinding | undefined,
+  ownerDescription: string,
+): string {
+  const elementStyle = ELEMENT_STYLES[element];
   const spacingLg = readEmailToken(palette, "--spacing-lg");
   const spacingXl = readEmailToken(palette, "--spacing-xl");
 
+  const typography = resolveElementTypography(element, style, ownerDescription, palette);
+  const fontFamily = readEmailToken(palette, ELEMENT_FONT_FAMILY_ROLE[element]);
+
   const parts = [
-    `font-family:${readEmailToken(palette, style.fontToken)}`,
-    `font-size:${readEmailToken(palette, style.sizeToken)}`,
-    `font-weight:${style.weight}`,
-    `line-height:${style.lineHeight}`,
-    `color:${readEmailToken(palette, style.colorToken)}`,
+    `font-family:${fontFamily}`,
+    `font-size:${typography.css}`,
+    `font-weight:${elementStyle.weight}`,
+    `line-height:${elementStyle.lineHeight}`,
+    `color:${readEmailToken(palette, elementStyle.colorToken)}`,
     `mso-line-height-rule:exactly`,
     `margin:0`,
   ];
 
-  if (style.textAlign) parts.push(`text-align:${style.textAlign}`);
-  if (style.textTransform) parts.push(`text-transform:${style.textTransform}`);
-  if (style.letterSpacing) parts.push(`letter-spacing:${style.letterSpacing}`);
+  if (elementStyle.textAlign) parts.push(`text-align:${elementStyle.textAlign}`);
+  if (elementStyle.textTransform) parts.push(`text-transform:${elementStyle.textTransform}`);
+  if (elementStyle.letterSpacing) parts.push(`letter-spacing:${elementStyle.letterSpacing}`);
 
   if (element === "divider") {
     parts.push(`border-top:1px solid ${readEmailToken(palette, "--color-line-base")}`);
     parts.push(`padding:${spacingLg} ${spacingXl} 0 ${spacingXl}`);
-  } else if (style.backgroundToken) {
-    parts.push(`background-color:${readEmailToken(palette, style.backgroundToken)}`);
+  } else if (elementStyle.backgroundToken) {
+    parts.push(`background-color:${readEmailToken(palette, elementStyle.backgroundToken)}`);
     parts.push(`border-radius:${readEmailToken(palette, "--radius-control")}`);
     parts.push(`padding:${readEmailToken(palette, "--spacing-md")} ${spacingXl}`);
   } else {

@@ -41,7 +41,7 @@
  * branch is chosen.
  */
 
-import type { ElementKind, Frame, SlotSpec } from "@vespeneventures/compose";
+import type { ElementKind, Frame, SlotSpec, StyleBinding } from "@vespeneventures/compose";
 import type { RenderWarning } from "../types.js";
 
 /** The placeholder every synthetic (no-real-layout) slot shares — see this file's top comment. Never read for ordering or warnings; only present so `SlotSpec`/`resolveDocument` type-check. */
@@ -80,12 +80,13 @@ export function buildSyntheticLayout(bindings: ReadonlyArray<{ slot: unknown }>)
   return { slots };
 }
 
-/** One slot's content plus the `Frame` it was positioned at — what {@link orderEntries}/{@link buildGeometryWarnings} operate on. */
+/** One slot's content plus the `Frame` it was positioned at — what {@link orderEntries}/{@link buildGeometryWarnings} operate on. `style`, when the resolved slot's own `SlotSpec.style` carried one, flows straight through untouched here — this module only ever reads/reorders on `frame`; it is `internal/styles.ts`'s `tdStyleForElement` that actually resolves `style.typography` (and, `style.color`/`.background`/etc. once/if this channel grows to resolve those too — see that file's own doc comment for what it resolves today). */
 export interface GeometryEntry {
   key: string;
   frame: Frame;
   text: string;
   element: ElementKind;
+  style?: StyleBinding;
 }
 
 /**

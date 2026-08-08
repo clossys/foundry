@@ -273,3 +273,45 @@ describe("options.brand — a flattenTokens override reaches the emitted HTML", 
     expect(brandedHtml).not.toContain("color:#1a1a1a");
   });
 });
+
+describe("SlotSpec.style.typography overrides the ElementKind default font size", () => {
+  it("a \"body\" element (default --text-body=15px) with style.typography=\"--text-display-xl\" (72px) emits font-size:72px, not 15px", () => {
+    const layout: LayoutSpec = {
+      slots: [{ key: "a", element: "body", frame: { x: 0, y: 0, w: 1, h: 1 }, required: true, style: { typography: "--text-display-xl" } }],
+    };
+    const doc: ComposeDocument = {
+      id: "typography-override",
+      channel: "email",
+      template: "T",
+      meta: { channel: "email", subject: "s", preheader: "p" },
+      bindings: [{ slot: "a", value: "Hero copy" }],
+    };
+
+    const { html } = renderEmailDocument(doc, { layout });
+    expect(html).toContain("font-size:72px");
+    expect(html).not.toContain("font-size:15px");
+  });
+
+  it("throws RenderError('unknown-style-role') for an unknown style.typography role — never a silent fallback to the ElementKind default size", () => {
+    const layout: LayoutSpec = {
+      slots: [{ key: "a", element: "body", frame: { x: 0, y: 0, w: 1, h: 1 }, required: true, style: { typography: "--text-not-real" } }],
+    };
+    const doc: ComposeDocument = {
+      id: "typography-unknown",
+      channel: "email",
+      template: "T",
+      meta: { channel: "email", subject: "s", preheader: "p" },
+      bindings: [{ slot: "a", value: "x" }],
+    };
+
+    let caught: unknown;
+    try {
+      renderEmailDocument(doc, { layout });
+    } catch (error) {
+      caught = error;
+    }
+    expect(caught).toBeInstanceOf(RenderError);
+    expect((caught as RenderError).reason).toBe("unknown-style-role");
+    expect((caught as RenderError).message).toContain("--text-not-real");
+  });
+});
