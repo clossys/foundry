@@ -94,4 +94,100 @@ describe("readStrategy", () => {
     expect(bundle.audiences).toBeUndefined();
     expect(bundle.issues).toEqual([]);
   });
+
+  // ---------------------------------------------------------------------
+  // Brand — brand-essence.json / brand-attributes.json / brand-derivations.json
+  // must load exactly like every other optional file: absent costs nothing,
+  // present-but-invalid flips `complete` to `false` and lands in `issues`
+  // with the same shape as a bad mission.json/roadmap.json would.
+  // ---------------------------------------------------------------------
+
+  const validEssence = { statement: "Precision engineering for teams who cannot afford to guess." };
+  const validAttributes = [
+    {
+      name: "Precise",
+      description: "Every public claim we make is checkable.",
+      evidence: { basis: "Every number in our marketing traces to a facts.json entry, enforced in CI." },
+    },
+  ];
+  const validDerivations = [
+    {
+      attribute: "Precise",
+      tokenSlots: ["--color-accent-primary"],
+      voiceRules: [],
+      rationale: "Precision means the accent color must read as decisive, not soft.",
+    },
+  ];
+
+  it("loads a valid brand set (essence + attributes + derivations) and reports complete", () => {
+    writeFileSync(join(dir, "facts.json"), JSON.stringify([validFact]));
+    writeFileSync(join(dir, "brand-essence.json"), JSON.stringify(validEssence));
+    writeFileSync(join(dir, "brand-attributes.json"), JSON.stringify(validAttributes));
+    writeFileSync(join(dir, "brand-derivations.json"), JSON.stringify(validDerivations));
+
+    const bundle = readStrategy(dir);
+
+    expect(bundle.brandEssence).toEqual(validEssence);
+    expect(bundle.brandAttributes).toEqual(validAttributes);
+    expect(bundle.brandDerivations).toEqual(validDerivations);
+    expect(bundle.issues).toEqual([]);
+    expect(bundle.complete).toBe(true);
+  });
+
+  it("surfaces a malformed brand-essence.json in issues and flips complete to false", () => {
+    writeFileSync(join(dir, "facts.json"), JSON.stringify([validFact]));
+    writeFileSync(join(dir, "brand-essence.json"), JSON.stringify({ statement: "Fast." })); // fails minLength: 10
+
+    const bundle = readStrategy(dir);
+
+    expect(bundle.brandEssence).toBeUndefined();
+    expect(bundle.complete).toBe(false);
+    expect(bundle.issues).toEqual([
+      { file: "brand-essence.json", reason: "invalid-schema", detail: expect.any(String) },
+    ]);
+  });
+
+  it("surfaces a malformed brand-attributes.json (bad evidence) in issues and flips complete to false", () => {
+    writeFileSync(join(dir, "facts.json"), JSON.stringify([validFact]));
+    writeFileSync(
+      join(dir, "brand-attributes.json"),
+      JSON.stringify([{ name: "Precise", description: "Checkable.", evidence: { basis: "too short" } }]),
+    );
+
+    const bundle = readStrategy(dir);
+
+    expect(bundle.brandAttributes).toBeUndefined();
+    expect(bundle.complete).toBe(false);
+    expect(bundle.issues).toEqual([
+      { file: "brand-attributes.json", reason: "invalid-schema", detail: expect.any(String) },
+    ]);
+  });
+
+  it("surfaces a malformed brand-derivations.json (no tokenSlots/voiceRules) in issues and flips complete to false", () => {
+    writeFileSync(join(dir, "facts.json"), JSON.stringify([validFact]));
+    writeFileSync(
+      join(dir, "brand-derivations.json"),
+      JSON.stringify([{ attribute: "Precise", tokenSlots: [], voiceRules: [], rationale: "Long enough rationale text here." }]),
+    );
+
+    const bundle = readStrategy(dir);
+
+    expect(bundle.brandDerivations).toBeUndefined();
+    expect(bundle.complete).toBe(false);
+    expect(bundle.issues).toEqual([
+      { file: "brand-derivations.json", reason: "invalid-schema", detail: expect.any(String) },
+    ]);
+  });
+
+  it("leaves all three brand fields undefined with no issue when no brand files exist at all", () => {
+    writeFileSync(join(dir, "facts.json"), JSON.stringify([validFact]));
+
+    const bundle = readStrategy(dir);
+
+    expect(bundle.brandEssence).toBeUndefined();
+    expect(bundle.brandAttributes).toBeUndefined();
+    expect(bundle.brandDerivations).toBeUndefined();
+    expect(bundle.issues).toEqual([]);
+    expect(bundle.complete).toBe(true);
+  });
 });

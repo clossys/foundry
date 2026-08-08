@@ -1,6 +1,6 @@
 {
   "name": "@vespeneventures/strategy",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -24,13 +24,14 @@
     "LICENSE"
   ],
   "sideEffects": false,
-  "description": "Upstream strategy machinery, not content: hand-rolled, dependency-free entity validators (facts, mission, positioning, markets, audiences, roadmap) plus a typed reader that loads and validates a consumer's own strategy directory, and a facts-traceability gate that scans prose and copy for numeric/superlative claims and fails when one cannot be traced back to a facts.json entry. This package ships the schema and the checker; every consumer authors its own values.",
+  "description": "Upstream strategy machinery, not content: hand-rolled, dependency-free entity validators (facts, mission, positioning, markets, audiences, roadmap, brand essence/attributes/derivations) plus a typed reader that loads and validates a consumer's own strategy directory, a facts-traceability gate that scans prose and copy for numeric/superlative claims and fails when one cannot be traced back to a facts.json entry, and a brand-coverage checker that verifies brand derivations account for a consumer's brandable token slots. This package ships the schema and the checkers; every consumer authors its own values.",
   "keywords": [
     "strategy",
     "facts",
     "traceability",
     "validation",
     "gate",
+    "brand",
     "typescript"
   ],
   "author": "Calvin Hung",
