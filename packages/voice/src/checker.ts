@@ -2,8 +2,10 @@
  * `checkCopy` — the working voice checker. Given a `VoiceRecord` (already
  * validated — see `schema.ts`) and a piece of copy, reports the subset of
  * voice violations that are actually mechanically detectable: forbidden
- * glossary terms, forbidden person/tense word-markers, and claims made in
- * the copy that lack a `factRef` while `requiresSupport` is true.
+ * glossary terms, forbidden person/tense word-markers, claims made in the
+ * copy that lack a `factRef` while `requiresSupport` is true, and —
+ * unconditionally, whether or not `copy` is even given — whether `record`
+ * itself is still (partly) an unedited copy of `voice-record.template.jsonc`.
  *
  * Pure, no I/O: every input is already in memory, every output is plain
  * data. `checkCopy` never reads a file, never calls `strategy` or any other
@@ -11,9 +13,9 @@
  * README's "The `factRef` seam" for why that resolution is deliberately not
  * this package's job.
  *
- * FAILS CLOSED. Two situations that would otherwise look like "nothing was
- * wrong" are instead surfaced as an explicit, visible incompleteness, never
- * as a silent, empty-findings pass:
+ * FAILS CLOSED. Three situations that would otherwise look like "nothing
+ * was wrong" are instead surfaced as an explicit, visible incompleteness or
+ * an explicit, unmissable error — never as a silent, empty-findings pass:
  *
  *   1. `copy` is empty or whitespace-only: every dimension is recorded in
  *      `skipped`, not run, and `findings` is empty for a reason a caller
@@ -22,13 +24,49 @@
  *      forbidden pronouns in `rules.person`, or an empty glossary) is
  *      likewise recorded in `skipped` rather than silently contributing
  *      zero findings to what would otherwise read as a clean run.
+ *   3. `record` still carries `TEMPLATE_PLACEHOLDER` in one or more of its
+ *      bindable string fields — this voice was never actually bound, only
+ *      copied from the template. See "The unbound signal" below.
  *
  * `report.complete` is `true` exactly when `skipped` is empty — mirroring
  * `@vespeneventures/gates`' `FoundationReport.complete` — so a caller can
  * ask "did this report actually check everything it could have" with one
- * boolean read.
+ * boolean read. `report.bound` is the analogous read for #3.
+ *
+ * THE UNBOUND SIGNAL
+ * -------------------
+ * `@vespeneventures/tokens` has a visual answer to "did anyone bind this
+ * yet": import only `tokens.css` and the page renders in visible grey, plus
+ * a literal dev-mode badge, until `data-brand-bound` is set. Text has no
+ * pixels to fall back to — there is no "render this copy in grey" — so the
+ * honest analog is not visual, it's TRUTHFUL DEFAULT DATA: every bindable
+ * slot in `voice-record.template.jsonc` is filled with one specific,
+ * exported, unmistakable sentinel (`TEMPLATE_PLACEHOLDER`, from
+ * `fields.ts`) instead of a plausible-looking example value. A plausible
+ * example (a real-sounding pronoun, a real-sounding claim) is exactly what
+ * would let an unbound voice "happen to pass" — it would look indistinguishable
+ * from a deliberately-authored record that just happens to match the
+ * example. A loud, structurally-unmistakable placeholder cannot be
+ * mistaken for real content, which is what makes detecting it a reliable
+ * signal rather than a heuristic.
+ *
+ * `findPlaceholderPaths` below scans every string `checkCopy` can reach in
+ * `record` — recursively, the same "leaf, not tree" walk `fields.ts`
+ * documents for the template itself — for exact equality with
+ * `TEMPLATE_PLACEHOLDER`. If it finds even one, `report.bound` is `false`
+ * AND, critically, an `"error"`-severity `"voice:unbound-placeholder"`
+ * finding is pushed into `report.findings` for each one — not merely a flag
+ * a caller has to remember to check. This is the deliberate design choice:
+ * this package's own README (see "Usage") already tells every caller to do
+ * `if (report.findings.some(f => f.severity === "error")) process.exitCode = 1;`.
+ * An unbound record fails that exact, already-idiomatic check on its own,
+ * with no second code path a caller has to add and no way for "still
+ * template" and "genuinely clean" to ever produce the same result shape —
+ * which is the whole point: an unbound voice must never look like a bound
+ * one that happens to pass.
  */
 
+import { TEMPLATE_PLACEHOLDER } from "./fields.js";
 import type { Claim, VoiceFinding, VoiceRecord } from "./types.js";
 
 /** Which of the four checkable dimensions a run can evaluate. */
@@ -75,7 +113,7 @@ export interface VoiceCheckOptions {
 }
 
 export interface VoiceCheckReport {
-  /** Findings not covered by any waiver. Empty does not necessarily mean "clean" — check `complete` and `skipped` too. */
+  /** Findings not covered by any waiver. Empty does not necessarily mean "clean" — check `complete` and `bound` too. */
   findings: VoiceFinding[];
   /** Findings that were covered by a waiver, each with the waiver that covered it. */
   waived: WaivedVoiceFinding[];
@@ -85,6 +123,17 @@ export interface VoiceCheckReport {
   ran: VoiceCheckDimension[];
   /** `true` exactly when `skipped` is empty. `false` means this report cannot vouch for having checked everything it could have. */
   complete: boolean;
+  /**
+   * `false` if `record` still carries `TEMPLATE_PLACEHOLDER` in one or more
+   * bindable fields — i.e. this is (at least partly) an unedited copy of
+   * `voice-record.template.jsonc`, not a real, bound voice. See this file's
+   * top-of-file doc comment, "The unbound signal". Computed unconditionally,
+   * independent of `copy` — an unbound `record` is reported as such even
+   * when `copy` is empty. Every unbound field also produces its own
+   * `"voice:unbound-placeholder"` **error** in `findings`, so `bound: false`
+   * is never a silent flag a caller has to remember to check separately.
+   */
+  bound: boolean;
 }
 
 const ALL_DIMENSIONS: readonly VoiceCheckDimension[] = ["glossary", "person", "tense", "claims"];
@@ -129,6 +178,38 @@ function isSingleUppercaseLetter(term: string): boolean {
 /** Case sensitivity `checkCopy` uses for one `person`/`tense` word-list entry — see `isSingleUppercaseLetter`. */
 function markerCaseSensitivity(term: string): boolean {
   return isSingleUppercaseLetter(term);
+}
+
+/**
+ * Recursively finds every dot-path in `value` whose STRING value is exactly
+ * `TEMPLATE_PLACEHOLDER` — the same "leaf, not tree" walk
+ * `internal/parse-template.ts`'s `extractFieldPaths` uses on the template
+ * itself, except this one DOES descend into arrays (`glossary.0.term`,
+ * `claims.1.text`, ...): the template's own coverage test only needs to
+ * know a bindable collection EXISTS, but a real record's placeholder scan
+ * needs to know exactly which entry, of however many a real consumer added,
+ * still carries the sentinel — a bare `"glossary"` path in a finding would
+ * not tell anyone which of N entries to go fix.
+ *
+ * Exact string equality only, never a substring/contains check: a real
+ * voice is free to legitimately quote or discuss this package's own
+ * placeholder text (documentation about `voice-record.template.jsonc`
+ * itself, say) without that mention alone flipping `bound` to `false` for
+ * an otherwise fully-authored field.
+ */
+function findPlaceholderPaths(value: unknown, prefix = ""): string[] {
+  if (typeof value === "string") {
+    return value === TEMPLATE_PLACEHOLDER ? [prefix || "$"] : [];
+  }
+  if (Array.isArray(value)) {
+    return value.flatMap((item, i) => findPlaceholderPaths(item, prefix ? `${prefix}.${i}` : String(i)));
+  }
+  if (value !== null && typeof value === "object") {
+    return Object.entries(value as Record<string, unknown>).flatMap(([key, nested]) =>
+      findPlaceholderPaths(nested, prefix ? `${prefix}.${key}` : key),
+    );
+  }
+  return [];
 }
 
 /**
@@ -179,6 +260,33 @@ export function checkCopy(record: VoiceRecord, copy: string, options: VoiceCheck
   const ran: VoiceCheckDimension[] = [];
   const skipped: VoiceDimensionSkip[] = [];
   const rawFindings: VoiceFinding[] = [];
+
+  // --- unbound-placeholder scan ---------------------------------------
+  // Runs unconditionally, before the copy-empty branch below and
+  // independent of it — whether `record` is still (partly) an unedited
+  // copy of the template is a property of `record`, not of `copy`. See
+  // this file's top-of-file doc comment, "The unbound signal".
+  //
+  // Kept in its OWN array, deliberately never merged into `rawFindings`
+  // below: `rawFindings` is what the waiver loop matches against, and a
+  // `"voice:unbound-placeholder"` finding must not be waivable. Every other
+  // finding this function produces is a judgment call a reviewer can
+  // legitimately override with a reason (a forbidden term quoted from a
+  // review, a claim phrase inside a testimonial); an unbound record is not
+  // a judgment call, it's a structural precondition — the same category as
+  // the `TypeError`s above, which also cannot be waived. Letting a waiver
+  // remove this finding from `findings` would reopen exactly the gap this
+  // whole mechanism exists to close: a caller relying on this package's own
+  // README idiom (`findings.some(f => f.severity === "error")`) would see a
+  // clean run for a voice that was never actually bound.
+  const placeholderPaths = findPlaceholderPaths(record);
+  const bound = placeholderPaths.length === 0;
+  const unboundFindings: VoiceFinding[] = placeholderPaths.map((path) => ({
+    rule: "voice:unbound-placeholder",
+    severity: "error",
+    message: `This voice record still carries the template placeholder value at "${path}" — voice-record.template.jsonc was copied but never fully filled in. An unbound voice must never be treated as checked; see the README's "The unbound signal". This finding cannot be waived.`,
+    path,
+  }));
 
   const trimmedCopy = copy.trim();
 
@@ -324,6 +432,12 @@ export function checkCopy(record: VoiceRecord, copy: string, options: VoiceCheck
   });
 
   findings.push(...configFindings);
+  // Unbound-placeholder findings are prepended, not appended: they describe
+  // the most fundamental thing wrong with this run (there is no real voice
+  // here yet), and — unlike everything else in `findings` — were never
+  // eligible for the waiver loop above. See this function's own comment on
+  // `unboundFindings` for why.
+  findings.unshift(...unboundFindings);
 
   return {
     findings,
@@ -331,5 +445,6 @@ export function checkCopy(record: VoiceRecord, copy: string, options: VoiceCheck
     skipped,
     ran,
     complete: skipped.length === 0,
+    bound,
   };
 }
