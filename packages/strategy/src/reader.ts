@@ -11,12 +11,29 @@
  * Expected directory shape, every file optional except `facts.json`:
  *
  *   strategy/
- *     facts.json        required — validateFacts (array of Fact)
- *     mission.json       optional — validateMission
- *     positioning.json   optional — validatePositioning
- *     markets.json        optional — validateMarkets (array of Market)
- *     audiences.json       optional — validateAudiences (array of Audience)
- *     roadmap.json          optional — validateRoadmapItems (array of RoadmapItem)
+ *     facts.json               required — validateFacts (array of Fact)
+ *     mission.json              optional — validateMission
+ *     positioning.json           optional — validatePositioning
+ *     markets.json                 optional — validateMarkets (array of Market)
+ *     audiences.json                 optional — validateAudiences (array of Audience)
+ *     roadmap.json                     optional — validateRoadmapItems (array of RoadmapItem)
+ *     brand-essence.json                 optional — validateBrandEssence
+ *     brand-attributes.json                optional — validateBrandAttributes (array of BrandAttribute)
+ *     brand-derivations.json                 optional — validateBrandDerivations (array of BrandDerivation)
+ *
+ * The three `brand-*.json` files follow the exact convention the other six
+ * already set: a singular document gets a singular file name
+ * (`brand-essence.json`, alongside `mission.json`/`positioning.json`), and
+ * a whole array of one entity gets the entity's own plural file name
+ * (`brand-attributes.json`/`brand-derivations.json`, alongside
+ * `markets.json`/`audiences.json`/`roadmap.json`) — not a single combined
+ * `brand.json` bundling all three, which would be a new, parallel
+ * convention invented for one entity family instead of the one this reader
+ * already uses everywhere else. The three names themselves are not new
+ * either: `validateBrandAttributes`'/`validateBrandDerivations`' own doc
+ * comments in `schema.ts`/`brand-derivation.ts` already name
+ * `brand-attributes.json`/`brand-derivations.json` as the file each
+ * validates the whole contents of.
  *
  * `facts.json` is singled out as required because it is this package's
  * whole reason to exist: `checkFactsTraceability` (see `facts-gate.ts`) has
@@ -25,24 +42,33 @@
  * function still never throws — but `StrategyBundle.complete` is `false`
  * whenever it happens, and a caller building a gate on top of this reader
  * should treat that as fail-closed input, not as "no facts to worry about".
+ * The three brand files are optional in exactly the same sense
+ * `mission.json`/`positioning.json` already are: absent is not an issue,
+ * present-but-invalid is — see `StrategyBundle.complete`'s own doc comment,
+ * which the brand fields participate in identically to every sibling file.
  */
 
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   validateAudiences,
+  validateBrandAttributes,
+  validateBrandEssence,
   validateFacts,
   validateMarkets,
   validateMission,
   validatePositioning,
   validateRoadmapItems,
   type Audience,
+  type BrandAttribute,
+  type BrandEssence,
   type Fact,
   type Market,
   type Mission,
   type Positioning,
   type RoadmapItem,
 } from "./schema.js";
+import { validateBrandDerivations, type BrandDerivation } from "./brand-derivation.js";
 import { summarizeIssues, type Validator } from "./validation.js";
 
 /**
@@ -75,6 +101,12 @@ export interface StrategyBundle {
   markets?: Market[];
   audiences?: Audience[];
   roadmap?: RoadmapItem[];
+  /** From `brand-essence.json` — see this file's top doc comment for the file-layout convention. */
+  brandEssence?: BrandEssence;
+  /** From `brand-attributes.json`. */
+  brandAttributes?: BrandAttribute[];
+  /** From `brand-derivations.json`. */
+  brandDerivations?: BrandDerivation[];
   /** Every file that could not be turned into usable data, and why. Empty means every present file validated cleanly. */
   issues: StrategyReadIssue[];
   /**
@@ -84,7 +116,9 @@ export interface StrategyBundle {
    * missing/invalid (nothing here can be trusted as ground truth), or some
    * other file is present but invalid (a narrower problem, but still a
    * bundle this function cannot vouch for in full). See `issues` for which
-   * case applies.
+   * case applies. The three brand fields participate in this rule exactly
+   * like every other optional file: absent costs nothing, present-but-
+   * invalid flips this to `false` the same as a bad `mission.json` would.
    */
   complete: boolean;
 }
@@ -156,6 +190,9 @@ export function readStrategy(root: string): StrategyBundle {
   const markets = readOptional("markets.json", validateMarkets);
   const audiences = readOptional("audiences.json", validateAudiences);
   const roadmap = readOptional("roadmap.json", validateRoadmapItems);
+  const brandEssence = readOptional("brand-essence.json", validateBrandEssence);
+  const brandAttributes = readOptional("brand-attributes.json", validateBrandAttributes);
+  const brandDerivations = readOptional("brand-derivations.json", validateBrandDerivations);
 
   return {
     root,
@@ -165,6 +202,9 @@ export function readStrategy(root: string): StrategyBundle {
     markets,
     audiences,
     roadmap,
+    brandEssence,
+    brandAttributes,
+    brandDerivations,
     issues,
     complete: issues.length === 0,
   };

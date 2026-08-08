@@ -39,6 +39,14 @@ All notable changes to this package are documented here. Format follows
     either an empty `brandableSlots` or an empty `derivations`
     (`ok: false`, with an explicit `reason`) — never a silent, vacuous
     pass when there was nothing to check.
+  - `readStrategy` now loads brand from disk alongside every other entity:
+    `brand-essence.json` (a `BrandEssence`), `brand-attributes.json` (a
+    `BrandAttribute[]`), `brand-derivations.json` (a `BrandDerivation[]`),
+    exposed as `StrategyBundle.brandEssence`/`brandAttributes`/
+    `brandDerivations`. All three are optional in exactly the sense
+    `mission.json`/`positioning.json` already are — absent is not an
+    issue, present-but-invalid is, and `StrategyBundle.complete` accounts
+    for all three identically to every other file this reader loads.
 
 ## [0.1.0] - Unreleased
 

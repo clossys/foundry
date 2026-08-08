@@ -67,13 +67,25 @@ except `facts.json` — see "Why facts.json is the one required file" below.
 
 ```
 strategy/
-  facts.json         required — an array of Fact
-  mission.json        optional — a Mission
-  positioning.json     optional — a Positioning
-  markets.json           optional — an array of Market
-  audiences.json           optional — an array of Audience
-  roadmap.json                optional — an array of RoadmapItem
+  facts.json                required — an array of Fact
+  mission.json                optional — a Mission
+  positioning.json             optional — a Positioning
+  markets.json                    optional — an array of Market
+  audiences.json                    optional — an array of Audience
+  roadmap.json                        optional — an array of RoadmapItem
+  brand-essence.json                     optional — a BrandEssence
+  brand-attributes.json                     optional — an array of BrandAttribute
+  brand-derivations.json                       optional — an array of BrandDerivation
 ```
+
+The three `brand-*.json` names follow the same convention as everything
+above them: a singular document gets a singular file name
+(`brand-essence.json`, next to `mission.json`/`positioning.json`), and a
+whole array of one entity gets that entity's own plural file name
+(`brand-attributes.json`/`brand-derivations.json`, next to
+`markets.json`/`audiences.json`/`roadmap.json`) — not one combined
+`brand.json`, which would be a second, parallel convention invented for
+just this entity family.
 
 ```ts
 import { readStrategy } from "@vespeneventures/strategy";
@@ -92,7 +104,11 @@ data — a missing `facts.json`, invalid JSON, a shape violation — is
 recorded into `bundle.issues` and reflected in `bundle.complete`, the same
 discipline `@vespeneventures/catalog`'s `buildCatalog` holds to for its own
 `Catalog.skipped`. `complete` is `true` only when `facts.json` itself
-validated AND every other file that exists on disk also validated.
+validated AND every other file that exists on disk also validated — the
+three brand files included: an absent `brand-essence.json`/
+`brand-attributes.json`/`brand-derivations.json` costs nothing, but a
+present-and-invalid one flips `complete` to `false` and lands in
+`bundle.issues` exactly like a bad `mission.json` would.
 
 ### Why `facts.json` is the one required file
 
@@ -380,7 +396,7 @@ anyone extending this package with their own entity.
 | Export | Kind | Purpose |
 | --- | --- | --- |
 | `readStrategy(root)` | function | Reads and validates a strategy directory (see "Directory shape" above). The package's one deliberate I/O surface. Never throws — see `StrategyBundle.issues`/`complete`. |
-| `StrategyBundle` | type | `{ root, facts, mission?, positioning?, markets?, audiences?, roadmap?, issues, complete }`. |
+| `StrategyBundle` | type | `{ root, facts, mission?, positioning?, markets?, audiences?, roadmap?, brandEssence?, brandAttributes?, brandDerivations?, issues, complete }`. |
 | `StrategyReadIssue` | type | `{ file, reason: StrategyReadIssueReason, detail }` — one file that did not become usable data. |
 | `StrategyReadIssueReason` | type | `"unreadable" \| "unparseable" \| "invalid-schema" \| "missing-required"`. |
 
