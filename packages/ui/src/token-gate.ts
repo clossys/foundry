@@ -10,13 +10,82 @@
  *
  * THE RULE, in one sentence: every styling literal `style-scan.ts` extracts
  * is a FINDING unless it is explicitly waived (`token-gate:ignore` on its
- * own source line — see `style-scan.ts`'s `IGNORE_MARKER_RE`) — there is no
- * "this one's fine" classification a bare hex color, color function, or raw
- * length can earn on its own, because by definition every one of them
- * either duplicates a value `@vespeneventures/tokens` already expresses
- * (rule `"hardcodes-token-value"`) or hardcodes a value with no token
- * backing at all (rule `"raw-value-no-token-backing"`) — both are exactly
- * the failure mode this package exists to make visible, never invisible.
+ * own source line — see `style-scan.ts`'s `IGNORE_MARKER_RE`) or is a bare
+ * `var(--custom-property)` reference with NO fallback at all (see "THE ONE
+ * EXCEPTION" below) — there is no other "this one's fine" classification a
+ * hex color, color function, or raw length can earn on its own.
+ *
+ * ============================================================================
+ * THREE RULES, NOT TWO — bare literals vs. var() FALLBACK literals
+ * ============================================================================
+ *
+ * An earlier version of this gate reported every literal the same way,
+ * regardless of whether it sat bare in source or inside a `var(--token,
+ * <fallback>)` call's own fallback slot — both were `"hardcodes-token-
+ * value"` if some token in the registry happened to share the literal's
+ * value. That collapsed two genuinely different situations into one
+ * message, and the message was actively WRONG for the fallback case: for
+ * `atoms/Icon.tsx`'s `"var(--ui-icon-sm, var(--spacing-lg, 16px))"`, the
+ * old finding read "read it via var(--spacing-lg) ... instead of the
+ * literal" — but the code ALREADY reads it via `var(--spacing-lg)`. The
+ * `16px` is that var's own documented fallback, and
+ * `@vespeneventures/tokens` itself ships this exact shape on purpose
+ * (`--ui-icon-sm`'s own registry value IS `"var(--spacing-lg, 16px)"` — see
+ * `packages/tokens/src/tokens.ts`). Telling the author to do the thing
+ * they already did is not an actionable finding.
+ *
+ * So this gate now distinguishes THREE outcomes for a literal candidate
+ * (`style-scan.ts`'s `StyleCandidate.fallbackForProperty` / a `tw-
+ * arbitrary` candidate's embedded literal's own `EmbeddedLiteral.
+ * fallbackForProperty` — see that file for how this is resolved
+ * STRUCTURALLY, by parsing `var(...)` nesting, never by searching `TOKENS`
+ * for a same-valued entry, which is what produced the wrong attribution in
+ * the first place):
+ *
+ *   1. BARE LITERAL (`fallbackForProperty === undefined`) — reached by no
+ *      `var(...)` at all. The token system is not consulted at THIS call
+ *      site in any way; if the referenced token's value ever changes,
+ *      nothing here changes with it, silently, forever. This is a full
+ *      defeat of the token system, so it stays the most severe outcome:
+ *      `severity: "error"`. Sub-classified exactly as before —
+ *      `"hardcodes-token-value"` if the literal's own value matches a real
+ *      token by exact text, `"raw-value-no-token-backing"` if it matches
+ *      none.
+ *   2. `var()` FALLBACK LITERAL (`fallbackForProperty` set) — new rule
+ *      `"token-value-duplicated-in-fallback"`, `severity: "warning"`. The
+ *      token IS being consulted at this call site, and wins whenever
+ *      `@vespeneventures/tokens`' CSS is actually loaded (the expected,
+ *      overwhelmingly common runtime case for a real consumer). The
+ *      literal only ever executes in the DEGRADED path — no tokens CSS at
+ *      all — so the live behavior for a normal consumer is already
+ *      correct. The real risk is LATENT DRIFT: nothing re-checks that the
+ *      fallback still matches the token's declared default the next time
+ *      either one changes. Lower blast radius (only visible in the
+ *      degraded path, and only once drift has actually happened), lower
+ *      frequency (requires two independent things — a hand-authored
+ *      fallback AND a later token-value edit — to both occur and go
+ *      unnoticed together) than a bare literal's total, permanent
+ *      disconnection from the token system. `severity: "warning"` argues
+ *      exactly that difference; it does not argue the risk is fake. The
+ *      message additionally reports whether the fallback CURRENTLY matches
+ *      the referenced token's real declared value (`fallbackSyncStatus`
+ *      below) — same-severity findings that have ALREADY drifted vs. ones
+ *      that currently happen to agree are not equally urgent, and a reader
+ *      should not have to go look that up by hand.
+ *   3. CLEAN — a `tw-arbitrary` bracket that is EXACTLY a bare
+ *      `var(--custom-property)` reference, no fallback at all (see "THE
+ *      ONE EXCEPTION" below). Not a finding of any kind.
+ *
+ * Every OTHER package/repo convention this gate mirrors (`copy-gate.ts`'s
+ * `CopyGateFinding`) uses a single severity, because copy's rule genuinely
+ * has no "less severe" shape — a string either traces to a registered
+ * entry or it doesn't. This gate's rule DOES have one, so `severity` here
+ * is `"error" | "warning"`, not the constant `"error"` copy's own type
+ * carries. Both severities still count as a `finding` for the exit-code
+ * contract (`cli.ts`): `unchecked` wins over everything (exit 2), then any
+ * finding at all — warning or error — means exit `1`, never a silent 0. A
+ * "warning" is still something a clean run must not contain; it just isn't
+ * equally urgent to fix.
  *
  * THE ONE EXCEPTION, and it belongs to `"tw-arbitrary"` candidates alone: a
  * Tailwind arbitrary-value class whose bracket is EXACTLY a bare
@@ -26,34 +95,30 @@
  * README describes for values that have no Tailwind `@theme` namespace at
  * all (z-index, elevation, layout widths, ...) — see
  * `packages/ui/src/atoms/internal/ui-vars.ts`'s own header comment for the
- * real precedent. A bracket with ANY fallback
- * (`var(--ui-layout-sidebar-rail-w,64px)`) is still a finding: the fallback
- * is a real hardcoded value duplicated from the token's own default, with
- * nothing in this toolchain keeping the two in sync if the token's default
- * ever changes — see this file's own header further down, "A REAL, HONEST
- * FINDING THIS GATE SURFACES", for why that duplication is exactly the
- * invisible-drift risk this whole package exists to catch, not a case to
- * quietly special-case away.
+ * real precedent.
  *
  * WHAT THIS DELIBERATELY DOES NOT DO, mirroring `copy-gate.ts`'s own list:
  *
- *   - It does not decide what counts as a "styling literal" at all — that
- *     classification, and the comment/attribute exclusions, already
- *     happened in `style-scan.ts`. This file only ever sees candidates
- *     `style-scan.ts` already decided are in scope.
+ *   - It does not decide what counts as a "styling literal" at all, or
+ *     whether a literal sits inside a `var()` fallback — that
+ *     classification (comment/attribute exclusions, and now fallback-chain
+ *     resolution) already happened in `style-scan.ts`. This file only ever
+ *     sees candidates `style-scan.ts` already decided are in scope, with
+ *     `fallbackForProperty` already resolved.
  *   - It does not parse or normalize CSS values beyond exact, trimmed,
  *     case-insensitive TEXT comparison against `TOKENS`' own `value`
- *     strings. `oklch(0.4748 0 0)` matches `--color-accent`'s value
- *     because the two strings are IDENTICAL once trimmed and lowercased —
- *     not because this gate understands OKLCH color space, rounds
- *     rgba() alpha channels, or resolves `calc()`/`clamp()` expressions.
- *     A near-miss (extra whitespace inside a function call the source
- *     author formatted differently, a value that is mathematically equal
- *     but textually different) is reported as `"raw-value-no-token-
- *     backing"` rather than `"hardcodes-token-value"` — a real,
- *     accepted precision limit, not a silent one (stated here, the same
- *     way `copy/src/scan.ts` states its own escape-sequence and
- *     regex-vs-division simplifications).
+ *     strings (bare-literal matching) or a SUBSTRING check against a
+ *     referenced token's composite value (fallback sync-status — see
+ *     `fallbackSyncStatus`, needed because a token like `--ui-ring-focus`'s
+ *     own registry value, `"0 0 0 2px var(--color-accent, oklch(0.4748 0
+ *     0))"`, is a composite string a single fallback literal like `2px` is
+ *     only ONE PIECE of, so exact-string equality is the wrong test for
+ *     that case specifically). Neither is a real CSS value parser — a
+ *     near-miss (extra whitespace, a mathematically-equal-but-textually-
+ *     different value) reads as "no match"/"drifted" rather than
+ *     recognized as equivalent. A real, accepted precision limit, not a
+ *     silent one (stated here, the same way `copy/src/scan.ts` states its
+ *     own escape-sequence and regex-vs-division simplifications).
  *
  * ============================================================================
  * A REAL, HONEST FINDING THIS GATE SURFACES (not fixed in this PR — see the
@@ -67,20 +132,21 @@
  * that same token's own shipped default in `@vespeneventures/tokens`'
  * `styles/tokens.css` — so a consumer who has this package but hasn't
  * wired up tokens' CSS yet still gets a legible result. Every one of those
- * fallbacks IS, by this gate's own rule above, a value that "hardcodes a
- * value a token already expresses" — `chart-vars.ts`'s `CHART_CATEGORICAL_
- * FALLBACK` record duplicates all 8 of `--color-chart-categorical-*`'s
- * hex defaults this way, and nothing in this toolchain, before this
- * package existed, ever checked that a fallback and its token's real
- * default stay in sync when one of them changes. This gate does not
- * special-case that pattern away: doing so would be exactly the "silent
- * allowlist buried in config" the task that produced this file explicitly
- * warns against, and the drift risk is real regardless of how deliberate
- * the pattern was when it was written. A consumer of this gate who wants
- * to keep the pattern is expected to waive each site explicitly
- * (`// token-gate:ignore — deliberate CSS fallback, kept in sync with
- * @vespeneventures/tokens by hand`), which is itself a real, greppable
- * admission of the drift risk, not a way to make it disappear.
+ * fallbacks is now correctly reported as `"token-value-duplicated-in-
+ * fallback"` (`warning`), not `"hardcodes-token-value"` (`error`) —
+ * `chart-vars.ts`'s `CHART_CATEGORICAL_FALLBACK` record duplicates all 8 of
+ * `--color-chart-categorical-*`'s hex defaults this way, and nothing in
+ * this toolchain, before this package existed, ever checked that a
+ * fallback and its token's real default stay in sync when one of them
+ * changes. This gate does not special-case that pattern away: doing so
+ * would be exactly the "silent allowlist buried in config" the task that
+ * produced this file explicitly warns against, and the drift risk is real
+ * regardless of how deliberate the pattern was when it was written. A
+ * consumer of this gate who wants to keep the pattern is expected to waive
+ * each site explicitly (`// token-gate:ignore — deliberate CSS fallback,
+ * kept in sync with @vespeneventures/tokens by hand`), which is itself a
+ * real, greppable admission of the drift risk, not a way to make it
+ * disappear.
  */
 
 import type { TokenDefinition } from "@vespeneventures/tokens";
@@ -92,18 +158,35 @@ import {
   type UncheckedItem,
 } from "./style-scan.js";
 
-export type TokenGateRule = "hardcodes-token-value" | "raw-value-no-token-backing";
+export type TokenGateRule = "hardcodes-token-value" | "raw-value-no-token-backing" | "token-value-duplicated-in-fallback";
+
+export type TokenGateSeverity = "error" | "warning";
 
 export interface TokenGateFinding {
   rule: TokenGateRule;
-  /** Always `"error"` — the same single-severity design `@vespeneventures/copy`'s `CopyGateFinding` uses: a styling literal either duplicates/lacks token backing or it doesn't. */
-  severity: "error";
+  /**
+   * `"error"` for a BARE literal (`hardcodes-token-value` /
+   * `raw-value-no-token-backing`) — the token system is not consulted at
+   * all at this call site. `"warning"` for `token-value-duplicated-in-
+   * fallback` — the token IS consulted and wins in the normal runtime
+   * path; the literal is a lower-frequency, lower-blast-radius LATENT
+   * drift risk, not a live defeat of the token system. See this file's top
+   * comment, "THREE RULES, NOT TWO", for the full argument.
+   */
+  severity: TokenGateSeverity;
   file: string;
   line: number;
   message: string;
   /** The candidate's raw source text, for a human scanning a report. */
   snippet: string;
-  /** The `TOKENS` property name this literal's value matches exactly, if any (see `TokenGateRule`). */
+  /**
+   * The `TOKENS` property name this finding is entangled with, if any: for
+   * a bare literal, a token whose value matches this literal's value
+   * exactly; for a fallback literal, the `--property` it is the `var()`
+   * fallback FOR (see `style-scan.ts`'s `resolveFallbackChain`) — set even
+   * when the value doesn't currently match (see `fallbackSyncStatus`), as
+   * long as that property is a REAL entry in `tokens`.
+   */
   matchedToken?: string;
 }
 
@@ -160,7 +243,14 @@ function buildTokenIndex(tokens: Readonly<Record<string, TokenDefinition>>): Map
   return index;
 }
 
-function findingFor(
+/**
+ * Bare-literal finding (`severity: "error"`) — a literal reached by no
+ * `var(...)` at all. `matchedValue`/`matchedValueKind` name what's being
+ * checked (the candidate's own value for a plain `hex-color`/`color-
+ * function`/`raw-length`, or an embedded literal's value+kind for a `tw-
+ * arbitrary` bracket — see `findingForCandidate` below).
+ */
+function bareLiteralFinding(
   file: string,
   line: number,
   raw: string,
@@ -190,12 +280,101 @@ function findingFor(
   };
 }
 
+/**
+ * Reports how a fallback literal's value compares to the REAL declared
+ * value of the token it is the fallback for — `property` is already known
+ * (resolved structurally by `style-scan.ts`'s `resolveFallbackChain`); this
+ * function only asks "does the registry agree". THREE outcomes, not a bare
+ * boolean, because a reader needs to tell "this has already silently
+ * drifted" apart from "this is currently fine, drift is only a future
+ * risk": a token like `--spacing-lg` (`"16px"`) or `--color-chart-
+ * categorical-1` (`"#2a78d6"`) has a SIMPLE, single-value default an exact
+ * comparison handles directly; a token like `--ui-ring-focus`
+ * (`"0 0 0 2px var(--color-accent, oklch(0.4748 0 0))"`) has a COMPOSITE
+ * value a single fallback literal (`2px`) is only one PIECE of — exact
+ * equality would wrongly call that "drifted" the moment the fallback is
+ * correct, so a substring check is the fallback test for the composite
+ * case. Both are real, accepted simplifications (see this file's top
+ * comment) — never a full CSS-value equivalence check.
+ */
+function fallbackSyncStatus(
+  property: string,
+  literalValue: string,
+  tokens: Readonly<Record<string, TokenDefinition>>,
+): { text: string; matchedToken: string | undefined } {
+  const token = tokens[property];
+  if (!token) {
+    return { text: `no token named "${property}" exists in @vespeneventures/tokens' TOKENS registry — verify the property name`, matchedToken: undefined };
+  }
+  const normToken = normalizeForLookup(token.value);
+  const normLiteral = normalizeForLookup(literalValue);
+  if (normToken === normLiteral) {
+    return { text: `currently matches "${property}"'s declared default exactly`, matchedToken: property };
+  }
+  if (normToken.includes(normLiteral)) {
+    return { text: `currently consistent with "${property}"'s declared default ("${token.value}")`, matchedToken: property };
+  }
+  return {
+    text: `does NOT match "${property}"'s current declared default ("${token.value}") — this fallback has already drifted out of sync`,
+    matchedToken: property,
+  };
+}
+
+/**
+ * `var()`-fallback finding (`severity: "warning"`) — `property` is the
+ * `--custom-property` this literal is the fallback FOR (see
+ * `style-scan.ts`'s `resolveFallbackChain`).
+ */
+function fallbackFinding(
+  file: string,
+  line: number,
+  raw: string,
+  literalValue: string,
+  literalValueKind: string,
+  property: string,
+  tokens: Readonly<Record<string, TokenDefinition>>,
+): TokenGateFinding {
+  const status = fallbackSyncStatus(property, literalValue, tokens);
+  return {
+    rule: "token-value-duplicated-in-fallback",
+    severity: "warning",
+    file,
+    line,
+    message: `${literalValueKind} "${literalValue}" is the var() fallback for token "${property}" — ${status.text}. Nothing keeps a hand-written fallback in sync with the token's real default: keep it as a documented, deliberate default, or drop the fallback so a missing token fails visibly instead of silently rendering a stale value.`,
+    snippet: snippetOf(raw),
+    matchedToken: status.matchedToken,
+  };
+}
+
 const KIND_LABEL: Record<StyleCandidate["kind"], string> = {
   "hex-color": "hex color",
   "color-function": "color function",
   "raw-length": "raw length",
   "tw-arbitrary": "arbitrary-value class",
 };
+
+const EMBEDDED_KIND_LABEL: Record<EmbeddedLiteral["kind"], string> = {
+  "hex-color": "embedded hex color",
+  "color-function": "embedded color function",
+  "raw-length": "embedded raw length",
+};
+
+/** Routes a literal (bare candidate value, or an embedded literal's value) to `bareLiteralFinding` or `fallbackFinding` depending on whether `fallbackForProperty` is set — the one branch point "THREE RULES, NOT TWO" (this file's top comment) describes. */
+function findingForLiteral(
+  file: string,
+  line: number,
+  raw: string,
+  literalValue: string,
+  literalValueKind: string,
+  fallbackForProperty: string | undefined,
+  tokens: Readonly<Record<string, TokenDefinition>>,
+  tokenIndex: Map<string, TokenDefinition>,
+): TokenGateFinding {
+  if (fallbackForProperty !== undefined) {
+    return fallbackFinding(file, line, raw, literalValue, literalValueKind, fallbackForProperty, tokens);
+  }
+  return bareLiteralFinding(file, line, raw, literalValue, literalValueKind, tokenIndex);
+}
 
 /**
  * Evaluates every `candidate` against `tokens` (`@vespeneventures/tokens`'
@@ -249,13 +428,33 @@ export function checkTokenPurity(
       // fixing this finding by inspecting the full `candidate.raw` will see
       // all of them, not just the one named in the message.
       const first = embedded[0] as EmbeddedLiteral;
-      const embeddedLabel =
-        first.kind === "hex-color" ? "embedded hex color" : first.kind === "color-function" ? "embedded color function" : "embedded raw length";
-      findings.push(findingFor(candidate.file, candidate.line, candidate.raw, first.raw, `${KIND_LABEL[candidate.kind]} (${embeddedLabel})`, tokenIndex));
+      findings.push(
+        findingForLiteral(
+          candidate.file,
+          candidate.line,
+          candidate.raw,
+          first.raw,
+          `${KIND_LABEL[candidate.kind]} (${EMBEDDED_KIND_LABEL[first.kind]})`,
+          first.fallbackForProperty,
+          tokens,
+          tokenIndex,
+        ),
+      );
       continue;
     }
 
-    findings.push(findingFor(candidate.file, candidate.line, candidate.raw, candidate.value, KIND_LABEL[candidate.kind], tokenIndex));
+    findings.push(
+      findingForLiteral(
+        candidate.file,
+        candidate.line,
+        candidate.raw,
+        candidate.value,
+        KIND_LABEL[candidate.kind],
+        candidate.fallbackForProperty,
+        tokens,
+        tokenIndex,
+      ),
+    );
   }
 
   return { findings, ignored, filesScanned, candidatesScanned: candidates.length, clean, unchecked };

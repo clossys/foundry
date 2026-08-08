@@ -208,6 +208,20 @@ export interface StyleCandidate {
   value: string;
   /** Whether a `token-gate:ignore` marker (see `IGNORE_MARKER_RE`) is present on this candidate's own source line. */
   hasIgnoreMarker: boolean;
+  /**
+   * For `"hex-color"` / `"color-function"` / `"raw-length"` candidates:
+   * the `--property` this literal is a `var()` fallback FOR, resolved
+   * structurally by `resolveFallbackChain` against the file's own real
+   * nesting — `undefined` for a bare literal reached by no `var(...)` at
+   * all. Always `undefined` for `"tw-arbitrary"`: that candidate IS the
+   * whole bracket, not a literal itself — a bracket's OWN embedded
+   * literals (which individually MAY be fallbacks) are resolved by
+   * `findEmbeddedStyleLiterals` on `value`, not here. See
+   * `resolveFallbackChain`'s own doc comment for why this is resolved by
+   * parsing structure, never by searching `TOKENS` for a same-valued
+   * entry.
+   */
+  fallbackForProperty: string | undefined;
 }
 
 export type ExcludedReason = "comment" | "regex-literal" | "structural-or-a11y-attribute-value";
@@ -347,10 +361,167 @@ const COLOR_FN_OPENER_RE = /\b(rgba?|hsla?|oklch|oklab|lab|lch)\(/g;
 const RAW_LENGTH_RE = new RegExp(`(?<![\\w.])(\\d+(?:\\.\\d+)?)(${LENGTH_UNITS.join("|")})(?![\\w])`, "g");
 const TW_ARBITRARY_OPENER_RE = /([a-zA-Z_][\w:/-]*)-\[/g;
 
-/** Every leaf value-shape this scanner recognizes, reused by `token-gate.ts` to classify text INSIDE a `"tw-arbitrary"` candidate's bracket (see this file's top comment, "THE BOUNDARY") without re-walking a whole file. */
+/**
+ * Resolves whether the literal STARTING at `index` in `text` sits inside a
+ * `var(--property, <fallback>)` call as that call's OWN fallback argument —
+ * and if so, which `--property`. Returns `undefined` for a bare literal (no
+ * enclosing `var(...)` at all, or the nearest enclosing call is some OTHER
+ * function like `rgba(`/`min(`/`clamp(`).
+ *
+ * WHY THIS IS STRUCTURAL, NOT VALUE-BASED — the distinction this function
+ * exists to get right: an earlier version of this gate decided "which token
+ * does this literal belong to" by searching `@vespeneventures/tokens`'
+ * `TOKENS` registry for an entry whose VALUE happened to equal the literal.
+ * That is wrong for exactly the case that matters most: `atoms/Icon.tsx`'s
+ * `"var(--ui-icon-sm, var(--spacing-lg, 16px))"` has its `16px` fallback
+ * INSIDE `--spacing-lg`'s own `var(...)` — value-matching against the
+ * registry happens to land on `--spacing-lg` too here, but only by
+ * coincidence (nothing about a value-search KNOWS the literal is `--spacing-
+ * lg`'s fallback specifically, as opposed to any other token that happens to
+ * also be `"16px"`), and it silently breaks the moment two different tokens
+ * ever share a value, or a literal fallback drifts to a value NO token has —
+ * a value-search would then report "no token backs this", even while the
+ * source text plainly says which property it is the fallback for. This
+ * function instead PARSES the actual nesting: walk backward from `index`
+ * tracking paren depth until the nearest UNMATCHED `(` is found (the
+ * innermost function call enclosing this position), confirm that call's
+ * name is literally `var`, then parse forward from that `(` to read the
+ * `--property` name and confirm `index` falls after its first top-level
+ * comma (i.e., in the fallback slot, not the property-name slot). Because
+ * this walks OUTWARD from `index` and stops at the FIRST enclosing `(`, a
+ * doubly-nested chain (`var(--a, var(--b, 16px))`) always resolves to the
+ * INNERMOST wrapping property (`--b`), never an outer or unrelated one —
+ * exactly the semantics a reader of the source text would expect, and the
+ * literal-position analogue of `tokenize()`'s own "nearest enclosing call"
+ * backward scan in `@vespeneventures/copy`'s `scan.ts`
+ * (`enclosingCallName`), applied here to `var(...)` specifically instead of
+ * a class-name builder.
+ */
+interface EnclosingCall {
+  /** Index of the call's own opening "(". */
+  openIndex: number;
+  /** The identifier immediately before "(", e.g. "var", "clamp", "rgba" — "" if none (a bare grouping paren). */
+  name: string;
+}
+
+/**
+ * Backward, paren-depth-aware scan from `pos - 1` for the NEAREST still-open
+ * `(` relative to `pos` — the innermost function call `pos` sits inside,
+ * one layer at a time. Shared by `resolveFallbackChain` below, which calls
+ * this repeatedly to peel through wrapping calls that are NOT `var(`.
+ */
+function findEnclosingCall(text: string, pos: number): EnclosingCall | null {
+  let depth = 0;
+  let i = pos - 1;
+  while (i >= 0) {
+    const c = text[i] as string;
+    if (c === ")") {
+      depth++;
+      i--;
+      continue;
+    }
+    if (c === "(") {
+      if (depth > 0) {
+        depth--;
+        i--;
+        continue;
+      }
+      let j = i - 1;
+      while (j >= 0 && /\s/.test(text[j] as string)) j--;
+      const nameEnd = j + 1;
+      while (j >= 0 && /[A-Za-z_$]/.test(text[j] as string)) j--;
+      return { openIndex: i, name: text.slice(j + 1, nameEnd) };
+    }
+    i--;
+  }
+  return null;
+}
+
+/**
+ * Resolves whether the literal STARTING at `index` in `text` sits inside a
+ * `var(--property, <fallback>)` call as that call's OWN fallback argument —
+ * and if so, which `--property`. Returns `undefined` for a bare literal (no
+ * enclosing `var(...)` anywhere, however many layers out).
+ *
+ * WHY THIS IS STRUCTURAL, NOT VALUE-BASED — the distinction this function
+ * exists to get right: an earlier version of this gate decided "which token
+ * does this literal belong to" by searching `@vespeneventures/tokens`'
+ * `TOKENS` registry for an entry whose VALUE happened to equal the literal.
+ * That is wrong for exactly the case that matters most: `atoms/Icon.tsx`'s
+ * `"var(--ui-icon-sm, var(--spacing-lg, 16px))"` has its `16px` fallback
+ * INSIDE `--spacing-lg`'s own `var(...)` — value-matching against the
+ * registry happens to land on `--spacing-lg` too here, but only by
+ * coincidence (nothing about a value-search KNOWS the literal is `--spacing-
+ * lg`'s fallback specifically, as opposed to any other token that happens to
+ * also be `"16px"`), and it silently breaks the moment two different tokens
+ * ever share a value, or a literal fallback drifts to a value NO token has —
+ * a value-search would then report "no token backs this", even while the
+ * source text plainly says which property it is the fallback for. This
+ * function instead PARSES the actual nesting via `findEnclosingCall`,
+ * PEELING OUTWARD one call at a time:
+ *
+ *   1. Find the nearest enclosing `(...)`. If none exists at all, the
+ *      literal is bare — return `undefined`.
+ *   2. If that call's name is literally `var`, this is (subject to the
+ *      comma check in step 4) the answer: the INNERMOST wrapping `var(...)`,
+ *      never an outer or unrelated one. This is what makes a doubly-nested
+ *      chain (`var(--a, var(--b, 16px))`) resolve to `--b`, not `--a` — the
+ *      literal-position analogue of `tokenize()`'s own "nearest enclosing
+ *      call" backward scan in `@vespeneventures/copy`'s `scan.ts`
+ *      (`enclosingCallName`), applied here to `var(...)` specifically.
+ *   3. If that call's name is anything ELSE — `clamp(`, `min(`, `calc(`,
+ *      `rgba(`, ... — this is NOT a decision point, it is a layer to see
+ *      PAST: `var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))` (the
+ *      real shape `shell/internal/shell-vars.ts`'s `UI_WIDTH_PAGE_PADDING_X`
+ *      uses) has its `16px`/`4vw`/`48px` each wrapped DIRECTLY by `clamp(`,
+ *      but `clamp(...)`'s own result IS `--ui-width-page-padding-x`'s
+ *      fallback value as a whole — from the "does this literal only take
+ *      effect when the token is absent" question this gate cares about,
+ *      being one non-`var` function away from the `var(...)` is no
+ *      different from being zero away. So this case re-searches from
+ *      BEFORE that wrapping call's own name (`clamp`), continuing outward
+ *      until a `var(` is found or the search runs out of enclosing calls
+ *      entirely.
+ *   4. Once an enclosing `var(` is found, parse forward from its `(` to
+ *      read `--property` and confirm the ORIGINAL `index` falls after that
+ *      call's first top-level comma (the fallback slot, not the
+ *      property-name slot).
+ */
+export function resolveFallbackChain(text: string, index: number): string | undefined {
+  let searchFrom = index;
+  for (;;) {
+    const enclosing = findEnclosingCall(text, searchFrom);
+    if (!enclosing) return undefined; // no enclosing call left at all — bare literal
+    if (enclosing.name !== "var") {
+      // Peel this layer: keep looking OUTWARD from just before this call's
+      // own name (its identifier's start), not from its "(" — searching
+      // from the "(" itself would immediately re-find this same call.
+      searchFrom = enclosing.openIndex - enclosing.name.length;
+      continue;
+    }
+    // Parse forward from "var("'s own "(" to read "--property" then
+    // confirm the ORIGINAL `index` (not `searchFrom`, which may have
+    // walked outward through intermediate wrapping calls) falls after
+    // this var()'s first top-level comma.
+    const propMatch = /^\(\s*(--[A-Za-z0-9_-]+)\s*,/.exec(text.slice(enclosing.openIndex));
+    if (!propMatch) return undefined; // e.g. var(--x) with no comma at all — not a fallback context, isPureVarReference's territory
+    const commaOffsetInMatch = (propMatch[0] as string).length - 1; // index of "," within propMatch[0]
+    const commaIndex = enclosing.openIndex + commaOffsetInMatch;
+    if (index <= commaIndex) return undefined; // `index` sits inside the property-name slot, not the fallback — cannot happen for a value-shaped literal in practice, checked anyway
+    return propMatch[1] as string;
+  }
+}
+
+/**
+ * Every leaf value-shape this scanner recognizes, reused by `token-gate.ts`
+ * to classify text INSIDE a `"tw-arbitrary"` candidate's bracket (see this
+ * file's top comment, "THE BOUNDARY") without re-walking a whole file.
+ */
 export interface EmbeddedLiteral {
   kind: "hex-color" | "color-function" | "raw-length";
   raw: string;
+  /** See `resolveFallbackChain` — the `--property` this literal is the `var()` fallback FOR, resolved structurally from `text`'s own nesting, or `undefined` for a bare literal. */
+  fallbackForProperty: string | undefined;
 }
 
 /**
@@ -368,7 +539,9 @@ export function findEmbeddedStyleLiterals(text: string): EmbeddedLiteral[] {
   const found: EmbeddedLiteral[] = [];
   for (const m of text.matchAll(new RegExp(HEX_RUN_RE.source, "g"))) {
     const len = (m[1] as string).length;
-    if (len === 3 || len === 4 || len === 6 || len === 8) found.push({ kind: "hex-color", raw: m[0] });
+    if (len === 3 || len === 4 || len === 6 || len === 8) {
+      found.push({ kind: "hex-color", raw: m[0], fallbackForProperty: resolveFallbackChain(text, m.index as number) });
+    }
   }
   for (const m of text.matchAll(new RegExp(COLOR_FN_OPENER_RE.source, "g"))) {
     const start = m.index as number;
@@ -379,10 +552,12 @@ export function findEmbeddedStyleLiterals(text: string): EmbeddedLiteral[] {
       else if (text[j] === ")") depth--;
       j++;
     }
-    if (depth === 0) found.push({ kind: "color-function", raw: text.slice(start, j) });
+    if (depth === 0) {
+      found.push({ kind: "color-function", raw: text.slice(start, j), fallbackForProperty: resolveFallbackChain(text, start) });
+    }
   }
   for (const m of text.matchAll(new RegExp(RAW_LENGTH_RE.source, "g"))) {
-    found.push({ kind: "raw-length", raw: m[0] });
+    found.push({ kind: "raw-length", raw: m[0], fallbackForProperty: resolveFallbackChain(text, m.index as number) });
   }
   return found;
 }
@@ -737,6 +912,11 @@ export function extractStyleCandidates(content: string, file: string): ExtractRe
       raw: full,
       value,
       hasIgnoreMarker: hasIgnoreMarkerOnLine(line),
+      // A "tw-arbitrary" candidate IS the whole bracket, never itself a
+      // literal inside a var() call — its own EMBEDDED literals (which
+      // individually may be fallbacks) are resolved separately, from
+      // `value` alone, by `findEmbeddedStyleLiterals` in token-gate.ts.
+      fallbackForProperty: undefined,
     });
   }
 
@@ -780,6 +960,7 @@ export function extractStyleCandidates(content: string, file: string): ExtractRe
       raw: full,
       value: full,
       hasIgnoreMarker: hasIgnoreMarkerOnLine(line),
+      fallbackForProperty: resolveFallbackChain(content, idx),
     });
   }
 
@@ -815,6 +996,7 @@ export function extractStyleCandidates(content: string, file: string): ExtractRe
       raw: m[0],
       value: m[0],
       hasIgnoreMarker: hasIgnoreMarkerOnLine(line),
+      fallbackForProperty: resolveFallbackChain(content, idx),
     });
   }
 
@@ -839,6 +1021,7 @@ export function extractStyleCandidates(content: string, file: string): ExtractRe
       raw: m[0],
       value: m[0],
       hasIgnoreMarker: hasIgnoreMarkerOnLine(line),
+      fallbackForProperty: resolveFallbackChain(content, idx),
     });
   }
 

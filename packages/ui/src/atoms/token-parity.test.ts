@@ -258,6 +258,10 @@ const KNOWN_NON_CLASS_MAPS = new Set([
   // ("hex color", "arbitrary-value class", ...), interpolated into a
   // TokenGateFinding's `message` string, never a Tailwind class name.
   "KIND_LABEL",
+  // token-gate.ts — EmbeddedLiteral["kind"] -> human-readable report label
+  // ("embedded hex color", ...), same role as KIND_LABEL above, one level
+  // down (for a literal embedded inside a tw-arbitrary bracket).
+  "EMBEDDED_KIND_LABEL",
 ]);
 
 function extractCandidateClasses(code: string): Set<string> {

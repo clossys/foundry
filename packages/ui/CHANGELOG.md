@@ -21,25 +21,43 @@ All notable changes to this package are documented here. Format follows
   `p-4`, `z-10`) untouched by construction, not by an allowlist. Zero
   runtime dependencies, matching `copy`'s own scanner (this repository's
   CI `safety` job runs gate scripts with no `npm ci`). `checkTokenPurity`
-  is the pure gate: every candidate is a finding unless it hardcodes a
-  value `@vespeneventures/tokens` already expresses (`"hardcodes-token-
-  value"`), has no token backing at all (`"raw-value-no-token-backing"`),
-  or is explicitly waived with a `token-gate:ignore` marker on its own
-  source line — mirroring `copy-gate:ignore` exactly, never a silent
-  allowlist buried in config. `ui-token-check` ships the same three-state
-  exit contract every gate CLI in this repository uses: `0` clean, `1`
-  findings, `2` could not run — including an explicit `unchecked` state
-  (an unterminated arbitrary-value bracket, an unresolvable color function,
-  an invalid hex length, or an arbitrary-value class this gate cannot
-  classify as in- or out-of-scope) that always prevents a clean `0`, the
-  same discipline `copy-check`'s own `ScanResult.unchecked` holds to. Run
-  against this package's own `src/`, the gate surfaces real, previously
-  invisible findings — mostly `var(--token, <literal fallback>)` patterns
-  in `atoms/internal/ui-vars.ts`, `charts/internal/chart-vars.ts`,
+  is the pure gate, with THREE rules, not two, because a bare hardcoded
+  literal and a `var(--token, <fallback>)`'s own fallback literal are
+  different problems with different remedies: a BARE literal (the token
+  system not consulted at this call site at all) is `severity: "error"`,
+  reported as `"hardcodes-token-value"` when it matches a real token's
+  value exactly or `"raw-value-no-token-backing"` when it matches none; a
+  `var()` FALLBACK literal (the token IS consulted, and wins whenever
+  `@vespeneventures/tokens`' CSS is actually loaded) is `severity:
+  "warning"`, reported as `"token-value-duplicated-in-fallback"` — a
+  latent drift risk, not a live defeat of the token system, and the
+  message states whether the fallback currently matches, is consistent
+  with, or has already drifted from the referenced token's real declared
+  value. Which token a fallback literal belongs to is resolved
+  STRUCTURALLY, by parsing `var(...)` nesting (peeling through any
+  wrapping non-`var` function like `clamp()`/`rgba()` to find the true
+  enclosing `var()`, and always resolving a nested chain to the INNERMOST
+  wrapper) — never by searching the registry for a same-valued entry,
+  which is how an earlier draft of this gate wrongly attributed
+  `atoms/Icon.tsx`'s `16px` (the fallback of `var(--ui-icon-sm,
+  var(--spacing-lg, 16px))`) to an unrelated token that merely happened to
+  share its value. Every rule is waivable with a `token-gate:ignore`
+  marker on its own source line — mirroring `copy-gate:ignore` exactly,
+  never a silent allowlist buried in config. `ui-token-check` ships the
+  same three-state exit contract every gate CLI in this repository uses:
+  `0` clean, `1` findings (error or warning — both fail a clean run), `2`
+  could not run — including an explicit `unchecked` state (an unterminated
+  arbitrary-value bracket, an unresolvable color function, an invalid hex
+  length, or an arbitrary-value class this gate cannot classify as in- or
+  out-of-scope) that always prevents a clean `0`, the same discipline
+  `copy-check`'s own `ScanResult.unchecked` holds to. Run against this
+  package's own `src/`: 44 findings (18 error, 26 warning), 4 unchecked —
+  the warnings are almost entirely `var(--token, <literal fallback>)`
+  patterns in `atoms/internal/ui-vars.ts`, `charts/internal/chart-vars.ts`,
   `shell/internal/shell-vars.ts`, and `views/internal/view-vars.ts` whose
   literal fallbacks duplicate a token's own shipped default with nothing
-  keeping the two in sync — left unfixed in the PR that introduced this
-  gate; see that PR's description for the full accounting.
+  keeping the two in sync — left unfixed (and unwaived) in the PR that
+  introduced this gate; see that PR's description for the full accounting.
 
 ## [0.3.0] - Unreleased
 

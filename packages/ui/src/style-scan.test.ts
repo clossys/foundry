@@ -2,7 +2,13 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { extractStyleCandidates, findEmbeddedStyleLiterals, isPureVarReference, scanStyleSources } from "./style-scan.js";
+import {
+  extractStyleCandidates,
+  findEmbeddedStyleLiterals,
+  isPureVarReference,
+  resolveFallbackChain,
+  scanStyleSources,
+} from "./style-scan.js";
 
 // Hermetic: `extractStyleCandidates` tests operate on plain in-memory
 // strings (zero I/O); `scanStyleSources` tests operate on their own
@@ -189,14 +195,15 @@ describe("extractStyleCandidates — the unchecked path", () => {
 });
 
 describe("findEmbeddedStyleLiterals / isPureVarReference — the tw-arbitrary value-shape helpers token-gate.ts reuses", () => {
-  it("finds a hex color embedded in a var() fallback", () => {
+  it("finds a hex color embedded in a var() fallback, and resolves which property it is the fallback FOR", () => {
     const found = findEmbeddedStyleLiterals("var(--ui-layout-sidebar-rail-w,64px)");
-    expect(found).toEqual([{ kind: "raw-length", raw: "64px" }]);
+    expect(found).toEqual([{ kind: "raw-length", raw: "64px", fallbackForProperty: "--ui-layout-sidebar-rail-w" }]);
   });
 
-  it("finds multiple raw lengths (min(24rem,90vw), the real Toaster.tsx shape)", () => {
+  it("finds multiple raw lengths (min(24rem,90vw), the real Toaster.tsx shape) — neither is a var() fallback (min() is not var())", () => {
     const found = findEmbeddedStyleLiterals("min(24rem,90vw)");
     expect(found.map((f) => f.raw).sort()).toEqual(["24rem", "90vw"]);
+    expect(found.every((f) => f.fallbackForProperty === undefined)).toBe(true);
   });
 
   it("finds nothing in a grid-track-list shape (Shell.tsx's real grid-cols-[...] value)", () => {
@@ -215,6 +222,63 @@ describe("findEmbeddedStyleLiterals / isPureVarReference — the tw-arbitrary va
     expect(isPureVarReference(" var( --ui-example-token-N ) ")).toBe(true);
     expect(isPureVarReference("var(--ui-example-token-N,320px)")).toBe(false);
     expect(isPureVarReference("#3b82f6")).toBe(false);
+  });
+});
+
+describe("resolveFallbackChain — structural attribution, never value-coincidental", () => {
+  it("a bare literal reached by no var() at all resolves to undefined", () => {
+    const text = "13px";
+    expect(resolveFallbackChain(text, text.indexOf("13px"))).toBeUndefined();
+  });
+
+  it("a single-level var(--x, <literal>) resolves to --x", () => {
+    const text = "var(--spacing-lg, 16px)";
+    expect(resolveFallbackChain(text, text.indexOf("16px"))).toBe("--spacing-lg");
+  });
+
+  it("var(--a, var(--b, 16px)) resolves to --b, the INNERMOST wrapper, never --a", () => {
+    const text = "var(--a, var(--b, 16px))";
+    expect(resolveFallbackChain(text, text.indexOf("16px"))).toBe("--b");
+  });
+
+  it("triply-nested var(--a, var(--b, var(--c, 16px))) resolves to --c", () => {
+    const text = "var(--a, var(--b, var(--c, 16px)))";
+    expect(resolveFallbackChain(text, text.indexOf("16px"))).toBe("--c");
+  });
+
+  it("peels through a NON-var wrapping function (rgba) to find the true enclosing var — a position INSIDE rgba(...)'s own argument list still resolves to the var() it is ultimately the fallback for", () => {
+    // In practice, style-scan.ts's own color-function pass extracts the
+    // WHOLE "rgba(0, 0, 0, 0.10)" as one candidate (never a bare "0"
+    // inside it) — this test exercises resolveFallbackChain directly at a
+    // position inside rgba(...)'s argument list, confirming the nearest
+    // enclosing call is correctly identified as "rgba" first, then peeled
+    // through (same mechanism the clamp() test below exercises) to reach
+    // the true enclosing "--ui-elevation-floating".
+    const text = "var(--ui-elevation-floating, rgba(0, 0, 0, 0.10))";
+    const zeroIndex = text.indexOf("0, 0, 0");
+    expect(resolveFallbackChain(text, zeroIndex)).toBe("--ui-elevation-floating");
+  });
+
+  it("peels through a NON-var wrapping function (clamp) to find the true enclosing var — the real shell-vars.ts UI_WIDTH_PAGE_PADDING_X shape", () => {
+    const text = "var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))";
+    expect(resolveFallbackChain(text, text.indexOf("16px"))).toBe("--ui-width-page-padding-x");
+    expect(resolveFallbackChain(text, text.indexOf("4vw"))).toBe("--ui-width-page-padding-x");
+    expect(resolveFallbackChain(text, text.lastIndexOf("48px"))).toBe("--ui-width-page-padding-x");
+  });
+
+  it("a position inside a bare var() reference with NO comma at all is not a fallback — isPureVarReference's territory, not this function's", () => {
+    // var(--x) with no fallback slot has nothing for a literal to occupy in
+    // the first place; this exercises the "no comma found" branch directly
+    // by pointing at a position that is nonetheless inside the parens.
+    const text = "var(--ui-example-token-N)";
+    expect(resolveFallbackChain(text, text.indexOf("N"))).toBeUndefined();
+  });
+
+  it("a literal in an UNRELATED sibling var() (not enclosing this position at all) is never attributed to it", () => {
+    const text = "var(--a, 1px) var(--b, 16px)";
+    // The "16px" belongs to --b; confirm resolving from its own position
+    // does not somehow reach back to --a (a prior, already-closed call).
+    expect(resolveFallbackChain(text, text.indexOf("16px"))).toBe("--b");
   });
 });
 

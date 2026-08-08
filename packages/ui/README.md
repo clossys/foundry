@@ -2934,9 +2934,24 @@ its own subpath and an installable CLI:
   mirroring `copy-gate:ignore` exactly) or — the one legitimate exception —
   a Tailwind arbitrary-value class that is a bare `var(--custom-property)`
   reference with no fallback, the documented "no Tailwind namespace, raw
-  `var()` only" escape hatch `atoms/internal/ui-vars.ts` describes. See
-  `src/token-gate.ts`'s own header for why a `var(--x, <fallback>)` pattern
-  is still a finding even when deliberate and documented.
+  `var()` only" escape hatch `atoms/internal/ui-vars.ts` describes. THREE
+  rules, not one: a BARE literal (no `var()` at all — the token system is
+  never consulted at this call site) is `severity: "error"`
+  (`"hardcodes-token-value"` if it matches a real token's value exactly,
+  `"raw-value-no-token-backing"` if it matches none); a literal that IS a
+  `var(--token, <fallback>)` call's own fallback is `severity: "warning"`,
+  `"token-value-duplicated-in-fallback"` — the token wins whenever
+  `@vespeneventures/tokens`' CSS is loaded, so this is a latent drift risk,
+  not a live defeat, and the message states whether the fallback currently
+  matches, is consistent with, or has already drifted from the referenced
+  token's real value. Which token a fallback belongs to is resolved
+  STRUCTURALLY (parsing `var(...)` nesting, peeling through a wrapping
+  non-`var` function like `clamp()` to find the true enclosing `var()`,
+  always resolving a nested chain to the INNERMOST wrapper) — never by
+  searching the registry for a same-valued entry. See `src/token-gate.ts`'s
+  own header for the full reasoning, including why a `var(--x, <fallback>)`
+  pattern is still a finding (just a lower-severity one) even when
+  deliberate and documented.
 - **`ui-token-check [scan-dir]`** is the installable CLI, with the same
   three-state exit contract every gate CLI in this repository uses: `0`
   clean, `1` findings, `2` could not run — `2` also covers a non-empty

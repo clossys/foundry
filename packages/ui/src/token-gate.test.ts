@@ -17,8 +17,8 @@ function candidatesFor(src: string, file = "x.ts") {
 
 const NO_TOKENS: Readonly<Record<string, TokenDefinition>> = {};
 
-describe("checkTokenPurity — hardcodes-token-value (matches a real @vespeneventures/tokens entry)", () => {
-  it("a hex color equal to --color-chart-categorical-1's real value is a hardcodes-token-value finding", () => {
+describe("checkTokenPurity — hardcodes-token-value (a BARE literal matching a real @vespeneventures/tokens entry)", () => {
+  it("a hex color equal to --color-chart-categorical-1's real value is a hardcodes-token-value finding, severity error", () => {
     // Real value from packages/tokens/src/tokens.ts — calibrated against
     // the actual registry, not a hand-picked fake, the same way
     // copy-gate.test.ts calibrates against Pagination.tsx/Select.tsx/
@@ -26,15 +26,11 @@ describe("checkTokenPurity — hardcodes-token-value (matches a real @vespeneven
     const { candidates, unchecked } = candidatesFor('const c = "#2a78d6";\n', "chart-vars.ts");
     const result = checkTokenPurity(candidates, TOKENS, 1, unchecked);
     expect(result.findings).toHaveLength(1);
-    expect(result.findings[0]).toMatchObject({ rule: "hardcodes-token-value", matchedToken: "--color-chart-categorical-1" });
-  });
-
-  it("a raw length equal to --spacing-lg's real value (16px) is a hardcodes-token-value finding — the real Icon.tsx shape", () => {
-    const { candidates, unchecked } = candidatesFor('const sm = "var(--ui-icon-sm, var(--spacing-lg, 16px))";\n', "Icon.tsx");
-    const result = checkTokenPurity(candidates, TOKENS, 1, unchecked);
-    const lengthFindings = result.findings.filter((f) => f.matchedToken === "--spacing-lg");
-    expect(lengthFindings).toHaveLength(1);
-    expect(lengthFindings[0]).toMatchObject({ rule: "hardcodes-token-value" });
+    expect(result.findings[0]).toMatchObject({
+      rule: "hardcodes-token-value",
+      severity: "error",
+      matchedToken: "--color-chart-categorical-1",
+    });
   });
 
   it("is case-insensitive when matching a hex value against the registry", () => {
@@ -44,12 +40,12 @@ describe("checkTokenPurity — hardcodes-token-value (matches a real @vespeneven
   });
 });
 
-describe("checkTokenPurity — raw-value-no-token-backing", () => {
-  it("a hex color with no matching token entry is raw-value-no-token-backing", () => {
+describe("checkTokenPurity — raw-value-no-token-backing (a BARE literal with no matching entry)", () => {
+  it("a hex color with no matching token entry is raw-value-no-token-backing, severity error", () => {
     const { candidates, unchecked } = candidatesFor('const c = "#123abc";\n', "x.ts");
     const result = checkTokenPurity(candidates, TOKENS, 1, unchecked);
     expect(result.findings).toHaveLength(1);
-    expect(result.findings[0]).toMatchObject({ rule: "raw-value-no-token-backing" });
+    expect(result.findings[0]).toMatchObject({ rule: "raw-value-no-token-backing", severity: "error" });
     expect(result.findings[0]?.matchedToken).toBeUndefined();
   });
 
@@ -67,6 +63,106 @@ describe("checkTokenPurity — raw-value-no-token-backing", () => {
   });
 });
 
+describe("checkTokenPurity — token-value-duplicated-in-fallback (a var() FALLBACK literal, not a bare one)", () => {
+  it("the real Icon.tsx shape: var(--ui-icon-sm, var(--spacing-lg, 16px)) attributes 16px to --spacing-lg (the INNERMOST var), not --ui-icon-sm, and never as hardcodes-token-value", () => {
+    const { candidates, unchecked } = candidatesFor('const sm = "var(--ui-icon-sm, var(--spacing-lg, 16px))";\n', "Icon.tsx");
+    const result = checkTokenPurity(candidates, TOKENS, 1, unchecked);
+    expect(result.findings).toHaveLength(1);
+    expect(result.findings[0]).toMatchObject({
+      rule: "token-value-duplicated-in-fallback",
+      severity: "warning",
+      matchedToken: "--spacing-lg",
+    });
+    expect(result.findings[0]?.message).toContain("--spacing-lg");
+    expect(result.findings[0]?.message).not.toContain("--ui-icon-sm");
+    // The circular remedy this rule replaces ("read it via var(--spacing-lg)
+    // ... instead of the literal") must never appear for a fallback finding
+    // — the code already reads it via var(--spacing-lg).
+    expect(result.findings[0]?.message).not.toContain("read it via");
+  });
+
+  it("a synthetic doubly-nested chain var(--a, var(--b, 16px)) resolves to --b, never --a — the general shape the Icon.tsx case is one instance of", () => {
+    const { candidates, unchecked } = candidatesFor(
+      'const x = "var(--example-outer-N, var(--example-inner-N, 16px))";\n',
+      "x.ts",
+    );
+    const result = checkTokenPurity(candidates, TOKENS, 1, unchecked);
+    expect(result.findings).toHaveLength(1);
+    expect(result.findings[0]?.matchedToken).toBeUndefined(); // neither placeholder name is a real token
+    expect(result.findings[0]?.message).toContain("--example-inner-N");
+    expect(result.findings[0]?.message).not.toContain("--example-outer-N");
+  });
+
+  it("var(--x, <fallback>) is STILL a finding, but as token-value-duplicated-in-fallback/warning, not hardcodes-token-value/error — the real Shell.tsx shape", () => {
+    const { candidates, unchecked } = candidatesFor(
+      '<div className="w-[var(--ui-layout-sidebar-rail-w,64px)]" />;\n',
+      "Shell.tsx",
+    );
+    const result = checkTokenPurity(candidates, TOKENS, 1, unchecked);
+    expect(result.findings).toHaveLength(1);
+    expect(result.findings[0]).toMatchObject({
+      rule: "token-value-duplicated-in-fallback",
+      severity: "warning",
+      matchedToken: "--ui-layout-sidebar-rail-w",
+    });
+    expect(result.findings[0]?.message).toContain("64px");
+  });
+
+  it("a literal wrapped by a NON-var function (clamp) inside a var() fallback still resolves to the enclosing var — the real shell-vars.ts UI_WIDTH_PAGE_PADDING_X shape", () => {
+    const { candidates, unchecked } = candidatesFor(
+      'export const X = "var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))";\n',
+      "shell-vars.ts",
+    );
+    const result = checkTokenPurity(candidates, TOKENS, 1, unchecked);
+    expect(result.findings).toHaveLength(3); // 16px, 4vw, 48px
+    for (const f of result.findings) {
+      expect(f).toMatchObject({ rule: "token-value-duplicated-in-fallback", matchedToken: "--ui-width-page-padding-x" });
+    }
+  });
+
+  it("reports 'currently matches' when the fallback agrees with the token's real declared value", () => {
+    const { candidates, unchecked } = candidatesFor('const x = "var(--spacing-lg, 16px)";\n', "x.ts");
+    const result = checkTokenPurity(candidates, TOKENS, 1, unchecked);
+    expect(result.findings[0]?.message).toContain("currently matches");
+  });
+
+  it("reports 'already drifted' when the fallback does NOT match the token's real declared value", () => {
+    const FAKE_TOKENS: Readonly<Record<string, TokenDefinition>> = {
+      "--example-drifted-N": {
+        property: "--example-drifted-N",
+        family: "spacing",
+        value: "24px", // the fallback below says 16px — deliberately different
+        brandable: false,
+        themeDependent: false,
+      },
+    };
+    const { candidates, unchecked } = candidatesFor('const x = "var(--example-drifted-N, 16px)";\n', "x.ts");
+    const result = checkTokenPurity(candidates, FAKE_TOKENS, 1, unchecked);
+    expect(result.findings).toHaveLength(1);
+    expect(result.findings[0]).toMatchObject({ rule: "token-value-duplicated-in-fallback", severity: "warning" });
+    expect(result.findings[0]?.message).toContain("already drifted");
+    expect(result.findings[0]?.message).toContain("24px"); // names the real current value
+  });
+
+  it("reports 'no token named ... exists' when the fallback's property is not in the registry at all (e.g. a typo), and leaves matchedToken undefined", () => {
+    const { candidates, unchecked } = candidatesFor('const x = "var(--this-property-does-not-exist-N, 16px)";\n', "x.ts");
+    const result = checkTokenPurity(candidates, TOKENS, 1, unchecked);
+    expect(result.findings).toHaveLength(1);
+    expect(result.findings[0]).toMatchObject({ rule: "token-value-duplicated-in-fallback", severity: "warning" });
+    expect(result.findings[0]?.message).toContain("no token named");
+    expect(result.findings[0]?.matchedToken).toBeUndefined();
+  });
+
+  it("bg-[#3b82f6] (no var() wrapper at all) stays a BARE finding — error, not warning", () => {
+    const { candidates, unchecked } = candidatesFor('<div className="bg-[#3b82f6]" />;\n', "x.tsx");
+    const result = checkTokenPurity(candidates, TOKENS, 1, unchecked);
+    expect(result.findings).toHaveLength(1);
+    expect(result.findings[0]?.severity).toBe("error");
+    expect(result.findings[0]?.rule).not.toBe("token-value-duplicated-in-fallback");
+    expect(result.findings[0]?.message).toContain("#3b82f6");
+  });
+});
+
 describe("checkTokenPurity — the tw-arbitrary var() exception", () => {
   it("a bare var() reference with no fallback is clean, not a finding", () => {
     // "-N" suffix: this repository's own placeholder-name convention (see
@@ -77,23 +173,6 @@ describe("checkTokenPurity — the tw-arbitrary var() exception", () => {
     const result = checkTokenPurity(candidates, TOKENS, 1, unchecked);
     expect(result.findings).toEqual([]);
     expect(result.clean).toBe(1);
-  });
-
-  it("var(--x, <fallback>) is STILL a finding — the fallback is a real hardcode (the real Shell.tsx shape)", () => {
-    const { candidates, unchecked } = candidatesFor(
-      '<div className="w-[var(--ui-layout-sidebar-rail-w,64px)]" />;\n',
-      "Shell.tsx",
-    );
-    const result = checkTokenPurity(candidates, TOKENS, 1, unchecked);
-    expect(result.findings).toHaveLength(1);
-    expect(result.findings[0]?.message).toContain("64px");
-  });
-
-  it("bg-[#3b82f6] is a finding referencing the embedded hex color", () => {
-    const { candidates, unchecked } = candidatesFor('<div className="bg-[#3b82f6]" />;\n', "x.tsx");
-    const result = checkTokenPurity(candidates, TOKENS, 1, unchecked);
-    expect(result.findings).toHaveLength(1);
-    expect(result.findings[0]?.message).toContain("#3b82f6");
   });
 });
 

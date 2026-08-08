@@ -151,9 +151,17 @@ function printGateReport(result: TokenGateResult): void {
     console.log("No findings.");
     return;
   }
-  console.log(`\n${result.findings.length} finding(s):`);
+  // Severity breakdown up front — an "error" (a bare literal, the token
+  // system not consulted at all) and a "warning" (a var() fallback
+  // literal, a latent drift risk rather than a live defeat — see
+  // token-gate.ts's own header, "THREE RULES, NOT TWO") are both real
+  // findings and both fail this run, but they are not equally urgent, and
+  // a reader should see that split before wading into the full list.
+  const errorCount = result.findings.filter((f) => f.severity === "error").length;
+  const warningCount = result.findings.filter((f) => f.severity === "warning").length;
+  console.log(`\n${result.findings.length} finding(s) — ${errorCount} error(s), ${warningCount} warning(s):`);
   for (const f of result.findings) {
-    console.log(`  [${f.rule}] ${f.file}:${f.line}  ${f.message}`);
+    console.log(`  [${f.severity}] [${f.rule}] ${f.file}:${f.line}  ${f.message}`);
   }
 }
 
