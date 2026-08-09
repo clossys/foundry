@@ -88,7 +88,7 @@ jobs:
           # needs a stored credential, and it needs only READ: it calls
           # GET /orgs/<owner>/packages (and the /users/ fallback).
           #
-          # GH_PACKAGES_TOKEN is the fleet's classic read:packages token —
+          # GH_PACKAGES_TOKEN is a classic read:packages token —
           # verified HTTP 200 on that exact endpoint, and it holds no `repo`
           # scope, so a leak cannot reach any repository. It deliberately
           # replaces NPM_TOKEN here: that token carries `repo` (GitHub force-
