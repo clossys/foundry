@@ -47,10 +47,24 @@ jobs:
             if (files.length >= 3000 || pullRequest.changed_files > 3000) { await report("failure", "Changed-file enumeration reached GitHub's 3,000-file limit; sensitive-path classification fails closed."); return; }
             if (protectedFiles.length === 0) { await report("success", "No credential, authentication, or integration-permission changes detected."); return; }
             const codexReviews = await github.paginate(github.rest.pulls.listReviews, { owner: context.repo.owner, repo: context.repo.repo, pull_number: pullRequest.number, per_page: 100 });
-            const latestCodexReview = codexReviews.filter((review) => review.user?.login === "chatgpt-codex-connector[bot]" && review.commit_id === pullRequest.head.sha).sort((left, right) => new Date(right.submitted_at ?? 0) - new Date(left.submitted_at ?? 0))[0];
+            const currentHeadCodexReviews = codexReviews.filter((review) => review.user?.login === "chatgpt-codex-connector[bot]" && review.commit_id === pullRequest.head.sha).sort((left, right) => new Date(right.submitted_at ?? 0) - new Date(left.submitted_at ?? 0));
+            const latestCodexReview = currentHeadCodexReviews[0];
             if (!latestCodexReview || !["APPROVED", "COMMENTED"].includes(latestCodexReview.state)) { await report("failure", "A completed current-head native Codex review is required before a sensitive-change acknowledgement can be accepted."); return; }
             const reviewComments = await github.paginate(github.rest.pulls.listReviewComments, { owner: context.repo.owner, repo: context.repo.repo, pull_number: pullRequest.number, per_page: 100 });
-            if (reviewComments.some((comment) => comment.user?.login === "chatgpt-codex-connector[bot]" && comment.pull_request_review_id === latestCodexReview.id)) { await report("failure", "The latest current-head native Codex review has findings; fix them and push a new SHA before acknowledging the sensitive change."); return; }
+            const latestReviewFindings = reviewComments.filter((comment) => comment.user?.login === "chatgpt-codex-connector[bot]" && comment.pull_request_review_id === latestCodexReview.id);
+            let cursor = null;
+            const unresolvedFindings = [];
+            do {
+              const result = await github.graphql(`query($owner: String!, $repo: String!, $number: Int!, $cursor: String) { repository(owner: $owner, name: $repo) { pullRequest(number: $number) { reviewThreads(first: 100, after: $cursor) { nodes { isResolved comments(first: 100) { nodes { author { login } pullRequestReview { commit { oid } } } } } pageInfo { hasNextPage endCursor } } } } }`, { owner: context.repo.owner, repo: context.repo.repo, number: pullRequest.number, cursor });
+              const threads = result.repository.pullRequest.reviewThreads;
+              unresolvedFindings.push(...threads.nodes.filter((thread) => !thread.isResolved && thread.comments.nodes.some((comment) => comment.author?.login === "chatgpt-codex-connector" && comment.pullRequestReview?.commit?.oid === pullRequest.head.sha)));
+              cursor = threads.pageInfo.hasNextPage ? threads.pageInfo.endCursor : null;
+            } while (cursor);
+            const latestStateChangingReview = currentHeadCodexReviews.find((review) => ["APPROVED", "CHANGES_REQUESTED", "DISMISSED"].includes(review.state));
+            if (latestStateChangingReview?.state === "DISMISSED") { await report("failure", "The latest state-changing current-head native Codex review was dismissed. Request a new review before acknowledging the sensitive change."); return; }
+            const effectiveState = latestStateChangingReview?.state ?? latestCodexReview.state;
+            if (effectiveState === "CHANGES_REQUESTED" || latestReviewFindings.length > 0 || unresolvedFindings.length > 0) { await report("failure", "Native Codex review has findings or unresolved current-head threads; fix with evidence and request a new review before acknowledging the sensitive change."); return; }
+            if (!["APPROVED", "COMMENTED"].includes(effectiveState)) { await report("failure", "Native Codex review is not in an accepted state before sensitive-change acknowledgement."); return; }
             const acknowledgement = `portfolio:acknowledge-protected ${pullRequest.head.sha}`;
             const comments = await github.paginate(github.rest.issues.listComments, { owner: context.repo.owner, repo: context.repo.repo, issue_number: pullRequest.number, per_page: 100 });
             const acknowledged = comments.some((comment) => comment.user?.login === ownerLogin && comment.body?.trim() === acknowledgement && Date.parse(comment.created_at) >= Date.parse(latestCodexReview.submitted_at));

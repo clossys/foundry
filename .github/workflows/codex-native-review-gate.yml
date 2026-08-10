@@ -54,7 +54,8 @@ jobs:
               unresolvedFindings.push(...threads.nodes.filter((thread) => !thread.isResolved && thread.comments.nodes.some((comment) => comment.author?.login === reviewerGraphqlLogin && comment.pullRequestReview?.commit?.oid === pullRequest.head.sha)));
               cursor = threads.pageInfo.hasNextPage ? threads.pageInfo.endCursor : null;
             } while (cursor);
-            const effectiveStateChangingReview = currentHeadReviews.find((review) => ["APPROVED", "CHANGES_REQUESTED"].includes(review.state));
+            const effectiveStateChangingReview = currentHeadReviews.find((review) => ["APPROVED", "CHANGES_REQUESTED", "DISMISSED"].includes(review.state));
+            if (effectiveStateChangingReview?.state === "DISMISSED") { await report("failure", "The latest state-changing current-head native Codex review was dismissed. Request a new review before merging."); return; }
             const effectiveState = effectiveStateChangingReview?.state ?? latest.state;
             if (effectiveState === "CHANGES_REQUESTED" || latestReviewFindings.length > 0 || unresolvedFindings.length > 0) { await report("failure", `Native Codex review blocks this head: state=${effectiveState}, latest-review finding(s)=${latestReviewFindings.length}, unresolved current-head thread(s)=${unresolvedFindings.length}. Fix the code with evidence; never resolve a thread merely to clear this gate. Then push a new head SHA or request an explicit re-review.`); return; }
             if (effectiveState !== "APPROVED" && effectiveState !== "COMMENTED") { await report("failure", `Native Codex review is not in an accepted state: ${effectiveState}.`); return; }
