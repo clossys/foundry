@@ -1,0 +1,59 @@
+name: Codex native review gate
+
+# A finding in the latest native Codex review always blocks this head, even if
+# someone resolves its GitHub thread. Fix it with code or evidence, then push
+# a new SHA and obtain a new native Codex review.
+
+on:
+  pull_request_target:
+    types: [opened, reopened, ready_for_review, synchronize]
+  pull_request_review:
+    types: [submitted, edited, dismissed]
+
+permissions:
+  checks: write
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: codex-native-review-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  codex-native-review:
+    name: codex-native-review
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require a current native Codex review
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        with:
+          script: |
+            const reviewerLogin = "chatgpt-codex-connector[bot]";
+            const reviewerGraphqlLogin = "chatgpt-codex-connector";
+            const pullRequest = context.payload.pull_request;
+            if (!pullRequest) { core.setFailed("No pull request was supplied by this event."); return; }
+            const report = async (conclusion, summary) => {
+              await github.rest.checks.create({ owner: context.repo.owner, repo: context.repo.repo, name: "codex-native-review", head_sha: pullRequest.head.sha, status: "completed", conclusion, output: { title: "Codex native review gate", summary } });
+              if (conclusion === "failure") core.setFailed(summary);
+            };
+            const reviews = await github.paginate(github.rest.pulls.listReviews, { owner: context.repo.owner, repo: context.repo.repo, pull_number: pullRequest.number, per_page: 100 });
+            const currentHeadReviews = reviews.filter((review) => review.user?.login === reviewerLogin && review.commit_id === pullRequest.head.sha).sort((left, right) => new Date(right.submitted_at ?? 0) - new Date(left.submitted_at ?? 0));
+            const latest = currentHeadReviews[0];
+            if (!latest) { await report("failure", `No completed native Codex review from ${reviewerLogin} exists for current head ${pullRequest.head.sha}. Wait for automatic review or request a re-review.`); return; }
+            const inlineComments = await github.paginate(github.rest.pulls.listReviewComments, { owner: context.repo.owner, repo: context.repo.repo, pull_number: pullRequest.number, per_page: 100 });
+            const latestReviewFindings = inlineComments.filter((comment) => comment.user?.login === reviewerLogin && comment.pull_request_review_id === latest.id);
+            let cursor = null;
+            const unresolvedFindings = [];
+            do {
+              const result = await github.graphql(`query($owner: String!, $repo: String!, $number: Int!, $cursor: String) { repository(owner: $owner, name: $repo) { pullRequest(number: $number) { reviewThreads(first: 100, after: $cursor) { nodes { isResolved comments(first: 100) { nodes { author { login } pullRequestReview { commit { oid } } } } } pageInfo { hasNextPage endCursor } } } } }`, { owner: context.repo.owner, repo: context.repo.repo, number: pullRequest.number, cursor });
+              const threads = result.repository.pullRequest.reviewThreads;
+              unresolvedFindings.push(...threads.nodes.filter((thread) => !thread.isResolved && thread.comments.nodes.some((comment) => comment.author?.login === reviewerGraphqlLogin && comment.pullRequestReview?.commit?.oid === pullRequest.head.sha)));
+              cursor = threads.pageInfo.hasNextPage ? threads.pageInfo.endCursor : null;
+            } while (cursor);
+            const effectiveStateChangingReview = currentHeadReviews.find((review) => ["APPROVED", "CHANGES_REQUESTED"].includes(review.state));
+            const effectiveState = effectiveStateChangingReview?.state ?? latest.state;
+            if (effectiveState === "CHANGES_REQUESTED" || latestReviewFindings.length > 0 || unresolvedFindings.length > 0) { await report("failure", `Native Codex review blocks this head: state=${effectiveState}, latest-review finding(s)=${latestReviewFindings.length}, unresolved current-head thread(s)=${unresolvedFindings.length}. Fix the code with evidence; never resolve a thread merely to clear this gate. Then push a new head SHA or request an explicit re-review.`); return; }
+            if (effectiveState !== "APPROVED" && effectiveState !== "COMMENTED") { await report("failure", `Native Codex review is not in an accepted state: ${effectiveState}.`); return; }
+            await report("success", `Native Codex review accepted for current head ${pullRequest.head.sha} (state=${effectiveState}).`);

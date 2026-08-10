@@ -1,0 +1,46 @@
+name: Portfolio merge governance
+
+on:
+  pull_request_target:
+    types: [opened, reopened, ready_for_review, synchronize, edited, labeled, unlabeled]
+  issue_comment:
+    types: [created, edited, deleted]
+  pull_request_review:
+    types: [submitted, edited, dismissed]
+
+permissions:
+  checks: write
+  contents: read
+  issues: read
+  pull-requests: read
+
+concurrency:
+  group: portfolio-merge-governance-${{ github.event.pull_request.number || github.event.issue.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  portfolio-merge-governance:
+    name: portfolio-merge-governance
+    if: github.event_name == 'issue_comment' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require acknowledgement for sensitive changes
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        with:
+          script: |
+            const ownerLogin = "thecalvinhung";
+            let pullRequest = context.payload.pull_request;
+            if (context.eventName === "issue_comment") { if (!context.payload.issue?.pull_request) return; pullRequest = (await github.rest.pulls.get({ owner: context.repo.owner, repo: context.repo.repo, pull_number: context.payload.issue.number })).data; }
+            if (!pullRequest) { core.setFailed("No pull request was supplied by this event."); return; }
+            if (pullRequest.draft) { core.info("Draft pull request does not require a governance result yet."); return; }
+            const report = async (conclusion, summary) => { await github.rest.checks.create({ owner: context.repo.owner, repo: context.repo.repo, name: "portfolio-merge-governance", head_sha: pullRequest.head.sha, status: "completed", conclusion, output: { title: "Portfolio merge governance", summary } }); if (conclusion === "failure") core.setFailed(summary); };
+            const isProtected = (filename) => filename.startsWith(".github/") || filename.startsWith(".infisical") || filename.startsWith(".gitleaks") || /(^|\/)\.npmrc$/.test(filename) || /(^|\/)\.yarnrc(?:\.ya?ml)?$/.test(filename) || filename === ".mcp.json" || filename === "SECURITY.md" || /(^|\/)\.env[^/]*$/.test(filename) || filename.startsWith("secrets/") || filename.includes("/secrets/") || filename === "render.yaml" || /^apps\/[^/]+\/vercel\.json$/.test(filename) || /(^|\/)(?:auth(?:entication)?|identity|iam|oauth|oidc|sso|mcp|integrations?)(?:[\/_.-]|$)/i.test(filename) || /(^|\/)[^/]*(?:secret|credential|token|password|webhook|clerk|infisical|resend|vercel|render|neon|cloudflare)[^/]*\.(?:[cm]?[jt]sx?|py|ya?ml|json|toml|sh)$/i.test(filename);
+            const files = await github.paginate(github.rest.pulls.listFiles, { owner: context.repo.owner, repo: context.repo.repo, pull_number: pullRequest.number, per_page: 100 });
+            const protectedFiles = [...new Set(files.flatMap((file) => [file.filename, file.previous_filename].filter(Boolean)).filter(isProtected))];
+            if (protectedFiles.length === 0) { await report("success", "No credential, authentication, or integration-permission changes detected."); return; }
+            const acknowledgement = `portfolio:acknowledge-protected ${pullRequest.head.sha}`;
+            const comments = await github.paginate(github.rest.issues.listComments, { owner: context.repo.owner, repo: context.repo.repo, issue_number: pullRequest.number, per_page: 100 });
+            const acknowledged = comments.some((comment) => comment.user?.login === ownerLogin && comment.body?.trim() === acknowledgement);
+            if (!acknowledged) { await report("failure", [`Protected change detected: ${protectedFiles.map((file) => `\`${file}\``).join(", ")}.`, `After Codex passes, @${ownerLogin} must post exactly: \`${acknowledgement}\`.`, "Creating, editing, or deleting that comment re-evaluates this check. A new head SHA requires a new acknowledgement."].join("\n")); return; }
+            await report("success", `Protected change acknowledged by @${ownerLogin} for current head ${pullRequest.head.sha}.`);
