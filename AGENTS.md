@@ -46,6 +46,14 @@ pass is not a clearance.** Before any publish, run:
 npm run preflight -- packages/<name>
 ```
 
+## Cloud sessions
+
+Codex Cloud and Claude remote sessions use the same repository contract: run
+`npm run agent:cloud:bootstrap`, then `npm run agent:cloud:check`, before
+scoped repository checks. Cloud sessions do not receive the public-safety
+denylist or publication credentials, so they may not produce a FULL clearance
+or publish packages.
+
 which runs every gate — including the tarball-content scan and the name-collision
 check — and fails rather than degrades.
 
