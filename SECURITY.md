@@ -39,11 +39,12 @@ refuses a tree that contains:
   `.claude/`, `.codex/`), changelogs carrying internal references, `.npmrc`,
   `.env*`, private keys, and committed build output (`dist/`, `build/`,
   `.next/`, `coverage/`). One deliberate exception: this repository's own
-  root `AGENTS.md` — the file governing contributions here — is exempt by
-  its exact path. It is purpose-written for this public repository and
-  content-scanned like everything else; only its filename is excused from
-  the forbidden-file rule. A package-level or otherwise-nested `AGENTS.md`
-  or `CLAUDE.md` is still refused outright. Build output is the subtle one:
+  root `AGENTS.md` — the file governing contributions here — and root
+  `CLAUDE.md` compatibility loader are exempt by exact path. They are
+  purpose-written for this public repository and content-scanned like
+  everything else; only their filenames are excused from the forbidden-file
+  rule. A package-level or otherwise-nested `AGENTS.md` or `CLAUDE.md` is
+  still refused outright. Build output is the subtle one:
   it can embed resolved local paths and other detail from wherever it was
   compiled.
 - **Credential-shaped strings** — provider API keys, tokens, private keys,
