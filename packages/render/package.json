@@ -78,7 +78,7 @@
     "react-dom": { "optional": true }
   },
   "devDependencies": {
-    "@types/node": "^22.10.0",
+    "@types/node": "^26.1.2",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@vespeneventures/ui": "~0.4.0",
