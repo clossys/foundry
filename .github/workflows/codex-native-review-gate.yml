@@ -1,0 +1,57 @@
+name: Codex native review signal
+
+# This read-only signal summarizes current-head native Codex review evidence.
+# It neither grants merge authority nor publishes a custom check run.
+
+on:
+  pull_request_target:
+    types: [opened, reopened, ready_for_review, synchronize]
+  pull_request_review:
+    types: [submitted, edited, dismissed]
+
+permissions:
+  pull-requests: read
+
+concurrency:
+  group: codex-native-review-signal-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  codex-native-review-signal:
+    name: codex-native-review-signal
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Summarize current native Codex review evidence
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        with:
+          script: |
+            const reviewerLogin = "chatgpt-codex-connector[bot]";
+            const reviewerGraphqlLogin = "chatgpt-codex-connector";
+            const pullRequest = context.payload.pull_request;
+            if (!pullRequest) { core.warning("No pull request was supplied by this event."); return; }
+            const report = async (severity, summary) => {
+              core.warning(summary);
+              await core.summary.addHeading("Codex native review signal").addRaw(`**${severity}**\n\n${summary}\n`).write();
+            };
+            const reviews = await github.paginate(github.rest.pulls.listReviews, { owner: context.repo.owner, repo: context.repo.repo, pull_number: pullRequest.number, per_page: 100 });
+            const currentHeadReviews = reviews.filter((review) => review.user?.login === reviewerLogin && review.commit_id === pullRequest.head.sha).sort((left, right) => new Date(right.submitted_at ?? 0) - new Date(left.submitted_at ?? 0));
+            const latest = currentHeadReviews[0];
+            if (!latest) { await report("attention", `No completed native Codex review from ${reviewerLogin} exists for current head ${pullRequest.head.sha}. Wait for automatic review or request a re-review.`); return; }
+            const inlineComments = await github.paginate(github.rest.pulls.listReviewComments, { owner: context.repo.owner, repo: context.repo.repo, pull_number: pullRequest.number, per_page: 100 });
+            const latestReviewFindings = inlineComments.filter((comment) => comment.user?.login === reviewerLogin && comment.pull_request_review_id === latest.id);
+            let cursor = null;
+            const unresolvedFindings = [];
+            do {
+              const result = await github.graphql(`query($owner: String!, $repo: String!, $number: Int!, $cursor: String) { repository(owner: $owner, name: $repo) { pullRequest(number: $number) { reviewThreads(first: 100, after: $cursor) { nodes { isResolved comments(first: 100) { nodes { author { login } pullRequestReview { commit { oid } } } } } pageInfo { hasNextPage endCursor } } } } }`, { owner: context.repo.owner, repo: context.repo.repo, number: pullRequest.number, cursor });
+              const threads = result.repository.pullRequest.reviewThreads;
+              unresolvedFindings.push(...threads.nodes.filter((thread) => !thread.isResolved && thread.comments.nodes.some((comment) => comment.author?.login === reviewerGraphqlLogin && comment.pullRequestReview?.commit?.oid === pullRequest.head.sha)));
+              cursor = threads.pageInfo.hasNextPage ? threads.pageInfo.endCursor : null;
+            } while (cursor);
+            const effectiveStateChangingReview = currentHeadReviews.find((review) => ["APPROVED", "CHANGES_REQUESTED", "DISMISSED"].includes(review.state));
+            if (effectiveStateChangingReview?.state === "DISMISSED") { await report("attention", "The latest state-changing current-head native Codex review was dismissed. Request a new review before relying on this signal."); return; }
+            const effectiveState = effectiveStateChangingReview?.state ?? latest.state;
+            if (effectiveState === "CHANGES_REQUESTED" || latestReviewFindings.length > 0 || unresolvedFindings.length > 0) { await report("attention", `Native Codex review reports: state=${effectiveState}, latest-review finding(s)=${latestReviewFindings.length}, unresolved current-head thread(s)=${unresolvedFindings.length}. Fix with evidence and request a new review before relying on this signal.`); return; }
+            if (effectiveState !== "APPROVED" && effectiveState !== "COMMENTED") { await report("attention", `Native Codex review state is not informative for this signal: ${effectiveState}.`); return; }
+            await report("observed", `Native Codex review observed for current head ${pullRequest.head.sha} (state=${effectiveState}).`);
