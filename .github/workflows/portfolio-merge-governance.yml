@@ -24,17 +24,20 @@ jobs:
     if: github.event_name == 'issue_comment' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    env:
+      PORTFOLIO_OWNER_LOGIN: ${{ vars.PORTFOLIO_OWNER_LOGIN }}
     steps:
       - name: Require acknowledgement for sensitive changes
         uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         with:
           script: |
-            const ownerLogin = "thecalvinhung";
+            const ownerLogin = process.env.PORTFOLIO_OWNER_LOGIN;
             let pullRequest = context.payload.pull_request;
             if (context.eventName === "issue_comment") { if (!context.payload.issue?.pull_request) return; pullRequest = (await github.rest.pulls.get({ owner: context.repo.owner, repo: context.repo.repo, pull_number: context.payload.issue.number })).data; }
             if (!pullRequest) { core.setFailed("No pull request was supplied by this event."); return; }
             if (pullRequest.draft) { core.info("Draft pull request does not require a governance result yet."); return; }
             const report = async (conclusion, summary) => { await github.rest.checks.create({ owner: context.repo.owner, repo: context.repo.repo, name: "portfolio-merge-governance", head_sha: pullRequest.head.sha, status: "completed", conclusion, output: { title: "Portfolio merge governance", summary } }); if (conclusion === "failure") core.setFailed(summary); };
+            if (!ownerLogin) { await report("failure", "Repository variable PORTFOLIO_OWNER_LOGIN must name the owner who can acknowledge sensitive changes."); return; }
             const isProtected = (filename) => filename.startsWith(".github/") || filename.startsWith(".infisical") || filename.startsWith(".gitleaks") || /(^|\/)\.npmrc$/.test(filename) || /(^|\/)\.yarnrc(?:\.ya?ml)?$/.test(filename) || filename === ".mcp.json" || filename === "SECURITY.md" || /(^|\/)\.env[^/]*$/.test(filename) || filename.startsWith("secrets/") || filename.includes("/secrets/") || filename === "render.yaml" || /^apps\/[^/]+\/vercel\.json$/.test(filename) || /(^|\/)(?:auth(?:entication)?|identity|iam|oauth|oidc|sso|mcp|integrations?)(?:[\/_.-]|$)/i.test(filename) || /(^|\/)[^/]*(?:secret|credential|token|password|webhook|clerk|infisical|resend|vercel|render|neon|cloudflare)[^/]*\.(?:[cm]?[jt]sx?|py|ya?ml|json|toml|sh)$/i.test(filename);
             const files = await github.paginate(github.rest.pulls.listFiles, { owner: context.repo.owner, repo: context.repo.repo, pull_number: pullRequest.number, per_page: 100 });
             const protectedFiles = [...new Set(files.flatMap((file) => [file.filename, file.previous_filename].filter(Boolean)).filter(isProtected))];
