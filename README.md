@@ -18,6 +18,10 @@ for the full account.
 
 | Package | What it does |
 | --- | --- |
+| [`@vespeneventures/agent-auth`](packages/agent-auth) | Dependency-free authorization guards for time-bounded software-agent contexts: lifecycle evaluation, tool-capability checks, monetary limits, and typed denial reasons. Performs no I/O and leaves identity verification to the caller. |
+| [`@vespeneventures/auth`](packages/auth) | Provider-, framework-, and storage-neutral authorization machinery: closed role hierarchies, session predicates, query-adapter contracts, transactional external-membership reconciliation, exact origin policies, and safe redirect resolution. |
+| [`@vespeneventures/auth-clerk`](packages/auth-clerk) | Verifies raw Clerk webhook deliveries with Svix, then maps a closed lifecycle-event set into minimal provider-neutral events without retaining profile data, metadata, headers, raw bodies, or signing material. Membership events plug directly into `@vespeneventures/auth` reconciliation. |
+| [`@vespeneventures/web-auth-clerk`](packages/web-auth-clerk) | Minimal Next.js 16 and Clerk 7 adapter with separate client/server exports: provider mount, hosted sign-in block, error normalization, explicit proxy policy, strict redirects, sign-in pages, and session-revoking sign-out routes. |
 | [`@vespeneventures/policy`](packages/policy) | Content-addressed binding: commit a document's digest publicly without committing the document, then verify later-materialized content matches it byte-for-byte. Zero dependencies, zero I/O. |
 | [`@vespeneventures/domain-model`](packages/domain-model) | Dependency-free machinery for product-owned domain models: stable identifiers, value types, closed vocabularies, domain types with fields, directed attributed relations, deterministic JSON artifacts, validation, and compatibility comparison. Ships no product values or runtime. |
 | [`@vespeneventures/catalog`](packages/catalog) | Walks a workspace's `packages/` directory and reports what exists, what could not be read, and whether the real dependency graph — read from each package's own `dependencies`/`peerDependencies` — has cycles or missing internal packages. |
