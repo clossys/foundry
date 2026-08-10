@@ -1,8 +1,10 @@
-name: Codex native review gate
+name: Codex native review advisory
 
 # A finding in the latest native Codex review always blocks this head, even if
 # someone resolves its GitHub thread. Fix it with code or evidence, then push
 # a new SHA and obtain a new native Codex review.
+# This is defense-in-depth only: an Actions-created check is not an
+# unspoofable merge authority and must never be made a required ruleset context.
 
 on:
   pull_request_target:
@@ -16,12 +18,12 @@ permissions:
   pull-requests: read
 
 concurrency:
-  group: codex-native-review-${{ github.event.pull_request.number || github.ref }}
+  group: codex-native-review-advisory-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  codex-native-review:
-    name: codex-native-review
+  codex-native-review-advisory:
+    name: codex-native-review-advisory
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -35,7 +37,7 @@ jobs:
             const pullRequest = context.payload.pull_request;
             if (!pullRequest) { core.setFailed("No pull request was supplied by this event."); return; }
             const report = async (conclusion, summary) => {
-              await github.rest.checks.create({ owner: context.repo.owner, repo: context.repo.repo, name: "codex-native-review", head_sha: pullRequest.head.sha, status: "completed", conclusion, output: { title: "Codex native review gate", summary } });
+              await github.rest.checks.create({ owner: context.repo.owner, repo: context.repo.repo, name: "codex-native-review-advisory", head_sha: pullRequest.head.sha, status: "completed", conclusion, output: { title: "Codex native review advisory", summary } });
               if (conclusion === "failure") core.setFailed(summary);
             };
             const reviews = await github.paginate(github.rest.pulls.listReviews, { owner: context.repo.owner, repo: context.repo.repo, pull_number: pullRequest.number, per_page: 100 });

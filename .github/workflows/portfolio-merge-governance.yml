@@ -1,4 +1,7 @@
-name: Portfolio merge governance
+name: Portfolio merge advisory
+
+# This is defense-in-depth only, not a required merge authority. An
+# Actions-created check can be spoofed by another workflow with checks: write.
 
 on:
   pull_request_target:
@@ -15,12 +18,12 @@ permissions:
   pull-requests: read
 
 concurrency:
-  group: portfolio-merge-governance-${{ github.event.pull_request.number || github.event.issue.number || github.ref }}
+  group: portfolio-merge-advisory-${{ github.event.pull_request.number || github.event.issue.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  portfolio-merge-governance:
-    name: portfolio-merge-governance
+  portfolio-merge-advisory:
+    name: portfolio-merge-advisory
     if: github.event_name == 'issue_comment' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -36,14 +39,20 @@ jobs:
             if (context.eventName === "issue_comment") { if (!context.payload.issue?.pull_request) return; pullRequest = (await github.rest.pulls.get({ owner: context.repo.owner, repo: context.repo.repo, pull_number: context.payload.issue.number })).data; }
             if (!pullRequest) { core.setFailed("No pull request was supplied by this event."); return; }
             if (pullRequest.draft) { core.info("Draft pull request does not require a governance result yet."); return; }
-            const report = async (conclusion, summary) => { await github.rest.checks.create({ owner: context.repo.owner, repo: context.repo.repo, name: "portfolio-merge-governance", head_sha: pullRequest.head.sha, status: "completed", conclusion, output: { title: "Portfolio merge governance", summary } }); if (conclusion === "failure") core.setFailed(summary); };
+            const report = async (conclusion, summary) => { await github.rest.checks.create({ owner: context.repo.owner, repo: context.repo.repo, name: "portfolio-merge-advisory", head_sha: pullRequest.head.sha, status: "completed", conclusion, output: { title: "Portfolio merge advisory", summary } }); if (conclusion === "failure") core.setFailed(summary); };
             if (!ownerLogin) { await report("failure", "Repository variable PORTFOLIO_OWNER_LOGIN must name the owner who can acknowledge sensitive changes."); return; }
-            const isProtected = (filename) => filename.startsWith(".github/") || filename.startsWith(".infisical") || filename.startsWith(".gitleaks") || /(^|\/)\.npmrc$/.test(filename) || /(^|\/)\.yarnrc(?:\.ya?ml)?$/.test(filename) || filename === ".mcp.json" || filename === "SECURITY.md" || /(^|\/)\.env[^/]*$/.test(filename) || filename.startsWith("secrets/") || filename.includes("/secrets/") || filename === "render.yaml" || /^apps\/[^/]+\/vercel\.json$/.test(filename) || /(^|\/)(?:auth(?:entication)?|identity|iam|oauth|oidc|sso|mcp|integrations?)(?:[\/_.-]|$)/i.test(filename) || /(^|\/)[^/]*(?:secret|credential|token|password|webhook|clerk|infisical|resend|vercel|render|neon|cloudflare)[^/]*\.(?:[cm]?[jt]sx?|py|ya?ml|json|toml|sh)$/i.test(filename);
+            const isProtected = (filename) => filename.startsWith(".github/") || filename.startsWith(".infisical") || filename.startsWith(".gitleaks") || /(^|\/)\.npmrc$/.test(filename) || /(^|\/)\.yarnrc(?:\.ya?ml)?$/.test(filename) || filename === ".mcp.json" || filename === "SECURITY.md" || /(^|\/)\.env[^/]*$/.test(filename) || filename.startsWith("secrets/") || filename.includes("/secrets/") || filename === "render.yaml" || /^apps\/[^/]+\/vercel\.json$/.test(filename) || /^apps\/(?:web|app|admin)\/src\/proxy\.[cm]?[jt]s$/.test(filename) || /(^|\/)(?:auth(?:entication)?|identity|iam|oauth|oidc|sso|mcp|integrations?)(?:[\/_.-]|$)/i.test(filename) || /(^|\/)[^/]*(?:secret|credential|token|password|webhook|clerk|infisical|resend|vercel|render|neon|cloudflare)[^/]*\.(?:[cm]?[jt]sx?|py|ya?ml|json|toml|sh)$/i.test(filename);
             const files = await github.paginate(github.rest.pulls.listFiles, { owner: context.repo.owner, repo: context.repo.repo, pull_number: pullRequest.number, per_page: 100 });
             const protectedFiles = [...new Set(files.flatMap((file) => [file.filename, file.previous_filename].filter(Boolean)).filter(isProtected))];
+            if (files.length >= 3000 || pullRequest.changed_files > 3000) { await report("failure", "Changed-file enumeration reached GitHub's 3,000-file limit; sensitive-path classification fails closed."); return; }
             if (protectedFiles.length === 0) { await report("success", "No credential, authentication, or integration-permission changes detected."); return; }
+            const codexReviews = await github.paginate(github.rest.pulls.listReviews, { owner: context.repo.owner, repo: context.repo.repo, pull_number: pullRequest.number, per_page: 100 });
+            const latestCodexReview = codexReviews.filter((review) => review.user?.login === "chatgpt-codex-connector[bot]" && review.commit_id === pullRequest.head.sha).sort((left, right) => new Date(right.submitted_at ?? 0) - new Date(left.submitted_at ?? 0))[0];
+            if (!latestCodexReview || !["APPROVED", "COMMENTED"].includes(latestCodexReview.state)) { await report("failure", "A completed current-head native Codex review is required before a sensitive-change acknowledgement can be accepted."); return; }
+            const reviewComments = await github.paginate(github.rest.pulls.listReviewComments, { owner: context.repo.owner, repo: context.repo.repo, pull_number: pullRequest.number, per_page: 100 });
+            if (reviewComments.some((comment) => comment.user?.login === "chatgpt-codex-connector[bot]" && comment.pull_request_review_id === latestCodexReview.id)) { await report("failure", "The latest current-head native Codex review has findings; fix them and push a new SHA before acknowledging the sensitive change."); return; }
             const acknowledgement = `portfolio:acknowledge-protected ${pullRequest.head.sha}`;
             const comments = await github.paginate(github.rest.issues.listComments, { owner: context.repo.owner, repo: context.repo.repo, issue_number: pullRequest.number, per_page: 100 });
-            const acknowledged = comments.some((comment) => comment.user?.login === ownerLogin && comment.body?.trim() === acknowledgement);
-            if (!acknowledged) { await report("failure", [`Protected change detected: ${protectedFiles.map((file) => `\`${file}\``).join(", ")}.`, `After Codex passes, @${ownerLogin} must post exactly: \`${acknowledgement}\`.`, "Creating, editing, or deleting that comment re-evaluates this check. A new head SHA requires a new acknowledgement."].join("\n")); return; }
+            const acknowledged = comments.some((comment) => comment.user?.login === ownerLogin && comment.body?.trim() === acknowledgement && Date.parse(comment.created_at) >= Date.parse(latestCodexReview.submitted_at));
+            if (!acknowledged) { await report("failure", [`Protected change detected: ${protectedFiles.map((file) => `\`${file}\``).join(", ")}.`, `After the latest Codex review passes, @${ownerLogin} must post exactly: \`${acknowledgement}\`.`, "Creating, editing, or deleting that comment re-evaluates this check. A new head SHA requires a new acknowledgement."].join("\n")); return; }
             await report("success", `Protected change acknowledged by @${ownerLogin} for current head ${pullRequest.head.sha}.`);
