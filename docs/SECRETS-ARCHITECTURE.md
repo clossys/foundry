@@ -54,8 +54,11 @@ exception can contain sensitive material.
 The Infisical client implements the core adapter contract directly. OIDC and
 access-token authentication are token-provider objects, so workloads can
 inject tokens from their own runtime without package-global configuration.
-List operations request names without values. Readiness returns booleans. Run
-keeps values in memory and injects them into one non-shell child process.
+List operations request names without values. Readiness derives booleans from
+that names-only listing rather than resolving catalog values. Run keeps values
+in memory and injects them into one non-shell child process; the wrapper does
+not print them, although the child process remains responsible for its own
+output.
 
 ## Maintenance and rotation
 

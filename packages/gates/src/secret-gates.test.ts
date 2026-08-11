@@ -76,6 +76,20 @@ describe("secret naming and raw reads", () => {
     ).toEqual([]);
   });
 
+  it("reports malformed raw-read input and fails closed for malformed options", () => {
+    expect(
+      detectRawSecretReads(null as unknown as { filePath: string; body: string }),
+    ).toEqual([
+      expect.objectContaining({ rule: "secrets/raw-env-input-shape", severity: "error" }),
+    ]);
+    expect(
+      detectRawSecretReads(
+        { filePath: "src/config.ts", body: "process.env.APP_TOKEN;" },
+        null as unknown as { sensitiveNames: readonly string[] },
+      ).map((item) => item.rule),
+    ).toEqual(["secrets/raw-env-read"]);
+  });
+
   it("scans executable MDX regions while ignoring its prose and examples", () => {
     const findings = detectRawSecretReads({
       filePath: "guide.mdx",
@@ -284,6 +298,19 @@ describe("secret naming and raw reads", () => {
         "mockRuntime.env.APP_SECRET;",
       ].join("\n"),
     });
+    expect(findings.map((item) => item.path)).toEqual(["src/config.ts:2"]);
+  });
+
+  it("detects raw reads through assignment-expression results", () => {
+    const findings = detectRawSecretReads({
+      filePath: "src/config.ts",
+      body: [
+        "let runtime = mockRuntime;",
+        "(runtime = process).env.APP_TOKEN;",
+        "(runtime = mockRuntime).env.APP_SECRET;",
+      ].join("\n"),
+    });
+
     expect(findings.map((item) => item.path)).toEqual(["src/config.ts:2"]);
   });
 
@@ -648,6 +675,14 @@ describe("catalog and readiness", () => {
     );
     expect(JSON.stringify(findings)).not.toContain("example-value");
   });
+
+  it("reports malformed readiness observation collections instead of throwing", () => {
+    expect(
+      checkSecretReadiness(catalog, null as unknown as readonly { key: string; present: boolean }[]),
+    ).toEqual([
+      expect.objectContaining({ rule: "secrets/readiness-observations-shape", path: "observations" }),
+    ]);
+  });
 });
 
 describe("credential inventory and drift", () => {
@@ -700,6 +735,14 @@ describe("credential inventory and drift", () => {
       "secrets/credential-surface-missing",
     ]);
   });
+
+  it("reports malformed credential observation collections instead of throwing", () => {
+    expect(
+      checkCredentialSurfaceDrift(inventory, null as unknown as readonly { credentialId: string; surface: string }[]),
+    ).toEqual([
+      expect.objectContaining({ rule: "secrets/credential-surface-observations-shape", path: "observations" }),
+    ]);
+  });
 });
 
 describe("local files and provider resource names", () => {
@@ -724,6 +767,15 @@ describe("local files and provider resource names", () => {
     expect(
       checkLocalSecretFiles([{ path: ".env", tracked: true, content: "example-value" }]).map((item) => item.rule),
     ).toEqual(["secrets/local-file-shape"]);
+  });
+
+  it("fails closed when local-file options are malformed", () => {
+    expect(
+      checkLocalSecretFiles(
+        [{ path: ".env", tracked: true }],
+        null as unknown as { allowedPaths: readonly string[] },
+      ).map((item) => item.rule),
+    ).toEqual(["secrets/local-file-tracked"]);
   });
 
   it("uses consumer-supplied provider/kind patterns and fails closed when no rule exists", () => {
@@ -757,6 +809,23 @@ describe("local files and provider resource names", () => {
         [{ provider: "example", kind: "project", pattern: "[a-z-]+", value: "example-value" }],
       ).map((item) => item.rule),
     ).toEqual(["secrets/provider-resource-rule-shape", "secrets/provider-resource-shape"]);
+  });
+
+  it("reports malformed observation collections instead of throwing", () => {
+    expect(
+      checkLocalSecretFiles(null as unknown as readonly { path: string; tracked: boolean }[]),
+    ).toEqual([
+      expect.objectContaining({ rule: "secrets/local-file-observations-shape", path: "files" }),
+    ]);
+    expect(
+      checkProviderResourceNames(
+        null as unknown as readonly { provider: string; kind: string; name: string }[],
+        null as unknown as readonly { provider: string; pattern: string }[],
+      ).map((item) => item.rule),
+    ).toEqual([
+      "secrets/provider-resource-rules-shape",
+      "secrets/provider-resource-observations-shape",
+    ]);
   });
 
   it("rejects duplicate provider and kind rule identities", () => {
