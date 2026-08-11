@@ -1,4 +1,4 @@
-# @vespeneventures/agent-auth
+# @vespeneventures/auth-agent
 
 Dependency-free authorization guards for a software-agent context. The
 context records the identity and model details needed for audit, a lifecycle
@@ -6,7 +6,7 @@ window, a declared tool scope, and an optional monetary limit. This package
 does not verify identity, persist records, call tools, or move money.
 
 ```bash
-npm install @vespeneventures/agent-auth
+npm install @vespeneventures/auth-agent
 ```
 
 ## Usage
@@ -16,7 +16,7 @@ import {
   assertAgentCanCall,
   assertAgentMonetaryAuthority,
   type GenericAgentContext,
-} from "@vespeneventures/agent-auth";
+} from "@vespeneventures/auth-agent";
 
 const agent: GenericAgentContext<"records.read" | "payments.create", "automation"> = {
   agentIdentityId: "agent-example",

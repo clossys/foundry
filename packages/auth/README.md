@@ -15,14 +15,14 @@ The boundary follows runtime and dependency ownership, not a single broad
 
 - `@vespeneventures/auth` is the dependency-free core. It owns contracts and
   deterministic policy but no provider, framework, database, or network I/O.
-- `@vespeneventures/auth-clerk` is a server-only provider adapter. It adds the
-  Svix verification dependency and emits the core's minimal event shapes.
-- `@vespeneventures/web-auth-clerk` is the framework adapter. It owns the
-  Next.js, React, and Clerk peer boundary without making those peers part of a
-  webhook worker or provider-neutral service.
-- `@vespeneventures/agent-auth` is a separate leaf domain for delegated
+- `@vespeneventures/auth-agent` is a separate leaf domain for delegated
   software-agent capability and monetary authority. It does not model human
   sessions or organization membership.
+- `@vespeneventures/auth-clerk` is a server-only provider adapter. It adds the
+  Svix verification dependency and emits the core's minimal event shapes.
+- `@vespeneventures/auth-web-clerk` is the framework adapter. It owns the
+  Next.js, React, and Clerk peer boundary without making those peers part of a
+  webhook worker or provider-neutral service.
 
 A single package would make unrelated consumers install or coordinate
 provider and framework dependencies they do not use. Product-specific

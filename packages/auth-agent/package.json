@@ -1,5 +1,5 @@
 {
-  "name": "@vespeneventures/agent-auth",
+  "name": "@vespeneventures/auth-agent",
   "version": "0.1.0",
   "private": false,
   "license": "MIT",
@@ -32,12 +32,12 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/vespeneventures/foundry.git",
-    "directory": "packages/agent-auth"
+    "directory": "packages/auth-agent"
   },
   "bugs": {
     "url": "https://github.com/vespeneventures/foundry/issues"
   },
-  "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/agent-auth#readme",
+  "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/auth-agent#readme",
   "engines": {
     "node": ">=20"
   },

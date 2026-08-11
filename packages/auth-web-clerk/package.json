@@ -1,5 +1,5 @@
 {
-  "name": "@vespeneventures/web-auth-clerk",
+  "name": "@vespeneventures/auth-web-clerk",
   "version": "0.1.0",
   "private": false,
   "license": "MIT",
@@ -17,12 +17,12 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/vespeneventures/foundry.git",
-    "directory": "packages/web-auth-clerk"
+    "directory": "packages/auth-web-clerk"
   },
   "bugs": {
     "url": "https://github.com/vespeneventures/foundry/issues"
   },
-  "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/web-auth-clerk#readme",
+  "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/auth-web-clerk#readme",
   "engines": {
     "node": ">=20.9.0"
   },

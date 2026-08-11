@@ -1,4 +1,4 @@
-# `@vespeneventures/web-auth-clerk`
+# `@vespeneventures/auth-web-clerk`
 
 A small Next.js adapter for Clerk authentication. It keeps browser-safe React
 code separate from server-only middleware and route factories, and it relies on
@@ -8,7 +8,7 @@ verbatim.
 ## Install
 
 ```bash
-npm install @vespeneventures/web-auth-clerk @clerk/nextjs next react react-dom
+npm install @vespeneventures/auth-web-clerk @clerk/nextjs next react react-dom
 ```
 
 The package is ESM-only and requires Node.js 20 or later, Clerk 7, Next.js 16,
@@ -21,7 +21,7 @@ The root export and `./client` are browser-safe. They do not import
 `@clerk/nextjs/server`.
 
 ```tsx
-import { AuthProvider } from "@vespeneventures/web-auth-clerk";
+import { AuthProvider } from "@vespeneventures/auth-web-clerk";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return <AuthProvider>{children}</AuthProvider>;
@@ -38,7 +38,7 @@ ignores the bypass flag unconditionally.
 on another component library:
 
 ```tsx
-import { ClerkSignInBlock } from "@vespeneventures/web-auth-clerk/client";
+import { ClerkSignInBlock } from "@vespeneventures/auth-web-clerk/client";
 
 export default function SignInPage() {
   return (
@@ -56,7 +56,7 @@ export default function SignInPage() {
 Import server code only from `./server`.
 
 ```ts
-import { createSiteProxy } from "@vespeneventures/web-auth-clerk/server";
+import { createSiteProxy } from "@vespeneventures/auth-web-clerk/server";
 
 export const proxy = createSiteProxy({
   protectedRoutes: ["/app(.*)", "/account(.*)"],
@@ -77,7 +77,7 @@ continues to skip route protection outside production.
 Create a sign-in page with a fixed local destination:
 
 ```ts
-import { createClerkSignInPage } from "@vespeneventures/web-auth-clerk/server";
+import { createClerkSignInPage } from "@vespeneventures/auth-web-clerk/server";
 
 export default createClerkSignInPage({
   redirectUrl: "/app",
@@ -101,7 +101,7 @@ Sign out by revoking the active Clerk session before clearing application
 cookies and redirecting:
 
 ```ts
-import { createSignOutRoute } from "@vespeneventures/web-auth-clerk/server";
+import { createSignOutRoute } from "@vespeneventures/auth-web-clerk/server";
 
 export const POST = createSignOutRoute({
   extraCookiesToClear: ["app-preference"],
