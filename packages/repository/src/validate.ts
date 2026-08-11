@@ -41,7 +41,7 @@ function validateRepositoryProfileValue(value: unknown): RepositoryProfileFindin
   if (!isRecord(value)) return [finding("profile-shape", "$", "A repository profile must be an object.")];
 
   const findings: RepositoryProfileFinding[] = [];
-  for (const key of Object.keys(value)) {
+  for (const key of Object.getOwnPropertyNames(value)) {
     if (!PROFILE_KEYS.has(key)) findings.push(finding("unknown-field", key, `Unknown profile field "${key}".`));
   }
 
@@ -56,7 +56,8 @@ function validateRepositoryProfileValue(value: unknown): RepositoryProfileFindin
   if (!isRecord(value.commands)) {
     findings.push(finding("commands-shape", "commands", "commands must be a plain object keyed by command name."));
   } else {
-    for (const [name, command] of Object.entries(value.commands)) {
+    for (const name of Object.getOwnPropertyNames(value.commands)) {
+      const command = value.commands[name];
       const commandPath = `commands.${name}`;
       if (!COMMAND_NAME.test(name)) {
         findings.push(finding("command-name", commandPath, `Command name "${name}" must be lowercase words separated by hyphens or colons.`));
@@ -65,7 +66,7 @@ function validateRepositoryProfileValue(value: unknown): RepositoryProfileFindin
         findings.push(finding("command-shape", commandPath, "A command must be an object."));
         continue;
       }
-      for (const key of Object.keys(command)) {
+      for (const key of Object.getOwnPropertyNames(command)) {
         if (!COMMAND_KEYS.has(key)) findings.push(finding("unknown-field", `${commandPath}.${key}`, `Unknown command field "${key}".`));
       }
       if (typeof command.run !== "string" || command.run.trim().length === 0) {

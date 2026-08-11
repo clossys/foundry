@@ -44,6 +44,18 @@ describe("validateRepositoryProfile", () => {
 
     const commands = Object.assign(Object.create(null) as Record<string, { run: string }>, validProfile.commands);
     expect(validateRepositoryProfile({ ...validProfile, commands })).toEqual([]);
+
+    const hiddenCommand = {};
+    Object.defineProperty(hiddenCommand, "test", { value: "npm test" });
+    expect(validateRepositoryProfile({ ...validProfile, commands: hiddenCommand }).map((entry) => [entry.rule, entry.path])).toEqual([
+      ["command-shape", "commands.test"],
+    ]);
+
+    const hiddenProfileField = { ...validProfile };
+    Object.defineProperty(hiddenProfileField, "provider", { value: "example" });
+    expect(validateRepositoryProfile(hiddenProfileField).map((entry) => [entry.rule, entry.path])).toEqual([
+      ["unknown-field", "provider"],
+    ]);
   });
 
   it("rejects unsafe branches, command names, command directories, and protected paths", () => {
