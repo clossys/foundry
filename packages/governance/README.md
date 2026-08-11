@@ -45,8 +45,8 @@ package the workspace catalog finds, and nothing it does not find.
       "status": "deprecated",
       "replacement": { "name": "@example/core", "range": "^1.0.0" },
       "deprecatedOn": "2026-08-11",
-      "decision": "docs/decisions/core-replacement.md",
-      "migration": "docs/migrations/legacy-core.md"
+      "decision": "https://example.invalid/decisions/core-replacement",
+      "migration": "https://example.invalid/migrations/legacy-core"
     }
   ]
 }

@@ -17,8 +17,8 @@ describe("validatePackageLifecycle", () => {
           status: "deprecated",
           replacement: { name: "@example/new", range: "not-a-range" },
           deprecatedOn: "2026-02-30",
-          decision: "docs/decisions/old.md",
-          migration: "docs/migrations/old.md",
+          decision: "https://example.invalid/decisions/old",
+          migration: "https://example.invalid/migrations/old",
         },
         {
           name: "@example/new",
@@ -37,8 +37,8 @@ describe("validatePackageLifecycle", () => {
         status: "deprecated",
         noReplacementReason: "The package has no remaining consumers or successor.",
         deprecatedOn: "2026-08-11",
-        decision: "docs/decisions/retirement.md",
-        migration: "docs/migrations/retirement.md",
+        decision: "https://example.invalid/decisions/retirement",
+        migration: "https://example.invalid/migrations/retirement",
       }],
     })).toEqual([]);
   });
