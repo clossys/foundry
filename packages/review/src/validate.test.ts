@@ -84,6 +84,16 @@ describe("validateReviewEvidence", () => {
     expect(validateReviewEvidence(evidence, policy)).toEqual([]);
   });
 
+  it("does not let a later comment-only review clear a change request", () => {
+    const evidence = validEvidence();
+    evidence.reviews = [
+      { id: "review-1", reviewerId: "reviewer-1", submittedAt: "2026-01-01T00:00:00.000Z", state: "changes-requested", headSha },
+      { id: "review-2", reviewerId: "reviewer-1", submittedAt: "2026-01-01T00:01:00.000Z", state: "commented", headSha },
+      { id: "review-3", reviewerId: "reviewer-2", submittedAt: "2026-01-01T00:02:00.000Z", state: "approved", headSha },
+    ];
+    expect(validateReviewEvidence(evidence, policy).map((entry) => entry.rule)).toEqual(["changes-requested"]);
+  });
+
   it("recognizes structurally valid negative evidence", () => {
     const evidence = validEvidence();
     evidence.reviews[0]!.state = "changes-requested";

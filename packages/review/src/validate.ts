@@ -156,6 +156,7 @@ function validateReviews(entries: unknown[], headSha: string, findings: ReviewFi
       continue;
     }
     if (typeof reviewerId !== "string" || reviewerId.trim().length === 0 || submittedAtMs === undefined || typeof state !== "string" || !REVIEW_DECISIONS.has(state as ReviewDecision)) continue;
+    if (state !== "approved" && state !== "changes-requested" && state !== "dismissed") continue;
     const previous = latestByReviewer.get(reviewerId);
     if (!previous || submittedAtMs > previous.submittedAtMs || (submittedAtMs === previous.submittedAtMs && index > previous.index)) {
       latestByReviewer.set(reviewerId, { submittedAtMs, index, state: state as ReviewDecision });

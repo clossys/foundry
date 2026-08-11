@@ -63,6 +63,8 @@ and RFC 3339 timestamp with `Z` or an explicit offset, so only that reviewer's
 latest current-head decision is effective on every machine. Dismissed reviews
 are retained as evidence but do not request
 changes or count as approvals.
+Commented, pending, and unknown states do not replace a reviewer's latest
+approval or change request.
 
 Findings have stable rule identifiers, input paths, and messages. Validation is
 pure, deterministic, and performs no I/O.
