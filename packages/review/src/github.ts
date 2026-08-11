@@ -30,8 +30,9 @@ function stringValue(value: unknown): string { return typeof value === "string" 
 function record(value: unknown): Record<string, unknown> { return typeof value === "object" && value !== null && !Array.isArray(value) ? value as Record<string, unknown> : {}; }
 function nodes(value: unknown): readonly unknown[] { const candidate = record(value).nodes; return Array.isArray(candidate) ? candidate : []; }
 function isComplete(value: unknown): boolean {
-  const pageInfo = record(record(value).pageInfo);
-  return pageInfo.hasNextPage === false && pageInfo.hasPreviousPage === false;
+  const connection = record(value);
+  const pageInfo = record(connection.pageInfo);
+  return Array.isArray(connection.nodes) && pageInfo.hasNextPage === false && pageInfo.hasPreviousPage === false;
 }
 
 function normalizeCheckConclusion(value: unknown): ReviewCheckConclusion {

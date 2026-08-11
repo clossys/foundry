@@ -59,6 +59,20 @@ describe("normalizeGitHubReviewEvidence", () => {
     expect(evidence.paginationComplete).toBe(false);
   });
 
+  it("marks the bundle incomplete when a connection omits its node array", () => {
+    const evidence = normalizeGitHubReviewEvidence({
+      pullRequest: { id: "PR_node", headRefOid: headSha },
+      checks: page([{ name: "unit", conclusion: "SUCCESS", headSha }]),
+      reviews: page([]),
+      reviewThreads: { pageInfo: { hasNextPage: false, hasPreviousPage: false } } as never,
+    });
+
+    expect(evidence.paginationComplete).toBe(false);
+    expect(validateReviewEvidence(evidence, { requiredChecks: ["unit"], requireApproval: false }).map((entry) => entry.rule)).toEqual([
+      "pagination-incomplete",
+    ]);
+  });
+
   it("preserves a stale review commit so root validation fails closed", () => {
     const evidence = normalizeGitHubReviewEvidence({
       pullRequest: { id: "PR_node", headRefOid: headSha },
