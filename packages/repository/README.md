@@ -14,7 +14,6 @@ npm install @vespeneventures/repository
 
 ```ts
 import {
-  isRepositoryProfile,
   validateRepositoryProfile,
   type RepositoryProfile,
 } from "@vespeneventures/repository";
@@ -35,17 +34,15 @@ if (findings.length > 0) {
     console.error(`${finding.path}: ${finding.message}`);
   }
 }
-
-if (isRepositoryProfile(profile)) {
-  // profile is narrowed to RepositoryProfile
-}
 ```
 
 Validation is pure, performs no I/O, does not invoke Git, and never throws for
 malformed input. Findings are deterministic and carry a stable rule, an input
-path, and an error message. Commands are an ordered array with explicit names,
+path, and an error message. It inspects own data descriptors without invoking
+accessors and intentionally does not narrow the caller's live object. Commands
+are an ordered array with explicit names,
 so consumers never need to treat inherited object properties as command names.
-After narrowing, command and protected-path collections expose only a dense,
+The command and protected-path collection types expose only a dense,
 read-only indexed-list contract (`length` plus numeric indexes); array methods
 and iterators are deliberately not trusted or promised for untrusted values.
 Protected paths support literal segments plus `*`
@@ -69,7 +66,6 @@ consumer exist.
 | Export | Kind | Purpose |
 | --- | --- | --- |
 | `validateRepositoryProfile(value)` | function | Returns every independently checkable structural finding without throwing or performing I/O. |
-| `isRepositoryProfile(value)` | function | Type guard that returns true only when validation has no findings. |
 | `REPOSITORY_PROFILE_VERSION` | constant | The supported profile schema version, currently `1`. |
 | `RepositoryCommand` | type | One consumer-owned command with `name`, `run`, and optional repository-relative `cwd`. |
 | `RepositoryList` | type | Dense, read-only indexed values; promises `length` and numeric indexes, not realm-specific array behavior. |

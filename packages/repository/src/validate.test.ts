@@ -1,6 +1,6 @@
 import { runInNewContext } from "node:vm";
 import { describe, expect, it, vi } from "vitest";
-import { isRepositoryProfile, validateRepositoryProfile } from "./index.js";
+import { validateRepositoryProfile } from "./index.js";
 
 const validProfile = {
   schemaVersion: 1,
@@ -15,7 +15,6 @@ const validProfile = {
 describe("validateRepositoryProfile", () => {
   it("accepts a provider-neutral consumer profile", () => {
     expect(validateRepositoryProfile(validProfile)).toEqual([]);
-    expect(isRepositoryProfile(validProfile)).toBe(true);
   });
 
   it("reports all independently checkable top-level problems", () => {
@@ -110,6 +109,22 @@ describe("validateRepositoryProfile", () => {
     expect(validateRepositoryProfile({ ...validProfile, commands: [pollutedCommand] }).map((entry) => entry.rule)).toEqual(["command-shape"]);
   });
 
+  it("rejects accessor-backed fields and entries without invoking them", () => {
+    let reads = 0;
+    const accessorProfile = { ...validProfile };
+    Object.defineProperty(accessorProfile, "commands", { get: () => { reads += 1; return []; } });
+    expect(validateRepositoryProfile(accessorProfile).map((entry) => entry.rule)).toEqual(["commands-shape"]);
+
+    const accessorCommand = { run: "npm test" };
+    Object.defineProperty(accessorCommand, "name", { get: () => { reads += 1; return "test"; } });
+    expect(validateRepositoryProfile({ ...validProfile, commands: [accessorCommand] }).map((entry) => entry.rule)).toEqual(["command-name"]);
+
+    const accessorPaths: string[] = [];
+    Object.defineProperty(accessorPaths, "0", { get: () => { reads += 1; return "src/**"; } });
+    expect(validateRepositoryProfile({ ...validProfile, protectedPaths: accessorPaths }).map((entry) => entry.rule)).toEqual(["protected-path"]);
+    expect(reads).toBe(0);
+  });
+
   it("rejects prototype pollution present before validator initialization", async () => {
     vi.resetModules();
     Object.defineProperty(Object.prototype, "zzpolluted", { value: "npm test", configurable: true });
@@ -146,7 +161,7 @@ describe("validateRepositoryProfile", () => {
       ["protected-path", "protectedPaths[2]"],
       ["duplicate-protected-path", "protectedPaths[4]"],
     ]);
-    expect(isRepositoryProfile({})).toBe(false);
+    expect(validateRepositoryProfile({}).length).toBeGreaterThan(0);
   });
 
   it("applies Git branch component rules without invoking Git", () => {

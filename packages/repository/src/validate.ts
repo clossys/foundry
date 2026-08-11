@@ -1,5 +1,5 @@
 import { REPOSITORY_PROFILE_VERSION } from "./types.js";
-import type { RepositoryProfile, RepositoryProfileFinding, RepositoryProfileFindingRule } from "./types.js";
+import type { RepositoryProfileFinding, RepositoryProfileFindingRule } from "./types.js";
 
 type RecordValue = Record<string, unknown>;
 
@@ -43,10 +43,25 @@ function isArrayIndexName(name: string): boolean {
   return /^(?:0|[1-9][0-9]*)$/.test(name) && Number(name) < 0xffffffff;
 }
 
-function isPlainArray(value: unknown): value is unknown[] {
-  if (!Array.isArray(value)) return false;
+interface InspectedArray {
+  value: unknown[];
+  length: number;
+  indexNames: string[];
+}
+
+function inspectArray(value: unknown): InspectedArray | undefined {
+  if (!Array.isArray(value)) return undefined;
   const ownKeys = Reflect.ownKeys(value);
-  return !ownKeys.some((key) => typeof key !== "string" || (key !== "length" && !isArrayIndexName(key)));
+  if (ownKeys.some((key) => typeof key !== "string" || (key !== "length" && !isArrayIndexName(key)))) return undefined;
+  const length = Object.getOwnPropertyDescriptor(value, "length");
+  if (!length || !("value" in length) || typeof length.value !== "number") return undefined;
+  return {
+    value,
+    length: length.value,
+    indexNames: ownKeys
+      .filter((key): key is string => typeof key === "string" && isArrayIndexName(key))
+      .sort((left, right) => Number(left) - Number(right)),
+  };
 }
 
 function finding(rule: RepositoryProfileFindingRule, path: string, message: string): RepositoryProfileFinding {
@@ -55,6 +70,11 @@ function finding(rule: RepositoryProfileFindingRule, path: string, message: stri
 
 function hasOwn(value: object, key: PropertyKey): boolean {
   return Object.prototype.hasOwnProperty.call(value, key);
+}
+
+function ownDataValue(value: object, key: PropertyKey): { value: unknown } | undefined {
+  const descriptor = Object.getOwnPropertyDescriptor(value, key);
+  return descriptor && "value" in descriptor ? { value: descriptor.value } : undefined;
 }
 
 function isRepositoryRelative(value: string, allowPatterns: boolean): boolean {
@@ -78,12 +98,6 @@ function isBranchName(value: string): boolean {
     .some((segment) => segment.length === 0 || segment.startsWith(".") || segment.endsWith(".lock"));
 }
 
-function arrayIndexNames(value: unknown[]): string[] {
-  return Object.getOwnPropertyNames(value)
-    .filter(isArrayIndexName)
-    .sort((left, right) => Number(left) - Number(right));
-}
-
 function validateRepositoryProfileValue(value: unknown): RepositoryProfileFinding[] {
   if (!isRecord(value)) return [finding("profile-shape", "$", "A repository profile must be an object.")];
 
@@ -92,28 +106,31 @@ function validateRepositoryProfileValue(value: unknown): RepositoryProfileFindin
     if (!PROFILE_KEYS.has(key)) findings.push(finding("unknown-field", key, `Unknown profile field "${key}".`));
   }
 
-  if (!hasOwn(value, "schemaVersion") || value.schemaVersion !== REPOSITORY_PROFILE_VERSION) {
+  const schemaVersion = ownDataValue(value, "schemaVersion")?.value;
+  if (schemaVersion !== REPOSITORY_PROFILE_VERSION) {
     findings.push(finding("schema-version", "schemaVersion", `schemaVersion must be ${REPOSITORY_PROFILE_VERSION}.`));
   }
 
-  if (!hasOwn(value, "defaultBranch") || typeof value.defaultBranch !== "string" || !isBranchName(value.defaultBranch)) {
+  const defaultBranch = ownDataValue(value, "defaultBranch")?.value;
+  if (typeof defaultBranch !== "string" || !isBranchName(defaultBranch)) {
     findings.push(finding("default-branch", "defaultBranch", "defaultBranch must be a valid Git branch name."));
   }
 
-  if (!hasOwn(value, "commands") || !isPlainArray(value.commands)) {
+  const commands = inspectArray(ownDataValue(value, "commands")?.value);
+  if (!commands) {
     findings.push(finding("commands-shape", "commands", "commands must be a plain array with no behavior-shadowing properties."));
   } else {
     const seenNames = new Set<string>();
     let nextExpectedIndex = 0;
     let reportedHole = false;
-    for (const indexName of arrayIndexNames(value.commands)) {
+    for (const indexName of commands.indexNames) {
       const index = Number(indexName);
       if (!reportedHole && index > nextExpectedIndex) {
         findings.push(finding("command-shape", `commands[${nextExpectedIndex}]`, "commands must not contain empty slots."));
         reportedHole = true;
       }
       nextExpectedIndex = index + 1;
-      const command = value.commands[index];
+      const command = ownDataValue(commands.value, indexName)?.value;
       const commandPath = `commands[${index}]`;
       if (!isRecord(command)) {
         findings.push(finding("command-shape", commandPath, "A command must be an object."));
@@ -122,40 +139,44 @@ function validateRepositoryProfileValue(value: unknown): RepositoryProfileFindin
       for (const key of Object.getOwnPropertyNames(command)) {
         if (!COMMAND_KEYS.has(key)) findings.push(finding("unknown-field", `${commandPath}.${key}`, `Unknown command field "${key}".`));
       }
-      if (!hasOwn(command, "name") || typeof command.name !== "string" || !COMMAND_NAME.test(command.name)) {
+      const name = ownDataValue(command, "name")?.value;
+      if (typeof name !== "string" || !COMMAND_NAME.test(name)) {
         findings.push(finding("command-name", `${commandPath}.name`, "name must be lowercase words separated by hyphens or colons."));
-      } else if (seenNames.has(command.name)) {
-        findings.push(finding("duplicate-command-name", `${commandPath}.name`, `Duplicate command name "${command.name}".`));
+      } else if (seenNames.has(name)) {
+        findings.push(finding("duplicate-command-name", `${commandPath}.name`, `Duplicate command name "${name}".`));
       } else {
-        seenNames.add(command.name);
+        seenNames.add(name);
       }
-      if (!hasOwn(command, "run") || typeof command.run !== "string" || command.run.trim().length === 0) {
+      const run = ownDataValue(command, "run")?.value;
+      if (typeof run !== "string" || run.trim().length === 0) {
         findings.push(finding("command-run", `${commandPath}.run`, "run must be a non-empty string."));
       }
       const ownsCwd = hasOwn(command, "cwd");
-      if ((!ownsCwd && "cwd" in command) || (ownsCwd && (typeof command.cwd !== "string" || !isRepositoryRelative(command.cwd, false)))) {
+      const cwd = ownDataValue(command, "cwd")?.value;
+      if ((!ownsCwd && "cwd" in command) || (ownsCwd && (typeof cwd !== "string" || !isRepositoryRelative(cwd, false)))) {
         findings.push(finding("command-cwd", `${commandPath}.cwd`, "cwd, when present, must be an own repository-relative directory without glob syntax or parent traversal."));
       }
     }
-    if (!reportedHole && nextExpectedIndex < value.commands.length) {
+    if (!reportedHole && nextExpectedIndex < commands.length) {
       findings.push(finding("command-shape", `commands[${nextExpectedIndex}]`, "commands must not contain empty slots."));
     }
   }
 
-  if (!hasOwn(value, "protectedPaths") || !isPlainArray(value.protectedPaths)) {
+  const protectedPaths = inspectArray(ownDataValue(value, "protectedPaths")?.value);
+  if (!protectedPaths) {
     findings.push(finding("protected-paths-shape", "protectedPaths", "protectedPaths must be a plain array with no behavior-shadowing properties."));
   } else {
     const seen = new Set<string>();
     let nextExpectedIndex = 0;
     let reportedHole = false;
-    for (const indexName of arrayIndexNames(value.protectedPaths)) {
+    for (const indexName of protectedPaths.indexNames) {
       const index = Number(indexName);
       if (!reportedHole && index > nextExpectedIndex) {
         findings.push(finding("protected-path", `protectedPaths[${nextExpectedIndex}]`, "protectedPaths must not contain empty slots."));
         reportedHole = true;
       }
       nextExpectedIndex = index + 1;
-      const path = value.protectedPaths[index];
+      const path = ownDataValue(protectedPaths.value, indexName)?.value;
       const inputPath = `protectedPaths[${index}]`;
       if (typeof path !== "string" || !isRepositoryRelative(path, true)) {
         findings.push(finding("protected-path", inputPath, "A protected path must be a repository-relative path or glob without parent traversal."));
@@ -164,7 +185,7 @@ function validateRepositoryProfileValue(value: unknown): RepositoryProfileFindin
       if (seen.has(path)) findings.push(finding("duplicate-protected-path", inputPath, `Duplicate protected path "${path}".`));
       seen.add(path);
     }
-    if (!reportedHole && nextExpectedIndex < value.protectedPaths.length) {
+    if (!reportedHole && nextExpectedIndex < protectedPaths.length) {
       findings.push(finding("protected-path", `protectedPaths[${nextExpectedIndex}]`, "protectedPaths must not contain empty slots."));
     }
   }
@@ -174,6 +195,7 @@ function validateRepositoryProfileValue(value: unknown): RepositoryProfileFindin
 
 /**
  * Validates an untrusted repository profile without I/O or throwing.
+ * Fields are inspected as own data descriptors; accessors are never invoked.
  * Findings are emitted in input order and every independently checkable
  * problem is reported.
  */
@@ -183,9 +205,4 @@ export function validateRepositoryProfile(value: unknown): RepositoryProfileFind
   } catch {
     return [finding("profile-shape", "$", "A repository profile must be a safely readable object.")];
   }
-}
-
-/** Returns true only when the value conforms to the complete profile shape. */
-export function isRepositoryProfile(value: unknown): value is RepositoryProfile {
-  return validateRepositoryProfile(value).length === 0;
 }
