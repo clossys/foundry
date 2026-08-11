@@ -159,8 +159,7 @@ function validateChecks(entries: unknown[], headSha: string, findings: ReviewFin
 }
 
 function validateReviews(entries: unknown[], headSha: string, findings: ReviewFinding[]): { hasApproval: boolean; hasChangesRequested: boolean; hasAmbiguousDecision: boolean } {
-  const latestByReviewer = new Map<string, { submittedAtMs: number; state: ReviewDecision }>();
-  let hasAmbiguousDecision = false;
+  const latestByReviewer = new Map<string, { submittedAtMs: number; state: ReviewDecision; isAmbiguous: boolean }>();
   for (let index = 0; index < entries.length; index += 1) {
     const path = `reviews[${index}]`;
     const entry = arrayEntry(entries, index);
@@ -193,13 +192,18 @@ function validateReviews(entries: unknown[], headSha: string, findings: ReviewFi
     if (state !== "approved" && state !== "changes-requested" && state !== "dismissed") continue;
     const previous = latestByReviewer.get(reviewerId);
     if (!previous || submittedAtMs > previous.submittedAtMs) {
-      latestByReviewer.set(reviewerId, { submittedAtMs, state: state as ReviewDecision });
+      // A later decision is decisive even if an older timestamp was ambiguous.
+      latestByReviewer.set(reviewerId, { submittedAtMs, state: state as ReviewDecision, isAmbiguous: false });
     } else if (submittedAtMs === previous.submittedAtMs && state !== previous.state) {
-      hasAmbiguousDecision = true;
+      latestByReviewer.set(reviewerId, { ...previous, isAmbiguous: true });
     }
   }
   const decisions = [...latestByReviewer.values()].map((review) => review.state);
-  return { hasApproval: decisions.includes("approved"), hasChangesRequested: decisions.includes("changes-requested"), hasAmbiguousDecision };
+  return {
+    hasApproval: decisions.includes("approved"),
+    hasChangesRequested: decisions.includes("changes-requested"),
+    hasAmbiguousDecision: [...latestByReviewer.values()].some((review) => review.isAmbiguous),
+  };
 }
 
 function validateThreads(entries: unknown[], headSha: string, findings: ReviewFinding[]): void {
@@ -274,7 +278,7 @@ export function validateReviewEvidence(value: unknown, policy: unknown): ReviewF
 /** Narrows valid normalized data after validation for consumers that need it. */
 export function isReviewEvidenceBundle(value: unknown): value is ReviewEvidenceBundle {
   return validateReviewEvidence(value, { requiredChecks: [], requireApproval: false })
-    .every((entry) => entry.rule === "changes-requested" || entry.rule === "unresolved-thread");
+    .every((entry) => entry.rule === "changes-requested" || entry.rule === "unresolved-thread" || entry.rule === "review-decision-ambiguous");
 }
 
 /** Narrows valid consumer-owned policy data without choosing any policy values. */
