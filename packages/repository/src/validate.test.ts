@@ -43,7 +43,7 @@ describe("validateRepositoryProfile", () => {
         "Build All": { run: " ", cwd: "../outside", extra: true },
         test: "npm test",
       },
-      protectedPaths: ["/absolute", "src/../private", "src/**", "src/**"],
+      protectedPaths: ["/absolute", "src/../private", "{..,src}/secret", "src/**", "src/**"],
     });
 
     expect(findings.map((entry) => [entry.rule, entry.path])).toEqual([
@@ -55,7 +55,8 @@ describe("validateRepositoryProfile", () => {
       ["command-shape", "commands.test"],
       ["protected-path", "protectedPaths[0]"],
       ["protected-path", "protectedPaths[1]"],
-      ["duplicate-protected-path", "protectedPaths[3]"],
+      ["protected-path", "protectedPaths[2]"],
+      ["duplicate-protected-path", "protectedPaths[4]"],
     ]);
     expect(isRepositoryProfile({})).toBe(false);
   });
@@ -83,9 +84,21 @@ describe("validateRepositoryProfile", () => {
     ]);
   });
 
+  it("validates sparse protected-path arrays by index", () => {
+    const protectedPaths = new Array<string>(1);
+    const findings = validateRepositoryProfile({ ...validProfile, protectedPaths });
+
+    expect(findings.map((entry) => [entry.rule, entry.path])).toEqual([["protected-path", "protectedPaths[0]"]]);
+  });
+
   it("does not throw for non-object input", () => {
     expect(validateRepositoryProfile(null)).toEqual([
       { rule: "profile-shape", severity: "error", path: "$", message: "A repository profile must be an object." },
+    ]);
+
+    const unreadable = new Proxy({}, { ownKeys: () => { throw new Error("unreadable"); } });
+    expect(validateRepositoryProfile(unreadable)).toEqual([
+      { rule: "profile-shape", severity: "error", path: "$", message: "A repository profile must be a safely readable object." },
     ]);
   });
 });

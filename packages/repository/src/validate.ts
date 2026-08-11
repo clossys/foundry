@@ -18,6 +18,7 @@ function finding(rule: RepositoryProfileFindingRule, path: string, message: stri
 function isRepositoryRelative(value: string, allowPatterns: boolean): boolean {
   if (value.length === 0 || value.startsWith("/") || /^[a-z]:/i.test(value) || value.includes("\\") || value.includes("\0")) return false;
   if (!allowPatterns && /[*?[\]{}]/.test(value)) return false;
+  if (allowPatterns && (/[?[\]{}]/.test(value) || /[@+?!*]\(/.test(value) || value.startsWith("!"))) return false;
   return !value.split("/").some((segment) => segment === ".." || segment.length === 0);
 }
 
@@ -34,12 +35,7 @@ function isBranchName(value: string): boolean {
     .some((segment) => segment.length === 0 || segment.startsWith(".") || segment.endsWith(".lock"));
 }
 
-/**
- * Validates an untrusted repository profile without I/O or throwing.
- * Findings are emitted in input order and every independently checkable
- * problem is reported.
- */
-export function validateRepositoryProfile(value: unknown): RepositoryProfileFinding[] {
+function validateRepositoryProfileValue(value: unknown): RepositoryProfileFinding[] {
   if (!isRecord(value)) return [finding("profile-shape", "$", "A repository profile must be an object.")];
 
   const findings: RepositoryProfileFinding[] = [];
@@ -83,18 +79,32 @@ export function validateRepositoryProfile(value: unknown): RepositoryProfileFind
     findings.push(finding("protected-paths-shape", "protectedPaths", "protectedPaths must be an array."));
   } else {
     const seen = new Set<string>();
-    value.protectedPaths.forEach((path, index) => {
+    for (let index = 0; index < value.protectedPaths.length; index += 1) {
+      const path = value.protectedPaths[index];
       const inputPath = `protectedPaths[${index}]`;
       if (typeof path !== "string" || !isRepositoryRelative(path, true)) {
         findings.push(finding("protected-path", inputPath, "A protected path must be a repository-relative path or glob without parent traversal."));
-        return;
+        continue;
       }
       if (seen.has(path)) findings.push(finding("duplicate-protected-path", inputPath, `Duplicate protected path "${path}".`));
       seen.add(path);
-    });
+    }
   }
 
   return findings;
+}
+
+/**
+ * Validates an untrusted repository profile without I/O or throwing.
+ * Findings are emitted in input order and every independently checkable
+ * problem is reported.
+ */
+export function validateRepositoryProfile(value: unknown): RepositoryProfileFinding[] {
+  try {
+    return validateRepositoryProfileValue(value);
+  } catch {
+    return [finding("profile-shape", "$", "A repository profile must be a safely readable object.")];
+  }
 }
 
 /** Returns true only when the value conforms to the complete profile shape. */

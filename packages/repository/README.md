@@ -43,7 +43,9 @@ if (isRepositoryProfile(profile)) {
 
 Validation is pure, performs no I/O, does not invoke Git, and never throws for
 malformed input. Findings are deterministic and carry a stable rule, an input
-path, and an error message.
+path, and an error message. Protected paths support literal segments plus `*`
+and `**` wildcards; brace expansion, character classes, extglobs, negation,
+absolute paths, and parent traversal are rejected.
 
 ## Ownership boundary
 

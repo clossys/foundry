@@ -17,6 +17,7 @@ export interface RepositoryProfile {
   schemaVersion: typeof REPOSITORY_PROFILE_VERSION;
   defaultBranch: string;
   commands: Record<string, RepositoryCommand>;
+  /** Repository-relative paths using literal segments plus `*` or `**` wildcards. */
   protectedPaths: string[];
 }
 
