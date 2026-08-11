@@ -41,6 +41,11 @@ class MemoryRepository implements ExternalMembershipRepository<StoredMembership>
   creates = 0;
   replacements = 0;
   deletes = 0;
+  locks = 0;
+
+  async lockExternalIdentity(_query: QueryAdapter, _identity: ExternalMembershipIdentity): Promise<void> {
+    this.locks += 1;
+  }
 
   async claimEvent(_query: QueryAdapter, eventId: string): Promise<boolean> {
     this.claims += 1;
@@ -230,6 +235,7 @@ describe("reconcileExternalMembership", () => {
     expect((await reconcileExternalMembership(command)).status).toBe("duplicate");
     expect(repository.creates).toBe(1);
     expect(repository.replacements).toBe(0);
+    expect(repository.locks).toBe(2);
   });
 
   it("ignores stale timestamps and stale versions", async () => {
@@ -300,6 +306,22 @@ describe("reconcileExternalMembership", () => {
       ...command,
       event: event("deleted", { eventId: "event-delete-again", occurredAt: "2026-04-01T00:00:00.000Z" }),
     })).status).toBe("duplicate");
+  });
+
+  it("applies a distinct deletion that ties the stored timestamp", async () => {
+    const adapter = transactionalAdapter();
+    const repository = new MemoryRepository();
+    const command = { queryAdapter: adapter, repository };
+    await reconcileExternalMembership({ ...command, event: event("created") });
+
+    expect((await reconcileExternalMembership({
+      ...command,
+      event: event("deleted", { eventId: "event-delete" }),
+    })).status).toBe("deleted");
+    expect(repository.memberships.has(key({
+      provider: "provider-a",
+      providerMembershipId: "membership-a",
+    }))).toBe(false);
   });
 
   it("does not create a membership from an update event", async () => {

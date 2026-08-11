@@ -1,4 +1,19 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const provider = vi.hoisted(() => ({
+  auth: vi.fn(),
+  clerkClient: vi.fn(),
+  cookies: vi.fn(),
+  revokeSession: vi.fn(),
+  deleteCookie: vi.fn(),
+}));
+
+vi.mock("@clerk/nextjs/server", () => ({
+  auth: provider.auth,
+  clerkClient: provider.clerkClient,
+}));
+
+vi.mock("next/headers", () => ({ cookies: provider.cookies }));
 
 import { createSignOutRoute, resolveRequestRedirect } from "./server-routes.js";
 
@@ -38,6 +53,13 @@ describe("resolveRequestRedirect", () => {
 describe("createSignOutRoute", () => {
   const route = createSignOutRoute();
 
+  beforeEach(() => {
+    vi.clearAllMocks();
+    provider.auth.mockResolvedValue({ sessionId: null });
+    provider.clerkClient.mockResolvedValue({ sessions: { revokeSession: provider.revokeSession } });
+    provider.cookies.mockResolvedValue({ delete: provider.deleteCookie });
+  });
+
   it("rejects state-changing GET requests", async () => {
     const response = await route(new Request("https://app.example.test/sign-out"));
     expect(response.status).toBe(405);
@@ -53,5 +75,15 @@ describe("createSignOutRoute", () => {
       headers: { Origin: "https://outside.example.test" },
     }));
     expect(crossOrigin.status).toBe(403);
+  });
+
+  it("converts the successful sign-out POST into a GET navigation", async () => {
+    const response = await route(new Request("https://app.example.test/sign-out", {
+      method: "POST",
+      headers: { Origin: "https://app.example.test" },
+    }));
+
+    expect(response.status).toBe(303);
+    expect(response.headers.get("location")).toBe("https://app.example.test/");
   });
 });

@@ -237,7 +237,12 @@ export async function mapClerkEvent(event: unknown, options: ClerkEventMappingOp
     ...(role ? { role } : {}),
   } as ClerkMembershipEvent;
 
-  if (!options.localIdResolver) return { status: "mapped", event: membershipEvent };
+  // Deletion is fully identified by the provider membership id. Requiring
+  // user or tenant lookups here could retain access when related mappings were
+  // removed before an out-of-order deletion arrived.
+  if (lifecycle.type === "deleted" || !options.localIdResolver) {
+    return { status: "mapped", event: membershipEvent };
+  }
 
   const resolution = await resolveClerkMembershipLocalIds(membershipEvent, options.localIdResolver);
   if (resolution.status === "invalid") return resolution;

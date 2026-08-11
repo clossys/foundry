@@ -15,6 +15,9 @@ type _TransactionalIsQueryAdapter = Assert<TransactionalQueryAdapter extends Que
 type _EventCarriesProviderIdentity = Assert<ExternalMembershipEvent extends { provider: string; providerMembershipId: string } ? true : false>;
 type _MembershipKeepsLocalIdentity = Assert<ExternalMembership extends { membershipId: string; createdAt: Date | string } ? true : false>;
 type _CommandUsesRepository = Assert<ReconcileExternalMembershipCommand extends { repository: ExternalMembershipRepository } ? true : false>;
+type _RepositoryRequiresIdentityLock = Assert<ExternalMembershipRepository extends {
+  lockExternalIdentity(query: QueryAdapter, identity: { provider: string; providerMembershipId: string }): Promise<void>;
+} ? true : false>;
 type _ResultHasClosedStatuses = Assert<Equal<ExternalMembershipReconciliationResult["status"], "created" | "updated" | "deleted" | "duplicate" | "stale" | "unchanged">>;
 
 export {};

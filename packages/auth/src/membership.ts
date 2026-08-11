@@ -52,14 +52,17 @@ export interface ExternalMembershipCreateInput<TEvent extends object = Record<ne
 
 /**
  * Persistence seam for external membership reconciliation. Implementations
- * must make `claimEvent` atomic within the supplied transaction and preserve
- * all fields of a record passed to `replace` except where their own storage
- * representation requires an equivalent encoding.
+ * must make `claimEvent` atomic within the supplied transaction. They must
+ * also acquire a transaction-scoped exclusive lock for an external identity,
+ * including identities with no membership row yet, before returning from
+ * `lockExternalIdentity`. Records passed to `replace` retain all caller-owned
+ * fields except where storage requires an equivalent encoding.
  */
 export interface ExternalMembershipRepository<
   TMembership extends ExternalMembership = ExternalMembership,
   TEvent extends object = Record<never, never>,
 > {
+  lockExternalIdentity(query: QueryAdapter, identity: ExternalMembershipIdentity): Promise<void>;
   claimEvent(query: QueryAdapter, eventId: string): Promise<boolean>;
   findByExternalIdentity(query: QueryAdapter, identity: ExternalMembershipIdentity): Promise<TMembership | undefined>;
   create(query: QueryAdapter, input: ExternalMembershipCreateInput<TEvent>): Promise<TMembership>;
@@ -135,7 +138,12 @@ function eventIsStale(event: ExternalMembershipEvent, cursor: ExternalMembership
   if (event.version !== undefined && cursor.version !== undefined) {
     return event.version <= cursor.version;
   }
-  return normalizeOccurredAt(event.occurredAt).getTime() <= cursor.occurredAt.getTime();
+  const eventTime = normalizeOccurredAt(event.occurredAt).getTime();
+  const cursorTime = cursor.occurredAt.getTime();
+  if (eventTime !== cursorTime) return eventTime < cursorTime;
+  // Providers can emit distinct unversioned events at the same timestamp.
+  // Prefer revocation in that ambiguity; other tied events remain stale.
+  return event.type !== "deleted";
 }
 
 function nextCursor(event: ExternalMembershipEvent): ExternalMembershipEventCursor {
@@ -170,6 +178,7 @@ export async function reconcileExternalMembership<
   const identity = eventIdentity(event);
 
   return transactionAdapter.transaction(async (query) => {
+    await command.repository.lockExternalIdentity(query, identity);
     const claimed = await command.repository.claimEvent(query, event.eventId);
     if (!claimed) return { status: "duplicate" };
 

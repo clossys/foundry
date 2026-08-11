@@ -41,11 +41,14 @@ export function assertAgentMonetaryAuthority<
   TKind extends string,
   TMeta extends Record<string, unknown>,
 >(
-  agent: GenericAgentContext<TToolId, TKind, TMeta>,
+  agent: GenericAgentContext<TToolId, TKind, TMeta> | null | undefined,
   amount: number,
   currency: string,
   toolId: TToolId,
+  now: Date | string = new Date(),
 ): void {
+  assertAgentCanCall(agent, toolId, now);
+
   if (typeof amount !== "number" || !Number.isFinite(amount) || amount < 0) {
     throw new TypeError("amount must be a finite, non-negative number");
   }

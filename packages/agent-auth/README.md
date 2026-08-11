@@ -54,11 +54,13 @@ reasons `agent_revoked`, `agent_not_yet_active`, `agent_expired`, or
 `tool_not_in_scope`. An absent context fails closed with `agent_revoked` and
 the sentinel identity `<missing>`.
 
-`assertAgentMonetaryAuthority` is a separate monetary-limit check. Call
-`assertAgentCanCall` first when lifecycle and tool scope must also be enforced.
-A `null` configured amount means unlimited; otherwise the requested amount must
-be finite and non-negative and the currency must match case-insensitively. A
-malformed, mismatched, or exceeded configured limit throws
+`assertAgentMonetaryAuthority` independently enforces lifecycle and tool scope
+before checking the monetary limit, so it is safe to use as the sole guard for
+a monetary tool call. It accepts the same optional evaluation instant as
+`assertAgentCanCall`. A `null` configured amount means unlimited after those
+base checks pass; otherwise the requested amount must be finite and
+non-negative and the currency must match case-insensitively. A malformed,
+mismatched, or exceeded configured limit throws
 `AgentAuthorizationError` with `monetary_limit_exceeded`. A negative or
 non-finite requested amount throws `TypeError`.
 
@@ -69,7 +71,7 @@ non-finite requested amount throws `TypeError`.
 | `isAgentContextActive(agent, now?)` | function | Returns whether a non-null context is active at the supplied instant. |
 | `describeAgentLifecycleState(agent, now?)` | function | Returns `not_yet_active`, `active`, `expired`, `revoked`, or `null` for an absent context. |
 | `assertAgentCanCall(agent, toolId, now?)` | function | Asserts an active context and an in-scope tool; otherwise throws a typed authorization error. |
-| `assertAgentMonetaryAuthority(agent, amount, currency, toolId)` | function | Asserts amount, currency, and configured monetary-limit authority. |
+| `assertAgentMonetaryAuthority(agent, amount, currency, toolId, now?)` | function | Asserts lifecycle, tool scope, amount, currency, and configured monetary-limit authority. |
 | `AgentAuthorizationError` | class | Error with stable `reason`, `agentIdentityId`, and `toolId` fields. |
 | `GenericAgentContext<TToolId, TKind, TMeta>` | type | Generic agent context with identity, model, lifecycle, scope, authority, and optional metadata fields. |
 | `BaseAgentAuditRecord` | type | Provider-neutral audit row for an authorized or denied agent tool call. |

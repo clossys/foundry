@@ -32,7 +32,7 @@ export interface AuthProviderProps extends Omit<ComponentProps<typeof ClerkProvi
  * credential-shaped placeholder.
  */
 export function AuthProvider({ children, ...props }: AuthProviderProps) {
-  if (devAuthBypassIsKeyless()) {
+  if (devAuthBypassIsKeyless() && !props.publishableKey) {
     return <Fragment>{children}</Fragment>;
   }
   return <ClerkProvider {...props}>{children}</ClerkProvider>;

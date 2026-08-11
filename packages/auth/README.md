@@ -69,8 +69,13 @@ const result = await reconcileExternalMembership({
 existing role. Only `updated` events replace that role. The core copies the
 stored record when updating it, retaining `membershipId`, `createdAt`,
 `invitedAt`, `acceptedAt`, `grants`, and any caller-owned fields. A repository
-keeps event claims and `ExternalMembershipEventCursor` values transactionally;
-that makes retries, out-of-order events, and deleted rows safe to handle.
+keeps event claims and `ExternalMembershipEventCursor` values transactionally.
+Its `lockExternalIdentity` implementation must take a transaction-scoped
+exclusive lock even when no membership row exists, serializing cursor checks
+and writes for that provider identity. This makes concurrent delivery, retries,
+out-of-order events, and deleted rows safe to handle. When distinct unversioned
+events share a timestamp, deletion wins the tie so ambiguous ordering cannot
+retain access.
 
 For post-auth redirects, create the allowlist once and resolve only destinations
 that meet it:
@@ -113,7 +118,7 @@ an explicit, allowlisted `baseOrigin`.
 | `ExternalMembershipEvent` | type | Normalized `created`, `updated`, or `deleted` provider event. |
 | `ExternalMembershipEventCursor` | type | Per-identity ordering state retained independently of a row. |
 | `ExternalMembershipCreateInput` | type | Repository input for creating locally owned membership fields. |
-| `ExternalMembershipRepository` | type | Transaction-scoped persistence seam for claims, membership records, and cursors. |
+| `ExternalMembershipRepository` | type | Transaction-scoped persistence seam with required per-identity locking, event claims, membership records, and cursors. |
 | `ReconcileExternalMembershipCommand` | type | Dependencies and event for one reconciliation. |
 | `ExternalMembershipReconciliationResult` | type | Status and optional membership returned by reconciliation. |
 | `reconcileExternalMembership(command)` | function | Atomically reconciles a normalized provider event. |

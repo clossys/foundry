@@ -166,6 +166,6 @@ export function createSignOutRoute(options: SignOutRouteOptions = {}) {
       [dynamic, options.redirectTo, "/"],
       options.allowedRedirectOrigins,
     ) ?? new URL("/", request.url).toString();
-    return NextResponse.redirect(target);
+    return NextResponse.redirect(target, 303);
   };
 }

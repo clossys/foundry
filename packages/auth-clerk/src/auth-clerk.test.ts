@@ -219,6 +219,30 @@ describe("mapClerkEvent", () => {
     expect(roleMapper).not.toHaveBeenCalled();
   });
 
+  it("never makes deletion depend on resolving removed local identifiers", async () => {
+    const resolveUserId = vi.fn(() => {
+      throw new Error("mapping removed");
+    });
+    const resolveTenantId = vi.fn(() => {
+      throw new Error("mapping removed");
+    });
+    const result = await mapClerkEvent(
+      {
+        type: "organizationMembership.deleted",
+        timestamp: 1_786_313_600_000,
+        data: membershipData(),
+      },
+      {
+        ...mappingOptions,
+        localIdResolver: { resolveUserId, resolveTenantId },
+      },
+    );
+
+    expect(result).toMatchObject({ status: "mapped", event: { kind: "membership", type: "deleted" } });
+    expect(resolveUserId).not.toHaveBeenCalled();
+    expect(resolveTenantId).not.toHaveBeenCalled();
+  });
+
   it("uses an injected local-id resolver without exposing its source data", async () => {
     const result = await mapClerkEvent(
       { type: "organizationMembership.created", timestamp: 1_786_313_600_000, data: membershipData() },

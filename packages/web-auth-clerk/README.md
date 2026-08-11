@@ -109,7 +109,8 @@ export const POST = createSignOutRoute({
 
 The route accepts only same-origin `POST` requests with an `Origin` header;
 cross-origin, missing-origin, and safe-method requests are rejected before
-session access. The request origin is trusted for redirects automatically.
+session access. A successful request returns a `303` so the destination is
+loaded with `GET`. The request origin is trusted for redirects automatically.
 Additional absolute redirect origins require an exact entry in
 `allowedRedirectOrigins`.
 

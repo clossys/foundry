@@ -126,6 +126,30 @@ describe("assertAgentMonetaryAuthority", () => {
     )).not.toThrow();
   });
 
+  it("always enforces lifecycle and tool scope, including for unlimited authority", () => {
+    const unlimited = { monetaryLimitAmount: null, monetaryLimitCurrency: null } as const;
+    expectAuthorizationFailure(
+      () => assertAgentMonetaryAuthority(
+        makeAgent({ ...unlimited, revokedAt: NOW }),
+        1,
+        "USD",
+        "payments.create",
+        NOW,
+      ),
+      "agent_revoked",
+    );
+    expectAuthorizationFailure(
+      () => assertAgentMonetaryAuthority(
+        makeAgent({ ...unlimited, toolScope: ["records.read"] }),
+        1,
+        "USD",
+        "payments.create",
+        NOW,
+      ),
+      "tool_not_in_scope",
+    );
+  });
+
   it("rejects an exceeded, malformed, or currency-mismatched monetary authority", () => {
     expectAuthorizationFailure(() => assertAgentMonetaryAuthority(makeAgent(), 250.01, "USD", "payments.create"), "monetary_limit_exceeded");
     expectAuthorizationFailure(() => assertAgentMonetaryAuthority(makeAgent(), 1, "EUR", "payments.create"), "monetary_limit_exceeded");
