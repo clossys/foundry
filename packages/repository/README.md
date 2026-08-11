@@ -45,6 +45,9 @@ Validation is pure, performs no I/O, does not invoke Git, and never throws for
 malformed input. Findings are deterministic and carry a stable rule, an input
 path, and an error message. Commands are an ordered array with explicit names,
 so consumers never need to treat inherited object properties as command names.
+After narrowing, command and protected-path collections expose only a dense,
+read-only indexed-list contract (`length` plus numeric indexes); array methods
+and iterators are deliberately not trusted or promised for untrusted values.
 Protected paths support literal segments plus `*`
 and `**` wildcards; brace expansion, character classes, extglobs, negation,
 absolute paths, and parent traversal are rejected.
@@ -69,6 +72,7 @@ consumer exist.
 | `isRepositoryProfile(value)` | function | Type guard that returns true only when validation has no findings. |
 | `REPOSITORY_PROFILE_VERSION` | constant | The supported profile schema version, currently `1`. |
 | `RepositoryCommand` | type | One consumer-owned command with `name`, `run`, and optional repository-relative `cwd`. |
+| `RepositoryList` | type | Dense, read-only indexed values; promises `length` and numeric indexes, not realm-specific array behavior. |
 | `RepositoryProfile` | type | The complete profile shape: schema version, default branch, commands, and protected paths. |
 | `RepositoryProfileFinding` | type | A deterministic error with `rule`, `path`, and `message`. |
 | `RepositoryProfileFindingRule` | type | Closed vocabulary of validator rule identifiers. |

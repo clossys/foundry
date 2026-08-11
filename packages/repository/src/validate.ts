@@ -20,48 +20,6 @@ const STANDARD_OBJECT_PROTOTYPE_KEYS = new Set<PropertyKey>([
   "__proto__",
   "toLocaleString",
 ]);
-const REQUIRED_ARRAY_PROTOTYPE_FUNCTIONS = [
-  "constructor",
-  "at",
-  "concat",
-  "copyWithin",
-  "fill",
-  "find",
-  "findIndex",
-  "findLast",
-  "findLastIndex",
-  "lastIndexOf",
-  "pop",
-  "push",
-  "reverse",
-  "shift",
-  "unshift",
-  "slice",
-  "sort",
-  "splice",
-  "includes",
-  "indexOf",
-  "join",
-  "keys",
-  "entries",
-  "values",
-  "forEach",
-  "filter",
-  "flat",
-  "flatMap",
-  "map",
-  "every",
-  "some",
-  "reduce",
-  "reduceRight",
-  "toReversed",
-  "toSorted",
-  "toSpliced",
-  "with",
-  "toLocaleString",
-  "toString",
-] as const;
-
 function hasStandardObjectPrototype(prototype: object): boolean {
   const actualKeys = Reflect.ownKeys(prototype);
   if (actualKeys.length !== STANDARD_OBJECT_PROTOTYPE_KEYS.size || actualKeys.some((key) => !STANDARD_OBJECT_PROTOTYPE_KEYS.has(key))) return false;
@@ -81,23 +39,6 @@ function isRecord(value: unknown): value is RecordValue {
   return Object.getPrototypeOf(prototype) === null && hasStandardObjectPrototype(prototype);
 }
 
-function hasStandardArrayPrototype(prototype: object): boolean {
-  const objectPrototype = Object.getPrototypeOf(prototype);
-  if (typeof objectPrototype !== "object" || objectPrototype === null || Object.getPrototypeOf(objectPrototype) !== null) return false;
-  if (!hasStandardObjectPrototype(objectPrototype)) return false;
-
-  const length = Object.getOwnPropertyDescriptor(prototype, "length");
-  if (!length || !("value" in length) || length.value !== 0 || length.enumerable !== false) return false;
-  for (const key of REQUIRED_ARRAY_PROTOTYPE_FUNCTIONS) {
-    const descriptor = Object.getOwnPropertyDescriptor(prototype, key);
-    if (!descriptor || !("value" in descriptor) || typeof descriptor.value !== "function" || descriptor.enumerable !== false) return false;
-  }
-
-  const iterator = Object.getOwnPropertyDescriptor(prototype, Symbol.iterator);
-  const values = Object.getOwnPropertyDescriptor(prototype, "values");
-  return Boolean(iterator && values && "value" in iterator && "value" in values && iterator.value === values.value && iterator.enumerable === false);
-}
-
 function isArrayIndexName(name: string): boolean {
   return /^(?:0|[1-9][0-9]*)$/.test(name) && Number(name) < 0xffffffff;
 }
@@ -105,9 +46,7 @@ function isArrayIndexName(name: string): boolean {
 function isPlainArray(value: unknown): value is unknown[] {
   if (!Array.isArray(value)) return false;
   const ownKeys = Reflect.ownKeys(value);
-  if (ownKeys.some((key) => typeof key !== "string" || (key !== "length" && !isArrayIndexName(key)))) return false;
-  const prototype = Object.getPrototypeOf(value);
-  return typeof prototype === "object" && prototype !== null && hasStandardArrayPrototype(prototype);
+  return !ownKeys.some((key) => typeof key !== "string" || (key !== "length" && !isArrayIndexName(key)));
 }
 
 function finding(rule: RepositoryProfileFindingRule, path: string, message: string): RepositoryProfileFinding {

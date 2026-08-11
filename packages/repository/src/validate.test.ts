@@ -198,7 +198,7 @@ describe("validateRepositoryProfile", () => {
     ]);
   });
 
-  it("rejects arrays that shadow built-in behavior", () => {
+  it("rejects own array behavior shadows without trusting prototype methods", () => {
     const commands = Object.assign([{ name: "test", run: "npm test" }], { map: null });
     expect(validateRepositoryProfile({ ...validProfile, commands }).map((entry) => entry.rule)).toEqual(["commands-shape"]);
 
@@ -208,7 +208,7 @@ describe("validateRepositoryProfile", () => {
 
     const customPrototypeCommands = [{ name: "test", run: "npm test" }];
     Object.setPrototypeOf(customPrototypeCommands, { map: null });
-    expect(validateRepositoryProfile({ ...validProfile, commands: customPrototypeCommands }).map((entry) => entry.rule)).toEqual(["commands-shape"]);
+    expect(validateRepositoryProfile({ ...validProfile, commands: customPrototypeCommands })).toEqual([]);
   });
 
   it("validates sparse protected-path arrays by own index", () => {

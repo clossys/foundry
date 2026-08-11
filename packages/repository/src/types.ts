@@ -1,6 +1,12 @@
 /** The only profile shape supported by this package version. */
 export const REPOSITORY_PROFILE_VERSION = 1 as const;
 
+/** Dense, read-only indexed values. No array methods or iterator are promised. */
+export interface RepositoryList<T> {
+  readonly length: number;
+  readonly [index: number]: T;
+}
+
 /** A consumer-owned command that tooling may invoke from the repository. */
 export interface RepositoryCommand {
   /** Stable lowercase name, using hyphens or colons as separators. */
@@ -19,9 +25,9 @@ export interface RepositoryProfile {
   readonly schemaVersion: typeof REPOSITORY_PROFILE_VERSION;
   readonly defaultBranch: string;
   /** Ordered commands with explicit names; never an inherited-property dictionary. */
-  readonly commands: readonly RepositoryCommand[];
+  readonly commands: RepositoryList<RepositoryCommand>;
   /** Repository-relative paths using literal segments plus `*` or `**` wildcards. */
-  readonly protectedPaths: readonly string[];
+  readonly protectedPaths: RepositoryList<string>;
 }
 
 export type RepositoryProfileFindingRule =

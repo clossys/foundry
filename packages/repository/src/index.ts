@@ -3,6 +3,7 @@ export { isRepositoryProfile, validateRepositoryProfile } from "./validate.js";
 export { REPOSITORY_PROFILE_VERSION } from "./types.js";
 export type {
   RepositoryCommand,
+  RepositoryList,
   RepositoryProfile,
   RepositoryProfileFinding,
   RepositoryProfileFindingRule,
