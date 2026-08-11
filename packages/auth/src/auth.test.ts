@@ -325,6 +325,22 @@ describe("reconcileExternalMembership", () => {
     }))).toBe(false);
   });
 
+  it("applies a distinct deletion that ties the stored provider version", async () => {
+    const adapter = transactionalAdapter();
+    const repository = new MemoryRepository();
+    const command = { queryAdapter: adapter, repository };
+    await reconcileExternalMembership({ ...command, event: event("created", { version: 7 }) });
+
+    expect((await reconcileExternalMembership({
+      ...command,
+      event: event("deleted", { eventId: "event-delete", version: 7 }),
+    })).status).toBe("deleted");
+    expect(repository.memberships.has(key({
+      provider: "provider-a",
+      providerMembershipId: "membership-a",
+    }))).toBe(false);
+  });
+
   it("does not create a membership from an update event", async () => {
     const repository = new MemoryRepository();
     const result = await reconcileExternalMembership({

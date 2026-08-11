@@ -136,7 +136,10 @@ function normalizeCursor(cursor: ExternalMembershipEventCursor): ExternalMembers
 
 function eventIsStale(event: ExternalMembershipEvent, cursor: ExternalMembershipEventCursor): boolean {
   if (event.version !== undefined && cursor.version !== undefined) {
-    return event.version <= cursor.version;
+    if (event.version !== cursor.version) return event.version < cursor.version;
+    // A distinct event already passed the idempotency claim. If provider
+    // versions tie, prefer revocation rather than retaining ambiguous access.
+    return event.type !== "deleted";
   }
   const eventTime = normalizeOccurredAt(event.occurredAt).getTime();
   const cursorTime = cursor.occurredAt.getTime();
