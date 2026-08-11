@@ -66,7 +66,9 @@ const result = await reconcileExternalMembership({
 ```
 
 `created` events add a previously absent provider identity but never replace an
-existing role. Only `updated` events replace that role. The core copies the
+existing role. An `updated` event delivered before its corresponding creation
+materializes the provider's current membership state; only `updated` events
+replace a role on an existing record. The core copies the
 stored record when updating it, retaining `membershipId`, `createdAt`,
 `invitedAt`, `acceptedAt`, `grants`, and any caller-owned fields. A repository
 keeps event claims and `ExternalMembershipEventCursor` values transactionally.

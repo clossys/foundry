@@ -156,6 +156,20 @@ describe("mapClerkEvent", () => {
     expect(result).toMatchObject({ status: "mapped", event: { kind: "membership", type: "created" } });
   });
 
+  it.each(["0", "2026-08-10T13:20:00", "2026-02-30T00:00:00Z"])(
+    "rejects malformed timestamp %s instead of coercing it",
+    async (timestamp) => {
+      const result = await mapClerkEvent(
+        { type: "organization.created", timestamp, data: { id: "organization_synthetic" } },
+        mappingOptions,
+      );
+      expect(result).toMatchObject({
+        status: "invalid",
+        findings: [expect.objectContaining({ code: "event-timestamp-invalid" })],
+      });
+    },
+  );
+
   it("requires every reconciliation field for created membership events", async () => {
     const result = await mapClerkEvent(
       {

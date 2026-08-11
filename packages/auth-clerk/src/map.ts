@@ -12,6 +12,15 @@ import type {
 
 type RecordValue = Record<string, unknown>;
 
+const ISO_INSTANT_PATTERN = /^(\d{4})-(\d{2})-(\d{2})T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)$/;
+
+function isValidCalendarDate(year: number, month: number, day: number): boolean {
+  if (month < 1 || month > 12 || day < 1) return false;
+  const leapYear = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const daysInMonth = [31, leapYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  return day <= (daysInMonth[month - 1] ?? 0);
+}
+
 const lifecycleByEventName: Readonly<Record<string, { kind: "user" | "organization" | "membership"; type: ClerkLifecycleType }>> = {
   "user.created": { kind: "user", type: "created" },
   "user.updated": { kind: "user", type: "updated" },
@@ -55,7 +64,11 @@ function occurredAtFrom(value: unknown): string | undefined {
     // Current Clerk event timestamps are milliseconds. Supporting seconds is
     // safe for explicitly supplied values and keeps the cursor chronological.
     date = new Date(Math.abs(value) < 100_000_000_000 ? value * 1_000 : value);
-  } else if (typeof value === "string" && value.trim()) {
+  } else if (typeof value === "string") {
+    const match = ISO_INSTANT_PATTERN.exec(value);
+    if (match === null || !isValidCalendarDate(Number(match[1]), Number(match[2]), Number(match[3]))) {
+      return undefined;
+    }
     date = new Date(value);
   } else {
     return undefined;

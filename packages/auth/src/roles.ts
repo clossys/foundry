@@ -55,6 +55,7 @@ export function hasRoleAtLeast(role: unknown, requiredRole: unknown, hierarchy: 
 
 /** Returns a viewer's configured role, never an unknown provider-supplied value. */
 export function resolveViewerRole(viewer: Viewer | null | undefined, hierarchy: RoleHierarchy): string | undefined {
+  if (typeof viewer?.subjectId !== "string" || viewer.subjectId.trim().length === 0) return undefined;
   const role = viewer?.role;
   return isKnownRole(role, hierarchy) ? role : undefined;
 }

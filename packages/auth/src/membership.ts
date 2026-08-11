@@ -210,8 +210,10 @@ export async function reconcileExternalMembership<
     }
 
     if (existing === undefined) {
+      const membership = await command.repository.create(query, { identity, role: event.role, event });
+      assertRepositoryIdentity(membership, identity);
       await command.repository.setCursor(query, identity, nextCursor(event));
-      return { status: "unchanged" };
+      return { status: "created", membership };
     }
 
     const replacement = { ...existing, role: event.role } as TMembership;

@@ -158,6 +158,8 @@ describe("role hierarchy", () => {
     expect(resolveViewerRole({ subjectId: "person", role: "unknown" }, hierarchy)).toBeUndefined();
     expect(viewerHasAccess(undefined, "viewer", hierarchy)).toBe(false);
     expect(viewerHasAccess({ subjectId: "person" }, "viewer", hierarchy)).toBe(false);
+    expect(viewerHasAccess({ role: "owner" } as never, "viewer", hierarchy)).toBe(false);
+    expect(viewerHasAccess({ subjectId: "", role: "owner" }, "viewer", hierarchy)).toBe(false);
   });
 });
 
@@ -341,15 +343,16 @@ describe("reconcileExternalMembership", () => {
     }))).toBe(false);
   });
 
-  it("does not create a membership from an update event", async () => {
+  it("materializes current state when an update arrives before creation", async () => {
     const repository = new MemoryRepository();
     const result = await reconcileExternalMembership({
       queryAdapter: transactionalAdapter(),
       repository,
       event: event("updated", { role: "owner" }),
     });
-    expect(result.status).toBe("unchanged");
-    expect(repository.creates).toBe(0);
+    expect(result.status).toBe("created");
+    expect(result.membership?.role).toBe("owner");
+    expect(repository.creates).toBe(1);
   });
 });
 
