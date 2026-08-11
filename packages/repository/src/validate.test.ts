@@ -61,7 +61,7 @@ describe("validateRepositoryProfile", () => {
   });
 
   it("applies Git branch component rules without invoking Git", () => {
-    for (const defaultBranch of ["feature.lock/work", ".hidden/work", "feature//work", "feature@{work", "feature\\work"]) {
+    for (const defaultBranch of ["HEAD", "feature.lock/work", ".hidden/work", "feature//work", "feature@{work", "feature\\work"]) {
       const findings = validateRepositoryProfile({ ...validProfile, defaultBranch });
       expect(findings.map((entry) => entry.rule)).toContain("default-branch");
     }

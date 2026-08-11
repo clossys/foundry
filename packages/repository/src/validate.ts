@@ -22,7 +22,7 @@ function isRepositoryRelative(value: string, allowPatterns: boolean): boolean {
 }
 
 function isBranchName(value: string): boolean {
-  if (value.length === 0 || value === "@" || value.startsWith("-") || value.startsWith("/") || value.endsWith("/")) return false;
+  if (value.length === 0 || value === "@" || value === "HEAD" || value.startsWith("-") || value.startsWith("/") || value.endsWith("/")) return false;
   if (value.endsWith(".") || value.endsWith(".lock") || value.includes("..") || value.includes("@{") || value.includes("//")) return false;
   const forbidden = new Set(["~", "^", ":", "?", "*", "[", "\\"]);
   for (const character of value) {
