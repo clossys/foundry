@@ -48,6 +48,14 @@ describe("resolveRequestRedirect", () => {
       ["https://accounts.example.test"],
     )).toBe("https://accounts.example.test/complete");
   });
+
+  it("deduplicates the implicit request origin after normalization", () => {
+    expect(resolveRequestRedirect(
+      request,
+      ["/account"],
+      ["https://APP.EXAMPLE.TEST:443"],
+    )).toBe("https://app.example.test/account");
+  });
 });
 
 describe("createSignOutRoute", () => {

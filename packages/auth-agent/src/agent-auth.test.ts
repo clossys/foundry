@@ -80,6 +80,13 @@ describe("describeAgentLifecycleState", () => {
     expect(describeAgentLifecycleState(malformedEnd, NOW)).toBe("expired");
     expect(isAgentContextActive(makeAgent(), "not-a-date")).toBe(false);
   });
+
+  it("rejects permissively parseable and timezone-free lifecycle strings", () => {
+    expect(describeAgentLifecycleState(makeAgent({ validFrom: "0" }), NOW)).toBe("not_yet_active");
+    expect(describeAgentLifecycleState(makeAgent({ validTo: "0" }), NOW)).toBe("expired");
+    expect(isAgentContextActive(makeAgent(), "2030-06-15T12:00:00")).toBe(false);
+    expect(isAgentContextActive(makeAgent({ validFrom: "2030-02-30T00:00:00Z" }), NOW)).toBe(false);
+  });
 });
 
 describe("assertAgentCanCall", () => {

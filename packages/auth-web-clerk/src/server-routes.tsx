@@ -38,7 +38,14 @@ export function resolveRequestRedirect(
   allowedOrigins: readonly string[] = [],
 ): string | undefined {
   const requestOrigin = new URL(requestUrl).origin;
-  const policy = createAllowedOriginPolicy([requestOrigin, ...allowedOrigins]);
+  const additionalOrigins = allowedOrigins
+    .map((origin) => {
+      const normalized = createAllowedOriginPolicy([origin]).origins[0];
+      if (normalized === undefined) throw new TypeError("Allowed origin normalization failed.");
+      return normalized;
+    })
+    .filter((origin) => origin !== requestOrigin);
+  const policy = createAllowedOriginPolicy([requestOrigin, ...additionalOrigins]);
   for (const candidate of candidates) {
     const resolved = resolveSafeRedirect(candidate, policy, requestOrigin);
     if (resolved) return resolved;
