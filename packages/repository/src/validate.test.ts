@@ -1,3 +1,4 @@
+import { runInNewContext } from "node:vm";
 import { describe, expect, it } from "vitest";
 import { isRepositoryProfile, validateRepositoryProfile } from "./index.js";
 
@@ -56,6 +57,14 @@ describe("validateRepositoryProfile", () => {
     expect(validateRepositoryProfile(hiddenProfileField).map((entry) => [entry.rule, entry.path])).toEqual([
       ["unknown-field", "provider"],
     ]);
+
+    const crossRealmProfile = runInNewContext(`({
+      schemaVersion: 1,
+      defaultBranch: "main",
+      commands: { test: { run: "npm test" } },
+      protectedPaths: ["src/**"]
+    })`) as unknown;
+    expect(validateRepositoryProfile(crossRealmProfile)).toEqual([]);
   });
 
   it("rejects unsafe branches, command names, command directories, and protected paths", () => {
@@ -105,6 +114,14 @@ describe("validateRepositoryProfile", () => {
       ["command-cwd", "commands.test.cwd"],
       ["protected-path", "protectedPaths[0]"],
     ]);
+  });
+
+  it("accepts one trailing separator on relative directories and patterns", () => {
+    expect(validateRepositoryProfile({
+      ...validProfile,
+      commands: { test: { run: "npm test", cwd: "packages/example/" } },
+      protectedPaths: ["src/**/"],
+    })).toEqual([]);
   });
 
   it("validates sparse protected-path arrays by index", () => {

@@ -6,11 +6,15 @@ type RecordValue = Record<string, unknown>;
 const PROFILE_KEYS = new Set(["schemaVersion", "defaultBranch", "commands", "protectedPaths"]);
 const COMMAND_KEYS = new Set(["run", "cwd"]);
 const COMMAND_NAME = /^[a-z][a-z0-9]*(?:(?:-|:)[a-z0-9]+)*$/;
+const OBJECT_CONSTRUCTOR_SOURCE = Function.prototype.toString.call(Object);
 
 function isRecord(value: unknown): value is RecordValue {
   if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
   const prototype = Object.getPrototypeOf(value);
-  return prototype === Object.prototype || prototype === null;
+  if (prototype === null) return true;
+  if (Object.getPrototypeOf(prototype) !== null) return false;
+  const constructor = Object.getOwnPropertyDescriptor(prototype, "constructor")?.value;
+  return typeof constructor === "function" && Function.prototype.toString.call(constructor) === OBJECT_CONSTRUCTOR_SOURCE;
 }
 
 function finding(rule: RepositoryProfileFindingRule, path: string, message: string): RepositoryProfileFinding {
@@ -21,7 +25,8 @@ function isRepositoryRelative(value: string, allowPatterns: boolean): boolean {
   if (value.length === 0 || value.startsWith("/") || /^[a-z]:/i.test(value) || value.includes("\\") || value.includes("\0")) return false;
   if (!allowPatterns && /[*?[\]{}]/.test(value)) return false;
   if (allowPatterns && (/[?[\]{}]/.test(value) || /[@+?!*]\(/.test(value) || value.startsWith("!"))) return false;
-  return !value.split("/").some((segment) => segment === ".." || segment.length === 0);
+  const withoutTrailingSeparator = value.endsWith("/") ? value.slice(0, -1) : value;
+  return withoutTrailingSeparator.length > 0 && !withoutTrailingSeparator.split("/").some((segment) => segment === ".." || segment.length === 0);
 }
 
 function isBranchName(value: string): boolean {
