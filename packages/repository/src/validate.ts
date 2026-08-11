@@ -8,7 +8,9 @@ const COMMAND_KEYS = new Set(["run", "cwd"]);
 const COMMAND_NAME = /^[a-z][a-z0-9]*(?:(?:-|:)[a-z0-9]+)*$/;
 
 function isRecord(value: unknown): value is RecordValue {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
 }
 
 function finding(rule: RepositoryProfileFindingRule, path: string, message: string): RepositoryProfileFinding {
@@ -52,7 +54,7 @@ function validateRepositoryProfileValue(value: unknown): RepositoryProfileFindin
   }
 
   if (!isRecord(value.commands)) {
-    findings.push(finding("commands-shape", "commands", "commands must be an object keyed by command name."));
+    findings.push(finding("commands-shape", "commands", "commands must be a plain object keyed by command name."));
   } else {
     for (const [name, command] of Object.entries(value.commands)) {
       const commandPath = `commands.${name}`;

@@ -35,6 +35,17 @@ describe("validateRepositoryProfile", () => {
     ]);
   });
 
+  it("requires record containers while accepting null-prototype records", () => {
+    const findings = validateRepositoryProfile({
+      ...validProfile,
+      commands: new Map([["test", { run: "npm test" }]]),
+    });
+    expect(findings.map((entry) => [entry.rule, entry.path])).toEqual([["commands-shape", "commands"]]);
+
+    const commands = Object.assign(Object.create(null) as Record<string, { run: string }>, validProfile.commands);
+    expect(validateRepositoryProfile({ ...validProfile, commands })).toEqual([]);
+  });
+
   it("rejects unsafe branches, command names, command directories, and protected paths", () => {
     const findings = validateRepositoryProfile({
       schemaVersion: 1,
