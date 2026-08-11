@@ -59,9 +59,9 @@ be treated as approval-ready evidence.
 observed at a different head commit, a required check is absent or unsuccessful,
 an approval is required but absent, a current review requests changes, or a
 current thread remains unresolved. Each review carries an opaque reviewer ID
-and RFC 3339 timestamp with `Z` or an explicit offset, so only that reviewer's
-latest current-head decision is effective on every machine. Dismissed reviews
-are retained as evidence but do not request
+and RFC 3339 timestamp with `Z` or an explicit offset (up to millisecond
+precision), so only that reviewer's latest current-head decision is effective
+on every machine. Dismissed reviews are retained as evidence but do not request
 changes or count as approvals.
 Commented, pending, and unknown states do not replace a reviewer's latest
 approval or change request.
@@ -69,7 +69,8 @@ approval or change request.
 Findings have stable rule identifiers, input paths, and messages. Validation is
 pure, deterministic, and performs no I/O. It accepts only plain JSON-like
 records with own data properties and dense array entries; inherited values and
-accessors are rejected rather than treated as review evidence.
+accessors are rejected rather than treated as review evidence. Evidence and
+policy arrays are limited to 10,000 entries to keep malformed input bounded.
 
 ## Ownership boundary
 

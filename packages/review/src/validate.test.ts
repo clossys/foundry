@@ -115,6 +115,15 @@ describe("validateReviewEvidence", () => {
     ]);
   });
 
+  it("rejects review timestamps more precise than milliseconds", () => {
+    const evidence = validEvidence();
+    evidence.reviews[0]!.submittedAt = "2026-01-01T00:00:00.0001Z";
+    expect(validateReviewEvidence(evidence, policy).map((entry) => [entry.rule, entry.path])).toEqual([
+      ["review-submitted-at", "reviews[0].submittedAt"],
+      ["approval-missing", "reviews"],
+    ]);
+  });
+
   it("rejects inherited, accessor, and sparse evidence before it can satisfy policy", () => {
     expect(validateReviewEvidence(Object.create(validEvidence()), policy).map((entry) => entry.rule)).toEqual(["evidence-shape"]);
 
@@ -125,8 +134,12 @@ describe("validateReviewEvidence", () => {
     const sparseEvidence = validEvidence();
     sparseEvidence.checks = new Array(1);
     expect(validateReviewEvidence(sparseEvidence, policy).map((entry) => [entry.rule, entry.path])).toEqual([
-      ["check-shape", "checks[0]"],
+      ["checks-shape", "checks"],
       ["missing-required-check", "requiredChecks[0]"],
     ]);
+
+    const oversizedEvidence = validEvidence();
+    oversizedEvidence.checks = new Array(10_001);
+    expect(validateReviewEvidence(oversizedEvidence, policy).map((entry) => entry.rule)).toContain("checks-shape");
   });
 });

@@ -22,7 +22,8 @@ const CHECK_KEYS = new Set(["name", "conclusion", "headSha"]);
 const REVIEW_KEYS = new Set(["id", "reviewerId", "submittedAt", "state", "headSha"]);
 const THREAD_KEYS = new Set(["id", "isResolved", "headSha"]);
 const SHA = /^[0-9a-f]{40}$/;
-const RFC3339_TIMESTAMP = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
+const RFC3339_TIMESTAMP = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$/;
+const MAX_ARRAY_ENTRIES = 10_000;
 
 function isRecord(value: unknown): value is UnknownRecord {
   if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
@@ -39,6 +40,19 @@ function ownData(value: UnknownRecord, key: string): unknown {
 function arrayEntry(value: unknown[], index: number): unknown {
   const descriptor = Object.getOwnPropertyDescriptor(value, String(index));
   return descriptor && "value" in descriptor ? descriptor.value : undefined;
+}
+
+function isDenseDataArray(value: unknown): value is unknown[] {
+  if (!Array.isArray(value) || value.length > MAX_ARRAY_ENTRIES) return false;
+  let entries = 0;
+  for (const key of Object.getOwnPropertyNames(value)) {
+    if (key === "length") continue;
+    const index = Number(key);
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    if (!Number.isSafeInteger(index) || index < 0 || index >= value.length || String(index) !== key || !descriptor || !("value" in descriptor)) return false;
+    entries += 1;
+  }
+  return entries === value.length;
 }
 
 function finding(rule: ReviewFindingRule, path: string, message: string): ReviewFinding {
@@ -80,7 +94,7 @@ export function validateReviewPolicy(value: unknown): ReviewFinding[] {
     const findings: ReviewFinding[] = [];
     findUnknownFields(value, POLICY_KEYS, "policy-unknown-field", "$policy", findings);
     const requiredChecks = ownData(value, "requiredChecks");
-    if (!Array.isArray(requiredChecks)) {
+    if (!isDenseDataArray(requiredChecks)) {
       findings.push(finding("required-checks-shape", "requiredChecks", "requiredChecks must be an array."));
     } else {
       const names = new Set<string>();
@@ -107,7 +121,7 @@ export function validateReviewPolicy(value: unknown): ReviewFinding[] {
 
 function readArray(value: UnknownRecord, key: "checks" | "reviews" | "threads", findings: ReviewFinding[]): unknown[] | undefined {
   const candidate = ownData(value, key);
-  if (Array.isArray(candidate)) return candidate;
+  if (isDenseDataArray(candidate)) return candidate;
   const rule = key === "checks" ? "checks-shape" : key === "reviews" ? "reviews-shape" : "threads-shape";
   findings.push(finding(rule, key, `${key} must be an array.`));
   return undefined;
@@ -236,7 +250,7 @@ export function validateReviewEvidence(value: unknown, policy: unknown): ReviewF
     if (threads) validateThreads(threads, headSha, findings);
 
     const policyRequiredChecks = isRecord(policy) ? ownData(policy, "requiredChecks") : undefined;
-    if (Array.isArray(policyRequiredChecks)) {
+    if (isDenseDataArray(policyRequiredChecks)) {
       for (let index = 0; index < policyRequiredChecks.length; index += 1) {
         const name = arrayEntry(policyRequiredChecks, index);
         if (typeof name !== "string" || name.trim().length === 0) continue;
