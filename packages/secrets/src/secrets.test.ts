@@ -61,6 +61,33 @@ describe("createSecretsClient", () => {
     }
   });
 
+  it("replaces hostile thenable inspection failures in synchronous methods", () => {
+    const client = createSecretsClient({
+      get: () =>
+        new Proxy(
+          {},
+          {
+            has: () => {
+              throw new Error("sensitive thenable inspection detail");
+            },
+          },
+        ) as PromiseLike<string>,
+    });
+
+    for (const read of [() => client.getSync("EXAMPLE_KEY"), () => client.requireSync("EXAMPLE_KEY")]) {
+      const error = (() => {
+        try {
+          read();
+        } catch (caught) {
+          return caught;
+        }
+        throw new Error("expected a synchronous client failure");
+      })();
+      expect(error).toBeInstanceOf(SecretAccessError);
+      expect(String(error)).not.toContain("sensitive thenable inspection detail");
+    }
+  });
+
   it("uses safe missing and access errors without adapter details", async () => {
     const missing = createSecretsClient({ get: () => null });
     await expect(missing.require("EXAMPLE_KEY")).rejects.toMatchObject({

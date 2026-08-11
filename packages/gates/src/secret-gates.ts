@@ -226,12 +226,24 @@ export function detectRawSecretReads(
   input: { filePath: string; body: string },
   options: RawSecretReadOptions = {},
 ): SecretGateFinding[] {
-  if (options.exempt === true) return [];
+  if (!isObject(input) || typeof input.filePath !== "string" || typeof input.body !== "string") {
+    return [
+      finding(
+        "secrets/raw-env-input-shape",
+        "error",
+        "Raw environment read input requires string filePath and body fields.",
+      ),
+    ];
+  }
+  const suppliedOptions = isObject(options) ? options : {};
+  if (suppliedOptions.exempt === true) return [];
+  const optionStringList = (value: unknown): readonly string[] =>
+    Array.isArray(value) && value.every((item) => typeof item === "string") ? value : [];
   const normalizeEnvironmentName = (name: string): string => name.toUpperCase();
   const sensitive = new Set(
-    [...DEFAULT_SENSITIVE_NAMES, ...(options.sensitiveNames ?? [])].map(normalizeEnvironmentName),
+    [...DEFAULT_SENSITIVE_NAMES, ...optionStringList(suppliedOptions.sensitiveNames)].map(normalizeEnvironmentName),
   );
-  const allowed = new Set((options.allowedNames ?? []).map(normalizeEnvironmentName));
+  const allowed = new Set(optionStringList(suppliedOptions.allowedNames).map(normalizeEnvironmentName));
   const matches: Array<{ index: number; finding: SecretGateFinding }> = [];
   const extension = input.filePath.toLowerCase();
   if (extension.endsWith(".md") || extension.endsWith(".markdown")) {
@@ -517,6 +529,12 @@ export function detectRawSecretReads(
     // A comma expression evaluates its left side for effects, then returns its
     // right side. Only that final value can make the binding a process alias.
     if (ts.isBinaryExpression(current) && current.operatorToken.kind === ts.SyntaxKind.CommaToken) {
+      return isProcessValue(current.right, resolving);
+    }
+    // The result of an assignment expression is its right-hand value. This
+    // catches direct reads such as `(runtime = process).env.APP_TOKEN` without
+    // treating the assignment target itself as a process alias.
+    if (ts.isBinaryExpression(current) && current.operatorToken.kind === ts.SyntaxKind.EqualsToken) {
       return isProcessValue(current.right, resolving);
     }
     if (
@@ -1002,6 +1020,17 @@ export function checkSecretReadiness(
   const parsed = parseSecretCatalog(catalog);
   const findings = [...parsed.findings];
   if (parsed.document === null) return findings;
+  if (!Array.isArray(observations)) {
+    findings.push(
+      finding(
+        "secrets/readiness-observations-shape",
+        "error",
+        "Readiness observations must be an array.",
+        "observations",
+      ),
+    );
+    return findings;
+  }
 
   const observed = new Map<string, boolean>();
   for (const [index, observation] of observations.entries()) {
@@ -1209,6 +1238,17 @@ export function checkCredentialSurfaceDrift(
   const parsed = parseCredentialInventory(inventory);
   const findings = [...parsed.findings];
   if (parsed.inventory === null) return findings;
+  if (!Array.isArray(observations)) {
+    findings.push(
+      finding(
+        "secrets/credential-surface-observations-shape",
+        "error",
+        "Credential surface observations must be an array.",
+        "observations",
+      ),
+    );
+    return findings;
+  }
   const declared = new Map(
     parsed.inventory.credentials.map((credential) => [credential.id, new Set(credential.surfaces)]),
   );
@@ -1270,7 +1310,22 @@ export function checkLocalSecretFiles(
   files: readonly LocalFileObservation[],
   options: LocalSecretFileOptions = {},
 ): SecretGateFinding[] {
-  const allowed = new Set(options.allowedPaths ?? []);
+  if (!Array.isArray(files)) {
+    return [
+      finding(
+        "secrets/local-file-observations-shape",
+        "error",
+        "Local file observations must be an array.",
+        "files",
+      ),
+    ];
+  }
+  const suppliedOptions = isObject(options) ? options : {};
+  const allowed = new Set(
+    Array.isArray(suppliedOptions.allowedPaths) && suppliedOptions.allowedPaths.every((path) => typeof path === "string")
+      ? suppliedOptions.allowedPaths
+      : [],
+  );
   const findings: SecretGateFinding[] = [];
   for (const [index, file] of files.entries()) {
     if (
@@ -1310,6 +1365,27 @@ export function checkProviderResourceNames(
   rules: readonly ProviderResourceNamingRule[],
 ): SecretGateFinding[] {
   const findings: SecretGateFinding[] = [];
+  if (!Array.isArray(rules)) {
+    findings.push(
+      finding(
+        "secrets/provider-resource-rules-shape",
+        "error",
+        "Provider resource naming rules must be an array.",
+        "rules",
+      ),
+    );
+  }
+  if (!Array.isArray(resources)) {
+    findings.push(
+      finding(
+        "secrets/provider-resource-observations-shape",
+        "error",
+        "Provider resource observations must be an array.",
+        "resources",
+      ),
+    );
+  }
+  if (!Array.isArray(rules) || !Array.isArray(resources)) return findings;
   const ruleIdentities: Array<{ provider: string; kind: string | undefined }> = [];
   const compiled = rules.map((rule, index) => {
     if (

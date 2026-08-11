@@ -26,7 +26,8 @@ export function createOidcTokenProvider(options: OidcTokenProviderOptions): Infi
   const baseUrl = normalizeBaseUrl(options.baseUrl);
   const request = options.fetch ?? globalThis.fetch;
   const now = options.now ?? Date.now;
-  if (options.identityId.trim().length === 0) {
+  const identityId = options.identityId.trim();
+  if (identityId.length === 0) {
     throw new InfisicalError("INFISICAL_CONFIGURATION_INVALID", "Infisical OIDC identityId must not be empty.");
   }
 
@@ -44,8 +45,8 @@ export function createOidcTokenProvider(options: OidcTokenProviderOptions): Infi
     try {
       response = await request(`${baseUrl}/api/v1/auth/oidc-auth/login`, {
         method: "POST",
-        headers: { "content-type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({ identityId: options.identityId, jwt }),
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ identityId, jwt }),
       });
     } catch {
       throw new InfisicalError("INFISICAL_AUTH_FAILED", "Infisical OIDC authentication request failed.");
@@ -62,7 +63,10 @@ export function createOidcTokenProvider(options: OidcTokenProviderOptions): Infi
       "Infisical OIDC authentication response was invalid.",
     );
     const token = typeof payload.accessToken === "string" ? requireToken(payload.accessToken) : null;
-    const expiresIn = typeof payload.expiresIn === "number" && payload.expiresIn > 0 ? payload.expiresIn : null;
+    const expiresIn =
+      typeof payload.expiresIn === "number" && Number.isFinite(payload.expiresIn) && payload.expiresIn > 0
+        ? payload.expiresIn
+        : null;
     if (token === null || expiresIn === null) {
       throw new InfisicalError("INFISICAL_AUTH_FAILED", "Infisical OIDC authentication response was invalid.");
     }

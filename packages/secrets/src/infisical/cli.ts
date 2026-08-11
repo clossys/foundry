@@ -178,8 +178,9 @@ async function main(): Promise<number> {
     case "get": {
       const key = required(args.positionals[0], "get key");
       if (args.positionals.length !== 1) throw new CliInputError("get accepts exactly one key");
-      const value = await createInfisicalClient(clientConfig(args)).get(key);
-      const present = value !== null && value.length > 0;
+      // This presence-only command deliberately uses the value-free list
+      // operation instead of resolving the requested secret.
+      const present = (await createInfisicalClient(clientConfig(args)).listSecretNames()).includes(key);
       console.log(JSON.stringify({ key, present }));
       return present ? 0 : 1;
     }
