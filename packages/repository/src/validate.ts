@@ -22,7 +22,7 @@ const STANDARD_OBJECT_PROTOTYPE_KEYS = new Set<PropertyKey>([
 ]);
 function hasStandardObjectPrototype(prototype: object): boolean {
   const actualKeys = Reflect.ownKeys(prototype);
-  if (actualKeys.length !== STANDARD_OBJECT_PROTOTYPE_KEYS.size || actualKeys.some((key) => !STANDARD_OBJECT_PROTOTYPE_KEYS.has(key))) return false;
+  if (actualKeys.some((key) => !STANDARD_OBJECT_PROTOTYPE_KEYS.has(key))) return false;
 
   return actualKeys.every((key) => {
     const descriptor = Object.getOwnPropertyDescriptor(prototype, key);

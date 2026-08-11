@@ -70,6 +70,7 @@ describe("validateRepositoryProfile", () => {
 
     const frozenPrototypeProfile = runInNewContext(`
       Object.freeze(Array.prototype);
+      delete Object.prototype.__proto__;
       Object.freeze(Object.prototype);
       ({
         schemaVersion: 1,
