@@ -404,6 +404,38 @@ describe("reconcileExternalMembership", () => {
     }))).toBe(false);
   });
 
+  it("keeps cursor time monotonic when a higher-version update wins", async () => {
+    const adapter = transactionalAdapter();
+    const repository = new MemoryRepository();
+    const command = { queryAdapter: adapter, repository };
+    await reconcileExternalMembership({
+      ...command,
+      event: event("created", { occurredAt: "2026-03-01T00:00:00Z", version: 7 }),
+    });
+    expect((await reconcileExternalMembership({
+      ...command,
+      event: event("updated", {
+        eventId: "event-new-version",
+        occurredAt: "2026-02-01T00:00:00Z",
+        role: "owner",
+        version: 8,
+      }),
+    })).status).toBe("updated");
+
+    expect((await reconcileExternalMembership({
+      ...command,
+      event: event("updated", {
+        eventId: "event-stale-update",
+        occurredAt: "2026-02-15T00:00:00Z",
+        role: "member",
+      }),
+    })).status).toBe("stale");
+    expect(repository.memberships.get(key({
+      provider: "provider-a",
+      providerMembershipId: "membership-a",
+    }))?.role).toBe("owner");
+  });
+
   it("materializes current state when an update arrives before creation", async () => {
     const repository = new MemoryRepository();
     const result = await reconcileExternalMembership({

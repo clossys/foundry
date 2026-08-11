@@ -30,8 +30,8 @@ const agent: GenericAgentContext<"records.read" | "payments.create", "automation
   monetaryLimitAmount: 250,
   monetaryLimitCurrency: "USD",
   responsibleHumanId: "operator-example",
-  validFrom: "2030-01-01T00:00:00.000Z",
-  validTo: "2031-01-01T00:00:00.000Z",
+  validFrom: null,
+  validTo: null,
   revokedAt: null,
   revokedReason: null,
 };

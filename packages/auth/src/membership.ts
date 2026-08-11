@@ -237,23 +237,23 @@ export async function reconcileExternalMembership<
       if (existing === undefined) {
         const membership = await command.repository.create(query, { identity, role: event.role, event });
         assertRepositoryIdentity(membership, identity);
-        await command.repository.setCursor(query, identity, nextCursor(event));
+        await command.repository.setCursor(query, identity, nextCursor(event, cursor));
         return { status: "created", membership };
       }
-      await command.repository.setCursor(query, identity, nextCursor(event));
+      await command.repository.setCursor(query, identity, nextCursor(event, cursor));
       return { status: "unchanged", membership: existing };
     }
 
     if (existing === undefined) {
       const membership = await command.repository.create(query, { identity, role: event.role, event });
       assertRepositoryIdentity(membership, identity);
-      await command.repository.setCursor(query, identity, nextCursor(event));
+      await command.repository.setCursor(query, identity, nextCursor(event, cursor));
       return { status: "created", membership };
     }
 
     const replacement = { ...existing, role: event.role } as TMembership;
     await command.repository.replace(query, replacement);
-    await command.repository.setCursor(query, identity, nextCursor(event));
+    await command.repository.setCursor(query, identity, nextCursor(event, cursor));
     return { status: "updated", membership: replacement };
   });
 }
