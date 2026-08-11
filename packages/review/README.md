@@ -64,7 +64,8 @@ precision), so only that reviewer's latest current-head decision is effective
 on every machine. Dismissed reviews are retained as evidence but do not request
 changes or count as approvals.
 Commented, pending, and unknown states do not replace a reviewer's latest
-approval or change request.
+approval or change request. Conflicting decisive states with the same timestamp
+are reported as ambiguous rather than resolved by array order.
 
 Findings have stable rule identifiers, input paths, and messages. Validation is
 pure, deterministic, and performs no I/O. It accepts only plain JSON-like

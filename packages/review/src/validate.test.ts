@@ -94,6 +94,19 @@ describe("validateReviewEvidence", () => {
     expect(validateReviewEvidence(evidence, policy).map((entry) => entry.rule)).toEqual(["changes-requested"]);
   });
 
+  it("fails closed for tied conflicting decisive review decisions", () => {
+    const evidence = validEvidence();
+    evidence.reviews = [
+      { id: "review-1", reviewerId: "reviewer-1", submittedAt: "2026-01-01T00:00:00.000Z", state: "changes-requested", headSha },
+      { id: "review-2", reviewerId: "reviewer-1", submittedAt: "2026-01-01T00:00:00.000Z", state: "approved", headSha },
+    ];
+    expect(validateReviewEvidence(evidence, policy).map((entry) => entry.rule)).toEqual([
+      "approval-missing",
+      "changes-requested",
+      "review-decision-ambiguous",
+    ]);
+  });
+
   it("recognizes structurally valid negative evidence", () => {
     const evidence = validEvidence();
     evidence.reviews[0]!.state = "changes-requested";

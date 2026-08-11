@@ -158,8 +158,9 @@ function validateChecks(entries: unknown[], headSha: string, findings: ReviewFin
   return byName;
 }
 
-function validateReviews(entries: unknown[], headSha: string, findings: ReviewFinding[]): { hasApproval: boolean; hasChangesRequested: boolean } {
-  const latestByReviewer = new Map<string, { submittedAtMs: number; index: number; state: ReviewDecision }>();
+function validateReviews(entries: unknown[], headSha: string, findings: ReviewFinding[]): { hasApproval: boolean; hasChangesRequested: boolean; hasAmbiguousDecision: boolean } {
+  const latestByReviewer = new Map<string, { submittedAtMs: number; state: ReviewDecision }>();
+  let hasAmbiguousDecision = false;
   for (let index = 0; index < entries.length; index += 1) {
     const path = `reviews[${index}]`;
     const entry = arrayEntry(entries, index);
@@ -191,12 +192,14 @@ function validateReviews(entries: unknown[], headSha: string, findings: ReviewFi
     if (typeof reviewerId !== "string" || reviewerId.trim().length === 0 || submittedAtMs === undefined || typeof state !== "string" || !REVIEW_DECISIONS.has(state as ReviewDecision)) continue;
     if (state !== "approved" && state !== "changes-requested" && state !== "dismissed") continue;
     const previous = latestByReviewer.get(reviewerId);
-    if (!previous || submittedAtMs > previous.submittedAtMs || (submittedAtMs === previous.submittedAtMs && index > previous.index)) {
-      latestByReviewer.set(reviewerId, { submittedAtMs, index, state: state as ReviewDecision });
+    if (!previous || submittedAtMs > previous.submittedAtMs) {
+      latestByReviewer.set(reviewerId, { submittedAtMs, state: state as ReviewDecision });
+    } else if (submittedAtMs === previous.submittedAtMs && state !== previous.state) {
+      hasAmbiguousDecision = true;
     }
   }
   const decisions = [...latestByReviewer.values()].map((review) => review.state);
-  return { hasApproval: decisions.includes("approved"), hasChangesRequested: decisions.includes("changes-requested") };
+  return { hasApproval: decisions.includes("approved"), hasChangesRequested: decisions.includes("changes-requested"), hasAmbiguousDecision };
 }
 
 function validateThreads(entries: unknown[], headSha: string, findings: ReviewFinding[]): void {
@@ -246,7 +249,7 @@ export function validateReviewEvidence(value: unknown, policy: unknown): ReviewF
     if (!isSha(headSha)) return findings;
 
     const checkStates = checks ? validateChecks(checks, headSha, findings) : new Map<string, ReviewCheckConclusion[]>();
-    const reviewState = reviews ? validateReviews(reviews, headSha, findings) : { hasApproval: false, hasChangesRequested: false };
+    const reviewState = reviews ? validateReviews(reviews, headSha, findings) : { hasApproval: false, hasChangesRequested: false, hasAmbiguousDecision: false };
     if (threads) validateThreads(threads, headSha, findings);
 
     const policyRequiredChecks = isRecord(policy) ? ownData(policy, "requiredChecks") : undefined;
@@ -261,6 +264,7 @@ export function validateReviewEvidence(value: unknown, policy: unknown): ReviewF
       if (isRecord(policy) && ownData(policy, "requireApproval") === true && !reviewState.hasApproval) findings.push(finding("approval-missing", "reviews", "A current-head approval is required."));
     }
     if (reviewState.hasChangesRequested) findings.push(finding("changes-requested", "reviews", "A current-head review requested changes."));
+    if (reviewState.hasAmbiguousDecision) findings.push(finding("review-decision-ambiguous", "reviews", "Conflicting decisive reviews share a timestamp and cannot be ordered safely."));
     return findings;
   } catch {
     return [...findings, finding("evidence-shape", "$", "Review evidence must be safely readable.")];

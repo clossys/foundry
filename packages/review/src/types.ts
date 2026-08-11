@@ -109,6 +109,7 @@ export type ReviewFindingRule =
   | "required-check-failed"
   | "approval-missing"
   | "changes-requested"
+  | "review-decision-ambiguous"
   | "unresolved-thread";
 
 /** A stable, deterministic reason review evidence does not satisfy its policy. */
