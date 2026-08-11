@@ -208,6 +208,7 @@ observations are collected.
 | `checkLocalSecretFiles(files, options?)` | function | Report secret-bearing environment paths without reading contents. |
 | `checkProviderResourceNames(resources, rules)` | function | Apply consumer-injected full-match naming rules by provider and kind. |
 | `FoundationReport` | type | Catalog, findings, and complete-coverage flag from `runFoundationCheck`. |
+| `RunFoundationCheckOptions` | type | Scope and catalog-discovery options accepted by `runFoundationCheck`. |
 | `BuildOrderResult` | type | Successful order or blocking catalog findings. |
 | `PolicyCheck` / `PolicyCheckResult` | types | Attributed policy verification input and output. |
 | `SecretGateFinding` | type | Secret gate rule, severity, message, and optional path. |

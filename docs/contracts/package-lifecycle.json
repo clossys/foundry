@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "packages": [
+    { "name": "@vespeneventures/auth", "status": "active" },
+    { "name": "@vespeneventures/catalog", "status": "active" },
+    { "name": "@vespeneventures/comms", "status": "active" },
+    { "name": "@vespeneventures/copy", "status": "active" },
+    { "name": "@vespeneventures/deployment", "status": "active" },
+    { "name": "@vespeneventures/domain", "status": "active" },
+    {
+      "name": "@vespeneventures/domain-model",
+      "status": "deprecated",
+      "replacement": {
+        "name": "@vespeneventures/domain",
+        "range": "^0.2.0"
+      },
+      "deprecatedOn": "2026-08-11",
+      "decision": "docs/DECISIONS.md",
+      "migration": "packages/domain/README.md#migration"
+    },
+    { "name": "@vespeneventures/gates", "status": "active" },
+    { "name": "@vespeneventures/governance", "status": "active" },
+    { "name": "@vespeneventures/ledger", "status": "active" },
+    { "name": "@vespeneventures/policy", "status": "active" },
+    { "name": "@vespeneventures/release", "status": "active" },
+    { "name": "@vespeneventures/repository", "status": "active" },
+    { "name": "@vespeneventures/review", "status": "active" },
+    { "name": "@vespeneventures/secrets", "status": "active" },
+    { "name": "@vespeneventures/strategy", "status": "active" },
+    { "name": "@vespeneventures/surface", "status": "active" },
+    { "name": "@vespeneventures/ui", "status": "active" }
+  ]
+}

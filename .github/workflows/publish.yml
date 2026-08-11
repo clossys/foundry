@@ -250,6 +250,8 @@ jobs:
       # silently stops working the moment one gains its first. See the
       # matching comment in ci.yml's build job.
       - run: npm run build
+      - name: Package lifecycle governance
+        run: npm run check:package-governance
       - run: npm run typecheck
       - run: npm test
 
