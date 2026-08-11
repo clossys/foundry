@@ -4,7 +4,7 @@ import type { RepositoryProfile, RepositoryProfileFinding, RepositoryProfileFind
 type RecordValue = Record<string, unknown>;
 
 const PROFILE_KEYS = new Set(["schemaVersion", "defaultBranch", "commands", "protectedPaths"]);
-const COMMAND_KEYS = new Set(["run", "cwd"]);
+const COMMAND_KEYS = new Set(["name", "run", "cwd"]);
 const COMMAND_NAME = /^[a-z][a-z0-9]*(?:(?:-|:)[a-z0-9]+)*$/;
 const STANDARD_OBJECT_PROTOTYPE_KEYS = new Set<PropertyKey>([
   "constructor",
@@ -27,9 +27,9 @@ function hasStandardObjectPrototype(prototype: object): boolean {
 
   return actualKeys.every((key) => {
     const descriptor = Object.getOwnPropertyDescriptor(prototype, key);
-    if (!descriptor || descriptor.configurable !== true || descriptor.enumerable !== false) return false;
+    if (!descriptor || descriptor.enumerable !== false) return false;
     if (key === "__proto__") return !("value" in descriptor) && typeof descriptor.get === "function" && typeof descriptor.set === "function";
-    return "value" in descriptor && descriptor.writable === true && typeof descriptor.value === "function";
+    return "value" in descriptor && typeof descriptor.value === "function";
   });
 }
 
@@ -91,21 +91,34 @@ function validateRepositoryProfileValue(value: unknown): RepositoryProfileFindin
     findings.push(finding("default-branch", "defaultBranch", "defaultBranch must be a valid Git branch name."));
   }
 
-  if (!hasOwn(value, "commands") || !isRecord(value.commands)) {
-    findings.push(finding("commands-shape", "commands", "commands must be a plain object keyed by command name."));
+  if (!hasOwn(value, "commands") || !Array.isArray(value.commands)) {
+    findings.push(finding("commands-shape", "commands", "commands must be an array."));
   } else {
-    for (const name of Object.getOwnPropertyNames(value.commands)) {
-      const command = value.commands[name];
-      const commandPath = `commands.${name}`;
-      if (!COMMAND_NAME.test(name)) {
-        findings.push(finding("command-name", commandPath, `Command name "${name}" must be lowercase words separated by hyphens or colons.`));
+    const seenNames = new Set<string>();
+    let nextExpectedIndex = 0;
+    let reportedHole = false;
+    for (const indexName of arrayIndexNames(value.commands)) {
+      const index = Number(indexName);
+      if (!reportedHole && index > nextExpectedIndex) {
+        findings.push(finding("command-shape", `commands[${nextExpectedIndex}]`, "commands must not contain empty slots."));
+        reportedHole = true;
       }
+      nextExpectedIndex = index + 1;
+      const command = value.commands[index];
+      const commandPath = `commands[${index}]`;
       if (!isRecord(command)) {
         findings.push(finding("command-shape", commandPath, "A command must be an object."));
         continue;
       }
       for (const key of Object.getOwnPropertyNames(command)) {
         if (!COMMAND_KEYS.has(key)) findings.push(finding("unknown-field", `${commandPath}.${key}`, `Unknown command field "${key}".`));
+      }
+      if (!hasOwn(command, "name") || typeof command.name !== "string" || !COMMAND_NAME.test(command.name)) {
+        findings.push(finding("command-name", `${commandPath}.name`, "name must be lowercase words separated by hyphens or colons."));
+      } else if (seenNames.has(command.name)) {
+        findings.push(finding("duplicate-command-name", `${commandPath}.name`, `Duplicate command name "${command.name}".`));
+      } else {
+        seenNames.add(command.name);
       }
       if (!hasOwn(command, "run") || typeof command.run !== "string" || command.run.trim().length === 0) {
         findings.push(finding("command-run", `${commandPath}.run`, "run must be a non-empty string."));
@@ -114,6 +127,9 @@ function validateRepositoryProfileValue(value: unknown): RepositoryProfileFindin
       if ((!ownsCwd && "cwd" in command) || (ownsCwd && (typeof command.cwd !== "string" || !isRepositoryRelative(command.cwd, false)))) {
         findings.push(finding("command-cwd", `${commandPath}.cwd`, "cwd, when present, must be an own repository-relative directory without glob syntax or parent traversal."));
       }
+    }
+    if (!reportedHole && nextExpectedIndex < value.commands.length) {
+      findings.push(finding("command-shape", `commands[${nextExpectedIndex}]`, "commands must not contain empty slots."));
     }
   }
 

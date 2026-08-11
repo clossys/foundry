@@ -3,6 +3,8 @@ export const REPOSITORY_PROFILE_VERSION = 1 as const;
 
 /** A consumer-owned command that tooling may invoke from the repository. */
 export interface RepositoryCommand {
+  /** Stable lowercase name, using hyphens or colons as separators. */
+  name: string;
   /** The command line exactly as the consumer declares it. */
   run: string;
   /** Optional repository-relative working directory. */
@@ -16,7 +18,8 @@ export interface RepositoryCommand {
 export interface RepositoryProfile {
   schemaVersion: typeof REPOSITORY_PROFILE_VERSION;
   defaultBranch: string;
-  commands: Record<string, RepositoryCommand>;
+  /** Ordered commands with explicit names; never an inherited-property dictionary. */
+  commands: RepositoryCommand[];
   /** Repository-relative paths using literal segments plus `*` or `**` wildcards. */
   protectedPaths: string[];
 }
@@ -28,6 +31,7 @@ export type RepositoryProfileFindingRule =
   | "default-branch"
   | "commands-shape"
   | "command-name"
+  | "duplicate-command-name"
   | "command-shape"
   | "command-run"
   | "command-cwd"
