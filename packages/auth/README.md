@@ -112,7 +112,7 @@ an explicit, allowlisted `baseOrigin`.
 | `Session` | type | Framework-neutral session data. |
 | `SessionResolver` | type | Resolves a session from application-owned context. |
 | `AuthorizationPredicate` | type | Application-defined authorization decision seam. |
-| `isAuthorized(predicate, session, context)` | function | Denies missing, malformed, expired, or failed sessions before returning an authorization decision. |
+| `isAuthorized(predicate, session, context)` | function | Denies missing, malformed, expired, or failed sessions and authorizes only a literal `true` predicate result. |
 | `ExternalMembershipIdentity` | type | Immutable `provider` plus `providerMembershipId` identity. |
 | `ExternalMembership` | type | Stored provider membership with caller-extensible local fields. |
 | `ExternalMembershipEvent` | type | Normalized `created`, `updated`, or `deleted` provider event. |

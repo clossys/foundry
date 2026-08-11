@@ -189,6 +189,7 @@ describe("isAuthorized", () => {
     }, { subjectId: "person" }, {})).resolves.toBe(false);
     await expect(isAuthorized(() => true, { subjectId: "person" }, {})).resolves.toBe(true);
     await expect(isAuthorized(() => false, { subjectId: "person" }, {})).resolves.toBe(false);
+    await expect(isAuthorized((() => "allowed") as never, { subjectId: "person" }, {})).resolves.toBe(false);
   });
 });
 

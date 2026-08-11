@@ -38,7 +38,7 @@ export async function isAuthorized<TContext>(
   }
 
   try {
-    return await predicate(session, context);
+    return await predicate(session, context) === true;
   } catch {
     return false;
   }
