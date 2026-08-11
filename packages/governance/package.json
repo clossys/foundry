@@ -1,6 +1,6 @@
 {
   "name": "@vespeneventures/governance",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -47,7 +47,7 @@
   },
   "dependencies": {
     "@vespeneventures/gates": "^0.1.1",
-    "@vespeneventures/release": "^0.1.0"
+    "@vespeneventures/release": "^0.1.1"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
