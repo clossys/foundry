@@ -41,11 +41,17 @@ describe("integration: real packages/ directory", () => {
     expect(matching.length).toBeGreaterThan(0);
   });
 
-  it("finds this repository's real packages: catalog, policy, gates, release", () => {
+  it("finds this repository's foundational and repository-contract packages", () => {
     const catalog = buildCatalog(repoRoot);
     const names = catalog.entries.map((e) => e.name);
 
-    for (const expected of [`${SCOPE}/catalog`, `${SCOPE}/policy`, `${SCOPE}/gates`, `${SCOPE}/release`]) {
+    for (const expected of [
+      `${SCOPE}/catalog`,
+      `${SCOPE}/policy`,
+      `${SCOPE}/gates`,
+      `${SCOPE}/release`,
+      `${SCOPE}/repository`,
+    ]) {
       expect(names).toContain(expected);
     }
   });
