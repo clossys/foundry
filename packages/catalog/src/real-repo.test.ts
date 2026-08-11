@@ -41,7 +41,7 @@ describe("integration: real packages/ directory", () => {
     expect(matching.length).toBeGreaterThan(0);
   });
 
-  it("finds this repository's foundational and repository-contract packages", () => {
+  it("finds this repository's foundational and paired repository-review packages", () => {
     const catalog = buildCatalog(repoRoot);
     const names = catalog.entries.map((e) => e.name);
 
@@ -51,6 +51,7 @@ describe("integration: real packages/ directory", () => {
       `${SCOPE}/gates`,
       `${SCOPE}/release`,
       `${SCOPE}/repository`,
+      `${SCOPE}/review`,
     ]) {
       expect(names).toContain(expected);
     }
