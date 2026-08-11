@@ -114,11 +114,11 @@ const FORBIDDEN_DIRS_LC = new Set(FORBIDDEN_DIRS.map((d) => d.toLowerCase()));
 const ARTIFACT_ALLOWED_DIRS = new Set(["dist", "build"]);
 
 // Paths, relative to the scan root, that may hold an otherwise-forbidden name.
-// The workspace validator requires an AGENTS.md at every canonical repository
-// root, so the repository root file is purpose-written for this public repo and
-// is content-scanned like everything else. The exemption is the exact path
-// only — a package-level AGENTS.md is still refused.
-const FORBIDDEN_EXEMPT_PATHS = new Set(["AGENTS.md"]);
+// The workspace validator requires paired agent loaders at every canonical
+// repository root, so these root files are purpose-written for this public repo
+// and content-scanned like everything else. The exemptions are exact paths;
+// nested agent instructions are still refused.
+const FORBIDDEN_EXEMPT_PATHS = new Set(["AGENTS.md", "CLAUDE.md"]);
 
 // Extensions never scanned for identity prose (secrets scanning is likewise
 // meaningless on binary pixel/audio/video/font data). Kept small and each

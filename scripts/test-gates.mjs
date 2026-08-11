@@ -156,8 +156,9 @@ try {
   {
     const dir = join(work, "forbidden");
     mkdirSync(join(dir, ".claude"), { recursive: true });
+    mkdirSync(join(dir, "packages", "example"), { recursive: true });
     writeFileSync(join(dir, ".claude", "settings.json"), "{}\n");
-    writeFileSync(join(dir, "CLAUDE.md"), "# internal\n");
+    writeFileSync(join(dir, "packages", "example", "CLAUDE.md"), "# internal\n");
     writeFileSync(join(dir, ".env"), "TOKEN=x\n");
     writeFileSync(join(dir, ".npmrc"), "//r/:_authToken=x\n");
     writeFileSync(join(dir, "CONSUMPTION.json"), "{}\n");
@@ -166,7 +167,7 @@ try {
     const r = run("node", [SAFETY, dir, ...DL, "--require-denylist", "--json"]);
     let report;
     try { report = JSON.parse(r.out); } catch { report = { failures: [] }; }
-    for (const f of [".claude/settings.json", "CLAUDE.md", ".env", ".npmrc", "CONSUMPTION.json"]) {
+    for (const f of [".claude/settings.json", "packages/example/CLAUDE.md", ".env", ".npmrc", "CONSUMPTION.json"]) {
       const hit = (report.failures ?? []).some((x) => x.kind === "forbidden-file" && x.rel === f);
       check(`refuses ${f}`, hit, `no forbidden-file finding for ${f}`);
     }

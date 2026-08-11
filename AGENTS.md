@@ -49,6 +49,14 @@ npm run preflight -- packages/<name>
 which runs every gate — including the tarball-content scan and the name-collision
 check — and fails rather than degrades.
 
+## Cloud sessions
+
+Codex Cloud and Claude remote sessions use the same repository contract: run
+`npm run agent:cloud:bootstrap`, then `npm run agent:cloud:check`, before
+scoped repository checks. Cloud sessions do not receive the public-safety
+denylist or publication credentials, so they may not produce a FULL clearance
+or publish packages.
+
 ## Working rules
 
 - **Never commit a `dist/`, `build/` or `.next/` directory.** Build output
@@ -61,9 +69,10 @@ check — and fails rather than degrades.
   something private — to a reader here. Start fresh, at the package's real
   version (see [docs/PUBLISHING.md](docs/PUBLISHING.md) — currently `0.1.0`
   for every package here).
-- **Never copy a `CLAUDE.md` or `AGENTS.md` from another repository.** This file
-  is the only agent-instruction file allowed here, and it is content-scanned
-  like everything else.
+- **Never copy agent instructions from another repository.** Root `AGENTS.md`
+  is the canonical public policy and root `CLAUDE.md` may only import it as a
+  thin compatibility loader. Both are content-scanned. Nested agent instruction
+  files remain forbidden.
 - **No `workspace:*` or `catalog:` dependency protocols.** They only resolve
   inside an npm/pnpm workspace and cannot resolve for a normal external
   installer. Pin real semver ranges.

@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "entries": {
+    ".github": { "kind": "automation", "purpose": "GitHub workflows and repository configuration" },
+    ".gitignore": { "kind": "config", "purpose": "tracked versus generated-file boundary" },
+    ".npmrc.example": { "kind": "config", "purpose": "credential-free registry setup example" },
+    ".root-entry-policy.json": { "kind": "policy", "purpose": "tracked repository-root allowlist" },
+    "AGENTS.md": { "kind": "agent", "purpose": "canonical public agent and contributor policy" },
+    "CLAUDE.md": { "kind": "agent-adapter", "purpose": "thin loader for the canonical agent policy" },
+    "CODE_OF_CONDUCT.md": { "kind": "community", "purpose": "community conduct policy" },
+    "CONTRIBUTING.md": { "kind": "community", "purpose": "contribution workflow" },
+    "LICENSE": { "kind": "legal", "purpose": "repository license" },
+    "README.md": { "kind": "documentation", "purpose": "public repository overview" },
+    "SECURITY.md": { "kind": "security", "purpose": "security and public-safety policy" },
+    "docs": { "kind": "documentation", "purpose": "publishing and architecture records" },
+    "package-lock.json": { "kind": "config", "purpose": "reproducible npm dependency lock" },
+    "package-scope.json": { "kind": "config", "purpose": "canonical publication scope" },
+    "package.json": { "kind": "config", "purpose": "workspace commands and dependencies" },
+    "packages": { "kind": "source", "purpose": "public package source workspaces" },
+    "scripts": { "kind": "tooling", "purpose": "repository validation and publication gates" }
+  }
+}

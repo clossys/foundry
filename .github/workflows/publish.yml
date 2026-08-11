@@ -84,10 +84,18 @@ jobs:
           # Lists this org's real packages via `gh api` — the ambient
           # GITHUB_TOKEN is scoped to this repo, not the whole org, so it
           # can't answer "does another repo already own this name" even with
-          # `packages: read` permission. NPM_TOKEN is a GitHub PAT either way
-          # (that's what GitHub Packages' npm auth actually is), so it also
-          # works as GH_TOKEN for this REST call — no second secret needed.
-          GH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # `packages: read` permission. This is the one step that genuinely
+          # needs a stored credential, and it needs only READ: it calls
+          # the org-level packages REST endpoint, plus its user-account fallback.
+          #
+          # GH_PACKAGES_TOKEN is a classic read:packages token —
+          # verified HTTP 200 on that exact endpoint, and it holds no `repo`
+          # scope, so a leak cannot reach any repository. It deliberately
+          # replaces NPM_TOKEN here: that token carries `repo` (GitHub force-
+          # selects it alongside write:packages on classic PATs, and
+          # fine-grained PATs expose no Packages permission at all), which on
+          # this account reaches every repository the owner can see.
+          GH_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
           PKG: ${{ inputs.package }}
         run: node scripts/check-name-collision.mjs "packages/$PKG"
 
@@ -192,7 +200,17 @@ jobs:
         if: ${{ !inputs.dry_run }}
         working-directory: packages/${{ inputs.package }}
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # The job's own GITHUB_TOKEN, not a stored PAT. The `packages: write`
+          # permission declared at the top of this file is what lets it push to
+          # this owner's registry, and it expires when the job ends, so there is
+          # no long-lived publish credential to leak or rotate.
+          #
+          # A stored PAT is strictly worse here and cannot be made better:
+          # classic PATs force `repo` alongside write:packages (GitHub disables
+          # the checkbox), and fine-grained PATs offer no Packages permission at
+          # all — so any PAT able to publish also carries write access to every
+          # repository this account can see.
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TARBALL: ${{ steps.pack.outputs.tarball }}
           EXPECTED_SHA256: ${{ steps.pack.outputs.sha256 }}
         run: |
