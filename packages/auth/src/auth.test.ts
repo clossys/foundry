@@ -373,6 +373,37 @@ describe("reconcileExternalMembership", () => {
     }))).toBe(false);
   });
 
+  it("keeps cursor time monotonic when an equal-version deletion wins", async () => {
+    const adapter = transactionalAdapter();
+    const repository = new MemoryRepository();
+    const command = { queryAdapter: adapter, repository };
+    await reconcileExternalMembership({
+      ...command,
+      event: event("created", { occurredAt: "2026-03-01T00:00:00Z", version: 7 }),
+    });
+    expect((await reconcileExternalMembership({
+      ...command,
+      event: event("deleted", {
+        eventId: "event-delete",
+        occurredAt: "2026-02-01T00:00:00Z",
+        version: 7,
+      }),
+    })).status).toBe("deleted");
+
+    expect((await reconcileExternalMembership({
+      ...command,
+      event: event("updated", {
+        eventId: "event-stale-update",
+        occurredAt: "2026-02-15T00:00:00Z",
+        role: "owner",
+      }),
+    })).status).toBe("stale");
+    expect(repository.memberships.has(key({
+      provider: "provider-a",
+      providerMembershipId: "membership-a",
+    }))).toBe(false);
+  });
+
   it("materializes current state when an update arrives before creation", async () => {
     const repository = new MemoryRepository();
     const result = await reconcileExternalMembership({

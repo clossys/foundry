@@ -74,6 +74,14 @@ static or per-request `clerkOptions`. With such a key Clerk middleware remains
 mounted so downstream `auth()` calls have context, while the explicit bypass
 continues to skip route protection outside production.
 
+When Clerk's public key is supplied to proxy options rather than the public
+environment variable, pass the same `publishableKey` to generated sign-in and
+sign-out route options. This coordinates the server factories with the mounted
+middleware so they use Clerk session APIs instead of taking the keyless path.
+Without either key source, the generated sign-in page omits the Clerk form and
+the sign-out route skips Clerk session access, keeping static-render lanes free
+of middleware and provider assumptions.
+
 Create a sign-in page with a fixed local destination:
 
 ```ts

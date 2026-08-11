@@ -57,6 +57,8 @@ export function resolveRequestRedirect(
 export interface ClerkSignInPageOptions {
   chrome?: (children: ReactNode) => ReactNode;
   appearance?: ClerkSignInProps["appearance"];
+  /** Public key supplied outside the environment, such as proxy options. */
+  publishableKey?: string;
   redirectUrl?: string;
   signedInRedirect?: string;
   redirectFromSearchParam?: string;
@@ -79,6 +81,7 @@ export function createClerkSignInPage(options: ClerkSignInPageOptions = {}) {
     : undefined;
 
   return async function ClerkSignInPage({ searchParams }: PageProps = {}) {
+    const keylessBypass = devAuthBypassIsKeyless() && !options.publishableKey?.trim();
     const parameters = options.redirectFromSearchParam
       ? await searchParams
       : undefined;
@@ -93,7 +96,7 @@ export function createClerkSignInPage(options: ClerkSignInPageOptions = {}) {
         )
       : undefined;
 
-    const session = devAuthBypassIsKeyless()
+    const session = keylessBypass
       ? { userId: null }
       : await auth();
     if (session.userId) {
@@ -105,7 +108,7 @@ export function createClerkSignInPage(options: ClerkSignInPageOptions = {}) {
       );
     }
 
-    const form = (
+    const form = keylessBypass ? null : (
       <ClerkSignInBlock
         appearance={options.appearance}
         redirect_url={dynamicRedirect ?? configuredRedirect}
@@ -128,6 +131,8 @@ export interface SignOutRouteOptions {
   extraCookiesToClear?: readonly string[];
   redirectTo?: string;
   allowedRedirectOrigins?: readonly string[];
+  /** Public key supplied outside the environment, such as proxy options. */
+  publishableKey?: string;
   getRedirectTarget?: (request: Request) => string | null;
 }
 
@@ -159,7 +164,7 @@ export function createSignOutRoute(options: SignOutRouteOptions = {}) {
     }
     if (!isSameOriginPost(request)) return new Response(null, { status: 403 });
 
-    if (!devAuthBypassIsKeyless()) {
+    if (!devAuthBypassIsKeyless() || Boolean(options.publishableKey?.trim())) {
       const session = await auth();
       if (session.sessionId) {
         const client = await clerkClient();

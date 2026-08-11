@@ -110,15 +110,41 @@ describe("createSignOutRoute", () => {
     expect(response.status).toBe(303);
     expect(provider.auth).not.toHaveBeenCalled();
   });
+
+  it("revokes Clerk sessions when a public key is supplied outside the environment", async () => {
+    vi.stubEnv("NEXT_PUBLIC_DEV_NO_AUTH", "1");
+    vi.stubEnv("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "");
+    provider.auth.mockResolvedValue({ sessionId: "session_synthetic" });
+    const configuredRoute = createSignOutRoute({ publishableKey: "configured" });
+    const response = await configuredRoute(new Request("https://app.example.test/sign-out", {
+      method: "POST",
+      headers: { Origin: "https://app.example.test" },
+    }));
+
+    expect(response.status).toBe(303);
+    expect(provider.revokeSession).toHaveBeenCalledWith("session_synthetic");
+  });
 });
 
 describe("createClerkSignInPage", () => {
   it("renders without Clerk server auth in a keyless development bypass", async () => {
+    vi.clearAllMocks();
     vi.stubEnv("NEXT_PUBLIC_DEV_NO_AUTH", "1");
     vi.stubEnv("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "");
     const page = createClerkSignInPage();
 
-    await expect(page()).resolves.toBeTruthy();
+    await expect(page()).resolves.toBeNull();
     expect(provider.auth).not.toHaveBeenCalled();
+  });
+
+  it("uses Clerk server auth when a public key is supplied outside the environment", async () => {
+    vi.clearAllMocks();
+    vi.stubEnv("NEXT_PUBLIC_DEV_NO_AUTH", "1");
+    vi.stubEnv("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "");
+    provider.auth.mockResolvedValue({ userId: null });
+    const page = createClerkSignInPage({ publishableKey: "configured" });
+
+    await expect(page()).resolves.toBeTruthy();
+    expect(provider.auth).toHaveBeenCalledOnce();
   });
 });

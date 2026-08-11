@@ -173,9 +173,17 @@ function eventIsStale(event: ExternalMembershipEvent, cursor: ExternalMembership
   return event.type !== "deleted";
 }
 
-function nextCursor(event: ExternalMembershipEvent): ExternalMembershipEventCursor {
+function nextCursor(
+  event: ExternalMembershipEvent,
+  current?: ExternalMembershipEventCursor,
+): ExternalMembershipEventCursor {
+  const eventTime = normalizeOccurredAt(event.occurredAt);
+  // Cursor time never moves backward, including when provider versions are
+  // the primary ordering signal. This keeps later unversioned events from
+  // reopening state that a versioned event already superseded.
+  const preserveCurrentTime = current !== undefined && current.occurredAt > eventTime;
   return {
-    occurredAt: normalizeOccurredAt(event.occurredAt),
+    occurredAt: preserveCurrentTime ? current.occurredAt : eventTime,
     ...(event.version === undefined ? {} : { version: event.version }),
   };
 }
@@ -221,7 +229,7 @@ export async function reconcileExternalMembership<
 
     if (event.type === "deleted") {
       await command.repository.delete(query, identity);
-      await command.repository.setCursor(query, identity, nextCursor(event));
+      await command.repository.setCursor(query, identity, nextCursor(event, cursor));
       return { status: "deleted" };
     }
 
