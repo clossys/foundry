@@ -85,7 +85,34 @@ jobs:
               packages.push({ package: path.split("/")[1] });
             }
           }
-          process.stdout.write(`matrix=${JSON.stringify(packages)}\n`);
+
+          // A serial matrix does not promise that GitHub will execute entries
+          // in discovery order. Sort the changed packages topologically by
+          // their first-party runtime dependencies so a newly published
+          // package is never installed before its changed dependency exists
+          // in the registry.
+          const manifests = new Map(packages.map(({ package: directory }) => {
+            const manifest = JSON.parse(readFileSync(`packages/${directory}/package.json`, "utf8"));
+            return [manifest.name, { directory, manifest }];
+          }));
+          const pending = new Set(manifests.keys());
+          const ordered = [];
+          while (pending.size > 0) {
+            const ready = [...pending]
+              .filter((name) => {
+                const dependencies = manifests.get(name).manifest.dependencies ?? {};
+                return !Object.keys(dependencies).some((dependency) => pending.has(dependency));
+              })
+              .sort();
+            if (ready.length === 0) {
+              throw new Error(`cannot publish a cyclic first-party dependency set: ${[...pending].sort().join(", ")}`);
+            }
+            for (const name of ready) {
+              pending.delete(name);
+              ordered.push({ package: manifests.get(name).directory });
+            }
+          }
+          process.stdout.write(`matrix=${JSON.stringify(ordered)}\n`);
           NODE
 
   visibility:
