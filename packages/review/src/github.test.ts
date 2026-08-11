@@ -90,6 +90,37 @@ describe("normalizeGitHubReviewEvidence", () => {
     expect(validateReviewEvidence(evidence, { requiredChecks: ["unit"], requireApproval: true })).toEqual([]);
   });
 
+  it("marks sparse connection nodes incomplete instead of compacting them", () => {
+    const sparseReviews = new Array(1) as Array<{
+      id: string;
+      state: string | null;
+    }>;
+    const evidence = normalizeGitHubReviewEvidence({
+      pullRequest: { id: "PR_node", headRefOid: headSha },
+      checks: page([{ name: "unit", conclusion: "SUCCESS", headSha }]),
+      reviews: page(sparseReviews),
+      reviewThreads: page([]),
+    });
+
+    expect(evidence.paginationComplete).toBe(false);
+    expect(evidence.reviews).toEqual([]);
+  });
+
+  it.each([null, "NOT_A_GITHUB_REVIEW_STATE"]) (
+    "keeps review evidence incomplete when review state is %j rather than silently omitting it",
+    (state) => {
+      const evidence = normalizeGitHubReviewEvidence({
+        pullRequest: { id: "PR_node", headRefOid: headSha },
+        checks: page([{ name: "unit", conclusion: "SUCCESS", headSha }]),
+        reviews: page([{ id: "review-invalid", state }]),
+        reviewThreads: page([]),
+      });
+
+      expect(evidence.paginationComplete).toBe(false);
+      expect(evidence.reviews).toEqual([{ id: "review-invalid", reviewerId: "", submittedAt: "", state: "unknown", headSha: "" }]);
+    },
+  );
+
   it("preserves a stale review commit so root validation fails closed", () => {
     const evidence = normalizeGitHubReviewEvidence({
       pullRequest: { id: "PR_node", headRefOid: headSha },

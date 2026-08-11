@@ -14,3 +14,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Deterministic, fail-closed evidence validation with no I/O.
 - A pure `@vespeneventures/review/github` normalizer for caller-provided
   GitHub-shaped payloads.
+- The `review-check` CLI for deterministic JSON evidence and policy reports.

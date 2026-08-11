@@ -27,12 +27,49 @@ export interface GitHubReviewEvidencePayload {
 }
 
 function stringValue(value: unknown): string { return typeof value === "string" ? value : ""; }
-function record(value: unknown): Record<string, unknown> { return typeof value === "object" && value !== null && !Array.isArray(value) ? value as Record<string, unknown> : {}; }
-function nodes(value: unknown): readonly unknown[] { const candidate = record(value).nodes; return Array.isArray(candidate) ? candidate : []; }
+function record(value: unknown): Record<string, unknown> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return {};
+  const prototype = Object.getPrototypeOf(value);
+  if (prototype !== Object.prototype && prototype !== null) return {};
+  return Object.values(Object.getOwnPropertyDescriptors(value)).every((descriptor) => "value" in descriptor)
+    ? value as Record<string, unknown>
+    : {};
+}
+function ownData(value: Record<string, unknown>, key: string): unknown {
+  const descriptor = Object.getOwnPropertyDescriptor(value, key);
+  return descriptor && "value" in descriptor ? descriptor.value : undefined;
+}
+function isDenseDataArray(value: unknown): value is unknown[] {
+  if (!Array.isArray(value)) return false;
+  let entries = 0;
+  for (const key of Object.getOwnPropertyNames(value)) {
+    if (key === "length") continue;
+    const index = Number(key);
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    if (!Number.isSafeInteger(index) || index < 0 || index >= value.length || String(index) !== key || !descriptor || !("value" in descriptor)) return false;
+    entries += 1;
+  }
+  return entries === value.length;
+}
+function nodes(value: unknown): readonly unknown[] {
+  const candidate = ownData(record(value), "nodes");
+  return isDenseDataArray(candidate) ? candidate : [];
+}
 function isComplete(value: unknown): boolean {
   const connection = record(value);
-  const pageInfo = record(connection.pageInfo);
-  return Array.isArray(connection.nodes) && pageInfo.hasNextPage === false && pageInfo.hasPreviousPage === false;
+  const pageInfo = record(ownData(connection, "pageInfo"));
+  return isDenseDataArray(ownData(connection, "nodes"))
+    && ownData(pageInfo, "hasNextPage") === false
+    && ownData(pageInfo, "hasPreviousPage") === false;
+}
+
+function reviewConnectionIsComplete(value: unknown): boolean {
+  if (!isComplete(value)) return false;
+  for (const node of nodes(value)) {
+    const state = ownData(record(node), "state");
+    if (typeof state !== "string" || !["APPROVED", "CHANGES_REQUESTED", "COMMENTED", "DISMISSED", "PENDING"].includes(state)) return false;
+  }
+  return true;
 }
 
 function normalizeCheckConclusion(value: unknown): ReviewCheckConclusion {
@@ -54,7 +91,8 @@ function normalizeReviewDecision(value: unknown): ReviewDecision {
     case "CHANGES_REQUESTED": return "changes-requested";
     case "COMMENTED": return "commented";
     case "DISMISSED": return "dismissed";
-    case "PENDING": case "": return "pending";
+    case "PENDING": return "pending";
+    case "": return "unknown";
     default: return "unknown";
   }
 }
@@ -66,19 +104,19 @@ function normalizeReviewDecision(value: unknown): ReviewDecision {
  */
 export function normalizeGitHubReviewEvidence(payload: GitHubReviewEvidencePayload): ReviewEvidenceBundle {
   const source = record(payload);
-  const pullRequest = record(source.pullRequest);
-  const headSha = stringValue(pullRequest.headRefOid);
-  const checksConnection = source.checks;
-  const reviewsConnection = source.reviews;
-  const threadsConnection = source.reviewThreads;
+  const pullRequest = record(ownData(source, "pullRequest"));
+  const headSha = stringValue(ownData(pullRequest, "headRefOid"));
+  const checksConnection = ownData(source, "checks");
+  const reviewsConnection = ownData(source, "reviews");
+  const threadsConnection = ownData(source, "reviewThreads");
   return {
     schemaVersion: REVIEW_EVIDENCE_VERSION,
     headSha,
-    paginationComplete: isComplete(checksConnection) && isComplete(reviewsConnection) && isComplete(threadsConnection),
-    checks: nodes(checksConnection).map((node) => { const check = record(node); return { name: stringValue(check.name), conclusion: normalizeCheckConclusion(check.conclusion), headSha: stringValue(check.headSha) || stringValue(check.head_sha) }; }),
+    paginationComplete: isComplete(checksConnection) && reviewConnectionIsComplete(reviewsConnection) && isComplete(threadsConnection),
+    checks: nodes(checksConnection).map((node) => { const check = record(node); return { name: stringValue(ownData(check, "name")), conclusion: normalizeCheckConclusion(ownData(check, "conclusion")), headSha: stringValue(ownData(check, "headSha")) || stringValue(ownData(check, "head_sha")) }; }),
     reviews: nodes(reviewsConnection)
-      .filter((node) => normalizeReviewDecision(record(node).state) !== "pending")
-      .map((node) => { const review = record(node); const commit = record(review.commit); const author = record(review.author); return { id: stringValue(review.id), reviewerId: stringValue(author.login), submittedAt: stringValue(review.submittedAt), state: normalizeReviewDecision(review.state), headSha: stringValue(commit.oid) || stringValue(review.commit_id) }; }),
-    threads: nodes(threadsConnection).map((node) => { const thread = record(node); return { id: stringValue(thread.id), isResolved: thread.isResolved === true, headSha }; }),
+      .filter((node) => ownData(record(node), "state") !== "PENDING")
+      .map((node) => { const review = record(node); const commit = record(ownData(review, "commit")); const author = record(ownData(review, "author")); return { id: stringValue(ownData(review, "id")), reviewerId: stringValue(ownData(author, "login")), submittedAt: stringValue(ownData(review, "submittedAt")), state: normalizeReviewDecision(ownData(review, "state")), headSha: stringValue(ownData(commit, "oid")) || stringValue(ownData(review, "commit_id")) }; }),
+    threads: nodes(threadsConnection).map((node) => { const thread = record(node); return { id: stringValue(ownData(thread, "id")), isResolved: ownData(thread, "isResolved") === true, headSha }; }),
   };
 }

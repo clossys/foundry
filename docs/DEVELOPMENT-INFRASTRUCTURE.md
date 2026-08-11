@@ -53,6 +53,11 @@ A consumer adopts it by authoring its own profile and validating that profile
 in the consumer's existing check path. No prior package is deprecated merely
 because a Foundry contract now exists.
 
+The paired registry-install and CLI qualification procedure is documented in
+[REPOSITORY-REVIEW-FIRST-RUN.md](REPOSITORY-REVIEW-FIRST-RUN.md). It stops
+before consumer workflow wiring, provider credentials, and consumer policy
+decisions.
+
 Deprecation is a later, owner-controlled step. It requires a published
 successor, migrated real consumers, a documented replacement range, and a
 settled public API. Package deletion, transfer, and registry deprecation are
