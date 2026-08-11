@@ -10,7 +10,10 @@ export type ClerkLifecycleEventName =
   | "organization.deleted"
   | "organizationMembership.created"
   | "organizationMembership.updated"
-  | "organizationMembership.deleted";
+  | "organizationMembership.deleted"
+  | "organization_membership.created"
+  | "organization_membership.updated"
+  | "organization_membership.deleted";
 
 /** A lifecycle operation, normalized independently of Clerk's event-name spelling. */
 export type ClerkLifecycleType = "created" | "updated" | "deleted";

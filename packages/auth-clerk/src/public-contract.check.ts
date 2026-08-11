@@ -1,5 +1,6 @@
 import type {
   ClerkEventMappingOptions,
+  ClerkLifecycleEventName,
   ClerkLocalIdResolution,
   ClerkMembershipEvent,
   ClerkNormalizedEvent,
@@ -26,6 +27,12 @@ type NormalizedMembershipContract = Extract<ClerkNormalizedEvent, { kind: "membe
 type RequiredRoleMapperContract = ClerkEventMappingOptions extends { roleMapper: ClerkRoleMapper } ? true : false;
 type SignatureErrorContract = ClerkWebhookSignatureError extends Error ? true : false;
 type VerifiedEventContract = VerifyResult extends { eventId: string; event: unknown } ? true : false;
+type LifecycleAliasContract = IsAssignable<
+  | "organization_membership.created"
+  | "organization_membership.updated"
+  | "organization_membership.deleted",
+  ClerkLifecycleEventName
+>;
 
 export const mapResultContract: MapResultContract = true;
 export const resolverResultContract: ResolverResultContract = true;
@@ -35,3 +42,4 @@ export const normalizedMembershipContract: NormalizedMembershipContract = true;
 export const requiredRoleMapperContract: RequiredRoleMapperContract = true;
 export const signatureErrorContract: SignatureErrorContract = true;
 export const verifiedEventContract: VerifiedEventContract = true;
+export const lifecycleAliasContract: LifecycleAliasContract = true;
