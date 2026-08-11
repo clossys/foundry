@@ -101,6 +101,17 @@ describe("assertAgentCanCall", () => {
     );
   });
 
+  it("rejects a context without a usable agent identity", () => {
+    expectAuthorizationFailure(
+      () => assertAgentCanCall(makeAgent({ agentIdentityId: "" }), "records.read", NOW),
+      "agent_revoked",
+    );
+    expectAuthorizationFailure(
+      () => assertAgentCanCall(makeAgent({ agentIdentityId: undefined as never }), "records.read", NOW),
+      "agent_revoked",
+    );
+  });
+
   it("uses stable error reasons for lifecycle denials", () => {
     expectAuthorizationFailure(() => assertAgentCanCall(makeAgent({ revokedAt: NOW }), "records.read", NOW), "agent_revoked");
     expectAuthorizationFailure(

@@ -94,6 +94,15 @@ export interface ExternalMembershipReconciliationResult<TMembership extends Exte
   readonly membership?: TMembership;
 }
 
+const ISO_INSTANT_PATTERN = /^(\d{4})-(\d{2})-(\d{2})T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)$/;
+
+function isValidCalendarDate(year: number, month: number, day: number): boolean {
+  if (month < 1 || month > 12 || day < 1) return false;
+  const leapYear = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  const daysInMonth = [31, leapYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  return day <= (daysInMonth[month - 1] ?? 0);
+}
+
 function requireNonEmptyString(value: unknown, label: string): asserts value is string {
   if (typeof value !== "string" || value.trim().length === 0) {
     throw new TypeError(`${label} must be a non-empty string.`);
@@ -101,6 +110,12 @@ function requireNonEmptyString(value: unknown, label: string): asserts value is 
 }
 
 function normalizeOccurredAt(value: Date | string): Date {
+  if (typeof value === "string") {
+    const match = ISO_INSTANT_PATTERN.exec(value);
+    if (match === null || !isValidCalendarDate(Number(match[1]), Number(match[2]), Number(match[3]))) {
+      throw new TypeError("External membership event occurredAt must be a strict ISO instant with a timezone.");
+    }
+  }
   const date = value instanceof Date ? new Date(value.getTime()) : new Date(value);
   if (Number.isNaN(date.getTime())) throw new TypeError("External membership event occurredAt must be a valid date.");
   return date;

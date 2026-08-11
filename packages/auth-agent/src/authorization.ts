@@ -20,6 +20,15 @@ export function assertAgentCanCall<
     );
   }
 
+  if (typeof agent.agentIdentityId !== "string" || agent.agentIdentityId.trim().length === 0) {
+    throw new AgentAuthorizationError(
+      "agent_revoked",
+      "<invalid>",
+      toolId,
+      "The agent context has no valid identity.",
+    );
+  }
+
   const state = describeAgentLifecycleState(agent, now);
   if (state === "revoked") {
     throw new AgentAuthorizationError("agent_revoked", agent.agentIdentityId, toolId);
