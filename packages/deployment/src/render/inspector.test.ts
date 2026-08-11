@@ -6,14 +6,38 @@ function response(body: unknown, status = 200): Response {
 }
 
 describe("createRenderInspector", () => {
+  it("fails closed on invalid runtime construction options", () => {
+    const invalidOptions = [
+      undefined,
+      {},
+      { fetch: async () => response({}) },
+      { getBearerToken: () => "test-token" },
+    ];
+    for (const options of invalidOptions) {
+      expect(() => createRenderInspector(options as unknown as { fetch: typeof globalThis.fetch; getBearerToken: () => string })).toThrowError(expect.objectContaining({ kind: "invalid-input" }));
+    }
+    expect(() => createRenderInspector({ fetch: async () => response({}), getBearerToken: () => "test-token", apiBaseUrl: 42 as unknown as string })).toThrowError(expect.objectContaining({ kind: "invalid-base-url" }));
+  });
+
+  it("accepts a cross-realm-compatible abort signal shape and stops before credential use", async () => {
+    let credentialCalls = 0;
+    const inspector = createRenderInspector({
+      fetch: async () => response({}),
+      getBearerToken: () => { credentialCalls += 1; return "test-token"; },
+    });
+    const signal = { aborted: true } as unknown as AbortSignal;
+    await expect(inspector.inspect({ service: "srv-input", signal })).rejects.toMatchObject({ kind: "aborted" });
+    expect(credentialCalls).toBe(0);
+  });
+
   it("uses GET-only requests and returns a whitelist projection", async () => {
     const urls: URL[] = [];
     const inits: RequestInit[] = [];
     const fetch = async (input: string | URL, init?: RequestInit): Promise<Response> => {
       urls.push(new URL(String(input))); inits.push(init ?? {});
-      if (urls.length === 1) return response({ id: "service-private-id", suspended: false });
-      if (urls.length === 2) return response([{ status: "live", private: "not-returned" }]);
-      return response([{ name: "app.example.test", verified: true }]);
+      if (urls.length === 1) return response({ id: "service-private-id", suspended: "not_suspended" });
+      if (urls.length === 2) return response([{ cursor: "deploy-page", deploy: { status: "live", private: "not-returned" } }]);
+      return response([{ cursor: "last-page", customDomain: { name: "app.example.test", verificationStatus: "verified", private: "not-returned" } }]);
     };
     const inspector = createRenderInspector({ fetch, getBearerToken: () => "test-token" });
     await expect(inspector.inspect({ service: "srv-123", expectedDomains: ["app.example.test"] })).resolves.toEqual({ service: "present", deployment: "live", serviceHealth: "unknown", domains: [{ domain: "app.example.test", status: "present" }] });
@@ -21,12 +45,12 @@ describe("createRenderInspector", () => {
     expect(urls.map((url) => url.pathname)).toEqual(["/v1/services/srv-123", "/v1/services/service-private-id/deploys", "/v1/services/service-private-id/custom-domains"]);
   });
 
-  it("maps suspended services without exposing provider fields", async () => {
+  it("maps Render's suspended string without exposing provider fields", async () => {
     let calls = 0;
     const inspector = createRenderInspector({
       fetch: async () => {
         calls += 1;
-        return calls === 1 ? response({ id: "service-private-id", suspended: true }) : response([{ status: "live" }]);
+        return calls === 1 ? response({ id: "service-private-id", suspended: "suspended" }) : response([{ cursor: "deploy-page", deploy: { status: "live" } }]);
       },
       getBearerToken: () => "test-token",
     });
@@ -47,8 +71,8 @@ describe("createRenderInspector", () => {
         urls.push(new URL(String(input)));
         if (calls === 1) return response({ id: "srv-canonical" });
         if (calls === 2) return response([{ cursor: "deploy-page", deploy: { status: "live" } }]);
-        if (calls === 3) return response([{ cursor: "next-page", customDomain: { name: "other.example.test", verified: true } }]);
-        return response([{ cursor: "last-page", customDomain: { name: "app.example.test", verified: false } }]);
+        if (calls === 3) return response([{ cursor: "next-page", customDomain: { name: "other.example.test", verificationStatus: "verified" } }]);
+        return response([{ cursor: "last-page", customDomain: { name: "app.example.test", verificationStatus: "unverified" } }]);
       },
       getBearerToken: () => "test-token",
     });
@@ -63,10 +87,88 @@ describe("createRenderInspector", () => {
         calls += 1;
         if (calls === 1) return response({ id: "srv-canonical" });
         if (calls === 2) return response([]);
-        return response([{ cursor: "next-page", customDomain: { name: "other.example.test", verified: true } }]);
+        return response([{ cursor: "next-page", customDomain: { name: "other.example.test", verificationStatus: "verified" } }]);
       },
       getBearerToken: () => "test-token",
     });
     await expect(inspector.inspect({ service: "srv-input", expectedDomains: ["app.example.test"], maxPages: 1 })).resolves.toMatchObject({ domains: [{ domain: "app.example.test", status: "unknown" }] });
+  });
+
+  it("stops on a repeated cursor and keeps unchecked domains unknown", async () => {
+    let calls = 0;
+    const inspector = createRenderInspector({
+      fetch: async () => {
+        calls += 1;
+        if (calls === 1) return response({ id: "srv-canonical" });
+        if (calls === 2) return response([{ cursor: "deploy-page", deploy: { status: "live" } }]);
+        return response([{ cursor: "repeated-page", customDomain: { name: "other.example.test", verificationStatus: "verified" } }]);
+      },
+      getBearerToken: () => "test-token",
+    });
+    await expect(inspector.inspect({ service: "srv-input", expectedDomains: ["app.example.test"] })).resolves.toMatchObject({ domains: [{ domain: "app.example.test", status: "unknown" }] });
+    expect(calls).toBe(4);
+  });
+
+  it("does not request custom domains when none are expected", async () => {
+    const urls: URL[] = [];
+    const inspector = createRenderInspector({
+      fetch: async (input) => {
+        urls.push(new URL(String(input)));
+        return urls.length === 1
+          ? response({ id: "srv-canonical" })
+          : response([{ cursor: "deploy-page", deploy: { status: "live" } }]);
+      },
+      getBearerToken: () => "test-token",
+    });
+    await expect(inspector.inspect({ service: "srv-input" })).resolves.toMatchObject({ domains: [] });
+    expect(urls.map((url) => url.pathname)).toEqual(["/v1/services/srv-input", "/v1/services/srv-canonical/deploys"]);
+  });
+
+  it("keeps an unknown provider verification value unknown", async () => {
+    let calls = 0;
+    const inspector = createRenderInspector({
+      fetch: async () => {
+        calls += 1;
+        if (calls === 1) return response({ id: "srv-canonical" });
+        if (calls === 2) return response([{ cursor: "deploy-page", deploy: { status: "live" } }]);
+        return response([{ cursor: "domain-page", customDomain: { name: "app.example.test", verificationStatus: "pending" } }]);
+      },
+      getBearerToken: () => "test-token",
+    });
+    await expect(inspector.inspect({ service: "srv-input", expectedDomains: ["app.example.test"] })).resolves.toMatchObject({ domains: [{ domain: "app.example.test", status: "unknown" }] });
+  });
+
+  it("rejects malformed cursor envelopes instead of inferring a result", async () => {
+    let calls = 0;
+    const inspector = createRenderInspector({
+      fetch: async () => {
+        calls += 1;
+        return calls === 1 ? response({ id: "srv-canonical" }) : response([{ status: "live" }]);
+      },
+      getBearerToken: () => "test-token",
+    });
+    await expect(inspector.inspect({ service: "srv-input" })).rejects.toMatchObject({ kind: "invalid-response" });
+  });
+
+  it("does not expose thrown credential values and rejects duplicate normalized domains", async () => {
+    const inspector = createRenderInspector({
+      fetch: async () => response({}),
+      getBearerToken: () => { throw new Error("credential-sentinel"); },
+    });
+    await expect(inspector.inspect({ service: "srv-input" })).rejects.toEqual(expect.objectContaining({ kind: "credential-unavailable", message: "Render credentials are unavailable." }));
+    await expect(inspector.inspect({ service: "srv-input", expectedDomains: ["app.example.test", "APP.EXAMPLE.TEST."] })).rejects.toMatchObject({ kind: "invalid-input" });
+  });
+
+  it("fails closed when an untyped caller provides a non-string credential", async () => {
+    const inspector = createRenderInspector({
+      fetch: async () => response({}),
+      getBearerToken: () => undefined as unknown as string,
+    });
+    await expect(inspector.inspect({ service: "srv-input" })).rejects.toMatchObject({ kind: "credential-unavailable" });
+  });
+
+  it("fails closed on untyped invalid inspection input", async () => {
+    const inspector = createRenderInspector({ fetch: async () => response({}), getBearerToken: () => "test-token" });
+    await expect(inspector.inspect({ service: "srv-input", expectedDomains: [123] } as unknown as { service: string; expectedDomains: readonly string[] })).rejects.toMatchObject({ kind: "invalid-input" });
   });
 });

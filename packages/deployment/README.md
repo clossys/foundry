@@ -79,7 +79,7 @@ const report = await inspector.inspect({
 ```
 
 The Render adapter reads service existence, the most recent deployment state,
-service suspension or maintenance state, and caller-supplied expected-domain
+documented service suspension state, and caller-supplied expected-domain
 outcomes. It does not request environment settings, return raw payloads, or
 mutate provider state.
 
