@@ -42,9 +42,10 @@ path, and an error message. It inspects own data descriptors without invoking
 accessors and intentionally does not narrow the caller's live object. Commands
 are an ordered array with explicit names,
 so consumers never need to treat inherited object properties as command names.
-The command and protected-path collection types expose only a dense,
-read-only indexed-list contract (`length` plus numeric indexes); array methods
-and iterators are deliberately not trusted or promised for untrusted values.
+The command and protected-path collection types are read-only arrays, matching
+the concrete arrays accepted by validation. Validation reads only own numeric
+data descriptors and `length`; it does not invoke array methods or iteration on
+untrusted values.
 Protected paths support literal segments plus `*`
 and `**` wildcards; brace expansion, character classes, extglobs, negation,
 absolute paths, and parent traversal are rejected.
@@ -68,7 +69,7 @@ consumer exist.
 | `validateRepositoryProfile(value)` | function | Returns every independently checkable structural finding without throwing or performing I/O. |
 | `REPOSITORY_PROFILE_VERSION` | constant | The supported profile schema version, currently `1`. |
 | `RepositoryCommand` | type | One consumer-owned command with `name`, `run`, and optional repository-relative `cwd`. |
-| `RepositoryList` | type | Dense, read-only indexed values; promises `length` and numeric indexes, not realm-specific array behavior. |
+| `RepositoryList` | type | Dense, read-only array values accepted by the profile validator. |
 | `RepositoryProfile` | type | The complete profile shape: schema version, default branch, commands, and protected paths. |
 | `RepositoryProfileFinding` | type | A deterministic error with `rule`, `path`, and `message`. |
 | `RepositoryProfileFindingRule` | type | Closed vocabulary of validator rule identifiers. |

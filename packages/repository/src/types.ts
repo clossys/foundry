@@ -1,11 +1,8 @@
 /** The only profile shape supported by this package version. */
 export const REPOSITORY_PROFILE_VERSION = 1 as const;
 
-/** Dense, read-only indexed values. No array methods or iterator are promised. */
-export interface RepositoryList<T> {
-  readonly length: number;
-  readonly [index: number]: T;
-}
+/** Dense, read-only array values accepted by the profile validator. */
+export type RepositoryList<T> = readonly T[];
 
 /** A consumer-owned command that tooling may invoke from the repository. */
 export interface RepositoryCommand {

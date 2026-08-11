@@ -11,4 +11,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - A dependency-free repository profile contract for consumer-owned branch,
   command, and protected-path values.
-- Deterministic validation and a type guard with no I/O or provider behavior.
+- Deterministic validation with no I/O or provider behavior.

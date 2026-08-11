@@ -125,6 +125,11 @@ describe("validateRepositoryProfile", () => {
     expect(reads).toBe(0);
   });
 
+  it("rejects structural indexed objects because profile collections are arrays", () => {
+    const indexedCommands = { 0: { name: "test", run: "npm test" }, length: 1 };
+    expect(validateRepositoryProfile({ ...validProfile, commands: indexedCommands }).map((entry) => entry.rule)).toEqual(["commands-shape"]);
+  });
+
   it("rejects prototype pollution present before validator initialization", async () => {
     vi.resetModules();
     Object.defineProperty(Object.prototype, "zzpolluted", { value: "npm test", configurable: true });
