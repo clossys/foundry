@@ -6,15 +6,34 @@ type RecordValue = Record<string, unknown>;
 const PROFILE_KEYS = new Set(["schemaVersion", "defaultBranch", "commands", "protectedPaths"]);
 const COMMAND_KEYS = new Set(["run", "cwd"]);
 const COMMAND_NAME = /^[a-z][a-z0-9]*(?:(?:-|:)[a-z0-9]+)*$/;
-const OBJECT_CONSTRUCTOR_SOURCE = Function.prototype.toString.call(Object);
+const OBJECT_PROTOTYPE_DESCRIPTORS = Object.getOwnPropertyDescriptors(Object.prototype);
+
+function sameBuiltinValue(actual: unknown, expected: unknown): boolean {
+  if (typeof expected !== "function") return Object.is(actual, expected);
+  return typeof actual === "function" && Function.prototype.toString.call(actual) === Function.prototype.toString.call(expected);
+}
+
+function hasStandardObjectPrototype(prototype: object): boolean {
+  const actualKeys = Reflect.ownKeys(prototype);
+  const expectedKeys = Reflect.ownKeys(OBJECT_PROTOTYPE_DESCRIPTORS);
+  if (actualKeys.length !== expectedKeys.length || expectedKeys.some((key) => !hasOwn(prototype, key))) return false;
+
+  return expectedKeys.every((key) => {
+    const actual = Object.getOwnPropertyDescriptor(prototype, key);
+    const expected = Object.getOwnPropertyDescriptor(OBJECT_PROTOTYPE_DESCRIPTORS, key)?.value as PropertyDescriptor | undefined;
+    if (!actual || !expected || actual.configurable !== expected.configurable || actual.enumerable !== expected.enumerable) return false;
+    if ("value" in expected) {
+      return "value" in actual && actual.writable === expected.writable && sameBuiltinValue(actual.value, expected.value);
+    }
+    return !("value" in actual) && sameBuiltinValue(actual.get, expected.get) && sameBuiltinValue(actual.set, expected.set);
+  });
+}
 
 function isRecord(value: unknown): value is RecordValue {
   if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
   const prototype = Object.getPrototypeOf(value);
   if (prototype === null) return true;
-  if (Object.getPrototypeOf(prototype) !== null) return false;
-  const constructor = Object.getOwnPropertyDescriptor(prototype, "constructor")?.value;
-  return typeof constructor === "function" && Function.prototype.toString.call(constructor) === OBJECT_CONSTRUCTOR_SOURCE;
+  return Object.getPrototypeOf(prototype) === null && hasStandardObjectPrototype(prototype);
 }
 
 function finding(rule: RepositoryProfileFindingRule, path: string, message: string): RepositoryProfileFinding {
