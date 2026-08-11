@@ -17,6 +17,7 @@ for the full account.
 
 | Package | What it does |
 | --- | --- |
+| [`@vespeneventures/auth`](packages/auth) | One authorization package with provider-neutral root primitives plus isolated `./agent` and `./providers/clerk` subpaths. It covers closed role hierarchies, sessions, transactional membership reconciliation, strict redirects, delegated-agent guards, verified Clerk webhooks, and optional Next.js/Clerk web helpers without loading provider or framework code from the root. |
 | [`@vespeneventures/policy`](packages/policy) | Content-addressed binding: commit a document's digest publicly without committing the document, then verify later-materialized content matches it byte-for-byte. Zero dependencies, zero I/O. |
 | [`@vespeneventures/domain-model`](packages/domain-model) | Dependency-free machinery for product-owned domain models and snapshots: stable identifiers, value types, closed vocabularies, domain types with fields, directed attributed relations, deterministic JSON artifacts, validation, and compatibility comparison. Ships no product values or runtime. |
 | [`@vespeneventures/deployment`](packages/deployment) | Deployment-surface contracts, validation, deterministic health summaries, and read-only `./vercel` and `./render` inspectors with caller-injected transport and credentials. Ships no provider configuration, environment reads, raw provider payloads, or mutation capability. |
