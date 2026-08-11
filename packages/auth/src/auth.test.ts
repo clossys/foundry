@@ -170,6 +170,11 @@ describe("isAuthorized", () => {
       subjectId: "person",
       expiresAt: new Date(Number.NaN),
     }, {})).resolves.toBe(false);
+    await expect(isAuthorized(predicate, { subjectId: undefined } as never, {})).resolves.toBe(false);
+    await expect(isAuthorized(predicate, {
+      subjectId: "person",
+      expiresAt: "2026-01-01T00:00:00.000Z",
+    } as never, {})).resolves.toBe(false);
     expect(predicate).not.toHaveBeenCalled();
   });
 
@@ -241,6 +246,32 @@ describe("reconcileExternalMembership", () => {
     expect((await reconcileExternalMembership({
       ...command,
       event: event("updated", { eventId: "event-4", occurredAt: "2026-03-01T00:00:00.000Z", version: 4, role: "owner" }),
+    })).status).toBe("stale");
+    expect(repository.memberships.get(key({ provider: "provider-a", providerMembershipId: "membership-a" }))?.role).toBe("editor");
+  });
+
+  it("does not carry an obsolete version across an unversioned event", async () => {
+    const adapter = transactionalAdapter();
+    const repository = new MemoryRepository();
+    const command = { queryAdapter: adapter, repository };
+    await reconcileExternalMembership({ ...command, event: event("created", { version: 5 }) });
+    expect((await reconcileExternalMembership({
+      ...command,
+      event: event("updated", {
+        eventId: "event-2",
+        occurredAt: "2026-03-01T00:00:00.000Z",
+        role: "editor",
+      }),
+    })).status).toBe("updated");
+
+    expect((await reconcileExternalMembership({
+      ...command,
+      event: event("updated", {
+        eventId: "event-3",
+        occurredAt: "2026-02-15T00:00:00.000Z",
+        version: 6,
+        role: "owner",
+      }),
     })).status).toBe("stale");
     expect(repository.memberships.get(key({ provider: "provider-a", providerMembershipId: "membership-a" }))?.role).toBe("editor");
   });

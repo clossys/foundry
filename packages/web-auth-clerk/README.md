@@ -98,7 +98,7 @@ cookies and redirecting:
 ```ts
 import { createSignOutRoute } from "@vespeneventures/web-auth-clerk/server";
 
-export const GET = createSignOutRoute({
+export const POST = createSignOutRoute({
   extraCookiesToClear: ["app-preference"],
   redirectTo: "/",
   getRedirectTarget(request) {
@@ -107,8 +107,11 @@ export const GET = createSignOutRoute({
 });
 ```
 
-The request origin is trusted automatically. Additional absolute redirect
-origins require an exact entry in `allowedRedirectOrigins`.
+The route accepts only same-origin `POST` requests with an `Origin` header;
+cross-origin, missing-origin, and safe-method requests are rejected before
+session access. The request origin is trusted for redirects automatically.
+Additional absolute redirect origins require an exact entry in
+`allowedRedirectOrigins`.
 
 ## API
 
@@ -137,7 +140,7 @@ origins require an exact entry in `allowedRedirectOrigins`.
 | `createClerkSignInPage` | Build a server-rendered Clerk sign-in page with strict redirect handling. |
 | `ClerkSignInPageOptions` | Sign-in page presentation and redirect policy. |
 | `createRedirectRoute` | Build a permanent redirect route for a fixed local path. |
-| `createSignOutRoute` | Revoke the active session, clear named cookies, and redirect safely. |
+| `createSignOutRoute` | Build a same-origin POST route that revokes the active session, clears named cookies, and redirects safely. |
 | `SignOutRouteOptions` | Sign-out cleanup and redirect policy. |
 
 ## Security boundary
@@ -150,6 +153,8 @@ origins require an exact entry in `allowedRedirectOrigins`.
 - The development bypass never activates when `NODE_ENV` is `production`.
 - Dynamic redirects are rejected unless they resolve to an explicitly allowed
   HTTP or HTTPS origin.
+- Session revocation accepts only same-origin POST requests with an explicit
+  `Origin` header.
 - `humaniseClerkError` returns one selected message and never serializes the
   whole provider error object.
 

@@ -138,11 +138,10 @@ function eventIsStale(event: ExternalMembershipEvent, cursor: ExternalMembership
   return normalizeOccurredAt(event.occurredAt).getTime() <= cursor.occurredAt.getTime();
 }
 
-function nextCursor(event: ExternalMembershipEvent, previous: ExternalMembershipEventCursor | undefined): ExternalMembershipEventCursor {
-  const version = event.version ?? previous?.version;
+function nextCursor(event: ExternalMembershipEvent): ExternalMembershipEventCursor {
   return {
     occurredAt: normalizeOccurredAt(event.occurredAt),
-    ...(version === undefined ? {} : { version }),
+    ...(event.version === undefined ? {} : { version: event.version }),
   };
 }
 
@@ -183,7 +182,7 @@ export async function reconcileExternalMembership<
 
     if (event.type === "deleted") {
       await command.repository.delete(query, identity);
-      await command.repository.setCursor(query, identity, nextCursor(event, cursor));
+      await command.repository.setCursor(query, identity, nextCursor(event));
       return { status: "deleted" };
     }
 
@@ -191,21 +190,21 @@ export async function reconcileExternalMembership<
       if (existing === undefined) {
         const membership = await command.repository.create(query, { identity, role: event.role, event });
         assertRepositoryIdentity(membership, identity);
-        await command.repository.setCursor(query, identity, nextCursor(event, cursor));
+        await command.repository.setCursor(query, identity, nextCursor(event));
         return { status: "created", membership };
       }
-      await command.repository.setCursor(query, identity, nextCursor(event, cursor));
+      await command.repository.setCursor(query, identity, nextCursor(event));
       return { status: "unchanged", membership: existing };
     }
 
     if (existing === undefined) {
-      await command.repository.setCursor(query, identity, nextCursor(event, cursor));
+      await command.repository.setCursor(query, identity, nextCursor(event));
       return { status: "unchanged" };
     }
 
     const replacement = { ...existing, role: event.role } as TMembership;
     await command.repository.replace(query, replacement);
-    await command.repository.setCursor(query, identity, nextCursor(event, cursor));
+    await command.repository.setCursor(query, identity, nextCursor(event));
     return { status: "updated", membership: replacement };
   });
 }

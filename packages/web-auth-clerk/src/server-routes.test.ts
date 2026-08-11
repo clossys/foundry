@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { resolveRequestRedirect } from "./server-routes.js";
+import { createSignOutRoute, resolveRequestRedirect } from "./server-routes.js";
 
 describe("resolveRequestRedirect", () => {
   const request = "https://app.example.test/sign-out";
@@ -32,5 +32,26 @@ describe("resolveRequestRedirect", () => {
       ["https://accounts.example.test/complete"],
       ["https://accounts.example.test"],
     )).toBe("https://accounts.example.test/complete");
+  });
+});
+
+describe("createSignOutRoute", () => {
+  const route = createSignOutRoute();
+
+  it("rejects state-changing GET requests", async () => {
+    const response = await route(new Request("https://app.example.test/sign-out"));
+    expect(response.status).toBe(405);
+    expect(response.headers.get("allow")).toBe("POST");
+  });
+
+  it("rejects missing and cross-origin POST origins before session access", async () => {
+    const missing = await route(new Request("https://app.example.test/sign-out", { method: "POST" }));
+    expect(missing.status).toBe(403);
+
+    const crossOrigin = await route(new Request("https://app.example.test/sign-out", {
+      method: "POST",
+      headers: { Origin: "https://outside.example.test" },
+    }));
+    expect(crossOrigin.status).toBe(403);
   });
 });

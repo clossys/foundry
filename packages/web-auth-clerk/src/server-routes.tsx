@@ -121,9 +121,34 @@ export interface SignOutRouteOptions {
   getRedirectTarget?: (request: Request) => string | null;
 }
 
-/** Creates a GET route that revokes the active session before redirecting. */
+function isSameOriginPost(request: Request): boolean {
+  if (request.method !== "POST") return false;
+  const origin = request.headers.get("origin");
+  if (!origin || origin !== origin.trim() || origin.includes("\\")) return false;
+  try {
+    const parsed = new URL(origin);
+    return (
+      (parsed.protocol === "http:" || parsed.protocol === "https:")
+      && !parsed.username
+      && !parsed.password
+      && parsed.pathname === "/"
+      && !parsed.search
+      && !parsed.hash
+      && parsed.origin === new URL(request.url).origin
+    );
+  } catch {
+    return false;
+  }
+}
+
+/** Creates a same-origin POST route that revokes the active session before redirecting. */
 export function createSignOutRoute(options: SignOutRouteOptions = {}) {
-  return async function GET(request: Request) {
+  return async function POST(request: Request) {
+    if (request.method !== "POST") {
+      return new Response(null, { status: 405, headers: { Allow: "POST" } });
+    }
+    if (!isSameOriginPost(request)) return new Response(null, { status: 403 });
+
     const session = await auth();
     if (session.sessionId) {
       const client = await clerkClient();

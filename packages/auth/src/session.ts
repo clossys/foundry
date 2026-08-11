@@ -26,9 +26,13 @@ export async function isAuthorized<TContext>(
 ): Promise<boolean> {
   if (
     session == null
+    || typeof session !== "object"
+    || typeof session.subjectId !== "string"
     || session.subjectId.trim().length === 0
     || (session.expiresAt !== undefined
-      && (!Number.isFinite(session.expiresAt.getTime()) || session.expiresAt.getTime() <= Date.now()))
+      && (!(session.expiresAt instanceof Date)
+        || !Number.isFinite(session.expiresAt.getTime())
+        || session.expiresAt.getTime() <= Date.now()))
   ) {
     return false;
   }
