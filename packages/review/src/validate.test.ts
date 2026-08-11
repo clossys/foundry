@@ -114,4 +114,19 @@ describe("validateReviewEvidence", () => {
       ["approval-missing", "reviews"],
     ]);
   });
+
+  it("rejects inherited, accessor, and sparse evidence before it can satisfy policy", () => {
+    expect(validateReviewEvidence(Object.create(validEvidence()), policy).map((entry) => entry.rule)).toEqual(["evidence-shape"]);
+
+    const accessorEvidence = validEvidence();
+    Object.defineProperty(accessorEvidence, "headSha", { enumerable: true, get: () => headSha });
+    expect(validateReviewEvidence(accessorEvidence, policy).map((entry) => entry.rule)).toEqual(["evidence-shape"]);
+
+    const sparseEvidence = validEvidence();
+    sparseEvidence.checks = new Array(1);
+    expect(validateReviewEvidence(sparseEvidence, policy).map((entry) => [entry.rule, entry.path])).toEqual([
+      ["check-shape", "checks[0]"],
+      ["missing-required-check", "requiredChecks[0]"],
+    ]);
+  });
 });

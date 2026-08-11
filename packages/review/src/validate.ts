@@ -25,7 +25,20 @@ const SHA = /^[0-9a-f]{40}$/;
 const RFC3339_TIMESTAMP = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
 
 function isRecord(value: unknown): value is UnknownRecord {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+  const prototype = Object.getPrototypeOf(value);
+  if (prototype !== Object.prototype && prototype !== null) return false;
+  return Object.values(Object.getOwnPropertyDescriptors(value)).every((descriptor) => "value" in descriptor);
+}
+
+function ownData(value: UnknownRecord, key: string): unknown {
+  const descriptor = Object.getOwnPropertyDescriptor(value, key);
+  return descriptor && "value" in descriptor ? descriptor.value : undefined;
+}
+
+function arrayEntry(value: unknown[], index: number): unknown {
+  const descriptor = Object.getOwnPropertyDescriptor(value, String(index));
+  return descriptor && "value" in descriptor ? descriptor.value : undefined;
 }
 
 function finding(rule: ReviewFindingRule, path: string, message: string): ReviewFinding {
@@ -66,13 +79,13 @@ export function validateReviewPolicy(value: unknown): ReviewFinding[] {
 
     const findings: ReviewFinding[] = [];
     findUnknownFields(value, POLICY_KEYS, "policy-unknown-field", "$policy", findings);
-    const requiredChecks = value.requiredChecks;
+    const requiredChecks = ownData(value, "requiredChecks");
     if (!Array.isArray(requiredChecks)) {
       findings.push(finding("required-checks-shape", "requiredChecks", "requiredChecks must be an array."));
     } else {
       const names = new Set<string>();
       for (let index = 0; index < requiredChecks.length; index += 1) {
-        const name = requiredChecks[index];
+        const name = arrayEntry(requiredChecks, index);
         const path = `requiredChecks[${index}]`;
         if (typeof name !== "string" || name.trim().length === 0) {
           findings.push(finding("required-check-name", path, "A required check name must be a non-empty string."));
@@ -83,7 +96,7 @@ export function validateReviewPolicy(value: unknown): ReviewFinding[] {
         }
       }
     }
-    if (typeof value.requireApproval !== "boolean") {
+    if (typeof ownData(value, "requireApproval") !== "boolean") {
       findings.push(finding("require-approval", "requireApproval", "requireApproval must be a boolean."));
     }
     return findings;
@@ -93,7 +106,7 @@ export function validateReviewPolicy(value: unknown): ReviewFinding[] {
 }
 
 function readArray(value: UnknownRecord, key: "checks" | "reviews" | "threads", findings: ReviewFinding[]): unknown[] | undefined {
-  const candidate = value[key];
+  const candidate = ownData(value, key);
   if (Array.isArray(candidate)) return candidate;
   const rule = key === "checks" ? "checks-shape" : key === "reviews" ? "reviews-shape" : "threads-shape";
   findings.push(finding(rule, key, `${key} must be an array.`));
@@ -104,13 +117,15 @@ function validateChecks(entries: unknown[], headSha: string, findings: ReviewFin
   const byName = new Map<string, ReviewCheckConclusion[]>();
   for (let index = 0; index < entries.length; index += 1) {
     const path = `checks[${index}]`;
-    const entry = entries[index];
+    const entry = arrayEntry(entries, index);
     if (!isRecord(entry)) {
       findings.push(finding("check-shape", path, "A check must be an object."));
       continue;
     }
     findUnknownFields(entry, CHECK_KEYS, "check-unknown-field", path, findings);
-    const { name, conclusion, headSha: itemHeadSha } = entry;
+    const name = ownData(entry, "name");
+    const conclusion = ownData(entry, "conclusion");
+    const itemHeadSha = ownData(entry, "headSha");
     if (typeof name !== "string" || name.trim().length === 0) findings.push(finding("check-name", `${path}.name`, "A check name must be a non-empty string."));
     if (typeof conclusion !== "string" || !CHECK_CONCLUSIONS.has(conclusion as ReviewCheckConclusion)) {
       findings.push(finding("check-conclusion", `${path}.conclusion`, "A check conclusion must be a supported normalized value."));
@@ -133,13 +148,17 @@ function validateReviews(entries: unknown[], headSha: string, findings: ReviewFi
   const latestByReviewer = new Map<string, { submittedAtMs: number; index: number; state: ReviewDecision }>();
   for (let index = 0; index < entries.length; index += 1) {
     const path = `reviews[${index}]`;
-    const entry = entries[index];
+    const entry = arrayEntry(entries, index);
     if (!isRecord(entry)) {
       findings.push(finding("review-shape", path, "A review must be an object."));
       continue;
     }
     findUnknownFields(entry, REVIEW_KEYS, "review-unknown-field", path, findings);
-    const { id, reviewerId, submittedAt, state, headSha: itemHeadSha } = entry;
+    const id = ownData(entry, "id");
+    const reviewerId = ownData(entry, "reviewerId");
+    const submittedAt = ownData(entry, "submittedAt");
+    const state = ownData(entry, "state");
+    const itemHeadSha = ownData(entry, "headSha");
     const submittedAtMs = reviewTimestamp(submittedAt);
     if (typeof id !== "string" || id.trim().length === 0) findings.push(finding("review-id", `${path}.id`, "A review id must be a non-empty string."));
     if (typeof reviewerId !== "string" || reviewerId.trim().length === 0) findings.push(finding("reviewer-id", `${path}.reviewerId`, "A review must identify its reviewer."));
@@ -169,13 +188,15 @@ function validateReviews(entries: unknown[], headSha: string, findings: ReviewFi
 function validateThreads(entries: unknown[], headSha: string, findings: ReviewFinding[]): void {
   for (let index = 0; index < entries.length; index += 1) {
     const path = `threads[${index}]`;
-    const entry = entries[index];
+    const entry = arrayEntry(entries, index);
     if (!isRecord(entry)) {
       findings.push(finding("thread-shape", path, "A review thread must be an object."));
       continue;
     }
     findUnknownFields(entry, THREAD_KEYS, "thread-unknown-field", path, findings);
-    const { id, isResolved, headSha: itemHeadSha } = entry;
+    const id = ownData(entry, "id");
+    const isResolved = ownData(entry, "isResolved");
+    const itemHeadSha = ownData(entry, "headSha");
     if (typeof id !== "string" || id.trim().length === 0) findings.push(finding("thread-id", `${path}.id`, "A review thread id must be a non-empty string."));
     if (typeof isResolved !== "boolean") findings.push(finding("thread-resolution", `${path}.isResolved`, "isResolved must be a boolean."));
     if (!isSha(itemHeadSha)) {
@@ -198,7 +219,9 @@ export function validateReviewEvidence(value: unknown, policy: unknown): ReviewF
   try {
     if (!isRecord(value)) return [...findings, finding("evidence-shape", "$", "Review evidence must be an object.")];
     findUnknownFields(value, EVIDENCE_KEYS, "evidence-unknown-field", "$", findings);
-    const { schemaVersion, headSha, paginationComplete } = value;
+    const schemaVersion = ownData(value, "schemaVersion");
+    const headSha = ownData(value, "headSha");
+    const paginationComplete = ownData(value, "paginationComplete");
     if (schemaVersion !== REVIEW_EVIDENCE_VERSION) findings.push(finding("schema-version", "schemaVersion", `schemaVersion must be ${REVIEW_EVIDENCE_VERSION}.`));
     if (!isSha(headSha)) findings.push(finding("head-sha", "headSha", "headSha must be exactly 40 lowercase hexadecimal characters."));
     if (paginationComplete !== true) findings.push(finding("pagination-incomplete", "paginationComplete", "Evidence must include every page before it can pass review."));
@@ -212,15 +235,16 @@ export function validateReviewEvidence(value: unknown, policy: unknown): ReviewF
     const reviewState = reviews ? validateReviews(reviews, headSha, findings) : { hasApproval: false, hasChangesRequested: false };
     if (threads) validateThreads(threads, headSha, findings);
 
-    if (isRecord(policy) && Array.isArray(policy.requiredChecks)) {
-      for (let index = 0; index < policy.requiredChecks.length; index += 1) {
-        const name = policy.requiredChecks[index];
+    const policyRequiredChecks = isRecord(policy) ? ownData(policy, "requiredChecks") : undefined;
+    if (Array.isArray(policyRequiredChecks)) {
+      for (let index = 0; index < policyRequiredChecks.length; index += 1) {
+        const name = arrayEntry(policyRequiredChecks, index);
         if (typeof name !== "string" || name.trim().length === 0) continue;
         const states = checkStates.get(name) ?? [];
         if (states.length === 0) findings.push(finding("missing-required-check", `requiredChecks[${index}]`, `Required check "${name}" has no current-head evidence.`));
         else if (states.some((state) => state !== "success")) findings.push(finding("required-check-failed", `requiredChecks[${index}]`, `Required check "${name}" did not report success.`));
       }
-      if (policy.requireApproval === true && !reviewState.hasApproval) findings.push(finding("approval-missing", "reviews", "A current-head approval is required."));
+      if (isRecord(policy) && ownData(policy, "requireApproval") === true && !reviewState.hasApproval) findings.push(finding("approval-missing", "reviews", "A current-head approval is required."));
     }
     if (reviewState.hasChangesRequested) findings.push(finding("changes-requested", "reviews", "A current-head review requested changes."));
     return findings;

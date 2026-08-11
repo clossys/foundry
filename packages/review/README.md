@@ -67,7 +67,9 @@ Commented, pending, and unknown states do not replace a reviewer's latest
 approval or change request.
 
 Findings have stable rule identifiers, input paths, and messages. Validation is
-pure, deterministic, and performs no I/O.
+pure, deterministic, and performs no I/O. It accepts only plain JSON-like
+records with own data properties and dense array entries; inherited values and
+accessors are rejected rather than treated as review evidence.
 
 ## Ownership boundary
 
