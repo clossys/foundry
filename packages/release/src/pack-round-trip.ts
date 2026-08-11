@@ -48,6 +48,19 @@ export interface PackRoundTripOptions {
    */
   keepTempDir?: boolean;
   /**
+   * An already-packed artifact to install instead of packing `packageDir`
+   * again. This is for verifying the exact tarball that a publisher scanned
+   * and uploaded; it does not change which package manifest supplies the
+   * declared import surface.
+   */
+  tarballPath?: string;
+  /**
+   * An explicit registry proof configuration. Omit it to retain the default
+   * unauthenticated public-registry proof. A token is used only by child npm
+   * processes and is never read from the ambient environment or persisted.
+   */
+  registry?: RegistryInstallOptions;
+  /**
    * Overrides for this round trip's subprocess timeouts, in milliseconds.
    * Each defaults to the sane, generous budget this module ships with
    * (`NPM_PACK_TIMEOUT_MS`, `NPM_INSTALL_TIMEOUT_MS`, `IMPORT_TIMEOUT_MS`)
@@ -60,6 +73,14 @@ export interface PackRoundTripOptions {
     install?: number;
     import?: number;
   };
+}
+
+/** Explicit registry credentials for a private-registry install proof. */
+export interface RegistryInstallOptions {
+  /** Registry URL used for this package's runtime dependencies. */
+  url: string;
+  /** Optional token supplied by the caller for this proof only. */
+  authToken?: string;
 }
 
 /**
@@ -124,13 +145,16 @@ export interface PackRoundTripOptions {
  * direct, fast unit test rather than only being provable indirectly through
  * a full subprocess round trip.
  */
-export function subprocessEnv(isolationDir: string): NodeJS.ProcessEnv {
+export function subprocessEnv(
+  isolationDir: string,
+  registry?: RegistryInstallOptions,
+): NodeJS.ProcessEnv {
   const env: NodeJS.ProcessEnv = {
     PATH: process.env.PATH,
     HOME: process.env.HOME ?? process.env.USERPROFILE,
     npm_config_userconfig: join(isolationDir, "unused-userconfig.npmrc"),
     npm_config_cache: join(isolationDir, "npm-cache"),
-    npm_config_registry: "https://registry.npmjs.org/",
+    npm_config_registry: registry?.url ?? "https://registry.npmjs.org/",
     npm_config_audit: "false",
     npm_config_fund: "false",
     npm_config_update_notifier: "false",
@@ -141,7 +165,21 @@ export function subprocessEnv(isolationDir: string): NodeJS.ProcessEnv {
     env.TEMP = process.env.TEMP;
     env.TMP = process.env.TMP;
   }
+  if (registry?.authToken) {
+    env.NODE_AUTH_TOKEN = registry.authToken;
+  }
   return env;
+}
+
+function registryAuthConfig(registry: RegistryInstallOptions | undefined): string | undefined {
+  if (!registry?.authToken) return undefined;
+
+  const parsed = new URL(registry.url);
+  if (parsed.protocol !== "https:" || parsed.username || parsed.password) {
+    throw new Error("packRoundTrip: registry URL must be an HTTPS URL without embedded credentials");
+  }
+  const path = parsed.pathname.endsWith("/") ? parsed.pathname : `${parsed.pathname}/`;
+  return `//${parsed.host}${path}:_authToken=${"${NODE_AUTH_TOKEN}"}\n`;
 }
 
 /**
@@ -210,6 +248,17 @@ function specifierFor(packageName: string, subpath: string): string {
   return `${packageName}/${subpath.replace(/^\.\//, "")}`;
 }
 
+async function manifestFromTarball(
+  tarballPath: string,
+  timeout: number,
+): Promise<{ name?: string; exports?: unknown }> {
+  const { stdout } = await execFile("tar", ["-xOf", tarballPath, "package/package.json"], {
+    timeout,
+    killSignal: TIMEOUT_KILL_SIGNAL,
+  });
+  return JSON.parse(stdout) as { name?: string; exports?: unknown };
+}
+
 /**
  * Packs `packageDir` for real, installs the resulting tarball into a fresh,
  * isolated temporary directory (outside this repository's own tree, with no
@@ -235,8 +284,8 @@ export async function packRoundTrip(packageDir: string, options?: PackRoundTripO
     name?: string;
     exports?: unknown;
   };
-  const packageName = manifest.name;
-  const subpaths = subpathsOf(manifest.exports);
+  let packageName = manifest.name;
+  let subpaths = subpathsOf(manifest.exports);
 
   // Two SEPARATE temporary directories: one to receive the packed tarball,
   // and one — genuinely isolated, outside this repository's own tree
@@ -248,44 +297,80 @@ export async function packRoundTrip(packageDir: string, options?: PackRoundTripO
   // below, including `npm pack` itself, runs isolated the same way.
   const tarballDir = mkdtempSync(join(tmpdir(), "release-pack-"));
   const consumerDir = mkdtempSync(join(tmpdir(), "release-consumer-"));
-  const env = subprocessEnv(tarballDir);
+  const env = subprocessEnv(tarballDir, options?.registry);
+  const authConfigPath = join(tarballDir, "unused-userconfig.npmrc");
   const packTimeoutMs = options?.timeoutsMs?.pack ?? NPM_PACK_TIMEOUT_MS;
   const installTimeoutMs = options?.timeoutsMs?.install ?? NPM_INSTALL_TIMEOUT_MS;
   const importTimeoutMs = options?.timeoutsMs?.import ?? IMPORT_TIMEOUT_MS;
 
   try {
+    const authConfig = registryAuthConfig(options?.registry);
+    if (authConfig) writeFileSync(authConfigPath, authConfig);
+
     // 1. Pack the real tarball. `npm pack` runs `prepublishOnly`, so what
     //    lands here is exactly what an `npm publish` from this state would
     //    upload — the same mechanism this repository's own artifact-safety
     //    gate uses to scan what actually ships, not the source tree.
-    let tarballName: string;
+    let tarballPath: string;
+    if (options?.tarballPath) {
+      tarballPath = resolve(options.tarballPath);
+      if (!existsSync(tarballPath)) {
+        return {
+          ok: false,
+          packageName,
+          tarballPath: "",
+          imports: [],
+          findings: [tarballMissingFinding(packageName, tarballPath)],
+        };
+      }
+    } else {
+      let tarballName: string;
+      try {
+        const { stdout } = await execFile("npm", ["pack", "--pack-destination", tarballDir], {
+          cwd: absPackageDir,
+          env,
+          timeout: packTimeoutMs,
+          killSignal: TIMEOUT_KILL_SIGNAL,
+        });
+        const lastLine = stdout.trim().split("\n").filter(Boolean).pop();
+        if (!lastLine) throw new Error("npm pack produced no output");
+        tarballName = lastLine;
+      } catch (error) {
+        return {
+          ok: false,
+          packageName,
+          tarballPath: "",
+          imports: [],
+          findings: [packFailedFinding(packageName, summarizeExecError(error, packTimeoutMs))],
+        };
+      }
+      tarballPath = join(tarballDir, tarballName);
+    }
+
+    // Read the packed artifact's manifest, rather than continuing to trust
+    // the source directory. A caller using `tarballPath` is proving that
+    // exact selected artifact, including its own export surface.
     try {
-      const { stdout } = await execFile("npm", ["pack", "--pack-destination", tarballDir], {
-        cwd: absPackageDir,
-        env,
-        timeout: packTimeoutMs,
-        killSignal: TIMEOUT_KILL_SIGNAL,
-      });
-      const lastLine = stdout.trim().split("\n").filter(Boolean).pop();
-      if (!lastLine) throw new Error("npm pack produced no output");
-      tarballName = lastLine;
+      const artifactManifest = await manifestFromTarball(tarballPath, packTimeoutMs);
+      packageName = artifactManifest.name;
+      subpaths = subpathsOf(artifactManifest.exports);
     } catch (error) {
       return {
         ok: false,
         packageName,
-        tarballPath: "",
+        tarballPath,
         imports: [],
-        findings: [packFailedFinding(packageName, summarizeExecError(error, packTimeoutMs))],
+        findings: [tarballInvalidFinding(packageName, summarizeExecError(error, packTimeoutMs))],
       };
     }
-    const tarballPath = join(tarballDir, tarballName);
-
-    // npm itself refuses to produce a tarball for a manifest with no "name"
-    // (that is exactly the pack-failure branch above), so reaching this
-    // point already proves packageName is defined -- this is a narrowing
-    // check on that invariant, not a new possibility.
     if (packageName === undefined) {
-      throw new Error("packRoundTrip: npm pack succeeded but package.json has no \"name\" (unreachable in practice)");
+      return {
+        ok: false,
+        packageName,
+        tarballPath,
+        imports: [],
+        findings: [tarballInvalidFinding(packageName, "package/package.json has no name")],
+      };
     }
 
     // 2. A minimal, real consumer project in the isolated directory — just
@@ -360,11 +445,29 @@ export async function packRoundTrip(packageDir: string, options?: PackRoundTripO
 
     return { ok: findings.length === 0, packageName, tarballPath, imports, findings };
   } finally {
+    // `keepTempDir` is for import debugging, never for retaining credentials.
+    rmSync(authConfigPath, { force: true });
     if (!options?.keepTempDir) {
       rmSync(tarballDir, { recursive: true, force: true });
       rmSync(consumerDir, { recursive: true, force: true });
     }
   }
+}
+
+function tarballMissingFinding(packageName: string | undefined, tarballPath: string): Finding {
+  return {
+    rule: "round-trip-tarball-missing",
+    severity: "error",
+    message: `${packageLabel(packageName)}: requested tarball does not exist at ${tarballPath}`,
+  };
+}
+
+function tarballInvalidFinding(packageName: string | undefined, detail: string): Finding {
+  return {
+    rule: "round-trip-tarball-invalid",
+    severity: "error",
+    message: `${packageLabel(packageName)}: requested tarball has no usable package manifest — ${detail}`,
+  };
 }
 
 function packFailedFinding(packageName: string | undefined, detail: string): Finding {

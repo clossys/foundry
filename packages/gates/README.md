@@ -9,6 +9,15 @@ calling `catalog`'s or `policy`'s own functions.
 npm install @vespeneventures/gates
 ```
 
+## Runtime availability
+
+`gates` has runtime dependencies on `@vespeneventures/catalog` and
+`@vespeneventures/policy`. They must be published to the configured registry
+before this package can be installed by an external consumer. A workspace
+link is useful for development but is not a substitute for that release
+order; see [`docs/PUBLISHING.md`](../../docs/PUBLISHING.md) in the repository
+for the isolated-tarball proof used before a dependent package is published.
+
 ## The three capabilities
 
 ### 1. Orchestrated validation — `runFoundationCheck`

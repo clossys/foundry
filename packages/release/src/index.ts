@@ -38,7 +38,7 @@
  */
 
 export { packRoundTrip } from "./pack-round-trip.js";
-export type { PackRoundTripOptions } from "./pack-round-trip.js";
+export type { PackRoundTripOptions, RegistryInstallOptions } from "./pack-round-trip.js";
 
 export { preflightPackage } from "./preflight.js";
 export type { PreflightPackageOptions } from "./preflight.js";

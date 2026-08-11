@@ -3,6 +3,7 @@ export { defineDomainModel } from "./define.js";
 export { normalizeDomainModel, serializeDomainModel } from "./normalize.js";
 export { validateDomainModel } from "./validate.js";
 export { compareDomainModels } from "./compatibility.js";
+export { defineDomainSnapshot, normalizeDomainSnapshot, serializeDomainSnapshot, validateDomainSnapshot } from "./snapshot.js";
 export { PRIMITIVE_VALUE_TYPES, RELATION_CARDINALITIES } from "./types.js";
 export type {
   DomainModel,
@@ -10,6 +11,13 @@ export type {
   DomainModelCompatibilityReport,
   DomainModelDefinition,
   DomainModelFinding,
+  DomainRecord,
+  DomainRecordDefinition,
+  DomainRelation,
+  DomainRelationDefinition,
+  DomainSnapshot,
+  DomainSnapshotDefinition,
+  DomainSnapshotFinding,
   DomainTypeDefinition,
   FieldDefinition,
   FieldValueType,

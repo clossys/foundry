@@ -88,6 +88,56 @@ export interface DomainModelCompatibilityReport {
   nextFindings: readonly DomainModelFinding[];
 }
 
+/** One product-owned record captured against a declared domain type. */
+export interface DomainRecordDefinition {
+  id: string;
+  type: string;
+  values?: Readonly<Record<string, unknown>>;
+}
+
+/** A detached record with an explicit value object. */
+export interface DomainRecord {
+  id: string;
+  type: string;
+  values: Readonly<Record<string, unknown>>;
+}
+
+/** One directed product-owned relation captured against a declared relation type. */
+export interface DomainRelationDefinition {
+  type: string;
+  from: string;
+  to: string;
+  values?: Readonly<Record<string, unknown>>;
+}
+
+/** A detached directed relation with an explicit value object. */
+export interface DomainRelation {
+  type: string;
+  from: string;
+  to: string;
+  values: Readonly<Record<string, unknown>>;
+}
+
+/** Authoring input for a product-owned collection of records and relations. */
+export interface DomainSnapshotDefinition {
+  records?: readonly DomainRecordDefinition[];
+  relations?: readonly DomainRelationDefinition[];
+}
+
+/** A detached domain snapshot with explicit collections. */
+export interface DomainSnapshot {
+  records: readonly DomainRecord[];
+  relations: readonly DomainRelation[];
+}
+
+/** One observed issue in a snapshot; callers decide whether an error blocks their workflow. */
+export interface DomainSnapshotFinding {
+  rule: string;
+  severity: "error" | "warning";
+  message: string;
+  path?: string;
+}
+
 export const PRIMITIVE_VALUE_TYPES: readonly PrimitiveValueType[] = [
   "string",
   "number",

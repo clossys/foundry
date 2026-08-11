@@ -2,9 +2,8 @@
 
 A small set of TypeScript packages for validating an npm workspace against
 what is actually true of it — not against what its own packages claim about
-themselves. This repository is public and MIT licensed; the packages it
-publishes are currently **private** on GitHub Packages (see Installing,
-below).
+themselves. This repository is public and MIT licensed; packages publish to
+GitHub Packages with visibility decided per package (see Installing, below).
 
 **Thesis:** every check here runs against what is actually on disk or
 actually installed — never against what a manifest claims about itself. An
@@ -19,7 +18,7 @@ for the full account.
 | Package | What it does |
 | --- | --- |
 | [`@vespeneventures/policy`](packages/policy) | Content-addressed binding: commit a document's digest publicly without committing the document, then verify later-materialized content matches it byte-for-byte. Zero dependencies, zero I/O. |
-| [`@vespeneventures/domain-model`](packages/domain-model) | Dependency-free machinery for product-owned domain models: stable identifiers, value types, closed vocabularies, domain types with fields, directed attributed relations, deterministic JSON artifacts, validation, and compatibility comparison. Ships no product values or runtime. |
+| [`@vespeneventures/domain-model`](packages/domain-model) | Dependency-free machinery for product-owned domain models and snapshots: stable identifiers, value types, closed vocabularies, domain types with fields, directed attributed relations, deterministic JSON artifacts, validation, and compatibility comparison. Ships no product values or runtime. |
 | [`@vespeneventures/comms`](packages/comms) | Finished communication contracts at the root plus the `./resend` subpath: typed email messages, validation, host-owned consent/policy, atomic dispatch claims with opaque leases, explicit provider acceptance, normalized lifecycle/inbound events, durable ledger ports, strict Resend mapping, idempotency/tag normalization, raw-body Svix verification, and signed delivery/inbound event mapping. Ships no credentials, identities, templates, routes, storage, provider configuration, or environment reads. |
 | [`@vespeneventures/catalog`](packages/catalog) | Walks a workspace's `packages/` directory and reports what exists, what could not be read, and whether the real dependency graph — read from each package's own `dependencies`/`peerDependencies` — has cycles or missing internal packages. |
 | [`@vespeneventures/gates`](packages/gates) | Orchestrates `catalog` and `policy` into one call, a deterministic build order, and the `foundry-check` CLI. |
@@ -39,13 +38,18 @@ Each package's own README has the full API and the reasoning behind it.
 The cross-package ownership and adoption plan is in
 [docs/COMMUNICATIONS.md](docs/COMMUNICATIONS.md).
 
+The table is a source-tree inventory, not a promise that every named package
+is available in the registry. Dependent packages publish only after their
+runtime siblings, and every such release is proved from an isolated install
+of its selected tarball. The required order for the core release graph is
+documented in [docs/PUBLISHING.md](docs/PUBLISHING.md).
+
 ## Installing
 
-Packages publish to **GitHub Packages**, not the public npm registry, and
-are currently **private** — installing needs a GitHub personal access token
-with `read:packages` scope, and an account with access granted to this
-organization's packages, regardless of whether the repository itself is
-public.
+Packages publish to **GitHub Packages**, not the public npm registry.
+Installing any GitHub Packages release needs a GitHub token with
+`read:packages`, including releases whose package visibility is public. A
+private package also requires an account granted access to that package.
 
 Add to your project's `.npmrc` (never commit a real one):
 
@@ -61,13 +65,15 @@ been granted access:
 npm install @vespeneventures/gates
 ```
 
-Nothing here has been published for open, unauthenticated installation yet.
-See [docs/PUBLISHING.md](docs/PUBLISHING.md) for the maintainer process and
-why packages default to private.
+Packages are private by default; registry availability is a per-package,
+per-version fact rather than a property of this public repository. See
+[docs/PUBLISHING.md](docs/PUBLISHING.md) for the maintainer process,
+dependency order, and the isolated install proof required before publishing.
 
 ## Usage
 
-The `gates` package ships a CLI, `foundry-check`, that walks a workspace's
+Once `@vespeneventures/gates` is available to your account, it ships a CLI,
+`foundry-check`, that walks a workspace's
 `packages/` directory and reports what it finds:
 
 ```bash
