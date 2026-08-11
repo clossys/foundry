@@ -12,7 +12,7 @@ function runtimeAuthEnvironment(): AuthEnvironment {
 
 /** Reports whether the explicit development-only bypass is active. */
 export function devAuthBypassEnabled(environment: AuthEnvironment = runtimeAuthEnvironment()): boolean {
-  return environment.NODE_ENV !== "production" && environment.NEXT_PUBLIC_DEV_NO_AUTH === "1";
+  return environment.NODE_ENV === "development" && environment.NEXT_PUBLIC_DEV_NO_AUTH === "1";
 }
 
 export function devAuthBypassIsKeyless(environment: AuthEnvironment = runtimeAuthEnvironment()): boolean {

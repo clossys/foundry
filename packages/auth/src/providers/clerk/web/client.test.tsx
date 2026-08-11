@@ -17,6 +17,15 @@ describe("AuthProvider", () => {
     expect(element.type).not.toBe(Fragment);
     expect(element.props).toMatchObject({ publishableKey: "configured" });
   });
+
+  it("treats a whitespace-only publishable key as keyless during development bypass", () => {
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("NEXT_PUBLIC_DEV_NO_AUTH", "1");
+    vi.stubEnv("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "");
+
+    const element = AuthProvider({ children: "content", publishableKey: "  " });
+    expect(element.type).toBe(Fragment);
+  });
 });
 
 describe("humaniseClerkError", () => {
