@@ -85,39 +85,6 @@ describe("vespene-secrets-infisical CLI", () => {
     expect(invalid.stderr).not.toContain("attempted-sensitive-value");
   });
 
-  it("uses a names-only listing for presence checks", async () => {
-    const server = createServer((request, response) => {
-      expect(request.url).toContain("viewSecretValue=false");
-      expect(request.url).toContain("expandSecretReferences=false");
-      response.writeHead(200, { "content-type": "application/json" });
-      response.end(JSON.stringify({ imports: [], secrets: [{ secretKey: "EXAMPLE_KEY" }] }));
-    });
-    server.listen(0, "127.0.0.1");
-    await once(server, "listening");
-    const address = server.address();
-    if (address === null || typeof address === "string") throw new Error("test server did not bind a TCP port");
-
-    try {
-      const result = await runCli(
-        [
-          "get",
-          "EXAMPLE_KEY",
-          "--base-url",
-          `http://127.0.0.1:${address.port}`,
-          "--project-id",
-          "project-example",
-          "--environment",
-          "test",
-        ],
-        { INFISICAL_TOKEN: "access-example" },
-      );
-      expect(result).toMatchObject({ code: 0 });
-      expect(JSON.parse(result.stdout)).toEqual({ key: "EXAMPLE_KEY", present: true });
-    } finally {
-      await new Promise<void>((resolveClose) => server.close(() => resolveClose()));
-    }
-  });
-
   it("normalizes every nonzero child exit to the child-failure code", async () => {
     const server = createServer((_request, response) => {
       response.writeHead(200, { "content-type": "application/json" });

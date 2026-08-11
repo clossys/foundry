@@ -142,5 +142,9 @@ export interface VerifiedClerkWebhook {
 /** A raw body accepted without reparsing or reserializing it. */
 export type ClerkWebhookRawBody = string | Uint8Array;
 
-/** Header input from an HTTP framework. Header names are matched case-insensitively. */
-export type ClerkWebhookHeaders = Readonly<Record<string, string | undefined>>;
+/**
+ * Header input from an HTTP framework. Pass `request.headers` directly in a
+ * Fetch/Next.js handler, or a string-keyed record in other server frameworks.
+ * Header names are matched case-insensitively.
+ */
+export type ClerkWebhookHeaders = Readonly<Record<string, string | undefined>> | Pick<Headers, "get">;

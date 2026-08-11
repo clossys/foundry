@@ -51,12 +51,10 @@ export function createInfisicalClient(config: InfisicalClientConfig): InfisicalC
         }
         keys.add(entry.key);
       }
-      // Readiness is intentionally name-only: a check must not fetch values
-      // that it neither returns nor needs to decide whether a key is present.
-      const availableKeys = new Set((await transport.list(false)).map((record) => record.key));
       const entries = [];
       for (const entry of catalog.entries) {
-        entries.push({ key: entry.key, required: entry.required, present: availableKeys.has(entry.key) });
+        const value = await transport.get(entry.key);
+        entries.push({ key: entry.key, required: entry.required, present: value !== null && value.length > 0 });
       }
       return {
         ok: entries.every((entry) => !entry.required || entry.present),

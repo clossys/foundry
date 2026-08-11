@@ -109,6 +109,20 @@ function transactionalAdapter() {
   return adapter;
 }
 
+function withTransactionAdapter() {
+  const adapter = {
+    transactions: 0,
+    async query(_statement: string, _parameters?: readonly unknown[]): Promise<{ rows: never[] }> {
+      return { rows: [] };
+    },
+    async withTransaction<TResult>(work: (query: QueryAdapter) => Promise<TResult>): Promise<TResult> {
+      this.transactions += 1;
+      return work(this);
+    },
+  };
+  return adapter;
+}
+
 interface TransactionScopedQueryAdapter extends QueryAdapter {
   onTransactionComplete(callback: () => void): void;
 }
@@ -202,8 +216,12 @@ function event(
 describe("query adapter compatibility", () => {
   it("accepts only adapters with both query and transaction support", () => {
     const adapter = transactionalAdapter();
+    const poolAdapter = withTransactionAdapter();
     expect(isQueryAdapter(adapter)).toBe(true);
     expect(isTransactionalQueryAdapter(adapter)).toBe(true);
+    expect(isQueryAdapter(poolAdapter)).toBe(true);
+    expect(isTransactionalQueryAdapter(poolAdapter)).toBe(true);
+    expect(requireTransactionalQueryAdapter(poolAdapter).transaction).toBeTypeOf("function");
     expect(isQueryAdapter({ transaction() {} })).toBe(false);
     expect(isTransactionalQueryAdapter({ query() {} })).toBe(false);
     expect(() => requireTransactionalQueryAdapter({ query() {} })).toThrow(/transactional/i);
@@ -217,6 +235,17 @@ describe("query adapter compatibility", () => {
       event: event("created"),
     })).rejects.toThrow(/transactional/i);
     expect(repository.claims).toBe(0);
+  });
+
+  it("reconciles through a withTransaction pool without replacing its scoped query", async () => {
+    const adapter = withTransactionAdapter();
+    const repository = new MemoryRepository();
+    await expect(reconcileExternalMembership({
+      queryAdapter: adapter,
+      repository,
+      event: event("created"),
+    })).resolves.toMatchObject({ status: "created" });
+    expect(adapter.transactions).toBe(1);
   });
 });
 

@@ -15,7 +15,17 @@ export class ClerkWebhookSignatureError extends Error {
 
 const requiredHeaderNames = ["svix-id", "svix-timestamp", "svix-signature"] as const;
 
+function isHeaderAccessor(headers: ClerkWebhookHeaders): headers is Pick<Headers, "get"> {
+  return typeof (headers as { get?: unknown }).get === "function";
+}
+
 function readRequiredHeaders(headers: ClerkWebhookHeaders): Record<(typeof requiredHeaderNames)[number], string> {
+  if (isHeaderAccessor(headers)) {
+    const values = Object.fromEntries(requiredHeaderNames.map((name) => [name, headers.get(name) ?? undefined])) as Record<(typeof requiredHeaderNames)[number], string | undefined>;
+    const missingHeaders = requiredHeaderNames.filter((name) => !values[name]?.trim());
+    if (missingHeaders.length > 0) throw new ClerkWebhookSignatureError("signature-headers-missing", missingHeaders);
+    return values as Record<(typeof requiredHeaderNames)[number], string>;
+  }
   const normalized = new Map<string, string>();
   for (const [name, value] of Object.entries(headers)) if (typeof value === "string") normalized.set(name.toLowerCase(), value);
   const missingHeaders = requiredHeaderNames.filter((name) => !normalized.get(name)?.trim());

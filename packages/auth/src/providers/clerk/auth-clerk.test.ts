@@ -70,6 +70,16 @@ describe("verifyClerkWebhook", () => {
       expect((error as ClerkWebhookSignatureError).missingHeaders).toEqual(["svix-timestamp", "svix-signature"]);
     }
   });
+
+  it("accepts a Fetch Headers object directly without weakening header checks", () => {
+    const rawBody = JSON.stringify({ type: "user.created", timestamp: 1_786_313_600_000, data: { id: "user_synthetic" } });
+    const headers = new Headers(signedHeaders(rawBody));
+
+    expect(verifyClerkWebhook(rawBody, headers, signingSecret)).toMatchObject({
+      eventId: "msg_synthetic",
+      event: { type: "user.created" },
+    });
+  });
 });
 
 describe("mapClerkEvent", () => {

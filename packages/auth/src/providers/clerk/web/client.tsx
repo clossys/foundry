@@ -21,7 +21,7 @@ export interface AuthProviderProps extends Omit<ComponentProps<typeof ClerkProvi
 
 /** Mounts Clerk, or renders children in the explicit keyless development bypass. */
 export function AuthProvider({ children, ...props }: AuthProviderProps) {
-  if (devAuthBypassIsKeyless() && !props.publishableKey) return <Fragment>{children}</Fragment>;
+  if (devAuthBypassIsKeyless() && !props.publishableKey?.trim()) return <Fragment>{children}</Fragment>;
   return <ClerkProvider {...props}>{children}</ClerkProvider>;
 }
 

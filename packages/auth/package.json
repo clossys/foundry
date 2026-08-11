@@ -63,6 +63,9 @@
     "url": "git+https://github.com/vespeneventures/foundry.git",
     "directory": "packages/auth"
   },
+  "bugs": {
+    "url": "https://github.com/vespeneventures/foundry/issues"
+  },
   "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/auth#readme",
   "engines": {
     "node": ">=20"

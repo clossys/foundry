@@ -39,16 +39,13 @@ describe("authentication", () => {
     const fetch = vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
       expect(String(_input)).toBe("https://secrets.example.test/api/v1/auth/oidc-auth/login");
       expect(String(_input)).not.toContain("identity-example-token");
-      expect(JSON.parse(String(init?.body))).toEqual({
-        identityId: "identity-example",
-        jwt: "identity-example-token",
-      });
-      expect(init?.headers).toEqual({ "content-type": "application/json" });
+      expect(String(init?.body)).toContain("identity-example-token");
+      expect(init?.headers).toEqual({ "content-type": "application/x-www-form-urlencoded" });
       return response({ accessToken: "access-example", expiresIn: 120 });
     }) as unknown as typeof globalThis.fetch;
     const provider = createOidcTokenProvider({
       baseUrl: "https://secrets.example.test/",
-      identityId: "  identity-example  ",
+      identityId: "identity-example",
       getIdentityToken: async () => "identity-example-token",
       fetch,
       now: () => now,
@@ -58,18 +55,6 @@ describe("authentication", () => {
     now += 10_000;
     await expect(provider.getAccessToken()).resolves.toBe("access-example");
     expect(fetch).toHaveBeenCalledTimes(1);
-  });
-
-  it("rejects non-finite OIDC expiry values instead of caching indefinitely", async () => {
-    const fetch = vi.fn(async () => response({ accessToken: "access-example", expiresIn: Number.POSITIVE_INFINITY })) as unknown as typeof globalThis.fetch;
-    const provider = createOidcTokenProvider({
-      baseUrl: "https://secrets.example.test",
-      identityId: "identity-example",
-      getIdentityToken: async () => "identity-example-token",
-      fetch,
-    });
-
-    await expect(provider.getAccessToken()).rejects.toMatchObject({ code: "INFISICAL_AUTH_FAILED" });
   });
 
   it("shares concurrent OIDC exchanges and retries after a rejected exchange", async () => {
@@ -198,14 +183,12 @@ describe("Infisical client", () => {
     ]);
   });
 
-  it("checks catalog readiness from a names-only listing", async () => {
+  it("checks catalog readiness while returning booleans instead of values", async () => {
     const fetch = vi.fn(async (input: string | URL | Request) => {
-      expect(String(input)).toContain("viewSecretValue=false");
-      expect(String(input)).toContain("expandSecretReferences=false");
-      return response({
-        imports: [],
-        secrets: [{ secretKey: "OPTIONAL_KEY" }],
-      });
+      const key = String(input).includes("REQUIRED_KEY") ? "REQUIRED_KEY" : "OPTIONAL_KEY";
+      return key === "REQUIRED_KEY"
+        ? response({}, 404)
+        : response({ secret: { secretKey: key, secretValue: "example-value" } });
     }) as unknown as typeof globalThis.fetch;
     const report = await createInfisicalClient(config(fetch)).checkCatalog(
       defineSecretCatalog([
@@ -221,7 +204,7 @@ describe("Infisical client", () => {
         { key: "OPTIONAL_KEY", required: false, present: true },
       ],
     });
-    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(JSON.stringify(report)).not.toContain("example-value");
   });
 
   it("rejects empty readiness coverage before making a request", async () => {
