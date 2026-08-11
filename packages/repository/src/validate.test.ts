@@ -69,6 +69,7 @@ describe("validateRepositoryProfile", () => {
     expect(validateRepositoryProfile(crossRealmProfile)).toEqual([]);
 
     const frozenPrototypeProfile = runInNewContext(`
+      Object.freeze(Array.prototype);
       Object.freeze(Object.prototype);
       ({
         schemaVersion: 1,
@@ -195,6 +196,19 @@ describe("validateRepositoryProfile", () => {
     expect(validateRepositoryProfile({ ...validProfile, commands: hugeSparseCommands }).map((entry) => [entry.rule, entry.path])).toEqual([
       ["command-shape", "commands[0]"],
     ]);
+  });
+
+  it("rejects arrays that shadow built-in behavior", () => {
+    const commands = Object.assign([{ name: "test", run: "npm test" }], { map: null });
+    expect(validateRepositoryProfile({ ...validProfile, commands }).map((entry) => entry.rule)).toEqual(["commands-shape"]);
+
+    const protectedPaths = ["src/**"];
+    Object.defineProperty(protectedPaths, Symbol.iterator, { value: function* () { yield "../outside"; } });
+    expect(validateRepositoryProfile({ ...validProfile, protectedPaths }).map((entry) => entry.rule)).toEqual(["protected-paths-shape"]);
+
+    const customPrototypeCommands = [{ name: "test", run: "npm test" }];
+    Object.setPrototypeOf(customPrototypeCommands, { map: null });
+    expect(validateRepositoryProfile({ ...validProfile, commands: customPrototypeCommands }).map((entry) => entry.rule)).toEqual(["commands-shape"]);
   });
 
   it("validates sparse protected-path arrays by own index", () => {

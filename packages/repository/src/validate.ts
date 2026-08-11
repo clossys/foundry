@@ -20,6 +20,47 @@ const STANDARD_OBJECT_PROTOTYPE_KEYS = new Set<PropertyKey>([
   "__proto__",
   "toLocaleString",
 ]);
+const REQUIRED_ARRAY_PROTOTYPE_FUNCTIONS = [
+  "constructor",
+  "at",
+  "concat",
+  "copyWithin",
+  "fill",
+  "find",
+  "findIndex",
+  "findLast",
+  "findLastIndex",
+  "lastIndexOf",
+  "pop",
+  "push",
+  "reverse",
+  "shift",
+  "unshift",
+  "slice",
+  "sort",
+  "splice",
+  "includes",
+  "indexOf",
+  "join",
+  "keys",
+  "entries",
+  "values",
+  "forEach",
+  "filter",
+  "flat",
+  "flatMap",
+  "map",
+  "every",
+  "some",
+  "reduce",
+  "reduceRight",
+  "toReversed",
+  "toSorted",
+  "toSpliced",
+  "with",
+  "toLocaleString",
+  "toString",
+] as const;
 
 function hasStandardObjectPrototype(prototype: object): boolean {
   const actualKeys = Reflect.ownKeys(prototype);
@@ -38,6 +79,35 @@ function isRecord(value: unknown): value is RecordValue {
   const prototype = Object.getPrototypeOf(value);
   if (prototype === null) return true;
   return Object.getPrototypeOf(prototype) === null && hasStandardObjectPrototype(prototype);
+}
+
+function hasStandardArrayPrototype(prototype: object): boolean {
+  const objectPrototype = Object.getPrototypeOf(prototype);
+  if (typeof objectPrototype !== "object" || objectPrototype === null || Object.getPrototypeOf(objectPrototype) !== null) return false;
+  if (!hasStandardObjectPrototype(objectPrototype)) return false;
+
+  const length = Object.getOwnPropertyDescriptor(prototype, "length");
+  if (!length || !("value" in length) || length.value !== 0 || length.enumerable !== false) return false;
+  for (const key of REQUIRED_ARRAY_PROTOTYPE_FUNCTIONS) {
+    const descriptor = Object.getOwnPropertyDescriptor(prototype, key);
+    if (!descriptor || !("value" in descriptor) || typeof descriptor.value !== "function" || descriptor.enumerable !== false) return false;
+  }
+
+  const iterator = Object.getOwnPropertyDescriptor(prototype, Symbol.iterator);
+  const values = Object.getOwnPropertyDescriptor(prototype, "values");
+  return Boolean(iterator && values && "value" in iterator && "value" in values && iterator.value === values.value && iterator.enumerable === false);
+}
+
+function isArrayIndexName(name: string): boolean {
+  return /^(?:0|[1-9][0-9]*)$/.test(name) && Number(name) < 0xffffffff;
+}
+
+function isPlainArray(value: unknown): value is unknown[] {
+  if (!Array.isArray(value)) return false;
+  const ownKeys = Reflect.ownKeys(value);
+  if (ownKeys.some((key) => typeof key !== "string" || (key !== "length" && !isArrayIndexName(key)))) return false;
+  const prototype = Object.getPrototypeOf(value);
+  return typeof prototype === "object" && prototype !== null && hasStandardArrayPrototype(prototype);
 }
 
 function finding(rule: RepositoryProfileFindingRule, path: string, message: string): RepositoryProfileFinding {
@@ -71,7 +141,7 @@ function isBranchName(value: string): boolean {
 
 function arrayIndexNames(value: unknown[]): string[] {
   return Object.getOwnPropertyNames(value)
-    .filter((name) => /^(?:0|[1-9][0-9]*)$/.test(name) && Number(name) < 0xffffffff)
+    .filter(isArrayIndexName)
     .sort((left, right) => Number(left) - Number(right));
 }
 
@@ -91,8 +161,8 @@ function validateRepositoryProfileValue(value: unknown): RepositoryProfileFindin
     findings.push(finding("default-branch", "defaultBranch", "defaultBranch must be a valid Git branch name."));
   }
 
-  if (!hasOwn(value, "commands") || !Array.isArray(value.commands)) {
-    findings.push(finding("commands-shape", "commands", "commands must be an array."));
+  if (!hasOwn(value, "commands") || !isPlainArray(value.commands)) {
+    findings.push(finding("commands-shape", "commands", "commands must be a plain array with no behavior-shadowing properties."));
   } else {
     const seenNames = new Set<string>();
     let nextExpectedIndex = 0;
@@ -133,8 +203,8 @@ function validateRepositoryProfileValue(value: unknown): RepositoryProfileFindin
     }
   }
 
-  if (!hasOwn(value, "protectedPaths") || !Array.isArray(value.protectedPaths)) {
-    findings.push(finding("protected-paths-shape", "protectedPaths", "protectedPaths must be an array."));
+  if (!hasOwn(value, "protectedPaths") || !isPlainArray(value.protectedPaths)) {
+    findings.push(finding("protected-paths-shape", "protectedPaths", "protectedPaths must be a plain array with no behavior-shadowing properties."));
   } else {
     const seen = new Set<string>();
     let nextExpectedIndex = 0;
