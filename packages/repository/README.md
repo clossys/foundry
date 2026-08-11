@@ -78,6 +78,37 @@ consumer exist.
 
 Node 20+. ESM only. Zero runtime dependencies.
 
+## CLI
+
+`repository-check` validates exactly one JSON profile file. It reads no
+repository state, runs no declared commands, and invokes neither Git nor a
+provider API.
+
+```bash
+repository-check repository-profile.json
+```
+
+It writes one deterministic JSON report to standard output:
+
+```json
+{
+  "ok": false,
+  "findings": [
+    {
+      "rule": "default-branch",
+      "severity": "error",
+      "path": "defaultBranch",
+      "message": "defaultBranch must be a valid Git branch name."
+    }
+  ]
+}
+```
+
+Its exit codes are `0` for a valid profile, `1` for validation findings, and
+`2` when it cannot run because its arguments are invalid, the profile file is
+unreadable, or the file is not valid JSON. Use `repository-check --help` for
+the complete invocation contract.
+
 ## Licence
 
 MIT.
