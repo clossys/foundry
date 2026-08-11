@@ -20,20 +20,10 @@ on:
         required: true
         default: true
         type: boolean
-      make_public:
-        description: >-
-          Also flip this package's registry visibility to public after
-          publishing. Defaults to false: packages publish PRIVATE by default
-          while the foundation library is still WIP and unproven in a real
-          consumer. Opt in explicitly, per-package, only once you actually
-          want strangers able to `npm install` it.
-        required: true
-        default: false
-        type: boolean
 
 permissions:
   contents: read
-  packages: write # needed to attempt the visibility fix-up after publish
+  packages: write # publish the merged package version
   id-token: write # npm provenance
 
 concurrency:
@@ -312,11 +302,10 @@ jobs:
             echo "::error title=Tarball mismatch::$TARBALL sha256 changed since it was packed and scanned (expected $EXPECTED_SHA256, got $actual_sha256). Refusing to publish."
             exit 1
           fi
-          # --access public is a registry-protocol flag, not a visibility
-          # setting on GitHub Packages — it does not make the package
-          # installable without a token, and observed behaviour this repo has
-          # actually hit is that a fresh package still lands PRIVATE despite
-          # it. The real visibility lever is the opt-in step below.
+          # GitHub Packages still requires registry authentication for npm
+          # installs, even when package visibility is public. Visibility and
+          # repository inheritance are configured through GitHub's supported
+          # package settings, not npm's --access flag or a REST PATCH route.
           npm publish "$TARBALL" --provenance --access public
 
       # A local tarball round trip proves the source artifact before publish,
@@ -385,46 +374,3 @@ jobs:
           }
           console.log(`published artifact imports: ${result.imports.map((check) => check.subpath).join(", ")}`);
           NODE
-
-      # GitHub Packages does not necessarily default a fresh package to public
-      # visibility even when the owning repo is public — new packages publish
-      # PRIVATE by default here (org members only), and this step is what
-      # would flip that. It is gated behind inputs.make_public (default
-      # false), not just an automatic publish: the foundation library is still
-      # WIP and not yet proven in a real consumer, so a plain publish must
-      # NOT silently make the result installable by strangers. A user account
-      # and an organisation are different REST paths and there is no reliable
-      # way to know which one this repo's owner is without asking — the same
-      # ambiguity scripts/check-name-collision.mjs resolves by trying both.
-      # Owner is derived from package-scope.json's `scope` (under GitHub
-      # Packages the scope IS the owner login) rather than hardcoded, so this
-      # step is not tied to any one account or org. Attempt it automatically
-      # when opted in, but never fail the publish over it: a green publish
-      # with a manual follow-up step is fine, a red publish because a
-      # convenience step failed is not.
-      - name: Attempt to set package visibility to public
-        if: ${{ github.event_name == 'workflow_dispatch' && !inputs.dry_run && inputs.make_public }}
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PKG: ${{ matrix.package }}
-        run: |
-          name="$(node -p "require('./packages/' + process.env.PKG + '/package.json').name.split('/')[1]")"
-          owner="$(node -p "JSON.parse(require('fs').readFileSync('package-scope.json','utf8')).scope.replace(/^@/, '')")"
-          # The path segment is built from a fragment rather than written out
-          # whole, because the literal form collides case-insensitively with
-          # the internal-path rule in this repo's own safety gate — this file
-          # has to pass the same gate it ships alongside. Mirrors
-          # scripts/check-name-collision.mjs.
-          kind_user="us""ers"
-          set_ok=""
-          for kind in orgs "$kind_user"; do
-            if gh api -X PATCH "/${kind}/${owner}/packages/npm/${name}" -f visibility=public; then
-              echo "visibility set to public via API (${kind} path)"
-              set_ok=1
-              break
-            fi
-          done
-          if [ -z "$set_ok" ]; then
-            echo "::warning title=Manual step needed::Could not set visibility via API — check https://github.com/orgs/${owner}/packages/npm/package/${name}/settings (org-owned) or https://github.com/${kind_user}/${owner}/packages/npm/package/${name}/settings (personal-account-owned) by hand."
-          fi

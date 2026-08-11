@@ -191,9 +191,6 @@ not publish: release them only with a version change.
 
 Actions → **Publish** remains available for an explicit `dry_run: true` and
 for bootstrap publication of a version that predated this automation.
-`make_public` defaults to `false` — leave it off; the package publishes
-private, and going public is a separate, explicit decision made later (see
-"Package visibility" below).
 
 The workflow re-runs every gate in FULL mode — including name collision and
 artifact safety — builds, tests, packs and prints one tarball. A manual dry
@@ -237,17 +234,16 @@ later would cost (a config change, not a rewrite).
 
 ### Package visibility
 
-New packages publish **private** by default (visible only to accounts with
-explicit access), even though this repository itself is public — that is
-deliberate while this package set is still unproven with no real external
-consumer, not a platform quirk to work around. The publish workflow's
-`make_public` input, off by default, opts a specific package into public
-visibility once that changes; leaving it off is what keeps a fresh publish
-from becoming silently installable by a stranger. When `make_public` is
-set, the workflow attempts an org-scoped API call to flip visibility and
-warns rather than fails if it doesn't work — check
-`https://github.com/orgs/vespeneventures/packages/npm/package/<name>/settings`
-by hand if it does.
+GitHub Packages visibility is configured in GitHub's package settings. The
+supported REST API does not offer a package-visibility update route, so the
+release workflow does not attempt one. Keep package access inherited from this
+public source repository and verify the package is public in GitHub before the
+first release. Version-triggered publishing remains fully automatic.
+
+Public visibility does not make npm registry requests anonymous: GitHub
+Packages requires an authenticated token with `read:packages` to install. For
+GitHub Actions consumers, grant the consumer repository package Actions access
+and use its job-scoped `GITHUB_TOKEN` with `packages: read`.
 
 ## Prerequisites held outside this repository
 
