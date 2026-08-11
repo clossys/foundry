@@ -1,9 +1,10 @@
 # @vespeneventures/gates
 
-Orchestrates `@vespeneventures/catalog` and `@vespeneventures/policy` into
-single, useful operations. It adds no new validation rules or binding logic
-of its own — every finding a `gates` function returns was produced by
-calling `catalog`'s or `policy`'s own functions.
+Foundation orchestration and pure governance checks. The package joins
+`@vespeneventures/catalog` and `@vespeneventures/policy` for workspace checks,
+build ordering, and binding verification, and it exposes consumer-supplied
+secret governance for names, source reads, credential surfaces, local files,
+catalog readiness, and provider resource names.
 
 ```bash
 npm install @vespeneventures/gates
@@ -27,154 +28,211 @@ One call that builds a catalog and evaluates it: nothing new beyond calling
 sequence and returning the result under one name — but it is the thing a
 consumer of this package actually wants to call.
 
+## Foundation checks
+
 ```ts
-import { runFoundationCheck } from "@vespeneventures/gates";
+import {
+  computeBuildOrder,
+  runFoundationCheck,
+  verifyPolicyBindings,
+} from "@vespeneventures/gates";
 
 const report = runFoundationCheck(process.cwd(), { scope: "@your-scope" });
-for (const finding of report.findings) {
-  console.error(`[${finding.severity}] ${finding.rule}${finding.package ? ` (${finding.package})` : ""}: ${finding.message}`);
-}
-if (report.findings.some((f) => f.severity === "error")) process.exitCode = 1;
-
-// report.complete is false when buildCatalog could not read or use some
-// path (an unreadable directory, a malformed manifest, a missing packages
-// directory) — equivalent to checking `report.catalog.skipped.length === 0`
-// by hand, but a caller does not have to remember to.
-if (!report.complete) console.error(`warning: ${report.catalog.skipped.length} path(s) were not checked`);
+const order = computeBuildOrder(report.catalog, { scope: "@your-scope" });
+const policyResults = verifyPolicyBindings(checks);
 ```
 
-### 2. Topological build order — `computeBuildOrder`
+`runFoundationCheck` delegates workspace discovery and evaluation to
+`@vespeneventures/catalog`. Its `complete` flag is false whenever any path was
+skipped. `computeBuildOrder` refuses cyclic or duplicate-name catalogs and
+otherwise returns a deterministic topological order. `verifyPolicyBindings`
+delegates each already-read document to `@vespeneventures/policy` and preserves
+the caller's policy identifier.
 
-Computes a deterministic build order from the same internal-dependency graph
-`catalog` already reads, using Kahn's algorithm: repeatedly take a ready
-package (no unresolved internal dependency remaining), append it to the
-order, and remove its outgoing edges.
+## Secret governance
 
-It does not reimplement cycle or duplicate-name detection. It calls
-`evaluateCatalog` first, and if that reports any `dependency-cycle` or
-`duplicate-name` finding, returns those findings as the failure instead of
-attempting a sort — a cyclic graph has no valid topological order to
-compute, and two entries sharing a name make "the" entry named X ambiguous
-for the same reason.
+Every secret gate is pure. Callers supply source text, path inventories,
+value-free metadata, readiness booleans, or naming rules. These functions do
+not resolve values, inspect an environment, walk a repository, authenticate to
+a provider, or own principals and grants.
 
-An entry with no matching real dependency is treated as having no internal
-dependencies. Ties between packages with no dependency relationship to each
-other are broken alphabetically by name, so the result is deterministic and
-reproducible — the same input catalog always produces the same order, on
-any machine, in any run.
+### Raw environment reads and names
 
 ```ts
-import { runFoundationCheck, computeBuildOrder } from "@vespeneventures/gates";
+import {
+  checkSecretName,
+  detectRawSecretReads,
+} from "@vespeneventures/gates";
 
-// runFoundationCheck's catalog is already built — reuse it rather than
-// building a second one.
-const { catalog } = runFoundationCheck(process.cwd());
-const result = computeBuildOrder(catalog);
-
-if (!result.ok) {
-  for (const finding of result.findings) console.error(`[error] ${finding.rule}: ${finding.message}`);
-  process.exit(1);
-}
-for (const name of result.order) {
-  console.log(name); // build in this order, left to right
-}
+const nameFindings = checkSecretName("APP_SIGNING_KEY");
+const readFindings = detectRawSecretReads({
+  filePath: "src/config.ts",
+  body: sourceText,
+});
 ```
 
-### 3. Orchestrated policy verification — `verifyPolicyBindings`
+`checkSecretName` requires uppercase underscore-separated keys that begin with
+a letter. `detectRawSecretReads` finds sensitive dot and string-bracket
+`process.env` access, including optional chaining, and fails computed bracket
+or whole-environment access because its sensitivity cannot be classified
+statically. Sensitive suffixes are built in; consumers can add exact
+names, allow known non-secret names, or explicitly exempt the one adapter
+implementation that is supposed to read the environment. `NEXT_PUBLIC_*`
+names are ignored. Markdown prose files are not parsed as executable source.
+For MDX, executable expression and module blocks are inspected while prose,
+inline code, and fenced examples do not create findings.
 
-Given a list of `{ policyId, binding, content }` checks — the caller has
-already read whatever file or secret `content` came from; this package does
-zero I/O of its own — verifies each binding against its content using
-`@vespeneventures/policy`'s own `verifyBinding`, and returns one result per
-check, each clearly attributed to its `policyId`.
+### Value-free catalog and readiness
 
 ```ts
-import { verifyPolicyBindings } from "@vespeneventures/gates";
-import type { PolicyCheck } from "@vespeneventures/gates";
+import {
+  checkSecretReadiness,
+  checkValueFreeSecretCatalog,
+} from "@vespeneventures/gates";
 
-// A CI script reads each document and its binding from wherever they live,
-// and hands the already-read bytes to this function — gates never decides
-// where a binding declaration lives or how its content gets read.
-const checks: PolicyCheck[] = [
-  { policyId: "release-checklist", binding: checklistBinding, content: checklistText },
-];
+const catalog = {
+  version: 1,
+  entries: [
+    { key: "APP_SIGNING_KEY", required: true, group: "runtime" },
+  ],
+};
 
-const results = verifyPolicyBindings(checks);
-for (const result of results) {
-  for (const finding of result.findings) {
-    console.error(`[${finding.severity}] ${result.policyId}: ${finding.rule} — ${finding.message}`);
-  }
-}
-if (results.some((r) => r.findings.length > 0)) process.exitCode = 1;
+const catalogFindings = checkValueFreeSecretCatalog(catalog);
+const readinessFindings = checkSecretReadiness(catalog, [
+  { key: "APP_SIGNING_KEY", present: true },
+]);
 ```
 
-### The `foundry-check` CLI
+Catalog entries allow only `key`, `required`, optional `description`, and
+optional `group`. Unknown properties are errors, which prevents `value`,
+provider response, token, or repository topology fields from slipping into a
+catalog. An invoked catalog gate also requires at least one entry, so empty
+coverage cannot report a false pass. Readiness observations contain only key and presence. Missing
+required keys are errors; missing optional keys are warnings; unregistered or
+duplicate observations are errors.
 
-This package also ships a command-line entry point, `foundry-check`, a thin
-wrapper over `runFoundationCheck`:
+### Credential inventory and surface drift
 
-```bash
-npx foundry-check --scope @your-scope
+```ts
+import {
+  checkCredentialInventory,
+  checkCredentialSurfaceDrift,
+} from "@vespeneventures/gates";
+
+const inventory = {
+  version: 1,
+  credentials: [
+    {
+      id: "example-service",
+      secretKey: "EXAMPLE_SERVICE_KEY",
+      provider: "example-provider",
+      surfaces: ["web", "worker"],
+    },
+  ],
+};
+
+const inventoryFindings = checkCredentialInventory(inventory);
+const driftFindings = checkCredentialSurfaceDrift(inventory, observedSurfaces);
 ```
 
+The inventory names storage references and consuming surfaces only. It has no
+value, principal, token, permission, policy, or grant fields. Drift checking
+reports both observed-but-undeclared and declared-but-unobserved surfaces. An
+invoked inventory gate requires at least one credential entry.
+Identity and authorization remain a separate ownership boundary.
+
+### Local secret files
+
+```ts
+import { checkLocalSecretFiles } from "@vespeneventures/gates";
+
+const findings = checkLocalSecretFiles([
+  { path: ".env", tracked: true },
+  { path: "apps/web/.env.local", tracked: false },
+  { path: ".env.example", tracked: true },
+]);
 ```
+
+The gate inspects paths only, never file contents. Secret-bearing `.env*`
+files are errors whether tracked or merely present; value-free `.example`,
+`.sample`, `.template`, and `.dist` files are allowed. A consumer may supply
+an exact path allowlist, but no broad implicit exception exists.
+
+### Provider resource names
+
+```ts
+import { checkProviderResourceNames } from "@vespeneventures/gates";
+
+const findings = checkProviderResourceNames(
+  [{ provider: "example", kind: "project", name: "app-production" }],
+  [{ provider: "example", kind: "project", pattern: "[a-z]+-(?:development|production)" }],
+);
+```
+
+Rules are injected by the consumer and matched as full regular expressions.
+Kind-specific rules take precedence over provider-wide rules. An invalid
+pattern or a resource with no covering rule fails closed. This package ships
+no organization, product, project, environment, or folder names.
+
+## CLI
+
+`foundry-check` remains the workspace foundation CLI:
+
+```text
 Usage: foundry-check [root] [options]
 
-  root                   Directory to check. Defaults to the current working directory.
-
-Options:
-  --scope <scope>        Restricts which of a package's real dependencies/peerDependencies count as internal to this catalog.
-  --packages-dir <dir>   Directory holding packages, relative to root. Must not be absolute. Defaults to "packages".
-  --max-depth <n>        How many directory levels below packages-dir to search. Must be a positive integer. Defaults to 4.
-  --help                 Print this message and exit 0.
+  --scope <scope>        Restrict which dependencies count as internal.
+  --packages-dir <dir>   Relative package directory. Defaults to packages.
+  --max-depth <n>        Positive package discovery depth. Defaults to 4.
+  --help                 Print usage.
 ```
 
-Exit codes: `0` — ran cleanly, no error-severity finding; `1` — ran
-cleanly, at least one error-severity finding; `2` — could not run at all
-(bad input, or an unexpected failure).
+Exit codes are `0` for no error findings, `1` for at least one error finding,
+and `2` when the check could not run. Secret gates are programmatic because
+each consumer owns how source files, tracked paths, inventories, and provider
+observations are collected.
 
 ## API
 
 | Export | Kind | Purpose |
 | --- | --- | --- |
-| `runFoundationCheck(root, options?)` | function | Builds a catalog rooted at `root` (via `buildCatalog`) and evaluates it (via `evaluateCatalog`), returning a `FoundationReport`. `options.scope` is passed through to `evaluateCatalog`; `options.packagesDir`/`options.maxDepth` pass through to `buildCatalog`. Does the same I/O `buildCatalog` does, and no more. |
-| `computeBuildOrder(catalog, options?)` | function | Computes a deterministic topological build order over an already-built `Catalog`'s internal-dependency graph. Pure — no I/O. Returns a `BuildOrderResult`. `options.scope` filters which real dependencies count as edges. |
-| `verifyPolicyBindings(checks)` | function | Verifies a batch of `PolicyCheck`s using `verifyBinding`, returning one `PolicyCheckResult` per check. Pure — no I/O. |
-| `FoundationReport` | type | `{ catalog: Catalog; findings: CatalogFinding[]; complete: boolean }` — what `runFoundationCheck` returns. `complete` is `true` exactly when `catalog.skipped` is empty, so a caller can tell a fully-scanned result from one where some path was unreadable or unusable without inspecting `catalog.skipped` itself. |
-| `BuildOrderResult` | type | `{ ok: true; order: string[] } \| { ok: false; findings: CatalogFinding[] }` — what `computeBuildOrder` returns. The `findings` on the `false` branch are `evaluateCatalog`'s own `dependency-cycle` and `duplicate-name` finding(s), unchanged — either one makes a valid order impossible to compute. |
-| `PolicyCheck` | type | `{ policyId: string; binding: PolicyBinding; content: string \| Uint8Array }` — one input to `verifyPolicyBindings`. |
-| `PolicyCheckResult` | type | `{ policyId: string; findings: Finding[] }` — one output of `verifyPolicyBindings`, echoing back the `policyId` of the check it came from. |
-| `Catalog`, `CatalogEntry`, `CatalogFinding` | re-exported | From `@vespeneventures/catalog`, so a caller reading a `FoundationReport` or a `BuildOrderResult` never needs a direct dependency on `catalog` just for the types. |
-| `Finding`, `PolicyBinding` | re-exported | From `@vespeneventures/policy`, so a caller building a `PolicyCheck` never needs a direct dependency on `policy` just for the types. |
+| `runFoundationCheck(root, options?)` | function | Build and evaluate a real workspace catalog, with explicit completeness. |
+| `computeBuildOrder(catalog, options?)` | function | Return a deterministic dependency order or the catalog findings that make ordering impossible. |
+| `verifyPolicyBindings(checks)` | function | Verify already-read content against policy bindings and preserve caller IDs. |
+| `checkSecretName(name, path?)` | function | Validate the public uppercase secret-key grammar. |
+| `detectRawSecretReads(input, options?)` | function | Find raw sensitive `process.env` reads in supplied source text. |
+| `checkValueFreeSecretCatalog(value)` | function | Validate strict metadata-only catalog shape and key uniqueness. |
+| `checkSecretReadiness(catalog, observations)` | function | Compare catalog requirements with value-free presence observations. |
+| `checkCredentialInventory(value)` | function | Validate value-free credential IDs, storage keys, providers, and surface declarations. |
+| `checkCredentialSurfaceDrift(inventory, observations)` | function | Compare declared and observed credential surfaces in both directions. |
+| `checkLocalSecretFiles(files, options?)` | function | Report secret-bearing environment paths without reading contents. |
+| `checkProviderResourceNames(resources, rules)` | function | Apply consumer-injected full-match naming rules by provider and kind. |
+| `FoundationReport` | type | Catalog, findings, and complete-coverage flag from `runFoundationCheck`. |
+| `BuildOrderResult` | type | Successful order or blocking catalog findings. |
+| `PolicyCheck` / `PolicyCheckResult` | types | Attributed policy verification input and output. |
+| `SecretGateFinding` | type | Secret gate rule, severity, message, and optional path. |
+| `RawSecretReadOptions` | type | Added sensitive names, allowed names, and explicit adapter exemption. |
+| `SecretCatalogGateDocument` / `SecretCatalogGateEntry` | types | Value-free catalog shapes accepted by secret gates. |
+| `SecretReadinessObservation` | type | Key and presence-only readiness input. |
+| `CredentialInventory` / `CredentialInventoryEntry` | types | Value-free credential-to-surface inventory. |
+| `CredentialSurfaceObservation` | type | One observed credential and surface pair. |
+| `LocalFileObservation` / `LocalSecretFileOptions` | types | Path/tracked input and exact allowlist options. |
+| `ProviderResourceObservation` / `ProviderResourceNamingRule` | types | Consumer resource metadata and naming pattern. |
+| `Catalog` / `CatalogEntry` / `CatalogFinding` | re-exported types | Catalog result contracts. |
+| `Finding` / `PolicyBinding` | re-exported types | Policy result and binding contracts. |
 
-## Non-goal: content safety
+## Boundary from Foundry's publication safety
 
-`gates` orchestrates `catalog` and `policy` — questions about the *shape* of
-a workspace's package graph, and about whether materialized content matches
-a committed digest. It has nothing to do with, and never will have anything
-to do with, whether a package's *content* is safe to publish: secrets,
-committed build output, agent-instruction files, private identity. That is
-a separate, deliberately out-of-scope concern, owned entirely by this
-repository's own safety-gate scripts — work this package never touches,
-never imports from, and never reimplements. A `FoundationReport` with zero
-findings says nothing about whether the same tree would pass a
-content-safety scan; those are two different, deliberately separate
-questions, asked by two different, non-overlapping tools.
-
-## Build-order awareness
-
-`computeBuildOrder` exists to replace a hand-maintained build-order prefix
-with a real topological sort computed over the actual dependency graph.
-This repository's own root `package.json` currently still hand-maintains
-that prefix itself — building the packages with no internal dependencies
-first, then running a general pass over everything else — as a stopgap.
-Wiring the root build script to call `computeBuildOrder` instead is a
-decision for whoever owns that shared file next, not something this package
-changes on its own.
+These consumer-facing secret gates do not replace this repository's
+`check-public-safety` or artifact scan. Publication safety inspects this public
+tree and packed tarballs for forbidden files, credential-shaped material, and
+private identity. The package APIs above validate consumer-supplied metadata
+and observations. Both layers are necessary and deliberately have different
+inputs.
 
 ## Requirements
 
-Node 20+. ESM only. Runtime dependencies: `@vespeneventures/catalog`,
+Node 20+. ESM only. Runtime dependencies: `@vespeneventures/catalog` and
 `@vespeneventures/policy`.
 
 ## Licence
