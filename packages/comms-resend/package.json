@@ -1,0 +1,63 @@
+{
+  "name": "@vespeneventures/comms-resend",
+  "version": "0.1.0",
+  "private": false,
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/**/*.test.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "description": "Strict Resend email transport plus raw webhook verification and provider-event normalization for @vespeneventures/comms.",
+  "keywords": [
+    "communications",
+    "email",
+    "resend",
+    "webhooks",
+    "typescript"
+  ],
+  "author": "Calvin Hung",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vespeneventures/foundry.git",
+    "directory": "packages/comms-resend"
+  },
+  "bugs": {
+    "url": "https://github.com/vespeneventures/foundry/issues"
+  },
+  "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/comms-resend#readme",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@vespeneventures/comms": "~0.1.0",
+    "resend": "^6.19.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "~6.0.0",
+    "vitest": "^4.1.9"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  }
+}
