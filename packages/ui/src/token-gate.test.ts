@@ -1,4 +1,4 @@
-import { TOKENS, type TokenDefinition } from "@vespeneventures/tokens";
+import { TOKENS, type TokenDefinition } from "./tokens/index.js";
 import { describe, expect, it } from "vitest";
 import { extractStyleCandidates } from "./style-scan.js";
 import { checkTokenPurity } from "./token-gate.js";
@@ -17,9 +17,9 @@ function candidatesFor(src: string, file = "x.ts") {
 
 const NO_TOKENS: Readonly<Record<string, TokenDefinition>> = {};
 
-describe("checkTokenPurity — hardcodes-token-value (a BARE literal matching a real @vespeneventures/tokens entry)", () => {
+describe("checkTokenPurity — hardcodes-token-value (a BARE literal matching a real token entry)", () => {
   it("a hex color equal to --color-chart-categorical-1's real value is a hardcodes-token-value finding, severity error", () => {
-    // Real value from packages/tokens/src/tokens.ts — calibrated against
+    // Real value from src/tokens/tokens.ts — calibrated against
     // the actual registry, not a hand-picked fake, the same way
     // copy-gate.test.ts calibrates against Pagination.tsx/Select.tsx/
     // Table.tsx's real lines.

@@ -26,14 +26,14 @@
  *      attributes must actually account for, checked in both directions —
  *      every brandable slot has a derivation, and no derivation names a
  *      slot that doesn't exist — the same two-directional discipline
- *      `@vespeneventures/tokens`' own `brand-coverage.test.ts` uses. Slot
+ *      `@vespeneventures/ui/tokens`' own `brand-coverage.test.ts` uses. Slot
  *      and rule names are plain strings, never a typed import of
- *      `@vespeneventures/tokens` or `@vespeneventures/voice` — see
+ *      `@vespeneventures/ui/tokens` or `@vespeneventures/copy/voice` — see
  *      `brand-derivation.ts`'s header comment for the seam.
  *
  * Nothing in this package's own source is a real company's mission,
  * positioning, facts, or brand — see the README's "What this package is
- * not" and `@vespeneventures/tokens`' README ("The three-layer contract")
+ * not" and `@vespeneventures/ui/tokens`' README ("The three-layer contract")
  * for the pattern this mirrors: a schema and a checker ship here; the
  * values live in each consumer's own repository.
  */
@@ -90,5 +90,36 @@ export type {
 
 export { scanStrategyDirectory } from "./scan.js";
 export type { ScanOptions } from "./scan.js";
+
+export {
+  STRATEGY_RECORD_KINDS,
+  createStrategyProvenance,
+  getApprovedClaims,
+  serializeStrategyContract,
+  validateStrategyContract,
+} from "./contract.js";
+export type {
+  ApprovedClaimApproval,
+  ApprovedClaimRecord,
+  AudienceRecord,
+  BrandRecord,
+  ClaimRecord,
+  ClaimStatus,
+  ConstraintKind,
+  ConstraintRecord,
+  ConstraintTarget,
+  EvidenceKind,
+  EvidenceRecord,
+  HypothesisClaimRecord,
+  PositioningRecord,
+  ProductRecord,
+  RecordProvenance,
+  StrategyContract,
+  StrategyProvenance,
+  StrategyRecord,
+  StrategyRecordBase,
+  StrategyRecordKind,
+  StrategyRecordReference,
+} from "./contract.js";
 
 export type { ValidationIssue, ValidationResult, Validator } from "./validation.js";

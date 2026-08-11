@@ -1,119 +1,17 @@
 # Changelog
 
-All notable changes to this package are documented here. Format follows
-[Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+## Unreleased
 
-## [0.1.0] - Unreleased
+- Added the strict, locale-aware `CopyRegistry` and `CopyRef` resolution API
+  for audience-facing rendered surfaces, including entry lifecycle and source
+  provenance.
+- Added `createCopyResolver` and `resolveCopyRef`; required copy now fails
+  closed for unknown IDs, locale mismatch, unapproved lifecycle state, and
+  placeholder mismatches.
 
-### Changed
+## 0.1.0
 
-- `dependencies["@vespeneventures/voice"]` bumped `~0.1.0` -> `~0.2.0`.
-  `voice` 0.2.0 added a template, a `VOICE_FIELDS` bindable/fixed catalog,
-  and an unbound-placeholder signal on `checkCopy`'s report — a `~0.x.0`
-  range is patch-only, so the old range stopped resolving the workspace
-  copy the moment `voice` crossed a minor version, which `npm ci` (unlike
-  a dev tree with `node_modules` already linked from a prior install)
-  catches immediately by reaching for the public registry and 404ing,
-  since these packages are private on GitHub Packages. Checked this
-  package's own test suite and fixtures against the new
-  `"voice:unbound-placeholder"` finding: every `VoiceRecord` fixture here
-  uses real (non-placeholder) values, so `checkCopyRecord`'s behavior is
-  unchanged — this is a pure compatibility-range fix, not a functional one.
-
-### Added
-
-- Initial release: the vocabulary layer over `@vespeneventures/voice`'s
-  verbal contract, the same split `@vespeneventures/ui` draws over
-  `@vespeneventures/tokens`.
-- **Schema** (`src/types.ts`): plain TypeScript types (no schema library —
-  see "Requirements" in the README) for `CopyEntry` (`id`, `text`,
-  `context`, optional `placeholders`, optional `factRef`) and
-  `CopyRecord` (`id`, `entries`).
-- **Shape validation** (`src/schema.ts`): `validateCopyRecordShape` —
-  hand-rolled type-guard validation, in the style of
-  `@vespeneventures/strategy`'s `validation.ts` and
-  `@vespeneventures/voice`'s own `schema.ts` — checking id uniqueness and
-  well-formedness (dot-separated, lowercase), non-empty `text`/`context`,
-  and that every declared `placeholders` entry actually appears as
-  `{name}` in its entry's `text`, plus `parseCopyRecord` (fail-fast,
-  throws with every issue listed).
-- **The reader** (`src/registry.ts`): `readCopyRecord(path)`, in the shape
-  of `@vespeneventures/strategy`'s `readStrategy` — reads a `CopyRecord`
-  from a JSON file on disk, never throwing; records an unreadable file, an
-  unparseable file, or a schema violation as an explicit issue instead.
-- **The checker** (`src/checker.ts`): `checkCopyRecord(record,
-  voiceRecord, options?)` — runs every entry's `text` through
-  `@vespeneventures/voice`'s own `checkCopy`, aggregates the findings
-  (each tagged with the entry id it came from), and fails closed on an
-  invalid `CopyRecord`, an invalid `VoiceRecord`, or a record with zero
-  entries, rather than reporting any of those as a clean pass. Reports an
-  explicit `checkedCount`/`skippedCount` alongside the `checked`/`skipped`
-  arrays themselves, and a `complete` flag that means "did this run check
-  everything it could have" — independent of whether what it checked was
-  clean, mirroring `voice`'s own `VoiceCheckReport.complete`.
-- No runtime dependency beyond `@vespeneventures/voice` itself (an exact
-  `~0.1.0` range, not a caret range — see the README, "Requirements", for
-  why). Otherwise zero runtime dependencies, matching
-  `@vespeneventures/catalog`, `@vespeneventures/policy`,
-  `@vespeneventures/tokens`, and `@vespeneventures/voice`'s own precedent.
-- Full test coverage in `src/*.test.ts`, entirely hermetic: `types.ts`,
-  `schema.ts`, and `checker.ts` are tested against inline literal
-  fixtures only; `registry.ts` is tested against its own `mkdtemp`
-  directory, never a real path in this repository, with no network access
-  anywhere in the suite.
-- `scanCopySourceTree`/`extractCopyCandidates` (`src/scan.ts`): a
-  hand-rolled, no-parser-library character scanner that walks a real
-  source tree and extracts every string/template literal that looks like
-  user-facing copy, excluding import specifiers, object/destructuring
-  keys, `type`/`interface` context, `aria-*`/`data-*` and other
-  denylisted attribute values, class-name-builder and developer-diagnostic
-  call arguments, decorative glyphs, and bare lowercase enum/variant
-  tokens — every exclusion counted and reported by reason, never silent.
-  **Fails closed**: an unreadable directory or file throws; a file that
-  cannot be reliably tokenized is reported as a parse failure and
-  contributes zero candidates rather than being silently under-scanned.
-- `checkCopyTraceability` (`src/copy-gate.ts`): the pure traceability gate.
-  Matches each extracted candidate against a `CopyRecord` entry's `text`
-  by static shape — every `{name}`/`${...}` interpolation on both sides
-  collapsed to the same sentinel, so a source expression's actual content
-  and a registered entry's placeholder names never need to agree — or a
-  `copy:<id>` citation on the same line. Ships the same escape hatch and
-  citation-integrity discipline as `@vespeneventures/strategy`'s facts
-  gate: `copy-gate:ignore` is recorded into `result.ignored`, never
-  silent, and citing an id that does not exist in the record is itself a
-  finding (`unknown-copy-citation`).
-- `copy-check` CLI (`bin`, `src/cli.ts`), wired to the same three-state
-  exit-code contract `strategy-facts-check` and `@vespeneventures/gates`'
-  `foundry-check` use: `0` clean, `1` findings, `2` could not run —
-  explicitly covering "the copy record is missing or invalid" and "the
-  scan matched zero files" as `2`, never a silent `0`.
-- **JSX text nodes** (fixes #37): `scanCopySourceTree`/`extractCopyCandidates`
-  now extract raw JSX text (`<span>Hello</span>`'s `Hello`) in `.tsx`/`.jsx`
-  files, not just string/template literals — closing the gap that let a
-  JSX-heavy consumer (`@vespeneventures/ui` in this repo) read as a clean
-  scan while carrying entirely untracked copy. Mixed content across an
-  element boundary becomes separate candidates (never concatenated, never
-  dropping the tail); `{expression}` children (including a `{/* JSX
-  comment */}`) are code, not text; common named and every numeric JSX
-  entity is decoded; whitespace-only and punctuation-only text runs are
-  excluded the same way a decorative literal already was; a `<` that is
-  really a generic type argument or a comparison is never mistaken for
-  JSX. What the scanner genuinely cannot resolve — an unclosed element, an
-  unterminated attribute value/expression, JSX nesting past a depth safety
-  bound — is reported via a new `ScanResult.unchecked` field, never
-  silently dropped.
-- **`ScanResult.unchecked` / `UncheckedItem`** (new): the explicit
-  third-state accounting for a construct the scanner recognized but could
-  not classify. `checkCopyTraceability` (`src/copy-gate.ts`) now takes a
-  required 5th argument (`unchecked: UncheckedItem[]`) and passes it
-  straight through onto `CopyGateResult.unchecked`, unmodified — this is a
-  breaking signature change from the initial (unpublished) `0.1.0` shape,
-  taken now rather than after a real release. `copy-check` (`cli.ts`)
-  returns exit code `2` — "could not run [fully]" — whenever `unchecked`
-  is non-empty, even with zero traceability findings: a JSX construct the
-  scanner could not examine is the same "could not check" shape a parse
-  failure or zero-files-scanned already are, just at finer grain, so it
-  gets the same answer. Every real finding is still printed first; a
-  non-empty `unchecked` list only refuses to let the run read as clean.
-- `CopyCandidate.kind` widened from `"string" | "template"` to
-  `"string" | "template" | "jsx-text"`.
+- Consolidated the voice contract, template, validation, and checker into
+  `@vespeneventures/copy`.
+- Added `@vespeneventures/copy/voice` and
+  `@vespeneventures/copy/voice-record.template.jsonc` entry points.

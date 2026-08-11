@@ -1,10 +1,9 @@
-import { execFileSync } from "node:child_process";
 import { existsSync, mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
-import { packRoundTrip, registryAuthConfig, subprocessEnv } from "./pack-round-trip.js";
+import { packRoundTrip, subprocessEnv } from "./pack-round-trip.js";
 
 // Real subprocess integration tests. No mocking of npm pack/install/import
 // here — that would defeat the entire point of this package, which exists
@@ -25,19 +24,6 @@ describe("packRoundTrip — real subprocess round trip", () => {
       expect(check.ok).toBe(true);
       expect(check.error).toBeUndefined();
     }
-    expect(result.ok).toBe(true);
-  });
-
-  it("packages/comms installs both its root and Resend exports from a genuinely isolated directory", async () => {
-    const result = await packRoundTrip(join(repoRoot, "packages", "comms"));
-
-    expect(result.packageName).toBe("@vespeneventures/comms");
-    expect(result.tarballPath).not.toBe("");
-    expect(result.findings).toEqual([]);
-    expect(result.imports).toEqual([
-      { subpath: ".", ok: true },
-      { subpath: "./resend", ok: true },
-    ]);
     expect(result.ok).toBe(true);
   });
 
@@ -169,7 +155,8 @@ describe("packRoundTrip — exports shape handling (fixture packages)", () => {
     const result = await packRoundTrip(dir);
 
     expect(result.findings).toEqual([]);
-    expect(result.imports).toEqual([{ subpath: ".", ok: true }]);
+    expect(result.imports).toEqual([{ subpath: ".", mode: "import", ok: true }]);
+    expect(result.declarations).toEqual([{ subpath: ".", target: "./index.d.ts", ok: true }]);
     expect(result.ok).toBe(true);
   });
 
@@ -193,37 +180,157 @@ describe("packRoundTrip — exports shape handling (fixture packages)", () => {
     const result = await packRoundTrip(dir);
 
     expect(result.findings).toEqual([]);
-    expect(result.imports).toEqual([{ subpath: ".", ok: true }]);
+    expect(result.imports).toEqual([{ subpath: ".", mode: "import", ok: true }]);
     expect(result.ok).toBe(true);
   });
 
-  it("never exposes private-registry credentials to imported package code", async () => {
-    const dir = makeFixture("import-env", {
+  it("checks CSS and JSONC export files without trying to import them or install optional peers", async () => {
+    const dir = makeFixture("static-assets", {
       "package.json": JSON.stringify(
         {
-          name: "import-env-fixture",
+          name: "static-assets-fixture",
           version: "1.0.0",
           type: "module",
-          exports: "./index.js",
+          exports: {
+            "./tokens.css": "./styles/tokens.css",
+            "./record.template.jsonc": "./templates/record.template.jsonc",
+          },
+          // This is intentionally nonexistent. Its optional declaration
+          // means npm does not install it with the tarball; a static-only
+          // package must still be verifiable without runtime peers.
+          peerDependencies: { "peer-that-must-not-be-installed": "^1.0.0" },
+          peerDependenciesMeta: { "peer-that-must-not-be-installed": { optional: true } },
         },
         null,
         2,
       ),
-      "index.js":
-        "if (process.env.NODE_AUTH_TOKEN) throw new Error('import received registry credential');\nexport const ok = true;\n",
+      "styles/tokens.css": ":root { --fixture-token: 1; }\n",
+      "templates/record.template.jsonc": "{ // fixture\n  \"ok\": true\n}\n",
     });
 
-    const result = await packRoundTrip(dir, {
-      registry: {
-        url: "https://registry.example.test/",
-        authToken: "fixture-private-registry-token",
-        scope: "@private-scope",
-      },
-    });
+    const result = await packRoundTrip(dir);
 
-    expect(result.findings).toEqual([]);
-    expect(result.imports).toEqual([{ subpath: ".", ok: true }]);
     expect(result.ok).toBe(true);
+    expect(result.findings).toEqual([]);
+    expect(result.imports).toEqual([
+      { subpath: "./tokens.css", mode: "static", ok: true },
+      { subpath: "./record.template.jsonc", mode: "static", ok: true },
+    ]);
+  });
+
+  it("reports a clear finding when a declared static export was omitted from the tarball", async () => {
+    const dir = makeFixture("missing-static-asset", {
+      "package.json": JSON.stringify(
+        {
+          name: "missing-static-asset-fixture",
+          version: "1.0.0",
+          type: "module",
+          exports: { "./tokens.css": "./styles/tokens.css" },
+        },
+        null,
+        2,
+      ),
+    });
+
+    const result = await packRoundTrip(dir);
+
+    expect(result.ok).toBe(false);
+    expect(result.imports).toEqual([
+      {
+        subpath: "./tokens.css",
+        mode: "static",
+        ok: false,
+        error: 'static export target "./styles/tokens.css" is absent from the isolated installed tarball',
+      },
+    ]);
+    expect(result.findings).toHaveLength(1);
+    expect(result.findings[0]?.rule).toBe("round-trip-asset-missing");
+    expect(result.findings[0]?.message).toContain("./tokens.css");
+    expect(result.findings[0]?.message).toContain("./styles/tokens.css");
+  });
+
+  it("fails when a declared TypeScript target was omitted even though its runtime export imports", async () => {
+    const dir = makeFixture("missing-declaration", {
+      "package.json": JSON.stringify(
+        {
+          name: "missing-declaration-fixture",
+          version: "1.0.0",
+          type: "module",
+          exports: { ".": { types: "./dist/index.d.ts", import: "./index.js" } },
+        },
+        null,
+        2,
+      ),
+      "index.js": "export const ok = true;\n",
+    });
+
+    const result = await packRoundTrip(dir);
+
+    expect(result.ok).toBe(false);
+    expect(result.imports).toEqual([{ subpath: ".", mode: "import", ok: true }]);
+    expect(result.declarations).toEqual([
+      {
+        subpath: ".",
+        target: "./dist/index.d.ts",
+        ok: false,
+        error: 'declaration target "./dist/index.d.ts" is absent from the isolated installed tarball',
+      },
+    ]);
+    expect(result.findings).toHaveLength(1);
+    expect(result.findings[0]?.rule).toBe("round-trip-declaration-missing");
+  });
+
+  it("executes an explicitly advertised CommonJS branch as well as its ESM import branch", async () => {
+    const dir = makeFixture("dual-module", {
+      "package.json": JSON.stringify(
+        {
+          name: "dual-module-fixture",
+          version: "1.0.0",
+          type: "module",
+          exports: { ".": { import: "./index.js", require: "./index.cjs" } },
+        },
+        null,
+        2,
+      ),
+      "index.js": "export const format = 'esm';\n",
+      "index.cjs": "module.exports = { format: 'cjs' };\n",
+    });
+
+    const result = await packRoundTrip(dir);
+
+    expect(result.ok).toBe(true);
+    expect(result.findings).toEqual([]);
+    expect(result.imports).toEqual([
+      { subpath: ".", mode: "import", ok: true },
+      { subpath: ".", mode: "require", ok: true },
+    ]);
+  });
+
+  it("installs declared runtime peers before importing executable exports", async () => {
+    const dir = makeFixture("runtime-peer", {
+      "package.json": JSON.stringify(
+        {
+          name: "runtime-peer-fixture",
+          version: "1.0.0",
+          type: "module",
+          exports: "./index.js",
+          peerDependencies: { "is-number": "^7.0.0" },
+          // Optional prevents npm's initial local-tarball install from
+          // satisfying it automatically; packRoundTrip must add it before
+          // importing this runtime subpath.
+          peerDependenciesMeta: { "is-number": { optional: true } },
+        },
+        null,
+        2,
+      ),
+      "index.js": "import isNumber from 'is-number';\nexport const ok = isNumber(1);\n",
+    });
+
+    const result = await packRoundTrip(dir);
+
+    expect(result.ok).toBe(true);
+    expect(result.findings).toEqual([]);
+    expect(result.imports).toEqual([{ subpath: ".", mode: "import", ok: true }]);
   });
 
   // Partial failure: one good subpath and one genuinely broken one. The
@@ -253,7 +360,7 @@ describe("packRoundTrip — exports shape handling (fixture packages)", () => {
     expect(result.imports).toHaveLength(2);
     const good = result.imports.find((i) => i.subpath === ".");
     const broken = result.imports.find((i) => i.subpath === "./broken");
-    expect(good).toEqual({ subpath: ".", ok: true });
+    expect(good).toEqual({ subpath: ".", mode: "import", ok: true });
     expect(broken?.ok).toBe(false);
     expect(broken?.error).toContain("broken on purpose");
     expect(result.findings).toHaveLength(1);
@@ -287,65 +394,6 @@ describe("packRoundTrip — exports shape handling (fixture packages)", () => {
     expect(result.findings[0]?.rule).toBe("round-trip-install-failed");
     expect(result.findings[0]?.message).not.toContain("undefined:");
     expect(result.findings[0]?.message).toContain("<unnamed package>");
-  });
-
-  it("installs and imports a caller-supplied tarball without packing the source again", async () => {
-    const dir = makeFixture("exact-tarball", {
-      "package.json": JSON.stringify(
-        {
-          name: "exact-tarball-fixture",
-          version: "1.0.0",
-          type: "module",
-          exports: "./index.js",
-        },
-        null,
-        2,
-      ),
-      "index.js": "export const artifact = 'exact';\n",
-    });
-    const tarballDir = mkdtempSync(join(tmpdir(), "release-exact-tarball-"));
-    fixtureDirs.push(tarballDir);
-    const stdout = execFileSync("npm", ["pack", "--pack-destination", tarballDir], {
-      cwd: dir,
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "ignore"],
-    });
-    const tarballName = stdout.trim().split("\n").filter(Boolean).pop();
-    expect(tarballName).toBeDefined();
-    const tarballPath = join(tarballDir, tarballName as string);
-    writeFileSync(join(dir, "index.js"), "throw new Error('source changed after packing');\n");
-    writeFileSync(join(dir, "package.json"), JSON.stringify({
-      name: "exact-tarball-fixture",
-      version: "1.0.0",
-      type: "module",
-      exports: {},
-    }, null, 2));
-
-    const result = await packRoundTrip(dir, { tarballPath });
-
-    expect(result.ok).toBe(true);
-    expect(result.tarballPath).toBe(tarballPath);
-    expect(result.imports).toEqual([{ subpath: ".", ok: true }]);
-  });
-
-  it("reports a missing caller-supplied tarball without attempting an install", async () => {
-    const dir = makeFixture("missing-exact-tarball", {
-      "package.json": JSON.stringify(
-        { name: "missing-exact-tarball-fixture", version: "1.0.0", type: "module", exports: "./index.js" },
-        null,
-        2,
-      ),
-      "index.js": "export const ok = true;\n",
-    });
-
-    const result = await packRoundTrip(dir, { tarballPath: join(dir, "missing.tgz") });
-
-    expect(result.ok).toBe(false);
-    expect(result.imports).toEqual([]);
-    expect(result.findings).toEqual([expect.objectContaining({
-      rule: "round-trip-tarball-missing",
-      severity: "error",
-    })]);
   });
 
   it("throws for a directory with no package.json at all, as documented", async () => {
@@ -440,52 +488,20 @@ describe("subprocessEnv — subprocess environment sanitization (defect 3)", () 
     expect(env.npm_config_userconfig).toContain(isolationDir);
   });
 
-  it("uses only explicit private-registry credentials when the caller supplies them", () => {
-    const env = subprocessEnv("/tmp/release-private-registry-proof", {
-      url: "https://registry.example.test/",
-      authToken: "explicit-test-token",
-    });
-
-    expect(env.npm_config_registry).toBe("https://registry.example.test/");
-    expect(env.NODE_AUTH_TOKEN).toBe("explicit-test-token");
-    expect(env.npm_config_userconfig).toContain("release-private-registry-proof");
-  });
-
-  it("maps a private scope without diverting unscoped dependencies from npmjs", () => {
-    const registry = {
-      url: "https://registry.example.test/",
-      authToken: "explicit-test-token",
-      scope: "@private-scope",
-    };
-    const env = subprocessEnv("/tmp/release-scoped-registry-proof", registry);
-
-    expect(env.npm_config_registry).toBe("https://registry.npmjs.org/");
-    expect(registryAuthConfig(registry)).toBe(
-      "@private-scope:registry=https://registry.example.test/\n" +
-        "//registry.example.test/:_authToken=${NODE_AUTH_TOKEN}\n",
-    );
-  });
-
-  it("refuses a scope that could make an npmrc mapping unsafe", () => {
-    expect(() =>
-      registryAuthConfig({
-        url: "https://registry.example.test/",
-        authToken: "explicit-test-token",
-        scope: "@private-scope\nregistry=https://elsewhere.invalid",
-      }),
-    ).toThrow(/registry scope/);
-  });
-
-  it("keeps a scoped registry mapping when no credential is needed", () => {
-    expect(registryAuthConfig({ url: "https://registry.example.test/", scope: "@public-scope" })).toBe(
-      "@public-scope:registry=https://registry.example.test/\n",
-    );
-  });
-
   it("still passes through PATH and HOME, needed for npm/node themselves to run", () => {
     const env = subprocessEnv("/tmp/does-not-need-to-exist-for-this-check");
 
     expect(env.PATH).toBe(process.env.PATH);
     expect(env.HOME).toBe(process.env.HOME);
+  });
+
+  it("uses an explicit caller-provided registry without inheriting the ambient registry", () => {
+    process.env.npm_config_registry = "https://ambient-registry.invalid/";
+
+    const env = subprocessEnv("/tmp/does-not-need-to-exist-for-this-check", "https://configured-registry.invalid/");
+
+    expect(env.npm_config_registry).toBe("https://configured-registry.invalid/");
+    expect(env.npm_config_registry).not.toBe(process.env.npm_config_registry);
+    expect(env.NODE_AUTH_TOKEN).toBeUndefined();
   });
 });

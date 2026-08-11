@@ -50,9 +50,8 @@ const SHAPE_CLASSES: Record<SkeletonShape, string> = {
  * `animate-pulse` (Tailwind's own built-in keyframe, not a token — there is
  * no motion-CURVE token family for a symmetric fade in/out the way
  * `--ease-*` covers directional enter/exit transitions) is applied
- * unconditionally: a completely static placeholder reads as inert content
- * rather than "still loading", which is the entire reason this component
- * exists instead of a plain `Card`-colored `<div>`.
+ * used unless the user requests reduced motion. A static placeholder is a
+ * better trade-off than motion that a user explicitly opted out of.
  */
 export function Skeleton({
   shape = "text",
@@ -67,7 +66,7 @@ export function Skeleton({
       aria-label={ariaLabel}
       aria-busy={ariaLabel ? true : undefined}
       aria-hidden={ariaLabel ? undefined : true}
-      className={cx("animate-pulse bg-skeleton-fill", SHAPE_CLASSES[shape], className)}
+      className={cx("animate-pulse motion-reduce:animate-none bg-skeleton-fill", SHAPE_CLASSES[shape], className)}
     />
   );
 }

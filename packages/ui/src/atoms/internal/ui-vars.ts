@@ -1,12 +1,12 @@
 /**
- * Raw CSS custom-property reads for the handful of @vespeneventures/tokens
+ * Raw CSS custom-property reads for the handful of this package's token-layer
  * values that have no Tailwind utility namespace — see that package's
  * README, the "no Tailwind namespace, raw var() only" table. Everything
  * else this package styles with is a Tailwind class (`bg-accent`,
  * `text-ink-primary`, ...); these are the exceptions.
  *
  * Every read below carries an explicit fallback (the token's own shipped
- * default from @vespeneventures/tokens' `styles/tokens.css`), so a
+ * default from this package's `styles/tokens.css`), so a
  * consumer who has these atoms but hasn't wired up tokens' CSS yet still
  * gets a legible, if unbranded, result — a focus ring, a disabled state,
  * a raised card — instead of `var()` silently resolving to nothing.

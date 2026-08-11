@@ -2,8 +2,9 @@
 
 A small set of TypeScript packages for validating an npm workspace against
 what is actually true of it — not against what its own packages claim about
-themselves. This repository is public and MIT licensed; packages publish to
-GitHub Packages with visibility decided per package (see Installing, below).
+themselves. This repository is public and MIT licensed; the packages it
+publishes are currently **private** on GitHub Packages (see Installing,
+below).
 
 **Thesis:** every check here runs against what is actually on disk or
 actually installed — never against what a manifest claims about itself. An
@@ -17,27 +18,24 @@ for the full account.
 
 | Package | What it does |
 | --- | --- |
-| [`@vespeneventures/auth`](packages/auth) | One authorization package with provider-neutral root primitives plus isolated `./agent` and `./providers/clerk` subpaths. It covers closed role hierarchies, sessions, transactional membership reconciliation, strict redirects, delegated-agent guards, verified Clerk webhooks, and optional Next.js/Clerk web helpers without loading provider or framework code from the root. |
+| [`@vespeneventures/auth`](packages/auth) | Provider-neutral authorization primitives with isolated provider and framework subpaths. |
 | [`@vespeneventures/policy`](packages/policy) | Content-addressed binding: commit a document's digest publicly without committing the document, then verify later-materialized content matches it byte-for-byte. Zero dependencies, zero I/O. |
-| [`@vespeneventures/domain-model`](packages/domain-model) | Dependency-free machinery for product-owned domain models and snapshots: stable identifiers, value types, closed vocabularies, domain types with fields, directed attributed relations, deterministic JSON artifacts, validation, and compatibility comparison. Ships no product values or runtime. |
-| [`@vespeneventures/deployment`](packages/deployment) | Deployment-surface contracts, validation, deterministic health summaries, and read-only `./vercel` and `./render` inspectors with caller-injected transport and credentials. Ships no provider configuration, environment reads, raw provider payloads, or mutation capability. |
-| [`@vespeneventures/comms`](packages/comms) | Finished communication contracts at the root plus the `./resend` subpath: typed email messages, validation, host-owned consent/policy, atomic dispatch claims with opaque leases, explicit provider acceptance, normalized lifecycle/inbound events, durable ledger ports, strict Resend mapping, idempotency/tag normalization, raw-body Svix verification, and signed delivery/inbound event mapping. Ships no credentials, identities, templates, routes, storage, provider configuration, or environment reads. |
+| [`@vespeneventures/domain-model`](packages/domain-model) | Dependency-free machinery for product-owned domain models: stable identifiers, value types, closed vocabularies, domain types with fields, directed attributed relations, deterministic JSON artifacts, validation, and compatibility comparison. Ships no product values or runtime. |
+| [`@vespeneventures/deployment`](packages/deployment) | Deployment-surface contracts and read-only provider inspectors with caller-injected transport and credentials. |
+| [`@vespeneventures/comms`](packages/comms) | Provider-neutral finished communication contracts and an isolated Resend adapter. |
 | [`@vespeneventures/catalog`](packages/catalog) | Walks a workspace's `packages/` directory and reports what exists, what could not be read, and whether the real dependency graph — read from each package's own `dependencies`/`peerDependencies` — has cycles or missing internal packages. |
-| [`@vespeneventures/gates`](packages/gates) | Orchestrates `catalog` and `policy` into one call, a deterministic build order, and the `foundry-check` CLI; also ships pure consumer-supplied checks for secret names, raw environment reads, credential surfaces, local secret files, value-free catalogs/readiness, and provider resource names. |
-| [`@vespeneventures/repository`](packages/repository) | Dependency-free contracts and deterministic validation for consumer-owned repository profiles: default branch, verification commands, and protected path patterns. Ships no repository values, workflows, provider configuration, or native agent state. |
-| [`@vespeneventures/secrets`](packages/secrets) | Provider-neutral secret resolution with an injected client and value-free catalogs, plus an `./infisical` subpath for injected Infisical authentication, readiness, and a provider-specific CLI. No provider SDK in the core, global configuration, or secret-value logging. |
+| [`@vespeneventures/gates`](packages/gates) | Orchestrates `catalog` and `policy` into one call, a deterministic build order, and the `foundry-check` CLI. |
+| [`@vespeneventures/repository`](packages/repository) | Dependency-free repository profile contracts and deterministic validation for consumer-owned configuration. |
+| [`@vespeneventures/secrets`](packages/secrets) | Provider-neutral secret resolution with injected clients and an isolated Infisical subpath. |
 | [`@vespeneventures/release`](packages/release) | Proves a package is actually installable: packs the real tarball, installs it into a genuinely isolated directory, and imports every subpath it claims to export. |
-| [`@vespeneventures/tokens`](packages/tokens) | Design tokens for web interfaces: CSS custom properties plus typed JS values, with a brand-binding layer so an interface never ships silently unbranded. |
-| [`@vespeneventures/ui`](packages/ui) | React components styled with `@vespeneventures/tokens` via Tailwind CSS v4: 31 atoms, 12 blocks, 4 charts, 2 views, a shell layer, and 32 icon glyphs, across six subpath exports (`./atoms`, `./charts`, `./blocks`, `./views`, `./shell`, `./icons`) — deliberately no root `.` export, so every import names its layer. |
-| [`@vespeneventures/voice`](packages/voice) | The verbal contract: a vocabulary for voice rules (person, tense, formality, tone), a glossary of forbidden/preferred terms, and a claims register, plus a checker that scans a piece of copy against them and reports `bound: false` if the record is still an unedited copy of the shipped `./voice-record.template.jsonc`. Ships the machinery only; each consumer binds its own rules, glossary, and claims. |
+| [`@vespeneventures/ui`](packages/ui) | The complete visual system: design tokens and theme CSS, icons, accessible React atoms and blocks, charts, shell primitives, and visual quality gates. Token-only consumers use `./tokens` or the CSS subpaths; page compositions live in `surface`. |
 | [`@vespeneventures/strategy`](packages/strategy) | Upstream strategy machinery, not content: dependency-free validators for facts, mission, positioning, markets, audiences, roadmap, and brand (essence, attributes, derivations), plus a facts-traceability gate and a brand-coverage checker. Ships the schema and checkers; every consumer authors its own values. |
-| [`@vespeneventures/copy`](packages/copy) | The vocabulary layer over `@vespeneventures/voice`'s verbal contract: a schema for registering a consumer's own copy as addressable, versioned, reviewable entries, a reader for a consumer's real registry file, and a checker that runs every entry through `voice`'s own `checkCopy`. Also ships a scanner that walks a real source tree for user-facing string/template literals AND raw JSX text nodes, and a traceability gate that fails one that isn't registered, wired into the `copy-check` CLI. Ships no actual copy; every entry a consumer registers is that consumer's own words. |
-| [`@vespeneventures/compose`](packages/compose) | The join point where `ui`'s visual vocabulary meets `copy`'s verbal one and `assets`'s visual-registry one, plus everything a specific output channel (`web`, `email`, `print`, `slides`, `image`) needs to know: a `ComposeDocument` names a template, binds its slots to copy ids, asset ids, or literal values, and carries that channel's own metadata. Ships the frozen contract, hand-rolled validation, and slot-resolution logic five separate renderer packages are built against. Zero dependencies, including on `ui`, `copy`, and `assets` themselves — `copyId`, `assetId`, and `template` are opaque string seams, never imports. Renders nothing. |
-| [`@vespeneventures/assets`](packages/assets) | The visual-registry layer over `compose`'s `SlotBinding.assetId` seam — the exact same split `copy` draws over `voice`'s verbal contract, one layer over, for images instead of words: a schema for registering a consumer's own images as addressable, versioned, reviewable entries (`AssetEntry`/`AssetRecord`), a reader for a consumer's real registry file, and a coverage check that reports referenced-but-unregistered and registered-but-unreferenced asset ids, wired into the `assets-check` CLI. Ships no actual images and never calls a generation API — every entry a consumer registers is that consumer's own asset. Zero dependencies, including on `compose` itself. |
+| [`@vespeneventures/copy`](packages/copy) | The complete language system: voice rules, glossary and claims validation, addressable copy records, templates, source scanning, and traceability checks. Ships machinery only; every consumer owns its actual voice and words. |
+| [`@vespeneventures/surface`](packages/surface) | Owns page/document composition, media registries, page-level web views, validation, and renderers for web, email, print, image, and slides. Its explicit subpaths keep channel dependencies separate while releasing the composition contract and its renderers together. |
 | [`@vespeneventures/ledger`](packages/ledger) | The return path: an append-only record of what was published, to which channel, when, derived from which revision of strategy, citing which facts. Records outcomes and makes them attributable; carries no opinion about whether an outcome is good, and nothing writes back automatically. Reuses `@vespeneventures/policy`'s content-addressed `PolicyBinding` to bind each cited fact to its value at publication time, and a drift checker (`checkLedgerDrift`) answers whether that value still holds against a caller-supplied current value — without ever importing `@vespeneventures/strategy`. Append-only is enforced two ways: `appendEntry` is the only way to grow a ledger in process (no `updateEntry`/`removeEntry` exists), and `checkAppendOnly` fails closed on any entry removed, reordered, or mutated in two serialized snapshots of one. One runtime dependency (`@vespeneventures/policy`, pinned with a tilde range). |
-| [`@vespeneventures/render`](packages/render) | Renderers built against `compose`'s `ComposeDocument` contract, one subpath export per output channel. Ships `./web`: resolves a document's bindings into a named `@vespeneventures/ui` view and emits framework-agnostic head metadata — title, description, canonical, robots, keywords, OpenGraph, Twitter card, and XSS-escaped JSON-LD. `compose` is a real dependency; `react`, `react-dom`, and `ui` are optional peer dependencies of this subpath, the pattern later channels' own heavy dependencies (Puppeteer, `pptxgenjs`, an image library) are meant to follow. Deliberately no root `.` export, matching `ui`'s own convention. |
 
 Each package's own README has the full API and the reasoning behind it.
+
 The cross-package ownership and adoption plan is in
 [docs/COMMUNICATIONS.md](docs/COMMUNICATIONS.md).
 
@@ -47,12 +45,17 @@ runtime siblings, and every such release is proved from an isolated install
 of its selected tarball. The required order for the core release graph is
 documented in [docs/PUBLISHING.md](docs/PUBLISHING.md).
 
+For the end-to-end boundary between governed strategy, approved copy, UI
+primitives, channel surfaces, and consumer-owned publishing, see
+[the product delivery pipeline](docs/PIPELINE.md).
+
 ## Installing
 
-Packages publish to **GitHub Packages**, not the public npm registry.
-Installing any GitHub Packages release needs a GitHub token with
-`read:packages`, including releases whose package visibility is public. A
-private package also requires an account granted access to that package.
+Packages publish to **GitHub Packages**, not the public npm registry, and
+are currently **private** — installing needs a GitHub personal access token
+with `read:packages` scope, and an account with access granted to this
+organization's packages, regardless of whether the repository itself is
+public.
 
 Add to your project's `.npmrc` (never commit a real one):
 
@@ -68,15 +71,13 @@ been granted access:
 npm install @vespeneventures/gates
 ```
 
-Packages are private by default; registry availability is a per-package,
-per-version fact rather than a property of this public repository. See
-[docs/PUBLISHING.md](docs/PUBLISHING.md) for the maintainer process,
-dependency order, and the isolated install proof required before publishing.
+Nothing here has been published for open, unauthenticated installation yet.
+See [docs/PUBLISHING.md](docs/PUBLISHING.md) for the maintainer process and
+why packages default to private.
 
 ## Usage
 
-Once `@vespeneventures/gates` is available to your account, it ships a CLI,
-`foundry-check`, that walks a workspace's
+The `gates` package ships a CLI, `foundry-check`, that walks a workspace's
 `packages/` directory and reports what it finds:
 
 ```bash

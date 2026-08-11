@@ -267,7 +267,7 @@ const NEGATION_MARKERS = [
 // subpath name if it turns out to match one — letters, digits, dots
 // (`tokens.css`-shaped), underscores, hyphens, starting with a letter.
 // Anything else backticked in a description (an npm scope like
-// `` `@vespeneventures/tokens` ``, a comma-joined list) never reaches this
+// `` `@vespeneventures/ui/tokens` ``, a comma-joined list) never reaches this
 // far because it never equals a real subpath name (checked below) — this
 // pattern only needs to be permissive enough not to reject a real one.
 const bareCandidateRe = /^[A-Za-z][A-Za-z0-9_.-]*$/;

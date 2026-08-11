@@ -21,7 +21,7 @@ export interface ProgressBarProps extends Omit<AriaProgressBarProps, "children">
 }
 
 const TRACK_CLASSES = "h-2 w-full overflow-hidden rounded-pill bg-surface-sunken";
-const FILL_CLASSES = "h-full rounded-pill bg-accent transition-[width]";
+const FILL_CLASSES = "h-full rounded-pill bg-accent transition-[width] motion-reduce:transition-none";
 
 /**
  * Determinate and indeterminate progress, built on react-aria-components'
@@ -56,7 +56,7 @@ export function ProgressBar({ label, className, ...rest }: ProgressBarProps) {
           </div>
           <div className={TRACK_CLASSES}>
             <div
-              className={cx(FILL_CLASSES, renderProps.isIndeterminate ? "w-1/3 animate-pulse" : "")}
+              className={cx(FILL_CLASSES, renderProps.isIndeterminate ? "w-1/3 animate-pulse motion-reduce:animate-none" : "")}
               style={{
                 width: renderProps.isIndeterminate ? undefined : `${renderProps.percentage ?? 0}%`,
               }}

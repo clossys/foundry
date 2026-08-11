@@ -90,9 +90,9 @@ export type IconProps = IconAccessibilityProps &
   >;
 
 /**
- * `size` -> `@vespeneventures/tokens` `--ui-icon-*` step, each carrying its
+ * `size` -> this package's token-layer `--ui-icon-*` step, each carrying its
  * own literal pixel fallback (defense-in-depth for a consumer who hasn't
- * imported `@vespeneventures/tokens/tokens.css` yet — the same
+ * imported `@vespeneventures/ui/tokens.css` yet — the same
  * `var(--token, <fallback>)` shape that package's own `--ui-density-*`
  * aliases use internally, and the shape this scope's pre-merge, standalone
  * `icons` package's own `SIZE_TOKENS` used before this atom absorbed it).
@@ -100,7 +100,7 @@ export type IconProps = IconAccessibilityProps &
  * which is what that pre-merge package did) is what makes icon size
  * independently tunable by a consumer
  * without moving the padding scale everything else on the page reads from
- * — see `@vespeneventures/tokens`' CHANGELOG for the token family itself.
+ * — see this package's token changelog for the token family itself.
  */
 const SIZE_VARS: Record<IconSize, string> = {
   sm: "var(--ui-icon-sm, var(--spacing-lg, 16px))",
@@ -116,7 +116,7 @@ const SIZE_VARS: Record<IconSize, string> = {
  * `var(...)` reference through an inline STYLE property is reliably
  * resolved by every browser, where a raw presentation-attribute value has
  * spottier cross-browser `var()` support historically. `--ui-icon-stroke`
- * is `brandable: true` in `@vespeneventures/tokens` — a real brand lever,
+ * is `brandable: true` in this package's token layer — a real brand lever,
  * the same category as `--radius-default` — unlike the three size steps.
  */
 const STROKE_WIDTH_VAR = "var(--ui-icon-stroke, 2)";

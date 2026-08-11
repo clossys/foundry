@@ -1,6 +1,6 @@
 {
   "name": "@vespeneventures/copy",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -11,7 +11,12 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    }
+    },
+    "./voice": {
+      "types": "./dist/voice/index.d.ts",
+      "import": "./dist/voice/index.js"
+    },
+    "./voice-record.template.jsonc": "./templates/voice-record.template.jsonc"
   },
   "bin": {
     "copy-check": "./dist/cli.js"
@@ -20,11 +25,12 @@
     "dist",
     "src",
     "!src/**/*.test.ts",
+    "templates",
     "README.md",
     "LICENSE"
   ],
   "sideEffects": false,
-  "description": "The vocabulary layer over @vespeneventures/voice's verbal contract: a schema for registering a consumer's own copy as addressable, versioned, reviewable entries (CopyEntry/CopyRecord), a reader that loads a consumer's real registry file, and a checker that runs every entry through voice's own checkCopy. This package ships no actual copy — every entry a consumer registers is that consumer's own words.",
+  "description": "A consumer-owned language system: voice rules, glossary and claims validation, addressable copy records, and source traceability checks. This package ships machinery and templates, never a consumer's actual copy or voice.",
   "keywords": [
     "copy",
     "content",
@@ -51,9 +57,6 @@
     "prepublishOnly": "npm run build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run"
-  },
-  "dependencies": {
-    "@vespeneventures/voice": "~0.2.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

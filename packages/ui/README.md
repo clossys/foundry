@@ -1,26 +1,22 @@
 # @vespeneventures/ui
 
-React components styled with [@vespeneventures/tokens](https://github.com/vespeneventures/foundry/tree/main/packages/tokens)'
-design tokens, via Tailwind CSS v4. This package ships a component ladder
-built on top of tokens, one rung at a time. The full shape — every rung now
-shipped — is:
+Design tokens, theme CSS, and React components for Tailwind CSS v4. This
+package ships reusable visual vocabulary built on its own token layer:
 
 ```
-tokens → icons → atoms → blocks → views     (content: transient, many, fills slots)
-                             ↘      shell    (frame: persistent, one, provides slots)
-                             ↘      charts   (a distinct domain, not layout: marks + scales)
+tokens → icons → atoms → blocks
+                       ↘ shell
+                       ↘ charts
 ```
 
-`atoms`, `blocks`, `views`, `shell`, and `charts` all ship today, alongside
+`atoms`, `blocks`, `shell`, and `charts` all ship today, alongside
 `icons` — pure glyph DATA sitting BELOW `atoms`, not a sixth rung of content
 (see "Icon glyph data" below for the full reasoning; the short version: a
 `[tag, attrs]` tuple has no rendering logic and depends on nothing else in
 this package, so it sits even more foundational than `atoms` itself, the
 same way `tokens` sits below all of `ui`). See "Placement rules" below for
-what distinguishes the four ladder rungs and how a new component gets
-assigned to one; see "Charts" below for why that layer is a sibling of
-`shell`/`views` rather than a fifth rung — the same "frame vs. content"
-question doesn't apply to it at all, because a chart is neither.
+what distinguishes reusable atoms and blocks. Whole-page compositions are
+surfaces and live in `@vespeneventures/surface/web`.
 
 - **`icons`** — glyph data only, no components: 32 `IconNode` exports
   (`AlertTriangle`, `BookOpen`, `Box`, `Building2`, `Calendar`, `Check`,
@@ -45,15 +41,6 @@ question doesn't apply to it at all, because a chart is neither.
   `DataTable`, `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`,
   `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader` — the last six
   complete this layer (see "Blocks" below).
-- **`views`** — a whole page's composition, where a second one on the same
-  page would be incoherent. Content: transient, it fills the slot the shell
-  provides. Deliberately a short list — page structure encodes what a
-  product is, so most pages are the consumer's own composition of blocks.
-  Only genuinely product-neutral pages are worth shipping. Two ship:
-  `ErrorView`, `AuthView`. (`DataTable` and `DetailView` ship as **blocks**,
-  not views, by test 3 below — a page can hold two of either. See "Views"
-  below for the full reasoning, including why `ListView` and `FormView` are
-  deliberately not here either.)
 - **`shell`** — the persistent frame around content (nav, layout chrome)
   that provides the slots content fills. One per app; survives route
   changes that swap out the content underneath it. `Shell` ships with five
@@ -65,31 +52,121 @@ question doesn't apply to it at all, because a chart is neither.
   and `Sparkline`. A sibling of `shell`, not a sixth rung of the ladder —
   see "Charts" below.
 
-A rung may only import DOWN the ladder — a block may import an atom, a view
-may import an atom or a block, never the reverse. `shell` is a peer of
-`views` (both build on `atoms`/`blocks`; neither imports the other) rather
-than another rung above it — see "Views" below. `charts` is a second,
+A layer may only import toward something more foundational: blocks may
+import atoms, never the reverse. `shell` and `charts` are narrower sibling
+domains built from those primitives. `charts` is a
 narrower sibling: it may import `atoms`, and nothing else in this package
 imports from it. `icons` sits at the very bottom: `atoms` may import
 `icons` (and does — `atoms/Icon.tsx` imports the `IconNode` type from
 `icons/types.ts`), and nothing under `icons/` may import from anywhere
 else in this package. `src/ladder.test.ts` enforces every one of these
 directions structurally, not just by convention: it scans every file under
-`src/atoms/`, `src/blocks/`, `src/views/`, `src/shell/`, `src/charts/`, and
+`src/atoms/`, `src/blocks/`, `src/shell/`, `src/charts/`, and
 `src/icons/` for an import referencing a layer it isn't allowed to reach,
 and fails the build if it finds one.
 
+The token layer is part of this package — every class its components render
+(`bg-accent`, `text-ink-primary`, `rounded-control`, ...) is a Tailwind
+utility generated from its tokens. Without the token CSS imported, those
+class names don't correspond to anything and every
+component renders unstyled, with no error anywhere to explain why.
+
+## Public contract
+
+There is deliberately no `@vespeneventures/ui` root export. Import the
+smallest stable subpath that owns what you need:
+
+| Subpath | Owns |
+| --- | --- |
+| `@vespeneventures/ui/tokens` | Typed `TOKENS`, brand CSS parsing, and the brand-coverage gate. No React runtime. |
+| `@vespeneventures/ui/tokens.css` | Neutral primitive custom-property defaults; works without Tailwind. |
+| `@vespeneventures/ui/theme.css` | Optional Tailwind v4 wiring; imports `tokens.css` itself. |
+| `@vespeneventures/ui/brand-template.css` | Copy-and-fill template for a consumer brand binding. |
+| `@vespeneventures/ui/icons` | Tree-shakeable glyph data. |
+| `@vespeneventures/ui/atoms`, `/blocks`, `/shell`, `/charts` | Reusable React visual primitives. |
+| `@vespeneventures/ui/gate` | Token-purity scanner and gate. |
+
+`ui` never exports page views, routes, metadata, strategy facts, or copy.
+Components receive resolved `ReactNode`s, labels, data, callbacks, and URLs
+through props. Product/page composition belongs to
+`@vespeneventures/surface`; audience-facing words belong to
+`@vespeneventures/copy`.
+
+### Token-only use
+
+Tokens can be the only thing a consumer installs and imports:
+
 ```bash
-npm install @vespeneventures/ui \
-  @vespeneventures/tokens react react-dom tailwindcss
+npm install @vespeneventures/ui
 ```
 
-`@vespeneventures/tokens` is a required **peer dependency**, not an
-implementation detail — every class this package's components render
-(`bg-accent`, `text-ink-primary`, `rounded-control`, ...) is a Tailwind
-utility generated from that package's tokens. Without it installed and its
-CSS imported, those class names don't correspond to anything and every
-component renders unstyled, with no error anywhere to explain why.
+```css
+@import "@vespeneventures/ui/tokens.css";
+```
+
+The package has no regular runtime dependencies. React, React DOM, React
+Aria, Tailwind, Tailwind Merge, and the date helpers are optional peers:
+install them only when importing the React component subpaths. `tokens.css`
+is ordinary CSS custom properties, so it has no React or Tailwind requirement.
+
+For React components, install the peers used by the subpaths you import:
+
+```bash
+npm install @vespeneventures/ui react react-dom react-aria-components \
+  tailwind-merge tailwindcss @internationalized/date
+```
+
+`@internationalized/date` is only needed when using `DateField`; the other
+component peers support the interactive primitives and their Tailwind classes.
+
+### CSS layers, fallbacks, and themes
+
+The visual contract is ordered:
+
+1. `tokens.css` defines neutral light defaults and automatic/explicit dark
+   overrides. Every token has a literal primitive default.
+2. A consumer brand file copied from `brand-template.css` overrides only
+   brandable roles under `:root[data-brand-bound]`.
+3. Consumer extension CSS can add product-specific values under its own
+   prefix; it must not redefine UI's token vocabulary.
+
+For Tailwind v4, use `theme.css` instead of importing `tokens.css`
+separately: it imports the primitives and exposes supported token families
+through `@theme inline`, keeping utilities live against later brand overrides.
+The emitted utilities and UI fallbacks use `var(--token, default)`, so an
+unbound token layer remains legible rather than failing invisibly. With no
+`data-theme`, CSS follows the OS; set `data-theme="light"` or
+`data-theme="dark"` on the document root to force a theme. Put that
+attribute in server-rendered markup to avoid a flash.
+
+### React SSR, hydration, and accessibility
+
+The component subpaths support React 18+ server rendering and hydration:
+they do not read browser globals while rendering. The test suite hydrates a
+representative `Shell` + `PageHeader` + `Button` tree without a recoverable
+mismatch. In a Next.js 16 App Router consumer, render structural markup in
+the server layout/page as usual and place an explicit client boundary around
+the interactive component tree; set `data-theme` and `data-brand-bound` in
+the root document/layout, not in a post-hydration effect.
+
+Interactive controls use React Aria for keyboard, focus, and semantic
+contracts. Noninteractive components expose semantic labels where needed,
+the token suite checks contrast in light and dark themes, and every shipped
+animation or transition has a Tailwind `motion-reduce` override.
+
+### Migration from split packages
+
+| Legacy import | Use now |
+| --- | --- |
+| `@vespeneventures/tokens` | `@vespeneventures/ui/tokens` |
+| `@vespeneventures/tokens/tokens.css` | `@vespeneventures/ui/tokens.css` |
+| `@vespeneventures/tokens/theme.css` | `@vespeneventures/ui/theme.css` |
+| `@vespeneventures/tokens/brand-template.css` | `@vespeneventures/ui/brand-template.css` |
+| `@vespeneventures/ui/views` | `@vespeneventures/surface/web` for generic rendered views, or compose UI primitives in a surface. |
+
+`atoms`, `blocks`, `icons`, `charts`, `shell`, and `gate` retain their UI
+subpaths. There is no compatibility root barrel: importing the owning
+subpath keeps dependencies and bundle boundaries explicit.
 
 ## Placement rules
 
@@ -186,13 +263,13 @@ your CSS entry point:
 ```css
 @import "tailwindcss";
 @import
-  "@vespeneventures/tokens/theme.css";
+  "@vespeneventures/ui/theme.css";
 ```
 
 (`theme.css` already pulls in the base token file, so you don't need a
-second line for that — see the tokens package's own README for the full
-three-layer contract, including how to bind your own brand colors on top
-of the neutral greyscale default.)
+second line for that. The token layer's `brand-template.css` provides the
+full three-layer contract, including how to bind brand colors over the
+neutral greyscale default.)
 
 **2. Point Tailwind's `@source` at this package's built output**, in the
 same CSS file. This is the single highest-risk step in this whole setup: if
@@ -293,9 +370,8 @@ costs nothing; a missing one costs every component's styling.
   internally regardless of whether a consumer ever imports the package
   directly — but constructing an initial or controlled value at all
   (`parseDate("2024-01-15")`, `new CalendarDate(2024, 1, 15)`) means a
-  consumer of `DateField` needs it too, so it ships here as a real
-  `dependencies` entry rather than staying an unlisted transitive of
-  `react-aria-components`.
+  consumer of `DateField` needs it too, so it is a documented optional peer
+  rather than an unlisted transitive of `react-aria-components`.
 - **`tailwind-merge`** — every atom accepts a `className` prop, and a
   consumer's value has to reliably win over this package's own default
   classes. Two Tailwind utilities that set the same CSS property have
@@ -310,6 +386,11 @@ costs nothing; a missing one costs every component's styling.
   keep a font-size class like `text-body` and a color class like
   `text-ink-on-accent` both applied at once. Both of those exact failures
   are pinned as regression tests in this package's test suite.
+
+These packages are optional peers so a token-only consumer installs none of
+the component runtime. A component consumer must install the matching peers
+alongside `@vespeneventures/ui`; npm can then report a missing peer instead
+of allowing a hidden transitive dependency to decide the runtime version.
 
 No `class-variance-authority` or similar: each atom's variants are a plain
 object literal mapping a variant name to a class string.
@@ -383,10 +464,10 @@ silently-ignored prop. Set CSS `color` on the icon itself or an ancestor
 instead, the same mechanism `Spinner` and `Skeleton` already use above.
 
 **Size** (`size`: `"sm" | "md" | "lg"`, default `"md"`) reads
-`@vespeneventures/tokens`' `--ui-icon-sm`/`-md`/`-lg` tokens (`16px`/
+this package's `--ui-icon-sm`/`-md`/`-lg` tokens (`16px`/
 `24px`/`32px` by default), each with a literal pixel fallback so `Icon`
 still renders at a sensible size even in a project that hasn't imported
-`@vespeneventures/tokens/tokens.css`. **Stroke weight** reads
+`@vespeneventures/ui/tokens.css`. **Stroke weight** reads
 `--ui-icon-stroke` (default `2`) the same way — a real brand lever (the
 token is `brandable: true`, the same category as `--radius-default`), not
 a per-instance prop: there is no `strokeWidth`/`width`/`height` prop either,
@@ -464,7 +545,7 @@ function Panel() {
 ```
 
 Accepts every prop a plain `<div>` does. No variants — a single raised
-surface, styled with `@vespeneventures/tokens`' elevation token.
+surface, styled with this package's elevation token.
 
 ### `Breadcrumb`
 
@@ -1842,6 +1923,11 @@ role.
 
 ## Views
 
+Page-level views are documented here because they are built entirely from
+this visual vocabulary, but they are exported by
+`@vespeneventures/surface/web`. UI stops at reusable primitives; surface owns
+the page composition and renderer.
+
 A view is a whole PAGE's composition — test 3 from "Placement rules" above,
 repeated here because it's the one that defines this layer: **can one page
 contain two of them?** If yes, it's a region of a page, so it's a block
@@ -1850,7 +1936,8 @@ the same page would be incoherent — because the component *is* the page —
 it's a view. There is no such thing as half a 404 page, and a sign-in page
 either is one or isn't.
 
-**Only two ship: `ErrorView` and `AuthView`.** This is deliberate, not an
+**Only two generic web views ship from `surface/web`: `ErrorView` and
+`AuthView`.** This is deliberate, not an
 oversight, and the list is meant to stay this short. A page's structure
 encodes what a product actually *is* — a `/prompts` list page, a
 `/settings` page, a dashboard — and that structure is close to always the
@@ -1884,7 +1971,7 @@ assuming one.
 ### `ErrorView`
 
 ```tsx
-import { ErrorView } from "@vespeneventures/ui/views";
+// ErrorView is exported by @vespeneventures/surface/web.
 import { Button } from "@vespeneventures/ui/atoms";
 
 function NotFoundPage() {
@@ -1966,7 +2053,7 @@ own title region rather than repeating the same text twice.
 ### `AuthView`
 
 ```tsx
-import { AuthView } from "@vespeneventures/ui/views";
+// AuthView is exported by @vespeneventures/surface/web.
 import { Link } from "@vespeneventures/ui/atoms";
 
 function SignInPage() {
@@ -2326,7 +2413,7 @@ app/
 Dependency-free SVG chart primitives — no charting library is a dependency
 of this package. Every mark is hand-drawn SVG, positioned by this package's
 own small internal scale helpers, reading color exclusively through
-`@vespeneventures/tokens`' chart-color family (`--color-chart-*`, added in
+this package's chart-color family (`--color-chart-*`, added in
 that package's `0.4.0`) so every chart follows the active theme the same
 way every other token-driven surface in this package does.
 
@@ -2345,7 +2432,7 @@ imports from `charts` — see `src/ladder.test.ts`.
   y-scale. Two measures of different magnitude are two charts, never one
   chart with a second axis.
 - **Color follows the entity, never its rank.** Every series gets a color
-  from `@vespeneventures/tokens`' fixed-order categorical palette, an
+  from this package's fixed-order categorical palette, an
   explicit `color` per series always winning outright. By default a
   series' color is its position in the `series` array — which, on its
   own, is exactly the anti-pattern this rule warns about the moment a
@@ -2458,7 +2545,7 @@ costs no layout space until opened.
 
 ### The categorical palette, and what happens past 8 series
 
-Every series gets its color from `@vespeneventures/tokens`' fixed-order
+Every series gets its color from this package's fixed-order
 categorical palette (8 slots, validated for color-vision-deficiency
 separation — see that package's README), assigned by the series' position
 in the array, never generated or cycled. Passing more than 8 series to
@@ -2485,7 +2572,7 @@ from, how the 32 were chosen, and how to keep it current.
 ### A subpath of `ui`, not a separate package
 
 This glyph set shipped for a while as this scope's own standalone `icons`
-package, at the same layer as `@vespeneventures/tokens` —
+package, at the same layer as this package's token layer —
 deliberately, not a `ui` subpath, specifically so a consumer who wanted
 only icons (a marketing site, a docs page, anything with no interactive
 components) never had to accept `ui`'s own dependency graph
@@ -2564,10 +2651,10 @@ generic left-right arrow). What's left is 22 icons.
 
 That 3-way intersection already happens to fully cover two families this
 repository's own other packages commit to elsewhere, worth calling out as
-corroboration rather than coincidence: `@vespeneventures/tokens`' README
+corroboration rather than coincidence: this package's token-layer docs
 documents a three-state theme toggle (`"system" | "light" | "dark"`), and
 `Sun`/`Moon`/`Monitor` — all three of its canonical icons — are already in
-the 22. `@vespeneventures/tokens` also ships exactly four status colors
+the 22. The token layer also ships exactly four status colors
 (`success`/`warning`/`danger`/`info`), already exposed as a `variant` prop
 on this package's own `Banner`/`Badge` atoms, and two of the four —
 `Info` (`info`) and `AlertTriangle` (`warning`) — are already in the 22 as
@@ -2791,10 +2878,7 @@ not a grab-bag).
 | `SectionHeader` | component | Heading for a section within a page (as opposed to the whole-page `PageHeader`): eyebrow, title, description, actions slot. `level` picks its heading element. |
 | `SectionHeaderProps` | type | Props for `SectionHeader`: `eyebrow`, `title`, `description`, `actions`, `level`, `className`, `style`, plus every native `<div>` attribute. |
 | `SectionHeaderLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
-| `ErrorView` | component | Full-page error state (404/500/403/...). Composes `EmptyState`; status conveyed as text in the page's own `<h1>`. |
-| `ErrorViewProps` | type | Props for `ErrorView`: `status`, `title`, `description`, `action`, `details`, plus every native `<div>` attribute. |
-| `AuthView` | component | Full-page authentication shell. Centered card with `brand`/`heading`/`description`/`form`/`secondaryAction`/`footnote` slots. Implements no authentication itself. |
-| `AuthViewProps` | type | Props for `AuthView`: `brand`, `heading`, `description`, `form`, `secondaryAction`, `footnote`, plus every native `<div>` attribute. |
+| `mergeUiClasses` | function | Merges token-aware Tailwind utility classes with last-argument precedence; used by surface-level compositions built from UI primitives. |
 | `Shell` | component | The persistent application frame. Carries `Shell.Header`, `Shell.SideNav`, `Shell.Main`, `Shell.Rail`, `Shell.Footer`. |
 | `ShellProps` | type | Props for `Shell`: `children` (any subset of the five slots above, in any order), plus every native `<div>` attribute. |
 | `ShellHeaderProps` | type | Props for `Shell.Header`: `children`, plus every native `<header>` attribute. |
@@ -2862,7 +2946,7 @@ two tests are worth calling out specifically:
   produces no CSS rule at all is invented, exactly the way a browser would
   discover the same typo, rather than pattern-matched against a
   hand-maintained list of prefixes and suffixes. Every `var()` read is
-  separately checked against a real entry in `@vespeneventures/tokens`' own
+  separately checked against a real entry in this package's own
   `TOKENS` export — imported from the real package, not a hand-copied list,
   since an opaque `var(...)` argument inside an otherwise-valid Tailwind
   arbitrary value (`shadow-[var(--ui-elevation-raised)]`) compiles clean
@@ -2941,7 +3025,7 @@ its own subpath and an installable CLI:
   `"raw-value-no-token-backing"` if it matches none); a literal that IS a
   `var(--token, <fallback>)` call's own fallback is `severity: "warning"`,
   `"token-value-duplicated-in-fallback"` — the token wins whenever
-  `@vespeneventures/tokens`' CSS is loaded, so this is a latent drift risk,
+  token CSS is loaded, so this is a latent drift risk,
   not a live defeat, and the message states whether the fallback currently
   matches, is consistent with, or has already drifted from the referenced
   token's real value. Which token a fallback belongs to is resolved
@@ -2988,7 +3072,7 @@ what a filter bar contains — a consumer composes filter controls from
 this package's own atoms (`Select`, `TextField`, `Popover`) directly into
 whichever slot fits.
 
-**Views:** only `ErrorView`, `AuthView` ship, and the list is meant to stay
+**Views:** `ErrorView` and `AuthView` moved to `@vespeneventures/surface/web`; the list is meant to stay
 this short — see "Views" above for the full reasoning. `ListView`,
 `FormView`, and `DashboardView` are deliberately NOT here: by test 3, a
 page can hold two lists, two forms, or several summary panels at once, so
@@ -3024,7 +3108,7 @@ components, not a general-purpose numerical or color library (see
 
 ## Requirements
 
-Node 20+. React 18+. Tailwind CSS v4. `@vespeneventures/tokens` ^0.4.0.
+Node 20+. React 18+. Tailwind CSS v4.
 
 ## Licence
 

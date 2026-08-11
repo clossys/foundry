@@ -2,7 +2,7 @@
  * Structural validation for a candidate `CopyRecord`, hand-rolled in the
  * same plain-type-guard, accumulate-and-keep-going style as
  * `@vespeneventures/strategy`'s `validation.ts` and
- * `@vespeneventures/voice`'s `schema.ts` — no schema library, for the
+ * `@vespeneventures/copy/voice`'s `schema.ts` — no schema library, for the
  * same reason both of those files give: this package's entire job is
  * dependency-free data validation, and a public package should not force
  * every consumer onto one schema library's major version for the sake of
@@ -24,7 +24,16 @@
  * that catches it.
  */
 
-import type { CopyEntry, CopyEntryId, CopyFinding, CopyRecord } from "./types.js";
+import type {
+  CopyEntry,
+  CopyEntryId,
+  CopyEntryStatus,
+  CopyFinding,
+  CopyRegistry,
+  CopyRegistryEntry,
+  CopyRecord,
+  CopySource,
+} from "./types.js";
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -32,6 +41,10 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
+}
+
+function isCopyEntryStatus(value: unknown): value is CopyEntryStatus {
+  return value === "draft" || value === "approved" || value === "retired";
 }
 
 /**
@@ -98,7 +111,7 @@ function validateCopyEntryShape(value: unknown, path: string): CopyFinding[] {
     return [{ rule: "entry-shape", severity: "error", message: `${path} must be an object.`, path }];
   }
   // Snapshot every field this function reads, exactly once, before any
-  // check runs — mirroring `@vespeneventures/voice`'s `schema.ts` and
+  // check runs — mirroring `@vespeneventures/copy/voice`'s `schema.ts` and
   // `@vespeneventures/policy`'s `validateBindingShape`, both of which
   // document why: a hostile or merely-badly-behaved `value` (a field
   // implemented as a getter, or a Proxy) could otherwise return a
@@ -185,7 +198,7 @@ function validateCopyEntryShape(value: unknown, path: string): CopyFinding[] {
  * (once defaults are applied — see `parseCopyRecord`). Never throws — any
  * input, including `null`, a string, or a wildly malformed object,
  * produces findings rather than an exception, the same discipline
- * `@vespeneventures/voice`'s `validateVoiceRecordShape` and
+ * `@vespeneventures/copy/voice`'s `validateVoiceRecordShape` and
  * `@vespeneventures/policy`'s `validateBindingShape` both hold to.
  *
  * Checks, in full: `id` present and non-empty; `entries` present and an
@@ -262,12 +275,90 @@ export function validateCopyRecordShape(value: unknown): CopyFinding[] {
 }
 
 /**
+ * Validates the stronger registry shape used to resolve `CopyRef`s. A plain
+ * `CopyRecord` deliberately remains valid for source scanning and voice
+ * checking; it cannot become rendered content until it carries locale,
+ * revision, source provenance, and an explicit lifecycle state per entry.
+ */
+export function validateCopyRegistryShape(value: unknown): CopyFinding[] {
+  const findings = validateCopyRecordShape(value);
+  if (!isPlainObject(value)) return findings;
+
+  const locale = value.locale;
+  const revision = value.revision;
+  const source = value.source;
+  const entries = value.entries;
+
+  if (!isNonEmptyString(locale)) {
+    findings.push({
+      rule: "registry-locale-shape",
+      severity: "error",
+      message: `locale must be a non-empty locale tag, got ${JSON.stringify(locale)}.`,
+      path: "locale",
+    });
+  }
+
+  if (!isNonEmptyString(revision)) {
+    findings.push({
+      rule: "registry-revision-shape",
+      severity: "error",
+      message: `revision must be a non-empty provenance revision, got ${JSON.stringify(revision)}.`,
+      path: "revision",
+    });
+  }
+
+  if (!isPlainObject(source)) {
+    findings.push({
+      rule: "registry-source-shape",
+      severity: "error",
+      message: `source must be an object with kind and reference, got ${JSON.stringify(source)}.`,
+      path: "source",
+    });
+  } else {
+    const kind = source.kind;
+    const reference = source.reference;
+    if (kind !== "consumer" && kind !== "generated" && kind !== "imported") {
+      findings.push({
+        rule: "registry-source-kind",
+        severity: "error",
+        message: `source.kind must be "consumer", "generated", or "imported", got ${JSON.stringify(kind)}.`,
+        path: "source.kind",
+      });
+    }
+    if (!isNonEmptyString(reference)) {
+      findings.push({
+        rule: "registry-source-reference-shape",
+        severity: "error",
+        message: `source.reference must be a non-empty opaque provenance reference, got ${JSON.stringify(reference)}.`,
+        path: "source.reference",
+      });
+    }
+  }
+
+  if (Array.isArray(entries)) {
+    entries.forEach((entry, i) => {
+      if (!isPlainObject(entry)) return;
+      if (!isCopyEntryStatus(entry.status)) {
+        findings.push({
+          rule: "entry-status-shape",
+          severity: "error",
+          message: `entries.${i}.status must be "draft", "approved", or "retired", got ${JSON.stringify(entry.status)}.`,
+          path: `entries.${i}.status`,
+        });
+      }
+    });
+  }
+
+  return findings;
+}
+
+/**
  * Builds a fully-defaulted `CopyRecord` from `value`, which the caller
  * must already know passed `validateCopyRecordShape` with zero findings
  * — this function does no validation of its own and will throw or
  * produce garbage on unvalidated input. Only called internally, from
  * `parseCopyRecord`, immediately after that check — mirrors
- * `@vespeneventures/voice`'s `buildVoiceRecord` exactly, including that
+ * `@vespeneventures/copy/voice`'s `buildVoiceRecord` exactly, including that
  * split's reasoning: see this file's `parseCopyRecord` doc comment for
  * why this is a deliberate two-pass design.
  */
@@ -291,6 +382,22 @@ function buildCopyRecord(value: Record<string, unknown>): CopyRecord {
   };
 }
 
+function buildCopyRegistry(value: Record<string, unknown>): CopyRegistry {
+  const record = buildCopyRecord(value);
+  const entries = (value.entries as Array<Record<string, unknown>>).map((entry) => ({
+    ...record.entries.find((item) => item.id === entry.id)!,
+    status: entry.status as CopyEntryStatus,
+  })) as CopyRegistryEntry[];
+
+  return {
+    ...record,
+    locale: value.locale as string,
+    revision: value.revision as string,
+    source: value.source as CopySource,
+    entries,
+  };
+}
+
 /**
  * Parses `value` as a `CopyRecord`, throwing a plain `Error` (never a
  * `CopyFinding[]`) if it does not conform. For a caller that wants
@@ -304,7 +411,7 @@ function buildCopyRecord(value: Record<string, unknown>): CopyRecord {
  * findings, makes one further pass over `value` (`buildCopyRecord`) to
  * apply this schema's one default (`placeholders: []`) and produce a
  * fully populated `CopyRecord`. This two-pass shape mirrors
- * `@vespeneventures/voice`'s `parseVoiceRecord` — see that function's own
+ * `@vespeneventures/copy/voice`'s `parseVoiceRecord` — see that function's own
  * doc comment for the fuller TOCTOU-safety argument for why reading twice
  * is a deliberate choice here, not an oversight, given this package's
  * actual threat model (a consumer's own in-memory config object, not a
@@ -319,4 +426,14 @@ export function parseCopyRecord(value: unknown): CopyRecord {
   // Safe: validateCopyRecordShape returning no findings means every field
   // buildCopyRecord reads below is present and correctly typed.
   return buildCopyRecord(value as Record<string, unknown>);
+}
+
+/** Parses a versioned, locale-specific registry or throws every finding. */
+export function parseCopyRegistry(value: unknown): CopyRegistry {
+  const findings = validateCopyRegistryShape(value);
+  if (findings.length > 0) {
+    const detail = findings.map((f) => `  - ${f.path ?? "(root)"}: ${f.message}`).join("\n");
+    throw new Error(`parseCopyRegistry: value is not a valid CopyRegistry:\n${detail}`);
+  }
+  return buildCopyRegistry(value as Record<string, unknown>);
 }

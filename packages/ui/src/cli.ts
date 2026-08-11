@@ -3,7 +3,7 @@
  * `ui-token-check` — the CLI for `checkTokenPurity`, mirroring
  * `@vespeneventures/copy`'s `copy-check` shape as closely as this
  * package's own inputs allow. Presentation only: parse argv, import
- * `@vespeneventures/tokens`' real `TOKENS` registry, walk the scan
+ * this package's real `TOKENS` registry, walk the scan
  * directory (`style-scan.ts`), run the pure gate (`token-gate.ts`), print a
  * report — every skip/exclusion count, never just the findings — and pick
  * an exit code.
@@ -11,10 +11,10 @@
  * UNLIKE `copy-check`, there is no `<record-file>` argument: `copy-check`
  * needs a consumer-authored `CopyRecord` JSON file loaded from disk because
  * copy is inherently consumer-specific (every consumer writes its own
- * words). This gate's "record" is `@vespeneventures/tokens`' `TOKENS`
+ * words). This gate's "record" is this package's `TOKENS`
  * export — a real, versioned, installable npm dependency of THIS package
  * (see `package.json`'s `dependencies`, the same tier
- * `@vespeneventures/voice` sits at for `@vespeneventures/copy` — a sibling
+ * `@vespeneventures/copy/voice` sits at for `@vespeneventures/copy` — a sibling
  * workspace package, not a third-party runtime dependency, so this stays
  * inside this repository's zero-third-party-dependency rule for its
  * gates), imported directly rather than read from a file argument.
@@ -45,7 +45,7 @@
 import { existsSync, realpathSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { TOKENS } from "@vespeneventures/tokens";
+import { TOKENS } from "./tokens/index.js";
 import { scanStyleSources, type StyleScanResult } from "./style-scan.js";
 import { checkTokenPurity, type TokenGateResult } from "./token-gate.js";
 
@@ -183,7 +183,7 @@ export function main(argv: string[]): number {
   requireDirectory("scan-dir", scanDir);
 
   console.log(`Scan directory: ${scanDir}`);
-  console.log(`Token registry: @vespeneventures/tokens (${Object.keys(TOKENS).length} tokens)`);
+  console.log(`Token registry: @vespeneventures/ui/tokens (${Object.keys(TOKENS).length} tokens)`);
 
   const scan = scanStyleSources(scanDir); // throws (fail-closed) on an unreadable directory — caught by run()
   printScanAccounting(scan);

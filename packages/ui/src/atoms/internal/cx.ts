@@ -1,11 +1,11 @@
 import { extendTailwindMerge } from "tailwind-merge";
-import { TOKENS } from "@vespeneventures/tokens";
+import { TOKENS } from "../../tokens/index.js";
 
 /**
  * `tailwind-merge`'s default config only recognizes Tailwind's OWN built-in
  * scale names for spacing (plain numbers, plus the literal `px`) and radius
  * (a fixed t-shirt-size regex). This package's spacing and radius classes
- * are named after @vespeneventures/tokens instead (`px-md`, `rounded-pill`),
+ * are named after this package's tokens instead (`px-md`, `rounded-pill`),
  * which the default config has never heard of — so out of the box, `px-md`
  * and a consumer's own `px-8` would NOT be recognized as conflicting and
  * both would ship, leaving the winner up to Tailwind's stylesheet source

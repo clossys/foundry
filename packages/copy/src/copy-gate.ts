@@ -45,7 +45,7 @@
  *     exit-code discipline).
  *   - It does not resolve a `CopyEntry.factRef` against a real facts
  *     registry — the exact same deliberately-left-open seam
- *     `@vespeneventures/voice`'s `Claim.factRef` and this package's own
+ *     `@vespeneventures/copy/voice`'s `Claim.factRef` and this package's own
  *     `CopyEntry.factRef` both describe in their doc comments. A gate with
  *     visibility into both a `CopyRecord` and a real facts registry is a
  *     different, later gate.

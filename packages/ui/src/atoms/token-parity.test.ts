@@ -4,12 +4,12 @@ import { dirname, extname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { __unstable__loadDesignSystem } from "tailwindcss";
-import { TOKENS } from "@vespeneventures/tokens";
+import { TOKENS } from "../tokens/index.js";
 
 /**
  * The highest-value test in this package (see the README's "Tests"
  * section). Every atom, block, AND shell component styles with Tailwind
- * classes generated from @vespeneventures/tokens, and separately with a
+ * classes generated from this package's token layer, and separately with a
  * handful of raw `var(--ui-*)` reads for tokens that have no Tailwind
  * namespace. Neither of those is checked by TypeScript — a class name and a
  * `var()` argument are both just strings to the compiler. A typo like
@@ -22,7 +22,7 @@ import { TOKENS } from "@vespeneventures/tokens";
  * The previous version of this file was a hand-maintained regex: it matched
  * `\b(prefix)-(suffix)\b` for a fixed list of prefixes it knew were
  * token-derived (`bg-`, `text-`, `border-`, `rounded-`, ...), then checked
- * `suffix` against @vespeneventures/tokens' own `TOKENS` export. Anything
+ * `suffix` against this package's `TOKENS` export. Anything
  * that wasn't a token — including Tailwind's OWN built-in vocabulary that
  * happens to share a prefix with a token family — had to be hand-enumerated
  * in an `ALLOWED_SUFFIXES` allow-list to avoid being rejected as invented.
@@ -46,7 +46,7 @@ import { TOKENS } from "@vespeneventures/tokens";
  * class is real, by literally compiling it — `tailwindcss`'s own
  * `__unstable__loadDesignSystem` JS API (a `devDependency` of this
  * package already), fed this package's own token CSS
- * (`@vespeneventures/tokens/theme.css`), the same way a consumer's real
+ * (`@vespeneventures/ui/theme.css`), the same way a consumer's real
  * build would. `designSystem.candidatesToCss(candidates)` returns, per
  * candidate, either a real CSS rule or `null` for "Tailwind has no idea
  * what this is" — variants (`hover:`, `not-last:`, custom breakpoints like
@@ -65,7 +65,7 @@ import { TOKENS } from "@vespeneventures/tokens";
  * The one thing Tailwind's compiler *can't* police is this package's own
  * token vocabulary — `shadow-[var(--ui-elevation-raised)]` compiles to a
  * real `box-shadow` declaration whether or not `--ui-elevation-raised`
- * exists as a real @vespeneventures/tokens entry, because from Tailwind's
+ * exists as a real token-layer entry, because from Tailwind's
  * point of view an arbitrary-value `var()` argument is just an opaque
  * string. That's exactly the class of bug the raw `var(--ui-*)` /
  * `var(--color-*)` scan below still exists for — it runs across the same
@@ -249,6 +249,8 @@ const KNOWN_NON_CLASS_MAPS = new Set([
   // charts/internal/chart-vars.ts — slot-number -> fallback-hex lookups fed
   // into a `var(--token, <fallback>)` string, never used as a class name.
   "CHART_CATEGORICAL_FALLBACK",
+  // `tokens/read-brand-css.ts`: parsed CSS custom-property values, not classes.
+  "declarations",
   "CHART_SEQUENTIAL_FALLBACK",
   // atoms/Icon.tsx — size -> `var(--ui-icon-*, <fallback>)` string lookup,
   // read via `style.width`/`style.height`, never a Tailwind class name (the
@@ -301,7 +303,7 @@ const VAR_RE = /var\(\s*(--[a-zA-Z0-9-]+)\s*(?:,|\))/g;
 // ── Compile Tailwind once, using this package's real token CSS ─────────
 //
 // `require.resolve` (via `createRequire`, since this file is ESM) rather
-// than a hardcoded path: this package, `@vespeneventures/tokens`, and
+// than a hardcoded path: this package's token CSS and
 // `tailwindcss` are all real npm dependencies resolved through the normal
 // module graph (an npm workspace symlink in this monorepo, a real
 // `node_modules` install for an external consumer of this package) — using
@@ -312,7 +314,7 @@ const VAR_RE = /var\(\s*(--[a-zA-Z0-9-]+)\s*(?:,|\))/g;
 // through that package's own `exports` map's `style` CONDITION, which
 // Node's plain CJS `require.resolve` (no loader for a `style` export
 // condition exists) can't follow on its own — every other specifier this
-// package imports (`@vespeneventures/tokens/theme.css`, and that file's own
+// package imports (`@vespeneventures/ui/theme.css`, and that file's own
 // relative `./tokens.css`) already names its `.css` file explicitly, so no
 // such rewrite is needed for them.
 const require = createRequire(import.meta.url);
@@ -331,7 +333,7 @@ async function loadStylesheet(id: string, base: string) {
 
 const TOKEN_CSS_ENTRY = [
   '@import "tailwindcss";',
-  '@import "@vespeneventures/tokens/theme.css";',
+  '@import "@vespeneventures/ui/theme.css";',
 ].join("\n");
 
 // One compile for the whole file, not one per class: `candidatesToCss`
@@ -374,7 +376,7 @@ for (const file of sourceFiles) {
         file: relFile,
         kind: "var",
         text: property,
-        reason: `"${property}" is not a token in @vespeneventures/tokens' TOKENS export`,
+        reason: `"${property}" is not a token in @vespeneventures/ui/tokens' TOKENS export`,
       });
     }
   }

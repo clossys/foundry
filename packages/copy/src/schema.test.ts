@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { parseCopyRecord, validateCopyRecordShape } from "./schema.js";
-import type { CopyRecord } from "./types.js";
+import { parseCopyRecord, parseCopyRegistry, validateCopyRecordShape, validateCopyRegistryShape } from "./schema.js";
+import type { CopyRecord, CopyRegistry } from "./types.js";
 
 // A minimal but complete, obviously-fictional CopyRecord used across this
 // file's tests. "Acme" mirrors the placeholder already used elsewhere in
@@ -300,5 +300,35 @@ describe("parseCopyRecord", () => {
         entries: [{ id: "pagination.range", text: "Showing {start} of results.", context: "y", placeholders: ["start", "total"] }],
       }),
     ).toThrowError(/"total"/);
+  });
+});
+
+describe("CopyRegistry — the stronger rendered-copy contract", () => {
+  const validRegistry: CopyRegistry = {
+    id: "acme-app",
+    locale: "en",
+    revision: "2026-08-11",
+    source: { kind: "consumer", reference: "editorial/revisions/42" },
+    entries: [{ id: "home.title", text: "Welcome", context: "home heading", status: "approved" }],
+  };
+
+  it("accepts versioned, locale-specific copy with source provenance and lifecycle state", () => {
+    expect(validateCopyRegistryShape(validRegistry)).toEqual([]);
+    expect(parseCopyRegistry(validRegistry)).toEqual({
+      ...validRegistry,
+      entries: [{ ...validRegistry.entries[0], placeholders: [] }],
+    });
+  });
+
+  it("rejects a record that is suitable for scanning but cannot safely resolve rendered copy", () => {
+    const findings = validateCopyRegistryShape({ id: "acme-app", entries: validRegistry.entries });
+    expect(findings.map((finding) => finding.rule)).toEqual(
+      expect.arrayContaining(["registry-locale-shape", "registry-revision-shape", "registry-source-shape"]),
+    );
+  });
+
+  it("requires each resolvable entry to have an explicit lifecycle state", () => {
+    const findings = validateCopyRegistryShape({ ...validRegistry, entries: [{ ...validRegistry.entries[0], status: undefined }] });
+    expect(findings.some((finding) => finding.rule === "entry-status-shape" && finding.path === "entries.0.status")).toBe(true);
   });
 });

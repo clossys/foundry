@@ -50,7 +50,7 @@ export function Spinner({ size = "md", className, label, ...rest }: SpinnerProps
       {...rest}
       viewBox="0 0 24 24"
       fill="none"
-      className={cx("animate-spin text-ink-secondary", SIZE_CLASSES[size], className)}
+      className={cx("animate-spin motion-reduce:animate-none text-ink-secondary", SIZE_CLASSES[size], className)}
       role={label ? "status" : undefined}
       aria-label={label}
       aria-hidden={label ? undefined : true}
