@@ -65,6 +65,33 @@ describe("validateRepositoryProfile", () => {
       protectedPaths: ["src/**"]
     })`) as unknown;
     expect(validateRepositoryProfile(crossRealmProfile)).toEqual([]);
+
+    const inheritedProfile = runInNewContext(`
+      Object.assign(Object.prototype, {
+        schemaVersion: 1,
+        defaultBranch: "main",
+        commands: {},
+        protectedPaths: []
+      });
+      ({})
+    `) as unknown;
+    expect(validateRepositoryProfile(inheritedProfile).map((entry) => entry.rule)).toEqual([
+      "schema-version",
+      "default-branch",
+      "commands-shape",
+      "protected-paths-shape",
+    ]);
+
+    const inheritedCommandFields = runInNewContext(`
+      Object.assign(Object.prototype, { run: "npm test", cwd: "packages/example" });
+      ({
+        schemaVersion: 1,
+        defaultBranch: "main",
+        commands: { test: {} },
+        protectedPaths: []
+      })
+    `) as unknown;
+    expect(validateRepositoryProfile(inheritedCommandFields).map((entry) => entry.rule)).toEqual(["command-run", "command-cwd"]);
   });
 
   it("rejects unsafe branches, command names, command directories, and protected paths", () => {

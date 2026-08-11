@@ -21,6 +21,10 @@ function finding(rule: RepositoryProfileFindingRule, path: string, message: stri
   return { rule, severity: "error", path, message };
 }
 
+function hasOwn(value: object, key: PropertyKey): boolean {
+  return Object.prototype.hasOwnProperty.call(value, key);
+}
+
 function isRepositoryRelative(value: string, allowPatterns: boolean): boolean {
   if (value.length === 0 || value.startsWith("/") || /^[a-z]:/i.test(value) || value.includes("\\") || value.includes("\0")) return false;
   if (!allowPatterns && /[*?[\]{}]/.test(value)) return false;
@@ -56,15 +60,15 @@ function validateRepositoryProfileValue(value: unknown): RepositoryProfileFindin
     if (!PROFILE_KEYS.has(key)) findings.push(finding("unknown-field", key, `Unknown profile field "${key}".`));
   }
 
-  if (value.schemaVersion !== REPOSITORY_PROFILE_VERSION) {
+  if (!hasOwn(value, "schemaVersion") || value.schemaVersion !== REPOSITORY_PROFILE_VERSION) {
     findings.push(finding("schema-version", "schemaVersion", `schemaVersion must be ${REPOSITORY_PROFILE_VERSION}.`));
   }
 
-  if (typeof value.defaultBranch !== "string" || !isBranchName(value.defaultBranch)) {
+  if (!hasOwn(value, "defaultBranch") || typeof value.defaultBranch !== "string" || !isBranchName(value.defaultBranch)) {
     findings.push(finding("default-branch", "defaultBranch", "defaultBranch must be a valid Git branch name."));
   }
 
-  if (!isRecord(value.commands)) {
+  if (!hasOwn(value, "commands") || !isRecord(value.commands)) {
     findings.push(finding("commands-shape", "commands", "commands must be a plain object keyed by command name."));
   } else {
     for (const name of Object.getOwnPropertyNames(value.commands)) {
@@ -80,16 +84,17 @@ function validateRepositoryProfileValue(value: unknown): RepositoryProfileFindin
       for (const key of Object.getOwnPropertyNames(command)) {
         if (!COMMAND_KEYS.has(key)) findings.push(finding("unknown-field", `${commandPath}.${key}`, `Unknown command field "${key}".`));
       }
-      if (typeof command.run !== "string" || command.run.trim().length === 0) {
+      if (!hasOwn(command, "run") || typeof command.run !== "string" || command.run.trim().length === 0) {
         findings.push(finding("command-run", `${commandPath}.run`, "run must be a non-empty string."));
       }
-      if (command.cwd !== undefined && (typeof command.cwd !== "string" || !isRepositoryRelative(command.cwd, false))) {
-        findings.push(finding("command-cwd", `${commandPath}.cwd`, "cwd must be a repository-relative directory without glob syntax or parent traversal."));
+      const ownsCwd = hasOwn(command, "cwd");
+      if ((!ownsCwd && "cwd" in command) || (ownsCwd && (typeof command.cwd !== "string" || !isRepositoryRelative(command.cwd, false)))) {
+        findings.push(finding("command-cwd", `${commandPath}.cwd`, "cwd, when present, must be an own repository-relative directory without glob syntax or parent traversal."));
       }
     }
   }
 
-  if (!Array.isArray(value.protectedPaths)) {
+  if (!hasOwn(value, "protectedPaths") || !Array.isArray(value.protectedPaths)) {
     findings.push(finding("protected-paths-shape", "protectedPaths", "protectedPaths must be an array."));
   } else {
     const seen = new Set<string>();
