@@ -11,7 +11,7 @@ repository and has since been removed from the codebase (see
 published still exist on the registry — a published name can never be
 reused for a different package, whether or not the original is still in
 the tree. Everything below is the general process for adding and
-publishing a new package here, not a record of what has shipped so far.
+publishing a new package here, not a complete registry inventory.
 
 ---
 
@@ -26,6 +26,32 @@ A public package whose dependency is private is broken for everyone outside.
       neither resolves for a normal external installer. Pin real semver
       ranges.
 - [ ] The licence is MIT and matches the repository `LICENSE`.
+
+### Runtime dependency order
+
+Publication order follows the runtime graph, not filesystem order or the
+order packages happen to appear in a workspace:
+
+```
+catalog ─┐
+         ├─ gates ── release
+policy ──┘       └───┘
+```
+
+`catalog` and `policy` are independent leaves and must each be available at
+the exact compatible versions before `gates` is published. `release` follows
+only after both `gates` and `policy` are available. A local workspace build is
+not evidence that this graph is closed: workspace links can satisfy a package
+that an external registry installer cannot obtain.
+
+For a dependent package, the final proof is an isolated install of the exact
+tarball that was scanned and selected for publication, after its sibling
+runtime packages are present in the configured registry.
+`@vespeneventures/release` supports that proof with `packRoundTrip`'s explicit
+`tarballPath` and `registry` options. The registry token is supplied by the
+caller for child npm processes only; it is never inherited from ambient
+configuration or retained in a kept debug directory. The default round trip
+intentionally remains an unauthenticated public-registry proof.
 
 ## 1. Copy the source — and only the source
 
@@ -149,6 +175,11 @@ tarball, not the tree).
 - [ ] `npm pack --dry-run` (or the artifact-safety gate, which packs for
       real) contents are exactly what you intended. This is the last look at
       the thing that actually ships.
+- [ ] For `gates` and `release`, their already-published runtime siblings
+      have passed an explicit private-registry round trip against the exact
+      tarball selected for publication. Do not replace this with a local
+      tarball dependency or a workspace link; either would hide the graph
+      closure being proven.
 
 ## 6. Publish
 

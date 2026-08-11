@@ -39,6 +39,12 @@ Each package's own README has the full API and the reasoning behind it.
 The cross-package ownership and adoption plan is in
 [docs/COMMUNICATIONS.md](docs/COMMUNICATIONS.md).
 
+The table is a source-tree inventory, not a promise that every named package
+is available in the registry. Dependent packages publish only after their
+runtime siblings, and every such release is proved from an isolated install
+of its selected tarball. The required order for the core release graph is
+documented in [docs/PUBLISHING.md](docs/PUBLISHING.md).
+
 ## Installing
 
 Packages publish to **GitHub Packages**, not the public npm registry, and
@@ -61,13 +67,15 @@ been granted access:
 npm install @vespeneventures/gates
 ```
 
-Nothing here has been published for open, unauthenticated installation yet.
-See [docs/PUBLISHING.md](docs/PUBLISHING.md) for the maintainer process and
-why packages default to private.
+Packages are private by default; registry availability is a per-package,
+per-version fact rather than a property of this public repository. See
+[docs/PUBLISHING.md](docs/PUBLISHING.md) for the maintainer process,
+dependency order, and the isolated install proof required before publishing.
 
 ## Usage
 
-The `gates` package ships a CLI, `foundry-check`, that walks a workspace's
+Once `@vespeneventures/gates` is available to your account, it ships a CLI,
+`foundry-check`, that walks a workspace's
 `packages/` directory and reports what it finds:
 
 ```bash

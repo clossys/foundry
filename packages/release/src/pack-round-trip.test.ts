@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { existsSync, mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -259,6 +260,65 @@ describe("packRoundTrip — exports shape handling (fixture packages)", () => {
     expect(result.findings[0]?.message).toContain("<unnamed package>");
   });
 
+  it("installs and imports a caller-supplied tarball without packing the source again", async () => {
+    const dir = makeFixture("exact-tarball", {
+      "package.json": JSON.stringify(
+        {
+          name: "exact-tarball-fixture",
+          version: "1.0.0",
+          type: "module",
+          exports: "./index.js",
+        },
+        null,
+        2,
+      ),
+      "index.js": "export const artifact = 'exact';\n",
+    });
+    const tarballDir = mkdtempSync(join(tmpdir(), "release-exact-tarball-"));
+    fixtureDirs.push(tarballDir);
+    const stdout = execFileSync("npm", ["pack", "--pack-destination", tarballDir], {
+      cwd: dir,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+    const tarballName = stdout.trim().split("\n").filter(Boolean).pop();
+    expect(tarballName).toBeDefined();
+    const tarballPath = join(tarballDir, tarballName as string);
+    writeFileSync(join(dir, "index.js"), "throw new Error('source changed after packing');\n");
+    writeFileSync(join(dir, "package.json"), JSON.stringify({
+      name: "exact-tarball-fixture",
+      version: "1.0.0",
+      type: "module",
+      exports: {},
+    }, null, 2));
+
+    const result = await packRoundTrip(dir, { tarballPath });
+
+    expect(result.ok).toBe(true);
+    expect(result.tarballPath).toBe(tarballPath);
+    expect(result.imports).toEqual([{ subpath: ".", ok: true }]);
+  });
+
+  it("reports a missing caller-supplied tarball without attempting an install", async () => {
+    const dir = makeFixture("missing-exact-tarball", {
+      "package.json": JSON.stringify(
+        { name: "missing-exact-tarball-fixture", version: "1.0.0", type: "module", exports: "./index.js" },
+        null,
+        2,
+      ),
+      "index.js": "export const ok = true;\n",
+    });
+
+    const result = await packRoundTrip(dir, { tarballPath: join(dir, "missing.tgz") });
+
+    expect(result.ok).toBe(false);
+    expect(result.imports).toEqual([]);
+    expect(result.findings).toEqual([expect.objectContaining({
+      rule: "round-trip-tarball-missing",
+      severity: "error",
+    })]);
+  });
+
   it("throws for a directory with no package.json at all, as documented", async () => {
     const dir = mkdtempSync(join(tmpdir(), "release-fixture-no-manifest-"));
     fixtureDirs.push(dir);
@@ -349,6 +409,17 @@ describe("subprocessEnv — subprocess environment sanitization (defect 3)", () 
     expect(env.npm_config_userconfig).toBeDefined();
     expect(env.npm_config_userconfig).not.toBe(join(process.env.HOME ?? "", ".npmrc"));
     expect(env.npm_config_userconfig).toContain(isolationDir);
+  });
+
+  it("uses only explicit private-registry credentials when the caller supplies them", () => {
+    const env = subprocessEnv("/tmp/release-private-registry-proof", {
+      url: "https://registry.example.test/",
+      authToken: "explicit-test-token",
+    });
+
+    expect(env.npm_config_registry).toBe("https://registry.example.test/");
+    expect(env.NODE_AUTH_TOKEN).toBe("explicit-test-token");
+    expect(env.npm_config_userconfig).toContain("release-private-registry-proof");
   });
 
   it("still passes through PATH and HOME, needed for npm/node themselves to run", () => {

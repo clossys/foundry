@@ -52,12 +52,24 @@ Every `npm pack`, `npm install`, and import-check subprocess runs with a
 deliberately minimal environment — `PATH` and `HOME` are passed through,
 but credential- and registry-shaped variables (`NODE_AUTH_TOKEN`, any
 ambient registry override, and the operator's own `~/.npmrc`) are never
-inherited, and the registry is pinned to the public default. A package that
-only resolves because of the operator's own local credentials is not proof
-of what an external stranger would actually experience. Each subprocess
-also runs under a finite timeout so a hung install, or a package whose
-top-level code never resolves, cannot hang `packRoundTrip` forever — a
-timeout is reported as a clear finding, never a silent, indefinite pass.
+inherited. By default the registry is pinned to the public default. A
+package that only resolves because of the operator's own local credentials
+is not proof of what an external stranger would actually experience.
+
+Private registry proof is an explicit opt-in: pass `registry.url` and a
+caller-supplied `registry.authToken`. The token is injected only into the
+isolated npm subprocesses through an ephemeral config file, never read from
+the ambient environment, never logged, and removed even when `keepTempDir`
+is enabled. This lets a publisher prove a private runtime graph after its
+sibling packages are published without weakening the default public-registry
+proof. Each subprocess also runs under a finite timeout so a hung install,
+or a package whose top-level code never resolves, cannot hang
+`packRoundTrip` forever — a timeout is reported as a clear finding, never a
+silent, indefinite pass.
+
+When a publisher has already scanned and selected a tarball, pass its path
+as `tarballPath`; `packRoundTrip` installs that exact file instead of packing
+the source directory again.
 
 A package that declares no importable `exports` surface at all checks zero
 imports and is therefore reported `ok: false` with a
@@ -113,43 +125,42 @@ if (findings.length > 0) process.exitCode = 1;
 | `packRoundTrip(packageDir, options?)` | function | Packs `packageDir`, installs the tarball into an isolated temporary directory, and attempts to import every declared `exports` subpath. Returns a `Promise<RoundTripResult>`. `options.keepTempDir` (default `false`) skips cleanup, for debugging a real failure by hand. |
 | `preflightPackage(root, packageDir, options?)` | function | Combines this package's own catalog findings with a real `packRoundTrip` result. Returns a `Promise<PreflightReport>`. `options.scope` is passed straight through to `runFoundationCheck`. |
 | `verifyPublishedArtifact(expectedDigest, publishedContent)` | function | Builds a `PolicyBinding` inline and calls `@vespeneventures/policy`'s own `verifyBinding`. Returns a `Finding[]`; empty means the content matches. |
-| `PackRoundTripOptions` | type | `{ keepTempDir?: boolean; timeoutsMs?: { pack?: number; install?: number; import?: number } }` — the second argument to `packRoundTrip`. `timeoutsMs` overrides the default per-subprocess timeouts; a production caller should rarely need it. |
+| `PackRoundTripOptions` | type | `{ keepTempDir?: boolean; tarballPath?: string; registry?: RegistryInstallOptions; timeoutsMs?: { pack?: number; install?: number; import?: number } }` — the second argument to `packRoundTrip`. `tarballPath` verifies the already-selected artifact rather than repacking source; `timeoutsMs` overrides the default per-subprocess timeouts. |
+| `RegistryInstallOptions` | type | `{ url: string; authToken?: string }` — explicit private-registry proof configuration. Omit it for the default unauthenticated public-registry proof. |
 | `PreflightPackageOptions` | type | `{ scope?: string }` — the third argument to `preflightPackage`. |
 | `ImportCheck` | type | `{ subpath: string; ok: boolean; error?: string }` — one attempted import of one declared `exports` key. |
-| `RoundTripResult` | type | `{ ok: boolean; packageName: string \| undefined; tarballPath: string; imports: ImportCheck[]; findings: Finding[] }` — what `packRoundTrip` returns. `findings` carries rule `"round-trip-install-failed"`, `"round-trip-import-failed"`, or `"round-trip-no-exports"` (a package that declares no importable `exports` subpath at all — checking zero imports is never reported as `ok: true`). |
+| `RoundTripResult` | type | `{ ok: boolean; packageName: string \| undefined; tarballPath: string; imports: ImportCheck[]; findings: Finding[] }` — what `packRoundTrip` returns. `findings` carries rule `"round-trip-tarball-missing"`, `"round-trip-tarball-invalid"`, `"round-trip-install-failed"`, `"round-trip-import-failed"`, or `"round-trip-no-exports"` (a package that declares no importable `exports` subpath at all — checking zero imports is never reported as `ok: true`). |
 | `PreflightReport` | type | `{ packageName: string; catalogFindings: CatalogFinding[]; roundTrip: RoundTripResult; ok: boolean }` — what `preflightPackage` returns. |
 
-## What this actually found, in this repository
+## Proving a private runtime graph
 
-This mechanism's proof is not hypothetical — it is the real, current state
-of this repository's own packages, and it is exactly what this package's
-own test suite asserts.
+For a package with private registry siblings, proof follows publish order:
 
-**The clean case: `packages/policy`.** Zero runtime dependencies. Packed,
-installed into a genuinely isolated directory with no workspace file at
-all, and every declared export subpath imports without error.
-`packRoundTrip` returns `ok: true`.
+1. Publish the dependency-free leaves.
+2. Pack and scan the dependent package exactly once.
+3. Use that selected tarball with an explicit private-registry configuration
+   to prove an isolated install and every declared import.
+4. Publish only after that proof is clean.
 
-**The interesting case: `packages/gates`.** `gates` declares two real npm
-dependencies with semver ranges — `@vespeneventures/catalog` and
-`@vespeneventures/policy` — in its own `package.json`. Neither has ever
-been published to a registry. Packed and installed into a directory with no
-workspace file and no sibling `node_modules` to fall back on, the install
-has nowhere it can resolve those two names from, so it fails — for real,
-with a real non-zero exit code from a real `npm install`. `packRoundTrip`
-returns `ok: false` with a `"round-trip-install-failed"` finding, and the
-import step never runs at all, because there is nothing installed to
-import.
+For this repository's core graph, `catalog` and `policy` precede `gates`,
+and `gates` plus `policy` precede `release`. The exact current availability
+of a version is a registry fact, not a source-tree fact; an isolated proof
+must therefore be run after the required sibling versions are available.
 
-That is not a bug in `gates`; it is the honest current state of this
-repository, and precisely the gap this package exists to surface. `gates`
-declares its dependencies correctly, its own catalog entry has no
-dependency-graph problem, and every earlier check already says `gates` is
-fine — none of those checks can see that installing it from outside this
-workspace, today, does not actually work, because the packages it depends
-on have never been published anywhere a stranger's `npm install` could find
-them. An internal dependency has to actually be published before anything
-depending on it can be proven installable from outside the workspace.
+```ts
+const result = await packRoundTrip("packages/gates", {
+  tarballPath: "packages/gates/vespeneventures-gates-0.1.0.tgz",
+  registry: {
+    url: "https://npm.pkg.github.com",
+    authToken: registryToken,
+  },
+});
+```
+
+This is still a local-tarball install for the package under proof. Its runtime
+dependencies resolve from the configured private registry, so a missing,
+incorrectly versioned, or inaccessible sibling fails the real `npm install`
+instead of being masked by workspace links.
 
 ## Non-goal: publishing and fetching
 
