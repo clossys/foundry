@@ -45,7 +45,8 @@ so consumers never need to treat inherited object properties as command names.
 The command and protected-path collection types are read-only arrays, matching
 the concrete arrays accepted by validation. Validation reads only own numeric
 data descriptors and `length`; it does not invoke array methods or iteration on
-untrusted values.
+untrusted values. Both profile collections are bounded at 10,000 entries, so a
+consumer check never processes an unbounded untrusted configuration.
 Protected paths support literal segments plus `*`
 and `**` wildcards; brace expansion, character classes, extglobs, negation,
 absolute paths, and parent traversal are rejected.
@@ -77,6 +78,37 @@ consumer exist.
 ## Requirements
 
 Node 20+. ESM only. Zero runtime dependencies.
+
+## CLI
+
+`repository-check` validates exactly one JSON profile file. It reads no
+repository state, runs no declared commands, and invokes neither Git nor a
+provider API.
+
+```bash
+repository-check repository-profile.json
+```
+
+It writes one deterministic JSON report to standard output:
+
+```json
+{
+  "ok": false,
+  "findings": [
+    {
+      "rule": "default-branch",
+      "severity": "error",
+      "path": "defaultBranch",
+      "message": "defaultBranch must be a valid Git branch name."
+    }
+  ]
+}
+```
+
+Its exit codes are `0` for a valid profile, `1` for validation findings, and
+`2` when it cannot run because its arguments are invalid, the profile file is
+unreadable, or the file is not valid JSON. Use `repository-check --help` for
+the complete invocation contract.
 
 ## Licence
 
