@@ -183,16 +183,23 @@ tarball, not the tree).
 
 ## 6. Publish
 
-Actions → **Publish** → the package directory, `dry_run: true` first.
+Merging a package's new `package.json` version to `main` publishes that
+package automatically. The workflow selects only newly added package
+manifests or manifests whose version changed, serializes releases, and runs
+the full publication path against the merged commit. Source-only changes do
+not publish: release them only with a version change.
+
+Actions → **Publish** remains available for an explicit `dry_run: true` and
+for bootstrap publication of a version that predated this automation.
 `make_public` defaults to `false` — leave it off; the package publishes
 private, and going public is a separate, explicit decision made later (see
 "Package visibility" below).
 
 The workflow re-runs every gate in FULL mode — including name collision and
-artifact safety — builds, tests, packs and prints one tarball, then runs npm's
-own publish command against that exact tarball with `--dry-run`. Read that
-output, then run it again with `dry_run: false` to publish the same release
-path with provenance. A real publish then re-fetches that exact
+artifact safety — builds, tests, packs and prints one tarball. A manual dry
+run exercises npm's own publish command against that exact tarball with
+`--dry-run`; an automatic version release publishes that same path with
+provenance. A real publish then re-fetches that exact
 `name@version`, compares its digest with the uploaded tarball, and installs
 the registry copy in an isolated consumer that imports every declared export.
 The workflow maps only the declared package scope to GitHub Packages, leaving
@@ -249,4 +256,3 @@ by hand if it does.
 | Denylist | `~/.config/public-safety/denylist-foundry.json` locally; `PUBLIC_SAFETY_DENYLIST_B64` repository secret in CI | Never committed here — it names exactly what must not be public. Specific to this repository — never reuse a denylist file written for a different project. |
 | Publish credential | Job-scoped `GITHUB_TOKEN` with workflow `packages: write` | Publishes packages associated with this repository; no stored publish token is used. |
 | Package-index credential | `GH_PACKAGES_TOKEN` repository secret | Classic token with `read:packages`, used only by the pre-publish name-collision query across the owner namespace. |
-| Publish approval | `npm-publish` GitHub environment | Add required reviewers so a publish cannot run unattended |
