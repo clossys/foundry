@@ -261,13 +261,13 @@ describe("reconcileExternalMembership", () => {
     expect(repository.creates).toBe(2);
   });
 
-  it("rejects permissively parseable membership timestamps", async () => {
-    for (const occurredAt of ["0", "2026-02-30T00:00:00Z"]) {
+  it("rejects malformed or coercible membership timestamps", async () => {
+    for (const occurredAt of ["0", "2026-02-30T00:00:00Z", null, 0, false]) {
       await expect(reconcileExternalMembership({
         queryAdapter: transactionalAdapter(),
         repository: new MemoryRepository(),
-        event: event("created", { occurredAt }),
-      })).rejects.toThrow(/strict ISO instant/i);
+        event: event("created", { occurredAt: occurredAt as never }),
+      })).rejects.toThrow(/occurredAt/i);
     }
   });
 

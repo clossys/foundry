@@ -110,6 +110,9 @@ function requireNonEmptyString(value: unknown, label: string): asserts value is 
 }
 
 function normalizeOccurredAt(value: Date | string): Date {
+  if (!(value instanceof Date) && typeof value !== "string") {
+    throw new TypeError("External membership event occurredAt must be a Date or strict ISO instant string.");
+  }
   if (typeof value === "string") {
     const match = ISO_INSTANT_PATTERN.exec(value);
     if (match === null || !isValidCalendarDate(Number(match[1]), Number(match[2]), Number(match[3]))) {

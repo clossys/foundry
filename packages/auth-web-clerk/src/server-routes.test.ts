@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const provider = vi.hoisted(() => ({
   auth: vi.fn(),
@@ -15,7 +15,11 @@ vi.mock("@clerk/nextjs/server", () => ({
 
 vi.mock("next/headers", () => ({ cookies: provider.cookies }));
 
-import { createSignOutRoute, resolveRequestRedirect } from "./server-routes.js";
+import { createClerkSignInPage, createSignOutRoute, resolveRequestRedirect } from "./server-routes.js";
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 describe("resolveRequestRedirect", () => {
   const request = "https://app.example.test/sign-out";
@@ -93,5 +97,28 @@ describe("createSignOutRoute", () => {
 
     expect(response.status).toBe(303);
     expect(response.headers.get("location")).toBe("https://app.example.test/");
+  });
+
+  it("skips Clerk session access in a keyless development bypass", async () => {
+    vi.stubEnv("NEXT_PUBLIC_DEV_NO_AUTH", "1");
+    vi.stubEnv("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "");
+    const response = await route(new Request("https://app.example.test/sign-out", {
+      method: "POST",
+      headers: { Origin: "https://app.example.test" },
+    }));
+
+    expect(response.status).toBe(303);
+    expect(provider.auth).not.toHaveBeenCalled();
+  });
+});
+
+describe("createClerkSignInPage", () => {
+  it("renders without Clerk server auth in a keyless development bypass", async () => {
+    vi.stubEnv("NEXT_PUBLIC_DEV_NO_AUTH", "1");
+    vi.stubEnv("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "");
+    const page = createClerkSignInPage();
+
+    await expect(page()).resolves.toBeTruthy();
+    expect(provider.auth).not.toHaveBeenCalled();
   });
 });

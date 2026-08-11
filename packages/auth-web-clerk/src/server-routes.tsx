@@ -9,6 +9,7 @@ import { NextResponse } from "next/server";
 import type { ReactNode } from "react";
 
 import { ClerkSignInBlock, type ClerkSignInProps } from "./client.js";
+import { devAuthBypassIsKeyless } from "./dev-bypass.js";
 
 type SearchParameters = Record<string, string | string[] | undefined>;
 type PageProps = { searchParams?: Promise<SearchParameters> };
@@ -92,7 +93,9 @@ export function createClerkSignInPage(options: ClerkSignInPageOptions = {}) {
         )
       : undefined;
 
-    const session = await auth();
+    const session = devAuthBypassIsKeyless()
+      ? { userId: null }
+      : await auth();
     if (session.userId) {
       redirect(
         dynamicRedirect
@@ -156,10 +159,12 @@ export function createSignOutRoute(options: SignOutRouteOptions = {}) {
     }
     if (!isSameOriginPost(request)) return new Response(null, { status: 403 });
 
-    const session = await auth();
-    if (session.sessionId) {
-      const client = await clerkClient();
-      await client.sessions.revokeSession(session.sessionId);
+    if (!devAuthBypassIsKeyless()) {
+      const session = await auth();
+      if (session.sessionId) {
+        const client = await clerkClient();
+        await client.sessions.revokeSession(session.sessionId);
+      }
     }
 
     const jar = await cookies();
