@@ -12,7 +12,7 @@
  * No charting library is a dependency here — every mark is a hand-drawn
  * SVG primitive, positioned by this package's own small scale helpers
  * (`internal/scale.ts`), reading color exclusively through
- * `@vespeneventures/tokens`' chart-color family (`internal/chart-vars.ts`)
+ * this package's token-layer chart-color family (`internal/chart-vars.ts`)
  * so every chart follows the active theme.
  *
  * `ChartFrame` is the shared container (plot area, axes, grid, legend

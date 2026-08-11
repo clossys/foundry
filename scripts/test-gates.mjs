@@ -190,6 +190,24 @@ try {
     check("PARTIAL mode says a pass is not a clearance", /does NOT clear/i.test(partial.out), "banner did not disclaim clearance");
   }
 
+  // ---------------------------------------- npm lock integrity normalization
+  console.log("\n# npm lock integrity normalization");
+  {
+    const dir = join(work, "lock-integrity");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      join(dir, "package-lock.json"),
+      JSON.stringify({ lockfileVersion: 3, packages: { "node_modules/example": { integrity: "sha512-acme-corp" } } }, null, 2) + "\n",
+    );
+    gitInit(dir);
+    const r = run("node", [SAFETY, dir, ...DL, "--require-denylist"]);
+    check(
+      "does not treat an opaque npm integrity hash as identity prose",
+      r.code === 0,
+      `lock integrity fixture exited ${r.code}: ${r.out.slice(0, 200)}`,
+    );
+  }
+
   // ------------------------------- check-contamination-classes: fail-closed
   console.log("\n# check-contamination-classes: fail-closed walker");
   {
@@ -976,7 +994,7 @@ try {
     // starts with the literal substring "import" must NOT be mistaken for an
     // `import` statement just because a `@scope/other-package` reference sits
     // on the same line. This is the exact shape that tripped the gate in
-    // packages/assets/README.md (worked around by rewording; see PR #53) —
+    // the former standalone media-registry README (worked around by rewording; see PR #53) —
     // a bare `\bimport` (no trailing boundary) matches "important" too.
     const proseImportant = writePackage(
       "prose-important",
@@ -1315,7 +1333,7 @@ try {
     );
 
     // Same fixture, beta's row removed — structurally the same shape as
-    // issue #28's actual defect (@vespeneventures/voice and
+    // issue #28's actual defect (@vespeneventures/copy/voice and
     // @vespeneventures/strategy had no row at all).
     writeReadme([`| \`${FIXTURE_SCOPE}/alpha\` | does alpha things |`]);
     const missing = run("node", [ROOT_README, dir]);

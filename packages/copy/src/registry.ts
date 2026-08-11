@@ -49,7 +49,7 @@ export interface CopyRegistryReadResult {
   /**
    * `true` exactly when `issues` is empty and `record` is populated.
    * Named to match `@vespeneventures/strategy`'s `StrategyBundle.complete`
-   * and `@vespeneventures/voice`'s `VoiceCheckReport.complete` —
+   * and `@vespeneventures/copy/voice`'s `VoiceCheckReport.complete` —
    * "everything this function could have checked, it did, and it found
    * nothing wrong" is the same one-boolean-read contract across all
    * three, on purpose.

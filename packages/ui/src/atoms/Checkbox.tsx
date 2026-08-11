@@ -25,7 +25,7 @@ export interface CheckboxProps extends Omit<AriaCheckboxProps, "children"> {
 // another radius utility, since Tailwind classifies it into a different
 // class group entirely. `rounded-default` has no such collision.
 const BOX_BASE =
-  "flex h-4 w-4 shrink-0 items-center justify-center rounded-default border transition-colors";
+  "flex h-4 w-4 shrink-0 items-center justify-center rounded-default border transition-colors motion-reduce:transition-none";
 
 /**
  * A checkbox, with support for the indeterminate ("some, not all, of a

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { VoiceRecord } from "@vespeneventures/voice";
+import type { VoiceRecord } from "./voice/index.js";
 import { checkCopyRecord } from "./checker.js";
 import type { CopyRecord } from "./types.js";
 

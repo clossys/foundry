@@ -21,7 +21,7 @@ export interface ButtonProps extends AriaButtonProps {
 }
 
 const BASE =
-  "inline-flex items-center justify-center gap-sm rounded-control text-body font-body transition-colors outline-none disabled:cursor-not-allowed";
+  "inline-flex items-center justify-center gap-sm rounded-control text-body font-body transition-colors motion-reduce:transition-none outline-none disabled:cursor-not-allowed";
 
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   primary: "bg-accent text-ink-on-accent hover:bg-accent-hover",

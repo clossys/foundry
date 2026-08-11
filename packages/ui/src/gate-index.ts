@@ -3,7 +3,7 @@
  * token-purity scanner/gate, kept separate from `src/index.ts` (the
  * component ladder's own internal-tooling barrel — see that file's header
  * for why it has no `"."` package export) the same way this package's
- * `atoms`/`blocks`/`views`/`shell`/`charts`/`icons` subpaths are each their
+ * `atoms`/`blocks`/`shell`/`charts`/`icons` subpaths are each their
  * own barrel. `scripts/check-readme-parity.mjs` reads only `src/index.ts`
  * as this package's canonical export list, so this file is deliberately
  * NOT re-exported there — a consumer imports the scanner/gate from
@@ -19,7 +19,7 @@
  *      hardcoded styling literal — hex colors, color functions, raw CSS
  *      lengths, Tailwind arbitrary-value classes — as a `StyleCandidate`.
  *   2. THE GATE. `checkTokenPurity` (`token-gate.ts`) is the pure gate
- *      that checks each candidate against `@vespeneventures/tokens`' real
+ *      that checks each candidate against this package's real
  *      `TOKENS` registry.
  *
  * `cli.ts` wires both into `ui-token-check`, an installable CLI with the

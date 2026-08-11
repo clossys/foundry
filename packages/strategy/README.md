@@ -13,7 +13,7 @@ npm install @vespeneventures/strategy
 
 ## What this package is, and is not
 
-The split here mirrors `@vespeneventures/tokens`' own README ("The
+The split here mirrors `@vespeneventures/ui/tokens`' own README ("The
 three-layer contract"): that package ships a greyscale token contract and
 lets each consumer bind its own brand on top; this package ships an entity
 schema and a checker, and lets each consumer author its own strategy
@@ -34,12 +34,92 @@ account for a consumer's brandable token slots, in both directions.
 
 Validation here is hand-rolled on purpose, not built on a schema library:
 `@vespeneventures/catalog`, `@vespeneventures/policy`, and
-`@vespeneventures/tokens` all ship with **zero** runtime dependencies, and
+`@vespeneventures/ui/tokens` all ship with **zero** runtime dependencies, and
 this package's own pitch — "pure data + validation, safe to install" — is
 only really true if installing it doesn't also mean resolving a schema
 library's own major version into a consumer's tree. `validation.ts` follows
 `@vespeneventures/policy`'s own `validate.ts` precedent: plain type guards
 over `unknown`, an accumulated issue list, never throws.
+
+## Governed strategy contract
+
+`StrategyContract` is the stable handoff for a product's governed strategy.
+It is intentionally separate from the file-oriented reader below: consumer
+repositories adapt their existing files into this contract without teaching
+the published package about their own directory layout.
+
+Every record has a kebab-case `id`, semantic-version `revision`, and source
+`provenance`. The contract covers `product`, `brand`, `audience`,
+`positioning`, `claim`, `evidence`, and `constraint` records. Validation
+checks duplicate ids, conflicting product/claim keys, invalid revisions,
+and every cross-record reference.
+
+```ts
+import {
+  createStrategyProvenance,
+  getApprovedClaims,
+  validateStrategyContract,
+  type StrategyContract,
+} from "@vespeneventures/strategy";
+
+const contract: StrategyContract = {
+  id: "example-strategy",
+  revision: "1.0.0",
+  provenance: { source: "research-register", recordedAt: "2026-08-11" },
+  records: [
+    {
+      kind: "product", id: "example", revision: "1.0.0",
+      provenance: { source: "research-register", recordedAt: "2026-08-11" },
+      name: "Example", summary: "A fictional product used in documentation.",
+    },
+    {
+      kind: "evidence", id: "interview-round-one", revision: "1.0.0",
+      provenance: { source: "research-register", recordedAt: "2026-08-11" },
+      productId: "example", evidenceKind: "research",
+      statement: "Participants described the workflow as difficult to coordinate.",
+    },
+    {
+      kind: "claim", id: "clearer-workflow", revision: "1.0.0",
+      provenance: { source: "research-register", recordedAt: "2026-08-11" },
+      productId: "example", claimKey: "clearer-workflow",
+      assertion: "Example makes the workflow easier to understand.",
+      status: "approved", evidenceIds: ["interview-round-one"],
+      approval: { approvedBy: "strategy-review", approvedAt: "2026-08-11" },
+    },
+  ],
+};
+
+const result = validateStrategyContract(contract);
+if (!result.ok) throw new Error(result.issues.map((issue) => `${issue.path}: ${issue.message}`).join("\n"));
+
+// Copy authors may use governed inputs; hypotheses are excluded here.
+const approvedClaims = getApprovedClaims(result.value);
+// An output manifest can carry this without importing consumer-specific files.
+const provenance = createStrategyProvenance(result.value, approvedClaims.map((claim) => claim.id));
+```
+
+`EvidenceRecord` holds observed facts or research separately from an
+audience-facing assertion. Only `ApprovedClaimRecord` has an approval and
+requires at least one evidence id; `HypothesisClaimRecord` remains visibly
+unapproved. `ConstraintRecord` may guide copy or a surface, but it contains
+plain product-owned instruction text—not renderer configuration, token
+names, or a dependency on `ui`, `copy`, or `surface`.
+
+`serializeStrategyContract(contract)` canonicalizes record/reference order;
+`createStrategyProvenance(contract)` derives its SHA-256 fingerprint from
+that serialization. These are reproducibility aids, not signatures or a
+mechanism for approving claims automatically.
+
+The governed-contract API exports `STRATEGY_RECORD_KINDS`,
+`validateStrategyContract`, `getApprovedClaims`,
+`serializeStrategyContract`, and `createStrategyProvenance`. Its data types
+are `StrategyContract`, `StrategyProvenance`, `StrategyRecord`,
+`StrategyRecordKind`, `StrategyRecordBase`, `StrategyRecordReference`,
+`RecordProvenance`, `ProductRecord`, `BrandRecord`, `AudienceRecord`,
+`PositioningRecord`, `ClaimRecord`, `ClaimStatus`, `ApprovedClaimRecord`,
+`ApprovedClaimApproval`, `HypothesisClaimRecord`, `EvidenceRecord`,
+`EvidenceKind`, `ConstraintRecord`, `ConstraintKind`, and
+`ConstraintTarget`.
 
 **What does not ship here:** any real company's mission, vision, values,
 positioning, market sizing, audience research, roadmap, facts, brand
@@ -279,7 +359,7 @@ pattern, a founder's stated rule — whatever actually makes the attribute
 true. It's required because an attribute with no basis at all is exactly a
 vibe: a word chosen because it sounds good. `evidence.factRef` is an
 optional, opaque string naming a `Fact.key` — the same seam
-`@vespeneventures/voice`'s `Claim.factRef` and this package's own
+`@vespeneventures/copy/voice`'s `Claim.factRef` and this package's own
 `Market.factRefs`/`Audience.factRefs` already use: a plain string, never
 validated against a real `facts.json` here, never a typed import.
 
@@ -340,7 +420,7 @@ cross-package gate with visibility into both — is the one place that can
 close it for real.
 
 The check itself runs in **both directions**, exactly like
-`@vespeneventures/tokens`' own `brand-coverage.test.ts`:
+`@vespeneventures/ui/tokens`' own `brand-coverage.test.ts`:
 
 1. Every slot in `brandableSlots` is named by at least one derivation's
    `tokenSlots` (`result.slotsMissingDerivation` otherwise).
@@ -447,8 +527,8 @@ without ever deciding what should happen next.
 `checkBrandCoverage` draws the identical line: it answers "does a
 derivation exist for this slot, and does every named slot actually exist"
 — nothing about whether a `tokenSlots` name is spelled correctly against a
-REAL `@vespeneventures/tokens` release, whether a `voiceRules` id resolves
-to a real `@vespeneventures/voice` glossary entry, or what value either
+REAL `@vespeneventures/ui/tokens` release, whether a `voiceRules` id resolves
+to a real `@vespeneventures/copy/voice` glossary entry, or what value either
 should actually be bound to. Resolving those names against the real
 packages they name is a later, cross-package gate's job — one with
 visibility into `tokens` and/or `voice` that this package deliberately does

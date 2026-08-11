@@ -1,5 +1,5 @@
 /**
- * Raw CSS custom-property reads for @vespeneventures/tokens' chart-color
+ * Raw CSS custom-property reads for this package's token-layer chart-color
  * family (`--color-chart-*`) — the charts layer's equivalent of
  * `atoms/internal/ui-vars.ts`. SVG presentation attributes (`fill`,
  * `stroke`) and inline `style` both take a `var(...)` string directly, so
@@ -9,7 +9,7 @@
  * way every other token-driven surface in this package does.
  *
  * Every read carries an explicit fallback (the token's own shipped default
- * from `@vespeneventures/tokens`' `styles/tokens.css`), so a chart still
+ * from this package's `styles/tokens.css`), so a chart still
  * renders legibly for a consumer who has this package but hasn't wired up
  * tokens' CSS yet.
  */
@@ -49,7 +49,7 @@ export const MAX_CATEGORICAL_SERIES = 8;
 /**
  * The categorical color for series `index` (0-based) in FIXED order — never
  * cycled. Per the dataviz method this package's tokens were validated
- * against (see `@vespeneventures/tokens`' `styles/tokens.css`, "CHART ·
+ * against (see this package's `styles/tokens.css`, "CHART ·
  * CATEGORICAL"), a 9th series does not get a generated hue: callers must
  * cap at `MAX_CATEGORICAL_SERIES` themselves (fold the tail into "Other",
  * or facet into small multiples) before calling this. Throws rather than

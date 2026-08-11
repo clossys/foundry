@@ -8,7 +8,8 @@
  * but the registry and whatever they declared. This does: pack the real
  * tarball, install it into a genuinely isolated temporary directory with no
  * workspace file and no sibling `node_modules` to fall back on, and try to
- * actually `import` every subpath the package's own `exports` field claims.
+ * check every subpath the package's own `exports` field claims: import
+ * executable JS/TS targets and verify static assets are present.
  *
  * Real subprocess work, real I/O, on purpose — this is the first layer of
  * this foundation where that is the point rather than something to avoid.
@@ -18,7 +19,7 @@ import { execFile as execFileCb } from "node:child_process";
 import { promisify } from "node:util";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { join, relative, resolve } from "node:path";
 import type { Finding } from "@vespeneventures/gates";
 import type { ImportCheck, RoundTripResult } from "./types.js";
 
@@ -48,18 +49,12 @@ export interface PackRoundTripOptions {
    */
   keepTempDir?: boolean;
   /**
-   * An already-packed artifact to install instead of packing `packageDir`
-   * again. This is for verifying the exact tarball that a publisher scanned
-   * and uploaded; it does not change which package manifest supplies the
-   * declared import surface.
+   * Registry used to resolve the packed package's declared dependencies and
+   * runtime peers. Defaults to the public npm registry. Supply this only for
+   * an intentionally configured, anonymously readable registry; credentials
+   * are still never inherited by the isolated subprocesses.
    */
-  tarballPath?: string;
-  /**
-   * An explicit registry proof configuration. Omit it to retain the default
-   * unauthenticated public-registry proof. A token is used only by child npm
-   * processes and is never read from the ambient environment or persisted.
-   */
-  registry?: RegistryInstallOptions;
+  registry?: string | RegistryInstallOptions;
   /**
    * Overrides for this round trip's subprocess timeouts, in milliseconds.
    * Each defaults to the sane, generous budget this module ships with
@@ -75,17 +70,13 @@ export interface PackRoundTripOptions {
   };
 }
 
-/** Explicit registry credentials for a private-registry install proof. */
+/** Explicit registry configuration for an authenticated package-install proof. */
 export interface RegistryInstallOptions {
-  /** Registry URL used for private runtime dependencies. */
+  /** Registry URL used for scoped private dependencies. */
   url: string;
-  /** Optional token supplied by the caller for this proof only. */
+  /** Optional proof-only token. It is passed only to child npm processes. */
   authToken?: string;
-  /**
-   * Optional npm scope to map to `url`. When supplied, unscoped dependencies
-   * continue resolving from the public npm registry instead of incorrectly
-   * looking for them in the private registry.
-   */
+  /** Optional npm scope mapped to `url`; unscoped dependencies stay on npmjs. */
   scope?: string;
 }
 
@@ -129,10 +120,10 @@ export interface RegistryInstallOptions {
  *     and nothing left over from a previous run can leak into this one's
  *     result.
  *   - `npm_config_registry` — pinned explicitly to the public default
- *     (`https://registry.npmjs.org/`), the same registry an external
- *     stranger with no configuration of their own would resolve against,
- *     rather than leaving resolution to whatever registry config happens to
- *     be ambient on the host.
+ *     (`https://registry.npmjs.org/`) unless the caller supplied an explicit
+ *     registry option. Either way it is never inherited from ambient host
+ *     configuration. An explicit registry is useful for an intentionally
+ *     configured public registry; it still receives no local credentials.
  *   - `npm_config_audit`, `npm_config_fund`, `npm_config_update_notifier` —
  *     disabled. None of them affect whether the package actually imports;
  *     they only add extra network round trips that a slow or offline
@@ -153,14 +144,15 @@ export interface RegistryInstallOptions {
  */
 export function subprocessEnv(
   isolationDir: string,
-  registry?: RegistryInstallOptions,
+  registry?: string | RegistryInstallOptions,
 ): NodeJS.ProcessEnv {
+  const registryUrl = typeof registry === "string" ? registry : registry?.url ?? "https://registry.npmjs.org/";
   const env: NodeJS.ProcessEnv = {
     PATH: process.env.PATH,
     HOME: process.env.HOME ?? process.env.USERPROFILE,
     npm_config_userconfig: join(isolationDir, "unused-userconfig.npmrc"),
     npm_config_cache: join(isolationDir, "npm-cache"),
-    npm_config_registry: registry?.scope ? "https://registry.npmjs.org/" : registry?.url ?? "https://registry.npmjs.org/",
+    npm_config_registry: typeof registry === "object" && registry.scope ? "https://registry.npmjs.org/" : registryUrl,
     npm_config_audit: "false",
     npm_config_fund: "false",
     npm_config_update_notifier: "false",
@@ -171,26 +163,23 @@ export function subprocessEnv(
     env.TEMP = process.env.TEMP;
     env.TMP = process.env.TMP;
   }
-  if (registry?.authToken) {
-    env.NODE_AUTH_TOKEN = registry.authToken;
-  }
+  if (typeof registry === "object" && registry.authToken) env.NODE_AUTH_TOKEN = registry.authToken;
   return env;
 }
 
-export function registryAuthConfig(registry: RegistryInstallOptions | undefined): string | undefined {
-  if (!registry) return undefined;
-
+function registryAuthConfig(registry: string | RegistryInstallOptions | undefined): string | undefined {
+  if (!registry || typeof registry === "string") return undefined;
   const parsed = new URL(registry.url);
   if (parsed.protocol !== "https:" || parsed.username || parsed.password) {
-    throw new Error("packRoundTrip: registry URL must be an HTTPS URL without embedded credentials");
+    throw new Error("packRoundTrip: registry URL must be HTTPS without embedded credentials");
   }
   if (registry.scope && !/^@[a-z0-9][a-z0-9._-]*$/.test(registry.scope)) {
-    throw new Error("packRoundTrip: registry scope must be an npm scope such as @example");
+    throw new Error("packRoundTrip: registry scope must be an npm scope");
   }
-  const path = parsed.pathname.endsWith("/") ? parsed.pathname : `${parsed.pathname}/`;
-  const scopeMapping = registry.scope ? `${registry.scope}:registry=${parsed.href}\n` : "";
-  const auth = registry.authToken ? `//${parsed.host}${path}:_authToken=${"${NODE_AUTH_TOKEN}"}\n` : "";
-  return scopeMapping || auth ? `${scopeMapping}${auth}` : undefined;
+  const pathname = parsed.pathname.endsWith("/") ? parsed.pathname : `${parsed.pathname}/`;
+  const scopeLine = registry.scope ? `${registry.scope}:registry=${parsed.href}\n` : "";
+  const tokenLine = registry.authToken ? `//${parsed.host}${pathname}:_authToken=${"${NODE_AUTH_TOKEN}"}\n` : "";
+  return scopeLine || tokenLine ? `${scopeLine}${tokenLine}` : undefined;
 }
 
 /**
@@ -259,15 +248,87 @@ function specifierFor(packageName: string, subpath: string): string {
   return `${packageName}/${subpath.replace(/^\.\//, "")}`;
 }
 
-async function manifestFromTarball(
-  tarballPath: string,
-  timeout: number,
-): Promise<{ name?: string; exports?: unknown }> {
-  const { stdout } = await execFile("tar", ["-xOf", tarballPath, "package/package.json"], {
-    timeout,
-    killSignal: TIMEOUT_KILL_SIGNAL,
-  });
-  return JSON.parse(stdout) as { name?: string; exports?: unknown };
+/** Conditions Node activates for a native ESM import. `types` deliberately is
+ * not active: it describes TypeScript tooling, not a runtime target. */
+const IMPORT_EXPORT_CONDITIONS = new Set(["node", "import", "default"]);
+
+/** Conditions Node activates for an explicitly advertised CommonJS branch. */
+const REQUIRE_EXPORT_CONDITIONS = new Set(["node", "require", "default"]);
+
+/** The extensions which a Node import check can meaningfully execute here. */
+const RUNTIME_TARGET_EXTENSIONS = /\.(?:[cm]?js|[cm]?ts|jsx|tsx)$/i;
+
+/**
+ * Resolves one declared export value as Node's import resolver would for the
+ * small condition set this verifier uses. This does not try to be a second
+ * implementation of Node's resolver: the later import is still authoritative.
+ * It only identifies the selected target's extension so static assets are not
+ * handed to Node as JavaScript.
+ */
+function resolveExportTarget(value: unknown, conditions: ReadonlySet<string>): string | undefined {
+  if (typeof value === "string") return value;
+  if (Array.isArray(value)) {
+    for (const candidate of value) {
+      const target = resolveExportTarget(candidate, conditions);
+      if (target !== undefined) return target;
+    }
+    return undefined;
+  }
+  if (!value || typeof value !== "object") return undefined;
+  for (const [condition, candidate] of Object.entries(value as Record<string, unknown>)) {
+    if (!conditions.has(condition)) continue;
+    const target = resolveExportTarget(candidate, conditions);
+    if (target !== undefined) return target;
+  }
+  return undefined;
+}
+
+/** Whether a conditional export explicitly promises a CommonJS `require`
+ * branch. A bare/default export is not treated as that promise: an ESM-only
+ * package may deliberately support import only. */
+function hasRequireCondition(value: unknown): boolean {
+  if (Array.isArray(value)) return value.some(hasRequireCondition);
+  if (!value || typeof value !== "object") return false;
+  return Object.entries(value as Record<string, unknown>).some(
+    ([condition, candidate]) => condition === "require" || hasRequireCondition(candidate),
+  );
+}
+
+/** Collects TypeScript declaration targets from an export condition tree.
+ * They are not executable, but a missing target makes the declared TypeScript
+ * API unusable just as surely as a missing JavaScript target does at runtime. */
+function typeTargetsOf(value: unknown): string[] {
+  if (Array.isArray(value)) return value.flatMap(typeTargetsOf);
+  if (!value || typeof value !== "object") return [];
+  const entries = value as Record<string, unknown>;
+  const direct = typeof entries.types === "string" ? [entries.types] : [];
+  return [...direct, ...Object.entries(entries).flatMap(([condition, candidate]) => condition === "types" ? [] : typeTargetsOf(candidate))];
+}
+
+/** Returns the declaration for one subpath, accounting for root shorthand. */
+function exportValueFor(exportsField: unknown, subpath: string): unknown {
+  if (typeof exportsField === "string" || Array.isArray(exportsField)) return exportsField;
+  if (!exportsField || typeof exportsField !== "object") return undefined;
+  const entries = exportsField as Record<string, unknown>;
+  const hasSubpathKeys = Object.keys(entries).some((key) => key.startsWith("."));
+  return hasSubpathKeys ? entries[subpath] : entries;
+}
+
+function isRuntimeTarget(target: string | undefined): boolean {
+  // An unresolvable condition still goes through Node's import check, which
+  // produces the same consumer-visible failure as before this classification.
+  return target === undefined || RUNTIME_TARGET_EXTENSIONS.test(target);
+}
+
+/**
+ * Checks an asset target directly in node_modules. Static exports such as CSS
+ * and JSONC are valid package API but cannot be imported by Node as modules.
+ */
+function staticTargetExists(installedPackageDir: string, target: string): boolean {
+  if (!target.startsWith("./")) return false;
+  const resolved = resolve(installedPackageDir, target);
+  const rel = relative(installedPackageDir, resolved);
+  return rel !== "" && !rel.startsWith("..") && !rel.includes(`..${process.platform === "win32" ? "\\" : "/"}`) && existsSync(resolved);
 }
 
 /**
@@ -294,9 +355,24 @@ export async function packRoundTrip(packageDir: string, options?: PackRoundTripO
   const manifest = JSON.parse(readFileSync(manifestPath, "utf8")) as {
     name?: string;
     exports?: unknown;
+    peerDependencies?: Record<string, string>;
+    types?: unknown;
+    typings?: unknown;
   };
-  let packageName = manifest.name;
-  let subpaths = subpathsOf(manifest.exports);
+  const packageName = manifest.name;
+  const subpaths = subpathsOf(manifest.exports);
+  const exportsBySubpath = new Map(subpaths.map((subpath) => [subpath, exportValueFor(manifest.exports, subpath)]));
+  const importTargets = new Map(
+    subpaths.map((subpath) => [subpath, resolveExportTarget(exportsBySubpath.get(subpath), IMPORT_EXPORT_CONDITIONS)]),
+  );
+  const requireTargets = new Map(
+    subpaths.map((subpath) => [subpath, resolveExportTarget(exportsBySubpath.get(subpath), REQUIRE_EXPORT_CONDITIONS)]),
+  );
+  const requireSubpaths = new Set(subpaths.filter((subpath) => hasRequireCondition(exportsBySubpath.get(subpath))));
+  const needsRuntimePeers = [
+    ...importTargets.values(),
+    ...[...requireSubpaths].map((subpath) => requireTargets.get(subpath)),
+  ].some(isRuntimeTarget);
 
   // Two SEPARATE temporary directories: one to receive the packed tarball,
   // and one — genuinely isolated, outside this repository's own tree
@@ -309,83 +385,48 @@ export async function packRoundTrip(packageDir: string, options?: PackRoundTripO
   const tarballDir = mkdtempSync(join(tmpdir(), "release-pack-"));
   const consumerDir = mkdtempSync(join(tmpdir(), "release-consumer-"));
   const env = subprocessEnv(tarballDir, options?.registry);
-  // Registry credentials are needed only while npm resolves dependencies.
-  // Package code runs during the import probe, so it must never inherit the
-  // caller's registry credential through Node's process environment.
-  const { NODE_AUTH_TOKEN: _npmAuthToken, ...importEnv } = env;
-  const authConfigPath = join(tarballDir, "unused-userconfig.npmrc");
+  const importEnv = { ...env };
+  delete importEnv.NODE_AUTH_TOKEN;
+  const authConfig = registryAuthConfig(options?.registry);
+  if (authConfig) writeFileSync(join(tarballDir, "unused-userconfig.npmrc"), authConfig);
   const packTimeoutMs = options?.timeoutsMs?.pack ?? NPM_PACK_TIMEOUT_MS;
   const installTimeoutMs = options?.timeoutsMs?.install ?? NPM_INSTALL_TIMEOUT_MS;
   const importTimeoutMs = options?.timeoutsMs?.import ?? IMPORT_TIMEOUT_MS;
 
   try {
-    const authConfig = registryAuthConfig(options?.registry);
-    if (authConfig) writeFileSync(authConfigPath, authConfig);
-
     // 1. Pack the real tarball. `npm pack` runs `prepublishOnly`, so what
     //    lands here is exactly what an `npm publish` from this state would
     //    upload — the same mechanism this repository's own artifact-safety
     //    gate uses to scan what actually ships, not the source tree.
-    let tarballPath: string;
-    if (options?.tarballPath) {
-      tarballPath = resolve(options.tarballPath);
-      if (!existsSync(tarballPath)) {
-        return {
-          ok: false,
-          packageName,
-          tarballPath: "",
-          imports: [],
-          findings: [tarballMissingFinding(packageName, tarballPath)],
-        };
-      }
-    } else {
-      let tarballName: string;
-      try {
-        const { stdout } = await execFile("npm", ["pack", "--pack-destination", tarballDir], {
-          cwd: absPackageDir,
-          env,
-          timeout: packTimeoutMs,
-          killSignal: TIMEOUT_KILL_SIGNAL,
-        });
-        const lastLine = stdout.trim().split("\n").filter(Boolean).pop();
-        if (!lastLine) throw new Error("npm pack produced no output");
-        tarballName = lastLine;
-      } catch (error) {
-        return {
-          ok: false,
-          packageName,
-          tarballPath: "",
-          imports: [],
-          findings: [packFailedFinding(packageName, summarizeExecError(error, packTimeoutMs))],
-        };
-      }
-      tarballPath = join(tarballDir, tarballName);
-    }
-
-    // Read the packed artifact's manifest, rather than continuing to trust
-    // the source directory. A caller using `tarballPath` is proving that
-    // exact selected artifact, including its own export surface.
+    let tarballName: string;
     try {
-      const artifactManifest = await manifestFromTarball(tarballPath, packTimeoutMs);
-      packageName = artifactManifest.name;
-      subpaths = subpathsOf(artifactManifest.exports);
+      const { stdout } = await execFile("npm", ["pack", "--pack-destination", tarballDir], {
+        cwd: absPackageDir,
+        env,
+        timeout: packTimeoutMs,
+        killSignal: TIMEOUT_KILL_SIGNAL,
+      });
+      const lastLine = stdout.trim().split("\n").filter(Boolean).pop();
+      if (!lastLine) throw new Error("npm pack produced no output");
+      tarballName = lastLine;
     } catch (error) {
       return {
         ok: false,
         packageName,
-        tarballPath,
+        tarballPath: "",
         imports: [],
-        findings: [tarballInvalidFinding(packageName, summarizeExecError(error, packTimeoutMs))],
+        declarations: [],
+        findings: [packFailedFinding(packageName, summarizeExecError(error, packTimeoutMs))],
       };
     }
+    const tarballPath = join(tarballDir, tarballName);
+
+    // npm itself refuses to produce a tarball for a manifest with no "name"
+    // (that is exactly the pack-failure branch above), so reaching this
+    // point already proves packageName is defined -- this is a narrowing
+    // check on that invariant, not a new possibility.
     if (packageName === undefined) {
-      return {
-        ok: false,
-        packageName,
-        tarballPath,
-        imports: [],
-        findings: [tarballInvalidFinding(packageName, "package/package.json has no name")],
-      };
+      throw new Error("packRoundTrip: npm pack succeeded but package.json has no \"name\" (unreachable in practice)");
     }
 
     // 2. A minimal, real consumer project in the isolated directory — just
@@ -416,73 +457,145 @@ export async function packRoundTrip(packageDir: string, options?: PackRoundTripO
         packageName,
         tarballPath,
         imports: [],
+        declarations: [],
         findings: [installFailedFinding(packageName, summarizeExecError(error, installTimeoutMs))],
       };
     }
 
-    // 4. Every declared export subpath, imported from a Node process whose
-    //    cwd — and therefore module resolution root — is the isolated
-    //    consumer directory, not this package's own node_modules. Each
-    //    subpath runs its own subprocess so one crashing import can never
-    //    hide the result of the next.
+    // 3b. Peer dependencies are intentionally not part of a tarball's own
+    // dependency graph. Install them explicitly before executable imports so
+    // the verifier proves the same peer-satisfied runtime a real application
+    // has. An asset-only package has nothing Node will execute, so it does not
+    // need peers merely to prove that its CSS/JSON/etc. files shipped.
+    const peerSpecs = needsRuntimePeers
+      ? Object.entries(manifest.peerDependencies ?? {}).map(([name, range]) => `${name}@${range}`)
+      : [];
+    if (peerSpecs.length > 0) {
+      try {
+        await execFile("npm", ["install", "--no-save", ...peerSpecs], {
+          cwd: consumerDir,
+          env,
+          timeout: installTimeoutMs,
+          killSignal: TIMEOUT_KILL_SIGNAL,
+        });
+      } catch (error) {
+        return {
+          ok: false,
+          packageName,
+          tarballPath,
+          imports: [],
+          declarations: [],
+          findings: [peerInstallFailedFinding(packageName, summarizeExecError(error, installTimeoutMs))],
+        };
+      }
+    }
+
+    // 4. Every declared export subpath. Executable JS/TS targets are imported
+    //    from a Node process whose cwd — and therefore module resolution root
+    //    — is the isolated consumer directory. Static targets (CSS, JSONC,
+    //    and other non-runtime files) are instead verified to exist inside
+    //    the installed package. Each executable subpath runs its own
+    //    subprocess so one crashing import can never hide the next result.
     //
-    //    A package that declares no importable subpath at all (`"exports":
-    //    {}`, or no `exports` field resolving to anything) runs zero
-    //    imports here — and that is itself the finding, not a clean pass.
-    //    This function exists to prove importability; a round trip that
-    //    checked nothing proves nothing, so it must never report `ok: true`
-    //    for having imported zero subpaths.
+    //    A package that declares no subpath at all (`"exports": {}`, or no
+    //    `exports` field resolving to anything) runs zero checks here — and
+    //    that is itself the finding, not a clean pass. This function exists
+    //    to prove the declared package surface; a round trip that checked
+    //    nothing proves nothing, so it must never report `ok: true`.
     const imports: ImportCheck[] = [];
+    const declarations: RoundTripResult["declarations"] = [];
     const findings: Finding[] = [];
     if (subpaths.length === 0) {
       findings.push(noExportsFinding(packageName));
     }
     for (const subpath of subpaths) {
+      const target = importTargets.get(subpath);
+      if (target !== undefined && !isRuntimeTarget(target)) {
+        if (staticTargetExists(join(consumerDir, "node_modules", packageName), target)) {
+          imports.push({ subpath, mode: "static", ok: true });
+        } else {
+          const message = `static export target ${JSON.stringify(target)} is absent from the isolated installed tarball`;
+          imports.push({ subpath, mode: "static", ok: false, error: message });
+          findings.push(assetMissingFinding(packageName, subpath, target));
+        }
+      } else {
+        const specifier = specifierFor(packageName, subpath);
+        const script =
+          `import(${JSON.stringify(specifier)})` +
+          `.then(() => { process.exit(0); })` +
+          `.catch((e) => { console.error(e && e.stack ? e.stack : String(e)); process.exit(1); });`;
+        try {
+          await execFile("node", ["--input-type=module", "-e", script], {
+            cwd: consumerDir,
+            env: importEnv,
+            timeout: importTimeoutMs,
+            killSignal: TIMEOUT_KILL_SIGNAL,
+          });
+          imports.push({ subpath, mode: "import", ok: true });
+        } catch (error) {
+          const message = summarizeExecError(error, importTimeoutMs);
+          imports.push({ subpath, mode: "import", ok: false, error: message });
+          findings.push(importFailedFinding(packageName, subpath, message));
+        }
+      }
+
+      if (!requireSubpaths.has(subpath)) continue;
       const specifier = specifierFor(packageName, subpath);
-      const script =
-        `import(${JSON.stringify(specifier)})` +
-        `.then(() => { process.exit(0); })` +
-        `.catch((e) => { console.error(e && e.stack ? e.stack : String(e)); process.exit(1); });`;
+      const requireTarget = requireTargets.get(subpath);
+      if (requireTarget !== undefined && !isRuntimeTarget(requireTarget)) {
+        if (staticTargetExists(join(consumerDir, "node_modules", packageName), requireTarget)) {
+          imports.push({ subpath, mode: "static", ok: true });
+        } else {
+          const message = `static export target ${JSON.stringify(requireTarget)} is absent from the isolated installed tarball`;
+          imports.push({ subpath, mode: "static", ok: false, error: message });
+          findings.push(assetMissingFinding(packageName, subpath, requireTarget));
+        }
+        continue;
+      }
+      const requireScript =
+        `try { require(${JSON.stringify(specifier)}); process.exit(0); }` +
+        ` catch (e) { console.error(e && e.stack ? e.stack : String(e)); process.exit(1); }`;
       try {
-        await execFile("node", ["--input-type=module", "-e", script], {
+        await execFile("node", ["--input-type=commonjs", "-e", requireScript], {
           cwd: consumerDir,
           env: importEnv,
           timeout: importTimeoutMs,
           killSignal: TIMEOUT_KILL_SIGNAL,
         });
-        imports.push({ subpath, ok: true });
+        imports.push({ subpath, mode: "require", ok: true });
       } catch (error) {
         const message = summarizeExecError(error, importTimeoutMs);
-        imports.push({ subpath, ok: false, error: message });
-        findings.push(importFailedFinding(packageName, subpath, message));
+        imports.push({ subpath, mode: "require", ok: false, error: message });
+        findings.push(requireFailedFinding(packageName, subpath, message));
       }
     }
 
-    return { ok: findings.length === 0, packageName, tarballPath, imports, findings };
+    const declarationTargets = new Map<string, { subpath: string; target: string }>();
+    for (const subpath of subpaths) {
+      for (const target of typeTargetsOf(exportsBySubpath.get(subpath))) {
+        declarationTargets.set(`${subpath}\u0000${target}`, { subpath, target });
+      }
+    }
+    for (const target of [manifest.types, manifest.typings]) {
+      if (typeof target === "string") declarationTargets.set(`.\u0000${target}`, { subpath: ".", target });
+    }
+    for (const { subpath, target } of declarationTargets.values()) {
+      if (staticTargetExists(join(consumerDir, "node_modules", packageName), target)) {
+        declarations.push({ subpath, target, ok: true });
+      } else {
+        const message = `declaration target ${JSON.stringify(target)} is absent from the isolated installed tarball`;
+        declarations.push({ subpath, target, ok: false, error: message });
+        findings.push(declarationMissingFinding(packageName, subpath, target));
+      }
+    }
+
+    return { ok: findings.length === 0, packageName, tarballPath, imports, declarations, findings };
   } finally {
-    // `keepTempDir` is for import debugging, never for retaining credentials.
-    rmSync(authConfigPath, { force: true });
     if (!options?.keepTempDir) {
       rmSync(tarballDir, { recursive: true, force: true });
       rmSync(consumerDir, { recursive: true, force: true });
     }
   }
-}
-
-function tarballMissingFinding(packageName: string | undefined, tarballPath: string): Finding {
-  return {
-    rule: "round-trip-tarball-missing",
-    severity: "error",
-    message: `${packageLabel(packageName)}: requested tarball does not exist at ${tarballPath}`,
-  };
-}
-
-function tarballInvalidFinding(packageName: string | undefined, detail: string): Finding {
-  return {
-    rule: "round-trip-tarball-invalid",
-    severity: "error",
-    message: `${packageLabel(packageName)}: requested tarball has no usable package manifest — ${detail}`,
-  };
 }
 
 function packFailedFinding(packageName: string | undefined, detail: string): Finding {
@@ -501,6 +614,14 @@ function installFailedFinding(packageName: string | undefined, detail: string): 
   };
 }
 
+function peerInstallFailedFinding(packageName: string | undefined, detail: string): Finding {
+  return {
+    rule: "round-trip-peer-install-failed",
+    severity: "error",
+    message: `${packageLabel(packageName)}: declared peerDependencies could not be installed in the isolated consumer before executable export checks — ${detail}`,
+  };
+}
+
 function importFailedFinding(packageName: string | undefined, subpath: string, detail: string): Finding {
   return {
     rule: "round-trip-import-failed",
@@ -509,11 +630,35 @@ function importFailedFinding(packageName: string | undefined, subpath: string, d
   };
 }
 
-/** The finding emitted when a package declares no importable `exports` surface at all — see the note at the call site for why this must never be a silent `ok: true`. */
+function requireFailedFinding(packageName: string | undefined, subpath: string, detail: string): Finding {
+  return {
+    rule: "round-trip-require-failed",
+    severity: "error",
+    message: `${packageLabel(packageName)}: CommonJS subpath "${subpath}" failed to require from a genuinely isolated install — ${detail}`,
+  };
+}
+
+function assetMissingFinding(packageName: string | undefined, subpath: string, target: string): Finding {
+  return {
+    rule: "round-trip-asset-missing",
+    severity: "error",
+    message: `${packageLabel(packageName)}: static export subpath "${subpath}" targets ${JSON.stringify(target)}, but that file is absent from the isolated installed tarball`,
+  };
+}
+
+function declarationMissingFinding(packageName: string | undefined, subpath: string, target: string): Finding {
+  return {
+    rule: "round-trip-declaration-missing",
+    severity: "error",
+    message: `${packageLabel(packageName)}: TypeScript declaration target ${JSON.stringify(target)} for subpath "${subpath}" is absent from the isolated installed tarball`,
+  };
+}
+
+/** The finding emitted when a package declares no `exports` surface at all — see the note at the call site for why this must never be a silent `ok: true`. */
 function noExportsFinding(packageName: string | undefined): Finding {
   return {
     rule: "round-trip-no-exports",
     severity: "error",
-    message: `${packageLabel(packageName)}: package.json "exports" declares no importable subpath, so this round trip checked zero imports. A round trip that never imported anything is not proof the package is importable and must not be reported as a clean pass.`,
+    message: `${packageLabel(packageName)}: package.json "exports" declares no subpath, so this round trip checked zero exports. A round trip that checked nothing is not proof the declared package surface works and must not be reported as a clean pass.`,
   };
 }

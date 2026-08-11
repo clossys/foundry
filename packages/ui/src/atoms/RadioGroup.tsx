@@ -92,7 +92,7 @@ export interface RadioGroupRadioProps extends Omit<AriaRadioProps, "children"> {
 // built-in scale, not this package's token scale, used only for this
 // reason.
 const DOT_BASE =
-  "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-pill border transition-colors";
+  "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-pill border transition-colors motion-reduce:transition-none";
 
 /**
  * One option within a `RadioGroup`. Named `RadioGroup.Radio`, matching

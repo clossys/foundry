@@ -6,7 +6,7 @@
  * These entities ship as MACHINERY, not content: this package defines what
  * a `Fact` or a `Mission` document must look like, never what any real
  * product's mission statement says. A consumer repo authors its own values
- * against this shape — the same split `@vespeneventures/tokens` draws
+ * against this shape — the same split `@vespeneventures/ui/tokens` draws
  * between a greyscale contract and a brand binding (see that package's
  * README, "The three-layer contract").
  *
@@ -14,7 +14,7 @@
  * package's own README leads with "pure data + validation, safe to
  * install" — and every other zero-dependency package in this foundation
  * (`@vespeneventures/catalog`, `@vespeneventures/policy`,
- * `@vespeneventures/tokens`) backs that claim with zero runtime
+ * `@vespeneventures/ui/tokens`) backs that claim with zero runtime
  * dependencies. `@vespeneventures/policy`'s `validate.ts` does this exact
  * job — shape validation over `unknown`, emitting findings, no dependency —
  * for one small shape; `validation.ts` in this package generalizes that
@@ -492,7 +492,7 @@ export function validateBrandEssence(value: unknown): ValidationResult<BrandEsse
  *     true" cannot satisfy it.
  *   - `factRef` (OPTIONAL, opaque string) — when the basis happens to be a
  *     tracked, checkable number or claim, this names the `Fact.key` it
- *     traces to. This is the exact seam `@vespeneventures/voice`'s
+ *     traces to. This is the exact seam `@vespeneventures/copy/voice`'s
  *     `Claim.factRef` already uses, and the same discipline this very
  *     file's `Market.factRefs`/`Audience.factRefs` already follow: a
  *     plain, optional string, never validated against a real `facts.json`

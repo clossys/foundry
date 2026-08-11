@@ -6,7 +6,7 @@
  * `rgb()`/`rgba()`/`hsl()`/`hsla()`/`oklch()`/`oklab()`/`lab()`/`lch()`
  * color function, a raw CSS length (`13px`, `1.5rem`, `2em`, ...), or a
  * Tailwind arbitrary-value utility class (`bg-[#3b82f6]`, `p-[13px]`,
- * `w-[var(--x,64px)]`). `@vespeneventures/tokens` owns the CONTRACT (the
+ * `w-[var(--x,64px)]`). This package's token layer owns the CONTRACT (the
  * 154-entry `TOKENS` registry); this file, `token-gate.ts`, and `cli.ts`
  * are `@vespeneventures/ui`'s copy of `copy`/`copy-gate.ts`/`cli.ts` —
  * before this package existed, `ui` shipped no gate at all: a hardcoded
@@ -104,7 +104,7 @@
  *
  * `text-ink-primary`, `bg-surface-base`, `p-4`, `z-10`, `rounded-control`
  * are the LEGITIMATE way this package consumes tokens: Tailwind (via
- * `@vespeneventures/tokens`' `styles/theme.css` `@theme inline` block, and
+ * this package's `styles/theme.css` `@theme inline` block, and
  * this package's own `extendTailwindMerge` config in
  * `atoms/internal/cx.ts`) maps each of these to a real CSS custom
  * property. None of them are STYLING LITERALS in the sense this file
@@ -370,7 +370,7 @@ const TW_ARBITRARY_OPENER_RE = /([a-zA-Z_][\w:/-]*)-\[/g;
  *
  * WHY THIS IS STRUCTURAL, NOT VALUE-BASED — the distinction this function
  * exists to get right: an earlier version of this gate decided "which token
- * does this literal belong to" by searching `@vespeneventures/tokens`'
+ * does this literal belong to" by searching this package's token layer
  * `TOKENS` registry for an entry whose VALUE happened to equal the literal.
  * That is wrong for exactly the case that matters most: `atoms/Icon.tsx`'s
  * `"var(--ui-icon-sm, var(--spacing-lg, 16px))"` has its `16px` fallback
@@ -445,7 +445,7 @@ function findEnclosingCall(text: string, pos: number): EnclosingCall | null {
  *
  * WHY THIS IS STRUCTURAL, NOT VALUE-BASED — the distinction this function
  * exists to get right: an earlier version of this gate decided "which token
- * does this literal belong to" by searching `@vespeneventures/tokens`'
+ * does this literal belong to" by searching this package's token layer
  * `TOKENS` registry for an entry whose VALUE happened to equal the literal.
  * That is wrong for exactly the case that matters most: `atoms/Icon.tsx`'s
  * `"var(--ui-icon-sm, var(--spacing-lg, 16px))"` has its `16px` fallback

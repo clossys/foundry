@@ -9,7 +9,7 @@ import { CliInputError, main } from "./cli.js";
 // than spawning the real CLI process — matching @vespeneventures/copy's
 // own `cli.test.ts`. Nothing here touches this repository's own source or
 // the network. Unlike copy-check, there is no record-file argument: the
-// token registry comes from the real `@vespeneventures/tokens` import
+// token registry comes from the real local token-layer import
 // (see cli.ts's own header for why), so every test here scans a real
 // temp directory only.
 

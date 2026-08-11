@@ -2,7 +2,7 @@
  * `checkTokenPurity` — the gate that makes `style-scan.ts`'s extraction
  * worth having, mirroring `@vespeneventures/copy`'s `copy-gate.ts` exactly:
  * pure (no I/O), takes already-extracted `StyleCandidate[]` (see
- * `style-scan.ts`) plus `@vespeneventures/tokens`' real `TOKENS` registry,
+ * `style-scan.ts`) plus this package's real `TOKENS` registry,
  * and never throws on any input shape. `scanStyleSources` is the half that
  * gathers candidates from a real directory; `cli.ts` is what imports the
  * real `TOKENS` registry and turns this function's result into an exit
@@ -29,9 +29,9 @@
  * old finding read "read it via var(--spacing-lg) ... instead of the
  * literal" — but the code ALREADY reads it via `var(--spacing-lg)`. The
  * `16px` is that var's own documented fallback, and
- * `@vespeneventures/tokens` itself ships this exact shape on purpose
- * (`--ui-icon-sm`'s own registry value IS `"var(--spacing-lg, 16px)"` — see
- * `packages/tokens/src/tokens.ts`). Telling the author to do the thing
+ * the token layer itself ships this exact shape on purpose
+ * (`--ui-icon-sm`'s own registry value IS `"var(--spacing-lg, 16px)"`).
+ * Telling the author to do the thing
  * they already did is not an actionable finding.
  *
  * So this gate now distinguishes THREE outcomes for a literal candidate
@@ -54,7 +54,7 @@
  *   2. `var()` FALLBACK LITERAL (`fallbackForProperty` set) — new rule
  *      `"token-value-duplicated-in-fallback"`, `severity: "warning"`. The
  *      token IS being consulted at this call site, and wins whenever
- *      `@vespeneventures/tokens`' CSS is actually loaded (the expected,
+ *      this package's token CSS is actually loaded (the expected,
  *      overwhelmingly common runtime case for a real consumer). The
  *      literal only ever executes in the DEGRADED path — no tokens CSS at
  *      all — so the live behavior for a normal consumer is already
@@ -91,7 +91,7 @@
  * Tailwind arbitrary-value class whose bracket is EXACTLY a bare
  * `var(--custom-property)` reference, no fallback — `token-gate.ts` treats
  * this as CLEAN, not a finding. This is the documented "no Tailwind
- * namespace, raw `var()` only" escape hatch `@vespeneventures/tokens`'
+ * namespace, raw `var()` only" escape hatch this package's token layer
  * README describes for values that have no Tailwind `@theme` namespace at
  * all (z-index, elevation, layout widths, ...) — see
  * `packages/ui/src/atoms/internal/ui-vars.ts`'s own header comment for the
@@ -126,10 +126,10 @@
  * ============================================================================
  *
  * `atoms/internal/ui-vars.ts`, `charts/internal/chart-vars.ts`,
- * `shell/internal/shell-vars.ts`, and `views/internal/view-vars.ts` each
+ * `shell/internal/shell-vars.ts` and surface-level web views each
  * carry a real, deliberate, and DOCUMENTED pattern: `"var(--token-name,
  * <literal fallback>)"`, where the literal fallback is hand-copied from
- * that same token's own shipped default in `@vespeneventures/tokens`'
+ * that same token's own shipped default in this package's
  * `styles/tokens.css` — so a consumer who has this package but hasn't
  * wired up tokens' CSS yet still gets a legible result. Every one of those
  * fallbacks is now correctly reported as `"token-value-duplicated-in-
@@ -144,12 +144,12 @@
  * regardless of how deliberate the pattern was when it was written. A
  * consumer of this gate who wants to keep the pattern is expected to waive
  * each site explicitly (`// token-gate:ignore — deliberate CSS fallback,
- * kept in sync with @vespeneventures/tokens by hand`), which is itself a
+ * kept in sync with the token layer by hand`), which is itself a
  * real, greppable admission of the drift risk, not a way to make it
  * disappear.
  */
 
-import type { TokenDefinition } from "@vespeneventures/tokens";
+import type { TokenDefinition } from "./tokens/index.js";
 import {
   findEmbeddedStyleLiterals,
   isPureVarReference,
@@ -275,7 +275,7 @@ function bareLiteralFinding(
     severity: "error",
     file,
     line,
-    message: `${matchedValueKind} "${matchedValue}" has no matching entry in @vespeneventures/tokens' TOKENS registry — register a token or replace this literal with an existing one`,
+    message: `${matchedValueKind} "${matchedValue}" has no matching entry in @vespeneventures/ui/tokens' TOKENS registry — register a token or replace this literal with an existing one`,
     snippet: snippetOf(raw),
   };
 }
@@ -304,7 +304,7 @@ function fallbackSyncStatus(
 ): { text: string; matchedToken: string | undefined } {
   const token = tokens[property];
   if (!token) {
-    return { text: `no token named "${property}" exists in @vespeneventures/tokens' TOKENS registry — verify the property name`, matchedToken: undefined };
+    return { text: `no token named "${property}" exists in @vespeneventures/ui/tokens' TOKENS registry — verify the property name`, matchedToken: undefined };
   }
   const normToken = normalizeForLookup(token.value);
   const normLiteral = normalizeForLookup(literalValue);
@@ -377,7 +377,7 @@ function findingForLiteral(
 }
 
 /**
- * Evaluates every `candidate` against `tokens` (`@vespeneventures/tokens`'
+ * Evaluates every `candidate` against `tokens` (this package's
  * real `TOKENS` registry, or an equivalent for a test). Never throws — an
  * empty `candidates` array or an empty `tokens` record is valid input
  * (every candidate with a matchable value would simply report

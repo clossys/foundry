@@ -15,8 +15,8 @@ export interface SwitchProps extends Omit<AriaSwitchProps, "children"> {
 // and thumb, as opposed to spacing around it) — see Checkbox and Avatar for
 // the same reasoning. These are Tailwind's own built-in scale, not this
 // package's token scale, used only for this reason.
-const TRACK_BASE = "flex h-5 w-9 shrink-0 items-center rounded-pill border transition-colors";
-const THUMB_BASE = "h-3.5 w-3.5 rounded-pill bg-surface-raised transition-transform";
+const TRACK_BASE = "flex h-5 w-9 shrink-0 items-center rounded-pill border transition-colors motion-reduce:transition-none";
+const THUMB_BASE = "h-3.5 w-3.5 rounded-pill bg-surface-raised transition-transform motion-reduce:transition-none";
 
 /**
  * A binary on/off toggle. Built on react-aria-components' `Switch` for the

@@ -54,7 +54,7 @@ export function Disclosure({ title, children, className, ...rest }: DisclosurePr
             <span
               aria-hidden="true"
               className={cx(
-                "inline-block transition-transform",
+                "inline-block transition-transform motion-reduce:transition-none",
                 renderProps.isExpanded ? "rotate-90" : "",
               )}
             >

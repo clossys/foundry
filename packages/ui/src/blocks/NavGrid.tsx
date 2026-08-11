@@ -37,7 +37,7 @@ export interface NavGridProps {
 }
 
 const CARD_BASE =
-  "flex h-full flex-col items-start gap-sm rounded-control border border-line-base bg-surface-raised p-lg text-left outline-none transition-colors hover:border-line-strong hover:bg-surface-sunken";
+  "flex h-full flex-col items-start gap-sm rounded-control border border-line-base bg-surface-raised p-lg text-left outline-none transition-colors motion-reduce:transition-none hover:border-line-strong hover:bg-surface-sunken";
 
 // `Button` (used for an `onSelect` card) already applies a focus-visible
 // ring itself, conditionally, via its own `isFocusVisible` style callback

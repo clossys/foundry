@@ -1,5 +1,5 @@
 /**
- * Raw CSS custom-property reads for the @vespeneventures/tokens values the
+ * Raw CSS custom-property reads for the token-layer values the
  * shell layer needs that have no Tailwind utility namespace — the same
  * "case 2" tokens `../../atoms/internal/ui-vars.ts` documents (z-index,
  * layout widths: no `@theme` namespace exists for either, per that
@@ -11,7 +11,7 @@
  * atom never renders a sidebar or a toast viewport.
  *
  * Every read below carries an explicit fallback (the token's own shipped
- * default from @vespeneventures/tokens' `styles/tokens.css`), for the same
+ * default from this package's `styles/tokens.css`), for the same
  * reason `ui-vars.ts` does: a consumer who has this package but hasn't
  * wired up tokens' CSS yet still gets a legible, if unbranded, shell —
  * correctly sized regions and correctly ordered stacking — instead of
@@ -64,7 +64,7 @@ export const UI_Z_TOAST = "var(--ui-z-toast, 60)";
  * `SideNav`'s right edge, `Rail`'s left edge). Border WIDTH stays a raw
  * `var()` read applied via inline style rather than a Tailwind class: there
  * is no `@theme` namespace for border-width in Tailwind v4 (see
- * `@vespeneventures/tokens`' naming rule — border width is a "case 2",
+ * this package's token-layer naming rule — border width is a "case 2",
  * `--ui-`-prefixed token for exactly that reason), so a Tailwind class can
  * only ever reach Tailwind's own hardcoded `1px`, never this token's actual
  * value. Border STYLE and COLOR, unlike width, map onto real token families

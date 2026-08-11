@@ -1,7 +1,7 @@
 /**
  * @vespeneventures/copy — public entry point. See README.md for the full
  * picture: the machinery-vs-values split this package mirrors from
- * @vespeneventures/voice (itself mirroring @vespeneventures/tokens), the
+ * the package's voice contract (itself mirroring @vespeneventures/ui/tokens), the
  * frozen CopyEntry/CopyRecord contract, and exactly what checkCopyRecord
  * does and does not attempt.
  *
@@ -23,9 +23,26 @@
  *      handling is not library surface, only its `bin` entry is.
  */
 
-export type { CopyEntry, CopyEntryId, CopyFinding, CopyRecord } from "./types.js";
+export type {
+  CopyEntry,
+  CopyEntryId,
+  CopyEntryStatus,
+  CopyFinding,
+  CopyLocale,
+  CopyRef,
+  CopyRegistry,
+  CopyRegistryEntry,
+  CopyResolution,
+  CopyResolver,
+  CopySource,
+  CopyValue,
+  CopyRecord,
+} from "./types.js";
 
-export { parseCopyRecord, validateCopyRecordShape } from "./schema.js";
+export { parseCopyRecord, parseCopyRegistry, validateCopyRecordShape, validateCopyRegistryShape } from "./schema.js";
+
+export { createCopyResolver, resolveCopyRef } from "./resolve.js";
+export type { CopyResolveIssue, CopyResolveIssueReason, CopyResolveResult } from "./resolve.js";
 
 export { readCopyRecord } from "./registry.js";
 export type { CopyRegistryReadIssue, CopyRegistryReadIssueReason, CopyRegistryReadResult } from "./registry.js";
@@ -40,11 +57,10 @@ export type {
   CopyRecordWaivedFinding,
 } from "./checker.js";
 
-// Re-exported so a consumer of this package never needs a direct dependency
-// on @vespeneventures/voice just to read the types checkCopyRecord's own
-// signature and report shape use — mirrors @vespeneventures/gates' own
-// re-export of @vespeneventures/catalog/policy types for the same reason.
-export type { VoiceCheckReport, VoiceCheckWaiver, VoiceFinding, VoiceRecord } from "@vespeneventures/voice";
+// Voice is a first-class part of copy. It is available from this root entry
+// point for a single-package experience and from the focused `copy/voice`
+// subpath for consumers that only need the verbal contract.
+export * from "./voice/index.js";
 
 export { extractCopyCandidates, PLACEHOLDER_SENTINEL, scanCopySourceTree } from "./scan.js";
 export type {

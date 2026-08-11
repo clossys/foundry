@@ -1,6 +1,6 @@
 /**
  * @vespeneventures/ui/blocks — the second rung of a three-layer component
- * ladder (atoms → blocks → views; `views` isn't built yet). A block owns
+ * reusable ladder (atoms → blocks). A block owns
  * the internal layout of MULTIPLE NAMED REGIONS — `PageHeader` (title /
  * description / actions / breadcrumb), `EmptyState` (icon / title /
  * description / action). See this package's README, "Placement rules",

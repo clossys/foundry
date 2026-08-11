@@ -1,11 +1,11 @@
 {
   "name": "@vespeneventures/ui",
-  "version": "0.4.0",
+  "version": "0.7.0",
   "private": false,
   "license": "MIT",
   "type": "module",
-  "sideEffects": false,
-  "description": "React components for @vespeneventures/tokens: atoms and blocks layers built on react-aria-components for behavior and accessibility, styled with Tailwind utility classes generated from the tokens themselves.",
+  "sideEffects": ["./styles/*.css"],
+  "description": "A complete visual system: design tokens, theme CSS, accessible React components, icons, charts, and visual quality gates.",
   "keywords": [
     "react",
     "components",
@@ -29,6 +29,13 @@
     "node": ">=20"
   },
   "exports": {
+    "./tokens": {
+      "types": "./dist/tokens/index.d.ts",
+      "import": "./dist/tokens/index.js"
+    },
+    "./tokens.css": "./styles/tokens.css",
+    "./theme.css": "./styles/theme.css",
+    "./brand-template.css": "./styles/brand-template.css",
     "./atoms": {
       "types": "./dist/atoms/index.d.ts",
       "import": "./dist/atoms/index.js"
@@ -45,10 +52,6 @@
       "types": "./dist/blocks/index.d.ts",
       "import": "./dist/blocks/index.js"
     },
-    "./views": {
-      "types": "./dist/views/index.d.ts",
-      "import": "./dist/views/index.js"
-    },
     "./shell": {
       "types": "./dist/shell/index.d.ts",
       "import": "./dist/shell/index.js"
@@ -59,14 +62,17 @@
     }
   },
   "bin": {
-    "ui-token-check": "./dist/cli.js"
+    "ui-token-check": "./dist/cli.js",
+    "tokens-brand-check": "./dist/tokens/cli.js"
   },
   "files": [
     "dist",
     "src",
     "!src/**/*.test.ts",
     "!src/**/*.test.tsx",
+    "styles",
     "README.md",
+    "TOKENS.md",
     "LICENSE",
     "THIRD-PARTY-NOTICES.md"
   ],
@@ -77,19 +83,24 @@
     "test": "vitest run",
     "generate:icons": "node scripts/generate-icons.mjs"
   },
-  "dependencies": {
-    "@internationalized/date": "^3.12.3",
-    "react-aria-components": "^1.20.0",
-    "tailwind-merge": "^3.0.0"
-  },
   "peerDependencies": {
+    "@internationalized/date": "^3.12.3",
     "react": ">=18",
     "react-dom": ">=18",
-    "tailwindcss": "^4.0.0",
-    "@vespeneventures/tokens": "^0.6.0"
+    "react-aria-components": "^1.20.0",
+    "tailwind-merge": "^3.0.0",
+    "tailwindcss": "^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@internationalized/date": { "optional": true },
+    "react": { "optional": true },
+    "react-dom": { "optional": true },
+    "react-aria-components": { "optional": true },
+    "tailwind-merge": { "optional": true },
+    "tailwindcss": { "optional": true }
   },
   "devDependencies": {
-    "@vespeneventures/tokens": "^0.6.0",
+    "@internationalized/date": "^3.12.3",
     "@testing-library/jest-dom": "^7.0.0",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.3",
@@ -99,7 +110,9 @@
     "esbuild": "^0.24.0",
     "jsdom": "^26.1.0",
     "react": "^19.2.0",
+    "react-aria-components": "^1.20.0",
     "react-dom": "^19.2.0",
+    "tailwind-merge": "^3.0.0",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.0",
     "vitest": "^4.1.9"

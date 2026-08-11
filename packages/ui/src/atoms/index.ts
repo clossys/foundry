@@ -1,6 +1,6 @@
 /**
  * @vespeneventures/ui/atoms — the first rung of a three-layer component
- * ladder (atoms → blocks → views; atoms and blocks both ship so far). An
+ * reusable ladder (atoms → blocks). An
  * atom is single-purpose: it either composes no other atom (`Button`,
  * `TextField`, `Badge`, `Card`, `Checkbox`, `Switch`, `Select`, `Textarea`,
  * `Avatar`, `Spinner`, `Dialog`, `Field`, `Skeleton`, `Tooltip`, `Banner`,
@@ -128,3 +128,6 @@ export type { SeparatorProps } from "./Separator.js";
 
 export { Chip } from "./Chip.js";
 export type { ChipProps } from "./Chip.js";
+
+/** Merge token-aware Tailwind class names with last-argument precedence. */
+export { cx as mergeUiClasses } from "./internal/cx.js";

@@ -75,7 +75,7 @@ function TabsTab({ children, className, style, ...rest }: TabsTabProps) {
           // element with no bottom border and one with a 2px-wide
           // transparent bottom border occupy different heights, even though
           // both paint nothing.
-          "cursor-default border-b-2 px-md py-sm text-body-s font-body text-ink-muted outline-none transition-colors disabled:cursor-not-allowed",
+          "cursor-default border-b-2 px-md py-sm text-body-s font-body text-ink-muted outline-none transition-colors motion-reduce:transition-none disabled:cursor-not-allowed",
           renderProps.isSelected ? "border-accent text-ink-primary" : "border-transparent",
           className,
         )

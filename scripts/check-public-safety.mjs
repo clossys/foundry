@@ -214,6 +214,18 @@ function stripInvisible(text) {
   return text.replace(ZERO_WIDTH_RE, "");
 }
 
+/**
+ * npm lockfile integrity values are opaque, deterministic hashes rather than
+ * publishable prose or package metadata. Scanning their base64 payloads for
+ * identity terms creates irreproducible false positives without increasing
+ * disclosure protection. Keep the field and all other lockfile content in
+ * scope; replace only the hash payload before identity matching.
+ */
+function normalizeOpaqueLockIntegrity(text, rel) {
+  if (rel !== "package-lock.json") return text;
+  return text.replace(/^(\s*"integrity"\s*:\s*")[^"]*("\s*,?\s*)$/gm, "$1<opaque-lock-integrity>$2");
+}
+
 const secretRes = SECRETISH.map(([p, why]) => [new RegExp(p, "g"), why]);
 // Terms are matched case-insensitively by default, which is right for a name or
 // a domain: nobody defends an identity by changing its capitalisation.
@@ -382,7 +394,8 @@ for (const file of files) {
   contents = stripInvisible(contents);
 
   const rawLines = contents.split("\n");
-  const neutralizedLines = rawLines.map((text) => {
+  const identityLines = normalizeOpaqueLockIntegrity(contents, rel).split("\n");
+  const neutralizedLines = identityLines.map((text) => {
     let scannable = text;
     for (const rule of neutralizeRules) {
       if (rule.paths && !rule.paths.some((p) => rel === p || rel.startsWith(p + "/"))) continue;

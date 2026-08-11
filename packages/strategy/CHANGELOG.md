@@ -7,6 +7,16 @@ All notable changes to this package are documented here. Format follows
 
 ### Added
 
+- `StrategyContract`: stable, product-neutral records for products, brands,
+  audiences, positioning, claims, evidence, and constraints. Every record
+  carries a stable id, semantic-version revision, and source provenance.
+  `validateStrategyContract` validates duplicate/conflicting records and
+  cross-record links; `serializeStrategyContract` and
+  `createStrategyProvenance` provide deterministic output provenance.
+  Approved claims require evidence and explicit approval, while hypotheses
+  remain a separate non-approved type. This is additive to the legacy
+  file-oriented schema/reader API.
+
 - The brand layer, absorbed here after a standalone `brand` package was
   planned and cancelled: stripped of what `strategy` already owned
   (`Mission.values: OperatingValue[]` is already brand values — see that

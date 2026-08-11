@@ -8,13 +8,17 @@
 import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { runFoundationCheck } from "@vespeneventures/gates";
-import { packRoundTrip } from "./pack-round-trip.js";
+import { packRoundTrip, type PackRoundTripOptions } from "./pack-round-trip.js";
 import type { PreflightReport } from "./types.js";
 
 /** Options for `preflightPackage`. */
 export interface PreflightPackageOptions {
   /** Passed straight through to `runFoundationCheck`'s own `options.scope`. */
   scope?: string;
+  /** Passed straight through to the isolated packed-install proof. Use this
+   * for its registry or timeout controls without weakening its environment
+   * isolation. */
+  roundTrip?: PackRoundTripOptions;
 }
 
 /**
@@ -40,7 +44,8 @@ export function combinePreflightOk(hasCatalogError: boolean, roundTripOk: boolea
  * Runs `runFoundationCheck(root, { scope })` (from `@vespeneventures/gates`),
  * filters its findings down to the ones attributed to the package at
  * `packageDir` (by matching `finding.package` against the `name` read from
- * `packageDir`'s own `package.json`), and calls `packRoundTrip(packageDir)`.
+ * `packageDir`'s own `package.json`), and calls `packRoundTrip(packageDir,
+ * options.roundTrip)`.
  *
  * `ok` is `true` only when this package's own catalog findings contain no
  * `"error"`-severity entry AND the round trip itself reports `ok: true` — a
@@ -61,7 +66,7 @@ export async function preflightPackage(
   const report = runFoundationCheck(root, { scope: options?.scope });
   const catalogFindings = report.findings.filter((finding) => finding.package === packageName);
 
-  const roundTrip = await packRoundTrip(absPackageDir);
+  const roundTrip = await packRoundTrip(absPackageDir, options?.roundTrip);
 
   const hasCatalogError = catalogFindings.some((finding) => finding.severity === "error");
   const ok = combinePreflightOk(hasCatalogError, roundTrip.ok);

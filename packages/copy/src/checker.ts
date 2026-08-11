@@ -1,8 +1,8 @@
 /**
  * `checkCopyRecord` — runs every entry in a `CopyRecord` through
- * `@vespeneventures/voice`'s own `checkCopy`, against a single
+ * `@vespeneventures/copy/voice`'s own `checkCopy`, against a single
  * `VoiceRecord`, and reports the result. This is the one file in this
- * package that imports `@vespeneventures/voice`: `types.ts` and
+ * package that imports `@vespeneventures/copy/voice`: `types.ts` and
  * `schema.ts` are pure, dependency-free data/validation, exactly like
  * `voice`'s own `types.ts`/`schema.ts`; this file is where the two
  * packages' machinery actually meet.
@@ -51,7 +51,7 @@
  * Pure, no I/O: `checkCopyRecord` never reads a file — that is
  * `registry.ts`'s job — and never resolves a `factRef` against anything,
  * for the same reason `voice`'s `checkCopy` does not: see
- * `@vespeneventures/voice`'s README, "The `factRef` seam".
+ * `@vespeneventures/copy/voice`'s README, "The `factRef` seam".
  */
 
 import {
@@ -61,7 +61,7 @@ import {
   type VoiceCheckWaiver,
   type VoiceFinding,
   type VoiceRecord,
-} from "@vespeneventures/voice";
+} from "./voice/index.js";
 import { validateCopyRecordShape } from "./schema.js";
 import type { CopyEntryId, CopyRecord } from "./types.js";
 

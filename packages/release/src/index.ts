@@ -16,7 +16,8 @@
  *
  *   - `packRoundTrip` — packs one package, installs the resulting tarball
  *     into an isolated directory, and attempts to import every subpath its
- *     own `exports` field declares. Real subprocess work; never throws for
+ *     own `exports` field declares (importing executable targets and checking
+ *     static asset targets for presence). Real subprocess work; never throws for
  *     an expected failure mode (a failed install or a failed import is a
  *     finding, not an exception).
  *   - `preflightPackage` — combines this package's own catalog findings
@@ -45,4 +46,4 @@ export type { PreflightPackageOptions } from "./preflight.js";
 
 export { verifyPublishedArtifact } from "./verify-artifact.js";
 
-export type { ImportCheck, RoundTripResult, PreflightReport } from "./types.js";
+export type { DeclarationCheck, ImportCheck, RoundTripResult, PreflightReport } from "./types.js";

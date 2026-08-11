@@ -39,7 +39,7 @@ refuses a tree that contains:
   `.claude/`, `.codex/`), changelogs carrying internal references, `.npmrc`,
   `.env*`, private keys, and committed build output (`dist/`, `build/`,
   `.next/`, `coverage/`). One deliberate exception: this repository's own
-  root `AGENTS.md` — the file governing contributions here — and root
+  root `AGENTS.md` — the file governing contributions here — and the root
   `CLAUDE.md` compatibility loader are exempt by exact path. They are
   purpose-written for this public repository and content-scanned like
   everything else; only their filenames are excused from the forbidden-file
