@@ -1,0 +1,105 @@
+{
+  "name": "@vespeneventures/auth",
+  "version": "0.1.0",
+  "private": false,
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./agent": {
+      "types": "./dist/agent/index.d.ts",
+      "import": "./dist/agent/index.js"
+    },
+    "./providers/clerk": {
+      "types": "./dist/providers/clerk/index.d.ts",
+      "import": "./dist/providers/clerk/index.js"
+    },
+    "./providers/clerk/web": {
+      "types": "./dist/providers/clerk/web/index.d.ts",
+      "import": "./dist/providers/clerk/web/index.js"
+    },
+    "./providers/clerk/web/client": {
+      "types": "./dist/providers/clerk/web/client-index.d.ts",
+      "import": "./dist/providers/clerk/web/client-index.js"
+    },
+    "./providers/clerk/web/server": {
+      "types": "./dist/providers/clerk/web/server.d.ts",
+      "import": "./dist/providers/clerk/web/server.js"
+    },
+    "./providers/clerk/web/proxy": {
+      "types": "./dist/providers/clerk/web/proxy-entry.d.ts",
+      "import": "./dist/providers/clerk/web/proxy-entry.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "!dist/**/*.test.js",
+    "!dist/**/*.test.js.map",
+    "!dist/**/*.test.d.ts",
+    "!dist/**/*.test.d.ts.map",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "description": "Authorization primitives with opt-in delegated-agent and Clerk provider subpath exports.",
+  "keywords": [
+    "auth",
+    "authorization",
+    "membership",
+    "redirect",
+    "typescript"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vespeneventures/foundry.git",
+    "directory": "packages/auth"
+  },
+  "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/auth#readme",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@clerk/nextjs": "7.5.13",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "next": "16.3.0",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "typescript": "~6.0.0",
+    "vitest": "^4.1.9"
+  },
+  "dependencies": {
+    "svix": "^1.96.0"
+  },
+  "peerDependencies": {
+    "@clerk/nextjs": ">=7 <8",
+    "next": ">=16 <17",
+    "react": ">=19 <20",
+    "react-dom": ">=19 <20"
+  },
+  "peerDependenciesMeta": {
+    "@clerk/nextjs": { "optional": true },
+    "next": { "optional": true },
+    "react": { "optional": true },
+    "react-dom": { "optional": true }
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  }
+}

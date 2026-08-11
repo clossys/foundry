@@ -27,7 +27,7 @@
 //    both a clean pass (0) and a real finding (1) — "could not check" must
 //    never be mistaken for "checked and fine".
 
-import { readFileSync, writeFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative, extname, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
@@ -168,7 +168,25 @@ let packageDirs;
 try {
   packageDirs = readdirSync(packagesDir, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
-    .map((entry) => entry.name);
+    .map((entry) => entry.name)
+    .filter((name) => {
+      if (existsSync(join(packagesDir, name, "package.json"))) return true;
+      try {
+        const visible = execFileSync(
+          "git",
+          ["-C", repoRoot, "ls-files", "--cached", "--others", "--exclude-standard", "--", join("packages", name)],
+          { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
+        );
+        // An ignored-only build/cache remnant is not a package. Anything
+        // tracked or nonignored remains a finding below because its missing
+        // package.json is meaningful and must fail closed.
+        return visible.trim().length > 0;
+      } catch {
+        // If git cannot establish whether the directory is ignored-only,
+        // include it so the subsequent manifest read fails closed.
+        return true;
+      }
+    });
 } catch (err) {
   console.error(`set-scope: could not read packages/ (${err.code ?? err.message}) — cannot verify anything is correctly scoped.`);
   process.exit(2);

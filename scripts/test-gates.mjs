@@ -1254,6 +1254,33 @@ try {
       cleanResult.code === 0,
       `expected exit 0, got ${cleanResult.code}: ${cleanResult.out}`,
     );
+
+    // A removed package can leave only ignored build output behind in a
+    // worktree. That directory is not a package and must not make the scope
+    // checker demand a manifest, while a tracked or nonignored directory
+    // without one remains fail-closed above.
+    const ignoredOnlyDir = join(work, "set-scope-ignored-only-remnant");
+    mkdirSync(join(ignoredOnlyDir, "packages", "ui"), { recursive: true });
+    mkdirSync(join(ignoredOnlyDir, "packages", "stale", "dist"), { recursive: true });
+    mkdirSync(join(ignoredOnlyDir, "scripts"), { recursive: true });
+    cpSync(SET_SCOPE, join(ignoredOnlyDir, "scripts", "set-scope.mjs"));
+    writeFileSync(join(ignoredOnlyDir, ".gitignore"), "packages/stale/dist/\n");
+    writeFileSync(
+      join(ignoredOnlyDir, "package-scope.json"),
+      JSON.stringify({ scope: "@real", registry: "https://example.invalid" }, null, 2) + "\n",
+    );
+    writeFileSync(
+      join(ignoredOnlyDir, "packages", "ui", "package.json"),
+      JSON.stringify({ name: "@real/ui", version: "1.0.0" }, null, 2) + "\n",
+    );
+    writeFileSync(join(ignoredOnlyDir, "packages", "stale", "dist", "placeholder"), "generated\n");
+    gitInit(ignoredOnlyDir);
+    const ignoredOnlyResult = run("node", [join(ignoredOnlyDir, "scripts", "set-scope.mjs"), "--check"], { cwd: ignoredOnlyDir });
+    check(
+      "an ignored-only package-directory remnant is not treated as a package",
+      ignoredOnlyResult.code === 0,
+      `expected exit 0, got ${ignoredOnlyResult.code}: ${ignoredOnlyResult.out}`,
+    );
   }
 
   // ------------------------------------------ root README parity (issue #28)
