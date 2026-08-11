@@ -27,6 +27,19 @@ describe("packRoundTrip — real subprocess round trip", () => {
     expect(result.ok).toBe(true);
   });
 
+  it("packages/comms installs both its root and Resend exports from a genuinely isolated directory", async () => {
+    const result = await packRoundTrip(join(repoRoot, "packages", "comms"));
+
+    expect(result.packageName).toBe("@vespeneventures/comms");
+    expect(result.tarballPath).not.toBe("");
+    expect(result.findings).toEqual([]);
+    expect(result.imports).toEqual([
+      { subpath: ".", ok: true },
+      { subpath: "./resend", ok: true },
+    ]);
+    expect(result.ok).toBe(true);
+  });
+
   // EXPECTED AND CORRECT, given this repository's real state today — not a
   // bug in @vespeneventures/gates and not a bug in this test.
   //

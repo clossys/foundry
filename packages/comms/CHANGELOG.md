@@ -10,4 +10,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Initial provider-neutral email message, policy, dispatch, lease, acceptance,
-  delivery-event and test-fake contracts.
+  and delivery-event contracts.
+- Built-in `./resend` subpath with strict Resend email transport, provider tag
+  normalization, raw webhook verification, and delivery/inbound event mapping.

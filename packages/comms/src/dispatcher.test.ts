@@ -1,8 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 import { CommunicationDeliveryError, CommunicationValidationError } from "./errors.js";
 import { createCommunicationDispatcher } from "./dispatcher.js";
-import { createMemoryDispatchLedger } from "./testing.js";
-import type { CommunicationAdapter, EmailMessage } from "./types.js";
+import type {
+  CommunicationAdapter,
+  CommunicationDispatchLedger,
+  CommunicationDispatchResult,
+  EmailMessage,
+} from "./types.js";
 
 const message: EmailMessage = {
   id: "account-invitation/user-123",
@@ -20,6 +24,26 @@ function adapter(deliver = vi.fn(async () => ({ provider: "example", messageId: 
   return { channel: "email", deliver };
 }
 
+function createTestLedger(): CommunicationDispatchLedger & { readonly results: ReadonlyMap<string, CommunicationDispatchResult> } {
+  const inFlight = new Map<string, string>();
+  const results = new Map<string, CommunicationDispatchResult>();
+  let sequence = 0;
+  return {
+    results,
+    async claim(nextMessage) {
+      if (inFlight.has(nextMessage.id) || results.has(nextMessage.id)) return { outcome: "duplicate" };
+      const leaseId = `test-lease-${++sequence}`;
+      inFlight.set(nextMessage.id, leaseId);
+      return { outcome: "claimed", leaseId };
+    },
+    async complete(claim, result) {
+      if (inFlight.get(result.messageId) !== claim.leaseId) throw new Error("stale test ledger lease");
+      inFlight.delete(result.messageId);
+      if (result.state !== "failed") results.set(result.messageId, result);
+    },
+  };
+}
+
 describe("createCommunicationDispatcher", () => {
   it("returns provider acceptance without claiming inbox delivery", async () => {
     const deliver = vi.fn(async () => ({ provider: "example", messageId: "provider-1" }));
@@ -31,7 +55,7 @@ describe("createCommunicationDispatcher", () => {
 
   it("applies policy before claiming or sending", async () => {
     const deliver = vi.fn(async () => ({ provider: "example", messageId: "provider-1" }));
-    const ledger = createMemoryDispatchLedger();
+    const ledger = createTestLedger();
     const result = await createCommunicationDispatcher({
       adapters: { email: adapter(deliver) },
       policy: () => ({ outcome: "deny", reason: "consent_withdrawn" }),
@@ -45,7 +69,7 @@ describe("createCommunicationDispatcher", () => {
 
   it("deduplicates accepted messages with an opaque ledger lease", async () => {
     const deliver = vi.fn(async () => ({ provider: "example", messageId: "provider-1" }));
-    const ledger = createMemoryDispatchLedger();
+    const ledger = createTestLedger();
     const dispatcher = createCommunicationDispatcher({ adapters: { email: adapter(deliver) }, ledger });
 
     await expect(dispatcher.dispatch(message)).resolves.toMatchObject({ state: "accepted" });
@@ -53,12 +77,12 @@ describe("createCommunicationDispatcher", () => {
     expect(deliver).toHaveBeenCalledTimes(1);
   });
 
-  it("makes a failed memory-ledger attempt claimable again", async () => {
+  it("makes a failed test-ledger attempt claimable again", async () => {
     const deliver = vi
       .fn<CommunicationAdapter["deliver"]>()
       .mockRejectedValueOnce(new CommunicationDeliveryError("network", "Network unavailable", { retryable: true }))
       .mockResolvedValueOnce({ provider: "example", messageId: "provider-2" });
-    const ledger = createMemoryDispatchLedger();
+    const ledger = createTestLedger();
     const dispatcher = createCommunicationDispatcher({ adapters: { email: adapter(deliver) }, ledger });
 
     await expect(dispatcher.dispatch(message)).resolves.toMatchObject({ state: "failed", failure: { retryable: true } });

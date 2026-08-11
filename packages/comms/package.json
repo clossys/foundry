@@ -12,9 +12,9 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./testing": {
-      "types": "./dist/testing.d.ts",
-      "import": "./dist/testing.js"
+    "./resend": {
+      "types": "./dist/resend/index.d.ts",
+      "import": "./dist/resend/index.js"
     }
   },
   "files": [
@@ -25,7 +25,7 @@
     "LICENSE"
   ],
   "sideEffects": false,
-  "description": "Provider-neutral contracts for finished communications, policy decisions, retry-safe dispatch, provider acceptance, and durable delivery events.",
+  "description": "Finished communication contracts, retry-safe dispatch, durable delivery events, and a Resend adapter subpath.",
   "keywords": [
     "communications",
     "email",
@@ -56,6 +56,9 @@
     "@types/node": "^22.10.0",
     "typescript": "~6.0.0",
     "vitest": "^4.1.9"
+  },
+  "dependencies": {
+    "resend": "^6.19.0"
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
