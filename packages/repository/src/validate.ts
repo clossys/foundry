@@ -16,13 +16,13 @@ function finding(rule: RepositoryProfileFindingRule, path: string, message: stri
 }
 
 function isRepositoryRelative(value: string, allowPatterns: boolean): boolean {
-  if (value.length === 0 || value.startsWith("/") || value.includes("\\") || value.includes("\0")) return false;
+  if (value.length === 0 || value.startsWith("/") || /^[a-z]:/i.test(value) || value.includes("\\") || value.includes("\0")) return false;
   if (!allowPatterns && /[*?[\]{}]/.test(value)) return false;
   return !value.split("/").some((segment) => segment === ".." || segment.length === 0);
 }
 
 function isBranchName(value: string): boolean {
-  if (value.length === 0 || value === "@" || value === "HEAD" || value.startsWith("-") || value.startsWith("/") || value.endsWith("/")) return false;
+  if (value.length === 0 || value === "HEAD" || value.startsWith("-") || value.startsWith("/") || value.endsWith("/")) return false;
   if (value.endsWith(".") || value.endsWith(".lock") || value.includes("..") || value.includes("@{") || value.includes("//")) return false;
   const forbidden = new Set(["~", "^", ":", "?", "*", "[", "\\"]);
   for (const character of value) {

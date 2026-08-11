@@ -67,6 +67,20 @@ describe("validateRepositoryProfile", () => {
     }
 
     expect(validateRepositoryProfile({ ...validProfile, defaultBranch: "feature/repository-contract" })).toEqual([]);
+    expect(validateRepositoryProfile({ ...validProfile, defaultBranch: "@" })).toEqual([]);
+  });
+
+  it("rejects Windows drive-qualified repository paths", () => {
+    const findings = validateRepositoryProfile({
+      ...validProfile,
+      commands: { test: { run: "npm test", cwd: "C:/outside" } },
+      protectedPaths: ["D:outside"],
+    });
+
+    expect(findings.map((entry) => [entry.rule, entry.path])).toEqual([
+      ["command-cwd", "commands.test.cwd"],
+      ["protected-path", "protectedPaths[0]"],
+    ]);
   });
 
   it("does not throw for non-object input", () => {
