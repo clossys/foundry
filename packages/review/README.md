@@ -40,7 +40,8 @@ if (findings.length > 0) process.exitCode = 1;
 
 `@vespeneventures/review/github` accepts a complete, caller-provided snapshot.
 It maps GitHub check and review states into the root contracts and marks the
-result incomplete when any connection reports another page.
+result incomplete when any connection reports another page in either
+direction.
 
 ```ts
 import { normalizeGitHubReviewEvidence } from "@vespeneventures/review/github";

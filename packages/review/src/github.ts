@@ -2,7 +2,7 @@ import { REVIEW_EVIDENCE_VERSION } from "./types.js";
 import type { ReviewCheckConclusion, ReviewDecision, ReviewEvidenceBundle } from "./types.js";
 
 /** Minimal GitHub GraphQL-style page marker used to prove a collection is complete. */
-export interface GitHubPageInfo { readonly hasNextPage: boolean; }
+export interface GitHubPageInfo { readonly hasNextPage: boolean; readonly hasPreviousPage: boolean; }
 /** A caller-provided GitHub GraphQL-style connection. No network access occurs here. */
 export interface GitHubConnection<T> { readonly nodes: readonly T[]; readonly pageInfo: GitHubPageInfo; }
 /** GitHub-shaped check data accepted by the normalizer. */
@@ -29,7 +29,10 @@ export interface GitHubReviewEvidencePayload {
 function stringValue(value: unknown): string { return typeof value === "string" ? value : ""; }
 function record(value: unknown): Record<string, unknown> { return typeof value === "object" && value !== null && !Array.isArray(value) ? value as Record<string, unknown> : {}; }
 function nodes(value: unknown): readonly unknown[] { const candidate = record(value).nodes; return Array.isArray(candidate) ? candidate : []; }
-function isComplete(value: unknown): boolean { return record(record(value).pageInfo).hasNextPage === false; }
+function isComplete(value: unknown): boolean {
+  const pageInfo = record(record(value).pageInfo);
+  return pageInfo.hasNextPage === false && pageInfo.hasPreviousPage === false;
+}
 
 function normalizeCheckConclusion(value: unknown): ReviewCheckConclusion {
   switch (stringValue(value).toUpperCase()) {
@@ -71,7 +74,7 @@ export function normalizeGitHubReviewEvidence(payload: GitHubReviewEvidencePaylo
     schemaVersion: REVIEW_EVIDENCE_VERSION,
     headSha,
     paginationComplete: isComplete(checksConnection) && isComplete(reviewsConnection) && isComplete(threadsConnection),
-    checks: nodes(checksConnection).map((node) => { const check = record(node); return { name: stringValue(check.name), conclusion: normalizeCheckConclusion(check.conclusion), headSha: stringValue(check.headSha) || stringValue(check.head_sha) || headSha }; }),
+    checks: nodes(checksConnection).map((node) => { const check = record(node); return { name: stringValue(check.name), conclusion: normalizeCheckConclusion(check.conclusion), headSha: stringValue(check.headSha) || stringValue(check.head_sha) }; }),
     reviews: nodes(reviewsConnection).map((node) => { const review = record(node); const commit = record(review.commit); const author = record(review.author); return { id: stringValue(review.id), reviewerId: stringValue(author.login), submittedAt: stringValue(review.submittedAt), state: normalizeReviewDecision(review.state), headSha: stringValue(commit.oid) || stringValue(review.commit_id) }; }),
     threads: nodes(threadsConnection).map((node) => { const thread = record(node); return { id: stringValue(thread.id), isResolved: thread.isResolved === true, headSha }; }),
   };
