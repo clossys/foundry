@@ -1,6 +1,7 @@
 import type {
   ExternalMembership,
   ExternalMembershipEvent,
+  ExternalMembershipEventClaim,
   ExternalMembershipReconciliationResult,
   ExternalMembershipRepository,
   QueryAdapter,
@@ -13,6 +14,7 @@ type Equal<Left, Right> = (<T>() => T extends Left ? 1 : 2) extends (<T>() => T 
 
 type _TransactionalIsQueryAdapter = Assert<TransactionalQueryAdapter extends QueryAdapter ? true : false>;
 type _EventCarriesProviderIdentity = Assert<ExternalMembershipEvent extends { provider: string; providerMembershipId: string } ? true : false>;
+type _EventClaimCarriesProviderNamespace = Assert<ExternalMembershipEventClaim extends { provider: string; eventId: string } ? true : false>;
 type _MembershipKeepsLocalIdentity = Assert<ExternalMembership extends { membershipId: string; createdAt: Date | string } ? true : false>;
 type _CommandUsesRepository = Assert<ReconcileExternalMembershipCommand extends { repository: ExternalMembershipRepository } ? true : false>;
 type _RepositoryRequiresIdentityLock = Assert<ExternalMembershipRepository extends {

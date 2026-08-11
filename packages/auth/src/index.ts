@@ -24,6 +24,7 @@ export type {
   ExternalMembership,
   ExternalMembershipCreateInput,
   ExternalMembershipEvent,
+  ExternalMembershipEventClaim,
   ExternalMembershipEventCursor,
   ExternalMembershipIdentity,
   ExternalMembershipReconciliationResult,

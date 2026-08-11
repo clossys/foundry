@@ -71,7 +71,8 @@ materializes the provider's current membership state; only `updated` events
 replace a role on an existing record. The core copies the
 stored record when updating it, retaining `membershipId`, `createdAt`,
 `invitedAt`, `acceptedAt`, `grants`, and any caller-owned fields. A repository
-keeps event claims and `ExternalMembershipEventCursor` values transactionally.
+keeps provider-namespaced event claims and `ExternalMembershipEventCursor`
+values transactionally.
 Its `lockExternalIdentity` implementation must take a transaction-scoped
 exclusive lock even when no membership row exists, serializing cursor checks
 and writes for that provider identity. This makes concurrent delivery, retries,
@@ -118,6 +119,7 @@ an explicit, allowlisted `baseOrigin`.
 | `ExternalMembershipIdentity` | type | Immutable `provider` plus `providerMembershipId` identity. |
 | `ExternalMembership` | type | Stored provider membership with caller-extensible local fields. |
 | `ExternalMembershipEvent` | type | Normalized `created`, `updated`, or `deleted` provider event. |
+| `ExternalMembershipEventClaim` | type | Provider-namespaced delivery identity used for retry idempotency. |
 | `ExternalMembershipEventCursor` | type | Per-identity ordering state retained independently of a row. |
 | `ExternalMembershipCreateInput` | type | Repository input for creating locally owned membership fields. |
 | `ExternalMembershipRepository` | type | Transaction-scoped persistence seam with required per-identity locking, event claims, membership records, and cursors. |

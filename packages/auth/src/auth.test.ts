@@ -17,6 +17,7 @@ import type {
   ExternalMembership,
   ExternalMembershipCreateInput,
   ExternalMembershipEvent,
+  ExternalMembershipEventClaim,
   ExternalMembershipEventCursor,
   ExternalMembershipIdentity,
   ExternalMembershipRepository,
@@ -47,10 +48,11 @@ class MemoryRepository implements ExternalMembershipRepository<StoredMembership>
     this.locks += 1;
   }
 
-  async claimEvent(_query: QueryAdapter, eventId: string): Promise<boolean> {
+  async claimEvent(_query: QueryAdapter, claim: ExternalMembershipEventClaim): Promise<boolean> {
     this.claims += 1;
-    if (this.events.has(eventId)) return false;
-    this.events.add(eventId);
+    const claimKey = `${claim.provider}\u0000${claim.eventId}`;
+    if (this.events.has(claimKey)) return false;
+    this.events.add(claimKey);
     return true;
   }
 
@@ -239,6 +241,24 @@ describe("reconcileExternalMembership", () => {
     expect(repository.creates).toBe(1);
     expect(repository.replacements).toBe(0);
     expect(repository.locks).toBe(2);
+  });
+
+  it("namespaces event idempotency claims by provider", async () => {
+    const repository = new MemoryRepository();
+    const command = { queryAdapter: transactionalAdapter(), repository };
+    expect((await reconcileExternalMembership({
+      ...command,
+      event: event("created", { eventId: "shared-event" }),
+    })).status).toBe("created");
+    expect((await reconcileExternalMembership({
+      ...command,
+      event: event("created", {
+        eventId: "shared-event",
+        provider: "provider-b",
+        providerMembershipId: "membership-b",
+      }),
+    })).status).toBe("created");
+    expect(repository.creates).toBe(2);
   });
 
   it("ignores stale timestamps and stale versions", async () => {

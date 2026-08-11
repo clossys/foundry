@@ -43,6 +43,12 @@ export interface ExternalMembershipEventCursor {
   readonly version?: number;
 }
 
+/** Provider-namespaced delivery identity used for retry idempotency. */
+export interface ExternalMembershipEventClaim {
+  readonly provider: string;
+  readonly eventId: string;
+}
+
 /** Input from which a repository creates its locally owned membership data. */
 export interface ExternalMembershipCreateInput<TEvent extends object = Record<never, never>> {
   readonly identity: ExternalMembershipIdentity;
@@ -63,7 +69,7 @@ export interface ExternalMembershipRepository<
   TEvent extends object = Record<never, never>,
 > {
   lockExternalIdentity(query: QueryAdapter, identity: ExternalMembershipIdentity): Promise<void>;
-  claimEvent(query: QueryAdapter, eventId: string): Promise<boolean>;
+  claimEvent(query: QueryAdapter, claim: ExternalMembershipEventClaim): Promise<boolean>;
   findByExternalIdentity(query: QueryAdapter, identity: ExternalMembershipIdentity): Promise<TMembership | undefined>;
   create(query: QueryAdapter, input: ExternalMembershipCreateInput<TEvent>): Promise<TMembership>;
   replace(query: QueryAdapter, membership: TMembership): Promise<void>;
@@ -182,7 +188,10 @@ export async function reconcileExternalMembership<
 
   return transactionAdapter.transaction(async (query) => {
     await command.repository.lockExternalIdentity(query, identity);
-    const claimed = await command.repository.claimEvent(query, event.eventId);
+    const claimed = await command.repository.claimEvent(query, {
+      provider: event.provider,
+      eventId: event.eventId,
+    });
     if (!claimed) return { status: "duplicate" };
 
     const storedCursor = await command.repository.getCursor(query, identity);
