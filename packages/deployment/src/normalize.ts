@@ -5,7 +5,7 @@ export function normalizeDeploymentManifest(manifest: DeploymentManifest): Deplo
   return {
     schemaVersion: manifest.schemaVersion,
     surfaces: [...manifest.surfaces]
-      .sort((left, right) => left.id.localeCompare(right.id))
+      .sort((left, right) => (left.id < right.id ? -1 : left.id > right.id ? 1 : 0))
       .map((surface) => ({ ...surface, health: { ...surface.health } })),
   };
 }

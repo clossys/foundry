@@ -1,18 +1,25 @@
 import { RenderInspectionError } from "./errors.js";
-import type { RenderDeploymentState, RenderDomainCheck, RenderInspection, RenderInspectionInput, RenderInspectorOptions } from "./types.js";
+import type { RenderDeploymentState, RenderDomainCheck, RenderFetch, RenderInspection, RenderInspectionInput, RenderInspectorOptions, RenderTokenProvider } from "./types.js";
 
 type JsonObject = Record<string, unknown>;
+
+type NormalizedOptions = {
+  readonly fetch: RenderFetch;
+  readonly getBearerToken: RenderTokenProvider;
+  readonly base: URL;
+};
 
 function object(value: unknown): value is JsonObject {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function string(value: unknown): string | undefined {
-  return typeof value === "string" && value.length > 0 ? value : undefined;
+  return typeof value === "string" && value.trim().length > 0 ? value : undefined;
 }
 
-function baseUrl(value: string | undefined): URL {
+function baseUrl(value: unknown): URL {
   try {
+    if (value !== undefined && typeof value !== "string") throw new Error();
     const url = new URL(value ?? "https://api.render.com");
     if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash || (url.pathname !== "/" && url.pathname !== "")) throw new Error();
     return url;
@@ -21,15 +28,34 @@ function baseUrl(value: string | undefined): URL {
   }
 }
 
-function normalizedDomain(value: string): string | undefined {
+function validAbortSignal(value: unknown): value is AbortSignal {
+  return object(value) && typeof value.aborted === "boolean";
+}
+
+function normalizeOptions(value: unknown): NormalizedOptions {
+  if (!object(value) || typeof value.fetch !== "function" || typeof value.getBearerToken !== "function") throw new RenderInspectionError("invalid-input");
+  return {
+    fetch: value.fetch as RenderFetch,
+    getBearerToken: value.getBearerToken as RenderTokenProvider,
+    base: baseUrl(value.apiBaseUrl),
+  };
+}
+
+function normalizedDomain(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
   const domain = value.trim().toLowerCase().replace(/\.$/, "");
   return domain.length > 0 && !/[/?#@\s]/.test(domain) ? domain : undefined;
 }
 
-function validInput(input: RenderInspectionInput): boolean {
-  return input.service.trim().length > 0
-    && (input.maxPages === undefined || (Number.isInteger(input.maxPages) && input.maxPages >= 1 && input.maxPages <= 100))
-    && (input.expectedDomains === undefined || input.expectedDomains.every((domain) => normalizedDomain(domain) !== undefined));
+function validInput(input: unknown): input is RenderInspectionInput {
+  if (!object(input) || typeof input.service !== "string") return false;
+  if (input.service.trim().length === 0) return false;
+  if (input.maxPages !== undefined && (typeof input.maxPages !== "number" || !Number.isInteger(input.maxPages) || input.maxPages < 1 || input.maxPages > 100)) return false;
+  if (input.signal !== undefined && !validAbortSignal(input.signal)) return false;
+  if (input.expectedDomains === undefined) return true;
+  if (!Array.isArray(input.expectedDomains)) return false;
+  const domains = input.expectedDomains.map(normalizedDomain);
+  return domains.every((domain) => domain !== undefined) && new Set(domains).size === domains.length;
 }
 
 function providerError(statusCode: number): RenderInspectionError {
@@ -46,19 +72,19 @@ async function parseJson(response: Response): Promise<unknown> {
   }
 }
 
-function page(payload: unknown, resourceKey: string): { readonly resources: readonly unknown[]; readonly cursor?: string } {
-  const list = Array.isArray(payload) ? payload : object(payload) && Array.isArray(payload[resourceKey]) ? payload[resourceKey] as readonly unknown[] : undefined;
-  if (list === undefined) throw new RenderInspectionError("invalid-response");
-  const resources: unknown[] = [];
+/**
+ * Render list endpoints return arrays of `{ cursor, resource }` envelopes.
+ * A cursor belongs to the envelope (not the resource) and the final cursor is
+ * the only safe value for the following request.
+ */
+function page(payload: unknown, resourceKey: "deploy" | "customDomain"): { readonly resources: readonly JsonObject[]; readonly cursor?: string } {
+  if (!Array.isArray(payload)) throw new RenderInspectionError("invalid-response");
+  const resources: JsonObject[] = [];
   let cursor: string | undefined;
-  for (const item of list) {
-    if (object(item) && string(item.cursor) !== undefined && item[resourceKey] !== undefined) {
-      resources.push(item[resourceKey]);
-      cursor = item.cursor as string;
-    } else {
-      resources.push(item);
-      if (object(item) && string(item.cursor) !== undefined) cursor = item.cursor as string;
-    }
+  for (const item of payload) {
+    if (!object(item) || string(item.cursor) === undefined || !object(item[resourceKey])) throw new RenderInspectionError("invalid-response");
+    resources.push(item[resourceKey]);
+    cursor = item.cursor as string;
   }
   return { resources, ...(cursor === undefined ? {} : { cursor }) };
 }
@@ -74,26 +100,29 @@ function deploymentState(value: unknown): RenderDeploymentState {
 }
 
 function serviceHealth(service: JsonObject): "healthy" | "unhealthy" | "unknown" {
-  if (service.suspended === true || (object(service.maintenanceMode) && service.maintenanceMode.enabled === true)) return "unhealthy";
+  // Render's documented `suspended` value is a string enum, not a boolean.
+  if (service.suspended === "suspended") return "unhealthy";
   return "unknown";
 }
 
 /** Creates a GET-only inspector. Credentials are obtained only when inspect is called. */
 export function createRenderInspector(options: RenderInspectorOptions): { inspect(input: RenderInspectionInput): Promise<RenderInspection> } {
-  const base = baseUrl(options.apiBaseUrl);
+  const normalizedOptions = normalizeOptions(options);
   return {
     async inspect(input: RenderInspectionInput): Promise<RenderInspection> {
       if (!validInput(input)) throw new RenderInspectionError("invalid-input");
-      let token: string;
+      if (input.signal?.aborted) throw new RenderInspectionError("aborted");
+      let token: unknown;
       try {
-        token = await options.getBearerToken(input.signal);
+        token = await normalizedOptions.getBearerToken(input.signal);
       } catch {
         throw new RenderInspectionError("credential-unavailable");
       }
-      if (token.trim().length === 0) throw new RenderInspectionError("credential-unavailable");
+      if (typeof token !== "string" || token.trim().length === 0) throw new RenderInspectionError("credential-unavailable");
       const request = async (url: URL): Promise<Response> => {
+        if (input.signal?.aborted) throw new RenderInspectionError("aborted");
         try {
-          const response = await options.fetch(url, { method: "GET", headers: { Accept: "application/json", Authorization: `Bearer ${token}` }, credentials: "omit", redirect: "error", signal: input.signal });
+          const response = await normalizedOptions.fetch(url, { method: "GET", headers: { Accept: "application/json", Authorization: `Bearer ${token}` }, credentials: "omit", redirect: "error", signal: input.signal });
           if (!response.ok) throw providerError(response.status);
           return response;
         } catch (error) {
@@ -102,7 +131,7 @@ export function createRenderInspector(options: RenderInspectorOptions): { inspec
           throw new RenderInspectionError("network");
         }
       };
-      const serviceUrl = new URL(`/v1/services/${encodeURIComponent(input.service)}`, base);
+      const serviceUrl = new URL(`/v1/services/${encodeURIComponent(input.service.trim())}`, normalizedOptions.base);
       let service: unknown;
       try {
         service = await parseJson(await request(serviceUrl));
@@ -111,8 +140,8 @@ export function createRenderInspector(options: RenderInspectorOptions): { inspec
         throw error;
       }
       if (!object(service) || string(service.id) === undefined) throw new RenderInspectionError("invalid-response");
-      const serviceId = service.id as string;
-      const deployUrl = new URL(`/v1/services/${encodeURIComponent(serviceId)}/deploys`, base);
+      const serviceId = string(service.id) as string;
+      const deployUrl = new URL(`/v1/services/${encodeURIComponent(serviceId)}/deploys`, normalizedOptions.base);
       deployUrl.searchParams.set("limit", "100");
       const deploys = page(await parseJson(await request(deployUrl)), "deploy").resources;
       const deployment = deploys.length === 0 ? "none" : deploymentState(deploys[0]);
@@ -122,15 +151,17 @@ export function createRenderInspector(options: RenderInspectorOptions): { inspec
       if (expected.length > 0) {
         let cursor: string | undefined;
         for (let index = 0; index < (input.maxPages ?? 20) && expected.some((domain) => !found.has(domain)); index += 1) {
-          const domainsUrl = new URL(`/v1/services/${encodeURIComponent(serviceId)}/custom-domains`, base);
+          const domainsUrl = new URL(`/v1/services/${encodeURIComponent(serviceId)}/custom-domains`, normalizedOptions.base);
           domainsUrl.searchParams.set("limit", "100");
           if (cursor !== undefined) domainsUrl.searchParams.set("cursor", cursor);
           const domainPage = page(await parseJson(await request(domainsUrl)), "customDomain");
           for (const item of domainPage.resources) {
-            if (!object(item)) continue;
             const name = string(item.name);
             const domain = name === undefined ? undefined : normalizedDomain(name);
-            if (domain !== undefined && expected.includes(domain)) found.set(domain, item.verified === false ? false : true);
+            if (domain !== undefined && expected.includes(domain)) {
+              const verificationStatus = string(item.verificationStatus);
+              found.set(domain, verificationStatus === "verified" ? true : verificationStatus === "unverified" ? false : undefined);
+            }
           }
           if (expected.every((domain) => found.has(domain)) || domainPage.cursor === undefined) {
             domainsComplete = true;
@@ -140,7 +171,13 @@ export function createRenderInspector(options: RenderInspectorOptions): { inspec
           cursor = domainPage.cursor;
         }
       }
-      const domainChecks: RenderDomainCheck[] = expected.map((domain) => ({ domain, status: !found.has(domain) ? domainsComplete ? "missing" : "unknown" : found.get(domain) === false ? "unverified" : "present" }));
+      const domainChecks: RenderDomainCheck[] = expected.map((domain) => {
+        const verification = found.get(domain);
+        const status = !found.has(domain)
+          ? domainsComplete ? "missing" : "unknown"
+          : verification === true ? "present" : verification === false ? "unverified" : "unknown";
+        return { domain, status };
+      });
       return { service: "present", deployment, serviceHealth: serviceHealth(service), domains: domainChecks };
     },
   };

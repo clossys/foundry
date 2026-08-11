@@ -19,17 +19,16 @@ function rejectUnknownKeys(value: Record<string, unknown>, allowed: Set<string>,
   }
 }
 
-export function validateDeploymentManifest(value: unknown): readonly DeploymentFinding[] {
-  const findings: DeploymentFinding[] = [];
+function validate(value: unknown, findings: DeploymentFinding[]): void {
   if (!object(value)) {
     record(findings, "manifest-object", "Deployment manifest must be an object.");
-    return findings;
+    return;
   }
   rejectUnknownKeys(value, MANIFEST_KEYS, "manifest", findings);
   if (value.schemaVersion !== "1") record(findings, "schema-version", "schemaVersion must be '1'.", "manifest.schemaVersion");
   if (!Array.isArray(value.surfaces) || value.surfaces.length === 0) {
     record(findings, "surfaces", "surfaces must be a non-empty array.", "manifest.surfaces");
-    return findings;
+    return;
   }
   const ids = new Set<string>();
   for (const [index, surface] of value.surfaces.entries()) {
@@ -55,12 +54,36 @@ export function validateDeploymentManifest(value: unknown): readonly DeploymentF
     else {
       try {
         const url = new URL(surface.health.url);
-        if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash) throw new Error();
+        if (
+          surface.health.url !== surface.health.url.trim()
+          || url.protocol !== "https:"
+          || !url.hostname
+          || url.username
+          || url.password
+          || url.search
+          || url.hash
+        ) throw new Error();
       } catch {
         record(findings, "health-url", "Health check URL must be an HTTPS URL without credentials, query, or fragment.", `${path}.health.url`);
       }
     }
     if (surface.health.expectedStatus !== undefined && (typeof surface.health.expectedStatus !== "number" || !Number.isInteger(surface.health.expectedStatus) || surface.health.expectedStatus < 100 || surface.health.expectedStatus > 599)) record(findings, "health-status", "Expected status must be an integer from 100 through 599.", `${path}.health.expectedStatus`);
+  }
+}
+
+/**
+ * Reports every supported structural violation without exposing source values.
+ *
+ * Authoring input can arrive from untyped configuration, including objects with
+ * throwing accessors. Treat those as unreadable input instead of leaking the
+ * accessor error or allowing validation itself to fail.
+ */
+export function validateDeploymentManifest(value: unknown): readonly DeploymentFinding[] {
+  const findings: DeploymentFinding[] = [];
+  try {
+    validate(value, findings);
+  } catch {
+    record(findings, "manifest-unreadable", "Deployment manifest could not be read safely.");
   }
   return findings;
 }
