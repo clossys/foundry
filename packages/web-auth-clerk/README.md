@@ -69,6 +69,11 @@ deny-by-default policy: everything not named public calls Clerk's
 runtime. The default policy permits only `/sign-in` and `/sign-up` and protects
 everything else within the application's Next.js matcher.
 
+The keyless development bypass also respects a publishable key supplied through
+static or per-request `clerkOptions`. With such a key Clerk middleware remains
+mounted so downstream `auth()` calls have context, while the explicit bypass
+continues to skip route protection outside production.
+
 Create a sign-in page with a fixed local destination:
 
 ```ts

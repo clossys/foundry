@@ -34,14 +34,14 @@ async function finishResponse(
   return response;
 }
 
+function hasPublishableKey(options: ClerkMiddlewareOptions | undefined): boolean {
+  return typeof options?.publishableKey === "string" && options.publishableKey.trim().length > 0;
+}
+
 /** Creates a Clerk-backed Next.js proxy with an explicit route policy. */
 export function createSiteProxy(config: SiteProxyConfig = {}): NextMiddleware {
   if (config.publicRoutes && config.protectedRoutes) {
     throw new TypeError("createSiteProxy accepts publicRoutes or protectedRoutes, not both");
-  }
-
-  if (devAuthBypassIsKeyless()) {
-    return (request) => finishResponse(request, config);
   }
 
   const isProtected = config.protectedRoutes
@@ -57,6 +57,20 @@ export function createSiteProxy(config: SiteProxyConfig = {}): NextMiddleware {
     }
     return finishResponse(request, config);
   };
+
+  if (devAuthBypassIsKeyless()) {
+    if (typeof config.clerkOptions === "function") {
+      const clerkOptions = config.clerkOptions;
+      return async (request, event) => {
+        const options = await clerkOptions(request);
+        if (!hasPublishableKey(options)) return finishResponse(request, config);
+        return clerkMiddleware(handler, options)(request, event);
+      };
+    }
+    if (!hasPublishableKey(config.clerkOptions)) {
+      return (request) => finishResponse(request, config);
+    }
+  }
 
   if (typeof config.clerkOptions === "function") {
     return clerkMiddleware(handler, config.clerkOptions);
