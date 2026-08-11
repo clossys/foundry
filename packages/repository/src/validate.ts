@@ -196,7 +196,7 @@ function validateRepositoryProfileValue(value: unknown): RepositoryProfileFindin
 /**
  * Validates an untrusted repository profile without I/O or throwing.
  * Fields are inspected as own data descriptors; accessors are never invoked.
- * Findings are emitted in input order and every independently checkable
+ * Findings are emitted deterministically and every independently checkable
  * problem is reported.
  */
 export function validateRepositoryProfile(value: unknown): RepositoryProfileFinding[] {
