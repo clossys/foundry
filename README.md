@@ -2,9 +2,8 @@
 
 A small set of TypeScript packages for validating an npm workspace against
 what is actually true of it — not against what its own packages claim about
-themselves. This repository is public and MIT licensed; the packages it
-publishes are currently **private** on GitHub Packages (see Installing,
-below).
+themselves. This repository is public and MIT licensed; packages publish to
+GitHub Packages with visibility decided per package (see Installing, below).
 
 **Thesis:** every check here runs against what is actually on disk or
 actually installed — never against what a manifest claims about itself. An
@@ -47,11 +46,10 @@ documented in [docs/PUBLISHING.md](docs/PUBLISHING.md).
 
 ## Installing
 
-Packages publish to **GitHub Packages**, not the public npm registry, and
-are currently **private** — installing needs a GitHub personal access token
-with `read:packages` scope, and an account with access granted to this
-organization's packages, regardless of whether the repository itself is
-public.
+Packages publish to **GitHub Packages**, not the public npm registry.
+Installing any GitHub Packages release needs a GitHub token with
+`read:packages`, including releases whose package visibility is public. A
+private package also requires an account granted access to that package.
 
 Add to your project's `.npmrc` (never commit a real one):
 

@@ -33,11 +33,10 @@ The trade-off, accepted deliberately rather than defaulted into:
 
 - Installing needs a GitHub personal access token with `read:packages` — a
   GitHub Packages platform behavior that applies to every registry read
-  regardless of visibility, not a permissions choice made here. These
-  packages are additionally **private** today (see
-  [docs/PUBLISHING.md](PUBLISHING.md#package-visibility)), which is a
-  separate, deliberate choice made while nothing here has a real external
-  consumer yet — not a consequence of the registry choice itself.
+  regardless of visibility, not a permissions choice made here. Package
+  visibility is a separate, per-package decision (see
+  [docs/PUBLISHING.md](PUBLISHING.md#package-visibility)), not a consequence
+  of the registry choice itself.
 - Public npmjs would make "anyone can install this, no token required"
   literally true, and remains an option later. Moving there is a config
   change, not a rewrite:

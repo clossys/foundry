@@ -210,10 +210,9 @@ unconditionally rather than being trusted to "obviously not apply."
 
 Installing a package from here needs a GitHub personal access token with
 `read:packages` scope — GitHub Packages requires authentication for every
-install regardless of registry visibility, and these packages are
-additionally **private** today, so the token also needs to belong to an
-account with access granted. Add to the consuming project's `.npmrc` (never
-commit a real one):
+install regardless of registry visibility. For a private package, the token
+must also belong to an account with access granted. Add to the consuming
+project's `.npmrc` (never commit a real one):
 
 ```
 @vespeneventures:registry=https://npm.pkg.github.com
