@@ -110,18 +110,26 @@ function isDateTime(value: string): boolean {
   return true;
 }
 
-function isJsonValue(value: unknown, seen = new WeakSet<object>()): boolean {
+function isJsonValue(value: unknown, ancestors = new WeakSet<object>()): boolean {
   if (value === null || typeof value === "string" || typeof value === "boolean") return true;
   if (typeof value === "number") return Number.isFinite(value);
   if (Array.isArray(value)) {
-    if (seen.has(value)) return false;
-    seen.add(value);
-    return value.every((entry) => isJsonValue(entry, seen));
+    if (ancestors.has(value)) return false;
+    ancestors.add(value);
+    try {
+      return value.every((entry) => isJsonValue(entry, ancestors));
+    } finally {
+      ancestors.delete(value);
+    }
   }
   if (!isRecord(value)) return false;
-  if (seen.has(value)) return false;
-  seen.add(value);
-  return Object.values(value).every((entry) => isJsonValue(entry, seen));
+  if (ancestors.has(value)) return false;
+  ancestors.add(value);
+  try {
+    return Object.values(value).every((entry) => isJsonValue(entry, ancestors));
+  } finally {
+    ancestors.delete(value);
+  }
 }
 
 function matchesPrimitive(value: unknown, primitive: PrimitiveValueType): boolean {
