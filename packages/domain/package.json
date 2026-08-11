@@ -1,6 +1,6 @@
 {
-  "name": "@vespeneventures/domain-model",
-  "version": "0.3.0",
+  "name": "@vespeneventures/domain",
+  "version": "0.2.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -21,17 +21,19 @@
     "LICENSE"
   ],
   "sideEffects": false,
-  "description": "Temporary compatibility re-export for @vespeneventures/domain. New consumers should import the canonical package name directly.",
+  "description": "Dependency-free machinery for authoring, validating, normalizing, serializing, and comparing product-owned domains with stable identifiers, typed fields, closed vocabularies, and attributed relations.",
   "keywords": [
     "domain",
+    "schema",
+    "validation",
     "compatibility",
-    "migration"
+    "typescript"
   ],
   "author": "Calvin Hung",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/vespeneventures/foundry.git",
-    "directory": "packages/domain-model"
+    "directory": "packages/domain"
   },
   "bugs": {
     "url": "https://github.com/vespeneventures/foundry/issues"
@@ -39,9 +41,6 @@
   "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/domain-model#readme",
   "engines": {
     "node": ">=20"
-  },
-  "dependencies": {
-    "@vespeneventures/domain": "~0.2.0"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
