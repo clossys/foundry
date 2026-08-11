@@ -1,6 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { compareDomainModels, defineDomainModel, normalizeDomainModel, serializeDomainModel, validateDomainModel } from "./index.js";
-import type { DomainModelDefinition, ValueTypeDefinition } from "./types.js";
+import {
+  compareDomainModels,
+  defineDomainModel,
+  defineDomainSnapshot,
+  normalizeDomainModel,
+  normalizeDomainSnapshot,
+  serializeDomainModel,
+  serializeDomainSnapshot,
+  validateDomainModel,
+  validateDomainSnapshot,
+} from "./index.js";
+import type { DomainModelDefinition, DomainSnapshotDefinition, ValueTypeDefinition } from "./types.js";
 
 function exampleModel(overrides: Partial<DomainModelDefinition> = {}): DomainModelDefinition {
   return {
@@ -191,5 +201,137 @@ describe("compareDomainModels", () => {
     expect(report.compatible).toBe(false);
     expect(report.changes).toEqual([]);
     expect(report.nextFindings.map((entry) => entry.rule)).toContain("collection-shape");
+  });
+});
+
+function exampleSnapshot(overrides: Partial<DomainSnapshotDefinition> = {}): DomainSnapshotDefinition {
+  return {
+    records: [
+      {
+        id: "article-1",
+        type: "example.article",
+        values: { "example.article.title": "A title", "example.article.state": "draft" },
+      },
+      {
+        id: "source-1",
+        type: "example.source",
+        values: { "example.source.url": "https://example.test/source" },
+      },
+    ],
+    relations: [
+      {
+        type: "example.article.cites",
+        from: "article-1",
+        to: "source-1",
+        values: { "example.article.cites.score": 1 },
+      },
+    ],
+    ...overrides,
+  };
+}
+
+describe("domain snapshots", () => {
+  it("detaches authoring values and supplies explicit collections and value objects", () => {
+    const source = exampleSnapshot({ relations: [] });
+    const snapshot = defineDomainSnapshot(source);
+    (source.records?.[0]?.values as Record<string, unknown>)["example.article.title"] = "Changed";
+    expect(snapshot.records[0]?.values["example.article.title"]).toBe("A title");
+    expect(snapshot.relations).toEqual([]);
+  });
+
+  it("validates declared record fields, value types, and closed vocabularies", () => {
+    const snapshot = exampleSnapshot({
+      records: [
+        {
+          id: "article-1",
+          type: "example.article",
+          values: {
+            "example.article.title": 42,
+            "example.article.state": "unknown",
+            "example.article.extra": true,
+          },
+        },
+        { id: "source-1", type: "example.source", values: {} },
+      ],
+      relations: [{ type: "example.article.cites", from: "article-1", to: "source-1", values: { "example.article.cites.score": "high" } }],
+    });
+    expect(validateDomainSnapshot(exampleModel(), snapshot).map((entry) => entry.rule)).toEqual(
+      expect.arrayContaining(["value-type", "vocabulary-value", "unknown-value", "required-value"]),
+    );
+  });
+
+  it("validates snapshot structure, record identities, and relation endpoints", () => {
+    const snapshot = exampleSnapshot({
+      records: [
+        { id: "article-1", type: "example.article", values: { "example.article.title": "A", "example.article.state": "draft" } },
+        { id: "article-1", type: "example.article", values: {} },
+        { id: "unknown", type: "example.none", values: {} },
+      ],
+      relations: [
+        { type: "example.none", from: "article-1", to: "missing", values: {} },
+        { type: "example.article.cites", from: "article-1", to: "missing", values: {} },
+      ],
+    });
+    expect(validateDomainSnapshot(exampleModel(), snapshot).map((entry) => entry.rule)).toEqual(
+      expect.arrayContaining(["duplicate-record-id", "unknown-record-type", "unknown-relation-type", "relation-to-record"]),
+    );
+  });
+
+  it("validates primitive date representations without accepting calendar overflow", () => {
+    const model = exampleModel({
+      types: [{ id: "example.event", fields: [{ id: "example.event.day", valueType: "date", required: true }, { id: "example.event.at", valueType: "datetime", required: true }] }],
+      relations: [],
+    });
+    const snapshot = {
+      records: [{ id: "event-1", type: "example.event", values: { "example.event.day": "2026-02-30", "example.event.at": "2026-02-30T24:00:00Z" } }],
+    };
+    expect(validateDomainSnapshot(model, snapshot).map((entry) => entry.rule)).toEqual(["value-type", "value-type"]);
+  });
+
+  it.each([
+    ["one-to-one", ["article-1", "source-1"], ["article-1", "source-2"]],
+    ["one-to-many", ["article-1", "source-1"], ["article-2", "source-1"]],
+    ["many-to-one", ["article-1", "source-1"], ["article-1", "source-2"]],
+  ] as const)("enforces %s relation cardinality", (cardinality, first, second) => {
+    const model = exampleModel({ relations: [{ id: "example.article.cites", from: "example.article", to: "example.source", cardinality, properties: [] }] });
+    const records = [
+      { id: "article-1", type: "example.article", values: { "example.article.title": "One", "example.article.state": "draft" } },
+      { id: "article-2", type: "example.article", values: { "example.article.title": "Two", "example.article.state": "draft" } },
+      { id: "source-1", type: "example.source", values: { "example.source.url": "https://example.test/one" } },
+      { id: "source-2", type: "example.source", values: { "example.source.url": "https://example.test/two" } },
+    ];
+    const relations = [first, second].map(([from, to]) => ({ type: "example.article.cites", from, to, values: {} }));
+    expect(validateDomainSnapshot(model, { records, relations }).map((entry) => entry.rule)).toContain("relation-cardinality");
+  });
+
+  it("does not treat repeated identical relation facts as cardinality violations", () => {
+    const model = exampleModel({ relations: [{ id: "example.article.cites", from: "example.article", to: "example.source", cardinality: "many-to-one", properties: [] }] });
+    const snapshot = exampleSnapshot({
+      relations: [
+        { type: "example.article.cites", from: "article-1", to: "source-1", values: {} },
+        { type: "example.article.cites", from: "article-1", to: "source-1", values: {} },
+      ],
+    });
+    expect(validateDomainSnapshot(model, snapshot)).toEqual([]);
+  });
+
+  it("allows many-to-many relations and serializes equivalent snapshots identically", () => {
+    const model = exampleModel();
+    const first = exampleSnapshot({
+      records: [
+        { id: "source-1", type: "example.source", values: { "example.source.url": "https://example.test/source" } },
+        { id: "article-1", type: "example.article", values: { "example.article.state": "draft", "example.article.title": "A title" } },
+      ],
+    });
+    const second = exampleSnapshot({ records: [...(first.records ?? [])].reverse() });
+    expect(validateDomainSnapshot(model, first)).toEqual([]);
+    expect(serializeDomainSnapshot(first)).toBe(serializeDomainSnapshot(second));
+    expect(normalizeDomainSnapshot(first).records.map((record) => record.id)).toEqual(["article-1", "source-1"]);
+    expect(serializeDomainSnapshot(first).endsWith("\n")).toBe(true);
+  });
+
+  it("reports invalid models instead of treating a snapshot as independently valid", () => {
+    const model = exampleModel({ types: "bad" as never });
+    expect(validateDomainSnapshot(model, exampleSnapshot()).map((entry) => entry.rule)).toContain("model-collection-shape");
   });
 });
