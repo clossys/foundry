@@ -215,7 +215,12 @@ describe("validateRepositoryProfile", () => {
 
     const hugeSparseCommands = new Array(0xffffffff);
     expect(validateRepositoryProfile({ ...validProfile, commands: hugeSparseCommands }).map((entry) => [entry.rule, entry.path])).toEqual([
-      ["command-shape", "commands[0]"],
+      ["commands-shape", "commands"],
+    ]);
+
+    const tooManyCommands = Array.from({ length: 10_001 }, (_, index) => ({ name: `check-${index}`, run: "npm test" }));
+    expect(validateRepositoryProfile({ ...validProfile, commands: tooManyCommands }).map((entry) => [entry.rule, entry.path])).toEqual([
+      ["commands-shape", "commands"],
     ]);
   });
 
@@ -240,7 +245,12 @@ describe("validateRepositoryProfile", () => {
 
     const hugeSparsePaths = new Array<string>(0xffffffff);
     expect(validateRepositoryProfile({ ...validProfile, protectedPaths: hugeSparsePaths }).map((entry) => [entry.rule, entry.path])).toEqual([
-      ["protected-path", "protectedPaths[0]"],
+      ["protected-paths-shape", "protectedPaths"],
+    ]);
+
+    const tooManyPaths = Array.from({ length: 10_001 }, (_, index) => `src/${index}/**`);
+    expect(validateRepositoryProfile({ ...validProfile, protectedPaths: tooManyPaths }).map((entry) => [entry.rule, entry.path])).toEqual([
+      ["protected-paths-shape", "protectedPaths"],
     ]);
   });
 

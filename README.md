@@ -27,6 +27,7 @@ for the full account.
 | [`@vespeneventures/catalog`](packages/catalog) | Walks a workspace's `packages/` directory and reports what exists, what could not be read, and whether the real dependency graph — read from each package's own `dependencies`/`peerDependencies` — has cycles or missing internal packages. |
 | [`@vespeneventures/gates`](packages/gates) | Orchestrates `catalog` and `policy` into one call, a deterministic build order, and the `foundry-check` CLI. |
 | [`@vespeneventures/repository`](packages/repository) | Dependency-free repository profile contracts and deterministic validation for consumer-owned configuration. |
+| [`@vespeneventures/review`](packages/review) | Provider-neutral review evidence contracts and deterministic validation, with a `./github` subpath for meaningful GitHub evidence translation. Ships no workflow YAML, credentials, provider account configuration, or consumer review policy. |
 | [`@vespeneventures/secrets`](packages/secrets) | Provider-neutral secret resolution with injected clients and an isolated Infisical subpath. |
 | [`@vespeneventures/release`](packages/release) | Proves a package is actually installable: packs the real tarball, installs it into a genuinely isolated directory, and imports every subpath it claims to export. |
 | [`@vespeneventures/ui`](packages/ui) | The complete visual system: design tokens and theme CSS, icons, accessible React atoms and blocks, charts, shell primitives, and visual quality gates. Token-only consumers use `./tokens` or the CSS subpaths; page compositions live in `surface`. |
