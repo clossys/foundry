@@ -14,6 +14,31 @@ import { packRoundTrip, subprocessEnv } from "./pack-round-trip.js";
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 
 describe("packRoundTrip — real subprocess round trip", () => {
+  it("packages/repository installs and imports cleanly from a genuinely isolated directory", async () => {
+    const result = await packRoundTrip(join(repoRoot, "packages", "repository"));
+
+    expect(result.packageName).toBe("@vespeneventures/repository");
+    expect(result.tarballPath).not.toBe("");
+    expect(result.findings).toEqual([]);
+    expect(result.imports).toEqual([{ subpath: ".", ok: true }]);
+    expect(result.ok).toBe(true);
+  });
+
+  it("packages/review installs and imports every declared subpath from a genuinely isolated directory", async () => {
+    const result = await packRoundTrip(join(repoRoot, "packages", "review"));
+
+    expect(result.packageName).toBe("@vespeneventures/review");
+    expect(result.tarballPath).not.toBe("");
+    expect(result.findings).toEqual([]);
+    expect(result.imports.length).toBeGreaterThan(0);
+    expect(result.imports.map((check) => check.subpath).sort()).toEqual([".", "./github"]);
+    for (const check of result.imports) {
+      expect(check.ok).toBe(true);
+      expect(check.error).toBeUndefined();
+    }
+    expect(result.ok).toBe(true);
+  });
+
   it("packages/policy installs and imports cleanly from a genuinely isolated directory", async () => {
     const result = await packRoundTrip(join(repoRoot, "packages", "policy"));
 

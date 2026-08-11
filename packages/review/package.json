@@ -1,5 +1,5 @@
 {
-  "name": "@vespeneventures/repository",
+  "name": "@vespeneventures/review",
   "version": "0.1.0",
   "private": false,
   "license": "MIT",
@@ -11,10 +11,14 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./github": {
+      "types": "./dist/github.d.ts",
+      "import": "./dist/github.js"
     }
   },
   "bin": {
-    "repository-check": "./dist/cli.js"
+    "review-check": "./dist/cli.js"
   },
   "files": [
     "dist",
@@ -24,24 +28,24 @@
     "LICENSE"
   ],
   "sideEffects": false,
-  "description": "Dependency-free contracts and deterministic validation for consumer-owned repository profiles: default branch, verification commands, and protected path patterns.",
+  "description": "Vendor-neutral review evidence contracts and deterministic validation, with a pure GitHub payload normalizer.",
   "keywords": [
-    "repository",
-    "schema",
+    "code-review",
+    "review-evidence",
+    "github",
     "validation",
-    "development-tools",
     "typescript"
   ],
   "author": "Calvin Hung",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/vespeneventures/foundry.git",
-    "directory": "packages/repository"
+    "directory": "packages/review"
   },
   "bugs": {
     "url": "https://github.com/vespeneventures/foundry/issues"
   },
-  "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/repository#readme",
+  "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/review#readme",
   "engines": {
     "node": ">=20"
   },

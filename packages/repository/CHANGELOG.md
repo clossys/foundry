@@ -12,3 +12,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A dependency-free repository profile contract for consumer-owned branch,
   command, and protected-path values.
 - Deterministic validation with no I/O or provider behavior.
+- `repository-check`, which reads one consumer-owned JSON profile and emits a
+  deterministic validation report without invoking commands, Git, or a
+  provider API.
