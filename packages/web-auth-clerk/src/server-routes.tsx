@@ -36,14 +36,14 @@ export function resolveRequestRedirect(
   requestUrl: string,
   candidates: ReadonlyArray<string | null | undefined>,
   allowedOrigins: readonly string[] = [],
-): string {
+): string | undefined {
   const requestOrigin = new URL(requestUrl).origin;
   const policy = createAllowedOriginPolicy([requestOrigin, ...allowedOrigins]);
   for (const candidate of candidates) {
     const resolved = resolveSafeRedirect(candidate, policy, requestOrigin);
     if (resolved) return resolved;
   }
-  return new URL("/", requestOrigin).toString();
+  return undefined;
 }
 
 export interface ClerkSignInPageOptions {
@@ -140,7 +140,7 @@ export function createSignOutRoute(options: SignOutRouteOptions = {}) {
       request.url,
       [dynamic, options.redirectTo, "/"],
       options.allowedRedirectOrigins,
-    );
+    ) ?? new URL("/", request.url).toString();
     return NextResponse.redirect(target);
   };
 }

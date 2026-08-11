@@ -213,7 +213,7 @@ export async function mapClerkEvent(event: unknown, options: ClerkEventMappingOp
   if (lifecycle.type !== "deleted" && !fields.providerRole) {
     return finding("membership-role-missing", "A created or updated membership event requires a provider role.", "data.role");
   }
-  if (fields.providerRole) {
+  if (lifecycle.type !== "deleted" && fields.providerRole) {
     const roleInput: ClerkRoleMappingInput = { ...fields, providerRole: fields.providerRole, type: lifecycle.type };
     try {
       role = await options.roleMapper(roleInput);

@@ -18,7 +18,12 @@ describe("resolveRequestRedirect", () => {
     "https://user:password@app.example.test/path",
   ])("rejects unsafe target %s", (target) => {
     expect(resolveRequestRedirect(request, [target]))
-      .toBe("https://app.example.test/");
+      .toBeUndefined();
+  });
+
+  it("returns no dynamic redirect when candidates are missing or rejected", () => {
+    expect(resolveRequestRedirect(request, [undefined, null, "//other.example.test/path"]))
+      .toBeUndefined();
   });
 
   it("allows an explicitly trusted second origin", () => {

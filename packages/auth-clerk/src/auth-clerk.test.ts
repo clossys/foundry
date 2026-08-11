@@ -1,6 +1,6 @@
 import { Buffer } from "node:buffer";
 import { Webhook } from "svix";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   ClerkWebhookSignatureError,
   mapClerkEvent,
@@ -140,7 +140,7 @@ describe("mapClerkEvent", () => {
         providerMembershipId: "membership_synthetic",
         providerUserId: "user_synthetic",
         providerTenantId: "organization_synthetic",
-        role: "manager",
+        ...(type === "deleted" ? {} : { role: "manager" }),
         eventId: "msg_synthetic",
         occurredAt: "2026-08-09T22:13:20.000Z",
       },
@@ -199,6 +199,24 @@ describe("mapClerkEvent", () => {
 
     expect(result).toMatchObject({ status: "mapped", event: { kind: "membership", type: "deleted" } });
     expect(JSON.stringify(result)).not.toContain('"role"');
+  });
+
+  it("never makes deletion depend on translating an obsolete role", async () => {
+    const roleMapper = vi.fn(() => {
+      throw new Error("obsolete role");
+    });
+    const result = await mapClerkEvent(
+      {
+        type: "organizationMembership.deleted",
+        timestamp: 1_786_313_600_000,
+        data: membershipData({ role: "source:obsolete" }),
+      },
+      { ...mappingOptions, roleMapper },
+    );
+
+    expect(result).toMatchObject({ status: "mapped", event: { kind: "membership", type: "deleted" } });
+    expect(JSON.stringify(result)).not.toContain('"role"');
+    expect(roleMapper).not.toHaveBeenCalled();
   });
 
   it("uses an injected local-id resolver without exposing its source data", async () => {
