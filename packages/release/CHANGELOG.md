@@ -7,6 +7,8 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-08-11
+
 ### Added
 
 - Scoped private-registry install proof that preserves npmjs resolution for
