@@ -1,6 +1,7 @@
 /** Foundation orchestration and pure, consumer-supplied governance gates. */
 
 export type { FoundationReport, BuildOrderResult, PolicyCheck, PolicyCheckResult } from "./types.js";
+export type { RunFoundationCheckOptions } from "./foundation.js";
 
 export { runFoundationCheck } from "./foundation.js";
 export { computeBuildOrder } from "./build-order.js";

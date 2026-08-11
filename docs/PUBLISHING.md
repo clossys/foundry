@@ -34,15 +34,16 @@ order packages happen to appear in a workspace:
 
 ```
 catalog ─┐
-         ├─ gates ── release
-policy ──┘       └───┘
+         ├─ gates ── release ── governance
+policy ──┘
 ```
 
 `catalog` and `policy` are independent leaves and must each be available at
-the exact compatible versions before `gates` is published. `release` follows
-only after both `gates` and `policy` are available. A local workspace build is
-not evidence that this graph is closed: workspace links can satisfy a package
-that an external registry installer cannot obtain.
+the exact compatible versions before `gates` is published. `release` and
+`governance` follow only after `gates` is available; governance also depends
+on release. A local workspace build is not evidence that this graph is closed:
+workspace links can satisfy a package that an external registry installer
+cannot obtain.
 
 For a dependent package, the final proof is an isolated install of the exact
 tarball that was scanned and selected for publication, after its sibling
@@ -52,6 +53,13 @@ runtime packages are present in the configured registry.
 caller for child npm processes only; it is never inherited from ambient
 configuration or retained in a kept debug directory. The default round trip
 intentionally remains an unauthenticated public-registry proof.
+
+`@vespeneventures/governance` is also a consumer-facing CLI. Before publishing
+it, verify an isolated private-registry installation can import its public API
+and run `foundry-governance` against a valid lifecycle document. Governance is
+read-only: package preflight is used only by the producer that intends to
+publish; ordinary consuming workspaces run its lifecycle check without any
+registry write.
 
 ## 1. Copy the source — and only the source
 

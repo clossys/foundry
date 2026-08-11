@@ -1,6 +1,6 @@
 {
-  "name": "@vespeneventures/gates",
-  "version": "0.1.1",
+  "name": "@vespeneventures/governance",
+  "version": "0.1.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -14,7 +14,7 @@
     }
   },
   "bin": {
-    "foundry-check": "./dist/cli.js"
+    "foundry-governance": "./dist/cli.js"
   },
   "files": [
     "dist",
@@ -24,33 +24,30 @@
     "LICENSE"
   ],
   "sideEffects": false,
-  "description": "Foundation orchestration plus pure gates for secret names, raw environment reads, credential surfaces, local secret files, value-free catalogs, readiness, and provider resource names.",
+  "description": "Read-only package lifecycle and process orchestration: plans minimal package scaffolds, validates a complete lifecycle registry, and composes catalog, gate, and release evidence without publishing or deploying.",
   "keywords": [
-    "gates",
-    "build-order",
-    "topological-sort",
-    "catalog",
-    "policy",
-    "secrets",
+    "governance",
+    "package-lifecycle",
+    "deprecation",
+    "package-scaffold",
     "typescript"
   ],
   "author": "Calvin Hung",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/vespeneventures/foundry.git",
-    "directory": "packages/gates"
+    "directory": "packages/governance"
   },
   "bugs": {
     "url": "https://github.com/vespeneventures/foundry/issues"
   },
-  "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/gates#readme",
+  "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/governance#readme",
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
-    "@vespeneventures/catalog": "^0.1.0",
-    "@vespeneventures/policy": "^0.1.0",
-    "typescript": "~6.0.0"
+    "@vespeneventures/gates": "^0.1.1",
+    "@vespeneventures/release": "^0.1.0"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -60,6 +57,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
+    "typescript": "~6.0.0",
     "vitest": "^4.1.9"
   },
   "publishConfig": {
