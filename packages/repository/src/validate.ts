@@ -6,26 +6,30 @@ type RecordValue = Record<string, unknown>;
 const PROFILE_KEYS = new Set(["schemaVersion", "defaultBranch", "commands", "protectedPaths"]);
 const COMMAND_KEYS = new Set(["run", "cwd"]);
 const COMMAND_NAME = /^[a-z][a-z0-9]*(?:(?:-|:)[a-z0-9]+)*$/;
-const OBJECT_PROTOTYPE_DESCRIPTORS = Object.getOwnPropertyDescriptors(Object.prototype);
-
-function sameBuiltinValue(actual: unknown, expected: unknown): boolean {
-  if (typeof expected !== "function") return Object.is(actual, expected);
-  return typeof actual === "function" && Function.prototype.toString.call(actual) === Function.prototype.toString.call(expected);
-}
+const STANDARD_OBJECT_PROTOTYPE_KEYS = new Set<PropertyKey>([
+  "constructor",
+  "__defineGetter__",
+  "__defineSetter__",
+  "hasOwnProperty",
+  "__lookupGetter__",
+  "__lookupSetter__",
+  "isPrototypeOf",
+  "propertyIsEnumerable",
+  "toString",
+  "valueOf",
+  "__proto__",
+  "toLocaleString",
+]);
 
 function hasStandardObjectPrototype(prototype: object): boolean {
   const actualKeys = Reflect.ownKeys(prototype);
-  const expectedKeys = Reflect.ownKeys(OBJECT_PROTOTYPE_DESCRIPTORS);
-  if (actualKeys.length !== expectedKeys.length || expectedKeys.some((key) => !hasOwn(prototype, key))) return false;
+  if (actualKeys.length !== STANDARD_OBJECT_PROTOTYPE_KEYS.size || actualKeys.some((key) => !STANDARD_OBJECT_PROTOTYPE_KEYS.has(key))) return false;
 
-  return expectedKeys.every((key) => {
-    const actual = Object.getOwnPropertyDescriptor(prototype, key);
-    const expected = Object.getOwnPropertyDescriptor(OBJECT_PROTOTYPE_DESCRIPTORS, key)?.value as PropertyDescriptor | undefined;
-    if (!actual || !expected || actual.configurable !== expected.configurable || actual.enumerable !== expected.enumerable) return false;
-    if ("value" in expected) {
-      return "value" in actual && actual.writable === expected.writable && sameBuiltinValue(actual.value, expected.value);
-    }
-    return !("value" in actual) && sameBuiltinValue(actual.get, expected.get) && sameBuiltinValue(actual.set, expected.set);
+  return actualKeys.every((key) => {
+    const descriptor = Object.getOwnPropertyDescriptor(prototype, key);
+    if (!descriptor || descriptor.configurable !== true || descriptor.enumerable !== false) return false;
+    if (key === "__proto__") return !("value" in descriptor) && typeof descriptor.get === "function" && typeof descriptor.set === "function";
+    return "value" in descriptor && descriptor.writable === true && typeof descriptor.value === "function";
   });
 }
 

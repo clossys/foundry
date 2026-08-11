@@ -1,5 +1,5 @@
 import { runInNewContext } from "node:vm";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { isRepositoryProfile, validateRepositoryProfile } from "./index.js";
 
 const validProfile = {
@@ -91,6 +91,20 @@ describe("validateRepositoryProfile", () => {
       ({})
     `) as unknown;
     expect(validateRepositoryProfile({ ...validProfile, commands: pollutedCommands }).map((entry) => entry.rule)).toEqual(["commands-shape"]);
+  });
+
+  it("rejects prototype pollution present before validator initialization", async () => {
+    vi.resetModules();
+    Object.defineProperty(Object.prototype, "zzpolluted", { value: "npm test", configurable: true });
+
+    try {
+      const { validateRepositoryProfile: validateFreshProfile } = await import("./validate.js");
+      const profile = Object.assign(Object.create(null) as Record<string, unknown>, validProfile, { commands: {} });
+      expect(validateFreshProfile(profile).map((entry) => entry.rule)).toEqual(["commands-shape"]);
+    } finally {
+      delete (Object.prototype as Record<string, unknown>).zzpolluted;
+      vi.resetModules();
+    }
   });
 
   it("rejects unsafe branches, command names, command directories, and protected paths", () => {
