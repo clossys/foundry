@@ -1,9 +1,11 @@
 # @vespeneventures/comms
 
-Provider-neutral contracts for sending finished communications. The package
-owns validation, policy, atomic dispatch claims, provider acceptance outcomes,
-and normalized delivery events. It owns no provider SDK, credential, sender
-identity, recipient directory, consent store, template, route or database.
+Contracts and provider adapters for sending finished communications. The root
+export owns validation, policy, atomic dispatch claims, provider acceptance
+outcomes, and normalized delivery events. The `./resend` export owns the
+strict Resend mapping and webhook normalization. The package owns no
+credential, sender identity, recipient directory, consent store, template,
+route, or database.
 
 ```bash
 npm install @vespeneventures/comms
@@ -79,22 +81,69 @@ the provider-scoped `(provider, eventId)`, append the event, and advance the cur
 only when its provider timestamp wins the host's ordering rule. Providers may
 deliver the same webhook more than once and out of order.
 
-Test-only single-process fakes are available from a separate subpath:
+## Resend
 
 ```ts
-import { createMemoryDeliveryEventLedger, createMemoryDispatchLedger } from "@vespeneventures/comms/testing";
+import { createResendAdapter, verifyResendWebhook } from "@vespeneventures/comms/resend";
+
+const adapter = createResendAdapter({
+  apiKey: () => process.env.RESEND_API_KEY,
+  timeoutMs: 8_000,
+});
 ```
 
-`MemoryDispatchLedger` exposes recorded results and retries failures;
-`MemoryDeliveryEventLedger` exposes recorded events and deduplicates provider-scoped event ids.
-Neither is durable or suitable for production.
+Pass `adapter` as the `email` entry of `createCommunicationDispatcher`, or
+call `deliver` directly with a validated `EmailMessage`. `ResendAdapterConfig`
+requires an explicit API key or resolver; it has no hidden environment fallback
+and no fail-silent mode.
 
-| Testing subpath export | Purpose |
-| --- | --- |
-| `createMemoryDispatchLedger()` / `MemoryDispatchLedger` | Single-process retry and deduplication fake. |
-| `createMemoryDeliveryEventLedger()` / `MemoryDeliveryEventLedger` | Single-process provider-event fake. |
+The adapter forwards `EmailMessage.id` as Resend's idempotency key. The key
+must be 1–256 characters and identify one exact payload. It is only a
+provider-window defense; a durable dispatch ledger remains required for
+long-lived deduplication and recovery.
 
-## API
+`headers`, `cc`, `bcc`, `replyTo`, HTML/text bodies, and attachments map
+directly. Provider tags are normalized to ASCII letters, numbers, underscores,
+and dashes. Two names that collide after normalization fail explicitly. Host-only
+`EmailMessage.context` is never transmitted.
+
+Provider and configuration failures throw `ResendCommunicationError`, a
+provider-specific subclass of `CommunicationDeliveryError`. Configuration and
+validation failures are not retryable; timeouts, network failures, rate limits,
+and server errors are retryable. Preserve the same id and payload when retrying.
+
+### Resend webhooks
+
+```ts
+const verified = await verifyResendWebhook({
+  webhookSecret: process.env.RESEND_WEBHOOK_SECRET ?? "",
+  payload: await request.text(),
+  headers: {
+    id: request.headers.get("svix-id") ?? "",
+    timestamp: request.headers.get("svix-timestamp") ?? "",
+    signature: request.headers.get("svix-signature") ?? "",
+  },
+});
+
+if (verified.kind === "delivery") {
+  await durableDeliveryLedger.apply(verified.event);
+}
+```
+
+Verification must receive the exact raw body. Parse or mutate nothing first;
+verification is local and does not require a sending API key. Results are
+`delivery` (a normalized `DeliveryEvent`), `inbound` (a privacy-minimal
+`InboundCommunicationEvent` for `email.received`), or `ignored` (a correctly
+signed event this package does not own). Hosts should acknowledge ignored and
+duplicate events so providers do not retry them.
+
+The host route owns HTTP status mapping and storage. Fail closed when the
+webhook secret or durable ledger is unavailable; return a retryable server
+error when durable apply fails. Endpoint registration, event subscriptions,
+credentials, domains, and sender identities remain provider settings owned by
+the deploying host.
+
+## Root API
 
 | Export | Kind | Purpose |
 | --- | --- | --- |
@@ -114,9 +163,24 @@ Neither is durable or suitable for production.
 | `DeliveryEvent` / `DeliveryEventType` / `DeliveryEventLedger` | types | Provider-neutral final-delivery lifecycle and atomic durable apply port. |
 | `InboundCommunicationEvent` | type | Privacy-minimal signal that a provider received a message; retrieval stays host-owned. |
 
+## `./resend` API
+
+Import the following from `@vespeneventures/comms/resend`.
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `createResendAdapter(config)` | function | Creates the strict outbound Resend email adapter. |
+| `verifyResendWebhook(input)` | function | Verifies the exact raw Svix body and returns a mapped signed event. |
+| `ResendCommunicationError` | class | Provider-specific normalized error with retryability and optional status code. |
+| `ResendAdapterConfig` / `ResendApiKey` | types | Explicit outbound credential, timeout, and client-construction contract. |
+| `ResendClient` / `ResendClientFactory` / `ResendWebhookClientFactory` / `ResendEmailPayload` / `ResendApiError` | types | Narrow SDK seams for testing and alternate construction. |
+| `VerifyResendWebhookInput` / `ResendWebhookHeaders` / `ResendWebhookEvent` | types | Raw-body webhook verification input and result. |
+
 ## Requirements
 
-Node 20+. ESM only. No runtime dependencies and no I/O.
+Node 20+. ESM only. Runtime dependency: the official `resend` SDK. The root
+contracts do no I/O; the `./resend` adapter performs provider calls only when
+the host invokes it.
 
 ## Licence
 

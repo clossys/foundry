@@ -2,18 +2,18 @@
 
 ## Decision
 
-Foundry owns two packages:
+Foundry owns one package with provider subpaths:
 
 | Owner | Responsibility |
 | --- | --- |
-| `@vespeneventures/comms` | Finished message contract, validation, consent/policy seam, atomic dispatch claim with an opaque lease, explicit provider-acceptance outcome, normalized delivery/inbound events, durable ledger ports, and test-only memory fakes. |
-| `@vespeneventures/comms-resend` | Resend SDK mapping, provider idempotency and tag constraints, strict error normalization, exact raw-body Svix verification, and Resend event mapping. |
+| `@vespeneventures/comms` | Finished message contract, validation, consent/policy seam, atomic dispatch claim with an opaque lease, explicit provider-acceptance outcome, normalized delivery/inbound events, and durable ledger ports. |
+| `@vespeneventures/comms/resend` | Resend SDK mapping, provider idempotency and tag constraints, strict error normalization, exact raw-body Svix verification, and Resend event mapping. |
 | Host application | Product events, recipients and personal data, templates/localization, sender identity, consent/preferences, suppression decisions, credentials, database adapters, route/bootstrap code, retention, logging, provider endpoint registration, domain configuration and deployment settings. |
 
-The split keeps a provider migration from changing the product-level contract
-and keeps the core install free of provider SDKs. It also avoids the opposite
-failure: a provider-neutral package with an untyped metadata bag that only one
-provider can interpret.
+The root/subpath boundary keeps a provider migration from changing the
+product-level contract without making consumers coordinate separate package
+versions. The package owns no provider configuration or environment reads and
+avoids an untyped metadata bag that only one provider can interpret.
 
 ## Pipeline
 
@@ -90,9 +90,9 @@ state, error code and retryability. Do not log credentials, webhook bodies,
 message bodies, attachments or recipient addresses. `EmailMessage.context` is
 host-only and adapters must not transmit it implicitly.
 
-## Future packages
+## Future extensions
 
-- `@vespeneventures/comms-twilio` should introduce an `SmsMessage` in the core
+- A future `@vespeneventures/comms/twilio` subpath should introduce an `SmsMessage` in the core
   and implement the same adapter/error/event boundaries. Provider account
   configuration stays in each host.
 - Inbound email currently maps to a privacy-minimal signal containing provider
@@ -115,7 +115,7 @@ No provider cutover is required to adopt these packages.
    existing stable occurrence id or introduce one without using body content or
    personal data.
 3. Implement the durable dispatch ledger and policy seam in the host. Exercise
-   the memory fakes only in unit tests.
+   that host's own unit and contract fixtures against the public interfaces.
 4. Replace the wrapper with `createResendAdapter` behind the existing call
    boundary. Keep provider dashboard, DNS, domains, credentials and deployment
    variables unchanged.

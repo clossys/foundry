@@ -1,13 +1,13 @@
 import { Buffer } from "node:buffer";
-import {
-  CommunicationDeliveryError,
-  assertValidCommunicationMessage,
-  type CommunicationAdapter,
-  type DeliveryEvent,
-  type DeliveryEventType,
-  type EmailMessage,
-  type InboundCommunicationEvent,
-} from "@vespeneventures/comms";
+import { CommunicationDeliveryError } from "../errors.js";
+import type {
+  CommunicationAdapter,
+  DeliveryEvent,
+  DeliveryEventType,
+  EmailMessage,
+  InboundCommunicationEvent,
+} from "../types.js";
+import { assertValidCommunicationMessage } from "../validation.js";
 import { Resend } from "resend";
 
 const PROVIDER = "resend";
