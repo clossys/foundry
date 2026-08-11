@@ -3,13 +3,30 @@
  * Statements and result shapes intentionally remain application-owned.
  */
 export interface QueryAdapter {
-  query<TResult>(statement: unknown, parameters?: readonly unknown[]): Promise<TResult>;
+  /**
+   * Executes an application-owned SQL statement. The auth package never
+   * inspects either the statement or its result; repositories retain their
+   * own result typing. Keeping this return value opaque lets ordinary
+   * PostgreSQL-style pools (`Promise<{ rows: Row[] }>`) satisfy the seam.
+   */
+  query(statement: string, parameters?: readonly unknown[]): Promise<unknown>;
 }
 
 /** A query adapter able to run a unit of work atomically. */
 export interface TransactionalQueryAdapter extends QueryAdapter {
   transaction<TResult>(work: (query: QueryAdapter) => Promise<TResult>): Promise<TResult>;
 }
+
+/**
+ * A common alternative transaction spelling used by pool adapters. It is
+ * accepted anywhere a transactional query adapter is required and normalized
+ * by `requireTransactionalQueryAdapter` before repository work begins.
+ */
+export interface WithTransactionQueryAdapter extends QueryAdapter {
+  withTransaction<TResult>(work: (query: QueryAdapter) => Promise<TResult>): Promise<TResult>;
+}
+
+type CompatibleTransactionalQueryAdapter = TransactionalQueryAdapter | WithTransactionQueryAdapter;
 
 /** Returns whether a value implements the minimum query-adapter contract. */
 export function isQueryAdapter(value: unknown): value is QueryAdapter {
@@ -21,14 +38,28 @@ export function isQueryAdapter(value: unknown): value is QueryAdapter {
  * A transaction method without the base query method is intentionally not
  * considered compatible.
  */
-export function isTransactionalQueryAdapter(value: unknown): value is TransactionalQueryAdapter {
-  return isQueryAdapter(value) && typeof (value as { transaction?: unknown }).transaction === "function";
+export function isTransactionalQueryAdapter(value: unknown): value is CompatibleTransactionalQueryAdapter {
+  return isQueryAdapter(value) && (
+    typeof (value as { transaction?: unknown }).transaction === "function"
+    || typeof (value as { withTransaction?: unknown }).withTransaction === "function"
+  );
 }
 
-/** Throws before any repository work when transaction support is unavailable. */
+/**
+ * Returns a standard `transaction` adapter or throws before repository work
+ * when transaction support is unavailable. `withTransaction` pool adapters
+ * are normalized without changing the transaction-scoped query object.
+ */
 export function requireTransactionalQueryAdapter(value: unknown): TransactionalQueryAdapter {
   if (!isTransactionalQueryAdapter(value)) {
     throw new TypeError("External membership reconciliation requires a transactional query adapter.");
   }
-  return value;
+  if ("transaction" in value && typeof value.transaction === "function") {
+    return value;
+  }
+  const withTransaction = (value as WithTransactionQueryAdapter).withTransaction;
+  return {
+    query: value.query.bind(value),
+    transaction: withTransaction.bind(value),
+  };
 }

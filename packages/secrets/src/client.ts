@@ -8,14 +8,6 @@ function isPromiseLike<T>(value: MaybePromise<T>): value is PromiseLike<T> {
   );
 }
 
-function isAsyncAdapterResult<T>(value: MaybePromise<T>, key: SecretKey): value is PromiseLike<T> {
-  try {
-    return isPromiseLike(value);
-  } catch {
-    throw new SecretAccessError(key);
-  }
-}
-
 function consumePromiseLike<T>(value: PromiseLike<T>): void {
   void Promise.resolve(value).catch(() => undefined);
 }
@@ -55,7 +47,7 @@ export function createSecretsClient(adapter: SecretsAdapter): SecretsClient {
 
     getSync(key: SecretKey): string | null {
       const value = read(adapter, key);
-      if (isAsyncAdapterResult(value, key)) {
+      if (isPromiseLike(value)) {
         consumePromiseLike(value);
         throw new AsyncSecretAdapterError(key);
       }
@@ -64,7 +56,7 @@ export function createSecretsClient(adapter: SecretsAdapter): SecretsClient {
 
     requireSync(key: SecretKey): string {
       const value = read(adapter, key);
-      if (isAsyncAdapterResult(value, key)) {
+      if (isPromiseLike(value)) {
         consumePromiseLike(value);
         throw new AsyncSecretAdapterError(key);
       }

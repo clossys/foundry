@@ -14,21 +14,26 @@ describe("development auth bypass", () => {
     })).toBe(false);
   });
 
-  it("requires the explicit flag outside production", () => {
+  it("requires the explicit flag in development", () => {
     expect(devAuthBypassEnabled({ NODE_ENV: "test" })).toBe(false);
     expect(devAuthBypassEnabled({
-      NODE_ENV: "test",
+      NODE_ENV: "development",
       NEXT_PUBLIC_DEV_NO_AUTH: "1",
     })).toBe(true);
   });
 
+  it("never activates in test or another non-development runtime", () => {
+    expect(devAuthBypassEnabled({ NODE_ENV: "test", NEXT_PUBLIC_DEV_NO_AUTH: "1" })).toBe(false);
+    expect(devAuthBypassEnabled({ NODE_ENV: "staging", NEXT_PUBLIC_DEV_NO_AUTH: "1" })).toBe(false);
+  });
+
   it("reports keyless state only while the bypass is active", () => {
     expect(devAuthBypassIsKeyless({
-      NODE_ENV: "test",
+      NODE_ENV: "development",
       NEXT_PUBLIC_DEV_NO_AUTH: "1",
     })).toBe(true);
     expect(devAuthBypassIsKeyless({
-      NODE_ENV: "test",
+      NODE_ENV: "development",
       NEXT_PUBLIC_DEV_NO_AUTH: "1",
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "configured",
     })).toBe(false);

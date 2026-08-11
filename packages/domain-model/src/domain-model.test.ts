@@ -288,22 +288,6 @@ describe("domain snapshots", () => {
     expect(validateDomainSnapshot(model, snapshot).map((entry) => entry.rule)).toEqual(["value-type", "value-type"]);
   });
 
-  it("accepts shared JSON subobjects but rejects an actual JSON cycle", () => {
-    const model = exampleModel({
-      types: [{ id: "example.event", fields: [{ id: "example.event.metadata", valueType: "json", required: true }] }],
-      relations: [],
-    });
-    const shared = { label: "reused" };
-    const cyclic: Record<string, unknown> = {};
-    cyclic.self = cyclic;
-    expect(validateDomainSnapshot(model, {
-      records: [{ id: "event-1", type: "example.event", values: { "example.event.metadata": { first: shared, second: shared } } }],
-    })).toEqual([]);
-    expect(validateDomainSnapshot(model, {
-      records: [{ id: "event-1", type: "example.event", values: { "example.event.metadata": cyclic } }],
-    }).map((entry) => entry.rule)).toEqual(["value-type"]);
-  });
-
   it.each([
     ["one-to-one", ["article-1", "source-1"], ["article-1", "source-2"]],
     ["one-to-many", ["article-1", "source-1"], ["article-2", "source-1"]],

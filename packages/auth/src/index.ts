@@ -4,7 +4,7 @@ export {
   isTransactionalQueryAdapter,
   requireTransactionalQueryAdapter,
 } from "./query.js";
-export type { QueryAdapter, TransactionalQueryAdapter } from "./query.js";
+export type { QueryAdapter, TransactionalQueryAdapter, WithTransactionQueryAdapter } from "./query.js";
 
 export {
   defineRoleHierarchy,

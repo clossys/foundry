@@ -5,6 +5,7 @@ import type {
   ClerkMembershipEvent,
   ClerkNormalizedEvent,
   ClerkRoleMapper,
+  ClerkWebhookHeaders,
   ClerkWebhookSignatureError,
   mapClerkEvent,
   resolveClerkMembershipLocalIds,
@@ -43,3 +44,6 @@ export const requiredRoleMapperContract: RequiredRoleMapperContract = true;
 export const signatureErrorContract: SignatureErrorContract = true;
 export const verifiedEventContract: VerifiedEventContract = true;
 export const lifecycleAliasContract: LifecycleAliasContract = true;
+
+declare const fetchRequestHeaders: Headers;
+export const fetchHeadersContract: ClerkWebhookHeaders = fetchRequestHeaders;

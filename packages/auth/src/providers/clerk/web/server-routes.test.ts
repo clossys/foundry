@@ -15,7 +15,7 @@ vi.mock("@clerk/nextjs/server", () => ({
 
 vi.mock("next/headers", () => ({ cookies: provider.cookies }));
 
-import { createClerkSignInPage, createSignOutRoute, resolveRequestRedirect } from "./server-routes.js";
+import { createClerkSignInPage, createRedirectRoute, createSignOutRoute, resolveRequestRedirect } from "./server-routes.js";
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -62,6 +62,13 @@ describe("resolveRequestRedirect", () => {
   });
 });
 
+describe("fixed redirect targets", () => {
+  it.each(["//other.example.test", "/%5Cother.example.test", "/account\nnext", " /account"])("rejects unsafe local redirect target %s", (target) => {
+    expect(() => createRedirectRoute(target)).toThrow(TypeError);
+    expect(() => createClerkSignInPage({ redirectUrl: target })).toThrow(TypeError);
+  });
+});
+
 describe("createSignOutRoute", () => {
   const route = createSignOutRoute();
 
@@ -100,6 +107,7 @@ describe("createSignOutRoute", () => {
   });
 
   it("skips Clerk session access in a keyless development bypass", async () => {
+    vi.stubEnv("NODE_ENV", "development");
     vi.stubEnv("NEXT_PUBLIC_DEV_NO_AUTH", "1");
     vi.stubEnv("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "");
     const response = await route(new Request("https://app.example.test/sign-out", {
@@ -112,6 +120,7 @@ describe("createSignOutRoute", () => {
   });
 
   it("revokes Clerk sessions when a public key is supplied outside the environment", async () => {
+    vi.stubEnv("NODE_ENV", "development");
     vi.stubEnv("NEXT_PUBLIC_DEV_NO_AUTH", "1");
     vi.stubEnv("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "");
     provider.auth.mockResolvedValue({ sessionId: "session_synthetic" });
@@ -129,6 +138,7 @@ describe("createSignOutRoute", () => {
 describe("createClerkSignInPage", () => {
   it("renders without Clerk server auth in a keyless development bypass", async () => {
     vi.clearAllMocks();
+    vi.stubEnv("NODE_ENV", "development");
     vi.stubEnv("NEXT_PUBLIC_DEV_NO_AUTH", "1");
     vi.stubEnv("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "");
     const page = createClerkSignInPage();
@@ -139,6 +149,7 @@ describe("createClerkSignInPage", () => {
 
   it("uses Clerk server auth when a public key is supplied outside the environment", async () => {
     vi.clearAllMocks();
+    vi.stubEnv("NODE_ENV", "development");
     vi.stubEnv("NEXT_PUBLIC_DEV_NO_AUTH", "1");
     vi.stubEnv("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "");
     provider.auth.mockResolvedValue({ userId: null });

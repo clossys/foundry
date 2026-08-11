@@ -113,6 +113,9 @@ const mapped = await verifyAndMapClerkWebhook(rawBody, headers, signingSecret, {
 Verification happens before mapping. The mapped event retains only the fields
 needed for lifecycle or membership reconciliation; raw bodies, headers,
 profile fields, metadata, and signing material are not returned.
+In a Fetch/Next.js route, pass `request.headers` directly and obtain `rawBody`
+with `await request.text()` exactly once; do not parse and reserialize it before
+verification.
 
 In a Next.js client boundary:
 
@@ -130,12 +133,17 @@ Use `@vespeneventures/auth/providers/clerk/web/server` for route/page helpers.
 The sign-out route applies strict redirect handling and requires a
 same-origin `POST` before revoking an active session.
 
+For local development only, `NEXT_PUBLIC_DEV_NO_AUTH=1` bypasses Clerk when
+`NODE_ENV` is exactly `development`. It is ignored in tests, previews, and
+production, and should never be configured for a deployed environment.
+
 ## API
 
 | Export | Kind | Purpose |
 | --- | --- | --- |
-| `QueryAdapter` | type | Minimal generic query contract supplied to repository operations. |
+| `QueryAdapter` | type | Minimal SQL query capability supplied to repository operations; repositories retain result typing. |
 | `TransactionalQueryAdapter` | type | A `QueryAdapter` with `transaction` for atomic units of work. |
+| `WithTransactionQueryAdapter` | type | A `QueryAdapter` using the common `withTransaction` pool spelling; normalized automatically. |
 | `isQueryAdapter(value)` | function | Runtime `QueryAdapter` compatibility guard. |
 | `isTransactionalQueryAdapter(value)` | function | Runtime transaction-capability guard. |
 | `requireTransactionalQueryAdapter(value)` | function | Returns a compatible adapter or throws before repository work begins. |

@@ -97,19 +97,16 @@ Infisical client implements `SecretsAdapter`, so it can be passed directly to
 identity token in memory and caches the short-lived provider token only until
 shortly before expiry.
 
-`listSecretNames()` returns names only. `checkCatalog()` derives a value-free
-readiness report from a names-only provider listing; it does not resolve each
-catalog value. `parseValueFreeCatalog()` accepts only strict version-1 catalog
-metadata. `run()` injects values into one non-shell child process without
-writing a file or printing the environment itself. The child process controls
-its own output, so use a command that does not print its environment.
+`listSecretNames()` returns names only. `checkCatalog()` returns a value-free
+readiness report. `parseValueFreeCatalog()` accepts only strict version-1
+catalog metadata. `run()` injects values into one non-shell child process
+without writing a file or printing the environment.
 
 The package intentionally keeps the provider-specific CLI name
 `vespene-secrets-infisical`; it avoids introducing a misleading neutral CLI
 for operations that require Infisical configuration. Its `catalog`, `check`,
-`list`, `get`, and `run` commands never print secret values themselves. `get`
-uses a names-only listing to report presence, and the CLI exposes no mutation
-command. A `run` child process can still write its own output.
+`list`, `get`, and `run` commands never print secret values. `get` reports
+presence only, and the CLI exposes no mutation command.
 
 ```text
 vespene-secrets-infisical catalog --catalog ./secret-catalog.json

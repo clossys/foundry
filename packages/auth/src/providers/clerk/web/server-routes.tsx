@@ -16,7 +16,15 @@ function firstParameter(parameters: SearchParameters | undefined, name: string):
 }
 
 function assertLocalPath(target: string): string {
-  if (!target.startsWith("/") || target.startsWith("//") || target.includes("\\")) throw new TypeError("redirect target must be a single-slash absolute path");
+  if (
+    typeof target !== "string" ||
+    target !== target.trim() ||
+    !target.startsWith("/") ||
+    target.startsWith("//") ||
+    target.includes("\\") ||
+    /%5c/i.test(target) ||
+    /[\u0000-\u001f\u007f]/.test(target)
+  ) throw new TypeError("redirect target must be a single-slash absolute path");
   return target;
 }
 
