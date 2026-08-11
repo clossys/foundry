@@ -22,6 +22,7 @@ const CHECK_KEYS = new Set(["name", "conclusion", "headSha"]);
 const REVIEW_KEYS = new Set(["id", "reviewerId", "submittedAt", "state", "headSha"]);
 const THREAD_KEYS = new Set(["id", "isResolved", "headSha"]);
 const SHA = /^[0-9a-f]{40}$/;
+const RFC3339_TIMESTAMP = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
 
 function isRecord(value: unknown): value is UnknownRecord {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -33,6 +34,17 @@ function finding(rule: ReviewFindingRule, path: string, message: string): Review
 
 function isSha(value: unknown): value is string {
   return typeof value === "string" && SHA.test(value);
+}
+
+function reviewTimestamp(value: unknown): number | undefined {
+  if (typeof value !== "string") return undefined;
+  const match = RFC3339_TIMESTAMP.exec(value);
+  if (!match) return undefined;
+  const [year, month, day, hour, minute, second] = match.slice(1, 7).map(Number);
+  const calendar = new Date(Date.UTC(year!, month! - 1, day!, hour!, minute!, second!));
+  if (calendar.getUTCFullYear() !== year || calendar.getUTCMonth() !== month! - 1 || calendar.getUTCDate() !== day || calendar.getUTCHours() !== hour || calendar.getUTCMinutes() !== minute || calendar.getUTCSeconds() !== second) return undefined;
+  const timestamp = Date.parse(value);
+  return Number.isNaN(timestamp) ? undefined : timestamp;
 }
 
 function findUnknownFields(
@@ -128,10 +140,10 @@ function validateReviews(entries: unknown[], headSha: string, findings: ReviewFi
     }
     findUnknownFields(entry, REVIEW_KEYS, "review-unknown-field", path, findings);
     const { id, reviewerId, submittedAt, state, headSha: itemHeadSha } = entry;
-    const submittedAtMs = typeof submittedAt === "string" ? Date.parse(submittedAt) : Number.NaN;
+    const submittedAtMs = reviewTimestamp(submittedAt);
     if (typeof id !== "string" || id.trim().length === 0) findings.push(finding("review-id", `${path}.id`, "A review id must be a non-empty string."));
     if (typeof reviewerId !== "string" || reviewerId.trim().length === 0) findings.push(finding("reviewer-id", `${path}.reviewerId`, "A review must identify its reviewer."));
-    if (Number.isNaN(submittedAtMs)) findings.push(finding("review-submitted-at", `${path}.submittedAt`, "submittedAt must be an ISO-parseable timestamp."));
+    if (submittedAtMs === undefined) findings.push(finding("review-submitted-at", `${path}.submittedAt`, "submittedAt must be an RFC 3339 timestamp with Z or an explicit offset."));
     if (typeof state !== "string" || !REVIEW_DECISIONS.has(state as ReviewDecision)) {
       findings.push(finding("review-state", `${path}.state`, "A review state must be a supported normalized value."));
     }
@@ -143,7 +155,7 @@ function validateReviews(entries: unknown[], headSha: string, findings: ReviewFi
       findings.push(finding("stale-evidence", `${path}.headSha`, "Review evidence does not match the bundle head commit."));
       continue;
     }
-    if (typeof reviewerId !== "string" || reviewerId.trim().length === 0 || Number.isNaN(submittedAtMs) || typeof state !== "string" || !REVIEW_DECISIONS.has(state as ReviewDecision)) continue;
+    if (typeof reviewerId !== "string" || reviewerId.trim().length === 0 || submittedAtMs === undefined || typeof state !== "string" || !REVIEW_DECISIONS.has(state as ReviewDecision)) continue;
     const previous = latestByReviewer.get(reviewerId);
     if (!previous || submittedAtMs > previous.submittedAtMs || (submittedAtMs === previous.submittedAtMs && index > previous.index)) {
       latestByReviewer.set(reviewerId, { submittedAtMs, index, state: state as ReviewDecision });

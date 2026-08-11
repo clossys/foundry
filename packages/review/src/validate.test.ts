@@ -95,4 +95,13 @@ describe("validateReviewEvidence", () => {
       "changes-requested",
     ]);
   });
+
+  it("requires timezone-qualified timestamps before ordering reviewer decisions", () => {
+    const evidence = validEvidence();
+    evidence.reviews[0]!.submittedAt = "2026-03-08T02:30:00";
+    expect(validateReviewEvidence(evidence, policy).map((entry) => [entry.rule, entry.path])).toEqual([
+      ["review-submitted-at", "reviews[0].submittedAt"],
+      ["approval-missing", "reviews"],
+    ]);
+  });
 });

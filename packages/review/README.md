@@ -59,8 +59,9 @@ be treated as approval-ready evidence.
 observed at a different head commit, a required check is absent or unsuccessful,
 an approval is required but absent, a current review requests changes, or a
 current thread remains unresolved. Each review carries an opaque reviewer ID
-and submitted timestamp, so only that reviewer's latest current-head decision
-is effective. Dismissed reviews are retained as evidence but do not request
+and RFC 3339 timestamp with `Z` or an explicit offset, so only that reviewer's
+latest current-head decision is effective on every machine. Dismissed reviews
+are retained as evidence but do not request
 changes or count as approvals.
 
 Findings have stable rule identifiers, input paths, and messages. Validation is
