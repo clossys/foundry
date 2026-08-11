@@ -62,6 +62,21 @@ describe("createResendAdapter", () => {
     });
   });
 
+  it("rejects an invalid timeout at adapter construction", () => {
+    for (const timeoutMs of [0, Number.NaN]) {
+      try {
+        createResendAdapter({ apiKey: "test-key", timeoutMs });
+        throw new Error("Expected adapter construction to throw");
+      } catch (error) {
+        expect(error).toMatchObject({
+          name: "ResendCommunicationError",
+          code: "configuration_error",
+          retryable: false,
+        });
+      }
+    }
+  });
+
   it("rejects tag names that collide after provider normalization", async () => {
     const send = vi.fn(async () => ({ data: { id: "email-1" }, error: null }));
     const adapter = createResendAdapter({ apiKey: "test-key", createClient: () => client(send) });

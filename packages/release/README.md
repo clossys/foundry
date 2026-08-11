@@ -126,7 +126,7 @@ if (findings.length > 0) process.exitCode = 1;
 | `preflightPackage(root, packageDir, options?)` | function | Combines this package's own catalog findings with a real `packRoundTrip` result. Returns a `Promise<PreflightReport>`. `options.scope` is passed straight through to `runFoundationCheck`. |
 | `verifyPublishedArtifact(expectedDigest, publishedContent)` | function | Builds a `PolicyBinding` inline and calls `@vespeneventures/policy`'s own `verifyBinding`. Returns a `Finding[]`; empty means the content matches. |
 | `PackRoundTripOptions` | type | `{ keepTempDir?: boolean; tarballPath?: string; registry?: RegistryInstallOptions; timeoutsMs?: { pack?: number; install?: number; import?: number } }` — the second argument to `packRoundTrip`. `tarballPath` verifies the already-selected artifact rather than repacking source; `timeoutsMs` overrides the default per-subprocess timeouts. |
-| `RegistryInstallOptions` | type | `{ url: string; authToken?: string }` — explicit private-registry proof configuration. Omit it for the default unauthenticated public-registry proof. |
+| `RegistryInstallOptions` | type | `{ url: string; authToken?: string; scope?: string }` — explicit private-registry proof configuration. Set `scope` when private scoped dependencies coexist with unscoped public dependencies, so the latter continue resolving from npmjs. Omit it for the default unauthenticated public-registry proof. |
 | `PreflightPackageOptions` | type | `{ scope?: string }` — the third argument to `preflightPackage`. |
 | `ImportCheck` | type | `{ subpath: string; ok: boolean; error?: string }` — one attempted import of one declared `exports` key. |
 | `RoundTripResult` | type | `{ ok: boolean; packageName: string \| undefined; tarballPath: string; imports: ImportCheck[]; findings: Finding[] }` — what `packRoundTrip` returns. `findings` carries rule `"round-trip-tarball-missing"`, `"round-trip-tarball-invalid"`, `"round-trip-install-failed"`, `"round-trip-import-failed"`, or `"round-trip-no-exports"` (a package that declares no importable `exports` subpath at all — checking zero imports is never reported as `ok: true`). |
@@ -153,6 +153,7 @@ const result = await packRoundTrip("packages/gates", {
   registry: {
     url: "https://npm.pkg.github.com",
     authToken: registryToken,
+    scope: "@vespeneventures",
   },
 });
 ```

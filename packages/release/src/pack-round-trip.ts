@@ -77,10 +77,16 @@ export interface PackRoundTripOptions {
 
 /** Explicit registry credentials for a private-registry install proof. */
 export interface RegistryInstallOptions {
-  /** Registry URL used for this package's runtime dependencies. */
+  /** Registry URL used for private runtime dependencies. */
   url: string;
   /** Optional token supplied by the caller for this proof only. */
   authToken?: string;
+  /**
+   * Optional npm scope to map to `url`. When supplied, unscoped dependencies
+   * continue resolving from the public npm registry instead of incorrectly
+   * looking for them in the private registry.
+   */
+  scope?: string;
 }
 
 /**
@@ -154,7 +160,7 @@ export function subprocessEnv(
     HOME: process.env.HOME ?? process.env.USERPROFILE,
     npm_config_userconfig: join(isolationDir, "unused-userconfig.npmrc"),
     npm_config_cache: join(isolationDir, "npm-cache"),
-    npm_config_registry: registry?.url ?? "https://registry.npmjs.org/",
+    npm_config_registry: registry?.scope ? "https://registry.npmjs.org/" : registry?.url ?? "https://registry.npmjs.org/",
     npm_config_audit: "false",
     npm_config_fund: "false",
     npm_config_update_notifier: "false",
@@ -171,15 +177,20 @@ export function subprocessEnv(
   return env;
 }
 
-function registryAuthConfig(registry: RegistryInstallOptions | undefined): string | undefined {
-  if (!registry?.authToken) return undefined;
+export function registryAuthConfig(registry: RegistryInstallOptions | undefined): string | undefined {
+  if (!registry) return undefined;
 
   const parsed = new URL(registry.url);
   if (parsed.protocol !== "https:" || parsed.username || parsed.password) {
     throw new Error("packRoundTrip: registry URL must be an HTTPS URL without embedded credentials");
   }
+  if (registry.scope && !/^@[a-z0-9][a-z0-9._-]*$/.test(registry.scope)) {
+    throw new Error("packRoundTrip: registry scope must be an npm scope such as @example");
+  }
   const path = parsed.pathname.endsWith("/") ? parsed.pathname : `${parsed.pathname}/`;
-  return `//${parsed.host}${path}:_authToken=${"${NODE_AUTH_TOKEN}"}\n`;
+  const scopeMapping = registry.scope ? `${registry.scope}:registry=${parsed.href}\n` : "";
+  const auth = registry.authToken ? `//${parsed.host}${path}:_authToken=${"${NODE_AUTH_TOKEN}"}\n` : "";
+  return scopeMapping || auth ? `${scopeMapping}${auth}` : undefined;
 }
 
 /**
@@ -298,6 +309,10 @@ export async function packRoundTrip(packageDir: string, options?: PackRoundTripO
   const tarballDir = mkdtempSync(join(tmpdir(), "release-pack-"));
   const consumerDir = mkdtempSync(join(tmpdir(), "release-consumer-"));
   const env = subprocessEnv(tarballDir, options?.registry);
+  // Registry credentials are needed only while npm resolves dependencies.
+  // Package code runs during the import probe, so it must never inherit the
+  // caller's registry credential through Node's process environment.
+  const { NODE_AUTH_TOKEN: _npmAuthToken, ...importEnv } = env;
   const authConfigPath = join(tarballDir, "unused-userconfig.npmrc");
   const packTimeoutMs = options?.timeoutsMs?.pack ?? NPM_PACK_TIMEOUT_MS;
   const installTimeoutMs = options?.timeoutsMs?.install ?? NPM_INSTALL_TIMEOUT_MS;
@@ -431,7 +446,7 @@ export async function packRoundTrip(packageDir: string, options?: PackRoundTripO
       try {
         await execFile("node", ["--input-type=module", "-e", script], {
           cwd: consumerDir,
-          env,
+          env: importEnv,
           timeout: importTimeoutMs,
           killSignal: TIMEOUT_KILL_SIGNAL,
         });

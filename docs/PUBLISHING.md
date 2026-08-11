@@ -189,9 +189,14 @@ private, and going public is a separate, explicit decision made later (see
 "Package visibility" below).
 
 The workflow re-runs every gate in FULL mode — including name collision and
-artifact safety — builds, tests, prints the tarball, and only then publishes
-with provenance. Read the dry-run output, then run it again with
-`dry_run: false`.
+artifact safety — builds, tests, packs and prints one tarball, then runs npm's
+own publish command against that exact tarball with `--dry-run`. Read that
+output, then run it again with `dry_run: false` to publish the same release
+path with provenance. A real publish then re-fetches that exact
+`name@version`, compares its digest with the uploaded tarball, and installs
+the registry copy in an isolated consumer that imports every declared export.
+The workflow maps only the declared package scope to GitHub Packages, leaving
+unscoped runtime dependencies on npmjs throughout verification.
 
 ### Why the name-collision check runs first, always
 
@@ -242,5 +247,6 @@ by hand if it does.
 | Thing | Where | Notes |
 | --- | --- | --- |
 | Denylist | `~/.config/public-safety/denylist-foundry.json` locally; `PUBLIC_SAFETY_DENYLIST_B64` repository secret in CI | Never committed here — it names exactly what must not be public. Specific to this repository — never reuse a denylist file written for a different project. |
-| Publish token | `NPM_TOKEN` repository secret (used as `NODE_AUTH_TOKEN`) | Needs `write:packages`/`read:packages` for the current GitHub Packages target, or npmjs publish rights if the registry moves — see `docs/DECISIONS.md` |
+| Publish credential | Job-scoped `GITHUB_TOKEN` with workflow `packages: write` | Publishes packages associated with this repository; no stored publish token is used. |
+| Package-index credential | `GH_PACKAGES_TOKEN` repository secret | Classic token with `read:packages`, used only by the pre-publish name-collision query across the owner namespace. |
 | Publish approval | `npm-publish` GitHub environment | Add required reviewers so a publish cannot run unattended |
