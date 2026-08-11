@@ -38,7 +38,7 @@ describe("integration: real packages/ directory", () => {
     expect(matching.length).toBeGreaterThan(0);
   });
 
-  it("finds the foundation and repository contract among the real entries", () => {
+  it("finds the foundation and paired repository-review contracts among the real entries", () => {
     const report = runFoundationCheck(repoRoot, { scope: SCOPE });
 
     expect(report.catalog.entries.length).toBeGreaterThanOrEqual(4);
@@ -49,6 +49,7 @@ describe("integration: real packages/ directory", () => {
       "@vespeneventures/gates",
       "@vespeneventures/release",
       "@vespeneventures/repository",
+      "@vespeneventures/review",
     ]) {
       expect(names).toContain(expected);
     }
@@ -81,6 +82,7 @@ describe("integration: real packages/ directory", () => {
     expect(indexOf("@vespeneventures/gates")).toBeLessThan(indexOf("@vespeneventures/release"));
     expect(indexOf("@vespeneventures/policy")).toBeLessThan(indexOf("@vespeneventures/release"));
     expect(indexOf("@vespeneventures/repository")).toBeGreaterThanOrEqual(0);
+    expect(indexOf("@vespeneventures/review")).toBeGreaterThanOrEqual(0);
 
     // Every entry the catalog found appears exactly once in the order.
     expect(result.order).toHaveLength(report.catalog.entries.length);
