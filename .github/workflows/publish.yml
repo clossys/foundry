@@ -135,7 +135,11 @@ jobs:
           # Package visibility is a GitHub Packages setting rather than an npm
           # publish flag. This uses the job-scoped token and never exposes a
           # long-lived package credential to an operator or consumer checkout.
-          name="$(node -p "encodeURIComponent(require('./packages/' + process.env.PKG + '/package.json').name)")"
+          # GitHub's package API scopes npm packages through the organization
+          # path. Its {package_name} segment is the unscoped final component,
+          # not the complete npm name (for example, `governance`, not
+          # `@vespeneventures/governance`).
+          name="$(node -p "require('./packages/' + process.env.PKG + '/package.json').name.split('/').at(-1)")"
           owner="$(node -p "JSON.parse(require('fs').readFileSync('package-scope.json','utf8')).scope.replace(/^@/, '')")"
           kind_user="us""ers"
           for kind in orgs "$kind_user"; do
