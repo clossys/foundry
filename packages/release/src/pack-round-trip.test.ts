@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
-import { packRoundTrip, subprocessEnv } from "./pack-round-trip.js";
+import { packRoundTrip, registryAuthConfig, subprocessEnv } from "./pack-round-trip.js";
 
 // Real subprocess integration tests. No mocking of npm pack/install/import
 // here — that would defeat the entire point of this package, which exists
@@ -191,6 +191,35 @@ describe("packRoundTrip — exports shape handling (fixture packages)", () => {
     });
 
     const result = await packRoundTrip(dir);
+
+    expect(result.findings).toEqual([]);
+    expect(result.imports).toEqual([{ subpath: ".", ok: true }]);
+    expect(result.ok).toBe(true);
+  });
+
+  it("never exposes private-registry credentials to imported package code", async () => {
+    const dir = makeFixture("import-env", {
+      "package.json": JSON.stringify(
+        {
+          name: "import-env-fixture",
+          version: "1.0.0",
+          type: "module",
+          exports: "./index.js",
+        },
+        null,
+        2,
+      ),
+      "index.js":
+        "if (process.env.NODE_AUTH_TOKEN) throw new Error('import received registry credential');\nexport const ok = true;\n",
+    });
+
+    const result = await packRoundTrip(dir, {
+      registry: {
+        url: "https://registry.example.test/",
+        authToken: "fixture-private-registry-token",
+        scope: "@private-scope",
+      },
+    });
 
     expect(result.findings).toEqual([]);
     expect(result.imports).toEqual([{ subpath: ".", ok: true }]);
@@ -420,6 +449,37 @@ describe("subprocessEnv — subprocess environment sanitization (defect 3)", () 
     expect(env.npm_config_registry).toBe("https://registry.example.test/");
     expect(env.NODE_AUTH_TOKEN).toBe("explicit-test-token");
     expect(env.npm_config_userconfig).toContain("release-private-registry-proof");
+  });
+
+  it("maps a private scope without diverting unscoped dependencies from npmjs", () => {
+    const registry = {
+      url: "https://registry.example.test/",
+      authToken: "explicit-test-token",
+      scope: "@private-scope",
+    };
+    const env = subprocessEnv("/tmp/release-scoped-registry-proof", registry);
+
+    expect(env.npm_config_registry).toBe("https://registry.npmjs.org/");
+    expect(registryAuthConfig(registry)).toBe(
+      "@private-scope:registry=https://registry.example.test/\n" +
+        "//registry.example.test/:_authToken=${NODE_AUTH_TOKEN}\n",
+    );
+  });
+
+  it("refuses a scope that could make an npmrc mapping unsafe", () => {
+    expect(() =>
+      registryAuthConfig({
+        url: "https://registry.example.test/",
+        authToken: "explicit-test-token",
+        scope: "@private-scope\nregistry=https://elsewhere.invalid",
+      }),
+    ).toThrow(/registry scope/);
+  });
+
+  it("keeps a scoped registry mapping when no credential is needed", () => {
+    expect(registryAuthConfig({ url: "https://registry.example.test/", scope: "@public-scope" })).toBe(
+      "@public-scope:registry=https://registry.example.test/\n",
+    );
   });
 
   it("still passes through PATH and HOME, needed for npm/node themselves to run", () => {

@@ -61,7 +61,7 @@ export type ResendWebhookClientFactory = (apiKey?: string) => ResendClient;
 export interface ResendAdapterConfig {
   /** Required explicit credential resolver; the package never reads the environment. */
   apiKey: ResendApiKey;
-  /** Caller-side bound. Retries remain safe because message.id is forwarded. */
+  /** Positive caller-side wait bound in milliseconds. Retries remain safe because message.id is forwarded. */
   timeoutMs?: number;
   /** Test seam or alternate SDK construction. */
   createClient?: ResendClientFactory;
@@ -111,12 +111,22 @@ function defaultClient(apiKey?: string): ResendClient {
 
 async function resolveApiKey(value: ResendApiKey): Promise<string> {
   const apiKey = typeof value === "function" ? await value() : value;
-  if (!apiKey?.trim()) {
+  if (typeof apiKey !== "string" || !apiKey.trim()) {
     throw new ResendCommunicationError("configuration_error", "Resend API key is not configured", {
       retryable: false,
     });
   }
-  return apiKey;
+  return apiKey.trim();
+}
+
+function assertValidTimeout(timeoutMs: number | undefined): void {
+  if (timeoutMs !== undefined && (!Number.isFinite(timeoutMs) || timeoutMs <= 0)) {
+    throw new ResendCommunicationError(
+      "configuration_error",
+      "Resend timeoutMs must be a positive finite number of milliseconds",
+      { retryable: false },
+    );
+  }
 }
 
 function normalizeTagPart(value: string, fallback: string): string {
@@ -174,7 +184,7 @@ function toPayload(message: EmailMessage): ResendEmailPayload {
 }
 
 async function withTimeout<T>(promise: Promise<T>, timeoutMs: number | undefined): Promise<T> {
-  if (timeoutMs === undefined || timeoutMs <= 0) return promise;
+  if (timeoutMs === undefined) return promise;
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     return await Promise.race([
@@ -198,6 +208,7 @@ function isRetryable(error: ResendApiError): boolean {
 
 /** Create the strict outbound Resend adapter for finished email messages. */
 export function createResendAdapter(config: ResendAdapterConfig): CommunicationAdapter<EmailMessage> {
+  assertValidTimeout(config.timeoutMs);
   return {
     channel: "email",
     async deliver(message) {

@@ -100,7 +100,9 @@ and no fail-silent mode.
 The adapter forwards `EmailMessage.id` as Resend's idempotency key. The key
 must be 1–256 characters and identify one exact payload. It is only a
 provider-window defense; a durable dispatch ledger remains required for
-long-lived deduplication and recovery.
+long-lived deduplication and recovery. `timeoutMs`, when set, must be a
+positive finite number; it bounds the caller's wait, not the provider's
+eventual processing, so retry the same id and payload after a timeout.
 
 `headers`, `cc`, `bcc`, `replyTo`, HTML/text bodies, and attachments map
 directly. Provider tags are normalized to ASCII letters, numbers, underscores,
