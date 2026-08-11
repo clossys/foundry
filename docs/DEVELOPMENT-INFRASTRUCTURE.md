@@ -15,23 +15,33 @@ customer values do not enter Foundry.
 
 ## Package boundaries
 
-`@vespeneventures/repository` is the first package. It owns a provider-neutral
-contract for consumer-authored repository values and validates those values
-without I/O. It does not install files or choose values for a consumer.
+`@vespeneventures/repository` and `@vespeneventures/review` are a paired
+implementation, release, and adoption train. They remain separately
+installable and independently versioned.
+
+`@vespeneventures/repository` owns a provider-neutral contract for
+consumer-authored repository values and validates those values without I/O. It
+does not install files or choose values for a consumer.
+
+`@vespeneventures/review` owns provider-neutral contracts and validation for
+review evidence: requests, findings, dispositions, threads, checks, decisions,
+and exact-head freshness. Its root export remains vendor-neutral. Meaningful
+GitHub evidence translation belongs at `@vespeneventures/review/github`; it
+does not warrant a separate `review-github` or generic `github` package.
 
 `@vespeneventures/gates` remains the orchestration package for catalog and
-policy checks. New repository infrastructure must reuse it instead of creating
-a second generic gate runner.
+policy checks. It is a separate foundation cluster, not a runtime dependency
+of `repository` or `review`, and neither package becomes a general gate runner.
 
-The following names are deliberately deferred:
+The following provider surfaces remain evidence-gated:
 
-- `@vespeneventures/review`: add only after a reusable review contract and a
-  proving consumer exist.
-- `@vespeneventures/github`: add only when real GitHub-specific behavior is
-  extracted behind vendor-neutral contracts; workflow YAML remains local.
-- Provider review adapters: add a dedicated adapter only when it performs
+- Codex, Claude, and CodeRabbit receive `review` subpaths only when they add
   meaningful provider-specific translation, invocation, or evidence parsing.
-  A package that merely re-exports a review type is not sufficient.
+  Fixed mention strings and workflow configuration remain consumer-local.
+- A separate provider package is justified only by a real dependency,
+  credential/runtime boundary, independent release cadence, incompatible peer
+  requirements, or material size or ownership pressure. A package that merely
+  re-exports a review type is not sufficient.
 
 This avoids both a monolithic development package and a family of empty
 provider wrappers.
@@ -42,6 +52,11 @@ The new package starts at `0.1.0` and runs in parallel with existing tooling.
 A consumer adopts it by authoring its own profile and validating that profile
 in the consumer's existing check path. No prior package is deprecated merely
 because a Foundry contract now exists.
+
+The paired registry-install and CLI qualification procedure is documented in
+[REPOSITORY-REVIEW-FIRST-RUN.md](REPOSITORY-REVIEW-FIRST-RUN.md). It stops
+before consumer workflow wiring, provider credentials, and consumer policy
+decisions.
 
 Deprecation is a later, owner-controlled step. It requires a published
 successor, migrated real consumers, a documented replacement range, and a

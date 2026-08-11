@@ -6,6 +6,7 @@ type RecordValue = Record<string, unknown>;
 const PROFILE_KEYS = new Set(["schemaVersion", "defaultBranch", "commands", "protectedPaths"]);
 const COMMAND_KEYS = new Set(["name", "run", "cwd"]);
 const COMMAND_NAME = /^[a-z][a-z0-9]*(?:(?:-|:)[a-z0-9]+)*$/;
+const MAX_PROFILE_COLLECTION_ENTRIES = 10_000;
 const STANDARD_OBJECT_PROTOTYPE_KEYS = new Set<PropertyKey>([
   "constructor",
   "__defineGetter__",
@@ -55,6 +56,7 @@ function inspectArray(value: unknown): InspectedArray | undefined {
   if (ownKeys.some((key) => typeof key !== "string" || (key !== "length" && !isArrayIndexName(key)))) return undefined;
   const length = Object.getOwnPropertyDescriptor(value, "length");
   if (!length || !("value" in length) || typeof length.value !== "number") return undefined;
+  if (length.value > MAX_PROFILE_COLLECTION_ENTRIES) return undefined;
   return {
     value,
     length: length.value,
@@ -118,7 +120,7 @@ function validateRepositoryProfileValue(value: unknown): RepositoryProfileFindin
 
   const commands = inspectArray(ownDataValue(value, "commands")?.value);
   if (!commands) {
-    findings.push(finding("commands-shape", "commands", "commands must be a plain array with no behavior-shadowing properties."));
+    findings.push(finding("commands-shape", "commands", `commands must be a plain array of at most ${MAX_PROFILE_COLLECTION_ENTRIES} entries with no behavior-shadowing properties.`));
   } else {
     const seenNames = new Set<string>();
     let nextExpectedIndex = 0;
@@ -164,7 +166,7 @@ function validateRepositoryProfileValue(value: unknown): RepositoryProfileFindin
 
   const protectedPaths = inspectArray(ownDataValue(value, "protectedPaths")?.value);
   if (!protectedPaths) {
-    findings.push(finding("protected-paths-shape", "protectedPaths", "protectedPaths must be a plain array with no behavior-shadowing properties."));
+    findings.push(finding("protected-paths-shape", "protectedPaths", `protectedPaths must be a plain array of at most ${MAX_PROFILE_COLLECTION_ENTRIES} entries with no behavior-shadowing properties.`));
   } else {
     const seen = new Set<string>();
     let nextExpectedIndex = 0;

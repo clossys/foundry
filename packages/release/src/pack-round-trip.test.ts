@@ -1,3 +1,4 @@
+import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -13,6 +14,70 @@ import { packRoundTrip, subprocessEnv } from "./pack-round-trip.js";
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 
 describe("packRoundTrip — real subprocess round trip", () => {
+  it("packages/repository installs and imports cleanly from a genuinely isolated directory", async () => {
+    const result = await packRoundTrip(join(repoRoot, "packages", "repository"));
+
+    expect(result.packageName).toBe("@vespeneventures/repository");
+    expect(result.tarballPath).not.toBe("");
+    expect(result.findings).toEqual([]);
+    expect(result.imports).toEqual([{ subpath: ".", ok: true }]);
+    expect(result.ok).toBe(true);
+  });
+
+  it("packages/repository exposes repository-check from its packed, isolated install", () => {
+    const packageDir = join(repoRoot, "packages", "repository");
+    const tarballDir = mkdtempSync(join(tmpdir(), "release-repository-cli-pack-"));
+    const consumerDir = mkdtempSync(join(tmpdir(), "release-repository-cli-consumer-"));
+    fixtureDirs.push(tarballDir, consumerDir);
+    const env = subprocessEnv(tarballDir);
+    const tarballName = execFileSync("npm", ["pack", "--pack-destination", tarballDir], {
+      cwd: packageDir,
+      env,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    }).trim().split("\n").filter(Boolean).pop();
+
+    expect(tarballName).toBeDefined();
+    writeFileSync(join(consumerDir, "package.json"), JSON.stringify({ name: "repository-cli-consumer", private: true, type: "module" }));
+    execFileSync("npm", ["install", join(tarballDir, tarballName as string)], {
+      cwd: consumerDir,
+      env,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    const profilePath = join(consumerDir, "repository-profile.json");
+    writeFileSync(profilePath, JSON.stringify({
+      schemaVersion: 1,
+      defaultBranch: "main",
+      commands: [{ name: "check", run: "npm test" }],
+      protectedPaths: ["src/**"],
+    }));
+
+    const executable = join(consumerDir, "node_modules", ".bin", "repository-check");
+    const valid = spawnSync(executable, [profilePath], { cwd: consumerDir, env, encoding: "utf8" });
+    expect(valid.status).toBe(0);
+    expect(JSON.parse(valid.stdout)).toEqual({ ok: true, findings: [] });
+
+    const help = spawnSync(executable, ["--help"], { cwd: consumerDir, env, encoding: "utf8" });
+    expect(help.status).toBe(0);
+    expect(help.stdout).toContain("Usage: repository-check");
+  });
+
+  it("packages/review installs and imports every declared subpath from a genuinely isolated directory", async () => {
+    const result = await packRoundTrip(join(repoRoot, "packages", "review"));
+
+    expect(result.packageName).toBe("@vespeneventures/review");
+    expect(result.tarballPath).not.toBe("");
+    expect(result.findings).toEqual([]);
+    expect(result.imports.length).toBeGreaterThan(0);
+    expect(result.imports.map((check) => check.subpath).sort()).toEqual([".", "./github"]);
+    for (const check of result.imports) {
+      expect(check.ok).toBe(true);
+      expect(check.error).toBeUndefined();
+    }
+    expect(result.ok).toBe(true);
+  });
+
   it("packages/policy installs and imports cleanly from a genuinely isolated directory", async () => {
     const result = await packRoundTrip(join(repoRoot, "packages", "policy"));
 
