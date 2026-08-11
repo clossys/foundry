@@ -20,6 +20,8 @@ for the full account.
 | --- | --- |
 | [`@vespeneventures/policy`](packages/policy) | Content-addressed binding: commit a document's digest publicly without committing the document, then verify later-materialized content matches it byte-for-byte. Zero dependencies, zero I/O. |
 | [`@vespeneventures/domain-model`](packages/domain-model) | Dependency-free machinery for product-owned domain models: stable identifiers, value types, closed vocabularies, domain types with fields, directed attributed relations, deterministic JSON artifacts, validation, and compatibility comparison. Ships no product values or runtime. |
+| [`@vespeneventures/comms`](packages/comms) | Provider-neutral contracts for finished communications: typed email messages, validation, host-owned consent/policy, atomic dispatch claims with opaque leases, explicit provider acceptance, normalized lifecycle/inbound events, durable ledger ports, and test-only memory fakes. Ships no provider SDK, credentials, identities, templates, routes or storage. |
+| [`@vespeneventures/comms-resend`](packages/comms-resend) | Strict Resend adapter for `comms`: finished-email mapping, provider idempotency and tag normalization, explicit retryable failures, exact raw-body Svix verification, and signed delivery/inbound event mapping. Reads no environment variables and changes no provider configuration. |
 | [`@vespeneventures/catalog`](packages/catalog) | Walks a workspace's `packages/` directory and reports what exists, what could not be read, and whether the real dependency graph — read from each package's own `dependencies`/`peerDependencies` — has cycles or missing internal packages. |
 | [`@vespeneventures/gates`](packages/gates) | Orchestrates `catalog` and `policy` into one call, a deterministic build order, and the `foundry-check` CLI. |
 | [`@vespeneventures/release`](packages/release) | Proves a package is actually installable: packs the real tarball, installs it into a genuinely isolated directory, and imports every subpath it claims to export. |
@@ -34,6 +36,8 @@ for the full account.
 | [`@vespeneventures/render`](packages/render) | Renderers built against `compose`'s `ComposeDocument` contract, one subpath export per output channel. Ships `./web`: resolves a document's bindings into a named `@vespeneventures/ui` view and emits framework-agnostic head metadata — title, description, canonical, robots, keywords, OpenGraph, Twitter card, and XSS-escaped JSON-LD. `compose` is a real dependency; `react`, `react-dom`, and `ui` are optional peer dependencies of this subpath, the pattern later channels' own heavy dependencies (Puppeteer, `pptxgenjs`, an image library) are meant to follow. Deliberately no root `.` export, matching `ui`'s own convention. |
 
 Each package's own README has the full API and the reasoning behind it.
+The cross-package ownership and adoption plan is in
+[docs/COMMUNICATIONS.md](docs/COMMUNICATIONS.md).
 
 ## Installing
 
