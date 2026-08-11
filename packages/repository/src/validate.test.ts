@@ -112,6 +112,11 @@ describe("validateRepositoryProfile", () => {
     const findings = validateRepositoryProfile({ ...validProfile, protectedPaths });
 
     expect(findings.map((entry) => [entry.rule, entry.path])).toEqual([["protected-path", "protectedPaths[0]"]]);
+
+    const hugeSparsePaths = new Array<string>(0xffffffff);
+    expect(validateRepositoryProfile({ ...validProfile, protectedPaths: hugeSparsePaths }).map((entry) => [entry.rule, entry.path])).toEqual([
+      ["protected-path", "protectedPaths[0]"],
+    ]);
   });
 
   it("does not throw for non-object input", () => {

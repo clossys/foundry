@@ -37,6 +37,12 @@ function isBranchName(value: string): boolean {
     .some((segment) => segment.length === 0 || segment.startsWith(".") || segment.endsWith(".lock"));
 }
 
+function arrayIndexNames(value: unknown[]): string[] {
+  return Object.getOwnPropertyNames(value)
+    .filter((name) => /^(?:0|[1-9][0-9]*)$/.test(name) && Number(name) < 0xffffffff)
+    .sort((left, right) => Number(left) - Number(right));
+}
+
 function validateRepositoryProfileValue(value: unknown): RepositoryProfileFinding[] {
   if (!isRecord(value)) return [finding("profile-shape", "$", "A repository profile must be an object.")];
 
@@ -82,7 +88,15 @@ function validateRepositoryProfileValue(value: unknown): RepositoryProfileFindin
     findings.push(finding("protected-paths-shape", "protectedPaths", "protectedPaths must be an array."));
   } else {
     const seen = new Set<string>();
-    for (let index = 0; index < value.protectedPaths.length; index += 1) {
+    let nextExpectedIndex = 0;
+    let reportedHole = false;
+    for (const indexName of arrayIndexNames(value.protectedPaths)) {
+      const index = Number(indexName);
+      if (!reportedHole && index > nextExpectedIndex) {
+        findings.push(finding("protected-path", `protectedPaths[${nextExpectedIndex}]`, "protectedPaths must not contain empty slots."));
+        reportedHole = true;
+      }
+      nextExpectedIndex = index + 1;
       const path = value.protectedPaths[index];
       const inputPath = `protectedPaths[${index}]`;
       if (typeof path !== "string" || !isRepositoryRelative(path, true)) {
@@ -91,6 +105,9 @@ function validateRepositoryProfileValue(value: unknown): RepositoryProfileFindin
       }
       if (seen.has(path)) findings.push(finding("duplicate-protected-path", inputPath, `Duplicate protected path "${path}".`));
       seen.add(path);
+    }
+    if (!reportedHole && nextExpectedIndex < value.protectedPaths.length) {
+      findings.push(finding("protected-path", `protectedPaths[${nextExpectedIndex}]`, "protectedPaths must not contain empty slots."));
     }
   }
 
