@@ -76,7 +76,9 @@ export function normalizeGitHubReviewEvidence(payload: GitHubReviewEvidencePaylo
     headSha,
     paginationComplete: isComplete(checksConnection) && isComplete(reviewsConnection) && isComplete(threadsConnection),
     checks: nodes(checksConnection).map((node) => { const check = record(node); return { name: stringValue(check.name), conclusion: normalizeCheckConclusion(check.conclusion), headSha: stringValue(check.headSha) || stringValue(check.head_sha) }; }),
-    reviews: nodes(reviewsConnection).map((node) => { const review = record(node); const commit = record(review.commit); const author = record(review.author); return { id: stringValue(review.id), reviewerId: stringValue(author.login), submittedAt: stringValue(review.submittedAt), state: normalizeReviewDecision(review.state), headSha: stringValue(commit.oid) || stringValue(review.commit_id) }; }),
+    reviews: nodes(reviewsConnection)
+      .filter((node) => normalizeReviewDecision(record(node).state) !== "pending")
+      .map((node) => { const review = record(node); const commit = record(review.commit); const author = record(review.author); return { id: stringValue(review.id), reviewerId: stringValue(author.login), submittedAt: stringValue(review.submittedAt), state: normalizeReviewDecision(review.state), headSha: stringValue(commit.oid) || stringValue(review.commit_id) }; }),
     threads: nodes(threadsConnection).map((node) => { const thread = record(node); return { id: stringValue(thread.id), isResolved: thread.isResolved === true, headSha }; }),
   };
 }

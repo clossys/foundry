@@ -73,6 +73,23 @@ describe("normalizeGitHubReviewEvidence", () => {
     ]);
   });
 
+  it("omits unsubmitted pending GitHub reviews", () => {
+    const evidence = normalizeGitHubReviewEvidence({
+      pullRequest: { id: "PR_node", headRefOid: headSha },
+      checks: page([{ name: "unit", conclusion: "SUCCESS", headSha }]),
+      reviews: page([
+        { id: "review-approved", author: { login: "reviewer-1" }, submittedAt: "2026-01-01T00:00:00.000Z", state: "APPROVED", commit: { oid: headSha } },
+        { id: "review-pending", state: "PENDING" },
+      ]),
+      reviewThreads: page([]),
+    });
+
+    expect(evidence.reviews).toEqual([
+      { id: "review-approved", reviewerId: "reviewer-1", submittedAt: "2026-01-01T00:00:00.000Z", state: "approved", headSha },
+    ]);
+    expect(validateReviewEvidence(evidence, { requiredChecks: ["unit"], requireApproval: true })).toEqual([]);
+  });
+
   it("preserves a stale review commit so root validation fails closed", () => {
     const evidence = normalizeGitHubReviewEvidence({
       pullRequest: { id: "PR_node", headRefOid: headSha },
