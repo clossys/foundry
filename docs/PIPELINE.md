@@ -57,7 +57,7 @@ runtime dependency when attaching it.
    `createCopyResolver(registry)`. It validates the document and fails closed
    if required copy is missing, draft, retired, locale-incompatible, or has
    invalid interpolation values.
-5. Pass the resulting compatibility document to the channel renderer, then
+5. Pass the resulting renderer-facing document to the channel renderer, then
    call `createResolvedOutputManifest` with the resolution, rendered artifact
    paths, and structural strategy provenance. The manifest records which copy
    registry revision and entry identifiers contributed to the output, without
@@ -67,8 +67,8 @@ runtime dependency when attaching it.
 
 This makes every new audience-facing page or file follow the same governed
 path without forcing a web route to pretend it is an email, image, or slide.
-The old string-bearing `ComposeDocument` remains a deprecated migration
-adapter; new work authors `SurfaceDocument` directly.
+New work authors `SurfaceDocument` directly; the renderer-facing
+`ComposeDocument` is produced only after copy resolution.
 
 ### The consumer boundary in code
 
@@ -123,9 +123,10 @@ returned output after that boundary succeeds.
   former voice imports with `copy` or `copy/voice`.
 - Move page-level view imports to `surface/web`; keep reusable primitives in
   `ui`.
-- Migrate existing composed documents with `migrateComposeDocument`, register
-  every literal it reports as consumer-owned copy, then switch new authored
-  documents to `SurfaceDocument`.
+- Author `SurfaceDocument` records with consumer-owned `CopyRef`s. Existing
+  literal-bearing documents must be converted by the consumer before entering
+  this pipeline; Foundry does not invent copy identifiers or retain a legacy
+  migration API.
 - Add a consumer adapter that maps its own route/build conventions to a
   resolved `OutputManifest`, retaining its strategy and copy provenance; do
   not let Foundry acquire those filesystem or deployment concerns.

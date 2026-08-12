@@ -2,7 +2,7 @@
  * @vespeneventures/surface/core — public composition contract. See README.md
  * for the full picture: the join point between
  * `@vespeneventures/ui`'s visual vocabulary and `@vespeneventures/copy`'s
- * verbal one, plus per-channel metadata), the frozen `ComposeDocument`
+ * verbal one, plus per-channel metadata; the renderer-facing `ComposeDocument`
  * contract, and why `layout` is channel-gated.
  *
  * Everything here is pure — no I/O, no React, no schema library, and no
@@ -87,9 +87,6 @@ export type { CanvasInches } from "./frame.js";
 export { getSlotSpec, listSlotKeys, requiredSlotKeys } from "./slots.js";
 
 export { collectCopyProvenance, createOutputManifest, createResolvedOutputManifest } from "./output-manifest.js";
-
-export { migrateComposeDocument } from "./migrate.js";
-export type { LegacyCopyRefFactory } from "./migrate.js";
 
 export { resolveSurfaceDocument, SurfaceResolutionError } from "./resolve-surface.js";
 export type { ResolvedSurfaceDocument, SurfaceResolutionReason } from "./resolve-surface.js";

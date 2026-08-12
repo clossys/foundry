@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { createOutputManifest } from "./output-manifest.js";
-import { migrateComposeDocument } from "./migrate.js";
 import { validateSurfaceDocument } from "./validate.js";
 import type { SurfaceDocument } from "./types.js";
 
@@ -20,22 +19,6 @@ const validWeb: SurfaceDocument = {
 describe("SurfaceDocument", () => {
   it("accepts CopyRef-based flowed metadata and explicit caller nodes without a canvas layout", () => {
     expect(validateSurfaceDocument(validWeb)).toEqual([]);
-  });
-
-  it("migrates legacy literal slots and metadata through a caller-owned CopyRef factory", () => {
-    const migrated = migrateComposeDocument(
-      {
-        id: "legacy",
-        channel: "email",
-        meta: { channel: "email", subject: "Subject", preheader: "Preview" },
-        template: "email",
-        bindings: [{ slot: "body", value: "Body" }],
-      },
-      (text, path) => ({ id: `migrated.${path}.${text.toLowerCase()}` }),
-    );
-    expect(migrated.meta).toMatchObject({ subject: { id: "migrated.meta.subject.subject" }, preheader: { id: "migrated.meta.preheader.preview" } });
-    expect(migrated.bindings).toEqual([{ slot: "body", copy: { id: "migrated.bindings.0.value.body" } }]);
-    expect(validateSurfaceDocument(migrated)).toEqual([]);
   });
 
   it("rejects literal audience-facing metadata and an ambiguous content binding", () => {
