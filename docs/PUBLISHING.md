@@ -257,6 +257,18 @@ short-lived `GITHUB_TOKEN` to make that existing package public, without
 repacking or publishing another version. The visibility job is deterministic:
 an API failure fails the run rather than leaving an ambiguous release state.
 
+### Deprecating compatibility packages
+
+The old `catalog`, `gates`, `release`, `repository`, and `review` names are
+published compatibility wrappers, not new integration targets. After their
+replacement version has passed registry qualification, use the manual
+**Deprecate legacy packages** workflow in `dry-run` mode first, then `apply`.
+It can only write its reviewed, hardcoded notices pointing to the corresponding
+`@vespeneventures/governance` subpath; it accepts no package name, version, or
+message input. The protected job reads every registry version before applying
+the notice and reads all of them back afterward. Do not unpublish these names:
+the compatibility wrapper remains the migration path.
+
 ## Prerequisites held outside this repository
 
 | Thing | Where | Notes |

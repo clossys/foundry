@@ -1,0 +1,82 @@
+name: Deprecate legacy packages
+
+# Registry deprecation is an irreversible consumer-facing lifecycle signal.
+# It is deliberately manual-only and can act only on the fixed compatibility
+# wrapper map in scripts/deprecate-legacy-packages.mjs.
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Report the fixed plan, or apply and verify the fixed notices
+        required: true
+        default: dry-run
+        type: choice
+        options:
+          - dry-run
+          - apply
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: legacy-package-deprecation
+  cancel-in-progress: false
+
+jobs:
+  deprecate:
+    runs-on: ubuntu-latest
+    # This is the same protected environment used for package uploads. A
+    # deprecation does not upload bytes, but it is still a public registry
+    # mutation and must retain the same reviewer boundary.
+    environment: npm-publish
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Read registry and scope from package-scope.json
+        id: scope
+        run: |
+          echo "registry=$(node -p "JSON.parse(require('fs').readFileSync('package-scope.json','utf8')).registry")" >> "$GITHUB_OUTPUT"
+          echo "scope=$(node -p "JSON.parse(require('fs').readFileSync('package-scope.json','utf8')).scope")" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+          registry-url: ${{ steps.scope.outputs.registry }}
+          scope: ${{ steps.scope.outputs.scope }}
+
+      - name: Validate fixed operation mode
+        env:
+          MODE: ${{ inputs.mode }}
+        run: |
+          case "$MODE" in
+            dry-run|apply) ;;
+            *) echo "::error title=Invalid deprecation mode::Only dry-run and apply are accepted."; exit 1 ;;
+          esac
+
+      - name: Materialise denylist
+        env:
+          DENYLIST_B64: ${{ secrets.PUBLIC_SAFETY_DENYLIST_B64 }}
+        run: |
+          if [ -z "$DENYLIST_B64" ]; then
+            echo "::error title=Cannot deprecate::PUBLIC_SAFETY_DENYLIST_B64 is not set."
+            exit 1
+          fi
+          printf '%s' "$DENYLIST_B64" | base64 -d > "$RUNNER_TEMP/denylist.json"
+          echo "PUBLIC_SAFETY_DENYLIST=$RUNNER_TEMP/denylist.json" >> "$GITHUB_ENV"
+
+      - name: Verify reviewed registry operation
+        run: |
+          node scripts/set-scope.mjs --check
+          node scripts/check-public-safety.mjs scripts/deprecate-legacy-packages.mjs --require-denylist
+          node --test scripts/deprecate-legacy-packages.test.mjs
+
+      - name: Apply and verify fixed registry notices
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}
+          MODE: ${{ inputs.mode }}
+        run: node scripts/deprecate-legacy-packages.mjs --mode="$MODE"
+
+      - name: Redact denylist
+        if: always()
+        run: rm -f "$RUNNER_TEMP/denylist.json"

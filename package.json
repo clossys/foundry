@@ -21,7 +21,7 @@
     "check:safety:strict": "node scripts/check-public-safety.mjs . --allow-changelogs --require-denylist",
     "check:scope": "node scripts/set-scope.mjs --check",
     "check:denylist": "node scripts/check-denylist-quality.mjs",
-    "check:gates": "node scripts/test-gates.mjs && node --test scripts/agent-cloud.test.mjs scripts/select-publishable-packages.test.mjs",
+    "check:gates": "node scripts/test-gates.mjs && node --test scripts/agent-cloud.test.mjs scripts/deprecate-legacy-packages.test.mjs scripts/select-publishable-packages.test.mjs",
     "check:root-entry": "node scripts/check-root-entry-policy.mjs",
     "check:readme": "node scripts/check-root-readme-parity.mjs . && for manifest in packages/*/package.json; do [ -f \"$manifest\" ] || continue; p=${manifest%/package.json}; node scripts/check-readme-parity.mjs \"$p\" || exit 1; done",
     "check:contamination": "for manifest in packages/*/package.json; do [ -f \"$manifest\" ] || continue; p=${manifest%/package.json}; node scripts/check-contamination-classes.mjs \"$p\" || exit 1; done",
