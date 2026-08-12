@@ -95,16 +95,36 @@ permissions:
   contents: read
 
 concurrency:
-  # github.event.issue.number covers issues + issue_comment (an issue_comment
-  # on a PR still populates .issue.number, with the PR's number, since GitHub
-  # treats every PR as an issue under the hood). github.event.pull_request.number
-  # covers pull_request_target AND the two review-shaped events added below
-  # (pull_request_review_comment, pull_request_review both carry a
-  # `pull_request` object in their payload) — so every event this workflow
-  # listens for groups by the same PR/issue number without needing a
-  # per-event-type branch here.
-  group: conversation-safety-${{ github.event.issue.number || github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  # GROUPED PER TEXT, NOT PER ISSUE — AND NEVER CANCELLED.
+  #
+  # An earlier version of this grouped by issue/PR number with
+  # cancel-in-progress: true, which is the right shape for a build (only the
+  # newest commit matters, kill the rest) and exactly the wrong shape for a
+  # scan. It was caught in the wild on this workflow's own first run: an
+  # automated review posted a summary plus several inline comments at once,
+  # three runs started, and two were cancelled by this very block. Each
+  # cancelled run was the only thing that would ever have scanned its own
+  # comment — the text was not "superseded" by the later run, it was simply
+  # never checked, and the cancellation surfaced as a red check that looks
+  # like a failure rather than as a gap.
+  #
+  # Every event here carries DIFFERENT text, so no two runs are ever
+  # redundant and there is nothing to legitimately cancel. The group key is
+  # therefore the specific object being scanned (comment id, review id, or
+  # the issue/PR number for a body edit) rather than the thread it belongs
+  # to, so a burst of comments on one PR runs as N independent scans. The
+  # only runs that can now collide are repeated edits of the SAME object,
+  # where serialising is correct and cancel-in-progress stays false so the
+  # earlier text is still scanned rather than dropped.
+  group: >-
+    conversation-safety-${{ github.event_name }}-${{
+      github.event.comment.id
+      || github.event.review.id
+      || github.event.issue.number
+      || github.event.pull_request.number
+      || github.ref
+    }}
+  cancel-in-progress: false
 
 jobs:
   scan:
