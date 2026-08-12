@@ -1,0 +1,312 @@
+name: Conversation safety
+
+# WHAT THIS WORKFLOW CANNOT DO — READ THIS FIRST
+# ------------------------------------------------
+# This workflow only DETECTS private identity in issue/PR/comment text after
+# someone has already posted it. It cannot prevent disclosure:
+#
+#   * The text is public the instant it is submitted — GitHub serves it to
+#     anyone who can view this public repository before this workflow's job
+#     has even been scheduled, let alone finished.
+#   * GitHub emails the full, unredacted body to every watcher and every
+#     participant in the thread the moment it is posted. That notification
+#     already happened by the time this workflow's first step runs. Labeling
+#     or commenting afterward does not recall it.
+#   * If the finding is later edited or the issue/comment deleted, GitHub
+#     keeps the prior revision visible in the edit-history dropdown (and, for
+#     a deleted issue, admins can still see it). "Removed" is not "undone".
+#
+# The only real prevention is local, BEFORE posting: the issue and pull
+# request templates in this directory carry the same "never post this" list
+# a contributor should check against themselves, and
+# scripts/check-conversation-safety.mjs can be run by hand against a draft
+# before it goes anywhere near the GitHub API. Do not let this workflow's
+# existence read as "the conversation surface is covered" — it is a
+# tripwire, not a lock. See AGENTS.md's "Conversation surface" section and
+# SECURITY.md's repository security controls table.
+#
+# WHY EVENT TEXT NEVER TOUCHES A SHELL/JS EXPRESSION DIRECTLY
+# -------------------------------------------------------------
+# ${{ github.event.issue.body }} (and .comment.body, .pull_request.body) is
+# attacker-controlled: anyone who can open an issue or post a comment
+# controls that string. GitHub Actions performs ${{ }} expression
+# interpolation as a textual substitution BEFORE the shell (or
+# actions/github-script's JS) ever runs — so splicing it directly into a
+# `run:` script body or into a JS template literal lets a crafted body close
+# a quote and inject arbitrary shell/JS into a workflow that runs with this
+# repository's real secrets. Unlike ci.yml's pull_request jobs, EVERY event
+# this workflow listens for (issues, issue_comment, pull_request_target,
+# pull_request_review_comment, pull_request_review) executes in the
+# base-repository security context — including for an issue, PR, review, or
+# review comment originating from a fork — so there is no "fork PRs can't
+# reach secrets" safety net here the way there is elsewhere in this
+# repository. The fix used throughout this file: assign the untrusted text
+# to an `env:` variable, then read it back with `$VAR_NAME` (shell) or
+# `process.env.VAR` (JS) — the shell/JS sees a fixed script; only a
+# variable's VALUE varies, and a value can't inject syntax into the script
+# that reads it.
+#
+# pull_request_target is used (rather than pull_request) specifically so a
+# fork's PR body can be scanned with the real denylist. Its default
+# `actions/checkout` behaviour (no `ref:` override, as below) checks out
+# THIS repository's base branch, never the fork's head commit, so no
+# attacker-controlled code is ever executed here — only attacker-controlled
+# TEXT is read, and only through the env-var indirection above.
+# pull_request_review and pull_request_review_comment need no equivalent
+# "_target" variant and no such override risk in the first place: neither
+# event runs the workflow at the PR head at all (both always resolve to the
+# base branch's workflow file, the same as issues/issue_comment), so this
+# checkout was already base-only for them with no extra flag required.
+
+on:
+  issues:
+    # "reopened" is deliberately excluded: it changes the issue's STATE, not
+    # its text. Whatever body it has was already text at "opened" (or the
+    # most recent "edited"), so re-scanning on reopen would just re-run the
+    # same check against the same string for no new information. If this
+    # reasoning ever needs revisiting (e.g. an issue closed before this
+    # workflow existed, then reopened with a never-scanned original body),
+    # add "reopened" back deliberately rather than by default.
+    types: [opened, edited]
+  issue_comment:
+    types: [created, edited]
+  pull_request_target:
+    types: [opened, edited]
+  # Inline code-review comments — a real, sizable slice of this repository's
+  # conversation surface (an audit of this repository found 224 of them) and
+  # just as public and just as permanent as an issue comment. Not covered by
+  # `issue_comment` above: GitHub fires review comments through this
+  # separate event, not that one.
+  pull_request_review_comment:
+    types: [created, edited]
+  # The review's own summary text (left in the "Finish your review" box),
+  # separate from any inline comments attached to it. Can be submitted with
+  # an empty body (e.g. a bare Approve) — see the empty-body handling in the
+  # gate step below.
+  pull_request_review:
+    types: [submitted, edited]
+
+permissions:
+  # Narrowest block that still lets the job read issue/PR text (implicit via
+  # the event payload, no extra scope needed for that) and label + comment
+  # on the finding. Nothing here needs to write code, packages, or contents.
+  issues: write
+  pull-requests: write
+  contents: read
+
+concurrency:
+  # github.event.issue.number covers issues + issue_comment (an issue_comment
+  # on a PR still populates .issue.number, with the PR's number, since GitHub
+  # treats every PR as an issue under the hood). github.event.pull_request.number
+  # covers pull_request_target AND the two review-shaped events added below
+  # (pull_request_review_comment, pull_request_review both carry a
+  # `pull_request` object in their payload) — so every event this workflow
+  # listens for groups by the same PR/issue number without needing a
+  # per-event-type branch here.
+  group: conversation-safety-${{ github.event.issue.number || github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    name: conversation safety
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # Only to get scripts/check-conversation-safety.mjs itself. See the
+      # pull_request_target note above: this is the base branch, never the
+      # fork's head, regardless of which event triggered this run.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+
+      # This workflow only ever runs in the base-repository security context
+      # (see the header comment), so a denylist is always expected to be
+      # available — there is no "fork PR, no secrets" case to degrade for,
+      # the way ci.yml has. A missing secret here is a real misconfiguration,
+      # not an expected condition, so it fails the job outright instead of
+      # falling back to a partial scan. A partial scan of conversation text
+      # that reports "clean" would be read as clearance by anyone who saw the
+      # green check — this workflow must never produce that appearance.
+      - name: Materialise denylist
+        env:
+          DENYLIST_B64: ${{ secrets.PUBLIC_SAFETY_DENYLIST_B64 }}
+        run: |
+          if [ -z "$DENYLIST_B64" ]; then
+            echo "::error title=Cannot run conversation safety gate::PUBLIC_SAFETY_DENYLIST_B64 is not set. This workflow only ever runs in FULL mode; a missing denylist fails the job rather than degrading to a scan that could be mistaken for a clean result."
+            exit 1
+          fi
+          printf '%s' "$DENYLIST_B64" | base64 -d > "$RUNNER_TEMP/denylist.json"
+          echo "PUBLIC_SAFETY_DENYLIST=$RUNNER_TEMP/denylist.json" >> "$GITHUB_ENV"
+
+      # Runs scripts/check-conversation-safety.mjs (owned by a parallel
+      # change; see AGENTS.md) against exactly the text this event carries.
+      # Every piece of event-supplied text below arrives through `env:`,
+      # never through interpolation into the script body — see the header
+      # comment for why that distinction matters here specifically. The
+      # text is piped to the script over stdin rather than passed as a CLI
+      # argument, for the same reason: a CLI argument value doesn't need
+      # shell-escaping to reach the script correctly, but building the
+      # argument list itself must still never depend on the text's content.
+      #
+      # This step deliberately never fails on its own exit code (`set +e`
+      # below, plus an explicit `exit 0` regardless of the scanner's result)
+      # — its job is only to record what happened. A later step turns that
+      # record into the job's actual pass/fail result, after the
+      # labeling/commenting step below has had a chance to run regardless of
+      # outcome.
+      - name: Run conversation safety gate
+        id: gate
+        env:
+          GH_EVENT_NAME: ${{ github.event_name }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_TEXT: ${{ github.event.issue.body }}
+          # Reused for BOTH issue_comment and pull_request_review_comment:
+          # GitHub populates github.event.comment.body identically for each,
+          # it's just a different kind of comment underneath. Which value is
+          # actually present depends only on which event fired this run.
+          COMMENT_TEXT: ${{ github.event.comment.body }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_TEXT: ${{ github.event.pull_request.body }}
+          # A review's summary body. Legitimately empty/null on an
+          # approve-with-no-comment — handled explicitly below rather than
+          # left to fall through as an empty string with no comment.
+          REVIEW_TEXT: ${{ github.event.review.body }}
+        run: |
+          set +e
+          out_file="$RUNNER_TEMP/conversation-safety-output.txt"
+
+          case "$GH_EVENT_NAME" in
+            issue_comment)
+              # A comment fires this same event whether it was posted on an
+              # issue or on a pull request — either way the number to label
+              # and comment back on is github.event.issue.number.
+              target_number="$ISSUE_NUMBER"
+              text="$COMMENT_TEXT"
+              ;;
+            issues)
+              target_number="$ISSUE_NUMBER"
+              text="$(printf '%s\n\n%s' "$ISSUE_TITLE" "$ISSUE_TEXT")"
+              ;;
+            pull_request_target)
+              target_number="$PR_NUMBER"
+              text="$(printf '%s\n\n%s' "$PR_TITLE" "$PR_TEXT")"
+              ;;
+            pull_request_review_comment)
+              # Inline review comment — same field GitHub uses for an
+              # ordinary issue/PR comment, just on a different event.
+              target_number="$PR_NUMBER"
+              text="$COMMENT_TEXT"
+              ;;
+            pull_request_review)
+              target_number="$PR_NUMBER"
+              text="$REVIEW_TEXT"
+              ;;
+            *)
+              echo "unhandled event: $GH_EVENT_NAME" > "$out_file"
+              echo "status=2" >> "$GITHUB_OUTPUT"
+              echo "target_number=" >> "$GITHUB_OUTPUT"
+              exit 0
+              ;;
+          esac
+
+          # A review can legitimately be submitted with no summary text at
+          # all (an approve/request-changes with only inline comments, or a
+          # bare approve with neither) — GitHub then sends this event with
+          # `review.body` empty or null. That is NOT a finding and NOT a
+          # failure to run; there is simply nothing to scan for this
+          # particular event, so this short-circuits to a clean pass without
+          # invoking the scanner at all, and without ever calling it on
+          # empty stdin only to reinterpret its answer. Any inline comments
+          # that came with the same review still arrive as their own,
+          # separate pull_request_review_comment events and are scanned by
+          # the branch above regardless of this one.
+          if [ "$GH_EVENT_NAME" = "pull_request_review" ] && [ -z "$text" ]; then
+            echo "check-conversation-safety: review submitted with an empty summary body — nothing to scan." > "$out_file"
+            cat "$out_file"
+            echo "status=0" >> "$GITHUB_OUTPUT"
+            echo "target_number=$target_number" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # stdin only — see the step header for why this text never becomes
+          # part of the command line or script body itself.
+          printf '%s' "$text" | node scripts/check-conversation-safety.mjs --require-denylist > "$out_file" 2>&1
+          status=$?
+
+          cat "$out_file"
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          echo "target_number=$target_number" >> "$GITHUB_OUTPUT"
+          exit 0
+
+      - name: Redact denylist
+        if: always()
+        run: rm -f "$RUNNER_TEMP/denylist.json"
+
+      # Only on an actual finding (exit 1, "findings" per the script's own
+      # contract — never on exit 2, "could not run"; see the final step).
+      #
+      # WHY THIS LABELS BUT DOES NOT COMMENT
+      # ------------------------------------
+      # An earlier draft of this workflow posted a redacted comment here
+      # explaining the finding. That was removed deliberately, and it should
+      # stay removed. On a PUBLIC repository, a comment reading "private
+      # identity detected in this text" is itself a public signal: it
+      # announces to anyone watching that this specific issue contains
+      # something its author did not mean to publish, and — because editing
+      # never erases a revision (see the header) — it points a reader
+      # straight at the edit-history dropdown where the ORIGINAL text is
+      # still readable. The comment would advertise the leak more
+      # effectively than the leak advertises itself, which inverts the
+      # purpose of the gate.
+      #
+      # The label plus the failed check carry the same information to the
+      # people who need it (maintainers, who can see both) without
+      # broadcasting it to people who don't. The remediation guidance that
+      # used to live in the comment now lives in CONTRIBUTING.md's
+      # "Conversation surface" section, which is where someone sent here by
+      # the label will look, and which can be updated without editing a
+      # workflow.
+      - name: Label finding
+        if: ${{ steps.gate.outputs.status == '1' }}
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
+        env:
+          TARGET_NUMBER: ${{ steps.gate.outputs.target_number }}
+        with:
+          script: |
+            const issue_number = Number(process.env.TARGET_NUMBER);
+            const { owner, repo } = context.repo;
+            const label = "public-safety";
+
+            try {
+              await github.rest.issues.getLabel({ owner, repo, name: label });
+            } catch (error) {
+              if (error.status !== 404) throw error;
+              await github.rest.issues.createLabel({
+                owner,
+                repo,
+                name: label,
+                color: "b60205",
+                description: "Automated conversation-safety finding — see CONTRIBUTING.md",
+              });
+            }
+
+            await github.rest.issues.addLabels({ owner, repo, issue_number, labels: [label] });
+
+      # Turns the gate step's recorded outcome into this job's real result.
+      # Deferred to here (rather than letting the gate step itself fail)
+      # specifically so the labeling step above always gets a chance to run
+      # on a finding, regardless of this job's final status.
+      - name: Reflect gate result in job status
+        if: ${{ steps.gate.outputs.status != '0' }}
+        run: |
+          status="${{ steps.gate.outputs.status }}"
+          if [ "$status" = "2" ]; then
+            echo "::error title=Conversation safety gate could not run::Denylist materialisation or scripts/check-conversation-safety.mjs itself failed — see the 'Run conversation safety gate' step log above. This is NOT a clean scan and must not be read as one; no label was applied because there is nothing confirmed to report."
+          else
+            echo "::error title=Conversation safety finding::scripts/check-conversation-safety.mjs reported a possible private-identity match. The 'public-safety' label has been applied; the redacted category and count are in the 'Run conversation safety gate' step log above. This job deliberately posts no comment — see that step's notes and CONTRIBUTING.md's 'Conversation surface' section."
+          fi
+          exit 1

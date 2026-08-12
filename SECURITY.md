@@ -28,6 +28,7 @@ forward; there are no long-term support branches.
 | `gitleaks` over full history | Runs in CI on every pull request and push |
 | `check-public-safety` | Required check on every pull request |
 | `check-name-collision` | Required before every publish — see below |
+| `conversation-safety` (issues, comments, pull request descriptions) | Runs after the text is already posted — labels a finding and fails the check, never echoing the matched text and never commenting. Detects; does not prevent. See below |
 
 ## The publish-safety gate
 
@@ -88,6 +89,44 @@ publish workflow uses that flag, so a release can never pass on a degraded scan.
 
 Both modes are advisory in one direction only: the gate can prove a tree dirty,
 never prove it clean. Human review before a first publish is still required.
+
+## The conversation-safety gate
+
+`scripts/check-public-safety.mjs` and the tarball scan both operate on
+files — the git tree and the packed package, respectively. Neither one has
+ever seen an issue, a pull request description, or a comment: those aren't
+files, they live in GitHub's own database, and no amount of tightening the
+tree scan reaches them. This gap is not hypothetical — an audit of this
+repository's conversation history found private-identity findings across
+issues, pull requests, and comments while the git tree stayed clean the
+whole time.
+
+`.github/workflows/conversation-safety.yml` runs
+`scripts/check-conversation-safety.mjs` against issue, comment, and
+pull-request-description text after it is posted or edited, in FULL mode
+only (`--require-denylist` — a run that cannot load the denylist fails the
+job rather than reporting a degraded pass that could be mistaken for
+clean). On a finding it applies the `public-safety` label and fails the
+check. It deliberately posts no comment. Commenting the matched string back
+would republish exactly what triggered the finding — but even a redacted
+comment naming only the category is a public announcement that this
+particular text holds something its author did not mean to publish, and,
+since editing never erases a revision, an arrow pointing at the edit-history
+dropdown where the original is still readable. The label and the failed
+check carry that information to maintainers without broadcasting it.
+
+**This is detection, not prevention, and the workflow says so in its own
+header.** The text is public, and GitHub has already emailed it to every
+watcher, before this workflow's first step even starts — a check that runs
+after posting cannot undo either of those. Editing or deleting the flagged
+text afterward reduces ongoing exposure; it does not erase it, because
+GitHub keeps prior revisions of an edited issue or comment in that
+item's own edit-history dropdown. The only point where this is actually
+preventable is before posting: the "never post this" list at the top of
+every issue and pull request template
+(`.github/ISSUE_TEMPLATE/`, `.github/PULL_REQUEST_TEMPLATE.md`), and
+running `scripts/check-conversation-safety.mjs` by hand against a draft
+before it goes anywhere near the GitHub API.
 
 ## The name-collision gate
 

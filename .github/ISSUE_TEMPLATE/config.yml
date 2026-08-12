@@ -1,0 +1,16 @@
+# Forces every new issue through one of the templates in this directory
+# rather than the blank form. The blank form has no "never post this" list —
+# these templates exist specifically to put that list in front of a
+# contributor before they type anything, not after. See AGENTS.md's
+# "Conversation surface" section for why that ordering matters: this
+# repository's tree scan (scripts/check-public-safety.mjs) never sees an
+# issue at all, so the only backstop before an issue is public is the
+# person opening it.
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability (private)
+    url: https://github.com/vespeneventures/foundry/security/advisories/new
+    about: >-
+      Do not describe an unpatched vulnerability in a public issue — anyone
+      can read it, including whoever would exploit it. Use GitHub's private
+      vulnerability reporting instead. See SECURITY.md.
