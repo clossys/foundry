@@ -92,6 +92,30 @@ describe("packRoundTrip — real subprocess round trip", () => {
     expect(result.ok).toBe(true);
   });
 
+  it("packages/auth compiles its Clerk web exports in an isolated Next fixture while raw-importing its framework-neutral exports", async () => {
+    const result = await packRoundTrip(join(repoRoot, "packages", "auth"), {
+      next: {
+        clientSubpaths: ["./providers/clerk/web", "./providers/clerk/web/client"],
+        serverSubpaths: ["./providers/clerk/web/server"],
+        proxySubpaths: ["./providers/clerk/web/proxy"],
+      },
+      timeoutsMs: { next: 120_000 },
+    });
+
+    expect(result.packageName).toBe("@vespeneventures/auth");
+    expect(result.findings).toEqual([]);
+    expect(result.imports).toEqual(expect.arrayContaining([
+      { subpath: ".", mode: "import", ok: true },
+      { subpath: "./agent", mode: "import", ok: true },
+      { subpath: "./providers/clerk", mode: "import", ok: true },
+      { subpath: "./providers/clerk/web", mode: "next-build", ok: true },
+      { subpath: "./providers/clerk/web/client", mode: "next-build", ok: true },
+      { subpath: "./providers/clerk/web/server", mode: "next-build", ok: true },
+      { subpath: "./providers/clerk/web/proxy", mode: "next-build", ok: true },
+    ]));
+    expect(result.ok).toBe(true);
+  }, 180_000);
+
   // EXPECTED AND CORRECT, given this repository's real state today — not a
   // bug in @vespeneventures/gates and not a bug in this test.
   //

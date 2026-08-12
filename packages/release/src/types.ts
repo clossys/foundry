@@ -17,8 +17,9 @@ export interface ImportCheck {
   /** An `exports` key from the packed package's own `package.json`, e.g. `"."` or `"./types"`. */
   subpath: string;
   /** The verification performed for this export: an ESM import, an explicitly
-   * advertised CommonJS require branch, or a static-file presence check. */
-  mode: "import" | "require" | "static";
+   * advertised CommonJS require branch, a framework-aware Next compilation,
+   * or a static-file presence check. */
+  mode: "import" | "require" | "next-build" | "static";
   /** `true` if this export's executable target imported, or its static target was present in the packed install. */
   ok: boolean;
   /** Present only when `ok` is `false` — a trimmed, readable summary of what failed. */
@@ -47,7 +48,8 @@ export interface RoundTripResult {
   /**
    * `true` only when the install succeeded AND at least one export subpath
    * was actually declared AND every declared export subpath checked cleanly.
-   * Executable ESM targets import, explicit CommonJS branches require, and
+   * Executable ESM targets import, explicit CommonJS branches require,
+   * configured Next exports compile in an isolated Next fixture, and
    * static/declaration targets must exist in the installed tarball. `false`
    * the moment any of those fail — either way, `findings`
    * says exactly what went wrong. A package that declares no `exports`

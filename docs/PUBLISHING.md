@@ -197,9 +197,12 @@ manifests or manifests whose version changed, serializes releases, and runs
 the full publication path against the merged commit. Source-only changes do
 not publish: release them only with a version change.
 
-Actions → **Publish** remains available for an explicit `dry_run: true` and
-for bootstrap publication of a version that predated this automation.
-`make_public` defaults to `false` — leave it off while a package is still
+Actions → **Publish** remains available for an explicit `dry_run: true`,
+bootstrap publication of a version that predated this automation, and a
+non-mutating `verify_only: true` qualification of an already-published
+tarball. The latter fetches the exact registry version and runs the isolated
+consumer proof without uploading a duplicate or changing package visibility.
+`visibility_only` defaults to `false` — leave it off while a package is still
 unproven. Once its successful release is ready for consumers outside the
 package repository, dispatch the same workflow with `visibility_only: true`.
 That job changes only the already-published package's GitHub Packages

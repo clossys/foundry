@@ -102,6 +102,16 @@
     "react": { "optional": true },
     "react-dom": { "optional": true }
   },
+  "foundryReleaseVerification": {
+    "next": {
+      "clientSubpaths": [
+        "./providers/clerk/web",
+        "./providers/clerk/web/client"
+      ],
+      "serverSubpaths": ["./providers/clerk/web/server"],
+      "proxySubpaths": ["./providers/clerk/web/proxy"]
+    }
+  },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
   }
