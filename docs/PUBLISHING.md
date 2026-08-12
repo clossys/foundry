@@ -261,13 +261,16 @@ an API failure fails the run rather than leaving an ambiguous release state.
 
 The old `catalog`, `gates`, `release`, `repository`, and `review` names are
 published compatibility wrappers, not new integration targets. After their
-replacement version has passed registry qualification, use the manual
-**Deprecate legacy packages** workflow in `dry-run` mode first, then `apply`.
-It can only write its reviewed, hardcoded notices pointing to the corresponding
-`@vespeneventures/governance` subpath; it accepts no package name, version, or
-message input. The protected job reads every registry version before applying
-the notice and reads all of them back afterward. Do not unpublish these names:
-the compatibility wrapper remains the migration path.
+replacement version has passed registry qualification, migrate to the
+corresponding `@vespeneventures/governance` subpath. Do not unpublish these
+names: the compatibility wrapper remains the migration path.
+
+GitHub Packages currently rejects `npm deprecate` metadata writes for this
+registry (including explicit versions with the job-scoped `packages: write`
+token). The manual **Deprecate legacy packages** workflow is retained for
+read-only plan verification, but do not use its `apply` mode unless GitHub
+Packages documents and demonstrates support. Lifecycle records and these
+wrapper READMEs are the authoritative migration notices in the meantime.
 
 ## Prerequisites held outside this repository
 
