@@ -8,8 +8,8 @@
  *      are resolved into that view's own slots via `@vespeneventures/
  *      compose`'s `resolveDocument`, using this package's own
  *      `internal/webTemplates.ts` registry as the "real slot list" every
- *      web/email document needs supplied from outside `compose` — see
- *      `compose`'s `resolve.ts` doc comment.
+ *      web/email document needs supplied from outside `surface/core` — see
+ *      `surface/core`'s `resolve.ts` doc comment.
  *   2. THE HEAD METADATA (`head`) — `doc.meta` (a `WebMeta`), reshaped into
  *      this package's own framework-agnostic `WebHeadMetadata` by
  *      `headMetadata.ts`.
@@ -18,7 +18,7 @@
  * -----------------------------------
  * `SlotBinding` carries exactly two possible sources — `copyId` (a string
  * id, resolved via the caller's own `resolveCopyId`) or `value` (a literal
- * string) — never a React node, a component, or markup (see `compose`'s
+ * string) — never a React node, a component, or markup (see `surface/core`'s
  * own `types.ts`). So every slot this function fills — including
  * `AuthView`'s `form`, which in a hand-built page holds a real interactive
  * sign-in form — receives plain resolved text, never richer content. This
@@ -27,7 +27,7 @@
  * form (or any other rich node) in that slot composes
  * `@vespeneventures/ui`'s `AuthView` directly, outside this document
  * pipeline — the same "this package's job ends where a richer composition
- * begins" boundary `compose`'s own README draws for `template` and
+ * begins" boundary `surface/core`'s own README draws for `template` and
  * `copyId`.
  *
  * WHAT COUNTS AS "RESOLVED NOTHING" — AND WHY THAT'S A THROW, NOT AN EMPTY PAGE
@@ -47,7 +47,7 @@
  * succeeds, this function additionally requires every REQUIRED slot to
  * have resolved to non-empty content, and throws `RenderError("empty-output",
  * ...)` if even one didn't. This is a deliberate strengthening beyond what
- * `resolveDocument` itself checks, flagged here the same way `compose`'s
+ * `resolveDocument` itself checks, flagged here the same way `surface/core`'s
  * own README flags its `frame-out-of-bounds` strengthening — not a change
  * to any contract shape, a stricter reading of what "resolved" has to mean
  * for a render to actually be safe to ship.

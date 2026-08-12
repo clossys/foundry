@@ -4,7 +4,7 @@
  * every field below is load-bearing: renamed, added, or reshaped only in a
  * coordinated change, never as a local convenience.
  *
- * `compose` is the join point where `@vespeneventures/ui`'s visual
+ * `surface/core` is the join point where `@vespeneventures/ui`'s visual
  * vocabulary meets `@vespeneventures/copy`'s verbal one, plus everything a
  * specific output channel needs to know: a `ComposeDocument` names a
  * template, binds its slots to copy ids or literal values, targets a
@@ -66,7 +66,7 @@ export interface SlotBinding {
    * package's first release: until now `SlotBinding` could only carry
    * text, so an `"image"`/`"logo"` slot could only ever render as a styled
    * word. Same seam as `copyId`, one binding field over: the coupling is
-   * an opaque string convention, not a code import, so `compose` works
+   * an opaque string convention, not a code import, so `surface/core` works
    * whether or not `@vespeneventures/surface/media` is even installed, and
    * resolving an `assetId` against a real `AssetRecord` is a later gate's
    * job — one with visibility into both sides, which this package

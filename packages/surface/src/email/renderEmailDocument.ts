@@ -16,7 +16,7 @@
  *   2. A REAL SLOT LIST — `@vespeneventures/surface/core`'s own `resolveDocument`
  *      needs a `LayoutSpec` to match `doc.bindings` against, and an
  *      `email`-channel `ComposeDocument` is FORBIDDEN from carrying one on
- *      `doc.layout` itself (`compose`'s `validate.ts`, `layout-forbidden` —
+ *      `doc.layout` itself (`surface/core`'s `validate.ts`, `layout-forbidden` —
  *      see `resolveDocument`'s own doc comment for why `layout` is always a
  *      separate argument, never read off the document). So this function
  *      uses `options.layout` when the caller supplied one (a real,

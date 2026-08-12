@@ -2,9 +2,9 @@
 
 A small set of TypeScript packages for validating an npm workspace against
 what is actually true of it — not against what its own packages claim about
-themselves. This repository is public and MIT licensed; the packages it
-publishes are currently **private** on GitHub Packages (see Installing,
-below).
+themselves. This repository is public and MIT licensed; published package
+versions are **public** on GitHub Packages. Some source packages have not yet
+been released (see Installing, below).
 
 **Thesis:** every check here runs against what is actually on disk or
 actually installed — never against what a manifest claims about itself. An
@@ -53,29 +53,26 @@ primitives, channel surfaces, and consumer-owned publishing, see
 
 ## Installing
 
-Packages publish to **GitHub Packages**, not the public npm registry, and
-are currently **private** — installing needs a GitHub personal access token
-with `read:packages` scope, and an account with access granted to this
-organization's packages, regardless of whether the repository itself is
-public.
+Packages publish to **GitHub Packages**, not the public npm registry. Published
+versions are public and can be installed without a GitHub token; package
+availability is still determined by the registry, not by this source-tree
+inventory.
 
 Add to your project's `.npmrc` (never commit a real one):
 
 ```
 @vespeneventures:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${GH_PACKAGES_TOKEN}
 ```
 
-with `GH_PACKAGES_TOKEN` set in your environment. Then, if your account has
-been granted access:
+Then install a published version:
 
 ```bash
 npm install @vespeneventures/gates
 ```
 
-Nothing here has been published for open, unauthenticated installation yet.
-See [docs/PUBLISHING.md](docs/PUBLISHING.md) for the maintainer process and
-why packages default to private.
+An authentication token is required only for maintainer actions such as
+publishing. See [docs/PUBLISHING.md](docs/PUBLISHING.md) for package release
+status and the maintainer process.
 
 ## Usage
 

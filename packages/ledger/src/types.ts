@@ -20,7 +20,7 @@ import type { PolicyBinding } from "@vespeneventures/policy";
  *
  * `factRef` is a plain, opaque string identifying a fact — never a typed
  * import of `@vespeneventures/strategy`'s `Fact`. This is the exact same
- * seam `@vespeneventures/voice`'s `Claim.factRef`,
+ * seam `@vespeneventures/copy/voice`'s `Claim.factRef`,
  * `@vespeneventures/copy`'s `CopyEntry.factRef`, and
  * `@vespeneventures/strategy`'s own `Market.factRefs`/`Audience.factRefs`
  * already use: the coupling is a string convention two sides happen to
@@ -59,10 +59,10 @@ export interface PublicationEntry {
   publishedAt: string;
   /**
    * Where this was published. A plain, non-empty string — deliberately
-   * **not** `@vespeneventures/compose`'s closed `Channel` vocabulary
+   * **not** `@vespeneventures/surface/core`'s closed `Channel` vocabulary
    * (`"web" | "email" | "print" | "slides" | "image"`). This package has no
-   * dependency on `compose`, and a real publication channel is broader than
-   * compose's five render targets — a press release, a single investor
+   * dependency on `surface`, and a real publication channel is broader than
+   * surface's five render targets — a press release, a single investor
    * update, a sales deck sent to one prospect are all channels a ledger
    * should be able to record without this package needing to know about
    * them in advance.
@@ -108,8 +108,8 @@ export type Ledger = readonly PublicationEntry[];
  * `"warning"`, worth surfacing without failing a check). Deliberately the
  * same shape as `@vespeneventures/policy`'s `Finding` — itself mirrored by
  * every other `Finding`-shaped type in this repository
- * (`@vespeneventures/compose`'s `ComposeFinding`, `@vespeneventures/copy`'s
- * `CopyFinding`, `@vespeneventures/voice`'s `VoiceFinding`) — but defined
+ * (`@vespeneventures/surface/core`'s `ComposeFinding`, `@vespeneventures/copy`'s
+ * `CopyFinding`, `@vespeneventures/copy/voice`'s `VoiceFinding`) — but defined
  * locally rather than imported, following that same repository-wide
  * convention: a caller already handling one kind of finding here does not
  * need a second mental model for this package's, and this package's own

@@ -20,7 +20,7 @@
  *
  *   - This package does NOT import `@vespeneventures/strategy`. Every fact
  *     a `PublicationEntry` cites is a plain, opaque `factRef` string — the
- *     exact seam `@vespeneventures/voice`'s `Claim.factRef` and
+ *     exact seam `@vespeneventures/copy/voice`'s `Claim.factRef` and
  *     `@vespeneventures/copy`'s `CopyEntry.factRef` already use one layer
  *     up. `strategy` never appears in this package's `dependencies`, and
  *     nothing in `src/` imports it — see `README.md`'s "Why this package

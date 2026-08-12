@@ -57,7 +57,7 @@ export function renderImageDocument(doc: ComposeDocument, options: RenderImageOp
   const meta = doc.meta as ImageMeta;
 
   // `ComposeDocument.layout` is typed optional (see @vespeneventures/
-  // compose's own `types.ts`) because it's forbidden for web/email —
+  // surface/core's own `types.ts`) because it's forbidden for web/email —
   // `validateComposeDocument` already enforces it's REQUIRED for `image`,
   // but this function does not assume its caller ran that validation
   // first, so it checks again rather than crashing on the shared

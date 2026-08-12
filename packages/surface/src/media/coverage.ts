@@ -2,7 +2,7 @@
  * `checkAssetCoverage` — compares a list of asset ids a consumer's own
  * documents actually REFERENCE (in practice, every `SlotBinding.assetId`
  * across a set of `@vespeneventures/surface/core` documents, though this
- * function takes a plain `string[]` and has no dependency on `compose`
+ * function takes a plain `string[]` and has no dependency on `surface/core`
  * itself) against a real `AssetRecord`, and reports both directions of
  * drift: a referenced id with no registered entry (an asset a renderer is
  * about to fail to find), and a registered entry no document currently
