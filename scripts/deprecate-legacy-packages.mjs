@@ -27,6 +27,13 @@ export function legacyDeprecationPlan(scope) {
   }));
 }
 
+export function deprecationTarget(packageName, version) {
+  if (typeof version !== "string" || !/^[0-9A-Za-z][0-9A-Za-z.+-]*$/.test(version)) {
+    throw new Error(`legacy deprecation: registry returned an unsafe version for ${packageName}`);
+  }
+  return `${packageName}@${version}`;
+}
+
 function npm(args, { allowEmpty = false } = {}) {
   const output = execFileSync("npm", args, {
     encoding: "utf8",
@@ -125,8 +132,10 @@ function main() {
     console.log("dry-run: no registry metadata changed");
     return;
   }
-  for (const entry of plan) {
-    npm(["deprecate", `${entry.packageName}@*`, entry.message, `--registry=${registry}`], { allowEmpty: true });
+  for (const entry of before) {
+    for (const { version } of entry.versions) {
+      npm(["deprecate", deprecationTarget(entry.packageName, version), entry.message, `--registry=${registry}`], { allowEmpty: true });
+    }
   }
   const after = readRegistryState(plan, registry);
   assertApplied(after);
