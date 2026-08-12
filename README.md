@@ -53,8 +53,9 @@ primitives, channel surfaces, and consumer-owned publishing, see
 
 ## Installing
 
-Packages publish to **GitHub Packages**, not the public npm registry. Published
-versions are public and can be installed without a GitHub token; package
+Packages publish to **GitHub Packages**, not the public npm registry. Installing
+from GitHub Packages requires a GitHub personal access token with
+`read:packages`, including for publicly visible package versions. Package
 availability is still determined by the registry, not by this source-tree
 inventory.
 
@@ -62,17 +63,18 @@ Add to your project's `.npmrc` (never commit a real one):
 
 ```
 @vespeneventures:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${GH_PACKAGES_TOKEN}
 ```
 
-Then install a published version:
+With `GH_PACKAGES_TOKEN` set in your environment, install a published version:
 
 ```bash
 npm install @vespeneventures/gates
 ```
 
-An authentication token is required only for maintainer actions such as
-publishing. See [docs/PUBLISHING.md](docs/PUBLISHING.md) for package release
-status and the maintainer process.
+The same token is also used for maintainer actions such as publishing. See
+[docs/PUBLISHING.md](docs/PUBLISHING.md) for package release status and the
+maintainer process.
 
 ## Usage
 

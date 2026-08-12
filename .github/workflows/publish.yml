@@ -69,7 +69,8 @@ jobs:
           if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
             echo "matrix=$(node -e 'console.log(JSON.stringify([{ package: process.env.MANUAL_PACKAGE }]))')" >> "$GITHUB_OUTPUT"
           else
-            echo "matrix=$(node scripts/select-publishable-packages.mjs "$BEFORE" "$HEAD")" >> "$GITHUB_OUTPUT"
+            matrix="$(node scripts/select-publishable-packages.mjs "$BEFORE" "$HEAD")"
+            echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
           fi
 
   visibility:
