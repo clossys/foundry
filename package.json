@@ -32,7 +32,11 @@
     "agent:cloud:bootstrap": "node scripts/agent-cloud.mjs bootstrap",
     "agent:cloud:check": "node scripts/agent-cloud.mjs check",
     "//preflight": "Everything a package must pass before a publish is even proposed. Unlike `check`, this scans the packed TARBALL and asks the registry whether the name is already taken.",
-    "preflight": "node scripts/preflight-package.mjs"
+    "preflight": "node scripts/preflight-package.mjs",
+    "//check-conversation": "Deliberately NOT part of `check` above. Every other check gate scans this checkout — offline, hermetic, exactly reproducible on a fork's CI run with no credentials. This one scans GitHub's live API instead: it needs network access and an authenticated `gh`, neither of which a fork's CI or an offline run has, so wiring it into `check` would make the whole chain fail (or silently no-op) for every contributor who isn't the repository owner. Run it separately, where those preconditions are actually met.",
+    "check:conversation": "node scripts/check-conversation-safety.mjs --all",
+    "//check-conversation-draft": "The prevention mode: scan text BEFORE it is posted to an issue or PR, while withholding it is still free. Pass --file <path>, or pipe the draft text in: `echo \"...\" | npm run check:conversation:draft --`.",
+    "check:conversation:draft": "node scripts/check-conversation-safety.mjs"
   },
   "devDependencies": {
     "typescript": "~6.0.0"

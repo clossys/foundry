@@ -49,6 +49,39 @@ npm run preflight -- packages/<name>
 which runs every gate — including the tarball-content scan and the name-collision
 check — and fails rather than degrades.
 
+## Conversation surface
+
+`scripts/check-public-safety.mjs` scans this repository's git tree. It has
+never seen an issue, a pull request description, or a comment — those live
+in GitHub's own database, not in a commit, so the tree scan cannot reach
+them no matter how thorough it gets. An audit of this repository's own
+conversation history is what surfaced that gap: private-identity findings
+sitting in issues and comments while every commit stayed clean.
+
+Issues, pull request descriptions, and comments are as public and as
+permanent as anything committed here — more so, in one respect: GitHub
+emails the full text to every watcher and thread participant the instant it
+is posted, before any check has had a chance to run. Editing or deleting
+the text afterward does not undo that email, and GitHub keeps prior
+revisions of an edited issue or comment visible in its own edit-history
+dropdown. "I edited it" is not "it never happened."
+
+`.github/workflows/conversation-safety.yml` runs the same category of check
+against issue, comment, and pull-request-description text after it posts,
+and labels a finding. It deliberately posts no comment: on a public
+repository an automated "private identity detected here" reply is itself a
+public signal, pointing a reader at the edit history where the original
+text still sits. The label and the failed check tell a maintainer what they
+need without broadcasting it. That workflow says so plainly in its own header: it detects after
+the fact, it cannot undo a notification that already went out, and it is
+not a substitute for checking a draft before posting. The issue templates
+under `.github/ISSUE_TEMPLATE/` and `.github/PULL_REQUEST_TEMPLATE.md`
+carry the same "never post this" list up front, before a contributor has
+typed anything, because that is the only point where prevention is
+actually possible. See [SECURITY.md](SECURITY.md) for the fuller
+explanation of the gate and [CONTRIBUTING.md](CONTRIBUTING.md) for what
+this means day to day.
+
 ## Cloud sessions
 
 Codex Cloud and Claude remote sessions use the same repository contract: run

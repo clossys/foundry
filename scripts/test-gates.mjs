@@ -80,14 +80,30 @@ const SET_SCOPE = join(scriptDir, "set-scope.mjs");
 const ROOT_README = join(scriptDir, "check-root-readme-parity.mjs");
 const TYPECHECKED = join(scriptDir, "check-typechecked-assertions.mjs");
 const COMMIT_MESSAGES = join(scriptDir, "check-commit-messages.mjs");
+const CONVERSATION = join(scriptDir, "check-conversation-safety.mjs");
 
 let passed = 0;
 let skipped = 0;
 const failures = [];
 
 function run(cmd, args, opts = {}) {
+  // execFileSync's `input` option is documented to "override stdio[0]", but
+  // in practice an explicit stdio[0] of "ignore" wins instead and `input` is
+  // silently dropped — verified empirically, not from the docs alone. Every
+  // existing caller here relies on stdin being ignored (none of the other
+  // ~150 cases in this file pass `input`), so stdio only switches to fully
+  // piped when a case actually supplies `input` — this can't change behavior
+  // for any case that doesn't.
+  const stdio = opts.input !== undefined ? ["pipe", "pipe", "pipe"] : ["ignore", "pipe", "pipe"];
+  // maxBuffer well above Node's 1 MiB default, because this harness has to be
+  // able to observe the very outputs most likely to be mishandled. A --json
+  // report over a large fixture runs to megabytes; at the default, execFileSync
+  // raises ENOBUFS and the catch below returns a TRUNCATED stdout, so a test
+  // asserting on that output would be judging a fragment while looking like it
+  // read the whole thing. That failure mode is indistinguishable from the
+  // product bug these large-output cases exist to detect.
   try {
-    const stdout = execFileSync(cmd, args, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], ...opts });
+    const stdout = execFileSync(cmd, args, { encoding: "utf8", stdio, maxBuffer: 1 << 28, ...opts });
     return { code: 0, out: stdout };
   } catch (error) {
     return { code: error.status ?? 1, out: (error.stdout ?? "") + (error.stderr ?? "") };
@@ -2218,6 +2234,180 @@ try {
       "no commit label contains an embedded newline",
       !/commit \n/.test(r.out),
       `found a "commit \\n..." label in output:\n${r.out}`,
+    );
+  }
+
+  // ------------------------------------------ check-conversation-safety
+  // GH gap: every gate above scans a directory of FILES. Nothing ever
+  // scanned GitHub's conversation surface — issue bodies, PR bodies, issue
+  // comments, PR review comments — until this gate, and an audit of this
+  // repository's own history found 214 private-identity findings sitting
+  // there while the tree itself was clean.
+  //
+  // These cases exercise DRAFT mode exclusively (--file and stdin): it is
+  // the one mode that needs no `gh` authentication and no network access, so
+  // it is the only mode a hermetic test suite can exercise at all — and, not
+  // coincidentally, it is also the single most valuable mode the gate has,
+  // since it PREVENTS disclosure (scanning text before it is posted) rather
+  // than merely detecting it after the fact. The --issue/--pr/--all fetch
+  // paths are unexercised here; check-name-collision.mjs's --packages-json
+  // seam is the model for how to make those hermetically testable too, left
+  // as follow-up rather than faked silently in this pass.
+  console.log("\n# check-conversation-safety: draft mode");
+  {
+    function listConversationTmpDirs() {
+      try {
+        return new Set(readdirSync(tmpdir()).filter((e) => e.startsWith("conversation-safety-")));
+      } catch {
+        return new Set();
+      }
+    }
+
+    // ---- detects a planted identity term piped in as a draft, and reports
+    // it as a category label + location, never as the matched text itself.
+    const before1 = listConversationTmpDirs();
+    const planted = run("node", [CONVERSATION, "--denylist", synthPath, "--require-denylist", "--json"], {
+      input: "Please review the acme-corp integration notes before merging.\n",
+    });
+    const after1 = listConversationTmpDirs();
+    let plantedReport;
+    try {
+      plantedReport = JSON.parse(planted.out);
+    } catch {
+      plantedReport = null;
+    }
+    check("draft mode exits 1 on a planted identity term", planted.code === 1, `exit was ${planted.code}: ${planted.out.slice(0, 300)}`);
+    check(
+      "draft mode reports the finding as a category label + location, not raw text",
+      (plantedReport?.findings ?? []).some(
+        (f) => f.kind === "identity" && f.detail === "synthetic sibling product" && f.location === "draft (not yet posted)",
+      ),
+      `findings: ${JSON.stringify(plantedReport?.findings)}`,
+    );
+    check(
+      "draft mode never echoes the matched string anywhere in its output",
+      !planted.out.includes("acme-corp"),
+      `matched term leaked into output: ${planted.out}`,
+    );
+    check(
+      "draft mode cleans up its temp dir after a FAILING run",
+      after1.size === before1.size,
+      `temp dirs before: ${before1.size}, after: ${after1.size} — a conversation-safety-* dir was left behind`,
+    );
+
+    // ---- a clean draft passes, and still cleans up
+    const before2 = listConversationTmpDirs();
+    const clean = run("node", [CONVERSATION, "--denylist", synthPath, "--require-denylist", "--json"], {
+      input: "This is an ordinary comment about a bug fix, nothing sensitive.\n",
+    });
+    const after2 = listConversationTmpDirs();
+    check("draft mode exits 0 on clean text", clean.code === 0, `exit was ${clean.code}: ${clean.out.slice(0, 300)}`);
+    check(
+      "draft mode cleans up its temp dir after a PASSING run",
+      after2.size === before2.size,
+      `temp dirs before: ${before2.size}, after: ${after2.size} — a conversation-safety-* dir was left behind`,
+    );
+
+    // ---- FULL mode required, no denylist available -> exit 2 (could not
+    // run), never a silent pass. Same fail-closed contract check-public-
+    // safety.mjs itself makes, delegated through rather than reimplemented.
+    const before3 = listConversationTmpDirs();
+    const noDenylistEnv = { ...process.env };
+    delete noDenylistEnv.PUBLIC_SAFETY_DENYLIST;
+    const requirePartial = run("node", [CONVERSATION, "--require-denylist"], {
+      input: "hello\n",
+      env: noDenylistEnv,
+    });
+    const after3 = listConversationTmpDirs();
+    check(
+      "--require-denylist exits 2 rather than passing when no denylist is available",
+      requirePartial.code === 2,
+      `exit was ${requirePartial.code}: ${requirePartial.out.slice(0, 300)}`,
+    );
+    check(
+      "draft mode cleans up its temp dir even on the FULL-mode-required failure path",
+      after3.size === before3.size,
+      `temp dirs before: ${before3.size}, after: ${after3.size} — a conversation-safety-* dir was left behind`,
+    );
+
+    // ---- PARTIAL mode (no denylist, not required) still exits 0 but never
+    // claims a bare, unqualified PASS.
+    const partial = run("node", [CONVERSATION], { input: "hello\n", env: noDenylistEnv });
+    check(
+      "PARTIAL mode (no denylist, not required) exits 0 but the banner says so",
+      partial.code === 0 && /PARTIAL SCAN/.test(partial.out),
+      `exit ${partial.code}: ${partial.out.slice(0, 300)}`,
+    );
+
+    // ---- --file mode: same scan, a real path instead of stdin, and the
+    // reported source names the draft file rather than a temp filename.
+    const draftPath = join(work, "conversation-draft.md");
+    writeFileSync(draftPath, "Mentions acme-corp in a file this time.\n");
+    const fileMode = run("node", [CONVERSATION, "--file", draftPath, "--denylist", synthPath, "--require-denylist", "--json"]);
+    let fileReport;
+    try {
+      fileReport = JSON.parse(fileMode.out);
+    } catch {
+      fileReport = null;
+    }
+    check("--file mode exits 1 on a planted identity term", fileMode.code === 1, `exit was ${fileMode.code}: ${fileMode.out.slice(0, 300)}`);
+    check(
+      "--file mode reports the draft file's own path as the source, not a temp filename",
+      fileReport?.source === `draft file ${draftPath}`,
+      `source: ${JSON.stringify(fileReport?.source)}`,
+    );
+    check(
+      "--file mode never echoes the matched string either",
+      !fileMode.out.includes("acme-corp"),
+      `matched term leaked into output: ${fileMode.out}`,
+    );
+
+    // ---- LARGE-REPORT REGRESSION. Every assertion above uses a tiny draft,
+    // and that is exactly how the original defect shipped green: the leak
+    // only appears once the inner --json report outgrows a pipe's buffer.
+    //
+    // Two distinct bugs, both found by review, both reproduced with the
+    // draft below:
+    //   1. check-public-safety.mjs wrote its report with console.log and then
+    //      called process.exit(), truncating a piped report at ~64 KB. The
+    //      reader then had invalid JSON.
+    //   2. check-conversation-safety.mjs, on failing to parse that report,
+    //      printed the raw payload — which still carried the matched lines in
+    //      each finding's `text` field — straight to stderr, i.e. into the
+    //      public CI log the whole script exists to protect.
+    // Together they turned the gate into a disclosure channel precisely when
+    // it had the most to disclose. A small fixture cannot catch either.
+    // Its own directory, not `work`: scanning `work` would sweep in every
+    // other fixture in this file and make the report's size depend on
+    // unrelated tests. This case is about one very large document.
+    const bigDir = join(work, "big-report-fixture");
+    mkdirSync(bigDir, { recursive: true });
+    const bigDraftPath = join(bigDir, "big-draft.md");
+    writeFileSync(bigDraftPath, Array.from({ length: 20000 }, (_, i) => `partner acme-corp row ${i}`).join("\n"));
+
+    const bigReport = run("node", [SAFETY, bigDir, "--no-gitignore", "--allow-changelogs", "--json", ...DL]);
+    let bigParsed = null;
+    try {
+      bigParsed = JSON.parse(bigReport.out);
+    } catch {
+      bigParsed = null;
+    }
+    check(
+      "check-public-safety --json survives a pipe when the report is megabytes long",
+      bigParsed !== null && Array.isArray(bigParsed.failures) && bigParsed.failures.length > 1000,
+      `report did not parse or was truncated: ${bigReport.out.length} bytes captured`,
+    );
+
+    const bigConv = run("node", [CONVERSATION, "--file", bigDraftPath, "--denylist", synthPath, "--require-denylist"]);
+    check(
+      "conversation gate still reports a finding on a very large draft",
+      bigConv.code === 1,
+      `expected exit 1, got ${bigConv.code}: ${bigConv.out.slice(0, 400)}`,
+    );
+    check(
+      "conversation gate never echoes the matched string on a very large draft",
+      !bigConv.out.includes("acme-corp"),
+      `matched term leaked ${(bigConv.out.match(/acme-corp/g) || []).length} time(s) into output`,
     );
   }
 } finally {

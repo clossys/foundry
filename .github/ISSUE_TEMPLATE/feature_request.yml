@@ -1,0 +1,63 @@
+name: Feature request
+description: Propose a change to a published package or to this repository's tooling.
+title: "[feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Before you post — this becomes public and permanent
+
+        This repository is public (see AGENTS.md). The instant you submit,
+        GitHub emails the full text to every watcher, and even if you edit
+        or delete it afterward, GitHub keeps prior revisions visible in the
+        edit-history dropdown. This repository's tree-based safety gate
+        (`scripts/check-public-safety.mjs`) never looks at an issue — it
+        only scans committed files — so this list is the only check a
+        public issue gets before it is world-readable, short of running
+        `scripts/check-conversation-safety.mjs` against a draft yourself
+        first.
+
+        **Never include:**
+        - The name of a private sibling repository or product — this
+          repository names only itself.
+        - A private npm scope or package name that isn't published from
+          this repository (check [README.md](https://github.com/vespeneventures/foundry#packages)'s package table).
+        - A cross-repository issue/PR reference to a private repo (e.g.
+          `org/private-repo#12`) — the number alone tells a reader that repo
+          exists.
+        - An absolute path into your own machine (anything rooted at your
+          home directory or drive letter, rather than relative to the
+          repository) — it can disclose your username or internal machine
+          layout.
+        - Any credential — API key, token, password, connection string. If
+          one is already posted anywhere, rotate it immediately regardless
+          of what happens to this issue.
+        - A client, customer, or personal name — describe the use case
+          generically instead ("a multi-tenant SaaS product" rather than a
+          real name).
+
+        Reporting a **security vulnerability**? Stop here — use
+        [private vulnerability reporting](https://github.com/vespeneventures/foundry/security/advisories/new)
+        instead of this form. See
+        [SECURITY.md](https://github.com/vespeneventures/foundry/blob/main/SECURITY.md).
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the situation generically — no real client, product, or repository names.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+    validations:
+      required: true
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Before submitting
+      options:
+        - label: I checked this request against the "never include" list above and it contains none of those things.
+          required: true

@@ -1,0 +1,67 @@
+name: Bug report
+description: Something in a published package, or this repository's own tooling, doesn't work as documented.
+title: "[bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Before you post — this becomes public and permanent
+
+        This repository is public (see AGENTS.md). The instant you submit,
+        GitHub emails the full text to every watcher, and even if you edit
+        or delete it afterward, GitHub keeps prior revisions visible in the
+        edit-history dropdown. This repository's tree-based safety gate
+        (`scripts/check-public-safety.mjs`) never looks at an issue — it
+        only scans committed files — so this list is the only check a
+        public issue gets before it is world-readable, short of running
+        `scripts/check-conversation-safety.mjs` against a draft yourself
+        first.
+
+        **Never include:**
+        - The name of a private sibling repository or product — this
+          repository names only itself.
+        - A private npm scope or package name that isn't published from
+          this repository (check [README.md](https://github.com/vespeneventures/foundry#packages)'s package table).
+        - A cross-repository issue/PR reference to a private repo (e.g.
+          `org/private-repo#12`) — the number alone tells a reader that repo
+          exists.
+        - An absolute path into your own machine (anything rooted at your
+          home directory or drive letter, rather than relative to the
+          repository) — it can disclose your username or internal machine
+          layout.
+        - Any credential — API key, token, password, connection string. If
+          one is already posted anywhere, rotate it immediately regardless
+          of what happens to this issue.
+        - A client, customer, or personal name.
+
+        Reporting a **security vulnerability**? Stop here — use
+        [private vulnerability reporting](https://github.com/vespeneventures/foundry/security/advisories/new)
+        instead of this form. See
+        [SECURITY.md](https://github.com/vespeneventures/foundry/blob/main/SECURITY.md).
+  - type: input
+    id: package
+    attributes:
+      label: Package and version
+      description: e.g. "@vespeneventures/policy@0.1.0". Leave blank if this is about repository tooling rather than a published package.
+      placeholder: "@vespeneventures/xxx@0.1.0"
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include the smallest reproduction you have. Use a fabricated example rather than real internal data — see the list above.
+    validations:
+      required: true
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Before submitting
+      options:
+        - label: I checked this report against the "never include" list above and it contains none of those things.
+          required: true

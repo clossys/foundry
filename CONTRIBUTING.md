@@ -52,6 +52,44 @@ On a pull request from a fork, the safety checks run in PARTIAL mode —
 repository secrets are unavailable to forks by design. This is expected and is
 not something you need to fix. A maintainer re-runs FULL mode before merge.
 
+## Conversation surface
+
+Everything above runs against files. None of it runs against an issue, a
+pull request description, or a comment — those aren't in the git tree, so
+`check-public-safety` and `gitleaks` never see them, no matter how careful
+the diff itself is. This repository learned that the hard way: a
+conversation-history audit found private-identity findings sitting in
+issues and comments while every commit stayed clean.
+
+Treat what you type into an issue, a PR description, or a comment as public
+and permanent from the moment you hit submit — more permanent, in one way,
+than a commit: GitHub emails the full text to every watcher immediately,
+before anything has had a chance to check it. If you edit or delete it
+afterward, the email already went out, and GitHub keeps the prior revision
+visible in that issue or comment's own edit-history dropdown. Fixing it
+after the fact reduces exposure; it does not undo it.
+
+Practically:
+
+- Open issues and pull requests through the templates in
+  `.github/ISSUE_TEMPLATE/` and `.github/PULL_REQUEST_TEMPLATE.md`. Each
+  leads with a short "never post this" list (private sibling repo/product
+  names, private npm scopes, cross-repository references to private repos,
+  absolute local filesystem paths, credentials, client/personal names) —
+  read it before you write anything, not after.
+- `.github/workflows/conversation-safety.yml` re-checks issue, comment, and
+  PR-description text after it posts and applies the `public-safety` label
+  to a finding. It posts no comment — on a public repository that reply
+  would itself advertise that this text holds something private, and point
+  at the edit history where the original still is. If your issue or PR gets
+  that label, the redacted category and count are in the workflow run log. It
+  is a tripwire, not a gate — by the time it runs, the text has already been
+  emailed to everyone watching. Do not rely on it instead of checking your
+  own draft; if you want to check before posting, run
+  `PUBLIC_SAFETY_DENYLIST=~/.config/public-safety/denylist-foundry.json node scripts/check-conversation-safety.mjs --file <draft.txt>` yourself first.
+- Found a security vulnerability instead of a bug? Don't put it in a public
+  issue or PR at all — see SECURITY.md's private vulnerability reporting.
+
 ## Conventions
 
 - **Dependencies:** the default answer is no. A package here should be usable
