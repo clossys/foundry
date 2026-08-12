@@ -165,9 +165,12 @@ export function evaluateLifecycleCoverage(value: unknown, packageNames: readonly
   const declared = new Set<string>();
   packagesValue.value.forEach((entry, index) => {
     const name = isRecord(entry) ? ownDataValue(entry, "name").value : undefined;
+    const status = isRecord(entry) ? ownDataValue(entry, "status").value : undefined;
     if (typeof name !== "string" || !PACKAGE_NAME.test(name)) return;
     declared.add(name);
-    if (!packageNames.includes(name)) {
+    // A deprecated lifecycle entry is durable retirement evidence and may
+    // intentionally outlive its workspace package directory.
+    if (status !== "deprecated" && !packageNames.includes(name)) {
       findings.push(finding("catalog-package-missing", `packages[${index}].name`, `Lifecycle entry "${name}" is not present in the workspace catalog.`));
     }
   });

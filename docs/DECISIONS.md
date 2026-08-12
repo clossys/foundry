@@ -127,6 +127,19 @@ finding about the mechanism the remaining four packages exist to enforce.
 
 ---
 
+## 6. Retiring `domain-model`
+
+**Status:** retired from the registry after the supported consumers migrated
+to `@vespeneventures/domain@0.2.0`.
+
+The original package name was retained temporarily only as a compatibility
+re-export. It has now been removed from this repository and the registry; it
+is not republished. The lifecycle record retains the replacement and migration
+evidence so historical package state remains auditable without leaving an
+installable compatibility surface.
+
+---
+
 ## Settled
 
 **Author attribution — keep a real name in the `"author"` field.** A real

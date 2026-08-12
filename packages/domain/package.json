@@ -38,7 +38,7 @@
   "bugs": {
     "url": "https://github.com/vespeneventures/foundry/issues"
   },
-  "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/domain-model#readme",
+  "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/domain#readme",
   "engines": {
     "node": ">=20"
   },

@@ -67,4 +67,21 @@ describe("validatePackageLifecycle", () => {
       "catalog-package-missing",
     ]);
   });
+
+  it("retains documented deprecated packages after their workspace source is removed", () => {
+    expect(evaluateLifecycleCoverage({
+      schemaVersion: 1,
+      packages: [
+        { name: "@example/current", status: "active" },
+        {
+          name: "@example/retired",
+          status: "deprecated",
+          replacement: { name: "@example/current", range: "^1.0.0" },
+          deprecatedOn: "2026-08-11",
+          decision: "https://example.invalid/decisions/retired",
+          migration: "https://example.invalid/migrations/retired",
+        },
+      ],
+    }, ["@example/current"])).toEqual([]);
+  });
 });

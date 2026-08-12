@@ -177,10 +177,18 @@ try {
           ["-C", repoRoot, "ls-files", "--cached", "--others", "--exclude-standard", "--", join("packages", name)],
           { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
         );
+        const deleted = execFileSync(
+          "git",
+          ["-C", repoRoot, "ls-files", "--deleted", "--", join("packages", name)],
+          { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
+        );
+        const deletedPaths = new Set(deleted.split("\n").filter(Boolean));
         // An ignored-only build/cache remnant is not a package. Anything
         // tracked or nonignored remains a finding below because its missing
-        // package.json is meaningful and must fail closed.
-        return visible.trim().length > 0;
+        // package.json is meaningful and must fail closed. A directory whose
+        // every tracked file has been removed from the worktree is a real
+        // package retirement, not a broken package awaiting a manifest.
+        return visible.split("\n").some((path) => path && !deletedPaths.has(path));
       } catch {
         // If git cannot establish whether the directory is ignored-only,
         // include it so the subsequent manifest read fails closed.
