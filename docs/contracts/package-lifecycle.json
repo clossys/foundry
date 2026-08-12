@@ -4,7 +4,7 @@
     { "name": "@vespeneventures/auth", "status": "published" },
     { "name": "@vespeneventures/catalog", "status": "published" },
     { "name": "@vespeneventures/comms", "status": "published" },
-    { "name": "@vespeneventures/copy", "status": "incubating" },
+    { "name": "@vespeneventures/copy", "status": "published" },
     { "name": "@vespeneventures/deployment", "status": "adopted" },
     { "name": "@vespeneventures/domain", "status": "adopted" },
     {
@@ -28,7 +28,29 @@
     { "name": "@vespeneventures/review", "status": "published" },
     { "name": "@vespeneventures/secrets", "status": "adopted" },
     { "name": "@vespeneventures/strategy", "status": "published" },
-    { "name": "@vespeneventures/surface", "status": "incubating" },
-    { "name": "@vespeneventures/ui", "status": "published" }
+    { "name": "@vespeneventures/surface", "status": "published" },
+    {
+      "name": "@vespeneventures/tokens",
+      "status": "deprecated",
+      "replacement": {
+        "name": "@vespeneventures/ui",
+        "range": "^0.7.0"
+      },
+      "deprecatedOn": "2026-08-11",
+      "decision": "docs/DECISIONS.md#7-consolidating-tokens-and-voice",
+      "migration": "docs/PIPELINE.md#consumer-integration-checklist"
+    },
+    { "name": "@vespeneventures/ui", "status": "published" },
+    {
+      "name": "@vespeneventures/voice",
+      "status": "deprecated",
+      "replacement": {
+        "name": "@vespeneventures/copy",
+        "range": "^0.3.0"
+      },
+      "deprecatedOn": "2026-08-11",
+      "decision": "docs/DECISIONS.md#7-consolidating-tokens-and-voice",
+      "migration": "docs/PIPELINE.md#consumer-integration-checklist"
+    }
   ]
 }
