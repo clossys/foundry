@@ -91,7 +91,7 @@
 // covers the surfaces GitHub's REST API exposes as fetchable objects: it does
 // not scan repository wiki pages, GitHub Discussions, or Actions run logs.
 
-import { mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync } from "node:fs";
+import { mkdtempSync, rmSync, writeFileSync, readFileSync, readSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { execFileSync } from "node:child_process";
@@ -297,6 +297,35 @@ function fetchAll(repo, sinceTs, sinceRaw) {
 function fetchDraft() {
   const filePath = flagValue("--file");
   let text;
+  // readFileSync(0) is the obvious way to slurp stdin and it is wrong for a
+  // pipe. Once the pipe buffer drains faster than the writer refills it, the
+  // underlying read(2) returns EAGAIN on a non-blocking fd and the sync call
+  // throws rather than waiting — reproducible with a ~1.7 MB paste on macOS,
+  // and silent for anything small enough to fit the buffer in one go, which
+  // is why it survives casual testing. An uncaught throw here would also exit
+  // with code 1: the code this tool reserves for "a real finding", making a
+  // crash indistinguishable from a detected leak by any caller that reads
+  // only the exit status. So: read in a loop, treat EAGAIN as "wait and
+  // retry" rather than as failure, and route any genuine error through die()
+  // so it becomes exit 2, "the gate could not run".
+  function readStdinFully() {
+    const chunks = [];
+    const buf = Buffer.alloc(1 << 16);
+    while (true) {
+      let bytes;
+      try {
+        bytes = readSync(0, buf, 0, buf.length, null);
+      } catch (error) {
+        if (error.code === "EAGAIN") continue;
+        if (error.code === "EOF") break;
+        die(`could not read stdin: ${error.message}`);
+      }
+      if (!bytes) break;
+      chunks.push(Buffer.from(buf.subarray(0, bytes)));
+    }
+    return Buffer.concat(chunks).toString("utf8");
+  }
+
   if (filePath) {
     if (!existsSync(filePath)) die(`--file ${filePath} does not exist`);
     text = readFileSync(filePath, "utf8");
@@ -308,7 +337,7 @@ function fetchDraft() {
           "     or: <text> | node scripts/check-conversation-safety.mjs",
       );
     }
-    text = readFileSync(0, "utf8");
+    text = readStdinFully();
   }
   return [bodyItem("draft", null, null, null, text)];
 }
@@ -392,7 +421,19 @@ try {
   let gateOut = "";
   let gateCode = 0;
   try {
-    gateOut = execFileSync("node", gateArgs, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
+    // maxBuffer MUST be set here, and generously. check-public-safety.mjs's
+    // --json report puts the RAW MATCHED LINE in each identity finding's
+    // `text` field (see that file's identity-matching push, where it stores
+    // rawLines[i].trim().slice(0, 100) — only SECRET-class findings are
+    // "<redacted>"). So this pipe carries precisely the strings this script
+    // exists to keep out of a public log. At Node's 1 MiB default a report
+    // with a few thousand findings — well within range for a real denylist
+    // over a whole conversation surface — overflows the buffer, execFileSync
+    // throws, the JSON no longer parses, and the truncated-but-still-raw
+    // payload lands in the error path below. That was a live defect, caught
+    // in review by piping a synthetic 20k-match draft through it and watching
+    // the planted term print 318 times.
+    gateOut = execFileSync("node", gateArgs, { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], maxBuffer: 1 << 28 });
   } catch (error) {
     gateCode = error.status ?? 2;
     gateOut = (error.stdout ?? "") + (error.stderr ?? "");
@@ -406,12 +447,35 @@ try {
   }
 
   if (!report) {
-    // The only way check-public-safety.mjs exits without ever reaching its
-    // --json branch is its own --require-denylist fast-fail (see that
-    // file's "FULL mode required..." path) — which always means "could not
-    // run", never "nothing found". Relay its explanation verbatim and mirror
-    // its exit code rather than inventing a second message for one failure.
-    console.error(gateOut.trim());
+    // Two very different things land here, and only one of them is safe to
+    // print.
+    //
+    // (a) check-public-safety.mjs never reached its --json branch at all —
+    //     its --require-denylist fast-fail. That output is a human-written
+    //     error message with no scanned content in it, so relaying it
+    //     verbatim is both safe and the most useful thing to do.
+    //
+    // (b) It DID emit a report and we failed to parse it — which now means
+    //     the output was truncated or corrupted, since maxBuffer is no longer
+    //     the cause. That payload is partial JSON still containing raw `text`
+    //     fields. Printing it would republish the matched strings into the
+    //     public CI log: the exact disclosure this whole script exists to
+    //     prevent, arriving through its own error handler.
+    //
+    // Distinguish by shape, and when in doubt treat it as (b). A report
+    // always starts with '{'; the fast-fail message never does.
+    const looksLikeReport = gateOut.trimStart().startsWith("{");
+    if (looksLikeReport) {
+      console.error(
+        "check-conversation-safety: the underlying gate produced a report that could not be parsed " +
+          `(${gateOut.length} bytes, exit ${gateCode}).\n` +
+          "Its output is deliberately NOT shown: an unparseable report is a truncated one, and a truncated " +
+          "report still contains raw matched text that must not reach a public log.\n" +
+          "This is NOT a clean scan. Re-run locally to investigate.",
+      );
+    } else {
+      console.error(gateOut.trim());
+    }
     exitCode = gateCode || 2;
   } else {
     const findings = (report.failures ?? []).map((f) => {

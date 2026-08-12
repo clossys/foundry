@@ -95,8 +95,15 @@ function run(cmd, args, opts = {}) {
   // piped when a case actually supplies `input` — this can't change behavior
   // for any case that doesn't.
   const stdio = opts.input !== undefined ? ["pipe", "pipe", "pipe"] : ["ignore", "pipe", "pipe"];
+  // maxBuffer well above Node's 1 MiB default, because this harness has to be
+  // able to observe the very outputs most likely to be mishandled. A --json
+  // report over a large fixture runs to megabytes; at the default, execFileSync
+  // raises ENOBUFS and the catch below returns a TRUNCATED stdout, so a test
+  // asserting on that output would be judging a fragment while looking like it
+  // read the whole thing. That failure mode is indistinguishable from the
+  // product bug these large-output cases exist to detect.
   try {
-    const stdout = execFileSync(cmd, args, { encoding: "utf8", stdio, ...opts });
+    const stdout = execFileSync(cmd, args, { encoding: "utf8", stdio, maxBuffer: 1 << 28, ...opts });
     return { code: 0, out: stdout };
   } catch (error) {
     return { code: error.status ?? 1, out: (error.stdout ?? "") + (error.stderr ?? "") };
@@ -2353,6 +2360,54 @@ try {
       "--file mode never echoes the matched string either",
       !fileMode.out.includes("acme-corp"),
       `matched term leaked into output: ${fileMode.out}`,
+    );
+
+    // ---- LARGE-REPORT REGRESSION. Every assertion above uses a tiny draft,
+    // and that is exactly how the original defect shipped green: the leak
+    // only appears once the inner --json report outgrows a pipe's buffer.
+    //
+    // Two distinct bugs, both found by review, both reproduced with the
+    // draft below:
+    //   1. check-public-safety.mjs wrote its report with console.log and then
+    //      called process.exit(), truncating a piped report at ~64 KB. The
+    //      reader then had invalid JSON.
+    //   2. check-conversation-safety.mjs, on failing to parse that report,
+    //      printed the raw payload — which still carried the matched lines in
+    //      each finding's `text` field — straight to stderr, i.e. into the
+    //      public CI log the whole script exists to protect.
+    // Together they turned the gate into a disclosure channel precisely when
+    // it had the most to disclose. A small fixture cannot catch either.
+    // Its own directory, not `work`: scanning `work` would sweep in every
+    // other fixture in this file and make the report's size depend on
+    // unrelated tests. This case is about one very large document.
+    const bigDir = join(work, "big-report-fixture");
+    mkdirSync(bigDir, { recursive: true });
+    const bigDraftPath = join(bigDir, "big-draft.md");
+    writeFileSync(bigDraftPath, Array.from({ length: 20000 }, (_, i) => `partner acme-corp row ${i}`).join("\n"));
+
+    const bigReport = run("node", [SAFETY, bigDir, "--no-gitignore", "--allow-changelogs", "--json", ...DL]);
+    let bigParsed = null;
+    try {
+      bigParsed = JSON.parse(bigReport.out);
+    } catch {
+      bigParsed = null;
+    }
+    check(
+      "check-public-safety --json survives a pipe when the report is megabytes long",
+      bigParsed !== null && Array.isArray(bigParsed.failures) && bigParsed.failures.length > 1000,
+      `report did not parse or was truncated: ${bigReport.out.length} bytes captured`,
+    );
+
+    const bigConv = run("node", [CONVERSATION, "--file", bigDraftPath, "--denylist", synthPath, "--require-denylist"]);
+    check(
+      "conversation gate still reports a finding on a very large draft",
+      bigConv.code === 1,
+      `expected exit 1, got ${bigConv.code}: ${bigConv.out.slice(0, 400)}`,
+    );
+    check(
+      "conversation gate never echoes the matched string on a very large draft",
+      !bigConv.out.includes("acme-corp"),
+      `matched term leaked ${(bigConv.out.match(/acme-corp/g) || []).length} time(s) into output`,
     );
   }
 } finally {
