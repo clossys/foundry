@@ -113,6 +113,10 @@ jobs:
     needs: discover
     if: ${{ needs.discover.outputs.packages != '[]' && (github.event_name != 'workflow_dispatch' || !inputs.visibility_only || inputs.verify_only) }}
     runs-on: ubuntu-latest
+    # A package upload or registry-artifact qualification must pass the
+    # repository's configured publish reviewers. Visibility-only changes have
+    # their own non-uploading job above and intentionally do not use it.
+    environment: npm-publish
     strategy:
       fail-fast: false
       max-parallel: 1
