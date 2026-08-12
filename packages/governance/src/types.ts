@@ -4,23 +4,41 @@ import type { PreflightPackageOptions, PreflightReport } from "@vespeneventures/
 /** The only lifecycle-document format supported by this version. */
 export const PACKAGE_LIFECYCLE_VERSION = 1 as const;
 
-/** One active package, or a deprecated package with its explicit successor. */
+/**
+ * A package's declared lifecycle maturity.
+ *
+ * `active` is retained as the schema-v1 compatibility value. It only means
+ * that the package remains current; new entries should use an explicit
+ * maturity value instead.
+ */
+export type PackageLifecycleStatus =
+  | "active"
+  | "incubating"
+  | "published"
+  | "qualified"
+  | "adopted"
+  | "deprecated"
+  | "retired";
+
+/** One package's maturity or terminal lifecycle record. */
 export interface PackageLifecycleEntry {
   readonly name: string;
-  readonly status: "active" | "deprecated";
-  /** Required only for deprecated packages. The successor must be active. */
+  readonly status: PackageLifecycleStatus;
+  /** Required for a terminal status unless `noReplacementReason` is supplied. */
   readonly replacement?: {
     readonly name: string;
     /** The semver range consumers should use for the successor. */
     readonly range: string;
   };
-  /** Required for a terminal retirement with no package successor; mutually exclusive with replacement. */
+  /** Required for a terminal package with no successor; mutually exclusive with replacement. */
   readonly noReplacementReason?: string;
-  /** Required only for deprecated packages, in calendar-date form (`YYYY-MM-DD`). */
+  /** Required for deprecated packages, in calendar-date form (`YYYY-MM-DD`). */
   readonly deprecatedOn?: string;
-  /** Required only for deprecated packages: durable decision record or URL. */
+  /** Required for retired packages, in calendar-date form (`YYYY-MM-DD`). */
+  readonly retiredOn?: string;
+  /** Required for deprecated or retired packages: durable decision record or URL. */
   readonly decision?: string;
-  /** Required only for deprecated packages: durable migration record or URL. */
+  /** Required for deprecated or retired packages: durable migration record or URL. */
   readonly migration?: string;
 }
 
@@ -44,6 +62,7 @@ export type LifecycleFindingRule =
   | "replacement-range"
   | "replacement-reason"
   | "deprecated-on"
+  | "retired-on"
   | "evidence"
   | "replacement-missing"
   | "replacement-not-active"
