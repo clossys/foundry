@@ -74,14 +74,22 @@ function readWorkspaceRoot(path: string): string {
 }
 
 function compactReport(report: ReturnType<typeof runGovernanceCheck>, scope: string | undefined, lifecycle: unknown): object {
-  const lifecycleEntries = typeof lifecycle === "object" && lifecycle !== null && Array.isArray((lifecycle as { packages?: unknown }).packages)
-    ? (lifecycle as { packages: unknown[] }).packages.length
-    : 0;
+  const lifecyclePackages = typeof lifecycle === "object" && lifecycle !== null && Array.isArray((lifecycle as { packages?: unknown }).packages)
+    ? (lifecycle as { packages: unknown[] }).packages
+    : [];
+  const lifecycleMaturity = lifecyclePackages.reduce<Record<string, number>>((counts, entry) => {
+    const status = typeof entry === "object" && entry !== null && typeof (entry as { status?: unknown }).status === "string"
+      ? (entry as { status: string }).status
+      : "invalid";
+    counts[status] = (counts[status] ?? 0) + 1;
+    return counts;
+  }, {});
   return {
     ok: report.ok,
     scope: scope ?? null,
     packages: report.foundation.catalog.entries.length,
-    lifecycleEntries,
+    lifecycleEntries: lifecyclePackages.length,
+    lifecycleMaturity: Object.fromEntries(Object.entries(lifecycleMaturity).sort(([left], [right]) => left.localeCompare(right))),
     foundationFindings: report.foundation.findings.length,
     lifecycleFindings: report.lifecycleFindings.length,
     buildOrder: report.buildOrder.ok ? "valid" : "invalid",
@@ -90,11 +98,13 @@ function compactReport(report: ReturnType<typeof runGovernanceCheck>, scope: str
 
 function formatText(summary: ReturnType<typeof compactReport>, verboseReport?: ReturnType<typeof runGovernanceCheck>): string {
   const values = summary as Record<string, unknown>;
+  const maturity = Object.entries(values.lifecycleMaturity as Record<string, number>).map(([status, count]) => `${status}=${count}`).join(", ");
   return [
     `Package governance: ${values.ok ? "PASS" : "FAIL"}`,
     `Scope: ${values.scope ?? "(all packages)"}`,
     `Packages: ${values.packages}`,
     `Lifecycle entries: ${values.lifecycleEntries}`,
+    `Lifecycle maturity: ${maturity || "(none)"}`,
     `Foundation findings: ${values.foundationFindings}`,
     `Lifecycle findings: ${values.lifecycleFindings}`,
     `Build order: ${values.buildOrder}`,

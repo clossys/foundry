@@ -2,9 +2,12 @@ import { PACKAGE_LIFECYCLE_VERSION } from "./types.js";
 import type { LifecycleFinding, LifecycleFindingRule } from "./types.js";
 
 const DOCUMENT_KEYS = new Set(["schemaVersion", "packages"]);
-const ENTRY_KEYS = new Set(["name", "status", "replacement", "noReplacementReason", "deprecatedOn", "decision", "migration"]);
+const ENTRY_KEYS = new Set(["name", "status", "replacement", "noReplacementReason", "deprecatedOn", "retiredOn", "decision", "migration"]);
 const PACKAGE_NAME = /^@[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/;
 const MAX_PACKAGES = 10_000;
+const CURRENT_STATUSES = new Set(["active", "incubating", "published", "qualified", "adopted"]);
+const TERMINAL_STATUSES = new Set(["deprecated", "retired"]);
+const REPLACEMENT_STATUSES = new Set(["active", "published", "qualified", "adopted"]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
@@ -86,9 +89,10 @@ export function validatePackageLifecycle(value: unknown): LifecycleFinding[] {
     const replacementValue = ownDataValue(entry, "replacement");
     const noReplacementReasonValue = ownDataValue(entry, "noReplacementReason");
     const deprecatedOnValue = ownDataValue(entry, "deprecatedOn");
+    const retiredOnValue = ownDataValue(entry, "retiredOn");
     const decisionValue = ownDataValue(entry, "decision");
     const migrationValue = ownDataValue(entry, "migration");
-    for (const [key, field] of Object.entries({ name: nameValue, status: statusValue, replacement: replacementValue, noReplacementReason: noReplacementReasonValue, deprecatedOn: deprecatedOnValue, decision: decisionValue, migration: migrationValue })) {
+    for (const [key, field] of Object.entries({ name: nameValue, status: statusValue, replacement: replacementValue, noReplacementReason: noReplacementReasonValue, deprecatedOn: deprecatedOnValue, retiredOn: retiredOnValue, decision: decisionValue, migration: migrationValue })) {
       if (field.accessor) findings.push(finding("field-accessor", `${path}.${key}`, "Lifecycle fields must be own data properties."));
     }
     const name = nameValue.value;
@@ -99,19 +103,22 @@ export function validatePackageLifecycle(value: unknown): LifecycleFinding[] {
     if (entries.has(name)) findings.push(finding("duplicate-package", `${path}.name`, `Duplicate lifecycle entry for "${name}".`));
     else entries.set(name, { status: typeof statusValue.value === "string" ? statusValue.value : "", path });
 
-    const deprecated = statusValue.value === "deprecated";
-    if (statusValue.value !== "active" && !deprecated) {
-      findings.push(finding("status", `${path}.status`, 'status must be "active" or "deprecated".'));
+    const status = statusValue.value;
+    const deprecated = status === "deprecated";
+    const retired = status === "retired";
+    const terminal = typeof status === "string" && TERMINAL_STATUSES.has(status);
+    if (typeof status !== "string" || (!CURRENT_STATUSES.has(status) && !terminal)) {
+      findings.push(finding("status", `${path}.status`, 'status must be "active", "incubating", "published", "qualified", "adopted", "deprecated", or "retired".'));
     }
     const replacement = replacementValue.value;
     const noReplacementReason = noReplacementReasonValue.value;
     const deprecatedOn = deprecatedOnValue.value;
-    if (deprecated) {
+    if (terminal) {
       if (replacementValue.present && noReplacementReasonValue.present) {
-        findings.push(finding("replacement-reason", path, "A deprecated package must declare either replacement or noReplacementReason, not both."));
+        findings.push(finding("replacement-reason", path, "A terminal package must declare either replacement or noReplacementReason, not both."));
       } else if (!replacementValue.present) {
         if (typeof noReplacementReason !== "string" || noReplacementReason.trim() === "") {
-          findings.push(finding("replacement-reason", `${path}.noReplacementReason`, "A deprecated package without a successor needs a non-empty noReplacementReason."));
+          findings.push(finding("replacement-reason", `${path}.noReplacementReason`, "A terminal package without a successor needs a non-empty noReplacementReason."));
         }
       } else {
         const replacementName = isRecord(replacement) ? ownDataValue(replacement, "name") : undefined;
@@ -119,24 +126,28 @@ export function validatePackageLifecycle(value: unknown): LifecycleFinding[] {
         if (replacementName?.accessor) findings.push(finding("field-accessor", `${path}.replacement.name`, "Lifecycle fields must be own data properties."));
         if (replacementRange?.accessor) findings.push(finding("field-accessor", `${path}.replacement.range`, "Lifecycle fields must be own data properties."));
         if (typeof replacementName?.value !== "string" || !PACKAGE_NAME.test(replacementName.value)) {
-          findings.push(finding("replacement", `${path}.replacement`, "A deprecated package needs a replacement with a scoped package name."));
+          findings.push(finding("replacement", `${path}.replacement`, "A terminal package needs a replacement with a scoped package name."));
         } else if (replacementName.value === name) {
-          findings.push(finding("replacement-self", `${path}.replacement`, "A deprecated package cannot replace itself."));
+          findings.push(finding("replacement-self", `${path}.replacement`, "A terminal package cannot replace itself."));
         }
         if (typeof replacementRange?.value !== "string" || !validSemverRange(replacementRange.value)) {
-          findings.push(finding("replacement-range", `${path}.replacement.range`, "A deprecated package needs a valid replacement semver range."));
+          findings.push(finding("replacement-range", `${path}.replacement.range`, "A terminal package needs a valid replacement semver range."));
         }
       }
-      if (typeof deprecatedOn !== "string" || !validDate(deprecatedOn)) {
+      if (deprecated && (typeof deprecatedOn !== "string" || !validDate(deprecatedOn))) {
         findings.push(finding("deprecated-on", `${path}.deprecatedOn`, "A deprecated package needs a real calendar date in YYYY-MM-DD form."));
       }
-      if (typeof decisionValue.value !== "string" || decisionValue.value.trim() === "" || typeof migrationValue.value !== "string" || migrationValue.value.trim() === "") {
-        findings.push(finding("evidence", path, "A deprecated package needs non-empty decision and migration evidence references."));
+      const retiredOn = retiredOnValue.value;
+      if (retired && (typeof retiredOn !== "string" || !validDate(retiredOn))) {
+        findings.push(finding("retired-on", `${path}.retiredOn`, "A retired package needs a real calendar date in YYYY-MM-DD form."));
       }
-    } else if (replacementValue.present || noReplacementReasonValue.present || deprecatedOnValue.present) {
-      findings.push(finding("replacement", path, "Only a deprecated package may declare replacement, noReplacementReason, or deprecatedOn."));
+      if (typeof decisionValue.value !== "string" || decisionValue.value.trim() === "" || typeof migrationValue.value !== "string" || migrationValue.value.trim() === "") {
+        findings.push(finding("evidence", path, "A terminal package needs non-empty decision and migration evidence references."));
+      }
+    } else if (replacementValue.present || noReplacementReasonValue.present || deprecatedOnValue.present || retiredOnValue.present) {
+      findings.push(finding("replacement", path, "Only a deprecated or retired package may declare replacement, noReplacementReason, deprecatedOn, or retiredOn."));
     } else if (decisionValue.present || migrationValue.present) {
-      findings.push(finding("evidence", path, "Only a deprecated package may declare decision or migration evidence."));
+      findings.push(finding("evidence", path, "Only a deprecated or retired package may declare decision or migration evidence."));
     }
   }
 
@@ -144,12 +155,12 @@ export function validatePackageLifecycle(value: unknown): LifecycleFinding[] {
     const entry = packages[index];
     const replacementValue = isRecord(entry) ? ownDataValue(entry, "replacement").value : undefined;
     const replacementName = isRecord(replacementValue) ? ownDataValue(replacementValue, "name").value : undefined;
-    if (!isRecord(entry) || ownDataValue(entry, "status").value !== "deprecated" || typeof replacementName !== "string") continue;
+    if (!isRecord(entry) || !TERMINAL_STATUSES.has(String(ownDataValue(entry, "status").value)) || typeof replacementName !== "string") continue;
     const replacement = entries.get(replacementName);
     if (!replacement) {
       findings.push(finding("replacement-missing", `packages[${index}].replacement`, `Replacement "${replacementName}" has no lifecycle entry.`));
-    } else if (replacement.status !== "active") {
-      findings.push(finding("replacement-not-active", `packages[${index}].replacement`, `Replacement "${entry.replacement}" must be active.`));
+    } else if (!REPLACEMENT_STATUSES.has(replacement.status)) {
+      findings.push(finding("replacement-not-active", `packages[${index}].replacement`, `Replacement "${replacementName}" must be published, qualified, adopted, or legacy active.`));
     }
   }
   return sortFindings(findings);
@@ -168,9 +179,9 @@ export function evaluateLifecycleCoverage(value: unknown, packageNames: readonly
     const status = isRecord(entry) ? ownDataValue(entry, "status").value : undefined;
     if (typeof name !== "string" || !PACKAGE_NAME.test(name)) return;
     declared.add(name);
-    // A deprecated lifecycle entry is durable retirement evidence and may
-    // intentionally outlive its workspace package directory.
-    if (status !== "deprecated" && !packageNames.includes(name)) {
+    // Terminal entries are durable evidence and may intentionally outlive
+    // their workspace package directory.
+    if (!TERMINAL_STATUSES.has(String(status)) && !packageNames.includes(name)) {
       findings.push(finding("catalog-package-missing", `packages[${index}].name`, `Lifecycle entry "${name}" is not present in the workspace catalog.`));
     }
   });

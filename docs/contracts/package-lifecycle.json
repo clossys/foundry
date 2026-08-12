@@ -1,33 +1,34 @@
 {
   "schemaVersion": 1,
   "packages": [
-    { "name": "@vespeneventures/auth", "status": "active" },
-    { "name": "@vespeneventures/catalog", "status": "active" },
-    { "name": "@vespeneventures/comms", "status": "active" },
-    { "name": "@vespeneventures/copy", "status": "active" },
-    { "name": "@vespeneventures/deployment", "status": "active" },
-    { "name": "@vespeneventures/domain", "status": "active" },
+    { "name": "@vespeneventures/auth", "status": "published" },
+    { "name": "@vespeneventures/catalog", "status": "published" },
+    { "name": "@vespeneventures/comms", "status": "published" },
+    { "name": "@vespeneventures/copy", "status": "incubating" },
+    { "name": "@vespeneventures/deployment", "status": "adopted" },
+    { "name": "@vespeneventures/domain", "status": "adopted" },
     {
       "name": "@vespeneventures/domain-model",
-      "status": "deprecated",
+      "status": "retired",
       "replacement": {
         "name": "@vespeneventures/domain",
         "range": "^0.2.0"
       },
       "deprecatedOn": "2026-08-11",
+      "retiredOn": "2026-08-11",
       "decision": "docs/DECISIONS.md",
       "migration": "packages/domain/README.md#migration"
     },
-    { "name": "@vespeneventures/gates", "status": "active" },
-    { "name": "@vespeneventures/governance", "status": "active" },
-    { "name": "@vespeneventures/ledger", "status": "active" },
-    { "name": "@vespeneventures/policy", "status": "active" },
-    { "name": "@vespeneventures/release", "status": "active" },
-    { "name": "@vespeneventures/repository", "status": "active" },
-    { "name": "@vespeneventures/review", "status": "active" },
-    { "name": "@vespeneventures/secrets", "status": "active" },
-    { "name": "@vespeneventures/strategy", "status": "active" },
-    { "name": "@vespeneventures/surface", "status": "active" },
-    { "name": "@vespeneventures/ui", "status": "active" }
+    { "name": "@vespeneventures/gates", "status": "qualified" },
+    { "name": "@vespeneventures/governance", "status": "adopted" },
+    { "name": "@vespeneventures/ledger", "status": "adopted" },
+    { "name": "@vespeneventures/policy", "status": "adopted" },
+    { "name": "@vespeneventures/release", "status": "published" },
+    { "name": "@vespeneventures/repository", "status": "published" },
+    { "name": "@vespeneventures/review", "status": "published" },
+    { "name": "@vespeneventures/secrets", "status": "adopted" },
+    { "name": "@vespeneventures/strategy", "status": "published" },
+    { "name": "@vespeneventures/surface", "status": "incubating" },
+    { "name": "@vespeneventures/ui", "status": "published" }
   ]
 }

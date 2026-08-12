@@ -32,6 +32,7 @@ describe("foundry-governance", () => {
     expect(main([lifecycleFile, root, "--scope", "@example", "--format", "json"])).toBe(0);
     const compact = JSON.parse((console.log as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as string);
     expect(compact).toMatchObject({ ok: true, packages: 1, lifecycleEntries: 1, buildOrder: "valid" });
+    expect(compact).toMatchObject({ lifecycleMaturity: { active: 1 } });
     expect(compact.foundation).toBeUndefined();
 
     expect(main([lifecycleFile, root, "--scope", "@example", "--format", "json", "--verbose"])).toBe(0);
