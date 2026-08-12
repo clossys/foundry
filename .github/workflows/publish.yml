@@ -408,7 +408,7 @@ jobs:
           set -euo pipefail
           node --input-type=module <<'NODE'
           import { readFileSync } from "node:fs";
-          import { packRoundTrip } from "./packages/release/dist/pack-round-trip.js";
+          import { packRoundTrip } from "./packages/governance/dist/release/pack-round-trip.js";
 
           const scope = JSON.parse(readFileSync("package-scope.json", "utf8")).scope;
           const manifest = JSON.parse(readFileSync(`packages/${process.env.PKG}/package.json`, "utf8"));
