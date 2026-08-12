@@ -68,7 +68,7 @@ jobs:
       - name: Verify reviewed registry operation
         run: |
           node scripts/set-scope.mjs --check
-          node scripts/check-public-safety.mjs scripts/deprecate-legacy-packages.mjs --require-denylist
+          node scripts/check-public-safety.mjs . --allow-changelogs --require-denylist
           node --test scripts/deprecate-legacy-packages.test.mjs
 
       - name: Apply and verify fixed registry notices
