@@ -16,7 +16,7 @@
  * `@vespeneventures/surface/core`'s `resolveAssets` deliberately stops one step
  * short of what a renderer needs: its `AssetLookup` returns `unknown` (see
  * that file's own doc comment, "why this function does not know what an
- * asset looks like" — `compose` has zero dependency on
+ * asset looks like" — `surface/core` has zero dependency on
  * `@vespeneventures/surface/media`, not even for a type), so `AssetResolveResult
  * .assets[].asset` is `unknown` too. A renderer that just assumed a shape
  * (`(asset as any).src`) and rendered it would be exactly the "silent

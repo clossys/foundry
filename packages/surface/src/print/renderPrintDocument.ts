@@ -30,9 +30,9 @@
  * -------------------------------
  * Unlike `./web` (which has its own `internal/webTemplates.ts` registry
  * mapping `doc.template` -> a real `LayoutSpec`, because a web/email
- * document carries NO `layout` of its own — see `compose`'s `LayoutSpec`
+ * document carries NO `layout` of its own — see `surface/core`'s `LayoutSpec`
  * doc comment), a print document's `LayoutSpec` lives directly on
- * `doc.layout`: `compose`'s own contract REQUIRES it for `print`/`slides`/
+ * `doc.layout`: `surface/core`'s own contract REQUIRES it for `print`/`slides`/
  * `image` (`validate.ts`'s `layout-required` rule). So this file has no
  * template registry at all — `doc.template` is carried through only as a
  * `data-template` attribute on the rendered `.page` element, for a

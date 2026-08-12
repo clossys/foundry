@@ -75,8 +75,8 @@ package is not coupled to a web framework.
 
 ### Templates and identity
 
-Templates stay upstream. A caller may use `@vespeneventures/compose` and
-`@vespeneventures/render/email`, a framework template system, or plain strings;
+Templates stay upstream. A caller may use `@vespeneventures/surface/core` and
+`@vespeneventures/surface/email`, a framework template system, or plain strings;
 the transport sees only a finished `EmailMessage`.
 
 Sender identities, reply paths, recipient resolution, consent and suppression

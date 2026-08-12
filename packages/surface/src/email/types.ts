@@ -41,7 +41,7 @@ export interface RenderEmailOptions {
    * `@vespeneventures/surface/core`'s own `resolveDocument` documents (its
    * `layout` argument is never read off `doc.layout`, because a
    * `channel: "email"` document is FORBIDDEN from carrying one at all —
-   * see `compose`'s `validate.ts`, `layout-forbidden`). Omit this entirely
+   * see `surface/core`'s `validate.ts`, `layout-forbidden`). Omit this entirely
    * when there is no real positioned template to supply — see this
    * package's README, "The geometry problem," for exactly what changes
    * (and what warnings disappear) when it's omitted.

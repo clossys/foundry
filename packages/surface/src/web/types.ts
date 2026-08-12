@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 // ---------------------------------------------------------------------------
 
 /**
- * Resolves a `SlotBinding.copyId` into literal display text. `compose`
+ * Resolves a `SlotBinding.copyId` into literal display text. `surface/core`
  * deliberately does not resolve `copyId` itself — see its README, "The
  * `copyId` seam" — and neither does this package resolve it against any
  * particular copy source. This function type IS the decision this package
@@ -42,7 +42,7 @@ export type CopyResolver = (copyId: string) => string | undefined;
  * `CopyResolver` draws for `copyId`, one binding field over. Same shape as
  * `@vespeneventures/surface/core`'s own `AssetLookup` (`(assetId: string) =>
  * unknown`), declared locally here rather than imported, for the same
- * reason `CopyResolver` is its own local declaration and not `compose`'s
+ * reason `CopyResolver` is its own local declaration and not `surface/core`'s
  * `CopyLookup` — see `RenderWebOptions`'s own doc comment history for why
  * this package's `./web` and `./print` channels keep their own small type
  * declarations rather than a cross-channel import.

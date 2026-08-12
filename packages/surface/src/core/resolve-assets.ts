@@ -40,7 +40,7 @@
  * has one obvious representation. An asset does not — a caller might hand
  * back a full `@vespeneventures/surface/media` `AssetEntry`, a bare URL string, a
  * pre-signed CDN link, or something else this package has no way to
- * anticipate, and `compose` has zero runtime dependencies (not even on
+ * anticipate, and `surface/core` has zero runtime dependencies (not even on
  * `@vespeneventures/surface/media` itself — see the README, "Zero runtime
  * dependencies"). So `AssetLookup` returns `unknown`, and `resolveAssets`
  * asks only one question of it: did `lookup(assetId)` return something

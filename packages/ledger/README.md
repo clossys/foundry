@@ -32,7 +32,7 @@ Concretely:
 
 - **This package does not depend on `@vespeneventures/strategy`.** Every fact
   a `PublicationEntry` cites is a plain, opaque `factRef` string — the same
-  seam `@vespeneventures/voice`'s `Claim.factRef`,
+  seam `@vespeneventures/copy/voice`'s `Claim.factRef`,
   `@vespeneventures/copy`'s `CopyEntry.factRef`, and
   `@vespeneventures/strategy`'s own `Market.factRefs`/`Audience.factRefs`
   already use one layer up. `strategy` is not in this package's
@@ -193,8 +193,8 @@ partial result, visible in the counts, not an all-or-nothing gate.
 
 | Export | Kind | Purpose |
 | --- | --- | --- |
-| `PublicationEntry` | type | One append-only record: `id`, `publishedAt` (ISO 8601 instant), `channel` (a plain string — not `@vespeneventures/compose`'s closed `Channel` vocabulary; a real publication channel is broader than compose's five render targets), optional `url`, `strategyRevision` (an opaque string naming the revision of strategy this was derived from), `factCitations: FactCitation[]`, and an optional `contentBinding: PolicyBinding` committing to the published artifact's own bytes. No score, threshold, or verdict field — see "Why this package exists". |
-| `FactCitation` | type | `{ factRef: string; valueBinding: PolicyBinding }` — one fact a `PublicationEntry` cites, bound to that fact's value at publication time. `factRef` is opaque, the same seam `@vespeneventures/voice`'s `Claim.factRef` uses. `valueBinding.policyId` always equals `factRef`, enforced by `validateEntry`'s `"citation-policy-id-mismatch"` rule and by construction in `citeFact`. |
+| `PublicationEntry` | type | One append-only record: `id`, `publishedAt` (ISO 8601 instant), `channel` (a plain string — not `@vespeneventures/surface/core`'s closed `Channel` vocabulary; a real publication channel is broader than surface's five render targets), optional `url`, `strategyRevision` (an opaque string naming the revision of strategy this was derived from), `factCitations: FactCitation[]`, and an optional `contentBinding: PolicyBinding` committing to the published artifact's own bytes. No score, threshold, or verdict field — see "Why this package exists". |
+| `FactCitation` | type | `{ factRef: string; valueBinding: PolicyBinding }` — one fact a `PublicationEntry` cites, bound to that fact's value at publication time. `factRef` is opaque, the same seam `@vespeneventures/copy/voice`'s `Claim.factRef` uses. `valueBinding.policyId` always equals `factRef`, enforced by `validateEntry`'s `"citation-policy-id-mismatch"` rule and by construction in `citeFact`. |
 | `Ledger` | type | `readonly PublicationEntry[]` — nothing more than an ordered, append-only list. |
 | `LedgerFinding` | type | `{ rule, severity: "error" \| "warning", message, path? }` — this package's own finding shape, deliberately the same shape as `@vespeneventures/policy`'s `Finding` (kept as a separate local type, never pulled in from there) and every sibling `*Finding` type across this foundation. |
 | `DriftReport` | type | What `checkLedgerDrift` returns: `ok`, `entriesChecked`, `citationsChecked`, `citationsUnchecked`, `citationsDrifted`, `findings: LedgerFinding[]`. See "Why the drift checker fails closed". |

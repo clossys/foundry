@@ -12,7 +12,7 @@
  * layouts." The second is not actually available: `ComposeDocument` has
  * exactly one `layout` field (`@vespeneventures/surface/core`'s frozen
  * `types.ts`), so "multiple layouts" would mean this package inventing a
- * NEW, non-`compose` array-of-layouts shape and hand-rolling its own
+ * new, non-`surface/core` array-of-layouts shape and hand-rolling its own
  * resolution loop over it — exactly the kind of parallel, drifting
  * reinvention `resolveDocument`/`resolveCopy` exist to prevent (see
  * `resolveCanvasLayout.ts`'s own top comment). So this package takes the
