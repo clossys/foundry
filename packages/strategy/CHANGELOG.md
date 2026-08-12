@@ -14,8 +14,9 @@ All notable changes to this package are documented here. Format follows
   cross-record links; `serializeStrategyContract` and
   `createStrategyProvenance` provide deterministic output provenance.
   Approved claims require evidence and explicit approval, while hypotheses
-  remain a separate non-approved type. This is additive to the legacy
-  file-oriented schema/reader API.
+  remain a separate non-approved type. This is additive to the existing
+  file-oriented schema/reader API: local authoring validation and the stable,
+  directory-independent handoff have distinct roles.
 
 - The brand layer, absorbed here after a standalone `brand` package was
   planned and cancelled: stripped of what `strategy` already owned

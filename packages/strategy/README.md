@@ -7,6 +7,13 @@ the schema, a typed reader, a facts-traceability gate, and a brand-coverage
 checker. It does not ship anyone's actual mission statement, market
 sizing, numbers, or brand attributes.
 
+## Release status
+
+This source package has not completed a public registry release. The install
+command below describes the post-release interface; do not treat this package
+as externally installable until its first public version has passed package
+preflight and is published.
+
 ```bash
 npm install @vespeneventures/strategy
 ```
@@ -44,9 +51,11 @@ over `unknown`, an accumulated issue list, never throws.
 ## Governed strategy contract
 
 `StrategyContract` is the stable handoff for a product's governed strategy.
-It is intentionally separate from the file-oriented reader below: consumer
-repositories adapt their existing files into this contract without teaching
-the published package about their own directory layout.
+It is intentionally distinct from the file-oriented reader below. The reader
+validates a consumer's local authoring files; the contract is the normalized,
+directory-independent payload handed to downstream systems. A consumer may
+adapt one into the other, but they are not competing sources of truth and
+neither API silently reads or writes the other.
 
 Every record has a kebab-case `id`, semantic-version `revision`, and source
 `provenance`. The contract covers `product`, `brand`, `audience`,

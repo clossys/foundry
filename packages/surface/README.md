@@ -3,6 +3,13 @@
 `@vespeneventures/surface` is the release unit for composed, audience-facing
 surfaces and their rendered artifacts.
 
+## Release status
+
+This source package has not completed a public registry release. The install
+commands in consumer documentation describe the post-release interface; do
+not treat this package as externally installable until its first public version
+has passed package preflight and is published.
+
 Use explicit subpaths:
 
 - `@vespeneventures/surface/core` — canonical `SurfaceDocument` contract, validation, copy/media resolution, and output manifests.
@@ -14,23 +21,21 @@ The package has no root export. `core` is deliberately framework-agnostic;
 the web subpath has optional React and UI peers, while non-web renderers do not
 require them at runtime.
 
-## SurfaceDocument migration
+## SurfaceDocument and renderer boundary
 
 `SurfaceDocument` is the canonical authored contract. It replaces the
 string-bearing `ComposeDocument` with `CopyRef` values for audience-facing
 slots and metadata: web titles/descriptions, email subjects/preheaders, image
 alt text, and slide notes. A binding is exactly one of `copy`, `node`, or
 `assetId`; `node` preserves an explicit consumer-provided interactive/rich UI
-node without pretending it is copy. `ComposeDocument` and its renderers remain
-available as a deprecated compatibility path for this release.
-
-Use `migrateComposeDocument(document, copyRefForLiteral)` to mechanically
-preserve existing ids and convert legacy literals through your copy registry.
-Use `resolveSurfaceDocument(surface, copyResolver)` at render time: it
+node without pretending it is copy. Use `resolveSurfaceDocument(surface,
+copyResolver)` at render time: it
 validates the canonical document, resolves every required `CopyRef` against a
-real approved registry, returns renderer-compatible data plus the full
-resolution provenance, and fails closed for invalid, missing, or unsupported
-node bindings.
+real approved registry, returns renderer-facing data plus the full resolution
+provenance, and fails closed for invalid, missing, or unsupported node
+bindings. New consumer code authors `SurfaceDocument`; `ComposeDocument` is
+the renderer-facing shape produced by this package, not a consumer migration
+API.
 
 Web and email templates use `FlowLayoutSpec`, which contains ordered keys and
 requiredness only. Print, slides, and image surfaces use `CanvasLayoutSpec`
@@ -59,7 +64,7 @@ that draft or malformed sources fail closed.
   `validateSurfaceDocument`, `createOutputManifest`,
   `collectCopyProvenance`, `createResolvedOutputManifest`,
   `resolveSurfaceDocument`,
-  `migrateComposeDocument`, `resolveDocument`, `resolveCopy`, `resolveAssets`, `frameToInches`,
+  `resolveDocument`, `resolveCopy`, `resolveAssets`, `frameToInches`,
   `frameToPercent`, `getSlotSpec`, `listSlotKeys`, `requiredSlotKeys`, and
   the `Channel`, `ChannelMeta`, `ComposeDocument`, `ComposeFinding`,
   `ElementKind`, `EmailMeta`, `FlowLayoutSpec`, `FlowSlotSpec`, `Frame`, `ImageMeta`, `LayoutSpec`,
@@ -68,8 +73,7 @@ that draft or malformed sources fail closed.
   `CopyResolveResult`, `ResolvedText`, `AssetLookup`, `AssetResolveResult`,
   `ResolvedAsset`, `ResolvedSurfaceDocument`, `SurfaceResolutionReason`, and
   `CanvasInches` types. `SurfaceResolutionError` is thrown when canonical
-  resolution fails closed; `LegacyCopyRefFactory` is the migration callback
-  type.
+  resolution fails closed.
 - `media`: `parseAssetRecord`, `validateAssetRecordShape`,
   `readAssetRecord`, `checkAssetCoverage`, and the `AssetEntry`,
   `AssetEntryId`, `AssetFinding`, `AssetRecord`, `AssetRegistryReadIssue`,

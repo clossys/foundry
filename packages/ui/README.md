@@ -3,6 +3,15 @@
 Design tokens, theme CSS, and React components for Tailwind CSS v4. This
 package ships reusable visual vocabulary built on its own token layer:
 
+## Release status
+
+This source package has not completed a public registry release. The install
+commands below describe the post-release interface; do not treat this package
+as externally installable until its first public version has passed package
+preflight and is published.
+
+## Package structure
+
 ```
 tokens → icons → atoms → blocks
                        ↘ shell
