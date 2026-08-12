@@ -140,6 +140,24 @@ installable compatibility surface.
 
 ---
 
+## 7. Consolidating `tokens` and `voice`
+
+**Status:** `@vespeneventures/tokens` and `@vespeneventures/voice` are
+deprecated registry artifacts. Their source packages were consolidated into
+`@vespeneventures/ui` and `@vespeneventures/copy`, respectively, on
+2026-08-11.
+
+The former packages remain published while consumers migrate, because a
+registry release cannot be safely erased from the history an installer may
+already resolve. New work uses the replacement packages and their focused
+subpaths: `@vespeneventures/ui` for tokens and styles, and
+`@vespeneventures/copy` or `@vespeneventures/copy/voice` for the voice
+contract. The consumer migration checklist in
+[docs/PIPELINE.md](PIPELINE.md#consumer-integration-checklist) is the durable
+handoff; no compatibility re-export is retained in this workspace.
+
+---
+
 ## Settled
 
 **Author attribution — keep a real name in the `"author"` field.** A real
