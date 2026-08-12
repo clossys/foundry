@@ -1,6 +1,6 @@
 {
   "name": "@vespeneventures/gates",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -24,7 +24,7 @@
     "LICENSE"
   ],
   "sideEffects": false,
-  "description": "Foundation orchestration plus pure gates for secret names, raw environment reads, credential surfaces, local secret files, value-free catalogs, readiness, and provider resource names.",
+  "description": "Deprecated compatibility entry point for @vespeneventures/governance/gates.",
   "keywords": [
     "gates",
     "build-order",
@@ -48,15 +48,13 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@vespeneventures/catalog": "^0.1.0",
-    "@vespeneventures/policy": "^0.1.0",
-    "typescript": "~6.0.0"
+    "@vespeneventures/governance": "^0.2.0"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "prepublishOnly": "npm run build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run"
+    "test": "vitest run --passWithNoTests"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

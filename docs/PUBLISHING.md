@@ -33,17 +33,15 @@ Publication order follows the runtime graph, not filesystem order or the
 order packages happen to appear in a workspace:
 
 ```
-catalog ─┐
-         ├─ gates ── release ── governance
-policy ──┘
+policy ── governance
 ```
 
-`catalog` and `policy` are independent leaves and must each be available at
-the exact compatible versions before `gates` is published. `release` and
-`governance` follow only after `gates` is available; governance also depends
-on release. A local workspace build is not evidence that this graph is closed:
-workspace links can satisfy a package that an external registry installer
-cannot obtain.
+`governance` owns its catalog, gates, release, repository, and review
+subpaths; its only Foundry runtime sibling is `policy`. The former standalone
+package names remain compatibility artifacts and must not be selected for new
+consumer integrations. A local workspace build is not evidence that this
+graph is closed: workspace links can satisfy a package that an external
+registry installer cannot obtain.
 
 For a dependent package, the final proof is an isolated install of the exact
 tarball that was scanned and selected for publication, after its sibling

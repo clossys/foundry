@@ -2,7 +2,14 @@
   "schemaVersion": 1,
   "packages": [
     { "name": "@vespeneventures/auth", "status": "published" },
-    { "name": "@vespeneventures/catalog", "status": "published" },
+    {
+      "name": "@vespeneventures/catalog",
+      "status": "deprecated",
+      "replacement": { "name": "@vespeneventures/governance", "range": "^0.2.0" },
+      "deprecatedOn": "2026-08-12",
+      "decision": "docs/DECISIONS.md#8-consolidating-package-process-surfaces-under-governance",
+      "migration": "packages/governance/README.md#migrating-from-compatibility-packages"
+    },
     { "name": "@vespeneventures/comms", "status": "published" },
     { "name": "@vespeneventures/copy", "status": "published" },
     { "name": "@vespeneventures/deployment", "status": "adopted" },
@@ -19,13 +26,41 @@
       "decision": "docs/DECISIONS.md",
       "migration": "packages/domain/README.md#migration"
     },
-    { "name": "@vespeneventures/gates", "status": "qualified" },
-    { "name": "@vespeneventures/governance", "status": "adopted" },
+    {
+      "name": "@vespeneventures/gates",
+      "status": "deprecated",
+      "replacement": { "name": "@vespeneventures/governance", "range": "^0.2.0" },
+      "deprecatedOn": "2026-08-12",
+      "decision": "docs/DECISIONS.md#8-consolidating-package-process-surfaces-under-governance",
+      "migration": "packages/governance/README.md#migrating-from-compatibility-packages"
+    },
+    { "name": "@vespeneventures/governance", "status": "published" },
     { "name": "@vespeneventures/ledger", "status": "adopted" },
     { "name": "@vespeneventures/policy", "status": "adopted" },
-    { "name": "@vespeneventures/release", "status": "published" },
-    { "name": "@vespeneventures/repository", "status": "published" },
-    { "name": "@vespeneventures/review", "status": "published" },
+    {
+      "name": "@vespeneventures/release",
+      "status": "deprecated",
+      "replacement": { "name": "@vespeneventures/governance", "range": "^0.2.0" },
+      "deprecatedOn": "2026-08-12",
+      "decision": "docs/DECISIONS.md#8-consolidating-package-process-surfaces-under-governance",
+      "migration": "packages/governance/README.md#migrating-from-compatibility-packages"
+    },
+    {
+      "name": "@vespeneventures/repository",
+      "status": "deprecated",
+      "replacement": { "name": "@vespeneventures/governance", "range": "^0.2.0" },
+      "deprecatedOn": "2026-08-12",
+      "decision": "docs/DECISIONS.md#8-consolidating-package-process-surfaces-under-governance",
+      "migration": "packages/governance/README.md#migrating-from-compatibility-packages"
+    },
+    {
+      "name": "@vespeneventures/review",
+      "status": "deprecated",
+      "replacement": { "name": "@vespeneventures/governance", "range": "^0.2.0" },
+      "deprecatedOn": "2026-08-12",
+      "decision": "docs/DECISIONS.md#8-consolidating-package-process-surfaces-under-governance",
+      "migration": "packages/governance/README.md#migrating-from-compatibility-packages"
+    },
     { "name": "@vespeneventures/secrets", "status": "adopted" },
     { "name": "@vespeneventures/strategy", "status": "published" },
     { "name": "@vespeneventures/surface", "status": "published" },

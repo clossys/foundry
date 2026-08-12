@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { evaluateCatalog } from "@vespeneventures/catalog";
-import type { Catalog, CatalogEntry } from "@vespeneventures/catalog";
+import { evaluateCatalog } from "../catalog/index.js";
+import type { Catalog, CatalogEntry } from "../catalog/index.js";
 import { computeBuildOrder } from "./build-order.js";
 
 // computeBuildOrder is pure — no I/O — so these fixtures are plain in-memory

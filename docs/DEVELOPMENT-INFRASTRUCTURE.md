@@ -15,23 +15,23 @@ customer values do not enter Foundry.
 
 ## Package boundaries
 
-`@vespeneventures/repository` and `@vespeneventures/review` are a paired
-implementation, release, and adoption train. They remain separately
-installable and independently versioned.
+`@vespeneventures/governance/repository` and
+`@vespeneventures/governance/review` are paired subpaths of the same
+implementation, release, and adoption train.
 
-`@vespeneventures/repository` owns a provider-neutral contract for
+`@vespeneventures/governance/repository` owns a provider-neutral contract for
 consumer-authored repository values and validates those values without I/O. It
 does not install files or choose values for a consumer.
 
-`@vespeneventures/review` owns provider-neutral contracts and validation for
+`@vespeneventures/governance/review` owns provider-neutral contracts and validation for
 review evidence: requests, findings, dispositions, threads, checks, decisions,
 and exact-head freshness. Its root export remains vendor-neutral. Meaningful
-GitHub evidence translation belongs at `@vespeneventures/review/github`; it
+GitHub evidence translation belongs at `@vespeneventures/governance/review/github`; it
 does not warrant a separate `review-github` or generic `github` package.
 
-`@vespeneventures/gates` remains the orchestration package for catalog and
-policy checks. It is a separate foundation cluster, not a runtime dependency
-of `repository` or `review`, and neither package becomes a general gate runner.
+`@vespeneventures/governance/gates` remains the orchestration subpath for
+catalog and policy checks. It is not a runtime dependency of the repository
+or review contracts, and neither contract becomes a general gate runner.
 
 The following provider surfaces remain evidence-gated:
 
@@ -58,7 +58,7 @@ The paired registry-install and CLI qualification procedure is documented in
 before consumer workflow wiring, provider credentials, and consumer policy
 decisions.
 
-Deprecation is a later, owner-controlled step. It requires a published
-successor, migrated real consumers, a documented replacement range, and a
-settled public API. Package deletion, transfer, and registry deprecation are
-not part of this phase.
+The legacy standalone package names are deprecated compatibility entry points.
+They require a published successor, migrated real consumers, a documented
+replacement range, and a settled public API before retirement. Package
+deletion, transfer, and registry removal are not part of this phase.

@@ -3,8 +3,8 @@
 The read-only process authority for a package workspace. It defines the
 package-creation, maintenance, review, release-readiness, and retirement
 records that the owning repository must prove; plans reviewable private
-starters or repository-profiled package files; and composes the existing
-catalog, gates, and release evidence rather than recreating any of them.
+starters or repository-profiled package files; and owns the package-process
+catalog, gates, release, repository-profile, and review-evidence subpaths.
 
 ```bash
 npm install @vespeneventures/governance
@@ -25,13 +25,44 @@ caller owns all of those actions and values.
   adopted package. Deprecated and retired packages need a viable replacement
   and range (or a terminal no-successor reason), dated evidence, and durable
   decision and migration references.
-- `runGovernanceCheck` calls `@vespeneventures/gates` for real workspace
-  discovery and deterministic build order, then requires the lifecycle
-  registry to match that catalog exactly.
-- `preflightGovernedPackage` calls `@vespeneventures/release` for its
-  existing packed-install proof and adds the workspace governance result. It
-  does not publish or authenticate. A private registry proof remains the
-  caller's deliberate release operation.
+- `runGovernanceCheck` calls the included `./gates` subpath for real
+  workspace discovery and deterministic build order, then requires the
+  lifecycle registry to match that catalog exactly.
+- `preflightGovernedPackage` calls the included `./release` subpath for its
+  packed-install proof and adds the workspace governance result. It does not
+  publish or authenticate. A private registry proof remains the caller's
+  deliberate release operation.
+
+## Package-process subpaths
+
+Install `@vespeneventures/governance` once and import the focused capability
+you need. The root remains lifecycle and scaffold planning; the subpaths keep
+their established contracts separate without making consumers select five
+separately versioned packages.
+
+| Subpath | Includes |
+| --- | --- |
+| `@vespeneventures/governance/catalog` | Workspace discovery and dependency-graph evaluation. |
+| `@vespeneventures/governance/gates` | Foundation checks, deterministic build order, secret-surface gates, and `foundry-check`. |
+| `@vespeneventures/governance/release` | Isolated packed-artifact and installed-import proof. |
+| `@vespeneventures/governance/repository` | Consumer-owned repository-profile contracts, validation, and `repository-check`. |
+| `@vespeneventures/governance/review` | Provider-neutral review evidence contracts, validation, and `review-check`. |
+| `@vespeneventures/governance/review/github` | Pure normalization of caller-provided GitHub-shaped review evidence. |
+
+## Migrating from compatibility packages
+
+The previous standalone names remain published compatibility packages while
+consumers migrate. New integrations use the governance subpaths below. Root
+imports and CLI command names remain compatible during the transition.
+
+| Deprecated package | Supported import |
+| --- | --- |
+| `@vespeneventures/catalog` | `@vespeneventures/governance/catalog` |
+| `@vespeneventures/gates` | `@vespeneventures/governance/gates` |
+| `@vespeneventures/release` | `@vespeneventures/governance/release` |
+| `@vespeneventures/repository` | `@vespeneventures/governance/repository` |
+| `@vespeneventures/review` | `@vespeneventures/governance/review` |
+| `@vespeneventures/review/github` | `@vespeneventures/governance/review/github` |
 
 ## Lifecycle registry
 
@@ -168,8 +199,8 @@ root. `--format json` prints the compact machine-readable summary; add
 
 ## Requirements
 
-Node 20+. ESM only. Runtime dependencies: `@vespeneventures/gates` and
-`@vespeneventures/release`.
+Node 20+. ESM only. Runtime dependencies: `@vespeneventures/policy` and
+TypeScript for the source-aware secret-surface checks.
 
 ## Licence
 

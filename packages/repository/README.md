@@ -1,5 +1,9 @@
 # @vespeneventures/repository
 
+> **Deprecated compatibility package.** New integrations import
+> `@vespeneventures/governance/repository`. This package preserves the same
+> root API and `repository-check` command while existing consumers migrate.
+
 Dependency-free contracts and deterministic validation for repository values
 that belong to a consumer: its default branch, verification commands, and
 protected path patterns. The package ships machinery only. It contains no

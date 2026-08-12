@@ -6,7 +6,7 @@ import { combinePreflightOk, preflightPackage } from "./preflight.js";
 
 // Real end-to-end proof, not a fixture: root is this repository's real
 // workspace root, and packageDir is the real packages/policy directory.
-const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "..");
 
 // Read the scope from package-scope.json rather than hardcoding it: a bare
 // scope literal is not rewritten by set-scope.mjs (which rewrites scopes in
@@ -27,23 +27,6 @@ describe("preflightPackage — real end-to-end against packages/policy", () => {
     expect(report.ok).toBe(true);
   });
 
-  // Regression: packages/gates has a clean real dependency graph of its own
-  // (its declared dependencies all resolve inside this workspace) but its
-  // round trip fails -- its internal dependencies are unpublished (see
-  // pack-round-trip.test.ts for the full explanation). This is the
-  // "roundTrip.ok alone makes it false" case: catalogFindings has no error,
-  // and ok must still be false.
-  it("reports ok:false for @vespeneventures/gates -- catalog is clean, but the round trip itself fails", async () => {
-    const report = await preflightPackage(repoRoot, join(repoRoot, "packages", "gates"), {
-      scope: SCOPE,
-    });
-
-    expect(report.packageName).toBe("@vespeneventures/gates");
-    const catalogErrors = report.catalogFindings.filter((f) => f.severity === "error");
-    expect(catalogErrors).toEqual([]);
-    expect(report.roundTrip.ok).toBe(false);
-    expect(report.ok).toBe(false);
-  });
 });
 
 describe("combinePreflightOk — exhaustive truth table (regression for a flipped &&/|| or an inverted !)", () => {

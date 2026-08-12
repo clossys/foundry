@@ -1,6 +1,6 @@
 {
   "name": "@vespeneventures/catalog",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -21,7 +21,7 @@
     "LICENSE"
   ],
   "sideEffects": false,
-  "description": "Reads a workspace's whole packages/ directory and answers the questions one package's own manifest cannot: what exists on disk, whether its real dependencies actually resolve, and whether the dependency graph they form has cycles. Computed entirely from standard package.json fields and real filesystem state — the one package in this foundation that does I/O.",
+  "description": "Deprecated compatibility entry point for @vespeneventures/governance/catalog.",
   "keywords": [
     "catalog",
     "workspace",
@@ -42,11 +42,14 @@
   "engines": {
     "node": ">=20"
   },
+  "dependencies": {
+    "@vespeneventures/governance": "^0.2.0"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "prepublishOnly": "npm run build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run"
+    "test": "vitest run --passWithNoTests"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

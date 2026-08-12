@@ -1,5 +1,11 @@
 # @vespeneventures/review
 
+> **Deprecated compatibility package.** New integrations import
+> `@vespeneventures/governance/review` and
+> `@vespeneventures/governance/review/github`. This package preserves the
+> same root API, GitHub subpath, and `review-check` command while existing
+> consumers migrate.
+
 Dependency-free contracts and deterministic validation for evidence gathered
 while reviewing a proposed change. The root package is provider-neutral. Its
 optional GitHub subpath translates caller-provided payloads only; it does not

@@ -1,5 +1,5 @@
-import { computeBuildOrder, runFoundationCheck } from "@vespeneventures/gates";
-import type { RunFoundationCheckOptions } from "@vespeneventures/gates";
+import { computeBuildOrder, runFoundationCheck } from "./gates/index.js";
+import type { RunFoundationCheckOptions } from "./gates/index.js";
 import { evaluateLifecycleCoverage } from "./lifecycle.js";
 import type { GovernanceReport } from "./types.js";
 

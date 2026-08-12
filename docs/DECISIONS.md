@@ -158,6 +158,30 @@ handoff; no compatibility re-export is retained in this workspace.
 
 ---
 
+## 8. Consolidating package-process surfaces under `governance`
+
+**Status:** the supported package-process surface is
+`@vespeneventures/governance@^0.2.0`. Its `./catalog`, `./gates`,
+`./release`, `./repository`, and `./review` subpaths own the corresponding
+public contracts and CLIs.
+
+`@vespeneventures/catalog`, `@vespeneventures/gates`,
+`@vespeneventures/release`, `@vespeneventures/repository`, and
+`@vespeneventures/review` remain as deprecated compatibility packages while
+consumers migrate. They preserve their existing root imports, the review
+GitHub subpath, and the `foundry-check`, `repository-check`, and
+`review-check` command names by delegating to the matching governance
+subpath. They are registry migration artifacts, not additional supported
+package choices.
+
+This keeps package lifecycle, discovery, gates, release proof, repository
+profiles, and review evidence in one package-process ownership boundary while
+preserving installed-consumer compatibility. The legacy names must not be
+unpublished or reused; their retirement requires the documented consumer
+migration and later lifecycle evidence.
+
+---
+
 ## Settled
 
 **Author attribution — keep a real name in the `"author"` field.** A real

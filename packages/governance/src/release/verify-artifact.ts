@@ -6,7 +6,7 @@
  */
 
 import { verifyBinding } from "@vespeneventures/policy";
-import type { Finding, PolicyBinding } from "@vespeneventures/gates";
+import type { Finding, PolicyBinding } from "../gates/index.js";
 
 /**
  * Constructs a `PolicyBinding` for a published tarball's expected digest —

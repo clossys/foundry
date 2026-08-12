@@ -7,7 +7,7 @@
 
 import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { runFoundationCheck } from "@vespeneventures/gates";
+import { runFoundationCheck } from "../gates/index.js";
 import { packRoundTrip, type PackRoundTripOptions } from "./pack-round-trip.js";
 import type { PreflightReport } from "./types.js";
 

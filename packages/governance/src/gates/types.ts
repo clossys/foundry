@@ -3,7 +3,7 @@
  * capabilities these shapes support — one call each, no logic lives here.
  */
 
-import type { Catalog, CatalogFinding } from "@vespeneventures/catalog";
+import type { Catalog, CatalogFinding } from "../catalog/index.js";
 import type { Finding, PolicyBinding } from "@vespeneventures/policy";
 
 /**

@@ -14,7 +14,7 @@ import { afterEach, describe, expect, it } from "vitest";
 // process.exitCode and process.argv entirely.
 
 const execFile = promisify(execFileCb);
-const cliPath = resolve(dirname(fileURLToPath(import.meta.url)), "..", "dist", "cli.js");
+const cliPath = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "dist", "gates", "cli.js");
 
 interface CliResult {
   code: number;

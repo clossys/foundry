@@ -1,5 +1,9 @@
 # @vespeneventures/catalog
 
+> **Deprecated compatibility package.** New integrations import
+> `@vespeneventures/governance/catalog`. This package preserves the same root
+> API while existing consumers migrate.
+
 Walks a workspace's `packages/` directory and answers the questions no
 single package's own manifest can: what packages actually exist on disk,
 whether their real internal dependencies actually resolve, and whether the

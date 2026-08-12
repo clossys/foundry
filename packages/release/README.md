@@ -1,5 +1,9 @@
 # @vespeneventures/release
 
+> **Deprecated compatibility package.** New integrations import
+> `@vespeneventures/governance/release`. This package preserves the same root
+> API while existing consumers migrate.
+
 Proof that a package actually installs and works the way a real, external
 stranger would install it — with nothing but a registry and whatever the
 package itself declared.

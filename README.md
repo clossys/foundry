@@ -23,13 +23,13 @@ for the full account.
 | [`@vespeneventures/domain`](packages/domain) | Dependency-free machinery for product-owned domains: stable identifiers, value types, closed vocabularies, domain types with fields, directed attributed relations, deterministic JSON artifacts, validation, and compatibility comparison. Ships no product values or runtime. |
 | [`@vespeneventures/deployment`](packages/deployment) | Deployment-surface contracts and read-only provider inspectors with caller-injected transport and credentials. |
 | [`@vespeneventures/comms`](packages/comms) | Provider-neutral finished communication contracts and an isolated Resend adapter. |
-| [`@vespeneventures/catalog`](packages/catalog) | Walks a workspace's `packages/` directory and reports what exists, what could not be read, and whether the real dependency graph — read from each package's own `dependencies`/`peerDependencies` — has cycles or missing internal packages. |
-| [`@vespeneventures/gates`](packages/gates) | Orchestrates `catalog` and `policy` into one call, a deterministic build order, and the `foundry-check` CLI. |
-| [`@vespeneventures/repository`](packages/repository) | Dependency-free repository profile contracts and deterministic validation for consumer-owned configuration. |
-| [`@vespeneventures/review`](packages/review) | Provider-neutral review evidence contracts and deterministic validation, with a `./github` subpath for meaningful GitHub evidence translation. Ships no workflow YAML, credentials, provider account configuration, or consumer review policy. |
 | [`@vespeneventures/secrets`](packages/secrets) | Provider-neutral secret resolution with injected clients and an isolated Infisical subpath. |
-| [`@vespeneventures/release`](packages/release) | Proves a package is actually installable: packs the real tarball, installs it into a genuinely isolated directory, and imports every subpath it claims to export. |
-| [`@vespeneventures/governance`](packages/governance) | Maintains a complete package lifecycle registry, plans private starters or repository-profiled package files without writing them, and composes the catalog, gate, and release proofs into one read-only governance report. |
+| [`@vespeneventures/governance`](packages/governance) | The package-process authority: lifecycle records and no-write starter planning at its root; workspace catalog, gates, release proof, repository profiles, and review evidence at focused subpaths. |
+| [`@vespeneventures/catalog`](packages/catalog) | Deprecated compatibility entry point for `@vespeneventures/governance/catalog`; retained while consumers migrate. |
+| [`@vespeneventures/gates`](packages/gates) | Deprecated compatibility entry point for `@vespeneventures/governance/gates`; retains `foundry-check` while consumers migrate. |
+| [`@vespeneventures/release`](packages/release) | Deprecated compatibility entry point for `@vespeneventures/governance/release`; retained while consumers migrate. |
+| [`@vespeneventures/repository`](packages/repository) | Deprecated compatibility entry point for `@vespeneventures/governance/repository`; retains `repository-check` while consumers migrate. |
+| [`@vespeneventures/review`](packages/review) | Deprecated compatibility entry point for `@vespeneventures/governance/review`; retains its GitHub subpath and `review-check` while consumers migrate. |
 | [`@vespeneventures/ui`](packages/ui) | The complete visual system: design tokens and theme CSS, icons, accessible React atoms and blocks, charts, shell primitives, and visual quality gates. Token-only consumers use `./tokens` or the CSS subpaths; page compositions live in `surface`. |
 | [`@vespeneventures/strategy`](packages/strategy) | Upstream strategy machinery, not content: dependency-free validators for facts, mission, positioning, markets, audiences, roadmap, and brand (essence, attributes, derivations), plus a facts-traceability gate and a brand-coverage checker. Ships the schema and checkers; every consumer authors its own values. |
 | [`@vespeneventures/copy`](packages/copy) | The complete language system: voice rules, glossary and claims validation, addressable copy records, templates, source scanning, and traceability checks. Ships machinery only; every consumer owns its actual voice and words. |
@@ -69,7 +69,7 @@ Add to your project's `.npmrc` (never commit a real one):
 With `GH_PACKAGES_TOKEN` set in your environment, install a published version:
 
 ```bash
-npm install @vespeneventures/gates
+npm install @vespeneventures/governance
 ```
 
 The same token is also used for maintainer actions such as publishing. See
@@ -78,7 +78,7 @@ maintainer process.
 
 ## Usage
 
-The `gates` package ships a CLI, `foundry-check`, that walks a workspace's
+The `governance/gates` subpath ships a CLI, `foundry-check`, that walks a workspace's
 `packages/` directory and reports what it finds:
 
 ```bash
@@ -91,7 +91,7 @@ Exit code `0` means no error-severity finding, `1` means at least one, and
 Programmatic use:
 
 ```ts
-import { runFoundationCheck } from "@vespeneventures/gates";
+import { runFoundationCheck } from "@vespeneventures/governance/gates";
 
 const report = runFoundationCheck(process.cwd(), { scope: "@your-scope" });
 for (const finding of report.findings) {

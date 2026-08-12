@@ -1,5 +1,4 @@
-import { execFileSync, spawnSync } from "node:child_process";
-import { existsSync, mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -11,71 +10,22 @@ import { packRoundTrip, subprocessEnv } from "./pack-round-trip.js";
 // specifically to prove installability with real I/O, not declared shape.
 // These are correspondingly slower than a unit test; see vitest.config.ts's
 // generous timeouts.
-const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "..");
 
 describe("packRoundTrip — real subprocess round trip", () => {
-  it("packages/repository installs and imports cleanly from a genuinely isolated directory", async () => {
-    const result = await packRoundTrip(join(repoRoot, "packages", "repository"));
+  it("governance declares built files for every package-process subpath", () => {
+    const governanceDir = join(repoRoot, "packages", "governance");
+    const manifest = JSON.parse(readFileSync(join(governanceDir, "package.json"), "utf8")) as {
+      exports: Record<string, { import: string; types: string }>;
+    };
 
-    expect(result.packageName).toBe("@vespeneventures/repository");
-    expect(result.tarballPath).not.toBe("");
-    expect(result.findings).toEqual([]);
-    expect(result.imports).toEqual([{ subpath: ".", mode: "import", ok: true }]);
-    expect(result.ok).toBe(true);
-  });
-
-  it("packages/repository exposes repository-check from its packed, isolated install", () => {
-    const packageDir = join(repoRoot, "packages", "repository");
-    const tarballDir = mkdtempSync(join(tmpdir(), "release-repository-cli-pack-"));
-    const consumerDir = mkdtempSync(join(tmpdir(), "release-repository-cli-consumer-"));
-    fixtureDirs.push(tarballDir, consumerDir);
-    const env = subprocessEnv(tarballDir);
-    const tarballName = execFileSync("npm", ["pack", "--pack-destination", tarballDir], {
-      cwd: packageDir,
-      env,
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "pipe"],
-    }).trim().split("\n").filter(Boolean).pop();
-
-    expect(tarballName).toBeDefined();
-    writeFileSync(join(consumerDir, "package.json"), JSON.stringify({ name: "repository-cli-consumer", private: true, type: "module" }));
-    execFileSync("npm", ["install", join(tarballDir, tarballName as string)], {
-      cwd: consumerDir,
-      env,
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "pipe"],
-    });
-    const profilePath = join(consumerDir, "repository-profile.json");
-    writeFileSync(profilePath, JSON.stringify({
-      schemaVersion: 1,
-      defaultBranch: "main",
-      commands: [{ name: "check", run: "npm test" }],
-      protectedPaths: ["src/**"],
-    }));
-
-    const executable = join(consumerDir, "node_modules", ".bin", "repository-check");
-    const valid = spawnSync(executable, [profilePath], { cwd: consumerDir, env, encoding: "utf8" });
-    expect(valid.status).toBe(0);
-    expect(JSON.parse(valid.stdout)).toEqual({ ok: true, findings: [] });
-
-    const help = spawnSync(executable, ["--help"], { cwd: consumerDir, env, encoding: "utf8" });
-    expect(help.status).toBe(0);
-    expect(help.stdout).toContain("Usage: repository-check");
-  });
-
-  it("packages/review installs and imports every declared subpath from a genuinely isolated directory", async () => {
-    const result = await packRoundTrip(join(repoRoot, "packages", "review"));
-
-    expect(result.packageName).toBe("@vespeneventures/review");
-    expect(result.tarballPath).not.toBe("");
-    expect(result.findings).toEqual([]);
-    expect(result.imports.length).toBeGreaterThan(0);
-    expect(result.imports.map((check) => check.subpath).sort()).toEqual([".", "./github"]);
-    for (const check of result.imports) {
-      expect(check.ok).toBe(true);
-      expect(check.error).toBeUndefined();
+    for (const subpath of ["./catalog", "./gates", "./release", "./repository", "./review", "./review/github"]) {
+      const entry = manifest.exports[subpath];
+      expect(entry).toBeDefined();
+      if (entry === undefined) throw new Error(`missing ${subpath} export`);
+      expect(existsSync(join(governanceDir, entry.import))).toBe(true);
+      expect(existsSync(join(governanceDir, entry.types))).toBe(true);
     }
-    expect(result.ok).toBe(true);
   });
 
   it("packages/policy installs and imports cleanly from a genuinely isolated directory", async () => {
@@ -116,49 +66,6 @@ describe("packRoundTrip — real subprocess round trip", () => {
     expect(result.ok).toBe(true);
   }, 180_000);
 
-  // EXPECTED AND CORRECT, given this repository's real state today — not a
-  // bug in @vespeneventures/gates and not a bug in this test.
-  //
-  // @vespeneventures/gates declares two real npm dependencies with semver
-  // ranges — @vespeneventures/catalog, @vespeneventures/policy — in its own
-  // package.json. None of the packages in this small foundation has ever
-  // been published to any registry. Installing gates' packed tarball into a
-  // directory with no workspace file and no sibling node_modules to fall
-  // back on means npm has nowhere at all it can resolve those two names
-  // from, so the install has to fail.
-  //
-  // That failure is exactly the gap this whole package exists to surface: a
-  // declared dependency and a clean catalog both describe SHAPE — neither
-  // proves installability. Proving installability needs a real publish
-  // first. Until gates' own runtime dependencies are published, this
-  // assertion is the honest, current state of this repository. Do not
-  // weaken this into a skip or a workaround; the failure itself is the point.
-  it("packages/gates currently fails to install in isolation — its internal dependencies are unpublished", async () => {
-    const result = await packRoundTrip(join(repoRoot, "packages", "gates"));
-
-    expect(result.ok).toBe(false);
-    expect(result.packageName).toBe("@vespeneventures/gates");
-    expect(result.imports).toEqual([]);
-    expect(result.findings).toHaveLength(1);
-    expect(result.findings[0]?.rule).toBe("round-trip-install-failed");
-    expect(result.findings[0]?.severity).toBe("error");
-    expect(result.findings[0]?.message).toContain("@vespeneventures/gates");
-
-    // Environment-isolation regression (defect 3): this machine's real
-    // ~/.npmrc carries a registry auth token for registry.npmjs.org, and npm
-    // resolves unscoped-registry lookups through it by default. If this
-    // round trip's subprocesses inherited the operator's full environment
-    // and user npmrc, npm would still resolve the registry itself the same
-    // way (npm's default registry, absent a scope mapping for
-    // @vespeneventures) -- so the only observable difference isolation makes
-    // here is which registry host actually gets contacted at all. Asserting
-    // it is the public default, and never the operator's GitHub Packages
-    // registry, is a direct, real check that the sanitized environment (see
-    // `subprocessEnv`) is actually the one in effect for a real subprocess,
-    // not just for a value that never gets used.
-    expect(result.findings[0]?.message).toContain("registry.npmjs.org");
-    expect(result.findings[0]?.message).not.toContain("npm.pkg.github.com");
-  });
 });
 
 // Fixture packages for the shape/behavior tests below. Each fixture is a

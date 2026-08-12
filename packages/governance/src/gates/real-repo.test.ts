@@ -2,16 +2,16 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { findByName } from "@vespeneventures/catalog";
+import { findByName } from "../catalog/index.js";
 import { runFoundationCheck } from "./foundation.js";
 import { computeBuildOrder } from "./build-order.js";
 
 // Self-hosting integration test: runs runFoundationCheck/computeBuildOrder
 // against THIS repository's real packages/ directory, not a fixture — the
 // same pattern @vespeneventures/catalog's own integration test uses. Root is
-// resolved three levels up from this file (src -> packages/gates ->
+// resolved four levels up from this file (gates -> src -> governance ->
 // packages -> repo root) and verified below before anything else runs.
-const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "..");
 
 // Read the scope from package-scope.json rather than hardcoding it. A bare
 // scope literal is not rewritten by set-scope.mjs — that script rewrites
@@ -77,10 +77,10 @@ describe("integration: real packages/ directory", () => {
 
     // Constraints the ordering MUST satisfy given the real dependency edges —
     // NOT a frozen literal ordering.
-    expect(indexOf("@vespeneventures/catalog")).toBeLessThan(indexOf("@vespeneventures/gates"));
-    expect(indexOf("@vespeneventures/policy")).toBeLessThan(indexOf("@vespeneventures/gates"));
-    expect(indexOf("@vespeneventures/gates")).toBeLessThan(indexOf("@vespeneventures/release"));
-    expect(indexOf("@vespeneventures/policy")).toBeLessThan(indexOf("@vespeneventures/release"));
+    expect(indexOf("@vespeneventures/policy")).toBeLessThan(indexOf("@vespeneventures/governance"));
+    expect(indexOf("@vespeneventures/governance")).toBeLessThan(indexOf("@vespeneventures/catalog"));
+    expect(indexOf("@vespeneventures/governance")).toBeLessThan(indexOf("@vespeneventures/gates"));
+    expect(indexOf("@vespeneventures/governance")).toBeLessThan(indexOf("@vespeneventures/release"));
     expect(indexOf("@vespeneventures/repository")).toBeGreaterThanOrEqual(0);
     expect(indexOf("@vespeneventures/review")).toBeGreaterThanOrEqual(0);
 
