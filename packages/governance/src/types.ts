@@ -1,5 +1,5 @@
-import type { BuildOrderResult, CatalogFinding, FoundationReport } from "@vespeneventures/gates";
-import type { PreflightPackageOptions, PreflightReport } from "@vespeneventures/release";
+import type { BuildOrderResult, CatalogFinding, FoundationReport } from "./gates/index.js";
+import type { PreflightPackageOptions, PreflightReport } from "./release/index.js";
 
 /** The only lifecycle-document format supported by this version. */
 export const PACKAGE_LIFECYCLE_VERSION = 1 as const;

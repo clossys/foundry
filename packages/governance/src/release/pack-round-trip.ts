@@ -20,7 +20,7 @@ import { promisify } from "node:util";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative, resolve } from "node:path";
-import type { Finding } from "@vespeneventures/gates";
+import type { Finding } from "../gates/index.js";
 import type { ImportCheck, RoundTripResult } from "./types.js";
 
 const execFile = promisify(execFileCb);

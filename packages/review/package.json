@@ -1,6 +1,6 @@
 {
   "name": "@vespeneventures/review",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -28,7 +28,7 @@
     "LICENSE"
   ],
   "sideEffects": false,
-  "description": "Vendor-neutral review evidence contracts and deterministic validation, with a pure GitHub payload normalizer.",
+  "description": "Deprecated compatibility entry point for @vespeneventures/governance/review.",
   "keywords": [
     "code-review",
     "review-evidence",
@@ -49,11 +49,14 @@
   "engines": {
     "node": ">=20"
   },
+  "dependencies": {
+    "@vespeneventures/governance": "^0.2.0"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "prepublishOnly": "npm run build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run"
+    "test": "vitest run --passWithNoTests"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

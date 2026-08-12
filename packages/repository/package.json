@@ -1,6 +1,6 @@
 {
   "name": "@vespeneventures/repository",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -24,7 +24,7 @@
     "LICENSE"
   ],
   "sideEffects": false,
-  "description": "Dependency-free contracts and deterministic validation for consumer-owned repository profiles: default branch, verification commands, and protected path patterns.",
+  "description": "Deprecated compatibility entry point for @vespeneventures/governance/repository.",
   "keywords": [
     "repository",
     "schema",
@@ -45,11 +45,14 @@
   "engines": {
     "node": ">=20"
   },
+  "dependencies": {
+    "@vespeneventures/governance": "^0.2.0"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "prepublishOnly": "npm run build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run"
+    "test": "vitest run --passWithNoTests"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

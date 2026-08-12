@@ -6,11 +6,11 @@ import { buildCatalog } from "./build.js";
 import { evaluateCatalog, findByName } from "./evaluate.js";
 
 // Integration test: runs buildCatalog/evaluateCatalog against THIS repo's
-// real packages/ directory, not a fixture. Root is resolved three levels up
-// from this file (src -> packages/catalog -> packages -> repo root) and
+// real packages/ directory, not a fixture. Root is resolved four levels up
+// from this file (catalog -> src -> governance -> packages -> repo root) and
 // verified below before anything else runs, so a future move of this test
 // file fails loudly here instead of quietly finding zero packages.
-const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "..");
 
 // Read the scope from package-scope.json rather than hardcoding it.
 //

@@ -7,8 +7,8 @@
  */
 
 import { isAbsolute } from "node:path";
-import { buildCatalog, evaluateCatalog } from "@vespeneventures/catalog";
-import type { CatalogOptions } from "@vespeneventures/catalog";
+import { buildCatalog, evaluateCatalog } from "../catalog/index.js";
+import type { CatalogOptions } from "../catalog/index.js";
 import type { FoundationReport } from "./types.js";
 
 /**

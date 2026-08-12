@@ -1,10 +1,9 @@
-/** Vendor-neutral contracts for consumer-owned repository values. */
-export { validateRepositoryProfile } from "./validate.js";
-export { REPOSITORY_PROFILE_VERSION } from "./types.js";
+/** @deprecated Migrate to `@vespeneventures/governance/repository`. */
+export { REPOSITORY_PROFILE_VERSION, validateRepositoryProfile } from "@vespeneventures/governance/repository";
 export type {
   RepositoryCommand,
   RepositoryList,
   RepositoryProfile,
   RepositoryProfileFinding,
   RepositoryProfileFindingRule,
-} from "./types.js";
+} from "@vespeneventures/governance/repository";

@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { runFoundationCheck } from "@vespeneventures/gates";
+import { runFoundationCheck } from "../gates/index.js";
 
 // Self-hosting integration test: runs @vespeneventures/gates's own
 // runFoundationCheck against THIS repository's real packages/ directory, the
@@ -10,7 +10,7 @@ import { runFoundationCheck } from "@vespeneventures/gates";
 // integration test uses — applied here to this package's own real
 // dependency graph rather than anything a package merely declares about
 // itself.
-const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "..");
 
 // Read the scope from package-scope.json rather than hardcoding it: a bare
 // scope literal is not rewritten by set-scope.mjs (which rewrites scopes in

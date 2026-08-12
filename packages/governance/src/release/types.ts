@@ -4,7 +4,7 @@
  * no logic.
  */
 
-import type { CatalogFinding, Finding } from "@vespeneventures/gates";
+import type { CatalogFinding, Finding } from "../gates/index.js";
 
 /**
  * The outcome of checking one subpath of a package's own `exports` field,

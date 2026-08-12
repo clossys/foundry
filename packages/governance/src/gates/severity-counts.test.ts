@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { CatalogFinding } from "@vespeneventures/catalog";
+import type { CatalogFinding } from "../catalog/index.js";
 import { severityCounts } from "./cli.js";
 
 // Direct import of cli.ts, not a subprocess: cli.ts guards its top-level

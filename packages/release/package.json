@@ -1,6 +1,6 @@
 {
   "name": "@vespeneventures/release",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -21,7 +21,7 @@
     "LICENSE"
   ],
   "sideEffects": false,
-  "description": "The release layer of a small foundation: packs a package's real tarball, installs it into a genuinely isolated temporary directory with no workspace and no sibling node_modules, and tries to actually import what it claims to export -- proof of installability, not just declared shape.",
+  "description": "Deprecated compatibility entry point for @vespeneventures/governance/release.",
   "keywords": [
     "release",
     "npm-pack",
@@ -43,14 +43,13 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@vespeneventures/gates": "^0.1.0",
-    "@vespeneventures/policy": "^0.1.0"
+    "@vespeneventures/governance": "^0.2.0"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "prepublishOnly": "npm run build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run"
+    "test": "vitest run --passWithNoTests"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

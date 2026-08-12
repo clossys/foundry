@@ -1,7 +1,8 @@
 # Repository and review first run
 
 This runbook qualifies the paired first release of
-`@vespeneventures/repository` and `@vespeneventures/review` in designated
+`@vespeneventures/governance/repository` and
+`@vespeneventures/governance/review` in designated
 consumer repositories. It is deliberately a handoff guide, not an installer:
 Foundry provides contracts and CLIs; each consumer authors and owns its own
 values, workflow, and provider access.
@@ -28,9 +29,9 @@ approved a change for any consumer.
    tarball, or a source checkout. The point of this run is to prove the
    registry artifact a consumer will actually receive.
 
-`@vespeneventures/gates`, `catalog`, and `policy` are not runtime
-dependencies of this pair. Their separate release state must not block a
-consumer from installing or running these two CLIs.
+The repository and review contracts are subpaths of governance. Consumers
+install one exact governance artifact, whose only Foundry runtime sibling is
+policy; no legacy standalone package is required.
 
 ## Consumer installation
 
@@ -43,7 +44,7 @@ Install the exact paired versions, rather than floating ranges, for the first
 run:
 
 ```bash
-npm install --save-exact @vespeneventures/repository@0.1.0 @vespeneventures/review@0.1.0
+npm install --save-exact @vespeneventures/governance@0.2.0
 ```
 
 Use the package manager that owns the consumer's lockfile. The command above
@@ -62,7 +63,7 @@ Before running either CLI, a consumer authors these values in its own change:
   change head, the complete check/review/thread snapshot, and whether
   pagination is complete.
 
-For GitHub, a consumer may use `@vespeneventures/review/github` in its own
+For GitHub, a consumer may use `@vespeneventures/governance/review/github` in its own
 code to normalize a fully fetched caller-provided snapshot before writing its
 own evidence JSON. The subpath makes no request, does not discover credentials,
 and does not choose pagination or workflow behavior. Provider tokens, raw

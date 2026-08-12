@@ -1,5 +1,9 @@
 # @vespeneventures/gates
 
+> **Deprecated compatibility package.** New integrations import
+> `@vespeneventures/governance/gates`. This package preserves the same root
+> API and `foundry-check` command while existing consumers migrate.
+
 Foundation orchestration and pure governance checks. The package joins
 `@vespeneventures/catalog` and `@vespeneventures/policy` for workspace checks,
 build ordering, and binding verification, and it exposes consumer-supplied

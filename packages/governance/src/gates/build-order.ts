@@ -10,8 +10,8 @@
  * without ever touching disk itself.
  */
 
-import { evaluateCatalog, internalDependencyNamesOf } from "@vespeneventures/catalog";
-import type { Catalog } from "@vespeneventures/catalog";
+import { evaluateCatalog, internalDependencyNamesOf } from "../catalog/index.js";
+import type { Catalog } from "../catalog/index.js";
 import type { BuildOrderResult } from "./types.js";
 
 /** Options for `computeBuildOrder`. */

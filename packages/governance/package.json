@@ -1,6 +1,6 @@
 {
   "name": "@vespeneventures/governance",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -11,10 +11,37 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./catalog": {
+      "types": "./dist/catalog/index.d.ts",
+      "import": "./dist/catalog/index.js"
+    },
+    "./gates": {
+      "types": "./dist/gates/index.d.ts",
+      "import": "./dist/gates/index.js"
+    },
+    "./release": {
+      "types": "./dist/release/index.d.ts",
+      "import": "./dist/release/index.js"
+    },
+    "./repository": {
+      "types": "./dist/repository/index.d.ts",
+      "import": "./dist/repository/index.js"
+    },
+    "./review": {
+      "types": "./dist/review/index.d.ts",
+      "import": "./dist/review/index.js"
+    },
+    "./review/github": {
+      "types": "./dist/review/github.d.ts",
+      "import": "./dist/review/github.js"
     }
   },
   "bin": {
-    "foundry-governance": "./dist/cli.js"
+    "foundry-governance": "./dist/cli.js",
+    "foundry-check": "./dist/gates/cli.js",
+    "repository-check": "./dist/repository/cli.js",
+    "review-check": "./dist/review/cli.js"
   },
   "files": [
     "dist",
@@ -24,12 +51,15 @@
     "LICENSE"
   ],
   "sideEffects": false,
-  "description": "Read-only package lifecycle and process orchestration: plans minimal package scaffolds, validates a complete lifecycle registry, and composes catalog, gate, and release evidence without publishing or deploying.",
+  "description": "Read-only package lifecycle and process orchestration, including catalog, gates, release, repository-profile, and review-evidence subpaths without publishing or deploying.",
   "keywords": [
     "governance",
     "package-lifecycle",
     "deprecation",
     "package-scaffold",
+    "catalog",
+    "release",
+    "review",
     "typescript"
   ],
   "author": "Calvin Hung",
@@ -46,8 +76,8 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@vespeneventures/gates": "^0.1.1",
-    "@vespeneventures/release": "^0.1.1"
+    "@vespeneventures/policy": "^0.1.0",
+    "typescript": "~6.0.0"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

@@ -14,6 +14,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   compatibility.
 - A distinct retired state with dated durable retirement evidence and CLI
   maturity summaries.
+- The `catalog`, `gates`, `release`, `repository`, and `review` subpaths,
+  including the review GitHub normalizer and established process CLIs.
+
+### Changed
+
+- Governance now owns its package-process implementations and depends only on
+  policy plus TypeScript for source-aware gates. The former standalone package
+  names are compatibility packages with documented migration paths.
 
 ## [0.1.1] - 2026-08-11
 

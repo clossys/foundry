@@ -1,4 +1,4 @@
-import { preflightPackage } from "@vespeneventures/release";
+import { preflightPackage } from "./release/index.js";
 import { runGovernanceCheck } from "./governance.js";
 import type { GovernedPreflightOptions, GovernedPreflightReport } from "./types.js";
 

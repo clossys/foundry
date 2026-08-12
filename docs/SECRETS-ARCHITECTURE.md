@@ -7,7 +7,7 @@ the existing gates package:
 
 1. `@vespeneventures/secrets` owns provider-neutral runtime resolution at its
    root entry and Infisical integration at `@vespeneventures/secrets/infisical`.
-2. `@vespeneventures/gates` owns pure consumer governance checks.
+2. `@vespeneventures/governance/gates` owns pure consumer governance checks.
 
 There is no standalone `secrets-infisical` or `secrets-cli` package. The only
 useful command-line operations in this release require Infisical configuration
@@ -26,12 +26,12 @@ in-memory adapter is small enough to remain part of the core public contract.
 | Runtime `get`/`require`, process environment default, dependency injection, synchronous compatibility, test double | `@vespeneventures/secrets` root entry | Which keys an application requests and when startup requires them |
 | Provider authentication and secret resolution | `@vespeneventures/secrets/infisical` | Base URL, project, environment, folder, identity, token source, and provider-side grants |
 | Provider run/check/catalog/list/get behavior | `@vespeneventures/secrets/infisical` | The catalog file, command, environment selection, and CI identity configuration |
-| Raw sensitive environment reads | `@vespeneventures/gates` | Source-file discovery and the explicit adapter exemption |
-| Secret naming | `@vespeneventures/gates` | Consumer key inventory and any added exact sensitive names |
-| Credential inventory and surface drift | `@vespeneventures/gates` | Credential IDs, providers, consuming surfaces, and observation collection |
-| Local secret-file prohibition | `@vespeneventures/gates` | Tracked and on-disk path enumeration |
-| Value-free catalog and readiness coverage | `@vespeneventures/gates` plus the provider client's readiness operation | Required/optional declarations and provider configuration |
-| Provider resource naming | `@vespeneventures/gates` | Provider/kind patterns and observed resource names |
+| Raw sensitive environment reads | `@vespeneventures/governance/gates` | Source-file discovery and the explicit adapter exemption |
+| Secret naming | `@vespeneventures/governance/gates` | Consumer key inventory and any added exact sensitive names |
+| Credential inventory and surface drift | `@vespeneventures/governance/gates` | Credential IDs, providers, consuming surfaces, and observation collection |
+| Local secret-file prohibition | `@vespeneventures/governance/gates` | Tracked and on-disk path enumeration |
+| Value-free catalog and readiness coverage | `@vespeneventures/governance/gates` plus the provider client's readiness operation | Required/optional declarations and provider configuration |
+| Provider resource naming | `@vespeneventures/governance/gates` | Provider/kind patterns and observed resource names |
 | Credential issuance, revocation, principals, tokens, policies, and grants | No secrets package | Identity/access-control layer and upstream credential authority |
 | Repository scaffolding for env and auth conventions | No package in this change | Repository creator or consumer templates, using these public contracts |
 
@@ -114,7 +114,7 @@ catalogs and provider bindings completely separate.
 
 The publication order is:
 
-1. `@vespeneventures/gates` version `0.1.0`
+1. `@vespeneventures/governance` version `0.2.0`
 2. `@vespeneventures/secrets` version `0.1.0`
 
 The packages are not published by this change. Each package must independently

@@ -5,7 +5,7 @@ const mocks = vi.hoisted(() => ({
   runGovernanceCheck: vi.fn(),
 }));
 
-vi.mock("@vespeneventures/release", () => ({ preflightPackage: mocks.preflightPackage }));
+vi.mock("./release/index.js", () => ({ preflightPackage: mocks.preflightPackage }));
 vi.mock("./governance.js", () => ({ runGovernanceCheck: mocks.runGovernanceCheck }));
 
 import { preflightGovernedPackage } from "./preflight.js";

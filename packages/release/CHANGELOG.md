@@ -7,6 +7,13 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-08-12
+
+### Deprecated
+
+- Migrate to `@vespeneventures/governance/release`. This compatibility release
+  preserves the existing root exports.
+
 ## [0.1.2] - 2026-08-12
 
 ### Added
