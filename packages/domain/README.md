@@ -160,9 +160,9 @@ Node 20+. ESM only. No runtime dependencies and no I/O.
 
 ## Migration
 
-This is the canonical package name. `@vespeneventures/domain-model` remains a
-temporary compatibility package for consumers migrating from the original
-name; new consumers should import `@vespeneventures/domain`.
+This is the canonical package name. The former compatibility package was
+retired from the registry after supported consumers migrated; install and
+import `@vespeneventures/domain` directly.
 
 ## Licence
 

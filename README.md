@@ -21,7 +21,6 @@ for the full account.
 | [`@vespeneventures/auth`](packages/auth) | Provider-neutral authorization primitives with isolated provider and framework subpaths. |
 | [`@vespeneventures/policy`](packages/policy) | Content-addressed binding: commit a document's digest publicly without committing the document, then verify later-materialized content matches it byte-for-byte. Zero dependencies, zero I/O. |
 | [`@vespeneventures/domain`](packages/domain) | Dependency-free machinery for product-owned domains: stable identifiers, value types, closed vocabularies, domain types with fields, directed attributed relations, deterministic JSON artifacts, validation, and compatibility comparison. Ships no product values or runtime. |
-| [`@vespeneventures/domain-model`](packages/domain-model) | Temporary compatibility package for the original domain package name. New consumers use `@vespeneventures/domain`. |
 | [`@vespeneventures/deployment`](packages/deployment) | Deployment-surface contracts and read-only provider inspectors with caller-injected transport and credentials. |
 | [`@vespeneventures/comms`](packages/comms) | Provider-neutral finished communication contracts and an isolated Resend adapter. |
 | [`@vespeneventures/catalog`](packages/catalog) | Walks a workspace's `packages/` directory and reports what exists, what could not be read, and whether the real dependency graph — read from each package's own `dependencies`/`peerDependencies` — has cycles or missing internal packages. |

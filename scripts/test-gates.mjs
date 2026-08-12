@@ -1299,6 +1299,29 @@ try {
       ignoredOnlyResult.code === 0,
       `expected exit 0, got ${ignoredOnlyResult.code}: ${ignoredOnlyResult.out}`,
     );
+
+    // A tracked package removed in the working tree is a deliberate
+    // retirement. It must not be treated as a malformed live package merely
+    // because `git ls-files --cached` still sees its former manifest.
+    const retiredDir = join(work, "set-scope-retired-package");
+    mkdirSync(join(retiredDir, "packages", "current"), { recursive: true });
+    mkdirSync(join(retiredDir, "packages", "retired"), { recursive: true });
+    mkdirSync(join(retiredDir, "scripts"), { recursive: true });
+    cpSync(SET_SCOPE, join(retiredDir, "scripts", "set-scope.mjs"));
+    writeFileSync(
+      join(retiredDir, "package-scope.json"),
+      JSON.stringify({ scope: "@real", registry: "https://example.invalid" }, null, 2) + "\n",
+    );
+    writeFileSync(join(retiredDir, "packages", "current", "package.json"), JSON.stringify({ name: "@real/current", version: "1.0.0" }, null, 2) + "\n");
+    writeFileSync(join(retiredDir, "packages", "retired", "package.json"), JSON.stringify({ name: "@real/retired", version: "1.0.0" }, null, 2) + "\n");
+    gitInit(retiredDir);
+    rmSync(join(retiredDir, "packages", "retired", "package.json"));
+    const retiredResult = run("node", [join(retiredDir, "scripts", "set-scope.mjs"), "--check"], { cwd: retiredDir });
+    check(
+      "a fully removed tracked package is not treated as a missing-manifest live package",
+      retiredResult.code === 0,
+      `expected exit 0, got ${retiredResult.code}: ${retiredResult.out}`,
+    );
   }
 
   // ------------------------------------------ root README parity (issue #28)
