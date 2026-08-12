@@ -410,6 +410,7 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           EXPECTED_SHA256: ${{ steps.pack.outputs.sha256 }}
+          VERIFY_ONLY: ${{ inputs.verify_only }}
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/published-tarball"
@@ -430,7 +431,13 @@ jobs:
           done
           tarball_path="$RUNNER_TEMP/published-tarball/$tarball"
           actual_sha256="$(sha256sum "$tarball_path" | awk '{print $1}')"
-          if [ "$actual_sha256" != "$EXPECTED_SHA256" ]; then
+          # A verify-only run intentionally qualifies a version that may
+          # predate source-only changes in this checkout (for example its
+          # release-verification metadata). It proves the registry tarball
+          # installs and compiles; it must not claim byte identity with a
+          # freshly packed, different source tree. A publish run still fails
+          # closed unless the registry served exactly the uploaded bytes.
+          if [ "$VERIFY_ONLY" != true ] && [ "$actual_sha256" != "$EXPECTED_SHA256" ]; then
             echo "::error title=Published tarball mismatch::$tarball sha256 differs from the uploaded artifact (expected $EXPECTED_SHA256, got $actual_sha256)."
             exit 1
           fi
