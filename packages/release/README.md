@@ -84,6 +84,13 @@ installation behavior. A static-only package has nothing to execute, so its
 asset-presence proof does not install peers merely to check CSS, JSON, JSONC,
 or similar files.
 
+For exports that need Next.js rather than raw Node's ESM loader, pass the
+explicit `next` option with the applicable client, server, and proxy subpaths.
+`release` creates an isolated App Router fixture, installs the package's
+declared peers, and runs `next build`; this is a framework compilation proof,
+not a request or provider-configuration test. All other exports continue to
+use raw Node imports.
+
 The check also verifies every declared TypeScript `types`/`typings` target is
 present in the installed tarball. When an export explicitly includes a
 CommonJS `require` condition, it executes that branch too; a bare ESM/default
@@ -135,12 +142,13 @@ if (findings.length > 0) process.exitCode = 1;
 
 | Export | Kind | Purpose |
 | --- | --- | --- |
-| `packRoundTrip(packageDir, options?)` | function | Packs `packageDir`, installs the tarball into an isolated temporary directory, imports ESM exports, executes explicitly advertised CommonJS branches, checks static assets and declaration-file targets for packed-file presence, and installs declared peers before executable checks. Returns a `Promise<RoundTripResult>`. `options.keepTempDir` (default `false`) skips cleanup; `options.registry` overrides the anonymous dependency registry; both are useful only for deliberately scoped verification. |
+| `packRoundTrip(packageDir, options?)` | function | Packs `packageDir`, installs the tarball into an isolated temporary directory, imports ESM exports, executes explicitly advertised CommonJS branches, compiles configured Next exports in an isolated App Router fixture, checks static assets and declaration-file targets for packed-file presence, and installs declared peers before executable checks. Returns a `Promise<RoundTripResult>`. `options.keepTempDir` (default `false`) skips cleanup; `options.registry` overrides the anonymous dependency registry. |
 | `preflightPackage(root, packageDir, options?)` | function | Combines this package's own catalog findings with a real `packRoundTrip` result. Returns a `Promise<PreflightReport>`. `options.scope` is passed through to `runFoundationCheck`; `options.roundTrip` is passed to the isolated packed-install proof. |
 | `verifyPublishedArtifact(expectedDigest, publishedContent)` | function | Builds a `PolicyBinding` inline and calls `@vespeneventures/policy`'s own `verifyBinding`. Returns a `Finding[]`; empty means the content matches. |
-| `PackRoundTripOptions` | type | `{ keepTempDir?: boolean; registry?: string; timeoutsMs?: { pack?: number; install?: number; import?: number } }` — the second argument to `packRoundTrip`. `registry` replaces the anonymous public-default registry without inheriting host auth; `timeoutsMs` overrides the default per-subprocess timeouts. |
+| `PackRoundTripOptions` | type | `{ keepTempDir?: boolean; registry?: string; next?: { clientSubpaths?: string[]; serverSubpaths?: string[]; proxySubpaths?: string[] }; timeoutsMs?: { pack?: number; install?: number; import?: number; next?: number } }` — the second argument to `packRoundTrip`. `next` moves only the named exports from raw Node imports into an isolated Next build; `registry` replaces the anonymous public-default registry without inheriting host auth. |
+| `RegistryInstallOptions` | type | `{ url: string; authToken?: string; scope?: string }` — authenticated scoped-registry configuration for an isolated round trip. The token is passed only to child npm processes and is never inherited from the host environment. |
 | `PreflightPackageOptions` | type | `{ scope?: string; roundTrip?: PackRoundTripOptions }` — the third argument to `preflightPackage`; `roundTrip` passes registry/timeout options through without weakening isolation. |
-| `ImportCheck` | type | `{ subpath: string; mode: "import" \| "require" \| "static"; ok: boolean; error?: string }` — one export check: an ESM import, explicitly advertised CommonJS require branch, or static-file presence check. |
+| `ImportCheck` | type | `{ subpath: string; mode: "import" \| "require" \| "next-build" \| "static"; ok: boolean; error?: string }` — one export check: an ESM import, explicitly advertised CommonJS require branch, Next build, or static-file presence check. |
 | `DeclarationCheck` | type | `{ subpath: string; target: string; ok: boolean; error?: string }` — one declared TypeScript target checked for presence in the isolated install. |
 | `RoundTripResult` | type | `{ ok: boolean; packageName: string \| undefined; tarballPath: string; imports: ImportCheck[]; declarations: DeclarationCheck[]; findings: Finding[] }` — what `packRoundTrip` returns. `findings` can additionally carry `"round-trip-require-failed"` or `"round-trip-declaration-missing"`; checking zero exports is never reported as `ok: true`. |
 | `PreflightReport` | type | `{ packageName: string; catalogFindings: CatalogFinding[]; roundTrip: RoundTripResult; ok: boolean }` — what `preflightPackage` returns. |

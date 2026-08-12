@@ -17,7 +17,7 @@
 
 import { execFile as execFileCb } from "node:child_process";
 import { promisify } from "node:util";
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative, resolve } from "node:path";
 import type { Finding } from "@vespeneventures/gates";
@@ -56,6 +56,23 @@ export interface PackRoundTripOptions {
    */
   registry?: string | RegistryInstallOptions;
   /**
+   * Opt selected exports into an isolated Next.js compilation proof instead
+   * of a raw Node import. Next route, middleware, and client-component
+   * modules are valid package exports, but their framework-only specifiers
+   * (for example `next/headers`) are intentionally resolved by Next rather
+   * than by Node's bare ESM loader.
+   *
+   * Each named subpath must be declared by the package. Client exports are
+   * compiled from a client component; server exports from an App Router
+   * module; and proxy exports from a `proxy.ts` entry. All peer dependencies
+   * are still installed in the same isolated consumer before this check.
+   */
+  next?: {
+    clientSubpaths?: readonly string[];
+    serverSubpaths?: readonly string[];
+    proxySubpaths?: readonly string[];
+  };
+  /**
    * Overrides for this round trip's subprocess timeouts, in milliseconds.
    * Each defaults to the sane, generous budget this module ships with
    * (`NPM_PACK_TIMEOUT_MS`, `NPM_INSTALL_TIMEOUT_MS`, `IMPORT_TIMEOUT_MS`)
@@ -67,6 +84,8 @@ export interface PackRoundTripOptions {
     pack?: number;
     install?: number;
     import?: number;
+    /** Next compilation timeout. Defaults to the install timeout. */
+    next?: number;
   };
 }
 
@@ -331,6 +350,69 @@ function staticTargetExists(installedPackageDir: string, target: string): boolea
   return rel !== "" && !rel.startsWith("..") && !rel.includes(`..${process.platform === "win32" ? "\\" : "/"}`) && existsSync(resolved);
 }
 
+type NextRoundTripOptions = NonNullable<PackRoundTripOptions["next"]>;
+
+function uniqueSubpaths(subpaths: readonly string[]): string[] {
+  return [...new Set(subpaths)];
+}
+
+function nextSubpathsOf(next: NextRoundTripOptions | undefined): {
+  client: string[];
+  server: string[];
+  proxy: string[];
+  all: Set<string>;
+} {
+  const client = uniqueSubpaths(next?.clientSubpaths ?? []);
+  const server = uniqueSubpaths(next?.serverSubpaths ?? []);
+  const proxy = uniqueSubpaths(next?.proxySubpaths ?? []);
+  const all = new Set([...client, ...server, ...proxy]);
+  if (all.size !== client.length + server.length + proxy.length) {
+    throw new Error("packRoundTrip: a Next framework subpath may appear in only one Next fixture role");
+  }
+  return { client, server, proxy, all };
+}
+
+function namespaceImports(packageName: string, subpaths: readonly string[]): string {
+  return subpaths
+    .map((subpath, index) => `import * as probe${index} from ${JSON.stringify(specifierFor(packageName, subpath))};\nvoid probe${index};`)
+    .join("\n");
+}
+
+/**
+ * Builds a minimal App Router project that makes Next resolve selected package
+ * exports in their real client, server, or proxy execution boundary. The
+ * modules are deliberately not invoked: this proves consumer installation and
+ * framework resolution without needing a provider key or a live request.
+ */
+function writeNextFixture(
+  consumerDir: string,
+  packageName: string,
+  next: { client: string[]; server: string[]; proxy: string[] },
+): void {
+  const appDir = join(consumerDir, "app");
+  mkdirSync(appDir, { recursive: true });
+  writeFileSync(
+    join(appDir, "layout.tsx"),
+    'import type { ReactNode } from "react";\n\nexport default function RootLayout({ children }: { children: ReactNode }) {\n  return <html><body>{children}</body></html>;\n}\n',
+  );
+  writeFileSync(
+    join(appDir, "client-probe.tsx"),
+    `"use client";\n\n${namespaceImports(packageName, next.client)}\n\nexport function ClientProbe() {\n  return null;\n}\n`,
+  );
+  writeFileSync(
+    join(appDir, "server-probe.ts"),
+    `${namespaceImports(packageName, next.server)}\n\nexport const serverProbe = true;\n`,
+  );
+  writeFileSync(
+    join(appDir, "page.tsx"),
+    'import { ClientProbe } from "./client-probe";\nimport { serverProbe } from "./server-probe";\n\nexport const dynamic = "force-dynamic";\n\nexport default function Page() {\n  void serverProbe;\n  return <ClientProbe />;\n}\n',
+  );
+  writeFileSync(
+    join(consumerDir, "proxy.ts"),
+    `${namespaceImports(packageName, next.proxy)}\n\nexport function proxy() {\n  return new Response(null);\n}\n`,
+  );
+}
+
 /**
  * Packs `packageDir` for real, installs the resulting tarball into a fresh,
  * isolated temporary directory (outside this repository's own tree, with no
@@ -361,6 +443,12 @@ export async function packRoundTrip(packageDir: string, options?: PackRoundTripO
   };
   const packageName = manifest.name;
   const subpaths = subpathsOf(manifest.exports);
+  const nextSubpaths = nextSubpathsOf(options?.next);
+  for (const subpath of nextSubpaths.all) {
+    if (!subpaths.includes(subpath)) {
+      throw new Error(`packRoundTrip: Next framework subpath ${JSON.stringify(subpath)} is not declared by this package`);
+    }
+  }
   const exportsBySubpath = new Map(subpaths.map((subpath) => [subpath, exportValueFor(manifest.exports, subpath)]));
   const importTargets = new Map(
     subpaths.map((subpath) => [subpath, resolveExportTarget(exportsBySubpath.get(subpath), IMPORT_EXPORT_CONDITIONS)]),
@@ -369,7 +457,7 @@ export async function packRoundTrip(packageDir: string, options?: PackRoundTripO
     subpaths.map((subpath) => [subpath, resolveExportTarget(exportsBySubpath.get(subpath), REQUIRE_EXPORT_CONDITIONS)]),
   );
   const requireSubpaths = new Set(subpaths.filter((subpath) => hasRequireCondition(exportsBySubpath.get(subpath))));
-  const needsRuntimePeers = [
+  const needsRuntimePeers = nextSubpaths.all.size > 0 || [
     ...importTargets.values(),
     ...[...requireSubpaths].map((subpath) => requireTargets.get(subpath)),
   ].some(isRuntimeTarget);
@@ -392,6 +480,7 @@ export async function packRoundTrip(packageDir: string, options?: PackRoundTripO
   const packTimeoutMs = options?.timeoutsMs?.pack ?? NPM_PACK_TIMEOUT_MS;
   const installTimeoutMs = options?.timeoutsMs?.install ?? NPM_INSTALL_TIMEOUT_MS;
   const importTimeoutMs = options?.timeoutsMs?.import ?? IMPORT_TIMEOUT_MS;
+  const nextTimeoutMs = options?.timeoutsMs?.next ?? installTimeoutMs;
 
   try {
     // 1. Pack the real tarball. `npm pack` runs `prepublishOnly`, so what
@@ -436,9 +525,19 @@ export async function packRoundTrip(packageDir: string, options?: PackRoundTripO
     //    contact. A registry is only ever consulted for THAT package's own
     //    declared dependencies — and whether that resolution succeeds is
     //    exactly the thing under test, not something to route around.
+    // A TypeScript App Router fixture needs its compiler and standard React
+    // declarations declared before Next runs. Without them, Next invokes its
+    // own interactive dependency bootstrap during `next build`; that second
+    // npm install can prune the intentionally no-save framework peers that
+    // this verifier installed, turning a sound package into a false failure.
+    // These are fixture-only development tools, never dependencies added to
+    // the package under test.
+    const fixtureDevDependencies = nextSubpaths.all.size > 0
+      ? { typescript: "^6.0.0", "@types/node": "^22.0.0", "@types/react": "^19.0.0" }
+      : undefined;
     writeFileSync(
       join(consumerDir, "package.json"),
-      JSON.stringify({ name: "round-trip-consumer", private: true, type: "module" }, null, 2),
+      JSON.stringify({ name: "round-trip-consumer", private: true, type: "module", ...(fixtureDevDependencies ? { devDependencies: fixtureDevDependencies } : {}) }, null, 2),
     );
 
     // 3. Install the local tarball for real. If this fails, that IS the
@@ -509,6 +608,7 @@ export async function packRoundTrip(packageDir: string, options?: PackRoundTripO
       findings.push(noExportsFinding(packageName));
     }
     for (const subpath of subpaths) {
+      if (nextSubpaths.all.has(subpath)) continue;
       const target = importTargets.get(subpath);
       if (target !== undefined && !isRuntimeTarget(target)) {
         if (staticTargetExists(join(consumerDir, "node_modules", packageName), target)) {
@@ -567,6 +667,25 @@ export async function packRoundTrip(packageDir: string, options?: PackRoundTripO
         const message = summarizeExecError(error, importTimeoutMs);
         imports.push({ subpath, mode: "require", ok: false, error: message });
         findings.push(requireFailedFinding(packageName, subpath, message));
+      }
+    }
+
+    if (nextSubpaths.all.size > 0) {
+      writeNextFixture(consumerDir, packageName, nextSubpaths);
+      try {
+        await execFile(join(consumerDir, "node_modules", ".bin", "next"), ["build"], {
+          cwd: consumerDir,
+          env: { ...importEnv, NEXT_TELEMETRY_DISABLED: "1" },
+          timeout: nextTimeoutMs,
+          killSignal: TIMEOUT_KILL_SIGNAL,
+        });
+        for (const subpath of nextSubpaths.all) imports.push({ subpath, mode: "next-build", ok: true });
+      } catch (error) {
+        const message = summarizeExecError(error, nextTimeoutMs);
+        for (const subpath of nextSubpaths.all) {
+          imports.push({ subpath, mode: "next-build", ok: false, error: message });
+          findings.push(importFailedFinding(packageName, subpath, message));
+        }
       }
     }
 

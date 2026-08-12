@@ -28,6 +28,14 @@ on:
         required: true
         default: false
         type: boolean
+      verify_only:
+        description: >-
+          Qualify an already-published package without uploading or changing
+          its visibility. Fetches the registry tarball and runs its isolated
+          consumer verification.
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -117,7 +125,7 @@ jobs:
 
   visibility:
     needs: discover
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.visibility_only && needs.discover.outputs.packages != '[]' }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.visibility_only && !inputs.verify_only && needs.discover.outputs.packages != '[]' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -153,7 +161,7 @@ jobs:
 
   publish:
     needs: discover
-    if: ${{ needs.discover.outputs.packages != '[]' && (github.event_name != 'workflow_dispatch' || !inputs.visibility_only) }}
+    if: ${{ needs.discover.outputs.packages != '[]' && (github.event_name != 'workflow_dispatch' || !inputs.visibility_only || inputs.verify_only) }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -197,6 +205,8 @@ jobs:
       - name: Validate package input
         env:
           PKG: ${{ matrix.package }}
+          VISIBILITY_ONLY: ${{ inputs.visibility_only }}
+          VERIFY_ONLY: ${{ inputs.verify_only }}
         run: |
           if ! [[ "$PKG" =~ ^[a-zA-Z0-9_-]+$ ]]; then
             echo "::error title=Invalid package input::package must match ^[a-zA-Z0-9_-]+\$ (got: $PKG)"
@@ -204,6 +214,10 @@ jobs:
           fi
           if [ ! -f "packages/$PKG/package.json" ]; then
             echo "::error title=Unknown package::packages/$PKG/package.json does not exist."
+            exit 1
+          fi
+          if [ "$VISIBILITY_ONLY" = true ] && [ "$VERIFY_ONLY" = true ]; then
+            echo "::error title=Conflicting release modes::visibility_only and verify_only cannot both be true."
             exit 1
           fi
 
@@ -340,7 +354,7 @@ jobs:
       # dry run must exercise that exact path — otherwise its name claims more
       # than it actually verifies. It still cannot mutate the registry.
       - name: Publish (dry run)
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && !inputs.verify_only }}
         working-directory: packages/${{ matrix.package }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -348,7 +362,7 @@ jobs:
         run: npm publish "$TARBALL" --dry-run --provenance --access public
 
       - name: Publish
-        if: ${{ github.event_name == 'push' || !inputs.dry_run }}
+        if: ${{ github.event_name == 'push' || (!inputs.dry_run && !inputs.verify_only) }}
         working-directory: packages/${{ matrix.package }}
         env:
           # The job's own GITHUB_TOKEN, not a stored PAT. The `packages: write`
@@ -390,7 +404,7 @@ jobs:
       # ordinary public npm dependencies on npmjs while resolving this
       # foundation's scoped packages from the configured registry.
       - name: Fetch and verify published tarball
-        if: ${{ github.event_name == 'push' || !inputs.dry_run }}
+        if: ${{ github.event_name == 'push' || !inputs.dry_run || inputs.verify_only }}
         id: published
         working-directory: packages/${{ matrix.package }}
         env:
@@ -423,7 +437,7 @@ jobs:
           echo "tarball_path=$tarball_path" >> "$GITHUB_OUTPUT"
 
       - name: Install and import published tarball
-        if: ${{ github.event_name == 'push' || !inputs.dry_run }}
+        if: ${{ github.event_name == 'push' || !inputs.dry_run || inputs.verify_only }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PKG: ${{ matrix.package }}
@@ -436,9 +450,11 @@ jobs:
           import { packRoundTrip } from "./packages/release/dist/pack-round-trip.js";
 
           const scope = JSON.parse(readFileSync("package-scope.json", "utf8")).scope;
+          const manifest = JSON.parse(readFileSync(`packages/${process.env.PKG}/package.json`, "utf8"));
           const result = await packRoundTrip(`packages/${process.env.PKG}`, {
             tarballPath: process.env.PUBLISHED_TARBALL,
             registry: { url: process.env.REGISTRY, authToken: process.env.NODE_AUTH_TOKEN, scope },
+            next: manifest.foundryReleaseVerification?.next,
           });
           if (!result.ok) {
             for (const finding of result.findings) {

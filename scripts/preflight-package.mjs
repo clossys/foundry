@@ -89,7 +89,7 @@ const worst = results.reduce((a, r) => (r.code === 2 ? 2 : r.code !== 0 && a !==
 console.log(
   worst === 0
     ? "\npreflight PASSED — this package may be proposed for publish.\n" +
-        "Publishing is still a separate, human-approved step; a green preflight is a precondition, not a decision."
+        "A merged version change is released by the repository's automated workflow; a green preflight is a required local precondition, not publication evidence."
     : "\npreflight FAILED — do not publish.",
 );
 process.exit(worst);
