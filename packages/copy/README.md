@@ -87,6 +87,69 @@ unknown ID, locale mismatch, draft/retired entry, missing placeholder value,
 or unexpected value. Locale fallback belongs to a consumer-owned registry
 selector, rather than an implicit package policy.
 
+## Where this package sits on i18n
+
+"i18n" is two different things, and this package deliberately does only one
+of them.
+
+**Translation RUNTIME** — ICU message format, plural rules, locale
+negotiation, date/number formatting — is out of scope. `CopyLocale` is a
+plain string (see `types.ts`) precisely so this package never grows a second
+internationalisation stack: that job already belongs to `Intl`
+(`Intl.PluralRules`, `Intl.ListFormat`, `Intl.RelativeTimeFormat`,
+`Intl.NumberFormat`) and a consumer's own choice of locale-negotiation
+policy. This is a scope decision, not a gap this package failed to fill —
+see `placeholders`' own doc comment in `types.ts` for the same point made
+about interpolation specifically.
+
+**Translation GOVERNANCE** — is every locale actually covered, has the
+source locale drifted ahead of its translations, is a target locale carrying
+entries that no longer exist upstream — is this package's job, because it is
+the same "addressable, checkable copy" problem this package already solves
+within one locale, applied across locales. What this package DOES do for
+multi-locale work:
+
+- **Addressing and resolution**: `CopyRegistry` is already locale-keyed
+  (`locale: CopyLocale`), and `resolveCopyRef` already fails closed with a
+  `"locale-mismatch"` issue when a `CopyRef` requests a locale a given
+  registry does not provide.
+- **Coverage governance**: `checkLocaleCoverage` (below) checks a set of
+  locale-keyed registries against a declared source locale for missing
+  coverage (an entry the source has that a target locale doesn't) and
+  orphaned entries (an entry a target locale has that the source no longer
+  does). It does **not** check staleness — a target-locale entry whose
+  translation is behind a since-edited source entry — because
+  `CopyRegistryEntry` carries no per-entry revision to compare, and
+  `CopyRegistry.revision` is a whole-registry, unordered provenance string
+  (the same opacity `CopySource.reference` already claims) that cannot
+  safely stand in for one. `checkLocaleCoverage` says so in its own report,
+  every run, rather than silently reporting a dimension it cannot evaluate
+  as passing — see `locale-coverage.ts`'s doc comment for the full argument.
+
+### Voice glossary vs. i18n glossary — two different axes, easy to conflate
+
+`@vespeneventures/copy/voice`'s `GlossaryEntry` (`term`/`status`/`reason`/
+`alternative`/`caseSensitive`) is a **voice** glossary: it enforces brand
+terms *within one locale* — "never say utilize, say use," checked by
+`checkCopy` against one string in one language. It has no concept of a
+second locale at all: a `VoiceRecord` is documented as "one consumer's
+complete, bound voice," singular, and `checkCopy` never receives a locale
+argument.
+
+An **i18n** glossary is a different axis over similar-looking machinery: it
+enforces that a *term stays equivalent across locales* — that whatever "an
+en entry translates to in fr" actually says the same thing, not that either
+locale's copy avoids a forbidden word. That requires a locale-keyed
+term-registry shape (multiple per-locale phrases grouped under one
+term-equivalence id) that `GlossaryEntry`/`VoiceRecord` do not have and were
+never designed to grow: `VoiceRecord` is deliberately a single, monolingual,
+bound voice, and threading a locale axis through `checkCopy`'s single-string
+contract would distort what that function already promises, not extend it.
+This package does not ship an i18n glossary for that reason — implementing
+one honestly is a new register (structurally closer to `checkLocaleCoverage`
+above, generalized from entry ids to term-equivalence ids) rather than a
+small addition to `copy/voice`.
+
 ## API
 
 The root entry point exports the copy registry and traceability surface:
@@ -108,6 +171,9 @@ The root entry point exports the copy registry and traceability surface:
   `SkippedFile`, and `UncheckedItem`.
 - Traceability: `checkCopyTraceability`, `CopyGateFinding`,
   `CopyGateIgnored`, `CopyGateResult`, and `CopyGateRule`.
+- Locale-coverage governance: `checkLocaleCoverage`, `LocaleCoverageFinding`,
+  `LocaleCoverageReport`, `LocaleCoverageSkip`, and
+  `LocaleCoverageSkipReason` — see "Where this package sits on i18n" above.
 
 The voice names described under Public entry points are re-exported from the
 root and from `@vespeneventures/copy/voice`.
