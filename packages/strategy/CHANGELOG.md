@@ -3,7 +3,16 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [0.2.0] - Unreleased
+## [0.2.1] - 2026-08-13
+
+### Fixed
+
+- Removed the stale "Release status" caveat claiming this package "has not
+  completed a public registry release." This package is already marked
+  published in this repository's own lifecycle catalog — the caveat, not
+  the package, was outdated. Surfaced by a consumer integration (#147).
+
+## [0.2.0] - 2026-08-12
 
 ### Added
 
@@ -59,7 +68,7 @@ All notable changes to this package are documented here. Format follows
     issue, present-but-invalid is, and `StrategyBundle.complete` accounts
     for all three identically to every other file this reader loads.
 
-## [0.1.0] - Unreleased
+## [0.1.0] - 2026-08-07
 
 ### Added
 

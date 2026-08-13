@@ -5,7 +5,7 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.1.1] - 2026-08-13
 
 ### Fixed
 
@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   declared. `svix` is only ever imported by the Clerk webhook adapter
   (`./providers/clerk`) — a consumer who installs this package for only its
   pure root/`/agent` primitives previously still pulled `svix` into their
-  install regardless.
+  install regardless. Surfaced by a consumer integration (#153).
 
 ## [0.1.0] - 2026-08-11
 

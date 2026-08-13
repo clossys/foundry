@@ -7,21 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-
-- Explicit lifecycle maturity states for incubating, published, qualified,
-  and adopted packages, while retaining legacy `active` records for schema-v1
-  compatibility.
-- A distinct retired state with dated durable retirement evidence and CLI
-  maturity summaries.
-- The `catalog`, `gates`, `release`, `repository`, and `review` subpaths,
-  including the review GitHub normalizer and established process CLIs.
-
-### Changed
-
-- Governance now owns its package-process implementations and depends only on
-  policy plus TypeScript for source-aware gates. The former standalone package
-  names are compatibility packages with documented migration paths.
+## [0.2.1] - 2026-08-13
 
 ### Fixed
 
@@ -40,7 +26,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `preflightGovernedPackage` already used `node:child_process` (a real
   tarball pack-and-install check) before this change, for reasons entirely
   unrelated to the barrel-import bug fixed here — see the README's
-  "Requirements" section for the precise boundary.
+  "Requirements" section for the precise boundary. Surfaced by a consumer
+  integration (#152).
+
+## [0.2.0] - 2026-08-12
+
+### Added
+
+- Explicit lifecycle maturity states for incubating, published, qualified,
+  and adopted packages, while retaining legacy `active` records for schema-v1
+  compatibility.
+- A distinct retired state with dated durable retirement evidence and CLI
+  maturity summaries.
+- The `catalog`, `gates`, `release`, `repository`, and `review` subpaths,
+  including the review GitHub normalizer and established process CLIs.
+
+### Changed
+
+- Governance now owns its package-process implementations and depends only on
+  policy plus TypeScript for source-aware gates. The former standalone package
+  names are compatibility packages with documented migration paths.
 
 ## [0.1.1] - 2026-08-11
 

@@ -3,7 +3,24 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [0.1.0] - Unreleased
+## [0.1.1] - 2026-08-13
+
+### Fixed
+
+- Doc comments in `src/index.ts` and `src/types.ts`, and the README's
+  rationale and export-table sections, cited two package names
+  that no longer exist: `@vespeneventures/voice` (consolidated into
+  `@vespeneventures/copy`, whose contract now lives at
+  `@vespeneventures/copy/voice`) and `@vespeneventures/compose`
+  (consolidated into `@vespeneventures/surface`, whose `Channel` vocabulary
+  now lives at `@vespeneventures/surface/core`). These comments explain the
+  `factRef`/`channel` seams this package deliberately keeps as opaque
+  strings, so a reader following them to a package that cannot be installed
+  loses exactly the explanation they were reaching for. `src/` ships in the
+  published tarball, so the stale names were consumer-visible. No runtime
+  behavior changes.
+
+## [0.1.0] - 2026-08-11
 
 ### Added
 
