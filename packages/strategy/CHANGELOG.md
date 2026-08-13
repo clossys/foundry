@@ -3,6 +3,17 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.2] - 2026-08-13
+
+### Changed
+
+- README now states up front that this package spans both strategy records
+  and the brand layer (`BrandEssence`, `BrandAttribute`, `BrandDerivation`,
+  `checkBrandCoverage`), and why the two are one package: the name-only
+  seam that keeps this package at zero runtime dependencies. Someone
+  scoping an adoption from the package name alone could previously miss the
+  brand half and leave it stranded. Documentation only — no API change.
+
 ## [0.2.1] - 2026-08-13
 
 ### Fixed
