@@ -23,7 +23,8 @@
  *       invalid, the scan directory does not exist, the walk matched zero
  *       files, every matched file failed to tokenize (so, despite files
  *       matching, zero were actually scanned), an unreadable directory
- *       during the walk, an unexpected exception, OR — as of the JSX
+ *       during the walk, an unexpected exception, a malformed
+ *       `ScanOptions.pathExclusions` entry (see below), OR — as of the JSX
  *       text-node scanning added for issue #37 — at least one
  *       `ScanResult.unchecked` entry: a JSX construct the scanner
  *       recognized but could not reliably classify. That last case lands
@@ -40,6 +41,17 @@
  *       run, OR after only partially running, is worse than no gate at
  *       all. This is the explicit third state this gate is built around:
  *       "could not check" must never be reported as a pass.
+ *
+ * A malformed `pathExclusions` entry (see `scan.ts`/`path-exclusions.ts`)
+ * gets the same `2` treatment as `unchecked`, for the identical reason: an
+ * exclusion list this run cannot trust means this run cannot say which
+ * files were correctly in or out of scope, which is "could not run", not "a
+ * clean scan that happened to find nothing". This CLI does not currently
+ * accept `pathExclusions` from argv — see `main()`'s own comment — so this
+ * only fires for a caller driving `scanCopySourceTree` directly with a
+ * malformed list and inspecting `ScanResult` themselves; it is handled here
+ * anyway so the accounting/exit-code contract stays correct for a future
+ * CLI flag without a second pass over this logic.
  */
 
 import { existsSync, realpathSync, statSync } from "node:fs";
@@ -146,6 +158,19 @@ function printScanAccounting(scan: ScanResult): void {
     for (const s of scan.skippedByDesign) console.log(`  ${s.file}`);
   }
 
+  if (scan.excludedFiles.length > 0) {
+    console.log(`${scan.excludedFiles.length} file(s) excluded via pathExclusions (never scanned):`);
+    for (const e of scan.excludedFiles) console.log(`  ${e.file}  (pattern "${e.pattern}": ${e.reason})`);
+  }
+
+  if (scan.pathExclusionFindings.length > 0) {
+    for (const f of scan.pathExclusionFindings) {
+      const line = `  [${f.rule}] ${f.path ? `"${f.path}": ` : ""}${f.message}`;
+      if (f.severity === "error") console.error(line);
+      else console.log(line);
+    }
+  }
+
   if (scan.parseFailures.length > 0) {
     console.error(`${scan.parseFailures.length} file(s) could NOT be parsed and were NOT scanned for copy:`);
     for (const p of scan.parseFailures) console.error(`  ${p.file}: ${p.detail}`);
@@ -223,8 +248,28 @@ export function main(argv: string[]): number {
     return 2;
   }
 
+  // No argv flag populates `pathExclusions` today — this CLI always calls
+  // `scanCopySourceTree` with defaults (`[]`), so `scan.excludedFiles`/
+  // `scan.pathExclusionFindings` are always empty in THIS binary as
+  // shipped. The accounting/exit-code handling below exists anyway so a
+  // future flag (or a caller wrapping this same `main()`'s pieces with its
+  // own options) does not require touching this exit-code logic again —
+  // see this file's top doc comment.
   const scan = scanCopySourceTree(scanDir); // throws (fail-closed) on an unreadable directory — caught by run()
   printScanAccounting(scan);
+
+  // A malformed pathExclusions entry means this run cannot trust which
+  // files were correctly excluded — "could not run", not "ran and found
+  // nothing wrong". Checked before the files-scanned gate below: an invalid
+  // exclusion list is a configuration problem independent of whether the
+  // walk itself found anything.
+  const invalidPathExclusions = scan.pathExclusionFindings.filter((f) => f.severity === "error");
+  if (invalidPathExclusions.length > 0) {
+    console.error(
+      `\n${invalidPathExclusions.length} pathExclusions entr${invalidPathExclusions.length === 1 ? "y is" : "ies are"} invalid — refusing to report a pass built on an exclusion list that cannot be trusted.`,
+    );
+    return 2;
+  }
 
   // Zero files SUCCESSFULLY scanned is the exact failure mode this gate is
   // built to never silently pass: "nothing to scan" (the walk matched no

@@ -67,10 +67,23 @@
  */
 
 import { TEMPLATE_PLACEHOLDER } from "./fields.js";
-import type { Claim, VoiceFinding, VoiceRecord } from "./types.js";
+import { checkPatternSafety, countPatternMatches } from "./internal/pattern-safety.js";
+import type { Claim, PatternRule, VoiceChannel, VoiceFinding, VoiceRecord, VoiceSeverity } from "./types.js";
 
-/** Which of the four checkable dimensions a run can evaluate. */
-export type VoiceCheckDimension = "glossary" | "person" | "tense" | "claims";
+/**
+ * Which checkable dimension a run can evaluate. `"pattern"` is CONDITIONAL
+ * on `record.patterns` — a `VoiceRecord` that never declares `patterns` at
+ * all (`record.patterns === undefined`, the exact shape of every existing
+ * `VoiceRecord` written before this feature existed) never sees `"pattern"`
+ * in `ran`/`skipped` at all, so `report.skipped`/`report.ran`/
+ * `report.complete` behave byte-for-byte as they did before this addition —
+ * see `checkCopy`'s own comment on `patternsDeclared` for the mechanism,
+ * and `checker.test.ts`'s "an existing VoiceRecord that never declares
+ * patterns" test for the pinned proof. A `VoiceRecord` that DOES declare
+ * `patterns` (even as `[]`) gets `"pattern"` in `skipped`/`ran` exactly like
+ * every other dimension already works.
+ */
+export type VoiceCheckDimension = "glossary" | "person" | "tense" | "claims" | "pattern";
 
 /** One dimension `checkCopy` did not evaluate this run, and why. */
 export interface VoiceDimensionSkip {
@@ -79,10 +92,42 @@ export interface VoiceDimensionSkip {
    * Machine-readable reason: `"empty-copy"` (nothing to scan at all —
    * every dimension gets this reason together), or one of
    * `"no-forbidden-terms-configured"` / `"no-forbidden-pronouns-configured"`
-   * / `"no-forbidden-markers-configured"` / `"no-claims-configured"` (the
-   * copy was real, but this dimension's own `VoiceRecord` list was empty).
+   * / `"no-forbidden-markers-configured"` / `"no-claims-configured"` /
+   * `"no-patterns-configured"` (the copy was real, but this dimension's own
+   * `VoiceRecord` list was empty).
    */
   reason: string;
+}
+
+/**
+ * `true` exactly for `"error"` — the tier this package's own documented CI
+ * idiom (`report.findings.some(f => f.severity === "error")`) treats as
+ * build-breaking. Exported so a caller does not have to hardcode the string
+ * `"error"` itself to implement that exact idiom — see `VoiceSeverity`'s own
+ * doc comment (`types.ts`) for the full three-value mapping this mirrors:
+ * `"error"` fails CI, `"warning"` fails only a narrower editorial gate this
+ * package does not implement, `"advisory"` never fails anything.
+ */
+export function isCiBlockingSeverity(severity: VoiceSeverity): boolean {
+  return severity === "error";
+}
+
+/**
+ * Does `ruleChannel` apply to a check being run for `requestedChannel`? A
+ * rule with no `channel` (`undefined`) is global and always applies. A rule
+ * WITH a `channel` applies only when `requestedChannel` is given and equals
+ * it exactly (plain string equality — this package does not normalize case
+ * or interpret channel names at all, see `VoiceChannel`'s doc comment in
+ * `types.ts`). Omitting `requestedChannel` entirely (the default — see
+ * `VoiceCheckOptions.channel`) means "no channel context for this check", so
+ * a channel-scoped rule simply does not apply — the same behavior as if the
+ * rule's own term/pattern never matched, not a reported skip: a rule that
+ * was never in scope for this check is a normal, honest non-match, not a
+ * coverage gap.
+ */
+function ruleAppliesToChannel(ruleChannel: VoiceChannel | undefined, requestedChannel: VoiceChannel | undefined): boolean {
+  if (ruleChannel === undefined) return true;
+  return requestedChannel !== undefined && requestedChannel === ruleChannel;
 }
 
 /**
@@ -110,6 +155,17 @@ export interface WaivedVoiceFinding extends VoiceFinding {
 export interface VoiceCheckOptions {
   /** Waivers to apply to this run's raw findings before returning. Defaults to none. */
   waivers?: VoiceCheckWaiver[];
+  /**
+   * The channel THIS `copy` is being checked for, e.g. `"linkedin"`. A
+   * channel-scoped `glossary`/`patterns` entry (see `VoiceChannel` in
+   * `types.ts`) only fires when it matches this value exactly — see
+   * `ruleAppliesToChannel`'s own doc comment for the omitted-vs-mismatched
+   * distinction. Omitted (the default) is IDENTICAL to every prior release
+   * of this package: no rule has a `channel` unless its author added one,
+   * so an existing `VoiceRecord`/caller that never touches this option
+   * behaves exactly as before.
+   */
+  channel?: VoiceChannel;
 }
 
 export interface VoiceCheckReport {
@@ -136,6 +192,7 @@ export interface VoiceCheckReport {
   bound: boolean;
 }
 
+/** The four dimensions every `VoiceRecord` always carries. `"pattern"` is deliberately NOT here — see `VoiceCheckDimension`'s own doc comment — and is appended by `checkCopy` only when `record.patterns !== undefined`. */
 const ALL_DIMENSIONS: readonly VoiceCheckDimension[] = ["glossary", "person", "tense", "claims"];
 
 function escapeRegExp(term: string): string {
@@ -288,13 +345,60 @@ export function checkCopy(record: VoiceRecord, copy: string, options: VoiceCheck
     path,
   }));
 
+  // --- pattern-rule safety gate ----------------------------------------
+  // ALSO runs unconditionally, ALSO before the copy-empty branch, ALSO kept
+  // in its own never-waivable array — the exact same reasoning as the
+  // unbound-placeholder scan directly above, extended to a second
+  // structural precondition: whether `record` even carries a runnable set
+  // of pattern rules is a property of `record` alone, independent of both
+  // `copy` and `options.channel` (an invalid regex is invalid no matter
+  // which channel a caller happens to be checking today). `checkCopy` does
+  // not trust that `record` was ever run through `parseVoiceRecord` — see
+  // this function's own doc comment — so this re-runs the exact same gate
+  // `schema.ts`'s `validatePatternRuleShape` already applies at
+  // registration. A pattern that fails is reported as a real,
+  // "pattern:invalid-rule" error finding here and is never attempted
+  // against `copy` below — see `internal/pattern-safety.ts` for the full
+  // safety gate this calls, and `types.ts`'s header comment for why a check
+  // that cannot run must fail, never silently pass.
+  //
+  // `patternsDeclared` is the backward-compatibility hinge for this whole
+  // dimension: `true` only when `record.patterns` is present at all
+  // (even as `[]`) — see `types.ts`'s `VoiceRecord` doc comment and
+  // `schema.ts`'s `buildVoiceRecord` for why `patterns` is deliberately
+  // never defaulted to `[]` the way `glossary`/`claims` are. A record that
+  // never declares `patterns` gets NO `"pattern"` entry in `ran`/`skipped`
+  // at all below — not "skipped for lack of configuration", genuinely
+  // ABSENT, so `report.skipped.length`/`report.ran`/`report.complete`
+  // reproduce this package's pre-pattern-rule behavior exactly for any
+  // existing `VoiceRecord`. See `checker.test.ts`'s pinned test for the
+  // proof.
+  const patternsDeclared = record.patterns !== undefined;
+  const validPatternRules: Array<{ rule: PatternRule; regex: RegExp }> = [];
+  const invalidPatternFindings: VoiceFinding[] = [];
+  for (const rule of record.patterns ?? []) {
+    const safety = checkPatternSafety(rule.pattern);
+    if (safety.ok) {
+      validPatternRules.push({ rule, regex: safety.regex });
+    } else {
+      invalidPatternFindings.push({
+        rule: "pattern:invalid-rule",
+        severity: "error",
+        message: `Pattern rule "${rule.id}" ("${rule.description}") has an invalid or unsafe pattern (${safety.issue}: ${safety.detail}) and could not be evaluated. A rule that cannot run must be reported as broken, never silently skipped — see types.ts's header comment. This finding cannot be waived.`,
+        path: rule.id,
+      });
+    }
+  }
+
   const trimmedCopy = copy.trim();
 
   if (trimmedCopy.length === 0) {
-    // Nothing to scan at all. Every dimension is unreachable, not clean —
-    // recording all four as skipped is what keeps this from reading like a
-    // report that checked the copy and found it flawless.
-    for (const dimension of ALL_DIMENSIONS) {
+    // Nothing to scan at all. Every APPLICABLE dimension is unreachable,
+    // not clean — recording each as skipped is what keeps this from
+    // reading like a report that checked the copy and found it flawless.
+    // "pattern" only joins this list when `patternsDeclared` — see that
+    // variable's own comment above.
+    for (const dimension of patternsDeclared ? [...ALL_DIMENSIONS, "pattern" as const] : ALL_DIMENSIONS) {
       skipped.push({ dimension, reason: "empty-copy" });
     }
   } else {
@@ -305,6 +409,7 @@ export function checkCopy(record: VoiceRecord, copy: string, options: VoiceCheck
     } else {
       ran.push("glossary");
       for (const entry of forbiddenTerms) {
+        if (!ruleAppliesToChannel(entry.channel, options.channel)) continue;
         const count = countMatches(copy, entry.term, entry.caseSensitive);
         if (count > 0) {
           const alt = entry.alternative ? ` Use "${entry.alternative}" instead.` : "";
@@ -374,6 +479,40 @@ export function checkCopy(record: VoiceRecord, copy: string, options: VoiceCheck
         }
       }
     }
+
+    // --- pattern -------------------------------------------------------
+    // Entirely gated on `patternsDeclared` (see its own comment above) —
+    // a record that never declared `patterns` gets no `"pattern"` entry
+    // in `ran`/`skipped` at all, preserving pre-existing 4-dimension
+    // behavior exactly. `validPatternRules` (built above, unconditionally)
+    // already excludes every rule that failed `checkPatternSafety`; those
+    // are reported once, via `invalidPatternFindings`, never here. Whether
+    // the "pattern" dimension itself counts as configured, once declared,
+    // is judged against `record.patterns`'s length — a record whose ONLY
+    // pattern rule is invalid still "ran" this dimension (it produced a
+    // real, unmissable finding), it did not skip it for lack of
+    // configuration.
+    if (patternsDeclared) {
+      const configuredPatterns = record.patterns ?? [];
+      if (configuredPatterns.length === 0) {
+        skipped.push({ dimension: "pattern", reason: "no-patterns-configured" });
+      } else {
+        ran.push("pattern");
+        for (const { rule, regex } of validPatternRules) {
+          if (!ruleAppliesToChannel(rule.channel, options.channel)) continue;
+          const count = countPatternMatches(copy, regex);
+          if (count > 0) {
+            const alt = rule.alternative ? ` Use "${rule.alternative}" instead.` : "";
+            rawFindings.push({
+              rule: "pattern:matched",
+              severity: rule.severity,
+              message: `Pattern rule "${rule.id}" ("${rule.description}") matched ${count} time(s). ${rule.reason}${alt}`,
+              path: rule.id,
+            });
+          }
+        }
+      }
+    }
   }
 
   // --- waivers -------------------------------------------------------------
@@ -432,12 +571,13 @@ export function checkCopy(record: VoiceRecord, copy: string, options: VoiceCheck
   });
 
   findings.push(...configFindings);
-  // Unbound-placeholder findings are prepended, not appended: they describe
-  // the most fundamental thing wrong with this run (there is no real voice
-  // here yet), and — unlike everything else in `findings` — were never
-  // eligible for the waiver loop above. See this function's own comment on
-  // `unboundFindings` for why.
-  findings.unshift(...unboundFindings);
+  // Unbound-placeholder and invalid-pattern findings are prepended, not
+  // appended: they describe the most fundamental things that can be wrong
+  // with this run (there is no real voice here yet / a rule cannot even be
+  // evaluated), and — unlike everything else in `findings` — were never
+  // eligible for the waiver loop above. See this function's own comments on
+  // `unboundFindings` and `invalidPatternFindings` for why.
+  findings.unshift(...unboundFindings, ...invalidPatternFindings);
 
   return {
     findings,

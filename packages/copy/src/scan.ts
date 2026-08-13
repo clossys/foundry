@@ -128,6 +128,17 @@
  *      copy. This is a WHOLE-FILE skip, decided in `scanCopySourceTree`,
  *      not a per-literal exclusion — see `DEFAULT_SKIP_FILE_RE`.
  *
+ * A DIFFERENT, SIBLING mechanism — `ScanOptions.pathExclusions` — is ALSO a
+ * whole-file skip, but is consumer-CONFIGURED (this list above is fixed,
+ * shipped by this package) and answers a different question: not "is this
+ * file's CONTENT test/build machinery" but "should this file's path be
+ * looked at for copy candidates at all" (the "mention vs. use" case — a
+ * style guide documenting this voice's own banned terms trips its own
+ * rules if scanned like any other file). See `path-exclusions.ts`'s top
+ * doc comment for the full argument for why this is a NEW, separate type
+ * (`PathExclusion`/`ExcludedPath`), not an 11th `ExclusionReason` — the two
+ * mechanisms are not the same feature wearing two names.
+ *
  * ============================================================================
  * JSX TEXT NODES (`<span>Hello</span>`) — closing issue #37
  * ============================================================================
@@ -276,6 +287,16 @@
 
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { extname, join, relative, sep } from "node:path";
+import {
+  matchesPathExclusion,
+  validatePathExclusions,
+  type ExcludedPath,
+  type PathExclusion,
+  type PathExclusionFinding,
+  type ValidatedPathExclusion,
+} from "./path-exclusions.js";
+
+export type { ExcludedPath, PathExclusion, PathExclusionFinding, PathExclusionFindingRule } from "./path-exclusions.js";
 
 // --------------------------------------------------------------- walking
 
@@ -284,6 +305,15 @@ export interface ScanOptions {
   extensions?: string[];
   /** Directory names never descended into. Default: node_modules, .git, dist, build, coverage. */
   skipDirs?: string[];
+  /**
+   * Files to skip entirely — never tokenized, never contribute a
+   * `CopyCandidate`/`ExcludedLiteral`/`Citation`/`UncheckedItem`. A DIFFERENT
+   * feature from `ExclusionReason` — see `path-exclusions.ts`'s top doc
+   * comment for the full "mention vs. use" case this exists for and exactly
+   * why it is not a tenth `ExclusionReason`. Defaults to `[]` (no
+   * exclusions — identical to every prior release of this package).
+   */
+  pathExclusions?: PathExclusion[];
 }
 
 const DEFAULT_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"];
@@ -424,6 +454,10 @@ export interface ScanResult {
   parseFailures: ParseFailure[];
   /** Constructs the scanner recognized as JSX-shaped but could not classify — see `UncheckedItem`. Empty is the ordinary, expected outcome for a well-formed file; it is never emptied to make a report look cleaner than it is. */
   unchecked: UncheckedItem[];
+  /** Files matched by extension/walk but skipped entirely because a caller-supplied `ScanOptions.pathExclusions` entry matched their path — see `path-exclusions.ts`. Counted, never silent, and DIFFERENT from `skippedByDesign` (this package's own built-in test/check-file skip) and from `excluded` (a per-LITERAL classification inside a file that WAS scanned). */
+  excludedFiles: ExcludedPath[];
+  /** Problems with `ScanOptions.pathExclusions` itself, not with any scanned file's content — a malformed entry (`"error"`, never applied) or an entry that matched zero files this run (`"warning"`, stale but still applied as configured). See `path-exclusions.ts`'s top doc comment for the fail-closed contract. Empty is the ordinary outcome when `pathExclusions` is omitted or every entry is well-formed and matched something. */
+  pathExclusionFindings: PathExclusionFinding[];
 }
 
 /**
@@ -441,6 +475,15 @@ export function scanCopySourceTree(root: string, options: ScanOptions = {}): Sca
   const extensions = new Set(options.extensions ?? DEFAULT_EXTENSIONS);
   const skipDirs = new Set(options.skipDirs ?? DEFAULT_SKIP_DIRS);
 
+  // Validated ONCE, up front — never re-validated per file. A malformed
+  // entry is reported and never applied (see path-exclusions.ts); a
+  // well-formed entry that matches zero files is reported AFTER the walk
+  // completes, once its real match count is known — see the bottom of this
+  // function.
+  const pathExclusionValidation = validatePathExclusions(options.pathExclusions);
+  const matchCounts = new Map<ValidatedPathExclusion, number>();
+  for (const exclusion of pathExclusionValidation.valid) matchCounts.set(exclusion, 0);
+
   const result: ScanResult = {
     filesScanned: 0,
     candidates: [],
@@ -449,6 +492,8 @@ export function scanCopySourceTree(root: string, options: ScanOptions = {}): Sca
     skippedByDesign: [],
     parseFailures: [],
     unchecked: [],
+    excludedFiles: [],
+    pathExclusionFindings: [...pathExclusionValidation.findings],
   };
 
   function walk(dir: string): void {
@@ -478,6 +523,25 @@ export function scanCopySourceTree(root: string, options: ScanOptions = {}): Sca
 
       const relPath = relative(root, full).split(sep).join("/");
 
+      // Consumer-supplied path exclusions are checked BEFORE this package's
+      // own built-in test/check-file skip, and against EVERY valid
+      // exclusion (not just the first match) so every exclusion's own match
+      // count stays accurate for the unused-exclusion check below. A file
+      // this matches is never tokenized at all — no candidates, no excluded
+      // literals, no citations, no unchecked items, exactly like a file
+      // this package could not read.
+      let matchedExclusion: ValidatedPathExclusion | undefined;
+      for (const exclusion of pathExclusionValidation.valid) {
+        if (matchesPathExclusion(relPath, exclusion)) {
+          matchCounts.set(exclusion, (matchCounts.get(exclusion) ?? 0) + 1);
+          matchedExclusion ??= exclusion;
+        }
+      }
+      if (matchedExclusion) {
+        result.excludedFiles.push({ file: relPath, reason: matchedExclusion.reason, pattern: matchedExclusion.path });
+        continue;
+      }
+
       if (SKIP_FILE_RE.test(entry)) {
         result.skippedByDesign.push({ file: relPath, reason: "test-or-check-file" });
         continue;
@@ -506,6 +570,22 @@ export function scanCopySourceTree(root: string, options: ScanOptions = {}): Sca
   }
 
   walk(root);
+
+  // A path exclusion that matched nothing this run is worth reporting too —
+  // a stale exclusion (the file it named was renamed/deleted) is otherwise
+  // indistinguishable from one still doing real work. See path-exclusions.ts's
+  // top doc comment.
+  for (const exclusion of pathExclusionValidation.valid) {
+    if ((matchCounts.get(exclusion) ?? 0) === 0) {
+      result.pathExclusionFindings.push({
+        rule: "path-exclusion-unused",
+        severity: "warning",
+        message: `pathExclusions entry "${exclusion.path}" (reason: "${exclusion.reason}") did not match any scanned file. Remove it, or check for a typo/renamed path.`,
+        path: exclusion.path,
+      });
+    }
+  }
+
   return result;
 }
 
