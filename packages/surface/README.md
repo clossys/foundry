@@ -115,7 +115,7 @@ package owns the contracts and deterministic renderers that produce them.
 ## Requirements and version coupling
 
 Node 20+. This package's own `package.json` declares runtime dependencies on
-`@vespeneventures/copy` (`~0.4.0`) and `@vespeneventures/ui` (`~0.7.0`) —
+`@vespeneventures/copy` (`~0.4.0`) and `@vespeneventures/ui` (`~0.8.0`) —
 patch-only tilde ranges, not exact pins. That is a real constraint on the
 dependency graph, not an install-ordering concern: a package manager
 resolves the whole graph regardless of what order packages are requested
@@ -123,7 +123,7 @@ in, so this cannot be worked around by installing things in a particular
 sequence.
 
 A consumer whose own policy is to pin exact versions must pin `copy` to a
-matching `0.4.x` patch release and `ui` to a matching `0.7.x` patch release
+matching `0.4.x` patch release and `ui` to a matching `0.8.x` patch release
 — otherwise `surface`'s declared ranges and the consumer's exact pin cannot
 both be satisfied, and the install fails with an unresolvable version
 conflict. `react` and `react-dom` are optional peer dependencies (`>=18`)
