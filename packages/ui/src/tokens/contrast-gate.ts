@@ -37,28 +37,61 @@
  * `0` or a same-severity `1` next to a real threshold failure.
  *
  * ============================================================================
+ * A THIRD OUTCOME FOR A BELOW-THRESHOLD RATIO — `relieved`, and why a
+ * relief that CLEARS is a finding too
+ * ============================================================================
+ *
+ * A pair whose ratio falls short of `minimumRatio` is not automatically a
+ * `"below-threshold"` finding: if the pair carries a valid `exception`
+ * (see `contrast-pairs.ts`'s own header, "EXCEPTIONS" — a real WCAG
+ * clause, a real compensating mechanism, and a real rationale, all
+ * non-blank), the miss is legitimate, documented relief. That goes on
+ * `relieved`, a THIRD bucket alongside `findings`/`unchecked` — visible in
+ * every report (never silently hidden the way excluding the pair
+ * entirely would hide it), but not a failure.
+ *
+ * The reverse direction is what keeps this from becoming a rubber stamp:
+ * a pair that carries a valid `exception` but whose ratio actually
+ * CLEARS `minimumRatio` anyway is a DIFFERENT real finding
+ * (`"stale-exception"`) — the relief it claims is no longer needed, and a
+ * stale claim left in the policy is exactly how an exception silently
+ * outlives the condition that justified it: nothing else would ever
+ * prompt its removal. This is the bidirectional check
+ * `contrast.test.ts`'s own `WARN_SLOTS_BY_THEME` sweep already performs
+ * (`toBeLessThan` for a WARN slot, `toBeGreaterThanOrEqual` for every
+ * other), ported here as gate policy rather than left as a test-only
+ * assertion.
+ *
+ * An `exception` present but missing/blank ANY of its three required
+ * fields is ALSO a real finding (`"invalid-exception"`) — checked FIRST,
+ * before the ratio comparison, and regardless of what the ratio turns out
+ * to be: an unjustified exception is a defect in the POLICY DATA itself,
+ * independent of whether this particular run happens to need the relief.
+ *
+ * ============================================================================
  * FAILS CLOSED ON AN EMPTY RUN
  * ============================================================================
  *
  * `ok` is `true` only when at least one pair was actually evaluated
  * (`pairsChecked > 0`) AND every pair resolved AND every resolved pair met
- * its threshold. `pairsChecked` is `pairs.length`, always populated — even
- * when it's `0` — so a caller can tell "checked nothing" apart from
- * "checked everything and it was clean" without inspecting `findings`/
- * `unchecked` first, the same discipline `checkBrandFileCoverage`'s
- * `declarationsChecked` holds to. An EMPTY `tokens` registry is treated as
- * the same degenerate case as an empty `pairs` list — see `reason:
- * "nothing-to-check"` below — rather than walking every pair only to
- * report N identical "registry is empty" `unchecked` entries.
+ * its threshold (directly, or via a valid, still-applicable exception).
+ * `pairsChecked` is `pairs.length`, always populated — even when it's `0`
+ * — so a caller can tell "checked nothing" apart from "checked everything
+ * and it was clean" without inspecting `findings`/`unchecked` first, the
+ * same discipline `checkBrandFileCoverage`'s `declarationsChecked` holds
+ * to. An EMPTY `tokens` registry is treated as the same degenerate case as
+ * an empty `pairs` list — see `reason: "nothing-to-check"` below — rather
+ * than walking every pair only to report N identical "registry is empty"
+ * `unchecked` entries.
  */
 
 import type { TokenDefinition } from "./tokens.js";
 import { TOKENS } from "./tokens.js";
 import { contrastRatio } from "./color.js";
 import { resolveTokenValue } from "./internal/resolve-token-value.js";
-import type { ContrastPair } from "./contrast-pairs.js";
+import type { ContrastException, ContrastPair } from "./contrast-pairs.js";
 
-export type ContrastGateFindingRule = "below-threshold";
+export type ContrastGateFindingRule = "below-threshold" | "stale-exception" | "invalid-exception";
 
 export interface ContrastGateFinding {
   rule: ContrastGateFindingRule;
@@ -66,6 +99,18 @@ export interface ContrastGateFinding {
   ratio: number;
   minimumRatio: number;
   message: string;
+}
+
+/**
+ * A pair whose ratio stayed below `minimumRatio` under a valid, currently
+ * applicable `exception` — legitimate, documented relief, not a finding.
+ * See this file's header, "A THIRD OUTCOME FOR A BELOW-THRESHOLD RATIO".
+ */
+export interface ContrastGateRelieved {
+  pairId: string;
+  ratio: number;
+  minimumRatio: number;
+  exception: ContrastException;
 }
 
 /**
@@ -87,6 +132,8 @@ export interface ContrastGateResult {
   /** `pairs.length` as handed to this function — always populated, including `0`. See this file's header, "FAILS CLOSED ON AN EMPTY RUN". */
   pairsChecked: number;
   findings: ContrastGateFinding[];
+  /** See this file's header, "A THIRD OUTCOME FOR A BELOW-THRESHOLD RATIO" — legitimate, documented relief. Never affects `ok`. */
+  relieved: ContrastGateRelieved[];
   unchecked: ContrastGateUnchecked[];
   /** Present exactly when `ok` is `false`. */
   reason?: ContrastGateFailureReason;
@@ -134,12 +181,33 @@ function resolveOrReport(
 }
 
 /**
+ * `true` only when EVERY one of `ContrastException`'s three required
+ * fields is present and non-blank. Checked at the STRING level, not just
+ * "is the property set" — `exception: { wcagClause: "", ... }` is exactly
+ * as unjustified as `exception` being absent, and a caller who trims a
+ * field down to whitespace while editing should not get a silent pass.
+ * See `contrast-pairs.ts`'s own header, "EXCEPTIONS", for why an
+ * unjustified exception must itself be a finding rather than accepted or
+ * silently ignored.
+ */
+function exceptionIsValid(exception: ContrastException | undefined): exception is ContrastException {
+  if (exception === undefined) return false;
+  return (
+    exception.wcagClause.trim().length > 0 &&
+    exception.compensatingMechanism.trim().length > 0 &&
+    exception.rationale.trim().length > 0
+  );
+}
+
+/**
  * Evaluates `pairs` against `options.tokens` (defaults to this package's
  * real `TOKENS`). Never throws — every decline path (a missing token, a
  * cyclic alias, a color `color.ts` cannot parse) is reported on the
  * returned `ContrastGateResult.unchecked`, and a real threshold miss is
- * reported on `.findings`; nothing is ever silently skipped. See this
- * file's header for the full split.
+ * reported on `.findings` — UNLESS the pair carries a valid `exception`
+ * AND the ratio still needs it, in which case it lands on `.relieved`
+ * instead (see this file's header, "A THIRD OUTCOME FOR A BELOW-THRESHOLD
+ * RATIO"). Nothing is ever silently skipped.
  */
 export function checkTokenContrast(
   pairs: readonly ContrastPair[],
@@ -148,6 +216,7 @@ export function checkTokenContrast(
   const tokens = options.tokens ?? TOKENS;
   const pairsChecked = pairs.length;
   const findings: ContrastGateFinding[] = [];
+  const relieved: ContrastGateRelieved[] = [];
   const unchecked: ContrastGateUnchecked[] = [];
 
   // Same degenerate case `checkBrandFileCoverage` names "nothing-to-check":
@@ -157,7 +226,7 @@ export function checkTokenContrast(
   // (there was nothing to check) under noise that looks like N separate
   // findings.
   if (pairsChecked === 0 || Object.keys(tokens).length === 0) {
-    return { ok: false, pairsChecked, findings, unchecked, reason: "nothing-to-check" };
+    return { ok: false, pairsChecked, findings, relieved, unchecked, reason: "nothing-to-check" };
   }
 
   for (const pair of pairs) {
@@ -181,17 +250,50 @@ export function checkTokenContrast(
       continue;
     }
 
-    if (ratio < pair.minimumRatio) {
+    // An exception is validated FIRST, and unconditionally — an
+    // unjustified exception is a defect in the POLICY DATA itself, not
+    // something the measured ratio can excuse either way. See this
+    // file's header, "A THIRD OUTCOME FOR A BELOW-THRESHOLD RATIO".
+    if (pair.exception !== undefined && !exceptionIsValid(pair.exception)) {
       findings.push({
-        rule: "below-threshold",
+        rule: "invalid-exception",
         pairId: pair.id,
         ratio,
         minimumRatio: pair.minimumRatio,
-        message: `"${pair.id}" measures ${ratio.toFixed(2)}:1, below its ${pair.level} minimum of ${pair.minimumRatio}:1 — ${pair.description}`,
+        message: `"${pair.id}" carries an exception missing a required justification field (wcagClause/compensatingMechanism/rationale must all be non-blank) — an unjustified exception is treated as a finding, not a silent pass. Measured ${ratio.toFixed(2)}:1 against a ${pair.minimumRatio}:1 minimum.`,
+      });
+      continue;
+    }
+
+    const hasValidException = exceptionIsValid(pair.exception);
+
+    if (ratio < pair.minimumRatio) {
+      if (hasValidException) {
+        relieved.push({ pairId: pair.id, ratio, minimumRatio: pair.minimumRatio, exception: pair.exception as ContrastException });
+      } else {
+        findings.push({
+          rule: "below-threshold",
+          pairId: pair.id,
+          ratio,
+          minimumRatio: pair.minimumRatio,
+          message: `"${pair.id}" measures ${ratio.toFixed(2)}:1, below its ${pair.level} minimum of ${pair.minimumRatio}:1 — ${pair.description}`,
+        });
+      }
+    } else if (hasValidException) {
+      // The pair CLEARS its floor while still claiming relief it no
+      // longer needs — a stale exception, and a real finding of its own
+      // kind: see this file's header for why this direction matters as
+      // much as the first.
+      findings.push({
+        rule: "stale-exception",
+        pairId: pair.id,
+        ratio,
+        minimumRatio: pair.minimumRatio,
+        message: `"${pair.id}" measures ${ratio.toFixed(2)}:1, which already meets its ${pair.level} minimum of ${pair.minimumRatio}:1 — its documented exception ("${(pair.exception as ContrastException).rationale}") is stale and should be removed from the policy.`,
       });
     }
   }
 
   const ok = findings.length === 0 && unchecked.length === 0;
-  return { ok, pairsChecked, findings, unchecked, reason: ok ? undefined : "contrast-gap" };
+  return { ok, pairsChecked, findings, relieved, unchecked, reason: ok ? undefined : "contrast-gap" };
 }

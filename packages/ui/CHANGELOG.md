@@ -49,39 +49,71 @@ All notable changes to this package are documented here. Format follows
     file's header for which roles and why, precisely.
   - **`checkTokenContrast`** (`contrast-gate.ts`) — the pure gate: resolves
     every pair's tokens (through any alias chain), computes the real ratio,
-    and reports EITHER a real threshold miss (`findings`, rule
-    `"below-threshold"`) OR a pair that could not be evaluated at all
-    (`unchecked`: `"unresolvable-token"`, `"cyclic-alias"`,
-    `"unparseable-color-value"`) — mirroring `checkTokenPurity`'s own
-    findings/unchecked split. Never passes on an empty run: zero pairs or an
-    empty token registry reports `reason: "nothing-to-check"`, never
-    `ok: true`.
+    and reports one of four outcomes. A real threshold miss with no
+    exception is `findings`, rule `"below-threshold"`. A pair that could
+    not be evaluated at all is `unchecked`
+    (`"unresolvable-token"`, `"cyclic-alias"`, `"unparseable-color-value"`)
+    — mirroring `checkTokenPurity`'s own findings/unchecked split. Never
+    passes on an empty run: zero pairs or an empty token registry reports
+    `reason: "nothing-to-check"`, never `ok: true`.
+  - **`ContrastException` — WCAG 1.4.11's own relief, carried as data, not
+    a bare comment.** A `ContrastPair` may carry an `exception`: a real
+    `wcagClause`, a real `compensatingMechanism`, and a real `rationale`,
+    all required and non-blank. A pair still under its floor with a VALID
+    exception is `relieved` — printed in every report, never hidden, but
+    not a failure. A pair that CLEARS its floor while still carrying that
+    exception is a *different* finding, `"stale-exception"` — the relief
+    it claims is no longer needed, and this is what stops a documented
+    exception from silently outliving the condition that justified it
+    (nothing else would ever prompt its removal). An exception missing any
+    required field is a THIRD finding, `"invalid-exception"`, checked
+    first and regardless of the measured ratio — an unjustified exception
+    is a defect in the policy data itself, not something a lucky ratio can
+    excuse. `contrastPairsForTheme(theme: "light" | "dark")`
+    (`contrast-pairs.ts`) is what attaches this package's OWN real relief
+    to `CONTRAST_PAIRS`, per theme — ported directly from
+    `contrast.test.ts`'s own `WARN_SLOTS_BY_THEME` (light-mode categorical
+    slots 3/4/5; dark carries none, since the dark palette's own steps
+    were chosen to clear 3:1 outright) — rather than baking a
+    theme-agnostic exception onto the bare array, which stays
+    exception-free for a caller building their own pairs against their own
+    palette.
   - **`ui-contrast-check [tokens-css-file]`** (`contrast-cli.ts`) — the
     installable CLI, mirroring `ui-token-check`'s shape and this
     repository's three-state exit contract (`0` clean, `1` findings, `2`
     could not run — `2` also covers a non-empty `unchecked` list and a
     zero-pairs run, the same "could not check must never read as a pass"
     discipline every gate CLI here holds to). Defaults to this package's own
-    `styles/tokens.css` and checks BOTH the light `:root` block and, when
-    present, the `:root[data-theme="dark"]` block — merging each dark
-    declaration on top of the light ones first (mirroring a real CSS
-    cascade), because a handful of real alias tokens
+    `styles/tokens.css` and checks BOTH the light `:root` block (against
+    `contrastPairsForTheme("light")`) and, when present, the
+    `:root[data-theme="dark"]` block (against `contrastPairsForTheme("dark")`)
+    — merging each dark declaration on top of the light ones first
+    (mirroring a real CSS cascade), because a handful of real alias tokens
     (`--color-chart-surface`, `--color-ink-on-accent`, ...) are declared
     only in `:root` and deliberately never redeclared in the dark block.
-  - **A real, currently-shipping finding this gate surfaces, not fixed in
-    this release:** the light-mode categorical chart marks at slots 3/4/5
+    **Wired in, not just installed:** a gate that ships as a `bin` with
+    nothing actually invoking it is decorative — this repository's own
+    root `npm run check:contrast` (new script, in the `check` chain
+    between `check:package-governance` and `typecheck`) runs it against
+    this package's own `styles/tokens.css`, and CI's new
+    `WCAG contrast gate (ui-contrast-check)` job does the same on every
+    push and pull request.
+  - **A real, currently-shipping WCAG miss this gate surfaces, reported
+    rather than excluded — and legitimately RELIEVED, not hidden:** the
+    light-mode categorical chart marks at slots 3/4/5
     (`--color-chart-categorical-3/4/5`, aqua/yellow/magenta) measure below
     the 3:1 AA-large floor against `--color-chart-surface` — 2.82:1, 2.17:1,
     and 2.69:1. `contrast.test.ts` already documents this as an accepted
     "WARN" band (the dataviz palette method's "relief rule": legal only
     because this package's chart layer ships mandatory direct labels/legend
-    and a table-view fallback for every chart, never color alone). This
-    gate does not know about that relief rule and correctly reports the
-    plain WCAG threshold miss as a real finding — `ui-contrast-check` run
+    and a table-view fallback for every chart, never color alone);
+    `contrastPairsForTheme("light")` carries that same relief as gate
+    policy, so these three report as `relieved`. `ui-contrast-check` run
     against this package's own `styles/tokens.css` with no arguments
-    returns `1`, not `0`, for exactly this reason. Left unfixed (and
-    un-excluded) in this release; see the PR that introduced this gate for
-    the full accounting.
+    returns `0` — not because the failures were excluded from the pair
+    list to force a green run, but because the relief is real, documented,
+    and machine-checkable both directions (a slot that stops needing it
+    becomes a `"stale-exception"` finding, not a silent pass).
 
 ## [0.8.0] - 2026-08-13
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { TOKENS, type TokenDefinition } from "./tokens.js";
 import { checkTokenContrast } from "./contrast-gate.js";
-import { AA, AA_LARGE, CONTRAST_PAIRS, type ContrastPair } from "./contrast-pairs.js";
+import { AA, AA_LARGE, CONTRAST_PAIRS, contrastPairsForTheme, type ContrastException, type ContrastPair } from "./contrast-pairs.js";
 
 function def(property: string, value: string): TokenDefinition {
   return { property, family: "surface", value, brandable: false, themeDependent: false };
@@ -159,5 +159,126 @@ describe("checkTokenContrast", () => {
     const result = checkTokenContrast(onePair);
     expect(result.unchecked).toEqual([]);
     expect(result.pairsChecked).toBe(1);
+  });
+});
+
+const VALID_EXCEPTION: ContrastException = {
+  wcagClause: "WCAG 2.2 SC 1.4.11 (Non-text Contrast)",
+  compensatingMechanism: "test fixture: a compensating mechanism.",
+  rationale: "test fixture: a rationale.",
+};
+
+describe("checkTokenContrast — exceptions", () => {
+  it("relieves the real light-mode categorical-3/4/5 WARN band instead of reporting it as a finding, via contrastPairsForTheme('light')", () => {
+    // Same real, currently-shipping pairs the "PROVES IT FAILS" test above
+    // checks — this time carrying the documented, theme-scoped relief
+    // contrastPairsForTheme attaches. This is what makes ui-contrast-check
+    // exit 0 against this package's own styles/tokens.css: the failures
+    // are relieved, not hidden — see result.relieved below, which is
+    // exactly as populated as the raw findings were in the un-excepted
+    // version of this same check.
+    const categoricalOnly = contrastPairsForTheme("light").filter((p) => p.id.startsWith("chart-categorical-"));
+    const result = checkTokenContrast(categoricalOnly, { tokens: TOKENS });
+
+    expect(result.unchecked).toEqual([]);
+    expect(result.findings).toEqual([]);
+    expect(result.ok).toBe(true);
+
+    const relievedIds = result.relieved.map((r) => r.pairId).sort();
+    expect(relievedIds).toEqual([
+      "chart-categorical-3/chart-surface",
+      "chart-categorical-4/chart-surface",
+      "chart-categorical-5/chart-surface",
+    ]);
+    for (const r of result.relieved) {
+      expect(r.ratio).toBeLessThan(AA_LARGE);
+      expect(r.exception.wcagClause.length).toBeGreaterThan(0);
+      expect(r.exception.compensatingMechanism.length).toBeGreaterThan(0);
+      expect(r.exception.rationale.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("carries NO exception on any dark-mode categorical pair, since contrast.test.ts's own WARN_SLOTS_BY_THEME.dark is empty", () => {
+    const darkCategorical = contrastPairsForTheme("dark").filter((p) => p.id.startsWith("chart-categorical-"));
+    for (const pair of darkCategorical) {
+      expect(pair.exception, `${pair.id} should carry no exception in dark theme`).toBeUndefined();
+    }
+  });
+
+  it("PROVES THE STALE-EXCEPTION DIRECTION WORKS: a pair whose ratio actually clears its floor, while still carrying a valid exception, is a finding — not silently accepted", () => {
+    // Same shape a real drift would take: the underlying token's value
+    // changed enough to clear the floor on its own, but nobody removed
+    // the now-unnecessary exception from the checked-in policy.
+    const tokens: Readonly<Record<string, TokenDefinition>> = {
+      "--fixed-mark": { property: "--fixed-mark", family: "chart", value: "#000000", brandable: false, themeDependent: false },
+      "--fixed-surface": { property: "--fixed-surface", family: "surface", value: "#ffffff", brandable: false, themeDependent: false },
+    };
+    const pairs: ContrastPair[] = [
+      {
+        id: "fixed-mark/fixed-surface",
+        foreground: "--fixed-mark",
+        background: "--fixed-surface",
+        level: "AA-large",
+        minimumRatio: AA_LARGE,
+        description: "test fixture",
+        exception: VALID_EXCEPTION,
+      },
+    ];
+    const result = checkTokenContrast(pairs, { tokens });
+
+    expect(result.unchecked).toEqual([]);
+    expect(result.relieved).toEqual([]); // NOT relieved — it doesn't need relief anymore
+    expect(result.ok).toBe(false);
+    expect(result.findings).toHaveLength(1);
+    expect(result.findings[0]).toMatchObject({ rule: "stale-exception", pairId: "fixed-mark/fixed-surface" });
+    expect(result.findings[0]!.ratio).toBeGreaterThanOrEqual(AA_LARGE);
+  });
+
+  it("reports a pair whose exception is missing a required field as invalid-exception — regardless of the measured ratio", () => {
+    const tokens: Readonly<Record<string, TokenDefinition>> = {
+      "--dark-mark": { property: "--dark-mark", family: "chart", value: "#000000", brandable: false, themeDependent: false },
+      "--light-surface": { property: "--light-surface", family: "surface", value: "#ffffff", brandable: false, themeDependent: false },
+    };
+    const pairs: ContrastPair[] = [
+      {
+        id: "dark-mark/light-surface",
+        foreground: "--dark-mark",
+        background: "--light-surface",
+        level: "AA-large",
+        minimumRatio: AA_LARGE,
+        description: "test fixture",
+        exception: { wcagClause: "WCAG 2.2 SC 1.4.11 (Non-text Contrast)", compensatingMechanism: "present", rationale: "   " }, // blank rationale
+      },
+    ];
+    const result = checkTokenContrast(pairs, { tokens });
+
+    expect(result.unchecked).toEqual([]);
+    expect(result.relieved).toEqual([]);
+    expect(result.ok).toBe(false);
+    expect(result.findings).toHaveLength(1);
+    expect(result.findings[0]).toMatchObject({ rule: "invalid-exception", pairId: "dark-mark/light-surface" });
+  });
+
+  it("reports invalid-exception even for a pair that is ALSO genuinely below threshold (the exception is a defect on its own, independent of the ratio)", () => {
+    const tokens: Readonly<Record<string, TokenDefinition>> = {
+      "--near-white-mark": { property: "--near-white-mark", family: "chart", value: "#f5f5f5", brandable: false, themeDependent: false },
+      "--white-surface": { property: "--white-surface", family: "surface", value: "#ffffff", brandable: false, themeDependent: false },
+    };
+    const pairs: ContrastPair[] = [
+      {
+        id: "near-white-mark/white-surface",
+        foreground: "--near-white-mark",
+        background: "--white-surface",
+        level: "AA-large",
+        minimumRatio: AA_LARGE,
+        description: "test fixture",
+        exception: { wcagClause: "", compensatingMechanism: "present", rationale: "present" }, // blank wcagClause
+      },
+    ];
+    const result = checkTokenContrast(pairs, { tokens });
+
+    expect(result.relieved).toEqual([]);
+    expect(result.findings).toHaveLength(1);
+    expect(result.findings[0]).toMatchObject({ rule: "invalid-exception" });
   });
 });

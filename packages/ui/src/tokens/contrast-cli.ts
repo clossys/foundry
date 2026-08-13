@@ -18,6 +18,16 @@
  * instance), the same "swap the registry" escape hatch `ui-token-check`'s
  * own `--tokens` flag provides.
  *
+ * A DOCUMENTED, VALID EXCEPTION IS NOT A FINDING — a pair carrying a
+ * valid `exception` (see `contrast-pairs.ts`'s header, "EXCEPTIONS") that
+ * still needs its relief is printed as `relieved`, every run, but does
+ * NOT fail this CLI — `contrastPairsForTheme(theme)` is what attaches the
+ * real, theme-scoped relief (ported from `contrast.test.ts`'s own
+ * `WARN_SLOTS_BY_THEME`) before either theme is checked. A pair that
+ * CLEARS its floor while still carrying that exception is the opposite
+ * problem — a stale exception — and DOES fail this CLI, exactly like any
+ * other finding.
+ *
  * BOTH THEMES, ALWAYS, WHEN BOTH ARE PRESENT — `styles/tokens.css` ships a
  * light `:root { ... }` block AND a `:root[data-theme="dark"]` block (see
  * that file's own header for the full cascade). This CLI parses BOTH (via
@@ -54,7 +64,7 @@
 import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { CONTRAST_PAIRS } from "./contrast-pairs.js";
+import { CONTRAST_PAIRS, contrastPairsForTheme } from "./contrast-pairs.js";
 import { checkTokenContrast, type ContrastGateResult } from "./contrast-gate.js";
 import { parseRootDeclarations, parseDeclarationsForSelector } from "./internal/parse-css.js";
 import { mergeDeclarations, registryFromDeclarations } from "./internal/registry-from-css.js";
@@ -138,6 +148,18 @@ function printThemeReport(themeLabel: string, result: ContrastGateResult): void 
     return;
   }
 
+  // Printed unconditionally, findings or not — a documented exception
+  // being exercised is real information a reader should see every run,
+  // not only when something else also happens to be wrong. See
+  // contrast-gate.ts's own header, "A THIRD OUTCOME FOR A BELOW-THRESHOLD
+  // RATIO".
+  if (result.relieved.length > 0) {
+    console.log(`[${themeLabel}] ${result.relieved.length} pair(s) below threshold under a documented, valid exception:`);
+    for (const r of result.relieved) {
+      console.log(`  ${r.pairId}: ${r.ratio.toFixed(2)}:1 (< ${r.minimumRatio}:1) — ${r.exception.wcagClause}: ${r.exception.rationale}`);
+    }
+  }
+
   // "could not evaluate" printed BEFORE findings, and to stderr like
   // ui-token-check's own unchecked report — it means the same thing here:
   // some part of what should have been checked was never actually
@@ -202,7 +224,12 @@ export function main(argv: string[]): number {
     return 2;
   }
 
-  const lightResult = checkTokenContrast(CONTRAST_PAIRS, { tokens: registryFromDeclarations(lightDeclarations) });
+  // Each theme gets ITS OWN pair list, not the bare CONTRAST_PAIRS — see
+  // contrast-pairs.ts's own header, "EXCEPTIONS": the light-mode
+  // categorical relief only applies to light, so `contrastPairsForTheme`
+  // is what attaches it to exactly the slots WARN_SLOTS_BY_THEME names,
+  // per theme, rather than blanket-applying (or blanket-omitting) it.
+  const lightResult = checkTokenContrast(contrastPairsForTheme("light"), { tokens: registryFromDeclarations(lightDeclarations) });
   printThemeReport("light", lightResult);
 
   let darkResult: ContrastGateResult | undefined;
@@ -214,7 +241,9 @@ export function main(argv: string[]): number {
     // are declared only in :root and deliberately never redeclared in the
     // dark block, exactly the way a real browser cascade still resolves
     // them for a dark-themed page.
-    darkResult = checkTokenContrast(CONTRAST_PAIRS, { tokens: registryFromDeclarations(mergeDeclarations(lightDeclarations, darkDeclarations)) });
+    darkResult = checkTokenContrast(contrastPairsForTheme("dark"), {
+      tokens: registryFromDeclarations(mergeDeclarations(lightDeclarations, darkDeclarations)),
+    });
     printThemeReport("dark", darkResult);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);

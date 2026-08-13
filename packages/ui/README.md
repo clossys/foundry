@@ -3428,6 +3428,27 @@ part of this package's public API" and reachable only by that one test.
   with no source file involved at all. Never passes on an empty run: zero
   pairs, or a token registry with nothing in it, reports `reason:
   "nothing-to-check"`, never `ok: true`.
+- **`exception` — WCAG 1.4.11's own relief, carried as data, not a bare
+  comment.** A `ContrastPair` may carry a `ContrastException` — a real
+  `wcagClause`, a real `compensatingMechanism`, and a real `rationale`,
+  all required and non-blank. `checkTokenContrast` treats an excepted
+  pair specially in BOTH directions, which is what keeps this from
+  becoming a rubber stamp: still under the floor, with a VALID exception,
+  is legitimate, documented relief (`relieved`, printed every run, never
+  a finding); now CLEARS the floor while still carrying that exception is
+  a *different* real finding (`"stale-exception"`) — the relief is no
+  longer needed, and a stale claim left in the policy is exactly how an
+  exception would otherwise silently outlive the condition that justified
+  it. An exception missing any of its three required fields is a THIRD
+  real finding (`"invalid-exception"`), checked first and regardless of
+  the measured ratio — an unjustified exception is a defect in the policy
+  data itself. `contrastPairsForTheme(theme)` (`"light" | "dark"`) is
+  what attaches this package's own real relief to `CONTRAST_PAIRS` per
+  theme — ported directly from `contrast.test.ts`'s own
+  `WARN_SLOTS_BY_THEME` (light-mode categorical slots 3/4/5; dark carries
+  none, since the dark palette's own steps were chosen to clear 3:1
+  outright) — rather than baking a theme-agnostic exception onto the bare
+  array.
 - **`ui-contrast-check [tokens-css-file]`** — the installable CLI,
   mirroring `ui-token-check`'s shape and this repository's three-state
   exit contract (`0` clean, `1` at least one pair below threshold, `2`
@@ -3435,28 +3456,39 @@ part of this package's public API" and reachable only by that one test.
   run, AND a non-empty `unchecked` list, the same "could not check must
   never read as a pass" discipline every gate CLI here holds to). Defaults
   to this package's own `styles/tokens.css`; checks BOTH the light `:root`
-  block and, when present, the `:root[data-theme="dark"]` block, merging
-  each dark declaration on top of the light ones first — the same thing a
-  real browser cascade does — because a handful of real alias tokens
-  (`--color-chart-surface`, `--color-ink-on-accent`, ...) are declared
-  only in `:root` and deliberately never redeclared in the dark block (see
-  `styles/tokens.css`'s own header comment).
+  block (against `contrastPairsForTheme("light")`) and, when present, the
+  `:root[data-theme="dark"]` block (against `contrastPairsForTheme("dark")`),
+  merging each dark declaration on top of the light ones first — the same
+  thing a real browser cascade does — because a handful of real alias
+  tokens (`--color-chart-surface`, `--color-ink-on-accent`, ...) are
+  declared only in `:root` and deliberately never redeclared in the dark
+  block (see `styles/tokens.css`'s own header comment). This repository's
+  own root `npm run check:contrast` runs it against this package's own
+  `styles/tokens.css` directly, wired into `npm run check` and into CI as
+  the `WCAG contrast gate (ui-contrast-check)` job — a gate that ships
+  only as an installed `bin`, with nothing anywhere actually invoking it,
+  is decorative, so this package does not ship one without also running
+  it against itself.
 
-**A real, currently-shipping finding this gate surfaces, reported here
-rather than quietly excluded to get a green run:** the light-mode
-categorical chart marks at slots 3/4/5 (`--color-chart-categorical-3/4/5`,
-aqua/yellow/magenta) measure 2.82:1, 2.17:1, and 2.69:1 against
-`--color-chart-surface` — all below the 3:1 AA-large floor.
-`contrast.test.ts` already documents this as an accepted "WARN" band under
-the dataviz palette method's "relief rule" (legal only because this
-package's chart layer ships mandatory direct labels/legend and a
-table-view fallback for every chart, never color alone) — this gate does
-not know about that relief rule, and correctly reports the plain WCAG
-threshold miss as a real finding rather than agreeing with the test's
-exception list. Running `npx ui-contrast-check` against this package's own
-`styles/tokens.css` with no arguments returns `1`, not `0`, for exactly
-this reason; dark mode's own categorical steps all clear 3:1 and add no
-findings of their own.
+**A real, currently-shipping WCAG miss this gate surfaces, reported here
+rather than quietly excluded to get a green run — but legitimately
+RELIEVED, not hidden:** the light-mode categorical chart marks at slots
+3/4/5 (`--color-chart-categorical-3/4/5`, aqua/yellow/magenta) measure
+2.82:1, 2.17:1, and 2.69:1 against `--color-chart-surface` — all below
+the 3:1 AA-large floor. `contrast.test.ts` already documents this as an
+accepted "WARN" band under the dataviz palette method's "relief rule"
+(legal only because this package's chart layer ships mandatory direct
+labels/legend and a table-view fallback for every chart, never color
+alone); `contrastPairsForTheme("light")` carries that SAME relief as gate
+policy, so `checkTokenContrast` reports these three as `relieved` — still
+visible in every report, never silently hidden — rather than as findings.
+Running `npx ui-contrast-check` against this package's own
+`styles/tokens.css` with no arguments returns `0`, because the relief is
+real and documented, not because the failures were excluded from the
+pair list to force a green run. Dark mode's own categorical steps all
+clear 3:1 on their own and carry no exception at all — if a future
+palette edit ever moved one of dark's slots under the floor, it would
+report as a genuine, unrelieved `"below-threshold"` finding.
 
 ## What's deliberately not here
 

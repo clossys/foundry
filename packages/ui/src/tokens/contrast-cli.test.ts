@@ -13,15 +13,18 @@ import { CliInputError, main } from "./contrast-cli.js";
 
 let dir: string;
 
-// Every property CONTRAST_PAIRS references, given clean values that clear
-// every pair's threshold — the categorical-3/4/5 slots are deliberately
-// NOT this package's real (WARN-band) hexes, so this fixture is a genuine
-// clean run, distinct from the real package default (see the "PROVES IT
-// FAILS" case in contrast-gate.test.ts and the real-tokens.css case below).
+// Every property CONTRAST_PAIRS references, given values that clear every
+// pair's threshold — EXCEPT categorical-3/4/5, which use this package's
+// REAL light-mode WARN-band hexes (see styles/tokens.css's own light
+// :root block) so that `contrastPairsForTheme("light")`'s documented
+// relief applies to them and this fixture is a genuine "relieved", not
+// "stale", clean run — distinct from a fixture that just happens to also
+// pass on its own (see DARK_PROPERTY_LINES below, where no exception is
+// ever attached, so those same three slots use passing hexes instead).
 // Kept as the shared INNER lines (no `:root { ... }` wrapper) so a test
-// can drop the same block into both a light and a dark selector without
-// fragile string slicing.
-const CLEAN_PROPERTY_LINES = `  --color-ink-primary: oklch(0.2178 0 0);
+// can drop the block into a light OR dark selector without fragile string
+// slicing.
+const LIGHT_PROPERTY_LINES = `  --color-ink-primary: oklch(0.2178 0 0);
   --color-surface-base: oklch(0.9702 0 0);
   --color-surface-raised: oklch(1 0 0);
   --color-surface-sunken: oklch(0.9401 0 0);
@@ -44,14 +47,23 @@ const CLEAN_PROPERTY_LINES = `  --color-ink-primary: oklch(0.2178 0 0);
   --color-chart-surface: oklch(1 0 0);
   --color-chart-categorical-1: #2a78d6;
   --color-chart-categorical-2: #eb6834;
-  --color-chart-categorical-3: #1a1a1a;
-  --color-chart-categorical-4: #1a1a1a;
-  --color-chart-categorical-5: #1a1a1a;
+  --color-chart-categorical-3: #1baf7a;
+  --color-chart-categorical-4: #eda100;
+  --color-chart-categorical-5: #e87ba4;
   --color-chart-categorical-6: #008300;
   --color-chart-categorical-7: #4a3aa7;
   --color-chart-categorical-8: #e34948;`;
 
-const CLEAN_LIGHT_ROOT = `:root {\n${CLEAN_PROPERTY_LINES}\n}\n`;
+// Same as LIGHT_PROPERTY_LINES, except categorical-3/4/5 use hexes that
+// actually clear 3:1 on their own — dark theme carries NO exception (see
+// contrast-pairs.ts's CATEGORICAL_EXCEPTION_SLOTS_BY_THEME.dark, which is
+// empty), so a dark-theme fixture needs these three to be genuinely clean,
+// not relieved.
+const DARK_PROPERTY_LINES = LIGHT_PROPERTY_LINES.replace("--color-chart-categorical-3: #1baf7a;", "--color-chart-categorical-3: #1a1a1a;")
+  .replace("--color-chart-categorical-4: #eda100;", "--color-chart-categorical-4: #1a1a1a;")
+  .replace("--color-chart-categorical-5: #e87ba4;", "--color-chart-categorical-5: #1a1a1a;");
+
+const CLEAN_LIGHT_ROOT = `:root {\n${LIGHT_PROPERTY_LINES}\n}\n`;
 
 function writeCss(content: string): string {
   const path = join(dir, "tokens.css");
@@ -136,14 +148,19 @@ describe("main — real runs", () => {
     expect(main([path])).toBe(1);
   });
 
-  it("both a light and a dark block, both clean, returns 0", () => {
-    const path = writeCss(`${CLEAN_LIGHT_ROOT}\n:root[data-theme="dark"] {\n${CLEAN_PROPERTY_LINES}\n}\n`);
+  it("both a light and a dark block, both clean (light relieved, dark genuinely passing), returns 0", () => {
+    const path = writeCss(`${CLEAN_LIGHT_ROOT}\n:root[data-theme="dark"] {\n${DARK_PROPERTY_LINES}\n}\n`);
     expect(main([path])).toBe(0);
+  });
+
+  it("returns 1 when a dark-theme categorical slot uses the light-mode WARN hex (no exception applies in dark) — a real threshold miss, not silently relieved", () => {
+    const path = writeCss(`${CLEAN_LIGHT_ROOT}\n:root[data-theme="dark"] {\n${LIGHT_PROPERTY_LINES}\n}\n`);
+    expect(main([path])).toBe(1);
   });
 });
 
 describe("main — real, currently-shipping tokens.css (no argument, this package's own default)", () => {
-  it("returns 1 — the real light-mode categorical-3/4/5 WARN slots are a genuine, currently-shipping finding, never silently hidden as a clean pass", () => {
-    expect(main([])).toBe(1);
+  it("returns 0 — the real light-mode categorical-3/4/5 WARN slots are relieved by a valid, documented exception (contrastPairsForTheme), not silently hidden by excluding them from the policy", () => {
+    expect(main([])).toBe(0);
   });
 });

@@ -76,6 +76,40 @@
  *     merely inconvenient to parse.
  *
  * ============================================================================
+ * EXCEPTIONS — WCAG 1.4.11's OWN relief, carried as DATA, never a bare
+ * comment
+ * ============================================================================
+ *
+ * Some graphical objects legitimately sit under their nominal floor and
+ * are still WCAG-compliant, because 1.4.11 permits relief when a
+ * compensating mechanism means color is never the only channel carrying
+ * the information. `contrast.test.ts`'s `WARN_SLOTS_BY_THEME` already
+ * encodes exactly this for this package's own categorical chart palette —
+ * light-mode slots 3/4/5 sit under the 3:1 floor on purpose, legal only
+ * because `ChartFrame` ships a mandatory direct label/legend and a
+ * table-view fallback for every chart, so color is never load-bearing on
+ * its own. `contrastPairsForTheme` (below) ports that SAME map — same
+ * theme keys, same slot numbers — as gate policy: a `ContrastPair` may
+ * carry an `exception: ContrastException`, and `checkTokenContrast`
+ * (`contrast-gate.ts`) treats an excepted pair specially in BOTH
+ * directions, which is what keeps this from becoming a rubber stamp:
+ *
+ *   - Still under the floor -> legitimate, documented relief. Reported as
+ *     `relieved`, not `findings` — visible in every report, never hidden,
+ *     but not a failure.
+ *   - Now CLEARS the floor -> a STALE exception. The relief this pair
+ *     claims is no longer needed, and a stale claim left in place is
+ *     exactly how an exception silently outlives the condition that
+ *     justified it — nobody would ever notice to remove it. Reported as
+ *     a real finding (`"stale-exception"`), same as any other threshold
+ *     problem.
+ *   - `exception` present but missing/blank ANY of its three required
+ *     fields -> ALSO a real finding (`"invalid-exception"`), regardless
+ *     of the measured ratio. An exception mechanism that accepts
+ *     unjustified entries is indistinguishable from no mechanism at all —
+ *     see `ContrastException`'s own fields for what "justified" requires.
+ *
+ * ============================================================================
  * HOW A CONSUMER ADDS A PAIR
  * ============================================================================
  *
@@ -90,7 +124,9 @@
  * `--color-ink-on-accent` needs no manual "what does this actually point
  * at" step) and reports a named finding — never a silent skip — for a
  * property missing from the registry, an alias cycle, an unparseable
- * color value, or a ratio below `minimumRatio`.
+ * color value, or a ratio below `minimumRatio` with no (or an invalid)
+ * exception. Add an `exception` only with a real WCAG clause, a real
+ * compensating mechanism, and a real rationale — see "EXCEPTIONS" above.
  */
 
 export type ContrastLevel = "AA" | "AA-large";
@@ -100,6 +136,23 @@ export const AA = 4.5;
 /** WCAG 2.x large-text (18px+, or 14px+ bold) / graphical-object minimum (3:1). */
 export const AA_LARGE = 3.0;
 
+/**
+ * The justification an excepted pair MUST carry, as data — never a bare
+ * comment a reader has to trust without a place for a machine to check
+ * it. `checkTokenContrast` requires all three fields non-blank before it
+ * will treat a below-threshold ratio as relieved; missing any one is
+ * itself a finding (`"invalid-exception"`) — see `contrast-pairs.ts`'s
+ * own header, "EXCEPTIONS".
+ */
+export interface ContrastException {
+  /** The WCAG success criterion this relief relies on, e.g. `"WCAG 2.2 SC 1.4.11 (Non-text Contrast)"`. */
+  readonly wcagClause: string;
+  /** What makes the relief legal — the mechanism that keeps color from being the only channel carrying the information. */
+  readonly compensatingMechanism: string;
+  /** Human-readable rationale for why THIS pair specifically qualifies. */
+  readonly rationale: string;
+}
+
 export interface ContrastPair {
   /** Stable, human-readable id for a report — e.g. `"ink-primary/surface-base"`. */
   readonly id: string;
@@ -108,7 +161,7 @@ export interface ContrastPair {
   /** The token whose resolved value is the background/surface it sits on. */
   readonly background: string;
   readonly level: ContrastLevel;
-  /** The ratio `foreground`/`background` must meet or exceed. Usually `AA`/`AA_LARGE` verbatim; occasionally a documented exception (none today) would state its own number here rather than relabeling `level`. */
+  /** The ratio `foreground`/`background` must meet or exceed. Usually `AA`/`AA_LARGE` verbatim. */
   readonly minimumRatio: number;
   /**
    * When set, both `foreground` and `background` are composited over THIS
@@ -119,6 +172,15 @@ export interface ContrastPair {
   readonly compositeOver?: string;
   /** Human-readable rationale, referencing the `contrast.test.ts` assertion this pair ratifies. */
   readonly description: string;
+  /**
+   * When set, a ratio below `minimumRatio` is legitimate, documented
+   * relief (`relieved`) rather than a finding — but ONLY while the ratio
+   * actually STAYS below `minimumRatio`. See this file's header,
+   * "EXCEPTIONS", for the full contract, including why a pair that
+   * clears its floor anyway while still carrying this field is a
+   * (different) real finding, not a pass.
+   */
+  readonly exception?: ContrastException;
 }
 
 export const CONTRAST_PAIRS: readonly ContrastPair[] = [
@@ -280,11 +342,11 @@ export const CONTRAST_PAIRS: readonly ContrastPair[] = [
   // ── categorical chart marks vs the chart surface: AA-large ────────────
   // Every one of the 8 fixed-order categorical marks is a graphical
   // object required to read a categorical chart's data — squarely inside
-  // WCAG 1.4.11's scope, unlike the chrome excluded above. Checked here
-  // as plain threshold pairs (not the WARN-slot/relief-rule shape
-  // contrast.test.ts also carries): see this gate's introducing PR
-  // description for which slots this produces a REAL, currently-shipping
-  // finding for, and why that finding is reported rather than excluded.
+  // WCAG 1.4.11's scope, unlike the chrome excluded above. This BASELINE
+  // array carries no `exception` on any slot — `contrastPairsForTheme`
+  // below is what attaches the real, theme-scoped WARN-slot relief (see
+  // this file's header, "EXCEPTIONS") to the matching slots for a given
+  // theme, ported from contrast.test.ts's own `WARN_SLOTS_BY_THEME`.
   ...([1, 2, 3, 4, 5, 6, 7, 8] as const).map((n) => ({
     id: `chart-categorical-${n}/chart-surface`,
     foreground: `--color-chart-categorical-${n}`,
@@ -294,3 +356,67 @@ export const CONTRAST_PAIRS: readonly ContrastPair[] = [
     description: `Categorical chart mark slot ${n} on the chart surface. Mirrors the per-slot sweep in contrast.test.ts's "every categorical slot either clears the 3:1 mark-contrast floor, or is a documented WARN slot".`,
   })),
 ];
+
+/**
+ * The compensating mechanism and WCAG clause behind this package's own
+ * categorical-mark relief — ONE justification object, reused by every
+ * slot/theme combination `CATEGORICAL_EXCEPTION_SLOTS_BY_THEME` names,
+ * because the reason is the same reason in every case: this package's
+ * chart layer never lets color carry a data channel alone.
+ */
+const CATEGORICAL_WARN_EXCEPTION: ContrastException = {
+  wcagClause: "WCAG 2.2 SC 1.4.11 (Non-text Contrast)",
+  compensatingMechanism:
+    "This package's chart layer (ChartFrame, the container BarChart/LineChart/Sparkline all share) ships a mandatory direct label/legend AND a table-view fallback for every chart it renders — color is never the only channel carrying which series a mark belongs to, which is what 1.4.11's relief for a compensated graphical object requires.",
+  rationale:
+    "The dataviz skill's validate_palette.js PASS/WARN report (see this token family's introducing PR description) accepted these specific categorical steps below the 3:1 mark-contrast floor for exactly this reason. contrast.test.ts pins the same slots, per theme, as WARN_SLOTS_BY_THEME — this map ports that same data as gate policy rather than re-deriving it.",
+};
+
+/**
+ * The EXACT shape (and, for light mode, the exact slot numbers)
+ * `contrast.test.ts`'s own `WARN_SLOTS_BY_THEME` uses — ported here as
+ * gate policy data rather than re-derived. `dark` is empty because the
+ * dark palette's own steps were chosen to clear 3:1 outright, so it
+ * carries no relief at all; `light`'s `[3, 4, 5]` (aqua/yellow/magenta)
+ * is the one real, currently-known-and-accepted WARN band. If a future
+ * palette edit moves a slot in or out of this list without ALSO updating
+ * `contrast.test.ts`'s own copy, the two now disagree about policy —
+ * `theme-parity.test.ts`-style drift this gate cannot catch by itself
+ * (each file owns its own copy, the same way `tokens.css`'s two dark
+ * blocks are hand-kept-identical rather than shared), but a stale entry
+ * on EITHER side still gets caught the moment it stops matching reality:
+ * a slot removed here that still fails on the palette becomes a real
+ * `"below-threshold"` finding; a slot left here that no longer fails
+ * becomes a real `"stale-exception"` finding. Neither direction can
+ * silently drift forever.
+ */
+const CATEGORICAL_EXCEPTION_SLOTS_BY_THEME: Readonly<Record<string, readonly number[]>> = {
+  light: [3, 4, 5],
+  dark: [],
+};
+
+/**
+ * `CONTRAST_PAIRS` with the theme-scoped categorical relief (see this
+ * file's header, "EXCEPTIONS") attached to the matching
+ * `chart-categorical-<n>/chart-surface` pairs' `exception` field for
+ * `theme`, and every other pair untouched. `contrast-cli.ts` calls this
+ * once per theme it checks (light, and dark when the file being checked
+ * declares one) instead of using the bare `CONTRAST_PAIRS` array
+ * directly — that bare array stays theme-agnostic on purpose (a caller
+ * building their OWN pairs against their OWN palette has no reason to
+ * inherit THIS package's specific relief), and this function is the one
+ * place that reunites the two for THIS package's real, checked-in
+ * policy.
+ */
+export function contrastPairsForTheme(theme: "light" | "dark"): readonly ContrastPair[] {
+  const exceptedSlots = new Set(CATEGORICAL_EXCEPTION_SLOTS_BY_THEME[theme] ?? []);
+  const slotOf = (id: string): number | undefined => {
+    const match = /^chart-categorical-(\d+)\/chart-surface$/.exec(id);
+    return match ? Number(match[1]) : undefined;
+  };
+  return CONTRAST_PAIRS.map((pair) => {
+    const slot = slotOf(pair.id);
+    if (slot === undefined || !exceptedSlots.has(slot)) return pair;
+    return { ...pair, exception: CATEGORICAL_WARN_EXCEPTION };
+  });
+}
