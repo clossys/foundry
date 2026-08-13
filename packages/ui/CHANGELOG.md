@@ -3,6 +3,112 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.7.1] - 2026-08-13
+
+### Fixed
+
+Six issues surfaced by a consumer integration:
+
+- Removed the stale "Release status" caveat claiming this package "has not
+  completed a public registry release." This package is already marked
+  published in this repository's own lifecycle catalog — the caveat, not
+  the package, was outdated (#147).
+- `styles/tokens.css`'s token declarations now live in a named `@layer
+  foundry-ui-tokens` instead of unlayered `:root`. An unlayered rule always
+  outranks a layered one regardless of import order, so these tokens
+  previously won over a host app's own Tailwind v4 `@layer theme`
+  unconditionally rather than composing with it (#148).
+- The "No brand binding" startup banner now respects a
+  `data-suppress-brand-banner` attribute on `<html>`. It stays default-on —
+  an unbranded render should never quietly pass as finished — but a
+  consumer shipping unbranded primitives on purpose previously had no way
+  to say so (#148).
+- `ui-token-check` gained a `--tokens <path-to-json>` flag to check scanned
+  source against a consumer's own token registry instead of always checking
+  against this package's own `TOKENS`, where every legitimate,
+  consumer-token-backed literal previously reported as unbacked. `--tokens`
+  replaces the default registry for the run rather than merging with it
+  (#149).
+- `checkTokenPurity`'s finding messages now take an optional
+  `registryLabel` and attribute themselves to the registry actually passed
+  in, rather than always naming `@vespeneventures/ui/tokens` regardless of
+  which registry a caller supplied (#150).
+- Relaxed the declared peer floor for `@internationalized/date` (`^3.12.3`
+  → `^3.12.2`) and `react-aria-components` (`^1.20.0` → `^1.19.0`). Neither
+  version had a documented reason to sit ahead of what a real consumer tree
+  already commonly resolves; installing into a real Next.js + Tailwind v4
+  app produced an `unmet peer` warning against versions one behind each
+  floor, non-fatal only because both peers are already optional (#154).
+
+## [0.7.0] - 2026-08-12
+
+### Added
+
+- **The token layer moved into this package.** `@vespeneventures/tokens`
+  (last published at `0.6.0`) is folded in whole: `@vespeneventures/ui/tokens`
+  ships the typed `TOKENS` export, brand CSS parsing, and the brand-coverage
+  gate with no React runtime; `@vespeneventures/ui/tokens.css`,
+  `/theme.css`, and `/brand-template.css` ship the same three CSS files the
+  standalone package shipped; `TOKENS.md` documents the layer and is in the
+  published `files` list alongside the existing `README.md`. A consumer can
+  now install tokens alone:
+
+  ```bash
+  npm install @vespeneventures/ui
+  ```
+
+  ```css
+  @import "@vespeneventures/ui/tokens.css";
+  ```
+
+  with no React, React Aria, or Tailwind requirement — `tokens.css` is
+  ordinary CSS custom properties.
+- `tokens-brand-check`, the standalone package's brand-coverage CLI, ships
+  as a second `bin` entry alongside the existing `ui-token-check`.
+
+### Changed
+
+- **Version jumps `0.4.0` → `0.7.0`.** This is the same commit that removed
+  `packages/tokens` from this repository; the jump reflects that
+  consolidation, not four intermediate `ui` releases that never happened.
+  `docs/contracts/package-lifecycle.json` now records
+  `@vespeneventures/tokens` as `deprecated`, replacement
+  `@vespeneventures/ui ^0.7.0`.
+- **`@vespeneventures/tokens` is no longer a dependency of this package —
+  it no longer needs to be, since its contents now ship as this package's
+  own `/tokens` subpath.** A consumer migrates each import:
+
+  | Old import | New import |
+  | --- | --- |
+  | `@vespeneventures/tokens` | `@vespeneventures/ui/tokens` |
+  | `@vespeneventures/tokens/tokens.css` | `@vespeneventures/ui/tokens.css` |
+  | `@vespeneventures/tokens/theme.css` | `@vespeneventures/ui/theme.css` |
+  | `@vespeneventures/tokens/brand-template.css` | `@vespeneventures/ui/brand-template.css` |
+- **Every component peer became optional.** `react`, `react-dom`,
+  `react-aria-components`, `tailwind-merge`, `tailwindcss`, and
+  `@internationalized/date` move to `peerDependenciesMeta` with
+  `optional: true`; `react-aria-components` and `tailwind-merge` were
+  previously regular `dependencies`, not peers at all. A consumer who only
+  wants the token layer installs none of them; a consumer importing
+  `atoms`/`blocks`/`shell`/`charts` still installs the peers those subpaths
+  actually use, but npm now reports a missing one instead of resolving a
+  hidden transitive version.
+- `sideEffects` narrowed from `false` to `["./styles/*.css"]`, reflecting
+  the CSS files this package now ships directly.
+- `files` gained `styles` (the three CSS files above) and `TOKENS.md`.
+- `description` rewritten to describe a self-contained visual system
+  (tokens, theme CSS, components, icons, charts, gates) rather than
+  components styled by a separate tokens package.
+
+### Removed
+
+- **The `./views` subpath is gone.** `ErrorView` and `AuthView` moved to
+  `@vespeneventures/surface/web`; this package stops exporting whole-page
+  compositions and keeps only reusable primitives (`atoms`, `blocks`,
+  `shell`, `charts`, `icons`, `gate`) plus the token layer. There is no
+  compatibility re-export — a consumer importing
+  `@vespeneventures/ui/views` must switch to `@vespeneventures/surface/web`.
+
 ## [0.4.0] - Unreleased
 
 ### Added
@@ -90,7 +196,7 @@ All notable changes to this package are documented here. Format follows
   passed in, rather than always saying `@vespeneventures/ui/tokens`
   regardless of which registry a caller supplied.
 
-## [0.3.0] - Unreleased
+## [0.3.0] - 2026-08-07
 
 ### Changed
 
@@ -167,7 +273,7 @@ All notable changes to this package are documented here. Format follows
   assign icons to nav items on a consumer's behalf) now that this package
   as a whole does ship a glyph set elsewhere.
 
-## [0.2.0] - Unreleased
+## [0.2.0] - 2026-08-07
 
 ### Added
 

@@ -145,6 +145,50 @@ jobs:
           node-version: 20
       - run: node scripts/set-scope.mjs --check
 
+  # scripts/select-publishable-packages.mjs only ever publishes a package
+  # whose `version` changed between two commits — that is correct, but it
+  # means a merged source change with no version bump publishes nothing and
+  # says nothing. That happened for real (issue #156): a consumer
+  # integration surfaced eight behavioural fixes across six packages that
+  # merged with no version bump, so the Publish workflow's matrix was empty
+  # and the fixes sat on main, invisible to consumers, for a day with no
+  # failure anywhere. This job is the check that catches that BEFORE merge,
+  # asking exactly the question select-publishable-packages.mjs asks on push
+  # — did the version change between two fixed points? — but scoped to the
+  # actual pull request being merged: the PR's merge base and HEAD, via
+  # `--base`. See the script's own header for why this default, diff-scoped
+  # mode replaced an earlier whole-repo design that had a real false
+  # positive (a package bumped, then edited, then published — indistinguishable
+  # from PR #155's real failure using git history alone, without knowing the
+  # PR's actual comparison point). That whole-repo heuristic still exists
+  # behind `--audit` for manual investigation, but is deliberately NOT run
+  # here for the same reason.
+  #
+  # pull_request only: on a push to main the "base" would be the commit
+  # immediately before an already-merged, already-irreversible push — by
+  # that point the Publish workflow's own selector is the authoritative
+  # check, and this job's purpose is catching the gap before merge, not
+  # re-deriving the same answer after it can no longer change anything.
+  #
+  # Needs the same full-history checkout `scope`'s sibling jobs above need:
+  # `git merge-base` and the package-content diff underneath it both need
+  # real ancestry, not the default shallow fetch-depth: 1.
+  release-readiness:
+    name: release readiness (version bump vs. shipped content)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+      - name: check-release-readiness (diffed against this PR's actual base)
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node scripts/check-release-readiness.mjs --base "$BASE_SHA"
+
   # Neither check here reads the denylist — both derive everything (package
   # names, exports, README claims) from the tree itself — so this runs
   # unconditionally, including on fork PRs, unlike the identity-scanning jobs.

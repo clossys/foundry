@@ -51,3 +51,4 @@ itself, even with no other detail attached.
 - [ ] `PUBLIC_SAFETY_DENYLIST=~/.config/public-safety/denylist-foundry.json npm run check` passes locally (or I understand CI will run it in PARTIAL mode on this fork PR, and a maintainer must re-run FULL mode before merge — see CONTRIBUTING.md).
 - [ ] I reviewed this description, my commit messages, and my diff against the "never include" list above.
 - [ ] If this touches a published package's public API, the README is updated in this same PR (`check-readme-parity.mjs` verifies this mechanically).
+- [ ] If this changes a published package's source, its `version` is bumped in this same PR — a merge is not a publish (`npm run check:release-readiness` verifies this mechanically; see issue #156).

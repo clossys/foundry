@@ -5,6 +5,20 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-08-13
+
+### Fixed
+
+- `homepage` pointed at `packages/domain-model`, the pre-rename directory
+  that no longer exists. The published `0.2.0` manifest therefore linked a
+  reader to a 404 from the registry's own package page. It now points at
+  `packages/domain`.
+- The README's "Migration" section still described
+  `@vespeneventures/domain-model` as a live temporary compatibility package.
+  It was retired from the registry once supported consumers had migrated, so
+  the section now says that outright rather than pointing a new consumer at
+  something they cannot install.
+
 ## [0.2.0] - 2026-08-11
 
 ### Added
