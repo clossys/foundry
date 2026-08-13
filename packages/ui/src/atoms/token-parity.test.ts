@@ -264,6 +264,13 @@ const KNOWN_NON_CLASS_MAPS = new Set([
   // ("embedded hex color", ...), same role as KIND_LABEL above, one level
   // down (for a literal embedded inside a tw-arbitrary bracket).
   "EMBEDDED_KIND_LABEL",
+  // theme/ThemeToggle.tsx — ThemePreference -> human-readable label
+  // ("System"/"Light"/"Dark"), interpolated into the button's aria-label
+  // and the live-region announcement text, never a Tailwind class name.
+  "PREFERENCE_LABEL",
+  // theme/ThemeToggle.tsx — ThemePreference -> IconNode glyph data
+  // (Monitor/Sun/Moon), passed to Icon's `glyph` prop, never a class name.
+  "PREFERENCE_GLYPH",
 ]);
 
 function extractCandidateClasses(code: string): Set<string> {

@@ -3,6 +3,47 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.8.0] - 2026-08-13
+
+### Added
+
+- New `@vespeneventures/ui/theme` subpath — the JavaScript half of this
+  package's theming contract, matching the three-state `data-theme`
+  contract `tokens.css` already defined in CSS (attribute absent follows
+  the OS; `data-theme="light"`/`"dark"` force a theme regardless of the
+  OS). Nothing shipped previously actually drove that attribute, so a
+  consumer could not build a working theme toggle without hand-writing
+  the storage read, the three-state branch, and a head script themselves.
+  Three pieces ship:
+  - `getThemeInitScript()` — a self-contained script, returned as a
+    string, for a consumer's `<head>`, so the correct `data-theme` is
+    stamped before first paint. A React component cannot run before the
+    document paints, so this is deliberately not something
+    `ThemeProvider` does on its own — see the README's "Wiring up a theme
+    toggle" for why, and the full setup.
+  - `ThemeProvider` / `useTheme()` — holds and persists the three-state
+    preference, keeps `<html data-theme>` and the native `color-scheme`
+    CSS property in sync (so native form controls, scrollbars, and
+    autofill match the theme too), and resolves `"system"` against a
+    live `prefers-color-scheme` subscription that updates without a
+    reload if the OS theme changes while the page is open.
+    `preference` (what was chosen) and `resolvedTheme` (what's actually
+    displayed) are deliberately separate values — collapsing them would
+    leave either an icon-picking component or a selected-option
+    component with no correct value to read. SSR-safe: never reads
+    `window`/`document`/`localStorage` during render.
+  - `ThemeToggle` — an accessible control built from this package's own
+    `Button`/`Icon` atoms, cycling System → Light → Dark → System (see
+    `ThemeToggle.tsx`'s own doc comment for why a cycle rather than a
+    switch-plus-reset pair). Keyboard-operable, and announces every
+    change through a live region.
+  - `theme-script-parity.test.ts` asserts the head script and
+    `ThemeProvider` resolve identically for every input (nothing stored,
+    each valid state, a malformed stored value, storage that throws, a
+    non-default storage key) — both call the SAME underlying functions
+    (one directly, one stringified into the head script), so they cannot
+    silently drift into two different implementations of the same rule.
+
 ## [0.7.2] - 2026-08-13
 
 ### Fixed

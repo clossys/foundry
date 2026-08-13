@@ -13,6 +13,7 @@ const atomsDir = join(srcDir, "atoms");
 const blocksDir = join(srcDir, "blocks");
 const shellDir = join(srcDir, "shell");
 const chartsDir = join(srcDir, "charts");
+const themeDir = join(srcDir, "theme");
 const iconsDir = join(srcDir, "icons");
 
 function collectSourceFiles(dir: string, out: string[] = []): string[] {
@@ -61,11 +62,26 @@ describe("ui layer dependencies", () => {
     expect(violations(chartsDir, ["blocks", "shell"])).toEqual([]);
   });
 
+  it("theme depends on neither blocks, shell, nor charts", () => {
+    expect(violations(themeDir, ["blocks", "shell", "charts"])).toEqual([]);
+  });
+
   it("icons remain pure glyph data", () => {
-    expect(violations(iconsDir, ["atoms", "blocks", "shell", "charts"])).toEqual([]);
+    expect(violations(iconsDir, ["atoms", "blocks", "shell", "charts", "theme"])).toEqual([]);
+  });
+
+  it("nothing outside theme depends on it — the same one-way sibling shape charts has", () => {
+    expect(violations(atomsDir, ["theme"])).toEqual([]);
+    expect(violations(blocksDir, ["theme"])).toEqual([]);
+    expect(violations(shellDir, ["theme"])).toEqual([]);
+    expect(violations(chartsDir, ["theme"])).toEqual([]);
   });
 
   it("the permitted blocks-to-atoms direction has real coverage", () => {
     expect(violations(blocksDir, ["atoms"]).length).toBeGreaterThan(0);
+  });
+
+  it("the permitted theme-to-atoms direction has real coverage", () => {
+    expect(violations(themeDir, ["atoms"]).length).toBeGreaterThan(0);
   });
 });

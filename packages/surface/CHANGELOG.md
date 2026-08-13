@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.1.4] - 2026-08-13
+
+### Changed
+
+- Widened the `@vespeneventures/ui` range from `~0.7.0` to `~0.8.0` to track
+  that package's 0.8.0 release, which adds the `theme` subpath. Required
+  for the same reason as the `copy` widening in 0.1.3: in 0.x semver a
+  tilde range is minor-locked, so `~0.7.0` excluded `ui` 0.8.0 and the
+  dependency stopped resolving to the sibling package.
+- Restored this package's `package.json` to the compact formatting every
+  other package here uses. The 0.1.3 edit was made with a JSON
+  pretty-printer, which expanded every single-line object and array —
+  no semantic change, but it left this one manifest formatted unlike its
+  siblings.
+
 ## [0.1.3] - 2026-08-13
 
 ### Changed

@@ -11,9 +11,9 @@ const packageJson = JSON.parse(readFileSync(join(packageRoot, "package.json"), "
   peerDependenciesMeta: Record<string, { optional?: boolean }>;
 };
 
-const JS_SUBPATHS = ["./tokens", "./atoms", "./icons", "./charts", "./blocks", "./shell", "./gate"] as const;
+const JS_SUBPATHS = ["./tokens", "./atoms", "./icons", "./charts", "./blocks", "./shell", "./theme", "./gate"] as const;
 const CSS_SUBPATHS = ["./tokens.css", "./theme.css", "./brand-template.css"] as const;
-const COMPONENT_DIRS = ["atoms", "blocks", "charts", "shell"] as const;
+const COMPONENT_DIRS = ["atoms", "blocks", "charts", "shell", "theme"] as const;
 
 function sourceFiles(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {

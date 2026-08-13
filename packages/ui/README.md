@@ -9,9 +9,10 @@ package ships reusable visual vocabulary built on its own token layer:
 tokens → icons → atoms → blocks
                        ↘ shell
                        ↘ charts
+                       ↘ theme
 ```
 
-`atoms`, `blocks`, `shell`, and `charts` all ship today, alongside
+`atoms`, `blocks`, `shell`, `charts`, and `theme` all ship today, alongside
 `icons` — pure glyph DATA sitting BELOW `atoms`, not a sixth rung of content
 (see "Icon glyph data" below for the full reasoning; the short version: a
 `[tag, attrs]` tuple has no rendering logic and depends on nothing else in
@@ -53,19 +54,29 @@ surfaces and live in `@vespeneventures/surface/web`.
   shared plot/axes/grid/legend/table container), `BarChart`, `LineChart`,
   and `Sparkline`. A sibling of `shell`, not a sixth rung of the ladder —
   see "Charts" below.
+- **`theme`** — the JavaScript half of this package's theming contract
+  (the CSS half already ships from `tokens.css`/`theme.css` — see "CSS
+  layers, fallbacks, and themes" below): `getThemeInitScript`, a
+  self-contained head script that stamps `data-theme` before first paint;
+  `ThemeProvider`/`useTheme`, which hold and persist the three-state
+  preference at runtime; and `ThemeToggle`, an accessible control built
+  from this package's own `Button`/`Icon` atoms. A sibling of `shell` and
+  `charts`, not a sixth rung — see "Theme" below.
 
 A layer may only import toward something more foundational: blocks may
-import atoms, never the reverse. `shell` and `charts` are narrower sibling
-domains built from those primitives. `charts` is a
+import atoms, never the reverse. `shell`, `charts`, and `theme` are
+narrower sibling domains built from those primitives. `charts` is a
 narrower sibling: it may import `atoms`, and nothing else in this package
-imports from it. `icons` sits at the very bottom: `atoms` may import
-`icons` (and does — `atoms/Icon.tsx` imports the `IconNode` type from
-`icons/types.ts`), and nothing under `icons/` may import from anywhere
-else in this package. `src/ladder.test.ts` enforces every one of these
-directions structurally, not just by convention: it scans every file under
-`src/atoms/`, `src/blocks/`, `src/shell/`, `src/charts/`, and
-`src/icons/` for an import referencing a layer it isn't allowed to reach,
-and fails the build if it finds one.
+imports from it. `theme` is the same shape: it may import `atoms` and
+`icons` (its `Button`/`Icon` atoms and `Sun`/`Moon`/`Monitor` glyphs), and
+nothing else in this package imports from it. `icons` sits at the very
+bottom: `atoms` may import `icons` (and does — `atoms/Icon.tsx` imports the
+`IconNode` type from `icons/types.ts`), and nothing under `icons/` may
+import from anywhere else in this package. `src/ladder.test.ts` enforces
+every one of these directions structurally, not just by convention: it
+scans every file under `src/atoms/`, `src/blocks/`, `src/shell/`,
+`src/charts/`, `src/theme/`, and `src/icons/` for an import referencing a
+layer it isn't allowed to reach, and fails the build if it finds one.
 
 The token layer is part of this package — every class its components render
 (`bg-accent`, `text-ink-primary`, `rounded-control`, ...) is a Tailwind
@@ -86,6 +97,7 @@ smallest stable subpath that owns what you need:
 | `@vespeneventures/ui/brand-template.css` | Copy-and-fill template for a consumer brand binding. |
 | `@vespeneventures/ui/icons` | Tree-shakeable glyph data. |
 | `@vespeneventures/ui/atoms`, `/blocks`, `/shell`, `/charts` | Reusable React visual primitives. |
+| `@vespeneventures/ui/theme` | `getThemeInitScript`, `ThemeProvider`/`useTheme`, `ThemeToggle` — the runtime half of theming. Not to be confused with the CSS `/theme.css` subpath above. |
 | `@vespeneventures/ui/gate` | Token-purity scanner and gate. |
 
 `ui` never exports page views, routes, metadata, strategy facts, or copy.
@@ -367,6 +379,83 @@ resolution entirely — at the cost of having to enumerate every class you
 actually use instead of Tailwind discovering them from `dist/`. If the
 directory form above silently produces no styling under Turbopack + pnpm in
 your project, try this instead.
+
+### Wiring up a theme toggle
+
+`tokens.css` already defines the three-state contract (see "CSS layers,
+fallbacks, and themes" above): no `data-theme` follows the OS, and
+`data-theme="light"`/`"dark"` force one regardless of the OS.
+`@vespeneventures/ui/theme` is the JavaScript that drives that attribute.
+Three pieces, used together:
+
+**(a) The head script — before anything else in `<head>`.** A React
+component cannot run before the document paints, so `ThemeProvider`
+(below) necessarily corrects the theme one tick too late for a
+server-rendered page: it would render the OLD theme for one frame, then
+visibly flip. `getThemeInitScript()` returns a small, self-contained
+script (as a string, ready for `dangerouslySetInnerHTML`) that reads the
+same stored preference and applies the same three-state rule
+SYNCHRONOUSLY, before the browser paints anything — there is no
+component-based way to get this timing, which is why it's a separate
+piece rather than something `ThemeProvider` does automatically:
+
+```tsx
+// app/layout.tsx (Next.js App Router) — first thing in <head>
+import { getThemeInitScript } from "@vespeneventures/ui/theme";
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: getThemeInitScript() }} />
+      </head>
+      <body>{children}</body>
+    </html>
+  );
+}
+```
+
+**(b) `ThemeProvider` — wrap your tree once, near the root.** Holds the
+three-state preference in React state, persists it, and keeps
+`<html data-theme>`/`color-scheme` in sync as it changes:
+
+```tsx
+import { ThemeProvider } from "@vespeneventures/ui/theme";
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return <ThemeProvider>{children}</ThemeProvider>;
+}
+```
+
+**(c) `ThemeToggle` — an accessible control, anywhere inside the provider.**
+Cycles System → Light → Dark → System (see `ThemeToggle.tsx`'s own doc
+comment for why a cycling control rather than a switch-plus-reset pair):
+
+```tsx
+import { ThemeToggle } from "@vespeneventures/ui/theme";
+
+function HeaderActions() {
+  return <ThemeToggle />;
+}
+```
+
+Reach for `useTheme()` directly when a component needs the current
+preference or resolved theme without rendering a toggle itself:
+
+```tsx
+import { useTheme } from "@vespeneventures/ui/theme";
+
+function CurrentThemeLabel() {
+  const { preference, resolvedTheme } = useTheme();
+  return <span>{preference} ({resolvedTheme})</span>;
+}
+```
+
+`(a)` and `(b)` must agree on the same `storageKey` (default `"ui-theme"`
+for both) — pass `{ storageKey: "..." }` to `getThemeInitScript` and
+`storageKey="..."` to `ThemeProvider` together if you override it, or the
+head script will stamp the theme from one key while the provider persists
+to another.
 
 ## Why these dependencies
 
@@ -2624,6 +2713,136 @@ built against, a 9th series does not get a generated color; fold the tail
 into an "Other" series, or facet into separate charts, before reaching
 this layer.
 
+## Theme
+
+`theme` is the JavaScript half of this package's theming contract. The
+CSS half already ships from `tokens.css` (see "CSS layers, fallbacks, and
+themes" above): a three-state contract, keyed on a `data-theme` attribute
+on `<html>`, that `tokens.css`'s own header comment defines precisely —
+
+- attribute **absent** → the OS decides, via `prefers-color-scheme`.
+- **`data-theme="dark"`** → forced dark, even on a light OS.
+- **`data-theme="light"`** → forced light, even on a dark OS.
+
+Before this subpath shipped, nothing in this package actually DROVE that
+attribute — a consumer had to hand-write the storage read, the three-state
+branch, and the head script themselves, and get all three exactly right,
+just to make a theme toggle work. `theme` is that missing JavaScript,
+matching the CSS contract exactly: no fourth state, no class-based
+toggle, no different attribute name. See "Wiring up a theme toggle" above
+for a complete, runnable setup; this section covers what each piece does
+and why it's shaped the way it is.
+
+### `getThemeInitScript`
+
+```tsx
+import { getThemeInitScript } from "@vespeneventures/ui/theme";
+
+<script dangerouslySetInnerHTML={{ __html: getThemeInitScript() }} />
+```
+
+Returns a small, self-contained script (as a string) that a consumer
+injects into `<head>`, before any stylesheet or script that might paint —
+see "Wiring up a theme toggle" above for why this can't be
+`ThemeProvider`'s job: a React component fundamentally cannot run before
+the document paints, so anything React-based corrects the theme one frame
+too late, and that one frame is a real, visible flash on every page load
+for a visitor whose stored preference disagrees with what the OS/CSS
+would otherwise render. The returned script reads the same storage key
+(`{ storageKey?: string }`, default `"ui-theme"`) and applies the exact
+same three-state rule `ThemeProvider` applies at runtime — not a second,
+hand-written copy of that rule: it embeds the compiled source of the same
+two functions `ThemeProvider` calls directly, `.toString()`'d into the
+returned string, so there is exactly one implementation, used two ways.
+`src/theme/theme-script-parity.test.ts` in this package asserts the two
+call sites agree, for every input, so they can't silently drift apart
+even though nothing in the type system enforces it on its own. Never
+throws: if `localStorage` is unavailable (private browsing, blocked
+cookies, a disabled-storage policy), it falls back to `"system"` — the
+safe default every other decline path in this subpath resolves to.
+
+### `ThemeProvider` and `useTheme`
+
+```tsx
+import { ThemeProvider, useTheme } from "@vespeneventures/ui/theme";
+
+function CurrentThemeLabel() {
+  const { preference, resolvedTheme, setPreference } = useTheme();
+  return (
+    <button onClick={() => setPreference("dark")}>
+      {preference} (showing {resolvedTheme})
+    </button>
+  );
+}
+```
+
+`ThemeProvider` holds the three-state preference (`"system" | "light" |
+"dark"`), persists it to `localStorage` under `storageKey` (default
+`"ui-theme"`, must match `getThemeInitScript`'s own), and keeps
+`<html data-theme>` — plus the native CSS `color-scheme` property, so
+browser-drawn form controls/scrollbars/autofill match the theme too — in
+sync with it. `useTheme()` returns three things:
+
+- **`preference`** — what the consumer CHOSE. May be `"system"`, which is
+  not itself a displayable theme.
+- **`resolvedTheme`** — what is actually ON SCREEN right now: always
+  `"light"` or `"dark"`, never `"system"`. For an explicit preference this
+  equals `preference`; for `"system"` it's the OS's current choice, read
+  live from a `prefers-color-scheme` media-query subscription and kept
+  updated for as long as `ThemeProvider` is mounted — if the OS theme
+  flips while the page is open, `resolvedTheme` updates without a reload.
+- **`setPreference(next)`** — persists `next` (best-effort; never throws)
+  and applies it.
+
+These two values are kept deliberately distinct rather than collapsed into
+one: a component picking a sun/moon icon needs `resolvedTheme`; a
+component showing which of three options is currently selected needs
+`preference`. Conflating them would leave one of those two, very ordinary
+cases with no correct value to read.
+
+**SSR safety.** `ThemeProvider` never reads `window`/`document`/
+`localStorage` during render — doing so would make React's client render
+diverge from the server's (which has no `localStorage` at all), producing
+a hydration mismatch. Both the server and React's first client render use
+`defaultPreference` (`"system"` unless overridden); a `useEffect` —
+client-only, runs once after mount — then reads the real stored value and
+corrects local state if it differs. This does not reintroduce the flash
+`getThemeInitScript` solves: the page's actual rendered THEME already
+matches the stored preference by the time this runs, because the head
+script (which must run) already stamped it before first paint. Only this
+hook's own reported `preference` — and anything that visibly depends on it,
+like `ThemeToggle`'s icon — settles into its correct value one tick after
+mount, the same tradeoff every SSR-safe theme provider makes.
+
+### `ThemeToggle`
+
+```tsx
+import { ThemeToggle } from "@vespeneventures/ui/theme";
+
+<ThemeToggle />
+```
+
+A single control that cycles System → Light → Dark → System, built from
+this package's own `Button`/`Icon` atoms — see `ThemeToggle.tsx`'s own
+doc comment for the full reasoning, summarized here: a theme preference is
+one of three values, not a bit, so a two-state `Switch` plus a separate
+"reset to system" control would need two controls to do one job, and the
+switch itself would have no correct on/off position to show whenever the
+preference is `"system"` (the OS could be either). A single cycling
+control keeps `"system"` a first-class, always-reachable stop on the same
+control, reachable through the same public API (`useTheme`'s
+`setPreference` accepts any of the three values directly) that a consumer
+building their own three-option segmented control or menu would use
+instead of `ThemeToggle`.
+
+Keyboard-operable and screen-reader accessible via this package's own
+`Button` atom (react-aria-components underneath — see "Why these
+dependencies"): `aria-label` states both the current preference and what
+activating the control does next, and a visually hidden
+`role="status"`/`aria-live="polite"` region announces every change, since
+not every screen reader/browser combination reliably re-announces an
+`aria-label` that changes on an already-focused element.
+
 ## Icon glyph data (`@vespeneventures/ui/icons`)
 
 ```tsx
@@ -2978,6 +3197,18 @@ not a grab-bag).
 | `LineChartSeries` | type | `{ name, values, color? }`. |
 | `Sparkline` | component | A bare inline trend — no axes/grid/legend/hover, still ships a table-view fallback. |
 | `SparklineProps` | type | Props for `Sparkline`: `values`, `title`, `width`, `height`, `color`, `valueFormat`, `className`, `style`. |
+| `getThemeInitScript` | function | Returns a self-contained head script (string) that stamps `data-theme` before first paint. Takes `{ storageKey? }`. |
+| `ThemeInitScriptOptions` | type | Options for `getThemeInitScript`: `storageKey?` (default `"ui-theme"`). |
+| `ThemeProvider` | component | Holds/persists the three-state theme preference and keeps `<html data-theme>`/`color-scheme` in sync. |
+| `ThemeProviderProps` | type | Props for `ThemeProvider`: `children`, `storageKey?`, `defaultPreference?`. |
+| `useTheme` | function | Hook returning `{ preference, resolvedTheme, setPreference }` from the nearest `ThemeProvider`. |
+| `ThemeContextValue` | type | `{ preference: ThemePreference; resolvedTheme: ResolvedTheme; setPreference(next: ThemePreference): void }`. |
+| `ThemePreference` | type | `"system" \| "light" \| "dark"`. |
+| `ResolvedTheme` | type | `"light" \| "dark"` — never `"system"`. |
+| `THEME_PREFERENCES` | value | `["system", "light", "dark"] as const` — the three valid preference strings. |
+| `DEFAULT_STORAGE_KEY` | value | `"ui-theme"` — the default `localStorage` key `ThemeProvider` and `getThemeInitScript` both use. |
+| `ThemeToggle` | component | Accessible control cycling System → Light → Dark → System, built from this package's own `Button`/`Icon` atoms. |
+| `ThemeToggleProps` | type | Props for `ThemeToggle`: everything `Button` accepts except `children`/`onPress`. |
 
 ## Tests
 
@@ -3000,9 +3231,12 @@ Beyond render/interaction/keyboard/ARIA tests per atom (`Button.test.tsx`,
 (`ChartFrame.test.tsx`, `BarChart.test.tsx`, `LineChart.test.tsx`,
 `Sparkline.test.tsx`, plus `internal/scale.test.ts` and
 `internal/chart-vars.test.ts` for the scale-boundary and
-categorical-color-assignment math underneath them), and the
+categorical-color-assignment math underneath them), per theme piece
+(`ThemeProvider.test.tsx`, `ThemeToggle.test.tsx`, `initScript.test.ts`,
+plus `internal/theme-core.test.ts` for the underlying decline-path/
+resolution logic), and the
 `tailwind-merge` regression tests described above (`internal/cx.test.ts`),
-two tests are worth calling out specifically:
+three tests are worth calling out specifically:
 
 - **`token-parity.test.ts`** scans every atom's, block's, AND shell
   component's source (everything under `src/`) for candidate Tailwind
@@ -3033,9 +3267,10 @@ two tests are worth calling out specifically:
   approach let this package undo, and how the previous, allow-list-based
   version of this check forced them in the first place.
 - **`ladder.test.ts`** scans every file under `src/atoms/`, `src/blocks/`,
-  `src/views/`, `src/shell/`, and `src/charts/` for import specifiers that
-  climb UP the ladder (or, for `charts`, out of its narrow sibling lane),
-  and fails the build if it finds one — the ladder invariant (`atoms` →
+  `src/views/`, `src/shell/`, `src/charts/`, and `src/theme/` for import
+  specifiers that climb UP the ladder (or, for `charts`/`theme`, out of
+  their narrow sibling lane), and fails the build if it finds one — the
+  ladder invariant (`atoms` →
   `blocks` → `views`, with `shell` as the frame `views` fill and `charts`
   as a second, narrower sibling, down only) enforced structurally rather
   than left as a comment that can silently drift. It checks every
@@ -3055,6 +3290,16 @@ two tests are worth calling out specifically:
   import from `views/` into `blocks/index.ts` was added, confirmed to fail
   the corresponding enforcement test, then reverted — proof the check
   fails closed rather than passing vacuously.
+- **`theme/theme-script-parity.test.ts`** guards against `getThemeInitScript`
+  and `ThemeProvider` silently drifting into two different implementations
+  of the same three-state rule. For every input (nothing stored, each of
+  the three valid states, a malformed stored value, storage that throws, a
+  non-default `storageKey`) it evaluates the STRINGIFIED head script
+  exactly the way a browser executing an injected `<head>` script would,
+  separately runs `ThemeProvider`'s own underlying calls
+  (`readStoredPreference` + `applyThemeDom`), and asserts both leave
+  `<html>`'s `data-theme` attribute and `color-scheme` style in the
+  identical state.
 
 ## Token-purity gate (`@vespeneventures/ui/gate`, `ui-token-check`)
 

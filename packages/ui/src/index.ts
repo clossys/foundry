@@ -2,13 +2,13 @@
  * This file is NOT a public entry point — `package.json` deliberately
  * declares no `"."` export. Import from `@vespeneventures/ui/atoms` or
  * `@vespeneventures/ui/blocks` instead; see the README for why the ladder
- * (atoms → blocks, with shell and charts as sibling layers) is kept explicit at the import site rather than
+ * (atoms → blocks, with shell, charts, and theme as sibling layers) is kept explicit at the import site rather than
  * flattened through a root barrel. This barrel exists only so the same
  * names are reachable from one place for internal tooling (see
  * `scripts/check-readme-parity.mjs` in the repository root, which reads
  * `src/index.ts` as every package's canonical export list); it re-exports
  * exactly what `./atoms/index.js`, `./icons/index.js`, `./blocks/index.js`,
- * `./shell/index.js` and `./charts/index.js` each
+ * `./shell/index.js`, `./charts/index.js`, and `./theme/index.js` each
  * export, nothing more.
  */
 export {
@@ -177,6 +177,16 @@ export type {
   LineChartSeries,
   SparklineProps,
 } from "./charts/index.js";
+
+export { DEFAULT_STORAGE_KEY, THEME_PREFERENCES, ThemeProvider, ThemeToggle, useTheme, getThemeInitScript } from "./theme/index.js";
+export type {
+  ResolvedTheme,
+  ThemeContextValue,
+  ThemeInitScriptOptions,
+  ThemePreference,
+  ThemeProviderProps,
+  ThemeToggleProps,
+} from "./theme/index.js";
 
 export {
   AlertTriangle,
