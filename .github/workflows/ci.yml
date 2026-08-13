@@ -145,6 +145,32 @@ jobs:
           node-version: 20
       - run: node scripts/set-scope.mjs --check
 
+  # Packages here depend on each other with 0.x ranges (e.g.
+  # `"@vespeneventures/governance": "^0.3.0"`). In 0.x semver BOTH `^` and
+  # `~` are minor-locked, so the moment a package's minor version is bumped,
+  # every sibling declaring a range against the old minor stops being
+  # satisfiable by the local workspace copy — npm then silently stops
+  # linking it and resolves it from the registry instead. The tokenless
+  # `artifact safety (tarball)` job below has no registry token, so that
+  # failure surfaces there as a bare 401 that names the symptom and hides
+  # the cause. This job catches it here instead, with a message that names
+  # the actual cause: see scripts/check-workspace-links.mjs's own header.
+  # This has already cost real time more than once in this repository's own
+  # history — a consumer integration is what first surfaced the pattern.
+  #
+  # Plain file checks only (packages/*/package.json and package-lock.json),
+  # same as `scope` above — no git history needed, so the default shallow
+  # checkout is fine.
+  workspace-links:
+    name: workspace link integrity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+      - run: node scripts/check-workspace-links.mjs
+
   # scripts/select-publishable-packages.mjs only ever publishes a package
   # whose `version` changed between two commits — that is correct, but it
   # means a merged source change with no version bump publishes nothing and
