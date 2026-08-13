@@ -3,9 +3,17 @@
 Contracts and provider adapters for sending finished communications. The root
 export owns validation, policy, atomic dispatch claims, provider acceptance
 outcomes, and normalized delivery events. The `./resend` export owns the
-strict Resend mapping and webhook normalization. The package owns no
-credential, sender identity, recipient directory, consent store, template,
-route, or database.
+strict Resend mapping and webhook normalization. The `./inbound` export owns
+generic inbound webhook admission doctrine — dedupe and ack/reject, not
+transport. The package owns no credential, sender identity, recipient
+directory, consent store, template, route, or database.
+
+This package is deliberately **email-scoped today**. It is a finished-message
+dispatch spine — validation, policy, atomic claim/complete, and normalized
+delivery events for one channel done rigorously — not a general
+multi-channel notification layer. See [Channel scope](#channel-scope) below
+for what that means for `CommunicationChannel` specifically, and why the
+vocabulary is reserved rather than absent.
 
 ```bash
 npm install @vespeneventures/comms
@@ -74,6 +82,49 @@ One dispatch call carries exactly one channel-ready message. A product that
 wants email and SMS creates two messages with channel-scoped stable ids. This
 keeps retry checkpoints independent instead of forcing untyped channel data
 through a shared metadata bag.
+
+## Channel scope
+
+`CommunicationChannel` is `"email" | "sms" | "whatsapp"`. `CommunicationMessage`
+is `EmailMessage` and nothing else — only `"email"` ships a message shape
+today.
+
+The channel vocabulary is declared independently of the message union on
+purpose, as this package's own decision about scope rather than something
+derived from what happens to be implemented. The alternative —
+`CommunicationChannel = CommunicationMessage["channel"]` — is what this
+package shipped originally, and it is a trap: it made `CommunicationChannel`
+exactly `"email"`, so a consumer's exhaustive `switch (message.channel)`
+compiled today and would **silently stop being exhaustive** the moment a
+second channel shipped, with no compiler error anywhere to catch it. That is
+a breaking change disguised as an additive one. Reserving the full
+vocabulary up front turns it into a compile error instead: a consumer who
+switches over `CommunicationChannel` today already has to handle `"sms"` and
+`"whatsapp"`, even though this package cannot yet tell them what a message on
+either channel looks like.
+
+Reserving a name is not the same as accepting a message on it:
+
+- `validateCommunicationMessage` and `assertValidCommunicationMessage` still
+  reject any message whose `channel` is not `"email"` — including `"sms"` and
+  `"whatsapp"`, exactly as they reject any other invalid channel value. A
+  reserved-but-unshipped channel is not a way to smuggle an unvalidated
+  message past validation.
+- `createCommunicationDispatcher` only ever receives a `CommunicationMessage`
+  (today, only `EmailMessage`), so `dispatch()` cannot be called with a
+  `channel: "sms"` message from typed code at all. A caller that bypasses
+  types and forces one through still fails at the `assertValidCommunicationMessage`
+  call `dispatch()` makes before touching policy, the ledger, or any adapter.
+  Separately, `config.adapters` is keyed by `CommunicationChannel`, and a
+  channel with no registered adapter already resolves to an explicit
+  `state: "failed"` result with `failure.code === "channel_unconfigured"` and
+  `failure.retryable === false` — reserving a channel name does not by itself
+  register an adapter for it, so an unimplemented channel already fails
+  closed on both the validation and the dispatch path.
+
+`sms` and `whatsapp` are a planned future addition, not a refusal — this
+section exists so that widening the vocabulary later is additive for
+consumers instead of a silent break.
 
 ## Ledger semantics
 
@@ -248,6 +299,58 @@ const deliveryLedger: DeliveryEventLedger = {
 };
 ```
 
+## Inbound admission
+
+`comms` today is outbound dispatch plus normalization of one provider's own
+delivery-status callbacks (see [Resend webhooks](#resend-webhooks) below).
+Generic inbound webhook handling — a provider calling back into your app for
+any reason — has no home in the root export or in `./resend`. `./inbound`
+gives it one, with the same ownership split `comms` already uses for
+`DeliveryEventLedger`: the host implements a ledger interface and owns the
+transport; foundry owns the decision logic on top of it.
+
+```ts
+import { admitInboundEvent, type InboundEventLedger } from "@vespeneventures/comms/inbound";
+
+const ledger: InboundEventLedger = createDurableInboundLedger(database);
+
+// In your route handler, after you have already verified the signature
+// yourself, with the raw body, using your provider's own scheme:
+const decision = await admitInboundEvent(
+  {
+    provider: "resend",
+    eventId: rawEvent.id,
+    occurredAt: rawEvent.created_at,
+    signature: verifiedLocally ? "verified" : "invalid",
+  },
+  ledger,
+);
+
+if (!decision.ack) {
+  // signature-invalid: return a 4xx, do not process.
+} else if (decision.action === "process") {
+  await handleInboundEvent(rawEvent);
+} // action === "ignore": a duplicate or a malformed-but-verified event — ack and stop.
+```
+
+`admitInboundEvent` is deliberately **not an HTTP handler**. It takes plain
+data in, an `InboundEventLedger` your host implements, and returns a plain
+decision — no request object, no response object, no status codes. This
+package has no way to test your provider's signature scheme against a real
+secret, so it does not pretend to.
+
+| Concern | Owner | Why |
+| --- | --- | --- |
+| HTTP route, raw-body access | Consumer | Only the host's framework and routing exist here; this package does no I/O. |
+| Signature verification | Consumer | Provider-specific and secret-dependent. foundry cannot exercise a real provider's signing algorithm in its own tests and must not claim to verify what it cannot test. |
+| Passing the verification result in as `signature: "verified" \| "invalid"` | Consumer | There is no default. Omitting the field, or supplying anything other than the literal `"verified"`, fails closed the same as an explicit `"invalid"` — an unverified event cannot reach `action: "process"` by omission. |
+| Dedupe storage (`InboundEventLedger.recordIfNew`) | Consumer | Durable state is host-owned everywhere in this package; mirrors `DeliveryEventLedger.apply()`. Must be one atomic check-and-record — provider webhooks are at-least-once and may arrive more than once and out of order. |
+| Ack/reject doctrine, replay tolerance | foundry | `admitInboundEvent` is the single place this policy is written down: ack on durable acceptance (not on your downstream processing succeeding), reject only on `signature-invalid`, and a replay is `{ ack: true, action: "ignore", reason: { kind: "duplicate" } }` — never an error. |
+| Malformed-input handling | foundry | Missing/blank `eventId`, missing `provider`, an unparseable `occurredAt`, or an unrecognized `signature` value all fail closed — never an implicit `{ ack: true, action: "process" }`. Structural malformation (not a signature failure) acks and ignores with a stated reason instead of rejecting, so a provider is never told to keep retrying a payload that will never become processable. |
+
+`admitInboundEvent` has zero runtime dependencies, matching the root export.
+See the [`./inbound` API](#inbound-api) table below for the full type shapes.
+
 ## Resend
 
 ```ts
@@ -322,7 +425,7 @@ the deploying host.
 | `CommunicationDeliveryError` | class | Provider-neutral adapter error with code, retryability and optional provider. |
 | `CommunicationValidationError` | class | Structured message-validation error carrying all findings. |
 | `EmailMessage` / `EmailAttachment` / `CommunicationTag` | types | The finished email contract and its portable parts. |
-| `CommunicationMessage` / `CommunicationChannel` | types | The currently supported message union and channel vocabulary. |
+| `CommunicationMessage` / `CommunicationChannel` | types | The currently shipped message union (`EmailMessage` only) and the full reserved channel vocabulary — see [Channel scope](#channel-scope). |
 | `CommunicationAdapter` / `ProviderAcceptance` | types | Provider adapter port and explicit acceptance evidence. |
 | `CommunicationPolicy` / `CommunicationPolicyDecision` | types | Host consent, preference and sender-policy seam. |
 | `CommunicationDispatcher` / `CommunicationDispatcherConfig` | types | Dispatcher instance and construction contract. |
@@ -345,13 +448,29 @@ Import the following from `@vespeneventures/comms/resend`.
 | `ResendClient` / `ResendClientFactory` / `ResendWebhookClientFactory` / `ResendEmailPayload` / `ResendApiError` | types | Narrow SDK seams for testing and alternate construction. |
 | `VerifyResendWebhookInput` / `ResendWebhookHeaders` / `ResendWebhookEvent` | types | Raw-body webhook verification input and result. |
 
+## `./inbound` API
+
+Import the following from `@vespeneventures/comms/inbound`. See
+[Inbound admission](#inbound-admission) above for the ownership split and a
+usage example.
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `admitInboundEvent(input, ledger)` | function | Validates, dedupes via the ledger, and returns the ack/process/ignore decision for one inbound event. |
+| `decideInboundAdmission(input, dedupe)` | function | The pure decision core behind `admitInboundEvent`, taking a plain `"new" \| "duplicate"` instead of a ledger — synchronously testable with no mock. |
+| `InboundEventLedger` | type | Host-implemented atomic dedupe port; mirrors `DeliveryEventLedger.apply()`. |
+| `InboundAdmissionInput` | type | One inbound event plus the caller's own signature-verification result. No default for `signature`. |
+| `InboundAdmissionDecision` / `InboundAdmissionIgnoreReason` | types | The explicit ack/process/ignore/reject result and why an accepted event was not processed. |
+
 ## Requirements
 
 Node 20+. ESM only. The root contracts have no runtime dependency and do no
 I/O. `./resend` needs the official `resend` SDK installed as a peer
 dependency (`peerDependenciesMeta` marks it optional) — install it only if
 you import `./resend`; a consumer that stays on the provider-neutral root
-never installs it.
+never installs it. `./inbound` has no runtime dependency of its own, either
+— `admitInboundEvent` is a pure function plus one call to a ledger you
+implement.
 
 ## Licence
 

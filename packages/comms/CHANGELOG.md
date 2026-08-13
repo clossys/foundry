@@ -5,6 +5,47 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-08-13
+
+### Added
+
+- New `./inbound` subpath: `admitInboundEvent()`, a pure, dependency-free
+  inbound-webhook admission decision, plus `decideInboundAdmission()` (its
+  synchronously-testable pure core), `InboundEventLedger`,
+  `InboundAdmissionInput`, `InboundAdmissionDecision`, and
+  `InboundAdmissionIgnoreReason`. Deliberately not an HTTP handler: the
+  consumer owns the route, raw-body access, and signature verification; this
+  package owns dedupe and the ack/reject doctrine on top of a ledger the
+  host implements, mirroring the existing `DeliveryEventLedger` split. Fails
+  closed on any malformed input (missing/blank `eventId`, missing
+  `provider`, an unparseable `occurredAt`, or a `signature` value other than
+  the exact literal `"verified"`) and never returns
+  `{ ack: true, action: "process" }` unless the signature was verified and
+  the ledger reported the event as new. See the README's
+  [Inbound admission](README.md#inbound-admission) section.
+
+### Changed
+
+- **Breaking:** `CommunicationChannel` is now declared independently as
+  `"email" | "sms" | "whatsapp"` instead of being derived as
+  `CommunicationMessage["channel"]` (which made it exactly `"email"`).
+  `CommunicationMessage` is unchanged — still `EmailMessage` only; no new
+  message shapes ship. This closes a silent-exhaustiveness trap: any
+  consumer's exhaustive `switch` over the old, derived `CommunicationChannel`
+  compiled today and would have silently stopped being exhaustive the moment
+  a second channel shipped, with no compiler error to catch it. Breaking for
+  a consumer that assumed `CommunicationChannel` would only ever contain
+  channels this package could already dispatch. Under this repo's pre-1.0
+  semver policy a breaking change to a 0.x package is a MINOR bump, not
+  MAJOR. Runtime behavior is unchanged: `validateCommunicationMessage`
+  already rejected (and still rejects) any message whose `channel` is not
+  `"email"`, and `createCommunicationDispatcher` already returned (and still
+  returns) an explicit `state: "failed"`,
+  `failure: { code: "channel_unconfigured", retryable: false }` result for a
+  channel with no registered adapter — reserving a channel name does not
+  register an adapter for it. See the README's
+  [Channel scope](README.md#channel-scope) section.
+
 ## [0.2.0] - 2026-08-13
 
 ### Changed
