@@ -1,6 +1,6 @@
 {
   "name": "@vespeneventures/comms",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -15,6 +15,10 @@
     "./resend": {
       "types": "./dist/resend/index.d.ts",
       "import": "./dist/resend/index.js"
+    },
+    "./inbound": {
+      "types": "./dist/inbound/index.d.ts",
+      "import": "./dist/inbound/index.js"
     }
   },
   "files": [

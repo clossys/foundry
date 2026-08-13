@@ -5,10 +5,13 @@ import { describe, expect, it } from "vitest";
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const packageJson = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8")) as {
+  exports: Record<string, unknown>;
   dependencies?: Record<string, string>;
   peerDependencies: Record<string, string>;
   peerDependenciesMeta: Record<string, { optional?: boolean }>;
 };
+
+const SUBPATHS = [".", "./resend", "./inbound"] as const;
 
 /**
  * Guards a real reported defect, not a hypothetical: `resend` — needed only
@@ -41,6 +44,24 @@ describe("public contract — dependency boundary", () => {
     // loop above checking only the ones that happen to have meta.
     for (const name of Object.keys(packageJson.peerDependencies)) {
       expect(packageJson.peerDependenciesMeta[name], `${name} has no peerDependenciesMeta entry`).toBeDefined();
+    }
+  });
+});
+
+/**
+ * `./inbound` is wired exactly like `./resend`: a real subpath with its own
+ * `types`/`import` conditions in `exports`, not a folder a consumer has to
+ * reach into by relative path. Unlike `./resend`, it declares no peer of
+ * its own — the admission decision is pure and dependency-free, and the
+ * host implements `InboundEventLedger` itself.
+ */
+describe("public contract — subpaths", () => {
+  it("exposes exactly the root, ./resend and ./inbound, each with types+import conditions", () => {
+    expect(Object.keys(packageJson.exports)).toEqual([...SUBPATHS]);
+    for (const subpath of SUBPATHS) {
+      const entry = packageJson.exports[subpath] as { types?: string; import?: string };
+      expect(entry.types, `${subpath} needs public types`).toMatch(/^\.\/dist\/.+\.d\.ts$/);
+      expect(entry.import, `${subpath} needs an ESM entry`).toMatch(/^\.\/dist\/.+\.js$/);
     }
   });
 });

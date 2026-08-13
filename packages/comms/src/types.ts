@@ -43,7 +43,24 @@ export interface EmailMessage {
 /** The finished message shapes this package can dispatch today. */
 export type CommunicationMessage = EmailMessage;
 
-export type CommunicationChannel = CommunicationMessage["channel"];
+/**
+ * Every channel this package's contract reserves. Only `email` ships a
+ * message shape today; the rest are declared so that adding one later is
+ * additive for consumers rather than a silent loss of exhaustiveness.
+ *
+ * This is declared independently of `CommunicationMessage` on purpose. It
+ * used to be derived as `CommunicationMessage["channel"]`, which made it
+ * exactly `"email"` — an exhaustive `switch (channel)` over that type
+ * compiled today and would silently stop being exhaustive the moment a
+ * second channel shipped, with no compiler error to catch it. Declaring the
+ * full vocabulary up front makes that a compile error instead, at the cost
+ * of `CommunicationChannel` naming channels no `CommunicationMessage` shape
+ * exists for yet. `validateCommunicationMessage` still rejects any message
+ * whose channel is not `"email"` at runtime — a reserved name is not a
+ * shipped one, and reserving it must not open a way to smuggle an
+ * unvalidated message past validation.
+ */
+export type CommunicationChannel = "email" | "sms" | "whatsapp";
 
 /** Evidence that a provider accepted responsibility for a message. */
 export interface ProviderAcceptance {

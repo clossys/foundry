@@ -139,4 +139,23 @@ describe("createCommunicationDispatcher", () => {
       CommunicationValidationError,
     );
   });
+
+  /**
+   * `CommunicationChannel` reserves `"sms"` as a name this package's
+   * contract owns, but `CommunicationMessage` ships no message shape for it.
+   * A message claiming that channel must still fail validation before
+   * policy, claim or transport run — reserving the name must not open a way
+   * to smuggle an unvalidated, unimplemented-channel message through.
+   */
+  it("rejects a reserved-but-unshipped channel before policy or transport, not by silently dispatching it", async () => {
+    const deliver = vi.fn(async () => ({ provider: "example", messageId: "provider-1" }));
+    const policy = vi.fn(() => ({ outcome: "allow" as const }));
+    const dispatcher = createCommunicationDispatcher({ adapters: { email: adapter(deliver) }, policy });
+
+    await expect(
+      dispatcher.dispatch({ ...message, channel: "sms" } as unknown as EmailMessage),
+    ).rejects.toBeInstanceOf(CommunicationValidationError);
+    expect(policy).not.toHaveBeenCalled();
+    expect(deliver).not.toHaveBeenCalled();
+  });
 });

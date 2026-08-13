@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { EmailMessage } from "./types.js";
+import type { CommunicationChannel, EmailMessage } from "./types.js";
 import { validateCommunicationMessage } from "./validation.js";
 
 const valid: EmailMessage = {
@@ -57,4 +57,46 @@ describe("validateCommunicationMessage", () => {
       { field: "message", message: "must be an object" },
     ]);
   });
+
+  /**
+   * `CommunicationChannel` reserves `"sms"` and `"whatsapp"` as names this
+   * package's contract owns, but no message shape ships for them yet. A
+   * reserved-but-unimplemented channel must not become a way to smuggle an
+   * unvalidated message past this function — it must still be rejected, the
+   * same as any other invalid channel value.
+   */
+  it("rejects a message on a reserved-but-unshipped channel instead of dispatching it silently", () => {
+    const findings = validateCommunicationMessage({
+      ...valid,
+      channel: "sms" as CommunicationChannel,
+    } as unknown as EmailMessage);
+    expect(findings).toEqual([{ field: "channel", message: 'must be "email"' }]);
+  });
+
+  it("rejects an unknown, unreserved channel the same way", () => {
+    const findings = validateCommunicationMessage({
+      ...valid,
+      channel: "carrier-pigeon",
+    } as unknown as EmailMessage);
+    expect(findings).toEqual([{ field: "channel", message: 'must be "email"' }]);
+  });
 });
+
+/**
+ * Type-level check that `CommunicationChannel` still names the reserved
+ * channels even though `CommunicationMessage` only ships an email shape.
+ * This never runs — a compile failure here (not a thrown error) is the
+ * signal that the vocabulary regressed back to being derived from
+ * `CommunicationMessage["channel"]`.
+ */
+function assertChannelVocabularyReserved(channel: CommunicationChannel): "email" | "sms" | "whatsapp" {
+  switch (channel) {
+    case "email":
+      return "email";
+    case "sms":
+      return "sms";
+    case "whatsapp":
+      return "whatsapp";
+  }
+}
+void assertChannelVocabularyReserved;
