@@ -38,6 +38,27 @@ for the full account.
 
 Each package's own README has the full API and the reasoning behind it.
 
+### What these packages are not
+
+Two names in the table above mean something narrower here than the word
+usually means elsewhere. Both have already cost a consumer real
+investigation time before they opened the README and found out:
+
+- **`policy` is not an authorization or access-control engine.** It does
+  not decide allow, deny, step-up, or review for anything. It is a
+  content-addressed digest-commitment primitive: compute a document's
+  digest, commit only the digest, and later verify a materialized copy
+  matches it byte-for-byte, without ever committing or transmitting the
+  document itself. A codebase can genuinely need both an authorization
+  engine and this — they solve unrelated problems, and neither is a
+  substitute for the other.
+- **`ledger` is not content-distribution or package-export tooling.** It
+  is a fact-citation drift checker: an append-only record of what was
+  published, citing which strategy facts, and a checker that answers
+  whether each cited fact's value still holds against a caller-supplied
+  current value. It does not distribute anything and does not export a
+  package.
+
 The cross-package ownership and adoption plan is in
 [docs/COMMUNICATIONS.md](docs/COMMUNICATIONS.md).
 
