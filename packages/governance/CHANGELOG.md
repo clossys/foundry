@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-08-13
+
+### Added
+
+- `evaluateRatchet(current, baseline)` (`./gates`): a generic, pure
+  "warn-first with a checked-in baseline, ratchet monotonically toward
+  zero" primitive. `current <= baseline` passes; `current > baseline` is a
+  `"ratchet/regression"` finding; `current < baseline` still passes but is
+  reported explicitly via an `improved: true` flag plus a
+  `"ratchet/baseline-stale"` warning finding, so real progress is never
+  silently dropped. Fails closed — `status: "invalid"` — on a negative or
+  non-integer `current`/`baseline`, or a missing (`undefined`/`null`)
+  baseline; a missing baseline is "could not run", never "baseline of
+  zero". Lowering the baseline is always an explicit, separate action —
+  this function never does it automatically.
+- `checkOverrideTargetRanges(overrides)` (`./gates`): a package.json
+  `overrides` entry's target range must be upper-bounded to the vulnerable
+  major, never a bare `>=x.y.z` — an unbounded target lets a resolver hoist
+  a dependent across a major version boundary and break it at runtime, a
+  class of break a security audit cannot catch (an audit only confirms the
+  vulnerable version is gone, never that its replacement stays
+  API-compatible). Hand-rolled range parsing, no semver dependency: accepts
+  an exact pin, a `~`/`^` range, an explicit space-hyphen-space range, or a
+  single/paired `>=`/`>`/`<`/`<=` comparator range; anything it does not
+  confidently understand (OR ranges, x-ranges, dist-tags, git/file/workspace
+  specifiers, and more) is reported as unparseable rather than assumed safe.
+- `checkDependencyScope(catalog, scope, allowlist, options?)` (`./gates`):
+  mechanical enforcement of this repository's own contribution policy,
+  "Dependencies: the default answer is no" — every `dependencies` entry in
+  a workspace's package.json under `packages`
+  must be `<scope>/*`-scoped, unless it is named in a small, checked-in
+  allowlist entry carrying a non-empty reason and a `reviewBy` date. A
+  malformed allowlist document or entry is itself a finding and exempts
+  nothing; an entry whose `reviewBy` date has passed stops exempting its
+  dependency and is reported as expired. Deliberately scoped small: every
+  runtime dependency in this repository was verified by inspection to
+  already be first-party, so this is a floor matching that reality, not a
+  full admission-and-retirement register.
+
 ## [0.3.0] - 2026-08-13
 
 ### Changed

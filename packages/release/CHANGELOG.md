@@ -7,6 +7,16 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-08-13
+
+### Changed
+
+- Widened the `@vespeneventures/governance` dependency range to `^0.4.0`
+  (was `^0.3.0`) so this package can pick up governance's 0.4.0 additions
+  (new `evaluateRatchet`, `checkOverrideTargetRanges`, and
+  `checkDependencyScope` gates under `./gates`; no change to any export
+  this package already re-exports). No functional change here.
+
 ## [0.2.0] - 2026-08-13
 
 ### Changed
