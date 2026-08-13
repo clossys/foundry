@@ -141,6 +141,32 @@ unbound token layer remains legible rather than failing invisibly. With no
 `data-theme="dark"` on the document root to force a theme. Put that
 attribute in server-rendered markup to avoid a flash.
 
+**Breakpoints are the one family that is NOT overridable this way.** Every
+other family in `theme.css`'s `@theme inline` block is deliberately
+`--token: var(--token, default)` so a later `:root[data-brand-bound]` rule
+redefining the plain custom property is still picked up. `--breakpoint-*`
+(and, if this package ever ships one, `--container-*`) cannot use that
+pattern: `@theme inline` substitutes the declared value directly into the
+generated utility's `@media`/`@container` condition, and a media-query
+condition cannot contain `var()` — a self-referential breakpoint compiles to
+literally invalid CSS (`@media (width >= var(--breakpoint-tablet, 768px))`),
+which fails to parse and can take down every rule that follows it in a
+consumer's stylesheet. `theme.css` therefore declares `--breakpoint-*` as
+plain literal lengths, not the self-referential form. If your product needs
+different breakpoints than this package's defaults (`375`/`480`/`768`/
+`1024`/`1280`/`1440px`), redeclaring `--breakpoint-tablet` as a plain custom
+property anywhere (`:root { --breakpoint-tablet: ...; }`, a brand file,
+`data-brand-bound`) has no effect on the generated `tablet:` utility —
+`@theme inline` only listens for `@theme` blocks, not arbitrary `:root`
+declarations, and by the time it does, the media condition is already a
+literal. What DOES work, verified against a real compile: declare your own
+`@theme { --breakpoint-tablet: 900px; }` block AFTER importing this
+package's `theme.css` in your CSS entry point — Tailwind v4 merges `@theme`
+blocks in source order, so a later block's value for the same key wins over
+an earlier one, `theme.css`'s own declaration included. Put it before, and
+this package's value wins instead. Order matters here in a way it doesn't
+for any other token family in this file.
+
 `tokens.css`'s own declarations live in a named `@layer foundry-ui-tokens`
 rather than unlayered `:root` — an unlayered rule always outranks a layered
 one regardless of import order, which would make these tokens win over a
@@ -315,6 +341,32 @@ If your bundler's default content scan already covers everything under
 `node_modules/@vespeneventures/ui` (some do), the `@source` line is
 redundant but harmless. If you're not sure, add it — a redundant `@source`
 costs nothing; a missing one costs every component's styling.
+
+**pnpm + Turbopack:** a consumer integration reported that the plain-path
+`@source` form above produces zero generated utility classes under Next.js
+Turbopack specifically when the project uses pnpm — no error, no warning,
+components just render unstyled, the same silent failure this whole section
+warns about, but with the `@source` line already present and seemingly
+correct. Their diagnosis: pnpm installs `node_modules/@vespeneventures/ui`
+as a symlink into its content-addressable store, and Turbopack's file
+watcher/source scanner does not follow that symlink, so it never sees
+`dist/` at all. This repository has not independently reproduced that
+Turbopack + pnpm interaction — treat it as a reported constraint, not a
+verified one, and confirm against your own Turbopack version before relying
+on it. Their workaround was `@source inline(...)` with the literal class
+names instead of a path:
+
+```css
+@source inline("bg-accent text-ink-on-accent rounded-pill px-md text-body ...");
+```
+
+`@source inline(...)` takes a space-separated list of literal class names
+(brace-expansion like `{sm,md,lg}` is supported for generating variants of
+the same base) rather than a directory to scan, so it sidesteps file/symlink
+resolution entirely — at the cost of having to enumerate every class you
+actually use instead of Tailwind discovering them from `dist/`. If the
+directory form above silently produces no styling under Turbopack + pnpm in
+your project, try this instead.
 
 ## Why these dependencies
 

@@ -3,6 +3,45 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.7.2] - 2026-08-13
+
+### Fixed
+
+- `styles/theme.css` could crash a consuming application's entire
+  stylesheet. The six `--breakpoint-*` declarations inside `@theme inline`
+  used the same self-referential `var(--x, default)` form as every other
+  token in that block, which is correct for the other 70 — `var()` resolves
+  fine in a property value — but fatal for these six. `@theme inline`
+  substitutes the declared value into generated utilities, so a `tablet:`
+  or `desktop:` utility compiled to `@media (width >= var(--breakpoint-tablet,
+  768px))`. A media-query condition cannot resolve `var()`, so the at-rule
+  is invalid and the whole stylesheet fails to parse — a consumer importing
+  this package's own documented `theme.css` and using any responsive
+  utility saw every route fail to render. The six now carry literal
+  lengths. Verified against a real Tailwind v4 compile, before and after.
+  Surfaced by a consumer integration.
+- A regression test now asserts that no `--breakpoint-*` or `--container-*`
+  declaration inside `@theme inline` contains a `var()` reference, because
+  both namespaces land in at-rule conditions rather than property values.
+  `--container-*` fails differently — Tailwind emits no rule at all rather
+  than invalid text — and this package ships no container tokens today, but
+  the guard covers it.
+
+### Changed
+
+- Breakpoints are the one token family a consumer cannot override by
+  redeclaring the plain custom property, since the value must be a literal.
+  The README now documents this and the mechanism that does work: a
+  consumer's own `@theme` block declared *after* importing this package's
+  `theme.css` wins, because Tailwind merges `@theme` blocks in source order.
+  Verified by compiling both orderings.
+- The README's Tailwind `@source` guidance now carries a consumer-reported
+  caveat that the plain-path form does not work under Turbopack with pnpm,
+  because Turbopack does not follow pnpm's store symlink — no utilities are
+  generated and nothing errors. The `@source inline(...)` alternative is
+  documented. This repository has not reproduced the Turbopack behaviour
+  itself and the caveat says so.
+
 ## [0.7.1] - 2026-08-13
 
 ### Fixed

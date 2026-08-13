@@ -159,10 +159,27 @@
   --ease-exit:                     var(--ease-exit, cubic-bezier(.4, 0, 1, 1));
 
   /* ── BREAKPOINT ───────────────────────────────────────────────── */
-  --breakpoint-mobile:             var(--breakpoint-mobile, 375px);
-  --breakpoint-mobile-lg:          var(--breakpoint-mobile-lg, 480px);
-  --breakpoint-tablet:             var(--breakpoint-tablet, 768px);
-  --breakpoint-tablet-lg:          var(--breakpoint-tablet-lg, 1024px);
-  --breakpoint-desktop:            var(--breakpoint-desktop, 1280px);
-  --breakpoint-wide:               var(--breakpoint-wide, 1440px);
+  /*
+   * NOT the `var(--x, default)` self-reference every other entry in this
+   * block uses. `@theme inline` substitutes the declared VALUE (live,
+   * at generated-utility-use time) into responsive-variant media queries —
+   * `tablet:*` compiles to `@media (width >= <this value>)`. A media query
+   * CONDITION cannot contain `var()`; unlike a property value, the browser
+   * never resolves it there, so a self-referential `var(--breakpoint-tablet,
+   * 768px)` here would compile to the literal, invalid
+   * `@media (width >= var(--breakpoint-tablet, 768px))` and the whole
+   * stylesheet fails to parse — every rule after it, in every file that
+   * follows this one in the cascade, is dropped. Plain literal lengths
+   * only. A consumer that needs different breakpoints cannot override
+   * these by redeclaring the plain `--breakpoint-*` custom property the way
+   * every other family in this file supports — see the README's "CSS
+   * layers, fallbacks, and themes" section for the `@theme` block override
+   * that actually works here.
+   */
+  --breakpoint-mobile:             375px;
+  --breakpoint-mobile-lg:          480px;
+  --breakpoint-tablet:             768px;
+  --breakpoint-tablet-lg:          1024px;
+  --breakpoint-desktop:            1280px;
+  --breakpoint-wide:               1440px;
 }
