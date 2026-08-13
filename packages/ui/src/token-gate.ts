@@ -257,6 +257,7 @@ function bareLiteralFinding(
   matchedValue: string,
   matchedValueKind: string,
   tokenIndex: Map<string, TokenDefinition>,
+  registryLabel: string,
 ): TokenGateFinding {
   const token = tokenIndex.get(normalizeForLookup(matchedValue));
   if (token) {
@@ -275,7 +276,7 @@ function bareLiteralFinding(
     severity: "error",
     file,
     line,
-    message: `${matchedValueKind} "${matchedValue}" has no matching entry in @vespeneventures/ui/tokens' TOKENS registry — register a token or replace this literal with an existing one`,
+    message: `${matchedValueKind} "${matchedValue}" has no matching entry in ${registryLabel}' TOKENS registry — register a token or replace this literal with an existing one`,
     snippet: snippetOf(raw),
   };
 }
@@ -301,10 +302,11 @@ function fallbackSyncStatus(
   property: string,
   literalValue: string,
   tokens: Readonly<Record<string, TokenDefinition>>,
+  registryLabel: string,
 ): { text: string; matchedToken: string | undefined } {
   const token = tokens[property];
   if (!token) {
-    return { text: `no token named "${property}" exists in @vespeneventures/ui/tokens' TOKENS registry — verify the property name`, matchedToken: undefined };
+    return { text: `no token named "${property}" exists in ${registryLabel}' TOKENS registry — verify the property name`, matchedToken: undefined };
   }
   const normToken = normalizeForLookup(token.value);
   const normLiteral = normalizeForLookup(literalValue);
@@ -333,8 +335,9 @@ function fallbackFinding(
   literalValueKind: string,
   property: string,
   tokens: Readonly<Record<string, TokenDefinition>>,
+  registryLabel: string,
 ): TokenGateFinding {
-  const status = fallbackSyncStatus(property, literalValue, tokens);
+  const status = fallbackSyncStatus(property, literalValue, tokens, registryLabel);
   return {
     rule: "token-value-duplicated-in-fallback",
     severity: "warning",
@@ -369,11 +372,12 @@ function findingForLiteral(
   fallbackForProperty: string | undefined,
   tokens: Readonly<Record<string, TokenDefinition>>,
   tokenIndex: Map<string, TokenDefinition>,
+  registryLabel: string,
 ): TokenGateFinding {
   if (fallbackForProperty !== undefined) {
-    return fallbackFinding(file, line, raw, literalValue, literalValueKind, fallbackForProperty, tokens);
+    return fallbackFinding(file, line, raw, literalValue, literalValueKind, fallbackForProperty, tokens, registryLabel);
   }
-  return bareLiteralFinding(file, line, raw, literalValue, literalValueKind, tokenIndex);
+  return bareLiteralFinding(file, line, raw, literalValue, literalValueKind, tokenIndex, registryLabel);
 }
 
 /**
@@ -385,12 +389,22 @@ function findingForLiteral(
  * matching `checkCopyTraceability`'s own signature discipline — a caller
  * cannot construct a `TokenGateResult` from this function while
  * accidentally forgetting that field exists.
+ *
+ * `registryLabel` names the `tokens` registry in every finding message —
+ * defaults to this package's own name so every existing caller (including
+ * every test) keeps its exact current message unchanged. A caller passing
+ * its OWN registry (the seam this function's `tokens` parameter exists
+ * for) should pass its own label too: without this, every finding still
+ * said "@vespeneventures/ui/tokens" regardless of whose registry was
+ * actually checked — correct for this package's own CLI, actively
+ * misleading for anyone else's.
  */
 export function checkTokenPurity(
   candidates: StyleCandidate[],
   tokens: Readonly<Record<string, TokenDefinition>>,
   filesScanned: number,
   scanUnchecked: UncheckedItem[],
+  registryLabel = "@vespeneventures/ui/tokens",
 ): TokenGateResult {
   const tokenIndex = buildTokenIndex(tokens);
   const findings: TokenGateFinding[] = [];
@@ -438,6 +452,7 @@ export function checkTokenPurity(
           first.fallbackForProperty,
           tokens,
           tokenIndex,
+          registryLabel,
         ),
       );
       continue;
@@ -453,6 +468,7 @@ export function checkTokenPurity(
         candidate.fallbackForProperty,
         tokens,
         tokenIndex,
+        registryLabel,
       ),
     );
   }

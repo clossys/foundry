@@ -3,13 +3,6 @@
 Design tokens, theme CSS, and React components for Tailwind CSS v4. This
 package ships reusable visual vocabulary built on its own token layer:
 
-## Release status
-
-This source package has not completed a public registry release. The install
-commands below describe the post-release interface; do not treat this package
-as externally installable until its first public version has passed package
-preflight and is published.
-
 ## Package structure
 
 ```
@@ -147,6 +140,21 @@ unbound token layer remains legible rather than failing invisibly. With no
 `data-theme`, CSS follows the OS; set `data-theme="light"` or
 `data-theme="dark"` on the document root to force a theme. Put that
 attribute in server-rendered markup to avoid a flash.
+
+`tokens.css`'s own declarations live in a named `@layer foundry-ui-tokens`
+rather than unlayered `:root` — an unlayered rule always outranks a layered
+one regardless of import order, which would make these tokens win over a
+host app's own Tailwind v4 `@layer theme` unconditionally. Layering it puts
+the two on ordinary layer-order footing instead: a host app that wants the
+final say can put its own override in an unlayered rule, or in a layer it
+declares later than `foundry-ui-tokens`.
+
+Until `data-brand-bound` is set, `tokens.css` also renders a fixed
+"No brand binding" badge on every page — deliberately: an unbranded render
+should never quietly pass as finished. Set `data-suppress-brand-banner` on
+`<html>` (same placement rule as `data-theme`/`data-brand-bound` — in
+server-rendered markup, not a post-hydration effect) to suppress it for a
+consumer that's shipping unbranded primitives on purpose.
 
 ### React SSR, hydration, and accessibility
 
@@ -3045,11 +3053,19 @@ its own subpath and an installable CLI:
   own header for the full reasoning, including why a `var(--x, <fallback>)`
   pattern is still a finding (just a lower-severity one) even when
   deliberate and documented.
-- **`ui-token-check [scan-dir]`** is the installable CLI, with the same
-  three-state exit contract every gate CLI in this repository uses: `0`
-  clean, `1` findings, `2` could not run — `2` also covers a non-empty
-  `unchecked` list, the same "could not check must never read as a pass"
-  discipline `copy-check` holds to.
+- **`ui-token-check [scan-dir] [--tokens <path-to-json>]`** is the
+  installable CLI, with the same three-state exit contract every gate CLI
+  in this repository uses: `0` clean, `1` findings, `2` could not run —
+  `2` also covers a non-empty `unchecked` list, the same "could not check
+  must never read as a pass" discipline `copy-check` holds to. Without
+  `--tokens`, source is checked against this package's own `TOKENS`
+  registry — the right default for scanning this package's own source, but
+  not for scanning a consumer's, whose own tokens are never registered
+  here. `--tokens path/to/tokens.json` checks against a supplied registry
+  instead: a JSON object mapping any key to an entry with at least string
+  `property` and `value` fields. It REPLACES the default registry for the
+  run rather than merging with it, and every finding's message names the
+  supplied file rather than `@vespeneventures/ui/tokens`.
 
 ## What's deliberately not here
 

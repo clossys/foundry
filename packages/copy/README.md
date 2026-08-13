@@ -5,13 +5,6 @@ rules, glossary, claims register, addressable copy records, and source
 traceability checks. It ships the machinery and a deliberately unbound voice
 template; each consumer supplies its own language and facts.
 
-## Release status
-
-This source package has not completed a public registry release. The install
-command below describes the post-release interface; do not treat this package
-as externally installable until its first public version has passed package
-preflight and is published.
-
 ```bash
 npm install @vespeneventures/copy
 ```

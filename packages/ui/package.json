@@ -4,7 +4,9 @@
   "private": false,
   "license": "MIT",
   "type": "module",
-  "sideEffects": ["./styles/*.css"],
+  "sideEffects": [
+    "./styles/*.css"
+  ],
   "description": "A complete visual system: design tokens, theme CSS, accessible React components, icons, charts, and visual quality gates.",
   "keywords": [
     "react",
@@ -84,20 +86,32 @@
     "generate:icons": "node scripts/generate-icons.mjs"
   },
   "peerDependencies": {
-    "@internationalized/date": "^3.12.3",
+    "@internationalized/date": "^3.12.2",
     "react": ">=18",
     "react-dom": ">=18",
-    "react-aria-components": "^1.20.0",
+    "react-aria-components": "^1.19.0",
     "tailwind-merge": "^3.0.0",
     "tailwindcss": "^4.0.0"
   },
   "peerDependenciesMeta": {
-    "@internationalized/date": { "optional": true },
-    "react": { "optional": true },
-    "react-dom": { "optional": true },
-    "react-aria-components": { "optional": true },
-    "tailwind-merge": { "optional": true },
-    "tailwindcss": { "optional": true }
+    "@internationalized/date": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    },
+    "react-aria-components": {
+      "optional": true
+    },
+    "tailwind-merge": {
+      "optional": true
+    },
+    "tailwindcss": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@internationalized/date": "^3.12.3",

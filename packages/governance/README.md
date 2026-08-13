@@ -199,8 +199,15 @@ root. `--format json` prints the compact machine-readable summary; add
 
 ## Requirements
 
-Node 20+. ESM only. Runtime dependencies: `@vespeneventures/policy` and
-TypeScript for the source-aware secret-surface checks.
+Node 20+. ESM only. Runtime dependencies: `@vespeneventures/policy`, and
+TypeScript — but only for the source-aware secret-surface checks reachable
+through `./gates`. A plain `import "@vespeneventures/governance"` (the root
+entry) never loads TypeScript or touches `node:fs`/`node:child_process`:
+`runGovernanceCheck` and `preflightGovernedPackage` import the specific
+foundation/build-order functions they need directly, never the `./gates`
+barrel those checks also live in. Import `@vespeneventures/governance/gates`
+yourself if you want the secret-surface checks — that subpath still carries
+the full TypeScript dependency, unchanged.
 
 ## Licence
 

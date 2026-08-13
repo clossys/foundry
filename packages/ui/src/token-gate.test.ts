@@ -63,6 +63,32 @@ describe("checkTokenPurity — raw-value-no-token-backing (a BARE literal with n
   });
 });
 
+// A finding's message names the registry it actually checked. Before this,
+// every message hardcoded "@vespeneventures/ui/tokens" regardless of what
+// was passed as `tokens` — actively wrong for exactly the caller-supplied-
+// registry use case checkTokenPurity's own `tokens` parameter exists for.
+describe("checkTokenPurity — registryLabel (which registry a finding's message names)", () => {
+  it("defaults to '@vespeneventures/ui/tokens' when omitted — every existing caller's message is unchanged", () => {
+    const { candidates, unchecked } = candidatesFor('const c = "#123abc";\n', "x.ts");
+    const result = checkTokenPurity(candidates, NO_TOKENS, 1, unchecked);
+    expect(result.findings[0]?.message).toContain("@vespeneventures/ui/tokens");
+  });
+
+  it("names a caller-supplied label instead, for a BARE literal with no token backing", () => {
+    const { candidates, unchecked } = candidatesFor('const c = "#123abc";\n', "x.ts");
+    const result = checkTokenPurity(candidates, NO_TOKENS, 1, unchecked, "consumer-tokens.json");
+    expect(result.findings[0]?.message).toContain("consumer-tokens.json");
+    expect(result.findings[0]?.message).not.toContain("@vespeneventures/ui/tokens");
+  });
+
+  it("names a caller-supplied label instead, for a var() FALLBACK literal whose property isn't in the registry", () => {
+    const { candidates, unchecked } = candidatesFor('const c = "var(--nonexistent-token, 4px)";\n', "x.ts");
+    const result = checkTokenPurity(candidates, NO_TOKENS, 1, unchecked, "consumer-tokens.json");
+    expect(result.findings[0]?.message).toContain("consumer-tokens.json");
+    expect(result.findings[0]?.message).not.toContain("@vespeneventures/ui/tokens");
+  });
+});
+
 describe("checkTokenPurity — token-value-duplicated-in-fallback (a var() FALLBACK literal, not a bare one)", () => {
   it("the real Icon.tsx shape: var(--ui-icon-sm, var(--spacing-lg, 16px)) attributes 16px to --spacing-lg (the INNERMOST var), not --ui-icon-sm, and never as hardcodes-token-value", () => {
     const { candidates, unchecked } = candidatesFor('const sm = "var(--ui-icon-sm, var(--spacing-lg, 16px))";\n', "Icon.tsx");

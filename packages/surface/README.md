@@ -3,12 +3,7 @@
 `@vespeneventures/surface` is the release unit for composed, audience-facing
 surfaces and their rendered artifacts.
 
-## Release status
-
-This source package has not completed a public registry release. The install
-commands in consumer documentation describe the post-release interface; do
-not treat this package as externally installable until its first public version
-has passed package preflight and is published.
+## Public entry points
 
 Use explicit subpaths:
 
@@ -41,6 +36,19 @@ Web and email templates use `FlowLayoutSpec`, which contains ordered keys and
 requiredness only. Print, slides, and image surfaces use `CanvasLayoutSpec`
 with frames and element kinds. This prevents flowed surfaces from carrying
 fictional canvas geometry.
+
+**One `SurfaceDocument` is exactly one canvas — pagination is out of scope
+by design, not an oversight.** `LayoutSpec`'s slots are fractional positions
+(`Frame = {x, y, w, h}`, 0..1 of a single fixed canvas); there is no flow,
+no auto-height, and no array of canvases on the contract. This fits a
+single-page artifact — an OG/share-card image, one slide, one print page —
+cleanly. A multi-page document (a book, a paginated report) is a
+consumer-side concern: compose it as an ordered sequence of
+`SurfaceDocument`s, one per page, each resolved and rendered independently,
+and assemble the resulting artifacts (e.g. concatenate PDF pages) outside
+this package. `surface` has no opinion on pagination, running headers, page
+numbering, or cross-page layout — those stay with whatever assembles the
+sequence.
 
 `createOutputManifest` is the lower-level hand-off seam to a consumer
 publisher. `createResolvedOutputManifest(surface, resolved, artifacts,

@@ -7,7 +7,12 @@
 
 import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { runFoundationCheck } from "../gates/index.js";
+// Not `../gates/index.js` — see governance.ts's own import comment: that
+// barrel also re-exports secret-gates.ts, whose top-level `import ts from
+// "typescript"` would then ride along. This file is reachable from the
+// package ROOT too (index.ts's `preflightGovernedPackage` → this file), so
+// the same root-stays-typescript-free requirement applies here.
+import { runFoundationCheck } from "../gates/foundation.js";
 import { packRoundTrip, type PackRoundTripOptions } from "./pack-round-trip.js";
 import type { PreflightReport } from "./types.js";
 

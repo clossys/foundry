@@ -176,9 +176,11 @@ production, and should never be configured for a deployed environment.
 
 ## Requirements
 
-Node 20+ and ESM. The root and `/agent` subpaths have no framework or provider
-runtime dependency. The Clerk webhook adapter depends on `svix`; the Clerk web
-subpaths require the listed optional peers in the consuming application.
+Node 20+ and ESM. The root and `/agent` subpaths have no framework or
+provider runtime dependency: `svix` — needed only by the Clerk webhook
+adapter (`./providers/clerk`) — is an optional peer, not a hard dependency,
+so installing this package alone never pulls it in. The Clerk web subpaths
+require the listed optional peers in the consuming application.
 
 ## Licence
 

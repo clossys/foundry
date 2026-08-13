@@ -7,13 +7,6 @@ the schema, a typed reader, a facts-traceability gate, and a brand-coverage
 checker. It does not ship anyone's actual mission statement, market
 sizing, numbers, or brand attributes.
 
-## Release status
-
-This source package has not completed a public registry release. The install
-command below describes the post-release interface; do not treat this package
-as externally installable until its first public version has passed package
-preflight and is published.
-
 ```bash
 npm install @vespeneventures/strategy
 ```
