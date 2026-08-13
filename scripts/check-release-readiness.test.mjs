@@ -339,11 +339,91 @@ test("--audit and --base together is a usage error (audit ignores merge base ent
   });
 });
 
+// ------------------------------------------------------------- empty scan (the third state)
+//
+// Regression coverage for the defect: an empty scan used to print "no
+// packages to check." and exit 0 — reporting every package release-ready on
+// the strength of having examined none. `packages/` renamed, a glob broken
+// in a refactor, or a shallow checkout hiding the directory would all have
+// gone green. These tests pin the fix (exit 2, "could not run" — same
+// three-state contract `ui-token-check`'s cli.test.ts uses, see its own
+// "the third state: could not run" describe block) and then prove the fix
+// did not also break the two states that must still work: a real clean pass
+// (0) and a real finding (1).
+
+test("default mode: an empty scan (packages/ exists but has no packages inside it) exits 2, never a clean pass", () => {
+  withRepo((root) => {
+    mkdirSync(join(root, "packages"), { recursive: true });
+
+    const r = run([], root); // no positional targets -> falls through to discoverPackages()
+    assert.equal(r.code, 2, `expected exit 2, got ${r.code}: ${r.out}`);
+    assert.match(r.out, /refusing to report a clean pass on an empty scan/);
+  });
+});
+
+test("default mode: an empty scan exits 2 in --json mode too, with an error key (not a bare {results: []})", () => {
+  withRepo((root) => {
+    mkdirSync(join(root, "packages"), { recursive: true });
+
+    const r = run(["--json"], root);
+    assert.equal(r.code, 2, `expected exit 2, got ${r.code}: ${r.out}`);
+    const report = JSON.parse(r.out);
+    assert.ok(
+      report.error,
+      `a JSON consumer must not be able to read this as success — expected an "error" key, got ${r.out}`,
+    );
+    assert.match(report.error, /refusing to report a clean pass on an empty scan/);
+    assert.deepEqual(report.results, []);
+  });
+});
+
+test("--audit: an empty scan also exits 2, not 0 — the guard applies in audit mode too", () => {
+  withRepo((root) => {
+    mkdirSync(join(root, "packages"), { recursive: true });
+
+    const r = run(["--json", "--audit"], root);
+    assert.equal(r.code, 2, `expected exit 2, got ${r.code}: ${r.out}`);
+    const report = JSON.parse(r.out);
+    assert.ok(report.error, `expected an "error" key in --audit mode too, got ${r.out}`);
+    assert.match(report.error, /refusing to report a clean pass on an empty scan/);
+  });
+});
+
+test("default mode: a genuinely clean run (one real, unchanged package discovered under packages/) still exits 0", () => {
+  withRepo((root) => {
+    mkdirSync(join(root, "packages"), { recursive: true });
+    makeFixture(join(root, "packages"));
+    const base = gitCommit(root, "initial release at 1.0.0");
+
+    const r = run(["--json", "--base", base], root); // no positional target -> discoverPackages() must find it
+    assert.equal(r.code, 0, `expected exit 0, got ${r.code}: ${r.out}`);
+    const report = JSON.parse(r.out);
+    assert.equal(report.results.length, 1);
+    assert.equal(report.results[0].status, "pass");
+  });
+});
+
+test("default mode: a real finding (content changed, no version bump) still exits 1 — the fix did not make the gate unable to fail", () => {
+  withRepo((root) => {
+    mkdirSync(join(root, "packages"), { recursive: true });
+    const pkgDir = makeFixture(join(root, "packages"));
+    const base = gitCommit(root, "initial release at 1.0.0");
+
+    writeFileSync(join(pkgDir, "src", "index.ts"), "export const x = 2;\n");
+
+    const r = run(["--json", "--base", base], root); // no positional target -> discoverPackages()
+    assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
+    const report = JSON.parse(r.out);
+    assert.equal(report.results[0].status, "needs-bump");
+  });
+});
+
 // -------------------------------------------------------------------- general
 
-test("exits 0 with nothing to check when no packages/ directory exists and no targets are given", () => {
+test("exits 2 (not 0) with nothing to check when no packages/ directory exists at all and no targets are given", () => {
   withRepo((root) => {
     const r = run([], root);
-    assert.equal(r.code, 0, `expected exit 0, got ${r.code}: ${r.out}`);
+    assert.equal(r.code, 2, `expected exit 2, got ${r.code}: ${r.out}`);
+    assert.match(r.out, /refusing to report a clean pass on an empty scan/);
   });
 });

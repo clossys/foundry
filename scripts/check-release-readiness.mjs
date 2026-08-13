@@ -446,9 +446,24 @@ function main() {
   const targets = positional.length > 0 ? positional : discoverPackages();
 
   if (targets.length === 0) {
-    if (json) console.log(JSON.stringify({ results: [] }));
-    else console.log("check-release-readiness: no packages to check.");
-    process.exit(0);
+    // Scanning nothing is "could not run" (2), never a clean pass (0).
+    //
+    // This gate exists to catch a package whose shipped content changed
+    // without a version bump. If discovery returns nothing — `packages/`
+    // renamed or moved, the glob broken by a refactor, the checkout
+    // shallow in a way that hides it — then a `0` here would report
+    // "every package is release-ready" on the strength of having examined
+    // zero packages. A check that passes because it checked nothing is
+    // indistinguishable from a check that cannot fail, and this one is
+    // specifically the guard against a silent non-publication, so it must
+    // not itself go silent.
+    //
+    // Same three-state contract `ui-token-check` already uses: 0 clean,
+    // 1 findings, 2 could not run. An empty scan is the third state.
+    const message = "found no packages to check — refusing to report a clean pass on an empty scan";
+    if (json) console.log(JSON.stringify({ error: message, results: [] }, null, 2));
+    else console.error(`check-release-readiness: ${message}`);
+    process.exit(2);
   }
 
   const results = audit ? targets.map(evaluatePackageAudit) : targets.map((dir) => evaluatePackageDiff(dir, requestedBase));
