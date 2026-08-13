@@ -119,7 +119,7 @@ describe("main — --tokens (a consumer's own registry, not this package's)", ()
   it("without --tokens: an arbitrary literal is raw-value-no-token-backing against this package's own registry", () => {
     writeFileSync(join(scanDir, "about.ts"), 'export const BRAND = "#123456";\n');
     expect(main([scanDir])).toBe(1);
-    expect(loggedText()).toContain("no matching entry in @vespeneventures/ui/tokens' TOKENS registry");
+    expect(loggedText()).toContain('no matching entry in the "@vespeneventures/ui/tokens" TOKENS registry');
   });
 
   it("...but is hardcodes-token-value, attributed to the SUPPLIED registry, once --tokens actually backs that value", () => {

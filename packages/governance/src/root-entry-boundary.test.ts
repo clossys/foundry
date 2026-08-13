@@ -67,8 +67,99 @@ const srcRoot = dirname(fileURLToPath(import.meta.url));
 // confirming this version (unlike the string-subtraction version) goes red.
 const IMPORT_RE = /^\s*(?:import|export)\s+(?!type\s)(?:[\s\S]*?)\bfrom\s+["']([^"']+)["']/gm;
 
+/**
+ * Blanks out the CONTENTS of every string/template literal, preserving
+ * length (so line/column positions — and therefore `^`/`$` line anchors in
+ * the regexes below — stay correct) and the quote characters themselves.
+ * Must run BEFORE comment-stripping: found by review, `//.*$` with no
+ * string-literal awareness deletes the rest of a line — including a real
+ * import on it — the moment `//` appears inside a same-line string ahead
+ * of it (a URL in a doc-comment-adjacent constant, for instance). That is
+ * an under-trace (a false negative), the opposite of this file's own
+ * stated "stricter than reality, never looser" direction, so it is worth
+ * closing even though no current file in this package happens to trigger
+ * it today.
+ *
+ * Template-literal `${...}` interpolation is masked as a single opaque
+ * unit at the top nesting level rather than recursively re-parsed — this
+ * tracer only ever needs to find `from "specifier"` clauses, which never
+ * appear inside an interpolation, so treating its contents as inert text
+ * (rather than correctly as more code) loses nothing this file cares
+ * about.
+ */
+function maskStringLiterals(text: string): string {
+  let out = "";
+  let i = 0;
+  while (i < text.length) {
+    const c = text[i];
+    if (c === '"' || c === "'" || c === "`") {
+      const quote = c;
+      out += quote;
+      i++;
+      let depth = 0; // ${...} nesting inside a template literal
+      while (i < text.length) {
+        const ch = text[i];
+        if (ch === "\\" && i + 1 < text.length) {
+          out += "  "; // blank the escape pair, preserve length
+          i += 2;
+          continue;
+        }
+        if (quote === "`" && ch === "$" && text[i + 1] === "{") {
+          depth++;
+          out += "  ";
+          i += 2;
+          continue;
+        }
+        if (depth > 0) {
+          if (ch === "{") depth++;
+          if (ch === "}") depth--;
+          out += ch === "\n" ? "\n" : " "; // keep newlines so line numbers stay honest
+          i++;
+          continue;
+        }
+        if (ch === quote) {
+          out += quote;
+          i++;
+          break;
+        }
+        out += ch === "\n" ? "\n" : " ";
+        i++;
+      }
+      continue;
+    }
+    out += c;
+    i++;
+  }
+  return out;
+}
+
 function stripComments(text: string): string {
-  return text.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
+  const masked = maskStringLiterals(text);
+  // Comment delimiters are found in the MASKED text (so one inside a
+  // string is never mistaken for real), but the STRIPPING is applied by
+  // position back onto the ORIGINAL text — comment stripping should still
+  // remove the real characters, not the mask placeholders, and this keeps
+  // both the masking and the stripping honest about what they each do.
+  let result = "";
+  let i = 0;
+  while (i < masked.length) {
+    if (masked[i] === "/" && masked[i + 1] === "*") {
+      const end = masked.indexOf("*/", i + 2);
+      const stop = end === -1 ? masked.length : end + 2;
+      for (let j = i; j < stop; j++) if (text[j] === "\n") result += "\n";
+      i = stop;
+      continue;
+    }
+    if (masked[i] === "/" && masked[i + 1] === "/") {
+      let end = masked.indexOf("\n", i);
+      if (end === -1) end = masked.length;
+      i = end;
+      continue;
+    }
+    result += text[i];
+    i++;
+  }
+  return result;
 }
 
 /**
@@ -150,5 +241,47 @@ describe("root entry (index.ts) never reaches typescript at runtime", () => {
     const hit = [...visited].find((p) => p.endsWith(join("gates", "secret-gates.ts")));
     expect(hit).toBeDefined();
     expect(bareSpecifiers.has("typescript")).toBe(true);
+  });
+});
+
+describe("stripComments — string-literal awareness (the tracer's own robustness)", () => {
+  // Found by adversarial review of this same tracer: `//.*$` with no
+  // string-literal awareness deletes the rest of a line — including a
+  // REAL import on it — once a same-line string contains "//" ahead of
+  // that import (a URL is the obvious real-world case). This is a
+  // regression test for that specific failure mode, using a synthetic
+  // fixture rather than this package's own source, because the bug is
+  // about the TRACER, not about anything this package currently contains.
+  it("a same-line string containing // does not swallow a real import that follows it on the same line", () => {
+    const code = 'const DOC_URL = "https://example.invalid/x"; import { runFoundationCheck } from "./gates/foundation.js";\n';
+    const stripped = stripComments(code);
+    expect(stripped).toContain('import { runFoundationCheck } from "./gates/foundation.js"');
+  });
+
+  it("a real // line comment is still stripped correctly (the fix doesn't just disable comment stripping)", () => {
+    const code = "// import { runFoundationCheck } from \"./gates/foundation.js\";\nimport { evaluateLifecycleCoverage } from \"./lifecycle.js\";\n";
+    const stripped = stripComments(code);
+    expect(stripped).not.toContain("runFoundationCheck");
+    expect(stripped).toContain('import { evaluateLifecycleCoverage } from "./lifecycle.js"');
+  });
+
+  it("a real /* block */ comment is still stripped correctly, including one that itself quotes an import statement in prose", () => {
+    const code = '/* Deliberately NOT `import { X } from "./gates/index.js"` — see below. */\nimport { runFoundationCheck } from "./gates/foundation.js";\n';
+    const stripped = stripComments(code);
+    expect(stripped).not.toContain("gates/index.js");
+    expect(stripped).toContain('import { runFoundationCheck } from "./gates/foundation.js"');
+  });
+
+  it("// inside a template literal is not mistaken for a comment either", () => {
+    const code = "const DOC_URL = `https://example.invalid/x`; import { runFoundationCheck } from \"./gates/foundation.js\";\n";
+    const stripped = stripComments(code);
+    expect(stripped).toContain('import { runFoundationCheck } from "./gates/foundation.js"');
+  });
+
+  it("line numbers are preserved (masking/stripping fill with spaces/newlines, never delete lines) — the ^ line-anchor in IMPORT_RE depends on this", () => {
+    const code = 'const X = "a // b";\nimport { runFoundationCheck } from "./gates/foundation.js";\n';
+    const stripped = stripComments(code);
+    const importLine = stripped.split("\n")[1];
+    expect(importLine).toContain('import { runFoundationCheck } from "./gates/foundation.js"');
   });
 });

@@ -261,12 +261,19 @@ function bareLiteralFinding(
 ): TokenGateFinding {
   const token = tokenIndex.get(normalizeForLookup(matchedValue));
   if (token) {
+    // `family` is required on this package's own TOKENS entries but
+    // deliberately NOT required by --tokens' loadTokensFile validation
+    // (cli.ts): a consumer's own registry may not carry the concept at
+    // all. Rendering it unconditionally as `(family "undefined")` for an
+    // entry that never had one reads as a real value rather than an
+    // absent one — worse than just leaving the parenthetical out.
+    const familyNote = token.family ? ` (family "${token.family}")` : "";
     return {
       rule: "hardcodes-token-value",
       severity: "error",
       file,
       line,
-      message: `${matchedValueKind} "${matchedValue}" hardcodes the exact value of token "${token.property}" (family "${token.family}") — read it via var(${token.property}) or the matching Tailwind class instead of the literal`,
+      message: `${matchedValueKind} "${matchedValue}" hardcodes the exact value of token "${token.property}"${familyNote} — read it via var(${token.property}) or the matching Tailwind class instead of the literal`,
       snippet: snippetOf(raw),
       matchedToken: token.property,
     };
@@ -276,7 +283,7 @@ function bareLiteralFinding(
     severity: "error",
     file,
     line,
-    message: `${matchedValueKind} "${matchedValue}" has no matching entry in ${registryLabel}' TOKENS registry — register a token or replace this literal with an existing one`,
+    message: `${matchedValueKind} "${matchedValue}" has no matching entry in the "${registryLabel}" TOKENS registry — register a token or replace this literal with an existing one`,
     snippet: snippetOf(raw),
   };
 }
@@ -306,7 +313,7 @@ function fallbackSyncStatus(
 ): { text: string; matchedToken: string | undefined } {
   const token = tokens[property];
   if (!token) {
-    return { text: `no token named "${property}" exists in ${registryLabel}' TOKENS registry — verify the property name`, matchedToken: undefined };
+    return { text: `no token named "${property}" exists in the "${registryLabel}" TOKENS registry — verify the property name`, matchedToken: undefined };
   }
   const normToken = normalizeForLookup(token.value);
   const normLiteral = normalizeForLookup(literalValue);
