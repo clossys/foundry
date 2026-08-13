@@ -109,8 +109,8 @@ Practically:
   this contract rather than inventing its own exit-code scheme.
 
   This is what makes the contract load-bearing, not decorative: **a check
-  that cannot run must fail (`2`), never pass (`0`).** `check-release-
-  readiness.mjs` shipped exactly the opposite — discovering zero packages to
+  that cannot run must fail (`2`), never pass (`0`).**
+  `scripts/check-release-readiness.mjs` shipped exactly the opposite — discovering zero packages to
   check exited `0`, and an existing test asserted that as intended, so the
   defect was encoded as correct. A renamed `packages/` directory or a glob
   broken by a refactor would have reported every package release-ready on
