@@ -154,6 +154,26 @@ body-level text and AA-large (3:1) for secondary/large text. A palette
 change that looks plausible but drops a pair below its bar fails this
 test, not a human doing final review by eye.
 
+That same math is public now — `contrastRatio` and the rest of that
+pipeline ship from this subpath (see "API" below) — and a checked-in gate,
+`checkTokenContrast`/`CONTRAST_PAIRS`, runs it as CI-enforceable policy
+rather than only a test a human has to remember to keep in sync:
+
+```bash
+npx ui-contrast-check
+```
+
+checks this package's own `styles/tokens.css` (both themes) against 25
+checked-in pairs and exits `1` — not `0` — because the light-mode
+categorical chart marks at slots 3/4/5 measure below the 3:1 AA-large
+floor against the chart surface, a real, currently-shipping WCAG miss
+`contrast.test.ts` already tracks as an accepted "WARN" band (mandatory
+labels/legend/table fallback, never color alone). See the main
+`README.md`'s "WCAG contrast gate" section for the full contract,
+including how a consumer's own `tokens.css` (or brand-bound copy of it)
+can be checked the same way, and how this differs from the
+token-purity gate.
+
 ### The three-layer contract
 
 ```
@@ -439,6 +459,25 @@ wants a token's name or default value without parsing CSS.
 | `BrandCssUnchecked` | type | `{ line, detail }` — one region of CSS the reader recognized but could not resolve into a declaration. |
 | `BrandCssReadIssue` | type | `{ reason, detail }` — why `readBrandCss` could not read `path` at all. |
 | `BrandCssReadIssueReason` | type | `"unreadable"` — the closed set of `BrandCssReadIssue.reason` values. |
+| `contrastRatio` | function | `(a, b, compositeBackground?) => number` — the real WCAG contrast ratio between two CSS color values (`oklch(...)` or a 6-digit hex), each optionally translucent. |
+| `luminanceOf` | function | `(value, backgroundValue?) => number` — the relative luminance of one CSS color value, compositing over `backgroundValue` first if it carries alpha < 1. |
+| `oklchToLinearSRGB` | function | `(color: Oklch) => readonly [number, number, number]` — OKLCH -> linear sRGB. |
+| `hexToLinearSRGB` | function | `(hex) => readonly [number, number, number]` — a 6-digit hex color -> linear sRGB. |
+| `relativeLuminance` | function | `(rgb) => number` — WCAG relative luminance from linear-sRGB channels. |
+| `parseOklch` | function | `(value) => Oklch` — parses the first `oklch(...)` function in a CSS value string. |
+| `Oklch` | type | `{ L, C, H, A }` — one parsed `oklch()` value. |
+| `CONTRAST_PAIRS` | const | `readonly ContrastPair[]` — this package's checked-in WCAG contrast policy, 25 pairs. See "Contrast is enforced, not assumed", above. |
+| `ContrastPair` | type | `{ id, foreground, background, level, minimumRatio, compositeOver?, description }` — one entry of `CONTRAST_PAIRS`. |
+| `ContrastLevel` | type | `"AA" \| "AA-large"`. |
+| `AA` / `AA_LARGE` | const | `4.5` / `3.0` — the two WCAG minimums `CONTRAST_PAIRS` checks against. |
+| `checkTokenContrast` | function | `(pairs, options?) => ContrastGateResult` — the pure contrast gate. See "Contrast is enforced, not assumed", above. |
+| `ContrastGateCheckOptions` | type | `{ tokens? }` — `checkTokenContrast`'s second argument. |
+| `ContrastGateResult` | type | `{ ok, pairsChecked, findings, unchecked, reason? }` — `checkTokenContrast`'s return shape. |
+| `ContrastGateFinding` | type | `{ rule: "below-threshold", pairId, ratio, minimumRatio, message }` — a real WCAG threshold miss. |
+| `ContrastGateFindingRule` | type | `"below-threshold"`. |
+| `ContrastGateUnchecked` | type | `{ pairId, reason, detail }` — a pair that could not be evaluated at all. |
+| `ContrastGateUncheckedReason` | type | `"unresolvable-token" \| "cyclic-alias" \| "unparseable-color-value"`. |
+| `ContrastGateFailureReason` | type | `"nothing-to-check" \| "contrast-gap"` — why `ContrastGateResult.ok` is `false`, when it is. |
 
 ```ts
 import { TOKENS } from "@vespeneventures/ui/tokens";

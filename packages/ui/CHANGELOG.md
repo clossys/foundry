@@ -3,6 +3,86 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.9.0] - 2026-08-13
+
+### Added
+
+- **A WCAG contrast gate** (`@vespeneventures/ui/tokens`, `ui-contrast-check`)
+  — this package shipped the math for a real OKLCH/hex -> WCAG contrast-ratio
+  check since before this release (`src/contrast.test.ts` has long asserted
+  real AA/AA-large ratios for dozens of token pairs, across both themes), but
+  the module doing that math lived at `tokens/internal/color.ts`, explicitly
+  marked "not part of this package's public API" and reachable only by that
+  one test. The capability existed; the gate did not. Four pieces ship:
+  - **`color.ts`** (promoted from `internal/color.ts`, public now, exported
+    from `@vespeneventures/ui/tokens`) — `parseOklch`, `oklchToLinearSRGB`,
+    `hexToLinearSRGB`, `relativeLuminance`, `luminanceOf`, `contrastRatio`.
+    No behavior change; only its visibility and header comment changed.
+  - **`internal/resolve-token-value.ts`** — a generic `var(--property, ...)`
+    ALIAS-CHAIN walker over a token REGISTRY (`resolveTokenValue(property,
+    tokens)`), following `TokenDefinition.value` from entry to entry (e.g.
+    `--color-chart-surface` -> `--color-surface-raised`) until it reaches a
+    literal value, a property missing from the registry, or a cycle — each
+    of the latter two reported on the result, never thrown or silently
+    treated as "no value". This is deliberately NOT the same thing as
+    `style-scan.ts`'s existing `resolveFallbackChain`, which parses `var()`
+    fallback nesting in SOURCE CODE at a character offset; this walker has
+    no source file involved at all, only a registry's own key space — see
+    that file's header comment for the full distinction, written so the two
+    are never conflated again.
+  - **`contrast-pairs.ts`** — `CONTRAST_PAIRS`, an EXPLICIT, checked-in list
+    of 25 (foreground, background[, composited-over]) token pairs and their
+    WCAG minimum, ratified from `contrast.test.ts`'s own hand-curated pair
+    map rather than re-derived. This gate was originally proposed as
+    self-extending — one pair auto-derived per `--<role>-on-<ground>`-shaped
+    token name — but that convention covers only 5 of this package's real
+    154 tokens (`--color-ink-on-accent`, `--color-ink-on-inverse`,
+    `--color-accent-on-inverse`, `--color-line-on-inverse`, `--ui-ring-on-
+    inverse`; a 6th, `--color-ink-on-inverse-muted`, contains `-on-` too but
+    is a muted VARIANT of `--color-ink-on-inverse`, not a distinct
+    role-on-ground pairing — see `contrast-pairs.ts`'s own header for the
+    full accounting); built that way, the gate would have checked almost
+    nothing while reading as though it checked everything. Decorative roles
+    (`--color-line-*`, `--color-chart-
+    grid`, `--color-overlay-scrim`, `--ui-elevation-*`, `--color-skeleton-
+    fill`, `--ui-ring-*`) are excluded per WCAG 1.4.11's own scope — see the
+    file's header for which roles and why, precisely.
+  - **`checkTokenContrast`** (`contrast-gate.ts`) — the pure gate: resolves
+    every pair's tokens (through any alias chain), computes the real ratio,
+    and reports EITHER a real threshold miss (`findings`, rule
+    `"below-threshold"`) OR a pair that could not be evaluated at all
+    (`unchecked`: `"unresolvable-token"`, `"cyclic-alias"`,
+    `"unparseable-color-value"`) — mirroring `checkTokenPurity`'s own
+    findings/unchecked split. Never passes on an empty run: zero pairs or an
+    empty token registry reports `reason: "nothing-to-check"`, never
+    `ok: true`.
+  - **`ui-contrast-check [tokens-css-file]`** (`contrast-cli.ts`) — the
+    installable CLI, mirroring `ui-token-check`'s shape and this
+    repository's three-state exit contract (`0` clean, `1` findings, `2`
+    could not run — `2` also covers a non-empty `unchecked` list and a
+    zero-pairs run, the same "could not check must never read as a pass"
+    discipline every gate CLI here holds to). Defaults to this package's own
+    `styles/tokens.css` and checks BOTH the light `:root` block and, when
+    present, the `:root[data-theme="dark"]` block — merging each dark
+    declaration on top of the light ones first (mirroring a real CSS
+    cascade), because a handful of real alias tokens
+    (`--color-chart-surface`, `--color-ink-on-accent`, ...) are declared
+    only in `:root` and deliberately never redeclared in the dark block.
+  - **A real, currently-shipping finding this gate surfaces, not fixed in
+    this release:** the light-mode categorical chart marks at slots 3/4/5
+    (`--color-chart-categorical-3/4/5`, aqua/yellow/magenta) measure below
+    the 3:1 AA-large floor against `--color-chart-surface` — 2.82:1, 2.17:1,
+    and 2.69:1. `contrast.test.ts` already documents this as an accepted
+    "WARN" band (the dataviz palette method's "relief rule": legal only
+    because this package's chart layer ships mandatory direct labels/legend
+    and a table-view fallback for every chart, never color alone). This
+    gate does not know about that relief rule and correctly reports the
+    plain WCAG threshold miss as a real finding — `ui-contrast-check` run
+    against this package's own `styles/tokens.css` with no arguments
+    returns `1`, not `0`, for exactly this reason. Left unfixed (and
+    un-excluded) in this release; see the PR that introduced this gate for
+    the full accounting.
+
 ## [0.8.0] - 2026-08-13
 
 ### Added
