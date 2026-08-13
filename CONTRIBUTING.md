@@ -30,6 +30,7 @@ npm run typecheck
 npm test
 npm run check:safety
 npm run check:scope
+npm run check:workspace-links
 npm run check:gates
 npm run check:readme
 npm run check:contamination
@@ -46,6 +47,7 @@ npm run check:typechecked-assertions
 | `check-gates` | Regression tests proving the safety gates still catch planted contamination. |
 | `check:readme` / `check:contamination` | Catch README/export drift and internal-convention leakage that no denylist string-match can see. Run unconditionally in CI, including on fork pull requests, since they read only the tree itself. |
 | `check:typechecked-assertions` | Fails if a `@ts-expect-error`, `@ts-ignore`, `expectTypeOf(...)`, or `assertType(...)` lives in a file `tsc` doesn't actually compile — see "Type-level assertions live in `.check.ts(x)` files" below. |
+| `check:workspace-links` (`workspace link integrity` in CI) | Every first-party `dependencies` range still covers its sibling's real on-disk version, and `package-lock.json` resolves every first-party package as a local workspace link, never a remote registry URL. See "0.x dependency ranges are minor-locked" below for the defect this exists to catch. |
 | `gitleaks` | Scans full git history, not just your diff. |
 
 On a pull request from a fork, the safety checks run in PARTIAL mode —
@@ -137,6 +139,22 @@ Practically:
   is data, not silence.
 - **No `workspace:*` or `catalog:` protocols.** They are unresolvable for anyone
   outside the workspace that defines them, and the safety gate rejects them.
+- **0.x dependency ranges are minor-locked — both `^` and `~`.** Packages
+  here depend on each other with plain semver ranges against 0.x versions
+  (e.g. `"@vespeneventures/governance": "^0.3.0"`). Past `1.0.0`, `^` locks
+  the major and `~` locks the minor; below `1.0.0` there is no such split —
+  `^0.3.0` and `~0.3.0` both mean `>=0.3.0 <0.4.0`. Bumping a package's minor
+  (e.g. `governance` from `0.3.0` to `0.4.0`) therefore breaks every sibling
+  that still declares the old range, silently: npm stops linking the local
+  workspace copy and resolves the sibling from the registry instead, and the
+  tokenless CI job 401s trying to fetch it. If you bump a package's minor,
+  update every dependent's declared range to cover the new version AND bump
+  those dependents' own versions too — their `package.json` is packed
+  content, so `check:release-readiness` will demand it regardless.
+  `check:workspace-links` (`workspace link integrity` in CI) is the gate
+  that catches a missed range or a lockfile a range fix forgot to
+  regenerate — see `scripts/check-workspace-links.mjs`'s own header for the
+  full failure mode.
 - **Changelogs** follow [Keep a Changelog](https://keepachangelog.com); packages
   are versioned with [semver](https://semver.org).
 - **Public API changes** need the README updated in the same pull request —
