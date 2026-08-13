@@ -16,7 +16,7 @@
  * `VoiceRecord` does not have that shape, and pretending it does would be
  * dishonest. Every field a `VoiceRecord` instance actually carries — `id`,
  * both rules' `description`s, `forbiddenPronouns`, `forbiddenMarkers`,
- * `formality`, `tone`, `glossary`, `claims` — is content one specific
+ * `formality`, `tone`, `glossary`, `claims`, `patterns` — is content one specific
  * consumer authors: there is no field here that ships a working default
  * value and stays that value for every voice the way `--spacing-lg: 16px`
  * does for every brand. `VoiceRecord` IS the consumer-owned binding layer in
@@ -140,6 +140,11 @@ export const VOICE_FIELDS: Readonly<Record<string, VoiceFieldDefinition>> = {
     path: "claims",
     bindable: true,
     description: "This voice's own claims register. Per-entry shape (`Claim`) is fixed; the entries themselves are this consumer's own.",
+  },
+  patterns: {
+    path: "patterns",
+    bindable: true,
+    description: "This voice's own regex pattern rules (alternation, optional apostrophes, hard character bans). Per-entry shape (`PatternRule`) is fixed; the entries themselves are this consumer's own. Optional — a voice with no pattern rules simply omits this array (`patterns` is the one field in this catalog that is also optional at the `VoiceRecord` TYPE level, not merely defaulted at validation time — see `types.ts`'s `VoiceRecord` doc comment for why).",
   },
 };
 

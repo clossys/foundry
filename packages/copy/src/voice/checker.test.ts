@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { auditClaimsRegister, checkCopy } from "./checker.js";
-import type { VoiceRecord } from "./types.js";
+import { auditClaimsRegister, checkCopy, isCiBlockingSeverity } from "./checker.js";
+import type { PatternRule, VoiceRecord } from "./types.js";
 
 // A minimal, obviously-fictional VoiceRecord. "Acme" mirrors the placeholder
 // already used in this repository's own packages/ui README examples.
@@ -294,5 +294,176 @@ describe("auditClaimsRegister", () => {
 
   it("returns [] (not a finding) for an empty claims list — an empty register is not itself a defect", () => {
     expect(auditClaimsRegister([])).toEqual([]);
+  });
+});
+
+describe("checkCopy — BACKWARD COMPATIBILITY pin: an existing VoiceRecord that never declares patterns", () => {
+  // The literal scope-discipline requirement: everything in this PR is
+  // additive, so a VoiceRecord that "uses none of this" must validate and
+  // behave EXACTLY as it did before pattern rules, channel scoping, and the
+  // third severity tier existed. `makeRecord()` above never sets `patterns`
+  // — this pins the exact report shape that produces, unchanged.
+  it("never adds a 'pattern' entry to ran/skipped, and complete/skipped.length match pre-pattern-rule behavior", () => {
+    const emptyReport = checkCopy(makeRecord(), "");
+    expect(emptyReport.skipped).toHaveLength(4);
+    expect(emptyReport.skipped.every((s) => s.dimension !== "pattern")).toBe(true);
+    expect(emptyReport.complete).toBe(false);
+
+    const cleanReport = checkCopy(makeRecord(), "This tool helps you plan your week.");
+    expect(cleanReport.findings).toEqual([]);
+    expect(cleanReport.complete).toBe(true);
+    expect(cleanReport.ran).toEqual(["glossary", "person", "tense", "claims"]);
+    expect(cleanReport.skipped).toEqual([]);
+  });
+
+  it("record.patterns stays undefined (never silently defaulted) for a record that never declared it", () => {
+    const record = makeRecord();
+    expect(record.patterns).toBeUndefined();
+    expect("patterns" in record).toBe(false);
+  });
+});
+
+function patternRule(overrides: Partial<PatternRule> = {}): PatternRule {
+  return {
+    id: "no-em-dash",
+    description: "hard ban on the em dash",
+    pattern: { source: "\\u2014" },
+    severity: "error",
+    reason: "house style bans the em dash",
+    ...overrides,
+  };
+}
+
+describe("checkCopy — pattern dimension", () => {
+  it("is skipped, with reason, when patterns is declared but empty — and DOES appear in ran/skipped once declared", () => {
+    const report = checkCopy(makeRecord({ patterns: [] }), "Some plain copy.");
+    expect(report.skipped.some((s) => s.dimension === "pattern" && s.reason === "no-patterns-configured")).toBe(true);
+  });
+
+  it("goes red when copy matches a pattern rule, at the rule's own declared severity", () => {
+    const record = makeRecord({ patterns: [patternRule({ severity: "advisory" })] });
+    const report = checkCopy(record, "A bold claim — with an em dash.");
+    const finding = report.findings.find((f) => f.rule === "pattern:matched" && f.path === "no-em-dash");
+    expect(finding).toBeDefined();
+    expect(finding?.severity).toBe("advisory");
+    expect(finding?.message).toMatch(/matched 1 time/);
+  });
+
+  it("does not flag copy that does not match the pattern", () => {
+    const record = makeRecord({ patterns: [patternRule()] });
+    const report = checkCopy(record, "No banned punctuation here.");
+    expect(report.findings.some((f) => f.rule === "pattern:matched")).toBe(false);
+    expect(report.ran).toContain("pattern");
+  });
+
+  it("expresses alternation a GlossaryEntry cannot", () => {
+    const record = makeRecord({
+      patterns: [patternRule({ id: "deep-dive", pattern: { source: "\\b(deep dive|dive deep)\\b" }, description: "d" })],
+    });
+    expect(checkCopy(record, "Let's deep dive into this.").findings.some((f) => f.path === "deep-dive")).toBe(true);
+    expect(checkCopy(record, "Let's dive deep into this.").findings.some((f) => f.path === "deep-dive")).toBe(true);
+    expect(checkCopy(record, "Let's look into this.").findings.some((f) => f.path === "deep-dive")).toBe(false);
+  });
+
+  it("expresses an optional apostrophe a GlossaryEntry cannot", () => {
+    const record = makeRecord({
+      patterns: [
+        patternRule({
+          id: "worth-considering",
+          pattern: { source: "\\bit'?s worth considering\\b", flags: "i" },
+          description: "d",
+        }),
+      ],
+    });
+    expect(checkCopy(record, "It's worth considering.").findings.some((f) => f.path === "worth-considering")).toBe(true);
+    expect(checkCopy(record, "Its worth considering.").findings.some((f) => f.path === "worth-considering")).toBe(true);
+  });
+
+  it("respects the alternative suggestion in the finding message", () => {
+    const record = makeRecord({ patterns: [patternRule({ alternative: "a comma or period" })] });
+    const report = checkCopy(record, "A claim — with a dash.");
+    expect(report.findings.find((f) => f.path === "no-em-dash")?.message).toMatch(/Use "a comma or period" instead/);
+  });
+
+  it("an INVALID pattern rule is a real, unmissable, non-waivable error finding — never a silent skip", () => {
+    const record = makeRecord({ patterns: [patternRule({ id: "evil", pattern: { source: "(a+)+" }, severity: "advisory" })] });
+    const report = checkCopy(record, "Some copy that never mentions the pattern at all.");
+    const finding = report.findings.find((f) => f.rule === "pattern:invalid-rule" && f.path === "evil");
+    expect(finding).toBeDefined();
+    // ALWAYS "error", regardless of the rule's own declared severity —
+    // an unenforceable rule is a structural problem, not a content judgment.
+    expect(finding?.severity).toBe("error");
+
+    // Cannot be waived, mirroring voice:unbound-placeholder.
+    const waivedReport = checkCopy(record, "Some copy.", {
+      waivers: [{ rule: "pattern:invalid-rule", match: "evil", reason: "trying to suppress it" }],
+    });
+    expect(waivedReport.findings.some((f) => f.rule === "pattern:invalid-rule")).toBe(true);
+    expect(waivedReport.waived.some((f) => f.rule === "pattern:invalid-rule")).toBe(false);
+  });
+
+  it("an invalid pattern is reported even when copy is empty — it is a property of the record, not the copy", () => {
+    const record = makeRecord({ patterns: [patternRule({ id: "evil", pattern: { source: "(a+)+" } })] });
+    const report = checkCopy(record, "");
+    expect(report.findings.some((f) => f.rule === "pattern:invalid-rule" && f.path === "evil")).toBe(true);
+  });
+
+  it("one invalid rule does not block a sibling valid rule from running", () => {
+    const record = makeRecord({
+      patterns: [patternRule({ id: "evil", pattern: { source: "(a+)+" } }), patternRule({ id: "good" })],
+    });
+    const report = checkCopy(record, "A claim — with a dash.");
+    expect(report.findings.some((f) => f.rule === "pattern:invalid-rule" && f.path === "evil")).toBe(true);
+    expect(report.findings.some((f) => f.rule === "pattern:matched" && f.path === "good")).toBe(true);
+  });
+});
+
+describe("checkCopy — channel scoping", () => {
+  it("a channel-scoped glossary entry does not fire when no channel is given", () => {
+    const record = makeRecord({
+      glossary: [{ term: "synergy", status: "forbidden", reason: "x", caseSensitive: false, channel: "linkedin" }],
+    });
+    const report = checkCopy(record, "Let's talk about synergy today.");
+    expect(report.findings.some((f) => f.path === "synergy")).toBe(false);
+  });
+
+  it("a channel-scoped glossary entry fires when the matching channel is given", () => {
+    const record = makeRecord({
+      glossary: [{ term: "synergy", status: "forbidden", reason: "x", caseSensitive: false, channel: "linkedin" }],
+    });
+    const report = checkCopy(record, "Let's talk about synergy today.", { channel: "linkedin" });
+    expect(report.findings.some((f) => f.path === "synergy")).toBe(true);
+  });
+
+  it("a channel-scoped glossary entry does not fire for a DIFFERENT channel", () => {
+    const record = makeRecord({
+      glossary: [{ term: "synergy", status: "forbidden", reason: "x", caseSensitive: false, channel: "linkedin" }],
+    });
+    const report = checkCopy(record, "Let's talk about synergy today.", { channel: "x" });
+    expect(report.findings.some((f) => f.path === "synergy")).toBe(false);
+  });
+
+  it("an UNSCOPED glossary entry fires regardless of the requested channel", () => {
+    const record = makeRecord({
+      glossary: [{ term: "synergy", status: "forbidden", reason: "x", caseSensitive: false }],
+    });
+    expect(checkCopy(record, "synergy", { channel: "linkedin" }).findings.some((f) => f.path === "synergy")).toBe(true);
+    expect(checkCopy(record, "synergy").findings.some((f) => f.path === "synergy")).toBe(true);
+  });
+
+  it("channel scoping applies to pattern rules too", () => {
+    const record = makeRecord({ patterns: [patternRule({ channel: "linkedin" })] });
+    expect(checkCopy(record, "A claim — with a dash.").findings.some((f) => f.path === "no-em-dash")).toBe(false);
+    expect(
+      checkCopy(record, "A claim — with a dash.", { channel: "linkedin" }).findings.some((f) => f.path === "no-em-dash"),
+    ).toBe(true);
+  });
+});
+
+describe("isCiBlockingSeverity — the documented severity-to-exit-code mapping", () => {
+  it("is true only for 'error'", () => {
+    expect(isCiBlockingSeverity("error")).toBe(true);
+    expect(isCiBlockingSeverity("warning")).toBe(false);
+    expect(isCiBlockingSeverity("advisory")).toBe(false);
   });
 });
