@@ -2409,6 +2409,60 @@ try {
       !bigConv.out.includes("acme-corp"),
       `matched term leaked ${(bigConv.out.match(/acme-corp/g) || []).length} time(s) into output`,
     );
+
+    // ---- TITLE COVERAGE REGRESSION. --issue/--pr/--all fetched only
+    // `.body` at first — an issue or PR's TITLE never reached the scanner in
+    // retrospective mode, even though the live workflow correctly folds
+    // title into the scanned text for the same two events. Caught by hand
+    // (a manual export of every title in this repo, run through draft mode)
+    // only after the tool had already reported a clean sweep that silently
+    // never looked at any of them. A fake `gh` on PATH, standing in for the
+    // real CLI, is what lets this be a real regression test instead of
+    // needing network + a live issue to plant a term in.
+    {
+      const ghFixtureDir = join(work, "gh-title-fixture");
+      mkdirSync(ghFixtureDir, { recursive: true });
+      const fakeGhPath = join(ghFixtureDir, "gh");
+      // Mimics exactly the two call shapes fetchIssue() makes: `gh api
+      // repos/x/issues/N` (single object) and `gh api
+      // repos/x/issues/N/comments --paginate --slurp` (paginated list, one
+      // page here). Routes on argv rather than trying to be a real gh.
+      writeFileSync(
+        fakeGhPath,
+        [
+          "#!/usr/bin/env node",
+          'const args = process.argv.slice(2);',
+          'if (args[0] !== "api") { process.exit(1); }',
+          'const path = args[1] || "";',
+          'if (path.endsWith("/comments")) {',
+          '  process.stdout.write(JSON.stringify([[]]));', // one empty page, --slurp shape
+          "} else {",
+          "  process.stdout.write(JSON.stringify({",
+          '    title: "planted-title-term-acme-corp",',
+          '    body: "ordinary body text, nothing interesting here",',
+          '    html_url: "https://example.invalid/issues/1",',
+          "  }));",
+          "}",
+          "process.exit(0);",
+        ].join("\n"),
+        "utf8",
+      );
+      chmodSync(fakeGhPath, 0o755);
+
+      const titleFetch = run("node", [CONVERSATION, "--issue", "1", "--repo", "x/y", "--denylist", synthPath, "--require-denylist"], {
+        env: { ...process.env, PATH: `${ghFixtureDir}:${process.env.PATH}` },
+      });
+      check(
+        "a title-only match is caught by --issue mode (title reaches the scanner, not just body)",
+        titleFetch.code === 1,
+        `expected exit 1 (title term should have been flagged), got ${titleFetch.code}: ${titleFetch.out.slice(0, 300)}`,
+      );
+      check(
+        "the title match is still never echoed",
+        !titleFetch.out.includes("acme-corp"),
+        `matched title term leaked into output: ${titleFetch.out}`,
+      );
+    }
   }
 } finally {
   rmSync(work, { recursive: true, force: true });

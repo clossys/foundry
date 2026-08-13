@@ -214,6 +214,20 @@ function bodyItem(kind, number, id, url, body) {
   return { kind, number, id, url, body: typeof body === "string" ? body : "" };
 }
 
+// Only for "-body" items (an issue or PR's own title, never a comment's — a
+// comment has no title). Folds title into body exactly the way
+// conversation-safety.yml's live gate step does for the same two events
+// (`printf '%s\n\n%s' "$ISSUE_TITLE" "$ISSUE_TEXT"`), so a retrospective
+// `--issue`/`--pr`/`--all` scan covers the same text the live workflow does
+// going forward. Titles were absent here until an --all sweep was found, by
+// hand, to have silently skipped every one of them — 144 titles that a
+// `PASS` from this tool had implied were covered but never were.
+function bodyItemWithTitle(kind, number, id, url, title, body) {
+  const t = typeof title === "string" ? title : "";
+  const b = typeof body === "string" ? body : "";
+  return { kind, number, id, url, body: t ? `${t}\n\n${b}` : b };
+}
+
 // Comments/reviews carry `created_at`; a body object (issue/PR/review) is
 // always included regardless of --since — the object was explicitly asked
 // for by number, so its own body is always in scope even if it predates the
@@ -236,7 +250,7 @@ function fetchIssue(repo, n, sinceTs) {
   if (r.data.pull_request) {
     console.error(`check-conversation-safety: note — #${n} is a pull request, not an issue; re-run with --pr ${n} to also scan its review comments.`);
   }
-  const items = [bodyItem("issue-body", n, n, r.data.html_url, r.data.body)];
+  const items = [bodyItemWithTitle("issue-body", n, n, r.data.html_url, r.data.title, r.data.body)];
   for (const c of fetchIssueComments(repo, n, sinceTs)) {
     items.push(bodyItem("issue-comment", n, c.id, c.html_url, c.body));
   }
@@ -246,7 +260,7 @@ function fetchIssue(repo, n, sinceTs) {
 function fetchPr(repo, n, sinceTs) {
   const r = ghApiOne(`repos/${repo}/pulls/${n}`);
   if (!r.ok) die(`could not fetch PR #${n} from ${repo}: ${r.error}\n  Needs an authenticated \`gh\` with access to this repository. Refusing to report a pass from a check that did not run.`);
-  const items = [bodyItem("pr-body", n, n, r.data.html_url, r.data.body)];
+  const items = [bodyItemWithTitle("pr-body", n, n, r.data.html_url, r.data.title, r.data.body)];
   for (const c of fetchIssueComments(repo, n, sinceTs)) {
     items.push(bodyItem("pr-comment", n, c.id, c.html_url, c.body));
   }
@@ -272,7 +286,7 @@ function fetchAll(repo, sinceTs, sinceRaw) {
   for (const entry of listing.data) {
     const n = entry.number;
     const isPr = Boolean(entry.pull_request);
-    items.push(bodyItem(isPr ? "pr-body" : "issue-body", n, n, entry.html_url, entry.body));
+    items.push(bodyItemWithTitle(isPr ? "pr-body" : "issue-body", n, n, entry.html_url, entry.title, entry.body));
     for (const c of fetchIssueComments(repo, n, sinceTs)) {
       items.push(bodyItem(isPr ? "pr-comment" : "issue-comment", n, c.id, c.html_url, c.body));
     }
