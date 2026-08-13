@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.1.3] - 2026-08-13
+
+### Changed
+
+- Widened the `@vespeneventures/copy` range from `~0.3.0` to `~0.4.0` to
+  track that package's 0.4.0 release. This is required, not cosmetic: in
+  0.x semver a tilde range is minor-locked, so once `copy` reached 0.4.0
+  the previous `~0.3.0` range excluded it and the dependency stopped
+  resolving to the sibling package at all. No API change here — `copy`
+  0.4.0 is purely additive to what this package uses.
+
 ## [0.1.2] - 2026-08-13
 
 ### Changed

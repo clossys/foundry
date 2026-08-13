@@ -77,3 +77,16 @@ export type {
 
 export { checkCopyTraceability } from "./copy-gate.js";
 export type { CopyGateFinding, CopyGateIgnored, CopyGateResult, CopyGateRule } from "./copy-gate.js";
+
+// Locale-coverage governance: is every declared locale covered by a source
+// locale's registry, and where has a target locale drifted? See
+// locale-coverage.ts's top-of-file doc comment for the runtime/governance
+// split this is the other half of, and for why stale-translation detection
+// is deliberately not implemented against the current CopyRegistry shape.
+export { checkLocaleCoverage } from "./locale-coverage.js";
+export type {
+  LocaleCoverageFinding,
+  LocaleCoverageReport,
+  LocaleCoverageSkip,
+  LocaleCoverageSkipReason,
+} from "./locale-coverage.js";

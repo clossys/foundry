@@ -1,32 +1,76 @@
 {
   "name": "@vespeneventures/surface",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "private": false,
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
   "description": "Surface composition, media registries, and channel renderers for web, email, print, images, and slides.",
-  "keywords": ["surface", "composition", "render", "web", "email", "print", "image", "slides", "typescript"],
+  "keywords": [
+    "surface",
+    "composition",
+    "render",
+    "web",
+    "email",
+    "print",
+    "image",
+    "slides",
+    "typescript"
+  ],
   "author": "Calvin Hung",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/vespeneventures/foundry.git",
     "directory": "packages/surface"
   },
-  "bugs": { "url": "https://github.com/vespeneventures/foundry/issues" },
-  "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/surface#readme",
-  "engines": { "node": ">=20" },
-  "exports": {
-    "./core": { "types": "./dist/core/index.d.ts", "import": "./dist/core/index.js" },
-    "./media": { "types": "./dist/media/index.d.ts", "import": "./dist/media/index.js" },
-    "./web": { "types": "./dist/web/index.d.ts", "import": "./dist/web/index.js" },
-    "./email": { "types": "./dist/email/index.d.ts", "import": "./dist/email/index.js" },
-    "./print": { "types": "./dist/print/index.d.ts", "import": "./dist/print/index.js" },
-    "./image": { "types": "./dist/image/index.d.ts", "import": "./dist/image/index.js" },
-    "./slides": { "types": "./dist/slides/index.d.ts", "import": "./dist/slides/index.js" }
+  "bugs": {
+    "url": "https://github.com/vespeneventures/foundry/issues"
   },
-  "bin": { "surface-media-check": "./dist/media/cli.js" },
-  "files": ["dist", "src", "!src/**/*.test.ts", "!src/**/*.test.tsx", "README.md", "LICENSE"],
+  "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/surface#readme",
+  "engines": {
+    "node": ">=20"
+  },
+  "exports": {
+    "./core": {
+      "types": "./dist/core/index.d.ts",
+      "import": "./dist/core/index.js"
+    },
+    "./media": {
+      "types": "./dist/media/index.d.ts",
+      "import": "./dist/media/index.js"
+    },
+    "./web": {
+      "types": "./dist/web/index.d.ts",
+      "import": "./dist/web/index.js"
+    },
+    "./email": {
+      "types": "./dist/email/index.d.ts",
+      "import": "./dist/email/index.js"
+    },
+    "./print": {
+      "types": "./dist/print/index.d.ts",
+      "import": "./dist/print/index.js"
+    },
+    "./image": {
+      "types": "./dist/image/index.d.ts",
+      "import": "./dist/image/index.js"
+    },
+    "./slides": {
+      "types": "./dist/slides/index.d.ts",
+      "import": "./dist/slides/index.js"
+    }
+  },
+  "bin": {
+    "surface-media-check": "./dist/media/cli.js"
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "prepublishOnly": "npm run build",
@@ -34,7 +78,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@vespeneventures/copy": "~0.3.0",
+    "@vespeneventures/copy": "~0.4.0",
     "@vespeneventures/ui": "~0.7.0"
   },
   "peerDependencies": {
@@ -42,8 +86,12 @@
     "react-dom": ">=18"
   },
   "peerDependenciesMeta": {
-    "react": { "optional": true },
-    "react-dom": { "optional": true }
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^7.0.0",
@@ -58,5 +106,7 @@
     "typescript": "~6.0.0",
     "vitest": "^4.1.9"
   },
-  "publishConfig": { "registry": "https://npm.pkg.github.com" }
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  }
 }
