@@ -161,6 +161,18 @@ export function decideInboundAdmission(
  *
  * No input combination yields `{ ack: true, action: "process" }` unless
  * `input.signature === "verified"` AND the ledger reports the event as new.
+ *
+ * A THROWING LEDGER REJECTS THIS PROMISE, AND THAT IS THE CORRECT DECLINE
+ * PATH — do not catch it and ack. Note this is the opposite of
+ * `dispatch()`, which deliberately never rejects on a transport failure;
+ * the asymmetry is real and load-bearing. Outbound already owns the
+ * message, so a failed send is a result to record. Inbound does not own
+ * anything yet: if durable dedupe could not be performed, this function
+ * cannot know whether the event is a replay, so acking it would silently
+ * discard an event that may never have been processed. Rejecting lets the
+ * caller's route return a 5xx and the provider redeliver, which is exactly
+ * what at-least-once delivery is for. Ack means "durably accepted"; an
+ * unreachable ledger means nothing was durably accepted.
  */
 export async function admitInboundEvent(
   input: InboundAdmissionInput,

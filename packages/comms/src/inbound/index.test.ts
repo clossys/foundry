@@ -153,3 +153,33 @@ describe("decideInboundAdmission (pure core)", () => {
     expect(decideInboundAdmission(invalidSignature, "duplicate")).toEqual({ ack: false, reason: "signature-invalid" });
   });
 });
+
+describe("admitInboundEvent — an unreachable ledger rejects rather than acking", () => {
+  it("propagates a ledger failure instead of acking an event it could not dedupe", async () => {
+    const failing: InboundEventLedger = {
+      recordIfNew: () => Promise.reject(new Error("ledger unavailable")),
+    };
+    await expect(
+      admitInboundEvent(
+        { provider: "p", eventId: "e1", occurredAt: "2026-08-13T00:00:00Z", signature: "verified" },
+        failing,
+      ),
+    ).rejects.toThrow("ledger unavailable");
+  });
+
+  it("does not consult the ledger at all when the signature is unverified", async () => {
+    let called = false;
+    const ledger: InboundEventLedger = {
+      recordIfNew: async () => {
+        called = true;
+        return "new";
+      },
+    };
+    const decision = await admitInboundEvent(
+      { provider: "p", eventId: "e1", occurredAt: "2026-08-13T00:00:00Z", signature: "invalid" },
+      ledger,
+    );
+    expect(decision).toEqual({ ack: false, reason: "signature-invalid" });
+    expect(called).toBe(false);
+  });
+});
