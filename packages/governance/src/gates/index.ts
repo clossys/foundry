@@ -7,6 +7,17 @@ export { runFoundationCheck } from "./foundation.js";
 export { computeBuildOrder } from "./build-order.js";
 export { verifyPolicyBindings } from "./policy-checks.js";
 export { main, run, severityCounts } from "./cli.js";
+export { evaluateRatchet } from "./ratchet.js";
+export type { RatchetFinding, RatchetResult } from "./ratchet.js";
+export { checkOverrideTargetRanges } from "./override-target-range.js";
+export type { OverrideRangeFinding } from "./override-target-range.js";
+export { checkDependencyScope } from "./dependency-scope.js";
+export type {
+  DependencyScopeAllowlistDocument,
+  DependencyScopeAllowlistEntry,
+  DependencyScopeFinding,
+  DependencyScopeOptions,
+} from "./dependency-scope.js";
 export {
   checkCredentialInventory,
   checkCredentialSurfaceDrift,

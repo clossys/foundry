@@ -43,11 +43,100 @@ separately versioned packages.
 | Subpath | Includes |
 | --- | --- |
 | `@vespeneventures/governance/catalog` | Workspace discovery and dependency-graph evaluation. |
-| `@vespeneventures/governance/gates` | Foundation checks, deterministic build order, secret-surface gates, and `foundry-check`. |
+| `@vespeneventures/governance/gates` | Foundation checks, deterministic build order, secret-surface gates, a ratchet primitive, override-range and dependency-scope gates, and `foundry-check`. |
 | `@vespeneventures/governance/release` | Isolated packed-artifact and installed-import proof. |
 | `@vespeneventures/governance/repository` | Consumer-owned repository-profile contracts, validation, and `repository-check`. |
 | `@vespeneventures/governance/review` | Provider-neutral review evidence contracts, validation, and `review-check`. |
 | `@vespeneventures/governance/review/github` | Pure normalization of caller-provided GitHub-shaped review evidence. |
+
+### `./gates` additions: ratchet, override bounds, dependency scope
+
+Three small, independent, pure gates alongside the existing foundation,
+build-order, policy, and secret-surface checks — none of them do I/O; a
+caller reads whatever real data each one needs and passes it in.
+
+#### `evaluateRatchet(current, baseline)`
+
+A generic "warn-first with a checked-in baseline, ratchet monotonically
+toward zero" primitive — count whatever a caller wants to track down to
+zero (lint warnings, TODOs, `any` usages, anything), read a checked-in
+baseline, and call this with both numbers.
+
+```ts
+import { evaluateRatchet } from "@vespeneventures/governance/gates";
+
+const result = evaluateRatchet(currentWarningCount, baselineFromDisk);
+if (!result.ok) process.exitCode = result.status === "invalid" ? 2 : 1;
+```
+
+| `current` vs `baseline` | `ok` | `status` | Notes |
+| --- | --- | --- | --- |
+| `current === baseline` | `true` | `"clean"` | `improved: false`, no findings. |
+| `current < baseline` | `true` | `"clean"` | `improved: true` plus a `"ratchet/baseline-stale"` **warning** finding — real progress, reported explicitly, never silently dropped. Lowering the baseline is always a separate, explicit action; this function never does it for you. |
+| `current > baseline` | `false` | `"regression"` | A `"ratchet/regression"` **error** finding. |
+| either input is nonsense | `false` | `"invalid"` | A negative or non-integer `current`/`baseline`, or a missing (`undefined`/`null`) baseline, fails closed — this is "could not run", not a clean or regressed result, and `current`/`baseline` are not echoed back. |
+
+#### `checkOverrideTargetRanges(overrides)`
+
+A package.json `overrides` entry's target range must be upper-bounded to
+the vulnerable major — never a bare `>=x.y.z`. An unbounded target lets a
+resolver hoist a dependent across a major version boundary and break it at
+runtime; a security audit cannot catch this class of break, since an audit
+only confirms the vulnerable version is gone, never that the replacement
+stays API-compatible with what depends on it.
+
+```ts
+import { checkOverrideTargetRanges } from "@vespeneventures/governance/gates";
+
+checkOverrideTargetRanges({ "left-pad": ">=1.2.3" });
+// -> one "overrides/range-unbounded" finding
+checkOverrideTargetRanges({ "left-pad": ">=1.2.3 <2.0.0" });
+// -> []
+```
+
+Range parsing is hand-rolled (no semver dependency) and deliberately
+narrow. It recognizes exactly: an exact pin (`"1.2.3"`, `"=1.2.3"`), a `~`
+or `^` range, an explicit space-hyphen-space range (`"1.2.3 - 2.0.0"`), and
+a single or paired `>=`/`>`/`<`/`<=` comparator range. Anything else — OR
+ranges (`"... || ..."`), x-ranges/wildcards, dist-tags, git/file/workspace
+specifiers, three or more space-separated comparators — is reported as
+`"overrides/range-unparseable"`, a finding, not a pass: an unparseable
+range is exactly the case where this gate must not assume the best.
+
+#### `checkDependencyScope(catalog, scope, allowlist, options?)`
+
+Mechanical enforcement of [CONTRIBUTING.md](../../CONTRIBUTING.md)'s
+"Dependencies: the default answer is no": every `dependencies` entry in a
+`packages/*/package.json` must be `<scope>/*`-scoped, unless it is named in
+a small, checked-in allowlist entry.
+
+```ts
+import { buildCatalog } from "@vespeneventures/governance/catalog";
+import { checkDependencyScope } from "@vespeneventures/governance/gates";
+
+const catalog = buildCatalog(process.cwd());
+const allowlist = JSON.parse(readFileSync("dependency-scope-allowlist.json", "utf8"));
+const findings = checkDependencyScope(catalog, "@example", allowlist);
+```
+
+| Allowlist entry field | Type | Notes |
+| --- | --- | --- |
+| `name` | `string` | The exact, non-scoped dependency name being exempted. Non-empty. |
+| `reason` | `string` | Why this dependency was deliberately admitted. Non-empty. |
+| `reviewBy` | `string` | `YYYY-MM-DD`. Once passed, the entry stops exempting anything and is itself reported as `"dependency-scope/allowlist-expired"`. |
+
+```json
+{ "version": 1, "entries": [] }
+```
+
+A malformed allowlist document or entry is a finding
+(`"dependency-scope/allowlist-shape"` / `"dependency-scope/allowlist-entry-shape"`)
+and exempts nothing — never a silent exemption. Deliberately scoped small:
+every runtime dependency in this repository was verified by inspection to
+already be `@vespeneventures/*`-scoped, so this is a floor that matches
+that reality today, not a full dependency admission-and-retirement
+register; it can grow richer if a third-party runtime dependency is ever
+legitimately admitted.
 
 ### `./repository` schema: `RepositoryProfile`
 
