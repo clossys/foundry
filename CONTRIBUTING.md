@@ -97,6 +97,32 @@ Practically:
 - **Dependencies:** the default answer is no. A package here should be usable
   without dragging in a tree. Adding a runtime dependency needs a reason in the
   pull request description.
+- **Supported configurations: the default answer is also no — be opinionated
+  about the foundation instead.** Where a package does depend on something,
+  it picks one and requires it, rather than supporting every environment an
+  adopter might have. `@vespeneventures/ui` requires Tailwind v4; that is a
+  deliberate choice, not a gap waiting to be closed.
+
+  This is a cost argument, not a taste argument. A second supported path is
+  never one feature: it is a second test matrix, a second override-precedence
+  story, and a second thing to keep in sync on every future change — paid
+  forever, by everyone, on work unrelated to why it was added. Two paths that
+  each get half the attention are worse than one that gets all of it.
+
+  So a proposal to "also support X" needs the same evidence a new package
+  needs: a real consumer that needs it, not a hypothetical adopter who might.
+  Speculative compatibility is cheap to add and expensive to keep. A proposal
+  to ship a second, non-Tailwind styling path for `ui` was declined on exactly
+  these grounds (#174).
+
+  The obligation this creates: **if you require something, say so loudly when
+  it is missing.** Requiring a prerequisite is legitimate; failing silently
+  when it is unmet is not — that turns a setup error into a debugging session
+  in someone else's codebase, and it is the same
+  absence-of-signal-looks-like-a-passing-signal failure described in the
+  entry below. Loudly means a thrown error or console output, never something
+  rendered into the page: a startup banner injected into every page load was
+  itself a defect, removed in #148.
 - **Gate CLIs exit `0` clean / `1` findings / `2` could not run — `2` is not a
   variant of failure.** Every gate CLI in this repo follows this three-state
   contract: `packages/ui/src/cli.ts` and `packages/ui/src/token-gate.ts`
