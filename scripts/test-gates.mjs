@@ -2244,15 +2244,14 @@ try {
   // repository's own history found 214 private-identity findings sitting
   // there while the tree itself was clean.
   //
-  // These cases exercise DRAFT mode exclusively (--file and stdin): it is
-  // the one mode that needs no `gh` authentication and no network access, so
-  // it is the only mode a hermetic test suite can exercise at all — and, not
-  // coincidentally, it is also the single most valuable mode the gate has,
-  // since it PREVENTS disclosure (scanning text before it is posted) rather
-  // than merely detecting it after the fact. The --issue/--pr/--all fetch
-  // paths are unexercised here; check-name-collision.mjs's --packages-json
-  // seam is the model for how to make those hermetically testable too, left
-  // as follow-up rather than faked silently in this pass.
+  // Most of these cases exercise DRAFT mode (--file and stdin): it needs no
+  // `gh` authentication and no network access, so it is the mode a hermetic
+  // test suite can exercise most directly — and, not coincidentally, it is
+  // also the single most valuable mode the gate has, since it PREVENTS
+  // disclosure (scanning text before it is posted) rather than merely
+  // detecting it after the fact. The --issue/--pr/--all fetch paths are
+  // exercised further down, via a fake `gh` placed on PATH — the same
+  // fixture-injection seam check-name-collision.mjs's --packages-json uses.
   console.log("\n# check-conversation-safety: draft mode");
   {
     function listConversationTmpDirs() {
@@ -2409,6 +2408,76 @@ try {
       !bigConv.out.includes("acme-corp"),
       `matched term leaked ${(bigConv.out.match(/acme-corp/g) || []).length} time(s) into output`,
     );
+
+    // ---- TITLE COVERAGE REGRESSION. --issue/--pr/--all fetched only
+    // `.body` at first — an issue or PR's TITLE never reached the scanner in
+    // retrospective mode, even though the live workflow correctly folds
+    // title into the scanned text for the same two events. Caught by hand
+    // (a manual export of every title in this repo, run through draft mode)
+    // only after the tool had already reported a clean sweep that silently
+    // never looked at any of them. A fake `gh` on PATH, standing in for the
+    // real CLI, is what lets this be a real regression test instead of
+    // needing network + a live issue to plant a term in.
+    {
+      const ghFixtureDir = join(work, "gh-title-fixture");
+      mkdirSync(ghFixtureDir, { recursive: true });
+      const fakeGhPath = join(ghFixtureDir, "gh");
+      // One shim, routed by path shape, standing in for every `gh api` call
+      // fetchIssue/fetchPr/fetchAll can make — a listing (`?state=all`), a
+      // paginated sub-collection (path ends in /comments or /reviews), or a
+      // single object (a bare issues/N or pulls/N). This is deliberately the
+      // SAME shim for all three modes below: title-folding at one call site
+      // regressing while the other two stay fixed is exactly the gap a
+      // prior review caught (only --issue was covered, and reverting the
+      // fold in fetchPr or fetchAll alone still passed 155/155) — one shared
+      // fixture exercised by three independent assertions is what actually
+      // closes that.
+      writeFileSync(
+        fakeGhPath,
+        [
+          "#!/usr/bin/env node",
+          'const args = process.argv.slice(2);',
+          'if (args[0] !== "api") { process.exit(1); }',
+          'const path = args[1] || "";',
+          'if (path.includes("?state=all")) {',
+          "  process.stdout.write(JSON.stringify([[{",
+          "    number: 1,",
+          '    html_url: "https://example.invalid/issues/1",',
+          '    title: "planted-title-term-acme-corp",',
+          '    body: "ordinary body text, nothing interesting here",',
+          "  }]]));", // one page, one issue entry — --slurp shape
+          '} else if (path.endsWith("/comments") || path.endsWith("/reviews")) {',
+          '  process.stdout.write(JSON.stringify([[]]));', // one empty page
+          "} else {",
+          "  process.stdout.write(JSON.stringify({",
+          '    title: "planted-title-term-acme-corp",',
+          '    body: "ordinary body text, nothing interesting here",',
+          '    html_url: "https://example.invalid/issues/1",',
+          "  }));", // a bare issues/N or pulls/N — single-object shape
+          "}",
+          "process.exit(0);",
+        ].join("\n"),
+        "utf8",
+      );
+      chmodSync(fakeGhPath, 0o755);
+
+      const env = { ...process.env, PATH: `${ghFixtureDir}:${process.env.PATH}` };
+      const modes = [
+        ["--issue", "1"],
+        ["--pr", "1"],
+        ["--all"],
+      ];
+      for (const modeArgs of modes) {
+        const label = modeArgs[0];
+        const result = run("node", [CONVERSATION, ...modeArgs, "--repo", "x/y", "--denylist", synthPath, "--require-denylist"], { env });
+        check(
+          `a title-only match is caught by ${label} mode (title reaches the scanner, not just body)`,
+          result.code === 1,
+          `expected exit 1 (title term should have been flagged), got ${result.code}: ${result.out.slice(0, 300)}`,
+        );
+        check(`the title match is still never echoed in ${label} mode`, !result.out.includes("acme-corp"), `matched title term leaked into ${label} output: ${result.out}`);
+      }
+    }
   }
 } finally {
   rmSync(work, { recursive: true, force: true });
