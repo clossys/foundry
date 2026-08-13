@@ -42,10 +42,10 @@
  *       whole read as fully accounted-for.
  */
 
-import { existsSync, realpathSync, statSync } from "node:fs";
-import { resolve } from "node:path";
+import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
+import { resolve, relative } from "node:path";
 import { fileURLToPath } from "node:url";
-import { TOKENS } from "./tokens/index.js";
+import { TOKENS, type TokenDefinition } from "./tokens/index.js";
 import { scanStyleSources, type StyleScanResult } from "./style-scan.js";
 import { checkTokenPurity, type TokenGateResult } from "./token-gate.js";
 
@@ -54,7 +54,15 @@ const USAGE = `Usage: ui-token-check [scan-dir] [options]
   scan-dir       Directory to scan for hardcoded styling literals (hex colors, color functions, raw lengths, Tailwind arbitrary-value classes). Defaults to the current working directory.
 
 Options:
-  --help         Print this message and exit 0.
+  --tokens <path>   Check against a JSON file's token registry instead of this
+                     package's own. The file must contain an object mapping
+                     any key to a token entry with at least "property" and
+                     "value" string fields (this package's own
+                     TokenDefinition shape — "family" and other fields are
+                     optional for this purpose). Findings will name this
+                     file, not "@vespeneventures/ui/tokens", as the registry
+                     that was checked.
+  --help            Print this message and exit 0.
 
 Exit codes: 0 = clean, 1 = at least one finding, 2 = could not run (bad input, nothing matched to scan, or at least one construct could not be classified).
 `;
@@ -64,16 +72,28 @@ export class CliInputError extends Error {}
 
 interface ParsedArgs {
   scanDir?: string;
+  tokensPath?: string;
   help: boolean;
 }
 
 function parseArgs(argv: string[]): ParsedArgs {
   let scanDir: string | undefined;
+  let tokensPath: string | undefined;
   let help = false;
 
-  for (const arg of argv) {
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i] as string;
     if (arg === "--help" || arg === "-h") {
       help = true;
+      continue;
+    }
+    if (arg === "--tokens") {
+      const value = argv[i + 1];
+      if (value === undefined || value.startsWith("-")) {
+        throw new CliInputError(`--tokens requires a path argument`);
+      }
+      tokensPath = value;
+      i++;
       continue;
     }
     if (arg.startsWith("-")) {
@@ -86,7 +106,65 @@ function parseArgs(argv: string[]): ParsedArgs {
     }
   }
 
-  return { scanDir, help };
+  return { scanDir, tokensPath, help };
+}
+
+/**
+ * Loads and validates a consumer-supplied token registry from a JSON file.
+ * JSON only, deliberately: `checkTokenPurity`'s own `tokens` seam already
+ * accepts any `Record<string, TokenDefinition>`, so a JS/TS module loader
+ * here would add real complexity (async resolution, a `main()` signature
+ * change that breaks every existing synchronous test call in
+ * `cli.test.ts`) for a case JSON already covers — a consumer's own token
+ * build can always emit JSON as one more output alongside its real module.
+ *
+ * Fails closed (throws `CliInputError`, mapping to exit 2) on anything
+ * that is not a plausible registry, rather than silently running a scan
+ * against a partially-garbage token set and reporting whatever findings
+ * happen to fall out of that.
+ */
+function loadTokensFile(path: string): Readonly<Record<string, TokenDefinition>> {
+  const resolved = resolve(path);
+  if (!existsSync(resolved)) throw new CliInputError(`--tokens file "${path}" does not exist`);
+  let stat;
+  try {
+    stat = statSync(resolved);
+  } catch (error) {
+    throw new CliInputError(`cannot read --tokens file "${path}": ${error instanceof Error ? error.message : String(error)}`);
+  }
+  if (!stat.isFile()) throw new CliInputError(`--tokens file "${path}" is not a file`);
+
+  let raw: string;
+  try {
+    raw = readFileSync(resolved, "utf8");
+  } catch (error) {
+    throw new CliInputError(`cannot read --tokens file "${path}": ${error instanceof Error ? error.message : String(error)}`);
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (error) {
+    throw new CliInputError(`--tokens file "${path}" is not valid JSON: ${error instanceof Error ? error.message : String(error)}`);
+  }
+
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    throw new CliInputError(`--tokens file "${path}" must contain a JSON object mapping token keys to token entries`);
+  }
+  for (const [key, entry] of Object.entries(parsed as Record<string, unknown>)) {
+    if (
+      typeof entry !== "object" ||
+      entry === null ||
+      typeof (entry as Record<string, unknown>).property !== "string" ||
+      typeof (entry as Record<string, unknown>).value !== "string"
+    ) {
+      throw new CliInputError(
+        `--tokens file "${path}": entry "${key}" is not a valid token — expected an object with at least string "property" and "value" fields`,
+      );
+    }
+  }
+
+  return parsed as Record<string, TokenDefinition>;
 }
 
 function requireDirectory(label: string, path: string): void {
@@ -182,8 +260,17 @@ export function main(argv: string[]): number {
   const scanDir = resolve(args.scanDir ?? process.cwd());
   requireDirectory("scan-dir", scanDir);
 
+  // A consumer's own registry, when supplied, fully REPLACES this
+  // package's own TOKENS for this run — not merged with it. Merging would
+  // silently let a consumer's source pass by matching one of THIS
+  // package's tokens instead of their own, which defeats the entire point
+  // of supplying a different registry: to check consumer source against
+  // consumer tokens.
+  const tokens = args.tokensPath ? loadTokensFile(args.tokensPath) : TOKENS;
+  const registryLabel = args.tokensPath ? relative(process.cwd(), resolve(args.tokensPath)) : "@vespeneventures/ui/tokens";
+
   console.log(`Scan directory: ${scanDir}`);
-  console.log(`Token registry: @vespeneventures/ui/tokens (${Object.keys(TOKENS).length} tokens)`);
+  console.log(`Token registry: ${registryLabel} (${Object.keys(tokens).length} tokens)`);
 
   const scan = scanStyleSources(scanDir); // throws (fail-closed) on an unreadable directory — caught by run()
   printScanAccounting(scan);
@@ -196,7 +283,7 @@ export function main(argv: string[]): number {
     return 2;
   }
 
-  const result = checkTokenPurity(scan.candidates, TOKENS, scan.filesScanned, scan.unchecked);
+  const result = checkTokenPurity(scan.candidates, tokens, scan.filesScanned, scan.unchecked, registryLabel);
   printGateReport(result);
 
   // `unchecked` wins over everything else in the exit-code decision — see

@@ -125,8 +125,16 @@
  * Declares no custom property — pure UI. Visible the moment this file is
  * imported without a brand binding layer on top of it, so an unbranded
  * render never quietly passes for "done." Disappears the instant a
- * consumer sets `data-brand-bound` on <html> (see brand-template.css). */
-html:not([data-brand-bound])::before {
+ * consumer sets `data-brand-bound` on <html> (see brand-template.css).
+ *
+ * `data-suppress-brand-banner` is the escape hatch: default-on is the
+ * point (an unbranded render should never quietly pass as finished), but
+ * a consumer intentionally shipping unbranded/greyscale primitives, or one
+ * whose brand-binding genuinely can't land before first paint, needs a way
+ * to say so rather than ship a badge it can never make go away. Set it on
+ * <html> the same way as `data-brand-bound` — in server-rendered markup,
+ * not a post-hydration effect, or it still flashes once before removal. */
+html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   content: "No brand binding — rendering greyscale primitives. See @vespeneventures/ui/brand-template.css";
   position: fixed;
   top: 0;
@@ -147,6 +155,7 @@ html:not([data-brand-bound])::before {
 }
 
 
+@layer foundry-ui-tokens {
 :root {
 
   /* ════════════════════════════════════════════════════════════════
@@ -512,6 +521,7 @@ html:not([data-brand-bound])::before {
    * ════════════════════════════════════════════════════════════════ */
   --ui-alpha-disabled:            0.5;
 }
+}
 
 
 /* ════════════════════════════════════════════════════════════════════
@@ -527,6 +537,7 @@ html:not([data-brand-bound])::before {
  * expressed as data (`themeDependent`), and src/theme-parity.test.ts /
  * src/dark-mode-cascade.test.ts for what enforces both.
  * ════════════════════════════════════════════════════════════════════ */
+@layer foundry-ui-tokens {
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
 
@@ -611,6 +622,7 @@ html:not([data-brand-bound])::before {
     --color-chart-categorical-8:    #e66767;
   }
 }
+}
 
 
 /* ════════════════════════════════════════════════════════════════════
@@ -623,6 +635,7 @@ html:not([data-brand-bound])::before {
  * identical, so nothing but that test needs to be trusted to keep them
  * in sync as this file changes.
  * ════════════════════════════════════════════════════════════════════ */
+@layer foundry-ui-tokens {
 :root[data-theme="dark"] {
 
   /* ── COLOR · SURFACE ──────────────────────────────────────────── */
@@ -685,4 +698,5 @@ html:not([data-brand-bound])::before {
   --color-chart-categorical-6:    #008300;
   --color-chart-categorical-7:    #9085e9;
   --color-chart-categorical-8:    #e66767;
+}
 }

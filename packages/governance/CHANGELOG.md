@@ -23,6 +23,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   policy plus TypeScript for source-aware gates. The former standalone package
   names are compatibility packages with documented migration paths.
 
+### Fixed
+
+- The root entry (`import "@vespeneventures/governance"`) no longer
+  transitively loads the TypeScript compiler. `governance.ts` and
+  `release/preflight.ts` each imported `runFoundationCheck`/
+  `computeBuildOrder` from the `./gates/index.js` barrel rather than from
+  the specific files those functions live in — and that barrel also
+  re-exports `secret-gates.ts`, whose own top-level `import ts from
+  "typescript"` rode along with it regardless of which single export a
+  caller actually wanted. A plain root import now stays free of the
+  compiler itself; a consumer who deliberately imports the public
+  `@vespeneventures/governance/gates` subpath still gets everything,
+  unchanged, secret-gates included. This is specifically about
+  `typescript`: the root already used `node:fs` (workspace discovery) and
+  `preflightGovernedPackage` already used `node:child_process` (a real
+  tarball pack-and-install check) before this change, for reasons entirely
+  unrelated to the barrel-import bug fixed here — see the README's
+  "Requirements" section for the precise boundary.
+
 ## [0.1.1] - 2026-08-11
 
 ### Fixed

@@ -38,6 +38,17 @@ describe("checkTokenPurity — hardcodes-token-value (a BARE literal matching a 
     const result = checkTokenPurity(candidates, TOKENS, 1, unchecked);
     expect(result.findings[0]).toMatchObject({ rule: "hardcodes-token-value", matchedToken: "--color-chart-categorical-1" });
   });
+
+  it("omits the '(family ...)' parenthetical entirely for a registry entry with no family — --tokens' loadTokensFile only requires property+value, so a consumer's own registry may not carry the concept at all, and rendering it as '(family \"undefined\")' would read as a real value rather than an absent one", () => {
+    const NO_FAMILY_TOKENS = {
+      "--consumer-brand": { property: "--consumer-brand", value: "#654321" },
+    } as unknown as Readonly<Record<string, TokenDefinition>>;
+    const { candidates, unchecked } = candidatesFor('const c = "#654321";\n', "x.ts");
+    const result = checkTokenPurity(candidates, NO_FAMILY_TOKENS, 1, unchecked);
+    expect(result.findings[0]).toMatchObject({ rule: "hardcodes-token-value", matchedToken: "--consumer-brand" });
+    expect(result.findings[0]?.message).not.toContain("undefined");
+    expect(result.findings[0]?.message).not.toContain("(family");
+  });
 });
 
 describe("checkTokenPurity — raw-value-no-token-backing (a BARE literal with no matching entry)", () => {
@@ -60,6 +71,32 @@ describe("checkTokenPurity — raw-value-no-token-backing (a BARE literal with n
     const result = checkTokenPurity(candidates, TOKENS, 1, unchecked);
     expect(result.findings).toHaveLength(1);
     expect(result.findings[0]?.message).toContain("12rem");
+  });
+});
+
+// A finding's message names the registry it actually checked. Before this,
+// every message hardcoded "@vespeneventures/ui/tokens" regardless of what
+// was passed as `tokens` — actively wrong for exactly the caller-supplied-
+// registry use case checkTokenPurity's own `tokens` parameter exists for.
+describe("checkTokenPurity — registryLabel (which registry a finding's message names)", () => {
+  it("defaults to '@vespeneventures/ui/tokens' when omitted — every existing caller's message is unchanged", () => {
+    const { candidates, unchecked } = candidatesFor('const c = "#123abc";\n', "x.ts");
+    const result = checkTokenPurity(candidates, NO_TOKENS, 1, unchecked);
+    expect(result.findings[0]?.message).toContain("@vespeneventures/ui/tokens");
+  });
+
+  it("names a caller-supplied label instead, for a BARE literal with no token backing", () => {
+    const { candidates, unchecked } = candidatesFor('const c = "#123abc";\n', "x.ts");
+    const result = checkTokenPurity(candidates, NO_TOKENS, 1, unchecked, "consumer-tokens.json");
+    expect(result.findings[0]?.message).toContain("consumer-tokens.json");
+    expect(result.findings[0]?.message).not.toContain("@vespeneventures/ui/tokens");
+  });
+
+  it("names a caller-supplied label instead, for a var() FALLBACK literal whose property isn't in the registry", () => {
+    const { candidates, unchecked } = candidatesFor('const c = "var(--nonexistent-token, 4px)";\n', "x.ts");
+    const result = checkTokenPurity(candidates, NO_TOKENS, 1, unchecked, "consumer-tokens.json");
+    expect(result.findings[0]?.message).toContain("consumer-tokens.json");
+    expect(result.findings[0]?.message).not.toContain("@vespeneventures/ui/tokens");
   });
 });
 

@@ -59,6 +59,37 @@ All notable changes to this package are documented here. Format follows
   keeping the two in sync — left unfixed (and unwaived) in the PR that
   introduced this gate; see that PR's description for the full accounting.
 
+### Fixed
+
+- Relaxed the declared peer floor for `@internationalized/date` (`^3.12.3`
+  → `^3.12.2`) and `react-aria-components` (`^1.20.0` → `^1.19.0`). Neither
+  version had a documented reason to sit ahead of what a real consumer tree
+  already commonly resolves; installing into a real Next.js + Tailwind v4
+  app tree produced an `unmet peer` warning against versions one behind
+  each floor, non-fatal only because both peers are already optional. Both
+  changes only widen what's accepted — nothing that satisfied the old floor
+  stops satisfying the new one.
+- `styles/tokens.css`'s token declarations now live in a named `@layer
+  foundry-ui-tokens` instead of unlayered `:root` — an unlayered rule
+  always outranks a layered one regardless of import order, which made
+  these tokens win over a host app's own Tailwind v4 `@layer theme`
+  unconditionally rather than composing with it.
+- The "No brand binding" startup banner now respects a
+  `data-suppress-brand-banner` attribute on `<html>`. It stays default-on
+  (an unbranded render should never quietly pass as finished) but a
+  consumer shipping unbranded primitives on purpose previously had no way
+  to say so.
+- `ui-token-check` gained a `--tokens <path-to-json>` flag to check scanned
+  source against a consumer's own token registry instead of always
+  checking against this package's own `TOKENS` — previously every finding
+  against a real consumer tree read as unbacked, because the consumer's
+  own tokens were never in scope. `--tokens` replaces the default registry
+  for the run rather than merging with it.
+- `checkTokenPurity`'s finding messages now take an optional
+  `registryLabel` and attribute themselves to the registry actually
+  passed in, rather than always saying `@vespeneventures/ui/tokens`
+  regardless of which registry a caller supplied.
+
 ## [0.3.0] - Unreleased
 
 ### Changed
