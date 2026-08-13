@@ -11,6 +11,30 @@ sizing, numbers, or brand attributes.
 npm install @vespeneventures/strategy
 ```
 
+## Scope: this package is strategy records AND brand derivation
+
+Before anything else: `strategy` is not only mission/positioning/markets/
+audiences/roadmap/facts. It also owns the brand layer —
+`BrandEssence`, `BrandAttribute`, `BrandDerivation`, and
+`checkBrandCoverage`. Someone scoping an adoption around the package name
+alone can miss that second half and leave it stranded, expecting a separate
+`brand` package that doesn't exist. It doesn't exist on purpose: strategy
+and brand are one package because splitting them would either duplicate or
+break a seam this package depends on to stay dependency-free.
+
+The seam: `BrandDerivation` names token slots (`"--color-accent-primary"`)
+and voice rules by **plain string only**, never by a typed import of
+`@vespeneventures/ui/tokens` or `@vespeneventures/copy/voice` — the exact
+discipline `Market.factRefs`/`Audience.factRefs` already use elsewhere in
+this package (see `brand-derivation.ts`'s header comment). That name-only
+seam is what lets this package ship with **zero runtime dependencies**:
+importing `tokens` here to validate a slot name for real would mean every
+consumer of `strategy` who has never touched brand tokens now resolves
+`tokens`' own dependency tree too. A standalone `brand` package would have
+had to either duplicate that same seam (and its zero-dependency
+justification) or give it up and import `tokens`/`voice` directly. See "Why
+brand lives here, not in its own package" below for the full account.
+
 ## What this package is, and is not
 
 The split here mirrors `@vespeneventures/ui/tokens`' own README ("The
