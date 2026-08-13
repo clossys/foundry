@@ -34,6 +34,20 @@
 // README and the export list are two independently-maintained lists of the
 // same thing — different direction of drift.
 //
+// A fourth check covers a real incident, not a hypothetical: five READMEs in
+// this repo kept saying "zero runtime dependencies," or named a
+// pre-consolidation dependency set, after every one of them started
+// depending on `@scope/governance` for real. Dependency prose is exactly as
+// hand-written and exactly as unchecked as an import example, and drifts the
+// same way — see CHECK D below.
+//
+// A second, later incident showed the same root cause has a third shape:
+// naming the right package is not enough if the version RANGE next to it is
+// stale. Five READMEs (the same five, after the first incident was fixed)
+// kept citing `@scope/governance`'s old `^0.2.0` range after every manifest
+// moved to `^0.3.0`. Neither of the two dependency-prose checks above reads
+// a version number, so all five passed. See CHECK D3 below.
+//
 // WHY EVERYTHING IS DERIVED, NOT HARDCODED
 // ------------------------------------------
 // This file ships in a public repo and is itself scanned by
@@ -213,8 +227,12 @@ readmeLines.forEach((line, i) => {
 // literal header text like "Export" — that keeps the check working whether
 // the column is titled "Export", "Name", or anything else, and is what lets
 // it correctly skip the header without special-casing its wording.
-function findApiSectionLines() {
-  const start = readmeLines.findIndex((l) => /^#{1,6}\s*.*\bAPI\b/i.test(l));
+// Generic "find the section under the first heading matching this pattern"
+// helper, factored out of the original API-only version so CHECK D below can
+// reuse the same structural approach for a "## Requirements" heading instead
+// of duplicating the walk.
+function findSectionLines(headingRe) {
+  const start = readmeLines.findIndex((l) => headingRe.test(l));
   if (start === -1) return null;
   let end = readmeLines.length;
   for (let i = start + 1; i < readmeLines.length; i++) {
@@ -224,6 +242,10 @@ function findApiSectionLines() {
     }
   }
   return [start + 1, end]; // exclusive of the heading itself
+}
+
+function findApiSectionLines() {
+  return findSectionLines(/^#{1,6}\s*.*\bAPI\b/i);
 }
 
 const separatorRowRe = /^\|?[\s:|-]+\|?$/;
@@ -293,6 +315,194 @@ if (apiSection) {
   }
 }
 
+// ------------------------------------------------------------------------- CHECK D
+
+// A README's dependency prose is a promise the same way its export table and
+// import examples are, and it drifts the same way: nothing forces "no
+// runtime dependencies" or a hand-listed dependency name to be touched when
+// `package.json`'s real `dependencies` change. That is exactly what
+// happened here — five READMEs kept claiming "zero runtime dependencies" or
+// naming pre-consolidation dependencies (`@scope/catalog`, `@scope/policy`)
+// after every one of them started declaring a real `dependencies` entry on
+// `@scope/governance`, and nothing in this file (or anywhere else) read
+// dependency prose at all.
+//
+// A full natural-language check of arbitrary dependency prose is not
+// realistic. This aims narrower and stays honest about it: it only fires on
+// two concrete, previously-real drift shapes, both anchored on the literal
+// phrase "runtime dependenc[y|ies]" so it never second-guesses prose that
+// isn't making a dependency claim in the first place.
+//
+//   D1. The README asserts NO/ZERO runtime dependencies for ITSELF, while
+//       `package.json` declares a non-empty `dependencies` object. This is
+//       the exact shape that shipped undetected. Scoped to the
+//       "## Requirements" section (the same house convention CHECK C
+//       already leans on for "## API") rather than the whole document: this
+//       package's own README legitimately quotes a *different* package's
+//       clean "zero runtime dependencies" result as a worked example
+//       (`packages/release` describing `packages/policy`'s round-trip
+//       result) — scanning the whole document for the bare phrase would
+//       misread that as a claim about the README's own package. A package
+//       whose README has no "## Requirements" heading at all falls back to
+//       a whole-document scan, on the theory that a check that never fires
+//       for such a package is worse than one that occasionally over-fires.
+//
+//   D2. A same-scope `@scope/name` reference appears inside the tight,
+//       deliberate DECLARATION CLAUSE that a "runtime dependenc[y|ies]"
+//       lead-in introduces — e.g. "Runtime dependencies: `@scope/catalog`
+//       and `@scope/policy`." or "`gates` has a runtime dependency on
+//       `@scope/governance`." — but that name is not a key in the real
+//       `dependencies` object. This catches a described dependency set that
+//       is stale in either direction — naming something no longer depended
+//       on, or never depended on at all — without trying to parse arbitrary
+//       surrounding English.
+//
+//       Earlier this fired on any same-scope name sharing a *paragraph* with
+//       the bare phrase "runtime dependenc[y|ies]" anywhere in it. That is
+//       far too loose for a monorepo whose READMEs constantly cross-
+//       reference sibling packages: a purely rhetorical comparison
+//       ("`@scope/catalog`, `@scope/policy`, and `@scope/ui/tokens` all ship
+//       with zero runtime dependencies, and this package's own pitch...")
+//       and a boundary statement ("belongs to `@scope/surface`;
+//       audience-facing words belong to `@scope/copy`") both got misread as
+//       *this* package declaring those names as ITS dependencies, because
+//       both happened to share a "paragraph" (in one real case, one giant
+//       bullet-list block with no blank line for hundreds of lines) with the
+//       phrase somewhere else in it. A gate that fails on accurate prose is
+//       worse than no gate.
+//
+//       The fix is to require the scoped name to sit inside the clause the
+//       lead-in actually introduces, not merely nearby: immediately after
+//       "runtime dependenc[y|ies]" is followed by ":" or "on" (the only two
+//       connectors this repo's READMEs actually use to introduce a
+//       declaration — see the real shapes above and in packages/gates,
+//       packages/governance, packages/surface), scanning stops at the first
+//       sentence-ending "." that isn't inside a backtick span (so a version
+//       number like "`^0.3.0`" can't be mistaken for a sentence end) or at
+//       the next blank line / heading, whichever comes first. That is
+//       "declares X" read structurally rather than semantically: a name
+//       merely mentioned later in the same paragraph, or earlier in a
+//       sentence that only gets around to saying "runtime dependencies"
+//       afterward, is outside the window and is never considered.
+const declarationLeadInRe = /runtime\s+dependenc(?:y|ies)\s*(:|on\b)/gi;
+
+function declarationWindow(text, startIndex) {
+  let inBacktick = false;
+  let i = startIndex;
+  for (; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === "`") {
+      inBacktick = !inBacktick;
+      continue;
+    }
+    if (inBacktick) continue;
+    if (ch === ".") {
+      i++;
+      break;
+    }
+    if (ch === "\n") {
+      let j = i + 1;
+      while (text[j] === " " || text[j] === "\t") j++;
+      if (text[j] === "\n" || text[j] === "#") break; // blank line or next heading
+    }
+  }
+  return text.slice(startIndex, i);
+}
+
+// Both checks read `dependencies` only (not `devDependencies` or
+// `peerDependencies`): "runtime dependency" is a claim about what a
+// consumer's own install pulls in transitively, which is exactly what
+// `dependencies` — and only `dependencies` — means in a published manifest.
+const realDependencyNames = new Set(
+  manifest.dependencies && typeof manifest.dependencies === "object" && !Array.isArray(manifest.dependencies)
+    ? Object.keys(manifest.dependencies)
+    : [],
+);
+const hasRealDependencies = realDependencyNames.size > 0;
+
+const zeroDepsClaimRe = /\b(?:zero|no)\s+runtime\s+dependenc(?:y|ies)\b/i;
+const requirementsSection = findSectionLines(/^#{1,6}\s*.*\bRequirements\b/i);
+const zeroDepsScanText = requirementsSection
+  ? readmeLines.slice(requirementsSection[0], requirementsSection[1]).join("\n")
+  : readmeSrc;
+const claimsZeroDeps = zeroDepsClaimRe.test(zeroDepsScanText);
+
+const staleNamedDependencies = new Set();
+for (const leadIn of readmeSrc.matchAll(declarationLeadInRe)) {
+  const window = declarationWindow(readmeSrc, leadIn.index + leadIn[0].length);
+  for (const found of window.match(scopedNameRe) ?? []) {
+    if (found === packageName) continue; // a README may legitimately name itself
+    if (!realDependencyNames.has(found)) staleNamedDependencies.add(found);
+  }
+}
+
+// ------------------------------------------------------------------------- CHECK D3
+
+// D1 and D2 catch the WRONG package name; this catches the RIGHT name with a
+// STALE range next to it, which is a real incident, not a hypothetical: five
+// READMEs here kept saying `@scope/governance` (`^0.2.0`) after every
+// manifest moved to `^0.3.0`, and D1/D2 both passed every one of them
+// because neither reads a version number at all. On a 0.x package this is
+// not merely stale, it's actively wrong: caret ranges are minor-locked below
+// 1.0 (`^0.2.0` means `>=0.2.0 <0.3.0`), so `^0.2.0` and `^0.3.0` cannot both
+// be satisfied by one installed version — a consumer who trusts the README
+// range installs something that cannot satisfy the manifest's real
+// constraint.
+//
+// Deliberately whole-document, like D2 and unlike D1 — but for a different
+// reason than D2's. D1 and D2 anchor themselves (to "## Requirements", or to
+// the literal phrase "runtime dependency") because a bare scoped-name
+// mention alone is ordinary, common prose — a README describing what a
+// sibling package does — that would otherwise be misread as a dependency
+// claim. This check doesn't need that anchor to stay narrow, because its
+// trigger shape already is one: a backticked package name immediately
+// followed by a backticked, parenthesized range. Nobody writes
+// "`@scope/foo` (`^1.2.3`)" except to cite that package's installed range.
+// That's what lets this also catch a stale range documented under any other
+// heading, or attached to a `peerDependencies` mention that never says
+// "runtime dependency" at all (e.g. "Peer dependency: `@scope/foo`
+// (`^1.2.3`)") — a stale peer range misleads a reader exactly as much as a
+// stale runtime one, so both `dependencies` and `peerDependencies` are
+// checked here, unlike D1/D2 which read `dependencies` only.
+//
+// This only fires when the README actually states a range. A README that
+// merely names a dependency with no version attached is not required to add
+// one — that would invent a new documentation burden this check has no
+// business creating (see D2's comment above for the same principle). And the
+// comparison is exact STRING equality against the manifest, not
+// semver-range equivalence: "^0.3.0" and ">=0.3.0 <0.4.0" resolve
+// identically but do not read the same to a human, and any intentional
+// difference between README prose and the manifest range is better fixed by
+// rewording than by teaching this script to shrug at it.
+const declaredRanges = new Map(); // same-scope package name -> its declared range string
+for (const depsField of [manifest.dependencies, manifest.peerDependencies]) {
+  if (depsField && typeof depsField === "object" && !Array.isArray(depsField)) {
+    for (const [name, range] of Object.entries(depsField)) {
+      if (typeof range === "string") declaredRanges.set(name, range);
+    }
+  }
+}
+
+// Matches "`@scope/name`" immediately followed by "(`range`)", allowing
+// whitespace (including a line break) between the two backticked spans —
+// the real prose shape in packages/catalog/README.md:164-165 puts the
+// package name at the end of one line and "(`^0.3.0`)" at the start of the
+// next.
+const namedRangeRe = new RegExp(
+  `\`(${scope.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/[A-Za-z0-9._-]+)\`\\s*\\(\`([^\`]+)\`\\)`,
+  "g",
+);
+
+const staleRanges = [];
+for (const match of readmeSrc.matchAll(namedRangeRe)) {
+  const [, name, claimedRange] = match;
+  if (name === packageName) continue; // a README may legitimately cite its own published range
+  const realRange = declaredRanges.get(name);
+  if (realRange !== undefined && realRange !== claimedRange) {
+    staleRanges.push({ name, claimedRange, realRange });
+  }
+}
+
 // ------------------------------------------------------------------------ report
 
 const findings = [
@@ -319,6 +529,25 @@ const findings = [
     file: "README.md",
     line: f.line,
     message: `README documents "${f.name}", which is not an export of src/index.ts`,
+  })),
+  ...(claimsZeroDeps && hasRealDependencies
+    ? [
+        {
+          check: "D",
+          severity: "high",
+          message: `README claims no/zero runtime dependencies, but package.json declares "dependencies": ${[...realDependencyNames].join(", ")}`,
+        },
+      ]
+    : []),
+  ...[...staleNamedDependencies].map((name) => ({
+    check: "D",
+    severity: "high",
+    message: `README names "${name}" as a runtime dependency, but package.json's "dependencies" does not include it`,
+  })),
+  ...staleRanges.map((f) => ({
+    check: "D",
+    severity: "high",
+    message: `README.md claims "${f.name}" is at "${f.claimedRange}", but package.json declares "${f.realRange}" for it`,
   })),
 ];
 
@@ -353,6 +582,7 @@ console.log(`check-readme-parity: ${packageName}`);
 printGroup("CHECK A — export coverage", findings.filter((f) => f.check === "A"));
 printGroup("CHECK B — wrong package name in examples", findings.filter((f) => f.check === "B"));
 printGroup("CHECK C — documented exports that don't exist", findings.filter((f) => f.check === "C"));
+printGroup("CHECK D — dependency prose vs. manifest", findings.filter((f) => f.check === "D"));
 
 if (findings.length === 0) {
   console.log("\n  README matches reality: every export is documented, every example uses the real package name.");

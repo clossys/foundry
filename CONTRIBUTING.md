@@ -6,7 +6,7 @@ are short for the same reason.
 ## Getting set up
 
 Installing a package from here needs a `.npmrc` with a GitHub `read:packages`
-token — see [README.md](README.md#using-a-package). Working on the repository
+token — see [README.md](README.md#installing). Working on the repository
 itself does not; it's a plain npm workspace.
 
 ```bash

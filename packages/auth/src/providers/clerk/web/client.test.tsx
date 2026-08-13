@@ -1,7 +1,7 @@
-import { Fragment } from "react";
+import { Children, Fragment, isValidElement, type ReactElement } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { AuthProvider, humaniseClerkError } from "./client.js";
+import { AuthProvider, ClerkSignInBlock, humaniseClerkError } from "./client.js";
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -25,6 +25,25 @@ describe("AuthProvider", () => {
 
     const element = AuthProvider({ children: "content", publishableKey: "  " });
     expect(element.type).toBe(Fragment);
+  });
+});
+
+describe("ClerkSignInBlock", () => {
+  it("passes the sanitized redirect as forceRedirectUrl, not fallbackRedirectUrl, so it wins over Clerk's own redirect_url query param", () => {
+    const element = ClerkSignInBlock({ redirect_url: "https://app.example.test/account" });
+    const signIn = Children.toArray(element.props.children).find(
+      (child): child is ReactElement<{ forceRedirectUrl?: string; fallbackRedirectUrl?: string }> =>
+        isValidElement(child) && "forceRedirectUrl" in (child.props as Record<string, unknown>),
+    );
+
+    expect(signIn).toBeDefined();
+    // forceRedirectUrl has precedence over other redirect props, environment
+    // variables, or search params (including Clerk's own `redirect_url`
+    // query param read at render time); fallbackRedirectUrl only applies
+    // when nothing else supplies a value, so a raw query param could win
+    // over it. The sanitized value must be wired to the prop that wins.
+    expect(signIn?.props.forceRedirectUrl).toBe("https://app.example.test/account");
+    expect(signIn?.props.fallbackRedirectUrl).toBeUndefined();
   });
 });
 

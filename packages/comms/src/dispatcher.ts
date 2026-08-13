@@ -37,6 +37,13 @@ async function observe(
 /** Create the policy -> claim -> transport -> durable-result pipeline. */
 export function createCommunicationDispatcher(config: CommunicationDispatcherConfig): CommunicationDispatcher {
   return {
+    /**
+     * Never rejects on a transport failure — a genuine send failure resolves
+     * as `{ state: "failed", failure }`, not a thrown error. A resolved
+     * promise is not success; branch on `result.state` before reading
+     * `result.acceptance`. See `CommunicationDispatcher.dispatch` for the
+     * full contract.
+     */
     async dispatch(message) {
       assertValidCommunicationMessage(message);
 

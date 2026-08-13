@@ -20,7 +20,16 @@ function parseOrigin(value: string): string | undefined {
   return url.origin;
 }
 
-/** Creates a strict allowlist of absolute HTTP(S) origins. */
+/**
+ * Creates a strict allowlist of absolute HTTP(S) origins.
+ *
+ * Duplicate origins are tolerated and collapsed to their first occurrence —
+ * an allowlist built from configuration (env vars with the same fallback
+ * literal, merged lists, etc.) commonly contains repeats, and a set of
+ * allowed origins is inherently a set. Only genuinely invalid entries
+ * (non-string, malformed, empty, credential-bearing, or path/query-bearing)
+ * throw.
+ */
 export function createAllowedOriginPolicy(allowedOrigins: readonly string[]): AllowedOriginPolicy {
   if (!Array.isArray(allowedOrigins) || allowedOrigins.length === 0) {
     throw new TypeError("An allowed-origin policy must contain at least one origin.");
@@ -33,8 +42,8 @@ export function createAllowedOriginPolicy(allowedOrigins: readonly string[]): Al
     return parsed;
   });
 
-  if (new Set(origins).size !== origins.length) throw new TypeError("Allowed origins must not contain duplicates.");
-  return Object.freeze({ origins: Object.freeze(origins) });
+  const deduped = [...new Set(origins)];
+  return Object.freeze({ origins: Object.freeze(deduped) });
 }
 
 /** Returns true only for an HTTP(S), credential-free URL whose origin is allowlisted. */
@@ -56,8 +65,19 @@ function hasUnsafeTargetSyntax(target: string): boolean {
 
 /**
  * Resolves an allowlisted absolute URL or an absolute-path target against an
- * explicit allowlisted base origin. It returns `undefined` for every rejected
- * input rather than falling back to a potentially caller-controlled value.
+ * explicit allowlisted base origin. It returns `undefined` for every
+ * untrusted-input rejection rather than falling back to a potentially
+ * caller-controlled value — never throwing on attacker-controlled `target`
+ * content.
+ *
+ * `baseOrigin` is a different kind of input: it is caller-supplied, not
+ * attacker-controlled, and it is mandatory whenever `target` is a
+ * path-style target. Omitting it entirely for a path-style target is a
+ * programming error, not a security outcome, so this throws a `TypeError`
+ * in that case instead of returning the same `undefined` used for a
+ * rejected target. When `baseOrigin` is present but is not itself an
+ * allowlisted origin, that is a legitimate untrusted-input-style rejection
+ * and still returns `undefined`, as does every other unsafe target.
  */
 export function resolveSafeRedirect(
   target: string | null | undefined,
@@ -72,7 +92,10 @@ export function resolveSafeRedirect(
 
   let base: string | undefined;
   if (isPathTarget) {
-    if (baseOrigin === undefined || !isAllowedOrigin(baseOrigin, policy)) return undefined;
+    if (baseOrigin === undefined) {
+      throw new TypeError("resolveSafeRedirect requires baseOrigin for a path-style target.");
+    }
+    if (!isAllowedOrigin(baseOrigin, policy)) return undefined;
     base = baseOrigin;
   }
 

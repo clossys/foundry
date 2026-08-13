@@ -118,7 +118,15 @@ returned output after that boundary succeeds.
 ## Consumer integration checklist
 
 - Install compatible releases of `strategy`, `copy`, `ui`, and `surface` from
-  the configured registry.
+  the configured registry. `surface`'s own `package.json` pins
+  `@vespeneventures/copy` and `@vespeneventures/ui` with patch-only tilde
+  ranges (`~0.3.0` and `~0.7.0`) — this is a real version-coupling constraint
+  in the dependency graph, not an install-ordering concern (a package manager
+  resolves the whole graph regardless of the order packages are requested
+  in). A consumer whose own policy is to pin exact versions must pin `copy`
+  to a `0.3.x` patch and `ui` to a `0.7.x` patch that satisfy those ranges,
+  or npm/pnpm/yarn will report an unresolvable version conflict when
+  installing `surface`.
 - Replace former token imports/CSS paths with the `ui` token subpaths; replace
   former voice imports with `copy` or `copy/voice`.
 - Move page-level view imports to `surface/web`; keep reusable primitives in

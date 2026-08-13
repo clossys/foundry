@@ -22,9 +22,10 @@ on:
         type: boolean
       visibility_only:
         description: >-
-          Change an already-published package's registry visibility without
-          publishing another version. Use only after its release workflow has
-          completed successfully.
+          Report an already-published package's current registry visibility
+          (read-only — there is no API to change it; see docs/PUBLISHING.md's
+          "Package visibility" section for the real manual step). Use only
+          after its release workflow has completed successfully.
         required: true
         default: false
         type: boolean
@@ -39,7 +40,7 @@ on:
 
 permissions:
   contents: read
-  packages: write # needed to attempt the visibility fix-up after publish
+  packages: write # needed to publish
   id-token: write # npm provenance
 
 concurrency:
@@ -77,6 +78,14 @@ jobs:
     needs: discover
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.visibility_only && !inputs.verify_only && needs.discover.outputs.packages != '[]' }}
     runs-on: ubuntu-latest
+    # REPORT-ONLY. There is no REST endpoint for changing a GitHub Packages
+    # npm package's visibility — verified directly: a PATCH to
+    # /orgs/{owner}/packages/npm/{name} with visibility=public returns 404
+    # even with a full-permission PAT, while GET on that same path works.
+    # Changing visibility is a web-UI-only operation (see docs/PUBLISHING.md's
+    # "Package visibility" section for the settings-page step). This job must
+    # never claim to have changed anything — it only reads and reports the
+    # current value, and points the operator at the real manual step.
     strategy:
       fail-fast: false
       max-parallel: 1
@@ -84,29 +93,50 @@ jobs:
         include: ${{ fromJSON(needs.discover.outputs.packages) }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-      - name: Make the published package public
+
+      # matrix.package is either a version-selected package or the manual
+      # workflow_dispatch string, spliced into a shell command below — the
+      # same validation the publish job applies to the same untrusted input,
+      # so a bad argument fails closed here instead of surfacing as an
+      # obscure downstream error.
+      - name: Validate package input
+        env:
+          PKG: ${{ matrix.package }}
+        run: |
+          if ! [[ "$PKG" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+            echo "::error title=Invalid package input::package must match ^[a-zA-Z0-9_-]+\$ (got: $PKG)"
+            exit 1
+          fi
+          if [ ! -f "packages/$PKG/package.json" ]; then
+            echo "::error title=Unknown package::packages/$PKG/package.json does not exist."
+            exit 1
+          fi
+
+      - name: Report current package visibility
         env:
           GH_TOKEN: ${{ github.token }}
           PKG: ${{ matrix.package }}
         run: |
           set -euo pipefail
-          # Package visibility is a GitHub Packages setting rather than an npm
-          # publish flag. This uses the job-scoped token and never exposes a
-          # long-lived package credential to an operator or consumer checkout.
           # GitHub's package API scopes npm packages through the organization
-          # path. Its {package_name} segment is the unscoped final component,
-          # not the complete npm name (for example, `governance`, not
-          # `@vespeneventures/governance`).
+          # (or user) path. Its {package_name} segment is the unscoped final
+          # component, not the complete npm name (for example, `governance`,
+          # not `@vespeneventures/governance`).
           name="$(node -p "require('./packages/' + process.env.PKG + '/package.json').name.split('/').at(-1)")"
           owner="$(node -p "JSON.parse(require('fs').readFileSync('package-scope.json','utf8')).scope.replace(/^@/, '')")"
           kind_user="us""ers"
+          # settings_url is built from $kind (not a second literal path)
+          # so the org and personal-account settings URLs share one line.
           for kind in orgs "$kind_user"; do
-            if gh api --method PATCH "/${kind}/${owner}/packages/npm/${name}" -f visibility=public; then
-              echo "visibility set to public via ${kind} API"
+            if response="$(gh api --method GET "/${kind}/${owner}/packages/npm/${name}" 2>/dev/null)"; then
+              visibility="$(node -e 'console.log(JSON.parse(process.argv[1]).visibility)' "$response")"
+              echo "Current registry visibility of ${owner}/${name}: ${visibility}"
+              settings_url="https://github.com/${kind}/${owner}/packages/npm/${name}/settings"
+              echo "::notice title=Visibility must be changed manually::There is no API for this. To change it, visit ${settings_url} and use the Danger Zone."
               exit 0
             fi
           done
-          echo "::error title=Package visibility was not changed::Neither the organization nor user package API accepted this request."
+          echo "::error title=Could not read package visibility::Neither the organization nor user package API returned ${owner}/${name}. Has it been published yet?"
           exit 1
 
   publish:

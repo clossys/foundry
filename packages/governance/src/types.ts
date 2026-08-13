@@ -20,6 +20,18 @@ export type PackageLifecycleStatus =
   | "deprecated"
   | "retired";
 
+/**
+ * A durable, checkable citation for a maturity claim. `reference` is a URL
+ * or a repo-relative path to something a reader can actually open; `date`
+ * is when it was true, in calendar-date form (`YYYY-MM-DD`). Never a
+ * self-attested completion boolean, matching the evidence discipline this
+ * registry already uses for `decision`/`migration`.
+ */
+export interface PackageLifecyclePromotionEvidence {
+  readonly reference: string;
+  readonly date: string;
+}
+
 /** One package's maturity or terminal lifecycle record. */
 export interface PackageLifecycleEntry {
   readonly name: string;
@@ -40,6 +52,27 @@ export interface PackageLifecycleEntry {
   readonly decision?: string;
   /** Required for deprecated or retired packages: durable migration record or URL. */
   readonly migration?: string;
+  /**
+   * Required once status is `qualified` or `adopted`: durable proof of the
+   * owner-defined integration or release check the package passed. May also
+   * be present on an earlier-maturity or terminal entry as a historical
+   * record.
+   */
+  readonly qualifiedEvidence?: PackageLifecyclePromotionEvidence;
+  /**
+   * Required once status is `adopted`: durable proof of confirmed consumer
+   * use, in addition to (not instead of) `qualifiedEvidence`, since adopted
+   * means qualified plus in confirmed use. May also be present on an
+   * earlier-maturity or terminal entry as a historical record.
+   */
+  readonly adoptedEvidence?: PackageLifecyclePromotionEvidence;
+  /**
+   * Required for a deprecated package: `true` when the old import path is a
+   * working compatibility shim that still resolves to real code, `false`
+   * when it is a hard break with no compatibility re-export. Optional for a
+   * retired package, where it is implied `false` if present at all.
+   */
+  readonly forwardsToReplacement?: boolean;
 }
 
 /** A consumer-owned, complete declaration of every package in one workspace. */
@@ -64,6 +97,9 @@ export type LifecycleFindingRule =
   | "deprecated-on"
   | "retired-on"
   | "evidence"
+  | "qualified-evidence"
+  | "adopted-evidence"
+  | "forwards-to-replacement"
   | "replacement-missing"
   | "replacement-not-active"
   | "replacement-self"

@@ -159,34 +159,31 @@ if (findings.length > 0) process.exitCode = 1;
 
 ## What this actually found, in this repository
 
-This mechanism's proof is not hypothetical — it is the real, current state
-of this repository's own packages, and it is exactly what this package's
-own test suite asserts.
+This mechanism's proof is not hypothetical. `@vespeneventures/governance`'s
+own test suite — the real implementation this shim package's `src/index.ts`
+re-exports from — exercises it against real packages in this repository.
 
 **The clean case: `packages/policy`.** Zero runtime dependencies. Packed,
 installed into a genuinely isolated directory with no workspace file at
 all, and every declared export subpath imports without error.
 `packRoundTrip` returns `ok: true`.
 
-**The interesting case: `packages/gates`.** `gates` declares two real npm
-dependencies with semver ranges — `@vespeneventures/catalog` and
-`@vespeneventures/policy` — in its own `package.json`. Neither has ever
-been published to a registry. Packed and installed into a directory with no
-workspace file and no sibling `node_modules` to fall back on, the install
-has nowhere it can resolve those two names from, so it fails — for real,
-with a real non-zero exit code from a real `npm install`. `packRoundTrip`
-returns `ok: false` with a `"round-trip-install-failed"` finding, and the
-import step never runs at all, because there is nothing installed to
-import.
+**The general case this mechanism exists for.** A package whose
+`package.json` declares a real npm dependency on another package in this
+scope — this very shim package's own manifest, for example, depends on
+`@vespeneventures/governance` — only proves installable from outside the
+workspace once that dependency is actually published to the configured
+registry. Packed and installed into a directory with no workspace file and
+no sibling `node_modules` to fall back on, an unpublished dependency has
+nowhere to resolve from, and the install fails for real, with a real
+non-zero exit code from a real `npm install`. `packRoundTrip` returns
+`ok: false` with a `"round-trip-install-failed"` finding, and the import
+step never runs at all, because there is nothing installed to import.
 
-That is not a bug in `gates`; it is the honest current state of this
-repository, and precisely the gap this package exists to surface. `gates`
-declares its dependencies correctly, its own catalog entry has no
-dependency-graph problem, and every earlier check already says `gates` is
-fine — none of those checks can see that installing it from outside this
-workspace, today, does not actually work, because the packages it depends
-on have never been published anywhere a stranger's `npm install` could find
-them. An internal dependency has to actually be published before anything
+That is not a bug in the dependent package. Every earlier check can say a
+package's manifest and catalog entry are fine while still missing that
+installing it from outside the workspace, today, does not actually work —
+because a real npm dependency has to actually be published before anything
 depending on it can be proven installable from outside the workspace.
 
 The same reporting applies to a package that depends on another package that
@@ -209,8 +206,12 @@ the same way `@vespeneventures/policy` never reads a file itself.
 
 ## Requirements
 
-Node 20+. ESM only. Runtime dependencies: `@vespeneventures/gates`,
-`@vespeneventures/policy`.
+Node 20+. ESM only. Runtime dependency: `@vespeneventures/governance`
+(`^0.3.0`), which this package's own `src/index.ts` re-exports from.
+
+This package is not dependency-free: `governance` itself depends on
+`@vespeneventures/policy`, which is therefore pulled in transitively by
+installing this package too.
 
 ## Licence
 

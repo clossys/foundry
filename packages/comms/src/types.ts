@@ -82,7 +82,14 @@ interface CommunicationDispatchBase {
   channel: CommunicationChannel;
 }
 
-/** Terminal result of one dispatch attempt. Accepted is not inbox delivery. */
+/**
+ * Terminal result of one dispatch attempt. Accepted is not inbox delivery.
+ *
+ * `dispatch()` never rejects on a transport failure — a genuine send failure
+ * still resolves this promise, as `state: "failed"` with a populated
+ * `failure`. A resolved promise is not success. Callers must branch on
+ * `state` before reading `acceptance` or treating the message as sent.
+ */
 export type CommunicationDispatchResult =
   | (CommunicationDispatchBase & { state: "accepted"; acceptance: ProviderAcceptance })
   | (CommunicationDispatchBase & { state: "failed"; failure: CommunicationFailure })
@@ -163,5 +170,15 @@ export interface CommunicationDispatcherConfig {
 }
 
 export interface CommunicationDispatcher {
+  /**
+   * Runs policy, claim, transport and durable completion for one message.
+   *
+   * This promise never rejects because of a transport/adapter failure; a
+   * failed send resolves with `{ state: "failed", failure }`, not a thrown
+   * error. `await dispatch(message)` resolving is not evidence of success —
+   * always inspect `result.state` before reading `result.acceptance` or
+   * treating the message as sent. (It still throws synchronously for an
+   * invalid `message`, and rejects if `ledger.complete` itself throws.)
+   */
   dispatch(message: CommunicationMessage): Promise<CommunicationDispatchResult>;
 }

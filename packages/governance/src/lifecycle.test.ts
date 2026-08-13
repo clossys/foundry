@@ -14,10 +14,71 @@ describe("validatePackageLifecycle", () => {
       packages: [
         { name: "@example/incubating", status: "incubating" },
         { name: "@example/published", status: "published" },
-        { name: "@example/qualified", status: "qualified" },
-        { name: "@example/adopted", status: "adopted" },
+        {
+          name: "@example/qualified",
+          status: "qualified",
+          qualifiedEvidence: { reference: "https://example.invalid/ci/qualified-run", date: "2026-08-01" },
+        },
+        {
+          name: "@example/adopted",
+          status: "adopted",
+          qualifiedEvidence: { reference: "https://example.invalid/ci/adopted-qualification-run", date: "2026-07-01" },
+          adoptedEvidence: { reference: "https://example.invalid/consumers/adopted-integration", date: "2026-08-01" },
+        },
         { name: "@example/legacy", status: "active" },
       ],
+    })).toEqual([]);
+  });
+
+  it("requires qualifiedEvidence for a qualified package and both evidence fields for an adopted one", () => {
+    const missingQualified = validatePackageLifecycle({
+      schemaVersion: 1,
+      packages: [{ name: "@example/qualified", status: "qualified" }],
+    });
+    expect(missingQualified.map((finding) => finding.rule)).toEqual(["qualified-evidence"]);
+
+    const missingBoth = validatePackageLifecycle({
+      schemaVersion: 1,
+      packages: [{ name: "@example/adopted", status: "adopted" }],
+    });
+    expect(missingBoth.map((finding) => finding.rule)).toEqual(["adopted-evidence", "qualified-evidence"]);
+
+    const missingAdoptedOnly = validatePackageLifecycle({
+      schemaVersion: 1,
+      packages: [{
+        name: "@example/adopted",
+        status: "adopted",
+        qualifiedEvidence: { reference: "https://example.invalid/ci/run", date: "2026-08-01" },
+      }],
+    });
+    expect(missingAdoptedOnly.map((finding) => finding.rule)).toEqual(["adopted-evidence"]);
+  });
+
+  it("rejects malformed promotion evidence — missing reference, invalid date, and a non-object value", () => {
+    const findings = validatePackageLifecycle({
+      schemaVersion: 1,
+      packages: [{
+        name: "@example/qualified",
+        status: "qualified",
+        qualifiedEvidence: { reference: "  ", date: "2026-02-30" },
+      }],
+    });
+    expect(findings.map((finding) => finding.rule)).toEqual(["qualified-evidence", "qualified-evidence"]);
+
+    expect(validatePackageLifecycle({
+      schemaVersion: 1,
+      packages: [{ name: "@example/qualified", status: "qualified", qualifiedEvidence: "trust me" }],
+    }).map((finding) => finding.rule)).toEqual(["qualified-evidence"]);
+  });
+
+  it("allows promotion evidence to be recorded early or retained as historical evidence outside qualified/adopted", () => {
+    expect(validatePackageLifecycle({
+      schemaVersion: 1,
+      packages: [{
+        name: "@example/published",
+        status: "published",
+        qualifiedEvidence: { reference: "https://example.invalid/ci/early-qualification-run", date: "2026-08-01" },
+      }],
     })).toEqual([]);
   });
 
@@ -32,6 +93,7 @@ describe("validatePackageLifecycle", () => {
           deprecatedOn: "2026-02-30",
           decision: "https://example.invalid/decisions/old",
           migration: "https://example.invalid/migrations/old",
+          forwardsToReplacement: true,
         },
         {
           name: "@example/new",
@@ -52,6 +114,7 @@ describe("validatePackageLifecycle", () => {
         deprecatedOn: "2026-08-11",
         decision: "https://example.invalid/decisions/retirement",
         migration: "https://example.invalid/migrations/retirement",
+        forwardsToReplacement: false,
       }],
     })).toEqual([]);
   });
@@ -88,6 +151,7 @@ describe("validatePackageLifecycle", () => {
           deprecatedOn: "2026-08-11",
           decision: "https://example.invalid/decisions/old",
           migration: "https://example.invalid/migrations/old",
+          forwardsToReplacement: true,
         },
       ],
     }).map((finding) => finding.rule)).toEqual(["replacement-not-active"]);
@@ -102,7 +166,7 @@ describe("validatePackageLifecycle", () => {
       schemaVersion: 1,
       packages: [{ name: "@example/old", status: "deprecated", replacement: { name: "@example/new", range: "^1.0.0" }, deprecatedOn: "2026-08-11" }],
     });
-    expect(findings.map((item) => item.rule)).toEqual(["evidence", "replacement-missing"]);
+    expect(findings.map((item) => item.rule)).toEqual(["evidence", "forwards-to-replacement", "replacement-missing"]);
 
     const withAccessor = { schemaVersion: 1, packages: [{ name: "@example/core", status: "active" }] } as Record<string, unknown>;
     Object.defineProperty(withAccessor, "packages", { enumerable: true, get: () => [] });
@@ -116,6 +180,70 @@ describe("validatePackageLifecycle", () => {
       "lifecycle-entry-missing",
       "catalog-package-missing",
     ]);
+  });
+
+  it("requires forwardsToReplacement on a deprecated package but not on a retired one", () => {
+    const missing = validatePackageLifecycle({
+      schemaVersion: 1,
+      packages: [{
+        name: "@example/old",
+        status: "deprecated",
+        noReplacementReason: "No successor exists.",
+        deprecatedOn: "2026-08-11",
+        decision: "https://example.invalid/decisions/old",
+        migration: "https://example.invalid/migrations/old",
+      }],
+    });
+    expect(missing.map((finding) => finding.rule)).toEqual(["forwards-to-replacement"]);
+
+    expect(validatePackageLifecycle({
+      schemaVersion: 1,
+      packages: [{
+        name: "@example/retired",
+        status: "retired",
+        noReplacementReason: "No successor exists.",
+        retiredOn: "2026-08-11",
+        decision: "https://example.invalid/decisions/retired",
+        migration: "https://example.invalid/migrations/retired",
+      }],
+    })).toEqual([]);
+  });
+
+  it("accepts a working-shim (true) or hard-break (false) forwardsToReplacement on a deprecated package", () => {
+    for (const forwardsToReplacement of [true, false]) {
+      expect(validatePackageLifecycle({
+        schemaVersion: 1,
+        packages: [{
+          name: "@example/old",
+          status: "deprecated",
+          noReplacementReason: "No successor exists.",
+          deprecatedOn: "2026-08-11",
+          decision: "https://example.invalid/decisions/old",
+          migration: "https://example.invalid/migrations/old",
+          forwardsToReplacement,
+        }],
+      })).toEqual([]);
+    }
+  });
+
+  it("rejects a non-boolean forwardsToReplacement and rejects it entirely on a non-terminal package", () => {
+    expect(validatePackageLifecycle({
+      schemaVersion: 1,
+      packages: [{
+        name: "@example/old",
+        status: "deprecated",
+        noReplacementReason: "No successor exists.",
+        deprecatedOn: "2026-08-11",
+        decision: "https://example.invalid/decisions/old",
+        migration: "https://example.invalid/migrations/old",
+        forwardsToReplacement: "yes",
+      }],
+    }).map((finding) => finding.rule)).toEqual(["forwards-to-replacement"]);
+
+    expect(validatePackageLifecycle({
+      schemaVersion: 1,
+      packages: [{ name: "@example/current", status: "published", forwardsToReplacement: true }],
+    }).map((finding) => finding.rule)).toEqual(["forwards-to-replacement"]);
   });
 
   it("retains documented terminal packages after their workspace source is removed", () => {

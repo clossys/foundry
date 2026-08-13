@@ -7,6 +7,25 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-13
+
+### Changed
+
+- **Breaking:** now requires `@vespeneventures/governance@^0.3.0` (was
+  `^0.2.0`). Because this package re-exports governance, governance's
+  0.3.0 lifecycle-schema requirement applies through it too — see
+  `@vespeneventures/governance`'s own changelog for the full detail on
+  `forwardsToReplacement` and the `qualifiedEvidence`/`adoptedEvidence`
+  fields. Under this repo's pre-1.0 semver policy a breaking change to a
+  0.x package is a MINOR bump, not MAJOR.
+- Corrected the README's stated runtime dependencies. It previously
+  described a pre-consolidation set — `@vespeneventures/gates` and
+  `@vespeneventures/policy` — that no longer exists; the package's actual
+  runtime dependency is `@vespeneventures/governance`.
+- No functional change to the deprecation: this remains a deprecated
+  compatibility package; new integrations should use
+  `@vespeneventures/governance/release` directly.
+
 ## [0.1.3] - 2026-08-12
 
 ### Deprecated

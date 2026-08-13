@@ -7,6 +7,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-13
+
+### Changed
+
+- **Breaking:** `typescript` moved from an unconditional `dependencies`
+  entry to an optional `peerDependency` (`peerDependenciesMeta` marks it
+  optional). It is imported only by `src/gates/secret-gates.ts`, reachable
+  only through `./gates`. Issue #152 asked for exactly this; the 0.2.1 fix
+  above corrected only the import graph — the root entry stopped
+  transitively *loading* TypeScript — and left the manifest unchanged, so
+  every consumer, including the five compatibility packages (`catalog`,
+  `gates`, `release`, `repository`, `review`) that depend on `governance`,
+  still *installed* a full compiler regardless of whether they ever
+  imported `./gates`. Under this repo's pre-1.0 semver policy a breaking
+  change to a 0.x package is a MINOR bump, not MAJOR.
+- **Breaking — action required on upgrade:** the lifecycle schema now
+  requires new fields. `forwardsToReplacement` (boolean) is required on
+  every `deprecated` entry. A status of `qualified` requires
+  `qualifiedEvidence`; a status of `adopted` requires both
+  `qualifiedEvidence` and `adoptedEvidence`, each shaped
+  `{ reference, date }`. **A consumer validating its own lifecycle file
+  against an existing `deprecated` entry will fail validation until it adds
+  `forwardsToReplacement`.** Set it to `true` if the deprecated entry's old
+  import path still resolves to a working compatibility re-export, `false`
+  if it is a hard break.
+  - `forwardsToReplacement` exists because a deprecated package that still
+    re-exports working code was previously indistinguishable, in the
+    machine-readable registry, from one whose source is gone entirely —
+    both carried identical `status`/`replacement` fields, and the
+    difference existed only in prose one hop away.
+  - The evidence fields exist because retiring a package required durable
+    evidence while promoting one to "confirmed consumer use" required
+    none, and the schema previously rejected any attempt to attach it.
+- This repository's own lifecycle registry
+  (`docs/contracts/package-lifecycle.json`) now marks `deployment`,
+  `domain`, `ledger`, `policy`, and `secrets` as `published` instead of
+  `adopted`. No durable public evidence could be cited for the stronger
+  `adopted` claim under the new evidence requirement above — an
+  unsubstantiated status is worth less than an accurate lower one.
+
+### Added
+
+- `RepositoryProfile`, `ReviewPolicy`, and `ReviewEvidenceBundle` are now
+  documented with field tables and worked examples in this package's own
+  README. They were previously documented only in the deprecated
+  `repository` and `review` compatibility packages, both of which direct
+  readers here for the schema — so the two docs pointed at each other and
+  neither actually carried it.
+
 ## [0.2.1] - 2026-08-13
 
 ### Fixed

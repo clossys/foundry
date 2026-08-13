@@ -200,12 +200,12 @@ bootstrap publication of a version that predated this automation, and a
 non-mutating `verify_only: true` qualification of an already-published
 tarball. The latter fetches the exact registry version and runs the isolated
 consumer proof without uploading a duplicate or changing package visibility.
-`visibility_only` defaults to `false` — leave it off while a package is still
-unproven. Once its successful release is ready for consumers outside the
-package repository, dispatch the same workflow with `visibility_only: true`.
-That job changes only the already-published package's GitHub Packages
-visibility; it does not republish a version or require an environment
-approval.
+`visibility_only` defaults to `false`. When set, the workflow's `visibility`
+job does **not** change anything — it only *reports* the package's current
+GitHub Packages visibility and prints the settings URL where an owner can
+change it. There is no REST endpoint for changing a GitHub Packages npm
+package's visibility; see [Package visibility](#package-visibility) below
+for why, and for the real manual step.
 
 The workflow re-runs every gate in FULL mode — including name collision and
 artifact safety — builds, tests, packs and prints one tarball. A manual dry
@@ -250,12 +250,29 @@ later would cost (a config change, not a rewrite).
 ### Package visibility
 
 New packages publish **private** by default (visible only to accounts with
-explicit access), even though this repository itself is public. Once a
-package has passed a real consumer qualification, dispatch **Publish** with
-its package directory and `visibility_only: true`. The workflow uses its
-short-lived `GITHUB_TOKEN` to make that existing package public, without
-repacking or publishing another version. The visibility job is deterministic:
-an API failure fails the run rather than leaving an ambiguous release state.
+explicit access), even though this repository itself is public.
+
+**There is no API to change a GitHub Packages npm package's visibility.**
+This was verified directly against the real API: a `PATCH` to
+`/orgs/{owner}/packages/npm/{name}` with `visibility=public` returns `404`
+even with a full-permission PAT, while `GET` on that same path works fine.
+Changing visibility is a web-UI-only operation; no token scope or workflow
+permission makes it possible another way.
+
+Once a package has passed a real consumer qualification, an owner makes it
+public manually:
+
+1. Visit `https://github.com/orgs/<org>/packages/npm/<name>/settings` — for
+   a package owned by a personal account rather than an organization, GitHub
+   exposes the equivalent settings page under that account's own packages
+   tab instead.
+2. Under **Danger Zone**, change the package's visibility to Public.
+
+Dispatching **Publish** with its package directory and `visibility_only:
+true` runs the workflow's `visibility` job as a convenience, but that job
+only *reports* the package's current visibility (a `GET` call) and prints
+the settings URL above — it never attempts to change anything, because
+there is nothing it could call to do so.
 
 ### Deprecating compatibility packages
 

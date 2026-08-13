@@ -4,11 +4,11 @@
 > `@vespeneventures/governance/gates`. This package preserves the same root
 > API and `foundry-check` command while existing consumers migrate.
 
-Foundation orchestration and pure governance checks. The package joins
-`@vespeneventures/catalog` and `@vespeneventures/policy` for workspace checks,
-build ordering, and binding verification, and it exposes consumer-supplied
-secret governance for names, source reads, credential surfaces, local files,
-catalog readiness, and provider resource names.
+Foundation orchestration and pure governance checks. The package's own
+`src/index.ts` re-exports from `@vespeneventures/governance/gates` for
+workspace checks, build ordering, and binding verification, and it exposes
+consumer-supplied secret governance for names, source reads, credential
+surfaces, local files, catalog readiness, and provider resource names.
 
 ```bash
 npm install @vespeneventures/gates
@@ -16,21 +16,23 @@ npm install @vespeneventures/gates
 
 ## Runtime availability
 
-`gates` has runtime dependencies on `@vespeneventures/catalog` and
-`@vespeneventures/policy`. They must be published to the configured registry
-before this package can be installed by an external consumer. A workspace
-link is useful for development but is not a substitute for that release
-order; see [`docs/PUBLISHING.md`](../../docs/PUBLISHING.md) in the repository
-for the isolated-tarball proof used before a dependent package is published.
+`gates` has a runtime dependency on `@vespeneventures/governance`.
+
+`governance` itself in turn depends on `@vespeneventures/policy`, so both
+must be published to the configured registry before this package can be
+installed by an external consumer. A workspace link is useful for
+development but is not a substitute for that release order; see
+[`docs/PUBLISHING.md`](../../docs/PUBLISHING.md) in the repository for the
+isolated-tarball proof used before a dependent package is published.
 
 ## The three capabilities
 
 ### 1. Orchestrated validation — `runFoundationCheck`
 
 One call that builds a catalog and evaluates it: nothing new beyond calling
-`@vespeneventures/catalog`'s own `buildCatalog` and `evaluateCatalog` in
-sequence and returning the result under one name — but it is the thing a
-consumer of this package actually wants to call.
+`@vespeneventures/governance`'s own `buildCatalog` and `evaluateCatalog` (its
+`catalog` subpath) in sequence and returning the result under one name — but
+it is the thing a consumer of this package actually wants to call.
 
 ## Foundation checks
 
@@ -47,11 +49,12 @@ const policyResults = verifyPolicyBindings(checks);
 ```
 
 `runFoundationCheck` delegates workspace discovery and evaluation to
-`@vespeneventures/catalog`. Its `complete` flag is false whenever any path was
-skipped. `computeBuildOrder` refuses cyclic or duplicate-name catalogs and
-otherwise returns a deterministic topological order. `verifyPolicyBindings`
-delegates each already-read document to `@vespeneventures/policy` and preserves
-the caller's policy identifier.
+`@vespeneventures/governance`'s `catalog` subpath. Its `complete` flag is
+false whenever any path was skipped. `computeBuildOrder` refuses cyclic or
+duplicate-name catalogs and otherwise returns a deterministic topological
+order. `verifyPolicyBindings` delegates each already-read document to
+`@vespeneventures/policy` (a real, separate dependency of `governance`, not
+of this package directly) and preserves the caller's policy identifier.
 
 ## Secret governance
 
@@ -237,8 +240,12 @@ inputs.
 
 ## Requirements
 
-Node 20+. ESM only. Runtime dependencies: `@vespeneventures/catalog` and
-`@vespeneventures/policy`.
+Node 20+. ESM only. Runtime dependency: `@vespeneventures/governance`
+(`^0.3.0`).
+
+This package is not dependency-free: `governance` itself depends on
+`@vespeneventures/policy`, which is therefore pulled in transitively by
+installing this package too.
 
 ## Licence
 

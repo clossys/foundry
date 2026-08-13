@@ -67,6 +67,12 @@ export interface ResendAdapterConfig {
   createClient?: ResendClientFactory;
 }
 
+/**
+ * These provider-neutral field names correspond directly to Resend's
+ * Svix-based wire headers: `id` is `svix-id`, `timestamp` is
+ * `svix-timestamp`, and `signature` is `svix-signature`. See the README's
+ * webhook example for the exact header-name mapping.
+ */
 export interface ResendWebhookHeaders {
   id: string;
   timestamp: string;

@@ -41,7 +41,7 @@ export function ClerkSignInBlock({ appearance, redirect_url, eyebrow, heading, s
       {eyebrow ? <p>{eyebrow}</p> : null}
       <h1 id="clerk-sign-in-heading">{heading ?? "Sign in"}</h1>
       {subtitle ? <p>{subtitle}</p> : null}
-      <SignIn appearance={appearance ?? CLERK_APPEARANCE} fallbackRedirectUrl={redirect_url} signUpUrl={signup_href} />
+      <SignIn appearance={appearance ?? CLERK_APPEARANCE} forceRedirectUrl={redirect_url} signUpUrl={signup_href} />
       {signup_href ? <a href={signup_href}>{signup_label}</a> : null}
     </section>
   );
