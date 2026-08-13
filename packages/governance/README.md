@@ -202,12 +202,25 @@ root. `--format json` prints the compact machine-readable summary; add
 Node 20+. ESM only. Runtime dependencies: `@vespeneventures/policy`, and
 TypeScript — but only for the source-aware secret-surface checks reachable
 through `./gates`. A plain `import "@vespeneventures/governance"` (the root
-entry) never loads TypeScript or touches `node:fs`/`node:child_process`:
-`runGovernanceCheck` and `preflightGovernedPackage` import the specific
-foundation/build-order functions they need directly, never the `./gates`
-barrel those checks also live in. Import `@vespeneventures/governance/gates`
-yourself if you want the secret-surface checks — that subpath still carries
-the full TypeScript dependency, unchanged.
+entry) never loads TypeScript: `runGovernanceCheck` and
+`preflightGovernedPackage` import the specific foundation/build-order
+functions they need directly, never the `./gates` barrel those secret-surface
+checks also live in. Import `@vespeneventures/governance/gates` yourself if
+you want the secret-surface checks — that subpath still carries the full
+TypeScript dependency, unchanged.
+
+This is a TypeScript-specific guarantee, not a general "the root does no
+I/O" one. Both root functions genuinely read the real filesystem
+(`node:fs`) — `runGovernanceCheck` for real workspace discovery via this
+package's own `./catalog`, exactly as this file's own "Boundaries" section
+above already says. `preflightGovernedPackage` goes further and also uses
+`node:child_process`: packing a real tarball and running `npm install`
+against it in a temp directory is the actual job `./release` does, has
+always done, and cannot do any other way. Neither of those is new, and
+neither is what issue #152 was ever about — only TypeScript itself (a
+whole compiler, unusable in a browser/edge bundle regardless of whether
+`node:fs`/`node:child_process` are even reachable there) was the surprising,
+avoidable weight.
 
 ## Licence
 
