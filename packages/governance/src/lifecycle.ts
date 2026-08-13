@@ -2,7 +2,20 @@ import { PACKAGE_LIFECYCLE_VERSION } from "./types.js";
 import type { LifecycleFinding, LifecycleFindingRule } from "./types.js";
 
 const DOCUMENT_KEYS = new Set(["schemaVersion", "packages"]);
-const ENTRY_KEYS = new Set(["name", "status", "replacement", "noReplacementReason", "deprecatedOn", "retiredOn", "decision", "migration"]);
+const ENTRY_KEYS = new Set([
+  "name",
+  "status",
+  "replacement",
+  "noReplacementReason",
+  "deprecatedOn",
+  "retiredOn",
+  "decision",
+  "migration",
+  "qualifiedEvidence",
+  "adoptedEvidence",
+  "forwardsToReplacement",
+]);
+const PROMOTION_EVIDENCE_KEYS = new Set(["reference", "date"]);
 const PACKAGE_NAME = /^@[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/;
 const MAX_PACKAGES = 10_000;
 const CURRENT_STATUSES = new Set(["active", "incubating", "published", "qualified", "adopted"]);
@@ -49,6 +62,37 @@ function sortFindings(findings: LifecycleFinding[]): LifecycleFinding[] {
 }
 
 /**
+ * Validates one `qualifiedEvidence`/`adoptedEvidence` object's shape when
+ * present. Presence itself (required once status reaches `qualified` or
+ * `adopted`) is enforced by the caller, since an absent field and a
+ * malformed one are reported with different, more specific messages.
+ */
+function validatePromotionEvidenceShape(
+  value: unknown,
+  path: string,
+  rule: Extract<LifecycleFindingRule, "qualified-evidence" | "adopted-evidence">,
+  findings: LifecycleFinding[],
+): void {
+  if (!isRecord(value)) {
+    findings.push(finding(rule, path, `${path.split(".").pop()} must be an object with a durable reference and a date.`));
+    return;
+  }
+  for (const key of Object.keys(value)) {
+    if (!PROMOTION_EVIDENCE_KEYS.has(key)) findings.push(finding("unknown-field", `${path}.${key}`, `Unknown lifecycle-entry field "${key}".`));
+  }
+  const reference = ownDataValue(value, "reference");
+  const date = ownDataValue(value, "date");
+  if (reference.accessor) findings.push(finding("field-accessor", `${path}.reference`, "Lifecycle fields must be own data properties."));
+  if (date.accessor) findings.push(finding("field-accessor", `${path}.date`, "Lifecycle fields must be own data properties."));
+  if (typeof reference.value !== "string" || reference.value.trim() === "") {
+    findings.push(finding(rule, `${path}.reference`, "reference must be a non-empty durable citation (a URL or a repo-relative path)."));
+  }
+  if (typeof date.value !== "string" || !validDate(date.value)) {
+    findings.push(finding(rule, `${path}.date`, "date must be a real calendar date in YYYY-MM-DD form."));
+  }
+}
+
+/**
  * Validates a consumer-owned lifecycle registry without reading a workspace
  * or invoking a command. Completeness against a real catalog is checked by
  * `runGovernanceCheck`, where the catalog is already available.
@@ -92,7 +136,22 @@ export function validatePackageLifecycle(value: unknown): LifecycleFinding[] {
     const retiredOnValue = ownDataValue(entry, "retiredOn");
     const decisionValue = ownDataValue(entry, "decision");
     const migrationValue = ownDataValue(entry, "migration");
-    for (const [key, field] of Object.entries({ name: nameValue, status: statusValue, replacement: replacementValue, noReplacementReason: noReplacementReasonValue, deprecatedOn: deprecatedOnValue, retiredOn: retiredOnValue, decision: decisionValue, migration: migrationValue })) {
+    const qualifiedEvidenceValue = ownDataValue(entry, "qualifiedEvidence");
+    const adoptedEvidenceValue = ownDataValue(entry, "adoptedEvidence");
+    const forwardsToReplacementValue = ownDataValue(entry, "forwardsToReplacement");
+    for (const [key, field] of Object.entries({
+      name: nameValue,
+      status: statusValue,
+      replacement: replacementValue,
+      noReplacementReason: noReplacementReasonValue,
+      deprecatedOn: deprecatedOnValue,
+      retiredOn: retiredOnValue,
+      decision: decisionValue,
+      migration: migrationValue,
+      qualifiedEvidence: qualifiedEvidenceValue,
+      adoptedEvidence: adoptedEvidenceValue,
+      forwardsToReplacement: forwardsToReplacementValue,
+    })) {
       if (field.accessor) findings.push(finding("field-accessor", `${path}.${key}`, "Lifecycle fields must be own data properties."));
     }
     const name = nameValue.value;
@@ -148,6 +207,37 @@ export function validatePackageLifecycle(value: unknown): LifecycleFinding[] {
       findings.push(finding("replacement", path, "Only a deprecated or retired package may declare replacement, noReplacementReason, deprecatedOn, or retiredOn."));
     } else if (decisionValue.present || migrationValue.present) {
       findings.push(finding("evidence", path, "Only a deprecated or retired package may declare decision or migration evidence."));
+    }
+
+    // Promotion evidence is independent of the terminal/non-terminal split
+    // above: an entry may record it early (before reaching qualified or
+    // adopted) or retain it as historical evidence after being deprecated or
+    // retired, exactly like deprecatedOn may survive onto a later retiredOn
+    // record. Only presence-once-reached is required, not exclusivity.
+    if (qualifiedEvidenceValue.present) {
+      validatePromotionEvidenceShape(qualifiedEvidenceValue.value, `${path}.qualifiedEvidence`, "qualified-evidence", findings);
+    } else if (status === "qualified" || status === "adopted") {
+      findings.push(finding("qualified-evidence", `${path}.qualifiedEvidence`, 'A "qualified" or "adopted" package needs qualifiedEvidence citing the owner-defined integration or release proof it passed.'));
+    }
+    if (adoptedEvidenceValue.present) {
+      validatePromotionEvidenceShape(adoptedEvidenceValue.value, `${path}.adoptedEvidence`, "adopted-evidence", findings);
+    } else if (status === "adopted") {
+      findings.push(finding("adopted-evidence", `${path}.adoptedEvidence`, 'An "adopted" package needs adoptedEvidence citing durable, checkable confirmed consumer use, in addition to qualifiedEvidence.'));
+    }
+
+    // forwardsToReplacement is what lets a reader tell "deprecated, still
+    // resolves" apart from "deprecated, will not resolve" without following
+    // a prose citation out of the machine-readable registry. It only makes
+    // sense once a package is at least deprecated; only deprecated makes it
+    // required, since a retired package is by definition no longer
+    // installable from this workspace and the field would only ever read
+    // `false` there.
+    if (forwardsToReplacementValue.present && typeof forwardsToReplacementValue.value !== "boolean") {
+      findings.push(finding("forwards-to-replacement", `${path}.forwardsToReplacement`, "forwardsToReplacement must be a boolean."));
+    } else if (deprecated && !forwardsToReplacementValue.present) {
+      findings.push(finding("forwards-to-replacement", `${path}.forwardsToReplacement`, "A deprecated package needs forwardsToReplacement: true if its old import path still resolves to working code, or false for a hard break."));
+    } else if (!terminal && forwardsToReplacementValue.present) {
+      findings.push(finding("forwards-to-replacement", `${path}.forwardsToReplacement`, "Only a deprecated or retired package may declare forwardsToReplacement."));
     }
   }
 

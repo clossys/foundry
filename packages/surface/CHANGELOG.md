@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.1.2] - 2026-08-13
+
+### Changed
+
+- Documented the version coupling between this package and its two runtime
+  dependencies: `@vespeneventures/copy` (`~0.3.0`) and
+  `@vespeneventures/ui` (`~0.7.0`) are patch-only tilde ranges, not exact
+  pins. This is a real constraint on the dependency graph, not an
+  install-ordering concern — a package manager resolves the whole graph
+  regardless of what order packages are requested in. A consumer whose own
+  policy is to pin exact versions must pin `copy` to a matching `0.3.x`
+  patch and `ui` to a matching `0.7.x` patch, or `surface`'s declared
+  ranges and the consumer's exact pin cannot both be satisfied and the
+  install fails with an unresolvable version conflict. Previously
+  undocumented.
+
 ## [0.1.1] - 2026-08-13
 
 ### Fixed

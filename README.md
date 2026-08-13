@@ -76,6 +76,31 @@ The same token is also used for maintainer actions such as publishing. See
 [docs/PUBLISHING.md](docs/PUBLISHING.md) for package release status and the
 maintainer process.
 
+### pnpm: a misleading "not found" when the auth token is unset
+
+If you install with pnpm and the environment variable your `.npmrc` auth-token
+line references is unset — commonly `NODE_AUTH_TOKEN`, since that is the name
+several tools (including GitHub's own `actions/setup-node`) write by default,
+even if you named it `GH_PACKAGES_TOKEN` as in the example above — pnpm's
+`${VAR}` substitution on that auth-token line fails, and that failure
+**silently also disables the `@vespeneventures:registry=` scope mapping on
+the line above it**. pnpm then falls through to the public default registry
+(`registry.npmjs.org`), which has never heard of `@vespeneventures/*`, and
+reports a plain **404 "package not found"** — not an authentication error.
+Every fresh local clone that hasn't exported the token yet hits this. If
+`pnpm install` reports a `@vespeneventures/<package>` package not found,
+check that the auth-token environment variable is actually set in your shell
+before assuming the package doesn't exist or isn't published.
+
+### pnpm: a same-day publish can silently stall behind a supply-chain cooldown
+
+If your `pnpm` configuration sets a supply-chain cooldown
+(`minimumReleaseAge`), installing a package published from this registry
+earlier the same day can stall silently — pnpm just waits out the cooldown
+with no error — unless `@vespeneventures` is added to your
+`minimumReleaseAgeExclude` list. Add the scope there if you need to consume a
+release on the day it publishes.
+
 ## Usage
 
 The `governance/gates` subpath ships a CLI, `foundry-check`, that walks a workspace's

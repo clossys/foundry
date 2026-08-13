@@ -1,6 +1,6 @@
 {
   "name": "@vespeneventures/comms",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -54,11 +54,15 @@
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
+    "resend": "^6.19.0",
     "typescript": "~6.0.0",
     "vitest": "^4.1.9"
   },
-  "dependencies": {
+  "peerDependencies": {
     "resend": "^6.19.0"
+  },
+  "peerDependenciesMeta": {
+    "resend": { "optional": true }
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"

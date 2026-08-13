@@ -641,13 +641,39 @@ describe("safe redirects", () => {
     ]) {
       expect(resolveSafeRedirect(target, policy, "https://app.example.test")).toBeUndefined();
     }
-    expect(resolveSafeRedirect("/account", policy)).toBeUndefined();
+    // baseOrigin present but not itself allowlisted: an untrusted-input-style
+    // rejection, same as any other unsafe target — returns `undefined`.
     expect(resolveSafeRedirect("/account", policy, "https://outside.example.test")).toBeUndefined();
+  });
+
+  it("throws when a path-style target is given with no baseOrigin at all", () => {
+    // Omitting baseOrigin entirely for a path-style target is a caller
+    // programming error, not a security outcome — it must be distinguishable
+    // from the `undefined` returned for a rejected (possibly hostile) target.
+    expect(() => resolveSafeRedirect("/account", policy)).toThrow(TypeError);
   });
 
   it("rejects malformed origins while constructing the allowlist", () => {
     expect(() => createAllowedOriginPolicy(["https://app.example.test/path"])).toThrow();
     expect(() => createAllowedOriginPolicy(["javascript:alert(1)"])).toThrow();
     expect(() => createAllowedOriginPolicy(["https://user:password@app.example.test"])).toThrow();
+    expect(() => createAllowedOriginPolicy([""])).toThrow();
+  });
+
+  it("dedupes duplicate origins instead of throwing, preserving first-occurrence order", () => {
+    const deduped = createAllowedOriginPolicy([
+      "https://app.example.test",
+      "http://localhost:3000",
+      "https://app.example.test",
+      "http://localhost:3000",
+      "https://other.example.test",
+    ]);
+    expect(deduped.origins).toEqual([
+      "https://app.example.test",
+      "http://localhost:3000",
+      "https://other.example.test",
+    ]);
+    expect(Object.isFrozen(deduped)).toBe(true);
+    expect(Object.isFrozen(deduped.origins)).toBe(true);
   });
 });

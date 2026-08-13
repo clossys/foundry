@@ -901,13 +901,13 @@ try {
   {
     const dir = join(work, "readme-parity");
 
-    function writePackage(name, indexTs, readmeMd) {
+    function writePackage(name, indexTs, readmeMd, dependencies, peerDependencies) {
       const pkgDir = join(dir, name);
       mkdirSync(join(pkgDir, "src"), { recursive: true });
-      writeFileSync(
-        join(pkgDir, "package.json"),
-        JSON.stringify({ name: `${FIXTURE_SCOPE}/${name}`, version: "1.0.0", private: false }, null, 2) + "\n",
-      );
+      const manifest = { name: `${FIXTURE_SCOPE}/${name}`, version: "1.0.0", private: false };
+      if (dependencies) manifest.dependencies = dependencies;
+      if (peerDependencies) manifest.peerDependencies = peerDependencies;
+      writeFileSync(join(pkgDir, "package.json"), JSON.stringify(manifest, null, 2) + "\n");
       writeFileSync(join(pkgDir, "src", "index.ts"), indexTs);
       writeFileSync(join(pkgDir, "README.md"), readmeMd);
       return pkgDir;
@@ -1055,6 +1055,473 @@ try {
       "CHECK C flags an API table row for an export that doesn't exist",
       phantomRun.code === 1 && (phantomReport.findings ?? []).some((f) => f.check === "C" && /Ghost/.test(f.message)),
       `exit ${phantomRun.code}: ${phantomRun.out.slice(0, 300)}`,
+    );
+
+    // CHECK D1: README claims "zero/no runtime dependencies" while the real
+    // manifest declares a non-empty `dependencies` object -- the exact shape
+    // that shipped, undetected, across five READMEs in this repo (catalog,
+    // repository, review, gates, release) after they all started depending
+    // on `@scope/governance` for real.
+    const zeroDepsClaim = writePackage(
+      "zero-deps-claim",
+      `export const Foo = 1;\n`,
+      [
+        "# zero-deps-claim",
+        "",
+        "Mentions `Foo`.",
+        "",
+        "## Requirements",
+        "",
+        "Node 20+. ESM only. Zero runtime dependencies.",
+        "",
+      ].join("\n"),
+      { [`${FIXTURE_SCOPE}/governance`]: "^0.2.0" },
+    );
+    const zeroDepsClaimRun = run("node", [READMEPARITY, zeroDepsClaim, "--json"]);
+    const zeroDepsClaimReport = parseJson(zeroDepsClaimRun.out);
+    check(
+      'CHECK D flags "zero runtime dependencies" prose when package.json declares a real dependency',
+      zeroDepsClaimRun.code === 1 &&
+        (zeroDepsClaimReport.findings ?? []).some((f) => f.check === "D" && f.severity === "high" && /governance/.test(f.message)),
+      `exit ${zeroDepsClaimRun.code}: ${zeroDepsClaimRun.out.slice(0, 300)}`,
+    );
+
+    // Regression: a "zero runtime dependencies" claim about a DIFFERENT
+    // package, quoted as a worked example outside the "## Requirements"
+    // section, must NOT be misread as a claim about this README's own
+    // package -- this is the real false positive found by dogfooding CHECK D
+    // against packages/release/README.md, which legitimately describes
+    // packages/policy's clean round-trip result this way.
+    const zeroDepsOtherPackage = writePackage(
+      "zero-deps-other-package",
+      `export const Foo = 1;\n`,
+      [
+        "# zero-deps-other-package",
+        "",
+        "Mentions `Foo`.",
+        "",
+        "## What this actually found",
+        "",
+        `**The clean case: \`packages/some-other-thing\`.** Zero runtime dependencies.`,
+        "Packed and installed cleanly.",
+        "",
+        "## Requirements",
+        "",
+        `Node 20+. ESM only. Runtime dependency: \`${FIXTURE_SCOPE}/governance\`.`,
+        "",
+      ].join("\n"),
+      { [`${FIXTURE_SCOPE}/governance`]: "^0.2.0" },
+    );
+    const zeroDepsOtherPackageRun = run("node", [READMEPARITY, zeroDepsOtherPackage, "--json"]);
+    check(
+      'CHECK D does not misread a "zero runtime dependencies" claim about a DIFFERENT package (outside "## Requirements") as a claim about this one',
+      zeroDepsOtherPackageRun.code === 0,
+      `exit ${zeroDepsOtherPackageRun.code}: ${zeroDepsOtherPackageRun.out.slice(0, 300)}`,
+    );
+
+    // Sanity: the identical claim is NOT a finding when it's actually true --
+    // proves CHECK D reads the real manifest rather than reacting to the
+    // phrase alone.
+    const zeroDepsTrue = writePackage(
+      "zero-deps-true",
+      `export const Foo = 1;\n`,
+      [
+        "# zero-deps-true",
+        "",
+        "Mentions `Foo`.",
+        "",
+        "## Requirements",
+        "",
+        "Node 20+. ESM only. No runtime dependencies.",
+        "",
+      ].join("\n"),
+    );
+    const zeroDepsTrueRun = run("node", [READMEPARITY, zeroDepsTrue, "--json"]);
+    check(
+      'CHECK D does not flag "no runtime dependencies" when the manifest really has none',
+      zeroDepsTrueRun.code === 0,
+      `exit ${zeroDepsTrueRun.code}: ${zeroDepsTrueRun.out.slice(0, 300)}`,
+    );
+
+    // Fallback: a package with a real dependency and a "no runtime
+    // dependencies" claim but NO "## Requirements" heading at all must still
+    // be caught (whole-document fallback), so the section-scoping fix above
+    // can't accidentally make CHECK D silent for a README that doesn't
+    // follow this repo's own "## Requirements" convention.
+    const zeroDepsNoHeading = writePackage(
+      "zero-deps-no-heading",
+      `export const Foo = 1;\n`,
+      ["# zero-deps-no-heading", "", "Mentions `Foo`. This package has no runtime dependencies at all.", ""].join("\n"),
+      { [`${FIXTURE_SCOPE}/governance`]: "^0.2.0" },
+    );
+    const zeroDepsNoHeadingRun = run("node", [READMEPARITY, zeroDepsNoHeading, "--json"]);
+    check(
+      'CHECK D still flags a "no runtime dependencies" claim in a README with no "## Requirements" heading at all (whole-document fallback)',
+      zeroDepsNoHeadingRun.code === 1,
+      `exit ${zeroDepsNoHeadingRun.code}: ${zeroDepsNoHeadingRun.out.slice(0, 300)}`,
+    );
+
+    // CHECK D2: a same-scope package named in "runtime dependencies" prose
+    // that is not a key in the real manifest `dependencies` -- catches a
+    // pre-consolidation dependency list (e.g. naming `catalog`/`policy`
+    // after the real dependency changed to `governance`) without trying to
+    // parse arbitrary English.
+    const staleDepName = writePackage(
+      "stale-dep-name",
+      `export const Foo = 1;\n`,
+      [
+        "# stale-dep-name",
+        "",
+        "Mentions `Foo`.",
+        "",
+        "## Runtime availability",
+        "",
+        `\`stale-dep-name\` has runtime dependencies on \`${FIXTURE_SCOPE}/catalog\` and \`${FIXTURE_SCOPE}/policy\`.`,
+        "",
+      ].join("\n"),
+      { [`${FIXTURE_SCOPE}/governance`]: "^0.2.0" },
+    );
+    const staleDepNameRun = run("node", [READMEPARITY, staleDepName, "--json"]);
+    const staleDepNameReport = parseJson(staleDepNameRun.out);
+    check(
+      "CHECK D flags a same-scope package named as a runtime dependency that isn't actually in package.json's dependencies",
+      staleDepNameRun.code === 1 &&
+        (staleDepNameReport.findings ?? []).some((f) => f.check === "D" && new RegExp(`${FIXTURE_SCOPE}/catalog`).test(f.message)) &&
+        (staleDepNameReport.findings ?? []).some((f) => f.check === "D" && new RegExp(`${FIXTURE_SCOPE}/policy`).test(f.message)),
+      `exit ${staleDepNameRun.code}: ${staleDepNameRun.out.slice(0, 300)}`,
+    );
+
+    // Sanity: the same paragraph shape, but naming the package that is
+    // ACTUALLY in `dependencies`, is clean -- proves CHECK D isn't just
+    // flagging every scoped name mentioned near "runtime dependencies".
+    const correctDepName = writePackage(
+      "correct-dep-name",
+      `export const Foo = 1;\n`,
+      [
+        "# correct-dep-name",
+        "",
+        "Mentions `Foo`.",
+        "",
+        "## Runtime availability",
+        "",
+        `\`correct-dep-name\` has a runtime dependency on \`${FIXTURE_SCOPE}/governance\`.`,
+        "",
+      ].join("\n"),
+      { [`${FIXTURE_SCOPE}/governance`]: "^0.2.0" },
+    );
+    const correctDepNameRun = run("node", [READMEPARITY, correctDepName, "--json"]);
+    check(
+      "CHECK D does not flag a runtime-dependency mention that matches the real manifest",
+      correctDepNameRun.code === 0,
+      `exit ${correctDepNameRun.code}: ${correctDepNameRun.out.slice(0, 300)}`,
+    );
+
+    // Regression: an unrelated sentence that merely mentions another
+    // same-scope package (not inside a "runtime dependencies" paragraph)
+    // must NOT be treated as a dependency claim at all.
+    const unrelatedMention = writePackage(
+      "unrelated-mention",
+      `export const Foo = 1;\n`,
+      [
+        "# unrelated-mention",
+        "",
+        "Mentions `Foo`.",
+        "",
+        `See \`${FIXTURE_SCOPE}/other-package\`'s README for the fuller argument about an unrelated topic.`,
+        "",
+      ].join("\n"),
+    );
+    const unrelatedMentionRun = run("node", [READMEPARITY, unrelatedMention, "--json"]);
+    check(
+      'CHECK D ignores a same-scope package mention outside any "runtime dependencies" paragraph',
+      unrelatedMentionRun.code === 0,
+      `exit ${unrelatedMentionRun.code}: ${unrelatedMentionRun.out.slice(0, 300)}`,
+    );
+
+    // Regression: a real false positive found by dogfooding the old,
+    // paragraph-wide CHECK D2 against packages/strategy/README.md -- a
+    // purely rhetorical COMPARISON naming several sibling packages that all
+    // happen to have zero runtime dependencies of their own, sharing a
+    // paragraph with the bare phrase "runtime dependencies" that never
+    // introduces a declaration about THIS package at all (no ":" or "on"
+    // right after it). None of the named siblings are in this package's own
+    // `dependencies`, so the old heuristic misread this as three stale
+    // dependency claims. Must be entirely clean.
+    const comparativeSiblings = writePackage(
+      "comparative-siblings",
+      `export const Foo = 1;\n`,
+      [
+        "# comparative-siblings",
+        "",
+        "Mentions `Foo`.",
+        "",
+        "Validation here is hand-rolled on purpose, not built on a schema",
+        `library: \`${FIXTURE_SCOPE}/catalog\`, \`${FIXTURE_SCOPE}/policy\`, and`,
+        `\`${FIXTURE_SCOPE}/ui-tokens\` all ship with **zero** runtime`,
+        "dependencies, and this package's own pitch is only really true if",
+        "installing it doesn't also mean resolving a schema library's own",
+        "major version into a consumer's tree.",
+        "",
+      ].join("\n"),
+    );
+    const comparativeSiblingsRun = run("node", [READMEPARITY, comparativeSiblings, "--json"]);
+    check(
+      'CHECK D2 does not flag a rhetorical comparison ("all ship with zero runtime dependencies") naming sibling packages',
+      comparativeSiblingsRun.code === 0,
+      `exit ${comparativeSiblingsRun.code}: ${comparativeSiblingsRun.out.slice(0, 300)}`,
+    );
+
+    // Regression: a real false positive found by dogfooding the old CHECK D2
+    // against packages/ui/README.md -- a BOUNDARY statement ("X belongs to
+    // sibling A; Y belongs to sibling B") sharing a paragraph with the
+    // phrase "runtime dependencies" is not a dependency claim about this
+    // package at all. Must be entirely clean.
+    const boundaryStatement = writePackage(
+      "boundary-statement",
+      `export const Foo = 1;\n`,
+      [
+        "# boundary-statement",
+        "",
+        "Mentions `Foo`.",
+        "",
+        "`boundary-statement` never exports page views, routes, metadata,",
+        "strategy facts, or copy. Components receive resolved props.",
+        "Product/page composition belongs to",
+        `\`${FIXTURE_SCOPE}/surface\`; audience-facing words belong to`,
+        `\`${FIXTURE_SCOPE}/copy\`.`,
+        "",
+        "## Requirements",
+        "",
+        "Node 20+. ESM only. No regular runtime dependencies. React and",
+        "friends are optional peers.",
+        "",
+      ].join("\n"),
+    );
+    const boundaryStatementRun = run("node", [READMEPARITY, boundaryStatement, "--json"]);
+    check(
+      'CHECK D2 does not flag a boundary statement ("belongs to `@scope/x`") sharing a paragraph with "runtime dependencies"',
+      boundaryStatementRun.code === 0,
+      `exit ${boundaryStatementRun.code}: ${boundaryStatementRun.out.slice(0, 300)}`,
+    );
+
+    // CHECK D2 positive: a real declaration clause naming TWO packages that
+    // are both absent from the real manifest must fail, naming both.
+    const staleDepPair = writePackage(
+      "stale-dep-pair",
+      `export const Foo = 1;\n`,
+      [
+        "# stale-dep-pair",
+        "",
+        "Mentions `Foo`.",
+        "",
+        "## Requirements",
+        "",
+        `Node 20+. ESM only. Runtime dependencies: \`${FIXTURE_SCOPE}/a\` and \`${FIXTURE_SCOPE}/b\`.`,
+        "",
+      ].join("\n"),
+    );
+    const staleDepPairRun = run("node", [READMEPARITY, staleDepPair, "--json"]);
+    const staleDepPairReport = parseJson(staleDepPairRun.out);
+    check(
+      'CHECK D2 flags "Runtime dependencies: `@scope/a` and `@scope/b`." naming both, when neither is in the manifest',
+      staleDepPairRun.code === 1 &&
+        (staleDepPairReport.findings ?? []).some((f) => f.check === "D" && new RegExp(`${FIXTURE_SCOPE}/a\\b`).test(f.message)) &&
+        (staleDepPairReport.findings ?? []).some((f) => f.check === "D" && new RegExp(`${FIXTURE_SCOPE}/b\\b`).test(f.message)),
+      `exit ${staleDepPairRun.code}: ${staleDepPairRun.out.slice(0, 300)}`,
+    );
+
+    // CHECK D2 positive: a real declaration clause naming a package WITH a
+    // range attached, where the name IS a real dependency, must pass.
+    const declaredWithRange = writePackage(
+      "declared-with-range",
+      `export const Foo = 1;\n`,
+      [
+        "# declared-with-range",
+        "",
+        "Mentions `Foo`.",
+        "",
+        "## Requirements",
+        "",
+        `Node 20+. ESM only. Runtime dependency: \`${FIXTURE_SCOPE}/a\` (\`^1.0.0\`).`,
+        "",
+      ].join("\n"),
+      { [`${FIXTURE_SCOPE}/a`]: "^1.0.0" },
+    );
+    const declaredWithRangeRun = run("node", [READMEPARITY, declaredWithRange, "--json"]);
+    check(
+      "CHECK D2 does not flag a declared dependency with a matching range",
+      declaredWithRangeRun.code === 0,
+      `exit ${declaredWithRangeRun.code}: ${declaredWithRangeRun.out.slice(0, 300)}`,
+    );
+
+    // CHECK D3: the right package, cited with the right range, is clean.
+    // This is the real prose shape (packages/*/README.md's "Requirements"
+    // section): a backticked package name immediately followed by a
+    // backticked, parenthesized range, on the same line.
+    const rangeMatch = writePackage(
+      "range-match",
+      `export const Foo = 1;\n`,
+      [
+        "# range-match",
+        "",
+        "Mentions `Foo`.",
+        "",
+        "## Requirements",
+        "",
+        `Node 20+. ESM only. Runtime dependency: \`${FIXTURE_SCOPE}/governance\` (\`^0.3.0\`), which this package re-exports from.`,
+        "",
+      ].join("\n"),
+      { [`${FIXTURE_SCOPE}/governance`]: "^0.3.0" },
+    );
+    const rangeMatchRun = run("node", [READMEPARITY, rangeMatch, "--json"]);
+    check(
+      "CHECK D3 does not flag a README range that matches the manifest",
+      rangeMatchRun.code === 0,
+      `exit ${rangeMatchRun.code}: ${rangeMatchRun.out.slice(0, 300)}`,
+    );
+
+    // CHECK D3's actual incident, reproduced exactly: the README still says
+    // the OLD range (`^0.2.0`) after the manifest moved to `^0.3.0`. This is
+    // the shape that shipped undetected across five READMEs -- D1 and D2
+    // both pass it (the right package is named, and "zero dependencies" is
+    // never claimed), so only a check that reads the range itself can catch
+    // it. The failure message must name the package and both ranges.
+    const rangeStale = writePackage(
+      "range-stale",
+      `export const Foo = 1;\n`,
+      [
+        "# range-stale",
+        "",
+        "Mentions `Foo`.",
+        "",
+        "## Requirements",
+        "",
+        `Node 20+. ESM only. Runtime dependency: \`${FIXTURE_SCOPE}/governance\` (\`^0.2.0\`), which this package re-exports from.`,
+        "",
+      ].join("\n"),
+      { [`${FIXTURE_SCOPE}/governance`]: "^0.3.0" },
+    );
+    const rangeStaleRun = run("node", [READMEPARITY, rangeStale, "--json"]);
+    const rangeStaleReport = parseJson(rangeStaleRun.out);
+    check(
+      "CHECK D3 flags a stale README range and names both the claimed and real range",
+      rangeStaleRun.code === 1 &&
+        (rangeStaleReport.findings ?? []).some(
+          (f) => f.check === "D" && f.severity === "high" && /governance/.test(f.message) && /\^0\.2\.0/.test(f.message) && /\^0\.3\.0/.test(f.message),
+        ),
+      `exit ${rangeStaleRun.code}: ${rangeStaleRun.out.slice(0, 300)}`,
+    );
+
+    // CHECK D3 must NOT invent a documentation burden: naming a dependency
+    // with no range attached at all is exactly as valid as it is for D2,
+    // and must stay clean.
+    const rangeNone = writePackage(
+      "range-none",
+      `export const Foo = 1;\n`,
+      [
+        "# range-none",
+        "",
+        "Mentions `Foo`.",
+        "",
+        "## Requirements",
+        "",
+        `Node 20+. ESM only. Runtime dependency: \`${FIXTURE_SCOPE}/governance\`, which this package re-exports from.`,
+        "",
+      ].join("\n"),
+      { [`${FIXTURE_SCOPE}/governance`]: "^0.3.0" },
+    );
+    const rangeNoneRun = run("node", [READMEPARITY, rangeNone, "--json"]);
+    check(
+      "CHECK D3 does not require a README that names a dependency to also state its range",
+      rangeNoneRun.code === 0,
+      `exit ${rangeNoneRun.code}: ${rangeNoneRun.out.slice(0, 300)}`,
+    );
+
+    // CHECK D3 across a line break, matching -- the actual real-world prose
+    // shape (packages/catalog/README.md:164-165): the package name ends one
+    // line, and "(`range`)" opens the next.
+    const rangeMatchBroken = writePackage(
+      "range-match-broken",
+      `export const Foo = 1;\n`,
+      [
+        "# range-match-broken",
+        "",
+        "Mentions `Foo`.",
+        "",
+        "## Requirements",
+        "",
+        `Node 20+. ESM only. Runtime dependency: \`${FIXTURE_SCOPE}/governance\``,
+        "(`^0.3.0`), which this package re-exports from.",
+        "",
+      ].join("\n"),
+      { [`${FIXTURE_SCOPE}/governance`]: "^0.3.0" },
+    );
+    const rangeMatchBrokenRun = run("node", [READMEPARITY, rangeMatchBroken, "--json"]);
+    check(
+      "CHECK D3 matches a package name and its range even when a line break separates them",
+      rangeMatchBrokenRun.code === 0,
+      `exit ${rangeMatchBrokenRun.code}: ${rangeMatchBrokenRun.out.slice(0, 300)}`,
+    );
+
+    // CHECK D3 across a line break, stale -- same line-break shape as above,
+    // but the range itself is wrong.
+    const rangeStaleBroken = writePackage(
+      "range-stale-broken",
+      `export const Foo = 1;\n`,
+      [
+        "# range-stale-broken",
+        "",
+        "Mentions `Foo`.",
+        "",
+        "## Requirements",
+        "",
+        `Node 20+. ESM only. Runtime dependency: \`${FIXTURE_SCOPE}/governance\``,
+        "(`^0.2.0`), which this package re-exports from.",
+        "",
+      ].join("\n"),
+      { [`${FIXTURE_SCOPE}/governance`]: "^0.3.0" },
+    );
+    const rangeStaleBrokenRun = run("node", [READMEPARITY, rangeStaleBroken, "--json"]);
+    const rangeStaleBrokenReport = parseJson(rangeStaleBrokenRun.out);
+    check(
+      "CHECK D3 flags a stale range even when a line break separates the package name from it",
+      rangeStaleBrokenRun.code === 1 &&
+        (rangeStaleBrokenReport.findings ?? []).some(
+          (f) => f.check === "D" && /\^0\.2\.0/.test(f.message) && /\^0\.3\.0/.test(f.message),
+        ),
+      `exit ${rangeStaleBrokenRun.code}: ${rangeStaleBrokenRun.out.slice(0, 300)}`,
+    );
+
+    // CHECK D3 covers peerDependencies too, not just dependencies -- a stale
+    // peer range misleads identically, and the real-world phrasing for a
+    // peer ("Peer dependency: ...") never says "runtime dependency" at all,
+    // so this also proves D3 isn't accidentally riding on D2's
+    // "runtime dependenc(y|ies)" paragraph anchor.
+    const peerStale = writePackage(
+      "peer-stale",
+      `export const Foo = 1;\n`,
+      [
+        "# peer-stale",
+        "",
+        "Mentions `Foo`.",
+        "",
+        "## Requirements",
+        "",
+        `Node 20+. ESM only. Peer dependency: \`${FIXTURE_SCOPE}/governance\` (\`^0.2.0\`).`,
+        "",
+      ].join("\n"),
+      undefined,
+      { [`${FIXTURE_SCOPE}/governance`]: "^0.3.0" },
+    );
+    const peerStaleRun = run("node", [READMEPARITY, peerStale, "--json"]);
+    const peerStaleReport = parseJson(peerStaleRun.out);
+    check(
+      "CHECK D3 flags a stale range in a peerDependencies entry",
+      peerStaleRun.code === 1 &&
+        (peerStaleReport.findings ?? []).some(
+          (f) => f.check === "D" && /governance/.test(f.message) && /\^0\.2\.0/.test(f.message) && /\^0\.3\.0/.test(f.message),
+        ),
+      `exit ${peerStaleRun.code}: ${peerStaleRun.out.slice(0, 300)}`,
     );
 
     // Fail-closed: a package directory missing a required file must abort

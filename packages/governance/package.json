@@ -1,6 +1,6 @@
 {
   "name": "@vespeneventures/governance",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -76,8 +76,7 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@vespeneventures/policy": "^0.1.0",
-    "typescript": "~6.0.0"
+    "@vespeneventures/policy": "^0.1.0"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -89,6 +88,12 @@
     "@types/node": "^22.10.0",
     "typescript": "~6.0.0",
     "vitest": "^4.1.9"
+  },
+  "peerDependencies": {
+    "typescript": "~6.0.0"
+  },
+  "peerDependenciesMeta": {
+    "typescript": { "optional": true }
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"

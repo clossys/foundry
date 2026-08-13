@@ -13,6 +13,7 @@ export type {
   NewPackagePlanReadiness,
   PackageLifecycleDocument,
   PackageLifecycleEntry,
+  PackageLifecyclePromotionEvidence,
   PackageLifecycleStatus,
   PackageScaffoldFile,
 } from "./types.js";

@@ -41,6 +41,19 @@ event.
 
 ## Key choices
 
+### `dispatch()` never rejects on transport failure
+
+`CommunicationDispatcher.dispatch` resolves for every outcome, including a
+genuine send failure, as `state: "failed"` with a populated `failure`. This
+is intentional: a rejected promise would force every caller into a
+try/catch just to reach the same discriminated union `dispatch` already
+returns. The consequence a host must design for is that **a resolved
+promise is not evidence of success.** `await dispatch(message)` completing
+without a thrown error tells you nothing by itself; the caller must inspect
+`result.state` before reading `result.acceptance` or recording the message
+as sent. Code that awaits `dispatch` and moves on without checking `state`
+will treat a failed send as delivered.
+
 ### One message per channel
 
 Email and SMS do not share a useful finished-content shape. The current core
@@ -55,6 +68,20 @@ The durable dispatch ledger is the primary deduplication boundary. `claim`
 must atomically grant one worker an opaque lease; `complete` receives that
 lease so stale workers cannot overwrite a newer attempt. Implementations own
 claim expiry, failed-attempt retry and abandoned-work recovery.
+
+`complete` runs on every claimed attempt, including failed ones — the
+dispatcher passes it the full `CommunicationDispatchResult`, so
+`result.failure.retryable` is available at that hook and the ledger contract
+depends on it: only a terminal outcome (`accepted`, `skipped`, `duplicate`,
+or `failed` with `retryable: false`) may be recorded as permanently
+complete. A `failed` result with `retryable: true` must leave the id
+reclaimable by a future `claim()`. Recording a retryable failure the same
+way as a terminal one silently and permanently blocks that message from
+ever being retried, because `claim`'s own dedup check will report it as
+`duplicate` forever after. This is the same lease/TTL machinery that
+recovers abandoned work; picking a TTL that is too short for the retry path
+races the in-flight retry and re-strands the claim into a second, duplicate
+attempt instead of a clean single retry.
 
 The Resend adapter additionally forwards the stable message id as the provider
 idempotency key. That is a bounded provider-window defense for ambiguous

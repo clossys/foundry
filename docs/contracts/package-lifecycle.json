@@ -8,12 +8,13 @@
       "replacement": { "name": "@vespeneventures/governance", "range": "^0.2.0" },
       "deprecatedOn": "2026-08-12",
       "decision": "docs/DECISIONS.md#8-consolidating-package-process-surfaces-under-governance",
-      "migration": "packages/governance/README.md#migrating-from-compatibility-packages"
+      "migration": "packages/governance/README.md#migrating-from-compatibility-packages",
+      "forwardsToReplacement": true
     },
     { "name": "@vespeneventures/comms", "status": "published" },
     { "name": "@vespeneventures/copy", "status": "published" },
-    { "name": "@vespeneventures/deployment", "status": "adopted" },
-    { "name": "@vespeneventures/domain", "status": "adopted" },
+    { "name": "@vespeneventures/deployment", "status": "published" },
+    { "name": "@vespeneventures/domain", "status": "published" },
     {
       "name": "@vespeneventures/domain-model",
       "status": "retired",
@@ -32,18 +33,20 @@
       "replacement": { "name": "@vespeneventures/governance", "range": "^0.2.0" },
       "deprecatedOn": "2026-08-12",
       "decision": "docs/DECISIONS.md#8-consolidating-package-process-surfaces-under-governance",
-      "migration": "packages/governance/README.md#migrating-from-compatibility-packages"
+      "migration": "packages/governance/README.md#migrating-from-compatibility-packages",
+      "forwardsToReplacement": true
     },
     { "name": "@vespeneventures/governance", "status": "published" },
-    { "name": "@vespeneventures/ledger", "status": "adopted" },
-    { "name": "@vespeneventures/policy", "status": "adopted" },
+    { "name": "@vespeneventures/ledger", "status": "published" },
+    { "name": "@vespeneventures/policy", "status": "published" },
     {
       "name": "@vespeneventures/release",
       "status": "deprecated",
       "replacement": { "name": "@vespeneventures/governance", "range": "^0.2.0" },
       "deprecatedOn": "2026-08-12",
       "decision": "docs/DECISIONS.md#8-consolidating-package-process-surfaces-under-governance",
-      "migration": "packages/governance/README.md#migrating-from-compatibility-packages"
+      "migration": "packages/governance/README.md#migrating-from-compatibility-packages",
+      "forwardsToReplacement": true
     },
     {
       "name": "@vespeneventures/repository",
@@ -51,7 +54,8 @@
       "replacement": { "name": "@vespeneventures/governance", "range": "^0.2.0" },
       "deprecatedOn": "2026-08-12",
       "decision": "docs/DECISIONS.md#8-consolidating-package-process-surfaces-under-governance",
-      "migration": "packages/governance/README.md#migrating-from-compatibility-packages"
+      "migration": "packages/governance/README.md#migrating-from-compatibility-packages",
+      "forwardsToReplacement": true
     },
     {
       "name": "@vespeneventures/review",
@@ -59,9 +63,10 @@
       "replacement": { "name": "@vespeneventures/governance", "range": "^0.2.0" },
       "deprecatedOn": "2026-08-12",
       "decision": "docs/DECISIONS.md#8-consolidating-package-process-surfaces-under-governance",
-      "migration": "packages/governance/README.md#migrating-from-compatibility-packages"
+      "migration": "packages/governance/README.md#migrating-from-compatibility-packages",
+      "forwardsToReplacement": true
     },
-    { "name": "@vespeneventures/secrets", "status": "adopted" },
+    { "name": "@vespeneventures/secrets", "status": "published" },
     { "name": "@vespeneventures/strategy", "status": "published" },
     { "name": "@vespeneventures/surface", "status": "published" },
     {
@@ -73,7 +78,8 @@
       },
       "deprecatedOn": "2026-08-11",
       "decision": "docs/DECISIONS.md#7-consolidating-tokens-and-voice",
-      "migration": "docs/PIPELINE.md#consumer-integration-checklist"
+      "migration": "docs/PIPELINE.md#consumer-integration-checklist",
+      "forwardsToReplacement": false
     },
     { "name": "@vespeneventures/ui", "status": "published" },
     {
@@ -85,7 +91,8 @@
       },
       "deprecatedOn": "2026-08-11",
       "decision": "docs/DECISIONS.md#7-consolidating-tokens-and-voice",
-      "migration": "docs/PIPELINE.md#consumer-integration-checklist"
+      "migration": "docs/PIPELINE.md#consumer-integration-checklist",
+      "forwardsToReplacement": false
     }
   ]
 }

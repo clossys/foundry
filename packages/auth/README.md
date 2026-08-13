@@ -85,6 +85,29 @@ const destination = resolveSafeRedirect("/settings", policy, "https://app.exampl
 backslash, non-HTTP(S), and credential-bearing targets. Relative paths require
 an explicit allowed base origin.
 
+`createAllowedOriginPolicy` tolerates and collapses duplicate origins
+(preserving first-occurrence order) instead of throwing — an allowlist built
+from configuration commonly contains repeats (two env vars falling back to
+the same default literal, merged lists, and so on), and a set of allowed
+origins is inherently a set. It still throws for genuinely invalid entries:
+non-string, malformed, empty, credential-bearing, or path/query-bearing
+origins.
+
+`resolveSafeRedirect`'s `baseOrigin` parameter is mandatory whenever `target`
+is a path-style target (starts with `/`). These two failure modes are
+deliberately different:
+
+- **Omitting `baseOrigin` entirely** for a path-style target is a caller
+  programming error — the function throws a `TypeError`.
+- **A rejected target** — including a `baseOrigin` that is present but not
+  itself allowlisted, or any other unsafe/attacker-controlled target — is a
+  security outcome, not a bug, and returns `undefined`, exactly as before.
+  `resolveSafeRedirect` never throws on attacker-controlled input.
+
+Before this distinction existed, both cases returned the identical
+`undefined` sentinel, which made "I forgot to pass `baseOrigin`" and "this
+redirect target is unsafe" indistinguishable at the call site.
+
 ## Delegated agents
 
 ```ts
@@ -136,6 +159,29 @@ same-origin `POST` before revoking an active session.
 For local development only, `NEXT_PUBLIC_DEV_NO_AUTH=1` bypasses Clerk when
 `NODE_ENV` is exactly `development`. It is ignored in tests, previews, and
 production, and should never be configured for a deployed environment.
+
+### A sanitized redirect is worthless if the widget it's handed to prefers a raw one
+
+Validating a redirect target with `resolveSafeRedirect` only closes the hole
+if the sanitized value actually reaches the browser as the destination. It is
+easy to sanitize correctly and then hand the result to a UI prop that some
+other, attacker-controllable input can simply outrank.
+
+`ClerkSignInBlock` (in `@vespeneventures/auth/providers/clerk/web/client`) is
+the worked example: it renders Clerk's `<SignIn>` widget, which independently
+reads its own `redirect_url` query parameter from the page URL at render
+time. Clerk's `forceRedirectUrl` prop takes precedence over that query
+parameter, environment variables, and every other redirect source; its
+`fallbackRedirectUrl` prop is used only when nothing else supplies a value —
+so a raw, attacker-controllable query param wins over a `fallbackRedirectUrl`
+that was populated from `resolveSafeRedirect`, silently defeating the
+sanitization. `ClerkSignInBlock` passes the sanitized `redirect_url` prop as
+`forceRedirectUrl` for exactly this reason.
+
+The lesson generalizes beyond Clerk: whenever you wire `resolveSafeRedirect`'s
+result into any auth UI, confirm — for that specific widget, by reading its
+actual prop/parameter semantics — that the sanitized value is the one that
+wins, not merely one candidate among several the widget consults.
 
 ## API
 

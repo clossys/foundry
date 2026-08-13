@@ -43,6 +43,14 @@ if (result.state === "accepted") {
 }
 ```
 
+> **`dispatch()` never rejects on a transport failure.** A genuine send
+> failure still resolves the returned promise — as `state: "failed"` with a
+> populated `failure`, not a thrown error. **A resolved promise is not
+> success.** `await dispatch(message)` completing tells you nothing on its
+> own; you must branch on `result.state` before reading `result.acceptance`
+> or treating the message as sent. Code that only does
+> `await dispatch(message)` and moves on silently drops failed sends.
+
 `accepted` means the provider accepted responsibility for the request. It does
 not mean delivery to a recipient's mail server or inbox. Final lifecycle state
 arrives later as a verified `DeliveryEvent` and belongs in a durable
@@ -76,10 +84,169 @@ The durable implementation decides when failed or abandoned work becomes
 claimable again. Provider idempotency is a second line of defense, not a
 replacement for this ledger.
 
+`complete` is called for every claimed attempt, including failed ones, with
+the full `CommunicationDispatchResult` — so `result.failure.retryable` is
+available at that call and `complete` must act on it:
+
+- `state: "accepted"`, `state: "skipped"`, `state: "duplicate"`, or
+  `state: "failed"` with `failure.retryable === false` are **terminal**.
+  `complete` must record the id as permanently done so a later `claim` for
+  the same id returns `duplicate`.
+- `state: "failed"` with `failure.retryable === true` is **not** terminal.
+  `complete` must leave the id reclaimable — a future `claim()` for the same
+  id must be able to succeed again — instead of recording it as permanently
+  complete. A host that marks a retryable failure complete the same way it
+  marks a success complete permanently blocks the retry: `claim`'s dedup
+  check will report every subsequent attempt as `duplicate`, and the message
+  never sends.
+
+This interacts with lease/TTL reclamation: whatever mechanism reclaims an
+abandoned claim (see below) is also what makes a retryable failure claimable
+again, if `complete` releases the claim rather than tracking retry
+eligibility itself. Either way, a TTL shorter than the time a retryable
+failure needs to actually be retried races the retry — the lease can expire
+and be reclaimed by a second worker while the first worker's retry is still
+in flight, producing a duplicate send instead of a clean retry. Size TTLs
+against the slowest realistic retry path, not the common case.
+
 `DeliveryEventLedger.apply` is deliberately one atomic operation: deduplicate
 the provider-scoped `(provider, eventId)`, append the event, and advance the current message state
 only when its provider timestamp wins the host's ordering rule. Providers may
 deliver the same webhook more than once and out of order.
+
+## Reference ledger implementation
+
+This package ships no ledger implementation — both ports are host-owned by
+design (see Boundaries). The sketch below is a **reference only**, to make
+the atomicity and retryable-handling requirements above concrete; it is not
+exported, not tested by this package, and not something you can import. Copy
+the shape, adapt it to your database, and cover it with your own host-side
+tests.
+
+### Schema sketch (Postgres)
+
+```sql
+create table communication_dispatch_claims (
+  message_id   text primary key,
+  lease_id     text not null,
+  status       text not null check (status in ('claimed', 'complete')),
+  retryable    boolean,               -- null until a terminal outcome lands
+  claimed_at   timestamptz not null default now(),
+  completed_at timestamptz
+);
+
+create table delivery_events (
+  provider           text not null,
+  event_id           text not null,
+  provider_message_id text not null,
+  occurred_at        timestamptz not null,
+  type                text not null,
+  primary key (provider, event_id)    -- makes apply()'s dedup atomic
+);
+
+create table delivery_state (
+  provider_message_id text primary key,
+  current_type         text not null,
+  current_occurred_at  timestamptz not null
+);
+```
+
+The `communication_dispatch_claims.message_id` primary key is what makes
+`claim()` atomic: a second worker's insert for the same id either fails
+(row already exists) or, once a row is `status = 'complete'`, is rejected by
+the application check before it ever races a real write. The
+`delivery_events` primary key on `(provider, event_id)` does the equivalent
+job for `apply()`.
+
+### `CommunicationDispatchLedger`
+
+```ts
+const ledger: CommunicationDispatchLedger = {
+  async claim(message) {
+    return db.transaction(async (tx) => {
+      const existing = await tx.query(
+        "select status, retryable from communication_dispatch_claims where message_id = $1 for update",
+        [message.id],
+      );
+      // A prior attempt is only reclaimable if it failed retryably; a
+      // terminal row (success, non-retryable failure, skip, or an earlier
+      // duplicate) is a hard stop.
+      if (existing && (existing.status === "complete" && existing.retryable !== true)) {
+        return { outcome: "duplicate" as const };
+      }
+      const leaseId = crypto.randomUUID();
+      await tx.query(
+        `insert into communication_dispatch_claims (message_id, lease_id, status)
+         values ($1, $2, 'claimed')
+         on conflict (message_id) do update set lease_id = excluded.lease_id, status = 'claimed', claimed_at = now()`,
+        [message.id, leaseId],
+      );
+      return { outcome: "claimed" as const, leaseId };
+    });
+  },
+
+  async complete(claim, result) {
+    const isTerminal =
+      result.state === "accepted" ||
+      result.state === "skipped" ||
+      result.state === "duplicate" ||
+      (result.state === "failed" && result.failure.retryable === false);
+
+    await db.query(
+      `update communication_dispatch_claims
+       set status = $1, retryable = $2, completed_at = now()
+       where message_id = $3 and lease_id = $4`,
+      [
+        isTerminal ? "complete" : "claimed", // retryable failure: leave reclaimable
+        result.state === "failed" ? result.failure.retryable : null,
+        result.messageId,
+        claim.leaseId,
+      ],
+    );
+    // A stale worker's lease_id no longer matches — the update above
+    // affects zero rows, so a newer attempt's result is never overwritten.
+  },
+};
+```
+
+A separate reclaim sweep (a scheduled job, or a check inside `claim` itself)
+releases rows whose `status = 'claimed'` and `claimed_at` is older than the
+TTL, so a worker that crashed mid-delivery does not strand the id forever.
+Size that TTL against the slowest realistic retry, per the note above — an
+in-flight retryable-failure retry must not still be running when the TTL
+reclaims its row out from under it.
+
+### `DeliveryEventLedger`
+
+```ts
+const deliveryLedger: DeliveryEventLedger = {
+  async apply(event) {
+    return db.transaction(async (tx) => {
+      const inserted = await tx.query(
+        `insert into delivery_events (provider, event_id, provider_message_id, occurred_at, type)
+         values ($1, $2, $3, $4, $5)
+         on conflict (provider, event_id) do nothing
+         returning provider_message_id`,
+        [event.provider, event.eventId, event.providerMessageId, event.occurredAt, event.type],
+      );
+      if (inserted.rowCount === 0) return "duplicate" as const;
+
+      // Advance current state only if this event is not older than what's
+      // recorded — providers may redeliver out of order.
+      await tx.query(
+        `insert into delivery_state (provider_message_id, current_type, current_occurred_at)
+         values ($1, $2, $3)
+         on conflict (provider_message_id) do update
+           set current_type = excluded.current_type,
+               current_occurred_at = excluded.current_occurred_at
+           where delivery_state.current_occurred_at <= excluded.current_occurred_at`,
+        [event.providerMessageId, event.type, event.occurredAt],
+      );
+      return "applied" as const;
+    });
+  },
+};
+```
 
 ## Resend
 
@@ -180,9 +347,11 @@ Import the following from `@vespeneventures/comms/resend`.
 
 ## Requirements
 
-Node 20+. ESM only. Runtime dependency: the official `resend` SDK. The root
-contracts do no I/O; the `./resend` adapter performs provider calls only when
-the host invokes it.
+Node 20+. ESM only. The root contracts have no runtime dependency and do no
+I/O. `./resend` needs the official `resend` SDK installed as a peer
+dependency (`peerDependenciesMeta` marks it optional) — install it only if
+you import `./resend`; a consumer that stays on the provider-neutral root
+never installs it.
 
 ## Licence
 
