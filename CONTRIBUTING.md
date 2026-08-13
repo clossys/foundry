@@ -95,6 +95,46 @@ Practically:
 - **Dependencies:** the default answer is no. A package here should be usable
   without dragging in a tree. Adding a runtime dependency needs a reason in the
   pull request description.
+- **Gate CLIs exit `0` clean / `1` findings / `2` could not run — `2` is not a
+  variant of failure.** Every gate CLI in this repo follows this three-state
+  contract: `packages/ui/src/cli.ts` and `packages/ui/src/token-gate.ts`
+  (returns `2` when zero files were scanned, before findings are even
+  possible), `packages/copy/src/cli.ts`, `packages/strategy/src/cli.ts`, and
+  `scripts/check-release-readiness.mjs` all agree on it. `2` means the gate
+  never formed an opinion — a git or npm failure, a directory it couldn't
+  read, a scan that matched nothing — and is the only thing that
+  distinguishes "I checked and it's fine" from "I never checked." Collapsing
+  `2` into `0` reports a clean pass for work that never happened; collapsing
+  it into `1` reports a finding that doesn't exist. A new gate should reuse
+  this contract rather than inventing its own exit-code scheme.
+
+  This is what makes the contract load-bearing, not decorative: **a check
+  that cannot run must fail (`2`), never pass (`0`).** `check-release-
+  readiness.mjs` shipped exactly the opposite — discovering zero packages to
+  check exited `0`, and an existing test asserted that as intended, so the
+  defect was encoded as correct. A renamed `packages/` directory or a glob
+  broken by a refactor would have reported every package release-ready on
+  the strength of having examined none. Fixed in `01bd520`. The reasons
+  generalize past this one script:
+  - Absence of signal is indistinguishable from a passing signal. A gate
+    that reports success by never executing looks exactly like a gate that
+    executed and found nothing.
+  - A gate never observed failing is indistinguishable from a gate that
+    cannot fail. If you've never seen a check go red, you don't know it
+    works.
+  - A guard must state where control goes when it declines. "Nothing,"
+    "skip," and an implicit fall-through are never acceptable outcomes for
+    a decline path.
+  - The decline path gets written last, with the least attention, by
+    someone who already believes the hard part is done. That's why this is
+    a written rule and not a matter of care.
+
+  Reuse the existing mechanism rather than reinventing this per gate:
+  `packages/governance/src/gates/types.ts`'s `FoundationReport.complete` is
+  `true` only when `catalog.skipped` is empty, and
+  `packages/governance/src/catalog/build.ts` pushes every unreadable or
+  unparseable path onto `skipped` instead of dropping it — the decline case
+  is data, not silence.
 - **No `workspace:*` or `catalog:` protocols.** They are unresolvable for anyone
   outside the workspace that defines them, and the safety gate rejects them.
 - **Changelogs** follow [Keep a Changelog](https://keepachangelog.com); packages
