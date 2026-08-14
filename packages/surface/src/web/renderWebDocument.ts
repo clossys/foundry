@@ -83,12 +83,41 @@
 import { resolveDocument } from "../core/index.js";
 import type { ComposeDocument, WebMeta } from "../core/index.js";
 import type { ReactNode } from "react";
-import { createElement } from "react";
+import { createElement, version as reactVersion } from "react";
 import { RenderError } from "../internal/errors.js";
 import { describeAssetProblems, hasAssetProblems, resolveDocumentAssets } from "../internal/assets.js";
+import { assertPeerVersion } from "../internal/peer-version.js";
 import { buildWebHeadMetadata } from "./headMetadata.js";
 import { getWebTemplate, listWebTemplateNames } from "./internal/webTemplates.js";
 import type { RenderWebOptions, RenderWebResult } from "./types.js";
+
+/**
+ * `react` is this subpath's optional peer (see package.json's
+ * `peerDependenciesMeta`) — optional so a consumer can install
+ * `@vespeneventures/surface` and use `./core`, `./media`, `./email`,
+ * `./print`, `./image`, or `./slides` without ever installing React; only
+ * `./web` (this file, and `./internal/webTemplates.js`, which it already
+ * imports and which transitively covers that file's own `react` usage
+ * too) needs it. An ABSENT or OUT-OF-RANGE `react` previously produced no
+ * signal until `createElement` itself crashed somewhere below, with
+ * nothing naming a version range as the cause. Read via `react`'s own
+ * exported `version` — not this package's `resolveInstalledPeerVersion`
+ * fs-based resolver — because this module is reachable from a browser
+ * bundle as easily as from a server one; `React.version` is a plain value
+ * export that works in every environment, while `resolveInstalledPeerVersion`
+ * assumes `node:module`/`node:fs`, which a browser bundle either can't
+ * resolve or shouldn't need to.
+ *
+ * (`react-dom` is this subpath's OTHER declared optional peer, but no file
+ * in this package ever imports it directly — only the consumer's own
+ * `react-dom/server` or client render call does, downstream of the
+ * `ReactNode` this function returns — so there is no adapter import site
+ * in this package to guard for it. `REACT_DECLARED_RANGE` must match
+ * package.json's `peerDependencies.react` exactly — `renderWebDocument.
+ * test.ts` asserts that directly.)
+ */
+export const REACT_DECLARED_RANGE = ">=18";
+assertPeerVersion({ peer: "react", declaredRange: REACT_DECLARED_RANGE, foundVersion: reactVersion });
 
 function resolveBindingText(
   binding: { copyId?: string; value?: string },

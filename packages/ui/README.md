@@ -98,7 +98,7 @@ smallest stable subpath that owns what you need:
 
 | Subpath | Owns |
 | --- | --- |
-| `@vespeneventures/ui/tokens` | Typed `TOKENS`, brand CSS parsing, the brand-coverage gate, WCAG colour math (`contrastRatio` and friends), and the contrast gate (`checkTokenContrast`, `CONTRAST_PAIRS`). No React runtime. |
+| `@vespeneventures/ui/tokens` | Typed `TOKENS`, brand CSS parsing, the brand-coverage gate, WCAG colour math (`contrastRatio` and friends), the contrast gate (`checkTokenContrast`, `CONTRAST_PAIRS`), and `assertTokenStylesLoaded` (dev-only token-CSS presence check — see "Setup" below). No React runtime. |
 | `@vespeneventures/ui/tokens.css` | Neutral primitive custom-property defaults; works without Tailwind. |
 | `@vespeneventures/ui/theme.css` | Optional Tailwind v4 wiring; imports `tokens.css` itself. |
 | `@vespeneventures/ui/brand-template.css` | Copy-and-fill template for a consumer brand binding. |
@@ -386,6 +386,36 @@ resolution entirely — at the cost of having to enumerate every class you
 actually use instead of Tailwind discovering them from `dist/`. If the
 directory form above silently produces no styling under Turbopack + pnpm in
 your project, try this instead.
+
+**3. If a component still renders unstyled, call `assertTokenStylesLoaded`
+first** — before chasing your Tailwind `@source` config or bundler setup.
+Both steps above can silently fail to do anything (a missed import, a
+`@source` path that resolves to nothing, the Turbopack + pnpm symlink case
+just above) with no error and no warning anywhere; the result looks
+identical to "I styled this component wrong" from inside your own code.
+`assertTokenStylesLoaded`, from `@vespeneventures/ui/tokens`, tells you
+which failure you actually have:
+
+```ts
+import { assertTokenStylesLoaded } from "@vespeneventures/ui/tokens";
+
+// Call once, near your app's root — never as a side effect of importing
+// the package, and never something that renders into the page.
+assertTokenStylesLoaded();
+```
+
+It reads back a sentinel custom property (`--ui-tokens-loaded`) that
+`styles/tokens.css` declares for exactly this purpose, and reports once,
+via `console.error`, if that property is missing — meaning the CSS file
+itself was never imported at all (step 1 above), a different failure than
+an `@source` misconfiguration (step 2), which imports the CSS fine but
+never generates the utility classes it needs. Dev-only (a no-op once
+`process.env.NODE_ENV === "production"`), SSR-safe (a no-op wherever
+`document` doesn't exist), and never renders anything into the page — pass
+your own `onMissing` callback instead of the default `console.error` if you
+want to route the signal elsewhere. See `assert-token-styles-loaded.ts`'s
+own header for the full contract, including why this is a console signal
+only and not the kind of injected page banner #148 removed.
 
 ### Wiring up a theme toggle
 

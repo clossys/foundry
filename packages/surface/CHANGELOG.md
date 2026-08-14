@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.2.1] - 2026-08-13
+
+### Added
+
+- **`react` peer-version guard.** `src/web/renderWebDocument.ts` — the
+  canonical `./web` entry point, which already transitively covers
+  `./web/internal/webTemplates.ts`'s own `react` usage — now calls
+  `assertPeerVersion` (new internal `src/internal/peer-version.ts`) at
+  import time, throwing a named, actionable error when the optional
+  `react` peer is either not installed or installed outside this
+  package's declared `>=18` range — distinct messages for each case, read
+  from `react`'s own exported `version` (not a filesystem read, so this
+  works whether `./web` is reached from a server or a browser bundle).
+  `react-dom` has no guard: no file in this package imports it directly.
+  Previously, an absent or incompatible `react` produced no signal until
+  `createElement` itself crashed. See the README's "Requirements and
+  version coupling" section. (#182)
+
 ## [0.2.0] - 2026-08-13
 
 ### Added

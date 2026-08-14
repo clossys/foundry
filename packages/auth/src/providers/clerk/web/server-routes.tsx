@@ -6,6 +6,41 @@ import { NextResponse } from "next/server";
 import type { ReactNode } from "react";
 import { ClerkSignInBlock, type ClerkSignInProps } from "./client.js";
 import { devAuthBypassIsKeyless } from "./dev-bypass.js";
+import { assertPeerVersion } from "../../../internal/peer-version.js";
+import { resolveInstalledPeerVersion } from "../../../internal/resolve-installed-peer-version.js";
+
+/**
+ * `@clerk/nextjs` and `next` are two of this package's optional peers
+ * (see package.json's `peerDependenciesMeta`). This is this package's
+ * "server" subpath (published as `./providers/clerk/web/server`,
+ * `foundryReleaseVerification.next.serverSubpaths` in package.json),
+ * reachable ONLY through `web/server.ts` — a separate file from
+ * `web/index.ts` (the CLIENT subpath, `./providers/clerk/web`, which
+ * re-exports exclusively from `./client.js` and never touches this
+ * module). Being genuinely Node-context, never bundled for the browser,
+ * makes it safe for `resolve-installed-peer-version.ts`'s
+ * `node:module`/`node:fs`-based resolver — the edge-safe
+ * `proxy.ts`/`proxy-entry.ts` and the browser-side `client.tsx`
+ * deliberately import only the pure `peer-version.js` (see those files'
+ * own comments; see `peer-version.ts`'s own header for why that split
+ * exists at all). An absent or out-of-range peer here previously
+ * surfaced as whatever `@clerk/nextjs/server`'s own call surface happened
+ * to crash on, with nothing naming a version range as the cause. Both
+ * declared-range constants must match package.json's `peerDependencies`
+ * exactly — `server-routes.test.ts` asserts that directly.
+ */
+export const CLERK_NEXTJS_DECLARED_RANGE = ">=7 <8";
+export const NEXT_DECLARED_RANGE = ">=16 <17";
+assertPeerVersion({
+  peer: "@clerk/nextjs",
+  declaredRange: CLERK_NEXTJS_DECLARED_RANGE,
+  foundVersion: resolveInstalledPeerVersion("@clerk/nextjs", import.meta.url),
+});
+assertPeerVersion({
+  peer: "next",
+  declaredRange: NEXT_DECLARED_RANGE,
+  foundVersion: resolveInstalledPeerVersion("next", import.meta.url),
+});
 
 type SearchParameters = Record<string, string | string[] | undefined>;
 type PageProps = { searchParams?: Promise<SearchParameters> };

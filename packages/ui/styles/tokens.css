@@ -700,3 +700,34 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --color-chart-categorical-8:    #e66767;
 }
 }
+
+/* ─── TOKEN CSS PRESENCE SENTINEL — public contract ──────────────────
+ * Declares exactly one custom property, read back only — never rendered,
+ * never visible. Lets `assertTokenStylesLoaded`
+ * (`@vespeneventures/ui/tokens`) tell, at runtime, whether THIS file was
+ * actually imported: without it, every class this package's components
+ * render (`bg-accent`, `text-ink-primary`, ...) is a Tailwind utility
+ * that resolves to nothing, and every component renders unstyled with no
+ * error anywhere to explain why — see the README's Setup section, and
+ * this package's own README line this issue (#182) quotes verbatim.
+ *
+ * Deliberately its OWN `:root { ... }` rule, appended after the real
+ * token layer above, rather than a property added to that layer's
+ * `:root` block: `parseRootDeclarations` (`src/tokens/internal/
+ * parse-css.ts`, used by `parity.test.ts`, `contrast.test.ts`, and
+ * `dark-mode-cascade.test.ts`) parses only the FIRST top-level `:root {`
+ * block in this file as "the real token layer" and asserts it declares
+ * exactly this package's curated 154 tokens; this sentinel is not a
+ * design token — it is a structural presence marker — so it stays out
+ * of `src/tokens/tokens.ts`'s registry and out of that block entirely,
+ * in a second `:root` rule the browser cascades in fine (CSS allows any
+ * number of `:root` rules; the property is unique, so there is nothing
+ * to conflict).
+ *
+ * The exact property name and value below are a stable, documented
+ * public contract: a consumer's own tooling may read
+ * `--ui-tokens-loaded` directly instead of going through
+ * `assertTokenStylesLoaded`. */
+:root {
+  --ui-tokens-loaded: 1;
+}

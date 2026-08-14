@@ -15,7 +15,17 @@ vi.mock("@clerk/nextjs/server", () => ({
 
 vi.mock("next/headers", () => ({ cookies: provider.cookies }));
 
-import { createClerkSignInPage, createRedirectRoute, createSignOutRoute, resolveRequestRedirect } from "./server-routes.js";
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import {
+  CLERK_NEXTJS_DECLARED_RANGE,
+  createClerkSignInPage,
+  createRedirectRoute,
+  createSignOutRoute,
+  NEXT_DECLARED_RANGE,
+  resolveRequestRedirect,
+} from "./server-routes.js";
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -157,5 +167,29 @@ describe("createClerkSignInPage", () => {
 
     await expect(page()).resolves.toBeTruthy();
     expect(provider.auth).toHaveBeenCalledOnce();
+  });
+});
+
+describe("the @clerk/nextjs and next peer-version guards (#182)", () => {
+  it("keeps both declared-range constants in sync with package.json's declared peer ranges", () => {
+    const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "..");
+    const manifest = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8")) as {
+      peerDependencies: Record<string, string>;
+      peerDependenciesMeta: Record<string, { optional?: boolean }>;
+    };
+    expect(CLERK_NEXTJS_DECLARED_RANGE).toBe(manifest.peerDependencies["@clerk/nextjs"]);
+    expect(manifest.peerDependenciesMeta["@clerk/nextjs"]?.optional).toBe(true);
+    expect(NEXT_DECLARED_RANGE).toBe(manifest.peerDependencies.next);
+    expect(manifest.peerDependenciesMeta.next?.optional).toBe(true);
+  });
+
+  it("importing this module does not throw against this repository's own real installed peers", () => {
+    // server-routes.tsx calls assertPeerVersion(...) twice at module load
+    // time (see its own header comment); this file already imported from
+    // it above, so reaching this test at all is itself the assertion that
+    // neither call threw against the real @clerk/nextjs / next this
+    // workspace has installed.
+    expect(CLERK_NEXTJS_DECLARED_RANGE).toBe(">=7 <8");
+    expect(NEXT_DECLARED_RANGE).toBe(">=16 <17");
   });
 });

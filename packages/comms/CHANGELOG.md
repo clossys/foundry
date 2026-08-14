@@ -5,6 +5,19 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-08-13
+
+### Added
+
+- **`resend` peer-version guard.** `src/resend/index.ts` now calls
+  `assertPeerVersion` (new internal `src/internal/peer-version.ts`) at
+  import time, throwing a named, actionable error when the optional
+  `resend` peer is either not installed or installed outside this
+  package's declared `^6.19.0` range — distinct messages for each case.
+  Previously, an absent or incompatible `resend` produced no signal until
+  something inside the SDK itself crashed. See the README's "Requirements"
+  section. (#182)
+
 ## [0.3.0] - 2026-08-13
 
 ### Added

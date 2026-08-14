@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { Buffer } from "node:buffer";
 import { Webhook } from "svix";
 import { describe, expect, it, vi } from "vitest";
@@ -9,6 +12,7 @@ import {
   verifyClerkWebhook,
 } from "./index.js";
 import type { ClerkEventMappingOptions, ClerkMembershipEvent, ClerkWebhookHeaders } from "./index.js";
+import { SVIX_DECLARED_RANGE } from "./verify.js";
 
 const signingSecret = `whsec_${Buffer.alloc(32, 7).toString("base64")}`;
 const mappingOptions: ClerkEventMappingOptions = {
@@ -336,5 +340,25 @@ describe("verifyAndMapClerkWebhook", () => {
         providerTenantId: "organization_synthetic",
       },
     });
+  });
+});
+
+describe("the svix peer-version guard (#182)", () => {
+  it("keeps SVIX_DECLARED_RANGE in sync with package.json's declared peer range", () => {
+    const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
+    const manifest = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8")) as {
+      peerDependencies: Record<string, string>;
+      peerDependenciesMeta: Record<string, { optional?: boolean }>;
+    };
+    expect(SVIX_DECLARED_RANGE).toBe(manifest.peerDependencies.svix);
+    expect(manifest.peerDependenciesMeta.svix?.optional).toBe(true);
+  });
+
+  it("importing verify.ts does not throw against this repository's own real installed svix", () => {
+    // verify.ts calls assertPeerVersion(...) at module load time (see its
+    // own header comment); this file already imported from it above, so
+    // reaching this test at all is itself the assertion that it didn't
+    // throw against the real svix this workspace has installed.
+    expect(SVIX_DECLARED_RANGE).toBe("^1.96.0");
   });
 });

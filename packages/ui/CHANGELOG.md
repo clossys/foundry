@@ -3,6 +3,22 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.11.1] - 2026-08-13
+
+### Added
+
+- **`assertTokenStylesLoaded`** (`@vespeneventures/ui/tokens`) — a dev-only,
+  SSR-safe runtime check for the silent-unstyled-render gap this README has
+  long documented ("without the token CSS imported, ... every component
+  renders unstyled, with no error anywhere to explain why"). Reads back a
+  new sentinel custom property (`--ui-tokens-loaded`, appended to
+  `styles/tokens.css`) via `getComputedStyle` and reports once, via
+  `console.error` by default (or a caller-supplied `onMissing`), when it's
+  missing. Opt-in only — importing the package never runs it — a no-op in
+  production and wherever `document` doesn't exist, and never renders
+  anything into the page: it does not reintroduce the injected banner #148
+  removed, in any form. See the README's "Setup" section, step 3. (#182)
+
 ## [0.11.0] - 2026-08-13
 
 ### Added

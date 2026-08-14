@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
   checkCredentialInventory,
@@ -8,6 +11,7 @@ import {
   checkSecretReadiness,
   checkValueFreeSecretCatalog,
   detectRawSecretReads,
+  TYPESCRIPT_DECLARED_RANGE,
 } from "./secret-gates.js";
 
 const catalog = {
@@ -769,5 +773,25 @@ describe("local files and provider resource names", () => {
         ],
       ).map((item) => item.rule),
     ).toEqual(["secrets/provider-resource-rule-duplicate"]);
+  });
+});
+
+describe("the typescript peer-version guard (#182)", () => {
+  it("keeps TYPESCRIPT_DECLARED_RANGE in sync with package.json's declared peer range", () => {
+    const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
+    const manifest = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8")) as {
+      peerDependencies: Record<string, string>;
+      peerDependenciesMeta: Record<string, { optional?: boolean }>;
+    };
+    expect(TYPESCRIPT_DECLARED_RANGE).toBe(manifest.peerDependencies.typescript);
+    expect(manifest.peerDependenciesMeta.typescript?.optional).toBe(true);
+  });
+
+  it("importing this module does not throw against this repository's own real installed typescript", () => {
+    // secret-gates.ts calls assertPeerVersion(...) at module load time (see
+    // its own header comment); this file already imported it above, so
+    // reaching this test at all is itself the assertion that it didn't
+    // throw against the real typescript this workspace has installed.
+    expect(TYPESCRIPT_DECLARED_RANGE).toBe("~6.0.0");
   });
 });
