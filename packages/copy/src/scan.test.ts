@@ -646,4 +646,74 @@ describe("scanCopySourceTree", () => {
     chmodSync(locked, 0o000);
     expect(() => scanCopySourceTree(dir)).toThrow(/cannot read directory/);
   });
+
+  describe("pathExclusions — the mention-vs-use fix, a DIFFERENT feature from per-literal `excluded`", () => {
+    it("skips an excluded file entirely — no candidates, no excluded literals, from that file", () => {
+      writeFileSync(
+        join(dir, "style-guide.md.ts"), // .ts so it matches the default extension list without changing options
+        'export const guidance = "Never say utilize, say use.";\n',
+      );
+      writeFileSync(join(dir, "real.ts"), 'const x = "Real copy";\n');
+      const result = scanCopySourceTree(dir, {
+        pathExclusions: [{ path: "style-guide.md.ts", reason: "documents banned terms, does not use them" }],
+      });
+      expect(result.filesScanned).toBe(1); // only real.ts
+      expect(result.candidates).toEqual([expect.objectContaining({ file: "real.ts" })]);
+      expect(result.excludedFiles).toEqual([
+        {
+          file: "style-guide.md.ts",
+          reason: "documents banned terms, does not use them",
+          pattern: "style-guide.md.ts",
+        },
+      ]);
+    });
+
+    it("a subtree exclusion ('docs/**') skips every file under that directory, recursively", () => {
+      mkdirSync(join(dir, "docs", "internal"), { recursive: true });
+      writeFileSync(join(dir, "docs", "guide.ts"), 'const x = "Mentioned copy";\n');
+      writeFileSync(join(dir, "docs", "internal", "notes.ts"), 'const x = "Also mentioned";\n');
+      writeFileSync(join(dir, "real.ts"), 'const x = "Real copy";\n');
+      const result = scanCopySourceTree(dir, { pathExclusions: [{ path: "docs/**", reason: "docs, not product copy" }] });
+      expect(result.filesScanned).toBe(1);
+      expect(result.candidates).toEqual([expect.objectContaining({ file: "real.ts" })]);
+      expect(result.excludedFiles.map((e) => e.file).sort()).toEqual(["docs/guide.ts", "docs/internal/notes.ts"]);
+    });
+
+    it("a segment-wildcard exclusion ('docs/*.ts') never crosses a directory boundary", () => {
+      mkdirSync(join(dir, "docs", "nested"), { recursive: true });
+      writeFileSync(join(dir, "docs", "guide.ts"), 'const x = "Mentioned copy";\n');
+      writeFileSync(join(dir, "docs", "nested", "guide.ts"), 'const x = "Nested, still scanned";\n');
+      const result = scanCopySourceTree(dir, { pathExclusions: [{ path: "docs/*.ts", reason: "top-level docs only" }] });
+      expect(result.filesScanned).toBe(1);
+      expect(result.candidates).toEqual([expect.objectContaining({ file: "docs/nested/guide.ts" })]);
+    });
+
+    it("a malformed pathExclusions entry is a finding, never a silent exemption — the entry is not applied", () => {
+      writeFileSync(join(dir, "real.ts"), 'const x = "Real copy";\n');
+      const result = scanCopySourceTree(dir, { pathExclusions: [{ path: "real.ts", reason: "" }] });
+      expect(result.filesScanned).toBe(1); // NOT excluded — the malformed entry exempts nothing
+      expect(result.candidates).toEqual([expect.objectContaining({ file: "real.ts" })]);
+      expect(result.pathExclusionFindings).toEqual([
+        expect.objectContaining({ rule: "path-exclusion-invalid", severity: "error" }),
+      ]);
+    });
+
+    it("an exclusion that matches nothing this run is reported too — a stale exclusion is indistinguishable from a working one otherwise", () => {
+      writeFileSync(join(dir, "real.ts"), 'const x = "Real copy";\n');
+      const result = scanCopySourceTree(dir, {
+        pathExclusions: [{ path: "renamed-or-deleted.ts", reason: "used to document banned terms" }],
+      });
+      expect(result.excludedFiles).toEqual([]);
+      expect(result.pathExclusionFindings).toEqual([
+        expect.objectContaining({ rule: "path-exclusion-unused", severity: "warning", path: "renamed-or-deleted.ts" }),
+      ]);
+    });
+
+    it("omitting pathExclusions entirely behaves exactly as before this feature — empty excludedFiles/pathExclusionFindings", () => {
+      writeFileSync(join(dir, "real.ts"), 'const x = "Real copy";\n');
+      const result = scanCopySourceTree(dir);
+      expect(result.excludedFiles).toEqual([]);
+      expect(result.pathExclusionFindings).toEqual([]);
+    });
+  });
 });

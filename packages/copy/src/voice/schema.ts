@@ -7,17 +7,22 @@
  * for the sake of shape-checking a handful of nested objects.
  */
 
-import { FORMALITY_LEVELS, GLOSSARY_STATUSES } from "./types.js";
+import { checkPatternSafety } from "./internal/pattern-safety.js";
+import { FORMALITY_LEVELS, GLOSSARY_STATUSES, VOICE_SEVERITIES } from "./types.js";
 import type {
   Claim,
   FormalityLevel,
   GlossaryEntry,
   GlossaryStatus,
+  PatternRule,
   PersonRule,
   TenseRule,
+  VoiceChannel,
   VoiceFinding,
+  VoicePattern,
   VoiceRecord,
   VoiceRules,
+  VoiceSeverity,
 } from "./types.js";
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -30,6 +35,30 @@ function isOneOf<T extends string>(value: unknown, list: readonly T[]): value is
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.length > 0;
+}
+
+/**
+ * Shape-only validation for an optional `VoiceChannel` field, shared by
+ * `validateGlossaryEntryShape` and `validatePatternRuleShape` — see
+ * `types.ts`'s `VoiceChannel` doc comment for why this package validates
+ * SHAPE only (a non-empty, non-whitespace-only string) and never a closed
+ * enum of "valid" channels, exactly mirroring how `registry-locale-shape`
+ * (the sibling `../schema.ts`, i.e. this package's root `CopyLocale`
+ * validation) treats `locale`.
+ */
+function validateChannelShape(value: unknown, rule: string, path: string): VoiceFinding[] {
+  if (value === undefined) return [];
+  if (typeof value !== "string" || value.trim().length === 0) {
+    return [
+      {
+        rule,
+        severity: "error",
+        message: `${path} must be a non-empty string when present, got ${JSON.stringify(value)}.`,
+        path,
+      },
+    ];
+  }
+  return [];
 }
 
 /**
@@ -139,7 +168,8 @@ function validateVoiceRulesShape(value: unknown, path: string): VoiceFinding[] {
 }
 
 // Rules: glossary-entry-shape, glossary-term-shape, glossary-status-shape,
-// glossary-reason-shape, glossary-alternative-shape, glossary-case-sensitive-shape
+// glossary-reason-shape, glossary-alternative-shape, glossary-case-sensitive-shape,
+// glossary-channel-shape
 function validateGlossaryEntryShape(value: unknown, path: string): VoiceFinding[] {
   if (!isPlainObject(value)) {
     return [{ rule: "glossary-entry-shape", severity: "error", message: `${path} must be an object.`, path }];
@@ -149,6 +179,7 @@ function validateGlossaryEntryShape(value: unknown, path: string): VoiceFinding[
   const reason = value.reason;
   const alternative = value.alternative;
   const caseSensitive = value.caseSensitive;
+  const channel = value.channel;
 
   const findings: VoiceFinding[] = [];
   if (!isNonEmptyString(term)) {
@@ -191,6 +222,95 @@ function validateGlossaryEntryShape(value: unknown, path: string): VoiceFinding[
       path: `${path}.caseSensitive`,
     });
   }
+  findings.push(...validateChannelShape(channel, "glossary-channel-shape", `${path}.channel`));
+  return findings;
+}
+
+// Rules: pattern-rule-shape, pattern-id-shape, pattern-description-shape,
+// pattern-shape (pattern.source/pattern.flags, via checkPatternSafety —
+// see internal/pattern-safety.ts), pattern-severity-shape,
+// pattern-reason-shape, pattern-alternative-shape, pattern-channel-shape
+function validatePatternRuleShape(value: unknown, path: string): VoiceFinding[] {
+  if (!isPlainObject(value)) {
+    return [{ rule: "pattern-rule-shape", severity: "error", message: `${path} must be an object.`, path }];
+  }
+  const id = value.id;
+  const description = value.description;
+  const pattern = value.pattern;
+  const severity = value.severity;
+  const reason = value.reason;
+  const alternative = value.alternative;
+  const channel = value.channel;
+
+  const findings: VoiceFinding[] = [];
+
+  if (!isNonEmptyString(id)) {
+    findings.push({
+      rule: "pattern-id-shape",
+      severity: "error",
+      message: `${path}.id must be a non-empty string, got ${JSON.stringify(id)}.`,
+      path: `${path}.id`,
+    });
+  }
+  if (!isNonEmptyString(description)) {
+    findings.push({
+      rule: "pattern-description-shape",
+      severity: "error",
+      message: `${path}.description must be a non-empty string, got ${JSON.stringify(description)}.`,
+      path: `${path}.description`,
+    });
+  }
+
+  // The real safety gate — see internal/pattern-safety.ts's top doc comment
+  // for exactly what this rejects and why. A pattern that fails here is a
+  // real, unmissable finding: this is this file's mechanical enforcement of
+  // the core rule stated in types.ts's own header comment — a check that
+  // cannot run must fail, not pass, never a silently dropped rule.
+  if (!isPlainObject(pattern)) {
+    findings.push({
+      rule: "pattern-shape",
+      severity: "error",
+      message: `${path}.pattern must be an object with a "source" string (and optional "flags"), got ${JSON.stringify(pattern)}.`,
+      path: `${path}.pattern`,
+    });
+  } else {
+    const safety = checkPatternSafety(pattern as { source?: unknown; flags?: unknown });
+    if (!safety.ok) {
+      findings.push({
+        rule: `pattern-shape:${safety.issue}`,
+        severity: "error",
+        message: `${path}.pattern is invalid or unsafe (${safety.issue}): ${safety.detail}`,
+        path: `${path}.pattern`,
+      });
+    }
+  }
+
+  if (!isOneOf(severity, VOICE_SEVERITIES)) {
+    findings.push({
+      rule: "pattern-severity-shape",
+      severity: "error",
+      message: `${path}.severity must be one of ${VOICE_SEVERITIES.join(", ")}, got ${JSON.stringify(severity)}.`,
+      path: `${path}.severity`,
+    });
+  }
+  if (!isNonEmptyString(reason)) {
+    findings.push({
+      rule: "pattern-reason-shape",
+      severity: "error",
+      message: `${path}.reason must be a non-empty string, got ${JSON.stringify(reason)}.`,
+      path: `${path}.reason`,
+    });
+  }
+  if (alternative !== undefined && !isNonEmptyString(alternative)) {
+    findings.push({
+      rule: "pattern-alternative-shape",
+      severity: "error",
+      message: `${path}.alternative must be a non-empty string when present, got ${JSON.stringify(alternative)}.`,
+      path: `${path}.alternative`,
+    });
+  }
+  findings.push(...validateChannelShape(channel, "pattern-channel-shape", `${path}.channel`));
+
   return findings;
 }
 
@@ -251,7 +371,7 @@ function validateClaimShape(value: unknown, path: string): VoiceFinding[] {
  * produces findings rather than an exception, the same discipline
  * `@vespeneventures/policy`'s `validateBindingShape` holds to.
  *
- * `glossary` and `claims` (top level) and `forbiddenPronouns`/
+ * `glossary`, `claims`, and `patterns` (top level) and `forbiddenPronouns`/
  * `forbiddenMarkers`/`tone`/`matchPhrases` (nested) may all be omitted —
  * a default of `[]` applies to each in `parseVoiceRecord`. Omitting one is
  * therefore not itself a finding; providing one of the wrong shape is.
@@ -273,6 +393,7 @@ export function validateVoiceRecordShape(value: unknown): VoiceFinding[] {
   const rules = value.rules;
   const glossary = value.glossary;
   const claims = value.claims;
+  const patterns = value.patterns;
 
   const findings: VoiceFinding[] = [];
 
@@ -313,6 +434,19 @@ export function validateVoiceRecordShape(value: unknown): VoiceFinding[] {
     }
   }
 
+  if (patterns !== undefined) {
+    if (!Array.isArray(patterns)) {
+      findings.push({
+        rule: "patterns-shape",
+        severity: "error",
+        message: `patterns must be an array when present, got ${JSON.stringify(patterns)}.`,
+        path: "patterns",
+      });
+    } else {
+      patterns.forEach((entry, i) => findings.push(...validatePatternRuleShape(entry, `patterns.${i}`)));
+    }
+  }
+
   return findings;
 }
 
@@ -329,6 +463,15 @@ function buildVoiceRecord(value: Record<string, unknown>): VoiceRecord {
   const tense = rules.tense as Record<string, unknown>;
   const glossaryRaw = (value.glossary as unknown[] | undefined) ?? [];
   const claimsRaw = (value.claims as unknown[] | undefined) ?? [];
+  // Deliberately NOT `?? []` like glossary/claims above — see this file's
+  // `buildVoiceRecord` return statement and `types.ts`'s `VoiceRecord` doc
+  // comment for why `patterns` preserves the distinction between "never
+  // declared" (stays `undefined`, all the way through) and "declared,
+  // currently empty" (`[]`), a distinction glossary/claims do not need
+  // because they are required fields with no "never declared" state to
+  // preserve.
+  const patternsDeclared = value.patterns !== undefined;
+  const patternsRaw = (value.patterns as unknown[] | undefined) ?? [];
 
   const builtRules: VoiceRules = {
     person: {
@@ -351,6 +494,7 @@ function buildVoiceRecord(value: Record<string, unknown>): VoiceRecord {
       reason: entry.reason as string,
       alternative: entry.alternative as string | undefined,
       caseSensitive: (entry.caseSensitive as boolean | undefined) ?? false,
+      channel: entry.channel as VoiceChannel | undefined,
     };
   });
 
@@ -365,11 +509,35 @@ function buildVoiceRecord(value: Record<string, unknown>): VoiceRecord {
     };
   });
 
+  const builtPatterns: PatternRule[] = patternsRaw.map((raw) => {
+    const entry = raw as Record<string, unknown>;
+    const pattern = entry.pattern as Record<string, unknown>;
+    return {
+      id: entry.id as string,
+      description: entry.description as string,
+      pattern: {
+        source: pattern.source as string,
+        flags: pattern.flags as string | undefined,
+      } satisfies VoicePattern,
+      severity: entry.severity as VoiceSeverity,
+      reason: entry.reason as string,
+      alternative: entry.alternative as string | undefined,
+      channel: entry.channel as VoiceChannel | undefined,
+    };
+  });
+
   return {
     id: value.id as string,
     rules: builtRules,
     glossary: builtGlossary,
     claims: builtClaims,
+    // Present (as `builtPatterns`, possibly `[]`) only when the input
+    // actually declared `patterns` — omitted entirely otherwise, so
+    // `record.patterns` stays `undefined` for a `VoiceRecord` built from
+    // input that never touched this feature, exactly matching a
+    // hand-written literal that omits the field. See the comment on
+    // `patternsDeclared` above.
+    ...(patternsDeclared ? { patterns: builtPatterns } : {}),
   };
 }
 
@@ -386,7 +554,13 @@ function buildVoiceRecord(value: Record<string, unknown>): VoiceRecord {
  * findings, makes one further pass over `value` (`buildVoiceRecord`) to
  * apply this schema's defaults (`glossary: []`, `claims: []`, `tone: []`,
  * `forbiddenPronouns: []`, `forbiddenMarkers: []`, `matchPhrases: []`,
- * `caseSensitive: false`, `requiresSupport: true`) and produce a fully
+ * `caseSensitive: false`, `requiresSupport: true` — and, ONLY if `value`
+ * declared a `patterns` array at all, `patterns` is carried through
+ * as-given; if `value` never declared `patterns`, the built record omits
+ * the field entirely rather than defaulting it to `[]`, so a caller reading
+ * `record.patterns === undefined` can still tell "never touched this
+ * feature" apart from "declared it, empty" — see `buildVoiceRecord`) and
+ * produce a fully
  * populated `VoiceRecord`. This is a deliberate two-pass design, not an
  * oversight: `@vespeneventures/policy`'s own TOCTOU-safety comments (see
  * `verifyBinding`) explain why reading the same object's fields twice can

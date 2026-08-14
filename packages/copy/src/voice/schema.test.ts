@@ -136,4 +136,113 @@ describe("parseVoiceRecord", () => {
       expect(String(error)).toMatch(/must be an object/);
     }
   });
+
+  it("BACKWARD COMPATIBILITY: an existing VoiceRecord that never declares patterns keeps patterns undefined after parsing, never defaulted to []", () => {
+    // Pinned explicitly, per this feature's scope discipline: patterns is
+    // the one field that must NOT behave like glossary/claims (which DO
+    // default to [] when absent) — see types.ts's VoiceRecord doc comment.
+    const parsed = parseVoiceRecord(validRecord);
+    expect(parsed.patterns).toBeUndefined();
+    expect("patterns" in parsed).toBe(false);
+  });
+
+  it("a record that DOES declare patterns: [] keeps that array present after parsing", () => {
+    const parsed = parseVoiceRecord({ ...validRecord, patterns: [] });
+    expect(parsed.patterns).toEqual([]);
+  });
+});
+
+describe("validateVoiceRecordShape — pattern rules", () => {
+  const validPatternRule = {
+    id: "no-em-dash",
+    description: "hard ban on the em dash",
+    pattern: { source: "\\u2014" },
+    severity: "error",
+    reason: "house style bans the em dash",
+  };
+
+  it("accepts a well-formed pattern rule", () => {
+    const findings = validateVoiceRecordShape({ ...validRecord, patterns: [validPatternRule] });
+    expect(findings).toEqual([]);
+  });
+
+  it("accepts every VoiceSeverity value", () => {
+    for (const severity of ["error", "warning", "advisory"]) {
+      const findings = validateVoiceRecordShape({
+        ...validRecord,
+        patterns: [{ ...validPatternRule, severity }],
+      });
+      expect(findings).toEqual([]);
+    }
+  });
+
+  it("rejects an unknown severity", () => {
+    const findings = validateVoiceRecordShape({
+      ...validRecord,
+      patterns: [{ ...validPatternRule, severity: "block" }],
+    });
+    expect(findings.some((f) => f.rule === "pattern-severity-shape" && f.path === "patterns.0.severity")).toBe(true);
+  });
+
+  it("rejects a missing id/description/reason", () => {
+    const { id, ...withoutId } = validPatternRule;
+    void id;
+    const findings = validateVoiceRecordShape({ ...validRecord, patterns: [withoutId] });
+    expect(findings.some((f) => f.rule === "pattern-id-shape")).toBe(true);
+  });
+
+  it("rejects a pattern that fails the regex-safety gate — a real, unmissable finding, not a silent skip", () => {
+    const findings = validateVoiceRecordShape({
+      ...validRecord,
+      patterns: [{ ...validPatternRule, pattern: { source: "(a+)+" } }],
+    });
+    const finding = findings.find((f) => f.rule.startsWith("pattern-shape:"));
+    expect(finding).toBeDefined();
+    expect(finding?.rule).toBe("pattern-shape:pattern-nested-quantifier");
+    expect(finding?.severity).toBe("error");
+  });
+
+  it("rejects a pattern that is not an object", () => {
+    const findings = validateVoiceRecordShape({ ...validRecord, patterns: [{ ...validPatternRule, pattern: "not an object" }] });
+    expect(findings.some((f) => f.rule === "pattern-shape")).toBe(true);
+  });
+
+  it("validates channel shape (non-empty string when present)", () => {
+    const good = validateVoiceRecordShape({ ...validRecord, patterns: [{ ...validPatternRule, channel: "linkedin" }] });
+    expect(good).toEqual([]);
+    const bad = validateVoiceRecordShape({ ...validRecord, patterns: [{ ...validPatternRule, channel: "  " }] });
+    expect(bad.some((f) => f.rule === "pattern-channel-shape")).toBe(true);
+  });
+
+  it("flags every malformed pattern rule in the array, not just the first", () => {
+    const findings = validateVoiceRecordShape({
+      ...validRecord,
+      patterns: [{ ...validPatternRule, severity: "bogus" }, { ...validPatternRule, reason: "" }],
+    });
+    expect(findings.some((f) => f.path === "patterns.0.severity")).toBe(true);
+    expect(findings.some((f) => f.path === "patterns.1.reason")).toBe(true);
+  });
+
+  it("rejects a non-array patterns with patterns-shape", () => {
+    const findings = validateVoiceRecordShape({ ...validRecord, patterns: "nope" });
+    expect(findings.some((f) => f.rule === "patterns-shape" && f.path === "patterns")).toBe(true);
+  });
+});
+
+describe("validateVoiceRecordShape — glossary channel scoping", () => {
+  it("accepts a glossary entry with a channel", () => {
+    const findings = validateVoiceRecordShape({
+      ...validRecord,
+      glossary: [{ term: "x", status: "forbidden", reason: "y", caseSensitive: false, channel: "linkedin" }],
+    });
+    expect(findings).toEqual([]);
+  });
+
+  it("rejects a whitespace-only channel", () => {
+    const findings = validateVoiceRecordShape({
+      ...validRecord,
+      glossary: [{ term: "x", status: "forbidden", reason: "y", caseSensitive: false, channel: "   " }],
+    });
+    expect(findings.some((f) => f.rule === "glossary-channel-shape" && f.path === "glossary.0.channel")).toBe(true);
+  });
 });
