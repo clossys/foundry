@@ -5,6 +5,38 @@ All notable changes to `@vespeneventures/conventions` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-08-14
+
+### Added
+
+- A capability-first skill registry (schema version `2.0.0`):
+  `SKILL_REGISTRY_SCHEMA_VERSION`, `validateSkillRegistry`,
+  `computeCapabilityCoverage`, and `validateRoutineCoverage`, plus the
+  `SkillRegistry`, `Capability`, `RegisteredSkill`, `SkillScope`,
+  `SkillCapabilityImplementation`, `AcceptedGap`, `RoutineCoverageQuery`, and
+  `CapabilityCoverage` types. The registry declares functional coverage
+  independently of any routine: a skill's identity is the pair
+  `(repository, name)`, a capability declares the target set it requires, a
+  skill declares which capability and targets it implements, and coverage is
+  deterministic set arithmetic over that. A repository-scoped skill claiming
+  coverage outside its own repository is a scope-escape finding. An accepted
+  gap needs both a durable reason and an issue/ADR reference — a gap missing
+  either is its own finding, and the underlying coverage gap is still
+  reported rather than being silently excused. A skill marked third-party can
+  declare `implements` but is deliberately excluded from first-party
+  coverage. `validateRoutineCoverage` is intentionally narrow: it confirms
+  only that a routine's target skill resolves and that the routine's scope is
+  a subset of what that skill already declares — a routine supplies tempo,
+  never coverage, so disabling or omitting one can never remove functional
+  coverage the registry already recorded. Ships no filesystem, GitHub,
+  scheduler, credential, or network access; it is schema plus pure functions
+  over caller-supplied data, the same boundary every other validator in this
+  package holds.
+- A seventh shipped document, `skill-registry` (`documents/skill-registry.md`),
+  describing the contract above in prose.
+- `expand` and `groom` added to the closed skill-naming verb vocabulary
+  (`SKILL_VERBS`), reflecting two verbs already proven in real use.
+
 ## [0.2.0] - 2026-08-14
 
 ### Added
@@ -62,6 +94,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `CONVENTION_ADAPTERS`, `DOCUMENTS_ROOT`, and `ADAPTERS_ROOT` for reaching the
   shipped defaults without this package performing any I/O.
 
+[0.3.0]: https://github.com/vespeneventures/foundry/releases/tag/conventions-v0.3.0
 [0.2.0]: https://github.com/vespeneventures/foundry/releases/tag/conventions-v0.2.0
 [0.1.1]: https://github.com/vespeneventures/foundry/releases/tag/conventions-v0.1.1
 [0.1.0]: https://github.com/vespeneventures/foundry/releases/tag/conventions-v0.1.0

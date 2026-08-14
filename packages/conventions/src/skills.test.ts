@@ -52,6 +52,13 @@ describe("validateSkillName", () => {
   it("accepts a multi-word subject", () => {
     expect(validateSkillName("acme-review-watched-protocols", options)).toEqual([]);
   });
+
+  it("accepts the expand and groom verbs", () => {
+    expect(SKILL_VERBS).toContain("expand");
+    expect(SKILL_VERBS).toContain("groom");
+    expect(validateSkillName("ex-expand-coverage", options)).toEqual([]);
+    expect(validateSkillName("ex-groom-backlog", options)).toEqual([]);
+  });
 });
 
 describe("validateSkillSet", () => {

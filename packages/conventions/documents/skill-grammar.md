@@ -26,9 +26,9 @@ the workflow spans more than one of the account's repositories, and the owning
 repository otherwise.
 
 Use a small, literal verb vocabulary: `audit`, `clean`, `close`, `create`,
-`diagnose`, `ingest`, `map`, `plan`, `reconcile`, `review`, `ship`, `sync`,
-and `verify`. Prefer a specific, descriptive name to an ambiguous one that
-hides what the skill does.
+`diagnose`, `expand`, `groom`, `ingest`, `map`, `plan`, `reconcile`, `review`,
+`ship`, `sync`, and `verify`. Prefer a specific, descriptive name to an
+ambiguous one that hides what the skill does.
 
 Third-party skills retain the namespace chosen by their maintaining provider;
 do not rename or fork them just to fit this convention. A locally copied

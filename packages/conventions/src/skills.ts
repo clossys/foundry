@@ -17,6 +17,8 @@ export const SKILL_VERBS: readonly string[] = Object.freeze([
   "close",
   "create",
   "diagnose",
+  "expand",
+  "groom",
   "ingest",
   "map",
   "plan",
