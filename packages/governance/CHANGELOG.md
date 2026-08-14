@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-08-14
+
+### Added
+
+- **Repository requirements schema v2 and pure evaluation** under
+  `./repository` (#237). A v2 `RepositoryProfile` adds a strict, ordered
+  `requirements` declaration with neutral `repository`, `workspace`, and
+  `machine` scopes plus `present` and caller-enumerated `one-of`
+  constraints. Foundry supplies no requirement values or defaults.
+- `evaluateRepositoryRequirements` and
+  `validateRepositoryRequirementsEvaluationInput` accept caller-associated
+  declarations and caller-normalized observations, then report every
+  `satisfied`, `unsatisfied`, `conflicting`, or `unknown` requirement. Missing
+  and explicitly unknown evidence both fail closed. Shared constraints are
+  intersected without selecting a value or interpreting version syntax;
+  repository-scoped requirements remain independent by source.
+- New declaration, constraint, scope, observation, evaluation, status, and
+  finding types are exported from `@vespeneventures/governance/repository`.
+  The evaluator performs no filesystem, Git, GitHub, provider, scheduler,
+  credential, installation, or mutation I/O.
+
+### Changed
+
+- **Breaking for exhaustive type consumers:** `REPOSITORY_PROFILE_VERSION`
+  is now `2`, and `RepositoryProfile` is the explicit
+  `RepositoryProfileV1 | RepositoryProfileV2` union. The original closed v1
+  shape remains accepted deliberately through `RepositoryProfileV1` and
+  `LEGACY_REPOSITORY_PROFILE_VERSION`; a v1 profile cannot silently add v2
+  fields.
+
 ## [0.8.1] - 2026-08-14
 
 ### Changed

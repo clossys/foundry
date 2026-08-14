@@ -19,10 +19,11 @@ describe("validateRepositoryProfile", () => {
 
   it("reports all independently checkable top-level problems", () => {
     const findings = validateRepositoryProfile({
-      schemaVersion: 2,
+      schemaVersion: 3,
       defaultBranch: "bad branch",
       commands: {},
       protectedPaths: "src/**",
+      requirements: [],
       provider: "example",
     });
 
@@ -33,6 +34,64 @@ describe("validateRepositoryProfile", () => {
       "commands-shape",
       "protected-paths-shape",
     ]);
+  });
+
+  it("accepts strict v2 requirements while preserving v1 profiles", () => {
+    expect(validateRepositoryProfile(validProfile)).toEqual([]);
+    expect(validateRepositoryProfile({
+      ...validProfile,
+      schemaVersion: 2,
+      requirements: [
+        { id: "runtime.node", scope: "machine", constraint: { kind: "one-of", values: ["current", "next"] } },
+        { id: "tool.formatter", scope: "repository", constraint: { kind: "present" } },
+      ],
+    })).toEqual([]);
+  });
+
+  it("keeps v1 closed and validates every v2 requirement field", () => {
+    expect(validateRepositoryProfile({ ...validProfile, requirements: [] }).map((entry) => [entry.rule, entry.path])).toEqual([
+      ["unknown-field", "requirements"],
+    ]);
+
+    const findings = validateRepositoryProfile({
+      ...validProfile,
+      schemaVersion: 2,
+      requirements: [
+        { id: "Bad Id", scope: "host", constraint: { kind: "range", value: "latest" }, extra: true },
+        { id: "runtime.node", scope: "machine", constraint: { kind: "one-of", values: ["current", "current", " bad"] } },
+        { id: "runtime.node", scope: "machine", constraint: { kind: "present" } },
+      ],
+    });
+
+    expect(findings.map((entry) => [entry.rule, entry.path])).toEqual([
+      ["unknown-field", "requirements[0].extra"],
+      ["requirement-id", "requirements[0].id"],
+      ["requirement-scope", "requirements[0].scope"],
+      ["unknown-field", "requirements[0].constraint.value"],
+      ["constraint-kind", "requirements[0].constraint.kind"],
+      ["duplicate-constraint-value", "requirements[1].constraint.values[1]"],
+      ["constraint-value", "requirements[1].constraint.values[2]"],
+      ["duplicate-requirement", "requirements[2]"],
+    ]);
+  });
+
+  it("rejects missing, sparse, empty one-of, and accessor-backed v2 requirements", () => {
+    expect(validateRepositoryProfile({ ...validProfile, schemaVersion: 2 }).map((entry) => entry.rule)).toEqual(["requirements-shape"]);
+
+    const sparse = new Array(1);
+    expect(validateRepositoryProfile({ ...validProfile, schemaVersion: 2, requirements: sparse }).map((entry) => entry.rule)).toEqual(["requirement-shape"]);
+
+    expect(validateRepositoryProfile({
+      ...validProfile,
+      schemaVersion: 2,
+      requirements: [{ id: "runtime.node", scope: "machine", constraint: { kind: "one-of", values: [] } }],
+    }).map((entry) => entry.rule)).toEqual(["constraint-values-shape"]);
+
+    let reads = 0;
+    const requirement = { id: "runtime.node", scope: "machine" };
+    Object.defineProperty(requirement, "constraint", { get: () => { reads += 1; return { kind: "present" }; } });
+    expect(validateRepositoryProfile({ ...validProfile, schemaVersion: 2, requirements: [requirement] }).map((entry) => entry.rule)).toEqual(["constraint-shape"]);
+    expect(reads).toBe(0);
   });
 
   it("requires command arrays and record entries while accepting null-prototype records", () => {
@@ -90,6 +149,7 @@ describe("validateRepositoryProfile", () => {
       "default-branch",
       "commands-shape",
       "protected-paths-shape",
+      "requirements-shape",
     ]);
 
     const inheritedCommand = new Proxy(Object.create(null) as Record<string, unknown>, {

@@ -7,8 +7,8 @@ consumer's policy values or a machine's authenticated state.
 | Owner | Owns |
 | --- | --- |
 | Foundry | Public-safe schemas, validators, CLIs, template or generator machinery, and provider adapters with meaningful provider-specific behavior. |
-| Workspace | User and machine account choices, connector and browser routing, local installation manifests, credentials references, and native session configuration. |
-| Consumer repository | Workflow YAML, branch and ruleset policy, protected paths, commands, and project-specific values. |
+| Workspace | Repository discovery and inventory, requirement aggregation and precedence, normalized machine observations, user and machine account choices, connector and browser routing, local installation manifests, credentials references, and native session configuration. |
+| Consumer repository | Workflow YAML, branch and ruleset policy, protected paths, commands, upward requirement declarations, and project-specific values. |
 
 Credentials, cookies, OAuth grants, session state, and private organization or
 customer values do not enter Foundry.
@@ -29,8 +29,10 @@ separate in [ADOPTION.md](ADOPTION.md).
 implementation, release, and adoption train.
 
 `@vespeneventures/governance/repository` owns a provider-neutral contract for
-consumer-authored repository values and validates those values without I/O. It
-does not install files or choose values for a consumer.
+consumer-authored repository values and upward requirements. It validates
+declarations and purely evaluates caller-normalized observations without I/O.
+It does not discover repositories or machines, choose precedence or compatible
+values, install files, produce a provisioning manifest, or mutate a consumer.
 
 `@vespeneventures/governance/review` owns provider-neutral contracts and validation for
 review evidence: requests, findings, dispositions, threads, checks, decisions,

@@ -1,12 +1,23 @@
-import { REPOSITORY_PROFILE_VERSION } from "./types.js";
-import type { RepositoryProfileFinding, RepositoryProfileFindingRule } from "./types.js";
+import { LEGACY_REPOSITORY_PROFILE_VERSION, REPOSITORY_PROFILE_VERSION } from "./types.js";
+import type {
+  RepositoryProfileFinding,
+  RepositoryProfileFindingRule,
+  RepositoryRequirementScope,
+} from "./types.js";
 
 type RecordValue = Record<string, unknown>;
 
-const PROFILE_KEYS = new Set(["schemaVersion", "defaultBranch", "commands", "protectedPaths"]);
+const PROFILE_V1_KEYS = new Set(["schemaVersion", "defaultBranch", "commands", "protectedPaths"]);
+const PROFILE_V2_KEYS = new Set([...PROFILE_V1_KEYS, "requirements"]);
 const COMMAND_KEYS = new Set(["name", "run", "cwd"]);
+const REQUIREMENT_KEYS = new Set(["id", "scope", "constraint"]);
+const PRESENCE_CONSTRAINT_KEYS = new Set(["kind"]);
+const ONE_OF_CONSTRAINT_KEYS = new Set(["kind", "values"]);
 const COMMAND_NAME = /^[a-z][a-z0-9]*(?:(?:-|:)[a-z0-9]+)*$/;
+const REQUIREMENT_ID = /^[a-z][a-z0-9]*(?:[.:-][a-z0-9]+)*$/;
+const REQUIREMENT_SCOPES = new Set<RepositoryRequirementScope>(["repository", "workspace", "machine"]);
 const MAX_PROFILE_COLLECTION_ENTRIES = 10_000;
+const MAX_REQUIREMENT_VALUE_LENGTH = 256;
 const STANDARD_OBJECT_PROTOTYPE_KEYS = new Set<PropertyKey>([
   "constructor",
   "__defineGetter__",
@@ -100,17 +111,118 @@ function isBranchName(value: string): boolean {
     .some((segment) => segment.length === 0 || segment.startsWith(".") || segment.endsWith(".lock"));
 }
 
+function isRequirementValue(value: unknown): value is string {
+  return typeof value === "string"
+    && value.length > 0
+    && value.length <= MAX_REQUIREMENT_VALUE_LENGTH
+    && value === value.trim()
+    && !/[\u0000-\u001f\u007f]/.test(value);
+}
+
+function validateRequirementArray(value: unknown): RepositoryProfileFinding[] {
+  const requirements = inspectArray(value);
+  if (!requirements) {
+    return [finding("requirements-shape", "requirements", `requirements must be a plain array of at most ${MAX_PROFILE_COLLECTION_ENTRIES} entries with no behavior-shadowing properties.`)];
+  }
+
+  const findings: RepositoryProfileFinding[] = [];
+  const seen = new Set<string>();
+  let nextExpectedIndex = 0;
+  let reportedHole = false;
+  for (const indexName of requirements.indexNames) {
+    const index = Number(indexName);
+    if (!reportedHole && index > nextExpectedIndex) {
+      findings.push(finding("requirement-shape", `requirements[${nextExpectedIndex}]`, "requirements must not contain empty slots."));
+      reportedHole = true;
+    }
+    nextExpectedIndex = index + 1;
+    const requirement = ownDataValue(requirements.value, indexName)?.value;
+    const requirementPath = `requirements[${index}]`;
+    if (!isRecord(requirement)) {
+      findings.push(finding("requirement-shape", requirementPath, "A requirement must be an object."));
+      continue;
+    }
+    for (const key of Object.getOwnPropertyNames(requirement)) {
+      if (!REQUIREMENT_KEYS.has(key)) findings.push(finding("unknown-field", `${requirementPath}.${key}`, `Unknown requirement field "${key}".`));
+    }
+
+    const id = ownDataValue(requirement, "id")?.value;
+    const scope = ownDataValue(requirement, "scope")?.value;
+    if (typeof id !== "string" || !REQUIREMENT_ID.test(id)) {
+      findings.push(finding("requirement-id", `${requirementPath}.id`, "id must be lowercase words separated by dots, hyphens, or colons."));
+    }
+    if (typeof scope !== "string" || !REQUIREMENT_SCOPES.has(scope as RepositoryRequirementScope)) {
+      findings.push(finding("requirement-scope", `${requirementPath}.scope`, "scope must be repository, workspace, or machine."));
+    }
+    if (typeof id === "string" && REQUIREMENT_ID.test(id) && typeof scope === "string" && REQUIREMENT_SCOPES.has(scope as RepositoryRequirementScope)) {
+      const identity = `${scope}\u0000${id}`;
+      if (seen.has(identity)) findings.push(finding("duplicate-requirement", requirementPath, `Duplicate ${scope}-scoped requirement "${id}".`));
+      else seen.add(identity);
+    }
+
+    const constraint = ownDataValue(requirement, "constraint")?.value;
+    if (!isRecord(constraint)) {
+      findings.push(finding("constraint-shape", `${requirementPath}.constraint`, "constraint must be an object."));
+      continue;
+    }
+    const kind = ownDataValue(constraint, "kind")?.value;
+    const allowedKeys = kind === "present" ? PRESENCE_CONSTRAINT_KEYS : kind === "one-of" ? ONE_OF_CONSTRAINT_KEYS : new Set<string>(["kind"]);
+    for (const key of Object.getOwnPropertyNames(constraint)) {
+      if (!allowedKeys.has(key)) findings.push(finding("unknown-field", `${requirementPath}.constraint.${key}`, `Unknown constraint field "${key}".`));
+    }
+    if (kind !== "present" && kind !== "one-of") {
+      findings.push(finding("constraint-kind", `${requirementPath}.constraint.kind`, "kind must be present or one-of."));
+      continue;
+    }
+    if (kind === "present") continue;
+
+    const values = inspectArray(ownDataValue(constraint, "values")?.value);
+    if (!values || values.length === 0) {
+      findings.push(finding("constraint-values-shape", `${requirementPath}.constraint.values`, `values must be a non-empty plain array of at most ${MAX_PROFILE_COLLECTION_ENTRIES} entries with no behavior-shadowing properties.`));
+      continue;
+    }
+    const seenValues = new Set<string>();
+    let nextExpectedValueIndex = 0;
+    let reportedValueHole = false;
+    for (const valueIndexName of values.indexNames) {
+      const valueIndex = Number(valueIndexName);
+      if (!reportedValueHole && valueIndex > nextExpectedValueIndex) {
+        findings.push(finding("constraint-value", `${requirementPath}.constraint.values[${nextExpectedValueIndex}]`, "values must not contain empty slots."));
+        reportedValueHole = true;
+      }
+      nextExpectedValueIndex = valueIndex + 1;
+      const acceptedValue = ownDataValue(values.value, valueIndexName)?.value;
+      const valuePath = `${requirementPath}.constraint.values[${valueIndex}]`;
+      if (!isRequirementValue(acceptedValue)) {
+        findings.push(finding("constraint-value", valuePath, `A constraint value must be a trimmed, non-empty string of at most ${MAX_REQUIREMENT_VALUE_LENGTH} characters without control characters.`));
+      } else if (seenValues.has(acceptedValue)) {
+        findings.push(finding("duplicate-constraint-value", valuePath, "Constraint values must be unique."));
+      } else {
+        seenValues.add(acceptedValue);
+      }
+    }
+    if (!reportedValueHole && nextExpectedValueIndex < values.length) {
+      findings.push(finding("constraint-value", `${requirementPath}.constraint.values[${nextExpectedValueIndex}]`, "values must not contain empty slots."));
+    }
+  }
+  if (!reportedHole && nextExpectedIndex < requirements.length) {
+    findings.push(finding("requirement-shape", `requirements[${nextExpectedIndex}]`, "requirements must not contain empty slots."));
+  }
+  return findings;
+}
+
 function validateRepositoryProfileValue(value: unknown): RepositoryProfileFinding[] {
   if (!isRecord(value)) return [finding("profile-shape", "$", "A repository profile must be an object.")];
 
   const findings: RepositoryProfileFinding[] = [];
+  const schemaVersion = ownDataValue(value, "schemaVersion")?.value;
+  const profileKeys = schemaVersion === LEGACY_REPOSITORY_PROFILE_VERSION ? PROFILE_V1_KEYS : PROFILE_V2_KEYS;
   for (const key of Object.getOwnPropertyNames(value)) {
-    if (!PROFILE_KEYS.has(key)) findings.push(finding("unknown-field", key, `Unknown profile field "${key}".`));
+    if (!profileKeys.has(key)) findings.push(finding("unknown-field", key, `Unknown profile field "${key}".`));
   }
 
-  const schemaVersion = ownDataValue(value, "schemaVersion")?.value;
-  if (schemaVersion !== REPOSITORY_PROFILE_VERSION) {
-    findings.push(finding("schema-version", "schemaVersion", `schemaVersion must be ${REPOSITORY_PROFILE_VERSION}.`));
+  if (schemaVersion !== LEGACY_REPOSITORY_PROFILE_VERSION && schemaVersion !== REPOSITORY_PROFILE_VERSION) {
+    findings.push(finding("schema-version", "schemaVersion", `schemaVersion must be ${LEGACY_REPOSITORY_PROFILE_VERSION} or ${REPOSITORY_PROFILE_VERSION}.`));
   }
 
   const defaultBranch = ownDataValue(value, "defaultBranch")?.value;
@@ -190,6 +302,10 @@ function validateRepositoryProfileValue(value: unknown): RepositoryProfileFindin
     if (!reportedHole && nextExpectedIndex < protectedPaths.length) {
       findings.push(finding("protected-path", `protectedPaths[${nextExpectedIndex}]`, "protectedPaths must not contain empty slots."));
     }
+  }
+
+  if (schemaVersion !== LEGACY_REPOSITORY_PROFILE_VERSION) {
+    findings.push(...validateRequirementArray(ownDataValue(value, "requirements")?.value));
   }
 
   return findings;

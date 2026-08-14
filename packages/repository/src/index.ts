@@ -1,9 +1,32 @@
 /** @deprecated Migrate to `@vespeneventures/governance/repository`. */
-export { REPOSITORY_PROFILE_VERSION, validateRepositoryProfile } from "@vespeneventures/governance/repository";
+export {
+  evaluateRepositoryRequirements,
+  LEGACY_REPOSITORY_PROFILE_VERSION,
+  REPOSITORY_PROFILE_VERSION,
+  validateRepositoryProfile,
+  validateRepositoryRequirementsEvaluationInput,
+} from "@vespeneventures/governance/repository";
 export type {
   RepositoryCommand,
   RepositoryList,
+  RepositoryObservationState,
+  RepositoryOneOfConstraint,
+  RepositoryPresenceConstraint,
   RepositoryProfile,
   RepositoryProfileFinding,
   RepositoryProfileFindingRule,
+  RepositoryProfileV1,
+  RepositoryProfileV2,
+  RepositoryRequirement,
+  RepositoryRequirementConstraint,
+  RepositoryRequirementDeclaration,
+  RepositoryRequirementEvaluation,
+  RepositoryRequirementFinding,
+  RepositoryRequirementFindingRule,
+  RepositoryRequirementObservation,
+  RepositoryRequirementScope,
+  RepositoryRequirementStatus,
+  RepositoryRequirementsEvaluation,
+  RepositoryRequirementsEvaluationInput,
+  RepositoryRequirementsEvaluationStatus,
 } from "@vespeneventures/governance/repository";

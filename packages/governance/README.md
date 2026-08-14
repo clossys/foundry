@@ -51,7 +51,7 @@ separately versioned packages.
 | `@vespeneventures/governance/catalog` | Workspace discovery and dependency-graph evaluation. |
 | `@vespeneventures/governance/gates` | Foundation checks, deterministic build order, secret-surface gates, a ratchet primitive, override-range and dependency-scope gates, and `foundry-check`. |
 | `@vespeneventures/governance/release` | Isolated packed-artifact and installed-import proof. |
-| `@vespeneventures/governance/repository` | Consumer-owned repository-profile contracts, validation, and `repository-check`. |
+| `@vespeneventures/governance/repository` | Consumer-owned repository profiles, upward requirements, pure evaluation, and `repository-check`. |
 | `@vespeneventures/governance/review` | Provider-neutral review evidence contracts, validation, and `review-check`. |
 | `@vespeneventures/governance/review/github` | Pure normalization of caller-provided GitHub-shaped review evidence. |
 | `@vespeneventures/governance/artifacts` | Deterministic, fail-closed verification for a consumer-owned governed artifact: declared kind + schema version, exact-content checksum, and structural provenance. |
@@ -256,54 +256,149 @@ that reality today, not a full dependency admission-and-retirement
 register; it can grow richer if a third-party runtime dependency is ever
 legitimately admitted.
 
-### `./repository` schema: `RepositoryProfile`
+### `./repository`: profiles and caller-owned upward requirements
 
-`@vespeneventures/governance/repository` defines and validates a
-consumer-owned repository profile. It ships no profile instance of its own —
-a caller supplies real values and `validateRepositoryProfile` returns every
-independently checkable structural finding without I/O or throwing.
+`@vespeneventures/governance/repository` owns a strict grammar and pure,
+deterministic evaluation. It ships no profile, requirement, observation,
+repository inventory, machine value, precedence rule, or default. It performs
+no filesystem, Git, provider, scheduler, credential, installation, or mutation
+I/O. A caller owns discovery and associates each validated v2 profile with its
+own opaque source identifier before evaluation.
+
+Requirements flow one way: a repository declares what it needs, an account
+workspace discovers and aggregates those declarations, and machine bootstrap
+may use the resulting report to compose an explicit configuration. Guidance
+and mutation do not flow upward through this API. If a caller later chooses to
+apply a configuration, it resolves that manifest itself and passes it to a
+separate engine; this subpath neither produces nor applies one.
+
+#### Profile schema v2
 
 ```ts
 import {
+  REPOSITORY_PROFILE_VERSION,
   validateRepositoryProfile,
-  type RepositoryProfile,
+  type RepositoryProfileV2,
 } from "@vespeneventures/governance/repository";
-```
 
-| Field | Type | Notes |
-| --- | --- | --- |
-| `schemaVersion` | `1` | Must equal `REPOSITORY_PROFILE_VERSION`. |
-| `defaultBranch` | `string` | A valid Git branch name (rejects `HEAD`, a leading `-`, `..`, `@{`, a `.lock` suffix, control characters, and the other Git-reserved forms). |
-| `commands` | `RepositoryCommand[]` | Ordered, dense array (at most 10,000 entries); command names must be unique. |
-| `protectedPaths` | `string[]` | Ordered, dense array (at most 10,000 entries) of repository-relative paths; duplicates are rejected. |
-
-`RepositoryCommand`:
-
-| Field | Type | Notes |
-| --- | --- | --- |
-| `name` | `string` | Lowercase words separated by `-` or `:` (e.g. `check`, `release:tag`). |
-| `run` | `string` | The command line exactly as the consumer declares it; must be non-empty. |
-| `cwd` | `string?` | Optional repository-relative working directory; no glob syntax, no parent (`..`) traversal. |
-
-`protectedPaths` entries are repository-relative and support literal path
-segments plus `*` and `**` wildcards; brace expansion, character classes,
-extglobs, negation, absolute paths, and parent traversal are all rejected.
-
-```json
-{
-  "schemaVersion": 1,
-  "defaultBranch": "main",
-  "commands": [
-    { "name": "setup", "run": "npm ci" },
-    { "name": "check", "run": "npm run check" },
-    { "name": "release:tag", "run": "npm run release -- --tag", "cwd": "packages/widgets" }
+const profile: RepositoryProfileV2 = {
+  schemaVersion: REPOSITORY_PROFILE_VERSION,
+  defaultBranch: "main",
+  commands: [{ name: "check", run: "npm run check" }],
+  protectedPaths: [".github/workflows/**"],
+  requirements: [
+    {
+      id: "runtime.example",
+      scope: "machine",
+      constraint: { kind: "one-of", values: ["variant-a", "variant-b"] },
+    },
+    {
+      id: "tool.formatter",
+      scope: "repository",
+      constraint: { kind: "present" },
+    },
   ],
-  "protectedPaths": [".github/workflows/**", "packages/core/src/**"]
-}
+};
+
+const findings = validateRepositoryProfile(profile);
 ```
 
-Types found in `packages/governance/src/repository/types.ts`; validation
-rules found in `packages/governance/src/repository/validate.ts`.
+| Field | Type | Notes |
+| --- | --- | --- |
+| `schemaVersion` | `2` | New declarations use `REPOSITORY_PROFILE_VERSION`. The closed v1 shape remains accepted deliberately; see compatibility below. |
+| `defaultBranch` | `string` | A valid Git branch name. |
+| `commands` | `RepositoryCommand[]` | Ordered, dense array (at most 10,000 entries); names are unique. |
+| `protectedPaths` | `string[]` | Ordered, dense repository-relative paths or the supported `*`/`**` patterns; duplicates are rejected. |
+| `requirements` | `RepositoryRequirement[]` | Ordered, dense array of unique `(scope, id)` declarations. Foundry supplies no entries. |
+
+A requirement identifier is lowercase words separated by `.`, `-`, or `:`.
+Its scope is:
+
+- `repository`: resolved independently for the declaration source;
+- `workspace`: shared by every declaration in one caller-selected evaluation;
+- `machine`: shared by every declaration in one caller-selected evaluation.
+
+These labels describe a requirement's resolution domain only. They do not
+define a workspace repository root, root-entry vocabulary, repository
+topology, compatibility aliases, or discovery layout. That separate
+structural contract is follow-up work in
+[#238](https://github.com/vespeneventures/foundry/issues/238), not part of
+schema v2.
+
+`{ kind: "present" }` accepts any conclusive observed value. `{ kind:
+"one-of", values: [...] }` accepts only the caller-enumerated values. Multiple
+workspace- or machine-scoped `one-of` declarations are compatible when their
+value intersection is non-empty. The evaluator exposes that intersection but
+never selects a value, interprets version syntax, or decides precedence.
+
+#### Pure multi-repository evaluation
+
+```ts
+import { evaluateRepositoryRequirements } from "@vespeneventures/governance/repository";
+
+const report = evaluateRepositoryRequirements({
+  declarations: [
+    { source: "account/repository-a", requirements: profile.requirements },
+    {
+      source: "account/repository-b",
+      requirements: [{
+        id: "runtime.example",
+        scope: "machine",
+        constraint: { kind: "one-of", values: ["variant-a"] },
+      }],
+    },
+  ],
+  observations: [
+    { id: "runtime.example", scope: "machine", state: "observed", value: "variant-a" },
+    { id: "tool.formatter", scope: "repository", source: "account/repository-a", state: "observed", value: "available" },
+  ],
+});
+```
+
+Each valid requirement result has exactly one status:
+
+| Status | Meaning |
+| --- | --- |
+| `satisfied` | Conclusive caller-supplied evidence satisfies the compatible declaration. |
+| `unsatisfied` | Evidence says the capability is absent or its observed value is not accepted. |
+| `conflicting` | Shared declarations have no common accepted value. Observation cannot override a declaration conflict. |
+| `unknown` | Evidence is explicitly `unknown` or no observation was supplied. This fails closed and emits `requirement-unknown`. |
+
+Malformed input returns top-level `status: "invalid"`, no partial requirement
+results, and strict shape findings. Otherwise the report includes every
+requirement result and every non-satisfied finding; one bad requirement never
+hides another. Overall status precedence is `conflicting`, `unknown`,
+`unsatisfied`, then `satisfied`, while the per-requirement entries preserve all
+four distinctions.
+
+Observations are normalized facts, not discovery instructions. `state` is
+`observed`, `absent`, or `unknown`; only `observed` carries `value`.
+Repository-scoped observations must name their declaration `source`, and
+shared observations must not. Duplicate declarations, requirements,
+constraint values, sources, and observations are rejected rather than merged
+silently.
+
+#### Deliberate v1 compatibility
+
+`RepositoryProfileV1` preserves the original exact shape: schema version `1`,
+`defaultBranch`, `commands`, and `protectedPaths`. `RepositoryProfile` is the
+explicit `RepositoryProfileV1 | RepositoryProfileV2` union, and
+`validateRepositoryProfile` accepts both. A v1 profile cannot add
+`requirements`; it must opt into v2, so old consumers remain valid without
+making the old closed schema silently mean something new.
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `validateRepositoryProfile(value)` | function | Strictly validates v1 or v2 without I/O or throwing. |
+| `validateRepositoryRequirementsEvaluationInput(value)` | function | Strictly validates discovered declarations and normalized observations. |
+| `evaluateRepositoryRequirements(value)` | function | Returns deterministic per-requirement states and findings; invalid and unknown inputs fail closed. |
+| `REPOSITORY_PROFILE_VERSION` / `LEGACY_REPOSITORY_PROFILE_VERSION` | constants | Current `2` and deliberately supported legacy `1`. |
+| `RepositoryProfileV1` / `RepositoryProfileV2` / `RepositoryProfile` | types | Closed profile versions and their explicit union. |
+| `RepositoryRequirement` / `RepositoryRequirementConstraint` / `RepositoryRequirementScope` | types | Neutral declaration grammar. |
+| `RepositoryRequirementDeclaration` / `RepositoryRequirementObservation` | types | Caller-associated declarations and caller-normalized evidence. |
+| `RepositoryRequirementsEvaluationInput` / `RepositoryRequirementsEvaluation` | types | Strict evaluator input and report. |
+| `RepositoryRequirementEvaluation` / `RepositoryRequirementStatus` | types | One requirement's resolved state. |
+| `RepositoryProfileFinding` / `RepositoryRequirementFinding` | types | Stable structural and evaluation findings. |
 
 ### `./review` schema: `ReviewPolicy` and `ReviewEvidenceBundle`
 
