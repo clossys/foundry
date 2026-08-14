@@ -139,7 +139,8 @@ function readReferencedIdsFile(path: string): ReferencedIdsReadResult {
 function printCoverageReport(result: AssetCoverageReport): void {
   console.log(
     `${result.referencedCount} referenced id(s), ${result.checkedCount} checked, ` +
-      `${result.registeredCount} registered entry/entries in "${result.recordId}".`,
+      `${result.registeredCount} registered entry/entries (${result.registeredByType.image} image, ` +
+      `${result.registeredByType.video} video) in "${result.recordId}".`,
   );
   if (result.unchecked.length > 0) {
     console.error(`${result.unchecked.length} referenced id(s) could NOT be checked:`);

@@ -121,7 +121,7 @@ describe("golden: AuthView", () => {
 });
 
 describe("golden: assetId — a real <img>, byte for byte, alt text and intrinsic dimensions included", () => {
-  const asset = { id: "marketing.logo", src: "https://cdn.example/logo.svg", width: 120, height: 40, alt: "Acme logo" };
+  const asset = { id: "marketing.logo", type: "image", src: "https://cdn.example/logo.svg", width: 120, height: 40, alt: "Acme logo" };
 
   const doc: ComposeDocument = {
     id: "acme-signin-with-logo",
@@ -182,7 +182,7 @@ describe("golden: assetId — a real <img>, byte for byte, alt text and intrinsi
 
   it("src/alt escaping — a src/alt containing \", ', <, &, and </script> never breaks out of the <img> attribute (React's own JSX attribute escaping)", () => {
     const hostileAsset = {
-      id: "marketing.logo",
+      id: "marketing.logo", type: "image",
       src: `https://cdn.example/logo.svg?q="'<&></script>`,
       width: 10,
       height: 10,

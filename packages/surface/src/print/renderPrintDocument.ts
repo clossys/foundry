@@ -64,6 +64,21 @@
  * `assetId` handling do — see `hasAssetProblems` below — regardless of
  * whether the failing slot happens to be `required`.
  *
+ * VIDEO: THIS CHANNEL HAS NO PLAYBACK CAPABILITY — A `VideoAssetEntry`
+ * RENDERS ITS `poster`, OR FAILS CLOSED (issue #177)
+ * -------------------------------------------------------------------------------
+ * A paged-media HTML document has no meaningful `<video>` story — the
+ * whole point of this channel is a static page (or a PDF prepress
+ * pipeline's own rasterization of one). `../internal/assets.ts`'s
+ * `resolveStaticAssets` reduces any resolved `VideoAssetEntry`-sourced
+ * binding to its `poster` image, painted exactly like an image slot would
+ * be; a video with no `poster` is fatal, joining the identical
+ * `hasAssetProblems` refusal every other asset problem already triggers —
+ * see `internal/slot.ts`'s `buildImageSlotHtml`, which never sees the
+ * discriminated `RenderAsset` shape at all, only the already-flattened
+ * `StaticRenderAsset`.
+ *
+
  * COLOURS ARE FLATTENED TO LITERAL HEX, ON PURPOSE
  * ----------------------------------------------------
  * A browser's print pipeline DOES understand `oklch()` and CSS custom
@@ -86,7 +101,7 @@
 import { resolveCopy, resolveDocument } from "../core/index.js";
 import type { ComposeDocument, PrintMeta, ResolvedSlot } from "../core/index.js";
 import { RenderError } from "../internal/errors.js";
-import { describeAssetProblems, hasAssetProblems, resolveDocumentAssets } from "../internal/assets.js";
+import { describeAssetProblems, describeStaticAssetProblems, hasAssetProblems, resolveDocumentAssets, resolveStaticAssets } from "../internal/assets.js";
 import { flattenTokens } from "../internal/tokens.js";
 import { buildHtmlDocument } from "./internal/document.js";
 import { buildPageAtRuleCss, resolvePageBox } from "./internal/page.js";
@@ -140,12 +155,17 @@ export function renderPrintDocument(doc: ComposeDocument, options: RenderPrintOp
   // Never hand-rolled — see this file's own top comment, "Images: assetId
   // bindings paint an <img>".
   const assetsResolution = resolveDocumentAssets(result, options.resolveAssetId);
+  // See this file's own top comment, "Video: this channel has no playback
+  // capability" — a resolved video asset with no poster is exactly as
+  // fatal as an unresolved/invalid asset.
+  const staticAssets = resolveStaticAssets(assetsResolution);
 
-  if (!copyResult.ok || hasAssetProblems(assetsResolution)) {
+  if (!copyResult.ok || hasAssetProblems(assetsResolution) || staticAssets.posterlessVideo.length > 0) {
     const parts: string[] = [];
     if (copyResult.unresolvedCopyIds.length > 0) parts.push(`copyId(s) that resolved to no text: ${copyResult.unresolvedCopyIds.join(", ")}`);
     if (copyResult.unchecked.length > 0) parts.push(`slot(s) with no usable, unambiguous source of text: ${copyResult.unchecked.join(", ")}`);
     parts.push(...describeAssetProblems(assetsResolution));
+    parts.push(...describeStaticAssetProblems(staticAssets));
     if (parts.length === 0) parts.push("no slot produced any content");
     throw new RenderError(
       "empty-output",
@@ -156,7 +176,7 @@ export function renderPrintDocument(doc: ComposeDocument, options: RenderPrintOp
   }
 
   const textByKey = new Map(copyResult.texts.map((t) => [t.key, t.text]));
-  const assetByKey = assetsResolution.byKey;
+  const assetByKey = staticAssets.byKey;
   const specByKey = new Map<string, ResolvedSlot["spec"]>(result.resolved.map((r) => [r.key, r.spec]));
 
   const flat = flattenTokens(options.tokenOverrides);

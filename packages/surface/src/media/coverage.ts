@@ -46,10 +46,45 @@
  * finding can tell which. `report.ok` requires BOTH lists to be empty,
  * the same "findings must be empty, full stop" reading
  * `@vespeneventures/copy`'s own `report.findings` gets, severity aside.
+ *
+ * `asset-missing-licence` (severity `"warning"`) IS V2's NEW FINDING —
+ * NOT A NEW SCHEMA REQUIREMENT
+ * ---------------------------------------------------------------------
+ * v1's actual gap, per issue #177, was never that `licence` lacked shape
+ * validation (`schema.ts`'s `licence-shape` already existed) — it was that
+ * a registered entry with NO `licence` at all produced zero signal
+ * anywhere. `licence` stays optional in `types.ts`'s `AssetEntryBase` (see
+ * that file's own top comment for why making it schema-required would
+ * break every already-registered v1 entry on upgrade); THIS file is where
+ * the gap actually closes, for every registered entry regardless of
+ * whether it is referenced. Warning, not error — matching
+ * `unreferenced-asset`'s own severity — because an asset whose licence is
+ * unstated is exactly "indistinguishable from one that is unlicensed," a
+ * real problem a reviewer needs surfaced, but not one that breaks
+ * rendering the way an unregistered id does.
+ *
+ * `registeredByType` — REPORTING THE DISCRIMINATED SHAPE, NEVER
+ * ID-MATCHING ON IT
+ * ---------------------------------------------------------------------
+ * `checkAssetCoverage`'s own id-comparison loop has no reason to branch on
+ * `AssetEntry.type` — an id either matches a registered entry or it
+ * doesn't, regardless of what kind of entry it is. `registeredByType`
+ * exists purely so a reviewer reading one `AssetCoverageReport` can tell
+ * what is actually registered (how many images, how many videos) without
+ * re-reading the raw `AssetRecord` JSON — restating information already
+ * implicit in `record.entries`, not deriving anything new. The existing
+ * three-state `ok`/`checkedCount > 0`/`unchecked` contract (this file's own
+ * non-negotiables 1–3, above) is unchanged by this addition.
  */
 
 import { validateAssetRecordShape } from "./schema.js";
 import type { AssetEntryId, AssetFinding, AssetRecord } from "./types.js";
+
+/** How many of `record`'s registered entries are each `AssetEntry.type` — see this file's own top comment, "registeredByType". */
+export interface AssetTypeCounts {
+  image: number;
+  video: number;
+}
 
 export interface AssetCoverageReport {
   recordId: string;
@@ -59,7 +94,9 @@ export interface AssetCoverageReport {
   checkedCount: number;
   /** `record.entries.length`, once `record` is known valid; `0` if `record` itself failed shape validation. */
   registeredCount: number;
-  /** `"unregistered-asset"` (error) for every checked id with no matching entry, `"unreferenced-asset"` (warning) for every registered entry no checked id named. Never silently dropped. */
+  /** `record.entries` broken down by `AssetEntry.type` — see this file's own top comment, "registeredByType". `{ image: 0, video: 0 }` when `record` itself failed shape validation, matching `registeredCount`'s own `0` in that case. */
+  registeredByType: AssetTypeCounts;
+  /** `"unregistered-asset"` (error) for every checked id with no matching entry, `"unreferenced-asset"` (warning) for every registered entry no checked id named, `"asset-missing-licence"` (warning) for every registered entry (referenced or not) with no `licence`. Never silently dropped. */
   findings: AssetFinding[];
   /**
    * Referenced-id entries this run could not evaluate at all: a
@@ -95,6 +132,16 @@ function describeReferencedId(value: unknown, index: number): string {
   })`;
 }
 
+/** `record.entries`, broken down by `type` — see this file's own top comment, "registeredByType". */
+function countByType(entries: readonly AssetRecord["entries"][number][]): AssetTypeCounts {
+  const counts: AssetTypeCounts = { image: 0, video: 0 };
+  for (const entry of entries) {
+    if (entry.type === "image") counts.image += 1;
+    else counts.video += 1;
+  }
+  return counts;
+}
+
 /**
  * Compares `referencedIds` against `record`. Never throws: an invalid
  * `record`, a non-array `referencedIds`, or malformed individual entries
@@ -121,6 +168,7 @@ export function checkAssetCoverage(referencedIds: unknown, record: AssetRecord):
       referencedCount: 0,
       checkedCount: 0,
       registeredCount: recordShapeFindings.length === 0 ? (record as AssetRecord).entries.length : 0,
+      registeredByType: recordShapeFindings.length === 0 ? countByType((record as AssetRecord).entries) : { image: 0, video: 0 },
       findings: recordShapeFindings.map((f) => ({ ...f })),
       unchecked: [`referencedIds (must be an array, got ${referencedIds === undefined ? "undefined" : typeof referencedIds})`],
       ok: false,
@@ -144,6 +192,7 @@ export function checkAssetCoverage(referencedIds: unknown, record: AssetRecord):
       referencedCount,
       checkedCount: 0,
       registeredCount: 0,
+      registeredByType: { image: 0, video: 0 },
       findings: recordShapeFindings.map((f) => ({ ...f })),
       unchecked,
       ok: false,
@@ -187,6 +236,21 @@ export function checkAssetCoverage(referencedIds: unknown, record: AssetRecord):
     }
   }
 
+  // `asset-missing-licence` — see this file's own top comment. Runs over
+  // EVERY registered entry, referenced or not: a missing licence is a
+  // property of the entry itself, independent of whether any document
+  // currently binds to it.
+  for (const entry of validRecord.entries) {
+    if (entry.licence === undefined) {
+      findings.push({
+        rule: "asset-missing-licence",
+        severity: "warning",
+        message: `Registered asset id "${entry.id}" in AssetRecord "${recordIdForReport}" has no licence — its usage terms are unstated, indistinguishable from being unlicensed.`,
+        path: entry.id,
+      });
+    }
+  }
+
   const ok = checkedCount > 0 && unchecked.length === 0 && findings.length === 0;
 
   return {
@@ -194,6 +258,7 @@ export function checkAssetCoverage(referencedIds: unknown, record: AssetRecord):
     referencedCount,
     checkedCount,
     registeredCount: validRecord.entries.length,
+    registeredByType: countByType(validRecord.entries),
     findings,
     unchecked,
     ok,

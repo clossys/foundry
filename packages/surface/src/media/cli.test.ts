@@ -15,11 +15,12 @@ const validRecord = {
   id: "acme-app",
   entries: [
     {
-      id: "marketing.hero-banner",
+      id: "marketing.hero-banner", type: "image",
       src: "/images/hero-banner.png",
       width: 1600,
       height: 900,
       alt: "Illustration of a laptop showing a dashboard",
+      licence: "CC-BY-4.0",
     },
   ],
 };
@@ -96,7 +97,7 @@ describe("main — EXIT 1 (at least one finding)", () => {
   it("returns 1 when a registered entry is never referenced", () => {
     const recordFile = writeRecord({
       id: "acme-app",
-      entries: [...validRecord.entries, { id: "marketing.footer-logo", src: "/logo.svg", width: 10, height: 10, alt: "logo" }],
+      entries: [...validRecord.entries, { id: "marketing.footer-logo", type: "image", src: "/logo.svg", width: 10, height: 10, alt: "logo" }],
     });
     const idsFile = writeReferencedIds(["marketing.hero-banner"]);
     expect(main([recordFile, idsFile])).toBe(1);

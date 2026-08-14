@@ -118,7 +118,7 @@ describe("golden: assetId — an <img> row, byte for byte, joining the same orde
       { slot: "hero", assetId: "marketing.hero" },
     ],
   };
-  const asset = { id: "marketing.hero", src: "https://cdn.example/hero.png", width: 600, height: 300, alt: "A hero shot" };
+  const asset = { id: "marketing.hero", type: "image", src: "https://cdn.example/hero.png", width: 600, height: 300, alt: "A hero shot" };
 
   it("renders the exact expected HTML, byte for byte — an <img> row with explicit width/height ATTRIBUTES, border=0, display:block", () => {
     const { html } = renderEmailDocument(doc, {
@@ -143,7 +143,7 @@ describe("golden: assetId — an <img> row, byte for byte, joining the same orde
 
   it("src/alt escaping — a src/alt containing \", ', <, &, and </script> is escaped, never breaking out of the <img> attribute", () => {
     const hostileAsset = {
-      id: "marketing.hero",
+      id: "marketing.hero", type: "image",
       src: `https://cdn.example/hero.png?q="'<&></script>`,
       width: 10,
       height: 10,
@@ -180,7 +180,7 @@ describe("golden: a mixed document — text and asset slots in one email", () =>
         { slot: "body", copyId: "welcome.body" },
       ],
     };
-    const asset = { id: "marketing.hero", src: "https://cdn.example/hero.png", width: 600, height: 300, alt: "A hero shot" };
+    const asset = { id: "marketing.hero", type: "image", src: "https://cdn.example/hero.png", width: 600, height: 300, alt: "A hero shot" };
 
     const { html, text } = renderEmailDocument(doc, {
       layout,

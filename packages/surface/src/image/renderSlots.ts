@@ -19,7 +19,7 @@
  *     `stat`, `list`, `button`, `fill`) — wrapped, multi-line `<text>`, via
  *     `wrapText`.
  *   - MEDIA kinds bound via `assetId` (`image`, `logo`) — a real, validated
- *     `RenderAsset` (`../internal/assets.ts`), emitted as `<image href=...
+ *     `StaticRenderAsset` (`../internal/assets.ts`), emitted as `<image href=...
  *     x= y= width= height=>` sized to the slot's frame, with a `<title>`/
  *     `aria-label` carrying `asset.alt` and an aspect-ratio-aware
  *     `preserveAspectRatio` — see {@link renderAssetMediaSlot}.
@@ -46,7 +46,7 @@
  */
 
 import type { LayoutSpec, SlotSpec, StyleBinding } from "../core/index.js";
-import type { RenderAsset } from "../internal/assets.js";
+import type { StaticRenderAsset } from "../internal/assets.js";
 import { resolveElementFontFamily, resolveElementTypography } from "../internal/typography.js";
 import {
   escapeXml,
@@ -195,7 +195,7 @@ function renderLegacyTextMediaSlot(spec: SlotSpec, text: string, rect: PixelRect
 }
 
 /**
- * A slot resolved via `assetId` — a real, shape-validated `RenderAsset`
+ * A slot resolved via `assetId` — a real, shape-validated `StaticRenderAsset`
  * (`../internal/assets.ts`) — emitted as `<image href=... x= y= width=
  * height=>`, sized to the slot's frame exactly like every other kind of
  * slot. Two things this function does that {@link renderLegacyTextMediaSlot}
@@ -234,7 +234,7 @@ function renderLegacyTextMediaSlot(spec: SlotSpec, text: string, rect: PixelRect
  */
 function renderAssetMediaSlot(
   spec: SlotSpec,
-  asset: RenderAsset,
+  asset: StaticRenderAsset,
   rect: PixelRect,
   flat: ReadonlyMap<string, string>,
   warnings: string[],
@@ -290,7 +290,7 @@ function renderDividerSlot(spec: SlotSpec, rect: PixelRect, flat: ReadonlyMap<st
 export function renderSlotsToSvg(
   layout: LayoutSpec,
   textByKey: ReadonlyMap<string, string>,
-  assetByKey: ReadonlyMap<string, RenderAsset>,
+  assetByKey: ReadonlyMap<string, StaticRenderAsset>,
   canvas: CanvasPixelSize,
   flat: ReadonlyMap<string, string>,
 ): RenderSlotsResult {

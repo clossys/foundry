@@ -241,7 +241,7 @@ describe("before/after: an asset-only document — the empty-output bug this tas
     layout: { slots: [{ key: "hero", element: "image", frame: { x: 0, y: 0, w: 1, h: 1 } }] },
     bindings: [{ slot: "hero", assetId: "marketing.hero" }],
   };
-  const asset = { id: "marketing.hero", src: "https://cdn.example/hero.png", width: 800, height: 400, alt: "Storefront photo" };
+  const asset = { id: "marketing.hero", type: "image", src: "https://cdn.example/hero.png", width: 800, height: 400, alt: "Storefront photo" };
 
   it("BEFORE (still true without resolveAssetId): throws empty-output — nothing was resolved", () => {
     try {
@@ -259,6 +259,52 @@ describe("before/after: an asset-only document — the empty-output bug this tas
     expect(result.svg).toContain('href="https://cdn.example/hero.png"');
     expect(result.svg).toContain("Storefront photo");
     expect(result.warnings).toEqual([]);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// Video assets — this channel has no playback capability; a video asset
+// paints its poster, or fails closed (issue #177)
+// ─────────────────────────────────────────────────────────────────────────
+
+describe("video assets — poster fallback, or fail closed (issue #177)", () => {
+  const videoDoc: ComposeDocument = {
+    id: "acme-hero-video",
+    channel: "image",
+    template: "og-card",
+    meta: { channel: "image", width: 400, height: 200, format: "svg", alt: "Acme hero" },
+    layout: { slots: [{ key: "hero", element: "image", frame: { x: 0, y: 0, w: 1, h: 1 } }] },
+    bindings: [{ slot: "hero", assetId: "marketing.hero-video" }],
+  };
+  const videoAsset = (overrides: Record<string, unknown> = {}) => ({
+    id: "marketing.hero-video",
+    type: "video",
+    sources: [{ src: "https://cdn.example/hero.mp4", mimeType: "video/mp4" }],
+    width: 1920,
+    height: 1080,
+    alt: "A product demo video",
+    transcript: "A transcript.",
+    reducedMotion: "no-autoplay",
+    ...overrides,
+  });
+
+  it("a video asset WITH a poster renders its poster as a normal <image> — exactly like an image asset", () => {
+    const result = renderImageDocument(videoDoc, {
+      resolveAssetId: () => videoAsset({ poster: "https://cdn.example/hero-poster.png" }),
+    });
+    expect(result.svg).toContain('href="https://cdn.example/hero-poster.png"');
+    expect(result.svg).toContain("A product demo video");
+  });
+
+  it("a video asset with NO poster refuses to render (empty-output) — this channel has nothing to paint instead", () => {
+    try {
+      renderImageDocument(videoDoc, { resolveAssetId: () => videoAsset() });
+      expect.unreachable();
+    } catch (error) {
+      expect(error).toBeInstanceOf(RenderError);
+      expect((error as RenderError).reason).toBe("empty-output");
+      expect((error as RenderError).message).toMatch(/no poster/);
+    }
   });
 });
 

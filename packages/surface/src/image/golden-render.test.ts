@@ -164,7 +164,7 @@ describe("golden: assetId — a real <image>, byte for byte, alt in <title>+aria
   it("renders the exact expected SVG, byte for byte, when the asset's aspect ratio MATCHES the frame's — no warning fires", () => {
     // frame {x:0.1,y:0.3,w:0.8,h:0.5} on 1200x630 -> x=120,y=189,w=960,h=315
     // -> frame aspect 960/315 = 3.0476..; asset chosen at exactly that ratio.
-    const matchedAsset = { id: "marketing.hero", src: "https://cdn.example/hero.png", width: 1920, height: 630, alt: "A hero shot" };
+    const matchedAsset = { id: "marketing.hero", type: "image", src: "https://cdn.example/hero.png", width: 1920, height: 630, alt: "A hero shot" };
     const result = renderImageDocument(doc, { resolveAssetId: () => matchedAsset });
 
     expect(result.svg).toBe(
@@ -180,7 +180,7 @@ describe("golden: assetId — a real <image>, byte for byte, alt in <title>+aria
   });
 
   it("fires an aspect-ratio warning when the asset's own ratio disagrees with the frame's — 'image' kind is filled/cropped (xMidYMid slice), never distorted", () => {
-    const mismatchedAsset = { id: "marketing.hero", src: "https://cdn.example/hero-square.png", width: 500, height: 500, alt: "A square hero shot" };
+    const mismatchedAsset = { id: "marketing.hero", type: "image", src: "https://cdn.example/hero-square.png", width: 500, height: 500, alt: "A square hero shot" };
     const result = renderImageDocument(doc, { resolveAssetId: () => mismatchedAsset });
 
     expect(result.svg).toContain('preserveAspectRatio="xMidYMid slice"');
@@ -198,7 +198,7 @@ describe("golden: assetId — a real <image>, byte for byte, alt in <title>+aria
       layout: { slots: [{ key: "brand", element: "logo", frame: { x: 0.1, y: 0.1, w: 0.3, h: 0.3 } }] },
       bindings: [{ slot: "brand", assetId: "marketing.logo" }],
     };
-    const wideLogo = { id: "marketing.logo", src: "https://cdn.example/logo.svg", width: 300, height: 60, alt: "Acme wordmark" };
+    const wideLogo = { id: "marketing.logo", type: "image", src: "https://cdn.example/logo.svg", width: 300, height: 60, alt: "Acme wordmark" };
     const result = renderImageDocument(logoDoc, { resolveAssetId: () => wideLogo });
 
     expect(result.svg).toBe(
@@ -215,7 +215,7 @@ describe("golden: assetId — a real <image>, byte for byte, alt in <title>+aria
 
   it("src/alt escaping — a src/alt containing <, &, \", ', and ]]> is escaped, byte for byte, never breaking out of the <image> attributes", () => {
     const hostileAsset = {
-      id: "marketing.hero",
+      id: "marketing.hero", type: "image",
       src: `https://cdn.example/hero.png?q=<&>"'</script>]]>`,
       width: 1920,
       height: 630,
@@ -233,7 +233,7 @@ describe("golden: assetId — a real <image>, byte for byte, alt in <title>+aria
   });
 
   it("a mixed document — a text heading and an assetId hero image — renders both", () => {
-    const matchedAsset = { id: "marketing.hero", src: "https://cdn.example/hero.png", width: 1920, height: 630, alt: "A hero shot" };
+    const matchedAsset = { id: "marketing.hero", type: "image", src: "https://cdn.example/hero.png", width: 1920, height: 630, alt: "A hero shot" };
     const result = renderImageDocument(doc, { resolveAssetId: () => matchedAsset });
     expect(result.svg).toContain("Ship faster");
     expect(result.svg).toContain('href="https://cdn.example/hero.png"');
