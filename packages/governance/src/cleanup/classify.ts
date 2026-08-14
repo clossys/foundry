@@ -8,21 +8,25 @@
  *
  * Two tiers, always evaluated in this order:
  *
- * 1. **"owned" — structural, unconditional, checked first.** A candidate
- *    that is the canonical clone, or a checkout of the default branch, is
- *    returned `"owned"` immediately, with only the structural reason(s)
- *    that made it so. None of the tier-2 checks below run at all in this
- *    case, and their evidence — even if dirty, missing, or otherwise
- *    disqualifying — never appears in the result. This is deliberate: an
+ * 1. **"owned" — structural, checked first, but not unconditional.** A
+ *    candidate that is the canonical clone, or a checkout of the default
+ *    branch, is returned `"owned"` immediately, with only the structural
+ *    reason(s) that made it so — none of the tier-2 checks below run, and
+ *    their evidence never appears in the result. This is deliberate: an
  *    "owned" location is categorically not a cleanup candidate no matter
  *    what else is true about it, so the reasons a *worktree* would be
- *    blocked for are simply not relevant facts about it — a caller would
- *    never want the canonical clone or the default-branch checkout
- *    proposed for removal, however its origin or working tree happen to
- *    look. (Reviewer note: this is the one precedence choice in this
- *    module that is a judgement call rather than a mechanical consequence
- *    of the inputs — worth double-checking it matches intent before
- *    relying on it.)
+ *    blocked for are simply not relevant facts about it.
+ *
+ *    One exception, and it is load-bearing rather than a style choice: a
+ *    **confirmed** origin mismatch — the origin was actually observed, and
+ *    it does not match what was expected — is checked before tier 1 and
+ *    suppresses it. "Looks structurally like the canonical clone" is not
+ *    good enough evidence when the one signal that actually identifies the
+ *    repository has been positively contradicted; a repurposed directory
+ *    or a stray same-named fork should never be waved through as "never a
+ *    cleanup candidate." An origin that was simply never observed does
+ *    *not* suppress tier 1 — "we don't know" is not proof the location is
+ *    wrong, unlike "we checked, and it doesn't match."
  *
  * 2. **"blocked" — every applicable check runs; none short-circuits the
  *    others.** Unlike tier 1, tier 2 does not stop at the first problem
@@ -211,8 +215,31 @@ function blockedReasons(candidate: CleanupCandidate): CleanupReason[] {
  * this file's top doc comment for the full precedence contract.
  */
 export function classifyCleanupCandidate(candidate: CleanupCandidate): CleanupProposal {
-  const owned = ownedReasons(candidate);
-  if (owned.length > 0) return proposal(candidate, "owned", owned);
+  // A CONFIRMED origin mismatch — the origin was actually observed, and it
+  // does not match what was expected — overrides the owned tier entirely.
+  // Origin evidence that was simply never gathered does not: "we don't
+  // know" is not proof the location is wrong, so an unknown origin still
+  // lets a structurally canonical/default-branch location classify as
+  // owned, exactly as before. But a *known*, mismatched origin is positive
+  // evidence this location is not actually the repository it claims to be
+  // — a repurposed directory, a stray clone of a similarly named fork, a
+  // worktree pointed at the wrong remote. Trusting "this looks like the
+  // canonical clone" over a confirmed contradiction in the one signal that
+  // actually identifies the repository would be exactly the unverified-
+  // claim failure this classifier exists to prevent, and it would violate
+  // the issue's own explicit requirement that "origin mismatch... must
+  // block." See `classify.test.ts`'s "confirmed origin mismatch overrides
+  // the owned tier" cases for the regression this guards.
+  const confirmedOriginMismatch =
+    candidate.origin.known === true &&
+    typeof candidate.origin.observed === "string" &&
+    candidate.origin.observed.length > 0 &&
+    candidate.origin.observed !== candidate.origin.expected;
+
+  if (!confirmedOriginMismatch) {
+    const owned = ownedReasons(candidate);
+    if (owned.length > 0) return proposal(candidate, "owned", owned);
+  }
 
   const blocked = blockedReasons(candidate);
   if (blocked.length > 0) return proposal(candidate, "blocked", blocked);

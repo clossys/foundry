@@ -84,6 +84,42 @@ describe("classifyCleanupCandidate — owned tier", () => {
     expect(result.status).toBe("owned");
     expect(result.reasons.map((r) => r.code)).toEqual(["canonical-repository"]);
   });
+
+  it("a CONFIRMED origin mismatch overrides owned status even for a default-branch checkout", () => {
+    const candidate = baseline();
+    const mismatched: CleanupCandidate = {
+      ...candidate,
+      origin: { ...candidate.origin, observed: "https://example.invalid/other.git" },
+      branch: { ...candidate.branch, isDefaultBranch: true },
+    };
+    const result = classifyCleanupCandidate(mismatched);
+    expect(result.status).toBe("blocked");
+    expect(result.reasons.map((r) => r.code)).toContain("origin-mismatch");
+  });
+
+  it("a CONFIRMED origin mismatch overrides owned status even for the canonical location", () => {
+    const candidate = baseline();
+    const mismatched: CleanupCandidate = {
+      ...candidate,
+      origin: { ...candidate.origin, observed: "https://example.invalid/other.git" },
+      location: { kind: "canonical", workingTreeKnown: true, workingTreeClean: true },
+    };
+    const result = classifyCleanupCandidate(mismatched);
+    expect(result.status).toBe("blocked");
+    expect(result.reasons.map((r) => r.code)).toContain("origin-mismatch");
+  });
+
+  it("a MISSING (never observed) origin does NOT override owned status, unlike a confirmed mismatch", () => {
+    const candidate = baseline();
+    const unknownOrigin: CleanupCandidate = {
+      ...candidate,
+      origin: { known: false, expected: candidate.origin.expected },
+      branch: { ...candidate.branch, isDefaultBranch: true },
+    };
+    const result = classifyCleanupCandidate(unknownOrigin);
+    expect(result.status).toBe("owned");
+    expect(result.reasons.map((r) => r.code)).toEqual(["default-branch"]);
+  });
 });
 
 describe("classifyCleanupCandidate — blocked tier: every reason code, in isolation", () => {
