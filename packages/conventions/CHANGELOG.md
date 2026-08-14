@@ -5,6 +5,21 @@ All notable changes to `@vespeneventures/conventions` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-08-14
+
+### Added
+
+- Restored the `./documents/*` and `./adapters/*` export subpaths, removed in
+  `0.1.1`. `@vespeneventures/governance@0.4.1` (foundry#193) taught the
+  publish-verification round trip to expand a wildcard export subpath against
+  what actually shipped instead of resolving it as a literal path, which is
+  what made `0.1.1` necessary in the first place.
+
+  `documentPath(id)` and `adapterPath(id)` are unaffected and remain the
+  primary way to reach a shipped file; the subpaths are a second route for a
+  consumer whose own tooling wants an import specifier rather than a resolved
+  path.
+
 ## [0.1.1] - 2026-08-14
 
 ### Removed
@@ -47,5 +62,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `CONVENTION_ADAPTERS`, `DOCUMENTS_ROOT`, and `ADAPTERS_ROOT` for reaching the
   shipped defaults without this package performing any I/O.
 
+[0.2.0]: https://github.com/vespeneventures/foundry/releases/tag/conventions-v0.2.0
 [0.1.1]: https://github.com/vespeneventures/foundry/releases/tag/conventions-v0.1.1
 [0.1.0]: https://github.com/vespeneventures/foundry/releases/tag/conventions-v0.1.0

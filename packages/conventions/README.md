@@ -86,10 +86,13 @@ one of those roles.
 ## Shipped documents
 
 Resolve a path with `documentPath(id)` and read it yourself; this package does
-no I/O of its own. The files ship under `documents/` and `adapters/` in the
-published tarball, so `documentPath` and `adapterPath` return real, readable
-paths — they resolve on the filesystem and do not go through Node's `exports`
-resolution at all.
+no I/O of its own. The files also ship under `documents/` and `adapters/` in
+the published tarball, reachable either way: `documentPath("branch-provenance")`
+for a filesystem path, or the equivalent import specifier — `documents/` or
+`adapters/` followed by the real filename — via the `./documents/*` and
+`./adapters/*` export subpaths, for a consumer whose own tooling wants a
+specifier rather than a resolved path (a bundler asset import, for instance).
+Both routes point at the same bytes; use whichever your tooling expects.
 
 | id | File | Contents |
 | --- | --- | --- |
