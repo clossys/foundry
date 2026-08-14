@@ -171,6 +171,60 @@ describe("evaluateRepositoryRequirements", () => {
     expect(reads).toBe(0);
   });
 
+  it("rejects inherited custom-prototype data before evaluation", () => {
+    const prototype = Object.create(null, {
+      source: { value: "not-an-observation-source", enumerable: true },
+    });
+    const observation = Object.assign(Object.create(prototype), {
+      id: "tool.required",
+      scope: "workspace",
+      state: "observed",
+      value: "present",
+    });
+    const input = {
+      declarations: [{ source: "repo-a", requirements: [] }],
+      observations: [observation],
+    };
+
+    expect(validateRepositoryRequirementsEvaluationInput(input).map((entry) => entry.rule)).toEqual(["observation-shape"]);
+    expect(evaluateRepositoryRequirements(input)).toMatchObject({
+      ok: false,
+      status: "invalid",
+      requirements: [],
+    });
+  });
+
+  it("rejects inherited custom-prototype getters without invoking them or throwing", () => {
+    let reads = 0;
+    const prototype = Object.create(null);
+    Object.defineProperty(prototype, "source", {
+      enumerable: true,
+      get: () => {
+        reads += 1;
+        throw new Error("must not read inherited source");
+      },
+    });
+    const observation = Object.assign(Object.create(prototype), {
+      id: "tool.required",
+      scope: "workspace",
+      state: "observed",
+      value: "present",
+    });
+    const input = {
+      declarations: [{ source: "repo-a", requirements: [] }],
+      observations: [observation],
+    };
+
+    expect(validateRepositoryRequirementsEvaluationInput(input).map((entry) => entry.rule)).toEqual(["observation-shape"]);
+    expect(() => evaluateRepositoryRequirements(input)).not.toThrow();
+    expect(evaluateRepositoryRequirements(input)).toMatchObject({
+      ok: false,
+      status: "invalid",
+      requirements: [],
+    });
+    expect(reads).toBe(0);
+  });
+
   it("accepts plain records from another realm", () => {
     const value = runInNewContext(`({
       declarations: [{ source: "repo-a", requirements: [] }],

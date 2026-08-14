@@ -24,15 +24,38 @@ const OBSERVATION_STATES = new Set(["observed", "absent", "unknown"]);
 const MAX_ARRAY_ENTRIES = 10_000;
 const MAX_SOURCE_LENGTH = 512;
 const MAX_VALUE_LENGTH = 256;
+const STANDARD_OBJECT_PROTOTYPE_KEYS = new Set<PropertyKey>([
+  "constructor",
+  "__defineGetter__",
+  "__defineSetter__",
+  "hasOwnProperty",
+  "__lookupGetter__",
+  "__lookupSetter__",
+  "isPrototypeOf",
+  "propertyIsEnumerable",
+  "toString",
+  "valueOf",
+  "__proto__",
+  "toLocaleString",
+]);
 
 function hasStandardObjectPrototype(prototype: object): boolean {
-  return Object.getPrototypeOf(prototype) === null;
+  const actualKeys = Reflect.ownKeys(prototype);
+  if (actualKeys.some((key) => !STANDARD_OBJECT_PROTOTYPE_KEYS.has(key))) return false;
+
+  return actualKeys.every((key) => {
+    const descriptor = Object.getOwnPropertyDescriptor(prototype, key);
+    if (!descriptor || descriptor.enumerable !== false) return false;
+    if (key === "__proto__") return !("value" in descriptor) && typeof descriptor.get === "function" && typeof descriptor.set === "function";
+    return "value" in descriptor && typeof descriptor.value === "function";
+  });
 }
 
 function isRecord(value: unknown): value is UnknownRecord {
   if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
   const prototype = Object.getPrototypeOf(value);
-  if (prototype !== null && !hasStandardObjectPrototype(prototype)) return false;
+  if (prototype === null) return true;
+  if (Object.getPrototypeOf(prototype) !== null || !hasStandardObjectPrototype(prototype)) return false;
   return Reflect.ownKeys(value).every((key) => {
     const descriptor = Object.getOwnPropertyDescriptor(value, key);
     return typeof key === "string" && descriptor !== undefined && "value" in descriptor;
