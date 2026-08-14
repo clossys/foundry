@@ -69,6 +69,64 @@ requiredness only. Print, slides, and image surfaces use `CanvasLayoutSpec`
 with frames and element kinds. This prevents flowed surfaces from carrying
 fictional canvas geometry.
 
+### Repeating-group bindings
+
+A `SurfaceDocument`'s `bindings` array accepts two shapes: a
+`SurfaceSlotBinding` (one slot, exactly one of `copy`/`node`/`assetId`, as
+above) or a `SurfaceRepeatingSlotBinding` — the same slot, bound to an
+**ordered list** of items instead of a single source. This closes part of
+issue #166: a template can commit a slot to holding N items (a capability
+grid, a stat band, a testimonial list) where N is a run-time fact the
+template's own layout cannot encode, since `FlowLayoutSpec`/`CanvasLayoutSpec`
+name a slot once, not "this slot, repeated."
+
+A repeating binding still names one explicit slot the consumer already
+decided exists — it does not select a template or invent a slot, the same
+boundary every other binding in this package holds to (see "Scope," above).
+Each item in `items` independently obeys the identical exactly-one-of
+discipline a single binding does:
+
+```ts
+import type { SurfaceDocument } from "@vespeneventures/surface/core";
+
+const acmeCapabilities: SurfaceDocument["bindings"][number] = {
+  slot: "capabilities",
+  items: [
+    { copy: { id: "acme.capability.one" } },
+    { copy: { id: "acme.capability.two" } },
+    { assetId: "acme.capability.icon.three" },
+  ],
+};
+```
+
+`items` may be an empty array. That is a deliberate choice, not an
+oversight: this package cannot tell "the consumer configured zero of these
+on purpose" (a legitimately-empty testimonial list) apart from "something
+upstream failed to populate this," so it validates an explicit `items: []`
+as clean rather than guessing. See `types.ts`'s `SurfaceRepeatingSlotBinding`
+doc comment for the fuller reasoning.
+
+`resolveSurfaceDocument` resolves a repeating binding's items in order and
+returns them on `ResolvedSurfaceDocument.groups` — an array of
+`{ slot, items: [{ index, value? , node?, assetId? }, ...] }` — rather than
+folding them into the legacy `ComposeDocument.bindings` shape, which has no
+way to carry more than one source per slot. `groups` is omitted entirely
+(not an empty array) on a document with no repeating binding, so an existing
+single-binding-only `SurfaceDocument` resolves identically to before this
+existed. A bad item — an unresolvable `CopyRef`, same as any single
+binding's — fails the whole `resolveSurfaceDocument` call with a message
+naming the specific item (`bindings.N.items.M`), the same fail-closed,
+all-or-nothing contract this function already holds for a single binding;
+it does not invent a second, partial-success mode just because the content
+is array-shaped. Per-item copy resolutions flow into the same
+`resolutions`/`collectCopyProvenance` provenance path a single binding's
+does, so a repeating-group slot shows up in manifest provenance per item,
+not just per slot — see `output-manifest.ts`.
+
+This is a repeating-group *binding* primitive only — not a flowed marketing
+template capable of rendering one. See issue #166 for the remaining,
+deliberately separate gap.
+
 **One `SurfaceDocument` is exactly one canvas — pagination is out of scope
 by design, not an oversight.** `LayoutSpec`'s slots are fractional positions
 (`Frame = {x, y, w, h}`, 0..1 of a single fixed canvas); there is no flow,
@@ -101,7 +159,8 @@ that draft or malformed sources fail closed.
 ## API
 
 - `core`: `CHANNELS`, `ELEMENT_KINDS`, `validateComposeDocument`,
-  `validateSurfaceDocument`, `createOutputManifest`,
+  `validateSurfaceDocument`, `isSurfaceRepeatingSlotBinding`,
+  `createOutputManifest`,
   `collectCopyProvenance`, `createResolvedOutputManifest`,
   `resolveSurfaceDocument`,
   `resolveDocument`, `resolveCopy`, `resolveAssets`, `frameToInches`,
@@ -109,9 +168,13 @@ that draft or malformed sources fail closed.
   the `Channel`, `ChannelMeta`, `ComposeDocument`, `ComposeFinding`,
   `ElementKind`, `EmailMeta`, `FlowLayoutSpec`, `FlowSlotSpec`, `Frame`, `ImageMeta`, `LayoutSpec`,
   `PrintMeta`, `Rect`, `ResolvedSlot`, `ResolveResult`, `SlidesMeta`,
-  `SlotBinding`, `SlotSpec`, `StyleBinding`, `SurfaceDocument`, `SurfaceSlotBinding`, `SurfaceChannelMeta`, `OutputArtifact`, `OutputManifest`, `StrategyProvenance`, `CopyProvenance`, `WebMeta`, `CopyLookup`,
+  `SlotBinding`, `SlotSpec`, `StyleBinding`, `SurfaceDocument`,
+  `SurfaceBinding`, `SurfaceSlotBinding`, `SurfaceRepeatingSlotBinding`,
+  `SurfaceSlotBindingItem`, `SurfaceChannelMeta`, `OutputArtifact`,
+  `OutputManifest`, `StrategyProvenance`, `CopyProvenance`, `WebMeta`, `CopyLookup`,
   `CopyResolveResult`, `ResolvedText`, `AssetLookup`, `AssetResolveResult`,
-  `ResolvedAsset`, `ResolvedSurfaceDocument`, `SurfaceResolutionReason`, and
+  `ResolvedAsset`, `ResolvedSurfaceDocument`, `ResolvedSurfaceGroup`,
+  `ResolvedSurfaceGroupItem`, `SurfaceResolutionReason`, and
   `CanvasInches` types. `SurfaceResolutionError` is thrown when canonical
   resolution fails closed.
 - `media`: `parseAssetRecord`, `validateAssetRecordShape`,

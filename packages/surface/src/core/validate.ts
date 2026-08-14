@@ -41,6 +41,7 @@ import type {
   SlotBinding,
   SlotSpec,
   StyleBinding,
+  SurfaceRepeatingSlotBinding,
 } from "./types.js";
 import { CHANNELS, ELEMENT_KINDS } from "./types.js";
 
@@ -788,6 +789,84 @@ function validateCopyRef(value: unknown, path: string, findings: ComposeFinding[
 }
 
 /**
+ * True when `binding` is a {@link SurfaceRepeatingSlotBinding} rather than
+ * a single-source {@link SurfaceSlotBinding} — discriminated by the
+ * presence of an `items` property, never a literal `kind` tag, so an
+ * existing `SurfaceSlotBinding` needs no migration. Deliberately keys off
+ * property PRESENCE, not `Array.isArray(binding.items)`: a candidate with
+ * `items: "not-an-array"` is still clearly attempting to author a
+ * repeating group, and routing it into `validateSurfaceRepeatingBindingShape`
+ * produces the specific `surface-binding-group-items-shape` finding
+ * instead of a generic `surface-binding-source-exclusive` that never
+ * mentions `items` at all. Accepts `unknown` on purpose:
+ * `validateSurfaceDocument` calls this before the candidate is known to be
+ * well-formed at all, and `resolve-surface.ts` calls the exact same
+ * function afterward, once `binding` is already typed as `SurfaceBinding`
+ * and known-valid — sharing one function keeps both call sites from ever
+ * quietly disagreeing on what counts as a repeating-group binding, the
+ * same reuse discipline `resolveDocument` follows for
+ * `validateSlotBindingShape` (see this file's own top comment).
+ */
+export function isSurfaceRepeatingSlotBinding(binding: unknown): binding is SurfaceRepeatingSlotBinding {
+  return isPlainObject(binding) && Object.hasOwn(binding, "items");
+}
+
+/**
+ * Rule: surface-binding-group-exclusive, surface-binding-group-items-shape,
+ * surface-binding-group-item-shape, surface-binding-group-item-source-exclusive.
+ *
+ * Validates a {@link SurfaceRepeatingSlotBinding} candidate: `items` must
+ * be an array (possibly empty — see `types.ts`'s `SurfaceRepeatingSlotBinding`
+ * doc comment for why an explicit empty group is valid, not a finding, here),
+ * `copy`/`node`/`assetId` must NOT also be present on the binding itself (a
+ * repeating-group binding carries its sources in `items`, not on the
+ * binding — mixing the two is ambiguous, not additive), and every entry in
+ * `items` independently obeys the same exactly-one-of-copy/node/assetId
+ * discipline `validateSurfaceDocument` already enforces for a single
+ * binding — see `SurfaceSlotBinding`'s own validation just above this
+ * function. Every finding's `path` names the specific failing item
+ * (`bindings.N.items.M[...]`), not just the slot, so a caller can say
+ * which of six capability-grid entries broke.
+ */
+function validateSurfaceRepeatingBindingShape(binding: Record<string, unknown>, path: string, findings: ComposeFinding[]): void {
+  const hasSingleSource = binding.copy !== undefined || binding.node !== undefined || binding.assetId !== undefined;
+  if (hasSingleSource) {
+    findings.push({
+      rule: "surface-binding-group-exclusive",
+      severity: "error",
+      message: `${path} must not combine items with copy/node/assetId — a repeating-group binding carries its sources in items, not on the binding itself.`,
+      path,
+    });
+  }
+
+  if (!Array.isArray(binding.items)) {
+    findings.push({ rule: "surface-binding-group-items-shape", severity: "error", message: `${path}.items must be an array.`, path: `${path}.items` });
+    return;
+  }
+
+  // No finding for items.length === 0 — see this function's own doc
+  // comment and types.ts's SurfaceRepeatingSlotBinding for why.
+  binding.items.forEach((item, itemIndex) => {
+    const itemPath = `${path}.items.${itemIndex}`;
+    if (!isPlainObject(item)) {
+      findings.push({ rule: "surface-binding-group-item-shape", severity: "error", message: `${itemPath} must be an object.`, path: itemPath });
+      return;
+    }
+    const itemSources = [item.copy !== undefined, item.node !== undefined, item.assetId !== undefined];
+    if (itemSources.filter(Boolean).length !== 1) {
+      findings.push({ rule: "surface-binding-group-item-source-exclusive", severity: "error", message: `${itemPath} must set exactly one of copy/node/assetId.`, path: itemPath });
+    }
+    if (item.copy !== undefined) validateCopyRef(item.copy, `${itemPath}.copy`, findings);
+    if (item.node !== undefined && (typeof item.node !== "object" || item.node === null)) {
+      findings.push({ rule: "surface-node-shape", severity: "error", message: `${itemPath}.node must be a non-null object; use copy for audience-facing text.`, path: `${itemPath}.node` });
+    }
+    if (item.assetId !== undefined && !isNonEmptyString(item.assetId)) {
+      findings.push({ rule: "binding-asset-id-shape", severity: "error", message: `${itemPath}.assetId must be a non-empty string when present.`, path: `${itemPath}.assetId` });
+    }
+  });
+}
+
+/**
  * Validates the canonical `SurfaceDocument` contract. Unlike the deprecated
  * `ComposeDocument` validator, this rejects literal audience-facing copy:
  * slots, web/email metadata, image alt text, and slide notes must all be
@@ -814,6 +893,12 @@ export function validateSurfaceDocument(value: unknown): ComposeFinding[] {
         return;
       }
       if (!isNonEmptyString(binding.slot)) findings.push({ rule: "binding-slot-shape", severity: "error", message: `${path}.slot must be a non-empty string.`, path: `${path}.slot` });
+
+      if (isSurfaceRepeatingSlotBinding(binding)) {
+        validateSurfaceRepeatingBindingShape(binding, path, findings);
+        return;
+      }
+
       const sources = [binding.copy !== undefined, binding.node !== undefined, binding.assetId !== undefined];
       if (sources.filter(Boolean).length !== 1) findings.push({ rule: "surface-binding-source-exclusive", severity: "error", message: `${path} must set exactly one of copy/node/assetId.`, path });
       if (binding.copy !== undefined) validateCopyRef(binding.copy, `${path}.copy`, findings);

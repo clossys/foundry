@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createOutputManifest } from "./output-manifest.js";
-import { validateSurfaceDocument } from "./validate.js";
+import { isSurfaceRepeatingSlotBinding, validateSurfaceDocument } from "./validate.js";
 import type { SurfaceDocument } from "./types.js";
 
 const ref = (id: string) => ({ id });
@@ -46,6 +46,78 @@ describe("SurfaceDocument", () => {
     };
     expect(validateSurfaceDocument(image)).toEqual([]);
     expect(validateSurfaceDocument({ ...image, meta: { ...image.meta, alt: "literal alt" } }).map((finding) => finding.rule)).toContain("copy-ref-shape");
+  });
+});
+
+describe("SurfaceRepeatingSlotBinding", () => {
+  const capabilityGrid: SurfaceDocument = {
+    ...validWeb,
+    bindings: [
+      ...validWeb.bindings,
+      {
+        slot: "capabilities",
+        items: [
+          { copy: ref("acme.capability.one") },
+          { copy: ref("acme.capability.two") },
+          { assetId: "acme.capability.icon.three" },
+        ],
+      },
+    ],
+  };
+
+  it("accepts an ordered list of items, each independently obeying the exactly-one-of-copy/node/assetId rule", () => {
+    expect(validateSurfaceDocument(capabilityGrid)).toEqual([]);
+  });
+
+  it("distinguishes a repeating-group binding from a single-source binding by the presence of items, never a kind tag", () => {
+    expect(isSurfaceRepeatingSlotBinding(capabilityGrid.bindings[2]!)).toBe(true);
+    expect(isSurfaceRepeatingSlotBinding(capabilityGrid.bindings[0]!)).toBe(false);
+  });
+
+  it("accepts an explicit empty group as valid — a legitimately-empty repeating list is not a finding", () => {
+    const emptyGroup: SurfaceDocument = { ...validWeb, bindings: [...validWeb.bindings, { slot: "testimonials", items: [] }] };
+    expect(validateSurfaceDocument(emptyGroup)).toEqual([]);
+  });
+
+  it("rejects a group binding that also sets copy/node/assetId on the binding itself", () => {
+    const findings = validateSurfaceDocument({
+      ...validWeb,
+      bindings: [...validWeb.bindings, { slot: "capabilities", copy: ref("acme.stray"), items: [{ copy: ref("acme.capability.one") }] }],
+    });
+    expect(findings.map((finding) => finding.rule)).toContain("surface-binding-group-exclusive");
+  });
+
+  it("rejects a non-array items field", () => {
+    const findings = validateSurfaceDocument({ ...validWeb, bindings: [...validWeb.bindings, { slot: "capabilities", items: "not-an-array" }] });
+    expect(findings.map((finding) => finding.rule)).toContain("surface-binding-group-items-shape");
+  });
+
+  it("attributes a bad item to its own index, not just the slot, and does not discard findings for sibling items", () => {
+    const findings = validateSurfaceDocument({
+      ...validWeb,
+      bindings: [
+        ...validWeb.bindings,
+        {
+          slot: "capabilities",
+          items: [
+            { copy: ref("acme.capability.one") },
+            { copy: ref("acme.capability.two"), assetId: "acme.capability.icon.two" },
+            { copy: ref("acme.capability.three") },
+          ],
+        },
+      ],
+    });
+    const groupItemFinding = findings.find((finding) => finding.rule === "surface-binding-group-item-source-exclusive");
+    expect(groupItemFinding?.path).toBe("bindings.2.items.1");
+    // The malformed item's finding does not erase the fact that items 0 and
+    // 2 are themselves well-formed — no finding names them.
+    expect(findings.some((finding) => finding.path?.startsWith("bindings.2.items.0"))).toBe(false);
+    expect(findings.some((finding) => finding.path?.startsWith("bindings.2.items.2"))).toBe(false);
+  });
+
+  it("rejects a primitive item entry and a whitespace-only assetId the same way a single binding would", () => {
+    const findings = validateSurfaceDocument({ ...validWeb, bindings: [...validWeb.bindings, { slot: "capabilities", items: ["not-an-object", { assetId: "" }] }] });
+    expect(findings.map((finding) => finding.rule)).toEqual(expect.arrayContaining(["surface-binding-group-item-shape", "binding-asset-id-shape"]));
   });
 });
 
