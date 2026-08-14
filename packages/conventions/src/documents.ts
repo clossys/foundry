@@ -53,6 +53,12 @@ export const CONVENTION_DOCUMENTS: readonly ConventionDocument[] = Object.freeze
     templated: false,
   }),
   Object.freeze({
+    id: "skill-registry",
+    filename: "skill-registry.md",
+    title: "Capability-first skill registry",
+    templated: false,
+  }),
+  Object.freeze({
     id: "machine-guidance",
     filename: "machine-guidance.md",
     title: "Shared machine-wide agent guidance",

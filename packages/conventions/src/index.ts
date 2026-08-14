@@ -49,5 +49,22 @@ export type { RoutineSetOptions } from "./routines.js";
 export { scanNeutrality } from "./neutrality.js";
 export type { NeutralityOptions } from "./neutrality.js";
 
+export {
+  SKILL_REGISTRY_SCHEMA_VERSION,
+  computeCapabilityCoverage,
+  validateRoutineCoverage,
+  validateSkillRegistry,
+} from "./skill-registry.js";
+export type {
+  AcceptedGap,
+  Capability,
+  CapabilityCoverage,
+  RegisteredSkill,
+  RoutineCoverageQuery,
+  SkillCapabilityImplementation,
+  SkillRegistry,
+  SkillScope,
+} from "./skill-registry.js";
+
 export { renderProductLoader } from "./loader.js";
 export type { ProductLoaderOptions } from "./loader.js";
