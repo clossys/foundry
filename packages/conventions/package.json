@@ -1,6 +1,6 @@
 {
   "name": "@vespeneventures/conventions",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -11,9 +11,7 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    },
-    "./documents/*": "./documents/*",
-    "./adapters/*": "./adapters/*"
+    }
   },
   "files": [
     "dist",
