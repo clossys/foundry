@@ -5,6 +5,17 @@ All notable changes to `@vespeneventures/conventions` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-08-14
+
+### Added
+
+- Added a pure workspace-cleanup classifier for caller-normalized worktree,
+  branch, and stale-metadata observations. It returns typed `owned`,
+  `safe-candidate`, or `blocked` proposals with stable reason codes and strict
+  fail-closed precedence. Every proposal still requires exact operator
+  confirmation; the package performs no discovery, provider access, command
+  rendering, deletion, or other mutation.
+
 ## [0.3.0] - 2026-08-14
 
 ### Added
@@ -77,6 +88,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `CONVENTION_ADAPTERS`, `DOCUMENTS_ROOT`, and `ADAPTERS_ROOT` for reaching the
   shipped defaults without this package performing any I/O.
 
+[0.4.0]: https://github.com/vespeneventures/foundry/releases/tag/conventions-v0.4.0
 [0.3.0]: https://github.com/vespeneventures/foundry/releases/tag/conventions-v0.3.0
 [0.2.0]: https://github.com/vespeneventures/foundry/releases/tag/conventions-v0.2.0
 [0.1.1]: https://github.com/vespeneventures/foundry/releases/tag/conventions-v0.1.1

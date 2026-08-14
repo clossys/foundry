@@ -1,6 +1,6 @@
 {
   "name": "@vespeneventures/conventions",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -25,7 +25,7 @@
     "LICENSE"
   ],
   "sideEffects": false,
-  "description": "Account-neutral agent conventions for branch provenance, capability-first skill registries, agent interoperability, and routine declarations, shipped as default documents plus pure validators.",
+  "description": "Account-neutral agent conventions for branch provenance, capability-first skill registries, agent interoperability, routine declarations, and pure workspace-cleanup classification, shipped as default documents plus deterministic validators and classifiers.",
   "keywords": [
     "agent-conventions",
     "branch-naming",

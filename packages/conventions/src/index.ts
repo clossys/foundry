@@ -2,7 +2,8 @@
  * @vespeneventures/conventions
  *
  * The account-neutral agent conventions two parties can share without either
- * owning the other, plus the checks that enforce their grammar.
+ * owning the other, plus deterministic grammar checks and workspace-cleanup
+ * classification.
  *
  * The split is the design. This package enforces the *grammar* -- branch
  * provenance, skill naming, routine declarations, neutrality -- and ships the
@@ -67,3 +68,28 @@ export type { NeutralityOptions } from "./neutrality.js";
 
 export { renderProductLoader } from "./loader.js";
 export type { ProductLoaderOptions } from "./loader.js";
+
+export {
+  WORKSPACE_CLEANUP_REASON_CODES,
+  classifyWorkspaceCleanup,
+  classifyWorkspaceCleanupSet,
+} from "./workspace-cleanup.js";
+export type {
+  BranchCleanupObservation,
+  BranchDispositionObservation,
+  BranchTrackingState,
+  BranchWorktreeState,
+  CanonicalCheckoutState,
+  PruneDryRunState,
+  PullRequestState,
+  TargetOwnershipState,
+  WorkspaceCleanupAction,
+  WorkspaceCleanupCommonObservation,
+  WorkspaceCleanupObservation,
+  WorkspaceCleanupProposal,
+  WorkspaceCleanupReasonCode,
+  WorkspaceCleanupStatus,
+  WorktreeCleanupObservation,
+  WorktreeMetadataCleanupObservation,
+  WorktreeState,
+} from "./workspace-cleanup.js";
