@@ -81,8 +81,8 @@ to **GitHub Packages**, not the public npm registry. GitHub Packages
 requires a GitHub personal access token with `read:packages` for every
 install, including for a publicly visible package version and a reader
 with no other relationship to this org — that is a GitHub Packages
-platform behavior, not a permission this repository chose. A credential-
-free CI job, ephemeral environment, or cloud agent cannot install any
+platform behavior, not a permission this repository chose. A
+credential-free CI job, ephemeral environment, or cloud agent cannot install any
 package from here yet. This is tracked as a P0 blocker in issue #194 —
 distribution, not any package's own API, is what's blocking public
 adoption.
