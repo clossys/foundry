@@ -370,7 +370,7 @@ export function classifyWorkspaceCleanup(observation: unknown): WorkspaceCleanup
 /** Classify a complete caller-owned observation set without reading anything. */
 export function classifyWorkspaceCleanupSet(
   observations: readonly WorkspaceCleanupObservation[],
-): readonly WorkspaceCleanupValidProposal[];
+): readonly WorkspaceCleanupProposal[];
 export function classifyWorkspaceCleanupSet(
   observations: unknown,
 ): readonly WorkspaceCleanupProposal[];

@@ -382,7 +382,7 @@ describe("classifyWorkspaceCleanup", () => {
       },
     ]);
 
-    const sparse: unknown[] = new Array(3);
+    const sparse: WorkspaceCleanupObservation[] = new Array(3);
     sparse[0] = metadata;
     sparse[2] = branch;
     const sparseProposals = classifyWorkspaceCleanupSet(sparse);
