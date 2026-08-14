@@ -18,8 +18,13 @@ export interface ImportCheck {
   subpath: string;
   /** The verification performed for this export: an ESM import, an explicitly
    * advertised CommonJS require branch, a framework-aware Next compilation,
-   * or a static-file presence check. */
-  mode: "import" | "require" | "next-build" | "static";
+   * a static-file presence check, or — for a wildcard `exports` key such as
+   * `"./documents/*"` — the expansion of that pattern against the files the
+   * tarball actually shipped. A `"pattern"` entry reports the expansion
+   * itself (`ok: false` when it matched nothing, which means the pattern
+   * exports nothing to a consumer); each file it expanded to then gets its
+   * own entry, under its concrete subpath and its own mode. */
+  mode: "import" | "require" | "next-build" | "static" | "pattern";
   /** `true` if this export's executable target imported, or its static target was present in the packed install. */
   ok: boolean;
   /** Present only when `ok` is `false` — a trimmed, readable summary of what failed. */
@@ -49,8 +54,10 @@ export interface RoundTripResult {
    * `true` only when the install succeeded AND at least one export subpath
    * was actually declared AND every declared export subpath checked cleanly.
    * Executable ESM targets import, explicit CommonJS branches require,
-   * configured Next exports compile in an isolated Next fixture, and
-   * static/declaration targets must exist in the installed tarball. `false`
+   * configured Next exports compile in an isolated Next fixture,
+   * static/declaration targets must exist in the installed tarball, and a
+   * wildcard subpath must expand to at least one shipped file (each of which
+   * is then checked in its own right). `false`
    * the moment any of those fail — either way, `findings`
    * says exactly what went wrong. A package that declares no `exports`
    * surface at all checks zero subpaths and is therefore `false`
@@ -72,7 +79,9 @@ export interface RoundTripResult {
    * passed). Empty string if packing itself never produced a tarball.
    */
   tarballPath: string;
-  /** One entry per declared `exports` subpath. Empty if installation failed, or if no export subpath was declared at all. */
+  /** One entry per declared `exports` subpath — and, for a wildcard subpath,
+   * one entry for the pattern's expansion plus one per file it expanded to.
+   * Empty if installation failed, or if no export subpath was declared at all. */
   imports: ImportCheck[];
   /** One entry per declared TypeScript target. Empty if no `types`/`typings`
    * target was declared, or if installation failed before the tarball could be inspected. */
@@ -80,7 +89,8 @@ export interface RoundTripResult {
   /**
    * `"round-trip-install-failed"`, `"round-trip-peer-install-failed"`,
    * `"round-trip-import-failed"`, `"round-trip-require-failed"`,
-   * `"round-trip-asset-missing"`, `"round-trip-declaration-missing"`, or
+   * `"round-trip-asset-missing"`, `"round-trip-pattern-unmatched"`,
+   * `"round-trip-declaration-missing"`, or
    * `"round-trip-no-exports"` findings. Empty if and only if `ok` is
    * `true` — a round trip is only reported clean when it actually checked
    * at least one export and every one of them succeeded. An empty array
