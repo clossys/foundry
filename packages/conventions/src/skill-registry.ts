@@ -186,13 +186,14 @@ function parseImplementation(
 
 function parseSkill(value: unknown, index: number, findings: Finding[]): RegisteredSkill | undefined {
   const raw = record(value);
-  if (!raw || typeof raw.name !== "string" || typeof raw.scope !== "string" ||
+  if (!raw || typeof raw.name !== "string" ||
+      (raw.scope !== "plane" && raw.scope !== "repository") ||
       (raw.repository !== undefined && typeof raw.repository !== "string") ||
       (raw.thirdParty !== undefined && typeof raw.thirdParty !== "boolean") ||
       !Array.isArray(raw.implements)) {
     findings.push(shapeFinding(
       "registry/malformed-skill",
-      `Registry skill at index ${index} must contain string name and scope fields, an implements array, and optional string repository and boolean thirdParty fields.`,
+      `Registry skill at index ${index} must contain a string name, a plane or repository scope, an implements array, and optional string repository and boolean thirdParty fields.`,
     ));
     return undefined;
   }
@@ -202,7 +203,7 @@ function parseSkill(value: unknown, index: number, findings: Finding[]): Registe
   });
   return {
     name: raw.name,
-    scope: raw.scope as SkillScope,
+    scope: raw.scope,
     ...(raw.repository === undefined ? {} : { repository: raw.repository as string }),
     ...(raw.thirdParty === undefined ? {} : { thirdParty: raw.thirdParty as boolean }),
     implements: implementations,

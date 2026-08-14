@@ -53,6 +53,19 @@ describe("validateSkillRegistry / malformed caller JSON", () => {
       "registry/malformed-accepted-gap",
     ]);
   });
+
+  it("rejects an unknown skill scope string", () => {
+    expect(validateSkillRegistry({
+      schemaVersion: SKILL_REGISTRY_SCHEMA_VERSION,
+      capabilities: [baseCapability],
+      skills: [{
+        name: "review-dependency-freshness",
+        scope: "typo",
+        repository: "repo-a",
+        implements: [{ capability: "dependency-freshness-review", targets: ["repo-a"] }],
+      }],
+    }).map((finding) => finding.rule)).toContain("registry/malformed-skill");
+  });
 });
 
 describe("validateSkillRegistry / coverage union", () => {
@@ -492,6 +505,24 @@ describe("validateRoutineCoverage / routine-subset validation", () => {
           scope: 42,
           repository: "repo-a",
           implements: [],
+        }] as unknown as SkillRegistry["skills"],
+      }),
+    ).map((finding) => finding.rule);
+    expect(findings).toEqual([
+      "registry/malformed-skill",
+      "registry/routine-unresolvable-skill",
+    ]);
+  });
+
+  it("does not resolve a routine target through an unknown skill scope", () => {
+    const findings = validateRoutineCoverage(
+      { skill: "review-dependency-freshness", skillRepository: "repo-a", scope: ["repo-a"] },
+      registry({
+        skills: [{
+          name: "review-dependency-freshness",
+          scope: "typo",
+          repository: "repo-a",
+          implements: [{ capability: "dependency-freshness-review", targets: ["repo-a"] }],
         }] as unknown as SkillRegistry["skills"],
       }),
     ).map((finding) => finding.rule);
