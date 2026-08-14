@@ -12,8 +12,8 @@
 export { renderWebDocument } from "./renderWebDocument.js";
 export { buildWebHeadMetadata } from "./headMetadata.js";
 export { listWebTemplateNames } from "./internal/webTemplates.js";
-export { AuthView, ErrorView } from "./views/index.js";
-export type { AuthViewProps, ErrorViewProps } from "./views/index.js";
+export { AuthView, ErrorView, MarketingView } from "./views/index.js";
+export type { AuthViewProps, ErrorViewProps, MarketingFaqItem, MarketingFeatureItem, MarketingViewProps } from "./views/index.js";
 
 export { RenderError } from "../internal/errors.js";
 export type { RenderErrorReason } from "../internal/errors.js";

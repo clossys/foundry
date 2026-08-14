@@ -123,9 +123,87 @@ is array-shaped. Per-item copy resolutions flow into the same
 does, so a repeating-group slot shows up in manifest provenance per item,
 not just per slot — see `output-manifest.ts`.
 
-This is a repeating-group *binding* primitive only — not a flowed marketing
-template capable of rendering one. See issue #166 for the remaining,
-deliberately separate gap.
+On its own, this is a repeating-group *binding* primitive only — it says
+nothing about which template actually consumes it. `web`'s `MarketingView`
+template (below) is that consumer, closing the second and final half of
+issue #166.
+
+### `MarketingView` — the flowed marketing template
+
+`web`'s template registry (`listWebTemplateNames()`) knows three names:
+`AuthView`, `ErrorView`, and `MarketingView` — an ordinary flowed page with
+a persistent header/footer, a hero, a feature grid, an optional FAQ list,
+and a closing call-to-action band. Like `AuthView`/`ErrorView`, it is one
+more explicit, nameable `SurfaceDocument.template` value, not a mechanism
+that picks one — see "Scope," above: this package still does not compose.
+
+`MarketingView`'s fixed slot set: `brand` and `heroHeading` and
+`ctaHeading` are required flowed text slots; `heroEyebrow`,
+`heroDescription`, `heroActions`, `heroMedia` (an asset slot),
+`featuresHeading`, `featuresDescription`, `faqHeading`, `faqDescription`,
+`ctaDescription`, `ctaAction`, and `footerSecondary` are optional flowed
+slots; `features` (required) and `faq` (optional) are **repeating** slots,
+each bound via a `SurfaceRepeatingSlotBinding` and rendered through
+`@vespeneventures/ui`'s `FeatureGrid`/`Faq` blocks respectively. An empty
+repeating group (`items: []`) renders that section with zero entries —
+never an error, the same "empty is a deliberate, valid choice" contract
+`SurfaceRepeatingSlotBinding` itself holds to, above; a `faq` binding that
+was never authored at all omits the whole FAQ section instead, which is a
+different, equally valid outcome (see `MarketingView`'s own `faq` prop doc
+comment).
+
+Because one repeating item carries exactly one resolved value
+(`copy`/`node`/`assetId`) but a FAQ entry needs two independent ones
+(`question` and `answer`), a `faq` item must be authored via `node`,
+shaped `{ question, answer }` — the same "explicit escape hatch for
+content plain text cannot carry" `node` already is everywhere else in this
+package. A `faq` item authored via `copy`/`assetId` instead fails closed
+with `RenderError("empty-output", ...)`.
+
+```ts
+import type { SurfaceDocument } from "@vespeneventures/surface/core";
+import { resolveSurfaceDocument } from "@vespeneventures/surface/core";
+import { renderWebDocument } from "@vespeneventures/surface/web";
+
+const ref = (id: string) => ({ id });
+
+const acmeMarketingHome: SurfaceDocument = {
+  id: "acme.marketing.home",
+  channel: "web",
+  template: "MarketingView",
+  meta: { channel: "web", title: ref("acme.brand"), description: ref("acme.hero.description") },
+  bindings: [
+    { slot: "brand", copy: ref("acme.brand") },
+    { slot: "heroHeading", copy: ref("acme.hero.heading") },
+    { slot: "heroDescription", copy: ref("acme.hero.description") },
+    { slot: "ctaHeading", copy: ref("acme.cta.heading") },
+    // A repeating slot — one CopyRef per placeholder feature, in order.
+    {
+      slot: "features",
+      items: [
+        { copy: ref("acme.feature.one") },
+        { copy: ref("acme.feature.two") },
+        { copy: ref("acme.feature.three") },
+      ],
+    },
+  ],
+};
+
+const resolved = resolveSurfaceDocument(acmeMarketingHome, myCopyResolver);
+const { element, head } = renderWebDocument(resolved.document, {
+  groups: resolved.groups, // carries "features" (and, if authored, "faq")
+});
+```
+
+`resolved.groups` is exactly `ResolvedSurfaceDocument.groups` — pass it
+straight through as `RenderWebOptions.groups`; `renderWebDocument` maps
+each declared repeating slot's resolved items onto `MarketingView`'s
+`features`/`faq` props in authored order. Passing a group for a slot
+`MarketingView` does not declare as repeating, or omitting the required
+`features` group entirely, both fail closed with
+`RenderError("resolution-failed", ...)` — the same error contract a
+missing/unknown single-slot binding already produces for `AuthView`/
+`ErrorView`.
 
 **One `SurfaceDocument` is exactly one canvas — pagination is out of scope
 by design, not an oversight.** `LayoutSpec`'s slots are fractional positions
@@ -183,10 +261,12 @@ that draft or malformed sources fail closed.
   `AssetRegistryReadIssueReason`, `AssetRegistryReadResult`, and
   `AssetCoverageReport` types. The CLI is `surface-media-check`.
 - `web`: `renderWebDocument`, `buildWebHeadMetadata`,
-  `listWebTemplateNames`, `AuthView`, `ErrorView`, `RenderError`, and the
-  `AuthViewProps`, `ErrorViewProps`, `RenderErrorReason`, `AssetResolver`,
-  `CopyResolver`, `RenderWebOptions`, `RenderWebResult`, `WebHeadMetadata`,
-  `WebOpenGraphMetadata`, and `WebTwitterMetadata` types.
+  `listWebTemplateNames`, `AuthView`, `ErrorView`, `MarketingView`,
+  `RenderError`, and the `AuthViewProps`, `ErrorViewProps`,
+  `MarketingViewProps`, `MarketingFeatureItem`, `MarketingFaqItem`,
+  `RenderErrorReason`, `AssetResolver`, `CopyResolver`, `RenderWebOptions`,
+  `RenderWebResult`, `WebHeadMetadata`, `WebOpenGraphMetadata`, and
+  `WebTwitterMetadata` types.
 - `email`: `renderEmailDocument`, `RenderError`, and the
   `RenderErrorReason`, `EmailRenderResult`, `RenderEmailOptions`, and
   `RenderWarning` types.
