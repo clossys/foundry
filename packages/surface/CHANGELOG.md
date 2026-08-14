@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.2.0] - 2026-08-13
+
+### Added
+
+- `core`: repeating-group slot bindings, closing part of issue #166 (the
+  remaining flowed-marketing-template gap is a deliberate, separate
+  follow-up). A `SurfaceDocument`'s `bindings` array now additionally
+  accepts a `SurfaceRepeatingSlotBinding` — the same slot key, bound to an
+  ORDERED LIST of `SurfaceSlotBindingItem`s instead of a single
+  `copy`/`node`/`assetId` — for content a template commits a slot to
+  holding N of at run time (a capability grid, a stat band, a testimonial
+  list). Each item independently obeys the same exactly-one-of-copy/node/
+  assetId discipline a single binding already does, and a malformed item
+  produces a finding attributed to that specific item
+  (`bindings.N.items.M`), not just the slot. An explicit empty group
+  (`items: []`) validates cleanly — this package cannot distinguish a
+  deliberately-empty list from an upstream population failure, so it does
+  not guess. `resolveSurfaceDocument` resolves a repeating binding's items
+  in order onto the new `ResolvedSurfaceDocument.groups` field (omitted
+  entirely, not an empty array, when a document has no repeating binding),
+  and a bad item fails the whole `resolveSurfaceDocument` call — the same
+  fail-closed, all-or-nothing contract a single binding's unresolved copy
+  already has — with a message naming the specific item. Per-item copy
+  resolutions flow into the existing `resolutions`/`collectCopyProvenance`
+  path, so provenance covers a repeating-group slot per item, not just per
+  slot. New exports: `SurfaceBinding`, `SurfaceRepeatingSlotBinding`,
+  `SurfaceSlotBindingItem`, `isSurfaceRepeatingSlotBinding`,
+  `ResolvedSurfaceGroup`, `ResolvedSurfaceGroupItem`. Fully additive: every
+  existing `SurfaceSlotBinding`-only document validates and resolves
+  identically to before this release — see the README, "Repeating-group
+  bindings," and the pinned backward-compatibility test in
+  `resolve-surface.test.ts`.
+
 ## [0.1.9] - 2026-08-13
 
 ### Changed

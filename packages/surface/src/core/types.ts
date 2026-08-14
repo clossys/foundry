@@ -95,6 +95,65 @@ export interface SurfaceSlotBinding {
 }
 
 // ---------------------------------------------------------------------------
+// SurfaceRepeatingSlotBinding — one slot, an ORDERED LIST of items
+// ---------------------------------------------------------------------------
+
+/**
+ * One item inside a {@link SurfaceRepeatingSlotBinding}. Same
+ * exactly-one-of discipline as {@link SurfaceSlotBinding} itself
+ * (`copy`/`node`/`assetId`) — see `validate.ts`'s
+ * `"surface-binding-group-item-source-exclusive"` rule, which applies the
+ * identical truth table `binding-source-exclusive` uses, independently to
+ * every item. Deliberately does NOT repeat `slot`: an item does not target
+ * a slot on its own — it fills one ordinal position inside the slot its
+ * enclosing `SurfaceRepeatingSlotBinding` already names.
+ */
+export interface SurfaceSlotBindingItem {
+  copy?: CopyRef;
+  node?: object;
+  assetId?: string;
+}
+
+/**
+ * A slot bound to an ORDERED LIST of items rather than a single source —
+ * the repeating-group primitive added to close part of #166 (a 6-item
+ * capability grid, a 3-item stat band: content a template already commits
+ * a slot to holding N of, where N is a run-time fact the template cannot
+ * know ahead of time). Still names exactly one explicit slot, same as
+ * {@link SurfaceSlotBinding} — see the README, "Scope: this package
+ * renders and validates. It does not compose": a repeating binding does
+ * not select a template or invent a slot the consumer didn't already
+ * declare, it only lets that already-named slot carry more than one bound
+ * item. Discriminated from `SurfaceSlotBinding` at runtime by the presence
+ * of `items` (see `validate.ts`'s exported `isSurfaceRepeatingSlotBinding`)
+ * — never a literal `kind` tag — so an existing `SurfaceSlotBinding`
+ * document needs no migration.
+ *
+ * `items` MAY be empty. That is a deliberate design decision, not an
+ * oversight — see `validate.ts`'s `validateSurfaceDocument` doc comment
+ * for the reasoning: `surface` has no way to distinguish "the consumer
+ * configured zero of these on purpose" (a legitimately-empty testimonial
+ * list) from "something upstream failed to populate this," so it refuses
+ * to guess and treats an explicitly-authored `items: []` as valid, not a
+ * validation finding. The alternative — treating empty as an error — would
+ * make a legitimately-empty list unrepresentable without a workaround, and
+ * this package has no more insight into which case it is here than it
+ * does anywhere else it draws the same "you decided this, I validate it"
+ * line.
+ */
+export interface SurfaceRepeatingSlotBinding {
+  slot: string;
+  items: SurfaceSlotBindingItem[];
+}
+
+/**
+ * Everything a {@link SurfaceDocument} may bind a slot with: exactly one
+ * source (`SurfaceSlotBinding`) or an ordered list of them
+ * (`SurfaceRepeatingSlotBinding`).
+ */
+export type SurfaceBinding = SurfaceSlotBinding | SurfaceRepeatingSlotBinding;
+
+// ---------------------------------------------------------------------------
 // Frame — a fractional position/size on the canvas
 // ---------------------------------------------------------------------------
 
@@ -329,7 +388,7 @@ export interface SurfaceDocument {
   channel: Channel;
   meta: SurfaceChannelMeta;
   template: string;
-  bindings: SurfaceSlotBinding[];
+  bindings: SurfaceBinding[];
   layout?: CanvasLayoutSpec;
 }
 

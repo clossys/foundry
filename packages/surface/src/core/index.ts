@@ -54,11 +54,14 @@ export type {
   ResolveResult,
   SlidesMeta,
   SlotBinding,
+  SurfaceBinding,
   SurfaceChannelMeta,
   SurfaceDocument,
   SurfaceEmailMeta,
   SurfaceImageMeta,
+  SurfaceRepeatingSlotBinding,
   SurfaceSlotBinding,
+  SurfaceSlotBindingItem,
   SurfaceSlidesMeta,
   SurfaceSlotSpec,
   SurfaceWebMeta,
@@ -71,7 +74,7 @@ export type {
 export { CHANNELS, ELEMENT_KINDS } from "./types.js";
 
 export { validateComposeDocument } from "./validate.js";
-export { validateSurfaceDocument } from "./validate.js";
+export { validateSurfaceDocument, isSurfaceRepeatingSlotBinding } from "./validate.js";
 
 export { resolveDocument } from "./resolve.js";
 
@@ -89,4 +92,4 @@ export { getSlotSpec, listSlotKeys, requiredSlotKeys } from "./slots.js";
 export { collectCopyProvenance, createOutputManifest, createResolvedOutputManifest } from "./output-manifest.js";
 
 export { resolveSurfaceDocument, SurfaceResolutionError } from "./resolve-surface.js";
-export type { ResolvedSurfaceDocument, SurfaceResolutionReason } from "./resolve-surface.js";
+export type { ResolvedSurfaceDocument, ResolvedSurfaceGroup, ResolvedSurfaceGroupItem, SurfaceResolutionReason } from "./resolve-surface.js";
