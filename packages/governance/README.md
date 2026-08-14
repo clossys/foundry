@@ -4,7 +4,8 @@ The read-only process authority for a package workspace. It defines the
 package-creation, maintenance, review, release-readiness, and retirement
 records that the owning repository must prove; plans reviewable private
 starters or repository-profiled package files; and owns the package-process
-catalog, gates, release, repository-profile, and review-evidence subpaths.
+catalog, gates, release, repository-profile, review-evidence, and
+workspace-cleanup-classification subpaths.
 
 ```bash
 npm install @vespeneventures/governance
@@ -32,6 +33,11 @@ caller owns all of those actions and values.
   packed-install proof and adds the workspace governance result. It does not
   publish or authenticate. A private registry proof remains the caller's
   deliberate release operation.
+- `./cleanup`'s `classifyCleanupCandidate` performs **no I/O of any kind** —
+  no Git, no filesystem, no GitHub, no scheduler, no credential, no network,
+  and no deletion. It classifies caller-gathered evidence and returns a
+  typed proposal; see its own section below for the full boundary, and note
+  in particular that this subpath exports **no deletion API at all**.
 
 ## Package-process subpaths
 
@@ -49,6 +55,7 @@ separately versioned packages.
 | `@vespeneventures/governance/review` | Provider-neutral review evidence contracts, validation, and `review-check`. |
 | `@vespeneventures/governance/review/github` | Pure normalization of caller-provided GitHub-shaped review evidence. |
 | `@vespeneventures/governance/artifacts` | Deterministic, fail-closed verification for a consumer-owned governed artifact: declared kind + schema version, exact-content checksum, and structural provenance. |
+| `@vespeneventures/governance/cleanup` | Pure workspace-cleanup classification: caller-normalized inventory and observations in, a typed `owned` / `safe-candidate` / `blocked` proposal out. No I/O, no deletion API. |
 
 ### `./artifacts`: governed artifact verification
 
@@ -381,6 +388,152 @@ found in `packages/governance/src/review/validate.ts`. The optional
 `./review/github` subpath (`normalizeGitHubReviewEvidence`) converts a
 caller-provided GitHub-shaped payload into this same `ReviewEvidenceBundle`
 shape without performing any network request itself.
+
+### `./cleanup`: pure workspace-cleanup classification
+
+`@vespeneventures/governance/cleanup` is the deterministic decision core
+shared by every account-plane cleanup skill: it turns caller-normalized
+repository inventory and observations into a typed `owned` / `safe-candidate`
+/ `blocked` proposal. Registry discovery, origin verification, live task
+ownership checks, evidence collection, account boundaries, exact operator
+confirmation, and guarded application all remain entirely the caller's own
+job — this subpath never does any of them.
+
+**Hard boundary.** `classifyCleanupCandidate` performs no Git, filesystem,
+GitHub, scheduler, credential, network, or deletion I/O. It contains no
+account names, no absolute paths, no standing authority, and no mutation
+hook of any kind. This subpath exports **no deletion API** — not a "propose
+and also execute" convenience, not a callback hook, nothing. See
+`src/cleanup/no-deletion-api.test.ts` for the test that fails the moment
+either guarantee regresses: one asserts the subpath's exact runtime export
+list, and a second independently checks every export name against a
+deletion/removal/mutation-shaped pattern.
+
+```ts
+import { classifyCleanupCandidate } from "@vespeneventures/governance/cleanup";
+import type { CleanupCandidate } from "@vespeneventures/governance/cleanup";
+
+const candidate: CleanupCandidate = {
+  repositoryId: "example/widgets#worktree-a",
+  origin: {
+    known: true,
+    observed: "https://example.invalid/example/widgets.git",
+    expected: "https://example.invalid/example/widgets.git",
+  },
+  location: { kind: "worktree", workingTreeKnown: true, workingTreeClean: true },
+  branch: { name: "feature/widgets", isDefaultBranch: false, trackingKnown: true, hasUpstream: true, aheadCount: 0 },
+  prune: { known: true, safeWithoutForce: true },
+  pullRequest: { known: true, state: "merged" },
+  ownership: { known: true, ownedByActiveTask: false },
+};
+
+const proposal = classifyCleanupCandidate(candidate);
+// proposal.status === "safe-candidate" — a PROPOSAL, never authorization.
+// The caller still owns confirming with its operator and applying the
+// change through its own guarded mechanism.
+```
+
+#### Status precedence, fixed and tested
+
+`classifyCleanupCandidate` evaluates two tiers, always in this order:
+
+1. **`"owned"` — structural, unconditional, checked first.** A candidate
+   whose `location.kind` is `"canonical"`, or whose `branch.isDefaultBranch`
+   is `true`, is `"owned"` immediately, with only that structural reason.
+   None of the tier-2 checks below run in that case — an owned location is
+   categorically not a cleanup candidate no matter what else is true about
+   it, so a worktree's dirty/missing-evidence/etc. reasons are simply not
+   relevant facts about it. (This is the one deliberate judgement call in
+   the precedence order, called out for a reviewer to double-check against
+   intent — see `src/cleanup/classify.ts`'s own doc comment.)
+2. **`"blocked"` — every check runs; none short-circuits the others.**
+   Origin, working tree, branch/tracking, prune dry-run, pull-request, then
+   active-task ownership — mirroring the order the underlying inputs are
+   listed in issue #215 itself. Every check that fails contributes its own
+   reason code; a candidate blocked for three independent reasons reports
+   all three, in this fixed order, not just the first one found.
+
+A candidate reaches `"safe-candidate"` only by falling through both tiers
+with zero reasons collected: every check ran, on complete evidence, and
+every one passed.
+
+#### Missing vs. incomplete evidence — both block, identically
+
+"The caller never gathered this evidence" (e.g. `origin.known: false`) and
+"the caller claims to have gathered it but the value is unusable" (e.g.
+`origin.known: true` with `observed` left `undefined`) are treated
+identically: both block, with the same `*-evidence-missing` reason code. A
+check that cannot actually be answered from what it was given fails closed,
+never passes — the same discipline
+[CONTRIBUTING.md](../../CONTRIBUTING.md) documents for `check-release-
+readiness.mjs`, and the same shape this package's own
+`FoundationReport.complete` (`src/gates/types.ts`) and `Catalog.skipped`
+(`src/catalog/build.ts`, `src/catalog/types.ts`) already use: the decline
+case is DATA, never silence.
+
+#### Reason codes
+
+| Code | Status | Meaning |
+| --- | --- | --- |
+| `canonical-repository` | owned | This location is the repository's canonical clone. |
+| `default-branch` | owned | This location is a checkout of the repository's default branch. |
+| `origin-evidence-missing` | blocked | Repository origin was not observed, or was claimed known with no value. |
+| `origin-mismatch` | blocked | Observed origin differs from the expected origin. |
+| `working-tree-evidence-missing` | blocked | Working tree clean/dirty state was not observed, or was claimed known with no verdict. |
+| `dirty-working-tree` | blocked | Working tree has uncommitted changes. |
+| `tracking-evidence-missing` | blocked | Upstream tracking state (or the ahead count once an upstream is known) was not observed. |
+| `unpushed-commits` | blocked | No upstream tracking branch at all, or the branch is ahead of its upstream. |
+| `prune-evidence-missing` | blocked | No non-destructive dry-run evidence was observed. |
+| `prune-requires-force` | blocked | A dry run reported this candidate would need a force flag to remove. |
+| `pull-request-evidence-missing` | blocked | No pull-request search evidence was observed, or its state was missing/unrecognized. |
+| `pull-request-not-found` | blocked | A pull-request search completed and found nothing. |
+| `pull-request-open` | blocked | The associated pull request is still open. |
+| `pull-request-closed-unmerged` | blocked | The associated pull request was closed without merging. |
+| `ownership-evidence-missing` | blocked | No active-task ownership evidence was observed. |
+| `active-task-ownership` | blocked | Another active task currently claims this candidate. |
+
+Types found in `packages/governance/src/cleanup/types.ts`; classification
+logic in `packages/governance/src/cleanup/classify.ts`.
+
+#### Thin-adapter guidance for a consuming skill
+
+An account plane's own cleanup skill stays a thin adapter around this
+subpath:
+
+1. **Discover.** Walk the plane's own registry of repositories and their
+   worktrees. This package has no opinion on how — that discovery is
+   entirely the skill's own, account-scoped concern.
+2. **Gather evidence.** For each candidate location, read its real origin,
+   working-tree state, branch/tracking state, run a non-destructive prune
+   dry run, search for an associated pull request, and check the plane's
+   own active-task registry for ownership. Every one of these is real I/O
+   the skill performs, never this package.
+3. **Normalize.** Map what was gathered onto one `CleanupCandidate` per
+   location — explicitly marking any evidence the skill could not gather as
+   `known: false`, never guessing or defaulting it to a passing value.
+4. **Classify.** Call `classifyCleanupCandidate` once per candidate. This is
+   the only step this package performs, and it is pure — safe to call
+   repeatedly, safe to call speculatively, safe to unit test without any
+   real repository present.
+5. **Report and confirm.** Present every `CleanupProposal` to the operator,
+   grouped by `status`. A `"safe-candidate"` result is a proposal to review,
+   never a command to run.
+6. **Apply, guarded, and only for what the operator explicitly confirmed.**
+   Perform the actual removal through the skill's own guarded mechanism,
+   entirely outside this package — which, again, exports no deletion API at
+   all for a skill to reach for by mistake.
+
+Two skills on different account planes gathering the same underlying facts
+through differently written adapters still land on the same `status` and
+the same `reasons[].code`, in the same order — see
+`src/cleanup/parity.test.ts`, which proves this with two independently
+constructed adapters that deliberately disagree on field names,
+construction style, and even which literal origin URL string "matches," and
+still converge on identical classifications. (Reason *messages* also match
+whenever neither adapter fed the classifier a plane-specific literal value —
+the two test adapters deliberately use different origin URL strings, so
+only the `origin-mismatch` message differs between them; every other
+message matches exactly.)
 
 ## Migrating from compatibility packages
 

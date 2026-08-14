@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-08-14
+
+### Added
+
+- **`./cleanup` subpath**: `classifyCleanupCandidate(candidate)` — a pure,
+  deterministic workspace-cleanup classifier: the shared decision core
+  behind every account-plane cleanup skill (#215). It performs no Git,
+  filesystem, GitHub, scheduler, credential, network, or deletion I/O — it
+  classifies caller-normalized inventory and observations, nothing more,
+  and exports no deletion API of any kind.
+  - Returns exactly one `CleanupProposal` per candidate: a stable
+    `"owned"` / `"safe-candidate"` / `"blocked"` status plus every
+    applicable machine-readable reason code, in a fixed, tested precedence
+    order. `"owned"` is checked first and is unconditional (a canonical
+    clone or a default-branch checkout is never a cleanup candidate,
+    regardless of any other evidence); `"blocked"` runs every remaining
+    check and collects every reason that applies, never stopping at the
+    first; `"safe-candidate"` is reached only when every check passed on
+    complete evidence.
+  - Missing evidence and structurally incomplete evidence (a field
+    claiming to be known whose value is absent) are treated identically —
+    both block, with a distinct `*-evidence-missing` reason code — the
+    same "a check that cannot run must fail, never pass" discipline this
+    package's own `FoundationReport.complete` and `Catalog.skipped`
+    already follow (see [CONTRIBUTING.md](../../CONTRIBUTING.md)).
+  - `"safe-candidate"` is documented, on the type itself, as a proposal
+    only — never deletion authorization. See the README's `./cleanup`
+    section for the full contract, the precedence order, and thin-adapter
+    guidance for a consuming skill.
+
 ## [0.7.0] - 2026-08-13
 
 ### Added
