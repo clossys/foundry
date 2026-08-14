@@ -196,6 +196,46 @@ describe("validateSkillRegistry", () => {
     expect(findings.map((finding) => finding.rule)).toContain("skill-registry/missing-capability-coverage");
   });
 
+  it.each([
+    "https://github.com/example/project/issues/42",
+    "https://github.enterprise.example:8443/team/project/issues/42#discussion-7",
+  ])("accepts a syntactically valid HTTPS issue URL: %s", (reference) => {
+    const current = registry();
+    expect(validateSkillRegistry(registry({
+      skills: [current.skills[0]!],
+      acceptedGaps: [{
+        capability: "daily-planning",
+        repositories: ["product"],
+        reason: "Deferred.",
+        reference,
+      }],
+    }), options)).toEqual([]);
+  });
+
+  it.each([
+    "https://example.com:65536/issues/42",
+    "https://999.999.999.999/issues/42",
+    "https://-invalid.example/issues/42",
+    "https://[malformed/issues/42",
+    "http://github.com/example/project/issues/42",
+    "https://github.com/example/project/pull/42",
+    "https://user@example.com/example/project/issues/42",
+    "https://github.com/example/project/issues/42?state=open",
+  ])("rejects an invalid or nonconforming issue URL: %s", (reference) => {
+    const current = registry();
+    const findings = validateSkillRegistry(registry({
+      skills: [current.skills[0]!],
+      acceptedGaps: [{
+        capability: "daily-planning",
+        repositories: ["product"],
+        reason: "Deferred.",
+        reference,
+      }],
+    }), options);
+    expect(findings.map((finding) => finding.rule)).toContain("skill-registry/gap-without-durable-reference");
+    expect(findings.map((finding) => finding.rule)).toContain("skill-registry/missing-capability-coverage");
+  });
+
   it("reports an accepted gap once real coverage exists", () => {
     const findings = validateSkillRegistry(registry({
       acceptedGaps: [{

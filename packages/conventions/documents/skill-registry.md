@@ -41,10 +41,11 @@ An accepted gap is not coverage. It is durable evidence that the absence was
 seen and decided. The validator reports a stale gap once an implementation
 does cover the same pair.
 
-The evidence grammar is deliberately mechanical. An issue reference is an
-HTTPS URL whose final two path segments are `issues` and a positive integer,
-with an optional fragment. A repository-relative decision reference is a
-Markdown path with no absolute or parent segments and either:
+The evidence grammar is deliberately mechanical. An issue reference must parse
+as an HTTPS URL with a valid host, no credentials or query, final path segments
+of `issues` and a positive integer, and an optional fragment. A
+repository-relative decision reference is a Markdown path with no absolute or
+parent segments and either:
 
 - a directory segment named `adr`, `adrs`, `decision`, or `decisions`; or
 - a filename beginning `adr-`, `adr_`, `decision-`, or `decision_`.

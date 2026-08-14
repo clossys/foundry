@@ -60,7 +60,8 @@ export interface SkillRegistryOptions {
 }
 
 const IDENTIFIER = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const HTTPS_ISSUE_REFERENCE = /^https:\/\/[A-Za-z0-9.-]+(?::[0-9]+)?\/(?:[A-Za-z0-9._~-]+\/)*issues\/[1-9][0-9]*(?:#[A-Za-z0-9._-]+)?$/;
+const ISSUE_PATH = /^\/(?:[A-Za-z0-9._~-]+\/)*issues\/[1-9][0-9]*$/;
+const ISSUE_FRAGMENT = /^#[A-Za-z0-9._-]+$/;
 const RELATIVE_MARKDOWN_REFERENCE = /^(?!\/)(?!\.\/)(?!.*(?:^|\/)\.\.(?:\/|$))[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)*\.md(?:#[A-Za-z0-9._-]+)?$/i;
 const DECISION_SEGMENT = /^(?:adr|adrs|decision|decisions)$/i;
 const DECISION_FILENAME = /^(?:adr|decision)[-_][A-Za-z0-9._-]+\.md$/i;
@@ -79,8 +80,31 @@ function duplicates(values: readonly string[]): string[] {
   return [...duplicate];
 }
 
+function validHostname(hostname: string): boolean {
+  if (hostname.startsWith("[") && hostname.endsWith("]")) return true;
+  if (hostname.length === 0 || hostname.length > 253) return false;
+  return hostname.split(".").every((label) =>
+    label.length > 0 && label.length <= 63 &&
+    /^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$/.test(label)
+  );
+}
+
+function issueReference(reference: string): boolean {
+  let parsed: URL;
+  try {
+    parsed = new URL(reference);
+  } catch {
+    return false;
+  }
+  return parsed.protocol === "https:" &&
+    parsed.username === "" && parsed.password === "" &&
+    parsed.search === "" && validHostname(parsed.hostname) &&
+    ISSUE_PATH.test(parsed.pathname) &&
+    (parsed.hash === "" || ISSUE_FRAGMENT.test(parsed.hash));
+}
+
 function durableReference(reference: string): boolean {
-  if (HTTPS_ISSUE_REFERENCE.test(reference)) return true;
+  if (issueReference(reference)) return true;
   if (!RELATIVE_MARKDOWN_REFERENCE.test(reference)) return false;
 
   const path = reference.split("#", 1)[0]!;
