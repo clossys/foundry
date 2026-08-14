@@ -31,9 +31,12 @@ registry-side gap, not a defect in what these packages publish — see
 confirming evidence and [docs/DECISIONS.md](DECISIONS.md#a-standing-property-of-that-registry-optional-peers-install-as-required)
 for the decision to document rather than restructure packages around it.
 
-Six packages in the table below are affected: `ui` (six optional peers),
-`auth` (five), `surface` and `consent` (`react`/`react-dom` each), `comms`
-(`resend`), and `governance` (`typescript`). Installing any one of them pulls
+Six packages are affected — five of them in the table below: `ui` (six
+optional peers), `auth` (five), `surface` (`react`/`react-dom`), `comms`
+(`resend`), and `governance` (`typescript`). The sixth, `consent`
+(`react`/`react-dom`), is `incubating` rather than published and so does not
+appear in that table, but carries the same behaviour once installed.
+Installing any one of them pulls
 in its full declared peer set, regardless of which subpath is actually
 imported — a consumer wanting only `ui`'s token CSS, or only `comms`'s
 provider-neutral root, gets React, Tailwind, or `resend` installed anyway.
