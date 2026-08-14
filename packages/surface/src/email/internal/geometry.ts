@@ -42,7 +42,7 @@
  */
 
 import type { ElementKind, FlowLayoutSpec, Frame, StyleBinding } from "../../core/index.js";
-import type { RenderAsset } from "../../internal/assets.js";
+import type { StaticRenderAsset } from "../../internal/assets.js";
 import type { RenderWarning } from "../types.js";
 
 /**
@@ -103,7 +103,7 @@ export interface GeometryEntry {
   /** Present only on the deprecated positioned-email migration path. */
   element?: ElementKind;
   style?: StyleBinding;
-  asset?: RenderAsset;
+  asset?: StaticRenderAsset;
 }
 
 /**

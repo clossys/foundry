@@ -36,7 +36,7 @@
  */
 
 import type { SlotSpec } from "../../core/index.js";
-import type { RenderAsset } from "../../internal/assets.js";
+import type { StaticRenderAsset } from "../../internal/assets.js";
 import type { RenderPrintOptions } from "../types.js";
 import { escapeHtmlAttr, escapeHtmlText } from "./escape.js";
 import { frameToPercentStrings } from "./geometry.js";
@@ -136,7 +136,7 @@ export function buildSlotHtml(
  * or otherwise inspects beyond escaping it safely for this HTML attribute
  * context (see `escape.ts`'s own doc comment).
  */
-export function buildImageSlotHtml(spec: SlotSpec, asset: RenderAsset, options: BreakOptions): string {
+export function buildImageSlotHtml(spec: SlotSpec, asset: StaticRenderAsset, options: BreakOptions): string {
   const { left, top, width, height } = frameToPercentStrings(spec.frame);
 
   const styleParts = ["position:absolute", `left:${left}%`, `top:${top}%`, `width:${width}%`, `height:${height}%`, ...breakDeclarations(spec.key, options)];

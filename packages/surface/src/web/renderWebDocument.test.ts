@@ -377,7 +377,7 @@ describe("renderWebDocument — node-kind slots (options.nodes), via a consumer-
     const renderer = rendererFor();
     const doc: ComposeDocument = { ...baseWidgetDoc, bindings: [...baseWidgetDoc.bindings, { slot: "widget", assetId: "acme.widget.icon" }] };
     try {
-      renderer.renderWebDocument(doc, { resolveAssetId: () => ({ src: "https://cdn.example/icon.svg", width: 1, height: 1, alt: "Placeholder icon" }) });
+      renderer.renderWebDocument(doc, { resolveAssetId: () => ({ type: "image", src: "https://cdn.example/icon.svg", width: 1, height: 1, alt: "Placeholder icon" }) });
       expect.unreachable();
     } catch (error) {
       expect(error).toBeInstanceOf(RenderError);

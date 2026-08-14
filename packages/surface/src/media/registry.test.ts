@@ -25,7 +25,7 @@ const validRecordJson = {
   id: "acme-app",
   entries: [
     {
-      id: "marketing.hero-banner",
+      id: "marketing.hero-banner", type: "image",
       src: "/images/hero-banner.png",
       width: 1600,
       height: 900,
@@ -68,8 +68,8 @@ describe("readAssetRecord", () => {
       JSON.stringify({
         id: "acme-app",
         entries: [
-          { id: "a.b", src: "x.png", width: 10, height: 10, alt: "x" },
-          { id: "a.b", src: "y.png", width: 10, height: 10, alt: "y" },
+          { id: "a.b", type: "image", src: "x.png", width: 10, height: 10, alt: "x" },
+          { id: "a.b", type: "image", src: "y.png", width: 10, height: 10, alt: "y" },
         ],
       }),
     );
@@ -85,7 +85,7 @@ describe("readAssetRecord", () => {
       recordPath,
       JSON.stringify({
         id: "acme-app",
-        entries: [{ id: "a.b", src: "x.png", width: 10, height: 10, alt: "   " }],
+        entries: [{ id: "a.b", type: "image", src: "x.png", width: 10, height: 10, alt: "   " }],
       }),
     );
     const result = readAssetRecord(recordPath);

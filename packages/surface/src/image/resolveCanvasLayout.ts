@@ -77,12 +77,27 @@
  * `./print` all hold `assetId` bindings to. "An unresolved asset id must
  * never render a blank box or a placeholder" (this package's own task
  * brief).
+ *
+ * VIDEO ON A CANVAS: A `RenderVideoAsset` REDUCES TO ITS `poster`, OR IT IS
+ * FATAL (issue #177)
+ * -------------------------------------------------------------------------
+ * `./image`/`./slides` are SVG canvases — there is no `<video>`-equivalent
+ * element, and this package's own README draws the line explicitly: real
+ * playback support is `./web`-only. So the moment `resolveDocumentAssets`
+ * resolves a `VideoAssetEntry`-sourced binding, this function reduces it to
+ * its `poster` via `../internal/assets.ts`'s `resolveStaticAssets` — the
+ * identical decision `./email`/`./print` make, made once and shared. A
+ * video asset with a `poster` paints exactly like an image would (see
+ * `renderSlots.ts`); a video asset with NO `poster` has nothing this
+ * function can paint, and is treated with the identical fatal bar an
+ * unresolved/invalid asset already gets — see `hasAssetProblems`'s own
+ * check below, now joined by `staticAssets.posterlessVideo`.
  */
 
 import { requiredSlotKeys, resolveCopy, resolveDocument } from "../core/index.js";
 import type { AssetLookup, ComposeDocument, CopyLookup, LayoutSpec } from "../core/index.js";
 import { RenderError } from "../internal/errors.js";
-import { describeAssetProblems, hasAssetProblems, resolveDocumentAssets } from "../internal/assets.js";
+import { describeAssetProblems, describeStaticAssetProblems, hasAssetProblems, resolveDocumentAssets, resolveStaticAssets } from "../internal/assets.js";
 import { buildFlatTokenMap, resolveColorRole, type CanvasPixelSize } from "./engine.js";
 import { renderSlotsToSvg } from "./renderSlots.js";
 
@@ -135,16 +150,21 @@ export function resolveCanvasLayout(
   // stricter bar than optional text". ANY problem here is fatal,
   // regardless of which slot(s) it hit or whether they're required.
   const assetsResolution = resolveDocumentAssets(result, options.resolveAssetId);
-  if (hasAssetProblems(assetsResolution)) {
+  // See this file's own top comment, "Video on a canvas" — a resolved
+  // video asset with no poster has nothing this SVG-canvas channel can
+  // paint, and is exactly as fatal as an unresolved/invalid asset.
+  const staticAssets = resolveStaticAssets(assetsResolution);
+  if (hasAssetProblems(assetsResolution) || staticAssets.posterlessVideo.length > 0) {
+    const parts = [...describeAssetProblems(assetsResolution), ...describeStaticAssetProblems(staticAssets)];
     throw new RenderError(
       "empty-output",
-      `resolved document "${doc.id}" against its layout, but at least one assetId binding did not produce a real asset: ${describeAssetProblems(assetsResolution).join("; ")}. Rendering would silently ship a canvas with a broken or missing image, which this function refuses to do.`,
+      `resolved document "${doc.id}" against its layout, but at least one assetId binding did not produce a real asset: ${parts.join("; ")}. Rendering would silently ship a canvas with a broken or missing image, which this function refuses to do.`,
     );
   }
 
   const textByKey = new Map<string, string>();
   for (const t of copyResult.texts) textByKey.set(t.key, t.text);
-  const assetByKey = assetsResolution.byKey;
+  const assetByKey = staticAssets.byKey;
 
   const required = requiredSlotKeys(layout);
   const missingRequiredContent = required.filter((key) => !textByKey.has(key) && !assetByKey.has(key));

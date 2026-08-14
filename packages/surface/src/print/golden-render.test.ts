@@ -179,7 +179,7 @@ describe("golden: assetId — an <img> positioned by the slot's frame, exactly l
       { slot: "hero", assetId: "marketing.hero" },
     ],
   };
-  const asset = { id: "marketing.hero", src: "https://cdn.example/hero.png", width: 800, height: 400, alt: "Storefront photo" };
+  const asset = { id: "marketing.hero", type: "image", src: "https://cdn.example/hero.png", width: 800, height: 400, alt: "Storefront photo" };
 
   it("renders the exact expected HTML, byte for byte — object-fit:contain so a mismatched aspect ratio never distorts", () => {
     const { html } = renderPrintDocument(doc, {
@@ -216,7 +216,7 @@ describe("golden: assetId — an <img> positioned by the slot's frame, exactly l
 
   it("src/alt escaping — a src/alt containing \", ', <, &, and </script> is escaped, never breaking out of the <img> attribute", () => {
     const hostileAsset = {
-      id: "marketing.hero",
+      id: "marketing.hero", type: "image",
       src: `https://cdn.example/hero.png?q="'<&></script>`,
       width: 10,
       height: 10,

@@ -102,6 +102,28 @@ export interface RenderWebOptions {
    * rule when a node targets an unknown or non-node-kind slot.
    */
   nodes?: ResolvedSurfaceNode[];
+  /**
+   * Whether THIS render should treat `prefers-reduced-motion: reduce` as
+   * active — governs autoplay for every `VideoAssetEntry`-sourced
+   * `<video>` this render produces (see `VideoAssetEntry.reducedMotion`,
+   * `@vespeneventures/surface/media`). Omitted (the default) means "unknown/
+   * not reduced" — every video's own `autoplay` is honoured exactly as
+   * authored, the same regression-safe default `resolveCopyId`/
+   * `resolveAssetId` already use for "caller didn't wire this up."
+   *
+   * THIS PACKAGE HAS NO `window`/DOM ACCESS AT RENDER TIME — see
+   * `renderWebDocument.ts`'s own doc comment, "Reduced motion is a
+   * rendering-time decision, not a build-time one," for why this cannot be
+   * checked automatically inside `renderWebDocument` itself and must
+   * instead be a caller-supplied boolean, the same "opaque seam, explicit
+   * input" pattern `resolveCopyId`/`resolveAssetId` already use. A
+   * server-rendering caller typically derives this from a
+   * `Sec-CH-Prefers-Reduced-Motion` client hint or a cookie set by an
+   * earlier client-side check; a client-only caller passes
+   * `window.matchMedia("(prefers-reduced-motion: reduce)").matches`
+   * directly.
+   */
+  prefersReducedMotion?: boolean;
 }
 
 /** What `renderWebDocument` returns: the two things a web `ComposeDocument` renders to. See `renderWebDocument.ts`'s own doc comment. */

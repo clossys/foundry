@@ -258,7 +258,7 @@ describe("before/after: an asset-only print document — the empty-output bug th
     },
     bindings: [{ slot: "hero", assetId: "marketing.hero" }],
   };
-  const asset = { id: "marketing.hero", src: "https://cdn.example/hero.png", width: 800, height: 400, alt: "Storefront photo" };
+  const asset = { id: "marketing.hero", type: "image", src: "https://cdn.example/hero.png", width: 800, height: 400, alt: "Storefront photo" };
 
   it("BEFORE (still true without resolveAssetId): throws — nothing was resolved", () => {
     expect(() => renderPrintDocument(assetOnlyDoc)).toThrow(RenderError);
@@ -269,6 +269,48 @@ describe("before/after: an asset-only print document — the empty-output bug th
       resolveAssetId: (assetId) => (assetId === "marketing.hero" ? asset : undefined),
     });
     expect(html).toContain('<img src="https://cdn.example/hero.png" alt="Storefront photo"');
+  });
+});
+
+describe("video assets — this channel has no <video> story; poster fallback, or fail closed (issue #177)", () => {
+  const videoDoc: ComposeDocument = {
+    id: "acme-flyer-video",
+    channel: "print",
+    template: "Flyer",
+    meta: {
+      channel: "print",
+      pageSize: "A4",
+      orientation: "portrait",
+      margins: { top: "20mm", right: "20mm", bottom: "20mm", left: "20mm" },
+    },
+    layout: {
+      slots: [{ key: "hero", element: "image", frame: { x: 0, y: 0, w: 1, h: 1 } }],
+    },
+    bindings: [{ slot: "hero", assetId: "marketing.hero-video" }],
+  };
+  const videoAsset = (overrides: Record<string, unknown> = {}) => ({
+    id: "marketing.hero-video",
+    type: "video",
+    sources: [{ src: "https://cdn.example/hero.mp4", mimeType: "video/mp4" }],
+    width: 1920,
+    height: 1080,
+    alt: "A product demo video",
+    transcript: "A transcript.",
+    reducedMotion: "no-autoplay",
+    ...overrides,
+  });
+
+  it("a video asset WITH a poster renders its poster as a plain <img> — exactly like an image asset", () => {
+    const { html } = renderPrintDocument(videoDoc, {
+      resolveAssetId: () => videoAsset({ poster: "https://cdn.example/hero-poster.png" }),
+    });
+    expect(html).toContain('<img src="https://cdn.example/hero-poster.png" alt="A product demo video"');
+  });
+
+  it("a video asset with NO poster refuses to render (empty-output) — this channel has nothing to paint instead", () => {
+    const error = thrown(() => renderPrintDocument(videoDoc, { resolveAssetId: () => videoAsset() }));
+    expect(error.reason).toBe("empty-output");
+    expect(error.message).toMatch(/no poster/);
   });
 });
 
