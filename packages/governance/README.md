@@ -48,6 +48,117 @@ separately versioned packages.
 | `@vespeneventures/governance/repository` | Consumer-owned repository-profile contracts, validation, and `repository-check`. |
 | `@vespeneventures/governance/review` | Provider-neutral review evidence contracts, validation, and `review-check`. |
 | `@vespeneventures/governance/review/github` | Pure normalization of caller-provided GitHub-shaped review evidence. |
+| `@vespeneventures/governance/artifacts` | Deterministic, fail-closed verification for a consumer-owned governed artifact: declared kind + schema version, exact-content checksum, and structural provenance. |
+
+### `./artifacts`: governed artifact verification
+
+A reusable contract for verifying a consumer-owned governed artifact that
+combines a declared kind + schema version, an exact-content checksum, and
+structural source/revision provenance — closing the gap issue #195 opened
+over: a checksum could pass while the schema version was unsupported, or
+provenance could be attached without ever being checked.
+
+```ts
+import { verifyGovernedArtifact, verifyGovernedArtifacts } from "@vespeneventures/governance/artifacts";
+import type { GovernedArtifactManifest, GovernedArtifactVerificationOptions } from "@vespeneventures/governance/artifacts";
+
+const manifest: GovernedArtifactManifest = {
+  kind: "widget-catalog",
+  schemaVersion: "2",
+  checksum: { algorithm: "sha256", digest: "…64 lowercase hex characters…" },
+  provenance: { source: "https://example.invalid/repo", revision: "abc123" },
+};
+
+const options: GovernedArtifactVerificationOptions = {
+  artifactKind: "widget-catalog",
+  supportedSchemaVersions: ["1", "2"],
+};
+
+const findings = verifyGovernedArtifact(manifest, rawContentBytes, options);
+if (findings.length > 0) process.exitCode = 1;
+```
+
+#### The verification order is fixed, deterministic, and documented
+
+`verifyGovernedArtifact` runs five stages, always in this order, and
+short-circuits on the first stage that reports an error:
+
+1. **Caller options** — `artifactKind` non-empty, `supportedSchemaVersions`
+   non-empty. An empty `supportedSchemaVersions` is a **caller
+   configuration error**, never an artifact that trivially passes.
+2. **Manifest structure**, including provenance shape (presence and shape
+   only — folded into the one mandatory stage every successful verification
+   passes through, so provenance can never be attached without being
+   checked).
+3. **Artifact kind** — `manifest.kind` must equal `options.artifactKind`.
+4. **Schema version** — `manifest.schemaVersion` must be one of
+   `options.supportedSchemaVersions`. Checked **before** the checksum,
+   deliberately: this is the exact ordering #195 was opened over. An
+   unsupported schema version is rejected even when the bytes match exactly.
+5. **Exact-content checksum** — delegated entirely to
+   `@vespeneventures/policy`'s own `verifyBinding`; this package hashes
+   nothing itself. Checked last, both because it is the most expensive
+   check and because checking it last means a caller can never see a
+   passing checksum for an artifact whose kind or schema version were never
+   actually accepted.
+
+`verifyGovernedArtifact` returns `[]` only after all five stages ran and
+every one produced zero error findings — there is no path that returns `[]`
+having skipped a stage. See `src/artifacts/verify.ts`'s own doc comment for
+the full reasoning and `src/artifacts/verify.test.ts` for tests that use
+fixtures broken at more than one stage simultaneously to prove only the
+earliest stage's findings are ever reported.
+
+`verifyGovernedArtifacts(entries, options)` verifies a batch sharing one
+trust configuration, prefixing each finding's `path` with that entry's own
+`id`. An **empty** `entries` array is itself a failure
+(`"artifact/empty-batch"`), never a clean `[]` — the same
+"a check that cannot run must fail" discipline documented in
+[CONTRIBUTING.md](../../CONTRIBUTING.md) (precedent: commit `01bd520`).
+
+#### What a clean result proves, and what it does not
+
+A clean result proves the manifest is structurally well-formed (including
+provenance), its `kind` and `schemaVersion` are both accepted by the
+caller, and `content` is byte-for-byte identical to what the checksum
+committed to. It **never** proves the payload is semantically valid under
+that schema version (schema-specific validation stays entirely
+caller-owned), that `provenance.source`/`provenance.revision` are genuine
+or that the named revision actually produced this content (only their
+shape is checked, never their truth), or — the sharpest distinction —
+**who produced the content**. Matching content is not attribution: a
+checksum proves bytes are unchanged from what was committed to, never who
+committed to them. This subpath implements no signature or
+identity-attestation scheme.
+
+#### Digest comparison is delegated, not reimplemented
+
+`checksum.algorithm` is typed as `@vespeneventures/policy`'s own
+`DigestAlgorithm` — currently just `"sha256"` — rather than a second,
+independent union, so this contract can never claim to accept an algorithm
+`policy` itself does not support. Both the digest's SHAPE (is it the right
+number of lowercase hex characters for its algorithm) and its VALUE (does
+it match `content`) are checked by handing a small synthetic
+`PolicyBinding` to `policy`'s own `validateBindingShape`/`verifyBinding` —
+this package never re-derives which algorithms are known, how long a
+digest should be, or how to hash anything.
+
+#### Fail-closed vocabulary
+
+Every finding is a `Finding` from `@vespeneventures/policy`, shaped
+`{ rule, severity, message, path? }` and re-exported from this subpath.
+Rules prefixed `artifact/` are owned here; `policy-id-shape`,
+`digest-algorithm-known`, `digest-shape`, and `digest-mismatch` are
+`@vespeneventures/policy`'s own rule names, passed through verbatim so a
+caller can see exactly which layer reported the problem. See
+`GovernedArtifactFindingRule` (documentation-only — `Finding.rule` itself
+stays plain `string`) for the full vocabulary.
+
+The package owns structural metadata validation and deterministic
+orchestration only. The consumer owns artifact bytes, semantic decoding,
+schema-specific validation, storage, transport, and trust policy —
+including deciding what `provenance.source`/`provenance.revision` actually
+mean and whether to trust them.
 
 ### `./gates` additions: ratchet, override bounds, dependency scope
 
