@@ -68,14 +68,21 @@ export function validateRoutineDeclaration(
     });
   }
 
-  // The target is always a skill, never a document. Pointing a routine at prose
-  // in another repository puts the procedure somewhere the plane can neither
-  // version nor check -- the same failure as inlining it, arrived at politely.
-  if (!registry.skills.includes(declaration.skill)) {
+  // An unqualified target resolves through the plane root's closed list. A
+  // repository-qualified target is resolved by validateRoutineCoverage using
+  // composite identity; this validator still closes the repository boundary.
+  if (declaration.skillRepository === undefined && !registry.skills.includes(declaration.skill)) {
     findings.push({
       rule: "routine/unresolvable-skill",
       severity: "high",
       message: `Routine "${declaration.id}" targets "${declaration.skill}", which does not resolve inside this plane's own skills root.`,
+    });
+  } else if (declaration.skillRepository !== undefined &&
+      !registry.repositories.includes(declaration.skillRepository)) {
+    findings.push({
+      rule: "routine/skill-repository-outside-plane",
+      severity: "high",
+      message: `Routine "${declaration.id}" qualifies its skill with repository "${declaration.skillRepository}", which this plane does not govern.`,
     });
   }
 
@@ -104,13 +111,21 @@ export function validateRoutineDeclaration(
   return findings;
 }
 
+/** Composite identity for a procedure deliberately kept off a schedule. */
+export interface RoutineExclusion {
+  readonly skill: string;
+  /** Owning repository for a repository-scoped skill. Omit for the plane root. */
+  readonly skillRepository?: string;
+  readonly reason: string;
+}
+
 export interface RoutineSetOptions {
   /**
    * Procedures deliberately kept off a schedule, with a reason each. An absent
    * exclusion is indistinguishable from an oversight, and an oversight is what
    * a later reader helpfully corrects.
    */
-  readonly exclusions?: ReadonlyArray<{ readonly skill: string; readonly reason: string }>;
+  readonly exclusions?: readonly RoutineExclusion[];
 }
 
 /**
@@ -139,11 +154,28 @@ export function validateRoutineSet(
   }
 
   for (const exclusion of options.exclusions ?? []) {
-    if (!exclusion.reason || exclusion.reason.trim() === "") {
+    const raw = exclusion as unknown as Record<string, unknown>;
+    const repository = raw.skillRepository;
+    if (repository !== undefined &&
+        (typeof repository !== "string" || repository.trim() === "")) {
+      findings.push({
+        rule: "routine/malformed-exclusion-skill-repository",
+        severity: "high",
+        message: `Excluded procedure "${String(raw.skill ?? "(no skill)")}" has a malformed skillRepository qualifier.`,
+      });
+    } else if (typeof repository === "string" &&
+        !registry.repositories.includes(repository)) {
+      findings.push({
+        rule: "routine/exclusion-skill-repository-outside-plane",
+        severity: "high",
+        message: `Excluded procedure "${String(raw.skill ?? "(no skill)")}" is qualified by repository "${repository}", which this plane does not govern.`,
+      });
+    }
+    if (typeof raw.reason !== "string" || raw.reason.trim() === "") {
       findings.push({
         rule: "routine/exclusion-without-reason",
         severity: "medium",
-        message: `Excluded procedure "${exclusion.skill}" records no reason. An unexplained exclusion reads as an oversight.`,
+        message: `Excluded procedure "${String(raw.skill ?? "(no skill)")}" records no reason. An unexplained exclusion reads as an oversight.`,
       });
     }
   }

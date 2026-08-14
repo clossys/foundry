@@ -33,12 +33,19 @@ Two consequences follow, and both are mechanical rather than advisory:
 A declaration carries an identifier unique within its plane, the name of a
 skill the plane owns, a cadence drawn from a closed list the plane declares, a
 scope expressed as registry identifiers, a mode stating how far the routine may
-act unattended, and a purpose in prose.
+act unattended, and a purpose in prose. Skill identity is composite: omitting
+`skillRepository` targets the declaring plane's closed skill root, while a
+repository-scoped target names its governed owning repository explicitly.
 
 The target is always a skill, never a document. Allowing a routine to point at
 prose in some other repository puts the procedure somewhere the plane can
 neither version nor check, which is the same failure as inlining it, arrived at
 politely. The skill is the procedure.
+
+A plane-scoped skill is always unqualified. This forces it through the ordinary
+validator's closed plane-root list; only a repository-scoped skill carries
+`skillRepository`. The capability registry then confirms the qualified target
+exists and the routine scope is a subset of its declared coverage.
 
 A skill invoked by a clock must declare in its description that it is not
 conversationally triggered. Skills compete for invocation, and a crowded list
@@ -135,3 +142,8 @@ declaration is well-formed, and never that the work runs.
 A procedure deliberately kept off a schedule is recorded with its reason
 alongside the routines. An absent exclusion is indistinguishable from an
 oversight, and an oversight is what a later reader helpfully corrects.
+
+Exclusions use the same composite identity. An unqualified exclusion names a
+plane-root skill. A repository-scoped exclusion adds `skillRepository`, so two
+governed repositories may deliberately exclude different procedures sharing a
+name. The qualifier must be a non-empty governed repository identifier.

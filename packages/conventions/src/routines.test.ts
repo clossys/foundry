@@ -55,6 +55,31 @@ describe("validateRoutineDeclaration", () => {
     expect(findings.map((f) => f.rule)).toContain("routine/unresolvable-skill");
   });
 
+  it("defers a governed repository-owned target to composite registry resolution", () => {
+    expect(validateRoutineDeclaration({
+      ...valid,
+      skill: "ex-clean-workspace",
+      skillRepository: "owned-two",
+    }, registry)).toEqual([]);
+  });
+
+  it("keeps unqualified targets closed to the plane root", () => {
+    expect(validateRoutineDeclaration({
+      ...valid,
+      skill: "ex-clean-workspace",
+    }, registry).map((finding) => finding.rule)).toContain("routine/unresolvable-skill");
+  });
+
+  it("rejects a repository qualifier outside the declaring plane", () => {
+    expect(validateRoutineDeclaration({
+      ...valid,
+      skill: "ex-clean-workspace",
+      skillRepository: "outside-plane",
+    }, registry).map((finding) => finding.rule)).toContain(
+      "routine/skill-repository-outside-plane",
+    );
+  });
+
   // Scope is closed with no escape hatch, deliberately not even a declared one.
   it("rejects a scope reaching outside the declaring plane", () => {
     const findings = validateRoutineDeclaration({ ...valid, scope: ["someone-elses"] }, registry);
@@ -88,6 +113,41 @@ describe("validateRoutineSet", () => {
       exclusions: [{ skill: "ex-review-protocols", reason: "Run on demand; upstream changes are announced." }],
     });
     expect(findings).toEqual([]);
+  });
+
+  it("preserves legacy unqualified exclusions as plane-root identity", () => {
+    expect(validateRoutineSet([valid], registry, {
+      exclusions: [{ skill: "ex-review-protocols", reason: "Run on demand." }],
+    })).toEqual([]);
+  });
+
+  it("disambiguates duplicate exclusion names across governed repositories", () => {
+    expect(validateRoutineSet([valid], registry, {
+      exclusions: [
+        {
+          skill: "ex-clean-workspace",
+          skillRepository: "owned-one",
+          reason: "The first repository has no recurring cleanup tempo.",
+        },
+        {
+          skill: "ex-clean-workspace",
+          skillRepository: "owned-two",
+          reason: "The second repository is cleaned on demand.",
+        },
+      ],
+    })).toEqual([]);
+  });
+
+  it("reports a malformed exclusion qualifier without throwing", () => {
+    expect(validateRoutineSet([valid], registry, {
+      exclusions: [{
+        skill: "ex-clean-workspace",
+        skillRepository: 42 as unknown as string,
+        reason: "Run on demand.",
+      }],
+    }).map((finding) => finding.rule)).toContain(
+      "routine/malformed-exclusion-skill-repository",
+    );
   });
 });
 

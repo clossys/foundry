@@ -5,6 +5,26 @@ All notable changes to `@vespeneventures/conventions` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-08-14
+
+### Added
+
+- Runtime shape guards for decoded registry and routine-query JSON. Malformed
+  documents and nested entries return deterministic findings rather than
+  exceptions, and parse findings remain visible when target resolution also
+  fails.
+- Repository-qualified routine declarations and exclusions using the same
+  composite skill identity as the registry, while unqualified targets retain
+  closed plane-root resolution.
+
+### Changed
+
+- Accepted-gap references now follow an enforceable grammar: a parsed HTTPS
+  issue URL or canonical repository-relative Markdown decision/ADR path.
+  Invalid evidence cannot suppress a missing-coverage finding.
+- Plane-scoped skills reject repository qualifiers, preventing a qualifier from
+  bypassing ordinary plane-root resolution.
+
 ## [0.3.0] - 2026-08-14
 
 ### Added
@@ -94,6 +114,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `CONVENTION_ADAPTERS`, `DOCUMENTS_ROOT`, and `ADAPTERS_ROOT` for reaching the
   shipped defaults without this package performing any I/O.
 
+[0.4.0]: https://github.com/vespeneventures/foundry/releases/tag/conventions-v0.4.0
 [0.3.0]: https://github.com/vespeneventures/foundry/releases/tag/conventions-v0.3.0
 [0.2.0]: https://github.com/vespeneventures/foundry/releases/tag/conventions-v0.2.0
 [0.1.1]: https://github.com/vespeneventures/foundry/releases/tag/conventions-v0.1.1
