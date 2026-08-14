@@ -3,7 +3,7 @@
   "entries": {
     ".github": { "kind": "automation", "purpose": "GitHub workflows and repository configuration" },
     ".gitignore": { "kind": "config", "purpose": "tracked versus generated-file boundary" },
-    ".npmrc.example": { "kind": "config", "purpose": "credential-free registry setup example" },
+    ".npmrc.example": { "kind": "config", "purpose": "authenticated GitHub Packages registry setup example" },
     ".root-entry-policy.json": { "kind": "policy", "purpose": "tracked repository-root allowlist" },
     "AGENTS.md": { "kind": "agent", "purpose": "canonical public agent and contributor policy" },
     "CLAUDE.md": { "kind": "agent-adapter", "purpose": "thin loader for the canonical agent policy" },

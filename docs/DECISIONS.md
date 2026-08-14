@@ -38,34 +38,33 @@ The trade-off, accepted deliberately rather than defaulted into:
   [docs/PUBLISHING.md](PUBLISHING.md#package-visibility)), not a consequence
   of the registry choice itself.
 - Public npmjs would make "anyone can install this, no token required"
-  literally true, and remains an option later — tracked as the P0 blocker
-  in issue #194, since distribution behind a required credential is what
-  currently keeps every package here from being installable by a consumer
-  with no relationship to this org. Moving there is a config change plus
-  separate, owner-only setup on npm's own infrastructure, not a rewrite of
-  this repository:
-  - verify control of `@vespeneventures` on npmjs (a separate, independent
-    namespace from GitHub Packages — owning the org name on GitHub does not
-    reserve it on npmjs),
-  - configure npm trusted publishing (OIDC) for `publish.yml`'s `publish`
-    job, so publishing authenticates with the job's own short-lived GitHub
-    Actions token rather than a stored long-lived `NPM_TOKEN` — the same
-    no-stored-publish-credential shape this repository already uses for
-    GitHub Packages,
-  - add `publishConfig.access: "public"` to each package (npmjs defaults
-    scoped packages to private; GitHub Packages has no equivalent flag),
-  - update `package-scope.json.registry` to `https://registry.npmjs.org` via
-    `node scripts/set-registry.mjs --registry https://registry.npmjs.org`,
-    which also propagates it to every package's `publishConfig.registry`.
-  - Version *history* does not carry over — the two registries are entirely
-    separate systems. Existing GitHub Packages versions can stay published
-    (harmless) or be deprecated pointing at the new home; installers just drop
-    the `@vespeneventures:registry=...` line from their `.npmrc` and reinstall.
+  literally true. It was planned, worked on, and then **cancelled** — see
+  [issue #213](https://github.com/vespeneventures/foundry/issues/213), which
+  supersedes the migration issue (#194) and the credentialless acceptance
+  criteria in its umbrella program (#196). Both are closed as not planned.
 
-  [docs/PUBLISHING.md#7-migrating-to-the-public-npm-registry](PUBLISHING.md#7-migrating-to-the-public-npm-registry)
-  is the authoritative ordered runbook for this move, including which steps
-  are recoverable and which (claiming the npm scope; any real publish) are
-  not.
+  GitHub Packages is therefore the canonical adoption lane, not a staging
+  step on the way somewhere else. Consumers authenticate through whichever
+  plane owns their package credentials.
+
+  The reasoning, since "we changed our mind" is not a reason: the first
+  step of that migration was verifying and, if unclaimed, **claiming
+  `@vespeneventures` on npmjs** — a first-come registration on a shared
+  public namespace, with no supported way to return a name to unclaimed and
+  no recourse for a dispute except npm support. Every later step was
+  recoverable; that one was not. What it bought was credential-free install
+  for a reader with no relationship to this org, and no such reader was
+  waiting: every actual consumer already authenticates through a plane that
+  holds package credentials. Paying an irreversible cost for a hypothetical
+  adopter is exactly the trade this repository's own conventions tell it not
+  to make — see `CONTRIBUTING.md`'s "Supported configurations: the default
+  answer is also no."
+
+  This is recorded rather than deleted because the question recurs. A reader
+  who notices the token requirement will wonder whether it is an oversight;
+  it is not, and the answer should be one link away rather than a
+  rediscovery. The bar to revisit is the same one any speculative capability
+  faces here: a real consumer that needs it, not one that might.
 
 ### Why the name-collision gate runs before every publish, unconditionally
 
