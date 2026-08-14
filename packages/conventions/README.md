@@ -172,7 +172,8 @@ merge disposition.
 The exported classifier is runtime-total as well as typed. A JavaScript caller
 or unchecked decoder that supplies a missing field or a value outside a closed
 vocabulary receives a blocked `observation-invalid` proposal rather than an
-exception or a safe fallthrough.
+exception or a safe fallthrough. Set classification materializes every input
+index, so even a sparse-array hole produces an explicit blocked proposal.
 
 Every result carries `requiresOperatorConfirmation: true`. A safe candidate is
 a reviewable proposal, never deletion authorization. The package exports no

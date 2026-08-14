@@ -381,6 +381,20 @@ describe("classifyWorkspaceCleanup", () => {
         requiresOperatorConfirmation: true,
       },
     ]);
+
+    const sparse: unknown[] = new Array(3);
+    sparse[0] = metadata;
+    sparse[2] = branch;
+    const sparseProposals = classifyWorkspaceCleanupSet(sparse);
+    expect(sparseProposals).toHaveLength(3);
+    expect(sparseProposals[1]).toEqual({
+      repositoryId: null,
+      targetId: null,
+      action: null,
+      status: "blocked",
+      reasonCodes: ["observation-invalid"],
+      requiresOperatorConfirmation: true,
+    });
   });
 
   it("exports classification only, with no cleanup executor", () => {

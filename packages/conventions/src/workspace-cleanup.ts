@@ -378,5 +378,9 @@ export function classifyWorkspaceCleanupSet(
   observations: unknown,
 ): readonly WorkspaceCleanupProposal[] {
   if (!Array.isArray(observations)) return Object.freeze([invalidProposal(observations)]);
-  return Object.freeze(observations.map((observation) => classifyWorkspaceCleanup(observation)));
+  return Object.freeze(
+    Array.from({ length: observations.length }, (_, index) =>
+      classifyWorkspaceCleanup(observations[index]),
+    ),
+  );
 }
