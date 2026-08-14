@@ -374,6 +374,33 @@ function resolvesLocally(citedPath) {
   return existsSync(resolve(rootAbs, citedPath));
 }
 
+// Filenames that name a PUBLIC, third-party agent-instruction format rather
+// than a document in anyone's repository. When prose says a policy lives in
+// "layered AGENTS.md", or that a skill is defined by a "SKILL.md", it is naming
+// a convention an outside reader can look up — not pointing at a file in this
+// package that they will fail to open. That is the exact distinction CLASS 1
+// draws, and these fall on the harmless side of it.
+//
+// The decisive argument is narrower than "these are well known", though, and it
+// is what keeps this from being a convenience hole: check-public-safety.mjs
+// FORBIDS these very filenames from existing anywhere in this repository
+// outside two exact root paths. So for any package that documents agent
+// conventions, "make the citation resolve locally" is not a fix that was
+// declined — it is a fix the safety gate refuses to allow. A rule no package
+// can ever satisfy is not enforcing anything; it is training contributors to
+// route around the checker.
+//
+// Kept deliberately short. A name earns a place here only if it is a published
+// cross-vendor format AND forbidden to exist here as a real file. An internal
+// SHOUTY-KEBAB convention doc — the original motivating case — satisfies
+// neither, and still reports.
+const PUBLIC_FORMAT_FILENAMES = new Set([
+  "AGENTS.md", // the agents.md cross-vendor instruction convention
+  "CLAUDE.md", // vendor instruction loader
+  "GEMINI.md", // vendor instruction loader
+  "SKILL.md", // the Agent Skills package format
+]);
+
 function checkClass1(file, lines) {
   lines.forEach((text, i) => {
     const matches = [];
@@ -389,6 +416,10 @@ function checkClass1(file, lines) {
     const resolved = new Map(matches.map((t) => [t, resolvesLocally(t)]));
     for (const t of matches) {
       if (resolved.get(t)) continue;
+      // Only the BARE name is format vocabulary. A path-prefixed citation
+      // (`docs/AGENTS.md`) is a real pointer at a real file, and a dangling one
+      // is exactly this class's job regardless of what the file is called.
+      if (PUBLIC_FORMAT_FILENAMES.has(t)) continue;
       const echoesResolvedSibling = matches.some((other) => other !== t && resolved.get(other) && other.endsWith(t));
       if (echoesResolvedSibling) continue;
       report(1, "high", file, i + 1, text, `cites "${t}" — does not resolve relative to the scanned package directory; a reader here cannot open it`);

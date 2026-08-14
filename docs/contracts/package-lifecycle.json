@@ -12,6 +12,7 @@
       "forwardsToReplacement": true
     },
     { "name": "@vespeneventures/comms", "status": "published" },
+    { "name": "@vespeneventures/conventions", "status": "published" },
     { "name": "@vespeneventures/copy", "status": "published" },
     { "name": "@vespeneventures/deployment", "status": "published" },
     { "name": "@vespeneventures/domain", "status": "published" },
@@ -39,6 +40,7 @@
     { "name": "@vespeneventures/governance", "status": "published" },
     { "name": "@vespeneventures/ledger", "status": "published" },
     { "name": "@vespeneventures/policy", "status": "published" },
+    { "name": "@vespeneventures/provisioning", "status": "published" },
     {
       "name": "@vespeneventures/release",
       "status": "deprecated",

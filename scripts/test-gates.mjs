@@ -807,6 +807,54 @@ try {
     check("exits 1 overall (the foreign + install-instruction findings still fail the gate)", r.code === 1, `exit was ${r.code}`);
   }
 
+  // ------------- check-contamination-classes CLASS 1: public agent-format names
+  // CLASS 1 flagged every bare SHOUTY .md name as a dangling private-doc
+  // citation, including AGENTS.md, CLAUDE.md, GEMINI.md and SKILL.md. For a
+  // package that documents agent conventions, those names ARE the subject
+  // matter, and the "fix" the finding asks for is impossible here:
+  // check-public-safety.mjs forbids those exact filenames from existing outside
+  // two root paths, so the citation can never be made to resolve locally. A
+  // rule no package can satisfy trains contributors to route around the
+  // checker. The exemption is for the BARE name only -- this proves a
+  // path-prefixed citation and an internal convention doc both still fail.
+  console.log("\n# check-contamination-classes CLASS 1: public agent-format filenames are vocabulary, not citations");
+  {
+    const dir = join(work, "contam-class1-formats");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "@vespeneventures/probe", version: "1.0.0" }, null, 2) + "\n");
+    writeFileSync(
+      join(dir, "formats.md"),
+      "Standing policy lives in layered `AGENTS.md`, loaded by a thin `CLAUDE.md` or `GEMINI.md`.\nA workflow is a `SKILL.md`.\n",
+    );
+    writeFileSync(join(dir, "prefixed.md"), "See docs/AGENTS.md for the full policy.\n");
+    writeFileSync(join(dir, "internal.md"), "See KIT-CONVENTIONS.md for the house rules.\n");
+
+    const r = run("node", [CONTAM, dir, "--class", "1", "--json"]);
+    let report;
+    try {
+      report = JSON.parse(r.out);
+    } catch {
+      report = { findings: [] };
+    }
+    const hit = (f) => (report.findings ?? []).some((x) => x.file === f);
+    check(
+      "bare public agent-format filenames are NOT flagged",
+      !hit("formats.md"),
+      `formats.md was flagged: ${JSON.stringify(report.findings)}`,
+    );
+    check(
+      "a path-prefixed citation to the same name IS still flagged (the exemption is the bare name only)",
+      hit("prefixed.md"),
+      `prefixed.md was not flagged: ${JSON.stringify(report.findings)}`,
+    );
+    check(
+      "an internal SHOUTY-KEBAB convention doc is still flagged (proves the fix didn't just stop checking)",
+      hit("internal.md"),
+      `internal.md was not flagged: ${JSON.stringify(report.findings)}`,
+    );
+    check("exits 1 overall (the prefixed + internal findings still fail the gate)", r.code === 1, `exit was ${r.code}`);
+  }
+
   // --------------- check-contamination-classes CLASS 4: shallow clones fail closed
   // CLASS 4's git-history read for "did this repo ever publish that name" is
   // silently WRONG, not absent, on a shallow checkout: `git log` still
