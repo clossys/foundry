@@ -47,8 +47,13 @@ surfaces and live in `@vespeneventures/surface/web`.
 - **`shell`** — the persistent frame around content (nav, layout chrome)
   that provides the slots content fills. One per app; survives route
   changes that swap out the content underneath it. `Shell` ships with five
-  slots (`Header`, `SideNav`, `Main`, `Rail`, `Footer`); `Toaster` — a
-  runtime service, not itself a rung of this ladder — ships alongside it.
+  slots (`Header`, `SideNav`, `Main`, `Rail`, `Footer`) for an
+  authenticated-app frame; `SiteHeader`, `NavShell`, `SiteFooter`, and
+  `SkipLink` ship alongside it for the simpler persistent chrome a public
+  SITE (as opposed to an app behind auth) needs — a brand/nav/actions
+  header, a responsive nav with a mobile drawer, grouped footer link
+  columns, and the keyboard affordance to bypass either. `Toaster` — a
+  runtime service, not itself a rung of this ladder — ships alongside both.
   See "Shell" below.
 - **`charts`** — dependency-free SVG chart primitives: `ChartFrame` (the
   shared plot/axes/grid/legend/table container), `BarChart`, `LineChart`,
@@ -2470,14 +2475,138 @@ files:
 ```
 
 `MarketingNav`, `AccountMenu`, `MemberNav`, `StaffToolbar`, `StaffNav`, and
-`AuditLog` are each the CONSUMER's own composition of atoms — this package
-ships no `SiteHeader`/`AppHeader` block. A header is where brand lives, and
-shipping a pre-built one would recreate, one layer up, exactly the
-`mode`-prop failure "Placement rules" above warns against: a single
-component slowly accreting a named mode for every consumer's structural
-divergence, with every combination of those modes untested. Three headers
-in three files share no code that can break that way, because there's no
-shared code to break.
+`AuditLog` are each the CONSUMER's own composition of atoms — `Shell.Header`
+itself stays a plain, unopinionated slot, and ships no `AppHeader` block of
+its own. A header is where brand lives, and shipping a pre-built one INTO
+`Shell` would recreate, one layer up, exactly the `mode`-prop failure
+"Placement rules" above warns against: a single component slowly accreting
+a named mode for every consumer's structural divergence, with every
+combination of those modes untested. Three headers in three files share no
+code that can break that way, because there's no shared code to break.
+
+This is a different question from "does this package ship a header
+component AT ALL" — it does now, at the narrower, `Shell.Header`-shaped
+scope of `SiteHeader` below: unlike the three headers above (each a
+one-off composition for ONE route group of ONE app), a public site's own
+brand/nav/actions header is close to always the exact same three regions,
+site to site, which is what makes it worth shipping as a real component
+rather than always-bespoke consumer code — see `SiteHeader`'s own doc
+comment for the placement reasoning in full.
+
+### Site chrome: `SkipLink`, `SiteHeader`, `NavShell`, `SiteFooter`
+
+`Shell` above is the app-shell frame — five slots, arbitrary consumer
+content in each, built for the header/side-nav/rail/footer shape an
+authenticated app tends to need. A public SITE (a marketing page, a docs
+site, anything with no side navigation and no per-route chrome swap) needs
+a simpler, more opinionated set: a brand/nav/actions header, the
+navigation itself with a mobile drawer, grouped footer link columns, and
+the skip link that makes either bypassable by keyboard. These four ship
+from this same `/shell` subpath — the same placement reasoning `Shell`
+itself already establishes applies to every one of them: run each through
+this package's own placement test #1 ("does it survive a route change?")
+first, and a site header/footer/nav survive it exactly the way `Shell`'s
+own regions do, which is what puts all four here rather than in `blocks`.
+
+```tsx
+// app/layout.tsx
+import { NavShell, SiteFooter, SiteHeader, SkipLink } from "@vespeneventures/ui/shell";
+import { Link } from "@vespeneventures/ui/atoms";
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <>
+      <SkipLink targetId="main-content">Skip to content</SkipLink>
+      <SiteHeader
+        brand={<Link href="/" variant="standalone">Acme</Link>}
+        nav={
+          <NavShell aria-label="Primary">
+            <Link href="/products" variant="standalone">Products</Link>
+            <Link href="/pricing" variant="standalone">Pricing</Link>
+          </NavShell>
+        }
+        actions={<Link href="/sign-in" variant="standalone">Sign in</Link>}
+      />
+      <main id="main-content" tabIndex={-1}>
+        {children}
+      </main>
+      <SiteFooter
+        columns={
+          <>
+            <SiteFooter.Column heading="Product">
+              <Link href="/products" variant="muted">Products</Link>
+              <Link href="/pricing" variant="muted">Pricing</Link>
+            </SiteFooter.Column>
+            <SiteFooter.Column heading="Company">
+              <Link href="/about" variant="muted">About</Link>
+            </SiteFooter.Column>
+          </>
+        }
+        secondary={
+          <>
+            <span>© 2026 Acme</span>
+            <Link href="/privacy" variant="muted">Privacy</Link>
+          </>
+        }
+      />
+    </>
+  );
+}
+```
+
+Every string above (`"Acme"`, `"Products"`, `"Skip to content"`, ...) is
+placeholder content this example supplies — the same "this package ships
+no real words" rule every other example in this README follows. Nothing
+about the four components themselves hardcodes a label, a brand name, or a
+footer line; every one arrives as a prop or a child.
+
+`SkipLink` takes the jump target's `id` (`targetId`) and its own visible
+text (`children`) as props — unlike `Shell`'s internal skip link, which is
+wired to `Shell.Main`'s own fixed, package-owned id, a site's own page
+structure decides what "content" means, so this version assumes nothing
+about where it points. Give the target element a matching `id` and
+`tabIndex={-1}` (a plain `<main>` isn't natively focusable).
+
+`SiteHeader` renders a real `<header>` — the page's `banner` landmark,
+provided it sits at the top level rather than nested inside `<main>`/
+`<article>`/`<aside>`/`<nav>`/`<section>` (nesting strips the implicit
+role per the HTML/ARIA spec, the same placement rule `Shell.Header` and
+`Shell.Footer` already carry). Three slots that differ in kind — `brand`
+(required), `nav`, `actions` — the same "Slots, not a `mode`/`variant`
+prop" shape every block in this README already follows; see `SiteHeader`'s
+own doc comment for why it's `shell`, not `blocks`, despite reading like a
+`PageHeader`-shaped composition of named regions.
+
+`NavShell` is the responsive half: an ordinary inline `<nav>` from the
+`tablet` breakpoint up, and a trigger-plus-drawer below it — CSS-only
+breakpoint switching, no JS media-query state, so the correct layout is
+already there on first paint before hydration ever runs. The drawer is
+built on the same react-aria-components `DialogTrigger`/`ModalOverlay`/
+`Modal`/`Dialog` primitives this package's own `Dialog` atom uses (see
+that atom's own doc comment for the underlying mechanism), which is what
+gives it, for free: focus moves into the drawer on open and is trapped
+there; Escape always closes it; the trigger exposes `aria-expanded`/
+`aria-haspopup` automatically; focus returns to the trigger on close;
+everything outside the drawer is hidden from assistive technology while
+it's open (`ariaHideOutside`, the same mechanism `Menu`'s and `Select`'s
+own popovers already rely on); and the whole flow — open, navigate,
+close — works with the keyboard alone. See `NavShell`'s own doc comment
+for the one real trade-off this design makes (`children` renders twice,
+once per breakpoint's own nav, so exactly one is ever visible and
+reachable at a time) and why it's the correct one given this package's
+"no JS-dependent layout" rule.
+
+`SiteFooter` renders a real `<footer>` — the page's `contentinfo`
+landmark, the same top-level-placement rule `SiteHeader` follows. Two
+slots that differ in kind: `columns` (a responsive grid of
+`SiteFooter.Column`s this component lays out) and `secondary` (a row
+below a hairline divider for a copyright line, legal links, a locale
+switcher). `SiteFooter.Column` ships as a sub-component — a heading plus
+its links — the same `Object.assign` shape `Dialog.Heading`/`Menu.Item`
+already use in this package, composed as JSX rather than a data array for
+the same reason `RadioGroup.Radio`'s own section documents: real footer
+columns differ column-by-column in a way that reads more naturally as
+hand-written markup.
 
 ### `Toaster` and `toast`
 
@@ -3174,6 +3303,15 @@ not a grab-bag).
 | `ShellMainProps` | type | Props for `Shell.Main`: `children`, plus every native `<main>` attribute except `id` (fixed, for the skip link). |
 | `ShellRailProps` | type | Props for `Shell.Rail`: `children`, plus every native `<aside>` attribute. |
 | `ShellFooterProps` | type | Props for `Shell.Footer`: `children`, plus every native `<footer>` attribute. |
+| `SkipLink` | component | Keyboard affordance to bypass nav chrome and jump straight to a page's content. Visually hidden until focused. |
+| `SkipLinkProps` | type | Props for `SkipLink`: `targetId` (the jump target's `id`), `children` (the link's own visible text — no built-in copy), `className`. |
+| `SiteHeader` | component | Public-site top chrome: brand slot, primary navigation slot, actions slot. Renders the page's `banner` landmark. |
+| `SiteHeaderProps` | type | Props for `SiteHeader`: `brand` (required), `nav`, `actions`, plus every native `<header>` attribute. |
+| `NavShell` | component | The responsive half of a public site's navigation: an inline `<nav>` from `tablet` up, a trigger-plus-drawer below it. |
+| `NavShellProps` | type | Props for `NavShell`: `children` (the nav links, rendered in both the desktop row and the drawer), `aria-label` (default `"Primary"`), `triggerLabel` (default `"Menu"`), `closeLabel` (default `"Close menu"`), `className`, plus most of react-aria-components' own `DialogTrigger` props (`isOpen`, `defaultOpen`, `onOpenChange`). |
+| `SiteFooter` | component | Public-site bottom chrome: grouped link columns, a secondary/legal row. Carries `SiteFooter.Column`. Renders the page's `contentinfo` landmark. |
+| `SiteFooterProps` | type | Props for `SiteFooter`: `columns`, `secondary`, plus every native `<footer>` attribute. |
+| `SiteFooterColumnProps` | type | Props for `SiteFooter.Column`: `heading`, `children` (the column's own links), `className`. |
 | `Toaster` | component | The toast viewport — mount once, anywhere in the same tree as `Shell`. |
 | `ToasterProps` | type | Props for `Toaster`: `aria-label` (default `"Notifications"`), `className`. |
 | `toast` | value | Imperative toast API: `toast(title, options?)`, `toast.success`/`.error`/`.warning`/`.info`, `toast.dismiss`, `toast.dismissAll`. |
@@ -3227,7 +3365,8 @@ Beyond render/interaction/keyboard/ARIA tests per atom (`Button.test.tsx`,
 `Form.test.tsx`, `FieldGroup.test.tsx`, `ConfirmDialog.test.tsx`,
 `Toolbar.test.tsx`, `NavGrid.test.tsx`, `SectionHeader.test.tsx`), per view
 (`ErrorView.test.tsx`, `AuthView.test.tsx`), per shell component
-(`Shell.test.tsx`, `Toaster.test.tsx`), per chart component
+(`Shell.test.tsx`, `Toaster.test.tsx`, `SkipLink.test.tsx`,
+`SiteHeader.test.tsx`, `NavShell.test.tsx`, `SiteFooter.test.tsx`), per chart component
 (`ChartFrame.test.tsx`, `BarChart.test.tsx`, `LineChart.test.tsx`,
 `Sparkline.test.tsx`, plus `internal/scale.test.ts` and
 `internal/chart-vars.test.ts` for the scale-boundary and
@@ -3527,20 +3666,34 @@ page can hold two lists, two forms, or several summary panels at once, so
 each of those is a block a consumer composes, not a view this package
 could pre-assemble without being wrong for most consumers.
 
-**Shell:** `Shell` ships five slots (`Header`, `SideNav`, `Main`, `Rail`,
-`Footer`) and nothing else — no `SiteHeader`/`AppHeader`/`AppFooter`
-block, no nav-item component, and no PER-ITEM icon assignment of its own
-(that's still true even though this package as a whole now ships a glyph
-set at `./icons` — `Shell` doesn't reach for it on a consumer's behalf; a
-consumer picks and places an `Icon` in whichever slot needs one, same as
-any other atom). Headers and navigation
-are where brand and product-specific structure live; a consumer composes
-those from atoms and passes them into the relevant slot (see "Shell" →
-"How differing chrome is handled" above). No modal/dialog manager and no
-command palette either, despite both being named as runtime-service
-examples in "Placement rules" above alongside the toast stack that DOES
-ship — added only once something real needs them, the same policy this
-README states for atoms and blocks.
+**Shell:** `Shell` itself ships five slots (`Header`, `SideNav`, `Main`,
+`Rail`, `Footer`) and nothing else — no `AppHeader`/`AppFooter` block of
+its own baked into `Shell.Header`/`Shell.Footer`, no nav-item component,
+and no PER-ITEM icon assignment of its own (that's still true even though
+this package as a whole now ships a glyph set at `./icons` — `Shell`
+doesn't reach for it on a consumer's behalf; a consumer picks and places an
+`Icon` in whichever slot needs one, same as any other atom). An
+authenticated app's own header/nav are where brand and product-specific
+structure live; a consumer composes those from atoms and passes them into
+the relevant `Shell` slot (see "Shell" → "How differing chrome is handled"
+above). No modal/dialog manager and no command palette either, despite
+both being named as runtime-service examples in "Placement rules" above
+alongside the toast stack that DOES ship — added only once something real
+needs them, the same policy this README states for atoms and blocks.
+
+This package DOES now ship `SiteHeader`/`SiteFooter` — at the narrower,
+public-SITE-chrome scope "Site chrome" above describes, alongside
+`NavShell` and `SkipLink` — rather than as `Shell`'s own `AppHeader`/
+`AppFooter`. The distinction is real, not a loophole around the paragraph
+above: `Shell`'s five slots are built for an authenticated app whose
+header/nav genuinely differ per route group (see the three-`layout.tsx`
+example above), where a single shipped header would need to keep
+absorbing every consumer's structural divergence; a public site's own
+header/footer are close to always the same three-or-two regions,
+site to site, which is what makes THEM worth shipping as real components.
+No `AppNavItem`/`AppFooterColumn` or similar per-item component beyond
+`SiteFooter.Column` either, for the same reason atoms/blocks stay this
+short elsewhere in this README: added only once something real needs it.
 
 **Charts:** four ship — `ChartFrame`, `BarChart`, `LineChart`, `Sparkline`
 — no `PieChart`/`DonutChart` (part-to-whole reads reliably only up to
