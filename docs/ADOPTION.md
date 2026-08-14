@@ -20,11 +20,14 @@ deliberately retained by that owning plane. [#216](https://github.com/vespeneven
 tracks the integration boundary. This ledger performs neither repository
 action.
 
-## Available Foundry packages
+## Published Foundry package candidates
 
-These packages have lifecycle status `published` and are valid new adoption
-targets. A consumer installs only the subset it needs through authenticated
-GitHub Packages access.
+These packages have lifecycle status `published`, but none is an adoption-ready
+target until its lifecycle entry records the required qualification evidence.
+Issue [#213](https://github.com/vespeneventures/foundry/issues/213) owns that
+14-package exact-version install and export or CLI proof. After qualification,
+a consumer installs only the subset it needs through authenticated GitHub
+Packages access.
 
 | Capability | Package or subpath | Consumer-owned remainder |
 | --- | --- | --- |
@@ -45,8 +48,9 @@ GitHub Packages access.
 
 `@vespeneventures/consent` remains `incubating`, so it is not an available
 registry adoption target. Deprecated compatibility packages remain published
-only for migration; new consumers use their lifecycle replacement. Retired
-names remain reserved and must not be reused or deleted.
+only for migration; after qualification, a newly adopting consumer uses the
+lifecycle replacement. Retired names remain reserved and must not be reused or
+deleted.
 
 ## Reusable capability not yet adoption-ready
 
