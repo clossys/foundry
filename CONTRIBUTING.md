@@ -113,9 +113,16 @@ Practically:
 
   So a proposal to "also support X" needs the same evidence a new package
   needs: a real consumer that needs it, not a hypothetical adopter who might.
-  Speculative compatibility is cheap to add and expensive to keep. A proposal
-  to ship a second, non-Tailwind styling path for `ui` was declined on exactly
-  these grounds (#174).
+  Speculative compatibility is cheap to add and expensive to keep. The bar is
+  evidence, not a permanent no: a proposal to ship a second, non-Tailwind
+  styling path for `ui` was declined while it was speculative — no real
+  consumer needed it (#174) — then reopened once a real external consumer
+  requirement existed, and shipped as a narrow, evidence-gated exception
+  rather than the original open-ended sketch: `@vespeneventures/ui/
+  compiled.css`, a generated stylesheet scoped to `atoms` only (see
+  `packages/ui/README.md`'s "Framework-portable components, without
+  Tailwind"). Declined, then reopened, then shipped narrowly — that arc, not
+  the bare decline alone, is what this convention is actually asking for.
 
   The obligation this creates: **if you require something, say so loudly when
   it is missing.** Requiring a prerequisite is legitimate; failing silently

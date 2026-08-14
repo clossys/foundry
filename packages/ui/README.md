@@ -101,6 +101,7 @@ smallest stable subpath that owns what you need:
 | `@vespeneventures/ui/tokens` | Typed `TOKENS`, brand CSS parsing, the brand-coverage gate, WCAG colour math (`contrastRatio` and friends), the contrast gate (`checkTokenContrast`, `CONTRAST_PAIRS`), and `assertTokenStylesLoaded` (dev-only token-CSS presence check — see "Setup" below). No React runtime. |
 | `@vespeneventures/ui/tokens.css` | Neutral primitive custom-property defaults; works without Tailwind. |
 | `@vespeneventures/ui/theme.css` | Optional Tailwind v4 wiring; imports `tokens.css` itself. |
+| `@vespeneventures/ui/compiled.css` | GENERATED, precompiled utility CSS for `atoms` — the framework-portable path for a consumer with no Tailwind pipeline. Imports nothing itself; load after `tokens.css`. See "Framework-portable components, without Tailwind" below. |
 | `@vespeneventures/ui/brand-template.css` | Copy-and-fill template for a consumer brand binding. |
 | `@vespeneventures/ui/icons` | Tree-shakeable glyph data. |
 | `@vespeneventures/ui/atoms`, `/blocks`, `/shell`, `/charts` | Reusable React visual primitives. |
@@ -215,6 +216,103 @@ Interactive controls use React Aria for keyboard, focus, and semantic
 contracts. Noninteractive components expose semantic labels where needed,
 the token suite checks contrast in light and dark themes, and every shipped
 animation or transition has a Tailwind `motion-reduce` override.
+
+### Framework-portable components, without Tailwind
+
+Everything above (`theme.css` + `@source`) assumes a Tailwind v4 pipeline —
+this package's deliberate, opinionated, and still the only *required* setup
+(see [CONTRIBUTING.md](../../CONTRIBUTING.md)'s "Supported configurations:
+the default answer is also no"). A consumer whose build has no Tailwind
+pipeline at all — and does
+not want to add one solely for this dependency — can still render this
+package's **`atoms`** with real styling, no Tailwind, no `@source`:
+
+```css
+@import "@vespeneventures/ui/tokens.css";
+@import "@vespeneventures/ui/compiled.css";
+```
+
+```bash
+npm install @vespeneventures/ui react react-dom react-aria-components \
+  tailwind-merge @internationalized/date
+# tailwindcss itself is NOT needed on this path
+```
+
+That's the whole setup. No `@source` line, no bundler-specific symlink-
+following behavior to get right, no Tailwind dependency at all.
+
+**Scope: `atoms` only.** `compiled.css` covers this package's 31 atoms — the
+self-contained base layer that composes no other component (see "Placement
+rules" below). `blocks`, `shell`, `charts`, and `theme` remain Tailwind-native
+only for now; a consumer on this path composes layout from `atoms` and plain
+markup the same way any consumer already assembles blocks from atoms (see
+"Placement rules" — "most page-level composition belongs to the consumer").
+Extending this same generator to `blocks`/`shell`/`charts`/`theme` is a
+same-shape, incremental follow-up once this narrower contract has real
+production mileage — see the introducing PR (#174) for the full reasoning
+behind starting here.
+
+**What `compiled.css` is.** A GENERATED file — never hand-edited, checked by
+`npm run check:compiled-css` (also runs as part of `npm test`, so CI catches
+drift automatically) and regenerated with `npm run generate:compiled-css`.
+It is produced by a REAL Tailwind v4 compile (`src/compiled-css/generate.ts`,
+using the real `tailwindcss` package's own `compile()` API) of every class
+candidate `src/compiled-css/class-scan.ts` finds by statically scanning
+`src/atoms/`'s own source — the same `VARIANT_CLASSES`/`SIZE_CLASSES`-style
+tables every atom already uses (see "No `class-variance-authority`" below).
+It is not a second, hand-maintained approximation of what `bg-accent` means:
+it is Tailwind's own real compiled answer for the SAME tokens, precomputed
+once instead of recompiled at every consumer's own build time.
+
+**Override precedence.** Every declaration `compiled.css` emits lives inside
+a single named CSS layer, `foundry-ui-compiled`, declared after this
+package's own `foundry-ui-tokens` layer (`tokens.css`) — never a bare/
+unlayered rule, for the exact reason `tokens.css` itself moved off unlayered
+`:root` in #148 (an unlayered rule always outranks ANY layered rule
+regardless of import order). Per the CSS Cascading Layers spec:
+
+- A consumer's own **unlayered** CSS (a plain stylesheet, CSS Modules,
+  most component-scoped styling systems) always wins on a conflicting
+  property, regardless of source/import order.
+- A consumer's own CSS inside a **named layer declared after**
+  `foundry-ui-compiled` wins too.
+- A consumer's own `className` prop is merged the same way it always is on
+  this package's atoms — via the internal `cx()`/`tailwind-merge` helper —
+  independent of which stylesheet path is loaded; this behavior is already
+  covered by every atom's own tests (e.g. `Button.test.tsx`) and does not
+  change under the compiled-CSS path.
+
+**Load exactly one path, never both.** `compiled.css` and the Tailwind-native
+path (`theme.css` + a consumer's own `@source`-driven Tailwind build) both
+generate declarations for the same class names, in different layers. Loading
+both is not verified to be safe or idempotent — this repository has no
+headless browser to check the resulting cascade in a real engine (see
+below), so rather than claim untested double-load safety, the rule is
+explicit: pick ONE path per project. There is no runtime double-load
+detector (considered and deliberately not built — there is no reliable,
+low-false-positive signal available without inspecting live CSSOM rules in a
+real browser, the same cost this repository already declined elsewhere for
+`@vespeneventures/ui`'s own test setup; see the introducing PR).
+
+**What is and is not verified.** `src/compiled-css/coverage.test.tsx` renders
+real atoms and cross-checks every class actually in the DOM against a fresh
+`compiled.css`; `override.test.ts` proves — structurally, from the text of
+the generated CSS itself — that 100% of its declarations sit inside the
+named layer, which is what makes the override precedence above a spec
+guarantee rather than a claim. What is **not** verified anywhere in this
+package's test suite: the actual resolved `getComputedStyle` value a real
+browser produces for a component under this path, in either theme, with or
+without a brand binding. jsdom (this package's test environment) has no CSS
+engine — it does not parse or apply stylesheets at all — and this repository
+has no headless browser (declined elsewhere, in #163, for the same
+dependency-cost reason [CONTRIBUTING.md](../../CONTRIBUTING.md)'s "the
+default answer is no" states generally). Because `compiled.css` is a real
+Tailwind compile of the
+same tokens the Tailwind-native path already compiles, its declarations are
+byte-identical to what a consumer's own Tailwind build would produce for the
+same classes — this is a structural argument about how the file is produced,
+not a substitute for a real-browser visual check a consumer cannot get from
+this package's own CI today.
 
 ### Migration from split packages
 

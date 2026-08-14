@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.1] - 2026-08-13
+
+### Changed
+
+- Widened the declared `@vespeneventures/ui` dependency range from
+  `~0.11.0` to `~0.12.0` to cover `ui`'s `0.12.0` minor release
+  (`@vespeneventures/ui/compiled.css` — a framework-portable stylesheet for
+  `atoms`; see that package's own CHANGELOG). No behavior change in this
+  package itself — a dependency-range bump required whenever a 0.x
+  dependency's minor version moves, so this package keeps resolving `ui`
+  as a local workspace link rather than falling back to a registry fetch.
+
 ## [0.4.0] - 2026-08-13
 
 ### Added
@@ -73,6 +85,7 @@
   contributes no `CopyResolution` — it is never resolved through `CopyRef`
   — so it appears nowhere in `resolutions`/manifest copy provenance; that
   absence is documented behavior, not a gap.
+
 ## [0.3.1] - 2026-08-13
 
 ### Changed
