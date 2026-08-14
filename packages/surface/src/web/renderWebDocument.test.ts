@@ -1,10 +1,14 @@
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { ComposeDocument } from "../core/index.js";
 import { RenderError } from "../internal/errors.js";
+import { createWebRenderer } from "./internal/createWebRenderer.js";
+import { defineWebTemplate } from "./internal/defineWebTemplate.js";
+import { listWebTemplateNames } from "./internal/webTemplates.js";
 import { REACT_DECLARED_RANGE, renderWebDocument } from "./renderWebDocument.js";
 
 const baseErrorDoc: ComposeDocument = {
@@ -236,6 +240,164 @@ describe("renderWebDocument — success paths", () => {
     const html = renderToStaticMarkup(element);
     expect(html).toContain("Second");
     expect(html).not.toContain("First");
+  });
+});
+
+describe("renderWebDocument — module-level sugar is unaffected by defineWebTemplate/createWebRenderer existing (issue #175 compatibility)", () => {
+  it("listWebTemplateNames() still returns exactly AuthView/ErrorView/MarketingView", () => {
+    expect(listWebTemplateNames().sort()).toEqual(["AuthView", "ErrorView", "MarketingView"]);
+  });
+
+  it("renderWebDocument still renders AuthView exactly as before, with zero change to the call", () => {
+    const doc: ComposeDocument = {
+      id: "acme-signin",
+      channel: "web",
+      template: "AuthView",
+      meta: { channel: "web", title: "Sign in", description: "d" },
+      bindings: [
+        { slot: "heading", value: "Sign in" },
+        { slot: "form", value: "form" },
+      ],
+    };
+    const { element } = renderWebDocument(doc);
+    expect(renderToStaticMarkup(element)).toContain("Sign in");
+  });
+});
+
+describe("renderWebDocument — node-kind slots (options.nodes), via a consumer-defined template", () => {
+  const WIDGET_TEMPLATE = defineWebTemplate({
+    name: "WidgetView",
+    flow: {
+      slots: [
+        { key: "heading", required: true },
+        { key: "widget", required: true },
+        { key: "caption" },
+      ],
+    },
+    slotKinds: { widget: ["node"] },
+    repeatingSlots: [{ key: "items" }],
+    build: (content) => createElement("section", null, createElement("h1", null, content.heading), content.widget, content.caption ?? null),
+  });
+
+  const rendererFor = (template = WIDGET_TEMPLATE) => createWebRenderer({ templates: [template] });
+
+  const baseWidgetDoc: ComposeDocument = {
+    id: "acme-widget",
+    channel: "web",
+    template: "WidgetView",
+    meta: { channel: "web", title: "Widget", description: "d" },
+    bindings: [{ slot: "heading", value: "Acme Widget Page" }],
+  };
+
+  it("renders a real caller-owned ReactElement into a node-kind slot, end to end via react-dom/server", () => {
+    const renderer = rendererFor();
+    const widgetNode = createElement("button", { type: "button" }, "Click me");
+    const { element } = renderer.renderWebDocument(baseWidgetDoc, { nodes: [{ slot: "widget", node: widgetNode }] });
+    const html = renderToStaticMarkup(element);
+    expect(html).toContain("Acme Widget Page");
+    expect(html).toContain('<button type="button">Click me</button>');
+  });
+
+  it("throws RenderError('empty-output') when a required node-kind slot has no matching entry in options.nodes", () => {
+    const renderer = rendererFor();
+    try {
+      renderer.renderWebDocument(baseWidgetDoc);
+      expect.unreachable();
+    } catch (error) {
+      expect(error).toBeInstanceOf(RenderError);
+      expect((error as RenderError).reason).toBe("empty-output");
+      expect((error as Error).message).toContain("widget");
+    }
+  });
+
+  it("throws RenderError('resolution-failed') when a node targets a slot the template does not declare at all", () => {
+    const renderer = rendererFor();
+    try {
+      renderer.renderWebDocument(baseWidgetDoc, { nodes: [{ slot: "does-not-exist", node: {} }] });
+      expect.unreachable();
+    } catch (error) {
+      expect(error).toBeInstanceOf(RenderError);
+      expect((error as RenderError).reason).toBe("resolution-failed");
+      expect((error as Error).message).toContain("does-not-exist");
+    }
+  });
+
+  it("throws RenderError('resolution-failed') when a node targets a real flowed slot whose slotKinds does not include 'node'", () => {
+    const renderer = rendererFor();
+    try {
+      renderer.renderWebDocument(baseWidgetDoc, { nodes: [{ slot: "heading", node: {} }] });
+      expect.unreachable();
+    } catch (error) {
+      expect(error).toBeInstanceOf(RenderError);
+      expect((error as RenderError).reason).toBe("resolution-failed");
+      expect((error as Error).message).toContain("heading");
+      expect((error as Error).message).toContain("node");
+    }
+  });
+
+  it("throws RenderError('resolution-failed') when a single node targets a slot that is REPEATING on this template, not flowed", () => {
+    const renderer = rendererFor();
+    try {
+      renderer.renderWebDocument(baseWidgetDoc, { nodes: [{ slot: "items", node: {} }] });
+      expect.unreachable();
+    } catch (error) {
+      expect(error).toBeInstanceOf(RenderError);
+      expect((error as RenderError).reason).toBe("resolution-failed");
+      expect((error as Error).message).toContain("REPEATING");
+    }
+  });
+
+  it("throws RenderError('resolution-failed') when a node collides with a copy/asset binding already targeting the same slot", () => {
+    const renderer = rendererFor();
+    const doc: ComposeDocument = { ...baseWidgetDoc, bindings: [...baseWidgetDoc.bindings, { slot: "widget", value: "text version" }] };
+    try {
+      renderer.renderWebDocument(doc, { nodes: [{ slot: "widget", node: createElement("span", null, "node version") }] });
+      expect.unreachable();
+    } catch (error) {
+      expect(error).toBeInstanceOf(RenderError);
+      expect((error as RenderError).reason).toBe("resolution-failed");
+    }
+  });
+
+  it("throws RenderError('resolution-failed') when a copy binding targets a slot restricted to 'node'-only content", () => {
+    const renderer = rendererFor();
+    const doc: ComposeDocument = { ...baseWidgetDoc, bindings: [...baseWidgetDoc.bindings, { slot: "widget", value: "not allowed here" }] };
+    try {
+      renderer.renderWebDocument(doc);
+      expect.unreachable();
+    } catch (error) {
+      expect(error).toBeInstanceOf(RenderError);
+      expect((error as RenderError).reason).toBe("resolution-failed");
+      expect((error as Error).message).toContain("widget");
+      expect((error as Error).message).toContain("copy");
+    }
+  });
+
+  it("throws RenderError('resolution-failed') when an assetId binding targets a slot restricted to 'node'-only content", () => {
+    const renderer = rendererFor();
+    const doc: ComposeDocument = { ...baseWidgetDoc, bindings: [...baseWidgetDoc.bindings, { slot: "widget", assetId: "acme.widget.icon" }] };
+    try {
+      renderer.renderWebDocument(doc, { resolveAssetId: () => ({ src: "https://cdn.example/icon.svg", width: 1, height: 1, alt: "Placeholder icon" }) });
+      expect.unreachable();
+    } catch (error) {
+      expect(error).toBeInstanceOf(RenderError);
+      expect((error as RenderError).reason).toBe("resolution-failed");
+      expect((error as Error).message).toContain("asset");
+    }
+  });
+
+  it("an optional node-kind slot with no options.nodes entry simply renders absent, like any other unbound optional slot", () => {
+    const renderer = rendererFor(
+      defineWebTemplate({
+        name: "OptionalWidgetView",
+        flow: { slots: [{ key: "heading", required: true }, { key: "widget" }] },
+        slotKinds: { widget: ["node"] },
+        build: (content) => createElement("section", null, createElement("h1", null, content.heading), content.widget ?? createElement("em", null, "no widget")),
+      }),
+    );
+    const doc: ComposeDocument = { ...baseWidgetDoc, template: "OptionalWidgetView" };
+    const { element } = renderer.renderWebDocument(doc);
+    expect(renderToStaticMarkup(element)).toContain("no widget");
   });
 });
 

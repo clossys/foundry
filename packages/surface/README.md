@@ -205,6 +205,150 @@ each declared repeating slot's resolved items onto `MarketingView`'s
 missing/unknown single-slot binding already produces for `AuthView`/
 `ErrorView`.
 
+### `defineWebTemplate` / `createWebRenderer` — an extensible, instance-scoped web-template registry
+
+`AuthView`, `ErrorView`, and `MarketingView` are this package's own three
+templates. `defineWebTemplate` and `createWebRenderer` let a consumer
+register their *own* page shapes against the same `web` renderer pipeline —
+the same validation, resolution, and provenance guarantees, extended to a
+template this package never shipped.
+
+**This is still not composition.** `SurfaceDocument.template` remains a
+plain string the caller names explicitly on every document — extensibility
+here is about *who may add* a template (now: any caller, not just this
+package), never about *who picks one* at render time. See "Scope," above:
+this package still renders and validates; it does not compose.
+
+```ts
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import type { SurfaceDocument } from "@vespeneventures/surface/core";
+import { resolveSurfaceDocument } from "@vespeneventures/surface/core";
+import { createWebRenderer, defineWebTemplate } from "@vespeneventures/surface/web";
+import { DashboardWidget } from "./DashboardWidget.js"; // a consumer's own component
+
+const DashboardView = defineWebTemplate({
+  name: "DashboardView",
+  flow: { slots: [{ key: "heading", required: true }, { key: "widget", required: true }] },
+  // A slot key absent from slotKinds defaults to ["copy", "asset"] — the
+  // same two sources AuthView/ErrorView's slots already accept. "widget"
+  // opts INTO "node" explicitly, per slot — never a renderer-wide switch.
+  slotKinds: { widget: ["node"] },
+  build: (content) => createElement("main", null, createElement("h1", null, content.heading), content.widget),
+});
+
+// Every renderer instance is isolated — see "Instance-scoped, never a
+// global mutable registry" below. `includeBuiltins: true` additionally
+// registers AuthView/ErrorView/MarketingView on this same instance.
+const renderer = createWebRenderer({ templates: [DashboardView], includeBuiltins: true });
+
+const ref = (id: string) => ({ id });
+const acmeDashboard: SurfaceDocument = {
+  id: "acme.dashboard.home",
+  channel: "web",
+  template: "DashboardView",
+  meta: { channel: "web", title: ref("acme.dashboard.heading"), description: ref("acme.dashboard.heading") },
+  bindings: [
+    { slot: "heading", copy: ref("acme.dashboard.heading") },
+    // A caller-owned, already-composed React element — never a raw HTML
+    // string, never audience-supplied content. See "Rich-node slots" below.
+    { slot: "widget", node: createElement(DashboardWidget, { chartId: "acme.chart.mrr" }) },
+  ],
+};
+
+// Tell resolveSurfaceDocument which of THIS template's slots accept a
+// node — derived from the template's own declaration, never hardcoded.
+const resolved = resolveSurfaceDocument(acmeDashboard, myCopyResolver, {
+  nodeSlots: Object.entries(DashboardView.slotKinds ?? {})
+    .filter(([, kinds]) => kinds.includes("node"))
+    .map(([slot]) => slot),
+});
+
+const { element } = renderer.renderWebDocument(resolved.document, {
+  groups: resolved.groups, // repeating slots, if the template declares any
+  nodes: resolved.nodes, // resolved single-binding node slots
+});
+renderToStaticMarkup(element);
+```
+
+**What a consumer-defined template is still forced through.** A `build`
+function only ever receives already-validated, already-resolved `content` —
+it never sees or influences a raw `SurfaceDocument`, so it cannot become a
+path around validation:
+
+- `validateSurfaceDocument`/`validateComposeDocument` run unchanged on
+  every document, built-in template or not — a custom template does not
+  bypass shape validation of `bindings`, `meta`, or `layout`.
+- `resolveDocument`'s `ok`/`missingRequired`/`unknownBindings`/
+  `bindingFindings` contract (issue #43's "resolved nothing is never
+  `ok: true`" bar) is reused as-is for a custom template's `flow`.
+- `renderWebDocument`'s "every required slot must resolve to real content
+  or the render throws" discipline (`RenderError("empty-output", ...)`)
+  applies identically, whether that content came from a `copy` binding, an
+  `assetId`, or an authorized `node`.
+- `createResolvedOutputManifest`/`collectCopyProvenance` receive the same
+  `CopyResolution[]` for a custom template's `copy`-kind slots as they do
+  for `AuthView`/`ErrorView`'s — a custom template is never a hole through
+  which resolved copy reaches a page without leaving the provenance trail
+  every other slot leaves. A `node`-kind slot's content is the one
+  documented exception: it never goes through `CopyRef` resolution at all
+  (it is not audience-facing copy), so it contributes no `CopyResolution`
+  and appears nowhere in `resolutions`/manifest copy provenance — that
+  absence is the intended behavior, not a gap.
+
+**Rich-node slots are the dangerous surface, so they are the narrow one.**
+A `"node"`-kind slot accepts a real `ReactNode` the caller's *own trusted
+code* already constructed — a composed `AuthView` form, a widget built from
+`@vespeneventures/ui` atoms, a small caller-authored component. It never
+accepts and never interprets a raw HTML string, and there is no
+`dangerouslySetInnerHTML` anywhere on this path — React's own
+child-rendering already escapes text/attribute values by default, and a
+node slot's safety rests entirely on staying inside that path. `"node"` is
+opt-in *per slot*, declared explicitly in `slotKinds`; a slot left off
+`slotKinds` (or listed without `"node"`) never accepts one, and every
+mismatch — a node for an unregistered or non-node-kind slot, a copy/asset
+binding against a node-only slot, a node colliding with a slot a copy/asset
+binding already filled — fails closed with
+`RenderError("resolution-failed", ...)`, never silently coerced or dropped.
+`core`'s own `resolveSurfaceDocument` mirrors this at the canonical-document
+layer: a single binding's `node` still refuses unconditionally
+(`SurfaceResolutionError("unsupported-node", ...)`) unless its `slot` is
+named in that call's own `nodeSlots` option — an opt-in allowlist a caller
+builds from the target template's own `slotKinds`, never inferred.
+
+**Instance-scoped, never a global mutable registry.** `createWebRenderer()`
+with no arguments knows *zero* templates — not the three built-ins.
+`AuthView`/`ErrorView`/`MarketingView` remain exported, unchanged; the
+module-level `renderWebDocument`/`listWebTemplateNames` functions (this
+package's only entry point before this feature existed) keep rendering
+them exactly as before — a zero-line diff for every existing caller. Two
+independently created `createWebRenderer()` instances never observe each
+other's templates, and this package exports no `registerWebTemplate` or
+other function that could mutate a shared, module-level map — the
+global-mutation alternative is not merely discouraged, it is structurally
+absent from this package's exports. See `defineWebTemplate`'s and
+`createWebRenderer`'s own doc comments for the full argument (order
+dependence on import timing, and cross-consumer/cross-request collision in
+a shared process, the same two failure modes a module-level mutable
+registry has always risked elsewhere).
+
+**Fails closed on a malformed definition or a duplicate name.**
+`defineWebTemplate` validates `flow` (non-empty, unique slot keys — the
+same discipline `validateComposeDocument` already holds a `LayoutSpec` to,
+applied here to a `FlowLayoutSpec` at definition time instead of first
+render), rejects a `slotKinds` entry naming a slot `flow.slots` does not
+declare, and rejects a `repeatingSlots` key that collides with a flowed
+slot or with itself — every one of these throws
+`RenderError("invalid-template-definition", ...)`.
+`createWebRenderer` throws `RenderError("duplicate-template", ...)` if two
+entries (across `templates`, and the built-ins when `includeBuiltins` is
+`true`) share a `name` — never silently keeps the last one registered.
+Both reuse this package's existing `RenderError`/`RenderErrorReason`
+contract (`internal/errors.ts`) rather than introducing a second error
+type — a caller catching errors from this package never needs a second
+`instanceof` check depending on whether a failure happened at template
+definition time or at render time.
+
 **One `SurfaceDocument` is exactly one canvas — pagination is out of scope
 by design, not an oversight.** `LayoutSpec`'s slots are fractional positions
 (`Frame = {x, y, w, h}`, 0..1 of a single fixed canvas); there is no flow,
@@ -252,7 +396,8 @@ that draft or malformed sources fail closed.
   `OutputManifest`, `StrategyProvenance`, `CopyProvenance`, `WebMeta`, `CopyLookup`,
   `CopyResolveResult`, `ResolvedText`, `AssetLookup`, `AssetResolveResult`,
   `ResolvedAsset`, `ResolvedSurfaceDocument`, `ResolvedSurfaceGroup`,
-  `ResolvedSurfaceGroupItem`, `SurfaceResolutionReason`, and
+  `ResolvedSurfaceGroupItem`, `ResolvedSurfaceNode`,
+  `ResolveSurfaceDocumentOptions`, `SurfaceResolutionReason`, and
   `CanvasInches` types. `SurfaceResolutionError` is thrown when canonical
   resolution fails closed.
 - `media`: `parseAssetRecord`, `validateAssetRecordShape`,
@@ -261,12 +406,15 @@ that draft or malformed sources fail closed.
   `AssetRegistryReadIssueReason`, `AssetRegistryReadResult`, and
   `AssetCoverageReport` types. The CLI is `surface-media-check`.
 - `web`: `renderWebDocument`, `buildWebHeadMetadata`,
-  `listWebTemplateNames`, `AuthView`, `ErrorView`, `MarketingView`,
+  `listWebTemplateNames`, `defineWebTemplate`, `createWebRenderer`,
+  `AuthView`, `ErrorView`, `MarketingView`,
   `RenderError`, and the `AuthViewProps`, `ErrorViewProps`,
   `MarketingViewProps`, `MarketingFeatureItem`, `MarketingFaqItem`,
   `RenderErrorReason`, `AssetResolver`, `CopyResolver`, `RenderWebOptions`,
-  `RenderWebResult`, `WebHeadMetadata`, `WebOpenGraphMetadata`, and
-  `WebTwitterMetadata` types.
+  `RenderWebResult`, `RepeatingWebSlotSpec`, `ResolvedWebGroupItem`,
+  `WebSlotContentKind`, `WebTemplate`, `DefineWebTemplateOptions`,
+  `CreateWebRendererOptions`, `WebRenderer`, `WebHeadMetadata`,
+  `WebOpenGraphMetadata`, and `WebTwitterMetadata` types.
 - `email`: `renderEmailDocument`, `RenderError`, and the
   `RenderErrorReason`, `EmailRenderResult`, `RenderEmailOptions`, and
   `RenderWarning` types.

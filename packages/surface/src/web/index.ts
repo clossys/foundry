@@ -12,6 +12,8 @@
 export { renderWebDocument } from "./renderWebDocument.js";
 export { buildWebHeadMetadata } from "./headMetadata.js";
 export { listWebTemplateNames } from "./internal/webTemplates.js";
+export { defineWebTemplate } from "./internal/defineWebTemplate.js";
+export { createWebRenderer } from "./internal/createWebRenderer.js";
 export { AuthView, ErrorView, MarketingView } from "./views/index.js";
 export type { AuthViewProps, ErrorViewProps, MarketingFaqItem, MarketingFeatureItem, MarketingViewProps } from "./views/index.js";
 
@@ -21,9 +23,16 @@ export type { RenderErrorReason } from "../internal/errors.js";
 export type {
   AssetResolver,
   CopyResolver,
+  CreateWebRendererOptions,
+  DefineWebTemplateOptions,
   RenderWebOptions,
   RenderWebResult,
+  RepeatingWebSlotSpec,
+  ResolvedWebGroupItem,
   WebHeadMetadata,
   WebOpenGraphMetadata,
+  WebRenderer,
+  WebSlotContentKind,
+  WebTemplate,
   WebTwitterMetadata,
 } from "./types.js";

@@ -64,6 +64,29 @@
  *     is one fixed canvas rendered repeatedly; a per-slide aspect change
  *     mid-deck has no sensible single canvas size, so this is refused
  *     rather than silently rendered at (say) the first slide's aspect.
+ *
+ * Two more members were added alongside `./web`'s `defineWebTemplate`/
+ * `createWebRenderer` (the extensible web-template registry — see
+ * `web/internal/defineWebTemplate.ts` and `web/internal/createWebRenderer.ts`).
+ * Both are DEFINITION-TIME failures — thrown before any `SurfaceDocument`
+ * is ever rendered against the template in question — reusing this same
+ * closed reason set rather than introducing a second error type for
+ * "something about a template registration was wrong": a consumer
+ * catching errors from this package should never need two different
+ * `instanceof` checks depending on whether the failure happened while
+ * defining a template or while rendering a document against one.
+ *
+ *   - `"invalid-template-definition"` — `defineWebTemplate` was given a
+ *     malformed `name`, `flow` (not an object, no `slots` array, a slot
+ *     with a non-string/empty `key`, or a duplicate slot key within it),
+ *     `slotKinds` (naming a key `flow.slots` does not declare, or an
+ *     unknown/empty content-kind list), `repeatingSlots` (a key that
+ *     collides with a `flow.slots` key, or with another repeating slot),
+ *     or `build`.
+ *   - `"duplicate-template"` — `createWebRenderer` was given two entries
+ *     (across `templates` and, when `includeBuiltins` is `true`, the
+ *     built-ins) sharing the same `WebTemplate.name`. Never silently
+ *     keeps the last one registered.
  */
 export type RenderErrorReason =
   | "unknown-template"
@@ -79,7 +102,9 @@ export type RenderErrorReason =
   | "missing-layout"
   | "missing-custom-page-size"
   | "unknown-style-role"
-  | "inconsistent-deck-aspect";
+  | "inconsistent-deck-aspect"
+  | "invalid-template-definition"
+  | "duplicate-template";
 
 export class RenderError extends Error {
   readonly reason: RenderErrorReason;

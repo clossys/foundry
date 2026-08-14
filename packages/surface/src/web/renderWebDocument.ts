@@ -14,21 +14,27 @@
  *      this package's own framework-agnostic `WebHeadMetadata` by
  *      `headMetadata.ts`.
  *
- * ONLY PLAIN TEXT EVER FILLS A SLOT
- * -----------------------------------
- * `SlotBinding` carries exactly two possible sources — `copyId` (a string
- * id, resolved via the caller's own `resolveCopyId`) or `value` (a literal
- * string) — never a React node, a component, or markup (see `surface/core`'s
- * own `types.ts`). So every slot this function fills — including
- * `AuthView`'s `form`, which in a hand-built page holds a real interactive
- * sign-in form — receives plain resolved text, never richer content. This
- * is not a shortcut this package took; it's what the frozen
- * `ComposeDocument` contract itself supports. A consumer who wants a real
- * form (or any other rich node) in that slot composes
- * `@vespeneventures/ui`'s `AuthView` directly, outside this document
- * pipeline — the same "this package's job ends where a richer composition
- * begins" boundary `surface/core`'s own README draws for `template` and
- * `copyId`.
+ * ONLY PLAIN TEXT OR A RESOLVED ASSET EVER FILLS A SLOT THROUGH `doc.bindings`
+ * -------------------------------------------------------------------------------
+ * `SlotBinding` (`doc.bindings`, the legacy `ComposeDocument` shape this
+ * function actually reads) carries exactly two possible sources — `copyId`/
+ * `value` (resolved to plain text) or `assetId` (resolved to a real
+ * `<img>`) — never a React node, a component, or markup (see `surface/core`'s
+ * own `types.ts`). This is not a shortcut this package took; it's what the
+ * frozen `ComposeDocument` contract itself supports, and it is why a
+ * caller-owned `node` binding could never be lowered into `doc.bindings`
+ * by `resolveSurfaceDocument` in the first place (see `core/resolve-
+ * surface.ts`). A rich node reaches a slot through exactly one sanctioned
+ * path instead: `options.nodes`, gated per slot by the target template's
+ * own declared `WebTemplate.slotKinds` — see "RICH-NODE SLOTS" below. A
+ * slot no template declares `"node"`-kind still only ever fills from
+ * `doc.bindings`'s plain text/asset, the same as before this option
+ * existed; a consumer with a genuinely bespoke composition need — one
+ * that isn't a named, registered `WebTemplate` slot at all — still
+ * composes `@vespeneventures/ui`'s views directly, outside this document
+ * pipeline entirely, the same "this package's job ends where a richer
+ * composition begins" boundary `surface/core`'s own README draws for
+ * `template` and `copyId`.
  *
  * WHAT COUNTS AS "RESOLVED NOTHING" — AND WHY THAT'S A THROW, NOT AN EMPTY PAGE
  * --------------------------------------------------------------------------
@@ -78,6 +84,28 @@
  * task brief) — silently omitting a broken image slot the way an optional
  * caption silently omits is exactly that: a page that LOOKS complete but
  * is quietly missing content nobody asked to have dropped.
+ *
+ * RICH-NODE SLOTS: `options.nodes`, GATED PER SLOT BY `WebTemplate.slotKinds`
+ * -----------------------------------------------------------------------------
+ * A slot a template declares `"node"`-kind (see `WebSlotContentKind`,
+ * `../types.ts`) may additionally resolve from `options.nodes` — the
+ * render-time counterpart to `ResolvedSurfaceDocument.nodes`, mirroring
+ * how `options.groups` is the counterpart to `ResolvedSurfaceDocument.
+ * groups`. This is NOT a general escape hatch: a `"node"`-kind slot
+ * accepts a real `ReactNode` the CALLER'S OWN trusted code constructed —
+ * never a raw HTML string, never `dangerouslySetInnerHTML`, and never
+ * audience-supplied or copy-registry-resolved content. React's own
+ * child-rendering already escapes text/attribute values by default; a
+ * node slot's safety rests entirely on staying inside that path. Every
+ * entry in `options.nodes` is checked against the target template's own
+ * declared `slotKinds` before it ever reaches `content` — a node for an
+ * unknown slot, a node for a slot not declared `"node"`-kind, or a node
+ * colliding with a slot a copy/asset binding already filled, are each a
+ * `RenderError("resolution-failed", ...)`, never silently coerced,
+ * dropped, or overwritten. Symmetrically, a `copy`/`assetId` binding
+ * (via `doc.bindings`) targeting a slot whose declared kinds do not
+ * include `"copy"`/`"asset"` is refused the same way, before it can reach
+ * `content` either.
  */
 
 import { resolveDocument } from "../core/index.js";
@@ -88,8 +116,8 @@ import { RenderError } from "../internal/errors.js";
 import { describeAssetProblems, hasAssetProblems, isRenderAsset, resolveDocumentAssets } from "../internal/assets.js";
 import { assertPeerVersion } from "../internal/peer-version.js";
 import { buildWebHeadMetadata } from "./headMetadata.js";
-import { getWebTemplate, listWebTemplateNames } from "./internal/webTemplates.js";
-import type { RepeatingWebSlotSpec, ResolvedWebGroupItem, WebTemplate } from "./internal/webTemplates.js";
+import { defaultWebTemplateMap, slotKindsFor } from "./internal/webTemplates.js";
+import type { RepeatingWebSlotSpec, ResolvedWebGroupItem, WebTemplate } from "./types.js";
 import type { RenderWebOptions, RenderWebResult } from "./types.js";
 
 /**
@@ -234,7 +262,16 @@ function resolveTemplateGroups(doc: ComposeDocument, template: WebTemplate, opti
   return groupsContent;
 }
 
-export function renderWebDocument(doc: ComposeDocument, options: RenderWebOptions = {}): RenderWebResult {
+/**
+ * The parameterized core `renderWebDocument` and every `WebRenderer`
+ * returned by `createWebRenderer` both run — the only difference between
+ * the module-level sugar `renderWebDocument` below and a
+ * `createWebRenderer(...).renderWebDocument` is which `templates` map gets
+ * passed here. See `internal/createWebRenderer.ts` for the instance-scoped
+ * caller, and this file's own top comment for the full behavioral
+ * contract, unchanged regardless of which registry is in play.
+ */
+export function renderWebDocumentAgainst(templates: ReadonlyMap<string, WebTemplate>, doc: ComposeDocument, options: RenderWebOptions = {}): RenderWebResult {
   if (doc.channel !== "web" || doc.meta.channel !== "web") {
     throw new RenderError(
       "wrong-channel",
@@ -242,20 +279,45 @@ export function renderWebDocument(doc: ComposeDocument, options: RenderWebOption
     );
   }
 
-  const template = getWebTemplate(doc.template);
+  const template = templates.get(doc.template);
   if (template === undefined) {
     throw new RenderError(
       "unknown-template",
-      `renderWebDocument does not know template "${doc.template}". Known templates: ${listWebTemplateNames().join(", ") || "(none)"}.`,
+      `renderWebDocument does not know template "${doc.template}". Known templates: ${[...templates.keys()].join(", ") || "(none)"}.`,
     );
   }
 
-  const result = resolveDocument(doc, template.flow);
-  if (!result.ok) {
+  // A node-kind slot's content NEVER arrives through doc.bindings (see
+  // this file's own top comment) — it can only ever arrive through
+  // options.nodes, entirely separate from what resolveDocument inspects.
+  // So resolveDocument must never report a node-kind slot `missingRequired`
+  // merely because doc.bindings has no entry for it — that would be true
+  // of EVERY node-kind slot on EVERY render, regardless of whether this
+  // particular call actually supplied one via options.nodes. Requiredness
+  // for a node-kind slot is instead re-checked, against the TEMPLATE's own
+  // real `required` flag, by this function's own `unresolvedRequired`
+  // check below, once `content` (which the options.nodes pass, further
+  // down, also writes into) is fully built. This mirrors exactly how a
+  // repeating slot's key is kept OUT of `flow.slots` entirely for the
+  // identical reason — see `internal/webTemplates.ts`'s own top comment —
+  // except a node-kind flowed slot cannot be pulled out of `flow` the same
+  // way a repeating slot is, because `slotKinds` may still allow copy/asset
+  // on that same slot too, and `resolveDocument` still needs to see it to
+  // resolve THOSE sources when a caller uses them instead.
+  const nodeKindFlowKeys = new Set(template.flow.slots.filter((slot) => slotKindsFor(template, slot.key).includes("node")).map((slot) => slot.key));
+  const flowForResolve = nodeKindFlowKeys.size === 0 ? template.flow : { slots: template.flow.slots.map((slot) => (nodeKindFlowKeys.has(slot.key) ? { ...slot, required: false } : slot)) };
+
+  const result = resolveDocument(doc, flowForResolve);
+  const hasBindingErrors = result.bindingFindings.some((finding) => finding.severity === "error");
+  // "Nothing resolved" is only a real failure if options.nodes ALSO
+  // resolved nothing — a document whose only content is a caller-owned
+  // node (no copy/asset binding at all) is legitimate, not empty.
+  const nothingResolvedAtAll = result.resolved.length === 0 && (options.nodes ?? []).length === 0;
+  if (result.missingRequired.length > 0 || result.unknownBindings.length > 0 || hasBindingErrors || nothingResolvedAtAll) {
     const parts: string[] = [];
     if (result.missingRequired.length > 0) parts.push(`missing required slot(s): ${result.missingRequired.join(", ")}`);
     if (result.unknownBindings.length > 0) parts.push(`binding(s) targeting unknown slot(s): ${result.unknownBindings.map((b) => b.slot).join(", ")}`);
-    if (result.resolved.length === 0) parts.push("no binding matched any slot in the template — nothing to render");
+    if (nothingResolvedAtAll) parts.push("no binding matched any slot in the template — nothing to render");
     throw new RenderError(
       "resolution-failed",
       `renderWebDocument could not resolve document "${doc.id}" against template "${doc.template}": ${parts.join("; ")}.`,
@@ -275,7 +337,14 @@ export function renderWebDocument(doc: ComposeDocument, options: RenderWebOption
 
   const content: Record<string, ReactNode> = {};
   for (const { key, binding } of result.resolved) {
+    const kinds = slotKindsFor(template, key);
     if (binding.assetId !== undefined && binding.assetId.length > 0) {
+      if (!kinds.includes("asset")) {
+        throw new RenderError(
+          "resolution-failed",
+          `renderWebDocument received an assetId binding for slot "${key}" against template "${doc.template}", but that slot's declared content kind(s) (${kinds.join(", ")}) do not include "asset".`,
+        );
+      }
       const asset = assetsResolution.byKey.get(key);
       if (asset !== undefined) {
         content[key] = createElement("img", {
@@ -289,8 +358,46 @@ export function renderWebDocument(doc: ComposeDocument, options: RenderWebOption
     }
     const text = resolveBindingText(binding, options.resolveCopyId);
     if (text !== undefined && text.length > 0) {
+      if (!kinds.includes("copy")) {
+        throw new RenderError(
+          "resolution-failed",
+          `renderWebDocument received a copy binding for slot "${key}" against template "${doc.template}", but that slot's declared content kind(s) (${kinds.join(", ")}) do not include "copy".`,
+        );
+      }
       content[key] = text;
     }
+  }
+
+  // See this file's own top comment, "RICH-NODE SLOTS" — a slot must be
+  // declared "node"-kind to accept an entry here at all, targets a real
+  // flowed slot on this template (never a repeating one — those go
+  // through options.groups instead), and never collides with a slot a
+  // copy/asset binding already filled above.
+  for (const nodeBinding of options.nodes ?? []) {
+    const slotSpec = template.flow.slots.find((slot) => slot.key === nodeBinding.slot);
+    if (slotSpec === undefined) {
+      const isRepeating = (template.repeatingSlots ?? []).some((spec) => spec.key === nodeBinding.slot);
+      throw new RenderError(
+        "resolution-failed",
+        isRepeating
+          ? `renderWebDocument received a single node binding for slot "${nodeBinding.slot}" against template "${doc.template}", but that slot is a REPEATING slot on this template — author it as a SurfaceRepeatingSlotBinding item and pass it through options.groups instead of options.nodes.`
+          : `renderWebDocument received a node binding for slot "${nodeBinding.slot}" against template "${doc.template}", which does not declare that flowed slot at all. Known flowed slot(s): ${template.flow.slots.map((slot) => slot.key).join(", ") || "(none)"}.`,
+      );
+    }
+    const kinds = slotKindsFor(template, nodeBinding.slot);
+    if (!kinds.includes("node")) {
+      throw new RenderError(
+        "resolution-failed",
+        `renderWebDocument received a node binding for slot "${nodeBinding.slot}" against template "${doc.template}", but that slot's declared content kind(s) (${kinds.join(", ")}) do not include "node". Declare it via slotKinds: { ${nodeBinding.slot}: [..., "node"] } when defining the template.`,
+      );
+    }
+    if (nodeBinding.slot in content) {
+      throw new RenderError(
+        "resolution-failed",
+        `renderWebDocument received both a node binding (options.nodes) and a copy/asset binding (doc.bindings) for slot "${nodeBinding.slot}" against template "${doc.template}" — a slot may resolve from exactly one source.`,
+      );
+    }
+    content[nodeBinding.slot] = nodeBinding.node as ReactNode;
   }
 
   const unresolvedRequired = template.flow.slots
@@ -317,4 +424,17 @@ export function renderWebDocument(doc: ComposeDocument, options: RenderWebOption
     element: template.build(content, groups),
     head: buildWebHeadMetadata(doc.meta as WebMeta),
   };
+}
+
+/**
+ * The module-level sugar entry point — every caller of this package's
+ * `web` subpath before `defineWebTemplate`/`createWebRenderer` existed
+ * keeps working with a zero-line diff. Exactly
+ * `renderWebDocumentAgainst(defaultWebTemplateMap(), doc, options)`: the
+ * same built-in `AuthView`/`ErrorView`/`MarketingView` registry as always,
+ * never a consumer's own templates — see `createWebRenderer` for a
+ * renderer scoped to those instead.
+ */
+export function renderWebDocument(doc: ComposeDocument, options: RenderWebOptions = {}): RenderWebResult {
+  return renderWebDocumentAgainst(defaultWebTemplateMap(), doc, options);
 }

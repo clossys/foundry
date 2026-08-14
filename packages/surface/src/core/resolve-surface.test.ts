@@ -142,3 +142,45 @@ describe("resolveSurfaceDocument — repeating-group resolution", () => {
     expect(JSON.stringify(provenance)).not.toContain("Capability two");
   });
 });
+
+describe("resolveSurfaceDocument — single-binding node, opt-in via options.nodeSlots", () => {
+  const withNodeBinding: SurfaceDocument = {
+    ...singleBindingOnly,
+    bindings: [...singleBindingOnly.bindings, { slot: "widget", node: { kind: "consumer-widget", label: "Acme widget" } }],
+  };
+
+  it("still refuses unconditionally — byte-identical to before this option existed — when nodeSlots is omitted", () => {
+    let thrown: unknown;
+    try {
+      resolveSurfaceDocument(withNodeBinding, resolver);
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).toBeInstanceOf(SurfaceResolutionError);
+    expect((thrown as SurfaceResolutionError).reason).toBe("unsupported-node");
+    expect((thrown as SurfaceResolutionError).message).toContain("bindings.1");
+    expect((thrown as SurfaceResolutionError).message).toContain("widget");
+  });
+
+  it("still refuses when nodeSlots is supplied but does not name this binding's slot", () => {
+    expect(() => resolveSurfaceDocument(withNodeBinding, resolver, { nodeSlots: ["some-other-slot"] })).toThrow(SurfaceResolutionError);
+  });
+
+  it("resolves the node into ResolvedSurfaceDocument.nodes, and excludes it from document.bindings, when its slot is named in nodeSlots", () => {
+    const resolved = resolveSurfaceDocument(withNodeBinding, resolver, { nodeSlots: ["widget"] });
+    expect(resolved.nodes).toEqual([{ slot: "widget", node: { kind: "consumer-widget", label: "Acme widget" } }]);
+    expect(resolved.document.bindings.some((binding) => binding.slot === "widget")).toBe(false);
+  });
+
+  it("omits `nodes` entirely — not an empty array — when no binding resolves through it, the same convention `groups` uses", () => {
+    const resolved = resolveSurfaceDocument(singleBindingOnly, resolver, { nodeSlots: ["widget"] });
+    expect(Object.hasOwn(resolved, "nodes")).toBe(false);
+  });
+
+  it("contributes no CopyResolution — a node binding is never resolved through CopyRef at all", () => {
+    const resolved = resolveSurfaceDocument(withNodeBinding, resolver, { nodeSlots: ["widget"] });
+    const entryIds = resolved.resolutions.map((r) => r.entryId);
+    expect(entryIds).not.toContain("widget");
+    expect(JSON.stringify(resolved.resolutions)).not.toContain("consumer-widget");
+  });
+});
