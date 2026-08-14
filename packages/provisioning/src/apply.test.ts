@@ -155,6 +155,49 @@ describe("applyInstallation", () => {
     expect(verifyInstallation(plan, fs)).toEqual([]);
   });
 
+  // The defect this ordering exists to prevent: a chained link whose target is
+  // produced by a COPY. While every chained target happened to be produced by
+  // another link, applying all links together worked by luck.
+  it("applies a link chained onto a copy, whichever order the manifest lists them", () => {
+    const { fs, plan } = setup({
+      copies: [
+        { source: "guidance.txt", destination: "${HOME}/.agents/guidance.txt", template: true },
+      ],
+      links: [
+        { target: "${HOME}/.agents/guidance.txt", destination: "${HOME}/.other/guidance.txt" },
+      ],
+    });
+    fs.set(`${sourceRoot}/guidance.txt`, "workspace is ${WORKSPACE_ROOT}\n");
+
+    applyInstallation(plan, fs, { backupRoot });
+
+    const chained = `${home}/.other/guidance.txt`;
+    expect(fs.lstat(chained)?.isSymbolicLink).toBe(true);
+    expect(fs.realpath(chained)).toBe(`${home}/.agents/guidance.txt`);
+    // Reading through the chain must reach expanded content, not a token.
+    expect(fs.read(`${home}/.agents/guidance.txt`)).toBe("workspace is /home/op/code\n");
+    expect(verifyInstallation(plan, fs)).toEqual([]);
+  });
+
+  it("applies a link chained onto a managed block", () => {
+    const { fs, plan } = setup({
+      managedBlocks: [
+        {
+          source: "shell.zsh",
+          destination: "${HOME}/.zshrc",
+          startMarker: "# >>> managed >>>",
+          endMarker: "# <<< managed <<<",
+        },
+      ],
+      links: [{ target: "${HOME}/.zshrc", destination: "${HOME}/.zshrc.link" }],
+    });
+    fs.set(`${sourceRoot}/shell.zsh`, "export PATH=x\n");
+
+    applyInstallation(plan, fs, { backupRoot });
+    expect(fs.realpath(`${home}/.zshrc.link`)).toBe(`${home}/.zshrc`);
+    expect(verifyInstallation(plan, fs)).toEqual([]);
+  });
+
   it("fails loudly when a link source is missing", () => {
     const { fs, plan } = setup({
       links: [{ source: "absent.txt", destination: "${HOME}/.agents/guidance.txt" }],
