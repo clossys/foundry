@@ -148,11 +148,9 @@ jobs:
   # package-scope.json.registry is the single declared source for which
   # registry every published package's publishConfig.registry must point
   # at -- the same single-source-of-truth pattern `scope` above enforces for
-  # the npm scope. See scripts/set-registry.mjs's own header and
-  # docs/PUBLISHING.md's "Migrating to the public npm registry" runbook: the
-  # registry this checks against today is GitHub Packages (issue #194's
-  # actual blocker), but the mechanism is what has to exist and stay correct
-  # before that value can ever change.
+  # the npm scope. GitHub Packages is canonical; this job proves every package
+  # manifest still agrees with package-scope.json rather than relying on
+  # workflow prose or ambient npm configuration.
   registry:
     name: registry drift
     runs-on: ubuntu-latest

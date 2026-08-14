@@ -13,6 +13,15 @@ consumer's policy values or a machine's authenticated state.
 Credentials, cookies, OAuth grants, session state, and private organization or
 customer values do not enter Foundry.
 
+## Package consumption
+
+GitHub Packages is Foundry's canonical registry. A consuming plane owns its
+authenticated scope mapping, credential reference, and local or CI injection;
+Foundry owns none of those values. A consumer installs only the packages its
+repository actually needs, never the full suite by default. Package
+availability, missing reusable capability, and consumer-local wiring are kept
+separate in [ADOPTION.md](ADOPTION.md).
+
 ## Package boundaries
 
 `@vespeneventures/governance/repository` and
