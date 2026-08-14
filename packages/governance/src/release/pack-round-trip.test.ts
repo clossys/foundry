@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -597,6 +598,156 @@ describe("packRoundTrip — exports shape handling (fixture packages)", () => {
     expect(result.findings[0]?.rule).toBe("round-trip-import-failed");
     expect(result.findings[0]?.message).toContain("timeout");
   }, 20_000);
+});
+
+// `tarballPath` is the mechanism the publish workflow's reordering (see
+// AGENTS.md / issue #191) depends on: it lets `packRoundTrip` check a tarball
+// that was already packed once, instead of packing `packageDir` again. These
+// tests pack a fixture EXACTLY the way the workflow's own "Pack tarball for
+// publish" step does — a plain `npm pack --pack-destination <dir>` run
+// entirely separately from the `packRoundTrip` call under test — and hand the
+// resulting file to `tarballPath`, so what's actually being proven is the
+// same thing the workflow's pre-publish gate proves: does checking THAT
+// tarball block a broken release, and pass a valid one, before anything is
+// published.
+describe("packRoundTrip — tarballPath option (pre-publish gate proof)", () => {
+  function packFixtureTarball(dir: string): string {
+    const packDestination = mkdtempSync(join(tmpdir(), "release-fixture-packed-"));
+    fixtureDirs.push(packDestination);
+    const stdout = execFileSync("npm", ["pack", "--pack-destination", packDestination], {
+      cwd: dir,
+      encoding: "utf8",
+    });
+    const tarballName = stdout.trim().split("\n").filter(Boolean).pop();
+    if (!tarballName) throw new Error("npm pack produced no output");
+    return join(packDestination, tarballName);
+  }
+
+  // Acceptance criterion: "a package whose export map names a path absent
+  // from its tarball fails the workflow with nothing reaching the registry."
+  // This is the pre-publish gate itself -- a literal (non-wildcard) subpath
+  // whose target was never shipped, checked the way the reordered workflow
+  // step checks it: against an already-packed tarball, via `tarballPath`.
+  it("blocks: a tarball whose export map names a path absent from it fails via tarballPath", async () => {
+    const dir = makeFixture("tarballpath-broken", {
+      "package.json": JSON.stringify(
+        {
+          name: "tarballpath-broken-fixture",
+          version: "1.0.0",
+          type: "module",
+          exports: { ".": "./index.js", "./missing-asset.txt": "./missing-asset.txt" },
+        },
+        null,
+        2,
+      ),
+      "index.js": "export const ok = true;\n",
+      // Deliberately never created: "./missing-asset.txt" is declared but
+      // nothing ships it, and nothing lists it in `files` either.
+    });
+
+    const tarballPath = packFixtureTarball(dir);
+    const result = await packRoundTrip(dir, { tarballPath });
+
+    expect(result.tarballPath).toBe(resolve(tarballPath));
+    expect(result.ok).toBe(false);
+    const missing = result.imports.find((check) => check.subpath === "./missing-asset.txt");
+    expect(missing).toEqual({
+      subpath: "./missing-asset.txt",
+      mode: "static",
+      ok: false,
+      error: 'static export target "./missing-asset.txt" is absent from the isolated installed tarball',
+    });
+    expect(result.findings.some((f) => f.rule === "round-trip-asset-missing")).toBe(true);
+    // The blocking mechanism itself: the reordered workflow step exits
+    // non-zero on `!result.ok`, and GitHub Actions skips every subsequent
+    // step (including `npm publish`) once one fails without `if: always()`
+    // or `continue-on-error`. `ok: false` here is exactly the signal that
+    // stops the job before the registry is ever touched.
+  });
+
+  // Acceptance criterion: "a fixture with a VALID wildcard export subpath
+  // must pass, so the reordering cannot silently reintroduce the [false
+  // positive] bug that #193 removed" -- checked here through the identical
+  // tarballPath mechanism the pre-publish gate uses, not merely through a
+  // fresh auto-pack (already covered separately above).
+  it("passes: a tarball with a valid wildcard export subpath passes via tarballPath", async () => {
+    const dir = makeFixture("tarballpath-valid-wildcard", {
+      "package.json": JSON.stringify(
+        {
+          name: "tarballpath-valid-wildcard-fixture",
+          version: "1.0.0",
+          type: "module",
+          exports: { ".": "./index.js", "./documents/*": "./documents/*" },
+          files: ["index.js", "documents"],
+        },
+        null,
+        2,
+      ),
+      "index.js": "export const ok = true;\n",
+      "documents/first.txt": "# first\n",
+      "documents/second.txt": "# second\n",
+    });
+
+    const tarballPath = packFixtureTarball(dir);
+    const result = await packRoundTrip(dir, { tarballPath });
+
+    expect(result.tarballPath).toBe(resolve(tarballPath));
+    expect(result.findings).toEqual([]);
+    expect(result.imports).toEqual([
+      { subpath: ".", mode: "import", ok: true },
+      { subpath: "./documents/*", mode: "pattern", ok: true },
+      { subpath: "./documents/first.txt", mode: "static", ok: true },
+      { subpath: "./documents/second.txt", mode: "static", ok: true },
+    ]);
+    expect(result.ok).toBe(true);
+  });
+
+  // `tarballPath` must actually be used, not silently ignored in favor of a
+  // fresh re-pack of `packageDir` -- exactly the latent defect this option
+  // fixes (see its doc comment on `PackRoundTripOptions`). Proven by packing
+  // a GOOD tarball, then breaking the source on disk in a way a fresh pack
+  // would visibly fail on, and confirming the round trip still passes: it
+  // can only be checking the untouched, already-packed bytes.
+  it("checks the supplied tarball's bytes, not a fresh re-pack of a since-broken source tree", async () => {
+    const dir = makeFixture("tarballpath-honored", {
+      "package.json": JSON.stringify(
+        { name: "tarballpath-honored-fixture", version: "1.0.0", type: "module", exports: "./index.js" },
+        null,
+        2,
+      ),
+      "index.js": "export const ok = true;\n",
+    });
+
+    const tarballPath = packFixtureTarball(dir);
+
+    // Break the source tree AFTER packing: the export target no longer
+    // exists on disk at all. A fresh `npm pack` from this directory would
+    // still succeed (npm pack does not require listed files to exist) but
+    // would ship nothing at "./index.js", so an import of it would fail.
+    rmSync(join(dir, "index.js"));
+
+    const result = await packRoundTrip(dir, { tarballPath });
+
+    expect(result.tarballPath).toBe(resolve(tarballPath));
+    expect(result.findings).toEqual([]);
+    expect(result.imports).toEqual([{ subpath: ".", mode: "import", ok: true }]);
+    expect(result.ok).toBe(true);
+  });
+
+  it("throws when tarballPath does not exist, since there is nothing meaningful to check", async () => {
+    const dir = makeFixture("tarballpath-missing-file", {
+      "package.json": JSON.stringify(
+        { name: "tarballpath-missing-file-fixture", version: "1.0.0", type: "module", exports: "./index.js" },
+        null,
+        2,
+      ),
+      "index.js": "export const ok = true;\n",
+    });
+
+    await expect(
+      packRoundTrip(dir, { tarballPath: join(dir, "does-not-exist.tgz") }),
+    ).rejects.toThrow(/tarballPath.*does not exist/);
+  });
 });
 
 describe("subprocessEnv — subprocess environment sanitization (defect 3)", () => {

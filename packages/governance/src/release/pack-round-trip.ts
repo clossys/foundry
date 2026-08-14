@@ -13,6 +13,12 @@
  * wildcard subpath against what actually shipped rather than looking for a
  * file literally named `*`.
  *
+ * By default the tarball is a fresh `npm pack` of `packageDir`. A caller
+ * that already has the exact bytes it needs checked — a tarball packed once
+ * and about to be published, or one fetched from a registry — passes it via
+ * `PackRoundTripOptions.tarballPath` instead, so this never re-packs and
+ * risks checking different bytes than the ones that matter.
+ *
  * Real subprocess work, real I/O, on purpose — this is the first layer of
  * this foundation where that is the point rather than something to avoid.
  */
@@ -51,6 +57,24 @@ export interface PackRoundTripOptions {
    * explicitly set.
    */
   keepTempDir?: boolean;
+  /**
+   * Use this exact tarball instead of running `npm pack` on `packageDir`.
+   *
+   * A caller that has already packed the artifact it cares about — the
+   * publish workflow's own "pack exactly once" tarball, or one fetched
+   * straight from a registry — needs THAT tarball checked, not a fresh
+   * re-pack of whatever happens to be on disk in `packageDir` right now.
+   * Packing again here would risk exactly the divergence the workflow's own
+   * pack step guards against (a second, separate `npm pack` invocation
+   * silently producing different bytes than the one that was scanned or
+   * published), and for a tarball fetched from a registry, `packageDir`'s
+   * current working tree may not even be that version's source at all.
+   *
+   * `packageDir/package.json` still supplies the declared `exports` surface
+   * to check — this option only changes which bytes get installed and
+   * checked against it, not where the declaration comes from.
+   */
+  tarballPath?: string;
   /**
    * Registry used to resolve the packed package's declared dependencies and
    * runtime peers. Defaults to the public npm registry. Supply this only for
@@ -593,39 +617,53 @@ export async function packRoundTrip(packageDir: string, options?: PackRoundTripO
   const nextTimeoutMs = options?.timeoutsMs?.next ?? installTimeoutMs;
 
   try {
-    // 1. Pack the real tarball. `npm pack` runs `prepublishOnly`, so what
-    //    lands here is exactly what an `npm publish` from this state would
-    //    upload — the same mechanism this repository's own artifact-safety
-    //    gate uses to scan what actually ships, not the source tree.
-    let tarballName: string;
-    try {
-      const { stdout } = await execFile("npm", ["pack", "--pack-destination", tarballDir], {
-        cwd: absPackageDir,
-        env,
-        timeout: packTimeoutMs,
-        killSignal: TIMEOUT_KILL_SIGNAL,
-      });
-      const lastLine = stdout.trim().split("\n").filter(Boolean).pop();
-      if (!lastLine) throw new Error("npm pack produced no output");
-      tarballName = lastLine;
-    } catch (error) {
-      return {
-        ok: false,
-        packageName,
-        tarballPath: "",
-        imports: [],
-        declarations: [],
-        findings: [packFailedFinding(packageName, summarizeExecError(error, packTimeoutMs))],
-      };
-    }
-    const tarballPath = join(tarballDir, tarballName);
+    // 1. The tarball to install: either the caller's own — already packed
+    //    elsewhere, see `tarballPath`'s doc comment above for why that
+    //    matters — or a fresh, real `npm pack` of `packageDir`. `npm pack`
+    //    runs `prepublishOnly`, so what lands here is exactly what an
+    //    `npm publish` from this state would upload — the same mechanism
+    //    this repository's own artifact-safety gate uses to scan what
+    //    actually ships, not the source tree.
+    let tarballPath: string;
+    if (options?.tarballPath !== undefined) {
+      tarballPath = resolve(options.tarballPath);
+      if (!existsSync(tarballPath)) {
+        throw new Error(`packRoundTrip: tarballPath ${JSON.stringify(options.tarballPath)} does not exist`);
+      }
+      if (packageName === undefined) {
+        throw new Error("packRoundTrip: tarballPath was supplied but packageDir's package.json has no \"name\"");
+      }
+    } else {
+      let tarballName: string;
+      try {
+        const { stdout } = await execFile("npm", ["pack", "--pack-destination", tarballDir], {
+          cwd: absPackageDir,
+          env,
+          timeout: packTimeoutMs,
+          killSignal: TIMEOUT_KILL_SIGNAL,
+        });
+        const lastLine = stdout.trim().split("\n").filter(Boolean).pop();
+        if (!lastLine) throw new Error("npm pack produced no output");
+        tarballName = lastLine;
+      } catch (error) {
+        return {
+          ok: false,
+          packageName,
+          tarballPath: "",
+          imports: [],
+          declarations: [],
+          findings: [packFailedFinding(packageName, summarizeExecError(error, packTimeoutMs))],
+        };
+      }
+      tarballPath = join(tarballDir, tarballName);
 
-    // npm itself refuses to produce a tarball for a manifest with no "name"
-    // (that is exactly the pack-failure branch above), so reaching this
-    // point already proves packageName is defined -- this is a narrowing
-    // check on that invariant, not a new possibility.
-    if (packageName === undefined) {
-      throw new Error("packRoundTrip: npm pack succeeded but package.json has no \"name\" (unreachable in practice)");
+      // npm itself refuses to produce a tarball for a manifest with no "name"
+      // (that is exactly the pack-failure branch above), so reaching this
+      // point already proves packageName is defined -- this is a narrowing
+      // check on that invariant, not a new possibility.
+      if (packageName === undefined) {
+        throw new Error("packRoundTrip: npm pack succeeded but package.json has no \"name\" (unreachable in practice)");
+      }
     }
 
     // 2. A minimal, real consumer project in the isolated directory — just

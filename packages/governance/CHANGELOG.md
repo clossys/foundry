@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-08-13
+
+### Added
+
+- **`PackRoundTripOptions.tarballPath`.** `packRoundTrip` (`./release`) can
+  now be pointed at an already-packed tarball instead of always running its
+  own `npm pack` on `packageDir`. A caller that has already packed the exact
+  bytes it needs checked — a tarball about to be published, or one fetched
+  from a registry — passes it via `tarballPath`, so the round trip checks
+  those bytes instead of risking a second, separately-produced pack that
+  could silently diverge from them. `packageDir/package.json` still supplies
+  the declared `exports` surface to check; only which bytes get installed
+  changes.
+
+  This closes a real gap: the publish workflow's post-publish step already
+  passed a `tarballPath`-shaped option to `packRoundTrip`, expecting it to
+  check the fetched, just-published tarball — but the option did not exist
+  on `PackRoundTripOptions`, so it was silently ignored and the function
+  always re-packed the current working tree instead. That step never
+  actually checked the tarball it claimed to. It does now, and this option
+  is also what lets the publish workflow move this proof to *before*
+  `npm publish` (see the workflow's own history for the ordering fix this
+  enables).
+
 ## [0.5.1] - 2026-08-13
 
 ### Added

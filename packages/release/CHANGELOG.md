@@ -7,6 +7,17 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-08-13
+
+### Changed
+
+- Widened the `@vespeneventures/governance` dependency range to `^0.6.0`
+  (was `^0.5.0`) so this package can pick up governance's 0.6.0 addition:
+  `packRoundTrip`'s new `tarballPath` option, which lets a caller point the
+  round trip at an already-packed tarball instead of always re-packing
+  `packageDir`. The re-exported `PackRoundTripOptions` type gains this new
+  optional field; no other change to any export this package re-exports.
+
 ## [0.2.2] - 2026-08-13
 
 ### Changed
