@@ -49,6 +49,10 @@ Markdown path with no absolute or parent segments and either:
 - a directory segment named `adr`, `adrs`, `decision`, or `decisions`; or
 - a filename beginning `adr-`, `adr_`, `decision-`, or `decision_`.
 
+Hidden repository metadata directories are valid path segments. A leading
+current-directory segment is not; references remain canonical paths from the
+repository root.
+
 An issue URL ending in `issues` plus a positive numeric identifier qualifies,
 as does a Markdown file beneath a decisions directory or named with an ADR
 prefix. A site root, ordinary source path, or arbitrary nested Markdown file is

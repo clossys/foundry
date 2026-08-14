@@ -16,6 +16,7 @@ const options: SkillRegistryOptions = {
   planeRepository: "control",
   prefixes: ["ex"],
 };
+const decisionFilename = ["ADR", "0042.md"].join("-");
 
 function registry(
   overrides: Partial<SkillRegistryDocument> = {},
@@ -124,6 +125,42 @@ describe("validateSkillRegistry", () => {
         reference: ["documents", "ADR-0042-planning-gap.md"].join("/"),
       }],
     }), options)).toEqual([]);
+  });
+
+  it("accepts a decision under a hidden repository metadata directory", () => {
+    const current = registry();
+    expect(validateSkillRegistry(registry({
+      skills: [current.skills[0]!],
+      acceptedGaps: [{
+        capability: "daily-planning",
+        repositories: ["product"],
+        reason: "The local workflow has not earned a reusable skill yet.",
+        reference: [".github", "decisions", "ADR-0042-planning-gap.md"].join("/"),
+      }],
+    }), options)).toEqual([]);
+  });
+
+  it.each([
+    ["", "decisions", decisionFilename].join("/"),
+    [".", "decisions", decisionFilename].join("/"),
+    ["..", "decisions", decisionFilename].join("/"),
+    ["docs", "..", "decisions", decisionFilename].join("/"),
+    ["docs", ".", "decisions", decisionFilename].join("/"),
+    [".github", "decisions", "ADR-0042.txt"].join("/"),
+    [".github", "notes", "coverage.md"].join("/"),
+  ])("rejects a non-canonical or non-decision relative reference: %s", (reference) => {
+    const current = registry();
+    const findings = validateSkillRegistry(registry({
+      skills: [current.skills[0]!],
+      acceptedGaps: [{
+        capability: "daily-planning",
+        repositories: ["product"],
+        reason: "Deferred.",
+        reference,
+      }],
+    }), options);
+    expect(findings.map((finding) => finding.rule)).toContain("skill-registry/gap-without-durable-reference");
+    expect(findings.map((finding) => finding.rule)).toContain("skill-registry/missing-capability-coverage");
   });
 
   it("rejects an accepted gap without durable evidence", () => {
@@ -321,6 +358,26 @@ describe("validateRoutineSkillCoverage", () => {
       "skill-registry/malformed-skills",
       "skill-registry/malformed-option-repositories",
       "routine/malformed-skill-coverage-declaration",
+    ]);
+  });
+
+  it("preserves malformed registry findings when target resolution also fails", () => {
+    const findings = validateRoutineSkillCoverage(
+      { ...routine, skillRepository: "product" },
+      registry({
+        skills: [{
+          repository: "product",
+          name: "ex-plan-day",
+          scope: 42,
+          source: "first-party",
+          implements: [{ capability: "daily-planning", repositories: ["product"] }],
+        }] as unknown as SkillRegistryDocument["skills"],
+      }),
+      options,
+    );
+    expect(findings.map((finding) => finding.rule)).toEqual([
+      "skill-registry/malformed-skill-entry",
+      "routine/unresolvable-registry-skill",
     ]);
   });
 });

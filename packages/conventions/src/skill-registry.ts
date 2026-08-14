@@ -61,7 +61,7 @@ export interface SkillRegistryOptions {
 
 const IDENTIFIER = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const HTTPS_ISSUE_REFERENCE = /^https:\/\/[A-Za-z0-9.-]+(?::[0-9]+)?\/(?:[A-Za-z0-9._~-]+\/)*issues\/[1-9][0-9]*(?:#[A-Za-z0-9._-]+)?$/;
-const RELATIVE_MARKDOWN_REFERENCE = /^(?![./])(?!.*(?:^|\/)\.\.(?:\/|$))[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)*\.md(?:#[A-Za-z0-9._-]+)?$/i;
+const RELATIVE_MARKDOWN_REFERENCE = /^(?!\/)(?!\.\/)(?!.*(?:^|\/)\.\.(?:\/|$))[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)*\.md(?:#[A-Za-z0-9._-]+)?$/i;
 const DECISION_SEGMENT = /^(?:adr|adrs|decision|decisions)$/i;
 const DECISION_FILENAME = /^(?:adr|decision)[-_][A-Za-z0-9._-]+\.md$/i;
 
@@ -85,6 +85,7 @@ function durableReference(reference: string): boolean {
 
   const path = reference.split("#", 1)[0]!;
   const segments = path.split("/");
+  if (segments.some((segment) => segment === "." || segment === "..")) return false;
   const filename = segments.at(-1)!;
   return segments.slice(0, -1).some((segment) => DECISION_SEGMENT.test(segment)) ||
     DECISION_FILENAME.test(filename);
@@ -627,11 +628,12 @@ export function validateRoutineSkillCoverage(
     (entry) => entry.repository === repository && entry.name === declaration.skill,
   );
   if (!skill || skill.source !== "first-party") {
-    return [{
+    findings.push({
       rule: "routine/unresolvable-registry-skill",
       severity: "high",
       message: `Routine "${declaration.id}" targets first-party skill (${repository}, ${declaration.skill}), which is not declared in the skill registry.`,
-    }];
+    });
+    return findings;
   }
 
   const capabilityTargets = new Map(
