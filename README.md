@@ -77,16 +77,22 @@ primitives, channel surfaces, and consumer-owned publishing, see
 
 ## Installing
 
-**Today, installing any package here needs a credential.** Packages publish
-to **GitHub Packages**, not the public npm registry. GitHub Packages
+**Installing any package here needs a credential.** Packages publish to
+**GitHub Packages**, which is the canonical and intended distribution
+lane for this repository — not a temporary staging step. GitHub Packages
 requires a GitHub personal access token with `read:packages` for every
 install, including for a publicly visible package version and a reader
 with no other relationship to this org — that is a GitHub Packages
-platform behavior, not a permission this repository chose. A
-credential-free CI job, ephemeral environment, or cloud agent cannot install any
-package from here yet. This is tracked as a P0 blocker in issue #194 —
-distribution, not any package's own API, is what's blocking public
-adoption.
+platform behavior, not a permission this repository chose.
+
+The consequence is worth stating plainly rather than leaving a reader to
+discover it: a CI job, ephemeral environment, or cloud agent holding no
+credential **cannot install from here, and that is not going to change**.
+The source is public and the APIs are public; resolution is
+authenticated. A consumer authenticates through whichever plane owns its
+package credentials. See [issue #213](https://github.com/vespeneventures/foundry/issues/213)
+for the decision and [docs/DECISIONS.md](docs/DECISIONS.md#2-the-registry--github-packages)
+for the reasoning.
 
 Add to your project's `.npmrc` (never commit a real one):
 
@@ -105,27 +111,32 @@ The same token is also used for maintainer actions such as publishing. See
 [docs/PUBLISHING.md](docs/PUBLISHING.md) for package release status and the
 maintainer process.
 
-### Intended end state: no `.npmrc`, no token
+### Why not the public npm registry
 
-The intended, but **not yet true**, end state is that a package here
-installs like any other public npm package — no scope-specific `.npmrc`
-line and no token, from the default public registry:
+A migration to `registry.npmjs.org` — which would have made these packages
+installable with no `.npmrc` and no token — was planned and then
+**cancelled**. This section records that, rather than leaving the question
+open for every reader who notices the token requirement and wonders
+whether it is an oversight. It is not: it is the chosen trade.
 
-```bash
-npm install @vespeneventures/governance
-```
+The migration is not deferred, not blocked on anything, and not waiting
+for a contributor. Claiming a scope on a shared public namespace is a
+first-come registration with no supported way to undo it, and the value it
+buys — credential-free install for readers with no relationship to this
+org — was judged not worth that irreversible step for a repository whose
+consumers all authenticate through a plane that already holds package
+credentials. See [issue #213](https://github.com/vespeneventures/foundry/issues/213)
+for the decision, and [docs/DECISIONS.md](docs/DECISIONS.md#2-the-registry--github-packages)
+for the full reasoning.
 
-This is *not yet the case*: as of this writing, the plain command above
-still resolves nothing, because the registry it needs to resolve from is
-still GitHub Packages, above. This section will be updated to describe
-that as the normal path — with the credential-free transcript that proves
-it — only once it is actually true, not before; see
-[docs/PUBLISHING.md#7-migrating-to-the-public-npm-registry](docs/PUBLISHING.md#7-migrating-to-the-public-npm-registry)
-for the exact ordered, owner-only steps that get from here to there, and
-`node scripts/set-registry.mjs --check` (`npm run check:registry`) for the
-mechanical gate that keeps every package's declared registry in sync with
-[`package-scope.json`](package-scope.json) — the single file that will
-change first, once those owner-only steps clear.
+One mechanism outlives the decision and is worth knowing about either way:
+[`package-scope.json`](package-scope.json) remains the single file
+declaring both the scope and the registry, and
+`node scripts/set-registry.mjs --check` (`npm run check:registry`, run in
+CI as `registry drift`) fails if any package's declared
+`publishConfig.registry` drifts from it. That gate matters more under a
+settled registry than it did under a pending migration — it is what keeps
+twenty packages agreeing on one answer.
 
 ### pnpm: a misleading "not found" when the auth token is unset
 
