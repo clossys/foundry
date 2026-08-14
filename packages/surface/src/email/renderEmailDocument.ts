@@ -107,12 +107,26 @@
  * itself; it was this file's positional zip silently producing zero rows
  * (or throwing on `undefined`) for a document `resolveCopy` correctly said
  * was fine.
+ *
+ * VIDEO: NO EMAIL CLIENT HAS A DEPENDABLE `<video>` STORY — A
+ * `VideoAssetEntry` RENDERS ITS `poster`, OR FAILS CLOSED (issue #177)
+ * -------------------------------------------------------------------------
+ * Real inline `<video>` playback in email is, at best, spotty across
+ * clients and unavailable in most — this channel makes no attempt at it.
+ * `../internal/assets.ts`'s `resolveStaticAssets` reduces any resolved
+ * `VideoAssetEntry`-sourced binding to its `poster` image and joins the
+ * SAME ordered row stack as every other slot, painted exactly like an
+ * image binding would be (`buildImageTag`, `internal/emailDocument.ts`). A
+ * video with no `poster` is fatal — this channel's own `hasAssetProblems`
+ * refusal now also covers `staticAssets.posterlessVideo`, the identical
+ * "no leniency, any problem is fatal" bar every other asset problem
+ * already gets here.
  */
 
 import { resolveCopy, resolveDocument } from "../core/index.js";
 import type { ComposeDocument, EmailMeta } from "../core/index.js";
 import { RenderError } from "../internal/errors.js";
-import { describeAssetProblems, hasAssetProblems, resolveDocumentAssets } from "../internal/assets.js";
+import { describeAssetProblems, describeStaticAssetProblems, hasAssetProblems, resolveDocumentAssets, resolveStaticAssets } from "../internal/assets.js";
 import { buildEmailHtml } from "./internal/emailDocument.js";
 import { buildGeometryWarnings, buildSyntheticLayout, orderEntries } from "./internal/geometry.js";
 import type { GeometryEntry } from "./internal/geometry.js";
@@ -160,8 +174,12 @@ export function renderEmailDocument(doc: ComposeDocument, options: RenderEmailOp
   // Never hand-rolled — see this file's own top comment, "Images: assetId
   // bindings join the same ordered row stack as text".
   const assetsResolution = resolveDocumentAssets(result, options.assetLookup);
+  // See this file's own top comment, "Video: no email client has a
+  // dependable <video> story" — a resolved video asset with no poster is
+  // exactly as fatal as an unresolved/invalid asset.
+  const staticAssets = resolveStaticAssets(assetsResolution);
 
-  if (!copyResult.ok || hasAssetProblems(assetsResolution)) {
+  if (!copyResult.ok || hasAssetProblems(assetsResolution) || staticAssets.posterlessVideo.length > 0) {
     const parts: string[] = [];
     if (copyResult.unresolvedCopyIds.length > 0) {
       parts.push(`copyId(s) that did not resolve to real text: ${copyResult.unresolvedCopyIds.join(", ")}`);
@@ -170,6 +188,7 @@ export function renderEmailDocument(doc: ComposeDocument, options: RenderEmailOp
       parts.push(`slot(s) resolveCopy could not even attempt to resolve: ${copyResult.unchecked.join(", ")}`);
     }
     parts.push(...describeAssetProblems(assetsResolution));
+    parts.push(...describeStaticAssetProblems(staticAssets));
     if (parts.length === 0) {
       parts.push("no slot produced any content at all");
     }
@@ -193,7 +212,7 @@ export function renderEmailDocument(doc: ComposeDocument, options: RenderEmailOp
   // its own "resolved" bucket via a problem this function has already
   // refused on.
   const textByKey = new Map(copyResult.texts.map((t) => [t.key, t.text]));
-  const assetByKey = assetsResolution.byKey;
+  const assetByKey = staticAssets.byKey;
 
   const zipped: GeometryEntry[] = [];
   for (const slot of result.resolved) {

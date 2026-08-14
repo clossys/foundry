@@ -19,7 +19,18 @@
  *      a list of referenced asset ids against a real `AssetRecord`.
  */
 
-export type { AssetEntry, AssetEntryId, AssetFinding, AssetRecord } from "./types.js";
+export type {
+  AssetEntry,
+  AssetEntryId,
+  AssetFinding,
+  AssetRecord,
+  ImageAssetEntry,
+  ImageSource,
+  VideoAssetEntry,
+  VideoCaption,
+  VideoReducedMotionBehavior,
+  VideoSource,
+} from "./types.js";
 
 export { parseAssetRecord, validateAssetRecordShape } from "./schema.js";
 
@@ -27,4 +38,4 @@ export { readAssetRecord } from "./registry.js";
 export type { AssetRegistryReadIssue, AssetRegistryReadIssueReason, AssetRegistryReadResult } from "./registry.js";
 
 export { checkAssetCoverage } from "./coverage.js";
-export type { AssetCoverageReport } from "./coverage.js";
+export type { AssetCoverageReport, AssetTypeCounts } from "./coverage.js";

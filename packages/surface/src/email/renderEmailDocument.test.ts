@@ -196,7 +196,7 @@ describe("before/after: an asset-only document — the empty-output bug this tas
     meta: { channel: "email", subject: "s", preheader: "p" },
     bindings: [{ slot: "a", assetId: "marketing.hero" }],
   };
-  const asset = { id: "marketing.hero", src: "https://cdn.example/hero.png", width: 600, height: 300, alt: "A hero shot" };
+  const asset = { id: "marketing.hero", type: "image", src: "https://cdn.example/hero.png", width: 600, height: 300, alt: "A hero shot" };
 
   it("BEFORE (still true without an assetLookup): throws — nothing was resolved", () => {
     expect(() => renderEmailDocument(assetOnlyDoc, { layout: SINGLE_SLOT_LAYOUT })).toThrow(RenderError);
@@ -209,6 +209,47 @@ describe("before/after: an asset-only document — the empty-output bug this tas
     });
     expect(html).toContain('<img src="https://cdn.example/hero.png" alt="A hero shot" width="600" height="300"');
     expect(text).toBe("A hero shot\n");
+  });
+});
+
+describe("video assets — no email client has a dependable <video> story; poster fallback, or fail closed (issue #177)", () => {
+  const videoDoc: ComposeDocument = {
+    id: "acme-video-email",
+    channel: "email",
+    template: "T",
+    meta: { channel: "email", subject: "s", preheader: "p" },
+    bindings: [{ slot: "a", assetId: "marketing.hero-video" }],
+  };
+  const videoAsset = (overrides: Record<string, unknown> = {}) => ({
+    id: "marketing.hero-video",
+    type: "video",
+    sources: [{ src: "https://cdn.example/hero.mp4", mimeType: "video/mp4" }],
+    width: 600,
+    height: 300,
+    alt: "A product demo video",
+    transcript: "A transcript.",
+    reducedMotion: "no-autoplay",
+    ...overrides,
+  });
+
+  it("a video asset WITH a poster renders its poster as a plain <img> row — exactly like an image asset", () => {
+    const { html, text } = renderEmailDocument(videoDoc, {
+      layout: SINGLE_SLOT_LAYOUT,
+      assetLookup: () => videoAsset({ poster: "https://cdn.example/hero-poster.png" }),
+    });
+    expect(html).toContain('<img src="https://cdn.example/hero-poster.png" alt="A product demo video" width="600" height="300"');
+    expect(text).toBe("A product demo video\n");
+  });
+
+  it("a video asset with NO poster refuses to render (empty-output) — this channel has nothing to paint instead", () => {
+    try {
+      renderEmailDocument(videoDoc, { layout: SINGLE_SLOT_LAYOUT, assetLookup: () => videoAsset() });
+      expect.unreachable();
+    } catch (error) {
+      expect(error).toBeInstanceOf(RenderError);
+      expect((error as RenderError).reason).toBe("empty-output");
+      expect((error as RenderError).message).toMatch(/no poster/);
+    }
   });
 });
 

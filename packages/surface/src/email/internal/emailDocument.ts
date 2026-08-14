@@ -22,7 +22,7 @@
  */
 
 import type { ElementKind, StyleBinding } from "../../core/index.js";
-import type { RenderAsset } from "../../internal/assets.js";
+import type { StaticRenderAsset } from "../../internal/assets.js";
 import { buildHiddenPreheaderContent, escapeHtml } from "./escapeHtml.js";
 import type { EmailPalette } from "./styles.js";
 import { readEmailToken, tdStyleForElement } from "./styles.js";
@@ -40,7 +40,7 @@ export interface EmailDocumentEntry {
    * with the asset's own `alt`, for `internal/plainText.ts` — see
    * `../internal/geometry.ts`'s own `GeometryEntry` doc comment).
    */
-  asset?: RenderAsset;
+  asset?: StaticRenderAsset;
 }
 
 export interface BuildEmailHtmlInput {
@@ -69,7 +69,7 @@ export interface BuildEmailHtmlInput {
  * it defends against, including a `src`/`alt` containing a raw `"` or
  * `</script...` sequence).
  */
-function buildImageTag(asset: RenderAsset): string {
+function buildImageTag(asset: StaticRenderAsset): string {
   return (
     `<img src="${escapeHtml(asset.src)}" alt="${escapeHtml(asset.alt)}" width="${asset.width}" height="${asset.height}" ` +
     `border="0" style="display:block" />`

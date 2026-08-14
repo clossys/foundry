@@ -256,7 +256,7 @@ describe("MarketingView — fail-closed contracts", () => {
   it("resolves a real assetId inside a repeating 'features' item into a real <img>", () => {
     const doc = marketingDoc([...baseBindings, { slot: "features", items: [{ assetId: "acme.feature.icon.a" }] }]);
     const resolved = resolveSurfaceDocument(doc, resolver);
-    const asset = { src: "https://cdn.example/icon-a.svg", width: 24, height: 24, alt: "Placeholder icon A" };
+    const asset = { type: "image" as const, src: "https://cdn.example/icon-a.svg", width: 24, height: 24, alt: "Placeholder icon A" };
     const { element } = renderWebDocument(resolved.document, {
       groups: resolved.groups,
       resolveAssetId: (id) => (id === "acme.feature.icon.a" ? asset : undefined),

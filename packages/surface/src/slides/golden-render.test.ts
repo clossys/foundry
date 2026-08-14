@@ -150,7 +150,7 @@ describe("golden: assetId — a slide with an image, byte for byte", () => {
       { slot: "hero", assetId: "marketing.hero" },
     ],
   };
-  const asset = { id: "marketing.hero", src: "https://cdn.example/hero.png", width: 1152, height: 540, alt: "Product shot" };
+  const asset = { id: "marketing.hero", type: "image", src: "https://cdn.example/hero.png", width: 1152, height: 540, alt: "Product shot" };
 
   it("renders the exact expected SVG, byte for byte — a mixed slide (text title + asset hero image)", () => {
     const result = renderSlidesDeck({ id: "d", slides: [titleSlide] }, { resolveAssetId: (id) => (id === "marketing.hero" ? asset : undefined) });

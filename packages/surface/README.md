@@ -379,6 +379,131 @@ slots avoid canvas placeholders; web, email, image, print, and slide outputs
 each receive a manifest with structural strategy provenance. It also asserts
 that draft or malformed sources fail closed.
 
+## `media` — the asset registry contract, responsive images, and video (v2)
+
+`@vespeneventures/surface/media` registers a consumer's own image and video
+assets under a stable `assetId`, the identical role `@vespeneventures/copy`
+plays for text: a registry, never a generation engine (it never calls an
+image/video API, never talks to a model, never transcodes or extracts a
+poster frame — see `src/media/types.ts`'s own top comment).
+
+**v2 (issue #177) added a required `type` discriminator, responsive image
+sources, and video — a breaking change from v1.** `AssetEntry` is now a
+discriminated union:
+
+```ts
+type AssetEntry = ImageAssetEntry | VideoAssetEntry;
+
+interface ImageAssetEntry {
+  id: string;
+  type: "image";
+  src: string;            // primary/fallback source — unchanged from v1
+  width: number;
+  height: number;
+  alt: string;             // required, unchanged from v1
+  mimeType?: string;
+  licence?: string;        // optional — unchanged from v1, see below
+  credit?: string;
+  sources?: { src: string; width: number; format?: string }[]; // NEW — responsive <picture>/srcset
+}
+
+interface VideoAssetEntry {
+  id: string;
+  type: "video";           // NEW — this package's first video support at all
+  sources: { src: string; mimeType: string }[]; // required, at least one
+  width: number;
+  height: number;
+  alt: string;
+  captions?: { src: string; srclang: string; label: string }[];
+  transcript?: string;     // at least one of captions/transcript is REQUIRED
+  poster?: string;
+  reducedMotion: "pause" | "no-autoplay" | "static-poster"; // required
+  autoplay?: boolean;
+  loop?: boolean;
+  muted?: boolean;
+  licence?: string;
+  credit?: string;
+}
+```
+
+**Migrating a v1 registry:** add `type: "image"` to every existing entry.
+`validateAssetRecordShape`'s new `"type-shape"` rule rejects any entry with
+no `type` at all — there is no silent default, on purpose (a registry that
+guessed "image" on a caller's behalf would hide the one piece of
+information a reviewer most needs to see stated). Every other v1 field
+(`src`/`width`/`height`/`alt`/`mimeType`/`licence`/`credit`) is unchanged.
+
+**`licence`/`credit` are not new in v2 and stay optional.** Both already
+existed in v1 with real shape validation (`"licence-shape"`/
+`"credit-shape"`). v1's actual gap was that a missing licence produced no
+signal at all — closed not by making `licence` schema-required (which would
+invalidate every already-registered v1 entry the moment its owner upgrades)
+but by a new `checkAssetCoverage` finding: `"asset-missing-licence"`
+(`severity: "warning"`), reported for every registered entry — referenced or
+not — with no `licence`. `AssetCoverageReport` also gained `registeredByType:
+{ image: number; video: number }`, so a reviewer can tell what is actually
+registered without re-reading the raw JSON; `checkAssetCoverage`'s own
+id-matching does not branch on `type` — an id either matches a registered
+entry or it doesn't, regardless of kind.
+
+**Video accessibility is enforced at the schema layer, not the renderer.**
+A `VideoAssetEntry` with neither `captions` nor `transcript` fails
+`validateAssetRecordShape` (`"video-caption-or-transcript-required"`,
+`severity: "error"`) and can never reach a renderer at all — the identical
+"no later recovery point" reasoning `alt`'s own required-and-non-whitespace
+rule already holds images to, restated for captions (recovering one after
+the fact means re-transcribing the video, not re-typing a sentence).
+`reducedMotion` is similarly required
+(`"video-reduced-motion-required"`), and `reducedMotion: "static-poster"`
+additionally requires `poster` (`"video-static-poster-requires-poster"`).
+`../internal/assets.ts`'s render-time validation (`isRenderVideoAsset`)
+enforces the identical bars independently, since a hand-rolled `AssetLookup`
+(a CMS, a CDN manifest, a test double) can hand a renderer a video-shaped
+value that never passed through this package's own schema at all.
+
+### Per-channel behaviour
+
+| Channel | Responsive images (`sources`) | Video |
+| --- | --- | --- |
+| `web` | Real `<picture>`/`<source>`/`srcset`, falling back to the primary `<img>` | Real `<video>` with every `<source>`/`<track kind="captions">`, gated by the reduced-motion contract below |
+| `email`, `print`, `image`, `slides` | Ignored — `sources` is dropped; the primary `src` renders exactly as a v1 image would | No playback capability of any kind. A video entry's `poster` renders as a plain `<img>`/`<image>`, exactly like an image asset. A video with **no `poster`** is an unresolvable asset — the render refuses (`RenderError("empty-output", ...)`), the identical fail-closed bar an unresolved `assetId` already gets. Never silently rendered as nothing. |
+
+**Reduced motion is a rendering-time decision, not a build-time one.**
+`renderWebDocument`/`RenderWebOptions.prefersReducedMotion` (issue #177) is
+a caller-supplied boolean — this package has no `window`/DOM access at
+render time (it may run on a server, in a build step, or in a browser), so
+it cannot itself call `window.matchMedia("(prefers-reduced-motion:
+reduce)")`; a caller derives that value from a `Sec-CH-Prefers-Reduced-Motion`
+client hint on the server, or a direct `matchMedia` read on the client, and
+passes it through. Applied against a resolved `VideoAssetEntry.reducedMotion`:
+
+- Omitted (or `false`) — every video's own `autoplay` renders exactly as
+  authored. Regression-safe: unchanged from before this option existed.
+- `true` and `reducedMotion` is `"pause"` or `"no-autoplay"` — the entry's
+  `autoplay` is force-suppressed; every other attribute (loop/muted/
+  poster/sources/captions) renders unchanged, so a viewer can still press
+  play.
+- `true` and `reducedMotion` is `"static-poster"` — no `<video>` element is
+  emitted at all; a static `<img>` built from `poster` renders instead.
+
+### Explicit non-goals
+
+- **No responsive-source or video support on `email`/`print`/`image`/
+  `slides`.** `RenderAsset`'s discriminated shape is shared by all five
+  channel renderers by construction, so each non-web channel must at
+  minimum not crash or silently mis-render a video/multi-source entry — but
+  real playback support is `web`-only, and a `<picture>`-equivalent
+  construct does not exist in an SVG canvas or reliably in an email client.
+- **No licence content-validation.** `licence` stays free text — this
+  package has no authority over what licences a consumer's assets actually
+  carry, unchanged from v1.
+- **No automatic captioning/transcription.** A missing captions/transcript
+  pair is a hard validation failure a human must resolve, never something
+  this package infers or generates.
+- **No video generation, transcoding, or poster extraction** — the
+  identical "registry, not an engine" boundary this file's own top comment
+  already draws for images.
+
 ## `document` — a product-neutral structured-document contract and renderer
 
 A help article, a policy page, a changelog entry, a long-form explainer —
@@ -628,8 +753,10 @@ rendering the TOC itself is left to the caller).
 - `media`: `parseAssetRecord`, `validateAssetRecordShape`,
   `readAssetRecord`, `checkAssetCoverage`, and the `AssetEntry`,
   `AssetEntryId`, `AssetFinding`, `AssetRecord`, `AssetRegistryReadIssue`,
-  `AssetRegistryReadIssueReason`, `AssetRegistryReadResult`, and
-  `AssetCoverageReport` types. The CLI is `surface-media-check`.
+  `AssetRegistryReadIssueReason`, `AssetRegistryReadResult`,
+  `AssetCoverageReport`, `AssetTypeCounts`, `ImageAssetEntry`,
+  `ImageSource`, `VideoAssetEntry`, `VideoCaption`, and
+  `VideoReducedMotionBehavior` types. The CLI is `surface-media-check`.
 - `web`: `renderWebDocument`, `buildWebHeadMetadata`,
   `listWebTemplateNames`, `defineWebTemplate`, `createWebRenderer`,
   `AuthView`, `ErrorView`, `MarketingView`,

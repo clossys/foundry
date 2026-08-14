@@ -1,5 +1,93 @@
 # Changelog
 
+## [0.6.0] - 2026-08-14
+
+### Added
+
+- **Media v2: responsive images and video, closing issue #177.**
+  `@vespeneventures/surface/media`'s `AssetEntry` is now a discriminated
+  union — `ImageAssetEntry` (`type: "image"`) or `VideoAssetEntry`
+  (`type: "video"`) — where v1 had a single, image-only shape with no
+  `type` field at all. `type` is REQUIRED; migrating a v1 registry means
+  adding `type: "image"` to every existing entry (`schema.ts`'s new
+  `"type-shape"` rule rejects an entry with none — there is no silent
+  default). `ImageAssetEntry` gained an optional `sources: { src, width,
+  format? }[]` for responsive `<picture>`/`srcset` output on `web`;
+  omitting it degrades to the identical v1 single-`<img>` behavior.
+  `VideoAssetEntry` is this package's first video support of any kind:
+  `sources` (required, at least one, each with a required `mimeType`),
+  `reducedMotion: "pause" | "no-autoplay" | "static-poster"` (required),
+  and at least one of `captions`/`transcript` (required — enforced by the
+  new `"video-caption-or-transcript-required"` schema rule, `severity:
+  "error"`, so an inaccessible video can never be registered) round out the
+  shape, alongside optional `poster`/`autoplay`/`loop`/`muted`.
+
+  `licence`/`credit` are NOT new — both already existed in v1 as optional,
+  shape-validated free-text fields, and stay optional here (making
+  `licence` schema-required would invalidate every already-registered v1
+  entry on upgrade). v1's real gap — a missing licence produced zero
+  signal — closes instead via `checkAssetCoverage`'s new
+  `"asset-missing-licence"` finding (`severity: "warning"`), reported for
+  every registered entry, referenced or not. `AssetCoverageReport` also
+  gained `registeredByType: { image: number; video: number }`; the
+  existing id-matching/three-state `ok` contract is unchanged.
+
+  `../internal/assets.ts`'s `RenderAsset` (the shared shape all five
+  channel renderers paint from — deliberately not an import of
+  `AssetEntry`, by design) gained the identical discriminated extension in
+  parallel: `RenderImageAsset`/`RenderVideoAsset`, with `isRenderAsset`
+  now dispatching to new `isRenderImageAsset`/`isRenderVideoAsset`
+  predicates. Every `src`/`sources[].src`/`poster` value is scheme-checked
+  (`new URL`, allowlist `https:`/`http:`, never a string match) before a
+  render trusts it — a rejected value makes the whole asset `invalid`,
+  never a silent drop; a value that isn't an absolute URL at all (a
+  build-resolved relative path) is accepted unchanged, matching v1's own
+  documented allowance. `isRenderVideoAsset` independently re-checks the
+  caption-or-transcript and `reducedMotion` bars, since a hand-rolled
+  `AssetLookup` can hand a renderer a value that never passed through
+  `media`'s own schema.
+
+  `web`: `renderWebDocument` now branches on `asset.type` instead of
+  always emitting `<img>`. An image with no `sources` still renders the
+  identical single `<img>` (regression-safe); an image WITH `sources`
+  renders a `<picture>` (sources grouped by `format`, each group one
+  `<source srcset="... w, ... w" type="...">`, plus a trailing fallback
+  `<img>`). A video renders a real `<video controls>` with every
+  `<source>`/`<track kind="captions">`, `poster`, and alt text as fallback
+  content. `RenderWebOptions.prefersReducedMotion` (new, optional) is a
+  caller-supplied boolean — this package has no `window`/DOM access at
+  render time, so it cannot call `matchMedia` itself; a caller derives the
+  value from a client hint or a direct `matchMedia` read and passes it
+  through. Applied against `reducedMotion`: `"pause"`/`"no-autoplay"`
+  suppress `autoplay` when active; `"static-poster"` replaces the whole
+  `<video>` with a static `<img>` built from `poster`. Omitting the option
+  preserves exactly today's behavior for every existing caller. Tested
+  with a real `window.matchMedia("(prefers-reduced-motion: reduce)")` read
+  (jsdom) feeding the option, asserted against real rendered HTML — never
+  a documentation-only promise.
+
+  `email`/`print`/`image`/`slides` (the four channels with zero video
+  playback capability, by construction — a paged HTML document, an email
+  client, and an SVG canvas have no `<video>`-equivalent element): a new
+  shared `internal/assets.ts` helper (`toStaticRenderAsset`/
+  `resolveStaticAssets`) reduces any resolved asset to the flat,
+  single-image shape these four channels already paint from — an image
+  reduces to itself (`sources` dropped, an explicit non-goal for these
+  channels); a video reduces to its `poster`, rendered exactly like an
+  image asset. A video with NO `poster` has nothing these channels can
+  paint and refuses to render (`RenderError("empty-output", ...)`), the
+  identical fail-closed bar an unresolved `assetId` already gets — never
+  silently rendered as nothing, the exact failure mode this package has
+  written down as a rule.
+
+  README updated: new "`media` — the asset registry contract, responsive
+  images, and video (v2)" section documents the discriminated shapes, the
+  migration from v1, the per-channel behaviour table, the reduced-motion
+  contract, and the explicit non-goals (no responsive/video support beyond
+  a poster fallback on the four non-web channels, no licence
+  content-validation, no automatic captioning/transcription, no video
+  generation/transcoding/poster-extraction).
+
 ## [0.5.0] - 2026-08-14
 
 ### Added

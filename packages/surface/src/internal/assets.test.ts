@@ -3,10 +3,17 @@ import { resolveDocument } from "../core/index.js";
 import type { ComposeDocument, LayoutSpec } from "../core/index.js";
 import {
   describeAssetProblems,
+  describeStaticAssetProblems,
   hasAssetProblems,
+  isAllowedAssetUrl,
   isRenderAsset,
+  isRenderImageAsset,
+  isRenderVideoAsset,
   resolveDocumentAssets,
+  resolveStaticAssets,
+  toStaticRenderAsset,
 } from "./assets.js";
+import type { RenderAssetResolution, RenderImageAsset, RenderVideoAsset } from "./assets.js";
 
 const LAYOUT: LayoutSpec = {
   slots: [
@@ -25,7 +32,7 @@ function docWithBindings(bindings: ComposeDocument["bindings"]): ComposeDocument
   };
 }
 
-const REAL_ASSET = { id: "marketing.hero", src: "https://cdn.example/hero.png", width: 800, height: 400, alt: "A hero shot" };
+const REAL_ASSET = { id: "marketing.hero", type: "image", src: "https://cdn.example/hero.png", width: 800, height: 400, alt: "A hero shot" };
 
 // ─────────────────────────────────────────────────────────────────────────
 // isRenderAsset — shape validation
@@ -182,5 +189,239 @@ describe("hasAssetProblems / describeAssetProblems", () => {
     expect(problems.some((p) => p.includes("unresolvable"))).toBe(true);
     expect(problems.some((p) => p.includes("wrong-shape"))).toBe(true);
     expect(hasAssetProblems(assets)).toBe(true);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// isAllowedAssetUrl — scheme checking (issue #177)
+// ─────────────────────────────────────────────────────────────────────────
+
+describe("isAllowedAssetUrl", () => {
+  it("accepts https:/http: absolute URLs", () => {
+    expect(isAllowedAssetUrl("https://cdn.example/hero.png")).toBe(true);
+    expect(isAllowedAssetUrl("http://cdn.example/hero.png")).toBe(true);
+  });
+
+  it("rejects a dangerous scheme (parsed, never string-matched)", () => {
+    expect(isAllowedAssetUrl("javascript:alert(1)")).toBe(false);
+    expect(isAllowedAssetUrl("vbscript:msgbox(1)")).toBe(false);
+    expect(isAllowedAssetUrl("file:///etc/passwd")).toBe(false);
+    expect(isAllowedAssetUrl("data:text/html,<script>alert(1)</script>")).toBe(false);
+  });
+
+  it("rejects a protocol-relative URL — it reads as same-site and is not", () => {
+    expect(isAllowedAssetUrl("//evil.example/hero.png")).toBe(false);
+  });
+
+  it("accepts a build-resolved relative path — v1's own documented allowance, unchanged", () => {
+    expect(isAllowedAssetUrl("./hero.png")).toBe(true);
+    expect(isAllowedAssetUrl("assets/hero.png")).toBe(true);
+    expect(isAllowedAssetUrl("/images/hero.png")).toBe(true);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// isRenderImageAsset / isRenderVideoAsset — the v2 discriminated shapes
+// ─────────────────────────────────────────────────────────────────────────
+
+const REAL_IMAGE_ASSET: RenderImageAsset = {
+  type: "image",
+  src: "https://cdn.example/hero.png",
+  width: 800,
+  height: 400,
+  alt: "A hero shot",
+};
+
+const REAL_VIDEO_ASSET: RenderVideoAsset = {
+  type: "video",
+  sources: [{ src: "https://cdn.example/hero.mp4", mimeType: "video/mp4" }],
+  width: 1920,
+  height: 1080,
+  alt: "A product demo",
+  transcript: "A transcript.",
+  reducedMotion: "no-autoplay",
+};
+
+describe("isRenderImageAsset", () => {
+  it("accepts a real image asset with no sources", () => {
+    expect(isRenderImageAsset(REAL_IMAGE_ASSET)).toBe(true);
+    expect(isRenderAsset(REAL_IMAGE_ASSET)).toBe(true);
+  });
+
+  it("accepts a real image asset WITH well-formed sources", () => {
+    const withSources: RenderImageAsset = {
+      ...REAL_IMAGE_ASSET,
+      sources: [
+        { src: "https://cdn.example/hero.avif", width: 800, format: "image/avif" },
+        { src: "https://cdn.example/hero-400.png", width: 400 },
+      ],
+    };
+    expect(isRenderImageAsset(withSources)).toBe(true);
+  });
+
+  it("rejects a wrong type discriminator", () => {
+    expect(isRenderImageAsset({ ...REAL_IMAGE_ASSET, type: "video" })).toBe(false);
+    expect(isRenderImageAsset({ ...REAL_IMAGE_ASSET, type: undefined })).toBe(false);
+  });
+
+  it("rejects a malformed sources entry — a plausible-looking wrong value is still fatal", () => {
+    expect(isRenderImageAsset({ ...REAL_IMAGE_ASSET, sources: [{ src: "x.png", width: 0 }] })).toBe(false);
+    expect(isRenderImageAsset({ ...REAL_IMAGE_ASSET, sources: [{ width: 400 }] })).toBe(false);
+    expect(isRenderImageAsset({ ...REAL_IMAGE_ASSET, sources: "not an array" })).toBe(false);
+  });
+
+  it("rejects a source whose src fails the URL scheme check", () => {
+    expect(isRenderImageAsset({ ...REAL_IMAGE_ASSET, sources: [{ src: "javascript:alert(1)", width: 400 }] })).toBe(false);
+  });
+
+  it("rejects a src that fails the URL scheme check", () => {
+    expect(isRenderImageAsset({ ...REAL_IMAGE_ASSET, src: "javascript:alert(1)" })).toBe(false);
+  });
+
+  it("rejects missing/whitespace-only alt, non-positive dimensions — unchanged from v1", () => {
+    expect(isRenderImageAsset({ ...REAL_IMAGE_ASSET, alt: "   " })).toBe(false);
+    expect(isRenderImageAsset({ ...REAL_IMAGE_ASSET, width: 0 })).toBe(false);
+  });
+});
+
+describe("isRenderVideoAsset", () => {
+  it("accepts a real, well-shaped video asset (transcript only)", () => {
+    expect(isRenderVideoAsset(REAL_VIDEO_ASSET)).toBe(true);
+    expect(isRenderAsset(REAL_VIDEO_ASSET)).toBe(true);
+  });
+
+  it("accepts a video asset with captions only (no transcript)", () => {
+    const { transcript: _drop, ...rest } = REAL_VIDEO_ASSET;
+    const withCaptions: RenderVideoAsset = { ...rest, captions: [{ src: "https://cdn.example/en.vtt", srclang: "en", label: "English" }] };
+    expect(isRenderVideoAsset(withCaptions)).toBe(true);
+  });
+
+  it("rejects a video asset with NEITHER captions nor transcript — the render-time accessibility bar, independent of schema", () => {
+    const { transcript: _drop, ...rest } = REAL_VIDEO_ASSET;
+    expect(isRenderVideoAsset(rest)).toBe(false);
+  });
+
+  it("rejects a video asset with a malformed captions array — malformed never counts as satisfying the requirement", () => {
+    const { transcript: _drop, ...rest } = REAL_VIDEO_ASSET;
+    expect(isRenderVideoAsset({ ...rest, captions: [{ src: "x.vtt" }] })).toBe(false);
+  });
+
+  it("rejects zero sources", () => {
+    expect(isRenderVideoAsset({ ...REAL_VIDEO_ASSET, sources: [] })).toBe(false);
+  });
+
+  it("rejects a source with no mimeType", () => {
+    expect(isRenderVideoAsset({ ...REAL_VIDEO_ASSET, sources: [{ src: "https://cdn.example/hero.mp4" }] })).toBe(false);
+  });
+
+  it("rejects a source whose src fails the URL scheme check", () => {
+    expect(isRenderVideoAsset({ ...REAL_VIDEO_ASSET, sources: [{ src: "javascript:alert(1)", mimeType: "video/mp4" }] })).toBe(false);
+  });
+
+  it("rejects a missing/unknown reducedMotion", () => {
+    const { reducedMotion: _drop, ...rest } = REAL_VIDEO_ASSET;
+    expect(isRenderVideoAsset(rest)).toBe(false);
+    expect(isRenderVideoAsset({ ...REAL_VIDEO_ASSET, reducedMotion: "sometimes" })).toBe(false);
+  });
+
+  it("rejects reducedMotion: static-poster with no poster", () => {
+    expect(isRenderVideoAsset({ ...REAL_VIDEO_ASSET, reducedMotion: "static-poster" })).toBe(false);
+  });
+
+  it("accepts reducedMotion: static-poster WITH a poster", () => {
+    expect(isRenderVideoAsset({ ...REAL_VIDEO_ASSET, reducedMotion: "static-poster", poster: "https://cdn.example/poster.png" })).toBe(true);
+  });
+
+  it("rejects a poster that fails the URL scheme check", () => {
+    expect(isRenderVideoAsset({ ...REAL_VIDEO_ASSET, poster: "javascript:alert(1)" })).toBe(false);
+  });
+
+  it("rejects a non-boolean autoplay/loop/muted", () => {
+    expect(isRenderVideoAsset({ ...REAL_VIDEO_ASSET, autoplay: "yes" })).toBe(false);
+    expect(isRenderVideoAsset({ ...REAL_VIDEO_ASSET, loop: "yes" })).toBe(false);
+    expect(isRenderVideoAsset({ ...REAL_VIDEO_ASSET, muted: "yes" })).toBe(false);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// toStaticRenderAsset / resolveStaticAssets — the non-web channels' shared
+// video decision (issue #177)
+// ─────────────────────────────────────────────────────────────────────────
+
+describe("toStaticRenderAsset", () => {
+  it("reduces an image asset to exactly itself, dropping sources", () => {
+    const withSources: RenderImageAsset = { ...REAL_IMAGE_ASSET, sources: [{ src: "https://cdn.example/hero.avif", width: 800 }] };
+    expect(toStaticRenderAsset(withSources)).toEqual({
+      src: REAL_IMAGE_ASSET.src,
+      width: REAL_IMAGE_ASSET.width,
+      height: REAL_IMAGE_ASSET.height,
+      alt: REAL_IMAGE_ASSET.alt,
+    });
+  });
+
+  it("reduces a video asset WITH a poster to that poster", () => {
+    const withPoster: RenderVideoAsset = { ...REAL_VIDEO_ASSET, poster: "https://cdn.example/poster.png" };
+    expect(toStaticRenderAsset(withPoster)).toEqual({
+      src: "https://cdn.example/poster.png",
+      width: REAL_VIDEO_ASSET.width,
+      height: REAL_VIDEO_ASSET.height,
+      alt: REAL_VIDEO_ASSET.alt,
+    });
+  });
+
+  it("returns undefined for a video asset with NO poster — nothing this channel can paint", () => {
+    expect(toStaticRenderAsset(REAL_VIDEO_ASSET)).toBeUndefined();
+  });
+});
+
+describe("resolveStaticAssets / describeStaticAssetProblems", () => {
+  function resolutionOf(byKey: Map<string, RenderImageAsset | RenderVideoAsset>): RenderAssetResolution {
+    return { byKey, unresolvedAssetIds: [], unchecked: [], invalid: [], deferredToCopy: [] };
+  }
+
+  it("flattens every image entry into byKey", () => {
+    const resolution = resolutionOf(new Map([["hero", REAL_IMAGE_ASSET]]));
+    const staticAssets = resolveStaticAssets(resolution);
+    expect(staticAssets.byKey.get("hero")).toEqual({
+      src: REAL_IMAGE_ASSET.src,
+      width: REAL_IMAGE_ASSET.width,
+      height: REAL_IMAGE_ASSET.height,
+      alt: REAL_IMAGE_ASSET.alt,
+    });
+    expect(staticAssets.posterlessVideo).toEqual([]);
+    expect(describeStaticAssetProblems(staticAssets)).toEqual([]);
+  });
+
+  it("flattens a poster-bearing video entry into byKey too", () => {
+    const withPoster: RenderVideoAsset = { ...REAL_VIDEO_ASSET, poster: "https://cdn.example/poster.png" };
+    const resolution = resolutionOf(new Map([["hero", withPoster]]));
+    const staticAssets = resolveStaticAssets(resolution);
+    expect(staticAssets.byKey.get("hero")?.src).toBe("https://cdn.example/poster.png");
+    expect(staticAssets.posterlessVideo).toEqual([]);
+  });
+
+  it("records a posterless video's key in posterlessVideo, never in byKey", () => {
+    const resolution = resolutionOf(new Map([["hero", REAL_VIDEO_ASSET]]));
+    const staticAssets = resolveStaticAssets(resolution);
+    expect(staticAssets.byKey.has("hero")).toBe(false);
+    expect(staticAssets.posterlessVideo).toEqual(["hero"]);
+    const problems = describeStaticAssetProblems(staticAssets);
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toContain("hero");
+    expect(problems[0]).toMatch(/no poster/);
+  });
+
+  it("handles a mix of image, poster-video, and posterless-video slots in one resolution", () => {
+    const withPoster: RenderVideoAsset = { ...REAL_VIDEO_ASSET, poster: "https://cdn.example/poster.png" };
+    const resolution = resolutionOf(
+      new Map<string, RenderImageAsset | RenderVideoAsset>([
+        ["a", REAL_IMAGE_ASSET],
+        ["b", withPoster],
+        ["c", REAL_VIDEO_ASSET],
+      ]),
+    );
+    const staticAssets = resolveStaticAssets(resolution);
+    expect([...staticAssets.byKey.keys()].sort()).toEqual(["a", "b"]);
+    expect(staticAssets.posterlessVideo).toEqual(["c"]);
   });
 });

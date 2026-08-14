@@ -288,6 +288,53 @@ describe("assetId refusal paths", () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────
+// Video assets — a slide canvas has no <video> story; poster fallback, or
+// fail closed (issue #177)
+// ─────────────────────────────────────────────────────────────────────────
+
+describe("video assets — poster fallback, or fail closed (issue #177)", () => {
+  function videoSlide(id: string, overrides: Record<string, unknown> = {}): ComposeDocument {
+    return {
+      id,
+      channel: "slides",
+      template: "t",
+      meta: { channel: "slides", aspect: "16:9" },
+      layout: { slots: [{ key: "hero", element: "image", frame: { x: 0, y: 0, w: 1, h: 1 } }] },
+      bindings: [{ slot: "hero", assetId: "marketing.hero-video" }],
+      ...overrides,
+    } as ComposeDocument;
+  }
+  const videoAsset = (overrides: Record<string, unknown> = {}) => ({
+    id: "marketing.hero-video",
+    type: "video",
+    sources: [{ src: "https://cdn.example/hero.mp4", mimeType: "video/mp4" }],
+    width: 1920,
+    height: 1080,
+    alt: "A product demo video",
+    transcript: "A transcript.",
+    reducedMotion: "no-autoplay",
+    ...overrides,
+  });
+
+  it("a video asset WITH a poster renders its poster as a normal <image> — exactly like an image asset", () => {
+    const deck: SlidesDeckInput = { id: "d", slides: [videoSlide("s1")] };
+    const result = renderSlidesDeck(deck, { resolveAssetId: () => videoAsset({ poster: "https://cdn.example/hero-poster.png" }) });
+    expect(result.slides[0]!.svg).toContain('href="https://cdn.example/hero-poster.png"');
+  });
+
+  it("a video asset with NO poster refuses to render (empty-output) — this channel has nothing to paint instead", () => {
+    const deck: SlidesDeckInput = { id: "d", slides: [videoSlide("s1")] };
+    try {
+      renderSlidesDeck(deck, { resolveAssetId: () => videoAsset() });
+      expect.unreachable();
+    } catch (error) {
+      expect((error as RenderError).reason).toBe("empty-output");
+      expect((error as RenderError).message).toMatch(/no poster/);
+    }
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────
 // Warnings roll up per slide, prefixed with the slide id
 // ─────────────────────────────────────────────────────────────────────────
 
