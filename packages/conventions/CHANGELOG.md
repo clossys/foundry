@@ -1,0 +1,34 @@
+# Changelog
+
+All notable changes to `@vespeneventures/conventions` are documented here.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.1.0] - 2026-08-13
+
+### Added
+
+- Six default documents: branch provenance, skill grammar, agent
+  interoperability, routine declarations, machine-wide agent guidance, and the
+  machine baseline.
+- Three adapter defaults: execution-policy rules, shell integration, and a
+  branch-provenance hook configured entirely through the environment.
+- `renderProductLoader` for a product's instruction-file loader. Generated
+  against a caller-supplied path rather than shipped as a file, because the
+  import target depends on where the guidance was installed.
+- `validateBranchName` and `TAXONOMY_PREFIXES` for branch provenance. The
+  validator reports rather than passing vacuously when a caller declares no
+  agent prefixes.
+- `validateSkillName`, `validateSkillSet`, and `SKILL_VERBS` for skill naming
+  and ownership.
+- `validateRoutineDeclaration`, `validateRoutineSet`,
+  `validateScheduledSkillDescription`, and `reconciliationFindingKinds` for
+  routine declarations.
+- `scanNeutrality` for the publishing precondition: absolute paths,
+  operator-specific home directories, and caller-supplied plane-owned names.
+- `documentPath`, `adapterPath`, `templatedFilenames`, `CONVENTION_DOCUMENTS`,
+  `CONVENTION_ADAPTERS`, `DOCUMENTS_ROOT`, and `ADAPTERS_ROOT` for reaching the
+  shipped defaults without this package performing any I/O.
+
+[0.1.0]: https://github.com/vespeneventures/foundry/releases/tag/conventions-v0.1.0

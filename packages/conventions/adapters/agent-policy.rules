@@ -1,0 +1,53 @@
+# Durable machine policy for an execution-policy engine that reads this format.
+# Keep this file separate from the product's own default rules so that
+# user-approved one-off rules remain user-owned and are never overwritten by a
+# reinstall of this policy.
+
+prefix_rule(
+    pattern = ["git", "push"],
+    decision = "prompt",
+    justification = "Publishing changes requires explicit confirmation and repository policy checks.",
+    match = ["git push", "git push origin feature/example"],
+)
+
+prefix_rule(
+    pattern = ["git", "push", ["--force", "-f", "--force-with-lease"]],
+    decision = "forbidden",
+    justification = "Do not force-push from an agent workflow; perform an explicitly reviewed manual operation if truly required.",
+    match = ["git push --force", "git push -f origin feature/example"],
+)
+
+prefix_rule(
+    pattern = ["git", "push", "origin", ["main", "master"]],
+    decision = "forbidden",
+    justification = "Direct pushes to protected default branches are forbidden; use a task branch and pull request.",
+    match = ["git push origin main", "git push origin master"],
+)
+
+prefix_rule(
+    pattern = ["git", ["reset", "clean"]],
+    decision = "prompt",
+    justification = "Potentially destructive cleanup requires explicit confirmation.",
+    match = ["git reset --hard HEAD", "git clean -fd"],
+)
+
+prefix_rule(
+    pattern = ["rm", ["-rf", "-fr"]],
+    decision = "prompt",
+    justification = "Recursive deletion requires an exact, reviewed target.",
+    match = ["rm -rf build"],
+)
+
+prefix_rule(
+    pattern = [["kill", "pkill", "killall"]],
+    decision = "prompt",
+    justification = "Process termination requires ownership and target verification.",
+    match = ["kill 12345", "pkill node", "killall node"],
+)
+
+prefix_rule(
+    pattern = ["gh", "repo", "delete"],
+    decision = "prompt",
+    justification = "Repository deletion is an external destructive action requiring explicit confirmation.",
+    match = ["gh repo delete owner/repository"],
+)

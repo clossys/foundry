@@ -1,0 +1,64 @@
+{
+  "name": "@vespeneventures/conventions",
+  "version": "0.1.0",
+  "private": false,
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./documents/*": "./documents/*",
+    "./adapters/*": "./adapters/*"
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/**/*.test.ts",
+    "documents",
+    "adapters",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "description": "Account-neutral agent conventions two parties can share without either owning the other: branch provenance, skill naming, agent interoperability, and routine declarations, shipped as default documents plus the validators that enforce their grammar.",
+  "keywords": [
+    "agent-conventions",
+    "branch-naming",
+    "agent-skills",
+    "governance",
+    "neutrality",
+    "typescript"
+  ],
+  "author": "Calvin Hung",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vespeneventures/foundry.git",
+    "directory": "packages/conventions"
+  },
+  "bugs": {
+    "url": "https://github.com/vespeneventures/foundry/issues"
+  },
+  "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/conventions#readme",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "~6.0.0",
+    "vitest": "^4.1.9"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  }
+}
