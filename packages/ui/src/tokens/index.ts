@@ -43,6 +43,35 @@
  * slots by name, not a real CSS file's declarations); see
  * `check-brand-file-coverage.ts`'s own header comment for the full
  * distinction.
+ *
+ * THE WCAG CONTRAST GATE. A token registry can be internally consistent —
+ * every brand slot filled in, every declaration typo-free — and still be
+ * unreadable: nothing about `checkBrandFileCoverage` or the naming
+ * convention itself asks whether `--color-ink-primary` is actually
+ * legible on `--color-surface-base`. `color.ts` ships this package's real
+ * OKLCH/hex -> linear-sRGB -> relative-luminance -> WCAG-contrast-ratio
+ * math (promoted here from a test-only internal module — see that file's
+ * own header); `contrast-pairs.ts`'s `CONTRAST_PAIRS` is the checked-in
+ * policy naming which token pairs matter and at what WCAG level;
+ * `checkTokenContrast` (`contrast-gate.ts`) is the pure gate that resolves
+ * each pair — including any `var()` alias chain, via
+ * `internal/resolve-token-value.ts` — and reports a real threshold miss
+ * or an unevaluable pair as a named finding, never a silent skip. A pair
+ * may also carry a `ContrastException` (a real WCAG clause, a real
+ * compensating mechanism, a real rationale — see `contrast-pairs.ts`'s
+ * own "EXCEPTIONS"): still below its floor, that's documented relief
+ * (`relieved`, not a finding); CLEARING its floor while still claiming
+ * that relief is itself a finding (`"stale-exception"`), so the
+ * exception can't silently outlive the condition that justified it.
+ * `ui-contrast-check` (`contrast-cli.ts`, installed as a `bin`) wires all
+ * of this into a CLI with the same three-state exit-code contract every
+ * gate CLI in this repository uses, and this repository's own root
+ * `npm run check:contrast` runs it against this package's own
+ * `styles/tokens.css`. See the README's "WCAG contrast gate"
+ * section for the full contract, including how this differs from the
+ * token-PURITY gate at `@vespeneventures/ui/gate` (a different axis
+ * entirely: that one flags hardcoded literals against the registry; this
+ * one computes luminance for declared pairs).
  */
 
 export type { TokenDefinition, TokenFamily } from "./tokens.js";
@@ -66,3 +95,21 @@ export type {
   BrandCssUnchecked,
   ParsedBrandCss,
 } from "./read-brand-css.js";
+
+export type { Oklch } from "./color.js";
+export { contrastRatio, hexToLinearSRGB, luminanceOf, oklchToLinearSRGB, parseOklch, relativeLuminance } from "./color.js";
+
+export type { ContrastException, ContrastLevel, ContrastPair } from "./contrast-pairs.js";
+export { AA, AA_LARGE, CONTRAST_PAIRS, contrastPairsForTheme } from "./contrast-pairs.js";
+
+export { checkTokenContrast } from "./contrast-gate.js";
+export type {
+  ContrastGateCheckOptions,
+  ContrastGateFailureReason,
+  ContrastGateFinding,
+  ContrastGateFindingRule,
+  ContrastGateRelieved,
+  ContrastGateResult,
+  ContrastGateUnchecked,
+  ContrastGateUncheckedReason,
+} from "./contrast-gate.js";
