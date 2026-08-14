@@ -137,6 +137,10 @@ only changes on reinstall.
 - **Private directories are handled first**, so anything written into them lands
   somewhere already restricted rather than sitting world-readable for the length
   of the run.
+- **Chained links are applied last.** A `links` entry declared with `target`
+  points at another managed destination, not at the source tree, so it runs
+  after copies and managed blocks. Manifest order does not matter: you can chain
+  a link onto a templated copy and list it first.
 - **A managed copy stays a regular file.** A same-content symlink at a copy
   destination is replaced rather than accepted, because the `chmod` that follows
   would otherwise change the permissions of whatever it points at.
@@ -172,7 +176,7 @@ only changes on reinstall.
 | `RuntimeContext` | type | `{ home, workspaceRoot, sourceRoot, tokens }` |
 | `RuntimeOptions` | type | `{ home, sourceRoot, workspaceRoot?, extraTokens? }` |
 | `Plan` | type | `{ runtime, operations }` |
-| `PlanOperation` | type | One resolved unit of work |
+| `PlanOperation` | type | One resolved unit of work. `chained: true` marks a link whose source is another managed destination, which is what defers it to the end |
 | `OperationKind` | type | `"link" \| "copy" \| "managed-block" \| "private-directory"` |
 | `FileSystemPort` | type | The injected filesystem interface |
 | `FileStats` | type | `{ isFile, isDirectory, isSymbolicLink, mode }` |

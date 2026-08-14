@@ -192,9 +192,29 @@ export function applyInstallation(
   fs.mkdir(backupRoot, PRIVATE_DIRECTORY_MODE);
   fs.chmod(backupRoot, PRIVATE_DIRECTORY_MODE);
 
-  const order: PlanOperation["kind"][] = ["private-directory", "link", "copy", "managed-block"];
-  for (const kind of order) {
-    for (const operation of plan.operations.filter((o) => o.kind === kind)) {
+  // Order matters in exactly two ways, and both are load-bearing.
+  //
+  // Private directories come first so anything written into them lands somewhere
+  // already restricted rather than sitting world-readable for the length of the
+  // run.
+  //
+  // Chained links come LAST, after copies and managed blocks, because a link
+  // declared with `target` points at another managed destination rather than at
+  // the source tree. Applying all links together works only while every chained
+  // target happens to be produced by another link; the moment one is produced by
+  // a copy, the link runs against a file that does not exist yet and the install
+  // dies partway through. Deferring them removes that ordering dependency
+  // instead of leaving it to the order entries happen to appear in a manifest.
+  const phases: ReadonlyArray<(o: PlanOperation) => boolean> = [
+    (o) => o.kind === "private-directory",
+    (o) => o.kind === "link" && o.chained !== true,
+    (o) => o.kind === "copy",
+    (o) => o.kind === "managed-block",
+    (o) => o.kind === "link" && o.chained === true,
+  ];
+
+  for (const selects of phases) {
+    for (const operation of plan.operations.filter(selects)) {
       let didChange: boolean;
       switch (operation.kind) {
         case "private-directory":

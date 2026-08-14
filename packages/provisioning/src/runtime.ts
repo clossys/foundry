@@ -108,6 +108,9 @@ export function planInstallation(manifest: Manifest, runtime: RuntimeContext): P
         : expandPath(entry.target as string, runtime),
       destinationPath: expandPath(entry.destination, runtime),
       template: false,
+      // A `target` link points at another managed destination, so it cannot be
+      // applied until that destination exists.
+      chained: entry.source === undefined,
     });
   }
 
