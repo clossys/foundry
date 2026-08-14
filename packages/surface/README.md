@@ -16,6 +16,38 @@ The package has no root export. `core` is deliberately framework-agnostic;
 the web subpath has optional React and UI peers, while non-web renderers do not
 require them at runtime.
 
+## Scope: this package renders and validates. It does not compose.
+
+Stated plainly because evaluating it and discovering this costs real time:
+**there is no compose step here, and there will not be one.** Nothing in this
+package takes an intent, a brief, or a content plan and *selects* a template
+to put it in. Every export is a `render*`, a `resolve*`, or a `validate*`.
+
+The boundary is: a caller authors a `SurfaceDocument` — naming its template
+explicitly — and this package validates it, resolves its copy and assets
+against real approved registries, renders it for a channel, and reports what
+it did. Deciding *which* document to build, from *what* intent, is the
+consumer's job and stays there.
+
+This is a scope decision, not a gap awaiting a contributor. Template selection
+is where product judgement lives: which page shape serves which audience at
+which moment is exactly the reasoning a shared package cannot hold for someone
+else, and a `compose(intent, target)` that guessed would be wrong in a way
+that is expensive to discover and impossible to override cleanly. Drawing the
+line at "you name the template, we guarantee everything after it" is what lets
+this package promise something real — validated content, resolved copy
+provenance, deterministic output — instead of promising judgement it does not
+have.
+
+What that leaves the consumer owning: intent-to-template selection, and any
+catalog of their own templates worth selecting from. What it leaves this
+package owning: everything from a named template onward.
+
+Making the *set* of selectable web templates extensible is a separate and
+genuinely open question — see the template-registry proposal in this
+repository's issues. That is about who may add a template, not about who picks
+one; extensibility does not imply composition.
+
 ## SurfaceDocument and renderer boundary
 
 `SurfaceDocument` is the canonical authored contract. It replaces the
@@ -115,7 +147,7 @@ package owns the contracts and deterministic renderers that produce them.
 ## Requirements and version coupling
 
 Node 20+. This package's own `package.json` declares runtime dependencies on
-`@vespeneventures/copy` (`~0.5.0`) and `@vespeneventures/ui` (`~0.8.0`) —
+`@vespeneventures/copy` (`~0.5.0`) and `@vespeneventures/ui` (`~0.9.0`) —
 patch-only tilde ranges, not exact pins. That is a real constraint on the
 dependency graph, not an install-ordering concern: a package manager
 resolves the whole graph regardless of what order packages are requested
@@ -123,7 +155,7 @@ in, so this cannot be worked around by installing things in a particular
 sequence.
 
 A consumer whose own policy is to pin exact versions must pin `copy` to a
-matching `0.4.x` patch release and `ui` to a matching `0.8.x` patch release
+matching `0.5.x` patch release and `ui` to a matching `0.9.x` patch release
 — otherwise `surface`'s declared ranges and the consumer's exact pin cannot
 both be satisfied, and the install fails with an unresolvable version
 conflict. `react` and `react-dom` are optional peer dependencies (`>=18`)

@@ -271,6 +271,11 @@ const KNOWN_NON_CLASS_MAPS = new Set([
   // theme/ThemeToggle.tsx — ThemePreference -> IconNode glyph data
   // (Monitor/Sun/Moon), passed to Icon's `glyph` prop, never a class name.
   "PREFERENCE_GLYPH",
+  // tokens/internal/registry-from-css.ts — CSS custom-property name ->
+  // synthesized TokenDefinition, built from parsed tokens.css declarations
+  // for the contrast gate to resolve var() aliases against; never a
+  // Tailwind class name, the same role "declarations" above already has.
+  "registry",
 ]);
 
 function extractCandidateClasses(code: string): Set<string> {

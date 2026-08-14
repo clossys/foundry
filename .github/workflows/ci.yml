@@ -215,6 +215,38 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: node scripts/check-release-readiness.mjs --base "$BASE_SHA"
 
+  # ui-contrast-check computes real WCAG contrast ratios for
+  # @vespeneventures/ui's own token registry (light AND dark) against a
+  # checked-in pair list (CONTRAST_PAIRS) and exits non-zero on a real,
+  # unrelieved threshold miss. It shipped as an installed `bin` with
+  # nothing anywhere actually invoking it — a gate that exists but never
+  # runs is decorative, the same defect `release-readiness` above exists
+  # to catch one level up (a check with no job is indistinguishable from
+  # no check at all). Modelled on that job's own shape: a single focused
+  # checkout, no denylist material, no tarball — this only ever reads
+  # `packages/ui`'s own `styles/tokens.css`, which the `safety`/`artifact`
+  # jobs already cover for secrets/identity separately. Unlike
+  # `release-readiness`, this is not diff-scoped (there is no "did this
+  # change since the base" question here, only "is the shipped palette
+  # legible right now"), so it runs on every push and every PR, not only
+  # `pull_request` events, and needs no `fetch-depth: 0`. It DOES need
+  # `packages/ui` actually built first — `ui-contrast-check` ships as
+  # `dist/tokens/contrast-cli.js`, gitignored until `tsc` runs — which is
+  # the one thing `release-readiness` (pure git-history diffing) never
+  # needed and this job does.
+  contrast:
+    name: WCAG contrast gate (ui-contrast-check)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build --workspace=packages/ui
+      - run: npm run check:contrast
+
   # Neither check here reads the denylist — both derive everything (package
   # names, exports, README claims) from the tree itself — so this runs
   # unconditionally, including on fork PRs, unlike the identity-scanning jobs.
