@@ -168,9 +168,65 @@ export interface CopyEntry {
   factRef?: string;
 }
 
+/**
+ * Content-derived provenance for one target-locale translation. Present only
+ * on a target-locale `CopyRegistryEntry` — a source-locale entry has nothing
+ * to be "translated from" and never carries this field. See
+ * `computeCopyFingerprint` below and `locale-coverage.ts`'s doc comment for
+ * why this is a fingerprint of the source text, never a human-maintained
+ * revision number: a hand-bumped counter requires someone to remember to
+ * bump it every time source copy changes, and nothing enforces that
+ * discipline, so it silently drifts out of sync. A content hash cannot drift
+ * the same way — it changes if and only if the text it was computed from
+ * changed.
+ */
+export interface CopyTranslationProvenance {
+  /**
+   * A fingerprint of the SOURCE entry's `text`, computed with
+   * `fingerprintAlgorithm`, at the moment this translation was produced.
+   * Compared against a fresh `computeCopyFingerprint(sourceEntry.text)` by
+   * `checkLocaleCoverage` to detect staleness — see that file's doc
+   * comment for the full comparison.
+   */
+  sourceFingerprint: string;
+  /**
+   * The algorithm `sourceFingerprint` was computed with, e.g. `"sha256"` —
+   * matches `COPY_FINGERPRINT_ALGORITHM`, the constant `computeCopyFingerprint`
+   * (`fingerprint.ts`) is documented to use. Declared explicitly, per entry,
+   * so a future algorithm change is a detectable mismatch rather than a
+   * silent comparison between two fingerprints computed two different ways.
+   */
+  fingerprintAlgorithm: string;
+  /** ISO-8601 timestamp of when this translation was produced. */
+  translatedAt: string;
+  /**
+   * Opaque translator/vendor-job identifier — never a personal name. This
+   * package ships no real identity data, per its own "no real product
+   * sentences" constraint (see this file's top-of-file doc comment).
+   */
+  translatedBy?: string;
+  /** ISO-8601 timestamp of when this translation was last reviewed, if it has been. */
+  reviewedAt?: string;
+  /** Opaque reviewer identifier, mirroring `translatedBy` — never a personal name. */
+  reviewedBy?: string;
+}
+
 /** A `CopyEntry` that is eligible to participate in a rendered registry. */
 export interface CopyRegistryEntry extends CopyEntry {
   status: CopyEntryStatus;
+  /**
+   * Content-derived translation provenance, present only on a target-locale
+   * entry that has recorded it. Optional: absent on every source-locale
+   * entry, and absent on any target-locale entry authored before this field
+   * existed or by a host that has not adopted it yet — an existing registry
+   * does not become invalid overnight. See `locale-coverage.ts` for how
+   * presence/absence of this field changes what `checkLocaleCoverage` can
+   * report: an entry with `translation` gets a real stale/not-stale
+   * verdict; an entry without it gets `"locale-coverage:provenance-missing"`
+   * instead, which is a DIFFERENT outcome from "checked and not stale" —
+   * never collapsed into one signal.
+   */
+  translation?: CopyTranslationProvenance;
 }
 
 // ---------------------------------------------------------------------------
