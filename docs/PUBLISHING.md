@@ -319,6 +319,35 @@ only *reports* the package's current visibility (a `GET` call) and prints
 the settings URL above — it never attempts to change anything, because
 there is nothing it could call to do so.
 
+#### The automated visibility gate
+
+The manual `visibility_only` report above only runs when someone remembers
+to ask for it. `scripts/check-package-visibility.mjs` is the gate that does
+not depend on that: it compares every "published"
+[`docs/contracts/package-lifecycle.json`](contracts/package-lifecycle.json)
+entry's declared intent — recorded separately in
+[`docs/contracts/package-visibility.json`](contracts/package-visibility.json),
+since `package-lifecycle.json`'s schema is owned by the published
+`@vespeneventures/governance` package and a new field there would force a
+version bump for what is really repository-tooling metadata — against the
+package's real GitHub Packages visibility, and fails when they disagree.
+This is the gate that would have caught `@vespeneventures/ui` sitting
+private across 12 published versions.
+
+It runs in two places, never as part of local `npm run check` (it needs a
+live `read:packages` token, which ordinary local development and fork CI
+should never be required to hold):
+
+- `.github/workflows/publish.yml`'s `visibility-check` job, immediately
+  after a real publish — catching a bad default the moment it is created.
+- `.github/workflows/package-visibility.yml`, on a daily schedule —
+  catching drift that happens with no publish at all (for example a manual
+  mistake in GitHub's own web UI).
+
+Like the `visibility_only` report above, it only ever detects and reports.
+There is no API to change a package's visibility, so a finding here still
+ends at the manual step described earlier in this section.
+
 ### Deprecating compatibility packages
 
 The old `catalog`, `gates`, `release`, `repository`, and `review` names are

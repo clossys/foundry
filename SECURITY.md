@@ -29,6 +29,7 @@ forward; there are no long-term support branches.
 | `check-public-safety` | Required check on every pull request |
 | `check-name-collision` | Required before every publish — see below |
 | `conversation-safety` (issues, comments, pull request descriptions) | Runs after the text is already posted — labels a finding and fails the check, never echoing the matched text and never commenting. Detects; does not prevent. See below |
+| `check-package-visibility` | Runs immediately after every real publish, and daily on a schedule. GitHub Packages defaults every new package to private regardless of this repository being public; this gate fails when a package declared "published" is actually private on the registry. Detects; there is no API to fix it. See [docs/PUBLISHING.md](docs/PUBLISHING.md#the-automated-visibility-gate) |
 
 ## The publish-safety gate
 
