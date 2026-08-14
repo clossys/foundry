@@ -35,9 +35,15 @@ export type {
   CopyResolution,
   CopyResolver,
   CopySource,
+  CopyTranslationProvenance,
   CopyValue,
   CopyRecord,
 } from "./types.js";
+
+// Content-derived fingerprinting for translation provenance — see
+// fingerprint.ts's and locale-coverage.ts's doc comments for why a source
+// text is fingerprinted rather than tracked by a human-maintained revision.
+export { computeCopyFingerprint, COPY_FINGERPRINT_ALGORITHM } from "./fingerprint.js";
 
 export { parseCopyRecord, parseCopyRegistry, validateCopyRecordShape, validateCopyRegistryShape } from "./schema.js";
 
@@ -93,10 +99,10 @@ export { checkCopyTraceability } from "./copy-gate.js";
 export type { CopyGateFinding, CopyGateIgnored, CopyGateResult, CopyGateRule } from "./copy-gate.js";
 
 // Locale-coverage governance: is every declared locale covered by a source
-// locale's registry, and where has a target locale drifted? See
-// locale-coverage.ts's top-of-file doc comment for the runtime/governance
-// split this is the other half of, and for why stale-translation detection
-// is deliberately not implemented against the current CopyRegistry shape.
+// locale's registry, where has a target locale drifted, has a translation
+// gone stale against an edited source (via content fingerprint), and does
+// every entry's interpolation stay in parity across locales? See
+// locale-coverage.ts's top-of-file doc comment for the full design.
 export { checkLocaleCoverage } from "./locale-coverage.js";
 export type {
   LocaleCoverageFinding,

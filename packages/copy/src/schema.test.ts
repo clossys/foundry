@@ -331,4 +331,139 @@ describe("CopyRegistry — the stronger rendered-copy contract", () => {
     const findings = validateCopyRegistryShape({ ...validRegistry, entries: [{ ...validRegistry.entries[0], status: undefined }] });
     expect(findings.some((finding) => finding.rule === "entry-status-shape" && finding.path === "entries.0.status")).toBe(true);
   });
+
+  describe("translation provenance — optional, backward compatible", () => {
+    it("is valid when translation is omitted entirely — an entry authored before this field existed stays valid", () => {
+      expect(validateCopyRegistryShape(validRegistry)).toEqual([]);
+    });
+
+    it("accepts a well-formed translation object", () => {
+      const findings = validateCopyRegistryShape({
+        ...validRegistry,
+        entries: [
+          {
+            ...validRegistry.entries[0],
+            translation: {
+              sourceFingerprint: "abc123",
+              fingerprintAlgorithm: "sha256",
+              translatedAt: "2026-08-01T00:00:00.000Z",
+            },
+          },
+        ],
+      });
+      expect(findings).toEqual([]);
+    });
+
+    it("accepts the optional translatedBy/reviewedAt/reviewedBy fields when present", () => {
+      const findings = validateCopyRegistryShape({
+        ...validRegistry,
+        entries: [
+          {
+            ...validRegistry.entries[0],
+            translation: {
+              sourceFingerprint: "abc123",
+              fingerprintAlgorithm: "sha256",
+              translatedAt: "2026-08-01T00:00:00.000Z",
+              translatedBy: "vendor-job-42",
+              reviewedAt: "2026-08-02T00:00:00.000Z",
+              reviewedBy: "reviewer-queue-7",
+            },
+          },
+        ],
+      });
+      expect(findings).toEqual([]);
+    });
+
+    it("flags a non-object translation with translation-shape", () => {
+      const findings = validateCopyRegistryShape({
+        ...validRegistry,
+        entries: [{ ...validRegistry.entries[0], translation: "not an object" }],
+      });
+      expect(findings.some((f) => f.rule === "translation-shape" && f.path === "entries.0.translation")).toBe(true);
+    });
+
+    it("flags a missing sourceFingerprint", () => {
+      const findings = validateCopyRegistryShape({
+        ...validRegistry,
+        entries: [
+          {
+            ...validRegistry.entries[0],
+            translation: { fingerprintAlgorithm: "sha256", translatedAt: "2026-08-01T00:00:00.000Z" },
+          },
+        ],
+      });
+      expect(
+        findings.some(
+          (f) => f.rule === "translation-source-fingerprint-shape" && f.path === "entries.0.translation.sourceFingerprint",
+        ),
+      ).toBe(true);
+    });
+
+    it("flags a missing fingerprintAlgorithm", () => {
+      const findings = validateCopyRegistryShape({
+        ...validRegistry,
+        entries: [
+          {
+            ...validRegistry.entries[0],
+            translation: { sourceFingerprint: "abc123", translatedAt: "2026-08-01T00:00:00.000Z" },
+          },
+        ],
+      });
+      expect(
+        findings.some(
+          (f) => f.rule === "translation-fingerprint-algorithm-shape" && f.path === "entries.0.translation.fingerprintAlgorithm",
+        ),
+      ).toBe(true);
+    });
+
+    it("flags a missing translatedAt", () => {
+      const findings = validateCopyRegistryShape({
+        ...validRegistry,
+        entries: [
+          {
+            ...validRegistry.entries[0],
+            translation: { sourceFingerprint: "abc123", fingerprintAlgorithm: "sha256" },
+          },
+        ],
+      });
+      expect(
+        findings.some((f) => f.rule === "translation-translated-at-shape" && f.path === "entries.0.translation.translatedAt"),
+      ).toBe(true);
+    });
+
+    it("flags an empty-string translatedBy when present", () => {
+      const findings = validateCopyRegistryShape({
+        ...validRegistry,
+        entries: [
+          {
+            ...validRegistry.entries[0],
+            translation: {
+              sourceFingerprint: "abc123",
+              fingerprintAlgorithm: "sha256",
+              translatedAt: "2026-08-01T00:00:00.000Z",
+              translatedBy: "",
+            },
+          },
+        ],
+      });
+      expect(findings.some((f) => f.rule === "translation-translated-by-shape")).toBe(true);
+    });
+
+    it("never resolves sourceFingerprint against anything — this file only checks shape, not correctness", () => {
+      const findings = validateCopyRegistryShape({
+        ...validRegistry,
+        entries: [
+          {
+            ...validRegistry.entries[0],
+            translation: {
+              sourceFingerprint: "this-does-not-need-to-match-anything-real",
+              fingerprintAlgorithm: "sha256",
+              translatedAt: "2026-08-01T00:00:00.000Z",
+            },
+          },
+        ],
+      });
+      expect(findings).toEqual([]);
+    });
+  });
 });

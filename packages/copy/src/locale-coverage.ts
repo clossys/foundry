@@ -8,59 +8,123 @@
  * is every locale covered, has the source locale drifted ahead of its
  * translations — is already this package's job: `CopyLocale`,
  * locale-keyed registries, and `resolve.ts`'s `"locale-mismatch"` issue all
- * already exist. This file adds the one axis that was still missing: not
+ * already exist. This file adds the axis that was still missing: not
  * "does THIS registry resolve", but "does the WHOLE SET of a project's
- * locales actually cover the same ground".
+ * locales actually cover the same ground, with translations that are still
+ * current and interpolate correctly".
  *
- * Three governance questions, one axis each:
+ * Four governance questions, one axis each — all implemented:
  *
  *   1. MISSING COVERAGE — an entry the source locale has that a target
- *      locale does not. Implemented (`"locale-coverage:missing-entry"`).
+ *      locale does not (`"locale-coverage:missing-entry"`).
  *   2. ORPHANED ENTRIES — an entry a target locale has that the source
- *      locale does not (a translation of something that no longer exists
- *      in the source). Implemented (`"locale-coverage:orphaned-entry"`).
- *   3. STALE TRANSLATIONS — a target-locale entry whose recorded revision
- *      is behind the source entry's revision. NOT IMPLEMENTED. See
- *      "WHY STALENESS IS NOT IMPLEMENTED" below — this is a deliberate
- *      omission, not an oversight, and this file says so in its own report
- *      output (`"locale-coverage:staleness-not-checked"`), every run, so
- *      the gap is never silent.
+ *      locale does not — a translation of something that no longer exists
+ *      in the source (`"locale-coverage:orphaned-entry"`).
+ *   3. STALE TRANSLATIONS — a target-locale entry whose recorded
+ *      `translation.sourceFingerprint` no longer matches the source entry's
+ *      current text (`"locale-coverage:stale-entry"`), or — when the target
+ *      entry carries no provenance at all — that staleness genuinely
+ *      cannot be evaluated (`"locale-coverage:provenance-missing"`). See
+ *      "STALE TRANSLATIONS, NOW IMPLEMENTED" below.
+ *   4. INTERPOLATION PARITY — a placeholder name declared by one locale's
+ *      entry and missing from the other's, checked both directions
+ *      (`"locale-coverage:interpolation-missing"`,
+ *      `"locale-coverage:interpolation-extra"`).
  *
- * WHY STALENESS IS NOT IMPLEMENTED
+ * STALE TRANSLATIONS, NOW IMPLEMENTED
  * ---------------------------------------------------------------------------
- * `CopyRegistryEntry` (`types.ts`) carries no per-entry revision or approval
- * timestamp — only `status: CopyEntryStatus` (draft/approved/retired), which
- * is a lifecycle state, not a version marker two entries could be compared
- * by. The only revision-shaped field anywhere in this contract is
- * `CopyRegistry.revision: string`, and it is declared at the WHOLE-REGISTRY
- * level, not per entry (see `types.ts`'s `CopyRegistry` and `schema.ts`'s
- * `registry-revision-shape` check, which only asks that it be a non-empty
- * string — never that it be ordered, incrementing, or a date). Two real
- * problems follow from that, and both are disqualifying on their own:
+ * This package previously left staleness unimplemented — `CopyRegistryEntry`
+ * carried no per-entry revision or approval timestamp, only
+ * `status: CopyEntryStatus` (a lifecycle state, not a version marker), and
+ * the only revision-shaped field anywhere in the contract,
+ * `CopyRegistry.revision: string`, was declared at the WHOLE-REGISTRY level
+ * and documented as an opaque, unordered provenance string — a git SHA, a
+ * CMS revision id, and an ISO date were all valid values, and only one of
+ * those three is safely comparable with `<`. Comparing it would have meant
+ * inventing an ordering this package's own contract explicitly promised not
+ * to interpret. Rather than fake the check, every run unconditionally
+ * pushed a `"locale-coverage:staleness-not-checked"` finding instead.
  *
- *   - GRANULARITY: a whole registry's `revision` moving says only "SOMETHING
- *     in this locale's registry changed" — it cannot say WHICH entry moved,
- *     so comparing `source.revision` to `target.revision` cannot answer "is
- *     THIS entry's translation behind", only "is this locale's registry as
- *     a whole behind its own last touch", a materially weaker and
- *     differently-shaped question than the one this checker was asked for.
- *   - ORDERING: `revision` is documented (here and in `schema.ts`) as an
- *     opaque provenance string — the same "may be a revision-control object,
- *     CMS revision, or editorial record" opacity `CopySource.reference`
- *     already claims. A git SHA, a CMS revision id, and an ISO date are all
- *     valid `revision` values under the current schema, and only one of
- *     those three is safely comparable with `<`. Inventing an ordering over
- *     an opaque string this package's own contract explicitly promises not
- *     to interpret would be exactly the "bolt on a new field" (or worse,
- *     silently reinterpret an existing one beyond its documented contract)
- *     this checker was told not to do.
+ * `CopyRegistryEntry.translation?: CopyTranslationProvenance` (`types.ts`)
+ * closes that gap with per-entry, CONTENT-DERIVED provenance instead of a
+ * human-maintained counter: `translation.sourceFingerprint` records
+ * `computeCopyFingerprint(sourceEntry.text)` (`fingerprint.ts`, `node:crypto`
+ * `sha256`) at the moment a translation was produced. Content-derived, not
+ * hand-bumped, because a hand-bumped revision requires someone to remember
+ * to update it every time source copy changes, and nothing enforces that
+ * discipline — it can drift silently, indistinguishable at the type level
+ * from a genuinely current one. A content hash cannot drift: if the source
+ * `text` changed by one character, a fresh `computeCopyFingerprint` call
+ * returns a different value with certainty; if it did not change, the same
+ * value with equal certainty. See `fingerprint.ts`'s and `types.ts`'s own
+ * doc comments for the fuller argument.
  *
- * Given both, this file implements the two checks the existing shape
- * actually supports and refuses to fake the third — a staleness check that
- * quietly always reports clean (because it has nothing trustworthy to
- * compare) is precisely the "check that passes because it checked nothing"
- * failure mode this repository has already paid for once; see
- * `scripts/check-release-readiness.mjs`'s own header for that precedent.
+ * `checkLocaleCoverage` now, for every target entry that exists in both
+ * locales (i.e. already excluded from missing/orphaned):
+ *
+ *   - if the entry carries `translation`, recomputes
+ *     `computeCopyFingerprint(sourceEntry.text)` and compares it to
+ *     `translation.sourceFingerprint`. A mismatch is
+ *     `"locale-coverage:stale-entry"` (`"warning"`) — the translation is
+ *     real, current-shaped data that has fallen behind.
+ *   - if the entry carries no `translation` at all, emits
+ *     `"locale-coverage:provenance-missing"` (`"warning"`) instead. This is
+ *     load-bearing, not decoration: `translation` is optional (see
+ *     BACKWARD COMPATIBILITY below), so an entry with none is neither
+ *     "checked and current" nor "checked and stale" — it is "cannot tell".
+ *     Collapsing that into either of the other two would recreate exactly
+ *     the silent-pass failure mode this file previously avoided by naming
+ *     `"staleness-not-checked"` on every run. Now that a real per-entry
+ *     verdict exists for entries that DO carry provenance,
+ *     `"provenance-missing"` is that same "cannot tell" honesty, narrowed to
+ *     the one entry it is actually true of, instead of a blanket notice
+ *     covering every entry regardless of whether it could have been
+ *     checked.
+ *
+ * `"locale-coverage:staleness-not-checked"` is REMOVED — not gated, not
+ * deprecated, deleted — because leaving it in place once a real per-entry
+ * verdict exists would be a gate reporting a gap it no longer has, actively
+ * misleading a caller into believing the whole axis is still unchecked.
+ *
+ * INTERPOLATION PARITY, BOTH DIRECTIONS
+ * ---------------------------------------------------------------------------
+ * For every entry present in both locales — independent of whether it
+ * carries `translation` — this file also compares `placeholders` (`{name}`
+ * interpolations, `types.ts`'s `CopyEntry.placeholders`) between the source
+ * and target entry. A name the source declares but the target's translation
+ * omits renders a broken sentence at runtime: `resolve.ts`'s `interpolate`
+ * only fills placeholders the entry itself declares, so a value with
+ * nowhere to interpolate into is a hole in the rendered text
+ * (`"locale-coverage:interpolation-missing"`). A name the target declares
+ * that the source never did renders the opposite failure: an unfilled,
+ * literal `{name}` token sent straight to a user
+ * (`"locale-coverage:interpolation-extra"`). Both are real correctness
+ * bugs, both `"error"` severity — matching `schema.ts`'s existing
+ * `placeholder-missing-from-text` precedent for the same class of bug
+ * within one locale — never `"warning"`: unlike staleness, which can be
+ * "cannot tell", a placeholder set is present-or-absent, always computable
+ * for any two entries with well-formed `placeholders` arrays, so there is
+ * no "cannot tell" state for this axis.
+ *
+ * BACKWARD COMPATIBILITY
+ * ---------------------------------------------------------------------------
+ * `translation` is optional on `CopyRegistryEntry` at the TYPE level, and
+ * `schema.ts`'s `validateCopyRegistryShape` does not require it — an entry
+ * with no `translation` remains a fully valid `CopyRegistryEntry`, and no
+ * registry that predates this field becomes invalid overnight.
+ * `report.complete` is unaffected by provenance presence or absence: it
+ * continues to mean only "every declared target locale was evaluated",
+ * exactly as before this file's own doc comment already stated —
+ * presence/absence of `translation` produces FINDINGS
+ * (`stale-entry`/`provenance-missing`), never a decline. The one rule this
+ * file will not bend on: `"locale-coverage:provenance-missing"` and
+ * `"locale-coverage:stale-entry"` are never the same finding and never
+ * collapsed into one signal. A caller must be able to tell apart three
+ * genuinely different outcomes for any one target entry — "checked, and
+ * still current" (no finding at all), "checked, and it's stale"
+ * (`stale-entry`), and "could not check — no provenance recorded"
+ * (`provenance-missing`). Folding the third into either of the first two is
+ * exactly the silent-pass failure this file exists to refuse.
  *
  * FAIL-CLOSED DESIGN, matching `checker.ts`'s `checkCopyRecord` precedent
  * ---------------------------------------------------------------------------
@@ -73,10 +137,20 @@
  * `checkCopy` both draw for their own `.complete` fields. No branch in this
  * file returns an empty `findings` array on a decline path; every early
  * return states, in `findings`, exactly why nothing further was checked.
+ *
+ * NON-GOAL, RESTATED: no competing i18n runtime. Everything above is
+ * translation GOVERNANCE — is a translation current, does it interpolate
+ * correctly. Translation RUNTIME — ICU plural rules, locale negotiation,
+ * date/number formatting — remains out of scope and belongs to `Intl`
+ * (`Intl.PluralRules`, `Intl.ListFormat`, `Intl.RelativeTimeFormat`,
+ * `Intl.NumberFormat`) plus a consumer's own locale-negotiation policy, per
+ * the README's "Where this package sits on i18n". Nothing in this file
+ * formats, negotiates, or pluralizes anything, and it never will.
  */
 
+import { computeCopyFingerprint } from "./fingerprint.js";
 import { validateCopyRegistryShape } from "./schema.js";
-import type { CopyEntryId, CopyFinding, CopyLocale, CopyRegistry } from "./types.js";
+import type { CopyEntryId, CopyFinding, CopyLocale, CopyRegistry, CopyRegistryEntry } from "./types.js";
 
 /** One thing `checkLocaleCoverage` found wrong, tagged with the locale and/or entry it concerns. */
 export interface LocaleCoverageFinding extends CopyFinding {
@@ -114,9 +188,10 @@ export interface LocaleCoverageReport {
   /**
    * Every finding this run produced: structural declines (empty registry
    * set, missing/invalid/empty source locale, a declared target locale
-   * entirely absent), missing coverage, orphaned entries, and the
-   * always-present staleness-not-checked notice. Populated on every decline
-   * path — never left empty to imply a clean run that in fact never
+   * entirely absent), missing coverage, orphaned entries, stale entries,
+   * entries with no translation provenance to check staleness against, and
+   * interpolation-parity mismatches (both directions). Populated on every
+   * decline path — never left empty to imply a clean run that in fact never
    * started. This is the one field a caller checking "is anything wrong"
    * should read; read `.complete`, not an empty `findings`, to decide
    * whether a run can be trusted as "checked everything it could".
@@ -169,11 +244,83 @@ function uniqueInOrder(values: readonly CopyLocale[]): CopyLocale[] {
 }
 
 /**
+ * Compares one target-locale entry against its source-locale counterpart
+ * for the two per-entry axes beyond missing/orphaned: staleness (via
+ * content fingerprint) and interpolation parity (both directions). Called
+ * only for an entry id present in BOTH `sourceEntry` and `targetEntry` —
+ * missing/orphaned entries never reach this function, since there is no
+ * counterpart to compare against. See this file's top-of-file doc comment,
+ * "STALE TRANSLATIONS, NOW IMPLEMENTED" and "INTERPOLATION PARITY, BOTH
+ * DIRECTIONS", for the full argument behind each finding pushed here.
+ */
+function checkEntryProvenanceAndInterpolation(
+  sourceEntry: CopyRegistryEntry,
+  targetEntry: CopyRegistryEntry,
+  sourceLocale: CopyLocale,
+  targetLocale: CopyLocale,
+  findings: LocaleCoverageFinding[],
+): void {
+  // --- staleness: content fingerprint, or "cannot tell" if none was recorded ---
+  if (targetEntry.translation === undefined) {
+    findings.push({
+      rule: "locale-coverage:provenance-missing",
+      severity: "warning",
+      message: `Entry "${targetEntry.id}" in locale "${targetLocale}" carries no translation provenance — staleness cannot be evaluated for it. This is distinct from "checked and not stale": it means "cannot tell".`,
+      path: targetEntry.id,
+      locale: targetLocale,
+      entryId: targetEntry.id,
+    });
+  } else {
+    const currentFingerprint = computeCopyFingerprint(sourceEntry.text);
+    if (targetEntry.translation.sourceFingerprint !== currentFingerprint) {
+      findings.push({
+        rule: "locale-coverage:stale-entry",
+        severity: "warning",
+        message: `Entry "${targetEntry.id}" in locale "${targetLocale}" was translated from source text fingerprinted as "${targetEntry.translation.sourceFingerprint}", but source locale "${sourceLocale}"'s current text fingerprints as "${currentFingerprint}" — the translation is behind an edited source.`,
+        path: targetEntry.id,
+        locale: targetLocale,
+        entryId: targetEntry.id,
+      });
+    }
+  }
+
+  // --- interpolation parity, both directions ---------------------------------
+  const sourcePlaceholders = new Set(sourceEntry.placeholders ?? []);
+  const targetPlaceholders = new Set(targetEntry.placeholders ?? []);
+
+  for (const name of sourcePlaceholders) {
+    if (!targetPlaceholders.has(name)) {
+      findings.push({
+        rule: "locale-coverage:interpolation-missing",
+        severity: "error",
+        message: `Entry "${targetEntry.id}" in locale "${targetLocale}" is missing placeholder "{${name}}", which source locale "${sourceLocale}"'s entry declares — the translation will render with a required value that has nowhere to interpolate into.`,
+        path: targetEntry.id,
+        locale: targetLocale,
+        entryId: targetEntry.id,
+      });
+    }
+  }
+  for (const name of targetPlaceholders) {
+    if (!sourcePlaceholders.has(name)) {
+      findings.push({
+        rule: "locale-coverage:interpolation-extra",
+        severity: "error",
+        message: `Entry "${targetEntry.id}" in locale "${targetLocale}" declares placeholder "{${name}}", which source locale "${sourceLocale}"'s entry does not — the translation will render an unfilled "{${name}}" token to a user.`,
+        path: targetEntry.id,
+        locale: targetLocale,
+        entryId: targetEntry.id,
+      });
+    }
+  }
+}
+
+/**
  * Checks that every `declaredLocales` entry other than `sourceLocale` covers
  * the same set of entry ids `registries[sourceLocale]` declares, and reports
- * any entry each target locale is missing or has orphaned. See this file's
- * top-of-file doc comment for exactly what "stale translations" would mean
- * and why it is not implemented against the current `CopyRegistry` shape.
+ * any entry each target locale is missing or has orphaned. For every entry
+ * present in both locales, also checks staleness (via content fingerprint)
+ * and interpolation parity — see this file's top-of-file doc comment for
+ * the full design and the rule names each check can produce.
  *
  * `registries` is deliberately typed to accept `unknown` per-locale values
  * and validated here via `validateCopyRegistryShape`, the same "do not trust
@@ -317,10 +464,11 @@ export function checkLocaleCoverage(
 
     // --- the real work: compare entry ids against the source locale -------
     checkedLocales.push(locale);
-    const targetIds = new Set(targetRegistry.entries.map((entry) => entry.id));
+    const targetById = new Map(targetRegistry.entries.map((entry) => [entry.id, entry]));
 
     for (const entry of sourceRegistry.entries) {
-      if (!targetIds.has(entry.id)) {
+      const targetEntry = targetById.get(entry.id);
+      if (!targetEntry) {
         findings.push({
           rule: "locale-coverage:missing-entry",
           severity: "error",
@@ -329,7 +477,13 @@ export function checkLocaleCoverage(
           locale,
           entryId: entry.id,
         });
+        continue;
       }
+      // Present in both locales: staleness and interpolation parity are
+      // only meaningful for a real pair — see this function's own doc
+      // comment and this file's top-of-file "STALE TRANSLATIONS, NOW
+      // IMPLEMENTED" / "INTERPOLATION PARITY, BOTH DIRECTIONS".
+      checkEntryProvenanceAndInterpolation(entry, targetEntry, sourceLocale, locale, findings);
     }
     for (const entry of targetRegistry.entries) {
       if (!sourceIds.has(entry.id)) {
@@ -344,18 +498,6 @@ export function checkLocaleCoverage(
       }
     }
   }
-
-  // --- always present: staleness is not a check this shape can express ---
-  // See this file's top-of-file "WHY STALENESS IS NOT IMPLEMENTED". Pushed
-  // unconditionally, on every run that reaches this point, so the gap is a
-  // structural, unmissable part of the report rather than a doc comment a
-  // caller could go without ever reading.
-  findings.push({
-    rule: "locale-coverage:staleness-not-checked",
-    severity: "warning",
-    message:
-      "Stale-translation detection is not implemented: CopyRegistryEntry carries no per-entry revision, and CopyRegistry.revision is a whole-registry, unordered provenance string that cannot safely stand in for one. See locale-coverage.ts's top-of-file doc comment.",
-  });
 
   return {
     sourceLocale,

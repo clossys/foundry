@@ -275,6 +275,93 @@ export function validateCopyRecordShape(value: unknown): CopyFinding[] {
 }
 
 /**
+ * Validates a `CopyRegistryEntry.translation` field, when present.
+ * `undefined` is always valid — see `types.ts`'s doc comment on
+ * `CopyTranslationProvenance` for why an entry with no `translation` must
+ * remain a fully valid `CopyRegistryEntry` rather than becoming invalid the
+ * moment this field was introduced. Only a present-but-malformed value is a
+ * finding.
+ */
+function validateTranslationShape(value: unknown, path: string): CopyFinding[] {
+  if (value === undefined) return [];
+  if (!isPlainObject(value)) {
+    return [
+      {
+        rule: "translation-shape",
+        severity: "error",
+        message: `${path} must be an object when present, got ${JSON.stringify(value)}.`,
+        path,
+      },
+    ];
+  }
+
+  const sourceFingerprint = value.sourceFingerprint;
+  const fingerprintAlgorithm = value.fingerprintAlgorithm;
+  const translatedAt = value.translatedAt;
+  const translatedBy = value.translatedBy;
+  const reviewedAt = value.reviewedAt;
+  const reviewedBy = value.reviewedBy;
+
+  const findings: CopyFinding[] = [];
+
+  if (!isNonEmptyString(sourceFingerprint)) {
+    findings.push({
+      rule: "translation-source-fingerprint-shape",
+      severity: "error",
+      message: `${path}.sourceFingerprint must be a non-empty string, got ${JSON.stringify(sourceFingerprint)}.`,
+      path: `${path}.sourceFingerprint`,
+    });
+  }
+
+  if (!isNonEmptyString(fingerprintAlgorithm)) {
+    findings.push({
+      rule: "translation-fingerprint-algorithm-shape",
+      severity: "error",
+      message: `${path}.fingerprintAlgorithm must be a non-empty string, got ${JSON.stringify(fingerprintAlgorithm)}.`,
+      path: `${path}.fingerprintAlgorithm`,
+    });
+  }
+
+  if (!isNonEmptyString(translatedAt)) {
+    findings.push({
+      rule: "translation-translated-at-shape",
+      severity: "error",
+      message: `${path}.translatedAt must be a non-empty ISO-8601 timestamp string, got ${JSON.stringify(translatedAt)}.`,
+      path: `${path}.translatedAt`,
+    });
+  }
+
+  if (translatedBy !== undefined && !isNonEmptyString(translatedBy)) {
+    findings.push({
+      rule: "translation-translated-by-shape",
+      severity: "error",
+      message: `${path}.translatedBy must be a non-empty string when present, got ${JSON.stringify(translatedBy)}.`,
+      path: `${path}.translatedBy`,
+    });
+  }
+
+  if (reviewedAt !== undefined && !isNonEmptyString(reviewedAt)) {
+    findings.push({
+      rule: "translation-reviewed-at-shape",
+      severity: "error",
+      message: `${path}.reviewedAt must be a non-empty ISO-8601 timestamp string when present, got ${JSON.stringify(reviewedAt)}.`,
+      path: `${path}.reviewedAt`,
+    });
+  }
+
+  if (reviewedBy !== undefined && !isNonEmptyString(reviewedBy)) {
+    findings.push({
+      rule: "translation-reviewed-by-shape",
+      severity: "error",
+      message: `${path}.reviewedBy must be a non-empty string when present, got ${JSON.stringify(reviewedBy)}.`,
+      path: `${path}.reviewedBy`,
+    });
+  }
+
+  return findings;
+}
+
+/**
  * Validates the stronger registry shape used to resolve `CopyRef`s. A plain
  * `CopyRecord` deliberately remains valid for source scanning and voice
  * checking; it cannot become rendered content until it carries locale,
@@ -346,6 +433,7 @@ export function validateCopyRegistryShape(value: unknown): CopyFinding[] {
           path: `entries.${i}.status`,
         });
       }
+      findings.push(...validateTranslationShape(entry.translation, `entries.${i}.translation`));
     });
   }
 
@@ -387,6 +475,7 @@ function buildCopyRegistry(value: Record<string, unknown>): CopyRegistry {
   const entries = (value.entries as Array<Record<string, unknown>>).map((entry) => ({
     ...record.entries.find((item) => item.id === entry.id)!,
     status: entry.status as CopyEntryStatus,
+    translation: entry.translation as CopyRegistryEntry["translation"],
   })) as CopyRegistryEntry[];
 
   return {

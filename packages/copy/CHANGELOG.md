@@ -1,5 +1,54 @@
 # Changelog
 
+## [0.6.0] - 2026-08-13
+
+### Added
+
+- **Per-entry translation provenance**: `CopyRegistryEntry.translation?:
+  CopyTranslationProvenance` (`types.ts`) — `sourceFingerprint`,
+  `fingerprintAlgorithm`, `translatedAt`, and optional `translatedBy` /
+  `reviewedAt` / `reviewedBy`. `translation` is optional at the TYPE level
+  and unenforced by `validateCopyRegistryShape`: an entry with no
+  `translation` remains a fully valid `CopyRegistryEntry`, and no registry
+  written before this release becomes invalid.
+- **`computeCopyFingerprint`** (new `fingerprint.ts`, exported from the
+  root), plus the `COPY_FINGERPRINT_ALGORITHM` constant it uses
+  (`"sha256"`). A deterministic, content-derived digest of a copy entry's
+  `text` and nothing else, computed with `node:crypto`'s `createHash` — no
+  new runtime dependency, following the same built-in-module precedent
+  `registry.ts` already set with `node:fs`.
+- **Real stale-translation detection in `checkLocaleCoverage`**: for every
+  target entry present in both a source and target locale, a target entry
+  carrying `translation` gets its recorded `sourceFingerprint` compared
+  against `computeCopyFingerprint(sourceEntry.text)` — a mismatch is
+  `"locale-coverage:stale-entry"` (`"warning"`). A target entry with no
+  `translation` at all gets `"locale-coverage:provenance-missing"`
+  (`"warning"`) instead — a deliberately DIFFERENT outcome from "checked and
+  not stale," never collapsed into either that or `stale-entry`, so a
+  caller can always tell "current," "stale," and "cannot tell" apart.
+  **`"locale-coverage:staleness-not-checked"` is removed entirely** — the
+  rule name, its unconditional push, and its "not implemented" doc-comment
+  section are all gone, because leaving a gate reporting a gap it no longer
+  has would be actively misleading.
+- **Interpolation-parity governance, both directions, in
+  `checkLocaleCoverage`**: for every entry present in both locales, a
+  `placeholders` name the source declares that the target's translation is
+  missing is `"locale-coverage:interpolation-missing"` (`"error"` — a
+  required value has nowhere to interpolate into); a name the target
+  declares that the source does not is
+  `"locale-coverage:interpolation-extra"` (`"error"` — an unfilled `{name}`
+  token renders straight to a user). Matches `schema.ts`'s existing
+  `placeholder-missing-from-text` severity precedent for the same class of
+  bug within one locale.
+- Content-derived fingerprinting was chosen over a human-maintained revision
+  field specifically because a hand-bumped counter requires someone to
+  remember to update it every time source copy changes, and nothing
+  enforces that discipline — see `fingerprint.ts` and `locale-coverage.ts`'s
+  doc comments for the full argument, and the README's rewritten "Where
+  this package sits on i18n" section for the consumer-facing summary. The
+  translation-*runtime* boundary (`Intl`, ICU, locale negotiation) this
+  package already drew is unchanged — this release is governance only.
+
 ## [0.5.0] - 2026-08-13
 
 ### Added

@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.1] - 2026-08-13
+
+### Changed
+
+- Widened the `@vespeneventures/copy` dependency range from `~0.5.0` to
+  `~0.6.0` to cover copy's new minor release (per-entry translation
+  provenance and real stale-translation detection in
+  `checkLocaleCoverage` — see that package's own changelog). No code in
+  this package changed; this is a version-and-range-only release, required
+  by this repository's 0.x-minor-locked dependency rule (both `^` and `~`
+  are minor-locked below `1.0.0`) so `check:workspace-links` keeps
+  resolving `copy` as a local workspace link instead of falling back to a
+  stale registry copy.
+
 ## [0.3.0] - 2026-08-13
 
 ### Added

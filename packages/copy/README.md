@@ -120,14 +120,44 @@ multi-locale work:
   locale-keyed registries against a declared source locale for missing
   coverage (an entry the source has that a target locale doesn't) and
   orphaned entries (an entry a target locale has that the source no longer
-  does). It does **not** check staleness — a target-locale entry whose
-  translation is behind a since-edited source entry — because
-  `CopyRegistryEntry` carries no per-entry revision to compare, and
-  `CopyRegistry.revision` is a whole-registry, unordered provenance string
-  (the same opacity `CopySource.reference` already claims) that cannot
-  safely stand in for one. `checkLocaleCoverage` says so in its own report,
-  every run, rather than silently reporting a dimension it cannot evaluate
-  as passing — see `locale-coverage.ts`'s doc comment for the full argument.
+  does).
+- **Staleness governance**: `checkLocaleCoverage` also checks whether a
+  target-locale entry's translation is still current against a since-edited
+  source entry. This is deliberately **content-derived**, not a
+  human-maintained revision counter: `CopyRegistryEntry.translation`
+  (`CopyTranslationProvenance`) records a `sourceFingerprint` — the source
+  entry's `text`, digested by `computeCopyFingerprint` (`node:crypto`
+  `sha256`, no runtime dependency) at the moment the translation was
+  produced. `checkLocaleCoverage` recomputes that fingerprint against the
+  source entry's CURRENT `text` and compares. A hand-bumped revision number
+  requires someone to remember to bump it every time source copy changes,
+  and nothing enforces that discipline — it drifts silently. A content hash
+  cannot drift: identical text always fingerprints identically, and any
+  edit changes the fingerprint with certainty.
+
+  `translation` is optional — an entry authored before this field existed,
+  or by a host that has not adopted it, remains a fully valid
+  `CopyRegistryEntry`. `checkLocaleCoverage` treats "checked, still current"
+  (no finding), "checked, and stale" (`"locale-coverage:stale-entry"`), and
+  "no provenance recorded, cannot tell" (`"locale-coverage:provenance-missing"`)
+  as three genuinely different outcomes, never collapsed into one signal —
+  collapsing "cannot tell" into either of the other two would silently
+  report a dimension it did not actually check as either clean or dirty.
+- **Interpolation-parity governance**: for every entry present in both a
+  source and target locale, `checkLocaleCoverage` also compares each
+  entry's `placeholders` in both directions: a name the source declares
+  that the target's translation is missing
+  (`"locale-coverage:interpolation-missing"`, a broken sentence at render
+  time — a required value has nowhere to interpolate into) and a name the
+  target declares that the source never did
+  (`"locale-coverage:interpolation-extra"`, an unfilled `{name}` token
+  rendered straight to a user). Both are `"error"` severity, matching the
+  same-class-of-bug precedent `placeholder-missing-from-text` already sets
+  within one locale.
+
+  See `locale-coverage.ts`'s doc comment for the full design, including why
+  this stays translation *governance*, never a competing translation
+  runtime — the boundary below is unchanged by any of this.
 
 ### Voice glossary vs. i18n glossary — two different axes, easy to conflate
 
@@ -345,6 +375,9 @@ The root entry point exports the copy registry and traceability surface:
   `CopyEntryCheckResult`, `CopyEntrySkip`, `CopyRecordCheckOptions`,
   `CopyRecordCheckReport`, `CopyRecordFinding`, and
   `CopyRecordWaivedFinding`.
+- Translation provenance and fingerprinting (see "Where this package sits
+  on i18n" above): `CopyTranslationProvenance`, `computeCopyFingerprint`,
+  and `COPY_FINGERPRINT_ALGORITHM`.
 - Source discovery: `extractCopyCandidates`, `scanCopySourceTree`,
   `PLACEHOLDER_SENTINEL`, `Citation`, `CopyCandidate`, `ExcludedLiteral`,
   `ExclusionReason`, `ParseFailure`, `ScanOptions`, `ScanResult`,
