@@ -2729,6 +2729,21 @@ try {
       }
     }
 
+    // Compare by set difference, not size. A stale conversation-safety-*
+    // dir left behind by some other invocation (an earlier interrupted
+    // run of this suite, a concurrent run, a manual run of the gate) sits
+    // in both `before` and `after` and must not count against this run;
+    // only a dir that is new in `after` — one this run's own child
+    // process created and failed to remove — is a real leak. Comparing
+    // `after.size === before.size` instead is spuriously sensitive to that
+    // shared, unowned state: a stale dir vanishing between snapshots (e.g.
+    // another process cleaning up) can mask a genuine leak by coincidence,
+    // and one appearing from a concurrent run can fail an otherwise-clean
+    // run.
+    function newTmpDirs(before, after) {
+      return [...after].filter((dir) => !before.has(dir));
+    }
+
     // ---- detects a planted identity term piped in as a draft, and reports
     // it as a category label + location, never as the matched text itself.
     const before1 = listConversationTmpDirs();
@@ -2755,10 +2770,11 @@ try {
       !planted.out.includes("acme-corp"),
       `matched term leaked into output: ${planted.out}`,
     );
+    const leaked1 = newTmpDirs(before1, after1);
     check(
       "draft mode cleans up its temp dir after a FAILING run",
-      after1.size === before1.size,
-      `temp dirs before: ${before1.size}, after: ${after1.size} — a conversation-safety-* dir was left behind`,
+      leaked1.length === 0,
+      `left behind: ${JSON.stringify(leaked1)}`,
     );
 
     // ---- a clean draft passes, and still cleans up
@@ -2768,10 +2784,11 @@ try {
     });
     const after2 = listConversationTmpDirs();
     check("draft mode exits 0 on clean text", clean.code === 0, `exit was ${clean.code}: ${clean.out.slice(0, 300)}`);
+    const leaked2 = newTmpDirs(before2, after2);
     check(
       "draft mode cleans up its temp dir after a PASSING run",
-      after2.size === before2.size,
-      `temp dirs before: ${before2.size}, after: ${after2.size} — a conversation-safety-* dir was left behind`,
+      leaked2.length === 0,
+      `left behind: ${JSON.stringify(leaked2)}`,
     );
 
     // ---- FULL mode required, no denylist available -> exit 2 (could not
@@ -2790,10 +2807,11 @@ try {
       requirePartial.code === 2,
       `exit was ${requirePartial.code}: ${requirePartial.out.slice(0, 300)}`,
     );
+    const leaked3 = newTmpDirs(before3, after3);
     check(
       "draft mode cleans up its temp dir even on the FULL-mode-required failure path",
-      after3.size === before3.size,
-      `temp dirs before: ${before3.size}, after: ${after3.size} — a conversation-safety-* dir was left behind`,
+      leaked3.length === 0,
+      `left behind: ${JSON.stringify(leaked3)}`,
     );
 
     // ---- PARTIAL mode (no denylist, not required) still exits 0 but never
