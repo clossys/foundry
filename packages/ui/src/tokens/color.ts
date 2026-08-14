@@ -1,15 +1,36 @@
 /**
- * A minimal, test-only OKLCH -> WCAG relative-luminance/contrast module —
- * NOT part of this package's public API (see the note atop
- * `internal/parse-css.ts`). It exists so `src/contrast.test.ts` can
- * compute real contrast ratios for this package's `oklch()` token values
- * instead of eyeballing the lightness channel, which the task this module
- * was written for explicitly calls out as not good enough: two colors
- * with a higher/lower OKLCH `L` are not guaranteed to have a
- * higher/lower relative luminance once hue and chroma are involved (they
- * happen to correlate closely for this package's tokens today, since
- * every one of them is achromatic — `C = 0` — but this module does the
- * real conversion rather than relying on that coincidence).
+ * `@vespeneventures/ui/tokens`'s WCAG colour math — a complete, zero-
+ * dependency OKLCH/hex -> linear-sRGB -> relative-luminance -> contrast-
+ * ratio pipeline, exported directly from `./tokens` alongside `TOKENS`
+ * itself. Public, not incidental: this used to live at
+ * `internal/color.ts`, undocumented and reachable only by
+ * `contrast.test.ts` — a real, tested, WCAG-correct implementation sitting
+ * behind this package's own "not part of the public API" line for no
+ * reason grounded in the code itself (see `contrast-gate.ts` for the
+ * gate now built on top of it, and this package's CHANGELOG for the
+ * promotion).
+ *
+ * WHY THE REAL CONVERSION, NOT THE LIGHTNESS CHANNEL — two colors with a
+ * higher/lower OKLCH `L` are not guaranteed to have a higher/lower
+ * relative luminance once hue and chroma are involved (they happen to
+ * correlate closely for this package's own tokens today, since every one
+ * of them is achromatic — `C = 0` — but a chromatic brand override, or a
+ * consumer's own token registry, has no reason to keep that property).
+ * `oklchToLinearSRGB` does the real OKLab-based conversion instead of
+ * relying on that coincidence, so a caller — this package's own
+ * `checkTokenContrast`, or a consumer's own tooling — gets a real
+ * contrast ratio for ANY `oklch()` value, chromatic or not.
+ *
+ * WHAT SHIPS FROM HERE: `parseOklch`/`oklchToLinearSRGB` (the `oklch()`
+ * path), `hexToLinearSRGB` (the hex path, for this package's
+ * `--color-chart-*` family), `relativeLuminance` (WCAG's own formula over
+ * linear-sRGB channels), `luminanceOf` (parses either color shape,
+ * compositing over a background when the color carries alpha < 1), and
+ * `contrastRatio` (the full WCAG ratio between two CSS color values, each
+ * optionally translucent). Every function is pure and throws on a value it
+ * cannot parse — a caller (the contrast gate, a test, a consumer) decides
+ * how to report that; this module never swallows a parse failure into a
+ * wrong number.
  */
 
 /** One parsed `oklch(L C H)` or `oklch(L C H / A)` value. `A` defaults to 1 (opaque) when omitted. */

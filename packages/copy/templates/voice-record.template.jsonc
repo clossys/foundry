@@ -37,13 +37,16 @@
 // falls between two FILES here rather than within this one file the way it
 // runs within `tokens.css` itself.
 //
-// `glossary` and `claims` are shown below with exactly ONE example entry
-// each, to demonstrate the shape — add as many of your own as your voice
-// actually needs, and delete the example once you have real entries. The
-// per-entry FIELD NAMES (`term`/`status`/`reason`/`alternative`/
-// `caseSensitive` for a glossary entry; `id`/`text`/`matchPhrases`/
-// `factRef`/`requiresSupport` for a claim) are fixed — see `src/types.ts` —
-// only the VALUES you put in them are yours.
+// `glossary`, `claims`, and `patterns` are shown below with exactly ONE
+// example entry each, to demonstrate the shape — add as many of your own as
+// your voice actually needs, and delete the example once you have real
+// entries. The per-entry FIELD NAMES (`term`/`status`/`reason`/
+// `alternative`/`caseSensitive`/`channel` for a glossary entry;
+// `id`/`text`/`matchPhrases`/`factRef`/`requiresSupport` for a claim;
+// `id`/`description`/`pattern`/`severity`/`reason`/`alternative`/`channel`
+// for a pattern rule) are fixed — see `src/types.ts` — only the VALUES you
+// put in them are yours. Unlike glossary/claims, `patterns` itself is
+// entirely OPTIONAL — omit the whole array for a voice with no regex rules.
 //
 // THE PLACEHOLDER, AND WHY IT MUST STAY LOUD
 //
@@ -106,6 +109,27 @@
       "text": "REPLACE_ME__VOICE_TEMPLATE_PLACEHOLDER",
       "matchPhrases": [],
       "requiresSupport": true
+    }
+  ],
+
+  // ─── PATTERNS (OPTIONAL — one example entry; add/remove your own) ────
+  // Unlike glossary/claims above, this whole array may be omitted entirely
+  // for a voice with no regex rules — see src/types.ts's VoiceRecord doc
+  // comment. `pattern.source`/`pattern.flags` are the two RegExp
+  // constructor arguments, never a real RegExp (this is checked-in JSON).
+  // `severity` is one of the three fixed VoiceSeverity values ("error" |
+  // "warning" | "advisory") — see the README, "Severity tiers and the
+  // exit-code mapping". `flags`, `alternative`, and `channel` are all
+  // optional and left out of this example — see src/types.ts's PatternRule.
+  "patterns": [
+    {
+      "id": "REPLACE_ME__VOICE_TEMPLATE_PLACEHOLDER",
+      "description": "REPLACE_ME__VOICE_TEMPLATE_PLACEHOLDER",
+      "pattern": {
+        "source": "REPLACE_ME__VOICE_TEMPLATE_PLACEHOLDER"
+      },
+      "severity": "REPLACE_ME__VOICE_TEMPLATE_PLACEHOLDER",
+      "reason": "REPLACE_ME__VOICE_TEMPLATE_PLACEHOLDER"
     }
   ]
 }

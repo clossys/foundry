@@ -75,6 +75,20 @@ export type {
   UncheckedItem,
 } from "./scan.js";
 
+// Path exclusions for scanCopySourceTree's scanning surface — see
+// path-exclusions.ts's top doc comment for the "mention vs. use" case this
+// exists for, and why it is a DIFFERENT feature from scan.ts's own
+// ExclusionReason (a per-literal classification, not a per-file scope
+// decision).
+export { validatePathExclusions } from "./path-exclusions.js";
+export type {
+  ExcludedPath,
+  PathExclusion,
+  PathExclusionFinding,
+  PathExclusionFindingRule,
+  PathExclusionValidation,
+} from "./path-exclusions.js";
+
 export { checkCopyTraceability } from "./copy-gate.js";
 export type { CopyGateFinding, CopyGateIgnored, CopyGateResult, CopyGateRule } from "./copy-gate.js";
 

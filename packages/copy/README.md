@@ -13,8 +13,11 @@ npm install @vespeneventures/copy
 
 - `@vespeneventures/copy` exposes both voice and copy-record APIs.
 - `@vespeneventures/copy/voice` exposes only the voice contract:
-  `checkCopy`, `auditClaimsRegister`, `parseVoiceRecord`,
-  `validateVoiceRecordShape`, `VOICE_FIELDS`, and their types.
+  `checkCopy`, `auditClaimsRegister`, `isCiBlockingSeverity`,
+  `checkPatternSafety`, `parseVoiceRecord`, `validateVoiceRecordShape`,
+  `VOICE_FIELDS`, `VOICE_SEVERITIES`, and their types — including the rule
+  vocabulary described below: `PatternRule`, `VoicePattern`, `VoiceSeverity`,
+  `VoiceChannel`.
 - `@vespeneventures/copy/voice-record.template.jsonc` is an annotated,
   unbound template to copy into a consumer repository and fill in.
 
@@ -150,6 +153,183 @@ one honestly is a new register (structurally closer to `checkLocaleCoverage`
 above, generalized from entry ids to term-equivalence ids) rather than a
 small addition to `copy/voice`.
 
+## Voice rule vocabulary: patterns, severity, and channels
+
+Three additions to `copy/voice`'s rule model, all strictly additive: an
+existing `VoiceRecord` that uses none of them validates and behaves exactly
+as it did before (see "Scope discipline" below).
+
+### Pattern rules vs. the glossary
+
+`GlossaryEntry` matches one literal term. It cannot express alternation
+(`"deep dive"` vs. `"dive deep"`), an optional apostrophe (`"it's"` vs.
+`"its"`), or a hard ban on a specific character (a U+2014 em dash). A
+`PatternRule` closes all three gaps with one mechanism — a regex — because a
+punctuation ban is just a pattern with no alternation in it:
+
+```ts
+import { checkCopy, type VoiceRecord } from "@vespeneventures/copy/voice";
+
+const voice: VoiceRecord = {
+  id: "acme-app",
+  rules: { /* ... */ } as VoiceRecord["rules"],
+  glossary: [],
+  claims: [],
+  patterns: [
+    {
+      id: "no-em-dash",
+      description: "hard ban on the em dash",
+      pattern: { source: "\\u2014" },
+      severity: "error",
+      reason: "house style bans the em dash — use a comma or period",
+    },
+    {
+      id: "deep-dive",
+      description: "banned buzzword, either word order",
+      pattern: { source: "\\b(deep dive|dive deep)\\b", flags: "i" },
+      severity: "warning",
+      reason: "overused",
+      alternative: "look closely at",
+    },
+  ],
+};
+
+checkCopy(voice, "Let's take a deep dive into this — with an em dash.");
+```
+
+**Regex safety.** A caller-supplied pattern can hang a scanner via
+catastrophic backtracking. This package's position: bound the pattern AT
+REGISTRATION TIME, never at run time — there is no runtime timeout anywhere
+in this package. `checkPatternSafety` (exported, so a consumer can validate
+a pattern before it ever reaches a `VoiceRecord`) rejects, as a real
+finding, never a silent skip: a disallowed flag (only `i`/`u`/`s` are
+accepted — never `g`/`y`/`m`), a source over 200 characters, a
+backreference (`\1`, `\k<name>`), a bounded quantifier whose upper bound
+exceeds 50, and — the classic catastrophic-backtracking shape — a
+quantifier applied to a group that itself contains an unbounded quantifier
+(`(a+)+`, `(a*)*`, `(.*)+`). This is a real, bounded, documented static
+gate, not a general ReDoS detector: it does not catch overlapping-alternation
+blowup with no nested quantifier (`(a|a)+`) — see
+`src/voice/internal/pattern-safety.ts`'s top doc comment for the complete,
+honest limitation list.
+
+**An invalid pattern is a finding, not a silent skip.** Both
+`validateVoiceRecordShape`/`parseVoiceRecord` (at registration) and
+`checkCopy` itself (as defense-in-depth, since `checkCopy` does not trust
+that its `VoiceRecord` argument was ever validated) run this same gate. A
+pattern that fails compiles to a `"pattern:invalid-rule"` **error** finding
+— always `"error"`, regardless of the rule's own declared severity, and,
+like `"voice:unbound-placeholder"`, it can never be waived away. A rule the
+author believes is enforcing something must never silently stop enforcing
+it.
+
+Patterns are serialized as `{ source, flags }` — the two `RegExp`
+constructor arguments — never a real `RegExp` instance, because a
+`VoiceRecord` is checked-in JSON data, not code.
+
+### Three severity tiers, and what each means for CI
+
+`VoiceFinding.severity` is now `"error" | "warning" | "advisory"` (widened
+from `"error" | "warning"` — every existing finding this package produces
+still uses exactly the same value it always did):
+
+| Tier | Meaning |
+| --- | --- |
+| `"error"` | Fails CI. This package's documented idiom — `report.findings.some(f => f.severity === "error")` — treats this, and only this, tier as build-breaking. `isCiBlockingSeverity(severity)` is the same check, exported so a caller does not have to hardcode the string. |
+| `"warning"` | Fails only a narrower, editorial gate — a stricter, consumer-owned check (e.g. "block merge to a marketing branch") that this package does not implement. Unchanged in behavior from before this release: the `tense` dimension already produced `"warning"` findings, and nothing about how they flow through `checkCopy` has changed. |
+| `"advisory"` | Purely informational. Never fails anything, including the narrower editorial gate. |
+
+Only `PatternRule.severity` requires an author to pick one of these
+explicitly — every other dimension's severity remains hardcoded by
+`checker.ts`, exactly as before.
+
+### Channel scoping
+
+An optional `channel` on a `GlossaryEntry` or `PatternRule` scopes it to one
+named channel — LinkedIn, X, HN, or whatever a consumer's own product calls
+its channels. **This package does not define what a channel is.** `VoiceChannel`
+is a plain string, validated for shape only (non-empty, non-whitespace),
+exactly the same seam `CopyLocale` draws for locale and `Claim.factRef`
+draws for a facts registry:
+
+```ts
+{
+  term: "synergy",
+  status: "forbidden",
+  reason: "buzzword",
+  caseSensitive: false,
+  channel: "linkedin", // this rule only applies when checkCopy is called with { channel: "linkedin" }
+}
+```
+
+```ts
+checkCopy(voice, copyForLinkedIn, { channel: "linkedin" });
+```
+
+A rule with no `channel` is global and always applies. A channel-scoped rule
+applies only when `options.channel` matches it EXACTLY (plain string
+equality — no case-folding, no interpretation). Omitting `options.channel`
+entirely is identical to every release before this one: no rule has a
+`channel` unless its author added one.
+
+### Scope discipline
+
+`patterns` is optional at the `VoiceRecord` TYPE level (not merely defaulted
+at validation time, the way `glossary`/`claims` are) specifically so every
+`VoiceRecord` object literal written before this feature existed keeps
+compiling and behaving unchanged: a record that never declares `patterns`
+gets no `"pattern"` entry in `checkCopy`'s `ran`/`skipped` at all — not
+"skipped for lack of configuration", genuinely absent, so
+`report.complete`/`report.skipped.length` reproduce this package's
+pre-pattern-rule behavior exactly. `packages/copy/src/voice/checker.test.ts`
+pins this explicitly.
+
+## Path exclusions for the scanning surface
+
+The mention-vs-use failure: a style guide that documents this voice's own
+banned terms — "never say X, say Y instead" — necessarily contains the
+literal banned text, as a MENTION, not a USE. Scanned like any other file,
+that mention looks identical to real, unregistered product copy.
+`ScanOptions.pathExclusions` fixes this for `scanCopySourceTree`'s scanning
+surface (the walk that feeds `checkCopyTraceability`):
+
+```ts
+import { scanCopySourceTree } from "@vespeneventures/copy";
+
+const scan = scanCopySourceTree(sourceDir, {
+  pathExclusions: [
+    { path: "docs/style-guide.ts", reason: "documents banned terms; does not ship them" },
+    { path: "docs/**", reason: "internal documentation, not product copy" },
+    { path: "fixtures/*.ts", reason: "test fixtures" },
+  ],
+});
+```
+
+A matched file is skipped BEFORE it is ever tokenized — it contributes no
+candidates, no excluded literals, no citations, no unchecked items, exactly
+as if it did not exist. The pattern language is deliberately small (no glob
+library, this package's usual zero-runtime-dependency rule): an exact path,
+a `dir/**` subtree, or a single `*` confined to the final path segment.
+
+**This is a different feature from `ExclusionReason`/`ExcludedLiteral`**,
+which scan.ts already had: that mechanism classifies one LITERAL already
+found inside a file that IS being scanned (is this string an import
+specifier, a CSS class, ...?) — a per-literal judgment. `pathExclusions`
+answers a different question at a different granularity: should this FILE
+be looked at at all, before a single character of it is tokenized? See
+`src/path-exclusions.ts`'s top doc comment for the full argument for why
+these are two separate mechanisms, not a coincidence of both being named
+"exclusion".
+
+**Fails closed**, mirroring `checkCopy`'s `VoiceCheckWaiver` handling: a
+malformed entry (missing/empty `path` or `reason`, or a pattern this small
+grammar cannot parse) is never applied — it exempts nothing — and is
+reported as an `"error"`-severity `PathExclusionFinding` on
+`ScanResult.pathExclusionFindings`. An exclusion that matched zero files
+this run is reported too, as a `"warning"`, since a stale exclusion (the
+file it named was renamed or deleted) is otherwise indistinguishable from
+one still doing real work.
+
 ## API
 
 The root entry point exports the copy registry and traceability surface:
@@ -169,6 +349,9 @@ The root entry point exports the copy registry and traceability surface:
   `PLACEHOLDER_SENTINEL`, `Citation`, `CopyCandidate`, `ExcludedLiteral`,
   `ExclusionReason`, `ParseFailure`, `ScanOptions`, `ScanResult`,
   `SkippedFile`, and `UncheckedItem`.
+- Path exclusions for the scanning surface (see above): `validatePathExclusions`,
+  `PathExclusion`, `ExcludedPath`, `PathExclusionFinding`,
+  `PathExclusionFindingRule`, and `PathExclusionValidation`.
 - Traceability: `checkCopyTraceability`, `CopyGateFinding`,
   `CopyGateIgnored`, `CopyGateResult`, and `CopyGateRule`.
 - Locale-coverage governance: `checkLocaleCoverage`, `LocaleCoverageFinding`,
@@ -176,4 +359,7 @@ The root entry point exports the copy registry and traceability surface:
   `LocaleCoverageSkipReason` — see "Where this package sits on i18n" above.
 
 The voice names described under Public entry points are re-exported from the
-root and from `@vespeneventures/copy/voice`.
+root and from `@vespeneventures/copy/voice`, including the rule-vocabulary
+additions: `PatternRule`, `VoicePattern`, `VoiceSeverity`, `VOICE_SEVERITIES`,
+`VoiceChannel`, `isCiBlockingSeverity`, `checkPatternSafety`,
+`PatternSafetyIssue`, and `PatternSafetyResult`.

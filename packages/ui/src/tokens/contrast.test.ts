@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 import { join, dirname } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parseRootDeclarations, parseDeclarationsForSelector } from "./internal/parse-css.js";
-import { contrastRatio } from "./internal/color.js";
+import { contrastRatio } from "./color.js";
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const tokensCss = readFileSync(join(packageRoot, "styles", "tokens.css"), "utf8");
@@ -165,8 +165,8 @@ describe.each(THEMES)("contrast — $name theme", (theme) => {
    * `--color-surface-raised` in both themes (see tokens.css's "CHART ·
    * CHROME" comment), not necessarily the page ground. This is the same
    * OKLCH/hex -> WCAG math as every check above, extended to cover the
-   * hex-valued chart-color family (see `internal/color.ts`'s hex-parsing
-   * addition) rather than a second, parallel contrast method.
+   * hex-valued chart-color family (see `color.ts`'s hex-parsing addition)
+   * rather than a second, parallel contrast method.
    */
   describe("chart chrome & categorical marks vs chart-surface", () => {
     it("chart-axis-label (muted axis/tick text) on chart-surface: AA-large", () => {

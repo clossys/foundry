@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.1.6] - 2026-08-13
+
+### Changed
+
+- Widened the `@vespeneventures/ui` range from `~0.8.0` to `~0.9.0` to track
+  that package's 0.9.0 release, which promotes its WCAG colour module to
+  public API and adds a checked-in contrast gate (`checkTokenContrast`,
+  `ui-contrast-check`). Required for the same reason as every prior range
+  widening in this file: in 0.x semver a tilde range is minor-locked, so
+  `~0.8.0` excluded `ui` 0.9.0 and the dependency stopped resolving to the
+  sibling package. No API change here — this package does not use the new
+  contrast exports.
+
+## [0.1.5] - 2026-08-13
+
+### Changed
+
+- Widened the `@vespeneventures/copy` range from `~0.4.0` to `~0.5.0` to
+  track that package's 0.5.0 release (pattern rules, a third severity
+  tier, channel scoping, and path exclusions for the scanning surface —
+  see `copy`'s own CHANGELOG). Required for the same reason as the prior
+  `copy`/`ui` widenings in this file: in 0.x semver a tilde range is
+  minor-locked, so `~0.4.0` would exclude `copy` 0.5.0 and the dependency
+  would stop resolving to the sibling package.
+
 ## [0.1.4] - 2026-08-13
 
 ### Changed
