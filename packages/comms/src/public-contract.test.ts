@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { RESEND_DECLARED_RANGE } from "./resend/index.js";
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const packageJson = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8")) as {
@@ -45,6 +46,10 @@ describe("public contract — dependency boundary", () => {
     for (const name of Object.keys(packageJson.peerDependencies)) {
       expect(packageJson.peerDependenciesMeta[name], `${name} has no peerDependenciesMeta entry`).toBeDefined();
     }
+  });
+
+  it("keeps resend/index.ts's peer-version guard in sync with the declared range (#182)", () => {
+    expect(RESEND_DECLARED_RANGE).toBe(packageJson.peerDependencies.resend);
   });
 });
 

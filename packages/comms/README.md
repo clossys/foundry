@@ -472,6 +472,14 @@ never installs it. `./inbound` has no runtime dependency of its own, either
 — `admitInboundEvent` is a pure function plus one call to a ledger you
 implement.
 
+Marking `resend` optional means npm gives no install-time signal if it's
+missing or on an incompatible version — importing `./resend` now guards
+against both itself, throwing a named error (never a silent pass) that
+states whether `resend` is absent entirely or installed but outside this
+package's declared `^6.19.0` range, before the SDK's own call surface gets
+a chance to fail with a less legible error. See `src/internal/
+peer-version.ts`'s own header for the full contract.
+
 ## Licence
 
 MIT

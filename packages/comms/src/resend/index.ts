@@ -9,6 +9,28 @@ import type {
 } from "../types.js";
 import { assertValidCommunicationMessage } from "../validation.js";
 import { Resend } from "resend";
+import { assertPeerVersion } from "../internal/peer-version.js";
+import { resolveInstalledPeerVersion } from "../internal/resolve-installed-peer-version.js";
+
+/**
+ * `resend` is this package's one optional peer (see package.json's
+ * `peerDependenciesMeta`) — optional so a consumer can install
+ * `@vespeneventures/comms` without it and use only the provider-neutral
+ * dispatcher/types. This is the one module that actually imports it, so
+ * this is the adapter entry point #182 asks for: an absent or
+ * out-of-range `resend` previously surfaced as whatever this file
+ * happened to crash on deep inside the Resend client, with nothing naming
+ * a version range as the cause. `RESEND_DECLARED_RANGE` must match
+ * package.json's `peerDependencies.resend` exactly —
+ * `public-contract.test.ts` asserts that directly, so drift between the
+ * two fails a real test rather than silently going stale.
+ */
+export const RESEND_DECLARED_RANGE = "^6.19.0";
+assertPeerVersion({
+  peer: "resend",
+  declaredRange: RESEND_DECLARED_RANGE,
+  foundVersion: resolveInstalledPeerVersion("resend", import.meta.url),
+});
 
 const PROVIDER = "resend";
 const IDEMPOTENCY_KEY_MAX_LENGTH = 256;

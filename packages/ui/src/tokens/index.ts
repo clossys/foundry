@@ -72,6 +72,16 @@
  * token-PURITY gate at `@vespeneventures/ui/gate` (a different axis
  * entirely: that one flags hardcoded literals against the registry; this
  * one computes luminance for declared pairs).
+ *
+ * THE TOKEN CSS PRESENCE CHECK. Every one of the checks above assumes
+ * `styles/tokens.css` was actually imported; nothing until now told a
+ * consumer when it wasn't, which is exactly the silent-unstyled-render gap
+ * this package's own README documents. `assertTokenStylesLoaded`
+ * (`assert-token-styles-loaded.ts`) closes it: dev-only, SSR-safe, reports
+ * at most once, and — unlike the pre-existing, unrelated brand-binding
+ * `::before` badge `styles/tokens.css` itself renders — never draws
+ * anything into the page. See that file's own header and the README's
+ * Setup section.
  */
 
 export type { TokenDefinition, TokenFamily } from "./tokens.js";
@@ -113,3 +123,6 @@ export type {
   ContrastGateUnchecked,
   ContrastGateUncheckedReason,
 } from "./contrast-gate.js";
+
+export { assertTokenStylesLoaded, TOKEN_STYLES_SENTINEL_PROPERTY } from "./assert-token-styles-loaded.js";
+export type { AssertTokenStylesLoadedOptions } from "./assert-token-styles-loaded.js";

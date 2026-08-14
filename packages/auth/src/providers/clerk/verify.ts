@@ -1,6 +1,32 @@
 import { Buffer } from "node:buffer";
 import { Webhook } from "svix";
 import type { ClerkWebhookHeaders, ClerkWebhookRawBody, VerifiedClerkWebhook } from "./types.js";
+import { assertPeerVersion } from "../../internal/peer-version.js";
+import { resolveInstalledPeerVersion } from "../../internal/resolve-installed-peer-version.js";
+
+/**
+ * `svix` is one of this package's optional peers (see package.json's
+ * `peerDependenciesMeta`) — optional so a consumer can install
+ * `@vespeneventures/auth` and use `./agent` or `mapClerkEvent` without
+ * ever installing it; only webhook signature verification needs it. This
+ * is the one module that imports it, so it's the adapter entry point
+ * #182 asks for: an absent or out-of-range `svix` previously surfaced as
+ * whatever `new Webhook(...).verify(...)` happened to crash on, with
+ * nothing naming a version range as the cause. This file already does
+ * `import { Buffer } from "node:buffer"`, so it is unambiguously a
+ * Node-context module — safe for the `node:module`/`node:fs`-based
+ * `resolveInstalledPeerVersion`, unlike the edge-safe `proxy.ts`/
+ * `proxy-entry.ts` or the browser-side `client.tsx` (see those files'
+ * own comments). `SVIX_DECLARED_RANGE` must match package.json's
+ * `peerDependencies.svix` exactly — `auth-clerk.test.ts` asserts that
+ * directly.
+ */
+export const SVIX_DECLARED_RANGE = "^1.96.0";
+assertPeerVersion({
+  peer: "svix",
+  declaredRange: SVIX_DECLARED_RANGE,
+  foundVersion: resolveInstalledPeerVersion("svix", import.meta.url),
+});
 
 type ClerkWebhookSignatureErrorCode = "signature-headers-missing" | "signature-invalid";
 

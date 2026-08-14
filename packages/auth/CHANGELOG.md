@@ -5,6 +5,27 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-08-13
+
+### Added
+
+- **Peer-version guards** for four of this package's five optional peers
+  (new internal `src/internal/peer-version.ts` and
+  `src/internal/resolve-installed-peer-version.ts`): `svix` from
+  `providers/clerk/verify.ts`; `@clerk/nextjs` and `next` from
+  `providers/clerk/web/server-routes.ts`; and `react` from
+  `providers/clerk/web/client.tsx` (read from React's own exported
+  `version` — the `"use client"` entry deliberately never imports the
+  filesystem-based resolver the other three use, since that module's
+  `node:module`/`node:fs` imports cannot resolve in a browser bundle).
+  Each throws a named, actionable error — distinct wording for "not
+  installed" versus "installed but outside the declared range" — instead
+  of letting an absent or incompatible peer crash somewhere inside its
+  own call surface with nothing naming a version as the cause. The
+  edge-safe middleware entry (`./providers/clerk/web/proxy`) and
+  `react-dom` (never imported directly by this package) are not guarded —
+  see the README's "Requirements" section for the full accounting. (#182)
+
 ## [0.2.0] - 2026-08-13
 
 ### Security
