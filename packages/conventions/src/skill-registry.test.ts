@@ -4,6 +4,7 @@ import {
   validateRoutineSkillCoverage,
   validateSkillRegistry,
 } from "./skill-registry.js";
+import { validateRoutineDeclaration } from "./routines.js";
 import type {
   SkillRegistryDocument,
   SkillRegistryOptions,
@@ -107,7 +108,20 @@ describe("validateSkillRegistry", () => {
         capability: "daily-planning",
         repositories: ["product"],
         reason: "The local workflow has not earned a reusable skill yet.",
-        reference: "documents/skill-registry.md",
+        reference: "https://example.invalid/project/issues/42",
+      }],
+    }), options)).toEqual([]);
+  });
+
+  it("accepts a repository-relative ADR filename", () => {
+    const current = registry();
+    expect(validateSkillRegistry(registry({
+      skills: [current.skills[0]!],
+      acceptedGaps: [{
+        capability: "daily-planning",
+        repositories: ["product"],
+        reason: "The local workflow has not earned a reusable skill yet.",
+        reference: ["documents", "ADR-0042-planning-gap.md"].join("/"),
       }],
     }), options)).toEqual([]);
   });
@@ -124,6 +138,25 @@ describe("validateSkillRegistry", () => {
       }],
     }), options);
     expect(findings.map((finding) => finding.rule)).toContain("skill-registry/gap-without-durable-reference");
+  });
+
+  it.each([
+    "https://example.com",
+    "documents/skill-registry.md",
+    "src/ADR-0042.ts",
+  ])("does not let a non-issue or non-decision reference suppress missing coverage: %s", (reference) => {
+    const current = registry();
+    const findings = validateSkillRegistry(registry({
+      skills: [current.skills[0]!],
+      acceptedGaps: [{
+        capability: "daily-planning",
+        repositories: ["product"],
+        reason: "Deferred.",
+        reference,
+      }],
+    }), options);
+    expect(findings.map((finding) => finding.rule)).toContain("skill-registry/gap-without-durable-reference");
+    expect(findings.map((finding) => finding.rule)).toContain("skill-registry/missing-capability-coverage");
   });
 
   it("reports an accepted gap once real coverage exists", () => {
@@ -162,6 +195,63 @@ describe("validateSkillRegistry", () => {
     const second = validateSkillRegistry(document, options);
     expect(second).toEqual(first);
   });
+
+  it("returns deterministic findings for missing required document arrays", () => {
+    const malformed = { schemaVersion: SKILL_REGISTRY_SCHEMA_VERSION };
+    const first = validateSkillRegistry(malformed, options);
+    const second = validateSkillRegistry(malformed, options);
+    expect(second).toEqual(first);
+    expect(first.map((finding) => finding.rule)).toEqual([
+      "skill-registry/malformed-capabilities",
+      "skill-registry/malformed-skills",
+    ]);
+  });
+
+  it("returns findings instead of throwing for malformed document entries", () => {
+    const findings = validateSkillRegistry({
+      schemaVersion: SKILL_REGISTRY_SCHEMA_VERSION,
+      capabilities: [null, { id: "daily-planning", purpose: "Plan.", repositories: "product" }],
+      skills: [42, {
+        repository: "control",
+        name: "ex-plan-day",
+        scope: "plane",
+        source: "first-party",
+        implements: [null],
+      }],
+      acceptedGaps: [false],
+    }, options);
+    expect(findings.map((finding) => finding.rule)).toEqual([
+      "skill-registry/malformed-capability-entry",
+      "skill-registry/malformed-capability-entry",
+      "skill-registry/malformed-skill-entry",
+      "skill-registry/malformed-implementation-entry",
+      "skill-registry/malformed-accepted-gap-entry",
+    ]);
+  });
+
+  it("returns deterministic findings for malformed options", () => {
+    const malformedOptions = {
+      repositories: "control",
+      planeRepository: 7,
+      prefixes: ["ex", 7],
+      reservedNamespaces: "provider",
+    };
+    const first = validateSkillRegistry(registry(), malformedOptions);
+    const second = validateSkillRegistry(registry(), malformedOptions);
+    expect(second).toEqual(first);
+    expect(first.map((finding) => finding.rule)).toEqual([
+      "skill-registry/malformed-option-repositories",
+      "skill-registry/malformed-option-plane-repository",
+      "skill-registry/malformed-option-prefixes",
+      "skill-registry/malformed-option-reserved-namespaces",
+    ]);
+  });
+
+  it("returns a finding for a non-object document", () => {
+    expect(validateSkillRegistry(null, options).map((finding) => finding.rule)).toEqual([
+      "skill-registry/malformed-document",
+    ]);
+  });
 });
 
 describe("validateRoutineSkillCoverage", () => {
@@ -197,11 +287,19 @@ describe("validateRoutineSkillCoverage", () => {
   });
 
   it("uses skillRepository to resolve a repository-owned target", () => {
-    expect(validateRoutineSkillCoverage(
-      { ...routine, skillRepository: "product" },
+    const repositoryRoutine = { ...routine, skillRepository: "product" };
+    const ordinaryFindings = validateRoutineDeclaration(repositoryRoutine, {
+      repositories: options.repositories,
+      skills: ["ex-plan-day"],
+      cadences: ["weekly"],
+      modes: ["report-only"],
+    });
+    const coverageFindings = validateRoutineSkillCoverage(
+      repositoryRoutine,
       registry(),
       options,
-    )).toEqual([]);
+    );
+    expect([...ordinaryFindings, ...coverageFindings]).toEqual([]);
   });
 
   it("rejects a routine whose repository-qualified skill does not exist", () => {
@@ -211,5 +309,18 @@ describe("validateRoutineSkillCoverage", () => {
       options,
     );
     expect(findings.map((finding) => finding.rule)).toContain("routine/unresolvable-registry-skill");
+  });
+
+  it("returns findings instead of throwing for malformed routine coverage input", () => {
+    expect(validateRoutineSkillCoverage(
+      { id: "weekly-plan", skill: "ex-plan-day", scope: "product" },
+      { schemaVersion: SKILL_REGISTRY_SCHEMA_VERSION },
+      { repositories: null, planeRepository: "control", prefixes: ["ex"] },
+    ).map((finding) => finding.rule)).toEqual([
+      "skill-registry/malformed-capabilities",
+      "skill-registry/malformed-skills",
+      "skill-registry/malformed-option-repositories",
+      "routine/malformed-skill-coverage-declaration",
+    ]);
   });
 });

@@ -207,8 +207,8 @@ expander reads like any other bytes.
 | `validateSkillSet(names, options)` | function | Validates a set and adds the cross-cutting duplicate-name rule |
 | `SKILL_VERBS` | `readonly string[]` | The closed verb vocabulary |
 | `SKILL_REGISTRY_SCHEMA_VERSION` | `2` | Current capability-first skill registry schema version |
-| `validateSkillRegistry(document, options)` | function | Purely validates composite skill identity, scope placement, coverage unions, accepted gaps, and third-party inventory boundaries |
-| `validateRoutineSkillCoverage(declaration, document, options)` | function | Confirms a routine target exists and its scope is a subset of the target skill's declared coverage; performs no cadence or scheduler check |
+| `validateSkillRegistry(document, options)` | function | Purely validates decoded caller JSON for composite skill identity, scope placement, coverage unions, accepted gaps, and third-party inventory boundaries; malformed shapes return findings |
+| `validateRoutineSkillCoverage(declaration, document, options)` | function | Confirms a routine target exists and its scope is a subset of the target skill's declared coverage; malformed shapes return findings, and it performs no cadence or scheduler check |
 | `validateRoutineDeclaration(declaration, registry)` | function | Validates one declaration against a plane's own registry of repositories, skills, cadences, and modes |
 | `validateRoutineSet(declarations, registry, options?)` | function | Validates a set; adds unique-identifier checking and reports an exclusion recorded without a reason |
 | `validateScheduledSkillDescription(skill, description)` | function | Checks that a clock-invoked skill declares it is not conversationally triggered |

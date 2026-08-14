@@ -38,7 +38,7 @@ export interface SkillRegistryAcceptedGap {
   readonly capability: string;
   readonly repositories: readonly string[];
   readonly reason: string;
-  /** An issue URL or repository-relative decision/ADR path. */
+  /** An HTTPS `/issues/<positive-integer>` URL or repository-relative Markdown decision/ADR path. */
   readonly reference: string;
 }
 
@@ -60,8 +60,10 @@ export interface SkillRegistryOptions {
 }
 
 const IDENTIFIER = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const HTTPS_REFERENCE = /^https:\/\/[^\s]+$/;
-const RELATIVE_REFERENCE = /^(?![./])(?!.*(?:^|\/)\.\.(?:\/|$))[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)+(?:#[A-Za-z0-9._-]+)?$/;
+const HTTPS_ISSUE_REFERENCE = /^https:\/\/[A-Za-z0-9.-]+(?::[0-9]+)?\/(?:[A-Za-z0-9._~-]+\/)*issues\/[1-9][0-9]*(?:#[A-Za-z0-9._-]+)?$/;
+const RELATIVE_MARKDOWN_REFERENCE = /^(?![./])(?!.*(?:^|\/)\.\.(?:\/|$))[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)*\.md(?:#[A-Za-z0-9._-]+)?$/i;
+const DECISION_SEGMENT = /^(?:adr|adrs|decision|decisions)$/i;
+const DECISION_FILENAME = /^(?:adr|decision)[-_][A-Za-z0-9._-]+\.md$/i;
 
 function pair(left: string, right: string): string {
   return `${left}\u0000${right}`;
@@ -78,7 +80,232 @@ function duplicates(values: readonly string[]): string[] {
 }
 
 function durableReference(reference: string): boolean {
-  return HTTPS_REFERENCE.test(reference) || RELATIVE_REFERENCE.test(reference);
+  if (HTTPS_ISSUE_REFERENCE.test(reference)) return true;
+  if (!RELATIVE_MARKDOWN_REFERENCE.test(reference)) return false;
+
+  const path = reference.split("#", 1)[0]!;
+  const segments = path.split("/");
+  const filename = segments.at(-1)!;
+  return segments.slice(0, -1).some((segment) => DECISION_SEGMENT.test(segment)) ||
+    DECISION_FILENAME.test(filename);
+}
+
+function record(value: unknown): Record<string, unknown> | undefined {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : undefined;
+}
+
+function stringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((entry) => typeof entry === "string");
+}
+
+function shapeFinding(rule: string, message: string): Finding {
+  return { rule, severity: "high", message };
+}
+
+function parseOptions(value: unknown): {
+  readonly value?: SkillRegistryOptions;
+  readonly findings: Finding[];
+} {
+  const raw = record(value);
+  if (!raw) {
+    return {
+      findings: [shapeFinding(
+        "skill-registry/malformed-options",
+        "Skill registry options must be an object.",
+      )],
+    };
+  }
+
+  const findings: Finding[] = [];
+  if (!stringArray(raw.repositories)) {
+    findings.push(shapeFinding(
+      "skill-registry/malformed-option-repositories",
+      "Skill registry option repositories must be an array of strings.",
+    ));
+  }
+  if (typeof raw.planeRepository !== "string") {
+    findings.push(shapeFinding(
+      "skill-registry/malformed-option-plane-repository",
+      "Skill registry option planeRepository must be a string.",
+    ));
+  }
+  if (!stringArray(raw.prefixes)) {
+    findings.push(shapeFinding(
+      "skill-registry/malformed-option-prefixes",
+      "Skill registry option prefixes must be an array of strings.",
+    ));
+  }
+  if (raw.reservedNamespaces !== undefined && !stringArray(raw.reservedNamespaces)) {
+    findings.push(shapeFinding(
+      "skill-registry/malformed-option-reserved-namespaces",
+      "Skill registry option reservedNamespaces must be an array of strings when present.",
+    ));
+  }
+  if (findings.length > 0) return { findings };
+
+  return {
+    findings,
+    value: {
+      repositories: raw.repositories as string[],
+      planeRepository: raw.planeRepository as string,
+      prefixes: raw.prefixes as string[],
+      ...(raw.reservedNamespaces === undefined
+        ? {}
+        : { reservedNamespaces: raw.reservedNamespaces as string[] }),
+    },
+  };
+}
+
+function parseCapability(
+  value: unknown,
+  index: number,
+  findings: Finding[],
+): SkillRegistryCapability | undefined {
+  const raw = record(value);
+  if (!raw || typeof raw.id !== "string" || typeof raw.purpose !== "string" ||
+      !stringArray(raw.repositories)) {
+    findings.push(shapeFinding(
+      "skill-registry/malformed-capability-entry",
+      `Skill registry capability at index ${index} must contain string id and purpose fields plus a string-array repositories field.`,
+    ));
+    return undefined;
+  }
+  return { id: raw.id, purpose: raw.purpose, repositories: raw.repositories };
+}
+
+function parseImplementation(
+  value: unknown,
+  skillIndex: number,
+  implementationIndex: number,
+  findings: Finding[],
+): SkillRegistryImplementation | undefined {
+  const raw = record(value);
+  if (!raw || typeof raw.capability !== "string" || !stringArray(raw.repositories)) {
+    findings.push(shapeFinding(
+      "skill-registry/malformed-implementation-entry",
+      `Skill registry implementation at skill index ${skillIndex}, implementation index ${implementationIndex} must contain a string capability and string-array repositories.`,
+    ));
+    return undefined;
+  }
+  return { capability: raw.capability, repositories: raw.repositories };
+}
+
+function parseSkill(
+  value: unknown,
+  index: number,
+  findings: Finding[],
+): SkillRegistryEntry | undefined {
+  const raw = record(value);
+  if (!raw || typeof raw.repository !== "string" || typeof raw.name !== "string" ||
+      typeof raw.scope !== "string" || typeof raw.source !== "string" ||
+      (raw.implements !== undefined && !Array.isArray(raw.implements))) {
+    findings.push(shapeFinding(
+      "skill-registry/malformed-skill-entry",
+      `Skill registry skill at index ${index} must contain string repository, name, scope, and source fields; implements must be an array when present.`,
+    ));
+    return undefined;
+  }
+  const implementations = (raw.implements ?? []) as unknown[];
+  return {
+    repository: raw.repository,
+    name: raw.name,
+    scope: raw.scope as SkillRegistryScope,
+    source: raw.source as SkillRegistrySource,
+    ...(raw.implements === undefined
+      ? {}
+      : {
+        implements: implementations.flatMap((implementation, implementationIndex) => {
+          const parsed = parseImplementation(implementation, index, implementationIndex, findings);
+          return parsed ? [parsed] : [];
+        }),
+      }),
+  };
+}
+
+function parseGap(
+  value: unknown,
+  index: number,
+  findings: Finding[],
+): SkillRegistryAcceptedGap | undefined {
+  const raw = record(value);
+  if (!raw || typeof raw.capability !== "string" || !stringArray(raw.repositories) ||
+      typeof raw.reason !== "string" || typeof raw.reference !== "string") {
+    findings.push(shapeFinding(
+      "skill-registry/malformed-accepted-gap-entry",
+      `Skill registry accepted gap at index ${index} must contain string capability, reason, and reference fields plus a string-array repositories field.`,
+    ));
+    return undefined;
+  }
+  return {
+    capability: raw.capability,
+    repositories: raw.repositories,
+    reason: raw.reason,
+    reference: raw.reference,
+  };
+}
+
+function parseDocument(value: unknown): {
+  readonly value?: SkillRegistryDocument;
+  readonly findings: Finding[];
+} {
+  const raw = record(value);
+  if (!raw) {
+    return {
+      findings: [shapeFinding(
+        "skill-registry/malformed-document",
+        "Skill registry document must be an object.",
+      )],
+    };
+  }
+
+  const findings: Finding[] = [];
+  if (!Array.isArray(raw.capabilities)) {
+    findings.push(shapeFinding(
+      "skill-registry/malformed-capabilities",
+      "Skill registry capabilities must be an array.",
+    ));
+  }
+  if (!Array.isArray(raw.skills)) {
+    findings.push(shapeFinding(
+      "skill-registry/malformed-skills",
+      "Skill registry skills must be an array.",
+    ));
+  }
+  if (raw.acceptedGaps !== undefined && !Array.isArray(raw.acceptedGaps)) {
+    findings.push(shapeFinding(
+      "skill-registry/malformed-accepted-gaps",
+      "Skill registry acceptedGaps must be an array when present.",
+    ));
+  }
+  if (!Array.isArray(raw.capabilities) || !Array.isArray(raw.skills) ||
+      (raw.acceptedGaps !== undefined && !Array.isArray(raw.acceptedGaps))) {
+    return { findings };
+  }
+
+  const capabilities = raw.capabilities.flatMap((capability, index) => {
+    const parsed = parseCapability(capability, index, findings);
+    return parsed ? [parsed] : [];
+  });
+  const skills = raw.skills.flatMap((skill, index) => {
+    const parsed = parseSkill(skill, index, findings);
+    return parsed ? [parsed] : [];
+  });
+  const acceptedGaps = (raw.acceptedGaps ?? []).flatMap((gap, index) => {
+    const parsed = parseGap(gap, index, findings);
+    return parsed ? [parsed] : [];
+  });
+
+  return {
+    findings,
+    value: {
+      schemaVersion: raw.schemaVersion as typeof SKILL_REGISTRY_SCHEMA_VERSION,
+      capabilities,
+      skills,
+      ...(raw.acceptedGaps === undefined ? {} : { acceptedGaps }),
+    },
+  };
 }
 
 /**
@@ -87,10 +314,16 @@ function durableReference(reference: string): boolean {
  * scheduler whether anything is installed.
  */
 export function validateSkillRegistry(
-  document: SkillRegistryDocument,
-  options: SkillRegistryOptions,
+  inputDocument: unknown,
+  inputOptions: unknown,
 ): Finding[] {
-  const findings: Finding[] = [];
+  const parsedDocument = parseDocument(inputDocument);
+  const parsedOptions = parseOptions(inputOptions);
+  const findings: Finding[] = [...parsedDocument.findings, ...parsedOptions.findings];
+  if (!parsedDocument.value || !parsedOptions.value) return findings;
+
+  const document = parsedDocument.value;
+  const options = parsedOptions.value;
   const governedRepositories = new Set(options.repositories);
 
   if (document.schemaVersion !== SKILL_REGISTRY_SCHEMA_VERSION) {
@@ -271,6 +504,8 @@ export function validateSkillRegistry(
   const gapPairs = new Set<string>();
   for (const gap of document.acceptedGaps ?? []) {
     const capability = capabilities.get(gap.capability);
+    const hasReason = gap.reason.trim().length > 0;
+    const hasDurableReference = durableReference(gap.reference);
     if (!capability) {
       findings.push({
         rule: "skill-registry/unknown-gap-capability",
@@ -278,14 +513,14 @@ export function validateSkillRegistry(
         message: `Accepted gap names undeclared capability "${gap.capability}".`,
       });
     }
-    if (!gap.reason?.trim()) {
+    if (!hasReason) {
       findings.push({
         rule: "skill-registry/gap-without-reason",
         severity: "high",
         message: `Accepted gap for "${gap.capability}" has no reason.`,
       });
     }
-    if (!durableReference(gap.reference ?? "")) {
+    if (!hasDurableReference) {
       findings.push({
         rule: "skill-registry/gap-without-durable-reference",
         severity: "high",
@@ -323,7 +558,8 @@ export function validateSkillRegistry(
           message: `Accepted gap for "${gap.capability}" names "${repository}", which does not require that capability.`,
         });
       }
-      if (capability) {
+      if (capability && hasReason && hasDurableReference &&
+          governedRepositories.has(repository) && capability.repositories.includes(repository)) {
         const accepted = gaps.get(gap.capability) ?? new Set<string>();
         accepted.add(repository);
         gaps.set(gap.capability, accepted);
@@ -361,10 +597,31 @@ export function validateSkillRegistry(
  * outside this function.
  */
 export function validateRoutineSkillCoverage(
-  declaration: RoutineDeclaration,
-  document: SkillRegistryDocument,
-  options: SkillRegistryOptions,
+  inputDeclaration: unknown,
+  inputDocument: unknown,
+  inputOptions: unknown,
 ): Finding[] {
+  const parsedDocument = parseDocument(inputDocument);
+  const parsedOptions = parseOptions(inputOptions);
+  const findings: Finding[] = [...parsedDocument.findings, ...parsedOptions.findings];
+  const rawDeclaration = record(inputDeclaration);
+  if (!rawDeclaration || typeof rawDeclaration.id !== "string" ||
+      typeof rawDeclaration.skill !== "string" || !stringArray(rawDeclaration.scope) ||
+      (rawDeclaration.skillRepository !== undefined &&
+        typeof rawDeclaration.skillRepository !== "string")) {
+    findings.push(shapeFinding(
+      "routine/malformed-skill-coverage-declaration",
+      "Routine skill coverage input must contain string id and skill fields, a string-array scope, and an optional string skillRepository.",
+    ));
+  }
+  if (!parsedDocument.value || !parsedOptions.value ||
+      findings.some((finding) => finding.rule === "routine/malformed-skill-coverage-declaration")) {
+    return findings;
+  }
+
+  const document = parsedDocument.value;
+  const options = parsedOptions.value;
+  const declaration = rawDeclaration as unknown as RoutineDeclaration;
   const repository = declaration.skillRepository ?? options.planeRepository;
   const skill = document.skills.find(
     (entry) => entry.repository === repository && entry.name === declaration.skill,
@@ -390,7 +647,6 @@ export function validateRoutineSkillCoverage(
         : [];
     }),
   );
-  const findings: Finding[] = [];
   for (const target of declaration.scope) {
     if (!covered.has(target)) {
       findings.push({

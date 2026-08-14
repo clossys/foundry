@@ -41,6 +41,20 @@ An accepted gap is not coverage. It is durable evidence that the absence was
 seen and decided. The validator reports a stale gap once an implementation
 does cover the same pair.
 
+The evidence grammar is deliberately mechanical. An issue reference is an
+HTTPS URL whose final two path segments are `issues` and a positive integer,
+with an optional fragment. A repository-relative decision reference is a
+Markdown path with no absolute or parent segments and either:
+
+- a directory segment named `adr`, `adrs`, `decision`, or `decisions`; or
+- a filename beginning `adr-`, `adr_`, `decision-`, or `decision_`.
+
+An issue URL ending in `issues` plus a positive numeric identifier qualifies,
+as does a Markdown file beneath a decisions directory or named with an ADR
+prefix. A site root, ordinary source path, or arbitrary nested Markdown file is
+not decision evidence. A gap with an invalid reason or reference does not
+satisfy coverage.
+
 ## Version 2 shape
 
 ```json
@@ -113,4 +127,6 @@ For a plane that already has a central cross-repository skill inventory:
 
 The validator is pure set arithmetic. Repository discovery, tree inspection,
 GitHub access, filesystem reads, scheduler state, and all mutation stay in the
-consumer that owns those authorities.
+consumer that owns those authorities. Callers may pass decoded JSON directly:
+malformed documents, entries, or options produce deterministic findings rather
+than exceptions.

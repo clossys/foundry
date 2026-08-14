@@ -19,6 +19,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The proven `expand` and `groom` skill verbs.
 - A shipped `skill-registry` convention document with account-neutral migration
   patterns for tree-discovered and centrally inventoried consumers.
+- Runtime shape guards that return deterministic findings for malformed decoded
+  registry documents, entries, options, and routine coverage inputs.
+
+### Changed
+
+- Repository-qualified routine targets defer name resolution to the capability
+  registry while the ordinary routine validator continues to enforce the
+  declaring plane's repository boundary and plane-root skill list.
+- Accepted-gap evidence now follows an enforceable issue or Markdown
+  decision/ADR reference grammar; invalid evidence cannot suppress a missing
+  coverage finding.
 
 ## [0.2.0] - 2026-08-14
 

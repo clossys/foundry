@@ -68,14 +68,22 @@ export function validateRoutineDeclaration(
     });
   }
 
-  // The target is always a skill, never a document. Pointing a routine at prose
-  // in another repository puts the procedure somewhere the plane can neither
-  // version nor check -- the same failure as inlining it, arrived at politely.
-  if (!registry.skills.includes(declaration.skill)) {
+  // An unqualified target resolves inside the plane root and must therefore be
+  // present in that root's closed skill list. A repository-qualified target is
+  // resolved by validateRoutineSkillCoverage against composite registry
+  // identity; the ordinary validator still closes the repository boundary.
+  if (declaration.skillRepository === undefined && !registry.skills.includes(declaration.skill)) {
     findings.push({
       rule: "routine/unresolvable-skill",
       severity: "high",
       message: `Routine "${declaration.id}" targets "${declaration.skill}", which does not resolve inside this plane's own skills root.`,
+    });
+  } else if (declaration.skillRepository !== undefined &&
+      !registry.repositories.includes(declaration.skillRepository)) {
+    findings.push({
+      rule: "routine/skill-repository-outside-plane",
+      severity: "high",
+      message: `Routine "${declaration.id}" qualifies its skill with repository "${declaration.skillRepository}", which this plane does not govern.`,
     });
   }
 

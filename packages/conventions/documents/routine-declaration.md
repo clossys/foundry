@@ -122,10 +122,11 @@ can.
 A declaration's internal consistency is deterministic and belongs in the
 plane's ordinary offline checks: field presence, unique identifiers, cadence
 and mode drawn from the declared lists, every scope identifier present in the
-registry, every skill resolving inside the plane's own skills root, and the
-body-content rules above — which are checkable precisely because the body is a
-versioned skill in the same checkout. These hold anywhere the plane is checked
-out, and gate on every change.
+registry, every unqualified skill resolving inside the plane's own skills root,
+every repository qualifier remaining inside the plane, and the body-content
+rules above. The capability registry separately resolves a qualified
+`(repository, skill)` pair and validates its coverage. These checks hold
+anywhere the plane is checked out, and gate on every change.
 
 A check that reads the machine is not one of these. Probing a scheduler's store
 makes a verdict depend on which machine ran it, so it passes in continuous

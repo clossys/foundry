@@ -55,6 +55,32 @@ describe("validateRoutineDeclaration", () => {
     expect(findings.map((f) => f.rule)).toContain("routine/unresolvable-skill");
   });
 
+  it("defers a governed repository-owned target to capability registry resolution", () => {
+    const findings = validateRoutineDeclaration({
+      ...valid,
+      skill: "ex-audit-repository",
+      skillRepository: "owned-two",
+    }, registry);
+    expect(findings).toEqual([]);
+  });
+
+  it("does not weaken plane-root resolution for an unqualified target", () => {
+    const findings = validateRoutineDeclaration({
+      ...valid,
+      skill: "ex-audit-repository",
+    }, registry);
+    expect(findings.map((f) => f.rule)).toContain("routine/unresolvable-skill");
+  });
+
+  it("rejects a repository-owned target outside the declaring plane", () => {
+    const findings = validateRoutineDeclaration({
+      ...valid,
+      skill: "ex-audit-repository",
+      skillRepository: "outside-plane",
+    }, registry);
+    expect(findings.map((f) => f.rule)).toContain("routine/skill-repository-outside-plane");
+  });
+
   // Scope is closed with no escape hatch, deliberately not even a declared one.
   it("rejects a scope reaching outside the declaring plane", () => {
     const findings = validateRoutineDeclaration({ ...valid, scope: ["someone-elses"] }, registry);
