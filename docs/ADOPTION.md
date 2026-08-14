@@ -20,6 +20,27 @@ deliberately retained by that owning plane. [#216](https://github.com/vespeneven
 tracks the integration boundary. This ledger performs neither repository
 action.
 
+## Before installing: optional peers install as required on this registry
+
+A consumer planning an install should know this before running one, not
+discover it after: `npm.pkg.github.com`'s packument omits
+`peerDependenciesMeta` for every version it serves, so every peer a package
+declares `optional: true` installs as a hard requirement anyway. This is a
+registry-side gap, not a defect in what these packages publish — see
+[issue #226](https://github.com/vespeneventures/foundry/issues/226) for the
+confirming evidence and [docs/DECISIONS.md](DECISIONS.md#a-standing-property-of-that-registry-optional-peers-install-as-required)
+for the decision to document rather than restructure packages around it.
+
+Six packages in the table below are affected: `ui` (six optional peers),
+`auth` (five), `surface` and `consent` (`react`/`react-dom` each), `comms`
+(`resend`), and `governance` (`typescript`). Installing any one of them pulls
+in its full declared peer set, regardless of which subpath is actually
+imported — a consumer wanting only `ui`'s token CSS, or only `comms`'s
+provider-neutral root, gets React, Tailwind, or `resend` installed anyway.
+Each affected package's own README states the consequence specific to that
+package; this entry exists so the pattern is visible before an install is
+planned, not only after.
+
 ## Published Foundry package candidates
 
 These packages have lifecycle status `published`, but none is an adoption-ready

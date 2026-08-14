@@ -821,3 +821,20 @@ own — no file in this package ever imports it directly; only your own
 `react-dom/server` or client render call does, downstream of the element
 either renderer returns. See `src/internal/peer-version.ts` for the
 guard's own contract.
+
+**Registry note: `react` and `react-dom` install even for a consumer using
+only the non-web renderers.** Both are declared `optional: true` in
+`peerDependenciesMeta`, correctly reflecting that `./core`, `./media`,
+`./email`, `./print`, `./image`, and `./slides` need neither. That
+declaration does not reach an installer resolving against
+`npm.pkg.github.com`: the registry's packument omits
+`peerDependenciesMeta` entirely, so both peers resolve as required
+regardless of which subpaths are actually imported. A consumer rendering
+only email or print output still has React and React DOM installed. This
+package's own `dependencies` on `@vespeneventures/ui` (`~0.13.0`) compounds
+it one level further: `ui` declares six of its own optional peers the same
+way, and the same registry gap applies to them too, so a consumer of
+`surface` inherits `ui`'s full peer set through the same mechanism, not just
+`surface`'s own two. See
+[issue #226](https://github.com/vespeneventures/foundry/issues/226) for the
+full evidence and why the declarations stay as-is.

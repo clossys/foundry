@@ -262,6 +262,22 @@ See `src/internal/peer-version.ts` and
 `src/internal/resolve-installed-peer-version.ts` for the guard's own
 contract.
 
+**Registry note: this only guards against a wrong version, not against an
+unwanted install.** All five peers — `@clerk/nextjs`, `next`, `react`,
+`react-dom`, `svix` — are declared `optional: true` in
+`peerDependenciesMeta`, and that is correct for the tarball this package
+publishes. It is not what an installer sees from `npm.pkg.github.com`: the
+registry's packument omits `peerDependenciesMeta` entirely, so all five
+resolve as required regardless of which subpath a consumer actually imports.
+Concretely, a consumer who installs this package only for the provider-neutral
+root or `./agent` — the exact case this README opens by describing as
+Clerk/React/Next-free — still gets Clerk, Next.js, React, React DOM, and
+`svix` installed. The per-subpath guards above still do their job once
+something is installed; they cannot make the registry stop installing peers
+it was told to treat as optional. See
+[issue #226](https://github.com/vespeneventures/foundry/issues/226) for the
+full evidence and why the declarations stay as-is.
+
 ## Licence
 
 MIT

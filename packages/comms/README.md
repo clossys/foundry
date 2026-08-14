@@ -480,6 +480,17 @@ package's declared `^6.19.0` range, before the SDK's own call surface gets
 a chance to fail with a less legible error. See `src/internal/
 peer-version.ts`'s own header for the full contract.
 
+**Registry note: "install it only if you import `./resend`" above assumes
+an installer that reads `peerDependenciesMeta`.** The `optional: true` flag
+on `resend` is correct in the tarball this package publishes. It is not
+honored by `npm.pkg.github.com`: the registry's packument omits
+`peerDependenciesMeta` entirely, so `resend` resolves as a required install
+the moment `@vespeneventures/comms` is installed — including for a consumer
+who only ever imports the provider-neutral root or `./inbound` and never
+touches the Resend adapter. See
+[issue #226](https://github.com/vespeneventures/foundry/issues/226) for the
+full evidence and why the declaration stays as-is.
+
 ## Licence
 
 MIT

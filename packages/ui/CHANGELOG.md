@@ -3,6 +3,22 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.13.1] - 2026-08-14
+
+### Changed
+
+- **Documented effective install behaviour on the GitHub Packages
+  registry.** All six of this package's optional peers
+  (`@internationalized/date`, `react`, `react-dom`, `react-aria-components`,
+  `tailwind-merge`, `tailwindcss`) are correctly declared `optional: true`
+  in `peerDependenciesMeta`, but `npm.pkg.github.com`'s packument omits
+  that field entirely, so an installer resolving against this registry
+  treats all six as required regardless of which subpath is imported — the
+  token-only and `compiled.css` paths included. No `peerDependenciesMeta`
+  block changed; see the README's "Token-only use" section and
+  [issue #226](https://github.com/vespeneventures/foundry/issues/226) for
+  the full evidence and decision.
+
 ## [0.13.0] - 2026-08-14
 
 ### Added
