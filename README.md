@@ -82,11 +82,9 @@ to **GitHub Packages**, not the public npm registry. GitHub Packages
 requires a GitHub personal access token with `read:packages` for every
 install, including for a publicly visible package version and a reader
 with no other relationship to this org — that is a GitHub Packages
-platform behavior, not a permission this repository chose. A
-credential-free CI job, ephemeral environment, or cloud agent cannot install any
-package from here yet. This is tracked as a P0 blocker in issue #194 —
-distribution, not any package's own API, is what's blocking public
-adoption.
+platform behavior, not a permission this repository chose. GitHub Packages is
+the canonical install source, so a credential-free CI job, ephemeral
+environment, or cloud agent cannot install these packages.
 
 Add to your project's `.npmrc` (never commit a real one):
 
@@ -95,37 +93,19 @@ Add to your project's `.npmrc` (never commit a real one):
 //npm.pkg.github.com/:_authToken=${GH_PACKAGES_TOKEN}
 ```
 
-With `GH_PACKAGES_TOKEN` set in your environment, install a published version:
+The consuming plane owns how that token reference is materialized locally and
+in CI. Never commit the value or copy a consumer's installation manifest into
+Foundry. With `GH_PACKAGES_TOKEN` set in your environment, install only the
+published package or packages that consumer needs:
 
 ```bash
 npm install @vespeneventures/governance
 ```
 
-The same token is also used for maintainer actions such as publishing. See
-[docs/PUBLISHING.md](docs/PUBLISHING.md) for package release status and the
-maintainer process.
-
-### Intended end state: no `.npmrc`, no token
-
-The intended, but **not yet true**, end state is that a package here
-installs like any other public npm package — no scope-specific `.npmrc`
-line and no token, from the default public registry:
-
-```bash
-npm install @vespeneventures/governance
-```
-
-This is *not yet the case*: as of this writing, the plain command above
-still resolves nothing, because the registry it needs to resolve from is
-still GitHub Packages, above. This section will be updated to describe
-that as the normal path — with the credential-free transcript that proves
-it — only once it is actually true, not before; see
-[docs/PUBLISHING.md#7-migrating-to-the-public-npm-registry](docs/PUBLISHING.md#7-migrating-to-the-public-npm-registry)
-for the exact ordered, owner-only steps that get from here to there, and
-`node scripts/set-registry.mjs --check` (`npm run check:registry`) for the
-mechanical gate that keeps every package's declared registry in sync with
-[`package-scope.json`](package-scope.json) — the single file that will
-change first, once those owner-only steps clear.
+Consumer read access does not grant publish authority. Maintainer publication
+uses the protected workflow described in
+[docs/PUBLISHING.md](docs/PUBLISHING.md). The available-package and
+consumer-wiring split is tracked in [docs/ADOPTION.md](docs/ADOPTION.md).
 
 ### pnpm: a misleading "not found" when the auth token is unset
 

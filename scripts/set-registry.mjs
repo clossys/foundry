@@ -40,10 +40,9 @@
 //
 // This script only ever edits text inside this repository. It never talks
 // to npm, GitHub Packages, or any other registry, and it never registers a
-// scope, an organization, or a trusted publisher — see
-// docs/PUBLISHING.md's "Migrating to the public npm registry" runbook for
-// the real, owner-only steps that happen outside this repository before
-// `registry` here is ever changed to point anywhere else.
+// scope, organization, credential, or publisher. GitHub Packages is the
+// canonical declared value; this script keeps manifests mechanically aligned
+// with that declaration without changing live registry state.
 
 import { existsSync, readFileSync, writeFileSync, readdirSync } from "node:fs";
 import { join, dirname, relative } from "node:path";

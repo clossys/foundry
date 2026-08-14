@@ -212,8 +212,9 @@ jobs:
       # latest tag. Everything else in this workflow can only hurt the
       # package being published; this check runs first because it is the one
       # that can hurt someone else's. This org was created specifically to own
-      # this repo and nothing else, so it should never legitimately fire — but
-      # a false negative here is unrecoverable, so it runs regardless.
+      # this owner to publish packages. Non-publishing account-control-plane
+      # repositories may coexist, so the owner-wide check still runs; a false
+      # negative here is unrecoverable.
       - name: name collision
         env:
           # Lists this org's real packages via `gh api` — the ambient

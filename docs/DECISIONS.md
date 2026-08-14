@@ -8,10 +8,11 @@ doesn't have to reconstruct the reasoning from git history.
 **Status:** set in [`package-scope.json`](../package-scope.json).
 
 `vespeneventures` is a GitHub organization created specifically to own this
-repository and its packages, with no relationship to any other package
-published anywhere else. That's not a config choice, it's structural: because
-this org owns nothing else, there is nothing for a package name here to
-collide with.
+repository's packages, with no relationship to any package published by a
+different producer. Foundry is the only repository under this owner authorized
+to publish packages. A private account-control-plane repository may coexist,
+but it does not publish packages or weaken Foundry's owner-wide name-collision
+gate.
 
 Changing the scope, if it's ever needed, is still one command:
 
@@ -37,35 +38,16 @@ The trade-off, accepted deliberately rather than defaulted into:
   visibility is a separate, per-package decision (see
   [docs/PUBLISHING.md](PUBLISHING.md#package-visibility)), not a consequence
   of the registry choice itself.
-- Public npmjs would make "anyone can install this, no token required"
-  literally true, and remains an option later — tracked as the P0 blocker
-  in issue #194, since distribution behind a required credential is what
-  currently keeps every package here from being installable by a consumer
-  with no relationship to this org. Moving there is a config change plus
-  separate, owner-only setup on npm's own infrastructure, not a rewrite of
-  this repository:
-  - verify control of `@vespeneventures` on npmjs (a separate, independent
-    namespace from GitHub Packages — owning the org name on GitHub does not
-    reserve it on npmjs),
-  - configure npm trusted publishing (OIDC) for `publish.yml`'s `publish`
-    job, so publishing authenticates with the job's own short-lived GitHub
-    Actions token rather than a stored long-lived `NPM_TOKEN` — the same
-    no-stored-publish-credential shape this repository already uses for
-    GitHub Packages,
-  - add `publishConfig.access: "public"` to each package (npmjs defaults
-    scoped packages to private; GitHub Packages has no equivalent flag),
-  - update `package-scope.json.registry` to `https://registry.npmjs.org` via
-    `node scripts/set-registry.mjs --registry https://registry.npmjs.org`,
-    which also propagates it to every package's `publishConfig.registry`.
-  - Version *history* does not carry over — the two registries are entirely
-    separate systems. Existing GitHub Packages versions can stay published
-    (harmless) or be deprecated pointing at the new home; installers just drop
-    the `@vespeneventures:registry=...` line from their `.npmrc` and reinstall.
-
-  [docs/PUBLISHING.md#7-migrating-to-the-public-npm-registry](PUBLISHING.md#7-migrating-to-the-public-npm-registry)
-  is the authoritative ordered runbook for this move, including which steps
-  are recoverable and which (claiming the npm scope; any real publish) are
-  not.
+- Each consuming plane owns its scope mapping, token reference, and local or CI
+  injection. Foundry documents the protocol but never stores consumer
+  credentials or account-specific installation manifests.
+- Publishing remains a separate protected lane. The workflow uses its
+  job-scoped `GITHUB_TOKEN` for uploads and a read-only package-index
+  credential for the owner-wide collision query; a consumer read credential
+  is not a publish credential.
+- Existing GitHub Packages names and versions remain published. They are not
+  deleted, yanked, copied to a second registry, or reused for a different
+  package.
 
 ### Why the name-collision gate runs before every publish, unconditionally
 
@@ -76,17 +58,17 @@ package and moves its `latest` dist-tag. The failure is silent at publish
 time, which is exactly the kind of mistake that's cheap to prevent and
 expensive to notice after the fact.
 
-This org exists as a dedicated, single-purpose identity specifically so there
-is nothing else under this owner for a package name to collide with — but
-`scripts/check-name-collision.mjs` still runs before every publish
-regardless, because a gate that only runs when someone remembers it's
-"probably fine" isn't a gate. See `docs/PUBLISHING.md` for what it checks and
-why it's ordered first among the gates.
+Foundry is the sole package producer under this owner, but other non-publishing
+repositories may exist. `scripts/check-name-collision.mjs` therefore runs
+before every publish regardless of the current repository inventory. See
+`docs/PUBLISHING.md` for what it checks and why it is ordered first among the
+gates.
 
-## 3. The GitHub organization — a new, dedicated org
+## 3. The GitHub organization — one package producer
 
-**Status:** `vespeneventures`, created specifically for this purpose and
-nothing else.
+**Status:** `vespeneventures`, with Foundry as its only package-producing
+repository. Private repositories may own account-level inventory, policy, and
+adapters without becoming package publishers.
 
 Every published package carries `repository`, `bugs`, and `homepage` URLs
 pointing at its own repository, so the org name is unavoidably public
