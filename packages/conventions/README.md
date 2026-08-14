@@ -86,8 +86,10 @@ one of those roles.
 ## Shipped documents
 
 Resolve a path with `documentPath(id)` and read it yourself; this package does
-no I/O of its own. The files also live under `documents/` in the published
-tarball, and are importable directly via the `./documents/*` subpath.
+no I/O of its own. The files ship under `documents/` and `adapters/` in the
+published tarball, so `documentPath` and `adapterPath` return real, readable
+paths — they resolve on the filesystem and do not go through Node's `exports`
+resolution at all.
 
 | id | File | Contents |
 | --- | --- | --- |
