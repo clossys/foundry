@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.1.7] - 2026-08-13
+
+### Changed
+
+- README now states up front that this package renders and validates but
+  deliberately does not compose: there is no step that takes an intent and
+  selects a template, and there will not be one. Consumers were evaluating
+  this package as a replacement for a composition engine and reaching that
+  conclusion only after real investigation. Documentation only — no API
+  change; the boundary described is the one that already existed.
+
 ## [0.1.6] - 2026-08-13
 
 ### Changed
