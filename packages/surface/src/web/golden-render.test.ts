@@ -1,10 +1,11 @@
 /**
  * Golden-output tests — the requirement this package's own delivery report
  * calls out by name. Each case here renders a REAL `ComposeDocument`
- * through the REAL `@vespeneventures/ui` views (`ErrorView`, `AuthView`)
- * via `react-dom/server`'s `renderToStaticMarkup`, and asserts the EXACT
- * emitted HTML string — not "it didn't throw", not "the output contains
- * some substring somewhere", the actual bytes a browser would receive.
+ * through the REAL `@vespeneventures/ui` views (`ErrorView`, `AuthView`,
+ * `MarketingView`) via `react-dom/server`'s `renderToStaticMarkup`, and
+ * asserts the EXACT emitted HTML string — not "it didn't throw", not "the
+ * output contains some substring somewhere", the actual bytes a browser
+ * would receive.
  *
  * Why this matters, concretely: this is what would have caught a
  * regression where `AuthView`'s prop wiring silently swapped `heading` and
@@ -273,5 +274,126 @@ describe("golden: JSON-LD escaping — the </script> XSS case", () => {
     };
     const { head } = renderWebDocument(doc);
     expect(head.jsonLd).toEqual([]);
+  });
+});
+
+describe("golden: MarketingView", () => {
+  it("renders the exact expected markup, byte for byte — every flowed slot filled, a repeating 'features' group of 2, and a repeating 'faq' group of 1 authored via a node item", () => {
+    const doc: ComposeDocument = {
+      id: "acme-marketing-home",
+      channel: "web",
+      template: "MarketingView",
+      meta: { channel: "web", title: "Acme — placeholder", description: "Placeholder page description." },
+      bindings: [
+        { slot: "brand", value: "Acme Wordmark" },
+        { slot: "heroEyebrow", value: "Placeholder eyebrow" },
+        { slot: "heroHeading", value: "Placeholder hero heading" },
+        { slot: "heroDescription", value: "Placeholder hero description." },
+        { slot: "featuresHeading", value: "Placeholder features heading" },
+        { slot: "ctaHeading", value: "Placeholder CTA heading" },
+        { slot: "ctaDescription", value: "Placeholder CTA description." },
+      ],
+    };
+
+    const { element } = renderWebDocument(doc, {
+      groups: [
+        {
+          slot: "features",
+          items: [
+            { index: 0, value: "Placeholder feature A" },
+            { index: 1, value: "Placeholder feature B" },
+          ],
+        },
+        {
+          slot: "faq",
+          items: [{ index: 0, node: { question: "Placeholder question A?", answer: "Placeholder answer A." } }],
+        },
+      ],
+    });
+    const html = renderToStaticMarkup(element);
+
+    expect(html).toBe(
+      '<div class="flex min-h-dvh flex-col">' +
+        '<header class="bg-surface-raised py-sm border-b border-line-base" style="position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)">' +
+        '<div class="mx-auto flex w-full flex-wrap items-center justify-between gap-md" style="padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))">' +
+        '<div class="flex items-center gap-lg">Acme Wordmark</div>' +
+        "</div>" +
+        "</header>" +
+        '<main class="flex flex-col gap-2xl py-2xl">' +
+        '<section class="flex flex-col">' +
+        '<div class="flex flex-col items-start gap-md">' +
+        '<p class="text-caption uppercase tracking-label text-ink-muted">Placeholder eyebrow</p>' +
+        '<h1 class="text-display-l font-display text-ink-primary">Placeholder hero heading</h1>' +
+        '<p class="text-body-l text-ink-secondary">Placeholder hero description.</p>' +
+        "</div>" +
+        "</section>" +
+        '<div class="flex flex-col gap-lg">' +
+        '<div class="flex flex-col gap-xs">' +
+        '<h2 class="text-h2 font-display text-ink-primary">Placeholder features heading</h2>' +
+        "</div>" +
+        '<div class="grid grid-cols-1 gap-lg tablet:grid-cols-2 desktop:grid-cols-3">' +
+        '<div class="flex flex-col items-start gap-sm"><p class="text-body font-body font-medium text-ink-primary">Placeholder feature A</p></div>' +
+        '<div class="flex flex-col items-start gap-sm"><p class="text-body font-body font-medium text-ink-primary">Placeholder feature B</p></div>' +
+        "</div>" +
+        "</div>" +
+        '<div class="flex flex-col gap-lg">' +
+        '<div class="flex flex-col">' +
+        '<div class="flex flex-col" data-rac="">' +
+        '<button id="react-aria-_R_6eH1_" class="flex w-full items-center gap-sm rounded-default py-sm text-left text-body text-ink-primary outline-none disabled:cursor-not-allowed" data-rac="" type="button" tabindex="0" data-react-aria-pressable="true" aria-expanded="false" aria-controls="react-aria-_R_6eH2_" slot="trigger">' +
+        '<span aria-hidden="true" class="inline-block transition-transform motion-reduce:transition-none">▸</span>' +
+        "Placeholder question A?" +
+        "</button>" +
+        '<div class="pl-lg text-body-s text-ink-secondary" data-rac="" id="react-aria-_R_6eH2_" role="group" aria-labelledby="react-aria-_R_6eH1_" aria-hidden="true" hidden="">Placeholder answer A.</div>' +
+        "</div>" +
+        "</div>" +
+        "</div>" +
+        '<section class="flex flex-col">' +
+        '<div class="flex flex-col items-start gap-md">' +
+        '<h2 class="text-display-l font-display text-ink-primary">Placeholder CTA heading</h2>' +
+        '<p class="text-body-l text-ink-secondary">Placeholder CTA description.</p>' +
+        "</div>" +
+        "</section>" +
+        "</main>" +
+        '<footer class="bg-surface-raised py-lg border-t border-line-base" style="position:relative;z-index:var(--ui-z-shell, 20);border-top-width:var(--ui-border-hairline, 1px)">' +
+        '<div class="mx-auto flex w-full flex-col gap-lg" style="padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))"></div>' +
+        "</footer>" +
+        "</div>",
+    );
+  });
+
+  it("renders cleanly with zero features (an empty grid, not a crash) and omits the FAQ section entirely when its binding was never authored", () => {
+    const doc: ComposeDocument = {
+      id: "acme-marketing-home",
+      channel: "web",
+      template: "MarketingView",
+      meta: { channel: "web", title: "Acme", description: "Acme description." },
+      bindings: [
+        { slot: "brand", value: "Acme Wordmark" },
+        { slot: "heroHeading", value: "Placeholder hero heading" },
+        { slot: "ctaHeading", value: "Placeholder CTA heading" },
+      ],
+    };
+
+    const { element } = renderWebDocument(doc, { groups: [{ slot: "features", items: [] }] });
+    const html = renderToStaticMarkup(element);
+
+    expect(html).toBe(
+      '<div class="flex min-h-dvh flex-col">' +
+        '<header class="bg-surface-raised py-sm border-b border-line-base" style="position:relative;z-index:var(--ui-z-shell, 20);border-bottom-width:var(--ui-border-hairline, 1px)">' +
+        '<div class="mx-auto flex w-full flex-wrap items-center justify-between gap-md" style="padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))">' +
+        '<div class="flex items-center gap-lg">Acme Wordmark</div>' +
+        "</div>" +
+        "</header>" +
+        '<main class="flex flex-col gap-2xl py-2xl">' +
+        '<section class="flex flex-col"><div class="flex flex-col items-start gap-md"><h1 class="text-display-l font-display text-ink-primary">Placeholder hero heading</h1></div></section>' +
+        '<div class="flex flex-col gap-lg"><div class="grid grid-cols-1 gap-lg tablet:grid-cols-2 desktop:grid-cols-3"></div></div>' +
+        '<section class="flex flex-col"><div class="flex flex-col items-start gap-md"><h2 class="text-display-l font-display text-ink-primary">Placeholder CTA heading</h2></div></section>' +
+        "</main>" +
+        '<footer class="bg-surface-raised py-lg border-t border-line-base" style="position:relative;z-index:var(--ui-z-shell, 20);border-top-width:var(--ui-border-hairline, 1px)">' +
+        '<div class="mx-auto flex w-full flex-col gap-lg" style="padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))"></div>' +
+        "</footer>" +
+        "</div>",
+    );
+    expect(html).not.toContain("aria-expanded");
   });
 });

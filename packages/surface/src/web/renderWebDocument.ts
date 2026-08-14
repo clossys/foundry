@@ -81,14 +81,15 @@
  */
 
 import { resolveDocument } from "../core/index.js";
-import type { ComposeDocument, WebMeta } from "../core/index.js";
+import type { ComposeDocument, ResolvedSurfaceGroup, ResolvedSurfaceGroupItem, WebMeta } from "../core/index.js";
 import type { ReactNode } from "react";
 import { createElement, version as reactVersion } from "react";
 import { RenderError } from "../internal/errors.js";
-import { describeAssetProblems, hasAssetProblems, resolveDocumentAssets } from "../internal/assets.js";
+import { describeAssetProblems, hasAssetProblems, isRenderAsset, resolveDocumentAssets } from "../internal/assets.js";
 import { assertPeerVersion } from "../internal/peer-version.js";
 import { buildWebHeadMetadata } from "./headMetadata.js";
 import { getWebTemplate, listWebTemplateNames } from "./internal/webTemplates.js";
+import type { RepeatingWebSlotSpec, ResolvedWebGroupItem, WebTemplate } from "./internal/webTemplates.js";
 import type { RenderWebOptions, RenderWebResult } from "./types.js";
 
 /**
@@ -126,6 +127,111 @@ function resolveBindingText(
   if (binding.value !== undefined) return binding.value;
   if (binding.copyId !== undefined) return resolveCopyId?.(binding.copyId);
   return undefined;
+}
+
+/**
+ * Turns one already-resolved `ResolvedSurfaceGroupItem` into paintable
+ * `ResolvedWebGroupItem` content — the repeating-group counterpart to this
+ * file's own per-slot `content` loop, below. `value` (already resolved
+ * text — a repeating item never carries a `copyId`, only `resolveSurface
+ * Document`'s own already-resolved `value`; see `resolve-surface.ts`)
+ * becomes `text`; `assetId` is resolved exactly the way a single binding's
+ * `assetId` is (`../internal/assets.ts`'s `isRenderAsset`), with the
+ * identical stricter-than-text bar — ANY problem is fatal, never a silent
+ * omission (see this file's own top comment, "Assets get a stricter bar
+ * than optional text"); `node` is passed through untouched, the same
+ * "rendered exactly as given" treatment `AuthView.form` gets.
+ */
+function resolveGroupItemContent(slotKey: string, item: ResolvedSurfaceGroupItem, resolveAssetId: RenderWebOptions["resolveAssetId"]): ResolvedWebGroupItem {
+  if (item.value !== undefined) {
+    return { index: item.index, text: item.value };
+  }
+  if (item.assetId !== undefined) {
+    let looked: unknown;
+    try {
+      looked = resolveAssetId?.(item.assetId);
+    } catch {
+      looked = undefined;
+    }
+    if (!isRenderAsset(looked)) {
+      throw new RenderError(
+        "empty-output",
+        `renderWebDocument could not resolve repeating slot "${slotKey}" item ${item.index}'s assetId "${item.assetId}" into a real asset (missing options.resolveAssetId, an unresolved id, or a value missing the required { src, width, height, alt } shape). Rendering would silently ship a page with a broken or missing image, which this function refuses to do.`,
+      );
+    }
+    return { index: item.index, element: createElement("img", { src: looked.src, alt: looked.alt, width: looked.width, height: looked.height }) };
+  }
+  if (item.node !== undefined) {
+    return { index: item.index, node: item.node };
+  }
+  // Unreachable once resolveSurfaceDocument has produced `item` —
+  // resolveRepeatingBindingItem already guarantees exactly one of
+  // value/node/assetId. Kept as an explicit, attributed throw rather than
+  // a silent fallthrough, per this repo's own "a guard must state where
+  // control goes when it declines" rule.
+  throw new RenderError(
+    "empty-output",
+    `renderWebDocument found repeating slot "${slotKey}" item ${item.index} with no resolved content (none of value/assetId/node was set), which resolveSurfaceDocument should never produce.`,
+  );
+}
+
+/**
+ * Resolves every repeating slot `template` declares against
+ * `options.groups`, fails closed on the two ways that can go wrong, and
+ * returns the per-slot resolved item arrays `WebTemplate.build`'s second
+ * parameter carries. See `internal/webTemplates.ts`'s own top comment,
+ * "REPEATING SLOTS LIVE OUTSIDE `flow`", for why this is a wholly separate
+ * pass from the single-binding `content` loop below rather than folded
+ * into `resolveDocument`'s own resolution.
+ *
+ * Fails closed two ways, both `RenderError("resolution-failed", ...)` —
+ * the same reason category `renderWebDocument` already uses for "a
+ * required slot has no binding" / "a binding targets an unknown slot":
+ *
+ *   - a `options.groups` entry targets a slot `template.repeatingSlots`
+ *     does not declare (the repeating-group analogue of an unknown
+ *     `SlotBinding.slot`);
+ *   - a `required: true` repeating slot has NO matching entry in
+ *     `options.groups` at all (the analogue of a missing required slot).
+ *
+ * A required repeating slot whose group IS present but has zero items is
+ * NOT a failure — see `types.ts`'s `SurfaceRepeatingSlotBinding` doc
+ * comment ("empty is a deliberate, valid choice") and `WebTemplate`'s own
+ * `repeatingSlots` doc comment for why this function only checks
+ * presence, never length.
+ */
+function resolveTemplateGroups(doc: ComposeDocument, template: WebTemplate, options: RenderWebOptions): Record<string, ResolvedWebGroupItem[]> {
+  const repeatingSlots: RepeatingWebSlotSpec[] = template.repeatingSlots ?? [];
+  const repeatingKeys = new Set(repeatingSlots.map((spec) => spec.key));
+
+  const groupsByKey = new Map<string, ResolvedSurfaceGroup>();
+  for (const group of options.groups ?? []) {
+    groupsByKey.set(group.slot, group); // last one for a given slot wins, matching this file's own documented bindings policy.
+  }
+
+  const unknownGroups = [...groupsByKey.keys()].filter((key) => !repeatingKeys.has(key));
+  if (unknownGroups.length > 0) {
+    throw new RenderError(
+      "resolution-failed",
+      `renderWebDocument received repeating group(s) for slot(s) [${unknownGroups.join(", ")}] against template "${doc.template}", which does not declare any of them as a repeating slot. Known repeating slot(s): ${repeatingSlots.map((spec) => spec.key).join(", ") || "(none)"}.`,
+    );
+  }
+
+  const missingRequired = repeatingSlots.filter((spec) => spec.required === true && !groupsByKey.has(spec.key)).map((spec) => spec.key);
+  if (missingRequired.length > 0) {
+    throw new RenderError(
+      "resolution-failed",
+      `renderWebDocument could not resolve document "${doc.id}" against template "${doc.template}": missing required repeating slot(s): ${missingRequired.join(", ")}.`,
+    );
+  }
+
+  const groupsContent: Record<string, ResolvedWebGroupItem[]> = {};
+  for (const spec of repeatingSlots) {
+    const group = groupsByKey.get(spec.key);
+    if (group === undefined) continue; // optional and never authored for this document — the slot's own build function decides what "absent" means.
+    groupsContent[spec.key] = group.items.map((item) => resolveGroupItemContent(spec.key, item, options.resolveAssetId));
+  }
+  return groupsContent;
 }
 
 export function renderWebDocument(doc: ComposeDocument, options: RenderWebOptions = {}): RenderWebResult {
@@ -199,8 +305,16 @@ export function renderWebDocument(doc: ComposeDocument, options: RenderWebOption
     );
   }
 
+  // See this file's own `resolveTemplateGroups` doc comment for the full
+  // fail-closed contract — a no-op for AuthView/ErrorView (neither
+  // declares `repeatingSlots`, and no caller of either passes
+  // `options.groups`), and the sole way MarketingView's `features`/`faq`
+  // slots receive their resolved content, since neither ever appears in
+  // `doc.bindings` (see `internal/webTemplates.ts`'s own top comment).
+  const groups = resolveTemplateGroups(doc, template, options);
+
   return {
-    element: template.build(content),
+    element: template.build(content, groups),
     head: buildWebHeadMetadata(doc.meta as WebMeta),
   };
 }

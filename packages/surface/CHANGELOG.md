@@ -1,5 +1,46 @@
 # Changelog
 
+## [0.3.0] - 2026-08-13
+
+### Added
+
+- `web`: `MarketingView`, a new named web template closing the SECOND and
+  final half of issue #166 (the flowed-marketing-template gap; repeating-
+  group bindings, the first half, shipped in 0.2.0). `renderWebDocument`
+  now dispatches `SurfaceDocument.template === "MarketingView"` alongside
+  the existing `AuthView`/`ErrorView` — one more explicit, nameable
+  template option, not a template-selection mechanism (this package still
+  renders and validates; it does not compose — see the README). Composed
+  entirely from already-shipped `@vespeneventures/ui` primitives:
+  `SiteHeader`/`SiteFooter` (persistent chrome) and `Hero`/`FeatureGrid`/
+  `Faq` (page content). Fixed, named slots: `brand` and `heroHeading` and
+  `ctaHeading` are required; `heroEyebrow`/`heroDescription`/`heroActions`/
+  `heroMedia`/`featuresHeading`/`featuresDescription`/`faqHeading`/
+  `faqDescription`/`ctaDescription`/`ctaAction`/`footerSecondary` are
+  optional flowed text/asset slots; `features` (required) and `faq`
+  (optional) are repeating slots bound via `SurfaceRepeatingSlotBinding`
+  and rendered through `FeatureGrid`/`Faq` respectively. An empty
+  repeating group (`items: []`) renders cleanly — zero features or zero
+  FAQ entries is not an error, consistent with the repeating-binding
+  primitive's own "empty is a deliberate, valid choice" contract; a FAQ
+  binding that was never authored at all omits the whole FAQ section,
+  distinct from an explicitly-empty one. Because a repeating item carries
+  exactly one resolved value (`copy`/`node`/`assetId`) but a FAQ entry
+  needs two (`question` and `answer`), a `faq` item must be authored via a
+  `node` shaped `{ question, answer }` — using `copy`/`assetId` there
+  fails closed with `RenderError("empty-output", ...)`, the same fail-
+  closed discipline `AuthView`/`ErrorView` already hold to for a missing
+  required slot. `RenderWebOptions` gained `groups`, the render-time input
+  a repeating slot's resolved content arrives through (mirrors
+  `ResolvedSurfaceDocument.groups` — see `core`'s own 0.2.0 entry); passing
+  a group for a slot a template does not declare as repeating, or omitting
+  a required repeating slot entirely, both refuse the same way an unknown
+  or missing single-slot binding already does
+  (`RenderError("resolution-failed", ...)`). New exports:
+  `MarketingView`, `MarketingViewProps`, `MarketingFeatureItem`,
+  `MarketingFaqItem`. `listWebTemplateNames()` now returns `AuthView`,
+  `ErrorView`, `MarketingView`.
+
 ## [0.2.1] - 2026-08-13
 
 ### Added

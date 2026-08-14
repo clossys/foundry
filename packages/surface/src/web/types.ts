@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { ResolvedSurfaceGroup } from "../core/index.js";
 
 // ---------------------------------------------------------------------------
 // CopyResolver — the copyId seam, resolved
@@ -74,6 +75,20 @@ export interface RenderWebOptions {
    * unresolved OPTIONAL text binding is).
    */
   resolveAssetId?: AssetResolver;
+  /**
+   * A resolved `SurfaceDocument`'s repeating-group content — the same
+   * `ResolvedSurfaceDocument.groups` `resolveSurfaceDocument` (`surface/
+   * core`) produces for any `SurfaceRepeatingSlotBinding`. Omit when the
+   * document has no repeating binding at all (the same convention
+   * `ResolvedSurfaceDocument.groups` itself uses — omitted, not an empty
+   * array). Only a template that declares matching `repeatingSlots`
+   * (currently `MarketingView` — see `internal/webTemplates.ts`) reads
+   * this; `AuthView`/`ErrorView` ignore it, and passing a group for a slot
+   * neither of them declares is refused the same way an unknown
+   * `SlotBinding.slot` already is — see `renderWebDocument.ts`'s own doc
+   * comment.
+   */
+  groups?: ResolvedSurfaceGroup[];
 }
 
 /** What `renderWebDocument` returns: the two things a web `ComposeDocument` renders to. See `renderWebDocument.ts`'s own doc comment. */
