@@ -66,6 +66,15 @@
 // exactly the incident this gate exists to catch. Both are always reported
 // — never silently skipped — but only the second counts as a finding.
 //
+// With one aggregate exception. GitHub answers 404, not 403, for a package
+// the caller cannot see, so "never published" and "published but invisible
+// to this credential" are the same response — indistinguishable per
+// package. If EVERY declared package returns 404, that is far more likely
+// a token that lost read:packages than a set of published packages none of
+// which was ever published, so the run exits 2 rather than reporting a
+// clean pass it did not earn. See the guard in main() for the full
+// reasoning.
+//
 // EVERY PACKAGE, NOT JUST THE FIRST FAILURE
 // --------------------------------------------
 // Every declared package is checked and reported; a failure on one never
@@ -250,9 +259,16 @@ export async function fetchPackageVisibility({ owner, name, token, fetchImpl }) 
  */
 export async function checkPackageVisibility({ lifecycle, visibility, owner, token, fetchImpl }) {
   const { declared, results, fatal } = selectDeclaredPackages(lifecycle, visibility);
-  if (fatal) return { results: [], fatal };
+  if (fatal) return { results: [], fatal, lookups: { attempted: 0, found: 0 } };
+
+  // Counted separately from `results`, and only for real registry lookups:
+  // a "not-published" result can also come from a stale declaration that
+  // was never looked up at all (see selectDeclaredPackages), and that must
+  // not be mistaken for evidence about what this token can see.
+  const lookups = { attempted: 0, found: 0 };
 
   for (const pkg of declared) {
+    lookups.attempted += 1;
     const outcome = await fetchPackageVisibility({ owner, name: pkg.bareName, token, fetchImpl });
     if (outcome.state === "error") {
       results.push({ package: pkg.name, status: "error", detail: `could not determine registry visibility for "${pkg.name}": ${outcome.detail}` });
@@ -263,8 +279,10 @@ export async function checkPackageVisibility({ lifecycle, visibility, owner, tok
         detail: `"${pkg.name}" has not been published to the registry yet (declared intendedVisibility: "${pkg.intendedVisibility}") — nothing to verify against a package that does not exist there.`,
       });
     } else if (outcome.visibility === pkg.intendedVisibility) {
+      lookups.found += 1;
       results.push({ package: pkg.name, status: "pass", detail: `"${pkg.name}" is registry-${outcome.visibility}, matching its declared intendedVisibility.` });
     } else {
+      lookups.found += 1;
       const extra =
         outcome.visibility === "private" && pkg.intendedVisibility === "public"
           ? ` GitHub Packages defaults every new package to private regardless of this repository being public — that is the exact incident this gate exists to catch. There is no API to change this; an owner must visit https://github.com/orgs/${owner}/packages/npm/${pkg.bareName}/settings (or the equivalent personal-account settings page) and flip it under Danger Zone. See docs/PUBLISHING.md's "Package visibility" section.`
@@ -277,7 +295,18 @@ export async function checkPackageVisibility({ lifecycle, visibility, owner, tok
     }
   }
 
-  return { results, fatal: null };
+  return { results, fatal: null, lookups };
+}
+
+/**
+ * True when this run looked packages up and every single one came back 404
+ * — the signature of a credential that cannot see this owner's packages,
+ * which GitHub reports identically to their not existing. Exported so the
+ * decision is testable without a network call; see the guard in main() for
+ * why it must produce exit 2 rather than a clean pass.
+ */
+export function isBlindCredential(lookups) {
+  return Boolean(lookups) && lookups.attempted > 0 && lookups.found === 0;
 }
 
 // ------------------------------------------------------------------- main
@@ -334,8 +363,40 @@ async function main() {
     owner = scope.slice(1);
   }
 
-  const { results, fatal } = await checkPackageVisibility({ lifecycle, visibility, owner, token, fetchImpl: fetch });
+  const { results, fatal, lookups } = await checkPackageVisibility({ lifecycle, visibility, owner, token, fetchImpl: fetch });
   if (fatal) die(fatal);
+
+  // A TOKEN THAT SEES NOTHING LOOKS EXACTLY LIKE AN EMPTY REGISTRY.
+  // GitHub answers 404 — not 403 — for a package the caller lacks access
+  // to, deliberately, so that the API never leaks the existence of a
+  // private package to someone who cannot read it. That means a single
+  // 404 is genuinely ambiguous: "never published" and "published, but
+  // invisible to this credential" are the same response byte for byte,
+  // and this gate cannot tell them apart for any one package.
+  //
+  // It can tell them apart in aggregate. If EVERY declared package comes
+  // back 404, the likely explanation is not that this repository has
+  // declared a set of published packages none of which was ever
+  // published — it is that the credential cannot see them: a
+  // GH_PACKAGES_TOKEN rotated to one missing `read:packages`, expired
+  // into a reduced-scope state, or belonging to an account without access
+  // to this owner's packages. Reporting that as OK would be this gate
+  // failing in precisely the way it exists to prevent, and worse than not
+  // having it: a daily green check asserting every package is public
+  // while the registry was never actually consulted.
+  //
+  // So: exit 2, could-not-run, not 0. This is the same discipline as the
+  // empty-scan guard below — a scan that examined nothing is never a
+  // clean pass — extended to a scan that examined everything and learned
+  // nothing.
+  if (isBlindCredential(lookups)) {
+    die(
+      `all ${lookups.attempted} declared package(s) returned "not found" from the registry. GitHub returns 404 both for a ` +
+        "package that does not exist and for one this credential cannot see, so this result cannot distinguish an unpublished " +
+        "set of packages from a GH_PACKAGES_TOKEN that has lost read:packages access — refusing to report a pass either way. " +
+        "Confirm the token's scope, then re-run.",
+    );
+  }
 
   // Same EMPTY SCAN discipline check-workspace-links.mjs documents: zero
   // results (no "published" entries at all) means this scan examined

@@ -348,6 +348,19 @@ Like the `visibility_only` report above, it only ever detects and reports.
 There is no API to change a package's visibility, so a finding here still
 ends at the manual step described earlier in this section.
 
+One property of it is worth stating, because it is the difference between a
+gate and a green light. GitHub answers `404` — not `403` — for a package the
+caller cannot see, so that it never leaks a private package's existence to
+someone without access. "Never published" and "published, but invisible to
+this credential" are therefore the same response, and no per-package check
+can separate them. A `GH_PACKAGES_TOKEN` rotated to one missing
+`read:packages` would otherwise produce a daily green check asserting every
+package is public, having never actually seen the registry — the exact
+shape of failure this gate exists to prevent, wearing the gate's own badge.
+So when *every* declared package comes back `404`, the run exits `2`
+(could-not-run) rather than `0`. A single real answer anywhere is enough to
+trust the remaining `404`s as genuine.
+
 ### Deprecating compatibility packages
 
 The old `catalog`, `gates`, `release`, `repository`, and `review` names are

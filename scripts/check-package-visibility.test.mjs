@@ -6,7 +6,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
-import { bareName, checkPackageVisibility, fetchPackageVisibility, selectDeclaredPackages } from "./check-package-visibility.mjs";
+import { bareName, checkPackageVisibility, fetchPackageVisibility, isBlindCredential, selectDeclaredPackages } from "./check-package-visibility.mjs";
 
 // Two layers of coverage, matching this repo's existing split:
 //
@@ -253,6 +253,73 @@ test("a package declared intentionally private that really is private passes (sy
   const fetchImpl = queueFetch([jsonResponse(200, { visibility: "private" })]);
   const { results } = await checkPackageVisibility({ lifecycle, visibility, owner: OWNER, token: TOKEN, fetchImpl });
   assert.equal(results[0].status, "pass");
+});
+
+// A blind credential is the sharpest failure mode this gate has, because it
+// is the one that produces a CONFIDENT WRONG ANSWER rather than an obvious
+// break: GitHub answers 404 (not 403) for a package the caller cannot see,
+// so a token that lost read:packages gets exactly the same bytes back as a
+// registry that genuinely holds nothing. Per package that is unresolvable.
+// In aggregate it is not, and `lookups` is what lets main() tell the
+// difference — so these two tests pin the counter's meaning, not just the
+// results array.
+test("lookups counts only real registry lookups, and counts a blind token as zero found", async () => {
+  const names = ["@scope/a", "@scope/b", "@scope/c"];
+  const lifecycle = lifecycleWith(names.map((name) => ({ name, status: "published" })));
+  const visibility = visibilityWith(names.map((name) => ({ name, intendedVisibility: "public" })));
+  // Every lookup 404s on BOTH the org and the user endpoint — what a token
+  // without read:packages actually receives.
+  const fetchImpl = async () => jsonResponse(404, {});
+  const { results, lookups } = await checkPackageVisibility({ lifecycle, visibility, owner: OWNER, token: TOKEN, fetchImpl });
+  assert.equal(lookups.attempted, 3);
+  assert.equal(lookups.found, 0, "a token that sees nothing must report zero found, which is what main() exits 2 on");
+  assert.equal(results.filter((r) => r.status === "not-published").length, 3);
+});
+
+test("lookups.found counts a finding as well as a pass — the registry answered, and that is what makes the run trustworthy", async () => {
+  const lifecycle = lifecycleWith([
+    { name: "@scope/seen-private", status: "published" },
+    { name: "@scope/absent", status: "published" },
+  ]);
+  const visibility = visibilityWith([
+    { name: "@scope/seen-private", intendedVisibility: "public" },
+    { name: "@scope/absent", intendedVisibility: "public" },
+  ]);
+  const fetchImpl = queueFetch([
+    jsonResponse(200, { visibility: "private" }), // seen-private: a real answer
+    jsonResponse(404, {}), jsonResponse(404, {}), // absent: genuinely not there
+  ]);
+  const { lookups } = await checkPackageVisibility({ lifecycle, visibility, owner: OWNER, token: TOKEN, fetchImpl });
+  assert.equal(lookups.attempted, 2);
+  assert.equal(lookups.found, 1, "one package answered, so this run saw the registry and its 404 for the other is believable");
+});
+
+test("a stale declaration's not-published result never counts as a lookup — it was never looked up", async () => {
+  const lifecycle = lifecycleWith([{ name: "@scope/real", status: "published" }]);
+  const visibility = visibilityWith([
+    { name: "@scope/real", intendedVisibility: "public" },
+    { name: "@scope/gone", intendedVisibility: "public" }, // not a published entry
+  ]);
+  const fetchImpl = queueFetch([jsonResponse(200, { visibility: "public" })]);
+  const { results, lookups } = await checkPackageVisibility({ lifecycle, visibility, owner: OWNER, token: TOKEN, fetchImpl });
+  assert.equal(lookups.attempted, 1, "only the published entry is a registry lookup");
+  assert.equal(lookups.found, 1);
+  assert.equal(results.filter((r) => r.status === "not-published").length, 1);
+});
+
+test("isBlindCredential: every lookup 404 means could-not-run (exit 2), not a clean pass", () => {
+  assert.equal(isBlindCredential({ attempted: 14, found: 0 }), true);
+  assert.equal(isBlindCredential({ attempted: 1, found: 0 }), true);
+});
+
+test("isBlindCredential: a single real answer is enough to believe the rest of the 404s", () => {
+  assert.equal(isBlindCredential({ attempted: 14, found: 1 }), false);
+  assert.equal(isBlindCredential({ attempted: 14, found: 14 }), false);
+});
+
+test("isBlindCredential: nothing looked up at all is not a blind credential — the empty-scan guard owns that case", () => {
+  assert.equal(isBlindCredential({ attempted: 0, found: 0 }), false);
+  assert.equal(isBlindCredential(undefined), false);
 });
 
 // -------------------------------------------------------------------- CLI (paths that never touch the network)
