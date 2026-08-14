@@ -3,6 +3,36 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.12.0] - 2026-08-13
+
+### Added
+
+- **`@vespeneventures/ui/compiled.css`** — a GENERATED, precompiled utility
+  stylesheet for `atoms`, letting a consumer with no Tailwind pipeline
+  render this package's React components with real styling:
+  ```css
+  @import "@vespeneventures/ui/tokens.css";
+  @import "@vespeneventures/ui/compiled.css";
+  ```
+  No Tailwind dependency, no `@source` line. Produced by a real Tailwind v4
+  compile (`src/compiled-css/generate.ts`, using `tailwindcss`'s own
+  `compile()` API — never a hand-maintained approximation) of every class
+  candidate `src/compiled-css/class-scan.ts` statically finds in
+  `src/atoms/`'s own source. Every declaration lives inside a single named
+  layer, `foundry-ui-compiled`, declared after `foundry-ui-tokens` — the
+  same #148-derived layering discipline `tokens.css` already uses — so a
+  consumer's own unlayered CSS, or CSS in a later-declared layer, always
+  wins on a conflicting property. `npm run check:compiled-css` (also part
+  of `npm test`) re-derives the file from source and diffs it against what
+  is committed, so it cannot silently drift; `npm run generate:compiled-css`
+  regenerates it. Scoped to `atoms` only for this first pass — see
+  `README.md`'s "Framework-portable components, without Tailwind" for the
+  full contract, override-precedence rules, and what is and is not verified
+  without a real browser. Reopened and re-scoped from the original,
+  broader #174 sketch once a real external-consumer requirement existed;
+  see the introducing PR for the alternatives weighed and why this
+  boundary was chosen. (#174)
+
 ## [0.11.1] - 2026-08-13
 
 ### Added

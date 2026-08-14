@@ -1,6 +1,6 @@
 {
   "name": "@vespeneventures/ui",
-  "version": "0.11.1",
+  "version": "0.12.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -37,6 +37,7 @@
     },
     "./tokens.css": "./styles/tokens.css",
     "./theme.css": "./styles/theme.css",
+    "./compiled.css": "./styles/compiled.css",
     "./brand-template.css": "./styles/brand-template.css",
     "./atoms": {
       "types": "./dist/atoms/index.d.ts",
@@ -88,7 +89,9 @@
     "prepublishOnly": "npm run build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
-    "generate:icons": "node scripts/generate-icons.mjs"
+    "generate:icons": "node scripts/generate-icons.mjs",
+    "generate:compiled-css": "npm run build && node dist/compiled-css/cli.js --write",
+    "check:compiled-css": "npm run build && node dist/compiled-css/cli.js --check"
   },
   "peerDependencies": {
     "@internationalized/date": "^3.12.2",
