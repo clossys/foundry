@@ -176,6 +176,23 @@ that can damage something *other* than this package — see below), denylist
 quality, gate regression, tree safety, and artifact safety (the actual packed
 tarball, not the tree).
 
+**What `npm run preflight` does *not* run: `packRoundTrip`.** Artifact safety
+(`scripts/check-artifact-safety.mjs`) packs the tarball for real and scans its
+*contents* — forbidden files, credential-shaped strings, private identity,
+structural defects such as a missing `LICENSE` — but it never installs the
+tarball or imports a single declared export. That install-and-import proof is
+a separate, genuinely distinct check (`packRoundTrip`, see
+[`packages/governance/src/release/pack-round-trip.ts`](../packages/governance/src/release/pack-round-trip.ts)),
+and it does not run as part of `preflight-package.mjs` at all. This is a real
+gap, not merely an enforcement gap: there is currently no local command that
+proves a package installs and imports cleanly before you propose publishing
+it. The only place that proof runs is inside the publish workflow itself (see
+[6. Publish](#6-publish) below) — now *before* `npm publish`, but still not
+reachable from a maintainer's own machine ahead of opening a pull request.
+Closing that — wiring `packRoundTrip` into `preflight-package.mjs` itself — is
+tracked as separate, future work; it is not part of what fixed the ordering
+below.
+
 - [ ] Safety gate reports **FULL** mode and `PASS`. A `PASS (partial)` is not
       a clearance — it means identity checks never ran.
 - [ ] `npm pack --dry-run` (or the artifact-safety gate, which packs for
@@ -208,12 +225,39 @@ package's visibility; see [Package visibility](#package-visibility) below
 for why, and for the real manual step.
 
 The workflow re-runs every gate in FULL mode — including name collision and
-artifact safety — builds, tests, packs and prints one tarball. A manual dry
-run exercises npm's own publish command against that exact tarball with
-`--dry-run`; an automatic version release publishes that same path with
-provenance. A real publish then re-fetches that exact
-`name@version`, compares its digest with the uploaded tarball, and installs
-the registry copy in an isolated consumer that imports every declared export.
+artifact safety — builds, tests, packs and prints one tarball. **The real
+order of operations, in full, is:**
+
+1. Pack exactly one tarball (the same bytes get inspected, round-tripped, and
+   published — never a second, separate `npm pack`).
+2. **`packRoundTrip` installs that exact tarball into a genuinely isolated
+   directory and imports every subpath its `exports` field declares — before
+   anything is published.** A failure here stops the job: `npm publish` never
+   runs, and nothing reaches the registry. This is the fix for the ordering
+   defect issue #191 describes — this check used to run
+   only *after* `npm publish`, where a registry version is already immutable
+   and a failure (real or a false positive in the checker itself) can only be
+   reported, never prevented.
+3. A manual dry run exercises npm's own publish command against that exact
+   tarball with `--dry-run`; an automatic version release publishes that same
+   path with provenance. Either way, step 2 already had to pass first.
+4. After a real publish, the workflow re-fetches that exact `name@version`
+   from the registry and compares its digest with the uploaded tarball — proof
+   that the registry *stored and now serves back* those same bytes, which is
+   the one thing step 2 cannot prove no matter how thorough it is (it never
+   touches the registry). It does **not** re-run the install-and-import proof
+   against those bytes for an ordinary publish: byte identity plus step 2's
+   proof against the identical local bytes already cover that; a second
+   install-and-import check against bytes already proven identical would be a
+   duplicate with no distinct purpose.
+5. `verify_only` is the one path that still runs `packRoundTrip` against the
+   fetched, already-published tarball — it exists specifically to qualify a
+   version *already in the registry*, independent of whatever the current
+   checkout contains (for example a version published before step 2 existed
+   in this workflow, or as the "real consumer qualification" step
+   [Package visibility](#package-visibility) asks for). There is no
+   pre-publish check that could have already covered that case.
+
 The workflow maps only the declared package scope to GitHub Packages, leaving
 unscoped runtime dependencies on npmjs throughout verification.
 

@@ -333,6 +333,64 @@ jobs:
           TARBALL: ${{ steps.pack.outputs.tarball }}
         run: tar tzf "$TARBALL"
 
+      # THE GATE THIS ORDERING EXISTS FOR (issue #191). Installs the exact
+      # tarball packed above into a genuinely isolated directory and imports
+      # every subpath its own `exports` field declares — the strongest proof
+      # this repository has that a package actually works for an external
+      # installer, run here for the first time BEFORE anything leaves this
+      # runner rather than after `npm publish` has already made a version
+      # permanent. Registry versions are immutable: run after publish, this
+      # check can only ever report a defect (or a false positive in the
+      # checker itself, which is exactly what happened the one time this ran
+      # in the old position — see the issue) that has already shipped and
+      # can never be un-shipped. Run here, a failure below stops the job
+      # before "Publish" ever executes: GitHub Actions skips every
+      # subsequent step once one fails, and neither Publish step below
+      # declares `if: always()` or `continue-on-error` to override that.
+      #
+      # `tarballPath` points `packRoundTrip` at the tarball "Pack tarball for
+      # publish" already produced, instead of letting it pack its own —
+      # packing a second time here would be exactly the kind of separate
+      # `npm pack` invocation that step's own comment warns can silently
+      # diverge from what was scanned and is about to be published.
+      #
+      # Skipped only for `verify_only`: that mode intentionally qualifies an
+      # ALREADY-published version, which may predate the current checkout —
+      # see "Fetch and verify published tarball" below for the matching
+      # skip and why. This step needs the current source tree to genuinely
+      # match what was just packed, which `verify_only` does not promise.
+      - name: Verify packed tarball installs and imports (pre-publish, blocks release)
+        if: ${{ !inputs.verify_only }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PKG: ${{ matrix.package }}
+          TARBALL: ${{ steps.pack.outputs.tarball }}
+          REGISTRY: ${{ steps.scope.outputs.registry }}
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import { readFileSync } from "node:fs";
+          import { join } from "node:path";
+          import { packRoundTrip } from "./packages/governance/dist/release/pack-round-trip.js";
+
+          const scope = JSON.parse(readFileSync("package-scope.json", "utf8")).scope;
+          const pkg = process.env.PKG;
+          const manifest = JSON.parse(readFileSync(`packages/${pkg}/package.json`, "utf8"));
+          const result = await packRoundTrip(`packages/${pkg}`, {
+            tarballPath: join("packages", pkg, process.env.TARBALL),
+            registry: { url: process.env.REGISTRY, authToken: process.env.NODE_AUTH_TOKEN, scope },
+            next: manifest.foundryReleaseVerification?.next,
+          });
+          if (!result.ok) {
+            for (const finding of result.findings) {
+              console.error(`[${finding.severity}] ${finding.rule}: ${finding.message}`);
+            }
+            console.error("Refusing to publish: the packed tarball does not install and import cleanly.");
+            process.exit(1);
+          }
+          console.log(`packed artifact imports: ${result.imports.map((check) => check.subpath).join(", ")}`);
+          NODE
+
       # `npm pack` proves the files in the selected tarball, but npm's own
       # publish path has additional validation and flag handling. A requested
       # dry run must exercise that exact path — otherwise its name claims more
@@ -380,13 +438,15 @@ jobs:
           # it. The real visibility lever is the opt-in step below.
           npm publish "$TARBALL" --provenance --access public
 
-      # A local tarball round trip proves the source artifact before publish,
-      # but it cannot prove that the configured registry stored and serves
-      # those same bytes. Fetch the just-published version, compare it with
-      # the uploaded tarball, then install that registry copy in a clean
-      # consumer and import every declared export. The scoped mapping keeps
-      # ordinary public npm dependencies on npmjs while resolving this
-      # foundation's scoped packages from the configured registry.
+      # WHAT THIS STEP PROVES THAT THE PRE-PUBLISH GATE CANNOT: not whether
+      # the artifact installs and imports — "Verify packed tarball installs
+      # and imports" above already proved that, against these exact bytes,
+      # before they left this runner — but whether the CONFIGURED REGISTRY
+      # actually stored and now serves back those same bytes. Fetch the
+      # just-published version by name@version (a real, network round trip
+      # through the registry, not a local file read) and compare its sha256
+      # against the uploaded tarball. That is a distinct fact from
+      # installability, and only the registry itself can supply it.
       - name: Fetch and verify published tarball
         if: ${{ github.event_name == 'push' || !inputs.dry_run || inputs.verify_only }}
         id: published
@@ -427,8 +487,24 @@ jobs:
           fi
           echo "tarball_path=$tarball_path" >> "$GITHUB_OUTPUT"
 
+      # NOT run for an ordinary publish (push, or a manual non-dry-run
+      # dispatch): "Fetch and verify published tarball" just proved the
+      # registry served back byte-identical bytes to what "Verify packed
+      # tarball installs and imports" already checked pre-publish. Running
+      # the same install-and-import proof a second time against bytes
+      # already proven identical would check nothing new — a duplicate with
+      # no distinct purpose is noise, not an extra safety margin.
+      #
+      # `verify_only` is the one case that still needs this: it exists
+      # specifically to qualify a version ALREADY sitting in the registry —
+      # for example one published before this pre-publish gate existed, or
+      # as the "real consumer qualification" docs/PUBLISHING.md's Package
+      # visibility section asks for before an owner flips a package public —
+      # independent of whatever the current checkout happens to contain.
+      # There is no pre-publish check to have already covered that case, so
+      # this is the only place it can be proven at all.
       - name: Install and import published tarball
-        if: ${{ github.event_name == 'push' || !inputs.dry_run || inputs.verify_only }}
+        if: ${{ inputs.verify_only }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PKG: ${{ matrix.package }}
