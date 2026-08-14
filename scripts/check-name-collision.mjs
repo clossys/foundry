@@ -72,9 +72,9 @@ if (typeof fullName !== "string" || !fullName.startsWith("@")) {
 }
 
 const [scope, bareName] = [fullName.slice(1, fullName.indexOf("/")), fullName.slice(fullName.indexOf("/") + 1)];
-// Under GitHub Packages the scope IS the owner login. --owner exists for the
-// case where that stops being true (a move to npmjs, where scope and owner are
-// unrelated) so this gate does not silently check the wrong account.
+// Under GitHub Packages the scope IS normally the owner login. --owner exists
+// for an explicit caller override so this gate never silently checks the wrong
+// account.
 const owner = flagValue("--owner") ?? scope;
 
 // This repository, as GitHub spells it: "<owner>/<repo>".

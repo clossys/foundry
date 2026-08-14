@@ -269,10 +269,10 @@ repository does not fail — it silently appends a version to that existing
 package and moves its `latest` dist-tag, with nothing to signal the mistake
 at publish time.
 
-`vespeneventures` was created specifically to own this repository and
-nothing else, so this should never legitimately fire here — but the failure
-mode is silent and hard to undo cleanly, which is exactly why the check runs
-unconditionally rather than being trusted to "obviously not apply."
+Foundry is the only repository under this owner authorized to publish
+packages. Non-publishing account-control-plane repositories may coexist, so
+the owner-wide check still runs: the failure mode is silent and hard to undo
+cleanly.
 
 ### Installing from GitHub Packages
 
@@ -287,9 +287,10 @@ project's `.npmrc` (never commit a real one):
 //npm.pkg.github.com/:_authToken=${GH_PACKAGES_TOKEN}
 ```
 
-with `GH_PACKAGES_TOKEN` set in the environment. See `docs/DECISIONS.md` for
-why GitHub Packages was chosen anyway, and what moving to public npmjs
-later would cost (a config change, not a rewrite).
+with `GH_PACKAGES_TOKEN` set in the environment. The consuming plane owns the
+registry mapping, credential reference, and local or CI injection. Foundry
+never stores the consumer's token value or account-specific installation
+manifest. See `docs/DECISIONS.md` for why GitHub Packages is canonical.
 
 ### Package visibility
 
@@ -333,172 +334,98 @@ read-only plan verification, but do not use its `apply` mode unless GitHub
 Packages documents and demonstrates support. Lifecycle records and these
 wrapper READMEs are the authoritative migration notices in the meantime.
 
-## 7. Migrating to the public npm registry
+## 7. The public npm registry: considered, cancelled
 
-**Status: not started.** Every package here still publishes to GitHub
-Packages, which requires a `read:packages` token to install even for a
-publicly visible package version — including for a consumer with no other
-relationship to this org. That is tracked as issue #194 (P0 in the
-credentialless-adoption program, issue #196): distribution, not any package
-API, is what currently blocks a clean install for a consumer holding no
-credential at all.
+**Status: cancelled — this is a recorded decision, not a pending task.**
+Every package here publishes to GitHub Packages, and that is the canonical
+adoption lane. Nothing in this section is work waiting to be picked up.
 
-This section is the ordered runbook a repository owner follows to move the
-canonical install source from GitHub Packages to the public npm registry
-(`https://registry.npmjs.org`). It exists so that migration is a checklist,
-not a rediscovery — the same reason the rest of this document is a
-checklist rather than prose. **Nothing in this repository can perform step
-1 or step 2 below.** Both happen on npm's own infrastructure, outside any
-CI job or script this repository runs, and both require an npm account
-with real authority over the destination namespace. An automated agent
-must never attempt them; they are listed here so a human owner has the
-exact steps in one place, in order.
+Earlier revisions of this document carried a ten-step, owner-only runbook
+for moving the canonical install source to `https://registry.npmjs.org`.
+That migration is cancelled — see
+[issue #213](https://github.com/vespeneventures/foundry/issues/213), which
+supersedes the migration issue (#194) and the credentialless acceptance
+criteria in its umbrella program (#196); both are closed as not planned.
+The runbook is deliberately not preserved here: a detailed, ordered,
+ready-to-run procedure sitting under a "cancelled" heading is an
+attractive nuisance, and the single most consequential step in it was
+irreversible.
 
-Reversibility is called out explicitly at each step, because the failure
-mode this whole document exists to avoid — publishing something that
-cannot be taken back — applies to this migration too, not only to a single
-package's first release.
+### What the decision actually turned on
 
-1. **Verify control of the `@vespeneventures` scope on the public npm
-   registry.** ⚠️ **Effectively irreversible.** GitHub organization
-   ownership and an npm scope are entirely separate namespaces — owning
-   `github.com/vespeneventures` does not reserve `@vespeneventures` on
-   `npmjs.com`, the same way this repository's own
-   [`docs/DECISIONS.md`](DECISIONS.md#2-the-registry--github-packages)
-   already notes. If the scope is unclaimed, claiming it (via an npm
-   organization or user account with billing/ownership control) is a
-   first-come registration on a shared public namespace: once registered,
-   there is no supported way to hand it back to "unclaimed," and a
-   dispute over an already-registered name goes through npm support, not
-   through anything this repository controls. If the scope is already
-   claimed by someone else, this migration cannot proceed under the
-   `@vespeneventures` name at all — see the compatibility requirement in
-   issue #194 for the fallback (another scope, or another npm-compatible
-   public registry proving the same credential-free contract).
-2. **Configure npm trusted publishing (OIDC) for this repository's
-   `publish.yml` workflow**, on npm's package/organization settings page,
-   for every package name that will publish from here. Trusted publishing
-   binds a specific GitHub repository and workflow file as an authorized
-   publisher for a specific npm package, so `npm publish` can authenticate
-   using the job's own short-lived GitHub Actions OIDC token instead of a
-   stored long-lived npm token — no `NPM_TOKEN` secret is created or
-   stored in this repository at any point. This repository's
-   `publish.yml` already declares `permissions: id-token: write` for npm
-   provenance, which is the same permission trusted publishing consumes;
-   no new workflow permission is required for this step, only the
-   publisher-trust registration on npm's side. ⚠️ **Recoverable but
-   security-sensitive**: the trust relationship can be edited or revoked
-   from npm's settings at any time, but while it is active, any workflow
-   run matching the trusted repository and file can publish under that
-   package name — review `publish.yml`'s `publish` job (in particular its
-   `environment: npm-publish` protected-environment gate) before trusting
-   it, the same review this repository already applies to the job-scoped
-   `GITHUB_TOKEN` it uses today.
-3. **Point the single declared registry at npm**, once steps 1–2 are
-   confirmed:
-   ```bash
-   node scripts/set-registry.mjs --registry https://registry.npmjs.org
-   ```
-   This is a plain, git-recoverable edit: it rewrites
-   `package-scope.json.registry` and every non-private
-   `packages/*/package.json`'s `publishConfig.registry` in place (see
-   `scripts/set-registry.mjs`'s own header), and
-   `node scripts/set-registry.mjs --check` (`npm run check:registry`) then
-   confirms nothing drifted. Nothing on any registry changes yet.
-4. **Add `publishConfig.access: "public"` to every package that will
-   publish to npm.** npmjs defaults a *scoped* package to private on first
-   publish; GitHub Packages has no equivalent flag, which is why no
-   package here declares this today. Because this edits
-   `packages/*/package.json`, each touched package's packed content has
-   changed and needs its own version bump — the `release readiness` gate
-   (`node scripts/check-release-readiness.mjs`) enforces this the same way
-   it enforces any other manifest change; see this repository's own
-   versioning conventions (prefer a patch bump, and widen every
-   dependent's declared range — 0.x semver is minor-locked both for `^`
-   and `~`) before touching more than one package's `package.json` in the
-   same change. Recoverable: a git revert undoes it before anything is
-   published.
-5. **Update `publish.yml`'s authentication step** to use npm trusted
-   publishing instead of the job-scoped `GITHUB_TOKEN` it authenticates
-   with today (that token only ever worked because the destination was
-   GitHub's own Packages registry — it authenticates to nothing on
-   npmjs). Keep every gate that already runs before publish unchanged:
-   name collision, denylist-backed safety (FULL mode, required), README
-   parity, contamination classes, artifact safety on the packed tarball,
-   and the pack-then-publish-that-exact-tarball ordering. Recoverable in
-   this repository; not yet reversible once it has actually published (see
-   step 7).
-6. **Review, do not blindly reuse, every registry-specific check** issue
-   #194 calls out by name before it runs against npm for real:
-   - `scripts/check-name-collision.mjs` queries GitHub's own
-     owner-scoped Packages API (`gh api /orgs/{owner}/packages/npm/...`)
-     to catch GitHub Packages' specific "same owner, different repo"
-     silent-append failure mode. npmjs collision semantics are different —
-     a name already published on npmjs is rejected outright with `403`,
-     not silently appended to — so this script's *purpose* (never publish
-     a name registered to something else) still applies, but its
-     *mechanism* (which API it queries) needs a destination-registry
-     equivalent before it can be trusted here.
-   - The provenance and pack/round-trip verification `publish.yml` already
-     runs (`packRoundTrip`, the tarball digest re-check, the isolated
-     consumer import) is registry-agnostic in shape — it takes a registry
-     URL and auth token as caller-supplied config — but has only ever
-     been exercised against GitHub Packages in this repository. Prove it
-     against npm with a `workflow_dispatch` dry run (see below) before
-     trusting it on a real publish.
-   - The `visibility` job and its "no API for this" finding are entirely
-     GitHub-Packages-specific (GitHub Packages defaults new packages
-     private with no visibility-change API). npmjs's own
-     `publishConfig.access: "public"` (step 4) is the equivalent lever
-     there and needs no separate reporting job.
-7. **Publish for real, starting from the runtime dependency order this
-   document already declares** (`policy` → `governance`, then each
-   dependent only after its runtime siblings are live on npm — see
-   [Runtime dependency order](#runtime-dependency-order) above), using a
-   `workflow_dispatch` **dry run** (`dry_run: true`) first for each
-   package to exercise the whole path — including step 6's reviewed
-   gates — without publishing anything. ⚠️ **A real publish (`dry_run:
-   false` or a version-bump push) is irreversible**: npm forbids
-   republishing the same `name@version` once published, and unpublishing
-   is restricted to a short window and does not free the version number
-   again. This is the step nothing before it can be undone after.
-8. **Prove the credential-free contract for real**, in a fresh temporary
-   `HOME`/`npm_config_userconfig` with no `.npmrc` copied in and every
-   npm/GitHub token environment variable absent:
-   ```bash
-   npm install @vespeneventures/<package>@<version>
-   ```
-   should succeed from the default registry with nothing else configured,
-   for every package published in step 7, and the resulting
-   `package-lock.json` should contain no `npm.pkg.github.com` URL for any
-   `@vespeneventures/*` tarball. This is the actual acceptance evidence
-   issue #194 asks for — a green `check:registry` gate proves internal
-   consistency, never a live credential-free install.
-9. **Decide the fate of the existing GitHub Packages versions**, and
-   record the decision in this document. They cannot be moved — the two
-   registries are entirely separate systems, so no version history carries
-   over (`docs/DECISIONS.md` already states this) — and per issue #194's
-   explicit non-goals, no existing GitHub Packages version is deleted or
-   yanked as part of this migration. The realistic choices are: leave
-   GitHub Packages published and undocumented (a consumer with an existing
-   `.npmrc` keeps resolving there, unaffected, but it is no longer the
-   path this repository tests or documents), or mark it deprecated once
-   GitHub Packages actually supports a `npm deprecate` metadata write for
-   this registry (as of this writing it does not — see [Deprecating
-   compatibility packages](#deprecating-compatibility-packages) above for
-   the same limitation already hit for the legacy compatibility package
-   names).
-10. **Update the documented and tested consumer path** — this file's
-    ["Installing from GitHub Packages"](#installing-from-github-packages)
-    section and [`README.md`'s "Installing"
-    section](../README.md#installing) — to describe the npm install as the
-    normal, working path, not a pending one, only after step 8's
-    credential-free transcript actually exists. Until then, both documents
-    describe the *intended* end state and say so explicitly; claiming it
-    early is the same false-clearance mistake `AGENTS.md` and this
-    document already warn against for a partial safety scan (**"A partial
-    pass is not a clearance"**) — applied here to installation instead of
-    to identity scanning.
+The first step was verifying and, if unclaimed, **claiming
+`@vespeneventures` on npmjs**. GitHub organization ownership and an npm
+scope are entirely separate namespaces, so owning the org name here
+reserves nothing there. Claiming it is a first-come registration on a
+shared public namespace: there is no supported way to return a name to
+unclaimed, and a dispute over one goes through npm support rather than
+anything this repository controls. Every subsequent step — trusted
+publishing, the registry config change, `publishConfig.access` — was
+recoverable. That one was not.
+
+What the migration bought was a credential-free `npm install` for a reader
+holding no credential and no relationship to this org. No such reader was
+waiting. Every actual consumer authenticates through a plane that already
+holds package credentials. Paying an irreversible cost up front for a
+hypothetical adopter is the trade
+[`CONTRIBUTING.md`](../CONTRIBUTING.md)'s "Supported configurations: the
+default answer is also no" exists to refuse.
+
+### What remains true regardless
+
+- [`package-scope.json`](../package-scope.json) is still the single file
+  declaring both the scope and the registry, and
+  `node scripts/set-registry.mjs --check` (`npm run check:registry`, CI job
+  `registry drift`) still fails if any package's `publishConfig.registry`
+  drifts from it. That gate matters *more* under a settled registry than it
+  did under a pending migration — it is what keeps twenty packages agreeing
+  on one answer.
+- `scripts/check-name-collision.mjs` still runs before every publish. Its
+  reason is GitHub Packages' own owner-scoped namespace and the silent
+  version-append failure that namespace allows — unrelated to which
+  registry was canonical.
+- The documented consumer path — this file's ["Installing from GitHub
+  Packages"](#installing-from-github-packages) section and
+  [`README.md`'s "Installing" section](../README.md#installing) — describes
+  an authenticated install because that is what actually works. It no
+  longer describes an intended end state, because there is no longer a
+  different one pending.
+
+### If this is ever revisited
+
+The bar is the one any speculative capability faces here: a real consumer
+that needs it, not one that might. Reopening would mean a fresh decision
+recorded in [`docs/DECISIONS.md`](DECISIONS.md#2-the-registry--github-packages),
+and a runbook rewritten against whatever npm's publishing and trusted-publisher
+surface looks like then — not this one restored from git history.
+
+## 8. Canonical registry qualification
+
+GitHub Packages is the canonical publication and installation lane. Existing
+package names and versions remain there; do not unpublish, delete, copy, or
+reuse them as part of consumer adoption.
+
+For every package whose lifecycle status is `published`:
+
+1. Run the package preflight in FULL public-safety mode before proposing any
+   new version. The preflight must inspect the exact packed tarball and complete
+   the owner-wide name-collision query.
+2. Let the protected `npm-publish` environment gate the serial publish job.
+   The job-scoped `GITHUB_TOKEN` uploads the exact tarball that passed the
+   pre-publish checks; no consumer credential participates in publication.
+3. Require the workflow's authenticated clean install and public-export smoke
+   test against the selected tarball before upload. After upload, require the
+   registry digest comparison; use `verify_only` to qualify an older existing
+   registry version without publishing a duplicate.
+4. Record the package's lifecycle state and replacement guidance in
+   `docs/contracts/package-lifecycle.json`. Deprecated compatibility names
+   remain installable migration artifacts and are not new adoption targets.
+
+Consumers separately prove an authenticated install of each exact package they
+adopt. They own their registry mapping, credential reference, lockfile, and
+public-export or CLI smoke test. Foundry records no token value, account path,
+or consumer-specific configuration. See [ADOPTION.md](ADOPTION.md) for the
+capability and wiring ledger.
 
 ## Prerequisites held outside this repository
 
@@ -507,3 +434,4 @@ package's first release.
 | Denylist | `~/.config/public-safety/denylist-foundry.json` locally; `PUBLIC_SAFETY_DENYLIST_B64` repository secret in CI | Never committed here — it names exactly what must not be public. Specific to this repository — never reuse a denylist file written for a different project. |
 | Publish credential | Job-scoped `GITHUB_TOKEN` with workflow `packages: write` | Publishes packages associated with this repository; no stored publish token is used. |
 | Package-index credential | `GH_PACKAGES_TOKEN` repository secret | Classic token with `read:packages`, used only by the pre-publish name-collision query across the owner namespace. |
+| Consumer read credential | Consuming plane's credential system and process environment | Authenticates only that consumer's GitHub Packages reads. The value and its machine/CI injection never enter Foundry. |

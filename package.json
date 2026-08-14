@@ -20,7 +20,7 @@
     "check:safety": "node scripts/check-public-safety.mjs . --allow-changelogs",
     "check:safety:strict": "node scripts/check-public-safety.mjs . --allow-changelogs --require-denylist",
     "check:scope": "node scripts/set-scope.mjs --check",
-    "//check-registry": "Does every non-private packages/*/package.json's publishConfig.registry still match the single declared registry in package-scope.json? Same single-source-of-truth pattern as check:scope, extended from the scope to the registry -- see scripts/set-registry.mjs's own header and docs/PUBLISHING.md's migration runbook.",
+    "//check-registry": "Does every non-private packages/*/package.json's publishConfig.registry still match the single declared registry in package-scope.json? Same single-source-of-truth pattern as check:scope, extended from the scope to the registry -- see scripts/set-registry.mjs's own header and docs/PUBLISHING.md's canonical registry qualification section.",
     "check:registry": "node scripts/set-registry.mjs --check",
     "check:denylist": "node scripts/check-denylist-quality.mjs",
     "//check-workspace-links": "Does every first-party 0.x dependency range still cover its sibling's real on-disk version, and does package-lock.json still resolve every first-party package as a local link rather than a remote registry URL? See the script's own header for the defect this exists to catch -- it has already cost real time more than once.",

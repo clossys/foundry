@@ -137,7 +137,8 @@ repository does not fail — it silently appends a version to that package and
 moves its `latest` dist-tag, with no error to signal the mistake. See
 `docs/DECISIONS.md` for the full reasoning.
 
-Because this org (`vespeneventures`) was created specifically to own this
-repository and nothing else, this gate should never legitimately fire here —
-but a gate that only runs when someone remembers a check is "probably
-unnecessary" isn't a gate, so it runs before every publish regardless.
+Foundry is the only repository under this owner authorized to publish
+packages, but non-publishing account-control-plane repositories may coexist.
+A gate that only runs when someone remembers a check is "probably
+unnecessary" is not a gate, so the owner-wide collision check runs before
+every publish regardless.

@@ -1,6 +1,6 @@
 {
   "name": "@vespeneventures/conventions",
-  "version": "0.2.0",
+  "version": "0.4.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -25,11 +25,12 @@
     "LICENSE"
   ],
   "sideEffects": false,
-  "description": "Account-neutral agent conventions two parties can share without either owning the other: branch provenance, skill naming, agent interoperability, and routine declarations, shipped as default documents plus the validators that enforce their grammar.",
+  "description": "Account-neutral agent conventions two parties can share without either owning the other: branch provenance, skill naming, agent interoperability, routine declarations, and a capability-first skill registry, shipped as default documents plus the validators that enforce their grammar.",
   "keywords": [
     "agent-conventions",
     "branch-naming",
     "agent-skills",
+    "skill-registry",
     "governance",
     "neutrality",
     "typescript"
