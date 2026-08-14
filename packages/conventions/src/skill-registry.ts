@@ -67,7 +67,7 @@ export interface AcceptedGap {
   readonly target: string;
   /** Why this target is deliberately left open. Must survive the moment it was written. */
   readonly reason: string;
-  /** An issue or ADR identifier a later reader can actually open. */
+  /** A parsed HTTPS issue URL or repository-relative Markdown decision/ADR path. */
   readonly reference: string;
 }
 
@@ -81,8 +81,10 @@ export interface SkillRegistry {
 /** What a routine declares about the one skill it targets, for coverage checking only. */
 export interface RoutineCoverageQuery {
   readonly skill: string;
-  /** Present only when targeting a repository-scoped skill. */
+  /** Existing query spelling; present only for a repository-scoped skill. */
   readonly repository?: string;
+  /** Routine-declaration spelling for the same repository qualifier. */
+  readonly skillRepository?: string;
   readonly scope: readonly string[];
 }
 
@@ -92,10 +94,222 @@ export interface CapabilityCoverage {
   readonly required: readonly string[];
   /** Required targets covered by at least one first-party skill. */
   readonly covered: readonly string[];
-  /** Required targets excused by a declared accepted gap, valid or not. */
+  /** Required targets excused by a valid declared accepted gap. */
   readonly acceptedGaps: readonly string[];
   /** Required targets neither covered nor excused. */
   readonly missing: readonly string[];
+}
+
+const ISSUE_PATH = /^\/(?:[A-Za-z0-9._~-]+\/)*issues\/[1-9][0-9]*$/;
+const ISSUE_FRAGMENT = /^#[A-Za-z0-9._-]+$/;
+const RELATIVE_MARKDOWN_REFERENCE = /^(?!\/)(?!\.\/)(?!.*(?:^|\/)\.\.(?:\/|$))[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)*\.md(?:#[A-Za-z0-9._-]+)?$/i;
+const DECISION_SEGMENT = /^(?:adr|adrs|decision|decisions)$/i;
+const DECISION_FILENAME = /^(?:adr|decision)[-_][A-Za-z0-9._-]+\.md$/i;
+
+function record(value: unknown): Record<string, unknown> | undefined {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : undefined;
+}
+
+function stringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((entry) => typeof entry === "string");
+}
+
+function shapeFinding(rule: string, message: string): Finding {
+  return { rule, severity: "high", message };
+}
+
+function validHostname(hostname: string): boolean {
+  if (hostname.startsWith("[") && hostname.endsWith("]")) return true;
+  if (hostname.length === 0 || hostname.length > 253) return false;
+  return hostname.split(".").every((label) =>
+    label.length > 0 && label.length <= 63 &&
+    /^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?$/.test(label)
+  );
+}
+
+function issueReference(reference: string): boolean {
+  let parsed: URL;
+  try {
+    parsed = new URL(reference);
+  } catch {
+    return false;
+  }
+  return parsed.protocol === "https:" &&
+    parsed.username === "" && parsed.password === "" &&
+    parsed.search === "" && validHostname(parsed.hostname) &&
+    ISSUE_PATH.test(parsed.pathname) &&
+    (parsed.hash === "" || ISSUE_FRAGMENT.test(parsed.hash));
+}
+
+function durableReference(reference: string): boolean {
+  if (issueReference(reference)) return true;
+  if (!RELATIVE_MARKDOWN_REFERENCE.test(reference)) return false;
+  const path = reference.split("#", 1)[0]!;
+  const segments = path.split("/");
+  if (segments.some((segment) => segment === "." || segment === "..")) return false;
+  const filename = segments.at(-1)!;
+  return segments.slice(0, -1).some((segment) => DECISION_SEGMENT.test(segment)) ||
+    DECISION_FILENAME.test(filename);
+}
+
+function parseCapability(value: unknown, index: number, findings: Finding[]): Capability | undefined {
+  const raw = record(value);
+  if (!raw || typeof raw.id !== "string" || typeof raw.description !== "string" ||
+      !stringArray(raw.requiredTargets)) {
+    findings.push(shapeFinding(
+      "registry/malformed-capability",
+      `Registry capability at index ${index} must contain string id and description fields plus a string-array requiredTargets field.`,
+    ));
+    return undefined;
+  }
+  return { id: raw.id, description: raw.description, requiredTargets: raw.requiredTargets };
+}
+
+function parseImplementation(
+  value: unknown,
+  skillIndex: number,
+  implementationIndex: number,
+  findings: Finding[],
+): SkillCapabilityImplementation | undefined {
+  const raw = record(value);
+  if (!raw || typeof raw.capability !== "string" || !stringArray(raw.targets)) {
+    findings.push(shapeFinding(
+      "registry/malformed-implementation",
+      `Registry implementation at skill index ${skillIndex}, implementation index ${implementationIndex} must contain a string capability and string-array targets.`,
+    ));
+    return undefined;
+  }
+  return { capability: raw.capability, targets: raw.targets };
+}
+
+function parseSkill(value: unknown, index: number, findings: Finding[]): RegisteredSkill | undefined {
+  const raw = record(value);
+  if (!raw || typeof raw.name !== "string" ||
+      (raw.scope !== "plane" && raw.scope !== "repository") ||
+      (raw.repository !== undefined && typeof raw.repository !== "string") ||
+      (raw.thirdParty !== undefined && typeof raw.thirdParty !== "boolean") ||
+      !Array.isArray(raw.implements)) {
+    findings.push(shapeFinding(
+      "registry/malformed-skill",
+      `Registry skill at index ${index} must contain a string name, a plane or repository scope, an implements array, and optional string repository and boolean thirdParty fields.`,
+    ));
+    return undefined;
+  }
+  const implementations = raw.implements.flatMap((implementation, implementationIndex) => {
+    const parsed = parseImplementation(implementation, index, implementationIndex, findings);
+    return parsed ? [parsed] : [];
+  });
+  return {
+    name: raw.name,
+    scope: raw.scope,
+    ...(raw.repository === undefined ? {} : { repository: raw.repository as string }),
+    ...(raw.thirdParty === undefined ? {} : { thirdParty: raw.thirdParty as boolean }),
+    implements: implementations,
+  };
+}
+
+function parseGap(value: unknown, index: number, findings: Finding[]): AcceptedGap | undefined {
+  const raw = record(value);
+  if (!raw || typeof raw.capability !== "string" || typeof raw.target !== "string" ||
+      typeof raw.reason !== "string" || typeof raw.reference !== "string") {
+    findings.push(shapeFinding(
+      "registry/malformed-accepted-gap",
+      `Registry accepted gap at index ${index} must contain string capability, target, reason, and reference fields.`,
+    ));
+    return undefined;
+  }
+  return {
+    capability: raw.capability,
+    target: raw.target,
+    reason: raw.reason,
+    reference: raw.reference,
+  };
+}
+
+function parseRegistry(input: unknown): { readonly value?: SkillRegistry; readonly findings: Finding[] } {
+  const raw = record(input);
+  if (!raw) {
+    return { findings: [shapeFinding("registry/malformed-document", "Skill registry must be an object.")] };
+  }
+  const findings: Finding[] = [];
+  if (typeof raw.schemaVersion !== "string") {
+    findings.push(shapeFinding("registry/malformed-schema-version", "Registry schemaVersion must be a string."));
+  }
+  if (!Array.isArray(raw.capabilities)) {
+    findings.push(shapeFinding("registry/malformed-capabilities", "Registry capabilities must be an array."));
+  }
+  if (!Array.isArray(raw.skills)) {
+    findings.push(shapeFinding("registry/malformed-skills", "Registry skills must be an array."));
+  }
+  if (raw.acceptedGaps !== undefined && !Array.isArray(raw.acceptedGaps)) {
+    findings.push(shapeFinding("registry/malformed-accepted-gaps", "Registry acceptedGaps must be an array when present."));
+  }
+  if (typeof raw.schemaVersion !== "string" || !Array.isArray(raw.capabilities) ||
+      !Array.isArray(raw.skills) ||
+      (raw.acceptedGaps !== undefined && !Array.isArray(raw.acceptedGaps))) {
+    return { findings };
+  }
+  const capabilities = raw.capabilities.flatMap((capability, index) => {
+    const parsed = parseCapability(capability, index, findings);
+    return parsed ? [parsed] : [];
+  });
+  const skills = raw.skills.flatMap((skill, index) => {
+    const parsed = parseSkill(skill, index, findings);
+    return parsed ? [parsed] : [];
+  });
+  const acceptedGaps = (raw.acceptedGaps ?? []).flatMap((gap, index) => {
+    const parsed = parseGap(gap, index, findings);
+    return parsed ? [parsed] : [];
+  });
+  return {
+    findings,
+    value: {
+      schemaVersion: raw.schemaVersion,
+      capabilities,
+      skills,
+      ...(raw.acceptedGaps === undefined ? {} : { acceptedGaps }),
+    },
+  };
+}
+
+function parseRoutineQuery(input: unknown): {
+  readonly value?: RoutineCoverageQuery;
+  readonly findings: Finding[];
+} {
+  const raw = record(input);
+  if (!raw || typeof raw.skill !== "string" || !stringArray(raw.scope) ||
+      (raw.repository !== undefined && typeof raw.repository !== "string") ||
+      (raw.skillRepository !== undefined && typeof raw.skillRepository !== "string")) {
+    return { findings: [shapeFinding(
+      "registry/malformed-routine-query",
+      "Routine coverage query must contain a string skill, a string-array scope, and optional string repository or skillRepository qualifiers.",
+    )] };
+  }
+  const findings: Finding[] = [];
+  if (raw.repository !== undefined && raw.skillRepository !== undefined &&
+      raw.repository !== raw.skillRepository) {
+    findings.push(shapeFinding(
+      "registry/conflicting-routine-repository-qualifiers",
+      "Routine coverage query repository and skillRepository qualifiers must agree when both are present.",
+    ));
+  }
+  return {
+    findings,
+    value: {
+      skill: raw.skill,
+      scope: raw.scope,
+      ...(raw.repository === undefined ? {} : { repository: raw.repository as string }),
+      ...(raw.skillRepository === undefined
+        ? {}
+        : { skillRepository: raw.skillRepository as string }),
+    },
+  };
+}
+
+function queryRepository(query: RoutineCoverageQuery): string | undefined {
+  return query.skillRepository ?? query.repository;
 }
 
 function skillIdentity(skill: Pick<RegisteredSkill, "name" | "scope" | "repository">): string {
@@ -124,9 +338,8 @@ function firstPartyCoverage(registry: SkillRegistry): Map<string, Set<string>> {
 
 /**
  * Deterministic set arithmetic for one capability: required, minus what a
- * first-party skill covers, minus what an accepted gap excuses (regardless of
- * whether that gap is itself well-formed -- pass the registry through
- * `validateSkillRegistry` first to know that). Returns an all-empty shape for
+ * first-party skill covers, minus what a well-formed accepted gap excuses.
+ * Returns an all-empty shape for
  * an unknown capability id rather than throwing, since "this id does not
  * exist" is itself a fact a caller may want to compute over.
  */
@@ -139,7 +352,10 @@ export function computeCapabilityCoverage(
   const covered = firstPartyCoverage(registry).get(capabilityId) ?? new Set<string>();
   const gaps = new Set(
     (registry.acceptedGaps ?? [])
-      .filter((gap) => gap.capability === capabilityId)
+      .filter((gap) =>
+        gap.capability === capabilityId && gap.reason.trim() !== "" &&
+        durableReference(gap.reference)
+      )
       .map((gap) => gap.target),
   );
 
@@ -162,8 +378,11 @@ export function computeCapabilityCoverage(
  * gap that cannot be checked or revisited later has not actually accepted
  * anything.
  */
-export function validateSkillRegistry(registry: SkillRegistry): Finding[] {
-  const findings: Finding[] = [];
+export function validateSkillRegistry(input: unknown): Finding[] {
+  const parsed = parseRegistry(input);
+  const findings: Finding[] = [...parsed.findings];
+  if (!parsed.value) return findings;
+  const registry = parsed.value;
 
   if (registry.schemaVersion !== SKILL_REGISTRY_SCHEMA_VERSION) {
     findings.push({
@@ -199,6 +418,14 @@ export function validateSkillRegistry(registry: SkillRegistry): Finding[] {
       });
     }
     seenIdentities.add(identity);
+
+    if (skill.scope !== "plane" && skill.scope !== "repository") {
+      findings.push({
+        rule: "registry/unknown-scope",
+        severity: "high",
+        message: `Skill "${skill.name}" declares unknown scope "${String(skill.scope)}".`,
+      });
+    }
 
     if (skill.scope === "repository" && (!skill.repository || skill.repository.trim() === "")) {
       findings.push({
@@ -283,6 +510,13 @@ export function validateSkillRegistry(registry: SkillRegistry): Finding[] {
         message: `Accepted gap for capability "${gap.capability}" target "${gap.target}" cites no issue or ADR reference. A reason that cannot be revisited later has not actually accepted anything.`,
       });
       valid = false;
+    } else if (!durableReference(gap.reference)) {
+      findings.push({
+        rule: "registry/gap-invalid-reference",
+        severity: "high",
+        message: `Accepted gap for capability "${gap.capability}" target "${gap.target}" must cite an HTTPS issue URL or a repository-relative Markdown decision/ADR path.`,
+      });
+      valid = false;
     }
 
     if (valid) {
@@ -317,35 +551,50 @@ export function validateSkillRegistry(registry: SkillRegistry): Finding[] {
  * coverage the skill never claimed, so there is nothing else here to check.
  */
 export function validateRoutineCoverage(
-  query: RoutineCoverageQuery,
-  registry: SkillRegistry,
+  inputQuery: unknown,
+  inputRegistry: unknown,
 ): Finding[] {
+  const parsedRegistry = parseRegistry(inputRegistry);
+  const parsedQuery = parseRoutineQuery(inputQuery);
+  const findings: Finding[] = [...parsedRegistry.findings, ...parsedQuery.findings];
+  if (!parsedRegistry.value || !parsedQuery.value) return findings;
+  const registry = parsedRegistry.value;
+  const query = parsedQuery.value;
+  const repository = queryRepository(query);
   const matches = registry.skills.filter(
     (skill) =>
       skill.name === query.skill &&
-      (skill.scope === "plane" ? query.repository === undefined : skill.repository === query.repository),
+      (skill.scope === "plane" ? repository === undefined : skill.repository === repository),
   );
 
   if (matches.length === 0) {
-    return [
-      {
+    if (repository !== undefined && registry.skills.some(
+      (skill) => skill.name === query.skill && skill.scope === "plane",
+    )) {
+      findings.push({
+        rule: "registry/routine-plane-skill-qualified",
+        severity: "high",
+        message: `Routine qualifies plane-scoped skill "${query.skill}" with repository "${repository}". Omit the qualifier so ordinary validation must resolve the plane-root skill.`,
+      });
+    } else {
+      findings.push({
         rule: "registry/routine-unresolvable-skill",
         severity: "high",
         message: `Routine targets skill "${query.skill}"${
-          query.repository ? ` in repository "${query.repository}"` : ""
+          repository ? ` in repository "${repository}"` : ""
         }, which does not resolve in this registry.`,
-      },
-    ];
+      });
+    }
+    return findings;
   }
 
   if (matches.length > 1) {
-    return [
-      {
-        rule: "registry/routine-ambiguous-skill",
-        severity: "high",
-        message: `Routine targets skill "${query.skill}", which resolves to more than one registered identity.`,
-      },
-    ];
+    findings.push({
+      rule: "registry/routine-ambiguous-skill",
+      severity: "high",
+      message: `Routine targets skill "${query.skill}", which resolves to more than one registered identity.`,
+    });
+    return findings;
   }
 
   const skill = matches[0]!;
@@ -354,7 +603,6 @@ export function validateRoutineCoverage(
     for (const target of implementation.targets) covered.add(target);
   }
 
-  const findings: Finding[] = [];
   for (const target of query.scope) {
     if (!covered.has(target)) {
       findings.push({

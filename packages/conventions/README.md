@@ -106,7 +106,7 @@ const skillRegistry = {
       capability: "dependency-freshness-review",
       target: "repo-b",
       reason: "repo-b is archived and receives no further dependency work.",
-      reference: "owning-plane#42",
+      reference: "https://github.com/example/project/issues/42",
     },
   ],
 };
@@ -117,7 +117,7 @@ computeCapabilityCoverage(skillRegistry, "dependency-freshness-review"); // { re
 // A routine only ever confirms two things: the skill resolves, and the
 // routine's own scope is a subset of what that skill already declares.
 validateRoutineCoverage(
-  { skill: "review-dependency-freshness", repository: "repo-a", scope: ["repo-a"] },
+  { skill: "review-dependency-freshness", skillRepository: "repo-a", scope: ["repo-a"] },
   skillRegistry,
 );
 
@@ -211,13 +211,13 @@ expander reads like any other bytes.
 | `validateSkillSet(names, options)` | function | Validates a set and adds the cross-cutting duplicate-name rule |
 | `SKILL_VERBS` | `readonly string[]` | The closed verb vocabulary |
 | `validateRoutineDeclaration(declaration, registry)` | function | Validates one declaration against a plane's own registry of repositories, skills, cadences, and modes |
-| `validateRoutineSet(declarations, registry, options?)` | function | Validates a set; adds unique-identifier checking and reports an exclusion recorded without a reason |
+| `validateRoutineSet(declarations, registry, options?)` | function | Validates a set; adds unique-identifier checking and validates exclusion reasons and repository qualifiers |
 | `validateScheduledSkillDescription(skill, description)` | function | Checks that a clock-invoked skill declares it is not conversationally triggered |
 | `reconciliationFindingKinds` | `readonly string[]` | The four findings only live reconciliation can produce. Data, not an implementation — this package cannot read a scheduler's store |
 | `scanNeutrality(contents, options?)` | function | Reports absolute paths, operator-specific home directories, and caller-supplied plane-owned names. Exempts a shebang line |
-| `validateSkillRegistry(registry)` | function | Validates a capability-first skill registry: schema version, duplicate composite skill identity, scope escape, unknown capability references, missing coverage, and malformed accepted gaps |
+| `validateSkillRegistry(registry)` | function | Validates decoded caller JSON without throwing: schema and entry shapes, composite identity, scope escape, capability coverage, and durable accepted-gap evidence |
 | `computeCapabilityCoverage(registry, capabilityId)` | function | Pure set arithmetic for one capability: required, covered, accepted gaps, and what is still missing |
-| `validateRoutineCoverage(query, registry)` | function | The only two checks a routine gets: that its target skill resolves, and that its scope is a subset of that skill's declared coverage |
+| `validateRoutineCoverage(query, registry)` | function | Non-throwingly resolves a routine or coverage query's composite skill identity and confirms scope is a subset of declared coverage |
 | `SKILL_REGISTRY_SCHEMA_VERSION` | `string` | The schema version this validator understands. A registry declaring a different version is a finding, not a silent pass |
 | `CONVENTION_DOCUMENTS` | `readonly ConventionDocument[]` | Metadata for every shipped document |
 | `CONVENTION_ADAPTERS` | `readonly ConventionAdapter[]` | Metadata for every shipped adapter |
@@ -232,10 +232,11 @@ expander reads like any other bytes.
 | `Severity` | type | `"high" \| "medium" \| "low"` |
 | `ConventionDocument` | type | `{ id, filename, title, templated }` |
 | `ConventionAdapter` | type | `{ id, filename, description, templated, mode? }` |
-| `RoutineDeclaration` | type | `{ id, skill, cadence, scope, mode, purpose }` |
+| `RoutineDeclaration` | type | `{ id, skill, skillRepository?, cadence, scope, mode, purpose }`; an unqualified target resolves through the plane root |
 | `RoutineRegistry` | type | The declaring plane's closed lists |
 | `BranchOptions` | type | `{ agents, exempt? }` |
 | `SkillOptions` | type | `{ prefixes, reservedNamespaces?, thirdParty? }` |
+| `RoutineExclusion` | type | `{ skill, skillRepository?, reason }`; unqualified identity is the plane root and qualified identity names a governed repository |
 | `RoutineSetOptions` | type | `{ exclusions? }` |
 | `NeutralityOptions` | type | `{ forbiddenNames?, allowTemplateTokens? }` |
 | `SkillRegistry` | type | `{ schemaVersion, capabilities, skills, acceptedGaps? }` |
@@ -244,7 +245,7 @@ expander reads like any other bytes.
 | `SkillScope` | type | `"plane" \| "repository"` |
 | `SkillCapabilityImplementation` | type | `{ capability, targets }` |
 | `AcceptedGap` | type | `{ capability, target, reason, reference }` |
-| `RoutineCoverageQuery` | type | `{ skill, repository?, scope }` |
+| `RoutineCoverageQuery` | type | `{ skill, repository?, skillRepository?, scope }`; qualifier spellings must agree if both are present |
 | `CapabilityCoverage` | type | `{ capability, required, covered, acceptedGaps, missing }` |
 
 ## What this package deliberately does not do

@@ -44,7 +44,7 @@ export {
   validateRoutineSet,
   validateScheduledSkillDescription,
 } from "./routines.js";
-export type { RoutineSetOptions } from "./routines.js";
+export type { RoutineExclusion, RoutineSetOptions } from "./routines.js";
 
 export { scanNeutrality } from "./neutrality.js";
 export type { NeutralityOptions } from "./neutrality.js";
