@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.6.1] - 2026-08-14
+
+### Changed
+
+- **Documented effective install behaviour on the GitHub Packages
+  registry.** `react` and `react-dom` are correctly declared
+  `optional: true` in `peerDependenciesMeta`, but `npm.pkg.github.com`'s
+  packument omits that field entirely, so an installer resolving against
+  this registry treats both as required regardless of which subpath is
+  imported — including the non-web renderers (`./core`, `./media`,
+  `./email`, `./print`, `./image`, `./slides`), which need neither. No
+  `peerDependenciesMeta` block changed; see the README's "Requirements and
+  version coupling" section and
+  [issue #226](https://github.com/vespeneventures/foundry/issues/226) for
+  the full evidence and decision.
+
 ## [0.6.0] - 2026-08-14
 
 ### Added

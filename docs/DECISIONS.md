@@ -77,6 +77,38 @@ The trade-off, accepted deliberately rather than defaulted into:
   deleted, yanked, copied to a second registry, or reused for a different
   package.
 
+### A standing property of that registry: optional peers install as required
+
+**Status:** documented, not worked around. [Issue #226](https://github.com/vespeneventures/foundry/issues/226)
+confirmed, with a control query, that the GitHub Packages packument omits
+`peerDependenciesMeta` for every version it serves — `peerDependencies`
+comes back complete, `peerDependenciesMeta` comes back empty, from the same
+authenticated request. The tarball's own `package.json` is correct; the loss
+happens when GitHub Packages assembles the metadata document an installer
+actually reads, before any tarball is fetched.
+
+This was always possible the moment #213 (above) made GitHub Packages the
+canonical, non-transitional registry: it is a property of *this* registry,
+not of publishing from this repository in general, and choosing this
+registry means living with what it does and doesn't serve. While the
+registry question was still open, a gap like this would have been a reason
+to keep looking; settled, it is a consequence to record next to the choice
+that produced it, not a reason to revisit #213 itself.
+
+Six packages currently express optionality through `peerDependenciesMeta` —
+`ui`, `auth`, `surface`, `consent`, `comms`, and `governance` — and all six
+are affected identically: every consumer installing from this registry gets
+every declared peer as a hard requirement, regardless of which subpath it
+actually imports. The declarations themselves are not changing. They are
+correct in the tarball, they are what a reader of the package's own
+`package.json` sees, and they become correct for installers too the day
+GitHub Packages starts serving the field. What changed instead is the
+documentation: each affected package's README now states its own effective
+install behaviour on this registry, and [docs/ADOPTION.md](ADOPTION.md)
+records it where adoption expectations are set. See issue #226 for the full
+evidence, the options considered, and why splitting packages or moving
+peers into `dependencies` were not taken.
+
 ### Why the name-collision gate runs before every publish, unconditionally
 
 GitHub Packages namespaces npm packages by **owner account**, not by

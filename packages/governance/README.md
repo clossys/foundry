@@ -764,6 +764,18 @@ throws a named, actionable error (never a silent pass) instead of
 whatever the compiler API itself happens to crash on first. See
 `src/internal/peer-version.ts` for the guard's own contract.
 
+**Registry note: the issue #152 fix above is undone one layer up by the
+registry itself.** `typescript` is correctly declared `optional: true` in
+`peerDependenciesMeta`, which is exactly what let the five compatibility
+shims stop inheriting a compiler transitively. But `npm.pkg.github.com`'s
+packument omits `peerDependenciesMeta` entirely, so an installer resolving
+against this registry sees `typescript` as required regardless — a
+consumer who only ever imports the root (`runGovernanceCheck`,
+`preflightGovernedPackage`) and never touches `./gates` still gets a
+TypeScript compiler installed on this package's account. See
+[issue #226](https://github.com/vespeneventures/foundry/issues/226) for the
+full evidence and why the declaration stays as-is.
+
 This is a TypeScript-specific guarantee, not a general "the root does no
 I/O" one. Both root functions genuinely read the real filesystem
 (`node:fs`) — `runGovernanceCheck` for real workspace discovery via this

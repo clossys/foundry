@@ -312,6 +312,19 @@ Node 20+. ESM only. **Zero runtime dependencies** in the root package. `./web`
 declares `react`/`react-dom` as optional peers (`>=18`); importing the root
 package never installs or loads either.
 
+**Registry note: that "never installs" claim is about what the root package
+imports, not about what a consumer's install command pulls in.** `react` and
+`react-dom` are correctly declared `optional: true` in
+`peerDependenciesMeta` — a consumer using only the provider-neutral root
+(policies, evaluation, audit events) has no code-level need for either. But
+that optionality does not reach an installer resolving against
+`npm.pkg.github.com`: the registry's packument omits
+`peerDependenciesMeta` entirely, so both peers install as required the
+moment `@vespeneventures/consent` is installed at all, whether or not
+`./web` is ever imported. See
+[issue #226](https://github.com/vespeneventures/foundry/issues/226) for the
+full evidence and why the declarations stay as-is.
+
 ## Licence
 
 MIT

@@ -141,6 +141,22 @@ npm install @vespeneventures/ui react react-dom react-aria-components \
 `@internationalized/date` is only needed when using `DateField`; the other
 component peers support the interactive primitives and their Tailwind classes.
 
+**Registry note: the token-only path above installs the full peer set
+anyway.** All six peers listed in `peerDependencies` — `react`, `react-dom`,
+`react-aria-components`, `tailwind-merge`, `tailwindcss`, and
+`@internationalized/date` — are correctly declared `optional: true` in
+`peerDependenciesMeta`, and that declaration is honored by the tarball this
+package publishes. It is not honored by `npm.pkg.github.com`: the registry's
+packument omits `peerDependenciesMeta` entirely, so an installer resolving
+against this registry sees six required peers, not six optional ones. In
+practice that means a consumer who runs `npm install @vespeneventures/ui` to
+get only `tokens.css` or `compiled.css` — the two paths that exist
+specifically so React and a Tailwind pipeline are *not* required — still has
+all six installed. There is no per-subpath way to avoid it from this side;
+the fix would have to happen registry-side. See
+[issue #226](https://github.com/vespeneventures/foundry/issues/226) for the
+full evidence and the decision to document rather than restructure around it.
+
 ### CSS layers, fallbacks, and themes
 
 The visual contract is ordered:

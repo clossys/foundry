@@ -5,6 +5,21 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.2] - 2026-08-14
+
+### Changed
+
+- **Documented effective install behaviour on the GitHub Packages
+  registry.** `resend` is correctly declared `optional: true` in
+  `peerDependenciesMeta`, but `npm.pkg.github.com`'s packument omits that
+  field entirely, so an installer resolving against this registry treats
+  it as required the moment this package is installed at all, including
+  for a consumer who only ever imports the provider-neutral root or
+  `./inbound` and never touches the Resend adapter. No
+  `peerDependenciesMeta` block changed; see the README's "Requirements"
+  section and [issue #226](https://github.com/vespeneventures/foundry/issues/226)
+  for the full evidence and decision.
+
 ## [0.3.1] - 2026-08-13
 
 ### Added
