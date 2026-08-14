@@ -48,8 +48,10 @@ planned, not only after.
 
 These packages have lifecycle status `published`, but none is an adoption-ready
 target until its lifecycle entry records the required qualification evidence.
-Issue [#213](https://github.com/vespeneventures/foundry/issues/213) owns that
-14-package exact-version install and export or CLI proof. After qualification,
+Issue [#234](https://github.com/vespeneventures/foundry/issues/234) owns that
+14-package exact-version install and export or CLI proof; it succeeds
+[#213](https://github.com/vespeneventures/foundry/issues/213), which decided
+the registry and is closed. After qualification,
 a consumer installs only the subset it needs through authenticated GitHub
 Packages access.
 
@@ -80,7 +82,7 @@ deleted.
 
 | Gap | Foundry owner | Consumer work that remains separate |
 | --- | --- | --- |
-| Capability-first skill registry | [#214](https://github.com/vespeneventures/foundry/issues/214) and [#225](https://github.com/vespeneventures/foundry/pull/225) landed the account-neutral schema, validator, vocabulary, and set arithmetic in `@vespeneventures/conventions` 0.3.0 source. Issue #213 still requires registry publication and exact-version qualification evidence before consumers treat that capability as available. | Each plane declares required targets, skill coverage, third-party inventory, and accepted exceptions. Routines add cadence only. |
+| Capability-first skill registry | [#214](https://github.com/vespeneventures/foundry/issues/214) and [#225](https://github.com/vespeneventures/foundry/pull/225) landed the account-neutral schema, validator, vocabulary, and set arithmetic in `@vespeneventures/conventions` 0.3.0 source. Issue [#234](https://github.com/vespeneventures/foundry/issues/234) still requires registry publication and exact-version qualification evidence before consumers treat that capability as available. | Each plane declares required targets, skill coverage, third-party inventory, and accepted exceptions. Routines add cadence only. |
 | Workspace-cleanup classification | [#215](https://github.com/vespeneventures/foundry/issues/215) owns the not-yet-qualified pure observation-to-proposal classifier. | Each plane discovers repositories, gathers Git and provider evidence, checks live task ownership, requests exact confirmation, and performs any approved cleanup. |
 
 Until a row has a qualified registry artifact, consumers keep their existing
