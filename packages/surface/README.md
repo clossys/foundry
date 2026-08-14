@@ -147,7 +147,7 @@ package owns the contracts and deterministic renderers that produce them.
 ## Requirements and version coupling
 
 Node 20+. This package's own `package.json` declares runtime dependencies on
-`@vespeneventures/copy` (`~0.5.0`) and `@vespeneventures/ui` (`~0.10.0`) —
+`@vespeneventures/copy` (`~0.5.0`) and `@vespeneventures/ui` (`~0.11.0`) —
 patch-only tilde ranges, not exact pins. That is a real constraint on the
 dependency graph, not an install-ordering concern: a package manager
 resolves the whole graph regardless of what order packages are requested

@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.9] - 2026-08-13
+
+### Changed
+
+- Widened the `@vespeneventures/ui` range from `~0.10.0` to `~0.11.0` to
+  track that package's 0.11.0 release, which adds marketing/editorial
+  content blocks (`Hero`, `FeatureGrid`, `Faq`, `PricingTable`,
+  `Testimonial`, `ArticleBody`) at the `./blocks` subpath. Required for the
+  same reason as every prior range widening in this file: in 0.x semver a
+  tilde range is minor-locked, so `~0.10.0` excluded `ui` 0.11.0 and the
+  dependency stopped resolving to the sibling package. No API change here
+  — this package does not use the new block exports.
+
 ## [0.1.8] - 2026-08-13
 
 ### Changed

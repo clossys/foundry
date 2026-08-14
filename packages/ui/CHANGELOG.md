@@ -3,6 +3,48 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.11.0] - 2026-08-13
+
+### Added
+
+- **Marketing/editorial content blocks** (`@vespeneventures/ui/blocks`):
+  `Hero`, `FeatureGrid`, `Faq`, `PricingTable`, `Testimonial`,
+  `ArticleBody`. The remainder of the marketing-blocks work started by the
+  0.10.0 site-chrome release — chrome (`SiteHeader`/`SiteFooter`/
+  `NavShell`/`SkipLink`) survives a route change and ships at `shell`;
+  these six can each appear more than once on a page (this package's
+  README, "Placement rules", test 3), which is what puts all six in
+  `blocks` instead.
+  - **`Hero`** — eyebrow, heading, description, actions slot, and an
+    optional `media` slot that switches the layout to two columns when
+    supplied rather than growing a `variant` prop for the same effect.
+    `headingLevel` (`1 | 2`, default `1`) picks its heading element.
+  - **`FeatureGrid`** — an optional eyebrow/heading/description region
+    above a grid of icon/heading/description feature items (a homogeneous
+    repeat, the same shape `NavGrid`'s cards already are).
+  - **`Faq`** — an optional heading region above a list of question/answer
+    pairs, each one this package's own `Disclosure` atom composed
+    directly rather than a second hand-rolled expand/collapse mechanism.
+    Independent, not a coordinated accordion.
+  - **`PricingTable`** — an optional heading region above a grid of
+    tiers (name, price, feature list, a `cta` slot, `isHighlighted` plus
+    an optional `badge` slot for a recommended tier), built on this
+    package's own `Card`/`Badge` atoms.
+  - **`Testimonial`** — a quote plus attribution, rendered as a real
+    `<figure>`/`<blockquote>`/`<figcaption>`. `attributorName` and
+    `attributorRole` are always separate props; an optional avatar's
+    `avatarSrc`/`avatarAlt` are required together at the type level, the
+    same enforcement `Chip`'s `onRemove`/`removeLabel` pairing already
+    establishes.
+  - **`ArticleBody`** — a thin, token-styled container for pre-structured
+    long-form content. Deliberately does not parse markdown or enforce a
+    content-shape schema; that belongs to a separate, already-filed
+    `@vespeneventures/surface` proposal.
+  - Ships **no real words of any kind**: every heading, body line, CTA
+    label, question/answer pair, tier name, and quote is a required or
+    optional prop the consumer supplies, the same "this package owns
+    visual vocabulary, never copy" boundary every prior release states.
+
 ## [0.10.0] - 2026-08-13
 
 ### Added

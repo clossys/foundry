@@ -122,6 +122,12 @@ export {
   Toolbar,
   NavGrid,
   SectionHeader,
+  Hero,
+  FeatureGrid,
+  Faq,
+  PricingTable,
+  Testimonial,
+  ArticleBody,
 } from "./blocks/index.js";
 export type {
   PageHeaderProps,
@@ -145,6 +151,19 @@ export type {
   NavGridItem,
   SectionHeaderProps,
   SectionHeaderLevel,
+  HeroProps,
+  HeroHeadingLevel,
+  FeatureGridProps,
+  FeatureGridItem,
+  FeatureGridHeadingLevel,
+  FaqProps,
+  FaqItem,
+  FaqHeadingLevel,
+  PricingTableProps,
+  PricingTier,
+  PricingTableHeadingLevel,
+  TestimonialProps,
+  ArticleBodyProps,
 } from "./blocks/index.js";
 
 export { Shell, Toaster, toast, SkipLink, SiteHeader, NavShell, SiteFooter } from "./shell/index.js";
