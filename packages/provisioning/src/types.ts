@@ -85,6 +85,15 @@ export interface PlanOperation {
   readonly startMarker?: string;
   readonly endMarker?: string;
   readonly create?: boolean;
+  /**
+   * True when this operation's source is another managed destination rather
+   * than a file in the source tree — a `links` entry declared with `target`.
+   *
+   * Such an operation cannot run until whatever produces that destination has
+   * run. It is the only dependency edge this manifest format can express, which
+   * is why recording it is enough to order the whole plan correctly.
+   */
+  readonly chained?: boolean;
 }
 
 export interface Plan {
