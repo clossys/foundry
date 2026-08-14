@@ -2,8 +2,9 @@
 
 Account-neutral agent conventions that two parties can share without either
 owning the other — branch provenance, skill naming, agent interoperability,
-routine declarations, and a capability-first skill registry — shipped as
-default documents plus the validators that enforce their grammar.
+routine declarations, a capability-first skill registry, and pure
+workspace-cleanup classification — shipped as default documents plus
+deterministic validators and classifiers.
 
 ```bash
 npm install @vespeneventures/conventions
@@ -129,6 +130,52 @@ repository gate exits non-zero on a finding; a migration tool reports and
 continues. Encoding that choice here would make the package usable in exactly
 one of those roles.
 
+## Workspace-cleanup classification
+
+Account-specific cleanup skills share one safety decision without sharing
+their discovery, provider access, or workflow prose. Each skill reads its own
+repository registry, verifies origins, checks live task ownership, gathers Git
+and pull-request evidence, and passes one normalized observation per proposed
+action to `classifyWorkspaceCleanup`.
+
+```ts
+import { classifyWorkspaceCleanup } from "@vespeneventures/conventions";
+
+const proposal = classifyWorkspaceCleanup({
+  repositoryId: registryRepository.id,
+  declaredOrigin: registryRepository.normalizedOrigin,
+  observedOrigin: observed.normalizedOrigin,
+  canonicalCheckout: observed.canonicalCheckout,
+  targetOwnership: observed.targetOwnership,
+  evidenceComplete: observed.evidenceComplete,
+  action: "remove-worktree",
+  targetId: observed.opaqueTargetId,
+  worktree: observed.worktree,
+  branch: {
+    tracking: observed.branchTracking,
+    pullRequest: observed.pullRequestState,
+  },
+});
+```
+
+The result is `owned`, `blocked`, or `safe-candidate`, with stable reason
+codes. Precedence is fail-closed: a wrong or unobserved origin, missing
+canonical checkout, or incomplete evidence blocks before ownership is
+considered; known active or dirty state is `owned`; unpushed work and any
+pull-request state other than `merged` block. Worktree-metadata pruning is safe
+only when the caller's prune dry run named that record as a candidate.
+
+Every result carries `requiresOperatorConfirmation: true`. A safe candidate is
+a reviewable proposal, never deletion authorization. The package exports no
+executor, shell command, filesystem adapter, Git provider client, scheduler
+reader, credential hook, or mutation API. Account skills retain all of those
+boundaries and the exact-target confirmation step.
+
+The classifier accepts opaque repository and target identities rather than
+importing the capability-first skill-registry model. A caller may map registry
+entries into those identities, while both contracts remain independently
+adoptable and versionable.
+
 ## Shipped documents
 
 Resolve a path with `documentPath(id)` and read it yourself; this package does
@@ -247,6 +294,16 @@ expander reads like any other bytes.
 | `AcceptedGap` | type | `{ capability, target, reason, reference }` |
 | `RoutineCoverageQuery` | type | `{ skill, repository?, skillRepository?, scope }`; qualifier spellings must agree if both are present |
 | `CapabilityCoverage` | type | `{ capability, required, covered, acceptedGaps, missing }` |
+| `classifyWorkspaceCleanup(observation)` | function | Purely classifies one caller-normalized worktree, branch, or stale-metadata proposal with strict fail-closed precedence |
+| `classifyWorkspaceCleanupSet(observations)` | function | Classifies an ordered caller-owned observation set without discovery or I/O |
+| `WORKSPACE_CLEANUP_REASON_CODES` | `readonly string[]` | Stable machine-readable reason vocabulary for owned, blocked, and safe-candidate results |
+| `WorkspaceCleanupObservation` | type | Discriminated union for worktree removal, branch removal, and stale-metadata pruning evidence |
+| `WorkspaceCleanupProposal` | type | Typed action proposal with status, reason codes, and mandatory operator confirmation; never a command or authorization |
+| `WorkspaceCleanupCommonObservation` / `BranchDispositionObservation` | types | Caller-normalized repository boundary, ownership, completeness, branch-tracking, and pull-request evidence shared by action observations |
+| `WorktreeCleanupObservation` / `BranchCleanupObservation` / `WorktreeMetadataCleanupObservation` | types | Action-specific evidence for worktree removal, branch removal, and stale-metadata pruning |
+| `WorkspaceCleanupAction` / `WorkspaceCleanupStatus` / `WorkspaceCleanupReasonCode` | types | Closed action, classification, and stable reason-code vocabularies |
+| `CanonicalCheckoutState` / `TargetOwnershipState` / `WorktreeState` / `BranchWorktreeState` | types | Closed canonical checkout, target ownership, and worktree observation vocabularies |
+| `BranchTrackingState` / `PullRequestState` / `PruneDryRunState` | types | Closed tracking, pull-request, and prune-dry-run evidence vocabularies |
 
 ## What this package deliberately does not do
 
@@ -263,6 +320,10 @@ expander reads like any other bytes.
 - **It does not install anything.** Applying these defaults to a machine is
   provisioning, which mutates state outside version control and belongs in a
   package that says so.
+- **It does not clean a workspace.** The classifier only evaluates normalized
+  observations. Repository discovery, Git and provider reads, active-task
+  checks, exact operator confirmation, and guarded mutation remain in the
+  account-owned skill.
 - **The skill registry never reads a scheduler either.** `validateRoutineCoverage`
   confirms only that a named skill resolves and that a routine's declared
   scope is a subset of what that skill already claims; it never asks whether
