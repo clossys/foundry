@@ -1,9 +1,9 @@
 # @vespeneventures/conventions
 
 Account-neutral agent conventions that two parties can share without either
-owning the other — branch provenance, skill naming, agent interoperability, and
-routine declarations — shipped as default documents plus the validators that
-enforce their grammar.
+owning the other — branch provenance, capability-first skill registries, agent
+interoperability, and routine declarations — shipped as default documents plus
+the pure validators that enforce their grammar.
 
 ```bash
 npm install @vespeneventures/conventions
@@ -52,6 +52,8 @@ import {
   scanNeutrality,
   validateBranchName,
   validateRoutineSet,
+  validateRoutineSkillCoverage,
+  validateSkillRegistry,
   validateSkillSet,
 } from "@vespeneventures/conventions";
 
@@ -64,6 +66,42 @@ const findings = validateBranchName("claude/extract-governance", {
 // Skill naming, against your own registered prefixes.
 validateSkillSet(["ex-audit-dependencies"], { prefixes: ["ex"] });
 
+// Functional coverage. Repository-owned skills may share a name because the
+// stable identity is (repository, name), not name alone.
+const skillRegistry = {
+  schemaVersion: 2,
+  capabilities: [{
+    id: "dependency-review",
+    purpose: "Review dependency drift using repository-owned policy.",
+    repositories: ["control", "product"],
+  }],
+  skills: [
+    {
+      repository: "control",
+      name: "ex-review-dependencies",
+      scope: "repository",
+      source: "first-party",
+      implements: [{ capability: "dependency-review", repositories: ["control"] }],
+    },
+    {
+      repository: "product",
+      name: "ex-review-dependencies",
+      scope: "repository",
+      source: "first-party",
+      implements: [{ capability: "dependency-review", repositories: ["product"] }],
+    },
+  ],
+  acceptedGaps: [],
+} as const;
+
+const skillRegistryOptions = {
+  repositories: ["control", "product"],
+  planeRepository: "control",
+  prefixes: ["ex"],
+} as const;
+
+validateSkillRegistry(skillRegistry, skillRegistryOptions);
+
 // Routine declarations, against your own closed lists.
 validateRoutineSet(declarations, {
   repositories: ["owned-one"],
@@ -71,6 +109,10 @@ validateRoutineSet(declarations, {
   cadences: ["daily", "weekly"],
   modes: ["report-only", "apply"],
 });
+
+// A routine adds tempo only. This separate check ensures its target exists and
+// its scope is a subset of coverage that was already declared above.
+validateRoutineSkillCoverage(declarations[0], skillRegistry, skillRegistryOptions);
 
 // Neutrality, before publishing anything shared.
 scanNeutrality(documentText, { forbiddenNames: myPrivateNameList });
@@ -98,6 +140,7 @@ Both routes point at the same bytes; use whichever your tooling expects.
 | --- | --- | --- |
 | `branch-provenance` | [documents/branch-provenance.md](documents/branch-provenance.md) | How an agent-created branch is named, and why taxonomy is not provenance |
 | `skill-grammar` | [documents/skill-grammar.md](documents/skill-grammar.md) | Skill naming, prefix ownership, and the closed verb vocabulary |
+| `skill-registry` | [documents/skill-registry.md](documents/skill-registry.md) | Capability-first coverage, repository-qualified skill identity, durable accepted gaps, and routine subset checks |
 | `agent-interoperability` | [documents/agent-interoperability.md](documents/agent-interoperability.md) | The canonical layer table, supported surfaces, and the admission test for a new agent |
 | `routine-declaration` | [documents/routine-declaration.md](documents/routine-declaration.md) | Why a trigger is a pointer, why scope is closed, and why declared intent is not live state |
 | `machine-guidance` | [documents/machine-guidance.md](documents/machine-guidance.md) | Machine-wide agent guidance. **Templated** — carries `${WORKSPACE_ROOT}` |
@@ -163,6 +206,9 @@ expander reads like any other bytes.
 | `validateSkillName(name, options, directoryName?)` | function | Validates one skill name; compares against the directory name when supplied, since that drift makes a skill silently undiscoverable |
 | `validateSkillSet(names, options)` | function | Validates a set and adds the cross-cutting duplicate-name rule |
 | `SKILL_VERBS` | `readonly string[]` | The closed verb vocabulary |
+| `SKILL_REGISTRY_SCHEMA_VERSION` | `2` | Current capability-first skill registry schema version |
+| `validateSkillRegistry(document, options)` | function | Purely validates composite skill identity, scope placement, coverage unions, accepted gaps, and third-party inventory boundaries |
+| `validateRoutineSkillCoverage(declaration, document, options)` | function | Confirms a routine target exists and its scope is a subset of the target skill's declared coverage; performs no cadence or scheduler check |
 | `validateRoutineDeclaration(declaration, registry)` | function | Validates one declaration against a plane's own registry of repositories, skills, cadences, and modes |
 | `validateRoutineSet(declarations, registry, options?)` | function | Validates a set; adds unique-identifier checking and reports an exclusion recorded without a reason |
 | `validateScheduledSkillDescription(skill, description)` | function | Checks that a clock-invoked skill declares it is not conversationally triggered |
@@ -181,10 +227,18 @@ expander reads like any other bytes.
 | `Severity` | type | `"high" \| "medium" \| "low"` |
 | `ConventionDocument` | type | `{ id, filename, title, templated }` |
 | `ConventionAdapter` | type | `{ id, filename, description, templated, mode? }` |
-| `RoutineDeclaration` | type | `{ id, skill, cadence, scope, mode, purpose }` |
+| `RoutineDeclaration` | type | `{ id, skill, skillRepository?, cadence, scope, mode, purpose }`; omitting `skillRepository` targets the declaring plane's skill root |
 | `RoutineRegistry` | type | The declaring plane's closed lists |
 | `BranchOptions` | type | `{ agents, exempt? }` |
 | `SkillOptions` | type | `{ prefixes, reservedNamespaces?, thirdParty? }` |
+| `SkillRegistryDocument` | type | Schema-v2 capability requirements, repository-qualified skill inventory, implementations, and accepted gaps |
+| `SkillRegistryCapability` | type | One capability's identifier, purpose, and required repository set |
+| `SkillRegistryEntry` | type | One `(repository, name)` skill identity, source, scope, and implementations |
+| `SkillRegistryImplementation` | type | One skill's coverage subset for a declared capability |
+| `SkillRegistryAcceptedGap` | type | A deliberately uncovered capability subset with reason and durable reference |
+| `SkillRegistryOptions` | type | Caller-owned repository set, plane repository, prefixes, and optional provider namespace reservations |
+| `SkillRegistryScope` | type | `"plane" | "repository"` |
+| `SkillRegistrySource` | type | `"first-party" | "third-party"` |
 | `RoutineSetOptions` | type | `{ exclusions? }` |
 | `NeutralityOptions` | type | `{ forbiddenNames?, allowTemplateTokens? }` |
 

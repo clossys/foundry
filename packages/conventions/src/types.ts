@@ -49,6 +49,11 @@ export interface RoutineDeclaration {
   readonly id: string;
   /** Name of a skill the declaring plane owns. Never a document. */
   readonly skill: string;
+  /**
+   * Owning repository when the target is repository-scoped. Omit for the
+   * declaring plane's own skill root.
+   */
+  readonly skillRepository?: string;
   readonly cadence: string;
   /** Registry identifiers, never paths. */
   readonly scope: readonly string[];

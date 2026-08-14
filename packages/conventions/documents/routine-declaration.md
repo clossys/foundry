@@ -33,12 +33,18 @@ Two consequences follow, and both are mechanical rather than advisory:
 A declaration carries an identifier unique within its plane, the name of a
 skill the plane owns, a cadence drawn from a closed list the plane declares, a
 scope expressed as registry identifiers, a mode stating how far the routine may
-act unattended, and a purpose in prose.
+act unattended, and a purpose in prose. Skill identity is the pair of owning
+repository and name: omitting `skillRepository` targets the declaring plane's
+own skill root, while a repository-owned target names its repository explicitly.
 
 The target is always a skill, never a document. Allowing a routine to point at
 prose in some other repository puts the procedure somewhere the plane can
 neither version nor check, which is the same failure as inlining it, arrived at
 politely. The skill is the procedure.
+
+The routine's scope must also be a subset of the target skill's capability
+coverage. A routine adds tempo to existing functional coverage; it does not
+expand that coverage merely by naming another repository.
 
 A skill invoked by a clock must declare in its description that it is not
 conversationally triggered. Skills compete for invocation, and a crowded list

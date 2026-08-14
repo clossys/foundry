@@ -5,6 +5,21 @@ All notable changes to `@vespeneventures/conventions` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-08-14
+
+### Added
+
+- Capability-first skill registry schema version 2, including pure validation
+  for repository-qualified skill identity, `plane` and `repository` scope,
+  capability coverage unions, durable accepted gaps, and explicit third-party
+  inventory entries that cannot silently satisfy first-party coverage.
+- `validateRoutineSkillCoverage`, which checks only that a routine's
+  repository-qualified target exists and its scope is a subset of the skill's
+  declared coverage. Cadence and live scheduler state remain separate.
+- The proven `expand` and `groom` skill verbs.
+- A shipped `skill-registry` convention document with account-neutral migration
+  patterns for tree-discovered and centrally inventoried consumers.
+
 ## [0.2.0] - 2026-08-14
 
 ### Added
@@ -62,6 +77,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `CONVENTION_ADAPTERS`, `DOCUMENTS_ROOT`, and `ADAPTERS_ROOT` for reaching the
   shipped defaults without this package performing any I/O.
 
+[0.3.0]: https://github.com/vespeneventures/foundry/releases/tag/conventions-v0.3.0
 [0.2.0]: https://github.com/vespeneventures/foundry/releases/tag/conventions-v0.2.0
 [0.1.1]: https://github.com/vespeneventures/foundry/releases/tag/conventions-v0.1.1
 [0.1.0]: https://github.com/vespeneventures/foundry/releases/tag/conventions-v0.1.0

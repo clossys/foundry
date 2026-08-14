@@ -39,6 +39,22 @@ export { SKILL_VERBS, validateSkillName, validateSkillSet } from "./skills.js";
 export type { SkillOptions } from "./skills.js";
 
 export {
+  SKILL_REGISTRY_SCHEMA_VERSION,
+  validateRoutineSkillCoverage,
+  validateSkillRegistry,
+} from "./skill-registry.js";
+export type {
+  SkillRegistryAcceptedGap,
+  SkillRegistryCapability,
+  SkillRegistryDocument,
+  SkillRegistryEntry,
+  SkillRegistryImplementation,
+  SkillRegistryOptions,
+  SkillRegistryScope,
+  SkillRegistrySource,
+} from "./skill-registry.js";
+
+export {
   reconciliationFindingKinds,
   validateRoutineDeclaration,
   validateRoutineSet,
