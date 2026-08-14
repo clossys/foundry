@@ -1,0 +1,113 @@
+import { describe, expect, it } from "vitest";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { Faq, type FaqItem } from "./Faq.js";
+
+const ITEMS: FaqItem[] = [
+  { id: "one", question: "Question one text", answer: "Answer one text." },
+  { id: "two", question: "Question two text", answer: "Answer two text." },
+];
+
+describe("Faq", () => {
+  it("renders an optional heading above the question list", () => {
+    render(<Faq heading="FAQ heading" items={ITEMS} />);
+    expect(screen.getByRole("heading", { name: "FAQ heading" })).toBeInTheDocument();
+  });
+
+  it("defaults the heading to <h2>", () => {
+    render(<Faq heading="FAQ heading" items={ITEMS} />);
+    expect(screen.getByRole("heading", { name: "FAQ heading" }).tagName).toBe("H2");
+  });
+
+  it("renders the heading at a custom level", () => {
+    render(<Faq heading="FAQ heading" items={ITEMS} headingLevel={3} />);
+    expect(screen.getByRole("heading", { name: "FAQ heading" }).tagName).toBe("H3");
+  });
+
+  it("renders no heading region when heading/description are both omitted", () => {
+    render(<Faq items={ITEMS} />);
+    expect(screen.queryByRole("heading")).not.toBeInTheDocument();
+  });
+
+  it("renders one question trigger per item", () => {
+    render(<Faq items={ITEMS} />);
+    expect(screen.getByRole("button", { name: "Question one text" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Question two text" })).toBeInTheDocument();
+  });
+
+  it("every question starts collapsed: aria-expanded=false, answer text not present", () => {
+    render(<Faq items={ITEMS} />);
+    const trigger = screen.getByRole("button", { name: "Question one text" });
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByText("Answer one text.")).not.toBeVisible();
+  });
+
+  it("clicking a question expands it: aria-expanded flips to true and the answer becomes visible", async () => {
+    const user = userEvent.setup();
+    render(<Faq items={ITEMS} />);
+    const trigger = screen.getByRole("button", { name: "Question one text" });
+
+    await user.click(trigger);
+
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByText("Answer one text.")).toBeVisible();
+  });
+
+  it("clicking an expanded question collapses it again", async () => {
+    const user = userEvent.setup();
+    render(<Faq items={ITEMS} />);
+    const trigger = screen.getByRole("button", { name: "Question one text" });
+
+    await user.click(trigger);
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    await user.click(trigger);
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("is keyboard-operable: Enter toggles the focused question", async () => {
+    const user = userEvent.setup();
+    render(<Faq items={ITEMS} />);
+    const trigger = screen.getByRole("button", { name: "Question one text" });
+
+    trigger.focus();
+    await user.keyboard("{Enter}");
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("is keyboard-operable: Space toggles the focused question", async () => {
+    const user = userEvent.setup();
+    render(<Faq items={ITEMS} />);
+    const trigger = screen.getByRole("button", { name: "Question one text" });
+
+    trigger.focus();
+    await user.keyboard(" ");
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("questions expand independently — not an accordion, opening one never closes another", async () => {
+    const user = userEvent.setup();
+    render(<Faq items={ITEMS} />);
+    const first = screen.getByRole("button", { name: "Question one text" });
+    const second = screen.getByRole("button", { name: "Question two text" });
+
+    await user.click(first);
+    await user.click(second);
+
+    expect(first).toHaveAttribute("aria-expanded", "true");
+    expect(second).toHaveAttribute("aria-expanded", "true");
+  });
+
+  it("aria-controls on the trigger points at the answer panel's own id", () => {
+    render(<Faq items={ITEMS} />);
+    const trigger = screen.getByRole("button", { name: "Question one text" });
+    const controlsId = trigger.getAttribute("aria-controls");
+    expect(controlsId).toBeTruthy();
+    expect(document.getElementById(controlsId as string)).toHaveTextContent("Answer one text.");
+  });
+
+  it("forwards className onto the root, and the consumer's conflicting class wins the merge", () => {
+    const { container } = render(<Faq items={ITEMS} className="gap-2xl" />);
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.className).toContain("gap-2xl");
+  });
+});

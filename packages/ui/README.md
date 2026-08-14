@@ -40,10 +40,12 @@ surfaces and live in `@vespeneventures/surface/web`.
   `Separator`, `Chip`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
-  with a real job on a page. Twelve ship: `PageHeader`, `EmptyState`,
+  with a real job on a page. Eighteen ship: `PageHeader`, `EmptyState`,
   `DataTable`, `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`,
-  `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader` — the last six
-  complete this layer (see "Blocks" below).
+  `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`,
+  `FeatureGrid`, `Faq`, `PricingTable`, `Testimonial`, `ArticleBody` — the
+  last six are marketing/editorial content blocks, completing this layer
+  (see "Blocks" below).
 - **`shell`** — the persistent frame around content (nav, layout chrome)
   that provides the slots content fills. One per app; survives route
   changes that swap out the content underneath it. `Shell` ships with five
@@ -2084,6 +2086,313 @@ document structure. The real structure a `SectionHeader` needs to provide
 comes from its heading element (`level`, above), not from a landmark
 role.
 
+### Marketing and editorial content blocks
+
+The six blocks below (`Hero` through `ArticleBody`) complete this layer.
+They ship **no real words of any kind** — every heading, body line, CTA
+label, question/answer pair, tier name, and quote is a required or
+optional prop the consumer supplies. Every example below uses obviously-
+structural placeholder text ("Heading text", "Body copy goes here") for
+exactly that reason: this package owns visual vocabulary, never copy (see
+"Public contract" above — audience-facing words belong to
+`@vespeneventures/copy`).
+
+### `Hero`
+
+```tsx
+import { Hero } from "@vespeneventures/ui/blocks";
+import { Button } from "@vespeneventures/ui/atoms";
+
+function LandingHero() {
+  return (
+    <Hero
+      eyebrow="Eyebrow text"
+      heading="Heading text"
+      description="Subheading copy goes here."
+      actions={<Button>CTA label</Button>}
+    />
+  );
+}
+```
+
+A page's primary above-the-fold message: an optional eyebrow, a heading,
+an optional description, and an optional row of calls to action — the same
+title/description/actions shape `PageHeader` gives an application page,
+sized for a marketing/content page instead. A page can reasonably contain
+two `Hero`-shaped sections (a long landing page routinely has more than
+one full-bleed message section), which is what makes this a block rather
+than a view (test 3) and is why it renders a plain `<section>` rather than
+`<header>` — a second top-level `<header>` would register a second
+`banner` landmark, which isn't valid document structure (the same
+reasoning `SectionHeader`'s own section documents).
+
+**One visual variant, driven by an optional `media` slot rather than a
+`variant` prop** — a hero-only-ever-text-and-button shape is common but
+not universal, so `media` (a screenshot, an illustration, an embedded
+video) switches the layout to two columns from the `tablet` breakpoint up
+when supplied, and stays a single centered column when it's omitted:
+
+```tsx
+<Hero
+  heading="Heading text"
+  description="Subheading copy goes here."
+  actions={<Button>CTA label</Button>}
+  media={<img src="/media.png" alt="Media description" />}
+/>
+```
+
+`media` is a plain `ReactNode`, not a `{ src, alt }` data pair the way
+`Testimonial`'s avatar (below) is: a hero's media isn't always a single
+`<img>` — it's just as often a video embed or an SVG illustration, neither
+of which shares one `alt`-shaped contract. If what you place there IS a
+plain image, give it real alt text yourself (as above), or compose this
+package's own `Avatar`/`Icon` atom, both of which already enforce an
+accessible name at the type level.
+
+`headingLevel` (`1 | 2`, default `1`) picks `heading`'s element — `1`
+because a marketing page's `Hero` typically IS the page's own top-of-
+content heading; a page with its own `<h1>` elsewhere, or a second
+`Hero`-shaped section further down the page, needs `headingLevel={2}`
+instead, the same document-outline reasoning `SectionHeader`'s `level`
+documents.
+
+### `FeatureGrid`
+
+```tsx
+import { FeatureGrid } from "@vespeneventures/ui/blocks";
+
+function ProductFeatures() {
+  return (
+    <FeatureGrid
+      heading="Grid heading"
+      description="Grid description."
+      items={[
+        { id: "one", heading: "Feature heading one", description: "Feature description one." },
+        { id: "two", heading: "Feature heading two", description: "Feature description two." },
+        { id: "three", heading: "Feature heading three", description: "Feature description three." },
+      ]}
+    />
+  );
+}
+```
+
+A titled collection of features: an optional eyebrow/heading/description
+region above a grid of feature items — two regions that differ in kind,
+which is what makes `FeatureGrid` a block (test 2), even though the ITEMS
+inside it are a homogeneous repeat (each plays the same role as any other,
+the same "list of similar things" shape `NavGrid`'s cards already are). A
+page can hold two `FeatureGrid`s (two separate feature groupings under two
+different headings), which is what makes it a block rather than a view
+(test 3).
+
+Each item's `icon` is optional and `aria-hidden` — decorative
+reinforcement for a heading that already carries the meaning, the same
+treatment `NavGrid`'s own `icon` slot gets. Item headings are deliberately
+NOT real heading elements (a homogeneous repeat, not named regions, the
+same reasoning `NavGrid`'s cards apply) — the grid's own optional
+`heading` (via `headingLevel`, default `2`) is the only real heading
+region. Items lay out one per row on narrow viewports, two from `tablet`,
+three from `desktop` — the same responsive grid `NavGrid` uses.
+
+### `Faq`
+
+```tsx
+import { Faq } from "@vespeneventures/ui/blocks";
+
+function ProductFaq() {
+  return (
+    <Faq
+      heading="FAQ heading"
+      items={[
+        { id: "one", question: "Question text one", answer: "Answer text one." },
+        { id: "two", question: "Question text two", answer: "Answer text two." },
+      ]}
+    />
+  );
+}
+```
+
+A list of expand/collapse question/answer pairs, under an optional heading
+region — two regions that differ in kind (test 2), even though the ITEMS
+are a homogeneous repeat. A page can hold two `Faq`s (a general FAQ block
+and a product-specific one further down the page), which is what makes it
+a block rather than a view (test 3).
+
+**Built on this package's own `Disclosure` atom, one per item** — see
+`Disclosure`'s own section above for the accessibility contract it already
+supplies (real `aria-expanded`/`aria-controls` wiring, Enter/Space-and-
+click toggling, collapsed content kept in the DOM rather than unmounted).
+None of that is reimplemented here: `Faq` renders one `Disclosure` per
+question and nothing more. Each pair expands and collapses
+INDEPENDENTLY — `Faq` holds no shared "which one is open" state and
+renders no `DisclosureGroup`, so opening one question never closes
+another, unlike a coordinated accordion.
+
+### `PricingTable`
+
+```tsx
+import { PricingTable } from "@vespeneventures/ui/blocks";
+import { Button } from "@vespeneventures/ui/atoms";
+
+function ProductPricing() {
+  return (
+    <PricingTable
+      heading="Pricing heading"
+      tiers={[
+        {
+          id: "starter",
+          name: "Tier name one",
+          price: "Price one",
+          features: ["Feature one", "Feature two"],
+          cta: <Button variant="secondary">CTA label one</Button>,
+        },
+        {
+          id: "team",
+          name: "Tier name two",
+          price: "Price two",
+          features: ["Feature one", "Feature two", "Feature three"],
+          cta: <Button>CTA label two</Button>,
+          isHighlighted: true,
+          badge: "Badge text",
+        },
+      ]}
+    />
+  );
+}
+```
+
+A set of pricing tiers under an optional heading region — two regions that
+differ in kind (test 2), even though the TIERS are a homogeneous repeat.
+A page can hold two `PricingTable`s (a monthly/annual toggle implemented
+as two tables a consumer switches between), which is what makes it a
+block rather than a view (test 3).
+
+Each tier's `name`, `price`, `features` (a plain list of `ReactNode`s —
+this block has no opinion about how a consumer represents "not included"),
+and `cta` slot are required; `description` and `badge` are optional.
+`isHighlighted` marks the recommended tier with an accent border ONLY —
+pair it with `badge` for a visible, non-colour label, since a border alone
+would be invisible to a screen reader and disappear in greyscale, the same
+colour-is-never-the-only-channel reasoning `Stat`'s trend indicator
+documents. `badge` has no built-in default text ("Recommended" or
+similar) — this package ships no copy of its own, so there is nothing
+sensible to default it to. Built on this package's own `Card` and `Badge`
+atoms (blocks may compose atoms).
+
+### `Testimonial`
+
+```tsx
+import { Testimonial } from "@vespeneventures/ui/blocks";
+
+function CustomerQuote() {
+  return (
+    <Testimonial
+      quote="Quote text goes here."
+      attributorName="Attributor name"
+      attributorRole="Attributor role, Attributor org"
+      avatarSrc="/avatar.png"
+      avatarAlt="Attributor name"
+    />
+  );
+}
+```
+
+A single testimonial: a quote, and who said it. `attributorName` and
+`attributorRole` are always separate props, never one blob of text, so a
+consumer can style the name and role/affiliation independently. Renders a
+real `<figure>`/`<blockquote>`/`<figcaption>` triple — the native elements
+built for exactly this — with `quote` set in this package's own
+`--text-blockquote` size token. A page can hold two `Testimonial`s (a pair
+of quotes side by side, or a longer wall of them), which is what makes
+this a block rather than a view (test 3).
+
+**`avatarSrc`/`avatarAlt` are optional together, and required together —
+enforced at the type level, not just documented.** Omit both for a
+testimonial with no avatar; supply `avatarSrc` and TypeScript requires
+`avatarAlt` in the same edit, the identical "no way to supply an image
+without its alt text" enforcement `Chip`'s own `onRemove`/`removeLabel`
+pairing already establishes elsewhere in this package. Rendered through
+this package's own `Avatar` atom, which independently requires `alt` at
+its own type level too.
+
+### `ArticleBody`
+
+```tsx
+import { ArticleBody } from "@vespeneventures/ui/blocks";
+
+function ArticlePage() {
+  return (
+    <ArticleBody>
+      <h2>Section heading text</h2>
+      <p>Body copy goes here.</p>
+      <ul>
+        <li>List item text</li>
+      </ul>
+    </ArticleBody>
+  );
+}
+```
+
+A semantic content region for a marketing/editorial page's long-form
+body. **Deliberately narrow scope: a styled container, not a content-shape
+parser.** This does NOT parse markdown and does NOT enforce a content-
+shape schema — it accepts ordinary pre-structured React children (real
+`<h2>`, `<p>`, `<ul>`, ... elements, however a consumer produced them) and
+applies this package's token-driven typography scale to them via CSS
+descendant-selector Tailwind variants (`[&_h2]:text-h2`, ...), nothing
+more. A product-neutral structured-document contract — parsing a content
+shape into these elements in the first place — is explicitly out of scope
+here and belongs to a separate, already-filed proposal in
+`@vespeneventures/surface` instead.
+
+Content is constrained to this package's own `--ui-width-prose-max` token
+(48rem default) — the same "case 2, no Tailwind namespace" raw `var()`
+read `Shell.Main`'s own `--ui-width-content-max` uses, applied via inline
+`style` for the same reason. A page can hold two `ArticleBody`s (a main
+article plus a sidebar callout, or two comparison columns), which is what
+keeps it at this layer rather than being a view (test 3).
+
+### Composing chrome and blocks
+
+Marketing/site chrome (`shell`) and marketing content blocks compose
+cleanly — `shell` and `blocks` are independent sibling layers built on
+`atoms`, neither depending on the other (see "Package structure" above),
+so a real page just renders both together:
+
+```tsx
+import { SiteHeader, SiteFooter } from "@vespeneventures/ui/shell";
+import { Hero, FeatureGrid } from "@vespeneventures/ui/blocks";
+import { Button, Link } from "@vespeneventures/ui/atoms";
+
+function MarketingPage() {
+  return (
+    <>
+      <SiteHeader
+        brand={<Link href="/" variant="standalone">Brand name</Link>}
+        actions={<Button>CTA label</Button>}
+      />
+      <main>
+        <Hero
+          heading="Heading text"
+          description="Subheading copy goes here."
+          actions={<Button>CTA label</Button>}
+        />
+        <FeatureGrid
+          heading="Grid heading"
+          items={[
+            { id: "one", heading: "Feature heading one", description: "Feature description one." },
+            { id: "two", heading: "Feature heading two", description: "Feature description two." },
+          ]}
+        />
+      </main>
+      <SiteFooter
+        secondary={<span>Secondary text goes here.</span>}
+      />
+    </>
+  );
+}
+```
+
 ## Views
 
 Page-level views are documented here because they are built entirely from
@@ -3295,6 +3604,25 @@ not a grab-bag).
 | `SectionHeader` | component | Heading for a section within a page (as opposed to the whole-page `PageHeader`): eyebrow, title, description, actions slot. `level` picks its heading element. |
 | `SectionHeaderProps` | type | Props for `SectionHeader`: `eyebrow`, `title`, `description`, `actions`, `level`, `className`, `style`, plus every native `<div>` attribute. |
 | `SectionHeaderLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
+| `Hero` | component | Above-the-fold message: eyebrow, heading, description, actions slot, optional media slot (switches to a two-column layout when supplied). `headingLevel` picks its heading element. |
+| `HeroProps` | type | Props for `Hero`: `eyebrow`, `heading`, `description`, `actions`, `media`, `headingLevel`, `className`, `style`, plus every native `<section>` attribute. |
+| `HeroHeadingLevel` | type | `1 \| 2`. |
+| `FeatureGrid` | component | Titled collection of feature items: optional eyebrow/heading/description region, a grid of icon/heading/description items. |
+| `FeatureGridProps` | type | Props for `FeatureGrid`: `eyebrow`, `heading`, `description`, `items`, `headingLevel`, `className`, `style`, plus every native `<div>` attribute. |
+| `FeatureGridItem` | type | One item: `id`, `icon?`, `heading`, `description?`. |
+| `FeatureGridHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
+| `Faq` | component | Expand/collapse question/answer list, under an optional heading region. Each item is this package's own `Disclosure` atom — independent, not a coordinated accordion. |
+| `FaqProps` | type | Props for `Faq`: `heading`, `description`, `items`, `headingLevel`, `className`, `style`, plus every native `<div>` attribute. |
+| `FaqItem` | type | One item: `id`, `question`, `answer`. |
+| `FaqHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
+| `PricingTable` | component | Pricing tiers under an optional heading region: name, price, feature list, CTA slot per tier, `isHighlighted` plus an optional `badge` slot to mark one as recommended. |
+| `PricingTableProps` | type | Props for `PricingTable`: `heading`, `description`, `tiers`, `headingLevel`, `className`, `style`, plus every native `<div>` attribute. |
+| `PricingTier` | type | One tier: `id`, `name`, `price`, `description?`, `features` (`readonly ReactNode[]`), `cta`, `isHighlighted?`, `badge?`. |
+| `PricingTableHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
+| `Testimonial` | component | Quote plus attribution, rendered as a real `<figure>`/`<blockquote>`/`<figcaption>`: `attributorName` and `attributorRole` are always separate fields. Optional avatar via `avatarSrc`/`avatarAlt`, required together at the type level. |
+| `TestimonialProps` | type | Props for `Testimonial`: `quote`, `attributorName`, `attributorRole`, `avatarSrc`/`avatarAlt` (a discriminated pair — both or neither), `className`, `style`, plus every native `<figure>` attribute except `children`. |
+| `ArticleBody` | component | Thin, token-styled container for pre-structured long-form content (real `<h2>`/`<p>`/`<ul>`/... children) — no markdown parsing, no content-shape schema. |
+| `ArticleBodyProps` | type | Props for `ArticleBody`: `children`, `className`, `style`, plus every native `<article>` attribute. |
 | `mergeUiClasses` | function | Merges token-aware Tailwind utility classes with last-argument precedence; used by surface-level compositions built from UI primitives. |
 | `Shell` | component | The persistent application frame. Carries `Shell.Header`, `Shell.SideNav`, `Shell.Main`, `Shell.Rail`, `Shell.Footer`. |
 | `ShellProps` | type | Props for `Shell`: `children` (any subset of the five slots above, in any order), plus every native `<div>` attribute. |
@@ -3363,7 +3691,9 @@ Beyond render/interaction/keyboard/ARIA tests per atom (`Button.test.tsx`,
 (`PageHeader.test.tsx`, `EmptyState.test.tsx`, `DataTable.test.tsx`,
 `DetailView.test.tsx`, `Pagination.test.tsx`, `Stat.test.tsx`,
 `Form.test.tsx`, `FieldGroup.test.tsx`, `ConfirmDialog.test.tsx`,
-`Toolbar.test.tsx`, `NavGrid.test.tsx`, `SectionHeader.test.tsx`), per view
+`Toolbar.test.tsx`, `NavGrid.test.tsx`, `SectionHeader.test.tsx`,
+`Hero.test.tsx`, `FeatureGrid.test.tsx`, `Faq.test.tsx`,
+`PricingTable.test.tsx`, `Testimonial.test.tsx`, `ArticleBody.test.tsx`), per view
 (`ErrorView.test.tsx`, `AuthView.test.tsx`), per shell component
 (`Shell.test.tsx`, `Toaster.test.tsx`, `SkipLink.test.tsx`,
 `SiteHeader.test.tsx`, `NavShell.test.tsx`, `SiteFooter.test.tsx`), per chart component
@@ -3649,9 +3979,10 @@ speculatively, just because a related component shipped, is the exact
 un-bounded growth this package's own "variant rule" warns against one level
 up. They get added here only once something real needs them.
 
-**Blocks:** twelve ship — `PageHeader`, `EmptyState`, `DataTable`,
+**Blocks:** eighteen ship — `PageHeader`, `EmptyState`, `DataTable`,
 `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`,
-`Toolbar`, `NavGrid`, `SectionHeader` — completing this layer. No
+`Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `FeatureGrid`, `Faq`,
+`PricingTable`, `Testimonial`, `ArticleBody` — completing this layer. No
 `FilterBar` block:
 `DataTable`'s own `toolbar` slot (and `Toolbar`'s own `search` slot) are
 deliberately plain `ReactNode`s, not a block with its own opinion about
