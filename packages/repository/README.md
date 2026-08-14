@@ -23,13 +23,18 @@ import {
 } from "@vespeneventures/repository";
 
 const profile: RepositoryProfile = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   defaultBranch: "main",
   commands: [
     { name: "setup", run: "npm ci" },
     { name: "check", run: "npm run check" },
   ],
   protectedPaths: [".github/workflows/**", "packages/core/src/**"],
+  requirements: [{
+    id: "runtime.example",
+    scope: "machine",
+    constraint: { kind: "one-of", values: ["variant-a", "variant-b"] },
+  }],
 };
 
 const findings = validateRepositoryProfile(profile);
@@ -67,22 +72,43 @@ This package does not model reviews or providers. Those require separate
 contracts or adapters once real provider-specific behavior and a proving
 consumer exist.
 
+Profile v2 adds caller-owned upward requirements and pure evaluation.
+Repository, workspace, and machine scopes are supported; constraints require
+presence or one of the caller's explicit values. A caller discovers profiles,
+associates each declaration with its own source identifier, gathers normalized
+observations, and calls `evaluateRepositoryRequirements`. Missing or explicit
+unknown evidence fails closed. Foundry does not discover repositories, inspect
+machines, select a compatible value, install anything, or mutate state.
+
+The original version-1 profile remains accepted as `RepositoryProfileV1`.
+`RepositoryProfile` is the explicit `RepositoryProfileV1 |
+RepositoryProfileV2` union, so compatibility does not make the old closed
+shape silently accept new fields.
+
 ## API
 
 | Export | Kind | Purpose |
 | --- | --- | --- |
 | `validateRepositoryProfile(value)` | function | Returns every independently checkable structural finding without throwing or performing I/O. |
-| `REPOSITORY_PROFILE_VERSION` | constant | The supported profile schema version, currently `1`. |
+| `validateRepositoryRequirementsEvaluationInput(value)` | function | Strictly validates caller-associated declarations and normalized observations. |
+| `evaluateRepositoryRequirements(value)` | function | Pure evaluation with `satisfied`, `unsatisfied`, `conflicting`, `unknown`, and invalid fail-closed report states. |
+| `REPOSITORY_PROFILE_VERSION` / `LEGACY_REPOSITORY_PROFILE_VERSION` | constants | Current schema `2` and deliberately supported legacy schema `1`. |
 | `RepositoryCommand` | type | One consumer-owned command with `name`, `run`, and optional repository-relative `cwd`. |
 | `RepositoryList` | type | Dense, read-only array values accepted by the profile validator. |
-| `RepositoryProfile` | type | The complete profile shape: schema version, default branch, commands, and protected paths. |
+| `RepositoryProfileV1` / `RepositoryProfileV2` / `RepositoryProfile` | types | The two closed profile versions and their explicit union. |
 | `RepositoryProfileFinding` | type | A deterministic error with `rule`, `path`, and `message`. |
 | `RepositoryProfileFindingRule` | type | Closed vocabulary of validator rule identifiers. |
+| `RepositoryRequirement` / `RepositoryRequirementConstraint` / `RepositoryPresenceConstraint` / `RepositoryOneOfConstraint` | types | Neutral requirement and constraint grammar. |
+| `RepositoryRequirementScope` / `RepositoryObservationState` | types | Closed scope and normalized evidence-state vocabularies. |
+| `RepositoryRequirementDeclaration` / `RepositoryRequirementObservation` | types | Caller-associated declarations and caller-normalized evidence. |
+| `RepositoryRequirementsEvaluationInput` / `RepositoryRequirementsEvaluation` / `RepositoryRequirementsEvaluationStatus` | types | Strict evaluator input and complete report. |
+| `RepositoryRequirementEvaluation` / `RepositoryRequirementStatus` | types | One requirement's deterministic result. |
+| `RepositoryRequirementFinding` / `RepositoryRequirementFindingRule` | types | Stable evaluation and input finding contracts. |
 
 ## Requirements
 
 Node 20+. ESM only. Runtime dependency: `@vespeneventures/governance`
-(`~0.8.0`), which this package's own `src/index.ts` re-exports from.
+(`~0.9.0`), which this package's own `src/index.ts` re-exports from.
 
 This package is not dependency-free: `governance` itself depends on
 `@vespeneventures/policy`, which is therefore pulled in transitively by

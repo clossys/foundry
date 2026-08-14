@@ -18,10 +18,10 @@ approved a change for any consumer.
    [PUBLISHING.md](PUBLISHING.md). The package tree and packed tarball must
    both pass a FULL public-safety scan, name-collision check, build, tests, and
    isolated-install proof.
-2. Run the publication workflow in dry-run mode, inspect its package contents,
-   then publish each package at the approved version. These packages have zero
-   runtime dependencies, so neither is a prerequisite of the other; publish
-   both from the same reviewed source head for the paired first run.
+2. Run the publication workflow in dry-run mode and inspect its package
+   contents. Governance's one Foundry runtime dependency, `policy`, must already
+   be available from the registry before governance is published from the
+   reviewed source head.
 3. Record the published package versions, source head, package tarball digest
    if the publication system reports one, and the successful preflight and
    workflow URLs in the Foundry release record.
@@ -44,7 +44,7 @@ Install the exact paired versions, rather than floating ranges, for the first
 run:
 
 ```bash
-npm install --save-exact @vespeneventures/governance@0.2.0
+npm install --save-exact @vespeneventures/governance@0.9.0
 ```
 
 Use the package manager that owns the consumer's lockfile. The command above
@@ -56,7 +56,10 @@ workspace layout, lockfile tool, or registry-authentication mechanism.
 Before running either CLI, a consumer authors these values in its own change:
 
 - A repository profile JSON file for `repository-check`. It chooses its own
-  default branch, verification commands, and protected-path patterns.
+  default branch, verification commands, protected-path patterns, and v2
+  upward requirements. If an account workspace evaluates those requirements,
+  it separately owns discovery, declaration source identities, observations,
+  precedence, and any resulting machine action.
 - A review policy JSON file for `review-check`. It chooses its own required
   check names and whether an approval is required.
 - A review evidence JSON file for `review-check`. It names the exact proposed
@@ -101,6 +104,7 @@ that consumer's adoption issue or pull request:
 | Artifact | Exact installed versions of both packages and lockfile update. |
 | Change identity | Adoption pull request URL and exact tested head identifier. |
 | Repository contract | Path to the consumer-owned profile and `repository-check` exit code/report. |
+| Requirements evaluation | When used, the pure evaluator report for caller-discovered declarations and normalized observations; unknown evidence must remain explicit. |
 | Review contract | Paths to the consumer-owned evidence and policy, plus `review-check` exit code/report. |
 | Determinism | A repeated invocation on the unchanged inputs produces the same report. |
 | CI | The consumer's existing deterministic checks pass at the exact tested head. |

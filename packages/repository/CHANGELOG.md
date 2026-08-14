@@ -5,6 +5,16 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-08-14
+
+### Changed
+
+- **Breaking for exhaustive type consumers:** forwards the repository profile
+  v2 and pure requirements-evaluation API from
+  `@vespeneventures/governance/repository`. The v1 profile remains explicitly
+  supported; new declarations use v2. The governance dependency is now
+  `~0.9.0`.
+
 ## [0.2.5] - 2026-08-14
 
 ### Changed

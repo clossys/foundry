@@ -65,7 +65,7 @@ Packages access.
 | Deployment inspection | `@vespeneventures/deployment` | Provider credentials, topology, environment choices, and remediation. |
 | Communication contracts | `@vespeneventures/comms` | Recipients, sender identity, templates, consent policy, storage, routes, and provider configuration. |
 | Secret resolution | `@vespeneventures/secrets` | Secret catalog, aliases, provider resources, credential references, grants, and rotation policy. |
-| Package and repository governance | `@vespeneventures/governance` and its focused subpaths | Profiles, lifecycle decisions, workflow YAML, rulesets, provider I/O, and evidence collection. |
+| Package and repository governance | `@vespeneventures/governance` and its focused subpaths | Profile and requirement values, discovery, precedence, observations, lifecycle decisions, workflow YAML, provider I/O, and any resulting machine mutation. |
 | Visual system | `@vespeneventures/ui` | Product theme choices, compositions, and application wiring. |
 | Strategy validation | `@vespeneventures/strategy` | Facts, mission, markets, audiences, roadmap, and brand values. |
 | Copy validation | `@vespeneventures/copy` | Voice, glossary, claims, templates, and approved words. |
@@ -82,6 +82,7 @@ deleted.
 
 | Gap | Foundry owner | Consumer work that remains separate |
 | --- | --- | --- |
+| Upward repository requirements | [#237](https://github.com/vespeneventures/foundry/issues/237) targets `@vespeneventures/governance@0.9.0` with the neutral v2 declaration grammar and pure evaluator. Consumers must wait for that exact version to be published and qualified; source in a branch or pull request is not an adoption target. Exact workspace-repository root structure and removal of singular control-plane assumptions remain explicitly separate follow-up work in [#238](https://github.com/vespeneventures/foundry/issues/238). | Each account workspace discovers repository declarations, associates opaque source identities, gathers normalized observations, decides precedence, selects any compatible value, and owns every installation or machine mutation. |
 | Capability-first skill registry | [#214](https://github.com/vespeneventures/foundry/issues/214) and [#225](https://github.com/vespeneventures/foundry/pull/225) landed the account-neutral schema, validator, vocabulary, and set arithmetic in `@vespeneventures/conventions` 0.3.0 source. Issue [#234](https://github.com/vespeneventures/foundry/issues/234) still requires registry publication and exact-version qualification evidence before consumers treat that capability as available. | Each plane declares required targets, skill coverage, third-party inventory, and accepted exceptions. Routines add cadence only. |
 | Workspace-cleanup classification | [#215](https://github.com/vespeneventures/foundry/issues/215) owns the not-yet-qualified pure observation-to-proposal classifier. | Each plane discovers repositories, gathers Git and provider evidence, checks live task ownership, requests exact confirmation, and performs any approved cleanup. |
 

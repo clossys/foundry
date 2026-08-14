@@ -5,6 +5,14 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.6] - 2026-08-14
+
+### Changed
+
+- Widened the `@vespeneventures/governance` dependency range to `~0.9.0`
+  so the compatibility package remains linked to governance 0.9.0. No catalog
+  export changed.
+
 ## [0.2.5] - 2026-08-14
 
 ### Changed
