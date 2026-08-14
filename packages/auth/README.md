@@ -228,6 +228,40 @@ adapter (`./providers/clerk`) — is an optional peer, not a hard dependency,
 so installing this package alone never pulls it in. The Clerk web subpaths
 require the listed optional peers in the consuming application.
 
+Marking a peer optional means npm gives no install-time signal if it's
+missing or on an incompatible version. This package guards every optional
+peer it actually imports itself, throwing a named error (never a silent
+pass) that states whether the peer is absent entirely or installed but
+outside its declared range, instead of letting the peer's own call
+surface crash first with nothing naming a version as the cause:
+
+- `svix` — guarded from `providers/clerk/verify.ts` (webhook signature
+  verification), declared range `^1.96.0`.
+- `@clerk/nextjs` and `next` — guarded from `providers/clerk/web/
+  server-routes.ts` (the `./providers/clerk/web/server` subpath, reachable
+  only through a genuinely Node-context file, never the browser-bundled
+  `./providers/clerk/web` client subpath), declared ranges `>=7 <8` and
+  `>=16 <17`. The edge-safe middleware entry
+  (`./providers/clerk/web/proxy`) deliberately stays unguarded — it also
+  imports `@clerk/nextjs/server` and `next/server`, but a filesystem-based
+  version check there would break the Node-free edge compatibility that
+  file exists to guarantee.
+- `react` — guarded from `providers/clerk/web/client.tsx` (the
+  `"use client"` entry), declared range `>=19 <20`, read from React's own
+  exported `version` rather than a filesystem check, since this module
+  runs in a browser bundle as easily as in Node — and, unlike the
+  `@clerk/nextjs`/`next` guard above, never imports the filesystem-based
+  resolver at all (see `src/internal/peer-version.ts` vs.
+  `resolve-installed-peer-version.ts`).
+
+`react-dom` has no guard: no file in this package imports it directly,
+only your own render call does, downstream of the components this
+package exports.
+
+See `src/internal/peer-version.ts` and
+`src/internal/resolve-installed-peer-version.ts` for the guard's own
+contract.
+
 ## Licence
 
 MIT

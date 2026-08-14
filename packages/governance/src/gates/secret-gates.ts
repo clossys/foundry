@@ -13,6 +13,25 @@ import type {
   SecretReadinessObservation,
 } from "./secret-types.js";
 import ts from "typescript";
+import { assertPeerVersion } from "../internal/peer-version.js";
+
+/**
+ * `typescript` is this package's one optional peer (see package.json's
+ * `peerDependenciesMeta`) — optional so a consumer can install
+ * `@vespeneventures/governance` without the compiler for every OTHER gate,
+ * which never touch it. This is the one module that actually imports it
+ * (see `governance.ts`'s own header comment for why the rest of this
+ * package's import graph stays free of `typescript`), so this is the
+ * adapter entry point #182 asks for: an absent or out-of-range compiler
+ * previously surfaced as whatever this file happened to crash on deep
+ * inside the TypeScript compiler API, with nothing naming a version range
+ * as the cause. `TYPESCRIPT_DECLARED_RANGE` must match package.json's
+ * `peerDependencies.typescript` exactly — `governance.test.ts` asserts
+ * that directly, so drift between the two fails a real test rather than
+ * silently going stale.
+ */
+export const TYPESCRIPT_DECLARED_RANGE = "~6.0.0";
+assertPeerVersion({ peer: "typescript", declaredRange: TYPESCRIPT_DECLARED_RANGE, foundVersion: ts.version });
 
 const SECRET_NAME = /^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)*$/;
 const CREDENTIAL_ID = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;

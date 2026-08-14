@@ -1,7 +1,10 @@
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { Children, Fragment, isValidElement, type ReactElement } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { AuthProvider, ClerkSignInBlock, humaniseClerkError } from "./client.js";
+import { AuthProvider, ClerkSignInBlock, humaniseClerkError, REACT_DECLARED_RANGE } from "./client.js";
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -62,5 +65,25 @@ describe("humaniseClerkError", () => {
 
   it("uses a stable generic message for unknown values", () => {
     expect(humaniseClerkError(null)).toBe("Authentication failed.");
+  });
+});
+
+describe("the react peer-version guard (#182)", () => {
+  it("keeps REACT_DECLARED_RANGE in sync with package.json's declared peer range", () => {
+    const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "..");
+    const manifest = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8")) as {
+      peerDependencies: Record<string, string>;
+      peerDependenciesMeta: Record<string, { optional?: boolean }>;
+    };
+    expect(REACT_DECLARED_RANGE).toBe(manifest.peerDependencies.react);
+    expect(manifest.peerDependenciesMeta.react?.optional).toBe(true);
+  });
+
+  it("importing this module does not throw against this repository's own real installed react", () => {
+    // client.tsx calls assertPeerVersion(...) at module load time (see its
+    // own header comment); this file already imported from it above, so
+    // reaching this test at all is itself the assertion that it didn't
+    // throw against the real react this workspace has installed.
+    expect(REACT_DECLARED_RANGE).toBe(">=19 <20");
   });
 });

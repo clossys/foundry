@@ -493,6 +493,13 @@ secret-surface checks, install `typescript` yourself and import
 TypeScript dependency, unchanged; only the manifest changed, not what any
 subpath does at runtime.
 
+Marking `typescript` optional means npm gives no install-time signal if
+it's missing or on an incompatible version. `secret-gates.ts` now guards
+against both itself, at import time: an absent or out-of-range `typescript`
+throws a named, actionable error (never a silent pass) instead of
+whatever the compiler API itself happens to crash on first. See
+`src/internal/peer-version.ts` for the guard's own contract.
+
 This is a TypeScript-specific guarantee, not a general "the root does no
 I/O" one. Both root functions genuinely read the real filesystem
 (`node:fs`) — `runGovernanceCheck` for real workspace discovery via this

@@ -160,3 +160,14 @@ matching `0.5.x` patch release and `ui` to a matching `0.10.x` patch release
 both be satisfied, and the install fails with an unresolvable version
 conflict. `react` and `react-dom` are optional peer dependencies (`>=18`)
 required only by the `web` subpath's renderers.
+
+Marking `react` optional means npm gives no install-time signal if it's
+missing or on an incompatible version — importing `./web` now guards
+against both itself: `renderWebDocument` throws a named error (never a
+silent pass) stating whether `react` is absent entirely or installed but
+outside this package's declared `>=18` range, before `createElement`
+itself gets a chance to fail with a less legible error. `react-dom` has no
+guard of its own — no file in this package ever imports it directly; only
+your own `react-dom/server` or client render call does, downstream of the
+element `renderWebDocument` returns. See `src/internal/peer-version.ts`
+for the guard's own contract.

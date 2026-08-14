@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-08-13
+
+### Added
+
+- **`typescript` peer-version guard.** `src/gates/secret-gates.ts` — the
+  sole importer of the `typescript` optional peer — now calls
+  `assertPeerVersion` (new internal `src/internal/peer-version.ts`) at
+  import time, throwing a named, actionable error when `typescript` is
+  either not installed or installed outside this package's declared
+  `~6.0.0` range — distinct messages for each case. Previously, an absent
+  or incompatible `typescript` produced no signal until something inside
+  the compiler API itself crashed. See the README's "Requirements"
+  section. (#182)
+
 ## [0.5.0] - 2026-08-13
 
 ### Fixed
