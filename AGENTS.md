@@ -92,6 +92,10 @@ or publish packages.
 
 ## Working rules
 
+- **Model-assisted code review is manually initiated.** Do not add a background
+  model reviewer or make repository workflows wait for provider-specific review
+  evidence. `.github/workflows/portfolio-merge-governance.yml` is an independent,
+  exact-head owner-routing signal for sensitive paths; it is not an AI review gate.
 - **Never commit a `dist/`, `build/` or `.next/` directory.** Build output
   can embed resolved local paths and other detail from wherever it was
   compiled, which is exactly why it's gitignored. Copy `src/` and rebuild

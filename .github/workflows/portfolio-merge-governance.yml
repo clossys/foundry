@@ -1,15 +1,14 @@
 name: Portfolio merge signal
 
 # This read-only signal summarizes sensitive-path and owner-routing context.
-# It neither grants merge authority nor publishes a custom check run.
+# It neither grants merge authority nor publishes a custom check run. Owner
+# routing is exact-head and intentionally independent of any automated reviewer.
 
 on:
   pull_request_target:
     types: [opened, reopened, ready_for_review, synchronize, edited, labeled, unlabeled]
   issue_comment:
     types: [created, edited, deleted]
-  pull_request_review:
-    types: [submitted, edited, dismissed]
 
 permissions:
   issues: read
@@ -44,27 +43,8 @@ jobs:
             const protectedFiles = [...new Set(files.flatMap((file) => [file.filename, file.previous_filename].filter(Boolean)).filter(isProtected))];
             if (files.length >= 3000 || pullRequest.changed_files > 3000) { await report("attention", "Changed-file enumeration reached GitHub's 3,000-file limit; sensitive-path owner routing cannot be summarized safely."); return; }
             if (protectedFiles.length === 0) { await report("observed", "No credential, authentication, or integration-permission changes detected."); return; }
-            const codexReviews = await github.paginate(github.rest.pulls.listReviews, { owner: context.repo.owner, repo: context.repo.repo, pull_number: pullRequest.number, per_page: 100 });
-            const currentHeadCodexReviews = codexReviews.filter((review) => review.user?.login === "chatgpt-codex-connector[bot]" && review.commit_id === pullRequest.head.sha).sort((left, right) => new Date(right.submitted_at ?? 0) - new Date(left.submitted_at ?? 0));
-            const latestCodexReview = currentHeadCodexReviews[0];
-            if (!latestCodexReview || !["APPROVED", "COMMENTED"].includes(latestCodexReview.state)) { await report("attention", "No completed current-head native Codex review is available; owner-routing remains informational."); return; }
-            const reviewComments = await github.paginate(github.rest.pulls.listReviewComments, { owner: context.repo.owner, repo: context.repo.repo, pull_number: pullRequest.number, per_page: 100 });
-            const latestReviewFindings = reviewComments.filter((comment) => comment.user?.login === "chatgpt-codex-connector[bot]" && comment.pull_request_review_id === latestCodexReview.id);
-            let cursor = null;
-            const unresolvedFindings = [];
-            do {
-              const result = await github.graphql(`query($owner: String!, $repo: String!, $number: Int!, $cursor: String) { repository(owner: $owner, name: $repo) { pullRequest(number: $number) { reviewThreads(first: 100, after: $cursor) { nodes { isResolved comments(first: 100) { nodes { author { login } pullRequestReview { commit { oid } } } } } pageInfo { hasNextPage endCursor } } } } }`, { owner: context.repo.owner, repo: context.repo.repo, number: pullRequest.number, cursor });
-              const threads = result.repository.pullRequest.reviewThreads;
-              unresolvedFindings.push(...threads.nodes.filter((thread) => !thread.isResolved && thread.comments.nodes.some((comment) => comment.author?.login === "chatgpt-codex-connector" && comment.pullRequestReview?.commit?.oid === pullRequest.head.sha)));
-              cursor = threads.pageInfo.hasNextPage ? threads.pageInfo.endCursor : null;
-            } while (cursor);
-            const latestStateChangingReview = currentHeadCodexReviews.find((review) => ["APPROVED", "CHANGES_REQUESTED", "DISMISSED"].includes(review.state));
-            if (latestStateChangingReview?.state === "DISMISSED") { await report("attention", "The latest state-changing current-head native Codex review was dismissed. Request a new review before relying on the owner-routing signal."); return; }
-            const effectiveState = latestStateChangingReview?.state ?? latestCodexReview.state;
-            if (effectiveState === "CHANGES_REQUESTED" || latestReviewFindings.length > 0 || unresolvedFindings.length > 0) { await report("attention", "Native Codex review has findings or unresolved current-head threads; owner-routing remains informational until a new review is available."); return; }
-            if (!["APPROVED", "COMMENTED"].includes(effectiveState)) { await report("attention", "Native Codex review is not in an informative state for owner routing."); return; }
             const acknowledgement = `portfolio:acknowledge-protected ${pullRequest.head.sha}`;
             const comments = await github.paginate(github.rest.issues.listComments, { owner: context.repo.owner, repo: context.repo.repo, issue_number: pullRequest.number, per_page: 100 });
-            const acknowledged = comments.some((comment) => comment.user?.login === ownerLogin && comment.body?.trim() === acknowledgement && Date.parse(comment.created_at) >= Date.parse(latestCodexReview.submitted_at));
+            const acknowledged = comments.some((comment) => comment.user?.login === ownerLogin && comment.body?.trim() === acknowledgement);
             if (!acknowledged) { await report("owner routing", [`Protected change detected: ${protectedFiles.map((file) => `\`${file}\``).join(", ")}.`, `If an owner acknowledgement is desired, @${ownerLogin} can post: \`${acknowledgement}\`.`, "This signal is informational and does not grant or deny merge authority."].join("\n")); return; }
             await report("observed", `Protected change acknowledgement observed from @${ownerLogin} for current head ${pullRequest.head.sha}. This signal is informational only.`);
