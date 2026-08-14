@@ -27,6 +27,21 @@
  * numerical/color library.
  */
 
+import { version as reactVersion } from "react";
+import { assertPeerVersion } from "../internal/peer-version.js";
+import { REACT_DECLARED_RANGE } from "../internal/declared-peer-ranges.js";
+
+/**
+ * `react` is one of this package's optional peers — see `atoms/index.ts`'s
+ * own, longer version of this comment for the full #182 rationale. Charts
+ * do not use `react-aria-components` at all (no charting library
+ * dependency, per this file's own header above), so this barrel only
+ * needs the `react` guard, independent of `atoms/index.ts`'s: a consumer
+ * who imports only `@vespeneventures/ui/charts` would otherwise get no
+ * signal at all.
+ */
+assertPeerVersion({ peer: "react", declaredRange: REACT_DECLARED_RANGE, foundVersion: reactVersion });
+
 export { ChartFrame } from "./ChartFrame.js";
 export type { ChartFrameProps, ChartMargin, ChartAxisTick, ChartLegendItem, ChartTableSpec, PlotArea } from "./ChartFrame.js";
 

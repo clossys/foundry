@@ -106,6 +106,9 @@
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, resolve as resolvePath } from "node:path";
+import { assertPeerVersion } from "../internal/peer-version.js";
+import { resolveInstalledPeerVersion } from "../internal/resolve-installed-peer-version.js";
+import { TAILWINDCSS_DECLARED_RANGE } from "../internal/declared-peer-ranges.js";
 
 export interface GenerateCompiledCssOptions {
   /** This package's own `styles/` directory (holds `theme.css`, which this module reads and re-derives from — never hand-copied). */
@@ -296,7 +299,30 @@ function addExplicitFallbacksForInternalProperties(css: string): string {
   });
 }
 
+/**
+ * `tailwindcss` is one of this package's optional peers (see
+ * package.json's `peerDependenciesMeta`) — optional so a token-only or
+ * `compiled.css`-only consumer never needs it. This module (see its own
+ * header) is the one place in this package that imports the real
+ * `tailwindcss` package, and — unlike `atoms/index.ts` and friends — it is
+ * a repository-internal build tool with no `exports` subpath of its own,
+ * so it is never reachable by an external consumer, browser or otherwise;
+ * the Node-only `resolveInstalledPeerVersion` is safe to use here
+ * unconditionally (this file already imports `node:fs`/`node:module`
+ * above for its own, pre-existing resolution logic). `TAILWINDCSS_
+ * DECLARED_RANGE` must match package.json's `peerDependencies.tailwindcss`
+ * exactly — `declared-peer-ranges.test.ts` asserts that directly. An
+ * absent or out-of-range `tailwindcss` previously surfaced only as
+ * `resolveTailwindSubpath`'s own "could not resolve" error below (still
+ * accurate for genuine absence, but silent about a version mismatch) or
+ * an unexplained crash inside Tailwind's own `compile()`/`build()` calls.
+ */
 export async function generateCompiledCss(options: GenerateCompiledCssOptions): Promise<GenerateCompiledCssResult> {
+  assertPeerVersion({
+    peer: "tailwindcss",
+    declaredRange: TAILWINDCSS_DECLARED_RANGE,
+    foundVersion: resolveInstalledPeerVersion("tailwindcss", import.meta.url),
+  });
   const { compile } = await import("tailwindcss");
   const entryCss = buildEntryCss(options.stylesDir);
   const loadStylesheet = makeStylesheetLoader(options.stylesDir);

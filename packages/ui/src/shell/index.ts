@@ -17,6 +17,27 @@
  * `charts`.
  */
 
+import { version as reactVersion } from "react";
+import reactAriaComponentsPackageJson from "react-aria-components/package.json" with { type: "json" };
+import { assertPeerVersion } from "../internal/peer-version.js";
+import { REACT_ARIA_COMPONENTS_DECLARED_RANGE, REACT_DECLARED_RANGE } from "../internal/declared-peer-ranges.js";
+
+/**
+ * `react` and `react-aria-components` are two of this package's optional
+ * peers — see `atoms/index.ts`'s own, longer version of this comment for
+ * the full #182 rationale. This barrel needs its own guard call,
+ * independent of `atoms/index.ts`'s: `Toaster.tsx`, `NavShell.tsx`, and
+ * `internal/toast-queue.ts` import `react-aria-components` directly, and a
+ * consumer who imports only `@vespeneventures/ui/shell` (never
+ * `@vespeneventures/ui/atoms`) would otherwise get no signal at all.
+ */
+assertPeerVersion({ peer: "react", declaredRange: REACT_DECLARED_RANGE, foundVersion: reactVersion });
+assertPeerVersion({
+  peer: "react-aria-components",
+  declaredRange: REACT_ARIA_COMPONENTS_DECLARED_RANGE,
+  foundVersion: reactAriaComponentsPackageJson.version,
+});
+
 export { Shell } from "./Shell.js";
 export type {
   ShellProps,

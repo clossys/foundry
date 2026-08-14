@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.5.1] - 2026-08-14
+
+### Changed
+
+- Widened the declared `@vespeneventures/ui` dependency range from
+  `~0.12.0` to `~0.13.0` to cover `ui`'s `0.13.0` minor release (its six
+  optional-peer version guards, closing the remainder of issue #182 — see
+  that package's own CHANGELOG). No behavior change in this package
+  itself — a dependency-range bump required whenever a 0.x dependency's
+  minor version moves, so this package keeps resolving `ui` as a local
+  workspace link rather than falling back to a registry fetch. Versioned
+  `0.5.1` (skipping straight past `0.5.0`, already used by a `./document`
+  subpath released independently of this change) so this package's own
+  version stays monotonically ahead regardless of merge order.
+
 ## [0.4.1] - 2026-08-13
 
 ### Changed

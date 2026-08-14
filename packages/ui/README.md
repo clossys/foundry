@@ -515,6 +515,49 @@ want to route the signal elsewhere. See `assert-token-styles-loaded.ts`'s
 own header for the full contract, including why this is a console signal
 only and not the kind of injected page banner #148 removed.
 
+**4. Optional-peer version guards.** Installing the wrong version of a
+component peer used to fail silently too — the same #182 gap
+`assertTokenStylesLoaded` closes for the token CSS, extended to
+`react`, `react-aria-components`, and `tailwindcss`. You don't call
+anything for these three: importing any component subpath
+(`@vespeneventures/ui/atoms`, `/blocks`, `/shell`, `/charts`, `/theme`) or
+running `generateCompiledCss` checks the relevant peers' installed
+versions automatically, and throws a named error — which peer, the range
+this package declares, and the version actually found — the moment an
+absent or incompatible one would otherwise have crashed somewhere deep
+inside a component's own render.
+
+`tailwind-merge` is the one exception, and it needs an explicit call.
+Unlike the peers above, it has no way to report its own installed version
+that doesn't require Node's filesystem — and the one file that imports it,
+`cx.ts`, is reachable from every atom, so checking it automatically would
+break bundling this package's components for the browser. Call
+`assertTailwindMergeVersion` yourself, once, from Node-side tooling (a
+build script, a setup step, or a test — never from component code):
+
+```ts
+import { assertTailwindMergeVersion } from "@vespeneventures/ui/tokens";
+
+assertTailwindMergeVersion();
+```
+
+It throws the same three ways `react`'s automatic guard does — absent,
+installed but out of range, or an installed version it cannot parse — and
+is Node-only: it throws its own clear error rather than a misleading "not
+installed" if it is ever called from real browser code. See
+`assert-tailwind-merge-version.ts`'s own header for the full reasoning.
+
+`react-dom` and `@internationalized/date` are declared, optional peers
+with no guard at all — neither has an adapter import site anywhere in this
+package's own source to guard. `react-dom` is always the consumer's own
+render call (`react-dom/client`, `react-dom/server`), never something this
+package imports; `DateField`'s controlled `value` needs
+`@internationalized/date` (`parseDate`, `CalendarDate`, ...), but only in
+code YOU write to construct that value — `DateField` itself never imports
+the package. Install both at the ranges given in "Token-only use" above
+regardless; there is simply nothing left for this package to check once
+you have.
+
 ### Wiring up a theme toggle
 
 `tokens.css` already defines the three-state contract (see "CSS layers,

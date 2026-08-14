@@ -3,6 +3,47 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.13.0] - 2026-08-14
+
+### Added
+
+- **Optional-peer version guards, closing the remainder of issue #182.**
+  This package's six optional peers (`@internationalized/date`, `react`,
+  `react-dom`, `react-aria-components`, `tailwind-merge`, `tailwindcss` —
+  see `peerDependenciesMeta`) previously produced no install-time signal
+  in either direction: not when absent, not when installed at an
+  incompatible version. A consumer on the wrong version learned about it
+  from whatever a component happened to crash on deep inside the peer's
+  own call surface, with nothing naming a version range as the cause.
+  - `react` and `react-aria-components` are now guarded automatically,
+    from every component subpath's own barrel (`atoms`, `blocks`,
+    `shell`; `charts` and `theme` guard `react` only, since they never
+    import `react-aria-components`). An absent or out-of-range install
+    now throws a named error identifying the peer, the declared range,
+    and the version actually found, before any component renders.
+  - `tailwindcss` is guarded the same way from
+    `src/compiled-css/generate.ts`, the one place this package's own
+    build tooling imports it.
+  - `tailwind-merge` cannot be guarded automatically without breaking
+    browser bundling for every consumer (see `internal/peer-version.ts`'s
+    own header for the full reasoning: it has neither an exported version
+    nor a `"./package.json"` `exports` entry, and the file that imports
+    it, `atoms/internal/cx.ts`, is reachable from every atom). It ships
+    instead as a new export, `assertTailwindMergeVersion`, from
+    `@vespeneventures/ui/tokens` — an explicit, opt-in, Node-only call, the
+    same shape as this package's existing `assertTokenStylesLoaded`. See
+    the README's Setup section for how to call it.
+  - `react-dom` and `@internationalized/date` remain declared, optional
+    peers with no runtime guard: neither has an adapter import site
+    anywhere in this package's own source (`react-dom` is always the
+    consumer's own render call; `DateField.tsx` names
+    `@internationalized/date` as something a caller constructing a
+    controlled `value` needs, but never imports it itself — only its test
+    file does). There is nothing in this package to guard for either —
+    see `internal/peer-guard-coverage.test.ts`, which enumerates every
+    real import site in this package's source and confirms this directly
+    rather than merely asserting it in prose.
+
 ## [0.12.0] - 2026-08-13
 
 ### Added
