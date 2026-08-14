@@ -12,6 +12,30 @@
  * takes what it needs through props and slots, same as an atom.
  */
 
+import { version as reactVersion } from "react";
+import reactAriaComponentsPackageJson from "react-aria-components/package.json" with { type: "json" };
+import { assertPeerVersion } from "../internal/peer-version.js";
+import { REACT_ARIA_COMPONENTS_DECLARED_RANGE, REACT_DECLARED_RANGE } from "../internal/declared-peer-ranges.js";
+
+/**
+ * `react` and `react-aria-components` are two of this package's optional
+ * peers — see `atoms/index.ts`'s own, longer version of this comment for
+ * the full #182 rationale and why each is read the way it is (a pure
+ * export for `react`, a static JSON import of `react-aria-components`'s
+ * own `package.json` for the other, neither touching `node:fs`). This
+ * barrel needs its own guard call, independent of `atoms/index.ts`'s:
+ * `Toolbar.tsx` and `DataTable.tsx` import `react-aria-components`
+ * directly, and a consumer who imports only `@vespeneventures/ui/blocks`
+ * (never `@vespeneventures/ui/atoms`) would otherwise get no signal at
+ * all.
+ */
+assertPeerVersion({ peer: "react", declaredRange: REACT_DECLARED_RANGE, foundVersion: reactVersion });
+assertPeerVersion({
+  peer: "react-aria-components",
+  declaredRange: REACT_ARIA_COMPONENTS_DECLARED_RANGE,
+  foundVersion: reactAriaComponentsPackageJson.version,
+});
+
 export { PageHeader } from "./PageHeader.js";
 export type { PageHeaderProps } from "./PageHeader.js";
 

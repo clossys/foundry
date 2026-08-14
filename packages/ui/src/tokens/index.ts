@@ -82,6 +82,18 @@
  * `::before` badge `styles/tokens.css` itself renders — never draws
  * anything into the page. See that file's own header and the README's
  * Setup section.
+ *
+ * THE tailwind-merge PEER-VERSION CHECK. `react` and `react-aria-components`
+ * — two more of this package's optional peers — are guarded automatically,
+ * from every component subpath's own barrel (see `atoms/index.ts`'s own
+ * comment). `tailwind-merge` cannot be: it has no exported version and no
+ * `"./package.json"` `exports` entry, so checking it needs `node:fs` — and
+ * `tailwind-merge` is imported from a file reachable by every atom, so
+ * wiring that check in automatically would break browser bundling for
+ * every consumer. `assertTailwindMergeVersion` (`assert-tailwind-
+ * merge-version.ts`) ships the same real version-range check as an
+ * explicit, opt-in, Node-only call instead — see that file's own header
+ * for the full reasoning, and the README's Setup section for the call.
  */
 
 export type { TokenDefinition, TokenFamily } from "./tokens.js";
@@ -126,3 +138,5 @@ export type {
 
 export { assertTokenStylesLoaded, TOKEN_STYLES_SENTINEL_PROPERTY } from "./assert-token-styles-loaded.js";
 export type { AssertTokenStylesLoadedOptions } from "./assert-token-styles-loaded.js";
+
+export { assertTailwindMergeVersion } from "./assert-tailwind-merge-version.js";

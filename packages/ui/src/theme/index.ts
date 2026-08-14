@@ -22,6 +22,22 @@
  *      design and why).
  */
 
+import { version as reactVersion } from "react";
+import { assertPeerVersion } from "../internal/peer-version.js";
+import { REACT_DECLARED_RANGE } from "../internal/declared-peer-ranges.js";
+
+/**
+ * `react` is one of this package's optional peers — see `atoms/index.ts`'s
+ * own, longer version of this comment for the full #182 rationale.
+ * `ThemeProvider.tsx` and `ThemeToggle.tsx` both import `react` directly
+ * (and `ThemeToggle.tsx` composes this package's own `Button`/`Icon`
+ * atoms, but never imports `react-aria-components` itself), so this
+ * barrel only needs the `react` guard, independent of `atoms/index.ts`'s:
+ * a consumer who imports only `@vespeneventures/ui/theme` would otherwise
+ * get no signal at all.
+ */
+assertPeerVersion({ peer: "react", declaredRange: REACT_DECLARED_RANGE, foundVersion: reactVersion });
+
 export { getThemeInitScript, type ThemeInitScriptOptions } from "./initScript.js";
 export {
   DEFAULT_STORAGE_KEY,

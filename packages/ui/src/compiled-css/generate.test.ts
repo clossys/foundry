@@ -1,8 +1,47 @@
 import { resolve } from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { generateCompiledCss } from "./generate.js";
 
 const stylesDir = resolve(import.meta.dirname, "..", "..", "styles");
+
+describe("generateCompiledCss's #182 tailwindcss peer-version guard", () => {
+  afterEach(() => {
+    vi.doUnmock("../internal/resolve-installed-peer-version.js");
+    vi.resetModules();
+  });
+
+  it("stays silent when the real, installed tailwindcss satisfies the declared range (present, in range)", async () => {
+    await expect(generateCompiledCss({ stylesDir, candidates: ["bg-accent"] })).resolves.toBeDefined();
+  });
+
+  it("throws naming tailwindcss when it cannot be resolved at all (absent), before ever attempting the real compile", async () => {
+    vi.doMock("../internal/resolve-installed-peer-version.js", () => ({
+      resolveInstalledPeerVersion: () => undefined,
+    }));
+    const { generateCompiledCss: generateWithMock } = await import("./generate.js");
+    await expect(generateWithMock({ stylesDir, candidates: ["bg-accent"] })).rejects.toThrow(
+      /tailwindcss is required for this import but is not installed/,
+    );
+  });
+
+  it("throws a distinctly-worded error when tailwindcss is installed but out of range", async () => {
+    vi.doMock("../internal/resolve-installed-peer-version.js", () => ({
+      resolveInstalledPeerVersion: () => "3.4.0",
+    }));
+    const { generateCompiledCss: generateWithMock } = await import("./generate.js");
+    await expect(generateWithMock({ stylesDir, candidates: ["bg-accent"] })).rejects.toThrow(
+      /tailwindcss@3\.4\.0 is installed, but this package requires tailwindcss@"\^4\.0\.0"/,
+    );
+  });
+
+  it("throws, never silently passes, when the installed version cannot be parsed (unresolvable)", async () => {
+    vi.doMock("../internal/resolve-installed-peer-version.js", () => ({
+      resolveInstalledPeerVersion: () => "4.0.0-alpha.1",
+    }));
+    const { generateCompiledCss: generateWithMock } = await import("./generate.js");
+    await expect(generateWithMock({ stylesDir, candidates: ["bg-accent"] })).rejects.toThrow(/not a plain x\.y\.z semver/);
+  });
+});
 
 describe("generateCompiledCss", () => {
   it("produces a real Tailwind compile scoped to the requested candidates", async () => {

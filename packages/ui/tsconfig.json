@@ -13,6 +13,7 @@
     "noImplicitOverride": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
+    "resolveJsonModule": true,
     "types": ["node"],
     "isolatedModules": true,
     "verbatimModuleSyntax": false,
