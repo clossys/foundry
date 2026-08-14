@@ -1,0 +1,80 @@
+{
+  "name": "@vespeneventures/consent",
+  "version": "0.1.0",
+  "private": false,
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./web": {
+      "types": "./dist/web/index.d.ts",
+      "import": "./dist/web/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "description": "A provider-neutral consent record core: versioned policies, tri-state (absent/denied/granted) consent, GPC representation, audit events, and host-implemented storage ports. An optional ./web subpath adds an SSR-safe gate component and preference-management hooks. Makes no claim of legal compliance.",
+  "keywords": [
+    "consent",
+    "privacy",
+    "gpc",
+    "cookie-consent",
+    "gdpr",
+    "cpra",
+    "typescript"
+  ],
+  "author": "Calvin Hung",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vespeneventures/foundry.git",
+    "directory": "packages/consent"
+  },
+  "bugs": {
+    "url": "https://github.com/vespeneventures/foundry/issues"
+  },
+  "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/consent#readme",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "react": { "optional": true },
+    "react-dom": { "optional": true }
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.3.2",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "jsdom": "^26.1.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "typescript": "~6.0.0",
+    "vitest": "^4.1.9"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  }
+}
