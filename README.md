@@ -76,11 +76,16 @@ primitives, channel surfaces, and consumer-owned publishing, see
 
 ## Installing
 
-Packages publish to **GitHub Packages**, not the public npm registry. Installing
-from GitHub Packages requires a GitHub personal access token with
-`read:packages`, including for publicly visible package versions. Package
-availability is still determined by the registry, not by this source-tree
-inventory.
+**Today, installing any package here needs a credential.** Packages publish
+to **GitHub Packages**, not the public npm registry. GitHub Packages
+requires a GitHub personal access token with `read:packages` for every
+install, including for a publicly visible package version and a reader
+with no other relationship to this org — that is a GitHub Packages
+platform behavior, not a permission this repository chose. A
+credential-free CI job, ephemeral environment, or cloud agent cannot install any
+package from here yet. This is tracked as a P0 blocker in issue #194 —
+distribution, not any package's own API, is what's blocking public
+adoption.
 
 Add to your project's `.npmrc` (never commit a real one):
 
@@ -98,6 +103,28 @@ npm install @vespeneventures/governance
 The same token is also used for maintainer actions such as publishing. See
 [docs/PUBLISHING.md](docs/PUBLISHING.md) for package release status and the
 maintainer process.
+
+### Intended end state: no `.npmrc`, no token
+
+The intended, but **not yet true**, end state is that a package here
+installs like any other public npm package — no scope-specific `.npmrc`
+line and no token, from the default public registry:
+
+```bash
+npm install @vespeneventures/governance
+```
+
+This is *not yet the case*: as of this writing, the plain command above
+still resolves nothing, because the registry it needs to resolve from is
+still GitHub Packages, above. This section will be updated to describe
+that as the normal path — with the credential-free transcript that proves
+it — only once it is actually true, not before; see
+[docs/PUBLISHING.md#7-migrating-to-the-public-npm-registry](docs/PUBLISHING.md#7-migrating-to-the-public-npm-registry)
+for the exact ordered, owner-only steps that get from here to there, and
+`node scripts/set-registry.mjs --check` (`npm run check:registry`) for the
+mechanical gate that keeps every package's declared registry in sync with
+[`package-scope.json`](package-scope.json) — the single file that will
+change first, once those owner-only steps clear.
 
 ### pnpm: a misleading "not found" when the auth token is unset
 
