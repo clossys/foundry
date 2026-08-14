@@ -1,5 +1,81 @@
 # Changelog
 
+## [0.5.0] - 2026-08-14
+
+### Added
+
+- New subpath `@vespeneventures/surface/document`: a product-neutral
+  structured-document contract and renderer, closing issue #176.
+  `StructuredDocument` (`id`, `title`, `sections`) is built from a closed,
+  six-member `DocumentBlock` vocabulary (`section`, `paragraph`, `list`,
+  `definition-list`, `table`, `callout`) and a two-member `DocumentInline`
+  vocabulary (`text`, `link`) — every leaf of content is a `CopyRef`,
+  never a literal string, the same discipline `SurfaceSlotBinding.copy`
+  already holds document content to.
+
+  `validateStructuredDocument(value): ComposeFinding[]` checks shape (a
+  distinct `rule` per failure, attributed to a precise path such as
+  `sections.0.blocks.2.rows.1`, the same convention the existing bindings
+  validator uses), heading order (a top-level section must be `level: 2`;
+  a nested section's `level` must equal its parent's `+ 1`, never equal,
+  lower, or skipped ahead — `"section-level-skip"` catches the h2→h4 jump
+  this contract exists to prevent; `"section-level-max-depth"` refuses a
+  section nested under a `level: 6` parent, since there is no `level: 7`),
+  link safety (a closed scheme allowlist — `https:`, `http:`, `mailto:` —
+  mirroring `packages/auth/src/redirect.ts`'s `parseHttpUrl`; a rejected
+  scheme is `"link-scheme-not-allowed"`, an error finding, never a silent
+  drop; a root-relative `"/pricing"` is accepted as-is, being same-origin
+  by construction, while a protocol-relative `"//host/path"` — which reads
+  as same-site but resolves to the host after the `//` — is rejected as
+  `"link-protocol-relative"`, and a path-relative `"docs/foo"` is rejected
+  because it would resolve differently depending on which route the
+  document is mounted at; an in-document `"#fragment"` link must resolve
+  against a real `DocumentSection.id` present anywhere in the document,
+  else
+  `"link-fragment-unresolved"`), table shape (`headers` must be
+  non-empty; every row must have exactly `headers.length` cells, never
+  padded or truncated — `"table-row-length-mismatch"`, reported per
+  offending row), and anchor uniqueness (every `DocumentSection.id` must
+  be unique across the whole document, not just among siblings —
+  `"section-anchor-duplicate"`, never auto-renamed or dropped to force
+  uniqueness). An empty document, an empty list, and an empty table body
+  are each valid, not a finding.
+
+  `renderStructuredDocument(doc, options?)` renders to semantic HTML only
+  (`<section>`, `<h2>`–`<h6>`, `<p>`, `<ul>`/`<ol>`, `<dl>`,
+  `<table>`/`<thead>`/`<tbody>`/`<th>`/`<td>`, `<a>`, and
+  `<aside role="note" data-callout-tone="…">` for a callout) — there is no
+  `"html"` block kind and no `dangerouslySetInnerHTML` anywhere on this
+  path. It refuses to render at all — throwing
+  `RenderError("resolution-failed", ...)`, reusing this package's existing
+  closed `RenderErrorReason` vocabulary — when `validateStructuredDocument`
+  reports any error finding, or when a `CopyRef` fails to resolve during
+  rendering. `doc.title` is resolved (for provenance) but never rendered
+  into the output tree — the page's own `<h1>` stays the caller's job.
+
+  Two deliberate corrections against issue #176's originally proposed
+  shape, both documented in `src/document/render.ts`'s own top comment:
+  `RenderStructuredDocumentOptions.resolveCopyId` is
+  `@vespeneventures/copy`'s ref-based `CopyResolver`
+  (`(ref: CopyRef) => CopyResolution | undefined`), not `surface/web`'s
+  string-keyed one — only the ref-based resolver can produce the
+  `CopyResolution[]` provenance the issue's own acceptance criteria
+  require; and `renderStructuredDocument` returns
+  `{ element, resolutions }` rather than a bare `ReactNode`, since a bare
+  `ReactNode` has no way to carry that same `CopyResolution[]` back to the
+  caller. `resolutions` feeds `collectCopyProvenance` (`surface/core`)
+  unchanged, the same shape `ResolvedSurfaceDocument.resolutions` already
+  produces.
+
+  A rendered document plugs into a page through a consumer's own
+  `surface/web` template's `"node"`-kind slot
+  (`defineWebTemplate`/`createWebRenderer`, issue #175) — this subpath
+  invents no second, parallel page-composition seam. See the README,
+  "`document` — a product-neutral structured-document contract and
+  renderer" for the full picture, including the non-goals (no
+  legal-specific content types, no arbitrary HTML passthrough, no
+  pagination, no automatic table-of-contents generation).
+
 ## [0.4.1] - 2026-08-13
 
 ### Changed

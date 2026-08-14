@@ -10,11 +10,12 @@ Use explicit subpaths:
 - `@vespeneventures/surface/core` — canonical `SurfaceDocument` contract, validation, copy/media resolution, and output manifests.
 - `@vespeneventures/surface/media` — media registry, reader, and coverage check.
 - `@vespeneventures/surface/web` — web composition and head metadata.
+- `@vespeneventures/surface/document` — the product-neutral structured-document contract (sections, paragraphs, lists, tables, callouts, safe links) and its renderer.
 - `@vespeneventures/surface/email`, `/print`, `/image`, `/slides` — channel renderers.
 
 The package has no root export. `core` is deliberately framework-agnostic;
-the web subpath has optional React and UI peers, while non-web renderers do not
-require them at runtime.
+the web and document subpaths have optional React (and, for `web`, UI) peers,
+while non-web renderers do not require them at runtime.
 
 ## Scope: this package renders and validates. It does not compose.
 
@@ -378,6 +379,230 @@ slots avoid canvas placeholders; web, email, image, print, and slide outputs
 each receive a manifest with structural strategy provenance. It also asserts
 that draft or malformed sources fail closed.
 
+## `document` — a product-neutral structured-document contract and renderer
+
+A help article, a policy page, a changelog entry, a long-form explainer —
+any page whose body is "read this document," not "fill in these five named
+regions" — has no shape in `SurfaceSlotBinding` (a single `CopyRef` or a
+caller-owned `node`, never an ordered sequence of headings, paragraphs,
+lists, tables, and callouts). `@vespeneventures/surface/document` is that
+shape: `StructuredDocument`, `validateStructuredDocument`, and
+`renderStructuredDocument`.
+
+```ts
+import { validateStructuredDocument, renderStructuredDocument } from "@vespeneventures/surface/document";
+import type { StructuredDocument } from "@vespeneventures/surface/document";
+
+const ref = (id: string) => ({ id });
+
+const helpArticle: StructuredDocument = {
+  id: "acme.help.getting-started",
+  title: ref("acme.doc.title"),
+  sections: [
+    {
+      kind: "section",
+      id: "overview", // a literal, author-supplied, locale-stable anchor — never derived from `heading`
+      level: 2, // h1 is reserved for the page's own title, rendered outside this contract
+      heading: ref("acme.overview.heading"),
+      blocks: [
+        {
+          kind: "paragraph",
+          content: [
+            { kind: "text", text: ref("acme.overview.p1") },
+            { kind: "link", text: ref("acme.overview.link"), href: "#pricing" }, // an in-document fragment link
+          ],
+        },
+        { kind: "list", style: "ordered", items: [[{ kind: "text", text: ref("acme.overview.item1") }]] },
+      ],
+    },
+    {
+      kind: "section",
+      id: "pricing",
+      level: 2,
+      heading: ref("acme.pricing.heading"),
+      blocks: [{ kind: "table", headers: [ref("acme.pricing.plan"), ref("acme.pricing.price")], rows: [[ref("acme.pricing.plan1"), ref("acme.pricing.price1")]] }],
+    },
+  ],
+};
+
+const findings = validateStructuredDocument(helpArticle); // [] when clean — see "What is validated" below
+const { element, resolutions } = renderStructuredDocument(helpArticle, { resolveCopyId: myCopyResolver });
+```
+
+**Every leaf of content is a `CopyRef`, never a literal string** — the same
+discipline `SurfaceSlotBinding.copy` already holds document content to.
+`DocumentBlock` is a closed, six-member vocabulary (`section`, `paragraph`,
+`list`, `definition-list`, `table`, `callout`); `DocumentInline` (inside a
+paragraph, list item, or callout — never a block on its own) is `text` or
+`link`. A `DocumentSection` (`id`, `level: 2–6`, `heading`, `blocks`) is the
+one block kind that nests, and is also what `StructuredDocument.sections`
+is made of at the top level. See `src/document/types.ts` for the full
+shape and every field's own doc comment.
+
+**What is validated (`validateStructuredDocument(value): ComposeFinding[]`)**
+— shape (every block/inline kind checked against its own fields, a
+distinct `rule` name per failure, the same `{ rule, severity, message,
+path }` shape every other validator in this package uses, attributed to a
+precise path like `sections.0.blocks.2.rows.1`), plus four checks worth
+calling out:
+
+- **Heading order.** A top-level `sections` entry must be `level: 2`
+  (`"section-level-must-be-two-at-top"`); a nested section's `level` must
+  equal its parent's `+ 1` — never equal, lower, or skipped ahead
+  (`"section-level-skip"`, the exact h2→h4 jump this contract exists to
+  catch); a `level: 6` section may not contain a nested section, since
+  there is no `level: 7` (`"section-level-max-depth"`).
+- **Links.** A `"link"`'s `href` is checked against a closed scheme
+  allowlist — `https:`, `http:`, `mailto:` — the same
+  `protocol !== "https:" && protocol !== "http:"` shape
+  `packages/auth/src/redirect.ts`'s `parseHttpUrl` already uses elsewhere
+  in this repository, extended with `mailto:`. A rejected scheme
+  (`javascript:`, `data:`, `file:`, or an unparseable value) is
+  `"link-scheme-not-allowed"`, **an error finding, never a silent drop**:
+  it is never omitted from the block, never replaced with a placeholder,
+  and never rendered inert — the finding makes the whole document invalid,
+  and `renderStructuredDocument` refuses to render at all.
+
+  Two **schemeless** forms are accepted alongside those three schemes,
+  because a prose document overwhelmingly links inside its own site:
+
+  - A `"#fragment"` link skips the scheme check (there is no scheme) but
+    must resolve against a real `DocumentSection.id` present anywhere in
+    the same document, at any nesting depth — a fragment naming no such id
+    is `"link-fragment-unresolved"`.
+  - A **root-relative** `"/pricing"` is accepted as-is. It is same-origin
+    by construction, so there is no scheme to allowlist, and requiring an
+    absolute URL instead would bake the deployment's hostname into content
+    the copy registry owns.
+
+  Two forms that *look* relative are rejected, and the distinction is the
+  point:
+
+  - `"//host/path"` — **protocol-relative** — is
+    `"link-protocol-relative"`. It reads as same-site and is not: it
+    inherits only the scheme and resolves to whatever host follows the
+    `//`. Write the absolute `https:` URL if that other origin is
+    genuinely intended.
+  - `"docs/foo"`, `"../sibling"` — **path-relative** — is
+    `"link-scheme-not-allowed"`. It resolves against whichever route the
+    document is mounted at, and this contract exists precisely so one
+    `StructuredDocument` can be rendered in more than one place; a link
+    that means different things per mount point is a defect that would
+    only surface on the second mount.
+- **Tables.** `headers` must be a non-empty `CopyRef[]`
+  (`"table-headers-required"`); every row must have exactly
+  `headers.length` cells, never padded or truncated
+  (`"table-row-length-mismatch"`, reported per offending row index).
+  `renderStructuredDocument` renders `headers` as `<th scope="col">` inside
+  a `<thead>` and every row as `<td>` inside `<tbody>` — the header-to-cell
+  association an accessible table needs is therefore structural (the fixed
+  cell count matching a real `<th>` per column), not left to visual
+  alignment.
+- **Anchors.** Every `DocumentSection.id`, at every nesting depth, must be
+  unique across the **whole document**, not just among siblings — a
+  duplicate is `"section-anchor-duplicate"`, reported for the second (and
+  every subsequent) occurrence, naming the path of the first. Never
+  auto-renamed, suffixed, or dropped to force uniqueness — resolving the
+  collision is the author's job.
+
+An empty document (`sections: []`), an empty list (`items: []`), and an
+empty table body (`rows: []`, headers still required) are each valid —
+"empty is a fact to report, not to hide," the same discipline
+`SurfaceRepeatingSlotBinding.items` already holds `surface/core` to —
+never a special-cased finding.
+
+**`renderStructuredDocument(doc, options?)` renders to semantic HTML only**
+— `<section>`, `<h2>`–`<h6>`, `<p>`, `<ul>`/`<ol>`, `<dl>`, `<table>`/
+`<thead>`/`<tbody>`/`<th>`/`<td>`, `<a>`, and `<aside role="note"
+data-callout-tone="…">` for a callout (there is no single HTML element for
+"callout"; `<aside>` is the closest semantic fit, and `data-callout-tone`
+is this subpath's own public, documented attribute naming the closed
+`tone` vocabulary — not an internal-convention leak). Every block and every
+inline node is a typed primitive this renderer walks explicitly and emits
+as a specific element: there is no `"html"` block kind, no markdown string
+parsed into markup, and no `dangerouslySetInnerHTML` anywhere on this
+path — the same non-goal issue #175 (the web-template registry) states for
+its own `"node"`-kind slots, applied here to document content specifically.
+
+It **refuses to render an invalid document at all**:
+`validateStructuredDocument` runs first, and any `severity: "error"`
+finding throws `RenderError("resolution-failed", ...)` before a single
+element is built — reusing this package's existing closed
+`RenderErrorReason` vocabulary (`src/internal/errors.ts`) rather than
+inventing a parallel one, and never partially rendering a document with
+known-invalid content. The same error, and the same reason, is thrown if a
+`CopyRef` fails to resolve during rendering (no `options.resolveCopyId`
+supplied, an unresolved id, or empty resolved text) — the identical
+fail-closed shape `resolveSurfaceDocument` already uses for every other
+unresolved/invalid input in this package.
+
+`doc.title` is resolved (and appears in the returned `resolutions`, for
+provenance) but is **never rendered into the output tree** — the page's
+own `<h1>` stays the caller's job, the same discipline `ErrorView` already
+holds between its own `<h1>` and `EmptyState`'s `<h2>`.
+
+**`resolveCopyId`'s type, and the `{ element, resolutions }` return
+shape.** `RenderStructuredDocumentOptions.resolveCopyId` is
+`@vespeneventures/copy`'s own ref-based `CopyResolver` —
+`(ref: CopyRef) => CopyResolution | undefined`, the same type
+`resolveSurfaceDocument`'s own `resolver` parameter takes — **not**
+`surface/web`'s string-keyed `CopyResolver` (`(copyId: string) => string |
+undefined`). Every `CopyRef` this render resolves (`title`, every
+`heading`, every inline `text`/`link` text, every table header/cell, every
+callout/definition-list text) is collected into a `CopyResolution[]`,
+returned as `resolutions` alongside the rendered `element` — feed it to
+`collectCopyProvenance` (`surface/core`) exactly as
+`ResolvedSurfaceDocument.resolutions` already is.
+
+**Plugging a rendered document into a page.** `renderStructuredDocument`'s
+`element` is a plain `ReactNode` a consumer's own `surface/web` template
+can accept through a `"node"`-kind slot (`defineWebTemplate`/
+`createWebRenderer`, see "`defineWebTemplate` / `createWebRenderer`"
+above) — the page shell (header, nav, footer) around the document body is
+exactly the kind of thing a consumer's own template already provides, and
+this package invents no second, parallel composition seam for document
+content specifically:
+
+```ts
+import { createElement } from "react";
+import { defineWebTemplate, createWebRenderer } from "@vespeneventures/surface/web";
+import { resolveSurfaceDocument } from "@vespeneventures/surface/core";
+import type { SurfaceDocument } from "@vespeneventures/surface/core";
+
+const HelpArticleView = defineWebTemplate({
+  name: "HelpArticleView",
+  flow: { slots: [{ key: "heading", required: true }, { key: "body", required: true }] },
+  slotKinds: { body: ["node"] },
+  build: (content) => createElement("main", null, createElement("h1", null, content.heading), content.body),
+});
+
+const page: SurfaceDocument = {
+  id: "acme.help.getting-started.page",
+  channel: "web",
+  template: "HelpArticleView",
+  meta: { channel: "web", title: ref("acme.page.title"), description: ref("acme.page.title") },
+  bindings: [
+    { slot: "heading", copy: ref("acme.page.title") },
+    { slot: "body", node: element as object }, // renderStructuredDocument's own `element`, from above
+  ],
+};
+
+const resolved = resolveSurfaceDocument(page, myCopyResolver, { nodeSlots: ["body"] });
+const { element: pageElement } = createWebRenderer({ templates: [HelpArticleView] }).renderWebDocument(resolved.document, { nodes: resolved.nodes });
+```
+
+**Non-goals** (see issue #176 for the fuller argument for each): no
+legal-specific content types (no clause numbering, no defined-terms
+glossary, no citation/footnote-to-statute primitive — this contract
+describes document *structure*, never *what kind* of document it is); no
+arbitrary HTML passthrough; no pagination (a `StructuredDocument` is one
+document — a multi-page work is a caller-side concern composing an ordered
+sequence of them, the identical boundary this package's README already
+draws for `SurfaceDocument` and canvas channels); no automatic
+table-of-contents generation (this contract supplies the addressable
+section/anchor structure a TOC would be built from; generating and
+rendering the TOC itself is left to the caller).
+
 ## API
 
 - `core`: `CHANNELS`, `ELEMENT_KINDS`, `validateComposeDocument`,
@@ -415,6 +640,12 @@ that draft or malformed sources fail closed.
   `WebSlotContentKind`, `WebTemplate`, `DefineWebTemplateOptions`,
   `CreateWebRendererOptions`, `WebRenderer`, `WebHeadMetadata`,
   `WebOpenGraphMetadata`, and `WebTwitterMetadata` types.
+- `document`: `validateStructuredDocument`, `renderStructuredDocument`,
+  `RenderError`, and the `DocumentBlock`, `DocumentCallout`,
+  `DocumentDefinitionList`, `DocumentInline`, `DocumentList`,
+  `DocumentParagraph`, `DocumentSection`, `DocumentTable`,
+  `StructuredDocument`, `RenderStructuredDocumentOptions`,
+  `RenderStructuredDocumentResult`, and `RenderErrorReason` types.
 - `email`: `renderEmailDocument`, `RenderError`, and the
   `RenderErrorReason`, `EmailRenderResult`, `RenderEmailOptions`, and
   `RenderWarning` types.
@@ -450,15 +681,16 @@ matching `0.5.x` patch release and `ui` to a matching `0.10.x` patch release
 — otherwise `surface`'s declared ranges and the consumer's exact pin cannot
 both be satisfied, and the install fails with an unresolvable version
 conflict. `react` and `react-dom` are optional peer dependencies (`>=18`)
-required only by the `web` subpath's renderers.
+required only by the `web` and `document` subpaths' renderers.
 
 Marking `react` optional means npm gives no install-time signal if it's
-missing or on an incompatible version — importing `./web` now guards
-against both itself: `renderWebDocument` throws a named error (never a
-silent pass) stating whether `react` is absent entirely or installed but
-outside this package's declared `>=18` range, before `createElement`
-itself gets a chance to fail with a less legible error. `react-dom` has no
-guard of its own — no file in this package ever imports it directly; only
-your own `react-dom/server` or client render call does, downstream of the
-element `renderWebDocument` returns. See `src/internal/peer-version.ts`
-for the guard's own contract.
+missing or on an incompatible version — importing `./web` or `./document`
+now guards against both itself: `renderWebDocument` and
+`renderStructuredDocument` each throw a named error (never a silent pass)
+stating whether `react` is absent entirely or installed but outside this
+package's declared `>=18` range, before `createElement` itself gets a
+chance to fail with a less legible error. `react-dom` has no guard of its
+own — no file in this package ever imports it directly; only your own
+`react-dom/server` or client render call does, downstream of the element
+either renderer returns. See `src/internal/peer-version.ts` for the
+guard's own contract.
