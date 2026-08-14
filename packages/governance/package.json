@@ -1,6 +1,6 @@
 {
   "name": "@vespeneventures/governance",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -39,6 +39,10 @@
     "./artifacts": {
       "types": "./dist/artifacts/index.d.ts",
       "import": "./dist/artifacts/index.js"
+    },
+    "./cleanup": {
+      "types": "./dist/cleanup/index.d.ts",
+      "import": "./dist/cleanup/index.js"
     }
   },
   "bin": {

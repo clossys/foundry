@@ -241,7 +241,7 @@ inputs.
 ## Requirements
 
 Node 20+. ESM only. Runtime dependency: `@vespeneventures/governance`
-(`^0.7.0`).
+(`~0.8.0`).
 
 This package is not dependency-free: `governance` itself depends on
 `@vespeneventures/policy`, which is therefore pulled in transitively by
