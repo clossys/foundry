@@ -14,10 +14,11 @@ not installed versions, consumer inventory, credentials, or rollout authority.
 
 This ledger applies to the current public producer at
 `vespeneventures/foundry`. [#224](https://github.com/vespeneventures/foundry/issues/224)
-plans its rename to `vespeneventures/vv-foundry` and establishes
-`vespeneventures/vv-workspace` as the planned private account-control-plane
-coordinate. [#216](https://github.com/vespeneventures/foundry/issues/216) tracks
-that control-plane bootstrap. This ledger performs neither repository action.
+plans its rename to `vespeneventures/vv-foundry`. A separate account control
+plane owns account-scoped inventory and policy; its repository coordinate is
+deliberately retained by that owning plane. [#216](https://github.com/vespeneventures/foundry/issues/216)
+tracks the integration boundary. This ledger performs neither repository
+action.
 
 ## Available Foundry packages
 
@@ -64,7 +65,7 @@ gap as a routine, a copied skill body, or package-consumption wiring.
 | Surface | Why it stays local | Adoption evidence |
 | --- | --- | --- |
 | GitHub Packages access | Registry mapping and credential references belong to the consuming plane. | Exact package/version in the lockfile plus an authenticated clean install; never a token value. |
-| Account control plane | Repository inventory, skill-prefix ownership, local paths, and operator policy are account choices. The current `vespeneventures/foundry` repository remains the public package producer until its planned `vespeneventures/vv-foundry` rename; the planned private `vespeneventures/vv-workspace` control plane does not publish packages. | Plane-owned validation. [#216](https://github.com/vespeneventures/foundry/issues/216) tracks the bootstrap and [#224](https://github.com/vespeneventures/foundry/issues/224) owns the coordinate migration; neither repository action is authorized or performed here. |
+| Account control plane | Repository inventory, skill-prefix ownership, local paths, and operator policy are account choices. The current `vespeneventures/foundry` repository remains the public package producer until its planned `vespeneventures/vv-foundry` rename; the separate account control plane does not publish packages, and its coordinate remains plane-owned. | Plane-owned validation. [#216](https://github.com/vespeneventures/foundry/issues/216) tracks the integration boundary and [#224](https://github.com/vespeneventures/foundry/issues/224) owns the public producer rename; neither repository action is authorized or performed here. |
 | Repository and review automation | Workflows, protected paths, commands, rulesets, pagination, and provider calls are repository policy and I/O. | Exact-head consumer checks using `@vespeneventures/governance` contracts. |
 | Secret operations | Provider projects, aliases, grants, authentication, and rotation are private operational state. | Value-free readiness and consumer-owned first-run evidence. |
 | Routes and publishers | Foundry supplies composition and rendering contracts, not product routes, deployment destinations, or send authority. | Consumer route/build tests and channel-specific delivery evidence. |
