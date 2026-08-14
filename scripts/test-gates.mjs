@@ -77,6 +77,7 @@ const COLLISION = join(scriptDir, "check-name-collision.mjs");
 const CONTAM = join(scriptDir, "check-contamination-classes.mjs");
 const QUALITY = join(scriptDir, "check-denylist-quality.mjs");
 const SET_SCOPE = join(scriptDir, "set-scope.mjs");
+const SET_REGISTRY = join(scriptDir, "set-registry.mjs");
 const ROOT_README = join(scriptDir, "check-root-readme-parity.mjs");
 const TYPECHECKED = join(scriptDir, "check-typechecked-assertions.mjs");
 const COMMIT_MESSAGES = join(scriptDir, "check-commit-messages.mjs");
@@ -1853,6 +1854,218 @@ try {
       retiredResult.code === 0,
       `expected exit 0, got ${retiredResult.code}: ${retiredResult.out}`,
     );
+  }
+
+  // -------------------------- set-registry: clean tree checks and rewrites
+  console.log("\n# set-registry: --check passes on a genuinely clean, fully-pinned tree");
+  {
+    const dir = join(work, "set-registry-clean");
+    mkdirSync(join(dir, "packages", "ui"), { recursive: true });
+    mkdirSync(join(dir, "scripts"), { recursive: true });
+    cpSync(SET_REGISTRY, join(dir, "scripts", "set-registry.mjs"));
+    writeFileSync(
+      join(dir, "package-scope.json"),
+      JSON.stringify({ scope: "@real", registry: "https://example.invalid" }, null, 2) + "\n",
+    );
+    writeFileSync(
+      join(dir, "packages", "ui", "package.json"),
+      JSON.stringify(
+        { name: "@real/ui", version: "1.0.0", private: false, publishConfig: { registry: "https://example.invalid" } },
+        null,
+        2,
+      ) + "\n",
+    );
+    gitInit(dir);
+    const r = run("node", [join(dir, "scripts", "set-registry.mjs"), "--check"], { cwd: dir });
+    check("a fully-pinned tree exits 0", r.code === 0, `expected exit 0, got ${r.code}: ${r.out}`);
+  }
+
+  console.log("\n# set-registry: --check catches a mismatched publishConfig.registry");
+  {
+    const dir = join(work, "set-registry-mismatch");
+    mkdirSync(join(dir, "packages", "ui"), { recursive: true });
+    mkdirSync(join(dir, "scripts"), { recursive: true });
+    cpSync(SET_REGISTRY, join(dir, "scripts", "set-registry.mjs"));
+    writeFileSync(
+      join(dir, "package-scope.json"),
+      JSON.stringify({ scope: "@real", registry: "https://example.invalid" }, null, 2) + "\n",
+    );
+    // Stale pin, hand-edited, pointing somewhere package-scope.json no longer declares.
+    writeFileSync(
+      join(dir, "packages", "ui", "package.json"),
+      JSON.stringify(
+        { name: "@real/ui", version: "1.0.0", private: false, publishConfig: { registry: "https://stale.invalid" } },
+        null,
+        2,
+      ) + "\n",
+    );
+    gitInit(dir);
+    const r = run("node", [join(dir, "scripts", "set-registry.mjs"), "--check"], { cwd: dir });
+    check("a mismatched publishConfig.registry exits 1, not 0", r.code === 1, `expected exit 1, got ${r.code}: ${r.out}`);
+    check(
+      "the failure names the offending package, its actual pin, and the expected value",
+      /packages\/ui\/package\.json/.test(r.out) && /stale\.invalid/.test(r.out) && /example\.invalid/.test(r.out),
+      `expected the finding to name packages/ui/package.json, "stale.invalid" and "example.invalid", got: ${r.out}`,
+    );
+  }
+
+  console.log("\n# set-registry: --check catches a missing publishConfig.registry");
+  {
+    const dir = join(work, "set-registry-missing-pin");
+    mkdirSync(join(dir, "packages", "ui"), { recursive: true });
+    mkdirSync(join(dir, "scripts"), { recursive: true });
+    cpSync(SET_REGISTRY, join(dir, "scripts", "set-registry.mjs"));
+    writeFileSync(
+      join(dir, "package-scope.json"),
+      JSON.stringify({ scope: "@real", registry: "https://example.invalid" }, null, 2) + "\n",
+    );
+    writeFileSync(
+      join(dir, "packages", "ui", "package.json"),
+      JSON.stringify({ name: "@real/ui", version: "1.0.0", private: false }, null, 2) + "\n",
+    );
+    gitInit(dir);
+    const r = run("node", [join(dir, "scripts", "set-registry.mjs"), "--check"], { cwd: dir });
+    check("an unpinned published package exits 1, not 0", r.code === 1, `expected exit 1, got ${r.code}: ${r.out}`);
+    check(
+      "a private:true package is never required to declare a registry pin",
+      (() => {
+        const privDir = join(work, "set-registry-private-package");
+        mkdirSync(join(privDir, "packages", "internal-only"), { recursive: true });
+        mkdirSync(join(privDir, "scripts"), { recursive: true });
+        cpSync(SET_REGISTRY, join(privDir, "scripts", "set-registry.mjs"));
+        writeFileSync(
+          join(privDir, "package-scope.json"),
+          JSON.stringify({ scope: "@real", registry: "https://example.invalid" }, null, 2) + "\n",
+        );
+        writeFileSync(
+          join(privDir, "packages", "internal-only", "package.json"),
+          JSON.stringify({ name: "@real/internal-only", version: "1.0.0", private: true }, null, 2) + "\n",
+        );
+        gitInit(privDir);
+        const privResult = run("node", [join(privDir, "scripts", "set-registry.mjs"), "--check"], { cwd: privDir });
+        return privResult.code === 0;
+      })(),
+      "a private:true package with no publishConfig.registry unexpectedly failed the check",
+    );
+  }
+
+  // -------------------------- set-registry: fails closed, never green on "could not check"
+  console.log("\n# set-registry: the structural check fails closed, never green on \"could not check\"");
+  {
+    const zeroDir = join(work, "set-registry-zero-packages");
+    mkdirSync(join(zeroDir, "scripts"), { recursive: true });
+    cpSync(SET_REGISTRY, join(zeroDir, "scripts", "set-registry.mjs"));
+    writeFileSync(
+      join(zeroDir, "package-scope.json"),
+      JSON.stringify({ scope: "@real", registry: "https://example.invalid" }, null, 2) + "\n",
+    );
+    // No packages/ directory at all.
+    gitInit(zeroDir);
+    const zeroResult = run("node", [join(zeroDir, "scripts", "set-registry.mjs"), "--check"], { cwd: zeroDir });
+    check("zero packages under packages/ exits 2, not 0", zeroResult.code === 2, `expected exit 2, got ${zeroResult.code}: ${zeroResult.out}`);
+
+    const noRegDir = join(work, "set-registry-no-declared-registry");
+    mkdirSync(join(noRegDir, "packages", "ui"), { recursive: true });
+    mkdirSync(join(noRegDir, "scripts"), { recursive: true });
+    cpSync(SET_REGISTRY, join(noRegDir, "scripts", "set-registry.mjs"));
+    // package-scope.json with no "registry" field at all, and no --registry override.
+    writeFileSync(join(noRegDir, "package-scope.json"), JSON.stringify({ scope: "@real" }, null, 2) + "\n");
+    writeFileSync(
+      join(noRegDir, "packages", "ui", "package.json"),
+      JSON.stringify({ name: "@real/ui", version: "1.0.0", private: false }, null, 2) + "\n",
+    );
+    gitInit(noRegDir);
+    const noRegResult = run("node", [join(noRegDir, "scripts", "set-registry.mjs"), "--check"], { cwd: noRegDir });
+    check(
+      "no declared registry to check against exits 2, not 0",
+      noRegResult.code === 2,
+      `expected exit 2, got ${noRegResult.code}: ${noRegResult.out}`,
+    );
+  }
+
+  // ----------------------------------------- set-registry: propagation rewrite
+  console.log("\n# set-registry: --registry propagates and rewrites publishConfig.registry in place");
+  {
+    const dir = join(work, "set-registry-propagate");
+    mkdirSync(join(dir, "packages", "compact"), { recursive: true });
+    mkdirSync(join(dir, "packages", "multiline"), { recursive: true });
+    mkdirSync(join(dir, "scripts"), { recursive: true });
+    cpSync(SET_REGISTRY, join(dir, "scripts", "set-registry.mjs"));
+    writeFileSync(
+      join(dir, "package-scope.json"),
+      JSON.stringify({ scope: "@real", registry: "https://old.invalid" }, null, 2) + "\n",
+    );
+    // One package with a compact single-line publishConfig, one multi-line —
+    // this repository's own packages/*/package.json actually mix both
+    // styles (see e.g. packages/surface vs. packages/policy), and this
+    // script must never round-trip either through JSON.stringify, which
+    // would silently reformat it.
+    writeFileSync(
+      join(dir, "packages", "compact", "package.json"),
+      '{\n  "name": "@real/compact",\n  "version": "1.0.0",\n  "private": false,\n  "publishConfig": { "registry": "https://old.invalid" }\n}\n',
+    );
+    writeFileSync(
+      join(dir, "packages", "multiline", "package.json"),
+      JSON.stringify(
+        { name: "@real/multiline", version: "1.0.0", private: false, publishConfig: { registry: "https://old.invalid" } },
+        null,
+        2,
+      ) + "\n",
+    );
+    gitInit(dir);
+
+    const r = run("node", [join(dir, "scripts", "set-registry.mjs"), "--registry", "https://new.invalid"], { cwd: dir });
+    check("propagation exits 0", r.code === 0, `expected exit 0, got ${r.code}: ${r.out}`);
+
+    const compactAfter = readFileSync(join(dir, "packages", "compact", "package.json"), "utf8");
+    check(
+      "the compact single-line publishConfig is rewritten in place, formatting untouched",
+      compactAfter === '{\n  "name": "@real/compact",\n  "version": "1.0.0",\n  "private": false,\n  "publishConfig": { "registry": "https://new.invalid" }\n}\n',
+      `unexpected content: ${compactAfter}`,
+    );
+
+    const multilineAfter = readFileSync(join(dir, "packages", "multiline", "package.json"), "utf8");
+    check(
+      "the multi-line publishConfig is rewritten too",
+      multilineAfter.includes('"registry": "https://new.invalid"') && !multilineAfter.includes("old.invalid"),
+      `unexpected content: ${multilineAfter}`,
+    );
+
+    const scopeAfter = JSON.parse(readFileSync(join(dir, "package-scope.json"), "utf8"));
+    check(
+      "package-scope.json's own registry field is updated too",
+      scopeAfter.registry === "https://new.invalid",
+      `expected package-scope.json.registry to be updated, got: ${JSON.stringify(scopeAfter)}`,
+    );
+
+    const recheck = run("node", [join(dir, "scripts", "set-registry.mjs"), "--check"], { cwd: dir });
+    check("a bare --check after propagation now passes", recheck.code === 0, `expected exit 0, got ${recheck.code}: ${recheck.out}`);
+  }
+
+  console.log("\n# set-registry: a package already out of sync with BOTH the old and new registry is left untouched");
+  {
+    const dir = join(work, "set-registry-already-diverged");
+    mkdirSync(join(dir, "packages", "ui"), { recursive: true });
+    mkdirSync(join(dir, "scripts"), { recursive: true });
+    cpSync(SET_REGISTRY, join(dir, "scripts", "set-registry.mjs"));
+    writeFileSync(
+      join(dir, "package-scope.json"),
+      JSON.stringify({ scope: "@real", registry: "https://old.invalid" }, null, 2) + "\n",
+    );
+    writeFileSync(
+      join(dir, "packages", "ui", "package.json"),
+      JSON.stringify(
+        { name: "@real/ui", version: "1.0.0", private: false, publishConfig: { registry: "https://already-wrong.invalid" } },
+        null,
+        2,
+      ) + "\n",
+    );
+    gitInit(dir);
+    const before = readFileSync(join(dir, "packages", "ui", "package.json"), "utf8");
+    const r = run("node", [join(dir, "scripts", "set-registry.mjs"), "--registry", "https://new.invalid"], { cwd: dir });
+    check("propagation reports a finding (exit 1) rather than guessing", r.code === 1, `expected exit 1, got ${r.code}: ${r.out}`);
+    const after = readFileSync(join(dir, "packages", "ui", "package.json"), "utf8");
+    check("the already-diverged file is left byte-for-byte untouched", after === before, `file was rewritten anyway: ${after}`);
   }
 
   // ------------------------------------------ root README parity (issue #28)

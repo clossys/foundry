@@ -30,6 +30,7 @@ npm run typecheck
 npm test
 npm run check:safety
 npm run check:scope
+npm run check:registry
 npm run check:workspace-links
 npm run check:gates
 npm run check:readme
@@ -44,6 +45,7 @@ npm run check:typechecked-assertions
 | `typecheck` / `test` | The usual. |
 | `check-public-safety` (tree + artifact) | Refuses credential-shaped strings, committed build output, agent-instruction files, and private identity — in both the git tree and the actual packed tarball. See [SECURITY.md](SECURITY.md). |
 | `check-scope` | Every first-party package name matches the scope declared in `package-scope.json`. |
+| `check-registry` (`registry drift` in CI) | Every non-private package's `publishConfig.registry` matches the single registry declared in `package-scope.json`. Same single-source-of-truth pattern as `check-scope`, extended to the registry — see `scripts/set-registry.mjs` and [docs/PUBLISHING.md](docs/PUBLISHING.md#7-migrating-to-the-public-npm-registry). |
 | `check-gates` | Regression tests proving the safety gates still catch planted contamination. |
 | `check:readme` / `check:contamination` | Catch README/export drift and internal-convention leakage that no denylist string-match can see. Run unconditionally in CI, including on fork pull requests, since they read only the tree itself. |
 | `check:typechecked-assertions` | Fails if a `@ts-expect-error`, `@ts-ignore`, `expectTypeOf(...)`, or `assertType(...)` lives in a file `tsc` doesn't actually compile — see "Type-level assertions live in `.check.ts(x)` files" below. |

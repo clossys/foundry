@@ -38,21 +38,34 @@ The trade-off, accepted deliberately rather than defaulted into:
   [docs/PUBLISHING.md](PUBLISHING.md#package-visibility)), not a consequence
   of the registry choice itself.
 - Public npmjs would make "anyone can install this, no token required"
-  literally true, and remains an option later. Moving there is a config
-  change, not a rewrite:
-  - register `@vespeneventures` on npmjs (a separate, independent namespace
-    from GitHub Packages — owning the org name on GitHub does not reserve it
-    on npmjs),
-  - an npm automation token with publish rights, stored as the `NPM_TOKEN`
-    repository secret (npmjs, not GitHub Packages, at that point),
+  literally true, and remains an option later — tracked as the P0 blocker
+  in issue #194, since distribution behind a required credential is what
+  currently keeps every package here from being installable by a consumer
+  with no relationship to this org. Moving there is a config change plus
+  separate, owner-only setup on npm's own infrastructure, not a rewrite of
+  this repository:
+  - verify control of `@vespeneventures` on npmjs (a separate, independent
+    namespace from GitHub Packages — owning the org name on GitHub does not
+    reserve it on npmjs),
+  - configure npm trusted publishing (OIDC) for `publish.yml`'s `publish`
+    job, so publishing authenticates with the job's own short-lived GitHub
+    Actions token rather than a stored long-lived `NPM_TOKEN` — the same
+    no-stored-publish-credential shape this repository already uses for
+    GitHub Packages,
   - add `publishConfig.access: "public"` to each package (npmjs defaults
     scoped packages to private; GitHub Packages has no equivalent flag),
-  - update `package-scope.json.registry` to `https://registry.npmjs.org` and
-    re-run `set-scope.mjs`.
+  - update `package-scope.json.registry` to `https://registry.npmjs.org` via
+    `node scripts/set-registry.mjs --registry https://registry.npmjs.org`,
+    which also propagates it to every package's `publishConfig.registry`.
   - Version *history* does not carry over — the two registries are entirely
     separate systems. Existing GitHub Packages versions can stay published
     (harmless) or be deprecated pointing at the new home; installers just drop
     the `@vespeneventures:registry=...` line from their `.npmrc` and reinstall.
+
+  [docs/PUBLISHING.md#7-migrating-to-the-public-npm-registry](PUBLISHING.md#7-migrating-to-the-public-npm-registry)
+  is the authoritative ordered runbook for this move, including which steps
+  are recoverable and which (claiming the npm scope; any real publish) are
+  not.
 
 ### Why the name-collision gate runs before every publish, unconditionally
 
