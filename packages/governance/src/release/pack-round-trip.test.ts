@@ -20,7 +20,7 @@ describe("packRoundTrip — real subprocess round trip", () => {
       exports: Record<string, { import: string; types: string }>;
     };
 
-    for (const subpath of ["./catalog", "./gates", "./release", "./repository", "./review", "./review/github"]) {
+    for (const subpath of ["./catalog", "./gates", "./release", "./repository", "./review", "./review/github", "./artifacts"]) {
       const entry = manifest.exports[subpath];
       expect(entry).toBeDefined();
       if (entry === undefined) throw new Error(`missing ${subpath} export`);

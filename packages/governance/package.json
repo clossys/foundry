@@ -1,6 +1,6 @@
 {
   "name": "@vespeneventures/governance",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -35,6 +35,10 @@
     "./review/github": {
       "types": "./dist/review/github.d.ts",
       "import": "./dist/review/github.js"
+    },
+    "./artifacts": {
+      "types": "./dist/artifacts/index.d.ts",
+      "import": "./dist/artifacts/index.js"
     }
   },
   "bin": {

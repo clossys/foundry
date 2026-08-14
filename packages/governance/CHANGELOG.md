@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-08-13
+
+### Added
+
+- **`./artifacts` subpath**: `verifyGovernedArtifact(manifest, content,
+  options)` and `verifyGovernedArtifacts(entries, options)` — a reusable
+  contract for verifying a consumer-owned governed artifact that combines a
+  declared kind + schema version, an exact-content checksum, and structural
+  source/revision provenance, in one deterministic, fail-closed order (#195).
+  - Verification runs five fixed stages, each short-circuiting on its first
+    error: caller options, manifest structure (including provenance shape),
+    artifact kind, schema version, then — last, and only once kind and
+    schema version are both accepted — the exact-content checksum. Checking
+    the checksum last closes #195's core complaint: a checksum could
+    previously pass while the schema version was unsupported, or provenance
+    could be attached without ever being checked. See the README's
+    "Governed artifact verification" section for the full order and
+    reasoning.
+  - Digest comparison is delegated entirely to `@vespeneventures/policy`'s
+    own `validateBindingShape`/`verifyBinding` via a small synthetic
+    `PolicyBinding` — this subpath reimplements no hashing and no digest
+    shape/length logic of its own.
+  - Fails closed on every ambiguous input: a non-object or accessor-backed
+    manifest, an unknown manifest/checksum/provenance field, a missing or
+    blank kind/schemaVersion/provenance field, a malformed digest, an
+    unsupported checksum algorithm, an unsupported schema version, a wrong
+    artifact kind, and an empty `supportedSchemaVersions` (a caller
+    configuration error, never an artifact that trivially passes).
+  - `verifyGovernedArtifacts` additionally fails closed on an EMPTY batch —
+    `"artifact/empty-batch"`, never a clean `[]` — the same
+    "a check that cannot run must fail" discipline as
+    `scripts/check-release-readiness.mjs` (fixed in commit `01bd520`).
+  - Findings never include artifact bytes, digest values, source, or
+    revision values — only stable rule/path/message text.
+  - New exports: `verifyGovernedArtifact`, `verifyGovernedArtifacts`,
+    `validateGovernedArtifactManifest`, `validateGovernedArtifactOptions`,
+    `readGovernedArtifactManifest`, `GovernedArtifactManifest`,
+    `GovernedArtifactChecksum`, `GovernedArtifactProvenance`,
+    `GovernedArtifactVerificationOptions`, `GovernedArtifactBatchEntry`,
+    `GovernedArtifactFindingRule`, `GovernedArtifactManifestRead`.
+  - No new runtime dependency: `./artifacts` uses only
+    `@vespeneventures/policy`, already this package's sole dependency.
+
 ## [0.6.0] - 2026-08-13
 
 ### Added
