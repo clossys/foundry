@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.1.8] - 2026-08-13
+
+### Changed
+
+- Widened the `@vespeneventures/ui` range from `~0.9.0` to `~0.10.0` to
+  track that package's 0.10.0 release, which adds public-site chrome
+  (`SkipLink`, `SiteHeader`, `NavShell`, `SiteFooter`) at the `./shell`
+  subpath. Required for the same reason as every prior range widening in
+  this file: in 0.x semver a tilde range is minor-locked, so `~0.9.0`
+  excluded `ui` 0.10.0 and the dependency stopped resolving to the sibling
+  package. No API change here — this package does not use the new shell
+  exports.
+
 ## [0.1.7] - 2026-08-13
 
 ### Changed
