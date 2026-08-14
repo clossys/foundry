@@ -37,6 +37,12 @@ routine's to hold.
   half-recorded gap as sufficient to excuse missing coverage would let an
   unexplained hole close itself just by being labeled, which defeats the
   entire reason a gap needs recording in the first place.
+  Evidence follows a mechanical grammar: either a parsed HTTPS URL with a
+  valid host, no credentials or query, and final path segments
+  `issues/<positive integer>`; or a repository-relative Markdown path with no
+  absolute, current-directory, or parent-traversal segments and an `adr`,
+  `adrs`, `decision`, or `decisions` directory or filename prefix. Hidden
+  metadata directories such as `.github/decisions/` are valid path segments.
 - **Third-party skills are inventoried, not assumed.** A skill installed
   from outside the plane can be marked as such, and marking it that way
   means it can never be counted toward a first-party capability's coverage
@@ -50,6 +56,9 @@ routine's to hold.
   from a skill that still claims it. Tempo and coverage are different
   facts, checked independently, and this is the whole reason they are kept
   in different places.
+  A repository-owned target uses composite identity through
+  `skillRepository`; a plane-scoped target must remain unqualified so it cannot
+  bypass the plane root's ordinary closed skill list.
 
 ## Hard boundary
 
@@ -59,6 +68,8 @@ no network access anywhere in this contract, and there must never be. A
 registry document is just data; a validator takes a registry (and, for
 routine checks, one routine query) and returns findings. Nothing here
 mutates anything, executes anything, or remembers state between calls.
+Decoded caller JSON is accepted as `unknown`; malformed top-level or nested
+shapes produce deterministic findings rather than exceptions.
 
 Everything about which repositories exist, which skills a plane has
 actually built, which capabilities that plane cares about, and which gaps

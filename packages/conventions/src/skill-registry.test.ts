@@ -12,6 +12,7 @@ const baseCapability = {
   description: "Repositories reviewed for dependency drift on a recurring basis.",
   requiredTargets: ["repo-a", "repo-b", "repo-c"],
 };
+const decisionFilename = ["ADR", "0042.md"].join("-");
 
 function registry(overrides: Partial<SkillRegistry> = {}): SkillRegistry {
   return {
@@ -26,6 +27,31 @@ describe("validateSkillRegistry / schema version", () => {
   it("rejects a registry declaring a version this validator does not understand", () => {
     const findings = validateSkillRegistry(registry({ schemaVersion: "1.0.0" }));
     expect(findings.map((f) => f.rule)).toContain("registry/unsupported-schema-version");
+  });
+});
+
+describe("validateSkillRegistry / malformed caller JSON", () => {
+  it("returns deterministic findings instead of throwing for missing arrays", () => {
+    expect(validateSkillRegistry({ schemaVersion: SKILL_REGISTRY_SCHEMA_VERSION }).map(
+      (finding) => finding.rule,
+    )).toEqual([
+      "registry/malformed-capabilities",
+      "registry/malformed-skills",
+    ]);
+  });
+
+  it("reports malformed nested entries without dereferencing them", () => {
+    const findings = validateSkillRegistry({
+      schemaVersion: SKILL_REGISTRY_SCHEMA_VERSION,
+      capabilities: [42],
+      skills: [{ name: "review-dependency-freshness", scope: 42, implements: [] }],
+      acceptedGaps: [{ capability: "dependency-freshness-review" }],
+    }).map((finding) => finding.rule);
+    expect(findings).toEqual([
+      "registry/malformed-capability",
+      "registry/malformed-skill",
+      "registry/malformed-accepted-gap",
+    ]);
   });
 });
 
@@ -250,7 +276,7 @@ describe("validateSkillRegistry / accepted gap", () => {
           capability: "dependency-freshness-review",
           target: "repo-c",
           reason: "repo-c is archived and receives no further dependency work.",
-          reference: "foundry#900",
+          reference: "https://github.com/example/project/issues/900",
         },
       ],
     });
@@ -260,7 +286,7 @@ describe("validateSkillRegistry / accepted gap", () => {
   it("flags a gap missing its reason, and still reports the coverage as missing", () => {
     const reg = registry({
       acceptedGaps: [
-        { capability: "dependency-freshness-review", target: "repo-c", reason: "", reference: "foundry#900" },
+        { capability: "dependency-freshness-review", target: "repo-c", reason: "", reference: "https://github.com/example/project/issues/900" },
       ],
     });
     const findings = validateSkillRegistry(reg);
@@ -306,7 +332,7 @@ describe("validateSkillRegistry / accepted gap", () => {
           capability: "dependency-freshness-review",
           target: "repo-z",
           reason: "Never required.",
-          reference: "foundry#900",
+          reference: "https://github.com/example/project/issues/900",
         },
       ],
     });
@@ -322,13 +348,60 @@ describe("validateSkillRegistry / accepted gap", () => {
           capability: "no-such-capability",
           target: "repo-a",
           reason: "Never required.",
-          reference: "foundry#900",
+          reference: "https://github.com/example/project/issues/900",
         },
       ],
     });
     expect(validateSkillRegistry(reg).map((f) => f.rule)).toContain(
       "registry/gap-unknown-capability",
     );
+  });
+
+  it.each([
+    "https://github.com/example/project/issues/42",
+    "https://github.enterprise.example:8443/team/project/issues/42#discussion-7",
+    [".github", "decisions", "ADR-0042-coverage.md"].join("/"),
+    ["documents", "ADR-0042-coverage.md"].join("/"),
+  ])("accepts durable issue or decision evidence: %s", (reference) => {
+    expect(validateSkillRegistry(registry({
+      capabilities: [{ ...baseCapability, requiredTargets: ["repo-c"] }],
+      acceptedGaps: [{
+        capability: "dependency-freshness-review",
+        target: "repo-c",
+        reason: "Deferred by an explicit decision.",
+        reference,
+      }],
+    }))).toEqual([]);
+  });
+
+  it.each([
+    "https://example.com:65536/issues/42",
+    "https://999.999.999.999/issues/42",
+    "https://-invalid.example/issues/42",
+    "https://[malformed/issues/42",
+    "http://github.com/example/project/issues/42",
+    "https://github.com/example/project/pull/42",
+    "https://user@example.com/example/project/issues/42",
+    "https://github.com/example/project/issues/42?state=open",
+    ["", "decisions", decisionFilename].join("/"),
+    [".", "decisions", decisionFilename].join("/"),
+    ["..", "decisions", decisionFilename].join("/"),
+    ["docs", "..", "decisions", decisionFilename].join("/"),
+    ["docs", ".", "decisions", decisionFilename].join("/"),
+    [".github", "decisions", "ADR-0042.txt"].join("/"),
+    [".github", "notes", "coverage.md"].join("/"),
+  ])("rejects non-durable evidence without suppressing missing coverage: %s", (reference) => {
+    const findings = validateSkillRegistry(registry({
+      capabilities: [{ ...baseCapability, requiredTargets: ["repo-c"] }],
+      acceptedGaps: [{
+        capability: "dependency-freshness-review",
+        target: "repo-c",
+        reason: "Deferred by an explicit decision.",
+        reference,
+      }],
+    })).map((finding) => finding.rule);
+    expect(findings).toContain("registry/gap-invalid-reference");
+    expect(findings).toContain("registry/missing-capability");
   });
 });
 
@@ -351,6 +424,21 @@ describe("validateRoutineCoverage / routine-subset validation", () => {
         reg,
       ),
     ).toEqual([]);
+  });
+
+  it("accepts the RoutineDeclaration skillRepository spelling", () => {
+    expect(validateRoutineCoverage(
+      {
+        id: "dependency-review",
+        skill: "review-dependency-freshness",
+        skillRepository: "repo-a",
+        cadence: "monthly",
+        scope: ["repo-a"],
+        mode: "report-only",
+        purpose: "Review declared coverage.",
+      },
+      reg,
+    )).toEqual([]);
   });
 
   it("rejects a target skill that does not resolve", () => {
@@ -376,5 +464,51 @@ describe("validateRoutineCoverage / routine-subset validation", () => {
         reg,
       ),
     ).toEqual([]);
+  });
+
+  it("rejects a repository qualifier on a plane-scoped skill", () => {
+    const planeRegistry = registry({
+      skills: [{
+        name: "review-dependency-freshness",
+        scope: "plane",
+        implements: [{
+          capability: "dependency-freshness-review",
+          targets: ["repo-a", "repo-b", "repo-c"],
+        }],
+      }],
+    });
+    expect(validateRoutineCoverage(
+      { skill: "review-dependency-freshness", skillRepository: "repo-a", scope: ["repo-a"] },
+      planeRegistry,
+    ).map((finding) => finding.rule)).toContain("registry/routine-plane-skill-qualified");
+  });
+
+  it("preserves registry parse findings when target resolution also fails", () => {
+    const findings = validateRoutineCoverage(
+      { skill: "review-dependency-freshness", skillRepository: "repo-a", scope: ["repo-a"] },
+      registry({
+        skills: [{
+          name: "review-dependency-freshness",
+          scope: 42,
+          repository: "repo-a",
+          implements: [],
+        }] as unknown as SkillRegistry["skills"],
+      }),
+    ).map((finding) => finding.rule);
+    expect(findings).toEqual([
+      "registry/malformed-skill",
+      "registry/routine-unresolvable-skill",
+    ]);
+  });
+
+  it("returns findings instead of throwing for malformed registry and query JSON", () => {
+    expect(validateRoutineCoverage(
+      { skill: "review-dependency-freshness", scope: "repo-a" },
+      { schemaVersion: SKILL_REGISTRY_SCHEMA_VERSION },
+    ).map((finding) => finding.rule)).toEqual([
+      "registry/malformed-capabilities",
+      "registry/malformed-skills",
+      "registry/malformed-routine-query",
+    ]);
   });
 });
