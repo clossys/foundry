@@ -319,6 +319,48 @@ only *reports* the package's current visibility (a `GET` call) and prints
 the settings URL above — it never attempts to change anything, because
 there is nothing it could call to do so.
 
+#### The automated visibility gate
+
+The manual `visibility_only` report above only runs when someone remembers
+to ask for it. `scripts/check-package-visibility.mjs` is the gate that does
+not depend on that: it compares every "published"
+[`docs/contracts/package-lifecycle.json`](contracts/package-lifecycle.json)
+entry's declared intent — recorded separately in
+[`docs/contracts/package-visibility.json`](contracts/package-visibility.json),
+since `package-lifecycle.json`'s schema is owned by the published
+`@vespeneventures/governance` package and a new field there would force a
+version bump for what is really repository-tooling metadata — against the
+package's real GitHub Packages visibility, and fails when they disagree.
+This is the gate that would have caught `@vespeneventures/ui` sitting
+private across 12 published versions.
+
+It runs in two places, never as part of local `npm run check` (it needs a
+live `read:packages` token, which ordinary local development and fork CI
+should never be required to hold):
+
+- `.github/workflows/publish.yml`'s `visibility-check` job, immediately
+  after a real publish — catching a bad default the moment it is created.
+- `.github/workflows/package-visibility.yml`, on a daily schedule —
+  catching drift that happens with no publish at all (for example a manual
+  mistake in GitHub's own web UI).
+
+Like the `visibility_only` report above, it only ever detects and reports.
+There is no API to change a package's visibility, so a finding here still
+ends at the manual step described earlier in this section.
+
+One property of it is worth stating, because it is the difference between a
+gate and a green light. GitHub answers `404` — not `403` — for a package the
+caller cannot see, so that it never leaks a private package's existence to
+someone without access. "Never published" and "published, but invisible to
+this credential" are therefore the same response, and no per-package check
+can separate them. A `GH_PACKAGES_TOKEN` rotated to one missing
+`read:packages` would otherwise produce a daily green check asserting every
+package is public, having never actually seen the registry — the exact
+shape of failure this gate exists to prevent, wearing the gate's own badge.
+So when *every* declared package comes back `404`, the run exits `2`
+(could-not-run) rather than `0`. A single real answer anywhere is enough to
+trust the remaining `404`s as genuine.
+
 ### Deprecating compatibility packages
 
 The old `catalog`, `gates`, `release`, `repository`, and `review` names are

@@ -25,7 +25,7 @@
     "check:denylist": "node scripts/check-denylist-quality.mjs",
     "//check-workspace-links": "Does every first-party 0.x dependency range still cover its sibling's real on-disk version, and does package-lock.json still resolve every first-party package as a local link rather than a remote registry URL? See the script's own header for the defect this exists to catch -- it has already cost real time more than once.",
     "check:workspace-links": "node scripts/check-workspace-links.mjs",
-    "check:gates": "node scripts/test-gates.mjs && node --test scripts/agent-cloud.test.mjs scripts/deprecate-legacy-packages.test.mjs scripts/select-publishable-packages.test.mjs scripts/check-release-readiness.test.mjs scripts/check-workspace-links.test.mjs",
+    "check:gates": "node scripts/test-gates.mjs && node --test scripts/agent-cloud.test.mjs scripts/deprecate-legacy-packages.test.mjs scripts/select-publishable-packages.test.mjs scripts/check-release-readiness.test.mjs scripts/check-workspace-links.test.mjs scripts/check-package-visibility.test.mjs",
     "check:root-entry": "node scripts/check-root-entry-policy.mjs",
     "check:readme": "node scripts/check-root-readme-parity.mjs . && for manifest in packages/*/package.json; do [ -f \"$manifest\" ] || continue; p=${manifest%/package.json}; node scripts/check-readme-parity.mjs \"$p\" || exit 1; done",
     "check:contamination": "for manifest in packages/*/package.json; do [ -f \"$manifest\" ] || continue; p=${manifest%/package.json}; node scripts/check-contamination-classes.mjs \"$p\" || exit 1; done",
@@ -45,6 +45,8 @@
     "preflight": "node scripts/preflight-package.mjs",
     "//check-conversation": "Deliberately NOT part of `check` above. Every other check gate scans this checkout — offline, hermetic, exactly reproducible on a fork's CI run with no credentials. This one scans GitHub's live API instead: it needs network access and an authenticated `gh`, neither of which a fork's CI or an offline run has, so wiring it into `check` would make the whole chain fail (or silently no-op) for every contributor who isn't the repository owner. Run it separately, where those preconditions are actually met.",
     "check:conversation": "node scripts/check-conversation-safety.mjs --all",
+    "//check-package-visibility": "Also deliberately NOT part of `check` above, for the same reason as check:conversation directly above: this calls the live GitHub Packages API and needs a read:packages token (GH_PACKAGES_TOKEN) to do it at all, which no fork's CI and no ordinary local `npm run check` should be required to hold. See the script's own header for what it checks and why. Wired into CI as a post-publish job in publish.yml and a scheduled run in package-visibility.yml, both of which already have the credential for a narrower reason.",
+    "check:package-visibility": "node scripts/check-package-visibility.mjs",
     "//check-conversation-draft": "The prevention mode: scan text BEFORE it is posted to an issue or PR, while withholding it is still free. Pass --file <path>, or pipe the draft text in: `echo \"...\" | npm run check:conversation:draft --`.",
     "check:conversation:draft": "node scripts/check-conversation-safety.mjs"
   },

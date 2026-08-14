@@ -1,0 +1,20 @@
+{
+  "$comment": "Declares the INTENDED GitHub Packages visibility for every package.json/contracts/package-lifecycle.json entry whose status is \"published\". This is a separate small file rather than a new field on package-lifecycle.json entries on purpose: package-lifecycle.json's schema is owned and exhaustively validated by the published @vespeneventures/governance package (packages/governance/src/lifecycle.ts's ENTRY_KEYS allowlist rejects any field it does not recognise), so adding a field there would force a governance version bump and rewritten test fixtures for what is really repository-tooling metadata, not package lifecycle maturity. See scripts/check-package-visibility.mjs, which joins this file against package-lifecycle.json's \"published\" entries and is deliberately NOT part of `npm run check` (see that script's own header for why) and deliberately DOES NOT invent a default: a \"published\" lifecycle entry with no matching entry here, or a malformed one, is a gate finding, not a silent pass.",
+  "schemaVersion": 1,
+  "packages": [
+    { "name": "@vespeneventures/auth", "intendedVisibility": "public" },
+    { "name": "@vespeneventures/comms", "intendedVisibility": "public" },
+    { "name": "@vespeneventures/conventions", "intendedVisibility": "public" },
+    { "name": "@vespeneventures/copy", "intendedVisibility": "public" },
+    { "name": "@vespeneventures/deployment", "intendedVisibility": "public" },
+    { "name": "@vespeneventures/domain", "intendedVisibility": "public" },
+    { "name": "@vespeneventures/governance", "intendedVisibility": "public" },
+    { "name": "@vespeneventures/ledger", "intendedVisibility": "public" },
+    { "name": "@vespeneventures/policy", "intendedVisibility": "public" },
+    { "name": "@vespeneventures/provisioning", "intendedVisibility": "public" },
+    { "name": "@vespeneventures/secrets", "intendedVisibility": "public" },
+    { "name": "@vespeneventures/strategy", "intendedVisibility": "public" },
+    { "name": "@vespeneventures/surface", "intendedVisibility": "public" },
+    { "name": "@vespeneventures/ui", "intendedVisibility": "public" }
+  ]
+}

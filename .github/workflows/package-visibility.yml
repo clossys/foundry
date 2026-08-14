@@ -1,0 +1,46 @@
+name: Package visibility
+
+# GitHub Packages defaults every newly published npm package to PRIVATE, per
+# package, regardless of this repository being public. publish.yml's own
+# `visibility-check` job catches a bad default immediately after the publish
+# that created it, but that job only ever runs on an actual publish event —
+# it has nothing to say about a package that drifts private later through no
+# publish this repository performed at all (for example a mistaken click in
+# GitHub's own web UI). This scheduled run is the independent, continuously
+# recurring backstop: it re-checks every "published" package's declared
+# intent against its real registry visibility on its own cadence, with no
+# publish required to trigger it. See scripts/check-package-visibility.mjs's
+# own header for the full design and the incident that motivated it.
+on:
+  schedule:
+    # Daily, off the top of the hour to avoid the scheduled-workflow queue
+    # every "on the hour" cron in the world competes for.
+    - cron: "17 6 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: package-visibility
+  cancel-in-progress: false
+
+jobs:
+  check:
+    name: check package visibility
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+
+      # The same classic read:packages token publish.yml's name-collision
+      # and post-publish visibility-check jobs already use — read-only,
+      # scoped to package listing, and unable to reach any other
+      # repository's contents.
+      - name: check-package-visibility
+        env:
+          GH_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
+        run: node scripts/check-package-visibility.mjs

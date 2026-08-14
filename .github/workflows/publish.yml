@@ -532,3 +532,53 @@ jobs:
           }
           console.log(`published artifact imports: ${result.imports.map((check) => check.subpath).join(", ")}`);
           NODE
+
+  # GitHub Packages defaults every newly published npm package to PRIVATE,
+  # per package, regardless of this repository being public — and nothing
+  # before this job re-checked that state. @vespeneventures/ui sat private
+  # across 12 published versions, completely uninstallable by any external
+  # reader, before anyone noticed; four packages were found private in
+  # total. This job runs immediately after a REAL publish (never for a dry
+  # run or a verify_only qualification, matching the "Publish" step's own
+  # condition above) and asks the registry directly whether every package
+  # this repository declares "published" is actually public — not scoped
+  # to only the package(s) this run just uploaded, since the cost of
+  # checking the rest is a handful of GET requests and doing so also
+  # catches unrelated drift on the same run. See
+  # scripts/check-package-visibility.mjs's own header for the full design
+  # and docs/contracts/package-visibility.json for the declared intent.
+  #
+  # Deliberately a SEPARATE job, not a trailing step inside `publish`
+  # above: a failure here must never be confused with, or imply a rollback
+  # of, the publish itself — that already succeeded and a registry version
+  # is immutable. This job can only ever report; there is no API to change
+  # a package's visibility (see docs/PUBLISHING.md's "Package visibility"
+  # section) so a failing check here is a page for a human to flip the
+  # setting by hand, never something a workflow can fix for itself.
+  #
+  # Not run for a fork pull request or workflow_dispatch dry run: no such
+  # trigger reaches this job's `if` at all, since only a push to main or an
+  # explicit non-dry-run, non-verify-only dispatch satisfies it — the same
+  # surface that gates `secrets.GH_PACKAGES_TOKEN` access elsewhere in this
+  # file.
+  visibility-check:
+    name: post-publish visibility check
+    needs: [discover, publish]
+    if: ${{ needs.discover.outputs.packages != '[]' && (github.event_name == 'push' || (!inputs.dry_run && !inputs.verify_only)) }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+
+      # The same classic read:packages token the name-collision job uses
+      # above — it can only read, never write or delete, and cannot reach
+      # any other repository's contents. There is no separate credential
+      # for this narrower purpose; reusing this one avoids minting another
+      # long-lived secret for the same access level.
+      - name: check-package-visibility
+        env:
+          GH_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
+        run: node scripts/check-package-visibility.mjs
