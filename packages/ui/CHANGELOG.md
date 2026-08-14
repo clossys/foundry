@@ -3,6 +3,53 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.10.0] - 2026-08-13
+
+### Added
+
+- **Public-site chrome** (`@vespeneventures/ui/shell`): `SkipLink`,
+  `SiteHeader`, `NavShell`, `SiteFooter`. `Shell` already ships the
+  five-slot frame an authenticated app needs; these four ship alongside it
+  for the simpler, more opinionated chrome a public marketing/content site
+  needs instead — a brand/nav/actions header, the primary navigation with
+  a mobile drawer, grouped footer link columns, and the skip link that
+  makes either bypassable by keyboard. Placement follows this package's
+  own test #1 ("does it survive a route change?") — a site header/footer/
+  nav survive route changes exactly the way `Shell`'s own regions do,
+  which is what puts all four in `shell` rather than `blocks`.
+  - **`SkipLink`** — the keyboard affordance every persistent-chrome page
+    needs, made public and reusable rather than living only inside
+    `Shell`'s own internal implementation: takes `targetId` (the jump
+    target's `id`) and its own visible `children` (this package ships no
+    built-in copy) as props, since a site's own page structure decides
+    what "content" means.
+  - **`SiteHeader`** — three regions that differ in kind: `brand`
+    (required), `nav`, `actions`. Renders a real `<header>`, registering
+    as the page's `banner` landmark at the top level.
+  - **`NavShell`** — an ordinary inline `<nav>` from the `tablet`
+    breakpoint up, and a trigger-plus-drawer below it, CSS-only breakpoint
+    switching with no JS media-query state. The drawer is built on the
+    same react-aria-components `DialogTrigger`/`ModalOverlay`/`Modal`/
+    `Dialog` primitives this package's own `Dialog` atom already uses,
+    which gives it — for free — a focus trap, focus moved in on open and
+    restored to the trigger on close, Escape-to-dismiss, an
+    `aria-expanded`/`aria-haspopup`-exposing trigger, background content
+    hidden from assistive technology while open (`ariaHideOutside`), and a
+    fully keyboard-operable open/navigate/close flow. Every one of those
+    is covered by a real jsdom test in `NavShell.test.tsx`, including an
+    explicit assertion that the rest of the page gains `aria-hidden` while
+    the drawer is open and loses it again on close.
+  - **`SiteFooter`** — two regions that differ in kind: `columns` (a
+    responsive grid of `SiteFooter.Column`s) and `secondary` (a row below
+    a hairline divider for a copyright line, legal links, a locale
+    switcher). Renders a real `<footer>`, registering as the page's
+    `contentinfo` landmark at the top level.
+
+  No new dependencies, no new design tokens, and no new WCAG contrast
+  pairs: every class these four components render reuses a token pairing
+  `Button`, `Dialog`, `Shell.Header`, or `Shell.Footer` already established
+  and already clears the WCAG contrast gate.
+
 ## [0.9.0] - 2026-08-13
 
 ### Added

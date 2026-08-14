@@ -147,7 +147,7 @@ export type {
   SectionHeaderLevel,
 } from "./blocks/index.js";
 
-export { Shell, Toaster, toast } from "./shell/index.js";
+export { Shell, Toaster, toast, SkipLink, SiteHeader, NavShell, SiteFooter } from "./shell/index.js";
 export type {
   ShellProps,
   ShellHeaderProps,
@@ -161,6 +161,11 @@ export type {
   ToastOptions,
   ToastRecord,
   ToastVariant,
+  SkipLinkProps,
+  SiteHeaderProps,
+  NavShellProps,
+  SiteFooterProps,
+  SiteFooterColumnProps,
 } from "./shell/index.js";
 
 export { ChartFrame, BarChart, LineChart, Sparkline } from "./charts/index.js";
