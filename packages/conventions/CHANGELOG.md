@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `safe-candidate` proposals with stable reason codes, strict fail-closed
   precedence, and mandatory operator confirmation. It performs no discovery,
   I/O, command rendering, or mutation.
+- Runtime-total observation guards block out-of-vocabulary values, and a
+  merged pull request is safe only when its head matches the branch's current
+  tip.
 
 ## [0.4.0] - 2026-08-14
 

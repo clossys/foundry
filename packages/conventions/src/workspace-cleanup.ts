@@ -8,6 +8,7 @@
  */
 
 export const WORKSPACE_CLEANUP_REASON_CODES = Object.freeze([
+  "observation-invalid",
   "origin-unobserved",
   "origin-mismatch",
   "canonical-checkout-missing",
@@ -27,6 +28,7 @@ export const WORKSPACE_CLEANUP_REASON_CODES = Object.freeze([
   "pull-request-closed-unmerged",
   "pull-request-missing",
   "pull-request-state-unknown",
+  "pull-request-tip-unverified",
   "prune-dry-run-not-run",
   "prune-dry-run-failed",
   "prune-not-candidate",
@@ -54,6 +56,11 @@ export type BranchTrackingState =
   | "untracked"
   | "unknown";
 export type PullRequestState = "merged" | "open" | "closed-unmerged" | "none" | "unknown";
+export type PullRequestTipState =
+  | "matches-current-tip"
+  | "different-tip"
+  | "unknown"
+  | "not-applicable";
 export type PruneDryRunState = "candidate" | "not-candidate" | "not-run" | "failed";
 
 /** Caller-normalized evidence shared by every cleanup target. */
@@ -74,6 +81,8 @@ export interface WorkspaceCleanupCommonObservation {
 export interface BranchDispositionObservation {
   readonly tracking: BranchTrackingState;
   readonly pullRequest: PullRequestState;
+  /** Whether the observed pull request's head is the branch's current tip. */
+  readonly pullRequestTip: PullRequestTipState;
 }
 
 export interface WorktreeCleanupObservation extends WorkspaceCleanupCommonObservation {
@@ -109,13 +118,110 @@ export type WorkspaceCleanupObservation =
  * subject to the account skill's exact-target confirmation and guarded apply
  * path.
  */
-export interface WorkspaceCleanupProposal {
+export interface WorkspaceCleanupValidProposal {
   readonly repositoryId: string;
   readonly targetId: string;
   readonly action: WorkspaceCleanupAction;
   readonly status: WorkspaceCleanupStatus;
   readonly reasonCodes: readonly WorkspaceCleanupReasonCode[];
   readonly requiresOperatorConfirmation: true;
+}
+
+/** Fail-closed result for a runtime value outside the observation contract. */
+export interface WorkspaceCleanupInvalidProposal {
+  readonly repositoryId: string | null;
+  readonly targetId: string | null;
+  readonly action: WorkspaceCleanupAction | null;
+  readonly status: "blocked";
+  readonly reasonCodes: readonly ["observation-invalid"];
+  readonly requiresOperatorConfirmation: true;
+}
+
+export type WorkspaceCleanupProposal =
+  | WorkspaceCleanupValidProposal
+  | WorkspaceCleanupInvalidProposal;
+
+const ACTIONS = ["remove-worktree", "remove-branch", "prune-worktree-metadata"] as const;
+const CANONICAL_CHECKOUT_STATES = ["clean", "dirty", "missing", "unknown"] as const;
+const TARGET_OWNERSHIP_STATES = ["owned", "unowned", "unknown"] as const;
+const WORKTREE_STATES = ["clean", "dirty", "missing", "unknown"] as const;
+const BRANCH_WORKTREE_STATES = ["none", "clean", "dirty", "unknown"] as const;
+const BRANCH_TRACKING_STATES = [
+  "up-to-date",
+  "behind",
+  "ahead",
+  "diverged",
+  "gone",
+  "untracked",
+  "unknown",
+] as const;
+const PULL_REQUEST_STATES = ["merged", "open", "closed-unmerged", "none", "unknown"] as const;
+const PULL_REQUEST_TIP_STATES = [
+  "matches-current-tip",
+  "different-tip",
+  "unknown",
+  "not-applicable",
+] as const;
+const PRUNE_DRY_RUN_STATES = ["candidate", "not-candidate", "not-run", "failed"] as const;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === "string" && value.length > 0;
+}
+
+function isMember<T extends string>(value: unknown, members: readonly T[]): value is T {
+  return typeof value === "string" && members.includes(value as T);
+}
+
+function hasValidBranchDisposition(value: unknown): value is BranchDispositionObservation {
+  return (
+    isRecord(value) &&
+    isMember(value.tracking, BRANCH_TRACKING_STATES) &&
+    isMember(value.pullRequest, PULL_REQUEST_STATES) &&
+    isMember(value.pullRequestTip, PULL_REQUEST_TIP_STATES)
+  );
+}
+
+function isWorkspaceCleanupObservation(value: unknown): value is WorkspaceCleanupObservation {
+  if (
+    !isRecord(value) ||
+    !isNonEmptyString(value.repositoryId) ||
+    !isNonEmptyString(value.declaredOrigin) ||
+    !(value.observedOrigin === null || isNonEmptyString(value.observedOrigin)) ||
+    !isMember(value.canonicalCheckout, CANONICAL_CHECKOUT_STATES) ||
+    !isMember(value.targetOwnership, TARGET_OWNERSHIP_STATES) ||
+    typeof value.evidenceComplete !== "boolean" ||
+    !isMember(value.action, ACTIONS) ||
+    !isNonEmptyString(value.targetId)
+  ) {
+    return false;
+  }
+
+  if (value.action === "remove-worktree") {
+    return isMember(value.worktree, WORKTREE_STATES) && hasValidBranchDisposition(value.branch);
+  }
+  if (value.action === "remove-branch") {
+    return (
+      isMember(value.checkedOutWorktree, BRANCH_WORKTREE_STATES) &&
+      hasValidBranchDisposition(value.branch)
+    );
+  }
+  return isMember(value.pruneDryRun, PRUNE_DRY_RUN_STATES);
+}
+
+function invalidProposal(observation: unknown): WorkspaceCleanupInvalidProposal {
+  const record = isRecord(observation) ? observation : {};
+  return Object.freeze({
+    repositoryId: isNonEmptyString(record.repositoryId) ? record.repositoryId : null,
+    targetId: isNonEmptyString(record.targetId) ? record.targetId : null,
+    action: isMember(record.action, ACTIONS) ? record.action : null,
+    status: "blocked" as const,
+    reasonCodes: Object.freeze(["observation-invalid"] as const),
+    requiresOperatorConfirmation: true as const,
+  });
 }
 
 function commonBlockingReasons(
@@ -178,6 +284,13 @@ function branchBlockingReasons(
     reasons.push("pull-request-state-unknown");
   }
 
+  if (
+    observation.pullRequest === "merged" &&
+    observation.pullRequestTip !== "matches-current-tip"
+  ) {
+    reasons.push("pull-request-tip-unverified");
+  }
+
   return reasons;
 }
 
@@ -233,7 +346,11 @@ function proposal(
  */
 export function classifyWorkspaceCleanup(
   observation: WorkspaceCleanupObservation,
-): WorkspaceCleanupProposal {
+): WorkspaceCleanupValidProposal;
+export function classifyWorkspaceCleanup(observation: unknown): WorkspaceCleanupProposal;
+export function classifyWorkspaceCleanup(observation: unknown): WorkspaceCleanupProposal {
+  if (!isWorkspaceCleanupObservation(observation)) return invalidProposal(observation);
+
   const commonBlockers = commonBlockingReasons(observation);
   if (commonBlockers.length > 0) return proposal(observation, "blocked", commonBlockers);
 
@@ -253,6 +370,13 @@ export function classifyWorkspaceCleanup(
 /** Classify a complete caller-owned observation set without reading anything. */
 export function classifyWorkspaceCleanupSet(
   observations: readonly WorkspaceCleanupObservation[],
+): readonly WorkspaceCleanupValidProposal[];
+export function classifyWorkspaceCleanupSet(
+  observations: unknown,
+): readonly WorkspaceCleanupProposal[];
+export function classifyWorkspaceCleanupSet(
+  observations: unknown,
 ): readonly WorkspaceCleanupProposal[] {
+  if (!Array.isArray(observations)) return Object.freeze([invalidProposal(observations)]);
   return Object.freeze(observations.map((observation) => classifyWorkspaceCleanup(observation)));
 }

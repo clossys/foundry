@@ -24,6 +24,7 @@ const common = {
 const mergedBranch = {
   tracking: "gone",
   pullRequest: "merged",
+  pullRequestTip: "matches-current-tip",
 } as const;
 
 const worktree: WorktreeCleanupObservation = {
@@ -109,7 +110,7 @@ describe("classifyWorkspaceCleanup", () => {
     expect(
       classifyWorkspaceCleanup({
         ...branch,
-        branch: { tracking: "ahead", pullRequest: "none" },
+        branch: { tracking: "ahead", pullRequest: "none", pullRequestTip: "not-applicable" },
       }).reasonCodes,
     ).toEqual(["branch-unpushed", "pull-request-missing"]);
   });
@@ -119,7 +120,7 @@ describe("classifyWorkspaceCleanup", () => {
       classifyWorkspaceCleanup({
         ...worktree,
         targetOwnership: "owned",
-        branch: { tracking: "ahead", pullRequest: "none" },
+        branch: { tracking: "ahead", pullRequest: "none", pullRequestTip: "not-applicable" },
       }),
     ).toMatchObject({ status: "owned", reasonCodes: ["active-owner"] });
 
@@ -145,19 +146,84 @@ describe("classifyWorkspaceCleanup", () => {
     [{ ...worktree, worktree: "unknown" }, "worktree-state-unknown"],
     [{ ...branch, checkedOutWorktree: "clean" }, "branch-checked-out"],
     [{ ...branch, checkedOutWorktree: "unknown" }, "branch-worktree-state-unknown"],
-    [{ ...branch, branch: { tracking: "ahead", pullRequest: "merged" } }, "branch-unpushed"],
-    [{ ...branch, branch: { tracking: "diverged", pullRequest: "merged" } }, "branch-unpushed"],
-    [{ ...branch, branch: { tracking: "untracked", pullRequest: "merged" } }, "branch-unpushed"],
-    [{ ...branch, branch: { tracking: "unknown", pullRequest: "merged" } }, "branch-tracking-unknown"],
-    [{ ...branch, branch: { tracking: "gone", pullRequest: "open" } }, "pull-request-open"],
     [
-      { ...branch, branch: { tracking: "gone", pullRequest: "closed-unmerged" } },
+      {
+        ...branch,
+        branch: { tracking: "ahead", pullRequest: "merged", pullRequestTip: "matches-current-tip" },
+      },
+      "branch-unpushed",
+    ],
+    [
+      {
+        ...branch,
+        branch: {
+          tracking: "diverged",
+          pullRequest: "merged",
+          pullRequestTip: "matches-current-tip",
+        },
+      },
+      "branch-unpushed",
+    ],
+    [
+      {
+        ...branch,
+        branch: {
+          tracking: "untracked",
+          pullRequest: "merged",
+          pullRequestTip: "matches-current-tip",
+        },
+      },
+      "branch-unpushed",
+    ],
+    [
+      {
+        ...branch,
+        branch: {
+          tracking: "unknown",
+          pullRequest: "merged",
+          pullRequestTip: "matches-current-tip",
+        },
+      },
+      "branch-tracking-unknown",
+    ],
+    [
+      {
+        ...branch,
+        branch: { tracking: "gone", pullRequest: "open", pullRequestTip: "not-applicable" },
+      },
+      "pull-request-open",
+    ],
+    [
+      {
+        ...branch,
+        branch: {
+          tracking: "gone",
+          pullRequest: "closed-unmerged",
+          pullRequestTip: "not-applicable",
+        },
+      },
       "pull-request-closed-unmerged",
     ],
-    [{ ...branch, branch: { tracking: "gone", pullRequest: "none" } }, "pull-request-missing"],
     [
-      { ...branch, branch: { tracking: "gone", pullRequest: "unknown" } },
+      {
+        ...branch,
+        branch: { tracking: "gone", pullRequest: "none", pullRequestTip: "not-applicable" },
+      },
+      "pull-request-missing",
+    ],
+    [
+      {
+        ...branch,
+        branch: { tracking: "gone", pullRequest: "unknown", pullRequestTip: "unknown" },
+      },
       "pull-request-state-unknown",
+    ],
+    [
+      {
+        ...branch,
+        branch: { tracking: "up-to-date", pullRequest: "merged", pullRequestTip: "different-tip" },
+      },
+      "pull-request-tip-unverified",
     ],
     [{ ...metadata, pruneDryRun: "not-run" }, "prune-dry-run-not-run"],
     [{ ...metadata, pruneDryRun: "failed" }, "prune-dry-run-failed"],
@@ -170,6 +236,7 @@ describe("classifyWorkspaceCleanup", () => {
   it("keeps every reason code covered by the fixture matrix", () => {
     const covered = new Set<string>([
       "origin-mismatch",
+      "observation-invalid",
       "active-owner",
       "canonical-dirty",
       "worktree-dirty",
@@ -187,12 +254,42 @@ describe("classifyWorkspaceCleanup", () => {
       { ...worktree, worktree: "unknown" },
       { ...branch, checkedOutWorktree: "clean" },
       { ...branch, checkedOutWorktree: "unknown" },
-      { ...branch, branch: { tracking: "ahead", pullRequest: "merged" } },
-      { ...branch, branch: { tracking: "unknown", pullRequest: "merged" } },
-      { ...branch, branch: { tracking: "gone", pullRequest: "open" } },
-      { ...branch, branch: { tracking: "gone", pullRequest: "closed-unmerged" } },
-      { ...branch, branch: { tracking: "gone", pullRequest: "none" } },
-      { ...branch, branch: { tracking: "gone", pullRequest: "unknown" } },
+      {
+        ...branch,
+        branch: { tracking: "ahead", pullRequest: "merged", pullRequestTip: "matches-current-tip" },
+      },
+      {
+        ...branch,
+        branch: {
+          tracking: "unknown",
+          pullRequest: "merged",
+          pullRequestTip: "matches-current-tip",
+        },
+      },
+      {
+        ...branch,
+        branch: { tracking: "gone", pullRequest: "open", pullRequestTip: "not-applicable" },
+      },
+      {
+        ...branch,
+        branch: {
+          tracking: "gone",
+          pullRequest: "closed-unmerged",
+          pullRequestTip: "not-applicable",
+        },
+      },
+      {
+        ...branch,
+        branch: { tracking: "gone", pullRequest: "none", pullRequestTip: "not-applicable" },
+      },
+      {
+        ...branch,
+        branch: { tracking: "gone", pullRequest: "unknown", pullRequestTip: "unknown" },
+      },
+      {
+        ...branch,
+        branch: { tracking: "up-to-date", pullRequest: "merged", pullRequestTip: "different-tip" },
+      },
       { ...metadata, pruneDryRun: "not-run" },
       { ...metadata, pruneDryRun: "failed" },
       { ...metadata, pruneDryRun: "not-candidate" },
@@ -220,6 +317,52 @@ describe("classifyWorkspaceCleanup", () => {
     });
   });
 
+  it("blocks unrecognized runtime evidence instead of falling through safe", () => {
+    expect(
+      classifyWorkspaceCleanup({
+        ...worktree,
+        canonicalCheckout: "error",
+        worktree: "error",
+        branch: {
+          tracking: "error",
+          pullRequest: "merged",
+          pullRequestTip: "matches-current-tip",
+        },
+      }),
+    ).toEqual({
+      repositoryId: "repo-one",
+      targetId: "review-fix",
+      action: "remove-worktree",
+      status: "blocked",
+      reasonCodes: ["observation-invalid"],
+      requiresOperatorConfirmation: true,
+    });
+
+    expect(classifyWorkspaceCleanup({ action: "erase-everything" })).toMatchObject({
+      repositoryId: null,
+      targetId: null,
+      action: null,
+      status: "blocked",
+      reasonCodes: ["observation-invalid"],
+    });
+  });
+
+  it("requires a merged pull request to contain the branch's current tip", () => {
+    expect(
+      classifyWorkspaceCleanup({
+        ...branch,
+        branch: {
+          tracking: "up-to-date",
+          pullRequest: "merged",
+          pullRequestTip: "different-tip",
+        },
+      }),
+    ).toMatchObject({
+      status: "blocked",
+      reasonCodes: ["pull-request-tip-unverified"],
+    });
+  });
+
   it("preserves input order for a caller-owned observation set", () => {
     const proposals = classifyWorkspaceCleanupSet([metadata, worktree, branch]);
     expect(proposals.map((item) => item.action)).toEqual([
@@ -228,6 +371,16 @@ describe("classifyWorkspaceCleanup", () => {
       "remove-branch",
     ]);
     expect(Object.isFrozen(proposals)).toBe(true);
+    expect(classifyWorkspaceCleanupSet("not-an-observation-set")).toEqual([
+      {
+        repositoryId: null,
+        targetId: null,
+        action: null,
+        status: "blocked",
+        reasonCodes: ["observation-invalid"],
+        requiresOperatorConfirmation: true,
+      },
+    ]);
   });
 
   it("exports classification only, with no cleanup executor", () => {

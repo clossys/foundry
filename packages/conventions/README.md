@@ -154,6 +154,7 @@ const proposal = classifyWorkspaceCleanup({
   branch: {
     tracking: observed.branchTracking,
     pullRequest: observed.pullRequestState,
+    pullRequestTip: observed.pullRequestTipState,
   },
 });
 ```
@@ -163,7 +164,15 @@ codes. Precedence is fail-closed: a wrong or unobserved origin, missing
 canonical checkout, or incomplete evidence blocks before ownership is
 considered; known active or dirty state is `owned`; unpushed work and any
 pull-request state other than `merged` block. Worktree-metadata pruning is safe
-only when the caller's prune dry run named that record as a candidate.
+only when the caller's prune dry run named that record as a candidate. A
+`merged` pull request is safe only when the caller also proves that its head
+matches the branch's current tip, so later commits cannot inherit an earlier
+merge disposition.
+
+The exported classifier is runtime-total as well as typed. A JavaScript caller
+or unchecked decoder that supplies a missing field or a value outside a closed
+vocabulary receives a blocked `observation-invalid` proposal rather than an
+exception or a safe fallthrough.
 
 Every result carries `requiresOperatorConfirmation: true`. A safe candidate is
 a reviewable proposal, never deletion authorization. The package exports no
@@ -298,12 +307,13 @@ expander reads like any other bytes.
 | `classifyWorkspaceCleanupSet(observations)` | function | Classifies an ordered caller-owned observation set without discovery or I/O |
 | `WORKSPACE_CLEANUP_REASON_CODES` | `readonly string[]` | Stable machine-readable reason vocabulary for owned, blocked, and safe-candidate results |
 | `WorkspaceCleanupObservation` | type | Discriminated union for worktree removal, branch removal, and stale-metadata pruning evidence |
-| `WorkspaceCleanupProposal` | type | Typed action proposal with status, reason codes, and mandatory operator confirmation; never a command or authorization |
+| `WorkspaceCleanupProposal` | type | Union of valid and invalid typed proposals; every variant remains a review result, never a command or authorization |
+| `WorkspaceCleanupValidProposal` / `WorkspaceCleanupInvalidProposal` | types | Valid action proposals and fail-closed blocked results for runtime values outside the observation contract |
 | `WorkspaceCleanupCommonObservation` / `BranchDispositionObservation` | types | Caller-normalized repository boundary, ownership, completeness, branch-tracking, and pull-request evidence shared by action observations |
 | `WorktreeCleanupObservation` / `BranchCleanupObservation` / `WorktreeMetadataCleanupObservation` | types | Action-specific evidence for worktree removal, branch removal, and stale-metadata pruning |
 | `WorkspaceCleanupAction` / `WorkspaceCleanupStatus` / `WorkspaceCleanupReasonCode` | types | Closed action, classification, and stable reason-code vocabularies |
 | `CanonicalCheckoutState` / `TargetOwnershipState` / `WorktreeState` / `BranchWorktreeState` | types | Closed canonical checkout, target ownership, and worktree observation vocabularies |
-| `BranchTrackingState` / `PullRequestState` / `PruneDryRunState` | types | Closed tracking, pull-request, and prune-dry-run evidence vocabularies |
+| `BranchTrackingState` / `PullRequestState` / `PullRequestTipState` / `PruneDryRunState` | types | Closed tracking, pull-request lifecycle, current-tip matching, and prune-dry-run evidence vocabularies |
 
 ## What this package deliberately does not do
 
