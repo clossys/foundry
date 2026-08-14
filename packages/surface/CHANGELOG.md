@@ -1,5 +1,78 @@
 # Changelog
 
+## [0.4.0] - 2026-08-13
+
+### Added
+
+- `web`: `defineWebTemplate` and `createWebRenderer` — an extensible,
+  instance-scoped registry for a consumer's own web templates, closing
+  issue #175. `defineWebTemplate(options)` validates and freezes a
+  `DefineWebTemplateOptions` candidate (`name`, `flow`, optional
+  `slotKinds`/`repeatingSlots`, `build`) into a real `WebTemplate`, the
+  same "non-empty, unique slot keys" discipline `validateComposeDocument`
+  already holds a `LayoutSpec` to, applied here at definition time instead
+  of first render; a malformed `flow`, a `slotKinds` entry naming a slot
+  `flow.slots` does not declare, or a `repeatingSlots` key colliding with
+  a flowed slot each throw `RenderError("invalid-template-definition",
+  ...)`. `createWebRenderer(options?)` returns an ISOLATED template
+  registry plus the renderer bound to it — `createWebRenderer()` with no
+  arguments knows zero templates, not the three built-ins;
+  `includeBuiltins: true` additionally registers `AuthView`/`ErrorView`/
+  `MarketingView` on that same instance; two independently created
+  renderers never observe each other's templates; a duplicate `name`
+  (across `templates`, and the built-ins when `includeBuiltins` is `true`)
+  throws `RenderError("duplicate-template", ...)` rather than silently
+  keeping the last one registered. This package exports no
+  `registerWebTemplate` or other function that could mutate a shared,
+  module-level map — the global-mutation alternative a consumer might
+  otherwise reach for is structurally unavailable, not merely discouraged.
+  The module-level `renderWebDocument`/`listWebTemplateNames` exports are
+  unchanged — under the hood they are now sugar equivalent to
+  `createWebRenderer({ includeBuiltins: true })`'s own methods, so every
+  existing caller keeps working with a zero-line diff.
+
+  `WebSlotContentKind` (`"copy" | "asset" | "node"`) is the new closed
+  vocabulary for what a flowed slot may hold; a slot key absent from
+  `WebTemplate.slotKinds` defaults to `["copy", "asset"]`, the same two
+  sources `AuthView`/`ErrorView`'s existing slots have always accepted, so
+  a template defined without ever mentioning `slotKinds` behaves
+  identically to today. `"node"` is the new, narrow, per-slot opt-in for a
+  real caller-owned `ReactNode` the caller's own trusted code already
+  constructed — never a raw HTML string, never
+  `dangerouslySetInnerHTML`, never audience-supplied or
+  copy-registry-resolved content; React's own child-rendering already
+  escapes text/attribute values by default, and a node slot's safety
+  rests entirely on staying inside that path. `RenderWebOptions.nodes`
+  carries a document's resolved single-binding node content into
+  `renderWebDocument`/`WebRenderer.renderWebDocument`, mirroring how
+  `RenderWebOptions.groups` already carries repeating-group content; a
+  node for an unregistered or non-`"node"`-kind slot, or one colliding
+  with a slot a `copy`/`asset` binding already filled, fails closed with
+  `RenderError("resolution-failed", ...)`. Symmetrically, a `copy`/
+  `assetId` binding against a slot whose declared kinds do not include
+  it is refused the same way.
+
+  `core`: `resolveSurfaceDocument` gained a third, optional parameter,
+  `ResolveSurfaceDocumentOptions` (`{ nodeSlots?: Iterable<string> }`).
+  Previously a single (non-repeating) `SurfaceSlotBinding` whose source
+  was `node` refused UNCONDITIONALLY with
+  `SurfaceResolutionError("unsupported-node", ...)`; that refusal is now
+  conditional on whether the binding's `slot` is named in `nodeSlots` — an
+  allowlist a caller builds from the target template's own declared
+  `slotKinds` (see `web`'s `defineWebTemplate`/`WebTemplate.slotKinds`
+  above), never inferred by `core` itself, which has no concept of a
+  "template" of its own. Omitting `nodeSlots` (its default) preserves
+  EXACTLY today's unconditional-refusal behavior — this is a purely
+  additive change for every existing caller. A newly-allowed node
+  resolves into the new `ResolvedSurfaceDocument.nodes` field (an array of
+  `{ slot, node }`, the `ResolvedSurfaceNode` type), omitted entirely — not
+  an empty array — when no such binding was authored, the identical
+  convention `ResolvedSurfaceDocument.groups` already uses; it is never
+  lowered into the legacy `ComposeDocument.bindings` shape, which has no
+  field that could carry a `node` value at all. A `node` binding
+  contributes no `CopyResolution` — it is never resolved through `CopyRef`
+  — so it appears nowhere in `resolutions`/manifest copy provenance; that
+  absence is documented behavior, not a gap.
 ## [0.3.1] - 2026-08-13
 
 ### Changed

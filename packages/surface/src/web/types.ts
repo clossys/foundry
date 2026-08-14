@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { ResolvedSurfaceGroup } from "../core/index.js";
+import type { ComposeDocument, FlowLayoutSpec, ResolvedSurfaceGroup, ResolvedSurfaceNode } from "../core/index.js";
 
 // ---------------------------------------------------------------------------
 // CopyResolver — the copyId seam, resolved
@@ -89,6 +89,19 @@ export interface RenderWebOptions {
    * comment.
    */
   groups?: ResolvedSurfaceGroup[];
+  /**
+   * A resolved `SurfaceDocument`'s single-binding `node` content — the
+   * same `ResolvedSurfaceDocument.nodes` `resolveSurfaceDocument`
+   * (`surface/core`) produces for a `SurfaceSlotBinding` whose source is
+   * `node` and whose `slot` was named in that call's own `nodeSlots`
+   * option. Omit when the document has no such binding at all (the same
+   * "omitted, not an empty array" convention `groups` itself uses). Only a
+   * slot the target template declares `"node"`-kind (via `WebTemplate.
+   * slotKinds`, set through `defineWebTemplate`) accepts an entry here —
+   * see `renderWebDocument.ts`'s own doc comment for the exact fail-closed
+   * rule when a node targets an unknown or non-node-kind slot.
+   */
+  nodes?: ResolvedSurfaceNode[];
 }
 
 /** What `renderWebDocument` returns: the two things a web `ComposeDocument` renders to. See `renderWebDocument.ts`'s own doc comment. */
@@ -144,4 +157,146 @@ export interface WebOpenGraphMetadata {
 export interface WebTwitterMetadata {
   card?: "summary" | "summary_large_image";
   site?: string;
+}
+
+// ---------------------------------------------------------------------------
+// WebSlotContentKind / WebTemplate — the extensible template registry
+// ---------------------------------------------------------------------------
+
+/**
+ * What a `WebTemplate`'s declared flowed slot is permitted to receive.
+ * Closed vocabulary, deliberately three members and no more:
+ *
+ *   - `"copy"` — resolved `CopyRef` text (a `SurfaceSlotBinding.copy`,
+ *     lowered by `resolveSurfaceDocument` into a plain string).
+ *   - `"asset"` — a resolved `AssetRecord` (a `SurfaceSlotBinding.assetId`),
+ *     rendered as a real `<img>`.
+ *   - `"node"` — a caller-owned `ReactNode` the caller's OWN trusted code
+ *     already constructed (a composed `AuthView` form, a widget built from
+ *     `@vespeneventures/ui` atoms, a small caller-authored component) —
+ *     never a raw HTML string, never audience-supplied or copy-registry
+ *     content. This is the dangerous one: see `renderWebDocument.ts`'s own
+ *     doc comment, "RICH-NODE SLOTS", for exactly what a `"node"`-kind slot
+ *     may and may not contain, and why there is no `dangerouslySetInnerHTML`
+ *     anywhere on this path. A `"node"`-kind slot is opt-in PER SLOT on a
+ *     template's own `slotKinds` — never a renderer-wide switch a consumer
+ *     could flip once to loosen every slot at once.
+ *
+ * A slot key absent from `WebTemplate.slotKinds` defaults to `["copy",
+ * "asset"]` — the exact two sources `AuthView`/`ErrorView`'s existing
+ * flowed slots already accept today, so a template defined without ever
+ * mentioning `slotKinds` behaves identically to one that spelled the
+ * default out by hand.
+ */
+export type WebSlotContentKind = "copy" | "asset" | "node";
+
+/**
+ * One resolved item inside a repeating web slot, already turned into
+ * paintable React content by `renderWebDocument` — exactly one of
+ * `text`/`element`/`node` is set. See `internal/webTemplates.ts` for the
+ * fuller doc comment on why this exists as a separate shape from a single
+ * slot's resolved content.
+ */
+export interface ResolvedWebGroupItem {
+  index: number;
+  text?: string;
+  element?: ReactNode;
+  node?: object;
+}
+
+/** One repeating slot key a `WebTemplate` expects to receive via `RenderWebOptions.groups`, and whether that slot must be present (not necessarily non-empty). */
+export interface RepeatingWebSlotSpec {
+  key: string;
+  required?: boolean;
+}
+
+/**
+ * One template a `WebRenderer` knows how to render — the unit both the
+ * three built-ins (`AuthView`, `ErrorView`, `MarketingView`) and a
+ * consumer's own `defineWebTemplate`-built entries share. `flow` is
+ * handed to the shared `resolveDocument(doc, flow)` resolver exactly as
+ * every existing template already uses it; `build` turns resolved slot
+ * content into the real `@vespeneventures/ui`-composed element. See
+ * `defineWebTemplate` for the validated, frozen way to construct one of
+ * these — constructing a `WebTemplate` object literal by hand bypasses
+ * that validation, the same way constructing a `SurfaceDocument` by hand
+ * bypasses `validateSurfaceDocument` until something actually calls it.
+ */
+export interface WebTemplate {
+  /** The exact `SurfaceDocument.template` string this entry answers to. */
+  name: string;
+  /** Handed to `resolveDocument(doc, flow)` as-is. */
+  flow: FlowLayoutSpec;
+  /** The repeating slot keys this template expects. Omitted (or empty) for a template with no repeating content, e.g. `AuthView`/`ErrorView`. */
+  repeatingSlots?: RepeatingWebSlotSpec[];
+  /**
+   * Declares what each of `flow.slots`' keys may be filled with. A slot
+   * key absent from this map defaults to `["copy", "asset"]` — see
+   * `WebSlotContentKind`'s own doc comment. A slot must be listed with
+   * `"node"` explicitly (alongside or instead of `"copy"`/`"asset"`) to
+   * accept a rich node; this is opt-in per slot, never a renderer-wide
+   * switch.
+   */
+  slotKinds?: Record<string, WebSlotContentKind[]>;
+  /**
+   * Builds the real element from resolved slot content. Missing optional
+   * slots are simply absent keys in `content`. `groups` carries every
+   * repeating slot's resolved items, keyed by slot — absent for a
+   * template with no `repeatingSlots`, or for an optional repeating slot
+   * this document never bound. A `build` function for a template with no
+   * repeating slots may ignore the second parameter entirely.
+   */
+  build: (content: Record<string, ReactNode>, groups: Record<string, ResolvedWebGroupItem[]>) => ReactNode;
+}
+
+/**
+ * What `defineWebTemplate` accepts — everything needed to construct one
+ * validated, frozen `WebTemplate`. See `defineWebTemplate`'s own doc
+ * comment for the exact validation performed and what throws.
+ */
+export interface DefineWebTemplateOptions {
+  /** The exact `SurfaceDocument.template` string this entry answers to. Must be unique within whichever renderer it is registered on — see `createWebRenderer`. */
+  name: string;
+  /** Same shape every existing template already uses — see `WebTemplate.flow`. */
+  flow: FlowLayoutSpec;
+  /** See `WebTemplate.slotKinds`. */
+  slotKinds?: Record<string, WebSlotContentKind[]>;
+  /** See `WebTemplate.repeatingSlots`. */
+  repeatingSlots?: RepeatingWebSlotSpec[];
+  /** See `WebTemplate.build`. */
+  build: (content: Record<string, ReactNode>, groups: Record<string, ResolvedWebGroupItem[]>) => ReactNode;
+}
+
+/**
+ * What `createWebRenderer` accepts. See `createWebRenderer`'s own doc
+ * comment — in `internal/createWebRenderer.ts` — for the full instance-
+ * scoping argument this type exists to support.
+ */
+export interface CreateWebRendererOptions {
+  /** Every template this renderer instance knows, beyond any built-ins. Construct each with `defineWebTemplate`. */
+  templates?: WebTemplate[];
+  /**
+   * Register `AuthView`/`ErrorView`/`MarketingView` under this instance
+   * too. Default `false` — a renderer built with no arguments at all
+   * knows ZERO templates, not the three built-ins; see `createWebRenderer`'s
+   * own doc comment, "Built-ins become opt-in, not gone".
+   */
+  includeBuiltins?: boolean;
+}
+
+/**
+ * One isolated template registry plus the renderer bound to it — what
+ * `createWebRenderer` returns. Every method here is scoped to exactly the
+ * templates that renderer instance was built with; a second, independently
+ * created `WebRenderer` never observes them, and vice versa. See
+ * `createWebRenderer`'s own doc comment for the full instance-scoping
+ * argument.
+ */
+export interface WebRenderer {
+  /** Identical contract to the module-level `renderWebDocument`, scoped to this instance's own templates. */
+  renderWebDocument(doc: ComposeDocument, options?: RenderWebOptions): RenderWebResult;
+  /** Identical contract to the module-level `listWebTemplateNames`, scoped to this instance's own templates. */
+  listWebTemplateNames(): string[];
+  /** The `WebTemplate` registered under `name` on THIS instance, or `undefined` if `name` names no template this instance knows. */
+  getWebTemplate(name: string): WebTemplate | undefined;
 }

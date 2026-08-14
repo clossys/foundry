@@ -92,4 +92,4 @@ export { getSlotSpec, listSlotKeys, requiredSlotKeys } from "./slots.js";
 export { collectCopyProvenance, createOutputManifest, createResolvedOutputManifest } from "./output-manifest.js";
 
 export { resolveSurfaceDocument, SurfaceResolutionError } from "./resolve-surface.js";
-export type { ResolvedSurfaceDocument, ResolvedSurfaceGroup, ResolvedSurfaceGroupItem, SurfaceResolutionReason } from "./resolve-surface.js";
+export type { ResolvedSurfaceDocument, ResolvedSurfaceGroup, ResolvedSurfaceGroupItem, ResolvedSurfaceNode, ResolveSurfaceDocumentOptions, SurfaceResolutionReason } from "./resolve-surface.js";

@@ -3,10 +3,13 @@
  * `SurfaceDocument.template` actually name, and what slots does it have?"
  *
  * A surface template is a plain string so the canonical contract remains
- * data-only. This registry owns the real slot shapes for the generic web
- * views this package ships (`AuthView`, `ErrorView`, `MarketingView`).
- * Canonical callers resolve a `SurfaceDocument` before rendering; the
- * renderer-compatible `ComposeDocument` only exists as that internal
+ * data-only. This file owns the real slot shapes for the generic web views
+ * this package ships (`AuthView`, `ErrorView`, `MarketingView`) — see
+ * `BUILTIN_WEB_TEMPLATES` below — plus the shared helpers a
+ * caller-registered template (built via `defineWebTemplate`, in the
+ * sibling `defineWebTemplate.ts`) and the module-level sugar renderer both
+ * need. Canonical callers resolve a `SurfaceDocument` before rendering;
+ * the renderer-compatible `ComposeDocument` only exists as that internal
  * compatibility lowering.
  *
  * Every template uses `FlowLayoutSpec`: flowed slots express only their key,
@@ -36,60 +39,30 @@
 
 import type { ReactNode } from "react";
 import { createElement } from "react";
-import type { FlowLayoutSpec } from "../../core/index.js";
 import { RenderError } from "../../internal/errors.js";
 import { AuthView, ErrorView, MarketingView } from "../views/index.js";
 import type { MarketingFaqItem, MarketingFeatureItem } from "../views/index.js";
+import type { ResolvedWebGroupItem, WebSlotContentKind, WebTemplate } from "../types.js";
+
+export type { RepeatingWebSlotSpec, ResolvedWebGroupItem, WebTemplate } from "../types.js";
 
 /**
- * One resolved item inside a repeating web slot, already turned into
- * paintable React content by `renderWebDocument` — exactly one of
- * `text`/`element`/`node` is set, mirroring whichever source
- * `resolve-surface.ts`'s `ResolvedSurfaceGroupItem` carried (`value` ->
- * `text`, a resolved `assetId` -> a real `<img>` `element`, a caller-owned
- * `node` -> passed through untouched, exactly like `AuthView.form`'s own
- * "rendered as given" treatment). `index` is the item's ordinal position
- * in authored order — see `resolve-surface.ts`'s own doc comment on why
- * this exists independent of array order.
+ * The two content sources every flowed web slot has always accepted —
+ * `AuthView`/`ErrorView`/`MarketingView` never declare `slotKinds` at all,
+ * so every one of their slots falls back to this default. See
+ * `WebSlotContentKind`'s own doc comment (`../types.ts`) for the full
+ * three-member vocabulary this is a subset of.
  */
-export interface ResolvedWebGroupItem {
-  index: number;
-  text?: string;
-  element?: ReactNode;
-  node?: object;
+export const DEFAULT_WEB_SLOT_KINDS: readonly WebSlotContentKind[] = ["copy", "asset"];
+
+/** The content kinds `template` declares slot `key` may be filled with — `template.slotKinds[key]` when present, else `DEFAULT_WEB_SLOT_KINDS`. */
+export function slotKindsFor(template: WebTemplate, key: string): readonly WebSlotContentKind[] {
+  return template.slotKinds?.[key] ?? DEFAULT_WEB_SLOT_KINDS;
 }
 
-/** One repeating slot key a `WebTemplate` expects to receive via `RenderWebOptions.groups`, and whether that slot must be present (not necessarily non-empty — see this file's own top comment). */
-export interface RepeatingWebSlotSpec {
-  key: string;
-  required?: boolean;
-}
-
-/**
- * One template this package knows how to render: `layout` is what gets
- * handed to the compatibility renderer, and `build` turns resolved slot content
- * (plain strings — see `renderWebDocument.ts`'s own doc comment for why
- * only plain text ever reaches a slot) into the real `@vespeneventures/ui`
- * element.
- */
-export interface WebTemplate {
-  /** The exact `SurfaceDocument.template` string this entry answers to. */
-  name: string;
-  /** Handed to `resolveDocument(doc, flow)` as-is. */
-  flow: FlowLayoutSpec;
-  /** The repeating slot keys this template expects — see this file's own top comment. Omitted (or empty) for a template with no repeating content, e.g. `AuthView`/`ErrorView`. */
-  repeatingSlots?: RepeatingWebSlotSpec[];
-  /**
-   * Builds the real element from resolved slot content. Missing optional
-   * slots are simply absent keys in `content`. `groups` carries every
-   * repeating slot's resolved items, keyed by slot — absent for a
-   * template with no `repeatingSlots`, or for an optional repeating slot
-   * this document never bound. A `build` function for a template with no
-   * repeating slots may ignore the second parameter entirely (every
-   * existing `WebTemplate.build` implementation does, and TypeScript
-   * permits the shorter arity).
-   */
-  build: (content: Record<string, ReactNode>, groups: Record<string, ResolvedWebGroupItem[]>) => ReactNode;
+/** Every flowed slot key `template` declares `"node"`-kind, in `flow.slots` order — the set `resolveSurfaceDocument`'s own `nodeSlots` option should be built from for this template (see `core/resolve-surface.ts`). */
+export function nodeSlotKeys(template: WebTemplate): string[] {
+  return template.flow.slots.filter((slot) => slotKindsFor(template, slot.key).includes("node")).map((slot) => slot.key);
 }
 
 const AUTH_VIEW_TEMPLATE: WebTemplate = {
@@ -255,16 +228,47 @@ const MARKETING_VIEW_TEMPLATE: WebTemplate = {
   },
 };
 
-const WEB_TEMPLATES: ReadonlyMap<string, WebTemplate> = new Map(
-  [AUTH_VIEW_TEMPLATE, ERROR_VIEW_TEMPLATE, MARKETING_VIEW_TEMPLATE].map((t) => [t.name, t]),
-);
+/** This package's three shipped web templates, in the fixed order they've always been declared in. Used both to build the module-level sugar registry below, and as `createWebRenderer`'s `includeBuiltins: true` source. */
+export const BUILTIN_WEB_TEMPLATES: readonly WebTemplate[] = [AUTH_VIEW_TEMPLATE, ERROR_VIEW_TEMPLATE, MARKETING_VIEW_TEMPLATE];
 
-/** Every template name this package's web renderer currently knows — `AuthView`, `ErrorView`, `MarketingView`. */
+/**
+ * Builds a `name -> WebTemplate` map from `templates`, refusing rather than
+ * silently keeping the last one when two entries share a `name` — the
+ * single place this check lives, reused by both the module-level built-in
+ * registry below (where a collision is structurally impossible, since the
+ * three built-in names are fixed and distinct) and `createWebRenderer`
+ * (`./createWebRenderer.ts`, where a consumer's own `templates` — plus
+ * the built-ins, when `includeBuiltins` is `true` — genuinely can
+ * collide). One check, one behavior, everywhere a `WebTemplate[]` becomes
+ * a lookup map in this package.
+ */
+export function buildTemplateMap(templates: readonly WebTemplate[]): ReadonlyMap<string, WebTemplate> {
+  const map = new Map<string, WebTemplate>();
+  for (const template of templates) {
+    if (map.has(template.name)) {
+      throw new RenderError(
+        "duplicate-template",
+        `createWebRenderer refused: template name "${template.name}" is registered more than once. Every WebTemplate.name must be unique within one renderer instance — rename one of the two, or register only one of them.`,
+      );
+    }
+    map.set(template.name, template);
+  }
+  return map;
+}
+
+const WEB_TEMPLATES: ReadonlyMap<string, WebTemplate> = buildTemplateMap(BUILTIN_WEB_TEMPLATES);
+
+/** Every template name this package's module-level web renderer currently knows — `AuthView`, `ErrorView`, `MarketingView`. For a renderer scoped to a consumer's OWN templates, see `createWebRenderer`. */
 export function listWebTemplateNames(): string[] {
   return [...WEB_TEMPLATES.keys()];
 }
 
-/** The `WebTemplate` registered under `name`, or `undefined` if `name` names no known template. */
+/** The `WebTemplate` registered under `name` on the module-level built-in registry, or `undefined` if `name` names no known template. For a renderer scoped to a consumer's OWN templates, see `createWebRenderer`. */
 export function getWebTemplate(name: string): WebTemplate | undefined {
   return WEB_TEMPLATES.get(name);
+}
+
+/** The module-level built-in template registry — what the sugar `renderWebDocument`/`listWebTemplateNames`/`getWebTemplate` exports resolve against. Exported for `renderWebDocument.ts` and `createWebRenderer.ts` to share, never mutated after this module first evaluates. */
+export function defaultWebTemplateMap(): ReadonlyMap<string, WebTemplate> {
+  return WEB_TEMPLATES;
 }

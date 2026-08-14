@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getWebTemplate, listWebTemplateNames } from "./webTemplates.js";
+import { BUILTIN_WEB_TEMPLATES, DEFAULT_WEB_SLOT_KINDS, getWebTemplate, listWebTemplateNames, nodeSlotKeys, slotKindsFor } from "./webTemplates.js";
 
 describe("web template registry", () => {
   it("lists exactly the three templates this package's web renderer knows today", () => {
@@ -39,5 +39,31 @@ describe("web template registry", () => {
   it("AuthView and ErrorView declare no repeating slots at all", () => {
     expect(getWebTemplate("AuthView")!.repeatingSlots).toBeUndefined();
     expect(getWebTemplate("ErrorView")!.repeatingSlots).toBeUndefined();
+  });
+
+  it("BUILTIN_WEB_TEMPLATES is exactly the three built-ins, in their declared order", () => {
+    expect(BUILTIN_WEB_TEMPLATES.map((t) => t.name)).toEqual(["AuthView", "ErrorView", "MarketingView"]);
+  });
+});
+
+describe("web template registry — slotKinds default to ['copy', 'asset'], no built-in declares 'node'", () => {
+  it("none of the three built-ins declare slotKinds at all", () => {
+    for (const template of BUILTIN_WEB_TEMPLATES) {
+      expect(template.slotKinds).toBeUndefined();
+    }
+  });
+
+  it("slotKindsFor returns the shared default for every flowed slot on every built-in", () => {
+    for (const template of BUILTIN_WEB_TEMPLATES) {
+      for (const slot of template.flow.slots) {
+        expect(slotKindsFor(template, slot.key)).toEqual(DEFAULT_WEB_SLOT_KINDS);
+      }
+    }
+  });
+
+  it("nodeSlotKeys is empty for every built-in — none declares a node-kind slot", () => {
+    for (const template of BUILTIN_WEB_TEMPLATES) {
+      expect(nodeSlotKeys(template)).toEqual([]);
+    }
   });
 });

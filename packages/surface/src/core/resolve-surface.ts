@@ -42,15 +42,49 @@ export interface ResolvedSurfaceGroup {
   items: ResolvedSurfaceGroupItem[];
 }
 
+/**
+ * One resolved single-binding `node` slot — the non-repeating counterpart
+ * to a repeating group's per-item `node`. See `ResolvedSurfaceDocument.nodes`
+ * and `resolveSurfaceDocument`'s own `nodeSlots` option for how a binding
+ * ends up here instead of throwing `unsupported-node`.
+ */
+export interface ResolvedSurfaceNode {
+  slot: string;
+  node: object;
+}
+
+/**
+ * Slot keys a caller has declared safe to carry a caller-owned `node`
+ * value on a SINGLE (non-repeating) binding — the opt-in that turns
+ * `resolveSurfaceDocument`'s formerly-unconditional `unsupported-node`
+ * refusal into a per-slot check. `core` has no concept of a "template" or
+ * a "slot kind" of its own — those are `@vespeneventures/surface/web`
+ * concepts (`WebTemplate.slotKinds`, `defineWebTemplate`). This option is
+ * deliberately the narrowest possible seam between the two: a plain set of
+ * slot keys, supplied by whatever caller already knows which of its own
+ * template's slots accept a rich node — `web`'s `createWebRenderer`-built
+ * renderers derive this set from a template's own `slotKinds` declaration
+ * (see `web/internal/webTemplates.ts`'s `nodeSlotKeys`) and hand it to this
+ * function before ever calling a `web` renderer. A caller who never
+ * supplies `nodeSlots` (or supplies an empty one) gets EXACTLY today's
+ * behavior: every single-binding `node` refuses, unconditionally — this
+ * option is additive, never a relaxation by default.
+ */
+export interface ResolveSurfaceDocumentOptions {
+  nodeSlots?: Iterable<string>;
+}
+
 export interface ResolvedSurfaceDocument {
   /**
    * Compatibility input for the existing deterministic channel renderers.
    * A `SurfaceRepeatingSlotBinding` is never lowered into this shape —
    * `ComposeDocument`'s `SlotBinding` has no way to carry more than one
-   * source per slot, and forcing an approximation in here (first item
-   * only, items joined into one string, ...) would silently discard real
-   * structure. See `groups` below for where a repeating slot's resolved
-   * content actually lives.
+   * source per slot — and neither is a single binding's `node` source,
+   * for the identical reason: `SlotBinding` has no field that could carry
+   * it at all. Forcing an approximation in here (stringifying it, dropping
+   * it silently) would misrepresent real structure as text or discard it.
+   * See `groups`/`nodes` below for where that resolved content actually
+   * lives instead.
    */
   document: ComposeDocument;
   /**
@@ -60,7 +94,10 @@ export interface ResolvedSurfaceDocument {
    * it came from a single binding or one item of a repeating group. This
    * is what lets provenance collection extend to repeating groups for
    * free: it was already structural over every `CopyResolution` produced,
-   * never keyed by which binding shape produced it.
+   * never keyed by which binding shape produced it. `nodes` (below)
+   * contributes nothing here — a `node` binding is never resolved through
+   * `CopyRef`/`CopyResolver` at all, so there is no `CopyResolution` to
+   * collect for it; see `nodes`'s own doc comment.
    */
   resolutions: CopyResolution[];
   /**
@@ -71,17 +108,40 @@ export interface ResolvedSurfaceDocument {
    * `ResolvedSurfaceDocument` before and after this field existed.
    */
   groups?: ResolvedSurfaceGroup[];
+  /**
+   * Resolved single-binding `node` slots — every `SurfaceSlotBinding` whose
+   * source was `node` AND whose `slot` appeared in `options.nodeSlots` (see
+   * `resolveSurfaceDocument`'s own doc comment). Omitted entirely — not an
+   * empty array, the identical convention `groups` already uses — when no
+   * such binding was authored, so a document with no `node` binding (or
+   * one authored before `nodeSlots` existed) resolves byte-identically to
+   * before this field existed. A `node` binding never contributes a
+   * `CopyResolution` to `resolutions` — it carries a caller-owned rich
+   * value, never audience-facing copy resolved through a registry — so a
+   * manifest reviewer reading `resolutions`/`collectCopyProvenance` should
+   * expect no entry for a slot listed here; that absence is the intended
+   * behavior, not a gap in provenance collection.
+   */
+  nodes?: ResolvedSurfaceNode[];
 }
 
 /**
  * Resolves a canonical `SurfaceDocument` through a real `CopyResolver`.
  * It fails closed: invalid references, missing/draft/unapproved registry
- * entries, and caller-owned `node` bindings (on a single binding — see
- * `groups` for the repeating case) all refuse rather than being replaced
- * with literals or silently omitted. `node` remains on the authored
- * contract for a future direct web composition path; a single binding's
- * `node` cannot be truthfully represented by the legacy string renderer
- * input, so it is refused here exactly as before.
+ * entries, and an unauthorized caller-owned `node` binding (on a single
+ * binding — see `groups` for the repeating case, which has no such
+ * restriction) all refuse rather than being replaced with literals or
+ * silently omitted.
+ *
+ * A single binding's `node` is refused with `SurfaceResolutionError
+ * ("unsupported-node", ...)` UNLESS its `slot` appears in
+ * `options.nodeSlots` — see that option's own doc comment for why this is
+ * a caller-supplied allowlist rather than this function inferring
+ * anything about templates on its own. When allowed, the resolved `{ slot,
+ * node }` pair is collected into `nodes` (see `ResolvedSurfaceDocument.
+ * nodes`) instead of being lowered into `document.bindings` — `SlotBinding`
+ * has no field that could carry a `node` value at all, the same reason a
+ * repeating group's items never lower into `document.bindings` either.
  *
  * PARTIAL-ITEM-FAILURE, DELIBERATELY FAIL-THE-WHOLE-DOCUMENT: a bad item
  * inside a `SurfaceRepeatingSlotBinding` — an unresolved `CopyRef`, same
@@ -96,7 +156,7 @@ export interface ResolvedSurfaceDocument {
  * just `bindings.N`), so a caller can tell which of six capability-grid
  * entries broke without re-deriving it from a stack trace.
  */
-export function resolveSurfaceDocument(surface: SurfaceDocument, resolver: CopyResolver): ResolvedSurfaceDocument {
+export function resolveSurfaceDocument(surface: SurfaceDocument, resolver: CopyResolver, options: ResolveSurfaceDocumentOptions = {}): ResolvedSurfaceDocument {
   const findings = validateSurfaceDocument(surface);
   if (findings.some((finding) => finding.severity === "error")) {
     throw new SurfaceResolutionError("invalid-surface", `resolveSurfaceDocument refused invalid surface "${surface.id}": ${findings.map((finding) => finding.message).join("; ")}`);
@@ -104,6 +164,8 @@ export function resolveSurfaceDocument(surface: SurfaceDocument, resolver: CopyR
   if (typeof resolver !== "function") {
     throw new SurfaceResolutionError("unresolved-copy", `resolveSurfaceDocument needs a CopyResolver for surface "${surface.id}".`);
   }
+
+  const nodeSlots = new Set(options.nodeSlots ?? []);
 
   const resolutions: CopyResolution[] = [];
   const text = (ref: CopyRef, path: string): string => {
@@ -116,6 +178,7 @@ export function resolveSurfaceDocument(surface: SurfaceDocument, resolver: CopyR
   };
 
   const groups: ResolvedSurfaceGroup[] = [];
+  const nodes: ResolvedSurfaceNode[] = [];
 
   const bindings = surface.bindings.flatMap((binding, index): SlotBinding[] => {
     if (isSurfaceRepeatingSlotBinding(binding)) {
@@ -124,7 +187,17 @@ export function resolveSurfaceDocument(surface: SurfaceDocument, resolver: CopyR
     }
     if (binding.copy !== undefined) return [{ slot: binding.slot, value: text(binding.copy, `bindings.${index}.copy`) }];
     if (binding.assetId !== undefined) return [{ slot: binding.slot, assetId: binding.assetId }];
-    throw new SurfaceResolutionError("unsupported-node", `resolveSurfaceDocument cannot lower caller-owned node binding at bindings.${index}; render that web node through a direct surface-web composition.`);
+    // binding.node !== undefined here — validateSurfaceDocument's
+    // surface-binding-source-exclusive rule already guarantees exactly one
+    // of copy/node/assetId reached this point.
+    if (!nodeSlots.has(binding.slot)) {
+      throw new SurfaceResolutionError(
+        "unsupported-node",
+        `resolveSurfaceDocument cannot lower caller-owned node binding at bindings.${index} (slot "${binding.slot}"); pass { nodeSlots: [...] } naming this slot (see a template's own node-kind slots, e.g. @vespeneventures/surface/web's defineWebTemplate/WebTemplate.slotKinds), or render that web node through a direct surface-web composition.`,
+      );
+    }
+    nodes.push({ slot: binding.slot, node: binding.node as object });
+    return [];
   });
 
   const meta = resolveMeta(surface.meta, text);
@@ -132,6 +205,7 @@ export function resolveSurfaceDocument(surface: SurfaceDocument, resolver: CopyR
     document: { id: surface.id, channel: surface.channel, meta, template: surface.template, bindings, ...(surface.layout === undefined ? {} : { layout: surface.layout }) },
     resolutions,
     ...(groups.length > 0 ? { groups } : {}),
+    ...(nodes.length > 0 ? { nodes } : {}),
   };
 }
 
