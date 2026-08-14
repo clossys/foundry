@@ -9,7 +9,9 @@
  * tarball, install it into a genuinely isolated temporary directory with no
  * workspace file and no sibling `node_modules` to fall back on, and try to
  * check every subpath the package's own `exports` field claims: import
- * executable JS/TS targets and verify static assets are present.
+ * executable JS/TS targets, verify static assets are present, and expand a
+ * wildcard subpath against what actually shipped rather than looking for a
+ * file literally named `*`.
  *
  * Real subprocess work, real I/O, on purpose — this is the first layer of
  * this foundation where that is the point rather than something to avoid.
@@ -17,7 +19,8 @@
 
 import { execFile as execFileCb } from "node:child_process";
 import { promisify } from "node:util";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import type { Dirent } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative, resolve } from "node:path";
 import type { Finding } from "../gates/index.js";
@@ -340,6 +343,22 @@ function isRuntimeTarget(target: string | undefined): boolean {
 }
 
 /**
+ * Whether a target might resolve to something Node executes, and therefore
+ * needs this package's runtime peers installed before it can be checked.
+ * Decided BEFORE the install, so a pattern target cannot yet be expanded: it
+ * is judged by its trailer instead (`./adapters/*.js` executes, `./styles/*.css`
+ * does not), and an extensionless pattern such as `./documents/*` — which
+ * could expand to either — installs peers rather than risking a false import
+ * failure. Installing peers that turn out to be unnecessary costs time; not
+ * installing peers that turn out to be necessary costs a wrong answer.
+ */
+function mayNeedRuntimePeers(target: string | undefined): boolean {
+  if (target === undefined || !isPatternSubpath(target)) return isRuntimeTarget(target);
+  const trailer = target.slice(target.lastIndexOf("*") + 1);
+  return !/\.[^./]+$/.test(trailer) || RUNTIME_TARGET_EXTENSIONS.test(trailer);
+}
+
+/**
  * Checks an asset target directly in node_modules. Static exports such as CSS
  * and JSONC are valid package API but cannot be imported by Node as modules.
  */
@@ -348,6 +367,97 @@ function staticTargetExists(installedPackageDir: string, target: string): boolea
   const resolved = resolve(installedPackageDir, target);
   const rel = relative(installedPackageDir, resolved);
   return rel !== "" && !rel.startsWith("..") && !rel.includes(`..${process.platform === "win32" ? "\\" : "/"}`) && existsSync(resolved);
+}
+
+/**
+ * Node's `exports` map may declare PATTERN keys as well as literal ones — a
+ * subpath containing a single `*`, whose matched segment is substituted into
+ * the target (`"./documents/*": "./documents/*"`, so `pkg/documents/a.txt`
+ * resolves to `./documents/a.txt`). This is ordinary, standard `exports`
+ * syntax, but a pattern is not a path: nothing on disk is ever named
+ * `documents/*`. Checking one the way a literal subpath is checked therefore
+ * looks for a file that cannot exist and reports a package which shipped
+ * everything it promised as missing its assets — a false failure, and one
+ * that surfaces at the worst possible moment, since the round trip runs
+ * against an already-published tarball.
+ *
+ * A pattern is instead verified by EXPANSION: match its target against the
+ * files that actually shipped inside the installed tarball, then check every
+ * expansion exactly the way any other subpath is checked — import the
+ * executable ones, confirm the static ones are present.
+ *
+ * WHAT "VERIFIED" MEANS FOR A PATTERN, chosen deliberately: at least one
+ * match is required, and each match is then checked. Requiring at least one
+ * is the real assertion. A pattern that expands to nothing exports nothing
+ * to a consumer, which is a genuine defect worth failing on — a renamed
+ * directory, a `files` entry that stopped shipping the contents, or a key
+ * carrying two `*`s that Node's resolver can never select — and it is
+ * exactly the class of silent breakage this round trip exists to catch. The
+ * alternative framing, "expand and require every match to exist", is vacuous
+ * here: the expansion is produced BY listing what shipped, so every match
+ * exists by construction. Existence is not the open question for a pattern;
+ * whether it exports anything at all is.
+ */
+function isPatternSubpath(subpath: string): boolean {
+  return subpath.includes("*");
+}
+
+/** How many `*` characters an `exports` key or target carries. */
+function starCount(pattern: string): number {
+  return pattern.split("*").length - 1;
+}
+
+/** Substitutes a matched segment into a pattern, replacing EVERY `*` — the same substitution Node's own resolver performs on a pattern target. */
+function substituteStar(pattern: string, star: string): string {
+  return pattern.split("*").join(star);
+}
+
+const REGEX_METACHARACTERS = /[.*+?^${}()|[\]\\]/g;
+
+/**
+ * Every segment a pattern target's `*` matched among the files that actually
+ * shipped, deduplicated and sorted so an expansion is deterministic. A second
+ * `*` in a target must match the SAME segment as the first (Node substitutes
+ * one matched value into all of them), which is why the trailing occurrences
+ * become a backreference rather than another capture group.
+ */
+function matchPatternTarget(files: readonly string[], target: string): string[] {
+  if (!target.startsWith("./") || starCount(target) === 0) return [];
+  const escape = (part: string): string => part.replace(REGEX_METACHARACTERS, "\\$&");
+  const parts = target.slice(2).split("*");
+  const matcher = new RegExp(`^${escape(parts[0] ?? "")}(.*)${parts.slice(1).map(escape).join("\\1")}$`);
+  const stars = new Set<string>();
+  for (const file of files) {
+    const match = matcher.exec(file);
+    if (match?.[1] !== undefined) stars.add(match[1]);
+  }
+  return [...stars].sort();
+}
+
+/**
+ * Every file inside the installed package, as `/`-separated paths relative to
+ * it — the set a pattern target is expanded against. `node_modules` is
+ * skipped: a nested dependency tree is not part of what this package promised
+ * to ship, and an unanchored pattern would otherwise expand across all of it.
+ */
+function installedFileList(installedPackageDir: string): string[] {
+  const files: string[] = [];
+  const walk = (dir: string, prefix: string): void => {
+    let entries: Dirent[];
+    try {
+      entries = readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      if (entry.name === "node_modules") continue;
+      const rel = prefix === "" ? entry.name : `${prefix}/${entry.name}`;
+      if (entry.isDirectory()) walk(join(dir, entry.name), rel);
+      else files.push(rel);
+    }
+  };
+  walk(installedPackageDir, "");
+  return files.sort();
 }
 
 type NextRoundTripOptions = NonNullable<PackRoundTripOptions["next"]>;
@@ -460,7 +570,7 @@ export async function packRoundTrip(packageDir: string, options?: PackRoundTripO
   const needsRuntimePeers = nextSubpaths.all.size > 0 || [
     ...importTargets.values(),
     ...[...requireSubpaths].map((subpath) => requireTargets.get(subpath)),
-  ].some(isRuntimeTarget);
+  ].some(mayNeedRuntimePeers);
 
   // Two SEPARATE temporary directories: one to receive the packed tarball,
   // and one — genuinely isolated, outside this repository's own tree
@@ -595,6 +705,9 @@ export async function packRoundTrip(packageDir: string, options?: PackRoundTripO
     //    and other non-runtime files) are instead verified to exist inside
     //    the installed package. Each executable subpath runs its own
     //    subprocess so one crashing import can never hide the next result.
+    //    A wildcard subpath is expanded against the files the tarball
+    //    actually shipped first, and each expansion is then checked exactly
+    //    like a literal subpath (see `isPatternSubpath`).
     //
     //    A package that declares no subpath at all (`"exports": {}`, or no
     //    `exports` field resolving to anything) runs zero checks here — and
@@ -607,19 +720,35 @@ export async function packRoundTrip(packageDir: string, options?: PackRoundTripO
     if (subpaths.length === 0) {
       findings.push(noExportsFinding(packageName));
     }
-    for (const subpath of subpaths) {
-      if (nextSubpaths.all.has(subpath)) continue;
-      const target = importTargets.get(subpath);
-      if (target !== undefined && !isRuntimeTarget(target)) {
-        if (staticTargetExists(join(consumerDir, "node_modules", packageName), target)) {
-          imports.push({ subpath, mode: "static", ok: true });
-        } else {
-          const message = `static export target ${JSON.stringify(target)} is absent from the isolated installed tarball`;
-          imports.push({ subpath, mode: "static", ok: false, error: message });
-          findings.push(assetMissingFinding(packageName, subpath, target));
-        }
+    const installedPackageDir = join(consumerDir, "node_modules", packageName);
+    // Walked at most once per round trip, and only if some pattern actually
+    // needs expanding — a package declaring no pattern never pays for it.
+    let walkedFiles: string[] | undefined;
+    const shippedFiles = (): string[] => (walkedFiles ??= installedFileList(installedPackageDir));
+
+    const recordStatic = (subpath: string, target: string): void => {
+      if (staticTargetExists(installedPackageDir, target)) {
+        imports.push({ subpath, mode: "static", ok: true });
+        return;
+      }
+      const message = `static export target ${JSON.stringify(target)} is absent from the isolated installed tarball`;
+      imports.push({ subpath, mode: "static", ok: false, error: message });
+      findings.push(assetMissingFinding(packageName, subpath, target));
+    };
+
+    // One CONCRETE subpath — a literal `exports` key, or one expansion of a
+    // pattern key. Its ESM branch first, then its CommonJS branch if the
+    // declaration advertises one.
+    const checkSubpath = async (
+      subpath: string,
+      importTarget: string | undefined,
+      requireTarget: string | undefined,
+      requiresCjs: boolean,
+    ): Promise<void> => {
+      const specifier = specifierFor(packageName, subpath);
+      if (importTarget !== undefined && !isRuntimeTarget(importTarget)) {
+        recordStatic(subpath, importTarget);
       } else {
-        const specifier = specifierFor(packageName, subpath);
         const script =
           `import(${JSON.stringify(specifier)})` +
           `.then(() => { process.exit(0); })` +
@@ -639,18 +768,10 @@ export async function packRoundTrip(packageDir: string, options?: PackRoundTripO
         }
       }
 
-      if (!requireSubpaths.has(subpath)) continue;
-      const specifier = specifierFor(packageName, subpath);
-      const requireTarget = requireTargets.get(subpath);
+      if (!requiresCjs) return;
       if (requireTarget !== undefined && !isRuntimeTarget(requireTarget)) {
-        if (staticTargetExists(join(consumerDir, "node_modules", packageName), requireTarget)) {
-          imports.push({ subpath, mode: "static", ok: true });
-        } else {
-          const message = `static export target ${JSON.stringify(requireTarget)} is absent from the isolated installed tarball`;
-          imports.push({ subpath, mode: "static", ok: false, error: message });
-          findings.push(assetMissingFinding(packageName, subpath, requireTarget));
-        }
-        continue;
+        recordStatic(subpath, requireTarget);
+        return;
       }
       const requireScript =
         `try { require(${JSON.stringify(specifier)}); process.exit(0); }` +
@@ -667,6 +788,58 @@ export async function packRoundTrip(packageDir: string, options?: PackRoundTripO
         const message = summarizeExecError(error, importTimeoutMs);
         imports.push({ subpath, mode: "require", ok: false, error: message });
         findings.push(requireFailedFinding(packageName, subpath, message));
+      }
+    };
+
+    for (const subpath of subpaths) {
+      if (nextSubpaths.all.has(subpath)) continue;
+      const importTarget = importTargets.get(subpath);
+      const requireTarget = requireTargets.get(subpath);
+      const requiresCjs = requireSubpaths.has(subpath);
+      if (!isPatternSubpath(subpath)) {
+        await checkSubpath(subpath, importTarget, requireTarget, requiresCjs);
+        continue;
+      }
+
+      // A pattern key. See `isPatternSubpath` above for what verifying one
+      // means and why. Node's resolver only ever selects a key carrying
+      // exactly one `*`, so a key with two matches nothing for anybody — that
+      // is the same defect as a pattern nothing shipped for, reported the
+      // same way rather than silently skipped.
+      if (starCount(subpath) !== 1) {
+        const detail = 'the key declares more than one "*", and Node\'s resolver only ever selects a pattern key carrying exactly one';
+        imports.push({ subpath, mode: "pattern", ok: false, error: detail });
+        findings.push(patternUnmatchedFinding(packageName, subpath, detail));
+        continue;
+      }
+      const patternTarget = [importTarget, requireTarget].find(
+        (target): target is string => target !== undefined && isPatternSubpath(target),
+      );
+      if (patternTarget === undefined) {
+        // A pattern key whose selected target carries no `*` of its own maps
+        // every consumer subpath onto one fixed file. There is no set to
+        // expand and no concrete specifier to import (the key itself is not
+        // one), so the honest check is that the fixed target shipped.
+        for (const target of new Set([importTarget, requireTarget].filter((t): t is string => t !== undefined))) {
+          recordStatic(subpath, target);
+        }
+        continue;
+      }
+      const stars = matchPatternTarget(shippedFiles(), patternTarget);
+      if (stars.length === 0) {
+        const detail = `its target ${JSON.stringify(patternTarget)} matched no file in the isolated installed tarball`;
+        imports.push({ subpath, mode: "pattern", ok: false, error: detail });
+        findings.push(patternUnmatchedFinding(packageName, subpath, detail));
+        continue;
+      }
+      imports.push({ subpath, mode: "pattern", ok: true });
+      for (const star of stars) {
+        await checkSubpath(
+          substituteStar(subpath, star),
+          importTarget === undefined ? undefined : substituteStar(importTarget, star),
+          requireTarget === undefined ? undefined : substituteStar(requireTarget, star),
+          requiresCjs,
+        );
       }
     }
 
@@ -690,16 +863,28 @@ export async function packRoundTrip(packageDir: string, options?: PackRoundTripO
     }
 
     const declarationTargets = new Map<string, { subpath: string; target: string }>();
+    const addDeclarationTarget = (subpath: string, target: string): void => {
+      declarationTargets.set(`${subpath}\u0000${target}`, { subpath, target });
+    };
     for (const subpath of subpaths) {
       for (const target of typeTargetsOf(exportsBySubpath.get(subpath))) {
-        declarationTargets.set(`${subpath}\u0000${target}`, { subpath, target });
+        // A pattern's declaration target is itself a pattern, and is expanded
+        // the same way its runtime target is. An expansion that matches
+        // nothing falls through to the unexpanded pattern, so it is reported
+        // as the missing declaration it is rather than silently dropped.
+        if (isPatternSubpath(subpath) && starCount(subpath) === 1 && isPatternSubpath(target)) {
+          const stars = matchPatternTarget(shippedFiles(), target);
+          for (const star of stars) addDeclarationTarget(substituteStar(subpath, star), substituteStar(target, star));
+          if (stars.length > 0) continue;
+        }
+        addDeclarationTarget(subpath, target);
       }
     }
     for (const target of [manifest.types, manifest.typings]) {
-      if (typeof target === "string") declarationTargets.set(`.\u0000${target}`, { subpath: ".", target });
+      if (typeof target === "string") addDeclarationTarget(".", target);
     }
     for (const { subpath, target } of declarationTargets.values()) {
-      if (staticTargetExists(join(consumerDir, "node_modules", packageName), target)) {
+      if (staticTargetExists(installedPackageDir, target)) {
         declarations.push({ subpath, target, ok: true });
       } else {
         const message = `declaration target ${JSON.stringify(target)} is absent from the isolated installed tarball`;
@@ -762,6 +947,17 @@ function assetMissingFinding(packageName: string | undefined, subpath: string, t
     rule: "round-trip-asset-missing",
     severity: "error",
     message: `${packageLabel(packageName)}: static export subpath "${subpath}" targets ${JSON.stringify(target)}, but that file is absent from the isolated installed tarball`,
+  };
+}
+
+/** The finding emitted when an `exports` PATTERN key exports nothing — see
+ * `isPatternSubpath` for why an empty expansion is a real defect and not a
+ * case to pass over quietly. */
+function patternUnmatchedFinding(packageName: string | undefined, subpath: string, detail: string): Finding {
+  return {
+    rule: "round-trip-pattern-unmatched",
+    severity: "error",
+    message: `${packageLabel(packageName)}: export pattern "${subpath}" exports nothing to a consumer — ${detail}.`,
   };
 }
 

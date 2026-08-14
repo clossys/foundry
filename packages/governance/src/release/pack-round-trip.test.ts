@@ -245,6 +245,153 @@ describe("packRoundTrip — exports shape handling (fixture packages)", () => {
     expect(result.findings[0]?.message).toContain("./styles/tokens.css");
   });
 
+  // Wildcard `exports` subpaths are standard Node syntax, and were previously
+  // resolved as literal filesystem paths -- the verifier looked for a file
+  // named `documents/*`, never found one, and reported a package that shipped
+  // every promised file as missing its assets. This fired for real on an
+  // already-published tarball: the publish itself succeeded and the isolated
+  // install check that runs after it failed, which is the worst point in the
+  // pipeline to discover a verifier defect.
+  it("expands a static wildcard subpath against the files that actually shipped", async () => {
+    const dir = makeFixture("wildcard-static", {
+      "package.json": JSON.stringify(
+        {
+          name: "wildcard-static-fixture",
+          version: "1.0.0",
+          type: "module",
+          exports: { "./documents/*": "./documents/*" },
+          files: ["documents"],
+        },
+        null,
+        2,
+      ),
+      "documents/first.txt": "# first\n",
+      "documents/nested/second.txt": "# second\n",
+    });
+
+    const result = await packRoundTrip(dir);
+
+    expect(result.findings).toEqual([]);
+    expect(result.ok).toBe(true);
+    // The pattern itself, then one entry per file it expanded to -- under the
+    // concrete subpath a consumer would actually write, not the pattern.
+    expect(result.imports).toEqual([
+      { subpath: "./documents/*", mode: "pattern", ok: true },
+      { subpath: "./documents/first.txt", mode: "static", ok: true },
+      { subpath: "./documents/nested/second.txt", mode: "static", ok: true },
+    ]);
+  });
+
+  // An expanded runtime match is imported for real, through Node's own
+  // resolver, from the isolated consumer -- so this also proves the expansion
+  // produces subpaths a consumer can genuinely import, not just strings that
+  // happen to name files. Its declaration pattern expands the same way.
+  it("imports every executable match of a runtime wildcard subpath and expands its declaration pattern", async () => {
+    const dir = makeFixture("wildcard-runtime", {
+      "package.json": JSON.stringify(
+        {
+          name: "wildcard-runtime-fixture",
+          version: "1.0.0",
+          type: "module",
+          exports: { "./adapters/*": { types: "./adapters/*.d.ts", import: "./adapters/*.js" } },
+        },
+        null,
+        2,
+      ),
+      "adapters/one.js": "export const adapter = 'one';\n",
+      "adapters/one.d.ts": "export declare const adapter: string;\n",
+      "adapters/two.js": "export const adapter = 'two';\n",
+      "adapters/two.d.ts": "export declare const adapter: string;\n",
+    });
+
+    const result = await packRoundTrip(dir);
+
+    expect(result.findings).toEqual([]);
+    expect(result.ok).toBe(true);
+    expect(result.imports).toEqual([
+      { subpath: "./adapters/*", mode: "pattern", ok: true },
+      { subpath: "./adapters/one", mode: "import", ok: true },
+      { subpath: "./adapters/two", mode: "import", ok: true },
+    ]);
+    expect(result.declarations).toEqual([
+      { subpath: "./adapters/one", target: "./adapters/one.d.ts", ok: true },
+      { subpath: "./adapters/two", target: "./adapters/two.d.ts", ok: true },
+    ]);
+  });
+
+  // The other half of the fix: expanding a pattern must not become a way to
+  // stop checking it. A wildcard that matches nothing exports nothing to a
+  // consumer -- a real defect (a renamed directory, a `files` entry that
+  // stopped shipping the contents), and it must still fail.
+  it("fails for a wildcard subpath that matches nothing in the packed tarball", async () => {
+    const dir = makeFixture("wildcard-unmatched", {
+      "package.json": JSON.stringify(
+        {
+          name: "wildcard-unmatched-fixture",
+          version: "1.0.0",
+          type: "module",
+          exports: { ".": "./index.js", "./documents/*": "./documents/*" },
+        },
+        null,
+        2,
+      ),
+      "index.js": "export const ok = true;\n",
+      // Deliberately no documents/ directory at all.
+    });
+
+    const result = await packRoundTrip(dir);
+
+    expect(result.ok).toBe(false);
+    expect(result.imports).toEqual([
+      { subpath: ".", mode: "import", ok: true },
+      {
+        subpath: "./documents/*",
+        mode: "pattern",
+        ok: false,
+        error: 'its target "./documents/*" matched no file in the isolated installed tarball',
+      },
+    ]);
+    expect(result.findings).toHaveLength(1);
+    expect(result.findings[0]?.rule).toBe("round-trip-pattern-unmatched");
+    expect(result.findings[0]?.severity).toBe("error");
+    expect(result.findings[0]?.message).toContain("./documents/*");
+    expect(result.findings[0]?.message).toContain("exports nothing to a consumer");
+  });
+
+  // Node's resolver only ever selects a pattern key carrying exactly one `*`,
+  // so a key with two is unreachable for every consumer. Expanding it must
+  // report that, not quietly treat an unmatchable key as satisfied.
+  it("fails for a wildcard key carrying more than one \"*\", which no consumer specifier can select", async () => {
+    const dir = makeFixture("wildcard-two-stars", {
+      "package.json": JSON.stringify(
+        {
+          name: "wildcard-two-stars-fixture",
+          version: "1.0.0",
+          type: "module",
+          exports: { "./*/*": "./documents/*" },
+        },
+        null,
+        2,
+      ),
+      "documents/first.txt": "# first\n",
+    });
+
+    const result = await packRoundTrip(dir);
+
+    expect(result.ok).toBe(false);
+    expect(result.imports).toEqual([
+      {
+        subpath: "./*/*",
+        mode: "pattern",
+        ok: false,
+        error:
+          'the key declares more than one "*", and Node\'s resolver only ever selects a pattern key carrying exactly one',
+      },
+    ]);
+    expect(result.findings).toHaveLength(1);
+    expect(result.findings[0]?.rule).toBe("round-trip-pattern-unmatched");
+  });
+
   it("fails when a declared TypeScript target was omitted even though its runtime export imports", async () => {
     const dir = makeFixture("missing-declaration", {
       "package.json": JSON.stringify(

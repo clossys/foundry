@@ -80,6 +80,15 @@ is therefore reported `ok: false` with a
 `"round-trip-no-exports"` finding, not `ok: true`. Checking nothing proves
 nothing about installability.
 
+A wildcard subpath (`"./documents/*": "./documents/*"`) is standard Node
+`exports` syntax and is not a path — nothing on disk is ever named
+`documents/*`. It is verified by expanding its target against the files the
+installed tarball actually shipped, then checking each expansion the way any
+other subpath is checked. A wildcard that expands to nothing exports nothing
+to a consumer and is reported `ok: false` with a
+`"round-trip-pattern-unmatched"` finding, so expanding a pattern is never a
+way to stop checking it.
+
 For a package with at least one executable JS/TS export,
 `packRoundTrip` also installs every declared `peerDependencies` entry using
 its declared range before import checks. That makes the executable proof a
@@ -152,9 +161,9 @@ if (findings.length > 0) process.exitCode = 1;
 | `PackRoundTripOptions` | type | `{ keepTempDir?: boolean; registry?: string; next?: { clientSubpaths?: string[]; serverSubpaths?: string[]; proxySubpaths?: string[] }; timeoutsMs?: { pack?: number; install?: number; import?: number; next?: number } }` — the second argument to `packRoundTrip`. `next` moves only the named exports from raw Node imports into an isolated Next build; `registry` replaces the anonymous public-default registry without inheriting host auth. |
 | `RegistryInstallOptions` | type | `{ url: string; authToken?: string; scope?: string }` — authenticated scoped-registry configuration for an isolated round trip. The token is passed only to child npm processes and is never inherited from the host environment. |
 | `PreflightPackageOptions` | type | `{ scope?: string; roundTrip?: PackRoundTripOptions }` — the third argument to `preflightPackage`; `roundTrip` passes registry/timeout options through without weakening isolation. |
-| `ImportCheck` | type | `{ subpath: string; mode: "import" \| "require" \| "next-build" \| "static"; ok: boolean; error?: string }` — one export check: an ESM import, explicitly advertised CommonJS require branch, Next build, or static-file presence check. |
+| `ImportCheck` | type | `{ subpath: string; mode: "import" \| "require" \| "next-build" \| "static" \| "pattern"; ok: boolean; error?: string }` — one export check: an ESM import, explicitly advertised CommonJS require branch, Next build, static-file presence check, or the expansion of a wildcard subpath against the files the tarball actually shipped. |
 | `DeclarationCheck` | type | `{ subpath: string; target: string; ok: boolean; error?: string }` — one declared TypeScript target checked for presence in the isolated install. |
-| `RoundTripResult` | type | `{ ok: boolean; packageName: string \| undefined; tarballPath: string; imports: ImportCheck[]; declarations: DeclarationCheck[]; findings: Finding[] }` — what `packRoundTrip` returns. `findings` can additionally carry `"round-trip-require-failed"` or `"round-trip-declaration-missing"`; checking zero exports is never reported as `ok: true`. |
+| `RoundTripResult` | type | `{ ok: boolean; packageName: string \| undefined; tarballPath: string; imports: ImportCheck[]; declarations: DeclarationCheck[]; findings: Finding[] }` — what `packRoundTrip` returns. `findings` can additionally carry `"round-trip-require-failed"`, `"round-trip-pattern-unmatched"`, or `"round-trip-declaration-missing"`; checking zero exports is never reported as `ok: true`. |
 | `PreflightReport` | type | `{ packageName: string; catalogFindings: CatalogFinding[]; roundTrip: RoundTripResult; ok: boolean }` — what `preflightPackage` returns. |
 
 ## What this actually found, in this repository
@@ -207,7 +216,7 @@ the same way `@vespeneventures/policy` never reads a file itself.
 ## Requirements
 
 Node 20+. ESM only. Runtime dependency: `@vespeneventures/governance`
-(`^0.4.0`), which this package's own `src/index.ts` re-exports from.
+(`^0.5.0`), which this package's own `src/index.ts` re-exports from.
 
 This package is not dependency-free: `governance` itself depends on
 `@vespeneventures/policy`, which is therefore pulled in transitively by

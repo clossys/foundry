@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-08-13
+
+### Fixed
+
+- `packRoundTrip` (`./release`) now verifies a **wildcard `exports` subpath**
+  instead of resolving it as a literal filesystem path. A manifest declaring
+  `"./documents/*": "./documents/*"` previously made the verifier look for a
+  file named `documents/*`, never find one, and report a package that shipped
+  every promised file as missing its assets — a false
+  `round-trip-asset-missing`. Wildcard subpaths are standard Node `exports`
+  syntax, and this fired for real on an already-published tarball: the
+  publish succeeded and the isolated install proof that runs immediately
+  after it failed, which is the worst point in the pipeline to discover a
+  verifier defect.
+
+  A wildcard is now **expanded** against the files the installed tarball
+  actually shipped, and each expansion is checked exactly like a literal
+  subpath — executable matches are imported through Node's own resolver from
+  the isolated consumer, static matches are checked for presence, and a
+  wildcard declaration target (`"types": "./adapters/*.d.ts"`) expands the
+  same way. Expanding a pattern is deliberately not a way to stop checking
+  it: a pattern that matches nothing exports nothing to a consumer, and is a
+  new `round-trip-pattern-unmatched` error finding. So is a key carrying more
+  than one `*`, which Node's resolver can never select for any specifier.
+
+### Changed
+
+- `ImportCheck["mode"]` gained a `"pattern"` member (`./release`), reporting
+  the expansion of a wildcard subpath itself; each file it expanded to gets
+  its own entry under its concrete subpath and its own mode. Additive, but it
+  widens a union a consumer may be switching over exhaustively.
+- A package whose wildcard target carries no extension (`"./adapters/*"`)
+  now installs declared runtime peers before its exports are checked. The
+  expansion could be executable or static and there is no way to know before
+  the install, so peers are installed rather than risking a false import
+  failure.
+
 ## [0.4.0] - 2026-08-13
 
 ### Added
