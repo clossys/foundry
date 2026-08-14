@@ -1,15 +1,16 @@
 /**
  * This file is NOT a public entry point — `package.json` deliberately
  * declares no `"."` export. Import an explicit `@vespeneventures/surface`
- * subpath instead: `/core`, `/media`, `/web`, `/email`, `/print`, `/image`,
- * or `/slides`.
+ * subpath instead: `/core`, `/media`, `/web`, `/document`, `/email`,
+ * `/print`, `/image`, or `/slides`.
  * This barrel exists only so the same names are reachable from one place
  * for internal tooling (see `scripts/check-readme-parity.mjs` in the
  * repository root, which reads `src/index.ts` as every package's canonical
- * export list); it re-exports exactly what `./web/index.js` exports,
- * nothing more. A future channel subpath's own exports get added here too,
- * the same way `ui`'s root barrel grew one `export ... from` block per
- * layer as `atoms`/`blocks`/`views`/`shell`/`charts`/`icons` shipped.
+ * export list); it re-exports exactly what `./web/index.js` and
+ * `./document/index.js` export, nothing more. A future channel subpath's
+ * own exports get added here too, the same way `ui`'s root barrel grew one
+ * `export ... from` block per layer as `atoms`/`blocks`/`views`/`shell`/
+ * `charts`/`icons` shipped.
  */
 export {
   renderWebDocument,
@@ -27,3 +28,18 @@ export type {
   WebOpenGraphMetadata,
   WebTwitterMetadata,
 } from "./web/index.js";
+
+export { validateStructuredDocument, renderStructuredDocument } from "./document/index.js";
+export type {
+  DocumentBlock,
+  DocumentCallout,
+  DocumentDefinitionList,
+  DocumentInline,
+  DocumentList,
+  DocumentParagraph,
+  DocumentSection,
+  DocumentTable,
+  StructuredDocument,
+  RenderStructuredDocumentOptions,
+  RenderStructuredDocumentResult,
+} from "./document/index.js";
