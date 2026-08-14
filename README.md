@@ -107,9 +107,10 @@ With `GH_PACKAGES_TOKEN` set in your environment, install a published version:
 npm install @vespeneventures/governance
 ```
 
-The same token is also used for maintainer actions such as publishing. See
-[docs/PUBLISHING.md](docs/PUBLISHING.md) for package release status and the
-maintainer process.
+Consumer read access does not grant publish authority. Maintainer publication
+uses the protected workflow described in
+[docs/PUBLISHING.md](docs/PUBLISHING.md). The available-package and
+consumer-wiring split is tracked in [docs/ADOPTION.md](docs/ADOPTION.md).
 
 ### Why not the public npm registry
 

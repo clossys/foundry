@@ -126,8 +126,10 @@ or publish packages.
   something else this org already owns does not fail, it silently appends a
   version and moves `latest`. `scripts/check-name-collision.mjs` (wired into
   `preflight-package.mjs` and `publish.yml`) is the gate for this; it should
-  never legitimately fire here (this org's whole purpose is a clean namespace)
-  but a firing gate is cheaper than the alternative.
+  never be waived merely because Foundry is the only package-producing
+  repository. Non-package account-control-plane repositories may coexist under
+  the same owner, and the gate remains the proof that none owns the candidate
+  package name.
 
 ## Adding a package
 

@@ -269,10 +269,10 @@ repository does not fail — it silently appends a version to that existing
 package and moves its `latest` dist-tag, with nothing to signal the mistake
 at publish time.
 
-`vespeneventures` was created specifically to own this repository and
-nothing else, so this should never legitimately fire here — but the failure
-mode is silent and hard to undo cleanly, which is exactly why the check runs
-unconditionally rather than being trusted to "obviously not apply."
+Foundry is the only repository under this owner authorized to publish
+packages. Non-publishing account-control-plane repositories may coexist, so
+the owner-wide check still runs: the failure mode is silent and hard to undo
+cleanly.
 
 ### Installing from GitHub Packages
 
@@ -287,9 +287,10 @@ project's `.npmrc` (never commit a real one):
 //npm.pkg.github.com/:_authToken=${GH_PACKAGES_TOKEN}
 ```
 
-with `GH_PACKAGES_TOKEN` set in the environment. See `docs/DECISIONS.md` for
-why GitHub Packages was chosen anyway, and what moving to public npmjs
-later would cost (a config change, not a rewrite).
+with `GH_PACKAGES_TOKEN` set in the environment. The consuming plane owns the
+registry mapping, credential reference, and local or CI injection. Foundry
+never stores the consumer's token value or account-specific installation
+manifest. See `docs/DECISIONS.md` for why GitHub Packages is canonical.
 
 ### Package visibility
 
@@ -398,6 +399,34 @@ recorded in [`docs/DECISIONS.md`](DECISIONS.md#2-the-registry--github-packages),
 and a runbook rewritten against whatever npm's publishing and trusted-publisher
 surface looks like then — not this one restored from git history.
 
+## 8. Canonical registry qualification
+
+GitHub Packages is the canonical publication and installation lane. Existing
+package names and versions remain there; do not unpublish, delete, copy, or
+reuse them as part of consumer adoption.
+
+For every package whose lifecycle status is `published`:
+
+1. Run the package preflight in FULL public-safety mode before proposing any
+   new version. The preflight must inspect the exact packed tarball and complete
+   the owner-wide name-collision query.
+2. Let the protected `npm-publish` environment gate the serial publish job.
+   The job-scoped `GITHUB_TOKEN` uploads the exact tarball that passed the
+   pre-publish checks; no consumer credential participates in publication.
+3. Require the workflow's authenticated clean install and public-export smoke
+   test against the selected tarball before upload. After upload, require the
+   registry digest comparison; use `verify_only` to qualify an older existing
+   registry version without publishing a duplicate.
+4. Record the package's lifecycle state and replacement guidance in
+   `docs/contracts/package-lifecycle.json`. Deprecated compatibility names
+   remain installable migration artifacts and are not new adoption targets.
+
+Consumers separately prove an authenticated install of each exact package they
+adopt. They own their registry mapping, credential reference, lockfile, and
+public-export or CLI smoke test. Foundry records no token value, account path,
+or consumer-specific configuration. See [ADOPTION.md](ADOPTION.md) for the
+capability and wiring ledger.
+
 ## Prerequisites held outside this repository
 
 | Thing | Where | Notes |
@@ -405,3 +434,4 @@ surface looks like then — not this one restored from git history.
 | Denylist | `~/.config/public-safety/denylist-foundry.json` locally; `PUBLIC_SAFETY_DENYLIST_B64` repository secret in CI | Never committed here — it names exactly what must not be public. Specific to this repository — never reuse a denylist file written for a different project. |
 | Publish credential | Job-scoped `GITHUB_TOKEN` with workflow `packages: write` | Publishes packages associated with this repository; no stored publish token is used. |
 | Package-index credential | `GH_PACKAGES_TOKEN` repository secret | Classic token with `read:packages`, used only by the pre-publish name-collision query across the owner namespace. |
+| Consumer read credential | Consuming plane's credential system and process environment | Authenticates only that consumer's GitHub Packages reads. The value and its machine/CI injection never enter Foundry. |
