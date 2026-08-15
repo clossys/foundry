@@ -283,7 +283,7 @@ const { names: historicalNames, reliable: historicalNamesReliable } = loadHistor
   resolve(dirname(fileURLToPath(import.meta.url)), ".."),
 );
 
-// The scope this SCANNED package itself publishes under, e.g. `@thecalvinhung`
+// The scope this SCANNED package itself publishes under, e.g. `@example-scope`
 // — read from the scanned directory's own package.json `name`, never
 // hardcoded. CLASS 4's scoped-package check only ever needs to ask "does this
 // look like OUR OWN organisation talking about itself", so a reference under
