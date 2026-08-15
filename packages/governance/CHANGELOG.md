@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-08-15
+
+### Changed
+
+- **`./review` schema bumped to version 2 (breaking).** `REVIEW_EVIDENCE_VERSION`
+  is now `2`; a version-1 bundle is rejected outright with a `"schema-version"`
+  finding naming the problem, never coerced or silently accepted.
+  `ReviewEvidenceBundle` gains a required `baseSha` (40 lowercase hex,
+  `"base-sha"` finding rule), so evidence is bound to the exact base commit a
+  merge would target, not just the head. `ReviewRecord` gains a required
+  `provider` (opaque, caller-supplied, `"review-provider"` finding rule) —
+  which analyzer produced the record, with no vendor enum, allowlist, or
+  notion of a "trusted" provider defined anywhere in this package.
+  `./review/github`'s `normalizeGitHubReviewEvidence` now reads
+  `pullRequest.baseRefOid` for `baseSha` and reads `provider` only from
+  whatever the caller already attached to a review node — never inferred from
+  `author.login` or any other GitHub-shaped field.
+- **`ReviewPolicy` gains a required `decisionUse: "advisory" | "authoritative"`
+  (breaking).** Whether `requireApproval` is merge-blocking clearance or an
+  audit signal only. No default in either direction: an omitted or
+  unsupported value is a `"decision-use"` finding, and
+  `requireApproval: true` combined with `decisionUse: "advisory"` is rejected
+  as an `"advisory-approval-conflict"` finding at policy-validation time,
+  before any evidence is read.
+
+### Added
+
+- **`isReviewPolicyAdoptionState` / `isReviewPolicyCoverageState`** and their
+  types `ReviewPolicyAdoptionState` (`"adopted" | "not-adopted" |
+  "assessment-pending"`) / `ReviewPolicyCoverageState` (`"verified" |
+  "not-verified" | "assessment-pending"`) — a shared, tri-state,
+  structurally independent vocabulary for account-control repositories to
+  declare, per repository, whether a review policy is adopted and whether
+  real pull requests were actually reviewed under it. The two vocabularies
+  are disjoint by construction (neither guard accepts the other's pass/fail
+  values) so coverage can never be satisfied merely by declaring adoption.
+  Foundry supplies the vocabulary and its validators only; the per-repository
+  values are each consuming account's own data.
+
 ## [0.11.0] - 2026-08-14
 
 ### Added
