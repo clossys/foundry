@@ -1,6 +1,6 @@
 {
   "name": "@vespeneventures/repository",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -14,7 +14,7 @@
     }
   },
   "bin": {
-    "repository-check": "./dist/cli.js"
+    "repository-check": "./dist/bin.js"
   },
   "files": [
     "dist",
@@ -47,7 +47,7 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@vespeneventures/governance": "~0.10.0"
+    "@vespeneventures/governance": "~0.10.1"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

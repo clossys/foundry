@@ -265,6 +265,12 @@ decision, or default. It performs no filesystem, Git, provider, scheduler,
 credential, installation, or mutation I/O. A caller owns discovery and every
 name and value supplied to the validators.
 
+Importing either this public subpath or its importable CLI API is inert: it
+does not inspect the filesystem or process arguments, write output, change an
+exit code or environment value, or mutate arguments. The installed
+`repository-check` command enters through a separate executable-only wrapper;
+only an explicit command invocation reads the requested profile and reports.
+
 Requirements flow one way: a repository declares what it needs, an account
 workspace discovers and aggregates those declarations, and machine bootstrap
 may use the resulting report to compose an explicit configuration. Guidance
@@ -438,6 +444,7 @@ into v3 for `rootEntries`.
 | `evaluateRepositoryRequirements(value)` | function | Returns deterministic per-requirement states and findings; invalid and unknown inputs fail closed. |
 | `validateRepositoryRootEvaluationInput(value)` | function | Strictly validates an exact root vocabulary and caller-normalized direct-child observations. |
 | `evaluateRepositoryRoot(value)` | function | Returns every classified direct-child result; missing, prohibited, and unknown entries fail closed. |
+| `main(argv)` / `run()` / `CliInputError` | CLI API | Preserved importable command API. Importing it is inert; only calling it reads input, writes a report, or sets an exit code. |
 | `REPOSITORY_PROFILE_VERSION` / `PREVIOUS_REPOSITORY_PROFILE_VERSION` / `LEGACY_REPOSITORY_PROFILE_VERSION` | constants | Current `3` plus deliberately supported `2` and `1`. |
 | `RepositoryProfileV1` / `RepositoryProfileV2` / `RepositoryProfileV3` / `RepositoryProfile` | types | Closed profile versions and their explicit union. |
 | `RepositoryRequirement` / `RepositoryRequirementConstraint` / `RepositoryRequirementScope` | types | Neutral declaration grammar. |

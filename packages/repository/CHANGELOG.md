@@ -5,6 +5,16 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2026-08-14
+
+### Fixed
+
+- Forwarded governance 0.10.1's restored no-I/O repository import boundary
+  (#243). The compatibility CLI API is now inert on import and a dedicated
+  executable wrapper preserves the installed `repository-check` command,
+  including invocation through npm-created bin symlinks. Repository profile
+  v1, v2, and v3 behavior is unchanged.
+
 ## [0.4.0] - 2026-08-14
 
 ### Changed
