@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.1] - 2026-08-14
+
+### Fixed
+
+- Restored the `./repository` no-I/O import boundary (#243). The importable
+  repository CLI API no longer performs executable-main detection during
+  module evaluation; an executable-only wrapper now invokes
+  `repository-check`, including through npm-created bin symlinks. Repository
+  profile v1, v2, and v3 validation and evaluation semantics are unchanged.
+
 ## [0.10.0] - 2026-08-14
 
 ### Added

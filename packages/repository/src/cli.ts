@@ -1,6 +1,2 @@
-#!/usr/bin/env node
-/** @deprecated Compatibility executable for `repository-check`. */
+/** @deprecated Compatibility CLI API for `repository-check`. */
 export { CliInputError, main } from "@vespeneventures/governance/repository";
-import { run } from "@vespeneventures/governance/repository";
-
-run();

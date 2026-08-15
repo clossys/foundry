@@ -1,6 +1,6 @@
 {
   "name": "@vespeneventures/governance",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -48,7 +48,7 @@
   "bin": {
     "foundry-governance": "./dist/cli.js",
     "foundry-check": "./dist/gates/cli.js",
-    "repository-check": "./dist/repository/cli.js",
+    "repository-check": "./dist/repository/bin.js",
     "review-check": "./dist/review/cli.js"
   },
   "files": [

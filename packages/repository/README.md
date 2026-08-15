@@ -130,7 +130,7 @@ caller; this contract does not imply a governance workspace subpath.
 ## Requirements
 
 Node 20+. ESM only. Runtime dependency: `@vespeneventures/governance`
-(`~0.10.0`), which this package's own `src/index.ts` re-exports from.
+(`~0.10.1`), which this package's own `src/index.ts` re-exports from.
 
 This package is not dependency-free: `governance` itself depends on
 `@vespeneventures/policy`, which is therefore pulled in transitively by
@@ -141,6 +141,11 @@ installing this package too.
 `repository-check` validates exactly one JSON profile file. It reads no
 repository state, runs no declared commands, and invokes neither Git nor a
 provider API.
+
+Importing this package or its compatibility CLI API performs no filesystem
+I/O, output, or process-state mutation. A separate executable-only wrapper
+runs the command, so npm-created `node_modules/.bin/repository-check` symlinks
+remain executable without adding work to module evaluation.
 
 ```bash
 repository-check repository-profile.json

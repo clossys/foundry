@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * `repository-check` — the intentionally small CLI around the pure
  * repository-profile validator. It reads exactly one JSON file, emits one
@@ -11,9 +10,8 @@
  *       JSON. This is deliberately distinct from an invalid profile.
  */
 
-import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import { validateRepositoryProfile } from "./validate.js";
 import type { RepositoryProfileFinding } from "./types.js";
 
@@ -105,19 +103,3 @@ export function run(): void {
     process.exitCode = 2;
   }
 }
-
-/**
- * Compare resolved real paths so an installed npm `bin` symlink executes the
- * module while importing this file from tests or another program does not.
- */
-function detectMainModule(): boolean {
-  const argvPath = process.argv[1];
-  if (argvPath === undefined) return false;
-  try {
-    return realpathSync(resolve(argvPath)) === realpathSync(fileURLToPath(import.meta.url));
-  } catch {
-    return false;
-  }
-}
-
-if (detectMainModule()) run();
