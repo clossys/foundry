@@ -7,6 +7,7 @@ import type {
   RepositoryProfileFinding,
   RepositoryProfileFindingRule,
   RepositoryRequirementScope,
+  RepositoryRootEntry,
   RepositoryRootEntryClassification,
   RepositoryRootEntryDisposition,
 } from "./types.js";
@@ -145,13 +146,27 @@ export function isRepositoryRootEntryName(value: unknown): value is string {
     && !/[\\/\u0000-\u001f\u007f]/.test(value);
 }
 
-export function validateRepositoryRootEntries(value: unknown): RepositoryProfileFinding[] {
+export interface RepositoryRootEntriesRead {
+  readonly entries: readonly RepositoryRootEntry[] | undefined;
+  readonly findings: readonly RepositoryProfileFinding[];
+}
+
+/**
+ * Reads root declarations from own data descriptors into immutable plain data.
+ * This is intentionally not re-exported from the package surface: evaluators
+ * use it to avoid reading caller objects after structural inspection.
+ */
+export function readRepositoryRootEntries(value: unknown): RepositoryRootEntriesRead {
   const entries = inspectArray(value);
   if (!entries) {
-    return [finding("root-entries-shape", "rootEntries", `rootEntries must be a plain array of at most ${MAX_PROFILE_COLLECTION_ENTRIES} entries with no behavior-shadowing properties.`)];
+    return {
+      entries: undefined,
+      findings: [finding("root-entries-shape", "rootEntries", `rootEntries must be a plain array of at most ${MAX_PROFILE_COLLECTION_ENTRIES} entries with no behavior-shadowing properties.`)],
+    };
   }
 
   const findings: RepositoryProfileFinding[] = [];
+  const snapshot: RepositoryRootEntry[] = [];
   const seen = new Set<string>();
   let nextExpectedIndex = 0;
   let reportedHole = false;
@@ -195,11 +210,29 @@ export function validateRepositoryRootEntries(value: unknown): RepositoryProfile
     if (typeof disposition !== "string" || !ROOT_ENTRY_DISPOSITIONS.has(disposition as RepositoryRootEntryDisposition)) {
       findings.push(finding("root-entry-disposition", `${entryPath}.disposition`, "disposition must be required, allowed, or prohibited."));
     }
+    if (isRepositoryRootEntryName(name)
+      && typeof classification === "string"
+      && ROOT_ENTRY_CLASSIFICATIONS.has(classification as RepositoryRootEntryClassification)
+      && typeof disposition === "string"
+      && ROOT_ENTRY_DISPOSITIONS.has(disposition as RepositoryRootEntryDisposition)) {
+      snapshot.push(Object.freeze({
+        name,
+        classification: classification as RepositoryRootEntryClassification,
+        disposition: disposition as RepositoryRootEntryDisposition,
+      }));
+    }
   }
   if (!reportedHole && nextExpectedIndex < entries.length) {
     findings.push(finding("root-entry-shape", `rootEntries[${nextExpectedIndex}]`, "rootEntries must not contain empty slots."));
   }
-  return findings;
+  return {
+    entries: findings.length === 0 ? Object.freeze(snapshot) : undefined,
+    findings: Object.freeze(findings),
+  };
+}
+
+export function validateRepositoryRootEntries(value: unknown): RepositoryProfileFinding[] {
+  return [...readRepositoryRootEntries(value).findings];
 }
 
 function validateRequirementArray(value: unknown): RepositoryProfileFinding[] {

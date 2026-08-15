@@ -111,4 +111,93 @@ describe("evaluateRepositoryRoot", () => {
     }).map((entry) => entry.rule)).toEqual(["root-entry-shape", "root-entry-shape"]);
     expect(reads).toBe(0);
   });
+
+  it("evaluates descriptor snapshots instead of lying top-level and nested proxy getters", () => {
+    let reads = 0;
+    const rootEntry = new Proxy(
+      { name: "old-link", classification: "compatibility-alias", disposition: "prohibited" },
+      {
+        get(target, key, receiver) {
+          reads += 1;
+          if (key === "disposition") return "allowed";
+          return Reflect.get(target, key, receiver);
+        },
+      },
+    );
+    const input = new Proxy(
+      { rootEntries: [rootEntry], observedEntries: ["old-link"] },
+      {
+        get(target, key, receiver) {
+          reads += 1;
+          if (key === "observedEntries") return [];
+          return Reflect.get(target, key, receiver);
+        },
+      },
+    );
+
+    expect(validateRepositoryRootEvaluationInput(input)).toEqual([]);
+    expect(evaluateRepositoryRoot(input)).toMatchObject({
+      ok: false,
+      status: "nonconforming",
+      entries: [{ name: "old-link", disposition: "prohibited", observed: true, status: "prohibited" }],
+      findings: [{ rule: "root-entry-prohibited" }],
+    });
+    expect(reads).toBe(0);
+  });
+
+  it("uses descriptor snapshots when nested proxy getters throw", () => {
+    let reads = 0;
+    const rootEntry = new Proxy(
+      { name: "source", classification: "canonical", disposition: "required" },
+      { get: () => { reads += 1; throw new Error("unsafe nested read"); } },
+    );
+    const observedEntries = new Proxy(["source", "unexpected"], {
+      get: () => { reads += 1; throw new Error("unsafe observation read"); },
+    });
+    const input = new Proxy(
+      { rootEntries: [rootEntry], observedEntries },
+      { get: () => { reads += 1; throw new Error("unsafe top-level read"); } },
+    );
+
+    expect(validateRepositoryRootEvaluationInput(input)).toEqual([]);
+    expect(evaluateRepositoryRoot(input)).toMatchObject({
+      ok: false,
+      status: "nonconforming",
+      findings: [{ rule: "root-entry-unknown", path: "observedEntries[1]" }],
+    });
+    expect(reads).toBe(0);
+  });
+
+  it("fails closed on descriptor traps and nested accessors without invoking getters", () => {
+    let reads = 0;
+    const accessorEntry = { name: "source", disposition: "required" };
+    Object.defineProperty(accessorEntry, "classification", {
+      get: () => { reads += 1; return "canonical"; },
+    });
+    const accessorInput = { rootEntries: [accessorEntry], observedEntries: ["source"] };
+    const descriptorFailure = new Proxy(
+      { rootEntries: [], observedEntries: [] },
+      {
+        get: () => { reads += 1; throw new Error("unsafe top-level read"); },
+        getOwnPropertyDescriptor(target, key) {
+          if (key === "rootEntries") throw new Error("descriptor failure");
+          return Reflect.getOwnPropertyDescriptor(target, key);
+        },
+      },
+    );
+
+    expect(evaluateRepositoryRoot(accessorInput)).toMatchObject({
+      ok: false,
+      status: "invalid",
+      entries: [],
+      findings: [{ rule: "root-entry-shape" }],
+    });
+    expect(evaluateRepositoryRoot(descriptorFailure)).toMatchObject({
+      ok: false,
+      status: "invalid",
+      entries: [],
+      findings: [{ rule: "root-evaluation-shape" }],
+    });
+    expect(reads).toBe(0);
+  });
 });
