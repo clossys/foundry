@@ -209,7 +209,20 @@ if (!denylist && flags.has("--require-denylist")) {
 // ones with no legitimate reason to appear in this repository's own prose or
 // source, so stripping them unconditionally (see stripInvisible, applied to
 // every scanned file's contents before any pattern runs) is pure hardening.
-const ZERO_WIDTH_RE = /[\u200B\u200C\u200D\u2060\u180E\u00AD\uFEFF]/g;
+//
+// A NUL byte is stripped here too, NOT used as `if (contents.includes(NUL))
+// continue` to skip the whole file as binary — that is the ordinary way to
+// detect a binary file and a trap for a gate like this one. A single stray
+// NUL anywhere in an otherwise-text file would make that whole file invisible
+// to this scan. That is not hypothetical: scripts/check-contamination-classes.mjs
+// embeds one literal NUL byte (as the needle of its own identical binary
+// check), and this gate's own wholesale-skip once made that entire file
+// invisible to FULL-mode scanning — the same file a real identity leak later
+// shipped in and survived FULL-mode CI. A boundary gate must not have a byte
+// that switches it off. Genuinely binary formats are already excluded above
+// by extension (SKIP_CONTENT / ARCHIVE_EXTENSIONS); everything else is
+// scanned in full, with the NUL and zero-width characters stripped out first.
+const ZERO_WIDTH_RE = /[\u0000\u200B\u200C\u200D\u2060\u180E\u00AD\uFEFF]/g;
 function stripInvisible(text) {
   return text.replace(ZERO_WIDTH_RE, "");
 }
@@ -384,13 +397,13 @@ for (const file of files) {
   } catch {
     continue;
   }
-  if (contents.includes("\u0000")) continue; // binary
 
-  // Strip zero-width/invisible Unicode before any pattern match: a term with
-  // a ZWSP/ZWNJ/ZWJ/BOM inserted mid-string renders identically to a human
-  // reader but defeats a literal or regex match. Stripped once here, upfront,
-  // so every check below (secrets, neutralize, identity) sees the same text
-  // a reader would.
+  // Strip NUL and zero-width/invisible Unicode before any pattern match: a
+  // term with a ZWSP/ZWNJ/ZWJ/BOM inserted mid-string renders identically to
+  // a human reader but defeats a literal or regex match, and a stray NUL must
+  // not make the whole file invisible to the scan (see stripInvisible above).
+  // Stripped once here, upfront, so every check below (secrets, neutralize,
+  // identity) sees the same text a reader would.
   contents = stripInvisible(contents);
 
   const rawLines = contents.split("\n");

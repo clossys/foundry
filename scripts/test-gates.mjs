@@ -226,6 +226,64 @@ try {
     );
   }
 
+  // ---------------------------- check-public-safety: a stray NUL byte must
+  // not switch the scan off for a whole file. The ordinary `if (contents has
+  // a NUL) continue` binary heuristic does exactly that, and it is not
+  // hypothetical: scripts/check-contamination-classes.mjs embeds a literal
+  // NUL as the needle of its own identical binary check, and an earlier
+  // version of THIS gate skipped that file wholesale as a result — the same
+  // file a real identity leak later shipped in and survived a FULL-mode scan
+  // (see check-foreign-references's identical regression case above for the
+  // sibling gate this was first caught in).
+  console.log("\n# check-public-safety: a stray NUL byte does not make a whole file invisible to the scan");
+  {
+    const dir = join(work, "safety-nul-byte");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      join(dir, "notes.md"),
+      ["# notes", "", `A binary sentinel: "${String.fromCharCode(0)}" is one NUL.`, "Mentions acme-corp in passing.", ""].join("\n"),
+      "utf8",
+    );
+    gitInit(dir);
+    const r = run("node", [SAFETY, dir, ...DL, "--require-denylist", "--json"]);
+    let report;
+    try { report = JSON.parse(r.out); } catch { report = { failures: [] }; }
+    const hit = (report.failures ?? []).some((f) => f.kind === "identity" && f.rel === "notes.md");
+    check(
+      "a denylisted term after a stray NUL is still caught",
+      r.code === 1 && hit,
+      `expected exit 1 with an identity finding for notes.md, got ${r.code}: ${r.out.slice(0, 600)}`,
+    );
+  }
+
+  // -------------------- check-contamination-classes: same NUL-byte hardening
+  // check-contamination-classes.mjs had the identical `if (contents has a
+  // NUL) continue` heuristic, applied to the exact file that motivated this
+  // whole class of fix -- this file, before its own literal NUL byte was
+  // replaced with a \u0000 escape. Proven directly against a fixture
+  // rather than against the script's own source, so the case still holds
+  // after that byte is gone.
+  console.log("\n# check-contamination-classes: a stray NUL byte does not make a whole file invisible to the scan");
+  {
+    const dir = join(work, "contam-nul-byte");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "@vespeneventures/probe", version: "1.0.0" }, null, 2) + "\n");
+    writeFileSync(
+      join(dir, "notes.md"),
+      ["# notes", "", `A binary sentinel: "${String.fromCharCode(0)}" is one NUL.`, "See KIT-CONVENTIONS.md for the house rules.", ""].join("\n"),
+      "utf8",
+    );
+    const r = run("node", [CONTAM, dir, "--class", "1", "--json"]);
+    let report;
+    try { report = JSON.parse(r.out); } catch { report = { findings: [] }; }
+    const hit = (report.findings ?? []).some((x) => x.file === "notes.md");
+    check(
+      "a dangling internal doc citation after a stray NUL is still caught",
+      r.code === 1 && hit,
+      `expected exit 1 naming notes.md, got ${r.code}: ${JSON.stringify(report.findings)}`,
+    );
+  }
+
   // ------------------------------- check-contamination-classes: fail-closed
   console.log("\n# check-contamination-classes: fail-closed walker");
   {
