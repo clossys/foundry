@@ -33,6 +33,7 @@ npm run check:scope
 npm run check:registry
 npm run check:workspace-links
 npm run check:gates
+npm run check:foreign-references
 npm run check:readme
 npm run check:contamination
 npm run check:typechecked-assertions
@@ -47,6 +48,7 @@ npm run check:typechecked-assertions
 | `check-scope` | Every first-party package name matches the scope declared in `package-scope.json`. |
 | `check-registry` (`registry drift` in CI) | Every non-private package's `publishConfig.registry` matches the single registry declared in `package-scope.json`. Same single-source-of-truth pattern as `check-scope`, extended to the registry — see `scripts/set-registry.mjs` and [docs/PUBLISHING.md](docs/PUBLISHING.md#7-the-public-npm-registry-considered-cancelled). |
 | `check-gates` | Regression tests proving the safety gates still catch planted contamination. |
+| `check:foreign-references` | The inverse of `check-public-safety`. That gate is a denylist and can only refuse names someone already listed; this one admits only this repository's own account and scope — derived from `package-scope.json` and the manifests' own `repository.url` — and fails every other account-shaped reference (`@scope/name`, and `owner/repo` in a GitHub URL, a workflow `uses:`, or a `gh --repo` argument) by shape. Foundry supplies planes that do not govern each other, so it must never name a consumer, a sibling repository, or any other account. Public infrastructure and fictional placeholders are admitted explicitly, and third-party npm scopes are derived from `package-lock.json` at run time. Runs on fork pull requests too — it needs no denylist. |
 | `check:readme` / `check:contamination` | Catch README/export drift and internal-convention leakage that no denylist string-match can see. Run unconditionally in CI, including on fork pull requests, since they read only the tree itself. |
 | `check:typechecked-assertions` | Fails if a `@ts-expect-error`, `@ts-ignore`, `expectTypeOf(...)`, or `assertType(...)` lives in a file `tsc` doesn't actually compile — see "Type-level assertions live in `.check.ts(x)` files" below. |
 | `check:workspace-links` (`workspace link integrity` in CI) | Every first-party `dependencies` range still covers its sibling's real on-disk version, and `package-lock.json` resolves every first-party package as a local workspace link, never a remote registry URL. See "0.x dependency ranges are minor-locked" below for the defect this exists to catch. |

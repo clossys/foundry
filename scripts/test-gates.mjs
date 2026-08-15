@@ -82,6 +82,7 @@ const ROOT_README = join(scriptDir, "check-root-readme-parity.mjs");
 const TYPECHECKED = join(scriptDir, "check-typechecked-assertions.mjs");
 const COMMIT_MESSAGES = join(scriptDir, "check-commit-messages.mjs");
 const CONVERSATION = join(scriptDir, "check-conversation-safety.mjs");
+const FOREIGN_REFS = join(scriptDir, "check-foreign-references.mjs");
 
 let passed = 0;
 let skipped = 0;
@@ -3225,6 +3226,310 @@ try {
       }
     }
   }
+
+  // ------------------------------------------- check-foreign-references
+  console.log("\n# check-foreign-references: naming an account or repository that is not this one");
+  {
+    // Every planted foreign name below is ASSEMBLED FROM FRAGMENTS at run
+    // time, never written out whole. Same discipline as the credential
+    // fixtures near the top of this file, and for a sharper reason here:
+    // check-foreign-references scans THIS file, and a name that is genuinely
+    // foreign — which is exactly what these cases need — would be caught by
+    // the gate under test the moment it appeared as a complete literal in
+    // tracked content. Fragments keep the fixtures honest without making the
+    // suite fail itself.
+    //
+    // The fixture's OWN identity uses the already-admitted `gate-fixture`
+    // placeholder, so the strings that DO appear whole here name nobody.
+    const OWN_SCOPE_NAME = FIXTURE_SCOPE.slice(1); // "gate-fixture"
+    const OWN_REPO = "own-repo";
+    const PLANTED_SCOPE_NAME = "unadmit" + "ted-scope";
+    const PLANTED_OWNER = "unadmit" + "ted-owner";
+    const LOCKFILE_SCOPE_NAME = "vend" + "or-only-in-the-lockfile";
+    const GH = "https://git" + "hub.com/";
+    const PUBLIC_REGISTRY = "https://registry.npm" + "js.org/";
+
+    // A fixture tree with the two declarations the gate derives identity from:
+    // package-scope.json's scope, and a manifest's own repository.url.
+    function makeTree(name, { docLines = [], lock = undefined, scope = FIXTURE_SCOPE, repoUrl } = {}) {
+      const dir = join(work, `foreign-refs-${name}`);
+      mkdirSync(join(dir, "packages", "thing"), { recursive: true });
+      if (scope !== null) {
+        writeFileSync(join(dir, "package-scope.json"), JSON.stringify({ scope, registry: "https://example.invalid" }, null, 2));
+      }
+      writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "fixture-root", private: true }, null, 2));
+      writeFileSync(
+        join(dir, "packages", "thing", "package.json"),
+        JSON.stringify(
+          { name: `${FIXTURE_SCOPE}/thing`, version: "0.1.0", repository: { type: "git", url: repoUrl ?? `git+${GH}${OWN_SCOPE_NAME}/${OWN_REPO}.git` } },
+          null,
+          2,
+        ),
+      );
+      writeFileSync(join(dir, "NOTES.md"), ["# notes", "", ...docLines, ""].join("\n"));
+      if (lock !== undefined) writeFileSync(join(dir, "package-lock.json"), lock);
+      return dir;
+    }
+
+    const clean = makeTree("clean", { docLines: ["Install it and read the docs.", `Ships as \`${FIXTURE_SCOPE}/thing\`.`] });
+    {
+      const result = run("node", [FOREIGN_REFS, clean]);
+      check(
+        "a tree naming only its own scope and repository passes",
+        result.code === 0,
+        `expected exit 0, got ${result.code}: ${result.out.slice(0, 600)}`,
+      );
+    }
+
+    // ---- the two shapes the gate exists to catch
+    {
+      const dir = makeTree("foreign-scope", { docLines: [`Also re-exported by \`@${PLANTED_SCOPE_NAME}/consumer\`.`] });
+      const result = run("node", [FOREIGN_REFS, dir]);
+      check(
+        "an npm scope that is not this repository's own is a finding",
+        result.code === 1,
+        `expected exit 1, got ${result.code}: ${result.out.slice(0, 600)}`,
+      );
+      check(
+        "the finding names the offending scope and its location",
+        result.out.includes(`@${PLANTED_SCOPE_NAME}`) && result.out.includes("NOTES.md:"),
+        `report did not name the scope and file: ${result.out.slice(0, 600)}`,
+      );
+    }
+    {
+      // The shape the real leak had: an account named in a doc comment as an
+      // "example scope", with NO package after it. A gate that only understood
+      // `@scope/name` would pass this tree while looking like it worked.
+      const dir = makeTree("bare-foreign-scope", { docLines: ["```js", `// The scope this package publishes under, e.g. \`@${PLANTED_SCOPE_NAME}\``, "```"] });
+      const result = run("node", [FOREIGN_REFS, dir]);
+      check(
+        "a BARE `@<account>` with no package after it is a finding (the shape the real leak had)",
+        result.code === 1,
+        `expected exit 1, got ${result.code}: ${result.out.slice(0, 600)}`,
+      );
+      check(
+        "the bare-form finding is reported as its own kind, not silently folded into the slashed one",
+        result.out.includes("bare-scope"),
+        `report did not distinguish the bare form: ${result.out.slice(0, 600)}`,
+      );
+    }
+    {
+      const dir = makeTree("foreign-owner", { docLines: [`Tracked at ${GH}${PLANTED_OWNER}/somewhere/issues/1.`] });
+      const result = run("node", [FOREIGN_REFS, dir]);
+      check(
+        "a forge owner that is not this repository's own is a finding",
+        result.code === 1,
+        `expected exit 1, got ${result.code}: ${result.out.slice(0, 600)}`,
+      );
+      check("the finding names the offending owner", result.out.includes(PLANTED_OWNER), `report did not name the owner: ${result.out.slice(0, 600)}`);
+    }
+    {
+      // "no account OTHER THAN ITS OWN" includes a sibling repository under the
+      // same account: a private control-plane repo next door is exactly the
+      // kind of thing this repository must not point a public reader at.
+      const dir = makeTree("sibling-repo", { docLines: [`See ${GH}${OWN_SCOPE_NAME}/${"a-sib" + "ling-repo"}.`] });
+      const result = run("node", [FOREIGN_REFS, dir]);
+      check(
+        "a DIFFERENT repository under this repository's own account is still a finding",
+        result.code === 1,
+        `expected exit 1, got ${result.code}: ${result.out.slice(0, 600)}`,
+      );
+    }
+    {
+      const dir = makeTree("uses", { docLines: ["```yaml", `      - uses: ${PLANTED_OWNER}/some-action@v1`, "```"] });
+      const result = run("node", [FOREIGN_REFS, dir]);
+      check(
+        "a workflow `uses:` naming a foreign owner is a finding",
+        result.code === 1,
+        `expected exit 1, got ${result.code}: ${result.out.slice(0, 600)}`,
+      );
+    }
+
+    // ---- admitted classes, each proved to be doing real work
+    {
+      const dir = makeTree("infrastructure", { docLines: ["```yaml", "      - uses: actions/checkout@v4", "```"] });
+      const result = run("node", [FOREIGN_REFS, dir]);
+      check(
+        "an INFRASTRUCTURE_FORGE_OWNERS entry (the forge's own actions org) is admitted",
+        result.code === 0,
+        `expected exit 0, got ${result.code}: ${result.out.slice(0, 600)}`,
+      );
+    }
+    {
+      // The derived third-party set: a scope is admitted because THIS TREE'S
+      // OWN lockfile resolves it from the public npm registry — not because
+      // anyone listed it. Three trees, one difference each.
+      const doc = [`Built on top of \`@${LOCKFILE_SCOPE_NAME}/tool\`.`];
+      const lockEntry = (resolved) =>
+        JSON.stringify({ name: "fixture-root", lockfileVersion: 3, packages: { "": {}, [`node_modules/@${LOCKFILE_SCOPE_NAME}/tool`]: { version: "1.0.0", resolved } } }, null, 2);
+
+      const withPublic = makeTree("lock-public", { docLines: doc, lock: lockEntry(`${PUBLIC_REGISTRY}@${LOCKFILE_SCOPE_NAME}/tool/-/tool-1.0.0.tgz`) });
+      check(
+        "a scope this tree's lockfile resolves from the public npm registry is admitted",
+        run("node", [FOREIGN_REFS, withPublic]).code === 0,
+        `expected exit 0 for a publicly-resolved dependency scope: ${run("node", [FOREIGN_REFS, withPublic]).out.slice(0, 600)}`,
+      );
+
+      const withPrivate = makeTree("lock-private", { docLines: doc, lock: lockEntry("https://npm.example.invalid/@x/tool/-/tool-1.0.0.tgz") });
+      check(
+        "the SAME scope resolved from somewhere other than the public registry is NOT admitted",
+        run("node", [FOREIGN_REFS, withPrivate]).code === 1,
+        "a lockfile entry alone admitted a scope — the public-registry condition is not load-bearing",
+      );
+
+      const withoutLock = makeTree("lock-absent", { docLines: doc });
+      check(
+        "with no lockfile at all the same scope is NOT admitted (absence is the strict direction)",
+        run("node", [FOREIGN_REFS, withoutLock]).code === 1,
+        "a missing lockfile silently admitted a third-party scope",
+      );
+    }
+
+    {
+      // A single stray NUL byte must not switch this gate off for a whole file.
+      // The ordinary `if (contents has a NUL) continue` binary heuristic does
+      // exactly that, and it is not hypothetical: one source file in this
+      // repository embeds a literal NUL as the needle of its own binary check,
+      // and an early draft of check-foreign-references skipped that file
+      // wholesale — the same file the leak that motivated the gate lived in. A
+      // planted foreign scope in it was missed and the gate reported PASS.
+      const dir = makeTree("nul-byte");
+      writeFileSync(
+        join(dir, "NOTES.md"),
+        ["# notes", "", `A binary sentinel: "${String.fromCharCode(0)}" is one NUL.`, `Adopted by \`@${PLANTED_SCOPE_NAME}/consumer\`.`, ""].join("\n"),
+        "utf8",
+      );
+      const result = run("node", [FOREIGN_REFS, dir]);
+      check(
+        "a stray NUL byte does not make a whole file invisible to the scan",
+        result.code === 1 && result.out.includes(PLANTED_SCOPE_NAME),
+        `expected exit 1 naming the planted scope, got ${result.code}: ${result.out.slice(0, 600)}`,
+      );
+    }
+
+    // ---- shapes that LOOK like a scope and are not
+    {
+      const dir = makeTree("not-scopes", {
+        docLines: [
+          "Reach the maintainers at someone@example.invalid/inbox if needed.",
+          "A @ts-expect-error/@ts-ignore/expectTypeOf marker is a type-level assertion.",
+          "```css",
+          "@layer base { @media (min-width: 40rem) { .a { color: red } } }",
+          "```",
+          "```js",
+          "/** @param {string} a @returns {string} @deprecated @see @link */",
+          "```",
+        ],
+      });
+      const result = run("node", [FOREIGN_REFS, dir]);
+      check(
+        "email local parts, TypeScript directives, CSS at-rules and JSDoc tags are not read as accounts",
+        result.code === 0,
+        `expected exit 0, got ${result.code}: ${result.out.slice(0, 600)}`,
+      );
+    }
+
+    // ---- deliberate scan exclusion, asserted so it stays deliberate
+    {
+      // package-lock.json is generated by npm from the public registry, and
+      // every name in it follows from the dependency set the manifests already
+      // declare (and which this gate DOES scan). Excluding it is a decision,
+      // not an oversight — this case pins the decision so that changing it is
+      // a visible change rather than a silent one.
+      const dir = makeTree("lock-not-scanned", {
+        lock: JSON.stringify(
+          { name: "fixture-root", lockfileVersion: 3, packages: { "": { funding: `${GH}${PLANTED_OWNER}/tool` } } },
+          null,
+          2,
+        ),
+      });
+      const result = run("node", [FOREIGN_REFS, dir]);
+      check(
+        "package-lock.json's own contents are deliberately not scanned",
+        result.code === 0,
+        `expected exit 0, got ${result.code}: ${result.out.slice(0, 600)}`,
+      );
+    }
+
+    // ---- fail-closed: never a silent pass when identity cannot be established
+    {
+      const dir = makeTree("no-scope-config", { scope: null });
+      rmSync(join(dir, "package-scope.json"), { force: true });
+      // A tree with no package-scope.json ANYWHERE above it. The temp dir has
+      // no repository above it, so the upward search genuinely finds nothing.
+      const result = run("node", [FOREIGN_REFS, dir]);
+      check(
+        "a missing package-scope.json fails closed (exit 2), never a pass",
+        result.code === 2,
+        `expected exit 2, got ${result.code}: ${result.out.slice(0, 400)}`,
+      );
+    }
+    {
+      const dir = makeTree("bad-scope-config");
+      writeFileSync(join(dir, "package-scope.json"), "{ not json");
+      const result = run("node", [FOREIGN_REFS, dir]);
+      check(
+        "an unparsable package-scope.json fails closed (exit 2)",
+        result.code === 2,
+        `expected exit 2, got ${result.code}: ${result.out.slice(0, 400)}`,
+      );
+    }
+    {
+      const dir = makeTree("no-repository");
+      writeFileSync(join(dir, "packages", "thing", "package.json"), JSON.stringify({ name: `${FIXTURE_SCOPE}/thing`, version: "0.1.0" }, null, 2));
+      const result = run("node", [FOREIGN_REFS, dir]);
+      check(
+        "no manifest declaring repository.url fails closed (exit 2) rather than falling back to a hardcoded identity",
+        result.code === 2,
+        `expected exit 2, got ${result.code}: ${result.out.slice(0, 400)}`,
+      );
+    }
+    {
+      const dir = makeTree("disagreeing-manifests");
+      mkdirSync(join(dir, "packages", "other"), { recursive: true });
+      writeFileSync(
+        join(dir, "packages", "other", "package.json"),
+        JSON.stringify(
+          { name: `${FIXTURE_SCOPE}/other`, version: "0.1.0", repository: { type: "git", url: `git+${GH}${OWN_SCOPE_NAME}/${"a-diff" + "erent-repo"}.git` } },
+          null,
+          2,
+        ),
+      );
+      const result = run("node", [FOREIGN_REFS, dir]);
+      check(
+        "manifests disagreeing about which repository this is fails closed (exit 2)",
+        result.code === 2,
+        `expected exit 2, got ${result.code}: ${result.out.slice(0, 400)}`,
+      );
+    }
+    {
+      const dir = makeTree("contradictory-identity", { repoUrl: `git+${GH}${"a-diff" + "erent-account"}/${OWN_REPO}.git` });
+      const result = run("node", [FOREIGN_REFS, dir]);
+      check(
+        "an npm scope and a forge account that contradict each other fail closed (exit 2), not a guess at which is right",
+        result.code === 2,
+        `expected exit 2, got ${result.code}: ${result.out.slice(0, 400)}`,
+      );
+    }
+    {
+      const dir = makeTree("bad-lock", { lock: "{ not json" });
+      const result = run("node", [FOREIGN_REFS, dir]);
+      check(
+        "an unparsable package-lock.json fails closed (exit 2) rather than silently admitting no third-party scope",
+        result.code === 2,
+        `expected exit 2, got ${result.code}: ${result.out.slice(0, 400)}`,
+      );
+    }
+    {
+      const result = run("node", [FOREIGN_REFS, join(work, "foreign-refs-does-not-exist")]);
+      check(
+        "a missing scan root fails closed (exit 2)",
+        result.code === 2,
+        `expected exit 2, got ${result.code}: ${result.out.slice(0, 400)}`,
+      );
+    }
+  }
+
 } finally {
   rmSync(work, { recursive: true, force: true });
 }
