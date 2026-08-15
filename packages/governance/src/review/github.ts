@@ -7,11 +7,22 @@ export interface GitHubPageInfo { readonly hasNextPage: boolean; readonly hasPre
 export interface GitHubConnection<T> { readonly nodes: readonly T[]; readonly pageInfo: GitHubPageInfo; }
 /** GitHub-shaped check data accepted by the normalizer. */
 export interface GitHubCheckNode { readonly name: string; readonly conclusion: string | null; readonly headSha?: string; readonly head_sha?: string; }
-/** GitHub-shaped review data accepted by the normalizer. */
+/**
+ * GitHub-shaped review data accepted by the normalizer. `provider` is not
+ * part of GitHub's own review shape -- GitHub has no concept of it -- so it
+ * is read only when the caller has already attached one to the node before
+ * calling this function. This normalizer never infers a provider from
+ * `author.login` or any other GitHub-shaped field: pattern-matching a login
+ * to guess which analyzer produced a review would hardcode vendor-shaped
+ * knowledge into a package whose charter forbids that. If a caller's payload
+ * omits `provider`, that is the caller's own gap to close, not a value this
+ * function may invent.
+ */
 export interface GitHubReviewNode {
   readonly id: string;
   readonly state: string | null;
   readonly author?: { readonly login?: string | null } | null;
+  readonly provider?: string | null;
   readonly submittedAt?: string | null;
   readonly commit?: { readonly oid?: string | null } | null;
   readonly commit_id?: string | null;
@@ -20,7 +31,7 @@ export interface GitHubReviewNode {
 export interface GitHubReviewThreadNode { readonly id: string; readonly isResolved: boolean; }
 /** Caller-provided snapshot of the GitHub data needed for a review decision. */
 export interface GitHubReviewEvidencePayload {
-  readonly pullRequest: { readonly id: string; readonly headRefOid: string; };
+  readonly pullRequest: { readonly id: string; readonly headRefOid: string; readonly baseRefOid: string; };
   readonly checks: GitHubConnection<GitHubCheckNode>;
   readonly reviews: GitHubConnection<GitHubReviewNode>;
   readonly reviewThreads: GitHubConnection<GitHubReviewThreadNode>;
@@ -99,24 +110,39 @@ function normalizeReviewDecision(value: unknown): ReviewDecision {
 
 /**
  * Normalizes a caller-provided GitHub snapshot into the root evidence model.
- * It performs no network access, token lookup, environment read, or provider
- * mutation. A connection with another page is deliberately marked incomplete.
+ * It performs no network access, token lookup, environment read, or
+ * GitHub-side mutation. A connection with another page is deliberately
+ * marked incomplete.
+ *
+ * `reviewerId` is populated from `author.login`, which is provider-neutral
+ * and opaque by design (see `ReviewRecord`'s own doc comment) -- and this
+ * already covers bot- and app-authored reviews correctly, not just human
+ * ones. GitHub's GraphQL `Actor` interface, which every kind of review
+ * author implements (`User`, `Bot`, `Mannequin`, `Organization`), requires
+ * `login` on all of them; a GitHub App's review author has a `login` the
+ * same shape as a human's, so it normalizes into `reviewerId` with no
+ * special-casing here and none needed.
  */
 export function normalizeGitHubReviewEvidence(payload: GitHubReviewEvidencePayload): ReviewEvidenceBundle {
   const source = record(payload);
   const pullRequest = record(ownData(source, "pullRequest"));
   const headSha = stringValue(ownData(pullRequest, "headRefOid"));
+  const baseSha = stringValue(ownData(pullRequest, "baseRefOid"));
   const checksConnection = ownData(source, "checks");
   const reviewsConnection = ownData(source, "reviews");
   const threadsConnection = ownData(source, "reviewThreads");
   return {
     schemaVersion: REVIEW_EVIDENCE_VERSION,
     headSha,
+    baseSha,
     paginationComplete: isComplete(checksConnection) && reviewConnectionIsComplete(reviewsConnection) && isComplete(threadsConnection),
     checks: nodes(checksConnection).map((node) => { const check = record(node); return { name: stringValue(ownData(check, "name")), conclusion: normalizeCheckConclusion(ownData(check, "conclusion")), headSha: stringValue(ownData(check, "headSha")) || stringValue(ownData(check, "head_sha")) }; }),
     reviews: nodes(reviewsConnection)
       .filter((node) => ownData(record(node), "state") !== "PENDING")
-      .map((node) => { const review = record(node); const commit = record(ownData(review, "commit")); const author = record(ownData(review, "author")); return { id: stringValue(ownData(review, "id")), reviewerId: stringValue(ownData(author, "login")), submittedAt: stringValue(ownData(review, "submittedAt")), state: normalizeReviewDecision(ownData(review, "state")), headSha: stringValue(ownData(commit, "oid")) || stringValue(ownData(review, "commit_id")) }; }),
+      // `provider` is read only from what the caller already attached to the
+      // node (see GitHubReviewNode's own doc comment) -- never inferred from
+      // `author.login` or any other GitHub-shaped field.
+      .map((node) => { const review = record(node); const commit = record(ownData(review, "commit")); const author = record(ownData(review, "author")); return { id: stringValue(ownData(review, "id")), reviewerId: stringValue(ownData(author, "login")), provider: stringValue(ownData(review, "provider")), submittedAt: stringValue(ownData(review, "submittedAt")), state: normalizeReviewDecision(ownData(review, "state")), headSha: stringValue(ownData(commit, "oid")) || stringValue(ownData(review, "commit_id")) }; }),
     threads: nodes(threadsConnection).map((node) => { const thread = record(node); return { id: stringValue(ownData(thread, "id")), isResolved: ownData(thread, "isResolved") === true, headSha }; }),
   };
 }

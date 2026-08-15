@@ -6,6 +6,9 @@ import type {
   ReviewFinding,
   ReviewFindingRule,
   ReviewPolicy,
+  ReviewPolicyAdoptionState,
+  ReviewPolicyCoverageState,
+  ReviewPolicyDecisionUse,
 } from "./types.js";
 
 type UnknownRecord = Record<string, unknown>;
@@ -16,10 +19,18 @@ const CHECK_CONCLUSIONS = new Set<ReviewCheckConclusion>([
 const REVIEW_DECISIONS = new Set<ReviewDecision>([
   "approved", "changes-requested", "commented", "dismissed", "pending", "unknown",
 ]);
-const POLICY_KEYS = new Set(["requiredChecks", "requireApproval"]);
-const EVIDENCE_KEYS = new Set(["schemaVersion", "headSha", "paginationComplete", "checks", "reviews", "threads"]);
+const DECISION_USES = new Set<ReviewPolicyDecisionUse>(["advisory", "authoritative"]);
+// Deliberately two disjoint Sets with no shared code path between them (see
+// ReviewPolicyCoverageState's doc comment): adoption and coverage must never
+// be derivable from one another, and keeping their vocabularies structurally
+// separate -- rather than, say, one Set with a shared "pass" value -- is part
+// of how that stays true rather than merely documented.
+const ADOPTION_STATES = new Set<ReviewPolicyAdoptionState>(["adopted", "not-adopted", "assessment-pending"]);
+const COVERAGE_STATES = new Set<ReviewPolicyCoverageState>(["verified", "not-verified", "assessment-pending"]);
+const POLICY_KEYS = new Set(["requiredChecks", "requireApproval", "decisionUse"]);
+const EVIDENCE_KEYS = new Set(["schemaVersion", "headSha", "baseSha", "paginationComplete", "checks", "reviews", "threads"]);
 const CHECK_KEYS = new Set(["name", "conclusion", "headSha"]);
-const REVIEW_KEYS = new Set(["id", "reviewerId", "submittedAt", "state", "headSha"]);
+const REVIEW_KEYS = new Set(["id", "reviewerId", "provider", "submittedAt", "state", "headSha"]);
 const THREAD_KEYS = new Set(["id", "isResolved", "headSha"]);
 const SHA = /^[0-9a-f]{40}$/;
 const RFC3339_TIMESTAMP = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$/;
@@ -110,8 +121,18 @@ export function validateReviewPolicy(value: unknown): ReviewFinding[] {
         }
       }
     }
-    if (typeof ownData(value, "requireApproval") !== "boolean") {
+    const requireApproval = ownData(value, "requireApproval");
+    if (typeof requireApproval !== "boolean") {
       findings.push(finding("require-approval", "requireApproval", "requireApproval must be a boolean."));
+    }
+    const decisionUse = ownData(value, "decisionUse");
+    if (decisionUse !== "advisory" && decisionUse !== "authoritative") {
+      findings.push(finding("decision-use", "decisionUse", 'decisionUse must be exactly "advisory" or "authoritative".'));
+    } else if (decisionUse === "advisory" && requireApproval === true) {
+      // Rejected here, inside policy validation, before any evidence is read:
+      // an advisory model can never let an approval grant clearance, so this
+      // combination is self-contradictory regardless of what evidence exists.
+      findings.push(finding("advisory-approval-conflict", "requireApproval", 'requireApproval must be false when decisionUse is "advisory"; an advisory review model can never grant merge clearance.'));
     }
     return findings;
   } catch {
@@ -170,12 +191,18 @@ function validateReviews(entries: unknown[], headSha: string, findings: ReviewFi
     findUnknownFields(entry, REVIEW_KEYS, "review-unknown-field", path, findings);
     const id = ownData(entry, "id");
     const reviewerId = ownData(entry, "reviewerId");
+    const provider = ownData(entry, "provider");
     const submittedAt = ownData(entry, "submittedAt");
     const state = ownData(entry, "state");
     const itemHeadSha = ownData(entry, "headSha");
     const submittedAtMs = reviewTimestamp(submittedAt);
     if (typeof id !== "string" || id.trim().length === 0) findings.push(finding("review-id", `${path}.id`, "A review id must be a non-empty string."));
     if (typeof reviewerId !== "string" || reviewerId.trim().length === 0) findings.push(finding("reviewer-id", `${path}.reviewerId`, "A review must identify its reviewer."));
+    // Required rather than defaulted to "" or "unknown": a review silently
+    // normalized to an empty provider would make an unknown-provider record
+    // indistinguishable from a caller that simply forgot to declare one, the
+    // same bad failure direction decisionUse's own no-default rule rejects.
+    if (typeof provider !== "string" || provider.trim().length === 0) findings.push(finding("review-provider", `${path}.provider`, "A review must identify which analyzer produced it."));
     if (submittedAtMs === undefined) findings.push(finding("review-submitted-at", `${path}.submittedAt`, "submittedAt must be an RFC 3339 timestamp with Z or an explicit offset."));
     if (typeof state !== "string" || !REVIEW_DECISIONS.has(state as ReviewDecision)) {
       findings.push(finding("review-state", `${path}.state`, "A review state must be a supported normalized value."));
@@ -242,9 +269,16 @@ export function validateReviewEvidence(value: unknown, policy: unknown): ReviewF
     findUnknownFields(value, EVIDENCE_KEYS, "evidence-unknown-field", "$", findings);
     const schemaVersion = ownData(value, "schemaVersion");
     const headSha = ownData(value, "headSha");
+    const baseSha = ownData(value, "baseSha");
     const paginationComplete = ownData(value, "paginationComplete");
-    if (schemaVersion !== REVIEW_EVIDENCE_VERSION) findings.push(finding("schema-version", "schemaVersion", `schemaVersion must be ${REVIEW_EVIDENCE_VERSION}.`));
+    if (schemaVersion !== REVIEW_EVIDENCE_VERSION) {
+      // A version-1 bundle is rejected outright, never coerced or silently
+      // accepted: it has no base-commit binding at all, so there is no safe
+      // way to treat it as a version-2 bundle with an unknown base.
+      findings.push(finding("schema-version", "schemaVersion", `schemaVersion must be ${REVIEW_EVIDENCE_VERSION} (received ${JSON.stringify(schemaVersion)}). Version 1 evidence has no base-commit binding and is rejected, not upgraded.`));
+    }
     if (!isSha(headSha)) findings.push(finding("head-sha", "headSha", "headSha must be exactly 40 lowercase hexadecimal characters."));
+    if (!isSha(baseSha)) findings.push(finding("base-sha", "baseSha", "baseSha must be exactly 40 lowercase hexadecimal characters."));
     if (paginationComplete !== true) findings.push(finding("pagination-incomplete", "paginationComplete", "Evidence must include every page before it can pass review."));
 
     const checks = readArray(value, "checks", findings);
@@ -256,6 +290,15 @@ export function validateReviewEvidence(value: unknown, policy: unknown): ReviewF
     const reviewState = reviews ? validateReviews(reviews, headSha, findings) : { hasApproval: false, hasChangesRequested: false, hasAmbiguousDecision: false };
     if (threads) validateThreads(threads, headSha, findings);
 
+    const requireApproval = isRecord(policy) ? ownData(policy, "requireApproval") : undefined;
+    const decisionUse = isRecord(policy) ? ownData(policy, "decisionUse") : undefined;
+    // The advisory+requireApproval combination is already rejected by
+    // validateReviewPolicy above (rule "advisory-approval-conflict"). Don't
+    // also pile an "approval-missing" finding on top of that: the policy is
+    // already invalid, so a second finding about the missing approval it
+    // could never have honored would only be noise on top of the real error.
+    const advisoryApprovalConflict = decisionUse === "advisory" && requireApproval === true;
+
     const policyRequiredChecks = isRecord(policy) ? ownData(policy, "requiredChecks") : undefined;
     if (isDenseDataArray(policyRequiredChecks)) {
       for (let index = 0; index < policyRequiredChecks.length; index += 1) {
@@ -265,8 +308,20 @@ export function validateReviewEvidence(value: unknown, policy: unknown): ReviewF
         if (states.length === 0) findings.push(finding("missing-required-check", `requiredChecks[${index}]`, `Required check "${name}" has no current-head evidence.`));
         else if (states.some((state) => state !== "success")) findings.push(finding("required-check-failed", `requiredChecks[${index}]`, `Required check "${name}" did not report success.`));
       }
-      if (isRecord(policy) && ownData(policy, "requireApproval") === true && !reviewState.hasApproval) findings.push(finding("approval-missing", "reviews", "A current-head approval is required."));
+      if (!advisoryApprovalConflict && requireApproval === true && !reviewState.hasApproval) findings.push(finding("approval-missing", "reviews", "A current-head approval is required."));
     }
+    // changes-requested and unresolved-thread are deliberately unconditional:
+    // they fire regardless of requireApproval, decisionUse, or requiredChecks
+    // -- including when the caller's policy requires nothing at all. This is
+    // the one authority a policy can never opt out of. A live objection (a
+    // current-head changes-requested review, or an unresolved thread) is
+    // always reported, in both "advisory" and "authoritative" models alike,
+    // because a policy that could silently waive it would let evidence with
+    // an unaddressed objection read as clean. isReviewEvidenceBundle below
+    // narrows past exactly these two rules plus review-decision-ambiguous --
+    // deliberately, since those three describe a decision OUTCOME, not a
+    // defect in the evidence's SHAPE, and a consumer narrowing to the type
+    // still needs to inspect findings for a real decision.
     if (reviewState.hasChangesRequested) findings.push(finding("changes-requested", "reviews", "A current-head review requested changes."));
     if (reviewState.hasAmbiguousDecision) findings.push(finding("review-decision-ambiguous", "reviews", "Conflicting decisive reviews share a timestamp and cannot be ordered safely."));
     return findings;
@@ -275,13 +330,45 @@ export function validateReviewEvidence(value: unknown, policy: unknown): ReviewF
   }
 }
 
-/** Narrows valid normalized data after validation for consumers that need it. */
+/**
+ * Narrows valid normalized data after validation for consumers that need it.
+ * This is shape narrowing, not a decision outcome: it deliberately ignores
+ * "changes-requested", "unresolved-thread", and "review-decision-ambiguous"
+ * findings, so a bundle can narrow to `ReviewEvidenceBundle` while still
+ * carrying a live objection a caller must separately inspect
+ * `validateReviewEvidence`'s findings to see. Do not change this — consumers
+ * may depend on narrowing succeeding independently of decision outcome.
+ */
 export function isReviewEvidenceBundle(value: unknown): value is ReviewEvidenceBundle {
-  return validateReviewEvidence(value, { requiredChecks: [], requireApproval: false })
+  return validateReviewEvidence(value, { requiredChecks: [], requireApproval: false, decisionUse: "authoritative" })
     .every((entry) => entry.rule === "changes-requested" || entry.rule === "unresolved-thread" || entry.rule === "review-decision-ambiguous");
 }
 
 /** Narrows valid consumer-owned policy data without choosing any policy values. */
 export function isReviewPolicy(value: unknown): value is ReviewPolicy {
   return validateReviewPolicy(value).length === 0;
+}
+
+/**
+ * Narrows a candidate adoption-state value. Accepts only `"adopted"`,
+ * `"not-adopted"`, or `"assessment-pending"` -- never any
+ * `ReviewPolicyCoverageState` value, so an adoption value alone can never
+ * read as a valid coverage value. The per-repository value itself is each
+ * consuming account's own data; this package supplies only the vocabulary
+ * and this guard.
+ */
+export function isReviewPolicyAdoptionState(value: unknown): value is ReviewPolicyAdoptionState {
+  return typeof value === "string" && ADOPTION_STATES.has(value as ReviewPolicyAdoptionState);
+}
+
+/**
+ * Narrows a candidate coverage-state value. Accepts only `"verified"`,
+ * `"not-verified"`, or `"assessment-pending"` -- never any
+ * `ReviewPolicyAdoptionState` value, so a coverage requirement can never be
+ * satisfied merely by supplying an adoption value. The per-repository value
+ * itself is each consuming account's own data; this package supplies only
+ * the vocabulary and this guard.
+ */
+export function isReviewPolicyCoverageState(value: unknown): value is ReviewPolicyCoverageState {
+  return typeof value === "string" && COVERAGE_STATES.has(value as ReviewPolicyCoverageState);
 }

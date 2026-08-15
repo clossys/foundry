@@ -609,13 +609,15 @@ import {
 | --- | --- | --- |
 | `requiredChecks` | `string[]` | Names of checks that must report `"success"` for the current head; no duplicates. |
 | `requireApproval` | `boolean` | Whether one current-head approval is required. |
+| `decisionUse` | `"advisory" \| "authoritative"` | Whether `requireApproval` is merge-blocking clearance (`"authoritative"`) or an audit signal only (`"advisory"`). Required, no default — an omitted or unsupported value is a `"decision-use"` finding. `requireApproval: true` combined with `decisionUse: "advisory"` is rejected as an `"advisory-approval-conflict"` finding at policy-validation time, before any evidence is read: an advisory model can never let an approval grant clearance. |
 
 `ReviewEvidenceBundle` — the provider-neutral snapshot for one head:
 
 | Field | Type | Notes |
 | --- | --- | --- |
-| `schemaVersion` | `1` | Must equal `REVIEW_EVIDENCE_VERSION`. |
+| `schemaVersion` | `2` | Must equal `REVIEW_EVIDENCE_VERSION`. A version-1 bundle (no base-commit binding) is rejected outright, never coerced. |
 | `headSha` | `string` | Exactly 40 lowercase hexadecimal characters — the exact commit this snapshot was observed against. |
+| `baseSha` | `string` | Exactly 40 lowercase hexadecimal characters — the exact base commit this snapshot was observed against, so evidence cannot outlive a base-branch change that alters the merge result. |
 | `paginationComplete` | `boolean` | Must be `true`. `false` means at least one paginated collection below was not fully consumed and the bundle must not be treated as approval-ready. |
 | `checks` | `ReviewCheck[]` | Dense array, at most 10,000 entries. |
 | `reviews` | `ReviewRecord[]` | Dense array, at most 10,000 entries. |
@@ -627,8 +629,11 @@ import {
 bundle's `headSha`, or the check is reported as stale evidence and ignored).
 
 `ReviewRecord`: `id` (`string`), `reviewerId` (`string`, opaque and
-provider-neutral), `submittedAt` (RFC 3339 timestamp with `Z` or an explicit
-offset, up to millisecond precision), `state` (one of `"approved"`,
+provider-neutral), `provider` (`string`, opaque and required — which analyzer
+produced this record; this package defines no vendor enum and no notion of a
+"trusted" provider, and no provider's presence grants clearance, same as
+`decisionUse` above), `submittedAt` (RFC 3339 timestamp with `Z` or an
+explicit offset, up to millisecond precision), `state` (one of `"approved"`,
 `"changes-requested"`, `"commented"`, `"dismissed"`, `"pending"`,
 `"unknown"`), and `headSha` (must match the bundle's `headSha`). Only each
 reviewer's latest current-head decisive state (`approved`,
@@ -643,8 +648,9 @@ current-head thread is reported as an unresolved-thread finding), and
 
 ```json
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "headSha": "0123456789abcdef0123456789abcdef01234567",
+  "baseSha": "76543210fedcba9876543210fedcba9876543210",
   "paginationComplete": true,
   "checks": [
     { "name": "test", "conclusion": "success", "headSha": "0123456789abcdef0123456789abcdef01234567" }
@@ -653,6 +659,7 @@ current-head thread is reported as an unresolved-thread finding), and
     {
       "id": "review-1",
       "reviewerId": "reviewer-1",
+      "provider": "review-analyzer-1",
       "submittedAt": "2026-01-01T00:00:00.000Z",
       "state": "approved",
       "headSha": "0123456789abcdef0123456789abcdef01234567"
@@ -668,7 +675,45 @@ Types found in `packages/governance/src/review/types.ts`; validation rules
 found in `packages/governance/src/review/validate.ts`. The optional
 `./review/github` subpath (`normalizeGitHubReviewEvidence`) converts a
 caller-provided GitHub-shaped payload into this same `ReviewEvidenceBundle`
-shape without performing any network request itself.
+shape without performing any network request itself. It reads `baseSha` from
+`pullRequest.baseRefOid` and reads `provider` only from whatever the caller
+already attached to a review node — it never infers a provider by
+pattern-matching a login or any other GitHub-shaped field.
+
+#### `changes-requested` and `unresolved-thread` are policy-independent
+
+A current-head `changes-requested` review and a current-head unresolved
+thread are always reported, regardless of `requireApproval`, `decisionUse`,
+or `requiredChecks` — including when a policy requires nothing at all. No
+policy can opt out of this: a consumer that could silently waive a live
+objection would be able to make evidence with an unaddressed objection read
+as clean. `isReviewEvidenceBundle` narrows past exactly these two rules plus
+`review-decision-ambiguous` deliberately, because those three describe a
+decision outcome, not a defect in the evidence's shape — a bundle can narrow
+to `ReviewEvidenceBundle` while still carrying a live objection a caller must
+inspect `validateReviewEvidence`'s findings to see.
+
+#### Adoption and coverage: a shared vocabulary for account-owned data
+
+`isReviewPolicyAdoptionState` and `isReviewPolicyCoverageState` validate two
+neutral, tri-state, and *structurally independent* vocabularies:
+
+| Type | Values | Meaning |
+| --- | --- | --- |
+| `ReviewPolicyAdoptionState` | `"adopted"` \| `"not-adopted"` \| `"assessment-pending"` | Whether a repository has turned a review policy on. |
+| `ReviewPolicyCoverageState` | `"verified"` \| `"not-verified"` \| `"assessment-pending"` | Whether that repository's real pull requests have actually been reviewed under it. |
+
+Both are tri-state so "not yet assessed" is always distinguishable from
+"assessed and failing" — a two-state field cannot express "unchecked" without
+letting an unchecked repository silently read as passing. Coverage is never
+derivable from adoption: a repository adopting a policy is not evidence its
+pull requests were reviewed under it, so the two vocabularies are disjoint
+(`isReviewPolicyCoverageState` rejects `"adopted"`/`"not-adopted"`, and
+`isReviewPolicyAdoptionState` rejects `"verified"`/`"not-verified"`) and
+share no validator or internal state, only the same "not yet assessed"
+literal. This package supplies the vocabulary and its validators only — the
+per-repository adoption and coverage values themselves are each consuming
+account's own data, never foundry's.
 
 ### `./cleanup`: pure workspace-cleanup classification
 

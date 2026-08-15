@@ -3,6 +3,8 @@ import { normalizeGitHubReviewEvidence } from "./github.js";
 import { validateReviewEvidence } from "./validate.js";
 
 const headSha = "c".repeat(40);
+const baseSha = "8".repeat(40);
+const authoritativePolicy = { requiredChecks: ["unit"], requireApproval: true, decisionUse: "authoritative" };
 
 function page<T>(nodes: readonly T[], hasNextPage = false, hasPreviousPage = false) {
   return { nodes, pageInfo: { hasNextPage, hasPreviousPage } };
@@ -11,46 +13,92 @@ function page<T>(nodes: readonly T[], hasNextPage = false, hasPreviousPage = fal
 describe("normalizeGitHubReviewEvidence", () => {
   it("normalizes GitHub-shaped checks, reviews, and threads without provider I/O", () => {
     const evidence = normalizeGitHubReviewEvidence({
-      pullRequest: { id: "PR_node", headRefOid: headSha },
+      pullRequest: { id: "PR_node", headRefOid: headSha, baseRefOid: baseSha },
       checks: page([{ name: "unit", conclusion: "SUCCESS", headSha }]),
       reviews: page([
-        { id: "review-approved", author: { login: "reviewer-1" }, submittedAt: "2026-01-01T00:00:00.000Z", state: "APPROVED", commit: { oid: headSha } },
-        { id: "review-dismissed", author: { login: "reviewer-2" }, submittedAt: "2026-01-01T00:01:00.000Z", state: "DISMISSED", commit: { oid: headSha } },
+        { id: "review-approved", author: { login: "reviewer-1" }, provider: "analyzer-1", submittedAt: "2026-01-01T00:00:00.000Z", state: "APPROVED", commit: { oid: headSha } },
+        { id: "review-dismissed", author: { login: "reviewer-2" }, provider: "analyzer-1", submittedAt: "2026-01-01T00:01:00.000Z", state: "DISMISSED", commit: { oid: headSha } },
       ]),
       reviewThreads: page([{ id: "thread-1", isResolved: true }]),
     });
 
     expect(evidence).toEqual({
-      schemaVersion: 1,
+      schemaVersion: 2,
       headSha,
+      baseSha,
       paginationComplete: true,
       checks: [{ name: "unit", conclusion: "success", headSha }],
       reviews: [
-        { id: "review-approved", reviewerId: "reviewer-1", submittedAt: "2026-01-01T00:00:00.000Z", state: "approved", headSha },
-        { id: "review-dismissed", reviewerId: "reviewer-2", submittedAt: "2026-01-01T00:01:00.000Z", state: "dismissed", headSha },
+        { id: "review-approved", reviewerId: "reviewer-1", provider: "analyzer-1", submittedAt: "2026-01-01T00:00:00.000Z", state: "approved", headSha },
+        { id: "review-dismissed", reviewerId: "reviewer-2", provider: "analyzer-1", submittedAt: "2026-01-01T00:01:00.000Z", state: "dismissed", headSha },
       ],
       threads: [{ id: "thread-1", isResolved: true, headSha }],
     });
-    expect(validateReviewEvidence(evidence, { requiredChecks: ["unit"], requireApproval: true })).toEqual([]);
+    expect(validateReviewEvidence(evidence, authoritativePolicy)).toEqual([]);
+  });
+
+  it("normalizes a bot- or app-authored review the same as a human's, since GitHub's Actor interface requires login on every author kind", () => {
+    const evidence = normalizeGitHubReviewEvidence({
+      pullRequest: { id: "PR_node", headRefOid: headSha, baseRefOid: baseSha },
+      checks: page([{ name: "unit", conclusion: "SUCCESS", headSha }]),
+      reviews: page([
+        { id: "review-bot", author: { login: "some-review-bot" }, provider: "analyzer-1", submittedAt: "2026-01-01T00:00:00.000Z", state: "APPROVED", commit: { oid: headSha } },
+      ]),
+      reviewThreads: page([]),
+    });
+
+    expect(evidence.reviews).toEqual([
+      { id: "review-bot", reviewerId: "some-review-bot", provider: "analyzer-1", submittedAt: "2026-01-01T00:00:00.000Z", state: "approved", headSha },
+    ]);
+    expect(validateReviewEvidence(evidence, authoritativePolicy)).toEqual([]);
+  });
+
+  it("reads baseSha from pullRequest.baseRefOid, independently of headSha", () => {
+    const evidence = normalizeGitHubReviewEvidence({
+      pullRequest: { id: "PR_node", headRefOid: headSha, baseRefOid: baseSha },
+      checks: page([]),
+      reviews: page([]),
+      reviewThreads: page([]),
+    });
+
+    expect(evidence.headSha).toBe(headSha);
+    expect(evidence.baseSha).toBe(baseSha);
+    expect(evidence.baseSha).not.toBe(evidence.headSha);
+  });
+
+  it("does not invent a provider from the payload -- an omitted provider normalizes to empty and is rejected by validation, not guessed", () => {
+    const evidence = normalizeGitHubReviewEvidence({
+      pullRequest: { id: "PR_node", headRefOid: headSha, baseRefOid: baseSha },
+      checks: page([{ name: "unit", conclusion: "SUCCESS", headSha }]),
+      reviews: page([
+        { id: "review-1", author: { login: "reviewer-1" }, submittedAt: "2026-01-01T00:00:00.000Z", state: "APPROVED", commit: { oid: headSha } },
+      ]),
+      reviewThreads: page([]),
+    });
+
+    expect(evidence.reviews[0]?.provider).toBe("");
+    expect(validateReviewEvidence(evidence, authoritativePolicy).map((entry) => [entry.rule, entry.path])).toEqual([
+      ["review-provider", "reviews[0].provider"],
+    ]);
   });
 
   it("marks the bundle incomplete when any GitHub connection has another page", () => {
     const evidence = normalizeGitHubReviewEvidence({
-      pullRequest: { id: "PR_node", headRefOid: headSha },
+      pullRequest: { id: "PR_node", headRefOid: headSha, baseRefOid: baseSha },
       checks: page([{ name: "unit", conclusion: "SUCCESS", headSha }], true),
       reviews: page([]),
       reviewThreads: page([]),
     });
 
     expect(evidence.paginationComplete).toBe(false);
-    expect(validateReviewEvidence(evidence, { requiredChecks: ["unit"], requireApproval: false }).map((entry) => entry.rule)).toEqual([
+    expect(validateReviewEvidence(evidence, { requiredChecks: ["unit"], requireApproval: false, decisionUse: "authoritative" }).map((entry) => entry.rule)).toEqual([
       "pagination-incomplete",
     ]);
   });
 
   it("marks the bundle incomplete when a GitHub connection has an earlier page", () => {
     const evidence = normalizeGitHubReviewEvidence({
-      pullRequest: { id: "PR_node", headRefOid: headSha },
+      pullRequest: { id: "PR_node", headRefOid: headSha, baseRefOid: baseSha },
       checks: page([{ name: "unit", conclusion: "SUCCESS", headSha }], false, true),
       reviews: page([]),
       reviewThreads: page([]),
@@ -61,33 +109,33 @@ describe("normalizeGitHubReviewEvidence", () => {
 
   it("marks the bundle incomplete when a connection omits its node array", () => {
     const evidence = normalizeGitHubReviewEvidence({
-      pullRequest: { id: "PR_node", headRefOid: headSha },
+      pullRequest: { id: "PR_node", headRefOid: headSha, baseRefOid: baseSha },
       checks: page([{ name: "unit", conclusion: "SUCCESS", headSha }]),
       reviews: page([]),
       reviewThreads: { pageInfo: { hasNextPage: false, hasPreviousPage: false } } as never,
     });
 
     expect(evidence.paginationComplete).toBe(false);
-    expect(validateReviewEvidence(evidence, { requiredChecks: ["unit"], requireApproval: false }).map((entry) => entry.rule)).toEqual([
+    expect(validateReviewEvidence(evidence, { requiredChecks: ["unit"], requireApproval: false, decisionUse: "authoritative" }).map((entry) => entry.rule)).toEqual([
       "pagination-incomplete",
     ]);
   });
 
   it("omits unsubmitted pending GitHub reviews", () => {
     const evidence = normalizeGitHubReviewEvidence({
-      pullRequest: { id: "PR_node", headRefOid: headSha },
+      pullRequest: { id: "PR_node", headRefOid: headSha, baseRefOid: baseSha },
       checks: page([{ name: "unit", conclusion: "SUCCESS", headSha }]),
       reviews: page([
-        { id: "review-approved", author: { login: "reviewer-1" }, submittedAt: "2026-01-01T00:00:00.000Z", state: "APPROVED", commit: { oid: headSha } },
+        { id: "review-approved", author: { login: "reviewer-1" }, provider: "analyzer-1", submittedAt: "2026-01-01T00:00:00.000Z", state: "APPROVED", commit: { oid: headSha } },
         { id: "review-pending", state: "PENDING" },
       ]),
       reviewThreads: page([]),
     });
 
     expect(evidence.reviews).toEqual([
-      { id: "review-approved", reviewerId: "reviewer-1", submittedAt: "2026-01-01T00:00:00.000Z", state: "approved", headSha },
+      { id: "review-approved", reviewerId: "reviewer-1", provider: "analyzer-1", submittedAt: "2026-01-01T00:00:00.000Z", state: "approved", headSha },
     ]);
-    expect(validateReviewEvidence(evidence, { requiredChecks: ["unit"], requireApproval: true })).toEqual([]);
+    expect(validateReviewEvidence(evidence, authoritativePolicy)).toEqual([]);
   });
 
   it("marks sparse connection nodes incomplete instead of compacting them", () => {
@@ -96,7 +144,7 @@ describe("normalizeGitHubReviewEvidence", () => {
       state: string | null;
     }>;
     const evidence = normalizeGitHubReviewEvidence({
-      pullRequest: { id: "PR_node", headRefOid: headSha },
+      pullRequest: { id: "PR_node", headRefOid: headSha, baseRefOid: baseSha },
       checks: page([{ name: "unit", conclusion: "SUCCESS", headSha }]),
       reviews: page(sparseReviews),
       reviewThreads: page([]),
@@ -110,26 +158,26 @@ describe("normalizeGitHubReviewEvidence", () => {
     "keeps review evidence incomplete when review state is %j rather than silently omitting it",
     (state) => {
       const evidence = normalizeGitHubReviewEvidence({
-        pullRequest: { id: "PR_node", headRefOid: headSha },
+        pullRequest: { id: "PR_node", headRefOid: headSha, baseRefOid: baseSha },
         checks: page([{ name: "unit", conclusion: "SUCCESS", headSha }]),
         reviews: page([{ id: "review-invalid", state }]),
         reviewThreads: page([]),
       });
 
       expect(evidence.paginationComplete).toBe(false);
-      expect(evidence.reviews).toEqual([{ id: "review-invalid", reviewerId: "", submittedAt: "", state: "unknown", headSha: "" }]);
+      expect(evidence.reviews).toEqual([{ id: "review-invalid", reviewerId: "", provider: "", submittedAt: "", state: "unknown", headSha: "" }]);
     },
   );
 
   it("preserves a stale review commit so root validation fails closed", () => {
     const evidence = normalizeGitHubReviewEvidence({
-      pullRequest: { id: "PR_node", headRefOid: headSha },
+      pullRequest: { id: "PR_node", headRefOid: headSha, baseRefOid: baseSha },
       checks: page([{ name: "unit", conclusion: "SUCCESS", headSha }]),
-      reviews: page([{ id: "review-1", author: { login: "reviewer-1" }, submittedAt: "2026-01-01T00:00:00.000Z", state: "APPROVED", commit_id: "d".repeat(40) }]),
+      reviews: page([{ id: "review-1", author: { login: "reviewer-1" }, provider: "analyzer-1", submittedAt: "2026-01-01T00:00:00.000Z", state: "APPROVED", commit_id: "d".repeat(40) }]),
       reviewThreads: page([]),
     });
 
-    expect(validateReviewEvidence(evidence, { requiredChecks: ["unit"], requireApproval: true }).map((entry) => [entry.rule, entry.path])).toEqual([
+    expect(validateReviewEvidence(evidence, authoritativePolicy).map((entry) => [entry.rule, entry.path])).toEqual([
       ["stale-evidence", "reviews[0].headSha"],
       ["approval-missing", "reviews"],
     ]);
@@ -137,14 +185,14 @@ describe("normalizeGitHubReviewEvidence", () => {
 
   it("does not stamp a check with the current head when provenance is absent", () => {
     const evidence = normalizeGitHubReviewEvidence({
-      pullRequest: { id: "PR_node", headRefOid: headSha },
+      pullRequest: { id: "PR_node", headRefOid: headSha, baseRefOid: baseSha },
       checks: page([{ name: "unit", conclusion: "SUCCESS" }]),
       reviews: page([]),
       reviewThreads: page([]),
     });
 
     expect(evidence.checks[0]?.headSha).toBe("");
-    expect(validateReviewEvidence(evidence, { requiredChecks: ["unit"], requireApproval: false }).map((entry) => [entry.rule, entry.path])).toEqual([
+    expect(validateReviewEvidence(evidence, { requiredChecks: ["unit"], requireApproval: false, decisionUse: "authoritative" }).map((entry) => [entry.rule, entry.path])).toEqual([
       ["stale-evidence", "checks[0].headSha"],
       ["missing-required-check", "requiredChecks[0]"],
     ]);
@@ -152,14 +200,14 @@ describe("normalizeGitHubReviewEvidence", () => {
 
   it("does not stamp a review with the current head when commit provenance is absent", () => {
     const evidence = normalizeGitHubReviewEvidence({
-      pullRequest: { id: "PR_node", headRefOid: headSha },
+      pullRequest: { id: "PR_node", headRefOid: headSha, baseRefOid: baseSha },
       checks: page([{ name: "unit", conclusion: "SUCCESS", headSha }]),
-      reviews: page([{ id: "review-1", author: { login: "reviewer-1" }, submittedAt: "2026-01-01T00:00:00.000Z", state: "APPROVED" }]),
+      reviews: page([{ id: "review-1", author: { login: "reviewer-1" }, provider: "analyzer-1", submittedAt: "2026-01-01T00:00:00.000Z", state: "APPROVED" }]),
       reviewThreads: page([]),
     });
 
     expect(evidence.reviews[0]?.headSha).toBe("");
-    expect(validateReviewEvidence(evidence, { requiredChecks: ["unit"], requireApproval: true }).map((entry) => [entry.rule, entry.path])).toEqual([
+    expect(validateReviewEvidence(evidence, authoritativePolicy).map((entry) => [entry.rule, entry.path])).toEqual([
       ["stale-evidence", "reviews[0].headSha"],
       ["approval-missing", "reviews"],
     ]);
