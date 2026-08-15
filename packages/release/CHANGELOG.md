@@ -7,6 +7,15 @@ and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.9] - 2026-08-15
+
+### Changed
+
+- Updated the `@vespeneventures/governance` dependency range from `~0.11.0`
+  to `~0.12.0`
+  so this deprecated compatibility package remains linked after governance's
+  advisory-review-contract release. No release export changed.
+
 ## [0.2.8] - 2026-08-14
 
 ### Changed
