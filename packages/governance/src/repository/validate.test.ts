@@ -19,11 +19,12 @@ describe("validateRepositoryProfile", () => {
 
   it("reports all independently checkable top-level problems", () => {
     const findings = validateRepositoryProfile({
-      schemaVersion: 3,
+      schemaVersion: 4,
       defaultBranch: "bad branch",
       commands: {},
       protectedPaths: "src/**",
       requirements: [],
+      rootEntries: [],
       provider: "example",
     });
 
@@ -46,6 +47,49 @@ describe("validateRepositoryProfile", () => {
         { id: "tool.formatter", scope: "repository", constraint: { kind: "present" } },
       ],
     })).toEqual([]);
+  });
+
+  it("accepts a strict v3 caller-owned root vocabulary while preserving v1 and v2", () => {
+    expect(validateRepositoryProfile({
+      ...validProfile,
+      schemaVersion: 3,
+      requirements: [],
+      rootEntries: [
+        { name: "source", classification: "canonical", disposition: "required" },
+        { name: ".tooling", classification: "extension", disposition: "allowed" },
+        { name: "old-link", classification: "compatibility-alias", disposition: "prohibited" },
+        { name: "archive", classification: "legacy-artifact", disposition: "allowed" },
+      ],
+    })).toEqual([]);
+
+    expect(validateRepositoryProfile({
+      ...validProfile,
+      schemaVersion: 2,
+      requirements: [],
+      rootEntries: [],
+    }).map((entry) => [entry.rule, entry.path])).toEqual([["unknown-field", "rootEntries"]]);
+  });
+
+  it("requires explicit classifications and dispositions for every v3 root entry", () => {
+    const findings = validateRepositoryProfile({
+      ...validProfile,
+      schemaVersion: 3,
+      requirements: [],
+      rootEntries: [
+        { name: "nested/path", classification: "standard", disposition: "keep", extra: true },
+        { name: "source", classification: "canonical" },
+        { name: "source", classification: "exception", disposition: "allowed" },
+      ],
+    });
+
+    expect(findings.map((entry) => [entry.rule, entry.path])).toEqual([
+      ["unknown-field", "rootEntries[0].extra"],
+      ["root-entry-name", "rootEntries[0].name"],
+      ["root-entry-classification", "rootEntries[0].classification"],
+      ["root-entry-disposition", "rootEntries[0].disposition"],
+      ["root-entry-disposition", "rootEntries[1].disposition"],
+      ["duplicate-root-entry", "rootEntries[2].name"],
+    ]);
   });
 
   it("keeps v1 closed and validates every v2 requirement field", () => {
@@ -150,6 +194,7 @@ describe("validateRepositoryProfile", () => {
       "commands-shape",
       "protected-paths-shape",
       "requirements-shape",
+      "root-entries-shape",
     ]);
 
     const inheritedCommand = new Proxy(Object.create(null) as Record<string, unknown>, {

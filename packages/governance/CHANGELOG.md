@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-08-14
+
+### Added
+
+- **Exact repository-root declarations and pure evaluation** under
+  `./repository` (#238). Profile schema v3 adds caller-owned `rootEntries`;
+  every direct-child name carries an explicit `canonical`, `extension`,
+  `exception`, `compatibility-alias`, or `legacy-artifact` classification and
+  a separate `required`, `allowed`, or `prohibited` disposition.
+- `evaluateRepositoryRoot` and `validateRepositoryRootEvaluationInput` compare
+  caller-normalized direct-child observations with that vocabulary. Missing
+  required entries, observed prohibited entries, and every undeclared direct
+  child fail closed. Malformed input returns no partial proof.
+- New root-entry, evaluation, status, and finding types are exported from
+  `@vespeneventures/governance/repository`. The API performs no filesystem
+  discovery, alias resolution, retention decision, or mutation.
+
+### Changed
+
+- **Breaking for exhaustive type consumers:** `REPOSITORY_PROFILE_VERSION` is
+  now `3`, and `RepositoryProfile` adds `RepositoryProfileV3` to its explicit
+  union. Closed v1 and v2 profiles remain supported; v2 is identified by
+  `PREVIOUS_REPOSITORY_PROFILE_VERSION` and cannot silently add root entries.
+- Repository-root vocabulary remains in `./repository`; account-container
+  discovery and multi-plane composition remain caller-owned, so no broad
+  `./workspace` subpath was added.
+
 ## [0.9.0] - 2026-08-14
 
 ### Added

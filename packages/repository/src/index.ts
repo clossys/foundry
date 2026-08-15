@@ -1,10 +1,13 @@
 /** @deprecated Migrate to `@vespeneventures/governance/repository`. */
 export {
   evaluateRepositoryRequirements,
+  evaluateRepositoryRoot,
   LEGACY_REPOSITORY_PROFILE_VERSION,
+  PREVIOUS_REPOSITORY_PROFILE_VERSION,
   REPOSITORY_PROFILE_VERSION,
   validateRepositoryProfile,
   validateRepositoryRequirementsEvaluationInput,
+  validateRepositoryRootEvaluationInput,
 } from "@vespeneventures/governance/repository";
 export type {
   RepositoryCommand,
@@ -17,6 +20,7 @@ export type {
   RepositoryProfileFindingRule,
   RepositoryProfileV1,
   RepositoryProfileV2,
+  RepositoryProfileV3,
   RepositoryRequirement,
   RepositoryRequirementConstraint,
   RepositoryRequirementDeclaration,
@@ -29,4 +33,13 @@ export type {
   RepositoryRequirementsEvaluation,
   RepositoryRequirementsEvaluationInput,
   RepositoryRequirementsEvaluationStatus,
+  RepositoryRootEntry,
+  RepositoryRootEntryClassification,
+  RepositoryRootEntryDisposition,
+  RepositoryRootEntryEvaluation,
+  RepositoryRootEvaluation,
+  RepositoryRootEvaluationInput,
+  RepositoryRootEvaluationStatus,
+  RepositoryRootFinding,
+  RepositoryRootFindingRule,
 } from "@vespeneventures/governance/repository";

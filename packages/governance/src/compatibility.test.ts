@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { buildCatalog } from "./catalog/index.js";
 import { runFoundationCheck } from "./gates/index.js";
 import { preflightPackage } from "./release/index.js";
-import { validateRepositoryProfile } from "./repository/index.js";
+import { evaluateRepositoryRoot, validateRepositoryProfile } from "./repository/index.js";
 import { normalizeGitHubReviewEvidence } from "./review/github.js";
 import { validateReviewEvidence } from "./review/index.js";
 
@@ -19,6 +19,7 @@ describe("deprecated package compatibility entries", () => {
     expect(gates.runFoundationCheck).toEqual(expect.any(Function));
     expect(release.preflightPackage).toEqual(expect.any(Function));
     expect(repository.validateRepositoryProfile).toEqual(expect.any(Function));
+    expect(repository.evaluateRepositoryRoot).toEqual(expect.any(Function));
     expect(review.validateReviewEvidence).toEqual(expect.any(Function));
     expect(reviewGitHub.normalizeGitHubReviewEvidence).toEqual(expect.any(Function));
 
@@ -29,6 +30,7 @@ describe("deprecated package compatibility entries", () => {
     expect(typeof runFoundationCheck).toBe("function");
     expect(typeof preflightPackage).toBe("function");
     expect(typeof validateRepositoryProfile).toBe("function");
+    expect(typeof evaluateRepositoryRoot).toBe("function");
     expect(typeof validateReviewEvidence).toBe("function");
     expect(typeof normalizeGitHubReviewEvidence).toBe("function");
   });

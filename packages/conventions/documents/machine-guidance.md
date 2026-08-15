@@ -7,21 +7,26 @@ locations; do not duplicate those mechanisms here.
 
 ## Workspace navigation
 
-- `$CODE_WORKSPACE_ROOT` is the canonical local workspace control plane. On
-  this machine it resolves to `${WORKSPACE_ROOT}`.
-- The standards checkout referenced by the workspace policy is the versioned
-  source for machine and workspace standards; its install location is resolved
-  dynamically. Change canonical standards there first, then run its installer
-  and validator.
+- `$CODE_WORKSPACE_ROOT` is the local repository discovery root. On this
+  machine it resolves to `${WORKSPACE_ROOT}`. It is a location, not a singular
+  governance authority.
+- Discover the applicable account-owned workspace planes from caller-owned
+  policy or registry data. Each plane owns its repository inventory, exact
+  root declaration, standards, and decisions; do not infer one plane from the
+  discovery root or treat one plane as authority for another.
+- Compose declared requirements from every applicable plane before machine
+  changes. Conflicts and missing observations remain visible for the caller to
+  resolve; discovery order is not precedence.
 - Before cross-repository, workspace-topology, or mixed personal/work tasks,
-  read the workspace control plane's own `AGENTS.md`, `README.md`, and
-  workspace policy document.
+  identify the owning planes and read each applicable repository's own
+  `AGENTS.md`, `README.md`, and policy documents.
 - For ordinary project work, start in the applicable canonical repository and
   follow its local instructions. Repository policy takes precedence inside that
   repository.
 - Preserve repository boundaries, existing user changes, and ephemeral
   worktrees. Do not create scratch material at the workspace root.
-- Treat the workspace's `personal` subtree as private and non-published.
+- Apply each plane's declared privacy classifications. A machine-wide rule must
+  not invent a shared subtree name or assume one plane's layout for another.
 
 ## Shared workflows and parity
 
@@ -38,8 +43,8 @@ locations; do not duplicate those mechanisms here.
   context, a skill for a repeated workflow, a hook or rule for mechanical
   enforcement, a connector for authorized live data, and an automation only
   for genuinely recurring work.
-- Keep topology, ports, launch commands, and repository ownership in the
-  workspace's versioned control-plane files. Do not restate them here.
+- Keep topology, ports, launch commands, repository ownership, and retention
+  decisions in their owning planes' versioned files. Do not restate them here.
 
 ## Recurring work
 
@@ -88,8 +93,8 @@ locations; do not duplicate those mechanisms here.
   in the operator's home, or one nested inside the repository itself. This
   placement is a harness default, not a second workspace convention, and
   generally cannot be redirected.
-- The branch and slug created there must still follow this workspace's naming
-  and branch-provenance rules above; never substitute an unrelated name.
+- The branch and slug created there must still follow the owning repository's
+  naming and branch-provenance rules above; never substitute an unrelated name.
 - Treat these as strictly ephemeral: remove them when the task finishes. They
   must not accumulate as untracked clutter beside the canonical worktree tree,
   and they are never a substitute for it.

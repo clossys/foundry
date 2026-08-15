@@ -4,11 +4,11 @@
 > `@vespeneventures/governance/repository`. This package preserves the same
 > root API and `repository-check` command while existing consumers migrate.
 
-Dependency-free contracts and deterministic validation for repository values
-that belong to a consumer: its default branch, verification commands, and
-protected path patterns. The package ships machinery only. It contains no
-repository profile, workflow, policy value, provider account, or native agent
-configuration.
+Contracts and deterministic validation for repository values that belong to a
+consumer: its default branch, verification commands, protected path patterns,
+upward requirements, and exact direct-child vocabulary. The package ships
+machinery only. It contains no repository profile, root entry, workflow,
+policy value, provider account, or native agent configuration.
 
 ```bash
 npm install @vespeneventures/repository
@@ -23,7 +23,7 @@ import {
 } from "@vespeneventures/repository";
 
 const profile: RepositoryProfile = {
-  schemaVersion: 2,
+  schemaVersion: 3,
   defaultBranch: "main",
   commands: [
     { name: "setup", run: "npm ci" },
@@ -35,6 +35,10 @@ const profile: RepositoryProfile = {
     scope: "machine",
     constraint: { kind: "one-of", values: ["variant-a", "variant-b"] },
   }],
+  rootEntries: [
+    { name: "source", classification: "canonical", disposition: "required" },
+    { name: "old-link", classification: "compatibility-alias", disposition: "prohibited" },
+  ],
 };
 
 const findings = validateRepositoryProfile(profile);
@@ -80,10 +84,22 @@ observations, and calls `evaluateRepositoryRequirements`. Missing or explicit
 unknown evidence fails closed. Foundry does not discover repositories, inspect
 machines, select a compatible value, install anything, or mutate state.
 
-The original version-1 profile remains accepted as `RepositoryProfileV1`.
-`RepositoryProfile` is the explicit `RepositoryProfileV1 |
-RepositoryProfileV2` union, so compatibility does not make the old closed
-shape silently accept new fields.
+The original version-1 profile and requirements-only version-2 profile remain
+accepted. `RepositoryProfile` is the explicit v1/v2/v3 union, so compatibility
+does not make either older closed shape silently accept new fields.
+
+Profile v3 adds the caller's exact direct-child vocabulary. Each entry names a
+single root child, classifies it as `canonical`, `extension`, `exception`,
+`compatibility-alias`, or `legacy-artifact`, and explicitly declares whether
+it is `required`, `allowed`, or `prohibited`. `evaluateRepositoryRoot` compares
+that vocabulary with caller-discovered direct-child names. Missing required,
+observed prohibited, and undeclared unknown entries all fail closed. Foundry
+does not discover the filesystem, choose classifications or retention, resolve
+aliases, or mutate anything.
+
+Root vocabulary remains a repository concern under the governance repository
+subpath. Account-container discovery and multi-plane composition stay with the
+caller; this contract does not imply a governance workspace subpath.
 
 ## API
 
@@ -92,10 +108,12 @@ shape silently accept new fields.
 | `validateRepositoryProfile(value)` | function | Returns every independently checkable structural finding without throwing or performing I/O. |
 | `validateRepositoryRequirementsEvaluationInput(value)` | function | Strictly validates caller-associated declarations and normalized observations. |
 | `evaluateRepositoryRequirements(value)` | function | Pure evaluation with `satisfied`, `unsatisfied`, `conflicting`, `unknown`, and invalid fail-closed report states. |
-| `REPOSITORY_PROFILE_VERSION` / `LEGACY_REPOSITORY_PROFILE_VERSION` | constants | Current schema `2` and deliberately supported legacy schema `1`. |
+| `validateRepositoryRootEvaluationInput(value)` | function | Strictly validates caller-owned root declarations and caller-normalized direct-child observations. |
+| `evaluateRepositoryRoot(value)` | function | Pure exact-root proof; missing, prohibited, and unknown direct children fail closed. |
+| `REPOSITORY_PROFILE_VERSION` / `PREVIOUS_REPOSITORY_PROFILE_VERSION` / `LEGACY_REPOSITORY_PROFILE_VERSION` | constants | Current schema `3` and deliberately supported schemas `2` and `1`. |
 | `RepositoryCommand` | type | One consumer-owned command with `name`, `run`, and optional repository-relative `cwd`. |
 | `RepositoryList` | type | Dense, read-only array values accepted by the profile validator. |
-| `RepositoryProfileV1` / `RepositoryProfileV2` / `RepositoryProfile` | types | The two closed profile versions and their explicit union. |
+| `RepositoryProfileV1` / `RepositoryProfileV2` / `RepositoryProfileV3` / `RepositoryProfile` | types | The three closed profile versions and their explicit union. |
 | `RepositoryProfileFinding` | type | A deterministic error with `rule`, `path`, and `message`. |
 | `RepositoryProfileFindingRule` | type | Closed vocabulary of validator rule identifiers. |
 | `RepositoryRequirement` / `RepositoryRequirementConstraint` / `RepositoryPresenceConstraint` / `RepositoryOneOfConstraint` | types | Neutral requirement and constraint grammar. |
@@ -104,11 +122,15 @@ shape silently accept new fields.
 | `RepositoryRequirementsEvaluationInput` / `RepositoryRequirementsEvaluation` / `RepositoryRequirementsEvaluationStatus` | types | Strict evaluator input and complete report. |
 | `RepositoryRequirementEvaluation` / `RepositoryRequirementStatus` | types | One requirement's deterministic result. |
 | `RepositoryRequirementFinding` / `RepositoryRequirementFindingRule` | types | Stable evaluation and input finding contracts. |
+| `RepositoryRootEntry` / `RepositoryRootEntryClassification` / `RepositoryRootEntryDisposition` | types | Caller-owned exact-root declaration grammar. |
+| `RepositoryRootEvaluationInput` / `RepositoryRootEvaluation` / `RepositoryRootEvaluationStatus` | types | Strict root evaluator input and complete report. |
+| `RepositoryRootEntryEvaluation` | type | One declared or unknown direct child's result. |
+| `RepositoryRootFinding` / `RepositoryRootFindingRule` | types | Stable exact-root structural and evaluation findings. |
 
 ## Requirements
 
 Node 20+. ESM only. Runtime dependency: `@vespeneventures/governance`
-(`~0.9.0`), which this package's own `src/index.ts` re-exports from.
+(`~0.10.0`), which this package's own `src/index.ts` re-exports from.
 
 This package is not dependency-free: `governance` itself depends on
 `@vespeneventures/policy`, which is therefore pulled in transitively by

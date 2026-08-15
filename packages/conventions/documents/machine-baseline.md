@@ -15,10 +15,10 @@ asserting something it cannot see, which is worse than declaring the gap.
   remain enabled, where the platform provides them.
 - The host firewall remains enabled.
 - Automatic operating-system security updates remain enabled.
-- The workspace's `personal` subtree, each agent product's own dot-directory in
-  the operator's home, `~/.ssh`, and the operator's secret directory are
-  private to the user: `0700` directories, and sensitive files that are not
-  world-readable.
+- Subtrees that an owning workspace plane classifies as private, each agent
+  product's own dot-directory in the operator's home, `~/.ssh`, and the
+  operator's secret directory are private to the user: `0700` directories,
+  and sensitive files that are not world-readable.
 - Secrets stay in their owning password or secret manager, or in a runtime auth
   store. They are never copied into a repository or into an agent instruction.
 
@@ -31,8 +31,8 @@ asserting something it cannot see, which is worse than declaring the gap.
 - Installer changes create timestamped backups under `~/.config-backups/`.
   Those are local rollback points, not a backup strategy — they live on the
   same disk as the thing they would restore.
-- Canonical source repositories and the private workspace control plane remain
-  pushed to their owning accounts.
+- Canonical source repositories and account-owned workspace planes remain
+  pushed to their owning accounts according to each plane's visibility policy.
 
 ## Resource posture
 
@@ -45,9 +45,9 @@ asserting something it cannot see, which is worse than declaring the gap.
 
 ## Review cadence
 
-- Run the plane's machine-diagnostic workflow after changing user-level agent
-  or shell settings.
-- Run the plane's workspace-reconciliation report, and read it, before removing
-  worktrees or branches.
+- Run every applicable plane's machine-diagnostic workflow after changing
+  user-level agent or shell settings.
+- Run the owning plane's workspace-reconciliation report, and read it, before
+  removing worktrees or branches.
 - Review this baseline after a major operating-system, agent-product,
   version-control, or forge change.

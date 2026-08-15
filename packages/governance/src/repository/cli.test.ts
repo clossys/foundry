@@ -57,11 +57,12 @@ describe("repository-check reports", () => {
 
   it("prints ordered validation findings and returns 1", () => {
     const profile = writeProfile("invalid.json", {
-      schemaVersion: 3,
+      schemaVersion: 4,
       defaultBranch: "bad branch",
       commands: {},
       protectedPaths: "src/**",
       requirements: [],
+      rootEntries: [],
     });
 
     expect(main([profile])).toBe(1);
