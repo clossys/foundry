@@ -94,6 +94,16 @@ jobs:
             node scripts/check-commit-messages.mjs "$range" "${extra[@]}" --require-denylist
           fi
 
+      # The inverse of the denylist scan above, and the reason it lives in this
+      # job rather than `prose`: it is an identity gate, so a tree that fails it
+      # should never reach build or test either. Needs no denylist and no
+      # credential — it derives this repository's own account and scope from
+      # package-scope.json and the manifests' own repository.url — so unlike the
+      # steps above it runs identically on a fork pull request, with no PARTIAL
+      # mode to fall back to.
+      - name: check-foreign-references
+        run: node scripts/check-foreign-references.mjs
+
       - name: gate regression tests
         run: node scripts/test-gates.mjs
 
