@@ -694,7 +694,18 @@ for (const file of scanFiles) {
   } catch {
     continue;
   }
-  if (contents.includes(" ")) continue; // binary
+  // Strip a stray NUL byte rather than treating its presence as "this whole
+  // file is binary, skip it" — that heuristic is exactly what let a real
+  // identity leak slip past scripts/check-public-safety.mjs in this very
+  // repository. This very line used to be written as a raw NUL literal (the
+  // needle of a check identical in shape to the one it just replaced), and
+  // that earlier version of scripts/check-public-safety.mjs's wholesale skip
+  // made this whole file invisible to a FULL-mode scan as a result. SCAN_EXT
+  // above already restricts this walk to genuinely-text extensions, so there
+  // is no real binary content here to protect against — only a byte that,
+  // left unstripped, would switch this scan off for whatever file happens to
+  // contain one.
+  contents = contents.replace(/\u0000/g, "");
   const lines = contents.split("\n");
   const ext = extname(file).toLowerCase();
 
