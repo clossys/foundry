@@ -36,7 +36,7 @@ order packages happen to appear in a workspace:
 policy ── governance
 ```
 
-`governance` owns its catalog, gates, release, repository, and review
+`governance` owns its catalog, composition, gates, release, repository, and review
 subpaths; its only Foundry runtime sibling is `policy`. The former standalone
 package names remain compatibility artifacts and must not be selected for new
 consumer integrations. A local workspace build is not evidence that this
