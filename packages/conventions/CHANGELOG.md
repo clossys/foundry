@@ -5,6 +5,29 @@ All notable changes to `@vespeneventures/conventions` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-08-15
+
+### Added
+
+- A `schedule-declaration` document and validator for the second scheduling
+  tier. `routine-declaration` already asserted that model-free work is a
+  distinct tier, but only the routine half had a grammar, so schedules had
+  nowhere to be declared and were carried inside whichever repository happened
+  to host them first.
+- `validateScheduleDeclaration`, `validateScheduleSet`, `isCronExpression`, and
+  `scheduleReconciliationFindingKinds`, with the `ScheduleDeclaration` and
+  `ScheduleRegistry` types.
+- Execution host is a first-class declared field in this tier, drawn from a
+  closed list the consuming plane supplies. Hosts are deliberately not
+  enumerated here: naming vendors in a grammar dates it, and adopting a new
+  host should not require this package to be republished.
+- Trigger correspondence checking. Where an artifact dispatches by matching a
+  fired cadence against its own table, the declaration and the host's trigger
+  list are two copies of one fact; a mismatch raises nothing at run time, so
+  the check compares them instead. `validateScheduleSet` adds the half a single
+  declaration cannot see: a host trigger that no schedule claims, which fires
+  into nothing while the host still reports a successful invocation.
+
 ## [0.5.0] - 2026-08-14
 
 ### Changed

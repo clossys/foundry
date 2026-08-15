@@ -70,3 +70,49 @@ export interface RoutineRegistry {
   readonly cadences: readonly string[];
   readonly modes: readonly string[];
 }
+
+/**
+ * A schedule declaration: a pointer to deployed code driven by a clock the
+ * declaring plane does not run. See `documents/schedule-declaration.md`.
+ *
+ * The sibling of `RoutineDeclaration`, deliberately not merged with it. Both
+ * tiers carry an identifier, a cadence and a scope; they diverge on what they
+ * point at, and the checks worth making follow from that divergence.
+ */
+export interface ScheduleDeclaration {
+  readonly id: string;
+  /**
+   * The expression the host itself will match, not a word. A schedule's clock
+   * belongs to a stranger, so the declaration must carry what that stranger
+   * reads.
+   */
+  readonly cadence: string;
+  /** Registry identifiers, never paths. */
+  readonly scope: readonly string[];
+  /** Where the work runs. Drawn from the plane's own closed list of hosts. */
+  readonly executionHost: string;
+  /** Repository-relative location of what actually runs. Never absolute. */
+  readonly artifact: string;
+  readonly purpose: string;
+  /**
+   * Cadences the host's own trigger configuration declares, when the artifact
+   * dispatches by matching a fired cadence against its own table. Supplying
+   * this is what lets a check compare the two copies of one fact instead of
+   * trusting that someone kept them aligned.
+   */
+  readonly hostTriggers?: readonly string[];
+}
+
+/**
+ * The declaring plane's closed lists for the schedule tier.
+ */
+export interface ScheduleRegistry {
+  /** Repository identifiers this plane governs. Scope may name nothing else. */
+  readonly repositories: readonly string[];
+  /**
+   * Execution hosts this plane declares. Kept open as data rather than fixed
+   * here: naming vendors in the grammar would date it, and a plane that adopts
+   * a new host should not need this package to be republished first.
+   */
+  readonly hosts: readonly string[];
+}
