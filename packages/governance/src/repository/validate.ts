@@ -1,21 +1,37 @@
-import { LEGACY_REPOSITORY_PROFILE_VERSION, REPOSITORY_PROFILE_VERSION } from "./types.js";
+import {
+  LEGACY_REPOSITORY_PROFILE_VERSION,
+  PREVIOUS_REPOSITORY_PROFILE_VERSION,
+  REPOSITORY_PROFILE_VERSION,
+} from "./types.js";
 import type {
   RepositoryProfileFinding,
   RepositoryProfileFindingRule,
   RepositoryRequirementScope,
+  RepositoryRootEntryClassification,
+  RepositoryRootEntryDisposition,
 } from "./types.js";
 
 type RecordValue = Record<string, unknown>;
 
 const PROFILE_V1_KEYS = new Set(["schemaVersion", "defaultBranch", "commands", "protectedPaths"]);
 const PROFILE_V2_KEYS = new Set([...PROFILE_V1_KEYS, "requirements"]);
+const PROFILE_V3_KEYS = new Set([...PROFILE_V2_KEYS, "rootEntries"]);
 const COMMAND_KEYS = new Set(["name", "run", "cwd"]);
 const REQUIREMENT_KEYS = new Set(["id", "scope", "constraint"]);
 const PRESENCE_CONSTRAINT_KEYS = new Set(["kind"]);
 const ONE_OF_CONSTRAINT_KEYS = new Set(["kind", "values"]);
+const ROOT_ENTRY_KEYS = new Set(["name", "classification", "disposition"]);
 const COMMAND_NAME = /^[a-z][a-z0-9]*(?:(?:-|:)[a-z0-9]+)*$/;
 const REQUIREMENT_ID = /^[a-z][a-z0-9]*(?:[.:-][a-z0-9]+)*$/;
 const REQUIREMENT_SCOPES = new Set<RepositoryRequirementScope>(["repository", "workspace", "machine"]);
+const ROOT_ENTRY_CLASSIFICATIONS = new Set<RepositoryRootEntryClassification>([
+  "canonical",
+  "extension",
+  "exception",
+  "compatibility-alias",
+  "legacy-artifact",
+]);
+const ROOT_ENTRY_DISPOSITIONS = new Set<RepositoryRootEntryDisposition>(["required", "allowed", "prohibited"]);
 const MAX_PROFILE_COLLECTION_ENTRIES = 10_000;
 const MAX_REQUIREMENT_VALUE_LENGTH = 256;
 const STANDARD_OBJECT_PROTOTYPE_KEYS = new Set<PropertyKey>([
@@ -119,6 +135,73 @@ function isRequirementValue(value: unknown): value is string {
     && !/[\u0000-\u001f\u007f]/.test(value);
 }
 
+export function isRepositoryRootEntryName(value: unknown): value is string {
+  return typeof value === "string"
+    && value.length > 0
+    && value.length <= 255
+    && value === value.trim()
+    && value !== "."
+    && value !== ".."
+    && !/[\\/\u0000-\u001f\u007f]/.test(value);
+}
+
+export function validateRepositoryRootEntries(value: unknown): RepositoryProfileFinding[] {
+  const entries = inspectArray(value);
+  if (!entries) {
+    return [finding("root-entries-shape", "rootEntries", `rootEntries must be a plain array of at most ${MAX_PROFILE_COLLECTION_ENTRIES} entries with no behavior-shadowing properties.`)];
+  }
+
+  const findings: RepositoryProfileFinding[] = [];
+  const seen = new Set<string>();
+  let nextExpectedIndex = 0;
+  let reportedHole = false;
+  for (const indexName of entries.indexNames) {
+    const index = Number(indexName);
+    if (!reportedHole && index > nextExpectedIndex) {
+      findings.push(finding("root-entry-shape", `rootEntries[${nextExpectedIndex}]`, "rootEntries must not contain empty slots."));
+      reportedHole = true;
+    }
+    nextExpectedIndex = index + 1;
+    const entry = ownDataValue(entries.value, indexName)?.value;
+    const entryPath = `rootEntries[${index}]`;
+    if (!isRecord(entry)) {
+      findings.push(finding("root-entry-shape", entryPath, "A root entry must be an object."));
+      continue;
+    }
+    const entryKeys = Reflect.ownKeys(entry);
+    if (entryKeys.some((key) => {
+      const descriptor = Object.getOwnPropertyDescriptor(entry, key);
+      return typeof key !== "string" || descriptor === undefined || !("value" in descriptor);
+    })) {
+      findings.push(finding("root-entry-shape", entryPath, "A root entry must contain only own string-keyed data fields."));
+      continue;
+    }
+    for (const key of entryKeys as string[]) {
+      if (!ROOT_ENTRY_KEYS.has(key)) findings.push(finding("unknown-field", `${entryPath}.${key}`, `Unknown root entry field "${key}".`));
+    }
+    const name = ownDataValue(entry, "name")?.value;
+    const classification = ownDataValue(entry, "classification")?.value;
+    const disposition = ownDataValue(entry, "disposition")?.value;
+    if (!isRepositoryRootEntryName(name)) {
+      findings.push(finding("root-entry-name", `${entryPath}.name`, "name must be one trimmed direct-child name without path separators or control characters."));
+    } else if (seen.has(name)) {
+      findings.push(finding("duplicate-root-entry", `${entryPath}.name`, `Duplicate root entry "${name}".`));
+    } else {
+      seen.add(name);
+    }
+    if (typeof classification !== "string" || !ROOT_ENTRY_CLASSIFICATIONS.has(classification as RepositoryRootEntryClassification)) {
+      findings.push(finding("root-entry-classification", `${entryPath}.classification`, "classification must be canonical, extension, exception, compatibility-alias, or legacy-artifact."));
+    }
+    if (typeof disposition !== "string" || !ROOT_ENTRY_DISPOSITIONS.has(disposition as RepositoryRootEntryDisposition)) {
+      findings.push(finding("root-entry-disposition", `${entryPath}.disposition`, "disposition must be required, allowed, or prohibited."));
+    }
+  }
+  if (!reportedHole && nextExpectedIndex < entries.length) {
+    findings.push(finding("root-entry-shape", `rootEntries[${nextExpectedIndex}]`, "rootEntries must not contain empty slots."));
+  }
+  return findings;
+}
+
 function validateRequirementArray(value: unknown): RepositoryProfileFinding[] {
   const requirements = inspectArray(value);
   if (!requirements) {
@@ -216,13 +299,17 @@ function validateRepositoryProfileValue(value: unknown): RepositoryProfileFindin
 
   const findings: RepositoryProfileFinding[] = [];
   const schemaVersion = ownDataValue(value, "schemaVersion")?.value;
-  const profileKeys = schemaVersion === LEGACY_REPOSITORY_PROFILE_VERSION ? PROFILE_V1_KEYS : PROFILE_V2_KEYS;
+  const profileKeys = schemaVersion === LEGACY_REPOSITORY_PROFILE_VERSION
+    ? PROFILE_V1_KEYS
+    : schemaVersion === PREVIOUS_REPOSITORY_PROFILE_VERSION
+      ? PROFILE_V2_KEYS
+      : PROFILE_V3_KEYS;
   for (const key of Object.getOwnPropertyNames(value)) {
     if (!profileKeys.has(key)) findings.push(finding("unknown-field", key, `Unknown profile field "${key}".`));
   }
 
-  if (schemaVersion !== LEGACY_REPOSITORY_PROFILE_VERSION && schemaVersion !== REPOSITORY_PROFILE_VERSION) {
-    findings.push(finding("schema-version", "schemaVersion", `schemaVersion must be ${LEGACY_REPOSITORY_PROFILE_VERSION} or ${REPOSITORY_PROFILE_VERSION}.`));
+  if (schemaVersion !== LEGACY_REPOSITORY_PROFILE_VERSION && schemaVersion !== PREVIOUS_REPOSITORY_PROFILE_VERSION && schemaVersion !== REPOSITORY_PROFILE_VERSION) {
+    findings.push(finding("schema-version", "schemaVersion", `schemaVersion must be ${LEGACY_REPOSITORY_PROFILE_VERSION}, ${PREVIOUS_REPOSITORY_PROFILE_VERSION}, or ${REPOSITORY_PROFILE_VERSION}.`));
   }
 
   const defaultBranch = ownDataValue(value, "defaultBranch")?.value;
@@ -306,6 +393,9 @@ function validateRepositoryProfileValue(value: unknown): RepositoryProfileFindin
 
   if (schemaVersion !== LEGACY_REPOSITORY_PROFILE_VERSION) {
     findings.push(...validateRequirementArray(ownDataValue(value, "requirements")?.value));
+  }
+  if (schemaVersion !== LEGACY_REPOSITORY_PROFILE_VERSION && schemaVersion !== PREVIOUS_REPOSITORY_PROFILE_VERSION) {
+    findings.push(...validateRepositoryRootEntries(ownDataValue(value, "rootEntries")?.value));
   }
 
   return findings;

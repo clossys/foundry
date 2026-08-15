@@ -5,6 +5,20 @@ All notable changes to `@vespeneventures/conventions` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-08-14
+
+### Changed
+
+- Machine guidance now treats the configured workspace root as a repository
+  discovery location, not a singular governance authority. It discovers
+  applicable account-owned workspace planes from caller-owned policy, composes
+  all applicable declarations without discovery-order precedence, and leaves
+  repository inventory, exact roots, topology, privacy, retention, and
+  decisions with each owning plane.
+- Machine baseline guidance now applies privacy, recovery, diagnostic, and
+  reconciliation rules across the applicable owning planes instead of assuming
+  one private workspace control plane.
+
 ## [0.4.0] - 2026-08-14
 
 ### Added
@@ -114,6 +128,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `CONVENTION_ADAPTERS`, `DOCUMENTS_ROOT`, and `ADAPTERS_ROOT` for reaching the
   shipped defaults without this package performing any I/O.
 
+[0.5.0]: https://github.com/vespeneventures/foundry/releases/tag/conventions-v0.5.0
 [0.4.0]: https://github.com/vespeneventures/foundry/releases/tag/conventions-v0.4.0
 [0.3.0]: https://github.com/vespeneventures/foundry/releases/tag/conventions-v0.3.0
 [0.2.0]: https://github.com/vespeneventures/foundry/releases/tag/conventions-v0.2.0

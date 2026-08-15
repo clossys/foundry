@@ -216,7 +216,7 @@ the same way `@vespeneventures/policy` never reads a file itself.
 ## Requirements
 
 Node 20+. ESM only. Runtime dependency: `@vespeneventures/governance`
-(`~0.9.0`), which this package's own `src/index.ts` re-exports from.
+(`~0.10.0`), which this package's own `src/index.ts` re-exports from.
 
 This package is not dependency-free: `governance` itself depends on
 `@vespeneventures/policy`, which is therefore pulled in transitively by

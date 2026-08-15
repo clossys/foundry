@@ -1,5 +1,8 @@
 /** The newest repository profile shape supported by this package version. */
-export const REPOSITORY_PROFILE_VERSION = 2 as const;
+export const REPOSITORY_PROFILE_VERSION = 3 as const;
+
+/** The requirements-only profile remains accepted for existing consumers. */
+export const PREVIOUS_REPOSITORY_PROFILE_VERSION = 2 as const;
 
 /** The original profile shape remains accepted for existing consumers. */
 export const LEGACY_REPOSITORY_PROFILE_VERSION = 1 as const;
@@ -42,6 +45,25 @@ export interface RepositoryRequirement {
   readonly constraint: RepositoryRequirementConstraint;
 }
 
+/** Why a caller has admitted one direct child into its repository root vocabulary. */
+export type RepositoryRootEntryClassification =
+  | "canonical"
+  | "extension"
+  | "exception"
+  | "compatibility-alias"
+  | "legacy-artifact";
+
+/** The caller's explicit presence decision for one declared direct child. */
+export type RepositoryRootEntryDisposition = "required" | "allowed" | "prohibited";
+
+/** One caller-owned direct-child declaration for an exact repository root. */
+export interface RepositoryRootEntry {
+  /** A single direct-child name, never a relative or absolute path. */
+  readonly name: string;
+  readonly classification: RepositoryRootEntryClassification;
+  readonly disposition: RepositoryRootEntryDisposition;
+}
+
 /** The legacy schema shipped before upward requirements were modeled. */
 export interface RepositoryProfileV1 {
   readonly schemaVersion: typeof LEGACY_REPOSITORY_PROFILE_VERSION;
@@ -50,24 +72,32 @@ export interface RepositoryProfileV1 {
   readonly protectedPaths: RepositoryList<string>;
 }
 
-/**
- * Current consumer-owned repository values. The package defines and validates
- * the shape only; it ships no repository profile or requirement instance.
- */
+/** Requirements-only schema retained for existing consumers. */
 export interface RepositoryProfileV2 {
-  readonly schemaVersion: typeof REPOSITORY_PROFILE_VERSION;
+  readonly schemaVersion: typeof PREVIOUS_REPOSITORY_PROFILE_VERSION;
   readonly defaultBranch: string;
   readonly commands: RepositoryList<RepositoryCommand>;
   readonly protectedPaths: RepositoryList<string>;
   readonly requirements: RepositoryList<RepositoryRequirement>;
 }
 
-/** Both deliberately supported profile versions. New declarations use v2. */
-export type RepositoryProfile = RepositoryProfileV1 | RepositoryProfileV2;
+/** Current profile: requirements plus an exact, caller-owned root vocabulary. */
+export interface RepositoryProfileV3 {
+  readonly schemaVersion: typeof REPOSITORY_PROFILE_VERSION;
+  readonly defaultBranch: string;
+  readonly commands: RepositoryList<RepositoryCommand>;
+  readonly protectedPaths: RepositoryList<string>;
+  readonly requirements: RepositoryList<RepositoryRequirement>;
+  readonly rootEntries: RepositoryList<RepositoryRootEntry>;
+}
+
+/** Every deliberately supported closed profile version. New declarations use v3. */
+export type RepositoryProfile = RepositoryProfileV1 | RepositoryProfileV2 | RepositoryProfileV3;
 
 /**
- * One discovered v2 declaration, associated with the opaque source identifier
- * selected by the caller. Discovery and source identity stay outside Foundry.
+ * One discovered requirements declaration, associated with the opaque source
+ * identifier selected by the caller. Discovery and source identity stay
+ * outside Foundry.
  */
 export interface RepositoryRequirementDeclaration {
   readonly source: string;
@@ -125,6 +155,38 @@ export interface RepositoryRequirementsEvaluation {
   readonly findings: RepositoryList<RepositoryRequirementFinding>;
 }
 
+/** Already-discovered direct children paired with the caller's exact vocabulary. */
+export interface RepositoryRootEvaluationInput {
+  readonly rootEntries: RepositoryList<RepositoryRootEntry>;
+  readonly observedEntries: RepositoryList<string>;
+}
+
+/** One declared or unknown direct child's structural result. */
+export type RepositoryRootEntryEvaluation =
+  | {
+      readonly name: string;
+      readonly classification: RepositoryRootEntryClassification;
+      readonly disposition: RepositoryRootEntryDisposition;
+      readonly observed: boolean;
+      readonly status: "satisfied" | "missing" | "prohibited";
+    }
+  | {
+      readonly name: string;
+      readonly observed: true;
+      readonly status: "unknown";
+    };
+
+/** Overall exact-root proof state. */
+export type RepositoryRootEvaluationStatus = "satisfied" | "nonconforming" | "invalid";
+
+/** Complete deterministic report from `evaluateRepositoryRoot`. */
+export interface RepositoryRootEvaluation {
+  readonly ok: boolean;
+  readonly status: RepositoryRootEvaluationStatus;
+  readonly entries: RepositoryList<RepositoryRootEntryEvaluation>;
+  readonly findings: RepositoryList<RepositoryRootFinding>;
+}
+
 export type RepositoryProfileFindingRule =
   | "profile-shape"
   | "unknown-field"
@@ -148,7 +210,13 @@ export type RepositoryProfileFindingRule =
   | "constraint-kind"
   | "constraint-values-shape"
   | "constraint-value"
-  | "duplicate-constraint-value";
+  | "duplicate-constraint-value"
+  | "root-entries-shape"
+  | "root-entry-shape"
+  | "root-entry-name"
+  | "duplicate-root-entry"
+  | "root-entry-classification"
+  | "root-entry-disposition";
 
 /** One deterministic structural finding, attributed to its input path. */
 export interface RepositoryProfileFinding {
@@ -182,6 +250,24 @@ export type RepositoryRequirementFindingRule =
 /** A stable reason the evaluation input or one requirement did not pass. */
 export interface RepositoryRequirementFinding {
   readonly rule: RepositoryRequirementFindingRule | RepositoryProfileFindingRule;
+  readonly severity: "error";
+  readonly path: string;
+  readonly message: string;
+}
+
+export type RepositoryRootFindingRule =
+  | "root-evaluation-shape"
+  | "root-evaluation-unknown-field"
+  | "observed-entries-shape"
+  | "observed-entry-name"
+  | "duplicate-observed-entry"
+  | "root-entry-missing"
+  | "root-entry-prohibited"
+  | "root-entry-unknown";
+
+/** A stable structural or evaluation reason an exact-root proof did not pass. */
+export interface RepositoryRootFinding {
+  readonly rule: RepositoryRootFindingRule | RepositoryProfileFindingRule;
   readonly severity: "error";
   readonly path: string;
   readonly message: string;

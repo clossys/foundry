@@ -64,6 +64,18 @@ describe("shipped defaults", () => {
       ["machine-guidance.md", "shell-integration.zsh"].sort(),
     );
   });
+
+  it("ships multi-plane discovery and composition guidance without a singular workspace authority", () => {
+    const guidance = readFileSync(documentPath("machine-guidance"), "utf8");
+    const baseline = readFileSync(documentPath("machine-baseline"), "utf8");
+
+    expect(guidance).toContain("account-owned workspace planes");
+    expect(guidance).toContain("discovery order is not precedence");
+    expect(guidance).not.toContain("canonical local workspace control plane");
+    expect(guidance).not.toContain("The standards checkout");
+    expect(baseline).toContain("account-owned workspace planes");
+    expect(baseline).not.toContain("the private workspace control plane");
+  });
 });
 
 describe("renderProductLoader", () => {

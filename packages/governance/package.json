@@ -1,6 +1,6 @@
 {
   "name": "@vespeneventures/governance",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -59,7 +59,7 @@
     "LICENSE"
   ],
   "sideEffects": false,
-  "description": "Read-only package lifecycle and process orchestration, including catalog, gates, release, repository-profile and requirements, and review-evidence subpaths without publishing or deploying.",
+  "description": "Read-only package lifecycle and process orchestration, including catalog, gates, release, repository-profile, requirements, exact-root evaluation, and review-evidence subpaths without publishing or deploying.",
   "keywords": [
     "governance",
     "package-lifecycle",

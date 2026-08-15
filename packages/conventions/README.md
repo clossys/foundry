@@ -5,6 +5,11 @@ owning the other — branch provenance, skill naming, agent interoperability,
 routine declarations, and a capability-first skill registry — shipped as
 default documents plus the validators that enforce their grammar.
 
+The shipped machine guidance treats a configured workspace root as a local
+discovery location, not a singular authority. Applicable account-owned
+workspace planes are discovered from caller-owned policy and composed without
+letting discovery order become precedence.
+
 ```bash
 npm install @vespeneventures/conventions
 ```
@@ -43,8 +48,10 @@ rather than against what is actually in place, is the failure mode this whole
 design exists to avoid.
 
 Values are always the caller's. This package never contains a list of accounts,
-repositories, prefixes, or cadences; every validator takes them as input. That
-is what keeps it publishable.
+repositories, workspace planes, exact roots, prefixes, or cadences; every
+validator takes them as input. Repository inventory, observations, topology,
+privacy, retention, and composition decisions remain with their owning planes.
+That is what keeps it publishable.
 
 ## Usage
 
@@ -147,7 +154,7 @@ Both routes point at the same bytes; use whichever your tooling expects.
 | `agent-interoperability` | [documents/agent-interoperability.md](documents/agent-interoperability.md) | The canonical layer table, supported surfaces, and the admission test for a new agent |
 | `routine-declaration` | [documents/routine-declaration.md](documents/routine-declaration.md) | Why a trigger is a pointer, why scope is closed, and why declared intent is not live state |
 | `skill-registry` | [documents/skill-registry.md](documents/skill-registry.md) | The capability-first skill registry contract: composite identity, closed scope, coverage as set arithmetic, and why a routine can only confirm coverage, never grant it |
-| `machine-guidance` | [documents/machine-guidance.md](documents/machine-guidance.md) | Machine-wide agent guidance. **Templated** — carries `${WORKSPACE_ROOT}` |
+| `machine-guidance` | [documents/machine-guidance.md](documents/machine-guidance.md) | Machine-wide guidance for discovery and composition across account-owned workspace planes. **Templated** — carries `${WORKSPACE_ROOT}` |
 | `machine-baseline` | [documents/machine-baseline.md](documents/machine-baseline.md) | The durable posture a development machine holds, and which part of it is mechanically checkable |
 
 ## Shipped adapters
@@ -263,6 +270,10 @@ expander reads like any other bytes.
 - **It does not install anything.** Applying these defaults to a machine is
   provisioning, which mutates state outside version control and belongs in a
   package that says so.
+- **It does not discover or compose workspace planes.** The guidance states the
+  ownership and fail-closed boundaries, but the caller supplies its plane
+  registry, observations, requirement evaluation, precedence decisions, and
+  any eventual machine manifest.
 - **The skill registry never reads a scheduler either.** `validateRoutineCoverage`
   confirms only that a named skill resolves and that a routine's declared
   scope is a subset of what that skill already claims; it never asks whether

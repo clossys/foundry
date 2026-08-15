@@ -1,4 +1,4 @@
-import { REPOSITORY_PROFILE_VERSION } from "./types.js";
+import { PREVIOUS_REPOSITORY_PROFILE_VERSION } from "./types.js";
 import type {
   RepositoryRequirement,
   RepositoryRequirementDeclaration,
@@ -142,7 +142,7 @@ function validateDeclarations(value: unknown, findings: RepositoryRequirementFin
     }
 
     const requirementFindings = validateRepositoryProfile({
-      schemaVersion: REPOSITORY_PROFILE_VERSION,
+      schemaVersion: PREVIOUS_REPOSITORY_PROFILE_VERSION,
       defaultBranch: "main",
       commands: [],
       protectedPaths: [],
