@@ -209,7 +209,30 @@ if (!denylist && flags.has("--require-denylist")) {
 // ones with no legitimate reason to appear in this repository's own prose or
 // source, so stripping them unconditionally (see stripInvisible, applied to
 // every scanned file's contents before any pattern runs) is pure hardening.
-const ZERO_WIDTH_RE = /[\u200B\u200C\u200D\u2060\u180E\u00AD\uFEFF]/g;
+//
+// U+0000 (NUL) is included here for a sharper reason than hardening. This
+// gate used to treat `contents.includes("\u0000")` as "this file is binary"
+// and `continue` past it — skipping identity, secret and neutralize
+// matching for the WHOLE file, not just redacting the byte. That is a trap,
+// not a binary check: a text file that happens to carry one stray NUL went
+// completely unscanned, and the gate reported a confident FULL-mode PASS
+// having never read it. This repository shipped exactly one such NUL, in
+// scripts/check-contamination-classes.mjs — the literal needle of that
+// script's own (equally mistaken) binary-detection check, written as a raw
+// byte instead of an escaped literal. A boundary gate must not have a byte
+// that switches it off.
+//
+// The correct split — matching scripts/check-foreign-references.mjs, which
+// hit this exact bug first and whose header explains it in more detail —
+// is to decide "binary asset, cannot carry publishable prose" STRUCTURALLY,
+// by extension (SKIP_CONTENT and ARCHIVE_EXTENSIONS below), before a file's
+// bytes are ever read, rather than by sniffing a byte after the fact. Real
+// binary formats (images, fonts, video, wasm, archives) are excluded that
+// way. Everything else is text as far as this gate is concerned — even a
+// text file with a stray NUL in it — and gets scanned in full, with NUL
+// stripped the same as any other invisible character rather than treated as
+// a reason to bail out of the whole file.
+const ZERO_WIDTH_RE = /[\u0000\u200B\u200C\u200D\u2060\u180E\u00AD\uFEFF]/g;
 function stripInvisible(text) {
   return text.replace(ZERO_WIDTH_RE, "");
 }
@@ -384,13 +407,15 @@ for (const file of files) {
   } catch {
     continue;
   }
-  if (contents.includes("\u0000")) continue; // binary
 
-  // Strip zero-width/invisible Unicode before any pattern match: a term with
-  // a ZWSP/ZWNJ/ZWJ/BOM inserted mid-string renders identically to a human
-  // reader but defeats a literal or regex match. Stripped once here, upfront,
-  // so every check below (secrets, neutralize, identity) sees the same text
-  // a reader would.
+  // Strip NUL and zero-width/invisible Unicode before any pattern match: a
+  // term with a ZWSP/ZWNJ/ZWJ/BOM inserted mid-string renders identically to
+  // a human reader but defeats a literal or regex match, and a stray NUL used
+  // to make this gate skip the file's contents entirely (see stripInvisible's
+  // own comment for why that was a real, exploited hole rather than a
+  // hypothetical one). Stripped once here, upfront, so every check below
+  // (secrets, neutralize, identity) sees the same text a reader would — and
+  // sees ALL of it, not none of it.
   contents = stripInvisible(contents);
 
   const rawLines = contents.split("\n");

@@ -226,6 +226,41 @@ try {
     );
   }
 
+  // ---------------------------------- check-public-safety: the NUL blind spot
+  console.log("\n# check-public-safety: a stray NUL byte does not exempt a file");
+  {
+    // A single stray NUL byte must not switch this gate off for a whole file.
+    // This is not hypothetical: this gate used to `continue` past any file
+    // whose contents included a NUL, and one real source file in this
+    // repository (scripts/check-contamination-classes.mjs) carried exactly
+    // one — the raw-byte needle of its own, equally mistaken, binary check.
+    // That file went completely unscanned in FULL mode, and the identity
+    // finding a human reviewer eventually caught by hand would have been a
+    // silent PASS here. See check-public-safety.mjs's stripInvisible comment
+    // for the full story.
+    const dir = join(work, "nul-byte-safety");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      join(dir, "NOTES.md"),
+      ["# notes", "", `A binary sentinel: "${String.fromCharCode(0)}" is one NUL.`, "This mentions acme-corp in passing.", ""].join("\n"),
+      "utf8",
+    );
+    gitInit(dir);
+    const r = run("node", [SAFETY, dir, ...DL, "--require-denylist", "--allow-changelogs", "--json"]);
+    let report;
+    try {
+      report = JSON.parse(r.out);
+    } catch {
+      report = { failures: [] };
+    }
+    const hit = (report.failures ?? []).some((f) => f.kind === "identity" && f.rel === "NOTES.md");
+    check(
+      "a stray NUL byte does not make a whole file invisible to identity matching",
+      r.code === 1 && hit,
+      `expected exit 1 with an identity finding for NOTES.md, got exit ${r.code}: ${r.out.slice(0, 600)}`,
+    );
+  }
+
   // ------------------------------- check-contamination-classes: fail-closed
   console.log("\n# check-contamination-classes: fail-closed walker");
   {
@@ -269,6 +304,29 @@ try {
       // read and delete this directory too.
       chmodSync(blocked, 0o755);
     }
+  }
+
+  // ------------------------- check-contamination-classes: the NUL blind spot
+  console.log("\n# check-contamination-classes: a stray NUL byte does not exempt a file");
+  {
+    // Same class of bug as check-public-safety's NUL case above, found in
+    // this gate itself: it used to hold its own binary-check needle as a raw
+    // NUL byte and `continue` past any file containing one — which, for a
+    // while, included this very script. A dangling CLASS 1 doc citation
+    // sharing a file with a stray NUL must still be caught.
+    const dir = join(work, "contam-nul");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(
+      join(dir, "NOTES.md"),
+      ["# notes", "", `A binary sentinel: "${String.fromCharCode(0)}" is one NUL.`, "See docs/architecture/NONEXISTENT.md for background.", ""].join("\n"),
+      "utf8",
+    );
+    const r = run("node", [CONTAM, dir, "--class", "1"]);
+    check(
+      "a stray NUL byte does not make a whole file invisible to CLASS 1",
+      r.code === 1 && /NONEXISTENT\.md/.test(r.out),
+      `expected exit 1 naming the dangling citation, got ${r.code}: ${r.out.slice(0, 600)}`,
+    );
   }
 
   // --------------------------------------------------- the dist/ blind spot

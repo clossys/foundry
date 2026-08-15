@@ -694,7 +694,23 @@ for (const file of scanFiles) {
   } catch {
     continue;
   }
-  if (contents.includes(" ")) continue; // binary
+
+  // A NUL byte must not exempt a whole file from every contamination-class
+  // check below. It once did here: this exact line used to test for a NUL by
+  // holding a raw NUL byte as its own needle -- `contents.includes(<a literal
+  // NUL byte>)` -- and `continue`-ing past any file that had one. That is not
+  // hypothetical: it made THIS FILE invisible to itself when scanned by
+  // scripts/check-public-safety.mjs's identity check, because this line's own
+  // needle was the stray NUL in question. See
+  // scripts/check-foreign-references.mjs's header for the leak that
+  // motivated hunting this class of bug down across every gate.
+  //
+  // SCAN_EXT above already restricts this walk to unambiguously text formats
+  // (.ts/.tsx/.js/.jsx/.mjs/.css/.md) -- there is no genuinely binary asset
+  // in that set to protect a skip for -- so the correct move on finding a
+  // stray NUL is to strip it (as an ESCAPED literal, so this file never again
+  // carries a raw one) and keep scanning, not to bail out of the file.
+  contents = contents.replace(/\u0000/g, "");
   const lines = contents.split("\n");
   const ext = extname(file).toLowerCase();
 
