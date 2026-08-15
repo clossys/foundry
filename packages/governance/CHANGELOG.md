@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-08-14
+
+### Added
+
+- **Pure cross-plane composition** under `./composition` (#241). The new
+  schema-v1 contract accepts only caller-owned requirement, policy,
+  preference, explicit capability supply, operator decision, exception,
+  timestamp, scope, value, and provenance data. `evaluateComposition` emits a
+  canonical `effective`, `exception-mediated`, `conflicting`, `unknown`, or
+  `invalid` result without discovery, I/O, implicit precedence, installation,
+  provisioning, mutation, or clock reads.
+- Strict hostile-input validation rejects unknown fields, accessors, polluted
+  prototypes, behavior-shadowed or sparse arrays, duplicate identifiers and
+  references, malformed provenance and timestamps, orphan evidence,
+  cross-scope exceptions, and unsupported schema versions.
+- The composition subpath preserves, but does not import, translate, or
+  conflate, `./repository` profile-v2 requirements and profile-v3 exact-root
+  semantics.
+
 ## [0.10.1] - 2026-08-14
 
 ### Fixed

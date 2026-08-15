@@ -56,6 +56,7 @@ separately versioned packages.
 | `@vespeneventures/governance/review/github` | Pure normalization of caller-provided GitHub-shaped review evidence. |
 | `@vespeneventures/governance/artifacts` | Deterministic, fail-closed verification for a consumer-owned governed artifact: declared kind + schema version, exact-content checksum, and structural provenance. |
 | `@vespeneventures/governance/cleanup` | Pure workspace-cleanup classification: caller-normalized inventory and observations in, a typed `owned` / `safe-candidate` / `blocked` proposal out. No I/O, no deletion API. |
+| `@vespeneventures/governance/composition` | Pure caller-owned cross-plane constraint, supply, decision, exception, and effective-value resolution. |
 
 ### `./artifacts`: governed artifact verification
 
@@ -455,6 +456,135 @@ into v3 for `rootEntries`.
 | `RepositoryRootEvaluationInput` / `RepositoryRootEvaluation` / `RepositoryRootEvaluationStatus` | types | Strict root evaluator input and complete report. |
 | `RepositoryRootEntryEvaluation` | type | One declared or unknown direct child's result. |
 | `RepositoryProfileFinding` / `RepositoryRequirementFinding` / `RepositoryRootFinding` / `RepositoryRootFindingRule` | types | Stable structural and evaluation findings. |
+
+### `./composition`: pure cross-plane effective-state resolution
+
+`@vespeneventures/governance/composition` resolves only data supplied by its
+caller. It does not inspect a filesystem, repository, account, environment,
+provider, scheduler, or machine; choose scope authority or source precedence;
+read the clock; install anything; construct a provisioning manifest; or mutate
+input. `evaluatedAt` is explicit input so expiry decisions remain deterministic.
+
+Every declaration names one exact `{ plane, id }` scope. The closed plane
+vocabulary is `producer`, `workspace`, `repository`, and `machine`, but that
+list is not an authority ladder: an array position, a more specific label, or
+a later source can never weaken a requirement or policy. Callers choose which
+declarations belong to the same exact scope before invoking the evaluator.
+
+```ts
+import {
+  COMPOSITION_SCHEMA_VERSION,
+  evaluateComposition,
+} from "@vespeneventures/governance/composition";
+
+const machineScope = { plane: "machine", id: "member-machine" } as const;
+const result = evaluateComposition({
+  schemaVersion: COMPOSITION_SCHEMA_VERSION,
+  evaluatedAt: "2026-08-15T00:00:00.000Z",
+  declarations: [
+    {
+      kind: "requirement",
+      id: "producer.runtime",
+      capability: "runtime.example",
+      scope: machineScope,
+      constraint: { kind: "one-of", values: ["stable", "preview"] },
+      provenance: { source: "producer", reference: "urn:example:producer-runtime" },
+    },
+    {
+      kind: "policy",
+      id: "workspace.runtime",
+      capability: "runtime.example",
+      scope: machineScope,
+      constraint: { kind: "one-of", values: ["stable"] },
+      provenance: { source: "workspace", reference: "urn:example:workspace-policy" },
+    },
+    {
+      kind: "preference",
+      id: "repository.runtime",
+      capability: "runtime.example",
+      scope: machineScope,
+      value: "stable",
+      provenance: { source: "repository", reference: "urn:example:repository-preference" },
+    },
+  ],
+  supplies: [{
+    id: "machine.runtime",
+    capability: "runtime.example",
+    scope: machineScope,
+    state: "available",
+    values: ["stable", "preview"],
+    provenance: { source: "machine", reference: "urn:example:machine-observation" },
+  }],
+  decisions: [],
+  exceptions: [],
+});
+```
+
+Requirements and policies are hard constraints. Preferences may select one
+otherwise-compatible supplied value, but never override a hard constraint.
+When compatible supply still leaves several preferred or unpreferred values,
+the result is `unknown` until the caller supplies one operator decision. A
+decision is never inferred from source order, scope labels, paths, or account
+state.
+
+An exception has an exact scope, non-empty reason, durable provenance
+reference, targeted hard-declaration identifiers, explicitly allowed values,
+and optional `reviewBy` and `expiresAt` timestamps. It changes an outcome only
+when a decision references it, its selected value is explicitly supplied and
+allowed, every target matches the decision's capability and scope, and neither
+its review nor expiry bound has been reached at the caller-supplied
+`evaluatedAt`. An unreferenced, mismatched, review-due, or expired exception has
+no weakening effect.
+
+Each resolution is `effective`, `exception-mediated`, `conflicting`, or
+`unknown`. `selectedValue` appears only for the first two. The result includes
+the compatible supplied values, every hard constraint's `satisfied`,
+`excepted`, `violated`, or `unresolved` state, and normalized provenance for
+every contributing declaration, supply, decision, and exception. Valid output
+ordering is canonical and independent of input ordering. Malformed input is
+`invalid` and produces no partial resolutions.
+
+This subpath deliberately does not accept `RepositoryProfileV2` or
+`RepositoryProfileV3`. `@vespeneventures/governance/repository` continues to
+own repository-authored upward requirements and exact-root semantics. A caller
+may cite a validated repository result when it authors a separate composition
+declaration, but Foundry performs no implicit conversion, discovery, or
+authority assignment between those contracts.
+
+#### Exact public export
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `COMPOSITION_SCHEMA_VERSION` | constant | The closed input schema version, currently `1`. |
+| `validateCompositionEvaluationInput(value)` | function | Strict hostile-input validation without I/O, mutation, or throwing. |
+| `evaluateComposition(value)` | function | Pure deterministic effective-state resolution with fail-closed invalid, conflicting, and unknown outcomes. |
+| `CompositionPlane` / `CompositionScope` | types | Closed plane vocabulary plus caller-owned exact scope identity. |
+| `CompositionProvenance` / `CompositionProvenanceEntry` / `CompositionContributorRole` | types | Durable input attribution and normalized result provenance. |
+| `CompositionPresenceConstraint` / `CompositionOneOfConstraint` / `CompositionConstraint` | types | Closed hard-constraint vocabulary. |
+| `CompositionRequirementDeclaration` / `CompositionPolicyDeclaration` / `CompositionPreferenceDeclaration` / `CompositionDeclaration` | types | Hard requirements, authoritative policy, non-binding preference, and their union. |
+| `CompositionCapabilitySupply` / `CompositionOperatorDecision` / `CompositionException` | types | Explicit normalized supply, selection, and narrowly referenced exception data. |
+| `CompositionEvaluationInput` / `CompositionEvaluation` / `CompositionEvaluationStatus` | types | Complete evaluator input and report. |
+| `CompositionResolution` / `CompositionResolutionStatus` / `CompositionConstraintResult` | types | One exact capability/scope outcome and its hard-constraint explanations. |
+| `CompositionFinding` / `CompositionFindingRule` | types | Stable validation and fail-closed outcome findings. |
+
+#### Consumer adoption order
+
+1. Wait for the exact governance release containing this subpath to be
+   published and independently qualified; never adopt from a branch, pull
+   request, workspace link, or copied implementation.
+2. Validate repository profile v2/v3 declarations and exact-root observations
+   through `@vespeneventures/governance/repository` without changing their
+   semantics.
+3. Outside Foundry, discover the consumer's planes and author composition
+   declarations, policies, preferences, normalized supply, decisions,
+   exceptions, scope identities, values, timestamps, and provenance.
+4. Call `evaluateComposition` and fail closed on `invalid`, `conflicting`, or
+   `unknown`; retain the complete result as decision evidence.
+5. Only after an `effective` or explicitly `exception-mediated` outcome may a
+   separate caller translate selected values into its own next action. Any
+   future provisioning input remains fully explicit and separate.
+6. Adopt the same published contract independently in each consumer workspace;
+   no workspace copies the evaluator or mutates a machine as part of adoption.
 
 ### `./review` schema: `ReviewPolicy` and `ReviewEvidenceBundle`
 
