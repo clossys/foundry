@@ -5,12 +5,12 @@
  * owning the other, plus the checks that enforce their grammar.
  *
  * The split is the design. This package enforces the *grammar* -- branch
- * provenance, skill naming, routine declarations, neutrality -- and ships the
- * *prose* as a default. It never gates on byte-identity with that prose: a
- * consumer that adopts the documents verbatim and one that rewrites them
- * entirely are both conforming, so long as what they declare satisfies the
- * grammar. A standard that required its own wording back would be a seeder
- * wearing a standard's clothes.
+ * provenance, skill naming, routine declarations, CI gate naming, neutrality
+ * -- and ships the *prose* as a default. It never gates on byte-identity with
+ * that prose: a consumer that adopts the documents verbatim and one that
+ * rewrites them entirely are both conforming, so long as what they declare
+ * satisfies the grammar. A standard that required its own wording back would
+ * be a seeder wearing a standard's clothes.
  */
 
 export type {
@@ -45,6 +45,9 @@ export {
   validateScheduledSkillDescription,
 } from "./routines.js";
 export type { RoutineExclusion, RoutineSetOptions } from "./routines.js";
+
+export { GATE_VERBS, validateGateName, validateGateSet } from "./gates.js";
+export type { GateNameOptions } from "./gates.js";
 
 export { scanNeutrality } from "./neutrality.js";
 export type { NeutralityOptions } from "./neutrality.js";

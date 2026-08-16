@@ -2,8 +2,8 @@
 
 Account-neutral agent conventions that two parties can share without either
 owning the other — branch provenance, skill naming, agent interoperability,
-routine declarations, and a capability-first skill registry — shipped as
-default documents plus the validators that enforce their grammar.
+routine declarations, CI gate naming, and a capability-first skill registry —
+shipped as default documents plus the validators that enforce their grammar.
 
 The shipped machine guidance treats a configured workspace root as a local
 discovery location, not a singular authority. Applicable account-owned
@@ -35,7 +35,8 @@ public. That is this package.
 It enforces the **grammar**: that a branch names its creating agent, that a
 skill name parses as `<owner>-<verb>-<what>` with a verb from a closed list,
 that a routine declares every required field and scopes only repositories its
-own plane governs, that a capability-first skill registry's identities,
+own plane governs, that a CI gate name parses as verb-noun with no account or
+repository prefix, that a capability-first skill registry's identities,
 scopes, and accepted gaps are internally consistent, and that shared content
 names no absolute path or operator-specific home directory.
 
@@ -59,6 +60,8 @@ That is what keeps it publishable.
 import {
   scanNeutrality,
   validateBranchName,
+  validateGateName,
+  validateGateSet,
   validateRoutineSet,
   validateSkillSet,
 } from "@vespeneventures/conventions";
@@ -79,6 +82,12 @@ validateRoutineSet(declarations, {
   cadences: ["daily", "weekly"],
   modes: ["report-only", "apply"],
 });
+
+// CI gate naming. The five-name default is a suggestion, not a requirement --
+// any conforming verb-noun set validates, and GATE_VERBS may be extended with
+// a real verb of your own through GateNameOptions.verbs.
+validateGateName("scan-secrets"); // []
+validateGateSet(["scan-secrets", "check-task-record", "verify-repository"]);
 
 // Neutrality, before publishing anything shared.
 scanNeutrality(documentText, { forbiddenNames: myPrivateNameList });
@@ -156,6 +165,7 @@ Both routes point at the same bytes; use whichever your tooling expects.
 | `skill-registry` | [documents/skill-registry.md](documents/skill-registry.md) | The capability-first skill registry contract: composite identity, closed scope, coverage as set arithmetic, and why a routine can only confirm coverage, never grant it |
 | `machine-guidance` | [documents/machine-guidance.md](documents/machine-guidance.md) | Machine-wide guidance for discovery and composition across account-owned workspace planes. **Templated** — carries `${WORKSPACE_ROOT}` |
 | `machine-baseline` | [documents/machine-baseline.md](documents/machine-baseline.md) | The durable posture a development machine holds, and which part of it is mechanically checkable |
+| `gate-naming` | [documents/gate-naming.md](documents/gate-naming.md) | CI gate naming grammar, why there is no account or repository prefix, and a suggested (not required) canonical gate set |
 
 ## Shipped adapters
 
