@@ -26,17 +26,17 @@ function writeJson(name: string, value: unknown): string {
 
 function evidence() {
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     headSha,
     baseSha,
     paginationComplete: true,
     checks: [{ name: "unit", conclusion: "success", headSha }],
-    reviews: [{ id: "review", reviewerId: "reviewer-1", provider: "analyzer-1", submittedAt: "2026-01-01T00:00:00.000Z", state: "approved", headSha }],
+    reviews: [{ id: "review", reviewerId: "reviewer-1", instanceId: "instance-1", provider: "analyzer-1", submittedAt: "2026-01-01T00:00:00.000Z", state: "approved", depth: "primary", headSha }],
     threads: [{ id: "thread", isResolved: true, headSha }],
   };
 }
 
-const policy = { requiredChecks: ["unit"], requireApproval: true, decisionUse: "authoritative" };
+const policy = { requiredChecks: ["unit"], requireApproval: true, requireSecondaryReview: false, decisionUse: "authoritative" };
 
 describe("review-check", () => {
   it("prints help and returns 0", () => {
@@ -73,10 +73,18 @@ describe("review-check", () => {
   });
 
   it("rejects an advisory policy that also requires approval", () => {
-    const advisoryPolicy = { requiredChecks: ["unit"], requireApproval: true, decisionUse: "advisory" };
+    const advisoryPolicy = { requiredChecks: ["unit"], requireApproval: true, requireSecondaryReview: false, decisionUse: "advisory" };
     expect(main([writeJson("evidence.json", evidence()), writeJson("policy.json", advisoryPolicy)])).toBe(1);
     const report = JSON.parse((console.log as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as string) as { ok: boolean; findings: Array<{ rule: string }> };
     expect(report.ok).toBe(false);
     expect(report.findings.map((item) => item.rule)).toEqual(["advisory-approval-conflict"]);
+  });
+
+  it("rejects an advisory policy that also requires a secondary review", () => {
+    const advisoryPolicy = { requiredChecks: ["unit"], requireApproval: false, requireSecondaryReview: true, decisionUse: "advisory" };
+    expect(main([writeJson("evidence.json", evidence()), writeJson("policy.json", advisoryPolicy)])).toBe(1);
+    const report = JSON.parse((console.log as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as string) as { ok: boolean; findings: Array<{ rule: string }> };
+    expect(report.ok).toBe(false);
+    expect(report.findings.map((item) => item.rule)).toEqual(["advisory-secondary-conflict"]);
   });
 });

@@ -4,7 +4,7 @@ import { validateReviewEvidence } from "./validate.js";
 
 const headSha = "c".repeat(40);
 const baseSha = "8".repeat(40);
-const authoritativePolicy = { requiredChecks: ["unit"], requireApproval: true, decisionUse: "authoritative" };
+const authoritativePolicy = { requiredChecks: ["unit"], requireApproval: true, requireSecondaryReview: false, decisionUse: "authoritative" };
 
 function page<T>(nodes: readonly T[], hasNextPage = false, hasPreviousPage = false) {
   return { nodes, pageInfo: { hasNextPage, hasPreviousPage } };
@@ -16,21 +16,21 @@ describe("normalizeGitHubReviewEvidence", () => {
       pullRequest: { id: "PR_node", headRefOid: headSha, baseRefOid: baseSha },
       checks: page([{ name: "unit", conclusion: "SUCCESS", headSha }]),
       reviews: page([
-        { id: "review-approved", author: { login: "reviewer-1" }, provider: "analyzer-1", submittedAt: "2026-01-01T00:00:00.000Z", state: "APPROVED", commit: { oid: headSha } },
-        { id: "review-dismissed", author: { login: "reviewer-2" }, provider: "analyzer-1", submittedAt: "2026-01-01T00:01:00.000Z", state: "DISMISSED", commit: { oid: headSha } },
+        { id: "review-approved", author: { login: "reviewer-1" }, provider: "analyzer-1", instanceId: "instance-1", depth: "primary", submittedAt: "2026-01-01T00:00:00.000Z", state: "APPROVED", commit: { oid: headSha } },
+        { id: "review-dismissed", author: { login: "reviewer-2" }, provider: "analyzer-1", instanceId: "instance-2", depth: "primary", submittedAt: "2026-01-01T00:01:00.000Z", state: "DISMISSED", commit: { oid: headSha } },
       ]),
       reviewThreads: page([{ id: "thread-1", isResolved: true }]),
     });
 
     expect(evidence).toEqual({
-      schemaVersion: 2,
+      schemaVersion: 3,
       headSha,
       baseSha,
       paginationComplete: true,
       checks: [{ name: "unit", conclusion: "success", headSha }],
       reviews: [
-        { id: "review-approved", reviewerId: "reviewer-1", provider: "analyzer-1", submittedAt: "2026-01-01T00:00:00.000Z", state: "approved", headSha },
-        { id: "review-dismissed", reviewerId: "reviewer-2", provider: "analyzer-1", submittedAt: "2026-01-01T00:01:00.000Z", state: "dismissed", headSha },
+        { id: "review-approved", reviewerId: "reviewer-1", instanceId: "instance-1", provider: "analyzer-1", submittedAt: "2026-01-01T00:00:00.000Z", state: "approved", depth: "primary", headSha },
+        { id: "review-dismissed", reviewerId: "reviewer-2", instanceId: "instance-2", provider: "analyzer-1", submittedAt: "2026-01-01T00:01:00.000Z", state: "dismissed", depth: "primary", headSha },
       ],
       threads: [{ id: "thread-1", isResolved: true, headSha }],
     });
@@ -42,13 +42,13 @@ describe("normalizeGitHubReviewEvidence", () => {
       pullRequest: { id: "PR_node", headRefOid: headSha, baseRefOid: baseSha },
       checks: page([{ name: "unit", conclusion: "SUCCESS", headSha }]),
       reviews: page([
-        { id: "review-bot", author: { login: "some-review-bot" }, provider: "analyzer-1", submittedAt: "2026-01-01T00:00:00.000Z", state: "APPROVED", commit: { oid: headSha } },
+        { id: "review-bot", author: { login: "some-review-bot" }, provider: "analyzer-1", instanceId: "instance-1", depth: "primary", submittedAt: "2026-01-01T00:00:00.000Z", state: "APPROVED", commit: { oid: headSha } },
       ]),
       reviewThreads: page([]),
     });
 
     expect(evidence.reviews).toEqual([
-      { id: "review-bot", reviewerId: "some-review-bot", provider: "analyzer-1", submittedAt: "2026-01-01T00:00:00.000Z", state: "approved", headSha },
+      { id: "review-bot", reviewerId: "some-review-bot", instanceId: "instance-1", provider: "analyzer-1", submittedAt: "2026-01-01T00:00:00.000Z", state: "approved", depth: "primary", headSha },
     ]);
     expect(validateReviewEvidence(evidence, authoritativePolicy)).toEqual([]);
   });
@@ -71,7 +71,7 @@ describe("normalizeGitHubReviewEvidence", () => {
       pullRequest: { id: "PR_node", headRefOid: headSha, baseRefOid: baseSha },
       checks: page([{ name: "unit", conclusion: "SUCCESS", headSha }]),
       reviews: page([
-        { id: "review-1", author: { login: "reviewer-1" }, submittedAt: "2026-01-01T00:00:00.000Z", state: "APPROVED", commit: { oid: headSha } },
+        { id: "review-1", author: { login: "reviewer-1" }, instanceId: "instance-1", depth: "primary", submittedAt: "2026-01-01T00:00:00.000Z", state: "APPROVED", commit: { oid: headSha } },
       ]),
       reviewThreads: page([]),
     });
@@ -80,6 +80,66 @@ describe("normalizeGitHubReviewEvidence", () => {
     expect(validateReviewEvidence(evidence, authoritativePolicy).map((entry) => [entry.rule, entry.path])).toEqual([
       ["review-provider", "reviews[0].provider"],
     ]);
+  });
+
+  it("does not invent an instanceId or depth from the payload -- both normalize to empty and are rejected by validation, not guessed", () => {
+    const evidence = normalizeGitHubReviewEvidence({
+      pullRequest: { id: "PR_node", headRefOid: headSha, baseRefOid: baseSha },
+      checks: page([{ name: "unit", conclusion: "SUCCESS", headSha }]),
+      reviews: page([
+        { id: "review-1", author: { login: "reviewer-1" }, provider: "analyzer-1", submittedAt: "2026-01-01T00:00:00.000Z", state: "APPROVED", commit: { oid: headSha } },
+      ]),
+      reviewThreads: page([]),
+    });
+
+    expect(evidence.reviews[0]?.instanceId).toBe("");
+    expect(evidence.reviews[0]?.depth).toBe("");
+    const rules = validateReviewEvidence(evidence, authoritativePolicy).map((entry) => entry.rule);
+    expect(rules).toContain("review-instance-id");
+    expect(rules).toContain("review-depth");
+  });
+
+  it("reads instanceId and depth only from what the caller already attached to the review node", () => {
+    const evidence = normalizeGitHubReviewEvidence({
+      pullRequest: { id: "PR_node", headRefOid: headSha, baseRefOid: baseSha },
+      checks: page([{ name: "unit", conclusion: "SUCCESS", headSha }]),
+      reviews: page([
+        { id: "review-1", author: { login: "reviewer-1" }, provider: "analyzer-1", instanceId: "instance-1", depth: "secondary", submittedAt: "2026-01-01T00:00:00.000Z", state: "APPROVED", commit: { oid: headSha } },
+      ]),
+      reviewThreads: page([]),
+    });
+
+    expect(evidence.reviews[0]?.instanceId).toBe("instance-1");
+    expect(evidence.reviews[0]?.depth).toBe("secondary");
+    expect(validateReviewEvidence(evidence, authoritativePolicy)).toEqual([]);
+  });
+
+  it("reads patchId only from what the caller already attached to pullRequest, and omits it entirely otherwise", () => {
+    const patchId = "d".repeat(40);
+    const withPatchId = normalizeGitHubReviewEvidence({
+      pullRequest: { id: "PR_node", headRefOid: headSha, baseRefOid: baseSha, patchId },
+      checks: page([]),
+      reviews: page([]),
+      reviewThreads: page([]),
+    });
+    expect(withPatchId.patchId).toBe(patchId);
+
+    const withoutPatchId = normalizeGitHubReviewEvidence({
+      pullRequest: { id: "PR_node", headRefOid: headSha, baseRefOid: baseSha },
+      checks: page([]),
+      reviews: page([]),
+      reviewThreads: page([]),
+    });
+    expect(withoutPatchId.patchId).toBeUndefined();
+    expect("patchId" in withoutPatchId).toBe(false);
+
+    const emptyPatchId = normalizeGitHubReviewEvidence({
+      pullRequest: { id: "PR_node", headRefOid: headSha, baseRefOid: baseSha, patchId: "" },
+      checks: page([]),
+      reviews: page([]),
+      reviewThreads: page([]),
+    });
+    expect("patchId" in emptyPatchId).toBe(false);
   });
 
   it("marks the bundle incomplete when any GitHub connection has another page", () => {
@@ -91,7 +151,7 @@ describe("normalizeGitHubReviewEvidence", () => {
     });
 
     expect(evidence.paginationComplete).toBe(false);
-    expect(validateReviewEvidence(evidence, { requiredChecks: ["unit"], requireApproval: false, decisionUse: "authoritative" }).map((entry) => entry.rule)).toEqual([
+    expect(validateReviewEvidence(evidence, { requiredChecks: ["unit"], requireApproval: false, requireSecondaryReview: false, decisionUse: "authoritative" }).map((entry) => entry.rule)).toEqual([
       "pagination-incomplete",
     ]);
   });
@@ -116,7 +176,7 @@ describe("normalizeGitHubReviewEvidence", () => {
     });
 
     expect(evidence.paginationComplete).toBe(false);
-    expect(validateReviewEvidence(evidence, { requiredChecks: ["unit"], requireApproval: false, decisionUse: "authoritative" }).map((entry) => entry.rule)).toEqual([
+    expect(validateReviewEvidence(evidence, { requiredChecks: ["unit"], requireApproval: false, requireSecondaryReview: false, decisionUse: "authoritative" }).map((entry) => entry.rule)).toEqual([
       "pagination-incomplete",
     ]);
   });
@@ -126,14 +186,14 @@ describe("normalizeGitHubReviewEvidence", () => {
       pullRequest: { id: "PR_node", headRefOid: headSha, baseRefOid: baseSha },
       checks: page([{ name: "unit", conclusion: "SUCCESS", headSha }]),
       reviews: page([
-        { id: "review-approved", author: { login: "reviewer-1" }, provider: "analyzer-1", submittedAt: "2026-01-01T00:00:00.000Z", state: "APPROVED", commit: { oid: headSha } },
+        { id: "review-approved", author: { login: "reviewer-1" }, provider: "analyzer-1", instanceId: "instance-1", depth: "primary", submittedAt: "2026-01-01T00:00:00.000Z", state: "APPROVED", commit: { oid: headSha } },
         { id: "review-pending", state: "PENDING" },
       ]),
       reviewThreads: page([]),
     });
 
     expect(evidence.reviews).toEqual([
-      { id: "review-approved", reviewerId: "reviewer-1", provider: "analyzer-1", submittedAt: "2026-01-01T00:00:00.000Z", state: "approved", headSha },
+      { id: "review-approved", reviewerId: "reviewer-1", instanceId: "instance-1", provider: "analyzer-1", submittedAt: "2026-01-01T00:00:00.000Z", state: "approved", depth: "primary", headSha },
     ]);
     expect(validateReviewEvidence(evidence, authoritativePolicy)).toEqual([]);
   });
@@ -165,7 +225,7 @@ describe("normalizeGitHubReviewEvidence", () => {
       });
 
       expect(evidence.paginationComplete).toBe(false);
-      expect(evidence.reviews).toEqual([{ id: "review-invalid", reviewerId: "", provider: "", submittedAt: "", state: "unknown", headSha: "" }]);
+      expect(evidence.reviews).toEqual([{ id: "review-invalid", reviewerId: "", instanceId: "", provider: "", submittedAt: "", state: "unknown", depth: "", headSha: "" }]);
     },
   );
 
@@ -173,7 +233,7 @@ describe("normalizeGitHubReviewEvidence", () => {
     const evidence = normalizeGitHubReviewEvidence({
       pullRequest: { id: "PR_node", headRefOid: headSha, baseRefOid: baseSha },
       checks: page([{ name: "unit", conclusion: "SUCCESS", headSha }]),
-      reviews: page([{ id: "review-1", author: { login: "reviewer-1" }, provider: "analyzer-1", submittedAt: "2026-01-01T00:00:00.000Z", state: "APPROVED", commit_id: "d".repeat(40) }]),
+      reviews: page([{ id: "review-1", author: { login: "reviewer-1" }, provider: "analyzer-1", instanceId: "instance-1", depth: "primary", submittedAt: "2026-01-01T00:00:00.000Z", state: "APPROVED", commit_id: "d".repeat(40) }]),
       reviewThreads: page([]),
     });
 
@@ -192,7 +252,7 @@ describe("normalizeGitHubReviewEvidence", () => {
     });
 
     expect(evidence.checks[0]?.headSha).toBe("");
-    expect(validateReviewEvidence(evidence, { requiredChecks: ["unit"], requireApproval: false, decisionUse: "authoritative" }).map((entry) => [entry.rule, entry.path])).toEqual([
+    expect(validateReviewEvidence(evidence, { requiredChecks: ["unit"], requireApproval: false, requireSecondaryReview: false, decisionUse: "authoritative" }).map((entry) => [entry.rule, entry.path])).toEqual([
       ["stale-evidence", "checks[0].headSha"],
       ["missing-required-check", "requiredChecks[0]"],
     ]);
@@ -202,7 +262,7 @@ describe("normalizeGitHubReviewEvidence", () => {
     const evidence = normalizeGitHubReviewEvidence({
       pullRequest: { id: "PR_node", headRefOid: headSha, baseRefOid: baseSha },
       checks: page([{ name: "unit", conclusion: "SUCCESS", headSha }]),
-      reviews: page([{ id: "review-1", author: { login: "reviewer-1" }, provider: "analyzer-1", submittedAt: "2026-01-01T00:00:00.000Z", state: "APPROVED" }]),
+      reviews: page([{ id: "review-1", author: { login: "reviewer-1" }, provider: "analyzer-1", instanceId: "instance-1", depth: "primary", submittedAt: "2026-01-01T00:00:00.000Z", state: "APPROVED" }]),
       reviewThreads: page([]),
     });
 

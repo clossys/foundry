@@ -609,15 +609,17 @@ import {
 | --- | --- | --- |
 | `requiredChecks` | `string[]` | Names of checks that must report `"success"` for the current head; no duplicates. |
 | `requireApproval` | `boolean` | Whether one current-head approval is required. |
-| `decisionUse` | `"advisory" \| "authoritative"` | Whether `requireApproval` is merge-blocking clearance (`"authoritative"`) or an audit signal only (`"advisory"`). Required, no default — an omitted or unsupported value is a `"decision-use"` finding. `requireApproval: true` combined with `decisionUse: "advisory"` is rejected as an `"advisory-approval-conflict"` finding at policy-validation time, before any evidence is read: an advisory model can never let an approval grant clearance. |
+| `requireSecondaryReview` | `boolean` | Whether a second, independent review reaching `depth: "secondary"` and a clean decisive state is required, on top of whatever `requireApproval` already demands. Required, no default, same discipline as `requireApproval`/`decisionUse` below — an omitted value is a `"require-secondary-review"` finding. `requireSecondaryReview: true` combined with `decisionUse: "advisory"` is rejected as an `"advisory-secondary-conflict"` finding, the same way `requireApproval: true` under `"advisory"` is. A `"secondary-incomplete"` record, or a `"secondary"` record whose state is not clean, never satisfies this. |
+| `decisionUse` | `"advisory" \| "authoritative"` | Whether `requireApproval` (and `requireSecondaryReview`) is merge-blocking clearance (`"authoritative"`) or an audit signal only (`"advisory"`). Required, no default — an omitted or unsupported value is a `"decision-use"` finding. `requireApproval: true` combined with `decisionUse: "advisory"` is rejected as an `"advisory-approval-conflict"` finding at policy-validation time, before any evidence is read: an advisory model can never let an approval grant clearance. |
 
 `ReviewEvidenceBundle` — the provider-neutral snapshot for one head:
 
 | Field | Type | Notes |
 | --- | --- | --- |
-| `schemaVersion` | `2` | Must equal `REVIEW_EVIDENCE_VERSION`. A version-1 bundle (no base-commit binding) is rejected outright, never coerced. |
+| `schemaVersion` | `3` | Must equal `REVIEW_EVIDENCE_VERSION`. A version-1 or version-2 bundle is rejected outright, never coerced. |
 | `headSha` | `string` | Exactly 40 lowercase hexadecimal characters — the exact commit this snapshot was observed against. |
 | `baseSha` | `string` | Exactly 40 lowercase hexadecimal characters — the exact base commit this snapshot was observed against, so evidence cannot outlive a base-branch change that alters the merge result. |
+| `patchId` | `string?` | Optional. A caller-supplied identity for the change itself (the diff, not the commit), stable across a base-only advance the way `headSha` is not. Git's `patch-id` is the established analogue, but this package never computes one and never constrains this field to `headSha`/`baseSha`'s 40-lowercase-hex shape — it is opaque, caller-supplied data. Absence carries no ambiguity: it means only "no patch-identity information," and `isRevalidatableReviewEvidence` (below) can never return `true` for such a bundle. |
 | `paginationComplete` | `boolean` | Must be `true`. `false` means at least one paginated collection below was not fully consumed and the bundle must not be treated as approval-ready. |
 | `checks` | `ReviewCheck[]` | Dense array, at most 10,000 entries. |
 | `reviews` | `ReviewRecord[]` | Dense array, at most 10,000 entries. |
@@ -628,19 +630,29 @@ import {
 `"action-required"`, `"pending"`, `"unknown"`), and `headSha` (must match the
 bundle's `headSha`, or the check is reported as stale evidence and ignored).
 
-`ReviewRecord`: `id` (`string`), `reviewerId` (`string`, opaque and
-provider-neutral), `provider` (`string`, opaque and required — which analyzer
-produced this record; this package defines no vendor enum and no notion of a
-"trusted" provider, and no provider's presence grants clearance, same as
-`decisionUse` above), `submittedAt` (RFC 3339 timestamp with `Z` or an
-explicit offset, up to millisecond precision), `state` (one of `"approved"`,
-`"changes-requested"`, `"commented"`, `"dismissed"`, `"pending"`,
-`"unknown"`), and `headSha` (must match the bundle's `headSha`). Only each
-reviewer's latest current-head decisive state (`approved`,
-`changes-requested`, or `dismissed`) is effective; `commented`/`pending`/
-`unknown` never replace a decisive state, and two decisive states sharing a
-timestamp for the same reviewer are reported as ambiguous rather than
-resolved by array order.
+`ReviewRecord`: `id` (`string`), `reviewerId` (`string`, opaque,
+provider-neutral, and purely descriptive), `instanceId` (`string`, opaque,
+required, unique per review session — validation groups and applies
+latest-wins on `instanceId`, not `reviewerId`: a consuming account's records
+can carry the same `reviewerId`, even the same login, for every audit it
+runs, so `reviewerId` alone cannot tell two genuinely independent review
+sessions apart from one review revising itself), `provider` (`string`,
+opaque and required — which analyzer produced this record; this package
+defines no vendor enum and no notion of a "trusted" provider, and no
+provider's presence grants clearance, same as `decisionUse` above),
+`submittedAt` (RFC 3339 timestamp with `Z` or an explicit offset, up to
+millisecond precision), `state` (one of `"approved"`, `"changes-requested"`,
+`"commented"`, `"dismissed"`, `"pending"`, `"unknown"`), `depth` (one of
+`"primary"`, `"secondary"`, `"secondary-incomplete"` — how far this record's
+review actually went, never derivable from `state`; only a `"secondary"`
+record reaching a clean decisive state can ever satisfy
+`ReviewPolicy.requireSecondaryReview`, and a `"secondary-incomplete"` record
+never does even with a clean `state`), and `headSha` (must match the
+bundle's `headSha`). Only each *instance's* latest current-head decisive
+state (`approved`, `changes-requested`, or `dismissed`) is effective;
+`commented`/`pending`/`unknown` never replace a decisive state, and two
+decisive states sharing a timestamp for the same instance are reported as
+ambiguous rather than resolved by array order.
 
 `ReviewThread`: `id` (`string`), `isResolved` (`boolean` — `false` on a
 current-head thread is reported as an unresolved-thread finding), and
@@ -648,9 +660,10 @@ current-head thread is reported as an unresolved-thread finding), and
 
 ```json
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "headSha": "0123456789abcdef0123456789abcdef01234567",
   "baseSha": "76543210fedcba9876543210fedcba9876543210",
+  "patchId": "fedcba9876543210fedcba9876543210fedcba98",
   "paginationComplete": true,
   "checks": [
     { "name": "test", "conclusion": "success", "headSha": "0123456789abcdef0123456789abcdef01234567" }
@@ -659,15 +672,43 @@ current-head thread is reported as an unresolved-thread finding), and
     {
       "id": "review-1",
       "reviewerId": "reviewer-1",
+      "instanceId": "review-session-1",
       "provider": "review-analyzer-1",
       "submittedAt": "2026-01-01T00:00:00.000Z",
       "state": "approved",
+      "depth": "primary",
       "headSha": "0123456789abcdef0123456789abcdef01234567"
     }
   ],
   "threads": [
     { "id": "thread-1", "isResolved": true, "headSha": "0123456789abcdef0123456789abcdef01234567" }
   ]
+}
+```
+
+#### Revalidation after a base-only advance
+
+A branch-protection rule that requires branches be current before merging
+forces a branch update — which changes `headSha` — even when a pull
+request's own diff never changed. `isRevalidatableReviewEvidence(evidence,
+currentPatchId)` answers whether stale-by-head evidence remains usable in
+that specific case: `true` only when `evidence.patchId` and `currentPatchId`
+are both non-empty strings and equal. It is a separate, pure predicate, not
+a `validateReviewEvidence` finding rule or parameter — every `headSha`
+comparison inside `validateReviewEvidence` is a within-bundle consistency
+check (does this item match this bundle's own `headSha`), never a comparison
+against some other, live head; that comparison, and now this one, are both
+entirely the caller's own job. `isRevalidatableReviewEvidence` never mutates
+or re-derives `evidence`, and never decides whether a caller should actually
+treat revalidated evidence as current for a merge — it supplies the fact
+only, never the consequence.
+
+```ts
+import { isRevalidatableReviewEvidence } from "@vespeneventures/governance/review";
+
+if (evidence.headSha !== pullRequest.headRefOid && isRevalidatableReviewEvidence(evidence, currentPatchId)) {
+  // The base advanced but the diff is byte-identical; the caller decides
+  // whether that is sufficient, or whether to gather fresh evidence anyway.
 }
 ```
 
