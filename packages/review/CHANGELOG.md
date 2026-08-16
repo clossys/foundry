@@ -5,6 +5,23 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.10] - 2026-08-15
+
+### Changed
+
+- Updated the `@vespeneventures/governance` dependency range from `~0.12.0`
+  to `~0.13.0`
+  so this deprecated compatibility package remains linked after governance's
+  patch-identity-binding release. This package's own exports are unchanged,
+  but the underlying `@vespeneventures/governance/review` schema it
+  re-exports moved to schema version 3 (breaking) in that release: a
+  version-1 or version-2 `ReviewEvidenceBundle` is now rejected,
+  `ReviewRecord` gained required `instanceId` and `depth` fields, and
+  `ReviewPolicy` gained a required `requireSecondaryReview`. Consumers of
+  this deprecated package should migrate directly to
+  `@vespeneventures/governance/review` and read its own CHANGELOG for the
+  full detail.
+
 ## [0.2.9] - 2026-08-15
 
 ### Changed

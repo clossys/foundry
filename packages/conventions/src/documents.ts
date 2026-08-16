@@ -77,6 +77,12 @@ export const CONVENTION_DOCUMENTS: readonly ConventionDocument[] = Object.freeze
     title: "Machine baseline",
     templated: false,
   }),
+  Object.freeze({
+    id: "gate-naming",
+    filename: "gate-naming.md",
+    title: "CI gate naming",
+    templated: false,
+  }),
 ]);
 
 export const CONVENTION_ADAPTERS: readonly ConventionAdapter[] = Object.freeze([

@@ -1,5 +1,5 @@
 /** The only review evidence schema supported by this package version. */
-export const REVIEW_EVIDENCE_VERSION = 2 as const;
+export const REVIEW_EVIDENCE_VERSION = 3 as const;
 
 /** Dense, read-only lists accepted by the evidence contracts. */
 export type ReviewList<T> = readonly T[];
@@ -33,9 +33,38 @@ export type ReviewDecision =
   | "unknown";
 
 /**
+ * Depth actually reached by one review record, expressed with the same
+ * tri-state discipline as `ReviewPolicyAdoptionState` /
+ * `ReviewPolicyCoverageState` below: a real third state gets its own named
+ * value rather than being collapsed into a boolean or inferred by comparing
+ * against what a policy demanded.
+ *
+ * `"primary"` — an ordinary single-pass review; no secondary pass was
+ * attempted or required. `"secondary"` — a second, independent pass reached
+ * a decisive result at that depth; only a `"secondary"` record can ever
+ * satisfy `ReviewPolicy.requireSecondaryReview`. `"secondary-incomplete"` —
+ * the record itself states that the depth a policy would demand was
+ * attempted and not reached; this is a first-class, explicitly reported
+ * fact, not this package's inference. A record can be decisive
+ * (`state: "approved"`) about what it did review while still declaring
+ * `"secondary-incomplete"` — a clean primary-depth result never upgrades
+ * itself into a satisfied secondary requirement. See `validateReviews` for
+ * why `state` alone (clean vs. negative) cannot express this: depth and
+ * decision are orthogonal facts about one record.
+ */
+export type ReviewDepth = "primary" | "secondary" | "secondary-incomplete";
+
+/**
  * A review decision observed while gathering evidence for one exact
- * proposed-change head. `reviewerId` is provider-neutral and opaque; together
- * with `submittedAt` it lets validation apply each reviewer's latest decision.
+ * proposed-change head. `reviewerId` is provider-neutral and opaque, and
+ * remains purely descriptive data on the record. It is `instanceId` —
+ * required, unique per review session — that validation actually groups and
+ * applies latest-wins on: a consuming account's records can carry the same
+ * `reviewerId` (even the same login) for every audit it ever runs, so
+ * `reviewerId` alone cannot tell two genuinely independent reviews apart
+ * from one review revising itself. `instanceId` is caller-assigned and
+ * opaque; this package defines no scheme for it beyond "stable for one
+ * review session, distinct across sessions."
  *
  * `provider` is a second, independent opaque identifier: which analyzer
  * produced this record (a human review client, or an automated review tool).
@@ -46,13 +75,19 @@ export type ReviewDecision =
  * reject, just keyed by tool instead of by human identity. Which providers an
  * account actually appointed is an account-owned value that never lives in
  * this package.
+ *
+ * `depth` is a third, independent fact: how far this record's review
+ * actually went, never derivable from `state` or `provider`. See
+ * `ReviewDepth`.
  */
 export interface ReviewRecord {
   readonly id: string;
   readonly reviewerId: string;
+  readonly instanceId: string;
   readonly provider: string;
   readonly submittedAt: string;
   readonly state: ReviewDecision;
+  readonly depth: ReviewDepth;
   readonly headSha: string;
 }
 
@@ -71,11 +106,32 @@ export interface ReviewThread {
  * would result: a review record surviving a base change (the target branch
  * moving underneath an otherwise-unchanged head) would otherwise validate
  * against a merge result it never actually saw.
+ *
+ * `patchId` is a caller-supplied identity for the change itself — the diff,
+ * not the commit — stable across a base-only advance the way `headSha` is
+ * not. Git's `patch-id` is the established analogue, but this package
+ * neither computes one nor assumes that exact algorithm or output shape: it
+ * is opaque, caller-supplied data, taken on the same terms as `headSha` is
+ * (this package performs no Git, filesystem, or network I/O to produce
+ * either), never validated against a fixed format the way `headSha` is,
+ * because constraining it to one scheme's output shape would silently
+ * assume every caller uses that scheme.
+ *
+ * `patchId` is optional, unlike every other identity field on this bundle.
+ * `headSha` and `baseSha` are required because a bundle without them cannot
+ * say what it is evidence FOR at all. `patchId`'s absence carries no such
+ * ambiguity: it means only "this bundle carries no patch-identity
+ * information," which leaves every existing head-binding guarantee on this
+ * bundle completely intact and simply means `isRevalidatableReviewEvidence`
+ * can never return true for it — there is no silent default direction to
+ * get wrong the way `decisionUse` and `provider` each has one. See
+ * `isRevalidatableReviewEvidence`.
  */
 export interface ReviewEvidenceBundle {
   readonly schemaVersion: typeof REVIEW_EVIDENCE_VERSION;
   readonly headSha: string;
   readonly baseSha: string;
+  readonly patchId?: string;
   /** True only when every paginated evidence collection was fully consumed. */
   readonly paginationComplete: boolean;
   readonly checks: ReviewList<ReviewCheck>;
@@ -100,6 +156,21 @@ export interface ReviewPolicy {
   /** Whether one current-head approval is required. */
   readonly requireApproval: boolean;
   /**
+   * Whether a second, independent review reaching `depth: "secondary"` and a
+   * clean decisive state is required, on top of whatever `requireApproval`
+   * already demands. Required, with no default, for the same reason
+   * `requireApproval` itself has none: a silently-assumed `false` would make
+   * an account's real secondary-review requirement invisible to the one
+   * mechanism meant to enforce it, which is exactly the failure this field
+   * exists to close (see this module's own review history: a reviewer
+   * correctly declared incomplete depth and the consuming gate passed
+   * anyway, because it read only `state`). A record satisfies this only
+   * through `depth: "secondary"` together with a clean decisive `state`; a
+   * `"secondary-incomplete"` record, or a `"secondary"` record whose state
+   * is not clean, never does. See `ReviewDepth`.
+   */
+  readonly requireSecondaryReview: boolean;
+  /**
    * Whether `requireApproval` is merge-blocking clearance or an audit signal
    * only. Required, with no default. An omitted value is rejected rather
    * than defaulted in either direction: defaulting to `"authoritative"`
@@ -112,6 +183,9 @@ export interface ReviewPolicy {
    * discipline (`requireApproval` must be an explicit boolean; there is no
    * silently-assumed `false`), so requiring `decisionUse` explicitly is
    * consistent with the existing contract, not a new exception to it.
+   * `requireSecondaryReview: true` combined with `decisionUse: "advisory"`
+   * is rejected the same way `requireApproval: true` is: an advisory model
+   * can never let any review signal, primary or secondary, grant clearance.
    */
   readonly decisionUse: ReviewPolicyDecisionUse;
 }
@@ -150,13 +224,16 @@ export type ReviewFindingRule =
   | "required-check-name"
   | "duplicate-required-check"
   | "require-approval"
+  | "require-secondary-review"
   | "decision-use"
   | "advisory-approval-conflict"
+  | "advisory-secondary-conflict"
   | "evidence-shape"
   | "evidence-unknown-field"
   | "schema-version"
   | "head-sha"
   | "base-sha"
+  | "patch-id"
   | "pagination-incomplete"
   | "checks-shape"
   | "check-shape"
@@ -168,9 +245,11 @@ export type ReviewFindingRule =
   | "review-unknown-field"
   | "review-id"
   | "reviewer-id"
+  | "review-instance-id"
   | "review-provider"
   | "review-submitted-at"
   | "review-state"
+  | "review-depth"
   | "threads-shape"
   | "thread-shape"
   | "thread-unknown-field"
@@ -180,6 +259,7 @@ export type ReviewFindingRule =
   | "missing-required-check"
   | "required-check-failed"
   | "approval-missing"
+  | "secondary-review-missing"
   | "changes-requested"
   | "review-decision-ambiguous"
   | "unresolved-thread";

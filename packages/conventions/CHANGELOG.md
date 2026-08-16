@@ -5,7 +5,7 @@ All notable changes to `@vespeneventures/conventions` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.0] - 2026-08-15
+## [0.7.0] - 2026-08-15
 
 ### Added
 
@@ -27,6 +27,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the check compares them instead. `validateScheduleSet` adds the half a single
   declaration cannot see: a host trigger that no schedule claims, which fires
   into nothing while the host still reports a successful invocation.
+
+## [0.6.0] - 2026-08-15
+
+### Added
+
+- CI gate naming: `validateGateName`, `validateGateSet`, and `GATE_VERBS`,
+  plus the `GateNameOptions` type. Enforces verb-noun (extended to
+  verb-noun-noun only where an added segment disambiguates), lowercase kebab
+  case, and no account or repository prefix — a gate context lives inside
+  exactly one repository, which belongs to exactly one account, so there is
+  no namespace to disambiguate. `GATE_VERBS` is a default vocabulary, not a
+  closed one: `options.verbs` lets a caller extend it with a genuinely new
+  verb without waiting on a release, unlike the closed `SKILL_VERBS` list
+  skill naming enforces. A third segment that only restates the second
+  (`scan-secrets-leaks`) is reported rather than encouraged.
+- An eighth shipped document, `gate-naming` (`documents/gate-naming.md`),
+  shipping a suggested canonical gate set — `scan-secrets`,
+  `check-task-record`, `verify-review-evidence`, `detect-policy-drift`,
+  `verify-repository` — as a default, never enforced back: any conforming
+  name is accepted whether or not it matches this vocabulary.
 
 ## [0.5.0] - 2026-08-14
 
@@ -151,6 +171,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `CONVENTION_ADAPTERS`, `DOCUMENTS_ROOT`, and `ADAPTERS_ROOT` for reaching the
   shipped defaults without this package performing any I/O.
 
+[0.6.0]: https://github.com/vespeneventures/foundry/releases/tag/conventions-v0.6.0
 [0.5.0]: https://github.com/vespeneventures/foundry/releases/tag/conventions-v0.5.0
 [0.4.0]: https://github.com/vespeneventures/foundry/releases/tag/conventions-v0.4.0
 [0.3.0]: https://github.com/vespeneventures/foundry/releases/tag/conventions-v0.3.0
