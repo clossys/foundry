@@ -5,6 +5,7 @@ export {
   isReviewPolicy,
   isReviewPolicyAdoptionState,
   isReviewPolicyCoverageState,
+  isRevalidatableReviewEvidence,
   validateReviewEvidence,
   validateReviewPolicy,
 } from "./validate.js";
@@ -13,6 +14,7 @@ export type {
   ReviewCheck,
   ReviewCheckConclusion,
   ReviewDecision,
+  ReviewDepth,
   ReviewEvidenceBundle,
   ReviewFinding,
   ReviewFindingRule,

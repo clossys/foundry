@@ -2,6 +2,7 @@ import { REVIEW_EVIDENCE_VERSION } from "./types.js";
 import type {
   ReviewCheckConclusion,
   ReviewDecision,
+  ReviewDepth,
   ReviewEvidenceBundle,
   ReviewFinding,
   ReviewFindingRule,
@@ -19,6 +20,7 @@ const CHECK_CONCLUSIONS = new Set<ReviewCheckConclusion>([
 const REVIEW_DECISIONS = new Set<ReviewDecision>([
   "approved", "changes-requested", "commented", "dismissed", "pending", "unknown",
 ]);
+const REVIEW_DEPTHS = new Set<ReviewDepth>(["primary", "secondary", "secondary-incomplete"]);
 const DECISION_USES = new Set<ReviewPolicyDecisionUse>(["advisory", "authoritative"]);
 // Deliberately two disjoint Sets with no shared code path between them (see
 // ReviewPolicyCoverageState's doc comment): adoption and coverage must never
@@ -27,10 +29,10 @@ const DECISION_USES = new Set<ReviewPolicyDecisionUse>(["advisory", "authoritati
 // of how that stays true rather than merely documented.
 const ADOPTION_STATES = new Set<ReviewPolicyAdoptionState>(["adopted", "not-adopted", "assessment-pending"]);
 const COVERAGE_STATES = new Set<ReviewPolicyCoverageState>(["verified", "not-verified", "assessment-pending"]);
-const POLICY_KEYS = new Set(["requiredChecks", "requireApproval", "decisionUse"]);
-const EVIDENCE_KEYS = new Set(["schemaVersion", "headSha", "baseSha", "paginationComplete", "checks", "reviews", "threads"]);
+const POLICY_KEYS = new Set(["requiredChecks", "requireApproval", "requireSecondaryReview", "decisionUse"]);
+const EVIDENCE_KEYS = new Set(["schemaVersion", "headSha", "baseSha", "patchId", "paginationComplete", "checks", "reviews", "threads"]);
 const CHECK_KEYS = new Set(["name", "conclusion", "headSha"]);
-const REVIEW_KEYS = new Set(["id", "reviewerId", "provider", "submittedAt", "state", "headSha"]);
+const REVIEW_KEYS = new Set(["id", "reviewerId", "instanceId", "provider", "submittedAt", "state", "depth", "headSha"]);
 const THREAD_KEYS = new Set(["id", "isResolved", "headSha"]);
 const SHA = /^[0-9a-f]{40}$/;
 const RFC3339_TIMESTAMP = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$/;
@@ -125,6 +127,10 @@ export function validateReviewPolicy(value: unknown): ReviewFinding[] {
     if (typeof requireApproval !== "boolean") {
       findings.push(finding("require-approval", "requireApproval", "requireApproval must be a boolean."));
     }
+    const requireSecondaryReview = ownData(value, "requireSecondaryReview");
+    if (typeof requireSecondaryReview !== "boolean") {
+      findings.push(finding("require-secondary-review", "requireSecondaryReview", "requireSecondaryReview must be a boolean."));
+    }
     const decisionUse = ownData(value, "decisionUse");
     if (decisionUse !== "advisory" && decisionUse !== "authoritative") {
       findings.push(finding("decision-use", "decisionUse", 'decisionUse must be exactly "advisory" or "authoritative".'));
@@ -133,6 +139,14 @@ export function validateReviewPolicy(value: unknown): ReviewFinding[] {
       // an advisory model can never let an approval grant clearance, so this
       // combination is self-contradictory regardless of what evidence exists.
       findings.push(finding("advisory-approval-conflict", "requireApproval", 'requireApproval must be false when decisionUse is "advisory"; an advisory review model can never grant merge clearance.'));
+    } else if (decisionUse === "advisory" && requireSecondaryReview === true) {
+      // Same self-contradiction, one level deeper: a secondary review can
+      // never grant clearance under an advisory model either. Reported only
+      // when the requireApproval conflict above did not already fire, for
+      // the same reason validateReviewEvidence never piles "approval-missing"
+      // on top of an already-conflicted policy -- a second finding about a
+      // policy that is already invalid is noise, not new information.
+      findings.push(finding("advisory-secondary-conflict", "requireSecondaryReview", 'requireSecondaryReview must be false when decisionUse is "advisory"; an advisory review model can never grant merge clearance, primary or secondary.'));
     }
     return findings;
   } catch {
@@ -179,8 +193,25 @@ function validateChecks(entries: unknown[], headSha: string, findings: ReviewFin
   return byName;
 }
 
-function validateReviews(entries: unknown[], headSha: string, findings: ReviewFinding[]): { hasApproval: boolean; hasChangesRequested: boolean; hasAmbiguousDecision: boolean } {
-  const latestByReviewer = new Map<string, { submittedAtMs: number; state: ReviewDecision; isAmbiguous: boolean }>();
+interface ReviewValidationResult {
+  readonly hasApproval: boolean;
+  readonly hasChangesRequested: boolean;
+  readonly hasAmbiguousDecision: boolean;
+  readonly hasSecondaryApproval: boolean;
+}
+
+function validateReviews(entries: unknown[], headSha: string, findings: ReviewFinding[]): ReviewValidationResult {
+  // Keyed by instanceId, not reviewerId. reviewerId remains purely
+  // descriptive (see ReviewRecord's own doc comment): a consuming account
+  // can legitimately emit the same reviewerId, even the same login, for
+  // every independent audit it ever runs, so grouping decisive state by
+  // reviewerId would silently let two genuinely independent review sessions
+  // collapse into one via ordinary latest-wins. Grouping by instanceId keeps
+  // "a reviewer revising their own decision within one session" (multiple
+  // records, one instanceId, latest submittedAt wins) distinct from "two
+  // independent sessions" (different instanceId, each contributes its own
+  // effective decision, neither ever shadows the other).
+  const latestByInstance = new Map<string, { submittedAtMs: number; state: ReviewDecision; depth: ReviewDepth; isAmbiguous: boolean }>();
   for (let index = 0; index < entries.length; index += 1) {
     const path = `reviews[${index}]`;
     const entry = arrayEntry(entries, index);
@@ -191,13 +222,20 @@ function validateReviews(entries: unknown[], headSha: string, findings: ReviewFi
     findUnknownFields(entry, REVIEW_KEYS, "review-unknown-field", path, findings);
     const id = ownData(entry, "id");
     const reviewerId = ownData(entry, "reviewerId");
+    const instanceId = ownData(entry, "instanceId");
     const provider = ownData(entry, "provider");
     const submittedAt = ownData(entry, "submittedAt");
     const state = ownData(entry, "state");
+    const depth = ownData(entry, "depth");
     const itemHeadSha = ownData(entry, "headSha");
     const submittedAtMs = reviewTimestamp(submittedAt);
     if (typeof id !== "string" || id.trim().length === 0) findings.push(finding("review-id", `${path}.id`, "A review id must be a non-empty string."));
     if (typeof reviewerId !== "string" || reviewerId.trim().length === 0) findings.push(finding("reviewer-id", `${path}.reviewerId`, "A review must identify its reviewer."));
+    // Required rather than defaulted: a silently-invented or reviewerId-
+    // derived instance id would let two independent review sessions be
+    // mistaken for one, exactly the defect this field exists to close (see
+    // ReviewRecord's own doc comment).
+    if (typeof instanceId !== "string" || instanceId.trim().length === 0) findings.push(finding("review-instance-id", `${path}.instanceId`, "A review must identify its own review session."));
     // Required rather than defaulted to "" or "unknown": a review silently
     // normalized to an empty provider would make an unknown-provider record
     // indistinguishable from a caller that simply forgot to declare one, the
@@ -207,6 +245,9 @@ function validateReviews(entries: unknown[], headSha: string, findings: ReviewFi
     if (typeof state !== "string" || !REVIEW_DECISIONS.has(state as ReviewDecision)) {
       findings.push(finding("review-state", `${path}.state`, "A review state must be a supported normalized value."));
     }
+    if (typeof depth !== "string" || !REVIEW_DEPTHS.has(depth as ReviewDepth)) {
+      findings.push(finding("review-depth", `${path}.depth`, "A review depth must be a supported normalized value."));
+    }
     if (!isSha(itemHeadSha)) {
       findings.push(finding("stale-evidence", `${path}.headSha`, "A review must identify the exact observed head commit."));
       continue;
@@ -215,21 +256,34 @@ function validateReviews(entries: unknown[], headSha: string, findings: ReviewFi
       findings.push(finding("stale-evidence", `${path}.headSha`, "Review evidence does not match the bundle head commit."));
       continue;
     }
-    if (typeof reviewerId !== "string" || reviewerId.trim().length === 0 || submittedAtMs === undefined || typeof state !== "string" || !REVIEW_DECISIONS.has(state as ReviewDecision)) continue;
+    if (
+      typeof reviewerId !== "string" || reviewerId.trim().length === 0
+      || typeof instanceId !== "string" || instanceId.trim().length === 0
+      || submittedAtMs === undefined
+      || typeof state !== "string" || !REVIEW_DECISIONS.has(state as ReviewDecision)
+      || typeof depth !== "string" || !REVIEW_DEPTHS.has(depth as ReviewDepth)
+    ) continue;
     if (state !== "approved" && state !== "changes-requested" && state !== "dismissed") continue;
-    const previous = latestByReviewer.get(reviewerId);
+    const previous = latestByInstance.get(instanceId);
     if (!previous || submittedAtMs > previous.submittedAtMs) {
       // A later decision is decisive even if an older timestamp was ambiguous.
-      latestByReviewer.set(reviewerId, { submittedAtMs, state: state as ReviewDecision, isAmbiguous: false });
+      latestByInstance.set(instanceId, { submittedAtMs, state: state as ReviewDecision, depth: depth as ReviewDepth, isAmbiguous: false });
     } else if (submittedAtMs === previous.submittedAtMs && state !== previous.state) {
-      latestByReviewer.set(reviewerId, { ...previous, isAmbiguous: true });
+      latestByInstance.set(instanceId, { ...previous, isAmbiguous: true });
     }
   }
-  const decisions = [...latestByReviewer.values()].map((review) => review.state);
+  const decisions = [...latestByInstance.values()];
   return {
-    hasApproval: decisions.includes("approved"),
-    hasChangesRequested: decisions.includes("changes-requested"),
-    hasAmbiguousDecision: [...latestByReviewer.values()].some((review) => review.isAmbiguous),
+    hasApproval: decisions.some((review) => review.state === "approved"),
+    hasChangesRequested: decisions.some((review) => review.state === "changes-requested"),
+    hasAmbiguousDecision: decisions.some((review) => review.isAmbiguous),
+    // A satisfied secondary is now a stated, validated fact about a specific
+    // instance's own effective decision, not a population count over records
+    // indistinguishable by construction: only an instance whose LATEST
+    // decisive record is both depth "secondary" and state "approved" counts.
+    // A "secondary-incomplete" record, whatever its state, never does (see
+    // ReviewDepth's own doc comment).
+    hasSecondaryApproval: decisions.some((review) => review.state === "approved" && review.depth === "secondary"),
   };
 }
 
@@ -270,15 +324,29 @@ export function validateReviewEvidence(value: unknown, policy: unknown): ReviewF
     const schemaVersion = ownData(value, "schemaVersion");
     const headSha = ownData(value, "headSha");
     const baseSha = ownData(value, "baseSha");
+    const patchId = ownData(value, "patchId");
     const paginationComplete = ownData(value, "paginationComplete");
     if (schemaVersion !== REVIEW_EVIDENCE_VERSION) {
-      // A version-1 bundle is rejected outright, never coerced or silently
-      // accepted: it has no base-commit binding at all, so there is no safe
-      // way to treat it as a version-2 bundle with an unknown base.
-      findings.push(finding("schema-version", "schemaVersion", `schemaVersion must be ${REVIEW_EVIDENCE_VERSION} (received ${JSON.stringify(schemaVersion)}). Version 1 evidence has no base-commit binding and is rejected, not upgraded.`));
+      // Every prior schema version is rejected outright, never coerced or
+      // silently accepted: version 1 has no base-commit binding at all, and
+      // version 2 has no review depth or review-instance identity, so there
+      // is no safe way to treat either as a version-3 bundle with those
+      // fields merely unknown.
+      findings.push(finding("schema-version", "schemaVersion", `schemaVersion must be ${REVIEW_EVIDENCE_VERSION} (received ${JSON.stringify(schemaVersion)}). Version 1 evidence has no base-commit binding, and version 2 evidence has no review depth or review-instance identity; neither is upgraded.`));
     }
     if (!isSha(headSha)) findings.push(finding("head-sha", "headSha", "headSha must be exactly 40 lowercase hexadecimal characters."));
     if (!isSha(baseSha)) findings.push(finding("base-sha", "baseSha", "baseSha must be exactly 40 lowercase hexadecimal characters."));
+    // patchId is optional (see ReviewEvidenceBundle's own doc comment for
+    // why its absence is safe), but when present it must be a real, non-empty
+    // opaque identifier -- not coerced from, say, a number, and not silently
+    // accepted as an empty string standing in for "none". It is deliberately
+    // NOT constrained to headSha/baseSha's 40-lowercase-hex shape: git's
+    // patch-id is only the established analogue, not a mandated algorithm,
+    // and assuming its exact output shape would silently assume every caller
+    // uses that one scheme.
+    if (patchId !== undefined && (typeof patchId !== "string" || patchId.length === 0)) {
+      findings.push(finding("patch-id", "patchId", "patchId, when present, must be a non-empty string."));
+    }
     if (paginationComplete !== true) findings.push(finding("pagination-incomplete", "paginationComplete", "Evidence must include every page before it can pass review."));
 
     const checks = readArray(value, "checks", findings);
@@ -287,10 +355,13 @@ export function validateReviewEvidence(value: unknown, policy: unknown): ReviewF
     if (!isSha(headSha)) return findings;
 
     const checkStates = checks ? validateChecks(checks, headSha, findings) : new Map<string, ReviewCheckConclusion[]>();
-    const reviewState = reviews ? validateReviews(reviews, headSha, findings) : { hasApproval: false, hasChangesRequested: false, hasAmbiguousDecision: false };
+    const reviewState: ReviewValidationResult = reviews
+      ? validateReviews(reviews, headSha, findings)
+      : { hasApproval: false, hasChangesRequested: false, hasAmbiguousDecision: false, hasSecondaryApproval: false };
     if (threads) validateThreads(threads, headSha, findings);
 
     const requireApproval = isRecord(policy) ? ownData(policy, "requireApproval") : undefined;
+    const requireSecondaryReview = isRecord(policy) ? ownData(policy, "requireSecondaryReview") : undefined;
     const decisionUse = isRecord(policy) ? ownData(policy, "decisionUse") : undefined;
     // The advisory+requireApproval combination is already rejected by
     // validateReviewPolicy above (rule "advisory-approval-conflict"). Don't
@@ -298,6 +369,8 @@ export function validateReviewEvidence(value: unknown, policy: unknown): ReviewF
     // already invalid, so a second finding about the missing approval it
     // could never have honored would only be noise on top of the real error.
     const advisoryApprovalConflict = decisionUse === "advisory" && requireApproval === true;
+    // Same reasoning, for the secondary-review conflict rule.
+    const advisorySecondaryConflict = decisionUse === "advisory" && requireSecondaryReview === true;
 
     const policyRequiredChecks = isRecord(policy) ? ownData(policy, "requiredChecks") : undefined;
     if (isDenseDataArray(policyRequiredChecks)) {
@@ -309,6 +382,13 @@ export function validateReviewEvidence(value: unknown, policy: unknown): ReviewF
         else if (states.some((state) => state !== "success")) findings.push(finding("required-check-failed", `requiredChecks[${index}]`, `Required check "${name}" did not report success.`));
       }
       if (!advisoryApprovalConflict && requireApproval === true && !reviewState.hasApproval) findings.push(finding("approval-missing", "reviews", "A current-head approval is required."));
+      // A record whose policy demands a secondary review but whose depth
+      // does not show one satisfied must not validate as clean: only a
+      // "secondary"-depth record reaching a clean decisive state counts (see
+      // validateReviews' own hasSecondaryApproval comment). A
+      // "secondary-incomplete" record, however decisive its own state, never
+      // silently satisfies this on its own.
+      if (!advisorySecondaryConflict && requireSecondaryReview === true && !reviewState.hasSecondaryApproval) findings.push(finding("secondary-review-missing", "reviews", "A current-head secondary independent review is required."));
     }
     // changes-requested and unresolved-thread are deliberately unconditional:
     // they fire regardless of requireApproval, decisionUse, or requiredChecks
@@ -340,13 +420,49 @@ export function validateReviewEvidence(value: unknown, policy: unknown): ReviewF
  * may depend on narrowing succeeding independently of decision outcome.
  */
 export function isReviewEvidenceBundle(value: unknown): value is ReviewEvidenceBundle {
-  return validateReviewEvidence(value, { requiredChecks: [], requireApproval: false, decisionUse: "authoritative" })
+  return validateReviewEvidence(value, { requiredChecks: [], requireApproval: false, requireSecondaryReview: false, decisionUse: "authoritative" })
     .every((entry) => entry.rule === "changes-requested" || entry.rule === "unresolved-thread" || entry.rule === "review-decision-ambiguous");
 }
 
 /** Narrows valid consumer-owned policy data without choosing any policy values. */
 export function isReviewPolicy(value: unknown): value is ReviewPolicy {
   return validateReviewPolicy(value).length === 0;
+}
+
+/**
+ * Whether `evidence` remains usable after only its base advanced -- not a
+ * fresh audit, but not stale either. True only when `evidence.patchId` and
+ * `currentPatchId` are both non-empty strings and equal: the change this
+ * evidence was gathered against is byte-identical, by patch identity, to the
+ * change at `currentPatchId`, so whatever was reviewed still applies
+ * regardless of which base commit now sits underneath the head. This package
+ * never computes a patch id and never reads a diff to decide this (see
+ * `ReviewEvidenceBundle`'s own doc comment) -- `currentPatchId` is taken as
+ * `unknown`, exactly as caller-supplied as `evidence.patchId` was, and
+ * validated defensively rather than assumed to already be a well-formed
+ * string.
+ *
+ * This is a distinct, separately exported predicate, not a
+ * `validateReviewEvidence` finding rule and not an added parameter to that
+ * function, because it answers a different question than that function
+ * does. `validateReviewEvidence` validates one bundle's own internal shape
+ * and its fit against a policy; every `headSha` comparison inside it is a
+ * WITHIN-bundle consistency check (does this check/review/thread match this
+ * bundle's own `headSha`), never a comparison against some other, live head.
+ * Whether `evidence.headSha` still matches a pull request's real current
+ * head is already an entirely caller-side comparison that happens before
+ * evidence would ever be handed to `validateReviewEvidence` again.
+ * Revalidation is the same shape of external, caller-side comparison, so it
+ * belongs beside that comparison, not folded into shape/policy validation.
+ * It also never mutates or re-derives `evidence`: whether stale-but-
+ * revalidatable evidence is actually treated as current for a merge is a
+ * policy decision this package does not make -- this predicate supplies the
+ * fact only, never the consequence.
+ */
+export function isRevalidatableReviewEvidence(evidence: ReviewEvidenceBundle, currentPatchId: unknown): boolean {
+  return typeof evidence.patchId === "string" && evidence.patchId.length > 0
+    && typeof currentPatchId === "string" && currentPatchId.length > 0
+    && evidence.patchId === currentPatchId;
 }
 
 /**

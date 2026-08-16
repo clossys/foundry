@@ -1,5 +1,5 @@
 import { REVIEW_EVIDENCE_VERSION } from "./types.js";
-import type { ReviewCheckConclusion, ReviewDecision, ReviewEvidenceBundle } from "./types.js";
+import type { ReviewCheckConclusion, ReviewDecision, ReviewDepth, ReviewEvidenceBundle } from "./types.js";
 
 /** Minimal GitHub GraphQL-style page marker used to prove a collection is complete. */
 export interface GitHubPageInfo { readonly hasNextPage: boolean; readonly hasPreviousPage: boolean; }
@@ -8,14 +8,19 @@ export interface GitHubConnection<T> { readonly nodes: readonly T[]; readonly pa
 /** GitHub-shaped check data accepted by the normalizer. */
 export interface GitHubCheckNode { readonly name: string; readonly conclusion: string | null; readonly headSha?: string; readonly head_sha?: string; }
 /**
- * GitHub-shaped review data accepted by the normalizer. `provider` is not
- * part of GitHub's own review shape -- GitHub has no concept of it -- so it
- * is read only when the caller has already attached one to the node before
- * calling this function. This normalizer never infers a provider from
- * `author.login` or any other GitHub-shaped field: pattern-matching a login
- * to guess which analyzer produced a review would hardcode vendor-shaped
+ * GitHub-shaped review data accepted by the normalizer. `provider`,
+ * `instanceId`, and `depth` are not part of GitHub's own review shape --
+ * GitHub has no concept of any of them -- so each is read only when the
+ * caller has already attached it to the node before calling this function.
+ * This normalizer never infers `provider` from `author.login` or any other
+ * GitHub-shaped field, never derives `instanceId` from `author.login` or the
+ * review's own `id` (a GitHub review id already identifies one review
+ * record, not one review SESSION spanning possibly several records -- see
+ * `ReviewRecord`'s own doc comment), and never infers `depth` from a review
+ * body, label, or any other GitHub-shaped field: pattern-matching
+ * GitHub-shaped data to guess any of these would hardcode vendor-shaped
  * knowledge into a package whose charter forbids that. If a caller's payload
- * omits `provider`, that is the caller's own gap to close, not a value this
+ * omits any of them, that is the caller's own gap to close, not a value this
  * function may invent.
  */
 export interface GitHubReviewNode {
@@ -23,15 +28,24 @@ export interface GitHubReviewNode {
   readonly state: string | null;
   readonly author?: { readonly login?: string | null } | null;
   readonly provider?: string | null;
+  readonly instanceId?: string | null;
+  readonly depth?: string | null;
   readonly submittedAt?: string | null;
   readonly commit?: { readonly oid?: string | null } | null;
   readonly commit_id?: string | null;
 }
 /** GitHub-shaped review-thread data accepted by the normalizer. */
 export interface GitHubReviewThreadNode { readonly id: string; readonly isResolved: boolean; }
-/** Caller-provided snapshot of the GitHub data needed for a review decision. */
+/**
+ * Caller-provided snapshot of the GitHub data needed for a review decision.
+ * `pullRequest.patchId`, like `GitHubReviewNode.provider` above, is not part
+ * of GitHub's own `PullRequest` shape -- GitHub exposes no patch-identity
+ * field -- so it is read only when the caller has already attached one.
+ * This normalizer never computes a patch id itself (see
+ * `ReviewEvidenceBundle`'s own doc comment).
+ */
 export interface GitHubReviewEvidencePayload {
-  readonly pullRequest: { readonly id: string; readonly headRefOid: string; readonly baseRefOid: string; };
+  readonly pullRequest: { readonly id: string; readonly headRefOid: string; readonly baseRefOid: string; readonly patchId?: string | null; };
   readonly checks: GitHubConnection<GitHubCheckNode>;
   readonly reviews: GitHubConnection<GitHubReviewNode>;
   readonly reviewThreads: GitHubConnection<GitHubReviewThreadNode>;
@@ -107,6 +121,15 @@ function normalizeReviewDecision(value: unknown): ReviewDecision {
     default: return "unknown";
   }
 }
+// Not a normalizer like the two functions above: GitHub has no native depth
+// concept to translate from (see GitHubReviewNode's own doc comment), so
+// this is a pure caller-attached pass-through, exactly like `provider`. An
+// absent or unrecognized value normalizes to "" here, same as `provider`
+// does, and is rejected by validateReviewEvidence's own "review-depth" rule
+// -- never guessed by this function.
+function reviewDepthValue(value: unknown): ReviewDepth {
+  return stringValue(value) as ReviewDepth;
+}
 
 /**
  * Normalizes a caller-provided GitHub snapshot into the root evidence model.
@@ -131,18 +154,33 @@ export function normalizeGitHubReviewEvidence(payload: GitHubReviewEvidencePaylo
   const checksConnection = ownData(source, "checks");
   const reviewsConnection = ownData(source, "reviews");
   const threadsConnection = ownData(source, "reviewThreads");
+  // `patchId` is read only from what the caller already attached to
+  // `pullRequest` (see GitHubReviewEvidencePayload's own doc comment) --
+  // GitHub's PullRequest has no such field. It is genuinely optional on
+  // ReviewEvidenceBundle (see that type's own doc comment), so an absent or
+  // empty value is simply omitted here rather than normalized to "" the way
+  // `provider` is below: "" would fail `patchId`'s own non-empty-string
+  // validation for no reason, where omitting the key entirely is exactly
+  // what an evidence bundle with no patch-identity information should be.
+  const rawPatchId = ownData(pullRequest, "patchId");
+  const patchId = typeof rawPatchId === "string" && rawPatchId.length > 0 ? rawPatchId : undefined;
   return {
     schemaVersion: REVIEW_EVIDENCE_VERSION,
     headSha,
     baseSha,
+    ...(patchId !== undefined ? { patchId } : {}),
     paginationComplete: isComplete(checksConnection) && reviewConnectionIsComplete(reviewsConnection) && isComplete(threadsConnection),
     checks: nodes(checksConnection).map((node) => { const check = record(node); return { name: stringValue(ownData(check, "name")), conclusion: normalizeCheckConclusion(ownData(check, "conclusion")), headSha: stringValue(ownData(check, "headSha")) || stringValue(ownData(check, "head_sha")) }; }),
     reviews: nodes(reviewsConnection)
       .filter((node) => ownData(record(node), "state") !== "PENDING")
-      // `provider` is read only from what the caller already attached to the
-      // node (see GitHubReviewNode's own doc comment) -- never inferred from
-      // `author.login` or any other GitHub-shaped field.
-      .map((node) => { const review = record(node); const commit = record(ownData(review, "commit")); const author = record(ownData(review, "author")); return { id: stringValue(ownData(review, "id")), reviewerId: stringValue(ownData(author, "login")), provider: stringValue(ownData(review, "provider")), submittedAt: stringValue(ownData(review, "submittedAt")), state: normalizeReviewDecision(ownData(review, "state")), headSha: stringValue(ownData(commit, "oid")) || stringValue(ownData(review, "commit_id")) }; }),
+      // `provider`, `instanceId`, and `depth` are each read only from what
+      // the caller already attached to the node (see GitHubReviewNode's own
+      // doc comment) -- never inferred from `author.login`, the review's own
+      // `id`, or any other GitHub-shaped field. Each normalizes to "" when
+      // the caller omitted it, exactly like `provider` already did before
+      // this fields' addition -- rejected by validation as missing, not
+      // guessed here.
+      .map((node) => { const review = record(node); const commit = record(ownData(review, "commit")); const author = record(ownData(review, "author")); return { id: stringValue(ownData(review, "id")), reviewerId: stringValue(ownData(author, "login")), instanceId: stringValue(ownData(review, "instanceId")), provider: stringValue(ownData(review, "provider")), submittedAt: stringValue(ownData(review, "submittedAt")), state: normalizeReviewDecision(ownData(review, "state")), depth: reviewDepthValue(ownData(review, "depth")), headSha: stringValue(ownData(commit, "oid")) || stringValue(ownData(review, "commit_id")) }; }),
     threads: nodes(threadsConnection).map((node) => { const thread = record(node); return { id: stringValue(ownData(thread, "id")), isResolved: ownData(thread, "isResolved") === true, headSha }; }),
   };
 }
