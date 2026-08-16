@@ -2,8 +2,15 @@
 
 Account-neutral agent conventions that two parties can share without either
 owning the other — branch provenance, skill naming, agent interoperability,
-routine declarations, CI gate naming, and a capability-first skill registry —
-shipped as default documents plus the validators that enforce their grammar.
+routine and schedule declarations, CI gate naming, and a capability-first
+skill registry — shipped as default documents plus the validators that
+enforce their grammar.
+
+Scheduled work is declared in two tiers that deliberately do not merge. Work
+needing an agent session to exercise judgment is a **routine** and points at a
+skill; work that runs without a model is a **schedule** and points at deployed
+code. The execution host does not separate them — either tier can run on the
+same runner — so each declares its host explicitly.
 
 The shipped machine guidance treats a configured workspace root as a local
 discovery location, not a singular authority. Applicable account-owned
@@ -162,6 +169,7 @@ Both routes point at the same bytes; use whichever your tooling expects.
 | `skill-grammar` | [documents/skill-grammar.md](documents/skill-grammar.md) | Skill naming, prefix ownership, and the closed verb vocabulary |
 | `agent-interoperability` | [documents/agent-interoperability.md](documents/agent-interoperability.md) | The canonical layer table, supported surfaces, and the admission test for a new agent |
 | `routine-declaration` | [documents/routine-declaration.md](documents/routine-declaration.md) | Why a trigger is a pointer, why scope is closed, and why declared intent is not live state |
+| `schedule-declaration` | [documents/schedule-declaration.md](documents/schedule-declaration.md) | The other scheduling tier: why model-free work declares a host and a cron expression, why the execution host is not what separates the tiers, and why a declaration is not a deployment |
 | `skill-registry` | [documents/skill-registry.md](documents/skill-registry.md) | The capability-first skill registry contract: composite identity, closed scope, coverage as set arithmetic, and why a routine can only confirm coverage, never grant it |
 | `machine-guidance` | [documents/machine-guidance.md](documents/machine-guidance.md) | Machine-wide guidance for discovery and composition across account-owned workspace planes. **Templated** — carries `${WORKSPACE_ROOT}` |
 | `machine-baseline` | [documents/machine-baseline.md](documents/machine-baseline.md) | The durable posture a development machine holds, and which part of it is mechanically checkable |
@@ -231,6 +239,10 @@ expander reads like any other bytes.
 | `validateRoutineSet(declarations, registry, options?)` | function | Validates a set; adds unique-identifier checking and validates exclusion reasons and repository qualifiers |
 | `validateScheduledSkillDescription(skill, description)` | function | Checks that a clock-invoked skill declares it is not conversationally triggered |
 | `reconciliationFindingKinds` | `readonly string[]` | The four findings only live reconciliation can produce. Data, not an implementation — this package cannot read a scheduler's store |
+| `validateScheduleDeclaration(declaration, registry)` | function | Validates one schedule against a plane's own registry of repositories and execution hosts, including cron-expression shape and correspondence with the host's trigger list |
+| `validateScheduleSet(declarations, registry, options?)` | function | Validates a set; adds unique-identifier checking, exclusion reasons, and the rule a single declaration cannot see — a host trigger no schedule claims |
+| `isCronExpression(cadence)` | function | Whether a cadence is a five-field cron expression a host could match |
+| `scheduleReconciliationFindingKinds` | `readonly string[]` | The four findings only a live probe can produce for the schedule tier, including a deployed artifact that predates its declaration |
 | `scanNeutrality(contents, options?)` | function | Reports absolute paths, operator-specific home directories, and caller-supplied plane-owned names. Exempts a shebang line |
 | `validateSkillRegistry(registry)` | function | Validates decoded caller JSON without throwing: schema and entry shapes, composite identity, scope escape, capability coverage, and durable accepted-gap evidence |
 | `computeCapabilityCoverage(registry, capabilityId)` | function | Pure set arithmetic for one capability: required, covered, accepted gaps, and what is still missing |

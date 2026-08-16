@@ -19,6 +19,8 @@ export type {
   Finding,
   RoutineDeclaration,
   RoutineRegistry,
+  ScheduleDeclaration,
+  ScheduleRegistry,
   Severity,
 } from "./types.js";
 
@@ -45,6 +47,14 @@ export {
   validateScheduledSkillDescription,
 } from "./routines.js";
 export type { RoutineExclusion, RoutineSetOptions } from "./routines.js";
+
+export {
+  isCronExpression,
+  scheduleReconciliationFindingKinds,
+  validateScheduleDeclaration,
+  validateScheduleSet,
+} from "./schedules.js";
+export type { ScheduleExclusion, ScheduleSetOptions } from "./schedules.js";
 
 export { GATE_VERBS, validateGateName, validateGateSet } from "./gates.js";
 export type { GateNameOptions } from "./gates.js";
