@@ -7,6 +7,71 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-08-15
+
+### Changed
+
+- **`./review` schema bumped to version 3 (breaking).** `REVIEW_EVIDENCE_VERSION`
+  is now `3`; a version-1 or version-2 bundle is rejected outright with a
+  `"schema-version"` finding naming the problem, never coerced or silently
+  upgraded. `ReviewRecord` gains a required `instanceId` (non-empty string,
+  `"review-instance-id"` finding rule) and a required `depth: ReviewDepth`
+  (`"primary" | "secondary" | "secondary-incomplete"`, `"review-depth"`
+  finding rule). Fixes two defects found by operating the system: (1)
+  `validateReviews` grouped decisive state by `reviewerId` and applied
+  latest-wins across it, which is correct for one reviewer revising their own
+  decision but silently collapsed two genuinely independent review sessions
+  into one whenever they shared a `reviewerId` (an identity-agnostic
+  consuming model can emit the same login for every audit it runs, and
+  `provider` does not disambiguate either — both independent reviews can
+  record the same provider). Latest-wins now applies per `instanceId`
+  instead: an account-owned, caller-assigned identifier unique per review
+  session. (2) A record could report a decisive, clean `state` while its
+  reviewing party correctly could not complete a policy-demanded secondary
+  pass, and the consuming gate read only `state` — passing anyway. `depth`
+  makes that fact structurally visible: only an instance whose *latest*
+  decisive record is both `depth: "secondary"` and a clean state can ever
+  satisfy `ReviewPolicy.requireSecondaryReview` (new, required, no default,
+  same discipline as `requireApproval`/`decisionUse`); a
+  `"secondary-incomplete"` record never silently upgrades itself.
+  `requireSecondaryReview: true` combined with `decisionUse: "advisory"` is
+  rejected as an `"advisory-secondary-conflict"` finding, the same way
+  `requireApproval: true` already is. `./review/github`'s
+  `normalizeGitHubReviewEvidence` reads `instanceId` and `depth` only from
+  what the caller already attached to a review node (GitHub has no native
+  concept of either) — never inferred, same discipline as `provider`.
+
+### Added
+
+- **`ReviewEvidenceBundle.patchId`** (optional string) — a caller-supplied
+  identity for the change itself (the diff, not the commit), stable across a
+  base-only advance the way `headSha` is not. Fixes a third defect: evidence
+  binds to an exact `headSha`, so a consumer whose branch-protection requires
+  branches be current before merging voids a clean, unchanged-diff audit
+  every time a queued PR merges ahead of it — observed three times in one
+  day, and quadratic in the size of a merge queue. Git's `patch-id` is the
+  established analogue; this package never computes one (that requires
+  reading a repository) and never constrains `patchId` to `headSha`/`baseSha`'s
+  40-lowercase-hex shape, since assuming one scheme's output format would
+  assume every caller uses that scheme. `./review/github` reads it only from
+  a caller-attached `pullRequest.patchId` (GitHub exposes no such field) and
+  omits the key entirely when absent, rather than normalizing to an empty
+  string, since `patchId` is genuinely optional.
+- **`isRevalidatableReviewEvidence(evidence, currentPatchId)`** — a pure,
+  separately exported predicate (not a `validateReviewEvidence` finding rule
+  or parameter) answering whether stale-by-head evidence remains usable: true
+  only when `evidence.patchId` and `currentPatchId` are both non-empty and
+  equal. It never mutates or re-derives evidence and never decides whether a
+  caller should actually treat revalidated evidence as current for a merge —
+  that remains the caller's own policy decision. Kept separate from
+  `validateReviewEvidence` because every `headSha` comparison inside that
+  function is a within-bundle consistency check (do this bundle's own
+  checks/reviews/threads match its own `headSha`), never a comparison against
+  some other, live head — that comparison already happens entirely on the
+  caller's side, before evidence would ever be handed to
+  `validateReviewEvidence` again, and revalidation is the same shape of
+  external comparison.
+
 ## [0.12.0] - 2026-08-15
 
 ### Changed
