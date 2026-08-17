@@ -2,14 +2,14 @@ import type { Finding } from "./types.js";
 
 export interface RunnerLabel {
   readonly label: string;
-  readonly sizeTier: "small" | "large";
+  readonly capacity: "standard" | "high";
   readonly intendedWorkload: string;
 }
 
 export interface RunnerVocabulary {
   readonly labels: readonly RunnerLabel[];
   readonly defaultLabel: string;
-  readonly largeTierJustifiedJobs: readonly string[];
+  readonly highCapacityJustifiedJobs: readonly string[];
 }
 
 export interface RunnerConventions {
@@ -37,9 +37,9 @@ function labelInVocabulary(label: string, vocabulary: RunnerVocabulary): RunnerL
   return vocabulary.labels.find((l) => l.label === label);
 }
 
-function isLargeTier(label: string, vocabulary: RunnerVocabulary): boolean {
+function isHighCapacity(label: string, vocabulary: RunnerVocabulary): boolean {
   const found = labelInVocabulary(label, vocabulary);
-  return found?.sizeTier === "large";
+  return found?.capacity === "high";
 }
 
 function isPublicRepoExempt(repo: string, conventions: RunnerConventions): boolean {
@@ -85,12 +85,12 @@ export function validateRunnerLabel(
     return results;
   }
 
-  if (labelEntry.sizeTier === "large" && !conventions.vocabulary.largeTierJustifiedJobs.includes(job.job)) {
+  if (labelEntry.capacity === "high" && !conventions.vocabulary.highCapacityJustifiedJobs.includes(job.job)) {
     results.push({
       job,
       state: "violated",
-      rule: "runner/unjustified-tier",
-      message: `Job "${job.job}" uses large tier (${labelEntry.label}) but is not in the justified-jobs list. Add to largeTierJustifiedJobs if intentional.`,
+      rule: "runner/unjustified-capacity",
+      message: `Job "${job.job}" uses high capacity (${labelEntry.label}) but is not in the justified-jobs list. Add to highCapacityJustifiedJobs if intentional.`,
     });
     return results;
   }

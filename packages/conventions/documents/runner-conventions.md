@@ -10,8 +10,8 @@ labels from the default GitHub-hosted labels to provider-specific labels, the
 same drift problems appear that this package already addresses for branch names,
 skill names, gate names, and routine declarations:
 
-1. **Sizing defaults, not decisions** — a blanket migration often places every job
-   on the larger (more expensive) tier, including single-purpose scripts where
+1. **Capacity defaults, not decisions** — a blanket migration often places every job
+   on the higher-capacity (more expensive) tier, including single-purpose scripts where
    extra cores provide no benefit.
 2. **No drift detection** — a repository silently reverting a `runs-on:` line,
    or a new repository never adopting the convention, surfaces only as a
@@ -30,11 +30,11 @@ Each declaring context declares a **RunnerVocabulary** and a **visibility exempt
 {
   "runnerVocabulary": {
     "labels": [
-      { "label": "blacksmith-2vcpu-ubuntu-2204", "sizeTier": "small", "intendedWorkload": "default" },
-      { "label": "blacksmith-4vcpu-ubuntu-2204", "sizeTier": "large", "intendedWorkload": "build+test" }
+      { "label": "blacksmith-2vcpu-ubuntu-2204", "capacity": "standard", "intendedWorkload": "default" },
+      { "label": "blacksmith-4vcpu-ubuntu-2204", "capacity": "high", "intendedWorkload": "build+test" }
     ],
     "defaultLabel": "blacksmith-2vcpu-ubuntu-2204",
-    "largeTierJustifiedJobs": ["frontend-verify", "node-tests-verify", "site-verify", "admin-verify"]
+    "highCapacityJustifiedJobs": ["frontend-verify", "node-tests-verify", "site-verify", "admin-verify"]
   },
   "publicRepos": ["foundry"]
 }
@@ -43,13 +43,13 @@ Each declaring context declares a **RunnerVocabulary** and a **visibility exempt
 ### Fields
 
 - **labels** — the approved label vocabulary. Each entry specifies the exact
-  label string, its size tier (`small` or `large`), and the intended workload
+  label string, its capacity tier (`standard` or `high`), and the intended workload
   shape (documentary only).
 - **defaultLabel** — the label that should be used for jobs without an explicit
   justification for a different tier.
-- **largeTierJustifiedJobs** — an explicit list of job names (as they appear in
-  workflow YAML) that are pre-approved for the large tier. Any job using a
-  large-tier label not in this list is a violation.
+- **highCapacityJustifiedJobs** — an explicit list of job names (as they appear in
+  workflow YAML) that are pre-approved for the high-capacity tier. Any job using a
+  high-capacity label not in this list is a violation.
 - **publicRepos** — repositories that are public and therefore MUST use
   GitHub-hosted runners (free). A job in a public repo using a paid-provider
   label is a violation unless the repo is explicitly listed here as an
@@ -63,7 +63,7 @@ declared conventions plus the repository's parsed workflow job definitions and
 returns one of three states per job:
 
 - **satisfied** — label is in the vocabulary; if repo is public, it's exempted.
-- **violated** — label unknown, large tier unjustified, or public repo on paid provider.
+- **violated** — label unknown, high capacity unjustified, or public repo on paid provider.
 - **indeterminate** — no vocabulary declared, or workflow files unparsable. **Never
   silently resolves to `satisfied`**.
 
@@ -72,7 +72,7 @@ returns one of three states per job:
 1. Missing vocabulary → `indeterminate` for all jobs.
 2. Label not in vocabulary → `violated`.
 3. Public repo + paid-provider label → `violated` (unless repo in `publicRepos`).
-4. Large-tier label + job not in `largeTierJustifiedJobs` → `violated`.
+4. High-capacity label + job not in `highCapacityJustifiedJobs` → `violated`.
 5. Otherwise → `satisfied`.
 
 ### Drift Detection

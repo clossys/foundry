@@ -10,11 +10,11 @@ import {
 const baseConventions: RunnerConventions = {
   vocabulary: {
     labels: [
-      { label: "blacksmith-2vcpu-ubuntu-2204", sizeTier: "small", intendedWorkload: "default" },
-      { label: "blacksmith-4vcpu-ubuntu-2204", sizeTier: "large", intendedWorkload: "build+test" },
+      { label: "blacksmith-2vcpu-ubuntu-2204", capacity: "standard", intendedWorkload: "default" },
+      { label: "blacksmith-4vcpu-ubuntu-2204", capacity: "high", intendedWorkload: "build+test" },
     ],
     defaultLabel: "blacksmith-2vcpu-ubuntu-2204",
-    largeTierJustifiedJobs: ["frontend-verify", "node-tests-verify", "site-verify", "admin-verify"],
+    highCapacityJustifiedJobs: ["frontend-verify", "node-tests-verify", "site-verify", "admin-verify"],
   },
   publicRepos: ["foundry"],
 };
@@ -27,7 +27,7 @@ const baseJob: JobDefinition = {
 };
 
 describe("validateRunnerLabel", () => {
-  it("returns satisfied for a valid large-tier job that is justified", () => {
+  it("returns satisfied for a valid high-capacity job that is justified", () => {
     const results = validateRunnerLabel(baseJob, baseConventions);
     expect(results).toHaveLength(1);
     expect(results[0].state).toBe("satisfied");
@@ -61,15 +61,15 @@ describe("validateRunnerLabel", () => {
     expect(results[0].state).toBe("satisfied");
   });
 
-  it("returns violated for large-tier job not in justified list", () => {
+  it("returns violated for high-capacity job not in justified list", () => {
     const job: JobDefinition = { ...baseJob, job: "secret-scan", label: "blacksmith-4vcpu-ubuntu-2204" };
     const results = validateRunnerLabel(job, baseConventions);
     expect(results).toHaveLength(1);
     expect(results[0].state).toBe("violated");
-    expect(results[0].rule).toBe("runner/unjustified-tier");
+    expect(results[0].rule).toBe("runner/unjustified-capacity");
   });
 
-  it("returns satisfied for small-tier job", () => {
+  it("returns satisfied for standard-capacity job", () => {
     const job: JobDefinition = { ...baseJob, job: "secret-scan", label: "blacksmith-2vcpu-ubuntu-2204" };
     const results = validateRunnerLabel(job, baseConventions);
     expect(results).toHaveLength(1);
