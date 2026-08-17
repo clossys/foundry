@@ -71,6 +71,9 @@ import {
   validateGateSet,
   validateRoutineSet,
   validateSkillSet,
+  validateRunnerLabel,
+  validateRunnerSet,
+  summarizeRunnerResults,
 } from "@vespeneventures/conventions";
 
 // Branch provenance. Which agents exist is your plane's fact, not this package's.
@@ -95,6 +98,30 @@ validateRoutineSet(declarations, {
 // a real verb of your own through GateNameOptions.verbs.
 validateGateName("scan-secrets"); // []
 validateGateSet(["scan-secrets", "check-task-record", "verify-repository"]);
+
+// Runner-label conventions. Account plane declares the vocabulary and exemptions.
+const conventions = {
+  vocabulary: {
+    labels: [
+      { label: "blacksmith-2vcpu-ubuntu-2204", sizeTier: "small", intendedWorkload: "default" },
+      { label: "blacksmith-4vcpu-ubuntu-2204", sizeTier: "large", intendedWorkload: "build+test" },
+    ],
+    defaultLabel: "blacksmith-2vcpu-ubuntu-2204",
+    largeTierJustifiedJobs: ["frontend-verify", "node-tests-verify"],
+  },
+  publicRepos: ["foundry"],
+};
+
+const jobs = [
+  { workflow: "ci.yml", job: "frontend-verify", label: "blacksmith-4vcpu-ubuntu-2204", repoVisibility: "private" },
+  { workflow: "ci.yml", job: "secret-scan", label: "blacksmith-2vcpu-ubuntu-2204", repoVisibility: "private" },
+];
+
+const runnerResults = validateRunnerSet(jobs, conventions);
+const summary = summarizeRunnerResults(runnerResults);
+
+for (const f of findings) console.error(`[${f.severity}] ${f.rule}: ${f.message}`);
+for (const r of runnerResults) console.log(`[${r.state}] ${r.job.job}: ${r.message}`);
 
 // Neutrality, before publishing anything shared.
 scanNeutrality(documentText, { forbiddenNames: myPrivateNameList });
@@ -244,6 +271,9 @@ expander reads like any other bytes.
 | `isCronExpression(cadence)` | function | Whether a cadence is a five-field cron expression a host could match |
 | `scheduleReconciliationFindingKinds` | `readonly string[]` | The four findings only a live probe can produce for the schedule tier, including a deployed artifact that predates its declaration |
 | `scanNeutrality(contents, options?)` | function | Reports absolute paths, operator-specific home directories, and caller-supplied plane-owned names. Exempts a shebang line |
+| `validateRunnerLabel(job, conventions)` | function | Validates one workflow job's runner label against declared vocabulary and exemptions. Returns `RunnerCheckResult[]` with state `satisfied`/`violated`/`indeterminate`. Never passes vacuously — missing vocabulary is `indeterminate`. |
+| `validateRunnerSet(jobs, conventions)` | function | Validates a set of jobs against the same conventions. |
+| `summarizeRunnerResults(results)` | function | Aggregates per-job results into counts and an overall state. |
 | `validateSkillRegistry(registry)` | function | Validates decoded caller JSON without throwing: schema and entry shapes, composite identity, scope escape, capability coverage, and durable accepted-gap evidence |
 | `computeCapabilityCoverage(registry, capabilityId)` | function | Pure set arithmetic for one capability: required, covered, accepted gaps, and what is still missing |
 | `validateRoutineCoverage(query, registry)` | function | Non-throwingly resolves a routine or coverage query's composite skill identity and confirms scope is a subset of declared coverage |
@@ -268,6 +298,12 @@ expander reads like any other bytes.
 | `RoutineExclusion` | type | `{ skill, skillRepository?, reason }`; unqualified identity is the plane root and qualified identity names a governed repository |
 | `RoutineSetOptions` | type | `{ exclusions? }` |
 | `NeutralityOptions` | type | `{ forbiddenNames?, allowTemplateTokens? }` |
+| `JobDefinition` | type | `{ workflow, job, label, repoVisibility }` — a parsed workflow job definition for runner validation |
+| `RunnerLabel` | type | `{ label, sizeTier, intendedWorkload }` — an entry in the declared vocabulary |
+| `RunnerVocabulary` | type | `{ labels, defaultLabel, largeTierJustifiedJobs }` — the account's approved label set |
+| `RunnerConventions` | type | `{ vocabulary, publicRepos }` — the full conventions input for the evaluator |
+| `RunnerCheckResult` | type | `{ job, state, rule, message }` — per-job evaluation result |
+| `RunnerCheckState` | type | `"satisfied" \| "violated" \| "indeterminate"` — the three states, `indeterminate` never silently satisfies |
 | `SkillRegistry` | type | `{ schemaVersion, capabilities, skills, acceptedGaps? }` |
 | `Capability` | type | `{ id, description, requiredTargets }` |
 | `RegisteredSkill` | type | `{ name, scope, repository?, thirdParty?, implements }`. Identity is `(repository, name)` for `scope: "repository"`, or `(plane, name)` for `scope: "plane"` |
