@@ -1,12 +1,11 @@
 # Runner-Label Conventions
 
 This document defines the conventions for declaring and validating CI runner labels
-across repositories in an account family that has adopted a third-party CI compute
-provider (e.g., Blacksmith).
+across repositories that have adopted a third-party CI compute provider.
 
 ## Problem Statement
 
-When an account family adopts a third-party CI provider by changing `runs-on:`
+When repositories adopt a third-party CI provider by changing `runs-on:`
 labels from the default GitHub-hosted labels to provider-specific labels, the
 same drift problems appear that this package already addresses for branch names,
 skill names, gate names, and routine declarations:
@@ -17,17 +16,15 @@ skill names, gate names, and routine declarations:
 2. **No drift detection** — a repository silently reverting a `runs-on:` line,
    or a new repository never adopting the convention, surfaces only as a
    surprise on the next invoice.
-3. **Public-repo correctness has no gate** — a public repository already gets
-   GitHub-hosted minutes free. Moving it to a paid provider creates spend where
-   none existed before, yet nothing prevents a future PR from "normalizing"
-   the provider onto it.
+3. **Visibility mismatch** — a public repository already gets GitHub-hosted
+   minutes free. Moving it to a paid provider creates spend where none existed
+   before, yet nothing prevents a future PR from adopting the provider onto it.
 
 ## Convention
 
-### Account Plane Declaration
+### Declaration
 
-Each account plane (workspace repository) declares a **RunnerVocabulary** and a
-**public-repo exemption list**:
+Each declaring context declares a **RunnerVocabulary** and a **visibility exemption list**:
 
 ```json
 {
@@ -62,8 +59,8 @@ Each account plane (workspace repository) declares a **RunnerVocabulary** and a
 
 Each repository wires the pure evaluator (exported from
 `@vespeneventures/conventions/runner`) into its own CI. The evaluator takes the
-account's declared conventions plus the repository's parsed workflow job
-definitions and returns one of three states per job:
+declared conventions plus the repository's parsed workflow job definitions and
+returns one of three states per job:
 
 - **satisfied** — label is in the vocabulary; if repo is public, it's exempted.
 - **violated** — label unknown, large tier unjustified, or public repo on paid provider.
@@ -82,8 +79,8 @@ definitions and returns one of three states per job:
 
 A scheduled run of the evaluator against each repository's current workflow
 files turns "surprise on next invoice" into a filed finding before the invoice
-arrives. The account plane owns the schedule; the consumer repository owns the
-wiring.
+arrives. The declaring context owns the schedule; the consumer repository owns
+the wiring.
 
 ## Non-Goals
 

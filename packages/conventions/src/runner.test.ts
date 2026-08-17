@@ -47,7 +47,7 @@ describe("validateRunnerLabel", () => {
     const results = validateRunnerLabel(job, baseConventions);
     expect(results).toHaveLength(1);
     expect(results[0].state).toBe("violated");
-    expect(results[0].rule).toBe("runner/public-repo-paid-provider");
+    expect(results[0].rule).toBe("runner/visibility-mismatch");
   });
 
   it("returns satisfied for public repo using paid-provider label when exempted", () => {
@@ -66,7 +66,7 @@ describe("validateRunnerLabel", () => {
     const results = validateRunnerLabel(job, baseConventions);
     expect(results).toHaveLength(1);
     expect(results[0].state).toBe("violated");
-    expect(results[0].rule).toBe("runner/large-tier-unjustified");
+    expect(results[0].rule).toBe("runner/unjustified-tier");
   });
 
   it("returns satisfied for small-tier job", () => {

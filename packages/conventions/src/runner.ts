@@ -57,7 +57,7 @@ export function validateRunnerLabel(
       job,
       state: "indeterminate",
       rule: "runner/missing-vocabulary",
-      message: "No runner vocabulary declared for this account.",
+      message: "No runner vocabulary declared.",
     });
     return results;
   }
@@ -79,7 +79,7 @@ export function validateRunnerLabel(
     results.push({
       job,
       state: "violated",
-      rule: "runner/public-repo-paid-provider",
+      rule: "runner/visibility-mismatch",
       message: `Public repository uses paid-provider label "${job.label}" — public repos should use GitHub-hosted runners (free). Add to publicRepos exemption if intentional.`,
     });
     return results;
@@ -89,7 +89,7 @@ export function validateRunnerLabel(
     results.push({
       job,
       state: "violated",
-      rule: "runner/large-tier-unjustified",
+      rule: "runner/unjustified-tier",
       message: `Job "${job.job}" uses large tier (${labelEntry.label}) but is not in the justified-jobs list. Add to largeTierJustifiedJobs if intentional.`,
     });
     return results;
