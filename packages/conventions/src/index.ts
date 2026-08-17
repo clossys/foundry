@@ -81,3 +81,15 @@ export type {
 
 export { renderProductLoader } from "./loader.js";
 export type { ProductLoaderOptions } from "./loader.js";
+
+export {
+  type JobDefinition,
+  type RunnerCheckResult,
+  type RunnerCheckState,
+  type RunnerConventions,
+  type RunnerLabel,
+  type RunnerVocabulary,
+  validateRunnerLabel,
+  validateRunnerSet,
+  summarizeRunnerResults,
+} from "./runner.js";
