@@ -51,6 +51,12 @@ import {
   downloadAndVerifyGitleaks,
   getCachedGitleaksPath,
   resolveGitleaksRelease,
+  getPlatformArch,
+  getAssetName,
+  getKnownVersions,
+  type GitleaksBinaryOptions,
+  type GitleaksBinaryResult,
+  type GitleaksRelease,
 } from "@vespeneventures/secret-scan";
 
 // Check cache first
@@ -128,6 +134,20 @@ runs:
 ```
 
 The `dist/index.js` would call `downloadAndVerifyGitleaks` with the inputs.
+
+## API
+
+| Export | Kind | Description |
+| --- | --- | --- |
+| `downloadAndVerifyGitleaks(options)` | function | Downloads the gitleaks release asset, verifies its SHA-256 checksum, extracts the binary, and caches it. Returns `{ path, version, verified }`. Throws on unknown version or checksum mismatch. |
+| `getCachedGitleaksPath(version, cacheDir?)` | function | Returns the cached binary path if it exists, otherwise `undefined`. |
+| `resolveGitleaksRelease(version)` | function | Returns the `GitleaksRelease` entry for a known version, or `undefined`. |
+| `getPlatformArch()` | function | Returns `{ platform, arch }` for the current process. |
+| `getAssetName(version, platform, arch)` | function | Constructs the GitHub release asset filename for the given version/platform/arch. |
+| `getKnownVersions()` | function | Returns an array of built-in known release versions. |
+| `GitleaksBinaryOptions` | type | `{ version, sha256, cacheDir?, platform?, arch? }` — options for the downloader. |
+| `GitleaksBinaryResult` | type | `{ path, version, verified }` — result of a successful download. |
+| `GitleaksRelease` | type | `{ version, sha256, url }` — a known release entry. |
 
 ## Known Releases
 
