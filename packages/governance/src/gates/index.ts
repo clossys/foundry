@@ -19,6 +19,29 @@ export type {
   DependencyScopeOptions,
 } from "./dependency-scope.js";
 export {
+  COMMON_INDETERMINATE_REASONS,
+  assertNeverVacuouslySatisfied,
+  createGateReasons,
+  foldGateResults,
+  gateIndeterminate,
+  gateResultFromRatchet,
+  gateResultToExitCode,
+  gateSatisfied,
+  gateViolated,
+  isIndeterminate,
+  isSatisfied,
+  isViolated,
+} from "./result.js";
+export type {
+  CommonIndeterminateReason,
+  GateReasonVocabulary,
+  GateResult,
+  GateVerdict,
+  IndeterminateGateResult,
+  SatisfiedGateResult,
+  ViolatedGateResult,
+} from "./result.js";
+export {
   checkCredentialInventory,
   checkCredentialSurfaceDrift,
   checkLocalSecretFiles,

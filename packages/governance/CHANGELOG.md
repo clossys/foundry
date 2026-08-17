@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-08-16
+
+### Added
+
+- **`./gates` gate-result ternary.** New, additive exports —
+  `GateResult`/`GateVerdict`, `gateSatisfied`/`gateViolated`/
+  `gateIndeterminate`, `createGateReasons`, `foldGateResults`,
+  `gateResultToExitCode`, `assertNeverVacuouslySatisfied`, and
+  `gateResultFromRatchet` — naming the three-state contract (`satisfied` /
+  `violated` / `indeterminate`) that `foundry-check`'s own CLI exit codes,
+  `evaluateRatchet`'s `status`, and the `unchecked` lists in
+  `@vespeneventures/ui`/`copy`/`strategy` had each already independently
+  reinvented. `gateSatisfied` refuses to construct a passing result unless
+  at least one input was actually evaluated — the mechanical form of the
+  meta-check that motivated this: a gate whose implementation can return a
+  passing result on a code path that performed no evaluation is itself a
+  defect. No existing export's return type changed; retrofitting an
+  existing gate onto this shared type directly (rather than being
+  convertible to/from it, as `gateResultFromRatchet` demonstrates for
+  `evaluateRatchet`) is left for its own follow-up.
+
 ## [0.13.0] - 2026-08-15
 
 ### Changed

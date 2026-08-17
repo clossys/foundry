@@ -168,11 +168,65 @@ schema-specific validation, storage, transport, and trust policy —
 including deciding what `provenance.source`/`provenance.revision` actually
 mean and whether to trust them.
 
-### `./gates` additions: ratchet, override bounds, dependency scope
+### `./gates` additions: ratchet, override bounds, dependency scope, gate-result ternary
 
 Three small, independent, pure gates alongside the existing foundation,
 build-order, policy, and secret-surface checks — none of them do I/O; a
-caller reads whatever real data each one needs and passes it in.
+caller reads whatever real data each one needs and passes it in. A fourth
+addition, the gate-result ternary below, is not a gate itself but the
+shared vocabulary the other three (and `foundry-check`'s own CLI) already
+independently converged on.
+
+#### The gate-result ternary: `satisfied` / `violated` / `indeterminate`
+
+Every gate result in this repository is exactly one of three states, never
+collapsed into a binary pass/fail: `satisfied` (evaluated, condition
+holds), `violated` (evaluated, condition does not hold), or `indeterminate`
+(could not evaluate — fails closed, and carries a required, machine-readable
+reason). This is not new: `foundry-check`'s own CLI already ships this
+ternary as its 0/1/2 exit-code contract, `evaluateRatchet`'s `status: "clean"
+| "regression" | "invalid"` is the identical three states under different
+names, and `@vespeneventures/ui`/`copy`/`strategy` each independently
+reinvented a third shape (`unchecked: UncheckedItem[]`, non-empty meaning
+"cannot vouch for this scan"). `GateResult` is that shape, named once, so
+the next gate reuses it instead of reinventing it a fifth time.
+
+```ts
+import {
+  createGateReasons,
+  foldGateResults,
+  gateResultToExitCode,
+  gateSatisfied,
+  gateViolated,
+} from "@vespeneventures/governance/gates";
+
+// A gate declares its own finite, reviewable set of indeterminate reasons.
+const reasons = createGateReasons(["missing-credential", "no-applicable-inputs"] as const);
+
+function evaluateOne(input: RegistryProbe) {
+  if (input.token === undefined) return reasons.indeterminate("missing-credential");
+  return input.registryReachable ? gateSatisfied(1) : gateViolated(["registry unreachable"]);
+}
+
+const overall = foldGateResults(probes.map(evaluateOne), { emptyReason: "no-applicable-inputs" });
+process.exitCode = gateResultToExitCode(overall); // 0 satisfied / 1 violated / 2 indeterminate, unconditionally
+```
+
+`gateSatisfied(evaluated)` refuses to construct a passing result unless
+`evaluated` is a positive integer — the mechanical form of the meta-check
+this contract exists to enforce: a gate built on this function cannot
+report a pass on a code path that evaluated nothing. `createGateReasons`
+scopes `indeterminate()` to exactly the reasons a gate declares up front;
+naming an undeclared reason throws rather than silently widening what
+"indeterminate" means for that gate. `gateResultToExitCode` takes no
+override — `indeterminate` always maps to `2`, never `0`, regardless of
+reason; see this function's own doc comment for why that is a deliberate,
+non-configurable choice. `assertNeverVacuouslySatisfied(evaluate, input)`
+is a reusable regression-test helper: call it with an input engineered to
+produce no real evaluation and it throws if the gate under test reports
+`satisfied` anyway. `gateResultFromRatchet(result)` converts an existing
+`evaluateRatchet` result into this shape, as a worked proof that the two
+are the same contract rather than parallel ones.
 
 #### `evaluateRatchet(current, baseline)`
 
