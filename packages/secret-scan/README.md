@@ -180,8 +180,12 @@ survives across CI runs on self-hosted runners.
 
 ## Requirements
 
-Node.js >= 20. No runtime dependencies (except optional `adm-zip` for
-Windows `.zip` extraction and `tar` for Unix archives).
+Node.js >= 20. No mandatory runtime dependencies. `adm-zip` and `tar` are
+optional — they are only required when downloading the gitleaks binary for
+the Windows `.zip` or Unix `.tar.gz` platforms respectively. Both may be
+installed optionally at the caller's discretion (e.g. `pnpm add
+@vespeneventures/secret-scan --optional`) and are handled by the package's
+internal guards if absent.
 
 ## License
 
