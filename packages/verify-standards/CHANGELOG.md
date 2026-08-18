@@ -5,6 +5,68 @@ All notable changes to `@vespeneventures/verify-standards` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - 2026-08-17
+
+### Fixed
+
+- **`documents/caller-workflow.md` shipped a fail-open decide step.** The
+  template piped the CLI into `tee -a "$GITHUB_STEP_SUMMARY"`. GitHub Actions
+  runs a `run:` block as `bash -e {0}` — `-e` is set, `-o pipefail` is not —
+  and a pipeline's exit status is its last command's, so the step reported
+  `tee`'s `0` and discarded the verdict. A `violated` (`1`) or
+  `indeterminate` (`2`) run rendered its full report into the job summary
+  while the step itself went green. Two consuming repositories ran that way
+  before it was caught. The template now sets `pipefail` **and** keeps the
+  decisive command out of any pipeline: it redirects to a file, captures the
+  status, appends the summary afterwards, and ends with an explicit
+  `exit "$status"`, so removing either guard alone does not silently
+  reintroduce the hole. A new "On never piping the decision step" section
+  states the rule for anyone adapting the template rather than copying it.
+  This is the defect class the package exists to eliminate, shipped inside
+  the package's own template, where every consumer inherits it.
+- **The template's trigger omitted `edited`.** The task-record check reads
+  the pull request description, so editing the description edits the check's
+  own evidence: a change could pass and then have its work-item reference
+  quietly removed, with nothing re-evaluating. Re-running the job does not
+  close this — a re-run replays the original event payload and reads the old
+  description. The template now declares
+  `types: [opened, synchronize, reopened, edited]`.
+- **`parseTaskReference` rejected a reference written in a Markdown code
+  span.** A description is Markdown, and `` `Work item: #12` `` or
+  `` Work item: `#12` `` is correct authoring; whitespace-split extraction
+  left a backtick attached to the token and the anchored pattern then
+  refused a reference that was plainly present, reporting
+  `task-record-unparseable` against a change that had done nothing wrong.
+  Code-span delimiters are now stripped before matching. `raw` still carries
+  the text exactly as written, and a backticked non-reference is still
+  refused.
+- **`extractTaskReferenceText` let prose beat the real record, and only ever
+  consulted the first configured label.** Labels are matched
+  case-insensitively, so a sentence such as "there is no work item at all"
+  matched, `at` was returned as the reference, and an actual `Work item: #12`
+  further down the same description was never reached; a repository
+  declaring more than one label got the same failure whenever prose matched
+  the first one. Every label and every occurrence is now collected, and the
+  first reference-*shaped* candidate wins. When none is shaped the first
+  candidate is still returned, so a genuinely malformed reference is still
+  reported as unparseable rather than being downgraded to "no reference
+  given" — two different findings that must not collapse into one.
+
+### Notes
+
+- No exit-code semantics changed. `0` satisfied, `1` violated, `2`
+  could-not-evaluate, and nothing here converts a `2` into a `0`. Each parser
+  fix removes a *false* `1`; neither can manufacture a pass, because every
+  candidate returned came out of the description and is still parsed and
+  looked up on its own merits.
+- `MINIMUM_SAFE_VERSION` is deliberately **not** raised. The floor exists for
+  a released build that reported a passing verdict it should not have; the
+  library never did that here. The one fail-open defect lived in a document
+  a consumer copies into its own repository, which no version floor can
+  observe or fix — a consumer that copied the old template must edit its own
+  workflow, and raising the floor would only add noise without closing
+  anything.
+
 ## [0.1.0] - 2026-08-17
 
 ### Added

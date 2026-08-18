@@ -47,6 +47,32 @@ describe("extractTaskReferenceText", () => {
     expect(extractTaskReferenceText("Ticket (id): #7", ["Ticket (id)"])).toBe("#7");
     expect(extractTaskReferenceText("Ticket xid: #7", ["Ticket (id)"])).toBeUndefined();
   });
+
+  it("does not let prose containing the label win over the real record", () => {
+    // The label is matched case-insensitively, so ordinary prose contains it.
+    // The earlier arrangement returned the token after the FIRST match — "at"
+    // — and never reached the reference sitting three lines below it.
+    const description = "There is no work item at all in the linked change.\n\nWork item: #42";
+    expect(extractTaskReferenceText(description, ["Work item"])).toBe("#42");
+  });
+
+  it("consults every configured label, not only the first", () => {
+    // A description whose reference is introduced by the SECOND declared
+    // label, with prose matching the first, was previously unreachable.
+    const description = "No work item at all for this one.\n\nIssue: #7";
+    expect(extractTaskReferenceText(description, ["Work item", "Issue"])).toBe("#7");
+  });
+
+  it("still reports a malformed reference rather than downgrading it to absent", () => {
+    // Preferring a parseable candidate must not collapse "the reference is
+    // wrong" into "there is no reference" — they are different findings.
+    expect(extractTaskReferenceText("Work item: banana", ["Work item"])).toBe("banana");
+  });
+
+  it("reads a reference written inside a code span", () => {
+    expect(extractTaskReferenceText("`Work item: #12`", ["Work item"])).toBe("#12`");
+    expect(extractTaskReferenceText("Work item: `#12`", ["Work item"])).toBe("`#12`");
+  });
 });
 
 describe("parseTaskReference", () => {
@@ -65,6 +91,27 @@ describe("parseTaskReference", () => {
       expect(parseTaskReference(raw, "fallback/scope")).toBeUndefined();
     },
   );
+
+  it.each([
+    ["#12`", { scope: "fallback/scope", number: "12" }],
+    ["`#12`", { scope: "fallback/scope", number: "12" }],
+    ["`a-scope/a-project#12`", { scope: "a-scope/a-project", number: "12" }],
+  ])("strips the code-span delimiters around %s", (raw, expected) => {
+    // A description is Markdown. A reference in a code span is correct
+    // authoring, and the whitespace-split extraction leaves the delimiter
+    // attached to the token, so the anchored pattern used to reject a
+    // reference that was plainly there.
+    expect(parseTaskReference(raw, "fallback/scope")).toMatchObject(expected);
+  });
+
+  it("keeps raw exactly as it was written, delimiters and all", () => {
+    // The report shows a human what the description actually said.
+    expect(parseTaskReference("`#12`", "fallback/scope")?.raw).toBe("`#12`");
+  });
+
+  it("still refuses a backticked value that is not a reference", () => {
+    expect(parseTaskReference("`banana`", "fallback/scope")).toBeUndefined();
+  });
 });
 
 describe("checkTaskRecord", () => {
@@ -87,6 +134,44 @@ describe("checkTaskRecord", () => {
     const report = checkTaskRecord(change({ description: "Work item: soon" }), policy);
     if (report.result.verdict !== "violated") throw new Error("expected violated");
     expect(report.result.findings[0]?.rule).toBe("task-record-unparseable");
+  });
+
+  it.each([
+    ["`Work item: #42`", "the whole line in a code span"],
+    ["Work item: `#42`", "only the reference in a code span"],
+    ["Work item: `a-scope/a-project#42`", "a qualified reference in a code span"],
+  ])("is satisfied for %s (%s)", (description) => {
+    // These are real descriptions, correctly authored. Failing them is a
+    // wrong verdict about a change that did everything right.
+    const report = checkTaskRecord(change({ description }), policy);
+    expect(report.result).toMatchObject({ verdict: "satisfied", evaluated: 2 });
+    expect(report.reference).toMatchObject({ scope: "a-scope/a-project", number: "42" });
+    expect(gateResultToExitCode(report.result)).toBe(0);
+  });
+
+  it("is satisfied when prose above the record also contains the label", () => {
+    const report = checkTaskRecord(
+      change({ description: "There is no work item at all in the upstream fix.\n\nWork item: #42" }),
+      policy,
+    );
+    expect(report.result).toMatchObject({ verdict: "satisfied", evaluated: 2 });
+    expect(gateResultToExitCode(report.result)).toBe(0);
+  });
+
+  it("is satisfied when the record uses a later configured label than the prose match", () => {
+    const report = checkTaskRecord(
+      change({ description: "No work item at all upstream.\n\nIssue: #42" }),
+      { ...policy, recordLabels: ["Work item", "Issue"] },
+    );
+    expect(report.result).toMatchObject({ verdict: "satisfied", evaluated: 2 });
+  });
+
+  it("does not turn a prose-only description into a pass", () => {
+    // The fixes above must never manufacture a satisfied verdict: a
+    // description with no reference in it is still violated.
+    const report = checkTaskRecord(change({ description: "There is no work item at all." }), policy);
+    expect(report.result.verdict).toBe("violated");
+    expect(gateResultToExitCode(report.result)).toBe(1);
   });
 
   it("is violated when the reference resolves to something that is not a work item", () => {

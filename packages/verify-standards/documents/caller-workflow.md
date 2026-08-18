@@ -43,7 +43,19 @@ name: Verify standards
 # unconditional status check. A path filter means a change that happens to
 # land outside a guessed scope silently never runs it, and a required check
 # that never ran is a required check that never failed.
-on: pull_request
+on:
+  pull_request:
+    # `edited` is NOT in the default set (`opened`, `synchronize`,
+    # `reopened`) and is not optional here. The task-record check reads the
+    # pull request DESCRIPTION, so editing the description edits this gate's
+    # own evidence: a change can pass with a work-item reference in its body
+    # and then have that reference quietly deleted, with nothing left to
+    # re-evaluate it. Re-running the job does not close this — a re-run
+    # replays the ORIGINAL event payload, so it reads the old description
+    # and cheerfully passes again. Only a fresh `edited` event delivers the
+    # current text. Any consumer whose inputs document is assembled from
+    # editable conversation text needs this line.
+    types: [opened, synchronize, reopened, edited]
 
 permissions:
   contents: read
@@ -122,14 +134,42 @@ jobs:
         run: ./.github/scripts/assemble-inputs.mjs > verify-inputs.json
 
       # ---- DECIDE --------------------------------------------------------
-      # One command, no credentials, no network. Its exit code is the job's.
+      # One command, no credentials, no network. Its exit code is the job's —
+      # and the block below exists to keep that sentence literally true.
 
       - name: verify-standards
         run: |
+          # DO NOT pipe the CLI into `tee`. GitHub Actions runs a `run:` block
+          # as `bash -e {0}`: `-e` is set, `-o pipefail` is NOT. A pipeline's
+          # exit status is its LAST command's, so `verify-standards ... | tee`
+          # reports tee's `0` and throws the verdict away — a `violated` (1)
+          # or `indeterminate` (2) run renders "Overall: VIOLATED" into the
+          # job summary while the step itself goes green. That is not a
+          # hypothetical: this template shipped with that pipe and two
+          # consuming repositories ran green against a violated verdict.
+          #
+          # Two independent guards, because a gate that computes the right
+          # answer and then discards it is the exact defect this package
+          # exists to eliminate:
+          #   1. `set -o pipefail` restores a pipeline's real status for
+          #      anything added to this step later.
+          #   2. The decisive command is in no pipeline at all. It writes to
+          #      a file, its status is captured explicitly, the summary is
+          #      appended afterwards, and the step ends by re-raising that
+          #      status. So an editor who deletes guard 1 has not silently
+          #      re-opened the hole.
+          # `exit "$status"` is load-bearing: without it the step's status is
+          # the last `cat`'s, which is always 0.
+          set -o pipefail
+          report="$RUNNER_TEMP/verify-standards-report.txt"
+          status=0
           npx verify-standards \
             --inputs verify-inputs.json \
             --declared-range "$(node -p "require('./package.json').devDependencies['@vespeneventures/verify-standards']")" \
-            | tee -a "$GITHUB_STEP_SUMMARY"
+            > "$report" || status=$?
+          cat "$report"
+          cat "$report" >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
 
       # Keeping the inputs is what makes a disputed verdict re-checkable
       # later, offline, without re-running any collection.
@@ -177,6 +217,33 @@ is a required check that blocks every fork contribution. Splitting trusted
 installation and decision from untrusted collection is the shape that solves
 it, and the split belongs to the consuming repository, whose fork policy and
 credentials decide what it looks like.
+
+### On never piping the decision step
+
+The gate's whole value is one number: the CLI's exit status. Anything that
+sits between that number and the step's own status can lose it, and the
+default shell loses it silently.
+
+GitHub Actions invokes a `run:` block as `bash -e {0}`. `-e` is on;
+`-o pipefail` is not, and cannot be turned on for the whole workflow from
+`defaults.run` — `shell: bash` there gets `bash --noprofile --norc -eo pipefail`,
+but only for steps that opt into it, which is one more thing to forget in one
+more file. In a pipeline without `pipefail`, `$?` is the last command's
+status. `verify-standards … | tee -a "$GITHUB_STEP_SUMMARY"` therefore reports
+`tee`'s `0` no matter what the gate concluded, and a `1` or a `2` becomes a
+green check with the real verdict printed, in full, in the job summary nobody
+reads on a passing run.
+
+Two rules follow, and the step above applies both:
+
+- **Nothing that decides may be the left-hand side of a pipe.** Redirect to a
+  file, capture the status, and re-raise it explicitly at the end of the step.
+- **Set `pipefail` anyway**, for whatever a later edit adds to the same block.
+
+The same trap applies to any collection step whose failure must be *recorded*
+rather than ignored — but those steps are `continue-on-error` and write their
+own outcome as data, so a lost status there is caught by the inputs document
+instead. It is only the decision step where the status is the entire result.
 
 ### On `--declared-range`
 
