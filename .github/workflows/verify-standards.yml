@@ -36,7 +36,16 @@
 # gates are already run against their own `dist/`.
 name: Verify standards
 
-on: pull_request
+# The task-record check reads the pull-request DESCRIPTION, so the description
+# changing is a change to the very evidence this gate evaluates. The default
+# trigger types (opened, synchronize, reopened) do not include `edited`, which
+# would leave an obvious hole: open with a valid record, let the check pass,
+# then edit the record away and nothing re-evaluates. Re-running the job by
+# hand does not close it either — a re-run replays the ORIGINAL event payload,
+# body and all. `edited` is the only thing that delivers a fresh description.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
 
 permissions:
   contents: read
