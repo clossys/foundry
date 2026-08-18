@@ -237,6 +237,58 @@ migration and later lifecycle evidence.
 
 ---
 
+## 9. Consolidating `governance`, `conventions`, and `policy` under `controller`
+
+**Status:** the supported rule-governing surface is
+`@vespeneventures/controller@^0.1.0`. It absorbs three packages: `governance`
+(package lifecycle, catalog, gates, release, repository, review, cleanup,
+composition), `conventions` (account-neutral agent conventions — branch
+provenance, skill naming, agent interoperability, routine and schedule
+declarations, CI gate naming, the capability-first skill registry), and
+`policy` (the zero-I/O content-addressed digest-binding primitive). All
+three packages describe rules — their grammar, lifecycle, identity, and the
+primitive that binds a rule to a document without disclosing it — and none
+of them had an independent lifecycle, population, or accumulating state of
+its own to justify staying separate. `policy` in particular was a pure
+function with no I/O and no runtime dependency of its own, sitting
+one level below the package whose rules it binds; `governance` was already
+the one package it fed. See issue #282 (issue #281 is the six-package
+program this decision belongs to).
+
+Every subpath previously reachable under the three old names resolves,
+unchanged in shape, under `@vespeneventures/controller`:
+`@vespeneventures/governance` becomes the `controller` root plus `./catalog`,
+`./gates`, `./release`, `./repository`, `./review`, `./review/github`,
+`./artifacts`, `./cleanup`, and `./composition`; `@vespeneventures/conventions`
+becomes `./conventions`, `./conventions/documents/*`, and
+`./conventions/adapters/*`; `@vespeneventures/policy` becomes `./policy`.
+This is a rename and a merge, not a rewrite — no export, argument shape, or
+return type changed.
+
+`@vespeneventures/governance` and `@vespeneventures/policy` remain published
+as thin, deprecated compatibility stubs that forward every export to the
+matching `@vespeneventures/controller` subpath, because unpublishing either
+outright would strand real consumers that depend on them directly: the five
+existing `governance`-consolidation compatibility packages above
+(`catalog`, `gates`, `release`, `repository`, `review`), and, outside this
+program, `@vespeneventures/ledger` and `@vespeneventures/verify-standards`
+(both depend on `policy`; `verify-standards` also depends on `governance`).
+`@vespeneventures/conventions` has no installed consumer in this workspace
+and is retired outright — no compatibility stub, following the same
+precedent set by `tokens` and `voice` (decision 7 above): its source is
+gone, not forwarding, and importing it is a hard break rather than a
+deprecation warning.
+
+This keeps rule grammar, lifecycle, identity, agent conventions, and the
+content-addressed binding primitive in one ownership boundary while
+preserving installed-consumer compatibility for `governance` and `policy`.
+The legacy `governance` and `policy` names must not be unpublished or
+reused while they remain deprecated; issue #288 retires both compatibility
+packages, together with the five older ones, once the migration window
+closes.
+
+---
+
 ## Settled
 
 **Author attribution — keep a real name in the `"author"` field.** A real

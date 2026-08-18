@@ -4,7 +4,7 @@
   "packages": [
     { "name": "@vespeneventures/auth", "intendedVisibility": "public" },
     { "name": "@vespeneventures/comms", "intendedVisibility": "public" },
-    { "name": "@vespeneventures/conventions", "intendedVisibility": "public" },
+    { "name": "@vespeneventures/controller", "intendedVisibility": "public" },
     { "name": "@vespeneventures/copy", "intendedVisibility": "public" },
     { "name": "@vespeneventures/deployment", "intendedVisibility": "public" },
     { "name": "@vespeneventures/domain", "intendedVisibility": "public" },

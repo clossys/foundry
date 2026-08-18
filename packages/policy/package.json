@@ -21,7 +21,7 @@
     "LICENSE"
   ],
   "sideEffects": false,
-  "description": "A content-addressed binding primitive: commit a policy document's digest publicly without ever committing the document itself, then verify later-materialized content matches it byte-for-byte. Zero I/O, zero filesystem knowledge — general-purpose, not tied to any one document format.",
+  "description": "Deprecated compatibility entry point for @vespeneventures/controller/policy.",
   "keywords": [
     "policy",
     "digest",
@@ -41,6 +41,9 @@
   "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/policy#readme",
   "engines": {
     "node": ">=20"
+  },
+  "dependencies": {
+    "@vespeneventures/controller": "^0.1.0"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

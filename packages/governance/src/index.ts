@@ -1,24 +1,9 @@
-/** Read-only lifecycle governance and package-process orchestration. */
-
-export { PACKAGE_LIFECYCLE_VERSION } from "./types.js";
-export type {
-  GovernedPreflightOptions,
-  GovernedPreflightReport,
-  GovernanceReport,
-  LifecycleFinding,
-  LifecycleFindingRule,
-  NewPackagePlan,
-  NewPackagePlanInput,
-  NewPackagePlanProfile,
-  NewPackagePlanReadiness,
-  PackageLifecycleDocument,
-  PackageLifecycleEntry,
-  PackageLifecyclePromotionEvidence,
-  PackageLifecycleStatus,
-  PackageScaffoldFile,
-} from "./types.js";
-
-export { validatePackageLifecycle, evaluateLifecycleCoverage } from "./lifecycle.js";
-export { planNewPackage } from "./scaffold.js";
-export { runGovernanceCheck } from "./governance.js";
-export { preflightGovernedPackage } from "./preflight.js";
+/**
+ * @vespeneventures/governance — DEPRECATED. Migrate to
+ * `@vespeneventures/controller`, which owns this source now (see issue
+ * #282). This root, and every subpath below, forwards to the matching
+ * `@vespeneventures/controller` subpath so existing imports and installed
+ * commands keep working during the migration window. Issue #288 removes
+ * this compatibility package.
+ */
+export * from "@vespeneventures/controller";
