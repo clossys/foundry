@@ -5,6 +5,15 @@ All notable changes to this package are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this package adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.12] - 2026-08-17
+
+### Changed
+
+- Updated the `@vespeneventures/governance` dependency range from `~0.14.0`
+  to `~0.15.0`
+  so this deprecated compatibility package remains linked after governance's
+  gate-result-ternary retrofit release. No release export changed.
+
 ## [Unreleased]
 
 ## [0.2.11] - 2026-08-16

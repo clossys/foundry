@@ -5,6 +5,21 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.12] - 2026-08-17
+
+### Changed
+
+- Updated the `@vespeneventures/governance` dependency range from `~0.14.0`
+  to `~0.15.0`
+  so this deprecated compatibility package remains linked after governance's
+  gate-result-ternary retrofit release. No gates export changed.
+- The `foundry-check` executable this package re-exports now exits `2`
+  rather than `0` for a run whose coverage was incomplete or whose
+  catalogue was empty, and `2` rather than `1` for an unreadable path.
+  This package adds no behaviour of its own — see
+  `@vespeneventures/governance`'s `0.15.0` entry for the full contract
+  and the defect it fixes.
+
 ## [0.2.11] - 2026-08-16
 
 ### Changed
