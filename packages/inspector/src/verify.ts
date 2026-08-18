@@ -22,8 +22,8 @@
  * hand out of `continue-on-error`, obtained here for free by not doing I/O.
  */
 
-import { createGateReasons, foldGateResults, gateResultToExitCode } from "@vespeneventures/governance/gates";
-import type { GateResult } from "@vespeneventures/governance/gates";
+import { createGateReasons, foldGateResults, gateResultToExitCode } from "@vespeneventures/controller/gates";
+import type { GateResult } from "@vespeneventures/controller/gates";
 import { checkPolicyDrift } from "./policy-drift.js";
 import type { PolicyDriftObservation, PolicyDriftOptions } from "./policy-drift.js";
 import { checkReviewEvidence } from "./review-evidence.js";

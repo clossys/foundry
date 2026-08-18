@@ -37,7 +37,7 @@
  *     (`append-only-gate.ts`) is the complementary at-rest check for
  *     whatever storage a ledger actually lives in.
  *
- * `@vespeneventures/policy`'s `PolicyBinding`/`computeDigest`/
+ * `@vespeneventures/controller/policy`'s `PolicyBinding`/`computeDigest`/
  * `validateBindingShape`/`verifyBinding` are reused directly throughout
  * this package (`FactCitation.valueBinding`, `PublicationEntry.contentBinding`,
  * `fact.ts`'s `citeFact`, `drift.ts`'s `checkLedgerDrift`) rather than
@@ -46,7 +46,7 @@
  * a moment in time.
  */
 
-export type { DigestAlgorithm, Finding as PolicyFinding, PolicyBinding } from "@vespeneventures/policy";
+export type { DigestAlgorithm, Finding as PolicyFinding, PolicyBinding } from "@vespeneventures/controller/policy";
 
 export type { FactCitation, Ledger, LedgerFinding, PublicationEntry } from "./types.js";
 

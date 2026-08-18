@@ -9,7 +9,7 @@
  * drift between a declared standard and the live state enforcing it. Each is
  * a pure function of observations the caller collected, each returns the
  * `satisfied` / `violated` / `indeterminate` ternary from
- * `@vespeneventures/governance/gates`, and the run folds to a `0` / `1` / `2`
+ * `@vespeneventures/controller/gates`, and the run folds to a `0` / `1` / `2`
  * exit code that nothing can override.
  *
  * A fifth thing is checked that is not about the repository at all: whether

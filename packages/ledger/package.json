@@ -24,7 +24,7 @@
     "LICENSE"
   ],
   "sideEffects": false,
-  "description": "The return path: an append-only record of what was published, to which channel, when, derived from which revision of strategy, citing which facts — and a drift checker that answers whether a cited fact still holds, without ever importing @vespeneventures/strategy. Records outcomes and makes them attributable; carries no opinion about whether an outcome is good and writes nothing back automatically.",
+  "description": "The return path: an append-only record of what was published, to which channel, when, derived from which revision of strategy, citing which facts \u2014 and a drift checker that answers whether a cited fact still holds, without ever importing @vespeneventures/strategy. Records outcomes and makes them attributable; carries no opinion about whether an outcome is good and writes nothing back automatically.",
   "keywords": [
     "ledger",
     "append-only",
@@ -47,7 +47,7 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@vespeneventures/policy": "~0.1.0"
+    "@vespeneventures/controller": "~0.1.0"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

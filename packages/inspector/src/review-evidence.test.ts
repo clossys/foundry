@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { gateResultToExitCode } from "@vespeneventures/governance/gates";
-import { REVIEW_EVIDENCE_VERSION } from "@vespeneventures/governance/review";
-import type { ReviewEvidenceBundle, ReviewPolicy } from "@vespeneventures/governance/review";
+import { gateResultToExitCode } from "@vespeneventures/controller/gates";
+import { REVIEW_EVIDENCE_VERSION } from "@vespeneventures/controller/review";
+import type { ReviewEvidenceBundle, ReviewPolicy } from "@vespeneventures/controller/review";
 import { checkReviewEvidence } from "./review-evidence.js";
 
 const HEAD = "a".repeat(40);

@@ -28,7 +28,7 @@ All notable changes to this package are documented here. Format follows
   the return-path entity — what was published, to which channel, when,
   derived from which revision of strategy, citing which facts, each fact
   bound to its value at publication time via a
-  `@vespeneventures/policy` `PolicyBinding` reused directly, not
+  `@vespeneventures/controller/policy` `PolicyBinding` reused directly, not
   reimplemented. No score, threshold, or verdict field anywhere — this
   package records outcomes and makes them attributable; it carries no
   opinion about whether an outcome is good.
@@ -36,13 +36,13 @@ All notable changes to this package are documented here. Format follows
   validation, the same style every other package in this foundation uses
   (plain type guards over `unknown`, an accumulated `LedgerFinding[]`,
   never throws), including a `PolicyBinding`-shape check delegated
-  straight to `@vespeneventures/policy`'s own `validateBindingShape` and a
+  straight to `@vespeneventures/controller/policy`'s own `validateBindingShape` and a
   `"citation-policy-id-mismatch"` rule enforcing that a citation's
   `valueBinding.policyId` always equals its `factRef`.
 - `canonicalizeValue`/`citeFact` (`fact.ts`): deterministic
   (key-order-independent) serialization of a JSON-serializable fact value,
   plus the one sanctioned way to build a `FactCitation` — computes a
-  digest of a fact's canonicalized value via `@vespeneventures/policy`'s
+  digest of a fact's canonicalized value via `@vespeneventures/controller/policy`'s
   own `computeDigest`. This package's first real use of `policy` outside
   `policy` itself.
 - `appendEntry` (`append.ts`): the one sanctioned, in-process way to grow
@@ -59,7 +59,7 @@ All notable changes to this package are documented here. Format follows
   mistaken for a real change.
 - `checkLedgerDrift` (`drift.ts`): the drift checker — for each fact a
   ledger cites, compares its recorded value-digest against a
-  caller-supplied current value via `@vespeneventures/policy`'s own
+  caller-supplied current value via `@vespeneventures/controller/policy`'s own
   `verifyBinding`, all without this package ever importing
   `@vespeneventures/strategy`. Fails closed in three distinct, separately
   tested ways: an invalid ledger, an empty ledger, and a non-empty ledger
@@ -76,6 +76,6 @@ All notable changes to this package are documented here. Format follows
   problem" from "could not check" at the exit-code level, not just in the
   printed report.
 
-Zero runtime dependencies beyond `@vespeneventures/policy`, pinned with a
+Zero runtime dependencies beyond `@vespeneventures/controller/policy`, pinned with a
 tilde range (`~0.1.0`), never a caret — a caret range on a `0.x` package is
 patch-only under semver and has broken this repository's CI twice before.

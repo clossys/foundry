@@ -71,7 +71,7 @@ state is a declared gap with a **named blocker**, never a silent pass.
 
 `reconcileLiveState` returns exactly one of `verified` / `drifted` /
 `could-not-verify` — never a boolean, and never a fourth state. This reuses
-`@vespeneventures/governance/gates`'s `GateResult` ternary rather than
+`@vespeneventures/controller/gates`'s `GateResult` ternary rather than
 inventing a fifth shape of the same idea inside this package. The
 `could-not-verify` constructor enforces the "named blocker" rule at
 construction time, not merely by convention:
@@ -308,7 +308,7 @@ separate package subpaths, documented in their own sections above.
 
 ## Requirements
 
-Node.js >= 20, ESM. Runtime dependency: `@vespeneventures/governance` (`~0.15.0`), for the `GateResult` ternary the `liveStateSurface` and CI-mechanics modules build on rather than reinvent.
+Node.js >= 20, ESM. Runtime dependency: `@vespeneventures/controller` (`~0.15.0`), for the `GateResult` ternary the `liveStateSurface` and CI-mechanics modules build on rather than reinvent.
 
 ## Licence
 

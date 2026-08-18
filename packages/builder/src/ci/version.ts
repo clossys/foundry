@@ -26,8 +26,8 @@
  * Zero I/O: every input is passed in.
  */
 
-import { createGateReasons, gateSatisfied } from "@vespeneventures/governance/gates";
-import type { GateResult } from "@vespeneventures/governance/gates";
+import { createGateReasons, gateSatisfied } from "@vespeneventures/controller/gates";
+import type { GateResult } from "@vespeneventures/controller/gates";
 
 /**
  * The oldest build of this package's CI mechanics whose behaviour is still

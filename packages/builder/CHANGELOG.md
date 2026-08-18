@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (all five finding kinds, including `declared-but-not-verifiable`), and
   `reconcileLiveState` with its three constructors
   (`liveStateVerified` / `liveStateDrifted` / `liveStateCouldNotVerify`),
-  built on `@vespeneventures/governance/gates`'s `GateResult` ternary.
+  built on `@vespeneventures/controller/gates`'s `GateResult` ternary.
 - `toolchain`: `RuntimePin`, `PackageManagerPin`, `BuildOrderPin`,
   `ToolchainDeclaration`, their validators, and `reconcileToolchain` for
   checking a declared toolchain against one observation of a real machine.

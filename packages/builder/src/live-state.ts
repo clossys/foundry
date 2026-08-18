@@ -31,7 +31,7 @@
  * `liveStateCouldNotVerify` below) rather than left as a convention a future
  * caller might forget.
  *
- * This module reuses `@vespeneventures/governance/gates`'s `GateResult`
+ * This module reuses `@vespeneventures/controller/gates`'s `GateResult`
  * ternary rather than inventing a fifth shape of the same idea — that
  * package's own header already counts four independent reinventions inside
  * this repository alone and says plainly that the next gate should reuse it
@@ -43,8 +43,8 @@
  * caller; this module never reads a machine, a registry, or a network.
  */
 
-import { createGateReasons, gateSatisfied, gateViolated } from "@vespeneventures/governance/gates";
-import type { GateResult } from "@vespeneventures/governance/gates";
+import { createGateReasons, gateSatisfied, gateViolated } from "@vespeneventures/controller/gates";
+import type { GateResult } from "@vespeneventures/controller/gates";
 import type { Finding } from "./types.js";
 
 /**

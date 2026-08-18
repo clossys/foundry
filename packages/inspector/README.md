@@ -134,7 +134,7 @@ shape, see
 
 ## The ternary
 
-Every check returns `GateResult` from `@vespeneventures/governance/gates`:
+Every check returns `GateResult` from `@vespeneventures/controller/gates`:
 
 | Verdict | Meaning | Exit |
 | --- | --- | --- |
@@ -271,7 +271,7 @@ named in the result rather than disappearing into a silent pass.
 ### Review evidence
 
 Delegates schema and policy validation to
-`@vespeneventures/governance/review`, then does the one thing that validator
+`@vespeneventures/controller/review`, then does the one thing that validator
 deliberately does not: partitions its findings into "the change failed review"
 and "the evidence could not be evaluated". The partition is a total mapping
 over the rule union, so an upstream rule added without being classified is a
@@ -293,7 +293,7 @@ to be enforced, and refuses to let the first stand in for the second. An
 unreadable or partially-read live state is `indeterminate` — permanently and
 correctly so whenever the run's credential cannot read the enforcement
 surface. Content-addressed policy documents are verified through
-`@vespeneventures/policy` rather than by hashing anything here.
+`@vespeneventures/controller/policy` rather than by hashing anything here.
 
 | Export | What it is |
 | --- | --- |
@@ -405,8 +405,8 @@ and survives across CI runs on self-hosted runners.
 ## Requirements
 
 - Node 20 or newer.
-- Runtime dependencies: `@vespeneventures/governance` (`~0.15.0`) for the
-  gate-result ternary and review-evidence validation, `@vespeneventures/policy`
+- Runtime dependencies: `@vespeneventures/controller` (`~0.15.0`) for the
+  gate-result ternary and review-evidence validation, `@vespeneventures/controller/policy`
   (`~0.1.0`) for content-addressed document verification, and — for the
   `./secret-scan` subpath only — `adm-zip` (`^0.6.0`, Windows archive
   extraction) and `tar` (`^7.5.22`, everywhere else).

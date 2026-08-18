@@ -317,7 +317,7 @@ named reason rather than a partial read.
   },
 
   "reviewEvidence": {
-    // The bundle shape from `@vespeneventures/governance/review`. That
+    // The bundle shape from `@vespeneventures/controller/review`. That
     // package's `./review/github` subpath normalizes a provider payload into
     // it without any network access of its own.
     "evidence": { "schemaVersion": 3, "headSha": "...", "baseSha": "...", "paginationComplete": true, "checks": [], "reviews": [], "threads": [] },
