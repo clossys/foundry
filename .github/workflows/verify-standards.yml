@@ -1,0 +1,135 @@
+# This repository's own caller for @vespeneventures/verify-standards.
+#
+# The package holds the grammar and the decisions; a consuming repository
+# holds the values, the credential, and the collection. This file is the
+# collection-and-invocation half for this repository.
+#
+# No `paths:` filter, deliberately. A path filter means a change landing
+# outside a guessed scope silently never runs this, and a check that never ran
+# is a check that never failed.
+#
+# This context is NOT required to merge. Adding it to a ruleset is a separate,
+# later step: a required context that has never reported wedges the
+# repository. Merge first, watch it report, then decide.
+#
+# ---------------------------------------------------------------------------
+# WHY THIS FILE IS NOT THE TEMPLATE VERBATIM — read before copying it onward
+# ---------------------------------------------------------------------------
+# The caller template in packages/verify-standards/documents/caller-workflow.md
+# installs the package from a registry, which requires `actions/setup-node` to
+# set BOTH `registry-url` and `scope`. That `scope` is load-bearing there and
+# must never be dropped: with it omitted, the action maps the CONSUMING
+# repository's own owner to the registry, so any consumer outside the
+# publishing account routes the scope to the public registry instead and the
+# install fails to resolve.
+#
+# This repository is the one place that does not install it. The package is an
+# in-tree workspace, so `npm ci` links it locally and a registry install here
+# would resolve a first-party package to a remote URL — exactly what
+# scripts/check-workspace-links.mjs exists to fail. So there is no registry
+# step here, no token, and correspondingly no `scope` to set. Anyone copying
+# this file into a repository that installs from the registry must add both
+# fields back.
+#
+# The gate is likewise invoked as its own compiled entry point rather than
+# through a runner indirection, matching how this repository's other packaged
+# gates are already run against their own `dist/`.
+name: Verify standards
+
+on: pull_request
+
+permissions:
+  contents: read
+  pull-requests: read
+  issues: read
+
+concurrency:
+  group: verify-standards-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # The job id and the job name match so the status-check context string stays
+  # stable if the display name is ever edited.
+  verify-standards:
+    name: verify-standards
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          # A gate that reads history needs history. A shallow clone silently
+          # reduces what any of it can see, which reads exactly like a clean
+          # result.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+
+      - name: Install workspace
+        run: npm ci --ignore-scripts
+
+      # `dist/` is gitignored, so on a fresh clone the package has nothing to
+      # run until it is compiled. Built in runtime-dependency order, not
+      # filesystem order: policy feeds governance, and governance feeds this
+      # package's gate-result ternary and review validation.
+      - name: Build the gate and its runtime dependencies
+        run: |
+          npm run build --workspace=packages/policy
+          npm run build --workspace=packages/governance
+          npm run build --workspace=packages/verify-standards
+
+      # ---- COLLECT ---------------------------------------------------------
+      # `continue-on-error` so a collector that dies still reaches the decide
+      # step, where its absence is reported as "could not evaluate" rather than
+      # silently becoming a clean run.
+      - name: Assemble the inputs document
+        id: assemble
+        continue-on-error: true
+        env:
+          # Untrusted pull-request text reaches the script through `env:`,
+          # never through string interpolation into a `run:` body.
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_LABELS_JSON: ${{ toJSON(github.event.pull_request.labels) }}
+          GH_TOKEN: ${{ github.token }}
+        run: node .github/scripts/assemble-verify-inputs.mjs > verify-inputs.json
+
+      # ---- DECIDE ----------------------------------------------------------
+      # One command. No credential, no network. Its exit code is the job's.
+      #
+      # `--checks task-record` narrows to the one check this workflow actually
+      # collects for. A check on a non-applicable event returns INDETERMINATE,
+      # not 0 — there is no silent skip — so an unnarrowed run would exit 2 on
+      # every pull request forever. Narrowing is visible on the command line
+      # and in the job summary, where a reviewer can see exactly what was and
+      # was not evaluated:
+      #   - secret-scan: a scan already runs in CI's own safety job, but this
+      #     workflow does not collect its record; wiring that across jobs is
+      #     separate work.
+      #   - review-evidence: needs an evidence bundle nothing assembles here yet.
+      #   - policy-drift: needs a live enforcement-surface read, which this
+      #     job's automatic token cannot perform.
+      #
+      # `--declared-range` is deliberately absent. It exists so a consumer's
+      # declared version range can be checked against the package's minimum
+      # safe version — but this repository declares no range for a package it
+      # builds from its own tree, and inventing one would assert a fact that is
+      # not true here.
+      - name: verify-standards
+        run: |
+          node packages/verify-standards/dist/bin.js \
+            --inputs verify-inputs.json \
+            --checks task-record \
+            | tee -a "$GITHUB_STEP_SUMMARY"
+
+      # Keeping the inputs is what makes a disputed verdict re-checkable later,
+      # offline, without re-running any collection.
+      - name: Upload the inputs document
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: verify-standards-inputs
+          path: verify-inputs.json
+          if-no-files-found: warn
