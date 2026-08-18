@@ -6,6 +6,7 @@ describe("evaluateRatchet — clean (current <= baseline)", () => {
     const result = evaluateRatchet(5, 5);
     expect(result).toEqual({
       ok: true,
+      verdict: "satisfied",
       status: "clean",
       current: 5,
       baseline: 5,
@@ -18,6 +19,7 @@ describe("evaluateRatchet — clean (current <= baseline)", () => {
     const result = evaluateRatchet(0, 0);
     expect(result).toEqual({
       ok: true,
+      verdict: "satisfied",
       status: "clean",
       current: 0,
       baseline: 0,
@@ -77,6 +79,7 @@ describe("evaluateRatchet — regression (current > baseline)", () => {
     const result = evaluateRatchet(6, 5);
     expect(result).toEqual({
       ok: false,
+      verdict: "violated",
       status: "regression",
       current: 6,
       baseline: 5,

@@ -1,6 +1,6 @@
 {
-  "name": "@vespeneventures/copy",
-  "version": "0.7.0",
+  "name": "@vespeneventures/secret-scan",
+  "version": "0.1.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -11,44 +11,35 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    },
-    "./voice": {
-      "types": "./dist/voice/index.d.ts",
-      "import": "./dist/voice/index.js"
-    },
-    "./voice-record.template.jsonc": "./templates/voice-record.template.jsonc"
-  },
-  "bin": {
-    "copy-check": "./dist/cli.js"
+    }
   },
   "files": [
     "dist",
     "src",
     "!src/**/*.test.ts",
-    "templates",
     "README.md",
     "LICENSE"
   ],
   "sideEffects": false,
-  "description": "A consumer-owned language system: voice rules, glossary and claims validation, addressable copy records, and source traceability checks. This package ships machinery and templates, never a consumer's actual copy or voice.",
+  "description": "Verified gitleaks binary download and secret-scan gate utilities. Pure, provider-agnostic mechanism for CI secret scanning with SHA-256 verified binary downloads.",
   "keywords": [
-    "copy",
-    "content",
-    "voice",
-    "i18n",
-    "content-checker",
-    "typescript"
+    "gitleaks",
+    "secret-scan",
+    "security",
+    "ci",
+    "checksum",
+    "supply-chain"
   ],
   "author": "Calvin Hung",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/vespeneventures/foundry.git",
-    "directory": "packages/copy"
+    "directory": "packages/secret-scan"
   },
   "bugs": {
     "url": "https://github.com/vespeneventures/foundry/issues"
   },
-  "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/copy#readme",
+  "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/secret-scan#readme",
   "engines": {
     "node": ">=20"
   },
@@ -65,5 +56,9 @@
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"
+  },
+  "dependencies": {
+    "adm-zip": "^0.6.0",
+    "tar": "^7.5.22"
   }
 }

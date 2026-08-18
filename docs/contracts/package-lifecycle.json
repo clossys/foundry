@@ -69,6 +69,7 @@
       "migration": "packages/governance/README.md#migrating-from-compatibility-packages",
       "forwardsToReplacement": true
     },
+    { "name": "@vespeneventures/secret-scan", "status": "published" },
     { "name": "@vespeneventures/secrets", "status": "published" },
     { "name": "@vespeneventures/strategy", "status": "published" },
     { "name": "@vespeneventures/surface", "status": "published" },
