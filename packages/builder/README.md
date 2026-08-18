@@ -136,6 +136,104 @@ symlink at a copy destination is replaced rather than accepted; ambiguous
 managed-block markers are refused, not guessed; applying throws, verifying
 reports.
 
+### Multi-source composition (#240)
+
+The engine above assumes one `sourceRoot` and one plan. That is unchanged
+and every existing single-source caller keeps working exactly as written
+above — this section covers a separate, additive layer for a caller that
+needs to compose one installation plan out of several independently-owned
+sources, e.g. several account-owned workspace checkouts, without staging
+them under one repository authority.
+
+Build one `Plan` per source with the same `createRuntimeContext` /
+`planInstallation` shown above — nothing new there — then tag each with the
+identifier it asked to be known by and compose them:
+
+```ts
+import {
+  applyComposedInstallation,
+  composeInstallationPlans,
+  createRuntimeContext,
+  createNodeFileSystem,
+  loadManifest,
+  planInstallation,
+  verifyComposedInstallation,
+} from "@vespeneventures/builder";
+
+const namedPlans = sources.map(({ name, sourceRoot, manifest }) => ({
+  source: name,
+  plan: planInstallation(manifest, createRuntimeContext(manifest, { home, sourceRoot })),
+}));
+
+// Pure, like planInstallation. Every operation carries the source that
+// requested it; throws DestinationCollisionError, naming every contributing
+// source, if two sources claim the same destination.
+const composed = composeInstallationPlans(namedPlans);
+
+const fs = createNodeFileSystem();
+const result = applyComposedInstallation(namedPlans, fs, { backupRoot });
+
+const findings = verifyComposedInstallation(namedPlans, fs);
+// findings[i].source names which source's plan the finding came from.
+```
+
+`composeInstallationPlans` validates the full composition — including
+collision detection — before `applyComposedInstallation` makes a single
+filesystem call, so a colliding destination is never discovered halfway
+through an apply; nothing from either contributing source is written.
+Collision detection covers `links`, `copies`, and `managedBlocks`
+destinations only. Two sources asking for the same `privateDirectories`
+entry to exist is not a collision — creating (or leaving alone) a directory
+with a fixed mode is idempotent and non-destructive regardless of which
+source asks or how many do, the same line `loadManifest` already draws for
+one manifest's own destinations.
+
+`applyComposedInstallation` applies each source's plan through the
+unchanged `applyInstallation`, in the order `namedPlans` supplies, sharing
+one `backupRoot`. **A known limit, not an oversight:** a chained link
+(a `links` entry declared with `target`) or a copy/managed-block destination
+nested inside another source's private directory only resolves correctly if
+the source it depends on was already applied — this package does not detect
+or order around a cross-source dependency, because doing so would mean
+inventing a precedence policy across sources, which is exactly what this
+package must not do (see "What this does not do" below). Supply `namedPlans`
+in an order that satisfies any real cross-source dependency, or avoid
+creating one.
+
+**What this does not do**, and why: composing several sources' plans is the
+only thing this module does. It never discovers what those sources are —
+that is a caller's job, informed by whatever registry or configuration names
+its account-owned workspace repositories, never this package's. It never
+decides which source wins a conflicting destination — a collision is always
+refused, never resolved, because resolving it is a precedence and policy
+decision this package does not make (see #240's Boundaries: no account
+discovery, no precedence or conflict-resolution policy, inside provisioning
+or its successor here).
+
+This first increment covers three of #240's eight acceptance criteria —
+multiple named sources with a preserved single-source compatibility path,
+per-operation provenance, and pre-mutation collision detection with
+evidence. It deliberately does **not** cover the other five: a durable
+applied receipt (so a later run can compare against what actually got
+installed, not just against the current plan); retirement planning for a
+destination a prior plan owned that a newer plan no longer names; the
+clean-room adapter qualification; and account discovery itself, which is
+out of scope for this package by design (see "What this does not do"
+above), not merely undelivered. See the pull request that introduced this
+section for the full breakdown.
+
+A note on vocabulary: this module does not report through
+`liveStateSurface`'s declared/verified/could-not-verify vocabulary
+described above. That contract reconciles one declaration against one live
+read of a subject somewhere else; a destination collision is neither —
+it is two declared plans disagreeing with each other, discovered before
+either is applied and before there is any live state to read at all. The
+one place this module *does* read live state — `verifyComposedInstallation`
+— delegates to the unchanged `verifyInstallation`, which already reports
+through the pre-existing `Finding` vocabulary rather than `liveStateSurface`;
+changing that return shape is a breaking change to already-published
+behavior and is out of scope here.
+
 ## Deployment (`./deployment` subpath, formerly `@vespeneventures/deployment`)
 
 Dependency-free deployment surface contracts, configuration planning, health
@@ -279,6 +377,10 @@ package's whole design exists to keep from reading as "looks fine."
 | `applyInstallation(plan, fs, options)` | function | Applies a plan through the injected port, backing up every replaced destination |
 | `verifyInstallation(plan, fs)` | function | Reads the machine and returns `Finding[]` |
 | `createNodeFileSystem()` | function | The default `FileSystemPort`, backed by `node:fs` |
+| `composeInstallationPlans(namedPlans)` | function | Composes several named sources' plans into one, provenance-tagged; throws `DestinationCollisionError` on a shared destination |
+| `applyComposedInstallation(namedPlans, fs, options)` | function | Validates composition, then applies each source's plan through `applyInstallation` |
+| `verifyComposedInstallation(namedPlans, fs)` | function | Validates composition, then returns `ComposedFinding[]`, each tagged with its source |
+| `DestinationCollisionError` | class | Thrown when two or more sources claim the same destination; carries `collisions` |
 | `renderManagedBlock(body, start, end)` | function | The marker-delimited block text |
 | `withoutManagedBlock(contents, start, end)` | function | Content with the managed region removed |
 | `composeManagedBlock(existing, body, start, end, legacyBody?)` | function | The exact content a destination should hold |
@@ -297,6 +399,10 @@ package's whole design exists to keep from reading as "looks fine."
 | `RuntimeContext` / `RuntimeOptions` / `Plan` / `PlanOperation` / `OperationKind` | type | Runtime resolution and planning shapes |
 | `FileSystemPort` / `FileStats` | type | The injected filesystem interface |
 | `ApplyOptions` / `ApplyResult` | type | `{ backupRoot }` and `{ changed, unchanged, backupRoot }` |
+| `NamedSourcePlan` | type | `{ source, plan }` — one source's already-computed `Plan`, tagged with its identifier |
+| `ComposedPlan` / `ComposedPlanOperation` | type | The composed plan and its provenance-tagged operations |
+| `ComposedFinding` | type | A `Finding` with the `source` whose plan produced it attached |
+| `DestinationCollision` | type | `{ destinationPath, sources }` — the evidence behind a `DestinationCollisionError` |
 | `LiveStateSurfaceDeclaration` | type | The `store` / `readableByScript` / `readableBy` / `reconciledBy` / `note` declaration |
 | `LiveStateSurfaceFindingKind` / `LiveStateDriftKind` | type | All five kinds, and the four a completed attempt can report |
 | `LiveStateFinding` / `LiveStateSubjectReport` / `LiveStateReconciliationResult` / `LiveStateReconciliationReason` | type | One finding, one subject's report, and the underlying `GateResult` shapes |

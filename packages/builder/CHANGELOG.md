@@ -5,7 +5,28 @@ All notable changes to `@vespeneventures/builder` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.1] - Unreleased
+## [0.2.0] - Unreleased
+
+### Added
+
+- Multi-source plan composition (#240, first increment):
+  `NamedSourcePlan`, `composeInstallationPlans`, `applyComposedInstallation`,
+  `verifyComposedInstallation`, `ComposedPlan`, `ComposedPlanOperation`,
+  `ComposedFinding`, `DestinationCollision`, and `DestinationCollisionError`.
+  A caller with several independently-owned sources — several account-owned
+  workspace checkouts, each with its own manifest and `sourceRoot` — builds
+  one `Plan` per source with the existing, unchanged `planInstallation`, tags
+  each with the identifier it asked to be known by, and composes them into
+  one explicit, provenance-tagged plan. Composing fails closed, before any
+  filesystem mutation, when two sources claim the same destination, naming
+  every contributing source — never a last-writer-wins merge. This is
+  additive only: `loadManifest`, `createRuntimeContext`, `planInstallation`,
+  `applyInstallation`, and `verifyInstallation` are unchanged, and every
+  existing single-source caller keeps working without touching this module.
+  See the README's "Multi-source composition" section for the full shape,
+  and that section's own note on what #240 describes that this increment
+  does not yet cover (a durable applied receipt, retirement planning, and
+  account discovery, which remains explicitly out of this package's scope).
 
 ### Changed
 
