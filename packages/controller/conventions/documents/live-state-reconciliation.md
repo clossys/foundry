@@ -31,7 +31,7 @@ that shared posture, so the next check does not have to pick one at random.
 
 ## Required fields
 
-A declaration names four things, in prose:
+A declaration names five things, in prose:
 
 - **`store`** — where the live state actually lives. Not a schema, not a
   type — a sentence a person could act on: an S3 bucket a platform team
@@ -62,9 +62,19 @@ A reconciliation attempt reports exactly one of three outcomes:
   from declared, or a live artifact that predates the declaration claiming
   to describe it (agreement here proves nothing about intent — the artifact
   was already there before whatever wrote the declaration).
-- **could-not-verify** — the read did not happen at all, for a named
-  reason. Never a fifth finding alongside the four above; a different kind
-  of outcome entirely, because nothing was actually compared.
+- **could-not-verify** — the outcome. Never a fifth finding alongside the
+  four above; a different kind of outcome entirely, because nothing was
+  actually compared. It covers two distinct situations, deliberately
+  collapsed to the same outcome: a read that was never attempted at all
+  (no credential, no surface built yet — nobody could look), and a read
+  that was attempted and reported a blocker mid-attempt (an API returning
+  500, a permission the ambient token was refused — someone looked and it
+  broke). Both are "nothing was actually compared," so both are
+  could-not-verify; the caller's own record may keep the distinction, but
+  this contract's verdict does not need to. `declared-but-not-verifiable`
+  is the **reason** carried inside a could-not-verify outcome, not another
+  name for the outcome itself — see the machine-readable vocabulary in
+  `live-state.ts`'s `liveStateReconciliationReasons`.
 
 The third state is the one addition this document makes over an ordinary
 pass/fail check, and it is the point of the whole contract. A two-state

@@ -1055,8 +1055,12 @@ const report = reconcileLiveState<string, string>({
 
 `reconcileLiveState` returns exactly one of `verified` / `drifted` /
 `could-not-verify` — never a boolean — built on this package's own
-`GateResult` ternary (`./gates`). See `conventions/documents/
-live-state-reconciliation.md` for the shared document, and
+`GateResult` ternary (`./gates`). Those three names are this module's own
+vocabulary for `report.result.verdict`, which is always one of `GateResult`'s
+own three literals: `verified` is `satisfied`, `drifted` is `violated`, and
+`could-not-verify` is `indeterminate` (carrying `declared-but-not-verifiable`
+as its one declared reason, and the named blocker as `detail`). See
+`conventions/documents/live-state-reconciliation.md` for the shared document, and
 `routine-declaration.md` / `schedule-declaration.md` for how the two
 existing tiers specialize it without any change to their own behaviour.
 `@vespeneventures/builder` re-exports this module's exports verbatim rather

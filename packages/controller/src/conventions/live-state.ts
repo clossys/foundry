@@ -163,14 +163,24 @@ export interface LiveStateObservation<TLive> {
   readonly blocker?: string;
   /** What was actually found. Absent means live state does not exist — never "was not read". */
   readonly live?: TLive;
-  /** When the live artifact was created or last changed, if knowable (ISO 8601). */
+  /**
+   * When the live artifact was created or last changed, if knowable (ISO
+   * 8601). Compared against `declared.declaredAt` as an *instant*, not as a
+   * string — see `reconcileLiveState`'s own doc comment for why, and for
+   * what a value that cannot be parsed as an instant does instead of
+   * silently comparing as equal-or-later.
+   */
   readonly liveObservedAt?: string;
 }
 
 /** What a plane declares about one subject, supplied by the caller. */
 export interface LiveStateDeclarationValue<TDeclared> {
   readonly value: TDeclared;
-  /** When this declaration was authored or last changed, if knowable (ISO 8601). */
+  /**
+   * When this declaration was authored or last changed, if knowable (ISO
+   * 8601). See `LiveStateObservation.liveObservedAt` for how this is
+   * compared.
+   */
   readonly declaredAt?: string;
 }
 
@@ -186,6 +196,22 @@ export interface ReconcileLiveStateInput<TDeclared, TLive> {
 }
 
 /**
+ * Parses an ISO 8601 timestamp as an instant (epoch milliseconds), for
+ * comparing two timestamps that may legally use different UTC offsets,
+ * different literal offset spellings (`+00:00` and `Z` name the same
+ * instant), and different fractional-second precision.
+ *
+ * Returns `undefined` when `value` is not a string `Date.parse` can resolve
+ * to a real instant — the caller must treat that as "cannot verify," never
+ * as "treat this as equal or later." See `reconcileLiveState`'s own doc
+ * comment.
+ */
+function parseInstant(value: string): number | undefined {
+  const instant = Date.parse(value);
+  return Number.isNaN(instant) ? undefined : instant;
+}
+
+/**
  * Reconciles one subject's declaration against one observation of its live
  * state, and returns exactly one of the three outcomes this module allows.
  *
@@ -193,6 +219,31 @@ export interface ReconcileLiveStateInput<TDeclared, TLive> {
  * `validateLiveStateSurfaceDeclaration`'s required `note` field, which is
  * where a plane states that in its own declaration, next to the fields that
  * make this function callable at all.
+ *
+ * WHY `declaredAt`/`liveObservedAt` ARE COMPARED AS INSTANTS, NOT STRINGS
+ * -------------------------------------------------------------------------
+ * The doc comments on both fields require only "ISO 8601," which permits
+ * UTC offsets other than `Z` and optional fractional seconds. Two valid
+ * ISO 8601 values can therefore compare in the wrong direction as strings:
+ * `"2026-08-10T09:00:00+02:00"` (07:00 UTC) is lexicographically *greater*
+ * than `"2026-08-10T08:00:00Z"` (08:00 UTC) even though it names an earlier
+ * instant. This comparison is the sole trigger for the
+ * `live-artifact-predates-its-declaration` finding, so a string comparison
+ * would make that finding silently fail to fire, or fire when it should
+ * not, for any pair of timestamps written with different offsets. This
+ * function parses both sides to an instant with `parseInstant` and compares
+ * those instead.
+ *
+ * A timestamp that cannot be parsed as an instant is not treated as "no
+ * drift." Comparing an unparseable value as though it sorted last (or
+ * first, or equal) would silently manufacture a verdict from data that
+ * cannot actually be compared — the exact defect class this whole contract
+ * exists to prevent, reproduced one level down. Instead, when either
+ * `declaredAt` or `liveObservedAt` is present but not parseable, this
+ * function returns `could-not-verify` for the whole subject, with a
+ * blocker naming which field and value could not be parsed, rather than
+ * silently proceeding as if temporal ordering had been checked and found
+ * clean.
  */
 export function reconcileLiveState<TDeclared, TLive>(
   input: ReconcileLiveStateInput<TDeclared, TLive>,
@@ -242,20 +293,33 @@ export function reconcileLiveState<TDeclared, TLive>(
     });
   }
 
-  if (
-    declared.declaredAt !== undefined &&
-    observation.liveObservedAt !== undefined &&
-    observation.liveObservedAt < declared.declaredAt
-  ) {
-    findings.push({
-      kind: "live-artifact-predates-its-declaration",
-      subject,
-      message:
-        `"${subject}"'s live artifact (observed ${observation.liveObservedAt}) predates its declaration ` +
-        `(${declared.declaredAt}). Agreement here proves nothing about intent: the artifact was already there ` +
-        "before whatever wrote the declaration, so the declaration may simply be describing what it found rather " +
-        "than what it caused to exist.",
-    });
+  if (declared.declaredAt !== undefined && observation.liveObservedAt !== undefined) {
+    const declaredInstant = parseInstant(declared.declaredAt);
+    const liveInstant = parseInstant(observation.liveObservedAt);
+
+    if (declaredInstant === undefined || liveInstant === undefined) {
+      const unparseable = [
+        declaredInstant === undefined ? `declaredAt "${declared.declaredAt}"` : undefined,
+        liveInstant === undefined ? `liveObservedAt "${observation.liveObservedAt}"` : undefined,
+      ].filter((entry): entry is string => entry !== undefined);
+      return liveStateCouldNotVerify(
+        subject,
+        `"${subject}" cannot be checked for live-artifact-predates-its-declaration: ${unparseable.join(" and ")} ` +
+          "could not be parsed as an ISO 8601 instant, so temporal ordering cannot be verified.",
+      );
+    }
+
+    if (liveInstant < declaredInstant) {
+      findings.push({
+        kind: "live-artifact-predates-its-declaration",
+        subject,
+        message:
+          `"${subject}"'s live artifact (observed ${observation.liveObservedAt}) predates its declaration ` +
+          `(${declared.declaredAt}). Agreement here proves nothing about intent: the artifact was already there ` +
+          "before whatever wrote the declaration, so the declaration may simply be describing what it found rather " +
+          "than what it caused to exist.",
+      });
+    }
   }
 
   return findings.length > 0 ? liveStateDrifted(subject, findings) : liveStateVerified(subject);

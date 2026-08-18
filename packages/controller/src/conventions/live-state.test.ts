@@ -203,6 +203,162 @@ describe("reconcileLiveState", () => {
     });
     expect(report.result.verdict).toBe("satisfied");
   });
+
+  // ---------------------------------------------------------------------
+  // #313: declaredAt/liveObservedAt are compared as instants, not as
+  // strings. Two ISO 8601 timestamps with different UTC offsets can
+  // disagree about ordering when compared lexicographically even though
+  // one is genuinely earlier -- see the module's own doc comment on
+  // reconcileLiveState for the reproduction this guards against.
+  // ---------------------------------------------------------------------
+  describe("declaredAt/liveObservedAt are compared as instants, not strings", () => {
+    it("catches a predate that a string comparison would miss (mixed offsets, direction 1)", () => {
+      // "+02:00" is 07:00 UTC -- genuinely earlier than "08:00Z" -- but as
+      // plain strings "09:00:00+02:00" > "08:00:00Z", so a naive `<` string
+      // comparison would say the live artifact is NOT earlier. It is.
+      const report = reconcileLiveState<string, string>({
+        subject: "s",
+        declared: { value: "1.0.0", declaredAt: "2026-08-10T08:00:00Z" },
+        observation: {
+          attempted: true,
+          live: "1.0.0",
+          liveObservedAt: "2026-08-10T09:00:00+02:00", // 07:00 UTC, earlier than declaredAt
+        },
+        agrees: (a, b) => a === b,
+      });
+      expect(report.result.verdict).toBe("violated");
+      if (report.result.verdict === "violated") {
+        expect(report.result.findings.map((f) => f.kind)).toEqual(["live-artifact-predates-its-declaration"]);
+      }
+    });
+
+    it("does not false-positive a predate a string comparison would wrongly claim (mixed offsets, direction 2)", () => {
+      // Same two clock-face strings as the previous test, roles reversed:
+      // the live artifact's instant (08:00 UTC) is actually AFTER the
+      // declaration's instant (07:00 UTC, written with a "+02:00" offset).
+      // A naive string comparison of "08:00:00Z" < "09:00:00+02:00" is
+      // true (lexicographically, "08" < "09"), so a buggy string-comparing
+      // implementation would wrongly report a predate here. It is not one.
+      const report = reconcileLiveState<string, string>({
+        subject: "s",
+        declared: { value: "1.0.0", declaredAt: "2026-08-10T09:00:00+02:00" }, // 07:00 UTC
+        observation: {
+          attempted: true,
+          live: "1.0.0",
+          liveObservedAt: "2026-08-10T08:00:00Z", // 08:00 UTC, later than declaredAt
+        },
+        agrees: (a, b) => a === b,
+      });
+      expect(report.result.verdict).toBe("satisfied");
+    });
+
+    it("treats identical instants written with different offset spellings as equal, not a predate", () => {
+      const report = reconcileLiveState<string, string>({
+        subject: "s",
+        declared: { value: "1.0.0", declaredAt: "2026-08-10T08:00:00+00:00" },
+        observation: { attempted: true, live: "1.0.0", liveObservedAt: "2026-08-10T08:00:00Z" },
+        agrees: (a, b) => a === b,
+      });
+      expect(report.result.verdict).toBe("satisfied");
+    });
+
+    it("compares fractional seconds correctly", () => {
+      const report = reconcileLiveState<string, string>({
+        subject: "s",
+        declared: { value: "1.0.0", declaredAt: "2026-08-10T08:00:00.500Z" },
+        observation: {
+          attempted: true,
+          live: "1.0.0",
+          liveObservedAt: "2026-08-10T08:00:00.100Z", // earlier by 400ms
+        },
+        agrees: (a, b) => a === b,
+      });
+      expect(report.result.verdict).toBe("violated");
+      if (report.result.verdict === "violated") {
+        expect(report.result.findings.map((f) => f.kind)).toEqual(["live-artifact-predates-its-declaration"]);
+      }
+    });
+
+    it("does not flag a predate when fractional-second ordering is the other way", () => {
+      const report = reconcileLiveState<string, string>({
+        subject: "s",
+        declared: { value: "1.0.0", declaredAt: "2026-08-10T08:00:00.100Z" },
+        observation: { attempted: true, live: "1.0.0", liveObservedAt: "2026-08-10T08:00:00.500Z" },
+        agrees: (a, b) => a === b,
+      });
+      expect(report.result.verdict).toBe("satisfied");
+    });
+
+    it("could-not-verify -- never a silent pass -- when declaredAt cannot be parsed", () => {
+      const report = reconcileLiveState<string, string>({
+        subject: "s",
+        declared: { value: "1.0.0", declaredAt: "not-a-real-timestamp" },
+        observation: { attempted: true, live: "1.0.0", liveObservedAt: "2026-08-10T08:00:00Z" },
+        agrees: (a, b) => a === b,
+      });
+      expect(report.result.verdict).toBe("indeterminate");
+      expect(isSatisfied(report.result)).toBe(false);
+      if (report.result.verdict === "indeterminate") {
+        expect(report.result.reason).toBe("declared-but-not-verifiable");
+        expect(report.result.detail).toContain("declaredAt");
+        expect(report.result.detail).toContain("not-a-real-timestamp");
+      }
+    });
+
+    it("could-not-verify -- never a silent pass -- when liveObservedAt cannot be parsed", () => {
+      const report = reconcileLiveState<string, string>({
+        subject: "s",
+        declared: { value: "1.0.0", declaredAt: "2026-08-10T08:00:00Z" },
+        observation: { attempted: true, live: "1.0.0", liveObservedAt: "also-not-a-timestamp" },
+        agrees: (a, b) => a === b,
+      });
+      expect(report.result.verdict).toBe("indeterminate");
+      expect(isSatisfied(report.result)).toBe(false);
+      if (report.result.verdict === "indeterminate") {
+        expect(report.result.reason).toBe("declared-but-not-verifiable");
+        expect(report.result.detail).toContain("liveObservedAt");
+        expect(report.result.detail).toContain("also-not-a-timestamp");
+      }
+    });
+
+    it("could-not-verify -- never a silent pass -- when both timestamps cannot be parsed", () => {
+      const report = reconcileLiveState<string, string>({
+        subject: "s",
+        declared: { value: "1.0.0", declaredAt: "bogus-declared" },
+        observation: { attempted: true, live: "1.0.0", liveObservedAt: "bogus-live" },
+        agrees: (a, b) => a === b,
+      });
+      expect(report.result.verdict).toBe("indeterminate");
+      if (report.result.verdict === "indeterminate") {
+        expect(report.result.reason).toBe("declared-but-not-verifiable");
+        expect(report.result.detail).toContain("bogus-declared");
+        expect(report.result.detail).toContain("bogus-live");
+      }
+    });
+
+    it("an unparseable timestamp is never read as verified through any of the three ways a caller could check", () => {
+      // The same proof the #255 could-not-verify suite already runs above,
+      // applied to the specific case this issue is about: a subject whose
+      // *values* agree but whose declaredAt/liveObservedAt is garbage must
+      // not be readable as "passed" by type-narrowing, by the CI exit-code
+      // projection, or by a truthy-checked boolean field.
+      const report = reconcileLiveState<string, string>({
+        subject: "s",
+        declared: { value: "1.0.0", declaredAt: "garbage" },
+        observation: { attempted: true, live: "1.0.0", liveObservedAt: "2026-08-10T08:00:00Z" },
+        agrees: (a, b) => a === b,
+      });
+      expect(isSatisfied(report.result)).toBe(false);
+      expect(isIndeterminate(report.result)).toBe(true);
+      expect(isViolated(report.result)).toBe(false);
+      expect(gateResultToExitCode(report.result)).toBe(2);
+      expect(gateResultToExitCode(report.result)).not.toBe(0);
+      const keys = new Set(Object.keys(report.result));
+      expect(keys.has("ok")).toBe(false);
+      expect(keys.has("passed")).toBe(false);
+      expect(keys.has("success")).toBe(false);
+    });
+  });
 });
 
 describe("validateLiveStateSurfaceDeclaration", () => {
