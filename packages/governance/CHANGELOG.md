@@ -7,6 +7,74 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-08-17
+
+### Changed
+
+- **`foundry-check` now exits `2` when it could not evaluate the tree
+  (behavioural, affects any CI job reading its exit code).** The CLI's exit
+  code is no longer picked by hand from a findings count — `main` builds a
+  `GateResult` via the new `foundationGateResult` and projects it through
+  `gateResultToExitCode`, so the ternary and the exit code can no longer
+  drift apart. Retrofitting it exposed the defect it was meant to catch:
+  the run printed a loud `!!! COVERAGE INCOMPLETE ... this report does NOT
+  verify a clean tree !!!` banner and then returned `0`, because every
+  `unusable` skip (`packages-dir-missing`, `unparseable-manifest`,
+  `manifest-not-object`, `manifest-missing-name-or-version`) is
+  warning-severity and the exit code was computed from error-severity
+  findings alone. A banner is read by a human; an exit code is what CI
+  consumes. Three changes follow:
+  - Incomplete coverage (`report.complete === false`, any skip at all)
+    is now `indeterminate` — reason `"incomplete-coverage"` — and exits
+    `2` instead of `0`.
+  - A tree read completely but containing **no packages** now exits `2`
+    with reason `"no-packages-catalogued"` instead of reporting a pass
+    with nothing evaluated behind it.
+  - An `unreadable` skip, which was error-severity and therefore exited
+    `1`, now exits `2`: it is "could not evaluate", not "evaluated and
+    found a violation".
+
+  Nothing that failed before passes now — every reclassification moves
+  toward the stricter code, and finding severities themselves are
+  unchanged. A consumer running `foundry-check` against a repository with
+  no `packages/` directory, or an empty one, previously saw a green check
+  that had verified nothing and will now see a red one; that is the fix,
+  not a regression.
+
+- **`RatchetResult` carries the shared ternary and names its indeterminate
+  cause (additive).** Every member gains `verdict` (`"satisfied"` /
+  `"violated"` / `"indeterminate"`), assigned alongside `status` so the two
+  cannot disagree; `status`, `ok`, `improved`, and `findings` are unchanged
+  and the contract is still written in terms of `status`. The `invalid`
+  member additionally gains a required `reason` drawn from a declared
+  vocabulary (`RatchetIndeterminateReason`): `"ratchet-current-invalid"`,
+  `"ratchet-baseline-missing"`, or `"ratchet-baseline-invalid"`. These are
+  three different operator actions — fix the counter, create the baseline,
+  repair the baseline — that `gateResultFromRatchet` previously flattened
+  into one opaque `"ratchet-invalid-input"`; that value is retained as the
+  fallback for a hand-built ratchet-shaped value carrying no `reason`, so
+  an existing structural caller is unaffected. Any caller asserting on the
+  whole result object with a deep equality will see the new fields.
+
+### Added
+
+- `foundationGateResult`, `FOUNDRY_CHECK_REASONS`, and
+  `FoundryCheckIndeterminateReason` exported from `./gates` — the pure fold
+  from a `FoundationReport` to a `GateResult`, unit-testable without
+  spawning the CLI, plus the finite vocabulary of reasons `foundry-check`
+  may report as indeterminate.
+- `RatchetIndeterminateReason` exported from `./gates`.
+
+### Fixed
+
+- `result.ts`'s own header claimed `@vespeneventures/strategy`'s
+  `checkFactsTraceability` maintained an `unchecked` list alongside
+  `@vespeneventures/ui` and `@vespeneventures/copy`. It does not, and never
+  has — `FactsGateResult` has no such field. `strategy-facts-check` does
+  implement the ternary correctly by other means (an unloadable `facts.json`
+  and a zero-file scan both exit `2`). The header now says so rather than
+  citing a third list that does not exist.
+
 ## [0.14.0] - 2026-08-16
 
 ### Added

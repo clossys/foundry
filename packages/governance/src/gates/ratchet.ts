@@ -38,6 +38,10 @@
  *     ratchet input.
  */
 
+import type { GateVerdict, RatchetIndeterminateReason } from "./result.js";
+
+export type { RatchetIndeterminateReason } from "./result.js";
+
 /** One thing wrong with `evaluateRatchet`'s inputs, or the outcome of a run that did run. */
 export interface RatchetFinding {
   /** Stable identifier for what this finding reports. */
@@ -64,10 +68,30 @@ export interface RatchetFinding {
  *   - `status: "regression"` -> exit 1.
  *   - `status: "invalid"` -> exit 2. Nothing was evaluated; `current` and
  *     `baseline` are not even echoed back, because neither could be trusted.
+ *
+ * That mapping used to live only in this prose. Every member now also
+ * carries `verdict`, the shared `GateVerdict` from `./result.ts`, so the
+ * ternary is a readable field rather than a paragraph a caller has to
+ * find and re-encode. `status` is unchanged and stays the field this
+ * function's own contract is written in — `verdict` is additive, and the
+ * two can never disagree because `verdict` is assigned alongside `status`
+ * at each of the three construction sites below.
+ *
+ * The `invalid` member additionally carries `reason`, a machine-readable
+ * member of a declared vocabulary. This is the substantive fix: before it,
+ * three genuinely different causes — a garbage `current`, a baseline file
+ * that does not exist yet, and a baseline that exists but holds a garbage
+ * value — were distinguishable only by reading `findings[].rule`, and
+ * `gateResultFromRatchet` flattened all three into one opaque
+ * `"ratchet-invalid-input"`. They call for different operator actions
+ * (fix the counter / create the baseline / repair the baseline), so
+ * `indeterminate` now names which one it was.
  */
 export type RatchetResult =
   | {
       ok: true;
+      /** The shared ternary. Always `"satisfied"` for `status: "clean"`. */
+      verdict: Extract<GateVerdict, "satisfied">;
       status: "clean";
       current: number;
       baseline: number;
@@ -77,6 +101,8 @@ export type RatchetResult =
     }
   | {
       ok: false;
+      /** The shared ternary. Always `"violated"` for `status: "regression"`. */
+      verdict: Extract<GateVerdict, "violated">;
       status: "regression";
       current: number;
       baseline: number;
@@ -84,12 +110,44 @@ export type RatchetResult =
     }
   | {
       ok: false;
+      /** The shared ternary. Always `"indeterminate"` for `status: "invalid"` — never `"violated"`: nothing was evaluated, so there is nothing to have violated. */
+      verdict: Extract<GateVerdict, "indeterminate">;
       status: "invalid";
+      /** Which input could not be evaluated. Required — an indeterminate result with no named cause is the thing this field exists to prevent. */
+      reason: RatchetIndeterminateReason;
       findings: RatchetFinding[];
     };
 
 function isNonNegativeSafeInteger(value: unknown): value is number {
   return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
+}
+
+/**
+ * Maps the rule of the FIRST invalid-input finding onto the declared
+ * indeterminate vocabulary. First, not "all of them", because `reason` is
+ * singular by design — it names the cause an operator should act on, and
+ * the findings list (which is returned in full, unchanged) is where the
+ * complete picture lives. `current` is validated before `baseline`, so a
+ * result with both wrong reports the counter, which is the one a caller
+ * controls directly.
+ */
+function indeterminateReasonFor(findings: readonly RatchetFinding[]): RatchetIndeterminateReason {
+  const first = findings[0];
+  switch (first?.rule) {
+    case "ratchet/current-invalid":
+      return "ratchet-current-invalid";
+    case "ratchet/baseline-missing":
+      return "ratchet-baseline-missing";
+    case "ratchet/baseline-invalid":
+      return "ratchet-baseline-invalid";
+    default:
+      // Unreachable via `evaluateRatchet`, which only ever calls this with
+      // one of the three above. Kept rather than asserted `never` because
+      // `RatchetFinding["rule"]` also covers the two rules that belong to
+      // results that DID evaluate; falling back to the generic reason is
+      // still an indeterminate result, so this cannot become a pass.
+      return "ratchet-invalid-input";
+  }
 }
 
 /**
@@ -136,7 +194,13 @@ export function evaluateRatchet(current: unknown, baseline: unknown): RatchetRes
   }
 
   if (invalid.length > 0) {
-    return { ok: false, status: "invalid", findings: invalid };
+    return {
+      ok: false,
+      verdict: "indeterminate",
+      status: "invalid",
+      reason: indeterminateReasonFor(invalid),
+      findings: invalid,
+    };
   }
 
   const currentValue = current as number;
@@ -145,6 +209,7 @@ export function evaluateRatchet(current: unknown, baseline: unknown): RatchetRes
   if (currentValue > baselineValue) {
     return {
       ok: false,
+      verdict: "violated",
       status: "regression",
       current: currentValue,
       baseline: baselineValue,
@@ -164,6 +229,7 @@ export function evaluateRatchet(current: unknown, baseline: unknown): RatchetRes
   const improved = currentValue < baselineValue;
   return {
     ok: true,
+    verdict: "satisfied",
     status: "clean",
     current: currentValue,
     baseline: baselineValue,
