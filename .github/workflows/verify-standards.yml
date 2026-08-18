@@ -119,6 +119,13 @@ jobs:
       # not true here.
       - name: verify-standards
         run: |
+          # `set -o pipefail` is load-bearing, not tidiness. Actions runs this
+          # with `bash -e {0}` and NO pipefail, so a pipeline returns the LAST
+          # command's status — `tee`'s 0 — and a run that exited 1 (violated)
+          # or 2 (indeterminate) would report the step as SUCCESS. That is
+          # exactly the "reports clean after failing" failure this gate exists
+          # to prevent, so the gate must not be installed wearing it.
+          set -o pipefail
           node packages/verify-standards/dist/bin.js \
             --inputs verify-inputs.json \
             --checks task-record \
