@@ -122,6 +122,29 @@ export const CONVENTION_ADAPTERS: readonly ConventionAdapter[] = Object.freeze([
     templated: false,
     mode: "755",
   }),
+  Object.freeze({
+    id: "heavy-cmd-hook",
+    filename: "heavy-cmd-hook.sh",
+    description:
+      "Pre-tool-use hook flagging a command likely to spike memory or CPU and handing it to a configured preflight check. Advisory only -- always exits 0. Configured entirely through the environment.",
+    templated: false,
+    mode: "755",
+  }),
+  Object.freeze({
+    id: "scoped-main-push",
+    filename: "scoped-main-push.sh",
+    description:
+      "Pre-tool-use hook protecting the default branch and enforcing branch provenance inside a discovered canonical workspace tree. Complements branch-provenance-hook.sh with a directory-shape heuristic instead of an explicit glob list. Configured entirely through the environment.",
+    templated: false,
+    mode: "755",
+  }),
+  Object.freeze({
+    id: "workspace-shell",
+    filename: "workspace-shell.zsh",
+    description:
+      "Generic interactive workspace-navigation helpers (croot, cw) over a discovery root. Names no account, repository, or port of its own.",
+    templated: false,
+  }),
 ]);
 
 function findDocument(id: string): ConventionDocument | undefined {

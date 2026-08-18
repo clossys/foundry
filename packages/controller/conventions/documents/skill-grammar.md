@@ -25,6 +25,26 @@ The canonical home for a prefixed skill is that account's control plane when
 the workflow spans more than one of the account's repositories, and the owning
 repository otherwise.
 
+## Scope tiers
+
+That canonical-home choice is exactly the test the skill registry's `scope`
+field encodes (see `conventions/documents/skill-registry.md`): every
+first-party skill is either `account`-scoped — spans more than one of that
+account's own repositories — or `repo`-scoped — lives inside, and never
+claims coverage outside, the one repository that owns it. A skill copied in
+from an external source instead of grown from one account's own review is
+`third-party`-scoped, and has no owning account at all: it keeps the
+namespace its maintaining provider chose (below) rather than a registered
+prefix, and the registry neither requires nor accepts a repository for it.
+
+These three tiers are exhaustive on purpose. There is no fourth, "machine",
+tier: a skill's naming grammar exists to bind it to the one account whose
+workflow it encodes, and "the machine" is not an account with a workflow of
+its own to encode — it is the shared substrate several accounts' skills
+happen to run on. A skill that tried to claim machine scope would either be
+restating one account's own `account`-scoped skill under a different name, or
+claiming judgment about repositories nobody who wrote it actually reviewed.
+
 Use a small, literal verb vocabulary: `audit`, `clean`, `close`, `create`,
 `diagnose`, `expand`, `groom`, `ingest`, `map`, `plan`, `reconcile`, `review`,
 `ship`, `sync`, and `verify`. Prefer a specific, descriptive name to an

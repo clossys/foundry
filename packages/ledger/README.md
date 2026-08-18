@@ -231,7 +231,7 @@ branching on the exit code.
 ## Requirements
 
 Node 20+. ESM only. Runtime dependency: `@vespeneventures/controller/policy` (pinned
-`~0.1.0` — a tilde range, deliberately not a caret; a caret range on a
+`~0.2.0` — a tilde range, deliberately not a caret; a caret range on a
 `0.x` package is patch-only under semver and has broken this repository's
 CI before). No other runtime dependencies.
 

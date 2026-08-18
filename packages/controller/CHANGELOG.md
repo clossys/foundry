@@ -5,6 +5,41 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - Unreleased
+
+### Added
+
+- Skill registry `scope` is now a closed, three-value enum: `account`
+  (operates on one account's own repository inventory), `repo` (operates
+  inside a single repository), and `third-party` (vendored from an external
+  source; has no owning account). There is deliberately no fourth,
+  "machine" or plane-spanning, tier — a skill encodes judgment about a
+  specific inventory someone actually reviewed, and "the machine" has no
+  inventory of its own to have judgment about. See
+  `conventions/documents/skill-grammar.md` and
+  `conventions/documents/skill-registry.md`.
+- Three new adapter files under `./conventions/adapters/*`:
+  `heavy-cmd-hook.sh` (resource-discipline preflight hook),
+  `scoped-main-push.sh` (default-branch protection and branch provenance
+  inside a discovered canonical workspace tree), and `workspace-shell.zsh`
+  (generic interactive workspace-navigation helpers). All three are
+  account-neutral: configured entirely through the environment, with no
+  operator path, account name, or topology baked in.
+
+### Changed
+
+- **Breaking:** the registry validator now hard-rejects two previously
+  accepted `scope` values instead of silently normalizing or vaguely
+  rejecting them. `"plane"` (this registry's own former name for the tier
+  now called `"account"`) and `"workspace"` (an independent name a
+  different consuming account had settled on for the identical concept)
+  both now fail validation with a `registry/legacy-scope` finding whose
+  message names `"account"` as the replacement. The former `"repository"`
+  value is rejected the same way, naming `"repo"`. `RegisteredSkill` also
+  drops the separate `thirdParty` boolean now that `scope: "third-party"`
+  carries the same fact in the one field that already decided a skill's
+  identity.
+
 ## [0.1.0] - Unreleased
 
 ### Added

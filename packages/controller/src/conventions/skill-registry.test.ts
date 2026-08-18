@@ -74,19 +74,19 @@ describe("validateSkillRegistry / coverage union", () => {
       skills: [
         {
           name: "review-dependency-freshness",
-          scope: "repository",
+          scope: "repo",
           repository: "repo-a",
           implements: [{ capability: "dependency-freshness-review", targets: ["repo-a"] }],
         },
         {
           name: "review-dependency-freshness",
-          scope: "repository",
+          scope: "repo",
           repository: "repo-b",
           implements: [{ capability: "dependency-freshness-review", targets: ["repo-b"] }],
         },
         {
           name: "review-dependency-freshness",
-          scope: "repository",
+          scope: "repo",
           repository: "repo-c",
           implements: [{ capability: "dependency-freshness-review", targets: ["repo-c"] }],
         },
@@ -102,7 +102,7 @@ describe("validateSkillRegistry / coverage union", () => {
       skills: [
         {
           name: "review-dependency-freshness",
-          scope: "repository",
+          scope: "repo",
           repository: "repo-a",
           implements: [{ capability: "dependency-freshness-review", targets: ["repo-a"] }],
         },
@@ -121,13 +121,13 @@ describe("validateSkillRegistry / duplicate composite identity", () => {
       skills: [
         {
           name: "review-dependency-freshness",
-          scope: "repository",
+          scope: "repo",
           repository: "repo-a",
           implements: [{ capability: "dependency-freshness-review", targets: ["repo-a"] }],
         },
         {
           name: "review-dependency-freshness",
-          scope: "repository",
+          scope: "repo",
           repository: "repo-b",
           implements: [{ capability: "dependency-freshness-review", targets: ["repo-b"] }],
         },
@@ -143,13 +143,13 @@ describe("validateSkillRegistry / duplicate composite identity", () => {
       skills: [
         {
           name: "review-dependency-freshness",
-          scope: "repository",
+          scope: "repo",
           repository: "repo-a",
           implements: [{ capability: "dependency-freshness-review", targets: ["repo-a"] }],
         },
         {
           name: "review-dependency-freshness",
-          scope: "repository",
+          scope: "repo",
           repository: "repo-a",
           implements: [{ capability: "dependency-freshness-review", targets: ["repo-a"] }],
         },
@@ -160,11 +160,11 @@ describe("validateSkillRegistry / duplicate composite identity", () => {
     );
   });
 
-  it("flags the same plane-scoped skill declared twice", () => {
+  it("flags the same account-scoped skill declared twice", () => {
     const reg = registry({
       skills: [
-        { name: "plan-registry-adoption", scope: "plane", implements: [] },
-        { name: "plan-registry-adoption", scope: "plane", implements: [] },
+        { name: "plan-registry-adoption", scope: "account", implements: [] },
+        { name: "plan-registry-adoption", scope: "account", implements: [] },
       ],
     });
     expect(validateSkillRegistry(reg).map((f) => f.rule)).toContain(
@@ -174,12 +174,12 @@ describe("validateSkillRegistry / duplicate composite identity", () => {
 });
 
 describe("validateSkillRegistry / scope escape", () => {
-  it("flags a repository-scoped skill claiming coverage outside its own repository", () => {
+  it("flags a repo-scoped skill claiming coverage outside its own repository", () => {
     const reg = registry({
       skills: [
         {
           name: "review-dependency-freshness",
-          scope: "repository",
+          scope: "repo",
           repository: "repo-a",
           implements: [
             { capability: "dependency-freshness-review", targets: ["repo-a", "repo-b"] },
@@ -190,21 +190,21 @@ describe("validateSkillRegistry / scope escape", () => {
     expect(validateSkillRegistry(reg).map((f) => f.rule)).toContain("registry/scope-escape");
   });
 
-  it("requires a repository when scope is repository", () => {
+  it("requires a repository when scope is repo", () => {
     const reg = registry({
-      skills: [{ name: "review-dependency-freshness", scope: "repository", implements: [] }],
+      skills: [{ name: "review-dependency-freshness", scope: "repo", implements: [] }],
     });
     expect(validateSkillRegistry(reg).map((f) => f.rule)).toContain(
       "registry/missing-repository",
     );
   });
 
-  it("allows a plane-scoped skill to cover more than one repository", () => {
+  it("allows an account-scoped skill to cover more than one repository", () => {
     const reg = registry({
       skills: [
         {
           name: "review-dependency-freshness",
-          scope: "plane",
+          scope: "account",
           implements: [
             {
               capability: "dependency-freshness-review",
@@ -233,7 +233,7 @@ describe("validateSkillRegistry / missing capability", () => {
       skills: [
         {
           name: "review-dependency-freshness",
-          scope: "repository",
+          scope: "repo",
           repository: "repo-a",
           implements: [{ capability: "no-such-capability", targets: ["repo-a"] }],
         },
@@ -251,8 +251,7 @@ describe("validateSkillRegistry / third-party skills", () => {
       skills: [
         {
           name: "vendor-dependency-review",
-          scope: "plane",
-          thirdParty: true,
+          scope: "third-party",
           implements: [
             {
               capability: "dependency-freshness-review",
@@ -265,6 +264,74 @@ describe("validateSkillRegistry / third-party skills", () => {
     const findings = validateSkillRegistry(reg);
     expect(findings.filter((f) => f.rule === "registry/missing-capability")).toHaveLength(3);
   });
+
+  it("does not require a third-party entry to name a repository", () => {
+    const reg = registry({
+      skills: [{ name: "vendor-dependency-review", scope: "third-party", implements: [] }],
+    });
+    expect(validateSkillRegistry(reg).map((f) => f.rule)).not.toContain(
+      "registry/missing-repository",
+    );
+  });
+
+  it("flags a third-party entry that carries a repository -- it has no owning account to bound it to one", () => {
+    const reg = registry({
+      skills: [{
+        name: "vendor-dependency-review",
+        scope: "third-party",
+        repository: "repo-a",
+        implements: [],
+      }],
+    });
+    expect(validateSkillRegistry(reg).map((f) => f.rule)).toContain(
+      "registry/scope-repository-mismatch",
+    );
+  });
+
+  it("flags the same third-party skill declared twice", () => {
+    const reg = registry({
+      skills: [
+        { name: "vendor-dependency-review", scope: "third-party", implements: [] },
+        { name: "vendor-dependency-review", scope: "third-party", implements: [] },
+      ],
+    });
+    expect(validateSkillRegistry(reg).map((f) => f.rule)).toContain(
+      "registry/duplicate-skill-identity",
+    );
+  });
+});
+
+describe("validateSkillRegistry / legacy scope rejection", () => {
+  it.each([
+    ["plane", "account"],
+    ["workspace", "account"],
+    ["repository", "repo"],
+  ])('rejects legacy scope "%s" with a message naming "%s" as the replacement', (legacy, replacement) => {
+    const findings = validateSkillRegistry({
+      schemaVersion: SKILL_REGISTRY_SCHEMA_VERSION,
+      capabilities: [baseCapability],
+      skills: [{
+        name: "review-dependency-freshness",
+        scope: legacy,
+        repository: "repo-a",
+        implements: [],
+      }],
+    });
+    expect(findings.map((f) => f.rule)).toContain("registry/legacy-scope");
+    const finding = findings.find((f) => f.rule === "registry/legacy-scope")!;
+    expect(finding.message).toContain(`"${legacy}"`);
+    expect(finding.message).toContain(`"${replacement}"`);
+  });
+
+  it("does not treat an unrecognized scope string as a legacy spelling", () => {
+    const findings = validateSkillRegistry({
+      schemaVersion: SKILL_REGISTRY_SCHEMA_VERSION,
+      capabilities: [baseCapability],
+      skills: [{ name: "review-dependency-freshness", scope: "typo", implements: [] }],
+    });
+    expect(findings.map((f) => f.rule)).toContain("registry/malformed-skill");
+    expect(findings.map((f) => f.rule)).not.toContain("registry/legacy-scope");
+  });
 });
 
 describe("validateSkillRegistry / accepted gap", () => {
@@ -273,13 +340,13 @@ describe("validateSkillRegistry / accepted gap", () => {
       skills: [
         {
           name: "review-dependency-freshness",
-          scope: "repository",
+          scope: "repo",
           repository: "repo-a",
           implements: [{ capability: "dependency-freshness-review", targets: ["repo-a"] }],
         },
         {
           name: "review-dependency-freshness",
-          scope: "repository",
+          scope: "repo",
           repository: "repo-b",
           implements: [{ capability: "dependency-freshness-review", targets: ["repo-b"] }],
         },
@@ -423,7 +490,7 @@ describe("validateRoutineCoverage / routine-subset validation", () => {
     skills: [
       {
         name: "review-dependency-freshness",
-        scope: "repository",
+        scope: "repo",
         repository: "repo-a",
         implements: [{ capability: "dependency-freshness-review", targets: ["repo-a"] }],
       },
@@ -479,11 +546,11 @@ describe("validateRoutineCoverage / routine-subset validation", () => {
     ).toEqual([]);
   });
 
-  it("rejects a repository qualifier on a plane-scoped skill", () => {
-    const planeRegistry = registry({
+  it("rejects a repository qualifier on an account-scoped skill", () => {
+    const accountRegistry = registry({
       skills: [{
         name: "review-dependency-freshness",
-        scope: "plane",
+        scope: "account",
         implements: [{
           capability: "dependency-freshness-review",
           targets: ["repo-a", "repo-b", "repo-c"],
@@ -492,8 +559,25 @@ describe("validateRoutineCoverage / routine-subset validation", () => {
     });
     expect(validateRoutineCoverage(
       { skill: "review-dependency-freshness", skillRepository: "repo-a", scope: ["repo-a"] },
-      planeRegistry,
-    ).map((finding) => finding.rule)).toContain("registry/routine-plane-skill-qualified");
+      accountRegistry,
+    ).map((finding) => finding.rule)).toContain("registry/routine-account-skill-qualified");
+  });
+
+  it("rejects a repository qualifier on a third-party skill", () => {
+    const thirdPartyRegistry = registry({
+      skills: [{
+        name: "vendor-dependency-review",
+        scope: "third-party",
+        implements: [{
+          capability: "dependency-freshness-review",
+          targets: ["repo-a", "repo-b", "repo-c"],
+        }],
+      }],
+    });
+    expect(validateRoutineCoverage(
+      { skill: "vendor-dependency-review", skillRepository: "repo-a", scope: ["repo-a"] },
+      thirdPartyRegistry,
+    ).map((finding) => finding.rule)).toContain("registry/routine-account-skill-qualified");
   });
 
   it("preserves registry parse findings when target resolution also fails", () => {

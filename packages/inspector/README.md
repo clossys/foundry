@@ -405,11 +405,12 @@ and survives across CI runs on self-hosted runners.
 ## Requirements
 
 - Node 20 or newer.
-- Runtime dependencies: `@vespeneventures/controller` (`~0.1.0`) for the
-  gate-result ternary and review-evidence validation, `@vespeneventures/controller/policy`
-  (`~0.1.0`) for content-addressed document verification, and — for the
-  `./secret-scan` subpath only — `adm-zip` (`^0.6.0`, Windows archive
-  extraction) and `tar` (`^7.5.22`, everywhere else).
+- Runtime dependencies: `@vespeneventures/controller` (`~0.2.0`) for the
+  gate-result ternary, review-evidence validation, and (via its
+  `./policy` subpath, the same single dependency, not a second one)
+  content-addressed document verification, and — for the `./secret-scan`
+  subpath only — `adm-zip` (`^0.6.0`, Windows archive extraction) and
+  `tar` (`^7.5.22`, everywhere else).
 
 ## Licence
 

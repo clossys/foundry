@@ -1,7 +1,7 @@
 import type { Finding } from "./types.js";
 
 /**
- * Capability-first skill registry (v2). See `conventions/documents/skill-registry.md`.
+ * Capability-first skill registry (v3). See `conventions/documents/skill-registry.md`.
  *
  * A routine says *when*; this registry says *what is actually covered*.
  * Keeping the two apart is the entire design: a routine that is disabled,
@@ -17,10 +17,47 @@ import type { Finding } from "./types.js";
  * Bumped only when the shape below changes in a way older data cannot
  * satisfy. A registry that declares a different version is not silently
  * accepted -- see `validateSkillRegistry`'s first check.
+ *
+ * v3 replaced the two-value `scope` (`"plane"` / `"repository"`) plus a
+ * separate `thirdParty` boolean with one closed three-value `scope`:
+ * `"account"`, `"repo"`, `"third-party"`. Two facts about a skill living in
+ * two fields that could disagree -- a `thirdParty: true` skill declaring
+ * `scope: "repository"`, say -- were never actually independent; folding
+ * them into one field removes the disagreement rather than validating
+ * against it. See `parseSkill`'s legacy-scope handling for the actionable
+ * rejection older `"plane"`, `"workspace"`, and `"repository"` data now gets.
  */
-export const SKILL_REGISTRY_SCHEMA_VERSION = "2.0.0";
+export const SKILL_REGISTRY_SCHEMA_VERSION = "3.0.0";
 
-export type SkillScope = "plane" | "repository";
+/**
+ * The three tiers a skill can occupy, and no others. There is deliberately no
+ * "machine" or plane-spanning tier: a skill encodes judgment about a
+ * specific inventory it has actually reviewed, and "the machine" has no
+ * inventory of its own to have judgment about -- see
+ * `conventions/documents/skill-registry.md`'s "Required model" section for
+ * the full argument. Assign a skill's tier by asking which test it passes:
+ *
+ * - `"account"`   -- operates on one account's own repository inventory.
+ * - `"repo"`      -- operates inside a single repository.
+ * - `"third-party"` -- vendored from an external source; has no owning
+ *   account, so it can neither claim one nor be required to.
+ */
+export type SkillScope = "account" | "repo" | "third-party";
+
+/**
+ * Legacy `scope` spellings this registry no longer accepts, mapped to the
+ * replacement value a caller should migrate to. `"plane"` was this
+ * registry's own prior name for what is now `"account"`; `"workspace"` was a
+ * different consuming plane's independent word for the identical concept;
+ * `"repository"` was this registry's own prior name for what is now
+ * `"repo"`. All three fail with a message naming their replacement rather
+ * than a bare "invalid" -- see `parseSkill`.
+ */
+const LEGACY_SCOPES: Readonly<Record<string, SkillScope>> = Object.freeze({
+  plane: "account",
+  workspace: "account",
+  repository: "repo",
+});
 
 /** One functional requirement, expressed as the set of targets it must reach. */
 export interface Capability {
@@ -39,21 +76,23 @@ export interface SkillCapabilityImplementation {
 
 /**
  * A skill as the registry knows it. Identity is the pair `(repository, name)`
- * for a repository-scoped skill, or `(plane, name)` for a plane-scoped one --
- * never the bare name alone, which is exactly what lets two repositories each
- * own a skill called the same thing without colliding.
+ * for a `"repo"`-scoped skill, or `(scope, name)` for an `"account"`- or
+ * `"third-party"`-scoped one -- never the bare name alone, which is exactly
+ * what lets two repositories each own a skill called the same thing without
+ * colliding.
  */
 export interface RegisteredSkill {
   readonly name: string;
   readonly scope: SkillScope;
-  /** Required when `scope` is `"repository"`; must be absent for `"plane"`. */
+  /** Required when `scope` is `"repo"`; must be absent for `"account"` and `"third-party"`. */
   readonly repository?: string;
   /**
-   * True for a skill this plane installed from outside itself. A third-party
-   * skill may still declare `implements`, but it is never counted toward a
-   * first-party capability's coverage -- see `validateSkillRegistry`.
+   * A `"third-party"`-scoped skill may still declare `implements`, but it is
+   * never counted toward a first-party capability's coverage -- see
+   * `validateSkillRegistry`. Vendored from an external source, so it has no
+   * owning account: it must not carry a `repository`, and it is never
+   * required to.
    */
-  readonly thirdParty?: boolean;
   readonly implements: readonly SkillCapabilityImplementation[];
 }
 
@@ -184,16 +223,39 @@ function parseImplementation(
   return { capability: raw.capability, targets: raw.targets };
 }
 
+const VALID_SCOPES: ReadonlySet<string> = new Set<SkillScope>(["account", "repo", "third-party"]);
+
 function parseSkill(value: unknown, index: number, findings: Finding[]): RegisteredSkill | undefined {
   const raw = record(value);
-  if (!raw || typeof raw.name !== "string" ||
-      (raw.scope !== "plane" && raw.scope !== "repository") ||
+  if (!raw) {
+    findings.push(shapeFinding(
+      "registry/malformed-skill",
+      `Registry skill at index ${index} must contain a string name, an account, repo, or third-party scope, an implements array, and an optional string repository field.`,
+    ));
+    return undefined;
+  }
+  // A legacy spelling gets a specific, actionable rejection naming its
+  // replacement -- a caller migrating an existing registry (or a plane that
+  // independently settled on its own word for the same tier, such as
+  // "workspace") needs to be told what to write instead, not just that what
+  // it wrote is invalid.
+  if (typeof raw.scope === "string" && raw.scope in LEGACY_SCOPES) {
+    const replacement = LEGACY_SCOPES[raw.scope]!;
+    const name = typeof raw.name === "string" ? raw.name : `at index ${index}`;
+    findings.push({
+      rule: "registry/legacy-scope",
+      severity: "high",
+      message: `Skill "${name}" declares legacy scope "${raw.scope}", which this registry no longer accepts. Use "${replacement}" instead.`,
+    });
+    return undefined;
+  }
+  if (typeof raw.name !== "string" ||
+      typeof raw.scope !== "string" || !VALID_SCOPES.has(raw.scope) ||
       (raw.repository !== undefined && typeof raw.repository !== "string") ||
-      (raw.thirdParty !== undefined && typeof raw.thirdParty !== "boolean") ||
       !Array.isArray(raw.implements)) {
     findings.push(shapeFinding(
       "registry/malformed-skill",
-      `Registry skill at index ${index} must contain a string name, a plane or repository scope, an implements array, and optional string repository and boolean thirdParty fields.`,
+      `Registry skill at index ${index} must contain a string name, an account, repo, or third-party scope, an implements array, and an optional string repository field.`,
     ));
     return undefined;
   }
@@ -203,9 +265,8 @@ function parseSkill(value: unknown, index: number, findings: Finding[]): Registe
   });
   return {
     name: raw.name,
-    scope: raw.scope,
+    scope: raw.scope as SkillScope,
     ...(raw.repository === undefined ? {} : { repository: raw.repository as string }),
-    ...(raw.thirdParty === undefined ? {} : { thirdParty: raw.thirdParty as boolean }),
     implements: implementations,
   };
 }
@@ -313,20 +374,20 @@ function queryRepository(query: RoutineCoverageQuery): string | undefined {
 }
 
 function skillIdentity(skill: Pick<RegisteredSkill, "name" | "scope" | "repository">): string {
-  return skill.scope === "repository"
-    ? `repository:${skill.repository ?? ""}::${skill.name}`
-    : `plane::${skill.name}`;
+  if (skill.scope === "repo") return `repo:${skill.repository ?? ""}::${skill.name}`;
+  if (skill.scope === "third-party") return `third-party::${skill.name}`;
+  return `account::${skill.name}`;
 }
 
 /**
  * Union, per capability, of every first-party skill's declared targets.
- * Third-party skills are read here but deliberately excluded from the union --
- * see the module doc comment.
+ * Third-party skills (`scope: "third-party"`) are read here but deliberately
+ * excluded from the union -- see the module doc comment.
  */
 function firstPartyCoverage(registry: SkillRegistry): Map<string, Set<string>> {
   const coverage = new Map<string, Set<string>>();
   for (const skill of registry.skills) {
-    if (skill.thirdParty) continue;
+    if (skill.scope === "third-party") continue;
     for (const implementation of skill.implements) {
       const targets = coverage.get(implementation.capability) ?? new Set<string>();
       for (const target of implementation.targets) targets.add(target);
@@ -412,14 +473,16 @@ export function validateSkillRegistry(input: unknown): Finding[] {
         rule: "registry/duplicate-skill-identity",
         severity: "high",
         message:
-          skill.scope === "repository"
-            ? `Skill "${skill.name}" is declared more than once in repository "${skill.repository ?? "(none)"}". Repository-owned skills may share a bare name across repositories; they may not share a full identity.`
-            : `Skill "${skill.name}" is declared more than once at plane scope.`,
+          skill.scope === "repo"
+            ? `Skill "${skill.name}" is declared more than once in repository "${skill.repository ?? "(none)"}". Repo-owned skills may share a bare name across repositories; they may not share a full identity.`
+            : skill.scope === "third-party"
+            ? `Skill "${skill.name}" is declared more than once as a third-party skill.`
+            : `Skill "${skill.name}" is declared more than once at account scope.`,
       });
     }
     seenIdentities.add(identity);
 
-    if (skill.scope !== "plane" && skill.scope !== "repository") {
+    if (skill.scope !== "account" && skill.scope !== "repo" && skill.scope !== "third-party") {
       findings.push({
         rule: "registry/unknown-scope",
         severity: "high",
@@ -427,18 +490,20 @@ export function validateSkillRegistry(input: unknown): Finding[] {
       });
     }
 
-    if (skill.scope === "repository" && (!skill.repository || skill.repository.trim() === "")) {
+    if (skill.scope === "repo" && (!skill.repository || skill.repository.trim() === "")) {
       findings.push({
         rule: "registry/missing-repository",
         severity: "high",
-        message: `Skill "${skill.name}" declares repository scope but names no repository.`,
+        message: `Skill "${skill.name}" declares repo scope but names no repository.`,
       });
     }
-    if (skill.scope === "plane" && skill.repository) {
+    if ((skill.scope === "account" || skill.scope === "third-party") && skill.repository) {
       findings.push({
         rule: "registry/scope-repository-mismatch",
         severity: "medium",
-        message: `Skill "${skill.name}" declares plane scope but also names repository "${skill.repository}". A plane-scoped skill's coverage is not bounded to one repository.`,
+        message: skill.scope === "third-party"
+          ? `Skill "${skill.name}" declares third-party scope but also names repository "${skill.repository}". A third-party skill is vendored from an external source and has no owning account or repository.`
+          : `Skill "${skill.name}" declares account scope but also names repository "${skill.repository}". An account-scoped skill's coverage is not bounded to one repository.`,
       });
     }
 
@@ -451,13 +516,13 @@ export function validateSkillRegistry(input: unknown): Finding[] {
         });
         continue;
       }
-      if (skill.scope === "repository" && skill.repository) {
+      if (skill.scope === "repo" && skill.repository) {
         for (const target of implementation.targets) {
           if (target !== skill.repository) {
             findings.push({
               rule: "registry/scope-escape",
               severity: "high",
-              message: `Skill "${skill.name}" is scoped to repository "${skill.repository}" but claims coverage of target "${target}". A repository-scoped skill cannot cover anything outside its own repository.`,
+              message: `Skill "${skill.name}" is scoped to repository "${skill.repository}" but claims coverage of target "${target}". A repo-scoped skill cannot cover anything outside its own repository.`,
             });
           }
         }
@@ -564,17 +629,17 @@ export function validateRoutineCoverage(
   const matches = registry.skills.filter(
     (skill) =>
       skill.name === query.skill &&
-      (skill.scope === "plane" ? repository === undefined : skill.repository === repository),
+      (skill.scope === "repo" ? skill.repository === repository : repository === undefined),
   );
 
   if (matches.length === 0) {
     if (repository !== undefined && registry.skills.some(
-      (skill) => skill.name === query.skill && skill.scope === "plane",
+      (skill) => skill.name === query.skill && skill.scope !== "repo",
     )) {
       findings.push({
-        rule: "registry/routine-plane-skill-qualified",
+        rule: "registry/routine-account-skill-qualified",
         severity: "high",
-        message: `Routine qualifies plane-scoped skill "${query.skill}" with repository "${repository}". Omit the qualifier so ordinary validation must resolve the plane-root skill.`,
+        message: `Routine qualifies skill "${query.skill}" (not repo-scoped) with repository "${repository}". Omit the qualifier so ordinary validation must resolve the account-root (or third-party) skill.`,
       });
     } else {
       findings.push({
