@@ -73,6 +73,44 @@ describe("extractTaskReferenceText", () => {
     expect(extractTaskReferenceText("`Work item: #12`", ["Work item"])).toBe("#12`");
     expect(extractTaskReferenceText("Work item: `#12`", ["Work item"])).toBe("`#12`");
   });
+
+  it("does not match a label embedded inside a longer word", () => {
+    // Without a word boundary, the label "Refs" matches the "Refs" hiding
+    // inside "Prefs" and "Underrefs" — neither is the label.
+    expect(extractTaskReferenceText("Check the user prefs 2024 config.", ["Refs"])).toBeUndefined();
+    expect(extractTaskReferenceText("An underrefs situation. Refs #9", ["Refs"])).toBe("#9");
+  });
+
+  it("still matches a label ending in punctuation, which plain \\b cannot", () => {
+    // `\b` requires a word/non-word transition at the label's own edge. A
+    // label ending in ")" immediately followed by ":" is two non-word
+    // characters in a row — a real boundary, but not one `\b` can see. The
+    // guard here must not regress the already-passing "Ticket (id)" case.
+    expect(extractTaskReferenceText("Ticket (id): #7", ["Ticket (id)"])).toBe("#7");
+  });
+
+  it("prefers a hash-marked reference over an earlier naked number found in prose", () => {
+    // The exact case from the filed defect: "Refs" is matched case-
+    // insensitively, so the prose "that Refs 2024 baseline" matches the
+    // configured label "Refs" and yields the bare, shape-valid candidate
+    // "2024" — which used to win outright because the earlier fix only
+    // preferred "shaped" over "unshaped", and a naked number is shaped.
+    // "2024" would resolve the gate against the wrong issue entirely.
+    const description = "This change follows on from work that Refs 2024 baseline of the standards document.\n\nRefs #12";
+    expect(extractTaskReferenceText(description, ["Refs"])).toBe("#12");
+  });
+
+  it("still returns a naked number when it is the only candidate at all", () => {
+    // Preferring a marked candidate must never manufacture "no reference" out
+    // of a description that names one, even ambiguously.
+    const description = "This change follows on from work that Refs 2024 baseline of the standards document.";
+    expect(extractTaskReferenceText(description, ["Refs"])).toBe("2024");
+  });
+
+  it("prefers a marked reference inside a code span over a naked number in prose", () => {
+    const description = "Work that Refs 2024 baseline. Refs `#12`.";
+    expect(extractTaskReferenceText(description, ["Refs"])).toBe("`#12`");
+  });
 });
 
 describe("parseTaskReference", () => {
@@ -164,6 +202,34 @@ describe("checkTaskRecord", () => {
       { ...policy, recordLabels: ["Work item", "Issue"] },
     );
     expect(report.result).toMatchObject({ verdict: "satisfied", evaluated: 2 });
+  });
+
+  it("resolves against the real record, not a naked number sitting in prose", () => {
+    // The exact scenario from the filed defect, run end to end: the label
+    // "Refs" matches inside ordinary prose ("that Refs 2024 baseline") and
+    // yields the shape-valid but wrong candidate "2024". Without the
+    // naked-number tie-break, this would resolve the gate against issue
+    // #2024 rather than the real #12 further down the description.
+    const report = checkTaskRecord(
+      change({
+        description:
+          "This change follows on from work that Refs 2024 baseline of the standards document.\n\nRefs #12",
+        item: { outcome: "resolved", title: "The real work item" },
+      }),
+      { ...policy, recordLabels: ["Refs"] },
+    );
+    expect(report.result).toMatchObject({ verdict: "satisfied", evaluated: 2 });
+    expect(report.reference).toMatchObject({ number: "12" });
+  });
+
+  it("does not match a configured label embedded inside an unrelated word", () => {
+    const report = checkTaskRecord(
+      change({ description: "Check the user prefs 2024 config. No other reference here." }),
+      { ...policy, recordLabels: ["Refs"] },
+    );
+    expect(report.result.verdict).toBe("violated");
+    if (report.result.verdict !== "violated") throw new Error("unreachable");
+    expect(report.result.findings[0]?.rule).toBe("task-record-missing");
   });
 
   it("does not turn a prose-only description into a pass", () => {

@@ -176,11 +176,24 @@ function escapeLiteral(value: string): string {
  * prose. "There is no work item at all here" contains the label, and the
  * token after it is `at`. See `extractTaskReferenceText` for what is done
  * about that.
+ *
+ * The label is guarded on both sides by `(?<!\w)` / `(?!\w)` rather than
+ * left unguarded. Without it, a configured label matches as a bare substring
+ * anywhere it occurs — including embedded inside a longer word, such as
+ * `Refs` inside `Prefs`, which is not the label at all. Plain `\b` cannot be
+ * used here instead: a caller's label can itself end in a non-word
+ * character (a policy declaring `"Ticket (id)"` is exercised by this
+ * package's own tests), and `\b` requires a word/non-word transition at
+ * that edge — which a label ending in `)` immediately followed by `:` can
+ * never produce, silently breaking a label that legitimately matches. The
+ * lookaround guards only care what is on the OTHER side of the boundary, so
+ * they hold regardless of which character the label itself starts or ends
+ * with.
  */
 function extractTaskReferenceCandidates(description: string, recordLabels: readonly string[]): readonly string[] {
   const candidates: string[] = [];
   for (const label of recordLabels) {
-    const pattern = new RegExp(`\\*{0,2}${escapeLiteral(label)}:?\\*{0,2}\\s*(\\S+)`, "gi");
+    const pattern = new RegExp(`\\*{0,2}(?<!\\w)${escapeLiteral(label)}(?!\\w):?\\*{0,2}\\s*(\\S+)`, "gi");
     for (const match of description.matchAll(pattern)) {
       const captured = match[1];
       if (captured === undefined) continue;
@@ -200,6 +213,27 @@ function extractTaskReferenceCandidates(description: string, recordLabels: reado
  * real.
  */
 const SHAPE_PROBE_SCOPE = "scope-probe/scope-probe";
+
+/**
+ * True for a candidate that is *only* a bare run of digits, once any
+ * code-span backticks are stripped — `2024`, not `#2024`, `a/b#2024`, or a
+ * tracker URL.
+ *
+ * A bare number is the one reference shape indistinguishable, by form
+ * alone, from an ordinary number sitting in a sentence: "…that Refs 2024
+ * baseline…" and "Refs #12" produce identically-shaped tokens once "Refs"
+ * has been matched as the label, and `2024` parses exactly as cleanly as
+ * `12` does. The other two shapes cannot make that mistake — a qualified
+ * `owner/name#12` and a tracker URL both carry punctuation no ordinary
+ * sentence puts next to a label by coincidence. So a naked number is not
+ * rejected (it is still a documented, accepted shorthand, and is still
+ * returned when it is the only thing found), it is only asked to stand
+ * behind any candidate that carries that punctuation.
+ */
+function isNakedNumericCandidate(candidate: string): boolean {
+  const unspanned = candidate.replace(/^`+/, "").replace(/`+$/, "");
+  return /^\d+$/.test(unspanned);
+}
 
 /**
  * Pulls the work-item reference out of a change description.
@@ -224,12 +258,25 @@ const SHAPE_PROBE_SCOPE = "scope-probe/scope-probe";
  *    declaring `["Work item", "Issue"]` and writing `Issue: #12` got the
  *    same failure whenever the word "work item" appeared in prose above it.
  *
- * So every label and every occurrence is collected, and the first candidate
- * that is actually reference-SHAPED wins. When none is (the description
- * really does contain only prose), the first candidate is still returned, so
- * a genuinely malformed reference is still reported as unparseable rather
- * than being quietly downgraded to "no reference given" — those are two
- * different findings about the change and this must not collapse them.
+ * So every label and every occurrence is collected, and a reference-SHAPED
+ * candidate is preferred over an unshaped one.
+ *
+ * WHY "SHAPED" ALONE IS STILL NOT ENOUGH
+ * ---------------------------------------
+ * A bare number is shaped — it is a documented, accepted form — and ordinary
+ * prose contains numbers next to words that happen to be configured labels.
+ * "…that Refs 2024 baseline…" matches the label `Refs` exactly as cleanly as
+ * a real `Refs #12` written elsewhere in the same description, and `2024`
+ * parses exactly as cleanly as `12` does: preferring the first SHAPED
+ * candidate still lets that prose win when it appears first, which is a
+ * wrong verdict against the WRONG issue rather than an honest "unparseable".
+ * A qualified `owner/name#12` and a tracker URL cannot make this mistake —
+ * both carry punctuation no sentence puts next to a label by coincidence —
+ * so among shaped candidates, one that is not a bare naked number is
+ * preferred over one that is. A naked number is never discarded; it is only
+ * asked to stand behind a more distinctly-marked candidate, and is still
+ * returned — shaped, then unshaped — when it is the only thing the
+ * description contains.
  *
  * This can never manufacture a pass: every candidate it can return came out
  * of the description, and whichever one it returns is parsed and then looked
@@ -238,7 +285,10 @@ const SHAPE_PROBE_SCOPE = "scope-probe/scope-probe";
 export function extractTaskReferenceText(description: string, recordLabels: readonly string[]): string | undefined {
   if (typeof description !== "string") return undefined;
   const candidates = extractTaskReferenceCandidates(description, recordLabels);
-  const shaped = candidates.find((candidate) => parseTaskReference(candidate, SHAPE_PROBE_SCOPE) !== undefined);
+  const isShaped = (candidate: string): boolean => parseTaskReference(candidate, SHAPE_PROBE_SCOPE) !== undefined;
+  const marked = candidates.find((candidate) => isShaped(candidate) && !isNakedNumericCandidate(candidate));
+  if (marked !== undefined) return marked;
+  const shaped = candidates.find(isShaped);
   return shaped ?? candidates[0];
 }
 
