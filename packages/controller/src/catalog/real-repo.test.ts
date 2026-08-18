@@ -28,7 +28,11 @@ describe("integration: real packages/ directory", () => {
   it("resolves repoRoot to a directory that actually contains a packages/ tree", () => {
     expect(existsSync(join(repoRoot, "packages"))).toBe(true);
     expect(existsSync(join(repoRoot, "package.json"))).toBe(true);
-    expect(existsSync(join(repoRoot, "packages", "catalog", "package.json"))).toBe(true);
+    // `catalog` is a subpath of `@vespeneventures/controller` now (issue
+    // #282 merged the standalone `catalog` package into it with zero
+    // consumers left behind), so the on-disk package that must exist is
+    // `controller`, not a `catalog` package directory.
+    expect(existsSync(join(repoRoot, "packages", "controller", "package.json"))).toBe(true);
   });
 
   // Guards every scope-dependent assertion in this file. Without it a wrong
@@ -41,32 +45,29 @@ describe("integration: real packages/ directory", () => {
     expect(matching.length).toBeGreaterThan(0);
   });
 
-  it("finds this repository's foundational and paired repository-review packages", () => {
+  it("finds this repository's foundational controller package", () => {
     const catalog = buildCatalog(repoRoot);
     const names = catalog.entries.map((e) => e.name);
 
-    for (const expected of [
-      `${SCOPE}/catalog`,
-      `${SCOPE}/policy`,
-      `${SCOPE}/gates`,
-      `${SCOPE}/release`,
-      `${SCOPE}/repository`,
-      `${SCOPE}/review`,
-    ]) {
-      expect(names).toContain(expected);
-    }
+    // `catalog`, `policy`, `gates`, `release`, `repository`, and `review`
+    // were separate, paired compatibility packages before issue #282's
+    // recut folded every one of them into `@vespeneventures/controller` as
+    // subpaths and deleted the standalone packages with zero consumers
+    // left. There is exactly one foundational package left to find now.
+    expect(names).toContain(`${SCOPE}/controller`);
   });
 
-  it("finds this package (@vespeneventures/catalog) itself, self-hosting cleanly against the real dependency graph", () => {
+  it("finds this package (@vespeneventures/controller) itself, self-hosting cleanly against the real dependency graph", () => {
     const catalog = buildCatalog(repoRoot);
-    const catalogEntry = findByName(catalog, `${SCOPE}/catalog`);
+    const controllerEntry = findByName(catalog, `${SCOPE}/controller`);
 
-    expect(catalogEntry).toBeDefined();
-    // catalog has zero declared dependencies today (see its own
-    // package.json) — no internal-dep-missing findings attributed to it.
+    expect(controllerEntry).toBeDefined();
+    // controller has zero declared internal dependencies today (see its
+    // own package.json) — no internal-dep-missing findings attributed to
+    // it.
     const findings = evaluateCatalog(catalog, { scope: SCOPE });
-    const catalogOwnFindings = findings.filter((f) => f.package === `${SCOPE}/catalog`);
-    expect(catalogOwnFindings).toEqual([]);
+    const controllerOwnFindings = findings.filter((f) => f.package === `${SCOPE}/controller`);
+    expect(controllerOwnFindings).toEqual([]);
   });
 
   it("produces zero error-severity findings for this repository's own packages/ tree", () => {

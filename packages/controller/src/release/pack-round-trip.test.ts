@@ -14,18 +14,34 @@ import { packRoundTrip, subprocessEnv } from "./pack-round-trip.js";
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "..");
 
 describe("packRoundTrip — real subprocess round trip", () => {
-  it("governance declares built files for every package-process subpath", () => {
-    const governanceDir = join(repoRoot, "packages", "governance");
-    const manifest = JSON.parse(readFileSync(join(governanceDir, "package.json"), "utf8")) as {
+  // This used to target packages/governance, back when governance was its
+  // own package with these package-process subpaths. Issue #282 folded
+  // governance's source into @vespeneventures/controller directly and
+  // deleted the `governance` compatibility stub with zero consumers left
+  // behind, so controller is now the package that declares these subpaths
+  // and must ship built files for every one of them.
+  it("controller declares built files for every package-process subpath", () => {
+    const controllerDir = join(repoRoot, "packages", "controller");
+    const manifest = JSON.parse(readFileSync(join(controllerDir, "package.json"), "utf8")) as {
       exports: Record<string, { import: string; types: string }>;
     };
 
-    for (const subpath of ["./catalog", "./gates", "./release", "./repository", "./review", "./review/github", "./artifacts"]) {
+    for (const subpath of [
+      "./catalog",
+      "./gates",
+      "./release",
+      "./repository",
+      "./review",
+      "./review/github",
+      "./artifacts",
+      "./cleanup",
+      "./composition",
+    ]) {
       const entry = manifest.exports[subpath];
       expect(entry).toBeDefined();
       if (entry === undefined) throw new Error(`missing ${subpath} export`);
-      expect(existsSync(join(governanceDir, entry.import))).toBe(true);
-      expect(existsSync(join(governanceDir, entry.types))).toBe(true);
+      expect(existsSync(join(controllerDir, entry.import))).toBe(true);
+      expect(existsSync(join(controllerDir, entry.types))).toBe(true);
     }
   });
 

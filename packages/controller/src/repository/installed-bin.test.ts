@@ -65,43 +65,32 @@ afterEach(() => {
   while (createdRoots.length > 0) rmSync(createdRoots.pop() as string, { recursive: true, force: true });
 });
 
-describe("installed repository-check packages", () => {
+describe("installed controller package", () => {
   it("keep imports hostile-clean and execute through npm-created bin symlinks", { timeout: 60_000 }, async () => {
     const root = mkdtempSync(join(tmpdir(), "repository-installed-bin-"));
     createdRoots.push(root);
     const tarballs = join(root, "tarballs");
     mkdirSync(tarballs);
 
-    // `governance` no longer depends on `policy` directly (issue #282 moved
-    // policy's source inside `@vespeneventures/controller`, and governance
-    // is now a thin stub forwarding to controller), so the consumer
-    // installs need controller's tarball in place of policy's.
+    // `governance` and `repository` were separate compatibility packages
+    // before issue #282's recut folded governance's source (including the
+    // `repository` subpath) directly into `@vespeneventures/controller` and
+    // deleted both standalone packages with zero consumers left behind.
+    // `repository-check` (declared in controller's own package.json `bin`
+    // map — verified as-is, not invented) is controller's own bin now, so
+    // there is exactly one tarball, and one consumer, to install.
     const controllerTarball = await pack("controller", tarballs);
-    const governanceTarball = await pack("governance", tarballs);
-    const repositoryTarball = await pack("repository", tarballs);
 
-    const governanceConsumer = join(root, "governance-consumer");
-    await installTarballs(governanceConsumer, [controllerTarball, governanceTarball]);
+    const consumer = join(root, "controller-consumer");
+    await installTarballs(consumer, [controllerTarball]);
     await execFile("node", ["--input-type=module", "--eval", hostileImport,
-      "@vespeneventures/governance/repository",
-      "./node_modules/@vespeneventures/governance/dist/repository/cli.js",
-    ], { cwd: governanceConsumer });
-    const governanceBin = join(governanceConsumer, "node_modules", ".bin", "repository-check");
-    expect(lstatSync(governanceBin).isSymbolicLink()).toBe(true);
-    expect(basename(readlinkSync(governanceBin))).toBe("bin.js");
-    const governanceHelp = await execFile(governanceBin, ["--help"], { cwd: governanceConsumer });
-    expect(governanceHelp.stdout).toContain("Usage: repository-check");
-
-    const facadeConsumer = join(root, "facade-consumer");
-    await installTarballs(facadeConsumer, [controllerTarball, governanceTarball, repositoryTarball]);
-    await execFile("node", ["--input-type=module", "--eval", hostileImport,
-      "@vespeneventures/repository",
-      "./node_modules/@vespeneventures/repository/dist/cli.js",
-    ], { cwd: facadeConsumer });
-    const facadeBin = join(facadeConsumer, "node_modules", ".bin", "repository-check");
-    expect(lstatSync(facadeBin).isSymbolicLink()).toBe(true);
-    expect(basename(readlinkSync(facadeBin))).toBe("bin.js");
-    const facadeHelp = await execFile(facadeBin, ["--help"], { cwd: facadeConsumer });
-    expect(facadeHelp.stdout).toContain("Usage: repository-check");
+      "@vespeneventures/controller/repository",
+      "./node_modules/@vespeneventures/controller/dist/repository/cli.js",
+    ], { cwd: consumer });
+    const bin = join(consumer, "node_modules", ".bin", "repository-check");
+    expect(lstatSync(bin).isSymbolicLink()).toBe(true);
+    expect(basename(readlinkSync(bin))).toBe("bin.js");
+    const help = await execFile(bin, ["--help"], { cwd: consumer });
+    expect(help.stdout).toContain("Usage: repository-check");
   });
 });
