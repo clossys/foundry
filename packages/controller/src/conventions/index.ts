@@ -5,8 +5,9 @@
  * owning the other, plus the checks that enforce their grammar.
  *
  * The split is the design. This package enforces the *grammar* -- branch
- * provenance, skill naming, routine declarations, CI gate naming, neutrality
- * -- and ships the *prose* as a default. It never gates on byte-identity with
+ * provenance, skill naming, routine and schedule declarations, live-state
+ * reconciliation, CI gate naming, neutrality -- and ships the *prose* as a
+ * default. It never gates on byte-identity with
  * that prose: a consumer that adopts the documents verbatim and one that
  * rewrites them entirely are both conforming, so long as what they declare
  * satisfies the grammar. A standard that required its own wording back would
@@ -55,6 +56,28 @@ export {
   validateScheduleSet,
 } from "./schedules.js";
 export type { ScheduleExclusion, ScheduleSetOptions } from "./schedules.js";
+
+export {
+  LIVE_STATE_SURFACE_FINDING_KINDS,
+  liveStateCouldNotVerify,
+  liveStateDrifted,
+  liveStateReconciliationReasons,
+  liveStateVerified,
+  reconcileLiveState,
+  validateLiveStateSurfaceDeclaration,
+} from "./live-state.js";
+export type {
+  LiveStateDeclarationValue,
+  LiveStateDriftKind,
+  LiveStateFinding,
+  LiveStateObservation,
+  LiveStateReconciliationReason,
+  LiveStateReconciliationResult,
+  LiveStateSubjectReport,
+  LiveStateSurfaceDeclaration,
+  LiveStateSurfaceFindingKind,
+  ReconcileLiveStateInput,
+} from "./live-state.js";
 
 export { GATE_VERBS, validateGateName, validateGateSet } from "./gates.js";
 export type { GateNameOptions } from "./gates.js";

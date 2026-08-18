@@ -101,6 +101,18 @@ deployed reality, and must state plainly that a green offline check never means
 the work runs. Reporting a passing declaration check as evidence that a schedule
 is live is the specific mistake this rule exists to prevent.
 
+This is one instance of a shape `live-state-reconciliation.md` names once: a
+declaration of intent, a live state owned elsewhere, a reconciliation surface
+that may not exist yet, and the same failure mode if a green offline check is
+mistaken for the whole answer. `scheduleReconciliationFindingKinds` (four
+findings: declared but not deployed, deployed but not declared, a deployed
+cadence differing from declared, a deployed artifact predating its
+declaration) is this tier's own wording of that document's four drift
+findings, plus the fifth state — could-not-verify, with a named blocker —
+that a reconciliation surface built against this tier's live state should
+report whenever the host cannot currently be read, rather than omitting the
+check.
+
 ## Deliberate absences are declared
 
 A schedule whose target is not yet live is declared with its host connection

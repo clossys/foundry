@@ -118,6 +118,16 @@ system: a declaration that reads correctly, over a body that would actually
 run. Nothing in a checkout can see it, so reconciliation is the only thing that
 can.
 
+This is one instance of a shape `live-state-reconciliation.md` names once: a
+declaration of intent, a live state owned elsewhere, a reconciliation surface
+that may not exist yet, and the same failure mode if a green offline check is
+mistaken for the whole answer. `reconciliationFindingKinds` is this tier's own
+wording of that document's four drift findings, plus the fifth state --
+could-not-verify, with a named blocker -- that a reconciliation surface built
+against this tier's live state should report whenever the scheduler cannot
+currently be read, rather than presenting an unreconciled declaration as
+though it were one.
+
 ## Deterministic checks and the reconciliation boundary
 
 A declaration's internal consistency is deterministic and belongs in the

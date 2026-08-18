@@ -219,6 +219,18 @@ export function validateScheduledSkillDescription(
  * procedure this grammar exists to eliminate. A declaration that reads
  * correctly, over a body that would actually run. Nothing in a checkout can see
  * it.
+ *
+ * This is the routine tier's own wording of the four drift findings
+ * `LIVE_STATE_SURFACE_FINDING_KINDS` (`./live-state.ts`) names once, generalized
+ * across this package's tiers -- see `conventions/documents/
+ * live-state-reconciliation.md`. No behavioural change follows from that: this
+ * vocabulary, and `validateRoutineDeclaration`'s checks, stay exactly as they
+ * are. What changes is that this list is now documented as a specialization of
+ * the shared shape rather than a coincidentally similar one, and a
+ * reconciliation surface built against a scheduler that cannot currently be
+ * read has a fifth state to report -- `declared-but-not-verifiable`, with a
+ * named blocker -- that this tier-specific list deliberately does not carry
+ * itself.
  */
 export const reconciliationFindingKinds: readonly string[] = Object.freeze([
   "declared-but-not-registered",

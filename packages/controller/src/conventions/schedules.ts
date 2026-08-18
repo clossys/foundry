@@ -255,6 +255,17 @@ export function validateScheduleSet(
  * counterpart. Deployment is usually a manual step that merging does not
  * perform, so an artifact can be merged, reviewed and correct while the host
  * keeps running an older copy — producing no error, no alert, and no diff.
+ *
+ * This is the schedule tier's own wording of the four drift findings
+ * `LIVE_STATE_SURFACE_FINDING_KINDS` (`./live-state.ts`) names once, generalized
+ * across this package's tiers — see `conventions/documents/
+ * live-state-reconciliation.md`. No behavioural change follows from that: this
+ * vocabulary, and `validateScheduleDeclaration`'s checks, stay exactly as they
+ * are. What changes is that this list is now documented as a specialization of
+ * the shared shape rather than a coincidentally similar one, and a
+ * reconciliation surface built against a host that cannot currently be read
+ * has a fifth state to report — `declared-but-not-verifiable`, with a named
+ * blocker — that this tier-specific list deliberately does not carry itself.
  */
 export const scheduleReconciliationFindingKinds: readonly string[] = Object.freeze([
   "declared-but-not-deployed",

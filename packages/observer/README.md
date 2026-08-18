@@ -137,13 +137,27 @@ a non-redacted, secret-shaped control value **does** survive serialization
 in the same run — ruling out "everything gets blanked" as the reason the
 real secret disappears.
 
-## `liveStateSurface`, adopted from issue #255
+## `liveStateSurface`, a deliberate duplicate of controller's canonical copy
 
-`live-state.ts` adopts the `liveStateSurface` shape recorded in issue #255
-verbatim, the same way `builder` does: `store`, `readableByScript` (an
-explicit boolean, never implicit), `readableBy` / `reconciledBy`, and a
-**required** `note` stating that a green offline check is not evidence the
-work is live.
+`live-state.ts` carries the `liveStateSurface` shape from issue #255:
+`store`, `readableByScript` (an explicit boolean, never implicit),
+`readableBy` / `reconciledBy`, and a **required** `note` stating that a
+green offline check is not evidence the work is live.
+
+The canonical home for this shape is
+`@vespeneventures/controller/conventions` (see `live-state-reconciliation.md`
+in that package's shipped convention documents). `controller` owns every
+rule this repository's tiers share and has no dependency of its own, so
+`builder` — which already depends on `controller` — re-exports its copy
+rather than keeping a second one. `observer` is the deliberate exception:
+this package's own contract is [zero runtime dependencies](#requirements),
+and adding `controller` as a dependency to remove five frozen strings and
+one small interface would spend that property to dedupe less code than it
+takes to explain why the duplication exists — so this file keeps its own
+copy on purpose, kept in sync by hand with controller's `LiveStateSurfaceDeclaration`
+/ `LIVE_STATE_SURFACE_FINDING_KINDS` / `validateLiveStateSurfaceDeclaration`,
+and says so in its own header comment for a reviewer to check future changes
+against.
 
 This package ships its own honest declaration,
 `OBSERVER_TELEMETRY_LOG_SURFACE`: `observer` defines the event shape, the
@@ -153,9 +167,9 @@ consuming plane's own infrastructure, declared in that plane's own
 `liveStateSurface`. `validateLiveStateSurface` checks a declaration's
 internal consistency offline; it never asks whether the declared store is
 real, because that is exactly the live half a script frequently cannot
-read. `liveStateFindingKinds` re-exports the generalized finding-kind
-vocabulary from issue #255, including `declared-but-not-verifiable` — the
-addition that matters most, for a reconciliation surface that cannot
+read. `liveStateFindingKinds` mirrors the generalized finding-kind
+vocabulary controller names once, including `declared-but-not-verifiable` —
+the addition that matters most, for a reconciliation surface that cannot
 currently read live state.
 
 ## Naming note, recorded deliberately

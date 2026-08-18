@@ -5,6 +5,15 @@ All notable changes to `@vespeneventures/inspector` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3] - Unreleased
+
+### Changed
+
+- Widened the `@vespeneventures/controller` dependency range from `~0.2.0`
+  to `~0.3.0` to track controller's own minor bump (a new canonical
+  `liveStateSurface` export under `./conventions`; see
+  `@vespeneventures/controller`'s own changelog). No API change here.
+
 ## [0.1.2] - Unreleased
 
 ### Changed

@@ -3,6 +3,20 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.1] - Unreleased
+
+### Changed
+
+- **`live-state.ts`'s header comment now names
+  `@vespeneventures/controller/conventions` as the canonical home for the
+  `liveStateSurface` shape and states explicitly why this package keeps its
+  own copy instead of depending on it (#255): `observer`'s own contract is
+  zero runtime dependencies, and adding one to dedupe five frozen strings
+  and one small interface would spend that property for less than it costs.
+  No behavioural or API change — `LiveStateSurface`, `liveStateFindingKinds`,
+  `validateLiveStateSurface`, and `OBSERVER_TELEMETRY_LOG_SURFACE` are
+  unchanged.
+
 ## [0.1.0] - Unreleased
 
 ### Added

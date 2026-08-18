@@ -3,6 +3,15 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.2] - Unreleased
+
+### Changed
+
+- Widened the `@vespeneventures/controller` dependency range from `~0.2.0`
+  to `~0.3.0` to track controller's own minor bump (a new canonical
+  `liveStateSurface` export under `./conventions`; see
+  `@vespeneventures/controller`'s own changelog). No API change here.
+
 ## [0.2.1] - Unreleased
 
 ### Changed
