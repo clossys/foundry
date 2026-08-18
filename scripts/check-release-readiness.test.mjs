@@ -266,6 +266,104 @@ test("default mode: passes gracefully when the repository has no commits at all 
   });
 });
 
+// ------------------------------------------------------- devDependencies exemption (issue #269)
+//
+// Operator decision: a change confined to `devDependencies` does not ship,
+// so it is exempt from the version-bump requirement — but ONLY when that is
+// the entire change. Every shape here that touches a runtime-relevant field,
+// or any file besides package.json, must still require a bump; an exemption
+// that accidentally widens past devDependencies-only is worse than the
+// Dependabot wedge it exists to fix.
+
+test("default mode: a devDependencies-only package.json change is exempt from the version-bump requirement", () => {
+  withRepo((root) => {
+    const pkgDir = makeFixture(root);
+    const manifest = readManifest(pkgDir);
+    manifest.devDependencies = { typescript: "5.4.0" };
+    writeManifest(pkgDir, manifest);
+    const base = gitCommit(root, "initial release at 1.0.0, with devDependencies");
+
+    const bumped = readManifest(pkgDir);
+    bumped.devDependencies = { typescript: "5.5.0" };
+    writeManifest(pkgDir, bumped);
+
+    const r = run(["--json", "--base", base, pkgDir]);
+    const report = JSON.parse(r.out);
+    assert.equal(r.code, 0, `expected exit 0, got ${r.code}: ${r.out}`);
+    assert.equal(report.results[0].status, "pass");
+    assert.match(report.results[0].detail, /devDependencies/);
+  });
+});
+
+test("default mode: a runtime `dependencies` change still requires a version bump", () => {
+  withRepo((root) => {
+    const pkgDir = makeFixture(root);
+    const manifest = readManifest(pkgDir);
+    manifest.dependencies = { "left-pad": "1.0.0" };
+    writeManifest(pkgDir, manifest);
+    const base = gitCommit(root, "initial release at 1.0.0, with a runtime dependency");
+
+    const bumped = readManifest(pkgDir);
+    bumped.dependencies = { "left-pad": "1.1.0" };
+    writeManifest(pkgDir, bumped);
+
+    const r = run(["--json", "--base", base, pkgDir]);
+    const report = JSON.parse(r.out);
+    assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
+    assert.equal(report.results[0].status, "needs-bump");
+    assert.ok(
+      report.results[0].changed.includes("modified: package.json"),
+      `expected package.json to be reported changed, got ${JSON.stringify(report.results[0].changed)}`,
+    );
+  });
+});
+
+test("default mode: a mixed devDependencies + dependencies change still requires a version bump", () => {
+  withRepo((root) => {
+    const pkgDir = makeFixture(root);
+    const manifest = readManifest(pkgDir);
+    manifest.dependencies = { "left-pad": "1.0.0" };
+    manifest.devDependencies = { typescript: "5.4.0" };
+    writeManifest(pkgDir, manifest);
+    const base = gitCommit(root, "initial release at 1.0.0, with runtime and dev dependencies");
+
+    const bumped = readManifest(pkgDir);
+    bumped.dependencies = { "left-pad": "1.1.0" };
+    bumped.devDependencies = { typescript: "5.5.0" };
+    writeManifest(pkgDir, bumped);
+
+    const r = run(["--json", "--base", base, pkgDir]);
+    const report = JSON.parse(r.out);
+    assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
+    assert.equal(report.results[0].status, "needs-bump");
+  });
+});
+
+test("default mode: a devDependencies bump alongside a source change still requires a version bump", () => {
+  withRepo((root) => {
+    const pkgDir = makeFixture(root);
+    const manifest = readManifest(pkgDir);
+    manifest.devDependencies = { typescript: "5.4.0" };
+    writeManifest(pkgDir, manifest);
+    const base = gitCommit(root, "initial release at 1.0.0, with a devDependency");
+
+    const bumped = readManifest(pkgDir);
+    bumped.devDependencies = { typescript: "5.5.0" };
+    writeManifest(pkgDir, bumped);
+    writeFileSync(join(pkgDir, "src", "index.ts"), "export const x = 2;\n");
+
+    const r = run(["--json", "--base", base, pkgDir]);
+    const report = JSON.parse(r.out);
+    assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
+    assert.equal(report.results[0].status, "needs-bump");
+    assert.ok(
+      report.results[0].changed.includes("modified: package.json") &&
+        report.results[0].changed.includes("modified: src/index.ts"),
+      `expected both package.json and src/index.ts reported changed, got ${JSON.stringify(report.results[0].changed)}`,
+    );
+  });
+});
+
 test("default mode: --base pointing at an unresolvable ref is a hard error, not a silent pass", () => {
   withRepo((root) => {
     const pkgDir = makeFixture(root);
