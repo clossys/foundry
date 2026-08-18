@@ -134,11 +134,26 @@ jobs:
           # or 2 (indeterminate) would report the step as SUCCESS. That is
           # exactly the "reports clean after failing" failure this gate exists
           # to prevent, so the gate must not be installed wearing it.
+          #
+          # But `pipefail` alone is one guard, and this step needs to survive
+          # losing it — an editor who later deletes that one line must not
+          # silently reopen the hole. So the decisive command is kept out of
+          # any pipeline at all: it redirects to a file in `$RUNNER_TEMP`, its
+          # status is captured explicitly, the file is `cat` to stdout and
+          # appended to the job summary afterward, and the step ends by
+          # re-raising that captured status. `exit "$status"` is load-bearing
+          # too — without it the step's status is the last `cat`'s, which is
+          # always 0.
           set -o pipefail
+          report="$RUNNER_TEMP/verify-standards-report.txt"
+          status=0
           node packages/verify-standards/dist/bin.js \
             --inputs verify-inputs.json \
             --checks task-record \
-            | tee -a "$GITHUB_STEP_SUMMARY"
+            > "$report" || status=$?
+          cat "$report"
+          cat "$report" >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
 
       # Keeping the inputs is what makes a disputed verdict re-checkable later,
       # offline, without re-running any collection.
