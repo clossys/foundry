@@ -368,7 +368,7 @@ real I/O, both kept out of the judge above:
 
 | Version | SHA-256 (linux x64, as recorded here) |
 |---------|---------------------|
-| 8.30.1 | `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855` |
+| 8.30.1 | `551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb` |
 
 This is a lookup convenience for `resolveGitleaksRelease`, not the value
 `downloadAndVerifyGitleaks` verifies against — that is always the caller's
