@@ -128,17 +128,38 @@ jobs:
       # not true here.
       - name: verify-standards
         run: |
-          # `set -o pipefail` is load-bearing, not tidiness. Actions runs this
-          # with `bash -e {0}` and NO pipefail, so a pipeline returns the LAST
-          # command's status — `tee`'s 0 — and a run that exited 1 (violated)
-          # or 2 (indeterminate) would report the step as SUCCESS. That is
-          # exactly the "reports clean after failing" failure this gate exists
-          # to prevent, so the gate must not be installed wearing it.
+          # TWO INDEPENDENT GUARDS, not one. Actions runs this with
+          # `bash -e {0}` and NO pipefail, so a pipeline returns the LAST
+          # command's status. The single-guard form this step used to
+          # carry -- `set -o pipefail` ahead of a pipe into `tee` -- relied on
+          # `pipefail` alone to keep a run that exited 1 (violated) or 2
+          # (indeterminate) from reporting the step as SUCCESS as `tee`'s 0.
+          # That single guard was never actually defeated here (pipefail does
+          # propagate the exit code), but it is exactly one deletion away from
+          # the "reports clean after failing" failure this gate exists to
+          # prevent -- and the package's own shipped template carried exactly
+          # that single-guard shape for a time (see #278, fixed in this same
+          # package). This step now matches the corrected template:
+          #   1. `set -o pipefail`, so anything added to this block later
+          #      still has a real pipeline status.
+          #   2. The decisive command is in NO pipeline at all -- it
+          #      redirects to a file, its status is captured explicitly in
+          #      `status`, the summary is appended afterwards, and the step
+          #      ends with `exit "$status"`. That line is load-bearing:
+          #      without it the step's status is the trailing `cat`'s, which
+          #      is always 0.
+          # Deleting guard 1 alone does not reopen the hole, because guard 2
+          # no longer depends on it.
           set -o pipefail
+          report="$RUNNER_TEMP/verify-standards-report.txt"
+          status=0
           node packages/verify-standards/dist/bin.js \
             --inputs verify-inputs.json \
             --checks task-record \
-            | tee -a "$GITHUB_STEP_SUMMARY"
+            > "$report" || status=$?
+          cat "$report"
+          cat "$report" >> "$GITHUB_STEP_SUMMARY"
+          exit "$status"
 
       # Keeping the inputs is what makes a disputed verdict re-checkable later,
       # offline, without re-running any collection.
