@@ -8,15 +8,44 @@
  * package does zero I/O of its own beyond what `runFoundationCheck` already
  * does.
  *
- * Exit codes — this is a contract a consumer's CI depends on:
- *   0 — ran cleanly, no error-severity finding. Warnings alone never
- *       produce anything but 0.
- *   1 — ran cleanly, at least one error-severity finding.
- *   2 — could not run at all: bad input (an unknown flag, a `--max-depth`
- *       that isn't a positive integer, a root that doesn't exist or isn't a
- *       readable directory) or an unexpected exception. Kept strictly
- *       distinct from 1 — a gate that reports "clean" after failing to run
- *       is worse than no gate at all.
+ * Exit codes — this is a contract a consumer's CI depends on. They are no
+ * longer picked by hand here: `main` builds a `GateResult` (see
+ * `./result.ts`) and hands it to `gateResultToExitCode`, so the exit code
+ * is a projection of the verdict rather than a second, parallel encoding
+ * of it that can drift from the first.
+ *
+ *   0 — `satisfied`: a COMPLETE tree was catalogued, at least one package
+ *       was actually evaluated, and no error-severity finding came back.
+ *       Warnings alone never produce anything but 0.
+ *   1 — `violated`: evaluated cleanly, at least one error-severity finding.
+ *   2 — `indeterminate`: could not evaluate. Bad input (an unknown flag, a
+ *       `--max-depth` that isn't a positive integer, a root that doesn't
+ *       exist or isn't a readable directory), an unexpected exception, OR —
+ *       new, and the reason this file was retrofitted — a run whose
+ *       coverage was incomplete or whose catalogue was empty.
+ *
+ * THE DEFECT THIS RETROFIT FIXES. `main` used to end with
+ * `errors > 0 ? 1 : 0`, computed from findings alone. `report.complete`
+ * was printed — in a deliberately loud `!!! COVERAGE INCOMPLETE ... this
+ * report does NOT verify a clean tree !!!` banner — and then ignored when
+ * picking the exit code. Two consequences, both of them the exact shape
+ * this repository's gate-result ternary exists to make impossible:
+ *
+ *   - Every `unusable` skip (`packages-dir-missing`,
+ *     `unparseable-manifest`, `manifest-not-object`,
+ *     `manifest-missing-name-or-version`) is warning-severity, so a run
+ *     that could not read part of the tree printed the banner and then
+ *     exited `0`. A CI job reading the exit code — which is the only
+ *     thing a CI job reads — saw a pass.
+ *   - A root whose packages directory exists but holds no packages
+ *     catalogued zero entries, evaluated nothing, and exited `0`: a
+ *     vacuous pass with no evidence behind it.
+ *
+ * Both now fold to `indeterminate` and exit `2`. `unreadable` skips, which
+ * are error-severity and therefore used to exit `1`, now also exit `2`:
+ * they are "could not evaluate", not "evaluated and found a violation",
+ * and `2` is where this repository puts that. Nothing that failed before
+ * passes now — every reclassification is toward the stricter code.
  *
  * Never throws an unhandled exception: `main` is wrapped in a catch-all
  * below that turns anything unexpected into exit code 2.
@@ -27,6 +56,7 @@ import { isAbsolute, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { CatalogFinding } from "../catalog/index.js";
 import { runFoundationCheck } from "./foundation.js";
+import { createGateReasons, gateResultToExitCode, gateSatisfied, gateViolated, type GateResult } from "./result.js";
 import type { FoundationReport } from "./types.js";
 
 const USAGE = `Usage: foundry-check [root] [options]
@@ -39,8 +69,20 @@ Options:
   --max-depth <n>        How many directory levels below packages-dir to search. Must be a positive integer. Defaults to 4.
   --help                 Print this message and exit 0.
 
-Exit codes: 0 = clean, 1 = at least one error-severity finding, 2 = could not run (bad input or unexpected failure).
+Exit codes: 0 = clean (a complete tree, at least one package evaluated, no error-severity finding), 1 = at least one error-severity finding, 2 = could not evaluate (bad input, unexpected failure, incomplete coverage, or no packages catalogued).
 `;
+
+/**
+ * Every reason `foundry-check` can ever report as `indeterminate`, declared
+ * in one place. Declaring the vocabulary is the half of the contract that
+ * keeps "could not evaluate" from quietly widening: a new failure mode has
+ * to be added to this array — and therefore reviewed as a new failure mode
+ * — before any call site can emit it. See `createGateReasons`.
+ */
+export const FOUNDRY_CHECK_REASONS = createGateReasons(["incomplete-coverage", "no-packages-catalogued"] as const);
+
+/** The declared indeterminate vocabulary of `foundry-check`, as a type. */
+export type FoundryCheckIndeterminateReason = (typeof FOUNDRY_CHECK_REASONS.reasons)[number];
 
 interface ParsedArgs {
   root: string;
@@ -242,6 +284,54 @@ function printReport(report: FoundationReport): void {
   );
 }
 
+/**
+ * Folds a `FoundationReport` into this repository's shared gate-result
+ * ternary. This is the whole retrofit: the decision that used to live as
+ * `errors > 0 ? 1 : 0` at the bottom of `main`, expressed once, in the
+ * shared vocabulary, where it can be unit-tested without a subprocess.
+ *
+ * Precedence is `indeterminate` before `violated` before `satisfied`, the
+ * same fail-closed ordering `foldGateResults` uses: a report whose coverage
+ * is incomplete cannot vouch for its own findings either way, so it is
+ * reported as unevaluated even when it also carries real error-severity
+ * findings. Those findings are still printed in full by `printReport` —
+ * this only decides what the run as a whole is allowed to claim.
+ *
+ * `gateSatisfied(entries.length)` is what makes the empty-catalogue case
+ * impossible to get wrong: it refuses a passing result carrying zero
+ * evaluated inputs, so "clean because nothing was looked at" throws at the
+ * call site instead of returning `0`. The explicit check below turns that
+ * into a named, machine-readable `indeterminate` reason first, so a caller
+ * gets a reason rather than an exception.
+ *
+ * Exported for direct testing.
+ */
+export function foundationGateResult(report: FoundationReport): GateResult<CatalogFinding, FoundryCheckIndeterminateReason> {
+  const skipped = report.catalog.skipped ?? [];
+
+  if (!report.complete) {
+    const reasons = skipped.map((skip) => `${skip.path} (${skip.reason})`).join(", ");
+    return FOUNDRY_CHECK_REASONS.indeterminate(
+      "incomplete-coverage",
+      `${skipped.length} path${skipped.length === 1 ? "" : "s"} could not be checked: ${reasons}`,
+    );
+  }
+
+  if (report.catalog.entries.length === 0) {
+    return FOUNDRY_CHECK_REASONS.indeterminate(
+      "no-packages-catalogued",
+      "the tree was read completely and contained no packages — nothing was evaluated, so there is nothing to report clean",
+    );
+  }
+
+  const errors = report.findings.filter((finding) => finding.severity === "error");
+  if (errors.length > 0) {
+    return gateViolated(errors);
+  }
+
+  return gateSatisfied(report.catalog.entries.length);
+}
+
 export function main(): number {
   const args = parseArgs(process.argv.slice(2));
 
@@ -286,8 +376,17 @@ export function main(): number {
 
   printReport(report);
 
-  const { errors } = severityCounts(report.findings);
-  return errors > 0 ? 1 : 0;
+  const result = foundationGateResult(report);
+  if (result.verdict === "indeterminate") {
+    // Printed to stderr, and phrased as a refusal rather than a finding:
+    // this is the run declining to make a claim at all, which is a
+    // different thing from the run making a claim a reader might disagree
+    // with. Every finding above stays exactly as printed — nothing real is
+    // hidden, the run just may not read as clean.
+    console.error(`\nfoundry-check: could not evaluate (${result.reason}): ${result.detail ?? ""}`);
+    console.error("Refusing to report a pass for a check that did not evaluate a complete tree.");
+  }
+  return gateResultToExitCode(result);
 }
 
 export function run(): void {

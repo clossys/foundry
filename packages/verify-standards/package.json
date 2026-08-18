@@ -1,0 +1,70 @@
+{
+  "name": "@vespeneventures/verify-standards",
+  "version": "0.1.0",
+  "private": false,
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./documents/*": "./documents/*"
+  },
+  "bin": {
+    "verify-standards": "./dist/bin.js"
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/**/*.test.ts",
+    "documents",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "description": "One repository-standards gate a consumer's own thin workflow invokes: secret-scan attempts, task records, review evidence, and policy drift, each reported as satisfied/violated/indeterminate and folded into a 0/1/2 exit contract, with a caller-visible minimum-safe-version floor.",
+  "keywords": [
+    "ci-gate",
+    "gate-result",
+    "fail-closed",
+    "secret-scan",
+    "review-evidence",
+    "policy-drift",
+    "typescript"
+  ],
+  "author": "Calvin Hung",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vespeneventures/foundry.git",
+    "directory": "packages/verify-standards"
+  },
+  "bugs": {
+    "url": "https://github.com/vespeneventures/foundry/issues"
+  },
+  "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/verify-standards#readme",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@vespeneventures/governance": "~0.15.0",
+    "@vespeneventures/policy": "~0.1.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "~6.0.0",
+    "vitest": "^4.1.9"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  }
+}

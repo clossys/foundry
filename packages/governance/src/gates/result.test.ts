@@ -15,6 +15,9 @@ import {
 } from "./result.js";
 import type { GateResult } from "./result.js";
 import { evaluateRatchet } from "./ratchet.js";
+import { FOUNDRY_CHECK_REASONS, foundationGateResult } from "./cli.js";
+import type { Catalog, CatalogEntry, CatalogFinding } from "../catalog/index.js";
+import type { FoundationReport } from "./types.js";
 
 describe("gateSatisfied — the meta-check: a pass must carry evidence it evaluated something", () => {
   it("constructs a satisfied result when at least one thing was evaluated", () => {
@@ -210,7 +213,13 @@ describe("gateResultFromRatchet — proves the ternary already existed at evalua
     const folded = gateResultFromRatchet(ratchet);
     expect(folded.verdict).toBe("indeterminate");
     if (folded.verdict !== "indeterminate") throw new Error("unreachable");
-    expect(folded.reason).toBe("ratchet-invalid-input");
+    // Was `"ratchet-invalid-input"` — the single flattened reason this
+    // function used to produce for all three invalid-input causes. Since
+    // the retrofit, `evaluateRatchet` names which input it could not
+    // evaluate and this function carries that through; the generic reason
+    // survives only as the fallback for a hand-built ratchet-shaped value
+    // that supplies none (covered in the retrofit section below).
+    expect(folded.reason).toBe("ratchet-current-invalid");
   });
 
   it("a clean ratchet result folds to exit 0, a regression to 1, invalid to 2 -- proving the lift is faithful", () => {
@@ -275,5 +284,168 @@ describe("design tests from the issue: the two live instances this contract must
     const result = evaluateSecretScanGate({ toolAvailable: false });
     expect(result.verdict).toBe("indeterminate");
     expect(gateResultToExitCode(result)).toBe(2);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The retrofit itself (#256). Everything above proves the shared type behaves;
+// these prove the two gates in this package are actually WIRED to it, which is
+// the only thing that turns a contract into a gate.
+// ---------------------------------------------------------------------------
+
+describe("retrofit: foundry-check's exit codes are now a projection of GateResult", () => {
+  function entry(name: string): CatalogEntry {
+    return { name, version: "1.0.0", dir: `packages/${name}`, private: false, packageJson: { name, version: "1.0.0" } };
+  }
+
+  function report(overrides: {
+    entries?: CatalogEntry[];
+    skipped?: Catalog["skipped"];
+    findings?: CatalogFinding[];
+  }): FoundationReport {
+    const skipped = overrides.skipped ?? [];
+    return {
+      catalog: { root: "/fixture", entries: overrides.entries ?? [entry("widgets")], skipped },
+      findings: overrides.findings ?? [],
+      complete: skipped.length === 0,
+    };
+  }
+
+  it("a complete tree with packages and no error findings is satisfied, carrying the package count as evidence", () => {
+    const result = foundationGateResult(report({ entries: [entry("widgets"), entry("gizmos")] }));
+    expect(result.verdict).toBe("satisfied");
+    if (result.verdict !== "satisfied") throw new Error("unreachable");
+    // `evaluated` is what makes a pass falsifiable: it is the count of
+    // things actually looked at, not merely the absence of complaints.
+    expect(result.evaluated).toBe(2);
+    expect(gateResultToExitCode(result)).toBe(0);
+  });
+
+  it("warnings alone stay satisfied — the retrofit did not make warnings blocking", () => {
+    const result = foundationGateResult(
+      report({ findings: [{ rule: "some-warning", severity: "warning", message: "m" }] }),
+    );
+    expect(result.verdict).toBe("satisfied");
+    expect(gateResultToExitCode(result)).toBe(0);
+  });
+
+  it("an error-severity finding on a complete tree is violated, exit 1 — unchanged", () => {
+    const result = foundationGateResult(
+      report({ findings: [{ rule: "internal-dep-missing", severity: "error", message: "m" }] }),
+    );
+    expect(result.verdict).toBe("violated");
+    if (result.verdict !== "violated") throw new Error("unreachable");
+    expect(result.findings).toHaveLength(1);
+    expect(gateResultToExitCode(result)).toBe(1);
+  });
+
+  // THE DEFECT, as a unit test. A warning-severity skip left `errors` at
+  // zero, so the old `errors > 0 ? 1 : 0` returned 0 for a report that had
+  // just printed "this report does NOT verify a clean tree".
+  it("incomplete coverage from a warning-severity skip is indeterminate, not the 0 it used to be", () => {
+    const result = foundationGateResult(
+      report({
+        entries: [],
+        skipped: [{ path: "packages", reason: "packages-dir-missing", kind: "unusable" }],
+        findings: [{ rule: "skipped:packages-dir-missing", severity: "warning", message: "m" }],
+      }),
+    );
+    expect(result.verdict).toBe("indeterminate");
+    if (result.verdict !== "indeterminate") throw new Error("unreachable");
+    expect(result.reason).toBe("incomplete-coverage");
+    expect(result.detail).toContain("packages-dir-missing");
+    expect(gateResultToExitCode(result)).toBe(2);
+  });
+
+  it("incomplete coverage outranks a real error finding — an unverifiable tree cannot vouch for its own findings", () => {
+    const result = foundationGateResult(
+      report({
+        skipped: [{ path: "packages/locked", reason: "unreadable-directory", kind: "unreadable" }],
+        findings: [{ rule: "internal-dep-missing", severity: "error", message: "m" }],
+      }),
+    );
+    expect(result.verdict).toBe("indeterminate");
+    expect(gateResultToExitCode(result)).toBe(2);
+  });
+
+  // The vacuous-pass half: read completely, nothing there, nothing checked.
+  it("a complete tree with zero packages is indeterminate, never a pass with no evidence", () => {
+    const result = foundationGateResult(report({ entries: [] }));
+    expect(result.verdict).toBe("indeterminate");
+    if (result.verdict !== "indeterminate") throw new Error("unreachable");
+    expect(result.reason).toBe("no-packages-catalogued");
+    expect(gateResultToExitCode(result)).toBe(2);
+  });
+
+  // The reusable meta-check from this module, pointed at a real gate rather
+  // than a reconstruction: hand foundry-check an input engineered to
+  // evaluate nothing, and assert it cannot come back "satisfied".
+  it("passes assertNeverVacuouslySatisfied for both no-evaluation inputs", () => {
+    expect(() => assertNeverVacuouslySatisfied(foundationGateResult, report({ entries: [] }))).not.toThrow();
+    expect(() =>
+      assertNeverVacuouslySatisfied(
+        foundationGateResult,
+        report({ entries: [], skipped: [{ path: "packages", reason: "packages-dir-missing", kind: "unusable" }] }),
+      ),
+    ).not.toThrow();
+  });
+
+  it("every reason foundry-check can emit is in its declared vocabulary — an undeclared one throws", () => {
+    expect(FOUNDRY_CHECK_REASONS.isDeclaredReason("incomplete-coverage")).toBe(true);
+    expect(FOUNDRY_CHECK_REASONS.isDeclaredReason("no-packages-catalogued")).toBe(true);
+    expect(FOUNDRY_CHECK_REASONS.isDeclaredReason("probably-fine")).toBe(false);
+    expect(() => FOUNDRY_CHECK_REASONS.indeterminate("probably-fine" as "incomplete-coverage")).toThrow(
+      /not a declared reason/,
+    );
+  });
+});
+
+describe("retrofit: evaluateRatchet carries the shared verdict and a per-cause reason", () => {
+  it("each status carries the matching verdict, so the two encodings cannot drift", () => {
+    expect(evaluateRatchet(5, 5).verdict).toBe("satisfied");
+    expect(evaluateRatchet(3, 5).verdict).toBe("satisfied"); // improved, still non-blocking
+    expect(evaluateRatchet(6, 5).verdict).toBe("violated");
+    expect(evaluateRatchet(-1, 5).verdict).toBe("indeterminate");
+  });
+
+  // Before the retrofit all three of these produced the same opaque
+  // "ratchet-invalid-input", so a caller could not tell "your counter is
+  // broken" from "your baseline file does not exist yet" without parsing
+  // finding rules — three different operator actions behind one reason.
+  it("names WHICH input could not be evaluated, rather than flattening three causes into one", () => {
+    const current = evaluateRatchet(-1, 5);
+    const missing = evaluateRatchet(1, undefined);
+    const garbage = evaluateRatchet(1, "not a number");
+
+    expect(current.status).toBe("invalid");
+    if (current.status !== "invalid") throw new Error("unreachable");
+    expect(current.reason).toBe("ratchet-current-invalid");
+
+    if (missing.status !== "invalid") throw new Error("unreachable");
+    expect(missing.reason).toBe("ratchet-baseline-missing");
+
+    if (garbage.status !== "invalid") throw new Error("unreachable");
+    expect(garbage.reason).toBe("ratchet-baseline-invalid");
+  });
+
+  it("gateResultFromRatchet preserves the specific reason instead of flattening it", () => {
+    const folded = gateResultFromRatchet(evaluateRatchet(1, undefined));
+    expect(folded.verdict).toBe("indeterminate");
+    if (folded.verdict !== "indeterminate") throw new Error("unreachable");
+    expect(folded.reason).toBe("ratchet-baseline-missing");
+    expect(gateResultToExitCode(folded)).toBe(2);
+  });
+
+  it("a hand-built ratchet-shaped value with no reason still folds to the generic one — back-compatible", () => {
+    const folded = gateResultFromRatchet({ status: "invalid", findings: ["something"] });
+    expect(folded.verdict).toBe("indeterminate");
+    if (folded.verdict !== "indeterminate") throw new Error("unreachable");
+    expect(folded.reason).toBe("ratchet-invalid-input");
+  });
+
+  it("a missing baseline is never treated as a baseline of zero — the pre-existing guarantee still holds", () => {
+    const result = evaluateRatchet(0, undefined);
+    expect(result.verdict).toBe("indeterminate");
+    expect(gateResultToExitCode(gateResultFromRatchet(result))).toBe(2);
   });
 });

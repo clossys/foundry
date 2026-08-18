@@ -13,6 +13,20 @@
 // failure, not a verdict — the same three-way split every gate in this repo
 // uses).
 //
+// THE devDependencies EXEMPTION (default mode only — see issue #269)
+// --------------------------------------------------------------------
+// A dependency-bump pull request (Dependabot or otherwise) that touches only
+// `devDependencies` in `package.json`, with nothing else in the tarball
+// changed, does not require a version bump: `devDependencies` shapes how the
+// package is built and tested, never what a consumer receives when they
+// install it. Any change to `dependencies`, `peerDependencies`,
+// `optionalDependencies`, `version`, `exports`, `files`, any other manifest
+// field, or any file besides `package.json` still requires one — see
+// `isDevDependenciesOnlyChange()` below for the exact rule. This is a
+// what-changed check, not a who-changed-it check: there is deliberately no
+// bot-author exemption, so a human PR touching only devDependencies is
+// exempt too, and a bot PR touching a runtime dependency is not.
+//
 // WHY THIS EXISTS
 // ---------------
 // scripts/select-publishable-packages.mjs is the thing that decides what the
@@ -170,6 +184,70 @@ function packedFilesAtCommit(gitRoot, relPkgDir, commit) {
   } finally {
     rmSync(workDir, { recursive: true, force: true });
   }
+}
+
+// Structural equality, key-order independent — used below to compare two
+// package.json manifests with `devDependencies` stripped out of both, so a
+// change that merely reordered an unrelated field (or was re-serialized with
+// different key order upstream) can never masquerade as "nothing else
+// changed." Plain values compare with `===` (which also covers `NaN !==
+// NaN`, matching JSON's own equality — `NaN` cannot occur in parsed JSON at
+// all, so that's moot, but it keeps this correct as a general-purpose
+// helper); objects/arrays compare recursively by key set.
+function deepEqual(a, b) {
+  if (a === b) return true;
+  if (typeof a !== "object" || typeof b !== "object" || a === null || b === null) return false;
+  if (Array.isArray(a) !== Array.isArray(b)) return false;
+  const aKeys = Object.keys(a);
+  const bKeys = Object.keys(b);
+  if (aKeys.length !== bKeys.length) return false;
+  return aKeys.every((k) => Object.prototype.hasOwnProperty.call(b, k) && deepEqual(a[k], b[k]));
+}
+
+// THE devDependencies EXEMPTION
+// ------------------------------
+// Operator decision (issue #269): a dependency bump PR the bot cannot itself
+// version-bump should not be permanently unmergeable. The narrowest correct
+// exemption is drawn at what actually ships: a `devDependencies` edit changes
+// how the package is built and tested, never what a consumer receives when
+// they install it, so it does not need a version bump. Every other kind of
+// manifest change — `dependencies`, `peerDependencies`,
+// `optionalDependencies`, `version`, `exports`, `files`, anything else in the
+// manifest, or any change to a file besides `package.json` — genuinely can
+// alter shipped content and must keep requiring one. This is deliberately
+// NOT an author check (no `dependabot[bot]` special case): the question is
+// what changed, never who changed it, matching the working rule this issue
+// records.
+//
+// Returns true only when `changed` names package.json and NOTHING else, and
+// the two manifests are structurally identical except for
+// `devDependencies` (which must itself actually differ — a package.json that
+// was merely re-saved by a formatter with no field changed at all is not
+// something this function is asked to classify; `changed` already being
+// non-empty means diffPackedFiles() saw different bytes, so in practice this
+// only returns false there for a change this function correctly refuses to
+// call devDependencies-only). Returns false for every other shape,
+// INCLUDING when the manifests fail to parse as JSON — a parse failure is
+// "cannot prove this is exempt," not "assume it is," so the caller falls
+// through to requiring a bump, the fail-closed side.
+function isDevDependenciesOnlyChange(changed, oldFiles, newFiles) {
+  if (changed.length !== 1 || changed[0] !== "modified: package.json") return false;
+
+  let oldManifest, newManifest;
+  try {
+    oldManifest = JSON.parse(oldFiles.get("package.json").toString("utf8"));
+    newManifest = JSON.parse(newFiles.get("package.json").toString("utf8"));
+  } catch {
+    return false;
+  }
+  if (typeof oldManifest !== "object" || oldManifest === null) return false;
+  if (typeof newManifest !== "object" || newManifest === null) return false;
+
+  const { devDependencies: oldDevDeps, ...oldRest } = oldManifest;
+  const { devDependencies: newDevDeps, ...newRest } = newManifest;
+  if (!deepEqual(oldRest, newRest)) return false;
+
+  return !deepEqual(oldDevDeps ?? {}, newDevDeps ?? {});
 }
 
 // Set-compares two packedFiles() maps (path -> file content Buffer) and
@@ -337,10 +415,10 @@ function evaluatePackageDiff(pkgDir, requestedBase) {
     };
   }
 
-  let changed;
+  let changed, oldFiles, newFiles;
   try {
-    const oldFiles = packedFilesAtCommit(gitRoot, relPkgDir, mergeBase);
-    const newFiles = packedFiles(absPkgDir);
+    oldFiles = packedFilesAtCommit(gitRoot, relPkgDir, mergeBase);
+    newFiles = packedFiles(absPkgDir);
     changed = diffPackedFiles(oldFiles, newFiles);
   } catch (error) {
     return { package: label, status: "error", detail: error.message };
@@ -351,6 +429,16 @@ function evaluatePackageDiff(pkgDir, requestedBase) {
       package: label,
       status: "pass",
       detail: `no packed-file changes since merge-base ${mergeBase.slice(0, 12)} (base ${baseRef}, version ${manifest.version})`,
+    };
+  }
+  if (isDevDependenciesOnlyChange(changed, oldFiles, newFiles)) {
+    return {
+      package: label,
+      status: "pass",
+      detail:
+        `only devDependencies changed in package.json since merge-base ${mergeBase.slice(0, 12)} (base ${baseRef}, ` +
+        `version ${manifest.version}) — devDependencies do not affect what consumers receive when they install this ` +
+        "package, so this is exempt from the version-bump requirement (see issue #269)",
     };
   }
   return {
