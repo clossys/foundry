@@ -71,24 +71,35 @@ jobs:
       #
       # The fix pins execution, not access: fetch the SAME scripts from this
       # PR's merge base (never this PR's own copy, regardless of who opened
-      # it) into a directory outside the tree `check-public-safety.mjs`
-      # itself scans, and run those against this checkout as data. A PR
-      # proposes arbitrary content; only base-ref code ever runs while the
-      # secret is present. The one cost: a PR that fixes a bug in one of
-      # these scripts does not get to exercise its own fix in its own CI run
-      # — the same trade every base-ref-pinned credentialed step makes.
+      # it) and run those against this checkout as data. A PR proposes
+      # arbitrary content; only base-ref code ever runs while the secret is
+      # present. The one cost: a PR that fixes a bug in one of these scripts
+      # does not get to exercise its own fix in its own CI run — the same
+      # trade every base-ref-pinned credentialed step makes.
+      #
+      # actions/checkout refuses a destination outside $GITHUB_WORKSPACE (a
+      # deliberate guard of its own), so this lands at .trusted-scripts/
+      # INSIDE the checkout instead of beside it. That would make it part of
+      # what check-public-safety.mjs (and check-foreign-references.mjs,
+      # which shares its exact gitignore-aware walk) scans next — except
+      # .gitignore lists it, and both scripts already skip anything
+      # `git ls-files --others --ignored` reports, the same mechanism that
+      # keeps a local node_modules/ or dist/ out of every content scan. A
+      # gitignored directory is by definition never published, so a PR
+      # cannot smuggle a scanned finding into `.trusted-scripts/` to dodge
+      # the gate — the content in it is base-ref content regardless.
       - name: Checkout trusted scripts (base ref only, never this PR's own copy)
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           ref: ${{ github.event.pull_request.base.sha || github.sha }}
-          path: ${{ runner.temp }}/trusted
+          path: .trusted-scripts
           sparse-checkout: |
             scripts
             package-scope.json
           sparse-checkout-cone-mode: false
 
       - name: check-public-safety
-        run: node "$RUNNER_TEMP/trusted/scripts/check-public-safety.mjs" . --allow-changelogs
+        run: node "$GITHUB_WORKSPACE/.trusted-scripts/scripts/check-public-safety.mjs" . --allow-changelogs
 
       # On anything that is not a fork pull request the denylist must be
       # present. This turns a missing or misnamed secret into a visible
@@ -101,7 +112,7 @@ jobs:
       # rejected).
       - name: Require FULL mode on trunk and internal PRs
         if: github.event.pull_request.head.repo.fork != true
-        run: node "$RUNNER_TEMP/trusted/scripts/check-public-safety.mjs" . --allow-changelogs --require-denylist
+        run: node "$GITHUB_WORKSPACE/.trusted-scripts/scripts/check-public-safety.mjs" . --allow-changelogs --require-denylist
 
       # A commit message is exactly as public and exactly as permanent as any
       # file it changes — editing a later commit does not remove it from
@@ -136,9 +147,9 @@ jobs:
             extra=()
           fi
           if [ "$IS_FORK" = "true" ]; then
-            node "$RUNNER_TEMP/trusted/scripts/check-commit-messages.mjs" "$range" "${extra[@]}"
+            node "$GITHUB_WORKSPACE/.trusted-scripts/scripts/check-commit-messages.mjs" "$range" "${extra[@]}"
           else
-            node "$RUNNER_TEMP/trusted/scripts/check-commit-messages.mjs" "$range" "${extra[@]}" --require-denylist
+            node "$GITHUB_WORKSPACE/.trusted-scripts/scripts/check-commit-messages.mjs" "$range" "${extra[@]}" --require-denylist
           fi
 
       # The inverse of the denylist scan above, and the reason it lives in this
@@ -163,7 +174,7 @@ jobs:
       # explicitly (see the script's own header on why that flag exists).
       - name: denylist quality
         if: github.event.pull_request.head.repo.fork != true
-        run: node "$RUNNER_TEMP/trusted/scripts/check-denylist-quality.mjs" --scope-config "$GITHUB_WORKSPACE/package-scope.json"
+        run: node "$GITHUB_WORKSPACE/.trusted-scripts/scripts/check-denylist-quality.mjs" --scope-config "$GITHUB_WORKSPACE/package-scope.json"
 
       - name: Redact denylist
         if: always()
@@ -455,18 +466,24 @@ jobs:
             echo "mode=PARTIAL" >> "$GITHUB_OUTPUT"
           fi
 
-      # Same reasoning and shape as the `safety` job's identical step: the
-      # secret is now present in this job's env, so the script that consumes
-      # it must be base-ref content, never this PR's own copy — see that
-      # job's comment for the full argument. check-artifact-safety.mjs
-      # itself shells out to its own sibling check-public-safety.mjs by
-      # relative path, so pointing at the trusted checkout here carries that
-      # sibling call along with it; no separate wiring needed.
+      # Same reasoning and shape as the `safety` job's identical step (see
+      # its comment for the full argument, including why this lands at
+      # .trusted-scripts/ inside the checkout rather than beside it):
+      # the secret is now present in this job's env, so the script that
+      # consumes it must be base-ref content, never this PR's own copy.
+      # check-artifact-safety.mjs itself shells out to its own sibling
+      # check-public-safety.mjs by relative path, so pointing at the
+      # trusted checkout here carries that sibling call along with it — no
+      # separate wiring needed. Unlike the `safety` job, nothing here scans
+      # this checkout's own tree for identity content (check-artifact-safety
+      # scans an extracted tarball in a temp directory instead), so
+      # .trusted-scripts/ never needs excluding from anything in THIS job —
+      # it is added to .gitignore purely for the `safety` job's sake.
       - name: Checkout trusted scripts (base ref only, never this PR's own copy)
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           ref: ${{ github.event.pull_request.base.sha || github.sha }}
-          path: ${{ runner.temp }}/trusted
+          path: .trusted-scripts
           sparse-checkout: |
             scripts
             package-scope.json
@@ -486,9 +503,9 @@ jobs:
           for pkg in "${pkgs[@]}"; do
             pkg="${pkg%/}"
             if [ "${{ github.event.pull_request.head.repo.fork }}" = "true" ]; then
-              node "$RUNNER_TEMP/trusted/scripts/check-artifact-safety.mjs" "$pkg"
+              node "$GITHUB_WORKSPACE/.trusted-scripts/scripts/check-artifact-safety.mjs" "$pkg"
             else
-              node "$RUNNER_TEMP/trusted/scripts/check-artifact-safety.mjs" "$pkg" --require-denylist
+              node "$GITHUB_WORKSPACE/.trusted-scripts/scripts/check-artifact-safety.mjs" "$pkg" --require-denylist
             fi
           done
 

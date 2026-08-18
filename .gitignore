@@ -20,3 +20,12 @@ coverage/
 # The safety gate refuses a committed .claude/ regardless of this entry; this
 # just keeps it from being staged by an unscoped `git add` in the first place.
 .claude/
+
+# CI's own base-ref-pinned copy of scripts/ + package-scope.json, checked out
+# by .github/workflows/ci.yml so a credentialed step never runs a pull
+# request's own copy of a script (see that file's own comment for the full
+# argument). Being gitignored is load-bearing here, not incidental: it is
+# what keeps check-public-safety.mjs and check-foreign-references.mjs (both
+# skip anything `git ls-files --others --ignored` reports) from re-scanning
+# this directory as if it were part of the tree a PR proposes.
+.trusted-scripts/
