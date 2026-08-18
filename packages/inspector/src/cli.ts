@@ -1,5 +1,5 @@
 /**
- * `verify-standards` — the executable a consuming repository's own thin
+ * `inspector` — the executable a consuming repository's own thin
  * workflow invokes.
  *
  * Presentation and argument handling only. Every decision is made by
@@ -42,7 +42,7 @@ import { MINIMUM_SAFE_VERSION } from "./version.js";
 import { STANDARDS_CHECKS } from "./types.js";
 import type { StandardsCheckName } from "./types.js";
 
-export const USAGE = `Usage: verify-standards --inputs <path> [options]
+export const USAGE = `Usage: inspector --inputs <path> [options]
 
   --inputs <path>            Required. A JSON document (schemaVersion ${VERIFY_STANDARDS_INPUTS_VERSION}) carrying the
                              observations each check evaluates. The calling workflow assembles it;
@@ -190,7 +190,7 @@ function rowDetail(report: VerifyStandardsReport["rows"][number]): string {
 
 /** Renders the report as a table a CI job summary can display verbatim. */
 export function renderReport(report: VerifyStandardsReport): string {
-  const lines = ["## verify-standards", "", "| row | verdict | detail |", "| --- | --- | --- |"];
+  const lines = ["## inspector", "", "| row | verdict | detail |", "| --- | --- | --- |"];
   for (const row of report.rows) {
     lines.push(`| ${cell(row.row)} | ${cell(verdictLabel(row))} | ${cell(rowDetail(row))} |`);
   }
@@ -215,7 +215,7 @@ export function main(argv: readonly string[], port: CliPort): 0 | 1 | 2 {
   try {
     args = parseArgs(argv);
   } catch (error) {
-    port.writeErr(`verify-standards: ${error instanceof Error ? error.message : String(error)}\n\n${USAGE}`);
+    port.writeErr(`inspector: ${error instanceof Error ? error.message : String(error)}\n\n${USAGE}`);
     return 2;
   }
 
@@ -225,7 +225,7 @@ export function main(argv: readonly string[], port: CliPort): 0 | 1 | 2 {
   }
 
   if (args.inputsPath === undefined) {
-    port.writeErr(`verify-standards: --inputs is required\n\n${USAGE}`);
+    port.writeErr(`inspector: --inputs is required\n\n${USAGE}`);
     return 2;
   }
 
@@ -236,7 +236,7 @@ export function main(argv: readonly string[], port: CliPort): 0 | 1 | 2 {
     inputs = JSON.parse(port.readTextFile(args.inputsPath)) as VerifyStandardsInputs;
   } catch (error) {
     port.writeErr(
-      `verify-standards: could not read the inputs document at ${args.inputsPath}: ` +
+      `inspector: could not read the inputs document at ${args.inputsPath}: ` +
         `${error instanceof Error ? error.message : String(error)}\n`,
     );
     return 2;
@@ -263,7 +263,7 @@ export function main(argv: readonly string[], port: CliPort): 0 | 1 | 2 {
     });
   } catch (error) {
     port.writeErr(
-      `verify-standards: the run did not complete, so nothing about this repository has been established: ` +
+      `inspector: the run did not complete, so nothing about this repository has been established: ` +
         `${error instanceof Error ? error.message : String(error)}\n`,
     );
     return 2;
