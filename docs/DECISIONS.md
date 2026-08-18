@@ -237,6 +237,74 @@ migration and later lifecycle evidence.
 
 ---
 
+## 9. Recutting the workspace surface into six job-shaped packages
+
+**Status:** the supported workspace-facing surface is six packages, each named
+for the human job it would otherwise be: `controller`, `inspector`, `builder`,
+`locksmith`, `integrator`, and `observer`. The product-facing tier — `auth`,
+`comms`, `consent`, `copy`, `domain`, `ledger`, `strategy`, `surface`, `ui` —
+is unchanged by this decision.
+
+This supersedes decision 8 in one direction only: `governance` remains the
+package-process authority, but it is renamed and merged into `controller`, and
+the five compatibility packages that decision preserved are retired rather than
+carried forward again.
+
+### Why a job, and not a thing
+
+A package named for a thing has no natural metric, so nothing ever says whether
+it is working. A package named for a job has one by construction. Each of the
+six states its metric in its own README, and each judges in at least three
+states so that "could not evaluate" can never be reported as "fine".
+
+### The three failures this cut is derived from
+
+Each is measurable in this repository's own history, not argued from taste.
+
+**One job with no owner.** Secret handling was split across three packages —
+resolution contracts, scanning, and environment state — with the reconciling
+half belonging to nobody. Nothing in the catalogue rotated a key. `locksmith`
+exists because a five-package cut was tested and would have split key custody
+back across integration and environment state, reproducing this deliberately.
+
+**One job with several names.** `catalog`, `gates`, `release`, `repository` and
+`review` are five published names for one concern, all five deprecated shims
+re-exporting subpaths of a sixth, all five with zero consumers, and nothing in
+the catalogue ever reported the situation. Decision 8 created them for a real
+reason — installed-consumer compatibility during a rename — and that reason
+expired without anything noticing.
+
+**A measurer that is also the measured.** `observer` is deliberately separate
+from `inspector` and must never import it. Gate efficacy computed by the gate
+is the system grading its own homework, which is the failure that produced a
+gate printing an incomplete verdict and exiting `0`.
+
+### On retiring the compatibility packages
+
+The five names must not be unpublished or reused. Their published versions stay
+resolvable, so a consumer pinned to one keeps working; they are deprecated with
+a replacement pointer rather than deleted from the registry.
+
+The same applies to the names this recut renames — `secrets`, `provisioning`,
+`deployment`, `verify-standards`, `secret-scan`, `governance`, `conventions`
+and `policy`. Each keeps its published versions and gains a lifecycle entry
+naming its replacement. A rename that strands an installed consumer with no
+recorded path forward is the same defect as a fix that cannot travel.
+
+### What is deliberately recorded as unresolved
+
+`controller` is the largest merge here and the likeliest to need re-splitting:
+it unifies two mature packages whose metrics genuinely differ — whether a
+verdict is well-formed, versus whether a name conforms — on the claim that both
+are rules. The seam is recorded now so that a future split is a decision rather
+than a discovery.
+
+`observer` collides with an established pattern name in this ecosystem. The
+collision was raised, weighed and accepted, because within this catalogue the
+register is human jobs and every sibling name reads that way.
+
+---
+
 ## Settled
 
 **Author attribution — keep a real name in the `"author"` field.** A real
