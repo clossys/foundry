@@ -1,0 +1,21 @@
+{
+  "$comment": [
+    "This repository's own values for the task-record check in",
+    "@vespeneventures/verify-standards. The package holds the grammar and the",
+    "decisions; every value below is a choice this repository makes and can",
+    "change without waiting for a package release.",
+    "",
+    "recordLabels are the field labels this repository's pull requests actually",
+    "use to introduce a work-item reference, read off merged pull requests",
+    "rather than guessed. A label listed that nobody writes finds nothing; a",
+    "label omitted that people do write reports a missing record that is really",
+    "present. This is the one part of this file worth re-reading whenever the",
+    "pull-request convention changes."
+  ],
+  "applicableEventKinds": ["pull_request"],
+  "exemptLabels": [],
+  "exemptAuthorSuffixes": ["[bot]"],
+  "exemptHeadRefPrefixes": [],
+  "recordLabels": ["Closes", "Refs", "Work item"],
+  "requireResolvedItem": true
+}
