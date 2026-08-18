@@ -11,7 +11,11 @@
  *     machine, and for checking afterwards whether the machine still agrees
  *     with it. Planning is pure; verification reads the machine rather than
  *     the manifest, because a manifest always says the installation is
- *     correct — that is what a manifest is.
+ *     correct — that is what a manifest is. `composeInstallationPlans` and
+ *     its `applyComposedInstallation`/`verifyComposedInstallation` companions
+ *     (#240) build one explicit, provenance-tagged plan from several
+ *     independently-owned sources' own plans, without changing anything a
+ *     single-source caller of the engine above already relies on.
  *   - `toolchain`: the runtime pin, the package-manager pin, and the build
  *     order, expressed and reconciled the same way.
  *   - `liveStateSurface`: the shared contract every subject above (and the
@@ -67,6 +71,22 @@ export { PRIVATE_DIRECTORY_MODE, applyInstallation } from "./apply.js";
 export { verifyInstallation } from "./verify.js";
 
 export { createNodeFileSystem } from "./node-fs.js";
+
+// -- multi-source composition (#240) -----------------------------------------
+
+export {
+  DestinationCollisionError,
+  applyComposedInstallation,
+  composeInstallationPlans,
+  verifyComposedInstallation,
+} from "./composition.js";
+export type {
+  ComposedFinding,
+  ComposedPlan,
+  ComposedPlanOperation,
+  DestinationCollision,
+  NamedSourcePlan,
+} from "./composition.js";
 
 // -- liveStateSurface (#255) -------------------------------------------------
 
