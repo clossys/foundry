@@ -115,7 +115,7 @@ jobs:
             const declaration = {
               runtime: { name: "node", version: "20.11.1" },
               packageManager: { name: "npm", version: "10.5.0" },
-              buildOrder: { packages: ["policy", "governance", "builder"] },
+              buildOrder: { packages: ["core", "adapters", "app"] },
             };
             const observation = attempted
               ? {

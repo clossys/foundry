@@ -183,7 +183,7 @@ import { reconcileToolchain, validateToolchainDeclaration } from "@vespeneventur
 const declaration = {
   runtime: { name: "node", version: "20.11.1" },
   packageManager: { name: "npm", version: "10.5.0" },
-  buildOrder: { packages: ["policy", "governance", "builder"] },
+  buildOrder: { packages: ["core", "adapters", "app"] },
 };
 
 if (validateToolchainDeclaration(declaration).length > 0) throw new Error("Invalid toolchain declaration");
@@ -308,7 +308,7 @@ separate package subpaths, documented in their own sections above.
 
 ## Requirements
 
-Node.js >= 20, ESM. Runtime dependency: `@vespeneventures/controller` (`~0.15.0`), for the `GateResult` ternary the `liveStateSurface` and CI-mechanics modules build on rather than reinvent.
+Node.js >= 20, ESM. Runtime dependency: `@vespeneventures/controller` (`~0.1.0`), for the `GateResult` ternary the `liveStateSurface` and CI-mechanics modules build on rather than reinvent.
 
 ## Licence
 
