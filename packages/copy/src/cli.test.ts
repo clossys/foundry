@@ -90,6 +90,28 @@ describe("main — the third state: could not run", () => {
     writeFileSync(join(scanDir, "broken.ts"), 'const broken = "never closed\nconst x = 1;\n');
     expect(main([recordFile, scanDir])).toBe(2);
   });
+
+  // REGRESSION (#256). The check above only ever fired when EVERY file
+  // failed, because it keys off `filesScanned === 0`. A single unparseable
+  // file alongside clean ones left `filesScanned > 0` and dropped out of
+  // the exit-code decision entirely: the run reported on what it could read
+  // and returned 0, as though the file it never opened had been checked and
+  // found clean. The unparseable file could contain any amount of
+  // unregistered copy; nobody knows, which is the definition of
+  // indeterminate.
+  it("returns 2 when SOME matched files fail to parse, even though others scanned cleanly", () => {
+    const recordFile = writeRecord(validRecord);
+    writeFileSync(join(scanDir, "about.ts"), 'const rangeSummary = "No results";\n');
+    writeFileSync(join(scanDir, "broken.ts"), 'const broken = "never closed\nconst x = 1;\n');
+    expect(main([recordFile, scanDir])).toBe(2);
+  });
+
+  it("a partial parse failure outranks a real finding — 2, not the 1 the readable file alone would give", () => {
+    const recordFile = writeRecord(validRecord);
+    writeFileSync(join(scanDir, "about.ts"), 'const headline = "Totally unregistered copy";\n');
+    writeFileSync(join(scanDir, "broken.ts"), 'const broken = "never closed\nconst x = 1;\n');
+    expect(main([recordFile, scanDir])).toBe(2);
+  });
 });
 
 describe("main — real runs", () => {

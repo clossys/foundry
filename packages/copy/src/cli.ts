@@ -21,8 +21,10 @@
  *       or a citation to a copy id that does not exist).
  *   2 — could not run: bad input, the copy record missing/unreadable/
  *       invalid, the scan directory does not exist, the walk matched zero
- *       files, every matched file failed to tokenize (so, despite files
- *       matching, zero were actually scanned), an unreadable directory
+ *       files, ANY matched file failed to tokenize (see `scan.parseFailures`
+ *       — a file that could not be parsed was never examined for copy, and
+ *       one such file among a hundred clean ones is still incomplete
+ *       coverage, not a clean scan), an unreadable directory
  *       during the walk, an unexpected exception, a malformed
  *       `ScanOptions.pathExclusions` entry (see below), OR — as of the JSX
  *       text-node scanning added for issue #37 — at least one
@@ -283,6 +285,32 @@ export function main(argv: string[]): number {
         : `\nNo files matched under "${scanDir}" — nothing was scanned.`,
     );
     console.error("Refusing to report a pass for a scan that checked nothing.");
+    return 2;
+  }
+
+  // A file that failed to parse was matched, was in scope, and was never
+  // examined for copy — and the check above only catches the case where
+  // EVERY file failed. One parse failure among a hundred clean files used
+  // to land here with `filesScanned > 0` and be dropped from the exit-code
+  // decision entirely: the run reported on the files it could read and
+  // exited 0 or 1 as if the unreadable one had been checked and found
+  // clean. That is the same collapse `unchecked` is handled below to
+  // prevent, only coarser — a whole file never examined rather than a
+  // construct within one — so it gets the same answer, for the reason
+  // this file's own header already gave for `unchecked`: "a gate that
+  // reports 'clean' after failing to run, OR after only partially
+  // running, is worse than no gate at all."
+  //
+  // Every parse failure was already printed in full by
+  // `printScanAccounting` above, and every finding from the files that DID
+  // parse is still printed below — this refuses to let the run as a whole
+  // read as fully accounted-for, it does not hide anything that was
+  // learned.
+  if (scan.parseFailures.length > 0) {
+    console.error(
+      `\n${scan.parseFailures.length} of ${scan.parseFailures.length + scan.filesScanned} matched file(s) under "${scanDir}" could not be parsed and were never examined for copy.`,
+    );
+    console.error("Refusing to report a pass for a scan whose coverage is incomplete.");
     return 2;
   }
 

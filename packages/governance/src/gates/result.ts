@@ -30,13 +30,36 @@
  * repository, is exactly the shape #256 describes at cross-repository
  * scale: "nine repository-local fixes do not stop a tenth... gate result
  * grammar is this package's concern." This module is that grammar, named
- * once. It does not replace `foundry-check`'s exit codes, `evaluateRatchet`'s
- * `status`, or any `unchecked` list — those all still work exactly as
- * before, and retrofitting each of them onto this shared type is
- * deliberately left for its own follow-up (see this package's CHANGELOG).
- * What this module adds is: a name for the shape everything above already
- * independently converged on, so the NEXT gate — in this repository or a
- * consumer's — reuses it instead of reinventing a fifth time.
+ * once, so the NEXT gate — in this repository or a consumer's — reuses it
+ * instead of reinventing a fifth time.
+ *
+ * RETROFIT STATUS. This module originally shipped standalone, with the
+ * retrofit of each existing gate onto it deferred to its own follow-up.
+ * That follow-up has now landed for the two gates inside this package:
+ *
+ *   - `foundry-check` (`./cli.ts`) no longer picks an exit code by hand.
+ *     `foundationGateResult` builds a real `GateResult` and
+ *     `gateResultToExitCode` projects it, which is also what fixed the
+ *     defect that retrofit exposed: incomplete coverage used to print a
+ *     COVERAGE INCOMPLETE banner and then exit `0`.
+ *   - `evaluateRatchet` (`./ratchet.ts`) now carries `verdict` on every
+ *     member of `RatchetResult`, and its `invalid` member carries a
+ *     machine-readable `reason` naming WHICH input could not be evaluated
+ *     — which `gateResultFromRatchet` below now preserves rather than
+ *     flattening into one opaque string.
+ *
+ * Still outstanding, and deliberately NOT done here: the `unchecked` lists
+ * in `@vespeneventures/ui` and `@vespeneventures/copy`. Those packages
+ * declare zero dependencies, and this module lives in a package that sits
+ * far above them in the build order — converging them onto this type at
+ * the TYPE level would invert the dependency graph, which is an
+ * architectural decision for an owner rather than a mechanical retrofit.
+ * Both already implement the ternary correctly at their own exit-code
+ * boundary (a non-empty `unchecked` list exits `2`, never `0`), so what is
+ * missing is shared vocabulary, not correct behaviour. `@vespeneventures/
+ * strategy` was named alongside them in this comment's first version as
+ * having a third `unchecked` list; it does not, and never did — see the
+ * package's CHANGELOG.
  *
  * Zero I/O, matching this package's own convention throughout `./gates`:
  * every function here is a pure function of already-collected data.
@@ -368,7 +391,31 @@ export function assertNeverVacuouslySatisfied<TInput, TFinding, TReason extends 
 interface RatchetLikeResult<TFinding> {
   readonly status: "clean" | "regression" | "invalid";
   readonly findings: readonly TFinding[];
+  /**
+   * Optional, because this shape is structural and predates `RatchetResult`
+   * carrying one. When present it is used verbatim, so an `invalid` result
+   * that already knows WHICH input it could not evaluate keeps that
+   * distinction instead of having it flattened away.
+   */
+  readonly reason?: RatchetIndeterminateReason;
 }
+
+/**
+ * The declared indeterminate vocabulary for `evaluateRatchet`. Lives here
+ * rather than in `./ratchet.ts` so `gateResultFromRatchet` can name its own
+ * return type without importing from the module it is deliberately
+ * decoupled from; `./ratchet.ts` imports and re-exports it, so a caller
+ * sees it from either side.
+ *
+ * `"ratchet-invalid-input"` is retained as the generic fallback the first
+ * version of this function always returned — kept so an older structural
+ * caller that supplies no `reason` gets exactly the value it used to.
+ */
+export type RatchetIndeterminateReason =
+  | "ratchet-invalid-input"
+  | "ratchet-current-invalid"
+  | "ratchet-baseline-missing"
+  | "ratchet-baseline-invalid";
 
 /**
  * Proof, not assertion, that #256's ternary already existed at
@@ -377,15 +424,17 @@ interface RatchetLikeResult<TFinding> {
  * anything new. `evaluateRatchet`'s own doc comment already states the
  * mapping this function encodes: `"clean" -> 0`, `"regression" -> 1`,
  * `"invalid" -> 2`. This function makes that mapping real, reusable code
- * instead of parallel prose, without changing `evaluateRatchet`'s own
- * return type — retrofitting every existing gate in this package onto
- * `GateResult` directly is a separate, larger, and potentially
- * breaking change (see this package's `CHANGELOG.md`), deliberately left
- * out of this addition.
+ * instead of parallel prose.
+ *
+ * `RatchetResult` now carries `verdict` itself, so this function is no
+ * longer the only way to read a ratchet result as a ternary. It stays
+ * because it is still the only way to get a full `GateResult` — one that
+ * carries the findings and the named reason in the shared shape — out of
+ * any ratchet-shaped value, including one a caller built by hand.
  */
 export function gateResultFromRatchet<TFinding>(
   result: RatchetLikeResult<TFinding>,
-): GateResult<TFinding, "ratchet-invalid-input"> {
+): GateResult<TFinding, RatchetIndeterminateReason> {
   switch (result.status) {
     case "clean":
       // A clean ratchet result is satisfied by definition of having run —
@@ -396,7 +445,10 @@ export function gateResultFromRatchet<TFinding>(
     case "regression":
       return gateViolated(result.findings);
     case "invalid":
-      return gateIndeterminate("ratchet-invalid-input", "evaluateRatchet could not evaluate its current/baseline input");
+      return gateIndeterminate(
+        result.reason ?? "ratchet-invalid-input",
+        "evaluateRatchet could not evaluate its current/baseline input",
+      );
     default: {
       const unhandled: never = result.status;
       throw new Error(`gateResultFromRatchet: unknown ratchet status ${JSON.stringify(unhandled)}`);
