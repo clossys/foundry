@@ -166,25 +166,80 @@ function escapeLiteral(value: string): string {
 }
 
 /**
- * Pulls the first work-item reference out of a change description.
+ * Every token that follows a declared label anywhere in the description, in
+ * the order they appear, label by label.
+ *
+ * Deliberately every occurrence rather than the first: the labels are
+ * matched case-insensitively (a description writes `Work item:` and
+ * `work ITEM:` interchangeably and both are the same record), and a
+ * case-insensitive literal like `Work item` also matches it inside ordinary
+ * prose. "There is no work item at all here" contains the label, and the
+ * token after it is `at`. See `extractTaskReferenceText` for what is done
+ * about that.
+ */
+function extractTaskReferenceCandidates(description: string, recordLabels: readonly string[]): readonly string[] {
+  const candidates: string[] = [];
+  for (const label of recordLabels) {
+    const pattern = new RegExp(`\\*{0,2}${escapeLiteral(label)}:?\\*{0,2}\\s*(\\S+)`, "gi");
+    for (const match of description.matchAll(pattern)) {
+      const captured = match[1];
+      if (captured === undefined) continue;
+      const trimmed = captured.replace(/[.,;:)\]]+$/, "");
+      if (trimmed !== "") candidates.push(trimmed);
+    }
+  }
+  return candidates;
+}
+
+/**
+ * A stand-in scope used only to ask whether a candidate token has the SHAPE
+ * of a reference. `parseTaskReference` rejects an empty default scope, and a
+ * bare `#12` needs some scope to resolve against, so the selection below
+ * needs a non-empty one — but the value never escapes this module. The real
+ * scope is applied by the caller when the chosen candidate is parsed for
+ * real.
+ */
+const SHAPE_PROBE_SCOPE = "scope-probe/scope-probe";
+
+/**
+ * Pulls the work-item reference out of a change description.
  *
  * Accepts `Work item: #12`, `**Work item:** #12`, and `Work item #12`, for
  * whichever labels the policy declared. Trailing sentence punctuation is
  * stripped, because a reference at the end of a sentence is still a
  * reference and failing it teaches nothing.
+ *
+ * WHY THIS PREFERS A PARSEABLE CANDIDATE INSTEAD OF TAKING THE FIRST ONE
+ * ----------------------------------------------------------------------
+ * The earlier arrangement returned the first token after the first declared
+ * label that matched anywhere, and stopped. Against real descriptions that
+ * produced wrong verdicts two ways, both observed:
+ *
+ * 1. Prose won over the record. `Work item` is matched case-insensitively,
+ *    so the sentence "there is no work item at all" matched, `at` was
+ *    returned, and the actual `Work item: #12` further down the description
+ *    was never reached — reported as an unparseable reference rather than
+ *    the resolved one sitting in the same text.
+ * 2. Only the FIRST configured label was ever consulted. A repository
+ *    declaring `["Work item", "Issue"]` and writing `Issue: #12` got the
+ *    same failure whenever the word "work item" appeared in prose above it.
+ *
+ * So every label and every occurrence is collected, and the first candidate
+ * that is actually reference-SHAPED wins. When none is (the description
+ * really does contain only prose), the first candidate is still returned, so
+ * a genuinely malformed reference is still reported as unparseable rather
+ * than being quietly downgraded to "no reference given" — those are two
+ * different findings about the change and this must not collapse them.
+ *
+ * This can never manufacture a pass: every candidate it can return came out
+ * of the description, and whichever one it returns is parsed and then looked
+ * up on its own merits by the caller.
  */
 export function extractTaskReferenceText(description: string, recordLabels: readonly string[]): string | undefined {
   if (typeof description !== "string") return undefined;
-  for (const label of recordLabels) {
-    const pattern = new RegExp(`\\*{0,2}${escapeLiteral(label)}:?\\*{0,2}\\s*(\\S+)`, "i");
-    const match = pattern.exec(description);
-    const captured = match?.[1];
-    if (captured !== undefined) {
-      const trimmed = captured.replace(/[.,;:)\]]+$/, "");
-      if (trimmed !== "") return trimmed;
-    }
-  }
-  return undefined;
+  const candidates = extractTaskReferenceCandidates(description, recordLabels);
+  const shaped = candidates.find((candidate) => parseTaskReference(candidate, SHAPE_PROBE_SCOPE) !== undefined);
+  return shaped ?? candidates[0];
 }
 
 /**
@@ -196,10 +251,25 @@ export function extractTaskReferenceText(description: string, recordLabels: read
  * does not pin a host: this package endorses no tracker vendor, and a host
  * literal here would be exactly the vendor-shaped knowledge the sibling
  * packages' charters refuse.
+ *
+ * Backticks around the reference are stripped first. A description is
+ * Markdown, and writing a reference in a code span — `` `Work item: #12` ``
+ * or `` Work item: `#12` `` — is ordinary, correct authoring, not a mistake
+ * to be failed. The extraction step above splits on whitespace, so a code
+ * span leaves a delimiter attached to the token (a trailing one when the
+ * whole line is spanned, both when only the reference is), and the anchored
+ * pattern below then rejects a reference that is plainly present. That is a
+ * wrong verdict about a real change, so the delimiters come off here rather
+ * than the pattern learning about Markdown. `raw` keeps the text exactly as
+ * it was written, because that is what a report shows a human.
  */
 export function parseTaskReference(raw: string, defaultScope: string): ParsedTaskReference | undefined {
+  if (typeof raw !== "string") return undefined;
+  const unspanned = raw.replace(/^`+/, "").replace(/`+$/, "");
   const match =
-    /^(?:https?:\/\/[^/\s]+\/([^/\s]+)\/([^/\s]+)\/issues\/(\d+)|([^/#\s]+)\/([^/#\s]+)#(\d+)|#?(\d+))$/.exec(raw);
+    /^(?:https?:\/\/[^/\s]+\/([^/\s]+)\/([^/\s]+)\/issues\/(\d+)|([^/#\s]+)\/([^/#\s]+)#(\d+)|#?(\d+))$/.exec(
+      unspanned,
+    );
   if (!match) return undefined;
   const [, urlOwner, urlName, urlNumber, shortOwner, shortName, shortNumber, bareNumber] = match;
   const scope =
