@@ -19,18 +19,22 @@ const SCOPE = JSON.parse(readFileSync(join(repoRoot, "package-scope.json"), "utf
 
 describe("self-hosting: this package's own real dependency graph validates clean in the repository catalog", () => {
   it("resolves repoRoot to a directory that actually contains this package", () => {
-    expect(existsSync(join(repoRoot, "packages", "release", "package.json"))).toBe(true);
+    // `release` is a subpath of `@vespeneventures/controller` now (issue
+    // #282 merged the standalone `release` package into it with zero
+    // consumers left behind), so the on-disk package that must exist is
+    // `controller`, not a `release` package directory.
+    expect(existsSync(join(repoRoot, "packages", "controller", "package.json"))).toBe(true);
   });
 
   it("is discovered as a catalog entry", () => {
     const report = runFoundationCheck(repoRoot, { scope: SCOPE });
     const names = report.catalog.entries.map((entry) => entry.name);
-    expect(names).toContain("@vespeneventures/release");
+    expect(names).toContain("@vespeneventures/controller");
   });
 
-  it("produces zero error-severity findings for @vespeneventures/release itself", () => {
+  it("produces zero error-severity findings for @vespeneventures/controller itself", () => {
     const report = runFoundationCheck(repoRoot, { scope: SCOPE });
-    const ownFindings = report.findings.filter((f) => f.package === "@vespeneventures/release");
+    const ownFindings = report.findings.filter((f) => f.package === "@vespeneventures/controller");
     const ownErrors = ownFindings.filter((f) => f.severity === "error");
 
     expect(ownErrors).toEqual([]);

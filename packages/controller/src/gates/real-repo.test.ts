@@ -26,7 +26,11 @@ describe("integration: real packages/ directory", () => {
   it("resolves repoRoot to a directory that actually contains this package", () => {
     expect(existsSync(join(repoRoot, "packages"))).toBe(true);
     expect(existsSync(join(repoRoot, "package.json"))).toBe(true);
-    expect(existsSync(join(repoRoot, "packages", "gates", "package.json"))).toBe(true);
+    // `gates` is a subpath of `@vespeneventures/controller` now (issue
+    // #282 merged the standalone `gates` package into it with zero
+    // consumers left behind), so the on-disk package that must exist is
+    // `controller`, not a `gates` package directory.
+    expect(existsSync(join(repoRoot, "packages", "controller", "package.json"))).toBe(true);
   });
 
   // Guards every scope-dependent assertion below: a scope matching nothing
@@ -38,34 +42,29 @@ describe("integration: real packages/ directory", () => {
     expect(matching.length).toBeGreaterThan(0);
   });
 
-  it("finds the foundation and paired repository-review contracts among the real entries", () => {
+  it("finds the foundation contract among the real entries", () => {
     const report = runFoundationCheck(repoRoot, { scope: SCOPE });
 
     expect(report.catalog.entries.length).toBeGreaterThanOrEqual(4);
     const names = report.catalog.entries.map((e) => e.name);
-    for (const expected of [
-      "@vespeneventures/controller",
-      "@vespeneventures/catalog",
-      "@vespeneventures/policy",
-      "@vespeneventures/governance",
-      "@vespeneventures/gates",
-      "@vespeneventures/release",
-      "@vespeneventures/repository",
-      "@vespeneventures/review",
-    ]) {
-      expect(names).toContain(expected);
-    }
+    // `catalog`, `policy`, `governance`, `gates`, `release`, `repository`,
+    // and `review` were separate, paired compatibility packages before
+    // issue #282's recut folded every one of them into
+    // `@vespeneventures/controller` as subpaths and deleted the standalone
+    // packages with zero consumers left. There is exactly one foundation
+    // package left to find now.
+    expect(names).toContain("@vespeneventures/controller");
 
-    const gatesEntry = findByName(report.catalog, "@vespeneventures/gates");
-    expect(gatesEntry).toBeDefined();
+    const controllerEntry = findByName(report.catalog, "@vespeneventures/controller");
+    expect(controllerEntry).toBeDefined();
   });
 
-  it("produces zero error-severity findings for @vespeneventures/gates itself", () => {
+  it("produces zero error-severity findings for @vespeneventures/controller itself", () => {
     const report = runFoundationCheck(repoRoot, { scope: SCOPE });
-    const gatesFindings = report.findings.filter((f) => f.package === "@vespeneventures/gates");
-    const gatesErrors = gatesFindings.filter((f) => f.severity === "error");
+    const controllerFindings = report.findings.filter((f) => f.package === "@vespeneventures/controller");
+    const controllerErrors = controllerFindings.filter((f) => f.severity === "error");
 
-    expect(gatesErrors).toEqual([]);
+    expect(controllerErrors).toEqual([]);
   });
 
   it("computes a real build order for this repo's actual dependency graph, with no cycle", () => {
@@ -78,18 +77,19 @@ describe("integration: real packages/ directory", () => {
     const indexOf = (name: string) => result.order.indexOf(name);
 
     // Constraints the ordering MUST satisfy given the real dependency edges —
-    // NOT a frozen literal ordering. `@vespeneventures/governance` and
-    // `@vespeneventures/policy` are now thin compatibility stubs that
-    // forward to `@vespeneventures/controller` (issue #282); `policy` no
-    // longer has a direct edge to `governance` — both depend on
-    // `controller` instead.
-    expect(indexOf("@vespeneventures/controller")).toBeLessThan(indexOf("@vespeneventures/governance"));
-    expect(indexOf("@vespeneventures/controller")).toBeLessThan(indexOf("@vespeneventures/policy"));
-    expect(indexOf("@vespeneventures/governance")).toBeLessThan(indexOf("@vespeneventures/catalog"));
-    expect(indexOf("@vespeneventures/governance")).toBeLessThan(indexOf("@vespeneventures/gates"));
-    expect(indexOf("@vespeneventures/governance")).toBeLessThan(indexOf("@vespeneventures/release"));
-    expect(indexOf("@vespeneventures/repository")).toBeGreaterThanOrEqual(0);
-    expect(indexOf("@vespeneventures/review")).toBeGreaterThanOrEqual(0);
+    // NOT a frozen literal ordering. Issue #282's recut deleted the
+    // `governance`/`policy` compatibility stubs entirely (zero consumers),
+    // so there is no longer a `governance` node to route through.
+    // `@vespeneventures/controller` absorbed `catalog`, `policy`, `gates`,
+    // `release`, `repository`, and `review` as subpaths and has zero
+    // internal dependencies of its own; `builder`, `inspector`, and
+    // `ledger` each declare a real, direct dependency on `controller`, and
+    // `surface` depends on `copy` and `ui`.
+    expect(indexOf("@vespeneventures/controller")).toBeLessThan(indexOf("@vespeneventures/builder"));
+    expect(indexOf("@vespeneventures/controller")).toBeLessThan(indexOf("@vespeneventures/inspector"));
+    expect(indexOf("@vespeneventures/controller")).toBeLessThan(indexOf("@vespeneventures/ledger"));
+    expect(indexOf("@vespeneventures/copy")).toBeLessThan(indexOf("@vespeneventures/surface"));
+    expect(indexOf("@vespeneventures/ui")).toBeLessThan(indexOf("@vespeneventures/surface"));
 
     // Every entry the catalog found appears exactly once in the order.
     expect(result.order).toHaveLength(report.catalog.entries.length);
