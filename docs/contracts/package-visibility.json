@@ -12,6 +12,7 @@
     { "name": "@vespeneventures/ledger", "intendedVisibility": "public" },
     { "name": "@vespeneventures/policy", "intendedVisibility": "public" },
     { "name": "@vespeneventures/provisioning", "intendedVisibility": "public" },
+    { "name": "@vespeneventures/secret-scan", "intendedVisibility": "public" },
     { "name": "@vespeneventures/secrets", "intendedVisibility": "public" },
     { "name": "@vespeneventures/strategy", "intendedVisibility": "public" },
     { "name": "@vespeneventures/surface", "intendedVisibility": "public" },

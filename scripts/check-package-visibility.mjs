@@ -320,16 +320,40 @@ async function main() {
   const lifecyclePath = positional[0] ?? DEFAULT_LIFECYCLE_PATH;
   const visibilityPath = positional[1] ?? DEFAULT_VISIBILITY_PATH;
 
+  // --declarations-only runs the half of this gate that needs no credential:
+  // the pure join between package-lifecycle.json's "published" entries and
+  // package-visibility.json. It exists because the credentialed half can only
+  // run AFTER publish.yml has already uploaded a tarball, which makes it a
+  // detector rather than a gate — it reports a fault that has already shipped.
+  //
+  // That is not hypothetical. `@vespeneventures/secret-scan` was published
+  // with no visibility declaration, and every subsequent publish run went red
+  // on this check for a data omission that was fully knowable offline, at
+  // review time, before anything reached the registry. Four consecutive runs
+  // failed that way, which also means a REAL publish failure in that window
+  // would have been indistinguishable from the known one.
+  //
+  // The join is `selectDeclaredPackages` — already pure, already exported,
+  // already never touching the network. Splitting the gate along the line the
+  // credential actually draws lets the offline half run in `npm run check` on
+  // every pull request, and leaves the live-visibility half where it belongs.
+  const declarationsOnly = argv.includes("--declarations-only");
+
   // No token is exit 2, always — never a silent pass, and never even
   // attempted against the network. See CONTRIBUTING.md's "Gate CLIs exit
   // 0/1/2" entry: absence of signal is indistinguishable from a passing
   // signal, so a check that cannot run must fail loudly instead.
+  //
+  // --declarations-only is exempt because it never reaches the network at
+  // all: requiring a credential for a check that makes no request would be
+  // the mirror of the same mistake, refusing to run a check that CAN run.
   const token = process.env.GH_PACKAGES_TOKEN;
-  if (!token) {
+  if (!token && !declarationsOnly) {
     die(
       "GH_PACKAGES_TOKEN is not set. This gate calls the live GitHub Packages API and needs a read:packages " +
         "token to do it — refusing to report a pass from a check that never ran. See docs/PUBLISHING.md's " +
-        '"Prerequisites held outside this repository" table.',
+        '"Prerequisites held outside this repository" table. To run only the offline declaration join, ' +
+        "pass --declarations-only.",
     );
   }
 
@@ -347,6 +371,27 @@ async function main() {
     visibility = JSON.parse(readFileSync(visibilityPath, "utf8"));
   } catch (error) {
     die(`${visibilityPath} does not parse as JSON: ${error.message}`);
+  }
+
+  if (declarationsOnly) {
+    const { declared, results, fatal } = selectDeclaredPackages(lifecycle, visibility);
+    if (fatal) die(fatal);
+
+    const findings = results.filter((r) => r.status === "finding" || r.status === "error");
+    if (json) {
+      console.log(JSON.stringify({ mode: "declarations-only", declared: declared.length, results }, null, 2));
+    } else {
+      for (const r of results) console.log(`  [${r.status === "error" ? "ERROR" : "FIND "}] ${r.package} — ${r.detail}`);
+      if (findings.length === 0) {
+        console.log(`PACKAGE VISIBILITY DECLARATIONS OK — all ${declared.length} "published" packages declare an intended visibility.`);
+        console.log("Live registry visibility is NOT checked here; that half needs a credential and runs post-publish.");
+      } else {
+        console.log("");
+        console.log("PACKAGE VISIBILITY DECLARATIONS FAIL — see FIND lines above. This is the offline half of the gate:");
+        console.log("every fault here is knowable before anything reaches the registry, so fix it now rather than after publish.");
+      }
+    }
+    process.exit(findings.length === 0 ? 0 : 1);
   }
 
   let owner = ownerOverride;
