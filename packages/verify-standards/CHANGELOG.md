@@ -5,6 +5,51 @@ All notable changes to `@vespeneventures/verify-standards` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] - 2026-08-18
+
+### Fixed
+
+- **The label pattern in `extractTaskReferenceCandidates` had no word
+  boundary.** A configured label matched as a bare substring anywhere it
+  occurred, including embedded inside a longer, unrelated word — `Refs`
+  matched the `refs` hiding inside `Prefs`. The label is now guarded on both
+  sides by `(?<!\w)` / `(?!\w)`. Plain `\b` cannot be used for this: a
+  caller's label may itself end in a non-word character (this package's own
+  tests exercise `"Ticket (id)"`), and `\b` requires a word/non-word
+  transition at that exact edge, which a label ending in `)` immediately
+  followed by `:` can never produce — it would have silently broken a label
+  that legitimately matches. The lookaround guards only inspect the
+  character on the *other* side of the boundary, so they hold regardless of
+  what the label itself starts or ends with.
+- **`extractTaskReferenceText` still let a wrong-but-shaped candidate win.**
+  0.1.1 fixed the earlier "first match wins" behavior by preferring any
+  reference-*shaped* candidate — but a bare number is shaped, and it is the
+  one reference shape that ordinary prose can produce by coincidence:
+  "…that Refs 2024 baseline…" matches a configured label `Refs` exactly as
+  cleanly as a real `Refs #12` written elsewhere in the same description,
+  and `2024` parses exactly as cleanly as `12` does. The word-boundary fix
+  above does not close this on its own — `Refs` in that sentence is already
+  a correctly-bounded, standalone word, and boundary-guarding it changes
+  nothing about the match. A shaped candidate that is not a bare naked
+  number (a qualified `owner/name#12`, a tracker URL, or any number written
+  with its `#`) is now preferred over one that is; a naked number is never
+  discarded and is still returned — shaped, then unshaped — when it is the
+  only thing the description contains, so this cannot manufacture "no
+  reference" out of a description that names one, even ambiguously.
+
+### Notes
+
+- No exit-code semantics changed. `0` satisfied, `1` violated, `2`
+  could-not-evaluate, and nothing here converts a `2` into a `0`.
+- Unlike 0.1.1's parser fixes, this release's `extractTaskReferenceText` fix
+  can change which candidate a description resolves to — the earlier
+  "shaped wins" rule could resolve a change against the wrong tracked item
+  when prose happened to contain a configured label next to a number.
+  Whether that reaches a caller as a false `0` depends on how the caller's
+  own lookup step is wired to this package's extraction; callers with that
+  concern should re-pull `0.1.2` rather than relying on the version floor,
+  which this release does not raise.
+
 ## [0.1.1] - 2026-08-17
 
 ### Fixed
