@@ -29,6 +29,17 @@
 #                                 says plainly that it could not run a check.
 #
 # This is advisory, never a permission decision -- it always exits 0.
+#
+# DELIBERATE, recorded here so the difference from this directory's two
+# protection hooks (branch-provenance-hook.sh, scoped-main-push.sh) is a
+# decision and not an accident: those hooks guard an irreversible action
+# (a push to the default branch) where an unconfigured guard must not read
+# as a working one, so an unset required variable there now yields an
+# explicit `ask` decision rather than silently continuing. This hook only
+# ever prints advice about a resource check that could not run -- skipping
+# it risks a slow or memory-heavy command, never a broken invariant -- so
+# degrading open (continue, warn on stderr-visible stdout, never block) is
+# the correct default, not a smaller version of the same bug.
 
 set -u
 
