@@ -3,6 +3,15 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.1] - Unreleased
+
+### Changed
+
+- Widened the `@vespeneventures/controller` dependency range from `~0.1.0`
+  to `~0.2.0` to track controller's own minor bump (its skill-registry
+  `scope` enum is now closed to `account`/`repo`/`third-party`; see
+  `@vespeneventures/controller`'s own changelog). No API change here.
+
 ## [0.2.0] - 2026-08-18
 
 ### Changed
