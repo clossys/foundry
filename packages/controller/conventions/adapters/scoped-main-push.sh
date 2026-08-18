@@ -14,7 +14,13 @@
 # Configuration, all through the environment so that nothing here encodes one
 # operator's topology:
 #
-#   AGENT_BRANCH_PREFIX   required; the creating agent's prefix, e.g. "claude"
+#   AGENT_BRANCH_PREFIX   required for the branch-provenance rule; the
+#                         creating agent's prefix, e.g. "claude". Default-
+#                         branch push protection below does not read this
+#                         variable and stays fully enforced without it --
+#                         only the branch-naming check needs it, and when
+#                         it is unset that check asks rather than silently
+#                         passing. See the unset handling below.
 #   CODE_WORKSPACE_ROOT   optional; the discovery root under which the
 #                         canonical `projects/*/repos/*` and
 #                         `projects/*/worktrees/*` shape is recognized.
@@ -26,12 +32,6 @@
 set -u
 
 prefix="${AGENT_BRANCH_PREFIX:-}"
-if [[ -z "$prefix" ]]; then
-  # Refusing to guess is the point: a hook that silently allowed every branch
-  # because it was misconfigured would look identical to a hook that was working.
-  echo "scoped-main-push-hook: AGENT_BRANCH_PREFIX is unset; refusing to run unconfigured." >&2
-  exit 0
-fi
 
 input=$(cat)
 
@@ -81,12 +81,33 @@ created_branch=$(printf '%s\n' "$cmd" | sed -nE 's/(^|&&|;|\|)[[:space:]]*git (s
 if [[ -z "$created_branch" ]]; then
   created_branch=$(printf '%s\n' "$cmd" | sed -nE 's/(^|&&|;|\|)[[:space:]]*git branch[[:space:]]+([^-[:space:];|&][^[:space:];|&]*).*/\2/p' | head -n 1)
 fi
-if [[ "$canonical_workspace" == true && -n "$created_branch" && "$created_branch" != "$prefix"/* ]]; then
-  printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"Agent-created branches must use %s/<short-slug>; generic prefixes such as feat/, fix/, chore/, task/, and agent/ are not allowed."}}\n' "$prefix"
-  exit 0
+
+if [[ "$canonical_workspace" == true && -n "$created_branch" ]]; then
+  if [[ -z "$prefix" ]]; then
+    # AGENT_BRANCH_PREFIX is the only input this rule needs and there is no
+    # safe default to guess it from: calling an unevaluated branch
+    # "compliant" would rubber-stamp a generic prefix, and calling it
+    # "non-compliant" would block a legitimately prefixed one. Ask, naming
+    # the missing variable, rather than silently allowing -- this is the
+    # decision, not just its emission: an unconditional deny here would
+    # block every branch creation in an unconfigured install, which in
+    # practice gets this hook deleted rather than configured.
+    # created_branch is parsed from the tool command, not from a trusted
+    # environment value -- it is deliberately left out of the JSON reason
+    # below rather than interpolated into it, unlike the deny message a few
+    # lines down whose %s is always $prefix, a value this file controls.
+    printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"ask","permissionDecisionReason":"AGENT_BRANCH_PREFIX is unset, so this guard cannot evaluate the agent branch-provenance rule for this branch creation. Confirm it is intentional, or configure AGENT_BRANCH_PREFIX."}}\n'
+    exit 0
+  fi
+  if [[ "$created_branch" != "$prefix"/* ]]; then
+    printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"Agent-created branches must use %s/<short-slug>; generic prefixes such as feat/, fix/, chore/, task/, and agent/ are not allowed."}}\n' "$prefix"
+    exit 0
+  fi
 fi
 
-# Cover the direct-push forms this hook exists to block.
+# Cover the direct-push forms this hook exists to block. This never reads
+# AGENT_BRANCH_PREFIX, so it stays fully enforced whether or not the
+# branch-provenance rule above could evaluate.
 printf '%s\n' "$cmd" | grep -qE '(^|&&|;|\|)[[:space:]]*git push (origin )?main([[:space:]]|:|$)' || exit 0
 
 if [[ "$canonical_workspace" == true ]]; then

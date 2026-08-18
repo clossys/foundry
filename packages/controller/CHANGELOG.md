@@ -5,6 +5,58 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - Unreleased
+
+### Fixed
+
+- **`branch-provenance-hook.sh` and `scoped-main-push.sh` no longer treat an
+  unset required `AGENT_BRANCH_PREFIX` as allow.** Both hooks signal their
+  decision on stdout; exiting 0 with empty stdout is read by the caller as
+  "allow." With the variable unset, both hooks printed a stderr line saying
+  "refusing to run unconfigured" and then did exactly the opposite — exited
+  with no stdout, permitting the very branch creation or default-branch push
+  they exist to block, while the log read as if the guard had run and
+  refused. This is live, not theoretical: `scoped-main-push.sh` used to
+  hardcode its prefix, so it always evaluated; parameterizing it for
+  publication removed the hardcoded value without giving the unset case a
+  safe direction, so any consumer moving from a hardcoded local copy to the
+  published one loses default-branch protection silently unless something
+  else happens to set the variable — and the variable comes from the agent
+  product's own hook registration, which a consuming repository does not own
+  and cannot set for its operator (issue #307).
+
+  The fix has two parts:
+
+  1. When `AGENT_BRANCH_PREFIX` is unset, the branch-provenance naming rule
+     (the only rule that reads the variable) now emits an `ask` decision —
+     the same JSON shape these hooks already use for `deny` — naming the
+     missing variable and stating that the rule cannot evaluate without it,
+     instead of exiting silently. `ask` was chosen over an unconditional
+     `deny`: it keeps the guard's decision in a human's hands rather than
+     dropping it, and it does not make every branch creation in an
+     unconfigured install fail outright the way `deny` would — which in
+     practice tends to get a hook deleted rather than configured, the
+     opposite of what a default-branch guard is for.
+  2. Default-branch push protection in both files never actually read
+     `AGENT_BRANCH_PREFIX` — only the branch-naming rule does. Both hooks
+     previously exited before reaching the push check at all whenever the
+     variable was unset, which is the actual mechanism behind the silent
+     allow. Push protection is now fully decoupled from that variable and
+     stays enforced (`deny`/`ask`, exactly as when configured) regardless of
+     whether `AGENT_BRANCH_PREFIX` is set.
+
+  The misleading comment directly above the old unset-handling code (which
+  asserted a safety property — "refusing to guess is the point" — that the
+  code did not have) is rewritten to describe what the code actually does.
+
+  `heavy-cmd-hook.sh`'s unrelated advisory degrade-open behavior (an unset
+  or unresolvable `HEAVY_CMD_PREFLIGHT_COMMAND` prints a warning and
+  continues) is unchanged and now carries a comment recording why: it is a
+  resource-discipline preflight, not a protection boundary, so continuing on
+  missing configuration is the correct default there — the difference from
+  the two hooks above is a recorded decision, not two scripts that happen to
+  differ.
+
 ## [0.2.0] - Unreleased
 
 ### Added
