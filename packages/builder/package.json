@@ -1,0 +1,86 @@
+{
+  "name": "@vespeneventures/builder",
+  "version": "0.1.0",
+  "private": false,
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./deployment": {
+      "types": "./dist/deployment/index.d.ts",
+      "import": "./dist/deployment/index.js"
+    },
+    "./deployment/vercel": {
+      "types": "./dist/deployment/vercel/index.d.ts",
+      "import": "./dist/deployment/vercel/index.js"
+    },
+    "./deployment/render": {
+      "types": "./dist/deployment/render/index.d.ts",
+      "import": "./dist/deployment/render/index.js"
+    },
+    "./ci": {
+      "types": "./dist/ci/index.d.ts",
+      "import": "./dist/ci/index.js"
+    }
+  },
+  "bin": {
+    "builder-verify-toolchain": "./dist/ci/bin.js"
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/**/*.test.ts",
+    "!src/**/*.test-helper.ts",
+    "documents",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "description": "Declared reality made actual: an idempotent manifest engine and machine verification, a deployment surface contract with read-only platform adapters, a toolchain pin (runtime, package manager, build order), and the liveStateSurface contract and shared CI gate mechanics that reconcile any of them against what is actually live.",
+  "keywords": [
+    "provisioning",
+    "deployment",
+    "toolchain",
+    "drift-detection",
+    "ci-gate",
+    "gate-result",
+    "fail-closed",
+    "typescript"
+  ],
+  "author": "Calvin Hung",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vespeneventures/foundry.git",
+    "directory": "packages/builder"
+  },
+  "bugs": {
+    "url": "https://github.com/vespeneventures/foundry/issues"
+  },
+  "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/builder#readme",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@vespeneventures/governance": "~0.15.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "~6.0.0",
+    "vitest": "^4.1.9"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  }
+}
