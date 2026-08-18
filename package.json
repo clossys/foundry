@@ -13,8 +13,8 @@
   "scripts": {
     "setup": "npm ci",
     "//shell": "npm runs these with /bin/sh, which is dash on most Linux CI images and has no arrays and no shopt. They must be POSIX. An unmatched glob expands to the literal pattern, so `[ -d ]` on the first word is the portable way to ask whether packages/ has anything in it.",
-    "//build-order": "npm --workspaces builds in filesystem-discovery order, not dependency order. Build the dependency roots first: policy feeds governance, governance feeds its deprecated compatibility packages, ui must exist before surface compiles its web templates and token consumers, and secrets has an internal subpath that must build on a fresh clone.",
-    "build": "set -- packages/*/; [ -d \"$1\" ] || exit 0; npm run build --workspace=packages/policy --if-present && npm run build --workspace=packages/ui --if-present && npm run build --workspace=packages/secrets --if-present && npm run build --workspace=packages/governance --if-present && npm run build --workspaces --if-present",
+    "//build-order": "npm --workspaces builds in filesystem-discovery order, not dependency order. Build the dependency roots first: policy feeds governance, governance feeds its deprecated compatibility packages, ui must exist before surface compiles its web templates and token consumers, and locksmith has an internal subpath that must build on a fresh clone.",
+    "build": "set -- packages/*/; [ -d \"$1\" ] || exit 0; npm run build --workspace=packages/policy --if-present && npm run build --workspace=packages/ui --if-present && npm run build --workspace=packages/locksmith --if-present && npm run build --workspace=packages/governance --if-present && npm run build --workspaces --if-present",
     "test": "set -- packages/*/; [ -d \"$1\" ] || exit 0; npm run test --workspaces --if-present",
     "typecheck": "set -- packages/*/; [ -d \"$1\" ] || exit 0; npm run typecheck --workspaces --if-present",
     "check:safety": "node scripts/check-public-safety.mjs . --allow-changelogs",
