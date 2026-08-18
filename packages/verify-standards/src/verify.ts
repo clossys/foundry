@@ -24,14 +24,15 @@
 
 import { createGateReasons, foldGateResults, gateResultToExitCode } from "@vespeneventures/governance/gates";
 import type { GateResult } from "@vespeneventures/governance/gates";
-import { checkPolicyDrift, policyDriftReasons } from "./policy-drift.js";
+import { checkPolicyDrift } from "./policy-drift.js";
 import type { PolicyDriftObservation, PolicyDriftOptions } from "./policy-drift.js";
-import { checkReviewEvidence, reviewEvidenceReasons } from "./review-evidence.js";
+import { checkReviewEvidence } from "./review-evidence.js";
 import type { ReviewEvidenceOptions } from "./review-evidence.js";
 import { checkSecretScan } from "./secret-scan.js";
 import type { SecretScanObservation, SecretScanPolicy } from "./secret-scan.js";
 import { checkTaskRecord } from "./task-record.js";
 import type { TaskRecordObservation, TaskRecordPolicy } from "./task-record.js";
+import { isRecord } from "./shape.js";
 import { STANDARDS_CHECKS } from "./types.js";
 import type { CheckFinding, StandardsCheckName, StandardsFinding, StandardsReportRow } from "./types.js";
 import { checkVersionFloor } from "./version.js";
@@ -105,6 +106,13 @@ export interface VerifyStandardsReport {
   readonly exitCode: 0 | 1 | 2;
 }
 
+/** Names what a non-object inputs document actually was, for the row that reports it. */
+function describeNonObject(value: unknown): string {
+  if (value === null) return "null";
+  if (Array.isArray(value)) return "an array";
+  return `a ${typeof value}`;
+}
+
 /** Attaches the producing row to a check's own findings, leaving everything else untouched. */
 function attribute<TFinding extends CheckFinding, TReason extends string>(
   row: StandardsReportRow,
@@ -147,16 +155,30 @@ export function verifyStandards(
   // with it. Without one, a caller who passed a document this build cannot
   // read would see four identical "no observation supplied" rows and no
   // statement of the actual cause.
-  const readable = inputs !== undefined && inputs.schemaVersion === VERIFY_STANDARDS_INPUTS_VERSION;
+  // `inputs` is declared as a type, and arrives as `JSON.parse` output. A
+  // document that is `null`, a number, a string, or an array satisfies no
+  // part of that declaration and is checked for here rather than trusted:
+  // reading `.schemaVersion` off `null` throws, and a throw at this layer
+  // leaves the process on Node's uncaught-exception status of `1`, which
+  // this package's contract reads as "violated". A document that is not an
+  // object is the same situation as no document at all — nothing was
+  // supplied that any check could read — so it takes the same row.
+  const supplied: unknown = inputs;
+  const documentSupplied = isRecord(supplied);
+  const readable =
+    documentSupplied && (supplied as { schemaVersion?: unknown }).schemaVersion === VERIFY_STANDARDS_INPUTS_VERSION;
   if (!readable) {
     rows.push({
       row: "inputs",
       result: inputsReasons.indeterminate(
-        inputs === undefined ? "no-inputs-supplied" : "unsupported-inputs-schema-version",
-        inputs === undefined
-          ? "No inputs document was supplied, so no check had anything to read."
-          : `The inputs document declares schemaVersion ${JSON.stringify((inputs as { schemaVersion?: unknown }).schemaVersion)} ` +
-            `and this build reads ${VERIFY_STANDARDS_INPUTS_VERSION}. Reading it under the wrong schema would be guessing.`,
+        documentSupplied ? "unsupported-inputs-schema-version" : "no-inputs-supplied",
+        documentSupplied
+          ? `The inputs document declares schemaVersion ${JSON.stringify((supplied as { schemaVersion?: unknown }).schemaVersion)} ` +
+            `and this build reads ${VERIFY_STANDARDS_INPUTS_VERSION}. Reading it under the wrong schema would be guessing.`
+          : supplied === undefined
+            ? "No inputs document was supplied, so no check had anything to read."
+            : `The inputs document is ${describeNonObject(supplied)} rather than an object, so it is not a document ` +
+              "this build can read any section out of.",
       ),
     });
   }
@@ -210,23 +232,14 @@ function runCheck(check: StandardsCheckName, inputs: VerifyStandardsInputs | und
       return { row: check, result: attribute(check, report.result), ...(note === undefined ? {} : { note }) };
     }
     case "review-evidence": {
+      // Absent, null, and structurally wrong options are all decided inside
+      // the check itself rather than pre-screened here. `requireReviewPresence`
+      // is a required boolean with no default, so an options object this
+      // package cannot read is a missing input rather than an implied setting
+      // — and the check is the public boundary a direct caller reaches too,
+      // so that judgement has to live there to be worth anything.
       const section = inputs?.reviewEvidence;
-      if (section?.options === undefined) {
-        // `requireReviewPresence` is a required boolean with no default, so an
-        // absent options object is a missing input rather than an implied
-        // setting. Defaulting it either way would decide a consuming
-        // repository's policy on its behalf and then report the result as if
-        // the repository had chosen it.
-        return {
-          row: check,
-          result: reviewEvidenceReasons.indeterminate(
-            "no-options-supplied",
-            "No review-evidence options were supplied. requireReviewPresence has no default, because a default would " +
-              "be this package choosing a consuming repository's review policy for it.",
-          ),
-        };
-      }
-      const report = checkReviewEvidence(section.evidence, section.policy, section.options);
+      const report = checkReviewEvidence(section?.evidence, section?.policy, section?.options);
       const note =
         report.providersObserved.length === 0
           ? undefined
@@ -234,18 +247,10 @@ function runCheck(check: StandardsCheckName, inputs: VerifyStandardsInputs | und
       return { row: check, result: attribute(check, report.result), ...(note === undefined ? {} : { note }) };
     }
     case "policy-drift": {
+      // Same delegation as review-evidence directly above, for the same
+      // reason: `allowUndeclaredLiveRequirements` has no default either.
       const section = inputs?.policyDrift;
-      if (section?.options === undefined) {
-        return {
-          row: check,
-          result: policyDriftReasons.indeterminate(
-            "no-options-supplied",
-            "No policy-drift options were supplied. allowUndeclaredLiveRequirements has no default, for the same " +
-              "reason: choosing it here would be choosing how strict a consuming repository is on its behalf.",
-          ),
-        };
-      }
-      const report = checkPolicyDrift(section.observation, section.options);
+      const report = checkPolicyDrift(section?.observation, section?.options);
       return {
         row: check,
         result: attribute(check, report.result),

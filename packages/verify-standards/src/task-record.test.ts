@@ -156,6 +156,42 @@ describe("checkTaskRecord", () => {
     expect(report.result).toMatchObject({ verdict: "satisfied", evaluated: 1 });
   });
 
+  it("is indeterminate for a lookup outcome this build does not recognise", () => {
+    // The satisfied branch is the last one in the check. An unrecognised
+    // outcome used to fall past every branch that names one and land on it,
+    // so a caller's typo read as a resolved work item.
+    const report = checkTaskRecord(
+      change({ item: { outcome: "unknown" } as unknown as { outcome: "resolved" } }),
+      policy,
+    );
+    expect(report.result).toMatchObject({ verdict: "indeterminate", reason: "observation-invalid" });
+    expect(gateResultToExitCode(report.result)).toBe(2);
+  });
+
+  it.each([
+    ["applicableEventKinds", { applicableEventKinds: null }],
+    ["exemptLabels", { exemptLabels: null }],
+    ["recordLabels", { recordLabels: 7 }],
+  ])("is indeterminate rather than throwing when policy.%s is not a list", (_name, broken) => {
+    const report = checkTaskRecord(change(), { ...policy, ...broken } as unknown as TaskRecordPolicy);
+    expect(report.result).toMatchObject({ verdict: "indeterminate", reason: "policy-invalid" });
+  });
+
+  it.each([
+    ["labels", { labels: null }],
+    ["authorId", { authorId: null }],
+    ["headRef", { headRef: 7 }],
+    ["description", { description: null }],
+  ])("is indeterminate rather than throwing when observation.%s is malformed", (_name, broken) => {
+    const report = checkTaskRecord({ ...change(), ...broken } as unknown as TaskRecordObservation, policy);
+    expect(report.result).toMatchObject({ verdict: "indeterminate", reason: "observation-invalid" });
+  });
+
+  it.each([[null], [42], ["a-string"]])("is indeterminate when the observation itself is %s", (record) => {
+    const report = checkTaskRecord(record as unknown as TaskRecordObservation, policy);
+    expect(report.result).toMatchObject({ verdict: "indeterminate", reason: "no-observation-supplied" });
+  });
+
   it("never reports satisfied on a path that evaluated nothing", () => {
     for (const input of [
       undefined,

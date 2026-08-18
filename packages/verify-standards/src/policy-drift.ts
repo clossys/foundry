@@ -50,6 +50,7 @@ import { createGateReasons, gateSatisfied, gateViolated } from "@vespeneventures
 import type { GateResult } from "@vespeneventures/governance/gates";
 import { validateBindingShape, verifyBinding } from "@vespeneventures/policy";
 import type { PolicyBinding } from "@vespeneventures/policy";
+import { isRecord } from "./shape.js";
 import type { CheckFinding } from "./types.js";
 
 /**
@@ -113,6 +114,7 @@ export interface PolicyDriftOptions {
 export const policyDriftReasons = createGateReasons([
   "no-observation-supplied",
   "no-options-supplied",
+  "observation-malformed",
   "empty-declaration",
   "live-state-unreadable",
   "live-state-incomplete",
@@ -138,23 +140,87 @@ function finding(rule: PolicyDriftFinding["rule"], path: string, message: string
   return { rule, severity: "error", path, message };
 }
 
+/**
+ * Says what is wrong with a requirement list, or `undefined` if nothing is.
+ *
+ * An absent list is not malformed — `liveRequirements` being absent is the
+ * check's own way of saying the live state could not be read, and it is
+ * handled below as its own named reason rather than as bad data.
+ */
+function describeMalformedRequirements(name: string, value: unknown): string | undefined {
+  if (value === undefined) return undefined;
+  if (!Array.isArray(value)) return `${name} is not a list of requirements.`;
+  for (let index = 0; index < value.length; index += 1) {
+    const entry: unknown = value[index];
+    if (!isRecord(entry)) return `${name}[${index}] is not a requirement object.`;
+    // An identifier that is not a string cannot be compared for equality
+    // against one that is. Two entries whose ids are both absent would
+    // otherwise compare equal to each other and to nothing real.
+    if (typeof entry.id !== "string" || entry.id.trim() === "") {
+      return `${name}[${index}] has no requirement id, so it names nothing that could agree or disagree.`;
+    }
+  }
+  return undefined;
+}
+
+/** Says what is wrong with the bound-document list, or `undefined` if nothing is. */
+function describeMalformedDocuments(value: unknown): string | undefined {
+  if (!Array.isArray(value)) return "documents is not a list of bound documents.";
+  for (let index = 0; index < value.length; index += 1) {
+    const entry: unknown = value[index];
+    if (!isRecord(entry)) return `documents[${index}] is not a policy-document expectation object.`;
+  }
+  return undefined;
+}
+
 /** Compares a repository's declared standard against its measured live state. */
 export function checkPolicyDrift(
   observation: PolicyDriftObservation | undefined,
-  options: PolicyDriftOptions,
+  options: PolicyDriftOptions | null | undefined,
 ): PolicyDriftReport {
-  if (observation === undefined) {
+  // Options first, and validated as data. `allowUndeclaredLiveRequirements`
+  // has no default for the same reason `requireReviewPresence` has none:
+  // reading an absent value as `false` would be this package choosing how
+  // strict a consuming repository is and then reporting the result as the
+  // repository's own choice.
+  if (!isRecord(options) || typeof options.allowUndeclaredLiveRequirements !== "boolean") {
+    return {
+      compared: 0,
+      result: policyDriftReasons.indeterminate(
+        "no-options-supplied",
+        "No usable policy-drift options were supplied. allowUndeclaredLiveRequirements must be an explicit boolean, " +
+          "because choosing it here would be choosing how strict a consuming repository is on its behalf.",
+      ),
+    };
+  }
+  if (!isRecord(observation)) {
     return {
       compared: 0,
       result: policyDriftReasons.indeterminate(
         "no-observation-supplied",
-        "No policy-drift observation was supplied. Nothing was compared, so nothing agreed.",
+        "No policy-drift observation was supplied, or what was supplied is not an observation. Nothing was compared, " +
+          "so nothing agreed.",
       ),
     };
   }
 
+  // Every list below arrives as parsed JSON. A list that is not a list — or
+  // one holding an entry that is not an object — has to become a verdict
+  // rather than a dereference: a throw here leaves the process on Node's
+  // uncaught-exception status of `1`, which this package's contract reads as
+  // a real drift finding about the repository.
   const documents = observation.documents ?? [];
   const declared = observation.declaredRequirements ?? [];
+  const malformed =
+    describeMalformedRequirements("declaredRequirements", declared) ??
+    describeMalformedRequirements("liveRequirements", observation.liveRequirements) ??
+    describeMalformedDocuments(documents);
+  if (malformed !== undefined) {
+    return {
+      compared: 0,
+      result: policyDriftReasons.indeterminate("observation-malformed", malformed),
+    };
+  }
 
   if (declared.length === 0 && documents.length === 0) {
     return {
@@ -228,7 +294,14 @@ export function checkPolicyDrift(
   for (let index = 0; index < documents.length; index += 1) {
     const document = documents[index] as PolicyDocumentExpectation;
     const path = `documents[${index}]`;
-    const shapeFindings = validateBindingShape(document.binding).filter((item) => item.severity === "error");
+    // Both fields are snapshotted once and every later use reads the local,
+    // never the entry again. A caller-supplied object can define either as a
+    // getter, and a getter that answers differently on a second read would
+    // let a binding be validated in one shape and verified in another —
+    // which is the shape of a check that passed on something it never saw.
+    const binding = document.binding;
+    const materializedContent = document.materializedContent;
+    const shapeFindings = validateBindingShape(binding).filter((item) => item.severity === "error");
     if (shapeFindings.length > 0) {
       return {
         compared: 0,
@@ -238,26 +311,24 @@ export function checkPolicyDrift(
         ),
       };
     }
-    if (document.materializedContent === undefined) {
+    if (materializedContent === undefined) {
       return {
         compared: 0,
         result: policyDriftReasons.indeterminate(
           "document-not-materialized",
-          `${path}: the document bound as ${JSON.stringify(document.binding.policyId)} was not materialized for this ` +
+          `${path}: the document bound as ${JSON.stringify(binding.policyId)} was not materialized for this ` +
             "run, so its digest had nothing to be compared against.",
         ),
       };
     }
     compared += 1;
-    const driftFindings = verifyBinding(document.binding, document.materializedContent).filter(
-      (item) => item.severity === "error",
-    );
+    const driftFindings = verifyBinding(binding, materializedContent).filter((item) => item.severity === "error");
     for (const item of driftFindings) {
       findings.push(
         finding(
           "document-drifted",
           `${path}.${item.path ?? "digest"}`,
-          `${JSON.stringify(document.binding.policyId)} no longer matches its committed digest — ${item.message}`,
+          `${JSON.stringify(binding.policyId)} no longer matches its committed digest — ${item.message}`,
         ),
       );
     }

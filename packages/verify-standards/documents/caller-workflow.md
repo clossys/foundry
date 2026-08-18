@@ -72,11 +72,23 @@ jobs:
         with:
           node-version: 20
           registry-url: https://npm.pkg.github.com
+          # Required, and not a formality. With `scope` omitted, this action
+          # maps the *consuming repository's own owner* to the registry above,
+          # so a consumer in any other account routes this package to the
+          # public registry instead and the install fails to resolve it.
+          scope: "@vespeneventures"
 
       # Installed from this repository's own lockfile, like every other
       # dependency, so the resolved version is reviewable in a diff and swept
       # by whatever dependency-freshness process this repository already runs.
-      - run: npm ci
+      #
+      # `--ignore-scripts` because this step is the one place a registry
+      # token is in the environment: a dependency lifecycle script inherits
+      # that environment and can read the token out of it. This package needs
+      # no install script of its own. A repository whose other dependencies
+      # do should run those in a separate step, after the token is out of
+      # scope, rather than widen this one.
+      - run: npm ci --ignore-scripts
         env:
           NODE_AUTH_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN }}
 
@@ -127,6 +139,44 @@ jobs:
           name: verify-standards-inputs
           path: verify-inputs.json
 ```
+
+### What this workflow trusts, and what it does not
+
+The gate decides nothing about a repository it did not read from the inputs
+document. That is the property the whole design is built on, and it has a
+consequence the template above must state rather than imply: **the verdict is
+exactly as trustworthy as the revision that produced the inputs document.**
+
+Under `on: pull_request`, the workflow file, the collector scripts, and the
+assembler all come from the pull request's own revision. A change that edits
+`assemble-inputs.mjs` is a change that edits the evidence its own gate will
+read. For a repository where opening a pull request already requires write
+access, that is the same trust boundary the branch itself has, and reviewing
+the diff is what closes it — the collectors are part of what a reviewer is
+looking at, and a change to them should read as loudly as a change to the
+gate. Two things follow, and neither is optional:
+
+- **A change to `.github/scripts/` or to this workflow is a change to the
+  gate.** Give those paths whatever review requirement the repository gives
+  its most sensitive code. A gate whose evidence collection can be edited
+  without a second reader is a gate with a documented bypass.
+- **Do not hand a secret to a job that runs code from an untrusted
+  revision.** `GH_TOKEN` above is `github.token` — for a fork pull request
+  GitHub already reduces it to read-only and withholds every repository
+  secret, which is the correct behaviour and not something to work around.
+  Never reach for `pull_request_target` to restore them; that runs the
+  base revision's *workflow* against the fork's *code* with full
+  credentials, which is strictly worse than the problem it appears to fix.
+
+**A repository that accepts pull requests from forks needs more than this
+template.** Fork runs receive no `PACKAGES_READ_TOKEN`, so the install step
+above cannot authenticate to a private registry and the job stops before the
+gate runs. A stopped job is red rather than falsely green, so nothing is
+laundered — but a required check that can never pass on a fork pull request
+is a required check that blocks every fork contribution. Splitting trusted
+installation and decision from untrusted collection is the shape that solves
+it, and the split belongs to the consuming repository, whose fork policy and
+credentials decide what it looks like.
 
 ### On `--declared-range`
 

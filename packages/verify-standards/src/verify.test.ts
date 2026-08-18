@@ -140,6 +140,21 @@ describe("verifyStandards", () => {
     });
   });
 
+  it.each([[null], [42], ["a-string"], [[]]])(
+    "exits 2 with a named reason when the inputs document is %s rather than an object",
+    (document) => {
+      // `JSON.parse("null")` is `null`, and reading `.schemaVersion` off it
+      // threw. A throw here never reaches the report at all — it ends the
+      // process on Node's status `1`, which this contract reads as "violated".
+      const report = verifyStandards(document as unknown as VerifyStandardsInputs, currentBuild);
+      expect(report.exitCode).toBe(2);
+      expect(report.rows.find((row) => row.row === "inputs")?.result).toMatchObject({
+        verdict: "indeterminate",
+        reason: "no-inputs-supplied",
+      });
+    },
+  );
+
   it("exits 2 with a named reason for an inputs schema it cannot read", () => {
     const report = verifyStandards({ ...goodInputs(), schemaVersion: 99 as 1 }, currentBuild);
     expect(report.exitCode).toBe(2);
@@ -168,6 +183,21 @@ describe("verifyStandards", () => {
     });
     expect(report.exitCode).toBe(2);
   });
+
+  it.each([[null], [{}], [{ requireReviewPresence: "yes" }]])(
+    "declines review-evidence when its options are %s rather than defaulting them",
+    (broken) => {
+      const inputs = goodInputs();
+      const report = verifyStandards(
+        { ...inputs, reviewEvidence: { ...inputs.reviewEvidence, options: broken as never } },
+        currentBuild,
+      );
+      expect(report.rows.find((row) => row.row === "review-evidence")?.result).toMatchObject({
+        reason: "no-options-supplied",
+      });
+      expect(report.exitCode).toBe(2);
+    },
+  );
 
   it("runs only the selected checks and reports exactly those rows", () => {
     const report = verifyStandards(goodInputs(), { ...currentBuild, selectedChecks: ["secret-scan"] });

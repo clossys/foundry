@@ -38,6 +38,7 @@
 
 import { createGateReasons, gateSatisfied, gateViolated } from "@vespeneventures/governance/gates";
 import type { GateResult } from "@vespeneventures/governance/gates";
+import { isRecord, isStringArray } from "./shape.js";
 import type { CheckFinding } from "./types.js";
 
 /** How a caller's attempt to resolve a referenced work item ended. */
@@ -52,6 +53,21 @@ export type TaskItemLookupOutcome =
   | "unavailable"
   /** No lookup was made. */
   | "not-attempted";
+
+/**
+ * The same vocabulary as a value, so a caller-supplied outcome can be
+ * checked against it at runtime. The type alone is erased before any
+ * observation is read, and an outcome outside this list must never be able
+ * to fall through the branches that interpret it into the satisfied result
+ * they all precede.
+ */
+export const TASK_ITEM_LOOKUP_OUTCOMES = Object.freeze([
+  "resolved",
+  "resolved-wrong-kind",
+  "not-visible",
+  "unavailable",
+  "not-attempted",
+] as const);
 
 /** What the caller found out about the referenced item, if anything. */
 export interface TaskItemObservation {
@@ -115,6 +131,7 @@ export const taskRecordReasons = createGateReasons([
   "no-observation-supplied",
   "no-policy-supplied",
   "policy-invalid",
+  "observation-invalid",
   "not-applicable-event",
   "item-lookup-not-attempted",
   "item-lookup-unavailable",
@@ -211,11 +228,19 @@ export interface TaskRecordReport {
   readonly reference?: ParsedTaskReference;
 }
 
+/**
+ * Says what is wrong with the policy, or `undefined` if nothing is.
+ *
+ * Shape is established before content, and that order is the whole point:
+ * the previous arrangement asked `applicableEventKinds.length === 0` before
+ * it had established that `applicableEventKinds` was a list at all, so a
+ * policy with a `null` there threw rather than returning `policy-invalid`.
+ * A throw does not reach the report — it ends the process on Node's
+ * uncaught-exception status of `1`, which this package reads as a real
+ * finding against the change.
+ */
 function validatePolicy(policy: TaskRecordPolicy): string | undefined {
-  if (policy.applicableEventKinds.length === 0) {
-    return "applicableEventKinds is empty, so this check could never apply to anything.";
-  }
-  const lists: readonly (readonly [string, readonly string[]])[] = [
+  const lists: readonly (readonly [string, unknown])[] = [
     ["applicableEventKinds", policy.applicableEventKinds],
     ["exemptLabels", policy.exemptLabels],
     ["exemptAuthorSuffixes", policy.exemptAuthorSuffixes],
@@ -223,20 +248,62 @@ function validatePolicy(policy: TaskRecordPolicy): string | undefined {
     ["recordLabels", policy.recordLabels],
   ];
   for (const [name, values] of lists) {
-    if (!Array.isArray(values)) return `${name} must be an array.`;
+    if (!isStringArray(values)) return `${name} must be a list of strings.`;
     for (const value of values) {
-      if (typeof value !== "string" || value.trim() === "") {
+      if (value.trim() === "") {
         // An empty exemption entry matches every author and every branch. It
         // reads as an oversight and behaves as a repository-wide waiver.
         return `${name} contains an empty entry, which would match everything.`;
       }
     }
   }
+  if (policy.applicableEventKinds.length === 0) {
+    return "applicableEventKinds is empty, so this check could never apply to anything.";
+  }
   if (policy.recordLabels.length === 0) {
     return "recordLabels is empty, so no reference could ever be recognised.";
   }
   if (typeof policy.requireResolvedItem !== "boolean") {
     return "requireResolvedItem must be an explicit boolean.";
+  }
+  return undefined;
+}
+
+/**
+ * Says what is wrong with the observation, or `undefined` if nothing is.
+ *
+ * Same reasoning as the policy above, applied to the other caller-supplied
+ * half: `labels.includes`, `authorId.endsWith`, and `headRef.startsWith` are
+ * all called on values a JSON document can perfectly well supply as `null`.
+ */
+function validateObservation(observation: TaskRecordObservation): string | undefined {
+  const strings: readonly (readonly [string, unknown])[] = [
+    ["eventKind", observation.eventKind],
+    ["description", observation.description],
+    ["authorId", observation.authorId],
+    ["headRef", observation.headRef],
+    ["trackerScope", observation.trackerScope],
+  ];
+  for (const [name, value] of strings) {
+    if (typeof value !== "string") return `${name} must be a string.`;
+  }
+  if (observation.trackerScope.trim() === "") {
+    return "trackerScope is empty, so no reference could be compared against the scope this run can read.";
+  }
+  if (!isStringArray(observation.labels)) return "labels must be a list of strings.";
+  const item: unknown = observation.item;
+  if (item !== undefined) {
+    if (!isRecord(item)) return "item must be a lookup result object when it is present.";
+    // An outcome outside the declared vocabulary must not fall past the
+    // branches below into the satisfied result at the end of the check. An
+    // unrecognised word is not a lookup that succeeded; it is a lookup this
+    // build cannot interpret, which is the definition of indeterminate.
+    if (!(TASK_ITEM_LOOKUP_OUTCOMES as readonly unknown[]).includes(item.outcome)) {
+      return (
+        `item.outcome is ${JSON.stringify(item.outcome)}, which is not one of ` +
+        `${TASK_ITEM_LOOKUP_OUTCOMES.join(", ")}. An outcome this build cannot read is not a resolved item.`
+      );
+    }
   }
   return undefined;
 }
@@ -256,15 +323,16 @@ export function checkTaskRecord(
   observation: TaskRecordObservation | undefined,
   policy: TaskRecordPolicy | undefined,
 ): TaskRecordReport {
-  if (observation === undefined) {
+  if (!isRecord(observation)) {
     return {
       result: taskRecordReasons.indeterminate(
         "no-observation-supplied",
-        "No change observation was supplied. Absence of a change is not a change with a valid record.",
+        "No change observation was supplied, or what was supplied is not an observation. Absence of a change is not " +
+          "a change with a valid record.",
       ),
     };
   }
-  if (policy === undefined) {
+  if (!isRecord(policy)) {
     return {
       result: taskRecordReasons.indeterminate(
         "no-policy-supplied",
@@ -275,6 +343,10 @@ export function checkTaskRecord(
   const policyProblem = validatePolicy(policy);
   if (policyProblem !== undefined) {
     return { result: taskRecordReasons.indeterminate("policy-invalid", policyProblem) };
+  }
+  const observationProblem = validateObservation(observation);
+  if (observationProblem !== undefined) {
+    return { result: taskRecordReasons.indeterminate("observation-invalid", observationProblem) };
   }
   if (!policy.applicableEventKinds.includes(observation.eventKind)) {
     return {
@@ -378,6 +450,24 @@ export function checkTaskRecord(
             (item.detail === undefined ? "." : `: ${item.detail}`),
         ),
       ]),
+    };
+  }
+
+  // The satisfied result is the last branch in the function and is guarded
+  // by an equality rather than reached by exhaustion. Every branch above
+  // names an outcome it handles; if this one merely returned whatever fell
+  // past them, adding a sixth outcome upstream — or a caller writing one
+  // this build has never heard of — would silently become a pass. It is the
+  // only branch that reports the change as sound, so it states the one
+  // condition under which that is true.
+  if (item.outcome !== "resolved") {
+    return {
+      reference,
+      result: taskRecordReasons.indeterminate(
+        "observation-invalid",
+        `item.outcome is ${JSON.stringify(item.outcome)}, which this build does not interpret as a resolved work ` +
+          "item. An outcome that was not understood is not one that succeeded.",
+      ),
     };
   }
 

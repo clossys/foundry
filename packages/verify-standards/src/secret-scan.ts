@@ -30,6 +30,7 @@
 
 import { createGateReasons, gateSatisfied, gateViolated } from "@vespeneventures/governance/gates";
 import type { GateResult } from "@vespeneventures/governance/gates";
+import { isRecord, isRecordArray } from "./shape.js";
 import type { CheckFinding } from "./types.js";
 
 /** What part of the repository a scan attempt covered. Caller-declared; never inferred here. */
@@ -43,14 +44,25 @@ export interface SecretScanHit {
   readonly path: string;
   /** Which commit it was found in, when the scanner reported one. */
   readonly commit?: string;
-  /**
-   * A description of the hit. It must never contain the matched value: this
-   * package's own repository is public, and a finding rendered into a CI log
-   * is as public as anything committed. Nothing here can enforce that about
-   * a caller's data, which is exactly why it is stated.
-   */
-  readonly description?: string;
 }
+/*
+ * NO FREE-TEXT FIELD, ON PURPOSE
+ * ------------------------------
+ * An earlier shape of this type carried a scanner-supplied `description`,
+ * rendered verbatim into the finding message. The message is written to a
+ * job summary and to a report artifact, so on a public repository it is as
+ * public as anything committed — and the one thing this package cannot do
+ * is verify that a caller's description holds the rule's name rather than
+ * the matched value. A scanner that reports both in adjacent fields makes
+ * that a one-character mistake in a collector script, and the failure is
+ * unrecoverable: the secret is in a public log before anyone reads it.
+ *
+ * Documenting the requirement was the previous answer and it is not one.
+ * `ruleId`, `path`, and `commit` are structural, they are what a reader
+ * needs in order to go and look, and none of them can carry a secret by
+ * accident. A caller that wants the scanner's own prose has it in the
+ * scanner's own output, next to the credential, where it belongs.
+ */
 
 /**
  * A caller's record of one scan attempt.
@@ -126,10 +138,11 @@ export function checkSecretScan(
   observation: SecretScanObservation | undefined,
   policy: SecretScanPolicy = {},
 ): GateResult<SecretScanFinding, SecretScanReason> {
-  if (observation === undefined) {
+  if (!isRecord(observation)) {
     return secretScanReasons.indeterminate(
       "no-observation-supplied",
-      "No secret-scan observation was supplied. Absence of a record is not a clean record.",
+      "No secret-scan observation was supplied, or what was supplied is not a scan record. Absence of a record is " +
+        "not a clean record.",
     );
   }
   if (observation.attempted !== true) {
@@ -156,8 +169,9 @@ export function checkSecretScan(
     );
   }
 
-  const cleanExitCode = policy.cleanExitCode ?? 0;
-  const findingsExitCode = policy.findingsExitCode ?? 1;
+  const stated: SecretScanPolicy = isRecord(policy) ? policy : {};
+  const cleanExitCode = typeof stated.cleanExitCode === "number" ? stated.cleanExitCode : 0;
+  const findingsExitCode = typeof stated.findingsExitCode === "number" ? stated.findingsExitCode : 1;
   if (observation.exitCode !== cleanExitCode && observation.exitCode !== findingsExitCode) {
     return secretScanReasons.indeterminate(
       "tool-errored",
@@ -169,6 +183,18 @@ export function checkSecretScan(
   const hits = Array.isArray(observation.hits) ? observation.hits : undefined;
   if (hits === undefined) {
     return secretScanReasons.indeterminate("inconsistent-report", "The scan record carries no hit list at all.");
+  }
+  // `Array.isArray` accepts `[null]`, and the hit list arrives as parsed
+  // JSON rather than as anything a compiler checked. A malformed entry has
+  // to be a verdict rather than a dereference: throwing here would leave the
+  // process on Node's uncaught-exception status of `1`, and `1` in this
+  // package means a real secret was found.
+  if (!isRecordArray(hits)) {
+    return secretScanReasons.indeterminate(
+      "inconsistent-report",
+      "The scan record's hit list contains an entry that is not a hit object, so the list cannot be read as a " +
+        "statement about anything.",
+    );
   }
   if (observation.exitCode === findingsExitCode && hits.length === 0) {
     return secretScanReasons.indeterminate(
@@ -195,8 +221,8 @@ export function checkSecretScan(
           path: typeof hit.path === "string" && hit.path !== "" ? hit.path : "<unreported path>",
           message:
             `${observation.toolName} rule ${ruleId}` +
-            (hit.commit === undefined ? "" : ` in commit ${hit.commit}`) +
-            `: ${hit.description ?? "a credential-shaped string was reported at this location"}`,
+            (typeof hit.commit === "string" && hit.commit !== "" ? ` in commit ${hit.commit}` : "") +
+            ": a credential-shaped string was reported at this location.",
         };
       }),
     );

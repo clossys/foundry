@@ -242,12 +242,32 @@ export function main(argv: readonly string[], port: CliPort): 0 | 1 | 2 {
     return 2;
   }
 
-  const report = verifyStandards(inputs, {
-    selectedChecks: args.checks,
-    installedVersion: port.resolveOwnVersion(),
-    ...(args.minimumVersion === undefined ? {} : { minimumVersion: args.minimumVersion }),
-    ...(args.declaredRange === undefined ? {} : { declaredRange: args.declaredRange }),
-  });
+  // Every check is written to turn a data problem into a verdict rather
+  // than an exception, and each validates its own inputs to keep that true.
+  // This catch is the backstop for the case where one of them is wrong.
+  //
+  // It is here because of where an escaping throw would land, not because
+  // one is expected: an uncaught exception ends a Node process on status
+  // `1`, and `1` is this contract's code for "ran, and found a real
+  // problem." A crash would therefore be reported to a consumer's CI as a
+  // finding about their repository, with no report and no named reason. `2`
+  // is the honest answer for a run that did not complete — and this catch
+  // only ever produces a `2`, so it can never turn a verdict into a pass.
+  let report: VerifyStandardsReport;
+  try {
+    report = verifyStandards(inputs, {
+      selectedChecks: args.checks,
+      installedVersion: port.resolveOwnVersion(),
+      ...(args.minimumVersion === undefined ? {} : { minimumVersion: args.minimumVersion }),
+      ...(args.declaredRange === undefined ? {} : { declaredRange: args.declaredRange }),
+    });
+  } catch (error) {
+    port.writeErr(
+      `verify-standards: the run did not complete, so nothing about this repository has been established: ` +
+        `${error instanceof Error ? error.message : String(error)}\n`,
+    );
+    return 2;
+  }
 
   port.writeOut(args.format === "json" ? `${JSON.stringify(report, null, 2)}\n` : renderReport(report));
   return report.exitCode;

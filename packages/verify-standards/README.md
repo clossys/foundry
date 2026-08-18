@@ -195,6 +195,7 @@ named in the result rather than disappearing into a silent pass.
 | `TaskRecordExemption` | Type. Which exemption fired and what matched. |
 | `TaskItemObservation` | Type. What the caller found out about the referenced item. |
 | `TaskItemLookupOutcome` | Type. How the caller's lookup ended. |
+| `TASK_ITEM_LOOKUP_OUTCOMES` | The same vocabulary as a value, so a caller-supplied outcome can be checked against it at runtime. An outcome outside it is `indeterminate`, never a resolved item. |
 | `ParsedTaskReference` | Type. |
 | `TaskRecordFinding` | Type. |
 | `TaskRecordReason` | Type. |

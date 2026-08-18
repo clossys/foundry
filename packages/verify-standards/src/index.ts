@@ -26,7 +26,7 @@ export type { ParsedVersion, VersionFloorFinding, VersionFloorInput, VersionFloo
 export { checkSecretScan, secretScanReasons } from "./secret-scan.js";
 export type { SecretScanFinding, SecretScanHit, SecretScanObservation, SecretScanPolicy, SecretScanReason, SecretScanScope } from "./secret-scan.js";
 
-export { checkTaskRecord, extractTaskReferenceText, parseTaskReference, taskRecordReasons } from "./task-record.js";
+export { TASK_ITEM_LOOKUP_OUTCOMES, checkTaskRecord, extractTaskReferenceText, parseTaskReference, taskRecordReasons } from "./task-record.js";
 export type { ParsedTaskReference, TaskItemLookupOutcome, TaskItemObservation, TaskRecordExemption, TaskRecordFinding, TaskRecordObservation, TaskRecordPolicy, TaskRecordReason, TaskRecordReport } from "./task-record.js";
 
 export { checkReviewEvidence, reviewEvidenceReasons } from "./review-evidence.js";

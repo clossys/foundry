@@ -131,6 +131,26 @@ describe("checkReviewEvidence", () => {
     });
   });
 
+  it.each([[undefined], [null], [{}], [{ requireReviewPresence: "yes" }]])(
+    "is indeterminate when the options are %s",
+    (broken) => {
+      // `requireReviewPresence` has no default. Reading an absent one as
+      // `false` would be this package choosing a consuming repository's
+      // review policy and then reporting the result as the repository's own.
+      const report = checkReviewEvidence(evidence(), policy, broken as unknown as typeof options);
+      expect(report.result).toMatchObject({ verdict: "indeterminate", reason: "no-options-supplied" });
+      expect(gateResultToExitCode(report.result)).toBe(2);
+    },
+  );
+
+  it("is indeterminate when headShaUnderTest is supplied and is not a string", () => {
+    const report = checkReviewEvidence(evidence(), policy, {
+      requireReviewPresence: true,
+      headShaUnderTest: 7,
+    } as unknown as typeof options);
+    expect(report.result).toMatchObject({ verdict: "indeterminate", reason: "no-options-supplied" });
+  });
+
   it("never reports satisfied on a path that evaluated nothing", () => {
     for (const bundle of [undefined, {}, evidence({ paginationComplete: false })]) {
       expect(checkReviewEvidence(bundle, policy, options).result.verdict).not.toBe("satisfied");

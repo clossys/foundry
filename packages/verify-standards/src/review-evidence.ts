@@ -38,6 +38,7 @@ import { createGateReasons, gateSatisfied, gateViolated } from "@vespeneventures
 import type { GateResult } from "@vespeneventures/governance/gates";
 import { validateReviewEvidence, validateReviewPolicy } from "@vespeneventures/governance/review";
 import type { ReviewEvidenceBundle, ReviewFinding, ReviewFindingRule, ReviewPolicy } from "@vespeneventures/governance/review";
+import { isRecord } from "./shape.js";
 import type { CheckFinding } from "./types.js";
 
 /** Requirements this check adds on top of whatever the review policy already demands. */
@@ -171,9 +172,36 @@ export interface ReviewEvidenceReport {
 export function checkReviewEvidence(
   evidence: unknown,
   policy: unknown,
-  options: ReviewEvidenceOptions,
+  options: ReviewEvidenceOptions | null | undefined,
 ): ReviewEvidenceReport {
   const empty: readonly string[] = [];
+  // Options are validated before anything else is read, and validated as
+  // data rather than trusted as a type. `requireReviewPresence` is a
+  // required boolean with no default, so an options object this package
+  // cannot read is a missing input, not an implied setting: reading it as
+  // absent-therefore-false would be this package quietly choosing a
+  // consuming repository's review policy and then reporting the result as
+  // if the repository had chosen it. `{}` and `null` reach here from a
+  // caller-assembled JSON document as easily as a correct object does.
+  if (!isRecord(options) || typeof options.requireReviewPresence !== "boolean") {
+    return {
+      providersObserved: empty,
+      result: reviewEvidenceReasons.indeterminate(
+        "no-options-supplied",
+        "No usable review-evidence options were supplied. requireReviewPresence must be an explicit boolean, because " +
+          "a default would be this package choosing a consuming repository's review policy for it.",
+      ),
+    };
+  }
+  if (options.headShaUnderTest !== undefined && typeof options.headShaUnderTest !== "string") {
+    return {
+      providersObserved: empty,
+      result: reviewEvidenceReasons.indeterminate(
+        "no-options-supplied",
+        "headShaUnderTest was supplied and is not a string, so the commit this run claims to be about cannot be read.",
+      ),
+    };
+  }
   if (evidence === undefined || evidence === null) {
     return {
       providersObserved: empty,

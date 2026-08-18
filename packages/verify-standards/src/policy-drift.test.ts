@@ -118,6 +118,37 @@ describe("checkPolicyDrift", () => {
     });
   });
 
+  it.each([[null], [42], ["a-string"]])("is indeterminate when a bound document entry is %s", (entry) => {
+    const report = checkPolicyDrift(
+      observation({ documents: [entry] as unknown as PolicyDriftObservation["documents"] }),
+      strict,
+    );
+    expect(report.result).toMatchObject({ verdict: "indeterminate", reason: "observation-malformed" });
+    expect(gateResultToExitCode(report.result)).toBe(2);
+  });
+
+  it.each([
+    ["declaredRequirements", { declaredRequirements: [null] }],
+    ["declaredRequirements", { declaredRequirements: "not-a-list" }],
+    ["liveRequirements", { liveRequirements: [{ detail: "no id here" }] }],
+    ["documents", { documents: "not-a-list" }],
+  ])("is indeterminate rather than throwing when %s is malformed", (_name, broken) => {
+    const report = checkPolicyDrift(
+      { ...observation(), ...broken } as unknown as PolicyDriftObservation,
+      strict,
+    );
+    expect(report.result).toMatchObject({ verdict: "indeterminate", reason: "observation-malformed" });
+  });
+
+  it.each([[undefined], [null], [{}], [{ allowUndeclaredLiveRequirements: "no" }]])(
+    "is indeterminate when the options are %s",
+    (broken) => {
+      const report = checkPolicyDrift(observation(), broken as unknown as typeof strict);
+      expect(report.result).toMatchObject({ verdict: "indeterminate", reason: "no-options-supplied" });
+      expect(gateResultToExitCode(report.result)).toBe(2);
+    },
+  );
+
   it("never reports satisfied on a path that evaluated nothing", () => {
     for (const input of [
       undefined,

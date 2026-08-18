@@ -175,6 +175,27 @@ describe("main", () => {
     expect(report.overall).toMatchObject({ verdict: "indeterminate", reason: "no-observation-supplied" });
   });
 
+  it.each([["null"], ["42"], ['"a-string"'], ["[]"]])("exits 2 for an inputs file holding %s", (body) => {
+    const port = testPort({ "in.json": body });
+    expect(main(["--inputs", "in.json"], port)).toBe(2);
+    expect(port.out.join("")).toContain("no-inputs-supplied");
+  });
+
+  it("exits 2, never 1, if the run itself fails to complete", () => {
+    // The backstop exists because of where an escaping throw would land:
+    // an uncaught exception ends a Node process on status 1, and 1 is this
+    // contract's code for "ran, and found a real problem". A crash reported
+    // as a finding about a consumer's repository is the wrong answer twice.
+    const port = testPort({ "in.json": cleanInputs });
+    const exploding: CliPort = {
+      ...port,
+      resolveOwnVersion() {
+        throw new Error("the version resolver failed");
+      },
+    };
+    expect(main(["--inputs", "in.json"], exploding)).toBe(2);
+  });
+
   it("escapes a pipe in a finding so it cannot break the rendered table", () => {
     const port = testPort({
       "in.json": JSON.stringify({
