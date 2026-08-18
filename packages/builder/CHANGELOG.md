@@ -5,6 +5,23 @@ All notable changes to `@vespeneventures/builder` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - Unreleased
+
+### Changed
+
+- **`live-state.ts` now re-exports `@vespeneventures/controller/conventions`'s
+  `liveStateSurface` contract instead of defining its own copy (#255).**
+  `LIVE_STATE_SURFACE_FINDING_KINDS`, `LiveStateSurfaceDeclaration`,
+  `validateLiveStateSurfaceDeclaration`, `reconcileLiveState`,
+  `liveStateVerified`/`liveStateDrifted`/`liveStateCouldNotVerify`, and every
+  associated type keep their existing names and behaviour — this package
+  already depended on `controller` for the `GateResult` ternary the contract
+  is built on, so re-exporting removes a real duplicate at no new dependency
+  cost. No consumer-visible API change.
+- Widened the `@vespeneventures/controller` dependency range from `~0.2.0`
+  to `~0.3.0` to track controller's own minor bump (the new canonical
+  `liveStateSurface` export above).
+
 ## [0.2.0] - Unreleased
 
 ### Added

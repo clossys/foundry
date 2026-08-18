@@ -5,6 +5,32 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - Unreleased
+
+### Added
+
+- **`./conventions` gains the canonical `liveStateSurface` contract (#255):**
+  `LIVE_STATE_SURFACE_FINDING_KINDS` (all five finding kinds, including
+  `declared-but-not-verifiable`), `LiveStateSurfaceDeclaration` and
+  `validateLiveStateSurfaceDeclaration`, `reconcileLiveState`, and the three
+  outcome constructors `liveStateVerified` / `liveStateDrifted` /
+  `liveStateCouldNotVerify`. This consolidates a shape that had already been
+  reimplemented independently in `@vespeneventures/builder` and
+  `@vespeneventures/observer`, plus this package's own tier-specific
+  `reconciliationFindingKinds` (`./routines.ts`) and
+  `scheduleReconciliationFindingKinds` (`./schedules.ts`): `controller` owns
+  every rule those two vocabularies already specialize and has no dependency
+  of its own, so it is the shape's one canonical home. Neither tier-specific
+  validator's behaviour changed.
+- New shipped convention document,
+  `conventions/documents/live-state-reconciliation.md`, naming the shared
+  contract once: a declaration of intent, a live state owned elsewhere, a
+  reconciliation surface that may not exist yet, and the three-state outcome
+  (verified / drifted / could-not-verify) that keeps "nobody looked" from
+  reading as "looks fine." `routine-declaration.md` and
+  `schedule-declaration.md` now each cross-reference it as the shape their
+  own finding vocabulary specializes.
+
 ## [0.2.1] - Unreleased
 
 ### Fixed

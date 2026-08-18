@@ -29,6 +29,18 @@ health, a toolchain's runtime — turn out to share one structure:
 - and a failure mode where the offline check goes green and gets mistaken
   for the whole answer.
 
+The canonical implementation of this shape now lives in
+`@vespeneventures/controller/conventions` — it owns every rule this
+repository's tiers share and has no dependency of its own, so this package
+(which already depended on controller for `GateResult`) re-exports its copy
+rather than keeping a second one. Every name below is unchanged for a
+consumer of `@vespeneventures/builder`: this is a consolidation of where the
+code lives, not a change to what it does. See
+`@vespeneventures/controller`'s own shipped documents,
+`live-state-reconciliation.md` for the shared document and
+`routine-declaration.md` / `schedule-declaration.md` for the two tiers that
+motivated generalizing this shape in the first place.
+
 `LiveStateSurfaceDeclaration` is that declaration, with every field the two
 tiers that motivated this contract already used in practice:
 
@@ -414,7 +426,7 @@ separate package subpaths, documented in their own sections above.
 
 ## Requirements
 
-Node.js >= 20, ESM. Runtime dependency: `@vespeneventures/controller` (`~0.2.0`), for the `GateResult` ternary the `liveStateSurface` and CI-mechanics modules build on rather than reinvent.
+Node.js >= 20, ESM. Runtime dependency: `@vespeneventures/controller` (`~0.3.0`), for the `GateResult` ternary the `liveStateSurface` and CI-mechanics modules build on rather than reinvent.
 
 ## Licence
 

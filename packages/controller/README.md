@@ -87,7 +87,7 @@ separately versioned packages.
 | `@vespeneventures/controller/cleanup` | Pure workspace-cleanup classification: caller-normalized inventory and observations in, a typed `owned` / `safe-candidate` / `blocked` proposal out. No I/O, no deletion API. |
 | `@vespeneventures/controller/composition` | Pure caller-owned cross-plane constraint, supply, decision, exception, and effective-value resolution. |
 | `@vespeneventures/controller/conventions` | Account-neutral agent conventions two parties can share without either owning the other: branch provenance, skill naming, agent interoperability, routine and schedule declarations, CI gate naming, and the capability-first skill registry. Ships the documents/adapters below as defaults and enforces only their grammar — never byte-identity with its own prose. |
-| `@vespeneventures/controller/conventions/documents/*` | The shipped convention documents themselves (`branch-provenance.md`, `skill-grammar.md`, `agent-interoperability.md`, `routine-declaration.md`, `schedule-declaration.md`, `skill-registry.md`, `machine-guidance.md`, `machine-baseline.md`, `gate-naming.md`, `runner-conventions.md`) as real files a provisioning step can copy or template onto a machine. |
+| `@vespeneventures/controller/conventions/documents/*` | The shipped convention documents themselves (`branch-provenance.md`, `skill-grammar.md`, `agent-interoperability.md`, `routine-declaration.md`, `schedule-declaration.md`, `live-state-reconciliation.md`, `skill-registry.md`, `machine-guidance.md`, `machine-baseline.md`, `gate-naming.md`, `runner-conventions.md`) as real files a provisioning step can copy or template onto a machine. |
 | `@vespeneventures/controller/conventions/adapters/*` | The shipped adapter files (`agent-policy.rules`, `shell-integration.zsh`, `branch-provenance-hook.sh`, `heavy-cmd-hook.sh`, `scoped-main-push.sh`, `workspace-shell.zsh`) as real files, same shape as the documents above. |
 | `@vespeneventures/controller/policy` | The content-addressed `PolicyBinding` primitive: compute a digest, validate a binding's shape, verify a binding against materialized content. Zero I/O, zero dependency of its own — the primitive `./gates` and `./artifacts` bind rules and artifacts to documents with, without ever committing the document itself. |
 
@@ -994,8 +994,9 @@ message matches exactly.)
 `@vespeneventures/controller/conventions` is the account-neutral agent
 conventions two parties can share without either owning the other, plus the
 checks that enforce their grammar: branch provenance, skill naming, agent
-interoperability, routine and schedule declarations, CI gate naming,
-neutrality, and a capability-first skill registry.
+interoperability, routine and schedule declarations, live-state
+reconciliation, CI gate naming, neutrality, and a capability-first skill
+registry.
 
 The split is the design. This subpath enforces the *grammar* and ships the
 *prose* as a default. It never gates on byte-identity with that prose: a
@@ -1012,6 +1013,8 @@ import {
   validateSkillName,
   validateRoutineDeclaration,
   validateScheduleDeclaration,
+  validateLiveStateSurfaceDeclaration,
+  reconcileLiveState,
   GATE_VERBS,
   validateGateName,
   scanNeutrality,
@@ -1022,6 +1025,44 @@ import {
 
 const findings = validateBranchName("claude/fix-the-thing", { taxonomy: TAXONOMY_PREFIXES });
 ```
+
+### `liveStateSurface` (#255): the shared reconciliation contract
+
+`reconciliationFindingKinds` (routine tier, `./routines.ts`) and
+`scheduleReconciliationFindingKinds` (schedule tier, `./schedules.ts`) are
+each a tier-specific wording of the same four drift findings. `live-state.ts`
+names that shape once, canonically, and adds the fifth state neither
+tier-specific vocabulary named on its own:
+
+```ts
+import {
+  LIVE_STATE_SURFACE_FINDING_KINDS,
+  liveStateCouldNotVerify,
+  reconcileLiveState,
+  validateLiveStateSurfaceDeclaration,
+} from "@vespeneventures/controller/conventions";
+
+liveStateCouldNotVerify("deployment.web", ""); // throws — never a silent pass
+
+const report = reconcileLiveState<string, string>({
+  subject: "toolchain.runtime.node",
+  declared: { value: "20.11.1" },
+  observation: { attempted: true, live: "18.19.0" },
+  agrees: (declared, live) => declared === live,
+});
+// report.result.verdict === "violated"
+```
+
+`reconcileLiveState` returns exactly one of `verified` / `drifted` /
+`could-not-verify` — never a boolean — built on this package's own
+`GateResult` ternary (`./gates`). See `conventions/documents/
+live-state-reconciliation.md` for the shared document, and
+`routine-declaration.md` / `schedule-declaration.md` for how the two
+existing tiers specialize it without any change to their own behaviour.
+`@vespeneventures/builder` re-exports this module's exports verbatim rather
+than keeping its own copy; `@vespeneventures/observer` keeps a deliberate,
+explained duplicate to preserve its own zero-runtime-dependency contract —
+see that package's own README.
 
 `documentPath(id)`/`adapterPath(id)` resolve absolute paths to the real
 shipped files under `./conventions/documents/*` and `./conventions/adapters/*`
@@ -1034,14 +1075,16 @@ adapter can find the shared guidance without duplicating it.
 | --- | --- | --- |
 | `TAXONOMY_PREFIXES` / `validateBranchName` | constant / function | Agent branch-naming grammar and its validator. |
 | `SKILL_VERBS` / `validateSkillName` / `validateSkillSet` | constant / functions | Skill-naming grammar and its validators. |
-| `validateRoutineDeclaration` / `validateRoutineSet` / `validateScheduledSkillDescription` | functions | Routine-declaration grammar and reconciliation. |
-| `isCronExpression` / `validateScheduleDeclaration` / `validateScheduleSet` | functions | Schedule-declaration grammar and reconciliation. |
+| `validateRoutineDeclaration` / `validateRoutineSet` / `validateScheduledSkillDescription` / `reconciliationFindingKinds` | functions / constant | Routine-declaration grammar and its tier-specific live-reconciliation findings. |
+| `isCronExpression` / `validateScheduleDeclaration` / `validateScheduleSet` / `scheduleReconciliationFindingKinds` | functions / constant | Schedule-declaration grammar and its tier-specific live-reconciliation findings. |
+| `LIVE_STATE_SURFACE_FINDING_KINDS` / `validateLiveStateSurfaceDeclaration` / `reconcileLiveState` / `liveStateVerified` / `liveStateDrifted` / `liveStateCouldNotVerify` / `liveStateReconciliationReasons` | constant / functions | The shared `liveStateSurface` reconciliation contract (#255) the two rows above specialize. |
 | `GATE_VERBS` / `validateGateName` / `validateGateSet` | constant / functions | CI gate-naming grammar and its validators. |
 | `scanNeutrality` | function | Structural neutrality scan — the same scan `scripts/check-neutrality.mjs` runs against this subpath's own shipped documents/adapters. |
 | `SKILL_REGISTRY_SCHEMA_VERSION` / `validateSkillRegistry` / `computeCapabilityCoverage` / `validateRoutineCoverage` | constant / functions | The capability-first skill registry's grammar, coverage computation, and routine-coverage cross-check. |
 | `CONVENTION_DOCUMENTS` / `CONVENTION_ADAPTERS` / `DOCUMENTS_ROOT` / `ADAPTERS_ROOT` / `documentPath` / `adapterPath` / `templatedFilenames` | constants / functions | The shipped document/adapter manifest and path resolution — no I/O. |
 | `renderProductLoader` | function | Renders a small pointer file a consuming product installs to reach shared guidance without duplicating it. |
 | `ConventionDocument` / `ConventionAdapter` / `RoutineDeclaration` / `RoutineRegistry` / `ScheduleDeclaration` / `ScheduleRegistry` / `Finding` / `Severity` | types | Shapes shared across the validators above. |
+| `LiveStateSurfaceDeclaration` / `LiveStateSurfaceFindingKind` / `LiveStateDriftKind` / `LiveStateFinding` / `LiveStateSubjectReport` / `LiveStateReconciliationResult` / `LiveStateReconciliationReason` / `LiveStateObservation` / `LiveStateDeclarationValue` / `ReconcileLiveStateInput` | types | The `liveStateSurface` declaration, its finding vocabulary, and the shapes `reconcileLiveState` reads and returns. |
 
 ### `./policy`: the content-addressed binding primitive
 

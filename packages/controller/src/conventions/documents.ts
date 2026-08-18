@@ -66,6 +66,12 @@ export const CONVENTION_DOCUMENTS: readonly ConventionDocument[] = Object.freeze
     templated: false,
   }),
   Object.freeze({
+    id: "live-state-reconciliation",
+    filename: "live-state-reconciliation.md",
+    title: "Live-state reconciliation",
+    templated: false,
+  }),
+  Object.freeze({
     id: "skill-registry",
     filename: "skill-registry.md",
     title: "Capability-first skill registry",

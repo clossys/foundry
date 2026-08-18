@@ -1,12 +1,32 @@
 /**
- * The `liveStateSurface` shape proposed in issue #255: declared intent and
- * live state are one contract, not a detail rewritten per subsystem.
- * `observer` adopts it verbatim, the same way `builder` does, for the same
- * reason issue #255 gives — a green offline check (this package's own test
- * suite included) is evidence a contract holds, never evidence that any
- * real infrastructure exists, is reachable, or is being written to.
+ * The `liveStateSurface` shape from issue #255: declared intent and live
+ * state are one contract, not a detail rewritten per subsystem. The
+ * canonical home for this shape is `@vespeneventures/controller/
+ * conventions` (`conventions/live-state.ts` there) — it owns every rule
+ * this repository's tiers share and has no dependency of its own, so
+ * `builder` re-exports controller's copy rather than keeping one, and any
+ * new subject adopting this contract should reuse controller's copy too.
  *
- * Every field name here matches issue #255's proposed shape exactly:
+ * `observer` is the deliberate exception, and says so here rather than
+ * leaving a reader to notice the duplication and wonder why it wasn't
+ * cleaned up: this package's own contract is zero runtime dependencies
+ * (see README.md's Requirements section) — no dependency on
+ * `@vespeneventures/controller`, or on anything else, so that a caller
+ * measuring gate efficacy or handling telemetry never inherits a governance
+ * package's own dependency surface just to do it. Adding controller as a
+ * dependency to remove five frozen strings and one small interface would
+ * spend that property to dedupe less code than the honest explanation of
+ * why it's duplicated takes to write. So this file keeps its own copy,
+ * on purpose, kept in sync by hand: `LiveStateSurface`'s fields,
+ * `liveStateFindingKinds`, and `validateLiveStateSurface`'s checks below
+ * must read identically to controller's `LiveStateSurfaceDeclaration`,
+ * `LIVE_STATE_SURFACE_FINDING_KINDS`, and `validateLiveStateSurfaceDeclaration`
+ * — a future change to either canonical shape should be mirrored here in
+ * the same pull request, and this comment is what a reviewer checks that
+ * against.
+ *
+ * Every field name here matches controller's shape, and issue #255's
+ * original proposal, exactly:
  *
  *   - `store`             — where the live state actually lives, in prose.
  *   - `readableByScript`  — an explicit boolean, never implicit. Required,
@@ -42,8 +62,8 @@ export interface LiveStateSurface {
  * surface — that requires the live probe, which is exactly what `observer`
  * does not perform on its own (see `gate-efficacy.ts`'s header). The
  * vocabulary is exported as data, for a caller's own reconciliation surface
- * to report against, the same way `@vespeneventures/conventions` exports
- * `reconciliationFindingKinds` and `scheduleReconciliationFindingKinds`
+ * to report against, the same way `@vespeneventures/controller/conventions`
+ * exports `reconciliationFindingKinds` and `scheduleReconciliationFindingKinds`
  * rather than implementing the probes itself.
  */
 export const liveStateFindingKinds = Object.freeze([
