@@ -3,6 +3,29 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.0] - 2026-08-18
+
+### Changed
+
+- The content-addressed `PolicyBinding` this package reuses now resolves
+  through `@vespeneventures/controller/policy` instead of
+  `@vespeneventures/policy`. The recut recorded in the producing repository's
+  decision 9 merged `governance`, `conventions` and `policy` into one rules
+  package; `policy` was a pure zero-I/O function with no lifecycle of its own,
+  sitting one level below the package whose rules it binds.
+- This is a rename, not a rewrite. No export, argument shape, or return type
+  changed here or upstream — `checkLedgerDrift`, `appendEntry` and
+  `checkAppendOnly` behave exactly as before, and this package still never
+  imports `@vespeneventures/strategy`.
+- One first-party dependency instead of one: `@vespeneventures/policy` is
+  replaced by `@vespeneventures/controller`, not added to.
+
+### Note for installed consumers
+
+`@vespeneventures/policy`'s published versions remain resolvable and carry a
+deprecation record naming their replacement, so a consumer pinned to `0.1.1`
+of this package keeps working unchanged. It will not receive further fixes.
+
 ## [0.1.1] - 2026-08-13
 
 ### Fixed
