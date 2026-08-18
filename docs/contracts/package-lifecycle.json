@@ -85,6 +85,7 @@
       "forwardsToReplacement": false
     },
     { "name": "@vespeneventures/ui", "status": "published" },
+    { "name": "@vespeneventures/verify-standards", "status": "incubating" },
     {
       "name": "@vespeneventures/voice",
       "status": "deprecated",
