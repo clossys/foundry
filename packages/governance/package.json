@@ -63,7 +63,7 @@
     "LICENSE"
   ],
   "sideEffects": false,
-  "description": "Read-only package lifecycle and process orchestration, including catalog, composition, gates, release, repository-profile, requirements, exact-root evaluation, and review-evidence subpaths without publishing or deploying.",
+  "description": "Deprecated compatibility entry point for @vespeneventures/controller. Its ./catalog, ./gates, ./release, ./repository, ./review, ./artifacts, ./cleanup, and ./composition subpaths, and its foundry-governance/foundry-check/repository-check/review-check commands, all forward to the matching @vespeneventures/controller subpath.",
   "keywords": [
     "governance",
     "package-lifecycle",
@@ -88,7 +88,7 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@vespeneventures/policy": "^0.1.0"
+    "@vespeneventures/controller": "^0.1.0"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -100,12 +100,6 @@
     "@types/node": "^22.10.0",
     "typescript": "~6.0.0",
     "vitest": "^4.1.9"
-  },
-  "peerDependencies": {
-    "typescript": "~6.0.0"
-  },
-  "peerDependenciesMeta": {
-    "typescript": { "optional": true }
   },
   "publishConfig": {
     "registry": "https://npm.pkg.github.com"

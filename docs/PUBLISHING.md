@@ -33,31 +33,39 @@ Publication order follows the runtime graph, not filesystem order or the
 order packages happen to appear in a workspace:
 
 ```
-policy ── governance
+controller ── governance
+controller ── policy
 ```
 
-`governance` owns its catalog, composition, gates, release, repository, and review
-subpaths; its only Foundry runtime sibling is `policy`. The former standalone
-package names remain compatibility artifacts and must not be selected for new
-consumer integrations. A local workspace build is not evidence that this
-graph is closed: workspace links can satisfy a package that an external
-registry installer cannot obtain.
+`controller` (issue #282 — formerly three separate packages: `governance`,
+`conventions`, and `policy`) owns the catalog, composition, gates, release,
+repository, review, conventions, and policy subpaths, with no runtime
+dependency of its own. `governance` and `policy` are deprecated compatibility
+packages that forward every export to the matching `controller` subpath; the
+former standalone package names (`governance`, `policy`, `catalog`, `gates`,
+`release`, `repository`, `review`) all remain compatibility artifacts and
+must not be selected for new consumer integrations. A local workspace build
+is not evidence that this graph is closed: workspace links can satisfy a
+package that an external registry installer cannot obtain.
 
 For a dependent package, the final proof is an isolated install of the exact
 tarball that was scanned and selected for publication, after its sibling
 runtime packages are present in the configured registry.
-`@vespeneventures/release` supports that proof with `packRoundTrip`'s explicit
-`tarballPath` and `registry` options. The registry token is supplied by the
-caller for child npm processes only; it is never inherited from ambient
-configuration or retained in a kept debug directory. The default round trip
-intentionally remains an unauthenticated public-registry proof.
+`@vespeneventures/controller`'s own `./release` subpath supports that proof
+with `packRoundTrip`'s explicit `tarballPath` and `registry` options. The
+registry token is supplied by the caller for child npm processes only; it is
+never inherited from ambient configuration or retained in a kept debug
+directory. The default round trip intentionally remains an unauthenticated
+public-registry proof.
 
-`@vespeneventures/governance` is also a consumer-facing CLI. Before publishing
-it, verify an isolated private-registry installation can import its public API
-and run `foundry-governance` against a valid lifecycle document. Governance is
-read-only: package preflight is used only by the producer that intends to
-publish; ordinary consuming workspaces run its lifecycle check without any
-registry write.
+`@vespeneventures/controller` is also a consumer-facing CLI (as
+`@vespeneventures/governance` was before issue #282, and still is through its
+now-deprecated forward). Before publishing it, verify an isolated
+private-registry installation can import its public API and run
+`foundry-governance` against a valid lifecycle document. It is read-only:
+package preflight is used only by the producer that intends to publish;
+ordinary consuming workspaces run its lifecycle check without any registry
+write.
 
 ## 1. Copy the source — and only the source
 
@@ -182,7 +190,7 @@ tarball, not the tree).
 structural defects such as a missing `LICENSE` — but it never installs the
 tarball or imports a single declared export. That install-and-import proof is
 a separate, genuinely distinct check (`packRoundTrip`, see
-[`packages/governance/src/release/pack-round-trip.ts`](../packages/governance/src/release/pack-round-trip.ts)),
+[`packages/controller/src/release/pack-round-trip.ts`](../packages/controller/src/release/pack-round-trip.ts)),
 and it does not run as part of `preflight-package.mjs` at all. This is a real
 gap, not merely an enforcement gap: there is currently no local command that
 proves a package installs and imports cleanly before you propose publishing
@@ -328,8 +336,9 @@ not depend on that: it compares every "published"
 entry's declared intent — recorded separately in
 [`docs/contracts/package-visibility.json`](contracts/package-visibility.json),
 since `package-lifecycle.json`'s schema is owned by the published
-`@vespeneventures/governance` package and a new field there would force a
-version bump for what is really repository-tooling metadata — against the
+`@vespeneventures/controller` package (formerly `@vespeneventures/governance`,
+before issue #282) and a new field there would force a version bump for
+what is really repository-tooling metadata — against the
 package's real GitHub Packages visibility, and fails when they disagree.
 This is the gate that would have caught `@vespeneventures/ui` sitting
 private across 12 published versions.
@@ -363,11 +372,11 @@ trust the remaining `404`s as genuine.
 
 ### Deprecating compatibility packages
 
-The old `catalog`, `gates`, `release`, `repository`, and `review` names are
-published compatibility wrappers, not new integration targets. After their
-replacement version has passed registry qualification, migrate to the
-corresponding `@vespeneventures/governance` subpath. Do not unpublish these
-names: the compatibility wrapper remains the migration path.
+The old `catalog`, `gates`, `release`, `repository`, `review`, `governance`,
+and `policy` names are published compatibility wrappers, not new integration
+targets. After their replacement version has passed registry qualification,
+migrate to the corresponding `@vespeneventures/controller` subpath. Do not
+unpublish these names: the compatibility wrapper remains the migration path.
 
 GitHub Packages currently rejects `npm deprecate` metadata writes for this
 registry (including explicit versions with the job-scoped `packages: write`

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/** Executable-only entry point for `repository-check`. */
-import { run } from "./cli.js";
+/** @deprecated Compatibility executable for `repository-check`. */
+import { run } from "@vespeneventures/controller/repository";
 
 run();

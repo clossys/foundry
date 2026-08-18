@@ -303,6 +303,41 @@ than a discovery.
 collision was raised, weighed and accepted, because within this catalogue the
 register is human jobs and every sibling name reads that way.
 
+### What resolves where
+
+This is a rename and a merge, not a rewrite — no export, argument shape, or
+return type changed. Every subpath previously reachable under the absorbed
+names resolves, unchanged in shape, under its new package:
+
+- `governance` becomes the `controller` root plus `./catalog`, `./gates`,
+  `./release`, `./repository`, `./review`, `./review/github`, `./artifacts`,
+  `./cleanup`, and `./composition`
+- `conventions` becomes `./conventions`, `./conventions/documents/*`, and
+  `./conventions/adapters/*`
+- `policy` becomes `./policy`
+- `secrets` becomes the `locksmith` root, alongside the four verbs it lacked
+- `provisioning` becomes the `builder` root; `deployment` becomes
+  `./deployment`
+- `verify-standards` becomes the `inspector` root; `secret-scan` becomes
+  `./secret-scan`
+
+### No forwarding stubs
+
+An intermediate version of this recut kept `governance` and `policy` as thin
+published stubs forwarding to the matching `controller` subpath, because seven
+packages in this workspace still imported them directly. Five of those seven
+were the compatibility packages retired above; the remaining two — `ledger` and
+the package that became `inspector` — were repointed at `controller` instead.
+
+With no in-workspace consumer left, a stub would be kept only for its own sake,
+and that is precisely the debt this decision exists to remove: decision 8
+created five such stubs for a real reason, the reason expired, and nothing
+noticed for months. The published versions of every absorbed name stay
+resolvable on the registry and carry a deprecation record naming their
+replacement, which is what actually protects an installed consumer. A source
+stub protects nobody who is not already served by that.
+
+
 ---
 
 ## Settled

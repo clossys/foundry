@@ -1,8 +1,19 @@
 #!/usr/bin/env node
+/**
+ * @deprecated Compatibility executable for `foundry-governance`. Migrate to
+ * `@vespeneventures/controller`'s own `foundry-governance` command, which
+ * this forwards to. This file mirrors `@vespeneventures/controller`'s own
+ * `src/cli.ts` byte-for-byte except for the import below: `runGovernanceCheck`
+ * moved with the rest of this package's source (issue #282), but the CLI
+ * plumbing here (arg parsing, text/json formatting) is not itself governance
+ * logic, so it is preserved directly rather than reached through an
+ * `@vespeneventures/controller` subpath that would have to expose it solely
+ * for this file's sake.
+ */
 import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { runGovernanceCheck } from "./governance.js";
+import { runGovernanceCheck } from "@vespeneventures/controller";
 
 const USAGE = `Usage: foundry-governance <lifecycle-file> [root] [options]
 

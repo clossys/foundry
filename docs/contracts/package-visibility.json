@@ -15,7 +15,7 @@
       "intendedVisibility": "public"
     },
     {
-      "name": "@vespeneventures/conventions",
+      "name": "@vespeneventures/controller",
       "intendedVisibility": "public"
     },
     {
@@ -24,10 +24,6 @@
     },
     {
       "name": "@vespeneventures/domain",
-      "intendedVisibility": "public"
-    },
-    {
-      "name": "@vespeneventures/governance",
       "intendedVisibility": "public"
     },
     {
@@ -40,10 +36,6 @@
     },
     {
       "name": "@vespeneventures/locksmith",
-      "intendedVisibility": "public"
-    },
-    {
-      "name": "@vespeneventures/policy",
       "intendedVisibility": "public"
     },
     {
