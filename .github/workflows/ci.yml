@@ -28,10 +28,21 @@ jobs:
         with:
           node-version: 20
 
-      # Repository secrets are unavailable to pull requests from forks. Rather
-      # than fail those runs, the gate drops to PARTIAL mode: structural rules
-      # and secret detection still apply, identity checks are skipped, and the
-      # output says so loudly. A maintainer re-runs FULL mode before merge.
+      # Repository (Actions) secrets are unavailable in TWO distinct cases, not
+      # one — see issue #269. Fork pull requests are the obvious case. The
+      # non-obvious one: a run whose *trigger* is Dependabot (push,
+      # pull_request, pull_request_review, pull_request_review_comment) is
+      # ALSO denied Actions secrets even though its branch lives in this
+      # repository (github.event.pull_request.head.repo.fork is false) —
+      # GitHub reads secrets for those runs from a separate Dependabot
+      # secrets store instead. `secrets.PUBLIC_SAFETY_DENYLIST_B64` below
+      # resolves from whichever store applies to this run automatically; the
+      # step just reports which one it got. Until this repository's owner
+      # also seeds a same-named secret into the Dependabot store, a
+      # Dependabot-triggered run lands here exactly like a fork run: no
+      # secret, PARTIAL mode. That is a real gap this workflow cannot close
+      # by itself — it is a credential the workflow cannot request and this
+      # comment cannot fix, only name.
       - name: Materialise denylist
         id: denylist
         env:
@@ -42,19 +53,55 @@ jobs:
             echo "PUBLIC_SAFETY_DENYLIST=$RUNNER_TEMP/denylist.json" >> "$GITHUB_ENV"
             echo "mode=FULL" >> "$GITHUB_OUTPUT"
           else
-            echo "::warning title=Partial safety scan::No denylist available (expected for fork pull requests). Identity checks are skipped."
+            echo "::warning title=Partial safety scan::No denylist available (expected for fork pull requests, and for any run triggered directly by Dependabot — see issue #269). Identity checks are skipped."
             echo "mode=PARTIAL" >> "$GITHUB_OUTPUT"
           fi
 
+      # From here on, this job's environment may carry the denylist secret
+      # (mode=FULL sets it job-wide via $GITHUB_ENV, not step-scoped) even
+      # for a step that does not pass --require-denylist. Every step below
+      # that touches the secret runs a script from THIS checkout — i.e. from
+      # `scripts/check-public-safety.mjs` etc. as this pull request itself
+      # proposes them. On any run that is not a fork (an internal branch, an
+      # agent's branch, or — once the gap above is closed — Dependabot's),
+      # that is PR-authored code executing with a credential in scope: a PR
+      # that edited its own copy of one of these scripts to read
+      # $PUBLIC_SAFETY_DENYLIST and exfiltrate it would sail through
+      # everything else in this job untouched.
+      #
+      # The fix pins execution, not access: fetch the SAME scripts from this
+      # PR's merge base (never this PR's own copy, regardless of who opened
+      # it) into a directory outside the tree `check-public-safety.mjs`
+      # itself scans, and run those against this checkout as data. A PR
+      # proposes arbitrary content; only base-ref code ever runs while the
+      # secret is present. The one cost: a PR that fixes a bug in one of
+      # these scripts does not get to exercise its own fix in its own CI run
+      # — the same trade every base-ref-pinned credentialed step makes.
+      - name: Checkout trusted scripts (base ref only, never this PR's own copy)
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.event.pull_request.base.sha || github.sha }}
+          path: ${{ runner.temp }}/trusted
+          sparse-checkout: |
+            scripts
+            package-scope.json
+          sparse-checkout-cone-mode: false
+
       - name: check-public-safety
-        run: node scripts/check-public-safety.mjs . --allow-changelogs
+        run: node "$RUNNER_TEMP/trusted/scripts/check-public-safety.mjs" . --allow-changelogs
 
       # On anything that is not a fork pull request the denylist must be
-      # present. This turns a missing or misnamed secret into a visible failure
-      # instead of a quietly weakened gate on the trunk.
+      # present. This turns a missing or misnamed secret into a visible
+      # failure instead of a quietly weakened gate on the trunk — including
+      # for Dependabot, which is not a fork either. That run reaching this
+      # step and failing here is correct until the Dependabot secrets store
+      # carries this same secret (see "Materialise denylist" above); it is
+      # not this step's job to quietly accept a degraded scan for a PR type
+      # nobody reviews line by line (the option issue #269 explicitly
+      # rejected).
       - name: Require FULL mode on trunk and internal PRs
         if: github.event.pull_request.head.repo.fork != true
-        run: node scripts/check-public-safety.mjs . --allow-changelogs --require-denylist
+        run: node "$RUNNER_TEMP/trusted/scripts/check-public-safety.mjs" . --allow-changelogs --require-denylist
 
       # A commit message is exactly as public and exactly as permanent as any
       # file it changes — editing a later commit does not remove it from
@@ -89,9 +136,9 @@ jobs:
             extra=()
           fi
           if [ "$IS_FORK" = "true" ]; then
-            node scripts/check-commit-messages.mjs "$range" "${extra[@]}"
+            node "$RUNNER_TEMP/trusted/scripts/check-commit-messages.mjs" "$range" "${extra[@]}"
           else
-            node scripts/check-commit-messages.mjs "$range" "${extra[@]}" --require-denylist
+            node "$RUNNER_TEMP/trusted/scripts/check-commit-messages.mjs" "$range" "${extra[@]}" --require-denylist
           fi
 
       # The inverse of the denylist scan above, and the reason it lives in this
@@ -108,10 +155,15 @@ jobs:
         run: node scripts/test-gates.mjs
 
       # Grades the denylist rules themselves, which requires the real denylist
-      # content — forks never see it, so this only runs where one is available.
+      # content — forks (and, until the gap above is closed, Dependabot)
+      # never see it, so this only runs where one is available. Runs from
+      # the trusted checkout for the same reason as the steps above; unlike
+      # them it does not default-resolve package-scope.json from a scanned
+      # root, so --scope-config points it at this checkout's real one
+      # explicitly (see the script's own header on why that flag exists).
       - name: denylist quality
         if: github.event.pull_request.head.repo.fork != true
-        run: node scripts/check-denylist-quality.mjs
+        run: node "$RUNNER_TEMP/trusted/scripts/check-denylist-quality.mjs" --scope-config "$GITHUB_WORKSPACE/package-scope.json"
 
       - name: Redact denylist
         if: always()
@@ -374,9 +426,21 @@ jobs:
 
       - run: npm ci
 
-      # Same materialisation as the `safety` job above: FULL mode when the
-      # secret is available, PARTIAL (no --require-denylist) on fork PRs that
-      # cannot read it.
+      # `npm run build` runs whatever build scripts this pull request's own
+      # package.json files declare. Materialising the denylist secret BEFORE
+      # that step (the previous order here) would put it in env for the
+      # duration of a build driven entirely by this PR's own manifests and
+      # source — i.e. PR-authored code executing with a credential in scope,
+      # on every internal PR, not just a Dependabot or fork one. Building
+      # first and materialising after closes that: nothing that runs with
+      # the secret present is something this PR gets to define the behaviour
+      # of.
+      - run: npm run build
+
+      # Same materialisation as the `safety` job above (see its own comment
+      # for the two distinct secretless cases — fork PRs and Dependabot-
+      # triggered runs, issue #269): FULL mode when the secret is available,
+      # PARTIAL (no --require-denylist) when it is not.
       - name: Materialise denylist
         id: denylist
         env:
@@ -387,11 +451,26 @@ jobs:
             echo "PUBLIC_SAFETY_DENYLIST=$RUNNER_TEMP/denylist.json" >> "$GITHUB_ENV"
             echo "mode=FULL" >> "$GITHUB_OUTPUT"
           else
-            echo "::warning title=Partial safety scan::No denylist available (expected for fork pull requests). Identity checks are skipped."
+            echo "::warning title=Partial safety scan::No denylist available (expected for fork pull requests, and for any run triggered directly by Dependabot — see issue #269). Identity checks are skipped."
             echo "mode=PARTIAL" >> "$GITHUB_OUTPUT"
           fi
 
-      - run: npm run build
+      # Same reasoning and shape as the `safety` job's identical step: the
+      # secret is now present in this job's env, so the script that consumes
+      # it must be base-ref content, never this PR's own copy — see that
+      # job's comment for the full argument. check-artifact-safety.mjs
+      # itself shells out to its own sibling check-public-safety.mjs by
+      # relative path, so pointing at the trusted checkout here carries that
+      # sibling call along with it; no separate wiring needed.
+      - name: Checkout trusted scripts (base ref only, never this PR's own copy)
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          ref: ${{ github.event.pull_request.base.sha || github.sha }}
+          path: ${{ runner.temp }}/trusted
+          sparse-checkout: |
+            scripts
+            package-scope.json
+          sparse-checkout-cone-mode: false
 
       # Loop over every package directory so newly added packages get scanned
       # automatically — nothing here needs updating when packages/ grows.
@@ -407,9 +486,9 @@ jobs:
           for pkg in "${pkgs[@]}"; do
             pkg="${pkg%/}"
             if [ "${{ github.event.pull_request.head.repo.fork }}" = "true" ]; then
-              node scripts/check-artifact-safety.mjs "$pkg"
+              node "$RUNNER_TEMP/trusted/scripts/check-artifact-safety.mjs" "$pkg"
             else
-              node scripts/check-artifact-safety.mjs "$pkg" --require-denylist
+              node "$RUNNER_TEMP/trusted/scripts/check-artifact-safety.mjs" "$pkg" --require-denylist
             fi
           done
 
