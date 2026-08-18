@@ -411,3 +411,73 @@ test("this repository's own real contract files join cleanly (structure only —
   assert.equal(r.code, 2, `expected exit 2 (no token), got ${r.code}: ${r.out}`);
   assert.match(r.out, /GH_PACKAGES_TOKEN is not set/);
 });
+
+// ------------------------------------------- CLI: --declarations-only (offline half)
+//
+// The credentialed half of this gate can only run after publish.yml has
+// already uploaded a tarball, which makes it a detector rather than a gate.
+// `@vespeneventures/secret-scan` published with no visibility declaration and
+// every subsequent publish run went red on a data omission that was fully
+// knowable offline, at review time. These cover the split that fixes that,
+// including the one property the split must NOT weaken: no flag, no token,
+// still exit 2.
+
+test("CLI --declarations-only: runs with NO token and passes when every published entry is declared", () => {
+  withDir((root) => {
+    writeFixture(root, {
+      lifecycle: lifecycleWith([
+        { name: "@fixture/a", status: "published" },
+        { name: "@fixture/b", status: "incubating" },
+      ]),
+      visibility: visibilityWith([{ name: "@fixture/a", intendedVisibility: "public" }]),
+    });
+    const r = run(["--declarations-only"], { cwd: root, env: { GH_PACKAGES_TOKEN: "" } });
+    assert.equal(r.code, 0, `expected exit 0, got ${r.code}: ${r.out}`);
+    assert.match(r.out, /DECLARATIONS OK/);
+    // An incubating entry is not in scope for this join and must not be
+    // counted into it — verify-standards sat at "incubating" while
+    // secret-scan was the actual omission, and a join that swept both in
+    // would have reported a second, false finding.
+    assert.match(r.out, /all 1 "published" packages/);
+    // Must say plainly what it did NOT check. A pass that reads as the whole
+    // answer is the failure mode this repo keeps rediscovering.
+    assert.match(r.out, /Live registry visibility is NOT checked here/);
+  });
+});
+
+test("CLI --declarations-only: an undeclared published entry exits 1 — the secret-scan omission, caught offline", () => {
+  withDir((root) => {
+    writeFixture(root, {
+      lifecycle: lifecycleWith([{ name: "@fixture/undeclared", status: "published" }]),
+      visibility: visibilityWith([]),
+    });
+    const r = run(["--declarations-only"], { cwd: root, env: { GH_PACKAGES_TOKEN: "" } });
+    assert.equal(r.code, 1, `expected exit 1, got ${r.code}: ${r.out}`);
+    assert.match(r.out, /has no entry in/);
+    assert.match(r.out, /DECLARATIONS FAIL/);
+  });
+});
+
+test("CLI --declarations-only: the flag does not weaken fail-closed — no flag and no token is still exit 2", () => {
+  withDir((root) => {
+    writeFixture(root, {
+      lifecycle: lifecycleWith([{ name: "@fixture/a", status: "published" }]),
+      visibility: visibilityWith([{ name: "@fixture/a", intendedVisibility: "public" }]),
+    });
+    const withFlag = run(["--declarations-only"], { cwd: root, env: { GH_PACKAGES_TOKEN: "" } });
+    const withoutFlag = run([], { cwd: root, env: { GH_PACKAGES_TOKEN: "" } });
+    assert.equal(withFlag.code, 0);
+    assert.equal(withoutFlag.code, 2, "the credentialed mode must still refuse to report a pass it never earned");
+  });
+});
+
+test("CLI --declarations-only: a malformed document is still fatal (exit 2), never iterated as if empty", () => {
+  withDir((root) => {
+    writeFixture(root, {
+      lifecycle: { schemaVersion: 1 },
+      visibility: visibilityWith([]),
+    });
+    const r = run(["--declarations-only"], { cwd: root, env: { GH_PACKAGES_TOKEN: "" } });
+    assert.equal(r.code, 2, `expected exit 2, got ${r.code}: ${r.out}`);
+  });
+});
