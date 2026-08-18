@@ -5,6 +5,30 @@ All notable changes to `@vespeneventures/inspector` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - 2026-08-18
+
+### Fixed
+
+- `KNOWN_RELEASES` carried the SHA-256 of **empty input**
+  (`e3b0c442...b7852b855`) as gitleaks 8.30.1's checksum. It is now the real
+  digest, `551f6fc8...3f2470eb`, verified two ways: against the gitleaks
+  project's own `gitleaks_8.30.1_checksums.txt`, and by hashing the
+  8,230,402-byte asset directly.
+
+  **This could not have admitted a bad binary.** `downloadAndVerifyGitleaks`
+  verifies against the *caller's* `options.sha256`, never this table, and a
+  real tarball never hashes to the empty digest — so the failure mode was a
+  guaranteed, unexplained verification failure for any caller passing
+  `resolveGitleaksRelease(v).sha256` straight through, plus a reader seeing a
+  value that looked revalidated and was not.
+
+  The table's own comment already said to revalidate every entry before the
+  first real consumer. Nothing enforced that, so nothing did it, and 0.1.0
+  shipped the placeholder. Four hermetic tests now assert the table is not the
+  empty digest, matches the published checksum exactly, is a well-formed
+  lowercase hex digest, and names the exact asset its version and platform
+  imply — so the same omission cannot recur silently.
+
 ## [0.1.0] - 2026-08-18
 
 ### Added

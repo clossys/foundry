@@ -201,3 +201,46 @@ describe("secret-scan / gitleaks", () => {
     });
   });
 });
+
+// ------------------------------------------------------- KNOWN_RELEASES integrity
+//
+// 0.1.0 shipped this table with the SHA-256 of EMPTY INPUT as gitleaks
+// 8.30.1's checksum. It could not have admitted a bad binary — a real tarball
+// never hashes to it, so verification failed closed — but a caller passing
+// `resolveGitleaksRelease(v).sha256` straight through got a guaranteed,
+// unexplained failure, and a reader got a value that looked revalidated and
+// was not. The table's own comment said to revalidate before the first real
+// consumer; nothing enforced it, so nothing did.
+//
+// These are cheap, hermetic, and make the specific mistake unrepeatable.
+
+describe("KNOWN_RELEASES integrity", () => {
+  const EMPTY_SHA256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+
+  it("no entry carries the digest of empty input", () => {
+    const release = resolveGitleaksRelease("8.30.1");
+    expect(release).toBeDefined();
+    expect(release?.sha256).not.toBe(EMPTY_SHA256);
+  });
+
+  it("8.30.1 carries the checksum published by the gitleaks project for the asset beside it", () => {
+    // Verified 2026-08-18 two ways: against gitleaks_8.30.1_checksums.txt, and
+    // by hashing the 8,230,402-byte asset directly. Pinned here so a future
+    // edit to the table has to change this line too, deliberately.
+    expect(resolveGitleaksRelease("8.30.1")?.sha256).toBe(
+      "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb",
+    );
+  });
+
+  it("every entry's checksum is a well-formed lowercase sha256 hex digest", () => {
+    for (const version of ["8.30.1"]) {
+      expect(resolveGitleaksRelease(version)?.sha256).toMatch(/^[0-9a-f]{64}$/);
+    }
+  });
+
+  it("every entry's url names the exact asset its version and platform imply", () => {
+    const release = resolveGitleaksRelease("8.30.1");
+    expect(release?.url).toContain(getAssetName("8.30.1", "linux", "x64"));
+    expect(release?.url).toContain("/v8.30.1/");
+  });
+});

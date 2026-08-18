@@ -50,9 +50,21 @@ const DEFAULT_CACHE_DIR = join(tmpdir(), "vespeneventures", "secret-scan", "gitl
  *
  *   1. A caller who calls `resolveGitleaksRelease(v).sha256` and passes it
  *      straight through is trusting THIS TABLE, not this module's logic, to
- *      be current. Before shipping this package's first real consumer,
- *      revalidate every entry here against the gitleaks project's own
- *      published checksums for the exact asset URL beside it.
+ *      be current. Revalidate every entry against the gitleaks project's own
+ *      published checksums for the exact asset URL beside it whenever one is
+ *      added or changed.
+ *
+ *      That revalidation was owed before the first real consumer and was not
+ *      done: this table shipped in 0.1.0 carrying
+ *      `e3b0c442...b7852b855` for 8.30.1, which is the SHA-256 of EMPTY
+ *      INPUT — a placeholder that reads exactly like a real digest. It could
+ *      not have leaked a bad binary (a real tarball never hashes to it, so
+ *      verification fails closed), but a caller passing it through got a
+ *      guaranteed, unexplained failure, and a reader got a value that looked
+ *      revalidated and was not. The entry below was verified two ways on
+ *      2026-08-18: against the gitleaks project's own
+ *      `gitleaks_8.30.1_checksums.txt`, and by hashing the 8,230,402-byte
+ *      asset directly.
  *   2. A caller who already has the checksum from its own source of truth
  *      does not need an entry here at all — `downloadAndVerifyGitleaks`
  *      still requires the version to be present in this table (an
@@ -63,7 +75,7 @@ const DEFAULT_CACHE_DIR = join(tmpdir(), "vespeneventures", "secret-scan", "gitl
 const KNOWN_RELEASES: readonly GitleaksRelease[] = Object.freeze([
   {
     version: "8.30.1",
-    sha256: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    sha256: "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb",
     url: "https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz",
   },
 ]);
