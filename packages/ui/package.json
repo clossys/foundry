@@ -123,7 +123,7 @@
   },
   "devDependencies": {
     "@internationalized/date": "^3.12.3",
-    "@testing-library/jest-dom": "^7.0.0",
+    "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.3",
     "@types/node": "^22.10.0",
