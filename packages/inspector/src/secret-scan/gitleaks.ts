@@ -1,11 +1,20 @@
+/**
+ * Verified `gitleaks` binary acquisition — download, checksum, cache.
+ *
+ * Formerly the whole of `@vespeneventures/secret-scan` (see #283); every
+ * export below is unchanged from that package's own shape. This module does
+ * not scan anything and never did: it is pure, verified acquisition, kept
+ * apart from `./attempt.ts` (which runs the binary this resolves) and from
+ * this package's own root (`../secret-scan.ts`, which judges a record of an
+ * attempt — by this binary or any other tool a caller names). See the
+ * package README's "Composition" section for why the three stay separate
+ * modules doing one job together rather than one module doing three.
+ */
+
 import { createHash } from "node:crypto";
 import { mkdirSync, writeFileSync, existsSync, readFileSync, rmSync } from "node:fs";
-import { homedir, tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
-
-const here = dirname(fileURLToPath(import.meta.url));
-const packageRoot = resolve(here, "..");
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 export interface GitleaksRelease {
   readonly version: string;
@@ -28,6 +37,29 @@ export interface GitleaksBinaryResult {
 }
 
 const DEFAULT_CACHE_DIR = join(tmpdir(), "vespeneventures", "secret-scan", "gitleaks");
+/**
+ * KNOWN, NOT TRUSTED
+ * -------------------
+ * This table is a lookup convenience for `resolveGitleaksRelease` — a place
+ * for a caller to find the checksum this package's own maintainers last
+ * recorded for a version, so they do not have to go and get it themselves.
+ * It is never read by `downloadAndVerifyGitleaks` as the value verification
+ * is performed against; `options.sha256`, which the caller states
+ * explicitly, is (see that function). Two consequences follow, and both are
+ * deliberate:
+ *
+ *   1. A caller who calls `resolveGitleaksRelease(v).sha256` and passes it
+ *      straight through is trusting THIS TABLE, not this module's logic, to
+ *      be current. Before shipping this package's first real consumer,
+ *      revalidate every entry here against the gitleaks project's own
+ *      published checksums for the exact asset URL beside it.
+ *   2. A caller who already has the checksum from its own source of truth
+ *      does not need an entry here at all — `downloadAndVerifyGitleaks`
+ *      still requires the version to be present in this table (an
+ *      allowlist of versions this package has been exercised against), but
+ *      the checksum it verifies against is always the caller's, never this
+ *      table's.
+ */
 const KNOWN_RELEASES: readonly GitleaksRelease[] = Object.freeze([
   {
     version: "8.30.1",
@@ -66,7 +98,16 @@ export async function downloadAndVerifyGitleaks(
     : getPlatformArch();
 
   const assetName = getAssetName(options.version, platform, arch);
-  const expectedSha256 = release.sha256;
+  // The CALLER'S checksum is what gets verified, never `release.sha256` —
+  // `sha256` is a required field on `GitleaksBinaryOptions` precisely so a
+  // caller always states what it expects rather than this function silently
+  // substituting its own bundled value. `release` above still gates which
+  // VERSIONS are accepted at all (an allowlist this package has been
+  // exercised against); it does not gate what content is trusted for one.
+  // A caller who wants this package's own recorded checksum for a known
+  // version still gets it, explicitly, via `resolveGitleaksRelease` — see
+  // that function and the README's usage example.
+  const expectedSha256 = options.sha256;
 
   const cacheDir = options.cacheDir ?? DEFAULT_CACHE_DIR;
   mkdirSync(cacheDir, { recursive: true });

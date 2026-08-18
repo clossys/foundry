@@ -1,20 +1,33 @@
 /**
- * @vespeneventures/verify-standards — one repository-standards gate,
- * published as a package so a fix reaches every consumer through the same
- * dependency machinery every other real dependency already uses.
+ * @vespeneventures/inspector — the gate that judges a change before it
+ * lands, published as a package so a fix reaches every consumer through the
+ * same dependency machinery every other real dependency already uses.
  *
- * Four checks are bundled — a secret-scan attempt, a change's task record,
- * its review evidence, and drift between a declared standard and the live
- * state enforcing it. Each is a pure function of observations the caller
- * collected, each returns the `satisfied` / `violated` / `indeterminate`
- * ternary from `@vespeneventures/governance/gates`, and the run folds to a
- * `0` / `1` / `2` exit code that nothing can override.
+ * Formerly two packages (`verify-standards` and `secret-scan`; see #283).
+ * This module — the package root — is the judge: four checks bundled here —
+ * a secret-scan attempt, a change's task record, its review evidence, and
+ * drift between a declared standard and the live state enforcing it. Each is
+ * a pure function of observations the caller collected, each returns the
+ * `satisfied` / `violated` / `indeterminate` ternary from
+ * `@vespeneventures/governance/gates`, and the run folds to a `0` / `1` / `2`
+ * exit code that nothing can override.
  *
  * A fifth thing is checked that is not about the repository at all: whether
  * this build is old enough to be untrustworthy. See `./version.ts`.
  *
- * Zero I/O in the library. The `verify-standards` executable reads exactly
- * one caller-named file through an injected port and nothing else.
+ * The `./secret-scan` subpath is the *mechanism* half — acquiring a verified
+ * `gitleaks` binary and, now, actually running it — kept structurally apart
+ * from the judge above. `checkSecretScan` here evaluates a record of an
+ * attempt; it was never able to tell whether the record is honest, only
+ * whether it is self-consistent, and that is unchanged. What is new is that
+ * this package can now produce a genuine attempt itself, for a caller who
+ * wants one, rather than requiring every caller to hand-roll a collector
+ * script around a binary from somewhere else. See `./secret-scan/attempt.ts`.
+ *
+ * Zero I/O in this module. The `inspector` executable reads exactly one
+ * caller-named file through an injected port and nothing else; the
+ * `./secret-scan` subpath is the one place in this package that does real
+ * I/O, and it is isolated there rather than folded into the judge.
  */
 
 export { STANDARDS_CHECKS } from "./types.js";

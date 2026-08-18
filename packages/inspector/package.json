@@ -1,6 +1,6 @@
 {
-  "name": "@vespeneventures/verify-standards",
-  "version": "0.1.2",
+  "name": "@vespeneventures/inspector",
+  "version": "0.1.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -12,10 +12,14 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./secret-scan": {
+      "types": "./dist/secret-scan/index.d.ts",
+      "import": "./dist/secret-scan/index.js"
+    },
     "./documents/*": "./documents/*"
   },
   "bin": {
-    "verify-standards": "./dist/bin.js"
+    "inspector": "./dist/bin.js"
   },
   "files": [
     "dist",
@@ -26,12 +30,13 @@
     "LICENSE"
   ],
   "sideEffects": false,
-  "description": "One repository-standards gate a consumer's own thin workflow invokes: secret-scan attempts, task records, review evidence, and policy drift, each reported as satisfied/violated/indeterminate and folded into a 0/1/2 exit contract, with a caller-visible minimum-safe-version floor.",
+  "description": "Judges a change before it lands: a secret-scan attempt (attested, or actually run via the ./secret-scan subpath's verified gitleaks acquisition), a change's task record, its review evidence, and policy drift, each reported as satisfied/violated/indeterminate and folded into a 0/1/2 exit contract, with a caller-visible minimum-safe-version floor.",
   "keywords": [
     "ci-gate",
     "gate-result",
     "fail-closed",
     "secret-scan",
+    "gitleaks",
     "review-evidence",
     "policy-drift",
     "typescript"
@@ -40,18 +45,20 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/vespeneventures/foundry.git",
-    "directory": "packages/verify-standards"
+    "directory": "packages/inspector"
   },
   "bugs": {
     "url": "https://github.com/vespeneventures/foundry/issues"
   },
-  "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/verify-standards#readme",
+  "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/inspector#readme",
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
     "@vespeneventures/governance": "~0.15.0",
-    "@vespeneventures/policy": "~0.1.0"
+    "@vespeneventures/policy": "~0.1.0",
+    "adm-zip": "^0.6.0",
+    "tar": "^7.5.22"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

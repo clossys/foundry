@@ -63,14 +63,14 @@ permissions:
   issues: read
 
 concurrency:
-  group: verify-standards-${{ github.ref }}
+  group: inspector-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   # The job id and the job name match, so the required-status-check context
   # string stays stable when the display name is edited.
-  verify-standards:
-    name: verify-standards
+  inspector:
+    name: inspector
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -137,11 +137,11 @@ jobs:
       # One command, no credentials, no network. Its exit code is the job's —
       # and the block below exists to keep that sentence literally true.
 
-      - name: verify-standards
+      - name: inspector
         run: |
           # DO NOT pipe the CLI into `tee`. GitHub Actions runs a `run:` block
           # as `bash -e {0}`: `-e` is set, `-o pipefail` is NOT. A pipeline's
-          # exit status is its LAST command's, so `verify-standards ... | tee`
+          # exit status is its LAST command's, so `inspector ... | tee`
           # reports tee's `0` and throws the verdict away — a `violated` (1)
           # or `indeterminate` (2) run renders "Overall: VIOLATED" into the
           # job summary while the step itself goes green. That is not a
@@ -161,11 +161,11 @@ jobs:
           # `exit "$status"` is load-bearing: without it the step's status is
           # the last `cat`'s, which is always 0.
           set -o pipefail
-          report="$RUNNER_TEMP/verify-standards-report.txt"
+          report="$RUNNER_TEMP/inspector-report.txt"
           status=0
-          npx verify-standards \
+          npx inspector \
             --inputs verify-inputs.json \
-            --declared-range "$(node -p "require('./package.json').devDependencies['@vespeneventures/verify-standards']")" \
+            --declared-range "$(node -p "require('./package.json').devDependencies['@vespeneventures/inspector']")" \
             > "$report" || status=$?
           cat "$report"
           cat "$report" >> "$GITHUB_STEP_SUMMARY"
@@ -176,7 +176,7 @@ jobs:
       - uses: actions/upload-artifact@<PIN_A_FULL_COMMIT_SHA>
         if: always()
         with:
-          name: verify-standards-inputs
+          name: inspector-inputs
           path: verify-inputs.json
 ```
 
@@ -229,7 +229,7 @@ GitHub Actions invokes a `run:` block as `bash -e {0}`. `-e` is on;
 `defaults.run` — `shell: bash` there gets `bash --noprofile --norc -eo pipefail`,
 but only for steps that opt into it, which is one more thing to forget in one
 more file. In a pipeline without `pipefail`, `$?` is the last command's
-status. `verify-standards … | tee -a "$GITHUB_STEP_SUMMARY"` therefore reports
+status. `inspector … | tee -a "$GITHUB_STEP_SUMMARY"` therefore reports
 `tee`'s `0` no matter what the gate concluded, and a `1` or a `2` becomes a
 green check with the real verdict printed, in full, in the job summary nobody
 reads on a passing run.
