@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.7.0] - 2026-08-17
+
+### Changed
+
+- **`copy-check` now exits `2` when ANY matched file failed to parse
+  (behavioural, affects any CI job reading its exit code).** The existing
+  parse-failure guard keyed off `filesScanned === 0`, so it only ever fired
+  when *every* matched file failed. One unparseable file alongside a
+  hundred clean ones left `filesScanned > 0` and dropped out of the
+  exit-code decision entirely: the run reported on the files it could read
+  and returned `0`, as though the file it never opened had been examined
+  and found clean. An unparseable file can contain any amount of
+  unregistered copy — nobody knows, which is what "could not evaluate"
+  means, and this gate's own documented rule is that such a state is never
+  a pass.
+
+  This is the same collapse a non-empty `unchecked` list already exits `2`
+  for, only coarser — a whole file never examined rather than a construct
+  within one — and it now gets the same answer, as this CLI's own header
+  already argued it should. Parse failures are still printed in full, and
+  every finding from the files that did parse is still reported; what
+  changed is only what the run as a whole is allowed to claim. Nothing that
+  failed before passes now.
+
 ## [0.6.0] - 2026-08-13
 
 ### Added

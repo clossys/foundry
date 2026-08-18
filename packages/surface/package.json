@@ -1,6 +1,6 @@
 {
   "name": "@vespeneventures/surface",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -35,7 +35,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@vespeneventures/copy": "~0.6.0",
+    "@vespeneventures/copy": "~0.7.0",
     "@vespeneventures/ui": "~0.13.0"
   },
   "peerDependencies": {

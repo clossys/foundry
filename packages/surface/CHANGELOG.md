@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.2] - 2026-08-17
+
+### Changed
+
+- Updated the `@vespeneventures/copy` dependency range from `~0.6.0` to
+  `~0.7.0` so this package remains linked after copy's partial-coverage
+  fix. No surface export changed.
+
 ## [0.6.1] - 2026-08-14
 
 ### Changed

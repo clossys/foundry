@@ -101,16 +101,44 @@ describe("foundry-check CLI — exit codes", () => {
     expect(result.stdout).toMatch(/1 error, \d+ warnings? across \d+ findings?\./);
   });
 
-  it("a tree with a skipped path (packages dir missing) does NOT fail the CLI — exits 0, warning only", async () => {
+  // REGRESSION (#256). This case used to assert exit 0 — "does NOT fail
+  // the CLI, warning only". It was the defect in its purest form: the CLI
+  // printed a COVERAGE INCOMPLETE banner saying in as many words that the
+  // report "does NOT verify a clean tree", and then handed CI a 0. The
+  // banner is only readable by a human who goes looking; the exit code is
+  // the only thing a CI job consumes.
+  it("a tree whose packages dir is missing exits 2 — coverage incomplete is never a pass", async () => {
     const root = mkdtempSync(join(tmpdir(), "gates-cli-fixture-warn-"));
     createdRoots.push(root);
     // No "packages" directory at all — a warning-severity "skipped:packages-dir-missing" finding.
 
     const result = await runCli([root]);
 
-    expect(result.code).toBe(0);
+    expect(result.code).toBe(2);
     expect(result.stdout).toContain("packages-dir-missing");
+    // The warning is still reported exactly as before — the severity of the
+    // FINDING did not change, only what the run as a whole may claim.
     expect(result.stdout).toMatch(/0 errors, 1 warning across 1 finding\./);
+    expect(result.stderr).toContain("incomplete-coverage");
+    expect(result.stderr).toContain("Refusing to report a pass");
+  });
+
+  // REGRESSION (#256), the vacuous-pass half: a tree that was read
+  // COMPLETELY (nothing skipped) but contained no packages at all. There is
+  // no banner for this one and never was — the run simply printed
+  // "Checked 0 packages. No findings." and exited 0, which is a pass with
+  // no evidence of any kind behind it.
+  it("a complete tree containing zero packages exits 2, not 0 — a pass needs something evaluated", async () => {
+    const root = mkdtempSync(join(tmpdir(), "gates-cli-fixture-empty-"));
+    createdRoots.push(root);
+    mkdirSync(join(root, "packages"), { recursive: true });
+
+    const result = await runCli([root]);
+
+    expect(result.code).toBe(2);
+    expect(result.stdout).toContain("Checked 0 packages. 0 paths skipped.");
+    expect(result.stdout).not.toContain("COVERAGE INCOMPLETE");
+    expect(result.stderr).toContain("no-packages-catalogued");
   });
 
   it("exits 2 on an unknown flag, with a message on stderr", async () => {
@@ -167,8 +195,13 @@ describe("foundry-check CLI — exit codes", () => {
     mkdirSync(pkgDir, { recursive: true });
     writeFileSync(join(pkgDir, "package.json"), JSON.stringify(validLeafManifest("@gates-cli-fixture/widgets"), null, 2), "utf8");
 
+    // Without the flag the default "packages" directory does not exist, so
+    // nothing is catalogued — exit 2, not 0. Asserting the exit code here
+    // (rather than only the package count) is what proves the flag is doing
+    // the work: a 0 from this call would mean the CLI reported a clean tree
+    // for a directory it never found.
     const withoutFlag = await runCli([root]);
-    expect(withoutFlag.code).toBe(0);
+    expect(withoutFlag.code).toBe(2);
     expect(withoutFlag.stdout).toContain("Checked 0 packages.");
 
     const withFlag = await runCli([root, "--packages-dir", "modules"]);
@@ -186,13 +219,17 @@ describe("foundry-check CLI — exit codes", () => {
 });
 
 describe("foundry-check CLI — coverage reporting (Part A)", () => {
-  it("a real chmod-000 package directory drives exit 1, with the skip visible in the output", async () => {
+  it("a real chmod-000 package directory drives exit 2, with the skip visible in the output", async () => {
     // Real reproduction, not a mock: a clean package next to one whose
-    // directory cannot be read at all (chmod 000). The skipped-directory
-    // finding is error-severity (unreadable), so this must exit 1 through
-    // the existing severity-based exit-code path — and the coverage banner
-    // this test also asserts on must make the incomplete scan impossible to
-    // miss, not just technically present in a findings list.
+    // directory cannot be read at all (chmod 000). This asserted exit 1
+    // before #256's retrofit, routed through the severity-based path
+    // because the skipped-directory finding is error-severity. It is now 2:
+    // an unreadable directory is "could not evaluate", not "evaluated and
+    // found a violation" — nobody knows what was behind it. Both codes
+    // fail, so nothing that failed before passes now; what changed is that
+    // a caller can finally tell the two apart. The coverage banner this
+    // test also asserts on must still make the incomplete scan impossible
+    // to miss, not just technically present in a findings list.
     const root = mkdtempSync(join(tmpdir(), "gates-cli-fixture-chmod-"));
     createdRoots.push(root);
     const cleanDir = join(root, "packages", "clean");
@@ -205,11 +242,12 @@ describe("foundry-check CLI — coverage reporting (Part A)", () => {
     try {
       const result = await runCli([root]);
 
-      expect(result.code).toBe(1);
+      expect(result.code).toBe(2);
       expect(result.stdout).toContain("Checked 1 package. 1 path skipped.");
       expect(result.stdout).toContain("COVERAGE INCOMPLETE");
       expect(result.stdout).toContain("skipped:unreadable-directory");
       expect(result.stdout).toMatch(/packages\/locked/);
+      expect(result.stderr).toContain("incomplete-coverage");
     } finally {
       // Restore permissions so afterEach's recursive rmSync can clean up.
       chmodSync(lockedDir, 0o755);
