@@ -15,7 +15,7 @@
 # ---------------------------------------------------------------------------
 # WHY THIS FILE IS NOT THE TEMPLATE VERBATIM — read before copying it onward
 # ---------------------------------------------------------------------------
-# The caller template in packages/verify-standards/documents/caller-workflow.md
+# The caller template in packages/inspector/documents/caller-workflow.md
 # installs the package from a registry, which requires `actions/setup-node` to
 # set BOTH `registry-url` and `scope`. That `scope` is load-bearing there and
 # must never be dropped: with it omitted, the action maps the CONSUMING
@@ -80,13 +80,20 @@ jobs:
 
       # `dist/` is gitignored, so on a fresh clone the package has nothing to
       # run until it is compiled. Built in runtime-dependency order, not
-      # filesystem order: policy feeds governance, and governance feeds this
-      # package's gate-result ternary and review validation.
+      # filesystem order: controller feeds this package's gate-result ternary
+      # and review validation.
+      #
+      # This step named packages/policy, packages/governance and
+      # packages/verify-standards until decision 9 merged all three of those
+      # directories away. It then failed with "No workspaces found" -- correctly,
+      # and loudly, rather than skipping the gate. Worth keeping in mind when
+      # editing: a workflow that hard-codes package directories is a second
+      # place the catalogue's shape is written down, and it does not move when
+      # the first one does.
       - name: Build the gate and its runtime dependencies
         run: |
-          npm run build --workspace=packages/policy
-          npm run build --workspace=packages/governance
-          npm run build --workspace=packages/verify-standards
+          npm run build --workspace=packages/controller
+          npm run build --workspace=packages/inspector
 
       # ---- COLLECT ---------------------------------------------------------
       # `continue-on-error` so a collector that dies still reaches the decide
@@ -147,7 +154,7 @@ jobs:
           set -o pipefail
           report="$RUNNER_TEMP/verify-standards-report.txt"
           status=0
-          node packages/verify-standards/dist/bin.js \
+          node packages/inspector/dist/bin.js \
             --inputs verify-inputs.json \
             --checks task-record \
             > "$report" || status=$?

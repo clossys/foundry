@@ -3,6 +3,29 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.0] - 2026-08-18
+
+### Changed
+
+- The content-addressed `PolicyBinding` this package reuses now resolves
+  through `@vespeneventures/controller/policy` instead of
+  `@vespeneventures/policy`. The recut recorded in the producing repository's
+  decision 9 merged `governance`, `conventions` and `policy` into one rules
+  package; `policy` was a pure zero-I/O function with no lifecycle of its own,
+  sitting one level below the package whose rules it binds.
+- This is a rename, not a rewrite. No export, argument shape, or return type
+  changed here or upstream — `checkLedgerDrift`, `appendEntry` and
+  `checkAppendOnly` behave exactly as before, and this package still never
+  imports `@vespeneventures/strategy`.
+- One first-party dependency instead of one: `@vespeneventures/policy` is
+  replaced by `@vespeneventures/controller`, not added to.
+
+### Note for installed consumers
+
+`@vespeneventures/policy`'s published versions remain resolvable and carry a
+deprecation record naming their replacement, so a consumer pinned to `0.1.1`
+of this package keeps working unchanged. It will not receive further fixes.
+
 ## [0.1.1] - 2026-08-13
 
 ### Fixed
@@ -28,7 +51,7 @@ All notable changes to this package are documented here. Format follows
   the return-path entity — what was published, to which channel, when,
   derived from which revision of strategy, citing which facts, each fact
   bound to its value at publication time via a
-  `@vespeneventures/policy` `PolicyBinding` reused directly, not
+  `@vespeneventures/controller/policy` `PolicyBinding` reused directly, not
   reimplemented. No score, threshold, or verdict field anywhere — this
   package records outcomes and makes them attributable; it carries no
   opinion about whether an outcome is good.
@@ -36,13 +59,13 @@ All notable changes to this package are documented here. Format follows
   validation, the same style every other package in this foundation uses
   (plain type guards over `unknown`, an accumulated `LedgerFinding[]`,
   never throws), including a `PolicyBinding`-shape check delegated
-  straight to `@vespeneventures/policy`'s own `validateBindingShape` and a
+  straight to `@vespeneventures/controller/policy`'s own `validateBindingShape` and a
   `"citation-policy-id-mismatch"` rule enforcing that a citation's
   `valueBinding.policyId` always equals its `factRef`.
 - `canonicalizeValue`/`citeFact` (`fact.ts`): deterministic
   (key-order-independent) serialization of a JSON-serializable fact value,
   plus the one sanctioned way to build a `FactCitation` — computes a
-  digest of a fact's canonicalized value via `@vespeneventures/policy`'s
+  digest of a fact's canonicalized value via `@vespeneventures/controller/policy`'s
   own `computeDigest`. This package's first real use of `policy` outside
   `policy` itself.
 - `appendEntry` (`append.ts`): the one sanctioned, in-process way to grow
@@ -59,7 +82,7 @@ All notable changes to this package are documented here. Format follows
   mistaken for a real change.
 - `checkLedgerDrift` (`drift.ts`): the drift checker — for each fact a
   ledger cites, compares its recorded value-digest against a
-  caller-supplied current value via `@vespeneventures/policy`'s own
+  caller-supplied current value via `@vespeneventures/controller/policy`'s own
   `verifyBinding`, all without this package ever importing
   `@vespeneventures/strategy`. Fails closed in three distinct, separately
   tested ways: an invalid ledger, an empty ledger, and a non-empty ledger
@@ -76,6 +99,6 @@ All notable changes to this package are documented here. Format follows
   problem" from "could not check" at the exit-code level, not just in the
   printed report.
 
-Zero runtime dependencies beyond `@vespeneventures/policy`, pinned with a
+Zero runtime dependencies beyond `@vespeneventures/controller/policy`, pinned with a
 tilde range (`~0.1.0`), never a caret — a caret range on a `0.x` package is
 patch-only under semver and has broken this repository's CI twice before.

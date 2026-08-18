@@ -1,7 +1,7 @@
 /**
  * Structural validation for `PublicationEntry` and `Ledger`. Hand-rolled,
  * deliberately, not a schema library — the same discipline
- * `@vespeneventures/policy`'s `validate.ts` and `@vespeneventures/strategy`'s
+ * `@vespeneventures/controller/policy`'s `validate.ts` and `@vespeneventures/strategy`'s
  * `validation.ts` already hold this whole foundation to: plain type guards
  * over `unknown`, an accumulated `LedgerFinding[]`, never throws. A
  * validator that can crash on the exact malformed input it exists to catch
@@ -15,7 +15,7 @@
  * either, by design (see `types.ts`).
  */
 
-import { validateBindingShape } from "@vespeneventures/policy";
+import { validateBindingShape } from "@vespeneventures/controller/policy";
 import type { FactCitation, LedgerFinding, PublicationEntry } from "./types.js";
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -45,7 +45,7 @@ function isValidUrl(value: string): boolean {
 
 /**
  * Validates a single `FactCitation`: `factRef` is a non-empty string,
- * `valueBinding` passes `@vespeneventures/policy`'s own
+ * `valueBinding` passes `@vespeneventures/controller/policy`'s own
  * `validateBindingShape` unchanged (never reimplemented here), and —
  * the one rule this package adds on top — `valueBinding.policyId` must
  * equal `factRef`, by the convention `types.ts`'s `FactCitation` doc

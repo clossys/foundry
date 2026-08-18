@@ -1,0 +1,38 @@
+# Changelog
+
+All notable changes to this package are documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.1.0] - Unreleased
+
+Renamed from `@vespeneventures/secrets`, which never published a release.
+Resolution was one verb of five; this package now owns the other four —
+custody, rotation, revocation, and distribution — end to end, alongside the
+resolution contracts unchanged.
+
+### Added
+
+- Key custody: a value-free manifest of who owns each declared key and where
+  it lives (`defineKeyCustody`, `custodyOf`, `unownedKeys`).
+- Key rotation: an explicit four-state result — `current` / `stale` /
+  `unowned` / `unverifiable` — so a rotation the system cannot observe is
+  never reported as fine (`evaluateRotation`, `rotationQueue`,
+  `summarizeRotationMetric`, `sameDigest`).
+- Key revocation: a pointer to upstream revocation authority and a
+  value-free record of a revocation, with no code path that performs a
+  revocation itself (`defineRevocationPath`, `recordRevocation`,
+  `isRevoked`, `latestRevocation`).
+- A distribution manifest declaring which principal may resolve which name
+  (`defineDistributionManifest`, `mayResolve`, `principalsFor`, `keysFor`).
+- Initial provider-neutral client and adapter contracts.
+- Late-bound environment and mutable in-memory test adapters.
+- Async and synchronous resolution with safe, value-free errors.
+- Value-free secret catalog types and a frozen catalog authoring helper.
+- Infisical v4 API integration at the `./infisical` subpath with injected
+  configuration, access-token and OIDC authentication, value-free readiness,
+  child-process injection, and a provider-specific CLI that never prints
+  secret values.
+- Separately constructed, policy-gated Infisical replacement with optional
+  verification and no unsafe automatic rollback.

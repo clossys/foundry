@@ -1,30 +1,110 @@
 #!/usr/bin/env node
-// Apply the one-way registry notices for the package-process consolidation.
-// This has no package-name, message, version, or registry command-line
-// options: its only caller-selected value is whether it reports or applies the
-// reviewed, fixed plan below.
+// Apply the one-way registry deprecation notices for every package name this
+// repository has renamed or retired.
+//
+//   node scripts/deprecate-legacy-packages.mjs --mode=dry-run|apply
+//
+// Its only caller-selected value is whether it reports or applies. The PLAN
+// itself is not a caller input and is not a list maintained here: it is
+// derived from docs/contracts/package-lifecycle.json's own "deprecated"
+// entries and their declared `replacement`.
+//
+// WHY THE PLAN IS DERIVED AND NOT HARD-CODED
+// ------------------------------------------
+// It used to be a frozen five-entry array pointing at `governance` subpaths,
+// written when exactly five compatibility packages existed. Decision 9's recut
+// then renamed eight more names and retired those five, and every one of the
+// hard-coded five pointed at a package that no longer exists — so running this
+// script would have written a registry notice directing consumers to a name
+// they cannot install. A one-way, irreversible action derived from a stale
+// literal is the worst shape available: it fails closed nowhere and publishes
+// a wrong answer permanently.
+//
+// The lifecycle document already had to be correct for `check:package-governance`
+// to pass, so it is the one source that cannot silently drift from reality.
+// Deriving from it means a future rename needs no edit here at all.
 
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-export const LEGACY_DEPRECATIONS = Object.freeze([
-  { directory: "catalog", subpath: "catalog" },
-  { directory: "gates", subpath: "gates" },
-  { directory: "release", subpath: "release" },
-  { directory: "repository", subpath: "repository" },
-  { directory: "review", subpath: "review" },
-]);
+const LIFECYCLE_PATH = "docs/contracts/package-lifecycle.json";
 
-export function legacyDeprecationPlan(scope) {
+/**
+ * Build the deprecation plan from the lifecycle document.
+ *
+ * Every "deprecated" entry must name a `replacement`; one that does not is a
+ * hard error rather than a skipped row, because a deprecation notice with no
+ * migration target is precisely the "blocked forever, nobody told" state this
+ * repository keeps rediscovering.
+ */
+export function deprecationPlanFrom(lifecycle, scope) {
   if (!/^@[a-z0-9][a-z0-9._-]*$/.test(scope)) {
     throw new Error("legacy deprecation: package-scope.json must contain an npm scope");
   }
-  return LEGACY_DEPRECATIONS.map(({ directory, subpath }) => ({
-    directory,
-    packageName: `${scope}/${directory}`,
-    message: `Deprecated: use ${scope}/governance/${subpath} instead.`,
-  }));
+  if (!lifecycle || !Array.isArray(lifecycle.packages)) {
+    throw new Error(`legacy deprecation: ${LIFECYCLE_PATH} does not have the expected { packages: [...] } shape`);
+  }
+  const plan = [];
+  for (const entry of lifecycle.packages) {
+    if (!entry || entry.status !== "deprecated") continue;
+    const packageName = entry.name;
+    if (typeof packageName !== "string" || !packageName.startsWith(`${scope}/`)) {
+      throw new Error(`legacy deprecation: deprecated entry ${JSON.stringify(packageName)} is not in scope ${scope}`);
+    }
+    const replacement = entry.replacement?.name;
+    if (typeof replacement !== "string" || replacement.length === 0) {
+      throw new Error(
+        `legacy deprecation: ${packageName} is deprecated with no replacement.name — refusing to write a registry notice ` +
+          `that tells a consumer something is deprecated without telling them what to use instead.`,
+      );
+    }
+    plan.push({
+      directory: packageName.slice(scope.length + 1),
+      packageName,
+      replacement,
+      message: `Deprecated: use ${replacement} instead.`,
+    });
+  }
+  if (plan.length === 0) {
+    throw new Error(`legacy deprecation: ${LIFECYCLE_PATH} declares no deprecated packages — nothing to do, and an empty apply is never intended`);
+  }
+  return plan.sort((left, right) => left.packageName.localeCompare(right.packageName, "en"));
+}
+
+/**
+ * A replacement must be a package this repository actually ships now.
+ *
+ * The predecessor of this check asserted the OLD package's directory still
+ * existed as a compatibility wrapper. That is the wrong end to check once a
+ * rename removes the old directory entirely: what a consumer needs is for the
+ * name the notice points AT to be real.
+ */
+export function assertReplacementIsShipped(entry, catalogNames) {
+  if (!catalogNames.has(entry.replacement)) {
+    throw new Error(
+      `legacy deprecation: ${entry.packageName}'s replacement ${entry.replacement} is not a package in this workspace — ` +
+        `refusing to publish a permanent notice pointing at a name that does not ship.`,
+    );
+  }
+}
+
+/**
+ * The package names this workspace actually ships right now, read from
+ * packages/ rather than from any document that claims to describe it.
+ */
+export function shippedPackageNames(root = ".") {
+  const names = new Set();
+  const dir = `${root}/packages`;
+  if (!existsSync(dir)) return names;
+  for (const child of readdirSync(dir, { withFileTypes: true })) {
+    if (!child.isDirectory()) continue;
+    const manifestPath = `${dir}/${child.name}/package.json`;
+    if (!existsSync(manifestPath)) continue;
+    const name = JSON.parse(readFileSync(manifestPath, "utf8")).name;
+    if (typeof name === "string" && name.length > 0) names.add(name);
+  }
+  return names;
 }
 
 export function deprecationTarget(packageName, version) {
@@ -59,13 +139,6 @@ function deprecationFor(packageName, version, registry) {
   return npm(["view", `${packageName}@${version}`, "deprecated", `--registry=${registry}`], { allowEmpty: true });
 }
 
-function assertCompatibilityManifest(directory, scope) {
-  const manifest = JSON.parse(readFileSync(`packages/${directory}/package.json`, "utf8"));
-  const expectedName = `${scope}/${directory}`;
-  if (manifest.name !== expectedName || manifest.dependencies?.[`${scope}/governance`] !== "^0.2.0") {
-    throw new Error(`legacy deprecation: ${directory} is not the reviewed ${expectedName} compatibility wrapper`);
-  }
-}
 
 function readRegistryState(plan, registry) {
   return plan.map((entry) => ({
@@ -123,8 +196,10 @@ function main() {
   if (typeof registry !== "string" || new URL(registry).protocol !== "https:") {
     throw new Error("legacy deprecation: package-scope.json must contain an HTTPS registry");
   }
-  const plan = legacyDeprecationPlan(scope);
-  for (const entry of plan) assertCompatibilityManifest(entry.directory, scope);
+  const lifecycle = JSON.parse(readFileSync(LIFECYCLE_PATH, "utf8"));
+  const plan = deprecationPlanFrom(lifecycle, scope);
+  const shipped = shippedPackageNames();
+  for (const entry of plan) assertReplacementIsShipped(entry, shipped);
   const before = readRegistryState(plan, registry);
   assertSafeToApply(before);
   printState("before", before);

@@ -1,17 +1,75 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 
-import { deprecationTarget, LEGACY_DEPRECATIONS, legacyDeprecationPlan, parseMode } from "./deprecate-legacy-packages.mjs";
+import {
+  assertReplacementIsShipped,
+  deprecationPlanFrom,
+  deprecationTarget,
+  parseMode,
+  shippedPackageNames,
+} from "./deprecate-legacy-packages.mjs";
 
-test("deprecation plan is a closed mapping to governance subpaths", () => {
-  assert.deepEqual(LEGACY_DEPRECATIONS.map(({ directory }) => directory), ["catalog", "gates", "release", "repository", "review"]);
-  assert.deepEqual(legacyDeprecationPlan("@vespeneventures"), [
-    { directory: "catalog", packageName: "@vespeneventures/catalog", message: "Deprecated: use @vespeneventures/governance/catalog instead." },
-    { directory: "gates", packageName: "@vespeneventures/gates", message: "Deprecated: use @vespeneventures/governance/gates instead." },
-    { directory: "release", packageName: "@vespeneventures/release", message: "Deprecated: use @vespeneventures/governance/release instead." },
-    { directory: "repository", packageName: "@vespeneventures/repository", message: "Deprecated: use @vespeneventures/governance/repository instead." },
-    { directory: "review", packageName: "@vespeneventures/review", message: "Deprecated: use @vespeneventures/governance/review instead." },
+// The plan used to be a frozen five-entry array pointing at `governance`
+// subpaths. Decision 9's recut renamed eight more names, retired those five,
+// and left every hard-coded entry pointing at a package that no longer exists.
+// These tests cover the derived form, and in particular the two ways it must
+// refuse rather than publish a wrong permanent notice.
+
+const lifecycle = (packages) => ({ schemaVersion: 1, packages });
+
+test("the plan is derived from the lifecycle document's deprecated entries", () => {
+  const plan = deprecationPlanFrom(
+    lifecycle([
+      { name: "@fixture/kept", status: "published" },
+      { name: "@fixture/old", status: "deprecated", replacement: { name: "@fixture/new", range: "^0.1.0" } },
+      { name: "@fixture/gone", status: "retired" },
+      { name: "@fixture/early", status: "incubating" },
+    ]),
+    "@fixture",
+  );
+  assert.deepEqual(plan, [
+    { directory: "old", packageName: "@fixture/old", replacement: "@fixture/new", message: "Deprecated: use @fixture/new instead." },
   ]);
+});
+
+test("a deprecated entry with no replacement is a hard error, never a skipped row", () => {
+  // A deprecation notice with no migration target tells a consumer their
+  // package is dead and nothing about what to do next. Skipping the row would
+  // be worse still: the notice silently never gets written at all.
+  assert.throws(
+    () => deprecationPlanFrom(lifecycle([{ name: "@fixture/orphan", status: "deprecated" }]), "@fixture"),
+    /no replacement\.name/,
+  );
+});
+
+test("an empty plan is an error — an apply that would deprecate nothing is never intended", () => {
+  assert.throws(() => deprecationPlanFrom(lifecycle([{ name: "@fixture/a", status: "published" }]), "@fixture"), /declares no deprecated packages/);
+});
+
+test("a malformed lifecycle document is an error, not an empty plan", () => {
+  assert.throws(() => deprecationPlanFrom({ schemaVersion: 1 }, "@fixture"), /expected \{ packages/);
+  assert.throws(() => deprecationPlanFrom(null, "@fixture"), /expected \{ packages/);
+});
+
+test("an out-of-scope deprecated entry is refused rather than deprecated under the wrong owner", () => {
+  assert.throws(
+    () => deprecationPlanFrom(lifecycle([{ name: "@other/thing", status: "deprecated", replacement: { name: "@fixture/new" } }]), "@fixture"),
+    /not in scope/,
+  );
+});
+
+test("the scope must be a real npm scope", () => {
+  assert.throws(() => deprecationPlanFrom(lifecycle([]), "not-a-scope"), /must contain an npm scope/);
+});
+
+test("a replacement that this workspace does not ship is refused", () => {
+  // The predecessor check asserted the OLD package's directory still existed.
+  // That is the wrong end once a rename deletes it: what a consumer needs is
+  // for the name the permanent notice points AT to be installable.
+  const entry = { directory: "old", packageName: "@fixture/old", replacement: "@fixture/never-shipped", message: "..." };
+  assert.throws(() => assertReplacementIsShipped(entry, new Set(["@fixture/something-else"])), /is not a package in this workspace/);
+  assert.doesNotThrow(() => assertReplacementIsShipped(entry, new Set(["@fixture/never-shipped"])));
 });
 
 test("only dry-run and apply are accepted", () => {
@@ -25,4 +83,15 @@ test("registry notices are applied per discovered version, never through a wildc
   assert.equal(deprecationTarget("@vespeneventures/catalog", "0.1.1"), "@vespeneventures/catalog@0.1.1");
   assert.throws(() => deprecationTarget("@vespeneventures/catalog", "*"));
   assert.throws(() => deprecationTarget("@vespeneventures/catalog", "0.1.1 --tag=latest"));
+});
+
+test("integration: this repository's own real plan resolves, and every replacement it names ships here", () => {
+  // The whole point of deriving the plan is that it cannot drift from
+  // reality. This asserts that against the real documents, not a fixture —
+  // if a rename lands without a lifecycle record, this fails here rather
+  // than at the moment someone runs an irreversible --mode=apply.
+  const plan = deprecationPlanFrom(JSON.parse(readFileSync("docs/contracts/package-lifecycle.json", "utf8")), "@vespeneventures");
+  const shipped = shippedPackageNames();
+  assert.ok(plan.length > 0);
+  for (const entry of plan) assert.doesNotThrow(() => assertReplacementIsShipped(entry, shipped), `${entry.packageName} -> ${entry.replacement}`);
 });

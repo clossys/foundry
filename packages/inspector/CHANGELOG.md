@@ -1,0 +1,95 @@
+# Changelog
+
+All notable changes to `@vespeneventures/inspector` are documented here.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.1.0] - 2026-08-18
+
+### Added
+
+New package (#283, part of the #281 recut). `inspector` absorbs
+`verify-standards` (`0.1.2`) and `secret-scan` (`0.1.0`, zero consumers) —
+one job that was two packages. See the package README's "Composition"
+section for why, and its "Metric" and "Loop" sections for what this gate is
+measured against and by whom.
+
+- Everything `verify-standards` `0.1.2` shipped, carried forward whole:
+  four checks (`checkSecretScan`, `checkTaskRecord`, `checkReviewEvidence`,
+  `checkPolicyDrift`), the `verifyStandards` orchestrator and its
+  `indeterminate`-dominant fold, the `0`/`1`/`2` exit contract with no flag
+  that can turn a `2` into a `0`, the `MINIMUM_SAFE_VERSION` staleness floor,
+  and `documents/caller-workflow.md`'s pipeline-free decide step and
+  `edited`-inclusive trigger (both from #278/#290). `src/task-record.ts`'s
+  word-boundary label guard and its shaped-candidate preference tier are
+  unmodified — see that file's own comments for why each is load-bearing.
+- Everything `secret-scan` `0.1.0` shipped, carried forward as the
+  `./secret-scan` subpath: verified `gitleaks` binary download, checksum,
+  extraction, and caching (`downloadAndVerifyGitleaks`,
+  `getCachedGitleaksPath`, `resolveGitleaksRelease`, `getPlatformArch`,
+  `getAssetName`, `getKnownVersions`), with the same exported shape.
+- **New:** `attemptGitleaksScan` and `defaultGitleaksExecutor`, in
+  `./secret-scan`. This is the actual wiring #283 asked for — a caller can
+  now run gitleaks through this package and get a `SecretScanObservation`
+  translated from its report, rather than every caller hand-writing that
+  translation around a binary from somewhere else. `checkSecretScan` itself
+  is unmodified: it still evaluates a record of an attempt from any source,
+  and the attested path keeps working exactly as it did in `verify-standards`
+  for a caller who scans by other means.
+- The `inspector` executable (renamed from `verify-standards`; see "Notes"
+  below) and its `--inputs` / `--checks` / `--minimum-version` /
+  `--declared-range` / `--format` flags, unchanged in behaviour.
+
+### Fixed
+
+- **`downloadAndVerifyGitleaks` verified the wrong checksum.** It accepted
+  `options.sha256` — a required field — and then silently ignored it,
+  verifying against this package's own bundled `KNOWN_RELEASES` value
+  instead. A caller who explicitly stated a checksum, including one
+  deliberately different from the bundled value, had no way to know their
+  value was never consulted. `expectedSha256` is now `options.sha256`;
+  `resolveGitleaksRelease` remains available for a caller who wants this
+  package's own recorded value to pass in, exactly as the README's usage
+  example already showed — the README's claim was more accurate than the
+  code. `release` continues to gate which *versions* this package will
+  attempt at all; it no longer gates what *content* is trusted for one. This
+  package's own `KNOWN_RELEASES` entry for `8.30.1` carries a placeholder
+  checksum (visibly documented in `src/secret-scan/gitleaks.ts` and the
+  README) that has not been revalidated against gitleaks' own published
+  release checksums; this fix removes it from the verification path
+  entirely, so its own staleness can no longer produce a false `verified:
+  true`.
+
+### Notes
+
+- No exit-code semantics changed anywhere in the judge. `0` satisfied, `1`
+  violated, `2` could-not-evaluate, and nothing here converts a `2` into a
+  `0`.
+- The CLI binary is renamed `verify-standards` → `inspector`, matching the
+  package name. `documents/caller-workflow.md` is updated throughout: job
+  id/name, concurrency group, decide-step name, artifact name, and the
+  `--declared-range` example's `devDependencies` lookup key. A consuming
+  repository that copied the old template must update its own workflow to
+  match; nothing here does that automatically, the same way `verify-standards`
+  0.1.1 could not retroactively fix a workflow file a consumer had already
+  copied.
+- **`MINIMUM_SAFE_VERSION` stays `0.1.0`**, unchanged from `verify-standards`'
+  own floor. The floor exists for a released build that reported a passing
+  verdict it should not have; a rename and a file move did not do that. What
+  the rename *does* affect, which the floor mechanism cannot: a caller
+  pinned to `@vespeneventures/verify-standards` cannot resolve
+  `@vespeneventures/inspector` through `npm`'s normal update path at all —
+  it is a new package name, not a new version of the old one — so the
+  version-range half of the staleness-floor check (`--declared-range`) has
+  no path to warn that caller the way it would warn a caller merely behind
+  on `verify-standards` releases. Left for a maintainer to decide in the
+  pull request that introduces this package, rather than assumed here either
+  way.
+- Hermetic-tests coverage on the `./secret-scan` subpath is substantially
+  deeper than `secret-scan` `0.1.0` shipped with: that package's own
+  checksum-mismatch test was a stub ("skipped as it requires more complex
+  mocking") and its download-success path had no test at all. Both are now
+  exercised with an injected `fetch` and a real, locally-built `.tar.gz`
+  fixture — no network call in any test, per this package's hermetic-tests
+  rule.

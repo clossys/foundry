@@ -26,7 +26,14 @@ import {
   parseTaskReference,
   TASK_ITEM_LOOKUP_OUTCOMES,
   VERIFY_STANDARDS_INPUTS_VERSION,
-} from "@vespeneventures/verify-standards";
+} from "@vespeneventures/inspector";
+
+// This import was "@vespeneventures/verify-standards" until decision 9 folded
+// that package and secret-scan into `inspector`. This file is byte-identical
+// across several consuming repositories by design; that identity is
+// deliberately broken here for the length of the migration window, because
+// this repository is the producer and moves first. Each consumer repoints when
+// it migrates, and the copies converge again on the new name.
 
 const POLICY_PATH = ".github/verify-standards-policy.json";
 

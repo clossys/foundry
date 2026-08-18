@@ -17,19 +17,23 @@
 // client — stays that gate's job, and this one deliberately does not duplicate
 // the denylist. The two together are the coverage; neither alone is.
 //
-// The scan itself is not reimplemented here. It is @vespeneventures/conventions'
-// own exported `scanNeutrality`, run against the files that package ships. A
-// second copy of those regexes in this repository is a second thing to keep in
-// agreement with the first, and the failure mode of a drifted copy is a gate
-// that passes for the wrong reason.
+// The scan itself is not reimplemented here. It is
+// @vespeneventures/controller's own exported `scanNeutrality` (the former
+// @vespeneventures/conventions' — see issue #282, which folded conventions'
+// source into controller as its `./conventions` subpath, retiring
+// @vespeneventures/conventions with no compatibility stub), run against the
+// files that subpath ships. A second copy of those regexes in this
+// repository is a second thing to keep in agreement with the first, and the
+// failure mode of a drifted copy is a gate that passes for the wrong reason.
 //
-// WHAT THIS ADDS OVER THE PACKAGE'S OWN TESTS
+// WHAT THIS ADDS OVER THE SUBPATH'S OWN TESTS
 //
-// The package's self-hosting test scans every document it DECLARES. This walks
-// the shipped directories instead, so a file added to documents/ or adapters/
-// but never declared — which still ships, because `files` includes the whole
-// directory — is caught rather than silently skipped. Undeclared-but-shipped is
-// exactly the shape of thing that reaches a registry unreviewed.
+// The subpath's self-hosting test scans every document it DECLARES. This
+// walks the shipped directories instead, so a file added to
+// conventions/documents/ or conventions/adapters/ but never declared — which
+// still ships, because `files` includes the whole `conventions` directory —
+// is caught rather than silently skipped. Undeclared-but-shipped is exactly
+// the shape of thing that reaches a registry unreviewed.
 
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
@@ -41,7 +45,7 @@ const repoRoot = resolve(scriptDir, "..");
 
 const flags = new Set(process.argv.slice(2).filter((a) => a.startsWith("--")));
 const positional = process.argv.slice(2).filter((a) => !a.startsWith("--"));
-const packageDir = resolve(repoRoot, positional[0] ?? "packages/conventions");
+const packageDir = resolve(repoRoot, positional[0] ?? "packages/controller");
 
 function fail(message) {
   console.error(`check-neutrality: ${message}`);
@@ -53,7 +57,12 @@ if (!existsSync(packageDir)) fail(`no such directory: ${packageDir}`);
 // The built package, not the source. Running the same artifact consumers get is
 // the point; a gate that passed against TypeScript a consumer never receives
 // would be checking something nobody installs.
-const distEntry = join(packageDir, "dist/neutrality.js");
+//
+// Nested under `dist/conventions/` rather than directly under `dist/`: this
+// package's own `rootDir` is `src`, and `scanNeutrality`'s source now lives
+// at `src/conventions/neutrality.ts` (moved there by issue #282), so `tsc`
+// mirrors that same `conventions/` nesting into `dist/`.
+const distEntry = join(packageDir, "dist/conventions/neutrality.js");
 if (!existsSync(distEntry)) {
   fail(
     `${relative(repoRoot, distEntry)} is missing — build the package first (npm run build). ` +
@@ -64,8 +73,12 @@ if (!existsSync(distEntry)) {
 const { scanNeutrality } = await import(pathToFileURL(distEntry).href);
 
 // Directories whose entire contents ship as shared material. Everything here is
-// read by an outside consumer, so everything here is scanned.
-const SHIPPED_DIRECTORIES = ["documents", "adapters"];
+// read by an outside consumer, so everything here is scanned. Both live under
+// a `conventions/` directory at the package root (not nested under `src`/
+// `dist`, since they are shipped raw, never compiled) — mirroring the
+// `./conventions/documents/*` and `./conventions/adapters/*` export subpaths
+// exactly.
+const SHIPPED_DIRECTORIES = ["conventions/documents", "conventions/adapters"];
 
 function walk(root) {
   if (!existsSync(root)) return [];
@@ -86,7 +99,7 @@ function walk(root) {
 const findings = [];
 
 let declared = new Set();
-const manifestEntry = join(packageDir, "dist/documents.js");
+const manifestEntry = join(packageDir, "dist/conventions/documents.js");
 if (existsSync(manifestEntry)) {
   const module = await import(pathToFileURL(manifestEntry).href);
   declared = new Set([

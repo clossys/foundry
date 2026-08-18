@@ -39,7 +39,7 @@
 // ----------------------------------------------------------------------
 // docs/contracts/package-lifecycle.json's schema is owned and exhaustively
 // validated by the PUBLISHED @vespeneventures/governance package —
-// packages/governance/src/lifecycle.ts's ENTRY_KEYS allowlist rejects any
+// packages/controller/src/lifecycle.ts's ENTRY_KEYS allowlist rejects any
 // field it does not already recognise. Adding an `intendedVisibility` field
 // there would force a governance version bump and rewritten test fixtures
 // for what is fundamentally repository-tooling metadata (which package
@@ -212,7 +212,7 @@ export function selectDeclaredPackages(lifecycle, visibility) {
  *
  * `fetchImpl` is injected so tests never make a real network call — see
  * scripts/check-package-visibility.test.mjs, and the same pattern
- * packages/deployment/src/vercel/inspector.ts uses for its own provider
+ * packages/builder/src/deployment/vercel/inspector.ts uses for its own provider
  * calls.
  */
 export async function fetchPackageVisibility({ owner, name, token, fetchImpl }) {

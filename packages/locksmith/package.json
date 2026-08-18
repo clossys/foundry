@@ -1,0 +1,74 @@
+{
+  "name": "@vespeneventures/locksmith",
+  "version": "0.1.0",
+  "private": false,
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./infisical": {
+      "types": "./dist/infisical/index.d.ts",
+      "import": "./dist/infisical/index.js"
+    }
+  },
+  "bin": {
+    "vespene-secrets-infisical": "./dist/infisical/cli.js"
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/**/*.test.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "description": "Key custody, rotation, revocation, and a distribution manifest, plus the provider-neutral secret resolution contracts (environment and test adapters, and an optional Infisical subpath) those verbs sit beside. Resolution is one verb of five; this package owns the other four.",
+  "keywords": [
+    "secrets",
+    "custody",
+    "rotation",
+    "revocation",
+    "distribution",
+    "key-management",
+    "configuration",
+    "dependency-injection",
+    "environment",
+    "typescript",
+    "infisical",
+    "oidc",
+    "cli"
+  ],
+  "author": "Vespene Ventures",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vespeneventures/foundry.git",
+    "directory": "packages/locksmith"
+  },
+  "bugs": {
+    "url": "https://github.com/vespeneventures/foundry/issues"
+  },
+  "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/locksmith#readme",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "~6.0.0",
+    "vitest": "^4.1.9"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  }
+}

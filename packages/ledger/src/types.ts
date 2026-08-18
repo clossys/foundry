@@ -12,7 +12,7 @@
  * or agent decision that reads a ledger, not a fact this package records.
  */
 
-import type { PolicyBinding } from "@vespeneventures/policy";
+import type { PolicyBinding } from "@vespeneventures/controller/policy";
 
 /**
  * One fact a `PublicationEntry` cites, bound to that fact's value at the
@@ -31,7 +31,7 @@ import type { PolicyBinding } from "@vespeneventures/policy";
  * does not have that visibility.
  *
  * `valueBinding` is a `PolicyBinding` reused directly from
- * `@vespeneventures/policy`, not reimplemented: `policyId` is set to
+ * `@vespeneventures/controller/policy`, not reimplemented: `policyId` is set to
  * `factRef` by construction (see `schema.ts`'s `"citation-policy-id-mismatch"`
  * rule), so a reader looking at one field never has to cross-reference the
  * other to know what the binding is about, and `digest` commits to the
@@ -74,7 +74,7 @@ export interface PublicationEntry {
    * Which revision of strategy this entry was derived from. A plain, opaque
    * string — a git SHA, a version tag, a content digest a caller computed
    * itself — never validated or interpreted by this package, the same
-   * `policyId`-style opaqueness `@vespeneventures/policy`'s own binding
+   * `policyId`-style opaqueness `@vespeneventures/controller/policy`'s own binding
    * uses. This package does not import `@vespeneventures/strategy`, so it
    * has no way to check that this string names a revision that ever
    * existed; recording an honest value is the caller's responsibility.
@@ -91,7 +91,7 @@ export interface PublicationEntry {
   factCitations: FactCitation[];
   /**
    * Optional content-addressed binding to the published artifact's own
-   * bytes — reused directly from `@vespeneventures/policy`, the same as
+   * bytes — reused directly from `@vespeneventures/controller/policy`, the same as
    * `FactCitation.valueBinding`. Lets a caller later prove *this exact
    * entry* still describes the artifact that is actually live, the same
    * mechanism `factCitations` applies to individual facts, applied here to
@@ -106,7 +106,7 @@ export type Ledger = readonly PublicationEntry[];
 /**
  * One thing this package's validation or checking logic found wrong (or, at
  * `"warning"`, worth surfacing without failing a check). Deliberately the
- * same shape as `@vespeneventures/policy`'s `Finding` — itself mirrored by
+ * same shape as `@vespeneventures/controller/policy`'s `Finding` — itself mirrored by
  * every other `Finding`-shaped type in this repository
  * (`@vespeneventures/surface/core`'s `ComposeFinding`, `@vespeneventures/copy`'s
  * `CopyFinding`, `@vespeneventures/copy/voice`'s `VoiceFinding`) — but defined
