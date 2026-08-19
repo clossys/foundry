@@ -16,6 +16,8 @@ export {
   runRepositoryProfileCheck,
 } from "./run.js";
 export type {
+  RepositoryProfileRunCustomAxis,
+  RepositoryProfileRunCustomFinding,
   RepositoryProfileRunDeclarationState,
   RepositoryProfileRunFinding,
   RepositoryProfileRunIndeterminateReason,

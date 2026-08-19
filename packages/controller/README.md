@@ -563,7 +563,7 @@ prohibited entry, and unknown direct child in one deterministic report. The
 evaluator never scans a directory, resolves an alias, deletes an artifact, or
 mutates its inputs.
 
-#### The runner: `runRepositoryProfileCheck` and `repository-profile-check` (issue #321)
+#### The runner: `runRepositoryProfileCheck` and `repository-profile-check` (issues #321, #324)
 
 Everything above is the contract: schema, validator, pure evaluators. None of
 it locates a declaration, observes a repository's real state, or decides an
@@ -642,6 +642,59 @@ is already indistinguishable, in its effect, from "nothing was observed."
 | `parsed`, valid, root entries declared but `rootObservedEntries` is `undefined` | `indeterminate` | Discovery never ran; never silently evaluated as an empty root. |
 | `parsed`, valid, every declared axis evaluated and holds | `satisfied` | The only path that reaches it. |
 
+**Custom axes for derived cross-reference checks (issue #324).** The two
+built-in axes above cover the requirements axis and the root-vocabulary
+axis. They do not cover a DERIVED comparison against a consumer's own
+source of truth — checked against real evidence found in two independent
+consumer repositories: one cross-references `commands[].run`'s
+`npm run <script>` against its manifest's real `scripts` map and
+`protectedPaths` against the live path-matching predicate in its own
+merge-governance workflow, clause by clause; another verifies a `run` file
+path exists on disk and that each `protectedPaths` entry's basename is
+referenced across a set of governance files. Neither can be expressed as a
+`RepositoryRequirementObservation` or a root entry — a migration that
+dropped them would convert a real evaluation into silence, exactly the
+failure mode this package exists to prevent.
+
+`RepositoryProfileRunInput.customAxes` is the fix: an optional list of
+already-evaluated `{ name, result }` pairs, where `result` is a
+`GateResult` the CALLER produced by performing whatever repository-specific
+comparison it alone can do. This module never learns what `name` means and
+never inspects a manifest, workflow file, or governance document itself —
+it only folds `result` through the exact same `foldGateResults` call as the
+two built-in axes above, so a custom axis gets the exact same precedence:
+`indeterminate` beats `violated` beats `satisfied`, even when every
+built-in axis is fully satisfied.
+
+```ts
+const result = runRepositoryProfileCheck({
+  declaration: { kind: "parsed", path: "governance/repository-profile.json", canonical: true, value: profile },
+  requirementObservations: [],
+  rootObservedEntries: undefined,
+  customAxes: [
+    {
+      name: "commands-vs-manifest-scripts",
+      result: { verdict: "satisfied", evaluated: profile.commands.length },
+      // or, having found a mismatch:
+      // result: { verdict: "violated", findings: [{ rule: "command-script-missing", severity: "error", path: "$.commands[0].run", message: "..." }] }
+      // or, unable to read the manifest at all:
+      // result: { verdict: "indeterminate", reason: "manifest-unreadable", detail: "..." }
+    },
+  ],
+});
+```
+
+A custom axis whose `result` is not itself a well-formed `GateResult` —
+missing `verdict`, a `satisfied` with no positive `evaluated`, a `violated`
+with empty `findings`, an `indeterminate` with no `reason` — is never
+ignored and never treated as `satisfied`. It folds to `indeterminate` under
+`custom-axis-invalid`, naming which axis was malformed; a well-formed
+`indeterminate` custom axis folds under `custom-axis-indeterminate`,
+quoting the axis's own `name` and `reason` in its `detail` so a caller
+reading the output can always tell which custom axis was responsible.
+Omitting `customAxes` entirely is identical to supplying `[]` — every
+caller from before issue #324 keeps working unchanged.
+
 `repository-profile-check` is the single command wrapping this function:
 it locates a declaration exactly the way `repository-check` does
 (issue #315 — the canonical location is always checked first), reads one optional
@@ -658,15 +711,23 @@ $ repository-profile-check path/to/repository --discovery observed.json
   "requirementObservations": [
     { "id": "runtime.node", "scope": "machine", "state": "observed", "value": "20" }
   ],
-  "rootObservedEntries": ["README.md", "src"]
+  "rootObservedEntries": ["README.md", "src"],
+  "customAxes": [
+    { "name": "commands-vs-manifest-scripts", "result": { "verdict": "satisfied", "evaluated": 1 } }
+  ]
 }
 ```
 
-Both discovery keys are optional and independent; omitting `--discovery`
-entirely is exactly `{}`. The printed report is legible on its own — which
-declaration was found and where, the verdict, and every finding for a
-`violated` result — so a consumer does not need its own reporting layer to
-learn which surface drifted.
+All three discovery keys are optional and independent; omitting
+`--discovery` entirely is exactly `{}`. `customAxes` (issue #324) carries
+already-evaluated results for a derived cross-reference check the CLI has
+no way to compute itself — reading it out of this same file is not new I/O,
+and producing the comparison remains entirely the caller's own CI job's
+responsibility, performed before this command is ever invoked. The printed
+report is legible on its own — which declaration was found and where, the
+verdict, and every finding for a `violated` result — so a consumer does not
+need its own reporting layer to learn which surface, built-in or custom,
+drifted.
 
 #### Deliberate v1 and v2 compatibility
 
@@ -708,11 +769,12 @@ repositoryProfileValidationCoverage({ schemaVersion: 3, /* ... */ });
 | `evaluateRepositoryRoot(value)` | function | Returns every classified direct-child result; missing, prohibited, and unknown entries fail closed. |
 | `main(argv)` / `run()` / `CliInputError` | CLI API | Preserved importable command API. Importing it is inert; only calling it reads input, writes a report, or sets an exit code. `main`/`run` also locate a declaration (issue #315) when given no path or a directory path. |
 | `RepositoryCheckReport` | type | `repository-check`'s own `{ ok, findings }` report shape. |
-| `runRepositoryProfileCheck(input)` | function | The runner (issue #321): validates schema unconditionally before evaluating declared requirements and root entries against injected discovery, and resolves to one shared `GateResult` verdict. Zero I/O. |
+| `runRepositoryProfileCheck(input)` | function | The runner (issue #321): validates schema unconditionally before evaluating declared requirements, root entries, and any caller-supplied custom axes (issue #324) against injected discovery, and resolves to one shared `GateResult` verdict. Zero I/O. |
 | `REPOSITORY_PROFILE_RUN_DECLARATION_SOURCE` | constant | The fixed `source` a repository-scoped requirement observation must name to match a single-profile run — never the declaration's resolved file path. |
-| `REPOSITORY_PROFILE_RUN_REASONS` | constant | The declared `indeterminate` reason vocabulary `runRepositoryProfileCheck` can ever emit (`createGateReasons`, from `./gates`). |
-| `RepositoryProfileRunInput` / `RepositoryProfileRunDeclarationState` | types | Strict input to `runRepositoryProfileCheck`: the caller-resolved declaration state plus injected discovery. |
-| `RepositoryProfileRunResult` / `RepositoryProfileRunFinding` / `RepositoryProfileRunIndeterminateReason` | types | The runner's `GateResult` verdict, its unified finding shape, and its declared indeterminate reasons. |
+| `REPOSITORY_PROFILE_RUN_REASONS` | constant | The declared `indeterminate` reason vocabulary `runRepositoryProfileCheck` can ever emit (`createGateReasons`, from `./gates`), including `custom-axis-invalid` and `custom-axis-indeterminate` (issue #324). |
+| `RepositoryProfileRunInput` / `RepositoryProfileRunDeclarationState` | types | Strict input to `runRepositoryProfileCheck`: the caller-resolved declaration state, injected discovery, and the optional `customAxes` list (issue #324). |
+| `RepositoryProfileRunCustomAxis` / `RepositoryProfileRunCustomFinding` | types | One caller-supplied, already-evaluated derived-check result (`{ name, result }`) and the finding shape its `violated` case may report through (issue #324). |
+| `RepositoryProfileRunResult` / `RepositoryProfileRunFinding` / `RepositoryProfileRunIndeterminateReason` | types | The runner's `GateResult` verdict, its unified finding shape (built-in and custom), and its declared indeterminate reasons. |
 | `CANONICAL_REPOSITORY_PROFILE_PATH` | constant | `"governance/repository-profile.json"` (issue #315) — the one location a declaration lives. |
 | `REPOSITORY_PROFILE_VERSION` / `PREVIOUS_REPOSITORY_PROFILE_VERSION` / `LEGACY_REPOSITORY_PROFILE_VERSION` | constants | Current `3` plus deliberately supported `2` and `1`. |
 | `REQUIREMENT_ID_CATEGORIES` | constant | `["runtime", "tool", "dependency"]` (issue #316) — the closed requirement-id category vocabulary. |

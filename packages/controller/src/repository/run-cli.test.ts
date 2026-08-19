@@ -55,6 +55,19 @@ describe("repository-profile-check: exit code 0 (satisfied)", () => {
     });
     expect(main([directory, "--discovery", discovery])).toBe(0);
   });
+
+  // Custom axes (issue #324): the discovery file's "customAxes" is
+  // caller-ALREADY-EVALUATED data, exactly like the two keys above — this
+  // CLI still performs no I/O to produce or check the comparison itself.
+  it("returns 0 when a satisfied custom axis is included alongside satisfied built-in axes", () => {
+    writeJson("governance/repository-profile.json", v3ProfileWithRequirements);
+    const discovery = writeJson("discovery.json", {
+      requirementObservations: [{ id: "runtime.node", scope: "machine", state: "observed", value: "20" }],
+      rootObservedEntries: ["README.md"],
+      customAxes: [{ name: "commands-vs-manifest-scripts", result: { verdict: "satisfied", evaluated: 1 } }],
+    });
+    expect(main([directory, "--discovery", discovery])).toBe(0);
+  });
 });
 
 describe("repository-profile-check: exit code 1 (violated)", () => {
@@ -76,6 +89,25 @@ describe("repository-profile-check: exit code 1 (violated)", () => {
     });
     expect(main([directory, "--discovery", discovery])).toBe(1);
     expect(console.log).toHaveBeenCalledWith(expect.stringContaining("requirement-unsatisfied"));
+  });
+
+  it("returns 1 when a custom axis reports violated, even with every built-in axis satisfied", () => {
+    writeJson("governance/repository-profile.json", v3ProfileWithRequirements);
+    const discovery = writeJson("discovery.json", {
+      requirementObservations: [{ id: "runtime.node", scope: "machine", state: "observed", value: "20" }],
+      rootObservedEntries: ["README.md"],
+      customAxes: [
+        {
+          name: "commands-vs-manifest-scripts",
+          result: {
+            verdict: "violated",
+            findings: [{ rule: "command-script-missing", severity: "error", path: "$.commands[0].run", message: "no such script" }],
+          },
+        },
+      ],
+    });
+    expect(main([directory, "--discovery", discovery])).toBe(1);
+    expect(console.log).toHaveBeenCalledWith(expect.stringContaining("command-script-missing"));
   });
 });
 
@@ -143,6 +175,31 @@ describe("repository-profile-check: exit code 2 (indeterminate)", () => {
   it("rejects a missing --discovery file", () => {
     writeJson("governance/repository-profile.json", validV1Profile);
     expect(() => main([directory, "--discovery", join(directory, "missing.json")])).toThrow(CliInputError);
+  });
+
+  it("returns 2, naming the axis, when a custom axis itself reports indeterminate", () => {
+    writeJson("governance/repository-profile.json", validV1Profile);
+    const discovery = writeJson("discovery.json", {
+      customAxes: [{ name: "protected-paths-vs-workflow-predicate", result: { verdict: "indeterminate", reason: "workflow-file-unreadable" } }],
+    });
+    expect(main([directory, "--discovery", discovery])).toBe(2);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining("custom-axis-indeterminate"));
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining("protected-paths-vs-workflow-predicate"));
+  });
+
+  it("returns 2, never 0, when a custom axis is not a well-formed GateResult", () => {
+    writeJson("governance/repository-profile.json", validV1Profile);
+    const discovery = writeJson("discovery.json", {
+      customAxes: [{ name: "commands-vs-manifest-scripts", result: { verdict: "satisfied" } }], // missing "evaluated"
+    });
+    expect(main([directory, "--discovery", discovery])).toBe(2);
+    expect(console.error).toHaveBeenCalledWith(expect.stringContaining("custom-axis-invalid"));
+  });
+
+  it("rejects a customAxes value that is not an array", () => {
+    writeJson("governance/repository-profile.json", validV1Profile);
+    const discovery = writeJson("discovery.json", { customAxes: { name: "x", result: { verdict: "satisfied", evaluated: 1 } } });
+    expect(() => main([directory, "--discovery", discovery])).toThrow(CliInputError);
   });
 });
 
