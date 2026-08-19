@@ -69,10 +69,21 @@ import type { Finding } from "./types.js";
  * so a caller can enumerate it (for `--help` text, a report legend, or a
  * lifecycle document) without re-deriving it from the two branches below.
  *
- * The first four are what a *completed* reconciliation attempt can report as
- * drift. The fifth is different in kind, not degree: it is what an attempt
- * that could not complete reports instead, and it is the point of the whole
- * contract — see the module header.
+ * This is a *finding* vocabulary, not a *verdict* vocabulary -- all five
+ * kinds can appear in a `drifted` report's `findings` list. The first four
+ * are outright disagreements a completed reconciliation attempt found
+ * between declared and live state. The fifth, `declared-but-not-verifiable`,
+ * is different in kind, not degree: it names one dimension of the
+ * comparison that could not be evaluated at all (a `declaredAt`/
+ * `liveObservedAt` that could not be parsed, for example -- see
+ * `reconcileLiveState`), reported as its own finding precisely so it can sit
+ * alongside a real, already-found disagreement without silently discarding
+ * it. It is also, separately, the one declared reason an entire
+ * reconciliation attempt reports at the OUTCOME level when nothing about
+ * the subject could be read at all -- see `liveStateCouldNotVerify` and the
+ * module header. Same name, two scopes: one finding among others in a
+ * `drifted` subject, or the whole reason a subject is `could-not-verify`
+ * with no findings collected at all.
  */
 export const LIVE_STATE_SURFACE_FINDING_KINDS = Object.freeze([
   "declared-but-not-live",
@@ -84,12 +95,32 @@ export const LIVE_STATE_SURFACE_FINDING_KINDS = Object.freeze([
 
 export type LiveStateSurfaceFindingKind = (typeof LIVE_STATE_SURFACE_FINDING_KINDS)[number];
 
-/** The four kinds a reconciliation that actually ran can report as drift. */
+/**
+ * The four kinds a reconciliation that actually ran can report as an
+ * outright disagreement between declared and live state (as opposed to
+ * `declared-but-not-verifiable`, which reports that one dimension of the
+ * comparison could not be evaluated at all, not that it disagreed).
+ */
 export type LiveStateDriftKind = Exclude<LiveStateSurfaceFindingKind, "declared-but-not-verifiable">;
 
-/** One reportable disagreement between a declaration and live state. */
+/**
+ * One reportable fact about a completed reconciliation attempt: either an
+ * outright disagreement between declared and live state (one of
+ * `LiveStateDriftKind`'s four), or `declared-but-not-verifiable` scoped to
+ * one dimension of the comparison that could not be evaluated (for example,
+ * a `declaredAt`/`liveObservedAt` that could not be parsed as an instant —
+ * see `reconcileLiveState`). The kind vocabulary is shared with the
+ * outcome-level `could-not-verify` reason on purpose: both name the same
+ * fact, "this could not be checked," at two different scopes -- one whole
+ * subject's reconciliation, or one specific thing this finding is about
+ * within it. A finding of this kind never gets to make an otherwise-clean
+ * subject look silently fine (it still counts toward `findings.length > 0`
+ * routing to `drifted`), and it never gets to make a subject with a real,
+ * already-found disagreement look like nothing could be checked, because it
+ * sits in the array next to that finding rather than replacing it.
+ */
 export interface LiveStateFinding {
-  readonly kind: LiveStateDriftKind;
+  readonly kind: LiveStateSurfaceFindingKind;
   /** The subject this finding is about — a toolchain pin, a deployment surface, a manifest entry. */
   readonly subject: string;
   readonly message: string;
@@ -240,10 +271,21 @@ function parseInstant(value: string): number | undefined {
  * cannot actually be compared — the exact defect class this whole contract
  * exists to prevent, reproduced one level down. Instead, when either
  * `declaredAt` or `liveObservedAt` is present but not parseable, this
- * function returns `could-not-verify` for the whole subject, with a
- * blocker naming which field and value could not be parsed, rather than
- * silently proceeding as if temporal ordering had been checked and found
- * clean.
+ * function records a `declared-but-not-verifiable` FINDING naming which
+ * field and value could not be parsed — never a boolean skip, and,
+ * pointedly, never a `return liveStateCouldNotVerify(...)` at that point in
+ * the function. This reconciliation attempt already completed: `declared`
+ * and `observation.live` are both present and `agrees` already ran above.
+ * Returning the could-not-verify OUTCOME here would silently discard
+ * whatever `agrees` already found — a subject whose live value genuinely
+ * disagrees with its declaration, and whose timestamps happen to be
+ * unparseable, must not get to report "nobody could check this" instead of
+ * "this drifted." That is the same defect class again, mirrored: not
+ * "unverified reads as verified," but "a confirmed finding reads as
+ * unverified." Folding the unparseable timestamp into the same findings
+ * list as everything else keeps both facts visible and guarantees
+ * `findings.length > 0` — never a silent pass, whether or not `agrees`
+ * found anything of its own.
  */
 export function reconcileLiveState<TDeclared, TLive>(
   input: ReconcileLiveStateInput<TDeclared, TLive>,
@@ -302,14 +344,35 @@ export function reconcileLiveState<TDeclared, TLive>(
         declaredInstant === undefined ? `declaredAt "${declared.declaredAt}"` : undefined,
         liveInstant === undefined ? `liveObservedAt "${observation.liveObservedAt}"` : undefined,
       ].filter((entry): entry is string => entry !== undefined);
-      return liveStateCouldNotVerify(
+      // NOT `return liveStateCouldNotVerify(...)` here. This reconciliation
+      // attempt DID complete -- declared and observation.live are both
+      // present, and `agrees` already ran above. Returning the could-not-
+      // verify OUTCOME at this point would silently discard any finding
+      // `agrees` already collected (see the module header's "found-and-
+      // discarded" note): a subject whose live value genuinely disagrees
+      // with its declaration, and whose timestamps happen to be
+      // unparseable, must not get to report "nobody could check this"
+      // instead of "this drifted." So an unparseable timestamp is recorded
+      // as its own finding, `declared-but-not-verifiable`, scoped to the
+      // one dimension (temporal ordering) that could not be evaluated,
+      // and folded into the same findings list as everything else this
+      // reconciliation found. It cannot make an actually-drifted subject
+      // look clean (findings, once found, are never dropped), and it
+      // cannot make a clean subject look silently fine either: a subject
+      // with no other findings gains this one, so `findings.length > 0`
+      // below still routes it to `drifted` rather than `verified` --
+      // never a silent pass, the same guarantee the outcome-level
+      // `could-not-verify` gives, expressed as a finding instead because a
+      // finding, not an outcome, is what has other findings to protect
+      // here.
+      findings.push({
+        kind: "declared-but-not-verifiable",
         subject,
-        `"${subject}" cannot be checked for live-artifact-predates-its-declaration: ${unparseable.join(" and ")} ` +
+        message:
+          `"${subject}" cannot be checked for live-artifact-predates-its-declaration: ${unparseable.join(" and ")} ` +
           "could not be parsed as an ISO 8601 instant, so temporal ordering cannot be verified.",
-      );
-    }
-
-    if (liveInstant < declaredInstant) {
+      });
+    } else if (liveInstant < declaredInstant) {
       findings.push({
         kind: "live-artifact-predates-its-declaration",
         subject,

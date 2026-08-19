@@ -74,10 +74,18 @@ import { LIVE_STATE_SURFACE_FINDING_KINDS } from "@vespeneventures/builder";
 // ]
 ```
 
-The first four are what a completed reconciliation attempt can report as
-drift. The fifth is different in kind, not degree, and is the point of the
-whole contract: a reconciliation surface that cannot currently read live
-state is a declared gap with a **named blocker**, never a silent pass.
+This is a finding vocabulary, not a verdict vocabulary — all five kinds can
+appear in a `drifted` report's `findings` list. The first four are outright
+disagreements a completed attempt found between declared and live state. The
+fifth, `declared-but-not-verifiable`, names one dimension of the comparison
+that could not be evaluated at all (a `declaredAt`/`liveObservedAt` that
+could not be parsed as an instant, for example), reported as its own finding
+precisely so it cannot silently discard a real disagreement already found
+alongside it. The same name is also, separately, the one declared reason an
+entire reconciliation attempt reports at the **outcome** level when nothing
+about the subject could be read at all: a reconciliation surface that cannot
+currently read live state is a declared gap with a **named blocker**, never
+a silent pass.
 
 ### Three states, enforced in the types
 

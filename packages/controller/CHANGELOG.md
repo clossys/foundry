@@ -21,10 +21,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   that finding could silently fail to fire, or fire when it should not.
   Both timestamps are now parsed with `Date.parse` and compared as epoch
   instants. A `declaredAt`/`liveObservedAt` that is present but cannot be
-  parsed as an instant now returns `could-not-verify` (reason
-  `declared-but-not-verifiable`, with a blocker naming which field and
-  value could not be parsed) instead of silently proceeding as though
-  temporal ordering had been checked and found clean.
+  parsed as an instant is now reported as a `declared-but-not-verifiable`
+  **finding** (naming which field and value could not be parsed), never as
+  a silent pass. That finding is recorded in the same `findings` list as
+  any outright disagreement `agrees` already found, rather than returned
+  as an outcome-level `could-not-verify` that would have discarded it —
+  review on the first version of this fix caught that an early-return
+  there was silently dropping a real, already-collected
+  `live-differs-from-declared` finding whenever the timestamp also
+  happened to be unparseable. `LiveStateFinding.kind` is now typed as the
+  full five-kind `LiveStateSurfaceFindingKind` (previously the
+  four-kind-only `LiveStateDriftKind`) to allow this.
 
 ### Documentation
 

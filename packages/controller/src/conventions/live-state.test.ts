@@ -289,59 +289,74 @@ describe("reconcileLiveState", () => {
       expect(report.result.verdict).toBe("satisfied");
     });
 
-    it("could-not-verify -- never a silent pass -- when declaredAt cannot be parsed", () => {
+    // -----------------------------------------------------------------
+    // An unparseable timestamp is reported as a `declared-but-not-
+    // verifiable` FINDING, not as an outcome-level `could-not-verify`
+    // that would discard whatever `agrees` already found. See
+    // reconcileLiveState's own doc comment for why: this reconciliation
+    // attempt completed (declared and observation.live are both
+    // present), so returning the could-not-verify outcome here would
+    // silently drop a real, already-collected finding -- the same defect
+    // class this contract exists to prevent, mirrored: not "unverified
+    // reads as verified," but "a confirmed finding reads as unverified."
+    // -----------------------------------------------------------------
+
+    it("reports declared-but-not-verifiable as a finding -- never a silent pass -- when declaredAt cannot be parsed", () => {
       const report = reconcileLiveState<string, string>({
         subject: "s",
         declared: { value: "1.0.0", declaredAt: "not-a-real-timestamp" },
         observation: { attempted: true, live: "1.0.0", liveObservedAt: "2026-08-10T08:00:00Z" },
         agrees: (a, b) => a === b,
       });
-      expect(report.result.verdict).toBe("indeterminate");
+      expect(report.result.verdict).toBe("violated");
       expect(isSatisfied(report.result)).toBe(false);
-      if (report.result.verdict === "indeterminate") {
-        expect(report.result.reason).toBe("declared-but-not-verifiable");
-        expect(report.result.detail).toContain("declaredAt");
-        expect(report.result.detail).toContain("not-a-real-timestamp");
+      if (report.result.verdict === "violated") {
+        expect(report.result.findings.map((f) => f.kind)).toEqual(["declared-but-not-verifiable"]);
+        expect(report.result.findings[0]?.message).toContain("declaredAt");
+        expect(report.result.findings[0]?.message).toContain("not-a-real-timestamp");
       }
     });
 
-    it("could-not-verify -- never a silent pass -- when liveObservedAt cannot be parsed", () => {
+    it("reports declared-but-not-verifiable as a finding -- never a silent pass -- when liveObservedAt cannot be parsed", () => {
       const report = reconcileLiveState<string, string>({
         subject: "s",
         declared: { value: "1.0.0", declaredAt: "2026-08-10T08:00:00Z" },
         observation: { attempted: true, live: "1.0.0", liveObservedAt: "also-not-a-timestamp" },
         agrees: (a, b) => a === b,
       });
-      expect(report.result.verdict).toBe("indeterminate");
+      expect(report.result.verdict).toBe("violated");
       expect(isSatisfied(report.result)).toBe(false);
-      if (report.result.verdict === "indeterminate") {
-        expect(report.result.reason).toBe("declared-but-not-verifiable");
-        expect(report.result.detail).toContain("liveObservedAt");
-        expect(report.result.detail).toContain("also-not-a-timestamp");
+      if (report.result.verdict === "violated") {
+        expect(report.result.findings.map((f) => f.kind)).toEqual(["declared-but-not-verifiable"]);
+        expect(report.result.findings[0]?.message).toContain("liveObservedAt");
+        expect(report.result.findings[0]?.message).toContain("also-not-a-timestamp");
       }
     });
 
-    it("could-not-verify -- never a silent pass -- when both timestamps cannot be parsed", () => {
+    it("reports declared-but-not-verifiable as a finding -- never a silent pass -- when both timestamps cannot be parsed", () => {
       const report = reconcileLiveState<string, string>({
         subject: "s",
         declared: { value: "1.0.0", declaredAt: "bogus-declared" },
         observation: { attempted: true, live: "1.0.0", liveObservedAt: "bogus-live" },
         agrees: (a, b) => a === b,
       });
-      expect(report.result.verdict).toBe("indeterminate");
-      if (report.result.verdict === "indeterminate") {
-        expect(report.result.reason).toBe("declared-but-not-verifiable");
-        expect(report.result.detail).toContain("bogus-declared");
-        expect(report.result.detail).toContain("bogus-live");
+      expect(report.result.verdict).toBe("violated");
+      if (report.result.verdict === "violated") {
+        expect(report.result.findings.map((f) => f.kind)).toEqual(["declared-but-not-verifiable"]);
+        expect(report.result.findings[0]?.message).toContain("bogus-declared");
+        expect(report.result.findings[0]?.message).toContain("bogus-live");
       }
     });
 
-    it("an unparseable timestamp is never read as verified through any of the three ways a caller could check", () => {
-      // The same proof the #255 could-not-verify suite already runs above,
-      // applied to the specific case this issue is about: a subject whose
-      // *values* agree but whose declaredAt/liveObservedAt is garbage must
-      // not be readable as "passed" by type-narrowing, by the CI exit-code
-      // projection, or by a truthy-checked boolean field.
+    it("an unparseable timestamp is never read as satisfied through any of the three ways a caller could check", () => {
+      // The same proof the #255 could-not-verify suite runs above for the
+      // outcome-level case, applied here to the finding-level case: a
+      // subject whose *values* agree but whose declaredAt/liveObservedAt
+      // is garbage must not be readable as "passed" by type-narrowing, by
+      // the CI exit-code projection, or by a truthy-checked boolean
+      // field. It is `violated`, not `indeterminate`, because a
+      // finding -- even this one -- was collected; see the two
+      // "does not lose" tests below for why that distinction matters.
       const report = reconcileLiveState<string, string>({
         subject: "s",
         declared: { value: "1.0.0", declaredAt: "garbage" },
@@ -349,14 +364,68 @@ describe("reconcileLiveState", () => {
         agrees: (a, b) => a === b,
       });
       expect(isSatisfied(report.result)).toBe(false);
-      expect(isIndeterminate(report.result)).toBe(true);
-      expect(isViolated(report.result)).toBe(false);
-      expect(gateResultToExitCode(report.result)).toBe(2);
+      expect(isViolated(report.result)).toBe(true);
+      expect(isIndeterminate(report.result)).toBe(false);
+      expect(gateResultToExitCode(report.result)).toBe(1);
       expect(gateResultToExitCode(report.result)).not.toBe(0);
       const keys = new Set(Object.keys(report.result));
       expect(keys.has("ok")).toBe(false);
       expect(keys.has("passed")).toBe(false);
       expect(keys.has("success")).toBe(false);
+    });
+
+    // -----------------------------------------------------------------
+    // The regression this section exists to pin: a subject with BOTH a
+    // real value mismatch AND an unparseable timestamp must report BOTH
+    // findings. An early `return liveStateCouldNotVerify(...)` from
+    // inside the timestamp block would discard the mismatch finding
+    // `agrees` already collected -- exactly the defect a prior version
+    // of this fix had.
+    // -----------------------------------------------------------------
+
+    it("does not lose an already-found live-differs-from-declared finding when declaredAt is also unparseable", () => {
+      const report = reconcileLiveState<string, string>({
+        subject: "s",
+        declared: { value: "1.0.0", declaredAt: "not-a-real-timestamp" },
+        observation: { attempted: true, live: "2.0.0", liveObservedAt: "2026-08-10T08:00:00Z" },
+        agrees: (a, b) => a === b,
+      });
+      expect(report.result.verdict).toBe("violated");
+      if (report.result.verdict === "violated") {
+        expect(report.result.findings.map((f) => f.kind).sort()).toEqual(
+          ["declared-but-not-verifiable", "live-differs-from-declared"].sort(),
+        );
+      }
+    });
+
+    it("does not lose an already-found live-differs-from-declared finding when liveObservedAt is also unparseable", () => {
+      const report = reconcileLiveState<string, string>({
+        subject: "s",
+        declared: { value: "1.0.0", declaredAt: "2026-08-10T08:00:00Z" },
+        observation: { attempted: true, live: "2.0.0", liveObservedAt: "also-not-a-timestamp" },
+        agrees: (a, b) => a === b,
+      });
+      expect(report.result.verdict).toBe("violated");
+      if (report.result.verdict === "violated") {
+        expect(report.result.findings.map((f) => f.kind).sort()).toEqual(
+          ["declared-but-not-verifiable", "live-differs-from-declared"].sort(),
+        );
+      }
+    });
+
+    it("does not lose an already-found live-differs-from-declared finding when both timestamps are unparseable", () => {
+      const report = reconcileLiveState<string, string>({
+        subject: "s",
+        declared: { value: "1.0.0", declaredAt: "bogus-declared" },
+        observation: { attempted: true, live: "2.0.0", liveObservedAt: "bogus-live" },
+        agrees: (a, b) => a === b,
+      });
+      expect(report.result.verdict).toBe("violated");
+      if (report.result.verdict === "violated") {
+        expect(report.result.findings.map((f) => f.kind).sort()).toEqual(
+          ["declared-but-not-verifiable", "live-differs-from-declared"].sort(),
+        );
+      }
     });
   });
 });
