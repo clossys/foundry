@@ -4,15 +4,23 @@
 //
 //   node scripts/check-package-visibility.mjs [lifecyclePath] [--json] [--owner <login>]
 //
-// Exit 0 = every declared package's actual registry visibility matches its
-// declared intent (or has never been published, which is not a violation —
-// see NOT PUBLISHED YET below). Exit 1 = at least one finding (a mismatch,
-// or a "published" lifecycle entry with no visibility declared at all).
-// Exit 2 = the check could not be completed — no token, an API error, a rate
-// limit, an unreachable endpoint, or an unparseable response. Same
-// three-state contract every gate in this repo uses (see CONTRIBUTING.md's
-// "Gate CLIs exit 0/1/2" entry): a check that cannot run must fail, never
-// silently pass.
+// This is a two-directional check. It starts from
+// docs/contracts/package-lifecycle.json's "published" entries and asks the
+// registry whether each one's real visibility matches its declared intent
+// (or has never been published, which is not a violation — see NOT
+// PUBLISHED YET below) — AND it starts from the registry's own package list
+// and asks the declaration whether it agrees a package should be there at
+// all. Exit 0 = both directions reconcile cleanly: every declared package's
+// registry visibility matches its declared intent, and every package the
+// registry actually lists is declared "published". Exit 1 = at least one
+// finding in either direction (a visibility mismatch, a "published"
+// lifecycle entry with no visibility declared, or a package live on the
+// registry whose lifecycle entry is not "published"). Exit 2 = the check
+// could not be completed — no token, an API error, a rate limit, an
+// unreachable endpoint, an unparseable response, or a registry enumeration
+// that could not be trusted. Same three-state contract every gate in this
+// repo uses (see CONTRIBUTING.md's "Gate CLIs exit 0/1/2" entry): a check
+// that cannot run must fail, never silently pass.
 //
 // WHY THIS GATE EXISTS
 // ---------------------
@@ -83,6 +91,34 @@
 // code: an error (2) dominates a finding (1), which dominates a clean pass
 // or a not-yet-published report (0) — the same aggregation
 // check-workspace-links.mjs and check-release-readiness.mjs already use.
+//
+// REGISTRY-DRIVEN RECONCILIATION, NOT JUST DECLARATION-DRIVEN CHECKING
+// -----------------------------------------------------------------------
+// Everything above starts from docs/contracts/package-lifecycle.json's
+// "published" entries and asks the registry whether each one's visibility
+// matches its declared intent. That direction alone has a blind spot: a
+// package that IS live on the registry, but whose lifecycle entry lags
+// reality (still "incubating", or missing from the file altogether), is
+// invisible to that scan — not reported as unchecked, simply absent from
+// the output, which reads identically to "checked and fine". A package
+// published three times over while its lifecycle entry stayed "incubating"
+// and it had no docs/contracts/package-visibility.json entry at all sailed
+// through every visibility run in that window this way, because the gate
+// never once consulted the registry's own package list — only the names
+// the declaration told it to look at.
+//
+// So this gate ALSO enumerates the registry directly — fetchRegistryPackages,
+// the org/user packages LIST endpoint, distinct from the per-package GET
+// fetchPackageVisibility uses above — and reconciles that real set against
+// package-lifecycle.json (reconcileRegistryAgainstLifecycle). Any registry
+// package whose lifecycle status is not "published" — incubating,
+// deprecated, retired, or simply undeclared — is a FINDING: the declaration
+// is wrong about reality, and that mismatch is exactly what a contract gate
+// exists to catch. Enumeration failure (an unreachable endpoint, a missing
+// or blind credential, an unparseable response) is exit 2, never an empty
+// set read as clean — the same discipline as isBlindCredential below,
+// extended from "found nothing about a package I already knew the name of"
+// to "found nothing about the registry's actual contents".
 //
 // NEVER WIRED INTO LOCAL `npm run check`
 // -----------------------------------------
@@ -252,6 +288,144 @@ export async function fetchPackageVisibility({ owner, name, token, fetchImpl }) 
 }
 
 /**
+ * Turns a name GitHub's packages LIST endpoint returned into the full scoped
+ * npm name package-lifecycle.json uses. Unlike the single-package GET
+ * endpoint fetchPackageVisibility calls (which deliberately wants the bare,
+ * unscoped segment — see bareName above), what the LIST endpoint puts in its
+ * own `name` field is not pinned down here to one shape: if it already reads
+ * as a scoped name, it is trusted as-is; otherwise it is prefixed with
+ * `scope`, which is either package-scope.json's own declared scope or, if
+ * that file is unavailable, `@${owner}` — the ordinary convention this
+ * workspace itself follows (`owner` "vespeneventures", `scope`
+ * "@vespeneventures").
+ */
+export function normalizeRegistryName(rawName, scope) {
+  return rawName.startsWith("@") ? rawName : `${scope}/${rawName}`;
+}
+
+/** The next-page URL from a paginated GitHub REST response's Link header, or undefined on the last page. */
+function nextPageUrl(response) {
+  const link = typeof response?.headers?.get === "function" ? response.headers.get("link") : undefined;
+  if (!link) return undefined;
+  const match = /<([^>]+)>;\s*rel="next"/.exec(link);
+  return match ? match[1] : undefined;
+}
+
+/**
+ * Enumerates every npm package GitHub Packages actually lists for `owner` —
+ * the org/user packages LIST endpoint, not a lookup of any name this gate
+ * already knows. This is the half of the gate that lets a package the
+ * declaration never mentioned be found at all; fetchPackageVisibility above
+ * can only ever confirm or deny a name it is handed.
+ *
+ * Returns one of:
+ *   - { state: "found", packages: [fullScopedName, ...] }
+ *   - { state: "error", detail } — an unreachable endpoint, a non-404/200
+ *     HTTP status, an unparseable response, or a credential/owner that
+ *     neither the org nor the user endpoint recognises. Deliberately no
+ *     "not-found" state here (contrast fetchPackageVisibility): a single
+ *     package can legitimately not exist yet, but an owner that enumerates
+ *     to nothing at all is far more likely a bad owner name or a credential
+ *     that cannot list packages than a registry genuinely holding zero — so
+ *     this is treated as could-not-enumerate, not "found: empty".
+ *
+ * `fetchImpl` is injected so tests never make a real network call, same as
+ * fetchPackageVisibility above.
+ */
+export async function fetchRegistryPackages({ owner, scope, token, fetchImpl }) {
+  for (const kind of ["orgs", "users"]) {
+    const collected = [];
+    let url = `${GITHUB_API}/${kind}/${owner}/packages?package_type=npm&per_page=100`;
+    let firstPage = true;
+    let notFound = false;
+    while (url) {
+      let response;
+      try {
+        response = await fetchImpl(url, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2022-11-28",
+          },
+        });
+      } catch (error) {
+        return { state: "error", detail: `network error calling the ${kind} packages list endpoint: ${error.message}` };
+      }
+      if (response.status === 404 && firstPage) {
+        notFound = true;
+        break;
+      }
+      if (!response.ok) {
+        return {
+          state: "error",
+          detail: `the ${kind} packages list endpoint returned HTTP ${response.status} — could not enumerate registry packages for "${owner}".`,
+        };
+      }
+      let body;
+      try {
+        body = await response.json();
+      } catch (error) {
+        return { state: "error", detail: `the ${kind} packages list endpoint returned a response this gate could not parse as JSON: ${error.message}` };
+      }
+      if (!Array.isArray(body)) {
+        return { state: "error", detail: `the ${kind} packages list endpoint returned a non-array response — could not enumerate registry packages for "${owner}".` };
+      }
+      for (const item of body) {
+        if (!item || typeof item !== "object" || typeof item.name !== "string" || item.name.length === 0) continue;
+        collected.push(normalizeRegistryName(item.name, scope));
+      }
+      firstPage = false;
+      url = nextPageUrl(response);
+    }
+    if (notFound) continue;
+    return { state: "found", packages: collected };
+  }
+  return {
+    state: "error",
+    detail: `neither the organization nor the user packages list endpoint could enumerate registry packages for "${owner}" — the credential may lack read:packages access, or the owner name is wrong. Refusing to report a reconciled set it never verified.`,
+  };
+}
+
+/**
+ * Reconciles the real registry package set (from fetchRegistryPackages)
+ * against package-lifecycle.json. Pure, no network — mirrors
+ * selectDeclaredPackages's shape and is tested the same hermetic way.
+ *
+ * A registry package whose lifecycle status is "published" is reconciled —
+ * its visibility is what checkPackageVisibility already verifies above, so
+ * it is not reported again here. Anything else — a status of "incubating",
+ * "deprecated", "retired", or no lifecycle entry at all — is a FINDING: the
+ * package is live and public-or-private on the registry regardless of what
+ * this repository's own declaration says, and the declaration is what is
+ * wrong. This is the direction selectDeclaredPackages's join never checks:
+ * declaration-versus-declaration is covered there; this is
+ * registry-versus-declaration.
+ */
+export function reconcileRegistryAgainstLifecycle(lifecycle, registryPackageNames) {
+  const statusByName = new Map();
+  for (const entry of lifecycle.packages) {
+    if (entry && typeof entry === "object" && typeof entry.name === "string" && entry.name.length > 0) {
+      statusByName.set(entry.name, entry.status);
+    }
+  }
+
+  const results = [];
+  for (const name of registryPackageNames) {
+    const status = statusByName.get(name);
+    if (status === "published") continue;
+    results.push({
+      package: name,
+      status: "finding",
+      detail:
+        typeof status === "string"
+          ? `"${name}" is live on the registry but its ${DEFAULT_LIFECYCLE_PATH} status is "${status}", not "published" — the declaration is wrong about reality. Either the package should not have been published yet, or its lifecycle entry is stale and needs to move to "published".`
+          : `"${name}" is live on the registry but has no entry at all in ${DEFAULT_LIFECYCLE_PATH} — the declaration is wrong about reality.`,
+    });
+  }
+  return results;
+}
+
+/**
  * The whole check: join the two contract documents, then look up every
  * declared package's real registry visibility and compare it against its
  * declared intent. Every package is checked — a failure on one never stops
@@ -307,6 +481,95 @@ export async function checkPackageVisibility({ lifecycle, visibility, owner, tok
  */
 export function isBlindCredential(lookups) {
   return Boolean(lookups) && lookups.attempted > 0 && lookups.found === 0;
+}
+
+/**
+ * The full two-directional check, orchestrated as one pure-async function
+ * so it is testable end-to-end with an injected `fetchImpl` — never through
+ * a spawned CLI process, which cannot inject a fake network. Runs both
+ * directions and every guard main() enforces, and returns a result shaped
+ * for the caller to act on rather than calling process.exit itself:
+ *
+ *   - { fatal: string, code: 2 } — could not complete either direction of
+ *     the check (declaration-side blind credential or empty scan,
+ *     registry-side enumeration failure or an untrustworthy empty result).
+ *   - { fatal: null, code: 0 | 1 | 2, results, lookups,
+ *       registryPackagesEnumerated } — completed; `code` is the worst
+ *       status across BOTH directions' results (declaration-vs-registry
+ *       from checkPackageVisibility, and registry-vs-declaration from
+ *       reconcileRegistryAgainstLifecycle combined).
+ *
+ * This is deliberately the seam the three required proofs run through: a
+ * declared-"incubating" package live on the registry, a fully reconciled
+ * set, and an unreachable registry all exercise this one function with a
+ * different injected `fetchImpl`, never a real network call.
+ */
+export async function checkAllPackageVisibility({ lifecycle, visibility, owner, scope, token, fetchImpl }) {
+  const { results, fatal, lookups } = await checkPackageVisibility({ lifecycle, visibility, owner, token, fetchImpl });
+  if (fatal) return { fatal, code: 2 };
+
+  // See the guard in main()'s historical comment block, preserved here: a
+  // token that sees nothing looks exactly like an empty registry, and only
+  // the aggregate — every declared lookup coming back 404 — can tell the
+  // two apart.
+  if (isBlindCredential(lookups)) {
+    return {
+      fatal:
+        `all ${lookups.attempted} declared package(s) returned "not found" from the registry. GitHub returns 404 both for a ` +
+        "package that does not exist and for one this credential cannot see, so this result cannot distinguish an unpublished " +
+        "set of packages from a GH_PACKAGES_TOKEN that has lost read:packages access — refusing to report a pass either way. " +
+        "Confirm the token's scope, then re-run.",
+      code: 2,
+    };
+  }
+
+  // Same EMPTY SCAN discipline check-workspace-links.mjs documents: zero
+  // results (no "published" entries at all) means this half examined
+  // nothing, which is indistinguishable from a scan that is silently
+  // broken — never a clean 0.
+  if (results.length === 0) {
+    return { fatal: `found zero "published" entries in ${DEFAULT_LIFECYCLE_PATH} to check — refusing to report a clean pass on an empty scan`, code: 2 };
+  }
+
+  // Everything above starts from the declaration and asks the registry
+  // whether it agrees. This half starts from the registry and asks the
+  // declaration whether IT agrees — the direction that catches a package
+  // that is live and public while its lifecycle entry still reads
+  // "incubating" (or has no entry at all). Enumeration failure is exit 2,
+  // never an empty set read as clean — see fetchRegistryPackages's own doc
+  // comment for why a total miss is "could not enumerate", not "found
+  // zero".
+  const registryResult = await fetchRegistryPackages({ owner, scope, token, fetchImpl });
+  if (registryResult.state === "error") {
+    return { fatal: `could not enumerate registry packages to reconcile against ${DEFAULT_LIFECYCLE_PATH}: ${registryResult.detail}`, code: 2 };
+  }
+
+  // A registry enumeration that comes back empty while at least one
+  // per-package lookup above independently confirmed a real answer (found a
+  // package, public or private) is internally inconsistent: the LIST
+  // endpoint missed packages the GET endpoint just proved exist. Reporting
+  // a reconciled set in that state would be exactly the "empty scan read as
+  // clean" mistake this file's other guards refuse to make.
+  if (registryResult.packages.length === 0 && lookups.found > 0) {
+    return {
+      fatal:
+        `the registry packages list for "${owner}" returned zero packages, but ${lookups.found} declared package(s) were ` +
+        "independently confirmed to exist via direct lookup above — the list enumeration cannot be trusted here (missing " +
+        "list-scoped access, or an incomplete response). Refusing to report a reconciled registry set it did not actually obtain.",
+      code: 2,
+    };
+  }
+
+  const registryFindings = reconcileRegistryAgainstLifecycle(lifecycle, registryResult.packages);
+  const allResults = [...results, ...registryFindings];
+
+  // Worst-of-three across BOTH directions combined: an error anywhere
+  // dominates a finding, which dominates a clean pass or a not-yet-
+  // published report. Same aggregation check-workspace-links.mjs and
+  // check-release-readiness.mjs already use.
+  const code = allResults.reduce((acc, r) => (r.status === "error" ? 2 : r.status === "finding" && acc !== 2 ? 1 : acc), 0);
+
+  return { fatal: null, code, results: allResults, lookups, registryPackagesEnumerated: registryResult.packages.length };
 }
 
 // ------------------------------------------------------------------- main
@@ -395,82 +658,46 @@ async function main() {
   }
 
   let owner = ownerOverride;
-  if (!owner) {
-    if (!existsSync(DEFAULT_SCOPE_PATH)) die(`no ${DEFAULT_SCOPE_PATH} found to determine the registry owner (or pass --owner <login>)`);
+  let scope;
+  if (existsSync(DEFAULT_SCOPE_PATH)) {
     let scopeDoc;
     try {
       scopeDoc = JSON.parse(readFileSync(DEFAULT_SCOPE_PATH, "utf8"));
     } catch (error) {
       die(`${DEFAULT_SCOPE_PATH} does not parse as JSON: ${error.message}`);
     }
-    const scope = scopeDoc?.scope;
-    if (typeof scope !== "string" || !scope.startsWith("@")) die(`${DEFAULT_SCOPE_PATH} has no valid "scope" field`);
+    if (typeof scopeDoc?.scope === "string" && scopeDoc.scope.startsWith("@")) scope = scopeDoc.scope;
+  }
+  if (!owner) {
+    if (!scope) die(`no ${DEFAULT_SCOPE_PATH} found to determine the registry owner (or pass --owner <login>)`);
     owner = scope.slice(1);
   }
+  // package-scope.json's own declared scope is preferred; falling back to
+  // `@${owner}` only when that file is absent (an --owner override with no
+  // scope file at all) — see normalizeRegistryName's own doc comment.
+  if (!scope) scope = `@${owner}`;
 
-  const { results, fatal, lookups } = await checkPackageVisibility({ lifecycle, visibility, owner, token, fetchImpl: fetch });
-  if (fatal) die(fatal);
+  const outcome = await checkAllPackageVisibility({ lifecycle, visibility, owner, scope, token, fetchImpl: fetch });
+  if (outcome.fatal) die(outcome.fatal, outcome.code);
 
-  // A TOKEN THAT SEES NOTHING LOOKS EXACTLY LIKE AN EMPTY REGISTRY.
-  // GitHub answers 404 — not 403 — for a package the caller lacks access
-  // to, deliberately, so that the API never leaks the existence of a
-  // private package to someone who cannot read it. That means a single
-  // 404 is genuinely ambiguous: "never published" and "published, but
-  // invisible to this credential" are the same response byte for byte,
-  // and this gate cannot tell them apart for any one package.
-  //
-  // It can tell them apart in aggregate. If EVERY declared package comes
-  // back 404, the likely explanation is not that this repository has
-  // declared a set of published packages none of which was ever
-  // published — it is that the credential cannot see them: a
-  // GH_PACKAGES_TOKEN rotated to one missing `read:packages`, expired
-  // into a reduced-scope state, or belonging to an account without access
-  // to this owner's packages. Reporting that as OK would be this gate
-  // failing in precisely the way it exists to prevent, and worse than not
-  // having it: a daily green check asserting every package is public
-  // while the registry was never actually consulted.
-  //
-  // So: exit 2, could-not-run, not 0. This is the same discipline as the
-  // empty-scan guard below — a scan that examined nothing is never a
-  // clean pass — extended to a scan that examined everything and learned
-  // nothing.
-  if (isBlindCredential(lookups)) {
-    die(
-      `all ${lookups.attempted} declared package(s) returned "not found" from the registry. GitHub returns 404 both for a ` +
-        "package that does not exist and for one this credential cannot see, so this result cannot distinguish an unpublished " +
-        "set of packages from a GH_PACKAGES_TOKEN that has lost read:packages access — refusing to report a pass either way. " +
-        "Confirm the token's scope, then re-run.",
-    );
-  }
-
-  // Same EMPTY SCAN discipline check-workspace-links.mjs documents: zero
-  // results (no "published" entries at all) means this scan examined
-  // nothing, which is indistinguishable from a scan that is silently
-  // broken — never a clean 0.
-  if (results.length === 0) {
-    die(`found zero "published" entries in ${lifecyclePath} to check — refusing to report a clean pass on an empty scan`);
-  }
+  const { results: allResults, lookups, registryPackagesEnumerated, code: worst } = outcome;
 
   if (json) {
-    console.log(JSON.stringify({ results }, null, 2));
+    console.log(JSON.stringify({ results: allResults, registryPackagesEnumerated }, null, 2));
   } else {
     const labels = { pass: "PASS ", finding: "FIND ", error: "ERROR", "not-published": "SKIP " };
-    for (const r of results) console.log(`  [${labels[r.status]}] ${r.package} — ${r.detail}`);
+    for (const r of allResults) console.log(`  [${labels[r.status]}] ${r.package} — ${r.detail}`);
   }
-
-  // Worst-of-three: an error anywhere dominates a finding, which dominates
-  // a clean pass or a not-yet-published report. Same aggregation
-  // check-workspace-links.mjs and check-release-readiness.mjs already use.
-  const worst = results.reduce((acc, r) => (r.status === "error" ? 2 : r.status === "finding" && acc !== 2 ? 1 : acc), 0);
 
   if (!json) {
     console.log("");
     console.log(
       worst === 0
-        ? "PACKAGE VISIBILITY OK — every declared package's real registry visibility matches its declared intent (or has not been published yet)."
+        ? `PACKAGE VISIBILITY OK — ${lookups.found} declared package(s) confirmed against their real registry visibility, and ` +
+            `${registryPackagesEnumerated} registry package(s) reconciled against ${lifecyclePath}. No mismatches found.`
         : worst === 2
           ? "PACKAGE VISIBILITY ERROR — could not determine at least one package's real visibility (see ERROR lines above). This is not a pass."
-          : "PACKAGE VISIBILITY FAIL — at least one package is registry-private while declared public (or is undeclared) — see FIND lines above. There is no API to fix this; see docs/PUBLISHING.md's \"Package visibility\" section for the manual step.",
+          : "PACKAGE VISIBILITY FAIL — at least one package's real registry state does not match what this repository declares — see FIND lines above. There is no API to change visibility; see docs/PUBLISHING.md's \"Package visibility\" section for the manual step. A lifecycle-status mismatch is fixed by editing docs/contracts/package-lifecycle.json instead.",
     );
   }
   process.exit(worst);
