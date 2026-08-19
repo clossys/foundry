@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 3,
+  "defaultBranch": "main",
+  "commands": [
+    { "name": "setup", "run": "npm ci" },
+    { "name": "check", "run": "npm run check" },
+    { "name": "build", "run": "npm run build" },
+    { "name": "typecheck", "run": "npm run typecheck" },
+    { "name": "test", "run": "npm test" }
+  ],
+  "protectedPaths": [
+    ".github/workflows/**",
+    ".github/verify-standards-policy.json",
+    ".root-entry-policy.json",
+    "package-scope.json",
+    "docs/contracts/**",
+    "SECURITY.md"
+  ],
+  "requirements": [
+    { "id": "runtime.node", "scope": "machine", "constraint": { "kind": "present" } },
+    { "id": "tool.git", "scope": "machine", "constraint": { "kind": "present" } },
+    { "id": "tool.package-manager", "scope": "repository", "constraint": { "kind": "one-of", "values": ["npm"] } }
+  ],
+  "rootEntries": [
+    { "name": ".github", "classification": "canonical", "disposition": "required" },
+    { "name": ".gitignore", "classification": "canonical", "disposition": "required" },
+    { "name": ".npmrc.example", "classification": "canonical", "disposition": "required" },
+    { "name": ".root-entry-policy.json", "classification": "canonical", "disposition": "required" },
+    { "name": "AGENTS.md", "classification": "canonical", "disposition": "required" },
+    { "name": "CLAUDE.md", "classification": "canonical", "disposition": "required" },
+    { "name": "CODE_OF_CONDUCT.md", "classification": "canonical", "disposition": "required" },
+    { "name": "CONTRIBUTING.md", "classification": "canonical", "disposition": "required" },
+    { "name": "LICENSE", "classification": "canonical", "disposition": "required" },
+    { "name": "README.md", "classification": "canonical", "disposition": "required" },
+    { "name": "SECURITY.md", "classification": "canonical", "disposition": "required" },
+    { "name": "docs", "classification": "canonical", "disposition": "required" },
+    { "name": "package-lock.json", "classification": "canonical", "disposition": "required" },
+    { "name": "package-scope.json", "classification": "canonical", "disposition": "required" },
+    { "name": "package.json", "classification": "canonical", "disposition": "required" },
+    { "name": "packages", "classification": "canonical", "disposition": "required" },
+    { "name": "scripts", "classification": "canonical", "disposition": "required" },
+    { "name": "governance", "classification": "extension", "disposition": "required" }
+  ]
+}

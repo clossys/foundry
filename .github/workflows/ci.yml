@@ -405,6 +405,15 @@ jobs:
       - run: npm run build
       - name: Package lifecycle governance
         run: npm run check:package-governance
+      # This repository's own repository-profile declaration (issue #317),
+      # checked with the same packaged validator every consumer installs --
+      # never a bespoke script. `.` (repository root), not an explicit file
+      # path, so this also exercises the discovery repository-check gained
+      # in issue #315: a declaration outside governance/repository-profile.json
+      # would surface here as its own non-canonical-location finding rather
+      # than a silent "no declaration" pass.
+      - name: Repository profile
+        run: npm run check:repository-profile
       # Asks each package's own tsc which files it actually compiles, then
       # fails if a @ts-expect-error/@ts-ignore/expectTypeOf/assertType lives
       # outside that set — i.e. in a *.test.ts(x) file, where it would be
