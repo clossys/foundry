@@ -33,6 +33,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   full five-kind `LiveStateSurfaceFindingKind` (previously the
   four-kind-only `LiveStateDriftKind`) to allow this.
 
+  The final verdict reads WHICH kinds ended up in the findings list, not
+  merely whether it is non-empty — a second round of review caught that
+  reporting `violated` whenever `findings.length > 0` manufactures a
+  violation for a subject whose values genuinely agree and whose ONLY
+  issue is an unparseable timestamp, which is exactly what
+  `indeterminate` exists to report instead. Any real drift kind (one of
+  `LiveStateDriftKind`'s four) present anywhere in the list makes the
+  subject `drifted`, carrying every finding collected including a
+  `declared-but-not-verifiable` one riding alongside it; a lone
+  `declared-but-not-verifiable` finding with no real drift makes the
+  subject `indeterminate` instead, never a manufactured violation; no
+  findings at all is `verified`. A confirmed finding is never downgraded
+  to could-not-verify, and an unverifiable dimension is never inflated
+  into a violation.
+
 ### Documentation
 
 - `conventions/documents/live-state-reconciliation.md` now says a

@@ -69,21 +69,25 @@ import type { Finding } from "./types.js";
  * so a caller can enumerate it (for `--help` text, a report legend, or a
  * lifecycle document) without re-deriving it from the two branches below.
  *
- * This is a *finding* vocabulary, not a *verdict* vocabulary -- all five
- * kinds can appear in a `drifted` report's `findings` list. The first four
- * are outright disagreements a completed reconciliation attempt found
- * between declared and live state. The fifth, `declared-but-not-verifiable`,
+ * This is a *finding* vocabulary, not a *verdict* vocabulary. The first
+ * four are outright disagreements a completed reconciliation attempt found
+ * between declared and live state, and any one of them present always
+ * means the subject is `drifted`. The fifth, `declared-but-not-verifiable`,
  * is different in kind, not degree: it names one dimension of the
  * comparison that could not be evaluated at all (a `declaredAt`/
  * `liveObservedAt` that could not be parsed, for example -- see
- * `reconcileLiveState`), reported as its own finding precisely so it can sit
- * alongside a real, already-found disagreement without silently discarding
- * it. It is also, separately, the one declared reason an entire
+ * `reconcileLiveState`), and what it means for the VERDICT depends on what
+ * else was found. Alongside a real drift finding, it rides in the same
+ * `drifted` report's `findings` list, naming the one dimension that stayed
+ * unchecked without hiding the disagreement that WAS confirmed. On its
+ * own -- nothing else wrong, one dimension unverifiable -- it makes the
+ * subject `indeterminate` instead, the same declared reason an entire
  * reconciliation attempt reports at the OUTCOME level when nothing about
- * the subject could be read at all -- see `liveStateCouldNotVerify` and the
- * module header. Same name, two scopes: one finding among others in a
- * `drifted` subject, or the whole reason a subject is `could-not-verify`
- * with no findings collected at all.
+ * the subject could be read at all (see `liveStateCouldNotVerify` and the
+ * module header). Same name, same meaning ("this could not be checked"),
+ * read at two different scopes: one finding among others in a `drifted`
+ * subject's list, or the whole reason a subject with no confirmed drift is
+ * `indeterminate`.
  */
 export const LIVE_STATE_SURFACE_FINDING_KINDS = Object.freeze([
   "declared-but-not-live",
@@ -114,10 +118,13 @@ export type LiveStateDriftKind = Exclude<LiveStateSurfaceFindingKind, "declared-
  * fact, "this could not be checked," at two different scopes -- one whole
  * subject's reconciliation, or one specific thing this finding is about
  * within it. A finding of this kind never gets to make an otherwise-clean
- * subject look silently fine (it still counts toward `findings.length > 0`
- * routing to `drifted`), and it never gets to make a subject with a real,
- * already-found disagreement look like nothing could be checked, because it
- * sits in the array next to that finding rather than replacing it.
+ * subject look silently fine (with no real drift finding alongside it, it
+ * routes the subject to `indeterminate`, never `verified`), and it never
+ * gets to make a subject with a real, already-found disagreement look like
+ * nothing could be checked, because it sits in the array next to that
+ * finding rather than replacing it -- see `reconcileLiveState`'s own
+ * verdict logic, which reads WHICH kinds a subject's findings hold, not
+ * merely whether the list is non-empty.
  */
 export interface LiveStateFinding {
   readonly kind: LiveStateSurfaceFindingKind;
@@ -283,9 +290,19 @@ function parseInstant(value: string): number | undefined {
  * "this drifted." That is the same defect class again, mirrored: not
  * "unverified reads as verified," but "a confirmed finding reads as
  * unverified." Folding the unparseable timestamp into the same findings
- * list as everything else keeps both facts visible and guarantees
- * `findings.length > 0` — never a silent pass, whether or not `agrees`
- * found anything of its own.
+ * list as everything else keeps both facts visible.
+ *
+ * That list is then read for WHICH kinds it holds, not merely whether it
+ * is non-empty. A real drift finding (`agrees` disagreeing, or one of the
+ * other three drift kinds) makes the subject `drifted`, carrying every
+ * finding collected, `declared-but-not-verifiable` included. A `declared-
+ * but-not-verifiable` finding with no real drift alongside it makes the
+ * subject `indeterminate` instead — nothing was confirmed wrong, and one
+ * dimension could not be checked, which is what `indeterminate` means, not
+ * a manufactured violation. Both outcomes are non-zero, distinct exit
+ * codes (see `gateResultToExitCode`), so neither is a silent pass; the
+ * three-way split exists so the ACCURATE one is reported, not merely a
+ * non-`satisfied` one.
  */
 export function reconcileLiveState<TDeclared, TLive>(
   input: ReconcileLiveStateInput<TDeclared, TLive>,
@@ -348,23 +365,20 @@ export function reconcileLiveState<TDeclared, TLive>(
       // attempt DID complete -- declared and observation.live are both
       // present, and `agrees` already ran above. Returning the could-not-
       // verify OUTCOME at this point would silently discard any finding
-      // `agrees` already collected (see the module header's "found-and-
-      // discarded" note): a subject whose live value genuinely disagrees
-      // with its declaration, and whose timestamps happen to be
+      // `agrees` already collected: a subject whose live value genuinely
+      // disagrees with its declaration, and whose timestamps happen to be
       // unparseable, must not get to report "nobody could check this"
       // instead of "this drifted." So an unparseable timestamp is recorded
       // as its own finding, `declared-but-not-verifiable`, scoped to the
-      // one dimension (temporal ordering) that could not be evaluated,
-      // and folded into the same findings list as everything else this
-      // reconciliation found. It cannot make an actually-drifted subject
-      // look clean (findings, once found, are never dropped), and it
-      // cannot make a clean subject look silently fine either: a subject
-      // with no other findings gains this one, so `findings.length > 0`
-      // below still routes it to `drifted` rather than `verified` --
-      // never a silent pass, the same guarantee the outcome-level
-      // `could-not-verify` gives, expressed as a finding instead because a
-      // finding, not an outcome, is what has other findings to protect
-      // here.
+      // one dimension (temporal ordering) that could not be evaluated, and
+      // folded into the same findings list as everything else this
+      // reconciliation found. The verdict below reads WHICH kinds ended up
+      // in this list, not merely whether it is non-empty: a real drift
+      // kind sitting alongside this one still reports `drifted`, carrying
+      // both; this one on its own, with no real drift found, reports
+      // `indeterminate` rather than manufacturing a violation out of an
+      // unrelated agreement -- see the verdict logic at the end of this
+      // function.
       findings.push({
         kind: "declared-but-not-verifiable",
         subject,
@@ -385,7 +399,33 @@ export function reconcileLiveState<TDeclared, TLive>(
     }
   }
 
-  return findings.length > 0 ? liveStateDrifted(subject, findings) : liveStateVerified(subject);
+  // The verdict depends on WHICH findings were collected, not merely on
+  // how many. A real drift kind (one of `LiveStateDriftKind`'s four) means
+  // something was actually confirmed wrong, so the subject is `drifted`,
+  // carrying every finding collected -- including a `declared-but-not-
+  // verifiable` one riding alongside it, so the unverifiable dimension is
+  // still visible even though it is not what decided the verdict. Absent
+  // any real drift, a lone `declared-but-not-verifiable` finding means
+  // nothing was confirmed wrong AND one dimension could not be checked --
+  // the definition of `indeterminate`, not a violation invented to avoid
+  // looking like a silent pass: `indeterminate` already isn't one (it is a
+  // non-zero, distinct exit code -- see `gateResultToExitCode`). Only when
+  // neither is true -- no findings of any kind -- is the subject
+  // `verified`. This is the same "never a silent pass, never a
+  // manufactured violation" guarantee the rest of this function upholds,
+  // expressed as a three-way read of the findings list instead of a
+  // length check.
+  const hasConfirmedDrift = findings.some((finding) => finding.kind !== "declared-but-not-verifiable");
+  if (hasConfirmedDrift) {
+    return liveStateDrifted(subject, findings);
+  }
+
+  const unverifiable = findings.find((finding) => finding.kind === "declared-but-not-verifiable");
+  if (unverifiable !== undefined) {
+    return liveStateCouldNotVerify(subject, unverifiable.message);
+  }
+
+  return liveStateVerified(subject);
 }
 
 /**
