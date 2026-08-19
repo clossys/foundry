@@ -423,6 +423,56 @@ jobs:
       - run: npm run check:typechecked-assertions
       - run: npm run typecheck
       - run: npm test
+      # scripts/observation-bundle.test.mjs (node:test, not check:gates --
+      # see that test file's own header for why: check:gates runs BEFORE
+      # `npm run build` in the `npm run check` aggregate, and this test
+      # needs packages/builder's built dist/, which this job already
+      # produced above). Runs on every push and every pull request, unlike
+      # the publish step below -- a regression in the bundle writer itself
+      # should fail this job before merge, not only be discovered after.
+      - name: Observation bundle unit tests
+        run: node --test scripts/observation-bundle.test.mjs
+      # Publishes this repository's own half of the observation-bundle
+      # transport this repository's own packages/builder ships
+      # (writeObservationBundle) and packages/controller ships
+      # (runRepositoryProfileCheck) -- see scripts/observation-bundle.mjs's
+      # own header for the full contract this evaluates against the same
+      # governance/repository-profile.json the "Repository profile" step
+      # above already checks (a second, richer evaluation of the same
+      # declaration, never a re-implementation of either checker's logic).
+      #
+      # `push` to `main` ONLY, deliberately -- never `pull_request`. A
+      # credentialed install against PR-controlled content was caught and
+      # fixed twice already in this fleet; this step performs no
+      # credentialed install of its own, but a pull request's own tree is
+      # still speculative, not yet this repository's agreed state, and a
+      # bundle published from every PR run would let an abandoned branch's
+      # stale evaluation sit in an artifact indistinguishable from main's.
+      #
+      # `--produced-at`/`--ref` are supplied here, by this step, never read
+      # by the script itself -- scripts/observation-bundle.mjs never calls
+      # `Date.now()` or reads `git` for its own timestamp/ref.
+      - name: Publish this repository's observation bundle
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          node scripts/observation-bundle.mjs \
+            --produced-at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --ref "$GITHUB_SHA" \
+            --out observation-bundle.json
+          cat observation-bundle.json
+      # An uploaded build artifact, never a committed file -- this
+      # repository never commits derived, run-scoped output (AGENTS.md:
+      # "Never commit a dist/, build/ or .next/ directory"; this is the
+      # same discipline applied to a different derived artifact). Name kept
+      # stable (`observation-bundle`) so a consuming plane's aggregator can
+      # locate it by name.
+      - name: Upload observation bundle
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: observation-bundle
+          path: observation-bundle.json
+          if-no-files-found: error
 
   # The tree scan in the `safety` job never sees dist/: it is gitignored and
   # only comes into existence via `npm run build`, yet it ships to consumers
