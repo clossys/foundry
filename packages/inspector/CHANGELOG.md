@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.8] - Unreleased
 
+### Fixed
+
+- **The task-record label matcher no longer matches mid-sentence prose or
+  captures a value across a line break (#332).** It previously matched a
+  configured label (`Closes`, `Fixes`, `Resolves`, …) case-insensitively
+  anywhere in a change description, so `...already fixes for every other
+  caller` matched `fixes` and extracted the next word, `for`. Worse, a
+  Markdown heading such as `* **Bug Fixes**` — the kind an automated
+  reviewer commonly appends to a description — matched `Fixes` and then
+  captured the `*` opening the following bullet line, reporting a real
+  `violated` verdict against a description that had a valid record. The
+  matcher now requires a label to sit at the start of one of the
+  description's lines, behind nothing but optional Markdown decoration
+  (list/blockquote/heading markers, emphasis, a code-span backtick) —
+  never behind a real word — with its value on that same line. Regions
+  fenced in HTML comments (`<!-- ... -->`), which is how generated
+  sections are commonly delimited, are skipped entirely before matching.
+  A description that genuinely lacks a task record is still reported as
+  `violated`; this change is extraction precision only.
+
 ### Changed
 
 - **Widened the `@vespeneventures/controller` dependency range from `~0.6.0`
