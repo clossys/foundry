@@ -6,6 +6,7 @@ import {
 import type {
   RepositoryProfileFinding,
   RepositoryProfileFindingRule,
+  RepositoryProfileValidationCoverage,
   RepositoryRequirementScope,
   RepositoryRootEntry,
   RepositoryRootEntryClassification,
@@ -328,11 +329,26 @@ function validateRequirementArray(value: unknown): RepositoryProfileFinding[] {
   return findings;
 }
 
+// Single source of truth for which schema-version-gated checks apply to a
+// given `schemaVersion` value — used both by the real validator below and by
+// the exported `repositoryProfileValidationCoverage`, so the two can never
+// silently drift apart the way the coverage question and the validator's own
+// branching had until issue #309: a caller had no way to ask what got
+// checked, only the validator's source did.
+function repositoryProfileValidationCoverageForVersion(schemaVersion: unknown): RepositoryProfileValidationCoverage {
+  return {
+    requirementsChecked: schemaVersion !== LEGACY_REPOSITORY_PROFILE_VERSION,
+    rootEntriesChecked:
+      schemaVersion !== LEGACY_REPOSITORY_PROFILE_VERSION && schemaVersion !== PREVIOUS_REPOSITORY_PROFILE_VERSION,
+  };
+}
+
 function validateRepositoryProfileValue(value: unknown): RepositoryProfileFinding[] {
   if (!isRecord(value)) return [finding("profile-shape", "$", "A repository profile must be an object.")];
 
   const findings: RepositoryProfileFinding[] = [];
   const schemaVersion = ownDataValue(value, "schemaVersion")?.value;
+  const coverage = repositoryProfileValidationCoverageForVersion(schemaVersion);
   const profileKeys = schemaVersion === LEGACY_REPOSITORY_PROFILE_VERSION
     ? PROFILE_V1_KEYS
     : schemaVersion === PREVIOUS_REPOSITORY_PROFILE_VERSION
@@ -425,14 +441,39 @@ function validateRepositoryProfileValue(value: unknown): RepositoryProfileFindin
     }
   }
 
-  if (schemaVersion !== LEGACY_REPOSITORY_PROFILE_VERSION) {
+  if (coverage.requirementsChecked) {
     findings.push(...validateRequirementArray(ownDataValue(value, "requirements")?.value));
   }
-  if (schemaVersion !== LEGACY_REPOSITORY_PROFILE_VERSION && schemaVersion !== PREVIOUS_REPOSITORY_PROFILE_VERSION) {
+  if (coverage.rootEntriesChecked) {
     findings.push(...validateRepositoryRootEntries(ownDataValue(value, "rootEntries")?.value));
   }
 
   return findings;
+}
+
+/**
+ * Reports which of `validateRepositoryProfile`'s schema-version-gated checks
+ * it will actually run for `value` — WITHOUT running validation itself and
+ * without asserting `value` is a valid profile at all. See
+ * `RepositoryProfileValidationCoverage`'s own doc comment (issue #309) for
+ * why this exists as a separate call: an empty `findings` array from
+ * `validateRepositoryProfile` looks identical whether a profile's
+ * `requirements` and `rootEntries` were genuinely checked and found correct,
+ * or never examined because its schema version predates one or both fields.
+ *
+ * `schemaVersion` is read the same defensive way `validateRepositoryProfile`
+ * reads it — as an own data descriptor, never via a prototype or accessor —
+ * so a profile crafted to fool one reads exactly the same to the other. A
+ * `value` this can't even read as a record (so `validateRepositoryProfile`
+ * would itself report a bare `profile-shape` finding) is reported as
+ * checking both fields: that matches `validateRepositoryProfileValue`'s own
+ * fallback of treating an unrecognized `schemaVersion` as the current,
+ * strictest schema rather than silently narrowing coverage for input that
+ * was already going to fail for an unrelated reason.
+ */
+export function repositoryProfileValidationCoverage(value: unknown): RepositoryProfileValidationCoverage {
+  const schemaVersion = isRecord(value) ? ownDataValue(value, "schemaVersion")?.value : undefined;
+  return repositoryProfileValidationCoverageForVersion(schemaVersion);
 }
 
 /**

@@ -1,6 +1,6 @@
 import { runInNewContext } from "node:vm";
 import { describe, expect, it, vi } from "vitest";
-import { validateRepositoryProfile } from "./index.js";
+import { repositoryProfileValidationCoverage, validateRepositoryProfile } from "./index.js";
 
 const validProfile = {
   schemaVersion: 1,
@@ -387,5 +387,103 @@ describe("validateRepositoryProfile", () => {
     expect(validateRepositoryProfile(unreadable)).toEqual([
       { rule: "profile-shape", severity: "error", path: "$", message: "A repository profile must be a safely readable object." },
     ]);
+  });
+});
+
+// issue #309 — a clean `validateRepositoryProfile` result does not say how
+// much of the profile it actually checked. `requirements` and `rootEntries`
+// are skipped entirely for schema versions that predate them, and a version
+// that skips them returns an empty `findings` array indistinguishable from
+// one that genuinely evaluated both and found them correct.
+describe("repositoryProfileValidationCoverage", () => {
+  const v1Profile = {
+    schemaVersion: 1,
+    defaultBranch: "main",
+    commands: [{ name: "test", run: "npm test" }],
+    protectedPaths: ["src/**"],
+  };
+  const v2Profile = {
+    ...v1Profile,
+    schemaVersion: 2,
+    requirements: [{ id: "runtime.node", scope: "machine", constraint: { kind: "present" } }],
+  };
+  const v3Profile = {
+    ...v2Profile,
+    schemaVersion: 3,
+    rootEntries: [{ name: "src", classification: "canonical", disposition: "required" }],
+  };
+
+  // The reproduction of the defect itself: a legacy (v1) profile that never
+  // declares `requirements`/`rootEntries` at all, and a fully-populated v3
+  // profile whose `requirements` and `rootEntries` were both genuinely
+  // checked, validate to the exact same empty array. Before this fix,
+  // nothing distinguished them — this is that "before" state, still true
+  // today, plus the "after": the two are only distinguishable through
+  // `repositoryProfileValidationCoverage`, which is the whole point of it
+  // existing.
+  it("a v1 pass and a v3 pass are indistinguishable via findings alone, but not via coverage", () => {
+    expect(validateRepositoryProfile(v1Profile)).toEqual([]);
+    expect(validateRepositoryProfile(v3Profile)).toEqual([]);
+
+    expect(repositoryProfileValidationCoverage(v1Profile)).toEqual({
+      requirementsChecked: false,
+      rootEntriesChecked: false,
+    });
+    expect(repositoryProfileValidationCoverage(v3Profile)).toEqual({
+      requirementsChecked: true,
+      rootEntriesChecked: true,
+    });
+  });
+
+  it("reports v2 coverage as requirements-checked but not rootEntries-checked", () => {
+    expect(repositoryProfileValidationCoverage(v2Profile)).toEqual({
+      requirementsChecked: true,
+      rootEntriesChecked: false,
+    });
+  });
+
+  it("treats an unrecognized or missing schemaVersion as full coverage, matching the validator's own fail-closed default", () => {
+    expect(repositoryProfileValidationCoverage({ ...v1Profile, schemaVersion: 99 })).toEqual({
+      requirementsChecked: true,
+      rootEntriesChecked: true,
+    });
+    expect(repositoryProfileValidationCoverage({ defaultBranch: "main" })).toEqual({
+      requirementsChecked: true,
+      rootEntriesChecked: true,
+    });
+  });
+
+  it("reports full coverage (rather than throwing) for non-object input, matching validateRepositoryProfile's own fail-closed handling", () => {
+    expect(repositoryProfileValidationCoverage(null)).toEqual({
+      requirementsChecked: true,
+      rootEntriesChecked: true,
+    });
+    expect(repositoryProfileValidationCoverage("not a profile")).toEqual({
+      requirementsChecked: true,
+      rootEntriesChecked: true,
+    });
+  });
+
+  it("reads schemaVersion as an own data descriptor only, exactly like validateRepositoryProfile", () => {
+    let reads = 0;
+    const accessorVersion = { ...v1Profile };
+    Object.defineProperty(accessorVersion, "schemaVersion", { get: () => { reads += 1; return 1; } });
+    expect(repositoryProfileValidationCoverage(accessorVersion)).toEqual({
+      requirementsChecked: true,
+      rootEntriesChecked: true,
+    });
+    expect(reads).toBe(0);
+
+    // A null-prototype object whose "schemaVersion" is only reachable via a
+    // `get` trap, never as an actual own property — the same shape the
+    // "requires fields to be own and rejects polluted record prototypes"
+    // case above uses for `validateRepositoryProfile` itself.
+    const inheritedVersion = new Proxy(Object.create(null) as Record<string, unknown>, {
+      get: (_target, key) => (key === "schemaVersion" ? 1 : undefined),
+    });
+    expect(repositoryProfileValidationCoverage(inheritedVersion)).toEqual({
+      requirementsChecked: true,
+      rootEntriesChecked: true,
+    });
   });
 });
