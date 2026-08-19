@@ -404,13 +404,18 @@ jobs:
       #
       #   1. The collect run actually finished, and succeeded. A cancelled
       #      or failed collect run must never read as "nothing to flag."
-      #   2. Which commit this is even about. `workflow_run.head_sha` and
-      #      `workflow_run.head_repository.full_name` — populated for a
-      #      fork run — never a field inside the uploaded JSON.
-      #      `workflow_run.pull_requests` is deliberately NOT used here:
-      #      GitHub leaves that array empty for a pull request from a
-      #      forked repository, which is exactly the case this workflow
-      #      exists for.
+      #   2. Which commit this is even about, and that the commit is real.
+      #      `workflow_run.head_sha` and `workflow_run.head_repository.full_name`
+      #      — populated for a fork run, never a field inside the uploaded
+      #      JSON — name a commit; this step also LOOKS IT UP, confirming
+      #      that SHA actually exists in the named repository, before
+      #      anything below evaluates the artifact or a Check Run is
+      #      created against it. (This requires the named repository to be
+      #      public — the same assumption this whole section already makes
+      #      for a fork pull request.) `workflow_run.pull_requests` is
+      #      deliberately NOT used here: GitHub leaves that array empty for
+      #      a pull request from a forked repository, which is exactly the
+      #      case this workflow exists for.
       #   3. That the artifact downloaded below is the one THIS run
       #      produced — scoped by `run-id`, never resolved by matching on
       #      artifact name alone, which nothing stops a different run
@@ -418,15 +423,29 @@ jobs:
       - name: Verify the triggering run before trusting anything it produced
         id: run
         env:
+          GH_TOKEN: ${{ github.token }}
           RUN_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          HEAD_REPOSITORY: ${{ github.event.workflow_run.head_repository.full_name }}
         run: |
           set -euo pipefail
           if [ "$RUN_CONCLUSION" != "success" ]; then
             echo "::error title=Collect run did not succeed::conclusion was '$RUN_CONCLUSION' — refusing to evaluate its output."
             exit 1
           fi
+          if [ -z "$HEAD_SHA" ] || [ -z "$HEAD_REPOSITORY" ]; then
+            echo "::error title=Missing commit identity::workflow_run reported an empty head_sha or head_repository — refusing to evaluate its output."
+            exit 1
+          fi
+          # Confirm the commit named above is a real commit in the named
+          # repository — not merely a value present in the event payload —
+          # before anything below trusts either one.
+          if ! gh api "repos/${HEAD_REPOSITORY}/commits/${HEAD_SHA}" --silent; then
+            echo "::error title=Commit not found::${HEAD_SHA} is not a commit ${HEAD_REPOSITORY} reports having — refusing to evaluate its output."
+            exit 1
+          fi
           echo "head_sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
+          echo "head_repository=$HEAD_REPOSITORY" >> "$GITHUB_OUTPUT"
 
       - uses: actions/download-artifact@<PIN_A_FULL_COMMIT_SHA>
         with:
@@ -466,16 +485,31 @@ jobs:
       # `workflow_run` never attaches its own job status to the pull request
       # the way `pull_request` does automatically — nothing here is a status
       # check on the PR until something explicitly makes it one. This posts
-      # a Check Run against the RE-DERIVED head SHA from the verification
-      # step above, never a SHA read out of the artifact.
+      # a Check Run against `workflow_run.head_sha`, re-read directly from
+      # the triggering event, never a SHA read out of the artifact.
+      #
+      # Deliberately NOT `steps.run.outputs.head_sha`: that output is only
+      # written once the verification step above reaches its last line, and
+      # this step must still post a FAILURE check when verification exits
+      # early (`if: always()`, below) — a required check a failed
+      # verification leaves silently pending, instead of red, is a required
+      # check that never reports failure. Reading the event field directly
+      # here does not reopen the "re-derive, do not believe" gap above:
+      # `workflow_run.head_sha` was always the re-derived value in both
+      # places — this step uses the raw one, unconditionally, only to name
+      # which commit a pass/fail check belongs to; the verification step
+      # uses the same value to additionally confirm, before anything
+      # evaluates the artifact, that the commit is real. Posting a check
+      # against a SHA does not evaluate anything that validation protects.
       - name: Post the required status check
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
-          HEAD_SHA: ${{ steps.run.outputs.head_sha }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
           STATUS: ${{ steps.decide.outputs.status }}
         run: |
           set -euo pipefail
+          test -n "$HEAD_SHA"
           conclusion="success"; [ "$STATUS" = "0" ] || conclusion="failure"
           gh api "repos/${{ github.repository }}/check-runs" \
             -f name="inspector" \
