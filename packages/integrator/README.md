@@ -234,10 +234,18 @@ a prerelease identifier on either side — is never folded into `current` or
 `behind`. It is its own `indeterminate` state, with a machine-readable
 `reason` (`"version-unparseable"` or `"version-not-comparable"`), so a caller
 building a gate on top of this can never mistake "could not be evaluated" for
-"evaluated and fine". An installed version ahead of the registry's own
-`latest` — a pinned prerelease channel, or a lagging registry view — grades
-as `current`, never a negative distance; this package only ever reports how
-far *behind* an installation is.
+"evaluated and fine". An installed **stable** version ahead of the
+registry's own `latest` — a lagging registry view, or a version published and
+then unpublished — grades as `current`, never a negative distance; this
+package only ever reports how far *behind* an installation is.
+
+A pinned **prerelease** channel is a different case and never reaches that
+rule. If either side carries a prerelease identifier the result is
+`indeterminate` (`version-not-comparable`), checked before any ordering
+comparison at all. Prerelease precedence is well defined in semver, but it
+does not answer the question this grading exists to ask — how much breaking
+change sits between two releases — and grading such a pair `current` would
+report an unjudged pair as a judged one.
 
 This package supplies the grading **and** the fold, because grading alone is
 only half a standard. `currencyVerdict` reduces a set of judgments to one of
