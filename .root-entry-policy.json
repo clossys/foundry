@@ -13,6 +13,7 @@
     "README.md": { "kind": "documentation", "purpose": "public repository overview" },
     "SECURITY.md": { "kind": "security", "purpose": "security and public-safety policy" },
     "docs": { "kind": "documentation", "purpose": "publishing and architecture records" },
+    "governance": { "kind": "policy", "purpose": "this repository's own repository-profile declaration (issue #317)" },
     "package-lock.json": { "kind": "config", "purpose": "reproducible npm dependency lock" },
     "package-scope.json": { "kind": "config", "purpose": "canonical publication scope" },
     "package.json": { "kind": "config", "purpose": "workspace commands and dependencies" },
