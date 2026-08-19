@@ -402,7 +402,18 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TARBALL: ${{ steps.pack.outputs.tarball }}
-        run: npm publish "$TARBALL" --dry-run --provenance --access public
+        # --ignore-scripts keeps this invocation identical in SHAPE to the
+        # real one below. It changes nothing here on its own: measured, a
+        # --dry-run publish does NOT run prepublishOnly, while a real one
+        # does.
+        #
+        # That asymmetry is worth naming, because it is why run 32311722090
+        # broke. This step is the rehearsal for the real publish, and it does
+        # not rehearse lifecycle hooks at all — so a hook that makes
+        # publishing fail passes here every time. Every gate on #273 was
+        # green; the first execution of the changed path was production.
+        # Tracked as its own issue rather than papered over here.
+        run: npm publish "$TARBALL" --dry-run --provenance --access public --ignore-scripts
 
       - name: Publish
         if: ${{ github.event_name == 'push' || (!inputs.dry_run && !inputs.verify_only) }}
@@ -437,7 +448,28 @@ jobs:
           # installable without a token, and observed behaviour this repo has
           # actually hit is that a fresh package still lands PRIVATE despite
           # it. The real visibility lever is the opt-in step below.
-          npm publish "$TARBALL" --provenance --access public
+          # --ignore-scripts is REQUIRED here, and is not a weakening.
+          #
+          # `npm publish <tarball>` still runs the package's own
+          # `prepublishOnly` hook. Since #273 that hook runs
+          # check-name-collision.mjs, which needs a token that can list this
+          # owner's packages. This step deliberately carries only
+          # NODE_AUTH_TOKEN, so the hook cannot reach the registry and — being
+          # a gate that fails closed — exits 2 and takes the publish with it.
+          # That broke every job in run 32311722090.
+          #
+          # The collision question is already answered for this job by the
+          # dedicated, credentialed "name collision" step far above, which
+          # runs before anything is packed and blocks the job on a real
+          # collision. Running it a second time here, with the wrong
+          # credentials, adds no coverage and can only produce a false
+          # indeterminate.
+          #
+          # The hook is not redundant in general: it exists for the ONE path
+          # no workflow can police — a maintainer running `npm publish` by
+          # hand from a package directory. That path is unaffected by this
+          # flag, because this flag lives here, in CI.
+          npm publish "$TARBALL" --provenance --access public --ignore-scripts
 
       # WHAT THIS STEP PROVES THAT THE PRE-PUBLISH GATE CANNOT: not whether
       # the artifact installs and imports — "Verify packed tarball installs
