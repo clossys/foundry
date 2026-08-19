@@ -108,10 +108,15 @@ mistaken for the whole answer. `scheduleReconciliationFindingKinds` (four
 findings: declared but not deployed, deployed but not declared, a deployed
 cadence differing from declared, a deployed artifact predating its
 declaration) is this tier's own wording of that document's four drift
-findings, plus the fifth state — could-not-verify, with a named blocker —
-that a reconciliation surface built against this tier's live state should
-report whenever the host cannot currently be read, rather than omitting the
-check.
+findings, reported when a reconciliation attempt actually completes. The
+fifth state — could-not-verify — is a different kind of outcome, not a fifth
+finding alongside those four: it is what a reconciliation surface built
+against this tier's live state reports, with a named blocker, whenever the
+host cannot currently be read — whether nobody could attempt the read at all,
+or an attempt was made and reported a blocker partway through (the deployment
+API returning an error, a credential being refused) — rather than omitting
+the check. `declared-but-not-verifiable` is that outcome's machine-readable
+reason, not another name for the outcome itself.
 
 ## Deliberate absences are declared
 

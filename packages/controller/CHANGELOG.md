@@ -5,6 +5,68 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - Unreleased
+
+### Fixed
+
+- **`reconcileLiveState` (`./conventions`) now compares `declaredAt`/
+  `liveObservedAt` as instants, not as strings (#313).** The doc comments on
+  both fields require only "ISO 8601," which permits UTC offsets other than
+  `Z` and optional fractional seconds; two valid ISO 8601 values could
+  therefore compare in the wrong direction as plain strings (for example,
+  `"2026-08-10T09:00:00+02:00"`, 07:00 UTC, sorted lexicographically *after*
+  `"2026-08-10T08:00:00Z"`, 08:00 UTC, even though it names an earlier
+  instant). This was the sole trigger for the
+  `live-artifact-predates-its-declaration` finding, so with mixed offsets
+  that finding could silently fail to fire, or fire when it should not.
+  Both timestamps are now parsed with `Date.parse` and compared as epoch
+  instants. A `declaredAt`/`liveObservedAt` that is present but cannot be
+  parsed as an instant is now reported as a `declared-but-not-verifiable`
+  **finding** (naming which field and value could not be parsed), never as
+  a silent pass. That finding is recorded in the same `findings` list as
+  any outright disagreement `agrees` already found, rather than returned
+  as an outcome-level `could-not-verify` that would have discarded it —
+  review on the first version of this fix caught that an early-return
+  there was silently dropping a real, already-collected
+  `live-differs-from-declared` finding whenever the timestamp also
+  happened to be unparseable. `LiveStateFinding.kind` is now typed as the
+  full five-kind `LiveStateSurfaceFindingKind` (previously the
+  four-kind-only `LiveStateDriftKind`) to allow this.
+
+  The final verdict reads WHICH kinds ended up in the findings list, not
+  merely whether it is non-empty — a second round of review caught that
+  reporting `violated` whenever `findings.length > 0` manufactures a
+  violation for a subject whose values genuinely agree and whose ONLY
+  issue is an unparseable timestamp, which is exactly what
+  `indeterminate` exists to report instead. Any real drift kind (one of
+  `LiveStateDriftKind`'s four) present anywhere in the list makes the
+  subject `drifted`, carrying every finding collected including a
+  `declared-but-not-verifiable` one riding alongside it; a lone
+  `declared-but-not-verifiable` finding with no real drift makes the
+  subject `indeterminate` instead, never a manufactured violation; no
+  findings at all is `verified`. A confirmed finding is never downgraded
+  to could-not-verify, and an unverifiable dimension is never inflated
+  into a violation.
+
+### Documentation
+
+- `conventions/documents/live-state-reconciliation.md` now says a
+  declaration names **five** things, matching the five fields it actually
+  lists (`store`, `readableByScript`, `readableBy`, `reconciledBy`, `note`);
+  it previously said four.
+- `live-state-reconciliation.md`, `routine-declaration.md`, and
+  `schedule-declaration.md` now distinguish the `could-not-verify`
+  **outcome** from `declared-but-not-verifiable`, its machine-readable
+  **reason**, and state explicitly that `could-not-verify` covers both a
+  read that was never attempted and a read that was attempted and reported
+  a blocker mid-attempt (an API returning 500, a permission refused) — not
+  only a surface that is unreadable in principle.
+- The README's `liveStateSurface` section now states the mapping from this
+  module's `verified` / `drifted` / `could-not-verify` vocabulary to
+  `GateResult`'s own `satisfied` / `violated` / `indeterminate` verdict
+  literals explicitly, rather than leaving a reader to infer it from the
+  tests.
+
 ## [0.3.0] - Unreleased
 
 ### Added

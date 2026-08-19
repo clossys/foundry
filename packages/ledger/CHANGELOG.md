@@ -3,6 +3,16 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.3] - Unreleased
+
+### Documentation
+
+- The "Requirements" section named the exported `./policy` subpath
+  (`@vespeneventures/controller/policy`) as though it were itself the
+  installable runtime dependency (#313). The actual runtime dependency, per
+  `package.json`, is `@vespeneventures/controller`; `./policy` is a subpath
+  this package imports from it. Both are now named, distinctly.
+
 ## [0.2.2] - Unreleased
 
 ### Changed

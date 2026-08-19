@@ -122,11 +122,17 @@ This is one instance of a shape `live-state-reconciliation.md` names once: a
 declaration of intent, a live state owned elsewhere, a reconciliation surface
 that may not exist yet, and the same failure mode if a green offline check is
 mistaken for the whole answer. `reconciliationFindingKinds` is this tier's own
-wording of that document's four drift findings, plus the fifth state --
-could-not-verify, with a named blocker -- that a reconciliation surface built
-against this tier's live state should report whenever the scheduler cannot
-currently be read, rather than presenting an unreconciled declaration as
-though it were one.
+wording of that document's four drift findings, reported when a reconciliation
+attempt actually completes. The fifth state -- could-not-verify -- is a
+different kind of outcome, not a fifth finding alongside those four: it is
+what a reconciliation surface built against this tier's live state reports,
+with a named blocker, whenever the scheduler cannot currently be read --
+whether because nothing could attempt the read at all, or because an attempt
+was made and reported a blocker partway through (a permission the ambient
+token was refused, an unreachable store) -- rather than presenting an
+unreconciled declaration as though it were one. `declared-but-not-verifiable`
+is that outcome's machine-readable reason, not another name for the outcome
+itself.
 
 ## Deterministic checks and the reconciliation boundary
 
