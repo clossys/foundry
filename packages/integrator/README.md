@@ -257,13 +257,22 @@ maps that onto the `0` / `1` / `2` ternary:
 | `major` (including any pre-1.0 minor gap) | violated |
 | `minor`, `patch`, `current` | satisfied — reported, never blocking |
 | `absent-with-reason` | satisfied — an absence on record is a decision |
-| `indeterminate`, `unreachable`, `unauthenticated`, `absent-without-reason` | indeterminate |
+| `absent-without-reason` | violated — entitled, absent, and nobody recorded why |
+| `indeterminate`, `unreachable`, `unauthenticated` | indeterminate |
 
 The last row is the load-bearing one, and `indeterminate` takes precedence
-over `violated`. A package that could not be reached, could not be
-authenticated for, or is simply missing with no recorded reason was not
-judged *current* — it was not judged at all, and folding it into `satisfied`
-would report success over ground the run never examined. By the same logic a
+over `violated`. A package that could not be reached or could not be
+authenticated for was not judged *current* — it was not judged at all, and
+folding it into `satisfied` would report success over ground the run never
+examined.
+
+`absent-without-reason` sits with the violations rather than there, and the
+distinction is worth being precise about. Nothing about it is unexamined: the
+package is entitled, it is not installed, and no opt-out records a decision to
+leave it out. That is a complete evaluation reaching a negative answer — drift
+nobody decided — and calling it indeterminate would demote a settled violation
+into "could not tell", while also letting it mask a real major gap, since
+indeterminate outranks violated. By the same logic a
 run that could not evaluate part of its set must not report `violated`
 either: that presents a partial answer as a complete one.
 

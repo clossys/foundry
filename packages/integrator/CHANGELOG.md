@@ -5,6 +5,20 @@ All notable changes to `@vespeneventures/integrator` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1]
+
+### Fixed
+
+- `currencyVerdict` now folds `absent-without-reason` to `violated` rather than
+  `indeterminate`. Nothing about an unexplained absence is unexamined: the
+  package is entitled, it is not installed, and no opt-out records a decision to
+  leave it out. That is a complete evaluation reaching a negative answer, and
+  reporting it as indeterminate demoted a settled violation into "could not
+  tell". Because indeterminate outranks violated in the fold, it could also mask
+  a genuine major gap appearing alongside it. `unreachable`, `unauthenticated`
+  and `indeterminate` are unchanged — those are the states where something
+  genuinely could not be determined.
+
 ## [0.2.0] - Unreleased
 
 ### Added
