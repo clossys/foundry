@@ -216,7 +216,9 @@ laundered — but a required check that can never pass on a fork pull request
 is a required check that blocks every fork contribution. Splitting trusted
 installation and decision from untrusted collection is the shape that solves
 it, and the split belongs to the consuming repository, whose fork policy and
-credentials decide what it looks like.
+credentials decide what it looks like. **"The fork-accepting shape" below is
+that second worked example** — read it before adopting this template into
+any repository that accepts pull requests from forks.
 
 ### On never piping the decision step
 
@@ -265,6 +267,277 @@ a `2` into a `0`.
 Whether a `2` blocks a merge is this repository's own branch-protection
 decision, made in this repository. That is the one place such an exception
 belongs: local, visible, and unable to affect anybody else's gate.
+
+---
+
+## The fork-accepting shape
+
+Everything above is one job because it can afford to be: `on: pull_request`
+already runs a fork's own workflow copy against a fork's own code, with no
+repository secret in scope. The install step is what breaks that shape the
+moment a repository accepts pull requests from forks — `PACKAGES_READ_TOKEN`
+is a repository secret, GitHub withholds every repository secret from a fork
+pull request's run, and there is no flag that changes that. The job stops at
+`npm ci`, before the gate has run at all, and a required check that can never
+pass on a fork pull request blocks every fork contribution outright.
+
+`pull_request_target` looks like the fix and is not one: it runs the *base*
+revision's workflow against the *fork's* code, with full repository secrets
+in scope for that run. A job built on it that checks out the pull request's
+head (as almost every use of it does, to actually test the change) is a
+credentialed step executing untrusted code — worse than the gap it appears
+to close, not a fix for it.
+
+The shape that actually works splits the job in two, in two **separate
+workflow files**, joined by an uploaded artifact:
+
+- **`collect`** — still `on: pull_request`, still runs on the fork's own
+  workflow copy against the fork's own code, still holds no secret. This is
+  everything above, minus the install step and the decision: it gathers
+  observations and uploads one JSON artifact. Nothing here needs to change
+  about how untrustworthy this job's environment is, because nothing here
+  gets a credential to protect.
+- **`decide`** — triggered by `on: workflow_run`, referencing the `collect`
+  workflow by name. A `workflow_run` job always executes with the
+  **target** repository's own permissions and secrets, regardless of
+  whether the run that triggered it came from a fork — that is what makes a
+  credential available here at all. It never checks out, builds, or
+  executes a single byte of the pull request's own code. Its only input
+  from the untrusted run is one downloaded JSON artifact, and even that is
+  not trusted as-is (see "Re-derive, do not believe" below).
+
+```yaml
+# .github/workflows/inspector-collect.yml — untrusted, holds no secret,
+# runs on every pull request including one from a fork.
+name: inspector (collect)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+permissions:
+  contents: read
+  pull-requests: read
+  issues: read
+
+concurrency:
+  group: inspector-collect-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  collect:
+    name: collect
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@<PIN_A_FULL_COMMIT_SHA>
+        with:
+          fetch-depth: 0
+
+      # ---- COLLECT ---------------------------------------------------
+      # Identical to the single-job template's collection steps: each one
+      # is `continue-on-error` and records its own outcome as data.
+      - name: Run the secret scanner
+        id: scan
+        continue-on-error: true
+        run: ./.github/scripts/collect-secret-scan.sh > scan.json
+
+      - name: Collect review evidence
+        id: review
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./.github/scripts/collect-review-evidence.sh > review.json
+
+      - name: Assemble the inputs document
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          PR_LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+          SCAN_OUTCOME: ${{ steps.scan.outcome }}
+          REVIEW_OUTCOME: ${{ steps.review.outcome }}
+        run: ./.github/scripts/assemble-inputs.mjs > verify-inputs.json
+
+      - uses: actions/upload-artifact@<PIN_A_FULL_COMMIT_SHA>
+        with:
+          name: inspector-inputs
+          path: verify-inputs.json
+```
+
+```yaml
+# .github/workflows/inspector-decide.yml — trusted, holds the real
+# credential, and never checks out the pull request it is evaluating.
+name: inspector (decide)
+
+on:
+  workflow_run:
+    workflows: ["inspector (collect)"]
+    types: [completed]
+
+permissions:
+  contents: read
+  checks: write  # to post the required status check onto the pull request
+  actions: read  # to re-read the triggering run and its artifacts
+
+concurrency:
+  group: inspector-decide-${{ github.event.workflow_run.id }}
+  cancel-in-progress: false
+
+jobs:
+  decide:
+    name: decide
+    runs-on: ubuntu-latest
+    steps:
+      # This checkout is for installing the package and running the script
+      # below, nothing else. It is always this repository's own default
+      # branch — `workflow_run` resolves the WORKFLOW FILE from the default
+      # branch unconditionally, the same way `pull_request_target` does (see
+      # "Which known trap this shape avoids, and which it does not" below).
+      # The pull request under evaluation is never checked out in this job.
+      - uses: actions/checkout@<PIN_A_FULL_COMMIT_SHA>
+
+      # ---- RE-DERIVE, DO NOT BELIEVE ----------------------------------
+      # Three facts this job must establish independently before trusting
+      # anything the collect run produced — none of them may come from the
+      # artifact's own content, because an attacker's collect job is free
+      # to write that content however it likes:
+      #
+      #   1. The collect run actually finished, and succeeded. A cancelled
+      #      or failed collect run must never read as "nothing to flag."
+      #   2. Which commit this is even about. `workflow_run.head_sha` and
+      #      `workflow_run.head_repository.full_name` — populated for a
+      #      fork run — never a field inside the uploaded JSON.
+      #      `workflow_run.pull_requests` is deliberately NOT used here:
+      #      GitHub leaves that array empty for a pull request from a
+      #      forked repository, which is exactly the case this workflow
+      #      exists for.
+      #   3. That the artifact downloaded below is the one THIS run
+      #      produced — scoped by `run-id`, never resolved by matching on
+      #      artifact name alone, which nothing stops a different run
+      #      (including one on an unrelated PR) from reusing.
+      - name: Verify the triggering run before trusting anything it produced
+        id: run
+        env:
+          RUN_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          if [ "$RUN_CONCLUSION" != "success" ]; then
+            echo "::error title=Collect run did not succeed::conclusion was '$RUN_CONCLUSION' — refusing to evaluate its output."
+            exit 1
+          fi
+          echo "head_sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/download-artifact@<PIN_A_FULL_COMMIT_SHA>
+        with:
+          name: inspector-inputs
+          # Scopes the download to the exact run that was just verified
+          # above, not "the most recent artifact with this name."
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+
+      - uses: actions/setup-node@<PIN_A_FULL_COMMIT_SHA>
+        with:
+          node-version: 20
+          registry-url: https://npm.pkg.github.com
+          scope: "@vespeneventures"
+
+      - run: npm ci --ignore-scripts
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN }}
+
+      # ---- DECIDE ------------------------------------------------------
+      # Same two guards as the single-job template's decision step (see "On
+      # never piping the decision step" above) — they apply unchanged here.
+      - name: inspector
+        id: decide
+        run: |
+          set -o pipefail
+          report="$RUNNER_TEMP/inspector-report.txt"
+          status=0
+          npx inspector \
+            --inputs verify-inputs.json \
+            --declared-range "$(node -p "require('./package.json').devDependencies['@vespeneventures/inspector']")" \
+            > "$report" || status=$?
+          cat "$report"
+          cat "$report" >> "$GITHUB_STEP_SUMMARY"
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+
+      # `workflow_run` never attaches its own job status to the pull request
+      # the way `pull_request` does automatically — nothing here is a status
+      # check on the PR until something explicitly makes it one. This posts
+      # a Check Run against the RE-DERIVED head SHA from the verification
+      # step above, never a SHA read out of the artifact.
+      - name: Post the required status check
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ steps.run.outputs.head_sha }}
+          STATUS: ${{ steps.decide.outputs.status }}
+        run: |
+          set -euo pipefail
+          conclusion="success"; [ "$STATUS" = "0" ] || conclusion="failure"
+          gh api "repos/${{ github.repository }}/check-runs" \
+            -f name="inspector" \
+            -f head_sha="$HEAD_SHA" \
+            -f status="completed" \
+            -f conclusion="$conclusion"
+```
+
+The inputs-document JSON shape below is unchanged between the two shapes —
+`decide` reads exactly the same schema `collect` assembled. Splitting the
+job changes who runs which half and what each half is allowed to hold, not
+what the document itself says.
+
+### Which known trap this shape avoids, and which it does not
+
+Two failure modes have shown up repeatedly in shapes that try to solve this:
+a credentialed step running on untrusted code, or a required check that
+resolves its own definition from the base branch so tightly that the pull
+request meant to repair it is judged by the version it is trying to fix.
+Naming both against this shape, rather than leaving either implicit:
+
+- **Avoided: a credentialed step running on untrusted code.** `decide` holds
+  the real registry credential and never checks out, builds, or executes the
+  pull request's own code — not even implicitly through a shared checkout.
+  Its only contact with the untrusted run is one downloaded JSON artifact,
+  and that artifact is treated as data to evaluate, not code to run, the
+  same design principle the package itself is built on (see "Why the
+  collection lives in the caller, not in the package" above). This is the
+  concrete difference from a `pull_request_target` job that checks out the
+  pull request's head to test it: that job runs fork-authored code with the
+  credential present. This one never runs fork-authored code at all.
+- **Not avoided, and not avoidable here: the decide workflow's own
+  definition is pinned to the base branch.** `workflow_run` — like
+  `pull_request_target` — always executes the copy of `inspector-decide.yml`
+  that lives on the repository's default branch, never the copy a pull
+  request proposes, even a pull request that fixes a bug in this exact file.
+  That fix only takes effect for the run *after* it merges; it cannot verify
+  itself in its own pull request. This is not a gap in this shape, it is the
+  mechanism that makes the credential separation possible at all — a
+  workflow whose own definition could be edited by the code it is about to
+  judge is the credential-boundary violation restated, not avoided. This
+  repository's own CI already accepts the identical trade-off for a
+  different credentialed step (`.github/workflows/ci.yml`'s
+  `.trusted-scripts` checkout, pinned to the pull request's base SHA for the
+  same reason its own comment gives) — nothing above is a new risk to a
+  consuming repository, only the same one, restated where a fork-accepting
+  caller needs to see it stated plainly.
+
+### Is the gate published somewhere anonymously readable?
+
+No — decided, not left open. GitHub Packages requires an authenticated,
+`read:packages`-scoped token for every install, regardless of a package's
+visibility; there is no "public means anonymous" tier on this registry the
+way npmjs.org has one. Achieving genuine anonymous installability would mean
+also publishing to a registry that supports it — a second, ongoing
+publishing-strategy commitment (a second provenance chain, a second
+visibility setting to keep from drifting out of sync with the first) that
+belongs to the package's own release process, not to any one consuming
+repository's caller workflow. The two-workflow split above is the recorded
+alternative instead: it needs no anonymous read at all, because the only job
+that ever installs the package is the one job that already holds a real
+credential.
 
 ---
 
