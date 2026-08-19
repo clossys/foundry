@@ -247,6 +247,35 @@ export interface RepositoryProfileFinding {
   readonly message: string;
 }
 
+/**
+ * Which of `validateRepositoryProfile`'s schema-version-gated checks it
+ * actually ran for a given profile (issue #309). `requirements` and
+ * `rootEntries` predate at least one supported schema version each —
+ * `LEGACY_REPOSITORY_PROFILE_VERSION` (1) profiles have neither field at
+ * all, and `PREVIOUS_REPOSITORY_PROFILE_VERSION` (2) profiles have
+ * `requirements` but not `rootEntries` — so an empty `findings` array from
+ * `validateRepositoryProfile` means something different depending on which
+ * version the profile declared, and nothing in that return value says
+ * which. This is deliberately a SEPARATE call rather than a field folded
+ * into `validateRepositoryProfile`'s own return value: that function has
+ * always returned a plain `RepositoryProfileFinding[]`, is exercised as one
+ * by every existing caller and test, and is exported from a package that
+ * already ships — widening its return type to an object would be a
+ * breaking change to every consumer for a question only some callers ever
+ * need to ask. A caller that binds a repository to a profile of unknown or
+ * older provenance (rather than one it just wrote itself) can call
+ * `repositoryProfileValidationCoverage` alongside `validateRepositoryProfile`
+ * to tell a genuinely thorough pass from one that evaluated a strict subset,
+ * instead of inferring it from an empty array — which looks identical
+ * either way.
+ */
+export interface RepositoryProfileValidationCoverage {
+  /** Whether `validateRepositoryProfile` validated the `requirements` field. */
+  readonly requirementsChecked: boolean;
+  /** Whether `validateRepositoryProfile` validated the `rootEntries` field. */
+  readonly rootEntriesChecked: boolean;
+}
+
 export type RepositoryRequirementFindingRule =
   | "evaluation-shape"
   | "evaluation-unknown-field"

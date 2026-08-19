@@ -1,7 +1,7 @@
 /** Vendor-neutral contracts for consumer-owned repository values. */
 export { evaluateRepositoryRequirements, validateRepositoryRequirementsEvaluationInput } from "./evaluate.js";
 export { evaluateRepositoryRoot, validateRepositoryRootEvaluationInput } from "./evaluate-root.js";
-export { validateRepositoryProfile } from "./validate.js";
+export { repositoryProfileValidationCoverage, validateRepositoryProfile } from "./validate.js";
 export {
   CANONICAL_REPOSITORY_PROFILE_PATH,
   LEGACY_REPOSITORY_PROFILE_VERSION,
@@ -35,6 +35,7 @@ export type {
   RepositoryProfile,
   RepositoryProfileFinding,
   RepositoryProfileFindingRule,
+  RepositoryProfileValidationCoverage,
   RepositoryProfileV1,
   RepositoryProfileV2,
   RepositoryProfileV3,

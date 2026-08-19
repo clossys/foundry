@@ -55,6 +55,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   issue also named, closed on the same narrow-scope-over-guessed-generality
   reasoning.
 
+## [0.2.6] - Unreleased
+
+### Changed
+
+- **Widened the `@vespeneventures/controller` dependency range from `~0.6.0`
+  to `~0.7.0`** to cover controller's new
+  `repositoryProfileValidationCoverage` export under `./repository` (#309),
+  which reports which of `validateRepositoryProfile`'s schema-version-gated
+  checks actually ran. This package does not use
+  `@vespeneventures/controller/repository`, so nothing here changes
+  behaviorally.
+
 ## [0.2.5] - Unreleased
 
 ### Changed
