@@ -234,6 +234,26 @@ jobs:
           node-version: 20
       - run: node scripts/set-registry.mjs --check
 
+  # A hand-run `npm publish` from inside a package directory is the one
+  # publish path this repository's own workflow (publish.yml) never governs:
+  # that workflow packs a tarball once and publishes the tarball FILE, which
+  # npm's own dispatcher never runs prepublishOnly for (only a directory-type
+  # publish gets that hook — see scripts/set-prepublish-hook.mjs's own header
+  # for the confirmed npm CLI behaviour, issue #273). Every non-private
+  # package's prepublishOnly is expected to run check-name-collision.mjs
+  # before its build, so this job proves that wiring has not drifted — same
+  # single-source-of-truth shape as `scope`/`registry` above, just guarding
+  # a lifecycle script instead of a manifest field.
+  prepublish-hook:
+    name: prepublish hook drift
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+      - run: node scripts/set-prepublish-hook.mjs --check
+
   # Packages here depend on each other with 0.x ranges (e.g.
   # `"@vespeneventures/governance": "^0.3.0"`). In 0.x semver BOTH `^` and
   # `~` are minor-locked, so the moment a package's minor version is bumped,

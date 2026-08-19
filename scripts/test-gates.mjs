@@ -78,6 +78,7 @@ const CONTAM = join(scriptDir, "check-contamination-classes.mjs");
 const QUALITY = join(scriptDir, "check-denylist-quality.mjs");
 const SET_SCOPE = join(scriptDir, "set-scope.mjs");
 const SET_REGISTRY = join(scriptDir, "set-registry.mjs");
+const SET_PREPUBLISH_HOOK = join(scriptDir, "set-prepublish-hook.mjs");
 const ROOT_README = join(scriptDir, "check-root-readme-parity.mjs");
 const TYPECHECKED = join(scriptDir, "check-typechecked-assertions.mjs");
 const COMMIT_MESSAGES = join(scriptDir, "check-commit-messages.mjs");
@@ -2125,6 +2126,192 @@ try {
     check("propagation reports a finding (exit 1) rather than guessing", r.code === 1, `expected exit 1, got ${r.code}: ${r.out}`);
     const after = readFileSync(join(dir, "packages", "ui", "package.json"), "utf8");
     check("the already-diverged file is left byte-for-byte untouched", after === before, `file was rewritten anyway: ${after}`);
+  }
+
+  // -------------------------- set-prepublish-hook: drift check + rewrite (issue #273)
+  console.log("\n# set-prepublish-hook: --check catches a manifest missing the collision-check hook (issue #273)");
+  {
+    const dir = join(work, "prepublish-hook-drift");
+    mkdirSync(join(dir, "packages", "probe"), { recursive: true });
+    mkdirSync(join(dir, "scripts"), { recursive: true });
+    cpSync(SET_PREPUBLISH_HOOK, join(dir, "scripts", "set-prepublish-hook.mjs"));
+    // The exact pre-fix shape every manifest under packages/ actually had:
+    // prepublishOnly runs the build and nothing else.
+    writeFileSync(
+      join(dir, "packages", "probe", "package.json"),
+      JSON.stringify({ name: "@real/probe", version: "1.0.0", private: false, scripts: { prepublishOnly: "npm run build" } }, null, 2) + "\n",
+    );
+    const r = run("node", [join(dir, "scripts", "set-prepublish-hook.mjs"), "--check"], { cwd: dir });
+    check("a bare `npm run build` prepublishOnly exits 1, not 0", r.code === 1, `expected exit 1, got ${r.code}: ${r.out}`);
+    check(
+      "the failure names the offending manifest and the expected hook",
+      /packages\/probe\/package\.json/.test(r.out) && /check-name-collision\.mjs/.test(r.out),
+      `expected the finding to name packages/probe/package.json and check-name-collision.mjs, got: ${r.out}`,
+    );
+
+    const rewrite = run("node", [join(dir, "scripts", "set-prepublish-hook.mjs")], { cwd: dir });
+    check("the rewrite exits 0", rewrite.code === 0, `expected exit 0, got ${rewrite.code}: ${rewrite.out}`);
+    const after = JSON.parse(readFileSync(join(dir, "packages", "probe", "package.json"), "utf8"));
+    check(
+      "the rewrite installs the exact collision-check hook",
+      after.scripts.prepublishOnly === "node ../../scripts/check-name-collision.mjs . && npm run build",
+      `unexpected prepublishOnly: ${after.scripts?.prepublishOnly}`,
+    );
+    const recheck = run("node", [join(dir, "scripts", "set-prepublish-hook.mjs"), "--check"], { cwd: dir });
+    check("a bare --check after the rewrite now passes", recheck.code === 0, `expected exit 0, got ${recheck.code}: ${recheck.out}`);
+  }
+
+  console.log("\n# set-prepublish-hook: a private:true package is never required to carry the hook");
+  {
+    const dir = join(work, "prepublish-hook-private");
+    mkdirSync(join(dir, "packages", "internal-only"), { recursive: true });
+    mkdirSync(join(dir, "scripts"), { recursive: true });
+    cpSync(SET_PREPUBLISH_HOOK, join(dir, "scripts", "set-prepublish-hook.mjs"));
+    writeFileSync(
+      join(dir, "packages", "internal-only", "package.json"),
+      JSON.stringify({ name: "@real/internal-only", version: "1.0.0", private: true, scripts: { prepublishOnly: "npm run build" } }, null, 2) + "\n",
+    );
+    const r = run("node", [join(dir, "scripts", "set-prepublish-hook.mjs"), "--check"], { cwd: dir });
+    check("a private:true package with a bare prepublishOnly does not fail the check", r.code === 0, `expected exit 0, got ${r.code}: ${r.out}`);
+  }
+
+  console.log("\n# set-prepublish-hook: fails closed, never green on \"could not check\"");
+  {
+    const zeroDir = join(work, "prepublish-hook-zero-packages");
+    mkdirSync(join(zeroDir, "scripts"), { recursive: true });
+    cpSync(SET_PREPUBLISH_HOOK, join(zeroDir, "scripts", "set-prepublish-hook.mjs"));
+    // No packages/ directory at all.
+    const zeroResult = run("node", [join(zeroDir, "scripts", "set-prepublish-hook.mjs"), "--check"], { cwd: zeroDir });
+    check("zero packages under packages/ exits 2, not 0", zeroResult.code === 2, `expected exit 2, got ${zeroResult.code}: ${zeroResult.out}`);
+  }
+
+  // ---- the real bypass, closed: running the ACTUAL npm lifecycle event, not
+  // just inspecting the manifest text (issue #273's core claim) ----------
+  //
+  // `npm publish` only fires `prepublishOnly` for a directory-type publish
+  // (confirmed by reading the installed npm CLI's own lib/commands/publish.js:
+  // `if (spec.type === 'directory' && !ignoreScripts)`), and that lifecycle
+  // event is reachable directly as `npm run prepublishOnly` without needing
+  // any registry contact (unlike `npm publish` itself, which performs a
+  // version-conflict lookup against the real registry even under --dry-run,
+  // and would make this case both networked and credentialed for no reason —
+  // the lifecycle hook itself needs neither). Running the real script through
+  // the real `npm` binary, rather than asserting on the JSON text, is what
+  // proves the WIRING and not just the manifest's spelling.
+  //
+  // check-name-collision.mjs itself calls the real `gh` CLI when
+  // --packages-json is not supplied — exactly what a bare `npm publish` run
+  // by hand would do. Shadowing `gh` on PATH with a fixture binary (rather
+  // than passing --packages-json) keeps this case faithful to that exact,
+  // real invocation instead of a parameterised stand-in for it.
+  console.log("\n# set-prepublish-hook: the real npm lifecycle actually runs check-name-collision.mjs before build (issue #273)");
+  {
+    const dir = join(work, "prepublish-hook-wiring");
+    const binDir = join(dir, "bin");
+    mkdirSync(binDir, { recursive: true });
+    mkdirSync(join(dir, "scripts"), { recursive: true });
+    mkdirSync(join(dir, "packages", "probe"), { recursive: true });
+    cpSync(COLLISION, join(dir, "scripts", "check-name-collision.mjs"));
+
+    // A fixture `gh` on PATH ahead of the real one. It answers exactly the
+    // one call check-name-collision.mjs makes (`gh api <path> --paginate`)
+    // by echoing a canned response file, or by failing outright when
+    // GH_FAKE_FAIL=1 — the same shape an unauthenticated `gh` produces.
+    const ghScriptPath = join(binDir, "gh");
+    writeFileSync(
+      ghScriptPath,
+      "#!/bin/sh\n" +
+        'if [ "$GH_FAKE_FAIL" = "1" ]; then echo "fake gh: unauthenticated" >&2; exit 1; fi\n' +
+        'cat "$GH_FAKE_RESPONSE_FILE"\n',
+    );
+    chmodSync(ghScriptPath, 0o755);
+
+    writeFileSync(
+      join(dir, "packages", "probe", "package.json"),
+      JSON.stringify(
+        {
+          name: "@gate-fixture/wired-probe",
+          version: "1.0.0",
+          private: false,
+          repository: { type: "git", url: "git+https://github.com/gate-fixture-owner/gate-fixture-repo.git" },
+          scripts: {
+            // The EXACT string this fix installs into every real manifest —
+            // not a paraphrase of it.
+            prepublishOnly: "node ../../scripts/check-name-collision.mjs . && npm run build",
+            // A stub "build" that leaves a sentinel file behind so the test
+            // can observe whether the chain ever reached it, without needing
+            // a real compiler.
+            build: 'node -e "require(\'fs\').writeFileSync(\'BUILD_RAN\',\'1\')"',
+          },
+        },
+        null,
+        2,
+      ) + "\n",
+    );
+
+    const pkgDir = join(dir, "packages", "probe");
+    const buildSentinel = join(pkgDir, "BUILD_RAN");
+    const baseEnv = {
+      ...process.env,
+      PATH: `${binDir}${process.platform === "win32" ? ";" : ":"}${process.env.PATH}`,
+      GITHUB_REPOSITORY: "gate-fixture-owner/gate-fixture-repo",
+    };
+
+    // Case 1: the name collides with a package a DIFFERENT repo owns ->
+    // check-name-collision.mjs exits 1 -> the `&&` chain must never reach
+    // `npm run build`.
+    {
+      if (existsSync(buildSentinel)) rmSync(buildSentinel);
+      const responseFile = join(dir, "gh-response-collision.json");
+      writeFileSync(
+        responseFile,
+        JSON.stringify([{ name: "wired-probe", visibility: "public", repository: { full_name: "gate-fixture-owner/some-other-repo" } }]),
+      );
+      const r = run("npm", ["run", "prepublishOnly", "--prefix", pkgDir], {
+        cwd: pkgDir,
+        env: { ...baseEnv, GH_FAKE_RESPONSE_FILE: responseFile },
+      });
+      check(
+        "a real `npm run prepublishOnly` is blocked by a genuine name collision",
+        r.code !== 0 && /COLLISION/.test(r.out),
+        `expected a nonzero exit mentioning COLLISION, got ${r.code}: ${r.out.slice(-500)}`,
+      );
+      check("build never ran when the collision check failed", !existsSync(buildSentinel), "BUILD_RAN sentinel exists — the bypass this fix closes is still open");
+    }
+
+    // Case 2: `gh` cannot be consulted at all (the unauthenticated-local-
+    // publish case the issue's own "Options" section names as the reason
+    // this hook might have been left out) -> check-name-collision.mjs exits
+    // 2 -> still must not reach `npm run build`. This is the three-state
+    // contract's middle case: "cannot run" must never look like "passed".
+    {
+      if (existsSync(buildSentinel)) rmSync(buildSentinel);
+      const r = run("npm", ["run", "prepublishOnly", "--prefix", pkgDir], {
+        cwd: pkgDir,
+        env: { ...baseEnv, GH_FAKE_FAIL: "1", GH_FAKE_RESPONSE_FILE: join(dir, "unused.json") },
+      });
+      check(
+        "a real `npm run prepublishOnly` is blocked when the collision check cannot run at all",
+        r.code !== 0,
+        `expected a nonzero exit, got ${r.code}: ${r.out.slice(-500)}`,
+      );
+      check("build never ran when the collision check could not run", !existsSync(buildSentinel), "BUILD_RAN sentinel exists — an indeterminate collision check silently passed");
+    }
+
+    // Case 3: the name is genuinely unused under the owner -> exits 0 -> the
+    // chain proceeds and `npm run build` actually runs. Proves this hook
+    // does not merely block everything; it lets a clean publish through.
+    {
+      if (existsSync(buildSentinel)) rmSync(buildSentinel);
+      const responseFile = join(dir, "gh-response-safe.json");
+      writeFileSync(responseFile, JSON.stringify([]));
+      const r = run("npm", ["run", "prepublishOnly", "--prefix", pkgDir], {
+        cwd: pkgDir,
+        env: { ...baseEnv, GH_FAKE_RESPONSE_FILE: responseFile },
+      });
+      check("a real `npm run prepublishOnly` succeeds when the name is genuinely unused", r.code === 0, `expected exit 0, got ${r.code}: ${r.out.slice(-500)}`);
+      check("build actually ran once the collision check cleared", existsSync(buildSentinel), "BUILD_RAN sentinel is missing — a clean check never reached build");
+    }
   }
 
   // ------------------------------------------ root README parity (issue #28)
