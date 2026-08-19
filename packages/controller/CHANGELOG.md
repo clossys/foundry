@@ -5,6 +5,33 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - Unreleased
+
+### Added
+
+- **The repository-profile runner (`./repository`, issue #321):
+  `runRepositoryProfileCheck` and the `repository-profile-check` CLI.**
+  This package previously shipped the contract — schema, validator, pure
+  evaluators, the exit-code ternary — but not the thing that runs it: locate
+  a declaration, observe the repository's real state, call the evaluators,
+  decide one of `satisfied` / `violated` / `indeterminate`
+  (`@vespeneventures/controller/gates`'s `GateResult`), and print something
+  actionable. `runRepositoryProfileCheck` is that runner as a single,
+  zero-I/O call; `repository-profile-check` is the single command wrapping
+  it, alongside the existing `repository-check`. Discovery of the
+  repository's real state — requirement observations and the root
+  direct-child listing — is always caller-injected, never performed by this
+  package: it takes exactly the shapes `evaluateRepositoryRequirements` and
+  `evaluateRepositoryRoot` already accept, so the runner stays hermetically
+  testable and keeps working with no shell or network access.
+  `validateRepositoryProfile` runs unconditionally before either evaluator
+  is ever reached, and a schema-invalid declaration is `indeterminate` —
+  never routed to evaluation, never `satisfied`. `rootObservedEntries:
+  undefined` (root discovery never ran) is deliberately distinct from `[]`
+  (root discovery ran and found nothing): collapsing the two would report a
+  declared-but-unevidenced root vocabulary as a real violation instead of
+  the honest "could not evaluate."
+
 ## [0.4.0] - Unreleased
 
 ### Added
