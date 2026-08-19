@@ -10,6 +10,18 @@ export {
   REQUIREMENT_ID_CATEGORIES,
 } from "./types.js";
 export { CliInputError, main, run } from "./cli.js";
+export {
+  REPOSITORY_PROFILE_RUN_DECLARATION_SOURCE,
+  REPOSITORY_PROFILE_RUN_REASONS,
+  runRepositoryProfileCheck,
+} from "./run.js";
+export type {
+  RepositoryProfileRunDeclarationState,
+  RepositoryProfileRunFinding,
+  RepositoryProfileRunIndeterminateReason,
+  RepositoryProfileRunInput,
+  RepositoryProfileRunResult,
+} from "./run.js";
 export type {
   RepositoryCommand,
   RepositoryDeclarationLocationFinding,

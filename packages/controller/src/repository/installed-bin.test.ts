@@ -86,11 +86,21 @@ describe("installed controller package", () => {
     await execFile("node", ["--input-type=module", "--eval", hostileImport,
       "@vespeneventures/controller/repository",
       "./node_modules/@vespeneventures/controller/dist/repository/cli.js",
+      "./node_modules/@vespeneventures/controller/dist/repository/run-cli.js",
     ], { cwd: consumer });
     const bin = join(consumer, "node_modules", ".bin", "repository-check");
     expect(lstatSync(bin).isSymbolicLink()).toBe(true);
     expect(basename(readlinkSync(bin))).toBe("bin.js");
     const help = await execFile(bin, ["--help"], { cwd: consumer });
     expect(help.stdout).toContain("Usage: repository-check");
+
+    // The full runner (issue #321) installs as its own bin, alongside the
+    // declaration-only checker above — one tarball, two commands, each
+    // reachable through its own symlink.
+    const runBin = join(consumer, "node_modules", ".bin", "repository-profile-check");
+    expect(lstatSync(runBin).isSymbolicLink()).toBe(true);
+    expect(basename(readlinkSync(runBin))).toBe("run-bin.js");
+    const runHelp = await execFile(runBin, ["--help"], { cwd: consumer });
+    expect(runHelp.stdout).toContain("Usage: repository-profile-check");
   });
 });

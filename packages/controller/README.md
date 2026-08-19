@@ -80,7 +80,7 @@ separately versioned packages.
 | `@vespeneventures/controller/catalog` | Workspace discovery and dependency-graph evaluation. |
 | `@vespeneventures/controller/gates` | Foundation checks, deterministic build order, secret-surface gates, a ratchet primitive, override-range and dependency-scope gates, and `foundry-check`. |
 | `@vespeneventures/controller/release` | Isolated packed-artifact and installed-import proof. |
-| `@vespeneventures/controller/repository` | Consumer-owned repository profiles, upward requirements, exact-root declarations, pure evaluation, and `repository-check`. |
+| `@vespeneventures/controller/repository` | Consumer-owned repository profiles, upward requirements, exact-root declarations, pure evaluation, `repository-check`, and the full runner (`runRepositoryProfileCheck` / `repository-profile-check`). |
 | `@vespeneventures/controller/review` | Provider-neutral review evidence contracts, validation, and `review-check`. |
 | `@vespeneventures/controller/review/github` | Pure normalization of caller-provided GitHub-shaped review evidence. |
 | `@vespeneventures/controller/artifacts` | Deterministic, fail-closed verification for a consumer-owned governed artifact: declared kind + schema version, exact-content checksum, and structural provenance. |
@@ -563,6 +563,111 @@ prohibited entry, and unknown direct child in one deterministic report. The
 evaluator never scans a directory, resolves an alias, deletes an artifact, or
 mutates its inputs.
 
+#### The runner: `runRepositoryProfileCheck` and `repository-profile-check` (issue #321)
+
+Everything above is the contract: schema, validator, pure evaluators. None of
+it locates a declaration, observes a repository's real state, or decides an
+exit code — that is a separate job, and shipping the contract without it
+left five consumer repositories to each hand-write their own runner for one
+purpose. Three of them even shared a filename, with three different hashes.
+Every one of those five had to independently get the same property right: a
+check that cannot run must not report success. It already shipped wrong
+once — one hand-written runner parsed a declaration as JSON and handed it
+straight to its own evaluation logic without validating the schema first, so
+a `commands` value that was a string got iterated character by character,
+every character "evaluated" to nothing, and the runner reported a clean
+result against a declaration it had never actually understood.
+
+`runRepositoryProfileCheck` is the one runner. It locates nothing itself —
+that stays the caller's job, exactly as it already is for `repository-check`
+above — but it does the rest: validate the declaration's schema
+unconditionally, before evaluation is even attempted; evaluate its declared
+requirements and root vocabulary against caller-injected discovery; and
+resolve everything to exactly one of this repository's shared ternary
+verdicts (`@vespeneventures/controller/gates`'s `GateResult`:
+`satisfied` / `violated` / `indeterminate`).
+
+```ts
+import { runRepositoryProfileCheck, REPOSITORY_PROFILE_RUN_DECLARATION_SOURCE } from "@vespeneventures/controller/repository";
+
+const result = runRepositoryProfileCheck({
+  declaration: { kind: "parsed", path: "governance/repository-profile.json", canonical: true, value: profile },
+  requirementObservations: [
+    { id: "runtime.node", scope: "machine", state: "observed", value: "20" },
+    {
+      id: "tool.package-manager",
+      scope: "repository",
+      source: REPOSITORY_PROFILE_RUN_DECLARATION_SOURCE,
+      state: "observed",
+      value: "npm",
+    },
+  ],
+  rootObservedEntries: ["README.md", "src"],
+});
+```
+
+**Discovery is injected, never performed by this function.** The five
+hand-written runners differed mostly in HOW they observed reality — one
+shelled out to `git ls-tree`, others read the filesystem directly, one
+cross-referenced a manifest. `runRepositoryProfileCheck` takes those
+observations as already-collected, caller-normalized data — the exact shapes
+`evaluateRepositoryRequirements` and `evaluateRepositoryRoot` already accept
+— and performs no filesystem, Git, process, or network I/O of its own. That
+keeps it hermetically testable and working in a sandboxed CI runner with no
+shell or network access, and it is why `RepositoryProfileRunInput.declaration`
+is a plain discriminated union (`not-found` / `unreadable` / `invalid-json` /
+`parsed`) rather than a path this function reads itself — resolving that
+union is `repository-profile-check`'s job (below), the same division
+`repository-check`'s own CLI already established.
+
+`rootObservedEntries: undefined` and `rootObservedEntries: []` are
+deliberately different inputs. `[]` is a real, evaluable observation ("the
+root has zero direct children"); `undefined` means root discovery never
+ran at all. Collapsing the two would turn "I never looked" into "I looked
+and found nothing" — for a profile that declares any `required` root entry,
+a false `violated` where the honest answer is `indeterminate`.
+`requirementObservations` needs no equivalent split: `RepositoryRequirementObservation`'s
+own `state` already carries `unknown` as a first-class value, and
+`evaluateRepositoryRequirements` already folds an entirely absent
+observation to that same `unknown` state per requirement, so an empty array
+is already indistinguishable, in its effect, from "nothing was observed."
+
+| `declaration.kind` | Verdict | Reason it isn't `satisfied` |
+| --- | --- | --- |
+| `not-found` | `violated` | Conclusively determined (the whole tree was searched), not missing evidence. |
+| `unreadable` / `invalid-json` | `indeterminate` | Nothing conclusive can be evaluated from unreadable input. |
+| `parsed`, fails `validateRepositoryProfile` | `indeterminate` | **Never routed into either evaluator, unconditionally** — the exact defect described above. |
+| `parsed`, valid, non-canonical location | `violated` | Conclusively determined; bundled with any requirement/root findings. |
+| `parsed`, valid, a declared requirement has no observation | `indeterminate` | Fails closed on incomplete evidence, same as `evaluateRepositoryRequirements`'s own `unknown` status. |
+| `parsed`, valid, root entries declared but `rootObservedEntries` is `undefined` | `indeterminate` | Discovery never ran; never silently evaluated as an empty root. |
+| `parsed`, valid, every declared axis evaluated and holds | `satisfied` | The only path that reaches it. |
+
+`repository-profile-check` is the single command wrapping this function:
+it locates a declaration exactly the way `repository-check` does (issue
+#315 — the canonical location is always checked first), reads one optional
+`--discovery <file>` JSON file for the injected observations, and exits
+`0` / `1` / `2` through `gateResultToExitCode`.
+
+```console
+$ repository-profile-check                                    # searches the current working directory, no discovery
+$ repository-profile-check path/to/repository --discovery observed.json
+```
+
+```json
+{
+  "requirementObservations": [
+    { "id": "runtime.node", "scope": "machine", "state": "observed", "value": "20" }
+  ],
+  "rootObservedEntries": ["README.md", "src"]
+}
+```
+
+Both discovery keys are optional and independent; omitting `--discovery`
+entirely is exactly `{}`. The printed report is legible on its own — which
+declaration was found and where, the verdict, and every finding for a
+`violated` result — so a consumer does not need its own reporting layer to
+learn which surface drifted.
+
 #### Deliberate v1 and v2 compatibility
 
 `RepositoryProfileV1` preserves the original exact shape: schema version `1`,
@@ -582,6 +687,11 @@ into v3 for `rootEntries`.
 | `evaluateRepositoryRoot(value)` | function | Returns every classified direct-child result; missing, prohibited, and unknown entries fail closed. |
 | `main(argv)` / `run()` / `CliInputError` | CLI API | Preserved importable command API. Importing it is inert; only calling it reads input, writes a report, or sets an exit code. `main`/`run` also locate a declaration (issue #315) when given no path or a directory path. |
 | `RepositoryCheckReport` | type | `repository-check`'s own `{ ok, findings }` report shape. |
+| `runRepositoryProfileCheck(input)` | function | The runner (issue #321): validates schema unconditionally before evaluating declared requirements and root entries against injected discovery, and resolves to one shared `GateResult` verdict. Zero I/O. |
+| `REPOSITORY_PROFILE_RUN_DECLARATION_SOURCE` | constant | The fixed `source` a repository-scoped requirement observation must name to match a single-profile run — never the declaration's resolved file path. |
+| `REPOSITORY_PROFILE_RUN_REASONS` | constant | The declared `indeterminate` reason vocabulary `runRepositoryProfileCheck` can ever emit (`createGateReasons`, from `./gates`). |
+| `RepositoryProfileRunInput` / `RepositoryProfileRunDeclarationState` | types | Strict input to `runRepositoryProfileCheck`: the caller-resolved declaration state plus injected discovery. |
+| `RepositoryProfileRunResult` / `RepositoryProfileRunFinding` / `RepositoryProfileRunIndeterminateReason` | types | The runner's `GateResult` verdict, its unified finding shape, and its declared indeterminate reasons. |
 | `CANONICAL_REPOSITORY_PROFILE_PATH` | constant | `"governance/repository-profile.json"` (issue #315) — the one location a declaration lives. |
 | `REPOSITORY_PROFILE_VERSION` / `PREVIOUS_REPOSITORY_PROFILE_VERSION` / `LEGACY_REPOSITORY_PROFILE_VERSION` | constants | Current `3` plus deliberately supported `2` and `1`. |
 | `REQUIREMENT_ID_CATEGORIES` | constant | `["runtime", "tool", "dependency"]` (issue #316) — the closed requirement-id category vocabulary. |

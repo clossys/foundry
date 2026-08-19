@@ -63,6 +63,7 @@
     "foundry-governance": "./dist/cli.js",
     "foundry-check": "./dist/gates/cli.js",
     "repository-check": "./dist/repository/bin.js",
+    "repository-profile-check": "./dist/repository/run-bin.js",
     "review-check": "./dist/review/cli.js"
   },
   "files": [
