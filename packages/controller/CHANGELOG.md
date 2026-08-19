@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   answers that directly, returning `{ requirementsChecked, rootEntriesChecked }`
   for the same input, without re-running validation. `validateRepositoryProfile`
   itself is unchanged — same input, same output, for every existing caller.
+  Never throws, even for a revoked `Proxy` or another object whose reflective
+  operations throw instead of returning `false` — it falls back to the same
+  strictest-schema coverage a merely-unrecognized `schemaVersion` gets,
+  matching `validateRepositoryProfile`'s own fail-closed try/catch.
 
 ## [0.6.0] - Unreleased
 

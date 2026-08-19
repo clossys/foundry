@@ -470,9 +470,22 @@ function validateRepositoryProfileValue(value: unknown): RepositoryProfileFindin
  * fallback of treating an unrecognized `schemaVersion` as the current,
  * strictest schema rather than silently narrowing coverage for input that
  * was already going to fail for an unrelated reason.
+ *
+ * Never throws. `isRecord` and the own-property-descriptor read below are
+ * both reflective operations that a revoked `Proxy` (or another
+ * exotic/hostile object) makes throw instead of merely returning `false` —
+ * exactly the scenario `validateRepositoryProfile` itself already guards
+ * against with its own try/catch. A `value` that throws here gets the same
+ * fail-closed, strictest-schema fallback as a `value` this can read cleanly
+ * but doesn't recognize.
  */
 export function repositoryProfileValidationCoverage(value: unknown): RepositoryProfileValidationCoverage {
-  const schemaVersion = isRecord(value) ? ownDataValue(value, "schemaVersion")?.value : undefined;
+  let schemaVersion: unknown;
+  try {
+    schemaVersion = isRecord(value) ? ownDataValue(value, "schemaVersion")?.value : undefined;
+  } catch {
+    schemaVersion = undefined;
+  }
   return repositoryProfileValidationCoverageForVersion(schemaVersion);
 }
 

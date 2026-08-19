@@ -486,4 +486,40 @@ describe("repositoryProfileValidationCoverage", () => {
       rootEntriesChecked: true,
     });
   });
+
+  // A revoked Proxy throws on essentially every reflective operation,
+  // including the `Array.isArray` call inside `isRecord` — a real, spec-
+  // mandated behavior, not a contrived mock. `validateRepositoryProfile`
+  // already guards against this with its own try/catch; before this test
+  // was added, `repositoryProfileValidationCoverage` had no equivalent
+  // guard and threw instead of returning the fail-closed fallback every
+  // other unreadable input already gets.
+  it("reports full coverage (rather than throwing) for a revoked Proxy", () => {
+    const { proxy, revoke } = Proxy.revocable(v1Profile, {});
+    revoke();
+    expect(() => repositoryProfileValidationCoverage(proxy)).not.toThrow();
+    expect(repositoryProfileValidationCoverage(proxy)).toEqual({
+      requirementsChecked: true,
+      rootEntriesChecked: true,
+    });
+  });
+
+  // Same fail-closed outcome when the throw comes from
+  // `Object.getOwnPropertyDescriptor` itself (inside `ownDataValue`) rather
+  // than from `isRecord`'s own `Array.isArray` check.
+  it("reports full coverage (rather than throwing) when getOwnPropertyDescriptor itself throws", () => {
+    const throwing = new Proxy(
+      { ...v1Profile },
+      {
+        getOwnPropertyDescriptor: () => {
+          throw new Error("hostile trap");
+        },
+      },
+    );
+    expect(() => repositoryProfileValidationCoverage(throwing)).not.toThrow();
+    expect(repositoryProfileValidationCoverage(throwing)).toEqual({
+      requirementsChecked: true,
+      rootEntriesChecked: true,
+    });
+  });
 });
