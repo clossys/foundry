@@ -40,6 +40,23 @@ stuck at `unverifiable` never counts toward that close — it stays visible in
 `rotationQueue` until an observation actually resolves it one way or the
 other.
 
+**Close condition, for a consuming plane's credential inventory:** this loop
+closes when the plane's own declared inventory (`defineKeyCustody`'s
+entries) accounts for the plane's full set of live credentials, and every
+one of them evaluates to `current`, `stale`, or `unowned` — never
+`unverifiable` for a reason that isn't an explicit, recorded opt-out.
+`unverifiable` standing in for "nobody checked" is not a close; that is the
+same distinction `evaluateRotation`'s ternary exists to keep visible rather
+than let collapse into a quiet pass. The loop reopens the moment a
+credential is observed in live use — in a workflow, a runtime environment, a
+provider console — that the declared inventory never named: an undeclared
+credential is a bigger gap than a stale one, because nothing in this package
+can report on a key it was never told about. Issue #326 records the fuller
+lifecycle this package is still growing into — naming, inventory, exposure,
+rotation, revocation, and expiry distribution all failing closed together —
+and this close condition is scoped to the custody-and-rotation slice shipped
+today, not a claim that #326 is already done.
+
 ## Usage
 
 ### Resolution (unchanged)

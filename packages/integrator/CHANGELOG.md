@@ -5,6 +5,18 @@ All notable changes to `@vespeneventures/integrator` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - Unreleased
+
+### Documentation
+
+- **README states a consuming plane's currency-gate loop-close condition
+  (issue #286's acceptance criterion), and honestly discloses issue #330 —
+  the pnpm-lockfile reading gap — as an open loop item rather than glossing
+  over it.** Closes when the gate reports green only by currency or by
+  recorded opt-out, never by silence; reopens on any drift a gate now
+  catches that a consumer previously had to write its own evaluation logic
+  to find. No code change.
+
 ## [0.1.0] - 2026-08-18
 
 ### Added

@@ -32,6 +32,22 @@ package.
 - **learn** — a rule that no consumer can express is a grammar gap, filed as
   such rather than worked around downstream.
 
+**Close condition:** for the `./repository` runner specifically, this loop
+closes when a consuming repository's `repository-profile-check` (or
+`runRepositoryProfileCheck` wired into an equivalent CI step) is a required
+status check that has actually proven it blocks — a schema-invalid
+declaration reaching `indeterminate` and failing the check in a real run,
+not a green history nobody has seen turn red — and no hand-written evaluator
+survives beside it duplicating the same judgment. A consumer that still
+maintains its own parallel runner has not closed this loop no matter how
+clean its own runs report; that was the exact failure five hand-written
+runners repeated independently before this one shipped. The loop reopens on
+any contract gap a caller files against the two fixed axes: `customAxes`
+(issue #324) exists because a derived cross-reference check two real
+consumers needed had no other way to express itself, and the expectation is
+that the next gap of that shape surfaces the same way — as a filed axis, not
+a private workaround living outside this package.
+
 This is a rename and a merge, not a rewrite: every subpath reachable under
 the three former package names resolves, unchanged in shape, under this one.
 See "Migrating from compatibility packages" below.

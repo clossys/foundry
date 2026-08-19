@@ -50,6 +50,29 @@ recorded opt-out reasons are the evidence. The loop closes when
 entitlement is installed at the latest version, and every gap left is a
 decision on record, not silence.
 
+**Close condition, for a consuming plane's currency gate:** this loop closes
+when a plane's currency gate is wired to `judgeCurrency`'s ternary and reports
+green for exactly one of two reasons — every entitled package reads
+`current`, or every remaining gap reads `absent-with-reason` — and never
+green because a subset of the catalogue was never evaluated in the first
+place. `computeCurrencyMetric`'s `absentWithoutReasonCount` has no path to
+zero by silence; a plane that wants that shortcut has to build it outside
+this package's contract, because nothing in `judgeCurrency` will manufacture
+it. The loop reopens on any drift a gate now catches that the consuming
+plane previously had to write its own evaluation logic to find.
+
+**Open honestly:** issue #330 is a real, currently open gap in that wiring.
+`readInstalledInventory` reads only an npm-shaped lockfile, so a pnpm-based
+consumer building this same gate had to hand-write its own roughly
+sixty-line `InstalledInventory` reader against `pnpm-lock.yaml` rather than
+get one from this package — everything downstream of inventory-reading
+(`judgeCurrency`, `upgradeSet`, `optOutGaps`, `computeCurrencyMetric`) worked
+for that consumer unmodified; only the lockfile-reading half didn't. That
+consumer's loop is closed today, but on its own inventory reader, not on
+this package's. Until #330 lands, that is the honest state of this
+close condition for a pnpm-based plane, not a gap this section will paper
+over.
+
 ## Usage
 
 ```ts
