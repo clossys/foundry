@@ -42,8 +42,9 @@ survives beside it duplicating the same judgment. A consumer that still
 maintains its own parallel runner has not closed this loop no matter how
 clean its own runs report; that was the exact failure five hand-written
 runners repeated independently before this one shipped. The loop reopens on
-any contract gap a caller files against the two fixed axes: `customAxes`
-(issue #324) exists because a derived cross-reference check two real
+any contract gap a caller files for a check not covered by the two
+built-in axes: `customAxes` (issue #324) exists precisely as the extension
+point beyond them, because a derived cross-reference check two real
 consumers needed had no other way to express itself, and the expectation is
 that the next gap of that shape surfaces the same way — as a filed axis, not
 a private workaround living outside this package.

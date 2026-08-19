@@ -51,11 +51,15 @@ entitlement is installed at the latest version, and every gap left is a
 decision on record, not silence.
 
 **Close condition, for a consuming plane's currency gate:** this loop closes
-when a plane's currency gate is wired to `judgeCurrency`'s ternary and reports
-green for exactly one of two reasons — every entitled package reads
-`current`, or every remaining gap reads `absent-with-reason` — and never
-green because a subset of the catalogue was never evaluated in the first
-place. `computeCurrencyMetric`'s `absentWithoutReasonCount` has no path to
+when a plane's currency gate is wired to `judgeCurrency`'s ternary over a
+NON-EMPTY entitled catalogue and `computeCurrencyMetric`'s
+`absentWithoutReasonCount` is zero — that is, every entitled package
+individually reads either `current` or `absent-with-reason`. An opt-out
+satisfies the policy condition without raising `currencyShare`; the metric
+and the policy are deliberately separate answers, and neither is ever green
+because a subset of the catalogue was never evaluated in the first place. An
+empty catalogue closes nothing: nothing was evaluated, so a gate over it
+reports indeterminate, not green. `computeCurrencyMetric`'s `absentWithoutReasonCount` has no path to
 zero by silence; a plane that wants that shortcut has to build it outside
 this package's contract, because nothing in `judgeCurrency` will manufacture
 it. The loop reopens on any drift a gate now catches that the consuming

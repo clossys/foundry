@@ -41,10 +41,15 @@ stuck at `unverifiable` never counts toward that close — it stays visible in
 other.
 
 **Close condition, for a consuming plane's credential inventory:** this loop
-closes when the plane's own declared inventory (`defineKeyCustody`'s
-entries) accounts for the plane's full set of live credentials, and every
-one of them evaluates to `current`, `stale`, or `unowned` — never
-`unverifiable` for a reason that isn't an explicit, recorded opt-out.
+closes on inventory COVERAGE, which is deliberately a weaker claim than
+rotation health: every live credential is declared in the plane's own
+inventory (`defineKeyCustody`'s entries) and every entry EVALUATES — to
+`current`, `stale`, or `unowned` — with `unverifiable` appearing only under
+an explicit, recorded opt-out. `stale` and `unowned` do not block this
+close; they are the gate's real findings, reported as violations for the
+plane to act on. Coverage closing means the loop can SEE everything;
+rotation health is the separate, stricter condition the gate then judges,
+and conflating the two would let "we know about it" read as "it is fine".
 `unverifiable` standing in for "nobody checked" is not a close; that is the
 same distinction `evaluateRotation`'s ternary exists to keep visible rather
 than let collapse into a quiet pass. The loop reopens the moment a

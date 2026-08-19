@@ -218,15 +218,17 @@ nothing this function is handed is silently dropped from the report, even
 data that turned out not to matter for the verdict.
 
 **Close condition:** this loop closes for a plane aggregating per-repository
-bundles when `report.repositories` names every id in `expectedRepositories`
-as exactly one of `observed`, `unobserved-repository`,
-`invalid-bundle-schema`, `duplicate-repository-identity`, or
-`stale-observation` — never as an id silently missing from the report — and
-`report.overall.verdict` reads `satisfied` only because every one of those
-was itself satisfied, never because the aggregator simply stopped looking. A
+bundles when three predicates all hold: every id in `expectedRepositories`
+has exactly one entry in `report.repositories`; every entry's classification
+is `observed` (the four gap classifications — `unobserved-repository`,
+`invalid-bundle-schema`, `duplicate-repository-identity`,
+`stale-observation` — are each `indeterminate` by construction and therefore
+never part of a close); and every observed entry's `result.verdict` is
+`satisfied`. `report.overall.verdict` then reads `satisfied` because all
+three held, never because the aggregator simply stopped looking. A
 repository that never reports in must show up as a named gap, not as a
 shorter list. The loop reopens on any bundle shape `aggregateObservations`
-cannot sort into one of the four reasons above: that is a transport-contract
+cannot sort into one of the four gap classifications above: that is a transport-contract
 gap, filed the same way `#255`'s narrowed-off remainder (scheduling,
 polling, further generalization of `liveStateSurface`) already is, rather
 than patched ad hoc inside this package.
