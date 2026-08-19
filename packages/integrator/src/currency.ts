@@ -290,15 +290,23 @@ export type CurrencyVerdict = "satisfied" | "violated" | "indeterminate";
  *   - `minor` / `patch` / `current`                  -> satisfied, advisory or
  *                                                       informational, reported
  *                                                       but never blocking
+ *   - `absent-without-reason`                       -> violated
  *   - `indeterminate` / `unreachable` /
- *     `unauthenticated` / `absent-without-reason`    -> indeterminate
+ *     `unauthenticated`                              -> indeterminate
  *
- * The last group is the load-bearing one. A package that could not be reached,
- * could not be authenticated for, or is simply missing with no recorded reason
- * has not been *judged current* -- it has not been judged at all, and reporting
- * it as satisfied would be a check reporting success over ground it never
- * examined. `absent-with-reason` is different: an absence somebody wrote down a
- * reason for is a decision on record, so it does not taint the verdict.
+ * The last group is the load-bearing one. A package that could not be reached
+ * or could not be authenticated for has not been *judged current* -- it has not
+ * been judged at all, and reporting it as satisfied would be a check reporting
+ * success over ground it never examined.
+ *
+ * `absent-without-reason` deliberately sits with the violations rather than
+ * there. It is tempting to group it with the other absences, but nothing about
+ * it is unexamined: the package is entitled, it is not installed, and no opt-out
+ * records a decision to leave it out. That is a complete evaluation reaching a
+ * negative answer -- drift nobody decided -- and calling it indeterminate would
+ * demote a settled violation into "could not tell". `absent-with-reason` is the
+ * genuinely different one: an absence somebody wrote a reason for is a decision
+ * on record, so it does not taint the verdict at all.
  *
  * Precedence is indeterminate over violated: if any package could not be
  * evaluated, the run cannot honestly say the set is violated *or* clean, and it
@@ -311,8 +319,10 @@ export function currencyVerdict(judgments: readonly PackageCurrency[]): Currency
       case "indeterminate":
       case "unreachable":
       case "unauthenticated":
-      case "absent-without-reason":
         return "indeterminate";
+      case "absent-without-reason":
+        violated = true;
+        break;
       case "behind":
         if (judgment.severity === "major") violated = true;
         break;

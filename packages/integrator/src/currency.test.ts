@@ -325,9 +325,20 @@ describe("currencyVerdict", () => {
     ["indeterminate", { state: "indeterminate", name: "a", reason: "version-unparseable" }],
     ["unreachable", { state: "unreachable", name: "a" }],
     ["unauthenticated", { state: "unauthenticated", name: "a" }],
-    ["absent-without-reason", { state: "absent-without-reason", name: "a" }],
   ] as const)("folds %s to indeterminate, never satisfied", (_label, judgment) => {
     expect(currencyVerdict([judgment as PackageCurrency])).toBe("indeterminate");
+  });
+
+  // Nothing about an unexplained absence is unexamined: the package is
+  // entitled, it is not installed, and no opt-out records a decision. That is
+  // a complete evaluation reaching a negative answer, so calling it
+  // indeterminate would demote a settled violation into "could not tell".
+  it("folds absent-without-reason to violated, not indeterminate", () => {
+    expect(currencyVerdict([{ state: "absent-without-reason", name: "a" }])).toBe("violated");
+  });
+
+  it("does not let an unexplained absence mask a genuine major gap", () => {
+    expect(currencyVerdict([behind("a", "major"), { state: "absent-without-reason", name: "b" }])).toBe("violated");
   });
 
   it("does not let a recorded absence taint the verdict", () => {
