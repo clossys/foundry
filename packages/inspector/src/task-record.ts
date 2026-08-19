@@ -166,36 +166,86 @@ function escapeLiteral(value: string): string {
 }
 
 /**
- * Every token that follows a declared label anywhere in the description, in
- * the order they appear, label by label.
+ * Strips regions delimited by HTML comment markers (`<!-- ... -->`) before
+ * any label is matched.
  *
- * Deliberately every occurrence rather than the first: the labels are
- * matched case-insensitively (a description writes `Work item:` and
- * `work ITEM:` interchangeably and both are the same record), and a
- * case-insensitive literal like `Work item` also matches it inside ordinary
- * prose. "There is no work item at all here" contains the label, and the
- * token after it is `at`. See `extractTaskReferenceText` for what is done
- * about that.
+ * An automated reviewer that appends a section to a description commonly
+ * fences its own markers this way — invisible when the description renders,
+ * present in the raw text this check actually reads. No legitimate task
+ * record is ever written inside a generated, fenced region, so removing it
+ * first removes a whole class of false positives in one place rather than
+ * teaching every downstream rule about it individually.
  *
- * The label is guarded on both sides by `(?<!\w)` / `(?!\w)` rather than
- * left unguarded. Without it, a configured label matches as a bare substring
- * anywhere it occurs — including embedded inside a longer word, such as
- * `Refs` inside `Prefs`, which is not the label at all. Plain `\b` cannot be
- * used here instead: a caller's label can itself end in a non-word
- * character (a policy declaring `"Ticket (id)"` is exercised by this
- * package's own tests), and `\b` requires a word/non-word transition at
- * that edge — which a label ending in `)` immediately followed by `:` can
- * never produce, silently breaking a label that legitimately matches. The
- * lookaround guards only care what is on the OTHER side of the boundary, so
- * they hold regardless of which character the label itself starts or ends
- * with.
+ * Replaced with a newline rather than deleted outright, so text that sat
+ * before and after an inline comment on the same physical line is never
+ * glued into a new false anchor by the removal itself.
+ */
+function stripGeneratedRegions(description: string): string {
+  return description.replace(/<!--[\s\S]*?-->/g, "\n");
+}
+
+/**
+ * Every token that follows a declared label at the START of one of the
+ * description's lines, in the order the lines appear, label by label.
+ *
+ * ANCHORED TO LINE START, NOT MATCHED ANYWHERE
+ * ----------------------------------------------
+ * The earlier arrangement matched a configured label as a bare, case-
+ * insensitive substring anywhere it occurred, including mid-sentence. Two
+ * confirmed failures came from exactly that: "...the header comment
+ * describes and already fixes for every other root-install caller" matched
+ * `fixes` and returned `for`, and a generated `* **Bug Fixes**` heading
+ * matched `Fixes` and returned `*` — the token that opened the following
+ * bullet.
+ *
+ * A record plausibly begins at the start of a line, optionally behind
+ * nothing but Markdown decoration — a list or blockquote marker, a heading
+ * marker, emphasis, a code-span backtick — never behind an actual word. The
+ * permitted-prefix character class below is exactly that decoration set; it
+ * contains no letters or digits, so any real word sitting between the start
+ * of the line and the label (`the header comment describes and already ` in
+ * the first failure, `Bug ` in the second) leaves nothing for the label to
+ * match against at that position and the line is skipped. This is also why
+ * the second failure needs no special case beyond ordinary anchoring:
+ * `Fixes` inside `Bug Fixes` is preceded by the word `Bug`, which is not
+ * decoration, so it never becomes a candidate regardless of what follows it.
+ *
+ * MATCHING IS PER LINE, SO THE CAPTURE CAN NEVER CROSS A LINE
+ * --------------------------------------------------------------
+ * A label with nothing after it on its own line — a bare generated heading
+ * such as `## Fixes` with the content on the following line — must not
+ * capture that following line's content as if it were the value. Operating
+ * one line at a time makes that structurally impossible rather than
+ * something the pattern has to remember not to do: there is nothing after
+ * the label on the line, so the capture group has nothing to match and the
+ * line contributes no candidate.
+ *
+ * EVERY LABEL, EVERY ANCHORED LINE
+ * -----------------------------------
+ * Still every declared label and every anchored occurrence, not the first:
+ * a description can legitimately carry more than one anchored line (a
+ * placeholder line above the real one), and a repository can declare more
+ * than one label. See `extractTaskReferenceText` for how a shape-valid
+ * candidate is preferred once more than one anchored line is found.
+ *
+ * The label is guarded on both sides by `(?<!\w)` / `(?!\w)`, matching the
+ * reasoning from the earlier arrangement: a plain `\b` cannot be used
+ * because a caller's label can itself end in a non-word character (a policy
+ * declaring `"Ticket (id)"` is exercised by this package's own tests), and
+ * `\b` requires a word/non-word transition at that edge which a label
+ * ending in `)` immediately followed by `:` can never produce.
  */
 function extractTaskReferenceCandidates(description: string, recordLabels: readonly string[]): readonly string[] {
   const candidates: string[] = [];
+  const lines = stripGeneratedRegions(description).split(/\r?\n/);
   for (const label of recordLabels) {
-    const pattern = new RegExp(`\\*{0,2}(?<!\\w)${escapeLiteral(label)}(?!\\w):?\\*{0,2}\\s*(\\S+)`, "gi");
-    for (const match of description.matchAll(pattern)) {
-      const captured = match[1];
+    const pattern = new RegExp(
+      "^[\\s*_`>#\\-+]*(?<!\\w)" + escapeLiteral(label) + "(?!\\w):?[*_`]{0,2}[ \\t]*(\\S+)",
+      "i",
+    );
+    for (const line of lines) {
+      const match = pattern.exec(line);
+      const captured = match?.[1];
       if (captured === undefined) continue;
       const trimmed = captured.replace(/[.,;:)\]]+$/, "");
       if (trimmed !== "") candidates.push(trimmed);

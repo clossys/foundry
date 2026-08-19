@@ -76,9 +76,10 @@ describe("extractTaskReferenceText", () => {
 
   it("does not match a label embedded inside a longer word", () => {
     // Without a word boundary, the label "Refs" matches the "Refs" hiding
-    // inside "Prefs" and "Underrefs" — neither is the label.
+    // inside "Prefs" and "Underrefs" — neither is the label. The genuine
+    // "Refs" is on its own anchored line, so it is still found.
     expect(extractTaskReferenceText("Check the user prefs 2024 config.", ["Refs"])).toBeUndefined();
-    expect(extractTaskReferenceText("An underrefs situation. Refs #9", ["Refs"])).toBe("#9");
+    expect(extractTaskReferenceText("An underrefs situation.\n\nRefs #9", ["Refs"])).toBe("#9");
   });
 
   it("still matches a label ending in punctuation, which plain \\b cannot", () => {
@@ -100,16 +101,67 @@ describe("extractTaskReferenceText", () => {
     expect(extractTaskReferenceText(description, ["Refs"])).toBe("#12");
   });
 
-  it("still returns a naked number when it is the only candidate at all", () => {
-    // Preferring a marked candidate must never manufacture "no reference" out
-    // of a description that names one, even ambiguously.
+  it("finds nothing in a description whose only label occurrence is mid-sentence", () => {
+    // "Refs" here sits after real words on the same line ("work that "),
+    // which is structurally the same shape as the confirmed false match
+    // "already fixes for" — a label trailing ordinary prose, not
+    // introducing a record. Anchoring now excludes it as a candidate
+    // outright, rather than falling back to it as an ambiguous last resort.
     const description = "This change follows on from work that Refs 2024 baseline of the standards document.";
-    expect(extractTaskReferenceText(description, ["Refs"])).toBe("2024");
+    expect(extractTaskReferenceText(description, ["Refs"])).toBeUndefined();
   });
 
-  it("prefers a marked reference inside a code span over a naked number in prose", () => {
-    const description = "Work that Refs 2024 baseline. Refs `#12`.";
+  it("prefers a marked, anchored reference over an earlier mid-sentence naked number", () => {
+    // The mid-sentence "Refs 2024" is excluded outright by anchoring; the
+    // anchored "Refs `#12`" on its own line is the only real candidate.
+    const description = "Work that Refs 2024 baseline.\n\nRefs `#12`.";
     expect(extractTaskReferenceText(description, ["Refs"])).toBe("`#12`");
+  });
+
+  it("prefers a shaped anchored candidate over an earlier unshaped anchored one", () => {
+    // Two genuinely anchored lines can still disagree — a placeholder line
+    // above the real one. The shaped candidate still wins.
+    expect(extractTaskReferenceText("Closes: soon\n\nCloses: #12", ["Closes"])).toBe("#12");
+  });
+
+  it("does not match a label anchored at line start but embedded in a real word before it", () => {
+    // The exact shape of the confirmed generated-heading failure: "Fixes" is
+    // preceded on its line only by decoration (bullet, emphasis) EXCEPT for
+    // the real word "Bug", so it is not a candidate at all.
+    const description = "* **Bug Fixes**\n  * Updated the check to use the latest compatible patch release.";
+    expect(extractTaskReferenceText(description, ["Fixes"])).toBeUndefined();
+  });
+
+  it("does not match a label trailing ordinary prose on the same line", () => {
+    // The exact shape of the confirmed author-prose failure.
+    const description = "...the header comment describes and already fixes for every other root-install caller";
+    expect(extractTaskReferenceText(description, ["Fixes"])).toBeUndefined();
+  });
+
+  it("does not capture across a line break when a heading label has nothing after it", () => {
+    // A bare generated heading with the real content on the FOLLOWING line
+    // must not have that line's content read as its value.
+    expect(extractTaskReferenceText("## Fixes\n* Updated a dependency.", ["Fixes"])).toBeUndefined();
+  });
+
+  it("still finds an anchored label immediately followed by a value on the same line", () => {
+    expect(extractTaskReferenceText("## Fixes #12", ["Fixes"])).toBe("#12");
+  });
+
+  it("ignores a record-shaped label inside a generated-content HTML comment", () => {
+    const description = "Some real prose about the change.\n\n<!--\nCloses: #99\n-->\n\nCloses: #12";
+    expect(extractTaskReferenceText(description, ["Closes"])).toBe("#12");
+  });
+
+  it("would otherwise have matched the same label were it not fenced in a comment", () => {
+    // Demonstrates the comment-stripping is actually doing something: the
+    // identical text, unfenced, is found.
+    expect(extractTaskReferenceText("Closes: #99", ["Closes"])).toBe("#99");
+  });
+
+  it("finds nothing when the only anchored-looking label sits entirely inside a generated comment block", () => {
+    const description = "No record from the author here.\n\n<!--\n* **Bug Fixes**\n  * Updated a dependency.\n-->";
+    expect(extractTaskReferenceText(description, ["Fixes"])).toBeUndefined();
   });
 });
 
@@ -172,6 +224,56 @@ describe("checkTaskRecord", () => {
     const report = checkTaskRecord(change({ description: "Work item: soon" }), policy);
     if (report.result.verdict !== "violated") throw new Error("expected violated");
     expect(report.result.findings[0]?.rule).toBe("task-record-unparseable");
+  });
+
+  describe("false matches from generated content and mid-sentence prose", () => {
+    // Both scenarios reproduce the confirmed occurrences: a review bot's
+    // appended "Bug Fixes" heading, and a label trailing ordinary author
+    // prose. Neither is a genuine record, so the label must never become a
+    // candidate at all — the verdict is "missing", never "unparseable"
+    // reporting a garbage token like "*" or "for".
+
+    it("does not report a generated 'Bug Fixes' heading as an unparseable record", () => {
+      const description =
+        "Some real prose explaining the change.\n\n" +
+        "## Summary by an automated reviewer\n\n" +
+        "* **Bug Fixes**\n" +
+        "  * Updated a dependency to the latest compatible patch release.\n";
+      const report = checkTaskRecord(change({ description }), { ...policy, recordLabels: ["Work item", "Fixes"] });
+      expect(report.result.verdict).toBe("violated");
+      if (report.result.verdict !== "violated") throw new Error("unreachable");
+      expect(report.result.findings[0]?.rule).toBe("task-record-missing");
+    });
+
+    it("still finds a real record above a generated 'Bug Fixes' heading", () => {
+      // The author's genuine record must survive even when a bot appends a
+      // heading that would otherwise be misread as one.
+      const description =
+        "Work item: #42\n\n" +
+        "## Summary by an automated reviewer\n\n" +
+        "* **Bug Fixes**\n" +
+        "  * Updated a dependency to the latest compatible patch release.\n";
+      const report = checkTaskRecord(change({ description }), { ...policy, recordLabels: ["Work item", "Fixes"] });
+      expect(report.result).toMatchObject({ verdict: "satisfied", evaluated: 2 });
+      expect(report.reference).toMatchObject({ number: "42" });
+    });
+
+    it("does not report a label trailing author prose as an unparseable record", () => {
+      const description =
+        "This removes the redundant wrapper; the header comment describes and " +
+        "already fixes for every other root-install caller.";
+      const report = checkTaskRecord(change({ description }), { ...policy, recordLabels: ["Work item", "Fixes"] });
+      expect(report.result.verdict).toBe("violated");
+      if (report.result.verdict !== "violated") throw new Error("unreachable");
+      expect(report.result.findings[0]?.rule).toBe("task-record-missing");
+    });
+
+    it("ignores a record-shaped label fenced inside a generated HTML comment", () => {
+      const description = "Work item: #42\n\n<!--\nWork item: #99\n-->\n";
+      const report = checkTaskRecord(change({ description }), policy);
+      expect(report.result).toMatchObject({ verdict: "satisfied", evaluated: 2 });
+      expect(report.reference).toMatchObject({ number: "42" });
+    });
   });
 
   it.each([
