@@ -1,6 +1,6 @@
 {
   "name": "@vespeneventures/builder",
-  "version": "0.2.5",
+  "version": "0.3.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -42,7 +42,7 @@
     "LICENSE"
   ],
   "sideEffects": false,
-  "description": "Declared reality made actual: an idempotent manifest engine and machine verification, a deployment surface contract with read-only platform adapters, a toolchain pin (runtime, package manager, build order), and the liveStateSurface contract and shared CI gate mechanics that reconcile any of them against what is actually live.",
+  "description": "Declared reality made actual: an idempotent manifest engine and machine verification, a deployment surface contract with read-only platform adapters, a toolchain pin (runtime, package manager, build order), the liveStateSurface contract and shared CI gate mechanics that reconcile any of them against what is actually live, and an observation-bundle transport for aggregating each repository's own self-reported gate results.",
   "keywords": [
     "provisioning",
     "deployment",
@@ -51,6 +51,8 @@
     "ci-gate",
     "gate-result",
     "fail-closed",
+    "observation-bundle",
+    "aggregation",
     "typescript"
   ],
   "author": "Calvin Hung",
