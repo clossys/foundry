@@ -40,6 +40,28 @@ stuck at `unverifiable` never counts toward that close — it stays visible in
 `rotationQueue` until an observation actually resolves it one way or the
 other.
 
+**Close condition, for a consuming plane's credential inventory:** this loop
+closes on inventory COVERAGE, which is deliberately a weaker claim than
+rotation health: every live credential is declared in the plane's own
+inventory (`defineKeyCustody`'s entries) and every entry EVALUATES — to
+`current`, `stale`, or `unowned` — with `unverifiable` appearing only under
+an explicit, recorded opt-out. `stale` and `unowned` do not block this
+close; they are the gate's real findings, reported as violations for the
+plane to act on. Coverage closing means the loop can SEE everything;
+rotation health is the separate, stricter condition the gate then judges,
+and conflating the two would let "we know about it" read as "it is fine".
+`unverifiable` standing in for "nobody checked" is not a close; that is the
+same distinction `evaluateRotation`'s ternary exists to keep visible rather
+than let collapse into a quiet pass. The loop reopens the moment a
+credential is observed in live use — in a workflow, a runtime environment, a
+provider console — that the declared inventory never named: an undeclared
+credential is a bigger gap than a stale one, because nothing in this package
+can report on a key it was never told about. Issue #326 records the fuller
+lifecycle this package is still growing into — naming, inventory, exposure,
+rotation, revocation, and expiry distribution all failing closed together —
+and this close condition is scoped to the custody-and-rotation slice shipped
+today, not a claim that #326 is already done.
+
 ## Usage
 
 ### Resolution (unchanged)

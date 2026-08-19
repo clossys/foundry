@@ -217,6 +217,25 @@ never named in `expectedRepositories`) are reported for the same reason:
 nothing this function is handed is silently dropped from the report, even
 data that turned out not to matter for the verdict.
 
+**Close condition:** this loop closes for a plane aggregating per-repository
+bundles when three predicates all hold: every id in `expectedRepositories`
+has exactly one entry in `report.repositories`; every entry's classification
+is `observed` (the four gap classifications — `unobserved-repository`,
+`invalid-bundle-schema`, `duplicate-repository-identity`,
+`stale-observation` — are each `indeterminate` by construction and therefore
+never part of a close); every observed entry's `result.verdict` is
+`satisfied`; and `report.unattributedCount` is zero — a bundle that arrived
+but could not be tied to any repository id is evidence that was never
+evaluated, and it folds into `overall` as `unattributed-bundle`
+(indeterminate), so it can never coexist with a close. `report.overall.verdict` then reads `satisfied` because all
+three held, never because the aggregator simply stopped looking. A
+repository that never reports in must show up as a named gap, not as a
+shorter list. The loop reopens on any bundle shape `aggregateObservations`
+cannot sort into one of the four gap classifications above: that is a transport-contract
+gap, filed the same way `#255`'s narrowed-off remainder (scheduling,
+polling, further generalization of `liveStateSurface`) already is, rather
+than patched ad hoc inside this package.
+
 ## Manifest engine (formerly `@vespeneventures/provisioning`)
 
 An idempotent engine for applying a provisioning manifest to a machine, and

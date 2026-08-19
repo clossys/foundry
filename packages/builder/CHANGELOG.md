@@ -5,6 +5,28 @@ All notable changes to `@vespeneventures/builder` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - Unreleased
+
+### Fixed
+
+- **An unattributed bundle now forces `aggregateObservations`'s `overall` to
+  `indeterminate` (`unattributed-bundle`)** instead of being counted in
+  `unattributedCount` while `overall` could still read `satisfied`. Evidence
+  that arrived but could not be attributed to any repository id was never
+  evaluated, and a report that read green over it was the exact
+  stopped-looking outcome this aggregator exists to prevent. The reason is
+  added to `OBSERVATION_AGGREGATE_INDETERMINATE_REASONS`.
+
+### Documentation
+
+- **README states the observation-bundle transport's loop-close condition
+  (issue #284's acceptance criterion).** Closes for an aggregating plane
+  when every expected repository id resolves to a named reason in
+  `report.repositories`, none silently omitted; reopens on any bundle
+  shape `aggregateObservations` cannot classify. (This entry is
+  documentation; the unattributed-bundle change above is the release's
+  code change.)
+
 ## [0.3.0] - Unreleased
 
 ### Added

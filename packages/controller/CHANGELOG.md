@@ -5,6 +5,18 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.1] - Unreleased
+
+### Documentation
+
+- **README states the `./repository` runner's loop-close condition
+  (issue #282's acceptance criterion).** Falsifiable, not a mission
+  statement: closes for a consuming repository when `repository-profile-check`
+  is a required check that has proven it blocks a schema-invalid declaration,
+  and no hand-written evaluator survives beside it; reopens on any contract
+  gap a caller has to file (`customAxes`, issue #324, exists because one
+  was). No code change.
+
 ## [0.7.0] - Unreleased
 
 - **`./repository` exports a new `repositoryProfileValidationCoverage(value)`

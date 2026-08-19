@@ -5,6 +5,17 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - Unreleased
+
+### Documentation
+
+- **README states a consuming plane's credential-inventory loop-close
+  condition (issue #285's acceptance criterion), and links issue #326 for
+  the fuller lifecycle scope this slice does not yet claim.** Closes when
+  the declared inventory accounts for every live credential and none reads
+  `unverifiable` without an explicit opt-out; reopens on any credential
+  observed in use but never declared. No code change.
+
 ## [0.1.0] - Unreleased
 
 Renamed from `@vespeneventures/secrets`, which never published a release.
