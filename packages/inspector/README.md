@@ -405,7 +405,7 @@ and survives across CI runs on self-hosted runners.
 ## Requirements
 
 - Node 20 or newer.
-- Runtime dependencies: `@vespeneventures/controller` (`~0.3.0`) for the
+- Runtime dependencies: `@vespeneventures/controller` (`~0.4.0`) for the
   gate-result ternary, review-evidence validation, and (via its
   `./policy` subpath, the same single dependency, not a second one)
   content-addressed document verification, and — for the `./secret-scan`
