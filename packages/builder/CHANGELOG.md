@@ -5,6 +5,56 @@ All notable changes to `@vespeneventures/builder` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - Unreleased
+
+### Added
+
+- **Observation-bundle transport (#255, narrowed to the aggregation
+  transport only -- see the issue for the full scope decision):**
+  `./observation-bundle.ts` and `./observation-aggregate.ts`.
+
+  The fleet's evaluation model is inverted: each repository runs its own
+  gates in its own CI and observes its own compliance; a plane wanting a
+  fleet-wide picture reads what each repository already concluded about
+  itself rather than re-scanning it centrally. This ships the one missing
+  piece: a standard shape and fold for those self-observations, with no
+  opinion on how they get fetched or stored.
+
+  - `ObservationBundle` / `OBSERVATION_BUNDLE_SCHEMA_VERSION` -- one
+    repository's self-observation: its identity, a caller-supplied
+    `producedAt`, and one `GateResult` per gate it ran, reusing
+    `@vespeneventures/controller/gates`'s existing ternary rather than a
+    parallel result type.
+  - `writeObservationBundle` -- pure, caller-supplied data in, a serialized
+    JSON bundle out. No I/O, no clock, no network; throws on a caller's own
+    malformed input.
+  - `validateObservationBundleShape` / `parseObservationBundle` -- offline
+    structural validation of an untrusted bundle, returning findings rather
+    than throwing, so a stranger's malformed bundle becomes data to report
+    on downstream, not a crash.
+  - `aggregateObservations` -- folds N already-fetched bundles (supplied as
+    data; this package fetches nothing) into one plane-level report, one
+    status per expected repository, always present. A repository this
+    aggregation expected to hear from but did not, a bundle that fails
+    schema validation, a bundle older than the caller-supplied staleness
+    threshold, and two or more bundles claiming the same repository
+    identity are all reported `indeterminate` with a named reason -- never
+    omitted, and never read as `satisfied`. `overall` folds every
+    repository's result with this package's own `foldGateResults`, whose
+    indeterminate-beats-violated-beats-satisfied precedence is exactly what
+    keeps "2 of 5 repositories unobserved" from silently reading as "the 3
+    we heard from were clean."
+
+  **What this is not**, matching the narrowed scope: no network I/O
+  anywhere in this package (fetching bundles is the consuming plane's own
+  job), no storage opinion (a bundle can be a committed artifact, a release
+  asset, or anything else a caller's CI decides), and no scheduling or
+  polling. The broader declared-intent-vs-live-state generalization #255
+  originally proposed is `./live-state.ts`'s `liveStateSurface` contract,
+  already shipped; this is the transport for a different, narrower gap the
+  issue also named, closed on the same narrow-scope-over-guessed-generality
+  reasoning.
+
 ## [0.2.6] - Unreleased
 
 ### Changed

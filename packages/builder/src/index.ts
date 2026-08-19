@@ -112,6 +112,35 @@ export type {
   ReconcileLiveStateInput,
 } from "./live-state.js";
 
+// -- observation bundle transport (#255, narrowed) ----------------------------
+
+export {
+  OBSERVATION_BUNDLE_SCHEMA_VERSION,
+  parseObservationBundle,
+  validateObservationBundleShape,
+  writeObservationBundle,
+} from "./observation-bundle.js";
+export type {
+  InvalidObservationBundle,
+  ObservationBundle,
+  ObservationBundleGateEntry,
+  ObservationBundleRepository,
+  ParsedObservationBundle,
+  WriteObservationBundleInput,
+} from "./observation-bundle.js";
+
+export {
+  OBSERVATION_AGGREGATE_INDETERMINATE_REASONS,
+  aggregateObservations,
+} from "./observation-aggregate.js";
+export type {
+  AggregateObservationsInput,
+  AggregateObservationsResult,
+  ObservationAggregateIndeterminateReason,
+  RepositoryObservationResult,
+  RepositoryObservationStatus,
+} from "./observation-aggregate.js";
+
 // -- toolchain ----------------------------------------------------------------
 
 export {

@@ -4,8 +4,11 @@ Declared reality made actual. A runtime pin, a machine manifest, and a
 deployment target are the same statement at three altitudes — *this is what
 should exist; go and see whether it does.* This package holds the manifest
 engine, the deployment surface contract, the toolchain pin, the shared
-`liveStateSurface` reconciliation contract all three of those sit on, and the
-CI gate mechanics that reconcile any of them for real.
+`liveStateSurface` reconciliation contract all three of those sit on, the CI
+gate mechanics that reconcile any of them for real, and an observation-bundle
+transport for the fleet's own inverted evaluation model — each repository
+observes its own compliance in its own CI, and a plane aggregates what got
+published.
 
 ```bash
 npm install @vespeneventures/builder
@@ -110,6 +113,109 @@ const report = reconcileLiveState<string, string>({
 // report.result.verdict === "violated"
 // report.result.findings[0].kind === "live-differs-from-declared"
 ```
+
+## Observation-bundle transport (#255, narrowed)
+
+The fleet's evaluation model is inverted from a central scanner: each
+repository runs its own gates in its own CI and observes its own
+compliance; a plane wanting a fleet-wide picture reads what each repository
+already concluded about itself rather than re-scanning it centrally. Until
+now, those self-observations had no standard shape or transport — every
+plane that wanted one improvised its own.
+
+`#255` originally proposed generalizing that gap into a full
+declared-intent-vs-live-state framework. The owner narrowed that on
+purpose: an API without a consumer is a guess, and the reconciliation half
+of that shape already shipped as `liveStateSurface` above. What ships here
+is the transport — the one shape a repository's CI writes and a plane's CI
+reads — with everything else left for a real second consumer to motivate.
+
+**What this is not:**
+
+- No network I/O anywhere in this package. Fetching a bundle from wherever
+  a repository published it is the consuming plane's own job.
+- No storage opinion. A bundle can be a committed artifact, a release
+  asset, or anything else a caller's CI decides — the contract is the
+  shape, not where it lives.
+- No scheduling, no polling, and no further generalization of
+  `liveStateSurface`. That remains `#255`'s open remainder, filed as its
+  own follow-up issue rather than guessed at here.
+
+### Writing one repository's observation
+
+```ts
+import { writeObservationBundle } from "@vespeneventures/builder";
+
+const serialized = writeObservationBundle({
+  repository: { id: "example-org/example-app", ref: "a1b2c3d" },
+  producedAt: new Date().toISOString(), // the CALLER's clock, never this package's
+  gates: [
+    { gateId: "secret-scan", result: { verdict: "satisfied", evaluated: 12 } },
+    {
+      gateId: "release-readiness",
+      result: { verdict: "violated", findings: [{ rule: "version-not-bumped", severity: "high", message: "…" }] },
+    },
+  ],
+});
+// serialized is a JSON string -- write it wherever this repository's own CI
+// decides an observation belongs.
+```
+
+`writeObservationBundle` is pure: caller-supplied data in, a serialized
+bundle out. It never reads a clock and never touches the network or the
+filesystem — `producedAt` is the caller's own timestamp, supplied
+explicitly, exactly like `liveStateSurface`'s `declaredAt`/`liveObservedAt`
+above. Each gate's `result` reuses `@vespeneventures/controller/gates`'s
+`GateResult` ternary directly rather than a parallel shape — this package
+already depends on `controller` for it throughout.
+
+### Aggregating N repositories' observations
+
+```ts
+import { aggregateObservations } from "@vespeneventures/builder";
+
+// `bundles` is already-fetched data -- the plane's own CI did the fetching.
+// This function never fetches anything itself.
+const report = aggregateObservations({
+  expectedRepositories: ["org/repo-a", "org/repo-b", "org/repo-c"],
+  bundles: [bundleA, bundleB], // org/repo-c never showed up
+  now: new Date().toISOString(),
+  staleAfterMs: 24 * 60 * 60 * 1000, // 24h -- entirely the caller's own policy
+});
+
+report.unobservedRepositories; // ["org/repo-c"] -- named, not a footnote
+report.overall.verdict; // "indeterminate" -- an unobserved repository can never read as clean
+```
+
+A repository this aggregation expected to hear from but did not, a bundle
+that fails `validateObservationBundleShape`, a bundle older than the
+caller-supplied `staleAfterMs`, and two or more bundles claiming the same
+repository identity are all reported **`indeterminate`**, with one of four
+named reasons — never omitted from `report.repositories`, and never
+resolved by picking one and discarding the rest ("last-write-wins"):
+
+| Reason | Meaning |
+| --- | --- |
+| `unobserved-repository` | No bundle at all was received for this expected repository. |
+| `invalid-bundle-schema` | A bundle claiming this repository failed `validateObservationBundleShape`. |
+| `duplicate-repository-identity` | Two or more bundles claim the same repository. |
+| `stale-observation` | The bundle's `producedAt` is older than `staleAfterMs` relative to `now`. |
+
+`report.overall` folds every `report.repositories[].result` with this
+package's own `foldGateResults` (`@vespeneventures/controller/gates`),
+whose documented precedence — indeterminate beats violated beats satisfied
+— is exactly what keeps "2 of 5 repositories were unobserved" from
+silently reading as "the 3 we heard from were clean, so we're done."
+`report.overall.verdict` is `"satisfied"` only when every expected
+repository was cleanly, freshly, and uniquely observed and every one of its
+own gates was itself satisfied.
+
+`report.receivedCount` (bundles that passed schema validation, independent
+of whether they matched an expected repository) and
+`report.unexpectedRepositories` (repository ids present in `bundles` but
+never named in `expectedRepositories`) are reported for the same reason:
+nothing this function is handed is silently dropped from the report, even
+data that turned out not to matter for the verdict.
 
 ## Manifest engine (formerly `@vespeneventures/provisioning`)
 
@@ -428,6 +534,18 @@ package's whole design exists to keep from reading as "looks fine."
 | `LiveStateFinding` / `LiveStateSubjectReport` / `LiveStateReconciliationResult` / `LiveStateReconciliationReason` | type | One finding, one subject's report, and the underlying `GateResult` shapes |
 | `LiveStateObservation` / `LiveStateDeclarationValue` / `ReconcileLiveStateInput` | type | What `reconcileLiveState` reads |
 | `RuntimePin` / `PackageManagerPin` / `BuildOrderPin` / `ToolchainDeclaration` / `ToolchainObservation` | type | The toolchain declaration and observation shapes |
+| `OBSERVATION_BUNDLE_SCHEMA_VERSION` | constant | This contract's own schema version |
+| `writeObservationBundle(input)` | function | Pure: caller-supplied data in, a serialized `ObservationBundle` JSON string out |
+| `validateObservationBundleShape(raw)` | function | Offline structural validation of an untrusted bundle; returns `Finding[]`, never throws |
+| `parseObservationBundle(raw)` | function | Validates `raw` and narrows it to `ObservationBundle` on success, or returns findings on failure |
+| `aggregateObservations(input)` | function | Folds N already-fetched bundles into one plane-level `AggregateObservationsResult`; fetches nothing itself |
+| `OBSERVATION_AGGREGATE_INDETERMINATE_REASONS` | constant | The four named reasons a repository's aggregate status can be indeterminate for |
+| `ObservationBundle` / `ObservationBundleRepository` / `ObservationBundleGateEntry` | type | One repository's self-observation and its parts |
+| `ParsedObservationBundle` / `InvalidObservationBundle` | type | What `parseObservationBundle` returns on success and on failure |
+| `WriteObservationBundleInput` | type | What `writeObservationBundle` accepts |
+| `AggregateObservationsInput` / `AggregateObservationsResult` | type | What `aggregateObservations` accepts and returns |
+| `RepositoryObservationStatus` / `RepositoryObservationResult` | type | One expected repository's status, and the `GateResult` it carries |
+| `ObservationAggregateIndeterminateReason` | type | The four-member union `OBSERVATION_AGGREGATE_INDETERMINATE_REASONS` enumerates |
 
 `./deployment`, `./deployment/vercel`, `./deployment/render`, and `./ci` are
 separate package subpaths, documented in their own sections above.
