@@ -131,12 +131,16 @@ export type {
 
 export {
   OBSERVATION_AGGREGATE_INDETERMINATE_REASONS,
+  OBSERVATION_AGGREGATE_RESULT_INDETERMINATE_REASONS,
   aggregateObservations,
+  checkObservationAggregateFreshness,
 } from "./observation-aggregate.js";
 export type {
   AggregateObservationsInput,
   AggregateObservationsResult,
+  CheckObservationAggregateFreshnessInput,
   ObservationAggregateIndeterminateReason,
+  ObservationAggregateResultIndeterminateReason,
   RepositoryObservationResult,
   RepositoryObservationStatus,
 } from "./observation-aggregate.js";

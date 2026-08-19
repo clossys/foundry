@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.3.1] - Unreleased
 
+### Added
+
+- **An aggregate can now vouch for its own freshness, or say it can't
+  (#340).** `stale-observation` already caught one contributing bundle
+  being too old; nothing previously let the AGGREGATE'S OWN computed
+  result be checked for its own age once persisted and read later by a
+  different process — the failure a schedule-less, push-triggered
+  aggregation actually hits when a contributing repository's publisher is
+  fixed and nothing re-evaluates the aggregate to notice.
+  `AggregateObservationsResult` now carries `computedAt` (echoing `now`)
+  and `maxResultAgeMs` (echoing the new required `input.maxResultAgeMs`).
+  The new `checkObservationAggregateFreshness(input)` takes a stored
+  result's `computedAt`/`maxResultAgeMs` plus a fresh `now` supplied at
+  read time, and reports `indeterminate` with the new, distinct reason
+  `stale-aggregate-result` (`OBSERVATION_AGGREGATE_RESULT_INDETERMINATE_REASONS`)
+  the moment it can no longer vouch for that result's age — never a
+  restated `stale-observation`, which answers a different question. This
+  is a breaking change to `AggregateObservationsInput`: `maxResultAgeMs`
+  is a new required field, matching `staleAfterMs`'s existing "explicit,
+  never defaulted" discipline.
+
 ### Fixed
 
 - **An unattributed bundle now forces `aggregateObservations`'s `overall` to
