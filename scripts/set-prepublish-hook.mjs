@@ -90,10 +90,50 @@ const EXPECTED_PREPUBLISH = "node ../../scripts/check-name-collision.mjs . && np
 // colliding with that work). Excluding it here, rather than editing it
 // anyway, is deliberate: this script would otherwise report a false
 // violation the moment it merges, on a package this change was never
-// allowed to touch. Follow-up: once that branch lands, remove builder from
-// this set in the same PR that adds its prepublishOnly hook — do not let
-// this exception outlive the branch that required it.
-const TEMPORARILY_EXCLUDED = new Set(["builder"]);
+// allowed to touch.
+//
+// This is a bounded exception, not a permanent hole: it expires on its own,
+// with no follow-up commit required to retire it, the moment EITHER —
+//   1. packages/builder's own manifest version reaches BUILDER_EXPIRY_VERSION
+//      (0.4.0) — the version issue #340/PR #344 bumps builder to, and the
+//      PR that was designated to add builder's own prepublishOnly hook in
+//      the same change; or
+//   2. today is on/after BUILDER_EXPIRY_DATE, as a backstop in case that PR
+//      ships under a different version number or never lands as planned.
+// is true. Once expired, builder is no longer excluded from anything below:
+// --check fails against it exactly like any other package missing the hook,
+// and non-check mode rewrites its manifest like any other package. That
+// failure is the point — it is what forces the hook onto builder instead of
+// letting this exception rot into a silent, permanent bypass.
+const BUILDER_EXPIRY_VERSION = "0.4.0";
+const BUILDER_EXPIRY_DATE = "2026-09-19";
+
+function compareSemver(a, b) {
+  const pa = String(a ?? "0").split(".").map((n) => Number.parseInt(n, 10) || 0);
+  const pb = String(b ?? "0").split(".").map((n) => Number.parseInt(n, 10) || 0);
+  for (let i = 0; i < 3; i++) {
+    const diff = (pa[i] ?? 0) - (pb[i] ?? 0);
+    if (diff !== 0) return diff;
+  }
+  return 0;
+}
+
+function builderExceptionExpired() {
+  if (new Date() >= new Date(`${BUILDER_EXPIRY_DATE}T00:00:00Z`)) return true;
+  try {
+    const builderManifest = JSON.parse(
+      readFileSync(join(packagesDir, "builder", "package.json"), "utf8"),
+    );
+    return compareSemver(builderManifest.version, BUILDER_EXPIRY_VERSION) >= 0;
+  } catch {
+    // builder's manifest is unreadable/missing/unparseable — the version
+    // signal cannot be evaluated, so fall through to the date backstop
+    // already checked above rather than guessing.
+    return false;
+  }
+}
+
+const TEMPORARILY_EXCLUDED = builderExceptionExpired() ? new Set() : new Set(["builder"]);
 
 let packageDirs;
 try {
