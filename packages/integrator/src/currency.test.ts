@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { classifyCurrencyDistance, computeCurrencyMetric, judgeCurrency, optOutGaps, upgradeSet, type PackageCurrency } from "./currency.js";
+import { classifyCurrencyDistance, computeCurrencyMetric, judgeCurrency, optOutGaps, upgradeSet, type PackageCurrency, type CurrencySeverity, currencyVerdict, currencyVerdictToExitCode } from "./currency.js";
 import type { EntitlementDeclaration } from "./entitlement.js";
 import type { InstalledInventory } from "./inventory.js";
 import type { ReachabilityVerdict } from "./reachability.js";
@@ -298,5 +298,52 @@ describe("computeCurrencyMetric", () => {
     ];
     const metric = computeCurrencyMetric(statuses);
     expect(metric).toEqual({ entitledCount: 3, currentCount: 1, absentWithoutReasonCount: 0, currencyShare: 1 / 3 });
+  });
+});
+
+describe("currencyVerdict", () => {
+  const behind = (name: string, severity: CurrencySeverity): PackageCurrency =>
+    ({ state: "behind", name, installedVersion: "0.0.0", latestVersion: "0.0.1", severity });
+
+  it("folds patch and minor gaps to satisfied -- reported, never blocking", () => {
+    expect(currencyVerdict([behind("a", "patch"), behind("b", "minor")])).toBe("satisfied");
+  });
+
+  it("folds a major gap to violated", () => {
+    expect(currencyVerdict([behind("a", "patch"), behind("b", "major")])).toBe("violated");
+  });
+
+  it("treats an empty set and an all-current set as satisfied", () => {
+    expect(currencyVerdict([])).toBe("satisfied");
+    expect(currencyVerdict([{ state: "current", name: "a", installedVersion: "1.0.0" }])).toBe("satisfied");
+  });
+
+  // The load-bearing cases. Each of these is a package that was NOT judged
+  // current -- it was not judged at all -- so reporting satisfied would be a
+  // check reporting success over ground it never examined.
+  it.each([
+    ["indeterminate", { state: "indeterminate", name: "a", reason: "version-unparseable" }],
+    ["unreachable", { state: "unreachable", name: "a" }],
+    ["unauthenticated", { state: "unauthenticated", name: "a" }],
+    ["absent-without-reason", { state: "absent-without-reason", name: "a" }],
+  ] as const)("folds %s to indeterminate, never satisfied", (_label, judgment) => {
+    expect(currencyVerdict([judgment as PackageCurrency])).toBe("indeterminate");
+  });
+
+  it("does not let a recorded absence taint the verdict", () => {
+    expect(currencyVerdict([{ state: "absent-with-reason", name: "a", reason: "not adopted here" }])).toBe("satisfied");
+  });
+
+  // Precedence matters: a run that could not evaluate part of the set cannot
+  // honestly report the set as violated either -- that would present a partial
+  // answer as a complete one.
+  it("puts indeterminate ahead of violated when both are present", () => {
+    expect(currencyVerdict([behind("a", "major"), { state: "unreachable", name: "b" }])).toBe("indeterminate");
+  });
+
+  it("maps verdicts onto the fleet's 0/1/2 exit-code ternary", () => {
+    expect(currencyVerdictToExitCode("satisfied")).toBe(0);
+    expect(currencyVerdictToExitCode("violated")).toBe(1);
+    expect(currencyVerdictToExitCode("indeterminate")).toBe(2);
   });
 });

@@ -239,16 +239,38 @@ building a gate on top of this can never mistake "could not be evaluated" for
 as `current`, never a negative distance; this package only ever reports how
 far *behind* an installation is.
 
-This package supplies the grading; it deliberately does not supply the
-policy of which severities block a merge. A consumer folds `severity` into
-its own pass/fail contract — for example: `current`/`patch`/`minor` →
-satisfied, `major` → violated, `indeterminate` (along with `unreachable` /
-`unauthenticated`) → indeterminate, exit `2`. That fold is a handful of lines
-against `@vespeneventures/controller`'s `GateResult` ternary
-(`gateSatisfied`/`gateViolated`/`gateIndeterminate`/`foldGateResults`) — see
-that package's own docs — deliberately left to the caller rather than baked
-in here, since this package ships with **no runtime dependencies** and never
-assumes which gate contract, if any, a consuming plane uses.
+This package supplies the grading **and** the fold, because grading alone is
+only half a standard. `currencyVerdict` reduces a set of judgments to one of
+`satisfied` / `violated` / `indeterminate`, and `currencyVerdictToExitCode`
+maps that onto the `0` / `1` / `2` ternary:
+
+| judgment | verdict |
+| --- | --- |
+| `major` (including any pre-1.0 minor gap) | violated |
+| `minor`, `patch`, `current` | satisfied — reported, never blocking |
+| `absent-with-reason` | satisfied — an absence on record is a decision |
+| `indeterminate`, `unreachable`, `unauthenticated`, `absent-without-reason` | indeterminate |
+
+The last row is the load-bearing one, and `indeterminate` takes precedence
+over `violated`. A package that could not be reached, could not be
+authenticated for, or is simply missing with no recorded reason was not
+judged *current* — it was not judged at all, and folding it into `satisfied`
+would report success over ground the run never examined. By the same logic a
+run that could not evaluate part of its set must not report `violated`
+either: that presents a partial answer as a complete one.
+
+This fold ships rather than being left to each caller precisely *because* it
+is short. Five lines that are easy to get quietly wrong — forgetting that a
+pre-1.0 minor counts as major, or mapping an ungradable pair to satisfied —
+are exactly the lines worth writing once, instead of leaving every consumer
+to rediscover them and producing a fleet of gates that look identical from
+the outside and disagree underneath.
+
+Both are plain functions over this package's own types, so this package still
+ships with **no runtime dependencies**. A plane that expresses gate results
+through `@vespeneventures/controller`'s `GateResult` ternary
+(`gateSatisfied` / `gateViolated` / `gateIndeterminate` / `foldGateResults`)
+can map the verdict onto it in one step; nothing here assumes it does.
 
 `upgradeSet` and `optOutGaps` are the loop's **act** step: the first is every
 `behind` entry, each still carrying its `severity`, with what to upgrade to;

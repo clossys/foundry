@@ -269,3 +269,63 @@ export function computeCurrencyMetric(statuses: readonly PackageCurrency[]): Cur
     currencyShare: entitledCount === 0 ? 0 : currentCount / entitledCount,
   };
 }
+
+/** The three verdicts every gate in this fleet folds to, named here without depending on the gate package. */
+export type CurrencyVerdict = "satisfied" | "violated" | "indeterminate";
+
+/**
+ * Fold a set of `PackageCurrency` judgments into one verdict.
+ *
+ * This ships rather than being left to each caller on purpose. The grading in
+ * `classifyCurrencyDistance` is only half a standard: if every consumer writes
+ * its own severity-to-verdict fold, each one can independently forget that a
+ * pre-1.0 minor counts as major, or map an ungradable pair to `satisfied`, and
+ * the fleet ends up with N subtly different currency gates that all look alike
+ * from the outside. The fold is short, which is the argument for sharing it,
+ * not against -- short and easy to get quietly wrong is exactly the shape worth
+ * writing once.
+ *
+ * The mapping:
+ *   - `major` (including any pre-1.0 minor gap)      -> violated
+ *   - `minor` / `patch` / `current`                  -> satisfied, advisory or
+ *                                                       informational, reported
+ *                                                       but never blocking
+ *   - `indeterminate` / `unreachable` /
+ *     `unauthenticated` / `absent-without-reason`    -> indeterminate
+ *
+ * The last group is the load-bearing one. A package that could not be reached,
+ * could not be authenticated for, or is simply missing with no recorded reason
+ * has not been *judged current* -- it has not been judged at all, and reporting
+ * it as satisfied would be a check reporting success over ground it never
+ * examined. `absent-with-reason` is different: an absence somebody wrote down a
+ * reason for is a decision on record, so it does not taint the verdict.
+ *
+ * Precedence is indeterminate over violated: if any package could not be
+ * evaluated, the run cannot honestly say the set is violated *or* clean, and it
+ * must not present a partial answer as a complete one.
+ */
+export function currencyVerdict(judgments: readonly PackageCurrency[]): CurrencyVerdict {
+  let violated = false;
+  for (const judgment of judgments) {
+    switch (judgment.state) {
+      case "indeterminate":
+      case "unreachable":
+      case "unauthenticated":
+      case "absent-without-reason":
+        return "indeterminate";
+      case "behind":
+        if (judgment.severity === "major") violated = true;
+        break;
+      default:
+        break;
+    }
+  }
+  return violated ? "violated" : "satisfied";
+}
+
+/** Process exit code for a verdict: the fleet-wide 0/1/2 ternary, so no caller re-derives it. */
+export function currencyVerdictToExitCode(verdict: CurrencyVerdict): 0 | 1 | 2 {
+  if (verdict === "satisfied") return 0;
+  if (verdict === "violated") return 1;
+  return 2;
+}
