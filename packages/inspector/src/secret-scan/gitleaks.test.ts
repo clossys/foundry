@@ -11,6 +11,11 @@ import {
   getPlatformArch,
   getAssetName,
   downloadAndVerifyGitleaks,
+  isWellFormedSha256,
+  isKnownDegenerateSha256,
+  assertUsableSha256,
+  EMPTY_INPUT_SHA256,
+  ALL_ZERO_SHA256,
   type GitleaksBinaryOptions,
 } from "./gitleaks.js";
 
@@ -181,8 +186,13 @@ describe("secret-scan / gitleaks", () => {
         "fetch",
         vi.fn(async () => ({ ok: false, status: 404, statusText: "Not Found" })),
       );
+      // Well-formed but arbitrary: this test is about the download failing
+      // before checksum verification is reached, not about the checksum
+      // itself, so the value only needs to pass the pre-flight
+      // well-formedness/degeneracy guard rather than trip it.
+      const wellFormedButArbitrarySha256 = "a".repeat(64);
       await expect(
-        downloadAndVerifyGitleaks({ version: "8.30.1", sha256: "irrelevant", cacheDir, platform, arch }),
+        downloadAndVerifyGitleaks({ version: "8.30.1", sha256: wellFormedButArbitrarySha256, cacheDir, platform, arch }),
       ).rejects.toThrow("Failed to download gitleaks");
     });
 
@@ -198,6 +208,48 @@ describe("secret-scan / gitleaks", () => {
       const result = await downloadAndVerifyGitleaks({ version: "8.30.1", sha256: "unused", cacheDir, platform, arch });
       expect(result.verified).toBe(true);
       expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    // ----------------------------------------------- degenerate checksum rejection
+    //
+    // This is the regression this whole class of bug needs: a checksum pin
+    // that cannot possibly name a real asset must fail LOUD before this
+    // function ever attempts a real comparison — not download, not compare,
+    // not silently pass. See `assertUsableSha256` and its own header.
+    describe("rejects an unusable options.sha256 without ever calling fetch", () => {
+      const cases: ReadonlyArray<[label: string, sha256: string | undefined]> = [
+        ["the SHA-256 of empty input", EMPTY_INPUT_SHA256],
+        ["the SHA-256 of empty input, uppercase", EMPTY_INPUT_SHA256.toUpperCase()],
+        ["an all-zero digest", ALL_ZERO_SHA256],
+        ["an empty string", ""],
+        ["missing (undefined)", undefined],
+        ["too short to be a sha256", "abc123"],
+        ["the right length but not hex", "z".repeat(64)],
+      ];
+
+      it.each(cases)("rejects %s", async (_label, sha256) => {
+        const { platform, arch } = getPlatformArch();
+        const fetchMock = vi.fn();
+        vi.stubGlobal("fetch", fetchMock);
+
+        await expect(
+          downloadAndVerifyGitleaks({
+            version: "8.30.1",
+            // `GitleaksBinaryOptions.sha256` is typed `string`; a caller
+            // passing `undefined` anyway (a missing field from untyped JSON,
+            // a stripped env var, ...) is exactly the "missing" case this
+            // guard exists to catch, so it is exercised here too.
+            sha256: sha256 as string,
+            cacheDir,
+            platform,
+            arch,
+          }),
+        ).rejects.toThrow(/sha256/i);
+        expect(fetchMock).not.toHaveBeenCalled();
+        // Never cached either — a rejected pin must not leave behind
+        // anything a later call could mistake for a verified binary.
+        expect(getCachedGitleaksPath("8.30.1", cacheDir)).toBeUndefined();
+      });
     });
   });
 });
@@ -215,12 +267,26 @@ describe("secret-scan / gitleaks", () => {
 // These are cheap, hermetic, and make the specific mistake unrepeatable.
 
 describe("KNOWN_RELEASES integrity", () => {
-  const EMPTY_SHA256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
-
   it("no entry carries the digest of empty input", () => {
-    const release = resolveGitleaksRelease("8.30.1");
-    expect(release).toBeDefined();
-    expect(release?.sha256).not.toBe(EMPTY_SHA256);
+    for (const version of getKnownVersions()) {
+      expect(resolveGitleaksRelease(version)?.sha256).not.toBe(EMPTY_INPUT_SHA256);
+    }
+  });
+
+  it("no entry carries an all-zero digest", () => {
+    for (const version of getKnownVersions()) {
+      expect(resolveGitleaksRelease(version)?.sha256).not.toBe(ALL_ZERO_SHA256);
+    }
+  });
+
+  it("no entry carries a known-degenerate digest, by the same predicate the runtime guard uses", () => {
+    // Belt-and-suspenders over the two explicit checks above: this asserts
+    // the general predicate directly, so a THIRD degenerate shape added to
+    // `isKnownDegenerateSha256` in the future is caught here too, without
+    // this test needing to be told about it by name.
+    for (const version of getKnownVersions()) {
+      expect(isKnownDegenerateSha256(resolveGitleaksRelease(version)?.sha256)).toBe(false);
+    }
   });
 
   it("8.30.1 carries the checksum published by the gitleaks project for the asset beside it", () => {
@@ -233,8 +299,14 @@ describe("KNOWN_RELEASES integrity", () => {
   });
 
   it("every entry's checksum is a well-formed lowercase sha256 hex digest", () => {
-    for (const version of ["8.30.1"]) {
-      expect(resolveGitleaksRelease(version)?.sha256).toMatch(/^[0-9a-f]{64}$/);
+    // Iterates whatever `getKnownVersions()` reports, not a hardcoded list —
+    // a version added to the table later is covered automatically, rather
+    // than silently skipped until this test is remembered to be updated too.
+    expect(getKnownVersions().length).toBeGreaterThan(0);
+    for (const version of getKnownVersions()) {
+      const sha256 = resolveGitleaksRelease(version)?.sha256;
+      expect(sha256).toMatch(/^[0-9a-f]{64}$/);
+      expect(isWellFormedSha256(sha256)).toBe(true);
     }
   });
 
@@ -242,5 +314,83 @@ describe("KNOWN_RELEASES integrity", () => {
     const release = resolveGitleaksRelease("8.30.1");
     expect(release?.url).toContain(getAssetName("8.30.1", "linux", "x64"));
     expect(release?.url).toContain("/v8.30.1/");
+  });
+});
+
+// --------------------------------------------------- checksum-validity predicates
+//
+// Direct, hermetic coverage of the functions that decide whether a
+// checksum is usable at all — the mechanism `KNOWN_RELEASES` validates
+// itself against at import time, and that `downloadAndVerifyGitleaks`
+// validates a caller's `options.sha256` against before any network call.
+// This is the regression test issue #301 asked for: the empty-input digest
+// and an all-zero digest are asserted REJECTED as pin values here, directly
+// against the predicate itself, independent of any one table entry or any
+// one call site — so this exact class of mistake cannot return through a
+// NEW entry or a NEW call site either.
+
+describe("isWellFormedSha256", () => {
+  it("accepts a real, well-formed digest", () => {
+    expect(isWellFormedSha256("551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb")).toBe(true);
+  });
+
+  it("accepts the empty-input and all-zero digests — well-formed is a syntax check, not a trust check", () => {
+    expect(isWellFormedSha256(EMPTY_INPUT_SHA256)).toBe(true);
+    expect(isWellFormedSha256(ALL_ZERO_SHA256)).toBe(true);
+  });
+
+  it("rejects uppercase hex, wrong length, non-hex characters, and non-strings", () => {
+    expect(isWellFormedSha256(EMPTY_INPUT_SHA256.toUpperCase())).toBe(false);
+    expect(isWellFormedSha256("abc123")).toBe(false);
+    expect(isWellFormedSha256("z".repeat(64))).toBe(false);
+    expect(isWellFormedSha256(undefined)).toBe(false);
+    expect(isWellFormedSha256(null)).toBe(false);
+    expect(isWellFormedSha256(12345)).toBe(false);
+    expect(isWellFormedSha256("")).toBe(false);
+  });
+});
+
+describe("isKnownDegenerateSha256", () => {
+  it("rejects the SHA-256 of empty input as a pin value", () => {
+    expect(isKnownDegenerateSha256(EMPTY_INPUT_SHA256)).toBe(true);
+  });
+
+  it("rejects the SHA-256 of empty input case-insensitively", () => {
+    expect(isKnownDegenerateSha256(EMPTY_INPUT_SHA256.toUpperCase())).toBe(true);
+  });
+
+  it("rejects an all-zero digest as a pin value", () => {
+    expect(isKnownDegenerateSha256(ALL_ZERO_SHA256)).toBe(true);
+  });
+
+  it("accepts a real, non-degenerate digest", () => {
+    expect(isKnownDegenerateSha256("551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb")).toBe(false);
+  });
+
+  it("is false, not a throw, for a non-string", () => {
+    expect(isKnownDegenerateSha256(undefined)).toBe(false);
+    expect(isKnownDegenerateSha256(null)).toBe(false);
+  });
+});
+
+describe("assertUsableSha256", () => {
+  it("does not throw for a real, well-formed, non-degenerate digest", () => {
+    expect(() =>
+      assertUsableSha256("551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb", "test"),
+    ).not.toThrow();
+  });
+
+  it("throws for the SHA-256 of empty input", () => {
+    expect(() => assertUsableSha256(EMPTY_INPUT_SHA256, "test context")).toThrow(/empty input/i);
+  });
+
+  it("throws for an all-zero digest", () => {
+    expect(() => assertUsableSha256(ALL_ZERO_SHA256, "test context")).toThrow(/all-zero/i);
+  });
+
+  it("throws for a missing, empty, or malformed value, naming the caller-supplied context", () => {
+    expect(() => assertUsableSha256(undefined, "test context")).toThrow(/test context/);
+    expect(() => assertUsableSha256("", "test context")).toThrow(/test context/);
+    expect(() => assertUsableSha256("not-hex-at-all", "test context")).toThrow(/test context/);
   });
 });

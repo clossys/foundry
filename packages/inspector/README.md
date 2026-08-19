@@ -349,12 +349,17 @@ real I/O, both kept out of the judge above:
 
 | Export | What it is |
 | --- | --- |
-| `downloadAndVerifyGitleaks(options)` | Downloads the gitleaks release asset, verifies its SHA-256 checksum against `options.sha256`, extracts the binary, and caches it. Returns `{ path, version, verified }`. Throws on unknown version or checksum mismatch. |
+| `downloadAndVerifyGitleaks(options)` | Downloads the gitleaks release asset, verifies its SHA-256 checksum against `options.sha256`, extracts the binary, and caches it. Returns `{ path, version, verified }`. Throws on unknown version, an unusable `options.sha256` (see `assertUsableSha256`, checked before any network call), or checksum mismatch. |
 | `getCachedGitleaksPath(version, cacheDir?)` | Returns the cached binary path if it exists, otherwise `undefined`. |
 | `resolveGitleaksRelease(version)` | Returns this package's own recorded `GitleaksRelease` entry for a known version, or `undefined` — a lookup convenience, not the value verified against (see the export's own doc comment). |
 | `getPlatformArch()` | Returns `{ platform, arch }` for the current process. |
 | `getAssetName(version, platform, arch)` | Constructs the GitHub release asset filename for the given version/platform/arch. |
 | `getKnownVersions()` | Returns an array of built-in known release versions. |
+| `isWellFormedSha256(value)` | Type guard. `true` for exactly 64 lowercase hex characters — a syntax check, not a trust check. |
+| `isKnownDegenerateSha256(value)` | `true` for a well-formed digest that still names no real asset: the SHA-256 of empty input, or an all-zero digest. |
+| `assertUsableSha256(value, context)` | Throws (naming `context`) unless `value` is well-formed and not a known-degenerate digest. What `downloadAndVerifyGitleaks` and `KNOWN_RELEASES`'s own import-time check both use. |
+| `EMPTY_INPUT_SHA256` | The well-known SHA-256 of empty input, as a constant — for comparison, and so this exact string appears in exactly one place in this package. |
+| `ALL_ZERO_SHA256` | 64 `"0"` characters, as a constant. |
 | `attemptGitleaksScan(options)` | Runs gitleaks through `options.execute` and returns a `SecretScanObservation` built from its report. `attempted` is always `true` in what it returns. |
 | `defaultGitleaksExecutor` | A real `GitleaksExecutor` a caller may use as-is: spawns the binary, asks for a JSON report in a scratch directory, reads it back, cleans up. Not exercised by this package's own tests — see the hermetic-tests note below. |
 | `GitleaksBinaryOptions` | Type. `{ version, sha256, cacheDir?, platform?, arch? }`. |
@@ -375,6 +380,15 @@ This is a lookup convenience for `resolveGitleaksRelease`, not the value
 own `options.sha256`. See `resolveGitleaksRelease`'s doc comment for why the
 distinction matters, and revalidate this table against gitleaks' own
 published checksums before leaning on it for a real download.
+
+Every entry here is also checked, at import time, against
+`assertUsableSha256` — malformed or one of the known-degenerate digests
+(the SHA-256 of empty input, or an all-zero digest) throws immediately for
+every consumer rather than shipping quietly. That check cannot see whether
+an otherwise well-formed entry is *correct*, only whether it is the specific
+shape of placeholder that has shipped here once already; revalidating
+against gitleaks' own published checksums, by hand, before relying on this
+table remains the caller's responsibility.
 
 ### Cache location
 
