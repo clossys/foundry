@@ -1,5 +1,6 @@
 import { PREVIOUS_REPOSITORY_PROFILE_VERSION } from "./types.js";
 import type {
+  RepositoryProfileFindingRule,
   RepositoryRequirement,
   RepositoryRequirementDeclaration,
   RepositoryRequirementEvaluation,
@@ -11,6 +12,7 @@ import type {
   RepositoryRequirementsEvaluation,
   RepositoryRequirementsEvaluationInput,
 } from "./types.js";
+import { classifyRequirementId } from "./id-grammar.js";
 import { validateRepositoryProfile } from "./validate.js";
 
 type UnknownRecord = Record<string, unknown>;
@@ -18,7 +20,6 @@ type UnknownRecord = Record<string, unknown>;
 const EVALUATION_KEYS = new Set(["declarations", "observations"]);
 const DECLARATION_KEYS = new Set(["source", "requirements"]);
 const OBSERVATION_KEYS = new Set(["id", "scope", "source", "state", "value"]);
-const REQUIREMENT_ID = /^[a-z][a-z0-9]*(?:[.:-][a-z0-9]+)*$/;
 const REQUIREMENT_SCOPES = new Set<RepositoryRequirementScope>(["repository", "workspace", "machine"]);
 const OBSERVATION_STATES = new Set(["observed", "absent", "unknown"]);
 const MAX_ARRAY_ENTRIES = 10_000;
@@ -90,7 +91,7 @@ function arrayEntry(value: unknown[], index: number): unknown {
 }
 
 function finding(
-  rule: RepositoryRequirementFindingRule,
+  rule: RepositoryRequirementFindingRule | RepositoryProfileFindingRule,
   path: string,
   message: string,
 ): RepositoryRequirementFinding {
@@ -182,10 +183,11 @@ function validateObservations(value: unknown, findings: RepositoryRequirementFin
     const state = ownData(observation, "state");
     const valueField = ownData(observation, "value");
 
-    const validId = typeof id === "string" && REQUIREMENT_ID.test(id);
+    const idFinding = classifyRequirementId(id);
+    const validId = typeof id === "string" && idFinding === undefined;
     const validScope = typeof scope === "string" && REQUIREMENT_SCOPES.has(scope as RepositoryRequirementScope);
     const validSource = isSafeString(source, MAX_SOURCE_LENGTH);
-    if (!validId) findings.push(finding("observation-id", `${path}.id`, "id must be lowercase words separated by dots, hyphens, or colons."));
+    if (idFinding) findings.push(finding("observation-id", `${path}.id`, idFinding.message));
     if (!validScope) findings.push(finding("observation-scope", `${path}.scope`, "scope must be repository, workspace, or machine."));
     if (scope === "repository" && !validSource) {
       findings.push(finding("observation-source", `${path}.source`, "A repository-scoped observation must name its declaration source."));

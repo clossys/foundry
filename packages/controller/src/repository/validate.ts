@@ -11,6 +11,7 @@ import type {
   RepositoryRootEntryClassification,
   RepositoryRootEntryDisposition,
 } from "./types.js";
+import { classifyRequirementId } from "./id-grammar.js";
 
 type RecordValue = Record<string, unknown>;
 
@@ -23,7 +24,6 @@ const PRESENCE_CONSTRAINT_KEYS = new Set(["kind"]);
 const ONE_OF_CONSTRAINT_KEYS = new Set(["kind", "values"]);
 const ROOT_ENTRY_KEYS = new Set(["name", "classification", "disposition"]);
 const COMMAND_NAME = /^[a-z][a-z0-9]*(?:(?:-|:)[a-z0-9]+)*$/;
-const REQUIREMENT_ID = /^[a-z][a-z0-9]*(?:[.:-][a-z0-9]+)*$/;
 const REQUIREMENT_SCOPES = new Set<RepositoryRequirementScope>(["repository", "workspace", "machine"]);
 const ROOT_ENTRY_CLASSIFICATIONS = new Set<RepositoryRootEntryClassification>([
   "canonical",
@@ -264,13 +264,14 @@ function validateRequirementArray(value: unknown): RepositoryProfileFinding[] {
 
     const id = ownDataValue(requirement, "id")?.value;
     const scope = ownDataValue(requirement, "scope")?.value;
-    if (typeof id !== "string" || !REQUIREMENT_ID.test(id)) {
-      findings.push(finding("requirement-id", `${requirementPath}.id`, "id must be lowercase words separated by dots, hyphens, or colons."));
+    const idFinding = classifyRequirementId(id);
+    if (idFinding) {
+      findings.push(finding(idFinding.rule, `${requirementPath}.id`, idFinding.message));
     }
     if (typeof scope !== "string" || !REQUIREMENT_SCOPES.has(scope as RepositoryRequirementScope)) {
       findings.push(finding("requirement-scope", `${requirementPath}.scope`, "scope must be repository, workspace, or machine."));
     }
-    if (typeof id === "string" && REQUIREMENT_ID.test(id) && typeof scope === "string" && REQUIREMENT_SCOPES.has(scope as RepositoryRequirementScope)) {
+    if (typeof id === "string" && !idFinding && typeof scope === "string" && REQUIREMENT_SCOPES.has(scope as RepositoryRequirementScope)) {
       const identity = `${scope}\u0000${id}`;
       if (seen.has(identity)) findings.push(finding("duplicate-requirement", requirementPath, `Duplicate ${scope}-scoped requirement "${id}".`));
       else seen.add(identity);

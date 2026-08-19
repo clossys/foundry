@@ -3,13 +3,17 @@ export { evaluateRepositoryRequirements, validateRepositoryRequirementsEvaluatio
 export { evaluateRepositoryRoot, validateRepositoryRootEvaluationInput } from "./evaluate-root.js";
 export { validateRepositoryProfile } from "./validate.js";
 export {
+  CANONICAL_REPOSITORY_PROFILE_PATH,
   LEGACY_REPOSITORY_PROFILE_VERSION,
   PREVIOUS_REPOSITORY_PROFILE_VERSION,
   REPOSITORY_PROFILE_VERSION,
+  REQUIREMENT_ID_CATEGORIES,
 } from "./types.js";
 export { CliInputError, main, run } from "./cli.js";
 export type {
   RepositoryCommand,
+  RepositoryDeclarationLocationFinding,
+  RepositoryDeclarationLocationFindingRule,
   RepositoryList,
   RepositoryObservationState,
   RepositoryOneOfConstraint,
@@ -26,6 +30,7 @@ export type {
   RepositoryRequirementEvaluation,
   RepositoryRequirementFinding,
   RepositoryRequirementFindingRule,
+  RepositoryRequirementIdCategory,
   RepositoryRequirementObservation,
   RepositoryRequirementScope,
   RepositoryRequirementStatus,
@@ -42,3 +47,4 @@ export type {
   RepositoryRootFinding,
   RepositoryRootFindingRule,
 } from "./types.js";
+export type { RepositoryCheckReport } from "./cli.js";

@@ -359,6 +359,35 @@ exit code or environment value, or mutate arguments. The installed
 `repository-check` command enters through a separate executable-only wrapper;
 only an explicit command invocation reads the requested profile and reports.
 
+#### Canonical declaration location (issue #315)
+
+A consumer's declaration lives at `governance/repository-profile.json` —
+`CANONICAL_REPOSITORY_PROFILE_PATH`, exported alongside the schema version
+constants below. This is settled, not merely a convention: an aggregator has
+to know where to look, and "wherever that repository decided" defeats the
+point of packaging one evaluator for every consumer to share.
+
+Locating a declaration is `repository-check`'s job, not this subpath's — the
+pure library still performs no I/O. Run with no argument, or with a directory
+argument, and the CLI searches that root for a declaration without being told
+exactly where it is:
+
+```console
+$ repository-check                      # searches the current working directory
+$ repository-check path/to/repository   # searches an explicit repository root
+$ repository-check path/to/profile.json # validates exactly that file, no search
+```
+
+The canonical path is always checked first and, when present, is always what
+gets used — nothing found elsewhere can shadow it. When nothing is at the
+canonical path, the search continues for a declaration parked somewhere else
+(the canonical filename under another directory, or a known former filename
+under the canonical directory). A declaration found there is never reported
+the same way as no declaration at all: it produces its own
+`declaration-non-canonical-location` finding, distinct from
+`declaration-not-found`, so a repository that has a declaration in the wrong
+place is never read as a repository that declares nothing.
+
 Requirements flow one way: a repository declares what it needs, an account
 workspace discovers and aggregates those declarations, and machine bootstrap
 may use the resulting report to compose an explicit configuration. Guidance
@@ -419,8 +448,27 @@ const findings = validateRepositoryProfile(profile);
 | `requirements` | `RepositoryRequirement[]` | Ordered, dense array of unique `(scope, id)` declarations. Foundry supplies no entries. |
 | `rootEntries` | `RepositoryRootEntry[]` | The caller's exact direct-child vocabulary. Names are unique single path segments; every entry has an explicit classification and disposition. |
 
-A requirement identifier is lowercase words separated by `.`, `-`, or `:`.
-Its scope is:
+#### Requirement-id grammar (issue #316)
+
+A requirement id is exactly two dot-separated segments, `<category>.<subject>`,
+where `category` is one of `REQUIREMENT_ID_CATEGORIES` (`runtime`, `tool`,
+`dependency`) and `subject` is lowercase words joined by hyphens — for example
+`runtime.node`, `tool.git`, `tool.package-manager`, `dependency.controller`.
+
+The governing principle: **the id names the slot, the constraint names the
+value.** Two planes evaluating the same capability must arrive at the same
+id regardless of which value each currently accepts — an id that bakes in its
+own precision or answer (`runtime.node.major`, adding a granularity segment
+the constraint already owns; `package-manager.npm`, folding the concrete tool
+into what should be the category) makes that impossible: the same slot then
+reads as two unrelated requirements. `validateRepositoryProfile` and the
+requirements evaluator both reject an id shaped like that with a
+`requirement-id-value-embedded` finding rather than accepting it — the drift
+is reported, never silently re-introduced. A malformed id that isn't even
+shaped like `<category>.<subject>` (wrong characters, an empty segment, no
+category at all) is the more generic `requirement-id` finding instead.
+
+A requirement's scope is:
 
 - `repository`: resolved independently for the declaration source;
 - `workspace`: shared by every declaration in one caller-selected evaluation;
@@ -532,10 +580,14 @@ into v3 for `rootEntries`.
 | `evaluateRepositoryRequirements(value)` | function | Returns deterministic per-requirement states and findings; invalid and unknown inputs fail closed. |
 | `validateRepositoryRootEvaluationInput(value)` | function | Strictly validates an exact root vocabulary and caller-normalized direct-child observations. |
 | `evaluateRepositoryRoot(value)` | function | Returns every classified direct-child result; missing, prohibited, and unknown entries fail closed. |
-| `main(argv)` / `run()` / `CliInputError` | CLI API | Preserved importable command API. Importing it is inert; only calling it reads input, writes a report, or sets an exit code. |
+| `main(argv)` / `run()` / `CliInputError` | CLI API | Preserved importable command API. Importing it is inert; only calling it reads input, writes a report, or sets an exit code. `main`/`run` also locate a declaration (issue #315) when given no path or a directory path. |
+| `RepositoryCheckReport` | type | `repository-check`'s own `{ ok, findings }` report shape. |
+| `CANONICAL_REPOSITORY_PROFILE_PATH` | constant | `"governance/repository-profile.json"` (issue #315) — the one location a declaration lives. |
 | `REPOSITORY_PROFILE_VERSION` / `PREVIOUS_REPOSITORY_PROFILE_VERSION` / `LEGACY_REPOSITORY_PROFILE_VERSION` | constants | Current `3` plus deliberately supported `2` and `1`. |
+| `REQUIREMENT_ID_CATEGORIES` | constant | `["runtime", "tool", "dependency"]` (issue #316) — the closed requirement-id category vocabulary. |
 | `RepositoryProfileV1` / `RepositoryProfileV2` / `RepositoryProfileV3` / `RepositoryProfile` | types | Closed profile versions and their explicit union. |
 | `RepositoryRequirement` / `RepositoryRequirementConstraint` / `RepositoryRequirementScope` | types | Neutral declaration grammar. |
+| `RepositoryRequirementIdCategory` | type | One category admitted by the requirement-id grammar. |
 | `RepositoryRequirementDeclaration` / `RepositoryRequirementObservation` | types | Caller-associated declarations and caller-normalized evidence. |
 | `RepositoryRequirementsEvaluationInput` / `RepositoryRequirementsEvaluation` | types | Strict evaluator input and report. |
 | `RepositoryRequirementEvaluation` / `RepositoryRequirementStatus` | types | One requirement's resolved state. |
@@ -543,6 +595,7 @@ into v3 for `rootEntries`.
 | `RepositoryRootEvaluationInput` / `RepositoryRootEvaluation` / `RepositoryRootEvaluationStatus` | types | Strict root evaluator input and complete report. |
 | `RepositoryRootEntryEvaluation` | type | One declared or unknown direct child's result. |
 | `RepositoryProfileFinding` / `RepositoryRequirementFinding` / `RepositoryRootFinding` / `RepositoryRootFindingRule` | types | Stable structural and evaluation findings. |
+| `RepositoryDeclarationLocationFinding` / `RepositoryDeclarationLocationFindingRule` | types | `declaration-not-found` and `declaration-non-canonical-location` (issue #315) plus every `RepositoryProfileFindingRule`. |
 
 ### `./composition`: pure cross-plane effective-state resolution
 

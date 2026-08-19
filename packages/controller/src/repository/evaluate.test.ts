@@ -19,14 +19,14 @@ const independentConsumerFixture: RepositoryRequirementsEvaluationInput = {
       source: "account/repository-b",
       requirements: [
         { id: "runtime.javascript", scope: "machine", constraint: { kind: "one-of", values: ["stable"] } },
-        { id: "workspace.cache", scope: "workspace", constraint: { kind: "present" } },
+        { id: "tool.workspace-cache", scope: "workspace", constraint: { kind: "present" } },
       ],
     },
   ],
   observations: [
     { id: "runtime.javascript", scope: "machine", state: "observed", value: "stable" },
     { id: "tool.formatter", scope: "repository", source: "account/repository-a", state: "observed", value: "available" },
-    { id: "workspace.cache", scope: "workspace", state: "observed", value: "available" },
+    { id: "tool.workspace-cache", scope: "workspace", state: "observed", value: "available" },
   ],
 };
 
@@ -51,7 +51,7 @@ describe("evaluateRepositoryRequirements", () => {
           status: "satisfied",
         },
         {
-          id: "workspace.cache",
+          id: "tool.workspace-cache",
           scope: "workspace",
           declaredBy: ["account/repository-b"],
           status: "satisfied",
