@@ -91,6 +91,46 @@ describe("aggregateObservations", () => {
     expect(result.receivedCount).toBe(0);
   });
 
+  it("a bundle that cannot even be FORMATTED (BigInt schemaVersion) never crashes the whole aggregation -- one bad repository stays indeterminate, every other repository still reports", () => {
+    // Constructed directly, not via bundleFor/writeObservationBundle: JSON has no BigInt
+    // literal, so this can only arise from a caller handing in-memory data straight to
+    // aggregateObservations (exactly what its own module header says it accepts) rather
+    // than something round-tripped through JSON.parse. This is the regression for the
+    // defect where JSON.stringify(1n) inside a validation-diagnostic message threw,
+    // taking parseObservationBundle -- and therefore the ENTIRE aggregateObservations
+    // call, including every unrelated repository's result -- down with it.
+    const malformedBundle = {
+      schemaVersion: 1n,
+      repository: { id: "repo-bad" },
+      producedAt: NOW,
+      gates: [satisfiedGate("secret-scan")],
+    };
+
+    let result: ReturnType<typeof aggregateObservations>;
+    expect(() => {
+      result = aggregateObservations({
+        expectedRepositories: ["repo-a", "repo-bad", "repo-c"],
+        bundles: [bundleFor("repo-a", [satisfiedGate("secret-scan")]), malformedBundle, bundleFor("repo-c", [satisfiedGate("secret-scan")])],
+        now: NOW,
+        staleAfterMs: ONE_HOUR_MS,
+      });
+    }).not.toThrow();
+
+    const byRepository = new Map(result!.repositories.map((status) => [status.repositoryId, status]));
+    expect(byRepository.get("repo-a")?.result.verdict).toBe("satisfied");
+    expect(byRepository.get("repo-c")?.result.verdict).toBe("satisfied");
+    const bad = byRepository.get("repo-bad");
+    expect(bad?.result.verdict).toBe("indeterminate");
+    if (bad?.result.verdict === "indeterminate") {
+      expect(bad.result.reason).toBe("invalid-bundle-schema");
+      expect(bad.result.detail).toContain("1n");
+    }
+    // One indeterminate repository still makes the overall report indeterminate
+    // (fail-closed precedence) -- but it does not erase the other two repositories'
+    // real, individually-reported results.
+    expect(result!.overall.verdict).toBe("indeterminate");
+  });
+
   it("stale bundle: reported indeterminate with a legible reason, using caller-supplied now/threshold", () => {
     const twoHoursAgo = "2026-08-18T10:00:00.000Z";
     const result = aggregateObservations({

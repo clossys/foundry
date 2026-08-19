@@ -96,6 +96,80 @@ describe("validateObservationBundleShape", () => {
     expect(findings.some((finding) => finding.rule === "observation-bundle/gate-result-empty-findings")).toBe(true);
   });
 
+  it("rejects a violated gate result whose findings array is not actually an array", () => {
+    const bundle = JSON.parse(writeObservationBundle(baseInput()));
+    bundle.gates = [{ gateId: "release-readiness", result: { verdict: "violated", findings: "not-an-array" } }];
+    const findings = validateObservationBundleShape(bundle);
+    expect(findings.some((finding) => finding.rule === "observation-bundle/gate-result-empty-findings")).toBe(true);
+  });
+
+  it("rejects a violated gate result carrying a null in its findings array -- never silently typed as a Finding", () => {
+    const bundle = JSON.parse(writeObservationBundle(baseInput()));
+    bundle.gates = [{ gateId: "release-readiness", result: { verdict: "violated", findings: [null] } }];
+    const findings = validateObservationBundleShape(bundle);
+    expect(findings.some((finding) => finding.rule === "observation-bundle/gate-result-invalid-finding")).toBe(true);
+  });
+
+  it("rejects a violated gate result carrying an empty object in its findings array", () => {
+    const bundle = JSON.parse(writeObservationBundle(baseInput()));
+    bundle.gates = [{ gateId: "release-readiness", result: { verdict: "violated", findings: [{}] } }];
+    const findings = validateObservationBundleShape(bundle);
+    expect(findings.some((finding) => finding.rule === "observation-bundle/gate-result-invalid-finding")).toBe(true);
+  });
+
+  it("still flags a well-formed finding alongside a malformed one, rather than accepting the whole array on one good entry", () => {
+    const bundle = JSON.parse(writeObservationBundle(baseInput()));
+    bundle.gates = [
+      {
+        gateId: "release-readiness",
+        result: {
+          verdict: "violated",
+          findings: [{ rule: "real/rule", severity: "high", message: "a real finding" }, null],
+        },
+      },
+    ];
+    const findings = validateObservationBundleShape(bundle);
+    expect(findings.some((finding) => finding.rule === "observation-bundle/gate-result-invalid-finding")).toBe(true);
+  });
+
+  it("accepts a violated gate result whose findings are all well-formed", () => {
+    const bundle = JSON.parse(writeObservationBundle(baseInput()));
+    bundle.gates = [
+      {
+        gateId: "release-readiness",
+        result: { verdict: "violated", findings: [{ rule: "real/rule", severity: "high", message: "a real finding" }] },
+      },
+    ];
+    expect(validateObservationBundleShape(bundle)).toEqual([]);
+  });
+
+  it("never throws formatting a BigInt schemaVersion -- diagnostics must not crash validation", () => {
+    // Constructed directly, not via JSON.parse/writeObservationBundle: JSON has no BigInt literal,
+    // so this shape can only arise from a caller handing in-memory data (not wire-parsed JSON) --
+    // exactly what `aggregateObservations` accepts (see its own module header).
+    const bundle = { ...JSON.parse(writeObservationBundle(baseInput())), schemaVersion: 1n };
+    let findings: ReturnType<typeof validateObservationBundleShape>;
+    expect(() => {
+      findings = validateObservationBundleShape(bundle);
+    }).not.toThrow();
+    expect(findings!.some((finding) => finding.rule === "observation-bundle/unsupported-schema-version")).toBe(true);
+    expect(findings!.some((finding) => finding.message.includes("1n"))).toBe(true);
+  });
+
+  it("never throws formatting a BigInt in other raw-input diagnostics (evaluated, verdict)", () => {
+    const bundle = JSON.parse(writeObservationBundle(baseInput()));
+    bundle.gates = [
+      { gateId: "a", result: { verdict: "satisfied", evaluated: 2n } },
+      { gateId: "b", result: { verdict: 7n } },
+    ];
+    let findings: ReturnType<typeof validateObservationBundleShape>;
+    expect(() => {
+      findings = validateObservationBundleShape(bundle);
+    }).not.toThrow();
+    expect(findings!.some((finding) => finding.rule === "observation-bundle/gate-result-invalid-evaluated")).toBe(true);
+    expect(findings!.some((finding) => finding.rule === "observation-bundle/gate-result-unknown-verdict")).toBe(true);
+  });
+
   it("rejects an indeterminate gate result with no reason", () => {
     const bundle = JSON.parse(writeObservationBundle(baseInput()));
     bundle.gates = [{ gateId: "release-readiness", result: { verdict: "indeterminate" } }];

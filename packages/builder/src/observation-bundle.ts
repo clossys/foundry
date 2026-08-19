@@ -100,6 +100,52 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+/**
+ * Formats an arbitrary, possibly-malformed value for a "got X" diagnostic
+ * message. Never throws -- unlike bare `JSON.stringify`, which throws a
+ * `TypeError` on a top-level `BigInt` (and on any value containing one, or
+ * a circular reference). `raw` is untrusted input from a stranger's bundle
+ * by design (see the module header): a value this module cannot even
+ * FORMAT must never take down validation itself -- that would mean one
+ * malformed field crashes `validateObservationBundleShape`, which crashes
+ * `parseObservationBundle`, which crashes `aggregateObservations` for every
+ * OTHER repository in the same aggregation run, not just the malformed one.
+ */
+function describeUnknown(value: unknown): string {
+  if (typeof value === "bigint") return `${value}n`;
+  try {
+    const serialized = JSON.stringify(value);
+    return serialized === undefined ? String(value) : serialized;
+  } catch {
+    return String(value);
+  }
+}
+
+const FINDING_SEVERITIES = new Set(["high", "medium", "low"]);
+
+/**
+ * True when `value` has the runtime shape of a `Finding`
+ * (`{ rule, severity, message }`, matching `./types.ts`). A `violated`
+ * `GateResult`'s `findings` array is untrusted, transported data -- without
+ * this check, a malformed entry (`null`, `{}`, a bare string) passes the
+ * "non-empty array" test on its own, `validateObservationBundleShape`
+ * reports zero findings, and `parseObservationBundle` returns the bundle
+ * typed as a well-formed `ObservationBundle` with `null` sitting inside it
+ * as a `Finding` for every downstream consumer (starting with
+ * `./observation-aggregate.ts`'s own fold).
+ */
+function isFindingShaped(value: unknown): value is Finding {
+  return (
+    isRecord(value) &&
+    typeof value.rule === "string" &&
+    value.rule.trim() !== "" &&
+    typeof value.severity === "string" &&
+    FINDING_SEVERITIES.has(value.severity) &&
+    typeof value.message === "string" &&
+    value.message.trim() !== ""
+  );
+}
+
 /** True when `value` parses as a real instant. Mirrors this repository's own `#314` fix: a timestamp is validated by parsing, never by string comparison or shape alone. */
 function isParseableInstant(value: unknown): value is string {
   return typeof value === "string" && value.trim() !== "" && Number.isFinite(Date.parse(value));
@@ -117,7 +163,7 @@ function collectGateResultFindings(value: unknown, path: string, findings: Findi
         findings.push(
           bundleFinding(
             "observation-bundle/gate-result-invalid-evaluated",
-            `${path}.evaluated must be a positive integer when verdict is "satisfied", got ${JSON.stringify(evaluated)}.`,
+            `${path}.evaluated must be a positive integer when verdict is "satisfied", got ${describeUnknown(evaluated)}.`,
           ),
         );
       }
@@ -132,7 +178,18 @@ function collectGateResultFindings(value: unknown, path: string, findings: Findi
             `${path}.findings must be a non-empty array when verdict is "violated".`,
           ),
         );
+        return;
       }
+      gateFindings.forEach((entry: unknown, index: number) => {
+        if (!isFindingShaped(entry)) {
+          findings.push(
+            bundleFinding(
+              "observation-bundle/gate-result-invalid-finding",
+              `${path}.findings[${index}] is not a well-formed Finding ({rule, severity, message}), got ${describeUnknown(entry)}.`,
+            ),
+          );
+        }
+      });
       return;
     }
     case "indeterminate": {
@@ -151,7 +208,7 @@ function collectGateResultFindings(value: unknown, path: string, findings: Findi
       findings.push(
         bundleFinding(
           "observation-bundle/gate-result-unknown-verdict",
-          `${path}.verdict must be "satisfied", "violated", or "indeterminate", got ${JSON.stringify(value.verdict)}.`,
+          `${path}.verdict must be "satisfied", "violated", or "indeterminate", got ${describeUnknown(value.verdict)}.`,
         ),
       );
   }
@@ -177,7 +234,7 @@ export function validateObservationBundleShape(raw: unknown): readonly Finding[]
     findings.push(
       bundleFinding(
         "observation-bundle/unsupported-schema-version",
-        `"schemaVersion" must be ${JSON.stringify(OBSERVATION_BUNDLE_SCHEMA_VERSION)}, got ${JSON.stringify(raw.schemaVersion)}.`,
+        `"schemaVersion" must be ${JSON.stringify(OBSERVATION_BUNDLE_SCHEMA_VERSION)}, got ${describeUnknown(raw.schemaVersion)}.`,
       ),
     );
   }
@@ -198,7 +255,7 @@ export function validateObservationBundleShape(raw: unknown): readonly Finding[]
     findings.push(
       bundleFinding(
         "observation-bundle/produced-at-unparseable",
-        `"producedAt" must be a parseable ISO 8601 instant, got ${JSON.stringify(raw.producedAt)}.`,
+        `"producedAt" must be a parseable ISO 8601 instant, got ${describeUnknown(raw.producedAt)}.`,
       ),
     );
   }
