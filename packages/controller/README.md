@@ -739,9 +739,30 @@ preserves schema version `2` with `requirements` and no root declaration.
 newer fields silently: v1 must opt into v2 for requirements, and v2 must opt
 into v3 for `rootEntries`.
 
+Accepting all three versions means `validateRepositoryProfile` validates a
+different amount depending on which one it got: a v1 profile has no
+`requirements` or `rootEntries` fields at all, and a v2 profile has
+`requirements` but not `rootEntries`, so those checks are skipped entirely
+for older versions rather than failing. An empty `findings` array therefore
+does not by itself say whether `requirements`/`rootEntries` were genuinely
+checked and found correct, or never examined because the profile's own
+schema version predates them (issue #309). `repositoryProfileValidationCoverage(value)`
+answers that directly — same input, no re-validation, no I/O — returning
+which of those two checks actually ran:
+
+```ts
+import { repositoryProfileValidationCoverage } from "@vespeneventures/controller/repository";
+
+repositoryProfileValidationCoverage({ schemaVersion: 1, /* ... */ });
+// => { requirementsChecked: false, rootEntriesChecked: false }
+repositoryProfileValidationCoverage({ schemaVersion: 3, /* ... */ });
+// => { requirementsChecked: true, rootEntriesChecked: true }
+```
+
 | Export | Kind | Purpose |
 | --- | --- | --- |
 | `validateRepositoryProfile(value)` | function | Strictly validates v1, v2, or v3 without I/O or throwing. |
+| `repositoryProfileValidationCoverage(value)` | function | Reports which schema-version-gated checks `validateRepositoryProfile` actually ran for `value`, without re-validating it. |
 | `validateRepositoryRequirementsEvaluationInput(value)` | function | Strictly validates discovered declarations and normalized observations. |
 | `evaluateRepositoryRequirements(value)` | function | Returns deterministic per-requirement states and findings; invalid and unknown inputs fail closed. |
 | `validateRepositoryRootEvaluationInput(value)` | function | Strictly validates an exact root vocabulary and caller-normalized direct-child observations. |
@@ -767,6 +788,7 @@ into v3 for `rootEntries`.
 | `RepositoryRootEvaluationInput` / `RepositoryRootEvaluation` / `RepositoryRootEvaluationStatus` | types | Strict root evaluator input and complete report. |
 | `RepositoryRootEntryEvaluation` | type | One declared or unknown direct child's result. |
 | `RepositoryProfileFinding` / `RepositoryRequirementFinding` / `RepositoryRootFinding` / `RepositoryRootFindingRule` | types | Stable structural and evaluation findings. |
+| `RepositoryProfileValidationCoverage` | type | `{ requirementsChecked, rootEntriesChecked }` (issue #309) — `repositoryProfileValidationCoverage`'s return shape. |
 | `RepositoryDeclarationLocationFinding` / `RepositoryDeclarationLocationFindingRule` | types | `declaration-not-found` and `declaration-non-canonical-location` (issue #315) plus every `RepositoryProfileFindingRule`. |
 
 ### `./composition`: pure cross-plane effective-state resolution
