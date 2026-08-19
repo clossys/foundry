@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeCurrencyMetric, judgeCurrency, optOutGaps, upgradeSet, type PackageCurrency } from "./currency.js";
+import { classifyCurrencyDistance, computeCurrencyMetric, judgeCurrency, optOutGaps, upgradeSet, type PackageCurrency } from "./currency.js";
 import type { EntitlementDeclaration } from "./entitlement.js";
 import type { InstalledInventory } from "./inventory.js";
 import type { ReachabilityVerdict } from "./reachability.js";
@@ -16,6 +16,62 @@ function installed(packages: { name: string; installedVersion: string }[]): Inst
   return { packages: packages.map((p) => ({ name: p.name, declaredRange: "*", installedVersion: p.installedVersion })) };
 }
 
+// ---------------------------------------------------------------------------
+// classifyCurrencyDistance -- the graded-severity ternary this issue asked for
+// ---------------------------------------------------------------------------
+
+describe("classifyCurrencyDistance", () => {
+  it("grades a same-version pair as current", () => {
+    expect(classifyCurrencyDistance("1.4.2", "1.4.2")).toEqual({ kind: "graded", distance: "current" });
+  });
+
+  it("grades a patch bump (>=1.0) as patch", () => {
+    expect(classifyCurrencyDistance("1.4.2", "1.4.9")).toEqual({ kind: "graded", distance: "patch" });
+  });
+
+  it("grades a minor bump (>=1.0) as minor", () => {
+    expect(classifyCurrencyDistance("1.4.2", "1.5.0")).toEqual({ kind: "graded", distance: "minor" });
+  });
+
+  it("grades a major bump as major", () => {
+    expect(classifyCurrencyDistance("1.4.2", "2.0.0")).toEqual({ kind: "graded", distance: "major" });
+  });
+
+  it("grades a pre-1.0 patch bump (same 0.y) as patch", () => {
+    expect(classifyCurrencyDistance("0.1.2", "0.1.9")).toEqual({ kind: "graded", distance: "patch" });
+  });
+
+  it("grades a pre-1.0 MINOR bump as major -- semver permits it to break", () => {
+    expect(classifyCurrencyDistance("0.5.0", "0.7.1")).toEqual({ kind: "graded", distance: "major" });
+  });
+
+  it("grades crossing 0.x -> 1.0.0 as major", () => {
+    expect(classifyCurrencyDistance("0.9.0", "1.0.0")).toEqual({ kind: "graded", distance: "major" });
+  });
+
+  it("grades an installed version ahead of latest as current, never behind", () => {
+    expect(classifyCurrencyDistance("2.0.0", "1.9.0")).toEqual({ kind: "graded", distance: "current" });
+    expect(classifyCurrencyDistance("0.7.1", "0.5.0")).toEqual({ kind: "graded", distance: "current" });
+    expect(classifyCurrencyDistance("1.4.9", "1.4.2")).toEqual({ kind: "graded", distance: "current" });
+  });
+
+  it("is indeterminate, never guessed, for an unparseable version on either side", () => {
+    expect(classifyCurrencyDistance("not-a-version", "1.0.0")).toEqual({ kind: "indeterminate", reason: "version-unparseable" });
+    expect(classifyCurrencyDistance("1.0.0", "also-not-a-version")).toEqual({ kind: "indeterminate", reason: "version-unparseable" });
+    expect(classifyCurrencyDistance("1.0", "1.0.0")).toEqual({ kind: "indeterminate", reason: "version-unparseable" });
+  });
+
+  it("is indeterminate, never guessed, when either side carries a prerelease identifier", () => {
+    expect(classifyCurrencyDistance("1.0.0-beta.1", "1.0.0")).toEqual({ kind: "indeterminate", reason: "version-not-comparable" });
+    expect(classifyCurrencyDistance("1.0.0", "1.1.0-rc.1")).toEqual({ kind: "indeterminate", reason: "version-not-comparable" });
+    expect(classifyCurrencyDistance("1.0.0-alpha", "1.0.0-beta")).toEqual({ kind: "indeterminate", reason: "version-not-comparable" });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// judgeCurrency
+// ---------------------------------------------------------------------------
+
 describe("judgeCurrency", () => {
   it("reports current when the installed version is the latest known", () => {
     const results = judgeCurrency({
@@ -26,13 +82,76 @@ describe("judgeCurrency", () => {
     expect(results).toEqual([{ state: "current", name: "a", installedVersion: "1.2.0" }]);
   });
 
-  it("reports behind when the installed version trails the latest known", () => {
+  it("reports current, not behind, when the installed version is ahead of latest", () => {
+    const results = judgeCurrency({
+      declaration: declaration(["a"]),
+      installed: installed([{ name: "a", installedVersion: "1.3.0" }]),
+      reachability: new Map<string, ReachabilityVerdict>([["a", { kind: "known", latestVersion: "1.2.0" }]]),
+    });
+    expect(results).toEqual([{ state: "current", name: "a", installedVersion: "1.3.0" }]);
+  });
+
+  it("reports behind, graded patch, for a patch-only gap at >=1.0", () => {
+    const results = judgeCurrency({
+      declaration: declaration(["a"]),
+      installed: installed([{ name: "a", installedVersion: "1.0.0" }]),
+      reachability: new Map<string, ReachabilityVerdict>([["a", { kind: "known", latestVersion: "1.0.4" }]]),
+    });
+    expect(results).toEqual([{ state: "behind", name: "a", installedVersion: "1.0.0", latestVersion: "1.0.4", severity: "patch" }]);
+  });
+
+  it("reports behind, graded minor, for a minor gap at >=1.0", () => {
     const results = judgeCurrency({
       declaration: declaration(["a"]),
       installed: installed([{ name: "a", installedVersion: "1.0.0" }]),
       reachability: new Map<string, ReachabilityVerdict>([["a", { kind: "known", latestVersion: "1.2.0" }]]),
     });
-    expect(results).toEqual([{ state: "behind", name: "a", installedVersion: "1.0.0", latestVersion: "1.2.0" }]);
+    expect(results).toEqual([{ state: "behind", name: "a", installedVersion: "1.0.0", latestVersion: "1.2.0", severity: "minor" }]);
+  });
+
+  it("reports behind, graded major, for a major gap", () => {
+    const results = judgeCurrency({
+      declaration: declaration(["a"]),
+      installed: installed([{ name: "a", installedVersion: "1.0.0" }]),
+      reachability: new Map<string, ReachabilityVerdict>([["a", { kind: "known", latestVersion: "2.0.0" }]]),
+    });
+    expect(results).toEqual([{ state: "behind", name: "a", installedVersion: "1.0.0", latestVersion: "2.0.0", severity: "major" }]);
+  });
+
+  it("reports behind, graded major, for a pre-1.0 minor gap -- the case this issue exists to fix", () => {
+    const results = judgeCurrency({
+      declaration: declaration(["a"]),
+      installed: installed([{ name: "a", installedVersion: "0.6.0" }]),
+      reachability: new Map<string, ReachabilityVerdict>([["a", { kind: "known", latestVersion: "0.7.0" }]]),
+    });
+    expect(results).toEqual([{ state: "behind", name: "a", installedVersion: "0.6.0", latestVersion: "0.7.0", severity: "major" }]);
+  });
+
+  it("reports indeterminate, never a guessed current or behind, for an unparseable installed version", () => {
+    const results = judgeCurrency({
+      declaration: declaration(["a"]),
+      installed: installed([{ name: "a", installedVersion: "not-a-version" }]),
+      reachability: new Map<string, ReachabilityVerdict>([["a", { kind: "known", latestVersion: "1.0.0" }]]),
+    });
+    expect(results).toEqual([{ state: "indeterminate", name: "a", reason: "version-unparseable" }]);
+  });
+
+  it("reports indeterminate, never a guessed current or behind, for an unparseable latest version", () => {
+    const results = judgeCurrency({
+      declaration: declaration(["a"]),
+      installed: installed([{ name: "a", installedVersion: "1.0.0" }]),
+      reachability: new Map<string, ReachabilityVerdict>([["a", { kind: "known", latestVersion: "not-a-version" }]]),
+    });
+    expect(results).toEqual([{ state: "indeterminate", name: "a", reason: "version-unparseable" }]);
+  });
+
+  it("reports indeterminate for a prerelease latest version, never folding it into current or behind", () => {
+    const results = judgeCurrency({
+      declaration: declaration(["a"]),
+      installed: installed([{ name: "a", installedVersion: "1.0.0" }]),
+      reachability: new Map<string, ReachabilityVerdict>([["a", { kind: "known", latestVersion: "1.1.0-rc.1" }]]),
+    });
+    expect(results).toEqual([{ state: "indeterminate", name: "a", reason: "version-not-comparable" }]);
   });
 
   it("distinguishes absent-with-reason from absent-without-reason -- the whole point", () => {
@@ -91,20 +210,59 @@ describe("judgeCurrency", () => {
     });
     expect(results.map((r) => r.name)).toEqual(["a", "b", "c"]);
   });
+
+  it("reports #339's own observed example: two patches stay informational, the pre-1.0 minor gap grades major, not advisory", () => {
+    // #339's own table: two straightforward patch gaps (0.3.1 -> 0.3.2,
+    // 0.1.8 -> 0.1.9) plus a 0.6.0 -> 0.7.0 gap that reads as "minor" by the
+    // digits alone. The issue's own refinement is explicit that pre-1.0 must
+    // NOT be graded that leniently -- semver permits a 0.y minor bump to
+    // break, so this package grades it the same as a major bump, not as an
+    // advisory. A consumer folding patch/minor -> satisfied, major ->
+    // violated over these three gets exactly two informational findings and
+    // one blocking one, never three uniformly-blocking findings and never a
+    // false-advisory silently let through.
+    const results = judgeCurrency({
+      declaration: declaration(["a", "b", "c"]),
+      installed: installed([
+        { name: "a", installedVersion: "0.3.1" },
+        { name: "b", installedVersion: "0.1.8" },
+        { name: "c", installedVersion: "0.6.0" },
+      ]),
+      reachability: new Map<string, ReachabilityVerdict>([
+        ["a", { kind: "known", latestVersion: "0.3.2" }],
+        ["b", { kind: "known", latestVersion: "0.1.9" }],
+        ["c", { kind: "known", latestVersion: "0.7.0" }],
+      ]),
+    });
+    expect(results).toEqual([
+      { state: "behind", name: "a", installedVersion: "0.3.1", latestVersion: "0.3.2", severity: "patch" },
+      { state: "behind", name: "b", installedVersion: "0.1.8", latestVersion: "0.1.9", severity: "patch" },
+      { state: "behind", name: "c", installedVersion: "0.6.0", latestVersion: "0.7.0", severity: "major" },
+    ]);
+  });
 });
+
+// ---------------------------------------------------------------------------
+// upgradeSet and optOutGaps
+// ---------------------------------------------------------------------------
 
 describe("upgradeSet and optOutGaps", () => {
   const statuses: PackageCurrency[] = [
     { state: "current", name: "a", installedVersion: "1.0.0" },
-    { state: "behind", name: "b", installedVersion: "1.0.0", latestVersion: "2.0.0" },
+    { state: "behind", name: "b", installedVersion: "1.0.0", latestVersion: "2.0.0", severity: "major" },
+    { state: "behind", name: "g", installedVersion: "1.0.0", latestVersion: "1.0.4", severity: "patch" },
     { state: "absent-with-reason", name: "c", reason: "x" },
     { state: "absent-without-reason", name: "d" },
     { state: "unreachable", name: "e" },
     { state: "unauthenticated", name: "f" },
+    { state: "indeterminate", name: "h", reason: "version-unparseable" },
   ];
 
-  it("upgradeSet contains exactly the behind entries", () => {
-    expect(upgradeSet(statuses)).toEqual([{ name: "b", installedVersion: "1.0.0", latestVersion: "2.0.0" }]);
+  it("upgradeSet contains exactly the behind entries, each carrying its graded severity", () => {
+    expect(upgradeSet(statuses)).toEqual([
+      { name: "b", installedVersion: "1.0.0", latestVersion: "2.0.0", severity: "major" },
+      { name: "g", installedVersion: "1.0.0", latestVersion: "1.0.4", severity: "patch" },
+    ]);
   });
 
   it("optOutGaps contains exactly the absent-without-reason names", () => {
@@ -112,12 +270,16 @@ describe("upgradeSet and optOutGaps", () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// computeCurrencyMetric
+// ---------------------------------------------------------------------------
+
 describe("computeCurrencyMetric", () => {
   it("computes the share of entitled packages current, and reports the opt-out-gap count separately", () => {
     const statuses: PackageCurrency[] = [
       { state: "current", name: "a", installedVersion: "1.0.0" },
       { state: "current", name: "b", installedVersion: "1.0.0" },
-      { state: "behind", name: "c", installedVersion: "1.0.0", latestVersion: "2.0.0" },
+      { state: "behind", name: "c", installedVersion: "1.0.0", latestVersion: "2.0.0", severity: "major" },
       { state: "absent-without-reason", name: "d" },
     ];
     const metric = computeCurrencyMetric(statuses);
@@ -126,5 +288,15 @@ describe("computeCurrencyMetric", () => {
 
   it("reports a zero share for zero entitlements, not a division-by-zero NaN", () => {
     expect(computeCurrencyMetric([]).currencyShare).toBe(0);
+  });
+
+  it("does not count an indeterminate result as current or as an opt-out gap", () => {
+    const statuses: PackageCurrency[] = [
+      { state: "current", name: "a", installedVersion: "1.0.0" },
+      { state: "indeterminate", name: "b", reason: "version-unparseable" },
+      { state: "indeterminate", name: "c", reason: "version-not-comparable" },
+    ];
+    const metric = computeCurrencyMetric(statuses);
+    expect(metric).toEqual({ entitledCount: 3, currentCount: 1, absentWithoutReasonCount: 0, currencyShare: 1 / 3 });
   });
 });

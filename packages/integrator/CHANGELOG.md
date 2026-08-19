@@ -5,7 +5,30 @@ All notable changes to `@vespeneventures/integrator` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.1] - Unreleased
+## [0.2.0] - Unreleased
+
+### Added
+
+- **Breaking: `judgeCurrency`'s `behind` state is now graded by semver distance
+  instead of being one undifferentiated "drift" finding.** `behind` carries
+  a new `severity: "patch" | "minor" | "major"`, computed by the new
+  `classifyCurrencyDistance(installedVersion, latestVersion)`: a patch gap
+  is `"patch"`, a minor gap is `"minor"`, a major gap is `"major"` — and a
+  pre-1.0 (`0.y.z`) minor gap also grades `"major"`, since semver explicitly
+  permits a `0.y` minor bump to break. `upgradeSet`'s entries carry the same
+  `severity`. A version this package cannot safely grade at all —
+  unparseable, or carrying a prerelease identifier on either side — is a new
+  `indeterminate` state (`PackageCurrency` now has seven states, not six),
+  with a machine-readable `reason` (`"version-unparseable"` or
+  `"version-not-comparable"`); it is never folded into `current` or
+  `behind`. This closes the gap a consuming plane previously had no choice
+  but to hand-roll its own version of: uniformly treating every currency
+  finding as equally blocking trains a consumer to read a currency gate's
+  red as "go bump something" rather than "something is wrong," and buries
+  the one distance semver actually promises may break (major, including
+  pre-1.0 minor) under the noise of routine patches. This package grades;
+  it does not decide policy — folding `severity` into a pass/fail gate
+  contract remains the caller's own decision, same as always.
 
 ### Documentation
 

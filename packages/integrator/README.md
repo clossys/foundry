@@ -43,7 +43,8 @@ The loop this closes: **aim** — a plane holds exactly the catalogue it is
 entitled to, current. **sense** — read the plane's own manifest, lockfile, and
 the registry it authenticates against. **judge** — `current` / `behind` /
 `absent-with-reason` / `absent-without-reason` / `unreachable` /
-`unauthenticated`. **act** — emit the upgrade set and the opt-out gaps.
+`unauthenticated` / `indeterminate`. **act** — emit the upgrade set and the
+opt-out gaps.
 **learn** — a package many planes opt out of is a catalogue problem, and the
 recorded opt-out reasons are the evidence. The loop closes when
 `currencyShare` is `1` and `absentWithoutReasonCount` is `0`: every
@@ -193,18 +194,19 @@ distinction being protected.
 ## Version reconciler
 
 `judgeCurrency` combines the entitlement declaration, the installed
-inventory, and the resolved reachability verdicts into exactly the six
+inventory, and the resolved reachability verdicts into exactly the seven
 required states, and reports every entitlement — it never stops at the
 first problem, because a drift report is only useful complete.
 
 `PackageCurrency` is a discriminated union, one variant per state, each
 carrying only the fields that state can truthfully report: `behind` is the
-only variant with a `latestVersion`, `absent-with-reason` is the only one
-with a `reason`. A plain `{ state: string, ...everythingOptional }` shape
-would let a bug construct `{ state: "current", reason: "..." }` and have it
-silently type-check; this shape does not allow that object literal to exist
-at all, which is what "enforced in the types" means here rather than only in
-review.
+only variant with a `latestVersion` (and the `severity` that grades it),
+`absent-with-reason` is the only one with a `reason` (and `indeterminate`
+has its own, differently-typed `reason`). A plain
+`{ state: string, ...everythingOptional }` shape would let a bug construct
+`{ state: "current", reason: "..." }` and have it silently type-check; this
+shape does not allow that object literal to exist at all, which is what
+"enforced in the types" means here rather than only in review.
 
 Absence is judged **before** reachability is even consulted: whether a
 package is installed, and whether its absence has a recorded reason, are both
@@ -212,9 +214,45 @@ facts a plane already holds about itself offline. Only `current` vs `behind`
 needs the registry, which is exactly the shape the blindness rule demands —
 the parts of this judgment that don't need the network don't touch it.
 
+**Graded severity.** A `behind` result is not one undifferentiated "drift"
+finding — every consumer that hand-rolled its own currency gate against this
+package's `current`/`behind` ternary was forced to treat a same-day patch and
+a breaking major bump identically, which is exactly the coupling that made a
+routine patch anywhere a fleet-wide merge blocker on unrelated work. `behind`
+now carries a `severity`, computed by `classifyCurrencyDistance` from
+ordinary semver meaning:
+
+| Distance | `severity` | Why |
+| --- | --- | --- |
+| Patch (`x.y.Z`, `major >= 1`) | `"patch"` | No interface change, by semver contract. |
+| Minor (`x.Y.z`, `major >= 1`) | `"minor"` | Backward-compatible addition. |
+| Major (`X.y.z`) | `"major"` | The one distance semver actually promises may break. |
+| Pre-1.0 minor (`0.Y.z`) | `"major"` | Semver explicitly permits a `0.y` minor bump to break — there is no "safe" minor bump below `1.0.0`. |
+
+A version this package cannot safely grade at all — unparseable, or carrying
+a prerelease identifier on either side — is never folded into `current` or
+`behind`. It is its own `indeterminate` state, with a machine-readable
+`reason` (`"version-unparseable"` or `"version-not-comparable"`), so a caller
+building a gate on top of this can never mistake "could not be evaluated" for
+"evaluated and fine". An installed version ahead of the registry's own
+`latest` — a pinned prerelease channel, or a lagging registry view — grades
+as `current`, never a negative distance; this package only ever reports how
+far *behind* an installation is.
+
+This package supplies the grading; it deliberately does not supply the
+policy of which severities block a merge. A consumer folds `severity` into
+its own pass/fail contract — for example: `current`/`patch`/`minor` →
+satisfied, `major` → violated, `indeterminate` (along with `unreachable` /
+`unauthenticated`) → indeterminate, exit `2`. That fold is a handful of lines
+against `@vespeneventures/controller`'s `GateResult` ternary
+(`gateSatisfied`/`gateViolated`/`gateIndeterminate`/`foldGateResults`) — see
+that package's own docs — deliberately left to the caller rather than baked
+in here, since this package ships with **no runtime dependencies** and never
+assumes which gate contract, if any, a consuming plane uses.
+
 `upgradeSet` and `optOutGaps` are the loop's **act** step: the first is every
-`behind` entry with what to upgrade to, the second is every entitled,
-absent, unexplained package name.
+`behind` entry, each still carrying its `severity`, with what to upgrade to;
+the second is every entitled, absent, unexplained package name.
 
 ## Admission contract
 
@@ -243,8 +281,9 @@ failing two rules reports both.
 | `createNodeInventoryFileSystem()` | function | The default `InventoryFileSystemPort`, backed by `node:fs` |
 | `probeReachability(names, options)` | function | Probes an injected `Transport` for each name's latest published version. Never touches a real network itself |
 | `resolveReachability(outcomes)` | function | Resolves raw probe outcomes into `known` / `unauthenticated` / `unreachable`, applying the aggregate 404 rule |
-| `judgeCurrency(input)` | function | Combines entitlement, inventory, and reachability into `PackageCurrency[]` — one of the six required states per entitlement |
-| `upgradeSet(statuses)` | function | Every `behind` entry, as `{ name, installedVersion, latestVersion }` |
+| `judgeCurrency(input)` | function | Combines entitlement, inventory, and reachability into `PackageCurrency[]` — one of the seven required states per entitlement |
+| `classifyCurrencyDistance(installedVersion, latestVersion)` | function | Grades a version pair by semver distance: `current` / `patch` / `minor` / `major` (pre-1.0 minor counts as `major`), or `indeterminate` with a reason. Never throws |
+| `upgradeSet(statuses)` | function | Every `behind` entry, as `{ name, installedVersion, latestVersion, severity }` |
 | `optOutGaps(statuses)` | function | Every `absent-without-reason` package name |
 | `computeCurrencyMetric(statuses)` | function | This package's stated metric: `currencyShare`, `entitledCount`, `currentCount`, `absentWithoutReasonCount` |
 | `loadAdmissionContract(raw)` | function | Validates a parsed admission contract offline. Rejects an unknown rule kind, a duplicate rule, or an unparseable `minimum-version` floor |
@@ -255,7 +294,8 @@ failing two rules reports both.
 | `EntitlementEntry` / `OptOutEntry` / `EntitlementDeclaration` | types | The entitlement schema |
 | `InventoryFileSystemPort` / `InventorySourceOptions` / `InstalledPackage` / `InstalledInventory` | types | The installed-inventory reader's contracts |
 | `Transport` / `ProbeOutcome` / `ReachabilityProbeOptions` / `ReachabilityVerdict` | types | The reachability probe's contracts |
-| `PackageCurrency` / `JudgeCurrencyInput` / `UpgradeSetEntry` / `CurrencyMetric` | types | The version reconciler's contracts, including the six required states |
+| `PackageCurrency` / `JudgeCurrencyInput` / `UpgradeSetEntry` / `CurrencyMetric` | types | The version reconciler's contracts, including the seven required states |
+| `CurrencySeverity` / `CurrencyDistance` / `CurrencyIndeterminateReason` / `ClassifyCurrencyDistanceResult` | types | The graded-severity contract: `"patch" \| "minor" \| "major"`, plus `"current"`, plus the two indeterminate reasons |
 | `AdmissionRule` / `AdmissionContract` / `AdmissionCandidate` / `AdmissionContext` / `AdmissionFinding` | types | The admission contract's schema |
 | `ParsedVersion` | type | `{ major, minor, patch, prerelease }` |
 | `IntegratorErrorCode` | type | Stable error-code union for `IntegratorValidationError` |
