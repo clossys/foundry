@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -23,6 +23,21 @@ function writeProfile(name: string, value: unknown): string {
   return path;
 }
 
+function writeProfileUnder(root: string, relativePath: string, value: unknown): string {
+  const path = join(root, ...relativePath.split("/"));
+  mkdirSync(join(path, ".."), { recursive: true });
+  writeFileSync(path, JSON.stringify(value));
+  return path;
+}
+
+function report(): { ok: boolean; findings: Array<{ rule: string; path: string; message: string }> } {
+  const calls = (console.log as ReturnType<typeof vi.fn>).mock.calls;
+  return JSON.parse(calls[calls.length - 1]?.[0] as string) as {
+    ok: boolean;
+    findings: Array<{ rule: string; path: string; message: string }>;
+  };
+}
+
 const validProfile = {
   schemaVersion: 1,
   defaultBranch: "main",
@@ -31,28 +46,45 @@ const validProfile = {
 };
 
 describe("repository-check arguments", () => {
-  it("prints help and returns 0 without requiring a profile", () => {
+  it("prints help and returns 0 without requiring a path", () => {
     expect(main(["--help"])).toBe(0);
     expect(console.log).toHaveBeenCalledWith(expect.stringContaining("Usage: repository-check"));
   });
 
-  it("requires exactly one profile file and rejects unknown options", () => {
-    expect(() => main([])).toThrow(CliInputError);
+  it("accepts at most one path argument and rejects unknown options", () => {
     expect(() => main(["--help", "profile.json"])).toThrow(CliInputError);
     expect(() => main(["--unknown"])).toThrow(CliInputError);
     expect(() => main(["one.json", "two.json"])).toThrow(CliInputError);
   });
 
-  it("maps missing and non-file paths to input errors", () => {
+  it("maps a missing explicit path to an input error", () => {
     expect(() => main([join(directory, "missing.json")])).toThrow(CliInputError);
+  });
+
+  it("treats malformed JSON at an explicit file path as unable to run", () => {
+    const path = join(directory, "malformed.json");
+    writeFileSync(path, "{ not JSON");
+    expect(() => main([path])).toThrow(CliInputError);
+  });
+
+  it("treats malformed JSON at a located canonical path as unable to run", () => {
+    const path = join(directory, "governance", "repository-profile.json");
+    mkdirSync(join(directory, "governance"), { recursive: true });
+    writeFileSync(path, "{ not JSON");
     expect(() => main([directory])).toThrow(CliInputError);
   });
 });
 
-describe("repository-check reports", () => {
-  it("prints a deterministic clean JSON report and returns 0", () => {
+describe("repository-check with an explicit file argument", () => {
+  it("validates exactly that file with no location search, and prints a clean report", () => {
     expect(main([writeProfile("valid.json", validProfile)])).toBe(0);
-    expect(console.log).toHaveBeenCalledWith(JSON.stringify({ ok: true, findings: [] }, null, 2));
+    expect(report()).toEqual({ ok: true, findings: [] });
+  });
+
+  it("still validates a file living outside governance/, since an explicit file bypasses discovery entirely", () => {
+    const path = writeProfileUnder(directory, "config/foundry/repository-profile.json", validProfile);
+    expect(main([path])).toBe(0);
+    expect(report()).toEqual({ ok: true, findings: [] });
   });
 
   it("prints ordered validation findings and returns 1", () => {
@@ -66,22 +98,91 @@ describe("repository-check reports", () => {
     });
 
     expect(main([profile])).toBe(1);
-    const report = JSON.parse((console.log as ReturnType<typeof vi.fn>).mock.calls[0]?.[0] as string) as {
-      ok: boolean;
-      findings: Array<{ rule: string }>;
-    };
-    expect(report.ok).toBe(false);
-    expect(report.findings.map((finding) => finding.rule)).toEqual([
+    expect(report().ok).toBe(false);
+    expect(report().findings.map((finding) => finding.rule)).toEqual([
       "schema-version",
       "default-branch",
       "commands-shape",
       "protected-paths-shape",
     ]);
   });
+});
 
-  it("treats malformed JSON as unable to run", () => {
-    const path = join(directory, "malformed.json");
-    writeFileSync(path, "{ not JSON");
-    expect(() => main([path])).toThrow(CliInputError);
+describe("repository-check declaration discovery (issue #315)", () => {
+  it("given a repository root, locates and validates the canonical path with no location finding", () => {
+    writeProfileUnder(directory, "governance/repository-profile.json", validProfile);
+    expect(main([directory])).toBe(0);
+    expect(report()).toEqual({ ok: true, findings: [] });
+  });
+
+  it("reports no declaration as a distinct finding, not a thrown error, and returns 1", () => {
+    expect(main([directory])).toBe(1);
+    expect(report()).toEqual({
+      ok: false,
+      findings: [{
+        rule: "declaration-not-found",
+        severity: "error",
+        path: "$",
+        message: expect.stringContaining("governance/repository-profile.json"),
+      }],
+    });
+  });
+
+  it("reports a declaration at a non-canonical directory as a distinct finding, never as not-found", () => {
+    writeProfileUnder(directory, "config/foundry/repository-profile.json", validProfile);
+    expect(main([directory])).toBe(1);
+    const found = report();
+    expect(found.ok).toBe(false);
+    expect(found.findings).toHaveLength(1);
+    expect(found.findings[0]).toMatchObject({
+      rule: "declaration-non-canonical-location",
+      severity: "error",
+    });
+    expect(found.findings[0]?.message).toContain("config/foundry/repository-profile.json");
+    expect(found.findings[0]?.message).toContain("governance/repository-profile.json");
+  });
+
+  it("reports a declaration under the canonical directory but a different filename as non-canonical too", () => {
+    writeProfileUnder(directory, "governance/repository-declaration.json", validProfile);
+    expect(main([directory])).toBe(1);
+    expect(report().findings[0]?.rule).toBe("declaration-non-canonical-location");
+  });
+
+  it("combines the location finding with the declaration's own content findings", () => {
+    writeProfileUnder(directory, "config/foundry/repository-profile.json", {
+      schemaVersion: 4,
+      defaultBranch: "main",
+      commands: [],
+      protectedPaths: [],
+    });
+    expect(main([directory])).toBe(1);
+    expect(report().findings.map((finding) => finding.rule)).toEqual([
+      "declaration-non-canonical-location",
+      "schema-version",
+      "requirements-shape",
+      "root-entries-shape",
+    ]);
+  });
+
+  it("never lets a non-canonical declaration shadow a canonical one", () => {
+    writeProfileUnder(directory, "governance/repository-profile.json", validProfile);
+    writeProfileUnder(directory, "config/foundry/repository-profile.json", validProfile);
+    expect(main([directory])).toBe(0);
+    expect(report()).toEqual({ ok: true, findings: [] });
+  });
+
+  it("defaults to the current working directory when no path argument is given", () => {
+    const originalCwd = process.cwd();
+    try {
+      process.chdir(directory);
+      expect(main([])).toBe(1);
+      expect(report().findings[0]?.rule).toBe("declaration-not-found");
+
+      writeProfileUnder(directory, "governance/repository-profile.json", validProfile);
+      expect(main([])).toBe(0);
+      expect(report()).toEqual({ ok: true, findings: [] });
+    } finally {
+      process.chdir(originalCwd);
+    }
   });
 });

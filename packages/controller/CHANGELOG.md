@@ -5,7 +5,46 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.3.1] - Unreleased
+## [0.4.0] - Unreleased
+
+### Added
+
+- **`repository-check` (`./repository`) now locates a declaration without
+  being told where it is (#315).** `governance/repository-profile.json` is
+  the settled canonical location, exported as
+  `CANONICAL_REPOSITORY_PROFILE_PATH`. Given no argument, or a directory
+  argument, the CLI searches that root for a declaration; the canonical path
+  is always checked first and, when present, is always what gets used — a
+  file anywhere else never shadows it. A declaration found somewhere else
+  (the canonical filename under a different directory, or the one known
+  former filename, `repository-declaration.json`, under the canonical
+  directory) is reported through its own `declaration-non-canonical-location`
+  finding, and no declaration anywhere is `declaration-not-found` — the two
+  are never conflated, so a repository that has a declaration in the wrong
+  place is never read as a repository that declares nothing. Passing a file
+  path directly still validates exactly that file, with no search at all.
+  The pure `/repository` evaluators remain zero-I/O; discovery lives only in
+  the CLI, which already owned this package's only I/O.
+- **The requirement-id grammar is now closed and two-segment (#316):
+  `<category>.<subject>`, with `category` one of `runtime`, `tool`,
+  `dependency` (exported as `REQUIREMENT_ID_CATEGORIES`).** The governing
+  principle: the id names the slot, the constraint names the value. An id
+  that instead embeds its own value or precision — an extra segment
+  (`runtime.node.major`) or a concrete answer folded into the category
+  (`package-manager.npm`) — is now reported as a `requirement-id-value-embedded`
+  finding rather than accepted, in `validateRepositoryProfile` and in the
+  requirements evaluator's observation ids alike, so this drift cannot
+  silently recur. An id that isn't shaped like `<category>.<subject>` at all
+  remains the more generic `requirement-id` finding.
+
+### Changed
+
+- **Breaking: `repository-check`'s positional argument is now optional, and
+  a directory argument no longer errors.** Previously a required exact
+  profile-file path; a missing argument or a directory argument each threw
+  `CliInputError` (exit 2). Both are now valid, and both start the discovery
+  described above instead of failing to run — see Added, above. An explicit
+  *file* path continues to validate exactly that file exactly as before.
 
 ### Fixed
 

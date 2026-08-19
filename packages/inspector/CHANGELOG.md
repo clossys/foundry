@@ -5,7 +5,7 @@ All notable changes to `@vespeneventures/inspector` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.1.4] - Unreleased
+## [0.1.5] - Unreleased
 
 ### Added
 
@@ -32,13 +32,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   evaluate" signal this repository's other gates report as exit `2`, not
   as a verified mismatch (`1`) and never as success (`0`).
 
-  Ten hermetic tests cover this directly: the predicate functions in
+  21 new hermetic tests cover this directly: the predicate functions in
   isolation, `downloadAndVerifyGitleaks` rejecting seven unusable
   `options.sha256` shapes (empty-input digest, its uppercase form,
   all-zero digest, empty string, missing, too short, non-hex) without ever
   calling `fetch`, and `KNOWN_RELEASES`'s own entries checked against the
   same predicate the runtime guard uses — not just the one specific value
   0.1.1 already pinned.
+
+## [0.1.4] - Unreleased
+
+### Changed
+
+- Widened the `@vespeneventures/controller` dependency range from `~0.3.0`
+  to `~0.4.0` to cover controller's settled canonical declaration location
+  and requirement-id grammar (#315, #316). This package does not use
+  `@vespeneventures/controller/repository`, so nothing here changes
+  behaviorally.
 
 ## [0.1.3] - Unreleased
 

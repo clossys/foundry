@@ -119,6 +119,25 @@ describe("validateRepositoryProfile", () => {
     ]);
   });
 
+  it("rejects a requirement id that embeds its own value instead of naming only the slot (issue #316)", () => {
+    const findings = validateRepositoryProfile({
+      ...validProfile,
+      schemaVersion: 2,
+      requirements: [
+        { id: "runtime.node.major", scope: "machine", constraint: { kind: "present" } },
+        { id: "package-manager.npm", scope: "repository", constraint: { kind: "present" } },
+        { id: "tool.package-manager", scope: "repository", constraint: { kind: "present" } },
+      ],
+    });
+
+    expect(findings.map((entry) => [entry.rule, entry.path])).toEqual([
+      ["requirement-id-value-embedded", "requirements[0].id"],
+      ["requirement-id-value-embedded", "requirements[1].id"],
+    ]);
+    expect(findings[0]?.message).toContain("3 dot-separated segments");
+    expect(findings[1]?.message).toContain('category "package-manager"');
+  });
+
   it("rejects missing, sparse, empty one-of, and accessor-backed v2 requirements", () => {
     expect(validateRepositoryProfile({ ...validProfile, schemaVersion: 2 }).map((entry) => entry.rule)).toEqual(["requirements-shape"]);
 

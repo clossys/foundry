@@ -7,6 +7,26 @@ export const PREVIOUS_REPOSITORY_PROFILE_VERSION = 2 as const;
 /** The original profile shape remains accepted for existing consumers. */
 export const LEGACY_REPOSITORY_PROFILE_VERSION = 1 as const;
 
+/**
+ * The one location a consumer's declaration lives (issue #315). The
+ * validator locates a declaration here without being told where it is; a
+ * declaration found anywhere else is reported as a distinct finding rather
+ * than treated as absent, which would silently read as "no declaration."
+ */
+export const CANONICAL_REPOSITORY_PROFILE_PATH = "governance/repository-profile.json" as const;
+
+/**
+ * The closed, two-segment `<category>.<subject>` requirement-id grammar
+ * (issue #316): the id names the slot a constraint fills, never the value
+ * the constraint currently holds. `runtime` is what executes the code,
+ * `tool` is what the work is done with, and `dependency` is what the
+ * repository consumes.
+ */
+export const REQUIREMENT_ID_CATEGORIES = ["runtime", "tool", "dependency"] as const;
+
+/** One category admitted by the requirement-id grammar. */
+export type RepositoryRequirementIdCategory = (typeof REQUIREMENT_ID_CATEGORIES)[number];
+
 /** Dense, read-only array values accepted by the repository contracts. */
 export type RepositoryList<T> = readonly T[];
 
@@ -204,6 +224,7 @@ export type RepositoryProfileFindingRule =
   | "requirements-shape"
   | "requirement-shape"
   | "requirement-id"
+  | "requirement-id-value-embedded"
   | "requirement-scope"
   | "duplicate-requirement"
   | "constraint-shape"
@@ -268,6 +289,26 @@ export type RepositoryRootFindingRule =
 /** A stable structural or evaluation reason an exact-root proof did not pass. */
 export interface RepositoryRootFinding {
   readonly rule: RepositoryRootFindingRule | RepositoryProfileFindingRule;
+  readonly severity: "error";
+  readonly path: string;
+  readonly message: string;
+}
+
+/**
+ * Reasons `repository-check` could not locate a declaration at the
+ * canonical path (issue #315). `declaration-non-canonical-location` is
+ * distinct from `declaration-not-found` on purpose: a declaration that
+ * exists somewhere else must never be reported the same way as no
+ * declaration at all, which would read as "this repository declares
+ * nothing" and pass a repository that actually has one.
+ */
+export type RepositoryDeclarationLocationFindingRule =
+  | "declaration-not-found"
+  | "declaration-non-canonical-location";
+
+/** A stable reason `repository-check` could not locate or validate a declaration. */
+export interface RepositoryDeclarationLocationFinding {
+  readonly rule: RepositoryDeclarationLocationFindingRule | RepositoryProfileFindingRule;
   readonly severity: "error";
   readonly path: string;
   readonly message: string;

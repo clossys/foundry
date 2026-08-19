@@ -74,10 +74,13 @@ responses, account identities, and browser/session data stay out of Foundry.
 
 ## CLI smoke test
 
-Run both commands from the consumer checkout, against consumer-owned files:
+Run both commands from the consumer checkout, against consumer-owned files.
+`repository-check` locates a declaration on its own (issue #315) — run it
+with no argument (searches the current working directory), a repository root
+directory, or an explicit file path, same as below:
 
 ```bash
-npx --no-install repository-check path/to/repository-profile.json
+npx --no-install repository-check                              # searches the current directory for governance/repository-profile.json
 npx --no-install review-check path/to/review-evidence.json path/to/review-policy.json
 ```
 

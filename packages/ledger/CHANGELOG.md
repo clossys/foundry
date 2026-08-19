@@ -3,6 +3,16 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.4] - Unreleased
+
+### Changed
+
+- Widened the `@vespeneventures/controller` dependency range from `~0.3.0`
+  to `~0.4.0` to cover controller's settled canonical declaration location
+  and requirement-id grammar (#315, #316). This package does not use
+  `@vespeneventures/controller/repository`, so nothing here changes
+  behaviorally.
+
 ## [0.2.3] - Unreleased
 
 ### Documentation
