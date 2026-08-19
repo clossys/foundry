@@ -5,6 +5,47 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - Unreleased
+
+### Added
+
+- **`runRepositoryProfileCheck` now accepts caller-supplied custom axes for
+  derived cross-reference checks (`./repository`, issue #324).** The runner
+  previously covered exactly two axes — declared requirements and the root
+  vocabulary — and had no way to express a DERIVED comparison against a
+  consumer's own source of truth: one consumer repository cross-references
+  `commands[].run`'s `npm run <script>` against its manifest's real
+  `scripts` map and `protectedPaths` against a live path-matching predicate
+  in its own merge-governance workflow; another verifies a `run` file path
+  exists on disk and that each `protectedPaths` entry's basename is
+  referenced across a set of governance files. Neither can be expressed as
+  a `RepositoryRequirementObservation` or a root entry, so migrating either
+  consumer fully onto the shared runner would have silently dropped a real
+  check. `RepositoryProfileRunInput.customAxes` closes that gap: an
+  optional list of `{ name, result }` pairs where `result` is a
+  caller-ALREADY-EVALUATED `GateResult` for a comparison only the caller
+  can perform — this package still learns nothing about any specific
+  consumer's manifest layout, workflow file, or governance convention. Every
+  custom axis folds through the exact same `foldGateResults` call, and
+  therefore the exact same `indeterminate` > `violated` > `satisfied`
+  precedence, as the two built-in axes: an indeterminate custom axis makes
+  the whole run indeterminate even when every built-in axis is satisfied. A
+  custom axis whose `result` is not itself a well-formed `GateResult` is
+  never ignored and never treated as `satisfied` — it folds to
+  `indeterminate` under the new `custom-axis-indeterminate` and
+  `custom-axis-invalid` reasons (added to `REPOSITORY_PROFILE_RUN_REASONS`),
+  the latter naming which axis was malformed. Schema validation still runs
+  unconditionally first: no custom axis is ever reached for a schema-invalid
+  declaration, proven by a dedicated regression test. `customAxes` is
+  optional and additive — every existing call to `runRepositoryProfileCheck`
+  keeps working unchanged, with identical results; the full pre-existing
+  test suite passes untouched. `repository-profile-check`'s `--discovery`
+  file gained a third, equally optional `customAxes` key carrying the same
+  `{ name, result }` shape — reading it is not new I/O, it is the same file
+  read the two existing discovery keys already go through; producing the
+  comparison itself remains entirely the caller's own responsibility,
+  performed before this command is ever invoked.
+
 ## [0.5.0] - Unreleased
 
 ### Added

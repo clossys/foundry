@@ -27,11 +27,14 @@
  *   "requirementObservations": [
  *     { "id": "runtime.node", "scope": "machine", "state": "observed", "value": "20" }
  *   ],
- *   "rootObservedEntries": ["README.md", "src"]
+ *   "rootObservedEntries": ["README.md", "src"],
+ *   "customAxes": [
+ *     { "name": "commands-vs-manifest-scripts", "result": { "verdict": "satisfied", "evaluated": 1 } }
+ *   ]
  * }
  * ```
  *
- * Both keys are optional and independent. An absent `requirementObservations`
+ * All three keys are optional and independent. An absent `requirementObservations`
  * behaves exactly like `[]` (see `./run.ts`'s doc comment: every declared
  * requirement folds to `unknown`, and an unevidenced requirement fails
  * closed as `indeterminate`, never `satisfied`). An absent
@@ -39,7 +42,22 @@
  * never ran; a profile that declares any root entry gets `indeterminate`,
  * not a real evaluation against zero observed children. Omitting
  * `--discovery` entirely is exactly `{}`: no requirement observations, no
- * root discovery.
+ * root discovery, no custom axes.
+ *
+ * `customAxes` (issue #324) is caller-supplied, ALREADY-EVALUATED derived
+ * cross-reference results — the shared runner has no way to compute one
+ * itself (see `./run.ts`'s header comment for why). This file still
+ * performs no I/O on their behalf: reading them out of this same,
+ * already-read discovery file is not new I/O, it is the identical data read
+ * `requirementObservations` and `rootObservedEntries` already go through.
+ * Whatever repository-specific comparison a custom axis represents — a
+ * manifest cross-reference, a live workflow predicate, a file-existence
+ * check — is entirely the caller's own CI job's responsibility, performed
+ * before this file is ever invoked, exactly like the observations above.
+ * This file only relays the caller's own verdict through to
+ * `runRepositoryProfileCheck`, which validates the SHAPE of each entry
+ * (never its content) and folds it into the same ternary as everything
+ * else.
  *
  * Exit codes — this repository's shared gate-result ternary
  * (`@vespeneventures/controller/gates`'s `GateResult`), projected by
@@ -72,6 +90,7 @@ import { locateRepositoryProfile } from "./locate.js";
 import { gateResultToExitCode } from "../gates/result.js";
 import {
   runRepositoryProfileCheck,
+  type RepositoryProfileRunCustomAxis,
   type RepositoryProfileRunDeclarationState,
   type RepositoryProfileRunFinding,
   type RepositoryProfileRunResult,
@@ -89,10 +108,15 @@ const USAGE = `Usage: repository-profile-check [path] [--discovery <file>]
 Options:
   --discovery <file>  Optional. Path to one JSON file with the caller's
                        injected discovery: { "requirementObservations": [...],
-                       "rootObservedEntries": [...] }. Both keys are
-                       optional. Omitting this flag entirely is the same as
-                       an empty object: no requirement evidence, no root
-                       discovery.
+                       "rootObservedEntries": [...], "customAxes": [...] }.
+                       All three keys are optional. "customAxes" entries are
+                       already-evaluated { name, result } pairs for a
+                       derived cross-reference check this command has no way
+                       to compute itself (issue #324) — the caller evaluates
+                       it elsewhere and supplies only the verdict.  Omitting
+                       this flag entirely is the same as an empty object: no
+                       requirement evidence, no root discovery, no custom
+                       axes.
   --help              Print this message and exit 0.
 
 Exit codes: 0 = satisfied, 1 = violated, 2 = indeterminate (could not evaluate — see README).
@@ -157,18 +181,27 @@ function isPlainArray(value: unknown): value is unknown[] {
 interface Discovery {
   readonly requirementObservations: RepositoryList<RepositoryRequirementObservation>;
   readonly rootObservedEntries: RepositoryList<string> | undefined;
+  readonly customAxes: RepositoryList<RepositoryProfileRunCustomAxis> | undefined;
 }
 
 /**
  * Reads and loosely shape-checks the discovery file: is it an object, are
- * its two known keys arrays when present. Deliberately shallow — every
+ * its three known keys arrays when present. Deliberately shallow — every
  * finer-grained validation (an individual observation's shape, duplicate
- * identities, an invalid root-entry name) is already `evaluateRepositoryRequirements`'s
- * and `evaluateRepositoryRoot`'s own job, reached through `runRepositoryProfileCheck`,
- * and reported as `indeterminate` there rather than re-validated here.
+ * identities, an invalid root-entry name, or — for `customAxes` — whether
+ * one entry is actually a well-formed `GateResult`) is already
+ * `evaluateRepositoryRequirements`'s, `evaluateRepositoryRoot`'s, or
+ * `runRepositoryProfileCheck`'s own job, reached through
+ * `runRepositoryProfileCheck`, and reported as `indeterminate` there rather
+ * than re-validated here. `customAxes` performs no I/O of its own to reach
+ * this point beyond the one file read `readJsonFile` above already did for
+ * `requirementObservations` and `rootObservedEntries` — see this file's
+ * header comment.
  */
 function readDiscovery(discoveryFile: string | undefined): Discovery {
-  if (discoveryFile === undefined) return { requirementObservations: [], rootObservedEntries: undefined };
+  if (discoveryFile === undefined) {
+    return { requirementObservations: [], rootObservedEntries: undefined, customAxes: undefined };
+  }
 
   const value = readJsonFile(discoveryFile, "discovery file");
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
@@ -176,7 +209,7 @@ function readDiscovery(discoveryFile: string | undefined): Discovery {
   }
   const record = value as Record<string, unknown>;
   for (const key of Object.keys(record)) {
-    if (key !== "requirementObservations" && key !== "rootObservedEntries") {
+    if (key !== "requirementObservations" && key !== "rootObservedEntries" && key !== "customAxes") {
       throw new CliInputError(`discovery file ${JSON.stringify(discoveryFile)} has an unknown field ${JSON.stringify(key)}`);
     }
   }
@@ -189,10 +222,15 @@ function readDiscovery(discoveryFile: string | undefined): Discovery {
   if (rootObservedEntriesRaw !== undefined && !isPlainArray(rootObservedEntriesRaw)) {
     throw new CliInputError(`discovery file ${JSON.stringify(discoveryFile)}: rootObservedEntries must be an array`);
   }
+  const customAxesRaw = record.customAxes;
+  if (customAxesRaw !== undefined && !isPlainArray(customAxesRaw)) {
+    throw new CliInputError(`discovery file ${JSON.stringify(discoveryFile)}: customAxes must be an array`);
+  }
 
   return {
     requirementObservations: (requirementObservationsRaw ?? []) as RepositoryRequirementObservation[],
     rootObservedEntries: rootObservedEntriesRaw as string[] | undefined,
+    customAxes: customAxesRaw as RepositoryProfileRunCustomAxis[] | undefined,
   };
 }
 
@@ -305,6 +343,7 @@ export function main(argv: readonly string[]): number {
     declaration,
     requirementObservations: discovery.requirementObservations,
     rootObservedEntries: discovery.rootObservedEntries,
+    customAxes: discovery.customAxes,
   });
   printReport(declaration, result);
   return gateResultToExitCode(result);

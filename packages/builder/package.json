@@ -1,6 +1,6 @@
 {
   "name": "@vespeneventures/builder",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -67,7 +67,7 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@vespeneventures/controller": "~0.5.0"
+    "@vespeneventures/controller": "~0.6.0"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",

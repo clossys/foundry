@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   REPOSITORY_PROFILE_RUN_DECLARATION_SOURCE,
   runRepositoryProfileCheck,
+  type RepositoryProfileRunCustomAxis,
   type RepositoryProfileRunInput,
 } from "./run.js";
 import type { RepositoryRequirementObservation } from "./types.js";
@@ -52,6 +53,7 @@ function parsedInput(
     },
     requirementObservations: overrides.requirementObservations ?? [],
     rootObservedEntries: overrides.rootObservedEntries,
+    customAxes: overrides.customAxes,
   };
 }
 
@@ -263,5 +265,167 @@ describe("runRepositoryProfileCheck: indeterminate", () => {
       parsedInput(validV3Profile, { requirementObservations: observations, rootObservedEntries: undefined }),
     );
     expect(result.verdict).toBe("indeterminate");
+  });
+});
+
+// Custom axes (issue #324): caller-supplied, ALREADY-EVALUATED derived
+// cross-reference checks the shared runner has no concept of — e.g. a
+// consumer cross-referencing `commands[].run` against its own manifest's
+// `scripts` map, or `protectedPaths` against its own merge-governance
+// workflow's live path-matching predicate. This suite proves the four
+// properties issue #324 asks for: the fold uses the same precedence as
+// every built-in axis, a malformed axis is indeterminate rather than
+// dropped or satisfied, and — the backward-compatibility half — every test
+// above this point still passes with `customAxes` never supplied.
+describe("runRepositoryProfileCheck: custom axes (#324)", () => {
+  it("folds a satisfied custom axis into an otherwise-satisfied result", () => {
+    const customAxes: readonly RepositoryProfileRunCustomAxis[] = [
+      { name: "commands-vs-manifest-scripts", result: { verdict: "satisfied", evaluated: 1 } },
+    ];
+    const result = runRepositoryProfileCheck(parsedInput(validV1Profile, { customAxes }));
+    expect(result.verdict).toBe("satisfied");
+  });
+
+  it("folds a violated custom axis to an overall violated result, findings intact", () => {
+    const customAxes: readonly RepositoryProfileRunCustomAxis[] = [
+      {
+        name: "commands-vs-manifest-scripts",
+        result: {
+          verdict: "violated",
+          findings: [
+            {
+              rule: "command-script-missing",
+              severity: "error",
+              path: "$.commands[0].run",
+              message: 'npm run check names a script that does not exist in the manifest\'s "scripts" map.',
+            },
+          ],
+        },
+      },
+    ];
+    const result = runRepositoryProfileCheck(parsedInput(validV1Profile, { customAxes }));
+    expect(result.verdict).toBe("violated");
+    if (result.verdict === "violated") {
+      expect(result.findings).toEqual([
+        {
+          rule: "command-script-missing",
+          severity: "error",
+          path: "$.commands[0].run",
+          message: 'npm run check names a script that does not exist in the manifest\'s "scripts" map.',
+        },
+      ]);
+    }
+  });
+
+  it("folds an indeterminate custom axis to indeterminate, legibly naming which axis", () => {
+    const customAxes: readonly RepositoryProfileRunCustomAxis[] = [
+      {
+        name: "protected-paths-vs-workflow-predicate",
+        result: { verdict: "indeterminate", reason: "workflow-file-unreadable", detail: "could not read the merge-governance workflow" },
+      },
+    ];
+    const result = runRepositoryProfileCheck(parsedInput(validV1Profile, { customAxes }));
+    expect(result.verdict).toBe("indeterminate");
+    if (result.verdict === "indeterminate") {
+      expect(result.reason).toBe("custom-axis-indeterminate");
+      expect(result.detail).toContain("protected-paths-vs-workflow-predicate");
+      expect(result.detail).toContain("workflow-file-unreadable");
+      expect(result.detail).toContain("could not read the merge-governance workflow");
+    }
+  });
+
+  it("an indeterminate custom axis beats every satisfied built-in axis (fold precedence)", () => {
+    const customAxes: readonly RepositoryProfileRunCustomAxis[] = [
+      { name: "protected-paths-vs-workflow-predicate", result: { verdict: "indeterminate", reason: "workflow-file-unreadable" } },
+    ];
+    const result = runRepositoryProfileCheck(
+      parsedInput(validV3Profile, {
+        requirementObservations: satisfyingObservations,
+        rootObservedEntries: ["README.md"],
+        customAxes,
+      }),
+    );
+    // Every built-in axis here is fully satisfied on its own (see the
+    // "satisfied" describe block above using the identical inputs) — the
+    // only thing that can make this indeterminate is the custom axis.
+    expect(result.verdict).toBe("indeterminate");
+    if (result.verdict === "indeterminate") expect(result.reason).toBe("custom-axis-indeterminate");
+  });
+
+  it("a violated custom axis is never silently dropped even when the declaration has nothing built-in to evaluate", () => {
+    // validV1Profile has no requirements/rootEntries at all — without
+    // custom-axis support this would take the "nothing to evaluate ->
+    // satisfied" path. A violated custom axis must still win.
+    const customAxes: readonly RepositoryProfileRunCustomAxis[] = [
+      {
+        name: "commands-vs-manifest-scripts",
+        result: { verdict: "violated", findings: [{ rule: "command-script-missing", severity: "error", path: "$", message: "missing" }] },
+      },
+    ];
+    const result = runRepositoryProfileCheck(parsedInput(validV1Profile, { customAxes }));
+    expect(result.verdict).toBe("violated");
+  });
+
+  it("a malformed custom axis result (not a valid GateResult) is indeterminate, never ignored and never satisfied", () => {
+    const malformedResults: readonly unknown[] = [
+      undefined,
+      null,
+      {},
+      { verdict: "satisfied" }, // missing "evaluated"
+      { verdict: "satisfied", evaluated: 0 }, // not a positive integer
+      { verdict: "violated", findings: [] }, // empty findings
+      { verdict: "violated", findings: [{ rule: "x" }] }, // finding missing required fields
+      { verdict: "indeterminate", reason: "" }, // empty reason
+      { verdict: "indeterminate" }, // missing reason
+      { verdict: "not-a-real-verdict" },
+    ];
+
+    for (const malformed of malformedResults) {
+      const customAxes = [{ name: "commands-vs-manifest-scripts", result: malformed }] as unknown as readonly RepositoryProfileRunCustomAxis[];
+      const result = runRepositoryProfileCheck(parsedInput(validV1Profile, { customAxes }));
+      expect(result.verdict, `expected indeterminate for ${JSON.stringify(malformed)}`).toBe("indeterminate");
+      if (result.verdict === "indeterminate") expect(result.reason).toBe("custom-axis-invalid");
+    }
+  });
+
+  it("a custom axis missing a valid name is indeterminate under custom-axis-invalid", () => {
+    const customAxes = [{ name: "", result: { verdict: "satisfied", evaluated: 1 } }] as unknown as readonly RepositoryProfileRunCustomAxis[];
+    const result = runRepositoryProfileCheck(parsedInput(validV1Profile, { customAxes }));
+    expect(result).toMatchObject({ verdict: "indeterminate", reason: "custom-axis-invalid" });
+  });
+
+  it("never reaches — never even READS — a custom axis when the declaration is schema-invalid", () => {
+    // A custom axis whose `result` getter throws if it is ever accessed.
+    // Schema validation must short-circuit before this module reads
+    // `customAxes` at all; if it were reached, this test would throw
+    // instead of asserting a clean "declaration-schema-invalid" result.
+    const poisonedAxis: RepositoryProfileRunCustomAxis = {
+      name: "commands-vs-manifest-scripts",
+      get result(): never {
+        throw new Error("customAxisResult must never be reached for a schema-invalid declaration");
+      },
+    };
+    const result = runRepositoryProfileCheck(
+      parsedInput(
+        { schemaVersion: 3, defaultBranch: "main", commands: [], protectedPaths: [] }, // missing requirements/rootEntries -> schema-invalid
+        { customAxes: [poisonedAxis] },
+      ),
+    );
+    expect(result).toMatchObject({ verdict: "indeterminate", reason: "declaration-schema-invalid" });
+  });
+
+  it("omitting customAxes entirely behaves identically to the pre-#324 API (backward compatibility)", () => {
+    const withoutField = runRepositoryProfileCheck(
+      parsedInput(validV3Profile, { requirementObservations: satisfyingObservations, rootObservedEntries: ["README.md"] }),
+    );
+    const withUndefined = runRepositoryProfileCheck(
+      parsedInput(validV3Profile, { requirementObservations: satisfyingObservations, rootObservedEntries: ["README.md"], customAxes: undefined }),
+    );
+    const withEmptyArray = runRepositoryProfileCheck(
+      parsedInput(validV3Profile, { requirementObservations: satisfyingObservations, rootObservedEntries: ["README.md"], customAxes: [] }),
+    );
+    expect(withoutField).toEqual(withUndefined);
+    expect(withoutField).toEqual(withEmptyArray);
+    expect(withoutField.verdict).toBe("satisfied");
   });
 });
