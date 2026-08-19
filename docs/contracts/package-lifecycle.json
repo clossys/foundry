@@ -27,7 +27,7 @@
     },
     {
       "name": "@vespeneventures/consent",
-      "status": "incubating"
+      "status": "published"
     },
     {
       "name": "@vespeneventures/controller",
@@ -119,7 +119,7 @@
     },
     {
       "name": "@vespeneventures/observer",
-      "status": "incubating"
+      "status": "published"
     },
     {
       "name": "@vespeneventures/policy",
