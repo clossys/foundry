@@ -20,6 +20,11 @@ export {
   getKnownVersions,
   getPlatformArch,
   resolveGitleaksRelease,
+  assertUsableSha256,
+  isKnownDegenerateSha256,
+  isWellFormedSha256,
+  EMPTY_INPUT_SHA256,
+  ALL_ZERO_SHA256,
 } from "./gitleaks.js";
 export type { GitleaksBinaryOptions, GitleaksBinaryResult, GitleaksRelease } from "./gitleaks.js";
 

@@ -36,6 +36,76 @@ export interface GitleaksBinaryResult {
   readonly verified: boolean;
 }
 
+/**
+ * DEGENERATE DIGESTS
+ * -------------------
+ * SHA-256 of empty input, and the all-zero digest. Neither can ever be a
+ * real gitleaks release asset's checksum (see `KNOWN_RELEASES`'s own
+ * comment for how the first one shipped here anyway, in 0.1.0). Both are
+ * rejected as pin values everywhere a checksum is expected to name a real
+ * asset — see `isKnownDegenerateSha256` below.
+ *
+ * Rejecting these is not merely cosmetic. A checksum pin exists to catch a
+ * download that came back wrong; a pin carrying the empty-input digest
+ * would instead spuriously VERIFY a zero-byte response (a stalled proxy, a
+ * misconfigured mirror, or an attacker who cannot serve real content but
+ * can serve none) — the exact failure a checksum is supposed to catch,
+ * passing instead of failing. An all-zero digest is the same class of
+ * mistake in its other common shape: an uninitialized or elided value that
+ * still reads like a real one. Both are refused outright, before any
+ * network call — see `downloadAndVerifyGitleaks`.
+ */
+export const EMPTY_INPUT_SHA256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+export const ALL_ZERO_SHA256 = "0".repeat(64);
+const DEGENERATE_SHA256_DIGESTS: ReadonlySet<string> = new Set([EMPTY_INPUT_SHA256, ALL_ZERO_SHA256]);
+
+/** `true` for a well-formed SHA-256 hex digest: exactly 64 lowercase hex characters. Anything else — wrong length, uppercase, missing, non-string — cannot be compared against a real digest at all. */
+export function isWellFormedSha256(value: unknown): value is string {
+  return typeof value === "string" && /^[0-9a-f]{64}$/.test(value);
+}
+
+/**
+ * `true` for a checksum that is well-formed but names no real asset: the
+ * digest of empty input, or the all-zero digest. A value this returns
+ * `true` for is not "probably wrong" — it is a known, specific placeholder
+ * shape that must never be trusted as a pin, regardless of how it got
+ * there.
+ */
+export function isKnownDegenerateSha256(value: unknown): boolean {
+  return typeof value === "string" && DEGENERATE_SHA256_DIGESTS.has(value.toLowerCase());
+}
+
+/**
+ * The one place that decides whether a checksum is usable as a pin at all.
+ * Throws — never returns a falsy verdict for a caller to (mis)handle — for
+ * anything that is not a 64-character lowercase hex digest, or that is one
+ * of the known-degenerate digests above. `context` is prepended to the
+ * message so a caller sees exactly which checksum failed and why, whether
+ * this rejected a table entry at import time or a caller's own
+ * `options.sha256` immediately before a download.
+ *
+ * A caller mapping the resulting exception onto this repository's 0/1/2
+ * gate contract should treat it as indeterminate (2): this never reached a
+ * comparison against a downloaded asset, so it is not a verified mismatch
+ * (which would be 1) — it is "could not evaluate," exactly like any other
+ * pre-flight input that this package refuses to run at all.
+ */
+export function assertUsableSha256(value: unknown, context: string): asserts value is string {
+  if (!isWellFormedSha256(value)) {
+    throw new Error(
+      `${context}: sha256 is missing or not a well-formed 64-character lowercase hex SHA-256 digest ` +
+      `(got ${JSON.stringify(value)}).`,
+    );
+  }
+  if (isKnownDegenerateSha256(value)) {
+    const which = value.toLowerCase() === EMPTY_INPUT_SHA256 ? "the SHA-256 of EMPTY INPUT" : "an all-zero digest";
+    throw new Error(
+      `${context}: sha256 (${value}) is ${which} — not the checksum of any real gitleaks release asset. ` +
+      `A pin like this would spuriously verify a zero-byte or degenerate response instead of catching one.`,
+    );
+  }
+}
+
 const DEFAULT_CACHE_DIR = join(tmpdir(), "vespeneventures", "secret-scan", "gitleaks");
 /**
  * KNOWN, NOT TRUSTED
@@ -79,6 +149,20 @@ const KNOWN_RELEASES: readonly GitleaksRelease[] = Object.freeze([
     url: "https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz",
   },
 ]);
+
+/**
+ * Fails LOUD, at import time, for the exact class of mistake this table
+ * shipped once already: a checksum that cannot possibly be right, sitting
+ * quietly in a place that looks revalidated. Anything importing this module
+ * — a real consumer, or `../secret-scan/index.ts` re-exporting it — throws
+ * immediately rather than shipping a placeholder that only fails later, for
+ * an unrelated-looking reason, the next time someone tries to use it. There
+ * is deliberately no way to catch this and continue: a table entry this
+ * cannot validate is not a value this module is willing to hand out at all.
+ */
+for (const release of KNOWN_RELEASES) {
+  assertUsableSha256(release.sha256, `KNOWN_RELEASES entry for gitleaks ${release.version}`);
+}
 
 export function getPlatformArch(): { platform: "linux" | "darwin" | "win32"; arch: "x64" | "arm64" } {
   const platform = process.platform === "win32" ? "win32" : process.platform === "darwin" ? "darwin" : "linux";
@@ -130,6 +214,15 @@ export async function downloadAndVerifyGitleaks(
   if (existsSync(cachedBinaryPath)) {
     return { path: cachedBinaryPath, version: options.version, verified: true };
   }
+
+  // Past this point a REAL download-and-compare is about to be attempted.
+  // `expectedSha256` must be a value that comparison could ever meaningfully
+  // succeed OR fail against — `assertUsableSha256` throws before any
+  // network call for anything that is not: fail closed and LOUD, never a
+  // silent pass-through into a comparison that either can't run at all, or
+  // — worse, for a degenerate digest — could spuriously succeed against a
+  // zero-byte or otherwise degenerate response instead of catching one.
+  assertUsableSha256(expectedSha256, `Cannot verify gitleaks ${options.version}: options.sha256`);
 
   const downloadUrl = `https://github.com/gitleaks/gitleaks/releases/download/v${options.version}/${assetName}`;
   const archivePath = join(cacheDir, `gitleaks-${options.version}-${platform}-${arch}${platform === "win32" ? ".zip" : ".tar.gz"}`);

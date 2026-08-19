@@ -5,6 +5,41 @@ All notable changes to `@vespeneventures/inspector` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.5] - Unreleased
+
+### Added
+
+- `downloadAndVerifyGitleaks` now refuses, before any network call, a
+  `options.sha256` that is missing, malformed (not 64 lowercase hex
+  characters), or one of two known-degenerate digests: the SHA-256 of
+  **empty input** and the all-zero digest. `KNOWN_RELEASES` validates every
+  one of its own entries against the same rule at import time, so a future
+  entry carrying a placeholder throws immediately for every consumer rather
+  than shipping quietly (see 0.1.1's own note on how the first one did).
+  New exports: `isWellFormedSha256`, `isKnownDegenerateSha256`,
+  `assertUsableSha256`, `EMPTY_INPUT_SHA256`, `ALL_ZERO_SHA256`.
+
+  This closes a real gap 0.1.1 left open: `downloadAndVerifyGitleaks`
+  already failed closed on a checksum *mismatch* against a downloaded
+  asset, but a degenerate pin was never rejected as a category — only ever
+  caught (or not) by whatever the download happened to return. A pin
+  carrying the empty-input digest specifically could have spuriously
+  *verified* a zero-byte response (a stalled proxy, a misconfigured mirror,
+  or an attacker able to serve no content but not real content) instead of
+  catching one, which is precisely the failure a checksum pin exists to
+  catch. It is now rejected outright, before any download is even
+  attempted — reported as a thrown exception, the same "could not
+  evaluate" signal this repository's other gates report as exit `2`, not
+  as a verified mismatch (`1`) and never as success (`0`).
+
+  21 new hermetic tests cover this directly: the predicate functions in
+  isolation, `downloadAndVerifyGitleaks` rejecting seven unusable
+  `options.sha256` shapes (empty-input digest, its uppercase form,
+  all-zero digest, empty string, missing, too short, non-hex) without ever
+  calling `fetch`, and `KNOWN_RELEASES`'s own entries checked against the
+  same predicate the runtime guard uses — not just the one specific value
+  0.1.1 already pinned.
+
 ## [0.1.4] - Unreleased
 
 ### Changed
