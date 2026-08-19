@@ -643,8 +643,8 @@ is already indistinguishable, in its effect, from "nothing was observed."
 | `parsed`, valid, every declared axis evaluated and holds | `satisfied` | The only path that reaches it. |
 
 `repository-profile-check` is the single command wrapping this function:
-it locates a declaration exactly the way `repository-check` does (issue
-#315 — the canonical location is always checked first), reads one optional
+it locates a declaration exactly the way `repository-check` does
+(issue #315 — the canonical location is always checked first), reads one optional
 `--discovery <file>` JSON file for the injected observations, and exits
 `0` / `1` / `2` through `gateResultToExitCode`.
 
