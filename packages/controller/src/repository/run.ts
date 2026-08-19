@@ -47,7 +47,26 @@
  * `satisfied`, and never routed into `evaluateRepositoryRequirements` or
  * `evaluateRepositoryRoot` at all. This is the direct fix for the defect
  * described above: there is no code path in this module that can reach an
- * evaluator with an unvalidated shape.
+ * evaluator with an unvalidated shape. `customAxes` (below) is folded in
+ * only after this same schema check — there is likewise no code path that
+ * reaches a custom axis for a schema-invalid declaration.
+ *
+ * CUSTOM AXES (issue #324). This module's built-in axes cover exactly two
+ * things: the requirements axis and the root-vocabulary axis. Consumer
+ * repositories also perform DERIVED cross-reference checks this package has
+ * no concept of and must never learn — one checks `commands[].run` against
+ * a manifest's real `scripts` map and `protectedPaths` against a live
+ * path-matching predicate, clause by clause; another checks a `run` file
+ * path exists on disk and that each `protectedPaths` entry's basename is
+ * referenced in a set of governance files. Both are real evaluations only
+ * the consumer can perform, over consumer-specific sources this package has
+ * no business reading. `RepositoryProfileRunInput.customAxes` lets a caller
+ * hand in the RESULT of that evaluation, already reduced to a `GateResult`,
+ * and this module folds it through the exact same `foldGateResults` call —
+ * and therefore the exact same indeterminate-beats-violated-beats-satisfied
+ * precedence — as every built-in axis. The caller evaluates; this module
+ * only folds, which is what keeps the ternary decided in ONE place even for
+ * a check this module could never implement itself.
  */
 
 import { CANONICAL_REPOSITORY_PROFILE_PATH } from "./types.js";
@@ -89,6 +108,45 @@ export type RepositoryProfileRunDeclarationState =
   | { readonly kind: "parsed"; readonly path: string; readonly canonical: boolean; readonly value: unknown };
 
 /**
+ * A finding shape a custom axis's own findings may report through, for a
+ * `violated` result. Structurally identical to every built-in finding shape
+ * this module already emits (`rule` / `severity` / `path` / `message`) —
+ * see `RepositoryRequirementFinding`, `RepositoryRootFinding`,
+ * `RepositoryDeclarationLocationFinding` — but with an open `rule`: this
+ * module has no concept of, and must never learn, any specific consumer's
+ * own finding vocabulary (see `RepositoryProfileRunCustomAxis`).
+ */
+export interface RepositoryProfileRunCustomFinding {
+  readonly rule: string;
+  readonly severity: "error" | "warning";
+  readonly path: string;
+  readonly message: string;
+}
+
+/**
+ * One caller-supplied, ALREADY-EVALUATED axis result (issue #324). This is
+ * the mechanism for a derived cross-reference check the shared contract has
+ * no concept of — `commands[].run` against a manifest's real `scripts` map,
+ * `protectedPaths` against a live path-matching predicate, or any other
+ * repository-specific comparison a consumer alone can perform. THE CALLER
+ * EVALUATES; THIS MODULE ONLY FOLDS — exactly the same division of labor
+ * `requirementObservations` and `rootObservedEntries` already establish for
+ * discovery. This module never learns what `name` means, never inspects a
+ * manifest, workflow file, or governance document, and performs no I/O to
+ * produce or validate the comparison itself — only to validate the SHAPE of
+ * what it was handed.
+ *
+ * `name` exists so a caller reading an `indeterminate` or `violated` result
+ * downstream can tell which custom axis was responsible — see
+ * `REPOSITORY_PROFILE_RUN_REASONS`'s `custom-axis-indeterminate` and
+ * `custom-axis-invalid` reasons, both of which quote it back in `detail`.
+ */
+export interface RepositoryProfileRunCustomAxis {
+  readonly name: string;
+  readonly result: GateResult<RepositoryProfileRunCustomFinding, string>;
+}
+
+/**
  * Everything this function needs. `declaration` is the one thing a caller
  * cannot avoid resolving through I/O; `requirementObservations` and
  * `rootObservedEntries` are the injected discovery this module never
@@ -105,11 +163,25 @@ export type RepositoryProfileRunDeclarationState =
  * an entirely absent observation to that same `unknown` state per
  * requirement — an empty array is already indistinguishable, in its effect,
  * from "nothing was observed."
+ *
+ * `customAxes` is optional and defaults to empty — every existing caller
+ * that never supplies it keeps working, unchanged, with identical results
+ * (issue #324). Each entry is one already-evaluated `GateResult` a caller
+ * produced for a derived cross-reference check this module has no way to
+ * express itself (see `RepositoryProfileRunCustomAxis`). Every custom axis
+ * folds through the exact same `foldGateResults` call, and therefore the
+ * exact same precedence, as the built-in requirements and root axes:
+ * `indeterminate` beats `violated` beats `satisfied`. A custom axis whose
+ * `result` is not itself a well-formed `GateResult` is never ignored and
+ * never treated as `satisfied` — it folds to `indeterminate` under the
+ * `custom-axis-invalid` reason, the same fail-closed treatment every other
+ * malformed input in this module already receives.
  */
 export interface RepositoryProfileRunInput {
   readonly declaration: RepositoryProfileRunDeclarationState;
   readonly requirementObservations: RepositoryList<RepositoryRequirementObservation>;
   readonly rootObservedEntries: RepositoryList<string> | undefined;
+  readonly customAxes?: RepositoryList<RepositoryProfileRunCustomAxis>;
 }
 
 /** Every reason `runRepositoryProfileCheck` can ever report as `indeterminate`, declared once. */
@@ -123,6 +195,8 @@ export const REPOSITORY_PROFILE_RUN_REASONS = createGateReasons([
   "requirements-input-invalid",
   "root-observations-missing",
   "root-input-invalid",
+  "custom-axis-invalid",
+  "custom-axis-indeterminate",
 ] as const);
 
 export type RepositoryProfileRunIndeterminateReason = (typeof REPOSITORY_PROFILE_RUN_REASONS.reasons)[number];
@@ -142,7 +216,8 @@ export const REPOSITORY_PROFILE_RUN_DECLARATION_SOURCE = "declaration";
 export type RepositoryProfileRunFinding =
   | RepositoryDeclarationLocationFinding
   | RepositoryRequirementFinding
-  | RepositoryRootFinding;
+  | RepositoryRootFinding
+  | RepositoryProfileRunCustomFinding;
 
 /** The complete result: the shared three-state ternary, never a fourth or a boolean. */
 export type RepositoryProfileRunResult = GateResult<RepositoryProfileRunFinding, RepositoryProfileRunIndeterminateReason>;
@@ -261,6 +336,107 @@ function rootAxisResult(
   }
 }
 
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === "string" && value.trim() !== "";
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Structural check for one custom-axis finding — the shape a `violated`
+ * custom axis's own `findings` must conform to. Deliberately shallow (an
+ * open `rule`, no known vocabulary to check it against — see
+ * `RepositoryProfileRunCustomFinding`): this module cannot know a specific
+ * consumer's own finding vocabulary, only that the four required fields are
+ * present and of the right primitive type.
+ */
+function isValidCustomFinding(value: unknown): value is RepositoryProfileRunCustomFinding {
+  if (!isPlainObject(value)) return false;
+  return (
+    isNonEmptyString(value.rule) &&
+    (value.severity === "error" || value.severity === "warning") &&
+    typeof value.path === "string" &&
+    isNonEmptyString(value.message)
+  );
+}
+
+/**
+ * Structural check that an unknown value is a well-formed `GateResult` —
+ * the same three shapes `gateSatisfied`/`gateViolated`/`gateIndeterminate`
+ * construct, checked here at runtime because a custom axis arrives as data
+ * from a caller this module cannot trust to have gone through those
+ * constructors (or even to be written in TypeScript at all). This is the
+ * enforcement behind issue #324's requirement 3: a custom axis that fails
+ * this check is malformed, and `customAxisResult` below folds it to
+ * `indeterminate` — never ignored, never `satisfied`.
+ */
+function isValidCustomAxisGateResult(value: unknown): value is GateResult<RepositoryProfileRunCustomFinding, string> {
+  if (!isPlainObject(value)) return false;
+  switch (value.verdict) {
+    case "satisfied":
+      return Number.isInteger(value.evaluated) && (value.evaluated as number) > 0;
+    case "violated":
+      return Array.isArray(value.findings) && value.findings.length > 0 && value.findings.every(isValidCustomFinding);
+    case "indeterminate":
+      return isNonEmptyString(value.reason);
+    default:
+      return false;
+  }
+}
+
+/**
+ * Folds one caller-supplied `RepositoryProfileRunCustomAxis` into this
+ * runner's own `GateResult` shape. THIS FUNCTION EVALUATES NOTHING — the
+ * caller already decided `satisfied` / `violated` / `indeterminate` for its
+ * own derived cross-reference check; this only validates the SHAPE of what
+ * it was handed and re-labels an `indeterminate` axis with which one it was
+ * (requirement 5 — legible provenance), so the eventual `foldGateResults`
+ * call downstream can treat it exactly like a built-in axis.
+ *
+ * A malformed axis — `name` not a non-empty string, or `result` not itself
+ * a well-formed `GateResult` (see `isValidCustomAxisGateResult`) — is
+ * `indeterminate` under `custom-axis-invalid`, never `satisfied` and never
+ * dropped. Silently ignoring a malformed axis would reintroduce exactly the
+ * defect issue #324 exists to prevent: a real check with nowhere to report,
+ * silently read as passing.
+ */
+function customAxisResult(
+  axis: RepositoryProfileRunCustomAxis,
+): GateResult<RepositoryProfileRunFinding, RepositoryProfileRunIndeterminateReason> {
+  const candidate = axis as unknown;
+  const name = isPlainObject(candidate) ? candidate.name : undefined;
+  const result = isPlainObject(candidate) ? candidate.result : undefined;
+  const validName = isNonEmptyString(name);
+
+  if (!validName || !isValidCustomAxisGateResult(result)) {
+    return REPOSITORY_PROFILE_RUN_REASONS.indeterminate(
+      "custom-axis-invalid",
+      `${validName ? `Custom axis "${name}"` : "A custom axis"} did not supply a valid GateResult — verdict must ` +
+        `be "satisfied" with a positive integer "evaluated", "violated" with non-empty "findings" each shaped ` +
+        `{ rule, severity, path, message }, or "indeterminate" with a non-empty "reason". A malformed custom ` +
+        `axis is never ignored and never treated as satisfied.`,
+    );
+  }
+
+  switch (result.verdict) {
+    case "satisfied":
+      return gateSatisfied(result.evaluated);
+    case "violated":
+      return gateViolated(result.findings);
+    case "indeterminate":
+      return REPOSITORY_PROFILE_RUN_REASONS.indeterminate(
+        "custom-axis-indeterminate",
+        `Custom axis "${name}" reported indeterminate (${result.reason}${result.detail ? `: ${result.detail}` : ""}).`,
+      );
+    default: {
+      const unhandled: never = result;
+      throw new Error(`runRepositoryProfileCheck: unknown custom axis verdict ${JSON.stringify(unhandled)}`);
+    }
+  }
+}
+
 /**
  * The runner. One call: locate-and-read the declaration (already resolved by
  * the caller into `input.declaration`), validate its schema, and — only for
@@ -327,12 +503,23 @@ export function runRepositoryProfileCheck(input: RepositoryProfileRunInput): Rep
     const result = rootAxisResult(profile.rootEntries, input.rootObservedEntries);
     if (result) axisResults.push(result);
   }
+  // Custom axes (issue #324) fold in last, but through the exact same array
+  // and the exact same `foldGateResults` call below as every built-in axis
+  // — there is no separate precedence for them. Pushed BEFORE the
+  // `axisResults.length === 0` short circuit so a caller-supplied custom
+  // axis is never silently dropped even when the declaration itself has no
+  // built-in requirements or root entries to evaluate (e.g. a bare v1
+  // profile with one custom axis attached).
+  for (const axis of input.customAxes ?? []) {
+    axisResults.push(customAxisResult(axis));
+  }
 
   if (axisResults.length === 0) {
     // A valid, canonically located declaration that declares nothing to
     // evaluate (a bare v1 profile, or v2/v3 with empty `requirements`/
-    // `rootEntries`). The declaration itself is the one thing evaluated —
-    // same reasoning `evaluateRatchet`'s "clean" case uses for `gateSatisfied(1)`.
+    // `rootEntries`) and no custom axes were supplied either. The
+    // declaration itself is the one thing evaluated — same reasoning
+    // `evaluateRatchet`'s "clean" case uses for `gateSatisfied(1)`.
     return gateSatisfied(1);
   }
 
