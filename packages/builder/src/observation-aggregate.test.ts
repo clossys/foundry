@@ -223,7 +223,12 @@ describe("aggregateObservations", () => {
     expect(result.overall.verdict).toBe("satisfied");
   });
 
-  it("counts a completely unattributable bundle without dropping it silently", () => {
+  it("counts a completely unattributable bundle and refuses to report satisfied over it", () => {
+    // This test previously asserted overall stayed "satisfied" with an
+    // unattributed bundle present -- encoding the exact fail-open this
+    // aggregator promises not to have: evidence arrived, was never
+    // evaluated, and the report still read green. Unattributed bundles now
+    // fold in as their own indeterminate result.
     const result = aggregateObservations({
       expectedRepositories: ["repo-a"],
       bundles: [bundleFor("repo-a", [satisfiedGate("secret-scan")]), { nonsense: true }],
@@ -232,7 +237,7 @@ describe("aggregateObservations", () => {
     });
 
     expect(result.unattributedCount).toBe(1);
-    expect(result.overall.verdict).toBe("satisfied");
+    expect(result.overall.verdict).toBe("indeterminate");
   });
 
   it("throws on a duplicate entry in expectedRepositories itself -- a caller precondition, not repository data", () => {
@@ -252,4 +257,19 @@ describe("aggregateObservations", () => {
       aggregateObservations({ expectedRepositories: ["repo-a"], bundles: [], now: NOW, staleAfterMs: -1 }),
     ).toThrow();
   });
+});
+
+it("an unattributed bundle forces overall indeterminate even when every expected repository is satisfied", () => {
+  const report = aggregateObservations({
+    expectedRepositories: ["alpha"],
+    bundles: [bundleFor("alpha", [satisfiedGate("profile")]), { garbage: true }],
+    now: NOW,
+    staleAfterMs: ONE_HOUR_MS,
+  });
+  expect(report.repositories[0]?.result.verdict).toBe("satisfied");
+  expect(report.unattributedCount).toBe(1);
+  expect(report.overall.verdict).toBe("indeterminate");
+  if (report.overall.verdict === "indeterminate") {
+    expect(report.overall.reason).toBe("unattributed-bundle");
+  }
 });

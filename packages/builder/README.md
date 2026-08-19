@@ -223,8 +223,11 @@ has exactly one entry in `report.repositories`; every entry's classification
 is `observed` (the four gap classifications — `unobserved-repository`,
 `invalid-bundle-schema`, `duplicate-repository-identity`,
 `stale-observation` — are each `indeterminate` by construction and therefore
-never part of a close); and every observed entry's `result.verdict` is
-`satisfied`. `report.overall.verdict` then reads `satisfied` because all
+never part of a close); every observed entry's `result.verdict` is
+`satisfied`; and `report.unattributedCount` is zero — a bundle that arrived
+but could not be tied to any repository id is evidence that was never
+evaluated, and it folds into `overall` as `unattributed-bundle`
+(indeterminate), so it can never coexist with a close. `report.overall.verdict` then reads `satisfied` because all
 three held, never because the aggregator simply stopped looking. A
 repository that never reports in must show up as a named gap, not as a
 shorter list. The loop reopens on any bundle shape `aggregateObservations`

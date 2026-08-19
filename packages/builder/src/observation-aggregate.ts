@@ -59,6 +59,7 @@ export const OBSERVATION_AGGREGATE_INDETERMINATE_REASONS = Object.freeze([
   "invalid-bundle-schema",
   "duplicate-repository-identity",
   "stale-observation",
+  "unattributed-bundle",
 ] as const);
 
 export type ObservationAggregateIndeterminateReason = (typeof OBSERVATION_AGGREGATE_INDETERMINATE_REASONS)[number];
@@ -232,13 +233,29 @@ export function aggregateObservations(input: AggregateObservationsInput): Aggreg
     };
   });
 
-  const overall = foldGateResults(
-    repositories.map((status) => status.result),
-    {
-      emptyReason: "unobserved-repository",
-      emptyDetail: "No repositories were expected -- there is nothing to aggregate.",
-    },
-  );
+  // An unattributed bundle is evidence that arrived but could not be tied
+  // to any repository -- a transport defect, not a shrug. If it were only a
+  // counter, `overall` could still read `satisfied` while real evidence
+  // went unexamined, which is exactly the "stopped looking" outcome this
+  // aggregator promises cannot happen. It folds in as its own
+  // indeterminate result, through the same precedence as everything else.
+  const perRepositoryResults = repositories.map((status) => status.result);
+  const foldedResults =
+    unattributedCount > 0
+      ? [
+          ...perRepositoryResults,
+          gateIndeterminate<ObservationAggregateIndeterminateReason>(
+            "unattributed-bundle",
+            `${unattributedCount} bundle(s) could not be attributed to any repository id; ` +
+              "their evidence was never evaluated, so this aggregate cannot report satisfied.",
+          ),
+        ]
+      : perRepositoryResults;
+
+  const overall = foldGateResults(foldedResults, {
+    emptyReason: "unobserved-repository",
+    emptyDetail: "No repositories were expected -- there is nothing to aggregate.",
+  });
 
   const unobservedRepositories = repositories
     .filter((status) => status.result.verdict === "indeterminate" && status.result.reason === "unobserved-repository")
