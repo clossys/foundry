@@ -659,7 +659,8 @@ async function main() {
 
   let owner = ownerOverride;
   let scope;
-  if (existsSync(DEFAULT_SCOPE_PATH)) {
+  const scopeFileExists = existsSync(DEFAULT_SCOPE_PATH);
+  if (scopeFileExists) {
     let scopeDoc;
     try {
       scopeDoc = JSON.parse(readFileSync(DEFAULT_SCOPE_PATH, "utf8"));
@@ -669,7 +670,17 @@ async function main() {
     if (typeof scopeDoc?.scope === "string" && scopeDoc.scope.startsWith("@")) scope = scopeDoc.scope;
   }
   if (!owner) {
-    if (!scope) die(`no ${DEFAULT_SCOPE_PATH} found to determine the registry owner (or pass --owner <login>)`);
+    // These are two different operator problems and they have two different
+    // fixes. Reporting "not found" for a file that is sitting right there sends
+    // the reader to create a file that already exists, and leaves the actual
+    // defect -- a malformed `scope` inside it -- unmentioned.
+    if (!scope) {
+      die(
+        scopeFileExists
+          ? `${DEFAULT_SCOPE_PATH} exists but declares no "scope" string beginning with "@", so the registry owner cannot be determined (fix the file, or pass --owner <login>)`
+          : `no ${DEFAULT_SCOPE_PATH} found to determine the registry owner (or pass --owner <login>)`,
+      );
+    }
     owner = scope.slice(1);
   }
   // package-scope.json's own declared scope is preferred; falling back to
