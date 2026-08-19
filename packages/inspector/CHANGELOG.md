@@ -5,6 +5,12 @@ All notable changes to `@vespeneventures/inspector` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.10] - 2026-08-19
+
+### Changed
+
+- **Documented the fork-accepting caller shape.** `documents/caller-workflow.md` gained a second worked example — a two-workflow split (collect / decide) for a consuming repository that accepts pull requests from forks. See [issue #272](https://github.com/vespeneventures/foundry/issues/272). No code changed.
+
 ## [0.1.9] - Unreleased
 
 ### Fixed
