@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.6.4] - 2026-08-20
+
+### Changed
+
+- **Widened the `@vespeneventures/copy` dependency range to `~0.8.0`.** A runtime dependency range is shipped content -- it sits in the published manifest and changes what a consumer resolves -- so it moves this package's version even though no code here changed. See [issue #378](https://github.com/vespeneventures/foundry/issues/378) for the change that required it.
+
 ## [0.6.3] - 2026-08-19
 
 ### Changed
