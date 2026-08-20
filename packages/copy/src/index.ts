@@ -98,6 +98,25 @@ export type {
 export { checkCopyTraceability } from "./copy-gate.js";
 export type { CopyGateFinding, CopyGateIgnored, CopyGateResult, CopyGateRule } from "./copy-gate.js";
 
+// Copy ADDRESSABILITY: is user-facing prose resolved from the copy
+// registry by id, or typed inline in a component? A different, stricter
+// question than traceability above — see addressability.ts's top doc
+// comment for the full split.
+export {
+  checkAddressability,
+  extractAddressabilityCandidates,
+  scanAddressabilitySources,
+} from "./addressability.js";
+export type {
+  AddressabilityGateResult,
+  AddressabilityPosition,
+  AddressabilityScanOptions,
+  AddressabilityScanResult,
+  AddressabilityUncheckedItem,
+  AddressabilityVerdict,
+  AddressabilityViolation,
+} from "./addressability.js";
+
 // Locale-coverage governance: is every declared locale covered by a source
 // locale's registry, where has a target locale drifted, has a translation
 // gone stale against an edited source (via content fingerprint), and does

@@ -360,6 +360,55 @@ this run is reported too, as a `"warning"`, since a stale exclusion (the
 file it named was renamed or deleted) is otherwise indistinguishable from
 one still doing real work.
 
+## Copy addressability — is prose resolved from the registry, or typed inline?
+
+`checkCopyTraceability` above answers "does this literal match a registered
+entry, or carry a `copy:<id>` citation?" — but a literal that matches is
+still a literal: the sentence sits in the component's own source, so a
+marketing rename means editing every component that typed it, not one
+registry entry. `checkAddressability` (`addressability.ts`) answers the
+stricter question traceability does not: is this prose actually resolved
+from the registry by id? There is no citation or text-match escape hatch.
+
+```ts
+import { scanAddressabilitySources, checkAddressability } from "@vespeneventures/copy";
+
+const scan = scanAddressabilitySources(sourceDir);
+const result = checkAddressability(scan);
+// result.verdict: "satisfied" | "violated" | "indeterminate"
+```
+
+Three positions are classified:
+
+1. **Markup text nodes** (`<span>Hello</span>`'s `Hello`) — always a
+   violation when it carries real prose.
+2. **The four user-facing attributes** — `aria-label`, `placeholder`,
+   `alt`, `title` — carry prose a person reads and are NOT text nodes; a
+   scanner that only understands text nodes reports zero on a component
+   whose entire user-facing surface is `<input aria-label="..." />`.
+   Always a violation when the value is literal prose.
+3. **Everything else** — a template literal (in any position, including
+   one of the four attributes above), an object/array literal value, or a
+   prop that is none of the four — this gate cannot confidently tell
+   whether it is resolved-through-an-id or genuinely non-user-facing, so it
+   is reported as `unchecked` (indeterminate), never silently treated as
+   clean.
+
+`AddressabilityGateResult.verdict` is `"indeterminate"` whenever `unchecked`
+is non-empty, zero components were scanned, or the tree could not be read —
+`"indeterminate"` wins over `"violated"` even when both are true in the same
+run, mirroring `checkCopyTraceability`'s own "a `2` gates before findings are
+counted" precedence.
+
+`copy-check addressability [scan-dir]` (see `cli.ts` — a subcommand of the
+existing `copy-check` bin, dispatched on an explicit `argv[0] ===
+"addressability"`, never by installed `bin` name or invoking path) exits
+`0` clean / `1` at least one violation / `2` could not run — deliberately a
+SEPARATE exit code from `copy-check`'s default command rather than folded
+into it, since the two gates' natural test fixtures are structurally
+incompatible (a literal traceability needs to prove a registry match is
+exactly a literal addressability cannot confirm is safe).
+
 ## API
 
 The root entry point exports the copy registry and traceability surface:
@@ -387,6 +436,12 @@ The root entry point exports the copy registry and traceability surface:
   `PathExclusionFindingRule`, and `PathExclusionValidation`.
 - Traceability: `checkCopyTraceability`, `CopyGateFinding`,
   `CopyGateIgnored`, `CopyGateResult`, and `CopyGateRule`.
+- Addressability (see above): `scanAddressabilitySources`,
+  `extractAddressabilityCandidates`, `checkAddressability`,
+  `AddressabilityGateResult`, `AddressabilityPosition`,
+  `AddressabilityScanOptions`, `AddressabilityScanResult`,
+  `AddressabilityUncheckedItem`, `AddressabilityVerdict`, and
+  `AddressabilityViolation`.
 - Locale-coverage governance: `checkLocaleCoverage`, `LocaleCoverageFinding`,
   `LocaleCoverageReport`, `LocaleCoverageSkip`, and
   `LocaleCoverageSkipReason` — see "Where this package sits on i18n" above.

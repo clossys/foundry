@@ -1,15 +1,41 @@
 #!/usr/bin/env node
 /**
- * `copy-check` — the CLI for `checkCopyTraceability`. Presentation only:
- * parse argv, load the copy record (via the sibling `registry.ts`), walk
- * the scan directory (`scan.ts`), run the pure gate (`copy-gate.ts`),
- * print a report — including every skip/exclusion count, never just the
- * findings — and pick an exit code. Matches
- * `@vespeneventures/strategy`'s `strategy-facts-check` shape closely,
- * deliberately: same three-state exit-code contract, same argument order
- * (the thing being checked FOR, then the thing being checked), same
- * `--help`, same `CliInputError` split between "bad arguments" and
- * "ran, found something wrong".
+ * `copy-check` — the CLI for `checkCopyTraceability` — AND, in this same
+ * file and under this SAME `copy-check` bin, a subcommand
+ * (`copy-check addressability`, dispatched on `argv[0] === "addressability"`
+ * before any of the existing argument parsing below runs — see the bottom
+ * of this file), `checkAddressability`: is user-facing prose resolved from
+ * the copy registry by id, rather than typed inline? A stricter, DIFFERENT
+ * question from traceability — see `addressability.ts`'s top doc comment
+ * for the full split. Deliberately NOT merged into the default command's
+ * own exit code: traceability's own fixtures/tests are built entirely
+ * around bare literal assignments (a registered string, an unregistered
+ * one, a `copy-gate:ignore` marker, a `copy:<id>` citation) — exactly the
+ * shapes addressability treats as either a violation (an attribute/
+ * text-node literal) or an unclassifiable position (a bare assignment,
+ * position 3 — see `addressability.ts`), by design and on purpose.
+ * Combining the two into one number would make the default command's own
+ * "clean pass" fixtures structurally unwritable (a literal a
+ * registered-text match needs to exist for traceability to prove anything
+ * is exactly a literal addressability cannot confirm is safe) rather than
+ * genuinely complementary. A SEPARATE `bin` entry pointing at this same
+ * compiled file was rejected for the identical reason `@vespeneventures/ui`
+ * never does that: this repository's own root `package.json` invokes every
+ * gate by its COMPILED PATH (`node packages/ui/dist/tokens/contrast-cli.js`,
+ * `node packages/controller/dist/cli.js`, ...), never by installed `bin`
+ * name — a second `bin` entry pointing at the same file is invisible to
+ * that invocation style, and worse, silently falls through to the OTHER
+ * command rather than erroring. An explicit `argv[0]` subcommand is
+ * reachable however the file is invoked, by path or by name. Both
+ * commands are still presentation-only wrappers over this package's pure
+ * gates, both still print every skip/exclusion count unconditionally, and
+ * both still use the identical three-state exit-code contract described
+ * below — same shape, same file, same bin, two subcommands, two numbers,
+ * matching `@vespeneventures/strategy`'s `strategy-facts-check` shape
+ * closely, deliberately: same argument order (the thing being checked
+ * FOR, then the thing being checked, where applicable), same `--help`,
+ * same `CliInputError` split between "bad arguments" and "ran, found
+ * something wrong".
  *
  * A second subcommand, `voice-derivation-coverage`, wires
  * `checkVoiceDerivationCoverage` (`./voice/derivation-coverage.ts`) in with
@@ -69,6 +95,12 @@
 import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  checkAddressability,
+  scanAddressabilitySources,
+  type AddressabilityGateResult,
+  type AddressabilityScanResult,
+} from "./addressability.js";
 import { checkCopyTraceability, type CopyGateResult } from "./copy-gate.js";
 import { readCopyRecord } from "./registry.js";
 import { scanCopySourceTree, type ScanResult } from "./scan.js";
@@ -79,6 +111,11 @@ const USAGE = `Usage: copy-check <record-file> [scan-dir] [options]
 
   record-file    Path to a CopyRecord JSON file (see @vespeneventures/copy's README). Required.
   scan-dir       Directory to scan for user-facing string/template literals. Defaults to the current working directory.
+
+See also "copy-check addressability [scan-dir]" (this same file's other
+subcommand, dispatched on argv[0] before anything below) — is user-facing
+prose resolved from the copy registry by id, rather than typed inline? A
+separate, stricter gate; not run as part of this default command.
 
 Options:
   --help         Print this message and exit 0.
@@ -399,6 +436,61 @@ function runVoiceDerivationCoverage(argv: string[]): number {
 }
 
 /**
+ * `copy-addressability`'s own accounting — a DIFFERENT gate from
+ * traceability above (see `addressability.ts`'s top doc comment): is this
+ * same source tree's user-facing prose resolved from the copy registry by
+ * id, rather than typed inline? Mirrors `printScanAccounting`'s
+ * "print every skip/exclusion count unconditionally" discipline.
+ */
+function printAddressabilityAccounting(scan: AddressabilityScanResult): void {
+  console.log(
+    `[addressability] Scanned ${scan.filesScanned} file${scan.filesScanned === 1 ? "" : "s"}, ` +
+      `${scan.violations.length} inline user-facing string${scan.violations.length === 1 ? "" : "s"} found.`,
+  );
+
+  if (scan.skippedByDesign.length > 0) {
+    console.log(`[addressability] ${scan.skippedByDesign.length} file(s) skipped by design (test/check/declaration files).`);
+  }
+
+  if (scan.excludedFiles.length > 0) {
+    console.log(`[addressability] ${scan.excludedFiles.length} file(s) excluded via pathExclusions.`);
+  }
+
+  if (scan.pathExclusionFindings.length > 0) {
+    for (const f of scan.pathExclusionFindings) {
+      const line = `[addressability]   [${f.rule}] ${f.path ? `"${f.path}": ` : ""}${f.message}`;
+      if (f.severity === "error") console.error(line);
+      else console.log(line);
+    }
+  }
+
+  if (scan.parseFailures.length > 0) {
+    console.error(`[addressability] ${scan.parseFailures.length} file(s) could NOT be parsed and were NOT scanned:`);
+    for (const p of scan.parseFailures) console.error(`  ${p.file}: ${p.detail}`);
+  }
+
+  if (scan.unchecked.length > 0) {
+    console.error(`[addressability] ${scan.unchecked.length} string position(s) recognized but NOT reliably classified — coverage for these is incomplete:`);
+    for (const u of scan.unchecked) console.error(`  [${u.kind}] ${u.file}:${u.line}  ${u.detail}`);
+  }
+}
+
+function printAddressabilityReport(result: AddressabilityGateResult): void {
+  if (result.violations.length === 0) {
+    console.log("[addressability] No inline user-facing prose found.");
+  } else {
+    console.log(`\n[addressability] ${result.violations.length} violation(s):`);
+    for (const v of result.violations) {
+      const where = v.position === "markup-text" ? "a markup text node" : `the "${v.attribute}" attribute`;
+      console.log(`  [copy-addressability] ${v.file}:${v.line}  inline prose in ${where}, not resolved from the copy registry by id: ${v.raw}`);
+    }
+  }
+  if (result.verdict === "indeterminate") {
+    console.error(`[addressability] indeterminate — ${result.reasons.join("; ")}. Refusing to report a pass.`);
+  }
+}
+
+/**
  * Exported (unlike a typical CLI `main`) so `cli.test.ts` can exercise the
  * whole argv-to-exit-code contract directly, against real `mkdtemp` temp
  * directories, without spawning a subprocess for every case. Takes `argv`
@@ -540,6 +632,124 @@ function run(): void {
   }
 }
 
+// ============================================================================
+// "copy-check addressability" — a SUBCOMMAND of the SAME `copy-check` bin,
+// same file, same three-state exit-code shape as the default command
+// above. Dispatched on `argv[0] === "addressability"` at the very bottom
+// of this file, BEFORE any of the default command's own argument parsing
+// runs — see this file's top doc comment for why this is a subcommand
+// rather than a second `bin` entry, and why its own exit code is not
+// folded into the default command's.
+// ============================================================================
+
+const ADDRESSABILITY_USAGE = `Usage: copy-check addressability [scan-dir] [options]
+
+  scan-dir       Directory to scan for user-facing prose. Defaults to the current working directory.
+
+Checks whether user-facing prose is resolved from the copy registry by id,
+rather than typed inline in a component — a stricter, separate question
+from copy-check's default traceability command (see
+@vespeneventures/copy's addressability.ts for the full contract). Three
+positions are classified: markup text nodes and the four user-facing
+attributes (aria-label, placeholder, alt, title) are violations when they
+carry literal prose; every other string position (a template literal, an
+object/array literal value, a prop outside the four) is reported as
+unclassifiable rather than assumed clean. There is no citation or
+registry-text-match escape hatch here, unlike the default command.
+
+Options:
+  --help         Print this message and exit 0.
+
+Exit codes: 0 = clean, 1 = at least one inline user-facing string found, 2 = could not run (bad input, nothing matched to scan, every matched file failed to parse, or a string position could not be confidently classified).
+`;
+
+interface AddressabilityParsedArgs {
+  scanDir?: string;
+  help: boolean;
+}
+
+function parseAddressabilityArgs(argv: string[]): AddressabilityParsedArgs {
+  let scanDir: string | undefined;
+  let help = false;
+
+  for (const arg of argv) {
+    if (arg === "--help" || arg === "-h") {
+      help = true;
+      continue;
+    }
+    if (arg.startsWith("-")) {
+      throw new CliInputError(`unknown flag "${arg}"`);
+    }
+    if (scanDir === undefined) {
+      scanDir = arg;
+    } else {
+      throw new CliInputError(`unexpected extra argument "${arg}"`);
+    }
+  }
+
+  return { scanDir, help };
+}
+
+/**
+ * Exported (unlike a typical CLI `main`) for the identical reason `main`
+ * above is — `cli.test.ts` exercises the whole argv-to-exit-code contract
+ * directly against real `mkdtemp` directories, without spawning a
+ * subprocess.
+ */
+export function mainAddressabilityCheck(argv: string[]): number {
+  const args = parseAddressabilityArgs(argv);
+  if (args.help) {
+    console.log(ADDRESSABILITY_USAGE);
+    return 0;
+  }
+
+  const scanDir = resolve(args.scanDir ?? process.cwd());
+  requireDirectory("scan-dir", scanDir);
+
+  console.log(`Scan directory: ${scanDir}`);
+
+  // Throws (fail-closed) on an unreadable directory, exactly like
+  // `scanCopySourceTree` — caught by `runAddressabilityCheck()`'s own
+  // catch-all below.
+  const scan = scanAddressabilitySources(scanDir);
+  printAddressabilityAccounting(scan);
+
+  const result = checkAddressability(scan);
+  printAddressabilityReport(result);
+
+  // Mirrors copy-check's own "unchecked/could-not-run wins over a real
+  // finding" precedence (see this file's top doc comment) —
+  // `checkAddressability` already applies it when computing `verdict`, so
+  // this is just the verdict-to-exit-code mapping.
+  if (result.verdict === "indeterminate") return 2;
+  return result.verdict === "violated" ? 1 : 0;
+}
+
+/**
+ * `argv` here is whatever followed the `"addressability"` subcommand token
+ * — the dispatch at the bottom of this file strips that token BEFORE
+ * calling this, so `mainAddressabilityCheck` never sees it and its own
+ * argument parsing (`parseAddressabilityArgs`) stays identical to
+ * `main`'s own shape (just `[scan-dir] [options]`, no subcommand of its
+ * own to account for).
+ */
+function runAddressabilityCheck(argv: string[]): void {
+  try {
+    process.exitCode = mainAddressabilityCheck(argv);
+  } catch (error) {
+    if (error instanceof CliInputError) {
+      console.error(`copy-check addressability: ${error.message}`);
+      console.error(`\n${ADDRESSABILITY_USAGE}`);
+      process.exitCode = 2;
+    } else {
+      console.error(
+        `copy-check addressability: unexpected error: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`,
+      );
+      process.exitCode = 2;
+    }
+  }
+}
+
 /**
  * Same real-path guard `@vespeneventures/strategy`'s `cli.ts` and
  * `@vespeneventures/gates`' `cli.ts` both use, for the same reason: `npm
@@ -561,6 +771,28 @@ function detectMainModule(): boolean {
   }
 }
 
+/**
+ * `copy-check` and `copy-check addressability` are ONE `bin` entry, one
+ * compiled file, dispatched by an explicit FIRST ARGUMENT — never by how
+ * this file was invoked (its own path, a symlink name, an installed `bin`
+ * shim, ...). That is deliberate: this repository's own root
+ * `package.json` invokes every gate by compiled path
+ * (`node packages/ui/dist/tokens/contrast-cli.js`,
+ * `node packages/controller/dist/cli.js`, ...), never by `bin` name, so
+ * any dispatch keyed on the invoking path/name (a second `bin` entry
+ * pointing at this same file, or a `basename(process.argv[1])` sniff)
+ * would be unreachable under that invocation style — worse, it would
+ * silently fall through to the DEFAULT command instead of erroring,
+ * exactly the "runs the wrong thing without ever failing" failure mode a
+ * gate must never have. `rawArgs[0]` is read BEFORE `main()`'s own
+ * `parseArgs` ever sees the array, so the default command's argument
+ * shape is completely unaffected by this subcommand existing at all.
+ */
 if (detectMainModule()) {
-  run();
+  const rawArgs = process.argv.slice(2);
+  if (rawArgs[0] === "addressability") {
+    runAddressabilityCheck(rawArgs.slice(1));
+  } else {
+    run();
+  }
 }
