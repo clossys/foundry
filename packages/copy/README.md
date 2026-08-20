@@ -400,12 +400,14 @@ is non-empty, zero components were scanned, or the tree could not be read —
 run, mirroring `checkCopyTraceability`'s own "a `2` gates before findings are
 counted" precedence.
 
-The installable `copy-addressability-check` CLI (see `cli.ts`, a second `bin`
-entry alongside `copy-check`) exits `0` clean / `1` at least one violation /
-`2` could not run — deliberately a SEPARATE command from `copy-check` rather
-than folded into its exit code, since the two gates' natural test fixtures
-are structurally incompatible (a literal traceability needs to prove a
-registry match is exactly a literal addressability cannot confirm is safe).
+`copy-check addressability [scan-dir]` (see `cli.ts` — a subcommand of the
+existing `copy-check` bin, dispatched on an explicit `argv[0] ===
+"addressability"`, never by installed `bin` name or invoking path) exits
+`0` clean / `1` at least one violation / `2` could not run — deliberately a
+SEPARATE exit code from `copy-check`'s default command rather than folded
+into it, since the two gates' natural test fixtures are structurally
+incompatible (a literal traceability needs to prove a registry match is
+exactly a literal addressability cannot confirm is safe).
 
 ## API
 

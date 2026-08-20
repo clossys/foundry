@@ -19,8 +19,7 @@
     "./voice-record.template.jsonc": "./templates/voice-record.template.jsonc"
   },
   "bin": {
-    "copy-check": "./dist/cli.js",
-    "copy-addressability-check": "./dist/cli.js"
+    "copy-check": "./dist/cli.js"
   },
   "files": [
     "dist",

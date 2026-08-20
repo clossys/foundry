@@ -1,6 +1,8 @@
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   checkAddressability,
@@ -10,6 +12,8 @@ import {
   type AddressabilityScanResult,
 } from "./addressability.js";
 import { mainAddressabilityCheck } from "./cli.js";
+
+const DIST_CLI = join(dirname(fileURLToPath(import.meta.url)), "..", "dist", "cli.js");
 
 // Hermetic: every test operates on its own in-memory source string (for
 // extractAddressabilityCandidates, which does zero I/O) or its own
@@ -270,5 +274,85 @@ describe("mainAddressabilityCheck — CLI wiring", () => {
   it("returns 2 for an unclassifiable position (a template literal), even with zero violations", () => {
     writeFileSync(join(dir, "labels.ts"), "const greeting = `Welcome, ${name}`;\n");
     expect(mainAddressabilityCheck([dir])).toBe(2);
+  });
+});
+
+// REGRESSION. Every test above invokes either `mainAddressabilityCheck`
+// (the exported function directly) or, indirectly, whatever bin name it
+// happened to be wired to — neither can observe how this repository's own
+// root package.json actually invokes every gate: BY COMPILED PATH
+// (`node packages/ui/dist/tokens/contrast-cli.js`,
+// `node packages/controller/dist/cli.js`, ...), never through `npx` or an
+// installed `bin` name. A prior version of this file dispatched on
+// `basename(process.argv[1])`, which is exactly invisible to that
+// invocation style — `node dist/cli.js <dir>` silently ran copy-check's
+// DEFAULT command instead of addressability, with no error at all. This
+// spawns the REAL compiled `dist/cli.js` as a subprocess, exactly the way
+// this repository's own CI would, and asserts the exit code directly —
+// the one thing "did not throw" cannot prove, since Node's own
+// uncaught-exception default exit code is also non-zero.
+describe("dist/cli.js — reachable by direct compiled-path invocation, this repository's own real invocation pattern", () => {
+  let dir: string;
+
+  beforeEach(() => {
+    if (!existsSync(DIST_CLI)) {
+      throw new Error(
+        `${DIST_CLI} does not exist — run "npm run build" in packages/copy before running this test file. ` +
+          `This suite proves the gate is reachable the way this repository's own CI invokes it (by compiled path), which is only meaningful against the real compiled output, never a mock of it.`,
+      );
+    }
+    dir = mkdtempSync(join(tmpdir(), "copy-addressability-distcli-"));
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  function runDistCli(args: string[]): { status: number; stdout: string; stderr: string } {
+    try {
+      const stdout = execFileSync(process.execPath, [DIST_CLI, ...args], { encoding: "utf8" });
+      return { status: 0, stdout, stderr: "" };
+    } catch (error) {
+      const e = error as { status: number | null; stdout?: string; stderr?: string };
+      return { status: e.status ?? 1, stdout: e.stdout ?? "", stderr: e.stderr ?? "" };
+    }
+  }
+
+  it("`node dist/cli.js addressability <empty-dir>` exits 2 — the exact invocation the wiring bug made silently run the wrong command", () => {
+    const result = runDistCli(["addressability", dir]);
+    expect(result.status).toBe(2);
+    expect(result.status).not.toBe(0);
+    expect(result.status).not.toBe(1);
+    // Proves the ADDRESSABILITY gate specifically ran, not copy-check's
+    // default command falling through silently (which would instead
+    // print "record-file ... is not a file" and never mention
+    // addressability at all — see this describe block's own comment).
+    expect(result.stdout).toContain("[addressability]");
+  });
+
+  it("`node dist/cli.js addressability <dir>` finds a real violation and exits 1", () => {
+    writeFileSync(join(dir, "Widget.tsx"), "export const Widget = () => <p>No results found</p>;\n");
+    const result = runDistCli(["addressability", dir]);
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain("[addressability]");
+    expect(result.stdout).toContain("No results found");
+  });
+
+  it("`node dist/cli.js addressability <clean-dir>` exits 0", () => {
+    writeFileSync(
+      join(dir, "Cta.tsx"),
+      "export function Cta({ resolve, id }: { resolve: (id: string) => string; id: string }) {\n" +
+        "  return <button aria-label={resolve(id)}>{resolve(id)}</button>;\n" +
+        "}\n",
+    );
+    const result = runDistCli(["addressability", dir]);
+    expect(result.status).toBe(0);
+  });
+
+  it("`node dist/cli.js <bad-record-file>` (no subcommand) still runs the DEFAULT copy-check command, unaffected by the subcommand existing", () => {
+    const result = runDistCli([dir]);
+    expect(result.status).toBe(2);
+    expect(result.stderr).toContain("record-file");
+    expect(result.stdout).not.toContain("[addressability]");
   });
 });

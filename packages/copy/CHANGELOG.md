@@ -30,16 +30,24 @@
   `extractAddressabilityCandidates`, `checkAddressability`, and their
   supporting types.
 
-- **`copy-addressability-check`** — a new installable CLI (see `cli.ts`,
-  wired as a second `bin` entry alongside the existing `copy-check`), same
-  three-state exit-code contract (`0` clean, `1` at least one violation,
-  `2` could not run — including any unclassifiable string position).
-  Deliberately a SEPARATE command from `copy-check` rather than folded
-  into its exit code: the two gates' own natural test fixtures are
-  structurally incompatible (a literal traceability needs to prove a
-  registry match is exactly a literal addressability cannot confirm is
-  safe), so combining them would make `copy-check`'s own "clean pass"
-  fixtures unwritable.
+- **`copy-check addressability [scan-dir]`** — a new subcommand of the
+  EXISTING `copy-check` bin (see `cli.ts`), dispatched on an explicit
+  `argv[0] === "addressability"` before any of the default command's own
+  argument parsing runs, same three-state exit-code contract (`0` clean,
+  `1` at least one violation, `2` could not run — including any
+  unclassifiable string position). Deliberately a separate EXIT CODE from
+  `copy-check`'s default command rather than folded into it: the two
+  gates' own natural test fixtures are structurally incompatible (a
+  literal traceability needs to prove a registry match is exactly a
+  literal addressability cannot confirm is safe), so combining the two
+  exit codes would make `copy-check`'s own "clean pass" fixtures
+  unwritable. NOT a second `bin` entry pointing at the same compiled
+  file — this repository's own root `package.json` invokes every gate by
+  compiled path (`node packages/<pkg>/dist/.../cli.js`), never by
+  installed `bin` name, so a second `bin` entry (or any dispatch keyed on
+  the invoking path/name) would be unreachable under that invocation
+  style and would silently fall through to the default command instead
+  of erroring.
 
 ## [0.8.0] - 2026-08-19
 
