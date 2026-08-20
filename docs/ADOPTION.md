@@ -31,12 +31,10 @@ registry-side gap, not a defect in what these packages publish — see
 confirming evidence and [docs/DECISIONS.md](DECISIONS.md#a-standing-property-of-that-registry-optional-peers-install-as-required)
 for the decision to document rather than restructure packages around it.
 
-Six packages are affected — five of them in the table below: `ui` (six
+Six packages are affected, all six in the table below: `ui` (six
 optional peers), `auth` (five), `surface` (`react`/`react-dom`), `comms`
-(`resend`), and `governance` (`typescript`). The sixth, `consent`
-(`react`/`react-dom`), is `incubating` rather than published and so does not
-appear in that table, but carries the same behaviour once installed.
-Installing any one of them pulls
+(`resend`), `controller` (`typescript`), and `consent`
+(`react`/`react-dom`). Installing any one of them pulls
 in its full declared peer set, regardless of which subpath is actually
 imported — a consumer wanting only `ui`'s token CSS, or only `comms`'s
 provider-neutral root, gets React, Tailwind, or `resend` installed anyway.
@@ -49,7 +47,7 @@ planned, not only after.
 These packages have lifecycle status `published`, but none is an adoption-ready
 target until its lifecycle entry records the required qualification evidence.
 Issue [#234](https://github.com/vespeneventures/foundry/issues/234) owns that
-14-package exact-version install and export or CLI proof; it succeeds
+15-package exact-version install and export or CLI proof; it succeeds
 [#213](https://github.com/vespeneventures/foundry/issues/213), which decided
 the registry and is closed. After qualification,
 a consumer installs only the subset it needs through authenticated GitHub
@@ -58,25 +56,24 @@ Packages access.
 | Capability | Package or subpath | Consumer-owned remainder |
 | --- | --- | --- |
 | Authorization primitives | `@vespeneventures/auth` | Principals, grants, policy values, provider clients, and enforcement wiring. |
-| Content bindings | `@vespeneventures/policy` | Bound documents, storage, and materialization. |
-| Shared conventions | `@vespeneventures/conventions` | Plane overlays, prefixes, repository inventory, skill bodies, and routine tempo. |
-| Machine provisioning | `@vespeneventures/provisioning` | Installation manifest, destinations, adapters, and mutation approval. |
+| Rule grammar and package-process governance | `@vespeneventures/controller` and its focused subpaths | Bound documents, storage, and materialization; plane overlays, prefixes, repository inventory, skill bodies, and routine tempo; profile, requirement, preference, supply, decision, exception, scope, provenance, and effective values; all discovery, provider I/O, and any resulting machine mutation. |
 | Domain machinery | `@vespeneventures/domain` | Product-owned types, vocabularies, relations, and migrations. |
-| Deployment inspection | `@vespeneventures/deployment` | Provider credentials, topology, environment choices, and remediation. |
+| Manifest, deployment, and toolchain reconciliation | `@vespeneventures/builder` | Installation manifest, destinations, adapters, and mutation approval; provider credentials, topology, environment choices, and remediation. |
 | Communication contracts | `@vespeneventures/comms` | Recipients, sender identity, templates, consent policy, storage, routes, and provider configuration. |
-| Secret resolution | `@vespeneventures/secrets` | Secret catalog, aliases, provider resources, credential references, grants, and rotation policy. |
-| Package, repository, and composition governance | `@vespeneventures/governance` and its focused subpaths | Profile, requirement, policy, preference, supply, decision, exception, scope, provenance, and effective values; all discovery, provider I/O, and any resulting machine mutation. |
+| Key custody and rotation | `@vespeneventures/locksmith` | Secret catalog, aliases, provider resources, credential references, grants, rotation policy, and any actual key rotation or revocation call. |
+| Change verdict and secret scanning | `@vespeneventures/inspector` | CI workflow wiring, required-check configuration, and any resulting branch-protection action. |
 | Visual system | `@vespeneventures/ui` | Product theme choices, compositions, and application wiring. |
 | Strategy validation | `@vespeneventures/strategy` | Facts, mission, markets, audiences, roadmap, and brand values. |
 | Copy validation | `@vespeneventures/copy` | Voice, glossary, claims, templates, and approved words. |
 | Channel surfaces | `@vespeneventures/surface` | Routes, build adapters, deployment, and publishing. |
 | Outcome ledger | `@vespeneventures/ledger` | Durable storage, current fact values, channel delivery, and operational follow-up. |
+| Consent record core | `@vespeneventures/consent` | Cookie or localStorage adapters, a database client, analytics or tag-manager integration, jurisdiction logic, and banner copy or legal compliance decisions. |
+| Plane self-entitlement reconciliation | `@vespeneventures/integrator` | Entitlement declaration, manifest and lockfile content, registry transport, and any resulting install or removal action. |
+| Telemetry and gate-efficacy measurement | `@vespeneventures/observer` | Event log storage, provider transport, gate wiring, and any resulting branch-protection action. |
 
-`@vespeneventures/consent` remains `incubating`, so it is not an available
-registry adoption target. Deprecated compatibility packages remain published
-only for migration; after qualification, a newly adopting consumer uses the
-lifecycle replacement. Retired names remain reserved and must not be reused or
-deleted.
+Deprecated compatibility packages remain published only for migration; after
+qualification, a newly adopting consumer uses the lifecycle replacement.
+Retired names remain reserved and must not be reused or deleted.
 
 ## Reusable capability not yet adoption-ready
 
