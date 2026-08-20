@@ -4,7 +4,8 @@
  * The machinery a consuming plane runs against ITSELF to answer whether it
  * holds the catalogue it is entitled to, and whether that holding is current:
  * entitlement and opt-out validation, an installed-inventory reader, a
- * version reconciler, a reachability probe, and an admission contract.
+ * version reconciler, a reachability probe, an admission contract, and a
+ * supersession detector.
  *
  * It ships no registry of consumers, and never will: this package supplies
  * planes that do not govern each other, so it must never learn who installs
@@ -46,3 +47,13 @@ export type { AdmissionRule, AdmissionContract, AdmissionCandidate, AdmissionCon
 
 export { parseVersion, compareVersions } from "./semver.js";
 export type { ParsedVersion } from "./semver.js";
+
+export { DEPENDENCY_POSITIONS, detectSupersession, supersessionResultToExitCode } from "./supersession.js";
+export type {
+  SupersessionEntry,
+  SupersessionMap,
+  DependencyPosition,
+  SupersededPair,
+  SupersessionIndeterminateReason,
+  SupersessionResult,
+} from "./supersession.js";

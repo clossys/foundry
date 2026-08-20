@@ -2,11 +2,14 @@ export type IntegratorErrorCode =
   | "INVALID_ENTITLEMENT_DECLARATION"
   | "INVALID_ADMISSION_CONTRACT"
   | "INVALID_INVENTORY_SOURCE"
-  | "INVALID_VERSION";
+  | "INVALID_VERSION"
+  | "INVALID_SUPERSESSION_MANIFEST"
+  | "INVALID_SUPERSESSION_MAP";
 
 /**
  * Thrown by every offline validator in this package (`loadEntitlementDeclaration`,
- * `loadAdmissionContract`, `readInstalledInventory`, `parseVersion`). All of
+ * `loadAdmissionContract`, `readInstalledInventory`, `parseVersion`,
+ * `detectSupersession`'s internal manifest and map parsers). All of
  * them validate data that arrived from outside this process -- a plane's own
  * declaration file, its own manifest, its own lockfile -- and all of them
  * throw rather than return findings, for the same reason

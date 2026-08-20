@@ -1,6 +1,6 @@
 {
   "name": "@vespeneventures/integrator",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -13,6 +13,9 @@
       "import": "./dist/index.js"
     }
   },
+  "bin": {
+    "integrator-supersession-check": "./dist/cli.js"
+  },
   "files": [
     "dist",
     "src",
@@ -22,7 +25,7 @@
     "LICENSE"
   ],
   "sideEffects": false,
-  "description": "Machinery a consuming plane runs against itself to answer whether it holds the catalogue it is entitled to, and whether that holding is current: entitlement and opt-out validation, an installed-inventory reader, a version reconciler, a reachability probe, and an admission contract. Ships no registry of consumers.",
+  "description": "Machinery a consuming plane runs against itself to answer whether it holds the catalogue it is entitled to, and whether that holding is current: entitlement and opt-out validation, an installed-inventory reader, a version reconciler, a reachability probe, an admission contract, and a supersession detector. Ships no registry of consumers.",
   "keywords": [
     "catalogue",
     "entitlement",
@@ -30,6 +33,7 @@
     "reachability",
     "admission",
     "version-reconciliation",
+    "supersession",
     "typescript"
   ],
   "author": "Vespene Ventures",

@@ -311,6 +311,84 @@ already computed — rather than inventing new external data:
 means admitted, and every rule is evaluated independently, so a candidate
 failing two rules reports both.
 
+## Supersession detector
+
+A package published from this repository can replace a package a consuming
+plane already installs under a different name. Nothing about that is a
+version conflict — the names differ, so a lockfile resolves both happily —
+which is exactly what makes the duplication silent: two visual systems, two
+auth surfaces, two copies of the same contract, sitting side by side.
+
+`detectSupersession(manifest, supersessionMap)` is the mechanism, and only
+the mechanism: **it ships no map and no consumer package names, exactly as
+the blindness rule above requires.** `SupersessionMap` is entirely
+caller-supplied —
+
+```jsonc
+{
+  "version": 1,
+  "supersededBy": {
+    "@example-scope/legacy-widget": { "replacement": "@example-scope/widget", "since": "2.0.0" }
+  }
+}
+```
+
+— a document each consuming plane writes and keeps in its own, private
+workspace. This package never learns what any plane actually installs, let
+alone what any plane used to install.
+
+Pure and hermetic: no network, no filesystem. `detectSupersession` never
+throws — a manifest or a supersession map it cannot trust is reported as
+`indeterminate`, with a machine-readable reason (`"manifest-invalid"`,
+`"supersession-map-invalid"`, or `"supersession-map-empty"` for a
+syntactically valid but empty map), never silently folded into `satisfied`
+and never silently reported as zero pairs.
+
+**Every dependency position is scanned** — `dependencies`, `devDependencies`,
+`peerDependencies`, `optionalDependencies`, and npm's `overrides` /
+yarn's `resolutions` blocks, recursively where either can nest a name. A
+superseding package declared in one position and the superseded name pinned
+only in another (an override block, say) is still a conflict; this looks up
+presence by exact name across every position, never per-field in isolation.
+
+**Exact match only, never a substring.** A superseded `foo` never matches an
+installed `foo-utils` or `@example-scope/foo-legacy`, and a scoped name never
+cross-matches its unscoped-looking counterpart — every comparison is whole-
+string equality against `isValidPackageName`-shaped keys, the same package-
+name check every other module here already shares.
+
+```ts
+import { detectSupersession, supersessionResultToExitCode } from "@vespeneventures/integrator";
+
+const result = detectSupersession(
+  JSON.parse(rawManifestJson),
+  JSON.parse(rawSupersessionMapJson), // this plane's own, private map -- never from this package
+);
+
+if (result.verdict === "violated") {
+  console.log(`${result.count} conflicting pair(s):`, result.pairs);
+}
+
+process.exitCode = supersessionResultToExitCode(result);
+```
+
+**`integrator-supersession-check`**, this package's one shipped CLI, wraps
+the same function for a plane that wants a drop-in gate:
+
+```bash
+npx integrator-supersession-check ./package.json ./supersession-map.json         # report-only: always exits 0
+npx integrator-supersession-check ./package.json ./supersession-map.json --block # enforced: 0 / 1 / 2
+```
+
+It is **report-only by default, blocking one flag away**. A plane adopting
+this gate against its own real supersession map is very likely to find a
+backlog of pre-existing pairs on day one — every one of them accumulated
+before this gate existed to catch them — and a gate that goes straight to
+red against a dozen known pairs teaches a team to disable or ignore it
+rather than work the list down. Run report-only in CI first, watch `count`
+fall as pairs are cleaned up, and pass `--block` once it reaches (and stays
+at) zero.
+
 ## API
 
 | Export | Kind | Description |
@@ -328,6 +406,8 @@ failing two rules reports both.
 | `loadAdmissionContract(raw)` | function | Validates a parsed admission contract offline. Rejects an unknown rule kind, a duplicate rule, or an unparseable `minimum-version` floor |
 | `evaluateAdmission(contract, candidate, context)` | function | Evaluates a candidate against a contract. Empty result means admitted |
 | `parseVersion(value)` / `compareVersions(a, b)` | function | A minimal, dependency-free semantic-version parser and comparator |
+| `detectSupersession(manifest, supersessionMap)` | function | Pure, hermetic supersession detector. Never throws — a manifest or map it cannot trust is `indeterminate` |
+| `supersessionResultToExitCode(result)` | function | Maps a `SupersessionResult` onto the `0` / `1` / `2` ternary |
 | `IntegratorValidationError` | class | Thrown by every offline validator in this package, carrying a stable `IntegratorErrorCode` |
 | `isValidPackageName(value)` | function | The one package-name check every module in this package shares |
 | `EntitlementEntry` / `OptOutEntry` / `EntitlementDeclaration` | types | The entitlement schema |
@@ -338,6 +418,10 @@ failing two rules reports both.
 | `AdmissionRule` / `AdmissionContract` / `AdmissionCandidate` / `AdmissionContext` / `AdmissionFinding` | types | The admission contract's schema |
 | `ParsedVersion` | type | `{ major, minor, patch, prerelease }` |
 | `IntegratorErrorCode` | type | Stable error-code union for `IntegratorValidationError` |
+| `SupersessionEntry` / `SupersessionMap` | types | A consuming plane's own, privately declared legacy-name-to-replacement map |
+| `DependencyPosition` / `DEPENDENCY_POSITIONS` | type / const | Every manifest field scanned: `dependencies`, `devDependencies`, `peerDependencies`, `optionalDependencies`, `overrides`, `resolutions` |
+| `SupersededPair` | type | One confirmed conflict: the legacy name and its replacement, each with the positions they were found in |
+| `SupersessionIndeterminateReason` / `SupersessionResult` | types | The supersession detector's three-state contract |
 
 ## What it is not
 
