@@ -4,6 +4,8 @@ import {
   validateBrandAttribute,
   validateBrandAttributes,
   validateBrandEssence,
+  validateDirectionEntities,
+  validateDirectionEntity,
   validateFact,
   validateFacts,
   validateMarket,
@@ -253,5 +255,124 @@ describe("validateBrandAttributes", () => {
 
   it("rejects a non-array", () => {
     expect(validateBrandAttributes({}).ok).toBe(false);
+  });
+});
+
+describe("validateDirectionEntity", () => {
+  const base = {
+    id: "vision-2026-h2",
+    kind: "mission",
+    statement: "Every public claim a team makes should trace to something checkable.",
+    rationale: "Trust erodes fastest when marketing outruns what engineering can actually verify.",
+    decidedOn: "2026-01-05",
+    derivesFrom: [],
+  };
+
+  it("accepts a well-formed root entity (empty derivesFrom, no supersedes)", () => {
+    const result = validateDirectionEntity(base);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.id).toBe("vision-2026-h2");
+      expect(result.value.supersedes).toBeUndefined();
+    }
+  });
+
+  it("accepts an entity that supersedes a prior version and derives from others", () => {
+    const result = validateDirectionEntity({
+      ...base,
+      id: "vision-2026-h2-v2",
+      supersedes: "vision-2026-h2",
+      derivesFrom: ["market-us-mid", "audience-eng-leads"],
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.supersedes).toBe("vision-2026-h2");
+      expect(result.value.derivesFrom).toEqual(["market-us-mid", "audience-eng-leads"]);
+    }
+  });
+
+  it("accepts every kind in the closed vocabulary", () => {
+    for (const kind of ["mission", "positioning", "market", "audience"]) {
+      expect(validateDirectionEntity({ ...base, kind }).ok).toBe(true);
+    }
+  });
+
+  it("rejects a kind outside the closed vocabulary", () => {
+    expect(validateDirectionEntity({ ...base, kind: "vibe" }).ok).toBe(false);
+  });
+
+  it("rejects a non-kebab-case id", () => {
+    expect(validateDirectionEntity({ ...base, id: "Vision 2026" }).ok).toBe(false);
+  });
+
+  it("rejects a statement under the minimum length", () => {
+    expect(validateDirectionEntity({ ...base, statement: "Be honest" }).ok).toBe(false);
+  });
+
+  it("rejects a rationale under the minimum length", () => {
+    expect(validateDirectionEntity({ ...base, rationale: "Because." }).ok).toBe(false);
+  });
+
+  it("rejects a decidedOn that is not an ISO date", () => {
+    expect(validateDirectionEntity({ ...base, decidedOn: "Jan 5 2026" }).ok).toBe(false);
+  });
+
+  it("rejects a missing derivesFrom entirely — required, even when it would be empty", () => {
+    const { derivesFrom: _derivesFrom, ...rest } = base;
+    expect(validateDirectionEntity(rest).ok).toBe(false);
+  });
+
+  it("rejects a non-object input", () => {
+    expect(validateDirectionEntity("vision").ok).toBe(false);
+    expect(validateDirectionEntity(null).ok).toBe(false);
+  });
+});
+
+describe("validateDirectionEntities", () => {
+  const vision = {
+    id: "vision-2026-h2",
+    kind: "mission",
+    statement: "Every public claim a team makes should trace to something checkable.",
+    rationale: "Trust erodes fastest when marketing outruns what engineering can actually verify.",
+    decidedOn: "2026-01-05",
+    derivesFrom: [],
+  };
+  const positioning = {
+    id: "positioning-2026-h2",
+    kind: "positioning",
+    statement: "For engineering leads at mid-market SaaS companies, we are the facts layer that ships with the product.",
+    rationale: "Positioning has to name the buyer this vision actually serves, not every possible buyer.",
+    decidedOn: "2026-01-12",
+    derivesFrom: ["vision-2026-h2"],
+  };
+
+  it("accepts an array of well-formed entities forming a DAG", () => {
+    expect(validateDirectionEntities([vision, positioning]).ok).toBe(true);
+  });
+
+  it("accepts an empty array — no direction authored yet is not itself a shape error", () => {
+    expect(validateDirectionEntities([]).ok).toBe(true);
+  });
+
+  it("rejects a non-array", () => {
+    expect(validateDirectionEntities({}).ok).toBe(false);
+  });
+
+  it("rejects two entities sharing the same id", () => {
+    const result = validateDirectionEntities([vision, { ...positioning, id: vision.id }]);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.issues.some((issue) => issue.message.includes("duplicate direction entity id"))).toBe(true);
+    }
+  });
+
+  it("reports the malformed entry before the duplicate-id check, same ordering discipline as validateFacts", () => {
+    const result = validateDirectionEntities([vision, { ...vision }, { id: vision.id }]);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      // The third entry is malformed (missing required fields) — that issue
+      // must surface even though a duplicate id is also present.
+      expect(result.issues.some((issue) => issue.path.startsWith("(root)[2]"))).toBe(true);
+    }
   });
 });

@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -235,6 +235,174 @@ describe("main — brand-coverage — real runs", () => {
 });
 
 // -----------------------------------------------------------------------
+// `direction` — the third subcommand. Same shape the `brand-coverage`
+// suite above uses: `main(argv)` called directly, a `direction-entities`
+// JSON file, and a `reviewed-against` JSON file (a flat array of strings,
+// one entry per derived artifact's `reviewedAgainst` value).
+// -----------------------------------------------------------------------
+
+const DIRECTION_RATIONALE =
+  "Customers now cite audit requirements as their top blocker, not speed — the vision has to say so.";
+
+function directionEntity(id: string, overrides: Record<string, unknown> = {}) {
+  return {
+    id,
+    kind: "mission",
+    statement: "Every public claim a team makes should trace to something checkable.",
+    rationale: DIRECTION_RATIONALE,
+    decidedOn: "2026-01-05",
+    derivesFrom: [],
+    ...overrides,
+  };
+}
+
+function writeDirectionEntities(dir: string, value: unknown): string {
+  const path = join(dir, "direction-entities.json");
+  writeFileSync(path, JSON.stringify(value));
+  return path;
+}
+
+function writeReviewedAgainst(dir: string, value: unknown): string {
+  const path = join(dir, "reviewed-against.json");
+  writeFileSync(path, JSON.stringify(value));
+  return path;
+}
+
+describe("main — direction — argument handling", () => {
+  it("--help returns 0 without touching either path", () => {
+    expect(main(["direction", "--help"])).toBe(0);
+  });
+
+  it("throws CliInputError when direction-entities-file is missing", () => {
+    expect(() => main(["direction"])).toThrow(CliInputError);
+  });
+
+  it("throws CliInputError when reviewed-against-file is missing", () => {
+    const entitiesFile = writeDirectionEntities(strategyDir, [directionEntity("vision-v1")]);
+    expect(() => main(["direction", entitiesFile])).toThrow(CliInputError);
+  });
+
+  it("throws CliInputError on an unknown flag", () => {
+    const entitiesFile = writeDirectionEntities(strategyDir, [directionEntity("vision-v1")]);
+    const reviewsFile = writeReviewedAgainst(strategyDir, ["vision-v1"]);
+    expect(() => main(["direction", entitiesFile, reviewsFile, "--bogus"])).toThrow(CliInputError);
+  });
+
+  it("throws CliInputError when direction-entities-file does not exist", () => {
+    const reviewsFile = writeReviewedAgainst(strategyDir, ["vision-v1"]);
+    expect(() => main(["direction", join(strategyDir, "nope.json"), reviewsFile])).toThrow(CliInputError);
+  });
+
+  it("throws CliInputError when reviewed-against-file does not exist", () => {
+    const entitiesFile = writeDirectionEntities(strategyDir, [directionEntity("vision-v1")]);
+    expect(() => main(["direction", entitiesFile, join(strategyDir, "nope.json")])).toThrow(CliInputError);
+  });
+});
+
+describe("main — direction — the third state: could not run (exit 2)", () => {
+  it("returns 2 when direction-entities-file does not parse as JSON", () => {
+    const entitiesFile = join(strategyDir, "direction-entities.json");
+    writeFileSync(entitiesFile, "{ not json");
+    const reviewsFile = writeReviewedAgainst(strategyDir, ["vision-v1"]);
+    expect(main(["direction", entitiesFile, reviewsFile])).toBe(2);
+  });
+
+  it("returns 2 when direction-entities-file fails schema validation", () => {
+    const entitiesFile = writeDirectionEntities(strategyDir, [{ id: "vision-v1" }]); // missing kind/statement/rationale/decidedOn/derivesFrom
+    const reviewsFile = writeReviewedAgainst(strategyDir, ["vision-v1"]);
+    expect(main(["direction", entitiesFile, reviewsFile])).toBe(2);
+  });
+
+  it("returns 2 when reviewed-against-file does not parse as JSON", () => {
+    const entitiesFile = writeDirectionEntities(strategyDir, [directionEntity("vision-v1")]);
+    const reviewsFile = join(strategyDir, "reviewed-against.json");
+    writeFileSync(reviewsFile, "{ not json");
+    expect(main(["direction", entitiesFile, reviewsFile])).toBe(2);
+  });
+
+  it("returns 2 when reviewed-against-file is not an array of strings", () => {
+    const entitiesFile = writeDirectionEntities(strategyDir, [directionEntity("vision-v1")]);
+    const reviewsFile = writeReviewedAgainst(strategyDir, { not: "an array" });
+    expect(main(["direction", entitiesFile, reviewsFile])).toBe(2);
+  });
+
+  // Empty direction-entities is indeterminate — checkDirectionCoverage's
+  // and checkDirectionCurrency's shared "no-entities-provided" reason.
+  it("returns 2 for empty direction-entities, even against real reviewedAgainst references", () => {
+    const entitiesFile = writeDirectionEntities(strategyDir, []);
+    const reviewsFile = writeReviewedAgainst(strategyDir, ["vision-v1"]);
+    expect(main(["direction", entitiesFile, reviewsFile])).toBe(2);
+  });
+
+  // Empty reviewed-against is indeterminate — "no-reviews-provided".
+  it("returns 2 for an empty reviewed-against list, even against real direction entities", () => {
+    const entitiesFile = writeDirectionEntities(strategyDir, [directionEntity("vision-v1")]);
+    const reviewsFile = writeReviewedAgainst(strategyDir, []);
+    expect(main(["direction", entitiesFile, reviewsFile])).toBe(2);
+  });
+
+  it("throws CliInputError when direction-entities-file is missing at the resolved path (unreadable)", () => {
+    const reviewsFile = writeReviewedAgainst(strategyDir, ["vision-v1"]);
+    expect(() => main(["direction", join(strategyDir, "does-not-exist.json"), reviewsFile])).toThrow(CliInputError);
+  });
+});
+
+describe("main — direction — real runs", () => {
+  it("returns 0 when every direction entity has a derived artifact and every reviewedAgainst is current", () => {
+    const entitiesFile = writeDirectionEntities(strategyDir, [directionEntity("vision-v1")]);
+    const reviewsFile = writeReviewedAgainst(strategyDir, ["vision-v1"]);
+    expect(main(["direction", entitiesFile, reviewsFile])).toBe(0);
+  });
+
+  // Coverage direction 1: a direction entity named by no reviewedAgainst.
+  it("returns 1 when a direction entity has no derived artifact", () => {
+    const entitiesFile = writeDirectionEntities(strategyDir, [
+      directionEntity("vision-v1"),
+      directionEntity("positioning-v1", { kind: "positioning" }),
+    ]);
+    const reviewsFile = writeReviewedAgainst(strategyDir, ["vision-v1"]);
+    expect(main(["direction", entitiesFile, reviewsFile])).toBe(1);
+  });
+
+  // Coverage direction 2: a reviewedAgainst naming no known entity.
+  it("returns 1 when a reviewedAgainst reference names no known direction entity", () => {
+    const entitiesFile = writeDirectionEntities(strategyDir, [directionEntity("vision-v1")]);
+    const reviewsFile = writeReviewedAgainst(strategyDir, ["vision-v1", "typo-d-id"]);
+    expect(main(["direction", entitiesFile, reviewsFile])).toBe(1);
+  });
+
+  // THE SEPARATING CASE, exercised through the real CLI subcommand: a
+  // reviewedAgainst names a REAL, EXISTING but SUPERSEDED version.
+  // Coverage alone (presence/traceability) is satisfied by this input —
+  // the reference resolves — but the combined `direction` subcommand must
+  // still exit 1, because checkDirectionCurrency flags it stale.
+  it("returns 1 when a reviewedAgainst names a real but superseded version (stale, not dangling)", () => {
+    const entitiesFile = writeDirectionEntities(strategyDir, [
+      directionEntity("vision-v1"),
+      directionEntity("vision-v2", { supersedes: "vision-v1", decidedOn: "2026-07-01" }),
+    ]);
+    const reviewsFile = writeReviewedAgainst(strategyDir, ["vision-v1", "vision-v2"]);
+
+    const coverage = checkDirectionCoverageDirect(entitiesFile, reviewsFile);
+    expect(coverage).toBe(true); // presence-only: both ids resolve, coverage alone would pass
+
+    expect(main(["direction", entitiesFile, reviewsFile])).toBe(1);
+  });
+});
+
+// Small helper used only by the "separating case" test above: replays
+// exactly what `checkDirectionCoverage` (the presence/traceability half)
+// would see for the same two files, so the test can assert presence
+// resolves cleanly before also asserting the combined subcommand still
+// fails — proving the failure comes from currency, not from coverage.
+function checkDirectionCoverageDirect(entitiesFile: string, reviewsFile: string): boolean {
+  const entities = JSON.parse(readFileSync(entitiesFile, "utf8")) as Array<{ id: string }>;
+  const reviews = JSON.parse(readFileSync(reviewsFile, "utf8")) as string[];
+  const ids = new Set(entities.map((e) => e.id));
+  return reviews.every((ref) => ids.has(ref));
+}
+
+// -----------------------------------------------------------------------
 // Direct-path reachability (required test 7). Everything above calls the
 // exported `main(argv)` directly, which proves the argv-to-exit-code
 // contract but NEVER proves the CLI is reachable the only way it actually
@@ -320,5 +488,72 @@ describe("direct-path reachability — the real compiled dist/cli.js", () => {
     const finding = runCli([strategyDir, scanDir]);
     expect(finding.stdout).toContain("finding(s)");
     expect(finding.status).toBe(1);
+  });
+
+  // Reachability for the THIRD subcommand — the same regression class the
+  // test above guards against, but for `direction` this time: proves
+  // `argv[0] === "direction"` dispatch (not a basename check) is what
+  // gates this subcommand too, through the real compiled entrypoint, and
+  // that adding it did not disturb `brand-coverage`'s own reachability
+  // (exercised again here, alongside `direction`, in the same process).
+  it("node dist/cli.js direction <direction-entities-file> <reviewed-against-file> exits 0 when both coverage and currency hold", () => {
+    const entitiesFile = writeDirectionEntities(strategyDir, [directionEntity("vision-v1")]);
+    const reviewsFile = writeReviewedAgainst(strategyDir, ["vision-v1"]);
+
+    const result = runCli(["direction", entitiesFile, reviewsFile]);
+
+    expect(result.stdout).toContain("Direction coverage: satisfied.");
+    expect(result.stdout).toContain("Direction currency: satisfied.");
+    expect(result.status).toBe(0);
+  });
+
+  // The separating case again, through the real compiled entrypoint: a
+  // reviewedAgainst names a real but superseded version. Presence
+  // resolves; the combined subcommand must still exit 1 with the
+  // stale-review finding kind visible in the report.
+  it("node dist/cli.js direction ... exits 1 and reports [stale-review] when a reviewedAgainst names a superseded version", () => {
+    const entitiesFile = writeDirectionEntities(strategyDir, [
+      directionEntity("vision-v1"),
+      directionEntity("vision-v2", { supersedes: "vision-v1", decidedOn: "2026-07-01" }),
+    ]);
+    const reviewsFile = writeReviewedAgainst(strategyDir, ["vision-v1", "vision-v2"]);
+
+    const result = runCli(["direction", entitiesFile, reviewsFile]);
+
+    expect(result.stdout).toContain("Direction coverage: satisfied.");
+    expect(result.stdout).toContain("[stale-review] vision-v1");
+    expect(result.stdout).toContain("Direction currency: violated.");
+    expect(result.status).toBe(1);
+  });
+
+  it("node dist/cli.js direction ... exits 2 on empty direction-entities", () => {
+    const entitiesFile = writeDirectionEntities(strategyDir, []);
+    const reviewsFile = writeReviewedAgainst(strategyDir, ["vision-v1"]);
+
+    const result = runCli(["direction", entitiesFile, reviewsFile]);
+
+    expect(result.status).toBe(2);
+  });
+
+  it("node dist/cli.js direction ... exits 2 on a missing/unreadable direction-entities-file (CliInputError caught by run())", () => {
+    const reviewsFile = writeReviewedAgainst(strategyDir, ["vision-v1"]);
+
+    const result = runCli(["direction", join(strategyDir, "does-not-exist.json"), reviewsFile]);
+
+    expect(result.status).toBe(2);
+  });
+
+  // Re-confirms brand-coverage reachability is unchanged now that a THIRD
+  // subcommand dispatches off the same argv[0] check.
+  it("node dist/cli.js brand-coverage ... is still reachable and unchanged alongside the new direction subcommand", () => {
+    const derivationsFile = writeDerivations(strategyDir, [
+      derivation("Precise", ["--color-accent-primary"], ["no-hedging"]),
+    ]);
+    const slotsFile = writeBrandableSlots(strategyDir, ["--color-accent-primary"]);
+
+    const result = runCli(["brand-coverage", derivationsFile, slotsFile]);
+
+    expect(result.stdout).toContain("Brand coverage: satisfied.");
+    expect(result.status).toBe(0);
   });
 });

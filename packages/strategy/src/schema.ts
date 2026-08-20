@@ -39,6 +39,7 @@ import {
   requireNumber,
   requirePattern,
   requireString,
+  requireStringArray,
   type ValidationIssue,
   type ValidationResult,
 } from "./validation.js";
@@ -570,4 +571,156 @@ export function validateBrandAttributes(value: unknown): ValidationResult<BrandA
   const issues: ValidationIssue[] = [];
   const attributes = requireArrayOf(value, "(root)", issues, readBrandAttribute);
   return attributes !== undefined ? { ok: true, value: attributes } : { ok: false, issues };
+}
+
+// --------------------------------------------------------------- direction
+
+/**
+ * Facts and direction have different physics. A `Fact` (above) is
+ * checkable and citable, and it DRIFTS — the value underneath it changes
+ * with nobody deciding anything, which is exactly what
+ * `checkFactsTraceability` (`facts-gate.ts`) exists to catch. Direction —
+ * vision, mission, positioning, market, audience — never drifts. Nothing
+ * about a vision becomes false on its own; it is CHANGED, deliberately, by
+ * someone who can say when and why. Drift detection is the wrong
+ * instrument for that: the right one is derivation invalidation — when a
+ * direction entity changes, nothing about it is wrong, but everything
+ * built on top of it is now unreviewed. See `direction-invalidation.ts`
+ * for the two checkers this entity exists to feed
+ * (`checkDirectionCoverage`, `checkDirectionCurrency`) and issue #374 for
+ * the full proposal.
+ *
+ * WHY A NEW TYPE, NOT FOUR RETROFITTED ONES
+ * -------------------------------------------
+ * `Mission`, `Positioning`, `Market`, and `Audience` above are already this
+ * package's direction-bearing entities, and the instinct is to bolt the
+ * DAG-versioning envelope (`id`, `rationale`, `decidedOn`, `supersedes`,
+ * `derivesFrom`) directly onto each of them. That instinct doesn't survive
+ * contact with their actual shapes: `Mission` already has both a
+ * `statement` AND a `vision`, `Positioning` is a six-field madlib with no
+ * single field that means "the statement", and `Market`/`Audience` name
+ * their content `description`, not `statement`. Retrofitting the same five
+ * fields onto four structurally incompatible shapes would mean either a
+ * breaking change to all four already-shipped, already-tested entities, or
+ * four independent, copy-pasted decisions about which existing field
+ * "counts" as the direction statement — the second of which is exactly the
+ * kind of silent inconsistency this package's hand-rolled validation
+ * discipline exists to rule out.
+ *
+ * `DirectionEntity` is instead a new, uniform envelope, and `kind` is what
+ * keeps it from being a parallel, disconnected system: its vocabulary is
+ * drawn directly from the four direction concepts this file already
+ * validates structurally (mirroring `RoadmapItem.status` drawing from
+ * `ROADMAP_STATUSES`) — a `DirectionEntity` names WHICH existing direction
+ * concept its `statement` is a dated, deliberate version of. The detailed,
+ * already-validated shape of an actual `Mission`/`Positioning`/`Market`/
+ * `Audience` document is untouched by this; `DirectionEntity` only ever
+ * carries the versioning metadata none of the four have today.
+ */
+export const DIRECTION_ENTITY_KINDS = ["mission", "positioning", "market", "audience"] as const;
+export type DirectionEntityKind = (typeof DIRECTION_ENTITY_KINDS)[number];
+
+const DIRECTION_ID_RE = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
+
+/**
+ * One dated, deliberate direction decision — a single node in the DAG the
+ * issue describes as "vision → positioning → market/audience → brand
+ * attributes → (token slots, voice rules)". `id` is this exact version's
+ * stable identifier (referenced by a derived artifact's `reviewedAgainst`
+ * — see `direction-invalidation.ts` — and by another `DirectionEntity`'s
+ * own `supersedes`), never the identifier of the ongoing conceptual thing
+ * across time: revising a vision creates a NEW `DirectionEntity` with a
+ * NEW `id` and `supersedes` naming the old one, rather than mutating the
+ * old entity in place. This is what makes "current" a computable property
+ * (an id nothing else's `supersedes` names) instead of a flag someone has
+ * to remember to update.
+ */
+export interface DirectionEntity {
+  /** Stable identifier for THIS VERSION, kebab-case — never reused once superseded. */
+  id: string;
+  /** Which existing direction concept this is a version of — see this section's header comment. */
+  kind: DirectionEntityKind;
+  /** The decision itself, one or more lines, present tense. */
+  statement: string;
+  /** Why this decision, not some other — a real reason, not restated intent. */
+  rationale: string;
+  /** ISO 8601 date this version was decided. */
+  decidedOn: string;
+  /** `id` of the `DirectionEntity` this version replaces, when it replaces one. Omitted for a version with no prior history. */
+  supersedes?: string;
+  /** `id`s of other `DirectionEntity` versions this one was decided in light of, forming the DAG's edges. Plain string ids, name-only — the same seam `BrandDerivation.tokenSlots`/`voiceRules` already use (see `brand-derivation.ts`'s header comment). May be empty: the DAG's roots (a vision) derive from nothing. */
+  derivesFrom: string[];
+}
+
+function readDirectionEntity(value: unknown, path: string, issues: ValidationIssue[]): DirectionEntity | undefined {
+  const start = issues.length;
+  if (!isPlainObject(value)) {
+    pushIssue(issues, path, "must be an object");
+    return undefined;
+  }
+  const id = requireString(value.id, `${path}.id`, issues, { minLength: 1 });
+  if (id !== undefined) {
+    requirePattern(id, `${path}.id`, issues, DIRECTION_ID_RE, 'must be kebab-case, e.g. "vision-2026-h2"');
+  }
+  const kindValue = value.kind;
+  const kindOk = typeof kindValue === "string" && (DIRECTION_ENTITY_KINDS as readonly string[]).includes(kindValue);
+  if (!kindOk) {
+    pushIssue(
+      issues,
+      `${path}.kind`,
+      `must be one of ${DIRECTION_ENTITY_KINDS.join(", ")}, got ${kindValue === undefined ? "undefined" : JSON.stringify(kindValue)}`,
+    );
+  }
+  const statement = requireString(value.statement, `${path}.statement`, issues, { minLength: 10 });
+  const rationale = requireString(value.rationale, `${path}.rationale`, issues, { minLength: 10 });
+  const decidedOn = requireString(value.decidedOn, `${path}.decidedOn`, issues);
+  if (decidedOn !== undefined) {
+    requirePattern(decidedOn, `${path}.decidedOn`, issues, ISO_DATE_RE, "must be an ISO 8601 date (YYYY-MM-DD)");
+  }
+  const supersedes = optionalString(value.supersedes, `${path}.supersedes`, issues, { minLength: 1 });
+  const derivesFrom = requireStringArray(value.derivesFrom, `${path}.derivesFrom`, issues, { itemMinLength: 1 });
+
+  if (issues.length > start) return undefined;
+  return {
+    id: id as string,
+    kind: kindValue as DirectionEntityKind,
+    statement: statement as string,
+    rationale: rationale as string,
+    decidedOn: decidedOn as string,
+    supersedes,
+    derivesFrom: derivesFrom as string[],
+  };
+}
+
+/** Validates a single `DirectionEntity`. */
+export function validateDirectionEntity(value: unknown): ValidationResult<DirectionEntity> {
+  const issues: ValidationIssue[] = [];
+  const entity = readDirectionEntity(value, "(root)", issues);
+  return entity !== undefined ? { ok: true, value: entity } : { ok: false, issues };
+}
+
+/**
+ * Validates the whole contents of a direction-entities file: an array of
+ * `DirectionEntity`, each `id` unique — the same duplicate-key discipline
+ * `validateFacts` applies to `Fact.key` above, for the identical reason: an
+ * `id` is how a derived artifact's `reviewedAgainst` and another entity's
+ * `supersedes` name this one, and two entities silently sharing an `id`
+ * would make both references ambiguous.
+ */
+export function validateDirectionEntities(value: unknown): ValidationResult<DirectionEntity[]> {
+  const issues: ValidationIssue[] = [];
+  const entities = requireArrayOf(value, "(root)", issues, readDirectionEntity);
+  if (entities === undefined) return { ok: false, issues };
+
+  const seenAt = new Map<string, number>();
+  entities.forEach((entity, i) => {
+    const firstIndex = seenAt.get(entity.id);
+    if (firstIndex !== undefined) {
+      pushIssue(issues, `[${i}].id`, `duplicate direction entity id "${entity.id}" (first seen at index ${firstIndex})`);
+    } else {
+      seenAt.set(entity.id, i);
+    }
+  });
+
+  return issues.length === 0 ? { ok: true, value: entities } : { ok: false, issues };
 }
