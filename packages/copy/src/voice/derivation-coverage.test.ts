@@ -1,35 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { checkVoiceDerivationCoverage } from "./derivation-coverage.js";
-import type { VoiceRecord } from "./types.js";
 
 // Every example below is deliberately fictional — no real company, product,
-// person, or domain. "Acme" mirrors the placeholder already used by this
-// package's own checker.test.ts/schema.test.ts.
-
-function makeRecord(overrides: Partial<VoiceRecord> = {}): VoiceRecord {
-  return {
-    id: "acme-app",
-    rules: {
-      person: { description: "second-person, you-voice", forbiddenPronouns: ["we", "our", "us"] },
-      tense: { description: "present tense, no future promises", forbiddenMarkers: ["will", "shall"] },
-      formality: "neutral",
-      tone: ["direct"],
-    },
-    glossary: [
-      { term: "revolutionary", status: "forbidden", reason: "overused buzzword", alternative: "new", caseSensitive: false },
-    ],
-    claims: [
-      { id: "fast-sync", text: "fastest sync in its class", matchPhrases: [], factRef: undefined, requiresSupport: true },
-    ],
-    ...overrides,
-  };
-}
-
-const EMPTY_RECORD: VoiceRecord = makeRecord({ glossary: [], claims: [] });
+// person, or domain. "Acme"-flavored ids mirror the placeholder already
+// used by this package's own checker.test.ts/schema.test.ts.
 
 describe("checkVoiceDerivationCoverage", () => {
-  it("SATISFIED: passes when every obligation names a real rule and every rule is obliged", () => {
-    const result = checkVoiceDerivationCoverage(["revolutionary", "fast-sync"], makeRecord());
+  it("SATISFIED: passes when every obligation names a supplied rule id and every supplied rule id is obliged", () => {
+    const result = checkVoiceDerivationCoverage(["revolutionary", "fast-sync"], ["revolutionary", "fast-sync"]);
     expect(result.ok).toBe(true);
     expect(result.obligationsChecked).toBe(2);
     expect(result.rulesChecked).toBe(2);
@@ -39,11 +17,14 @@ describe("checkVoiceDerivationCoverage", () => {
   });
 
   // ------------------------------------------------------------------
-  // VIOLATED, direction 1: an obligation names a rule absent from the
-  // record.
+  // VIOLATED, direction 1: an obligation names a rule id absent from the
+  // supplied brand-derived-rule-ids list.
   // ------------------------------------------------------------------
-  it("VIOLATED direction 1: an obligation names a rule id the record does not declare", () => {
-    const result = checkVoiceDerivationCoverage(["revolutionary", "fast-sync", "plainspoken"], makeRecord());
+  it("VIOLATED direction 1: an obligation names a rule id not in the supplied list", () => {
+    const result = checkVoiceDerivationCoverage(
+      ["revolutionary", "fast-sync", "plainspoken"],
+      ["revolutionary", "fast-sync"],
+    );
     expect(result.ok).toBe(false);
     expect(result.reason).toBe("coverage-gap");
     expect(result.obligationsMissingFromRecord).toEqual(["plainspoken"]);
@@ -51,13 +32,13 @@ describe("checkVoiceDerivationCoverage", () => {
   });
 
   // ------------------------------------------------------------------
-  // VIOLATED, direction 2: the record declares a rule no obligation
-  // reaches. A ONE-DIRECTIONAL checker (only verifying every obligation
-  // resolves) PASSES this exact case — this is the test that proves both
-  // directions are actually implemented, not just direction 1.
+  // VIOLATED, direction 2: a supplied rule id no obligation reaches. A
+  // ONE-DIRECTIONAL checker (only verifying every obligation resolves)
+  // PASSES this exact case — this is the test that proves both directions
+  // are actually implemented, not just direction 1.
   // ------------------------------------------------------------------
-  it("VIOLATED direction 2: the record declares a rule no obligation reaches (proves both directions are checked)", () => {
-    const result = checkVoiceDerivationCoverage(["revolutionary"], makeRecord());
+  it("VIOLATED direction 2: a supplied rule id no obligation reaches (proves both directions are checked)", () => {
+    const result = checkVoiceDerivationCoverage(["revolutionary"], ["revolutionary", "fast-sync"]);
     expect(result.ok).toBe(false);
     expect(result.reason).toBe("coverage-gap");
     expect(result.obligationsMissingFromRecord).toEqual([]);
@@ -72,8 +53,8 @@ describe("checkVoiceDerivationCoverage", () => {
   // not throw" (Node's own uncaught-exception default also exits 1, the
   // same code a real violation uses — that would prove nothing here).
   // ------------------------------------------------------------------
-  it("INDETERMINATE: zero obligations supplied, even with real rules present in the record — never a vacuous pass", () => {
-    const result = checkVoiceDerivationCoverage([], makeRecord());
+  it("INDETERMINATE: zero obligations supplied, even with real brand-derived rule ids present — never a vacuous pass", () => {
+    const result = checkVoiceDerivationCoverage([], ["revolutionary", "fast-sync"]);
     expect(result.ok).toBe(false);
     expect(result.reason).toBe("no-obligations-provided");
     expect(result.obligationsChecked).toBe(0);
@@ -83,65 +64,44 @@ describe("checkVoiceDerivationCoverage", () => {
   });
 
   // ------------------------------------------------------------------
-  // INDETERMINATE: empty voice record (zero glossary/claim/pattern ids),
-  // even with real obligations supplied.
+  // INDETERMINATE: zero brand-derived rule ids supplied, even with real
+  // obligations present.
   // ------------------------------------------------------------------
-  it("INDETERMINATE: empty voice record, even with real obligations present — never a vacuous pass", () => {
-    const result = checkVoiceDerivationCoverage(["plainspoken"], EMPTY_RECORD);
+  it("INDETERMINATE: empty brand-derived-rule-ids list, even with real obligations present — never a vacuous pass", () => {
+    const result = checkVoiceDerivationCoverage(["plainspoken"], []);
     expect(result.ok).toBe(false);
-    expect(result.reason).toBe("no-rules-in-record");
+    expect(result.reason).toBe("no-brand-derived-rules-provided");
     expect(result.rulesChecked).toBe(0);
     expect(result.obligationsChecked).toBe(1);
     expect(result.ok).not.toBe(true);
   });
 
-  it("INDETERMINATE: both obligations and record rules empty — never satisfied", () => {
-    const result = checkVoiceDerivationCoverage([], EMPTY_RECORD);
+  it("INDETERMINATE: both obligations and brand-derived-rule-ids empty — never satisfied", () => {
+    const result = checkVoiceDerivationCoverage([], []);
     expect(result.ok).toBe(false);
     expect(result.reason).toBe("no-obligations-provided");
     expect(result.obligationsChecked).toBe(0);
     expect(result.rulesChecked).toBe(0);
   });
 
-  it("counts pattern rule ids as voice rule ids too, when the record declares patterns", () => {
-    const record = makeRecord({
-      patterns: [
-        {
-          id: "no-em-dash",
-          description: "no em dash",
-          pattern: { source: "\\u2014" },
-          severity: "error",
-          reason: "house style",
-        },
-      ],
-    });
-    const result = checkVoiceDerivationCoverage(["revolutionary", "fast-sync", "no-em-dash"], record);
-    expect(result.ok).toBe(true);
-    expect(result.rulesChecked).toBe(3);
-  });
-
-  it("is pure and order-independent: reordering obligations/rules does not change the verdict", () => {
-    const record = makeRecord({
-      glossary: [
-        { term: "revolutionary", status: "forbidden", reason: "buzzword", caseSensitive: false },
-        { term: "utilize", status: "forbidden", reason: "just say use", caseSensitive: false },
-      ],
-    });
-    const a = checkVoiceDerivationCoverage(["utilize", "revolutionary", "fast-sync"], record);
-    const b = checkVoiceDerivationCoverage(["fast-sync", "revolutionary", "utilize"], record);
+  it("is pure and order-independent: reordering obligations/rule ids does not change the verdict", () => {
+    const brandDerivedRuleIds = ["revolutionary", "utilize", "fast-sync"];
+    const a = checkVoiceDerivationCoverage(["utilize", "revolutionary", "fast-sync"], brandDerivedRuleIds);
+    const b = checkVoiceDerivationCoverage(["fast-sync", "revolutionary", "utilize"], brandDerivedRuleIds);
     expect(a.ok).toBe(true);
     expect(b.ok).toBe(true);
   });
 
-  it("de-duplicates repeated voice rule ids in the record when counting rulesChecked", () => {
-    const record = makeRecord({
-      claims: [
-        { id: "fast-sync", text: "fastest sync in its class", matchPhrases: [], requiresSupport: true },
-        { id: "fast-sync", text: "duplicate id, still one rule to check", matchPhrases: [], requiresSupport: true },
-      ],
-    });
-    const result = checkVoiceDerivationCoverage(["revolutionary", "fast-sync"], record);
-    expect(result.rulesChecked).toBe(2);
+  it("de-duplicates repeated rule ids in brandDerivedRuleIds when counting rulesChecked", () => {
+    const result = checkVoiceDerivationCoverage(
+      ["revolutionary", "fast-sync"],
+      ["revolutionary", "fast-sync", "fast-sync"],
+    );
+    // Not de-duplicated by this function — brandDerivedRuleIds is a plain
+    // caller-supplied list, exactly like checkBrandCoverage's
+    // brandableSlots, which is never de-duplicated either. A caller that
+    // wants a de-duplicated count de-duplicates before calling.
+    expect(result.rulesChecked).toBe(3);
     expect(result.ok).toBe(true);
   });
 });
