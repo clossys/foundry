@@ -293,6 +293,95 @@ can map the verdict onto it in one step; nothing here assumes it does.
 `behind` entry, each still carrying its `severity`, with what to upgrade to;
 the second is every entitled, absent, unexplained package name.
 
+## Currency delta fold
+
+`currencyVerdict` grades a plane's **absolute** currency: every entitled
+package's status right now, full stop. Wired into a pull-request gate, that
+is exactly the wrong question — a pull request that touches no dependency at
+all gets blocked by drift some earlier, unrelated change already introduced,
+and a registry's `latest` dist-tag moves during the workday, so the absolute
+verdict a pull request is graded against isn't even a fixed target. Two real
+incidents landed on the same day from this: a release-workflow change and a
+security fix, each blocked by several unrelated major-version drifts neither
+one touched.
+
+`foldCurrencyDelta(input)` is the fix — one fold, two scopes, keyed by
+`input.scope`:
+
+- **`absolute`** is `currencyVerdict`'s existing semantics, generalized: any
+  `behind` whose `severity` is in a caller-supplied `blockingSeverities` set
+  is a violation, rather than `"major"` being hardcoded. This is what a trunk
+  or scheduled run should use — there is no "before" to compare against for a
+  run that isn't a proposed change.
+- **`introduced`** grades only what a change made worse, against a
+  `baseline` — a second `PackageCurrency[]` snapshot captured at the merge
+  base. This is what a pull-request run should use. It reports two lists,
+  never conflated: `introduced` (this change's own doing, blocking) and
+  `inherited` (drift that already existed, reported so a pull request can
+  still **see** the fleet's drift, but never blocking on it).
+
+```ts
+import { foldCurrencyDelta, currencyFoldResultToExitCode } from "@vespeneventures/integrator";
+
+// Trunk / scheduled run: grade everything, right now.
+const trunkResult = foldCurrencyDelta({
+  scope: "absolute",
+  statuses, // from judgeCurrency
+  blockingSeverities: new Set(["major"]),
+});
+
+// Pull-request run: grade only what this change made worse.
+const prResult = foldCurrencyDelta({
+  scope: "introduced",
+  statuses, // from judgeCurrency, run against this change
+  baseline, // judgeCurrency's output at the merge base -- caller-captured
+  blockingSeverities: new Set(["major"]),
+});
+
+process.exitCode = currencyFoldResultToExitCode(prResult);
+```
+
+**The baseline is caller-supplied, exactly like everything else this
+package's blindness rule governs**, and it is not always available: a
+shallow clone with no merge-base commit reachable, or a checkout that could
+not be read. `baseline` therefore accepts three things, and all three are
+handled explicitly rather than two of them being silently mistaken for the
+third:
+
+| `baseline` | Result |
+| --- | --- |
+| omitted (`undefined`) | `indeterminate` |
+| `{ kind: "unreadable", reason }` — the caller tried and failed | `indeterminate`, naming the reason |
+| a real `PackageCurrency[]` (including `[]`, a merge base genuinely entitled to nothing) | graded for real |
+
+**This is the rule to get right, and the one place this fold is uncompromising.**
+An unread baseline is never folded into "nothing was introduced" — that fails
+OPEN, inverting `classifyCurrencyDistance`'s own law that an ungradable input
+is its own `indeterminate` state, never guessed into a pass. It is also never
+silently answered with `absolute` grading instead — that doesn't fail loudly,
+it quietly answers a *different question* under the `introduced` name, and a
+caller who asked "did this change make anything worse" would get back "is the
+fleet currently behind", reintroducing the exact bug this fold exists to fix,
+now hidden inside its own fix. An unread baseline is an unobserved surface,
+exactly like an unreachable registry or an unparseable version elsewhere in
+this package, and an unobserved surface is `indeterminate` — never a pass,
+never a fail.
+
+Given a readable baseline, per package name: newly present at a blocking
+severity with nothing at that name in `baseline` is `introduced`; present in
+both with `installedVersion` unchanged is `inherited` — this is what protects
+an untouched dependency from a `latestVersion` that moved on its own during
+the workday; present in both with `installedVersion` moved backward, or moved
+forward but still landing at a worse graded severity, is `introduced`;
+present in both with `installedVersion` moved forward and landing at the same
+or a better severity is `inherited` — **improved-but-still-behind is never
+punished, or nobody will make partial progress**; `current` in `baseline` and
+`behind` now is `introduced`. `indeterminate` / `unreachable` /
+`unauthenticated`, on either the current run or the baseline side of a
+package this fold needs to classify, make the whole fold `indeterminate` —
+the same "not judged, not judged-and-clean" precedence `currencyVerdict`
+already applies, one level removed.
+
 ## Admission contract
 
 `AdmissionContract` declares what a candidate package must satisfy before a
@@ -403,6 +492,8 @@ at) zero.
 | `upgradeSet(statuses)` | function | Every `behind` entry, as `{ name, installedVersion, latestVersion, severity }` |
 | `optOutGaps(statuses)` | function | Every `absent-without-reason` package name |
 | `computeCurrencyMetric(statuses)` | function | This package's stated metric: `currencyShare`, `entitledCount`, `currentCount`, `absentWithoutReasonCount` |
+| `foldCurrencyDelta(input)` | function | One fold, two scopes: `absolute` grades the current state; `introduced` grades it against a `baseline`, splitting `introduced` (blocking) from `inherited` (reported, never blocking) findings. An unreadable or omitted `baseline` is `indeterminate`, never a silent pass and never a silent fall-back to `absolute` |
+| `currencyFoldResultToExitCode(result)` | function | Maps a `CurrencyFoldResult` onto the `0` / `1` / `2` ternary |
 | `loadAdmissionContract(raw)` | function | Validates a parsed admission contract offline. Rejects an unknown rule kind, a duplicate rule, or an unparseable `minimum-version` floor |
 | `evaluateAdmission(contract, candidate, context)` | function | Evaluates a candidate against a contract. Empty result means admitted |
 | `parseVersion(value)` / `compareVersions(a, b)` | function | A minimal, dependency-free semantic-version parser and comparator |
@@ -415,6 +506,10 @@ at) zero.
 | `Transport` / `ProbeOutcome` / `ReachabilityProbeOptions` / `ReachabilityVerdict` | types | The reachability probe's contracts |
 | `PackageCurrency` / `JudgeCurrencyInput` / `UpgradeSetEntry` / `CurrencyMetric` | types | The version reconciler's contracts, including the seven required states |
 | `CurrencySeverity` / `CurrencyDistance` / `CurrencyIndeterminateReason` / `ClassifyCurrencyDistanceResult` | types | The graded-severity contract: `"patch" \| "minor" \| "major"`, plus `"current"`, plus the two indeterminate reasons |
+| `CurrencyVerdict` | type | `currencyVerdict`'s three-state result: `"satisfied" \| "violated" \| "indeterminate"` |
+| `CurrencyFoldScope` / `CurrencyFoldInput` / `AbsoluteCurrencyFoldInput` / `IntroducedCurrencyFoldInput` | types | `foldCurrencyDelta`'s input, keyed by `scope: "absolute" \| "introduced"` |
+| `CurrencyBaseline` / `CurrencyBaselineUnreadable` | types | `introduced`'s baseline: a real `PackageCurrency[]` snapshot, or an explicit `{ kind: "unreadable", reason }` marker |
+| `CurrencyFoldFinding` / `CurrencyFoldResult` | types | One graded finding (`behind` or `absent-without-reason`), and `foldCurrencyDelta`'s discriminated result, tagged by both `scope` and `verdict` |
 | `AdmissionRule` / `AdmissionContract` / `AdmissionCandidate` / `AdmissionContext` / `AdmissionFinding` | types | The admission contract's schema |
 | `ParsedVersion` | type | `{ major, minor, patch, prerelease }` |
 | `IntegratorErrorCode` | type | Stable error-code union for `IntegratorValidationError` |
