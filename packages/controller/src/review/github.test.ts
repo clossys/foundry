@@ -151,8 +151,12 @@ describe("normalizeGitHubReviewEvidence", () => {
     });
 
     expect(evidence.paginationComplete).toBe(false);
+    // A required check's own verdict is indeterminate too while pagination
+    // is incomplete, not just the bundle-wide finding -- see
+    // ReviewFindingRule's "required-check-indeterminate" doc comment.
     expect(validateReviewEvidence(evidence, { requiredChecks: ["unit"], requireApproval: false, requireSecondaryReview: false, decisionUse: "authoritative" }).map((entry) => entry.rule)).toEqual([
       "pagination-incomplete",
+      "required-check-indeterminate",
     ]);
   });
 
@@ -178,6 +182,7 @@ describe("normalizeGitHubReviewEvidence", () => {
     expect(evidence.paginationComplete).toBe(false);
     expect(validateReviewEvidence(evidence, { requiredChecks: ["unit"], requireApproval: false, requireSecondaryReview: false, decisionUse: "authoritative" }).map((entry) => entry.rule)).toEqual([
       "pagination-incomplete",
+      "required-check-indeterminate",
     ]);
   });
 
@@ -271,5 +276,62 @@ describe("normalizeGitHubReviewEvidence", () => {
       ["stale-evidence", "reviews[0].headSha"],
       ["approval-missing", "reviews"],
     ]);
+  });
+
+  describe("check completedAt (issue #391)", () => {
+    it("reads completedAt from a camelCase GitHub check node", () => {
+      const evidence = normalizeGitHubReviewEvidence({
+        pullRequest: { id: "PR_node", headRefOid: headSha, baseRefOid: baseSha },
+        checks: page([{ name: "unit", conclusion: "SUCCESS", headSha, completedAt: "2026-08-18T21:23:36.000Z" } as never]),
+        reviews: page([]),
+        reviewThreads: page([]),
+      });
+
+      expect(evidence.checks[0]?.completedAt).toBe("2026-08-18T21:23:36.000Z");
+      expect(validateReviewEvidence(evidence, authoritativePolicy).map((entry) => entry.rule)).not.toContain("check-completed-at");
+    });
+
+    it("reads completed_at from a snake_case GitHub check node, the same way head_sha already falls back for headSha", () => {
+      const evidence = normalizeGitHubReviewEvidence({
+        pullRequest: { id: "PR_node", headRefOid: headSha, baseRefOid: baseSha },
+        checks: page([{ name: "unit", conclusion: "SUCCESS", headSha, completed_at: "2026-08-18T21:23:36.000Z" } as never]),
+        reviews: page([]),
+        reviewThreads: page([]),
+      });
+
+      expect(evidence.checks[0]?.completedAt).toBe("2026-08-18T21:23:36.000Z");
+    });
+
+    it("omits completedAt entirely, rather than defaulting to an empty string, when the caller's node did not carry one -- a still-running check genuinely has none", () => {
+      const evidence = normalizeGitHubReviewEvidence({
+        pullRequest: { id: "PR_node", headRefOid: headSha, baseRefOid: baseSha },
+        checks: page([{ name: "unit", conclusion: "SUCCESS", headSha }]),
+        reviews: page([]),
+        reviewThreads: page([]),
+      });
+
+      expect(evidence.checks[0]?.completedAt).toBeUndefined();
+      expect("completedAt" in evidence.checks[0]!).toBe(false);
+      // A lone current-head run for a name never needs a timestamp to be
+      // graded -- see ReviewCheck's own doc comment.
+      expect(validateReviewEvidence(evidence, { requiredChecks: ["unit"], requireApproval: false, requireSecondaryReview: false, decisionUse: "authoritative" })).toEqual([]);
+    });
+
+    it("normalizes two runs of the same check name into two entries the evaluator can order by completedAt -- the exact collection shape issue #391 relies on", () => {
+      const evidence = normalizeGitHubReviewEvidence({
+        pullRequest: { id: "PR_node", headRefOid: headSha, baseRefOid: baseSha },
+        checks: page([
+          { name: "task-record", conclusion: "FAILURE", headSha, completedAt: "2026-08-18T21:00:00.000Z" } as never,
+          { name: "task-record", conclusion: "SUCCESS", headSha, completedAt: "2026-08-18T21:23:36.000Z" } as never,
+        ]),
+        reviews: page([]),
+        reviewThreads: page([]),
+      });
+
+      expect(evidence.checks).toHaveLength(2);
+      expect(
+        validateReviewEvidence(evidence, { requiredChecks: ["task-record"], requireApproval: false, requireSecondaryReview: false, decisionUse: "authoritative" }),
+      ).toEqual([]);
+    });
   });
 });

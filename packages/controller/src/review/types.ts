@@ -16,11 +16,35 @@ export type ReviewCheckConclusion =
   | "pending"
   | "unknown";
 
-/** A check observed while gathering evidence for one exact proposed-change head. */
+/**
+ * A check observed while gathering evidence for one exact proposed-change
+ * head. A provider's status-check collection reports every RUN for `name` at
+ * this head, not one current value per name -- the same check can appear
+ * here more than once (a failed attempt and its later, passing re-run both
+ * show up as separate `ReviewCheck` entries). `completedAt` is what lets
+ * validation tell those apart: it is the completion timestamp of THIS run,
+ * so grading a required check means grouping its entries by `name` and
+ * judging the one with the latest `completedAt`, never the first (or last)
+ * one encountered in whatever order the caller's array happens to hold them.
+ *
+ * `completedAt` is optional, unlike `ReviewRecord.submittedAt`, because a
+ * run that has not finished yet genuinely has no completion time -- that is
+ * a true fact about the run, not a caller omission to reject the way a
+ * missing `submittedAt` is. A single current-head entry for a name never
+ * needs it: with nothing to compare against, that entry already is "the"
+ * run for `name`. It matters only once a second entry for the same `name`
+ * shows up; see `validate.ts`'s grouping logic for what happens then --
+ * multiple entries with no comparable timestamp, or tied timestamps that
+ * disagree on `conclusion`, are never resolved by array order. Ordering by
+ * array position would silently reintroduce this package's own
+ * first-match-wins incident (see `ReviewFindingRule`'s
+ * `"required-check-indeterminate"` doc comment).
+ */
 export interface ReviewCheck {
   readonly name: string;
   readonly conclusion: ReviewCheckConclusion;
   readonly headSha: string;
+  readonly completedAt?: string;
 }
 
 /** Normalized state of one human or automated review decision. */
@@ -240,6 +264,7 @@ export type ReviewFindingRule =
   | "check-unknown-field"
   | "check-name"
   | "check-conclusion"
+  | "check-completed-at"
   | "reviews-shape"
   | "review-shape"
   | "review-unknown-field"
@@ -258,6 +283,39 @@ export type ReviewFindingRule =
   | "stale-evidence"
   | "missing-required-check"
   | "required-check-failed"
+  /**
+   * A required check exists in the evidence, current-head and otherwise
+   * well-formed, but this package will not guess which of its runs is the
+   * one that counts. Two situations produce this, and both are the
+   * `indeterminate` half of the ternary contract every check evaluation in
+   * this package follows (never pass, never fail, when the true answer is
+   * simply unknown -- see `@vespeneventures/integrator`'s
+   * `classifyCurrencyDistance` doc comment (`src/currency.ts`) for the
+   * canonical statement of that reasoning, applied here to check evaluation
+   * instead of version comparison):
+   *
+   * 1. `paginationComplete` is not `true`. A later, unread page could hold a
+   *    newer run of this exact name, so whatever this page already shows --
+   *    even a clean `"success"` -- cannot be trusted as the LATEST run.
+   *    Reported for every required check while pagination is incomplete,
+   *    regardless of what has already been observed for it.
+   * 2. More than one current-head run for this name was observed, and
+   *    recency cannot be decided between them: either at least one of those
+   *    runs carries no usable `completedAt` (see `ReviewCheck`'s own doc
+   *    comment for why that is a legitimate, not-a-shape-defect state), or
+   *    every run at the latest `completedAt` does not agree on
+   *    `conclusion`. Either way there is no non-arbitrary way to pick a
+   *    winner, so none is picked.
+   *
+   * This is the fix for the incident this rule exists to prevent: grading
+   * a required check by finding the first matching name in an unordered,
+   * possibly-repeated-per-name collection, so that a genuinely later
+   * success could never clear an earlier failure the collection also still
+   * carries. Never reported alongside `"missing-required-check"` or
+   * `"required-check-failed"` for the SAME required check -- for one name,
+   * exactly one of the three fires, per the ternary contract above.
+   */
+  | "required-check-indeterminate"
   | "approval-missing"
   | "secondary-review-missing"
   | "changes-requested"

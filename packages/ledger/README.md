@@ -295,7 +295,7 @@ choice `checkLedgerDrift` makes for a citation it could not check.
 ## Requirements
 
 Node 20+. ESM only. Runtime dependency: `@vespeneventures/controller` (pinned
-`~0.7.0` — a tilde range, deliberately not a caret; a caret range on a
+`~0.8.0` — a tilde range, deliberately not a caret; a caret range on a
 `0.x` package is patch-only under semver and has broken this repository's
 CI before), of which this package only imports the `./policy` subpath —
 `@vespeneventures/controller/policy` — never the package's other exports.

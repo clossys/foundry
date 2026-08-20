@@ -31,7 +31,7 @@ const ADOPTION_STATES = new Set<ReviewPolicyAdoptionState>(["adopted", "not-adop
 const COVERAGE_STATES = new Set<ReviewPolicyCoverageState>(["verified", "not-verified", "assessment-pending"]);
 const POLICY_KEYS = new Set(["requiredChecks", "requireApproval", "requireSecondaryReview", "decisionUse"]);
 const EVIDENCE_KEYS = new Set(["schemaVersion", "headSha", "baseSha", "patchId", "paginationComplete", "checks", "reviews", "threads"]);
-const CHECK_KEYS = new Set(["name", "conclusion", "headSha"]);
+const CHECK_KEYS = new Set(["name", "conclusion", "headSha", "completedAt"]);
 const REVIEW_KEYS = new Set(["id", "reviewerId", "instanceId", "provider", "submittedAt", "state", "depth", "headSha"]);
 const THREAD_KEYS = new Set(["id", "isResolved", "headSha"]);
 const SHA = /^[0-9a-f]{40}$/;
@@ -76,7 +76,10 @@ function isSha(value: unknown): value is string {
   return typeof value === "string" && SHA.test(value);
 }
 
-function reviewTimestamp(value: unknown): number | undefined {
+// Shared by ReviewRecord.submittedAt and ReviewCheck.completedAt -- both are
+// RFC 3339 instants this package orders records/runs by, so both parse
+// through the same strict rule rather than two subtly different regexes.
+function parseRfc3339Timestamp(value: unknown): number | undefined {
   if (typeof value !== "string") return undefined;
   const match = RFC3339_TIMESTAMP.exec(value);
   if (!match) return undefined;
@@ -162,8 +165,23 @@ function readArray(value: UnknownRecord, key: "checks" | "reviews" | "threads", 
   return undefined;
 }
 
-function validateChecks(entries: unknown[], headSha: string, findings: ReviewFinding[]): Map<string, ReviewCheckConclusion[]> {
-  const byName = new Map<string, ReviewCheckConclusion[]>();
+/**
+ * One current-head, otherwise-well-formed run of a named check.
+ * `completedAtMs` is `undefined` exactly when the entry carried no
+ * `completedAt` at all (a legitimately still-running check -- see
+ * `ReviewCheck`'s own doc comment); it is never `undefined` because a
+ * supplied value failed to parse -- that case is rejected as a
+ * `"check-completed-at"` finding and the whole entry is excluded from
+ * `validateChecks`'s returned map instead, the same way an invalid `name` or
+ * `conclusion` already excludes it.
+ */
+interface CheckObservation {
+  readonly conclusion: ReviewCheckConclusion;
+  readonly completedAtMs: number | undefined;
+}
+
+function validateChecks(entries: unknown[], headSha: string, findings: ReviewFinding[]): Map<string, CheckObservation[]> {
+  const byName = new Map<string, CheckObservation[]>();
   for (let index = 0; index < entries.length; index += 1) {
     const path = `checks[${index}]`;
     const entry = arrayEntry(entries, index);
@@ -175,6 +193,7 @@ function validateChecks(entries: unknown[], headSha: string, findings: ReviewFin
     const name = ownData(entry, "name");
     const conclusion = ownData(entry, "conclusion");
     const itemHeadSha = ownData(entry, "headSha");
+    const rawCompletedAt = ownData(entry, "completedAt");
     if (typeof name !== "string" || name.trim().length === 0) findings.push(finding("check-name", `${path}.name`, "A check name must be a non-empty string."));
     if (typeof conclusion !== "string" || !CHECK_CONCLUSIONS.has(conclusion as ReviewCheckConclusion)) {
       findings.push(finding("check-conclusion", `${path}.conclusion`, "A check conclusion must be a supported normalized value."));
@@ -184,13 +203,76 @@ function validateChecks(entries: unknown[], headSha: string, findings: ReviewFin
     } else if (itemHeadSha !== headSha) {
       findings.push(finding("stale-evidence", `${path}.headSha`, "Check evidence does not match the bundle head commit."));
     }
-    if (typeof name === "string" && name.trim().length > 0 && typeof conclusion === "string" && CHECK_CONCLUSIONS.has(conclusion as ReviewCheckConclusion) && itemHeadSha === headSha) {
-      const values = byName.get(name) ?? [];
-      values.push(conclusion as ReviewCheckConclusion);
-      byName.set(name, values);
+    // completedAt is optional -- a check that has not finished yet
+    // legitimately has none (see ReviewCheck's own doc comment) -- but when
+    // the caller DOES supply a value it must be a real RFC 3339 instant, the
+    // same strict rule submittedAt already follows below. An unparseable
+    // value is never silently treated the same as an absent one: that would
+    // let a caller-side bug (a non-timestamp string, a bare epoch number, a
+    // truncated value) quietly fall back to "no timestamp" instead of being
+    // reported, which would then silently widen how often recency reads as
+    // indeterminate for reasons the caller never sees.
+    let completedAtMs: number | undefined;
+    let completedAtValid = true;
+    if (rawCompletedAt !== undefined) {
+      completedAtMs = parseRfc3339Timestamp(rawCompletedAt);
+      if (completedAtMs === undefined) {
+        completedAtValid = false;
+        findings.push(finding("check-completed-at", `${path}.completedAt`, "completedAt, when present, must be an RFC 3339 timestamp with Z or an explicit offset."));
+      }
+    }
+    if (
+      typeof name === "string" && name.trim().length > 0
+      && typeof conclusion === "string" && CHECK_CONCLUSIONS.has(conclusion as ReviewCheckConclusion)
+      && itemHeadSha === headSha
+      && completedAtValid
+    ) {
+      const observations = byName.get(name) ?? [];
+      observations.push({ conclusion: conclusion as ReviewCheckConclusion, completedAtMs });
+      byName.set(name, observations);
     }
   }
   return byName;
+}
+
+/** What grading the latest observed current-head run of one check concluded. */
+type CheckGrade =
+  | { readonly kind: "graded"; readonly conclusion: ReviewCheckConclusion }
+  | { readonly kind: "indeterminate"; readonly reason: string };
+
+/**
+ * Picks the run that actually counts out of every current-head observation
+ * collected for one check name -- this is the fix for the incident this
+ * module exists to close (see ReviewFindingRule's
+ * `"required-check-indeterminate"` doc comment): the FIRST observation for a
+ * name is never automatically "the" one graded, and neither is the last; a
+ * name with only one observation trivially IS that one observation, but a
+ * name with several is resolved strictly by `completedAt`, never by array
+ * position.
+ *
+ * When recency cannot be established without guessing -- an observation with
+ * no usable `completedAt` in the mix, or more than one observation tied for
+ * the latest `completedAt` that disagree on `conclusion` -- this reports
+ * `indeterminate` rather than picking a winner. Never invents an order.
+ */
+function gradeCheckObservations(observations: readonly CheckObservation[]): CheckGrade {
+  if (observations.length === 1) return { kind: "graded", conclusion: observations[0]!.conclusion };
+  if (observations.some((observation) => observation.completedAtMs === undefined)) {
+    return {
+      kind: "indeterminate",
+      reason: `has ${observations.length} current-head runs and at least one carries no completion timestamp, so the most recent cannot be identified safely`,
+    };
+  }
+  const latestMs = Math.max(...observations.map((observation) => observation.completedAtMs!));
+  const atLatest = observations.filter((observation) => observation.completedAtMs === latestMs);
+  const distinctConclusions = new Set(atLatest.map((observation) => observation.conclusion));
+  if (distinctConclusions.size > 1) {
+    return {
+      kind: "indeterminate",
+      reason: `has ${atLatest.length} runs tied for the most recent completion timestamp that disagree on conclusion, so the most recent result cannot be determined safely`,
+    };
+  }
+  return { kind: "graded", conclusion: atLatest[0]!.conclusion };
 }
 
 interface ReviewValidationResult {
@@ -228,7 +310,7 @@ function validateReviews(entries: unknown[], headSha: string, findings: ReviewFi
     const state = ownData(entry, "state");
     const depth = ownData(entry, "depth");
     const itemHeadSha = ownData(entry, "headSha");
-    const submittedAtMs = reviewTimestamp(submittedAt);
+    const submittedAtMs = parseRfc3339Timestamp(submittedAt);
     if (typeof id !== "string" || id.trim().length === 0) findings.push(finding("review-id", `${path}.id`, "A review id must be a non-empty string."));
     if (typeof reviewerId !== "string" || reviewerId.trim().length === 0) findings.push(finding("reviewer-id", `${path}.reviewerId`, "A review must identify its reviewer."));
     // Required rather than defaulted: a silently-invented or reviewerId-
@@ -354,7 +436,7 @@ export function validateReviewEvidence(value: unknown, policy: unknown): ReviewF
     const threads = readArray(value, "threads", findings);
     if (!isSha(headSha)) return findings;
 
-    const checkStates = checks ? validateChecks(checks, headSha, findings) : new Map<string, ReviewCheckConclusion[]>();
+    const checkStates = checks ? validateChecks(checks, headSha, findings) : new Map<string, CheckObservation[]>();
     const reviewState: ReviewValidationResult = reviews
       ? validateReviews(reviews, headSha, findings)
       : { hasApproval: false, hasChangesRequested: false, hasAmbiguousDecision: false, hasSecondaryApproval: false };
@@ -377,9 +459,37 @@ export function validateReviewEvidence(value: unknown, policy: unknown): ReviewF
       for (let index = 0; index < policyRequiredChecks.length; index += 1) {
         const name = arrayEntry(policyRequiredChecks, index);
         if (typeof name !== "string" || name.trim().length === 0) continue;
-        const states = checkStates.get(name) ?? [];
-        if (states.length === 0) findings.push(finding("missing-required-check", `requiredChecks[${index}]`, `Required check "${name}" has no current-head evidence.`));
-        else if (states.some((state) => state !== "success")) findings.push(finding("required-check-failed", `requiredChecks[${index}]`, `Required check "${name}" did not report success.`));
+        const path = `requiredChecks[${index}]`;
+        // Pagination first, unconditionally: an unread page could be hiding
+        // a NEWER run of this exact name than anything observed so far, so
+        // whatever this check's own observations already show -- including a
+        // clean "success" -- cannot be trusted as the latest run while the
+        // collection is known incomplete. This is checked before consulting
+        // `checkStates` at all, so an incomplete collection never lets an
+        // already-seen run stand in for "no newer run exists" -- see
+        // ReviewFindingRule's "required-check-indeterminate" doc comment.
+        if (paginationComplete !== true) {
+          findings.push(finding("required-check-indeterminate", path, `Required check "${name}" cannot be evaluated: the check collection has not been fully paginated, so a more recent run for this name may exist on an unread page.`));
+          continue;
+        }
+        const observations = checkStates.get(name);
+        if (!observations || observations.length === 0) {
+          findings.push(finding("missing-required-check", path, `Required check "${name}" has no current-head evidence.`));
+          continue;
+        }
+        // Grade the run that actually is the most recent one -- never the
+        // first (or last) entry encountered for this name. This is the fix
+        // for the incident this module exists to close: a name repeated
+        // across several runs (every attempt for the head commit, not one
+        // current value per name) used to be graded by simple array
+        // membership, so a later successful re-run could never clear an
+        // earlier failure the same collection still carried alongside it.
+        const grade = gradeCheckObservations(observations);
+        if (grade.kind === "indeterminate") {
+          findings.push(finding("required-check-indeterminate", path, `Required check "${name}" ${grade.reason}.`));
+        } else if (grade.conclusion !== "success") {
+          findings.push(finding("required-check-failed", path, `Required check "${name}" did not report success.`));
+        }
       }
       if (!advisoryApprovalConflict && requireApproval === true && !reviewState.hasApproval) findings.push(finding("approval-missing", "reviews", "A current-head approval is required."));
       // A record whose policy demands a secondary review but whose depth

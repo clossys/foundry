@@ -624,7 +624,7 @@ separate package subpaths, documented in their own sections above.
 
 ## Requirements
 
-Node.js >= 20, ESM. Runtime dependency: `@vespeneventures/controller` (`~0.7.0`), for the `GateResult` ternary the `liveStateSurface` and CI-mechanics modules build on rather than reinvent.
+Node.js >= 20, ESM. Runtime dependency: `@vespeneventures/controller` (`~0.8.0`), for the `GateResult` ternary the `liveStateSurface` and CI-mechanics modules build on rather than reinvent.
 
 ## Licence
 

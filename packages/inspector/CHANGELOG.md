@@ -5,6 +5,24 @@ All notable changes to `@vespeneventures/inspector` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.12] - 2026-08-20
+
+### Changed
+
+- **Stays exhaustive against `@vespeneventures/controller@0.8.0`'s two new
+  `ReviewFindingRule` values (issue #391).** `checkReviewEvidence`'s
+  `RULE_CLASS` is a total `Record` over that union specifically so an
+  upstream rule addition is a compile error here, not a silent default;
+  `"check-completed-at"` and `"required-check-indeterminate"` are now
+  classified `"evaluability"` — the same class as `"pagination-incomplete"`,
+  since both mean nothing about the change's checks has been established in
+  either direction — and `evaluabilityReason` reports
+  `"evidence-incomplete"` for `"required-check-indeterminate"`, the same
+  reason `"pagination-incomplete"` already reports, rather than the generic
+  `"evidence-malformed"`. No behavior changes for any existing caller: these
+  rules cannot occur before this dependency bump. Depends on
+  `@vespeneventures/controller@~0.8.0`.
+
 ## [0.1.11] - 2026-08-19
 
 ### Changed

@@ -53,7 +53,16 @@ describe("validateReviewEvidence", () => {
   it("fails closed when a GitHub collection has another page", () => {
     const evidence = validEvidence();
     evidence.paginationComplete = false;
-    expect(validateReviewEvidence(evidence, policy).map((entry) => entry.rule)).toEqual(["pagination-incomplete"]);
+    // Incomplete pagination makes a required check's own verdict
+    // indeterminate too, not just the bundle-wide "pagination-incomplete"
+    // finding: an unread page could hold a newer run than the one this
+    // check already saw, so the check the policy names ("unit", already
+    // observed as "success") cannot be trusted as current either. See
+    // ReviewFindingRule's "required-check-indeterminate" doc comment.
+    expect(validateReviewEvidence(evidence, policy).map((entry) => entry.rule)).toEqual([
+      "pagination-incomplete",
+      "required-check-indeterminate",
+    ]);
   });
 
   it("reports unresolved threads and failed required checks", () => {
@@ -558,6 +567,121 @@ describe("validateReviewEvidence", () => {
       // nothing about the other dimension either way.
       expect(isReviewPolicyAdoptionState("assessment-pending")).toBe(true);
       expect(isReviewPolicyCoverageState("assessment-pending")).toBe(true);
+    });
+  });
+
+  // issue #391: a required check's status-check collection reports every
+  // run for one name at the current head, not one current value per name.
+  // The pre-fix evaluator graded a required check by simple array
+  // membership -- any observed conclusion for the name, regardless of which
+  // run it came from -- so once one run for a name had failed, a later,
+  // genuinely successful re-run of that same name could never clear the
+  // verdict: the stale failed run was still in the collection and always
+  // would be. Every test below constructs the collection exactly the way a
+  // real provider's rollup does: more than one entry sharing one `name`.
+  describe("required check recency (issue #391)", () => {
+    it("clears an earlier failure when the same check name's most recent run succeeded -- the exact incident this fix closes", () => {
+      const evidence = validEvidence();
+      evidence.checks = [
+        { name: "unit", conclusion: "failure", headSha, completedAt: "2026-08-18T21:00:00.000Z" },
+        { name: "unit", conclusion: "success", headSha, completedAt: "2026-08-18T21:23:36.000Z" },
+      ];
+      expect(validateReviewEvidence(evidence, policy)).toEqual([]);
+    });
+
+    it("does not let an earlier success outrank a later failure for the same check name", () => {
+      const evidence = validEvidence();
+      evidence.checks = [
+        { name: "unit", conclusion: "success", headSha, completedAt: "2026-08-18T21:00:00.000Z" },
+        { name: "unit", conclusion: "failure", headSha, completedAt: "2026-08-18T21:23:36.000Z" },
+      ];
+      expect(validateReviewEvidence(evidence, policy).map((entry) => [entry.rule, entry.path])).toEqual([
+        ["required-check-failed", "requiredChecks[0]"],
+      ]);
+    });
+
+    it("grades several current-head runs cleanly once every page has been read and the most recent one succeeded", () => {
+      const evidence = validEvidence();
+      evidence.paginationComplete = true;
+      evidence.checks = [
+        { name: "unit", conclusion: "failure", headSha, completedAt: "2026-08-18T21:00:00.000Z" },
+        { name: "unit", conclusion: "neutral", headSha, completedAt: "2026-08-18T21:10:00.000Z" },
+        { name: "unit", conclusion: "success", headSha, completedAt: "2026-08-18T21:23:36.000Z" },
+      ];
+      expect(validateReviewEvidence(evidence, policy)).toEqual([]);
+    });
+
+    it("reports a required check indeterminate, never pass or fail, while its collection is not fully paginated -- even though the only run observed so far already succeeded", () => {
+      const evidence = validEvidence();
+      evidence.paginationComplete = false;
+      evidence.checks = [{ name: "unit", conclusion: "success", headSha, completedAt: "2026-08-18T21:23:36.000Z" }];
+      expect(validateReviewEvidence(evidence, policy).map((entry) => entry.rule)).toEqual([
+        "pagination-incomplete",
+        "required-check-indeterminate",
+      ]);
+    });
+
+    it("excludes a run observed for a superseded head from a required check's own grading -- it is not evidence about the current head at all", () => {
+      const staleHeadSha = "b".repeat(40);
+      const evidence = validEvidence();
+      evidence.checks = [
+        // A run for the OLD head that failed. If this were not excluded, it
+        // would wrongly fail "unit" even though the only current-head run
+        // succeeded.
+        { name: "unit", conclusion: "failure", headSha: staleHeadSha, completedAt: "2026-08-18T20:00:00.000Z" },
+        { name: "unit", conclusion: "success", headSha, completedAt: "2026-08-18T21:23:36.000Z" },
+      ];
+      const findings = validateReviewEvidence(evidence, policy);
+      // The stale run is still reported -- exclusion from grading never
+      // means the mismatch is silently swallowed.
+      expect(findings.map((entry) => [entry.rule, entry.path])).toEqual([
+        ["stale-evidence", "checks[0].headSha"],
+      ]);
+    });
+
+    it("reports indeterminate, not a guessed grade, when one of several current-head runs for a name carries no completion timestamp to order it against the others", () => {
+      const evidence = validEvidence();
+      evidence.checks = [
+        { name: "unit", conclusion: "failure", headSha, completedAt: "2026-08-18T21:00:00.000Z" },
+        // Still running: genuinely no completedAt yet (see ReviewCheck's own
+        // doc comment). With two runs and no way to order them, this must
+        // not silently resolve to whichever happens to have a timestamp.
+        { name: "unit", conclusion: "success", headSha },
+      ];
+      expect(validateReviewEvidence(evidence, policy).map((entry) => entry.rule)).toEqual(["required-check-indeterminate"]);
+    });
+
+    it("reports indeterminate when the runs tied for the most recent completion timestamp disagree on conclusion", () => {
+      const evidence = validEvidence();
+      evidence.checks = [
+        { name: "unit", conclusion: "failure", headSha, completedAt: "2026-08-18T21:23:36.000Z" },
+        { name: "unit", conclusion: "success", headSha, completedAt: "2026-08-18T21:23:36.000Z" },
+      ];
+      expect(validateReviewEvidence(evidence, policy).map((entry) => entry.rule)).toEqual(["required-check-indeterminate"]);
+    });
+
+    it("does not treat a tie as ambiguous when every run tied for the most recent timestamp agrees on conclusion", () => {
+      const evidence = validEvidence();
+      evidence.checks = [
+        { name: "unit", conclusion: "success", headSha, completedAt: "2026-08-18T21:23:36.000Z" },
+        { name: "unit", conclusion: "success", headSha, completedAt: "2026-08-18T21:23:36.000Z" },
+      ];
+      expect(validateReviewEvidence(evidence, policy)).toEqual([]);
+    });
+
+    it("rejects a completedAt that is present but not a well-formed RFC 3339 instant, the same way submittedAt is rejected", () => {
+      const evidence = validEvidence();
+      evidence.checks = [{ name: "unit", conclusion: "success", headSha, completedAt: "not-a-timestamp" }];
+      expect(validateReviewEvidence(evidence, policy).map((entry) => [entry.rule, entry.path])).toEqual([
+        ["check-completed-at", "checks[0].completedAt"],
+        ["missing-required-check", "requiredChecks[0]"],
+      ]);
+    });
+
+    it("never needs a completedAt for a check name with only one current-head run -- there is nothing to order it against", () => {
+      const evidence = validEvidence();
+      evidence.checks = [{ name: "unit", conclusion: "success", headSha }];
+      expect(validateReviewEvidence(evidence, policy)).toEqual([]);
     });
   });
 });

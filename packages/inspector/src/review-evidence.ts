@@ -118,6 +118,7 @@ const RULE_CLASS: Record<ReviewFindingRule, "evaluability" | "violation"> = {
   "check-unknown-field": "evaluability",
   "check-name": "evaluability",
   "check-conclusion": "evaluability",
+  "check-completed-at": "evaluability",
   "reviews-shape": "evaluability",
   "review-shape": "evaluability",
   "review-unknown-field": "evaluability",
@@ -137,6 +138,14 @@ const RULE_CLASS: Record<ReviewFindingRule, "evaluability" | "violation"> = {
   // internally consistent; it is simply about a change that no longer exists
   // in the form it was reviewed.
   "stale-evidence": "evaluability",
+  // A required check exists but this package would have to guess which of
+  // its several runs is the current one (an unread page might hold a newer
+  // run, or the runs it did read cannot be ordered without inventing an
+  // order it has no basis for) -- see ReviewFindingRule's own doc comment.
+  // Nothing about this change's checks has been established in either
+  // direction, so this is evaluability, not a violation, the same as
+  // "pagination-incomplete" above.
+  "required-check-indeterminate": "evaluability",
   // The bundle was read, and the change does not satisfy the policy.
   "missing-required-check": "violation",
   "required-check-failed": "violation",
@@ -149,12 +158,15 @@ const RULE_CLASS: Record<ReviewFindingRule, "evaluability" | "violation"> = {
 
 /**
  * The reason reported for an evaluability-class rule. `pagination-incomplete`
- * gets its own reason because it is a genuinely different situation from a
- * malformed bundle: the shape was right and the caller simply did not finish
- * reading, which is a caller-side fix rather than a schema mismatch.
+ * and `required-check-indeterminate` both get `"evidence-incomplete"`
+ * because both are a genuinely different situation from a malformed bundle:
+ * the shape was right and there simply is not enough settled information yet
+ * to decide a required check's current state (an unread page, an
+ * un-orderable set of runs) -- a caller-side gap to close, not a schema
+ * mismatch.
  */
 function evaluabilityReason(rule: ReviewFindingRule): ReviewEvidenceReason {
-  return rule === "pagination-incomplete" ? "evidence-incomplete" : "evidence-malformed";
+  return rule === "pagination-incomplete" || rule === "required-check-indeterminate" ? "evidence-incomplete" : "evidence-malformed";
 }
 
 function toFinding(finding: ReviewFinding): ReviewEvidenceFinding {
