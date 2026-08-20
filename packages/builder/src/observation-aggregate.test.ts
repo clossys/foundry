@@ -156,6 +156,32 @@ describe("aggregateObservations", () => {
     }
   });
 
+  it("a bundle stamped AFTER now is indeterminate, not fresh -- the same negative-age hole, one level down", () => {
+    // The reviewer found this in the aggregate-result check; it was equally
+    // present here and unflagged. A bundle whose producer's clock runs ahead
+    // yields a negative age, which is below every staleness threshold, so a
+    // bundle of genuinely unknown age reports as a fresh observation and
+    // contributes its gates to a satisfied overall.
+    const oneHourAhead = "2026-08-18T13:00:00.000Z";
+    const result = aggregateObservations({
+      expectedRepositories: ["repo-a"],
+      bundles: [bundleFor("repo-a", [satisfiedGate("secret-scan")], oneHourAhead)],
+      now: NOW,
+      staleAfterMs: ONE_HOUR_MS,
+      maxResultAgeMs: ONE_DAY_MS,
+    });
+
+    const [status] = result.repositories;
+    expect(status?.result.verdict).toBe("indeterminate");
+    if (status?.result.verdict === "indeterminate") {
+      expect(status.result.reason).toBe("unusable-timestamp");
+      expect(status.result.reason).not.toBe("stale-observation");
+      expect(status.result.detail).toContain("clock disagreement");
+    }
+    // And it must not be quietly folded away as a passing contributor.
+    expect(result.overall.verdict).toBe("indeterminate");
+  });
+
   it("a bundle exactly at the staleness threshold is still fresh (strictly greater-than is stale)", () => {
     const exactlyOneHourAgo = "2026-08-18T11:00:00.000Z";
     const result = aggregateObservations({
@@ -338,6 +364,30 @@ describe("checkObservationAggregateFreshness", () => {
       expect(result.reason).not.toBe("stale-observation");
       expect(result.detail).toContain(NOW);
       expect(result.detail).toContain(sixteenMinutesLater);
+    }
+  });
+
+  it("a result stamped AFTER now is indeterminate, not fresh -- a negative age must not slip under the bound", () => {
+    // The hole this closes: age is `now - computedAt`, so a result stamped in
+    // the future produces a NEGATIVE age, which is less than every maximum and
+    // therefore passes as fresh. A clock-skewed writer could keep a verdict of
+    // genuinely unknown age reading as current until the reader's clock caught
+    // up. The separating assertion is the verdict, not the exit code: before
+    // this guard the call returned satisfied, which no age-based test would
+    // have caught, because the age it computed was a number and the comparison
+    // it fed was true.
+    const result = checkObservationAggregateFreshness({
+      computedAt: "2026-08-18T13:00:00.000Z", // one hour AFTER `now`
+      maxResultAgeMs: ONE_DAY_MS,
+      now: NOW,
+    });
+    expect(result.verdict).toBe("indeterminate");
+    if (result.verdict === "indeterminate") {
+      // Distinct from staleness on purpose: an operator told "stale" goes
+      // looking for a scheduler, an operator told this goes looking for a clock.
+      expect(result.reason).toBe("unusable-timestamp");
+      expect(result.reason).not.toBe("stale-aggregate-result");
+      expect(result.detail).toContain("clock disagreement");
     }
   });
 

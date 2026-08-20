@@ -94,6 +94,7 @@ export const OBSERVATION_AGGREGATE_INDETERMINATE_REASONS = Object.freeze([
   "duplicate-repository-identity",
   "stale-observation",
   "unattributed-bundle",
+  "unusable-timestamp",
 ] as const);
 
 export type ObservationAggregateIndeterminateReason = (typeof OBSERVATION_AGGREGATE_INDETERMINATE_REASONS)[number];
@@ -111,7 +112,7 @@ export type ObservationAggregateIndeterminateReason = (typeof OBSERVATION_AGGREG
  * reader would not be able to tell "one bundle was old when this ran" from
  * "this whole verdict is old now" from the reason string alone.
  */
-export const OBSERVATION_AGGREGATE_RESULT_INDETERMINATE_REASONS = Object.freeze(["stale-aggregate-result"] as const);
+export const OBSERVATION_AGGREGATE_RESULT_INDETERMINATE_REASONS = Object.freeze(["stale-aggregate-result", "unusable-timestamp"] as const);
 
 export type ObservationAggregateResultIndeterminateReason = (typeof OBSERVATION_AGGREGATE_RESULT_INDETERMINATE_REASONS)[number];
 
@@ -291,6 +292,21 @@ export function aggregateObservations(input: AggregateObservationsInput): Aggreg
 
     const { bundle } = entry.parsed;
     const producedAtMs = Date.parse(bundle.producedAt);
+    // A bundle stamped in the future yields a NEGATIVE age, which slips under
+    // every staleness threshold and reports as fresh. The clock that produced
+    // it disagrees with the clock reading it, so this bundle's real age is not
+    // knowable here -- and "not knowable" is indeterminate, never fresh.
+    if (producedAtMs > nowMs) {
+      return {
+        repositoryId,
+        result: gateIndeterminate(
+          "unusable-timestamp",
+          `bundles[${entry.index}] for "${repositoryId}" reports producedAt ${bundle.producedAt}, which is after ` +
+            `"now" (${now}). Its age cannot be established, so it cannot be counted as a fresh observation. ` +
+            "This is a clock disagreement between producer and reader, not a stale bundle.",
+        ),
+      };
+    }
     const ageMs = nowMs - producedAtMs;
     if (ageMs > staleAfterMs) {
       return {
@@ -411,6 +427,21 @@ export function checkObservationAggregateFreshness(
   }
   if (!Number.isFinite(maxResultAgeMs) || maxResultAgeMs < 0) {
     throw new Error(`checkObservationAggregateFreshness: "maxResultAgeMs" must be a non-negative finite number, got ${JSON.stringify(maxResultAgeMs)}.`);
+  }
+
+  // Same hole as the per-bundle check above, one level up: a result stamped in
+  // the future makes ageMs negative, which passes the maximum-age comparison
+  // and presents a verdict of unknown age as current. Named separately from
+  // staleness for the reason this module already gives for splitting these
+  // vocabularies -- an operator told "stale" goes looking for a scheduler, and
+  // an operator told "unusable-timestamp" goes looking for a clock.
+  if (computedAtMs > nowMs) {
+    return gateIndeterminate(
+      "unusable-timestamp",
+      `This aggregate result reports computedAt ${computedAt}, which is after "now" (${now}). Its age cannot be ` +
+        "established, so it cannot be presented as a current verdict. This is a clock disagreement between the " +
+        "writer and the reader, not a stale result.",
+    );
   }
 
   const ageMs = nowMs - computedAtMs;
