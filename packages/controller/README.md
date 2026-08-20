@@ -978,8 +978,36 @@ import {
 
 `ReviewCheck`: `name` (`string`), `conclusion` (one of `"success"`,
 `"failure"`, `"neutral"`, `"skipped"`, `"cancelled"`, `"timed-out"`,
-`"action-required"`, `"pending"`, `"unknown"`), and `headSha` (must match the
-bundle's `headSha`, or the check is reported as stale evidence and ignored).
+`"action-required"`, `"pending"`, `"unknown"`), `headSha` (must match the
+bundle's `headSha`, or the check is reported as stale evidence and excluded
+from grading), and `completedAt` (`string?`, RFC 3339, the completion time of
+THIS run — optional because a check that has not finished yet genuinely has
+none, unlike `ReviewRecord.submittedAt` below, which is always required).
+
+A provider's check collection reports every RUN for one `name` at a head, not
+one current value per name — the same check can legitimately appear more
+than once (a failed attempt and its later, passing re-run are two separate
+`ReviewCheck` entries). `requiredChecks` is graded against the MOST RECENT
+current-head run of each name, decided strictly by `completedAt`, never by
+array position — grading the first (or last) entry seen for a repeated name
+was issue #391, and let a required check that had failed once stay failed
+forever even after it re-ran clean. A name with only one current-head entry
+needs no `completedAt` at all, since there is nothing to order it against.
+Grading a required check reports exactly one of three findings, never more
+than one for the same name:
+
+- `"missing-required-check"` — no current-head run for this name at all.
+- `"required-check-failed"` — the most recent current-head run's
+  `conclusion` was not `"success"`.
+- `"required-check-indeterminate"` — this package will not guess which run
+  counts. Fires while `paginationComplete` is not `true` (an unread page
+  could hold a newer run than anything already observed, so even an
+  already-observed `"success"` cannot be trusted as the latest one), or when
+  more than one current-head run exists for the name and recency cannot be
+  decided without guessing (a run with no `completedAt` in the mix, or
+  multiple runs tied for the latest `completedAt` that disagree on
+  `conclusion`). Never a pass and never a failure — see
+  `ReviewFindingRule`'s own doc comment for the full reasoning.
 
 `ReviewRecord`: `id` (`string`), `reviewerId` (`string`, opaque,
 provider-neutral, and purely descriptive), `instanceId` (`string`, opaque,
@@ -1017,7 +1045,7 @@ current-head thread is reported as an unresolved-thread finding), and
   "patchId": "fedcba9876543210fedcba9876543210fedcba98",
   "paginationComplete": true,
   "checks": [
-    { "name": "test", "conclusion": "success", "headSha": "0123456789abcdef0123456789abcdef01234567" }
+    { "name": "test", "conclusion": "success", "headSha": "0123456789abcdef0123456789abcdef01234567", "completedAt": "2026-01-01T00:00:00.000Z" }
   ],
   "reviews": [
     {

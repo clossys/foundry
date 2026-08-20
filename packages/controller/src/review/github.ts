@@ -5,8 +5,24 @@ import type { ReviewCheckConclusion, ReviewDecision, ReviewDepth, ReviewEvidence
 export interface GitHubPageInfo { readonly hasNextPage: boolean; readonly hasPreviousPage: boolean; }
 /** A caller-provided GitHub GraphQL-style connection. No network access occurs here. */
 export interface GitHubConnection<T> { readonly nodes: readonly T[]; readonly pageInfo: GitHubPageInfo; }
-/** GitHub-shaped check data accepted by the normalizer. */
-export interface GitHubCheckNode { readonly name: string; readonly conclusion: string | null; readonly headSha?: string; readonly head_sha?: string; }
+/**
+ * GitHub-shaped check data accepted by the normalizer. GitHub's own rollup
+ * reports every run for `name` at this head, not one current value per name
+ * -- see `ReviewCheck`'s own doc comment -- so `completedAt` (or its
+ * snake_case sibling `completed_at`, matching `headSha`/`head_sha`) is what
+ * lets `validateReviewEvidence` tell a stale run from the current one when
+ * more than one shows up for the same `name`. It is optional and, when
+ * supplied, read verbatim, never invented: a check that has not finished yet
+ * genuinely has none, which is a true fact about the run, not a caller gap.
+ */
+export interface GitHubCheckNode {
+  readonly name: string;
+  readonly conclusion: string | null;
+  readonly headSha?: string;
+  readonly head_sha?: string;
+  readonly completedAt?: string | null;
+  readonly completed_at?: string | null;
+}
 /**
  * GitHub-shaped review data accepted by the normalizer. `provider`,
  * `instanceId`, and `depth` are not part of GitHub's own review shape --
@@ -52,6 +68,15 @@ export interface GitHubReviewEvidencePayload {
 }
 
 function stringValue(value: unknown): string { return typeof value === "string" ? value : ""; }
+// Preserves genuine absence instead of collapsing it to "" the way
+// `stringValue` does for headSha/provider/etc. An empty string would fail
+// ReviewCheck.completedAt's own RFC 3339 validation for no reason -- the
+// same distinction `patchId` already draws in normalizeGitHubReviewEvidence
+// below. A check that has not completed yet has NO completion timestamp,
+// which is not the same fact as "the caller forgot to supply one".
+function optionalStringValue(value: unknown): string | undefined {
+  return typeof value === "string" && value.length > 0 ? value : undefined;
+}
 function record(value: unknown): Record<string, unknown> {
   if (typeof value !== "object" || value === null || Array.isArray(value)) return {};
   const prototype = Object.getPrototypeOf(value);
@@ -170,7 +195,22 @@ export function normalizeGitHubReviewEvidence(payload: GitHubReviewEvidencePaylo
     baseSha,
     ...(patchId !== undefined ? { patchId } : {}),
     paginationComplete: isComplete(checksConnection) && reviewConnectionIsComplete(reviewsConnection) && isComplete(threadsConnection),
-    checks: nodes(checksConnection).map((node) => { const check = record(node); return { name: stringValue(ownData(check, "name")), conclusion: normalizeCheckConclusion(ownData(check, "conclusion")), headSha: stringValue(ownData(check, "headSha")) || stringValue(ownData(check, "head_sha")) }; }),
+    // `completedAt` is read the same optional, never-invented way `patchId`
+    // is above: present only when the caller's node actually carried one
+    // (camelCase or snake_case), omitted entirely otherwise -- never
+    // defaulted to "" the way `headSha` is, because "" would fail
+    // `completedAt`'s own RFC 3339 validation for a check that has simply
+    // not finished yet, which is not a defect in the evidence.
+    checks: nodes(checksConnection).map((node) => {
+      const check = record(node);
+      const completedAt = optionalStringValue(ownData(check, "completedAt")) ?? optionalStringValue(ownData(check, "completed_at"));
+      return {
+        name: stringValue(ownData(check, "name")),
+        conclusion: normalizeCheckConclusion(ownData(check, "conclusion")),
+        headSha: stringValue(ownData(check, "headSha")) || stringValue(ownData(check, "head_sha")),
+        ...(completedAt !== undefined ? { completedAt } : {}),
+      };
+    }),
     reviews: nodes(reviewsConnection)
       .filter((node) => ownData(record(node), "state") !== "PENDING")
       // `provider`, `instanceId`, and `depth` are each read only from what

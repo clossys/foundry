@@ -5,6 +5,56 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-08-20
+
+### Fixed
+
+- **`./review`'s required-check evaluation now grades the most recent run of
+  each check name, not the first one it happens to encounter (issue #391).**
+  A provider's status-check collection reports every run for one `name` at a
+  head, not one current value per name, so a check can legitimately appear
+  in `checks` more than once — a failed attempt and its later, passing
+  re-run were both present as separate entries. `validateReviewEvidence`
+  previously graded a required check by simple membership across every entry
+  for that name, so once one run had failed, a later genuinely successful
+  re-run of the same name could never clear the verdict: the stale failed
+  entry was still in the collection and always would be. Confirmed live
+  twice against one consumer repository, where a `task-record` re-run went
+  green and the gate still reported it failed on two subsequent runs.
+
+  `ReviewCheck` gains an optional `completedAt` (RFC 3339 completion
+  timestamp) so recency can be decided without guessing; it is optional,
+  unlike `ReviewRecord.submittedAt`, because a check that has not finished
+  yet genuinely has none, and a check name with only one current-head entry
+  never needs one. `normalizeGitHubReviewEvidence` (`./review/github`) reads
+  it from a GitHub check node's `completedAt`/`completed_at`, the same
+  optional, never-invented way it already reads `headSha`/`head_sha`.
+
+  Two adjacent correctness gaps are closed in the same pass, both following
+  the same never-guess discipline:
+
+  - **Pagination.** A required check's own verdict is now
+    `"required-check-indeterminate"` — never a pass or a failure — for as
+    long as `paginationComplete` is not `true`, even when every run already
+    observed for that name reported `"success"`: an unread page could still
+    hold a newer run of the same name.
+  - **`headSha` skew.** A run observed for a superseded head was already
+    excluded from grading via the existing per-item `headSha` check (and
+    still separately, unconditionally reported as `"stale-evidence"`); that
+    behavior is now stated explicitly as the deliberate design, not
+    incidental.
+
+  When more than one current-head run for a name remains after that (the
+  new case this release adds), and recency cannot be decided without
+  guessing — a run with no `completedAt` in the mix, or several runs tied
+  for the latest `completedAt` that disagree on `conclusion` — the required
+  check is `"required-check-indeterminate"` rather than graded either way.
+  Two new `ReviewFindingRule` values support this:
+  `"required-check-indeterminate"` and `"check-completed-at"` (an invalid,
+  present `completedAt`). Every existing caller with at most one current-head
+  run per required check name — the common case — is completely unaffected:
+  same input, same output.
+
 ## [0.7.2] - 2026-08-19
 
 ### Changed
