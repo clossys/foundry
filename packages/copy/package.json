@@ -1,6 +1,6 @@
 {
   "name": "@vespeneventures/copy",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -19,7 +19,8 @@
     "./voice-record.template.jsonc": "./templates/voice-record.template.jsonc"
   },
   "bin": {
-    "copy-check": "./dist/cli.js"
+    "copy-check": "./dist/cli.js",
+    "copy-addressability-check": "./dist/cli.js"
   },
   "files": [
     "dist",

@@ -1,5 +1,46 @@
 # Changelog
 
+## [0.9.0] - 2026-08-19
+
+### Added
+
+- **`copy-addressability` — a new gate, `addressability.ts`, checking a
+  DIFFERENT and stricter property than `copy-check`'s existing
+  traceability: is user-facing prose resolved from the copy registry BY
+  ID, rather than typed inline in a component? A literal that happens to
+  match a registered `CopyEntry.text`'s shape, or that carries a
+  `copy:<id>` citation comment, still satisfies traceability — but the
+  sentence is still sitting in the component's own source, which is
+  exactly what makes a marketing rename expensive rather than cheap.
+  Addressability has no such escape hatch.
+
+  Reuses `scan.ts`'s `extractCopyCandidates` for literal/JSX-text
+  boundary-finding (no second tokenizer) and classifies three positions:
+  markup text nodes and the four user-facing attributes (`aria-label`,
+  `placeholder`, `alt`, `title`) are violations when they carry literal
+  prose; every other string position — a template literal in any
+  position, an object/array literal value, a prop outside the four — is
+  reported as unclassifiable (`unchecked`) rather than assumed clean.
+  `aria-label` is specifically recovered from `scan.ts`'s own
+  `"aria-or-data-attribute-value"` exclusion bucket (which otherwise
+  bundles it with every other `aria-*`/`data-*` attribute, none of which
+  are in this gate's scope) via a local, same-line attribute-name lookup.
+
+  Exported from the package root: `scanAddressabilitySources`,
+  `extractAddressabilityCandidates`, `checkAddressability`, and their
+  supporting types.
+
+- **`copy-addressability-check`** — a new installable CLI (see `cli.ts`,
+  wired as a second `bin` entry alongside the existing `copy-check`), same
+  three-state exit-code contract (`0` clean, `1` at least one violation,
+  `2` could not run — including any unclassifiable string position).
+  Deliberately a SEPARATE command from `copy-check` rather than folded
+  into its exit code: the two gates' own natural test fixtures are
+  structurally incompatible (a literal traceability needs to prove a
+  registry match is exactly a literal addressability cannot confirm is
+  safe), so combining them would make `copy-check`'s own "clean pass"
+  fixtures unwritable.
+
 ## [0.8.0] - 2026-08-19
 
 ### Added
