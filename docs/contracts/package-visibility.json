@@ -15,6 +15,10 @@
       "intendedVisibility": "public"
     },
     {
+      "name": "@vespeneventures/consent",
+      "intendedVisibility": "public"
+    },
+    {
       "name": "@vespeneventures/controller",
       "intendedVisibility": "public"
     },
@@ -40,6 +44,10 @@
     },
     {
       "name": "@vespeneventures/locksmith",
+      "intendedVisibility": "public"
+    },
+    {
+      "name": "@vespeneventures/observer",
       "intendedVisibility": "public"
     },
     {
