@@ -1,11 +1,22 @@
 #!/usr/bin/env node
 /**
- * `ledger-check` — the CLI for `checkLedgerDrift`. Presentation and I/O
- * only: parse argv, read two JSON files, run the pure gate, print a
- * report, pick an exit code. All real logic lives in `drift.ts`.
+ * `ledger-check` — the CLI for both this package's gates: `checkLedgerDrift`
+ * (the default, no-subcommand invocation) and `checkAppendOnly` (the
+ * `append-only` subcommand). Presentation and I/O only in both cases: parse
+ * argv, read JSON files, run the pure gate, print a report, pick an exit
+ * code. All real logic lives in `drift.ts` and `append-only-gate.ts`
+ * respectively.
  *
- * Exit codes — matching this repository's three-state convention
- * (`strategy-facts-check`, `copy-check`, `foundry-check`):
+ * Dispatch happens on `argv[0]` — the literal first token a caller passes
+ * on the command line — never on the invoked binary's path or filename.
+ * This repository invokes every gate by its compiled path (e.g. `node
+ * packages/controller/dist/cli.js`), so a dispatch keyed off
+ * `basename(process.argv[1])` would always see `cli.js` and silently run
+ * the wrong command. See `main` below for the actual dispatch.
+ *
+ * Exit codes for the default (drift) invocation — matching this
+ * repository's three-state convention (`strategy-facts-check`,
+ * `copy-check`, `foundry-check`):
  *
  *   0 — ran cleanly: the ledger validated, at least one citation was
  *       compared against a current value, and none had drifted.
@@ -17,14 +28,34 @@
  *       unexpected exception. Kept strictly distinct from 1 — a drift
  *       checker that reports "clean" after failing to check anything is
  *       worse than no checker at all.
+ *
+ * Exit codes for the `append-only` subcommand — the same three-state
+ * convention, applied to `checkAppendOnly` instead of `checkLedgerDrift`:
+ *
+ *   0 — "next" is a valid, order-preserving append-only evolution of
+ *       "previous", verified over at least one entry in "previous".
+ *   1 — a real violation: an entry present in "previous" was removed,
+ *       reordered, or mutated in "next" (`checkAppendOnly` returned at
+ *       least one finding).
+ *   2 — could not evaluate: bad arguments, a file missing/unreadable/not
+ *       valid JSON, either ledger failing its own shape validation, or
+ *       "previous" having zero entries. Zero entries is deliberately its
+ *       own exit code, never folded into 0 — "verified nothing" and
+ *       "verified everything and it held" must never look like the same
+ *       result to a CI job branching on this exit code, the same
+ *       three-state discipline `checkLedgerDrift`'s empty-ledger case
+ *       already holds this CLI to above.
  */
 
 import { readFileSync, existsSync, realpathSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { checkAppendOnly } from "./append-only-gate.js";
 import { checkLedgerDrift, type DriftReport } from "./drift.js";
+import type { LedgerFinding } from "./types.js";
 
 const USAGE = `Usage: ledger-check <ledger-file> <current-values-file> [options]
+       ledger-check append-only <previous-ledger-file> <next-ledger-file> [options]
 
   ledger-file           Path to a JSON file containing a Ledger (an array of PublicationEntry). Required.
   current-values-file   Path to a JSON file containing a flat object mapping factRef -> current value. Required.
@@ -33,6 +64,19 @@ Options:
   --help   Print this message and exit 0.
 
 Exit codes: 0 = clean (something was checked, nothing drifted), 1 = at least one cited fact has drifted, 2 = could not run (bad input, missing/unreadable/invalid JSON, an invalid or empty ledger, or nothing could be checked).
+
+Run "ledger-check append-only --help" for the append-only subcommand's own usage.
+`;
+
+const APPEND_ONLY_USAGE = `Usage: ledger-check append-only <previous-ledger-file> <next-ledger-file> [options]
+
+  previous-ledger-file   Path to a JSON file containing a Ledger (an array of PublicationEntry) — e.g. a base ref's copy. Required.
+  next-ledger-file       Path to a JSON file containing a Ledger — e.g. a head ref's copy, checked against previous-ledger-file for a pure, order-preserving append. Required.
+
+Options:
+  --help   Print this message and exit 0.
+
+Exit codes: 0 = next is a valid append-only evolution of previous, verified over at least one entry; 1 = a real violation (an entry removed, reordered, or mutated); 2 = could not evaluate (bad input, missing/unreadable/invalid JSON, a ledger failing its own shape validation, or zero entries in previous to check against).
 `;
 
 /** Exported for `cli.test.ts` — anything wrong with the arguments or input files always maps to exit code 2, never 1. */
@@ -67,6 +111,37 @@ function parseArgs(argv: string[]): ParsedArgs {
   }
 
   return { ledgerFile, currentValuesFile, help };
+}
+
+interface AppendOnlyParsedArgs {
+  previousFile?: string;
+  nextFile?: string;
+  help: boolean;
+}
+
+function parseAppendOnlyArgs(argv: string[]): AppendOnlyParsedArgs {
+  let previousFile: string | undefined;
+  let nextFile: string | undefined;
+  let help = false;
+
+  for (const arg of argv) {
+    if (arg === "--help" || arg === "-h") {
+      help = true;
+      continue;
+    }
+    if (arg.startsWith("-")) {
+      throw new CliInputError(`unknown flag "${arg}"`);
+    }
+    if (previousFile === undefined) {
+      previousFile = arg;
+    } else if (nextFile === undefined) {
+      nextFile = arg;
+    } else {
+      throw new CliInputError(`unexpected extra argument "${arg}"`);
+    }
+  }
+
+  return { previousFile, nextFile, help };
 }
 
 /**
@@ -133,15 +208,35 @@ function printReport(report: DriftReport): void {
   }
 }
 
+function printFindings(findings: readonly LedgerFinding[]): void {
+  console.log(`${findings.length} finding(s):`);
+  for (const f of findings) {
+    const loc = f.path ? ` (${f.path})` : "";
+    console.log(`  [${f.severity}] ${f.rule}${loc}: ${f.message}`);
+  }
+}
+
 /**
- * Exported (unlike a typical CLI `main`) so `cli.test.ts` can exercise the
- * whole argv-to-exit-code contract directly against real `mkdtemp` fixture
- * files, without spawning a subprocess for every case. Takes `argv` as a
- * parameter rather than reading `process.argv` itself for exactly that
- * reason — `run()` below is the only caller that reads the real
+ * Dispatcher. Checked BEFORE `parseArgs`/the drift-check argument shape —
+ * on the literal first argv token, never on the invoked binary's path or
+ * filename — so this repository's compiled-path invocations (`node
+ * dist/cli.js <ledger-file> <current-values-file>`) keep running the drift
+ * check exactly as before, and only a caller that actually types
+ * `append-only` first gets the append-only gate. Exported (unlike a
+ * typical CLI `main`) so `cli.test.ts` can exercise the whole
+ * argv-to-exit-code contract directly, without spawning a subprocess for
+ * every case — `run()` below is the only caller that reads the real
  * `process.argv`.
  */
 export function main(argv: string[]): number {
+  if (argv[0] === "append-only") {
+    return runAppendOnly(argv.slice(1));
+  }
+  return runDriftCheck(argv);
+}
+
+/** The default (no-subcommand) invocation: `checkLedgerDrift`. This is exactly the previous, unchanged `main` body — see `main` above for why it now lives under its own name. */
+function runDriftCheck(argv: string[]): number {
   const args = parseArgs(argv);
   if (args.help) {
     console.log(USAGE);
@@ -199,13 +294,105 @@ export function main(argv: string[]): number {
   return 0;
 }
 
+/**
+ * The `append-only` subcommand: `checkAppendOnly`. Same shape as
+ * `runDriftCheck` above — parse, read two files, run the pure gate, print,
+ * pick an exit code — but the mapping from `checkAppendOnly`'s
+ * `LedgerFinding[]` to an exit code is entirely this function's own job:
+ * `checkAppendOnly` itself has no notion of exit codes, and (unlike
+ * `checkLedgerDrift`'s `DriftReport`) does not distinguish "could not
+ * evaluate" from "found a violation" in its return type — both come back
+ * as findings. This function draws that line by rule name (see below) and,
+ * separately, by checking "previous" for zero entries itself — the one
+ * "could not evaluate" case `checkAppendOnly` cannot report on its own,
+ * since an empty "previous" that "next" only adds to is, findings-wise,
+ * indistinguishable from a real clean pass.
+ */
+function runAppendOnly(argv: string[]): number {
+  const args = parseAppendOnlyArgs(argv);
+  if (args.help) {
+    console.log(APPEND_ONLY_USAGE);
+    return 0;
+  }
+  if (!args.previousFile) {
+    throw new CliInputError("previous-ledger-file is required");
+  }
+  if (!args.nextFile) {
+    throw new CliInputError("next-ledger-file is required");
+  }
+
+  const previousPath = resolve(args.previousFile);
+  const nextPath = resolve(args.nextFile);
+
+  // Both reads can throw CliInputError (a bad path is an argument problem).
+  const previousRaw = readFileText("previous-ledger-file", previousPath);
+  const nextRaw = readFileText("next-ledger-file", nextPath);
+
+  console.log(`Previous: ${previousPath}`);
+  console.log(`Next: ${nextPath}`);
+
+  // From here on, a problem is about CONTENT, not arguments — reported and
+  // mapped to exit code 2 without ever throwing, the same "could not run"
+  // category runDriftCheck uses for a malformed ledger/current-values file.
+  const parsedPrevious = parseJson(previousRaw);
+  if (!parsedPrevious.ok) {
+    console.error(`\n${previousPath} is not valid JSON: ${parsedPrevious.message}`);
+    console.error("Refusing to report on append-only-ness for a previous ledger that could not even be parsed.");
+    return 2;
+  }
+  const parsedNext = parseJson(nextRaw);
+  if (!parsedNext.ok) {
+    console.error(`\n${nextPath} is not valid JSON: ${parsedNext.message}`);
+    console.error("Refusing to report on append-only-ness for a next ledger that could not even be parsed.");
+    return 2;
+  }
+
+  const findings = checkAppendOnly(parsedPrevious.value, parsedNext.value);
+
+  // checkAppendOnly fails closed on shape by returning ONLY
+  // "previous-ledger-invalid" or "next-*"-prefixed findings (see its own
+  // doc comment) — never mixed with a genuine append-only violation
+  // finding, since it returns immediately in both cases. Recognizing those
+  // rule names is how this function tells "could not evaluate" (2) apart
+  // from "evaluated and found a real problem" (1).
+  const shapeInvalid = findings.some((f) => f.rule === "previous-ledger-invalid" || f.rule.startsWith("next-"));
+  if (shapeInvalid) {
+    printFindings(findings);
+    console.error("\nCould not evaluate append-only-ness: at least one ledger failed its own shape validation.");
+    return 2;
+  }
+
+  // Both ledgers validated (no shape errors) at this point, so "previous"
+  // is safely a well-formed array — count its entries the same way
+  // checkLedgerDrift's entriesChecked does, to tell "verified zero entries"
+  // apart from "verified at least one and it held".
+  const previousEntries = parsedPrevious.value as unknown[];
+  if (previousEntries.length === 0) {
+    console.log("Checked 0 entries: \"previous\" has zero entries, so there is nothing to verify \"next\" preserved.");
+    console.error("\nRefusing to report a clean append-only result for a check that verified nothing.");
+    return 2;
+  }
+
+  console.log(
+    `Checked ${previousEntries.length} entr${previousEntries.length === 1 ? "y" : "ies"} from "previous" against "next".`,
+  );
+  if (findings.length === 0) {
+    console.log("No findings — next is a valid append-only evolution of previous.");
+    return 0;
+  }
+  printFindings(findings);
+  return 1;
+}
+
 function run(): void {
+  const argv = process.argv.slice(2);
+  const usage = argv[0] === "append-only" ? APPEND_ONLY_USAGE : USAGE;
   try {
-    process.exitCode = main(process.argv.slice(2));
+    process.exitCode = main(argv);
   } catch (error) {
     if (error instanceof CliInputError) {
       console.error(`ledger-check: ${error.message}`);
-      console.error(`\n${USAGE}`);
+      console.error(`\n${usage}`);
       process.exitCode = 2;
     } else {
       console.error(`ledger-check: unexpected error: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`);
