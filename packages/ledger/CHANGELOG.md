@@ -3,6 +3,46 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.0] - 2026-08-19
+
+### Added
+
+- **`ledger-check append-only <previous-ledger-file> <next-ledger-file>`** —
+  a CLI path for `checkAppendOnly`, closing the asymmetry between it and its
+  sibling `checkLedgerDrift`, which has had a CLI since `0.1.0`. Until now
+  `checkAppendOnly` was public API with no `bin` behind it and no in-package
+  caller — a gate nothing ever runs. It is a subcommand of the existing
+  `ledger-check` bin, dispatched on the literal `argv[0] === "append-only"`,
+  checked BEFORE the default drift-check argument parsing so every existing
+  no-subcommand invocation (`ledger-check <ledger-file> <current-values-file>`)
+  keeps working completely unchanged. No new `bin` entry, and dispatch never
+  reads `process.argv[1]`/the invoked binary's path or filename — this
+  repository invokes every gate by its compiled path (e.g. `node
+  packages/controller/dist/cli.js`), so a `basename`-keyed dispatch would
+  always see `cli.js` and silently run the wrong command.
+- Same three-state exit-code contract as `ledger-check`'s default
+  invocation, mapped onto `checkAppendOnly` instead of `checkLedgerDrift`:
+  `0` — `next` verified as a valid, order-preserving append-only evolution
+  of `previous`, over at least one entry; `1` — a real violation
+  (`checkAppendOnly` reported an entry removed, reordered, or mutated); `2`
+  — could not evaluate (bad arguments, a file missing/unreadable/not valid
+  JSON, either ledger failing its own shape validation, or `previous` having
+  zero entries). Zero entries in `previous` is deliberately its own `2`,
+  never folded into a `0` pass — `checkAppendOnly` itself returns no
+  findings for an empty `previous` (there is nothing in it to have been
+  altered), which is exactly why the CLI checks entry count itself rather
+  than trusting an empty findings array alone to mean "verified clean". A
+  history where a prior entry was edited in place while a new entry was
+  also appended still exits `1` — entry count growing is not, by itself,
+  evidence of anything; `checkAppendOnly`'s own per-id diff is what this
+  CLI trusts, never a naive "did the file grow" check.
+
+### Fixed
+
+- Closed the exact asymmetry `checkLedgerDrift` and `checkAppendOnly`
+  otherwise shared no more: one gate reachable from a shell, the other only
+  from `import`.
+
 ## [0.2.8] - 2026-08-19
 
 ### Changed

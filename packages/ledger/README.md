@@ -109,6 +109,12 @@ if (findings.length > 0) {
 }
 ```
 
+Or from the shell, once built — the same `ledger-check` bin `checkLedgerDrift` uses, via its `append-only` subcommand:
+
+```bash
+npx ledger-check append-only ./previous-ledger.json ./next-ledger.json
+```
+
 ## Why append-only
 
 A ledger that can be silently edited after the fact is not evidence — it is
@@ -213,8 +219,13 @@ partial result, visible in the counts, not an all-or-nothing gate.
 installed — its argv-handling `cli.ts` is deliberately not part of the
 exports above, the same convention `@vespeneventures/strategy`'s
 `strategy-facts-check` and `@vespeneventures/copy`'s `copy-check` already
-set) reads a ledger JSON file and a current-values JSON file, runs
-`checkLedgerDrift`, and prints a report:
+set) has two invocations, dispatched on the literal first `argv` token —
+never on the invoked binary's path or filename, since this repository
+always invokes a gate by its compiled path (`node .../dist/cli.js`), and a
+filename-keyed dispatch would always see `cli.js`:
+
+The default (no subcommand) invocation reads a ledger JSON file and a
+current-values JSON file, runs `checkLedgerDrift`, and prints a report:
 
 ```bash
 npx ledger-check ./ledger.json ./current-values.json
@@ -227,6 +238,28 @@ whose citations could not be compared against any current value. `1` and
 `2` are kept strictly distinct on purpose: "found a real problem" and
 "could not check" must never look like the same failure to a CI job
 branching on the exit code.
+
+The **`append-only` subcommand** reads two ledger JSON files — a
+`previous` and a `next`, e.g. a base ref's copy and a head ref's copy in a
+CI job — and runs `checkAppendOnly`:
+
+```bash
+npx ledger-check append-only ./previous-ledger.json ./next-ledger.json
+```
+
+Exit codes follow the same three-state shape: `0` — `next` verified as a
+valid, order-preserving append-only evolution of `previous`, over at least
+one entry in `previous`; `1` — a real violation (an entry in `previous` was
+removed, reordered, or mutated in `next`); `2` — could not evaluate — bad
+arguments, a file missing/unreadable/not valid JSON, either ledger failing
+its own shape validation, or `previous` having zero entries. Zero entries
+is deliberately its own `2`, not folded into `0`: `checkAppendOnly` reports
+no findings at all for an empty `previous` (there is nothing in it that
+could have been altered), so the CLI checks `previous`'s entry count itself
+rather than treating "no findings" alone as proof anything was verified —
+"checked nothing" and "checked everything and it held" must stay
+distinguishable, the same discipline `checkLedgerDrift`'s empty-ledger case
+already holds this CLI to above.
 
 ## Requirements
 
