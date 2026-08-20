@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.6.8] - 2026-08-20
+
+### Changed
+
+- **Widened the `@vespeneventures/copy` dependency range to `~0.10.0`.** Same
+  reason as 0.6.7 directly below, and as 0.6.5 and 0.6.4 before it: a runtime
+  dependency range is shipped content, so it moves this package's version even
+  though no code here changed. See
+  [issue #377](https://github.com/vespeneventures/foundry/issues/377) for the
+  change that required it.
+- This is 0.6.8 rather than a second 0.6.7 because two independent branches each
+  correctly bumped this package to 0.6.7, one widening `ui` and one widening
+  `copy`. Both widenings are real and both are kept; resolving the collision by
+  taking one side would have shipped 0.6.7 with a range that silently never
+  widened.
+
 ## [0.6.7] - 2026-08-20
 
 ### Changed

@@ -1,5 +1,56 @@
 # Changelog
 
+## [0.10.0] - 2026-08-20
+
+### Added
+
+- **`copy-check locale-coverage <registries-file> <source-locale> [declared-locale...]`**
+  — a THIRD subcommand of the existing `copy-check` bin (see `cli.ts`),
+  giving `checkLocaleCoverage` (`locale-coverage.ts`) the CLI path and
+  caller it had never had: it was exported as public API since `0.4.0` but
+  reachable only by writing TypeScript against it directly, unlike its
+  siblings `checkCopyTraceability`, `checkVoiceDerivationCoverage`, and
+  `checkAddressability` — see [issue #377](https://github.com/vespeneventures/foundry/issues/377).
+
+  Dispatched the same way the existing `voice-derivation-coverage`
+  subcommand is: an explicit `argv[0] === "locale-coverage"` check inside
+  `main()`, before any of the default command's own argument parsing runs
+  — never a second `bin` entry, and never keyed off
+  `basename(process.argv[1])`. This repository's own root `package.json`
+  invokes every gate by compiled path (`node packages/<pkg>/dist/cli.js`),
+  never by installed `bin` name, so a second `bin` entry pointing at the
+  same file would be unreachable that way, and a name-based dispatch would
+  silently fall through to the wrong command instead of erroring — the
+  exact defect this issue's own history already caught once during this
+  effort.
+
+  `registries-file` is a JSON file: a plain object mapping each locale to
+  its `CopyRegistry` (validated per-locale by `checkLocaleCoverage` itself,
+  via `validateCopyRegistryShape`; this CLI only confirms the top-level
+  container is a plain object, never an array or primitive).
+  `declared-locale` defaults to every key `registries-file` itself
+  declares, in file order, when omitted — the common case, "check coverage
+  across every locale I actually produced a registry for." Passing
+  `declared-locale` explicitly is how a caller additionally asserts that
+  some OTHER locale — one the project is supposed to cover but has no
+  registry file for at all — is missing; `checkLocaleCoverage` reports that
+  as its own `"target-locale-missing"` finding rather than this CLI
+  silently narrowing the declared set to only what exists on disk.
+
+  Exit code is the exact mapping `LocaleCoverageReport.complete`'s own doc
+  comment already states as its caller contract, applied faithfully rather
+  than reinvented: `2` when `!complete` (any declared locale not actually
+  evaluated, including "checked nothing" shapes like zero declared locales,
+  a missing/invalid/empty source locale, or a registries-file that failed
+  to load/parse/shape-validate at the container level); `1` when `complete`
+  and at least one `"error"`-severity finding was produced (missing
+  coverage, an interpolation-parity gap, or a structural decline); `0`
+  otherwise — including a `complete` run whose only findings are
+  `"warning"`-severity (orphaned entries, stale translations, or missing
+  translation provenance).
+
+  No runtime dependency was added — this package remains at zero.
+
 ## [0.9.0] - 2026-08-19
 
 ### Added
