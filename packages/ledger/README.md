@@ -214,6 +214,9 @@ partial result, visible in the counts, not an all-or-nothing gate.
 | `appendEntry(ledger, entry)` | function | The one sanctioned way to grow a `Ledger`. Throws (never returns a `LedgerFinding[]`) on a malformed `entry` or an `entry.id` that already exists in `ledger` — both are caller programming errors at the point of the call, the same distinction `computeDigest` draws. Returns a **new**, deep-frozen `Ledger`; `ledger` itself, and every entry already in it, is left completely untouched. |
 | `checkAppendOnly(previous, next)` | function | The at-rest complement to `appendEntry`. Pure diff between two `unknown` values, each validated with `validateLedger` first. Reports `"entry-removed"`, `"entry-reordered"`, or `"entry-mutated"` (compared via `canonicalizeValue`, so a harmless JSON-key-order round-trip is never mistaken for a real change) for anything in `previous` that `next` fails to preserve exactly, in the same position; `"entries-removed"` once, up front, if `next` has fewer entries than `previous`. An empty return means `next` is a valid append-only evolution of `previous`. |
 | `checkLedgerDrift(ledger, currentValues)` | function | The drift checker: for each `FactCitation` in `ledger`, compares its recorded `valueBinding` against `currentValues[citation.factRef]` (canonicalized, then run through `@vespeneventures/controller/policy`'s own `verifyBinding` — no digest-comparison logic reimplemented here) and reports a `"fact-drift"` finding on mismatch. `currentValues` is a plain `factRef -> value` map — this function never reads a real fact registry or depends on `@vespeneventures/strategy`. Fails closed on an invalid ledger, an empty ledger, or a non-empty ledger where nothing ends up checked — see "Why the drift checker fails closed". |
+| `JoinKeyReport` | type | What `checkJoinKeyCompleteness` returns: `ok`, `liveEntriesChecked`, `completeLiveEntries`, `incompleteLiveEntries`, `identities: JoinKeyIdentity[]`, `findings: LedgerFinding[]`. Mirrors `DriftReport`'s counted shape for the same reason — "checked nothing" and "checked everything and it held" must never print as the same result. |
+| `JoinKeyIdentity` | type | `{ contentId: string; windows: Array<{ entryId, publishedAt, supersededAt? }> }` — one content identity with every window it has been published under, in `publishedAt` order. Exposed on the report so a caller can assert on the grouping directly rather than infer it from a pass or fail. |
+| `checkJoinKeyCompleteness(ledger)` | function | For everything the ledger currently says is live, is enough recorded here for someone else — an observer-shaped tier holding external engagement signals, never this package — to attribute a signal to the right revision of the right surface? Reports `"join-key-missing-identity"` (a live entry with no `contentId`), `"join-key-window-invalid"` (a `supersededAt` that does not actually close a window), and the cross-entry `"join-key-identity-churn"`. Emits and checks for a KEY only, never a verdict about whether a signal is good — see "Why this package exists". Fails closed on an invalid ledger, an empty ledger, or a ledger with zero live entries. |
 
 `ledger-check` (the CLI, installed as a `bin` when this package is
 installed — its argv-handling `cli.ts` is deliberately not part of the
@@ -260,6 +263,34 @@ rather than treating "no findings" alone as proof anything was verified —
 "checked nothing" and "checked everything and it held" must stay
 distinguishable, the same discipline `checkLedgerDrift`'s empty-ledger case
 already holds this CLI to above.
+
+The **`join-key` subcommand** reads one ledger JSON file and runs
+`checkJoinKeyCompleteness`:
+
+```bash
+npx ledger-check join-key ./ledger.json
+```
+
+Exit codes, same three-state shape again: `0` — every currently-live entry
+carries a complete join key, verified over at least one live entry; `1` — a
+live entry is missing its content identity or its window is not
+interpretable, or two entries at the same address disagree on identity; `2`
+— could not evaluate: bad arguments, a file missing/unreadable/not valid
+JSON, an invalid or empty ledger, or **zero entries currently live**. That
+last case is deliberately a `2` rather than a `0`, for the same reason
+`append-only`'s empty-`previous` case is: a ledger that has retired
+everything it ever recorded produces no findings, and "nothing live to
+check" must never read as "publishing here is cleanly governed".
+
+Liveness is derived, not read off a field. This package is append-only, so
+an already-recorded entry can never be reached back into and marked no
+longer current once a successor ships; `supersededAt` is therefore often
+absent even on an entry that is, in fact, retired. Entries are grouped by
+`contentId`, the latest `publishedAt` in each group is the live candidate,
+and it stays live unless it carries a well-formed `supersededAt` strictly
+after its own `publishedAt`. An entry with no `contentId` cannot be grouped
+against anything, so it is always treated as live — the same fail-closed
+choice `checkLedgerDrift` makes for a citation it could not check.
 
 ## Requirements
 
