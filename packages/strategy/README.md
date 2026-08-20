@@ -357,6 +357,46 @@ prose against) and a scan that matched zero files (nothing was actually
 scanned — "found nothing wrong" and "checked nothing" must never look the
 same in a report).
 
+### `strategy-facts-check brand-coverage` — the second subcommand
+
+`checkBrandCoverage` (below) is a library function — it was reachable only
+by writing TypeScript against this package, unlike the facts gate above,
+which ships as an installable CLI. This subcommand closes that gap without
+adding a second `bin` entry or importing `@vespeneventures/ui/tokens`:
+
+```bash
+npx strategy-facts-check brand-coverage ./brand-derivations.json ./brandable-slots.json
+```
+
+```
+Usage: strategy-facts-check brand-coverage <derivations-file> <brandable-slots-file>
+
+  derivations-file      Path to a JSON file containing an array of BrandDerivation objects. Required.
+  brandable-slots-file  Path to a JSON file containing an array of brandable token-slot name strings. Required.
+
+Options:
+  --help                 Print this message and exit 0.
+```
+
+`derivations-file` is the JSON serialization of a `BrandDerivation[]` (see
+"The brand layer" below) — the same shape `readStrategy` loads from a real
+`brand-derivations.json`. `brandable-slots-file` is a plain JSON array of
+non-empty strings: the caller-supplied `brandableSlots` list
+`checkBrandCoverage` takes as its seam (this package still never imports
+`@vespeneventures/ui/tokens` — a consumer collects that list itself, e.g.
+`Object.values(TOKENS).filter(t => t.brandable).map(t => t.property)`, and
+writes it to a file this subcommand reads).
+
+Exit codes map `checkBrandCoverage`'s own three-state result directly —
+note this is **not** the same 0/1/2 meaning as the facts-check exit codes
+above, because `checkBrandCoverage`'s own ternary is different:
+
+| Code | Meaning |
+| --- | --- |
+| `0` | Both directions hold on non-empty lists — every brandable slot has a derivation, and every derivation names a real slot. |
+| `1` | A real coverage gap in either direction (`checkBrandCoverage`'s `reason: "coverage-gap"`). |
+| `2` | **Indeterminate** — bad input, a file missing/unreadable/unparseable/schema-invalid, an empty `brandable-slots-file`, or empty `derivations-file`. Never `0` and never `1`: an empty list either way means nothing was actually compared, which `checkBrandCoverage` fails closed on rather than reporting as a vacuous pass — see its own "Fails closed" doc comment (`src/brand-derivation.ts`). |
+
 ## The brand layer
 
 Two entities, plus a derivation, plus a checker — the same shape the facts
