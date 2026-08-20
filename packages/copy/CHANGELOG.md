@@ -1,5 +1,55 @@
 # Changelog
 
+## [0.10.1] - 2026-08-20
+
+### Fixed
+
+- **`addressability.ts` — two precision defects that kept `copy-addressability`
+  from ever reaching a clean verdict on a real component tree** — see
+  [issue #383](https://github.com/vespeneventures/foundry/issues/383).
+
+  1. A destructuring default for one of the four tracked user-facing
+     attributes (`aria-label`, `placeholder`, `alt`, `title`) — `{
+     "aria-label": ariaLabel = "Pagination" }`, `{ placeholder = "Search"
+     }`, or a plain (non-destructured) parameter default `function f(alt
+     = "...")` — was misread as a JSX attribute assignment and reported
+     as a violation identical to a real hardcoded `aria-label="..."` on a
+     JSX element. That inverted the verdict on a construct that is
+     already correctly addressable: the consumer CAN override a default,
+     so the component's own source does not lock the sentence in.
+     `isDestructuringOrParameterDefault` now tells the two apart by what
+     precedes the identifier once an optional rename is skipped over — a
+     JSX attribute is never preceded by `{`/`(`/`,`, while a
+     destructuring property or parameter always is.
+
+  2. A CSS/Tailwind utility class list assigned to a variable or sitting
+     in an object-literal value (as opposed to a literal `className` JSX
+     attribute, which `scan.ts` already excluded) landed in `unchecked`
+     even though it is definitively not prose, inflating the
+     indeterminate count on any component tree with real styling code.
+     `looksLikeUtilityClassList` now excludes that shape outright, the
+     same way `scan.ts` already does for a `className` attribute value —
+     conservatively: every token must carry at least one
+     `-`/`:`/`/`-separated segment, so a bare, separator-free utility
+     (`"flex"`, `"hidden"`) mixed into the list still leaves the whole
+     string `unchecked` rather than risk sweeping in a real short English
+     word.
+
+  Measured against `@vespeneventures/ui`'s own source (142 files):
+  violations 11 → 5 (six false positives removed; the one genuine
+  hardcoded `aria-label` on a JSX element still correctly flags),
+  unchecked 806 → 768 (38 confirmed class-list strings excluded, zero
+  regressions in either direction — verified by diffing the full
+  before/after `unchecked` position lists, not just the counts). The
+  remaining unchecked positions are dominated by `tokens/tokens.ts`'s own
+  object-literal token DATA (colors, custom property names) — genuinely
+  ambiguous by this gate's own "object/array literal value" category, not
+  merely unhandled.
+
+  No API change — `AddressabilityViolation`, `AddressabilityUncheckedItem`,
+  and the `"satisfied" | "violated" | "indeterminate"` ternary are
+  unchanged; only which position some literals land in changed.
+
 ## [0.10.0] - 2026-08-20
 
 ### Added
