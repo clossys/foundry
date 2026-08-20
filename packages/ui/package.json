@@ -1,6 +1,6 @@
 {
   "name": "@vespeneventures/ui",
-  "version": "0.13.2",
+  "version": "0.14.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -43,6 +43,10 @@
       "types": "./dist/atoms/index.d.ts",
       "import": "./dist/atoms/index.js"
     },
+    "./atoms/server": {
+      "types": "./dist/atoms/server.d.ts",
+      "import": "./dist/atoms/server.js"
+    },
     "./icons": {
       "types": "./dist/icons/index.d.ts",
       "import": "./dist/icons/index.js"
@@ -51,21 +55,41 @@
       "types": "./dist/charts/index.d.ts",
       "import": "./dist/charts/index.js"
     },
+    "./charts/server": {
+      "types": "./dist/charts/server.d.ts",
+      "import": "./dist/charts/server.js"
+    },
     "./blocks": {
       "types": "./dist/blocks/index.d.ts",
       "import": "./dist/blocks/index.js"
+    },
+    "./blocks/server": {
+      "types": "./dist/blocks/server.d.ts",
+      "import": "./dist/blocks/server.js"
     },
     "./shell": {
       "types": "./dist/shell/index.d.ts",
       "import": "./dist/shell/index.js"
     },
+    "./shell/server": {
+      "types": "./dist/shell/server.d.ts",
+      "import": "./dist/shell/server.js"
+    },
     "./theme": {
       "types": "./dist/theme/index.d.ts",
       "import": "./dist/theme/index.js"
     },
+    "./theme/server": {
+      "types": "./dist/theme/server.d.ts",
+      "import": "./dist/theme/server.js"
+    },
     "./gate": {
       "types": "./dist/gate-index.d.ts",
       "import": "./dist/gate-index.js"
+    },
+    "./render-environment": {
+      "types": "./dist/render-environment.d.ts",
+      "import": "./dist/render-environment.js"
     }
   },
   "bin": {

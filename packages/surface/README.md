@@ -796,7 +796,7 @@ package owns the contracts and deterministic renderers that produce them.
 ## Requirements and version coupling
 
 Node 20+. This package's own `package.json` declares runtime dependencies on
-`@vespeneventures/copy` (`~0.9.0`) and `@vespeneventures/ui` (`~0.13.0`) —
+`@vespeneventures/copy` (`~0.9.0`) and `@vespeneventures/ui` (`~0.14.0`) —
 patch-only tilde ranges, not exact pins. That is a real constraint on the
 dependency graph, not an install-ordering concern: a package manager
 resolves the whole graph regardless of what order packages are requested
@@ -831,7 +831,7 @@ declaration does not reach an installer resolving against
 `peerDependenciesMeta` entirely, so both peers resolve as required
 regardless of which subpaths are actually imported. A consumer rendering
 only email or print output still has React and React DOM installed. This
-package's own `dependencies` on `@vespeneventures/ui` (`~0.13.0`) compounds
+package's own `dependencies` on `@vespeneventures/ui` (`~0.14.0`) compounds
 it one level further: `ui` declares six of its own optional peers the same
 way, and the same registry gap applies to them too, so a consumer of
 `surface` inherits `ui`'s full peer set through the same mechanism, not just
