@@ -11,7 +11,22 @@ const packageJson = JSON.parse(readFileSync(join(packageRoot, "package.json"), "
   peerDependenciesMeta: Record<string, { optional?: boolean }>;
 };
 
-const JS_SUBPATHS = ["./tokens", "./atoms", "./icons", "./charts", "./blocks", "./shell", "./theme", "./gate"] as const;
+const JS_SUBPATHS = [
+  "./tokens",
+  "./atoms",
+  "./atoms/server",
+  "./icons",
+  "./charts",
+  "./charts/server",
+  "./blocks",
+  "./blocks/server",
+  "./shell",
+  "./shell/server",
+  "./theme",
+  "./theme/server",
+  "./gate",
+  "./render-environment",
+] as const;
 const CSS_SUBPATHS = ["./tokens.css", "./theme.css", "./compiled.css", "./brand-template.css"] as const;
 const COMPONENT_DIRS = ["atoms", "blocks", "charts", "shell", "theme"] as const;
 

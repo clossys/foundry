@@ -105,8 +105,10 @@ smallest stable subpath that owns what you need:
 | `@vespeneventures/ui/brand-template.css` | Copy-and-fill template for a consumer brand binding. |
 | `@vespeneventures/ui/icons` | Tree-shakeable glyph data. |
 | `@vespeneventures/ui/atoms`, `/blocks`, `/shell`, `/charts` | Reusable React visual primitives. |
+| `@vespeneventures/ui/atoms/server`, `/blocks/server`, `/shell/server`, `/charts/server`, `/theme/server` | The server-safe subset of each sibling subpath, importable from a React Server Component. See "Server Components" below. |
 | `@vespeneventures/ui/theme` | `getThemeInitScript`, `ThemeProvider`/`useTheme`, `ThemeToggle` — the runtime half of theming. Not to be confused with the CSS `/theme.css` subpath above. |
 | `@vespeneventures/ui/gate` | Token-purity scanner and gate. |
+| `@vespeneventures/ui/render-environment` | `RENDER_ENVIRONMENT` — a plain data declaration of every subpath's render environment (`"server-safe"` \| `"client-only"`). See "Server Components" below. |
 
 `ui` never exports page views, routes, metadata, strategy facts, or copy.
 Components receive resolved `ReactNode`s, labels, data, callbacks, and URLs
@@ -232,6 +234,49 @@ Interactive controls use React Aria for keyboard, focus, and semantic
 contracts. Noninteractive components expose semantic labels where needed,
 the token suite checks contrast in light and dark themes, and every shipped
 animation or transition has a Tailwind `motion-reduce` override.
+
+### Server Components
+
+SSR-safe and importable-from-a-Server-Component are different guarantees.
+Every atom, block, and shell component avoids browser globals at render time
+(the "React SSR, hydration, and accessibility" section above), but `atoms`,
+`blocks`, `shell`, `charts`, and `theme` are each a SINGLE barrel that
+re-exports every one of its members eagerly from one module — importing even
+one noninteractive member (`Card`, say) pulls in whatever interactive
+sibling shares that barrel (`Button`, `Dialog`, ...), and those read
+`react-aria-components`' own `useContext` at module scope. That fails to
+import under React's `react-server` module-resolution condition, which is
+exactly what blocks a React Server Component from reaching `Card` at all —
+not because `Card` itself is unsafe, but because of how it's packaged.
+
+Five narrower subpaths exist for exactly this: `@vespeneventures/ui/atoms/server`,
+`/blocks/server`, `/shell/server`, `/charts/server`, and `/theme/server`. Each
+re-exports ONLY the members of its sibling barrel confirmed, empirically, to
+import cleanly under `--conditions=react-server` — never a name inferred from
+"looks presentational" or a client-directive grep (see each `*server.ts`
+source file's own header for the exact probe and its result). Today that's:
+
+| Subpath | Server-safe members |
+| --- | --- |
+| `@vespeneventures/ui/atoms/server` | `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Skeleton`, `Spinner`, `mergeUiClasses` |
+| `@vespeneventures/ui/blocks/server` | `ArticleBody`, `DetailView`, `EmptyState`, `FeatureGrid`, `FieldGroup`, `Hero`, `PageHeader`, `PricingTable`, `SectionHeader`, `Stat` |
+| `@vespeneventures/ui/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
+| `@vespeneventures/ui/charts/server` | `ChartFrame`, `Sparkline` |
+| `@vespeneventures/ui/theme/server` | `getThemeInitScript` |
+
+Everything not listed above stays reachable only from its original barrel,
+inside a client boundary — nothing was removed, renamed, or restructured to
+create these subpaths; each is strictly additive, a second, narrower way to
+reach bindings that already ship.
+
+`@vespeneventures/ui/render-environment` exports `RENDER_ENVIRONMENT`, a
+plain `Record<string, "server-safe" | "client-only">` keyed by every
+`package.json#exports` subpath this package declares — including the CSS
+entries, which carry no JavaScript execution context and are always
+`"server-safe"`. It is data only, no resolver logic: a consumer (or a
+separate checker package, resolving a real module graph under a declared
+export condition) reads it to know which subpath to reach for without
+re-deriving the same probe.
 
 ### Framework-portable components, without Tailwind
 
@@ -3956,6 +4001,16 @@ three tests are worth calling out specifically:
   (`readStoredPreference` + `applyThemeDom`), and asserts both leave
   `<html>`'s `data-theme` attribute and `color-scheme` style in the
   identical state.
+- **`render-environment.test.ts`** proves the "Server Components" claims
+  above against the REAL compiled output, not a simulation: a real `node
+  --conditions=react-server` subprocess against each `*/server` subpath's
+  compiled entry (must resolve cleanly), the same probe against its
+  original barrel as a negative control (must still fail — proving the
+  server entry does real work rather than merely existing), a normal-node
+  resolution check across every `package.json#exports` subpath (proving
+  this change added nothing that regresses), and an exhaustiveness check
+  that `RENDER_ENVIRONMENT` covers every real subpath and declares no
+  phantom one, in both directions.
 
 ## Token-purity gate (`@vespeneventures/ui/gate`, `ui-token-check`)
 

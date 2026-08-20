@@ -3,6 +3,42 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.14.0] - 2026-08-20
+
+### Added
+
+- **Server-safe entry points, closing [issue #375](https://github.com/vespeneventures/foundry/issues/375).**
+  A consumer could not reach any noninteractive component from a React
+  Server Component: `atoms`, `blocks`, `shell`, `charts`, and `theme` each
+  re-export every one of their members eagerly from a single barrel, so
+  importing even one noninteractive member pulled in whatever interactive
+  sibling shared that barrel — and this package published no deep
+  subpaths at all. Five new subpaths ship the verified-safe subset of
+  each barrel, each with its own compiled entry file (never a wildcard
+  subpath, never a per-file deep export):
+  - `@vespeneventures/ui/atoms/server` — `Badge`, `Banner`, `Card`,
+    `Field`, `Icon`, `Skeleton`, `Spinner`, `mergeUiClasses`.
+  - `@vespeneventures/ui/blocks/server` — `ArticleBody`, `DetailView`,
+    `EmptyState`, `FeatureGrid`, `FieldGroup`, `Hero`, `PageHeader`,
+    `PricingTable`, `SectionHeader`, `Stat`.
+  - `@vespeneventures/ui/shell/server` — `Shell`, `SiteFooter`,
+    `SiteHeader`, `SkipLink`.
+  - `@vespeneventures/ui/charts/server` — `ChartFrame`, `Sparkline`.
+  - `@vespeneventures/ui/theme/server` — `getThemeInitScript`.
+
+  Membership was decided empirically, not inferred: each name was
+  confirmed by resolving its own real compiled file (never the barrel)
+  under `node --conditions=react-server`, and every non-listed member of
+  each barrel was independently confirmed to still fail that same probe.
+  This is purely additive — nothing was removed, renamed, or moved; every
+  name above already shipped from its original barrel and still does.
+- **`@vespeneventures/ui/render-environment`** — a new subpath exporting
+  `RENDER_ENVIRONMENT`, a plain `Record<string, "server-safe" |
+  "client-only">` declaration covering every `package.json#exports`
+  subpath this package ships, including the CSS entries. Data only, no
+  resolver logic — a real module-graph checker is expected to live
+  elsewhere and use this as the claim it checks against.
+
 ## [0.13.2] - 2026-08-19
 
 ### Changed
