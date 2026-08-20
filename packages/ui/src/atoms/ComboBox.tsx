@@ -53,6 +53,8 @@ export interface ComboBoxProps
   errorMessage?: ReactNode | ((validation: ValidationResult) => ReactNode);
   /** Shown inside the empty input. */
   placeholder?: string;
+  /** Accessible name for the trigger button that opens the suggestion list. @default "Show suggestions" */
+  triggerLabel?: string;
   /**
    * The full list of choices. Passed to react-aria-components' own
    * `ComboBox` as `defaultItems` (uncontrolled) so ITS built-in
@@ -97,6 +99,7 @@ export function ComboBox({
   description,
   errorMessage,
   placeholder,
+  triggerLabel = "Show suggestions",
   options,
   className,
   inputClassName,
@@ -127,7 +130,7 @@ export function ComboBox({
             boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined,
           })}
         />
-        <AriaButton className="shrink-0 text-ink-muted outline-none" aria-label="Show suggestions">
+        <AriaButton className="shrink-0 text-ink-muted outline-none" aria-label={triggerLabel}>
           <span aria-hidden="true">▾</span>
         </AriaButton>
       </div>

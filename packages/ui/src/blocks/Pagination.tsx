@@ -19,6 +19,10 @@ export interface PaginationProps extends Omit<HTMLAttributes<HTMLElement>, "onCh
   onPageSizeChange?: (pageSize: number) => void;
   /** How many page numbers to show on each side of the current page before truncating with an ellipsis. @default 1 */
   siblingCount?: number;
+  /** Accessible name for the previous-page control. @default "Previous page" */
+  previousPageLabel?: string;
+  /** Accessible name for the next-page control. @default "Next page" */
+  nextPageLabel?: string;
   className?: string;
   style?: CSSProperties;
 }
@@ -85,6 +89,8 @@ export function Pagination({
   pageSizeOptions,
   onPageSizeChange,
   siblingCount = 1,
+  previousPageLabel = "Previous page",
+  nextPageLabel = "Next page",
   className,
   style,
   "aria-label": ariaLabel = "Pagination",
@@ -122,7 +128,7 @@ export function Pagination({
         <Button
           variant="ghost"
           size="sm"
-          aria-label="Previous page"
+          aria-label={previousPageLabel}
           isDisabled={isFirstPage}
           onPress={() => onPageChange(page - 1)}
         >
@@ -148,7 +154,7 @@ export function Pagination({
         <Button
           variant="ghost"
           size="sm"
-          aria-label="Next page"
+          aria-label={nextPageLabel}
           isDisabled={isLastPage}
           onPress={() => onPageChange(page + 1)}
         >

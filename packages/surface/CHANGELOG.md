@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.6.7] - 2026-08-20
+
+### Changed
+
+- **Widened the `@vespeneventures/ui` dependency range to `~0.15.0`.** A runtime dependency range is shipped content, so it moves this package's version even though no code here changed. See [issue #382](https://github.com/vespeneventures/foundry/issues/382).
+
 ## [0.6.6] - 2026-08-20
 
 ### Changed
