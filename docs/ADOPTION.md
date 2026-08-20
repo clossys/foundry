@@ -46,10 +46,10 @@ planned, not only after.
 
 These packages have lifecycle status `published`, but none is an adoption-ready
 target until its lifecycle entry records the required qualification evidence.
-Issue [#234](https://github.com/vespeneventures/foundry/issues/234) owns that
-15-package exact-version install and export or CLI proof; it succeeds
-[#213](https://github.com/vespeneventures/foundry/issues/213), which decided
-the registry and is closed. After qualification,
+Issue [#234](https://github.com/vespeneventures/foundry/issues/234) owns the
+15-package exact-version install and export or CLI proof. Issue
+[#213](https://github.com/vespeneventures/foundry/issues/213) decided the
+registry and is closed. After qualification,
 a consumer installs only the subset it needs through authenticated GitHub
 Packages access.
 
