@@ -3,6 +3,48 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.4.0] - 2026-08-20
+
+### Added
+
+- **`checkJoinKeyCompleteness(ledger)`** and the **`ledger-check join-key
+  <ledger-file>`** subcommand. A publication record said what shipped and
+  when, but carried nothing an outside tier could join an engagement signal
+  to — so "did this content do anything" was unanswerable without guessing
+  at a URL. `PublicationEntry` gains two optional fields, `contentId` (a
+  stable identity that survives a revision) and `supersededAt` (when this
+  revision stopped being the live one), and this gate checks that everything
+  currently live carries enough to be attributable.
+- Three findings, kept distinct because they have different remedies:
+  `"join-key-missing-identity"` (a live entry with no `contentId` — nothing
+  to compare a future revision against), `"join-key-window-invalid"` (a
+  `supersededAt` present but not strictly after `publishedAt`, so it reads
+  neither as "still live" nor as "retired on this date"), and the cross-entry
+  `"join-key-identity-churn"` (two entries at the same address disagreeing on
+  identity — invisible to any per-entry check, because it is only observable
+  by comparing entries against each other).
+- Same three-state exit-code contract the rest of this CLI already holds to:
+  `0` every live entry complete, verified over at least one; `1` a real
+  incompleteness or an identity conflict; `2` could not evaluate. Zero live
+  entries is deliberately its own `2`: a ledger that has retired everything
+  it ever recorded produces no findings, and that must never read the same as
+  a ledger that is actively, cleanly complete.
+- Liveness is **derived** from `publishedAt` ordering per `contentId`, not
+  read off a stored boolean. This package is append-only — there is no
+  `updateEntry`, so an entry can never be reached back into and marked stale
+  once a successor ships, which means `supersededAt` is frequently absent on
+  an entry that is genuinely retired. An entry with no `contentId` at all is
+  always treated as live, the same fail-closed choice `checkLedgerDrift`
+  makes for a citation it could not check.
+
+### Note on the boundary
+
+This package still emits and checks for a KEY, never a verdict. Whether an
+engagement signal is good remains someone else's question — see this
+package's own "Why this package exists". Adding a join key is what makes
+that question askable by a tier that holds the signals; it is not this
+package starting to answer it.
+
 ## [0.3.0] - 2026-08-19
 
 ### Added
