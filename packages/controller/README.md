@@ -91,6 +91,31 @@ separately versioned packages.
 | `@vespeneventures/controller/conventions/adapters/*` | The shipped adapter files (`agent-policy.rules`, `shell-integration.zsh`, `branch-provenance-hook.sh`, `heavy-cmd-hook.sh`, `scoped-main-push.sh`, `workspace-shell.zsh`) as real files, same shape as the documents above. |
 | `@vespeneventures/controller/policy` | The content-addressed `PolicyBinding` primitive: compute a digest, validate a binding's shape, verify a binding against materialized content. Zero I/O, zero dependency of its own — the primitive `./gates` and `./artifacts` bind rules and artifacts to documents with, without ever committing the document itself. |
 
+### `./catalog`: workspace discovery and dependency-graph evaluation
+
+`@vespeneventures/controller/catalog` is the one subpath in this package that
+does real I/O: `buildCatalog(root, options?)` walks a workspace's packages
+directory and gathers every package's own `package.json`, verbatim. Every
+other export here is pure judgement over data `buildCatalog` already
+gathered — none of it touches disk again.
+
+```ts
+import { buildCatalog, evaluateCatalog, closureOf, findByName } from "@vespeneventures/controller/catalog";
+
+const catalog = buildCatalog(process.cwd());
+const findings = evaluateCatalog(catalog, { scope: "@example" });
+const { reachable, missing } = closureOf(catalog, "@example/widgets", "@example");
+```
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `buildCatalog(root, options?)` | function | Walks disk under a workspace's packages directory and gathers each package's full `package.json`. The only I/O this subpath performs. |
+| `evaluateCatalog(catalog, options?)` | function | Judges an already-built `Catalog`: reports `duplicate-name`, `internal-dep-missing`, and `dependency-cycle` findings, plus one `skipped:<reason>` finding per path `buildCatalog` could not turn into an entry. |
+| `internalDependencyNamesOf(entry, scope?)` | function | The names of one entry's real `dependencies` + `peerDependencies` that count as internal to the catalog — every name when `scope` is omitted, or only names starting with `"<scope>/"` when given. Every function below that reads dependency names goes through this one. |
+| `findByName(catalog, name)` | function | The first entry in `catalog.entries` with the given `name`, or `undefined`. Picks an arbitrary match among duplicate names — see `closureOf` for the traversal that visits every duplicate instead of stopping at the first. |
+| `closureOf(catalog, name, scope?)` | function | The internal-dependency closure of one entry, excluding itself: every package transitively reachable by following real dependency edges (filtered by `scope`), split into `reachable` (found in the catalog) and `missing` (not found anywhere in it). Safe against cycles — each name is visited at most once. |
+| `EvaluateCatalogOptions` | type | Options for `evaluateCatalog` — currently just `scope`. |
+
 ### `./artifacts`: governed artifact verification
 
 A reusable contract for verifying a consumer-owned governed artifact that
@@ -201,6 +226,20 @@ schema-specific validation, storage, transport, and trust policy —
 including deciding what `provenance.source`/`provenance.revision` actually
 mean and whether to trust them.
 
+#### Standalone shape checks
+
+`verifyGovernedArtifact` runs these internally as stage 2 (manifest) and
+stage 1 (options) of its fixed order above, but each is also exported for a
+caller that wants to check shape alone — before a checksum or content is
+even available.
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `readGovernedArtifactManifest(value)` | function | Reads and validates a candidate manifest in one pass: every structural finding, plus — only when there are zero error-severity findings — a `GovernedArtifactManifestRead.manifest` snapshot safe to read again without re-touching `value`. |
+| `validateGovernedArtifactManifest(value)` | function | A thin `Finding[]`-only wrapper around `readGovernedArtifactManifest`, for a caller that just wants to check shape. |
+| `validateGovernedArtifactOptions(value)` | function | Validates caller-supplied `GovernedArtifactVerificationOptions`. An empty `supportedSchemaVersions` is reported as `"artifact/options-supported-versions-empty"` — a caller configuration error, never an artifact that trivially passes. |
+| `GovernedArtifactManifestRead` | type | The result of `readGovernedArtifactManifest`: findings plus an optional validated manifest snapshot. |
+
 ### `./gates` additions: ratchet, override bounds, dependency scope, gate-result ternary
 
 Three small, independent, pure gates alongside the existing foundation,
@@ -260,6 +299,42 @@ produce no real evaluation and it throws if the gate under test reports
 `satisfied` anyway. `gateResultFromRatchet(result)` converts an existing
 `evaluateRatchet` result into this shape, as a worked proof that the two
 are the same contract rather than parallel ones.
+
+`isSatisfied(result)`, `isViolated(result)`, and `isIndeterminate(result)`
+narrow a `GateResult` to its matching member — the same role
+`foldGateResults` uses `isIndeterminate` for internally. `gateIndeterminate
+(reason, detail?)` constructs an `indeterminate` result directly, with an
+unconstrained `reason` string; prefer `createGateReasons` for any real gate
+(it scopes `reason` to a finite, declared vocabulary), and reach for
+`gateIndeterminate` only when relaying an upstream reason verbatim, with no
+fixed vocabulary of its own. `COMMON_INDETERMINATE_REASONS` is a
+non-exhaustive starter vocabulary of common indeterminate reasons
+(`"missing-credential"`, `"no-applicable-inputs"`, `"tool-unavailable"`,
+`"unreadable-input"`, `"upstream-unavailable"`) a gate's own
+`createGateReasons` call can draw from, in whole or in part, alongside
+reasons of its own.
+
+#### Foundation orchestration: `runFoundationCheck`, `computeBuildOrder`, `verifyPolicyBindings`
+
+Three orchestration exports compose the primitives above (and `./catalog`,
+`./policy`) into the actual entry points a consumer or `foundry-check`'s own
+CLI calls:
+
+```ts
+import { runFoundationCheck, computeBuildOrder, verifyPolicyBindings } from "@vespeneventures/controller/gates";
+
+const report = runFoundationCheck(process.cwd(), { scope: "@example" });
+const order = computeBuildOrder(report.catalog, { scope: "@example" });
+```
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `runFoundationCheck(root, options?)` | function | Builds the catalog rooted at `root` (via `./catalog`'s `buildCatalog`) and evaluates it (via `evaluateCatalog`), in one call — one root path in, one `FoundationReport` out. Rejects an absolute `options.packagesDir` up front rather than letting it silently escape `root`. |
+| `computeBuildOrder(catalog, options?)` | function | A deterministic topological build order (Kahn's algorithm, alphabetical tie-break) over an already-built `Catalog`'s internal-dependency graph. Gates first on `evaluateCatalog`'s own `dependency-cycle` and `duplicate-name` findings — a cyclic or duplicate-named catalog has no valid order, so it returns those findings as the failure instead of attempting a sort. |
+| `verifyPolicyBindings(checks)` | function | Verifies every `PolicyCheck` in a list against its own `binding` and `content` (via `./policy`'s `verifyBinding`), in order, returning one `PolicyCheckResult` per check, each attributable to its own `policyId`. Does no I/O — every check's `content` is already in memory. |
+| `foundationGateResult(report)` | function | Folds a `FoundationReport` into the shared `GateResult` ternary: `indeterminate` (incomplete coverage or zero packages catalogued) beats `violated` (any error-severity finding) beats `satisfied`. This is what `foundry-check`'s own CLI now builds its exit code from, exported for direct testing. |
+| `FOUNDRY_CHECK_REASONS` | constant | The declared `indeterminate` vocabulary `foundationGateResult` draws from — `"incomplete-coverage"` and `"no-packages-catalogued"` — via `createGateReasons`. `FoundryCheckIndeterminateReason` names it as a type. |
+| `severityCounts(findings)` | function | Counts a `CatalogFinding[]` by severity (`{ errors, warnings }`), exhaustively switching over the closed `"error" \| "warning"` union so a third severity value, if one is ever added, throws rather than silently counting as a warning. |
 
 #### `evaluateRatchet(current, baseline)`
 
@@ -343,6 +418,54 @@ already be `@vespeneventures/*`-scoped, so this is a floor that matches
 that reality today, not a full dependency admission-and-retirement
 register; it can grow richer if a third-party runtime dependency is ever
 legitimately admitted.
+
+#### Secret-surface gates
+
+Value-free, caller-supplied-evidence checks over a secret catalog and
+credential inventory — this subpath never reads an actual secret value,
+only names, shapes, and caller-observed facts about them. `typescript` is
+required for this subpath alone (see "Requirements" below): `checkSecretName`
+and `detectRawSecretReads` scan real source text with the TypeScript
+compiler's own scanner so a raw `process.env.SECRET_NAME`-shaped read is
+never confused with a string that merely mentions the name in a comment or
+template literal.
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `checkSecretName(name, path?)` | function | Validates one secret key's shape: non-empty, at most 128 characters, uppercase underscore-separated segments starting with a letter. Reused by every check below that validates a secret or credential key. |
+| `detectRawSecretReads(input, options?)` | function | Scans one file's real source text (via the TypeScript scanner, so comments, strings, and template literals are excluded) for a raw read of a sensitive environment-variable name, and reports each one as a finding. `options.allowedNames` exempts specific names; `options.exempt` skips the file entirely. |
+| `checkValueFreeSecretCatalog(value)` | function | Validates a secret catalog document's shape and that every entry contains only `key`/`required`/`description`/`group` — never a value — reporting a duplicate or malformed key as a finding. |
+| `checkSecretReadiness(catalog, observations)` | function | Cross-checks a secret catalog against caller-supplied presence observations: an observed key not in the catalog, a required key never observed present (error), and an optional key never observed present (warning) are each their own finding. |
+| `checkCredentialInventory(value)` | function | Validates a credential inventory document's shape: each entry's `id` (lowercase hyphen-separated), `secretKey` (via `checkSecretName`), `provider`, and non-empty unique `surfaces`, with no fields beyond those four and no duplicate `id`/`secretKey`. |
+| `checkCredentialSurfaceDrift(inventory, observations)` | function | Cross-checks a credential inventory against caller-observed `{ credentialId, surface }` pairs: an observed surface not declared for that credential, and a declared surface never observed, are each their own finding. |
+| `checkLocalSecretFiles(files, options?)` | function | Flags a caller-observed `.env`-shaped file (excluding `.example`/`.sample`/`.template`/`.dist` variants) that is tracked in Git, or merely present locally outside `options.allowedPaths` — in-memory provider injection is expected instead. |
+| `checkProviderResourceNames(resources, rules)` | function | Matches each caller-observed provider resource (by `provider` + `kind`) against a small set of caller-supplied naming-convention regular expressions, reporting a missing rule or a non-matching name as a finding. |
+
+### `./release`: isolated packed-artifact and installed-import proof
+
+Every subpath above reasons about DECLARED shape — a manifest says what it
+depends on, a catalog says whether that declaration is internally
+consistent. None of that proves a package actually installs and loads the
+way a real, external stranger would install it: nothing but the registry
+and whatever it declared. `@vespeneventures/controller/release` is that
+proof — real subprocess work, real I/O, on purpose.
+
+```ts
+import { packRoundTrip, preflightPackage, verifyPublishedArtifact } from "@vespeneventures/controller/release";
+
+const roundTrip = await packRoundTrip("packages/example");
+const preflight = await preflightPackage(process.cwd(), "packages/example");
+const findings = verifyPublishedArtifact(expectedDigest, publishedTarballBytes);
+```
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `packRoundTrip(packageDir, options?)` | function | Packs a real `npm pack` tarball of `packageDir` (or checks an already-packed one via `options.tarballPath`), installs it into a genuinely isolated temporary directory with no workspace and no sibling `node_modules`, and attempts to import or presence-check every subpath its own `exports` field declares, including expanding a wildcard subpath against what actually shipped. |
+| `preflightPackage(root, packageDir, options?)` | function | Combines `./gates`' `runFoundationCheck` (filtered to the package at `packageDir`) with a real `packRoundTrip` result. `ok` is `true` only when both halves are clean: no error-severity catalog finding attributed to this package, and the round trip itself reports `ok: true`. |
+| `verifyPublishedArtifact(expectedDigest, publishedContent)` | function | A thin wrapper around `./policy`'s own `verifyBinding`, for checking already-fetched published content (however the caller obtained it — a registry fetch, `npm pack <name>@<version>`, a GitHub Packages API call) against an expected sha256 digest. Does no fetching and no digest comparison of its own. |
+| `PackRoundTripOptions` / `RegistryInstallOptions` | types | Options for `packRoundTrip`, including `keepTempDir` (skip cleanup, for debugging) and registry/timeout controls for the isolated install. |
+| `PreflightPackageOptions` | type | Options for `preflightPackage` — `scope`, passed to `runFoundationCheck`, and `roundTrip`, passed to `packRoundTrip`. |
+| `DeclarationCheck` / `ImportCheck` / `RoundTripResult` | types | The outcome of checking one declared TypeScript target, one `exports` subpath, and the full `packRoundTrip` result respectively. |
 
 ### `./repository`: profiles, requirements, and exact roots
 
@@ -752,6 +875,15 @@ import {
 | `requireSecondaryReview` | `boolean` | Whether a second, independent review reaching `depth: "secondary"` and a clean decisive state is required, on top of whatever `requireApproval` already demands. Required, no default, same discipline as `requireApproval`/`decisionUse` below — an omitted value is a `"require-secondary-review"` finding. `requireSecondaryReview: true` combined with `decisionUse: "advisory"` is rejected as an `"advisory-secondary-conflict"` finding, the same way `requireApproval: true` under `"advisory"` is. A `"secondary-incomplete"` record, or a `"secondary"` record whose state is not clean, never satisfies this. |
 | `decisionUse` | `"advisory" \| "authoritative"` | Whether `requireApproval` (and `requireSecondaryReview`) is merge-blocking clearance (`"authoritative"`) or an audit signal only (`"advisory"`). Required, no default — an omitted or unsupported value is a `"decision-use"` finding. `requireApproval: true` combined with `decisionUse: "advisory"` is rejected as an `"advisory-approval-conflict"` finding at policy-validation time, before any evidence is read: an advisory model can never let an approval grant clearance. |
 
+`validateReviewPolicy(value)` validates a candidate `ReviewPolicy` value in
+isolation against exactly this table — every field-shape and cross-field
+conflict finding above — without requiring an evidence bundle at all.
+`validateReviewEvidence` already calls this internally, before ever reading
+`evidence`, so both stay in agreement; it is exported separately for a
+caller that wants to validate a policy document on its own (e.g. at
+policy-authoring time, before any pull request exists to gather evidence
+from).
+
 `ReviewEvidenceBundle` — the provider-neutral snapshot for one head:
 
 | Field | Type | Notes |
@@ -939,6 +1071,11 @@ const proposal = classifyCleanupCandidate(candidate);
 // The caller still owns confirming with its operator and applying the
 // change through its own guarded mechanism.
 ```
+
+`CLEANUP_CLASSIFICATION_VERSION` (currently `1`) is the only classification
+schema this package version produces; every `CleanupProposal.schemaVersion`
+equals it, so a caller persisting proposals can detect a future schema
+change rather than assume one never happens.
 
 #### Status precedence, fixed and tested
 
@@ -1128,6 +1265,21 @@ same discipline `./policy` holds for digests. `renderProductLoader(options)`
 renders a small pointer file a consuming product installs so its own agent
 adapter can find the shared guidance without duplicating it.
 
+`validateRunnerLabel(job, conventions)` checks one CI `JobDefinition` (a
+workflow, job, and runner label) against a caller-declared `RunnerConventions`
+vocabulary: an unknown label, a paid-provider label used by a public
+repository not named in `conventions.publicRepos`, and a high-capacity label
+used by a job not named in `conventions.vocabulary.highCapacityJustifiedJobs`
+are each reported with their own `RunnerCheckState` (`satisfied` /
+`violated` / `indeterminate`, the same tri-state discipline as `./gates`'
+`GateVerdict`). `validateRunnerSet(jobs, conventions)` runs it over every job
+in a list. `summarizeRunnerResults(results)` folds a list of `RunnerCheckResult`s
+into per-state counts plus one `overall` verdict — `violated` if any result
+violated, `indeterminate` if none were satisfied and at least one couldn't
+be evaluated, `satisfied` otherwise. See
+`runner-conventions.md` (via `documentPath("runner-conventions")`) for the
+shared prose this grammar enforces.
+
 | Export | Kind | Purpose |
 | --- | --- | --- |
 | `TAXONOMY_PREFIXES` / `validateBranchName` | constant / function | Agent branch-naming grammar and its validator. |
@@ -1136,6 +1288,7 @@ adapter can find the shared guidance without duplicating it.
 | `isCronExpression` / `validateScheduleDeclaration` / `validateScheduleSet` / `scheduleReconciliationFindingKinds` | functions / constant | Schedule-declaration grammar and its tier-specific live-reconciliation findings. |
 | `LIVE_STATE_SURFACE_FINDING_KINDS` / `validateLiveStateSurfaceDeclaration` / `reconcileLiveState` / `liveStateVerified` / `liveStateDrifted` / `liveStateCouldNotVerify` / `liveStateReconciliationReasons` | constant / functions | The shared `liveStateSurface` reconciliation contract (#255) the two rows above specialize. |
 | `GATE_VERBS` / `validateGateName` / `validateGateSet` | constant / functions | CI gate-naming grammar and its validators. |
+| `validateRunnerLabel` / `validateRunnerSet` / `summarizeRunnerResults` | functions | CI runner-label convention checks: unknown labels, paid-provider labels on public repos, and unjustified high-capacity labels — one job, a whole job set, and a fold to per-state counts plus an overall verdict, respectively. |
 | `scanNeutrality` | function | Structural neutrality scan — the same scan `scripts/check-neutrality.mjs` runs against this subpath's own shipped documents/adapters. |
 | `SKILL_REGISTRY_SCHEMA_VERSION` / `validateSkillRegistry` / `computeCapabilityCoverage` / `validateRoutineCoverage` | constant / functions | The capability-first skill registry's grammar, coverage computation, and routine-coverage cross-check. |
 | `CONVENTION_DOCUMENTS` / `CONVENTION_ADAPTERS` / `DOCUMENTS_ROOT` / `ADAPTERS_ROOT` / `documentPath` / `adapterPath` / `templatedFilenames` | constants / functions | The shipped document/adapter manifest and path resolution — no I/O. |

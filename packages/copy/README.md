@@ -17,7 +17,15 @@ npm install @vespeneventures/copy
   `checkPatternSafety`, `parseVoiceRecord`, `validateVoiceRecordShape`,
   `VOICE_FIELDS`, `VOICE_SEVERITIES`, and their types — including the rule
   vocabulary described below: `PatternRule`, `VoicePattern`, `VoiceSeverity`,
-  `VoiceChannel`.
+  `VoiceChannel`. It also exports the declared-order value lists behind two
+  of `VoiceRecord`'s enum-shaped fields, so `schema.ts` never hardcodes them
+  as a second, separately-maintained literal check: `FORMALITY_LEVELS`
+  (`["casual", "neutral", "formal"]` — `formality` is descriptive only,
+  never mechanically checked by `checkCopy`) and `GLOSSARY_STATUSES`
+  (`["forbidden", "preferred"]`, the valid `GlossaryEntry.status` values).
+  `TEMPLATE_PLACEHOLDER` is the literal sentinel string
+  `voice-record.template.jsonc` uses for every bindable slot; `checkCopy`
+  reports `report.bound = false` while a record still carries it anywhere.
 - `@vespeneventures/copy/voice-record.template.jsonc` is an annotated,
   unbound template to copy into a consumer repository and fill in.
 

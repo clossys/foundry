@@ -1029,6 +1029,36 @@ try {
       }
     }
 
+    // Builds a package with an explicit "exports" map and one source file per
+    // subpath, following this repo's real shape: a subpath's "types"/"import"
+    // point at "./dist/<rel>.{d.ts,js}", which this gate derives back to
+    // "src/<rel>.ts" — matching every real package.json in packages/*.
+    // `subpaths` is `{ [exportKey]: { rel, source } }`, e.g.
+    // `{ "./conventions": { rel: "conventions/index", source: "export const X = 1;" } }`.
+    function writePackageWithSubpaths(name, { rootTs, subpaths = {}, wildcards = {}, readmeMd }) {
+      const pkgDir = join(dir, name);
+      mkdirSync(join(pkgDir, "src"), { recursive: true });
+      const exportsMap = {
+        ".": { types: "./dist/index.d.ts", import: "./dist/index.js" },
+      };
+      for (const [exportKey, { rel }] of Object.entries(subpaths)) {
+        exportsMap[exportKey] = { types: `./dist/${rel}.d.ts`, import: `./dist/${rel}.js` };
+      }
+      for (const [exportKey, target] of Object.entries(wildcards)) {
+        exportsMap[exportKey] = target;
+      }
+      const manifest = { name: `${FIXTURE_SCOPE}/${name}`, version: "1.0.0", private: false, exports: exportsMap };
+      writeFileSync(join(pkgDir, "package.json"), JSON.stringify(manifest, null, 2) + "\n");
+      writeFileSync(join(pkgDir, "src", "index.ts"), rootTs);
+      for (const [, { rel, source }] of Object.entries(subpaths)) {
+        const filePath = join(pkgDir, "src", `${rel}.ts`);
+        mkdirSync(dirname(filePath), { recursive: true });
+        writeFileSync(filePath, source);
+      }
+      writeFileSync(join(pkgDir, "README.md"), readmeMd);
+      return pkgDir;
+    }
+
     // Happy path: every export documented, table entries real, examples use
     // the real package name.
     const clean = writePackage(
@@ -1630,6 +1660,211 @@ try {
           (f) => f.check === "D" && /governance/.test(f.message) && /\^0\.2\.0/.test(f.message) && /\^0\.3\.0/.test(f.message),
         ),
       `exit ${peerStaleRun.code}: ${peerStaleRun.out.slice(0, 300)}`,
+    );
+
+    // ---------------- issue #311: subpath exports must be examined, not just src/index.ts
+
+    // The exact defect: a package declares a subpath export ("./conventions")
+    // in its package.json "exports" map, and a real value export reachable
+    // only through that subpath is completely absent from the README. Before
+    // the fix, this gate read src/index.ts alone and reported success; it
+    // must now find and flag it, naming the subpath.
+    const subpathUndocumented = writePackageWithSubpaths("subpath-undocumented", {
+      rootTs: `export const RootThing = 1;\n`,
+      subpaths: {
+        "./conventions": {
+          rel: "conventions/index",
+          source: `export function validateRunnerLabel(x: string) { return x; }\nexport type RunnerLabel = string;\n`,
+        },
+      },
+      readmeMd: [
+        "# subpath-undocumented",
+        "",
+        "Mentions `RootThing` only. Never mentions the `./conventions` subpath at all.",
+        "",
+      ].join("\n"),
+    });
+    const subpathUndocumentedRun = run("node", [READMEPARITY, subpathUndocumented, "--json"]);
+    const subpathUndocumentedReport = parseJson(subpathUndocumentedRun.out);
+    check(
+      "issue #311: a value export reachable only through a declared subpath, absent from the README, is caught",
+      subpathUndocumentedRun.code === 1 &&
+        (subpathUndocumentedReport.findings ?? []).some(
+          (f) => f.check === "A" && f.severity === "high" && /validateRunnerLabel/.test(f.message) && /conventions/.test(f.message),
+        ),
+      `exit ${subpathUndocumentedRun.code}: ${subpathUndocumentedRun.out.slice(0, 500)}`,
+    );
+    check(
+      "issue #311: the success sentence never fires when a subpath export is undocumented (no false 'every export is documented')",
+      !subpathUndocumentedRun.out.includes("README matches reality"),
+      subpathUndocumentedRun.out.slice(0, 300),
+    );
+
+    // The mirror of the above: every subpath export IS documented (including
+    // the one only reachable through "./conventions"), so the gate must pass
+    // — and must report that it actually examined both entrypoints, not just
+    // the root, so a future narrowing of scope would be visible in the
+    // normal output.
+    const subpathDocumented = writePackageWithSubpaths("subpath-documented", {
+      rootTs: `export const RootThing = 1;\n`,
+      subpaths: {
+        "./conventions": {
+          rel: "conventions/index",
+          source: `export function validateRunnerLabel(x: string) { return x; }\nexport type RunnerLabel = string;\n`,
+        },
+      },
+      readmeMd: [
+        "# subpath-documented",
+        "",
+        "Mentions `RootThing`.",
+        "",
+        "`./conventions` exports `validateRunnerLabel` and the `RunnerLabel` type.",
+        "",
+      ].join("\n"),
+    });
+    const subpathDocumentedRun = run("node", [READMEPARITY, subpathDocumented, "--json"]);
+    const subpathDocumentedReport = parseJson(subpathDocumentedRun.out);
+    check(
+      "issue #311: a package with every subpath export documented passes, and reports full entrypoint coverage",
+      subpathDocumentedRun.code === 0 &&
+        subpathDocumentedReport.entrypointsChecked === 2 &&
+        subpathDocumentedReport.entrypointsTotal === 2 &&
+        (subpathDocumentedReport.entrypointsCheckedSubpaths ?? []).includes("./conventions"),
+      `exit ${subpathDocumentedRun.code}: ${JSON.stringify(subpathDocumentedReport).slice(0, 500)}`,
+    );
+
+    // Mirror check (CHECK C) widened: a README that documents a name real
+    // only under a subpath must NOT be flagged as documenting something that
+    // doesn't exist — the exact false positive the issue calls out as the
+    // second half of this fix. `allExportNames` must be the union across
+    // every entrypoint, not just the root.
+    const subpathMirrorSafe = writePackageWithSubpaths("subpath-mirror-safe", {
+      rootTs: `export const RootThing = 1;\n`,
+      subpaths: {
+        "./conventions": { rel: "conventions/index", source: `export function validateRunnerLabel(x: string) { return x; }\n` },
+      },
+      readmeMd: [
+        "# subpath-mirror-safe",
+        "",
+        "Mentions `RootThing`, and `validateRunnerLabel` from `./conventions`.",
+        "",
+        "## API",
+        "",
+        "| Export | Type |",
+        "| --- | --- |",
+        "| `RootThing` | number |",
+        "| `validateRunnerLabel` | function |",
+        "",
+      ].join("\n"),
+    });
+    const subpathMirrorSafeRun = run("node", [READMEPARITY, subpathMirrorSafe, "--json"]);
+    const subpathMirrorSafeReport = parseJson(subpathMirrorSafeRun.out);
+    check(
+      "issue #311 mirror check: a README table row naming a real SUBPATH export is not flagged as documenting something that doesn't exist",
+      subpathMirrorSafeRun.code === 0 && !(subpathMirrorSafeReport.findings ?? []).some((f) => f.check === "C"),
+      `exit ${subpathMirrorSafeRun.code}: ${subpathMirrorSafeRun.out.slice(0, 400)}`,
+    );
+
+    // A wildcard subpath ("./conventions/documents/*") exposes files, not
+    // symbols — it must be skipped (not treated as unresolvable, and not
+    // silently dropped without a trace), and the run must still complete and
+    // pass when nothing else is wrong.
+    const wildcardPkg = writePackageWithSubpaths("subpath-wildcard", {
+      rootTs: `export const RootThing = 1;\n`,
+      wildcards: { "./conventions/documents/*": "./conventions/documents/*" },
+      readmeMd: ["# subpath-wildcard", "", "Mentions `RootThing`.", ""].join("\n"),
+    });
+    const wildcardRun = run("node", [READMEPARITY, wildcardPkg, "--json"]);
+    const wildcardReport = parseJson(wildcardRun.out);
+    check(
+      "a wildcard export subpath is skipped (not an error) and reported as seen, not silently dropped",
+      wildcardRun.code === 0 &&
+        wildcardReport.entrypointsChecked === 1 &&
+        wildcardReport.entrypointsTotal === 2 &&
+        (wildcardReport.wildcardSubpathsSkipped ?? []).includes("./conventions/documents/*"),
+      `exit ${wildcardRun.code}: ${JSON.stringify(wildcardReport).slice(0, 400)}`,
+    );
+
+    // A static-asset subpath (a plain-string target with a non-code
+    // extension, e.g. a stylesheet or a JSON template shipped verbatim) has
+    // no export list of its own either, and must be skipped the same way a
+    // wildcard is — not misread as an unresolvable code entrypoint.
+    const staticAssetPkg = writePackageWithSubpaths("subpath-static-asset", {
+      rootTs: `export const RootThing = 1;\n`,
+      wildcards: { "./tokens.css": "./styles/tokens.css" },
+      readmeMd: ["# subpath-static-asset", "", "Mentions `RootThing`.", ""].join("\n"),
+    });
+    const staticAssetRun = run("node", [READMEPARITY, staticAssetPkg, "--json"]);
+    const staticAssetReport = parseJson(staticAssetRun.out);
+    check(
+      "a static-asset export subpath (non-code file target) is skipped, not treated as unresolvable",
+      staticAssetRun.code === 0 &&
+        staticAssetReport.entrypointsChecked === 1 &&
+        (staticAssetReport.staticAssetSubpathsSkipped ?? []).includes("./tokens.css"),
+      `exit ${staticAssetRun.code}: ${JSON.stringify(staticAssetReport).slice(0, 400)}`,
+    );
+
+    // Indeterminate, not a silent pass: a declared, code-shaped subpath whose
+    // target this gate cannot resolve to a real source file (here: a
+    // "types"/"import" pair that doesn't point under "./dist/", the one
+    // layout this gate knows how to trace back to src/) must abort the whole
+    // run at exit 2 — it must never narrow silently to "checked whatever it
+    // could resolve" and report a pass.
+    const unresolvableDir = join(dir, "subpath-unresolvable");
+    mkdirSync(join(unresolvableDir, "src"), { recursive: true });
+    writeFileSync(
+      join(unresolvableDir, "package.json"),
+      JSON.stringify(
+        {
+          name: `${FIXTURE_SCOPE}/subpath-unresolvable`,
+          version: "1.0.0",
+          private: false,
+          exports: {
+            ".": { types: "./dist/index.d.ts", import: "./dist/index.js" },
+            "./weird": { types: "./vendor/weird.d.ts", import: "./vendor/weird.js" },
+          },
+        },
+        null,
+        2,
+      ) + "\n",
+    );
+    writeFileSync(join(unresolvableDir, "src", "index.ts"), "export const RootThing = 1;\n");
+    writeFileSync(join(unresolvableDir, "README.md"), ["# subpath-unresolvable", "", "Mentions `RootThing`.", ""].join("\n"));
+    const unresolvableRun = run("node", [READMEPARITY, unresolvableDir]);
+    check(
+      "a declared code-shaped subpath this gate cannot resolve to a source file aborts (exit 2), never a silent pass over a narrower set",
+      unresolvableRun.code === 2 && !unresolvableRun.out.includes("README matches reality"),
+      `exit ${unresolvableRun.code}: ${unresolvableRun.out.slice(0, 400)}`,
+    );
+
+    // A subpath whose declared source file genuinely does not exist on disk
+    // (a real, resolvable dist-style path, but nothing there) is the same
+    // indeterminate outcome, not a pass over what does exist.
+    const missingSourceDir = join(dir, "subpath-missing-source");
+    mkdirSync(join(missingSourceDir, "src"), { recursive: true });
+    writeFileSync(
+      join(missingSourceDir, "package.json"),
+      JSON.stringify(
+        {
+          name: `${FIXTURE_SCOPE}/subpath-missing-source`,
+          version: "1.0.0",
+          private: false,
+          exports: {
+            ".": { types: "./dist/index.d.ts", import: "./dist/index.js" },
+            "./ghost": { types: "./dist/ghost/index.d.ts", import: "./dist/ghost/index.js" },
+          },
+        },
+        null,
+        2,
+      ) + "\n",
+    );
+    writeFileSync(join(missingSourceDir, "src", "index.ts"), "export const RootThing = 1;\n");
+    writeFileSync(join(missingSourceDir, "README.md"), ["# subpath-missing-source", "", "Mentions `RootThing`.", ""].join("\n"));
+    const missingSourceRun = run("node", [READMEPARITY, missingSourceDir]);
+    check(
+      "a declared subpath resolving to a source file that does not exist on disk aborts (exit 2), never a silent pass",
+      missingSourceRun.code === 2,
+      `exit ${missingSourceRun.code}: ${missingSourceRun.out.slice(0, 400)}`,
     );
 
     // Fail-closed: a package directory missing a required file must abort

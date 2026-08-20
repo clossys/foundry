@@ -120,6 +120,12 @@ assertAgentMonetaryAuthority(context, 500, "USD", "billing.create", new Date());
 Both guards fail closed. The monetary guard first enforces lifecycle and tool
 scope, including when no monetary limit is configured.
 
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `AgentAuthorizationError` | class | Thrown by both guards on failure; carries `reason`, `agentIdentityId`, and `toolId`. |
+| `describeAgentLifecycleState(agent, now?)` | function | Classifies an agent context as `"active"`, `"not_yet_active"`, `"expired"`, `"revoked"`, or `null` for a missing context. |
+| `isAgentContextActive(agent, now?)` | function | `true` only when `describeAgentLifecycleState` resolves to `"active"`. |
+
 ## Clerk adapters
 
 Use the provider server subpath only in a webhook handler after obtaining the
@@ -140,6 +146,16 @@ In a Fetch/Next.js route, pass `request.headers` directly and obtain `rawBody`
 with `await request.text()` exactly once; do not parse and reserialize it before
 verification.
 
+`verifyAndMapClerkWebhook` composes two lower-level exports from the same
+`./providers/clerk` subpath, available separately for callers that need them:
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `verifyClerkWebhook(rawBody, headers, signingSecret)` | function | Verifies the exact received bytes against the Svix signature headers; returns the event id and parsed payload. |
+| `ClerkWebhookSignatureError` | class | Thrown by `verifyClerkWebhook` for missing (`"signature-headers-missing"`) or invalid (`"signature-invalid"`) Svix signatures; carries `code` and `missingHeaders`. |
+| `mapClerkEvent(event, options)` | function | Maps an already-parsed Clerk event into a minimal, normalized lifecycle event (user, organization, or membership), validating its shape and resolving local ids when a `localIdResolver` is configured. |
+| `resolveClerkMembershipLocalIds(event, resolver)` | function | Resolves local user/tenant identifiers for an already-mapped membership event via the supplied resolver. |
+
 In a Next.js client boundary:
 
 ```tsx
@@ -151,10 +167,32 @@ export function Providers({ children }: { children: ReactNode }) {
 }
 ```
 
+`@vespeneventures/auth/providers/clerk/web` (re-exported from
+`.../web/client`) also exports:
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `CLERK_APPEARANCE` | const | The default, frozen Clerk `appearance` object `ClerkSignInBlock` applies unless the caller passes its own. |
+| `humaniseClerkError(error)` | function | Reduces a Clerk error object to one human-readable string, falling back to a formatted error code when no message is present. |
+
 Use `@vespeneventures/auth/providers/clerk/web/proxy` in Next.js middleware.
 Use `@vespeneventures/auth/providers/clerk/web/server` for route/page helpers.
 The sign-out route applies strict redirect handling and requires a
 same-origin `POST` before revoking an active session.
+
+| `./providers/clerk/web/server` export | Kind | Purpose |
+| --- | --- | --- |
+| `createClerkSignInPage(options?)` | function | Builds a Next.js sign-in page: redirects an already-signed-in session, bypasses Clerk entirely in the dev-keyless bypass, otherwise renders `ClerkSignInBlock` with a redirect target resolved via `resolveRequestRedirect`. |
+| `createRedirectRoute(target)` | function | Builds a `GET` route handler that issues a `permanentRedirect` to a fixed, validated local path. |
+| `createSignOutRoute(options?)` | function | Builds a `POST` route handler: rejects a non-`POST` or cross-origin request, revokes the active Clerk session (skipped in the dev-keyless bypass), clears any configured cookies, and redirects to a resolved safe target. |
+| `resolveRequestRedirect(requestUrl, candidates, allowedOrigins?)` | function | Returns the first candidate target `resolveSafeRedirect` accepts against the request's own origin plus any additional allowed origins. |
+| `devAuthBypassEnabled(environment?)` | function | `true` only when `NODE_ENV` is exactly `"development"` and `NEXT_PUBLIC_DEV_NO_AUTH` is exactly `"1"`. |
+| `devAuthBypassIsKeyless(environment?)` | function | `true` when the bypass above is active and no `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` is configured — i.e. the bypass never contacts Clerk at all. |
+
+| `./providers/clerk/web/proxy` export | Kind | Purpose |
+| --- | --- | --- |
+| `createSiteProxy(config?)` | function | Builds a Next.js middleware that runs Clerk's `auth.protect()` on routes matched by `protectedRoutes` (or, by default, every route except `publicRoutes`), skips protection during the dev bypass, and finishes the response through optional `afterAuth`/`decorateResponse` hooks. |
+| `createClerkMiddleware` | function | The same function as `createSiteProxy`, exported under this alternate name. |
 
 For local development only, `NEXT_PUBLIC_DEV_NO_AUTH=1` bypasses Clerk when
 `NODE_ENV` is exactly `development`. It is ignored in tests, previews, and

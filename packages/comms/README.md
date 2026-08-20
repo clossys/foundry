@@ -444,6 +444,7 @@ Import the following from `@vespeneventures/comms/resend`.
 | `createResendAdapter(config)` | function | Creates the strict outbound Resend email adapter. |
 | `verifyResendWebhook(input)` | function | Verifies the exact raw Svix body and returns a mapped signed event. |
 | `ResendCommunicationError` | class | Provider-specific normalized error with retryability and optional status code. |
+| `RESEND_DECLARED_RANGE` | const | The `resend` peer version range this subpath's import-time guard enforces; kept in sync with `peerDependencies.resend`. |
 | `ResendAdapterConfig` / `ResendApiKey` | types | Explicit outbound credential, timeout, and client-construction contract. |
 | `ResendClient` / `ResendClientFactory` / `ResendWebhookClientFactory` / `ResendEmailPayload` / `ResendApiError` | types | Narrow SDK seams for testing and alternate construction. |
 | `VerifyResendWebhookInput` / `ResendWebhookHeaders` / `ResendWebhookEvent` | types | Raw-body webhook verification input and result. |

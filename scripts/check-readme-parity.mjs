@@ -56,6 +56,24 @@
 // script anyway: the scope and package name are read from package.json at
 // run time, so this gate keeps working unchanged if the scope is ever
 // renamed (see scripts/set-scope.mjs) or if a third package is added.
+//
+// WHICH ENTRYPOINTS CHECKS A/C EXAMINE (issue #311)
+// ---------------------------------------------------
+// Earlier versions of this gate read exactly one file per package —
+// src/index.ts — no matter how many subpaths package.json's "exports" map
+// actually declared. A package with real, consumer-reachable exports behind
+// a subpath (package.json `"./conventions": { "types": ..., "import": ... }`,
+// say) had that entire surface invisible to CHECK A and CHECK C: the README
+// could omit it completely and this gate would still print its "every export
+// is documented" success sentence, having examined a fraction of the
+// package's actual public surface. See the "entrypoint resolution" section
+// below for exactly how the full entrypoint set is now derived from
+// "exports", what counts as out of scope (wildcard and static-asset
+// subpaths), and why an entrypoint this gate is told exists but cannot
+// resolve is an indeterminate result (exit 2) for the whole run rather than
+// a pass over whatever it could find. The normal (non-JSON) output always
+// states how many entrypoints were checked out of how many were declared,
+// so a future narrowing of scope is visible instead of silent.
 
 import { readFileSync, existsSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -76,11 +94,9 @@ if (!pkgDirArg) {
 
 const pkgDir = resolve(pkgDirArg);
 const manifestPath = join(pkgDir, "package.json");
-const indexPath = join(pkgDir, "src", "index.ts");
 const readmePath = join(pkgDir, "README.md");
 
 if (!existsSync(manifestPath)) die(`no package.json at ${manifestPath}`);
-if (!existsSync(indexPath)) die(`no src/index.ts at ${indexPath}`);
 if (!existsSync(readmePath)) die(`no README.md at ${readmePath}`);
 
 let manifest;
@@ -96,9 +112,133 @@ if (typeof packageName !== "string" || !packageName.startsWith("@") || !packageN
 }
 const scope = packageName.slice(0, packageName.indexOf("/")); // e.g. "@scope"
 
-const indexSrc = readFileSync(indexPath, "utf8");
 const readmeSrc = readFileSync(readmePath, "utf8");
 const readmeLines = readmeSrc.split("\n");
+
+// ------------------------------------------------------------- entrypoint resolution
+//
+// package.json's "exports" map is the authoritative list of what a consumer
+// can actually reach — not just the root barrel. A package that declares
+// `"./conventions": { "types": "./dist/conventions/index.d.ts", ... }` makes
+// every export of src/conventions/index.ts as reachable to a consumer as the
+// root export, and a README that never mentions one of those names is making
+// exactly the same undocumented-export mistake CHECK A exists to catch — the
+// gate must therefore examine every declared entrypoint, not only the root.
+//
+// Three kinds of declared subpath are NOT a source module and are
+// deliberately out of scope for the export-name checks below:
+//
+//   - A WILDCARD subpath ("./conventions/documents/*") maps a whole directory
+//     of files through unchanged (its target string contains the same "*").
+//     It exposes files (markdown, shell scripts, JSON), not language-level
+//     exports, so there is no export list to diff against a README.
+//   - A STATIC-ASSET subpath maps directly to one non-code file, verbatim,
+//     with no build step in between — real examples in this workspace:
+//     `"./tokens.css": "./styles/tokens.css"` and
+//     `"./voice-record.template.jsonc": "./templates/voice-record.template.jsonc"`.
+//     Its target is a plain string (not a conditions object with
+//     "types"/"import") whose extension is not a JS/TS one, so there is no
+//     compiled output to trace back to a `src/*.ts` file and, like a
+//     wildcard, no export list to diff against a README — a stylesheet or a
+//     template has no "exports" in the sense this gate checks.
+//
+//   Both of the above are counted and reported separately so a reader can
+//   see they were seen and deliberately excluded, not silently skipped.
+//
+//   - A concrete, code-shaped subpath (an object with "types"/"import"/etc.,
+//     or a plain string ending in a JS/TS extension) whose target cannot be
+//     resolved to a real source file under "./dist/" makes the scope of this
+//     gate itself uncertain: it has been told a door exists but cannot find
+//     it. That is an indeterminate result for the whole run (exit 2), not a
+//     pass that silently examined fewer entrypoints than declared.
+const CODE_EXTENSION_RE = /\.(?:d\.ts|d\.mts|d\.cts|ts|mts|cts|tsx|js|mjs|cjs|jsx)$/;
+
+function deriveSourceRelativePath(distTarget) {
+  if (typeof distTarget !== "string") return null;
+  const match = distTarget.match(/^\.\/dist\/(.+)$/);
+  if (!match) return null;
+  const rel = match[1];
+  if (rel.endsWith(".d.ts")) return rel.slice(0, -".d.ts".length) + ".ts";
+  if (rel.endsWith(".js")) return rel.slice(0, -".js".length) + ".ts";
+  return null;
+}
+
+function resolveConcreteTarget(target) {
+  const candidates = [];
+  if (typeof target === "string") {
+    candidates.push(target);
+  } else if (target && typeof target === "object" && !Array.isArray(target)) {
+    for (const key of ["types", "import", "default", "require"]) {
+      if (typeof target[key] === "string") candidates.push(target[key]);
+    }
+  }
+  for (const candidate of candidates) {
+    const rel = deriveSourceRelativePath(candidate);
+    if (rel) return join(pkgDir, "src", rel);
+  }
+  return null;
+}
+
+function subpathLabel(subpath) {
+  return subpath === "." ? "root entrypoint (src/index.ts)" : `subpath export "${subpath}"`;
+}
+
+const wildcardSubpaths = [];
+const staticAssetSubpaths = [];
+const unresolvedSubpaths = [];
+const entrypoints = []; // { subpath, sourcePath }
+
+if (manifest.exports === undefined) {
+  // No "exports" map at all — the only entrypoint a consumer (or this gate,
+  // historically) can see is the conventional root barrel.
+  entrypoints.push({ subpath: ".", sourcePath: join(pkgDir, "src", "index.ts") });
+} else {
+  const exportsField = manifest.exports;
+  const exportsMap = typeof exportsField === "string" ? { ".": exportsField } : exportsField;
+  if (typeof exportsMap !== "object" || exportsMap === null || Array.isArray(exportsMap)) {
+    die(`package.json "exports" (${JSON.stringify(exportsField)}) is neither a string nor an object`);
+  }
+  for (const [subpath, target] of Object.entries(exportsMap)) {
+    if (subpath.includes("*")) {
+      wildcardSubpaths.push(subpath);
+      continue;
+    }
+    if (typeof target === "string" && !CODE_EXTENSION_RE.test(target)) {
+      staticAssetSubpaths.push(subpath);
+      continue;
+    }
+    const sourcePath = resolveConcreteTarget(target);
+    if (!sourcePath) {
+      unresolvedSubpaths.push({ subpath, target });
+      continue;
+    }
+    entrypoints.push({ subpath, sourcePath });
+  }
+}
+
+if (unresolvedSubpaths.length > 0) {
+  die(
+    `cannot resolve declared export${unresolvedSubpaths.length === 1 ? "" : "s"} to a source file: ` +
+      unresolvedSubpaths.map((u) => `"${u.subpath}" -> ${JSON.stringify(u.target)}`).join(", "),
+  );
+}
+
+for (const { subpath, sourcePath } of entrypoints) {
+  if (!existsSync(sourcePath)) {
+    die(`declared export ${subpathLabel(subpath)} resolves to ${sourcePath}, which does not exist`);
+  }
+}
+
+if (entrypoints.length === 0) {
+  die(
+    `package.json "exports" declares no entrypoint this gate can resolve to a source file ` +
+      `(only wildcard subpaths: ${wildcardSubpaths.join(", ") || "none"}; static-asset subpaths: ${staticAssetSubpaths.join(", ") || "none"})`,
+  );
+}
+
+const nonCodeSubpathsTotal = wildcardSubpaths.length + staticAssetSubpaths.length;
+const entrypointsTotal = entrypoints.length + nonCodeSubpathsTotal;
+const entrypointsChecked = entrypoints.length;
 
 // --------------------------------------------------------------- CHECK A/C shared: parse exports
 
@@ -113,16 +253,22 @@ function stripComments(src) {
   return src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
 }
 
-const code = stripComments(indexSrc);
-
-// name -> { isType: boolean }. A name can only be introduced once by a
-// well-formed index.ts, so last-write-wins is fine.
+// name -> { isType: boolean, subpaths: Set<string> }. A name can only be
+// introduced once per entrypoint by a well-formed barrel file, so last-write-
+// wins on `isType` within one file; a name reachable through more than one
+// entrypoint (unusual, but not forbidden) just accumulates the extra subpath.
 const exportsByName = new Map();
 
-function recordExport(rawName, isType) {
+function recordExport(rawName, isType, subpath) {
   const name = rawName.trim();
   if (!name) return;
-  exportsByName.set(name, { isType });
+  const existing = exportsByName.get(name);
+  if (existing) {
+    existing.isType = isType;
+    existing.subpaths.add(subpath);
+  } else {
+    exportsByName.set(name, { isType, subpaths: new Set([subpath]) });
+  }
 }
 
 // Split a `{ ... }` export-list body on top-level commas and record each
@@ -130,7 +276,7 @@ function recordExport(rawName, isType) {
 // members can additionally be marked `type X` inside an otherwise-value
 // block (`export { A, type B } from "./x.js"`), which is per-member type-only
 // regardless of the block.
-function recordExportList(body, blockIsType) {
+function recordExportList(body, blockIsType, subpath) {
   for (const rawMember of body.split(",")) {
     const member = rawMember.trim();
     if (!member) continue;
@@ -144,7 +290,7 @@ function recordExportList(body, blockIsType) {
     // mention) is the alias, B, not the original local name A.
     const asMatch = spec.match(/^(.+?)\s+as\s+(.+)$/);
     const exportedName = asMatch ? asMatch[2].trim() : spec.trim();
-    recordExport(exportedName, isType);
+    recordExport(exportedName, isType, subpath);
   }
 }
 
@@ -152,26 +298,38 @@ function recordExportList(body, blockIsType) {
 // same two forms without a `from` clause (re-exports always have `from`
 // here, but local named exports of already-declared bindings do not).
 // Matching is non-greedy across `{...}` so multi-line export lists (used
-// throughout both packages here) are captured whole.
+// throughout every entrypoint here) are captured whole.
 const exportBlockRe = /export\s+(type\s+)?\{([\s\S]*?)\}(?:\s*from\s*["'][^"']*["'])?\s*;?/g;
-for (const match of code.matchAll(exportBlockRe)) {
-  const blockIsType = Boolean(match[1]);
-  recordExportList(match[2], blockIsType);
-}
-
 // `export const F = ...` / `export function G(...)` / `export function* G`
-// / `export class H`. Not used by either index.ts in this repo today (both
+// / `export class H`. Not used by most barrel files in this repo today (most
 // are pure re-export barrels) but a barrel file gaining a direct declaration
 // is a plausible future edit, and the task spec calls out this form
 // explicitly as a real one to handle.
 const directDeclRe = /export\s+(?:const|let|var|function\*?|class|enum)\s+([A-Za-z_$][A-Za-z0-9_$]*)/g;
-for (const match of code.matchAll(directDeclRe)) {
-  recordExport(match[1], false);
+
+// Every declared, resolved entrypoint is scanned the same way — the root
+// barrel gets no special treatment relative to a subpath barrel. This is the
+// fix for the defect this gate exists to close: previously only src/index.ts
+// (the "." entrypoint) was ever read here, so an export reachable only
+// through a subpath like "./conventions" was invisible to CHECK A/C no
+// matter how real or undocumented it was.
+for (const { subpath, sourcePath } of entrypoints) {
+  const code = stripComments(readFileSync(sourcePath, "utf8"));
+  for (const match of code.matchAll(exportBlockRe)) {
+    recordExportList(match[2], Boolean(match[1]), subpath);
+  }
+  for (const match of code.matchAll(directDeclRe)) {
+    recordExport(match[1], false, subpath);
+  }
 }
 
-const valueExports = [...exportsByName.entries()].filter(([, v]) => !v.isType).map(([name]) => name);
-const typeExports = [...exportsByName.entries()].filter(([, v]) => v.isType).map(([name]) => name);
+const valueExports = [...exportsByName.entries()].filter(([, v]) => !v.isType).map(([name, v]) => ({ name, subpaths: v.subpaths }));
+const typeExports = [...exportsByName.entries()].filter(([, v]) => v.isType).map(([name, v]) => ({ name, subpaths: v.subpaths }));
 const allExportNames = new Set(exportsByName.keys());
+
+function firstSubpathLabel(subpaths) {
+  return subpathLabel([...subpaths][0]);
+}
 
 // ------------------------------------------------------------------------- CHECK A
 
@@ -181,8 +339,8 @@ const allExportNames = new Set(exportsByName.keys());
 // so a substring search across the whole document, not just the table, is
 // the right bar: it is permissive about WHERE a name is documented and
 // strict about WHETHER it is documented at all.
-const undocumentedValues = valueExports.filter((name) => !readmeSrc.includes(name));
-const undocumentedTypes = typeExports.filter((name) => !readmeSrc.includes(name));
+const undocumentedValues = valueExports.filter((e) => !readmeSrc.includes(e.name));
+const undocumentedTypes = typeExports.filter((e) => !readmeSrc.includes(e.name));
 
 // ------------------------------------------------------------------------- CHECK B
 
@@ -506,15 +664,15 @@ for (const match of readmeSrc.matchAll(namedRangeRe)) {
 // ------------------------------------------------------------------------ report
 
 const findings = [
-  ...undocumentedValues.map((name) => ({
+  ...undocumentedValues.map((e) => ({
     check: "A",
     severity: "high",
-    message: `export "${name}" is not mentioned anywhere in README.md`,
+    message: `export "${e.name}" (${firstSubpathLabel(e.subpaths)}) is not mentioned anywhere in README.md`,
   })),
-  ...undocumentedTypes.map((name) => ({
+  ...undocumentedTypes.map((e) => ({
     check: "A",
     severity: "low",
-    message: `type "${name}" is not mentioned anywhere in README.md`,
+    message: `type "${e.name}" (${firstSubpathLabel(e.subpaths)}) is not mentioned anywhere in README.md`,
   })),
   ...wrongNameFindings.map((f) => ({
     check: "B",
@@ -528,7 +686,7 @@ const findings = [
     severity: "medium",
     file: "README.md",
     line: f.line,
-    message: `README documents "${f.name}", which is not an export of src/index.ts`,
+    message: `README documents "${f.name}", which is not an export of any declared entrypoint (checked ${entrypointsChecked}/${entrypointsTotal}: ${entrypoints.map((e) => e.subpath).join(", ")})`,
   })),
   ...(claimsZeroDeps && hasRealDependencies
     ? [
@@ -559,6 +717,11 @@ if (flags.has("--json")) {
       {
         package: packageName,
         packageDir: pkgDirArg,
+        entrypointsChecked,
+        entrypointsTotal,
+        entrypointsCheckedSubpaths: entrypoints.map((e) => e.subpath),
+        wildcardSubpathsSkipped: wildcardSubpaths,
+        staticAssetSubpathsSkipped: staticAssetSubpaths,
         findings,
         ok: !hasFailure,
       },
@@ -579,13 +742,24 @@ function printGroup(title, items) {
 }
 
 console.log(`check-readme-parity: ${packageName}`);
+console.log(
+  `  entrypoints checked: ${entrypointsChecked}/${entrypointsTotal} (${entrypoints.map((e) => e.subpath).join(", ")})` +
+    (wildcardSubpaths.length
+      ? ` — ${wildcardSubpaths.length} wildcard subpath(s) skipped (expose files, not symbols): ${wildcardSubpaths.join(", ")}`
+      : "") +
+    (staticAssetSubpaths.length
+      ? ` — ${staticAssetSubpaths.length} static-asset subpath(s) skipped (map to one non-code file, not a symbol export): ${staticAssetSubpaths.join(", ")}`
+      : ""),
+);
 printGroup("CHECK A — export coverage", findings.filter((f) => f.check === "A"));
 printGroup("CHECK B — wrong package name in examples", findings.filter((f) => f.check === "B"));
 printGroup("CHECK C — documented exports that don't exist", findings.filter((f) => f.check === "C"));
 printGroup("CHECK D — dependency prose vs. manifest", findings.filter((f) => f.check === "D"));
 
 if (findings.length === 0) {
-  console.log("\n  README matches reality: every export is documented, every example uses the real package name.");
+  console.log(
+    `\n  README matches reality: every export is documented, every example uses the real package name (${entrypointsChecked}/${entrypointsTotal} entrypoints examined).`,
+  );
 }
 
 console.log(

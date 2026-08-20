@@ -287,6 +287,45 @@ for the full contract each subpath ships — the shape is unchanged from
 `@vespeneventures/deployment`'s own README, which this package's history
 carries forward.
 
+`isValidDeploymentManifest(value)` is `validateDeploymentManifest`'s boolean
+type-guard sibling. `normalizeDeploymentManifest(manifest)` sorts a
+manifest's surfaces into a stable order without changing their meaning;
+`serializeDeploymentManifest(manifest)` normalizes and renders it as
+pretty-printed JSON, terminated with a trailing newline.
+`DEPLOYMENT_ENVIRONMENTS` is the closed environment vocabulary
+(`"production"`, `"preview"`, `"staging"`, `"development"`) `DeploymentEnvironment`
+is drawn from.
+
+### Configuration plans
+
+A `DeploymentConfigurationPlan` pairs a deployment manifest with, per
+surface, its build command and output directory, its internal routing, and
+its required environment-variable names — structural planning only; it
+reads no environment variable, secret store, repository, or provider state.
+
+```ts
+import { defineDeploymentConfigurationPlan, validateDeploymentConfigurationPlan } from "@vespeneventures/builder/deployment";
+
+if (validateDeploymentConfigurationPlan(planCandidate).length > 0) throw new Error("Invalid plan");
+const plan = defineDeploymentConfigurationPlan(planCandidate);
+```
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `validateDeploymentConfigurationPlan(value)` | function | Reports structural planning errors: an unknown surface, a duplicate surface id, an unsupported provider, a malformed build command or output directory, a malformed or duplicate route, or a manifest surface missing its requirement. |
+| `isValidDeploymentConfigurationPlan(value)` | function | The boolean type-guard form of `validateDeploymentConfigurationPlan`. |
+| `defineDeploymentConfigurationPlan(definition)` | function | Validates and returns a detached, normalized plan (surfaces and requirements sorted, routes and environment-variable names sorted). Throws `TypeError` on an invalid definition. |
+
+### Provider inspection errors
+
+`createVercelInspector`/`createRenderInspector` reject with a typed error
+naming exactly what went wrong, rather than an opaque thrown value:
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `VercelInspectionError` | class | Thrown by the Vercel inspector. Carries `kind` (`VercelInspectionErrorKind` — e.g. `"credential-unavailable"`, `"unauthorized"`, `"rate-limited"`, `"http"`, `"invalid-response"`) and an optional `statusCode`. |
+| `RenderInspectionError` | class | The same contract, thrown by the Render inspector, with `RenderInspectionErrorKind`. |
+
 ## Toolchain
 
 The runtime pin, the package-manager pin, and the build order, expressed and
@@ -360,6 +399,40 @@ import { checkVersionFloor, foldLiveStateReports } from "@vespeneventures/builde
 
 Every check here is hermetic: `src/ci/*.test.ts` injects every declaration,
 observation, and file read, and calls no network and no real machine.
+
+### The version floor's own pieces
+
+`checkVersionFloor` is built from smaller pieces, each independently
+exported:
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `MINIMUM_SAFE_VERSION` | constant | The oldest build of this package's CI mechanics whose verdicts are still trusted. Raised only in the same change that lands a fix for a version found to have reported a wrong passing verdict. |
+| `parseVersion(value)` | function | Parses a `major.minor.patch[-prerelease]` string into a `ParsedVersion`, or `undefined` if it does not match. |
+| `compareVersions(left, right)` | function | Orders two `ParsedVersion`s (`-1`/`0`/`1`) — major, then minor, then patch, then prerelease (a release outranks any prerelease of the same triple). |
+| `lowestSatisfyingVersion(range)` | function | The lowest `ParsedVersion` a caller-declared range (an exact pin, or a `^`/`~`/`>=`/`>` prefix) could resolve to — the same conservative subset `@vespeneventures/verify-standards` parses. |
+| `versionFloorReasons` | constant | `checkVersionFloor`'s declared `indeterminate` vocabulary, via `createGateReasons` — `"unknown-installed-version"`, `"unknown-minimum-version"`, `"stale-installed-version"`, `"unparseable-declared-range"`, `"declared-range-permits-stale-version"`. |
+
+### `verifyToolchain` and the CLI it backs
+
+`verifyToolchain(inputs, options)` is the orchestrator behind
+`builder-verify-toolchain`: it runs the version-floor check above as its
+first row, then — only once the supplied inputs document validates against
+`TOOLCHAIN_VERIFY_INPUTS_VERSION` and its `declaration` validates — reconciles
+the declared toolchain against the observation via `reconcileToolchain`,
+folding every row through `foldGateResults` into one overall verdict and
+exit code.
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `verifyToolchain(inputs, options)` | function | Runs the staleness floor and, when the inputs document is readable and its declaration valid, reconciles the declared toolchain against the observation. Returns every row plus one folded `overall` verdict and `exitCode`. |
+| `TOOLCHAIN_VERIFY_INPUTS_VERSION` | constant | The schema version (`1`) `ToolchainVerifyInputs.schemaVersion` must equal. |
+| `toolchainCliReasons` | constant | The declared `indeterminate` vocabulary for the `inputs`/`declaration` rows — `"no-inputs-supplied"`, `"unsupported-inputs-schema-version"`, `"declaration-invalid"`. |
+| `USAGE` | constant | `builder-verify-toolchain`'s own `--help` text. |
+| `parseArgs(argv)` | function | Parses `builder-verify-toolchain`'s argv into `--inputs`, `--minimum-version`, `--declared-range`, and `--format`. Throws `CliInputError` on anything unusable. |
+| `CliInputError` | class | Thrown for a malformed argument. Always maps to exit `2`, never `1`. |
+| `renderReport(report)` | function | Renders a `ToolchainVerifyReport` as a Markdown table (one row per subject, plus an overall verdict line) suitable for a CI job summary. |
+| `main(argv, port)` | function | Runs the CLI end to end against an injected `CliPort` (no direct filesystem or process access) and returns the exit code — `0` verified, `1` drifted, `2` could not verify. |
 
 ## Metric
 

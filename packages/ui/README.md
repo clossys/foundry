@@ -518,7 +518,8 @@ import { assertTokenStylesLoaded } from "@vespeneventures/ui/tokens";
 assertTokenStylesLoaded();
 ```
 
-It reads back a sentinel custom property (`--ui-tokens-loaded`) that
+It reads back a sentinel custom property — its name is exported as
+`TOKEN_STYLES_SENTINEL_PROPERTY` (`--ui-tokens-loaded`) — that
 `styles/tokens.css` declares for exactly this purpose, and reports once,
 via `console.error`, if that property is missing — meaning the CSS file
 itself was never imported at all (step 1 above), a different failure than
@@ -3982,6 +3983,20 @@ its own subpath and an installable CLI:
   `npm ci`) — see `src/style-scan.ts`'s own header for the full boundary
   reasoning, including exactly what is reported as `unchecked` rather than
   silently skipped.
+- **`extractStyleCandidates(content, file)`** (same subpath) — the pure,
+  no-I/O extraction step `scanStyleSources` calls per file, exported
+  directly so a test can exercise extraction against a short in-memory
+  string without touching a real file — mirrors
+  `@vespeneventures/copy`'s `extractCopyCandidates`.
+- **`findEmbeddedStyleLiterals(text)`** (same subpath) — finds every
+  hex-color / color-function / raw-length literal embedded inside an
+  already-isolated string, in practice a Tailwind arbitrary-value
+  bracket's inner content; reuses the same leaf patterns the top-level
+  scan uses, but does not recurse into nested brackets.
+- **`isPureVarReference(text)`** (same subpath) — `true` only for a
+  bracket value that is EXACTLY a bare `var(--custom-property)` reference
+  with no fallback, the one arbitrary-value shape `checkTokenPurity`
+  treats as clean rather than a finding.
 - **`checkTokenPurity(candidates, tokens, filesScanned, unchecked)`** (from
   the same subpath) is the pure gate: every candidate is a finding unless
   it is explicitly waived (`// token-gate:ignore` on its own source line,
@@ -4020,6 +4035,37 @@ its own subpath and an installable CLI:
   run rather than merging with it, and every finding's message names the
   supplied file rather than `@vespeneventures/ui/tokens`.
 
+## Brand-coverage gate (`@vespeneventures/ui/tokens`, `tokens-brand-check`)
+
+`TOKENS` and `styles/brand-template.css` are a vocabulary and a template —
+neither one, by itself, can tell a consumer whether their own real
+`brand.css` actually filled the template in correctly. This gate closes
+that gap, the same "self-closing package" shape
+`@vespeneventures/copy/voice`'s `checkCopy` and `@vespeneventures/copy`'s
+`checkCopyTraceability` already use.
+
+- **`readBrandCss(path)`** / **`parseBrandDeclarations(css)`** (from
+  `@vespeneventures/ui/tokens`) — get already-parsed custom-property
+  declarations from a real brand `.css` file, or from an already-read
+  string. `readBrandCss` does the file I/O and reports a read failure as a
+  `BrandCssReadIssue`; `parseBrandDeclarations` is the pure parse it calls
+  internally, usable directly against in-memory CSS text.
+- **`checkBrandFileCoverage(declarations, options?)`** (same subpath) —
+  given declarations from either function above, reports every brandable
+  slot with no real declaration, every declaration naming a slot this
+  package doesn't recognize (almost always a typo), and every declaration
+  targeting a structural (non-brandable) slot — the same rule
+  `@vespeneventures/surface`'s `flattenTokens` already enforces by
+  throwing.
+- **`TOKEN_FAMILIES`** (same subpath) — the ordered list of this
+  package's 26 semantic token-family names (the values of the
+  `TokenFamily` type — `"surface"`, `"ink"`, `"accent"`, and so on) that
+  each `TokenDefinition.family` in `TOKENS` draws from.
+- **`tokens-brand-check [brand-css-file]`** — the installable CLI wiring
+  `readBrandCss` and `checkBrandFileCoverage` together, with the same
+  three-state exit contract every gate CLI in this repository uses: `0`
+  clean, `1` findings, `2` could not run.
+
 ## WCAG contrast gate (`@vespeneventures/ui/tokens`, `ui-contrast-check`)
 
 The token-purity gate above and this one check two completely different
@@ -4043,6 +4089,11 @@ part of this package's public API" and reachable only by that one test.
   `relativeLuminance`, `parseOklch`** (from `@vespeneventures/ui/tokens`,
   promoted from that internal module — no behavior change, only
   visibility) — the WCAG colour math itself, pure and zero-dependency.
+- **`AA`, `AA_LARGE`** (same subpath) — the two numeric WCAG floor
+  constants the math above is checked against: `AA = 4.5` (the normal-text
+  minimum ratio) and `AA_LARGE = 3.0` (the large-text / graphical-object
+  minimum), the same figures `CONTRAST_PAIRS`' own `minimumRatio` values
+  encode.
 - **`CONTRAST_PAIRS`** (same subpath) — an EXPLICIT, checked-in list of 25
   `{ foreground, background, level, minimumRatio, compositeOver? }` pairs,
   ratified from `contrast.test.ts`'s own hand-curated pair map rather than
