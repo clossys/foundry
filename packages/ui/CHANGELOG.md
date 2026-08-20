@@ -3,6 +3,35 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.15.0] - 2026-08-20
+
+### Added
+
+- **Every hardcoded, English-only screen-reader/instructional string in an
+  `aria-label` now has an overridable prop**, closing
+  [issue #382](https://github.com/vespeneventures/foundry/issues/382).
+  `copy-check addressability` found two (`Pagination`'s previous/next page
+  controls); grepping the whole package for the same construct — a fixed
+  string with no prop behind it, not just the two named — turned up two
+  more:
+  - `Pagination`: `previousPageLabel` (`@default "Previous page"`),
+    `nextPageLabel` (`@default "Next page"`).
+  - `ComboBox`: `triggerLabel`, the suggestion-list trigger button's
+    accessible name (`@default "Show suggestions"`).
+  - `LineChart`: `keyboardHintLabel`, the fixed instructional half of the
+    hover/keyboard overlay's `aria-label` (`@default "use arrow keys to
+    inspect values"`; the `title`-derived half was already consumer
+    content, not hardcoded).
+
+  Each keeps the existing string as its fallback, so nothing renders
+  differently for a consumer who passes nothing — only a consumer who
+  supplies the prop sees a different string. `Shell.SideNav`'s own
+  `aria-label="Primary"` default was checked and left as-is: it already
+  sits before `{...rest}` in JSX prop order, so a consumer's own
+  `aria-label` already wins the merge (proven by an existing test in
+  `Shell.test.tsx`) — the same overridable-by-default shape, just
+  expressed as prop-spread order instead of a destructured default.
+
 ## [0.14.0] - 2026-08-20
 
 ### Added

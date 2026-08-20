@@ -113,4 +113,25 @@ describe("LineChart", () => {
     );
     expect(screen.getByRole("cell", { name: /Jan/ })).toBeInTheDocument();
   });
+
+  it("defaults the hover overlay's accessible name to \"<title>: use arrow keys to inspect values\"", () => {
+    const { container } = render(
+      <LineChart title="Revenue" x={[0, 1]} series={[{ name: "s", values: [1, 2] }]} />,
+    );
+    const overlay = container.querySelector('[data-chart-part="hover-overlay"]')!;
+    expect(overlay).toHaveAttribute("aria-label", "Revenue: use arrow keys to inspect values");
+  });
+
+  it("accepts a custom keyboardHintLabel that replaces the default hint text", () => {
+    const { container } = render(
+      <LineChart
+        title="Revenue"
+        x={[0, 1]}
+        series={[{ name: "s", values: [1, 2] }]}
+        keyboardHintLabel="usa las flechas para inspeccionar los valores"
+      />,
+    );
+    const overlay = container.querySelector('[data-chart-part="hover-overlay"]')!;
+    expect(overlay).toHaveAttribute("aria-label", "Revenue: usa las flechas para inspeccionar los valores");
+  });
 });

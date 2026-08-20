@@ -31,6 +31,12 @@ export interface LineChartProps {
   valueFormat?: (value: number) => string;
   /** @default `Date` -> locale short date; `number` -> the number itself */
   xFormat?: (value: Date | number) => string;
+  /**
+   * Accessible name for the keyboard/hover overlay, appended after `title`
+   * (as `"${title}: ${keyboardHintLabel}"`).
+   * @default "use arrow keys to inspect values"
+   */
+  keyboardHintLabel?: string;
   className?: string;
   style?: CSSProperties;
 }
@@ -56,6 +62,7 @@ export function LineChart({
   height = 280,
   valueFormat = formatTickValue,
   xFormat = defaultXFormat,
+  keyboardHintLabel = "use arrow keys to inspect values",
   className,
   style,
 }: LineChartProps) {
@@ -215,7 +222,7 @@ export function LineChart({
               fill="transparent"
               tabIndex={0}
               role="img"
-              aria-label={`${title}: use arrow keys to inspect values`}
+              aria-label={`${title}: ${keyboardHintLabel}`}
               onPointerMove={onOverlayPointerMove}
               onPointerLeave={() => setActiveIndex(null)}
               onFocus={() => setActiveIndex((cur) => cur ?? 0)}

@@ -1674,7 +1674,8 @@ atom — see "Atoms compose no other atom" below). `options` is a plain array
 `options` uses, passed to react-aria-components as `defaultItems` so its
 built-in language-sensitive "contains" filter narrows the list as the user
 types; a consumer can supply their own `defaultFilter` for a different
-match strategy.
+match strategy. The trigger button that opens the suggestion list defaults
+its accessible name to `"Show suggestions"`, overridable via `triggerLabel`.
 
 ### `SearchField`
 
@@ -2841,7 +2842,11 @@ navigate to as a URL, so a link styled to look like a button would be the
 wrong element regardless of styling. A large `pageCount` truncates to
 `1 … 4 5 6 … 20` rather than a flat row of every page number, via
 `siblingCount` (default `1`) page numbers shown on each side of the
-current page.
+current page. The previous/next controls' own accessible names default to
+`"Previous page"`/`"Next page"` and are independently overridable via
+`previousPageLabel`/`nextPageLabel` — for localization, or to disambiguate
+several `Pagination`s on one page the same way `aria-label` does for the
+surrounding `<nav>`.
 
 Omit `totalItems`/`pageSize` for a plain "Page X of Y" range summary;
 provide both for "Showing 11–20 of 42".
@@ -3353,7 +3358,11 @@ an 8px marker with a 2px surface-color ring so it stays legible crossing
 another line. Moving the pointer over the plot (or moving keyboard focus
 onto it and pressing the arrow keys) shows a crosshair at the nearest x
 position plus a readout listing every series' value there — the pointer
-never has to land exactly on a line to read it.
+never has to land exactly on a line to read it. That overlay's own
+accessible name is `"${title}: ${keyboardHintLabel}"`; `keyboardHintLabel`
+defaults to `"use arrow keys to inspect values"` and is independently
+overridable — `title` itself is already consumer-supplied, so only the
+fixed instructional half needed a prop.
 
 ### `Sparkline`
 
@@ -3789,7 +3798,7 @@ not a grab-bag).
 | `DateField` | component | Segmented, keyboard-editable date entry built on react-aria-components' `DateField`/`DateInput`/`DateSegment`. |
 | `DateFieldProps` | type | Props for `DateField`: `label`, `description`, `errorMessage`, `className`, `inputClassName`, plus everything react-aria-components' own `DateField` accepts (`value`/`defaultValue` as `@internationalized/date` `DateValue`s). |
 | `ComboBox` | component | Searchable/filterable single-choice field built on react-aria-components' `ComboBox`/`Input`/`Button`/`Popover`/`ListBox`/`ListBoxItem`. |
-| `ComboBoxProps` | type | Props for `ComboBox`: `label`, `description`, `errorMessage`, `placeholder`, `options`, `className`, `inputClassName`, plus everything react-aria-components' own `ComboBox` accepts. |
+| `ComboBoxProps` | type | Props for `ComboBox`: `label`, `description`, `errorMessage`, `placeholder`, `triggerLabel`, `options`, `className`, `inputClassName`, plus everything react-aria-components' own `ComboBox` accepts. |
 | `ComboBoxOption` | type | One option: `id`, `label`, `isDisabled?`, `textValue?`. |
 | `SearchField` | component | Search input with a built-in clear affordance, built on react-aria-components' `SearchField`/`Input`/`Button`. |
 | `SearchFieldProps` | type | Props for `SearchField`: `label`, `description`, `errorMessage`, `placeholder`, `className`, `inputClassName`, plus everything react-aria-components' own `SearchField` accepts. |
@@ -3815,7 +3824,7 @@ not a grab-bag).
 | `DetailViewProps` | type | Props for `DetailView`: `title`, `fields`, `actions`, `className`, `style`, plus every native `<section>` attribute. |
 | `DetailViewField` | type | One field: `label`, `value` (`ReactNode`), `span?` (`1 \| 2`). |
 | `Pagination` | component | Page navigation: range summary, page controls, optional page-size selector. |
-| `PaginationProps` | type | Props for `Pagination`: `page`, `pageCount`, `onPageChange`, `totalItems`, `pageSize`, `pageSizeOptions`, `onPageSizeChange`, `siblingCount`, `className`, `style`, plus every native `<nav>` attribute. |
+| `PaginationProps` | type | Props for `Pagination`: `page`, `pageCount`, `onPageChange`, `totalItems`, `pageSize`, `pageSizeOptions`, `onPageSizeChange`, `siblingCount`, `previousPageLabel`, `nextPageLabel`, `className`, `style`, plus every native `<nav>` attribute. |
 | `Stat` | component | A single metric: label, value, optional delta/trend, optional description. |
 | `StatProps` | type | Props for `Stat`: `label`, `value`, `delta`, `trend`, `description`, `className`, `style`, plus every native `<div>` attribute. |
 | `StatTrend` | type | `"up" \| "down" \| "neutral"`. |
@@ -3891,7 +3900,7 @@ not a grab-bag).
 | `BarChartProps` | type | Props for `BarChart`: `categories`, `series`, `colorDomain`, `title`, `description`, `width`, `height`, `valueFormat`, `className`, `style`. |
 | `BarChartSeries` | type | `{ name, values, color? }`. |
 | `LineChart` | component | Change over time: one line per series, one shared x/y scale, a crosshair + tooltip hover layer. |
-| `LineChartProps` | type | Props for `LineChart`: `x`, `series`, `colorDomain`, `title`, `description`, `width`, `height`, `valueFormat`, `xFormat`, `className`, `style`. |
+| `LineChartProps` | type | Props for `LineChart`: `x`, `series`, `colorDomain`, `title`, `description`, `width`, `height`, `valueFormat`, `xFormat`, `keyboardHintLabel`, `className`, `style`. |
 | `LineChartSeries` | type | `{ name, values, color? }`. |
 | `Sparkline` | component | A bare inline trend — no axes/grid/legend/hover, still ships a table-view fallback. |
 | `SparklineProps` | type | Props for `Sparkline`: `values`, `title`, `width`, `height`, `color`, `valueFormat`, `className`, `style`. |

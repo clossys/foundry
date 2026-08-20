@@ -103,6 +103,25 @@ describe("ComboBox", () => {
     expect(wrapper.className).not.toContain("gap-xs");
   });
 
+  it("defaults the trigger button's aria-label to \"Show suggestions\"", () => {
+    // react-aria-components' Button also gets an auto-generated
+    // aria-labelledby pointing at the field's <label> — which, per the ARIA
+    // accessible-name algorithm, takes precedence over aria-label for the
+    // COMPUTED name. So this asserts the attribute directly rather than
+    // querying by accessible name.
+    const { container } = render(<ComboBox label="Favorite fruit" options={FRUIT_OPTIONS} />);
+    const trigger = container.querySelector("button")!;
+    expect(trigger).toHaveAttribute("aria-label", "Show suggestions");
+  });
+
+  it("accepts a custom triggerLabel that replaces the default", () => {
+    const { container } = render(
+      <ComboBox label="Favorite fruit" options={FRUIT_OPTIONS} triggerLabel="Mostrar sugerencias" />,
+    );
+    const trigger = container.querySelector("button")!;
+    expect(trigger).toHaveAttribute("aria-label", "Mostrar sugerencias");
+  });
+
   it("disabled: the input is disabled and does not open", async () => {
     const user = userEvent.setup();
     render(<ComboBox label="Favorite fruit" options={FRUIT_OPTIONS} isDisabled />);

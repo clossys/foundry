@@ -40,6 +40,28 @@ describe("Pagination", () => {
     expect(onPageChange).toHaveBeenCalledWith(1);
   });
 
+  it("defaults the previous/next controls' accessible names to \"Previous page\"/\"Next page\"", () => {
+    render(<Pagination page={2} pageCount={4} onPageChange={() => {}} />);
+    expect(screen.getByRole("button", { name: "Previous page" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Next page" })).toBeInTheDocument();
+  });
+
+  it("accepts custom previousPageLabel/nextPageLabel that replace the defaults", () => {
+    render(
+      <Pagination
+        page={2}
+        pageCount={4}
+        onPageChange={() => {}}
+        previousPageLabel="Página anterior"
+        nextPageLabel="Página siguiente"
+      />,
+    );
+    expect(screen.getByRole("button", { name: "Página anterior" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Página siguiente" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Previous page" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Next page" })).not.toBeInTheDocument();
+  });
+
   it("disables the previous control on the first page, and the next control on the last page", () => {
     const { rerender } = render(<Pagination page={1} pageCount={4} onPageChange={() => {}} />);
     expect(screen.getByRole("button", { name: "Previous page" })).toBeDisabled();
