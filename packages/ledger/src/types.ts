@@ -98,6 +98,53 @@ export interface PublicationEntry {
    * the whole published thing.
    */
   contentBinding?: PolicyBinding;
+  /**
+   * A stable identity for the *thing that was published* — a page, a deck,
+   * a release note — that survives revisions. Optional (see `schema.ts`'s
+   * `"entry-content-id-shape"` for the shape check, and this package's
+   * README/CHANGELOG for why this is optional rather than required at a
+   * schema version): every existing `PublicationEntry` predates this field,
+   * and `validateEntry`/`validateLedger` must keep accepting them exactly
+   * as they are.
+   *
+   * This is the load-bearing field `checkJoinKeyCompleteness` (`join-key.ts`)
+   * exists to police. `id` and `contentBinding` both identify a specific
+   * *publish event* — `id` is opaque and unique per entry, `contentBinding`
+   * commits to that event's exact bytes — and neither is reusable across a
+   * redesign, since both are expected to change on every publish.
+   * `contentId` is the opposite: a caller mints it once for a real-world
+   * surface (e.g. `"page:pricing"`) and reuses the SAME string on every
+   * later entry describing a revision of that same surface. Without a
+   * field that is deliberately NOT freshly generated per publish, an
+   * external signal (a click, a conversion) can be attributed to *a*
+   * publication of *something*, but never compared across "the page before
+   * the redesign" and "the page after" — the exact comparison a join key
+   * exists to make possible. A caller that mints a fresh `contentId` on
+   * every publish produces entries that individually look complete (every
+   * field present) while remaining exactly as useless for that comparison
+   * as if the field were absent — see `checkJoinKeyCompleteness`'s
+   * `"join-key-identity-churn"` finding, the one check in this package that
+   * can tell the two apart.
+   */
+  contentId?: string;
+  /**
+   * ISO 8601 instant (same format as `publishedAt`) marking when this
+   * entry's live window closed — the moment a later revision of the same
+   * `contentId` took over, or the moment this surface was retired outright.
+   * Optional, and expected to often stay unset on the record that is
+   * CURRENTLY live: this package is append-only (see `append.ts`'s doc
+   * comment) with no `updateEntry`, so there is no way to go back and stamp
+   * `supersededAt` onto an entry already appended once its successor
+   * ships. A caller only sets this at append time — a rare case where the
+   * end of an artifact's life is already known when it is recorded (a
+   * time-boxed campaign page, or an honest historical backfill) — never as
+   * a later edit. For the far more common case (record now, retire later,
+   * date unknown), leave it unset: `checkJoinKeyCompleteness` derives which
+   * entries are still "live" from `contentId` + `publishedAt` ordering
+   * across the whole ledger, rather than requiring this field to be filled
+   * in retroactively.
+   */
+  supersededAt?: string;
 }
 
 /** A ledger is nothing more than an ordered list of entries — see `schema.ts`'s `validateLedger` for what makes one well-formed, and `append.ts` for the one sanctioned way to grow one. */

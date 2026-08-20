@@ -172,6 +172,35 @@ export function validateEntry(value: unknown, path = "(root)"): LedgerFinding[] 
     }
   }
 
+  // Both new (issue #376), both OPTIONAL — an existing entry recorded
+  // before this field existed must keep validating exactly as it did
+  // before. When present, shape only: is `contentId` a non-empty string,
+  // is `supersededAt` a full ISO 8601 UTC instant (the same format
+  // `publishedAt` above requires). Whether a `contentId` is actually
+  // *reused* across revisions of the same surface — the semantic property
+  // that makes a join key useful rather than merely well-shaped — is
+  // deliberately NOT this function's job: that comparison needs the whole
+  // ledger, not one entry in isolation, and lives in `join-key.ts`'s
+  // `checkJoinKeyCompleteness`, the same layering `checkLedgerDrift` and
+  // `checkAppendOnly` already hold to (shape here, semantics there).
+  if (value.contentId !== undefined && !isNonEmptyString(value.contentId)) {
+    findings.push({
+      rule: "entry-content-id-shape",
+      severity: "error",
+      message: `${path}.contentId, when present, must be a non-empty string, got ${JSON.stringify(value.contentId)}.`,
+      path: `${path}.contentId`,
+    });
+  }
+
+  if (value.supersededAt !== undefined && (!isNonEmptyString(value.supersededAt) || !ISO_INSTANT_RE.test(value.supersededAt))) {
+    findings.push({
+      rule: "entry-superseded-at-shape",
+      severity: "error",
+      message: `${path}.supersededAt, when present, must be an ISO 8601 UTC instant (e.g. "2026-08-07T14:03:00.000Z"), got ${JSON.stringify(value.supersededAt)}.`,
+      path: `${path}.supersededAt`,
+    });
+  }
+
   return findings;
 }
 
