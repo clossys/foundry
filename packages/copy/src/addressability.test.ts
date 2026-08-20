@@ -168,6 +168,151 @@ describe("copy-addressability — the six acceptance cases", () => {
   });
 });
 
+// ============================================================================
+// Regression coverage for issue #383's two precision defects.
+// ============================================================================
+
+describe("defect 1 (issue #383) — a destructuring default is misread as a JSX attribute, INVERTING the verdict on a correct construct", () => {
+  // CONSTRUCTED POSITIVE CONTROL, exactly as issue #383 demands: the SAME
+  // default value ("Pagination"), first as a correctly-overridable
+  // destructuring default (must NOT be flagged), then inlined directly
+  // onto the JSX element (must BE flagged) — proving this is a real
+  // discrimination between two different constructs, not merely "stopped
+  // detecting aria-label at all". Mirrors the real, previously-misread
+  // line verbatim: `blocks/Pagination.tsx:96`'s
+  // `"aria-label": ariaLabel = "Pagination",`.
+  it("a renamed destructuring default for aria-label is addressable — NOT flagged — while the identical value inlined onto the element IS", () => {
+    const addressable =
+      "export function Pagination({\n" +
+      "  page,\n" +
+      "  pageCount,\n" +
+      '  "aria-label": ariaLabel = "Pagination",\n' +
+      "  ...rest\n" +
+      "}: PaginationProps) {\n" +
+      "  return <nav aria-label={ariaLabel} {...rest}>{page}/{pageCount}</nav>;\n" +
+      "}\n";
+    const addressableResult = checkSource(addressable, "Pagination.tsx");
+    expect(addressableResult.verdict).toBe("satisfied");
+    expect(addressableResult.violations).toEqual([]);
+
+    const inlined =
+      "export function Pagination({ page, pageCount, ...rest }: PaginationProps) {\n" +
+      '  return <nav aria-label="Pagination" {...rest}>{page}/{pageCount}</nav>;\n' +
+      "}\n";
+    const inlinedResult = checkSource(inlined, "Pagination.tsx");
+    expect(inlinedResult.verdict).toBe("violated");
+    expect(inlinedResult.violations).toEqual([
+      expect.objectContaining({ position: "user-facing-attribute", attribute: "aria-label", raw: '"Pagination"' }),
+    ]);
+  });
+
+  // Same positive control, direct (non-renamed) key — `{ label = "Save" }`
+  // — proving the fix is not narrowly keyed to the renamed-string-key
+  // shape alone.
+  it("a direct (non-renamed) destructuring default is addressable — NOT flagged — while the identical value inlined onto the element IS", () => {
+    const addressable =
+      "export function Btn({ label = \"Save\" }: { label?: string }) {\n" +
+      "  return <button>{label}</button>;\n" +
+      "}\n";
+    expect(checkSource(addressable, "Btn.tsx").violations).toEqual([]);
+  });
+
+  // "Find every construct in that class, not just the one named" — the
+  // SAME misreading applies to placeholder/alt/title, not only aria-label
+  // (position 2b's own lookup shares attributeNameFor with position 2a's,
+  // and had the identical bug for all three).
+  it.each([
+    ["placeholder", "Search"],
+    ["alt", "A golden retriever"],
+    ["title", "Cover photo"],
+  ] as const)("a destructuring default for %s is addressable — NOT flagged — while the identical value inlined IS", (attr, value) => {
+    const addressable =
+      `export function Field({ ${attr} = "${value}" }: { ${attr}?: string }) {\n` +
+      `  return <input ${attr}={${attr}} />;\n` +
+      "}\n";
+    const addressableResult = checkSource(addressable, "Field.tsx");
+    expect(addressableResult.violations).toEqual([]);
+
+    const inlined = `export const Field = () => <input ${attr}="${value}" />;\n`;
+    const inlinedResult = checkSource(inlined, "Field.tsx");
+    expect(inlinedResult.violations).toEqual([
+      expect.objectContaining({ position: "user-facing-attribute", attribute: attr, raw: `"${value}"` }),
+    ]);
+  });
+
+  // A plain (non-destructured) parameter default — `function f(ariaLabel =
+  // "...")` — the other half of "every construct in that class": not a
+  // destructuring pattern at all, but the same `identifier = "..."`
+  // shape `attributeNameFor` cannot tell from a JSX attribute on its own.
+  it("a plain (non-destructured) parameter default is addressable — NOT flagged", () => {
+    const src = 'function describe(ariaLabel = "Pagination") {\n  return ariaLabel;\n}\n';
+    const { violations } = extractAddressabilityCandidates(src, "describe.ts");
+    expect(violations).toEqual([]);
+  });
+
+  // Every OTHER aria-*/data-* attribute still stays out of this gate's
+  // scope even for a destructuring default with an aria-shaped local
+  // binding name that ISN'T aria-label itself — guards against the fix
+  // accidentally widening scope rather than narrowing false positives.
+  it("a destructuring default whose local binding merely starts with 'aria' but isn't aria-label stays out of scope", () => {
+    const src = 'export function Row({ "aria-hidden": ariaHidden = "true" }: RowProps) {\n  return <tr aria-hidden={ariaHidden} />;\n}\n';
+    const { violations, unchecked } = extractAddressabilityCandidates(src, "Row.tsx");
+    expect(violations).toEqual([]);
+    expect(unchecked).toEqual([]);
+  });
+});
+
+describe("defect 2 (issue #383) — a className-shaped string outside attribute position inflates unclassifiable past what is genuinely ambiguous", () => {
+  // The two exact fixtures cited in issue #383.
+  it("a Tailwind class list assigned to a variable is not prose — excluded, not unchecked", () => {
+    const src = 'const baseStyles = "border-t border-line-base pt-xs";\n';
+    const { violations, unchecked } = extractAddressabilityCandidates(src, "Faq.ts");
+    expect(violations).toEqual([]);
+    expect(unchecked).toEqual([]);
+  });
+
+  it("a Tailwind class list sitting in an object-literal value is not prose — excluded, not unchecked", () => {
+    const src = 'const grid = { base: "grid-cols-1 tablet:grid-cols-2" };\n';
+    const { violations, unchecked } = extractAddressabilityCandidates(src, "FieldGroup.ts");
+    expect(violations).toEqual([]);
+    expect(unchecked).toEqual([]);
+  });
+
+  it("a variant-map object literal of class lists (the shape @vespeneventures/ui's Button/Badge/Banner use) is fully excluded", () => {
+    const src =
+      "const VARIANT_CLASSES: Record<string, string> = {\n" +
+      '  danger: "border-status-danger bg-status-danger-tint text-status-danger-text",\n' +
+      '  success: "border-status-success bg-status-success-tint text-status-success-text",\n' +
+      "};\n";
+    const { violations, unchecked } = extractAddressabilityCandidates(src, "Banner.tsx");
+    expect(violations).toEqual([]);
+    expect(unchecked).toEqual([]);
+  });
+
+  // Negative controls — proves the heuristic is conservative, not merely
+  // "any multi-word string assigned to a variable is now clean". Real
+  // prose, and a class list containing even ONE separator-free bare
+  // utility token, must both remain unchecked (never silently rounded
+  // down to a pass).
+  it("ordinary prose assigned to a variable is NOT swept in as a class list — stays unchecked", () => {
+    const src = 'const confirmMessage = "Are you sure you want to continue";\n';
+    const { unchecked } = extractAddressabilityCandidates(src, "confirm.ts");
+    expect(unchecked).toEqual([expect.objectContaining({ kind: "unclassified-string-position" })]);
+  });
+
+  it("short lowercase prose with no hyphenation is NOT swept in as a class list — stays unchecked", () => {
+    const src = 'const status = "low stock";\n';
+    const { unchecked } = extractAddressabilityCandidates(src, "status.ts");
+    expect(unchecked).toEqual([expect.objectContaining({ kind: "unclassified-string-position" })]);
+  });
+
+  it("a class list containing even one separator-free bare utility token stays unchecked — a stated, deliberate under-classification", () => {
+    const src = 'const baseStyles = "flex items-center gap-md";\n';
+    const { unchecked } = extractAddressabilityCandidates(src, "styles.ts");
+    expect(unchecked).toEqual([expect.objectContaining({ kind: "unclassified-string-position" })]);
+  });
+});
+
 describe("extractAddressabilityCandidates — supporting detail", () => {
   it("a JSX text node is always position 'markup-text', regardless of whether it happens to match some registered text elsewhere", () => {
     const { violations } = extractAddressabilityCandidates("export const P = () => <p>No results</p>;\n", "P.tsx");
