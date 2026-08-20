@@ -47,6 +47,20 @@
  * `record-file` path) falls through to the original, unchanged behavior
  * above — this addition is purely additive to the argv contract.
  *
+ * A third subcommand, `locale-coverage`, wires `checkLocaleCoverage`
+ * (`./locale-coverage.ts`) in with the identical shape again: parse argv,
+ * load a JSON registries file, run the pure check, print a report, pick an
+ * exit code — see `runLocaleCoverage`'s own doc comment below.
+ * `checkLocaleCoverage` already defines its own caller contract for turning
+ * a `LocaleCoverageReport` into this package's usual three-state exit code
+ * (see `LocaleCoverageReport.complete`'s own doc comment in
+ * `locale-coverage.ts`); `runLocaleCoverage` applies that mapping exactly,
+ * rather than inventing a second one. `main()` dispatches to it only when
+ * `argv[0]` is exactly `"locale-coverage"` — checked alongside
+ * `"voice-derivation-coverage"`, before either falls through to the
+ * original `record-file` handling — so this, too, is purely additive to the
+ * argv contract.
+ *
  * Exit codes — a contract a consumer's CI depends on, matching this
  * repository's `foundry-check` convention (`@vespeneventures/gates`):
  *
@@ -102,12 +116,14 @@ import {
   type AddressabilityScanResult,
 } from "./addressability.js";
 import { checkCopyTraceability, type CopyGateResult } from "./copy-gate.js";
+import { checkLocaleCoverage, type LocaleCoverageReport } from "./locale-coverage.js";
 import { readCopyRecord } from "./registry.js";
 import { scanCopySourceTree, type ScanResult } from "./scan.js";
 import { checkVoiceDerivationCoverage, type VoiceDerivationCoverageResult } from "./voice/index.js";
 
 const USAGE = `Usage: copy-check <record-file> [scan-dir] [options]
    or: copy-check voice-derivation-coverage <obligations-file> <brand-derived-rule-ids-file> [options]
+   or: copy-check locale-coverage <registries-file> <source-locale> [declared-locale...] [options]
 
   record-file    Path to a CopyRecord JSON file (see @vespeneventures/copy's README). Required.
   scan-dir       Directory to scan for user-facing string/template literals. Defaults to the current working directory.
@@ -123,6 +139,7 @@ Options:
 Exit codes: 0 = clean, 1 = at least one finding, 2 = could not run (bad input, missing/invalid record, nothing matched to scan, or every matched file failed to parse).
 
 Run "copy-check voice-derivation-coverage --help" for the second subcommand's own usage.
+Run "copy-check locale-coverage --help" for the third subcommand's own usage.
 `;
 
 const VOICE_DERIVATION_COVERAGE_USAGE = `Usage: copy-check voice-derivation-coverage <obligations-file> <brand-derived-rule-ids-file> [options]
@@ -136,6 +153,20 @@ Options:
 Checks, in both directions, whether obligations-file fully accounts for the rule ids brand-derived-rule-ids-file lists — see checkVoiceDerivationCoverage's own doc comment (src/voice/derivation-coverage.ts) for why this package cannot derive that list itself and must take it from the caller.
 
 Exit codes: 0 = satisfied, 1 = violated (a real coverage gap in either direction), 2 = indeterminate (could not run: bad input, missing/unreadable/unparseable file, zero obligations supplied, or zero brand-derived rule ids supplied).
+`;
+
+const LOCALE_COVERAGE_USAGE = `Usage: copy-check locale-coverage <registries-file> <source-locale> [declared-locale...] [options]
+
+  registries-file   Path to a JSON file: a plain object mapping each locale to its CopyRegistry (unknown at parse time, validated per-locale by checkLocaleCoverage itself) — e.g. {"en": {...}, "fr": {...}}. Required.
+  source-locale     The locale every other declared locale's coverage is measured against. Required.
+  declared-locale    One or more locales (source-locale included) that make up the full set this run must cover. When omitted, defaults to every key registries-file itself declares, in file order. Pass this explicitly to additionally assert that some OTHER locale — declared, but with no registry present in registries-file at all — is missing; checkLocaleCoverage reports that as its own finding rather than silently ignoring it.
+
+Options:
+  --help         Print this message and exit 0.
+
+Checks that every declared locale other than source-locale covers the same entry ids the source locale does, and reports missing coverage, orphaned entries, stale translations, and interpolation-parity gaps — see checkLocaleCoverage's own doc comment (src/locale-coverage.ts) for the full design.
+
+Exit codes — the exact mapping LocaleCoverageReport.complete's own doc comment states as its caller contract: 0 = every declared locale was evaluated and no error-severity finding was produced, 1 = every declared locale was evaluated but at least one error-severity finding was produced, 2 = could not run (bad input, missing/unreadable/unparseable registries-file, registries-file is not a JSON object, zero declared locales, or at least one declared locale was NOT actually evaluated — an entirely-absent, invalid, or mis-keyed target registry, or the source locale itself missing/invalid/empty).
 `;
 
 /** Exported for `cli.test.ts` — anything wrong with the arguments themselves always maps to exit code 2, never 1. */
@@ -435,6 +466,162 @@ function runVoiceDerivationCoverage(argv: string[]): number {
   return result.ok ? 0 : 1;
 }
 
+// ---------------------------------------------------------------------
+// locale-coverage — the third subcommand. See this file's top-of-file doc
+// comment and `./locale-coverage.ts` for the full design; everything below
+// is presentation only, the same split `main()` draws for
+// `checkCopyTraceability` and `runVoiceDerivationCoverage` draws for
+// `checkVoiceDerivationCoverage`.
+// ---------------------------------------------------------------------
+
+interface LocaleCoverageArgs {
+  registriesFile?: string;
+  sourceLocale?: string;
+  declaredLocales: string[];
+  help: boolean;
+}
+
+function parseLocaleCoverageArgs(argv: string[]): LocaleCoverageArgs {
+  let registriesFile: string | undefined;
+  let sourceLocale: string | undefined;
+  const declaredLocales: string[] = [];
+  let help = false;
+
+  for (const arg of argv) {
+    if (arg === "--help" || arg === "-h") {
+      help = true;
+      continue;
+    }
+    if (arg.startsWith("-")) {
+      throw new CliInputError(`unknown flag "${arg}"`);
+    }
+    if (registriesFile === undefined) {
+      registriesFile = arg;
+    } else if (sourceLocale === undefined) {
+      sourceLocale = arg;
+    } else {
+      declaredLocales.push(arg);
+    }
+  }
+
+  return { registriesFile, sourceLocale, declaredLocales, help };
+}
+
+type RegistriesReadResult = { ok: true; value: Record<string, unknown> } | { ok: false; detail: string };
+
+/**
+ * Reads and JSON-parses `registries-file`, then confirms the TOP-LEVEL shape
+ * is a plain object (never an array, never `null`, never a primitive) —
+ * `checkLocaleCoverage` itself validates each PER-LOCALE registry value via
+ * `validateCopyRegistryShape`, so this only needs to confirm the container
+ * this CLI reads off disk is the `Record<CopyLocale, unknown>` shape
+ * `checkLocaleCoverage` expects, never the per-locale contents. Mirrors
+ * `readJsonFile`'s never-throw discipline: any failure comes back as
+ * `{ ok: false, detail }`, never an exception.
+ */
+function readRegistriesFile(path: string): RegistriesReadResult {
+  const parsed = readJsonFile("registries-file", path);
+  if (!parsed.ok) return parsed;
+  const { value } = parsed;
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return {
+      ok: false,
+      detail: `registries-file "${path}" must be a JSON object mapping each locale to its CopyRegistry, got ${JSON.stringify(value)}.`,
+    };
+  }
+  return { ok: true, value: value as Record<string, unknown> };
+}
+
+function printLocaleCoverageReport(result: LocaleCoverageReport): void {
+  console.log(
+    `Source locale "${result.sourceLocale}": ${result.sourceEntryCount} entr${result.sourceEntryCount === 1 ? "y" : "ies"}. ` +
+      `${result.checkedLocales.length} of ${result.targetLocales.length} declared target locale(s) evaluated.`,
+  );
+  if (result.skippedLocales.length > 0) {
+    console.error(`${result.skippedLocales.length} declared locale(s) could NOT be evaluated:`);
+    for (const s of result.skippedLocales) console.error(`  ${s.locale}  [${s.reason}]`);
+  }
+  if (result.findings.length === 0) {
+    console.log("No findings.");
+    return;
+  }
+  console.log(`\n${result.findings.length} finding(s):`);
+  for (const f of result.findings) {
+    const where = f.locale ? (f.entryId ? `${f.locale}:${f.entryId}` : f.locale) : "(locale set)";
+    console.log(`  [${f.severity}] [${f.rule}] ${where}  ${f.message}`);
+  }
+}
+
+/**
+ * `locale-coverage`'s own `main`-equivalent: parse argv, load the
+ * registries file, run `checkLocaleCoverage`, print a report, pick an exit
+ * code — the identical shape `runVoiceDerivationCoverage` above uses for
+ * `checkVoiceDerivationCoverage`.
+ *
+ * `declared-locale` defaults to every key `registries-file` itself declares,
+ * in file order, when none are given on argv — the common case, where a
+ * project simply wants "check coverage across every locale I actually
+ * produced a registry for." Passing `declared-locale` explicitly is how a
+ * caller additionally asserts that some OTHER locale — one the project is
+ * SUPPOSED to cover but has no registry file for at all — is missing;
+ * `checkLocaleCoverage` reports that as its own `"target-locale-missing"`
+ * finding (and folds the run to `complete: false`) rather than this CLI
+ * silently narrowing the declared set to only what exists on disk.
+ *
+ * A registries-file that is missing/unreadable/unparseable/not-an-object
+ * never reaches `checkLocaleCoverage` at all: it is "could not run" (exit
+ * `2`), decided and reported here — exactly how `main()` above never calls
+ * `checkCopyTraceability` when `readCopyRecord` fails, and
+ * `runVoiceDerivationCoverage` never calls `checkVoiceDerivationCoverage`
+ * when either of its own files fails to load.
+ */
+function runLocaleCoverage(argv: string[]): number {
+  const args = parseLocaleCoverageArgs(argv);
+  if (args.help) {
+    console.log(LOCALE_COVERAGE_USAGE);
+    return 0;
+  }
+  if (!args.registriesFile) {
+    throw new CliInputError("registries-file is required");
+  }
+  if (!args.sourceLocale) {
+    throw new CliInputError("source-locale is required");
+  }
+
+  const registriesFile = resolve(args.registriesFile);
+  requireFile("registries-file", registriesFile);
+
+  console.log(`Registries file: ${registriesFile}`);
+  console.log(`Source locale: ${args.sourceLocale}`);
+
+  const registriesRead = readRegistriesFile(registriesFile);
+  if (!registriesRead.ok) {
+    console.error(`\nRegistries could not be loaded: ${registriesRead.detail}`);
+    console.error("Refusing to report a pass with no trustworthy registry set to check coverage against.");
+    return 2;
+  }
+
+  const declaredLocales =
+    args.declaredLocales.length > 0 ? args.declaredLocales : Object.keys(registriesRead.value);
+
+  console.log(`Declared locales: ${declaredLocales.length > 0 ? declaredLocales.join(", ") : "(none)"}`);
+
+  const result = checkLocaleCoverage(registriesRead.value, args.sourceLocale, declaredLocales);
+  printLocaleCoverageReport(result);
+
+  // The exact mapping LocaleCoverageReport.complete's own doc comment
+  // states as its caller contract (locale-coverage.ts): `!complete` — not
+  // every declared locale was actually evaluated, including "checked
+  // nothing" shapes like zero declared locales or a missing/empty source
+  // locale — is always `2`, never `0` and never conflated with a real `1`.
+  // A `complete` run with only warning-severity findings (e.g. every
+  // finding is `orphaned-entry`, `stale-entry`, or `provenance-missing`)
+  // is `0`; at least one error-severity finding (missing-entry,
+  // interpolation-missing/-extra, or a structural decline) is `1`.
+  if (!result.complete) return 2;
+  return result.findings.some((f) => f.severity === "error") ? 1 : 0;
+}
+
 /**
  * `copy-addressability`'s own accounting — a DIFFERENT gate from
  * traceability above (see `addressability.ts`'s top doc comment): is this
@@ -499,13 +686,17 @@ function printAddressabilityReport(result: AddressabilityGateResult): void {
  * `process.argv`.
  */
 export function main(argv: string[]): number {
-  // Subcommand dispatch: only `argv[0] === "voice-derivation-coverage"`
-  // exactly diverts to the second subcommand — see this file's top-of-file
-  // doc comment. Every other first argument, including any real
-  // `record-file` path an existing caller already passes, falls straight
-  // through to the original behavior below, unchanged.
+  // Subcommand dispatch: only `argv[0] === "voice-derivation-coverage"` or
+  // `argv[0] === "locale-coverage"` exactly diverts to the second/third
+  // subcommand — see this file's top-of-file doc comment. Every other first
+  // argument, including any real `record-file` path an existing caller
+  // already passes, falls straight through to the original behavior below,
+  // unchanged.
   if (argv[0] === "voice-derivation-coverage") {
     return runVoiceDerivationCoverage(argv.slice(1));
+  }
+  if (argv[0] === "locale-coverage") {
+    return runLocaleCoverage(argv.slice(1));
   }
 
   const args = parseArgs(argv);

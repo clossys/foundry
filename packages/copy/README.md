@@ -159,6 +159,27 @@ multi-locale work:
   this stays translation *governance*, never a competing translation
   runtime — the boundary below is unchanged by any of this.
 
+`copy-check locale-coverage <registries-file> <source-locale>
+[declared-locale...]` (see `cli.ts` — a THIRD subcommand of the existing
+`copy-check` bin, dispatched on an explicit `argv[0] === "locale-coverage"`,
+never by installed `bin` name or invoking path, the same dispatch shape
+`cli.ts` already uses for its `voice-derivation-coverage` and
+`addressability` subcommands) runs `checkLocaleCoverage` from the command
+line. `registries-file` is a JSON file: a plain object mapping each
+locale to its `CopyRegistry` (`{"en": {...}, "fr": {...}}`).
+`declared-locale` defaults to every key `registries-file` itself declares,
+in file order, when omitted; pass it explicitly to also assert that some
+OTHER locale — declared, but with no registry present in the file at
+all — is missing. Exit code is the exact mapping
+`LocaleCoverageReport.complete`'s own doc comment states as its caller
+contract: `0` when every declared locale was evaluated and no
+`"error"`-severity finding was produced (a `"warning"`-only run — orphaned
+entries, stale translations, missing provenance — still exits `0`), `1`
+when every declared locale was evaluated but at least one `"error"`-severity
+finding was produced, `2` when any declared locale was NOT actually
+evaluated (bad input, an unreadable/unparseable/non-object registries-file,
+zero declared locales, or a missing/invalid/empty source locale).
+
 ### Voice glossary vs. i18n glossary — two different axes, easy to conflate
 
 `@vespeneventures/copy/voice`'s `GlossaryEntry` (`term`/`status`/`reason`/

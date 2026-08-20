@@ -329,6 +329,154 @@ describe("main — voice-derivation-coverage — real runs", () => {
 });
 
 // -----------------------------------------------------------------------
+// locale-coverage — the third subcommand. Same hermetic-mkdtemp discipline
+// as the sections above: real files on disk, `main(argv)` called directly,
+// nothing spawned. `registriesFile` is a plain JSON object mapping each
+// locale to its CopyRegistry, matching `checkLocaleCoverage`'s own
+// `Readonly<Record<CopyLocale, unknown>>` signature.
+// -----------------------------------------------------------------------
+
+// A deliberately KNOWN-GOOD pair of locale registries — "en" (source) and
+// "fr" (target) cover the exact same two entry ids, with real, correct
+// translations. Obviously-fictional fixtures only, matching
+// locale-coverage.test.ts's own "Acme" convention. Never real copy.
+function validRegistries(): Record<string, unknown> {
+  return {
+    en: {
+      id: "acme-app",
+      locale: "en",
+      revision: "2026-08-01",
+      source: { kind: "consumer", reference: "editorial/revisions/1" },
+      entries: [
+        { id: "pagination.no-results", text: "No results found.", context: "search results page", status: "approved" },
+        { id: "dashboard.welcome", text: "Welcome back.", context: "dashboard header", status: "approved" },
+      ],
+    },
+    fr: {
+      id: "acme-app",
+      locale: "fr",
+      revision: "2026-08-01",
+      source: { kind: "consumer", reference: "editorial/revisions/1" },
+      entries: [
+        { id: "pagination.no-results", text: "Aucun résultat trouvé.", context: "search results page", status: "approved" },
+        { id: "dashboard.welcome", text: "Content de vous revoir.", context: "dashboard header", status: "approved" },
+      ],
+    },
+  };
+}
+
+function writeRegistries(value: unknown): string {
+  const path = join(recordDir, "registries.json");
+  writeFileSync(path, JSON.stringify(value));
+  return path;
+}
+
+describe("main — locale-coverage — argument handling", () => {
+  it("--help returns 0 without touching either path", () => {
+    expect(main(["locale-coverage", "--help"])).toBe(0);
+  });
+
+  it("throws CliInputError when registries-file is missing", () => {
+    expect(() => main(["locale-coverage"])).toThrow(CliInputError);
+  });
+
+  it("throws CliInputError when source-locale is missing", () => {
+    const registriesFile = writeRegistries(validRegistries());
+    expect(() => main(["locale-coverage", registriesFile])).toThrow(CliInputError);
+  });
+
+  it("throws CliInputError on an unknown flag", () => {
+    const registriesFile = writeRegistries(validRegistries());
+    expect(() => main(["locale-coverage", registriesFile, "en", "--bogus"])).toThrow(CliInputError);
+  });
+
+  it("throws CliInputError when registries-file does not exist", () => {
+    expect(() => main(["locale-coverage", join(recordDir, "nope.json"), "en"])).toThrow(CliInputError);
+  });
+});
+
+describe("main — locale-coverage — the third state: could not run", () => {
+  it("returns 2 when registries-file does not parse as JSON (never a silent pass)", () => {
+    const registriesFile = join(recordDir, "registries.json");
+    writeFileSync(registriesFile, "{ not json");
+    expect(main(["locale-coverage", registriesFile, "en"])).toBe(2);
+  });
+
+  it("returns 2 when registries-file is a JSON array, not an object", () => {
+    const registriesFile = writeRegistries(["en", "fr"]);
+    expect(main(["locale-coverage", registriesFile, "en"])).toBe(2);
+  });
+
+  it("returns 2 when registries-file is a JSON primitive, not an object", () => {
+    const registriesFile = writeRegistries("en");
+    expect(main(["locale-coverage", registriesFile, "en"])).toBe(2);
+  });
+
+  it("returns 2 when zero declared locales result (empty registries-file, no explicit declared-locale args) — checked nothing must never be 0", () => {
+    const registriesFile = writeRegistries({});
+    expect(main(["locale-coverage", registriesFile, "en"])).toBe(2);
+  });
+
+  it("returns 2 when source-locale is not among the (defaulted) declared locales at all", () => {
+    const registriesFile = writeRegistries(validRegistries());
+    expect(main(["locale-coverage", registriesFile, "de"])).toBe(2);
+  });
+
+  it("returns 2 when an explicitly declared locale has no registry in registries-file — a declared-but-entirely-absent target locale", () => {
+    const registriesFile = writeRegistries(validRegistries());
+    expect(main(["locale-coverage", registriesFile, "en", "en", "fr", "de"])).toBe(2);
+  });
+});
+
+describe("main — locale-coverage — real runs", () => {
+  it("returns 0 on a genuinely clean pass across matching locales (declared-locale defaults to the registries-file's own keys)", () => {
+    const registriesFile = writeRegistries(validRegistries());
+    expect(main(["locale-coverage", registriesFile, "en"])).toBe(0);
+  });
+
+  it("returns 0 with explicit declared-locale args naming exactly the same set", () => {
+    const registriesFile = writeRegistries(validRegistries());
+    expect(main(["locale-coverage", registriesFile, "en", "en", "fr"])).toBe(0);
+  });
+
+  // CONSTRUCTED POSITIVE CONTROL. Start from the same known-good fixture the
+  // "returns 0" case above proves is genuinely clean, then perturb it in
+  // exactly one way — delete one entry from the TARGET locale ("fr") that
+  // the SOURCE locale ("en") still has — and assert the gate reports that
+  // SPECIFIC finding kind (`locale-coverage:missing-entry`, naming the
+  // exact entry id and locale), not merely "exit code is nonzero." This is
+  // what distinguishes the gate actually detecting the perturbation from
+  // the test harness itself being broken (e.g. a registries-file that never
+  // parsed at all would also exit nonzero, for an entirely different
+  // reason).
+  it("a constructed missing-entry perturbation is reported by name, and drives exit 1", () => {
+    const registries = validRegistries();
+    const fr = registries.fr as { entries: Array<{ id: string }> };
+    fr.entries = fr.entries.filter((e) => e.id !== "dashboard.welcome");
+    const registriesFile = writeRegistries(registries);
+
+    const logSpy = vi.spyOn(console, "log");
+    const status = main(["locale-coverage", registriesFile, "en"]);
+    expect(status).toBe(1);
+
+    const printed = logSpy.mock.calls.map((c) => c.join(" ")).join("\n");
+    expect(printed).toMatch(/locale-coverage:missing-entry/);
+    expect(printed).toMatch(/dashboard\.welcome/);
+    expect(printed).toMatch(/fr/);
+  });
+
+  it("an orphaned-entry-only perturbation (warning severity) still returns 0 — a warning alone is not an error-severity finding", () => {
+    const registries = validRegistries();
+    const fr = registries.fr as { entries: Array<{ id: string; text: string; context: string; status: string }> };
+    fr.entries = [...fr.entries, { id: "legacy.retired-banner", text: "Bannière retirée.", context: "old banner", status: "approved" }];
+    const registriesFile = writeRegistries(registries);
+
+    const status = main(["locale-coverage", registriesFile, "en"]);
+    expect(status).toBe(0);
+  });
+});
+
+// -----------------------------------------------------------------------
 // Direct-path reachability: spawn the REAL compiled dist/cli.js, not the
 // exported main() this whole file otherwise calls directly.
 //
@@ -441,6 +589,43 @@ describe("main — direct-path reachability (real compiled dist/cli.js)", () => 
       writeFileSync(join(scanDir, "about.ts"), 'const rangeSummary = "Totally unregistered copy";\n');
       const result = runCompiledCli([recordFile, scanDir]);
       expect(result.status).toBe(1);
+    },
+    20_000,
+  );
+
+  it(
+    "locale-coverage: real exit 0 on a genuinely clean pass",
+    () => {
+      const registriesFile = writeRegistries(validRegistries());
+      const result = runCompiledCli(["locale-coverage", registriesFile, "en"]);
+      expect(result.status).toBe(0);
+      expect(result.stdout).toMatch(/Source locale "en"/);
+    },
+    20_000,
+  );
+
+  it(
+    "locale-coverage: real exit 1 on the same constructed missing-entry perturbation the in-process suite proves",
+    () => {
+      const registries = validRegistries();
+      const fr = registries.fr as { entries: Array<{ id: string }> };
+      fr.entries = fr.entries.filter((e) => e.id !== "dashboard.welcome");
+      const registriesFile = writeRegistries(registries);
+
+      const result = runCompiledCli(["locale-coverage", registriesFile, "en"]);
+      expect(result.status).toBe(1);
+      expect(result.stdout).toMatch(/locale-coverage:missing-entry/);
+      expect(result.stdout).toMatch(/dashboard\.welcome/);
+    },
+    20_000,
+  );
+
+  it(
+    "locale-coverage: real exit 2 when registries-file is empty and nothing was declared — checked nothing must never be 0",
+    () => {
+      const registriesFile = writeRegistries({});
+      const result = runCompiledCli(["locale-coverage", registriesFile, "en"]);
+      expect(result.status).toBe(2);
     },
     20_000,
   );
