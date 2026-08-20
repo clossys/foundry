@@ -3,9 +3,9 @@
 Upstream strategy machinery: mission, positioning, markets, audiences,
 roadmap, and brand, plus `facts` — the single place every number and named
 claim a product states publicly should trace back to. This package ships
-the schema, a typed reader, a facts-traceability gate, and a brand-coverage
-checker. It does not ship anyone's actual mission statement, market
-sizing, numbers, or brand attributes.
+the schema, a typed reader, a facts-traceability gate, a brand-coverage
+checker, and a direction-invalidation checker. It does not ship anyone's
+actual mission statement, market sizing, numbers, or brand attributes.
 
 ```bash
 npm install @vespeneventures/strategy
@@ -216,6 +216,16 @@ three brand files included: an absent `brand-essence.json`/
 present-and-invalid one flips `complete` to `false` and lands in
 `bundle.issues` exactly like a bad `mission.json` would.
 
+`DirectionEntity` deliberately does NOT get a file in this directory shape
+or a field on `StrategyBundle`. Unlike the brand layer, direction entities
+and their `reviewedAgainst` references are consumed directly by
+`checkDirectionCoverage`/`checkDirectionCurrency` (and the `direction`
+CLI subcommand below) as caller-supplied lists — the same seam
+`brandableSlots` already uses for `checkBrandCoverage` — because this
+package has no settled opinion about where a consumer keeps its direction
+history or its derived-artifact records across files that may not even
+live in this same directory. See "The direction layer" below.
+
 ### Why `facts.json` is the one required file
 
 Every other entity here is prose a human writes once and revises rarely.
@@ -397,6 +407,45 @@ above, because `checkBrandCoverage`'s own ternary is different:
 | `1` | A real coverage gap in either direction (`checkBrandCoverage`'s `reason: "coverage-gap"`). |
 | `2` | **Indeterminate** — bad input, a file missing/unreadable/unparseable/schema-invalid, an empty `brandable-slots-file`, or empty `derivations-file`. Never `0` and never `1`: an empty list either way means nothing was actually compared, which `checkBrandCoverage` fails closed on rather than reporting as a vacuous pass — see its own "Fails closed" doc comment (`src/brand-derivation.ts`). |
 
+### `strategy-facts-check direction` — the third subcommand
+
+`checkDirectionCoverage` and `checkDirectionCurrency` (below) are library
+functions, same gap as `checkBrandCoverage` before its own subcommand
+existed. This subcommand closes it for both at once — a single
+invocation runs both checks against the same two inputs:
+
+```bash
+npx strategy-facts-check direction ./direction-entities.json ./reviewed-against.json
+```
+
+```
+Usage: strategy-facts-check direction <direction-entities-file> <reviewed-against-file>
+
+  direction-entities-file  Path to a JSON file containing an array of DirectionEntity objects. Required.
+  reviewed-against-file    Path to a JSON file containing an array of strings: one entry per derived artifact, naming the DirectionEntity id that artifact's "reviewedAgainst" points at. Required.
+
+Options:
+  --help                   Print this message and exit 0.
+```
+
+`direction-entities-file` is the JSON serialization of a `DirectionEntity[]`
+(see "The direction layer" below), validated with `validateDirectionEntities`.
+`reviewed-against-file` is a plain JSON array of non-empty strings — the
+caller-supplied `reviewedAgainstRefs` list both checkers take, the same
+name-only seam `brandable-slots-file` above uses: this package has no fixed
+idea what a "derived artifact" is (a token slot, a piece of copy, a
+`BrandAttribute`, a roadmap item), so it never asks for one — only for the
+flat list of `reviewedAgainst` values a caller has already pulled off
+however many real derived artifacts it owns.
+
+Exit codes combine BOTH checkers' three-state results into one:
+
+| Code | Meaning |
+| --- | --- |
+| `0` | Both `checkDirectionCoverage` and `checkDirectionCurrency` hold on non-empty inputs. |
+| `1` | Either checker found a real violation — a coverage gap (`checkDirectionCoverage`'s `reason: "coverage-gap"`), or a dangling/stale `reviewedAgainst` (`checkDirectionCurrency`'s `reason: "currency-violation"`). |
+| `2` | **Indeterminate** — bad input, a file missing/unreadable/unparseable/schema-invalid, an empty `direction-entities-file`, or an empty `reviewed-against-file`. Takes precedence over `1`: if either checker could not run at all, the combined result is never a masked `1` from the checker that happened to run. |
+
 ## The brand layer
 
 Two entities, plus a derivation, plus a checker — the same shape the facts
@@ -501,6 +550,117 @@ The check itself runs in **both directions**, exactly like
 "zero things were checked" can never be mistaken for "everything checked
 out clean" by a caller that only glances at `ok`.
 
+## The direction layer
+
+Facts and direction have different physics. A `Fact` drifts — the value
+underneath it changes with nobody deciding anything, which is what
+`checkFactsTraceability` above exists to catch. Direction — vision,
+mission, positioning, market, audience — never drifts: nothing about a
+vision becomes false on its own. It is *changed*, deliberately, by
+someone who can say when and why. Drift detection is the wrong instrument
+for that; the right one is **derivation invalidation**: when a direction
+entity changes, nothing about it is wrong, but everything built on top of
+it is now unreviewed. See [issue #374](https://github.com/vespeneventures/foundry/issues/374)
+for the full proposal.
+
+```ts
+interface DirectionEntity {
+  id: string;               // stable id for THIS VERSION — never reused once superseded
+  kind: "mission" | "positioning" | "market" | "audience";
+  statement: string;        // the decision itself
+  rationale: string;        // why this decision, not some other
+  decidedOn: string;        // ISO date
+  supersedes?: string;      // id of the DirectionEntity version this one replaces
+  derivesFrom: string[];    // ids of other DirectionEntity versions this one was decided in light of
+}
+```
+
+### Why a new type, not four retrofitted ones
+
+`Mission`, `Positioning`, `Market`, and `Audience` are already this
+package's direction-bearing entities, so the instinct is to bolt the
+DAG-versioning envelope (`id`, `rationale`, `decidedOn`, `supersedes`,
+`derivesFrom`) directly onto each of them. That doesn't survive contact
+with their actual shapes: `Mission` already has both a `statement` AND a
+`vision`, `Positioning` is a six-field madlib with no single field that
+means "the statement", and `Market`/`Audience` name their content
+`description`, not `statement`. Retrofitting the same five fields onto
+four structurally incompatible shapes would mean either a breaking change
+to all four already-shipped, already-tested entities, or four
+independent, copy-pasted decisions about which existing field "counts" as
+the direction statement.
+
+`DirectionEntity` is instead one new, uniform envelope, and `kind` is what
+keeps it from being a parallel, disconnected system: its vocabulary is
+drawn directly from the four direction concepts this package already
+validates structurally — the same way `RoadmapItem.status` draws from
+`ROADMAP_STATUSES` instead of inventing an unrelated set of labels. A
+`DirectionEntity` names WHICH existing direction concept its `statement`
+is a dated, deliberate version of; the detailed, already-validated shape
+of an actual `Mission`/`Positioning`/`Market`/`Audience` document is
+untouched by this.
+
+### Versions, not mutation
+
+Revising a direction decision creates a NEW `DirectionEntity` with a NEW
+`id`, whose `supersedes` names the old one — the old entity is never
+mutated in place. "Current" is therefore a *computed* property (an id
+nothing else's `supersedes` names), not a flag anyone has to remember to
+flip:
+
+```ts
+const visionV1 = { id: "vision-v1", kind: "mission", statement: "…", rationale: "…", decidedOn: "2026-01-05", derivesFrom: [] };
+const visionV2 = { id: "vision-v2", kind: "mission", statement: "…", rationale: "…", decidedOn: "2026-07-01", derivesFrom: [], supersedes: "vision-v1" };
+// vision-v1 is now superseded; vision-v2 is current. Nothing about
+// vision-v1 itself changed.
+```
+
+### `checkDirectionCoverage` and `checkDirectionCurrency` — two checks, not one
+
+Both take the identical, caller-supplied, flat `reviewedAgainstRefs: string[]`
+— one entry per derived artifact's `reviewedAgainst` value. This package has
+no fixed idea what a "derived artifact" is (a token slot, a piece of copy, a
+`BrandAttribute`, a roadmap item), so neither function asks for one — the
+same name-only seam `checkBrandCoverage` already uses for `tokenSlots`/
+`voiceRules`.
+
+```ts
+import { checkDirectionCoverage, checkDirectionCurrency } from "@vespeneventures/strategy";
+
+const directionIds = entities.map((e) => e.id);
+const reviewedAgainstRefs = derivedArtifacts.map((a) => a.reviewedAgainst);
+
+const coverage = checkDirectionCoverage(directionIds, reviewedAgainstRefs);
+const currency = checkDirectionCurrency(entities, reviewedAgainstRefs);
+```
+
+1. **`checkDirectionCoverage(directionIds, reviewedAgainstRefs)`** — the
+   same two-directional shape `checkBrandCoverage` uses: every direction
+   entity has at least one derived artifact behind it (a vision nothing
+   derives from is a poster on a wall — `result.entitiesWithoutDerivedArtifact`
+   otherwise), and every derived artifact traces to a real direction entity
+   (`result.untraceableDerivedArtifacts` otherwise). Says nothing about
+   whether a resolved reference is still current.
+
+2. **`checkDirectionCurrency(entities, reviewedAgainstRefs)`** — the check
+   coverage cannot do. Every `reviewedAgainst` must name a version that
+   both EXISTS and is CURRENT (nothing else's `supersedes` names it). A
+   `reviewedAgainst` naming a real, existing, but SUPERSEDED entity passes
+   every presence check there is — the reference resolves cleanly — while
+   citing a decision nobody stands behind anymore. `checkDirectionCurrency`
+   reports that as a `"stale-review"` finding in `result.findings`, distinct
+   from `"dangling-reference"` (names no entity at all). This is the
+   separating case: a weaker tool that only checks "does this id exist" is
+   satisfied by exactly this input; `checkDirectionCurrency` is not.
+
+**Fails closed on both degenerate inputs, for both functions**, never a
+vacuous pass: an empty entity/id list (`reason: "no-entities-provided"`) or
+an empty `reviewedAgainstRefs` (`reason: "no-reviews-provided"`) is
+`ok: false`, and the checked counts (`entitiesChecked`,
+`derivedArtifactsChecked`/`reviewsChecked`) are always present — the same
+"zero things checked is never zero findings" discipline `checkBrandCoverage`
+already documents.
+
 ## API
 
 ### Entities (`schema.ts`)
@@ -523,7 +683,9 @@ them throw.
 | `ROADMAP_STATUSES` | const | `readonly RoadmapStatus[]` — `["now", "next", "later", "shipped"]`, in the order a new status would be added. Mirrors `@vespeneventures/policy`'s own `DIGEST_ALGORITHMS`. |
 | `validateBrandEssence(value)` | function | `{ statement }` — the irreducible one-line statement of what the brand is. |
 | `validateBrandAttribute(value)` / `validateBrandAttributes(value)` | function | One brand attribute / an array of them. `evidence: { basis: string; factRef?: string }` — see "The brand layer" above for why both fields exist. |
-| `Fact`, `Money`, `Mission`, `OperatingValue`, `Positioning`, `Market`, `Audience`, `RoadmapItem`, `RoadmapStatus`, `BrandEssence`, `BrandAttribute`, `BrandEvidence` | types | Plain TypeScript interfaces/unions — the shape each `validate*` function above checks and returns on success. |
+| `validateDirectionEntity(value)` / `validateDirectionEntities(value)` | function | One `DirectionEntity` / an array of them, additionally rejecting a duplicate `id`. `id`, `kind`, `statement`, `rationale`, `decidedOn`, optional `supersedes`, `derivesFrom: string[]` — see "The direction layer" above. |
+| `DIRECTION_ENTITY_KINDS` | const | `readonly DirectionEntityKind[]` — `["mission", "positioning", "market", "audience"]`. Mirrors `ROADMAP_STATUSES`'s own pattern. |
+| `Fact`, `Money`, `Mission`, `OperatingValue`, `Positioning`, `Market`, `Audience`, `RoadmapItem`, `RoadmapStatus`, `BrandEssence`, `BrandAttribute`, `BrandEvidence`, `DirectionEntity`, `DirectionEntityKind` | types | Plain TypeScript interfaces/unions — the shape each `validate*` function above checks and returns on success. |
 
 ### Validation primitives (`validation.ts`)
 
@@ -579,6 +741,19 @@ its own section above.
 | `BrandDerivation` | type | `{ attribute, tokenSlots: string[], voiceRules: string[], rationale }`. |
 | `BrandCoverageResult` | type | `{ ok, slotsChecked, derivationsChecked, slotsMissingDerivation: string[], unknownSlotsInDerivations: string[], reason? }`. |
 | `BrandCoverageFailureReason` | type | `"no-slots-provided" \| "no-derivations-provided" \| "coverage-gap"`. |
+
+### Direction invalidation (`direction-invalidation.ts`)
+
+| Export | Kind | Purpose |
+| --- | --- | --- |
+| `checkDirectionCoverage(directionIds, reviewedAgainstRefs)` | function | Pure. Checks, in both directions, whether `reviewedAgainstRefs` fully accounts for `directionIds`. Fails closed on either input being empty — see "The direction layer" above. Says nothing about currency. Never throws. |
+| `checkDirectionCurrency(entities, reviewedAgainstRefs)` | function | Pure. Checks whether every `reviewedAgainstRefs` entry names a `DirectionEntity.id` that both exists in `entities` and is current (nothing in `entities` supersedes it). Fails closed on either input being empty. The separating check presence alone cannot do. Never throws. |
+| `DirectionCoverageResult` | type | `{ ok, entitiesChecked, derivedArtifactsChecked, entitiesWithoutDerivedArtifact: string[], untraceableDerivedArtifacts: string[], reason? }`. |
+| `DirectionCoverageFailureReason` | type | `"no-entities-provided" \| "no-reviews-provided" \| "coverage-gap"`. |
+| `DirectionCurrencyResult` | type | `{ ok, entitiesChecked, reviewsChecked, findings: DirectionCurrencyFinding[], reason? }`. |
+| `DirectionCurrencyFinding` | type | `{ reviewedAgainst: string; kind: DirectionCurrencyFindingKind; supersededBy?: string }` — one per stale/dangling reference, never deduplicated (two artifacts citing the same stale version are two findings). |
+| `DirectionCurrencyFindingKind` | type | `"dangling-reference" \| "stale-review"`. |
+| `DirectionCurrencyFailureReason` | type | `"no-entities-provided" \| "no-reviews-provided" \| "currency-violation"`. |
 
 ## Non-goal: what this package never derives
 
