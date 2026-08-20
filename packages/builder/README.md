@@ -180,11 +180,13 @@ const report = aggregateObservations({
   expectedRepositories: ["org/repo-a", "org/repo-b", "org/repo-c"],
   bundles: [bundleA, bundleB], // org/repo-c never showed up
   now: new Date().toISOString(),
-  staleAfterMs: 24 * 60 * 60 * 1000, // 24h -- entirely the caller's own policy
+  staleAfterMs: 24 * 60 * 60 * 1000, // 24h -- how old one CONTRIBUTING BUNDLE may be
+  maxResultAgeMs: 60 * 60 * 1000, // 1h -- how old THIS RESULT may be before a later reader can no longer vouch for it
 });
 
 report.unobservedRepositories; // ["org/repo-c"] -- named, not a footnote
 report.overall.verdict; // "indeterminate" -- an unobserved repository can never read as clean
+report.computedAt; // echoes `now` -- carried so a persisted copy of `report` can be freshness-checked later
 ```
 
 A repository this aggregation expected to hear from but did not, a bundle
@@ -235,6 +237,53 @@ cannot sort into one of the four gap classifications above: that is a transport-
 gap, filed the same way `#255`'s narrowed-off remainder (scheduling,
 polling, further generalization of `liveStateSurface`) already is, rather
 than patched ad hoc inside this package.
+
+### The aggregate's own age is a different question from any bundle's (#340)
+
+`stale-observation` above answers "is any ONE contributing bundle too old to
+fold in." It cannot answer "is this AGGREGATION ITSELF too old to still be
+presented as current" — a plane that only re-runs this aggregation on a push
+to the repository that hosts it can go a long time between runs, and every
+one of its inputs can change in the meantime with nothing re-evaluating the
+aggregate to notice. `aggregateObservations` cannot detect that about its own
+output: `report.computedAt` always equals the `now` it was just called with,
+so no check inside that one call can ever observe its own result aging after
+the fact.
+
+That is why `report` also carries `computedAt` and `maxResultAgeMs` —
+so that a caller who **persists** `report` (a committed artifact, a status
+check, anything a different process reads later) can hand both back to
+`checkObservationAggregateFreshness`, alongside a FRESH `now` supplied at
+read time, to ask the question `aggregateObservations` cannot ask of its own
+output:
+
+```ts
+import { checkObservationAggregateFreshness } from "@vespeneventures/builder";
+
+// `storedReport` was read back from wherever the previous run persisted it --
+// not produced by the same call as the freshness check below.
+const freshness = checkObservationAggregateFreshness({
+  computedAt: storedReport.computedAt,
+  maxResultAgeMs: storedReport.maxResultAgeMs,
+  now: new Date().toISOString(), // the reader's own clock, at READ time
+});
+
+// A stale but otherwise-unanimous-pass stored report must never silently
+// stay satisfied: fold the stored verdict together with the freshness check
+// through any GateResult fold, including this package's own dependency,
+// `@vespeneventures/controller/gates`'s `foldGateResults` -- the same
+// combinator `aggregateObservations` already uses internally.
+const effective = freshness.verdict === "satisfied" ? storedReport.overall : freshness;
+```
+
+`checkObservationAggregateFreshness` reports `indeterminate` with reason
+`stale-aggregate-result` — never a restated `stale-observation`, because the
+two questions are different: `stale-observation` is about one bundle's age
+at aggregation time; `stale-aggregate-result` is about the aggregate's own
+age at whatever later moment it is actually read. A schedule (or any other
+input-driven trigger) makes this staleness less likely; this check is what
+makes it detectable, because it is the one thing that still works when that
+trigger has silently stopped firing.
 
 ## Manifest engine (formerly `@vespeneventures/provisioning`)
 
@@ -558,13 +607,17 @@ package's whole design exists to keep from reading as "looks fine."
 | `validateObservationBundleShape(raw)` | function | Offline structural validation of an untrusted bundle; returns `Finding[]`, never throws |
 | `parseObservationBundle(raw)` | function | Validates `raw` and narrows it to `ObservationBundle` on success, or returns findings on failure |
 | `aggregateObservations(input)` | function | Folds N already-fetched bundles into one plane-level `AggregateObservationsResult`; fetches nothing itself |
-| `OBSERVATION_AGGREGATE_INDETERMINATE_REASONS` | constant | The four named reasons a repository's aggregate status can be indeterminate for |
+| `checkObservationAggregateFreshness(input)` | function | Given a stored result's `computedAt`/`maxResultAgeMs` and a fresh `now`, reports whether this aggregate can still vouch for that result as current |
+| `OBSERVATION_AGGREGATE_INDETERMINATE_REASONS` | constant | The named reasons a repository's aggregate status can be indeterminate for |
+| `OBSERVATION_AGGREGATE_RESULT_INDETERMINATE_REASONS` | constant | The single reason (`stale-aggregate-result`) `checkObservationAggregateFreshness` can report -- distinct from the per-bundle reasons above |
 | `ObservationBundle` / `ObservationBundleRepository` / `ObservationBundleGateEntry` | type | One repository's self-observation and its parts |
 | `ParsedObservationBundle` / `InvalidObservationBundle` | type | What `parseObservationBundle` returns on success and on failure |
 | `WriteObservationBundleInput` | type | What `writeObservationBundle` accepts |
-| `AggregateObservationsInput` / `AggregateObservationsResult` | type | What `aggregateObservations` accepts and returns |
+| `AggregateObservationsInput` / `AggregateObservationsResult` | type | What `aggregateObservations` accepts and returns, including `computedAt` and `maxResultAgeMs` |
+| `CheckObservationAggregateFreshnessInput` | type | What `checkObservationAggregateFreshness` accepts |
 | `RepositoryObservationStatus` / `RepositoryObservationResult` | type | One expected repository's status, and the `GateResult` it carries |
-| `ObservationAggregateIndeterminateReason` | type | The four-member union `OBSERVATION_AGGREGATE_INDETERMINATE_REASONS` enumerates |
+| `ObservationAggregateIndeterminateReason` | type | The union `OBSERVATION_AGGREGATE_INDETERMINATE_REASONS` enumerates |
+| `ObservationAggregateResultIndeterminateReason` | type | The union `OBSERVATION_AGGREGATE_RESULT_INDETERMINATE_REASONS` enumerates |
 
 `./deployment`, `./deployment/vercel`, `./deployment/render`, and `./ci` are
 separate package subpaths, documented in their own sections above.

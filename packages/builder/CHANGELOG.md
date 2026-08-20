@@ -5,6 +5,30 @@ All notable changes to `@vespeneventures/builder` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - Unreleased
+
+### Added
+
+- **An aggregate can now vouch for its own freshness, or say it can't
+  (#340).** `stale-observation` already caught one contributing bundle
+  being too old; nothing previously let the AGGREGATE'S OWN computed
+  result be checked for its own age once persisted and read later by a
+  different process — the failure a schedule-less, push-triggered
+  aggregation actually hits when a contributing repository's publisher is
+  fixed and nothing re-evaluates the aggregate to notice.
+  `AggregateObservationsResult` now carries `computedAt` (echoing `now`)
+  and `maxResultAgeMs` (echoing the new required `input.maxResultAgeMs`).
+  The new `checkObservationAggregateFreshness(input)` takes a stored
+  result's `computedAt`/`maxResultAgeMs` plus a fresh `now` supplied at
+  read time, and reports `indeterminate` with the new, distinct reason
+  `stale-aggregate-result` (`OBSERVATION_AGGREGATE_RESULT_INDETERMINATE_REASONS`)
+  the moment it can no longer vouch for that result's age — never a
+  restated `stale-observation`, which answers a different question. **Breaking:**
+  `AggregateObservationsInput` gains a new required field,
+  `maxResultAgeMs`, matching `staleAfterMs`'s existing "explicit, never
+  defaulted" discipline. Under this repo's pre-1.0 semver policy a
+  breaking change to a 0.x package is a MINOR bump, not a MAJOR one.
+
 ## [0.3.1] - Unreleased
 
 ### Fixed

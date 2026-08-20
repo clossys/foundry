@@ -44,11 +44,45 @@
  * `liveStateSurface`) for the class of bug that lexical timestamp
  * comparison produces across UTC offsets.
  *
- * Zero I/O. Every bundle, the expected repository list, `now`, and
- * `staleAfterMs` are all supplied by the caller.
+ * THIS AGGREGATE'S OWN AGE IS A SEPARATE QUESTION FROM ANY BUNDLE'S (#340)
+ * ---------------------------------------------------------------------------
+ * `stale-observation` above answers "is any ONE contributing bundle too old
+ * to fold in." It cannot answer a different question: "is this AGGREGATION
+ * ITSELF -- the computed `overall` verdict -- too old to still be presented
+ * as current." Those are different failure modes with the same shape. A
+ * plane that only triggers this aggregation on a push to the repository that
+ * hosts it can go a long time between runs; every one of its inputs can
+ * change -- a contributing repository's publisher can start succeeding again
+ * after having failed -- with nothing re-evaluating the aggregate to notice.
+ * The result computed at the last run stays exactly as accurate as it was
+ * the moment it was computed, and exactly as wrong as it likes for every
+ * moment after, because nothing about `aggregateObservations` itself can
+ * ever detect that: `computedAt` always equals the `now` this function was
+ * called with, so no check inside this function can ever observe its own
+ * result aging.
+ *
+ * `AggregateObservationsResult` therefore carries `computedAt` (echoing
+ * `now`) and `maxResultAgeMs` (echoing `input.maxResultAgeMs`, the caller's
+ * own declared answer to "how long am I willing to vouch for this verdict
+ * without re-running") -- not because either is useful at the instant this
+ * function returns, but because a caller that PERSISTS this result (a
+ * committed artifact, a status check, anything read later by something
+ * other than this exact call) hands a later reader everything needed to ask
+ * the question this function cannot ask of itself. `checkObservationAggregate
+ * Freshness`, below, is that later check: given a stored result's
+ * `computedAt`/`maxResultAgeMs` and a FRESH `now` supplied at read time, it
+ * reports `indeterminate` (`"stale-aggregate-result"` -- a reason distinct
+ * from `stale-observation`, never a restated one, because the two questions
+ * are different) the moment the aggregate can no longer vouch for its own
+ * age. A schedule makes that staleness less likely; only this makes it
+ * detectable, because it is the one check that still works when the
+ * schedule itself has silently stopped firing.
+ *
+ * Zero I/O. Every bundle, the expected repository list, `now`,
+ * `staleAfterMs`, and `maxResultAgeMs` are all supplied by the caller.
  */
 
-import { foldGateResults, gateIndeterminate } from "@vespeneventures/controller/gates";
+import { foldGateResults, gateIndeterminate, gateSatisfied } from "@vespeneventures/controller/gates";
 import type { GateResult } from "@vespeneventures/controller/gates";
 import type { Finding } from "./types.js";
 import { parseObservationBundle } from "./observation-bundle.js";
@@ -60,9 +94,27 @@ export const OBSERVATION_AGGREGATE_INDETERMINATE_REASONS = Object.freeze([
   "duplicate-repository-identity",
   "stale-observation",
   "unattributed-bundle",
+  "unusable-timestamp",
 ] as const);
 
 export type ObservationAggregateIndeterminateReason = (typeof OBSERVATION_AGGREGATE_INDETERMINATE_REASONS)[number];
+
+/**
+ * The reason `checkObservationAggregateFreshness` reports when a computed
+ * `AggregateObservationsResult` is too old to vouch for. Deliberately its
+ * own single-entry vocabulary, separate from
+ * `OBSERVATION_AGGREGATE_INDETERMINATE_REASONS` above: those five name why
+ * one CONTRIBUTING BUNDLE could not be folded in at aggregation time;
+ * `"stale-aggregate-result"` names why the AGGREGATE'S OWN RESULT can no
+ * longer be presented as current, a question only askable later, at read
+ * time -- see the module header. Reusing `"stale-observation"` for this
+ * would be exactly the restated-stale-verdict outcome #340 calls out: a
+ * reader would not be able to tell "one bundle was old when this ran" from
+ * "this whole verdict is old now" from the reason string alone.
+ */
+export const OBSERVATION_AGGREGATE_RESULT_INDETERMINATE_REASONS = Object.freeze(["stale-aggregate-result", "unusable-timestamp"] as const);
+
+export type ObservationAggregateResultIndeterminateReason = (typeof OBSERVATION_AGGREGATE_RESULT_INDETERMINATE_REASONS)[number];
 
 /**
  * One repository's folded status: either the fold of its own bundle's
@@ -87,6 +139,19 @@ export interface AggregateObservationsInput {
   readonly now: string;
   /** How old (in milliseconds) a bundle's `producedAt` may be, relative to `now`, before it is stale. */
   readonly staleAfterMs: number;
+  /**
+   * How old (in milliseconds) this AGGREGATION's own computed result may
+   * become before it can no longer be presented as current -- carried
+   * through, unchanged, to `AggregateObservationsResult.maxResultAgeMs`.
+   * Distinct from `staleAfterMs`: that bounds one contributing bundle's age
+   * at aggregation time; this bounds the aggregate's OWN age at whatever
+   * later moment a persisted copy of this result is actually read -- see
+   * the module header and `checkObservationAggregateFreshness`, the
+   * function that later check is performed with. Required, not defaulted --
+   * this repository has no basis for guessing how long any particular
+   * caller is willing to trust a verdict it did not just compute.
+   */
+  readonly maxResultAgeMs: number;
 }
 
 export interface AggregateObservationsResult {
@@ -103,6 +168,21 @@ export interface AggregateObservationsResult {
   readonly repositories: readonly RepositoryObservationStatus[];
   /** The fold of every `repositories[].result`, via `foldGateResults`. Satisfied only when every expected repository was cleanly observed and satisfied. */
   readonly overall: RepositoryObservationResult;
+  /**
+   * When this result was computed -- echoes `input.now` verbatim, ISO 8601.
+   * A caller that persists this result (rather than consuming `overall`
+   * immediately) hands this field to `checkObservationAggregateFreshness`,
+   * later, alongside a fresh `now`, to ask the question this function
+   * itself cannot ask of its own output -- see the module header.
+   */
+  readonly computedAt: string;
+  /**
+   * Echoes `input.maxResultAgeMs` verbatim -- this result's own declared
+   * answer to "how long am I willing to be vouched for," carried alongside
+   * `computedAt` so a later reader of a persisted copy of this result never
+   * has to source that threshold from anywhere else out of band.
+   */
+  readonly maxResultAgeMs: number;
 }
 
 function extractRepositoryId(raw: unknown): string | undefined {
@@ -129,7 +209,7 @@ interface GroupedBundle {
  * the data this function exists to report on rather than crash over.
  */
 export function aggregateObservations(input: AggregateObservationsInput): AggregateObservationsResult {
-  const { expectedRepositories, bundles, now, staleAfterMs } = input;
+  const { expectedRepositories, bundles, now, staleAfterMs, maxResultAgeMs } = input;
 
   const seenExpected = new Set<string>();
   for (const repositoryId of expectedRepositories) {
@@ -147,6 +227,9 @@ export function aggregateObservations(input: AggregateObservationsInput): Aggreg
   }
   if (!Number.isFinite(staleAfterMs) || staleAfterMs < 0) {
     throw new Error(`aggregateObservations: "staleAfterMs" must be a non-negative finite number, got ${JSON.stringify(staleAfterMs)}.`);
+  }
+  if (!Number.isFinite(maxResultAgeMs) || maxResultAgeMs < 0) {
+    throw new Error(`aggregateObservations: "maxResultAgeMs" must be a non-negative finite number, got ${JSON.stringify(maxResultAgeMs)}.`);
   }
 
   const byRepository = new Map<string, GroupedBundle[]>();
@@ -209,6 +292,21 @@ export function aggregateObservations(input: AggregateObservationsInput): Aggreg
 
     const { bundle } = entry.parsed;
     const producedAtMs = Date.parse(bundle.producedAt);
+    // A bundle stamped in the future yields a NEGATIVE age, which slips under
+    // every staleness threshold and reports as fresh. The clock that produced
+    // it disagrees with the clock reading it, so this bundle's real age is not
+    // knowable here -- and "not knowable" is indeterminate, never fresh.
+    if (producedAtMs > nowMs) {
+      return {
+        repositoryId,
+        result: gateIndeterminate(
+          "unusable-timestamp",
+          `bundles[${entry.index}] for "${repositoryId}" reports producedAt ${bundle.producedAt}, which is after ` +
+            `"now" (${now}). Its age cannot be established, so it cannot be counted as a fresh observation. ` +
+            "This is a clock disagreement between producer and reader, not a stale bundle.",
+        ),
+      };
+    }
     const ageMs = nowMs - producedAtMs;
     if (ageMs > staleAfterMs) {
       return {
@@ -269,5 +367,92 @@ export function aggregateObservations(input: AggregateObservationsInput): Aggreg
     unattributedCount,
     repositories,
     overall,
+    computedAt: now,
+    maxResultAgeMs,
   };
+}
+
+/** What `checkObservationAggregateFreshness` accepts: a stored result's own freshness declaration, plus a fresh `now`. */
+export interface CheckObservationAggregateFreshnessInput {
+  /**
+   * The `computedAt` of a previously-computed `AggregateObservationsResult`
+   * -- typically read back from wherever the caller persisted that result,
+   * not from the same call that produced it (a check against its own
+   * `now` would trivially always pass).
+   */
+  readonly computedAt: string;
+  /**
+   * How old (in milliseconds) `computedAt` may be, relative to `now`,
+   * before this aggregate can no longer vouch for it -- typically the same
+   * result's own `maxResultAgeMs`.
+   */
+  readonly maxResultAgeMs: number;
+  /** The caller's own "now" AT READ TIME, ISO 8601. Never read from a clock inside this module -- see the module header. */
+  readonly now: string;
+}
+
+/**
+ * Answers the question `aggregateObservations` cannot ask of its own
+ * output: given a previously-computed result's `computedAt`/
+ * `maxResultAgeMs` and a fresh `now` supplied at read time, can this
+ * aggregate still vouch for that result as current?
+ *
+ * Returns `gateSatisfied(1)` when the result is within bound, and
+ * `gateIndeterminate("stale-aggregate-result", ...)` -- never
+ * `"stale-observation"`, see `OBSERVATION_AGGREGATE_RESULT_INDETERMINATE_
+ * REASONS`'s doc comment -- the moment it is not. A caller that wants the
+ * combined verdict (the stored `overall`, but never presented as current
+ * past this bound) folds this result together with the stored `overall`
+ * through `@vespeneventures/controller/gates`'s own `foldGateResults` --
+ * exactly the same combinator this module already uses internally, so a
+ * stale-but-otherwise-satisfied stored result folds to `indeterminate`
+ * rather than silently staying `satisfied`.
+ *
+ * Throws only on a caller precondition being violated directly (an
+ * unparseable `computedAt` or `now`, a negative `maxResultAgeMs`) -- the
+ * same discipline `aggregateObservations` holds its own preconditions to.
+ */
+export function checkObservationAggregateFreshness(
+  input: CheckObservationAggregateFreshnessInput,
+): GateResult<never, ObservationAggregateResultIndeterminateReason> {
+  const { computedAt, maxResultAgeMs, now } = input;
+
+  const computedAtMs = Date.parse(computedAt);
+  if (!Number.isFinite(computedAtMs)) {
+    throw new Error(`checkObservationAggregateFreshness: "computedAt" must be a parseable ISO 8601 instant, got ${JSON.stringify(computedAt)}.`);
+  }
+  const nowMs = Date.parse(now);
+  if (!Number.isFinite(nowMs)) {
+    throw new Error(`checkObservationAggregateFreshness: "now" must be a parseable ISO 8601 instant, got ${JSON.stringify(now)}.`);
+  }
+  if (!Number.isFinite(maxResultAgeMs) || maxResultAgeMs < 0) {
+    throw new Error(`checkObservationAggregateFreshness: "maxResultAgeMs" must be a non-negative finite number, got ${JSON.stringify(maxResultAgeMs)}.`);
+  }
+
+  // Same hole as the per-bundle check above, one level up: a result stamped in
+  // the future makes ageMs negative, which passes the maximum-age comparison
+  // and presents a verdict of unknown age as current. Named separately from
+  // staleness for the reason this module already gives for splitting these
+  // vocabularies -- an operator told "stale" goes looking for a scheduler, and
+  // an operator told "unusable-timestamp" goes looking for a clock.
+  if (computedAtMs > nowMs) {
+    return gateIndeterminate(
+      "unusable-timestamp",
+      `This aggregate result reports computedAt ${computedAt}, which is after "now" (${now}). Its age cannot be ` +
+        "established, so it cannot be presented as a current verdict. This is a clock disagreement between the " +
+        "writer and the reader, not a stale result.",
+    );
+  }
+
+  const ageMs = nowMs - computedAtMs;
+  if (ageMs > maxResultAgeMs) {
+    return gateIndeterminate(
+      "stale-aggregate-result",
+      `This aggregate result was computed at ${computedAt}, ${ageMs}ms before "now" (${now}) -- exceeds the ` +
+        `${maxResultAgeMs}ms maximum age this aggregate is willing to vouch for. Nothing has re-evaluated this ` +
+        "aggregate since it was computed, so it cannot be presented as a current verdict.",
+    );
+  }
+
+  return gateSatisfied(1);
 }
