@@ -34,6 +34,16 @@
  * lists, `1` a real coverage gap in either direction, `2` indeterminate —
  * either input list empty, or a file missing/unreadable/unparseable/
  * invalid. See `runBrandCoverage` below for the exact mapping.
+ *
+ * A third subcommand, `direction`, wires `checkDirectionCoverage` AND
+ * `checkDirectionCurrency` (`./direction-invalidation.ts`) in with the
+ * identical shape again: parse argv, load two JSON files, run both pure
+ * checks, print a combined report, pick a single exit code from the same
+ * 0/1/2 contract — see `runDirection`'s own doc comment below. Dispatched
+ * only when `argv[0]` is exactly `"direction"`, checked BEFORE the
+ * existing `parseArgs` call and alongside the `brand-coverage` check —
+ * every other first argument, including `brand-coverage` itself and any
+ * real `strategy-dir` path, still falls through unchanged.
  */
 
 import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
@@ -45,12 +55,20 @@ import {
   type BrandCoverageResult,
   type BrandDerivation,
 } from "./brand-derivation.js";
+import {
+  checkDirectionCoverage,
+  checkDirectionCurrency,
+  type DirectionCoverageResult,
+  type DirectionCurrencyResult,
+} from "./direction-invalidation.js";
 import { checkFactsTraceability, type FactsGateResult } from "./facts-gate.js";
 import { readStrategy, type StrategyBundle } from "./reader.js";
+import { validateDirectionEntities, type DirectionEntity } from "./schema.js";
 import { scanStrategyDirectory } from "./scan.js";
 
 const USAGE = `Usage: strategy-facts-check <strategy-dir> [scan-dir] [options]
    or: strategy-facts-check brand-coverage <derivations-file> <brandable-slots-file>
+   or: strategy-facts-check direction <direction-entities-file> <reviewed-against-file>
 
   strategy-dir   Directory containing facts.json (and the rest of the strategy bundle). Required.
   scan-dir       Directory to scan for prose/copy claims. Defaults to the current working directory.
@@ -60,7 +78,7 @@ Options:
 
 Exit codes: 0 = clean, 1 = at least one finding, 2 = could not run (bad input, missing/invalid facts.json, nothing matched to scan, or an unreadable directory).
 
-Run "strategy-facts-check brand-coverage --help" for the second subcommand's own usage.
+Run "strategy-facts-check brand-coverage --help" or "strategy-facts-check direction --help" for those subcommands' own usage.
 `;
 
 const BRAND_COVERAGE_USAGE = `Usage: strategy-facts-check brand-coverage <derivations-file> <brandable-slots-file>
@@ -74,6 +92,21 @@ Options:
 Checks, in both directions, whether derivations-file fully accounts for the slot names brandable-slots-file declares — see checkBrandCoverage's own doc comment (src/brand-derivation.ts, "THE CHECKER'S SEAM").
 
 Exit codes: 0 = satisfied, 1 = violated (a real coverage gap in either direction), 2 = indeterminate (could not run: bad input, missing/unreadable/unparseable/invalid file, zero brandable slots supplied, or zero derivations supplied).
+`;
+
+const DIRECTION_USAGE = `Usage: strategy-facts-check direction <direction-entities-file> <reviewed-against-file>
+
+  direction-entities-file  Path to a JSON file containing an array of DirectionEntity objects (see @vespeneventures/strategy's README, "The direction layer"). Required.
+  reviewed-against-file    Path to a JSON file containing an array of strings: one entry per derived artifact, naming the DirectionEntity id that artifact's "reviewedAgainst" points at. Required.
+
+Options:
+  --help                   Print this message and exit 0.
+
+Runs BOTH checkDirectionCoverage and checkDirectionCurrency against the same two inputs and reports a single combined result:
+  - checkDirectionCoverage: does every direction entity have at least one derived artifact behind it, and does every derived artifact trace to a real direction entity.
+  - checkDirectionCurrency: does every derived artifact's reviewedAgainst name a direction-entity version that is not just present, but CURRENT (not superseded) — the check presence alone cannot do. See checkDirectionCurrency's own doc comment (src/direction-invalidation.ts).
+
+Exit codes: 0 = both checks hold on non-empty inputs, 1 = either check found a real violation (a coverage gap, or a dangling/stale reviewedAgainst), 2 = indeterminate (could not run: bad input, missing/unreadable/unparseable/invalid file, zero direction entities supplied, or zero reviewedAgainst entries supplied).
 `;
 
 /** Exported for `cli.test.ts` — anything wrong with the arguments themselves always maps to exit code 2, never 1. */
@@ -327,6 +360,184 @@ function runBrandCoverage(argv: string[]): number {
   return result.ok ? 0 : 1;
 }
 
+// ---------------------------------------------------------------------
+// direction — the third subcommand. Same shape as `brand-coverage` above:
+// parse argv, load two JSON files, run the pure checks, print a report,
+// pick an exit code from the same 0/1/2 contract. Unlike `brand-coverage`,
+// TWO pure checkers run against the SAME pair of loaded inputs
+// (`checkDirectionCoverage` and `checkDirectionCurrency` — see
+// `direction-invalidation.ts`'s header comment for why they are two
+// functions, not one) and this subcommand reports a single combined exit
+// code across both.
+// ---------------------------------------------------------------------
+
+interface DirectionArgs {
+  entitiesFile?: string;
+  reviewedAgainstFile?: string;
+  help: boolean;
+}
+
+function parseDirectionArgs(argv: string[]): DirectionArgs {
+  let entitiesFile: string | undefined;
+  let reviewedAgainstFile: string | undefined;
+  let help = false;
+
+  for (const arg of argv) {
+    if (arg === "--help" || arg === "-h") {
+      help = true;
+      continue;
+    }
+    if (arg.startsWith("-")) {
+      throw new CliInputError(`unknown flag "${arg}"`);
+    }
+    if (entitiesFile === undefined) {
+      entitiesFile = arg;
+    } else if (reviewedAgainstFile === undefined) {
+      reviewedAgainstFile = arg;
+    } else {
+      throw new CliInputError(`unexpected extra argument "${arg}"`);
+    }
+  }
+
+  return { entitiesFile, reviewedAgainstFile, help };
+}
+
+type ReviewedAgainstReadResult = { ok: true; value: string[] } | { ok: false; detail: string };
+
+/** `reviewed-against-file` must be a JSON array of non-empty strings — same shape discipline `readBrandableSlots` applies to `brandable-slots-file`. Any other shape is "could not run", never a silently-empty list. */
+function readReviewedAgainst(path: string): ReviewedAgainstReadResult {
+  const parsed = readJsonFile("reviewed-against-file", path);
+  if (!parsed.ok) return parsed;
+  const { value } = parsed;
+  if (!Array.isArray(value) || !value.every((item) => typeof item === "string" && item.length > 0)) {
+    return {
+      ok: false,
+      detail: `reviewed-against-file "${path}" must be a JSON array of non-empty strings, got ${JSON.stringify(value)}.`,
+    };
+  }
+  return { ok: true, value };
+}
+
+function printDirectionCoverageReport(result: DirectionCoverageResult): void {
+  console.log(
+    `${result.entitiesChecked} direction entit${result.entitiesChecked === 1 ? "y" : "ies"} checked against ${result.derivedArtifactsChecked} reviewedAgainst reference(s) (coverage).`,
+  );
+  if (result.entitiesWithoutDerivedArtifact.length > 0) {
+    console.log(
+      `${result.entitiesWithoutDerivedArtifact.length} direction entit${result.entitiesWithoutDerivedArtifact.length === 1 ? "y" : "ies"} with no derived artifact:`,
+    );
+    for (const id of result.entitiesWithoutDerivedArtifact) console.log(`  ${id}`);
+  }
+  if (result.untraceableDerivedArtifacts.length > 0) {
+    console.log(`${result.untraceableDerivedArtifacts.length} reviewedAgainst reference(s) naming no known direction entity:`);
+    for (const ref of result.untraceableDerivedArtifacts) console.log(`  ${ref}`);
+  }
+  if (result.ok) {
+    console.log("Direction coverage: satisfied.");
+  } else if (result.reason === "coverage-gap") {
+    console.log("Direction coverage: violated.");
+  } else {
+    console.log(`Direction coverage: indeterminate (${result.reason}).`);
+  }
+}
+
+function printDirectionCurrencyReport(result: DirectionCurrencyResult): void {
+  console.log(
+    `${result.entitiesChecked} direction entit${result.entitiesChecked === 1 ? "y" : "ies"} checked against ${result.reviewsChecked} reviewedAgainst reference(s) (currency).`,
+  );
+  if (result.findings.length > 0) {
+    console.log(`${result.findings.length} stale/dangling reviewedAgainst reference(s):`);
+    for (const finding of result.findings) {
+      const detail = finding.kind === "stale-review" ? `superseded by "${finding.supersededBy}"` : "no such direction entity";
+      console.log(`  [${finding.kind}] ${finding.reviewedAgainst} — ${detail}`);
+    }
+  }
+  if (result.ok) {
+    console.log("Direction currency: satisfied.");
+  } else if (result.reason === "currency-violation") {
+    console.log("Direction currency: violated.");
+  } else {
+    console.log(`Direction currency: indeterminate (${result.reason}).`);
+  }
+}
+
+/**
+ * `direction`'s own `main`-equivalent: parse argv, load the two JSON
+ * files once, run BOTH `checkDirectionCoverage` and `checkDirectionCurrency`
+ * against the identical loaded inputs, print both reports, pick ONE
+ * combined exit code — the identical shape `runBrandCoverage` above uses
+ * for `checkBrandCoverage`, doubled because this subcommand wires two
+ * checkers instead of one.
+ *
+ * A file that is missing/unreadable/unparseable/schema-invalid never
+ * reaches either checker: it is "could not run" (exit `2`), decided and
+ * reported here, before either pure check function is ever called. Given
+ * clean input, both checkers run: if EITHER reports an indeterminate
+ * reason (nothing meaningful was compared by that checker), the combined
+ * result is `2`; otherwise if EITHER reports a real violation
+ * (`"coverage-gap"` or `"currency-violation"`), the combined result is
+ * `1`; only when both hold is the combined result `0`. `2` takes
+ * precedence over `1` so "could not fully check" is never masked by "the
+ * part that did run happened to pass".
+ */
+function runDirection(argv: string[]): number {
+  const args = parseDirectionArgs(argv);
+  if (args.help) {
+    console.log(DIRECTION_USAGE);
+    return 0;
+  }
+  if (!args.entitiesFile) {
+    throw new CliInputError("direction-entities-file is required");
+  }
+  if (!args.reviewedAgainstFile) {
+    throw new CliInputError("reviewed-against-file is required");
+  }
+
+  const entitiesFile = resolve(args.entitiesFile);
+  const reviewedAgainstFile = resolve(args.reviewedAgainstFile);
+  requireFile("direction-entities-file", entitiesFile);
+  requireFile("reviewed-against-file", reviewedAgainstFile);
+
+  console.log(`Direction entities file: ${entitiesFile}`);
+  console.log(`Reviewed-against file: ${reviewedAgainstFile}`);
+
+  const reviewedAgainstRead = readReviewedAgainst(reviewedAgainstFile);
+  if (!reviewedAgainstRead.ok) {
+    console.error(`\nReviewed-against references could not be loaded: ${reviewedAgainstRead.detail}`);
+    console.error("Refusing to report a pass with no trustworthy reviewedAgainst list to check against.");
+    return 2;
+  }
+
+  const entitiesJson = readJsonFile("direction-entities-file", entitiesFile);
+  if (!entitiesJson.ok) {
+    console.error(`\nDirection entities could not be loaded: ${entitiesJson.detail}`);
+    console.error("Refusing to report a pass with no trustworthy direction entities to check against.");
+    return 2;
+  }
+
+  const shape = validateDirectionEntities(entitiesJson.value);
+  if (!shape.ok) {
+    console.error(`\nDirection entities file "${entitiesFile}" is not a valid DirectionEntity[]:`);
+    for (const issue of shape.issues) console.error(`  ${issue.path}: ${issue.message}`);
+    console.error("Refusing to report a pass with no trustworthy direction entities to check against.");
+    return 2;
+  }
+  const entities: DirectionEntity[] = shape.value;
+  const directionIds = entities.map((entity) => entity.id);
+
+  const coverage = checkDirectionCoverage(directionIds, reviewedAgainstRead.value);
+  printDirectionCoverageReport(coverage);
+  console.log("");
+  const currency = checkDirectionCurrency(entities, reviewedAgainstRead.value);
+  printDirectionCurrencyReport(currency);
+
+  const coverageIndeterminate = !coverage.ok && coverage.reason !== "coverage-gap";
+  const currencyIndeterminate = !currency.ok && currency.reason !== "currency-violation";
+  if (coverageIndeterminate || currencyIndeterminate) return 2;
+  if (!coverage.ok || !currency.ok) return 1;
+  return 0;
+}
+
 /**
  * Exported (unlike a typical CLI `main`) so `cli.test.ts` can exercise the
  * whole argv-to-exit-code contract directly, against a real `mkdtemp` temp
@@ -336,14 +547,18 @@ function runBrandCoverage(argv: string[]): number {
  * `process.argv`.
  */
 export function main(argv: string[]): number {
-  // Subcommand dispatch: only `argv[0] === "brand-coverage"` exactly
-  // diverts to the second subcommand — see this file's top-of-file doc
-  // comment. Every other first argument, including any real `strategy-dir`
-  // path an existing caller already passes, falls straight through to the
-  // original behavior below, unchanged. Checked BEFORE `parseArgs` so no
+  // Subcommand dispatch: only `argv[0] === "brand-coverage"` or
+  // `argv[0] === "direction"` exactly diverts to the second/third
+  // subcommand — see this file's top-of-file doc comment. Every other
+  // first argument, including any real `strategy-dir` path an existing
+  // caller already passes, falls straight through to the original
+  // behavior below, unchanged. Checked BEFORE `parseArgs` so no
   // pre-existing argv shape can be reinterpreted.
   if (argv[0] === "brand-coverage") {
     return runBrandCoverage(argv.slice(1));
+  }
+  if (argv[0] === "direction") {
+    return runDirection(argv.slice(1));
   }
 
   const args = parseArgs(argv);
