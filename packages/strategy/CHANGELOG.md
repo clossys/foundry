@@ -3,6 +3,16 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.0] - 2026-08-19
+
+### Added
+
+- **`strategy-facts-check brand-coverage <derivations-file> <brandable-slots-file>`**: a second subcommand on the existing `strategy-facts-check` CLI, making `checkBrandCoverage` invocable without writing TypeScript against this package. Until now the facts gate was the only command this package shipped, and `checkBrandCoverage` — the brand-coverage checker — was reachable only as a library function. Mirrors `@vespeneventures/copy`'s `copy-check voice-derivation-coverage` subcommand shape exactly: dispatched only when `argv[0]` is exactly `"brand-coverage"`, checked BEFORE the existing argument parsing so every pre-existing caller's argv (including a real `strategy-dir` path) falls through unchanged. No second `bin` entry was added, and dispatch is never done on `basename(process.argv[1])` — every gate in this repository invokes CLIs by compiled path (e.g. `node packages/strategy/dist/cli.js`), so a basename check would always resolve to `cli.js` and silently never fire.
+
+  Preserves the name-only seam `checkBrandCoverage` is built on: `brandable-slots-file` is a plain JSON array of slot-name strings, supplied by the caller — this package still never imports `@vespeneventures/ui/tokens` and still ships **zero runtime dependencies**. `derivations-file` is a JSON `BrandDerivation[]`, validated with the existing `validateBrandDerivations`.
+
+  Exit codes map `checkBrandCoverage`'s own three-state result, not the facts-check gate's: `0` both directions hold on non-empty lists, `1` a real coverage gap in either direction, `2` indeterminate (bad input, a file missing/unreadable/unparseable/schema-invalid, or either input list empty — `checkBrandCoverage`'s own fail-closed behavior on a degenerate input, never conflated with `0` or `1`). See the README's new "`strategy-facts-check brand-coverage`" section.
+
 ## [0.2.3] - 2026-08-19
 
 ### Changed
