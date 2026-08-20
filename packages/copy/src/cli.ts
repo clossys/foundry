@@ -11,6 +11,16 @@
  * `--help`, same `CliInputError` split between "bad arguments" and
  * "ran, found something wrong".
  *
+ * A second subcommand, `voice-derivation-coverage`, wires
+ * `checkVoiceDerivationCoverage` (`./voice/derivation-coverage.ts`) in with
+ * the identical shape: parse argv, load two JSON files, run the pure check,
+ * print a report, pick an exit code from the same 0/1/2 contract — see
+ * `runVoiceDerivationCoverage`'s own doc comment below. `main()` dispatches
+ * to it only when `argv[0]` is exactly `"voice-derivation-coverage"`; any
+ * other first argument (including every existing caller's real
+ * `record-file` path) falls through to the original, unchanged behavior
+ * above — this addition is purely additive to the argv contract.
+ *
  * Exit codes — a contract a consumer's CI depends on, matching this
  * repository's `foundry-check` convention (`@vespeneventures/gates`):
  *
@@ -56,14 +66,21 @@
  * CLI flag without a second pass over this logic.
  */
 
-import { existsSync, realpathSync, statSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { checkCopyTraceability, type CopyGateResult } from "./copy-gate.js";
 import { readCopyRecord } from "./registry.js";
 import { scanCopySourceTree, type ScanResult } from "./scan.js";
+import {
+  checkVoiceDerivationCoverage,
+  parseVoiceRecord,
+  validateVoiceRecordShape,
+  type VoiceDerivationCoverageResult,
+} from "./voice/index.js";
 
 const USAGE = `Usage: copy-check <record-file> [scan-dir] [options]
+   or: copy-check voice-derivation-coverage <obligations-file> <voice-record-file> [options]
 
   record-file    Path to a CopyRecord JSON file (see @vespeneventures/copy's README). Required.
   scan-dir       Directory to scan for user-facing string/template literals. Defaults to the current working directory.
@@ -72,6 +89,21 @@ Options:
   --help         Print this message and exit 0.
 
 Exit codes: 0 = clean, 1 = at least one finding, 2 = could not run (bad input, missing/invalid record, nothing matched to scan, or every matched file failed to parse).
+
+Run "copy-check voice-derivation-coverage --help" for the second subcommand's own usage.
+`;
+
+const VOICE_DERIVATION_COVERAGE_USAGE = `Usage: copy-check voice-derivation-coverage <obligations-file> <voice-record-file> [options]
+
+  obligations-file    Path to a JSON file containing an array of voice rule id strings (the thing being checked FOR). Required.
+  voice-record-file   Path to a VoiceRecord JSON file (see @vespeneventures/copy/voice's README). Required.
+
+Options:
+  --help               Print this message and exit 0.
+
+Checks, in both directions, whether obligations-file fully accounts for the voice rule ids (glossary terms, claim ids, pattern ids) voice-record-file declares — see checkVoiceDerivationCoverage's own doc comment (src/voice/derivation-coverage.ts).
+
+Exit codes: 0 = satisfied, 1 = violated (a real coverage gap in either direction), 2 = indeterminate (could not run: bad input, missing/unreadable/unparseable/invalid file, zero obligations supplied, or zero voice rule ids declared in the record).
 `;
 
 /** Exported for `cli.test.ts` — anything wrong with the arguments themselves always maps to exit code 2, never 1. */
@@ -211,6 +243,174 @@ function printGateReport(result: CopyGateResult): void {
   }
 }
 
+// ---------------------------------------------------------------------
+// voice-derivation-coverage — the second subcommand. See this file's
+// top-of-file doc comment and `./voice/derivation-coverage.ts` for the
+// full design; everything below is presentation only, the same split
+// `main()` above draws for `checkCopyTraceability`.
+// ---------------------------------------------------------------------
+
+interface VoiceDerivationCoverageArgs {
+  obligationsFile?: string;
+  voiceRecordFile?: string;
+  help: boolean;
+}
+
+function parseVoiceDerivationCoverageArgs(argv: string[]): VoiceDerivationCoverageArgs {
+  let obligationsFile: string | undefined;
+  let voiceRecordFile: string | undefined;
+  let help = false;
+
+  for (const arg of argv) {
+    if (arg === "--help" || arg === "-h") {
+      help = true;
+      continue;
+    }
+    if (arg.startsWith("-")) {
+      throw new CliInputError(`unknown flag "${arg}"`);
+    }
+    if (obligationsFile === undefined) {
+      obligationsFile = arg;
+    } else if (voiceRecordFile === undefined) {
+      voiceRecordFile = arg;
+    } else {
+      throw new CliInputError(`unexpected extra argument "${arg}"`);
+    }
+  }
+
+  return { obligationsFile, voiceRecordFile, help };
+}
+
+type JsonReadResult = { ok: true; value: unknown } | { ok: false; detail: string };
+
+/**
+ * Reads and JSON-parses a file, never throwing: an I/O failure or a JSON
+ * syntax error is returned as `{ ok: false, detail }`, the same
+ * never-throw discipline `readCopyRecord` (`registry.ts`) holds to for the
+ * copy record it loads. Kept local to this file rather than promoted to a
+ * shared helper: `./voice` is deliberately zero-I/O (see `checker.ts`'s own
+ * doc comment, "Pure, no I/O"), so the one place in this package that reads
+ * a `VoiceRecord` off disk is this CLI, not the `voice` module itself.
+ */
+function readJsonFile(label: string, path: string): JsonReadResult {
+  let raw: string;
+  try {
+    raw = readFileSync(path, "utf8");
+  } catch (error) {
+    return { ok: false, detail: `cannot read ${label} "${path}": ${error instanceof Error ? error.message : String(error)}` };
+  }
+  try {
+    return { ok: true, value: JSON.parse(raw) };
+  } catch (error) {
+    return { ok: false, detail: `${label} "${path}" is not valid JSON: ${error instanceof Error ? error.message : String(error)}` };
+  }
+}
+
+type ObligationsReadResult = { ok: true; value: string[] } | { ok: false; detail: string };
+
+/** `obligations-file` must be a JSON array of non-empty strings — the plain rule-id list `checkVoiceDerivationCoverage` takes. Any other shape is "could not run", never a silently-empty obligation list. */
+function readObligations(path: string): ObligationsReadResult {
+  const parsed = readJsonFile("obligations-file", path);
+  if (!parsed.ok) return parsed;
+  const { value } = parsed;
+  if (!Array.isArray(value) || !value.every((item) => typeof item === "string" && item.length > 0)) {
+    return { ok: false, detail: `obligations-file "${path}" must be a JSON array of non-empty strings, got ${JSON.stringify(value)}.` };
+  }
+  return { ok: true, value };
+}
+
+function printVoiceDerivationCoverageReport(result: VoiceDerivationCoverageResult): void {
+  console.log(
+    `${result.obligationsChecked} obligation(s) checked against ${result.rulesChecked} voice rule id(s) declared in the record.`,
+  );
+  if (result.obligationsMissingFromRecord.length > 0) {
+    console.log(`${result.obligationsMissingFromRecord.length} obligation(s) name a rule id the record does not declare:`);
+    for (const id of result.obligationsMissingFromRecord) console.log(`  ${id}`);
+  }
+  if (result.recordRulesNotObliged.length > 0) {
+    console.log(`${result.recordRulesNotObliged.length} voice rule id(s) in the record are reached by no obligation:`);
+    for (const id of result.recordRulesNotObliged) console.log(`  ${id}`);
+  }
+  if (result.ok) {
+    console.log("Voice derivation coverage: satisfied.");
+  } else if (result.reason === "coverage-gap") {
+    console.log("Voice derivation coverage: violated.");
+  } else {
+    console.log(`Voice derivation coverage: indeterminate (${result.reason}).`);
+  }
+}
+
+/**
+ * `voice-derivation-coverage`'s own `main`-equivalent: parse argv, load the
+ * two JSON files, run `checkVoiceDerivationCoverage`, print a report, pick
+ * an exit code — the identical shape `main()` uses for `checkCopyTraceability`
+ * above, projected onto this gate's own three-state result.
+ *
+ * A file that is missing/unreadable/unparseable/schema-invalid never
+ * reaches `checkVoiceDerivationCoverage` at all: it is "could not run"
+ * (exit `2`), decided and reported here, before the pure check function is
+ * ever called — exactly how `main()` above never calls
+ * `checkCopyTraceability` when `readCopyRecord` fails. `checkVoiceDerivationCoverage`
+ * itself only ever sees a real, already-valid `VoiceRecord` and a real
+ * `string[]`; its own `"no-obligations-provided"`/`"no-rules-in-record"`
+ * indeterminate reasons are for a run that loaded cleanly but had nothing
+ * to compare.
+ */
+function runVoiceDerivationCoverage(argv: string[]): number {
+  const args = parseVoiceDerivationCoverageArgs(argv);
+  if (args.help) {
+    console.log(VOICE_DERIVATION_COVERAGE_USAGE);
+    return 0;
+  }
+  if (!args.obligationsFile) {
+    throw new CliInputError("obligations-file is required");
+  }
+  if (!args.voiceRecordFile) {
+    throw new CliInputError("voice-record-file is required");
+  }
+
+  const obligationsFile = resolve(args.obligationsFile);
+  const voiceRecordFile = resolve(args.voiceRecordFile);
+  requireFile("obligations-file", obligationsFile);
+  requireFile("voice-record-file", voiceRecordFile);
+
+  console.log(`Obligations file: ${obligationsFile}`);
+  console.log(`Voice record file: ${voiceRecordFile}`);
+
+  const obligationsRead = readObligations(obligationsFile);
+  if (!obligationsRead.ok) {
+    console.error(`\nObligations could not be loaded: ${obligationsRead.detail}`);
+    console.error("Refusing to report a pass with no trustworthy obligation list to check against.");
+    return 2;
+  }
+
+  const recordJson = readJsonFile("voice-record-file", voiceRecordFile);
+  if (!recordJson.ok) {
+    console.error(`\nVoice record could not be loaded: ${recordJson.detail}`);
+    console.error("Refusing to report a pass with no trustworthy voice record to check against.");
+    return 2;
+  }
+
+  const shapeFindings = validateVoiceRecordShape(recordJson.value);
+  if (shapeFindings.length > 0) {
+    console.error(`\nVoice record "${voiceRecordFile}" is not a valid VoiceRecord:`);
+    for (const f of shapeFindings) console.error(`  [${f.rule}] ${f.path ?? "(root)"}: ${f.message}`);
+    console.error("Refusing to report a pass with no trustworthy voice record to check against.");
+    return 2;
+  }
+  const record = parseVoiceRecord(recordJson.value);
+
+  const result = checkVoiceDerivationCoverage(obligationsRead.value, record);
+  printVoiceDerivationCoverageReport(result);
+
+  // Same fail-closed mapping `main()` uses above, restated for this gate's
+  // own three-state result: `indeterminate` (nothing meaningful was
+  // compared) is `2`, never `0` and never conflated with a real `1`
+  // violation.
+  if (!result.ok && result.reason !== "coverage-gap") return 2;
+  return result.ok ? 0 : 1;
+}
+
 /**
  * Exported (unlike a typical CLI `main`) so `cli.test.ts` can exercise the
  * whole argv-to-exit-code contract directly, against real `mkdtemp` temp
@@ -220,6 +420,15 @@ function printGateReport(result: CopyGateResult): void {
  * `process.argv`.
  */
 export function main(argv: string[]): number {
+  // Subcommand dispatch: only `argv[0] === "voice-derivation-coverage"`
+  // exactly diverts to the second subcommand — see this file's top-of-file
+  // doc comment. Every other first argument, including any real
+  // `record-file` path an existing caller already passes, falls straight
+  // through to the original behavior below, unchanged.
+  if (argv[0] === "voice-derivation-coverage") {
+    return runVoiceDerivationCoverage(argv.slice(1));
+  }
+
   const args = parseArgs(argv);
   if (args.help) {
     console.log(USAGE);

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0] - 2026-08-19
+
+### Added
+
+- **`checkVoiceDerivationCoverage`** (new `src/voice/derivation-coverage.ts`, re-exported from `./voice`): the voice half of `@vespeneventures/strategy`'s `checkBrandCoverage`, which this mirrors closely. `strategy`'s `BrandDerivation.voiceRules` names voice rule ids by plain string but `strategy` — zero runtime dependencies, no import of this package — has no way to check that half of a `BrandDerivation` against a real `VoiceRecord`. This closes that gap from the `copy` side: given a caller-supplied `obligations: string[]` (a flat list of voice rule ids, e.g. every `BrandDerivation.voiceRules` entry a consumer's own strategy declares) and a `VoiceRecord`, it checks BOTH directions — every obligation names a rule id the record actually declares (a glossary entry's `term`, a claim's `id`, or a pattern's `id`), and every rule id the record declares is reached by at least one obligation. Fails closed, exactly like `checkBrandCoverage`: `ok: false` with `reason: "no-obligations-provided"` or `reason: "no-rules-in-record"` on either degenerate empty input, never a vacuous pass; a real gap in either direction is `reason: "coverage-gap"`. Pure, no I/O, never throws.
+- **`copy-check voice-derivation-coverage <obligations-file> <voice-record-file>`**: a second subcommand on the existing `copy-check` CLI, wiring `checkVoiceDerivationCoverage` in with the same 0/1/2 exit-code contract the original subcommand already uses (0 satisfied, 1 a real coverage gap, 2 could not run — bad input, an unreadable/unparseable/schema-invalid file, zero obligations, or zero voice rule ids in the record). Dispatched only when `argv[0]` is exactly `"voice-derivation-coverage"`; every existing caller's argv is unaffected.
+
 ## [0.7.1] - 2026-08-19
 
 ### Changed

@@ -204,3 +204,130 @@ describe("main — JSX text nodes (issue #37)", () => {
     expect(main([recordFile, scanDir])).toBe(2);
   });
 });
+
+// -----------------------------------------------------------------------
+// voice-derivation-coverage — the second subcommand. Same hermetic-mkdtemp
+// discipline as the tests above: real files on disk, `main(argv)` called
+// directly, nothing spawned.
+// -----------------------------------------------------------------------
+
+// A minimal but complete, obviously-fictional VoiceRecord — "Acme" mirrors
+// the placeholder already used by this package's own voice/*.test.ts files.
+const validVoiceRecord = {
+  id: "acme-app",
+  rules: {
+    person: { description: "second-person, you-voice", forbiddenPronouns: ["we", "our", "us"] },
+    tense: { description: "present tense, no future promises", forbiddenMarkers: ["will", "shall"] },
+    formality: "neutral",
+    tone: ["direct"],
+  },
+  glossary: [{ term: "revolutionary", status: "forbidden", reason: "overused buzzword", caseSensitive: false }],
+  claims: [{ id: "fast-sync", text: "fastest sync in its class", matchPhrases: [], requiresSupport: true }],
+};
+
+function writeObligations(value: unknown): string {
+  const path = join(recordDir, "obligations.json");
+  writeFileSync(path, JSON.stringify(value));
+  return path;
+}
+
+function writeVoiceRecord(value: unknown): string {
+  const path = join(recordDir, "voice-record.json");
+  writeFileSync(path, JSON.stringify(value));
+  return path;
+}
+
+describe("main — voice-derivation-coverage — argument handling", () => {
+  it("--help returns 0 without touching either path", () => {
+    expect(main(["voice-derivation-coverage", "--help"])).toBe(0);
+  });
+
+  it("throws CliInputError when obligations-file is missing", () => {
+    expect(() => main(["voice-derivation-coverage"])).toThrow(CliInputError);
+  });
+
+  it("throws CliInputError when voice-record-file is missing", () => {
+    const obligationsFile = writeObligations(["revolutionary"]);
+    expect(() => main(["voice-derivation-coverage", obligationsFile])).toThrow(CliInputError);
+  });
+
+  it("throws CliInputError on an unknown flag", () => {
+    const obligationsFile = writeObligations(["revolutionary"]);
+    const voiceRecordFile = writeVoiceRecord(validVoiceRecord);
+    expect(() => main(["voice-derivation-coverage", obligationsFile, voiceRecordFile, "--bogus"])).toThrow(CliInputError);
+  });
+
+  it("throws CliInputError when obligations-file does not exist", () => {
+    const voiceRecordFile = writeVoiceRecord(validVoiceRecord);
+    expect(() => main(["voice-derivation-coverage", join(recordDir, "nope.json"), voiceRecordFile])).toThrow(
+      CliInputError,
+    );
+  });
+
+  it("throws CliInputError when voice-record-file does not exist", () => {
+    const obligationsFile = writeObligations(["revolutionary"]);
+    expect(() => main(["voice-derivation-coverage", obligationsFile, join(recordDir, "nope.json")])).toThrow(
+      CliInputError,
+    );
+  });
+});
+
+describe("main — voice-derivation-coverage — the third state: could not run", () => {
+  it("returns 2 when obligations-file does not parse as JSON", () => {
+    const obligationsFile = join(recordDir, "obligations.json");
+    writeFileSync(obligationsFile, "{ not json");
+    const voiceRecordFile = writeVoiceRecord(validVoiceRecord);
+    expect(main(["voice-derivation-coverage", obligationsFile, voiceRecordFile])).toBe(2);
+  });
+
+  it("returns 2 when obligations-file is not an array of strings", () => {
+    const obligationsFile = writeObligations({ not: "an array" });
+    const voiceRecordFile = writeVoiceRecord(validVoiceRecord);
+    expect(main(["voice-derivation-coverage", obligationsFile, voiceRecordFile])).toBe(2);
+  });
+
+  it("returns 2 when voice-record-file does not parse as JSON", () => {
+    const obligationsFile = writeObligations(["revolutionary"]);
+    const voiceRecordFile = join(recordDir, "voice-record.json");
+    writeFileSync(voiceRecordFile, "{ not json");
+    expect(main(["voice-derivation-coverage", obligationsFile, voiceRecordFile])).toBe(2);
+  });
+
+  it("returns 2 when voice-record-file fails schema validation", () => {
+    const obligationsFile = writeObligations(["revolutionary"]);
+    const voiceRecordFile = writeVoiceRecord({ id: "t" }); // missing required `rules`
+    expect(main(["voice-derivation-coverage", obligationsFile, voiceRecordFile])).toBe(2);
+  });
+
+  it("returns 2 when zero obligations are supplied, even against a real voice record — never a silent pass", () => {
+    const obligationsFile = writeObligations([]);
+    const voiceRecordFile = writeVoiceRecord(validVoiceRecord);
+    expect(main(["voice-derivation-coverage", obligationsFile, voiceRecordFile])).toBe(2);
+  });
+
+  it("returns 2 for an empty voice record (zero glossary/claim ids), even against real obligations", () => {
+    const obligationsFile = writeObligations(["plainspoken"]);
+    const voiceRecordFile = writeVoiceRecord({ ...validVoiceRecord, glossary: [], claims: [] });
+    expect(main(["voice-derivation-coverage", obligationsFile, voiceRecordFile])).toBe(2);
+  });
+});
+
+describe("main — voice-derivation-coverage — real runs", () => {
+  it("returns 0 when every obligation resolves and every rule is obliged", () => {
+    const obligationsFile = writeObligations(["revolutionary", "fast-sync"]);
+    const voiceRecordFile = writeVoiceRecord(validVoiceRecord);
+    expect(main(["voice-derivation-coverage", obligationsFile, voiceRecordFile])).toBe(0);
+  });
+
+  it("returns 1 when an obligation names a rule the record does not declare", () => {
+    const obligationsFile = writeObligations(["revolutionary", "fast-sync", "plainspoken"]);
+    const voiceRecordFile = writeVoiceRecord(validVoiceRecord);
+    expect(main(["voice-derivation-coverage", obligationsFile, voiceRecordFile])).toBe(1);
+  });
+
+  it("returns 1 when the record declares a rule no obligation reaches (direction 2)", () => {
+    const obligationsFile = writeObligations(["revolutionary"]);
+    const voiceRecordFile = writeVoiceRecord(validVoiceRecord);
+    expect(main(["voice-derivation-coverage", obligationsFile, voiceRecordFile])).toBe(1);
+  });
+});

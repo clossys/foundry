@@ -38,6 +38,13 @@ export type {
   VoiceCheckReport,
 } from "./checker.js";
 
+// The other half of the seam `@vespeneventures/strategy`'s
+// `checkBrandCoverage` documents but cannot itself close (it does not, and
+// cannot, import this package) — see `derivation-coverage.ts`'s top-of-file
+// doc comment for the full account of the gap this closes.
+export { checkVoiceDerivationCoverage } from "./derivation-coverage.js";
+export type { VoiceDerivationCoverageFailureReason, VoiceDerivationCoverageResult } from "./derivation-coverage.js";
+
 // The regex-safety gate itself — exported so a consumer can validate a
 // pattern (e.g. in an editor/CI step, before it ever reaches a VoiceRecord)
 // using the exact same logic schema.ts/checker.ts already run internally,

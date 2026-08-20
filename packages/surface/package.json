@@ -35,7 +35,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@vespeneventures/copy": "~0.7.0",
+    "@vespeneventures/copy": "~0.8.0",
     "@vespeneventures/ui": "~0.13.0"
   },
   "peerDependencies": {
