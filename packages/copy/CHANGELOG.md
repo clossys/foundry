@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.7.1] - 2026-08-19
+
+### Changed
+
+- **`prepublishOnly` now runs the name-collision check before building.** A hand-run `npm publish` from this package's directory previously built and published without `check-name-collision.mjs` ever executing — npm only runs `prepublishOnly` for a directory-type publish, and this manifest declared just `npm run build`. See [issue #273](https://github.com/vespeneventures/foundry/issues/273). No runtime behavior changed.
+
 ## [0.7.0] - 2026-08-17
 
 ### Changed

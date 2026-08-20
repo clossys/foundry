@@ -28,8 +28,18 @@ export { createNodeInventoryFileSystem } from "./node-fs.js";
 export { probeReachability, resolveReachability } from "./reachability.js";
 export type { Transport, ProbeOutcome, ReachabilityProbeOptions, ReachabilityVerdict } from "./reachability.js";
 
-export { judgeCurrency, upgradeSet, optOutGaps, computeCurrencyMetric } from "./currency.js";
-export type { PackageCurrency, JudgeCurrencyInput, UpgradeSetEntry, CurrencyMetric } from "./currency.js";
+export { judgeCurrency, upgradeSet, optOutGaps, computeCurrencyMetric, classifyCurrencyDistance, currencyVerdict, currencyVerdictToExitCode } from "./currency.js";
+export type {
+  PackageCurrency,
+  JudgeCurrencyInput,
+  UpgradeSetEntry,
+  CurrencyMetric,
+  CurrencySeverity,
+  CurrencyDistance,
+  CurrencyIndeterminateReason,
+  ClassifyCurrencyDistanceResult,
+  CurrencyVerdict,
+} from "./currency.js";
 
 export { loadAdmissionContract, evaluateAdmission } from "./admission.js";
 export type { AdmissionRule, AdmissionContract, AdmissionCandidate, AdmissionContext, AdmissionFinding } from "./admission.js";

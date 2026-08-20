@@ -6,7 +6,19 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
-import { bareName, checkPackageVisibility, fetchPackageVisibility, isBlindCredential, selectDeclaredPackages } from "./check-package-visibility.mjs";
+import {
+  bareName,
+  checkAllPackageVisibility,
+  checkPackageVisibility,
+  fetchPackageVisibility,
+  fetchRegistryPackages,
+  isBlindCredential,
+  isRetentionExpired,
+  normalizeRegistryName,
+  reconcileRegistryAgainstLifecycle,
+  selectDeclaredPackages,
+  selectRetentionDeclarations,
+} from "./check-package-visibility.mjs";
 
 // Two layers of coverage, matching this repo's existing split:
 //
@@ -347,10 +359,11 @@ function withDir(build) {
   }
 }
 
-function writeFixture(root, { lifecycle, visibility, scope = "@fixture" }) {
+function writeFixture(root, { lifecycle, visibility, retention = { schemaVersion: 1, packages: [] }, scope = "@fixture" }) {
   mkdirSync(join(root, "docs", "contracts"), { recursive: true });
   writeFileSync(join(root, "docs", "contracts", "package-lifecycle.json"), JSON.stringify(lifecycle, null, 2));
   writeFileSync(join(root, "docs", "contracts", "package-visibility.json"), JSON.stringify(visibility, null, 2));
+  writeFileSync(join(root, "docs", "contracts", "package-retention.json"), JSON.stringify(retention, null, 2));
   writeFileSync(join(root, "package-scope.json"), JSON.stringify({ scope, registry: "https://npm.pkg.github.com" }, null, 2));
 }
 
@@ -374,6 +387,21 @@ test("CLI: a missing lifecycle document exits 2", () => {
     const r = run([], { cwd: root, env: { GH_PACKAGES_TOKEN: "x" } });
     assert.equal(r.code, 2, `expected exit 2, got ${r.code}: ${r.out}`);
     assert.match(r.out, /no lifecycle document/);
+  });
+});
+
+test("CLI: a missing retention document exits 2 (credentialed mode only — --declarations-only never needs it)", () => {
+  withDir((root) => {
+    mkdirSync(join(root, "docs", "contracts"), { recursive: true });
+    writeFileSync(join(root, "docs", "contracts", "package-lifecycle.json"), JSON.stringify(lifecycleWith([{ name: "@fixture/a", status: "published" }])));
+    writeFileSync(join(root, "docs", "contracts", "package-visibility.json"), JSON.stringify(visibilityWith([{ name: "@fixture/a", intendedVisibility: "public" }])));
+    writeFileSync(join(root, "package-scope.json"), JSON.stringify({ scope: "@fixture" }));
+    const r = run([], { cwd: root, env: { GH_PACKAGES_TOKEN: "x" } });
+    assert.equal(r.code, 2, `expected exit 2, got ${r.code}: ${r.out}`);
+    assert.match(r.out, /no retention declaration document/);
+
+    const withFlag = run(["--declarations-only"], { cwd: root, env: { GH_PACKAGES_TOKEN: "" } });
+    assert.equal(withFlag.code, 0, `--declarations-only must not require a retention document it never reads, got ${withFlag.code}: ${withFlag.out}`);
   });
 });
 
@@ -480,4 +508,363 @@ test("CLI --declarations-only: a malformed document is still fatal (exit 2), nev
     const r = run(["--declarations-only"], { cwd: root, env: { GH_PACKAGES_TOKEN: "" } });
     assert.equal(r.code, 2, `expected exit 2, got ${r.code}: ${r.out}`);
   });
+});
+
+// =====================================================================
+// REGISTRY-DRIVEN RECONCILIATION (issue: the post-publish visibility check
+// reported OK over the package it had just published)
+//
+// Everything above tests the DECLARATION-driven half: it asks the registry
+// about names the declaration already handed it. These tests cover the
+// other direction — enumerating the registry's OWN package list and
+// reconciling it against the declaration — which is what catches a package
+// that is live and public on the registry while its lifecycle entry still
+// reads "incubating" (or is missing altogether). Same hermetic discipline:
+// every "response" is a plain object this file builds, never a real
+// network call.
+// =====================================================================
+
+/** A minimal paginated-list Response stand-in, with an optional Link header. */
+function listResponse(status, body, { link } = {}) {
+  return {
+    status,
+    ok: status >= 200 && status < 300,
+    async json() {
+      return body;
+    },
+    headers: { get: (name) => (name.toLowerCase() === "link" && link ? link : undefined) },
+  };
+}
+
+// -------------------------------------------------------------------- normalizeRegistryName
+
+test("normalizeRegistryName: a name already scoped is trusted as-is", () => {
+  assert.equal(normalizeRegistryName("@scope/pkg", "@other"), "@scope/pkg");
+});
+
+test("normalizeRegistryName: a bare name is prefixed with the supplied scope", () => {
+  assert.equal(normalizeRegistryName("pkg", "@scope"), "@scope/pkg");
+});
+
+// -------------------------------------------------------------------- fetchRegistryPackages
+
+test("fetchRegistryPackages: a single page from the org endpoint", async () => {
+  const fetchImpl = queueFetch([listResponse(200, [{ name: "a", visibility: "public" }, { name: "b", visibility: "private" }])]);
+  const outcome = await fetchRegistryPackages({ owner: OWNER, scope: "@scope", token: TOKEN, fetchImpl });
+  assert.deepEqual(outcome, { state: "found", packages: ["@scope/a", "@scope/b"] });
+});
+
+test("fetchRegistryPackages: follows Link header pagination across multiple pages", async () => {
+  const fetchImpl = queueFetch([
+    listResponse(200, [{ name: "a" }], { link: `<https://api.github.com/orgs/${OWNER}/packages?page=2>; rel="next"` }),
+    listResponse(200, [{ name: "b" }]),
+  ]);
+  const outcome = await fetchRegistryPackages({ owner: OWNER, scope: "@scope", token: TOKEN, fetchImpl });
+  assert.deepEqual(outcome, { state: "found", packages: ["@scope/a", "@scope/b"] });
+});
+
+test("fetchRegistryPackages: falls back to the user endpoint on an org 404", async () => {
+  const urls = [];
+  const fetchImpl = async (url) => {
+    urls.push(String(url));
+    return urls.length === 1 ? listResponse(404, {}) : listResponse(200, [{ name: "a" }]);
+  };
+  const outcome = await fetchRegistryPackages({ owner: OWNER, scope: "@scope", token: TOKEN, fetchImpl });
+  assert.deepEqual(outcome, { state: "found", packages: ["@scope/a"] });
+  assert.match(urls[0], /\/orgs\//);
+  assert.match(urls[1], /\/users\//);
+});
+
+test("fetchRegistryPackages: both the org and user list endpoints 404 is an ERROR, never an empty found — an enumeration miss must not read as a clean, empty registry", async () => {
+  const fetchImpl = queueFetch([listResponse(404, {}), listResponse(404, {})]);
+  const outcome = await fetchRegistryPackages({ owner: OWNER, scope: "@scope", token: TOKEN, fetchImpl });
+  assert.equal(outcome.state, "error");
+  assert.match(outcome.detail, /Refusing to report a reconciled set it never verified/);
+});
+
+test("fetchRegistryPackages: a non-404 HTTP error is an error", async () => {
+  const fetchImpl = queueFetch([listResponse(500, {})]);
+  const outcome = await fetchRegistryPackages({ owner: OWNER, scope: "@scope", token: TOKEN, fetchImpl });
+  assert.equal(outcome.state, "error");
+  assert.match(outcome.detail, /HTTP 500/);
+});
+
+test("fetchRegistryPackages: a non-array response body is an error, never iterated as if it were a package list", async () => {
+  const fetchImpl = queueFetch([listResponse(200, { message: "not a list" })]);
+  const outcome = await fetchRegistryPackages({ owner: OWNER, scope: "@scope", token: TOKEN, fetchImpl });
+  assert.equal(outcome.state, "error");
+  assert.match(outcome.detail, /non-array response/);
+});
+
+test("fetchRegistryPackages: a thrown network error is an error", async () => {
+  const fetchImpl = queueFetch([new TypeError("fetch failed")]);
+  const outcome = await fetchRegistryPackages({ owner: OWNER, scope: "@scope", token: TOKEN, fetchImpl });
+  assert.equal(outcome.state, "error");
+  assert.match(outcome.detail, /network error/);
+});
+
+// -------------------------------------------------------------------- reconcileRegistryAgainstLifecycle
+
+test("reconcileRegistryAgainstLifecycle: a registry package declared \"published\" reconciles cleanly — no finding", () => {
+  const lifecycle = lifecycleWith([{ name: "@scope/a", status: "published" }]);
+  const results = reconcileRegistryAgainstLifecycle(lifecycle, ["@scope/a"]);
+  assert.deepEqual(results, []);
+});
+
+test("reconcileRegistryAgainstLifecycle: a registry package declared \"incubating\" is a FINDING — the exact issue #343 shape", () => {
+  const lifecycle = lifecycleWith([{ name: "@scope/integrator", status: "incubating" }]);
+  const results = reconcileRegistryAgainstLifecycle(lifecycle, ["@scope/integrator"]);
+  assert.equal(results.length, 1);
+  assert.equal(results[0].status, "finding");
+  assert.match(results[0].detail, /status is "incubating", not "published"/);
+});
+
+test("reconcileRegistryAgainstLifecycle: a registry package with NO lifecycle entry at all is a FINDING", () => {
+  const results = reconcileRegistryAgainstLifecycle(lifecycleWith([]), ["@scope/undeclared"]);
+  assert.equal(results.length, 1);
+  assert.equal(results[0].status, "finding");
+  assert.match(results[0].detail, /has no entry at all/);
+});
+
+test("reconcileRegistryAgainstLifecycle: a retired registry package is a finding, not silently accepted", () => {
+  const lifecycle = lifecycleWith([{ name: "@scope/old", status: "retired", replacement: { name: "@scope/new", range: "^1.0.0" }, deprecatedOn: "2026-01-01", retiredOn: "2026-01-01", decision: "x", migration: "x" }]);
+  const results = reconcileRegistryAgainstLifecycle(lifecycle, ["@scope/old"]);
+  assert.equal(results.length, 1);
+  assert.equal(results[0].status, "finding");
+  assert.match(results[0].detail, /status is "retired"/);
+});
+
+// ---------------------------------------------------------- reconcileRegistryAgainstLifecycle: "deprecated" is a THIRD state
+//
+// A "deprecated" package remaining live on the registry is not automatically
+// wrong — that is the entire point of deprecation — but it is also not
+// automatically fine, because this repository's own history has deprecated
+// names that were deliberately removed from the registry. These cover the
+// three-way split: declared-and-unexpired (satisfied), undeclared
+// (violated), and declared-but-expired (violated) — never the
+// "declaration is wrong about reality" wording, which does not apply to any
+// of them.
+
+const DEPRECATED_ENTRY = { name: "@scope/legacy", status: "deprecated", replacement: { name: "@scope/new", range: "^1.0.0" }, deprecatedOn: "2026-01-01", decision: "x", migration: "x", forwardsToReplacement: false };
+
+test("reconcileRegistryAgainstLifecycle: a deprecated, live package with NO retention entry is a FINDING that says to declare or remove it — never 'the declaration is wrong'", () => {
+  const lifecycle = lifecycleWith([DEPRECATED_ENTRY]);
+  const results = reconcileRegistryAgainstLifecycle(lifecycle, ["@scope/legacy"], new Map());
+  assert.equal(results.length, 1);
+  assert.equal(results[0].status, "finding");
+  assert.match(results[0].detail, /no entry in .*package-retention\.json/);
+  assert.doesNotMatch(results[0].detail, /the declaration is wrong about reality/);
+});
+
+test("reconcileRegistryAgainstLifecycle: a deprecated, live package WITH an unexpired retention entry is SATISFIED (pass) — the intended state, not a violation", () => {
+  const lifecycle = lifecycleWith([DEPRECATED_ENTRY]);
+  const retentionByName = new Map([["@scope/legacy", { reason: "kept for existing consumers", reviewBy: "2099-01-01" }]]);
+  const results = reconcileRegistryAgainstLifecycle(lifecycle, ["@scope/legacy"], retentionByName, new Date("2026-06-01T00:00:00Z"));
+  assert.equal(results.length, 1);
+  assert.equal(results[0].status, "pass");
+  assert.match(results[0].detail, /deliberately retains it/);
+  assert.match(results[0].detail, /kept for existing consumers/);
+});
+
+test("reconcileRegistryAgainstLifecycle: a deprecated, live package whose retention entry has EXPIRED is a FINDING, not an indefinite pass", () => {
+  const lifecycle = lifecycleWith([DEPRECATED_ENTRY]);
+  const retentionByName = new Map([["@scope/legacy", { reason: "kept for existing consumers", reviewBy: "2026-01-01" }]]);
+  const results = reconcileRegistryAgainstLifecycle(lifecycle, ["@scope/legacy"], retentionByName, new Date("2026-06-01T00:00:00Z"));
+  assert.equal(results.length, 1);
+  assert.equal(results[0].status, "finding");
+  assert.match(results[0].detail, /expired on 2026-01-01/);
+});
+
+test("reconcileRegistryAgainstLifecycle: a retention entry reviewed on exactly today's calendar date has not yet expired", () => {
+  const lifecycle = lifecycleWith([DEPRECATED_ENTRY]);
+  const retentionByName = new Map([["@scope/legacy", { reason: "kept for existing consumers", reviewBy: "2026-06-01" }]]);
+  const results = reconcileRegistryAgainstLifecycle(lifecycle, ["@scope/legacy"], retentionByName, new Date("2026-06-01T23:59:00Z"));
+  assert.equal(results[0].status, "pass");
+});
+
+// -------------------------------------------------------------------- selectRetentionDeclarations
+
+test("selectRetentionDeclarations: a well-formed entry is included in the map, no findings", () => {
+  const { byName, findings, fatal } = selectRetentionDeclarations({ schemaVersion: 1, packages: [{ name: "@scope/legacy", reason: "kept for migration", reviewBy: "2099-01-01" }] });
+  assert.equal(fatal, null);
+  assert.equal(findings.length, 0);
+  assert.deepEqual(byName.get("@scope/legacy"), { reason: "kept for migration", reviewBy: "2099-01-01" });
+});
+
+test("selectRetentionDeclarations: a malformed document shape is fatal", () => {
+  const { fatal } = selectRetentionDeclarations({ packages: "not-an-array" });
+  assert.match(fatal, /expected \{ packages: \[\.\.\.\] \} shape/);
+});
+
+test("selectRetentionDeclarations: a missing reason, a missing reviewBy, and an invalid reviewBy are each reported as an error, not silently dropped", () => {
+  const { byName, findings } = selectRetentionDeclarations({
+    schemaVersion: 1,
+    packages: [
+      { name: "@scope/no-reason", reviewBy: "2099-01-01" },
+      { name: "@scope/no-review-by", reason: "x" },
+      { name: "@scope/bad-date", reason: "x", reviewBy: "not-a-date" },
+      { name: "@scope/impossible-date", reason: "x", reviewBy: "2026-02-30" },
+    ],
+  });
+  assert.equal(byName.size, 0);
+  assert.equal(findings.length, 4);
+  assert.ok(findings.every((f) => f.status === "error"));
+});
+
+test("selectRetentionDeclarations: a duplicate name is an error and only the first entry is kept", () => {
+  const { byName, findings } = selectRetentionDeclarations({
+    schemaVersion: 1,
+    packages: [
+      { name: "@scope/legacy", reason: "first", reviewBy: "2099-01-01" },
+      { name: "@scope/legacy", reason: "second", reviewBy: "2099-01-01" },
+    ],
+  });
+  assert.equal(byName.get("@scope/legacy").reason, "first");
+  assert.equal(findings.length, 1);
+  assert.match(findings[0].detail, /more than one entry/);
+});
+
+// -------------------------------------------------------------------- isRetentionExpired
+
+test("isRetentionExpired: a future reviewBy has not expired", () => {
+  assert.equal(isRetentionExpired("2099-01-01", new Date("2026-06-01T00:00:00Z")), false);
+});
+
+test("isRetentionExpired: a past reviewBy has expired", () => {
+  assert.equal(isRetentionExpired("2020-01-01", new Date("2026-06-01T00:00:00Z")), true);
+});
+
+// -------------------------------------------------------------------- checkAllPackageVisibility (the full two-directional orchestration)
+//
+// The required proofs, each exercising this one orchestration function
+// end-to-end with a different injected fetchImpl, never a real network
+// call: a declared-"incubating" package live on the registry (violated); a
+// fully reconciled set (satisfied); an unreachable registry (indeterminate);
+// and the two cases specific to the three-way "deprecated" distinction this
+// file adds — declared-and-unexpired retention (satisfied) and undeclared
+// retention (violated) for an otherwise identical deprecated-and-live
+// package, which is exactly the separation a weaker "some code path exists"
+// test would not catch.
+
+test("PROOF 1/3: a declared-\"incubating\" package live on the registry is a violation (code 1) — the exact bug this gate missed", async () => {
+  const lifecycle = lifecycleWith([
+    { name: "@scope/fine", status: "published" },
+    { name: "@scope/integrator", status: "incubating" }, // never reaches package-visibility.json's join at all
+  ]);
+  const visibility = visibilityWith([{ name: "@scope/fine", intendedVisibility: "public" }]);
+  const fetchImpl = async (url) => {
+    const target = String(url);
+    if (target.includes("/packages/npm/")) return jsonResponse(200, { visibility: "public" }); // per-package GET for "fine"
+    // the packages LIST endpoint used for registry enumeration — includes the
+    // just-published "integrator", which has no matching "published" entry
+    return listResponse(200, [{ name: "fine", visibility: "public" }, { name: "integrator", visibility: "public" }]);
+  };
+  const outcome = await checkAllPackageVisibility({ lifecycle, visibility, owner: OWNER, scope: "@scope", token: TOKEN, fetchImpl });
+  assert.equal(outcome.fatal, null);
+  assert.equal(outcome.code, 1, `expected code 1 (violated), got ${JSON.stringify(outcome)}`);
+  const integratorFinding = outcome.results.find((r) => r.package === "@scope/integrator");
+  assert.ok(integratorFinding, "the live-but-undeclared package must appear in results, not be silently absent");
+  assert.equal(integratorFinding.status, "finding");
+  assert.match(integratorFinding.detail, /status is "incubating", not "published"/);
+});
+
+test("PROOF 2/3: a fully reconciled set — every declared package's visibility matches, every registry package is declared published — is code 0", async () => {
+  const lifecycle = lifecycleWith([{ name: "@scope/a", status: "published" }]);
+  const visibility = visibilityWith([{ name: "@scope/a", intendedVisibility: "public" }]);
+  const fetchImpl = async (url) => {
+    const target = String(url);
+    if (target.includes("/packages/npm/")) return jsonResponse(200, { visibility: "public" });
+    return listResponse(200, [{ name: "a", visibility: "public" }]);
+  };
+  const outcome = await checkAllPackageVisibility({ lifecycle, visibility, owner: OWNER, scope: "@scope", token: TOKEN, fetchImpl });
+  assert.equal(outcome.fatal, null);
+  assert.equal(outcome.code, 0, `expected code 0 (satisfied), got ${JSON.stringify(outcome)}`);
+  assert.equal(outcome.registryPackagesEnumerated, 1);
+  assert.ok(outcome.results.every((r) => r.status === "pass" || r.status === "not-published"));
+});
+
+test("PROOF 3/3: the registry is unreachable for enumeration — indeterminate (fatal, code 2), never an empty set read as clean", async () => {
+  const lifecycle = lifecycleWith([{ name: "@scope/a", status: "published" }]);
+  const visibility = visibilityWith([{ name: "@scope/a", intendedVisibility: "public" }]);
+  const fetchImpl = async (url) => {
+    const target = String(url);
+    if (target.includes("/packages/npm/")) return jsonResponse(200, { visibility: "public" }); // declared-side lookup succeeds
+    return listResponse(500, {}); // but registry enumeration for reconciliation fails
+  };
+  const outcome = await checkAllPackageVisibility({ lifecycle, visibility, owner: OWNER, scope: "@scope", token: TOKEN, fetchImpl });
+  assert.equal(outcome.code, 2, `expected code 2 (indeterminate), got ${JSON.stringify(outcome)}`);
+  assert.match(outcome.fatal, /could not enumerate registry packages/);
+});
+
+test("PROOF 4/5: a deprecated, live package WITH a declared unexpired retention entry is satisfied (code 0) — the deliberate-migration-path case", async () => {
+  const lifecycle = lifecycleWith([{ name: "@scope/fine", status: "published" }, { ...DEPRECATED_ENTRY }]);
+  const visibility = visibilityWith([{ name: "@scope/fine", intendedVisibility: "public" }]);
+  const retention = { schemaVersion: 1, packages: [{ name: "@scope/legacy", reason: "kept for existing consumers migrating to @scope/new", reviewBy: "2099-01-01" }] };
+  const fetchImpl = async (url) => {
+    const target = String(url);
+    if (target.includes("/packages/npm/")) return jsonResponse(200, { visibility: "public" }); // per-package GET for "fine"
+    return listResponse(200, [{ name: "fine", visibility: "public" }, { name: "legacy", visibility: "public" }]);
+  };
+  const outcome = await checkAllPackageVisibility({ lifecycle, visibility, retention, owner: OWNER, scope: "@scope", token: TOKEN, fetchImpl, now: new Date("2026-06-01T00:00:00Z") });
+  assert.equal(outcome.fatal, null);
+  assert.equal(outcome.code, 0, `expected code 0 (satisfied), got ${JSON.stringify(outcome)}`);
+  const legacyResult = outcome.results.find((r) => r.package === "@scope/legacy");
+  assert.equal(legacyResult.status, "pass");
+});
+
+test("PROOF 5/5: a deprecated, live package with NO retention entry is a violation (code 1) — the exact class-B defect this file fixes", async () => {
+  const lifecycle = lifecycleWith([{ name: "@scope/fine", status: "published" }, { ...DEPRECATED_ENTRY }]);
+  const visibility = visibilityWith([{ name: "@scope/fine", intendedVisibility: "public" }]);
+  const retention = { schemaVersion: 1, packages: [] }; // nothing declares why @scope/legacy is still live
+  const fetchImpl = async (url) => {
+    const target = String(url);
+    if (target.includes("/packages/npm/")) return jsonResponse(200, { visibility: "public" }); // per-package GET for "fine"
+    return listResponse(200, [{ name: "fine", visibility: "public" }, { name: "legacy", visibility: "public" }]);
+  };
+  const outcome = await checkAllPackageVisibility({ lifecycle, visibility, retention, owner: OWNER, scope: "@scope", token: TOKEN, fetchImpl, now: new Date("2026-06-01T00:00:00Z") });
+  assert.equal(outcome.fatal, null);
+  assert.equal(outcome.code, 1, `expected code 1 (violated), got ${JSON.stringify(outcome)}`);
+  const legacyResult = outcome.results.find((r) => r.package === "@scope/legacy");
+  assert.equal(legacyResult.status, "finding");
+  assert.match(legacyResult.detail, /no entry in .*package-retention\.json/);
+  assert.doesNotMatch(legacyResult.detail, /the declaration is wrong about reality/);
+});
+
+test("checkAllPackageVisibility: a registry enumeration that returns zero while a declared lookup found a real answer is indeterminate, not a clean reconciled set", async () => {
+  const lifecycle = lifecycleWith([{ name: "@scope/a", status: "published" }]);
+  const visibility = visibilityWith([{ name: "@scope/a", intendedVisibility: "public" }]);
+  const fetchImpl = async (url) => {
+    const target = String(url);
+    if (target.includes("/packages/npm/")) return jsonResponse(200, { visibility: "public" });
+    return listResponse(200, []); // list enumeration implausibly empty despite a confirmed real package
+  };
+  const outcome = await checkAllPackageVisibility({ lifecycle, visibility, owner: OWNER, scope: "@scope", token: TOKEN, fetchImpl });
+  assert.equal(outcome.code, 2);
+  assert.match(outcome.fatal, /cannot be trusted/);
+});
+
+test("checkAllPackageVisibility: a blind declared-side credential is still indeterminate even though registry enumeration is never reached", async () => {
+  const names = ["@scope/a", "@scope/b", "@scope/c"];
+  const lifecycle = lifecycleWith(names.map((name) => ({ name, status: "published" })));
+  const visibility = visibilityWith(names.map((name) => ({ name, intendedVisibility: "public" })));
+  let listCalls = 0;
+  const fetchImpl = async (url) => {
+    const target = String(url);
+    if (target.includes("/packages/npm/")) return jsonResponse(404, {});
+    listCalls += 1;
+    return listResponse(200, []);
+  };
+  const outcome = await checkAllPackageVisibility({ lifecycle, visibility, owner: OWNER, scope: "@scope", token: TOKEN, fetchImpl });
+  assert.equal(outcome.code, 2);
+  assert.match(outcome.fatal, /GH_PACKAGES_TOKEN that has lost read:packages access/);
+  assert.equal(listCalls, 0, "a blind declared-side credential must short-circuit before registry enumeration is ever attempted");
+});
+
+// -------------------------------------------------------------------- CLI: the real contract files, with the registry-enumeration step also present
+
+test("CLI: this repository's own real contract files still exit 2 before any network call, with the registry step wired in", () => {
+  const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+  const r = run([], { cwd: repoRoot, env: { GH_PACKAGES_TOKEN: "" } });
+  assert.equal(r.code, 2, `expected exit 2 (no token), got ${r.code}: ${r.out}`);
+  assert.match(r.out, /GH_PACKAGES_TOKEN is not set/);
 });

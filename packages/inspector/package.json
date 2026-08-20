@@ -1,6 +1,6 @@
 {
   "name": "@vespeneventures/inspector",
-  "version": "0.1.9",
+  "version": "0.1.11",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -61,7 +61,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "prepublishOnly": "npm run build",
+    "prepublishOnly": "node ../../scripts/check-name-collision.mjs . && npm run build",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run"
   },

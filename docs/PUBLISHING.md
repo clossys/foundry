@@ -378,6 +378,18 @@ targets. After their replacement version has passed registry qualification,
 migrate to the corresponding `@vespeneventures/controller` subpath. Do not
 unpublish these names: the compatibility wrapper remains the migration path.
 
+A deprecated name deliberately kept live on the registry this way must carry
+a matching entry in `docs/contracts/package-retention.json` (`name`,
+`reason`, `reviewBy`) — `scripts/check-package-visibility.mjs`'s
+registry-reconciliation half treats a live `"deprecated"` package with no
+retention entry, or one whose `reviewBy` has passed, as a finding: either
+renew the entry after review, or actually remove the package from the
+registry. Not every deprecated name in this repository's history stayed
+live — some were deliberately removed — so the gate cannot infer "deprecated
+and live" as automatically fine; it has to be declared, the same way
+`package-visibility.json` declares intended visibility rather than letting
+the gate assume one.
+
 GitHub Packages currently rejects `npm deprecate` metadata writes for this
 registry (including explicit versions with the job-scoped `packages: write`
 token). The manual **Deprecate legacy packages** workflow is retained for

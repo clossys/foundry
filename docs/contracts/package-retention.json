@@ -1,0 +1,31 @@
+{
+  "$comment": "Declares which \"deprecated\" docs/contracts/package-lifecycle.json packages are DELIBERATELY still live on the registry, and why. A deprecated package remaining installable is not automatically wrong -- that is the entire point of deprecation: existing consumers keep resolving it while new adoption is steered at the replacement -- but it must be a declared decision, not silent drift indistinguishable from a package nobody remembered to unpublish. See scripts/check-package-visibility.mjs, which joins this file against the registry's own package list. A \"deprecated\" package live on the registry with no entry here, or with an entry whose reviewBy date has passed, is a gate finding: either declare (or renew) the retention, or remove the package from the registry. Same reason+reviewBy shape as packages/controller's dependency-scope allowlist (see its own doc comment) -- a standing exemption with no expiry is the same failure as an absence with no declared reason, just wearing the other sign.",
+  "schemaVersion": 1,
+  "packages": [
+    {
+      "name": "@vespeneventures/policy",
+      "reason": "Deprecated into @vespeneventures/controller's ./policy subpath per docs/DECISIONS.md#9-recutting-the-workspace-surface-into-six-job-shaped-packages. Kept live so a consumer already pinned to a published policy version keeps resolving it while migrating.",
+      "reviewBy": "2026-11-18"
+    },
+    {
+      "name": "@vespeneventures/governance",
+      "reason": "Deprecated into @vespeneventures/controller (root plus ./catalog, ./gates, ./release, ./repository, ./review, ./artifacts, ./cleanup, ./composition) per docs/DECISIONS.md#9-recutting-the-workspace-surface-into-six-job-shaped-packages. Kept live so a consumer already pinned to a published governance version keeps resolving it while migrating.",
+      "reviewBy": "2026-11-18"
+    },
+    {
+      "name": "@vespeneventures/secrets",
+      "reason": "Deprecated into @vespeneventures/locksmith's root (alongside the custody/rotation/revocation/distribution verbs it lacked) per docs/DECISIONS.md#9-recutting-the-workspace-surface-into-six-job-shaped-packages. Kept live so a consumer already pinned to a published secrets version keeps resolving it while migrating.",
+      "reviewBy": "2026-11-18"
+    },
+    {
+      "name": "@vespeneventures/deployment",
+      "reason": "Deprecated into @vespeneventures/builder's ./deployment subpath per docs/DECISIONS.md#9-recutting-the-workspace-surface-into-six-job-shaped-packages. Kept live so a consumer already pinned to a published deployment version keeps resolving it while migrating.",
+      "reviewBy": "2026-11-18"
+    },
+    {
+      "name": "@vespeneventures/verify-standards",
+      "reason": "Deprecated into @vespeneventures/inspector's root per docs/DECISIONS.md#9-recutting-the-workspace-surface-into-six-job-shaped-packages. Kept live so a consumer already pinned to a published verify-standards version keeps resolving it while migrating.",
+      "reviewBy": "2026-11-18"
+    }
+  ]
+}
