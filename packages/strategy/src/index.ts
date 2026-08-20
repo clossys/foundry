@@ -1,16 +1,16 @@
 /**
  * @vespeneventures/strategy — the machinery, not the values.
  *
- * This package ships three halves, and the second and third are what
+ * This package ships four halves, and the second through fourth are what
  * justify the first:
  *
  *   1. SCHEMA + READERS. Hand-rolled, dependency-free entity validators
  *      (`Fact`, `Mission`, `Positioning`, `Market`, `Audience`,
- *      `RoadmapItem`, `BrandEssence`, `BrandAttribute` — see `schema.ts`)
- *      plus `readStrategy` (`reader.ts`), a typed reader that loads and
- *      validates a consumer's real strategy directory. Pure data and
- *      validation, except `readStrategy` itself, which is this package's
- *      one deliberate I/O surface.
+ *      `RoadmapItem`, `BrandEssence`, `BrandAttribute`, `DirectionEntity`
+ *      — see `schema.ts`) plus `readStrategy` (`reader.ts`), a typed
+ *      reader that loads and validates a consumer's real strategy
+ *      directory. Pure data and validation, except `readStrategy` itself,
+ *      which is this package's one deliberate I/O surface.
  *
  *   2. THE FACTS GATE. `checkFactsTraceability` (`facts-gate.ts`) scans
  *      prose (and copy in source) for numeric and superlative claims and
@@ -31,6 +31,19 @@
  *      `@vespeneventures/ui/tokens` or `@vespeneventures/copy/voice` — see
  *      `brand-derivation.ts`'s header comment for the seam.
  *
+ *   4. DIRECTION INVALIDATION. Facts drift; direction — vision, mission,
+ *      positioning, market, audience — is changed, deliberately, by
+ *      someone who can say when and why. `DirectionEntity` (`schema.ts`)
+ *      is one dated, versioned direction decision; `checkDirectionCoverage`
+ *      and `checkDirectionCurrency` (`direction-invalidation.ts`) are the
+ *      two checks that follow from that: does every direction entity have
+ *      a derived artifact behind it and vice versa, and — the check
+ *      presence alone cannot do — does every derived artifact's
+ *      `reviewedAgainst` still name the CURRENT version, not one some
+ *      other entity's `supersedes` has already replaced. See
+ *      `direction-invalidation.ts`'s header comment for why this is two
+ *      functions, not one.
+ *
  * Nothing in this package's own source is a real company's mission,
  * positioning, facts, or brand — see the README's "What this package is
  * not" and `@vespeneventures/ui/tokens`' README ("The three-layer contract")
@@ -39,12 +52,15 @@
  */
 
 export {
+  DIRECTION_ENTITY_KINDS,
   ROADMAP_STATUSES,
   validateAudience,
   validateAudiences,
   validateBrandAttribute,
   validateBrandAttributes,
   validateBrandEssence,
+  validateDirectionEntities,
+  validateDirectionEntity,
   validateFact,
   validateFacts,
   validateMarket,
@@ -60,6 +76,8 @@ export type {
   BrandAttribute,
   BrandEssence,
   BrandEvidence,
+  DirectionEntity,
+  DirectionEntityKind,
   Fact,
   Market,
   Mission,
@@ -72,6 +90,16 @@ export type {
 
 export { checkBrandCoverage, validateBrandDerivation, validateBrandDerivations } from "./brand-derivation.js";
 export type { BrandCoverageFailureReason, BrandCoverageResult, BrandDerivation } from "./brand-derivation.js";
+
+export { checkDirectionCoverage, checkDirectionCurrency } from "./direction-invalidation.js";
+export type {
+  DirectionCoverageFailureReason,
+  DirectionCoverageResult,
+  DirectionCurrencyFailureReason,
+  DirectionCurrencyFinding,
+  DirectionCurrencyFindingKind,
+  DirectionCurrencyResult,
+} from "./direction-invalidation.js";
 
 export { readStrategy } from "./reader.js";
 export type { StrategyBundle, StrategyReadIssue, StrategyReadIssueReason } from "./reader.js";
