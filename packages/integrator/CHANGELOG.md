@@ -5,6 +5,44 @@ All notable changes to `@vespeneventures/integrator` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-08-19
+
+### Added
+
+- **`detectSupersession(manifest, supersessionMap)`** — a pure, hermetic
+  detector for a manifest that holds both a package published from this
+  repository and a name that package supersedes. No version conflict makes
+  this loud on its own: the names differ, so a lockfile resolves both
+  happily, and two visual systems, two auth surfaces, or two copies of the
+  same contract end up installed side by side with nothing to catch it.
+  Ships no map and no consumer package names, exactly as this package's
+  blindness rule requires everywhere else — `SupersessionMap` is entirely
+  caller-supplied, the same way `EntitlementDeclaration` and
+  `AdmissionContract` are. Scans every dependency position —
+  `dependencies`, `devDependencies`, `peerDependencies`,
+  `optionalDependencies`, and npm's `overrides` / yarn's `resolutions`
+  blocks, recursively where either can nest a name — so a superseding
+  package declared in one position and the superseded name pinned only in
+  another is still reported. Every comparison is exact string equality
+  against a validated package name, never a substring test: a superseded
+  `foo` never matches an installed `foo-utils`, and a scoped name never
+  cross-matches its unscoped-looking counterpart. Reports `satisfied` /
+  `violated` / `indeterminate`, the fold this fleet's gates already share
+  (see `currencyVerdict`) — a manifest or map this function cannot trust is
+  always `indeterminate` with a named reason, never silently `satisfied`
+  and never a silently empty pair count. `violated` names every confirmed
+  pair, never stopping at the first, and carries an explicit `count` — the
+  falling count over time is the artifact this gate is built to make
+  visible.
+- **`integrator-supersession-check`**, this package's first shipped CLI —
+  reads a manifest and a private supersession-map file, runs
+  `detectSupersession`, and prints the report. **Report-only by default**:
+  without `--block` it always exits `0`, so a plane can wire it into CI and
+  watch the count fall before it ever blocks a merge. `--block` enforces
+  the real `0` / `1` / `2` result.
+- `supersessionResultToExitCode`, the same fold-to-exit-code convention
+  `currencyVerdictToExitCode` already established.
+
 ## [0.2.2] - 2026-08-19
 
 ### Changed
