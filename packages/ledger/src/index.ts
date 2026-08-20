@@ -60,3 +60,6 @@ export { checkAppendOnly } from "./append-only-gate.js";
 
 export { checkLedgerDrift } from "./drift.js";
 export type { DriftReport } from "./drift.js";
+
+export { checkJoinKeyCompleteness } from "./join-key.js";
+export type { JoinKeyIdentity, JoinKeyReport } from "./join-key.js";

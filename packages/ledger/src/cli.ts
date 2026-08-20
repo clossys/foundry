@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 /**
- * `ledger-check` — the CLI for both this package's gates: `checkLedgerDrift`
- * (the default, no-subcommand invocation) and `checkAppendOnly` (the
- * `append-only` subcommand). Presentation and I/O only in both cases: parse
- * argv, read JSON files, run the pure gate, print a report, pick an exit
- * code. All real logic lives in `drift.ts` and `append-only-gate.ts`
- * respectively.
+ * `ledger-check` — the CLI for all three of this package's gates:
+ * `checkLedgerDrift` (the default, no-subcommand invocation),
+ * `checkAppendOnly` (the `append-only` subcommand), and
+ * `checkJoinKeyCompleteness` (the `join-key` subcommand). Presentation and
+ * I/O only in every case: parse argv, read JSON files, run the pure gate,
+ * print a report, pick an exit code. All real logic lives in `drift.ts`,
+ * `append-only-gate.ts`, and `join-key.ts` respectively.
  *
  * Dispatch happens on `argv[0]` — the literal first token a caller passes
  * on the command line — never on the invoked binary's path or filename.
@@ -45,6 +46,24 @@
  *       result to a CI job branching on this exit code, the same
  *       three-state discipline `checkLedgerDrift`'s empty-ledger case
  *       already holds this CLI to above.
+ *
+ * Exit codes for the `join-key` subcommand — the same three-state
+ * convention, applied to `checkJoinKeyCompleteness` (issue #376):
+ *
+ *   0 — every entry this ledger currently treats as live carries a
+ *       complete join key, verified over at least one live entry.
+ *   1 — a real violation: a live entry is missing its content identity or
+ *       carries an invalid window (`"join-key-missing-identity"` /
+ *       `"join-key-window-invalid"`), or two entries publishing to the
+ *       same address disagree on content identity
+ *       (`"join-key-identity-churn"`).
+ *   2 — could not evaluate: bad arguments, a file missing/unreadable/not
+ *       valid JSON, a ledger that doesn't validate, an empty ledger, or a
+ *       non-empty ledger with zero entries currently live. Zero live
+ *       entries is deliberately its own exit code, never folded into 0 —
+ *       publishing nothing live right now is not evidence that publishing
+ *       is governed, the same three-state discipline the other two
+ *       subcommands already hold this CLI to above.
  */
 
 import { readFileSync, existsSync, realpathSync, statSync } from "node:fs";
@@ -52,10 +71,12 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { checkAppendOnly } from "./append-only-gate.js";
 import { checkLedgerDrift, type DriftReport } from "./drift.js";
+import { checkJoinKeyCompleteness, type JoinKeyReport } from "./join-key.js";
 import type { LedgerFinding } from "./types.js";
 
 const USAGE = `Usage: ledger-check <ledger-file> <current-values-file> [options]
        ledger-check append-only <previous-ledger-file> <next-ledger-file> [options]
+       ledger-check join-key <ledger-file> [options]
 
   ledger-file           Path to a JSON file containing a Ledger (an array of PublicationEntry). Required.
   current-values-file   Path to a JSON file containing a flat object mapping factRef -> current value. Required.
@@ -66,6 +87,7 @@ Options:
 Exit codes: 0 = clean (something was checked, nothing drifted), 1 = at least one cited fact has drifted, 2 = could not run (bad input, missing/unreadable/invalid JSON, an invalid or empty ledger, or nothing could be checked).
 
 Run "ledger-check append-only --help" for the append-only subcommand's own usage.
+Run "ledger-check join-key --help" for the join-key subcommand's own usage.
 `;
 
 const APPEND_ONLY_USAGE = `Usage: ledger-check append-only <previous-ledger-file> <next-ledger-file> [options]
@@ -77,6 +99,16 @@ Options:
   --help   Print this message and exit 0.
 
 Exit codes: 0 = next is a valid append-only evolution of previous, verified over at least one entry; 1 = a real violation (an entry removed, reordered, or mutated); 2 = could not evaluate (bad input, missing/unreadable/invalid JSON, a ledger failing its own shape validation, or zero entries in previous to check against).
+`;
+
+const JOIN_KEY_USAGE = `Usage: ledger-check join-key <ledger-file> [options]
+
+  ledger-file   Path to a JSON file containing a Ledger (an array of PublicationEntry). Required.
+
+Options:
+  --help   Print this message and exit 0.
+
+Exit codes: 0 = every currently-live entry carries a complete join key, verified over at least one; 1 = a live entry is missing its content identity or window, or two entries at the same address disagree on identity; 2 = could not evaluate (bad input, missing/unreadable/invalid JSON, an invalid or empty ledger, or zero entries currently live).
 `;
 
 /** Exported for `cli.test.ts` — anything wrong with the arguments or input files always maps to exit code 2, never 1. */
@@ -142,6 +174,33 @@ function parseAppendOnlyArgs(argv: string[]): AppendOnlyParsedArgs {
   }
 
   return { previousFile, nextFile, help };
+}
+
+interface JoinKeyParsedArgs {
+  ledgerFile?: string;
+  help: boolean;
+}
+
+function parseJoinKeyArgs(argv: string[]): JoinKeyParsedArgs {
+  let ledgerFile: string | undefined;
+  let help = false;
+
+  for (const arg of argv) {
+    if (arg === "--help" || arg === "-h") {
+      help = true;
+      continue;
+    }
+    if (arg.startsWith("-")) {
+      throw new CliInputError(`unknown flag "${arg}"`);
+    }
+    if (ledgerFile === undefined) {
+      ledgerFile = arg;
+    } else {
+      throw new CliInputError(`unexpected extra argument "${arg}"`);
+    }
+  }
+
+  return { ledgerFile, help };
 }
 
 /**
@@ -216,14 +275,31 @@ function printFindings(findings: readonly LedgerFinding[]): void {
   }
 }
 
+function printJoinKeyReport(report: JoinKeyReport): void {
+  console.log(
+    `Checked ${report.liveEntriesChecked} live entr${report.liveEntriesChecked === 1 ? "y" : "ies"}: ` +
+      `${report.completeLiveEntries} complete, ${report.incompleteLiveEntries} incomplete. ` +
+      `${report.identities.length} distinct content identit${report.identities.length === 1 ? "y" : "ies"} in the ledger.`,
+  );
+  if (report.findings.length === 0) {
+    console.log("No findings.");
+    return;
+  }
+  console.log(`\n${report.findings.length} finding(s):`);
+  for (const f of report.findings) {
+    const loc = f.path ? ` (${f.path})` : "";
+    console.log(`  [${f.severity}] ${f.rule}${loc}: ${f.message}`);
+  }
+}
+
 /**
  * Dispatcher. Checked BEFORE `parseArgs`/the drift-check argument shape —
  * on the literal first argv token, never on the invoked binary's path or
  * filename — so this repository's compiled-path invocations (`node
  * dist/cli.js <ledger-file> <current-values-file>`) keep running the drift
  * check exactly as before, and only a caller that actually types
- * `append-only` first gets the append-only gate. Exported (unlike a
- * typical CLI `main`) so `cli.test.ts` can exercise the whole
+ * `append-only` or `join-key` first gets that gate instead. Exported
+ * (unlike a typical CLI `main`) so `cli.test.ts` can exercise the whole
  * argv-to-exit-code contract directly, without spawning a subprocess for
  * every case — `run()` below is the only caller that reads the real
  * `process.argv`.
@@ -231,6 +307,9 @@ function printFindings(findings: readonly LedgerFinding[]): void {
 export function main(argv: string[]): number {
   if (argv[0] === "append-only") {
     return runAppendOnly(argv.slice(1));
+  }
+  if (argv[0] === "join-key") {
+    return runJoinKeyCheck(argv.slice(1));
   }
   return runDriftCheck(argv);
 }
@@ -384,9 +463,67 @@ function runAppendOnly(argv: string[]): number {
   return 1;
 }
 
+/**
+ * The `join-key` subcommand: `checkJoinKeyCompleteness` (issue #376). Same
+ * shape as `runDriftCheck`/`runAppendOnly` above — parse, read a file, run
+ * the pure gate, print, pick an exit code — but only ONE file is read
+ * (unlike `runDriftCheck`'s ledger + current-values pair): completeness is
+ * a property of the ledger alone, never compared against anything external.
+ *
+ * `checkJoinKeyCompleteness` already returns a `DriftReport`-shaped result
+ * (`ok`, count fields, `findings`) with its own three-state fail-closed
+ * behavior baked in — `liveEntriesChecked: 0` on every "could not
+ * meaningfully check" case (`"ledger-invalid"`, `"empty-ledger"`,
+ * `"no-live-entries"`). That single field is what this function uses to
+ * tell "could not evaluate" (2) apart from "evaluated and found a real
+ * incompleteness/inconsistency problem" (1) — the same
+ * `citationsDrifted > 0 ? 1 : 2` pattern `runDriftCheck` uses above, just
+ * keyed on `liveEntriesChecked` instead.
+ */
+function runJoinKeyCheck(argv: string[]): number {
+  const args = parseJoinKeyArgs(argv);
+  if (args.help) {
+    console.log(JOIN_KEY_USAGE);
+    return 0;
+  }
+  if (!args.ledgerFile) {
+    throw new CliInputError("ledger-file is required");
+  }
+
+  const ledgerPath = resolve(args.ledgerFile);
+
+  // Can throw CliInputError (a bad path is an argument problem).
+  const ledgerRaw = readFileText("ledger-file", ledgerPath);
+
+  console.log(`Ledger: ${ledgerPath}`);
+
+  // From here on, a problem is about CONTENT, not arguments — reported and
+  // mapped to exit code 2 without ever throwing, the same "could not run"
+  // category runDriftCheck/runAppendOnly use for a malformed ledger.
+  const parsedLedger = parseJson(ledgerRaw);
+  if (!parsedLedger.ok) {
+    console.error(`\n${ledgerPath} is not valid JSON: ${parsedLedger.message}`);
+    console.error("Refusing to report on join-key completeness for a ledger that could not even be parsed.");
+    return 2;
+  }
+
+  const report = checkJoinKeyCompleteness(parsedLedger.value);
+  printJoinKeyReport(report);
+
+  if (!report.ok) {
+    // Distinguish "found a real incompleteness/inconsistency problem" (1)
+    // from "could not meaningfully check" (2 — an invalid/empty ledger, or
+    // a ledger with zero entries currently live): the exact distinction
+    // `checkJoinKeyCompleteness`'s own doc comment describes, carried
+    // through to the exit code a CI job actually branches on.
+    return report.liveEntriesChecked > 0 ? 1 : 2;
+  }
+  return 0;
+}
+
 function run(): void {
   const argv = process.argv.slice(2);
-  const usage = argv[0] === "append-only" ? APPEND_ONLY_USAGE : USAGE;
+  const usage = argv[0] === "append-only" ? APPEND_ONLY_USAGE : argv[0] === "join-key" ? JOIN_KEY_USAGE : USAGE;
   try {
     process.exitCode = main(argv);
   } catch (error) {
