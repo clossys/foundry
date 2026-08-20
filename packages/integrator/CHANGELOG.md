@@ -5,6 +5,55 @@ All notable changes to `@vespeneventures/integrator` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-08-20
+
+### Added
+
+- **`foldCurrencyDelta(input)`, in a new `currency-fold.ts` module** — one
+  fold, two scopes, fixing a real fleet-wide bug: every consumer wiring
+  `currencyVerdict` into a pull-request gate was grading that pull request's
+  ABSOLUTE currency, so a pull request touching no dependency at all could be
+  (and was) blocked by drift an earlier, unrelated change had already
+  introduced — observed the same day on a release-workflow change and a
+  security fix, each blocked by several unrelated major-version drifts
+  neither one touched. Worse, a registry's `latest` dist-tag moves during the
+  workday, so the absolute verdict a pull request was graded against was
+  never even a fixed target.
+  - `scope: "absolute"` is `currencyVerdict`'s existing semantics,
+    generalized: any `behind` whose `severity` is in a caller-supplied
+    `blockingSeverities` set is a violation, rather than `"major"` being
+    hardcoded. For a trunk or scheduled run, where there is no "before" to
+    compare against.
+  - `scope: "introduced"` grades only what a change made worse, against a
+    `baseline` — a second `PackageCurrency[]` snapshot from the merge base.
+    For a pull-request run. Reports `introduced` (this change's own doing,
+    blocking) separately from `inherited` (pre-existing drift, reported so a
+    pull request can still see the fleet's drift, but never blocking on it —
+    an untouched dependency whose `latestVersion` moved on its own during the
+    workday is `inherited`, never `introduced`; an upgrade that still leaves
+    the package behind is `inherited` too, because partial progress must
+    never be punished the same as a regression).
+  - **The rule this fold is uncompromising about:** a `baseline` the caller
+    could not read — omitted outright, or passed as an explicit
+    `{ kind: "unreadable", reason }` marker for a shallow clone with no
+    merge-base commit, say — is `indeterminate`, naming the reason. It is
+    never folded into "nothing was introduced" (failing OPEN, inverting
+    `classifyCurrencyDistance`'s own law that an ungradable input is its own
+    `indeterminate` state) and never silently answered with `absolute`
+    grading instead (which would quietly answer a different question under
+    the `introduced` name, reintroducing this exact bug inside its own fix).
+  - `indeterminate` / `unreachable` / `unauthenticated`, on either the
+    current run or the relevant baseline entry, make the whole fold
+    `indeterminate` — the same "not judged, not judged-and-clean" precedence
+    `currencyVerdict` already applies, one level removed.
+  - `currencyFoldResultToExitCode`, the same fold-to-exit-code convention
+    `currencyVerdictToExitCode` and `supersessionResultToExitCode` already
+    establish.
+  - New file, not a change to `currency.ts` — `classifyCurrencyDistance` and
+    `judgeCurrency` still own grading; this module owns exactly the one
+    question they don't answer: grading a set of judgments against another
+    set of judgments.
+
 ## [0.3.0] - 2026-08-19
 
 ### Added

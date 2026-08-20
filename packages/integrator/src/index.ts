@@ -42,6 +42,18 @@ export type {
   CurrencyVerdict,
 } from "./currency.js";
 
+export { foldCurrencyDelta, currencyFoldResultToExitCode } from "./currency-fold.js";
+export type {
+  CurrencyFoldScope,
+  CurrencyBaselineUnreadable,
+  CurrencyBaseline,
+  AbsoluteCurrencyFoldInput,
+  IntroducedCurrencyFoldInput,
+  CurrencyFoldInput,
+  CurrencyFoldFinding,
+  CurrencyFoldResult,
+} from "./currency-fold.js";
+
 export { loadAdmissionContract, evaluateAdmission } from "./admission.js";
 export type { AdmissionRule, AdmissionContract, AdmissionCandidate, AdmissionContext, AdmissionFinding } from "./admission.js";
 
