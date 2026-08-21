@@ -127,13 +127,25 @@ describe("no regression: every existing subpath still resolves normally (test 3)
     });
   }
 
-  it("the original component barrels still export every member they always did (spot check)", () => {
-    expect(importKeysNormally("atoms/index.js")).toContain("Button");
-    expect(importKeysNormally("blocks/index.js")).toContain("DataTable");
-    expect(importKeysNormally("shell/index.js")).toContain("NavShell");
-    expect(importKeysNormally("charts/index.js")).toContain("BarChart");
-    expect(importKeysNormally("theme/index.js")).toContain("ThemeProvider");
-  });
+  // One `it` per barrel, not one `it` spanning all five. `importKeysNormally`
+  // spawns a subprocess per call, so the single combined spot check paid five
+  // module-graph imports against one 5s timeout: ~1s on an idle machine but
+  // over 6s under load, which made it fail on machine load rather than on
+  // a missing export (issue #434). Split, each case sits with its siblings at
+  // roughly 200ms, and a failure names the barrel that actually regressed.
+  const barrelSpotChecks: Array<[string, string]> = [
+    ["atoms/index.js", "Button"],
+    ["blocks/index.js", "DataTable"],
+    ["shell/index.js", "NavShell"],
+    ["charts/index.js", "BarChart"],
+    ["theme/index.js", "ThemeProvider"],
+  ];
+
+  for (const [distRelPath, expectedExport] of barrelSpotChecks) {
+    it(`${distRelPath} still exports ${expectedExport} (spot check)`, () => {
+      expect(importKeysNormally(distRelPath)).toContain(expectedExport);
+    });
+  }
 });
 
 describe("render-environment declaration exhaustiveness (test 4)", () => {
