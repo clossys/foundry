@@ -24,10 +24,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     and `packRoundTrip` — one subcommand reaches all three named exports
     via the call graph, the same "outer gate calling an inner one" shape
     already established for `verifyToolchain` → `reconcileToolchain` and
-    `verifyComposedInstallation` → `verifyInstallation`. This is also the
-    local command `docs/PUBLISHING.md` names as a real, previously-open gap
-    ("no local command that proves a package installs and imports cleanly
-    before you propose publishing it").
+    `verifyComposedInstallation` → `verifyInstallation`. This also closes a
+    real, previously-documented gap this repository's own contributor
+    publishing guide named: no local command proved a package installs and
+    imports cleanly before you propose publishing it.
   - `foundry-governance verify-published <expected-digest> <content-file>`
     calls `verifyPublishedArtifact` directly.
   - Extended the package's existing `foundry-governance` bin rather than

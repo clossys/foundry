@@ -1647,7 +1647,8 @@ entry point on this same bin, dispatched on the literal `argv[0]`:
 ```bash
 # Packs packages/widgets, installs it into a genuinely isolated directory,
 # imports every declared subpath, AND folds in the lifecycle/catalog report
-# above — the local command docs/PUBLISHING.md names as a real gap.
+# above — a real gap this repository's own contributor publishing guide
+# previously named explicitly.
 foundry-governance preflight package-lifecycle.json packages/widgets . --scope @example
 
 # Verifies already-fetched published content against an expected sha256

@@ -6,10 +6,10 @@
  * (`preflightGovernedPackage`, which itself calls `preflightPackage` and
  * `packRoundTrip` — see `preflight.ts` and `release/preflight.ts`) and
  * `verify-published` (`verifyPublishedArtifact`). All three were public
- * library exports reachable only by writing TypeScript; `docs/PUBLISHING.md`
- * names the `preflight` gap directly ("there is currently no local command
- * that proves a package installs and imports cleanly before you propose
- * publishing it").
+ * library exports reachable only by writing TypeScript; `preflight` closes a
+ * gap this repository's own contributor publishing guide previously named
+ * directly ("there is currently no local command that proves a package
+ * installs and imports cleanly before you propose publishing it").
  *
  * Dispatch happens on `argv[0]` — the literal first token a caller passes
  * on the command line — never on the invoked binary's path or filename.
