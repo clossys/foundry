@@ -3,6 +3,20 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.1] - 2026-08-21
+
+### Changed
+
+- Widened the declared `@vespeneventures/writer` dependency range from
+  `^0.1.0` to `^0.2.0`. `writer` 0.2.0 (issue #407) changed
+  `writer-check addressability`'s exit-code precedence — a real violation
+  now wins over an incomplete scan — which is a behavioural contract
+  change, not a patch; `^0.1.0` does not resolve `0.2.0` (0.x ranges are
+  minor-locked), so the old declared range would have kept this package
+  pinned to the superseded precedence. No source in this package imports
+  `checkAddressability` or otherwise depends on the changed behaviour
+  directly; this is purely picking up the new range.
+
 ## [0.1.0] - 2026-08-21
 
 First release. This package is the publisher role, fused from two donors —

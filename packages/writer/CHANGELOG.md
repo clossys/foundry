@@ -3,6 +3,44 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.0] - 2026-08-21
+
+### Changed — BEHAVIOURAL, read this before upgrading (issue #407)
+
+**`writer-check addressability`'s exit-code precedence flipped.** A run that
+finds at least one violation now exits `1` REGARDLESS of how many string
+positions are unclassified. Previously, any unclassified ("unchecked")
+position forced exit `2` ("indeterminate") even when the same run had
+already found and named real violations — and on any real tree, hundreds of
+positions are token data this gate cannot classify by design, so the old
+precedence made `1` unreachable outside a fixture: every real run had *some*
+unclassified positions and therefore always read `2`, silently discarding
+every violation it had actually found.
+
+- **`violated` (exit `1`)** — at least one violation, regardless of
+  unclassified count. The coverage gap is not hidden by this: `unchecked`
+  and `reasons` are still populated and `writer-check addressability`
+  still prints them unconditionally; only the verdict changed.
+- **`indeterminate` (exit `2`)** — zero violations AND at least one
+  unclassified position (or the tree could not be read, or zero components
+  were scanned). The honest "found nothing, but did not see everything"
+  case — unchanged, and still never a pass.
+- **`satisfied` (exit `0`)** — zero violations, zero unclassified, over at
+  least one scanned file. Unchanged.
+
+**If your CI treats `writer-check addressability`'s exit `2` as
+non-blocking or "flaky, coverage is never complete, ignore it": stop.** A
+tree that used to report `2` will now correctly report `1` whenever it
+contains a real violation, and that is the point of this release, not a
+regression — those trees always had the violation, this exit code was
+previously the only thing hiding it.
+
+`checkAddressability`'s `AddressabilityGateResult.verdict`/`.reasons` and
+`mainAddressabilityCheck`'s exit code both changed together; no other
+export's shape changed. See `addressability.ts`'s top doc comment ("THE
+TERNARY") and `README.md`'s "Copy addressability" section for the full
+precedence.
+
 ## [0.1.0] - 2026-08-21
 
 First release. This package is the writer role, recut from
