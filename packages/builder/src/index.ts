@@ -78,6 +78,7 @@ export {
   DestinationCollisionError,
   applyComposedInstallation,
   composeInstallationPlans,
+  diffRetiredDestinations,
   verifyComposedInstallation,
 } from "./composition.js";
 export type {
@@ -86,6 +87,8 @@ export type {
   ComposedPlanOperation,
   DestinationCollision,
   NamedSourcePlan,
+  RetiredDestination,
+  RetirementReport,
 } from "./composition.js";
 
 // -- liveStateSurface (#255) -------------------------------------------------

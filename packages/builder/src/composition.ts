@@ -233,3 +233,80 @@ export function verifyComposedInstallation(
   }
   return findings;
 }
+
+/**
+ * One destination a PRIOR composition managed that the CURRENT composition no
+ * longer claims at all. #240 lists this as undelivered by the original
+ * multi-source composition work: when a source stops contributing a
+ * destination it used to own — an account workspace loses a skill, a
+ * workspace disappears entirely because its repository was deleted, a
+ * class-one convention id is dropped from the machine layer declaration --
+ * that destination must be retired EXPLICITLY, not left silently orphaned on
+ * the machine forever.
+ *
+ * Deliberately the smallest shape that lets `diffRetiredDestinations` do its
+ * one job: `destinationPath`, the `source` that used to own it, and its
+ * `kind`, so a caller can decide what retiring it actually means (unlink a
+ * `link`, remove a `copy`, strip a `managed-block`'s region) without this
+ * module making that decision for them. This is intentionally NOT a full
+ * "applied receipt" (durable provenance, applied timestamps, package/schema
+ * versions) — #240 lists that as a separate, larger piece of future work;
+ * this type is only what a diff needs, and any `ComposedPlanOperation[]` a
+ * caller already has (e.g. a prior `composeInstallationPlans(...).operations`,
+ * persisted as JSON by the caller — this module has no storage opinion and
+ * writes nothing itself) is structurally assignable here without conversion.
+ */
+export interface RetiredDestination {
+  readonly destinationPath: string;
+  readonly source: string;
+  readonly kind: PlanOperation["kind"];
+}
+
+export interface RetirementReport {
+  /** Every destination a prior composition owned that the current one no longer claims. Sorted by destination path for a stable report. */
+  readonly retired: readonly RetiredDestination[];
+}
+
+/**
+ * Compares the destinations a PRIOR composed run managed (`previous`) against
+ * what the CURRENT run actually composed (`current` — typically the
+ * `operations` a fresh `composeInstallationPlans` call just returned), and
+ * names every destination the prior run owned that no source in the current
+ * run claims at all.
+ *
+ * Pure: no filesystem access, no mutation, and no removal of anything --
+ * reporting is the entire contract. A caller wanting destructive cleanup
+ * (actually unlinking or removing a retired destination) must build that on
+ * top of this report explicitly, opting in on purpose; this function will
+ * never do it by default, the same way `applyInstallation` never deletes a
+ * destination a manifest no longer mentions.
+ *
+ * `private-directory` operations are excluded from the comparison in both
+ * directions, for the identical reason `composeInstallationPlans` excludes
+ * them from collision detection: a directory two — or, over time, a
+ * changing set of — sources all wanted to exist is not "owned" by any one of
+ * them specifically, so one source dropping it is not evidence the directory
+ * itself should be retired while another still-active source keeps
+ * declaring it.
+ */
+export function diffRetiredDestinations(
+  previous: readonly RetiredDestination[],
+  current: readonly ComposedPlanOperation[],
+): RetirementReport {
+  const currentDestinations = new Set(
+    current.filter((operation) => operation.kind !== "private-directory").map((operation) => operation.destinationPath),
+  );
+
+  const retired: RetiredDestination[] = [];
+  const seen = new Set<string>();
+  for (const operation of previous) {
+    if (operation.kind === "private-directory") continue;
+    if (currentDestinations.has(operation.destinationPath)) continue;
+    const key = `${operation.destinationPath} ${operation.source}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    retired.push({ destinationPath: operation.destinationPath, source: operation.source, kind: operation.kind });
+  }
+
+  return { retired: retired.sort((a, b) => a.destinationPath.localeCompare(b.destinationPath)) };
+}
