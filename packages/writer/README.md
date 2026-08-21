@@ -432,20 +432,39 @@ Three positions are classified:
    excludes that shape when it has an actual `className` attribute name to
    key off.
 
-`AddressabilityGateResult.verdict` is `"indeterminate"` whenever `unchecked`
-is non-empty, zero components were scanned, or the tree could not be read —
-`"indeterminate"` wins over `"violated"` even when both are true in the same
-run, mirroring `checkCopyTraceability`'s own "a `2` gates before findings are
-counted" precedence.
+**Verdict precedence (changed in 0.2.0 — see issue #407).**
+`AddressabilityGateResult.verdict` is `"violated"` whenever at least one
+violation was found, REGARDLESS of how many string positions are
+unclassified. It is `"indeterminate"` only when there are zero violations
+AND `unchecked` is non-empty, zero components were scanned, or the tree
+could not be read. This is deliberately the OPPOSITE of
+`checkCopyTraceability`'s "a `2` gates before findings are counted"
+precedence: on a real tree, hundreds of string positions are token data this
+gate cannot classify by design, so letting unclassified-count outrank a
+violation made `"violated"` unreachable outside a fixture — every real run
+had *some* unclassified positions, so it always read `2`. A caller that had
+learned to treat that `2` as "coverage is never complete, ignore it" would
+never see the violations a run actually found. The coverage gap itself is
+still fully reported: `unchecked`/`reasons` stay populated and
+`writer-check addressability`'s own accounting output still prints them
+unconditionally, independent of verdict — only the verdict (and the exit
+code a `1` maps to) changed.
+
+Before 0.2.0, a caller that treated exit `2` from `writer-check
+addressability` as "flaky, coverage is never complete, ignore it" will now
+see exit `1` on trees that used to report `2` — that is the fix, not a
+regression: those trees had a real violation the old precedence was hiding
+behind a coverage-gap exit code.
 
 `writer-check addressability [scan-dir]` (see `cli.ts` — a subcommand of the
 existing `writer-check` bin, dispatched on an explicit `argv[0] ===
 "addressability"`, never by installed `bin` name or invoking path) exits
-`0` clean / `1` at least one violation / `2` could not run — deliberately a
-SEPARATE exit code from `writer-check`'s default command rather than folded
-into it, since the two gates' natural test fixtures are structurally
-incompatible (a literal traceability needs to prove a registry match is
-exactly a literal addressability cannot confirm is safe).
+`0` clean / `1` at least one violation (regardless of unclassified count) /
+`2` zero violations but could not fully evaluate — deliberately a SEPARATE
+exit code from `writer-check`'s default command rather than folded into it,
+since the two gates' natural test fixtures are structurally incompatible (a
+literal traceability needs to prove a registry match is exactly a literal
+addressability cannot confirm is safe).
 
 ## API
 
