@@ -112,7 +112,7 @@ test("probeOneVersion: a thrown network error is unreachable", async () => {
 
 test("probeOneVersion: follows Link-header pagination to find a version on a later page", async () => {
   const fetchImpl = queueFetch([
-    jsonResponse(200, versionsPage(["0.3.0", "0.2.0"]), { link: '<https://api.github.com/orgs/x/packages/npm/pkg/versions?page=2>; rel="next"' }),
+    jsonResponse(200, versionsPage(["0.3.0", "0.2.0"]), { link: `<https://api.github.com/orgs/${OWNER}/packages/npm/pkg/versions?page=2>; rel="next"` }),
     jsonResponse(200, versionsPage(["0.1.0"])),
   ]);
   const outcome = await probeOneVersion({ owner: OWNER, name: "pkg", version: "0.1.0", token: TOKEN, fetchImpl });
