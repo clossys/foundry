@@ -119,23 +119,40 @@
  * THE TERNARY
  * ============================================================================
  *
- * Mirrors `copy-gate.ts`/`scan.ts`'s existing convention exactly: an
- * `unchecked[]` list gates a `2` BEFORE findings are counted, the same
- * "could not run [fully]" precedence `cli.ts` already documents and tests
- * for `writer-check` ("a partial parse failure outranks a real finding").
+ * Deliberately DIFFERENT from `copy-gate.ts`/`scan.ts`'s "an `unchecked[]`
+ * list gates a `2` before findings are counted" precedence — see issue #407.
+ * On this gate specifically, partial coverage of a real tree is not a rare
+ * edge case: hundreds of string positions are token data (category 3 above)
+ * this gate cannot classify BY DESIGN, on every real tree it has ever been
+ * run against. Letting "at least one unclassified position" outrank a
+ * confirmed violation therefore does not model "an occasional coverage gap
+ * might be hiding something" — it makes the `"violated"` branch permanently
+ * unreachable outside a fixture, because a real tree always has unclassified
+ * positions somewhere. A gate that can only ever report `"indeterminate"` or
+ * `"satisfied"` in production has one usable state, and a caller that
+ * learns to treat `2` as "coverage is never complete, ignore it" will walk
+ * straight past five named, file-and-line violations without ever seeing
+ * them — see `packages/inspector/src/review-evidence.ts`'s own argument
+ * against the mirror image of this mistake (folding an outage into a
+ * verdict); this is folding a verdict into an outage.
  *
- *   - `"indeterminate"` — the source tree could not be read at all (this
- *     file's `scanAddressabilitySources` fails closed, throwing, exactly
- *     like `scan.ts`'s `scanCopySourceTree`), ZERO components were
- *     successfully scanned (nothing matched, or every matched file failed
- *     to parse), a `pathExclusions` entry was malformed, or ANY string
- *     position could not be confidently classified (category 3 above, or a
- *     JSX construct `scan.ts` itself could not resolve). Wins over
- *     `"violated"` even when both are true in the same run — a partial
- *     picture is never allowed to read as a completed one just because it
- *     also happened to find something real.
- *   - `"violated"` — zero indeterminate positions, at least one inline
- *     user-facing prose string found (category 1 or 2 above).
+ *   - `"violated"` — at least one inline user-facing prose string found
+ *     (category 1 or 2 above), REGARDLESS of how many string positions are
+ *     unclassified. The coverage gap is not hidden: `reasons` and
+ *     `unchecked` are still populated and still printed (`cli.ts`'s
+ *     `printAddressabilityAccounting` reports `unchecked` unconditionally,
+ *     independent of verdict) — a `"violated"` verdict never claims full
+ *     coverage, it claims that what WAS seen included a definite violation,
+ *     which is true regardless of what else was not seen.
+ *   - `"indeterminate"` — zero violations, AND the source tree could not be
+ *     read at all (this file's `scanAddressabilitySources` fails closed,
+ *     throwing, exactly like `scan.ts`'s `scanCopySourceTree`), ZERO
+ *     components were successfully scanned (nothing matched, or every
+ *     matched file failed to parse), a `pathExclusions` entry was
+ *     malformed, or ANY string position could not be confidently classified
+ *     (category 3 above, or a JSX construct `scan.ts` itself could not
+ *     resolve). The honest "found nothing, but did not see everything"
+ *     case — it must never read as a pass.
  *   - `"satisfied"` — at least one component scanned, every string
  *     position classified, and no inline user-facing prose found.
  */
@@ -589,7 +606,14 @@ export interface AddressabilityGateResult {
   violations: AddressabilityViolation[];
   unchecked: AddressabilityUncheckedItem[];
   filesScanned: number;
-  /** Human-readable reasons the verdict is `"indeterminate"` — empty for `"satisfied"`/`"violated"`. */
+  /**
+   * Human-readable reasons coverage is incomplete — empty for `"satisfied"`.
+   * Since #407, this can be non-empty for `"violated"` too: a run can find a
+   * definite violation AND have unclassified positions left over in the
+   * same scan. Only `"indeterminate"` requires `reasons.length > 0`; a
+   * `"violated"` verdict does not promise `reasons` is empty, only that at
+   * least one real finding exists regardless of what else `reasons` lists.
+   */
   reasons: string[];
 }
 
@@ -624,12 +648,17 @@ export function checkAddressability(scan: AddressabilityScanResult): Addressabil
 
   const base = { violations: scan.violations, unchecked: scan.unchecked, filesScanned: scan.filesScanned };
 
-  // unchecked/zero-scanned/invalid-config wins over a real finding — the
-  // same "a 2 gates before findings are counted" precedence copy-gate.ts's
-  // and scan.ts's own doc comments describe, and cli.test.ts's
-  // "a partial parse failure outranks a real finding" test already proves
-  // for writer-check.
-  if (reasons.length > 0) return { verdict: "indeterminate", reasons, ...base };
+  // A real finding wins over an incomplete picture — see this file's top
+  // doc comment, "THE TERNARY", and issue #407. Deliberately the OPPOSITE
+  // of copy-gate.ts's/scan.ts's "a 2 gates before findings are counted"
+  // precedence: on THIS gate, partial coverage (category 3's unclassified
+  // positions) is the PERMANENT state of any real tree, so letting it
+  // outrank a violation makes "violated" unreachable outside a fixture.
+  // The coverage gap is not lost by returning "violated" here — `reasons`
+  // is still populated below and still printed unconditionally by
+  // `cli.ts`'s `printAddressabilityAccounting`; only the verdict/exit-code
+  // changes.
   if (scan.violations.length > 0) return { verdict: "violated", reasons, ...base };
+  if (reasons.length > 0) return { verdict: "indeterminate", reasons, ...base };
   return { verdict: "satisfied", reasons, ...base };
 }

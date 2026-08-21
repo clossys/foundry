@@ -908,10 +908,12 @@ export function mainAddressabilityCheck(argv: string[]): number {
   const result = checkAddressability(scan);
   printAddressabilityReport(result);
 
-  // Mirrors writer-check's own "unchecked/could-not-run wins over a real
-  // finding" precedence (see this file's top doc comment) —
-  // `checkAddressability` already applies it when computing `verdict`, so
-  // this is just the verdict-to-exit-code mapping.
+  // Since #407, addressability's own precedence is the OPPOSITE of
+  // writer-check's default command: a real violation wins over an
+  // incomplete picture, rather than "could not run [fully]" winning over a
+  // real finding — see `addressability.ts`'s top doc comment, "THE
+  // TERNARY". `checkAddressability` already applies it when computing
+  // `verdict`, so this is just the verdict-to-exit-code mapping.
   if (result.verdict === "indeterminate") return 2;
   return result.verdict === "violated" ? 1 : 0;
 }

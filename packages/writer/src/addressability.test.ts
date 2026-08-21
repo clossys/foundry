@@ -102,6 +102,29 @@ describe("copy-addressability — the six acceptance cases", () => {
     );
   });
 
+  // 3b (issue #407). A violation found ALONGSIDE unclassified positions in
+  // the SAME scan must report the violation — "violated" wins over
+  // "indeterminate" when both are true, the opposite of case 3 above (which
+  // has zero violations and is correctly indeterminate). Before #407 this
+  // was folded into "indeterminate", making "violated" unreachable on any
+  // real tree, since real trees always have some unclassified positions.
+  it("a real violation alongside unclassified positions is violated, not indeterminate (#407)", () => {
+    const src =
+      'export const Banner = () => <p>Welcome to the dashboard</p>;\n' +
+      'const greeting = `Welcome, ${name}`;\n';
+    const result = checkSource(src, "Banner.tsx");
+    expect(result.violations).toHaveLength(1);
+    expect(result.unchecked.length).toBeGreaterThan(0);
+    expect(result.verdict).toBe("violated");
+    expect(result.verdict).not.toBe("indeterminate");
+    // The coverage gap is not hidden by the "violated" verdict — reasons
+    // still names it, and the caller (cli.ts) still prints `unchecked`
+    // unconditionally regardless of verdict.
+    expect(result.reasons).toEqual(
+      expect.arrayContaining([expect.stringContaining("string position(s) could not be confidently classified")]),
+    );
+  });
+
   // 4. Zero components scanned (empty dir) -> indeterminate, NOT satisfied.
   // Asserts the verdict AND the CLI's own exit code explicitly — a test
   // that only asserts "did not throw" proves nothing, since Node's
@@ -419,6 +442,16 @@ describe("mainAddressabilityCheck — CLI wiring", () => {
   it("returns 2 for an unclassifiable position (a template literal), even with zero violations", () => {
     writeFileSync(join(dir, "labels.ts"), "const greeting = `Welcome, ${name}`;\n");
     expect(mainAddressabilityCheck([dir])).toBe(2);
+  });
+
+  // #407: a violation found alongside unclassified positions returns 1, not
+  // 2 — the exit code CI actually branches on must not fold a real finding
+  // into a coverage-gap outage.
+  it("returns 1, not 2, when a violation is found alongside unclassified positions (#407)", () => {
+    writeFileSync(join(dir, "Widget.tsx"), "export const Widget = () => <p>No results found</p>;\n");
+    writeFileSync(join(dir, "labels.ts"), "const greeting = `Welcome, ${name}`;\n");
+    expect(mainAddressabilityCheck([dir])).toBe(1);
+    expect(mainAddressabilityCheck([dir])).not.toBe(2);
   });
 });
 
