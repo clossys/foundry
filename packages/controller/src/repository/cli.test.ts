@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { CliInputError, main } from "./cli.js";
+import { main } from "./cli.js";
 
 let directory: string;
 
@@ -51,27 +51,32 @@ describe("repository-check arguments", () => {
     expect(console.log).toHaveBeenCalledWith(expect.stringContaining("Usage: repository-check"));
   });
 
+  // #392: main() must never let an exception escape — it is self-contained
+  // and always returns 0 | 1 | 2 itself, the same contract inspector's and
+  // builder's own CLI main functions already follow. Bad input used to
+  // throw CliInputError PAST main(), caught only by a separate run()
+  // wrapper; these assert the exit code main() now returns directly.
   it("accepts at most one path argument and rejects unknown options", () => {
-    expect(() => main(["--help", "profile.json"])).toThrow(CliInputError);
-    expect(() => main(["--unknown"])).toThrow(CliInputError);
-    expect(() => main(["one.json", "two.json"])).toThrow(CliInputError);
+    expect(main(["--help", "profile.json"])).toBe(2);
+    expect(main(["--unknown"])).toBe(2);
+    expect(main(["one.json", "two.json"])).toBe(2);
   });
 
   it("maps a missing explicit path to an input error", () => {
-    expect(() => main([join(directory, "missing.json")])).toThrow(CliInputError);
+    expect(main([join(directory, "missing.json")])).toBe(2);
   });
 
   it("treats malformed JSON at an explicit file path as unable to run", () => {
     const path = join(directory, "malformed.json");
     writeFileSync(path, "{ not JSON");
-    expect(() => main([path])).toThrow(CliInputError);
+    expect(main([path])).toBe(2);
   });
 
   it("treats malformed JSON at a located canonical path as unable to run", () => {
     const path = join(directory, "governance", "repository-profile.json");
     mkdirSync(join(directory, "governance"), { recursive: true });
     writeFileSync(path, "{ not JSON");
-    expect(() => main([directory])).toThrow(CliInputError);
+    expect(main([directory])).toBe(2);
   });
 });
 
