@@ -5,6 +5,31 @@ All notable changes to `@vespeneventures/builder` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - 2026-08-21
+
+### Added
+
+- **`aggregate-observations`, `check-observation-freshness`, and
+  `deployment-health` subcommands on the existing `builder-verify-toolchain`
+  bin (#377).** `aggregateObservations`, `checkObservationAggregateFreshness`
+  (`./observation-aggregate.ts`), and `evaluateDeploymentHealth`
+  (`./deployment/health.ts`) were public API with no CLI path anywhere in
+  this package — gate-shaped exports only a caller writing TypeScript could
+  run. Dispatch is keyed on the literal `argv[0]` token, checked before the
+  pre-existing no-subcommand toolchain-check parsing, never on
+  `basename(process.argv[1])` — this repository invokes every gate by its
+  compiled path (`node packages/builder/dist/ci/bin.js`), so a
+  filename-keyed dispatch could never tell the four commands apart. No new
+  `bin` entry and no new runtime dependency. `aggregate-observations` and
+  `check-observation-freshness` apply the fleet 0/1/2 ternary via
+  `@vespeneventures/controller/gates`'s own `gateResultToExitCode`;
+  `deployment-health` applies the identical mapping to
+  `DeploymentHealthStatus` (healthy → 0, degraded/unhealthy → 1, unknown →
+  2). See `src/ci/cli.test.ts`'s direct-path reachability suite, which
+  spawns the real compiled `dist/ci/bin.js` and asserts real exit codes for
+  all four commands, including the pre-existing no-subcommand path
+  unchanged.
+
 ## [0.6.0] - 2026-08-21
 
 ### Changed
