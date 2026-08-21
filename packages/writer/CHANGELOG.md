@@ -54,6 +54,17 @@ a reader who arrives at this package first.
   `@vespeneventures/writer`, the same treatment `strategist` gave its own
   self-references to `@vespeneventures/strategy`.
 
+### On the donor, and why it is not deprecated yet
+
+`@vespeneventures/copy` stays `published` for now. It cannot be marked
+deprecated while `@vespeneventures/surface` still declares it as a runtime
+dependency — `check:package-governance` reports a lifecycle finding for a live
+package depending on a deprecated one, and it is right to. The donors are
+deprecated once `publisher` replaces `surface` and depends on this package
+instead.
+
+This is a deferral with a trigger, not an omission.
+
 ### Not included
 
 - **No forwarding stub in the donor.** `@vespeneventures/copy` is

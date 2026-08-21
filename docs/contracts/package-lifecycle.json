@@ -47,15 +47,7 @@
     },
     {
       "name": "@vespeneventures/copy",
-      "status": "deprecated",
-      "replacement": {
-        "name": "@vespeneventures/writer",
-        "range": "^0.1.0"
-      },
-      "deprecatedOn": "2026-08-21",
-      "decision": "docs/DECISIONS.md#10-recutting-the-expression-surface-into-role-shaped-packages",
-      "migration": "packages/writer/README.md",
-      "forwardsToReplacement": false
+      "status": "published"
     },
     {
       "name": "@vespeneventures/deployment",
