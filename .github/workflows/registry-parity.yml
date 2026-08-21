@@ -1,0 +1,57 @@
+name: Registry parity
+
+# The safety net for issue #416: FAIL when a non-private
+# packages/*/package.json's version on `main` has no counterpart on the
+# registry. `publish.yml`'s `discover` job now selects by
+# registry-versus-manifest instead of by one push's diff (see
+# scripts/select-publishable-packages.mjs), which makes an ordinary publish
+# self-healing on the very next push that touches ANY package manifest. But
+# "the next push" might not come for a while — if the package a publish run
+# was evicted for is the last one anybody bumps, nothing triggers that
+# self-healing at all. This scheduled run needs no further push: it
+# re-derives the same gap from nothing but `main`'s current manifests and
+# the registry, on its own cadence, the same independent-backstop shape
+# .github/workflows/package-visibility.yml already uses for its own
+# registry check. See scripts/check-registry-parity.mjs's own header for
+# the full design.
+#
+# Deliberately NOT a required status context. A scheduled workflow cannot be
+# one (it does not run per pull request), and this repository's practice is
+# that promoting any check to "required" is an owner decision made in
+# GitHub's branch protection settings, never something a workflow file
+# decides for itself — see AGENTS.md.
+on:
+  schedule:
+    # Daily, off the top of the hour to avoid the scheduled-workflow queue
+    # every "on the hour" cron in the world competes for. Offset from
+    # package-visibility.yml's own 06:17 run so the two scheduled registry
+    # checks do not contend for the same runner minute.
+    - cron: "43 7 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: registry-parity
+  cancel-in-progress: false
+
+jobs:
+  check:
+    name: check registry parity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+
+      # The same classic read:packages token publish.yml's discover,
+      # name-collision, and post-publish visibility-check steps already
+      # use — read-only, scoped to package listing, and unable to reach any
+      # other repository's contents.
+      - name: check-registry-parity
+        env:
+          GH_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
+        run: node scripts/check-registry-parity.mjs
