@@ -1,6 +1,6 @@
 {
   "name": "@vespeneventures/builder",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -27,10 +27,15 @@
     "./ci": {
       "types": "./dist/ci/index.d.ts",
       "import": "./dist/ci/index.js"
+    },
+    "./machine": {
+      "types": "./dist/machine/index.d.ts",
+      "import": "./dist/machine/index.js"
     }
   },
   "bin": {
-    "builder-verify-toolchain": "./dist/ci/bin.js"
+    "builder-verify-toolchain": "./dist/ci/bin.js",
+    "builder-verify-machine": "./dist/machine/bin.js"
   },
   "files": [
     "dist",
