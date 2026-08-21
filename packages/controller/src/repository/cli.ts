@@ -30,7 +30,7 @@ import { join, resolve } from "node:path";
 import { CANONICAL_REPOSITORY_PROFILE_PATH } from "./types.js";
 import { locateRepositoryProfile } from "./locate.js";
 import { validateRepositoryProfile } from "./validate.js";
-import type { RepositoryDeclarationLocationFinding } from "./types.js";
+import type { RepositoryDeclarationLocationFinding, RepositoryProfileFinding } from "./types.js";
 
 const USAGE = `Usage: repository-check [path]
 
@@ -141,24 +141,66 @@ function resolveInput(pathArgument: string | undefined): ResolvedInput {
 
 /**
  * Runs the CLI without reading global process arguments so the complete
- * argument-to-exit-code contract can be tested directly.
+ * argument-to-exit-code contract can be tested directly. Self-contained:
+ * this never lets an exception escape, always returning `0 | 1 | 2` itself
+ * — matching `inspector`'s and `builder`'s own CLI `main` functions (issue
+ * #392). It used to let `parseJson`/`readDeclarationText`'s `CliInputError`
+ * propagate out to a separate `run()` wrapper's `catch`, which meant `main`
+ * itself was not safe to call directly — every other exported `main` in
+ * this fleet is.
  */
 export function main(argv: readonly string[]): number {
-  const args = parseArgs(argv);
+  let args: { path?: string; help: boolean };
+  try {
+    args = parseArgs(argv);
+  } catch (error) {
+    console.error(`repository-check: ${error instanceof Error ? error.message : String(error)}`);
+    console.error(`\n${USAGE}`);
+    return 2;
+  }
   if (args.help) {
     console.log(USAGE);
     return 0;
   }
 
-  const resolved = resolveInput(args.path);
+  let resolved: ResolvedInput;
+  try {
+    resolved = resolveInput(args.path);
+  } catch (error) {
+    console.error(`repository-check: ${error instanceof Error ? error.message : String(error)}`);
+    return 2;
+  }
   if (resolved.kind === "not-found") {
     const findings = [notFoundFinding()];
     printReport({ ok: false, findings });
     return 1;
   }
 
-  const value = parseJson(resolved.absolutePath, readDeclarationText(resolved.absolutePath));
-  const contentFindings = validateRepositoryProfile(value);
+  let value: unknown;
+  try {
+    value = parseJson(resolved.absolutePath, readDeclarationText(resolved.absolutePath));
+  } catch (error) {
+    console.error(`repository-check: ${error instanceof Error ? error.message : String(error)}`);
+    return 2;
+  }
+
+  // A backstop, not an expected path: `validateRepositoryProfile` is a pure
+  // classifier of `unknown` input and is not documented to throw. Wrapped
+  // anyway, the same way `inspector`'s `main` wraps its own core call — an
+  // exception escaping here would otherwise end the process on status `1`,
+  // this contract's code for "ran, and found a real violation", silently
+  // misreporting "could not run" as "ran and failed."
+  let contentFindings: RepositoryProfileFinding[];
+  try {
+    contentFindings = validateRepositoryProfile(value);
+  } catch (error) {
+    console.error(
+      `repository-check: the run did not complete, so nothing about this declaration has been established: ` +
+        `${error instanceof Error ? error.message : String(error)}`,
+    );
+    return 2;
+  }
+
   const findings = resolved.kind === "located" && !resolved.canonical
     ? [nonCanonicalLocationFinding(resolved.relativePath), ...contentFindings]
     : contentFindings;
@@ -166,13 +208,7 @@ export function main(argv: readonly string[]): number {
   return findings.length === 0 ? 0 : 1;
 }
 
+/** The installed entry point. `main` never throws, so there is nothing left for this to catch. */
 export function run(): void {
-  try {
-    process.exitCode = main(process.argv.slice(2));
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error(`repository-check: ${message}`);
-    if (!(error instanceof CliInputError)) console.error("repository-check: unexpected error");
-    process.exitCode = 2;
-  }
+  process.exitCode = main(process.argv.slice(2));
 }

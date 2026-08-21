@@ -191,15 +191,19 @@ structural defects such as a missing `LICENSE` — but it never installs the
 tarball or imports a single declared export. That install-and-import proof is
 a separate, genuinely distinct check (`packRoundTrip`, see
 [`packages/controller/src/release/pack-round-trip.ts`](../packages/controller/src/release/pack-round-trip.ts)),
-and it does not run as part of `preflight-package.mjs` at all. This is a real
-gap, not merely an enforcement gap: there is currently no local command that
-proves a package installs and imports cleanly before you propose publishing
-it. The only place that proof runs is inside the publish workflow itself (see
-[6. Publish](#6-publish) below) — now *before* `npm publish`, but still not
-reachable from a maintainer's own machine ahead of opening a pull request.
-Closing that — wiring `packRoundTrip` into `preflight-package.mjs` itself — is
+and it does not run as part of `preflight-package.mjs` at all.
+
+A local command for that proof now exists (issue #377):
+`foundry-governance preflight <lifecycle-file> <package-dir> [root]` (see
+`packages/controller`'s own README) runs `preflightGovernedPackage`, which
+calls `packRoundTrip` itself. It is a genuinely separate command, though —
+running it is a manual, additional step, not something `npm run preflight`
+runs for you. **Wiring `packRoundTrip` into `preflight-package.mjs` itself,
+so the ordinary preflight sequence above covers it automatically, is still
 tracked as separate, future work; it is not part of what fixed the ordering
-below.
+below**, and until it lands, the only place that proof runs *automatically*
+is inside the publish workflow itself (see [6. Publish](#6-publish) below) —
+after `preflight-package.mjs`, before `npm publish`.
 
 - [ ] Safety gate reports **FULL** mode and `PASS`. A `PASS (partial)` is not
       a clearance — it means identity checks never ran.

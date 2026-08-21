@@ -777,14 +777,23 @@ describe("local files and provider resource names", () => {
 });
 
 describe("the typescript peer-version guard (#182)", () => {
-  it("keeps TYPESCRIPT_DECLARED_RANGE in sync with package.json's declared peer range", () => {
+  it("keeps TYPESCRIPT_DECLARED_RANGE in sync with package.json's declared peer range, and the peer is optional again (#411 required it briefly; this PR — CI failure on #419 — restores optional now that this file lives behind its own ./gates/secrets subpath instead of the shared ./gates barrel)", () => {
     const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
     const manifest = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8")) as {
       peerDependencies: Record<string, string>;
-      peerDependenciesMeta: Record<string, { optional?: boolean }>;
+      peerDependenciesMeta?: Record<string, { optional?: boolean }>;
     };
     expect(TYPESCRIPT_DECLARED_RANGE).toBe(manifest.peerDependencies.typescript);
-    expect(manifest.peerDependenciesMeta.typescript?.optional).toBe(true);
+    // This file still imports `typescript` unconditionally at module
+    // scope, so a consumer who imports THIS file (or the ./gates/secrets
+    // subpath it lives behind) without installing typescript still gets
+    // ERR_MODULE_NOT_FOUND — that hazard is real and unchanged. What
+    // changed is that this file is no longer reachable through the shared
+    // ./gates barrel (see gates/index.ts and gates/secrets.ts), so
+    // `optional: true` is honest again for every OTHER ./gates consumer,
+    // who never reaches this file at all. See secret-gates.ts's own header
+    // for the full history of why this flag has flipped twice.
+    expect(manifest.peerDependenciesMeta?.typescript?.optional).toBe(true);
   });
 
   it("importing this module does not throw against this repository's own real installed typescript", () => {
