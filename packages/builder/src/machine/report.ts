@@ -5,6 +5,7 @@ import type { NamedSourcePlan } from "../composition.js";
 import { createRuntimeContext, planInstallation } from "../runtime.js";
 import type { FileSystemPort, Finding } from "../types.js";
 import { discoverAccountWorkspaces, resolveWorkspacesRoot } from "./discovery.js";
+import { CLASS_ONE_SOURCE, loadClassOnePolicy, resolveClassOneDeclarationPath } from "./machine-layer.js";
 import { buildSkillsManifest } from "./skills-manifest.js";
 import { loadThirdPartySkills, resolveThirdPartyRoot } from "./third-party.js";
 import type { DiscoveryPort } from "./types.js";
@@ -12,20 +13,21 @@ import type { DiscoveryPort } from "./types.js";
 /**
  * `verifyMachine`: the orchestrator behind `builder-verify-machine`.
  *
- * Composes what `discovery.ts` and `third-party.ts` found into named source
- * plans (§2 of the README's "Machine composition" section — per-skill links,
- * never a directory symlink or a materialized copy), then runs them through
- * this package's already-tested `composeInstallationPlans` and
- * `verifyComposedInstallation` completely unchanged.
+ * Composes what `machine-layer.ts` (class 1: package-owned, account-neutral
+ * conventions content), `discovery.ts` (class 2: per-account skill trees),
+ * and `third-party.ts` (class 3: vendor-scoped skills) found into named
+ * source plans (README's "Machine composition" section), then runs them
+ * through this package's already-tested `composeInstallationPlans` and
+ * `verifyComposedInstallation` completely unchanged — one composition path
+ * for all three classes, never a second one for class 1.
  *
  * The one rule every branch below is written to protect: an indeterminate
  * source is never quietly excluded from composition while the sources that
- * DID resolve get verified as if they were the whole machine. If ANY
- * discovered workspace or the third-party source is indeterminate,
- * composition itself is reported indeterminate too — see the `composition`
- * row's `sources-indeterminate` branch. A caller reading only `overall`
- * therefore can never mistake "half the machine verified clean" for "the
- * machine verified clean."
+ * DID resolve get verified as if they were the whole machine. If ANY of the
+ * three classes above is indeterminate, composition itself is reported
+ * indeterminate too — see the `composition` row's `sources-indeterminate`
+ * branch. A caller reading only `overall` therefore can never mistake "half
+ * the machine verified clean" for "the machine verified clean."
  */
 
 export const MACHINE_VERIFY_INPUTS_VERSION = 1 as const;
@@ -40,6 +42,17 @@ export interface MachineVerifyInputs {
   readonly accountWorkspacesRoot?: string;
   /** Overrides the `BUILDER_MACHINE_THIRD_PARTY_SKILLS_ROOT` environment variable. Third-party is optional: omitting both this and the environment variable means "this machine composes no third-party skills," not an error. */
   readonly thirdPartySkillsRoot?: string;
+  /**
+   * Overrides the `BUILDER_MACHINE_LAYER_DECLARATION_PATH` environment
+   * variable. Optional in the same shape `thirdPartySkillsRoot` is: omitting
+   * both this and the environment variable means "this run does not compose
+   * class 1," not an error — a caller mid-migration, or one that has not
+   * adopted a declaration yet, still gets a real verdict for the sources it
+   * DID supply. The retirement #410 exists to unblock requires supplying
+   * this explicitly; `verifyMachine` enforces the ternary once it is
+   * supplied, it does not force every caller to supply it.
+   */
+  readonly classOneDeclarationPath?: string;
 }
 
 export const machineVerifyReasons = createGateReasons([
@@ -47,9 +60,11 @@ export const machineVerifyReasons = createGateReasons([
   "invalid-inputs",
   "account-workspaces-indeterminate",
   "third-party-skills-indeterminate",
+  "class-one-indeterminate",
   "sources-indeterminate",
   "no-sources-found",
   "composition-failed",
+  "retirement-indeterminate",
 ] as const);
 
 export type MachineVerifyReason = (typeof machineVerifyReasons.reasons)[number];
@@ -81,12 +96,14 @@ function parseInputs(raw: unknown): MachineVerifyInputs | undefined {
   if (typeof raw.composedSkillsRoot !== "string" || raw.composedSkillsRoot === "") return undefined;
   if (raw.accountWorkspacesRoot !== undefined && typeof raw.accountWorkspacesRoot !== "string") return undefined;
   if (raw.thirdPartySkillsRoot !== undefined && typeof raw.thirdPartySkillsRoot !== "string") return undefined;
+  if (raw.classOneDeclarationPath !== undefined && typeof raw.classOneDeclarationPath !== "string") return undefined;
   return {
     schemaVersion: MACHINE_VERIFY_INPUTS_VERSION,
     home: raw.home,
     composedSkillsRoot: raw.composedSkillsRoot,
     ...(raw.accountWorkspacesRoot === undefined ? {} : { accountWorkspacesRoot: raw.accountWorkspacesRoot }),
     ...(raw.thirdPartySkillsRoot === undefined ? {} : { thirdPartySkillsRoot: raw.thirdPartySkillsRoot }),
+    ...(raw.classOneDeclarationPath === undefined ? {} : { classOneDeclarationPath: raw.classOneDeclarationPath }),
   };
 }
 
@@ -197,6 +214,33 @@ export function verifyMachine(
           ),
         );
       }
+    }
+  }
+
+  // -- class one: package-owned, account-neutral conventions --------------------
+  // Optional the same way third-party is, just below: an unconfigured class-1
+  // source is absent, not a failure. See `MachineVerifyInputs.classOneDeclarationPath`.
+  const classOnePath = resolveClassOneDeclarationPath({ path: inputs.classOneDeclarationPath, env: options.env });
+  if (classOnePath !== undefined) {
+    const classOneResult = loadClassOnePolicy(discovery, { path: classOnePath });
+    if (classOneResult.verdict === "indeterminate") {
+      rows.push({
+        row: "class-one-conventions",
+        result: machineVerifyReasons.indeterminate(
+          "class-one-indeterminate",
+          `${classOneResult.reason ?? "unknown"}: ${classOneResult.detail ?? ""}`,
+        ),
+      });
+    } else {
+      const manifest = classOneResult.manifest as NonNullable<typeof classOneResult.manifest>;
+      const entryCount = manifest.links.length + manifest.copies.length + manifest.managedBlocks.length;
+      rows.push({ row: "class-one-conventions", result: gateSatisfied(evaluatedCount(entryCount)) });
+      const runtime = createRuntimeContext(manifest, {
+        home: inputs.home,
+        sourceRoot: classOneResult.sourceRoot as string,
+        workspaceRoot: inputs.home,
+      });
+      namedPlans.push({ source: CLASS_ONE_SOURCE, plan: planInstallation(manifest, runtime) });
     }
   }
 

@@ -503,6 +503,68 @@ were on the table:
   already generalizes to "one entry per unit of content," and a skill is
   exactly that unit.
 
+### Class 1: package-owned, account-neutral conventions, and where its destination map lives (#410)
+
+#393 named three classes of source; the two above are classes 2 and 3.
+Class 1 — machine guidance, agent policy rules, shell integration, command
+hooks — is not new content. It already ships in
+`@vespeneventures/controller/conventions`'s `CONVENTION_DOCUMENTS` and
+`CONVENTION_ADAPTERS` catalogs, and the retiring account repository was only
+ever the placement mechanism for it. What was missing was not the content; it
+was **where the mapping from that content to real machine destinations
+lives**, and #410 exists because three of the four candidate homes fail:
+
+1. **Inside `builder` itself** — every consumer of a general-purpose package
+   would inherit one particular machine's opinion about where its own files
+   go. A composition *engine* is general; a specific machine's destination
+   map is not.
+2. **Inside a surviving account plane** — this breaks the rule the whole
+   design rests on: no account plane may reach into another's, and only the
+   machine layer sees all of them. Declaring the machine's destination map
+   from inside one account plane is reaching, by definition.
+3. **Inside the retiring repository** — the status quo being retired, listed
+   only to be ruled out explicitly.
+4. **On the machine, in no repository at all.** A machine-local declaration,
+   owned by the machine layer, versioned nowhere because it is not a shared
+   artifact. **This is the one adopted.**
+
+`./machine-layer.ts`'s `MachineLayerDeclaration` is that declaration: a plain
+JSON document, read from a path the caller supplies or from
+`BUILDER_MACHINE_LAYER_DECLARATION_PATH`, naming — for each catalog id it
+places — an install kind (`link`, `copy`, or `managed-block`) and a
+`destination` expressed **relative to `home`**, never absolute. `home` is
+already an explicit input `verifyMachine` never infers
+(`MachineVerifyInputs.home`), so there was never a real "absolute paths baked
+into a public package" problem to solve by keeping this out of `builder` —
+that reasoning, floated early in #393's history, was the wrong one and #410
+explicitly retires it. The actual reason class 1's map stays out of this
+package is ownership: a general engine should not ship one machine's opinion.
+
+Because the declaration is a plain local file — never a path inside a
+repository, never fetched over the network — reading it needs no credential
+of any kind, for any repository. That is a stronger property than
+`packages/observer`'s `coverage-declaration.ts` contract achieves for its own
+different problem (a repository-hosted declaration reachable by an
+unauthenticated raw-content GET): there is no repository here to need
+unauthenticated access to in the first place.
+
+`buildClassOneManifest` is catalog-aware and throws on an id the catalog does
+not ship, or on templated content (a document or adapter carrying
+`${TOKEN}` placeholders) declared `"link"` — a symlinked reader would receive
+the literal token. `loadClassOnePolicy` is the public entry point and never
+throws, following `packages/integrator`'s `detectSupersession` split exactly:
+every internal failure folds into a named `indeterminate` reason, including
+an empty `destinations` array — nothing declared is not evidence class 1 has
+been composed (#338).
+
+`verifyMachine`'s class-one source is optional the same way third-party is:
+omitting `classOneDeclarationPath` and the environment variable means "this
+run does not compose class 1," not a failure — but composed, once supplied,
+it goes through the exact same `composeInstallationPlans` classes 2 and 3
+already use, tagged `"package-conventions"`, so a destination it shares with
+an account workspace or a third-party skill is a reported
+`DestinationCollisionError` like any other, never a silent last-writer-wins.
+
 ### Discovery: never a hard-coded list, never a silent partial machine
 
 `./discovery.ts`'s `discoverAccountWorkspaces` takes a root from the caller or
@@ -541,8 +603,9 @@ const report = verifyMachine(createNodeDiscoveryPort(), createNodeFileSystem(), 
   schemaVersion: 1,
   home: process.env.HOME,
   composedSkillsRoot: `${process.env.HOME}/.agents/skills`,
-  // accountWorkspacesRoot / thirdPartySkillsRoot may come from here instead
-  // of BUILDER_MACHINE_WORKSPACES_ROOT / BUILDER_MACHINE_THIRD_PARTY_SKILLS_ROOT.
+  // accountWorkspacesRoot / thirdPartySkillsRoot / classOneDeclarationPath may
+  // come from here instead of BUILDER_MACHINE_WORKSPACES_ROOT /
+  // BUILDER_MACHINE_THIRD_PARTY_SKILLS_ROOT / BUILDER_MACHINE_LAYER_DECLARATION_PATH.
 });
 // report.overall.verdict: "satisfied" | "violated" | "indeterminate"
 // report.exitCode: 0 | 1 | 2 — the same fold as everywhere else in this package
