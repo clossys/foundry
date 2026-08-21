@@ -5,6 +5,38 @@ All notable changes to `@vespeneventures/inspector` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.14] - 2026-08-21
+
+### Added
+
+- **Closes issue #283's last open acceptance criterion: the caller pattern is
+  now verified under real Actions shell semantics.** `src/bin.actions-shell.test.ts`
+  spawns the actual compiled `dist/bin.js` — the same dist path
+  `.github/workflows/verify-standards.yml` and the caller-workflow template
+  both invoke — through a real `bash -e` subprocess (the shell GitHub Actions
+  runs a `run:` step under) and asserts all three exit states: `0`
+  (satisfied), `1` (violated), and `2` (indeterminate). Previously only
+  `src/cli.test.ts`'s in-memory-port coverage existed; it can assert `main`'s
+  return value but cannot see what a real shell does to that value on the
+  way to becoming a step's exit status.
+- The suite also reproduces, under a real subprocess, the exact defect the
+  workflow's own "DECIDE" step comment and `documents/caller-workflow.md`'s
+  "On never piping the decision step" section describe in prose: piping the
+  decisive command into another command under `bash -e` with no
+  `pipefail` swallows a real `1` or `2` into a false `0`, and `set -o
+  pipefail` alone restores the real status. Both are now backed by an
+  assertion, not just a comment.
+
+### Verified, not changed
+
+- The documented caller pattern — redirect the decisive command's output to
+  a file, capture its status with `|| status=$?`, `cat` the file, then `exit
+  "$status"` — was confirmed correct for all three exit states under a real
+  `bash -e` subprocess. No fix was needed to
+  `.github/workflows/verify-standards.yml` or this package's own
+  `documents/caller-workflow.md`: both already document the pattern this
+  release's test now verifies.
+
 ## [0.1.13] - 2026-08-21
 
 ### Changed
