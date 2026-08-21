@@ -1639,6 +1639,29 @@ root. `--format json` prints the compact machine-readable summary; add
 `--verbose` to either format for the complete report. Use
 `foundry-governance --help` for the full invocation contract.
 
+Two subcommands (issue #377) give `preflightGovernedPackage` /
+`preflightPackage` / `packRoundTrip` and `verifyPublishedArtifact` — all
+three previously public library exports with no CLI path at all — a real
+entry point on this same bin, dispatched on the literal `argv[0]`:
+
+```bash
+# Packs packages/widgets, installs it into a genuinely isolated directory,
+# imports every declared subpath, AND folds in the lifecycle/catalog report
+# above — the local command docs/PUBLISHING.md names as a real gap.
+foundry-governance preflight package-lifecycle.json packages/widgets . --scope @example
+
+# Verifies already-fetched published content against an expected sha256
+# digest, via this package's own ./policy binding verifier.
+foundry-governance verify-published <sha256-digest> ./fetched-artifact.tgz
+```
+
+`preflight` exits `0` when the package installs and imports cleanly AND has
+no lifecycle/catalog error finding, `1` when either half fails, `2` when it
+could not run. `verify-published` exits `0` on a digest match, `1` on a
+mismatch (or another binding finding), `2` when it could not run. Use
+`foundry-governance preflight --help` / `foundry-governance verify-published
+--help` for each subcommand's own invocation contract.
+
 ## API
 
 | Export | Kind | Purpose |

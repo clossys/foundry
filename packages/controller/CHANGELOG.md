@@ -5,6 +5,46 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.6] - 2026-08-21
+
+### Added
+
+- **Two `foundry-governance` subcommands close the last remaining
+  instances of issue #377** ("gates shipped as library exports with no
+  CLI path are decorative"): `preflight` and `verify-published`. Traced the
+  real call graph (not the import list) first: none of this package's five
+  existing bins called `preflightPackage`, `preflightGovernedPackage`,
+  `packRoundTrip`, or `verifyPublishedArtifact` anywhere — `packRoundTrip`
+  was reachable only from an inline script inside
+  `.github/workflows/publish.yml`, never from a bin a consumer could
+  invoke — confirming the three were genuinely decorative, not merely
+  under-exercised by this repository's own CI.
+  - `foundry-governance preflight <lifecycle-file> <package-dir> [root]`
+    calls `preflightGovernedPackage`, which itself calls `preflightPackage`
+    and `packRoundTrip` — one subcommand reaches all three named exports
+    via the call graph, the same "outer gate calling an inner one" shape
+    already established for `verifyToolchain` → `reconcileToolchain` and
+    `verifyComposedInstallation` → `verifyInstallation`. This is also the
+    local command `docs/PUBLISHING.md` names as a real, previously-open gap
+    ("no local command that proves a package installs and imports cleanly
+    before you propose publishing it").
+  - `foundry-governance verify-published <expected-digest> <content-file>`
+    calls `verifyPublishedArtifact` directly.
+  - Extended the package's existing `foundry-governance` bin rather than
+    adding a sixth bin, per the wiring rule this issue's own thread states.
+    Dispatch is keyed on the literal `argv[0]`, never on
+    `basename(process.argv[1])` — this repository invokes every gate by its
+    compiled `dist/` path, under which a filename-keyed dispatch always
+    sees `cli.js` and silently runs the wrong command, a defect that
+    shipped once already during this same effort. Confirmed reachable the
+    way this repository actually invokes gates: a new test spawns the real
+    compiled `dist/cli.js` via `execFileSync` for both new subcommands AND
+    the pre-existing no-subcommand invocation (unchanged).
+  - The pre-existing, synchronous, no-subcommand `main` is unchanged —
+    same signature, same behavior, same tests. The two new subcommands call
+    `async` functions, so a new `mainAsync` dispatcher (which `run()` now
+    calls) handles them and falls through to the original `main` otherwise.
+
 ## [0.8.5] - 2026-08-21
 
 ### Fixed
