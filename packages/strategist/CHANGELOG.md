@@ -25,6 +25,11 @@ reader who arrives at this package first.
   `basename(process.argv[1])`, which would see `cli.js` and silently run the
   wrong command wherever a gate is invoked by compiled path.
 - Zero runtime dependencies, unchanged from the donor.
+- **The published tarball carries this changelog.** `files` includes
+  `CHANGELOG.md`, following the convention the operation packages adopted in
+  #417. A consumer reading the installed package should not have to leave it to
+  find out what changed; a new package should be born with the current
+  convention rather than inheriting its donor's gap.
 
 ### Changed from `@vespeneventures/strategy`
 
