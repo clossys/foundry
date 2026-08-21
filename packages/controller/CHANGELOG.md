@@ -5,6 +5,26 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.5] - 2026-08-21
+
+### Fixed
+
+- **The three CLI `main()` functions no longer throw on malformed input
+  (issue #392, medium finding).** `repository/cli.ts`, `gates/cli.ts`, and
+  `review/cli.ts` each let a `CliInputError` from argument parsing or
+  `JSON.parse`-ing a file escape `main()` itself, relying on a separate
+  `run()` wrapper's `catch` to turn it into exit code 2 — meaning `main()`
+  was not actually safe to call directly, unlike `inspector`'s and
+  `builder`'s own CLI `main()` functions, which never throw and always
+  return `0 | 1 | 2` themselves. Each of the three now wraps its own risky
+  calls (argument parsing, file read + JSON parse, and — as a backstop, the
+  same way `inspector`'s `main` wraps its own core call — the pure
+  validator/check call itself) and returns `2` directly; `run()` is now a
+  trivial `process.exitCode = main(...)` with nothing left to catch,
+  matching the sibling pattern exactly rather than inventing a third one.
+  Existing tests that asserted the old `toThrow(CliInputError)` behavior
+  now assert the returned exit code instead.
+
 ## [0.8.4] - 2026-08-21
 
 ### Fixed

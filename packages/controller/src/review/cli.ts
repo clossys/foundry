@@ -46,27 +46,63 @@ function readJson(path: string, label: string): unknown {
   }
 }
 
-/** Runs without global arguments so the full exit-code contract is testable. */
+/**
+ * Runs without global arguments so the full exit-code contract is testable.
+ * Self-contained: never lets an exception escape, always returning
+ * `0 | 1 | 2` itself — matching `inspector`'s and `builder`'s own CLI
+ * `main` functions (issue #392). It used to let `readJson`'s
+ * `CliInputError` propagate out to a separate `run()` wrapper's `catch`,
+ * which meant `main` itself was not safe to call directly — every other
+ * exported `main` in this fleet is.
+ */
 export function main(argv: readonly string[]): number {
-  const args = parseArgs(argv);
+  let args: { evidenceFile?: string; policyFile?: string; help: boolean };
+  try {
+    args = parseArgs(argv);
+  } catch (error) {
+    console.error(`review-check: ${error instanceof Error ? error.message : String(error)}`);
+    console.error(`\n${USAGE}`);
+    return 2;
+  }
   if (args.help) {
     console.log(USAGE);
     return 0;
   }
-  const evidence = readJson(resolve(args.evidenceFile as string), "evidence-file");
-  const policy = readJson(resolve(args.policyFile as string), "policy-file");
-  const findings = validateReviewEvidence(evidence, policy);
+
+  let evidence: unknown;
+  let policy: unknown;
+  try {
+    evidence = readJson(resolve(args.evidenceFile as string), "evidence-file");
+    policy = readJson(resolve(args.policyFile as string), "policy-file");
+  } catch (error) {
+    console.error(`review-check: ${error instanceof Error ? error.message : String(error)}`);
+    return 2;
+  }
+
+  // A backstop, not an expected path: `validateReviewEvidence` is a pure
+  // classifier of `unknown` input and is not documented to throw. Wrapped
+  // anyway, the same way `inspector`'s `main` wraps its own core call — an
+  // exception escaping here would otherwise end the process on status `1`,
+  // this contract's code for "ran, and found a real violation", silently
+  // misreporting "could not run" as "ran and failed."
+  let findings: ReviewFinding[];
+  try {
+    findings = validateReviewEvidence(evidence, policy);
+  } catch (error) {
+    console.error(
+      `review-check: the run did not complete, so nothing about this evidence has been established: ` +
+        `${error instanceof Error ? error.message : String(error)}`,
+    );
+    return 2;
+  }
+
   console.log(JSON.stringify({ ok: findings.length === 0, findings }, null, 2));
   return findings.length === 0 ? 0 : 1;
 }
 
+/** The installed entry point. `main` never throws, so there is nothing left for this to catch. */
 export function run(): void {
-  try {
-    process.exitCode = main(process.argv.slice(2));
-  } catch (error) {
-    console.error(`review-check: ${error instanceof Error ? error.message : String(error)}`);
-    process.exitCode = 2;
-  }
+  process.exitCode = main(process.argv.slice(2));
 }
 
 /** Avoid running while this module is imported by a test or another program. */
