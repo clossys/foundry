@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * `strategy-facts-check` — the CLI for `checkFactsTraceability`. Presentation
+ * `strategist-check` — the CLI for `checkFactsTraceability`. Presentation
  * only: parse argv, read the strategy directory, walk the scan directory,
  * run the pure gate, print a report, pick an exit code. All real work
  * happens in `reader.ts`, `scan.ts`, and `facts-gate.ts`.
@@ -66,9 +66,9 @@ import { readStrategy, type StrategyBundle } from "./reader.js";
 import { validateDirectionEntities, type DirectionEntity } from "./schema.js";
 import { scanStrategyDirectory } from "./scan.js";
 
-const USAGE = `Usage: strategy-facts-check <strategy-dir> [scan-dir] [options]
-   or: strategy-facts-check brand-coverage <derivations-file> <brandable-slots-file>
-   or: strategy-facts-check direction <direction-entities-file> <reviewed-against-file>
+const USAGE = `Usage: strategist-check <strategy-dir> [scan-dir] [options]
+   or: strategist-check brand-coverage <derivations-file> <brandable-slots-file>
+   or: strategist-check direction <direction-entities-file> <reviewed-against-file>
 
   strategy-dir   Directory containing facts.json (and the rest of the strategy bundle). Required.
   scan-dir       Directory to scan for prose/copy claims. Defaults to the current working directory.
@@ -78,10 +78,10 @@ Options:
 
 Exit codes: 0 = clean, 1 = at least one finding, 2 = could not run (bad input, missing/invalid facts.json, nothing matched to scan, or an unreadable directory).
 
-Run "strategy-facts-check brand-coverage --help" or "strategy-facts-check direction --help" for those subcommands' own usage.
+Run "strategist-check brand-coverage --help" or "strategist-check direction --help" for those subcommands' own usage.
 `;
 
-const BRAND_COVERAGE_USAGE = `Usage: strategy-facts-check brand-coverage <derivations-file> <brandable-slots-file>
+const BRAND_COVERAGE_USAGE = `Usage: strategist-check brand-coverage <derivations-file> <brandable-slots-file>
 
   derivations-file      Path to a JSON file containing an array of BrandDerivation objects (see @vespeneventures/strategist's README, "The brand layer"). Required.
   brandable-slots-file  Path to a JSON file containing an array of brandable token-slot name strings (the thing being checked FOR — e.g. every @vespeneventures/ui/tokens entry with "brandable: true", collected by the caller since this package never imports tokens). Required.
@@ -94,7 +94,7 @@ Checks, in both directions, whether derivations-file fully accounts for the slot
 Exit codes: 0 = satisfied, 1 = violated (a real coverage gap in either direction), 2 = indeterminate (could not run: bad input, missing/unreadable/unparseable/invalid file, zero brandable slots supplied, or zero derivations supplied).
 `;
 
-const DIRECTION_USAGE = `Usage: strategy-facts-check direction <direction-entities-file> <reviewed-against-file>
+const DIRECTION_USAGE = `Usage: strategist-check direction <direction-entities-file> <reviewed-against-file>
 
   direction-entities-file  Path to a JSON file containing an array of DirectionEntity objects (see @vespeneventures/strategist's README, "The direction layer"). Required.
   reviewed-against-file    Path to a JSON file containing an array of strings: one entry per derived artifact, naming the DirectionEntity id that artifact's "reviewedAgainst" points at. Required.
@@ -615,12 +615,12 @@ function run(): void {
     process.exitCode = main(process.argv.slice(2));
   } catch (error) {
     if (error instanceof CliInputError) {
-      console.error(`strategy-facts-check: ${error.message}`);
+      console.error(`strategist-check: ${error.message}`);
       console.error(`\n${USAGE}`);
       process.exitCode = 2;
     } else {
       console.error(
-        `strategy-facts-check: unexpected error: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`,
+        `strategist-check: unexpected error: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`,
       );
       process.exitCode = 2;
     }

@@ -16,7 +16,7 @@
  *      prose (and copy in source) for numeric and superlative claims and
  *      fails when one cannot be traced back to a `facts.json` entry.
  *      `scanStrategyDirectory` (`scan.ts`) is its I/O half. `cli.ts` wires
- *      both into `strategy-facts-check`, an installable CLI with the
+ *      both into `strategist-check`, an installable CLI with the
  *      three-state exit-code contract this repository's other gates use:
  *      0 clean, 1 findings, 2 could not run.
  *

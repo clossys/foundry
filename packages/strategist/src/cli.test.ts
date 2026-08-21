@@ -407,7 +407,7 @@ function checkDirectionCoverageDirect(entitiesFile: string, reviewsFile: string)
 // exported `main(argv)` directly, which proves the argv-to-exit-code
 // contract but NEVER proves the CLI is reachable the only way it actually
 // ships: as `node dist/cli.js ...`, invoked by a consumer's CI or by the
-// `strategy-facts-check`/future `node_modules/.bin` symlink. This is the
+// `strategist-check`/future `node_modules/.bin` symlink. This is the
 // exact gap an earlier sibling task's defect exploited: dispatching on
 // `basename(process.argv[1])` instead of `argv[0]` made a real subcommand
 // unreachable through every actual invocation shape while every OTHER test
