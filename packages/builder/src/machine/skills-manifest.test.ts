@@ -57,7 +57,7 @@ describe("the single-directory-symlink to per-skill-links transition (#240)", ()
     // The pre-migration shape: composedSkillsRoot is a single directory
     // symlink into the repository being retired, and that repository is
     // now gone — a dangling link, exactly #240's own reproduction.
-    fs.setSymlink(composedSkillsRoot, "/code/deleted-account-repo/skills");
+    fs.setSymlink(composedSkillsRoot, "/code/deleted-account-checkout/skills");
 
     const plan = setup(["greet"]);
 
@@ -70,7 +70,7 @@ describe("the single-directory-symlink to per-skill-links transition (#240)", ()
 
     // Untouched: the stale symlink is exactly what it was before the attempt.
     expect(fs.lstat(composedSkillsRoot)?.isSymbolicLink).toBe(true);
-    expect(fs.readlink(composedSkillsRoot)).toBe("/code/deleted-account-repo/skills");
+    expect(fs.readlink(composedSkillsRoot)).toBe("/code/deleted-account-checkout/skills");
     // Nothing was backed up either -- the refusal fires before any backup or
     // removal is attempted.
     expect(fs.lstat(`${backupRoot}${composedSkillsRoot}`)).toBeUndefined();
@@ -79,7 +79,7 @@ describe("the single-directory-symlink to per-skill-links transition (#240)", ()
   it("also refuses a directory symlink still pointing at a directory that exists — not only the dangling case", () => {
     const fs = createMemoryFileSystem();
     fs.setDirectory(`${sourceRoot}/greet`);
-    const stillExistingTarget = "/code/not-yet-deleted-account-repo/skills";
+    const stillExistingTarget = "/code/not-yet-deleted-account-checkout/skills";
     fs.setDirectory(stillExistingTarget);
     fs.setSymlink(composedSkillsRoot, stillExistingTarget);
 
@@ -94,7 +94,7 @@ describe("the single-directory-symlink to per-skill-links transition (#240)", ()
 
   it("verify (never applies) reports the same situation as a clean finding, never a throw", () => {
     const fs = createMemoryFileSystem();
-    fs.setSymlink(composedSkillsRoot, "/code/deleted-account-repo/skills");
+    fs.setSymlink(composedSkillsRoot, "/code/deleted-account-checkout/skills");
 
     const plan = setup(["greet"]);
     const findings = verifyInstallation(plan, fs);

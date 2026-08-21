@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { createMemoryDiscoveryFileSystem } from "./memory-discovery.test-helper.js";
 import {
@@ -17,7 +18,7 @@ function validDeclaration(overrides: Record<string, unknown> = {}): Record<strin
   return {
     schemaVersion: 1,
     destinations: [
-      { id: "branch-provenance", install: "link", destination: ".agents/documents/branch-provenance.md" },
+      { id: "branch-provenance", install: "link", destination: ".agents/documents/branch-provenance" },
       { id: "agent-policy-rules", install: "copy", destination: ".claude/agent-policy.rules" },
     ],
     ...overrides,
@@ -161,7 +162,7 @@ describe("parseMachineLayerDeclaration", () => {
 describe("writeMachineLayerDeclaration", () => {
   it("serializes a valid declaration", () => {
     const serialized = writeMachineLayerDeclaration({
-      destinations: [{ id: "branch-provenance", install: "link", destination: ".agents/branch-provenance.md" }],
+      destinations: [{ id: "branch-provenance", install: "link", destination: ".agents/branch-provenance" }],
     });
     const parsed = JSON.parse(serialized) as Record<string, unknown>;
     expect(parsed.schemaVersion).toBe(1);
@@ -179,9 +180,9 @@ describe("buildClassOneManifest", () => {
   it("builds a link entry for non-templated content, sourced from the shared conventions root", () => {
     const manifest = buildClassOneManifest({
       schemaVersion: 1,
-      destinations: [{ id: "branch-provenance", install: "link", destination: ".agents/branch-provenance.md" }],
+      destinations: [{ id: "branch-provenance", install: "link", destination: ".agents/branch-provenance" }],
     });
-    expect(manifest.links).toEqual([{ source: "documents/branch-provenance.md", destination: "${HOME}/.agents/branch-provenance.md" }]);
+    expect(manifest.links).toEqual([{ source: join("documents", "branch-provenance.md"), destination: "${HOME}/.agents/branch-provenance" }]);
   });
 
   it("builds a copy entry carrying the catalog's own mode for an adapter that declares one", () => {
@@ -197,10 +198,10 @@ describe("buildClassOneManifest", () => {
   it("builds a templated copy for templated content, with template:true", () => {
     const manifest = buildClassOneManifest({
       schemaVersion: 1,
-      destinations: [{ id: "machine-guidance", install: "copy", destination: ".agents/machine-guidance.md" }],
+      destinations: [{ id: "machine-guidance", install: "copy", destination: ".agents/machine-guidance" }],
     });
     expect(manifest.copies).toEqual([
-      { source: "documents/machine-guidance.md", destination: "${HOME}/.agents/machine-guidance.md", template: true },
+      { source: join("documents", "machine-guidance.md"), destination: "${HOME}/.agents/machine-guidance", template: true },
     ]);
   });
 
@@ -208,7 +209,7 @@ describe("buildClassOneManifest", () => {
     expect(() =>
       buildClassOneManifest({
         schemaVersion: 1,
-        destinations: [{ id: "machine-guidance", install: "link", destination: ".agents/machine-guidance.md" }],
+        destinations: [{ id: "machine-guidance", install: "link", destination: ".agents/machine-guidance" }],
       }),
     ).toThrow(/must never be linked/);
   });

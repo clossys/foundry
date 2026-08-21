@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { applyComposedInstallation } from "../composition.js";
 import { createMemoryFileSystem } from "../memory-fs.test-helper.js";
@@ -218,7 +219,7 @@ describe("verifyMachine — class one: package-owned, account-neutral convention
   function classOneDeclaration(overrides: Record<string, unknown> = {}): string {
     return JSON.stringify({
       schemaVersion: 1,
-      destinations: [{ id: "branch-provenance", install: "link", destination: ".agents/branch-provenance.md" }],
+      destinations: [{ id: "branch-provenance", install: "link", destination: ".agents/branch-provenance" }],
       ...overrides,
     });
   }
@@ -270,7 +271,7 @@ describe("verifyMachine — class one: package-owned, account-neutral convention
 
     const composition = report.rows.find((row) => row.row === "composition");
     if (composition?.result.verdict === "violated") {
-      expect(composition.result.findings.some((f) => f.message.includes(".agents/branch-provenance.md"))).toBe(true);
+      expect(composition.result.findings.some((f) => f.message.includes(".agents/branch-provenance"))).toBe(true);
     } else {
       throw new Error("expected composition row to be violated");
     }
@@ -321,7 +322,7 @@ describe("verifyMachine — class one: package-owned, account-neutral convention
     // in-memory `fs` above knows nothing about the real controller package on
     // disk, so its copy of the one source file this test's declaration names
     // has to be seeded explicitly.
-    fs.set(`${classOneResult.sourceRoot}/documents/branch-provenance.md`, "branch provenance guidance");
+    fs.set(join(classOneResult.sourceRoot as string, "documents", "branch-provenance.md"), "branch provenance guidance");
     const runtime = createRuntimeContext(classOneResult.manifest as import("../types.js").Manifest, {
       home,
       sourceRoot: classOneResult.sourceRoot as string,

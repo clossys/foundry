@@ -279,7 +279,7 @@ function catalogEntryFor(id: string): CatalogEntry {
 
 /**
  * Builds a `Manifest` from an already shape-valid `MachineLayerDeclaration`,
- * consumed by `loadManifest`/`createRuntimeContext`/`planInstallation`
+ * ready to hand to `loadManifest`/`createRuntimeContext`/`planInstallation`
  * completely unchanged — the same discipline `skills-manifest.ts`'s
  * `buildSkillsManifest` follows for classes 2 and 3.
  *
