@@ -55,6 +55,10 @@
       "intendedVisibility": "public"
     },
     {
+      "name": "@vespeneventures/publisher",
+      "intendedVisibility": "public"
+    },
+    {
       "name": "@vespeneventures/strategist",
       "intendedVisibility": "public"
     },
