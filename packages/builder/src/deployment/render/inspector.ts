@@ -1,5 +1,5 @@
 import { RenderInspectionError } from "./errors.js";
-import type { RenderDeploymentState, RenderDomainCheck, RenderFetch, RenderInspection, RenderInspectionInput, RenderInspectorOptions, RenderTokenProvider } from "./types.js";
+import type { RenderDeploymentState, RenderDomainCheck, RenderFetch, RenderInspection, RenderInspectionInput, RenderInspectionResult, RenderInspectorOptions, RenderTokenProvider } from "./types.js";
 
 type JsonObject = Record<string, unknown>;
 
@@ -105,11 +105,108 @@ function serviceHealth(service: JsonObject): "healthy" | "unhealthy" | "unknown"
   return "unknown";
 }
 
-/** Creates a GET-only inspector. Credentials are obtained only when inspect is called. */
-export function createRenderInspector(options: RenderInspectorOptions): { inspect(input: RenderInspectionInput): Promise<RenderInspection> } {
+/**
+ * Runs the actual inspection: the service lookup, the deploy lookup, and
+ * however many custom-domain pages are needed. Every request-and-parse step
+ * in here can throw `RenderInspectionError`, and that is deliberate --
+ * `inspect` below is the single place that decides which of those throws are
+ * a real finding it lets propagate (`unauthorized`, `rate-limited`, an
+ * unrecognized `http` status: the provider responded, coherently, with
+ * something bad) and which are folded into `RenderInspectionIndeterminate`
+ * (`network`, `invalid-response`: the inspector never got a response it
+ * could read at all). Keeping that single decision point in `inspect` is
+ * what keeps this function free to throw eagerly and stay readable, exactly
+ * like `parseManifestNames` throwing freely under `detectSupersession` in
+ * `@vespeneventures/integrator`.
+ */
+async function performInspection(input: RenderInspectionInput, normalizedOptions: NormalizedOptions, token: string): Promise<RenderInspection> {
+  const request = async (url: URL): Promise<Response> => {
+    if (input.signal?.aborted) throw new RenderInspectionError("aborted");
+    try {
+      const response = await normalizedOptions.fetch(url, { method: "GET", headers: { Accept: "application/json", Authorization: `Bearer ${token}` }, credentials: "omit", redirect: "error", signal: input.signal });
+      if (!response.ok) throw providerError(response.status);
+      return response;
+    } catch (error) {
+      if (error instanceof RenderInspectionError) throw error;
+      if (input.signal?.aborted || (error instanceof Error && error.name === "AbortError")) throw new RenderInspectionError("aborted");
+      throw new RenderInspectionError("network");
+    }
+  };
+  const serviceUrl = new URL(`/v1/services/${encodeURIComponent(input.service.trim())}`, normalizedOptions.base);
+  let service: unknown;
+  try {
+    service = await parseJson(await request(serviceUrl));
+  } catch (error) {
+    if (error instanceof RenderInspectionError && error.kind === "http" && error.statusCode === 404) return { kind: "inspected", service: "missing", deployment: "none", serviceHealth: "unknown", domains: [] };
+    throw error;
+  }
+  if (!object(service) || string(service.id) === undefined) throw new RenderInspectionError("invalid-response");
+  const serviceId = string(service.id) as string;
+  const deployUrl = new URL(`/v1/services/${encodeURIComponent(serviceId)}/deploys`, normalizedOptions.base);
+  deployUrl.searchParams.set("limit", "100");
+  const deploys = page(await parseJson(await request(deployUrl)), "deploy").resources;
+  const deployment = deploys.length === 0 ? "none" : deploymentState(deploys[0]);
+  const expected = (input.expectedDomains ?? []).map((domain) => normalizedDomain(domain) as string);
+  const found = new Map<string, boolean | undefined>();
+  let domainsComplete = expected.length === 0;
+  if (expected.length > 0) {
+    let cursor: string | undefined;
+    for (let index = 0; index < (input.maxPages ?? 20) && expected.some((domain) => !found.has(domain)); index += 1) {
+      const domainsUrl = new URL(`/v1/services/${encodeURIComponent(serviceId)}/custom-domains`, normalizedOptions.base);
+      domainsUrl.searchParams.set("limit", "100");
+      if (cursor !== undefined) domainsUrl.searchParams.set("cursor", cursor);
+      const domainPage = page(await parseJson(await request(domainsUrl)), "customDomain");
+      for (const item of domainPage.resources) {
+        const name = string(item.name);
+        const domain = name === undefined ? undefined : normalizedDomain(name);
+        if (domain !== undefined && expected.includes(domain)) {
+          const verificationStatus = string(item.verificationStatus);
+          found.set(domain, verificationStatus === "verified" ? true : verificationStatus === "unverified" ? false : undefined);
+        }
+      }
+      if (expected.every((domain) => found.has(domain)) || domainPage.cursor === undefined) {
+        domainsComplete = true;
+        break;
+      }
+      if (domainPage.cursor === cursor) break;
+      cursor = domainPage.cursor;
+    }
+  }
+  const domainChecks: RenderDomainCheck[] = expected.map((domain) => {
+    const verification = found.get(domain);
+    const status = !found.has(domain)
+      ? domainsComplete ? "missing" : "unknown"
+      : verification === true ? "present" : verification === false ? "unverified" : "unknown";
+    return { domain, status };
+  });
+  return { kind: "inspected", service: "present", deployment, serviceHealth: serviceHealth(service), domains: domainChecks };
+}
+
+/**
+ * Creates a GET-only inspector. Credentials are obtained only when inspect
+ * is called.
+ *
+ * A response `performInspection` could not read at all -- a transport
+ * failure (`network`), or a response body that does not shape up the way
+ * the provider's own contract promises (`invalid-response`) -- is not a
+ * deployment that failed. It is a state this inspector could not form an
+ * opinion about, so it is reported as `RenderInspectionIndeterminate` here,
+ * never thrown out of this public entry point, and never silently folded
+ * into a healthy-looking `RenderInspection`. This is the exact fold
+ * `@vespeneventures/integrator`'s `resolveReachability` applies to a
+ * transport failure and a malformed registry body (both `unreachable`) --
+ * see that module's header for the fuller reasoning.
+ *
+ * Every other `RenderInspectionError` `performInspection` can throw stays a
+ * throw: `unauthorized` and `rate-limited` are the provider affirmatively
+ * responding with something real (a genuine finding, not an unreadable
+ * one), and `invalid-input` / `invalid-base-url` / `credential-unavailable`
+ * / `aborted` are never about what a provider said at all.
+ */
+export function createRenderInspector(options: RenderInspectorOptions): { inspect(input: RenderInspectionInput): Promise<RenderInspectionResult> } {
   const normalizedOptions = normalizeOptions(options);
   return {
-    async inspect(input: RenderInspectionInput): Promise<RenderInspection> {
+    async inspect(input: RenderInspectionInput): Promise<RenderInspectionResult> {
       if (!validInput(input)) throw new RenderInspectionError("invalid-input");
       if (input.signal?.aborted) throw new RenderInspectionError("aborted");
       let token: unknown;
@@ -119,66 +216,15 @@ export function createRenderInspector(options: RenderInspectorOptions): { inspec
         throw new RenderInspectionError("credential-unavailable");
       }
       if (typeof token !== "string" || token.trim().length === 0) throw new RenderInspectionError("credential-unavailable");
-      const request = async (url: URL): Promise<Response> => {
-        if (input.signal?.aborted) throw new RenderInspectionError("aborted");
-        try {
-          const response = await normalizedOptions.fetch(url, { method: "GET", headers: { Accept: "application/json", Authorization: `Bearer ${token}` }, credentials: "omit", redirect: "error", signal: input.signal });
-          if (!response.ok) throw providerError(response.status);
-          return response;
-        } catch (error) {
-          if (error instanceof RenderInspectionError) throw error;
-          if (input.signal?.aborted || (error instanceof Error && error.name === "AbortError")) throw new RenderInspectionError("aborted");
-          throw new RenderInspectionError("network");
-        }
-      };
-      const serviceUrl = new URL(`/v1/services/${encodeURIComponent(input.service.trim())}`, normalizedOptions.base);
-      let service: unknown;
+
       try {
-        service = await parseJson(await request(serviceUrl));
+        return await performInspection(input, normalizedOptions, token);
       } catch (error) {
-        if (error instanceof RenderInspectionError && error.kind === "http" && error.statusCode === 404) return { service: "missing", deployment: "none", serviceHealth: "unknown", domains: [] };
+        if (error instanceof RenderInspectionError && (error.kind === "network" || error.kind === "invalid-response")) {
+          return { kind: "indeterminate", reason: error.kind, detail: error.message };
+        }
         throw error;
       }
-      if (!object(service) || string(service.id) === undefined) throw new RenderInspectionError("invalid-response");
-      const serviceId = string(service.id) as string;
-      const deployUrl = new URL(`/v1/services/${encodeURIComponent(serviceId)}/deploys`, normalizedOptions.base);
-      deployUrl.searchParams.set("limit", "100");
-      const deploys = page(await parseJson(await request(deployUrl)), "deploy").resources;
-      const deployment = deploys.length === 0 ? "none" : deploymentState(deploys[0]);
-      const expected = (input.expectedDomains ?? []).map((domain) => normalizedDomain(domain) as string);
-      const found = new Map<string, boolean | undefined>();
-      let domainsComplete = expected.length === 0;
-      if (expected.length > 0) {
-        let cursor: string | undefined;
-        for (let index = 0; index < (input.maxPages ?? 20) && expected.some((domain) => !found.has(domain)); index += 1) {
-          const domainsUrl = new URL(`/v1/services/${encodeURIComponent(serviceId)}/custom-domains`, normalizedOptions.base);
-          domainsUrl.searchParams.set("limit", "100");
-          if (cursor !== undefined) domainsUrl.searchParams.set("cursor", cursor);
-          const domainPage = page(await parseJson(await request(domainsUrl)), "customDomain");
-          for (const item of domainPage.resources) {
-            const name = string(item.name);
-            const domain = name === undefined ? undefined : normalizedDomain(name);
-            if (domain !== undefined && expected.includes(domain)) {
-              const verificationStatus = string(item.verificationStatus);
-              found.set(domain, verificationStatus === "verified" ? true : verificationStatus === "unverified" ? false : undefined);
-            }
-          }
-          if (expected.every((domain) => found.has(domain)) || domainPage.cursor === undefined) {
-            domainsComplete = true;
-            break;
-          }
-          if (domainPage.cursor === cursor) break;
-          cursor = domainPage.cursor;
-        }
-      }
-      const domainChecks: RenderDomainCheck[] = expected.map((domain) => {
-        const verification = found.get(domain);
-        const status = !found.has(domain)
-          ? domainsComplete ? "missing" : "unknown"
-          : verification === true ? "present" : verification === false ? "unverified" : "unknown";
-        return { domain, status };
-      });
-      return { service: "present", deployment, serviceHealth: serviceHealth(service), domains: domainChecks };
     },
   };
 }

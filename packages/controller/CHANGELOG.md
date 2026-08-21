@@ -5,6 +5,130 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.7] - 2026-08-21
+
+### Changed
+
+- **BREAKING: the source-aware secret-surface gates moved off `./gates`
+  onto their own subpath, `./gates/secrets`.** `checkCredentialInventory`,
+  `checkCredentialSurfaceDrift`, `checkLocalSecretFiles`,
+  `checkProviderResourceNames`, `checkSecretName`, `checkSecretReadiness`,
+  `checkValueFreeSecretCatalog`, `detectRawSecretReads`, and their
+  associated types are **no longer exported from
+  `@vespeneventures/controller/gates`**. Import them from
+  `@vespeneventures/controller/gates/secrets` instead.
+- **`typescript` is an optional peer again**
+  (`peerDependenciesMeta: { typescript: { optional: true } }`, restored).
+  It was made required in 0.8.4 (issue #411) because
+  `gates/secret-gates.ts` imports `typescript` unconditionally and, at the
+  time, was re-exported unconditionally from the shared `./gates` barrel —
+  so "optional" was a live lie for any `./gates` consumer. That fix traded
+  one defect for another: with `typescript` required, an offline install
+  of the published tarball (`npm install --offline`, no cache to resolve a
+  peer from) failed outright, caught by
+  `src/repository/installed-bin.test.ts`, for a consumer who never wanted
+  a secret gate in the first place.
+
+### Fixed
+
+- **The actual defect from #411 — one gate's compiler dependency forcing
+  itself on every `./gates` consumer, not the honesty of the manifest flag
+  — is now fixed at the source.** `secret-gates.ts` lives behind its own
+  subpath (`./gates/secrets`, `src/gates/secrets.ts`) and `gates/index.ts`
+  no longer re-exports it, matching the same technique this package
+  already used to keep the root entry point (`index.ts`/`governance.ts`)
+  free of `typescript` — see `governance.ts`'s own header. `./gates` itself
+  no longer requires `typescript` at all; `root-entry-boundary.test.ts` now
+  asserts that boundary for `./gates` the same way it already did for the
+  root, and traces `./gates/secrets` as the new (and now only) place
+  `secret-gates.ts` is reachable from a public entry point.
+  `gates/typescript-required.test.ts` proves both halves of the split with
+  a mocked absent peer: `./gates/secrets` still rejects without
+  `typescript` installed, and `./gates` no longer does.
+
+## [0.8.6] - 2026-08-21
+
+### Added
+
+- **Two `foundry-governance` subcommands close the last remaining
+  instances of issue #377** ("gates shipped as library exports with no
+  CLI path are decorative"): `preflight` and `verify-published`. Traced the
+  real call graph (not the import list) first: none of this package's five
+  existing bins called `preflightPackage`, `preflightGovernedPackage`,
+  `packRoundTrip`, or `verifyPublishedArtifact` anywhere — `packRoundTrip`
+  was reachable only from an inline script inside
+  `.github/workflows/publish.yml`, never from a bin a consumer could
+  invoke — confirming the three were genuinely decorative, not merely
+  under-exercised by this repository's own CI.
+  - `foundry-governance preflight <lifecycle-file> <package-dir> [root]`
+    calls `preflightGovernedPackage`, which itself calls `preflightPackage`
+    and `packRoundTrip` — one subcommand reaches all three named exports
+    via the call graph, the same "outer gate calling an inner one" shape
+    already established for `verifyToolchain` → `reconcileToolchain` and
+    `verifyComposedInstallation` → `verifyInstallation`. This also closes a
+    real, previously-documented gap this repository's own contributor
+    publishing guide named: no local command proved a package installs and
+    imports cleanly before you propose publishing it.
+  - `foundry-governance verify-published <expected-digest> <content-file>`
+    calls `verifyPublishedArtifact` directly.
+  - Extended the package's existing `foundry-governance` bin rather than
+    adding a sixth bin, per the wiring rule this issue's own thread states.
+    Dispatch is keyed on the literal `argv[0]`, never on
+    `basename(process.argv[1])` — this repository invokes every gate by its
+    compiled `dist/` path, under which a filename-keyed dispatch always
+    sees `cli.js` and silently runs the wrong command, a defect that
+    shipped once already during this same effort. Confirmed reachable the
+    way this repository actually invokes gates: a new test spawns the real
+    compiled `dist/cli.js` via `execFileSync` for both new subcommands AND
+    the pre-existing no-subcommand invocation (unchanged).
+  - The pre-existing, synchronous, no-subcommand `main` is unchanged —
+    same signature, same behavior, same tests. The two new subcommands call
+    `async` functions, so a new `mainAsync` dispatcher (which `run()` now
+    calls) handles them and falls through to the original `main` otherwise.
+
+## [0.8.5] - 2026-08-21
+
+### Fixed
+
+- **The three CLI `main()` functions no longer throw on malformed input
+  (issue #392, medium finding).** `repository/cli.ts`, `gates/cli.ts`, and
+  `review/cli.ts` each let a `CliInputError` from argument parsing or
+  `JSON.parse`-ing a file escape `main()` itself, relying on a separate
+  `run()` wrapper's `catch` to turn it into exit code 2 — meaning `main()`
+  was not actually safe to call directly, unlike `inspector`'s and
+  `builder`'s own CLI `main()` functions, which never throw and always
+  return `0 | 1 | 2` themselves. Each of the three now wraps its own risky
+  calls (argument parsing, file read + JSON parse, and — as a backstop, the
+  same way `inspector`'s `main` wraps its own core call — the pure
+  validator/check call itself) and returns `2` directly; `run()` is now a
+  trivial `process.exitCode = main(...)` with nothing left to catch,
+  matching the sibling pattern exactly rather than inventing a third one.
+  Existing tests that asserted the old `toThrow(CliInputError)` behavior
+  now assert the returned exit code instead.
+
+## [0.8.4] - 2026-08-21
+
+### Fixed
+
+- **`typescript` is now a required peer, not an optional one (issue #411).**
+  `gates/secret-gates.ts` has always imported `typescript` unconditionally,
+  at module scope — `peerDependenciesMeta: { optional: true }` was a live
+  lie: a consumer who believed it and skipped installing `typescript` got a
+  hard `ERR_MODULE_NOT_FOUND` the instant anything reached the `./gates`
+  subpath, not a degraded gate and nothing to catch it. This went unnoticed
+  because #226 made the registry drop `peerDependenciesMeta` from published
+  metadata, so every real consumer installed `typescript` regardless of
+  what the flag claimed. `peerDependencies` is declared at the package
+  level, not per subpath, so there is no way to keep the compiler optional
+  for the root entry point (which genuinely never touches it — see
+  `governance.ts`'s own header) while requiring it for `./gates` (which
+  always does). Given that, the `optional` flag is removed; `typescript`
+  is now an honest, required peer. `secret-gates.test.ts` and
+  `public-contract.test.ts` assert the flag is gone, and a new
+  `gates/typescript-required.test.ts` exercises the actual absent-peer
+  import path (via a mocked resolution failure) rather than only asserting
+  the manifest declaration.
+
 ## [0.8.3] - 2026-08-21
 
 ### Added

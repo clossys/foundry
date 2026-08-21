@@ -16,19 +16,50 @@ import ts from "typescript";
 import { assertPeerVersion } from "../internal/peer-version.js";
 
 /**
- * `typescript` is this package's one optional peer (see package.json's
- * `peerDependenciesMeta`) — optional so a consumer can install
- * `@vespeneventures/controller` without the compiler for every OTHER gate,
- * which never touch it. This is the one module that actually imports it
- * (see `governance.ts`'s own header comment for why the rest of this
- * package's import graph stays free of `typescript`), so this is the
- * adapter entry point #182 asks for: an absent or out-of-range compiler
- * previously surfaced as whatever this file happened to crash on deep
- * inside the TypeScript compiler API, with nothing naming a version range
- * as the cause. `TYPESCRIPT_DECLARED_RANGE` must match package.json's
- * `peerDependencies.typescript` exactly — `governance.test.ts` asserts
- * that directly, so drift between the two fails a real test rather than
- * silently going stale.
+ * `typescript` is an OPTIONAL peer again (this PR; CI failure on #419,
+ * closing the consequence of #411 rather than reopening it). History,
+ * because the flag has flipped twice:
+ *
+ * Originally optional. #411 found that this file has always imported
+ * `typescript` unconditionally, at module scope, right below — so an
+ * optional peer that a module imports unconditionally was not actually
+ * optional: a consumer who believed the declaration and skipped
+ * `npm install typescript` got `ERR_MODULE_NOT_FOUND` the instant anything
+ * reached the `./gates` subpath, because `gates/index.ts` re-exported this
+ * module unconditionally too. #411's fix made the declaration honest by
+ * making `typescript` REQUIRED at the package level instead — the only
+ * option available at the time, since `peerDependencies` is declared per
+ * package, not per subpath, and this file lived behind the one subpath
+ * (`./gates`) every other gate also lived behind.
+ *
+ * That fix immediately broke `installed-bin.test.ts`: with `typescript`
+ * required, `npm install --offline` on a clean tarball install has no
+ * cache to resolve the peer from, and fails outright — a consumer wanting
+ * nothing more than, say, `runFoundationCheck` now could not install this
+ * package at all without also pulling a compiler.
+ *
+ * The actual defect was never the manifest flag; it was this file's
+ * unconditional import riding along inside the SHARED `./gates` barrel.
+ * This PR fixes that at the source: this module now lives behind its own
+ * subpath, `./gates/secrets` (see `secrets.ts`), and `gates/index.ts` no
+ * longer re-exports it at all. With the barrel clean, `typescript` can go
+ * back to being genuinely optional — a consumer of plain `./gates` never
+ * reaches this file, and a consumer who deliberately imports
+ * `./gates/secrets` still gets the same unconditional import, same
+ * `ERR_MODULE_NOT_FOUND` if they skip installing the peer, same as this
+ * file has always actually demanded of ITS OWN importers specifically.
+ * `root-entry-boundary.test.ts` asserts the new split: `./gates` never
+ * resolves this file or a bare `"typescript"` specifier, `./gates/secrets`
+ * always does. `governance.test.ts` and `secret-gates.test.ts` both assert
+ * `TYPESCRIPT_DECLARED_RANGE` matches package.json's
+ * `peerDependencies.typescript` exactly, and that `peerDependenciesMeta`
+ * marks it optional once again, so drift between the code and the
+ * manifest fails a real test rather than silently going stale. This is
+ * still the adapter entry point #182 asks for: an absent or out-of-range
+ * compiler surfaces as a named, actionable error via `assertPeerVersion`
+ * below — installed-but-incompatible is caught here; fully-absent is
+ * caught by Node's own module resolution failing to find the bare
+ * specifier, now that npm no longer force-installs it as a required peer.
  */
 export const TYPESCRIPT_DECLARED_RANGE = "~6.0.0";
 assertPeerVersion({ peer: "typescript", declaredRange: TYPESCRIPT_DECLARED_RANGE, foundVersion: ts.version });

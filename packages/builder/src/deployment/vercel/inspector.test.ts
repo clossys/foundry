@@ -24,7 +24,7 @@ describe("createVercelInspector", () => {
       return response({ domains: [{ name: "www.example.test", verified: true }], pagination: {} });
     };
     const inspector = createVercelInspector({ fetch, getBearerToken: () => "test-token" });
-    await expect(inspector.inspect({ project: "web", teamId: "team-1", expectedDomains: ["WWW.EXAMPLE.TEST."] })).resolves.toEqual({ project: "present", deployment: "ready", domains: [{ domain: "www.example.test", status: "present" }] });
+    await expect(inspector.inspect({ project: "web", teamId: "team-1", expectedDomains: ["WWW.EXAMPLE.TEST."] })).resolves.toEqual({ kind: "inspected", project: "present", deployment: "ready", domains: [{ domain: "www.example.test", status: "present" }] });
     expect(requests.every((request) => request.method === "GET" && request.credentials === "omit" && request.redirect === "error")).toBe(true);
     expect(requests.every((request) => (request.headers as Record<string, string>).Accept === "application/json" && (request.headers as Record<string, string>).Authorization === "Bearer test-token")).toBe(true);
     expect(urls.map((url) => url.pathname)).toEqual(["/v9/projects/web", "/v6/deployments", "/v9/projects/web/domains"]);
@@ -37,7 +37,7 @@ describe("createVercelInspector", () => {
 
   it("reports a missing project without exposing provider content", async () => {
     const inspector = createVercelInspector({ fetch: async () => response({}, 404), getBearerToken: () => "test-token" });
-    await expect(inspector.inspect({ project: "web" })).resolves.toEqual({ project: "missing", deployment: "none", domains: [] });
+    await expect(inspector.inspect({ project: "web" })).resolves.toEqual({ kind: "inspected", project: "missing", deployment: "none", domains: [] });
   });
 
   it("uses stable errors for unavailable credentials and never preserves their message", async () => {
@@ -68,9 +68,9 @@ describe("createVercelInspector", () => {
     expect(credentialCalls).toBe(0);
   });
 
-  it("normalizes an arbitrary fetch failure without preserving its message", async () => {
+  it("reports a network failure as indeterminate rather than throwing, without preserving its message", async () => {
     const inspector = createVercelInspector({ fetch: async () => { throw new Error("provider-detail-not-exposed"); }, getBearerToken: () => "test-token" });
-    await expect(inspector.inspect({ project: "web" })).rejects.toMatchObject({ kind: "network", message: "Vercel inspection request failed." } satisfies Partial<VercelInspectionError>);
+    await expect(inspector.inspect({ project: "web" })).resolves.toEqual({ kind: "indeterminate", reason: "network", detail: "Vercel inspection request failed." });
   });
 
   it("does not report an unseen domain as missing when pagination is bounded", async () => {
@@ -91,7 +91,7 @@ describe("createVercelInspector", () => {
       },
       getBearerToken: () => "test-token",
     });
-    await expect(inspector.inspect({ project: "web" })).resolves.toEqual({ project: "present", deployment: "none", domains: [] });
+    await expect(inspector.inspect({ project: "web" })).resolves.toEqual({ kind: "inspected", project: "present", deployment: "none", domains: [] });
     expect(calls).toBe(2);
   });
 
@@ -127,12 +127,17 @@ describe("createVercelInspector", () => {
     await expect(unknown.inspect({ project: "web", expectedDomains: ["www.example.test"] })).resolves.toMatchObject({ domains: [{ status: "unknown" }] });
   });
 
-  it("uses a stable invalid-response error for malformed provider pages", async () => {
+  it("reports a malformed provider page as indeterminate rather than throwing", async () => {
     const inspector = inspectorForResponses([
       response({ id: "project-id" }),
       response({ deployments: [] }),
       response({ domains: [], pagination: { next: {} } }),
     ]);
-    await expect(inspector.inspect({ project: "web", expectedDomains: ["www.example.test"] })).rejects.toMatchObject({ kind: "invalid-response", message: "Vercel returned an invalid response." } satisfies Partial<VercelInspectionError>);
+    await expect(inspector.inspect({ project: "web", expectedDomains: ["www.example.test"] })).resolves.toEqual({ kind: "indeterminate", reason: "invalid-response", detail: "Vercel returned an invalid response." });
+  });
+
+  it("keeps a genuine provider denial a distinct thrown finding, not an indeterminate result", async () => {
+    const inspector = createVercelInspector({ fetch: async () => response({}, 401), getBearerToken: () => "test-token" });
+    await expect(inspector.inspect({ project: "web" })).rejects.toMatchObject({ kind: "unauthorized", statusCode: 401 } satisfies Partial<VercelInspectionError>);
   });
 });

@@ -11,11 +11,17 @@ import { describe, expect, it } from "vitest";
  * `governance.ts` and `release/preflight.ts` each imported
  * `runFoundationCheck`/`computeBuildOrder` from the `./gates/index.js`
  * BARREL rather than from the specific files those functions live in — and
- * that barrel also re-exports `secret-gates.ts`, whose own top-level
- * `import ts from "typescript"` then rides along with everything else in
- * the barrel, regardless of which single export a caller actually wanted.
+ * at the time, that barrel also re-exported `secret-gates.ts`, whose own
+ * top-level `import ts from "typescript"` then rode along with everything
+ * else in the barrel, regardless of which single export a caller actually
+ * wanted. A later PR (CI failure on #419, closing the consequence of
+ * #411) moved `secret-gates.ts` off the barrel entirely, onto its own
+ * subpath — see the "root entry (index.ts) never reaches typescript at
+ * runtime" describe block below for the current, more precise boundary:
+ * neither the root NOR the `./gates` barrel reaches `typescript` anymore;
+ * only the new `./gates/secrets` subpath does.
  *
- * Verified empirically once, by hand, at the time of the fix: `node_modules
+ * Verified empirically once, by hand, at the time of the original fix: `node_modules
  * /typescript` renamed aside, then `import("<dist>/index.js")` — it loaded
  * successfully. That proof doesn't survive a later refactor; THIS test is
  * what keeps it true going forward, by tracing the real SOURCE import graph
@@ -225,7 +231,7 @@ describe("root entry (index.ts) never reaches typescript at runtime", () => {
     expect(hit).toBeUndefined();
   });
 
-  it("never resolves the gates barrel (gates/index.ts) either — the root must import specific gate files directly, not the barrel that re-exports secret-gates alongside them", () => {
+  it("never resolves the gates barrel (gates/index.ts) either — the root must import specific gate files directly, not the barrel", () => {
     const { visited } = traceFromRoot("index.ts");
     const hit = [...visited].find((p) => p.endsWith(join("gates", "index.ts")));
     expect(hit).toBeUndefined();
@@ -236,8 +242,37 @@ describe("root entry (index.ts) never reaches typescript at runtime", () => {
     expect(bareSpecifiers.has("typescript")).toBe(false);
   });
 
-  it("the SAME check on gates/index.ts itself (the public subpath, not the root) — this one MUST still resolve secret-gates.ts and its typescript import, proving the tracer works and the split is precise rather than accidentally removing the functionality entirely", () => {
+  // UPDATED, this PR (CI failure on #419, closing the consequence of
+  // #411). Until now, this describe block's control case traced
+  // `gates/index.ts` and asserted the OPPOSITE of every test above it —
+  // that the barrel MUST still resolve secret-gates.ts and a bare
+  // `typescript` specifier, proving the tracer could actually find a real
+  // hit and wasn't just vacuously passing everywhere. That assertion was
+  // correct for the shape that existed then: `gates/index.ts` really did
+  // re-export secret-gates.ts unconditionally, and every consumer of the
+  // public `./gates` subpath — not just the root — transitively pulled in
+  // a full TypeScript compiler as a result. `installed-bin.test.ts` is
+  // what surfaced why that shape was itself a defect: once #411 made
+  // `typescript` a required peer to make the unconditional import honest,
+  // an offline install of the published tarball failed outright, because
+  // npm had no cache to resolve the peer from.
+  //
+  // The fix moves secret-gates.ts out of the barrel entirely, onto its own
+  // subpath (`./gates/secrets`, see `gates/secrets.ts`) — so `gates/index.ts`
+  // now belongs on the "never reaches typescript" side of this file's own
+  // guarantee, same as the root. The control-case role — proving the
+  // tracer can find a real hit, not just report absence everywhere —
+  // moves to `gates/secrets.ts` instead, the new (and now only) place
+  // secret-gates.ts is reachable from a public entry point.
+  it("the gates barrel (gates/index.ts) no longer resolves secret-gates.ts either — it moved to its own subpath, ./gates/secrets, precisely so the barrel doesn't drag a compiler in for every consumer", () => {
     const { visited, bareSpecifiers } = traceFromRoot(join("gates", "index.ts"));
+    const hit = [...visited].find((p) => p.endsWith(join("gates", "secret-gates.ts")));
+    expect(hit).toBeUndefined();
+    expect(bareSpecifiers.has("typescript")).toBe(false);
+  });
+
+  it("the SAME check on gates/secrets.ts (the new subpath that isolates the typescript-dependent surface) — this one MUST resolve secret-gates.ts and its typescript import, proving the tracer works and the boundary moved rather than the functionality disappearing", () => {
+    const { visited, bareSpecifiers } = traceFromRoot(join("gates", "secrets.ts"));
     const hit = [...visited].find((p) => p.endsWith(join("gates", "secret-gates.ts")));
     expect(hit).toBeDefined();
     expect(bareSpecifiers.has("typescript")).toBe(true);

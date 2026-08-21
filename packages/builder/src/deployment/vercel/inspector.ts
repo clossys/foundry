@@ -1,5 +1,5 @@
 import { VercelInspectionError } from "./errors.js";
-import type { VercelDeploymentState, VercelDomainCheck, VercelDomainState, VercelFetch, VercelInspection, VercelInspectionInput, VercelInspectorOptions, VercelTokenProvider } from "./types.js";
+import type { VercelDeploymentState, VercelDomainCheck, VercelDomainState, VercelFetch, VercelInspection, VercelInspectionInput, VercelInspectionResult, VercelInspectorOptions, VercelTokenProvider } from "./types.js";
 
 type JsonObject = Record<string, unknown>;
 
@@ -154,11 +154,118 @@ function mergeDomainState(previous: VercelDomainState | undefined, current: Verc
   return previous === undefined || previous === current ? current : "unknown";
 }
 
-/** Creates a GET-only inspector. Credentials are obtained only when inspect is called. */
-export function createVercelInspector(options: VercelInspectorOptions): { inspect(input: VercelInspectionInput): Promise<VercelInspection> } {
+/**
+ * Runs the actual inspection: the project lookup, the deployment lookup, and
+ * however many domain pages are needed. Every request-and-parse step in here
+ * can throw `VercelInspectionError`, and that is deliberate -- `inspect`
+ * below is the single place that decides which of those throws are a real
+ * finding it lets propagate (`unauthorized`, `rate-limited`, an unrecognized
+ * `http` status: the provider responded, coherently, with something bad) and
+ * which are folded into `VercelInspectionIndeterminate` (`network`,
+ * `invalid-response`: the inspector never got a response it could read at
+ * all). Keeping that single decision point in `inspect` is what keeps this
+ * function free to throw eagerly and stay readable, exactly like
+ * `parseManifestNames` throwing freely under `detectSupersession` in
+ * `@vespeneventures/integrator`.
+ */
+async function performInspection(normalizedInput: NormalizedInput, normalizedOptions: NormalizedOptions, token: string): Promise<VercelInspection> {
+  const request = async (url: URL): Promise<Response> => {
+    if (normalizedInput.signal?.aborted) throw new VercelInspectionError("aborted");
+    let response: Response;
+    try {
+      response = await normalizedOptions.fetch(url, {
+        method: "GET",
+        headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
+        credentials: "omit",
+        redirect: "error",
+        signal: normalizedInput.signal,
+      });
+    } catch (error) {
+      if (normalizedInput.signal?.aborted || (error instanceof Error && error.name === "AbortError")) throw new VercelInspectionError("aborted");
+      throw new VercelInspectionError("network");
+    }
+    try {
+      if (typeof response.ok !== "boolean" || !Number.isInteger(response.status) || response.status < 0) throw new Error();
+      if (!response.ok) throw providerError(response.status);
+      return response;
+    } catch (error) {
+      if (error instanceof VercelInspectionError) throw error;
+      throw new VercelInspectionError("invalid-response");
+    }
+  };
+
+  const projectUrl = addTeam(new URL(`/v9/projects/${encodeURIComponent(normalizedInput.project)}`, normalizedOptions.base), normalizedInput.teamId);
+  let project: unknown;
+  try {
+    project = await parseJson(await request(projectUrl));
+  } catch (error) {
+    if (error instanceof VercelInspectionError && error.kind === "http" && error.statusCode === 404) return { kind: "inspected", project: "missing", deployment: "none", domains: [] };
+    throw error;
+  }
+  if (!object(project) || nonEmptyString(project.id) === undefined) throw new VercelInspectionError("invalid-response");
+  const projectId = project.id as string;
+
+  const deploymentUrl = addTeam(new URL("/v6/deployments", normalizedOptions.base), normalizedInput.teamId);
+  deploymentUrl.searchParams.set("projectId", projectId);
+  deploymentUrl.searchParams.set("target", "production");
+  deploymentUrl.searchParams.set("limit", "1");
+  const deployments = await parseJson(await request(deploymentUrl));
+  if (!object(deployments) || !Array.isArray(deployments.deployments)) throw new VercelInspectionError("invalid-response");
+  const deployment = deployments.deployments.length === 0 ? "none" : deploymentState(deployments.deployments[0]);
+
+  const found = new Map<string, VercelDomainState>();
+  let until: string | undefined;
+  const seenCursors = new Set<string>();
+  let domainsComplete = normalizedInput.expectedDomains.length === 0;
+  for (let page = 0; page < normalizedInput.maxDomainPages && normalizedInput.expectedDomains.some((domain) => !found.has(domain)); page += 1) {
+    const domainsUrl = addTeam(new URL(`/v9/projects/${encodeURIComponent(normalizedInput.project)}/domains`, normalizedOptions.base), normalizedInput.teamId);
+    domainsUrl.searchParams.set("limit", "100");
+    if (until !== undefined) domainsUrl.searchParams.set("until", until);
+    const domainPage = decodeDomainPage(await parseJson(await request(domainsUrl)));
+    for (const item of domainPage.domains) {
+      if (normalizedInput.expectedDomains.includes(item.name)) found.set(item.name, mergeDomainState(found.get(item.name), item.status));
+    }
+    if (normalizedInput.expectedDomains.every((domain) => found.has(domain)) || domainPage.next === undefined) {
+      domainsComplete = true;
+      break;
+    }
+    if (seenCursors.has(domainPage.next)) break;
+    seenCursors.add(domainPage.next);
+    until = domainPage.next;
+  }
+
+  const domains: VercelDomainCheck[] = normalizedInput.expectedDomains.map((domain) => ({
+    domain,
+    status: found.get(domain) ?? (domainsComplete ? "missing" : "unknown"),
+  }));
+  return { kind: "inspected", project: "present", deployment, domains };
+}
+
+/**
+ * Creates a GET-only inspector. Credentials are obtained only when inspect
+ * is called.
+ *
+ * A response `performInspection` could not read at all -- a transport
+ * failure (`network`), or a response body that does not shape up the way
+ * the provider's own contract promises (`invalid-response`) -- is not a
+ * deployment that failed. It is a state this inspector could not form an
+ * opinion about, so it is reported as `VercelInspectionIndeterminate` here,
+ * never thrown out of this public entry point, and never silently folded
+ * into a healthy-looking `VercelInspection`. This is the exact fold
+ * `@vespeneventures/integrator`'s `resolveReachability` applies to a
+ * transport failure and a malformed registry body (both `unreachable`) --
+ * see that module's header for the fuller reasoning.
+ *
+ * Every other `VercelInspectionError` `performInspection` can throw stays a
+ * throw: `unauthorized` and `rate-limited` are the provider affirmatively
+ * responding with something real (a genuine finding, not an unreadable one),
+ * and `invalid-input` / `invalid-base-url` / `credential-unavailable` /
+ * `aborted` are never about what a provider said at all.
+ */
+export function createVercelInspector(options: VercelInspectorOptions): { inspect(input: VercelInspectionInput): Promise<VercelInspectionResult> } {
   const normalizedOptions = normalizeOptions(options);
   return {
-    async inspect(input: VercelInspectionInput): Promise<VercelInspection> {
+    async inspect(input: VercelInspectionInput): Promise<VercelInspectionResult> {
       const normalizedInput = normalizeInput(input);
       if (normalizedInput === undefined) throw new VercelInspectionError("invalid-input");
       if (normalizedInput.signal?.aborted) throw new VercelInspectionError("aborted");
@@ -171,76 +278,14 @@ export function createVercelInspector(options: VercelInspectorOptions): { inspec
       }
       if (!validBearerToken(token)) throw new VercelInspectionError("credential-unavailable");
 
-      const request = async (url: URL): Promise<Response> => {
-        if (normalizedInput.signal?.aborted) throw new VercelInspectionError("aborted");
-        let response: Response;
-        try {
-          response = await normalizedOptions.fetch(url, {
-            method: "GET",
-            headers: { Accept: "application/json", Authorization: `Bearer ${token}` },
-            credentials: "omit",
-            redirect: "error",
-            signal: normalizedInput.signal,
-          });
-        } catch (error) {
-          if (normalizedInput.signal?.aborted || (error instanceof Error && error.name === "AbortError")) throw new VercelInspectionError("aborted");
-          throw new VercelInspectionError("network");
-        }
-        try {
-          if (typeof response.ok !== "boolean" || !Number.isInteger(response.status) || response.status < 0) throw new Error();
-          if (!response.ok) throw providerError(response.status);
-          return response;
-        } catch (error) {
-          if (error instanceof VercelInspectionError) throw error;
-          throw new VercelInspectionError("invalid-response");
-        }
-      };
-
-      const projectUrl = addTeam(new URL(`/v9/projects/${encodeURIComponent(normalizedInput.project)}`, normalizedOptions.base), normalizedInput.teamId);
-      let project: unknown;
       try {
-        project = await parseJson(await request(projectUrl));
+        return await performInspection(normalizedInput, normalizedOptions, token);
       } catch (error) {
-        if (error instanceof VercelInspectionError && error.kind === "http" && error.statusCode === 404) return { project: "missing", deployment: "none", domains: [] };
+        if (error instanceof VercelInspectionError && (error.kind === "network" || error.kind === "invalid-response")) {
+          return { kind: "indeterminate", reason: error.kind, detail: error.message };
+        }
         throw error;
       }
-      if (!object(project) || nonEmptyString(project.id) === undefined) throw new VercelInspectionError("invalid-response");
-      const projectId = project.id as string;
-
-      const deploymentUrl = addTeam(new URL("/v6/deployments", normalizedOptions.base), normalizedInput.teamId);
-      deploymentUrl.searchParams.set("projectId", projectId);
-      deploymentUrl.searchParams.set("target", "production");
-      deploymentUrl.searchParams.set("limit", "1");
-      const deployments = await parseJson(await request(deploymentUrl));
-      if (!object(deployments) || !Array.isArray(deployments.deployments)) throw new VercelInspectionError("invalid-response");
-      const deployment = deployments.deployments.length === 0 ? "none" : deploymentState(deployments.deployments[0]);
-
-      const found = new Map<string, VercelDomainState>();
-      let until: string | undefined;
-      const seenCursors = new Set<string>();
-      let domainsComplete = normalizedInput.expectedDomains.length === 0;
-      for (let page = 0; page < normalizedInput.maxDomainPages && normalizedInput.expectedDomains.some((domain) => !found.has(domain)); page += 1) {
-        const domainsUrl = addTeam(new URL(`/v9/projects/${encodeURIComponent(normalizedInput.project)}/domains`, normalizedOptions.base), normalizedInput.teamId);
-        domainsUrl.searchParams.set("limit", "100");
-        if (until !== undefined) domainsUrl.searchParams.set("until", until);
-        const domainPage = decodeDomainPage(await parseJson(await request(domainsUrl)));
-        for (const item of domainPage.domains) {
-          if (normalizedInput.expectedDomains.includes(item.name)) found.set(item.name, mergeDomainState(found.get(item.name), item.status));
-        }
-        if (normalizedInput.expectedDomains.every((domain) => found.has(domain)) || domainPage.next === undefined) {
-          domainsComplete = true;
-          break;
-        }
-        if (seenCursors.has(domainPage.next)) break;
-        seenCursors.add(domainPage.next);
-        until = domainPage.next;
-      }
-
-      const domains: VercelDomainCheck[] = normalizedInput.expectedDomains.map((domain) => ({
-        domain,
-        status: found.get(domain) ?? (domainsComplete ? "missing" : "unknown"),
-      }));
-      return { project: "present", deployment, domains };
     },
   };
 }

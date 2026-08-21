@@ -47,8 +47,12 @@
  * and `2` is where this repository puts that. Nothing that failed before
  * passes now — every reclassification is toward the stricter code.
  *
- * Never throws an unhandled exception: `main` is wrapped in a catch-all
- * below that turns anything unexpected into exit code 2.
+ * Never throws an unhandled exception: `main` itself catches every risky
+ * call it makes — argument parsing and the foundation check itself — and
+ * turns anything unexpected into exit code 2 directly (issue #392). It used
+ * to rely on a separate `run()` wrapper's `catch` for this, which meant
+ * `main` was not actually safe to call on its own, unlike every other
+ * exported `main` in this fleet.
  */
 
 import { existsSync, realpathSync, statSync } from "node:fs";
@@ -332,8 +336,25 @@ export function foundationGateResult(report: FoundationReport): GateResult<Catal
   return gateSatisfied(report.catalog.entries.length);
 }
 
+/**
+ * Self-contained: never lets an exception escape, always returning
+ * `0 | 1 | 2` itself — matching `inspector`'s and `builder`'s own CLI
+ * `main` functions (issue #392). It used to let `parseArgs`'s
+ * `CliInputError` propagate out to a separate `run()` wrapper's `catch`,
+ * which meant `main` itself was not safe to call directly — every other
+ * exported `main` in this fleet is. (This file's own header, above, already
+ * documented the never-throws INTENT; this closes the gap between that
+ * intent and where the catch actually lived.)
+ */
 export function main(): number {
-  const args = parseArgs(process.argv.slice(2));
+  let args: ParsedArgs;
+  try {
+    args = parseArgs(process.argv.slice(2));
+  } catch (error) {
+    console.error(`foundry-check: ${error instanceof Error ? error.message : String(error)}`);
+    console.error(`\n${USAGE}`);
+    return 2;
+  }
 
   if (args.help) {
     console.log(USAGE);
@@ -368,11 +389,26 @@ export function main(): number {
   console.log(`Scanning root: ${root}`);
   console.log(`Packages directory: ${packagesDirAbs}`);
 
-  const report = runFoundationCheck(root, {
-    scope: args.scope,
-    packagesDir: args.packagesDir,
-    maxDepth: args.maxDepth,
-  });
+  // A backstop, not an expected path: `runFoundationCheck` is documented
+  // never to throw (see this file's own header), the same way `inspector`'s
+  // `main` wraps its own core call anyway — an exception escaping here
+  // would otherwise end the process on status `1`, this contract's code for
+  // "ran, and found a real violation", silently misreporting "could not
+  // run" as "ran and failed."
+  let report: FoundationReport;
+  try {
+    report = runFoundationCheck(root, {
+      scope: args.scope,
+      packagesDir: args.packagesDir,
+      maxDepth: args.maxDepth,
+    });
+  } catch (error) {
+    console.error(
+      `foundry-check: the run did not complete, so nothing about this tree has been established: ` +
+        `${error instanceof Error ? error.message : String(error)}`,
+    );
+    return 2;
+  }
 
   printReport(report);
 
@@ -389,21 +425,9 @@ export function main(): number {
   return gateResultToExitCode(result);
 }
 
+/** The installed entry point. `main` never throws, so there is nothing left for this to catch. */
 export function run(): void {
-  try {
-    process.exitCode = main();
-  } catch (error) {
-    if (error instanceof CliInputError) {
-      console.error(`foundry-check: ${error.message}`);
-      console.error(`\n${USAGE}`);
-      process.exitCode = 2;
-    } else {
-      console.error(
-        `foundry-check: unexpected error: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`,
-      );
-      process.exitCode = 2;
-    }
-  }
+  process.exitCode = main();
 }
 
 /**

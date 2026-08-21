@@ -40,7 +40,7 @@ describe("createRenderInspector", () => {
       return response([{ cursor: "last-page", customDomain: { name: "app.example.test", verificationStatus: "verified", private: "not-returned" } }]);
     };
     const inspector = createRenderInspector({ fetch, getBearerToken: () => "test-token" });
-    await expect(inspector.inspect({ service: "srv-123", expectedDomains: ["app.example.test"] })).resolves.toEqual({ service: "present", deployment: "live", serviceHealth: "unknown", domains: [{ domain: "app.example.test", status: "present" }] });
+    await expect(inspector.inspect({ service: "srv-123", expectedDomains: ["app.example.test"] })).resolves.toEqual({ kind: "inspected", service: "present", deployment: "live", serviceHealth: "unknown", domains: [{ domain: "app.example.test", status: "present" }] });
     expect(inits.every((init) => init.method === "GET" && init.credentials === "omit" && init.redirect === "error")).toBe(true);
     expect(urls.map((url) => url.pathname)).toEqual(["/v1/services/srv-123", "/v1/services/service-private-id/deploys", "/v1/services/service-private-id/custom-domains"]);
   });
@@ -59,7 +59,7 @@ describe("createRenderInspector", () => {
 
   it("reports a missing service as a normal result", async () => {
     const inspector = createRenderInspector({ fetch: async () => response({}, 404), getBearerToken: () => "test-token" });
-    await expect(inspector.inspect({ service: "srv-123" })).resolves.toEqual({ service: "missing", deployment: "none", serviceHealth: "unknown", domains: [] });
+    await expect(inspector.inspect({ service: "srv-123" })).resolves.toEqual({ kind: "inspected", service: "missing", deployment: "none", serviceHealth: "unknown", domains: [] });
   });
 
   it("follows Render's paired cursor envelope for expected domains", async () => {
@@ -138,7 +138,7 @@ describe("createRenderInspector", () => {
     await expect(inspector.inspect({ service: "srv-input", expectedDomains: ["app.example.test"] })).resolves.toMatchObject({ domains: [{ domain: "app.example.test", status: "unknown" }] });
   });
 
-  it("rejects malformed cursor envelopes instead of inferring a result", async () => {
+  it("reports a malformed cursor envelope as indeterminate rather than throwing or inferring a result", async () => {
     let calls = 0;
     const inspector = createRenderInspector({
       fetch: async () => {
@@ -147,7 +147,20 @@ describe("createRenderInspector", () => {
       },
       getBearerToken: () => "test-token",
     });
-    await expect(inspector.inspect({ service: "srv-input" })).rejects.toMatchObject({ kind: "invalid-response" });
+    await expect(inspector.inspect({ service: "srv-input" })).resolves.toEqual({ kind: "indeterminate", reason: "invalid-response", detail: "Render returned an invalid response." });
+  });
+
+  it("reports a network failure as indeterminate rather than throwing", async () => {
+    const inspector = createRenderInspector({
+      fetch: async () => { throw new Error("provider-detail-not-exposed"); },
+      getBearerToken: () => "test-token",
+    });
+    await expect(inspector.inspect({ service: "srv-input" })).resolves.toEqual({ kind: "indeterminate", reason: "network", detail: "Render inspection request failed." });
+  });
+
+  it("keeps a genuine provider denial a distinct thrown finding, not an indeterminate result", async () => {
+    const inspector = createRenderInspector({ fetch: async () => response({}, 401), getBearerToken: () => "test-token" });
+    await expect(inspector.inspect({ service: "srv-input" })).rejects.toMatchObject({ kind: "unauthorized", statusCode: 401 });
   });
 
   it("does not expose thrown credential values and rejects duplicate normalized domains", async () => {
