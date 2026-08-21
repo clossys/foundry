@@ -13,6 +13,7 @@ import type {
   RepositoryRootEntryDisposition,
 } from "./types.js";
 import { classifyRequirementId } from "./id-grammar.js";
+import { parseVersionFloor } from "./version-floor.js";
 
 type RecordValue = Record<string, unknown>;
 
@@ -23,6 +24,7 @@ const COMMAND_KEYS = new Set(["name", "run", "cwd"]);
 const REQUIREMENT_KEYS = new Set(["id", "scope", "constraint"]);
 const PRESENCE_CONSTRAINT_KEYS = new Set(["kind"]);
 const ONE_OF_CONSTRAINT_KEYS = new Set(["kind", "values"]);
+const MINIMUM_VERSION_CONSTRAINT_KEYS = new Set(["kind", "floor"]);
 const ROOT_ENTRY_KEYS = new Set(["name", "classification", "disposition"]);
 const COMMAND_NAME = /^[a-z][a-z0-9]*(?:(?:-|:)[a-z0-9]+)*$/;
 const REQUIREMENT_SCOPES = new Set<RepositoryRequirementScope>(["repository", "workspace", "machine"]);
@@ -284,15 +286,28 @@ function validateRequirementArray(value: unknown): RepositoryProfileFinding[] {
       continue;
     }
     const kind = ownDataValue(constraint, "kind")?.value;
-    const allowedKeys = kind === "present" ? PRESENCE_CONSTRAINT_KEYS : kind === "one-of" ? ONE_OF_CONSTRAINT_KEYS : new Set<string>(["kind"]);
+    const allowedKeys = kind === "present"
+      ? PRESENCE_CONSTRAINT_KEYS
+      : kind === "one-of"
+        ? ONE_OF_CONSTRAINT_KEYS
+        : kind === "minimum-version"
+          ? MINIMUM_VERSION_CONSTRAINT_KEYS
+          : new Set<string>(["kind"]);
     for (const key of Object.getOwnPropertyNames(constraint)) {
       if (!allowedKeys.has(key)) findings.push(finding("unknown-field", `${requirementPath}.constraint.${key}`, `Unknown constraint field "${key}".`));
     }
-    if (kind !== "present" && kind !== "one-of") {
-      findings.push(finding("constraint-kind", `${requirementPath}.constraint.kind`, "kind must be present or one-of."));
+    if (kind !== "present" && kind !== "one-of" && kind !== "minimum-version") {
+      findings.push(finding("constraint-kind", `${requirementPath}.constraint.kind`, "kind must be present, one-of, or minimum-version."));
       continue;
     }
     if (kind === "present") continue;
+    if (kind === "minimum-version") {
+      const floor = ownDataValue(constraint, "floor")?.value;
+      if (typeof floor !== "string" || parseVersionFloor(floor) === undefined) {
+        findings.push(finding("constraint-floor", `${requirementPath}.constraint.floor`, 'floor must be a bare dotted-numeric version string such as "20" or "10.33.0".'));
+      }
+      continue;
+    }
 
     const values = inspectArray(ownDataValue(constraint, "values")?.value);
     if (!values || values.length === 0) {

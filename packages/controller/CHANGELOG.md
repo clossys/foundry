@@ -5,6 +5,46 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.3] - 2026-08-21
+
+### Added
+
+- **`RepositoryRequirement`'s constraint vocabulary now expresses an
+  open-ended minimum-version floor (issue #318).** `{ kind: "present" }` and
+  `{ kind: "one-of", values: [...] }` were the only two shapes: the first
+  understates an open range like `engines.node: ">=20"` ("must merely
+  exist"), and the second requires an exhaustive, closed enumeration that
+  goes stale the moment a new value satisfying the same floor is released —
+  exactly the gap that left this repository's own `governance/repository-profile.json`
+  (issue #317) declaring `runtime.node` as bare `{ kind: "present" }`,
+  weaker than the real `>=20` constraint. The new
+  `{ kind: "minimum-version", floor: "20" }` shape closes it: `floor` is a
+  bare dotted-numeric version string (`"20"`, `"20.11"`, `"10.33.0"`), parsed
+  and compared by a new minimal, dependency-free comparator
+  (`src/repository/version-floor.ts` — deliberately not
+  `@vespeneventures/integrator`'s `semver.ts`; this package takes no runtime
+  dependencies and the two parsers serve different grammars). `evaluateRepositoryRequirements`
+  combines multiple declared floors for the same requirement by keeping the
+  strictest, reports `conflicting` when a floor and a `one-of` set share no
+  compatible value, and treats an observed value that does not itself parse
+  as a version as `unsatisfied` — never `satisfied`. An unparseable `floor`
+  on the constraint itself is a new `constraint-floor` structural finding,
+  routed through the same closed `status: "invalid"` path every other
+  malformed constraint already used, so it can never be silently treated as
+  satisfied. Every existing `present` and `one-of` requirement continues to
+  parse and evaluate identically — see the added regression coverage in
+  `src/repository/validate.test.ts` and `src/repository/evaluate.test.ts`.
+
+  Versioned `0.8.3`, not `0.9.0`: `packages/builder`, `packages/inspector`,
+  and `packages/ledger` each declare `"@vespeneventures/controller": "~0.8.0"`.
+  A minor bump falls outside that range and silently swaps their local
+  workspace link for a remote registry copy on the next lockfile
+  resolution — confirmed by hand via `npm install --package-lock-only`
+  before settling on this version. `0.8.2` is skipped: it is both already
+  published and, after this branch was rebased onto a newer `main`, also
+  the version of the unrelated changelog-packaging release directly below
+  this entry; this release is unrelated to either.
+
 ## [0.8.2] - 2026-08-21
 
 ### Changed

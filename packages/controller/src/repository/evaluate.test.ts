@@ -96,6 +96,78 @@ describe("evaluateRepositoryRequirements", () => {
     ]);
   });
 
+  it("satisfies a minimum-version requirement (issue #318) when the observed value clears the floor, and reports the floor", () => {
+    const result = evaluateRepositoryRequirements({
+      declarations: [
+        { source: "repo-a", requirements: [{ id: "runtime.node", scope: "machine", constraint: { kind: "minimum-version", floor: "20" } }] },
+      ],
+      observations: [{ id: "runtime.node", scope: "machine", state: "observed", value: "24.1.2" }],
+    });
+
+    expect(result).toEqual({
+      ok: true,
+      status: "satisfied",
+      requirements: [{
+        id: "runtime.node",
+        scope: "machine",
+        declaredBy: ["repo-a"],
+        status: "satisfied",
+        floor: "20",
+      }],
+      findings: [],
+    });
+  });
+
+  it("fails closed as unsatisfied, never satisfied, when the observed value is below the floor or does not parse as a version", () => {
+    const belowFloor = evaluateRepositoryRequirements({
+      declarations: [{ source: "repo-a", requirements: [{ id: "runtime.node", scope: "machine", constraint: { kind: "minimum-version", floor: "20" } }] }],
+      observations: [{ id: "runtime.node", scope: "machine", state: "observed", value: "18.19.0" }],
+    });
+    expect(belowFloor.status).toBe("unsatisfied");
+    expect(belowFloor.requirements[0]?.status).toBe("unsatisfied");
+
+    const unparseableObservation = evaluateRepositoryRequirements({
+      declarations: [{ source: "repo-a", requirements: [{ id: "runtime.node", scope: "machine", constraint: { kind: "minimum-version", floor: "20" } }] }],
+      observations: [{ id: "runtime.node", scope: "machine", state: "observed", value: "unknown-build" }],
+    });
+    expect(unparseableObservation.status).toBe("unsatisfied");
+    expect(unparseableObservation.requirements[0]?.status).toBe("unsatisfied");
+  });
+
+  it("combines multiple declared minimum-version floors for the same requirement by keeping the strictest", () => {
+    const result = evaluateRepositoryRequirements({
+      declarations: [
+        { source: "repo-a", requirements: [{ id: "runtime.node", scope: "machine", constraint: { kind: "minimum-version", floor: "18" } }] },
+        { source: "repo-b", requirements: [{ id: "runtime.node", scope: "machine", constraint: { kind: "minimum-version", floor: "20" } }] },
+      ],
+      observations: [{ id: "runtime.node", scope: "machine", state: "observed", value: "19.0.0" }],
+    });
+
+    expect(result.requirements[0]).toMatchObject({ floor: "20", status: "unsatisfied" });
+  });
+
+  it("reports conflicting when a closed one-of set and a minimum-version floor share no compatible value", () => {
+    const result = evaluateRepositoryRequirements({
+      declarations: [
+        { source: "repo-a", requirements: [{ id: "runtime.node", scope: "machine", constraint: { kind: "one-of", values: ["18", "19"] } }] },
+        { source: "repo-b", requirements: [{ id: "runtime.node", scope: "machine", constraint: { kind: "minimum-version", floor: "20" } }] },
+      ],
+      observations: [{ id: "runtime.node", scope: "machine", state: "observed", value: "19" }],
+    });
+
+    expect(result.status).toBe("conflicting");
+    expect(result.requirements[0]?.status).toBe("conflicting");
+  });
+
+  it("treats an absent observation against a minimum-version requirement as unsatisfied, not satisfied", () => {
+    const result = evaluateRepositoryRequirements({
+      declarations: [{ source: "repo-a", requirements: [{ id: "runtime.node", scope: "machine", constraint: { kind: "minimum-version", floor: "20" } }] }],
+      observations: [{ id: "runtime.node", scope: "machine", state: "absent" }],
+    });
+
+    expect(result.requirements[0]?.status).toBe("unsatisfied");
+  });
+
   it("treats missing and explicit unknown evidence identically and fails closed", () => {
     const base = {
       declarations: [{ source: "repo-a", requirements: [{ id: "tool.required", scope: "machine", constraint: { kind: "present" } }] }],
@@ -126,6 +198,18 @@ describe("evaluateRepositoryRequirements", () => {
       ["repo-a", "satisfied"],
       ["repo-b", "unsatisfied"],
     ]);
+  });
+
+  it("reports invalid, never satisfied, for an unparseable minimum-version floor (issue #318)", () => {
+    const result = evaluateRepositoryRequirements({
+      declarations: [{ source: "repo-a", requirements: [{ id: "runtime.node", scope: "machine", constraint: { kind: "minimum-version", floor: ">=20" } }] }],
+      observations: [{ id: "runtime.node", scope: "machine", state: "observed", value: "24.0.0" }],
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.status).toBe("invalid");
+    expect(result.requirements).toEqual([]);
+    expect(result.findings.map((entry) => entry.rule)).toEqual(["constraint-floor"]);
   });
 
   it("returns invalid with no partial evaluations for strict-shape findings", () => {

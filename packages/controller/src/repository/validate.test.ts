@@ -49,6 +49,43 @@ describe("validateRepositoryProfile", () => {
     })).toEqual([]);
   });
 
+  it("accepts a minimum-version requirement constraint (issue #318) alongside the pre-existing forms unchanged", () => {
+    expect(validateRepositoryProfile({
+      ...validProfile,
+      schemaVersion: 2,
+      requirements: [
+        { id: "runtime.node", scope: "machine", constraint: { kind: "minimum-version", floor: "20" } },
+        { id: "tool.package-manager-version", scope: "repository", constraint: { kind: "minimum-version", floor: "10.33.0" } },
+        { id: "runtime.javascript", scope: "machine", constraint: { kind: "one-of", values: ["current", "next"] } },
+        { id: "tool.formatter", scope: "repository", constraint: { kind: "present" } },
+      ],
+    })).toEqual([]);
+  });
+
+  it("rejects a minimum-version constraint with a missing, non-string, or unparseable floor, and rejects unknown fields on every constraint kind", () => {
+    const findings = validateRepositoryProfile({
+      ...validProfile,
+      schemaVersion: 2,
+      requirements: [
+        { id: "runtime.node", scope: "machine", constraint: { kind: "minimum-version" } },
+        { id: "runtime.pnpm", scope: "machine", constraint: { kind: "minimum-version", floor: 20 } },
+        { id: "runtime.python", scope: "machine", constraint: { kind: "minimum-version", floor: ">=20" } },
+        { id: "runtime.ruby", scope: "machine", constraint: { kind: "minimum-version", floor: "20", values: ["20"] } },
+        { id: "runtime.go", scope: "machine", constraint: { kind: "present", floor: "20" } },
+        { id: "runtime.rust", scope: "machine", constraint: { kind: "one-of", floor: "20", values: ["20"] } },
+      ],
+    });
+
+    expect(findings.map((entry) => [entry.rule, entry.path])).toEqual([
+      ["constraint-floor", "requirements[0].constraint.floor"],
+      ["constraint-floor", "requirements[1].constraint.floor"],
+      ["constraint-floor", "requirements[2].constraint.floor"],
+      ["unknown-field", "requirements[3].constraint.values"],
+      ["unknown-field", "requirements[4].constraint.floor"],
+      ["unknown-field", "requirements[5].constraint.floor"],
+    ]);
+  });
+
   it("accepts a strict v3 caller-owned root vocabulary while preserving v1 and v2", () => {
     expect(validateRepositoryProfile({
       ...validProfile,

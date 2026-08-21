@@ -29,6 +29,7 @@ export type {
   RepositoryDeclarationLocationFinding,
   RepositoryDeclarationLocationFindingRule,
   RepositoryList,
+  RepositoryMinimumVersionConstraint,
   RepositoryObservationState,
   RepositoryOneOfConstraint,
   RepositoryPresenceConstraint,

@@ -14,6 +14,7 @@ import type {
 } from "./types.js";
 import { classifyRequirementId } from "./id-grammar.js";
 import { validateRepositoryProfile } from "./validate.js";
+import { compareVersionFloors, meetsVersionFloor, parseVersionFloor } from "./version-floor.js";
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -257,30 +258,75 @@ function groupRequirements(declarations: readonly RepositoryRequirementDeclarati
   return [...groups.values()];
 }
 
-function compatibleValues(requirements: readonly RepositoryRequirement[]): string[] | undefined {
-  let compatible: string[] | undefined;
+interface CombinedConstraints {
+  readonly acceptedValues?: string[];
+  /** The strictest (highest) of every `minimum-version` floor declared for this group. */
+  readonly floor?: string;
+}
+
+/**
+ * Folds every declared constraint for one requirement group into the
+ * compatible accepted-value set (`one-of`, unchanged from before issue
+ * #318) and the binding minimum-version floor (issue #318, new). `present`
+ * contributes nothing to either, exactly as before. A `floor` reaching this
+ * function has already passed `validateRequirementArray`'s
+ * `parseVersionFloor` check, so the `undefined` branch below is defense in
+ * depth, not the expected path: this function still never throws and never
+ * lets an unparseable floor silently win a comparison.
+ */
+function combineConstraints(requirements: readonly RepositoryRequirement[]): CombinedConstraints {
+  let acceptedValues: string[] | undefined;
+  let floor: string | undefined;
   for (const requirement of requirements) {
-    if (requirement.constraint.kind === "present") continue;
-    compatible = compatible === undefined
-      ? [...requirement.constraint.values]
-      : compatible.filter((value) => requirement.constraint.kind === "one-of" && requirement.constraint.values.includes(value));
+    const constraint = requirement.constraint;
+    if (constraint.kind === "present") continue;
+    if (constraint.kind === "one-of") {
+      acceptedValues = acceptedValues === undefined
+        ? [...constraint.values]
+        : acceptedValues.filter((value) => constraint.values.includes(value));
+      continue;
+    }
+    // constraint.kind === "minimum-version": keep the strictest (highest) floor seen.
+    if (floor === undefined) {
+      floor = constraint.floor;
+      continue;
+    }
+    const parsedCurrent = parseVersionFloor(constraint.floor);
+    const parsedFloor = parseVersionFloor(floor);
+    if (parsedCurrent !== undefined && parsedFloor !== undefined && compareVersionFloors(parsedCurrent, parsedFloor) > 0) {
+      floor = constraint.floor;
+    }
   }
-  return compatible;
+  return { acceptedValues, floor };
 }
 
 function evaluateGroup(
   group: RequirementGroup,
   observations: ReadonlyMap<string, RepositoryRequirementObservation>,
 ): RepositoryRequirementEvaluation {
-  const acceptedValues = compatibleValues(group.requirements);
+  const { acceptedValues, floor } = combineConstraints(group.requirements);
   let status: RepositoryRequirementStatus;
   if (acceptedValues !== undefined && acceptedValues.length === 0) {
+    status = "conflicting";
+  } else if (acceptedValues !== undefined && floor !== undefined && !acceptedValues.some((value) => meetsVersionFloor(value, floor))) {
+    // The declarations jointly require both a closed accepted-value set and a
+    // minimum-version floor, and no accepted value clears that floor -- a
+    // conflict between the declarations themselves, not evidence about the
+    // plane, exactly the same reasoning as an empty `one-of` intersection above.
     status = "conflicting";
   } else {
     const observation = observations.get(observationIdentity(group.scope, group.id, group.source));
     if (!observation || observation.state === "unknown") status = "unknown";
     else if (observation.state === "absent") status = "unsatisfied";
-    else status = acceptedValues === undefined || acceptedValues.includes(observation.value as string) ? "satisfied" : "unsatisfied";
+    else {
+      const value = observation.value as string;
+      const withinAcceptedValues = acceptedValues === undefined || acceptedValues.includes(value);
+      // An observed value that does not itself parse as a dotted-numeric
+      // version is `false` here, never `true` -- an unparseable observation
+      // must never be silently treated as clearing the floor.
+      const meetsFloor = floor === undefined || meetsVersionFloor(value, floor);
+      status = withinAcceptedValues && meetsFloor ? "satisfied" : "unsatisfied";
+    }
   }
   return {
     id: group.id,
@@ -289,6 +335,7 @@ function evaluateGroup(
     declaredBy: group.declaredBy,
     status,
     ...(acceptedValues === undefined ? {} : { acceptedValues }),
+    ...(floor === undefined ? {} : { floor }),
   };
 }
 
