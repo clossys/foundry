@@ -256,6 +256,95 @@ jobs:
           node-version: 20
       - run: node scripts/set-prepublish-hook.mjs --check
 
+  # scripts/check-root-entry-policy.mjs is already in the local `npm run
+  # check` aggregate but, before this job, had never been invoked by any
+  # workflow (issue #414: it and check:neutrality below were the two
+  # check:* scripts that gap covered). Confirms every git-tracked root-level
+  # entry is declared in .root-entry-policy.json and vice versa — pure
+  # `git ls-files` plus one JSON read, no build needed, same shallow-checkout
+  # shape as `scope`/`registry`/`prepublish-hook` above.
+  #
+  # NOT added to this repository's `main-required-checks` ruleset by this
+  # change, same as `prepublish-hook` above: a status context with no
+  # reporting history wedges a repository if it lands straight into
+  # `required_status_checks` (see verify-standards.yml's own header for the
+  # identical reasoning, and #414's pull request body for which of the jobs
+  # added there are recommended for promotion and why).
+  root-entry:
+    name: root entry policy drift
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+      - run: node scripts/check-root-entry-policy.mjs
+
+  # Three gates over this repository's own tree that had never been invoked
+  # by any workflow before this change, and that share one requirement: a
+  # BUILT @vespeneventures/controller (issue #414's wider finding — six
+  # job-shaped packages here ship eleven bin entry points, and before this
+  # change workflows invoked two). Grouped into one job, one build, rather
+  # than three separate checkouts.
+  #
+  # NOT added to `main-required-checks` by this change — same reasoning as
+  # `root-entry` above. See #414's pull request body for the promotion
+  # recommendation on each of the three.
+  controller-gates:
+    name: controller gates (catalog, neutrality, repository-profile)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build --workspace=packages/controller
+
+      # foundry-check (dist/gates/cli.js) — catalog evaluation over
+      # packages/* (internal-dependency graph, dependency cycles). Distinct
+      # from `check:package-governance` in the `build` job below (package
+      # LIFECYCLE governance against docs/contracts/package-lifecycle.json):
+      # the two share controller's compiled output but are different gates
+      # over different input. `--scope @vespeneventures` is load-bearing —
+      # confirmed while wiring this in: run without it, every ordinary
+      # external dependency (react, typescript, tailwindcss, ...) is
+      # reported as an "internal-dep-missing" finding, because the flag is
+      # what restricts the internal-dep rules to this catalog's own scope in
+      # the first place. With it, this gate is clean against this
+      # repository today (see #414's pull request body for the real output).
+      - name: Package catalog gate (foundry-check)
+        run: node packages/controller/dist/gates/cli.js . --scope @vespeneventures
+
+      # check-neutrality.mjs — the structural half of publish safety: an
+      # absolute path or a named home directory discloses one operator's
+      # machine layout without containing a single denylisted string, so
+      # `safety`'s check-public-safety.mjs above can never see it (see the
+      # script's own header). Needs the BUILT controller/conventions
+      # subpath, hence its place here — after build, never alongside the
+      # cheap structural checks in `scope`/`registry`/`root-entry`.
+      - name: Structural neutrality gate (check:neutrality)
+        run: npm run check:neutrality
+
+      # repository-profile-check (dist/repository/run-bin.js) — the richer,
+      # three-state evaluator over the SAME governance/repository-profile.json
+      # the `build` job's "Repository profile" step below already validates
+      # structurally (dist/repository/bin.js — a DIFFERENT compiled entry
+      # point; this repository invokes gates by dist path, not bin name, for
+      # exactly the reason a name collision like this one would otherwise
+      # hide). It performs no discovery of its own by design (its own
+      # --help says so); scripts/repository-profile-discovery.mjs supplies
+      # the identical discovery scripts/observation-bundle.mjs already
+      # trusts to grade this same declaration for the observation bundle the
+      # `build` job publishes on push to main — reused via
+      # buildRepositoryProfileDiscovery, never reimplemented for this CLI's
+      # sake.
+      - name: Repository profile gate (repository-profile-check, discovery-backed)
+        run: |
+          node scripts/repository-profile-discovery.mjs > "$RUNNER_TEMP/repository-profile-discovery.json"
+          node packages/controller/dist/repository/run-bin.js . --discovery "$RUNNER_TEMP/repository-profile-discovery.json"
+
   # Packages here depend on each other with 0.x ranges (e.g.
   # `"@vespeneventures/governance": "^0.3.0"`). In 0.x semver BOTH `^` and
   # `~` are minor-locked, so the moment a package's minor version is bumped,

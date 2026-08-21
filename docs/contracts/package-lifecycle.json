@@ -62,6 +62,10 @@
       "forwardsToReplacement": false
     },
     {
+      "name": "@vespeneventures/designer",
+      "status": "published"
+    },
+    {
       "name": "@vespeneventures/domain",
       "status": "published"
     },
