@@ -157,16 +157,22 @@ function buildRequirementObservations(repositoryRoot, declarationSource) {
 }
 
 /**
- * Runs `runRepositoryProfileCheck` (packages/controller, in-workspace) over
- * this repository's own governance/repository-profile.json. Returns the
- * real `GateResult` the runner produces -- no shape decisions happen in
- * this function beyond assembling its inputs.
+ * Assembles the same `{ requirementObservations, rootObservedEntries }`
+ * `buildRepositoryProfileGateResult` below feeds `runRepositoryProfileCheck`
+ * in-process -- exported separately, as caller-usable DATA rather than an
+ * evaluated result, because it has a second consumer: packages/controller's
+ * own `repository-profile-check` CLI (`dist/repository/run-bin.js
+ * --discovery <file>`) performs no discovery of its own by design (see that
+ * CLI's own header comment) and needs exactly this shape written to a file.
+ * scripts/repository-profile-discovery.mjs is the thin wrapper that prints
+ * it. One discovery implementation, two consumers -- never a second, drifting
+ * copy of `discoverTrackedRootEntries`/`buildRequirementObservations` for
+ * the CLI's sake.
  */
-export async function buildRepositoryProfileGateResult({ repositoryRoot = defaultRepositoryRoot } = {}) {
+export async function buildRepositoryProfileDiscovery({ repositoryRoot = defaultRepositoryRoot } = {}) {
   const controllerRepository = await importDistEntry(repositoryRoot, "packages/controller/dist/repository/index.js", "packages/controller");
-  const { runRepositoryProfileCheck, REPOSITORY_PROFILE_RUN_DECLARATION_SOURCE } = controllerRepository;
+  const { REPOSITORY_PROFILE_RUN_DECLARATION_SOURCE } = controllerRepository;
 
-  const declaration = readDeclarationState(repositoryRoot);
   let rootObservedEntries;
   try {
     rootObservedEntries = discoverTrackedRootEntries(repositoryRoot);
@@ -174,6 +180,22 @@ export async function buildRepositoryProfileGateResult({ repositoryRoot = defaul
     rootObservedEntries = undefined;
   }
   const requirementObservations = buildRequirementObservations(repositoryRoot, REPOSITORY_PROFILE_RUN_DECLARATION_SOURCE);
+
+  return { requirementObservations, rootObservedEntries };
+}
+
+/**
+ * Runs `runRepositoryProfileCheck` (packages/controller, in-workspace) over
+ * this repository's own governance/repository-profile.json. Returns the
+ * real `GateResult` the runner produces -- no shape decisions happen in
+ * this function beyond assembling its inputs.
+ */
+export async function buildRepositoryProfileGateResult({ repositoryRoot = defaultRepositoryRoot } = {}) {
+  const controllerRepository = await importDistEntry(repositoryRoot, "packages/controller/dist/repository/index.js", "packages/controller");
+  const { runRepositoryProfileCheck } = controllerRepository;
+
+  const declaration = readDeclarationState(repositoryRoot);
+  const { requirementObservations, rootObservedEntries } = await buildRepositoryProfileDiscovery({ repositoryRoot });
 
   return runRepositoryProfileCheck({ declaration, requirementObservations, rootObservedEntries });
 }
