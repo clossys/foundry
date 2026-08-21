@@ -66,17 +66,16 @@ this package's contract, because nothing in `judgeCurrency` will manufacture
 it. The loop reopens on any drift a gate now catches that the consuming
 plane previously had to write its own evaluation logic to find.
 
-**Open honestly:** issue #330 is a real, currently open gap in that wiring.
-`readInstalledInventory` reads only an npm-shaped lockfile, so a pnpm-based
+**Closed:** issue #330 was a real gap in this wiring —
+`readInstalledInventory` read only an npm-shaped lockfile, so a pnpm-based
 consumer building this same gate had to hand-write its own roughly
 sixty-line `InstalledInventory` reader against `pnpm-lock.yaml` rather than
-get one from this package — everything downstream of inventory-reading
-(`judgeCurrency`, `upgradeSet`, `optOutGaps`, `computeCurrencyMetric`) worked
-for that consumer unmodified; only the lockfile-reading half didn't. That
-consumer's loop is closed today, but on its own inventory reader, not on
-this package's. Until #330 lands, that is the honest state of this
-close condition for a pnpm-based plane, not a gap this section will paper
-over.
+get one from this package. `readInstalledInventoryReport` (below) closes it:
+it reads either lockfile format and reports which it read, and — just as
+importantly — never collapses "this plane's lockfile is present but this
+package could not parse it" into the same silence as "this plane installed
+nothing." Those are different facts, and conflating them is exactly the
+ambiguity this program exists to remove.
 
 ## Usage
 
@@ -147,18 +146,66 @@ reason is the only thing that turns an absence into a decision.
 
 ## Installed-inventory reader
 
-`readInstalledInventory` reads a plane's manifest and lockfile through an
-injected `InventoryFileSystemPort`, following
+`readInstalledInventory` reads a plane's manifest and an **npm** lockfile
+through an injected `InventoryFileSystemPort`, following
 [`@vespeneventures/provisioning`](https://github.com/vespeneventures/foundry/tree/main/packages/provisioning)'s
 injected-port pattern — this package never opens a file itself.
 `createNodeInventoryFileSystem()` is the default, real-filesystem adapter; a
 test, or a caller reading from somewhere other than disk, supplies its own.
+It throws `IntegratorValidationError` on anything it cannot trust — a
+missing manifest, a missing lockfile, a lockfile that does not parse, or an
+unsupported `lockfileVersion` — the same offline-validator convention every
+other loader in this package uses (see `IntegratorValidationError`'s own doc
+comment).
 
 A package declared in the manifest with no matching resolution in the
 lockfile is not reported as installed. That is deliberate: a declared range
 with nothing actually resolved is, from this reader's point of view, not
 present, and it is left to `judgeCurrency` to decide whether that counts as a
 recorded decision or drift.
+
+`readInstalledInventoryReport` (issue #330) is the pnpm-aware, never-throwing
+sibling. It reads either lockfile format and reports which one it read — or
+reports exactly why it could not, as an explicit `indeterminate` result,
+rather than throwing or silently reporting an empty inventory:
+
+```ts
+import { createNodeInventoryFileSystem, readInstalledInventoryReport } from "@vespeneventures/integrator";
+
+const fs = createNodeInventoryFileSystem();
+const result = readInstalledInventoryReport(fs, {
+  manifestPath: "./package.json",
+  npmLockfilePath: "./package-lock.json",
+  pnpmLockfilePath: "./pnpm-lock.yaml",
+});
+
+if (result.kind === "read") {
+  console.log(result.lockfileFormat); // "npm" | "pnpm" -- whichever was actually present
+  // result.inventory is the same InstalledInventory readInstalledInventory returns
+} else {
+  console.log(result.reason); // see InstalledInventoryIndeterminateReason below
+}
+```
+
+The caller supplies BOTH candidate lockfile paths; this function checks which
+actually exist rather than trusting the caller's say-so about which package
+manager a plane uses:
+
+| `reason` | When |
+| --- | --- |
+| `manifest-not-found` | No file at `manifestPath`. |
+| `manifest-invalid` | The manifest does not parse as JSON, or a dependency field is malformed. |
+| `lockfile-not-found` | Neither `npmLockfilePath` nor `pnpmLockfilePath` exists. |
+| `lockfile-invalid` | Exactly one lockfile is present but this package could not parse it in its own format — reported, never folded into an empty "nothing installed" inventory. |
+| `ambiguous-lockfile-format` | BOTH `npmLockfilePath` and `pnpmLockfilePath` exist. Which one governs is not this reader's call to make, so it reports the ambiguity rather than silently picking one. |
+
+`readInstalledInventoryReport`'s pnpm support reads the CURRENT
+`importers`-based `pnpm-lock.yaml` shape only (the shape pnpm has written
+since lockfile v6). It is deliberately not a general YAML parser — see
+`src/pnpm-lockfile.ts`'s own header for the exact supported subset and why
+this package took on a small internal parser rather than a YAML dependency
+(this package declares no runtime dependencies at all, and that is
+deliberate).
 
 ## Reachability probe
 
@@ -483,7 +530,8 @@ at) zero.
 | Export | Kind | Description |
 | --- | --- | --- |
 | `loadEntitlementDeclaration(raw)` | function | Validates a parsed entitlement declaration offline. Throws on a duplicate, an invalid name, or an opt-out with no reason |
-| `readInstalledInventory(fs, options)` | function | Reads a plane's manifest and lockfile through the injected port. Reports only what actually resolves |
+| `readInstalledInventory(fs, options)` | function | Reads a plane's manifest and an npm lockfile through the injected port. Reports only what actually resolves. Throws on anything it cannot trust |
+| `readInstalledInventoryReport(fs, options)` | function | Reads a plane's manifest and EITHER lockfile format (issue #330). Never throws — reports `{ kind: "read", inventory, lockfileFormat }` or `{ kind: "indeterminate", reason, detail? }` |
 | `createNodeInventoryFileSystem()` | function | The default `InventoryFileSystemPort`, backed by `node:fs` |
 | `probeReachability(names, options)` | function | Probes an injected `Transport` for each name's latest published version. Never touches a real network itself |
 | `resolveReachability(outcomes)` | function | Resolves raw probe outcomes into `known` / `unauthenticated` / `unreachable`, applying the aggregate 404 rule |
@@ -503,6 +551,7 @@ at) zero.
 | `isValidPackageName(value)` | function | The one package-name check every module in this package shares |
 | `EntitlementEntry` / `OptOutEntry` / `EntitlementDeclaration` | types | The entitlement schema |
 | `InventoryFileSystemPort` / `InventorySourceOptions` / `InstalledPackage` / `InstalledInventory` | types | The installed-inventory reader's contracts |
+| `InventoryReportSourceOptions` / `InstalledInventoryReadResult` / `InstalledInventoryIndeterminateReason` / `InventoryLockfileFormat` | types | `readInstalledInventoryReport`'s never-throwing contract (issue #330) |
 | `Transport` / `ProbeOutcome` / `ReachabilityProbeOptions` / `ReachabilityVerdict` | types | The reachability probe's contracts |
 | `PackageCurrency` / `JudgeCurrencyInput` / `UpgradeSetEntry` / `CurrencyMetric` | types | The version reconciler's contracts, including the seven required states |
 | `CurrencySeverity` / `CurrencyDistance` / `CurrencyIndeterminateReason` / `ClassifyCurrencyDistanceResult` | types | The graded-severity contract: `"patch" \| "minor" \| "major"`, plus `"current"`, plus the two indeterminate reasons |

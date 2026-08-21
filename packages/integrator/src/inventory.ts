@@ -1,5 +1,6 @@
 import { IntegratorValidationError } from "./errors.js";
 import { isValidPackageName } from "./package-name.js";
+import { parsePnpmRootImporterVersions } from "./pnpm-lockfile.js";
 
 /**
  * Reads what a plane has actually vendored -- its own manifest and its own
@@ -122,4 +123,150 @@ export function readInstalledInventory(fs: InventoryFileSystemPort, options: Inv
   }
 
   return { packages: Object.freeze(packages) };
+}
+
+/** Which lockfile grammar `readInstalledInventoryReport` actually read. */
+export type InventoryLockfileFormat = "npm" | "pnpm";
+
+/**
+ * Why `readInstalledInventoryReport` could not produce an `InstalledInventory`
+ * at all. Never omitted -- see the function's own doc comment for why this
+ * exists as an explicit reported state rather than an empty inventory or a
+ * thrown error (issue #330).
+ */
+export type InstalledInventoryIndeterminateReason =
+  | "manifest-not-found"
+  | "manifest-invalid"
+  | "lockfile-not-found"
+  | "lockfile-invalid"
+  | "ambiguous-lockfile-format";
+
+export type InstalledInventoryReadResult =
+  | {
+      readonly kind: "read";
+      readonly inventory: InstalledInventory;
+      readonly lockfileFormat: InventoryLockfileFormat;
+    }
+  | {
+      readonly kind: "indeterminate";
+      readonly reason: InstalledInventoryIndeterminateReason;
+      readonly detail?: string;
+    };
+
+export interface InventoryReportSourceOptions {
+  /** Path to the plane's own `package.json`-shaped manifest. */
+  readonly manifestPath: string;
+  /** Candidate path to an npm lockfile (`lockfileVersion` 2 or 3 shape) -- checked for presence, not assumed. */
+  readonly npmLockfilePath: string;
+  /** Candidate path to a pnpm lockfile (the current `importers`-based shape) -- checked for presence, not assumed. */
+  readonly pnpmLockfilePath: string;
+}
+
+function detailOf(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function buildPackages(ranges: ReadonlyMap<string, string>, versions: ReadonlyMap<string, string>): readonly InstalledPackage[] {
+  const packages: InstalledPackage[] = [];
+  for (const [name, declaredRange] of ranges) {
+    const installedVersion = versions.get(name);
+    if (installedVersion === undefined) continue;
+    packages.push({ name, declaredRange, installedVersion });
+  }
+  return Object.freeze(packages);
+}
+
+function npmResolvedVersions(lockfile: Record<string, unknown>, names: Iterable<string>): ReadonlyMap<string, string> {
+  const versions = new Map<string, string>();
+  for (const name of names) {
+    const version = resolvedVersion(lockfile, name);
+    if (version !== undefined) versions.set(name, version);
+  }
+  return versions;
+}
+
+/**
+ * Read a plane's manifest and EITHER lockfile format through the injected
+ * port, and report what is really installed -- or report exactly why it
+ * could not, as an explicit `indeterminate` result. Never throws (issue
+ * #330), unlike `readInstalledInventory` above: this is the "detect what a
+ * plane actually has" entry point, following `detectSupersession`'s own
+ * documented discipline (see its header in `./supersession.ts`) of folding
+ * every internal parser's throw into a named, reported state rather than
+ * letting it escape or silently reporting an empty inventory.
+ *
+ * `readInstalledInventory` stays npm-only and keeps throwing, unchanged --
+ * this is a deliberately separate, additive entry point, not a replacement,
+ * so nothing that already depends on the throwing contract is disturbed.
+ *
+ * The caller supplies BOTH candidate lockfile paths (typically the plane's
+ * own `package-lock.json` and `pnpm-lock.yaml`, at whatever root the caller
+ * already knows), and this function checks which actually exist rather than
+ * assuming a format from the caller's say-so:
+ *
+ * - Neither present -> `indeterminate` / `"lockfile-not-found"`.
+ * - Exactly one present -> read in that format.
+ * - BOTH present -> `indeterminate` / `"ambiguous-lockfile-format"`, its own
+ *   reported state, never a silent pick of one over the other -- a plane
+ *   mid-migration between package managers, or one that simply has stale
+ *   lockfile litter, is a fact worth surfacing, not guessing past.
+ *
+ * A lockfile that IS present but fails to parse in its own format is
+ * `indeterminate` / `"lockfile-invalid"`, carrying the parser's message as
+ * `detail` -- never folded into an empty, "nothing installed" inventory,
+ * which is the exact ambiguity issue #330 exists to remove.
+ *
+ * `pnpm-lock.yaml` support is intentionally scoped to the CURRENT
+ * `importers`-based lockfile shape (see `./pnpm-lockfile.ts`'s own header).
+ * A pnpm lockfile that predates that shape is `"lockfile-invalid"`, not
+ * silently misread.
+ */
+export function readInstalledInventoryReport(fs: InventoryFileSystemPort, options: InventoryReportSourceOptions): InstalledInventoryReadResult {
+  const manifestContent = fs.readFile(options.manifestPath);
+  if (manifestContent === undefined) {
+    return { kind: "indeterminate", reason: "manifest-not-found", detail: `manifest not found: ${options.manifestPath}` };
+  }
+
+  let ranges: ReadonlyMap<string, string>;
+  try {
+    ranges = declaredRanges(parseJsonObject(manifestContent, `manifest at ${options.manifestPath}`));
+  } catch (error) {
+    return { kind: "indeterminate", reason: "manifest-invalid", detail: detailOf(error) };
+  }
+
+  const npmContent = fs.readFile(options.npmLockfilePath);
+  const pnpmContent = fs.readFile(options.pnpmLockfilePath);
+
+  if (npmContent !== undefined && pnpmContent !== undefined) {
+    return {
+      kind: "indeterminate",
+      reason: "ambiguous-lockfile-format",
+      detail: `both an npm lockfile (${options.npmLockfilePath}) and a pnpm lockfile (${options.pnpmLockfilePath}) are present -- which one governs is not this reader's call to make`,
+    };
+  }
+
+  if (npmContent !== undefined) {
+    try {
+      const lockfile = parseJsonObject(npmContent, `lockfile at ${options.npmLockfilePath}`);
+      const versions = npmResolvedVersions(lockfile, ranges.keys());
+      return { kind: "read", inventory: { packages: buildPackages(ranges, versions) }, lockfileFormat: "npm" };
+    } catch (error) {
+      return { kind: "indeterminate", reason: "lockfile-invalid", detail: detailOf(error) };
+    }
+  }
+
+  if (pnpmContent !== undefined) {
+    try {
+      const versions = parsePnpmRootImporterVersions(pnpmContent);
+      return { kind: "read", inventory: { packages: buildPackages(ranges, versions) }, lockfileFormat: "pnpm" };
+    } catch (error) {
+      return { kind: "indeterminate", reason: "lockfile-invalid", detail: detailOf(error) };
+    }
+  }
+
+  return {
+    kind: "indeterminate",
+    reason: "lockfile-not-found",
+    detail: `neither an npm lockfile (${options.npmLockfilePath}) nor a pnpm lockfile (${options.pnpmLockfilePath}) was found`,
+  };
 }

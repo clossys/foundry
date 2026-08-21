@@ -5,6 +5,46 @@ All notable changes to `@vespeneventures/integrator` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-08-21
+
+### Added
+
+- **`readInstalledInventoryReport(fs, options)`, a pnpm-aware, never-throwing
+  sibling to `readInstalledInventory` (issue #330).** `readInstalledInventory`
+  reads only an npm-shaped `package-lock.json`, so a pnpm-based consumer
+  repository had no way to build an `InstalledInventory` from this package at
+  all — it had to hand-write its own roughly sixty-line reader against
+  `pnpm-lock.yaml` instead, with everything downstream (`judgeCurrency`,
+  `upgradeSet`, `optOutGaps`, `computeCurrencyMetric`) working unmodified for
+  that consumer. The new function reads either lockfile format: the caller
+  supplies both candidate lockfile paths, and it reports which one it
+  actually found (`lockfileFormat: "npm" | "pnpm"`), never assuming or being
+  told. It never throws — every failure mode is folded into an explicit
+  `{ kind: "indeterminate", reason, detail? }` result, following
+  `detectSupersession`'s own documented discipline (`src/supersession.ts`'s
+  header) rather than escaping as a thrown error or, worse, silently
+  reporting an empty "nothing installed" inventory: a lockfile that is
+  PRESENT but fails to parse in its own format is `"lockfile-invalid"`,
+  never the same silence as a genuinely absent lockfile
+  (`"lockfile-not-found"`) — collapsing those two facts into one is exactly
+  the ambiguity this issue exists to remove. Both lockfiles present at once
+  is its own reported state too (`"ambiguous-lockfile-format"`), never a
+  silent pick of one over the other.
+  `readInstalledInventory` itself is UNCHANGED — still npm-only, still
+  throws — this is a deliberately additive, separate entry point.
+- **`pnpm-lock.yaml` support (`src/pnpm-lockfile.ts`) is a small internal
+  parser, not a new runtime dependency.** This package declares no runtime
+  dependencies, deliberately, and a full YAML parser is far more than this
+  reader needs: it reads exactly one shape, the current `importers`-based
+  lockfile's root (`"."`) importer `dependencies` / `devDependencies` /
+  `optionalDependencies` blocks, and nothing else in the document (in
+  particular, never the `packages:` block, which uses flow-style YAML this
+  parser does not support and does not need to). See that module's own doc
+  comment for the exact supported subset and its limits. This is a decision
+  worth a second look — see this package's own README ("Installed-inventory
+  reader") and the pull request that introduced this entry for the full
+  reasoning.
+
 ## [0.4.1] - 2026-08-21
 
 ### Changed

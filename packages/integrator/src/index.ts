@@ -21,8 +21,17 @@ export { isValidPackageName } from "./package-name.js";
 export { loadEntitlementDeclaration } from "./entitlement.js";
 export type { EntitlementEntry, OptOutEntry, EntitlementDeclaration } from "./entitlement.js";
 
-export { readInstalledInventory } from "./inventory.js";
-export type { InventoryFileSystemPort, InventorySourceOptions, InstalledPackage, InstalledInventory } from "./inventory.js";
+export { readInstalledInventory, readInstalledInventoryReport } from "./inventory.js";
+export type {
+  InventoryFileSystemPort,
+  InventorySourceOptions,
+  InventoryReportSourceOptions,
+  InstalledPackage,
+  InstalledInventory,
+  InventoryLockfileFormat,
+  InstalledInventoryIndeterminateReason,
+  InstalledInventoryReadResult,
+} from "./inventory.js";
 
 export { createNodeInventoryFileSystem } from "./node-fs.js";
 
