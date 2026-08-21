@@ -34,12 +34,23 @@ describe("generateCompiledCss's #182 tailwindcss peer-version guard", () => {
     );
   });
 
-  it("throws, never silently passes, when the installed version cannot be parsed (unresolvable)", async () => {
+  // Updated for #389: assertPeerVersion no longer throws when it merely
+  // cannot PARSE an installed version (e.g. a prerelease identifier) —
+  // that is now indeterminate, reported via a single console.warn, and
+  // the real compile proceeds. See ../internal/peer-version.ts's header.
+  it("warns and proceeds, rather than rejecting, when the installed version cannot be parsed (unresolvable)", async () => {
     vi.doMock("../internal/resolve-installed-peer-version.js", () => ({
       resolveInstalledPeerVersion: () => "4.0.0-alpha.1",
     }));
-    const { generateCompiledCss: generateWithMock } = await import("./generate.js");
-    await expect(generateWithMock({ stylesDir, candidates: ["bg-accent"] })).rejects.toThrow(/not a plain x\.y\.z semver/);
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      const { generateCompiledCss: generateWithMock } = await import("./generate.js");
+      await expect(generateWithMock({ stylesDir, candidates: ["bg-accent"] })).resolves.toBeDefined();
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn.mock.calls[0]?.[0]).toMatch(/prerelease identifier/);
+    } finally {
+      warn.mockRestore();
+    }
   });
 });
 

@@ -5,6 +5,27 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.1] - 2026-08-20
+
+### Fixed
+
+- **`assertPeerVersion` no longer throws when it merely cannot PARSE an
+  installed `typescript` version — including any version carrying a
+  prerelease identifier (issue #389).** The version parser this guard uses
+  accepts only strict `x.y.z`, and `assertPeerVersion` runs at MODULE LOAD
+  from `gates/secret-gates.ts`, so the throw fired during import
+  resolution, before any caller could catch it. An unparseable DECLARED
+  RANGE is still this package's own bug and still throws, unchanged; an
+  unparseable INSTALLED version is now treated as `indeterminate` — this
+  guard warns once per distinct `(peer, foundVersion)` pair via
+  `console.warn` and proceeds, rather than crashing the consumer's build.
+  This is a deliberate, documented inversion of the fleet's fail-closed
+  `indeterminate` contract (`gates/result.ts`): a CI gate must refuse to
+  certify what it could not check, but a runtime import guard must not
+  crash a consumer's build over a version string it merely failed to read.
+  See `src/internal/peer-version.ts`'s own header for the full reasoning
+  and the tradeoff this buys.
+
 ## [0.8.0] - 2026-08-20
 
 ### Fixed

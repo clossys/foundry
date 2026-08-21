@@ -30,12 +30,23 @@ describe("assertTailwindMergeVersion", () => {
     expect(() => assertWithMock()).toThrow(/tailwind-merge@1\.0\.0 is installed, but this package requires tailwind-merge@"\^3\.0\.0"/);
   });
 
-  it("throws, never silently passes, when the installed version cannot be parsed (unresolvable)", async () => {
+  // Updated for #389: assertPeerVersion no longer throws when it merely
+  // cannot PARSE an installed version (e.g. a prerelease identifier) —
+  // that is now indeterminate, reported via a single console.warn, and
+  // the caller proceeds. See ../internal/peer-version.ts's header.
+  it("warns and proceeds, rather than throwing, when the installed version cannot be parsed (unresolvable)", async () => {
     vi.doMock("../internal/resolve-installed-peer-version.js", () => ({
       resolveInstalledPeerVersion: () => "3.0.0-canary.1",
     }));
-    const { assertTailwindMergeVersion: assertWithMock } = await import("./assert-tailwind-merge-version.js");
-    expect(() => assertWithMock()).toThrow(/not a plain x\.y\.z semver/);
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    try {
+      const { assertTailwindMergeVersion: assertWithMock } = await import("./assert-tailwind-merge-version.js");
+      expect(() => assertWithMock()).not.toThrow();
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(warn.mock.calls[0]?.[0]).toMatch(/prerelease identifier/);
+    } finally {
+      warn.mockRestore();
+    }
   });
 
   it("throws a distinct, Node-only-context error rather than a false 'not installed' when called from a browser-like global scope", () => {

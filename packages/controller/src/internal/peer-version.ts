@@ -53,6 +53,43 @@
  * for a browser), but the same split keeps the pattern — and any future
  * guard site this package adds — consistent across every package in
  * this PR.
+ *
+ * THE THREE STATES, MIRRORED LOCALLY, NOT IMPORTED — AND THE FAILURE
+ * DIRECTION DELIBERATELY INVERTED (#389). A peer version this guard cannot
+ * parse — including one carrying a prerelease identifier — is not a value
+ * that FAILED this check. It is a value the checker could not form an
+ * opinion about at all: `indeterminate`, never silently folded into a pass
+ * and never thrown as though it were a real, actionable violation. THIS
+ * package is the one that OWNS `gates/result.ts`'s three-state
+ * `satisfied | violated | indeterminate` grammar, which makes importing it
+ * here look tempting — but do not: `gates/secret-gates.ts` imports
+ * `internal/peer-version.js`, so having `internal/peer-version.ts` import
+ * `gates/result.js` would create an import cycle inside `gates/`.
+ * `assertPeerVersion` below therefore reimplements the same three states
+ * as its own local control flow — but do NOT read this as parity with
+ * `gates/result.ts`'s CONTRACT, only its VOCABULARY: that module defines
+ * `indeterminate` as failing CLOSED ("could not evaluate ... fails CLOSED
+ * ... never silently promoted to satisfied"), because its callers are CI
+ * gates whose job is to refuse to certify what they could not check. This
+ * file's `indeterminate` deliberately fails OPEN instead: parses and
+ * satisfies the range (proceed, silently), parses and violates it (throw —
+ * a real, actionable violation, unchanged), or cannot be parsed at all
+ * (warn — see below — and PROCEED, never thrown). That inversion is
+ * intentional, not a drift from the fleet contract: a CI gate that cannot
+ * evaluate should refuse to certify, but a runtime import guard that
+ * cannot evaluate must not crash a consumer's build over a string it
+ * merely failed to read — doing exactly that, unconditionally, is #389
+ * itself. The tradeoff this buys is real and is named here rather than
+ * left implicit: a peer that is GENUINELY incompatible, but whose version
+ * string this guard cannot parse, now proceeds silently instead of failing
+ * loudly — this guard cannot tell "cannot parse, but actually fine" apart
+ * from "cannot parse, and actually broken." If that peer is really
+ * incompatible, this guard no longer catches it; whatever it is actually
+ * incompatible WITH is expected to surface the failure instead (see the
+ * warning text below, which says so). An unparseable DECLARED RANGE stays
+ * on the OLD, fail-loud path — that range is this package's own source,
+ * not external input, so failing to parse it is this package's own bug,
+ * never an assumed pass.
  */
 
 // ------------------------------------------------------------- range parsing
@@ -122,19 +159,44 @@ function parseGteForm(range: string): { lower: Bound; upper: Bound | null } | nu
   return null;
 }
 
-type RangeSatisfaction = { evaluated: true; ok: boolean } | { evaluated: false; reason: string };
+type RangeSatisfaction =
+  | { evaluated: true; ok: boolean }
+  /**
+   * This package's OWN declared range failed to parse — not an external
+   * input, a defect in this package's own source. Still loud: see
+   * `assertPeerVersion`.
+   */
+  | { evaluated: false; kind: "unparseable-range"; reason: string }
+  /**
+   * The externally-supplied installed version failed to parse — including
+   * any value carrying a prerelease identifier (`6.1.0-beta.1`), build
+   * metadata, or anything else that is not a plain `x.y.z`. This is
+   * `indeterminate`, not `violated`: see this file's header and
+   * `assertPeerVersion`.
+   */
+  | { evaluated: false; kind: "unparseable-version"; reason: string };
+
+/** True when `versionStr` looks like `x.y.z-<prerelease>`, for a more specific warning. */
+function looksLikePrereleaseVersion(versionStr: string): boolean {
+  return /^\d+\.\d+\.\d+-/.test(String(versionStr).trim());
+}
 
 /**
- * Returns `{ evaluated: false, reason }` when either side could not be
- * parsed — a finding, never assumed satisfied, the same discipline
+ * Returns `{ evaluated: false, kind, reason }` when either side could not
+ * be parsed — a finding, never assumed satisfied, the same discipline
  * `scripts/check-workspace-links.mjs`'s own `satisfies()` uses — or
- * `{ evaluated: true, ok }` once both sides parsed cleanly.
+ * `{ evaluated: true, ok }` once both sides parsed cleanly. `kind`
+ * distinguishes an unparseable RANGE (this package's own bug — `assertPeerVersion`
+ * still throws) from an unparseable installed VERSION (an external input
+ * this guard could not read — `assertPeerVersion` warns and proceeds; see
+ * this file's header).
  */
 function satisfiesRange(versionStr: string, rangeStr: string): RangeSatisfaction {
   const bound = parsePinCaretTilde(rangeStr) ?? parseGteForm(rangeStr);
   if (!bound) {
     return {
       evaluated: false,
+      kind: "unparseable-range",
       reason:
         `"${rangeStr}" is not a range form this guard parses (an exact pin, ^x.y.z, ~x.y.z, ` +
         `">=x.y.z <a.b.c>", or ">=x.y.z" are supported)`,
@@ -144,7 +206,10 @@ function satisfiesRange(versionStr: string, rangeStr: string): RangeSatisfaction
   if (!version) {
     return {
       evaluated: false,
-      reason: `the installed version "${versionStr}" is not a plain x.y.z semver this guard can compare`,
+      kind: "unparseable-version",
+      reason: looksLikePrereleaseVersion(versionStr)
+        ? `the installed version "${versionStr}" carries a prerelease identifier this guard will not guess an ordering for`
+        : `the installed version "${versionStr}" is not a plain x.y.z semver this guard can compare`,
     };
   }
   const geLower = compareVersions(version, bound.lower) >= 0;
@@ -164,15 +229,36 @@ export interface AssertPeerVersionInput {
 }
 
 /**
+ * De-duplication for the "cannot parse this installed version" warning
+ * below, keyed on the exact `(peer, foundVersion)` pair. `assertPeerVersion`
+ * runs at MODULE LOAD, so a consumer that imports this package's gate
+ * entry points more than once would otherwise see the identical warning
+ * repeated — exactly how a real warning stops being read (repeated
+ * identical noise gets filtered out). Module-scoped and process-lifetime:
+ * this is a logging concern, not a correctness one, so it is never
+ * cleared.
+ */
+const warnedUnparseableVersions = new Set<string>();
+
+/**
  * Throws a named, actionable error naming the package, the declared
- * range, and the version actually found. Never returns a boolean — a
- * guard must state where control goes when it declines, and a boolean
- * return is trivially ignored by a caller who forgets to check it. A
- * missing peer and an out-of-range peer throw genuinely DIFFERENT
- * messages — "not installed" and "installed but incompatible" are
- * different problems with different fixes. An unparseable declared range
- * or installed version is a third, equally loud error, never an assumed
- * pass.
+ * range, and the version actually found — for the two states that ARE
+ * actionable violations. Never returns a boolean — a guard must state
+ * where control goes when it declines, and a boolean return is trivially
+ * ignored by a caller who forgets to check it. A missing peer and an
+ * out-of-range peer throw genuinely DIFFERENT messages — "not installed"
+ * and "installed but incompatible" are different problems with different
+ * fixes. An unparseable DECLARED RANGE is a third, equally loud thrown
+ * error — that range is this package's own source, not external input, so
+ * failing to parse it is this package's own bug, never an assumed pass.
+ *
+ * An unparseable, or prerelease-carrying, INSTALLED version is different:
+ * that string is supplied by whatever resolved the peer at runtime, not
+ * by this package or necessarily by the consumer either. This guard never
+ * throws for it — see this file's header for why, and for the tradeoff
+ * that choice buys (#389) — it calls `console.warn` exactly once per
+ * distinct `(peer, foundVersion)` pair (see `warnedUnparseableVersions`
+ * above), with the raw string and the reason, and returns normally.
  */
 export function assertPeerVersion(input: AssertPeerVersionInput): void {
   const { peer, declaredRange, foundVersion } = input;
@@ -185,12 +271,29 @@ export function assertPeerVersion(input: AssertPeerVersionInput): void {
   }
 
   const outcome = satisfiesRange(foundVersion, declaredRange);
+
+  if (!outcome.evaluated && outcome.kind === "unparseable-version") {
+    const warnKey = `${peer}@${foundVersion}`;
+    if (!warnedUnparseableVersions.has(warnKey)) {
+      warnedUnparseableVersions.add(warnKey);
+      console.warn(
+        `[@vespeneventures/controller] Could not verify ${peer}@${foundVersion} against this package's declared ` +
+          `range "${declaredRange}": ${outcome.reason}. This is not a value that failed the check — it is a value ` +
+          `assertPeerVersion could not read at all, so it is being treated as indeterminate rather than as a ` +
+          `violation. Proceeding without blocking the build; if ${peer} is genuinely incompatible that will ` +
+          `surface elsewhere.`,
+      );
+    }
+    return;
+  }
+
   if (!outcome.evaluated) {
     throw new Error(
       `Could not verify ${peer}@${foundVersion} against this package's declared range "${declaredRange}": ` +
         `${outcome.reason}. Refusing to assume this is compatible.`,
     );
   }
+
   if (!outcome.ok) {
     throw new Error(
       `${peer}@${foundVersion} is installed, but this package requires ${peer}@"${declaredRange}". ` +
