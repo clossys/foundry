@@ -206,8 +206,20 @@
       "forwardsToReplacement": false
     },
     {
-      "name": "@vespeneventures/strategy",
+      "name": "@vespeneventures/strategist",
       "status": "published"
+    },
+    {
+      "name": "@vespeneventures/strategy",
+      "status": "deprecated",
+      "replacement": {
+        "name": "@vespeneventures/strategist",
+        "range": "^0.1.0"
+      },
+      "deprecatedOn": "2026-08-20",
+      "decision": "docs/DECISIONS.md#10-recutting-the-expression-surface-into-role-shaped-packages",
+      "migration": "packages/strategist/README.md",
+      "forwardsToReplacement": false
     },
     {
       "name": "@vespeneventures/surface",
