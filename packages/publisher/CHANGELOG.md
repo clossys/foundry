@@ -3,7 +3,7 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [0.1.1] - 2026-08-21
+## [0.1.2] - 2026-08-21
 
 ### Changed
 
@@ -16,6 +16,26 @@ All notable changes to this package are documented here. Format follows
   pinned to the superseded precedence. No source in this package imports
   `checkAddressability` or otherwise depends on the changed behaviour
   directly; this is purely picking up the new range.
+
+  This release is `0.1.2` rather than `0.1.1` because the `designer`
+  widening below took `0.1.1` first, on a branch developed in parallel with
+  this one. Both widenings are carried here together. Resolving that
+  collision by keeping only one side would have shipped this package with
+  the other range still pointing at a superseded version, and no gate would
+  have failed — an un-widened range still resolves against the older
+  published release, so it would simply never widen.
+
+## [0.1.1] - 2026-08-21
+
+### Changed
+
+- **Widened the `@vespeneventures/designer` dependency range to `^0.2.0`.** A
+  runtime dependency range is shipped content, so it moves this package's
+  version even though no code here changed. See
+  [issue #405](https://github.com/vespeneventures/foundry/issues/405), which
+  added `designer`'s `environment-conformance` gate
+  (`designer-environment-check`, `checkEnvironmentConformance`) and bumped
+  `designer` to `0.2.0`.
 
 ## [0.1.0] - 2026-08-21
 

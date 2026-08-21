@@ -1129,7 +1129,7 @@ import-free of each other under one version.
 
 Node 20+. This package's own `package.json` declares runtime dependencies on
 `@vespeneventures/writer` (`^0.2.0`), `@vespeneventures/designer`
-(`^0.1.0`), and `@vespeneventures/controller` (`~0.8.0`) — of which this
+(`^0.2.0`), and `@vespeneventures/controller` (`~0.8.0`) — of which this
 package only imports the `./policy` subpath, `@vespeneventures/controller/policy`,
 never `controller`'s other exports. `writer` and `designer` are caret
 ranges (both fresh `0.x` role packages); `controller` stays a tilde range,
@@ -1142,10 +1142,16 @@ installing things in a particular sequence. `writer`'s range moved from
 `^0.1.0` to `^0.2.0` when `writer` 0.2.0 changed `writer-check
 addressability`'s exit-code precedence (issue #407) — a behavioural
 contract change, not a patch, so the old `^0.1.0` range does not resolve it
-(0.x ranges are minor-locked).
+(0.x ranges are minor-locked). `designer`'s range moved the same way and
+for the same reason at `designer` 0.2.0, which added the
+`designer-environment-check` gate (issue #405). Both widenings landed
+independently and are carried together here; taking only one would have
+left the other range pinned to a superseded version without any gate
+failing, since an un-widened range still resolves against the older
+published release.
 
 A consumer whose own policy is to pin exact versions must pin `writer` to a
-matching `0.2.x` patch release, `designer` to a matching `0.1.x` patch
+matching `0.2.x` patch release, `designer` to a matching `0.2.x` patch
 release, and `controller` to a matching `0.8.x` patch release — otherwise
 `publisher`'s declared ranges and the consumer's exact pin cannot both be
 satisfied, and the install fails with an unresolvable version conflict.
@@ -1175,7 +1181,7 @@ That declaration does not reach an installer resolving against
 regardless of which subpaths are actually imported. A consumer rendering
 only email, print, or `record` output still has React and React DOM
 installed. This package's own `dependencies` on `@vespeneventures/designer`
-(`^0.1.0`) compounds it one level further: `designer` declares six of its
+(`^0.2.0`) compounds it one level further: `designer` declares six of its
 own optional peers the same way, and the same registry gap applies to them
 too, so a consumer of `publisher` inherits `designer`'s full peer set
 through the same mechanism, not just `publisher`'s own two. See

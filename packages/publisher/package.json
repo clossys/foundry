@@ -1,6 +1,6 @@
 {
   "name": "@vespeneventures/publisher",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -94,7 +94,7 @@
   },
   "dependencies": {
     "@vespeneventures/writer": "^0.2.0",
-    "@vespeneventures/designer": "^0.1.0",
+    "@vespeneventures/designer": "^0.2.0",
     "@vespeneventures/controller": "~0.8.0"
   },
   "peerDependencies": {

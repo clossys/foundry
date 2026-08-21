@@ -3,6 +3,52 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.0] - 2026-08-21
+
+### Added
+
+- **The `environment-conformance` gate**, closing
+  [issue #405](https://github.com/vespeneventures/foundry/issues/405) as
+  narrowed by that issue's own correction comment once
+  [issue #358](https://github.com/vespeneventures/foundry/issues/358) routed
+  the full module-graph resolver elsewhere: `render-environment.ts` has
+  exported `RENDER_ENVIRONMENT` — a plain record declaring each
+  `package.json#exports` subpath `"server-safe"` or `"client-only"` — since
+  this package's first release, but nothing ever verified it stayed in step
+  with the manifest it describes. A subpath could be added to, removed
+  from, or renamed in `package.json#exports` with no matching edit to the
+  record, or vice versa, and nothing would notice.
+  - **`checkEnvironmentConformance(packageRoot)`** (new export from
+    `@vespeneventures/designer/gate`) checks that `RENDER_ENVIRONMENT`'s key
+    set and `package.json#exports`' subpath set are the SAME SET, in both
+    directions — nothing more. It performs NO module resolution and does
+    not verify that a `"server-safe"` subpath actually resolves safely
+    under a real export condition; that real verification is
+    [issue #358](https://github.com/vespeneventures/foundry/issues/358)'s
+    shared `builder` capability, deliberately not built twice here. A
+    `"satisfied"` verdict means the declaration is internally consistent
+    with the manifest — it says nothing about whether the declaration is
+    true of the compiled output. Returns a three-state verdict:
+    `"satisfied"` (the two sets agree, over at least one subpath, never
+    "no error was thrown"), `"violated"` (every `undeclared-subpath` and
+    every `stale-declaration` reported, each naming its own direction, not
+    collapsed into one "mismatch"), or `"indeterminate"` with a
+    machine-readable reason (manifest missing/unparseable, no or an empty
+    `exports` map, the declaration missing/unparseable, or the
+    declaration-loading subprocess failing).
+  - **`designer-environment-check [package-dir]`**, a new installable
+    `bin`, exits `0`/`1`/`2` for satisfied/violated/indeterminate.
+  - **The adversarial proof this gate is built to pass, asserted in one
+    test over one fixture** (`environment-conformance.adversarial.test.ts`):
+    the named weaker tool — a bare COUNT comparison, "N keys on each side,
+    so they must agree" — exits `0` on a fixture where one subpath was
+    RENAMED (never added or removed), because the count is unchanged on
+    both sides. The real gate, spawned as the compiled CLI by its compiled
+    path (the same way this repository invokes every gate), exits `1` on
+    the identical fixture, because the renamed-to name is undeclared and
+    the renamed-from name is now a stale declaration — a defect a count
+    can never see.
+
 ## [0.1.0] - 2026-08-21
 
 First release. This package is the designer role, recut from
