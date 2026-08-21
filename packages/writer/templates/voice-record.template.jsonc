@@ -1,0 +1,135 @@
+// ════════════════════════════════════════════════════════════════════════
+// @vespeneventures/writer/voice · voice-record.template.jsonc
+// ────────────────────────────────────────────────────────────────────────
+// BINDING — the second layer, the exact peer of `@vespeneventures/ui/tokens`'
+// `brand-template.css`. This is a template, not real content — copy it into
+// your own project and fill in every placeholder:
+//
+//   cp node_modules/@vespeneventures/writer/voice/voice-record.template.jsonc \
+//      src/voice/acme-app.voice.jsonc
+//
+// then load it (any JSON-with-comments reader, or strip comments yourself)
+// and pass the result through `parseVoiceRecord` before using it — that
+// call is what turns "JSON that happens to have the right keys" into an
+// actual, validated `VoiceRecord`:
+//
+//   import { parseVoiceRecord, checkCopy } from "@vespeneventures/writer/voice";
+//   const acmeVoice = parseVoiceRecord(JSON.parse(stripJsonComments(raw)));
+//   const report = checkCopy(acmeVoice, someCopy);
+//   if (!report.bound) {
+//     // this record is still (partly) this template, unedited — see below.
+//   }
+//
+// WHAT'S HERE, AND WHAT ISN'T
+//
+// Every slot below is one this package considers BINDABLE — a rule VALUE a
+// real voice plausibly wants to state for itself: which pronouns are
+// forbidden, which tense markers, which terms and why, which claims and
+// whether each needs a fact. Every field this package's schema instead
+// considers a rule KIND — that a voice has exactly a `person` rule and a
+// `tense` rule and nothing else, that a glossary entry's `status` is one of
+// `"forbidden"`/`"preferred"` and no third option, that a claim has exactly
+// `id`/`text`/`matchPhrases`/`factRef`/`requiresSupport` and no more fields
+// — is FIXED, shipped once in `src/types.ts`, and deliberately does not
+// appear here as a fill-in-the-blank, the same way `brand-template.css`
+// never lists `--spacing-*` or `--ui-z-*`. See `src/fields.ts`'s header
+// comment for the full accounting of where that line falls and why it
+// falls between two FILES here rather than within this one file the way it
+// runs within `tokens.css` itself.
+//
+// `glossary`, `claims`, and `patterns` are shown below with exactly ONE
+// example entry each, to demonstrate the shape — add as many of your own as
+// your voice actually needs, and delete the example once you have real
+// entries. The per-entry FIELD NAMES (`term`/`status`/`reason`/
+// `alternative`/`caseSensitive`/`channel` for a glossary entry;
+// `id`/`text`/`matchPhrases`/`factRef`/`requiresSupport` for a claim;
+// `id`/`description`/`pattern`/`severity`/`reason`/`alternative`/`channel`
+// for a pattern rule) are fixed — see `src/types.ts` — only the VALUES you
+// put in them are yours. Unlike glossary/claims, `patterns` itself is
+// entirely OPTIONAL — omit the whole array for a voice with no regex rules.
+//
+// THE PLACEHOLDER, AND WHY IT MUST STAY LOUD
+//
+// Every bindable slot below is filled with the literal string
+// `REPLACE_ME__VOICE_TEMPLATE_PLACEHOLDER` (exported as `TEMPLATE_PLACEHOLDER`
+// from `src/fields.ts`) rather than left blank or `null`. `checkCopy` scans
+// every string field of the `VoiceRecord` you pass it for this exact value
+// and reports `bound: false`, plus an unmissable `"voice:unbound-placeholder"`
+// ERROR finding for each slot still carrying it, if even one remains — see
+// `checker.ts`'s `findPlaceholderPaths` and the README's "The unbound
+// signal" section for the full reasoning. Leave NO placeholder behind
+// before treating a copy of this file as a real, bound voice.
+// ════════════════════════════════════════════════════════════════════════
+{
+  "id": "REPLACE_ME__VOICE_TEMPLATE_PLACEHOLDER",
+
+  "rules": {
+    // ─── PERSON (required) ────────────────────────────────────────────
+    "person": {
+      "description": "REPLACE_ME__VOICE_TEMPLATE_PLACEHOLDER",
+      "forbiddenPronouns": ["REPLACE_ME__VOICE_TEMPLATE_PLACEHOLDER"]
+    },
+
+    // ─── TENSE (required) ─────────────────────────────────────────────
+    "tense": {
+      "description": "REPLACE_ME__VOICE_TEMPLATE_PLACEHOLDER",
+      "forbiddenMarkers": ["REPLACE_ME__VOICE_TEMPLATE_PLACEHOLDER"]
+    },
+
+    // ─── FORMALITY (required — one of "casual" | "neutral" | "formal",
+    //      the fixed FormalityLevel enum; the CHOICE of which is yours) ──
+    "formality": "REPLACE_ME__VOICE_TEMPLATE_PLACEHOLDER",
+
+    // ─── TONE (required — free-text descriptors; never mechanically
+    //      checked, see the README) ─────────────────────────────────────
+    "tone": ["REPLACE_ME__VOICE_TEMPLATE_PLACEHOLDER"]
+  },
+
+  // ─── GLOSSARY (required — one example entry; add/remove your own) ────
+  // `status` is one of the two fixed GlossaryStatus values, not itself a
+  // blank to fill in — this example entry picks "forbidden"; a real entry
+  // of your own may pick either.
+  "glossary": [
+    {
+      "term": "REPLACE_ME__VOICE_TEMPLATE_PLACEHOLDER",
+      "status": "forbidden",
+      "reason": "REPLACE_ME__VOICE_TEMPLATE_PLACEHOLDER",
+      "alternative": "REPLACE_ME__VOICE_TEMPLATE_PLACEHOLDER",
+      "caseSensitive": false
+    }
+  ],
+
+  // ─── CLAIMS (required — one example entry; add/remove your own) ──────
+  // `factRef` is the opaque seam into a future `strategy` package's facts
+  // registry — see the README, "The factRef seam". Leave it out entirely
+  // (as here) for a claim that has no fact backing it yet.
+  "claims": [
+    {
+      "id": "REPLACE_ME__VOICE_TEMPLATE_PLACEHOLDER",
+      "text": "REPLACE_ME__VOICE_TEMPLATE_PLACEHOLDER",
+      "matchPhrases": [],
+      "requiresSupport": true
+    }
+  ],
+
+  // ─── PATTERNS (OPTIONAL — one example entry; add/remove your own) ────
+  // Unlike glossary/claims above, this whole array may be omitted entirely
+  // for a voice with no regex rules — see src/types.ts's VoiceRecord doc
+  // comment. `pattern.source`/`pattern.flags` are the two RegExp
+  // constructor arguments, never a real RegExp (this is checked-in JSON).
+  // `severity` is one of the three fixed VoiceSeverity values ("error" |
+  // "warning" | "advisory") — see the README, "Severity tiers and the
+  // exit-code mapping". `flags`, `alternative`, and `channel` are all
+  // optional and left out of this example — see src/types.ts's PatternRule.
+  "patterns": [
+    {
+      "id": "REPLACE_ME__VOICE_TEMPLATE_PLACEHOLDER",
+      "description": "REPLACE_ME__VOICE_TEMPLATE_PLACEHOLDER",
+      "pattern": {
+        "source": "REPLACE_ME__VOICE_TEMPLATE_PLACEHOLDER"
+      },
+      "severity": "REPLACE_ME__VOICE_TEMPLATE_PLACEHOLDER",
+      "reason": "REPLACE_ME__VOICE_TEMPLATE_PLACEHOLDER"
+    }
+  ]
+}

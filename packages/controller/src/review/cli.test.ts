@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { CliInputError, main } from "./cli.js";
+import { main } from "./cli.js";
 
 const headSha = "e".repeat(40);
 const baseSha = "7".repeat(40);
@@ -11,6 +11,7 @@ let directory: string;
 beforeEach(() => {
   directory = mkdtempSync(join(tmpdir(), "review-cli-"));
   vi.spyOn(console, "log").mockImplementation(() => {});
+  vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
 afterEach(() => {
@@ -58,10 +59,15 @@ describe("review-check", () => {
     expect(report.findings.map((item) => item.rule)).toContain("required-check-failed");
   });
 
-  it("throws an input error for malformed input so the bin exits 2", () => {
+  // #392: main() must never let an exception escape — it is self-contained
+  // and always returns 0 | 1 | 2 itself, the same contract inspector's and
+  // builder's own CLI main functions already follow. Malformed input used
+  // to throw CliInputError PAST main(), caught only by a separate run()
+  // wrapper; this asserts the exit code main() now returns directly.
+  it("reports malformed input as exit code 2, without throwing", () => {
     const malformed = join(directory, "malformed.json");
     writeFileSync(malformed, "{ no");
-    expect(() => main([malformed, writeJson("policy.json", policy)])).toThrow(CliInputError);
+    expect(main([malformed, writeJson("policy.json", policy)])).toBe(2);
   });
 
   it("rejects a version-1 evidence file rather than accepting it", () => {
