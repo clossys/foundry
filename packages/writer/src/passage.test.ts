@@ -1,7 +1,8 @@
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { mainPassagesCheck } from "./cli.js";
 import {
   checkPassageComposition,
   classifyPassageField,
@@ -325,5 +326,77 @@ describe("checkPassageComposition", () => {
     expect(result.passagesEvaluated).toBe(2);
     expect(result.violations).toHaveLength(1);
     expect(result.violations[0]?.passageId).toBe("faq.pricing");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// mainPassagesCheck — CLI wiring (calls the exported function directly,
+// mirroring addressability.test.ts's own "mainAddressabilityCheck — CLI
+// wiring" block; passage.adversarial.test.ts is what exercises the
+// COMPILED cli.js by path, the way this repository actually invokes every
+// gate.)
+// ---------------------------------------------------------------------------
+
+describe("mainPassagesCheck — CLI wiring", () => {
+  let dir: string;
+  let registryPath: string;
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), "passage-cli-"));
+    registryPath = join(dir, "passages.json");
+    vi.spyOn(console, "log").mockImplementation(() => {});
+    vi.spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+    vi.restoreAllMocks();
+  });
+
+  it("returns 0 for a clean registry", () => {
+    writeFileSync(registryPath, JSON.stringify(validRecord));
+    expect(mainPassagesCheck([registryPath])).toBe(0);
+  });
+
+  it("returns 1 for an inlined literal", () => {
+    writeFileSync(
+      registryPath,
+      JSON.stringify({
+        id: "acme-app",
+        passages: [{ id: "onboarding.empty-state", context: "onboarding card", fields: { title: "Nothing here yet." } }],
+      }),
+    );
+    expect(mainPassagesCheck([registryPath])).toBe(1);
+  });
+
+  it("throws CliInputError (mapped to 2 by runPassagesCheck) for a missing registry file", () => {
+    expect(() => mainPassagesCheck([registryPath])).toThrow(/does not exist/);
+  });
+
+  it("returns 2 for zero registered passages", () => {
+    writeFileSync(registryPath, JSON.stringify({ id: "acme-app", passages: [] }));
+    expect(mainPassagesCheck([registryPath])).toBe(2);
+  });
+
+  it("returns 1, not 2, when a violation is found alongside an unclassifiable field", () => {
+    writeFileSync(
+      registryPath,
+      JSON.stringify({
+        id: "acme-app",
+        passages: [
+          {
+            id: "onboarding.empty-state",
+            context: "onboarding card",
+            fields: { title: "Nothing here yet.", weird: 42 },
+          },
+        ],
+      }),
+    );
+    expect(mainPassagesCheck([registryPath])).toBe(1);
+    expect(mainPassagesCheck([registryPath])).not.toBe(2);
+  });
+
+  it("throws CliInputError (mapped to 2 by runPassagesCheck) when registry-file is missing from argv", () => {
+    expect(() => mainPassagesCheck([])).toThrow(/registry-file is required/);
   });
 });
