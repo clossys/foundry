@@ -27,6 +27,10 @@
       "intendedVisibility": "public"
     },
     {
+      "name": "@vespeneventures/designer",
+      "intendedVisibility": "public"
+    },
+    {
       "name": "@vespeneventures/domain",
       "intendedVisibility": "public"
     },
