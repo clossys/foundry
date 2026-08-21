@@ -5,6 +5,47 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.7] - 2026-08-21
+
+### Changed
+
+- **BREAKING: the source-aware secret-surface gates moved off `./gates`
+  onto their own subpath, `./gates/secrets`.** `checkCredentialInventory`,
+  `checkCredentialSurfaceDrift`, `checkLocalSecretFiles`,
+  `checkProviderResourceNames`, `checkSecretName`, `checkSecretReadiness`,
+  `checkValueFreeSecretCatalog`, `detectRawSecretReads`, and their
+  associated types are **no longer exported from
+  `@vespeneventures/controller/gates`**. Import them from
+  `@vespeneventures/controller/gates/secrets` instead.
+- **`typescript` is an optional peer again**
+  (`peerDependenciesMeta: { typescript: { optional: true } }`, restored).
+  It was made required in 0.8.4 (issue #411) because
+  `gates/secret-gates.ts` imports `typescript` unconditionally and, at the
+  time, was re-exported unconditionally from the shared `./gates` barrel —
+  so "optional" was a live lie for any `./gates` consumer. That fix traded
+  one defect for another: with `typescript` required, an offline install
+  of the published tarball (`npm install --offline`, no cache to resolve a
+  peer from) failed outright, caught by
+  `src/repository/installed-bin.test.ts`, for a consumer who never wanted
+  a secret gate in the first place.
+
+### Fixed
+
+- **The actual defect from #411 — one gate's compiler dependency forcing
+  itself on every `./gates` consumer, not the honesty of the manifest flag
+  — is now fixed at the source.** `secret-gates.ts` lives behind its own
+  subpath (`./gates/secrets`, `src/gates/secrets.ts`) and `gates/index.ts`
+  no longer re-exports it, matching the same technique this package
+  already used to keep the root entry point (`index.ts`/`governance.ts`)
+  free of `typescript` — see `governance.ts`'s own header. `./gates` itself
+  no longer requires `typescript` at all; `root-entry-boundary.test.ts` now
+  asserts that boundary for `./gates` the same way it already did for the
+  root, and traces `./gates/secrets` as the new (and now only) place
+  `secret-gates.ts` is reachable from a public entry point.
+  `gates/typescript-required.test.ts` proves both halves of the split with
+  a mocked absent peer: `./gates/secrets` still rejects without
+  `typescript` installed, and `./gates` no longer does.
+
 ## [0.8.6] - 2026-08-21
 
 ### Added

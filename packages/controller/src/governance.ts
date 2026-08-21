@@ -1,16 +1,23 @@
-// Deliberately NOT `from "./gates/index.js"` — that barrel also re-exports
-// secret-gates.ts, whose own top-level `import ts from "typescript"` would
-// then load with it. This file is reachable from the package ROOT (via
-// index.ts's `runGovernanceCheck`), so importing the barrel here would
-// mean plain `import "@vespeneventures/controller"` transitively loads the
-// full TypeScript compiler for every consumer, regardless of whether they
-// ever call a secret-gate function. Importing these two functions from
-// their own files instead keeps the root import graph free of `typescript`
-// — the public `./gates` subpath itself is unaffected; a consumer who
-// deliberately imports THAT still gets everything, secret-gates included.
-// `typescript` is a REQUIRED peer for that reason (#411): `peerDependencies`
-// is package-level, not per-subpath, so there is no way to keep it optional
-// for `./gates` while this file keeps it out of the root — see
+// Deliberately NOT `from "./gates/index.js"`. Historically that barrel
+// also re-exported secret-gates.ts, whose own top-level `import ts from
+// "typescript"` would then load with it — this file is reachable from the
+// package ROOT (via index.ts's `runGovernanceCheck`), so importing the
+// barrel here would have meant plain `import "@vespeneventures/controller"`
+// transitively loading the full TypeScript compiler for every consumer,
+// regardless of whether they ever call a secret-gate function. As of this
+// PR (CI failure on #419, closing the consequence of #411) the barrel no
+// longer carries secret-gates.ts at all — it moved to its own subpath,
+// `./gates/secrets` (see `gates/secrets.ts`) — so `./gates/index.js` is
+// itself typescript-free now, and importing it here would no longer
+// reintroduce the hazard this comment used to warn about. This file still
+// imports the two specific functions it needs directly rather than
+// widening back to the barrel: no functional reason requires it, but doing
+// so keeps this entry point's import graph the minimum the root actually
+// uses, and `root-entry-boundary.test.ts` asserts the root never resolves
+// EITHER the barrel or `secret-gates.ts`, so this stays true either way.
+// `typescript` is an OPTIONAL peer again for that reason: with the barrel
+// clean, there is no longer a package-level conflict between "root stays
+// free of the compiler" and "`./gates` requires it" — see
 // `secret-gates.ts`'s own header for the full reasoning.
 import { computeBuildOrder } from "./gates/build-order.js";
 import { runFoundationCheck } from "./gates/foundation.js";

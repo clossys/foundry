@@ -95,7 +95,8 @@ separately versioned packages.
 | Subpath | Includes |
 | --- | --- |
 | `@vespeneventures/controller/catalog` | Workspace discovery and dependency-graph evaluation. |
-| `@vespeneventures/controller/gates` | Foundation checks, deterministic build order, secret-surface gates, a ratchet primitive, override-range and dependency-scope gates, and `foundry-check`. |
+| `@vespeneventures/controller/gates` | Foundation checks, deterministic build order, a ratchet primitive, override-range and dependency-scope gates, and `foundry-check`. Does **not** require `typescript` — the source-aware secret-surface gates that need it moved to `./gates/secrets` (below) as of this version; see "Requirements" for why. |
+| `@vespeneventures/controller/gates/secrets` | Source-aware secret-surface gates: credential inventory, provider-resource naming, local secret files, and raw-secret-read AST detection. Requires `typescript` — install it to use this subpath; `./gates` itself does not need it. **Breaking change from earlier versions:** these exports used to live on `./gates` directly; import them from here instead. |
 | `@vespeneventures/controller/release` | Isolated packed-artifact and installed-import proof. |
 | `@vespeneventures/controller/repository` | Consumer-owned repository profiles, upward requirements, exact-root declarations, pure evaluation, `repository-check`, and the full runner (`runRepositoryProfileCheck` / `repository-profile-check`). |
 | `@vespeneventures/controller/review` | Provider-neutral review evidence contracts, validation, and `review-check`. |
@@ -221,11 +222,13 @@ mean and whether to trust them.
 ### `./gates` additions: ratchet, override bounds, dependency scope, gate-result ternary
 
 Three small, independent, pure gates alongside the existing foundation,
-build-order, policy, and secret-surface checks — none of them do I/O; a
-caller reads whatever real data each one needs and passes it in. A fourth
-addition, the gate-result ternary below, is not a gate itself but the
-shared vocabulary the other three (and `foundry-check`'s own CLI) already
-independently converged on.
+build-order, and policy checks — none of them do I/O; a caller reads
+whatever real data each one needs and passes it in. A fourth addition, the
+gate-result ternary below, is not a gate itself but the shared vocabulary
+the other three (and `foundry-check`'s own CLI) already independently
+converged on. (The source-aware secret-surface checks that used to be
+listed alongside these now live at `./gates/secrets` instead — see
+"Requirements" below for why they moved.)
 
 #### The gate-result ternary: `satisfied` / `violated` / `indeterminate`
 
@@ -1688,39 +1691,54 @@ one: `@vespeneventures/controller/policy`. That dependency is gone — not remov
 absorbed: `policy`'s source now lives inside this package as the `./policy`
 subpath, so there is nothing left outside this package to depend on.
 
-TypeScript is declared a **required** peer dependency (`peerDependencies:
-{ typescript: "~6.0.0" }`, no `peerDependenciesMeta` entry) — not optional.
-It was briefly declared optional, the same shape `@vespeneventures/auth`
-uses for its own genuinely optional peers such as `svix`, but that flag was
-wrong for this package: `packages/controller/src/gates/secret-gates.ts`
-imports `typescript` unconditionally, at module scope, with nothing able to
-catch a resolution failure. A consumer who believed the "optional" flag and
-skipped installing `typescript` got a hard `ERR_MODULE_NOT_FOUND` — not a
-degraded gate, not an `indeterminate` verdict — the instant anything reached
-the `./gates` subpath. `peerDependencies` is declared at the package level,
-not per subpath, so there was never a way to keep the compiler optional for
-the root entry point while making it required for `./gates`; between the two
-defensible fixes (a lazy/guarded import that degrades to `indeterminate`, or
-an honest required declaration), this package chose the latter (issue #411).
-See `secret-gates.ts`'s and `governance.ts`'s own header comments for the
-full reasoning, and `gates/typescript-required.test.ts` for a test that
-exercises the actual absent-peer import failure, not just the manifest.
+TypeScript is declared an **optional** peer dependency again
+(`peerDependencies: { typescript: "~6.0.0" }` +
+`peerDependenciesMeta: { typescript: { optional: true } }`) — the same
+shape `@vespeneventures/auth` uses for its own optional peers such as
+`svix`. This flag has flipped twice, and both changes were correct for
+their own moment:
+
+- It was originally optional. Issue #411 found that flag dishonest:
+  `packages/controller/src/gates/secret-gates.ts` imports `typescript`
+  unconditionally, at module scope, and at the time that module was
+  re-exported unconditionally from the SHARED `./gates` barrel — so a
+  consumer who believed "optional," skipped installing `typescript`, and
+  imported anything from `./gates` got a hard `ERR_MODULE_NOT_FOUND`, not a
+  degraded gate. #411's fix made `typescript` a required peer instead,
+  honest about what the barrel actually demanded.
+- That fix broke a different, worse thing: with `typescript` required,
+  `npm install --offline` on the published tarball had no cache to resolve
+  the peer from, and failed outright — a consumer wanting nothing from
+  `./gates` but, say, `./repository`'s `repository-check` could no longer
+  install this package at all. **`./gates/secrets` (below) is the actual
+  fix**, closing the real defect — one gate's compiler dependency forcing
+  itself on every `./gates` consumer — instead of trading it for a
+  different one. With `secret-gates.ts` isolated behind its own subpath,
+  `optional` is honest again: a consumer of `./gates` (or anything else)
+  never reaches it, and `./gates/secrets` still demands the same
+  unconditional import it always has.
+
+See `secret-gates.ts`'s, `gates/index.ts`'s, and `gates/secrets.ts`'s own
+header comments for the full history, and
+`gates/typescript-required.test.ts` for tests that exercise the actual
+absent-peer import behavior on both sides of the split, not just the
+manifest declaration.
 
 A plain `import "@vespeneventures/controller"` (the root entry) still never
 loads TypeScript at runtime: `runGovernanceCheck` and
 `preflightGovernedPackage` import the specific foundation/build-order
-functions they need directly, never the `./gates` barrel that also carries
-`secret-gates.ts`. Each of the five compatibility shims that depend on
-`@vespeneventures/governance` (which forwards here — see "Migrating from
-compatibility packages" above) and only ever touch the root still install
-and run without a compiler on their account — a required peer that npm
-cannot satisfy is a warning or an auto-install attempt in npm 7+, not a hard
-install failure, unless there is a genuine version conflict. If you want the
-source-aware secret-surface checks, install `typescript` yourself (or let
-npm's peer auto-install do it) and import `@vespeneventures/controller/gates`
-— that subpath has always carried the full TypeScript dependency, and still
-does; only the manifest's honesty about it changed, not what any subpath
-does at runtime.
+functions they need directly, never a barrel. Each of the five
+compatibility shims that depend on `@vespeneventures/governance` (which
+forwards here — see "Migrating from compatibility packages" above) and only
+ever touch the root install and run without a compiler on their account, as
+they always have. **Breaking change:** if you were importing the
+source-aware secret-surface checks (`checkCredentialInventory`,
+`checkSecretReadiness`, `checkLocalSecretFiles`, `checkValueFreeSecretCatalog`,
+`checkProviderResourceNames`, `checkSecretName`, `detectRawSecretReads`,
+`checkCredentialSurfaceDrift`, or their associated types) from
+`@vespeneventures/controller/gates`, that subpath no longer carries them —
+import `@vespeneventures/controller/gates/secrets` instead, and install
+`typescript` if you have not already.
 
 An installed-but-incompatible `typescript` is still guarded explicitly:
 `secret-gates.ts` calls `assertPeerVersion` at import time, which throws a
@@ -1728,14 +1746,18 @@ named, actionable error (never a silent pass) instead of whatever the
 compiler API itself happens to crash on first for a genuinely out-of-range
 version. See `src/internal/peer-version.ts` for the guard's own contract.
 
-**Registry note, now moot for this specific flag:** `npm.pkg.github.com`'s
-packument has historically omitted `peerDependenciesMeta` from published
-metadata (see [issue #226](https://github.com/vespeneventures/foundry/issues/226)),
-which is what let the previous `optional: true` declaration mask issue #411
-for so long — every real consumer installed `typescript` regardless of what
-the flag claimed, so the unconditional import never actually failed for
-anyone. Since `typescript` is no longer declared optional at all, that
-registry gap no longer changes this package's behavior either way.
+**Registry note:** `npm.pkg.github.com`'s packument has historically
+omitted `peerDependenciesMeta` from published metadata (see
+[issue #226](https://github.com/vespeneventures/foundry/issues/226)), so an
+installer resolving `@vespeneventures/controller` from that registry sees
+`typescript` as required regardless of the `optional: true` declared here —
+a consumer who only ever imports the root or `./gates` (and never
+`./gates/secrets`) still installs a TypeScript compiler onto this package's
+account. `installed-bin.test.ts`, the test that proves this package installs and its
+bins execute offline, packs and installs a LOCAL tarball (`npm pack` against
+this very source tree) rather than fetching from that registry, so it sees
+this manifest's real `peerDependenciesMeta` as written and is unaffected by
+the registry gap either way.
 
 This is a TypeScript-specific guarantee, not a general "the root does no
 I/O" one. Both root functions genuinely read the real filesystem
