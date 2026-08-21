@@ -285,6 +285,16 @@ input-driven trigger) makes this staleness less likely; this check is what
 makes it detectable, because it is the one thing that still works when that
 trigger has silently stopped firing.
 
+Or from the shell, once built — the same `builder-verify-toolchain` bin
+`verifyToolchain` uses, via its `aggregate-observations` and
+`check-observation-freshness` subcommands:
+
+```bash
+npx builder-verify-toolchain aggregate-observations --inputs ./aggregate-observations-inputs.json
+npx builder-verify-toolchain check-observation-freshness --inputs ./check-observation-freshness-inputs.json
+# Exit codes for both: 0 = satisfied, 1 = violated, 2 = indeterminate/could not run.
+```
+
 ## Manifest engine (formerly `@vespeneventures/provisioning`)
 
 An idempotent engine for applying a provisioning manifest to a machine, and
@@ -577,6 +587,17 @@ process environment. See the module doc comments under `src/deployment/`
 for the full contract each subpath ships — the shape is unchanged from
 `@vespeneventures/deployment`'s own README, which this package's history
 carries forward.
+
+`evaluateDeploymentHealth` is also reachable from the shell, via the same
+`builder-verify-toolchain` bin's `deployment-health` subcommand:
+
+```bash
+npx builder-verify-toolchain deployment-health --inputs ./deployment-health-inputs.json
+# --inputs is { "observations": [{ "surfaceId": "web", "status": "healthy" }, ...] }.
+# Exit codes: 0 = every recognized observation is healthy, 1 = at least one is
+#             degraded or unhealthy, 2 = could not evaluate (bad input, or no
+#             observation could be recognized at all).
+```
 
 ## Toolchain
 

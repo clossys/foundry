@@ -8,7 +8,10 @@ export type {
   RenderFetch,
   RenderInspection,
   RenderInspectionErrorKind,
+  RenderInspectionIndeterminate,
+  RenderInspectionIndeterminateReason,
   RenderInspectionInput,
+  RenderInspectionResult,
   RenderInspectorOptions,
   RenderTokenProvider,
 } from "./types.js";
