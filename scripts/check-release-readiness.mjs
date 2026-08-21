@@ -29,12 +29,15 @@
 //
 // WHY THIS EXISTS
 // ---------------
-// scripts/select-publishable-packages.mjs is the thing that decides what the
-// Publish workflow actually uploads, and it decides on exactly one signal: a
-// package's `version` field changed between the before/after commits of a
-// push to main. That is deliberate and correct — see its own header — but it
-// means a package whose source changed with no version bump produces an
-// empty matrix and publishes NOTHING, silently. That happened for real: a
+// scripts/select-publishable-packages.mjs's `discover` job decides what the
+// Publish workflow actually uploads. As of issue #416 it selects by
+// registry-versus-manifest (does the registry already have this exact
+// version?), not by diffing one push — but that change only closed the
+// eviction gap; it did nothing for a package whose SOURCE changed with no
+// version bump at all, because a same-version manifest still looks
+// identical to the registry regardless of which selection mechanism is
+// asking. A package in that state produces an empty matrix and publishes
+// NOTHING, silently, exactly as it always has. That happened for real: a
 // consumer integration surfaced eight behavioural fixes across six packages
 // that merged to main with no version bump, so the selector's matrix was
 // empty, `publish` was skipped, and the fixes sat on main invisible to
@@ -44,13 +47,21 @@
 // recur silently — see the `release-readiness` job it is wired into in
 // .github/workflows/ci.yml.
 //
-// DEFAULT MODE: diffed against the merge base, exactly like the Publish
-// workflow itself
+// This is a PRE-MERGE, diff-scoped proxy for one narrow question — did THIS
+// pull request change a package's shipped content without also bumping its
+// version? It is deliberately independent of, and does not replace,
+// scripts/check-registry-parity.mjs's POST-MERGE reconciliation against the
+// live registry: that gate answers "did an already-bumped version actually
+// arrive at the registry", which this one cannot, because a version that
+// merges here has not been published anywhere yet to check against.
+//
+// DEFAULT MODE: diffed against the merge base
 // ------------------------------------------------------------------------
-// The default check asks exactly the question select-publishable-packages.mjs
-// asks on a push to main — did this package's version change between two
-// fixed points? — using the SAME two points a pull request is actually
-// being merged across: `git merge-base <base> HEAD` and HEAD/working tree.
+// The default check asks a version of the same question
+// select-publishable-packages.mjs used to ask on a push to main before
+// #416 — did this package's version change between two fixed points? —
+// using the SAME two points a pull request is actually being merged
+// across: `git merge-base <base> HEAD` and HEAD/working tree.
 // `--base` names the comparison point (a ref or a commit); it defaults to
 // `origin/main`, falling back to a local `main` branch when no `origin`
 // remote is configured (so this stays runnable offline, with no network).
@@ -403,7 +414,7 @@ function evaluatePackageDiff(pkgDir, requestedBase) {
     return {
       package: label,
       status: "pass",
-      detail: `package did not exist at merge-base ${mergeBase.slice(0, 12)} — a brand-new package publishes on its own (see select-publishable-packages.mjs)`,
+      detail: `package did not exist at merge-base ${mergeBase.slice(0, 12)} — a brand-new manifest has no prior version to compare against, so there is nothing for this gate to flag (its first publish goes through publish.yml's workflow_dispatch bootstrap path, not automatic discovery — see scripts/registry-version-lookup.mjs)`,
     };
   }
 
@@ -468,7 +479,7 @@ function evaluatePackageAudit(pkgDir) {
     return {
       package: label,
       status: "pass",
-      detail: "package.json has no commits yet — a brand-new manifest publishes on its own (see select-publishable-packages.mjs)",
+      detail: "package.json has no commits yet — a brand-new manifest has no prior version to compare against, so there is nothing for this gate to flag (its first publish goes through publish.yml's workflow_dispatch bootstrap path, not automatic discovery — see scripts/registry-version-lookup.mjs)",
     };
   }
   if (bump.reason === "version-unprecedented") {

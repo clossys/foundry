@@ -371,24 +371,24 @@ jobs:
           node-version: 20
       - run: node scripts/check-workspace-links.mjs
 
-  # scripts/select-publishable-packages.mjs only ever publishes a package
-  # whose `version` changed between two commits — that is correct, but it
-  # means a merged source change with no version bump publishes nothing and
-  # says nothing. That happened for real (issue #156): a consumer
-  # integration surfaced eight behavioural fixes across six packages that
-  # merged with no version bump, so the Publish workflow's matrix was empty
-  # and the fixes sat on main, invisible to consumers, for a day with no
-  # failure anywhere. This job is the check that catches that BEFORE merge,
-  # asking exactly the question select-publishable-packages.mjs asks on push
-  # — did the version change between two fixed points? — but scoped to the
-  # actual pull request being merged: the PR's merge base and HEAD, via
-  # `--base`. See the script's own header for why this default, diff-scoped
-  # mode replaced an earlier whole-repo design that had a real false
-  # positive (a package bumped, then edited, then published — indistinguishable
-  # from PR #155's real failure using git history alone, without knowing the
-  # PR's actual comparison point). That whole-repo heuristic still exists
-  # behind `--audit` for manual investigation, but is deliberately NOT run
-  # here for the same reason.
+  # A merged source change with no version bump publishes nothing and says
+  # nothing, whether the Publish workflow's discover job is asking "what did
+  # this push diff?" or, as of issue #416, "what does the registry not have
+  # yet?" — a same-version manifest looks identical to the registry either
+  # way. That happened for real (issue #156): a consumer integration
+  # surfaced eight behavioural fixes across six packages that merged with no
+  # version bump, so the Publish workflow's matrix was empty and the fixes
+  # sat on main, invisible to consumers, for a day with no failure anywhere.
+  # This job is the check that catches that BEFORE merge — did the version
+  # change between two fixed points? — scoped to the actual pull request
+  # being merged: the PR's merge base and HEAD, via `--base`. See the
+  # script's own header for why this default, diff-scoped mode replaced an
+  # earlier whole-repo design that had a real false positive (a package
+  # bumped, then edited, then published — indistinguishable from PR #155's
+  # real failure using git history alone, without knowing the PR's actual
+  # comparison point). That whole-repo heuristic still exists behind
+  # `--audit` for manual investigation, but is deliberately NOT run here for
+  # the same reason.
   #
   # pull_request only: on a push to main the "base" would be the commit
   # immediately before an already-merged, already-irreversible push — by

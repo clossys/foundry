@@ -1,0 +1,128 @@
+{
+  "name": "@vespeneventures/publisher",
+  "version": "0.1.0",
+  "private": false,
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "description": "The publisher role: did we put it out to an audience, and can we prove what shipped? Surface composition, media registries, and channel renderers for web, email, print, images, and slides, plus a product-neutral structured-document contract, under `./core`, `./media`, `./web`, `./document`, `./email`, `./print`, `./image`, and `./slides`; an append-only, content-addressed record of what was published, to which channel, when, and citing which facts, plus a drift checker, under `./record`. One package, one version: every time the publisher runs, the record runs, and the record still does not import the composer.",
+  "keywords": [
+    "publisher",
+    "composition",
+    "render",
+    "web",
+    "email",
+    "print",
+    "image",
+    "slides",
+    "ledger",
+    "append-only",
+    "attribution",
+    "drift",
+    "content-addressed",
+    "typescript"
+  ],
+  "author": "Calvin Hung",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vespeneventures/foundry.git",
+    "directory": "packages/publisher"
+  },
+  "bugs": {
+    "url": "https://github.com/vespeneventures/foundry/issues"
+  },
+  "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/publisher#readme",
+  "engines": {
+    "node": ">=20"
+  },
+  "exports": {
+    "./core": {
+      "types": "./dist/core/index.d.ts",
+      "import": "./dist/core/index.js"
+    },
+    "./media": {
+      "types": "./dist/media/index.d.ts",
+      "import": "./dist/media/index.js"
+    },
+    "./web": {
+      "types": "./dist/web/index.d.ts",
+      "import": "./dist/web/index.js"
+    },
+    "./document": {
+      "types": "./dist/document/index.d.ts",
+      "import": "./dist/document/index.js"
+    },
+    "./email": {
+      "types": "./dist/email/index.d.ts",
+      "import": "./dist/email/index.js"
+    },
+    "./print": {
+      "types": "./dist/print/index.d.ts",
+      "import": "./dist/print/index.js"
+    },
+    "./image": {
+      "types": "./dist/image/index.d.ts",
+      "import": "./dist/image/index.js"
+    },
+    "./slides": {
+      "types": "./dist/slides/index.d.ts",
+      "import": "./dist/slides/index.js"
+    },
+    "./record": {
+      "types": "./dist/record/index.d.ts",
+      "import": "./dist/record/index.js"
+    }
+  },
+  "bin": {
+    "publisher-media-check": "./dist/media/cli.js",
+    "publisher-record-check": "./dist/record/cli.js"
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "CHANGELOG.md",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "node ../../scripts/check-name-collision.mjs . && npm run build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@vespeneventures/writer": "^0.1.0",
+    "@vespeneventures/designer": "^0.1.0",
+    "@vespeneventures/controller": "~0.8.0"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.3",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "jsdom": "^26.1.0",
+    "typescript": "~6.0.0",
+    "vitest": "^4.1.9"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  }
+}
