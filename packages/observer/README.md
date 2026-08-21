@@ -1,9 +1,9 @@
 # @vespeneventures/observer
 
-Telemetry contracts, redaction as a tested contract, and gate efficacy
-measured from caller-supplied run history. The measurer, never the
-measured: this package computes whether a gate is working and never judges
-a change itself.
+Telemetry contracts, redaction as a tested contract, gate efficacy measured
+from caller-supplied run history, and a fleet package-coverage grader with
+a CLI. The measurer, never the measured: this package computes whether a
+gate is working and never judges a change itself.
 
 ```bash
 npm install @vespeneventures/observer
@@ -12,7 +12,8 @@ npm install @vespeneventures/observer
 ## The job
 
 `observer` measures what actually happened — including whether the gates
-caught anything. That is four things:
+caught anything, and whether this fleet's own packages are actually
+installed where they're supposed to be. That is five things:
 
 - **Telemetry contracts** — an event shape (`TelemetryEvent`), a declared
   retention window, a redaction rule that ships with a test instead of a
@@ -24,6 +25,10 @@ caught anything. That is four things:
 - **Gate efficacy** — for each declared gate: did it run, what did it
   conclude, and did anything reach the default branch that it should have
   stopped.
+- **Fleet package coverage** (#395) — for each package x repository cell in
+  this fleet: is the package installed, has the repository declared out
+  loud that it deliberately has none, or is neither known — see "Fleet
+  package coverage" below.
 
 ## Why this package is separate from the gate it measures
 
@@ -92,6 +97,116 @@ principle governs `unobserved-surface.ts`'s handling of a subject with no
 read supplied at all: it is treated as `could-not-read`, never as
 `unobserved` — "nobody checked" must never silently become "checked, and
 found nothing".
+
+## Fleet package coverage (#395)
+
+A fleet coverage matrix — this package's own catalogue x every repository
+that consumes it — is only gradeable when every cell resolves to one of
+exactly three states:
+
+- **`installed`** — the package is a dependency and its capabilities are
+  wired, per a caller-supplied installed inventory.
+- **`declared-absent`** — this repository has stated, out loud and with a
+  **required reason**, that it has no lane for this package.
+- **`unclassified`** — neither of the above. **Fails closed**: never
+  counted as covered, never dropped from the denominator, and always drives
+  the aggregate verdict to `indeterminate` — the same discipline
+  `could-not-read` already enforces throughout this package, applied to a
+  different domain (see the next section for exactly why it is a different
+  module rather than a relabeling of `computeUnobservedSurface`).
+
+`gradeFleetCoverage` (`coverage.ts`) takes the package catalog, every
+repository's already-fetched, raw coverage-declaration payload (see
+`coverage-declaration.ts`), and every repository's own caller-supplied
+installed inventory, and returns every cell plus one aggregate verdict in
+this package's usual ternary: `satisfied` (every cell resolved, clean),
+`violated` (at least one repository is BOTH installed AND declared-absent
+for the same package — a stale or wrong declaration, ground truth wins for
+the cell but the contradiction is reported), or `indeterminate` (at least
+one cell is unclassified, or the matrix itself was empty — see "An empty
+matrix is never satisfied" below).
+
+The installed inventory is **caller-supplied**, on purpose: this package
+adds no dependency on `@vespeneventures/integrator` to compute it.
+`FleetInstalledInventory` is a structural match for integrator's own
+`InstalledInventory` (`packages/integrator/src/inventory.ts`), named here
+rather than imported — a real `InstalledInventory` value satisfies it
+as-is. A caller's own script (which MAY depend on integrator) is expected
+to compute it and pass it in.
+
+### Why not extend `unobserved-surface.ts`?
+
+#395's own reading list points at `computeUnobservedSurface` first, asking
+that this feature reuse or extend it rather than build a second thing
+beside it. It does not fit, for reasons fixed by #395 itself rather than by
+taste:
+
+1. **The vocabulary is mandated, not stylistic.** #395 requires exactly
+   `installed` / `declared-absent` / `unclassified`.
+   `unobserved-surface.ts`'s `Observation<T>` (`observation.ts`)
+   hard-codes its own three literal states — `"observed" | "unobserved" |
+   "could-not-read"` — into the type itself, not as a parameter.
+2. **`declared-absent` carries a mandatory `reason`; `unobserved` cannot.**
+   `Observation<T>`'s `"unobserved"` branch is deliberately payload-free. A
+   repository's claim about itself must be reviewable, so it always
+   carries a reason — a shape `unobserved` has no field for.
+3. **This package's own rule against blending metrics applies here too.**
+   `EscapeRateMetric` and `UnobservedSurfaceMetric` are kept structurally
+   separate and never combined (see "Two metrics" above) precisely because
+   folding two different questions into one shape hides the distinction
+   each exists to preserve. Package-installation coverage and
+   telemetry-presence are exactly that kind of different question.
+
+What IS reused is the *discipline*: a cell nobody attempted to classify is
+exactly as unproven as one whose classification failed, and both fail
+closed the same way `could-not-read` already does throughout this package.
+
+### The declaration surface is designed to be read without a credential
+
+#395 requires the declaration surface to live somewhere "a repository can
+be read WITHOUT credentials for it, so the fleet aggregate can grade
+coverage without holding a token per account." `coverage-declaration.ts`'s
+own header records why this rules out both transports this fleet already
+uses elsewhere (the npm registry this fleet publishes to is GitHub
+Packages, which requires an authenticated token even for a public package;
+the GitHub contents API requires an Authorization header past a very low
+unauthenticated rate limit) and what the format is designed for instead: a
+JSON file committed to a repository's own default branch at one fixed
+path, read with a bare, unauthenticated HTTP GET against the hosting
+provider's raw-content endpoint. `parseCoverageDeclaration` and
+`gradeFleetCoverage` never fetch anything themselves — they take the
+already-fetched body, exactly as `@vespeneventures/builder`'s
+`observation-bundle.ts` already does for its own self-published contract.
+
+### An empty matrix is never `satisfied`
+
+Issue #338 in this repository's own tracker names a real, shipped failure
+mode: a run that evaluated nothing reporting `satisfied`. `gradeFleetCoverage`
+refuses to reproduce it — zero packages, zero repositories, or both, folds
+to `indeterminate`, never to a clean pass with an empty cell list.
+
+### CLI: `observer-coverage-check`
+
+observer's **first** shipped bin — until this existed, `gradeFleetCoverage`
+was invocable only by writing TypeScript against it directly, exactly what
+issue #377 calls "decorative."
+
+```bash
+observer-coverage-check --input fleet.json [--format text|json]
+```
+
+`fleet.json` is one JSON document the caller assembles: the package
+catalog, and for each repository its id, the already-fetched body of its
+coverage-declaration file (or omitted, if none was found), and its already-
+computed installed inventory (or omitted, if it could not be read). This
+command performs no fetching and no manifest/lockfile parsing of its own —
+see `cli.ts`'s own header for the full account of why "wiring a caller's
+inventory in at the call site" means the data always arrives already
+materialized.
+
+Exit codes: `0` satisfied, `1` violated, `2` indeterminate (including an
+empty matrix, an unreadable input file, or bad arguments) — never a flag to
+turn a `2` into a `0`.
 
 ## The loop and its close condition
 
@@ -281,6 +396,22 @@ const unobservedSurface = computeUnobservedSurface(declaredSubjects, presenceRea
 | `SubjectTelemetryRead` | type | One subject's presence read: `subject`, `presence`. |
 | `UnobservedSurfaceMetric` | type | `computeUnobservedSurface`'s result: `declaredCount`, `observed`, `unobserved`, `couldNotRead`. |
 | `computeUnobservedSurface(declared, reads)` | function | Sorts declared subjects into observed / unobserved / could-not-read. |
+| `COVERAGE_DECLARATION_SCHEMA_VERSION` | value | This contract's schema version, `1`. |
+| `DeclaredPackageAbsence` | type | One package a repository declares absent, with a required `reason`. |
+| `CoverageDeclaration` | type | One repository's own declaration: `schemaVersion`, `repository`, `declaredAbsences`. |
+| `CoverageDeclarationFinding` | type | One problem found validating a raw declaration payload: `rule`, `message`. |
+| `validateCoverageDeclarationShape(raw)` | function | Offline validation of an untrusted declaration payload. Never throws. |
+| `parseCoverageDeclaration(raw)` | function | Validates and narrows `raw`, or returns findings. Never throws. |
+| `writeCoverageDeclaration(input)` | function | Builds and serializes a well-formed declaration. Throws on an invalid one. |
+| `CoverageCellState` | type | `"installed" \| "declared-absent" \| "unclassified"`. |
+| `FleetInstalledPackage` / `FleetInstalledInventory` | type | Structural match for `@vespeneventures/integrator`'s `InstalledPackage`/`InstalledInventory`, not imported. |
+| `UNCLASSIFIED_REASONS` / `UnclassifiedReason` | value / type | The finite set of reasons a cell can be `unclassified` for. |
+| `CoverageCell` | type | `InstalledCoverageCell \| DeclaredAbsentCoverageCell \| UnclassifiedCoverageCell` — one graded cell. |
+| `FleetCoverageContradiction` | type | A package both installed and declared-absent for the same repository. |
+| `FleetRepositoryCoverageInput` / `FleetCoverageInput` | type | `gradeFleetCoverage`'s input: the package catalog and every repository's raw declaration + caller-supplied inventory. |
+| `FleetCoverageVerdict` / `FleetCoverageReport` | type | The aggregate `satisfied`/`violated`/`indeterminate` verdict, and the full graded report. |
+| `gradeFleetCoverage(input)` | function | Grades one fleet's coverage matrix. Throws only on a duplicate/empty identifier. |
+| `fleetCoverageVerdictToExitCode(result)` | function | `0` satisfied, `1` violated, `2` indeterminate. |
 
 ## Non-Goals
 
@@ -294,11 +425,19 @@ const unobservedSurface = computeUnobservedSurface(declaredSubjects, presenceRea
   ground truth.
 - **Never imports a gate package.** See "Why this package is separate from
   the gate it measures" above.
+- **`gradeFleetCoverage` never fetches a declaration or reads a manifest.**
+  Both are caller-supplied — see "Fleet package coverage" above. This
+  package adds no dependency on `@vespeneventures/integrator` to compute an
+  installed inventory itself.
 
 ## Requirements
 
-Node.js >= 20. Zero runtime dependencies. Zero I/O — every function in this
-package is a pure function of its arguments.
+Node.js >= 20. Zero runtime dependencies. The library (everything except
+`cli.ts`/`bin.ts`) is zero I/O — every function is a pure function of its
+arguments. `observer-coverage-check` (the CLI) is this package's only I/O:
+it reads one input file and writes to stdout/stderr, through an injected
+`CliPort` (`cli.ts`) so the logic itself stays testable without a real
+filesystem.
 
 ## License
 

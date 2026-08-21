@@ -3,6 +3,107 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.0] - 2026-08-20
+
+### Added
+
+- **Fleet package coverage grading (#395)**, closing the observability gap
+  that made this fleet's own coverage matrix ungradeable: 26 of 60
+  package-repository cells had no way to distinguish "this repository
+  decided it needs no such lane" from "nobody has swept it yet."
+  - `coverage-declaration.ts`: the `CoverageDeclaration` contract a
+    repository writes, once, to state out loud (with a **required
+    reason**) that it has decided not to install one of this fleet's
+    packages. `validateCoverageDeclarationShape` / `parseCoverageDeclaration`
+    validate an untrusted, already-fetched payload without throwing;
+    `writeCoverageDeclaration` builds and serializes a well-formed one. The
+    module's own header records why the declaration format is designed to
+    be committed at a fixed path and read via a plain, unauthenticated
+    raw-content GET — the "no credential per account" constraint #395
+    requires — rather than through this fleet's own npm registry (GitHub
+    Packages requires a token even for a public package) or the GitHub
+    contents API (rate-limited without one).
+  - `coverage.ts`: `gradeFleetCoverage`, which grades a fleet's package
+    catalog against every repository's raw declaration and
+    caller-supplied installed inventory into exactly three cell states —
+    `installed` / `declared-absent` / `unclassified` — plus one aggregate
+    `satisfied` / `violated` / `indeterminate` verdict.
+    **`unclassified` fails closed**: never counted as covered, never
+    dropped from the denominator, and always drives the aggregate to
+    `indeterminate` — the opposite of `assertPeerVersion`'s deliberate
+    warn-and-proceed for an unparseable *runtime* value elsewhere in this
+    fleet, which is a different kind of check (an import guard) answering
+    a different question. A repository both installed and
+    declared-absent for the same package resolves to `installed` (ground
+    truth wins) and is reported separately as a `FleetCoverageContradiction`,
+    driving the aggregate to `violated` when nothing is unclassified. An
+    empty matrix (`packages.length * repositories.length === 0`) resolves
+    to `indeterminate`, never `satisfied` — issue #338's own failure mode
+    ("a run that evaluated nothing reports satisfied"), refused here by
+    construction.
+  - The installed inventory is a **caller-supplied** input, never fetched:
+    `FleetInstalledInventory` is a structural match for
+    `@vespeneventures/integrator`'s own `InstalledInventory`, named here
+    rather than imported, so this package adds **no runtime dependency**
+    to grade coverage. It remains at zero.
+  - Deliberately a NEW module, not an extension of the existing
+    `computeUnobservedSurface` (`unobserved-surface.ts`), despite #395
+    pointing at it first: the mandated vocabulary
+    (`installed`/`declared-absent`/`unclassified`) doesn't match
+    `Observation<T>`'s hard-coded `observed`/`unobserved`/`could-not-read`
+    states, `declared-absent`'s mandatory `reason` has no home in
+    `unobserved`'s payload-free branch, and this package's own rule
+    against blending `EscapeRateMetric` and `UnobservedSurfaceMetric`
+    into one score applies here too — coverage-by-installation and
+    telemetry-presence are a different question. See `coverage.ts`'s own
+    header and the README's "Fleet package coverage" section for the full
+    reasoning.
+- **`observer-coverage-check`, this package's FIRST bin** (#377: "gates
+  shipped as library exports with no CLI path are decorative" — until now,
+  `observer` shipped zero bins, exactly the case that issue names).
+  `cli.ts` exports a port-injected `main(argv, port)` (testable with an
+  in-memory `CliPort`, no real filesystem needed), mirroring
+  `@vespeneventures/builder`'s `ci/cli.ts` + `ci/bin.ts` split; `bin.ts` is
+  the thin installed executable wiring the real `node:fs`/`process` port.
+  Reads one caller-assembled JSON input document (the package catalog,
+  plus each repository's already-fetched declaration and already-computed
+  installed inventory — this CLI performs no fetching or manifest parsing
+  of its own) and exits `0` satisfied / `1` violated / `2` indeterminate,
+  this package's one gate ternary. A direct-path reachability test spawns
+  the real compiled `dist/bin.js` via `execFileSync` and asserts real exit
+  codes for all three states plus the empty-matrix case, per #377's own
+  requirement that every CLI fix prove the shipped artifact is reachable,
+  not merely the function it wraps.
+- New exports from `./index.ts`: `COVERAGE_DECLARATION_SCHEMA_VERSION`,
+  `DeclaredPackageAbsence`, `CoverageDeclaration`,
+  `CoverageDeclarationFinding`, `ParsedCoverageDeclaration`,
+  `InvalidCoverageDeclaration`, `WriteCoverageDeclarationInput`,
+  `validateCoverageDeclarationShape`, `parseCoverageDeclaration`,
+  `writeCoverageDeclaration`, `CoverageCellState`, `FleetInstalledPackage`,
+  `FleetInstalledInventory`, `UNCLASSIFIED_REASONS`, `UnclassifiedReason`,
+  `InstalledCoverageCell`, `DeclaredAbsentCoverageCell`,
+  `UnclassifiedCoverageCell`, `CoverageCell`, `FleetCoverageContradiction`,
+  `FleetRepositoryCoverageInput`, `FleetCoverageInput`,
+  `CoverageCellCounts`, `FleetCoverageVerdict`, `FleetCoverageReport`,
+  `gradeFleetCoverage`, `fleetCoverageVerdictToExitCode`.
+
+### Changed
+
+- The package description and keywords now mention fleet coverage grading
+  and its CLI. The library (everything except `cli.ts`/`bin.ts`) remains
+  zero I/O; the CLI is this package's only I/O, and only through an
+  injected port.
+- `tsconfig.json` now declares `"types": ["node"]`, required for `bin.ts`'s
+  and `cli.ts`'s use of `node:fs` and `process` — this package's first use
+  of either.
+
+### Out of scope, on purpose
+
+- Driving this fleet's 26 currently-unclassified cells to a real state
+  across ten repositories is per-repository adoption work, not a
+  mechanism change, and is not part of this release. See issue #395 for
+  the tracking.
+
 ## [0.1.2] - 2026-08-19
 
 ### Changed
