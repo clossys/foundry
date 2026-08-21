@@ -3,8 +3,8 @@
   "schemaVersion": 1,
   "packages": [
     {
-      "name": "@vespeneventures/policy",
-      "reason": "Deprecated into @vespeneventures/controller's ./policy subpath per docs/DECISIONS.md#9-recutting-the-workspace-surface-into-six-job-shaped-packages. Kept live so a consumer already pinned to a published policy version keeps resolving it while migrating.",
+      "name": "@vespeneventures/deployment",
+      "reason": "Deprecated into @vespeneventures/builder's ./deployment subpath per docs/DECISIONS.md#9-recutting-the-workspace-surface-into-six-job-shaped-packages. Kept live so a consumer already pinned to a published deployment version keeps resolving it while migrating.",
       "reviewBy": "2026-11-18"
     },
     {
@@ -13,14 +13,19 @@
       "reviewBy": "2026-11-18"
     },
     {
+      "name": "@vespeneventures/policy",
+      "reason": "Deprecated into @vespeneventures/controller's ./policy subpath per docs/DECISIONS.md#9-recutting-the-workspace-surface-into-six-job-shaped-packages. Kept live so a consumer already pinned to a published policy version keeps resolving it while migrating.",
+      "reviewBy": "2026-11-18"
+    },
+    {
       "name": "@vespeneventures/secrets",
       "reason": "Deprecated into @vespeneventures/locksmith's root (alongside the custody/rotation/revocation/distribution verbs it lacked) per docs/DECISIONS.md#9-recutting-the-workspace-surface-into-six-job-shaped-packages. Kept live so a consumer already pinned to a published secrets version keeps resolving it while migrating.",
       "reviewBy": "2026-11-18"
     },
     {
-      "name": "@vespeneventures/deployment",
-      "reason": "Deprecated into @vespeneventures/builder's ./deployment subpath per docs/DECISIONS.md#9-recutting-the-workspace-surface-into-six-job-shaped-packages. Kept live so a consumer already pinned to a published deployment version keeps resolving it while migrating.",
-      "reviewBy": "2026-11-18"
+      "name": "@vespeneventures/strategy",
+      "reason": "Deprecated into @vespeneventures/strategist per docs/DECISIONS.md#10-recutting-the-expression-surface-into-role-shaped-packages. Kept live so a consumer already pinned to a published strategy version keeps resolving it while migrating. No forwarding stub ships, deliberately: a stub would keep the old name importable and a supersession check could then never reach zero.",
+      "reviewBy": "2026-11-20"
     },
     {
       "name": "@vespeneventures/verify-standards",

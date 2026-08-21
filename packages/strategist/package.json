@@ -1,0 +1,66 @@
+{
+  "name": "@vespeneventures/strategist",
+  "version": "0.1.0",
+  "private": false,
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "strategist-check": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/**/*.test.ts",
+    "CHANGELOG.md",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "description": "The strategist role: is it true, and is it us? Dependency-free validators for a consumer's own strategy records (facts, mission, positioning, markets, audiences, roadmap, brand essence/attributes/derivations), a typed reader over a consumer's strategy directory, and three gates reachable from one bin \u2014 a facts-traceability gate that fails when a numeric or superlative claim cannot be traced to a facts.json entry, a brand-coverage checker over brandable token slots, and a direction-currency check that reports a derivation still citing superseded direction. Ships the schema and the checkers; every consumer authors its own values.",
+  "keywords": [
+    "strategist",
+    "strategy",
+    "facts",
+    "traceability",
+    "brand",
+    "direction",
+    "gate",
+    "typescript"
+  ],
+  "author": "Calvin Hung",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vespeneventures/foundry.git",
+    "directory": "packages/strategist"
+  },
+  "bugs": {
+    "url": "https://github.com/vespeneventures/foundry/issues"
+  },
+  "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/strategist#readme",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "node ../../scripts/check-name-collision.mjs . && npm run build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "~6.0.0",
+    "vitest": "^4.1.9"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  }
+}
