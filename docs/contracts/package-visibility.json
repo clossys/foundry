@@ -65,6 +65,10 @@
     {
       "name": "@vespeneventures/ui",
       "intendedVisibility": "public"
+    },
+    {
+      "name": "@vespeneventures/writer",
+      "intendedVisibility": "public"
     }
   ]
 }
