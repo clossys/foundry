@@ -3,6 +3,17 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.1] - 2026-08-21
+
+### Changed
+
+- **The changelog is now shipped in the published package (#400).** This file
+  was written and maintained but was absent from `package.json`'s `files` array,
+  so it never reached the tarball. A consumer installing this package could not
+  read what a breaking upgrade breaks without leaving the registry and finding
+  the source repository. Adding it to `files` is the whole fix; no runtime code
+  changed in this release.
+
 ## [0.2.0] - 2026-08-20
 
 ### Added
