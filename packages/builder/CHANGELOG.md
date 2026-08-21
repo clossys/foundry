@@ -5,6 +5,32 @@ All notable changes to `@vespeneventures/builder` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - Unreleased
+
+### Added
+
+- **Machine composition (#393), a new `./machine` subpath.** Composes one
+  machine's skill tree from several self-declared account-owned workspace
+  checkouts plus a third-party-scoped skill source, replacing the mechanism
+  a retiring account-owned installer repository used to provide.
+  `discoverAccountWorkspaces` finds workspaces by their own declared
+  policy — never a hard-coded list, never a guessed default — and reports a
+  candidate that cannot be read as `indeterminate`, always present in the
+  result, never silently dropped. `loadThirdPartySkills` is the
+  third-party-scoped mirror of the same ternary, keyed off
+  `@vespeneventures/controller/conventions`'s own `SkillScope` vocabulary.
+  `buildSkillsManifest` turns a discovered skill tree into per-skill
+  `links` entries into one composed directory — the shape that makes the
+  existing `composeInstallationPlans` per-destination collision check work
+  unmodified, so two sources shipping a same-named skill surface as a
+  `DestinationCollisionError` for free. `verifyMachine` orchestrates all of
+  it into one `GateResult`-based report, shipped as an installed CLI,
+  `builder-verify-machine` (`./machine/cli.ts` + `./machine/bin.ts`, a
+  separate compiled entry file from `builder-verify-toolchain`), on the
+  same 0/1/2 exit-code ternary as every other gate in this package. See the
+  README's "Machine composition" section for the two decisions this
+  subpath implements and the reasoning behind each.
+
 ## [0.4.1] - Unreleased
 
 ### Changed

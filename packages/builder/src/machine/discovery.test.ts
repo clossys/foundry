@@ -45,8 +45,8 @@ describe("discoverAccountWorkspaces", () => {
 
   it("excludes a directory with no marker — it never declared itself a workspace", () => {
     const fs = createMemoryDiscoveryFileSystem();
-    fs.setDirectory(`${root}/unrelated-repo`);
-    fs.setFile(`${root}/unrelated-repo/package.json`, "{}");
+    fs.setDirectory(`${root}/other-checkout`);
+    fs.setFile(`${root}/other-checkout/package.json`, "{}");
     const result = discoverAccountWorkspaces(fs, { root });
     expect(result.verdict).toBe("satisfied");
     expect(result.candidates).toEqual([]);
