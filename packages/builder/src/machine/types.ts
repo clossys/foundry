@@ -154,3 +154,108 @@ export interface ThirdPartySkillsResult {
   readonly detail?: string;
   readonly skills: readonly ThirdPartySkill[];
 }
+
+/**
+ * The machine-layer policy declaration (#410): a machine-local file, owned by
+ * no repository, that maps package-owned, account-neutral content (the class
+ * described in issue #393 as "already in `controller/conventions`; today an
+ * account repository copies them out of its own `node_modules`") onto
+ * destinations on ONE machine.
+ *
+ * WHY THIS LIVES HERE AND NOT IN A REPOSITORY
+ * --------------------------------------------
+ * #410 rules out three homes explicitly: inside `builder` itself (every
+ * consumer of a general-purpose package would inherit one particular
+ * machine's layout); inside one of the surviving account planes (an account
+ * plane declaring another plane's — or the machine's whole — destination map
+ * is exactly the "reaching into another plane" this program's design
+ * forbids); and inside the repository being retired (that is the status quo
+ * this issue exists to end). What is left is the machine itself: a plain
+ * local file this module's caller points at by path (or by the
+ * `BUILDER_MACHINE_LAYER_DECLARATION_PATH` environment variable — see
+ * `machine-layer.ts`), read directly off disk by whatever process runs
+ * `verifyMachine`. It carries no version of its own across machines, because
+ * it is not a shared artifact -- it describes one machine's own placement
+ * choices, the same way `/etc/fstab` describes one machine's own mounts
+ * rather than a fleet's.
+ *
+ * This is deliberately the SAME shape `discovery.ts`'s workspace marker and
+ * `third-party.ts`'s declaration already use, one level up: a JSON document
+ * this subpath reads and validates without trusting, sharing this file's own
+ * `MACHINE_DECLARATION_SCHEMA_VERSION` rather than inventing a third schema
+ * counter for a third sibling format.
+ *
+ * WHAT IT DOES NOT DECLARE
+ * -------------------------
+ * The declaration says WHERE each catalog id (from
+ * `@vespeneventures/controller/conventions`'s `CONVENTION_DOCUMENTS` /
+ * `CONVENTION_ADAPTERS`) is placed, and by which of this engine's three
+ * install mechanisms (`link`, `copy`, `managed-block`) — never an absolute
+ * path. Every `destination` is expressed RELATIVE TO `home`, because the
+ * verifier already takes `home` as an explicit input and never infers it
+ * (`report.ts`'s `MachineVerifyInputs.home`) — see `machine-layer.ts` for
+ * where that token gets expanded. The earlier reasoning that composing class
+ * 1 into a manifest would "bake absolute destination paths into a public
+ * package" was the WRONG reason to keep this out of `builder` — `home` being
+ * explicit already solves that. The actual reason is ownership: a general
+ * engine should not ship one machine's opinion about where its own files go.
+ */
+export interface MachineLayerDeclarationFinding {
+  readonly rule: string;
+  readonly message: string;
+}
+
+/**
+ * How one catalog entry gets placed. Mirrors this engine's own three
+ * non-directory operation kinds (`../types.ts`'s `OperationKind`, minus
+ * `private-directory`, which no catalog entry needs) — never a fourth
+ * mechanism invented for this one caller.
+ */
+export type MachineLayerInstallKind = "link" | "copy" | "managed-block";
+
+/**
+ * One catalog entry's placement on this machine. `id` names an entry in
+ * `@vespeneventures/controller/conventions`'s `CONVENTION_DOCUMENTS` or
+ * `CONVENTION_ADAPTERS` — validated against that catalog by
+ * `machine-layer.ts`'s `buildClassOneManifest`, not by shape validation
+ * alone, because shape validation must stay usable without importing
+ * controller's catalog as ground truth for every check.
+ */
+export interface MachineLayerDestinationDeclaration {
+  readonly id: string;
+  readonly install: MachineLayerInstallKind;
+  /**
+   * Relative to `home` — never absolute, never containing a `..` segment.
+   * Expanded against the `${HOME}` token this engine already resolves
+   * (`../runtime.ts`'s `expandTokens`), the same as every other manifest
+   * entry in this package.
+   */
+  readonly destination: string;
+  /** Required, and only meaningful, when `install` is `"managed-block"`. */
+  readonly startMarker?: string;
+  readonly endMarker?: string;
+}
+
+export interface MachineLayerDeclaration {
+  readonly schemaVersion: typeof MACHINE_DECLARATION_SCHEMA_VERSION;
+  readonly destinations: readonly MachineLayerDestinationDeclaration[];
+}
+
+export type MachineLayerIndeterminateReason =
+  | "path-not-declared"
+  | "declaration-unreadable"
+  | "declaration-malformed"
+  | "declaration-invalid-schema"
+  | "declaration-empty"
+  | "declaration-semantically-invalid";
+
+export interface MachineLayerResult {
+  readonly verdict: "satisfied" | "indeterminate";
+  readonly path: string | undefined;
+  readonly reason?: MachineLayerIndeterminateReason;
+  readonly detail?: string;
+  /** Present only on `"satisfied"`. Ready to hand to `createRuntimeContext`. */
+  readonly manifest?: import("../types.js").Manifest;
+  /** Present only on `"satisfied"`. Where every catalog `source` resolves from. */
+  readonly sourceRoot?: string;
+}

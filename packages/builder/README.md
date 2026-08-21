@@ -503,6 +503,132 @@ were on the table:
   already generalizes to "one entry per unit of content," and a skill is
   exactly that unit.
 
+### Class 1: package-owned, account-neutral conventions, and where its destination map lives (#410)
+
+#393 named three classes of source; the two above are classes 2 and 3.
+Class 1 — machine guidance, agent policy rules, shell integration, command
+hooks — is not new content. It already ships in
+`@vespeneventures/controller/conventions`'s `CONVENTION_DOCUMENTS` and
+`CONVENTION_ADAPTERS` catalogs, and the retiring account repository was only
+ever the placement mechanism for it. What was missing was not the content; it
+was **where the mapping from that content to real machine destinations
+lives**, and #410 exists because three of the four candidate homes fail:
+
+1. **Inside `builder` itself** — every consumer of a general-purpose package
+   would inherit one particular machine's opinion about where its own files
+   go. A composition *engine* is general; a specific machine's destination
+   map is not.
+2. **Inside a surviving account plane** — this breaks the rule the whole
+   design rests on: no account plane may reach into another's, and only the
+   machine layer sees all of them. Declaring the machine's destination map
+   from inside one account plane is reaching, by definition.
+3. **Inside the retiring repository** — the status quo being retired, listed
+   only to be ruled out explicitly.
+4. **On the machine, in no repository at all.** A machine-local declaration,
+   owned by the machine layer, versioned nowhere because it is not a shared
+   artifact. **This is the one adopted.**
+
+`./machine-layer.ts`'s `MachineLayerDeclaration` is that declaration: a plain
+JSON document, read from a path the caller supplies or from
+`BUILDER_MACHINE_LAYER_DECLARATION_PATH`, naming — for each catalog id it
+places — an install kind (`link`, `copy`, or `managed-block`) and a
+`destination` expressed **relative to `home`**, never absolute. `home` is
+already an explicit input `verifyMachine` never infers
+(`MachineVerifyInputs.home`), so there was never a real "absolute paths baked
+into a public package" problem to solve by keeping this out of `builder` —
+that reasoning, floated early in #393's history, was the wrong one and #410
+explicitly retires it. The actual reason class 1's map stays out of this
+package is ownership: a general engine should not ship one machine's opinion.
+
+Because the declaration is a plain local file — never a path inside a
+repository, never fetched over the network — reading it needs no credential
+of any kind, for any repository. That is a stronger property than
+`packages/observer`'s `coverage-declaration.ts` contract achieves for its own
+different problem (a repository-hosted declaration reachable by an
+unauthenticated raw-content GET): there is no repository here to need
+unauthenticated access to in the first place.
+
+`buildClassOneManifest` is catalog-aware and throws on an id the catalog does
+not ship, or on templated content (a document or adapter carrying
+`${TOKEN}` placeholders) declared `"link"` — a symlinked reader would receive
+the literal token. `loadClassOnePolicy` is the public entry point and never
+throws, following `packages/integrator`'s `detectSupersession` split exactly:
+every internal failure folds into a named `indeterminate` reason, including
+an empty `destinations` array — nothing declared is not evidence class 1 has
+been composed (#338).
+
+`verifyMachine`'s class-one source is optional the same way third-party is:
+omitting `classOneDeclarationPath` and the environment variable means "this
+run does not compose class 1," not a failure — but composed, once supplied,
+it goes through the exact same `composeInstallationPlans` classes 2 and 3
+already use, tagged `"package-conventions"`, so a destination it shares with
+an account workspace or a third-party skill is a reported
+`DestinationCollisionError` like any other, never a silent last-writer-wins.
+
+### The single-directory-symlink to per-skill-links transition (#240)
+
+On the machine this replaces, `~/.agents/skills` (`composedSkillsRoot`) is
+today a single directory symlink into the repository being retired. This
+subpath's own composed shape is per-skill links (decision 2, above) — a
+different shape at the exact same path. #240's own reproduction records that
+transition crashing `applyInstallation` on a stale dangling link: the old
+symlink no longer resolves, and the generic engine's own recursive `mkdir`
+(called while preparing to write the first per-skill link) throws an opaque,
+unrelated `ENOENT` deep inside `apply.ts`'s `replace()` — never a clear,
+actionable finding. The non-dangling case is just as unsafe in the other
+direction: a symlink still pointing at a directory that still exists lets
+`mkdir` walk straight through it, silently writing the new per-skill link
+INSIDE the old repository's tree instead of into a real, machine-owned
+directory.
+
+`./skills-manifest.ts`'s `buildSkillsManifest` closes both cases by declaring
+`composedSkillsRoot` itself as a `privateDirectories` entry (`create: true`)
+on every source's manifest, ahead of that source's per-skill `links` — no new
+engine mechanism, reusing the existing safety `apply.ts`'s
+`applyPrivateDirectory` and `verify.ts`'s `verifyPrivateDirectory` already
+enforce for every other private directory this engine manages: a destination
+that is a symlink (dangling or not) is refused with a named, actionable error
+before anything is touched, and multiple sources declaring the identical
+private directory is not a collision — `composeInstallationPlans` already
+exempts `private-directory` operations from collision detection (see "Multi-source
+composition," above), which is exactly the shape needed here since every
+account, third-party, and class-one source shares the one composed root.
+`./skills-manifest.test.ts` reproduces the exact transition #240 recorded —
+a dangling directory symlink at `composedSkillsRoot`, replaced by per-skill
+links — and asserts it fails with a named error, leaves the stale symlink
+completely untouched, and never crashes.
+
+### Explicit retirement of a dropped destination (#240)
+
+When a source stops contributing a destination it used to manage — an
+account workspace loses a skill, a workspace disappears entirely because its
+repository was deleted, a class-one convention id is dropped from the
+machine layer declaration — that destination must be retired explicitly,
+never left silently orphaned on the machine. `../composition.ts`'s
+`diffRetiredDestinations` is the pure comparison this needs: given the
+destinations a PRIOR run's composition managed and the CURRENT run's actual
+composed operations, it returns a `RetirementReport` naming every destination
+(`RetiredDestination`, one entry per destination-path/source/kind triple) the
+prior run owned that no current source claims at all. `private-directory`
+operations are excluded from the comparison in both directions, the
+identical reasoning `composeInstallationPlans` already applies to its own
+collision check (a directory several sources want to exist is not "owned" by
+any one of them).
+
+This never deletes anything — reporting is the entire contract, and a caller
+wanting destructive cleanup must build that on top, explicitly, as its own
+opt-in step; this module will never do it by default, the same discipline
+`applyInstallation` already keeps for a destination a manifest simply stops
+mentioning. `verifyMachine` wires this in as an entirely optional row:
+supplying `MachineVerifyInputs.previousCompositionPath` (a JSON document
+shaped `{"schemaVersion":1,"operations":[...]}`, typically a prior run's own
+`composeInstallationPlans(...).operations` persisted verbatim — this module
+never writes that file itself) reports every retired destination as a
+`machine/destination-retired` finding; omitting it means "this run does not
+check for retired destinations," not an error. A retirement check against
+composition that itself did not resolve is reported `indeterminate` rather
+than diffed against a partial machine.
+
 ### Discovery: never a hard-coded list, never a silent partial machine
 
 `./discovery.ts`'s `discoverAccountWorkspaces` takes a root from the caller or
@@ -541,8 +667,9 @@ const report = verifyMachine(createNodeDiscoveryPort(), createNodeFileSystem(), 
   schemaVersion: 1,
   home: process.env.HOME,
   composedSkillsRoot: `${process.env.HOME}/.agents/skills`,
-  // accountWorkspacesRoot / thirdPartySkillsRoot may come from here instead
-  // of BUILDER_MACHINE_WORKSPACES_ROOT / BUILDER_MACHINE_THIRD_PARTY_SKILLS_ROOT.
+  // accountWorkspacesRoot / thirdPartySkillsRoot / classOneDeclarationPath may
+  // come from here instead of BUILDER_MACHINE_WORKSPACES_ROOT /
+  // BUILDER_MACHINE_THIRD_PARTY_SKILLS_ROOT / BUILDER_MACHINE_LAYER_DECLARATION_PATH.
 });
 // report.overall.verdict: "satisfied" | "violated" | "indeterminate"
 // report.exitCode: 0 | 1 | 2 — the same fold as everywhere else in this package

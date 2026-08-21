@@ -1,10 +1,11 @@
 import { createGateReasons, foldGateResults, gateResultToExitCode, gateSatisfied, gateViolated } from "@vespeneventures/controller/gates";
 import type { GateResult } from "@vespeneventures/controller/gates";
-import { DestinationCollisionError, composeInstallationPlans, verifyComposedInstallation } from "../composition.js";
-import type { NamedSourcePlan } from "../composition.js";
+import { DestinationCollisionError, composeInstallationPlans, diffRetiredDestinations, verifyComposedInstallation } from "../composition.js";
+import type { ComposedPlanOperation, NamedSourcePlan, RetiredDestination } from "../composition.js";
 import { createRuntimeContext, planInstallation } from "../runtime.js";
 import type { FileSystemPort, Finding } from "../types.js";
 import { discoverAccountWorkspaces, resolveWorkspacesRoot } from "./discovery.js";
+import { CLASS_ONE_SOURCE, loadClassOnePolicy, resolveClassOneDeclarationPath } from "./machine-layer.js";
 import { buildSkillsManifest } from "./skills-manifest.js";
 import { loadThirdPartySkills, resolveThirdPartyRoot } from "./third-party.js";
 import type { DiscoveryPort } from "./types.js";
@@ -12,20 +13,21 @@ import type { DiscoveryPort } from "./types.js";
 /**
  * `verifyMachine`: the orchestrator behind `builder-verify-machine`.
  *
- * Composes what `discovery.ts` and `third-party.ts` found into named source
- * plans (§2 of the README's "Machine composition" section — per-skill links,
- * never a directory symlink or a materialized copy), then runs them through
- * this package's already-tested `composeInstallationPlans` and
- * `verifyComposedInstallation` completely unchanged.
+ * Composes what `machine-layer.ts` (class 1: package-owned, account-neutral
+ * conventions content), `discovery.ts` (class 2: per-account skill trees),
+ * and `third-party.ts` (class 3: vendor-scoped skills) found into named
+ * source plans (README's "Machine composition" section), then runs them
+ * through this package's already-tested `composeInstallationPlans` and
+ * `verifyComposedInstallation` completely unchanged — one composition path
+ * for all three classes, never a second one for class 1.
  *
  * The one rule every branch below is written to protect: an indeterminate
  * source is never quietly excluded from composition while the sources that
- * DID resolve get verified as if they were the whole machine. If ANY
- * discovered workspace or the third-party source is indeterminate,
- * composition itself is reported indeterminate too — see the `composition`
- * row's `sources-indeterminate` branch. A caller reading only `overall`
- * therefore can never mistake "half the machine verified clean" for "the
- * machine verified clean."
+ * DID resolve get verified as if they were the whole machine. If ANY of the
+ * three classes above is indeterminate, composition itself is reported
+ * indeterminate too — see the `composition` row's `sources-indeterminate`
+ * branch. A caller reading only `overall` therefore can never mistake "half
+ * the machine verified clean" for "the machine verified clean."
  */
 
 export const MACHINE_VERIFY_INPUTS_VERSION = 1 as const;
@@ -40,6 +42,30 @@ export interface MachineVerifyInputs {
   readonly accountWorkspacesRoot?: string;
   /** Overrides the `BUILDER_MACHINE_THIRD_PARTY_SKILLS_ROOT` environment variable. Third-party is optional: omitting both this and the environment variable means "this machine composes no third-party skills," not an error. */
   readonly thirdPartySkillsRoot?: string;
+  /**
+   * Overrides the `BUILDER_MACHINE_LAYER_DECLARATION_PATH` environment
+   * variable. Optional in the same shape `thirdPartySkillsRoot` is: omitting
+   * both this and the environment variable means "this run does not compose
+   * class 1," not an error — a caller mid-migration, or one that has not
+   * adopted a declaration yet, still gets a real verdict for the sources it
+   * DID supply. The retirement #410 exists to unblock requires supplying
+   * this explicitly; `verifyMachine` enforces the ternary once it is
+   * supplied, it does not force every caller to supply it.
+   */
+  readonly classOneDeclarationPath?: string;
+  /**
+   * Path to a JSON document this caller previously persisted, shaped
+   * `{"schemaVersion":1,"operations":[{"destinationPath","source","kind"},...]}`
+   * — typically a prior run's own `composeInstallationPlans(...).operations`,
+   * serialized verbatim (see `../composition.ts`'s `diffRetiredDestinations`
+   * doc comment: `ComposedPlanOperation` is a structural superset of
+   * `RetiredDestination`, so no conversion is needed on the way out). Entirely
+   * optional, and this module never writes this file itself — no storage
+   * opinion, the same discipline `observation-bundle.ts` and
+   * `coverage-declaration.ts` keep. Omitting it means "this run does not
+   * check for retired destinations," not an error.
+   */
+  readonly previousCompositionPath?: string;
 }
 
 export const machineVerifyReasons = createGateReasons([
@@ -47,9 +73,11 @@ export const machineVerifyReasons = createGateReasons([
   "invalid-inputs",
   "account-workspaces-indeterminate",
   "third-party-skills-indeterminate",
+  "class-one-indeterminate",
   "sources-indeterminate",
   "no-sources-found",
   "composition-failed",
+  "retirement-indeterminate",
 ] as const);
 
 export type MachineVerifyReason = (typeof machineVerifyReasons.reasons)[number];
@@ -81,12 +109,16 @@ function parseInputs(raw: unknown): MachineVerifyInputs | undefined {
   if (typeof raw.composedSkillsRoot !== "string" || raw.composedSkillsRoot === "") return undefined;
   if (raw.accountWorkspacesRoot !== undefined && typeof raw.accountWorkspacesRoot !== "string") return undefined;
   if (raw.thirdPartySkillsRoot !== undefined && typeof raw.thirdPartySkillsRoot !== "string") return undefined;
+  if (raw.classOneDeclarationPath !== undefined && typeof raw.classOneDeclarationPath !== "string") return undefined;
+  if (raw.previousCompositionPath !== undefined && typeof raw.previousCompositionPath !== "string") return undefined;
   return {
     schemaVersion: MACHINE_VERIFY_INPUTS_VERSION,
     home: raw.home,
     composedSkillsRoot: raw.composedSkillsRoot,
     ...(raw.accountWorkspacesRoot === undefined ? {} : { accountWorkspacesRoot: raw.accountWorkspacesRoot }),
     ...(raw.thirdPartySkillsRoot === undefined ? {} : { thirdPartySkillsRoot: raw.thirdPartySkillsRoot }),
+    ...(raw.classOneDeclarationPath === undefined ? {} : { classOneDeclarationPath: raw.classOneDeclarationPath }),
+    ...(raw.previousCompositionPath === undefined ? {} : { previousCompositionPath: raw.previousCompositionPath }),
   };
 }
 
@@ -200,7 +232,39 @@ export function verifyMachine(
     }
   }
 
+  // -- class one: package-owned, account-neutral conventions --------------------
+  // Optional the same way third-party is, just below: an unconfigured class-1
+  // source is absent, not a failure. See `MachineVerifyInputs.classOneDeclarationPath`.
+  const classOnePath = resolveClassOneDeclarationPath({ path: inputs.classOneDeclarationPath, env: options.env });
+  if (classOnePath !== undefined) {
+    const classOneResult = loadClassOnePolicy(discovery, { path: classOnePath });
+    if (classOneResult.verdict === "indeterminate") {
+      rows.push({
+        row: "class-one-conventions",
+        result: machineVerifyReasons.indeterminate(
+          "class-one-indeterminate",
+          `${classOneResult.reason ?? "unknown"}: ${classOneResult.detail ?? ""}`,
+        ),
+      });
+    } else {
+      const manifest = classOneResult.manifest as NonNullable<typeof classOneResult.manifest>;
+      const entryCount = manifest.links.length + manifest.copies.length + manifest.managedBlocks.length;
+      rows.push({ row: "class-one-conventions", result: gateSatisfied(evaluatedCount(entryCount)) });
+      const runtime = createRuntimeContext(manifest, {
+        home: inputs.home,
+        sourceRoot: classOneResult.sourceRoot as string,
+        workspaceRoot: inputs.home,
+      });
+      namedPlans.push({ source: CLASS_ONE_SOURCE, plan: planInstallation(manifest, runtime) });
+    }
+  }
+
   // -- composition ---------------------------------------------------------------
+  // Captured only on a successful `composeInstallationPlans` call, for the
+  // retirement comparison below -- `undefined` on every other branch
+  // (indeterminate sources, no sources, or a collision/thrown failure),
+  // which the retirement row below treats as "nothing to diff against."
+  let composedOperations: readonly ComposedPlanOperation[] | undefined;
   const anySourceIndeterminate = rows.some((row) => row.result.verdict === "indeterminate");
   if (anySourceIndeterminate) {
     rows.push({
@@ -220,7 +284,8 @@ export function verifyMachine(
     });
   } else {
     try {
-      composeInstallationPlans(namedPlans);
+      const composed = composeInstallationPlans(namedPlans);
+      composedOperations = composed.operations;
       const findings = verifyComposedInstallation(namedPlans, fs);
       rows.push({
         row: "composition",
@@ -246,9 +311,94 @@ export function verifyMachine(
     }
   }
 
+  // -- retirement: destinations a prior run owned that this run no longer claims (#240) --
+  // Entirely optional -- see `MachineVerifyInputs.previousCompositionPath`.
+  // This module never writes the file it reads here; a caller decides for
+  // itself whether and how to persist a prior run's composed operations.
+  if (inputs.previousCompositionPath !== undefined) {
+    const compositionRow = rows.find((row) => row.row === "composition");
+    if (compositionRow?.result.verdict === "indeterminate" || composedOperations === undefined) {
+      rows.push({
+        row: "retirement",
+        result: machineVerifyReasons.indeterminate(
+          "retirement-indeterminate",
+          "Composition itself did not resolve this run, so retirement cannot be evaluated against a partial machine.",
+        ),
+      });
+    } else {
+      const raw = discovery.readTextFile(inputs.previousCompositionPath);
+      if (raw === undefined) {
+        rows.push({
+          row: "retirement",
+          result: machineVerifyReasons.indeterminate(
+            "retirement-indeterminate",
+            `${inputs.previousCompositionPath}: could not be read as text`,
+          ),
+        });
+      } else {
+        let parsedRaw: unknown;
+        let parseErrorMessage: string | undefined;
+        try {
+          parsedRaw = JSON.parse(raw);
+        } catch (error) {
+          parseErrorMessage = error instanceof Error ? error.message : String(error);
+        }
+        const previous = parseErrorMessage === undefined ? parsePreviousComposition(parsedRaw) : undefined;
+        if (parseErrorMessage !== undefined || previous === undefined) {
+          rows.push({
+            row: "retirement",
+            result: machineVerifyReasons.indeterminate(
+              "retirement-indeterminate",
+              parseErrorMessage ??
+                `${inputs.previousCompositionPath}: does not match the expected {"schemaVersion":1,"operations":[{"destinationPath","source","kind"}]} shape`,
+            ),
+          });
+        } else {
+          const diff = diffRetiredDestinations(previous, composedOperations);
+          if (diff.retired.length === 0) {
+            rows.push({ row: "retirement", result: gateSatisfied(Math.max(1, previous.length)) });
+          } else {
+            const findings: Finding[] = diff.retired.map((destination) => ({
+              rule: "machine/destination-retired",
+              severity: "medium",
+              message: `${destination.destinationPath}: previously managed by "${destination.source}" (${destination.kind}); no current source claims it. Retire explicitly — this module never removes it automatically.`,
+            }));
+            rows.push({ row: "retirement", result: gateViolated(findings) });
+          }
+        }
+      }
+    }
+  }
+
   const overall = foldGateResults(rows.map((row) => row.result), {
     emptyReason: "no-inputs-supplied",
     emptyDetail: "No row produced a result.",
   });
   return { rows, overall, exitCode: gateResultToExitCode(overall) };
+}
+
+const OPERATION_KINDS = ["link", "copy", "managed-block", "private-directory"] as const;
+
+/**
+ * Parses `raw` into `RetiredDestination[]`, or `undefined` for anything that
+ * does not match the expected shape. Never throws — a malformed previous-
+ * composition file is data for the caller above to fold into `indeterminate`,
+ * not a program error.
+ */
+function parsePreviousComposition(raw: unknown): readonly RetiredDestination[] | undefined {
+  if (!isRecord(raw)) return undefined;
+  if (raw.schemaVersion !== 1) return undefined;
+  const operations = raw.operations;
+  if (!Array.isArray(operations)) return undefined;
+
+  const parsed: RetiredDestination[] = [];
+  for (const entry of operations) {
+    if (!isRecord(entry)) return undefined;
+    const { destinationPath, source, kind } = entry;
+    if (typeof destinationPath !== "string" || destinationPath === "") return undefined;
+    if (typeof source !== "string" || source === "") return undefined;
+    if (typeof kind !== "string" || !OPERATION_KINDS.includes(kind as (typeof OPERATION_KINDS)[number])) return undefined;
+    parsed.push({ destinationPath, source, kind: kind as RetiredDestination["kind"] });
+  }
+  return parsed;
 }

@@ -20,9 +20,14 @@ export const USAGE = `Usage: builder-verify-machine --inputs <path> [options]
 
   --inputs <path>   Required. A JSON document (schemaVersion 1) declaring \`home\`,
                      \`composedSkillsRoot\`, and optionally \`accountWorkspacesRoot\` /
-                     \`thirdPartySkillsRoot\`. Either root may instead come from the
-                     BUILDER_MACHINE_WORKSPACES_ROOT / BUILDER_MACHINE_THIRD_PARTY_SKILLS_ROOT
-                     environment variables; an explicit inputs field always wins.
+                     \`thirdPartySkillsRoot\` / \`classOneDeclarationPath\` /
+                     \`previousCompositionPath\`. The three roots/paths may instead come
+                     from the BUILDER_MACHINE_WORKSPACES_ROOT /
+                     BUILDER_MACHINE_THIRD_PARTY_SKILLS_ROOT /
+                     BUILDER_MACHINE_LAYER_DECLARATION_PATH environment variables; an
+                     explicit inputs field always wins. \`previousCompositionPath\` has
+                     no environment variable — it names a caller-persisted prior run's
+                     composed operations, so it is only ever supplied explicitly.
   --format <text|json>   Output format. Defaults to text.
   --help                 Print this message and exit 0.
 

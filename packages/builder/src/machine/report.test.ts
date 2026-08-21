@@ -1,8 +1,10 @@
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { applyComposedInstallation } from "../composition.js";
 import { createMemoryFileSystem } from "../memory-fs.test-helper.js";
 import { createRuntimeContext, planInstallation } from "../runtime.js";
 import { createMemoryDiscoveryFileSystem } from "./memory-discovery.test-helper.js";
+import { loadClassOnePolicy } from "./machine-layer.js";
 import { MACHINE_VERIFY_INPUTS_VERSION, verifyMachine } from "./report.js";
 import { buildSkillsManifest } from "./skills-manifest.js";
 import { THIRD_PARTY_DECLARATION_FILENAME, WORKSPACE_MARKER_FILENAME } from "./types.js";
@@ -187,7 +189,10 @@ describe("verifyMachine — idempotent verification against an applied machine",
       fs,
       { backupRoot: `${home}/.config-backups/run-1` },
     );
-    expect(applied.changed).toHaveLength(1);
+    // Two operations, not one: the private-directory guard on
+    // composedSkillsRoot itself (#240's migration-hazard fix, see
+    // skills-manifest.ts) plus the one skill link.
+    expect(applied.changed).toHaveLength(2);
 
     const afterFirstApply = verifyMachine(discovery, fs, inputs);
     expect(afterFirstApply.overall.verdict).toBe("satisfied");
@@ -200,10 +205,240 @@ describe("verifyMachine — idempotent verification against an applied machine",
       { backupRoot: `${home}/.config-backups/run-2` },
     );
     expect(reapplied.changed).toHaveLength(0);
-    expect(reapplied.unchanged).toHaveLength(1);
+    expect(reapplied.unchanged).toHaveLength(2);
 
     const afterSecondApply = verifyMachine(discovery, fs, inputs);
     expect(afterSecondApply.overall.verdict).toBe("satisfied");
     expect(afterSecondApply.exitCode).toBe(0);
+  });
+});
+
+describe("verifyMachine — class one: package-owned, account-neutral conventions (#410)", () => {
+  const classOneDeclarationPath = "/machine/policy/class-one.json";
+
+  function classOneDeclaration(overrides: Record<string, unknown> = {}): string {
+    return JSON.stringify({
+      schemaVersion: 1,
+      destinations: [{ id: "branch-provenance", install: "link", destination: ".agents/branch-provenance" }],
+      ...overrides,
+    });
+  }
+
+  it("is absent, not a failure, when no declaration path is configured", () => {
+    const discovery = createMemoryDiscoveryFileSystem();
+    discovery.setFile(`${accountsRoot}/alpha/${WORKSPACE_MARKER_FILENAME}`, workspaceMarker("alpha-account"));
+    discovery.setDirectory(`${accountsRoot}/alpha/skills/greet`);
+    const fs = createMemoryFileSystem();
+
+    const report = verifyMachine(discovery, fs, baseInputs());
+    expect(report.rows.some((row) => row.row === "class-one-conventions")).toBe(false);
+  });
+
+  it("is indeterminate for the whole run when a configured declaration cannot be read", () => {
+    const discovery = createMemoryDiscoveryFileSystem();
+    discovery.setFile(`${accountsRoot}/alpha/${WORKSPACE_MARKER_FILENAME}`, workspaceMarker("alpha-account"));
+    discovery.setDirectory(`${accountsRoot}/alpha/skills/greet`);
+    const fs = createMemoryFileSystem();
+
+    const report = verifyMachine(discovery, fs, baseInputs({ classOneDeclarationPath }));
+    expect(report.overall.verdict).toBe("indeterminate");
+    const classOneRow = report.rows.find((row) => row.row === "class-one-conventions");
+    expect(classOneRow?.result.verdict).toBe("indeterminate");
+    if (classOneRow?.result.verdict === "indeterminate") {
+      expect(classOneRow.result.reason).toBe("class-one-indeterminate");
+    }
+    const composition = report.rows.find((row) => row.row === "composition");
+    if (composition?.result.verdict === "indeterminate") {
+      expect(composition.result.reason).toBe("sources-indeterminate");
+    } else {
+      throw new Error("expected composition row to be indeterminate");
+    }
+  });
+
+  it("composes class-one content through the same composeInstallationPlans as accounts and third-party", () => {
+    const discovery = createMemoryDiscoveryFileSystem();
+    discovery.setFile(`${accountsRoot}/alpha/${WORKSPACE_MARKER_FILENAME}`, workspaceMarker("alpha-account"));
+    discovery.setDirectory(`${accountsRoot}/alpha/skills/greet`);
+    discovery.setFile(classOneDeclarationPath, classOneDeclaration());
+    const fs = createMemoryFileSystem();
+
+    const report = verifyMachine(discovery, fs, baseInputs({ classOneDeclarationPath }));
+    // Nothing has been applied yet, so this is violated, not indeterminate --
+    // class one's own row still resolved cleanly on its own terms.
+    const classOneRow = report.rows.find((row) => row.row === "class-one-conventions");
+    expect(classOneRow?.result.verdict).toBe("satisfied");
+    expect(report.overall.verdict).toBe("violated");
+
+    const composition = report.rows.find((row) => row.row === "composition");
+    if (composition?.result.verdict === "violated") {
+      expect(composition.result.findings.some((f) => f.message.includes(".agents/branch-provenance"))).toBe(true);
+    } else {
+      throw new Error("expected composition row to be violated");
+    }
+  });
+
+  it("reports a destination collision between class one and an account workspace, never last-writer-wins", () => {
+    const discovery = createMemoryDiscoveryFileSystem();
+    discovery.setFile(`${accountsRoot}/alpha/${WORKSPACE_MARKER_FILENAME}`, workspaceMarker("alpha-account"));
+    discovery.setDirectory(`${accountsRoot}/alpha/skills/greet`);
+    // A pathological account skill literally named to collide with the class-one destination.
+    discovery.setFile(
+      classOneDeclarationPath,
+      JSON.stringify({
+        schemaVersion: 1,
+        destinations: [{ id: "branch-provenance", install: "link", destination: ".agents/skills/greet" }],
+      }),
+    );
+    const fs = createMemoryFileSystem();
+
+    const report = verifyMachine(discovery, fs, baseInputs({ classOneDeclarationPath }));
+    expect(report.overall.verdict).toBe("violated");
+    const composition = report.rows.find((row) => row.row === "composition");
+    if (composition?.result.verdict === "violated") {
+      expect(composition.result.findings[0]?.rule).toBe("machine/skill-collision");
+      expect(composition.result.findings[0]?.message).toContain("package-conventions");
+    } else {
+      throw new Error("expected composition row to be violated");
+    }
+  });
+
+  it("is satisfied end to end once class-one content has actually been applied", () => {
+    const discovery = createMemoryDiscoveryFileSystem();
+    // The account workspaces root resolves and is readable, but nothing under
+    // it declares itself a workspace -- that source contributes zero plans,
+    // and class one alone is enough to give composition a real source.
+    discovery.setDirectory(accountsRoot);
+    discovery.setFile(classOneDeclarationPath, classOneDeclaration());
+    const fs = createMemoryFileSystem();
+
+    const inputs = baseInputs({ classOneDeclarationPath });
+
+    const before = verifyMachine(discovery, fs, inputs);
+    expect(before.overall.verdict).toBe("violated");
+
+    const classOneResult = loadClassOnePolicy(discovery, { path: classOneDeclarationPath });
+    if (classOneResult.verdict !== "satisfied") throw new Error("expected class one to resolve for this test");
+    // The manifest engine reads through `fs`, not through `discovery` -- the
+    // in-memory `fs` above knows nothing about the real controller package on
+    // disk, so its copy of the one source file this test's declaration names
+    // has to be seeded explicitly.
+    fs.set(join(classOneResult.sourceRoot as string, "documents", "branch-provenance.md"), "branch provenance guidance");
+    const runtime = createRuntimeContext(classOneResult.manifest as import("../types.js").Manifest, {
+      home,
+      sourceRoot: classOneResult.sourceRoot as string,
+      workspaceRoot: home,
+    });
+    const plan = planInstallation(classOneResult.manifest as import("../types.js").Manifest, runtime);
+    applyComposedInstallation([{ source: "package-conventions", plan }], fs, { backupRoot: `${home}/.config-backups/run-1` });
+
+    const after = verifyMachine(discovery, fs, inputs);
+    expect(after.overall.verdict).toBe("satisfied");
+    expect(after.exitCode).toBe(0);
+  });
+});
+
+describe("verifyMachine — retirement of a dropped destination (#240)", () => {
+  const previousCompositionPath = "/machine/policy/previous-composition.json";
+
+  it("is absent, not a failure, when no previous-composition path is configured", () => {
+    const discovery = createMemoryDiscoveryFileSystem();
+    discovery.setFile(`${accountsRoot}/alpha/${WORKSPACE_MARKER_FILENAME}`, workspaceMarker("alpha-account"));
+    discovery.setDirectory(`${accountsRoot}/alpha/skills/greet`);
+    const fs = createMemoryFileSystem();
+
+    const report = verifyMachine(discovery, fs, baseInputs());
+    expect(report.rows.some((row) => row.row === "retirement")).toBe(false);
+  });
+
+  it("is satisfied with nothing to report when every previously managed destination is still claimed", () => {
+    const discovery = createMemoryDiscoveryFileSystem();
+    discovery.setFile(`${accountsRoot}/alpha/${WORKSPACE_MARKER_FILENAME}`, workspaceMarker("alpha-account"));
+    discovery.setDirectory(`${accountsRoot}/alpha/skills/greet`);
+    discovery.setFile(
+      previousCompositionPath,
+      JSON.stringify({
+        schemaVersion: 1,
+        operations: [{ destinationPath: `${composedSkillsRoot}/greet`, source: "alpha-account", kind: "link" }],
+      }),
+    );
+    const fs = createMemoryFileSystem();
+
+    const report = verifyMachine(discovery, fs, baseInputs({ previousCompositionPath }));
+    const retirement = report.rows.find((row) => row.row === "retirement");
+    expect(retirement?.result.verdict).toBe("satisfied");
+  });
+
+  it("reports a destination the previous run owned that no current source claims — never removes it", () => {
+    const discovery = createMemoryDiscoveryFileSystem();
+    discovery.setFile(`${accountsRoot}/alpha/${WORKSPACE_MARKER_FILENAME}`, workspaceMarker("alpha-account"));
+    discovery.setDirectory(`${accountsRoot}/alpha/skills/greet`);
+    discovery.setFile(
+      previousCompositionPath,
+      JSON.stringify({
+        schemaVersion: 1,
+        operations: [
+          { destinationPath: `${composedSkillsRoot}/greet`, source: "alpha-account", kind: "link" },
+          { destinationPath: `${composedSkillsRoot}/retired-skill`, source: "beta-account", kind: "link" },
+        ],
+      }),
+    );
+    const fs = createMemoryFileSystem();
+
+    const report = verifyMachine(discovery, fs, baseInputs({ previousCompositionPath }));
+    const retirement = report.rows.find((row) => row.row === "retirement");
+    expect(retirement?.result.verdict).toBe("violated");
+    if (retirement?.result.verdict === "violated") {
+      expect(retirement.result.findings).toHaveLength(1);
+      expect(retirement.result.findings[0]?.rule).toBe("machine/destination-retired");
+      expect(retirement.result.findings[0]?.message).toContain(`${composedSkillsRoot}/retired-skill`);
+      expect(retirement.result.findings[0]?.message).toContain("beta-account");
+    }
+    // Reporting only -- nothing here ever calls a filesystem mutation.
+    expect(fs.lstat(`${composedSkillsRoot}/retired-skill`)).toBeUndefined();
+  });
+
+  it("is indeterminate when the previous-composition file cannot be read", () => {
+    const discovery = createMemoryDiscoveryFileSystem();
+    discovery.setFile(`${accountsRoot}/alpha/${WORKSPACE_MARKER_FILENAME}`, workspaceMarker("alpha-account"));
+    discovery.setDirectory(`${accountsRoot}/alpha/skills/greet`);
+    const fs = createMemoryFileSystem();
+
+    const report = verifyMachine(discovery, fs, baseInputs({ previousCompositionPath }));
+    const retirement = report.rows.find((row) => row.row === "retirement");
+    expect(retirement?.result.verdict).toBe("indeterminate");
+    if (retirement?.result.verdict === "indeterminate") {
+      expect(retirement.result.reason).toBe("retirement-indeterminate");
+    }
+    expect(report.overall.verdict).toBe("indeterminate");
+  });
+
+  it("is indeterminate when the previous-composition file is malformed", () => {
+    const discovery = createMemoryDiscoveryFileSystem();
+    discovery.setFile(`${accountsRoot}/alpha/${WORKSPACE_MARKER_FILENAME}`, workspaceMarker("alpha-account"));
+    discovery.setDirectory(`${accountsRoot}/alpha/skills/greet`);
+    discovery.setFile(previousCompositionPath, "not json");
+    const fs = createMemoryFileSystem();
+
+    const report = verifyMachine(discovery, fs, baseInputs({ previousCompositionPath }));
+    const retirement = report.rows.find((row) => row.row === "retirement");
+    expect(retirement?.result.verdict).toBe("indeterminate");
+  });
+
+  it("is indeterminate when composition itself did not resolve — never diffed against a partial machine", () => {
+    const discovery = createMemoryDiscoveryFileSystem();
+    // A broken workspace: composition never runs.
+    discovery.setFile(`${accountsRoot}/broken/${WORKSPACE_MARKER_FILENAME}`, "not json");
+    discovery.setFile(
+      previousCompositionPath,
+      JSON.stringify({ schemaVersion: 1, operations: [] }),
+    );
+    const fs = createMemoryFileSystem();
+
+    const report = verifyMachine(discovery, fs, baseInputs({ previousCompositionPath }));
+    const retirement = report.rows.find((row) => row.row === "retirement");
+    expect(retirement?.result.verdict).toBe("indeterminate");
+    if (retirement?.result.verdict === "indeterminate") {
+      expect(retirement.result.reason).toBe("retirement-indeterminate");
+    }
   });
 });

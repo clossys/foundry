@@ -5,6 +5,62 @@ All notable changes to `@vespeneventures/builder` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-08-21
+
+### Added
+
+- **Class 1 (package-owned, account-neutral conventions content) now
+  composes through `./machine`, closing the retirement gap tracked by
+  #410.** #393 named three classes of source the machine installer had
+  to compose; the prior release shipped classes 2 (per-account skill
+  trees) and 3 (third-party-scoped skills) only. `./machine/machine-layer.js`
+  adds the class-1 declaration contract: a machine-local file, owned by
+  no repository and versioned nowhere, mapping a
+  `@vespeneventures/controller/conventions` catalog id onto a
+  destination expressed relative to `home` (never absolute) and an
+  install kind (`link`, `copy`, or `managed-block`). Read from a
+  caller-supplied path or `BUILDER_MACHINE_LAYER_DECLARATION_PATH`.
+  `validateMachineLayerDeclarationShape` / `parseMachineLayerDeclaration`
+  / `writeMachineLayerDeclaration` follow `packages/observer`'s
+  `coverage-declaration.ts` for the validate/parse/never-throw shape;
+  `buildClassOneManifest` (catalog-aware, throws internally) /
+  `loadClassOnePolicy` (the public entry point, never throws) follow
+  `packages/integrator`'s `detectSupersession` split. `verifyMachine`
+  composes class 1 through the exact same `composeInstallationPlans`
+  classes 2 and 3 already use — no second composition path — tagged
+  `"package-conventions"`, and optional the same shape `thirdPartySkillsRoot`
+  already is: an unconfigured class-1 source is absent, not a failure,
+  so every existing caller's behavior is unchanged.
+- **The single-directory-symlink to per-skill-links migration hazard
+  (#240) is now detected and reported, never crashed on.** On the
+  machine this replaces, `composedSkillsRoot` is today a single
+  directory symlink into the repository being retired; this subpath's
+  own shape is per-skill links at the identical path. #240's own
+  reproduction recorded that transition crashing `applyInstallation` on
+  a stale dangling link via an opaque, unrelated `ENOENT` deep inside
+  `apply.ts`'s `replace()`. `./machine/skills-manifest.js`'s
+  `buildSkillsManifest` now declares `composedSkillsRoot` itself as a
+  `privateDirectories` entry (`create: true`) ahead of every per-skill
+  link — no new engine mechanism, reusing `apply.ts`'s
+  `applyPrivateDirectory` / `verify.ts`'s `verifyPrivateDirectory`,
+  which already refuse a symlinked destination (dangling or not) with a
+  named, actionable error before anything is touched, and which
+  `composeInstallationPlans` already exempts from collision detection
+  across sources. `skills-manifest.test.ts` reproduces the exact
+  transition #240 recorded.
+- **Explicit retirement of a dropped destination (#240).**
+  `diffRetiredDestinations` (also exported from the package root) is a
+  pure comparison: given the destinations a prior composed run managed
+  and the current run's actual composed operations, it names every
+  destination the prior run owned that no current source claims at
+  all. Reporting only — this never removes anything, and no destructive
+  option is offered. `verifyMachine` wires this in as an entirely
+  optional row via `MachineVerifyInputs.previousCompositionPath`
+  (a caller-persisted JSON document, no environment-variable fallback);
+  a `machine/destination-retired` finding per retired destination when
+  something was dropped, `indeterminate` rather than a comparison
+  against a partial machine when composition itself did not resolve.
+
 ## [0.6.1] - 2026-08-21
 
 ### Added

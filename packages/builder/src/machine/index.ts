@@ -23,6 +23,18 @@ export {
   resolveThirdPartyRoot,
 } from "./third-party.js";
 
+export {
+  CLASS_ONE_SOURCE,
+  CLASS_ONE_SOURCE_ROOT,
+  MACHINE_LAYER_DECLARATION_PATH_ENV_VAR,
+  buildClassOneManifest,
+  loadClassOnePolicy,
+  parseMachineLayerDeclaration,
+  resolveClassOneDeclarationPath,
+  validateMachineLayerDeclarationShape,
+  writeMachineLayerDeclaration,
+} from "./machine-layer.js";
+
 export { buildSkillsManifest } from "./skills-manifest.js";
 
 export { createNodeDiscoveryPort } from "./node-discovery.js";
@@ -45,6 +57,12 @@ export type {
   AccountWorkspaceDiscoveryResult,
   DiscoveryIndeterminateReason,
   DiscoveryPort,
+  MachineLayerDeclaration,
+  MachineLayerDeclarationFinding,
+  MachineLayerDestinationDeclaration,
+  MachineLayerIndeterminateReason,
+  MachineLayerInstallKind,
+  MachineLayerResult,
   ThirdPartyIndeterminateReason,
   ThirdPartySkill,
   ThirdPartySkillsDeclaration,
