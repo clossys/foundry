@@ -443,6 +443,11 @@ const profile: RepositoryProfileV3 = {
       scope: "repository",
       constraint: { kind: "present" },
     },
+    {
+      id: "runtime.node",
+      scope: "machine",
+      constraint: { kind: "minimum-version", floor: "20" },
+    },
   ],
   rootEntries: [
     { name: "source", classification: "canonical", disposition: "required" },
@@ -498,8 +503,28 @@ separate root-entry vocabulary because that vocabulary is repository-local.
 `{ kind: "present" }` accepts any conclusive observed value. `{ kind:
 "one-of", values: [...] }` accepts only the caller-enumerated values. Multiple
 workspace- or machine-scoped `one-of` declarations are compatible when their
-value intersection is non-empty. The evaluator exposes that intersection but
-never selects a value, interprets version syntax, or decides precedence.
+value intersection is non-empty.
+
+`{ kind: "minimum-version", floor: "20" }` (issue #318) accepts any observed
+value at or above `floor` — the open-ended shape neither `present` nor
+`one-of` can honestly express: an `engines.node: ">=20"`-style requirement is
+not "Node must merely exist" (`present` understates it) and not an
+exhaustive, closed enumeration of every accepted major (`one-of` requires a
+list that goes stale the moment a new satisfying value is released). `floor`
+is a bare dotted-numeric version string — `"20"`, `"20.11"`, or `"10.33.0"` —
+never a range operator (`>=20` itself is rejected as an unparseable floor).
+Multiple declared floors for the same requirement combine by keeping the
+strictest (highest); combined with a `one-of` declaration for the same
+requirement, the two are jointly required and report `conflicting` when no
+accepted value clears the floor. An observed value that does not itself
+parse as a dotted-numeric version is `unsatisfied`, never `satisfied` — an
+unparseable floor on the constraint itself is a strict-shape `constraint-floor`
+finding, reported through the same closed `status: "invalid"` path as every
+other malformed constraint, never silently treated as satisfied.
+
+The evaluator exposes the compatible `one-of` intersection and the binding
+`minimum-version` floor but never selects a value or decides precedence
+beyond combining what the declarations themselves state.
 
 #### Pure multi-repository evaluation
 
@@ -797,6 +822,7 @@ repositoryProfileValidationCoverage({ schemaVersion: 3, /* ... */ });
 | `REQUIREMENT_ID_CATEGORIES` | constant | `["runtime", "tool", "dependency"]` (issue #316) — the closed requirement-id category vocabulary. |
 | `RepositoryProfileV1` / `RepositoryProfileV2` / `RepositoryProfileV3` / `RepositoryProfile` | types | Closed profile versions and their explicit union. |
 | `RepositoryRequirement` / `RepositoryRequirementConstraint` / `RepositoryRequirementScope` | types | Neutral declaration grammar. |
+| `RepositoryPresenceConstraint` / `RepositoryOneOfConstraint` / `RepositoryMinimumVersionConstraint` | types | The three constraint shapes `RepositoryRequirementConstraint` closes over — bare presence, a closed enumeration, and an open-ended minimum-version floor (issue #318). |
 | `RepositoryRequirementIdCategory` | type | One category admitted by the requirement-id grammar. |
 | `RepositoryRequirementDeclaration` / `RepositoryRequirementObservation` | types | Caller-associated declarations and caller-normalized evidence. |
 | `RepositoryRequirementsEvaluationInput` / `RepositoryRequirementsEvaluation` | types | Strict evaluator input and report. |
