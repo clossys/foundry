@@ -3,6 +3,18 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.1] - 2026-08-21
+
+### Changed
+
+- **Widened the `@vespeneventures/designer` dependency range to `^0.2.0`.** A
+  runtime dependency range is shipped content, so it moves this package's
+  version even though no code here changed. See
+  [issue #405](https://github.com/vespeneventures/foundry/issues/405), which
+  added `designer`'s `environment-conformance` gate
+  (`designer-environment-check`, `checkEnvironmentConformance`) and bumped
+  `designer` to `0.2.0`.
+
 ## [0.1.0] - 2026-08-21
 
 First release. This package is the publisher role, fused from two donors —

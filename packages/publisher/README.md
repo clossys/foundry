@@ -1129,7 +1129,7 @@ import-free of each other under one version.
 
 Node 20+. This package's own `package.json` declares runtime dependencies on
 `@vespeneventures/writer` (`^0.1.0`), `@vespeneventures/designer`
-(`^0.1.0`), and `@vespeneventures/controller` (`~0.8.0`) — of which this
+(`^0.2.0`), and `@vespeneventures/controller` (`~0.8.0`) — of which this
 package only imports the `./policy` subpath, `@vespeneventures/controller/policy`,
 never `controller`'s other exports. `writer` and `designer` are caret
 ranges (both fresh `0.x` role packages); `controller` stays a tilde range,
@@ -1140,11 +1140,12 @@ concern: a package manager resolves the whole graph regardless of what order
 packages are requested in, so none of this can be worked around by
 installing things in a particular sequence.
 
-A consumer whose own policy is to pin exact versions must pin `writer` and
-`designer` to a matching `0.1.x` patch release and `controller` to a
-matching `0.8.x` patch release — otherwise `publisher`'s declared ranges and
-the consumer's exact pin cannot both be satisfied, and the install fails
-with an unresolvable version conflict. `react` and `react-dom` are optional
+A consumer whose own policy is to pin exact versions must pin `writer` to a
+matching `0.1.x` patch release, `designer` to a matching `0.2.x` patch
+release, and `controller` to a matching `0.8.x` patch release — otherwise
+`publisher`'s declared ranges and the consumer's exact pin cannot both be
+satisfied, and the install fails with an unresolvable version conflict.
+`react` and `react-dom` are optional
 peer dependencies (`>=18`) required only by the `web` and `document`
 subpaths' renderers; `record` has no peer dependencies of its own.
 
@@ -1170,7 +1171,7 @@ That declaration does not reach an installer resolving against
 regardless of which subpaths are actually imported. A consumer rendering
 only email, print, or `record` output still has React and React DOM
 installed. This package's own `dependencies` on `@vespeneventures/designer`
-(`^0.1.0`) compounds it one level further: `designer` declares six of its
+(`^0.2.0`) compounds it one level further: `designer` declares six of its
 own optional peers the same way, and the same registry gap applies to them
 too, so a consumer of `publisher` inherits `designer`'s full peer set
 through the same mechanism, not just `publisher`'s own two. See
