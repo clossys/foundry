@@ -51,6 +51,10 @@
       "intendedVisibility": "public"
     },
     {
+      "name": "@vespeneventures/strategist",
+      "intendedVisibility": "public"
+    },
+    {
       "name": "@vespeneventures/strategy",
       "intendedVisibility": "public"
     },

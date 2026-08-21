@@ -340,6 +340,71 @@ stub protects nobody who is not already served by that.
 
 ---
 
+## 10. Recutting the expression surface into role-shaped packages
+
+Decision 9 recut the workspace's operation surface into six job-shaped
+packages. This is the same cut applied to the expression surface, and it rests
+on the same rule stated more precisely:
+
+> If the name is a thing rather than a doer, it is an artifact — and an
+> artifact belongs inside a role.
+
+`strategy`, `copy`, `ui`, `surface` and `ledger` are all things. None of them
+names who is accountable for anything, so none of them can be asked a question
+it alone must answer. Four roles can:
+
+| role | from | the question only it answers |
+| --- | --- | --- |
+| `strategist` | `strategy` | Is it true, and is it us? |
+| `writer` | `copy` | Is it well said? |
+| `designer` | `ui` | Is it well made? |
+| `publisher` | `surface` + `ledger` | Did we put it out to an audience, and can we prove what shipped? |
+
+### Why four and not five
+
+`publisher` is one package, not two. Composition without a record is
+unprovable, and every time the publisher runs, the record runs — there is no
+publish that legitimately skips it. That argues for one install and one
+version, which one package with a `./record` subpath delivers.
+
+The measurement that argued for two is accommodated rather than overturned:
+the record shares no code with the composer and does not import it, so the two
+import surfaces stay genuinely separate under one version. Fusing the
+*packaging* was never the same as fusing the *dependency graph*, and only the
+second would have cost anything.
+
+### What is renamed, and what deliberately is not
+
+The package is named for the job. The vocabulary inside it is not touched.
+`strategist` keeps `readStrategy`, `StrategyBundle` and a `strategy-dir`
+argument, because a role owns artifacts and renaming the role does not rename
+what it reasons about. A sweep that renamed the vocabulary too would have made
+the diff unreviewable while changing no behaviour.
+
+### No forwarding stubs
+
+Same conclusion as decision 9, for a reason that is decisive rather than
+stylistic. Each donor is deprecated-and-retained: still installable for a
+consumer already pinned to it, declared in
+`docs/contracts/package-retention.json` with a reason and a `reviewBy`, and
+carrying `forwardsToReplacement: false`.
+
+A stub would keep the old name importable. A supersession check could then
+never reach zero, so the forwarding layer would defeat the very gate built to
+prove the swap completed. A gate that cannot reach its own satisfied state is
+decorative.
+
+### What this decision does not do
+
+It does not migrate any consumer. Publishing a role-named package and
+deprecating its donor changes nothing in a consuming repository until that
+repository chooses to move. Adoption is separate, later, and sequenced against
+one constraint learned from the operation lane: **publish first, entitle
+second.** A consumer that entitles a role name before it is published, and
+whose entitled set is mostly renamed packages, gets a confident
+`unauthenticated` verdict — a credential diagnosis for what is really "not
+published yet".
+
 ## Settled
 
 **Author attribution — keep a real name in the `"author"` field.** A real
