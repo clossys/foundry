@@ -565,6 +565,39 @@ already use, tagged `"package-conventions"`, so a destination it shares with
 an account workspace or a third-party skill is a reported
 `DestinationCollisionError` like any other, never a silent last-writer-wins.
 
+### The single-directory-symlink to per-skill-links transition (#240)
+
+On the machine this replaces, `~/.agents/skills` (`composedSkillsRoot`) is
+today a single directory symlink into the repository being retired. This
+subpath's own composed shape is per-skill links (decision 2, above) — a
+different shape at the exact same path. #240's own reproduction records that
+transition crashing `applyInstallation` on a stale dangling link: the old
+symlink no longer resolves, and the generic engine's own recursive `mkdir`
+(called while preparing to write the first per-skill link) throws an opaque,
+unrelated `ENOENT` deep inside `apply.ts`'s `replace()` — never a clear,
+actionable finding. The non-dangling case is just as unsafe in the other
+direction: a symlink still pointing at a directory that still exists lets
+`mkdir` walk straight through it, silently writing the new per-skill link
+INSIDE the old repository's tree instead of into a real, machine-owned
+directory.
+
+`./skills-manifest.ts`'s `buildSkillsManifest` closes both cases by declaring
+`composedSkillsRoot` itself as a `privateDirectories` entry (`create: true`)
+on every source's manifest, ahead of that source's per-skill `links` — no new
+engine mechanism, reusing the existing safety `apply.ts`'s
+`applyPrivateDirectory` and `verify.ts`'s `verifyPrivateDirectory` already
+enforce for every other private directory this engine manages: a destination
+that is a symlink (dangling or not) is refused with a named, actionable error
+before anything is touched, and multiple sources declaring the identical
+private directory is not a collision — `composeInstallationPlans` already
+exempts `private-directory` operations from collision detection (see "Multi-source
+composition," above), which is exactly the shape needed here since every
+account, third-party, and class-one source shares the one composed root.
+`./skills-manifest.test.ts` reproduces the exact transition #240 recorded —
+a dangling directory symlink at `composedSkillsRoot`, replaced by per-skill
+links — and asserts it fails with a named error, leaves the stale symlink
+completely untouched, and never crashes.
+
 ### Discovery: never a hard-coded list, never a silent partial machine
 
 `./discovery.ts`'s `discoverAccountWorkspaces` takes a root from the caller or

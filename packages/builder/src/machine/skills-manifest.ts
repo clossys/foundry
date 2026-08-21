@@ -20,6 +20,53 @@ import type { Manifest } from "../types.js";
  * entry with destination `<composedSkillsRoot>/foo`, and composing them
  * throws `DestinationCollisionError` for free, with both sources named. No
  * new collision logic was written for this module because none was needed.
+ *
+ * THE SHAPE TRANSITION, AND WHY `composedSkillsRoot` IS ALSO A `privateDirectories`
+ * ENTRY NOW (#240's own reproduction, closing the retirement #410 tracks)
+ * -----------------------------------------------------------------------
+ * On the machine this replaces, `composedSkillsRoot` is today a SINGLE
+ * DIRECTORY SYMLINK into the repository being retired — decision 2 above is
+ * a different shape (per-skill links) at that exact same path. #240
+ * reproduced what happens when the old symlink is left in place and per-skill
+ * links are planned into it: `../apply.ts`'s `replace()` calls the generic
+ * filesystem port's recursive `mkdir` on `dirname(destination)` —
+ * `composedSkillsRoot` itself — while preparing to write the FIRST per-skill
+ * link, and a real filesystem throws an opaque `ENOENT` (verified against
+ * real `mkdirSync(..., {recursive:true})` behavior: a dangling directory
+ * symlink at that path is neither absent nor a directory it can enter) deep
+ * inside machinery that has nothing to do with what actually went wrong. The
+ * same crash — differently but just as opaquely — hits the NON-dangling case
+ * too: a symlink still pointing at a directory that still exists lets
+ * `mkdir` silently succeed by walking straight through it, so a per-skill
+ * link would be written INSIDE the old repository's tree instead of into a
+ * real, machine-owned directory. Neither outcome is "detected and reported."
+ *
+ * Declaring `composedSkillsRoot` itself as a `privateDirectories` entry
+ * (`create: true`) on every source's manifest closes both cases WITHOUT a new
+ * engine mechanism: `../apply.ts`'s `applyPrivateDirectory` and
+ * `../verify.ts`'s `verifyPrivateDirectory` already refuse a destination that
+ * exists as anything other than a real, non-symlinked directory — `lstat`
+ * (which never follows the final path component) sees the symlink itself
+ * regardless of whether its target exists, so this check fires identically
+ * for the dangling and the still-resolving case. Because `applyInstallation`
+ * runs its private-directory phase BEFORE any link phase (`../apply.ts`'s
+ * own documented ordering), this refusal happens before the first per-skill
+ * link is even attempted — the stale symlink is left completely untouched,
+ * never silently overwritten, and the failure a caller sees is one clear,
+ * named `Error` instead of the crash #240 reproduced. `verifyMachine`'s
+ * verify-only path (which never applies) reports the identical situation as
+ * a normal `install/private-directory-not-a-directory` finding, no throw at
+ * all — see `machine-layer.ts` and `report.test.ts` for that path exercised
+ * end to end.
+ *
+ * Every source (each account workspace, third-party, and class one's own
+ * conventions once class one starts using this composed root too) declares
+ * this SAME `composedSkillsRoot` path independently. That is not a conflict:
+ * `../composition.ts`'s `composeInstallationPlans` already exempts
+ * `private-directory` operations from its collision check (see that module's
+ * own doc comment and "Multi-source composition" in the README) — ensuring a
+ * directory exists with a fixed mode is idempotent and non-destructive
+ * regardless of which source asks, or how many do.
  */
 
 const SKILL_NAME = /^[^/\\]+$/;
@@ -52,6 +99,10 @@ export function buildSkillsManifest(
       .map((name) => ({ source: name, destination: join(options.composedSkillsRoot, name) })),
     copies: [],
     managedBlocks: [],
-    privateDirectories: [],
+    // See this module's header: this is what turns a stale symlink at
+    // `composedSkillsRoot` — the pre-migration single-directory-symlink shape
+    // — into a clear, reported refusal instead of a crash or a silent write
+    // through the old link.
+    privateDirectories: [{ path: options.composedSkillsRoot, create: true }],
   });
 }

@@ -188,7 +188,10 @@ describe("verifyMachine — idempotent verification against an applied machine",
       fs,
       { backupRoot: `${home}/.config-backups/run-1` },
     );
-    expect(applied.changed).toHaveLength(1);
+    // Two operations, not one: the private-directory guard on
+    // composedSkillsRoot itself (#240's migration-hazard fix, see
+    // skills-manifest.ts) plus the one skill link.
+    expect(applied.changed).toHaveLength(2);
 
     const afterFirstApply = verifyMachine(discovery, fs, inputs);
     expect(afterFirstApply.overall.verdict).toBe("satisfied");
@@ -201,7 +204,7 @@ describe("verifyMachine — idempotent verification against an applied machine",
       { backupRoot: `${home}/.config-backups/run-2` },
     );
     expect(reapplied.changed).toHaveLength(0);
-    expect(reapplied.unchanged).toHaveLength(1);
+    expect(reapplied.unchanged).toHaveLength(2);
 
     const afterSecondApply = verifyMachine(discovery, fs, inputs);
     expect(afterSecondApply.overall.verdict).toBe("satisfied");
