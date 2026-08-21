@@ -5,6 +5,30 @@ All notable changes to `@vespeneventures/builder` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-08-21
+
+### Changed
+
+- **BREAKING: `createVercelInspector().inspect` and `createRenderInspector().inspect`
+  no longer throw on a malformed or unreachable provider response (#392).**
+  A `network` transport failure and an `invalid-response` body that does not
+  parse into the shape the provider's own contract promises are not a
+  deployment that failed — they are a state the inspector could not form an
+  opinion about. Both now resolve to a discriminated
+  `VercelInspectionResult` / `RenderInspectionResult`: the existing success
+  shape gains a `kind: "inspected"` tag, and a new `kind: "indeterminate"`
+  variant carries a machine-readable `reason` (`"network"` |
+  `"invalid-response"`) and a static `detail` string, mirroring the fold
+  `@vespeneventures/integrator`'s `resolveReachability` already applies to
+  the identical ambiguity. `unauthorized`, `rate-limited`, and an
+  unrecognized `http` status still throw — the provider responded
+  coherently there, which is a real finding, not an unreadable one — and so
+  do `invalid-input`, `invalid-base-url`, `credential-unavailable`, and
+  `aborted`, none of which are about what a provider said. A caller
+  destructuring the old bare success shape, or narrowing on `.reject`s for a
+  `network` or `invalid-response` kind, must update for the new
+  discriminant.
+
 ## [0.5.1] - 2026-08-21
 
 ### Changed

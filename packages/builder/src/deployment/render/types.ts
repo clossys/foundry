@@ -24,11 +24,34 @@ export type RenderDomainCheck = {
 };
 
 export type RenderInspection = {
+  readonly kind: "inspected";
   readonly service: "present" | "missing";
   readonly deployment: RenderDeploymentState;
   readonly serviceHealth: "healthy" | "unhealthy" | "unknown";
   readonly domains: readonly RenderDomainCheck[];
 };
+
+/**
+ * Why `inspect` could not form an opinion at all -- a response it received
+ * but could not parse into the shape it expects (`invalid-response`), or
+ * never received a response for at all (`network`). Distinct from a
+ * `RenderInspectionError` the provider's own status code explains
+ * (`unauthorized`, `rate-limited`, an unrecognized `http` status): those are
+ * the provider telling the caller something real, and stay thrown rather
+ * than folded in here. See `inspector.ts`'s own header for the full
+ * reasoning, mirrored from `@vespeneventures/integrator`'s
+ * `resolveReachability`.
+ */
+export type RenderInspectionIndeterminateReason = "network" | "invalid-response";
+
+export type RenderInspectionIndeterminate = {
+  readonly kind: "indeterminate";
+  readonly reason: RenderInspectionIndeterminateReason;
+  readonly detail?: string;
+};
+
+/** What `inspect` actually resolves to. Never a bare `RenderInspection` -- see `RenderInspectionIndeterminate`'s doc comment. */
+export type RenderInspectionResult = RenderInspection | RenderInspectionIndeterminate;
 
 export type RenderInspectionErrorKind =
   | "credential-unavailable"
