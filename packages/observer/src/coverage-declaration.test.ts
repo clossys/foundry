@@ -8,7 +8,7 @@ import {
 
 const validRaw = {
   schemaVersion: COVERAGE_DECLARATION_SCHEMA_VERSION,
-  repository: "example-repo",
+  repository: "example-repository-id",
   declaredAbsences: [{ package: "@vespeneventures/observer", reason: "this repository ships no telemetry lane" }],
 };
 
@@ -105,7 +105,7 @@ describe("parseCoverageDeclaration", () => {
     const result = parseCoverageDeclaration(validRaw);
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.declaration.repository).toBe("example-repo");
+      expect(result.declaration.repository).toBe("example-repository-id");
       expect(result.declaration.declaredAbsences).toHaveLength(1);
     }
   });
@@ -122,7 +122,7 @@ describe("parseCoverageDeclaration", () => {
 describe("writeCoverageDeclaration", () => {
   it("serializes a valid declaration that round-trips through parseCoverageDeclaration", () => {
     const json = writeCoverageDeclaration({
-      repository: "example-repo",
+      repository: "example-repository-id",
       declaredAbsences: [{ package: "@vespeneventures/observer", reason: "no telemetry lane here" }],
     });
     const parsed = parseCoverageDeclaration(JSON.parse(json));
@@ -130,7 +130,7 @@ describe("writeCoverageDeclaration", () => {
   });
 
   it("serializes an empty declaredAbsences list", () => {
-    const json = writeCoverageDeclaration({ repository: "example-repo", declaredAbsences: [] });
+    const json = writeCoverageDeclaration({ repository: "example-repository-id", declaredAbsences: [] });
     const parsed = parseCoverageDeclaration(JSON.parse(json));
     expect(parsed.ok).toBe(true);
     if (parsed.ok) expect(parsed.declaration.declaredAbsences).toEqual([]);
@@ -139,7 +139,7 @@ describe("writeCoverageDeclaration", () => {
   it("throws when asked to serialize an invalid declaration (empty reason)", () => {
     expect(() =>
       writeCoverageDeclaration({
-        repository: "example-repo",
+        repository: "example-repository-id",
         declaredAbsences: [{ package: "@vespeneventures/observer", reason: "" }],
       }),
     ).toThrow(/absence-missing-reason/);
@@ -148,7 +148,7 @@ describe("writeCoverageDeclaration", () => {
   it("throws when asked to serialize a declaration with a duplicated package", () => {
     expect(() =>
       writeCoverageDeclaration({
-        repository: "example-repo",
+        repository: "example-repository-id",
         declaredAbsences: [
           { package: "@vespeneventures/observer", reason: "a" },
           { package: "@vespeneventures/observer", reason: "b" },

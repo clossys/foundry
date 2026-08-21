@@ -401,15 +401,21 @@ const unobservedSurface = computeUnobservedSurface(declaredSubjects, presenceRea
 | `CoverageDeclaration` | type | One repository's own declaration: `schemaVersion`, `repository`, `declaredAbsences`. |
 | `CoverageDeclarationFinding` | type | One problem found validating a raw declaration payload: `rule`, `message`. |
 | `validateCoverageDeclarationShape(raw)` | function | Offline validation of an untrusted declaration payload. Never throws. |
-| `parseCoverageDeclaration(raw)` | function | Validates and narrows `raw`, or returns findings. Never throws. |
-| `writeCoverageDeclaration(input)` | function | Builds and serializes a well-formed declaration. Throws on an invalid one. |
+| `ParsedCoverageDeclaration` | type | `parseCoverageDeclaration`'s success shape: `{ ok: true, declaration }`. |
+| `InvalidCoverageDeclaration` | type | `parseCoverageDeclaration`'s failure shape: `{ ok: false, findings }`. |
+| `parseCoverageDeclaration(raw)` | function | Validates and narrows `raw` to a `ParsedCoverageDeclaration`, or returns an `InvalidCoverageDeclaration`. Never throws. |
+| `WriteCoverageDeclarationInput` | type | `writeCoverageDeclaration`'s input: `repository`, `declaredAbsences`. |
+| `writeCoverageDeclaration(input)` | function | Builds and serializes a well-formed declaration from a `WriteCoverageDeclarationInput`. Throws on an invalid one. |
 | `CoverageCellState` | type | `"installed" \| "declared-absent" \| "unclassified"`. |
 | `FleetInstalledPackage` / `FleetInstalledInventory` | type | Structural match for `@vespeneventures/integrator`'s `InstalledPackage`/`InstalledInventory`, not imported. |
 | `UNCLASSIFIED_REASONS` / `UnclassifiedReason` | value / type | The finite set of reasons a cell can be `unclassified` for. |
 | `CoverageCell` | type | `InstalledCoverageCell \| DeclaredAbsentCoverageCell \| UnclassifiedCoverageCell` — one graded cell. |
 | `FleetCoverageContradiction` | type | A package both installed and declared-absent for the same repository. |
-| `FleetRepositoryCoverageInput` / `FleetCoverageInput` | type | `gradeFleetCoverage`'s input: the package catalog and every repository's raw declaration + caller-supplied inventory. |
-| `FleetCoverageVerdict` / `FleetCoverageReport` | type | The aggregate `satisfied`/`violated`/`indeterminate` verdict, and the full graded report. |
+| `FleetRepositoryCoverageInput` | type | One repository's contribution to a grading run: its id, raw declaration payload, and caller-supplied installed inventory. |
+| `FleetCoverageInput` | type | `gradeFleetCoverage`'s input: the package catalog and every `FleetRepositoryCoverageInput`. |
+| `CoverageCellCounts` | type | How many cells resolved to each of the three states: `installed`, `declaredAbsent`, `unclassified`. |
+| `FleetCoverageVerdict` | type | The aggregate `satisfied` / `violated` / `indeterminate` verdict for a whole graded matrix. |
+| `FleetCoverageReport` | type | The full graded report: every `CoverageCell`, its `CoverageCellCounts`, contradictions, and the `FleetCoverageVerdict`. |
 | `gradeFleetCoverage(input)` | function | Grades one fleet's coverage matrix. Throws only on a duplicate/empty identifier. |
 | `fleetCoverageVerdictToExitCode(result)` | function | `0` satisfied, `1` violated, `2` indeterminate. |
 
