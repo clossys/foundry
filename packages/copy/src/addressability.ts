@@ -69,7 +69,18 @@
  *    belongs: out of copy governance entirely. A literal-valued occurrence
  *    of one of the four, carrying at least one letter, is ALWAYS a
  *    violation — there is no citation or registry-text-match escape hatch
- *    here (see this file's top comment for why).
+ *    here (see this file's top comment for why) — UNLESS the assignment
+ *    this gate re-derived is itself a DESTRUCTURING-PATTERN DEFAULT or a
+ *    plain (non-destructured) PARAMETER DEFAULT (`{ "aria-label":
+ *    ariaLabel = "Pagination" }`, `{ placeholder = "Search" }`,
+ *    `function f(alt = "...")`), never a JSX attribute at all — see
+ *    `isDestructuringOrParameterDefault`. A default value in a
+ *    destructuring pattern is exactly the property this gate exists to
+ *    protect: the CONSUMER can override it, so the component's own source
+ *    does not lock the sentence in the way a hardcoded JSX attribute
+ *    does. Reporting one as a violation would not just be a false
+ *    positive — it would INVERT the verdict on a construct that is
+ *    already correctly addressable.
  *
  * 3. EVERYTHING ELSE THIS GATE CANNOT CONFIDENTLY CLASSIFY — a template
  *    literal (in ANY position, including one of the four attributes above:
@@ -79,13 +90,19 @@
  *    KEYS, never values — `{ tooltip: "Explain this" }`'s `"Explain
  *    this"` is a default-included candidate with no attribute name at
  *    all), or a plain string in a prop that is none of the four (a custom
- *    `tooltip`, a bare variable assignment, ...). NEVER silently treated
- *    as clean, and NEVER treated as a violation either — reported as
- *    `unchecked`, the same discipline `scan.ts`'s own `UncheckedItem` and
- *    `checkCopyTraceability`'s `unchecked` passthrough already hold JSX
- *    parse ambiguities to. A measurement may round an unknown down to "probably
- *    fine"; a gate may not — that is the whole reason this file exists
- *    rather than a grep for `aria-label="`.
+ *    `tooltip`, a bare variable assignment, ...) — UNLESS that string is
+ *    itself shaped like a CSS/Tailwind utility class LIST (`"border-t
+ *    border-line-base pt-xs"`, `"grid-cols-1 tablet:grid-cols-2"`), which
+ *    is definitively not prose and is excluded here for the same reason
+ *    `scan.ts` already excludes that shape when it DOES have an attribute
+ *    name to key off (a literal `className="..."` value) — see
+ *    `looksLikeUtilityClassList`. Everything else in this category is
+ *    NEVER silently treated as clean, and NEVER treated as a violation
+ *    either — reported as `unchecked`, the same discipline `scan.ts`'s own
+ *    `UncheckedItem` and `checkCopyTraceability`'s `unchecked` passthrough
+ *    already hold JSX parse ambiguities to. A measurement may round an
+ *    unknown down to "probably fine"; a gate may not — that is the whole
+ *    reason this file exists rather than a grep for `aria-label="`.
  *
  * `scan.ts`'s own exclusions for genuinely non-user-facing literals
  * (`className`, `data-testid`, an import specifier, a `cx(...)` argument, a
@@ -332,6 +349,111 @@ function attributeNameFor(lines: string[], line: number, raw: string): string | 
   return match?.[1];
 }
 
+/**
+ * How many lines of LEADING context `isDestructuringOrParameterDefault`
+ * looks back through to find the `{`/`(`/`,` that precedes a destructured
+ * property or parameter — each property in a real multi-line destructure
+ * (see `Pagination.tsx`'s own `PaginationProps` destructure) is normally
+ * its own line, so the delimiter is usually one line up, on the PRIOR
+ * property's trailing comma. A small, bounded window, not an attempt to
+ * parse the whole enclosing pattern.
+ */
+const DESTRUCTURING_CONTEXT_LINES = 5;
+
+/**
+ * `{`/`(` (the pattern's or parameter list's own opening delimiter) or a
+ * bare `,` (separating this property/parameter from the previous one),
+ * optionally preceded by a rename (`identifier:` or `"quoted-key":`, for
+ * `{ "aria-label": ariaLabel = "..." }`), then the bound identifier
+ * itself and `=` — anchored at the END of the search text, matching
+ * exactly what precedes a destructuring-pattern DEFAULT VALUE or a plain
+ * (non-destructured) parameter default. Deliberately does NOT match
+ * through any OTHER non-whitespace token: if something this narrow
+ * heuristic cannot account for sits between the delimiter and the
+ * identifier, the match simply fails and `isDestructuringOrParameterDefault`
+ * returns `false`, falling back to the pre-existing (JSX-attribute)
+ * assumption rather than guessing.
+ */
+const DESTRUCTURING_OR_PARAMETER_DEFAULT_RE =
+  /[{(,]\s*(?:(?:"[^"]*"|'[^']*'|[A-Za-z_$][A-Za-z0-9_$]*)\s*:\s*)?[A-Za-z_$][A-Za-z0-9_$-]*\s*=\s*\{?\s*$/;
+
+/**
+ * Whether the `identifier =` assignment `attributeNameFor` found
+ * immediately before `raw` is actually a DESTRUCTURING-PATTERN DEFAULT
+ * (`{ label = "Save" }`, or renamed `{ "aria-label": ariaLabel = "Save"
+ * }`) or a plain, non-destructured PARAMETER DEFAULT (`function
+ * f(ariaLabel = "Save")`) — never a JSX attribute assignment at all
+ * (`aria-label="Save"`). `attributeNameFor`'s own regex cannot tell these
+ * apart on its own: both are exactly `identifier = "..."` in the raw
+ * source text it looks at. They ARE distinguishable, though, by what
+ * immediately precedes the identifier once an optional rename is skipped
+ * over: a JSX attribute is always preceded by a tag name, another
+ * attribute's already-finished value, or `<` itself — NEVER by `{`, `(`,
+ * or `,`. A destructuring pattern's own property, or a parameter list's
+ * own argument, is ALWAYS preceded by exactly one of those three (`{`/`(`
+ * for the first property/argument, `,` for every one after) — JSX
+ * attributes, by contrast, are never comma-separated, and neither a
+ * pattern nor a parameter list opens with `<`. See
+ * `DESTRUCTURING_OR_PARAMETER_DEFAULT_RE`'s own doc comment for exactly
+ * what is and is not matched.
+ */
+function isDestructuringOrParameterDefault(lines: string[], line: number, raw: string): boolean {
+  const lineText = lines[line - 1];
+  if (lineText === undefined) return false;
+  const idx = lineText.indexOf(raw);
+  if (idx === -1) return false;
+  const start = Math.max(0, line - 1 - DESTRUCTURING_CONTEXT_LINES);
+  const context = [...lines.slice(start, line - 1), lineText.slice(0, idx)].join("\n");
+  return DESTRUCTURING_OR_PARAMETER_DEFAULT_RE.test(context);
+}
+
+/**
+ * Each token in a CSS/Tailwind-shaped utility class LIST: an optional
+ * leading `-` (negative utilities, e.g. `-mt-2`), a lowercase
+ * alphanumeric run, then one or more `-`/`:`/`/`-separated lowercase
+ * alphanumeric segments — `border-t`, `border-line-base`, `pt-xs`,
+ * `grid-cols-1`, `tablet:grid-cols-2` all match; a bare English word
+ * (`flex`, `hidden`, `low`, `open`) does NOT, because it has no separated
+ * segment at all (the trailing group requires at least one repetition).
+ * That asymmetry is deliberate — see `looksLikeUtilityClassList`'s own
+ * doc comment.
+ */
+const CLASS_TOKEN_RE = /^-?[a-z0-9]+(?:[:/-][a-z0-9.]+)+$/;
+
+/**
+ * Whether `raw` (a plain string literal's own raw source text, quotes
+ * included — never a template literal, see this function's call site)
+ * is shaped like a space-separated list of CSS/Tailwind utility class
+ * names rather than prose. `scan.ts` already excludes this exact shape
+ * when the literal sits in an actual `className` ATTRIBUTE (see this
+ * file's top doc comment, "THREE POSITIONS"); this catches the SAME
+ * shape one level removed — a class list assigned to a variable or
+ * sitting in an object-literal value (`Faq.tsx`'s `"border-t
+ * border-line-base pt-xs"`, `FieldGroup.tsx`'s `"grid-cols-1
+ * tablet:grid-cols-2"`) — which has no attribute name for `scan.ts`'s own
+ * exclusion to key off, and so reaches this file as an ordinary "string"
+ * candidate instead.
+ *
+ * Deliberately conservative: EVERY token must match `CLASS_TOKEN_RE`,
+ * which requires at least one `-`/`:`/`/`-separated segment — a shape a
+ * hand-typed English sentence does not reliably have across every one of
+ * its words, but a Tailwind utility name always does. A bare,
+ * separator-free utility class (`"flex"`, `"hidden"`) mixed into such a
+ * list still fails this check and is left `unchecked` rather than risk a
+ * real short English word (`"low"`, `"open"`) being swept in as
+ * definitively clean — an intentional under-classification, not an
+ * oversight; see this file's own test suite.
+ */
+function looksLikeUtilityClassList(raw: string): boolean {
+  const quote = raw[0];
+  if (quote !== '"' && quote !== "'") return false; // a template literal never reaches this — see this function's call site
+  const text = raw.slice(1, -1).trim();
+  if (text.length === 0 || text.length > 300) return false;
+  const tokens = text.split(/\s+/);
+  if (tokens.length < 2 || tokens.length > 40) return false;
+  return tokens.every((t) => t.length <= 60 && CLASS_TOKEN_RE.test(t));
+}
+
 interface AddressabilityExtractResult {
   violations: AddressabilityViolation[];
   unchecked: AddressabilityUncheckedItem[];
@@ -394,6 +516,7 @@ export function extractAddressabilityCandidates(content: string, filePath: strin
       continue;
     }
     if (normalizeAttrName(attrName) !== "arialabel") continue; // a different aria-*/data-* attribute — out of this gate's scope, same as scan.ts's own traceability gate
+    if (isDestructuringOrParameterDefault(lines, e.line, e.raw)) continue; // a default value the consumer can override, not a JSX attribute at all — see isDestructuringOrParameterDefault
     if (e.raw.startsWith("`")) {
       // A template literal in the ONE attribute this gate DOES track —
       // could carry an interpolated copy id or genuine inline prose, and
@@ -427,15 +550,22 @@ export function extractAddressabilityCandidates(content: string, filePath: strin
     // documents that this loop is deliberately NOT the aria-label path.
     const attribute = (["placeholder", "alt", "title"] as const).find((n) => n === normalized);
     if (!attribute) continue;
+    // Handled here either way (violation OR a default value excluded
+    // below) — `claimed` marks it done so position 3 below never
+    // re-examines it and reports it as unclassified instead.
     claimed.add(`${c.line}::${c.raw}`);
+    if (isDestructuringOrParameterDefault(lines, c.line, c.raw)) continue; // a default value the consumer can override, not a JSX attribute at all — see isDestructuringOrParameterDefault
     violations.push({ file: c.file, line: c.line, position: "user-facing-attribute", attribute, raw: c.raw });
   }
 
   // ---- position 3: everything else scan.ts kept as a real candidate —
-  // never silently treated as clean, never treated as a violation either.
+  // never silently treated as clean, never treated as a violation either
+  // — except a plain string shaped like a utility class LIST, which is
+  // definitively not prose (see looksLikeUtilityClassList).
   for (const c of candidates) {
     if (c.kind === "jsx-text") continue; // already position 1
     if (c.kind === "string" && claimed.has(`${c.line}::${c.raw}`)) continue; // already position 2
+    if (c.kind === "string" && looksLikeUtilityClassList(c.raw)) continue; // a class-name list, not prose
     unchecked.push({
       file: c.file,
       line: c.line,

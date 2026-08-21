@@ -407,13 +407,23 @@ Three positions are classified:
    `alt`, `title` — carry prose a person reads and are NOT text nodes; a
    scanner that only understands text nodes reports zero on a component
    whose entire user-facing surface is `<input aria-label="..." />`.
-   Always a violation when the value is literal prose.
+   A violation when the value is literal prose ON A JSX ELEMENT — but NOT
+   when the same shape is actually a destructuring-pattern default or a
+   plain parameter default (`{ "aria-label": ariaLabel = "Pagination" }`,
+   `{ placeholder = "Search" }`, `function f(alt = "...")`): the consumer
+   can override a default, so the component's own source does not lock
+   the sentence in the way a hardcoded JSX attribute does, and flagging
+   one would invert the verdict on an already-addressable construct.
 3. **Everything else** — a template literal (in any position, including
    one of the four attributes above), an object/array literal value, or a
    prop that is none of the four — this gate cannot confidently tell
    whether it is resolved-through-an-id or genuinely non-user-facing, so it
    is reported as `unchecked` (indeterminate), never silently treated as
-   clean.
+   clean — UNLESS the string is itself shaped like a CSS/Tailwind utility
+   class list (`"border-t border-line-base pt-xs"`), which is definitively
+   not prose and is excluded outright, the same way `scan.ts` already
+   excludes that shape when it has an actual `className` attribute name to
+   key off.
 
 `AddressabilityGateResult.verdict` is `"indeterminate"` whenever `unchecked`
 is non-empty, zero components were scanned, or the tree could not be read —
