@@ -1,6 +1,6 @@
 {
   "name": "@vespeneventures/builder",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -43,6 +43,7 @@
     "!src/**/*.test.ts",
     "!src/**/*.test-helper.ts",
     "documents",
+    "CHANGELOG.md",
     "README.md",
     "LICENSE"
   ],

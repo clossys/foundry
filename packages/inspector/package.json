@@ -1,6 +1,6 @@
 {
   "name": "@vespeneventures/inspector",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -26,6 +26,7 @@
     "src",
     "!src/**/*.test.ts",
     "documents",
+    "CHANGELOG.md",
     "README.md",
     "LICENSE"
   ],
