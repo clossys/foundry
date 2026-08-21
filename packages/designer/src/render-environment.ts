@@ -16,6 +16,21 @@
  * elsewhere" note) is expected to cross-check this declaration against
  * reality, not trust it blindly; this file is only the claim being
  * checked, kept in one place so a checker has something to check against.
+ * Issue #358 places that REAL resolver in `builder`, shared with a second
+ * declaration shape (layering-seam conformance) — a consumer of this
+ * package gets that verification once `builder` ships it, not from here.
+ *
+ * WHAT ISSUE #405 CLOSES — NARROWER THAN THE FULL RESOLVER ABOVE: before
+ * it, nothing verified even that this record stayed in step with the
+ * MANIFEST it describes — a subpath could be added to (or removed from)
+ * `package.json#exports` with no matching edit here, or vice versa, and
+ * nothing would notice. `environment-conformance.ts`'s own
+ * `checkEnvironmentConformance` is that declaration-consistency check —
+ * it verifies this record's key set against `package.json#exports`' real
+ * subpath set, in both directions, but performs NO module resolution of
+ * its own; see that module's own header for exactly what it does and
+ * does not verify, its full ternary, and the adversarial proof
+ * (`environment-conformance.adversarial.test.ts`) it is built to pass.
  *
  * `"server-safe"` means: importing this subpath's compiled entry under
  * React's `react-server` module-resolution condition does not throw.

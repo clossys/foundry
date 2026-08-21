@@ -113,7 +113,7 @@ smallest stable subpath that owns what you need:
 | `@vespeneventures/designer/atoms`, `/blocks`, `/shell`, `/charts` | Reusable React visual primitives. |
 | `@vespeneventures/designer/atoms/server`, `/blocks/server`, `/shell/server`, `/charts/server`, `/theme/server` | The server-safe subset of each sibling subpath, importable from a React Server Component. See "Server Components" below. |
 | `@vespeneventures/designer/theme` | `getThemeInitScript`, `ThemeProvider`/`useTheme`, `ThemeToggle` — the runtime half of theming. Not to be confused with the CSS `/theme.css` subpath above. |
-| `@vespeneventures/designer/gate` | Token-purity scanner and gate. |
+| `@vespeneventures/designer/gate` | Token-purity scanner/gate and the environment-conformance gate (`checkEnvironmentConformance`). |
 | `@vespeneventures/designer/render-environment` | `RENDER_ENVIRONMENT` — a plain data declaration of every subpath's render environment (`"server-safe"` \| `"client-only"`). See "Server Components" below. |
 
 `ui` never exports page views, routes, metadata, strategy facts, or copy.
@@ -283,6 +283,14 @@ entries, which carry no JavaScript execution context and are always
 separate checker package, resolving a real module graph under a declared
 export condition) reads it to know which subpath to reach for without
 re-deriving the same probe.
+
+This record's own **internal consistency** — that its key set matches
+`package.json#exports`' real subpath set, in both directions — is now
+verified on every run by the environment-conformance gate; see
+"Environment-declaration-consistency gate" below. That gate does **not**
+verify the claim itself (that a `"server-safe"` subpath truly resolves
+safely under the `react-server` condition) — read that section before
+treating a passing gate as more than it is.
 
 ### Framework-portable components, without Tailwind
 
@@ -4026,6 +4034,16 @@ three tests are worth calling out specifically:
   this change added nothing that regresses), and an exhaustiveness check
   that `RENDER_ENVIRONMENT` covers every real subpath and declares no
   phantom one, in both directions.
+- **`environment-conformance.test.ts`, `environment-conformance-worker.test.ts`,
+  and `environment-conformance-cli.test.ts`** cover
+  `checkEnvironmentConformance` and its CLI directly: every one of the
+  ternary's three states, both violation directions (independently and
+  together in the same run), and a real-package integration test against
+  this package's own compiled `dist/`. **`environment-conformance.adversarial.test.ts`**
+  is the separating proof described in "Environment-declaration-
+  consistency gate" below: the real, compiled CLI and a bare count
+  comparison, run over the identical renamed-subpath fixture in the same
+  test, asserted to disagree.
 
 ## Token-purity gate (`@vespeneventures/designer/gate`, `designer-token-check`)
 
@@ -4215,6 +4233,81 @@ pair list to force a green run. Dark mode's own categorical steps all
 clear 3:1 on their own and carry no exception at all — if a future
 palette edit ever moved one of dark's slots under the floor, it would
 report as a genuine, unrelieved `"below-threshold"` finding.
+
+## Environment-declaration-consistency gate (`@vespeneventures/designer/gate`, `designer-environment-check`)
+
+"Server Components" above documents `RENDER_ENVIRONMENT` — a plain
+`Record<string, "server-safe" | "client-only">`, one entry per
+`package.json#exports` subpath, hand-written by a human after running each
+`*/server.ts` entry through a manual `node --conditions=react-server`
+probe (see each `*/server.ts` file's own header). Before this gate, nothing
+ever verified this record stayed in step with the MANIFEST it describes: a
+subpath could be added to (or removed or renamed in)
+`package.json#exports` with no matching edit here, or vice versa, and
+nothing would notice. This gate closes
+[issue #405](https://github.com/vespeneventures/foundry/issues/405),
+narrowed by that issue's own correction comment once
+[issue #358](https://github.com/vespeneventures/foundry/issues/358)
+routed the FULL verification elsewhere (see the next paragraph).
+
+**What this gate checks, precisely, and what it deliberately does not —
+read both halves, because a `"satisfied"` verdict is worthless if
+mistaken for the other one.** It checks that `RENDER_ENVIRONMENT`'s own
+key set and `package.json#exports`' own subpath set are the SAME SET, in
+both directions — nothing more. A subpath present in `package.json#exports`
+with no entry in `RENDER_ENVIRONMENT` is *undeclared*; a subpath present in
+`RENDER_ENVIRONMENT` with no matching real export is a *stale declaration*.
+Two different defects, two different fixes, never collapsed into one
+"mismatch." **It performs NO module resolution and walks no module
+graph.** It never imports, requires, or inspects the compiled entry a
+subpath points to — only the two DECLARATIONS (the manifest's `exports`
+map and `RENDER_ENVIRONMENT`) against each other. A `"satisfied"` verdict
+means the declaration is internally consistent with the manifest; **it
+says nothing about whether the declaration is true of the compiled
+output** — whether a subpath marked `"server-safe"` actually resolves
+safely under the `react-server` export condition is a genuinely different
+capability (real module-graph resolution under a declared export
+condition), and [issue #358](https://github.com/vespeneventures/foundry/issues/358)
+places that resolver in `builder`, shared with a second declaration shape
+(layering-seam conformance), specifically so the same resolver serves both
+rather than being built twice. This gate is not a smaller version of that
+capability and does not pretend to be one.
+
+**Why a bare count comparison is the wrong tool, named explicitly rather
+than left implicit.** The obvious-looking cheaper check is: count
+`RENDER_ENVIRONMENT`'s keys, count `package.json#exports`' subpaths, and
+call it satisfied when the counts match. A fixture where one subpath is
+RENAMED — never added, never removed — keeps both counts identical while
+the real SETS diverge: the new name is undeclared and the old name is now
+a stale declaration. `environment-conformance.adversarial.test.ts` proves
+the gap directly, spawning the real compiled CLI by its compiled path
+(the same way this repository invokes every gate) against a renamed-
+subpath fixture: this gate exits `1`, while a bare count comparison, run
+over the IDENTICAL fixture in the same test, exits `0`.
+
+- **`checkEnvironmentConformance(packageRoot)`** (from
+  `@vespeneventures/designer/gate`, async) — loads `packageRoot`'s
+  `package.json#exports` subpath set and `dist/render-environment.js`'s
+  `RENDER_ENVIRONMENT` key set (via a real `node` subprocess — see
+  `environment-conformance-worker.ts`'s own header for why an in-process
+  dynamic `import()` cannot stand in for this under `vitest`) and compares
+  the two sets, in both directions. Returns issue #405's own three-state
+  ternary, never a boolean:
+  - `"satisfied"` — the two sets are identical, over at least one subpath
+    (never "no error was thrown" — `agreedSubpaths` names every subpath
+    both sides agree exists).
+  - `"violated"` — `violations` lists every `undeclared-subpath` (a real
+    export with no declaration) and every `stale-declaration` (a
+    declaration with no matching real export), not just the first, and
+    each violation names its own direction.
+  - `"indeterminate"` — `indeterminateReasons` gives a machine-readable
+    reason: the manifest is missing or unparseable, the manifest declares
+    no (or an empty) `exports` map, `RENDER_ENVIRONMENT` is missing (`dist/`
+    was never built) or does not parse into a plain string-keyed object,
+    or the declaration-loading subprocess itself failed.
+- **`designer-environment-check [package-dir]`** — the installable CLI,
+  exit `0`/`1`/`2` matching `"satisfied"`/`"violated"`/`"indeterminate"`
+  directly. Defaults to this package's own root.
 
 ## What's deliberately not here
 
