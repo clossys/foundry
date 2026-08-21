@@ -54,8 +54,26 @@ export interface RepositoryOneOfConstraint {
   readonly values: RepositoryList<string>;
 }
 
+/**
+ * A capability must be at least a declared version floor (issue #318). This
+ * is the open-ended shape neither `present` nor `one-of` can honestly
+ * express: `present` understates an open-ended range ("must exist" instead
+ * of "must be at least X"), and `one-of` requires an exhaustive, closed
+ * enumeration that goes stale the moment a new value satisfying the same
+ * floor is released. `floor` is a bare dotted-numeric version string (for
+ * example `"20"` or `"10.33.0"`) -- see `version-floor.ts` for the exact
+ * grammar and why it deliberately is not strict semver.
+ */
+export interface RepositoryMinimumVersionConstraint {
+  readonly kind: "minimum-version";
+  readonly floor: string;
+}
+
 /** Neutral constraints understood by the pure evaluator. */
-export type RepositoryRequirementConstraint = RepositoryPresenceConstraint | RepositoryOneOfConstraint;
+export type RepositoryRequirementConstraint =
+  | RepositoryPresenceConstraint
+  | RepositoryOneOfConstraint
+  | RepositoryMinimumVersionConstraint;
 
 /** One consumer-authored upward requirement. */
 export interface RepositoryRequirement {
@@ -162,6 +180,8 @@ export interface RepositoryRequirementEvaluation {
   readonly status: RepositoryRequirementStatus;
   /** Compatible accepted values; absent when presence alone is enough. */
   readonly acceptedValues?: RepositoryList<string>;
+  /** The binding minimum-version floor (the strictest of every declared floor); absent when no requirement declared one. */
+  readonly floor?: string;
 }
 
 /** Overall report status; invalid means the evaluator input failed strict validation. */
@@ -232,6 +252,7 @@ export type RepositoryProfileFindingRule =
   | "constraint-values-shape"
   | "constraint-value"
   | "duplicate-constraint-value"
+  | "constraint-floor"
   | "root-entries-shape"
   | "root-entry-shape"
   | "root-entry-name"

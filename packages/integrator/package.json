@@ -1,6 +1,6 @@
 {
   "name": "@vespeneventures/integrator",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -21,6 +21,7 @@
     "src",
     "!src/**/*.test.ts",
     "!src/**/*.test-helper.ts",
+    "CHANGELOG.md",
     "README.md",
     "LICENSE"
   ],
