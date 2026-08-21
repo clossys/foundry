@@ -1,6 +1,6 @@
 {
   "name": "@vespeneventures/observer",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -13,6 +13,9 @@
       "import": "./dist/index.js"
     }
   },
+  "bin": {
+    "observer-coverage-check": "./dist/bin.js"
+  },
   "files": [
     "dist",
     "src",
@@ -21,13 +24,14 @@
     "LICENSE"
   ],
   "sideEffects": false,
-  "description": "Telemetry contracts, redaction as a tested contract, and gate efficacy measured from caller-supplied run history. The measurer, never the measured: this package computes whether a gate is working and never judges a change itself. Zero I/O, zero network calls.",
+  "description": "Telemetry contracts, redaction as a tested contract, gate efficacy measured from caller-supplied run history, and a fleet package-coverage grader with a CLI. The measurer, never the measured: this package computes whether a gate is working and never judges a change itself. The library stays zero I/O, zero network calls; only the CLI touches a filesystem, and only through an injected port.",
   "keywords": [
     "telemetry",
     "observability",
     "redaction",
     "gate-efficacy",
     "escape-rate",
+    "fleet-coverage",
     "audit",
     "typescript"
   ],

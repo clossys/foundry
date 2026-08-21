@@ -55,3 +55,36 @@ export type {
   UnobservedSurfaceMetric,
 } from "./unobserved-surface.js";
 export { computeUnobservedSurface } from "./unobserved-surface.js";
+
+export type {
+  CoverageDeclaration,
+  DeclaredPackageAbsence,
+  CoverageDeclarationFinding,
+  ParsedCoverageDeclaration,
+  InvalidCoverageDeclaration,
+  WriteCoverageDeclarationInput,
+} from "./coverage-declaration.js";
+export {
+  COVERAGE_DECLARATION_SCHEMA_VERSION,
+  validateCoverageDeclarationShape,
+  parseCoverageDeclaration,
+  writeCoverageDeclaration,
+} from "./coverage-declaration.js";
+
+export type {
+  CoverageCellState,
+  FleetInstalledPackage,
+  FleetInstalledInventory,
+  UnclassifiedReason,
+  InstalledCoverageCell,
+  DeclaredAbsentCoverageCell,
+  UnclassifiedCoverageCell,
+  CoverageCell,
+  FleetCoverageContradiction,
+  FleetRepositoryCoverageInput,
+  FleetCoverageInput,
+  CoverageCellCounts,
+  FleetCoverageVerdict,
+  FleetCoverageReport,
+} from "./coverage.js";
+export { UNCLASSIFIED_REASONS, gradeFleetCoverage, fleetCoverageVerdictToExitCode } from "./coverage.js";
