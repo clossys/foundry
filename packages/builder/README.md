@@ -607,11 +607,13 @@ machine layer declaration — that destination must be retired explicitly,
 never left silently orphaned on the machine. `../composition.ts`'s
 `diffRetiredDestinations` is the pure comparison this needs: given the
 destinations a PRIOR run's composition managed and the CURRENT run's actual
-composed operations, it names every destination the prior run owned that no
-current source claims at all. `private-directory` operations are excluded
-from the comparison in both directions, the identical reasoning
-`composeInstallationPlans` already applies to its own collision check (a
-directory several sources want to exist is not "owned" by any one of them).
+composed operations, it returns a `RetirementReport` naming every destination
+(`RetiredDestination`, one entry per destination-path/source/kind triple) the
+prior run owned that no current source claims at all. `private-directory`
+operations are excluded from the comparison in both directions, the
+identical reasoning `composeInstallationPlans` already applies to its own
+collision check (a directory several sources want to exist is not "owned" by
+any one of them).
 
 This never deletes anything — reporting is the entire contract, and a caller
 wanting destructive cleanup must build that on top, explicitly, as its own
