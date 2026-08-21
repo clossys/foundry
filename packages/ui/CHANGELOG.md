@@ -3,6 +3,36 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.15.1] - 2026-08-20
+
+### Fixed
+
+- **`assertPeerVersion` no longer throws when it merely cannot PARSE an
+  installed peer version — including any version carrying a prerelease
+  identifier (issue #389).** The version parser this guard uses accepts
+  only strict `x.y.z`, and `assertPeerVersion` runs at MODULE LOAD from
+  fourteen separate call sites across this package's component subpaths
+  (`atoms`, `blocks`, `shell`, `charts`, `theme`, and the Node-only
+  `tailwind-merge`/`tailwindcss` guards), so the throw fired during import
+  resolution, before any caller could catch it. Under Next.js + Turbopack,
+  a `"use client"` module's bundled `react` import can resolve during SSR
+  to Next's own internally-vendored canary build instead of the
+  consumer's real, installed `react` — this took down `next build` for
+  real consumers. An unparseable DECLARED RANGE is still this package's
+  own bug and still throws, unchanged; an unparseable INSTALLED version is
+  now treated as `indeterminate` — this guard warns once per distinct
+  `(peer, foundVersion)` pair via `console.warn` and proceeds, rather than
+  crashing the consumer's build. This is a deliberate, documented
+  inversion of the fleet's fail-closed `indeterminate` contract
+  (`@vespeneventures/controller`'s `gates/result.ts`): a CI gate must
+  refuse to certify what it could not check, but a runtime import guard
+  must not crash a consumer's build over a version string it merely
+  failed to read. `assertTailwindMergeVersion`
+  (`@vespeneventures/ui/tokens`) and `generateCompiledCss`'s internal
+  `tailwindcss` guard inherit the same corrected behavior. See
+  `src/internal/peer-version.ts`'s own header for the full reasoning and
+  the tradeoff this buys.
+
 ## [0.15.0] - 2026-08-20
 
 ### Added

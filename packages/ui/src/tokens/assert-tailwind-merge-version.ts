@@ -39,14 +39,19 @@ import { assertPeerVersion } from "../internal/peer-version.js";
 import { TAILWIND_MERGE_DECLARED_RANGE } from "../internal/declared-peer-ranges.js";
 
 /**
- * Throws if `tailwind-merge` is absent, out of range, or its installed
- * version cannot be parsed — never silently passes on an inconclusive
- * result. Node-only: relies on `node:fs`/`node:module` to walk
- * `tailwind-merge`'s installed `package.json` on disk (see
- * `resolveInstalledPeerVersion`), so it throws if `document` exists but
- * `process.versions.node` does not — i.e. if it is ever mistakenly called
- * from real browser code — rather than silently reporting "not
- * installed" for a peer that may in fact be present and compatible.
+ * Throws if `tailwind-merge` is absent or installed but out of range.
+ * Warns once, via `console.warn`, and proceeds if its installed version
+ * cannot be PARSED — including one carrying a prerelease identifier — per
+ * `assertPeerVersion`'s own deliberately-inverted `indeterminate` handling
+ * for #389 (see `../internal/peer-version.ts`'s header): that string is
+ * external input this guard could not read, not a value that failed the
+ * check, so it is never grounds to crash the caller. Node-only: relies on
+ * `node:fs`/`node:module` to walk `tailwind-merge`'s installed
+ * `package.json` on disk (see `resolveInstalledPeerVersion`), so it
+ * throws if `document` exists but `process.versions.node` does not — i.e.
+ * if it is ever mistakenly called from real browser code — rather than
+ * silently reporting "not installed" for a peer that may in fact be
+ * present and compatible.
  */
 export function assertTailwindMergeVersion(): void {
   if (typeof document !== "undefined" && (typeof process === "undefined" || !process.versions?.node)) {
