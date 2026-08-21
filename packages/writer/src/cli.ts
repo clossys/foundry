@@ -61,6 +61,21 @@
  * original `record-file` handling — so this, too, is purely additive to the
  * argv contract.
  *
+ * A FOURTH subcommand, `passages` (`writer-check passages <registry-file>`),
+ * wires `checkPassageComposition` (`./passage.ts`) in — the passage-layer
+ * COMPOSITION gate: does every passage in a `PassageRecord` reference only
+ * registered entries and glossary terms, never an inlined literal string
+ * or another passage's own internals? Dispatched EXACTLY the way
+ * `addressability` is (see below): a fully separate top-level branch at
+ * the very bottom of this file, its own exported `mainPassagesCheck`, its
+ * own `runPassagesCheck` wrapper — never folded through `main()` at all,
+ * for the identical reason addressability is not: this gate's own ternary
+ * precedence ("a real violation wins over an incomplete picture" — see
+ * `passage.ts`'s own top doc comment, "THE TERNARY") is independent of
+ * every other subcommand's exit-code contract, and keeping it a fully
+ * separate dispatch path keeps that independence visible in this file's
+ * own structure, not just in a comment.
+ *
  * Exit codes — a contract a consumer's CI depends on, matching this
  * repository's `foundry-check` convention (`@vespeneventures/gates`):
  *
@@ -117,6 +132,7 @@ import {
 } from "./addressability.js";
 import { checkCopyTraceability, type CopyGateResult } from "./copy-gate.js";
 import { checkLocaleCoverage, type LocaleCoverageReport } from "./locale-coverage.js";
+import { checkPassageComposition, readPassageRecord, type PassageGateResult } from "./passage.js";
 import { readCopyRecord } from "./registry.js";
 import { scanCopySourceTree, type ScanResult } from "./scan.js";
 import { checkVoiceDerivationCoverage, type VoiceDerivationCoverageResult } from "./voice/index.js";
@@ -128,10 +144,13 @@ const USAGE = `Usage: writer-check <record-file> [scan-dir] [options]
   record-file    Path to a CopyRecord JSON file (see @vespeneventures/writer's README). Required.
   scan-dir       Directory to scan for user-facing string/template literals. Defaults to the current working directory.
 
-See also "writer-check addressability [scan-dir]" (this same file's other
-subcommand, dispatched on argv[0] before anything below) — is user-facing
-prose resolved from the copy registry by id, rather than typed inline? A
-separate, stricter gate; not run as part of this default command.
+See also "writer-check addressability [scan-dir]" and "writer-check passages
+<registry-file>" (this same file's other subcommands, both dispatched on
+argv[0] before anything below) — addressability asks whether user-facing
+prose is resolved from the copy registry by id, rather than typed inline;
+passages asks whether a passage composes registered entries/terms rather
+than inlining a literal or reaching into another passage's internals. Both
+are separate, stricter gates; neither runs as part of this default command.
 
 Options:
   --help         Print this message and exit 0.
@@ -140,6 +159,8 @@ Exit codes: 0 = clean, 1 = at least one finding, 2 = could not run (bad input, m
 
 Run "writer-check voice-derivation-coverage --help" for the second subcommand's own usage.
 Run "writer-check locale-coverage --help" for the third subcommand's own usage.
+Run "writer-check addressability --help" for that subcommand's own usage.
+Run "writer-check passages --help" for the passage-composition subcommand's own usage.
 `;
 
 const VOICE_DERIVATION_COVERAGE_USAGE = `Usage: writer-check voice-derivation-coverage <obligations-file> <brand-derived-rule-ids-file> [options]
@@ -824,6 +845,158 @@ function run(): void {
 }
 
 // ============================================================================
+// "writer-check passages" — a SUBCOMMAND of the SAME `writer-check` bin,
+// same file, same three-state exit-code shape as the default command above
+// and as `writer-check addressability` below. Dispatched on
+// `argv[0] === "passages"` at the very bottom of this file, BEFORE any of
+// the default command's own argument parsing runs — see this file's top
+// doc comment ("A FOURTH subcommand, `passages`") for why this mirrors
+// addressability's own fully-separate dispatch rather than being folded
+// through `main()` the way `voice-derivation-coverage`/`locale-coverage`
+// are.
+// ============================================================================
+
+const PASSAGES_USAGE = `Usage: writer-check passages <registry-file> [options]
+
+  registry-file  Path to a PassageRecord JSON file: { id: string, passages: Passage[] } — see @vespeneventures/writer's passage.ts for the full shape. Required.
+
+Checks the PASSAGE-LAYER COMPOSITION gate (issue #373): does every passage's
+every field reference a registered entry ({ ref: "entry", id }) or a
+glossary term ({ ref: "term", term }), never a literal string inlined
+directly into the field, and never a reference into another passage's own
+internals ({ ref: "passage", ... })? See @vespeneventures/writer's
+passage.ts, "THE GATE", for the full ternary this subcommand exposes, and
+"WHAT THIS GATE DELIBERATELY DOES NOT DO" for why this does not verify a
+referenced entry id/term actually exists in a real CopyRecord/glossary —
+that is a different, weaker question this gate's own adversarial proof is
+built to separate itself from.
+
+Options:
+  --help         Print this message and exit 0.
+
+Exit codes: 0 = satisfied (every passage references only entries and terms, at least one passage evaluated), 1 = violated (a passage inlines a literal string, or references another passage's internals — regardless of how many other fields are unclassifiable), 2 = indeterminate (registry-file missing/unreadable/unparseable/invalid, zero passages registered, or a field's value could not be confidently classified, with zero violations found).
+`;
+
+interface PassagesParsedArgs {
+  registryFile?: string;
+  help: boolean;
+}
+
+function parsePassagesArgs(argv: string[]): PassagesParsedArgs {
+  let registryFile: string | undefined;
+  let help = false;
+
+  for (const arg of argv) {
+    if (arg === "--help" || arg === "-h") {
+      help = true;
+      continue;
+    }
+    if (arg.startsWith("-")) {
+      throw new CliInputError(`unknown flag "${arg}"`);
+    }
+    if (registryFile === undefined) {
+      registryFile = arg;
+    } else {
+      throw new CliInputError(`unexpected extra argument "${arg}"`);
+    }
+  }
+
+  return { registryFile, help };
+}
+
+function printPassagesReport(result: PassageGateResult): void {
+  console.log(
+    `[passages] ${result.passagesEvaluated} passage(s) evaluated, ${result.violations.length} violation(s), ` +
+      `${result.unclassified.length} field(s) unclassified.`,
+  );
+
+  if (result.violations.length > 0) {
+    console.log(`\n[passages] ${result.violations.length} violation(s):`);
+    for (const v of result.violations) {
+      console.log(`  [${v.rule}] ${v.message}`);
+    }
+  } else {
+    console.log("[passages] No composition violations found.");
+  }
+
+  if (result.unclassified.length > 0) {
+    console.error(`[passages] ${result.unclassified.length} field(s) could not be confidently classified:`);
+    for (const u of result.unclassified) console.error(`  ${u.detail}`);
+  }
+
+  if (result.verdict === "indeterminate") {
+    console.error(`[passages] indeterminate — ${result.reasons.join("; ")}. Refusing to report a pass.`);
+  }
+}
+
+/**
+ * Exported (unlike a typical CLI `main`) for the identical reason `main`
+ * and `mainAddressabilityCheck` above are — `cli.test.ts` exercises the
+ * whole argv-to-exit-code contract directly against real fixture files,
+ * without spawning a subprocess.
+ */
+export function mainPassagesCheck(argv: string[]): number {
+  const args = parsePassagesArgs(argv);
+  if (args.help) {
+    console.log(PASSAGES_USAGE);
+    return 0;
+  }
+  if (!args.registryFile) {
+    throw new CliInputError("registry-file is required");
+  }
+
+  const registryFile = resolve(args.registryFile);
+  requireFile("registry-file", registryFile);
+
+  console.log(`[passages] Registry: ${registryFile}`);
+
+  // The passage record itself missing/unreadable/unparseable/invalid is
+  // fail-closed: there is no trustworthy set of passages to evaluate, so
+  // this is "could not run", never a clean pass produced with nothing
+  // trustworthy behind it — the same discipline `main()` above holds
+  // `readCopyRecord` to.
+  const read = readPassageRecord(registryFile);
+  if (!read.complete || !read.record) {
+    console.error(`\n[passages] Registry could not be loaded:`);
+    for (const issue of read.issues) console.error(`  [${issue.reason}] ${issue.detail}`);
+    console.error("[passages] Refusing to report a pass with no trustworthy passage registry to check.");
+    return 2;
+  }
+
+  const result = checkPassageComposition(read.record);
+  printPassagesReport(result);
+
+  // Same fail-closed, "violated wins" mapping `passage.ts`'s own
+  // `checkPassageComposition` already applies when computing `verdict` —
+  // this is just the verdict-to-exit-code projection, identical in shape
+  // to `mainAddressabilityCheck`'s own mapping below.
+  if (result.verdict === "indeterminate") return 2;
+  return result.verdict === "violated" ? 1 : 0;
+}
+
+/**
+ * `argv` here is whatever followed the `"passages"` subcommand token — the
+ * dispatch at the bottom of this file strips that token BEFORE calling
+ * this, so `mainPassagesCheck` never sees it.
+ */
+function runPassagesCheck(argv: string[]): void {
+  try {
+    process.exitCode = mainPassagesCheck(argv);
+  } catch (error) {
+    if (error instanceof CliInputError) {
+      console.error(`writer-check passages: ${error.message}`);
+      console.error(`\n${PASSAGES_USAGE}`);
+      process.exitCode = 2;
+    } else {
+      console.error(
+        `writer-check passages: unexpected error: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`,
+      );
+      process.exitCode = 2;
+    }
+  }
+}
+
+// ============================================================================
 // "writer-check addressability" — a SUBCOMMAND of the SAME `writer-check` bin,
 // same file, same three-state exit-code shape as the default command
 // above. Dispatched on `argv[0] === "addressability"` at the very bottom
@@ -965,11 +1138,11 @@ function detectMainModule(): boolean {
 }
 
 /**
- * `writer-check` and `writer-check addressability` are ONE `bin` entry, one
- * compiled file, dispatched by an explicit FIRST ARGUMENT — never by how
- * this file was invoked (its own path, a symlink name, an installed `bin`
- * shim, ...). That is deliberate: this repository's own root
- * `package.json` invokes every gate by compiled path
+ * `writer-check`, `writer-check addressability`, and `writer-check passages`
+ * are ONE `bin` entry, one compiled file, dispatched by an explicit FIRST
+ * ARGUMENT — never by how this file was invoked (its own path, a symlink
+ * name, an installed `bin` shim, ...). That is deliberate: this
+ * repository's own root `package.json` invokes every gate by compiled path
  * (`node packages/ui/dist/tokens/contrast-cli.js`,
  * `node packages/controller/dist/cli.js`, ...), never by `bin` name, so
  * any dispatch keyed on the invoking path/name (a second `bin` entry
@@ -979,12 +1152,14 @@ function detectMainModule(): boolean {
  * exactly the "runs the wrong thing without ever failing" failure mode a
  * gate must never have. `rawArgs[0]` is read BEFORE `main()`'s own
  * `parseArgs` ever sees the array, so the default command's argument
- * shape is completely unaffected by this subcommand existing at all.
+ * shape is completely unaffected by either subcommand existing at all.
  */
 if (detectMainModule()) {
   const rawArgs = process.argv.slice(2);
   if (rawArgs[0] === "addressability") {
     runAddressabilityCheck(rawArgs.slice(1));
+  } else if (rawArgs[0] === "passages") {
+    runPassagesCheck(rawArgs.slice(1));
   } else {
     run();
   }
