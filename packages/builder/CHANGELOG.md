@@ -5,6 +5,55 @@ All notable changes to `@vespeneventures/builder` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - 2026-08-21
+
+### Added
+
+- **`aggregate-observations`, `check-observation-freshness`, and
+  `deployment-health` subcommands on the existing `builder-verify-toolchain`
+  bin (#377).** `aggregateObservations`, `checkObservationAggregateFreshness`
+  (`./observation-aggregate.ts`), and `evaluateDeploymentHealth`
+  (`./deployment/health.ts`) were public API with no CLI path anywhere in
+  this package — gate-shaped exports only a caller writing TypeScript could
+  run. Dispatch is keyed on the literal `argv[0]` token, checked before the
+  pre-existing no-subcommand toolchain-check parsing, never on
+  `basename(process.argv[1])` — this repository invokes every gate by its
+  compiled path (`node packages/builder/dist/ci/bin.js`), so a
+  filename-keyed dispatch could never tell the four commands apart. No new
+  `bin` entry and no new runtime dependency. `aggregate-observations` and
+  `check-observation-freshness` apply the fleet 0/1/2 ternary via
+  `@vespeneventures/controller/gates`'s own `gateResultToExitCode`;
+  `deployment-health` applies the identical mapping to
+  `DeploymentHealthStatus` (healthy → 0, degraded/unhealthy → 1, unknown →
+  2). See `src/ci/cli.test.ts`'s direct-path reachability suite, which
+  spawns the real compiled `dist/ci/bin.js` and asserts real exit codes for
+  all four commands, including the pre-existing no-subcommand path
+  unchanged.
+
+## [0.6.0] - 2026-08-21
+
+### Changed
+
+- **BREAKING: `createVercelInspector().inspect` and `createRenderInspector().inspect`
+  no longer throw on a malformed or unreachable provider response (#392).**
+  A `network` transport failure and an `invalid-response` body that does not
+  parse into the shape the provider's own contract promises are not a
+  deployment that failed — they are a state the inspector could not form an
+  opinion about. Both now resolve to a discriminated
+  `VercelInspectionResult` / `RenderInspectionResult`: the existing success
+  shape gains a `kind: "inspected"` tag, and a new `kind: "indeterminate"`
+  variant carries a machine-readable `reason` (`"network"` |
+  `"invalid-response"`) and a static `detail` string, mirroring the fold
+  `@vespeneventures/integrator`'s `resolveReachability` already applies to
+  the identical ambiguity. `unauthorized`, `rate-limited`, and an
+  unrecognized `http` status still throw — the provider responded
+  coherently there, which is a real finding, not an unreadable one — and so
+  do `invalid-input`, `invalid-base-url`, `credential-unavailable`, and
+  `aborted`, none of which are about what a provider said. A caller
+  destructuring the old bare success shape, or narrowing on `.reject`s for a
+  `network` or `invalid-response` kind, must update for the new
+  discriminant.
+
 ## [0.5.1] - 2026-08-21
 
 ### Changed

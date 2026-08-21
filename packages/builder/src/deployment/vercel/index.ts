@@ -8,7 +8,10 @@ export type {
   VercelFetch,
   VercelInspection,
   VercelInspectionErrorKind,
+  VercelInspectionIndeterminate,
+  VercelInspectionIndeterminateReason,
   VercelInspectionInput,
+  VercelInspectionResult,
   VercelInspectorOptions,
   VercelTokenProvider,
 } from "./types.js";
