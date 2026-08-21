@@ -1664,46 +1664,54 @@ one: `@vespeneventures/controller/policy`. That dependency is gone — not remov
 absorbed: `policy`'s source now lives inside this package as the `./policy`
 subpath, so there is nothing left outside this package to depend on.
 
-TypeScript is not installed by a plain `npm install @vespeneventures/controller`.
-It is declared as an optional peer dependency (`peerDependencies` +
-`peerDependenciesMeta: { typescript: { optional: true } }`) — the same shape
-`@vespeneventures/auth` uses for its own optional peers such as `svix`. A
-consumer who never imports `./gates` never installs a compiler on this
-package's account, including each of the five compatibility shims that
-depend on `@vespeneventures/governance` (which forwards here — see
-"Migrating from compatibility packages" above) and previously inherited it
-transitively through a bare `dependencies` entry (issue #152).
+TypeScript is declared a **required** peer dependency (`peerDependencies:
+{ typescript: "~6.0.0" }`, no `peerDependenciesMeta` entry) — not optional.
+It was briefly declared optional, the same shape `@vespeneventures/auth`
+uses for its own genuinely optional peers such as `svix`, but that flag was
+wrong for this package: `packages/controller/src/gates/secret-gates.ts`
+imports `typescript` unconditionally, at module scope, with nothing able to
+catch a resolution failure. A consumer who believed the "optional" flag and
+skipped installing `typescript` got a hard `ERR_MODULE_NOT_FOUND` — not a
+degraded gate, not an `indeterminate` verdict — the instant anything reached
+the `./gates` subpath. `peerDependencies` is declared at the package level,
+not per subpath, so there was never a way to keep the compiler optional for
+the root entry point while making it required for `./gates`; between the two
+defensible fixes (a lazy/guarded import that degrades to `indeterminate`, or
+an honest required declaration), this package chose the latter (issue #411).
+See `secret-gates.ts`'s and `governance.ts`'s own header comments for the
+full reasoning, and `gates/typescript-required.test.ts` for a test that
+exercises the actual absent-peer import failure, not just the manifest.
 
-TypeScript is needed only for the source-aware secret-surface checks
-reachable through `./gates` (`packages/controller/src/gates/secret-gates.ts`
-is the sole importer, gated behind that one subpath). A plain `import
-"@vespeneventures/controller"` (the root entry) never loads it at runtime
-either: `runGovernanceCheck` and `preflightGovernedPackage` import the
-specific foundation/build-order functions they need directly, never the
-`./gates` barrel those secret-surface checks also live in. If you want the
-secret-surface checks, install `typescript` yourself and import
-`@vespeneventures/controller/gates` — that subpath still carries the full
-TypeScript dependency, unchanged; only the manifest changed, not what any
-subpath does at runtime.
+A plain `import "@vespeneventures/controller"` (the root entry) still never
+loads TypeScript at runtime: `runGovernanceCheck` and
+`preflightGovernedPackage` import the specific foundation/build-order
+functions they need directly, never the `./gates` barrel that also carries
+`secret-gates.ts`. Each of the five compatibility shims that depend on
+`@vespeneventures/governance` (which forwards here — see "Migrating from
+compatibility packages" above) and only ever touch the root still install
+and run without a compiler on their account — a required peer that npm
+cannot satisfy is a warning or an auto-install attempt in npm 7+, not a hard
+install failure, unless there is a genuine version conflict. If you want the
+source-aware secret-surface checks, install `typescript` yourself (or let
+npm's peer auto-install do it) and import `@vespeneventures/controller/gates`
+— that subpath has always carried the full TypeScript dependency, and still
+does; only the manifest's honesty about it changed, not what any subpath
+does at runtime.
 
-Marking `typescript` optional means npm gives no install-time signal if
-it's missing or on an incompatible version. `secret-gates.ts` now guards
-against both itself, at import time: an absent or out-of-range `typescript`
-throws a named, actionable error (never a silent pass) instead of
-whatever the compiler API itself happens to crash on first. See
-`src/internal/peer-version.ts` for the guard's own contract.
+An installed-but-incompatible `typescript` is still guarded explicitly:
+`secret-gates.ts` calls `assertPeerVersion` at import time, which throws a
+named, actionable error (never a silent pass) instead of whatever the
+compiler API itself happens to crash on first for a genuinely out-of-range
+version. See `src/internal/peer-version.ts` for the guard's own contract.
 
-**Registry note: the issue #152 fix above is undone one layer up by the
-registry itself.** `typescript` is correctly declared `optional: true` in
-`peerDependenciesMeta`, which is exactly what let the five compatibility
-shims stop inheriting a compiler transitively. But `npm.pkg.github.com`'s
-packument omits `peerDependenciesMeta` entirely, so an installer resolving
-against this registry sees `typescript` as required regardless — a
-consumer who only ever imports the root (`runGovernanceCheck`,
-`preflightGovernedPackage`) and never touches `./gates` still gets a
-TypeScript compiler installed on this package's account. See
-[issue #226](https://github.com/vespeneventures/foundry/issues/226) for the
-full evidence and why the declaration stays as-is.
+**Registry note, now moot for this specific flag:** `npm.pkg.github.com`'s
+packument has historically omitted `peerDependenciesMeta` from published
+metadata (see [issue #226](https://github.com/vespeneventures/foundry/issues/226)),
+which is what let the previous `optional: true` declaration mask issue #411
+for so long — every real consumer installed `typescript` regardless of what
+the flag claimed, so the unconditional import never actually failed for
+anyone. Since `typescript` is no longer declared optional at all, that
+registry gap no longer changes this package's behavior either way.
 
 This is a TypeScript-specific guarantee, not a general "the root does no
 I/O" one. Both root functions genuinely read the real filesystem

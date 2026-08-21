@@ -16,19 +16,41 @@ import ts from "typescript";
 import { assertPeerVersion } from "../internal/peer-version.js";
 
 /**
- * `typescript` is this package's one optional peer (see package.json's
- * `peerDependenciesMeta`) — optional so a consumer can install
- * `@vespeneventures/controller` without the compiler for every OTHER gate,
- * which never touch it. This is the one module that actually imports it
- * (see `governance.ts`'s own header comment for why the rest of this
- * package's import graph stays free of `typescript`), so this is the
- * adapter entry point #182 asks for: an absent or out-of-range compiler
- * previously surfaced as whatever this file happened to crash on deep
- * inside the TypeScript compiler API, with nothing naming a version range
- * as the cause. `TYPESCRIPT_DECLARED_RANGE` must match package.json's
- * `peerDependencies.typescript` exactly — `governance.test.ts` asserts
- * that directly, so drift between the two fails a real test rather than
- * silently going stale.
+ * `typescript` is a REQUIRED peer (#411) — not optional. It used to be
+ * declared `peerDependenciesMeta: { optional: true }`, but this file has
+ * always imported it unconditionally, at module scope, right below. An
+ * optional peer that a module imports unconditionally is not actually
+ * optional: a consumer who believed the declaration and skipped
+ * `npm install typescript` got `ERR_MODULE_NOT_FOUND` the instant anything
+ * reached the `./gates` subpath — not a degraded gate, not an
+ * `indeterminate` verdict, a hard resolution failure during import, with
+ * nothing to catch. That combination went unnoticed because #226 made the
+ * registry drop `peerDependenciesMeta` from published metadata, so every
+ * real consumer installed `typescript` regardless of the optional flag —
+ * two defects canceling out and looking like one correct behavior.
+ *
+ * This package's root entry point (`index.ts`/`governance.ts`) genuinely
+ * does keep `typescript` out of its import graph — see `governance.ts`'s
+ * own header for how and why. But the PUBLIC `./gates` subpath this file
+ * lives behind re-exports this module unconditionally (see
+ * `gates/index.ts`), and `root-entry-boundary.test.ts` asserts that split
+ * on purpose: the root must never reach `typescript`, and `./gates` always
+ * does. `peerDependencies` is declared at the package level, not per
+ * subpath, so there is no way to keep the compiler optional for the root
+ * while still requiring it for `./gates` — given that, the honest
+ * declaration is "required," matching what this file has always actually
+ * demanded of a consumer who imports `./gates`. `governance.test.ts` and
+ * `secret-gates.test.ts` both assert `TYPESCRIPT_DECLARED_RANGE` matches
+ * package.json's `peerDependencies.typescript` exactly, and that it is no
+ * longer marked `optional`, so drift between the code and the manifest
+ * fails a real test rather than silently going stale. This is the adapter
+ * entry point #182 asks for: an absent or out-of-range compiler previously
+ * surfaced as whatever this file happened to crash on deep inside the
+ * TypeScript compiler API, with nothing naming a version range as the
+ * cause; `assertPeerVersion` below still gives the out-of-range case (peer
+ * installed, wrong version) a named, actionable error — the fully-absent
+ * case (peer not installed at all) is now handled one layer up, by npm
+ * refusing to consider the peer satisfied in the first place.
  */
 export const TYPESCRIPT_DECLARED_RANGE = "~6.0.0";
 assertPeerVersion({ peer: "typescript", declaredRange: TYPESCRIPT_DECLARED_RANGE, foundVersion: ts.version });

@@ -5,6 +5,29 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.4] - 2026-08-21
+
+### Fixed
+
+- **`typescript` is now a required peer, not an optional one (issue #411).**
+  `gates/secret-gates.ts` has always imported `typescript` unconditionally,
+  at module scope — `peerDependenciesMeta: { optional: true }` was a live
+  lie: a consumer who believed it and skipped installing `typescript` got a
+  hard `ERR_MODULE_NOT_FOUND` the instant anything reached the `./gates`
+  subpath, not a degraded gate and nothing to catch it. This went unnoticed
+  because #226 made the registry drop `peerDependenciesMeta` from published
+  metadata, so every real consumer installed `typescript` regardless of
+  what the flag claimed. `peerDependencies` is declared at the package
+  level, not per subpath, so there is no way to keep the compiler optional
+  for the root entry point (which genuinely never touches it — see
+  `governance.ts`'s own header) while requiring it for `./gates` (which
+  always does). Given that, the `optional` flag is removed; `typescript`
+  is now an honest, required peer. `secret-gates.test.ts` and
+  `public-contract.test.ts` assert the flag is gone, and a new
+  `gates/typescript-required.test.ts` exercises the actual absent-peer
+  import path (via a mocked resolution failure) rather than only asserting
+  the manifest declaration.
+
 ## [0.8.3] - 2026-08-21
 
 ### Added

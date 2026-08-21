@@ -7,7 +7,7 @@ const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const packageJson = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8")) as {
   dependencies?: Record<string, string>;
   peerDependencies: Record<string, string>;
-  peerDependenciesMeta: Record<string, { optional?: boolean }>;
+  peerDependenciesMeta?: Record<string, { optional?: boolean }>;
 };
 
 /**
@@ -27,30 +27,37 @@ const packageJson = JSON.parse(readFileSync(join(packageRoot, "package.json"), "
  * used to declare, `@vespeneventures/policy`, is no longer an external
  * package at all — its source now lives inside this package as the
  * `./policy` subpath (see issue #282), so there is nothing left to declare.
- * Every other runtime input this package needs is an optional peer a
- * consumer opts into by using the subpath that needs it, matching
- * `@vespeneventures/auth`'s own public-contract test for the same shape of
- * guarantee.
+ *
+ * UPDATE (#411): `typescript` used to ALSO carry `peerDependenciesMeta:
+ * { optional: true }`, matching `@vespeneventures/auth`'s svix peer and
+ * this file's own former "every peer is optional" test below. That flag
+ * was a live lie, not a harmless default: `./gates`'s `secret-gates.ts`
+ * imports `typescript` unconditionally, at module scope, with nothing to
+ * catch a resolution failure — a consumer who believed "optional" and
+ * skipped installing it got `ERR_MODULE_NOT_FOUND` the instant anything
+ * reached `./gates`, not a degraded gate. `peerDependencies` is declared
+ * at the PACKAGE level, not per subpath, so there is no way to keep
+ * `typescript` optional for the root (which never touches it — the test
+ * right below still proves that) while making it required for `./gates`
+ * (which always does, unconditionally, by design — see `governance.ts`'s
+ * and `secret-gates.ts`'s own header comments for why that split exists at
+ * all). Given that constraint, this package now declares `typescript` a
+ * required peer: honest about what `./gates` has always actually
+ * demanded, and — because npm 7+ auto-installs or warns on an unmet peer
+ * rather than hard-failing the install outright — a consumer who never
+ * touches `./gates` still installs and uses the root entry point without
+ * incident. This deliberately makes controller's dependency-boundary
+ * contract narrower than `@vespeneventures/auth`'s: auth's `svix` genuinely
+ * has no such unconditional-import hazard (verified separately), so its
+ * "every peer optional" invariant still holds there.
  */
 describe("public contract — dependency boundary", () => {
   it("declares zero unconditional runtime dependencies", () => {
     expect(packageJson.dependencies ?? {}).toEqual({});
   });
 
-  it("declares typescript as an optional peer, not a hard dependency", () => {
+  it("declares typescript as a REQUIRED peer, not optional (#411) — ./gates imports it unconditionally, at module scope, with nothing to catch a resolution failure", () => {
     expect(packageJson.peerDependencies.typescript).toBeDefined();
-    expect(packageJson.peerDependenciesMeta.typescript?.optional).toBe(true);
-  });
-
-  it("declares every peer as optional — installing this package alone must never fail on a missing peer", () => {
-    for (const [name, meta] of Object.entries(packageJson.peerDependenciesMeta)) {
-      expect(meta.optional, `${name} should be optional`).toBe(true);
-    }
-    // Every declared peer has a matching meta entry — an un-declared-optional
-    // peer would silently default to required, defeating the point of the
-    // loop above checking only the ones that happen to have meta.
-    for (const name of Object.keys(packageJson.peerDependencies)) {
-      expect(packageJson.peerDependenciesMeta[name], `${name} has no peerDependenciesMeta entry`).toBeDefined();
-    }
+    expect(packageJson.peerDependenciesMeta?.typescript).toBeUndefined();
   });
 });

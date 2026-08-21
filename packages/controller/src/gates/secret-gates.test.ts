@@ -777,14 +777,21 @@ describe("local files and provider resource names", () => {
 });
 
 describe("the typescript peer-version guard (#182)", () => {
-  it("keeps TYPESCRIPT_DECLARED_RANGE in sync with package.json's declared peer range", () => {
+  it("keeps TYPESCRIPT_DECLARED_RANGE in sync with package.json's declared peer range, and the peer is required, not optional (#411)", () => {
     const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
     const manifest = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8")) as {
       peerDependencies: Record<string, string>;
-      peerDependenciesMeta: Record<string, { optional?: boolean }>;
+      peerDependenciesMeta?: Record<string, { optional?: boolean }>;
     };
     expect(TYPESCRIPT_DECLARED_RANGE).toBe(manifest.peerDependencies.typescript);
-    expect(manifest.peerDependenciesMeta.typescript?.optional).toBe(true);
+    // #411: this file imports `typescript` unconditionally at module scope,
+    // so declaring it `optional` in peerDependenciesMeta was a live lie —
+    // an absent peer crashed on import with no try/catch possible around a
+    // public subpath's own barrel. Either drop the optional flag (this) or
+    // make the import lazy/guarded; this package chose the former. Assert
+    // the flag is gone entirely, not merely `false` — its presence at all
+    // would resurrect the same claim this issue closed.
+    expect(manifest.peerDependenciesMeta?.typescript).toBeUndefined();
   });
 
   it("importing this module does not throw against this repository's own real installed typescript", () => {
