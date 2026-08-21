@@ -428,6 +428,123 @@ through the pre-existing `Finding` vocabulary rather than `liveStateSurface`;
 changing that return shape is a breaking change to already-published
 behavior and is out of scope here.
 
+## Machine composition (`./machine` subpath, #393)
+
+Composing one machine's skill tree from several account-owned workspace
+checkouts plus a third-party-scoped skill source — the mechanism a retiring
+account-owned installer repository used to provide, promoted into this
+package once that repository had nothing left to place. Two decisions were
+made explicitly rather than by default, and both are recorded here because
+"the package that already holds the files" and "the package that owns
+machines" were both defensible, and only one shape of composition actually
+worked with what this package already ships.
+
+### Decision 1: builder owns the mechanism, not controller
+
+`@vespeneventures/controller/conventions` already ships the account-neutral,
+package-owned content itself — five documents plus a managed shell
+block — and #393 leaves every one of those files exactly where they are,
+untouched. What is missing is not content; it is a mechanism to *place*
+content and per-account skill trees onto a machine, and roughly 90% of that
+mechanism already lived in this package before #393: `composeInstallationPlans`,
+`applyInstallation`, `verifyInstallation`, and `GateResult` are all builder's
+own. Building the machine installer inside controller would have meant
+duplicating `composition.ts` in a package that has no reason to depend on the
+filesystem-mutation half of this one. Builder's own charter — "declared ->
+actual: toolchain, pipeline shape, machines, platforms" — already names
+"machines" as a first-class subject; controller's does not. So: **builder
+owns the mechanism, controller keeps owning the content.** A caller composing
+a real machine imports package-owned entries from controller's
+`CONVENTION_DOCUMENTS` / `CONVENTION_ADAPTERS` catalog (`@vespeneventures/
+controller/conventions`) as one more source alongside the account and
+third-party sources this subpath discovers — this package does not fold that
+catalog into a manifest itself, because doing so would mean hard-coding one
+particular machine's destination paths into a public, account-neutral
+package. That composition — which document goes to which absolute path on
+which real machine — is local machine state, never checked in here.
+
+### Decision 2: composition is per-skill links, not a directory symlink or a copy
+
+`~/.agents/skills` (or wherever a caller composes skills to) must present the
+union of several accounts' skill trees plus a third-party tree. Three shapes
+were on the table:
+
+- **A single directory symlink** — the mechanism this replaces used. Rejected:
+  a symlink can only point at one source, so it cannot union N accounts' trees
+  no matter how many are discovered.
+- **A materialized copy** of every account's skills into one directory.
+  Rejected: a copy drifts from its source the moment the source changes, and
+  this package's own manifest engine already treats "canonical elsewhere" as
+  link-not-copy everywhere else it applies (see `links` vs. `copies` in
+  `../types.ts`) — inventing a copy-based exception here for skills alone
+  would be a second policy this package does not need.
+- **Per-skill links into one composed directory.** Adopted. Each discovered
+  source (`./discovery.ts`'s account workspaces, `./third-party.ts`'s
+  vendored skills) becomes one named `Plan` carrying one `links` entry per
+  skill it owns, all destined inside the same composed directory
+  (`./skills-manifest.ts`'s `buildSkillsManifest`). This is the only shape of
+  the three where `composeInstallationPlans`'s EXISTING per-destination
+  collision check (documented above, under "Multi-source composition") works
+  completely unmodified: two accounts shipping a skill with the same name
+  both produce a `links` entry destined at
+  `<composedSkillsRoot>/<name>`, and composing them throws
+  `DestinationCollisionError` — naming both accounts — for free. No new
+  collision logic was written for this subpath, because the existing one
+  already generalizes to "one entry per unit of content," and a skill is
+  exactly that unit.
+
+### Discovery: never a hard-coded list, never a silent partial machine
+
+`./discovery.ts`'s `discoverAccountWorkspaces` takes a root from the caller or
+the `BUILDER_MACHINE_WORKSPACES_ROOT` environment variable — never a guessed
+default, so no absolute path to any account repository appears anywhere in
+this package's content. A directory under that root is a candidate only once
+it has placed a `builder-machine-workspace.json` marker at its own root,
+declaring its `account` identifier and its `skillsPath` — the same
+discovery-by-self-declaration shape `npm`'s own workspace globbing uses. A
+directory with no marker is simply not a workspace, excluded the same way an
+npm workspace glob excludes a directory with no `package.json`. A directory
+**with** a marker has declared intent to be counted, and from that point
+every failure — an unreadable marker, malformed JSON, a schema mismatch, an
+unreadable declared skill tree, two workspaces claiming the same account — is
+`indeterminate`, always present in the result, never dropped. `./third-party.ts`'s
+`loadThirdPartySkills` is the third-party-scoped mirror of the same
+ternary, keyed off `SkillScope`'s own `"third-party"` value
+(`@vespeneventures/controller/conventions`) rather than a second vocabulary —
+`THIRD_PARTY_SCOPE`'s assignment stops compiling if that union ever drops the
+value.
+
+`./report.ts`'s `verifyMachine` (behind `builder-verify-machine`, `./cli.ts` +
+`./bin.ts` — a SEPARATE compiled entry file from `../ci/bin.js`, since this
+repository invokes gates by direct dist path and a CLI that dispatches on the
+invoked bin name is unreachable that way) is the orchestrator that makes the
+whole-machine rule concrete: if ANY discovered source is indeterminate,
+composition itself is skipped and reported `indeterminate` — never a
+partially-composed machine reported as satisfied because the sources that DID
+resolve happened to verify clean.
+
+```ts
+import { verifyMachine, createNodeDiscoveryPort } from "@vespeneventures/builder/machine";
+import { createNodeFileSystem } from "@vespeneventures/builder";
+
+const report = verifyMachine(createNodeDiscoveryPort(), createNodeFileSystem(), {
+  schemaVersion: 1,
+  home: process.env.HOME,
+  composedSkillsRoot: `${process.env.HOME}/.agents/skills`,
+  // accountWorkspacesRoot / thirdPartySkillsRoot may come from here instead
+  // of BUILDER_MACHINE_WORKSPACES_ROOT / BUILDER_MACHINE_THIRD_PARTY_SKILLS_ROOT.
+});
+// report.overall.verdict: "satisfied" | "violated" | "indeterminate"
+// report.exitCode: 0 | 1 | 2 — the same fold as everywhere else in this package
+```
+
+```bash
+npx builder-verify-machine --inputs machine-verify-inputs.json
+# Exit codes: 0 = every managed skill destination resolves as composed,
+#             1 = at least one destination or source disagreed,
+#             2 = could not verify (an unresolvable source, or bad input).
+```
+
 ## Deployment (`./deployment` subpath, formerly `@vespeneventures/deployment`)
 
 Dependency-free deployment surface contracts, configuration planning, health
@@ -619,8 +736,15 @@ package's whole design exists to keep from reading as "looks fine."
 | `ObservationAggregateIndeterminateReason` | type | The union `OBSERVATION_AGGREGATE_INDETERMINATE_REASONS` enumerates |
 | `ObservationAggregateResultIndeterminateReason` | type | The union `OBSERVATION_AGGREGATE_RESULT_INDETERMINATE_REASONS` enumerates |
 
-`./deployment`, `./deployment/vercel`, `./deployment/render`, and `./ci` are
-separate package subpaths, documented in their own sections above.
+| `discoverAccountWorkspaces(port, options)` (`./machine`) | function | Finds every self-declared account workspace under a root; `indeterminate`, never dropped, for one that cannot be resolved |
+| `loadThirdPartySkills(port, options)` (`./machine`) | function | The third-party-scoped skill source of truth, tagged with controller's own `SkillScope` |
+| `buildSkillsManifest(skillNames, options)` (`./machine`) | function | Per-skill `links` entries into one composed directory — decision 2 above, made concrete |
+| `verifyMachine(discovery, fs, inputs, options)` (`./machine`) | function | Orchestrates discovery, the third-party source, and `composeInstallationPlans`/`verifyComposedInstallation` into one `GateResult`-based report |
+| `createNodeDiscoveryPort()` (`./machine`) | function | The default `DiscoveryPort`, backed by the real filesystem |
+
+`./deployment`, `./deployment/vercel`, `./deployment/render`, `./ci`, and
+`./machine` are separate package subpaths, documented in their own sections
+above.
 
 ## Requirements
 
