@@ -5,6 +5,27 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.4] - 2026-08-20
+
+### Fixed
+
+- **`assertPeerVersion` no longer throws on a peer version it merely
+  failed to parse — including a prerelease identifier — treating that as
+  an indeterminate result (warn once, proceed) instead of an actionable
+  violation.** Under Next.js + Turbopack, the `"use client"` `react`
+  guard in `providers/clerk/web/client.tsx` could see a bundler-vendored
+  canary build (e.g. `19.3.0-canary-...`) rather than the consumer's real
+  installed `react` during SSR/static generation, and the previous strict
+  `x.y.z`-only parser threw unconditionally on that string — a single
+  publish took down `next build` for every consumer whose root layout
+  wraps `AuthProvider`. A value this guard cannot parse is not a value
+  that failed the check; it is a value the checker could not form an
+  opinion about. `assertPeerVersion` still throws for a version that DOES
+  parse and is genuinely out of range, and for this package's own
+  declared range failing to parse (that is this package's bug, not
+  external input) — only the "cannot read the peer's version at all" path
+  changed. See [issue #389](https://github.com/vespeneventures/foundry/issues/389).
+
 ## [0.2.3] - 2026-08-19
 
 ### Changed
