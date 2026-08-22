@@ -1,0 +1,88 @@
+{
+  "name": "@vespeneventures/butler",
+  "version": "0.1.0",
+  "private": false,
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./inbound": {
+      "types": "./dist/inbound/index.d.ts",
+      "import": "./dist/inbound/index.js"
+    },
+    "./web": {
+      "types": "./dist/web/index.d.ts",
+      "import": "./dist/web/index.js"
+    }
+  },
+  "bin": {
+    "butler-check": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/**/*.test.ts",
+    "CHANGELOG.md",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "description": "The butler role: do we have what this person wants — this request in their own confirmation, and their standing instructions, still current? Dependency-free machinery for a consumer's own want records: a three-state standing model (absent/denied/granted) plus a stale evaluation status, structured intents carrying a confidence read against a declared floor, host-supplied storage and audit ports, an isolated ./inbound admission subpath, an optional ./web subpath whose React peer is asserted at import time, and three gates behind one butler-check bin — confirmation-completeness, which fails when an acted-on intent has no confirmation record, when it was acted on against a misread or unclear read-back, or when an intent below the declared confidence floor was acted on with no explicit hand-off; currency, which fails when a standing instruction is relied on past its declared window, after a policy version superseded it, or when nothing was on record to rely on at all; and withdrawal-parity, which fails when withdrawing takes more steps than granting or demands a contact or an account the matching grant path never required. Ships the schema and the checkers; every consumer authors its own values.",
+  "keywords": [
+    "butler",
+    "consent",
+    "intent",
+    "confirmation",
+    "currency",
+    "preferences",
+    "gate",
+    "typescript"
+  ],
+  "author": "Calvin Hung",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vespeneventures/foundry.git",
+    "directory": "packages/butler"
+  },
+  "bugs": {
+    "url": "https://github.com/vespeneventures/foundry/issues"
+  },
+  "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/butler#readme",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "node ../../scripts/check-name-collision.mjs . && npm run build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "react": { "optional": true },
+    "react-dom": { "optional": true }
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.3.2",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "jsdom": "^26.1.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "typescript": "~6.0.0",
+    "vitest": "^4.1.9"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  }
+}

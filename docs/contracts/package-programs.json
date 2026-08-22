@@ -241,7 +241,7 @@
     },
     {
       "name": "@vespeneventures/butler",
-      "state": "designed"
+      "state": "implemented"
     },
     {
       "name": "@vespeneventures/giver",
