@@ -140,6 +140,10 @@
       "status": "published"
     },
     {
+      "name": "@vespeneventures/keeper",
+      "status": "published"
+    },
+    {
       "name": "@vespeneventures/ledger",
       "status": "retired",
       "replacement": {
