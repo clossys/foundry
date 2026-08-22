@@ -585,6 +585,13 @@ jobs:
       # than a silent "no declaration" pass.
       - name: Repository profile
         run: npm run check:repository-profile
+      # Program A staging: these are author-side invocations of the built
+      # locksmith and integrator artifacts. They stay after `npm run build`
+      # and outside publish.yml's bootstrap discovery (#494, #495).
+      - name: Locksmith value-free catalogue
+        run: npm run check:locksmith-catalog
+      - name: Supersession map
+        run: npm run check:supersession
       # One vocabulary, two packages, no import between them (#443). The
       # duplicate is deliberate and observer's own header argues for it --
       # observer ships zero runtime dependencies, and builder's

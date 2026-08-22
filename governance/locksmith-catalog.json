@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "key": "GH_PACKAGES_TOKEN",
+      "required": true,
+      "description": "Read-only package-registry access used by release qualification.",
+      "group": "registry"
+    },
+    {
+      "key": "NODE_AUTH_TOKEN",
+      "required": true,
+      "description": "Package publication authentication supplied only by the workflow runtime.",
+      "group": "registry"
+    }
+  ]
+}
