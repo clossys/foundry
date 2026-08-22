@@ -237,7 +237,7 @@
     },
     {
       "name": "@vespeneventures/bouncer",
-      "state": "designed"
+      "state": "implemented"
     },
     {
       "name": "@vespeneventures/butler",

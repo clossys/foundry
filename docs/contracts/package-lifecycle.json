@@ -10,6 +10,10 @@
       "status": "published"
     },
     {
+      "name": "@vespeneventures/bouncer",
+      "status": "published"
+    },
+    {
       "name": "@vespeneventures/catalog",
       "status": "retired",
       "replacement": {

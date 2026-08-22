@@ -11,6 +11,10 @@
       "intendedVisibility": "public"
     },
     {
+      "name": "@vespeneventures/bouncer",
+      "intendedVisibility": "public"
+    },
+    {
       "name": "@vespeneventures/comms",
       "intendedVisibility": "public"
     },
