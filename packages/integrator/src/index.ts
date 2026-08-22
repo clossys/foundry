@@ -36,7 +36,13 @@ export type {
 export { createNodeInventoryFileSystem } from "./node-fs.js";
 
 export { probeReachability, resolveReachability } from "./reachability.js";
-export type { Transport, ProbeOutcome, ReachabilityProbeOptions, ReachabilityVerdict } from "./reachability.js";
+export type {
+  Transport,
+  ProbeOutcome,
+  ReachabilityProbeOptions,
+  ReachabilityVerdict,
+  ReachabilityIndeterminateReason,
+} from "./reachability.js";
 
 export { judgeCurrency, upgradeSet, optOutGaps, computeCurrencyMetric, classifyCurrencyDistance, currencyVerdict, currencyVerdictToExitCode } from "./currency.js";
 export type {

@@ -184,6 +184,25 @@ describe("judgeCurrency", () => {
     expect(results).toEqual([{ state: "unreachable", name: "a" }]);
   });
 
+  it("reports a definitive 404 as indeterminate with its reason, never as unreachable", () => {
+    // Five names in this catalogue were deleted from the registry on
+    // 2026-08-22 as the last step of a supersession. A plane still holding a
+    // stale entitlement to one now gets a 404 from a working credential. If
+    // that is reported as `unreachable` the plane is told it has a transport
+    // problem, so the correct response -- drop the entitlement -- looks
+    // identical to the wrong one, retry later. Retirement is permanent, so
+    // the retry never succeeds.
+    const results = judgeCurrency({
+      declaration: declaration(["a"]),
+      installed: installed([{ name: "a", installedVersion: "1.0.0" }]),
+      reachability: new Map<string, ReachabilityVerdict>([
+        ["a", { kind: "indeterminate", reason: "not-found-with-working-credential" }],
+      ]),
+    });
+    expect(results).toEqual([{ state: "indeterminate", name: "a", reason: "registry-name-not-found" }]);
+    expect(results[0]).not.toEqual({ state: "unreachable", name: "a" });
+  });
+
   it("treats an unprobed installed package the same as unreachable, not as a silent current", () => {
     const results = judgeCurrency({
       declaration: declaration(["a"]),

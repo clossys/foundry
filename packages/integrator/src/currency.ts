@@ -48,7 +48,22 @@ export type CurrencySeverity = "patch" | "minor" | "major";
 export type CurrencyDistance = "current" | CurrencySeverity;
 
 /** Why `classifyCurrencyDistance` could not grade a pair at all. */
-export type CurrencyIndeterminateReason = "version-unparseable" | "version-not-comparable";
+export type CurrencyIndeterminateReason =
+  | "version-unparseable"
+  | "version-not-comparable"
+  /**
+   * The registry answered definitively that it does not have this name, with
+   * a credential proven to work for other names in the same batch. Because
+   * GitHub Packages access is PER PACKAGE, that leaves "never published",
+   * "deliberately retired" and "not visible to this credential"
+   * indistinguishable -- so the currency of an installed copy cannot be
+   * judged either.
+   *
+   * Deliberately NOT reported as `unreachable`: nothing failed to be reached.
+   * A caller told "unreachable" waits and retries, and for a name that is
+   * deliberately gone the retry never succeeds.
+   */
+  | "registry-name-not-found";
 
 export type ClassifyCurrencyDistanceResult =
   | { readonly kind: "graded"; readonly distance: CurrencyDistance }
@@ -164,8 +179,19 @@ export function judgeCurrency(input: JudgeCurrencyInput): readonly PackageCurren
       results.push({ state: "unauthenticated", name });
       continue;
     }
+    if (verdict.kind === "indeterminate") {
+      // The registry answered and said no. That is not a transport failure and
+      // must not be reported as one, but it is also not proof the name is gone
+      // -- per-package access control makes a 404 and an invisible package the
+      // same response. Report that the currency could not be determined, and
+      // say why, so a caller can act on the real question: is this entitlement
+      // stale, or is this credential short a grant?
+      results.push({ state: "indeterminate", name, reason: "registry-name-not-found" });
+      continue;
+    }
 
-    // verdict.kind === "known" from here.
+    // verdict.kind === "known" from here -- now narrowed by the compiler
+    // rather than asserted by this comment.
     const classification = classifyCurrencyDistance(installedPkg.installedVersion, verdict.latestVersion);
     if (classification.kind === "indeterminate") {
       // An unparseable installed or "latest" version, or a prerelease

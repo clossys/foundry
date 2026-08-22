@@ -194,9 +194,34 @@ export async function probeVersions(entries, options) {
  *                                  version. Safe to treat as publishable.
  *   { kind: "unauthenticated" } — an explicit denial, or a not-found the
  *                                  batch could not distinguish from one.
- *   { kind: "unreachable" }     — a transport failure, or a not-found that
- *                                  stayed undecidable even with proof the
- *                                  credential otherwise works.
+ *   { kind: "unreachable" }     — a transport failure. Nothing else: the
+ *                                  registry never answered.
+ *   { kind: "indeterminate" }   — the registry ANSWERED and said it does not
+ *                                  have this name, with the credential proven
+ *                                  to work for other names in the batch.
+ *                                  GitHub Packages access is per package, so
+ *                                  "never published", "deliberately retired"
+ *                                  and "not visible to this credential" stay
+ *                                  indistinguishable. Undecidable, and now
+ *                                  said so rather than borrowed from
+ *                                  `unreachable`, which asserted a failure
+ *                                  that did not occur.
+ *
+ * WHY THIS MIRRORS @vespeneventures/integrator RATHER THAN IMPORTING IT
+ * ---------------------------------------------------------------------
+ * Not preference, and not an oversight to be tidied away later. This module
+ * runs from `scripts/select-publishable-packages.mjs` in publish.yml's
+ * `discover` job (line 89) — which is BEFORE `npm ci` and `npm run build`
+ * (lines 291 and 298, in a later job). There are no node_modules and no dist
+ * when it runs, so it cannot import a workspace package. It also decides
+ * whether to publish integrator itself, so importing integrator to make that
+ * decision would be a bootstrap loop: a broken integrator build would take
+ * out the very step that publishes its fix.
+ *
+ * So this stays a hand mirror, and a change to integrator's resolver must be
+ * mirrored here deliberately. That cost is real and is the reason this
+ * paragraph exists — the alternative was discovering it during a convergence
+ * attempt that could not work.
  *
  * Never returns `missing` for anything the registry did not affirmatively
  * confirm — a caller must never read `unauthenticated` or `unreachable` as
@@ -221,7 +246,7 @@ export function resolveVersionLookups(outcomes) {
         resolved.set(name, { kind: "unreachable" });
         break;
       case "not-found":
-        resolved.set(name, hasKnown ? { kind: "unreachable" } : { kind: "unauthenticated" });
+        resolved.set(name, hasKnown ? { kind: "indeterminate" } : { kind: "unauthenticated" });
         break;
       default:
         throw new Error(`Unhandled probe outcome: ${JSON.stringify(outcome)}`);
