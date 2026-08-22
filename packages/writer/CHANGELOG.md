@@ -62,7 +62,7 @@ of scope for this release — see the issue.
   from inline literals (it has zero references to check), while
   `writer-check passages`, spawned as the compiled CLI, correctly exits 1
   on the identical fixture.
-- Not ported from `@vespeneventures/ui/tokens`: the `brandable` boolean.
+- Not ported from `@vespeneventures/designer/tokens`: the `brandable` boolean.
   See `passage.ts`'s own top doc comment, "WHERE THE MIRROR STOPS", for
   why forcing that field into this layer would be false symmetry.
 

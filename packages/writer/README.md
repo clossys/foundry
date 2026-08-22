@@ -469,7 +469,7 @@ addressability cannot confirm is safe).
 ## The passage layer — the missing middle between an entry and a document
 
 `@vespeneventures/copy` (now `writer`) has terms (a glossary) and entries
-(single addressable strings) and nothing between them. `@vespeneventures/ui`
+(single addressable strings) and nothing between them. `@vespeneventures/designer`
 has tokens, atoms, **and blocks**. In practice nobody reuses one string —
 they reuse a whole empty-state (title + body + action), a whole FAQ item
 (question + answer), a whole error (message + recovery). `Passage`
@@ -527,7 +527,7 @@ gate, correctly exits `1` on the identical fixture — plus the sanity check
 that the weak tool is not simply broken (both agree when references
 genuinely are valid).
 
-**Not ported**: `@vespeneventures/ui/tokens`' `brandable` boolean. In
+**Not ported**: `@vespeneventures/designer/tokens`' `brandable` boolean. In
 tokens, `brandable` marks a subset WITHIN one namespace (154 ship, 42 are
 brandable). The voice record's own consumer/machinery split runs between
 FILES instead — forcing a boolean into a `Passage` field here would be
