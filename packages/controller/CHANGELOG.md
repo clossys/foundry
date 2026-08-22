@@ -5,7 +5,29 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-<<<<<<< HEAD
+## [0.8.10] - 2026-08-22
+
+### Fixed
+
+- `runGovernanceCheck` now runs `evaluateDependencyInstallability`. The rule
+  shipped in 0.8.9 exported, documented and unit-tested, and no production
+  caller invoked it — so the gate that exists to catch a still-installable
+  package depending on a retired one never ran the rule that catches one. The
+  edges come from the catalog's own manifests: `dependencies` plus any
+  `peerDependencies` not marked optional, which is exactly what an install
+  has to resolve. An optional peer that cannot resolve is not a broken install.
+
+  **A consumer whose governance run passed may now fail.** That is the point:
+  the rule and its documentation already promised this behaviour, and only the
+  wiring was missing. Nothing about the rule's own judgement changed.
+
+- The text output of `package-governance` now prints each finding — its rule,
+  its location, and its message — under the counts. It previously reported
+  `Lifecycle findings: 3` and stopped, so a failing run named nothing to fix.
+  The detail was reachable only through `--verbose`, which dumps the whole
+  report as JSON including every package description, leaving a reader to grep
+  a blob for the lines that mattered. Counts stay; `--verbose` is unchanged.
+
 ## [0.8.9] - 2026-08-22
 
 ### Added
@@ -18,7 +40,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   cannot break, since nothing can install either. Verified against the real
   tree — 0 findings as-is, 2 on a subset retirement that would break an
   install, 0 when the affected packages are retired together.
-=======
 ## [0.8.8] - 2026-08-22
 
 ### Changed
@@ -32,7 +53,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   covered the replacement package it named — a range could go stale as
   the replacement kept shipping and nothing caught it. Omitting
   `packageVersions` keeps the prior behavior exactly, so this is additive.
->>>>>>> origin/main
 
 ## [0.8.7] - 2026-08-21
 
