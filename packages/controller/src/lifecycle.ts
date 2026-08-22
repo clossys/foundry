@@ -21,6 +21,11 @@ const MAX_PACKAGES = 10_000;
 const CURRENT_STATUSES = new Set(["active", "incubating", "published", "qualified", "adopted"]);
 const TERMINAL_STATUSES = new Set(["deprecated", "retired"]);
 const REPLACEMENT_STATUSES = new Set(["active", "published", "qualified", "adopted"]);
+// Every status whose package can still be RESOLVED by an installer. This is
+// deliberately "everything except retired" rather than a list of healthy
+// statuses: a deprecated package is meant to stay installable -- that is the
+// entire point of deprecating rather than retiring it.
+const INSTALLABLE_STATUSES = new Set(["active", "incubating", "published", "qualified", "adopted", "deprecated"]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
@@ -336,6 +341,68 @@ export function validatePackageLifecycle(value: unknown): LifecycleFinding[] {
       findings.push(finding("replacement-missing", `packages[${index}].replacement`, `Replacement "${replacementName}" has no lifecycle entry.`));
     } else if (!REPLACEMENT_STATUSES.has(replacement.status)) {
       findings.push(finding("replacement-not-active", `packages[${index}].replacement`, `Replacement "${replacementName}" must be published, qualified, adopted, or legacy active.`));
+    }
+  }
+  return sortFindings(findings);
+}
+
+/** One package and the first-party package names it declares as dependencies. */
+export interface PackageDependencyEdge {
+  readonly name: string;
+  readonly dependencies: readonly string[];
+}
+
+/**
+ * Does every dependency of a still-installable package terminate somewhere
+ * installable?
+ *
+ * `replacement-not-active` already encodes the neighbouring invariant: a
+ * migration chain must terminate somewhere live. This is the same idea one
+ * edge over -- a DEPENDENCY must terminate somewhere installable -- and it is
+ * the constraint that orders a retirement.
+ *
+ * The asymmetry is the whole rule, and a weaker version of it is wrong in
+ * both directions. "Warn on a dependency to a terminal package" would fire on
+ * a deprecated package depending on a deprecated package, which is correct and
+ * is the state of this repository today. "Warn whenever the target is retired"
+ * would fire on a retired package depending on a retired package, which is
+ * equally fine -- nothing can install either, so no edge between them can
+ * break. It fires only where the depender can still be installed and its
+ * dependency cannot, because that is the only combination a person can
+ * actually hit: `npm install <depender>` failing to resolve.
+ *
+ * Needs no network and no registry read. Both facts live in documents the
+ * caller already parses.
+ */
+export function evaluateDependencyInstallability(value: unknown, edges: readonly PackageDependencyEdge[]): LifecycleFinding[] {
+  const findings: LifecycleFinding[] = [];
+  if (!isRecord(value)) return findings;
+  const packagesValue = ownDataValue(value, "packages");
+  if (!Array.isArray(packagesValue.value) || !isDenseArray(packagesValue.value)) return findings;
+
+  const statusByName = new Map<string, string>();
+  for (const entry of packagesValue.value) {
+    if (!isRecord(entry)) continue;
+    const name = ownDataValue(entry, "name").value;
+    const status = ownDataValue(entry, "status").value;
+    if (typeof name === "string" && typeof status === "string") statusByName.set(name, status);
+  }
+
+  for (const edge of [...edges].sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))) {
+    const dependerStatus = statusByName.get(edge.name);
+    // A package with no lifecycle entry is another rule's finding, not this
+    // one's -- reporting it here would double-count it.
+    if (dependerStatus === undefined || !INSTALLABLE_STATUSES.has(dependerStatus)) continue;
+    for (const dependency of [...edge.dependencies].sort()) {
+      const dependencyStatus = statusByName.get(dependency);
+      if (dependencyStatus === undefined || INSTALLABLE_STATUSES.has(dependencyStatus)) continue;
+      findings.push(
+        finding(
+          "dependency-not-installable",
+          `packages[${edge.name}].dependencies`,
+          `"${edge.name}" is "${dependerStatus}" and therefore still installable, but depends on "${dependency}", which is "${dependencyStatus}". Installing "${edge.name}" cannot resolve. Retire "${edge.name}" in the same change, or keep "${dependency}" installable.`,
+        ),
+      );
     }
   }
   return sortFindings(findings);

@@ -103,6 +103,7 @@ export type LifecycleFindingRule =
   | "replacement-missing"
   | "replacement-not-active"
   | "replacement-self"
+  | "dependency-not-installable"
   | "replacement-range-stale"
   | "catalog-package-missing"
   | "lifecycle-entry-missing";

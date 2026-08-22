@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { evaluateLifecycleCoverage, validatePackageLifecycle } from "./index.js";
+import { evaluateDependencyInstallability, evaluateLifecycleCoverage, validatePackageLifecycle } from "./index.js";
 
 const active = { schemaVersion: 1, packages: [{ name: "@example/core", status: "active" }] };
 
@@ -327,5 +327,82 @@ describe("validatePackageLifecycle", () => {
       ],
     };
     expect(evaluateLifecycleCoverage(unknownVersion, ["@example/current"], new Map())).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------
+// evaluateDependencyInstallability
+//
+// The ordering constraint on a retirement. A package that is still
+// installable must not depend on one that is not, or `npm install
+// <depender>` cannot resolve. The real case this was written for: a
+// deprecated package declaring two dependencies that a proposed
+// retirement would have removed from the registry, where every existing
+// gate reported PASS with zero findings for both the safe ordering and
+// the broken one.
+// ---------------------------------------------------------------------
+
+const installabilityDoc = {
+  schemaVersion: 1,
+  packages: [
+    { name: "@scope/live", status: "published" },
+    { name: "@scope/donor", status: "deprecated" },
+    { name: "@scope/older", status: "deprecated" },
+    { name: "@scope/gone", status: "retired" },
+  ],
+};
+
+describe("evaluateDependencyInstallability", () => {
+  it("reports a still-installable package depending on a retired one", () => {
+    const findings = evaluateDependencyInstallability(installabilityDoc, [
+      { name: "@scope/donor", dependencies: ["@scope/gone"] },
+    ]);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].rule).toBe("dependency-not-installable");
+    expect(findings[0].message).toContain("cannot resolve");
+  });
+
+  // The asymmetry, asserted in both directions. A weaker implementation
+  // that keys only on the DEPENDENCY's status passes the test above and
+  // fails this one — it would fire on the current tree, where a deprecated
+  // package depending on a deprecated package is correct and intended.
+  it("stays silent when a deprecated package depends on a deprecated package — both are installable", () => {
+    expect(
+      evaluateDependencyInstallability(installabilityDoc, [{ name: "@scope/donor", dependencies: ["@scope/older"] }]),
+    ).toEqual([]);
+  });
+
+  // The other half of the asymmetry: once the depender is retired too,
+  // nothing can install either one, so no edge between them can break.
+  it("stays silent when a retired package depends on a retired package — retiring together is the fix, not a fault", () => {
+    const doc = { ...installabilityDoc, packages: [...installabilityDoc.packages, { name: "@scope/alsogone", status: "retired" }] };
+    expect(evaluateDependencyInstallability(doc, [{ name: "@scope/gone", dependencies: ["@scope/alsogone"] }])).toEqual([]);
+  });
+
+  it("stays silent on a healthy edge between two published packages", () => {
+    expect(
+      evaluateDependencyInstallability(installabilityDoc, [{ name: "@scope/live", dependencies: ["@scope/donor"] }]),
+    ).toEqual([]);
+  });
+
+  // A package absent from the registry is a different rule's finding.
+  // Reporting it here would double-count it against lifecycle-entry-missing.
+  it("ignores an edge whose depender or dependency has no lifecycle entry", () => {
+    expect(evaluateDependencyInstallability(installabilityDoc, [{ name: "@scope/unknown", dependencies: ["@scope/gone"] }])).toEqual([]);
+    expect(evaluateDependencyInstallability(installabilityDoc, [{ name: "@scope/donor", dependencies: ["@scope/unknown"] }])).toEqual([]);
+  });
+
+  it("is deterministic across edge and dependency ordering", () => {
+    const doc = { ...installabilityDoc, packages: [...installabilityDoc.packages, { name: "@scope/gone2", status: "retired" }] };
+    const a = evaluateDependencyInstallability(doc, [
+      { name: "@scope/older", dependencies: ["@scope/gone2", "@scope/gone"] },
+      { name: "@scope/donor", dependencies: ["@scope/gone"] },
+    ]);
+    const b = evaluateDependencyInstallability(doc, [
+      { name: "@scope/donor", dependencies: ["@scope/gone"] },
+      { name: "@scope/older", dependencies: ["@scope/gone", "@scope/gone2"] },
+    ]);
+    expect(a).toEqual(b);
+    expect(a).toHaveLength(3);
   });
 });

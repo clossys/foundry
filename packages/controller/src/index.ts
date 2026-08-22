@@ -18,7 +18,8 @@ export type {
   PackageScaffoldFile,
 } from "./types.js";
 
-export { validatePackageLifecycle, evaluateLifecycleCoverage } from "./lifecycle.js";
+export { validatePackageLifecycle, evaluateDependencyInstallability,
+  evaluateLifecycleCoverage } from "./lifecycle.js";
 export { planNewPackage } from "./scaffold.js";
 export { runGovernanceCheck } from "./governance.js";
 export { preflightGovernedPackage } from "./preflight.js";
