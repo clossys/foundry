@@ -190,6 +190,11 @@ this repository plus four consuming repositories.
 real and both blocking, but neither has a recorded failing run — so both sit
 between *implemented* and *staged*.
 
+Twenty-three packages are graded in total — the fourteen roles above, the
+eight donors the programmes are retiring, and `domain`, which predates all
+three. Nineteen of the twenty-three currently declare a shortfall at
+`staged`, and fifteen of those have **zero** invocation sites.
+
 **The grounded column is zero for every package in every program.** Five of
 the six operation packages state close conditions that depend on `observer`
 reporting a number, and `observer` has no input. The producer and the consumer
@@ -198,18 +203,70 @@ an observation bundle on every CI run, and `observer` ships the readers for it.
 
 Nothing in this catalogue has reached *closed*.
 
-## What this document cannot yet prove
+## How this is enforced
 
-Every position in the table above was measured by hand, once, for this
-document. By this document's own rule that makes it a declaration, not a
-derived state, and it will drift the moment it is not re-measured.
+This document is not the record. `docs/contracts/package-programs.json` is,
+and `scripts/check-package-programs.mjs` grades it on every run of
+`npm run check`:
 
-The fix is a checker that derives what it can — invocation sites, published
-versions, pinned ranges — and fails when a declared state runs ahead of its
-measured one. Until that exists, this document records one afternoon's
-measurement rather than a standing fact, and should be read that way.
+```bash
+npm run check:package-programs
+```
 
-Two smaller instances of the same drift were found while writing it: this
+Every package in the workspace must declare a position. The gate derives what
+this repository can actually see — whether a package directory exists,
+how many **dist-path** invocation sites it has across `package.json`,
+`scripts/` and `.github/workflows/`, and its status in the lifecycle contract
+— and fails when a declared position runs ahead of that evidence.
+
+Three rules make it more than a formality.
+
+**Invocation sites never satisfy `staged` on their own.** They prove a gate
+runs. Only a recorded run in which it failed on a real defect proves it
+works, and that record cannot be derived, so it must be declared and pointed
+at.
+
+**A state this repository cannot derive is never assumed.** `adopted`,
+`grounded` and `closed` need a consumer's tree or `observer`'s output.
+Silence about them fails; it is not read as satisfied.
+
+**A shortfall must be acknowledged, not baselined.** The states are a ladder
+and this repository published ten packages before the ladder existed. A gate
+that simply refused every unsupported position would report ten-plus
+violations on its first run and could never be wired, which makes it
+decorative. So a shortfall below a declared state is declared in that
+package's `gaps`, with prose saying what is actually missing and an issue
+tracking it — the same shape `@vespeneventures/integrator` already ships for
+currency opt-outs, where every opt-out carries a required reason. An
+*unacknowledged* shortfall fails. So does an acknowledgement that outlives
+its reason: once the evidence exists, the gap is a `stale-gap` finding until
+it is removed. The list is a countdown, not a baseline, and the gate refuses
+to let it go quiet.
+
+Bin-name invocations are reported separately and never counted. A bin
+resolves to whatever the installer happened to link, which has already left a
+gate silently unreachable in this fleet.
+
+The gate exits `0` clean, `1` on a finding, `2` when it could not run —
+never a pass it did not earn.
+
+## What this still cannot prove
+
+The derivable half is now derived. The rest is not, and is declared:
+
+- **`designed`** is not graded at all. The loop declaration exists in all
+  fourteen role packages but in several different prose shapes, so nothing
+  can parse it. A grammar has to come first.
+- **`staged`'s** second half — the recorded failing run — is a pointer this
+  gate checks the presence of, not the truth of.
+- **`adopted`** needs each consuming repository to report whether the gate is
+  wired in blocking position and whether its hand-written equivalent was
+  deleted. Absence is what has to be proven, and only that repository can
+  prove it.
+- **`grounded`** needs `observer` to have an input.
+
+Two instances of exactly the drift this gate exists to stop were found while
+writing this document, in prose the gate does not read: this
 repository's own README described `builder` and `ledger` as each having one
 runtime dependency, naming `governance` and `policy` respectively. Both of
 those names are retired, and both packages actually depend on `controller`.
@@ -223,3 +280,5 @@ else, and only a reader catches it.
   expression programs and why each package is named for a job.
 - [PUBLISHING.md](PUBLISHING.md) — state 4 in full.
 - [ADOPTION.md](ADOPTION.md) — state 5, from the consumer's side.
+- `docs/contracts/package-programs.json` — the record this document
+  describes, and the thing that is actually enforced.
