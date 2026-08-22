@@ -405,6 +405,139 @@ whose entitled set is mostly renamed packages, gets a confident
 `unauthenticated` verdict — a credential diagnosis for what is really "not
 published yet".
 
+---
+
+## 11. A gate behind a `bin`, or a declared primitive
+
+**Status:** the rule below governs every package in `packages/`. It is declared
+in [`docs/contracts/package-programs.json`](contracts/package-programs.json) —
+the primitive tier is the `foundation` programme, marked `"tier": "primitive"`,
+with `domain` as its first member — and graded by
+`scripts/check-package-programs.mjs`, which already owned every package's
+programme membership and lifecycle state. Program C's four roles are named and
+their questions fixed here; none of them is cut, and this decision creates no
+package.
+
+Decisions 9 and 10 wrote down half of what every package here is actually held
+to: it names a doer rather than a thing, and answers one question only it can
+answer. The other half was never written down and is near-universal in the code
+anyway — a role package ships a gate behind a `bin`, so a consumer's own CI can
+fail on it. Of the fourteen live packages in this tree, ten do. `auth`, `comms`
+and `consent` do not, because nobody has built one. `domain` does not, because
+it is a primitive that correctly has none. From outside the tree those two
+situations are the same thing: an absent `bin`.
+
+> A package either belongs to a program — in which case it names a doer,
+> answers one question only it answers, and ships a gate behind a `bin` — or it
+> belongs to the primitive tier, in which case it declares that it ships none,
+> and why.
+
+This turns "no `bin`" from an absence into a decision, which is the principle
+[`docs/contracts/package-retention.json`](contracts/package-retention.json)
+already states in the other direction: "a standing exemption with no expiry is
+the same failure as an absence with no declared reason, just wearing the other
+sign."
+
+### The programs, and who each addresses
+
+A program is identified by its addressee, not by its subject matter. Two are
+cut; a third is named with its roles unbuilt; a fourth is named so its absence
+is a decision rather than an oversight.
+
+| program | addresses | packages |
+| --- | --- | --- |
+| operation | a repository | `controller`, `inspector`, `builder`, `locksmith`, `integrator`, `observer` (decision 9) |
+| expression | an audience | `strategist`, `writer`, `designer`, `publisher` (decision 10) |
+| interaction | one person | `bouncer`, `butler`, `giver`, `keeper` — not cut |
+| transaction | an organisation under agreement | not cut, and nothing here waits on it |
+
+### The primitive tier
+
+A primitive has no addressee. With no addressee there is no role, with no role
+there is no question only it answers, and with no such question there is
+nothing for a gate to judge. `domain` is the first declared member: it defines
+identifiers, typed fields, closed vocabularies and relations, and ships no
+values, storage, authorization, provenance or lifecycle of its own. What a
+`domain` gate would check is the consumer's model, and whether that model is
+right is the consumer's judgment, not this package's.
+
+Membership is declared, never inferred from a missing `bin`, and the two kinds
+of declaration are deliberately not interchangeable. A primitive declares
+`shipsNoGate` with `permanent: true`: there is no work to track. `auth`,
+`comms` and `consent` declare the same field with an **issue**, because they
+address one person, they owe a gate, and nobody has built it — a countdown,
+exactly like a `gaps` entry, and the gate refuses a permanent claim from a
+package that belongs to a programme. The three packages this decision is
+derived from therefore appear in the contract as what they are, rather than
+being absent from it: a decision whose motivating case is missing from its own
+machine-readable half describes an aspiration rather than the tree.
+
+### Program C's four roles
+
+| role | everything about | the question only it answers |
+| --- | --- | --- |
+| `bouncer` | who you are, what you can do, how that changes | Is this actor who they claim, and is this inside what they were granted? |
+| `butler` | what you want — now, and standing | Do we have what this person wants, in their own confirmation, and still current? |
+| `giver` | what you get — asked for, and owed | Did they get what they asked for, a reason, or a human — and everything owed, on time? |
+| `keeper` | what you gave us, and what we understand from it | Does everything we hold trace to something they did, and can they see and correct it? |
+
+Order is the request path: `bouncer`, then `butler`, then `giver`, with
+`keeper` read throughout.
+
+### The failure this rule is derived from
+
+Measurable in this repository, not argued from taste.
+`packages/comms/src/dispatcher.ts` reads:
+
+```ts
+const policy = (await config.policy?.(message)) ?? { outcome: "allow" as const };
+```
+
+`policy` is optional, so a host that never wires one dispatches everything to
+everyone and nothing reports a fault. Its sibling donor argues against exactly
+this shape in its own README — "silently treats absence of a signal as a
+passing one" — and ships a three-state model to refuse it. The two donors
+contradict each other in the tree, and no first-party code joins them.
+
+What kept the contradiction invisible is the missing `bin`. Every package with
+a gate is one invocation away from having a defect of this class surface in a
+consumer's CI; these three are the only non-primitive packages here that no
+consumer can check at all. The rule exists so that the next package in that
+position has to say so.
+
+### What is deliberately left unresolved
+
+The rule requires a gate, and says nothing about how many, or what each must
+judge. Decision 9's standing bar — judge in at least three states, so "could
+not evaluate" can never be reported as "fine" — is unchanged and not raised
+here. Nor does shipping a `bin` mean the gate works: that is what
+[docs/LIFECYCLE.md](LIFECYCLE.md)'s `staged` state asks, and this rule is
+deliberately the weaker, earlier question of whether a consumer could run
+anything at all.
+
+The primitive tier has exactly one declared member, which is too few to know
+whether it is a tier or a special case wearing a general name. It is recorded
+as a tier because the alternative, an exemption field on `domain` alone, is the
+standing exemption with no expiry that the retention contract already refuses.
+
+Where a message-transport and contact-coordinate substrate belongs is also
+open. It carries messages and identities and decides nothing about what either
+means, so it answers to no addressee and fails every program's test, including
+interaction's. That is recorded as unowned rather than defaulted into the
+nearest program.
+
+### Why this rule has no contract file of its own
+
+It nearly got one. This decision was first written with its own
+`package-tier.json` and its own checker, in parallel with
+`package-programs.json` and `check-package-programs.mjs` — two files and two
+gates for one concern, which is precisely the failure decision 9 is derived
+from: five published names for one job, and nothing reporting the situation.
+The parallel pair was deleted rather than reconciled later, and the rule was
+folded into the contract that already knew each package's programme, donors and
+lifecycle state. A rule that needs a second copy of that data to be checked is a
+rule that belongs next to the first copy.
+
 ## Settled
 
 **Author attribution — keep a real name in the `"author"` field.** A real

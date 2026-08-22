@@ -256,6 +256,17 @@ Bin-name invocations are reported separately and never counted. A bin
 resolves to whatever the installer happened to link, which has already left a
 gate silently unreachable in this fleet.
 
+One further rule is graded here that is not a rung on this ladder at all.
+[DECISIONS.md 11](DECISIONS.md#11-a-gate-behind-a-bin-or-a-declared-primitive)
+states that a package in a programme ships a gate behind a `bin`, or declares
+`shipsNoGate` with a reason — permanently, which only the primitive tier (the
+`foundation` programme, marked `"tier": "primitive"`) may claim, or with an
+issue, which is a countdown like `gaps`. It lives in this gate because this is
+the file that already knows each package's programme and lifecycle status, and
+a rule needing a second copy of that data belongs beside the first. Shipping a
+`bin` is the weaker, earlier question than `staged`: whether a consumer could
+run anything at all, not whether what they ran has ever caught a defect.
+
 The gate exits `0` clean, `1` on a finding, `2` when it could not run —
 never a pass it did not earn.
 
@@ -286,7 +297,9 @@ else, and only a reader catches it.
 ## Related documents
 
 - [DECISIONS.md](DECISIONS.md) — decisions 9 and 10 define the operation and
-  expression programs and why each package is named for a job.
+  expression programs and why each package is named for a job; decision 11
+  states the gate rule this contract also carries, and declares the primitive
+  tier.
 - [PUBLISHING.md](PUBLISHING.md) — state 4 in full.
 - [ADOPTION.md](ADOPTION.md) — state 5, from the consumer's side.
 - `docs/contracts/package-programs.json` — the record this document

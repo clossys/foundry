@@ -52,8 +52,10 @@
     },
     "foundation": {
       "letter": "-",
+      "tier": "primitive",
       "question": "Not a programme. Packages that predate the three recuts and belong to no role.",
-      "decision": "packages/domain/README.md",
+      "decision": "docs/DECISIONS.md#11-a-gate-behind-a-bin-or-a-declared-primitive",
+      "$comment": "The primitive tier, per decision 11: no addressee, therefore no role, therefore no question only it answers, therefore nothing for a gate to judge. Membership is a declaration and never a fallback -- a member must declare `shipsNoGate` with `permanent: true` and a reason, and exposing a `bin` from here is itself a finding. `packages/domain/README.md` is what the tier's one member does; this decision is why it owes no gate for doing it.",
       "packages": [
         "@vespeneventures/domain"
       ],
@@ -194,6 +196,10 @@
     {
       "name": "@vespeneventures/auth",
       "state": "published",
+      "shipsNoGate": {
+        "issue": 458,
+        "reason": "Donor to the unbuilt `bouncer` role -- who you are, what you can do, and how that changes. It addresses one person, so it owes a gate; nobody has built one, which is why no consumer's CI can check it at all. Resolved by the cut of the interaction roles, then issue #464 retiring this donor."
+      },
       "gaps": [
         {
           "state": "staged",
@@ -205,6 +211,10 @@
     {
       "name": "@vespeneventures/consent",
       "state": "published",
+      "shipsNoGate": {
+        "issue": 458,
+        "reason": "Donor to the unbuilt `butler` role. It ships the three-state model that its sibling donor's fail-open contradicts, and no `bin` from which either could be checked. Resolved by the cut of the interaction roles, then issue #464 retiring this donor."
+      },
       "gaps": [
         {
           "state": "staged",
@@ -216,6 +226,10 @@
     {
       "name": "@vespeneventures/comms",
       "state": "published",
+      "shipsNoGate": {
+        "issue": 458,
+        "reason": "Donor to the unbuilt interaction roles, split across more than one of them. Its missing `bin` is the founding measurement behind decision 11: src/dispatcher.ts treats an unwired policy as `allow`, and there is no CLI anywhere that could fail on it. Resolved by the cut of the interaction roles, then issue #464 retiring this donor."
+      },
       "gaps": [
         {
           "state": "staged",
@@ -227,6 +241,10 @@
     {
       "name": "@vespeneventures/domain",
       "state": "published",
+      "shipsNoGate": {
+        "permanent": true,
+        "reason": "The primitive tier's first declared member. It defines identifiers, typed fields, closed vocabularies and relations and ships no values, storage, authorization, provenance or lifecycle of its own, so the only thing a gate of its own could judge is the consumer's model -- which is the consumer's judgment to make, not this package's. Its checkers are library functions a consumer's own gate calls, not a command this package installs."
+      },
       "gaps": [
         {
           "state": "staged",
