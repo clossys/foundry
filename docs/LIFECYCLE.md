@@ -55,7 +55,7 @@ second person could reproduce without asking the first.
 | --- | --- | --- | --- |
 | 1 | **designed** | Is there a job here, and can it be graded? | The loop declaration parses: a named job, one metric, the five verbs, and a close condition grounded in a measurement outside the package. |
 | 2 | **implemented** | Does it build and hold its own contracts? | `npm run check` and release readiness, both green. |
-| 3 | **staged** | Has the author's own repository run it? | An executable invocation site here, **and a recorded run in which it failed on a real defect**. |
+| 3 | **staged** | Has the author's own repository run it? | An executable invocation site here, **and a recorded run in which the gate went red on a genuine violation, alongside a control that stayed green**. |
 | 4 | **published** | Can someone else install exactly this? | A registry artifact, a lifecycle entry, a clear name-collision check, and a declared visibility. |
 | 5 | **adopted** | Does it block in a consumer's tree? | Installed at the current version, invoked by dist path, in blocking position, proven by a deliberate failure — and the consumer's hand-written equivalent deleted. |
 | 6 | **grounded** | Is the gate worth having? | `observer` computes its efficacy and escape rate from landed-change outcomes, and the number moves in response to a real change. |
@@ -94,7 +94,32 @@ installs it.
 The evidence is deliberately not "it is wired". A gate that has run green
 since the day it was added has not been shown to work — it has been shown to
 run. **The absence of a failure is not evidence of success.** So this state
-ends on a recorded run in which the gate went red for a real defect.
+ends on a recorded run in which the gate went red.
+
+**The violation may be injected.** What matters is that it is real in *kind*,
+not in *origin*. Requiring a naturally-occurring defect would make this state
+reachable only by luck — a well-maintained package could never reach it, and
+the incentive would be to have worse code. Two other places in this
+repository already say `deliberate` and this one is the outlier that drifted:
+state 5 below requires "a deliberate failure", and the fleet adoption
+checklist requires "a deliberately failing case". This paragraph settles it in
+their favour.
+
+Three things make an injected failure evidence rather than theatre:
+
+- **The input is something a consumer could really produce.** A stylesheet
+  with a genuine contrast violation counts. A stub that returns a failure does
+  not.
+- **The gate's own judgment produces the red.** Not a mocked return, not a
+  forced exit code — the same path a real defect would travel.
+- **A control stays green in the same run.** This is the part that is easy to
+  skip and the part that carries the proof: a gate that fails on *any* input
+  is not a working gate, and a red run alone cannot tell the two apart. The
+  same discipline as running a positive control before believing a zero.
+
+The record says which it was. An injected failure is recorded as injected —
+a reader who cannot tell an injected red from a natural one is back to
+trusting a summary instead of reading a measurement.
 
 ### 4. published
 

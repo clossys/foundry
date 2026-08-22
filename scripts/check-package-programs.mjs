@@ -198,7 +198,21 @@ export function scanInvocationSites(repoRoot, packageNames, { readFile = (p) => 
       const line = lines[i];
       if (line.trimStart().startsWith("//") || line.trimStart().startsWith("#")) continue;
       for (const name of packageNames) {
-        if (line.includes(`packages/${bareName(name)}/dist`)) {
+        // TWO forms of executable use, because looking for only one is the
+        // mistake this whole gate exists to catch -- and the mistake this
+        // scanner itself made on its first extension. A CI step invokes a gate
+        // by dist path; a caller script imports the package by name. Counting
+        // only the first reported `observer` at zero sites while two files in
+        // scripts/ imported it.
+        const usesDistPath = line.includes(`packages/${bareName(name)}/dist`);
+        // An IMPORT, not any quoted occurrence. A package name also appears as
+        // ordinary test-fixture data -- `entry("auth", "@vespeneventures/auth",
+        // "0.2.4")` -- and counting those reported six invocation sites for a
+        // package nothing here invokes. `from`/`require(`/`import(` is what
+        // separates using a package from naming one.
+        const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const importsByName = new RegExp(`(from|require\\(|import\\()\\s*["']${escaped}(/[^"']*)?["']`).test(line);
+        if (usesDistPath || importsByName) {
           distSites.get(name).push(`${where}:${i + 1}`);
         }
       }

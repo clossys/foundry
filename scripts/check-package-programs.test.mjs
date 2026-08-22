@@ -183,6 +183,27 @@ test("the scan finds a dist-path invocation and ignores a commented one", () => 
   }
 });
 
+test("a package NAME used as test-fixture data is not an invocation site", () => {
+  // The scanner's first extension counted any quoted occurrence of a package
+  // name and reported six invocation sites for `auth`, all of them strings
+  // like `entry("auth", "@vespeneventures/auth", "0.2.4")` inside another
+  // script's tests. Naming a package is not using one.
+  const dir = mkdtempSync(join(tmpdir(), "programs-fixture-"));
+  try {
+    mkdirSync(join(dir, "packages/thing"), { recursive: true });
+    mkdirSync(join(dir, "scripts"), { recursive: true });
+    writeFileSync(join(dir, "packages/thing/package.json"), JSON.stringify({ name: P }));
+    writeFileSync(join(dir, "package.json"), "{}");
+    writeFileSync(join(dir, "scripts/a.test.mjs"), `const row = entry("thing", "${P}", "1.0.0");\n`);
+    writeFileSync(join(dir, "scripts/b.mjs"), `import { thing } from "${P}";\n`);
+
+    const { distSites } = scanInvocationSites(dir, [P]);
+    assert.deepEqual(distSites.get(P), ["scripts/b.mjs:1"]);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 test("lifecycle statuses are read by name", () => {
   const s = readLifecycleStatuses({ packages: [{ name: P, status: "deprecated" }, { name: "x" }, "nope"] });
   assert.equal(s.get(P), "deprecated");

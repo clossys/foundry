@@ -122,7 +122,7 @@
       "gaps": [
         {
           "state": "staged",
-          "reason": "zero dist-path invocation sites in this repository: this package has never been executed against a real tree by its own author",
+          "reason": "2 invocation sites (scripts/check-gate-efficacy.mjs and its tests, the first callers of computeGateEfficacy anywhere in this fleet), but no recorded run in which it failed on a real defect; a green history proves it ran, not that it works",
           "issue": 466
         }
       ]
