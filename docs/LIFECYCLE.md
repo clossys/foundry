@@ -260,6 +260,37 @@ node scripts/check-package-programs.mjs
 reader. A prose table returns here only once it is generated and the gate
 fails when the committed copy drifts from the derived one — #493.
 
+<!-- lifecycle-position-table:start -->
+
+| program | package | membership | declared state | staged here | grounded |
+| --- | --- | --- | --- | --- | --- |
+| A — operation | `@vespeneventures/controller` | role | published | yes | unknown — #484 |
+| A — operation | `@vespeneventures/inspector` | role | published | yes | unknown — #484 |
+| A — operation | `@vespeneventures/builder` | role | published | yes | unknown — #484 |
+| A — operation | `@vespeneventures/locksmith` | role | published | yes | unknown — #484 |
+| A — operation | `@vespeneventures/integrator` | role | published | yes | unknown — #484 |
+| A — operation | `@vespeneventures/observer` | role | published | yes | unknown — #484 |
+| B — expression | `@vespeneventures/strategist` | role | published | not yet | unknown — #484 |
+| B — expression | `@vespeneventures/writer` | role | published | not yet | unknown — #484 |
+| B — expression | `@vespeneventures/designer` | role | published | yes | unknown — #484 |
+| B — expression | `@vespeneventures/publisher` | role | published | not yet | unknown — #484 |
+| B — expression | `@vespeneventures/strategy` | donor | published | yes | unknown — #484 |
+| B — expression | `@vespeneventures/copy` | donor | published | yes | unknown — #484 |
+| B — expression | `@vespeneventures/ui` | donor | published | yes | unknown — #484 |
+| B — expression | `@vespeneventures/surface` | donor | published | yes | unknown — #484 |
+| B — expression | `@vespeneventures/ledger` | donor | published | yes | unknown — #484 |
+| C — interaction | `@vespeneventures/auth` | donor | published | not yet | unknown — #484 |
+| C — interaction | `@vespeneventures/consent` | donor | published | not yet | unknown — #484 |
+| C — interaction | `@vespeneventures/comms` | donor | published | not yet | unknown — #484 |
+| - — foundation | `@vespeneventures/domain` | role | published | not yet | unknown — #484 |
+| C — interaction | `@vespeneventures/bouncer` | role | published | not yet | unknown — #484 |
+| C — interaction | `@vespeneventures/butler` | role | published | not yet | unknown — #484 |
+| C — interaction | `@vespeneventures/giver` | role | published | not yet | unknown — #484 |
+| C — interaction | `@vespeneventures/keeper` | role | published | not yet | unknown — #484 |
+
+<!-- lifecycle-position-table:end -->
+
+
 Two claims about position are structural rather than counted, and survive:
 
 **No package in any program has an escape rate.** *Grounded* is not merely

@@ -108,11 +108,13 @@
 // declaration and fails, for the same reason a `gaps` entry that outlived its
 // reason does. Retired packages are exempt: they have left the ladder.
 
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const STATES = ["designed", "implemented", "staged", "published", "adopted", "grounded", "closed"];
+export const LIFECYCLE_POSITION_START = "<!-- lifecycle-position-table:start -->";
+export const LIFECYCLE_POSITION_END = "<!-- lifecycle-position-table:end -->";
 
 /** States this gate can derive from the author's own repository. */
 export const DERIVABLE_STATES = new Set(["implemented", "staged", "published"]);
@@ -674,6 +676,49 @@ export function isFailureFinding(f) {
   return f.severity === "error";
 }
 
+function markdownCell(value) {
+  return String(value).replaceAll("|", "\\|").replaceAll("\n", " ");
+}
+
+/**
+ * The committed position table in docs/LIFECYCLE.md is generated from the
+ * same evaluated results the gate prints. It deliberately reports grounded
+ * as unknown: #484 has not supplied independent landed-change outcomes, so
+ * an apparent zero escape rate would be a measurement gap, not a result.
+ */
+export function renderLifecyclePositionTable({ contract, results }) {
+  const programLabels = new Map(
+    Object.entries(contract.programs ?? {}).map(([id, program]) => [
+      id,
+      program?.letter ? `${program.letter} — ${id}` : id,
+    ]),
+  );
+  const rows = [
+    LIFECYCLE_POSITION_START,
+    "",
+    "| program | package | membership | declared state | staged here | grounded |",
+    "| --- | --- | --- | --- | --- | --- |",
+  ];
+  for (const result of results) {
+    const staged = result.acknowledgedGaps.includes("staged") ? "not yet" : "yes";
+    rows.push(
+      `| ${markdownCell(programLabels.get(result.program) ?? "unassigned")} | \`${markdownCell(result.package)}\` | ${markdownCell(result.role ?? "unknown")} | ${markdownCell(result.state)} | ${staged} | unknown — #484 |`,
+    );
+  }
+  rows.push("", LIFECYCLE_POSITION_END);
+  return `${rows.join("\n")}\n`;
+}
+
+export function replaceLifecyclePositionTable(document, rendered) {
+  const start = document.indexOf(LIFECYCLE_POSITION_START);
+  const end = document.indexOf(LIFECYCLE_POSITION_END);
+  if (start === -1 || end === -1 || end < start) {
+    throw new Error(`missing ${LIFECYCLE_POSITION_START} / ${LIFECYCLE_POSITION_END} markers`);
+  }
+  const afterEnd = end + LIFECYCLE_POSITION_END.length;
+  return `${document.slice(0, start)}${rendered}${document.slice(afterEnd)}`;
+}
+
 export function readWorkspacePackages(repoRoot) {
   const names = new Set();
   let entries;
@@ -735,6 +780,9 @@ function die(message) {
 async function main() {
   const argv = process.argv.slice(2);
   const json = argv.includes("--json");
+  const render = argv.includes("--render-lifecycle-position");
+  const write = argv.includes("--write-lifecycle-position");
+  if (render && write) die("--render-lifecycle-position and --write-lifecycle-position cannot be used together");
   const positional = argv.filter((a) => !a.startsWith("--"));
   const repoRoot = resolve(positional[1] ?? ".");
   const contractPath = resolve(positional[0] ?? join(repoRoot, "docs/contracts/package-programs.json"));
@@ -761,6 +809,32 @@ async function main() {
 
   const workspaceBins = readWorkspaceBins(repoRoot);
   const { findings, results } = evaluatePrograms({ contract, distSites, binSites, lifecycleStatuses, workspacePackages, workspaceBins });
+  const lifecycleDocumentPath = join(repoRoot, "docs/LIFECYCLE.md");
+  const renderedPosition = renderLifecyclePositionTable({ contract, results });
+
+  if (render) {
+    process.stdout.write(renderedPosition);
+    process.exit(findings.filter(isFailureFinding).length === 0 ? 0 : 1);
+  }
+
+  let lifecycleDocument;
+  try {
+    lifecycleDocument = readFileSync(lifecycleDocumentPath, "utf8");
+    if (write) {
+      writeFileSync(lifecycleDocumentPath, replaceLifecyclePositionTable(lifecycleDocument, renderedPosition));
+      console.log(`Updated ${relative(repoRoot, lifecycleDocumentPath)} from docs/contracts/package-programs.json.`);
+    } else if (!lifecycleDocument.includes(renderedPosition)) {
+      findings.push(
+        finding(
+          "lifecycle-position-table-drift",
+          "docs/LIFECYCLE.md",
+          "the generated lifecycle position table does not match docs/contracts/package-programs.json; regenerate it with `node scripts/check-package-programs.mjs --write-lifecycle-position`",
+        ),
+      );
+    }
+  } catch (error) {
+    findings.push(finding("lifecycle-position-table-unreadable", "docs/LIFECYCLE.md", `${error instanceof Error ? error.message : String(error)}`));
+  }
 
   if (json) {
     console.log(JSON.stringify({ results, findings }, null, 2));

@@ -14,6 +14,8 @@ import {
   isFailureFinding,
   readLifecycleStatuses,
   readWorkspacePackages,
+  renderLifecyclePositionTable,
+  replaceLifecyclePositionTable,
   scanInvocationSites,
   stateIndex,
 } from "./check-package-programs.mjs";
@@ -374,6 +376,29 @@ test("lifecycle statuses are read by name", () => {
   assert.equal(s.size, 1);
 });
 
+test("the lifecycle position renderer derives rows and never invents grounded evidence", () => {
+  const rendered = renderLifecyclePositionTable({
+    contract: { programs: { operation: { letter: "A" } } },
+    results: [
+      { program: "operation", package: P, role: "role", state: "published", acknowledgedGaps: [] },
+      { program: "operation", package: "@vespeneventures/not-yet", role: "role", state: "published", acknowledgedGaps: ["staged"] },
+    ],
+  });
+  assert.match(rendered, /<!-- lifecycle-position-table:start -->/);
+  assert.match(rendered, /\| A — operation \| `@vespeneventures\/thing` \| role \| published \| yes \| unknown — #484 \|/);
+  assert.match(rendered, /@vespeneventures\/not-yet.*\| not yet \| unknown — #484/);
+  assert.match(rendered, /<!-- lifecycle-position-table:end -->/);
+});
+
+test("replacing the generated lifecycle block preserves surrounding prose and refuses missing markers", () => {
+  const rendered = "<!-- lifecycle-position-table:start -->\nnew table\n<!-- lifecycle-position-table:end -->\n";
+  assert.equal(
+    replaceLifecyclePositionTable("before\n<!-- lifecycle-position-table:start -->\nold\n<!-- lifecycle-position-table:end -->\nafter\n", rendered),
+    "before\n<!-- lifecycle-position-table:start -->\nnew table\n<!-- lifecycle-position-table:end -->\n\nafter\n",
+  );
+  assert.throws(() => replaceLifecyclePositionTable("no markers", rendered), /missing/);
+});
+
 test("this repository's own contract passes, and exits 0/1/2 correctly", () => {
   const out = execFileSync(process.execPath, [script, "--json"], { cwd: repoRoot, encoding: "utf8" });
   const { results, findings } = JSON.parse(out);
@@ -394,6 +419,19 @@ test("this repository's own contract passes, and exits 0/1/2 correctly", () => {
     const broken = join(dir, "broken.json");
     writeFileSync(broken, JSON.stringify(contract));
     assert.throws(() => execFileSync(process.execPath, [script, broken, repoRoot], { cwd: repoRoot, stdio: "pipe" }), (e) => e.status === 1);
+
+    // The table is a committed generated view. Altering only an ungraded
+    // display label leaves the lifecycle evaluation clean, but must still
+    // make the normal check refuse a stale rendered block and point at the
+    // explicit (never automatic) regeneration command.
+    const drifted = JSON.parse(execFileSync(process.execPath, ["-e", "process.stdout.write(require('fs').readFileSync('docs/contracts/package-programs.json','utf8'))"], { cwd: repoRoot, encoding: "utf8" }));
+    drifted.programs.operation.letter = "Z";
+    const driftedPath = join(dir, "drifted.json");
+    writeFileSync(driftedPath, JSON.stringify(drifted));
+    assert.throws(
+      () => execFileSync(process.execPath, [script, driftedPath, repoRoot], { cwd: repoRoot, stdio: "pipe" }),
+      (e) => e.status === 1 && `${e.stdout}`.includes("lifecycle-position-table-drift") && `${e.stdout}`.includes("--write-lifecycle-position"),
+    );
     assert.throws(() => execFileSync(process.execPath, [script, join(dir, "absent.json"), repoRoot], { cwd: repoRoot, stdio: "pipe" }), (e) => e.status === 2);
 
     // The same control for the gate rule, against the real tree: drop the
