@@ -37,7 +37,11 @@ export function runGovernanceCheck(
 ): GovernanceReport {
   const foundation = runFoundationCheck(root, options);
   const buildOrder = computeBuildOrder(foundation.catalog, { scope: options?.scope });
-  const lifecycleFindings = evaluateLifecycleCoverage(lifecycle, foundation.catalog.entries.map((entry) => entry.name));
+  const lifecycleFindings = evaluateLifecycleCoverage(
+    lifecycle,
+    foundation.catalog.entries.map((entry) => entry.name),
+    new Map(foundation.catalog.entries.map((entry) => [entry.name, entry.version])),
+  );
   const foundationHasError = foundation.findings.some((finding) => finding.severity === "error");
   return {
     foundation,
