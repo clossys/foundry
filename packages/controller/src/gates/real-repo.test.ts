@@ -83,13 +83,32 @@ describe("integration: real packages/ directory", () => {
     // `@vespeneventures/controller` absorbed `catalog`, `policy`, `gates`,
     // `release`, `repository`, and `review` as subpaths and has zero
     // internal dependencies of its own; `builder`, `inspector`, and
-    // `ledger` each declare a real, direct dependency on `controller`, and
-    // `surface` depends on `copy` and `ui`.
-    expect(indexOf("@vespeneventures/controller")).toBeLessThan(indexOf("@vespeneventures/builder"));
-    expect(indexOf("@vespeneventures/controller")).toBeLessThan(indexOf("@vespeneventures/inspector"));
-    expect(indexOf("@vespeneventures/controller")).toBeLessThan(indexOf("@vespeneventures/ledger"));
-    expect(indexOf("@vespeneventures/copy")).toBeLessThan(indexOf("@vespeneventures/surface"));
-    expect(indexOf("@vespeneventures/ui")).toBeLessThan(indexOf("@vespeneventures/surface"));
+    // `publisher` each declare a real, direct dependency on `controller`,
+    // and `publisher` also depends on `writer` and `designer`.
+    //
+    // These edges were `ledger`, `copy -> surface` and `ui -> surface`
+    // until the five expression donors were retired (#469). The shape is
+    // unchanged because the replacement graph is the same graph: `surface`
+    // and `ledger` fused into `publisher`, and `copy`/`ui` became
+    // `writer`/`designer`, so the fan-in that made `surface` build last
+    // now makes `publisher` build last.
+    //
+    // `before` exists because `indexOf` returns -1 for a name that is not
+    // in the order at all, and `expect(-1).toBeLessThan(realIndex)` PASSES.
+    // A deleted or renamed package on the left-hand side would therefore
+    // satisfy this test by being absent -- the exact failure this file is
+    // supposed to catch. Asserting presence first makes absence loud.
+    const before = (earlier: string, later: string) => {
+      expect(result.order, `${earlier} is not in the build order at all`).toContain(earlier);
+      expect(result.order, `${later} is not in the build order at all`).toContain(later);
+      expect(indexOf(earlier)).toBeLessThan(indexOf(later));
+    };
+
+    before("@vespeneventures/controller", "@vespeneventures/builder");
+    before("@vespeneventures/controller", "@vespeneventures/inspector");
+    before("@vespeneventures/controller", "@vespeneventures/publisher");
+    before("@vespeneventures/writer", "@vespeneventures/publisher");
+    before("@vespeneventures/designer", "@vespeneventures/publisher");
 
     // Every entry the catalog found appears exactly once in the order.
     expect(result.order).toHaveLength(report.catalog.entries.length);
