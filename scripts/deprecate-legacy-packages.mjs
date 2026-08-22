@@ -37,6 +37,19 @@ const LIFECYCLE_PATH = "docs/contracts/package-lifecycle.json";
  * hard error rather than a skipped row, because a deprecation notice with no
  * migration target is precisely the "blocked forever, nobody told" state this
  * repository keeps rediscovering.
+ *
+ * An EMPTY plan is valid and returns `[]`. This guard used to throw on it, on
+ * the reasoning that "an empty apply is never intended" -- true of an apply
+ * that was MEANT to do something, but it conflated two different states. Zero
+ * deprecated entries is now reachable, and is in fact the desired steady state:
+ * it means nothing is mid-supersession. Foundry reached it the day the last
+ * five donors retired, and this script immediately failed `npm run check` for
+ * every contributor, on a green tree, for being in the state it wanted.
+ *
+ * The distinction the guard actually needed is document-level, and is enforced
+ * above: a contract that cannot be read, or that declares no packages at all,
+ * is a misconfiguration. A readable contract with real entries and none of them
+ * deprecated is a finished migration.
  */
 export function deprecationPlanFrom(lifecycle, scope) {
   if (!/^@[a-z0-9][a-z0-9._-]*$/.test(scope)) {
@@ -44,6 +57,13 @@ export function deprecationPlanFrom(lifecycle, scope) {
   }
   if (!lifecycle || !Array.isArray(lifecycle.packages)) {
     throw new Error(`legacy deprecation: ${LIFECYCLE_PATH} does not have the expected { packages: [...] } shape`);
+  }
+  // An empty `packages` array is a misconfiguration: this repository always
+  // ships packages, so a document that declares none was not read from the
+  // contract this script means to read. Zero DEPRECATED entries among real
+  // ones is a different thing entirely -- see deprecationPlanFrom's header.
+  if (lifecycle.packages.length === 0) {
+    throw new Error(`legacy deprecation: ${LIFECYCLE_PATH} declares no packages at all — refusing to treat an empty contract as "nothing to deprecate"`);
   }
   const plan = [];
   for (const entry of lifecycle.packages) {
@@ -65,9 +85,6 @@ export function deprecationPlanFrom(lifecycle, scope) {
       replacement,
       message: `Deprecated: use ${replacement} instead.`,
     });
-  }
-  if (plan.length === 0) {
-    throw new Error(`legacy deprecation: ${LIFECYCLE_PATH} declares no deprecated packages — nothing to do, and an empty apply is never intended`);
   }
   return plan.sort((left, right) => left.packageName.localeCompare(right.packageName, "en"));
 }
@@ -198,6 +215,10 @@ function main() {
   }
   const lifecycle = JSON.parse(readFileSync(LIFECYCLE_PATH, "utf8"));
   const plan = deprecationPlanFrom(lifecycle, scope);
+  if (plan.length === 0) {
+    console.log(`legacy deprecation: ${LIFECYCLE_PATH} declares no deprecated packages — nothing to deprecate`);
+    return;
+  }
   const shipped = shippedPackageNames();
   for (const entry of plan) assertReplacementIsShipped(entry, shipped);
   const before = readRegistryState(plan, registry);
