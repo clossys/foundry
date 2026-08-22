@@ -22,7 +22,8 @@
 import { computeBuildOrder } from "./gates/build-order.js";
 import { runFoundationCheck } from "./gates/foundation.js";
 import type { RunFoundationCheckOptions } from "./gates/foundation.js";
-import { evaluateLifecycleCoverage } from "./lifecycle.js";
+import type { CatalogEntry } from "./catalog/types.js";
+import { evaluateDependencyInstallability, evaluateLifecycleCoverage } from "./lifecycle.js";
 import type { GovernanceReport } from "./types.js";
 
 /**
@@ -30,6 +31,26 @@ import type { GovernanceReport } from "./types.js";
  * complete lifecycle registry. It does not discover packages independently,
  * execute commands, write files, or contact a registry.
  */
+/** First-party edges an install must resolve: runtime dependencies, plus peers that are not optional. */
+function dependencyEdges(entries: readonly CatalogEntry[]): { name: string; dependencies: string[] }[] {
+  const names = new Set(entries.map((entry) => entry.name));
+  const edges: { name: string; dependencies: string[] }[] = [];
+  for (const entry of entries) {
+    const manifest = entry.packageJson as {
+      dependencies?: Record<string, string>;
+      peerDependencies?: Record<string, string>;
+      peerDependenciesMeta?: Record<string, { optional?: boolean }>;
+    };
+    const required = new Set(Object.keys(manifest.dependencies ?? {}));
+    for (const peer of Object.keys(manifest.peerDependencies ?? {})) {
+      if (manifest.peerDependenciesMeta?.[peer]?.optional !== true) required.add(peer);
+    }
+    const dependencies = [...required].filter((dependency) => names.has(dependency)).sort();
+    if (dependencies.length > 0) edges.push({ name: entry.name, dependencies });
+  }
+  return edges;
+}
+
 export function runGovernanceCheck(
   root: string,
   lifecycle: unknown,
@@ -37,11 +58,24 @@ export function runGovernanceCheck(
 ): GovernanceReport {
   const foundation = runFoundationCheck(root, options);
   const buildOrder = computeBuildOrder(foundation.catalog, { scope: options?.scope });
-  const lifecycleFindings = evaluateLifecycleCoverage(
-    lifecycle,
-    foundation.catalog.entries.map((entry) => entry.name),
-    new Map(foundation.catalog.entries.map((entry) => [entry.name, entry.version])),
-  );
+  const lifecycleFindings = [
+    ...evaluateLifecycleCoverage(
+      lifecycle,
+      foundation.catalog.entries.map((entry) => entry.name),
+      new Map(foundation.catalog.entries.map((entry) => [entry.name, entry.version])),
+    ),
+    // `evaluateDependencyInstallability` shipped exported, documented and
+    // tested, and nothing in this repository called it -- so the one gate that
+    // would catch a still-installable package depending on a retired one never
+    // ran the rule that catches it. The mechanism existed; the reachability did
+    // not, which is the same shape as a gate wired to no workflow.
+    //
+    // The edges come from the catalog's own manifests rather than a second
+    // read: `dependencies` plus any `peerDependencies` NOT marked optional,
+    // because that is exactly the set an install has to resolve. An optional
+    // peer that cannot resolve is not a broken install.
+    ...evaluateDependencyInstallability(lifecycle, dependencyEdges(foundation.catalog.entries)),
+  ];
   const foundationHasError = foundation.findings.some((finding) => finding.severity === "error");
   return {
     foundation,

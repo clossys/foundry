@@ -7,7 +7,15 @@
       "intendedVisibility": "public"
     },
     {
+      "name": "@vespeneventures/bouncer",
+      "intendedVisibility": "public"
+    },
+    {
       "name": "@vespeneventures/builder",
+      "intendedVisibility": "public"
+    },
+    {
+      "name": "@vespeneventures/butler",
       "intendedVisibility": "public"
     },
     {

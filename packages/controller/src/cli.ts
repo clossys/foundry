@@ -155,19 +155,49 @@ function compactReport(report: ReturnType<typeof runGovernanceCheck>, scope: str
   };
 }
 
-function formatText(summary: ReturnType<typeof compactReport>, verboseReport?: ReturnType<typeof runGovernanceCheck>): string {
+/**
+ * One finding as a line someone can act on: the rule that produced it, where
+ * it is, and what is wrong.
+ *
+ * `path` and `package` are both optional and carry different halves of the
+ * location depending on which check produced the finding, so this prints
+ * whichever are present rather than assuming one shape.
+ */
+function formatFinding(finding: { rule: string; message: string; path?: string; package?: string }): string {
+  const where = [finding.package, finding.path].filter((part) => typeof part === "string" && part.length > 0).join(" ");
+  return `  [${finding.rule}]${where ? ` ${where}` : ""} — ${finding.message}`;
+}
+
+/**
+ * A count is not a finding.
+ *
+ * This printed `Lifecycle findings: 3` and stopped, so a failing run named
+ * nothing to fix (#430). The detail existed the whole time — it was reachable
+ * only through `--verbose`, which dumps the entire report as JSON, package
+ * descriptions and all, leaving a reader to grep a blob for the three lines
+ * that matter. That is not a detail view, and a gate that cannot say what is
+ * wrong makes the person who runs it guess.
+ *
+ * Findings now print under their count whenever there are any. The counts stay
+ * -- they answer "how bad" at a glance -- and `--verbose` stays exactly as it
+ * was, since the full report is still the right thing for a machine reading it.
+ */
+function formatText(summary: ReturnType<typeof compactReport>, report: ReturnType<typeof runGovernanceCheck>, verboseReport?: ReturnType<typeof runGovernanceCheck>): string {
   const values = summary as Record<string, unknown>;
   const maturity = Object.entries(values.lifecycleMaturity as Record<string, number>).map(([status, count]) => `${status}=${count}`).join(", ");
-  return [
+  const lines = [
     `Package governance: ${values.ok ? "PASS" : "FAIL"}`,
     `Scope: ${values.scope ?? "(all packages)"}`,
     `Packages: ${values.packages}`,
     `Lifecycle entries: ${values.lifecycleEntries}`,
     `Lifecycle maturity: ${maturity || "(none)"}`,
     `Foundation findings: ${values.foundationFindings}`,
-    `Lifecycle findings: ${values.lifecycleFindings}`,
-    `Build order: ${values.buildOrder}`,
-  ].join("\n") + (verboseReport ? `\n\nDetails:\n${JSON.stringify(verboseReport, null, 2)}` : "");
+  ];
+  for (const found of report.foundation.findings) lines.push(formatFinding(found));
+  lines.push(`Lifecycle findings: ${values.lifecycleFindings}`);
+  for (const found of report.lifecycleFindings) lines.push(formatFinding(found));
+  lines.push(`Build order: ${values.buildOrder}`);
+  return lines.join("\n") + (verboseReport ? `\n\nDetails:\n${JSON.stringify(verboseReport, null, 2)}` : "");
 }
 
 function readJsonFile(path: string): unknown {
@@ -188,7 +218,7 @@ export function main(argv: readonly string[]): number {
   const summary = compactReport(report, args.scope, lifecycle);
   console.log(args.format === "json"
     ? JSON.stringify(args.verbose ? report : summary, null, 2)
-    : formatText(summary, args.verbose ? report : undefined));
+    : formatText(summary, report, args.verbose ? report : undefined));
   return report.ok ? 0 : 1;
 }
 
