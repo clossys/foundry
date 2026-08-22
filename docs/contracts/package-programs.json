@@ -173,58 +173,23 @@
     },
     {
       "name": "@vespeneventures/strategy",
-      "state": "published",
-      "gaps": [
-        {
-          "state": "staged",
-          "reason": "zero dist-path invocation sites in this repository: this package has never been executed against a real tree by its own author",
-          "issue": 466
-        }
-      ]
+      "state": "published"
     },
     {
       "name": "@vespeneventures/copy",
-      "state": "published",
-      "gaps": [
-        {
-          "state": "staged",
-          "reason": "zero dist-path invocation sites in this repository: this package has never been executed against a real tree by its own author",
-          "issue": 466
-        }
-      ]
+      "state": "published"
     },
     {
       "name": "@vespeneventures/ui",
-      "state": "published",
-      "gaps": [
-        {
-          "state": "staged",
-          "reason": "1 dist-path invocation site(s) (package.json:43, the contrast gate), but no recorded run in which it failed on a real defect; a green history proves it ran, not that it works",
-          "issue": 466
-        }
-      ]
+      "state": "published"
     },
     {
       "name": "@vespeneventures/surface",
-      "state": "published",
-      "gaps": [
-        {
-          "state": "staged",
-          "reason": "zero dist-path invocation sites in this repository: this package has never been executed against a real tree by its own author",
-          "issue": 466
-        }
-      ]
+      "state": "published"
     },
     {
       "name": "@vespeneventures/ledger",
-      "state": "published",
-      "gaps": [
-        {
-          "state": "staged",
-          "reason": "zero dist-path invocation sites in this repository: this package has never been executed against a real tree by its own author",
-          "issue": 466
-        }
-      ]
+      "state": "published"
     },
     {
       "name": "@vespeneventures/auth",
