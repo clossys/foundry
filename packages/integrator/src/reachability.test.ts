@@ -81,10 +81,28 @@ describe("resolveReachability", () => {
     expect(resolved.get("b")).toEqual({ kind: "unauthenticated" });
   });
 
-  it("leaves a lone not-found genuinely undecided -- unreachable, never unauthenticated or absent -- once the batch proves the credential works", () => {
+  // This test's previous name said it all: "leaves a lone not-found genuinely
+  // undecided -- unreachable". It called the case undecided and then asserted
+  // a transport failure, because the vocabulary had no word for undecided and
+  // the nearest neighbour was borrowed. A caller could not tell "the registry
+  // could not be reached" from "the registry was reached and said no".
+  it("says INDETERMINATE for a lone not-found once the batch proves the credential works -- never unreachable, which asserts a failure that did not happen", () => {
     const resolved = resolveReachability(outcomes({ a: { kind: "known", latestVersion: "1.0.0" }, b: { kind: "not-found" } }));
     expect(resolved.get("a")).toEqual({ kind: "known", latestVersion: "1.0.0" });
-    expect(resolved.get("b")).toEqual({ kind: "unreachable" });
+    expect(resolved.get("b")).toEqual({ kind: "indeterminate", reason: "not-found-with-working-credential" });
+  });
+
+  it("keeps a real transport failure distinct from a definitive 404 in the same batch", () => {
+    // The whole point of the fourth verdict: these two must not collapse.
+    // `unreachable` means retry later and it will work; `indeterminate` means
+    // the answer arrived and cannot be acted on without knowing whether the
+    // name is gone or merely invisible to this credential.
+    const resolved = resolveReachability(
+      outcomes({ a: { kind: "known", latestVersion: "1.0.0" }, b: { kind: "not-found" }, c: { kind: "unreachable" } }),
+    );
+    expect(resolved.get("b")).toEqual({ kind: "indeterminate", reason: "not-found-with-working-credential" });
+    expect(resolved.get("c")).toEqual({ kind: "unreachable" });
+    expect(resolved.get("b")).not.toEqual(resolved.get("c"));
   });
 
   it("resolves an empty batch to an empty map", () => {

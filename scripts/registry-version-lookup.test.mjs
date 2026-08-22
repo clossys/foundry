@@ -152,8 +152,10 @@ test("resolveVersionLookups: a known outcome with the version absent resolves to
     ]),
   );
   assert.deepEqual(resolved.get("a"), { kind: "missing" });
-  // "b" alongside a proven-good "a" lookup stays undecidable, never missing.
-  assert.deepEqual(resolved.get("b"), { kind: "unreachable" });
+  // "b" alongside a proven-good "a" lookup stays undecidable — the registry
+  // answered and said no, which is INDETERMINATE, never missing and never
+  // unreachable.
+  assert.deepEqual(resolved.get("b"), { kind: "indeterminate" });
 });
 
 test("resolveVersionLookups: denied passes straight through as unauthenticated, never reclassified", () => {
@@ -182,13 +184,19 @@ test("resolveVersionLookups: the batch-ambiguity case — every lookup not-found
   assert.deepEqual(resolved.get("b"), { kind: "unauthenticated" });
 });
 
-test("resolveVersionLookups: a lone not-found alongside a proven known lookup stays undecidable (unreachable), never guessed either way", () => {
+// The old name carried the defect: "stays undecidable (unreachable)". It
+// named the case undecidable and asserted a transport failure, because the
+// vocabulary had no word for undecidable.
+test("resolveVersionLookups: a lone not-found alongside a proven known lookup is INDETERMINATE — the registry answered, so it is not unreachable", () => {
   const resolved = resolveVersionLookups(
     new Map([
       ["a", { kind: "not-found" }],
       ["b", { kind: "known", hasVersion: true }],
     ]),
   );
-  assert.deepEqual(resolved.get("a"), { kind: "unreachable" });
+  assert.deepEqual(resolved.get("a"), { kind: "indeterminate" });
+  // The distinction the fourth kind exists for: a caller must be able to
+  // tell "retry later and it will work" from "the answer arrived".
+  assert.notDeepEqual(resolved.get("a"), { kind: "unreachable" });
   assert.deepEqual(resolved.get("b"), { kind: "published" });
 });
