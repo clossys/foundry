@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 import {
+  DEFECT_ORIGINS,
   DERIVABLE_STATES,
   STATES,
   evaluatePrograms,
@@ -66,15 +67,53 @@ test("invocation sites alone never satisfy staged — a recorded failing run is 
   // run, not to work.
   assert.deepEqual(rules(grade({ name: P, state: "published" }, { sites: ["ci.yml:10"] })), ["state-ahead-of-evidence"]);
   const withRun = grade(
-    { name: P, state: "published", stagedBy: { run: "https://example/run/1", defect: "#12" } },
+    { name: P, state: "published", stagedBy: { run: "https://example/run/1", defectOrigin: "injected", defect: "set the ink token equal to the surface token", control: "the dark theme stayed clean in the same run" } },
     { sites: ["ci.yml:10"] },
   );
   assert.deepEqual(rules(withRun), []);
 });
 
+test("a stagedBy record must name a run, an origin, the defect, and the control", () => {
+  // The gate checks the PRESENCE of this record, never its truth. That is why
+  // every field names something a reader can go and check.
+  const complete = { run: "https://example/run/1", defectOrigin: "injected", defect: "set the ink token equal to the surface token", control: "the dark theme stayed clean in the same run" };
+  assert.deepEqual(rules(grade({ name: P, state: "published", stagedBy: complete }, { sites: ["ci.yml:10"] })), []);
+
+  // `{}` used to satisfy staged outright.
+  const empty = rules(grade({ name: P, state: "published", stagedBy: {} }, { sites: ["ci.yml:10"] }));
+  assert.deepEqual(empty.slice(0, 4), [
+    "staged-by-without-run",
+    "staged-by-without-origin",
+    "staged-by-without-defect",
+    "staged-by-without-control",
+  ]);
+});
+
+test("a record with no control is refused, because a red alone proves nothing", () => {
+  // The field most likely to be left out, and the one that carries the proof:
+  // a gate that fails on ANY input is not a working gate, and a red run alone
+  // cannot tell the two apart.
+  const { control, ...noControl } = { run: "https://example/run/1", defectOrigin: "injected", defect: "set the ink token equal to the surface token", control: "the dark theme stayed clean in the same run" };
+  const found = rules(grade({ name: P, state: "published", stagedBy: noControl }, { sites: ["ci.yml:10"] }));
+  assert.equal(found.includes("staged-by-without-control"), true);
+  assert.equal(found.includes("state-ahead-of-evidence"), true);
+});
+
+test("both defect origins are acceptable evidence; an unstated one is not", () => {
+  // An injected violation is real in KIND, which is what state 3 requires.
+  // Requiring natural origin would make staged reachable only by luck.
+  assert.deepEqual([...DEFECT_ORIGINS].sort(), ["injected", "natural"]);
+  for (const defectOrigin of DEFECT_ORIGINS) {
+    const stagedBy = { ...{ run: "https://example/run/1", defectOrigin: "injected", defect: "set the ink token equal to the surface token", control: "the dark theme stayed clean in the same run" }, defectOrigin };
+    assert.deepEqual(rules(grade({ name: P, state: "published", stagedBy }, { sites: ["ci.yml:10"] })), [], defectOrigin);
+  }
+  const vague = { ...{ run: "https://example/run/1", defectOrigin: "injected", defect: "set the ink token equal to the surface token", control: "the dark theme stayed clean in the same run" }, defectOrigin: "probably real" };
+  assert.equal(rules(grade({ name: P, state: "published", stagedBy: vague }, { sites: ["ci.yml:10"] })).includes("staged-by-without-origin"), true);
+});
+
 test("an acknowledgement that outlives its reason is a violation", () => {
   const r = grade(
-    { name: P, state: "published", stagedBy: { run: "https://example/run/1", defect: "#12" }, gaps: [{ state: "staged", reason: "no invocation site exists yet at all", issue: 466 }] },
+    { name: P, state: "published", stagedBy: { run: "https://example/run/1", defectOrigin: "injected", defect: "set the ink token equal to the surface token", control: "the dark theme stayed clean in the same run" }, gaps: [{ state: "staged", reason: "no invocation site exists yet at all", issue: 466 }] },
     { sites: ["ci.yml:10"] },
   );
   assert.deepEqual(rules(r), ["stale-gap"]);

@@ -238,6 +238,66 @@ export function readLifecycleStatuses(document) {
   return statuses;
 }
 
+/** The two origins a recorded red run can have. Both are acceptable; being unable to tell them apart is not. */
+export const DEFECT_ORIGINS = new Set(["injected", "natural"]);
+
+/**
+ * Validate a `stagedBy` record — the one piece of evidence on this ladder that
+ * cannot be derived from the tree.
+ *
+ * This gate checks the PRESENCE of the record, never the truth of it: no scan
+ * can confirm that a linked run really went red for the reason claimed. That
+ * is exactly why the required fields are what they are — each names something
+ * a reader can go and check, so the record is a pointer to evidence rather
+ * than a summary of it.
+ *
+ * `control` is required, and it is the field most likely to be left out. A
+ * gate that fails on ANY input is not a working gate, and a red run alone
+ * cannot distinguish the two, so a record with no control names a failure
+ * nobody can interpret. The first real candidate in this repository DID have
+ * a control and its author had not noticed it was one — reporting it as a
+ * feature of the gate rather than as the half that made the red mean
+ * anything. Requiring the field is what stops the next one omitting it.
+ *
+ * `defectOrigin` is required for the same reason, and not because one origin
+ * outranks the other: an injected violation is fully acceptable evidence (see
+ * docs/LIFECYCLE.md state 3 — real in kind, not in origin). What is not
+ * acceptable is a reader being unable to tell which they are looking at
+ * without parsing someone's prose.
+ */
+export function validateStagedBy(value, name, findings) {
+  if (value === undefined) return false;
+  if (!isRecord(value)) {
+    findings.push(finding("unreadable-staged-by", name, "`stagedBy` must be an object"));
+    return false;
+  }
+  let ok = true;
+  if (typeof value.run !== "string" || value.run.trim() === "") {
+    findings.push(finding("staged-by-without-run", name, "`stagedBy.run` must name the recorded run, so a reader can go and look at it"));
+    ok = false;
+  }
+  if (!DEFECT_ORIGINS.has(value.defectOrigin)) {
+    findings.push(
+      finding(
+        "staged-by-without-origin",
+        name,
+        `\`stagedBy.defectOrigin\` must be one of: ${[...DEFECT_ORIGINS].join(", ")} — both are acceptable evidence, being unable to tell them apart is not`,
+      ),
+    );
+    ok = false;
+  }
+  for (const [field, what] of [
+    ["defect", "what actually went wrong, in terms a reader could reproduce"],
+    ["control", "what stayed GREEN in the same run — without one, a red proves the gate fails, not that it discriminates"],
+  ]) {
+    if (typeof value[field] !== "string" || value[field].trim().length < 20) {
+      findings.push(finding(`staged-by-without-${field}`, name, `\`stagedBy.${field}\` must say ${what}`));
+      ok = false;
+    }
+  }
+  return ok;
+}
+
 /**
  * Grade every declared position against the observations collected for it.
  *
@@ -339,7 +399,8 @@ export function evaluatePrograms({ contract, distSites, binSites, lifecycleStatu
     evidence.set("implemented", workspacePackages.has(name));
     // Sites prove the gate RUNS. Only a recorded red run proves it WORKS, and
     // that cannot be derived here — so staged is never satisfied by scan alone.
-    evidence.set("staged", sites.length > 0 && isRecord(entry.stagedBy));
+    const stagedByOk = validateStagedBy(entry.stagedBy, name, findings);
+    evidence.set("staged", sites.length > 0 && stagedByOk);
     evidence.set("published", PUBLISHED_STATUSES.has(lifecycleStatus ?? ""));
 
     const gaps = new Map();

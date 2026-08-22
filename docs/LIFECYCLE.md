@@ -121,6 +121,25 @@ The record says which it was. An injected failure is recorded as injected —
 a reader who cannot tell an injected red from a natural one is back to
 trusting a summary instead of reading a measurement.
 
+The record is `stagedBy`, and every field names something a reader can go and
+check for themselves — because the gate checks that the record is *present*,
+never that it is *true*:
+
+```json
+"stagedBy": {
+  "run": "https://github.com/…/actions/runs/…",
+  "defectOrigin": "injected",
+  "defect": "what actually went wrong, in reproducible terms",
+  "control": "what stayed green in the same run"
+}
+```
+
+`control` is the field most likely to be left out and the one that carries the
+proof. The first real candidate in this repository *had* a control — a second
+theme that stayed clean while the injected one failed — and its author had not
+noticed it was one, reporting it as a feature of the gate rather than as the
+half that made the red mean anything.
+
 ### 4. published
 
 [docs/PUBLISHING.md](PUBLISHING.md) is this state in full, written as a
