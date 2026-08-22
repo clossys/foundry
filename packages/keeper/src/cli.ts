@@ -59,6 +59,7 @@ import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  DISPOSAL_VIOLATION_REASONS,
   checkAttribution,
   checkDisposal,
   checkVisibility,
@@ -312,18 +313,24 @@ function printDisposalReport(result: DisposalResult): void {
   );
   printFindings(result.findings);
   if (result.ok) console.log("Disposal: satisfied.");
-  else if (result.reason === "items-retained-past-schedule") console.log("Disposal: violated.");
+  else if (DISPOSAL_VIOLATION_REASONS.includes(result.reason as (typeof DISPOSAL_VIOLATION_REASONS)[number])) console.log(`Disposal: violated (${result.reason}).`);
   else console.log(`Disposal: indeterminate (${result.reason}).`);
 }
 
 /**
- * The one mapping every gate shares: a real violation is `1`; an
- * indeterminate reason — nothing, or not everything, could be compared — is
- * `2`, never `0` and never conflated with a violation.
+ * The one mapping every gate shares: a real violation is `1`; an indeterminate
+ * reason — nothing, or not everything, could be compared — is `2`, never `0`
+ * and never conflated with a violation.
+ *
+ * Takes the violation reasons as a LIST rather than a single name because
+ * `disposal` has two of them: material that outlived its schedule, and a
+ * deletion that left residue. Both are real findings and both are `1`; naming
+ * only one here would have quietly mapped the other to `2` and reported an
+ * erasure failure as something the gate could not check.
  */
-function exitCodeFor(ok: boolean, reason: string | undefined, violationReason: string): number {
+function exitCodeFor(ok: boolean, reason: string | undefined, violationReasons: readonly string[]): number {
   if (ok) return 0;
-  return reason === violationReason ? 1 : 2;
+  return reason !== undefined && violationReasons.includes(reason) ? 1 : 2;
 }
 
 function runAttribution(argv: string[]): number {
@@ -349,7 +356,7 @@ function runAttribution(argv: string[]): number {
 
   const result = checkAttribution(items, events);
   printAttributionReport(result);
-  return exitCodeFor(result.ok, result.reason, "holdings-unattributed");
+  return exitCodeFor(result.ok, result.reason, ["holdings-unattributed"]);
 }
 
 function runVisibility(argv: string[]): number {
@@ -375,7 +382,7 @@ function runVisibility(argv: string[]): number {
 
   const result = checkVisibility(items, disclosures);
   printVisibilityReport(result);
-  return exitCodeFor(result.ok, result.reason, "holdings-unreachable");
+  return exitCodeFor(result.ok, result.reason, ["holdings-unreachable"]);
 }
 
 function runDisposal(argv: string[]): number {
@@ -407,7 +414,7 @@ function runDisposal(argv: string[]): number {
 
   const result = checkDisposal(items, schedule, deletions, at);
   printDisposalReport(result);
-  return exitCodeFor(result.ok, result.reason, "items-retained-past-schedule");
+  return exitCodeFor(result.ok, result.reason, DISPOSAL_VIOLATION_REASONS);
 }
 
 /**

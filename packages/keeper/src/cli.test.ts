@@ -280,14 +280,29 @@ describe("disposal", () => {
 
     const printed = vi.mocked(console.log).mock.calls.map((call) => String(call[0])).join("\n");
     expect(printed).toContain("400 day(s) against the 90-day retention");
-    expect(printed).toContain("Disposal: violated.");
+    expect(printed).toContain("Disposal: violated (items-retained-past-schedule).");
   });
 
-  it("exits 1 on an erasure that left the item still held", () => {
+  it("exits 1 on an erasure that left the item still held, under its own reason", () => {
+    // Two violation reasons, both `1`. Naming only one in the exit mapping
+    // would have quietly sent this one to `2` and reported an erasure failure
+    // as something the gate could not check.
     const items = write("items.json", [heldItem]);
     const schedule = write("schedule.json", [retentionRule]);
     const deletions = write("deletions.json", [deletionRecord]);
     expect(main(["disposal", items, schedule, deletions, "--at", AT])).toBe(1);
+
+    const printed = vi.mocked(console.log).mock.calls.map((call) => String(call[0])).join("\n");
+    expect(printed).toContain("Disposal: violated (deletions-left-residue).");
+  });
+
+  it("exits 2 — never 0 — on an item whose own heldSince cannot be read", () => {
+    const items = write("items.json", [{ ...heldItem, heldSince: "a while ago" }]);
+    const schedule = write("schedule.json", [retentionRule]);
+    const deletions = write("deletions.json", []);
+    // The JSON validator refuses this shape, which is itself a `2`. The gate
+    // behind it refuses it too, for a caller that constructs items directly.
+    expect(main(["disposal", items, schedule, deletions, "--at", AT])).toBe(2);
   });
 
   it("exits 1 on a deletion that failed while the item is still held", () => {
@@ -419,7 +434,7 @@ describe("direct-path reachability — the real compiled dist/cli.js", () => {
     const schedule = write("schedule.json", [retentionRule]);
     const deletions = write("deletions.json", []);
     const result = runCli(cliPath, ["disposal", items, schedule, deletions, "--at", AT]);
-    expect(result.stdout).toContain("Disposal: violated.");
+    expect(result.stdout).toContain("Disposal: violated (items-retained-past-schedule).");
     expect(result.status).toBe(1);
   });
 

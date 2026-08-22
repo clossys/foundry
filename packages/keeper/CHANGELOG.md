@@ -63,6 +63,23 @@ first.
   each item to the rule its own class declared and compares ages in days, and
   reports an item whose class the schedule never covered as unverifiable
   rather than clean.
+- **The rule lives in the arithmetic, not only in the validators.** Every
+  comparison here is a strictly-greater test, and `NaN > n` is `false`, so an
+  unparseable instant flowing through the maths would read as "inside its
+  schedule" and count toward the satisfied answer. The validators refuse one
+  at the JSON boundary, but the checkers are exported and take any record a
+  host builds directly, so `elapsedDays` returns `undefined` rather than `NaN`
+  and every caller routes that to the adverse or the indeterminate answer.
+- **`disposal` has two violation reasons, kept apart.** A set whose only fault
+  is erasure residue did not outlive its schedule, and reporting it under
+  `items-retained-past-schedule` would send a reader to inspect a schedule
+  that is working. `DISPOSAL_VIOLATION_REASONS` is exported so the CLI derives
+  its exit code from the list rather than restating either name.
+- **On a closed account, succession wins the basis.** Including over an
+  inferred belief, whose own basis it replaces: `successorSubjectId` is the
+  only place the fact that somebody inherited the material survives. The
+  boundary rule is still judged first, so a constraint the person never agreed
+  to is not laundered by being inherited.
 - **Indeterminate must be representable, and it never rounds to satisfied.**
   These gates output judgements, so "I could not check" is the most important
   thing one can say. All three have a per-record indeterminate route as well

@@ -19,6 +19,7 @@
  */
 import { describe, expect, it } from "vitest";
 import {
+  DISPOSAL_VIOLATION_REASONS,
   HOLDING_KINDS,
   INDETERMINATE_ATTRIBUTION_FINDING_KINDS,
   INDETERMINATE_DISPOSAL_FINDING_KINDS,
@@ -223,6 +224,37 @@ describe("decideHolding — the precedence order", () => {
     expect(verdict).toEqual({ kind: "held", basis: { kind: "succession", sourceEventId: "evt_will", successorSubjectId: "sub_heir" } });
   });
 
+  it("2. succession wins the basis over an inferred belief, so the successor is not lost", () => {
+    // The belief basis would say why we formed it; only the succession basis
+    // says who inherited it, and on a closed account that is the fact a reader
+    // needs.
+    const verdict = decideHolding(
+      inputs({
+        item: inferred({ mode: "informs" }),
+        disposition: {
+          status: "account-closed",
+          closedAt: "2026-08-15T00:00:00.000Z",
+          succession: { successorSubjectId: "sub_heir", sourceEventId: "evt_will", classes: ["inferred-preferences"] },
+        },
+      }),
+    );
+    expect(verdict).toEqual({ kind: "held", basis: { kind: "succession", sourceEventId: "evt_will", successorSubjectId: "sub_heir" } });
+  });
+
+  it("2. but a constraint the person never agreed to is not laundered by being inherited", () => {
+    const verdict = decideHolding(
+      inputs({
+        item: inferred({ mode: "constrains", confirmation: null }),
+        disposition: {
+          status: "account-closed",
+          closedAt: "2026-08-15T00:00:00.000Z",
+          succession: { successorSubjectId: "sub_heir", sourceEventId: "evt_will", classes: ["inferred-preferences"] },
+        },
+      }),
+    );
+    expect(verdict).toMatchObject({ kind: "unjustifiable", fault: { kind: "belief-used-as-constraint" } });
+  });
+
   it("3. elapsed retention forgets, and forgetting beats justifying", () => {
     // An item both past its schedule and unjustifiable is `forgotten`:
     // forgetting resolves it, and reporting it as a holding to justify would
@@ -248,6 +280,16 @@ describe("decideHolding — the precedence order", () => {
       inputs({ source: { status: "missing", namedReason: "no event" }, reach: { status: "unreachable", namedReason: "no surface" } }),
     );
     expect(verdict).toMatchObject({ fault: { kind: "no-source-event" } });
+  });
+
+  it("returns unjustifiable, never held, when the item's own heldSince cannot be read", () => {
+    // Every comparison here is strictly-greater, and `NaN > n` is false — so
+    // an unreadable instant flowing through arithmetic would read as "inside
+    // its schedule" and count toward the satisfied answer. The validators
+    // catch this at the JSON boundary, but these functions are exported and
+    // take any item a host constructs directly.
+    const verdict = decideHolding(inputs({ item: item({ heldSince: "a while ago" }) }));
+    expect(verdict).toEqual({ kind: "unjustifiable", fault: { kind: "held-since-unreadable", heldSince: "a while ago" } });
   });
 
   it("takes its instant as a parameter, so the same inputs always produce the same verdict", () => {
@@ -327,6 +369,13 @@ describe("checkAttribution", () => {
       { provenance: { kind: "event", sourceEventId: "evt_2" } },
     );
     expect(checkAttribution([dangling], events).findings[0]?.kind).toBe("belief-confirmation-not-retained");
+  });
+
+  it("reports an unorderable pair of instants as indeterminate, never as attributed", () => {
+    const result = checkAttribution([item({ heldSince: "a while ago" })], events);
+    expect(result).toMatchObject({ ok: false, reason: "attribution-unverifiable" });
+    expect(result.findings[0]?.kind).toBe("instant-unreadable");
+    expect(result.attributed).toBe(0);
   });
 
   it("reports a provenance the store could not resolve as indeterminate, never as a violation and never as clean", () => {
@@ -464,12 +513,33 @@ describe("checkDisposal", () => {
 
   it("fails on an erasure that left the item still held — erasure with residue is not erasure", () => {
     const result = checkDisposal([item()], schedule, [deletion()], AT);
-    expect(result).toMatchObject({ ok: false, reason: "items-retained-past-schedule" });
     expect(result.findings[0]?.kind).toBe("deletion-residue");
+    // Its OWN reason, not the retention one. A set whose only fault is
+    // residue did not outlive its schedule, and reporting it under that name
+    // would send a reader to inspect a schedule that is working.
+    expect(result).toMatchObject({ ok: false, reason: "deletions-left-residue" });
+    expect(DISPOSAL_VIOLATION_REASONS).toContain(result.reason);
+  });
+
+  it("keeps the two violation reasons apart, and reports the retention one when both are present", () => {
+    const stale = item({ itemId: "item_stale", heldSince: "2025-01-01T00:00:00.000Z" });
+    const both = checkDisposal([stale, item()], schedule, [deletion()], AT);
+    expect(both.reason).toBe("items-retained-past-schedule");
+    expect(both.findings.map((finding) => finding.kind)).toEqual(["retained-past-schedule", "deletion-residue"]);
+    expect(DISPOSAL_VIOLATION_REASONS).toEqual(["items-retained-past-schedule", "deletions-left-residue"]);
+  });
+
+  it("reports an item whose own heldSince cannot be read as indeterminate, never as within schedule", () => {
+    const result = checkDisposal([item({ heldSince: "a while ago" })], schedule, [], AT);
+    expect(result).toMatchObject({ ok: false, reason: "disposal-unverifiable" });
+    expect(result.findings[0]?.kind).toBe("held-since-unreadable");
+    expect(result.withinSchedule).toBe(0);
   });
 
   it("fails on a deletion that failed while the item is still held", () => {
-    expect(checkDisposal([item()], schedule, [deletion({ effect: "failed" })], AT).findings[0]?.kind).toBe("deletion-failed");
+    const result = checkDisposal([item()], schedule, [deletion({ effect: "failed" })], AT);
+    expect(result.findings[0]?.kind).toBe("deletion-failed");
+    expect(result.reason).toBe("deletions-left-residue");
   });
 
   it("treats a deletion naming an item that is NOT in the held set as the success case", () => {

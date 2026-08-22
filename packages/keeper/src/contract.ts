@@ -65,8 +65,33 @@ import type {
 
 const MILLISECONDS_PER_DAY = 86_400_000;
 
-function elapsedDays(from: string, to: string): number {
-  return (Date.parse(to) - Date.parse(from)) / MILLISECONDS_PER_DAY;
+/**
+ * Days between two instants, or `undefined` when either cannot be read.
+ *
+ * `undefined`, never `NaN`. Every comparison in this file is a
+ * strictly-greater test, and `NaN > n` is `false` — so an unreadable timestamp
+ * flowing through arithmetic would read as "inside its schedule" and count
+ * toward the satisfied answer. That is a route out of indeterminacy toward
+ * `ok`, which is the one direction this package does not allow.
+ *
+ * `validateHeldItem` guarantees a parseable `heldSince` at the JSON boundary,
+ * but these checkers are exported and take any `HeldItem` a host constructs
+ * directly. The guarantee therefore has to live here too, in the arithmetic
+ * itself, rather than in a validator a caller can legitimately skip.
+ */
+function elapsedDays(from: string, to: string): number | undefined {
+  const fromMs = Date.parse(from);
+  const toMs = Date.parse(to);
+  if (Number.isNaN(fromMs) || Number.isNaN(toMs)) return undefined;
+  return (toMs - fromMs) / MILLISECONDS_PER_DAY;
+}
+
+/** `true` when `later` is strictly after `earlier`, or `undefined` when either cannot be read. Same rule as `elapsedDays`. */
+function isAfter(later: string, earlier: string): boolean | undefined {
+  const laterMs = Date.parse(later);
+  const earlierMs = Date.parse(earlier);
+  if (Number.isNaN(laterMs) || Number.isNaN(earlierMs)) return undefined;
+  return laterMs > earlierMs;
 }
 
 // ---------------------------------------------------------- the runtime verdict
@@ -140,7 +165,8 @@ export type UnjustifiableFault =
   | { kind: "retention-undeclared"; namedReason: string }
   | { kind: "unreachable"; namedReason: string }
   | { kind: "not-correctable"; surface: string }
-  | { kind: "reach-unverifiable"; namedReason: string };
+  | { kind: "reach-unverifiable"; namedReason: string }
+  | { kind: "held-since-unreadable"; heldSince: string };
 
 /** The verdict. Three outcomes, never a boolean. */
 export type Holding =
@@ -284,7 +310,11 @@ function isFault(value: HoldingBasis | UnjustifiableFault): value is Unjustifiab
  *      CLASS. Succession is opt-in per class and carries the event in which
  *      they named it. An account closed with no succession is `forgotten`;
  *      one whose successor covers this class continues to step 3 with the
- *      succession recorded as the basis.
+ *      succession recorded as the basis — including for an inferred belief,
+ *      whose own basis it replaces, because on a closed account the fact a
+ *      reader needs is who inherited it. Step 5 still runs first, so a
+ *      constraint the person never agreed to is not laundered by being
+ *      inherited.
  *   3. DECLARED RETENTION RUNS OUT. Past the days the consumer's own
  *      schedule declared for this class, the item is `forgotten`. Note this
  *      sits ABOVE justification: an item that is both past its schedule and
@@ -327,6 +357,12 @@ export function decideHolding(inputs: HoldingInputs): Holding {
 
   if (retention.status === "declared") {
     const heldDays = elapsedDays(item.heldSince, at);
+    if (heldDays === undefined) {
+      // Neither held nor forgotten: nothing could be compared, and the
+      // adverse answer is the only one available to a verdict with no
+      // indeterminate variant.
+      return { kind: "unjustifiable", fault: { kind: "held-since-unreadable", heldSince: item.heldSince } };
+    }
     if (heldDays > retention.days) {
       return { kind: "forgotten", grounds: { kind: "retention-elapsed", declaredDays: retention.days, heldDays } };
     }
@@ -355,13 +391,27 @@ export function decideHolding(inputs: HoldingInputs): Holding {
 
   const sourceEventId = source.event.eventId;
 
-  let basis: HoldingBasis;
+  // The boundary rule is judged BEFORE any basis is chosen, and independently
+  // of succession: a belief that constrains behaviour unconfirmed is
+  // unjustifiable whether or not somebody inherited it. Inheriting a
+  // constraint the person never agreed to would launder it.
+  let beliefHeld: HoldingBasis | undefined;
   if (item.origin === "inferred" && item.belief !== null) {
     const decided = beliefBasis(item.belief, sourceEventId);
     if (isFault(decided)) return { kind: "unjustifiable", fault: decided };
-    basis = decided;
-  } else if (succession !== null) {
+    beliefHeld = decided;
+  }
+
+  // Succession then wins the BASIS, including over a belief that passed the
+  // rule above. On a closed account, why this is still here is the successor
+  // the person named — and `successorSubjectId` is the only place that fact
+  // survives. Letting the belief basis win instead would leave a verdict that
+  // cannot say the material is held for somebody else.
+  let basis: HoldingBasis;
+  if (succession !== null) {
     basis = { kind: "succession", sourceEventId: succession.sourceEventId, successorSubjectId: succession.successorSubjectId };
+  } else if (beliefHeld !== undefined) {
+    basis = beliefHeld;
   } else if (item.origin === "authored") {
     basis = { kind: "authored", sourceEventId };
   } else if (item.origin === "saved") {
@@ -395,7 +445,9 @@ export type AttributionFindingKind =
   /** A belief's confirmation names an event the consumer no longer retains. A confirmation nobody can produce. */
   | "belief-confirmation-not-retained"
   /** The store could not say where this came from. Indeterminate, never a pass. */
-  | "source-unverifiable";
+  | "source-unverifiable"
+  /** An instant on the item or its source event could not be read, so the two could not be ordered. Indeterminate, never a pass. */
+  | "instant-unreadable";
 
 export interface AttributionFinding {
   kind: AttributionFindingKind;
@@ -406,7 +458,7 @@ export interface AttributionFinding {
 }
 
 /** The one indeterminate finding kind. Kept as a list so the CLI derives its exit code rather than restating the rule. */
-export const INDETERMINATE_ATTRIBUTION_FINDING_KINDS: readonly AttributionFindingKind[] = ["source-unverifiable"];
+export const INDETERMINATE_ATTRIBUTION_FINDING_KINDS: readonly AttributionFindingKind[] = ["source-unverifiable", "instant-unreadable"];
 
 export type AttributionFailureReason = "holdings-unattributed" | "attribution-unverifiable" | "no-items-provided";
 
@@ -530,7 +582,16 @@ export function checkAttribution(items: readonly HeldItem[], events: readonly So
       });
       continue;
     }
-    if (Date.parse(event.occurredAt) > Date.parse(item.heldSince)) {
+    const postdates = isAfter(event.occurredAt, item.heldSince);
+    if (postdates === undefined) {
+      findings.push({
+        ...where,
+        kind: "instant-unreadable",
+        message: `held since "${item.heldSince}" and its source event occurred at "${event.occurredAt}"; the two could not be ordered`,
+      });
+      continue;
+    }
+    if (postdates) {
       findings.push({
         ...where,
         kind: "source-event-postdates-holding",
@@ -704,7 +765,9 @@ export type DisposalFindingKind =
   /** The item's class appears nowhere in the declared schedule. Indeterminate, never a pass. */
   | "retention-undeclared"
   /** A deletion nobody observed the effect of, and the item is still held. Indeterminate, never a pass. */
-  | "deletion-unobserved";
+  | "deletion-unobserved"
+  /** The item's own `heldSince` could not be read, so its age could not be compared. Indeterminate, never a pass. */
+  | "held-since-unreadable";
 
 export interface DisposalFinding {
   kind: DisposalFindingKind;
@@ -715,9 +778,24 @@ export interface DisposalFinding {
 }
 
 /** The two indeterminate finding kinds. Kept as a list so the CLI derives its exit code rather than restating the rule. */
-export const INDETERMINATE_DISPOSAL_FINDING_KINDS: readonly DisposalFindingKind[] = ["retention-undeclared", "deletion-unobserved"];
+export const INDETERMINATE_DISPOSAL_FINDING_KINDS: readonly DisposalFindingKind[] = [
+  "retention-undeclared",
+  "deletion-unobserved",
+  "held-since-unreadable",
+];
 
-export type DisposalFailureReason = "items-retained-past-schedule" | "disposal-unverifiable" | "no-items-provided";
+/**
+ * The two violation reasons, kept apart deliberately.
+ *
+ * A set whose only fault is erasure residue is not a set that outlived its
+ * retention, and reporting it under that reason names the wrong defect to
+ * whoever reads the output — sending them to inspect a schedule that is
+ * working. `cli.ts` derives its exit code from this list rather than restating
+ * either name.
+ */
+export const DISPOSAL_VIOLATION_REASONS = ["items-retained-past-schedule", "deletions-left-residue"] as const;
+
+export type DisposalFailureReason = (typeof DISPOSAL_VIOLATION_REASONS)[number] | "disposal-unverifiable" | "no-items-provided";
 
 export interface DisposalResult {
   ok: boolean;
@@ -790,6 +868,14 @@ export function checkDisposal(
       continue;
     }
     const heldDays = elapsedDays(item.heldSince, at);
+    if (heldDays === undefined) {
+      findings.push({
+        ...where,
+        kind: "held-since-unreadable",
+        message: `held since "${item.heldSince}", which cannot be read as an instant: its age against the ${rule.days}-day retention could not be compared`,
+      });
+      continue;
+    }
     if (heldDays > rule.days) {
       findings.push({
         ...where,
@@ -829,6 +915,9 @@ export function checkDisposal(
 
   const indeterminate = findings.some((finding) => INDETERMINATE_DISPOSAL_FINDING_KINDS.includes(finding.kind));
   if (indeterminate) return { ok: false, reason: "disposal-unverifiable", ...base, withinSchedule, findings };
-  if (findings.length > 0) return { ok: false, reason: "items-retained-past-schedule", ...base, withinSchedule, findings };
+  if (findings.some((finding) => finding.kind === "retained-past-schedule")) {
+    return { ok: false, reason: "items-retained-past-schedule", ...base, withinSchedule, findings };
+  }
+  if (findings.length > 0) return { ok: false, reason: "deletions-left-residue", ...base, withinSchedule, findings };
   return { ok: true, ...base, withinSchedule, findings: [] };
 }

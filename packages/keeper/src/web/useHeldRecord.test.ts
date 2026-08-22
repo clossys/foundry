@@ -143,6 +143,58 @@ describe("useHeldRecord", () => {
     }
   });
 
+  it("clears the previous result state before each mutation, so nothing stale is shown", async () => {
+    // `error` is documented as the most recent client call's failure and
+    // `lastForgetEffect` as the most recent forget's observed effect. A stale
+    // `"erased"` surviving a later failed attempt would tell somebody their
+    // record is gone on the strength of a different call.
+    let effect: DeletionEffect = "erased";
+    const flaky: HeldRecordClient = {
+      read: async () => [entry(), entry({ item: item({ itemId: "item_2" }) })],
+      correct: async (_subjectId, next) => next,
+      forget: async () => effect,
+    };
+    const { result } = render(flaky);
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(async () => {
+      await result.current.forget("item_1");
+    });
+    expect(result.current.lastForgetEffect).toBe("erased");
+
+    effect = "failed";
+    await act(async () => {
+      await result.current.forget("item_2");
+    });
+    expect(result.current.lastForgetEffect).toBe("failed");
+    expect(result.current.rows.map((row) => row.entry.item.itemId)).toEqual(["item_2"]);
+  });
+
+  it("clears a previous error when a later call succeeds", async () => {
+    let fail = true;
+    const flaky: HeldRecordClient = {
+      read: async () => [entry()],
+      correct: async (_subjectId, next) => {
+        if (fail) throw new Error("the store rejected the correction");
+        return next;
+      },
+      forget: async () => "erased",
+    };
+    const { result } = render(flaky);
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(async () => {
+      await result.current.correct(item({ holdingClass: "corrected-notes" }));
+    });
+    expect((result.current.error as Error).message).toBe("the store rejected the correction");
+
+    fail = false;
+    await act(async () => {
+      await result.current.correct(item({ holdingClass: "corrected-notes" }));
+    });
+    expect(result.current.error).toBeUndefined();
+  });
+
   it("surfaces a client error rather than throwing out of the hook", async () => {
     const failing: HeldRecordClient = {
       read: async () => {

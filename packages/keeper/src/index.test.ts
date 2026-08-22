@@ -43,9 +43,10 @@ describe("the package root", () => {
     expect(root.BELIEF_USE_MODES).toEqual(["informs", "constrains"]);
     expect(root.DISCLOSURE_REACHES).toEqual(["visible", "hidden", "unknown"]);
     expect(root.DELETION_EFFECTS).toEqual(["erased", "failed", "unknown"]);
-    expect(root.INDETERMINATE_ATTRIBUTION_FINDING_KINDS).toEqual(["source-unverifiable"]);
+    expect(root.INDETERMINATE_ATTRIBUTION_FINDING_KINDS).toEqual(["source-unverifiable", "instant-unreadable"]);
     expect(root.INDETERMINATE_VISIBILITY_FINDING_KINDS).toEqual(["reach-unverifiable"]);
-    expect(root.INDETERMINATE_DISPOSAL_FINDING_KINDS).toEqual(["retention-undeclared", "deletion-unobserved"]);
+    expect(root.INDETERMINATE_DISPOSAL_FINDING_KINDS).toEqual(["retention-undeclared", "deletion-unobserved", "held-since-unreadable"]);
+    expect(root.DISPOSAL_VIOLATION_REASONS).toEqual(["items-retained-past-schedule", "deletions-left-residue"]);
   });
 
   it("does not export the ./web surface from the root, so importing the gates never pulls React in", () => {

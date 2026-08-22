@@ -195,13 +195,23 @@ removed, not by the call that claimed to remove it. A deletion recorded as
 erased whose item is still in the held set is `deletion-residue`; one recorded
 as failed is `deletion-failed`. A deletion naming an item that is *not* in the
 held set is the success case and is not a finding: that is the shape a working
-erasure actually has.
+erasure actually has. Residue reports under its own reason,
+`deletions-left-residue`, rather than borrowing the retention one.
 
 An item whose class the schedule **never declared** is `retention-undeclared`,
 which exits `2` — the answer a weaker tool cannot give. A schedule with a hole
 in it looks exactly like a schedule without one, until something is held under
 the hole. A deletion nobody observed the effect of is `deletion-unobserved`,
-which exits `2` for the same reason.
+and an item whose own `heldSince` cannot be read is `held-since-unreadable`;
+both exit `2` for the same reason.
+
+That last one is the arithmetic version of the same rule. Every comparison in
+this package is a strictly-greater test, and `NaN > n` is `false` — so an
+unreadable instant flowing through the maths would read as "inside its
+schedule" and count toward the satisfied answer. The validators refuse an
+unparseable timestamp at the JSON boundary, but the checkers are exported and
+take any record a host builds directly, so the rule lives in the arithmetic
+too.
 
 ### Exit codes
 
@@ -267,9 +277,15 @@ Everything below is exported from the package root.
 `DISCLOSURE_REACHES`, `DELETION_EFFECTS`,
 `INDETERMINATE_PROVENANCE_KINDS`,
 `INDETERMINATE_ATTRIBUTION_FINDING_KINDS`,
-`INDETERMINATE_VISIBILITY_FINDING_KINDS` and
-`INDETERMINATE_DISPOSAL_FINDING_KINDS` are the closed lists a caller
-validating untyped input, or deriving an exit code, needs.
+`INDETERMINATE_VISIBILITY_FINDING_KINDS`,
+`INDETERMINATE_DISPOSAL_FINDING_KINDS` and `DISPOSAL_VIOLATION_REASONS` are
+the closed lists a caller validating untyped input, or deriving an exit code,
+needs.
+
+`disposal` has **two** violation reasons — `items-retained-past-schedule` and
+`deletions-left-residue` — and they are kept apart deliberately. A set whose
+only fault is erasure residue did not outlive its schedule, and reporting it
+under that name would send a reader to inspect a schedule that is working.
 
 ### Types
 

@@ -147,6 +147,11 @@ export function useHeldRecord(options: UseHeldRecordOptions): UseHeldRecordResul
 
   const correct = useCallback(
     async (item: HeldItem) => {
+      // Cleared before the call, not after it. `error` is documented as the
+      // most recent client call's failure, and leaving a previous one standing
+      // through a successful call would show the person a stale failure about
+      // their own record.
+      setError(undefined);
       try {
         const stored = await client.correct(subjectId, item);
         setEntries((previous) => previous.map((entry) => (entry.item.itemId === stored.itemId ? { ...entry, item: stored } : entry)));
@@ -159,6 +164,12 @@ export function useHeldRecord(options: UseHeldRecordOptions): UseHeldRecordResul
 
   const forget = useCallback(
     async (itemId: string) => {
+      setError(undefined);
+      // Cleared before the call for the same reason, and this one matters
+      // more: a stale `"erased"` left standing through a later failed attempt
+      // would tell somebody their record is gone on the strength of a
+      // different call.
+      setLastForgetEffect(undefined);
       try {
         const effect = await client.forget(subjectId, itemId);
         setLastForgetEffect(effect);
