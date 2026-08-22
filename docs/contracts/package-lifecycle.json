@@ -49,12 +49,13 @@
     },
     {
       "name": "@vespeneventures/copy",
-      "status": "deprecated",
+      "status": "retired",
       "replacement": {
         "name": "@vespeneventures/writer",
         "range": "^0.3.0"
       },
       "deprecatedOn": "2026-08-21",
+      "retiredOn": "2026-08-22",
       "decision": "docs/DECISIONS.md#10-recutting-the-expression-surface-into-role-shaped-packages",
       "migration": "packages/writer/README.md",
       "forwardsToReplacement": false
@@ -67,7 +68,7 @@
         "range": "^0.7.0"
       },
       "deprecatedOn": "2026-08-18",
-      "retiredOn": "2026-08-21",
+      "retiredOn": "2026-08-22",
       "decision": "docs/DECISIONS.md#9-recutting-the-workspace-surface-into-six-job-shaped-packages",
       "migration": "packages/builder/README.md",
       "forwardsToReplacement": false
@@ -113,7 +114,7 @@
         "range": "^0.8.0"
       },
       "deprecatedOn": "2026-08-18",
-      "retiredOn": "2026-08-21",
+      "retiredOn": "2026-08-22",
       "decision": "docs/DECISIONS.md#9-recutting-the-workspace-surface-into-six-job-shaped-packages",
       "migration": "packages/controller/README.md",
       "forwardsToReplacement": false
@@ -128,12 +129,13 @@
     },
     {
       "name": "@vespeneventures/ledger",
-      "status": "deprecated",
+      "status": "retired",
       "replacement": {
         "name": "@vespeneventures/publisher",
         "range": "^0.1.0"
       },
       "deprecatedOn": "2026-08-21",
+      "retiredOn": "2026-08-22",
       "decision": "docs/DECISIONS.md#10-recutting-the-expression-surface-into-role-shaped-packages",
       "migration": "packages/publisher/README.md",
       "forwardsToReplacement": false
@@ -154,7 +156,7 @@
         "range": "^0.8.0"
       },
       "deprecatedOn": "2026-08-18",
-      "retiredOn": "2026-08-21",
+      "retiredOn": "2026-08-22",
       "decision": "docs/DECISIONS.md#9-recutting-the-workspace-surface-into-six-job-shaped-packages",
       "migration": "packages/controller/README.md",
       "forwardsToReplacement": false
@@ -236,7 +238,7 @@
         "range": "^0.1.0"
       },
       "deprecatedOn": "2026-08-18",
-      "retiredOn": "2026-08-21",
+      "retiredOn": "2026-08-22",
       "decision": "docs/DECISIONS.md#9-recutting-the-workspace-surface-into-six-job-shaped-packages",
       "migration": "packages/locksmith/README.md",
       "forwardsToReplacement": false
@@ -247,24 +249,26 @@
     },
     {
       "name": "@vespeneventures/strategy",
-      "status": "deprecated",
+      "status": "retired",
       "replacement": {
         "name": "@vespeneventures/strategist",
         "range": "^0.1.0"
       },
       "deprecatedOn": "2026-08-20",
+      "retiredOn": "2026-08-22",
       "decision": "docs/DECISIONS.md#10-recutting-the-expression-surface-into-role-shaped-packages",
       "migration": "packages/strategist/README.md",
       "forwardsToReplacement": false
     },
     {
       "name": "@vespeneventures/surface",
-      "status": "deprecated",
+      "status": "retired",
       "replacement": {
         "name": "@vespeneventures/publisher",
         "range": "^0.1.0"
       },
       "deprecatedOn": "2026-08-21",
+      "retiredOn": "2026-08-22",
       "decision": "docs/DECISIONS.md#10-recutting-the-expression-surface-into-role-shaped-packages",
       "migration": "packages/publisher/README.md",
       "forwardsToReplacement": false
@@ -284,12 +288,13 @@
     },
     {
       "name": "@vespeneventures/ui",
-      "status": "deprecated",
+      "status": "retired",
       "replacement": {
         "name": "@vespeneventures/designer",
         "range": "^0.2.0"
       },
       "deprecatedOn": "2026-08-21",
+      "retiredOn": "2026-08-22",
       "decision": "docs/DECISIONS.md#10-recutting-the-expression-surface-into-role-shaped-packages",
       "migration": "packages/designer/README.md",
       "forwardsToReplacement": false
@@ -302,7 +307,7 @@
         "range": "^0.1.0"
       },
       "deprecatedOn": "2026-08-18",
-      "retiredOn": "2026-08-21",
+      "retiredOn": "2026-08-22",
       "decision": "docs/DECISIONS.md#9-recutting-the-workspace-surface-into-six-job-shaped-packages",
       "migration": "packages/inspector/README.md",
       "forwardsToReplacement": false
