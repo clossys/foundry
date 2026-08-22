@@ -33,7 +33,11 @@
  *   - a required declared value that was not supplied — the confidence
  *     floor, or the denial-invalidation policy. Neither has a default
  *     anywhere in this package, and a run missing one declines rather than
- *     inventing one of the consumer's own values.
+ *     inventing one of the consumer's own values;
+ *   - NO GATE SELECTED AT ALL. A bare `butler-check` with no subcommand is
+ *     a run that never happened, and it exits `2`, not `0` — see `main()`'s
+ *     own comment for why an explicitly requested `--help` is the one
+ *     argument-shaped `0` here and a dropped argument is not.
  */
 
 import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
@@ -378,9 +382,24 @@ function runWithdrawalParity(argv: string[]): number {
  */
 export function main(argv: string[]): number {
   const first = argv[0];
-  if (first === undefined || first === "--help" || first === "-h") {
+
+  // An EXPLICITLY requested `--help` is a run that did exactly what was
+  // asked, so it is `0`. A BARE invocation is not: no gate was selected, so
+  // nothing was checked, and reporting that clean is the precise fail-open
+  // shape this repository's own contribution guide forbids ("a check that
+  // cannot run must fail (`2`), never pass (`0`)"). A CI step with a dropped
+  // argument, a wrapper that loses `$1`, or a gate renamed out from under
+  // its caller all arrive here, and all three must go red rather than green
+  // on the strength of having examined nothing. Usage still prints — on
+  // stderr, because it is now a diagnostic rather than the thing asked for.
+  if (first === "--help" || first === "-h") {
     console.log(USAGE);
     return 0;
+  }
+  if (first === undefined) {
+    console.error("butler-check: no gate selected, so nothing was checked.");
+    console.error(`\n${USAGE}`);
+    return 2;
   }
   if (first === "confirmation-completeness") return runConfirmationCompleteness(argv.slice(1));
   if (first === "currency") return runCurrency(argv.slice(1));

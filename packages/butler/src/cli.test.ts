@@ -60,9 +60,23 @@ const freshUsage = { instructionId: "ins_1", actorId: "agent_1", usedAt: "2026-0
 const easyCost = { steps: 2, requiresContact: false, requiresAccount: false };
 
 describe("dispatch", () => {
-  it("prints usage and exits 0 with no arguments or --help", () => {
-    expect(main([])).toBe(0);
+  it("exits 2 with no gate selected — a bare invocation is a run that never happened", () => {
+    // The fail-open shape this package exists to repay, guarded in its own
+    // CLI: a CI step with a dropped argument, a wrapper that loses `$1`, or
+    // a gate renamed out from under its caller all land here, and none of
+    // them may report clean on the strength of having checked nothing.
+    expect(main([])).toBe(2);
+  });
+
+  it("prints its usage to stderr when no gate was selected, never to stdout as if it were output", () => {
+    main([]);
+    expect(console.error).toHaveBeenCalled();
+    expect(console.log).not.toHaveBeenCalled();
+  });
+
+  it("exits 0 for an explicitly requested --help, which is a run that did what was asked", () => {
     expect(main(["--help"])).toBe(0);
+    expect(main(["-h"])).toBe(0);
   });
 
   it("refuses an unknown gate rather than falling through to one", () => {

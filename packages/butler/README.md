@@ -107,11 +107,17 @@ half of that. The API half is structural and lives in `./web`.
 | --- | --- |
 | `0` | Ran against a non-empty record set and found nothing. |
 | `1` | Ran and found at least one real violation. |
-| `2` | Could not run: a missing, unreadable, unparseable or schema-invalid record store; an empty record set; or a required declared value that was not supplied. |
+| `2` | Could not run: a missing, unreadable, unparseable or schema-invalid record store; an empty record set; a required declared value that was not supplied; or no gate selected at all. |
 
 `2` is not a variant of failure. "I checked and it is fine" and "I never
 checked" are different answers, and a gate that reports the second as the
 first is worse than no gate.
+
+A bare `butler-check` with no subcommand exits `2`, not `0`. Nothing was
+selected, so nothing was checked, and a CI step with a dropped argument
+must go red rather than green on the strength of having examined nothing.
+An explicitly requested `--help` is the one exception, and exits `0`,
+because asking for help is a run that did exactly what was asked.
 
 ## API
 

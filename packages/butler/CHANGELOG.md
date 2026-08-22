@@ -31,8 +31,11 @@ thing — to a reader who arrives at this package first.
   `basename(process.argv[1])`, which would see `cli.js` and silently run
   the wrong command wherever a gate is invoked by compiled path.
 - The `0` / `1` / `2` exit contract, with `2` reachable on every gate by
-  more than one route — an unreadable or invalid record store, and an empty
-  record set — and each route tested.
+  more than one route — an unreadable or invalid record store, an empty
+  record set, a required declared value that was not supplied, and no gate
+  selected at all — and each route tested. A bare `butler-check` exits `2`:
+  nothing was selected, so nothing was checked. Only an explicitly
+  requested `--help` exits `0`.
 - An `./inbound` subpath: admission on any channel as a pure function of
   the caller's own signature verification and a host ledger's dedupe
   answer. An unreachable ledger rejects rather than acknowledging, because
