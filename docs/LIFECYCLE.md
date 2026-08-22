@@ -174,6 +174,15 @@ measurable.
 An installed package that nothing invokes proves only that a resolver could
 find the name.
 
+**The author's repository is never a consumer.** Wiring a package into this
+repository earns *staged* and nothing above it, however blocking the wiring
+is. That rule is not pedantry about who owns a tree: *adopted* exists because
+an author's repository bends to fit its own gate, and this catalogue has the
+receipts — three operation packages passed every check here while having
+never been executed by anything. If this repository could grade itself as a
+consumer, *staged* and *adopted* would collapse into one measurement and the
+ladder would lose the exact rung that caught that.
+
 ### 6. grounded
 
 A gate that has never gone red is either perfectly effective or completely
@@ -229,31 +238,37 @@ in sequence:
 
 ## Where this repository actually is
 
-Three programs, fourteen packages. Cells are packages against consumers —
-this repository plus four consuming repositories.
+This section used to carry a table of positions measured by hand on
+2026-08-22. It has been deleted, and the deletion is the point.
 
-| program | packages | designed | implemented | staged | published | adopted | grounded |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| **A** — operation | 6 | 6 | 6 | 1 | 6 | 3 / 24 cells | **0** |
-| **B** — expression | 4 | 4 | 4 | — | 4 | 0 / 16 cells | **0** |
-| **C** — interaction | 4 | 4 | 0 | 0 | 0 | 0 / 16 cells | **0** |
+Within a day it disagreed with the contract in four places at once: it
+counted three programs where there are four, nineteen packages short of
+*staged* where there are thirteen, fifteen packages with no invocation site
+where there are nine, and one *staged* package in program A where the gate
+grades none. Nothing was wrong with the measurement — it was correct when
+taken, and it was a declaration by the following morning. That is the failure
+this document describes, committed by this document.
 
-`builder` and `inspector` each have exactly one invocation site here, both
-real and both blocking, but neither has a recorded failing run — so both sit
-between *implemented* and *staged*.
+Refreshing the numbers would have re-committed it with fresher digits. So the
+position is not written here. It is read:
 
-Twenty-three packages are graded in total — the fourteen roles above, the
-eight donors the programmes are retiring, and `domain`, which predates all
-three. Nineteen of the twenty-three currently declare a shortfall at
-`staged`, and fifteen of those have **zero** invocation sites.
+```bash
+node scripts/check-package-programs.mjs
+```
 
-**The grounded column is zero for every package in every program.** Five of
-the six operation packages state close conditions that depend on `observer`
-reporting a number, and `observer` has no input. The producer and the consumer
-of that number both exist and have never been connected: this repository emits
-an observation bundle on every CI run, and `observer` ships the readers for it.
+`docs/contracts/package-programs.json` is the record and that command is its
+reader. A prose table returns here only once it is generated and the gate
+fails when the committed copy drifts from the derived one — #493.
 
-Nothing in this catalogue has reached *closed*.
+Two claims about position are structural rather than counted, and survive:
+
+**No package in any program has an escape rate.** *Grounded* is not merely
+zero, it is unmeasured: `observer` ships the readers and this repository emits
+an observation bundle on every CI run, and the two have never been connected
+to a source of independent landed-change outcomes. A rate that reads zero
+because nothing could be read is not a rate (#484).
+
+**Nothing in this catalogue has reached *closed*.**
 
 ## How this is enforced
 
