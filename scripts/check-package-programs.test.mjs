@@ -28,7 +28,14 @@ const script = join(repoRoot, "scripts/check-package-programs.mjs");
 
 const P = "@vespeneventures/thing";
 
-function grade(entry, { sites = [], bins = [], status = "published", inWorkspace = true, programs } = {}) {
+// `manifestBins` is what the package's own manifest exposes, which the gate
+// rule (docs/DECISIONS.md 11) grades. The default is one bin: a package that
+// ships a gate is the ordinary case, and it keeps every ladder test above
+// free of a rule they are not about.
+function grade(
+  entry,
+  { sites = [], bins = [], status = "published", inWorkspace = true, programs, manifestBins = ["thing-check"] } = {},
+) {
   return evaluatePrograms({
     contract: {
       programs: programs ?? { operation: { packages: [P], donors: [] } },
@@ -38,6 +45,7 @@ function grade(entry, { sites = [], bins = [], status = "published", inWorkspace
     binSites: new Map([[P, bins]]),
     lifecycleStatuses: new Map(status ? [[P, status]] : []),
     workspacePackages: new Set(inWorkspace ? [P] : []),
+    workspaceBins: new Map([[P, manifestBins]]),
   });
 }
 
@@ -221,6 +229,98 @@ test("a package in no programme, and a workspace package in no contract, both fa
   assert.deepEqual(rules(r), ["undeclared-package"]);
 });
 
+// ---------------------------------------------- the gate rule (decision 11)
+
+const staged = { state: "staged", reason: "zero invocation sites anywhere here", issue: 466 };
+const noGate = { manifestBins: [] };
+
+test("a package that ships a gate declares nothing and passes", () => {
+  assert.deepEqual(rules(grade({ name: P, state: "published", gaps: [staged] })), []);
+});
+
+test("a package that ships no gate and says nothing about it is a violation", () => {
+  // The whole point of decision 11: before it, a primitive that correctly
+  // owes no gate and a package whose gate nobody built were the same absence.
+  assert.deepEqual(rules(grade({ name: P, state: "published", gaps: [staged] }, noGate)), ["gate-not-declared"]);
+});
+
+test("declaring it, with a reason and an issue, passes", () => {
+  const r = grade(
+    { name: P, state: "published", gaps: [staged], shipsNoGate: { reason: "donor to a role nobody has cut yet", issue: 458 } },
+    noGate,
+  );
+  assert.deepEqual(rules(r), []);
+  assert.equal(r.results[0].shipsGate, false);
+});
+
+test("outside the primitive tier the declaration is a countdown: reason and issue both required", () => {
+  assert.deepEqual(
+    rules(grade({ name: P, state: "published", gaps: [staged], shipsNoGate: { reason: "short", issue: 458 } }, noGate)),
+    ["no-gate-without-reason"],
+  );
+  assert.deepEqual(
+    rules(grade({ name: P, state: "published", gaps: [staged], shipsNoGate: { reason: "donor to a role nobody has cut yet" } }, noGate)),
+    ["no-gate-without-issue"],
+  );
+  assert.deepEqual(
+    rules(
+      grade(
+        { name: P, state: "published", gaps: [staged], shipsNoGate: { reason: "donor to a role nobody has cut yet", permanent: true } },
+        noGate,
+      ),
+    ),
+    ["no-gate-claimed-permanent"],
+  );
+});
+
+test("permanence is available only in the primitive tier, and takes no issue", () => {
+  const tier = { programs: { foundation: { tier: "primitive", packages: [P], donors: [] } } };
+  const ok = grade(
+    { name: P, state: "published", gaps: [staged], shipsNoGate: { reason: "no addressee, therefore no question to judge", permanent: true } },
+    { ...noGate, programs: tier.programs },
+  );
+  assert.deepEqual(rules(ok), []);
+
+  const notPermanent = grade(
+    { name: P, state: "published", gaps: [staged], shipsNoGate: { reason: "no addressee, therefore no question to judge", issue: 458 } },
+    { ...noGate, programs: tier.programs },
+  );
+  assert.deepEqual(rules(notPermanent).sort(), ["no-gate-with-both", "no-gate-without-permanence"]);
+});
+
+test("a primitive that ships a gate is a contradiction, not a bonus", () => {
+  const r = grade(
+    { name: P, state: "published", gaps: [staged] },
+    { programs: { foundation: { tier: "primitive", packages: [P], donors: [] } } },
+  );
+  assert.deepEqual(rules(r), ["primitive-ships-a-gate"]);
+});
+
+test("a declaration that outlived the gate it excused is stale, like a gap", () => {
+  const r = grade({
+    name: P,
+    state: "published",
+    gaps: [staged],
+    shipsNoGate: { reason: "donor to a role nobody has cut yet", issue: 458 },
+  });
+  assert.deepEqual(rules(r), ["stale-no-gate-declaration"]);
+});
+
+test("an unreadable declaration is a finding, and a tier that is not `primitive` is a typo", () => {
+  assert.deepEqual(rules(grade({ name: P, state: "published", gaps: [staged], shipsNoGate: "yes" }, noGate)), [
+    "unreadable-no-gate",
+  ]);
+  const r = grade({ name: P, state: "published", gaps: [staged] }, { programs: { x: { tier: "core", packages: [P], donors: [] } } });
+  assert.equal(rules(r).includes("unreadable-contract"), true);
+});
+
+test("a designed package has no manifest to grade, and a retired one has left the ladder", () => {
+  // A rule about what a manifest exposes cannot be applied to a package that
+  // does not exist yet, and must not be applied to one deliberately gone.
+  assert.deepEqual(rules(grade({ name: P, state: "designed" }, { ...noGate, inWorkspace: false, status: null })), []);
+  assert.deepEqual(rules(grade({ name: P, state: "published" }, { ...noGate, status: "retired" })), []);
+});
+
 test("an unparseable contract yields one finding and no results, never a pass", () => {
   for (const contract of [null, {}, { programs: {} }, { programs: {}, packages: {} }]) {
     const r = evaluatePrograms({ contract, distSites: new Map(), binSites: new Map(), lifecycleStatuses: new Map(), workspacePackages: new Set() });
@@ -295,6 +395,17 @@ test("this repository's own contract passes, and exits 0/1/2 correctly", () => {
     writeFileSync(broken, JSON.stringify(contract));
     assert.throws(() => execFileSync(process.execPath, [script, broken, repoRoot], { cwd: repoRoot, stdio: "pipe" }), (e) => e.status === 1);
     assert.throws(() => execFileSync(process.execPath, [script, join(dir, "absent.json"), repoRoot], { cwd: repoRoot, stdio: "pipe" }), (e) => e.status === 2);
+
+    // The same control for the gate rule, against the real tree: drop the
+    // primitive's declaration and the absent `bin` must stop being excused.
+    const stripped = JSON.parse(execFileSync(process.execPath, ["-e", "process.stdout.write(require('fs').readFileSync('docs/contracts/package-programs.json','utf8'))"], { cwd: repoRoot, encoding: "utf8" }));
+    for (const p of stripped.packages) if (p.name === "@vespeneventures/domain") delete p.shipsNoGate;
+    const undeclared = join(dir, "undeclared-gate.json");
+    writeFileSync(undeclared, JSON.stringify(stripped));
+    assert.throws(
+      () => execFileSync(process.execPath, [script, undeclared, repoRoot], { cwd: repoRoot, stdio: "pipe" }),
+      (e) => e.status === 1 && `${e.stdout}`.includes("gate-not-declared"),
+    );
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

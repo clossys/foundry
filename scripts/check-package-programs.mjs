@@ -84,6 +84,29 @@
 // installer happened to link, which is not necessarily the package under
 // test. Bin-name invocations are reported separately and never counted as
 // evidence of staging.
+//
+// THE GATE RULE (docs/DECISIONS.md 11)
+// -------------------------------------
+// Separate from the ladder, and graded here because this is the file that
+// already knows every package's programme and lifecycle status: a package in
+// a programme ships a gate behind a `bin`, or it declares `shipsNoGate` with
+// a reason — and a package that ships none permanently is only possible in
+// the primitive tier, a programme marked `"tier": "primitive"`, whose members
+// have no addressee and therefore no question a gate could judge.
+//
+// The rule turns an absent `bin` from an absence into a decision. Before it,
+// `domain` (a primitive that correctly ships no gate) and `auth`, `comms` and
+// `consent` (three published packages whose gate nobody has built) were
+// indistinguishable from outside: all four simply had no `bin`. The second
+// case is why `packages/comms/src/dispatcher.ts` can treat an unwired policy
+// as `allow` with no CLI anywhere that could fail on it.
+//
+// A non-primitive declaration therefore requires an integer `issue`: it is a
+// countdown, exactly like `gaps`. A primitive declaration requires
+// `permanent: true` and takes no issue, because there is no work to track. A
+// package that ships a `bin` and still declares `shipsNoGate` is a stale
+// declaration and fails, for the same reason a `gaps` entry that outlived its
+// reason does. Retired packages are exempt: they have left the ladder.
 
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
@@ -332,7 +355,102 @@ export function validateStagedBy(value, name, findings) {
  * filesystem and a disputed verdict is re-checkable offline from the same
  * observation set.
  */
-export function evaluatePrograms({ contract, distSites, binSites, lifecycleStatuses, workspacePackages }) {
+/**
+ * Grade one package against the gate rule (docs/DECISIONS.md 11).
+ *
+ * Pure, and separate from the ladder on purpose: shipping a gate is not a
+ * rung, it is a property a package either has or has declared it will never
+ * have. Returns findings only — a package that ships a `bin` and declares
+ * nothing is the ordinary, silent pass.
+ */
+export function evaluateGateRule({ name, entry, bins, isPrimitive }) {
+  const findings = [];
+  const declaration = entry.shipsNoGate;
+  const shipsGate = bins.length > 0;
+
+  if (declaration !== undefined && !isRecord(declaration)) {
+    findings.push(finding("unreadable-no-gate", name, "`shipsNoGate`, when present, must be an object with a `reason`"));
+    return { findings, shipsGate };
+  }
+
+  if (shipsGate) {
+    if (declaration) {
+      findings.push(
+        finding(
+          "stale-no-gate-declaration",
+          name,
+          `declares it ships no gate, but its manifest exposes ${bins.length} bin entry point(s) (${bins.join(", ")}) — remove the declaration`,
+        ),
+      );
+    }
+    if (isPrimitive) {
+      findings.push(
+        finding(
+          "primitive-ships-a-gate",
+          name,
+          "belongs to the primitive tier but exposes a `bin` — a package with a question to judge has an addressee, and therefore belongs to a programme",
+        ),
+      );
+    }
+    return { findings, shipsGate };
+  }
+
+  if (!declaration) {
+    findings.push(
+      finding(
+        "gate-not-declared",
+        name,
+        "exposes no `bin` and does not declare `shipsNoGate` — an absent gate must be a decision with a reason, not an absence " +
+          "indistinguishable from one nobody remembered to build (docs/DECISIONS.md 11)",
+      ),
+    );
+    return { findings, shipsGate };
+  }
+
+  if (typeof declaration.reason !== "string" || declaration.reason.trim().length < 20) {
+    findings.push(finding("no-gate-without-reason", name, "`shipsNoGate` needs a reason saying why this package judges nothing"));
+  }
+
+  if (isPrimitive) {
+    if (declaration.permanent !== true) {
+      findings.push(
+        finding(
+          "no-gate-without-permanence",
+          name,
+          "belongs to the primitive tier, so its `shipsNoGate` must declare `permanent: true` — the tier is the claim that no gate will ever be owed",
+        ),
+      );
+    }
+    if (declaration.issue !== undefined) {
+      findings.push(
+        finding("no-gate-with-both", name, "a permanent declaration tracks no issue: there is no work to close"),
+      );
+    }
+    return { findings, shipsGate };
+  }
+
+  if (declaration.permanent === true) {
+    findings.push(
+      finding(
+        "no-gate-claimed-permanent",
+        name,
+        "claims it will never owe a gate, but belongs to a programme rather than the primitive tier — a package with an addressee owes a question only it answers",
+      ),
+    );
+  } else if (!Number.isInteger(declaration.issue)) {
+    findings.push(
+      finding(
+        "no-gate-without-issue",
+        name,
+        "`shipsNoGate` outside the primitive tier needs an integer `issue`: it is a countdown, like `gaps`, not a standing exemption",
+      ),
+    );
+  }
+
+  return { findings, shipsGate };
+}
+
+export function evaluatePrograms({ contract, distSites, binSites, lifecycleStatuses, workspacePackages, workspaceBins = new Map() }) {
   const findings = [];
   const results = [];
 
@@ -348,10 +466,18 @@ export function evaluatePrograms({ contract, distSites, binSites, lifecycleStatu
 
   const declaredNames = new Set();
   const membership = new Map();
+  const primitivePrograms = new Set();
   for (const [programId, program] of Object.entries(contract.programs)) {
     if (!isRecord(program) || !Array.isArray(program.packages)) {
       findings.push(finding("unreadable-contract", programId, "a program must declare a `packages` array"));
       continue;
+    }
+    // "primitive" is the only tier there is: a programme addresses somebody,
+    // and the tier is what a package belongs to when nobody is addressed. Any
+    // other value is a typo pretending to be a category.
+    if (program.tier !== undefined) {
+      if (program.tier === "primitive") primitivePrograms.add(programId);
+      else findings.push(finding("unreadable-contract", programId, '`tier`, when present, must be "primitive"'));
     }
     // A donor a programme is retiring is as much a member of it as the role
     // that replaces it. Supersession runs in parallel with the ladder rather
@@ -414,6 +540,9 @@ export function evaluatePrograms({ contract, distSites, binSites, lifecycleStatu
         supersession: RETIRED_STATUS,
         invocationSites: sites.length,
         binInvocations: bins.length,
+        // The gate rule is not applied to a retired package for the same
+        // reason the ladder is not: it has left. Reported, never graded.
+        shipsGate: (workspaceBins.get(name) ?? []).length > 0,
         acknowledgedGaps: [],
       });
       continue;
@@ -503,6 +632,22 @@ export function evaluatePrograms({ contract, distSites, binSites, lifecycleStatu
       );
     }
 
+    // The gate rule (docs/DECISIONS.md 11), graded only where there is a
+    // package to observe: a role still at "designed" has no manifest, and a
+    // rule about what a manifest exposes cannot be applied to one that does
+    // not exist yet.
+    let shipsGate = false;
+    if (workspacePackages.has(name)) {
+      const gate = evaluateGateRule({
+        name,
+        entry,
+        bins: workspaceBins.get(name) ?? [],
+        isPrimitive: primitivePrograms.has(membership.get(name)?.program),
+      });
+      findings.push(...gate.findings);
+      shipsGate = gate.shipsGate;
+    }
+
     results.push({
       package: name,
       program: membership.get(name)?.program ?? null,
@@ -511,6 +656,7 @@ export function evaluatePrograms({ contract, distSites, binSites, lifecycleStatu
       supersession: lifecycleStatus === "deprecated" ? "deprecated" : null,
       invocationSites: sites.length,
       binInvocations: bins.length,
+      shipsGate,
       acknowledgedGaps: [...gaps.keys()],
     });
   }
@@ -550,6 +696,37 @@ export function readWorkspacePackages(repoRoot) {
   return names;
 }
 
+/**
+ * Bin entry-point names per package, read from each manifest on disk.
+ *
+ * Read from the manifest rather than from the contract for the same reason
+ * every state above is derived rather than declared: what a package installs
+ * is a fact about the package, and a second copy of that fact in a contract
+ * agrees with the first only by luck.
+ */
+export function readWorkspaceBins(repoRoot) {
+  const bins = new Map();
+  let entries;
+  try {
+    entries = readdirSync(join(repoRoot, "packages"), { withFileTypes: true });
+  } catch {
+    return bins;
+  }
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    try {
+      const manifest = JSON.parse(readFileSync(join(repoRoot, "packages", entry.name, "package.json"), "utf8"));
+      if (typeof manifest.name !== "string") continue;
+      const bin = manifest.bin;
+      bins.set(manifest.name, typeof bin === "string" ? [manifest.name] : Object.keys(bin ?? {}));
+    } catch {
+      // Same as readWorkspacePackages: a directory with no readable manifest
+      // is not a package, and is not silently credited with anything either.
+    }
+  }
+  return bins;
+}
+
 function die(message) {
   console.error(`check-package-programs: ${message}`);
   process.exit(2);
@@ -582,14 +759,15 @@ async function main() {
   const declared = (contract.packages ?? []).map((p) => p?.name).filter((n) => typeof n === "string");
   const { distSites, binSites } = scanInvocationSites(repoRoot, [...new Set([...declared, ...workspacePackages])]);
 
-  const { findings, results } = evaluatePrograms({ contract, distSites, binSites, lifecycleStatuses, workspacePackages });
+  const workspaceBins = readWorkspaceBins(repoRoot);
+  const { findings, results } = evaluatePrograms({ contract, distSites, binSites, lifecycleStatuses, workspacePackages, workspaceBins });
 
   if (json) {
     console.log(JSON.stringify({ results, findings }, null, 2));
   } else {
     for (const r of results) {
       console.log(
-        `  [${String(r.state).padEnd(11)}] ${r.package.padEnd(32)} ${String(r.role ?? "?").padEnd(5)} sites=${String(r.invocationSites).padStart(2)}` +
+        `  [${String(r.state).padEnd(11)}] ${r.package.padEnd(32)} ${String(r.role ?? "?").padEnd(5)} ${r.shipsGate ? "gate" : "----"} sites=${String(r.invocationSites).padStart(2)}` +
           (r.acknowledgedGaps.length > 0 ? `  gaps: ${r.acknowledgedGaps.join(", ")}` : ""),
       );
     }
