@@ -197,7 +197,49 @@ describe("checkAuthorityReconciliation", () => {
     );
     expect(result.reason).toBe("provider-unreachable");
     // The violation it DID find is still reported, so nothing is hidden — it
-    // is the exit code that refuses to call the list complete.
+    // is the exit code that refuses to call the list complete. Pinned as the
+    // actual finding, not merely a count: a refactor that emptied the list
+    // while keeping the number would pass a count-only assertion.
+    expect(result.unreconciledGrantSurface).toBe(1);
+    expect(result.findings).toHaveLength(1);
+    expect(result.findings[0]).toMatchObject({ kind: "revoked-upstream", grantId: "grant-1", actorId: "actor-1", subjectId: "subject-1" });
+    // And the blind half is counted separately, so a reader can see that one
+    // grant was judged and one was not.
+    expect(result.unverifiableGrants).toBe(1);
+  });
+
+  it("keeps reporting indeterminate however the mix is ordered, so the answer never depends on input order", () => {
+    // The precedence has to come from the reasons themselves, not from
+    // whichever grant happened to be evaluated last. Both orderings, one answer.
+    const revoked = reachable({
+      backs: [{ actorId: "actor-1", subjectId: "subject-1", authority: "records.read", status: "revoked", confirmedAt: AT }],
+    });
+    const down: ProviderAssertion = { ...unreachable, providerId: "provider-b" };
+    const violationFirst = checkAuthorityReconciliation(
+      [grant(), grant({ grantId: "grant-2", providerId: "provider-b" })],
+      [revoked, down],
+      AT,
+    );
+    const blindFirst = checkAuthorityReconciliation(
+      [grant({ grantId: "grant-2", providerId: "provider-b" }), grant()],
+      [down, revoked],
+      AT,
+    );
+    expect(violationFirst.reason).toBe("provider-unreachable");
+    expect(blindFirst.reason).toBe("provider-unreachable");
+    expect(blindFirst.unreconciledGrantSurface).toBe(1);
+  });
+
+  it("reports indeterminate over violated for an UNOBSERVED provider too, not only an unreachable one", () => {
+    // `provider-not-observed` is the quieter of the two indeterminate reasons
+    // and the one most likely to be dropped by mistake, because nothing failed
+    // — somebody simply did not supply an observation. It must still beat a
+    // real violation found elsewhere in the same run.
+    const revoked = reachable({
+      backs: [{ actorId: "actor-1", subjectId: "subject-1", authority: "records.read", status: "revoked", confirmedAt: AT }],
+    });
+    const result = checkAuthorityReconciliation([grant(), grant({ grantId: "grant-2", providerId: "provider-z" })], [revoked], AT);
+    expect(result.reason).toBe("provider-not-observed");
     expect(result.unreconciledGrantSurface).toBe(1);
   });
 
@@ -276,6 +318,30 @@ describe("checkDelegationCeiling", () => {
   it("is indeterminate with no actors at all, rather than reporting a clean run over nothing", () => {
     expect(checkDelegationCeiling([])).toMatchObject({ ok: false, reason: "no-actors-provided" });
   });
+
+  it("has no mixed indeterminate-and-violated state to resolve, and this pins why", () => {
+    // Gates 1 and 3 each need an explicit precedence rule, because one run of
+    // either can be partly blind and partly conclusive. This gate cannot be:
+    // its only indeterminate reason is `no-actors-provided`, which requires an
+    // empty input, and an empty input can produce no findings. There is
+    // nothing to order.
+    //
+    // So rather than a mixed-case test that could never fail, this pins the
+    // structural fact the absence rests on. If a future indeterminate reason is
+    // added that CAN coexist with a finding, this breaks, and the precedence
+    // question has to be answered deliberately instead of by default.
+    const empty = checkDelegationCeiling([]);
+    expect(empty.reason).toBe("no-actors-provided");
+    expect(empty.findings).toHaveLength(0);
+    expect(empty.actorsChecked).toBe(0);
+
+    // And every non-empty input resolves to exactly one of clean or violated —
+    // never to an indeterminate reason alongside findings.
+    const { monetaryLimitAmount: _amount, monetaryLimitCurrency: _currency, ...undecided } = actor();
+    expect(checkDelegationCeiling([actor()]).reason).toBeUndefined();
+    expect(checkDelegationCeiling([undecided]).reason).toBe("unbounded-delegation");
+    expect(checkDelegationCeiling([actor(), undecided]).reason).toBe("unbounded-delegation");
+  });
 });
 
 describe("checkProviderContract", () => {
@@ -313,6 +379,26 @@ describe("checkProviderContract", () => {
   it("is indeterminate — not clean — for a mapping whose provider shape was never supplied", () => {
     const result = checkProviderContract([mapping(), mapping({ adapterId: "adapter-b", providerId: "provider-z" })], [shape()]);
     expect(result).toMatchObject({ ok: false, reason: "shape-not-observed" });
+  });
+
+  it("reports indeterminate over drift when both are present, and still returns the drift it did find", () => {
+    // Gate 3 has the same mixed state gate 1 does, and needs the same
+    // precedence: one mapping drifted, another was never compared at all, so
+    // the finding list is known to be incomplete. Reporting `1` here would
+    // present a partially-blind run as a completed check.
+    const drifted = mapping({ readsFields: [{ path: "data.legacy_id", required: true }] });
+    const uncompared = mapping({ adapterId: "adapter-b", providerId: "provider-z" });
+    const result = checkProviderContract([drifted, uncompared], [shape()]);
+    expect(result.reason).toBe("shape-not-observed");
+    expect(result.findings).toHaveLength(1);
+    expect(result.findings[0]).toMatchObject({ kind: "field-not-declared", adapterId: "adapter-a", subject: "data.legacy_id" });
+  });
+
+  it("keeps that answer whichever order the mappings arrive in", () => {
+    const drifted = mapping({ readsFields: [{ path: "data.legacy_id", required: true }] });
+    const uncompared = mapping({ adapterId: "adapter-b", providerId: "provider-z" });
+    expect(checkProviderContract([uncompared, drifted], [shape()]).reason).toBe("shape-not-observed");
+    expect(checkProviderContract([drifted, uncompared], [shape()]).reason).toBe("shape-not-observed");
   });
 
   it("is indeterminate with nothing to check, and with nothing to check against", () => {

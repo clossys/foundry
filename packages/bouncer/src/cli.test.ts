@@ -153,6 +153,34 @@ describe("authority-reconciliation", () => {
     expect(main(["authority-reconciliation", grants, providers, "--at", AT])).toBe(2);
   });
 
+  it("exits 2 — not 1 — when one run found a real violation AND a provider it could not reach", () => {
+    // THE MIXED CASE, at the exit code. A partially-blind run reporting `1`
+    // looks like a completed check that found something, when half the input
+    // was never evaluated at all. The exit code is the only part of this a
+    // caller's CI ever sees, so the precedence is pinned here and not only
+    // against the pure checker in contract.test.ts.
+    const grants = write("grants.json", [liveGrant, { ...liveGrant, grantId: "grant-2", providerId: "provider-b" }]);
+    const providers = write("providers.json", [providerRevoked, { ...providerDown, providerId: "provider-b" }]);
+    expect(main(["authority-reconciliation", grants, providers, "--at", AT])).toBe(2);
+  });
+
+  it("still prints the findings it did reach in that mixed run, rather than swallowing them with the exit code", () => {
+    // The other half of the same contract: refusing to call the list complete
+    // must not mean refusing to show it. A reader has to be able to act on the
+    // revocation that WAS found while going back for the provider that was not
+    // reached.
+    const grants = write("grants.json", [liveGrant, { ...liveGrant, grantId: "grant-2", providerId: "provider-b" }]);
+    const providers = write("providers.json", [providerRevoked, { ...providerDown, providerId: "provider-b" }]);
+    main(["authority-reconciliation", grants, providers, "--at", AT]);
+
+    const printed = vi.mocked(console.log).mock.calls.map((call) => String(call[0])).join("\n");
+    expect(printed).toContain("[revoked-upstream] grant-1");
+    expect(printed).toContain("Unreconciled grant surface: 1");
+    // And it says plainly that the run was indeterminate, so the printed list
+    // is never mistaken for the whole answer.
+    expect(printed).toContain("Authority reconciliation: indeterminate (provider-unreachable)");
+  });
+
   it("exits 2 when a grant names a provider nothing observed", () => {
     const grants = write("grants.json", [{ ...liveGrant, providerId: "provider-z" }]);
     const providers = write("providers.json", [providerBacks]);
@@ -261,6 +289,23 @@ describe("provider-contract", () => {
     const mappings = write("mappings.json", [adapterMapping]);
     const shapes = write("shapes.json", [{ ...providerShape, emittedEvents: ["membership.created", "membership.deleted"] }]);
     expect(main(["provider-contract", mappings, shapes])).toBe(1);
+  });
+
+  it("exits 2 — not 1 — when one mapping drifted and another was never compared, and still prints the drift", () => {
+    // Gate 3's own mixed case, pinned at the exit code the same way gate 1's
+    // is. Gate 2 has no mixed state to pin: its only indeterminate reason is an
+    // empty input, which can produce no findings — see contract.test.ts, "has
+    // no mixed indeterminate-and-violated state to resolve, and this pins why".
+    const mappings = write("mappings.json", [
+      { ...adapterMapping, readsFields: [{ path: "data.legacy_id", required: true }] },
+      { ...adapterMapping, adapterId: "adapter-b", providerId: "provider-z" },
+    ]);
+    const shapes = write("shapes.json", [providerShape]);
+    expect(main(["provider-contract", mappings, shapes])).toBe(2);
+
+    const printed = vi.mocked(console.log).mock.calls.map((call) => String(call[0])).join("\n");
+    expect(printed).toContain("[field-not-declared] adapter-a");
+    expect(printed).toContain("Provider contract: indeterminate (shape-not-observed)");
   });
 
   it("exits 2 for a mapping whose provider shape was never supplied", () => {
