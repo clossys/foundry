@@ -1,0 +1,293 @@
+# The package lifecycle
+
+Every package in this repository moves through seven states. This document
+says what each state means, what evidence ends it, and where each package
+actually stands today.
+
+One rule governs all of it:
+
+> **A package's state is derived from evidence, never declared. A state
+> claimed ahead of its evidence is a defect, not a plan.**
+
+That rule exists because the obvious alternative — a build-then-register
+pipeline whose stages are marked done by the person doing them — was tried
+here and failed silently. The failure is recorded below rather than
+paraphrased, because it is the whole reason this document has a different
+shape than a checklist.
+
+## Why states, and not a pipeline
+
+The natural way to describe this work is a sequence: build a package to
+standard, register it, get consumers to adopt it, retire what it replaces,
+refine it. Each of those is real. As a pipeline they do not work, and the
+reason is measurable in this repository.
+
+On 2026-08-22, three of the six packages in the operation program had
+cleared every check this repository runs. Each had a lifecycle entry, a
+visibility declaration, README parity, clean contamination classes, and
+between 76 and 171 test cases. None of the three had ever been executed
+against a real tree by anything, including this repository.
+
+Measured by scanning every executable invocation site — `package.json`
+scripts, `scripts/`, and `.github/workflows/`:
+
+| package | invocation sites in this repository |
+| --- | --- |
+| `controller` | 6 |
+| `builder` | 1 |
+| `inspector` | 1 |
+| `locksmith` | **0** |
+| `integrator` | **0** |
+| `observer` | **0** |
+
+Each of the three zeros is referenced only in documentation, contract files,
+the lockfile, and its own source. A pipeline reported all three as finished,
+because every stage in it accepted a declaration as its exit criterion. A
+package can satisfy "built to standard" and "registered" completely while
+never having run.
+
+The states below are the same work with one change: each ends on evidence a
+second person could reproduce without asking the first.
+
+## The seven states
+
+| # | state | the question it answers | evidence that ends it |
+| --- | --- | --- | --- |
+| 1 | **designed** | Is there a job here, and can it be graded? | The loop declaration parses: a named job, one metric, the five verbs, and a close condition grounded in a measurement outside the package. |
+| 2 | **implemented** | Does it build and hold its own contracts? | `npm run check` and release readiness, both green. |
+| 3 | **staged** | Has the author's own repository run it? | An executable invocation site here, **and a recorded run in which it failed on a real defect**. |
+| 4 | **published** | Can someone else install exactly this? | A registry artifact, a lifecycle entry, a clear name-collision check, and a declared visibility. |
+| 5 | **adopted** | Does it block in a consumer's tree? | Installed at the current version, invoked by dist path, in blocking position, proven by a deliberate failure — and the consumer's hand-written equivalent deleted. |
+| 6 | **grounded** | Is the gate worth having? | `observer` computes its efficacy and escape rate from landed-change outcomes, and the number moves in response to a real change. |
+| 7 | **closed** | Is the loop done? | The close condition, as written in the package's own README, reads satisfied. Revocable. |
+
+An eighth value is not a state but a verdict a cell may carry:
+**`not-applicable`, with a reason.** It is distinct from "not yet" and from
+"unknown", and the distinction is load-bearing: a capability requiring zero
+targets must not grade identically to one fully covered.
+
+### 1. designed
+
+A package named for a thing has no natural metric, so nothing ever says
+whether it is working. A package named for a job has one by construction.
+That is the test this state applies.
+
+The close condition must name a measurement **outside the package**. "Our
+tests pass" is not a close condition; it is the system grading its own
+homework. `inspector`'s close condition is the model — it closes when
+`observer` reports an escape rate, never when `inspector`'s own run history
+looks clean.
+
+### 2. implemented
+
+This is the only state this repository currently gates well, and it is also
+the state that proves the least. Everything in the table in the previous
+section had cleared it.
+
+### 3. staged
+
+The author's own repository is a consumer, and it is the cheapest one: no
+cross-repository coordination, no pin to move, no second party to schedule.
+It is also the last chance to make a package fail before anyone else
+installs it.
+
+The evidence is deliberately not "it is wired". A gate that has run green
+since the day it was added has not been shown to work — it has been shown to
+run. **The absence of a failure is not evidence of success.** So this state
+ends on a recorded run in which the gate went red for a real defect.
+
+### 4. published
+
+[docs/PUBLISHING.md](PUBLISHING.md) is this state in full, written as a
+checklist because the failure mode — publishing something private — is not
+reversible.
+
+### 5. adopted
+
+Installing is one of three parts, and on its own it changes nothing
+measurable.
+
+- **Install** the package at the current version. Consumers here pin exact
+  versions, so nothing published reaches a consumer without a pull request in
+  that consumer's own repository.
+- **Wire the gate into that consumer's CI, by dist path.** Bin-name dispatch
+  has already left a gate silently unreachable in this fleet.
+- **Prove the wiring with a deliberately failing case**, so that a green
+  result distinguishes "ran and passed" from "never ran".
+- **Delete the hand-written equivalent.** A consumer that still maintains a
+  parallel runner beside the package has not adopted it, no matter how clean
+  its own runs report. Five hand-written runners repeated the same judgment
+  independently before the shared one shipped.
+
+An installed package that nothing invokes proves only that a resolver could
+find the name.
+
+### 6. grounded
+
+A gate that has never gone red is either perfectly effective or completely
+broken, and its run history looks identical in both cases. Only a catch rate
+separates them.
+
+This state is where that number exists. It cannot be computed by the package
+being measured: a measurer that is also the measured reproduces the exact
+failure this catalogue was recut to remove. `observer` therefore never
+imports what it measures.
+
+### 7. closed
+
+Revocable, and the only state that is. Grounded-and-open is a normal
+position: an escape rate of five percent is a real number and a bad one. A
+closed loop reopens the moment its metric moves back.
+
+## Supersession runs in parallel, not afterwards
+
+Retiring what a package replaces is not a stage that follows adoption. It is
+an obligation that opens the moment superseding is decided and closes only
+when the last consumer has un-pinned the donor. Its own three positions:
+
+- **deprecated** — a lifecycle entry naming the replacement, its version
+  range, and a migration document.
+- **un-pinned** — measured across the fleet, with a positive control, that no
+  consumer pins the donor.
+- **retired** — no longer installable.
+
+Two invariants hold across the contract files at all times: the published and
+deprecated names together are exactly the registry, and the retired names are
+exactly what is absent from it. A third holds across manifests: **a package
+that is still installable may not depend on a name that is retired**, because
+that is a broken install for anyone who follows the pointer.
+
+Modelling this as a stage is what let fifteen names sit in `deprecated`
+without anything noticing. The compatibility packages that preceded them were
+created for a real reason, and that reason expired with nothing in the
+catalogue reporting it.
+
+## Standing obligations
+
+Three programs run concurrently in this repository. Normalisation across them
+is therefore not a stage a package passes through once — the thing being
+normalised against keeps moving. Two obligations run continuously rather than
+in sequence:
+
+- **One grammar for the loop declaration.** Every package states a metric, a
+  loop and a close condition, and they are currently stated in several
+  different prose shapes. Nothing can read them, so nothing can check them.
+- **One vocabulary per shared concept.** A live-state vocabulary declared
+  twice agrees only by luck.
+
+## Where this repository actually is
+
+Three programs, fourteen packages. Cells are packages against consumers —
+this repository plus four consuming repositories.
+
+| program | packages | designed | implemented | staged | published | adopted | grounded |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| **A** — operation | 6 | 6 | 6 | 1 | 6 | 3 / 24 cells | **0** |
+| **B** — expression | 4 | 4 | 4 | — | 4 | 0 / 16 cells | **0** |
+| **C** — interaction | 4 | 4 | 0 | 0 | 0 | 0 / 16 cells | **0** |
+
+`builder` and `inspector` each have exactly one invocation site here, both
+real and both blocking, but neither has a recorded failing run — so both sit
+between *implemented* and *staged*.
+
+Twenty-three packages are graded in total — the fourteen roles above, the
+eight donors the programmes are retiring, and `domain`, which predates all
+three. Nineteen of the twenty-three currently declare a shortfall at
+`staged`, and fifteen of those have **zero** invocation sites.
+
+**The grounded column is zero for every package in every program.** Five of
+the six operation packages state close conditions that depend on `observer`
+reporting a number, and `observer` has no input. The producer and the consumer
+of that number both exist and have never been connected: this repository emits
+an observation bundle on every CI run, and `observer` ships the readers for it.
+
+Nothing in this catalogue has reached *closed*.
+
+## How this is enforced
+
+This document is not the record. `docs/contracts/package-programs.json` is,
+and `scripts/check-package-programs.mjs` grades it on every run of
+`npm run check`:
+
+```bash
+npm run check:package-programs
+```
+
+Every package in the workspace must declare a position. The gate derives what
+this repository can actually see — whether a package directory exists,
+how many **dist-path** invocation sites it has across `package.json`,
+`scripts/` and `.github/workflows/`, and its status in the lifecycle contract
+— and fails when a declared position runs ahead of that evidence.
+
+Three rules make it more than a formality.
+
+**Invocation sites never satisfy `staged` on their own.** They prove a gate
+runs. Only a recorded run in which it failed on a real defect proves it
+works, and that record cannot be derived, so it must be declared and pointed
+at.
+
+**A state this repository cannot derive is never assumed.** `adopted`,
+`grounded` and `closed` need a consumer's tree or `observer`'s output.
+Silence about them fails; it is not read as satisfied.
+
+**A shortfall must be acknowledged, not baselined.** The states are a ladder
+and this repository published ten packages before the ladder existed. A gate
+that simply refused every unsupported position would report ten-plus
+violations on its first run and could never be wired, which makes it
+decorative. So a shortfall below a declared state is declared in that
+package's `gaps`, with prose saying what is actually missing and an issue
+tracking it — the same shape `@vespeneventures/integrator` already ships for
+currency opt-outs, where every opt-out carries a required reason. An
+*unacknowledged* shortfall fails. So does an acknowledgement that outlives
+its reason: once the evidence exists, the gap is a `stale-gap` finding until
+it is removed. The list is a countdown, not a baseline, and the gate refuses
+to let it go quiet.
+
+A **retired** package has left the ladder, and the gate reads that from the
+lifecycle contract rather than from a second declaration of its own — one
+concept declared in two contracts agrees only by luck. It is reported where it
+stopped and is not graded for stopping, because grading a retired package
+against `published` would report it as running ahead of its evidence for
+having been retired on purpose. Its `gaps` must then be dropped: a gap on a
+retired package tracks work that will never be done, which is the precise way
+an acknowledgement outlives its reason.
+
+Bin-name invocations are reported separately and never counted. A bin
+resolves to whatever the installer happened to link, which has already left a
+gate silently unreachable in this fleet.
+
+The gate exits `0` clean, `1` on a finding, `2` when it could not run —
+never a pass it did not earn.
+
+## What this still cannot prove
+
+The derivable half is now derived. The rest is not, and is declared:
+
+- **`designed`** is not graded at all. The loop declaration exists in all
+  fourteen role packages but in several different prose shapes, so nothing
+  can parse it. A grammar has to come first.
+- **`staged`'s** second half — the recorded failing run — is a pointer this
+  gate checks the presence of, not the truth of.
+- **`adopted`** needs each consuming repository to report whether the gate is
+  wired in blocking position and whether its hand-written equivalent was
+  deleted. Absence is what has to be proven, and only that repository can
+  prove it.
+- **`grounded`** needs `observer` to have an input.
+
+Two instances of exactly the drift this gate exists to stop were found while
+writing this document, in prose the gate does not read: this
+repository's own README described `builder` and `ledger` as each having one
+runtime dependency, naming `governance` and `policy` respectively. Both of
+those names are retired, and both packages actually depend on `controller`.
+The README parity gate reads a package's exports, not prose claims about its
+dependencies, so nothing caught it. Prose drifts exactly as fast as anything
+else, and only a reader catches it.
+
+## Related documents
+
+- [DECISIONS.md](DECISIONS.md) — decisions 9 and 10 define the operation and
+  expression programs and why each package is named for a job.
+- [PUBLISHING.md](PUBLISHING.md) — state 4 in full.
+- [ADOPTION.md](ADOPTION.md) — state 5, from the consumer's side.
+- `docs/contracts/package-programs.json` — the record this document
+  describes, and the thing that is actually enforced.

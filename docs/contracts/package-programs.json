@@ -1,0 +1,255 @@
+{
+  "schemaVersion": 1,
+  "$comment": "Where every package stands on the seven-state ladder in docs/LIFECYCLE.md, and what is missing below the state it claims. Graded by scripts/check-package-programs.mjs, wired as `npm run check:package-programs`. The one rule: a state is derived from evidence, never declared. A shortfall below a declared state must be acknowledged here with a reason and an issue -- an unacknowledged one fails the gate, and an acknowledgement that outlives its reason fails it too. The `gaps` list is a countdown, not a baseline: it is meant to shrink, and the gate refuses to let it go stale.",
+  "programs": {
+    "operation": {
+      "letter": "A",
+      "question": "Does the workspace do what it says it does?",
+      "decision": "docs/DECISIONS.md#9-recutting-the-workspace-surface-into-six-job-shaped-packages",
+      "packages": [
+        "@vespeneventures/controller",
+        "@vespeneventures/inspector",
+        "@vespeneventures/builder",
+        "@vespeneventures/locksmith",
+        "@vespeneventures/integrator",
+        "@vespeneventures/observer"
+      ],
+      "donors": []
+    },
+    "expression": {
+      "letter": "B",
+      "question": "Is what we put out true, well said, well made, and provable?",
+      "decision": "docs/DECISIONS.md#10-recutting-the-expression-surface-into-role-shaped-packages",
+      "packages": [
+        "@vespeneventures/strategist",
+        "@vespeneventures/writer",
+        "@vespeneventures/designer",
+        "@vespeneventures/publisher"
+      ],
+      "donors": [
+        "@vespeneventures/strategy",
+        "@vespeneventures/copy",
+        "@vespeneventures/ui",
+        "@vespeneventures/surface",
+        "@vespeneventures/ledger"
+      ]
+    },
+    "interaction": {
+      "letter": "C",
+      "question": "Is everything we do with one identified person accounted for?",
+      "decision": "https://github.com/vespeneventures/foundry/issues/458",
+      "packages": [
+        "@vespeneventures/bouncer",
+        "@vespeneventures/butler",
+        "@vespeneventures/giver",
+        "@vespeneventures/keeper"
+      ],
+      "donors": [
+        "@vespeneventures/auth",
+        "@vespeneventures/consent",
+        "@vespeneventures/comms"
+      ]
+    },
+    "foundation": {
+      "letter": "-",
+      "question": "Not a programme. Packages that predate the three recuts and belong to no role.",
+      "decision": "packages/domain/README.md",
+      "packages": [
+        "@vespeneventures/domain"
+      ],
+      "donors": []
+    }
+  },
+  "packages": [
+    {
+      "name": "@vespeneventures/controller",
+      "state": "published",
+      "gaps": [
+        {
+          "state": "staged",
+          "reason": "8 dist-path invocation site(s) (package.json:39, package.json:41, and six more), but no recorded run in which it failed on a real defect; a green history proves it ran, not that it works",
+          "issue": 466
+        }
+      ]
+    },
+    {
+      "name": "@vespeneventures/inspector",
+      "state": "published",
+      "gaps": [
+        {
+          "state": "staged",
+          "reason": "1 dist-path invocation site(s) (.github/workflows/verify-standards.yml:157), but no recorded run in which it failed on a real defect; a green history proves it ran, not that it works",
+          "issue": 466
+        }
+      ]
+    },
+    {
+      "name": "@vespeneventures/builder",
+      "state": "published",
+      "gaps": [
+        {
+          "state": "staged",
+          "reason": "2 dist-path invocation site(s) (scripts/observation-bundle.mjs:222 and its test), but no recorded run in which it failed on a real defect; a green history proves it ran, not that it works",
+          "issue": 466
+        }
+      ]
+    },
+    {
+      "name": "@vespeneventures/locksmith",
+      "state": "published",
+      "gaps": [
+        {
+          "state": "staged",
+          "reason": "zero dist-path invocation sites in this repository: this package has never been executed against a real tree by its own author",
+          "issue": 466
+        }
+      ]
+    },
+    {
+      "name": "@vespeneventures/integrator",
+      "state": "published",
+      "gaps": [
+        {
+          "state": "staged",
+          "reason": "zero dist-path invocation sites in this repository: this package has never been executed against a real tree by its own author",
+          "issue": 466
+        }
+      ]
+    },
+    {
+      "name": "@vespeneventures/observer",
+      "state": "published",
+      "gaps": [
+        {
+          "state": "staged",
+          "reason": "zero dist-path invocation sites in this repository: this package has never been executed against a real tree by its own author",
+          "issue": 466
+        }
+      ]
+    },
+    {
+      "name": "@vespeneventures/strategist",
+      "state": "published",
+      "gaps": [
+        {
+          "state": "staged",
+          "reason": "zero dist-path invocation sites in this repository: this package has never been executed against a real tree by its own author",
+          "issue": 466
+        }
+      ]
+    },
+    {
+      "name": "@vespeneventures/writer",
+      "state": "published",
+      "gaps": [
+        {
+          "state": "staged",
+          "reason": "zero dist-path invocation sites in this repository: this package has never been executed against a real tree by its own author",
+          "issue": 466
+        }
+      ]
+    },
+    {
+      "name": "@vespeneventures/designer",
+      "state": "published",
+      "gaps": [
+        {
+          "state": "staged",
+          "reason": "zero dist-path invocation sites, while this repository's own check:contrast still runs packages/ui/dist -- the deprecated donor designer replaces. The author's repository stages the package it is retiring and not the one it ships",
+          "issue": 466
+        }
+      ]
+    },
+    {
+      "name": "@vespeneventures/publisher",
+      "state": "published",
+      "gaps": [
+        {
+          "state": "staged",
+          "reason": "zero dist-path invocation sites in this repository: this package has never been executed against a real tree by its own author",
+          "issue": 466
+        }
+      ]
+    },
+    {
+      "name": "@vespeneventures/strategy",
+      "state": "published"
+    },
+    {
+      "name": "@vespeneventures/copy",
+      "state": "published"
+    },
+    {
+      "name": "@vespeneventures/ui",
+      "state": "published"
+    },
+    {
+      "name": "@vespeneventures/surface",
+      "state": "published"
+    },
+    {
+      "name": "@vespeneventures/ledger",
+      "state": "published"
+    },
+    {
+      "name": "@vespeneventures/auth",
+      "state": "published",
+      "gaps": [
+        {
+          "state": "staged",
+          "reason": "zero dist-path invocation sites in this repository: this package has never been executed against a real tree by its own author",
+          "issue": 466
+        }
+      ]
+    },
+    {
+      "name": "@vespeneventures/consent",
+      "state": "published",
+      "gaps": [
+        {
+          "state": "staged",
+          "reason": "zero dist-path invocation sites in this repository: this package has never been executed against a real tree by its own author",
+          "issue": 466
+        }
+      ]
+    },
+    {
+      "name": "@vespeneventures/comms",
+      "state": "published",
+      "gaps": [
+        {
+          "state": "staged",
+          "reason": "zero dist-path invocation sites in this repository: this package has never been executed against a real tree by its own author",
+          "issue": 466
+        }
+      ]
+    },
+    {
+      "name": "@vespeneventures/domain",
+      "state": "published",
+      "gaps": [
+        {
+          "state": "staged",
+          "reason": "zero dist-path invocation sites in this repository: this package has never been executed against a real tree by its own author",
+          "issue": 466
+        }
+      ]
+    },
+    {
+      "name": "@vespeneventures/bouncer",
+      "state": "designed"
+    },
+    {
+      "name": "@vespeneventures/butler",
+      "state": "designed"
+    },
+    {
+      "name": "@vespeneventures/giver",
+      "state": "designed"
+    },
+    {
+      "name": "@vespeneventures/keeper",
+      "state": "designed"
+    }
+  ]
+}

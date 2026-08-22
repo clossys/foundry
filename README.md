@@ -21,7 +21,7 @@ for the full account.
 | [`@vespeneventures/auth`](packages/auth) | Provider-neutral authorization primitives with isolated provider and framework subpaths. |
 | [`@vespeneventures/controller`](packages/controller) | Owns every rule: package lifecycle records and no-write starter planning at its root; focused subpaths provide workspace catalog, gates, release proof, caller-owned repository profiles and requirements evaluation, pure caller-supplied cross-plane composition, review evidence, workspace-cleanup classification, account-neutral agent conventions, and the content-addressed policy-binding primitive. Formed by merging `governance`, `conventions`, and `policy` into one package (issue #282). |
 | [`@vespeneventures/domain`](packages/domain) | Dependency-free machinery for product-owned domains: stable identifiers, value types, closed vocabularies, domain types with fields, directed attributed relations, deterministic JSON artifacts, validation, and compatibility comparison. Ships no product values or runtime. |
-| [`@vespeneventures/builder`](packages/builder) | Declared reality made actual: an idempotent provisioning-manifest engine and machine verification at its root, deployment-surface contracts and read-only provider inspectors under `./deployment`, a toolchain pin (runtime, package manager, build order), the shared `liveStateSurface` reconciliation contract (`verified` / `drifted` / `could-not-verify`, with a named-blocker requirement for the last), and importable CI gate mechanics with an installed `builder-verify-toolchain` CLI under `./ci`. One runtime dependency (`@vespeneventures/governance`). |
+| [`@vespeneventures/builder`](packages/builder) | Declared reality made actual: an idempotent provisioning-manifest engine and machine verification at its root, deployment-surface contracts and read-only provider inspectors under `./deployment`, a toolchain pin (runtime, package manager, build order), the shared `liveStateSurface` reconciliation contract (`verified` / `drifted` / `could-not-verify`, with a named-blocker requirement for the last), and importable CI gate mechanics with an installed `builder-verify-toolchain` CLI under `./ci`. One runtime dependency (`@vespeneventures/controller`). |
 | [`@vespeneventures/comms`](packages/comms) | Provider-neutral finished communication contracts and an isolated Resend adapter. |
 | [`@vespeneventures/consent`](packages/consent) | A provider-neutral consent record core: versioned policies, tri-state (absent/denied/granted) consent, GPC signal representation, audit events, and host-implemented storage/audit ports. An optional `./web` subpath adds an SSR-safe gate component and preference-management hooks. Makes no claim of legal compliance; carries no jurisdiction logic. Zero runtime dependencies. |
 | [`@vespeneventures/integrator`](packages/integrator) | Whether a consuming plane holds what it declared it holds, and whether it is current: an entitlement declaration where every opt-out carries a required reason, an installed-inventory reader over the plane's own manifests and lockfile through an injected filesystem port, a version reconciler producing the upgrade set, an admission contract for a package entering the catalogue, a reachability probe over injected transport, and a supersession detector for a manifest holding both a package published here and a name it replaces. Its states are a discriminated union — `current`, `behind`, `absent-with-reason`, `absent-without-reason`, `unreachable`, `unauthenticated` — so an absence that is a decision cannot be confused with one that is drift, and a credential that can see nothing cannot be read as an empty registry. Ships the mechanism a plane runs against itself; holds no inventory of consumers, and the supersession map is entirely caller-supplied. |
@@ -36,7 +36,7 @@ for the full account.
 | [`@vespeneventures/copy`](packages/copy) | The complete language system: voice rules, glossary and claims validation, addressable copy records, templates, source scanning, and traceability checks. Ships machinery only; every consumer owns its actual voice and words. **Deprecated** into `@vespeneventures/writer` (decision 10); retained for consumers already pinned to it, with no forwarding stub. |
 | [`@vespeneventures/publisher`](packages/publisher) | The publisher role — did we put it out to an audience, and can we prove what shipped? Surface documents, page-level web views, media contracts and channel renderers (web, email, print, image, slides), plus an append-only publication record with fact-citation drift and join-key checking on its `./record` subpath. Fuses `surface` and `ledger` (decision 10); the record does not import the composer. |
 | [`@vespeneventures/surface`](packages/surface) | Owns page/document composition, media registries, page-level web views, validation, and renderers for web, email, print, image, and slides. Its explicit subpaths keep channel dependencies separate while releasing the composition contract and its renderers together. **Deprecated** into `@vespeneventures/publisher` (decision 10); retained for consumers already pinned to it, with no forwarding stub. |
-| [`@vespeneventures/ledger`](packages/ledger) | The return path: an append-only record of what was published, to which channel, when, derived from which revision of strategy, citing which facts. Records outcomes and makes them attributable; carries no opinion about whether an outcome is good, and nothing writes back automatically. Reuses `@vespeneventures/policy`'s content-addressed `PolicyBinding` to bind each cited fact to its value at publication time, and a drift checker (`checkLedgerDrift`) answers whether that value still holds against a caller-supplied current value — without ever importing `@vespeneventures/strategy`. Append-only is enforced two ways: `appendEntry` is the only way to grow a ledger in process (no `updateEntry`/`removeEntry` exists), and `checkAppendOnly` fails closed on any entry removed, reordered, or mutated in two serialized snapshots of one. One runtime dependency (`@vespeneventures/policy`, pinned with a tilde range). **Deprecated** into `@vespeneventures/publisher` (decision 10); retained for consumers already pinned to it, with no forwarding stub. |
+| [`@vespeneventures/ledger`](packages/ledger) | The return path: an append-only record of what was published, to which channel, when, derived from which revision of strategy, citing which facts. Records outcomes and makes them attributable; carries no opinion about whether an outcome is good, and nothing writes back automatically. Reuses `@vespeneventures/controller/policy`'s content-addressed `PolicyBinding` to bind each cited fact to its value at publication time, and a drift checker (`checkLedgerDrift`) answers whether that value still holds against a caller-supplied current value — without ever importing `@vespeneventures/strategy`. Append-only is enforced two ways: `appendEntry` is the only way to grow a ledger in process (no `updateEntry`/`removeEntry` exists), and `checkAppendOnly` fails closed on any entry removed, reordered, or mutated in two serialized snapshots of one. One runtime dependency (`@vespeneventures/controller`, pinned with a tilde range). **Deprecated** into `@vespeneventures/publisher` (decision 10); retained for consumers already pinned to it, with no forwarding stub. |
 
 Each package's own README has the full API and the reasoning behind it.
 
@@ -103,7 +103,7 @@ Add to your project's `.npmrc` (never commit a real one):
 With `GH_PACKAGES_TOKEN` set in your environment, install a published version:
 
 ```bash
-npm install @vespeneventures/governance
+npm install @vespeneventures/controller
 ```
 
 Consumer read access does not grant publish authority. Maintainer publication
@@ -165,7 +165,7 @@ release on the day it publishes.
 
 ## Usage
 
-The `governance/gates` subpath ships a CLI, `foundry-check`, that walks a workspace's
+`controller`'s `./gates` subpath ships a CLI, `foundry-check`, that walks a workspace's
 `packages/` directory and reports what it finds:
 
 ```bash
@@ -178,7 +178,7 @@ Exit code `0` means no error-severity finding, `1` means at least one, and
 Programmatic use:
 
 ```ts
-import { runFoundationCheck } from "@vespeneventures/governance/gates";
+import { runFoundationCheck } from "@vespeneventures/controller/gates";
 
 const report = runFoundationCheck(process.cwd(), { scope: "@your-scope" });
 for (const finding of report.findings) {
@@ -200,7 +200,10 @@ declarations.
 
 ## Contributing and publishing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the day-to-day workflow. Adding
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the day-to-day workflow. Every
+package here moves through seven states, each ending on evidence rather than
+on someone's say-so; [docs/LIFECYCLE.md](docs/LIFECYCLE.md) states them, and
+records where each package actually stands. Adding
 and publishing a package is a separate, maintainer-only process, documented
 in [docs/PUBLISHING.md](docs/PUBLISHING.md); the safety machinery that
 guards it is described in [SECURITY.md](SECURITY.md). Design decisions —
