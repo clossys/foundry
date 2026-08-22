@@ -152,13 +152,12 @@
     {
       "name": "@vespeneventures/designer",
       "state": "published",
-      "gaps": [
-        {
-          "state": "staged",
-          "reason": "zero dist-path invocation sites, while this repository's own check:contrast still runs packages/ui/dist -- the deprecated donor designer replaces. The author's repository stages the package it is retiring and not the one it ships",
-          "issue": 466
-        }
-      ]
+      "stagedBy": {
+        "run": "LOCAL, not a CI run — no Actions URL exists for it. Reproduce: build designer, copy packages/designer/styles/tokens.css, set --color-ink-primary to oklch(0.9702 0 0) (identical to --color-surface-base), then `node packages/designer/dist/tokens/contrast-cli.js <that file>`. 2026-08-22.",
+        "defectOrigin": "injected",
+        "defect": "--color-ink-primary set equal to --color-surface-base gives a 1:1 contrast ratio against the page ground. designer-contrast-check exited 1 with three light-theme findings, reached through the gate’s own contrast computation over CONTRAST_PAIRS — not a mock, a stub, or a forced exit code.",
+        "control": "The dark theme stayed GREEN in the same run: 0 findings, while light produced 3. Only the light-theme value was altered, so the clean dark result shows the gate discriminates between a violating and a conforming palette rather than failing on any input it is handed."
+      }
     },
     {
       "name": "@vespeneventures/publisher",
