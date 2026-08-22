@@ -1674,6 +1674,7 @@ mismatch (or another binding finding), `2` when it could not run. Use
 | `planNewPackage(input)` | function | Returns a deterministic, no-write private starter or repository-profiled package plan. |
 | `validatePackageLifecycle(value)` | function | Purely validates a lifecycle document without workspace I/O. |
 | `evaluateLifecycleCoverage(value, packageNames)` | function | Validates a lifecycle document and checks it names exactly the supplied packages. |
+| `evaluateDependencyInstallability(value, edges)` | function | Does every dependency of a still-installable package terminate somewhere installable? Reports `dependency-not-installable` only where the depender can still be installed and its dependency cannot — a deprecated package depending on a deprecated package is correct, and a retired one depending on a retired one cannot break. This is the ordering constraint on a retirement. |
 | `runGovernanceCheck(root, lifecycle, options?)` | function | Composes the existing foundation check and build order with lifecycle coverage. |
 | `preflightGovernedPackage(root, packageDir, lifecycle, options?)` | function | Combines `release`'s existing package preflight with a governance report. |
 | `PackageLifecycleDocument` / `PackageLifecycleEntry` / `PackageLifecycleStatus` | types | Consumer-owned maturity registry, one lifecycle entry, and its status vocabulary. |
