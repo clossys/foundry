@@ -26,6 +26,14 @@ A public package whose dependency is private is broken for everyone outside.
       neither resolves for a normal external installer. Pin real semver
       ranges.
 - [ ] The licence is MIT and matches the repository `LICENSE`.
+- [ ] The package ships a gate behind a `bin`, or declares `shipsNoGate` in
+      `docs/contracts/package-programs.json` with a reason — `permanent: true`
+      if it belongs to the primitive tier, otherwise an issue tracking the gate
+      nobody has built yet. See
+      [DECISIONS.md 11](DECISIONS.md#11-a-gate-behind-a-bin-or-a-declared-primitive).
+      An undeclared absent `bin` is indistinguishable from one nobody
+      remembered to build — `npm run check:package-programs` fails on exactly
+      that, so this box is checked mechanically rather than on trust.
 
 ### Runtime dependency order
 
