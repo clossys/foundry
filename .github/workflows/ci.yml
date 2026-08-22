@@ -560,6 +560,16 @@ jobs:
       # than a silent "no declaration" pass.
       - name: Repository profile
         run: npm run check:repository-profile
+      # One vocabulary, two packages, no import between them (#443). The
+      # duplicate is deliberate and observer's own header argues for it --
+      # observer ships zero runtime dependencies, and builder's
+      # collapse-into-a-re-export precedent worked only because builder
+      # already depended on controller. What was missing was not
+      # deduplication but verification: the two copies were "kept in sync by
+      # hand", with a code comment as the review step. Lives in this job
+      # because it imports both packages' built dist/.
+      - name: Shared vocabularies agree across packages
+        run: npm run check:shared-vocabularies
       # Asks each package's own tsc which files it actually compiles, then
       # fails if a @ts-expect-error/@ts-ignore/expectTypeOf/assertType lives
       # outside that set — i.e. in a *.test.ts(x) file, where it would be
