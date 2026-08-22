@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "supersededBy": {
+    "@vespeneventures/auth": {
+      "replacement": "@vespeneventures/bouncer",
+      "since": "0.1.0"
+    },
+    "@vespeneventures/consent": {
+      "replacement": "@vespeneventures/butler",
+      "since": "0.1.0"
+    }
+  }
+}

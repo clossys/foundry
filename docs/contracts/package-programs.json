@@ -66,68 +66,62 @@
     {
       "name": "@vespeneventures/controller",
       "state": "published",
-      "gaps": [
-        {
-          "state": "staged",
-          "reason": "8 dist-path invocation site(s) (package.json:39, package.json:41, and six more), but no recorded run in which it failed on a real defect; a green history proves it ran, not that it works",
-          "issue": 466
-        }
-      ]
+      "stagedBy": {
+        "run": "LOCAL, not a CI run — after `npm ci && npm run build`, `node packages/controller/dist/cli.js docs/contracts/package-lifecycle.json . --scope @vespeneventures` printed `Package governance: PASS` and exited 0. The injected red ran the same dist CLI with `packages/locksmith` as root; it printed `Package governance: FAIL`, one packages-dir-missing foundation finding, 16 catalog-package-missing lifecycle findings, and exited 1. 2026-08-22.",
+        "defectOrigin": "injected",
+        "defect": "A consumer pointing the governance CLI at a package directory instead of its repository root is a real catalog defect. The built controller gate discovered no packages directory and named every lifecycle package the incomplete catalog omitted; the gate itself produced exit 1.",
+        "control": "The same compiled CLI, lifecycle contract, and scope against this repository root stayed GREEN in the same session: 18 packages, zero foundation findings, zero lifecycle findings, and exit 0."
+      }
     },
     {
       "name": "@vespeneventures/inspector",
       "state": "published",
-      "gaps": [
-        {
-          "state": "staged",
-          "reason": "1 dist-path invocation site(s) (.github/workflows/verify-standards.yml:157), but no recorded run in which it failed on a real defect; a green history proves it ran, not that it works",
-          "issue": 466
-        }
-      ]
+      "stagedBy": {
+        "run": "LOCAL, not a CI run — after `npm ci && npm run build`, run `node packages/inspector/dist/bin.js --inputs <red-input> --checks secret-scan`; the injected observation printed `secret-detected (src/a.ts): example-scanner rule generic-api-key` and `Overall: VIOLATED (exit 1)`. With the otherwise identical control containing zero hits, the same dist CLI printed `secret-scan | satisfied | 5 evaluated` and `Overall: SATISFIED (exit 0)`. 2026-08-22.",
+        "defectOrigin": "injected",
+        "defect": "A scanner reporting a credential-shaped hit at a source path is the real secret-scan violation this gate consumes. The compiled inspector entry point rendered its own violated report and exit 1, with no mocked return or forced process status.",
+        "control": "The same scanner observation shape with five evaluated units and no hits stayed GREEN in the same local session, proving the dist CLI distinguishes a reported hit from a clean scan."
+      }
     },
     {
       "name": "@vespeneventures/builder",
       "state": "published",
-      "gaps": [
-        {
-          "state": "staged",
-          "reason": "2 dist-path invocation site(s) (scripts/observation-bundle.mjs:222 and its test), but no recorded run in which it failed on a real defect; a green history proves it ran, not that it works",
-          "issue": 466
-        }
-      ]
+      "stagedBy": {
+        "run": "LOCAL, not a CI run — after `npm ci && npm run build`, run `node packages/builder/dist/ci/bin.js deployment-health --inputs <red-input>` with one healthy and one unhealthy surface. It printed `Overall: UNHEALTHY (exit 1)` with `healthy 1, degraded 0, unhealthy 1, unknown 0`. The control with the healthy surface only printed `Overall: HEALTHY (exit 0)`. 2026-08-22.",
+        "defectOrigin": "injected",
+        "defect": "An unhealthy deployment observation is a real input a consuming plane's deployment-health gate can receive. Builder's compiled dist CLI judged it unhealthy and supplied its normal exit 1 rather than a mock or forced exit status.",
+        "control": "The otherwise same one-surface control with status healthy stayed GREEN in the same local session: builder printed HEALTHY, one healthy observation, and exit 0."
+      }
     },
     {
       "name": "@vespeneventures/locksmith",
       "state": "published",
-      "gaps": [
-        {
-          "state": "staged",
-          "reason": "zero dist-path invocation sites in this repository: this package has never been executed against a real tree by its own author",
-          "issue": 466
-        }
-      ]
+      "stagedBy": {
+        "run": "LOCAL, not a CI run — reproduce after `npm ci && npm run build`: run `node packages/locksmith/dist/infisical/cli.js catalog --catalog governance/locksmith-catalog.json` (printed the two value-free registry credential entries and exited 0). For the injected red, run the same dist CLI against a version-1 catalog containing GH_PACKAGES_TOKEN twice; it printed `Secret catalog must be value-free version 1 metadata with unique keys.` and exited 2. 2026-08-22.",
+        "defectOrigin": "injected",
+        "defect": "A duplicate credential name is a real value-free catalogue defect a consuming plane can produce. The built locksmith parser, not a mocked return or forced exit code, rejected the duplicate-key catalogue and printed its own uniqueness failure.",
+        "control": "The repository-owned governance/locksmith-catalog.json stayed GREEN in the same local staging session: the built dist CLI printed its two declared, value-free workflow credential classes and exited 0. The control differs only by having unique keys."
+      }
     },
     {
       "name": "@vespeneventures/integrator",
       "state": "published",
-      "gaps": [
-        {
-          "state": "staged",
-          "reason": "zero dist-path invocation sites in this repository: this package has never been executed against a real tree by its own author",
-          "issue": 466
-        }
-      ]
+      "stagedBy": {
+        "run": "LOCAL, not a CI run — reproduce after `npm ci && npm run build`: run `node packages/integrator/dist/cli.js package.json governance/foundry-supersession-map.json --block` (printed `Evaluated 2 declared supersessions. No conflicting pairs installed.` and exited 0). For the injected red, run the same dist CLI with a manifest whose dependencies contain @vespeneventures/auth and @vespeneventures/bouncer; it printed `1 conflicting pair installed together` and exited 1. 2026-08-22.",
+        "defectOrigin": "injected",
+        "defect": "A manifest pinning both the retained auth donor and its published bouncer replacement is the real duplicate-install condition this supersession gate judges. The built CLI found the pair in dependencies and produced its normal blocking exit 1, not a mocked result or forced exit code.",
+        "control": "The repository's root package.json stayed GREEN in the same local staging session against governance/foundry-supersession-map.json: both declared relationships were evaluated and no conflicting pair was installed, so the built CLI exited 0 in --block mode."
+      }
     },
     {
       "name": "@vespeneventures/observer",
       "state": "published",
-      "gaps": [
-        {
-          "state": "staged",
-          "reason": "2 invocation sites (scripts/check-gate-efficacy.mjs and its tests, the first callers of computeGateEfficacy anywhere in this fleet), but no recorded run in which it failed on a real defect; a green history proves it ran, not that it works",
-          "issue": 466
-        }
-      ]
+      "stagedBy": {
+        "run": "LOCAL, not a CI run — after `npm ci && npm run build`, run `node packages/observer/dist/bin.js --input <red-input>` with observer installed in repo-a and the same package declared absent there. It printed the contradiction, `Overall: VIOLATED (exit 1)`. The control removed the declared absence and the same dist CLI printed `Overall: SATISFIED (exit 0)`. 2026-08-22.",
+        "defectOrigin": "injected",
+        "defect": "An installed package simultaneously declared absent is the real coverage contradiction observer exists to surface. Its compiled CLI found the contradiction and emitted its normal violated exit 1, not a mocked verdict or forced process code.",
+        "control": "The otherwise identical installed inventory without a declared absence stayed GREEN in the same local session: observer classified the package installed with no contradiction and exited 0."
+      }
     },
     {
       "name": "@vespeneventures/strategist",

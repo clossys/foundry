@@ -390,7 +390,7 @@ test("this repository's own contract passes, and exits 0/1/2 correctly", () => {
   const dir = mkdtempSync(join(tmpdir(), "programs-cli-"));
   try {
     const contract = JSON.parse(execFileSync(process.execPath, ["-e", "process.stdout.write(require('fs').readFileSync('docs/contracts/package-programs.json','utf8'))"], { cwd: repoRoot, encoding: "utf8" }));
-    for (const p of contract.packages) if (p.name === "@vespeneventures/observer") delete p.gaps;
+    for (const p of contract.packages) if (p.name === "@vespeneventures/strategist") delete p.gaps;
     const broken = join(dir, "broken.json");
     writeFileSync(broken, JSON.stringify(contract));
     assert.throws(() => execFileSync(process.execPath, [script, broken, repoRoot], { cwd: repoRoot, stdio: "pipe" }), (e) => e.status === 1);
