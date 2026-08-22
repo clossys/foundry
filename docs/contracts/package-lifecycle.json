@@ -115,6 +115,10 @@
       "forwardsToReplacement": false
     },
     {
+      "name": "@vespeneventures/giver",
+      "status": "published"
+    },
+    {
       "name": "@vespeneventures/governance",
       "status": "retired",
       "replacement": {

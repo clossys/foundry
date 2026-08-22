@@ -43,6 +43,10 @@
       "intendedVisibility": "public"
     },
     {
+      "name": "@vespeneventures/giver",
+      "intendedVisibility": "public"
+    },
+    {
       "name": "@vespeneventures/inspector",
       "intendedVisibility": "public"
     },
