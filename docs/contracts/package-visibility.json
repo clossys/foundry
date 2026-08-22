@@ -11,6 +11,10 @@
       "intendedVisibility": "public"
     },
     {
+      "name": "@vespeneventures/butler",
+      "intendedVisibility": "public"
+    },
+    {
       "name": "@vespeneventures/comms",
       "intendedVisibility": "public"
     },

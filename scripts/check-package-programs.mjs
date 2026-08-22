@@ -84,6 +84,29 @@
 // installer happened to link, which is not necessarily the package under
 // test. Bin-name invocations are reported separately and never counted as
 // evidence of staging.
+//
+// THE GATE RULE (docs/DECISIONS.md 11)
+// -------------------------------------
+// Separate from the ladder, and graded here because this is the file that
+// already knows every package's programme and lifecycle status: a package in
+// a programme ships a gate behind a `bin`, or it declares `shipsNoGate` with
+// a reason — and a package that ships none permanently is only possible in
+// the primitive tier, a programme marked `"tier": "primitive"`, whose members
+// have no addressee and therefore no question a gate could judge.
+//
+// The rule turns an absent `bin` from an absence into a decision. Before it,
+// `domain` (a primitive that correctly ships no gate) and `auth`, `comms` and
+// `consent` (three published packages whose gate nobody has built) were
+// indistinguishable from outside: all four simply had no `bin`. The second
+// case is why `packages/comms/src/dispatcher.ts` can treat an unwired policy
+// as `allow` with no CLI anywhere that could fail on it.
+//
+// A non-primitive declaration therefore requires an integer `issue`: it is a
+// countdown, exactly like `gaps`. A primitive declaration requires
+// `permanent: true` and takes no issue, because there is no work to track. A
+// package that ships a `bin` and still declares `shipsNoGate` is a stale
+// declaration and fails, for the same reason a `gaps` entry that outlived its
+// reason does. Retired packages are exempt: they have left the ladder.
 
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
@@ -198,7 +221,21 @@ export function scanInvocationSites(repoRoot, packageNames, { readFile = (p) => 
       const line = lines[i];
       if (line.trimStart().startsWith("//") || line.trimStart().startsWith("#")) continue;
       for (const name of packageNames) {
-        if (line.includes(`packages/${bareName(name)}/dist`)) {
+        // TWO forms of executable use, because looking for only one is the
+        // mistake this whole gate exists to catch -- and the mistake this
+        // scanner itself made on its first extension. A CI step invokes a gate
+        // by dist path; a caller script imports the package by name. Counting
+        // only the first reported `observer` at zero sites while two files in
+        // scripts/ imported it.
+        const usesDistPath = line.includes(`packages/${bareName(name)}/dist`);
+        // An IMPORT, not any quoted occurrence. A package name also appears as
+        // ordinary test-fixture data -- `entry("auth", "@vespeneventures/auth",
+        // "0.2.4")` -- and counting those reported six invocation sites for a
+        // package nothing here invokes. `from`/`require(`/`import(` is what
+        // separates using a package from naming one.
+        const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const importsByName = new RegExp(`(from|require\\(|import\\()\\s*["']${escaped}(/[^"']*)?["']`).test(line);
+        if (usesDistPath || importsByName) {
           distSites.get(name).push(`${where}:${i + 1}`);
         }
       }
@@ -224,6 +261,91 @@ export function readLifecycleStatuses(document) {
   return statuses;
 }
 
+/** The two origins a recorded red run can have. Both are acceptable; being unable to tell them apart is not. */
+/** A local run stands in for a URL only if it carries enough for a reader to reproduce it. */
+const MIN_REPRODUCTION_LENGTH = 60;
+
+export const DEFECT_ORIGINS = new Set(["injected", "natural"]);
+
+/**
+ * Validate a `stagedBy` record — the one piece of evidence on this ladder that
+ * cannot be derived from the tree.
+ *
+ * This gate checks the PRESENCE of the record, never the truth of it: no scan
+ * can confirm that a linked run really went red for the reason claimed. That
+ * is exactly why the required fields are what they are — each names something
+ * a reader can go and check, so the record is a pointer to evidence rather
+ * than a summary of it.
+ *
+ * `control` is required, and it is the field most likely to be left out. A
+ * gate that fails on ANY input is not a working gate, and a red run alone
+ * cannot distinguish the two, so a record with no control names a failure
+ * nobody can interpret. The first real candidate in this repository DID have
+ * a control and its author had not noticed it was one — reporting it as a
+ * feature of the gate rather than as the half that made the red mean
+ * anything. Requiring the field is what stops the next one omitting it.
+ *
+ * `defectOrigin` is required for the same reason, and not because one origin
+ * outranks the other: an injected violation is fully acceptable evidence (see
+ * docs/LIFECYCLE.md state 3 — real in kind, not in origin). What is not
+ * acceptable is a reader being unable to tell which they are looking at
+ * without parsing someone's prose.
+ */
+export function validateStagedBy(value, name, findings) {
+  if (value === undefined) return false;
+  if (!isRecord(value)) {
+    findings.push(finding("unreadable-staged-by", name, "`stagedBy` must be an object"));
+    return false;
+  }
+  let ok = true;
+  // `run` must let a READER VERIFY THE CLAIM, which a URL does by inspection
+  // and a local run does by reproduction. Both are acceptable, and requiring a
+  // CI URL would be wrong: for a gate whose CI job is a REQUIRED status
+  // context, the only ways to make it go red are a pull request that then
+  // carries a failing required check, or a push to the default branch. This
+  // repository's ci.yml is `push: branches: [main]`, so there is no
+  // scratch-branch path either. Demanding a URL would make `staged` reachable
+  // only by damaging the branch protection the gate exists to serve -- the
+  // same shape as demanding a natural defect, which state 3 already rejects.
+  //
+  // Unlike `defectOrigin`, this needs no field of its own: which kind it is
+  // can be read off the value. An unverifiable claim needs a declared field; a
+  // derivable one does not.
+  const run = typeof value.run === "string" ? value.run.trim() : "";
+  const isUrl = /^https?:\/\//.test(run);
+  if (run === "" || (!isUrl && run.length < MIN_REPRODUCTION_LENGTH)) {
+    findings.push(
+      finding(
+        "staged-by-without-run",
+        name,
+        "`stagedBy.run` must be either a URL to the recorded run, or -- when the gate's CI job is a required status context and " +
+          "no such URL can exist without breaking it -- a local run described in enough detail to reproduce: the input, the command, and what it printed",
+      ),
+    );
+    ok = false;
+  }
+  if (!DEFECT_ORIGINS.has(value.defectOrigin)) {
+    findings.push(
+      finding(
+        "staged-by-without-origin",
+        name,
+        `\`stagedBy.defectOrigin\` must be one of: ${[...DEFECT_ORIGINS].join(", ")} — both are acceptable evidence, being unable to tell them apart is not`,
+      ),
+    );
+    ok = false;
+  }
+  for (const [field, what] of [
+    ["defect", "what actually went wrong, in terms a reader could reproduce"],
+    ["control", "what stayed GREEN in the same run — without one, a red proves the gate fails, not that it discriminates"],
+  ]) {
+    if (typeof value[field] !== "string" || value[field].trim().length < 20) {
+      findings.push(finding(`staged-by-without-${field}`, name, `\`stagedBy.${field}\` must say ${what}`));
+      ok = false;
+    }
+  }
+  return ok;
+}
+
 /**
  * Grade every declared position against the observations collected for it.
  *
@@ -233,7 +355,102 @@ export function readLifecycleStatuses(document) {
  * filesystem and a disputed verdict is re-checkable offline from the same
  * observation set.
  */
-export function evaluatePrograms({ contract, distSites, binSites, lifecycleStatuses, workspacePackages }) {
+/**
+ * Grade one package against the gate rule (docs/DECISIONS.md 11).
+ *
+ * Pure, and separate from the ladder on purpose: shipping a gate is not a
+ * rung, it is a property a package either has or has declared it will never
+ * have. Returns findings only — a package that ships a `bin` and declares
+ * nothing is the ordinary, silent pass.
+ */
+export function evaluateGateRule({ name, entry, bins, isPrimitive }) {
+  const findings = [];
+  const declaration = entry.shipsNoGate;
+  const shipsGate = bins.length > 0;
+
+  if (declaration !== undefined && !isRecord(declaration)) {
+    findings.push(finding("unreadable-no-gate", name, "`shipsNoGate`, when present, must be an object with a `reason`"));
+    return { findings, shipsGate };
+  }
+
+  if (shipsGate) {
+    if (declaration) {
+      findings.push(
+        finding(
+          "stale-no-gate-declaration",
+          name,
+          `declares it ships no gate, but its manifest exposes ${bins.length} bin entry point(s) (${bins.join(", ")}) — remove the declaration`,
+        ),
+      );
+    }
+    if (isPrimitive) {
+      findings.push(
+        finding(
+          "primitive-ships-a-gate",
+          name,
+          "belongs to the primitive tier but exposes a `bin` — a package with a question to judge has an addressee, and therefore belongs to a programme",
+        ),
+      );
+    }
+    return { findings, shipsGate };
+  }
+
+  if (!declaration) {
+    findings.push(
+      finding(
+        "gate-not-declared",
+        name,
+        "exposes no `bin` and does not declare `shipsNoGate` — an absent gate must be a decision with a reason, not an absence " +
+          "indistinguishable from one nobody remembered to build (docs/DECISIONS.md 11)",
+      ),
+    );
+    return { findings, shipsGate };
+  }
+
+  if (typeof declaration.reason !== "string" || declaration.reason.trim().length < 20) {
+    findings.push(finding("no-gate-without-reason", name, "`shipsNoGate` needs a reason saying why this package judges nothing"));
+  }
+
+  if (isPrimitive) {
+    if (declaration.permanent !== true) {
+      findings.push(
+        finding(
+          "no-gate-without-permanence",
+          name,
+          "belongs to the primitive tier, so its `shipsNoGate` must declare `permanent: true` — the tier is the claim that no gate will ever be owed",
+        ),
+      );
+    }
+    if (declaration.issue !== undefined) {
+      findings.push(
+        finding("no-gate-with-both", name, "a permanent declaration tracks no issue: there is no work to close"),
+      );
+    }
+    return { findings, shipsGate };
+  }
+
+  if (declaration.permanent === true) {
+    findings.push(
+      finding(
+        "no-gate-claimed-permanent",
+        name,
+        "claims it will never owe a gate, but belongs to a programme rather than the primitive tier — a package with an addressee owes a question only it answers",
+      ),
+    );
+  } else if (!Number.isInteger(declaration.issue)) {
+    findings.push(
+      finding(
+        "no-gate-without-issue",
+        name,
+        "`shipsNoGate` outside the primitive tier needs an integer `issue`: it is a countdown, like `gaps`, not a standing exemption",
+      ),
+    );
+  }
+
+  return { findings, shipsGate };
+}
+
+export function evaluatePrograms({ contract, distSites, binSites, lifecycleStatuses, workspacePackages, workspaceBins = new Map() }) {
   const findings = [];
   const results = [];
 
@@ -249,10 +466,18 @@ export function evaluatePrograms({ contract, distSites, binSites, lifecycleStatu
 
   const declaredNames = new Set();
   const membership = new Map();
+  const primitivePrograms = new Set();
   for (const [programId, program] of Object.entries(contract.programs)) {
     if (!isRecord(program) || !Array.isArray(program.packages)) {
       findings.push(finding("unreadable-contract", programId, "a program must declare a `packages` array"));
       continue;
+    }
+    // "primitive" is the only tier there is: a programme addresses somebody,
+    // and the tier is what a package belongs to when nobody is addressed. Any
+    // other value is a typo pretending to be a category.
+    if (program.tier !== undefined) {
+      if (program.tier === "primitive") primitivePrograms.add(programId);
+      else findings.push(finding("unreadable-contract", programId, '`tier`, when present, must be "primitive"'));
     }
     // A donor a programme is retiring is as much a member of it as the role
     // that replaces it. Supersession runs in parallel with the ladder rather
@@ -315,6 +540,9 @@ export function evaluatePrograms({ contract, distSites, binSites, lifecycleStatu
         supersession: RETIRED_STATUS,
         invocationSites: sites.length,
         binInvocations: bins.length,
+        // The gate rule is not applied to a retired package for the same
+        // reason the ladder is not: it has left. Reported, never graded.
+        shipsGate: (workspaceBins.get(name) ?? []).length > 0,
         acknowledgedGaps: [],
       });
       continue;
@@ -325,7 +553,8 @@ export function evaluatePrograms({ contract, distSites, binSites, lifecycleStatu
     evidence.set("implemented", workspacePackages.has(name));
     // Sites prove the gate RUNS. Only a recorded red run proves it WORKS, and
     // that cannot be derived here — so staged is never satisfied by scan alone.
-    evidence.set("staged", sites.length > 0 && isRecord(entry.stagedBy));
+    const stagedByOk = validateStagedBy(entry.stagedBy, name, findings);
+    evidence.set("staged", sites.length > 0 && stagedByOk);
     evidence.set("published", PUBLISHED_STATUSES.has(lifecycleStatus ?? ""));
 
     const gaps = new Map();
@@ -403,6 +632,22 @@ export function evaluatePrograms({ contract, distSites, binSites, lifecycleStatu
       );
     }
 
+    // The gate rule (docs/DECISIONS.md 11), graded only where there is a
+    // package to observe: a role still at "designed" has no manifest, and a
+    // rule about what a manifest exposes cannot be applied to one that does
+    // not exist yet.
+    let shipsGate = false;
+    if (workspacePackages.has(name)) {
+      const gate = evaluateGateRule({
+        name,
+        entry,
+        bins: workspaceBins.get(name) ?? [],
+        isPrimitive: primitivePrograms.has(membership.get(name)?.program),
+      });
+      findings.push(...gate.findings);
+      shipsGate = gate.shipsGate;
+    }
+
     results.push({
       package: name,
       program: membership.get(name)?.program ?? null,
@@ -411,6 +656,7 @@ export function evaluatePrograms({ contract, distSites, binSites, lifecycleStatu
       supersession: lifecycleStatus === "deprecated" ? "deprecated" : null,
       invocationSites: sites.length,
       binInvocations: bins.length,
+      shipsGate,
       acknowledgedGaps: [...gaps.keys()],
     });
   }
@@ -450,6 +696,37 @@ export function readWorkspacePackages(repoRoot) {
   return names;
 }
 
+/**
+ * Bin entry-point names per package, read from each manifest on disk.
+ *
+ * Read from the manifest rather than from the contract for the same reason
+ * every state above is derived rather than declared: what a package installs
+ * is a fact about the package, and a second copy of that fact in a contract
+ * agrees with the first only by luck.
+ */
+export function readWorkspaceBins(repoRoot) {
+  const bins = new Map();
+  let entries;
+  try {
+    entries = readdirSync(join(repoRoot, "packages"), { withFileTypes: true });
+  } catch {
+    return bins;
+  }
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    try {
+      const manifest = JSON.parse(readFileSync(join(repoRoot, "packages", entry.name, "package.json"), "utf8"));
+      if (typeof manifest.name !== "string") continue;
+      const bin = manifest.bin;
+      bins.set(manifest.name, typeof bin === "string" ? [manifest.name] : Object.keys(bin ?? {}));
+    } catch {
+      // Same as readWorkspacePackages: a directory with no readable manifest
+      // is not a package, and is not silently credited with anything either.
+    }
+  }
+  return bins;
+}
+
 function die(message) {
   console.error(`check-package-programs: ${message}`);
   process.exit(2);
@@ -482,14 +759,15 @@ async function main() {
   const declared = (contract.packages ?? []).map((p) => p?.name).filter((n) => typeof n === "string");
   const { distSites, binSites } = scanInvocationSites(repoRoot, [...new Set([...declared, ...workspacePackages])]);
 
-  const { findings, results } = evaluatePrograms({ contract, distSites, binSites, lifecycleStatuses, workspacePackages });
+  const workspaceBins = readWorkspaceBins(repoRoot);
+  const { findings, results } = evaluatePrograms({ contract, distSites, binSites, lifecycleStatuses, workspacePackages, workspaceBins });
 
   if (json) {
     console.log(JSON.stringify({ results, findings }, null, 2));
   } else {
     for (const r of results) {
       console.log(
-        `  [${String(r.state).padEnd(11)}] ${r.package.padEnd(32)} ${String(r.role ?? "?").padEnd(5)} sites=${String(r.invocationSites).padStart(2)}` +
+        `  [${String(r.state).padEnd(11)}] ${r.package.padEnd(32)} ${String(r.role ?? "?").padEnd(5)} ${r.shipsGate ? "gate" : "----"} sites=${String(r.invocationSites).padStart(2)}` +
           (r.acknowledgedGaps.length > 0 ? `  gaps: ${r.acknowledgedGaps.join(", ")}` : ""),
       );
     }
