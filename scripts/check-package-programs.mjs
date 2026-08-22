@@ -97,6 +97,19 @@ export const DERIVABLE_STATES = new Set(["implemented", "staged", "published"]);
 /** Lifecycle statuses that mean "the registry can resolve this name". */
 const PUBLISHED_STATUSES = new Set(["active", "incubating", "published", "qualified", "adopted", "deprecated"]);
 
+// Supersession runs in PARALLEL with the ladder, not as a stage on it (see
+// docs/LIFECYCLE.md). A retired package has left the ladder: it was published,
+// its versions stay reserved, and it is now deliberately absent from the
+// registry. Grading it against `published` would report a package as running
+// ahead of its evidence for having been retired on purpose, which inverts the
+// meaning of the finding.
+//
+// This is read from the LIFECYCLE contract rather than re-declared here. One
+// concept declared in two contracts agrees only by luck, and the luck runs out
+// exactly when the two are edited by different people at the same time --
+// which is the situation this rule was written during.
+const RETIRED_STATUS = "retired";
+
 const SEARCH_ROOTS = ["scripts", ".github/workflows"];
 const SEARCH_EXTENSIONS = new Set([".mjs", ".js", ".ts", ".yml", ".yaml", ".json", ".sh"]);
 const MAX_FILE_BYTES = 2_000_000;
@@ -281,6 +294,32 @@ export function evaluatePrograms({ contract, distSites, binSites, lifecycleStatu
     const bins = binSites.get(name) ?? [];
     const lifecycleStatus = lifecycleStatuses.get(name);
 
+    // A retired package has left the ladder. Report where it stopped; do not
+    // grade it for failing to go further, and do not require its `gaps` to be
+    // maintained for states it will never reach.
+    if (lifecycleStatus === RETIRED_STATUS) {
+      if ((entry.gaps ?? []).length > 0) {
+        findings.push(
+          finding(
+            "gap-on-a-retired-package",
+            name,
+            "the lifecycle contract records this name as retired, so it has left the ladder — remove its `gaps`, which now track work that will never be done",
+          ),
+        );
+      }
+      results.push({
+        package: name,
+        program: membership.get(name)?.program ?? null,
+        role: membership.get(name)?.role ?? null,
+        state: entry.state,
+        supersession: RETIRED_STATUS,
+        invocationSites: sites.length,
+        binInvocations: bins.length,
+        acknowledgedGaps: [],
+      });
+      continue;
+    }
+
     // What the tree actually supports, independent of what was declared.
     const evidence = new Map();
     evidence.set("implemented", workspacePackages.has(name));
@@ -369,6 +408,7 @@ export function evaluatePrograms({ contract, distSites, binSites, lifecycleStatu
       program: membership.get(name)?.program ?? null,
       role: membership.get(name)?.role ?? null,
       state: entry.state,
+      supersession: lifecycleStatus === "deprecated" ? "deprecated" : null,
       invocationSites: sites.length,
       binInvocations: bins.length,
       acknowledgedGaps: [...gaps.keys()],

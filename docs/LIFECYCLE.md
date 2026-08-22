@@ -243,6 +243,15 @@ its reason: once the evidence exists, the gap is a `stale-gap` finding until
 it is removed. The list is a countdown, not a baseline, and the gate refuses
 to let it go quiet.
 
+A **retired** package has left the ladder, and the gate reads that from the
+lifecycle contract rather than from a second declaration of its own — one
+concept declared in two contracts agrees only by luck. It is reported where it
+stopped and is not graded for stopping, because grading a retired package
+against `published` would report it as running ahead of its evidence for
+having been retired on purpose. Its `gaps` must then be dropped: a gap on a
+retired package tracks work that will never be done, which is the precise way
+an acknowledgement outlives its reason.
+
 Bin-name invocations are reported separately and never counted. A bin
 resolves to whatever the installer happened to link, which has already left a
 gate silently unreachable in this fleet.

@@ -100,6 +100,33 @@ test("a state this repository cannot derive is never assumed satisfied", () => {
   }
 });
 
+test("a retired package has left the ladder and is not graded for stopping", () => {
+  // Supersession is a parallel axis, not a stage. Grading a retired package
+  // against `published` would report it as running ahead of its evidence for
+  // having been deliberately retired, which inverts the finding's meaning.
+  const r = grade({ name: P, state: "published" }, { status: "retired" });
+  assert.deepEqual(rules(r), []);
+  assert.equal(r.results[0].supersession, "retired");
+});
+
+test("a retired package still carrying gaps is told to drop them", () => {
+  // The gap list is a countdown. A gap on a retired package tracks work that
+  // will never be done, which is how an acknowledgement outlives its reason.
+  const r = grade(
+    { name: P, state: "published", gaps: [{ state: "staged", reason: "zero invocation sites anywhere here", issue: 466 }] },
+    { status: "retired" },
+  );
+  assert.deepEqual(rules(r), ["gap-on-a-retired-package"]);
+  assert.deepEqual(r.results[0].acknowledgedGaps, []);
+});
+
+test("a deprecated package is still on the ladder, because it is still installable", () => {
+  assert.deepEqual(rules(grade({ name: P, state: "published" }, { status: "deprecated" })), ["state-ahead-of-evidence"]);
+  const ok = grade({ name: P, state: "published", gaps: [{ state: "staged", reason: "zero invocation sites anywhere here", issue: 466 }] }, { status: "deprecated" });
+  assert.deepEqual(rules(ok), []);
+  assert.equal(ok.results[0].supersession, "deprecated");
+});
+
 test("a bin-name invocation is reported and is not evidence of staging", () => {
   const r = grade({ name: P, state: "published" }, { bins: ["ci.yml:44"] });
   assert.equal(rules(r).includes("state-ahead-of-evidence"), true);
