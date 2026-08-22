@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
+  assertRegistryCanApplyDeprecation,
   assertReplacementIsShipped,
   deprecationPlanFrom,
   deprecationTarget,
@@ -97,6 +98,27 @@ test("registry notices are applied per discovered version, never through a wildc
   assert.equal(deprecationTarget("@vespeneventures/catalog", "0.1.1"), "@vespeneventures/catalog@0.1.1");
   assert.throws(() => deprecationTarget("@vespeneventures/catalog", "*"));
   assert.throws(() => deprecationTarget("@vespeneventures/catalog", "0.1.1 --tag=latest"));
+});
+
+test("apply preflight reads a persistent identity for every exact discovered version", () => {
+  const calls = [];
+  const state = [{
+    packageName: "@fixture/old",
+    versions: [{ version: "0.1.0" }, { version: "0.1.1" }],
+  }];
+  assert.doesNotThrow(() => assertRegistryCanApplyDeprecation(state, (packageName, version) => {
+    calls.push(`${packageName}@${version}`);
+    return `${packageName}@${version}`;
+  }));
+  assert.deepEqual(calls, ["@fixture/old@0.1.0", "@fixture/old@0.1.1"]);
+});
+
+test("apply preflight refuses GitHub Packages' empty version identity before any mutation", () => {
+  const state = [{ packageName: "@fixture/old", versions: [{ version: "0.1.0" }] }];
+  assert.throws(
+    () => assertRegistryCanApplyDeprecation(state, () => ""),
+    /version\.ID cannot be empty.*Refusing before mutation.*no registry metadata changed/,
+  );
 });
 
 test("integration: this repository's own real plan resolves, and every replacement it names ships here", () => {

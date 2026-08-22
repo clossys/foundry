@@ -494,6 +494,15 @@ move enforcement and proof of owed delivery to `@vespeneventures/giver` at
 versions remain resolvable during migration, subject to the time-bounded
 retention entries in `docs/contracts/package-retention.json`.
 
+GitHub Packages currently cannot apply npm's registry deprecation notice: the
+npm command overwrites a package packument, but this registry serves no
+persistent version identity for that write and rejects it. The protected
+workflow therefore records an explicit capability blocker before any mutation;
+it does not fabricate an identity or send an undocumented replacement PUT. The
+safe terminal path is unchanged: document the migration, retain the donor only
+through its expiring retention review, measure that every consumer has
+un-pinned it, then make the separate reviewed removal decision.
+
 ### The failure this rule is derived from
 
 Measurable in this repository, not argued from taste.
