@@ -5,6 +5,49 @@ All notable changes to `@vespeneventures/integrator` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-08-22
+
+### Changed
+
+- **A registry `404` from a working credential is now `indeterminate`, not
+  `unreachable`.** `ReachabilityVerdict` gained a fourth arm,
+  `{ kind: "indeterminate", reason: ReachabilityIndeterminateReason }`, and
+  `resolveReachability` returns it where it previously returned
+  `{ kind: "unreachable" }` for a `not-found` alongside at least one `known`
+  lookup.
+
+  `unreachable` means the registry could not be reached. In this case it was
+  reached and it answered. The module's own comment already called the case
+  "genuinely undecidable" — the defect was that the vocabulary had no word for
+  undecidable, so the nearest neighbour was borrowed, and a caller could no
+  longer distinguish a transport failure from a definitive answer. A caller
+  acting on `unreachable` waits and retries; for a name that is deliberately
+  retired the retry never succeeds, so the correct response (drop the stale
+  entitlement) was indistinguishable from the wrong one.
+
+  The all-`404` case is unchanged and still resolves to `unauthenticated`: a
+  blind credential explains an entire batch of misses better than an entire
+  entitled slice never having been published.
+
+  Deliberately **not** a verdict asserting the name is absent. GitHub Packages
+  access control is per package, so a credential can legitimately read some
+  names and `404` on one it has no grant for — "never published",
+  "deliberately retired" and "not visible to this credential" remain
+  indistinguishable from the transport layer alone. Resolving that ambiguity
+  needs the lifecycle contract, which belongs to the caller.
+
+- **`judgeCurrency` reports the same case as
+  `{ state: "indeterminate", reason: "registry-name-not-found" }`**, a new
+  member of `CurrencyIndeterminateReason`, rather than
+  `{ state: "unreachable" }`.
+
+### Migration
+
+A caller exhaustively switching on `ReachabilityVerdict["kind"]` or
+`CurrencyIndeterminateReason` gains one arm each. Callers testing
+`verdict.kind !== "known"` — the shape `checkAdmission` uses — need no change
+and stay fail-closed.
+
 ## [0.5.0] - 2026-08-21
 
 ### Added

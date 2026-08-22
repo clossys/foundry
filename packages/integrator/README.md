@@ -229,10 +229,25 @@ batch comes back `404`, a credential that lost its read scope explains that
 far better than an entire entitled slice of the catalogue having never been
 published, so every `404` in that batch resolves to `unauthenticated`. If at
 least one lookup in the batch comes back `known`, the credential is proven to
-work, and a lone `404` alongside it stays genuinely undecidable — it resolves
-to `unreachable` rather than being guessed at in either direction. This
-mirrors `scripts/check-package-visibility.mjs`'s own reasoning in this
-repository, applied to the installer side instead of the publisher side. An
+work **for the names it worked for** — which is not proof of visibility for
+the one that `404`d, because GitHub Packages access control is per package. So
+a lone `404` alongside a `known` stays genuinely undecidable, and says so:
+`{ kind: "indeterminate", reason: ReachabilityIndeterminateReason }`.
+
+It used to resolve to `unreachable`, and that was a false statement about what
+happened — the registry was reached and it answered. A caller acting on
+`unreachable` waits and retries, and for a name that is deliberately retired
+the retry never succeeds, so the right response (drop the stale entitlement)
+looked identical to the wrong one. `judgeCurrency` reports the same case as
+`{ state: "indeterminate", reason: "registry-name-not-found" }`.
+
+What this deliberately is **not** is a verdict that the name is absent. From
+the transport alone, "never published", "deliberately retired" and "not
+visible to this credential" are one response. Telling them apart needs the
+lifecycle contract, which belongs to the caller — this package ships the
+distinction, not the resolution. This mirrors
+`scripts/check-package-visibility.mjs`'s own reasoning in this repository,
+applied to the installer side instead of the publisher side. An
 explicit `401`/`403`, and a transport failure or malformed response, are
 never subject to this aggregation: they resolve straight through as
 `unauthenticated` and `unreachable` respectively, because those two ARE the
