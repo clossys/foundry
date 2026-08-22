@@ -370,6 +370,13 @@ jobs:
       # cheap structural checks in `scope`/`registry`/`root-entry`.
       - name: Structural neutrality gate (check:neutrality)
         run: npm run check:neutrality
+      # An unresolved merge committed into a tracked file. Lives in this
+      # dependency-free job on purpose: it reads the git tree and nothing
+      # else, so it runs on fork pull requests too, and it is the cheapest
+      # possible check for a failure that reached main of a public
+      # repository once already.
+      - name: Conflict markers gate
+        run: npm run check:conflict-markers
 
       # repository-profile-check (dist/repository/run-bin.js) — the richer,
       # three-state evaluator over the SAME governance/repository-profile.json
