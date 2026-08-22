@@ -596,6 +596,19 @@ jobs:
       # should fail this job before merge, not only be discovered after.
       - name: Observation bundle unit tests
         run: node --test scripts/observation-bundle.test.mjs
+      # scripts/gate-run-history.test.mjs is here rather than in `check:gates`
+      # for the same reason: it imports @vespeneventures/observer from its
+      # BUILD OUTPUT, deliberately -- it is a caller of the published contract,
+      # and running it against src/ would prove something consumers never get.
+      # `check:gates` runs in the dependency-free `safety` job, which has no
+      # `npm ci` and no build, so a suite that needs either belongs here.
+      #
+      # This is a defect caught by #473 rather than avoided: all ten suites in
+      # `check:gates` were verified to import only node builtins and local
+      # scripts, and then this eleventh one was added to that list, breaking
+      # the property the verification had established.
+      - name: Gate run-history reader
+        run: node --test scripts/gate-run-history.test.mjs
       # Publishes this repository's own half of the observation-bundle
       # transport this repository's own packages/builder ships
       # (writeObservationBundle) and packages/controller ships
