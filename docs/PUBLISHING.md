@@ -226,21 +226,39 @@ after `preflight-package.mjs`, before `npm publish`.
 
 ## 6. Publish
 
-Merging a package's new `package.json` version to `main` publishes that
-package automatically. The workflow selects only newly added package
-manifests or manifests whose version changed, serializes releases, and runs
-the full publication path against the merged commit. Source-only changes do
-not publish: release them only with a version change.
+For an **existing package name**, merging a new `package.json` version to
+`main` publishes that version automatically. Push discovery selects a version
+that is absent from the registry and serializes releases through the
+workflow's `publish` concurrency group. Source-only changes do not publish:
+release them only with a version change.
 
-Actions → **Publish** remains available for an explicit `dry_run: true`,
-bootstrap publication of a version that predated this automation, and a
-non-mutating `verify_only: true` qualification of an already-published
-tarball. The latter fetches the exact registry version and runs the isolated
-consumer proof without uploading a duplicate or changing package visibility.
-`visibility_only` defaults to `false`. When set, the workflow's `visibility`
-job does **not** change anything — it only *reports* the package's current
-GitHub Packages visibility and prints the settings URL where an owner can
-change it. There is no REST endpoint for changing a GitHub Packages npm
+A **new package name is never selected by push discovery**. Its first
+publication requires an explicit Actions → **Publish** `workflow_dispatch`,
+with the package directory under `packages/`. The dispatch is single-package
+and the workflow is serialized: dispatch one package, wait for the run to
+finish, then dispatch the next. GitHub keeps only one pending run in the
+`publish` concurrency group; dispatching several in quick succession can evict
+a pending run as `cancelled` (see issue #416).
+
+For a first publication, run the dispatch twice, in order:
+
+1. Set `dry_run: true`, leave `visibility_only: false` and `verify_only:
+   false`, and inspect the successful run. This proves the gates, packed
+   tarball, isolated `packRoundTrip`, and npm's publish path with
+   `--dry-run`; it does **not** upload a version, prove that the registry now
+   serves the tarball, or establish package visibility.
+2. After the dry run succeeds, dispatch the same package with `dry_run: false`
+   and wait for completion. This is the mutating upload; the workflow's
+   post-publish digest comparison proves that the registry serves the bytes it
+   uploaded. A successful real publish still does **not** prove that the
+   package is public.
+
+Actions → **Publish** also supports `verify_only: true` to qualify an
+already-published tarball without uploading a duplicate or changing package
+visibility. `visibility_only` defaults to `false`. When set, the workflow's
+`visibility` job does **not** change anything — it only *reports* the package's
+current GitHub Packages visibility and prints the settings URL where an owner
+can change it. There is no REST endpoint for changing a GitHub Packages npm
 package's visibility; see [Package visibility](#package-visibility) below
 for why, and for the real manual step.
 

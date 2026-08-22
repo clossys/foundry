@@ -182,6 +182,8 @@ export interface GroundCitation {
  */
 export interface RetainedGround {
   groundId: string;
+  /** The person this ground explains a decision about. Required so the visibility gate can join it to that person's disclosure route. */
+  subjectId: string;
   retainedAt: string;
 }
 
@@ -350,14 +352,15 @@ function readGroundCitation(value: unknown, path: string, issues: ValidationIssu
 
 function readRetainedGround(value: unknown, path: string, issues: ValidationIssue[]): RetainedGround | undefined {
   if (!isPlainObject(value)) {
-    pushIssue(issues, path, "must be an object with groundId and retainedAt");
+    pushIssue(issues, path, "must be an object with groundId, subjectId and retainedAt");
     return undefined;
   }
   const before = issues.length;
   const groundId = requireString(value.groundId, `${path}.groundId`, issues, { minLength: 1 });
+  const subjectId = requireString(value.subjectId, `${path}.subjectId`, issues, { minLength: 1 });
   const retainedAt = requireTimestamp(value.retainedAt, `${path}.retainedAt`, issues);
-  if (issues.length > before || groundId === undefined || retainedAt === undefined) return undefined;
-  return { groundId, retainedAt };
+  if (issues.length > before || groundId === undefined || subjectId === undefined || retainedAt === undefined) return undefined;
+  return { groundId, subjectId, retainedAt };
 }
 
 function readAnswerOutcome(value: unknown, path: string, issues: ValidationIssue[]): AnswerOutcome | undefined {

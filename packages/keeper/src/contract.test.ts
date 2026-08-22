@@ -35,6 +35,7 @@ import {
   type SourceRead,
 } from "./contract.js";
 import type { DeletionRecord, DisclosureRecord, HeldItem, InferredBelief, SourceEvent } from "./schema.js";
+import type { GiverRetainedGroundsDocument } from "./giver-record.js";
 
 const AT = "2026-08-22T12:00:00.000Z";
 
@@ -54,6 +55,10 @@ function item(overrides: Partial<HeldItem> = {}): HeldItem {
     belief: null,
     ...overrides,
   };
+}
+
+function groundsDocument(overrides: Partial<GiverRetainedGroundsDocument> = {}): GiverRetainedGroundsDocument {
+  return { schemaVersion: 1, producedAt: AT, grounds: [], ...overrides };
 }
 
 function inferred(use: InferredBelief["use"], overrides: Partial<HeldItem> = {}): HeldItem {
@@ -414,48 +419,48 @@ describe("checkVisibility", () => {
   }
 
   it("is satisfied when every item is reachable AND correctable by the person it is about", () => {
-    const result = checkVisibility([item()], [route()]);
+    const result = checkVisibility([item()], [route()], groundsDocument());
     expect(result.ok).toBe(true);
     expect(result.reachable).toBe(1);
   });
 
   it("reports an empty holding set as indeterminate", () => {
-    expect(checkVisibility([], [route()])).toMatchObject({ ok: false, reason: "no-items-provided" });
+    expect(checkVisibility([], [route()], groundsDocument())).toMatchObject({ ok: false, reason: "no-items-provided" });
   });
 
   it("fails on an item with no disclosure route at all — the step nothing else in a codebase fails on", () => {
-    const result = checkVisibility([item()], []);
+    const result = checkVisibility([item()], [], groundsDocument());
     expect(result).toMatchObject({ ok: false, reason: "holdings-unreachable" });
     expect(result.findings[0]?.kind).toBe("item-not-disclosed");
   });
 
   it("fails when every route for the person reports it hidden", () => {
-    expect(checkVisibility([item()], [route({ reach: "hidden" })]).findings[0]?.kind).toBe("item-hidden");
+    expect(checkVisibility([item()], [route({ reach: "hidden" })], groundsDocument()).findings[0]?.kind).toBe("item-hidden");
   });
 
   it("fails when the only route belongs to a different person — 'somebody can see this' was never the question", () => {
-    const result = checkVisibility([item()], [route({ subjectId: "sub_other" })]);
+    const result = checkVisibility([item()], [route({ subjectId: "sub_other" })], groundsDocument());
     expect(result.findings[0]?.kind).toBe("disclosed-to-another-subject");
   });
 
   it("fails on a route that shows without allowing correction — reading is not correcting", () => {
-    const result = checkVisibility([item()], [route({ correctable: false })]);
+    const result = checkVisibility([item()], [route({ correctable: false })], groundsDocument());
     expect(result.findings[0]?.kind).toBe("visible-but-not-correctable");
     expect(result.findings[0]?.message).toContain("account-data-page");
   });
 
   it("accepts one good route among several bad ones — a person needs one way in, not every way", () => {
-    const result = checkVisibility([item()], [route({ surface: "export", reach: "hidden", correctable: false }), route()]);
+    const result = checkVisibility([item()], [route({ surface: "export", reach: "hidden", correctable: false }), route()], groundsDocument());
     expect(result.ok).toBe(true);
   });
 
   it("fails on a route naming an item outside the set being checked", () => {
-    const result = checkVisibility([item()], [route(), route({ itemId: "item_ghost" })]);
+    const result = checkVisibility([item()], [route(), route({ itemId: "item_ghost" })], groundsDocument());
     expect(result.findings.map((finding) => finding.kind)).toContain("disclosure-without-item");
   });
 
   it("reports a reach nobody could establish as indeterminate, never as visible and never as hidden", () => {
-    const result = checkVisibility([item()], [route({ reach: "unknown" })]);
+    const result = checkVisibility([item()], [route({ reach: "unknown" })], groundsDocument());
     expect(result).toMatchObject({ ok: false, reason: "visibility-unverifiable" });
     expect(INDETERMINATE_VISIBILITY_FINDING_KINDS).toContain(result.findings[0]?.kind);
   });
@@ -464,9 +469,32 @@ describe("checkVisibility", () => {
     const result = checkVisibility(
       [item({ itemId: "item_hidden" }), item({ itemId: "item_unknown" })],
       [route({ itemId: "item_hidden", reach: "hidden" }), route({ itemId: "item_unknown", reach: "unknown" })],
+      groundsDocument(),
     );
     expect(result.reason).toBe("visibility-unverifiable");
     expect(result.findings.map((finding) => finding.kind)).toEqual(["item-hidden", "reach-unverifiable"]);
+  });
+
+  it("reads retained grounds from giver's document as person-facing material, without turning them into holdings", () => {
+    const grounds = groundsDocument({ grounds: [{ groundId: "ground_1", subjectId: "sub_1", retainedAt: AT }] });
+    const result = checkVisibility([item()], [route()], grounds);
+    expect(result).toMatchObject({ ok: false, reason: "holdings-unreachable", itemsChecked: 1, groundsChecked: 1 });
+    expect(result.findings).toEqual([
+      expect.objectContaining({ kind: "retained-ground-unreachable", itemId: "ground_1", subjectId: "sub_1" }),
+    ]);
+  });
+
+  it("counts a retained ground as reachable only through a route for the person it explains a decision about", () => {
+    const grounds = groundsDocument({ grounds: [{ groundId: "ground_1", subjectId: "sub_1", retainedAt: AT }] });
+    const result = checkVisibility([item()], [route(), route({ itemId: "ground_1" })], grounds);
+    expect(result).toMatchObject({ ok: true, reachable: 2, groundsChecked: 1 });
+  });
+
+  it("reports an unknown retained-ground route as indeterminate rather than calling the grounds visible", () => {
+    const grounds = groundsDocument({ grounds: [{ groundId: "ground_1", subjectId: "sub_1", retainedAt: AT }] });
+    const result = checkVisibility([item()], [route(), route({ itemId: "ground_1", reach: "unknown" })], grounds);
+    expect(result).toMatchObject({ ok: false, reason: "visibility-unverifiable" });
+    expect(result.findings[0]?.kind).toBe("retained-ground-reach-unverifiable");
   });
 });
 

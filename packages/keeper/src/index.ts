@@ -86,6 +86,9 @@ export type {
   SourceEventLedger,
 } from "./schema.js";
 
+export { GIVER_RETAINED_GROUNDS_SCHEMA_VERSION, validateGiverRetainedGroundsDocument } from "./giver-record.js";
+export type { GiverRetainedGround, GiverRetainedGroundsDocument } from "./giver-record.js";
+
 export {
   DISPOSAL_VIOLATION_REASONS,
   HOLDING_KINDS,

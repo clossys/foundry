@@ -74,6 +74,7 @@ import {
   validateRetentionRules,
   validateSourceEvents,
 } from "./schema.js";
+import { validateGiverRetainedGroundsDocument } from "./giver-record.js";
 import type { ValidationResult } from "./validation.js";
 
 const USAGE = `Usage: keeper-check <gate> [arguments]
@@ -87,11 +88,13 @@ Gates:
       confirmation from the person. An item whose provenance the store could
       not resolve is unverifiable, and exits 2 rather than passing.
 
-  visibility <items-file> <disclosures-file>
+  visibility <items-file> <disclosures-file> <giver-retained-grounds-file>
       Fails when a held item has no disclosure route at all, when every
       route reports it hidden, when the only routes belong to a different
-      person, and when it is reachable but not correctable. A route that
-      could not say either way is unverifiable, and exits 2.
+      person, and when it is reachable but not correctable. It also checks
+      giver's retained decision grounds from its declared JSON record path;
+      a grounds record with no disclosure route is a distinct finding. A
+      route that could not say either way is unverifiable, and exits 2.
 
   disposal <items-file> <schedule-file> <deletions-file> --at <timestamp>
       Fails when an item outlived the retention its own class declared, when
@@ -126,10 +129,11 @@ nothing the person did.
 Exit codes: 0 = every held item traces to something they did, 1 = at least one does not, 2 = could not run (including an item whose provenance the store could not resolve).
 `;
 
-const VISIBILITY_USAGE = `Usage: keeper-check visibility <items-file> <disclosures-file>
+const VISIBILITY_USAGE = `Usage: keeper-check visibility <items-file> <disclosures-file> <giver-retained-grounds-file>
 
   items-file        JSON array of HeldItem objects. Required. An empty HOLDING set exits 2.
   disclosures-file  JSON array of DisclosureRecord objects — where, if anywhere, each item is reachable. Required. May be an empty array; every item is then undisclosed, which is a real finding.
+  giver-retained-grounds-file  The versioned retained-grounds JSON document at giver's declared record path. Required. Its grounds are not keeper holdings, but must be reachable by the person each explains a decision about.
 
 Routes are joined on the SUBJECT, not just the item: a route pointing at a
 different person is not visibility. Being able to read something is not being
@@ -251,7 +255,7 @@ function readJsonFile(label: string, path: string): JsonReadResult {
  * that is missing, unreadable, unparseable, or schema-invalid never reaches a
  * checker at all: it is "could not run", decided here.
  */
-function loadRecords<T>(label: string, path: string, validate: (value: unknown) => ValidationResult<T[]>): T[] | undefined {
+function loadRecords<T>(label: string, path: string, validate: (value: unknown) => ValidationResult<T>): T | undefined {
   const problem = fileProblem(label, path);
   if (problem !== undefined) {
     console.error(`\n${label} could not be loaded: ${problem}`);
@@ -299,7 +303,7 @@ function printAttributionReport(result: AttributionResult): void {
 
 function printVisibilityReport(result: VisibilityResult): void {
   console.log(
-    `${result.itemsChecked} held item(s) checked against ${result.disclosuresChecked} disclosure route(s): ${result.reachable} reachable and correctable by the person they are about.`,
+    `${result.itemsChecked} held item(s) and ${result.groundsChecked} retained ground(s) checked against ${result.disclosuresChecked} disclosure route(s): ${result.reachable} reachable and correctable by the person they are about.`,
   );
   printFindings(result.findings);
   if (result.ok) console.log("Visibility: satisfied.");
@@ -365,22 +369,27 @@ function runVisibility(argv: string[]): number {
     console.log(VISIBILITY_USAGE);
     return 0;
   }
-  const [itemsArg, disclosuresArg, ...extra] = args.positional;
+  const [itemsArg, disclosuresArg, groundsArg, ...extra] = args.positional;
   if (itemsArg === undefined) throw new CliInputError("items-file is required");
   if (disclosuresArg === undefined) throw new CliInputError("disclosures-file is required");
+  if (groundsArg === undefined) throw new CliInputError("giver-retained-grounds-file is required");
   if (extra.length > 0) throw new CliInputError(`unexpected extra argument "${extra[0]}"`);
 
   const itemsFile = resolve(itemsArg);
   const disclosuresFile = resolve(disclosuresArg);
+  const groundsFile = resolve(groundsArg);
   console.log(`Held items file: ${itemsFile}`);
   console.log(`Disclosures file: ${disclosuresFile}`);
+  console.log(`Giver retained grounds file: ${groundsFile}`);
 
   const items = loadRecords("items-file", itemsFile, validateHeldItems);
   if (items === undefined) return 2;
   const disclosures = loadRecords("disclosures-file", disclosuresFile, validateDisclosureRecords);
   if (disclosures === undefined) return 2;
+  const grounds = loadRecords("giver-retained-grounds-file", groundsFile, validateGiverRetainedGroundsDocument);
+  if (grounds === undefined) return 2;
 
-  const result = checkVisibility(items, disclosures);
+  const result = checkVisibility(items, disclosures, grounds);
   printVisibilityReport(result);
   return exitCodeFor(result.ok, result.reason, ["holdings-unreachable"]);
 }

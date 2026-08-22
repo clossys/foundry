@@ -10,15 +10,20 @@
  * a grant.
  */
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { decideOutcome, type OutcomeInputs, type Verdict } from "./contract.js";
 import {
   STANDING_DECISIONS_DOCUMENT_FILENAME,
   STANDING_DECISIONS_SCHEMA_VERSION,
   STANDING_DECISION_STATUSES,
+  RETAINED_GROUNDS_DOCUMENT_FILENAME,
+  RETAINED_GROUNDS_SCHEMA_VERSION,
   answerRecordFor,
   handoffRecordFor,
   readStandingDecision,
   unreadableStandingDecision,
+  validateRetainedGroundsDocument,
   validateStandingDecisionDocument,
 } from "./record.js";
 
@@ -55,9 +60,38 @@ describe("the declared seam", () => {
     expect(STANDING_DECISIONS_DOCUMENT_FILENAME).not.toContain("/");
   });
 
+  it("declares the retained-grounds record path as a contract, never a CLI convention", () => {
+    expect(RETAINED_GROUNDS_DOCUMENT_FILENAME).toBe("retained-grounds.json");
+    expect(RETAINED_GROUNDS_DOCUMENT_FILENAME).not.toContain("/");
+  });
+
   it("names the four statuses the producing role can report, and does not include this side's own unreadable", () => {
     expect(STANDING_DECISION_STATUSES).toEqual(["granted", "denied", "absent", "stale"]);
     expect(STANDING_DECISION_STATUSES as readonly string[]).not.toContain("unreadable");
+  });
+
+  it("does not import keeper: the retained-grounds contract is a JSON document, not a package dependency", () => {
+    const source = readFileSync(fileURLToPath(new URL("./record.ts", import.meta.url)), "utf8");
+    expect(source).not.toMatch(/from\s+["']@vespeneventures\/keeper(?:\/|["'])/);
+  });
+});
+
+describe("validateRetainedGroundsDocument", () => {
+  const groundsDocument = {
+    schemaVersion: 1,
+    producedAt: AT,
+    grounds: [{ groundId: "ground-1", subjectId: "subject-1", retainedAt: AT }],
+  };
+
+  it("accepts the person-facing grounds register at its declared version", () => {
+    const result = validateRetainedGroundsDocument(groundsDocument);
+    expect(result.ok).toBe(true);
+    expect(RETAINED_GROUNDS_SCHEMA_VERSION).toBe(1);
+  });
+
+  it("refuses an unknown document version and a ground with no subject", () => {
+    expect(validateRetainedGroundsDocument({ ...groundsDocument, schemaVersion: 2 }).ok).toBe(false);
+    expect(validateRetainedGroundsDocument({ ...groundsDocument, grounds: [{ groundId: "ground-1", retainedAt: AT }] }).ok).toBe(false);
   });
 });
 

@@ -59,6 +59,7 @@ describe("the package root", () => {
 describe("the ./record subpath", () => {
   it("is where the seam lives, and the root does not carry it", () => {
     expect(typeof record.validateStandingDecisionDocument).toBe("function");
+    expect(typeof record.validateRetainedGroundsDocument).toBe("function");
     expect(typeof record.readStandingDecision).toBe("function");
     expect(typeof record.unreadableStandingDecision).toBe("function");
     expect((root as Record<string, unknown>).readStandingDecision).toBeUndefined();
@@ -73,5 +74,7 @@ describe("the ./record subpath", () => {
   it("declares the seam's filename and version as values, not as prose in a comment", () => {
     expect(record.STANDING_DECISIONS_DOCUMENT_FILENAME).toBe("standing-decisions.json");
     expect(record.STANDING_DECISIONS_SCHEMA_VERSION).toBe(1);
+    expect(record.RETAINED_GROUNDS_DOCUMENT_FILENAME).toBe("retained-grounds.json");
+    expect(record.RETAINED_GROUNDS_SCHEMA_VERSION).toBe(1);
   });
 });
