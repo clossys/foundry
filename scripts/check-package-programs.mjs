@@ -221,7 +221,21 @@ export function scanInvocationSites(repoRoot, packageNames, { readFile = (p) => 
       const line = lines[i];
       if (line.trimStart().startsWith("//") || line.trimStart().startsWith("#")) continue;
       for (const name of packageNames) {
-        if (line.includes(`packages/${bareName(name)}/dist`)) {
+        // TWO forms of executable use, because looking for only one is the
+        // mistake this whole gate exists to catch -- and the mistake this
+        // scanner itself made on its first extension. A CI step invokes a gate
+        // by dist path; a caller script imports the package by name. Counting
+        // only the first reported `observer` at zero sites while two files in
+        // scripts/ imported it.
+        const usesDistPath = line.includes(`packages/${bareName(name)}/dist`);
+        // An IMPORT, not any quoted occurrence. A package name also appears as
+        // ordinary test-fixture data -- `entry("auth", "@vespeneventures/auth",
+        // "0.2.4")` -- and counting those reported six invocation sites for a
+        // package nothing here invokes. `from`/`require(`/`import(` is what
+        // separates using a package from naming one.
+        const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const importsByName = new RegExp(`(from|require\\(|import\\()\\s*["']${escaped}(/[^"']*)?["']`).test(line);
+        if (usesDistPath || importsByName) {
           distSites.get(name).push(`${where}:${i + 1}`);
         }
       }
@@ -245,6 +259,91 @@ export function readLifecycleStatuses(document) {
     }
   }
   return statuses;
+}
+
+/** The two origins a recorded red run can have. Both are acceptable; being unable to tell them apart is not. */
+/** A local run stands in for a URL only if it carries enough for a reader to reproduce it. */
+const MIN_REPRODUCTION_LENGTH = 60;
+
+export const DEFECT_ORIGINS = new Set(["injected", "natural"]);
+
+/**
+ * Validate a `stagedBy` record — the one piece of evidence on this ladder that
+ * cannot be derived from the tree.
+ *
+ * This gate checks the PRESENCE of the record, never the truth of it: no scan
+ * can confirm that a linked run really went red for the reason claimed. That
+ * is exactly why the required fields are what they are — each names something
+ * a reader can go and check, so the record is a pointer to evidence rather
+ * than a summary of it.
+ *
+ * `control` is required, and it is the field most likely to be left out. A
+ * gate that fails on ANY input is not a working gate, and a red run alone
+ * cannot distinguish the two, so a record with no control names a failure
+ * nobody can interpret. The first real candidate in this repository DID have
+ * a control and its author had not noticed it was one — reporting it as a
+ * feature of the gate rather than as the half that made the red mean
+ * anything. Requiring the field is what stops the next one omitting it.
+ *
+ * `defectOrigin` is required for the same reason, and not because one origin
+ * outranks the other: an injected violation is fully acceptable evidence (see
+ * docs/LIFECYCLE.md state 3 — real in kind, not in origin). What is not
+ * acceptable is a reader being unable to tell which they are looking at
+ * without parsing someone's prose.
+ */
+export function validateStagedBy(value, name, findings) {
+  if (value === undefined) return false;
+  if (!isRecord(value)) {
+    findings.push(finding("unreadable-staged-by", name, "`stagedBy` must be an object"));
+    return false;
+  }
+  let ok = true;
+  // `run` must let a READER VERIFY THE CLAIM, which a URL does by inspection
+  // and a local run does by reproduction. Both are acceptable, and requiring a
+  // CI URL would be wrong: for a gate whose CI job is a REQUIRED status
+  // context, the only ways to make it go red are a pull request that then
+  // carries a failing required check, or a push to the default branch. This
+  // repository's ci.yml is `push: branches: [main]`, so there is no
+  // scratch-branch path either. Demanding a URL would make `staged` reachable
+  // only by damaging the branch protection the gate exists to serve -- the
+  // same shape as demanding a natural defect, which state 3 already rejects.
+  //
+  // Unlike `defectOrigin`, this needs no field of its own: which kind it is
+  // can be read off the value. An unverifiable claim needs a declared field; a
+  // derivable one does not.
+  const run = typeof value.run === "string" ? value.run.trim() : "";
+  const isUrl = /^https?:\/\//.test(run);
+  if (run === "" || (!isUrl && run.length < MIN_REPRODUCTION_LENGTH)) {
+    findings.push(
+      finding(
+        "staged-by-without-run",
+        name,
+        "`stagedBy.run` must be either a URL to the recorded run, or -- when the gate's CI job is a required status context and " +
+          "no such URL can exist without breaking it -- a local run described in enough detail to reproduce: the input, the command, and what it printed",
+      ),
+    );
+    ok = false;
+  }
+  if (!DEFECT_ORIGINS.has(value.defectOrigin)) {
+    findings.push(
+      finding(
+        "staged-by-without-origin",
+        name,
+        `\`stagedBy.defectOrigin\` must be one of: ${[...DEFECT_ORIGINS].join(", ")} — both are acceptable evidence, being unable to tell them apart is not`,
+      ),
+    );
+    ok = false;
+  }
+  for (const [field, what] of [
+    ["defect", "what actually went wrong, in terms a reader could reproduce"],
+    ["control", "what stayed GREEN in the same run — without one, a red proves the gate fails, not that it discriminates"],
+  ]) {
+    if (typeof value[field] !== "string" || value[field].trim().length < 20) {
+      findings.push(finding(`staged-by-without-${field}`, name, `\`stagedBy.${field}\` must say ${what}`));
+      ok = false;
+    }
+  }
+  return ok;
 }
 
 /**
@@ -454,7 +553,8 @@ export function evaluatePrograms({ contract, distSites, binSites, lifecycleStatu
     evidence.set("implemented", workspacePackages.has(name));
     // Sites prove the gate RUNS. Only a recorded red run proves it WORKS, and
     // that cannot be derived here — so staged is never satisfied by scan alone.
-    evidence.set("staged", sites.length > 0 && isRecord(entry.stagedBy));
+    const stagedByOk = validateStagedBy(entry.stagedBy, name, findings);
+    evidence.set("staged", sites.length > 0 && stagedByOk);
     evidence.set("published", PUBLISHED_STATUSES.has(lifecycleStatus ?? ""));
 
     const gaps = new Map();

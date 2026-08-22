@@ -162,8 +162,26 @@ jobs:
       - name: check-foreign-references
         run: node scripts/check-foreign-references.mjs
 
+      # `npm run check:gates`, not `node scripts/test-gates.mjs` alone. The
+      # script is a compound -- the fixture-driven gate regressions AND ten
+      # node:test suites over this repository's own scripts -- and before
+      # #472 only the first half ran here. Nine of those ten suites ran in no
+      # workflow at all and the tenth only in a workflow_dispatch job, so all
+      # ten were enforced by `npm run check` and contributor discipline and
+      # nothing else. #468 passed every check on its pull request and turned
+      # main red at merge as a direct result: the suite that catches it exists,
+      # works, and could not run before the damage.
+      #
+      # Invoking by script name rather than by listing the file paths is
+      # deliberate -- a path list silently goes stale the moment a suite is
+      # added to `check:gates`, which is the same trap one command vouching for
+      # its siblings already set once.
+      #
+      # Runs in this dependency-free job because every one of the ten imports
+      # only node builtins and local scripts; verified by grepping all ten for
+      # non-builtin, non-relative imports and finding none.
       - name: gate regression tests
-        run: node scripts/test-gates.mjs
+        run: npm run check:gates
 
       # Grades the denylist rules themselves, which requires the real denylist
       # content — forks (and, until the gap above is closed, Dependabot)
@@ -441,8 +459,17 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: node scripts/check-release-readiness.mjs --base "$BASE_SHA"
 
-  # ui-contrast-check computes real WCAG contrast ratios for
-  # @vespeneventures/ui's own token registry (light AND dark) against a
+  # THE JOB NAME BELOW IS DELIBERATELY NOT RENAMED. It still reads
+  # "ui-contrast-check" while running designer's copy, because that exact
+  # string is a REQUIRED status check on main. Renaming a required context
+  # does not rename anything -- it creates a required context that never
+  # reports, and wedges every pull request until the ruleset is edited to
+  # match. Moving it is a three-phase operation (add the new context, let it
+  # report on real pull requests, swap the required list, retire the old
+  # name), tracked separately rather than smuggled into a deletion.
+  #
+  # designer-contrast-check computes real WCAG contrast ratios for
+  # @vespeneventures/designer's own token registry (light AND dark) against a
   # checked-in pair list (CONTRAST_PAIRS) and exits non-zero on a real,
   # unrelieved threshold miss. It shipped as an installed `bin` with
   # nothing anywhere actually invoking it — a gate that exists but never
@@ -450,13 +477,13 @@ jobs:
   # to catch one level up (a check with no job is indistinguishable from
   # no check at all). Modelled on that job's own shape: a single focused
   # checkout, no denylist material, no tarball — this only ever reads
-  # `packages/ui`'s own `styles/tokens.css`, which the `safety`/`artifact`
+  # `packages/designer`'s own `styles/tokens.css`, which the `safety`/`artifact`
   # jobs already cover for secrets/identity separately. Unlike
   # `release-readiness`, this is not diff-scoped (there is no "did this
   # change since the base" question here, only "is the shipped palette
   # legible right now"), so it runs on every push and every PR, not only
   # `pull_request` events, and needs no `fetch-depth: 0`. It DOES need
-  # `packages/ui` actually built first — `ui-contrast-check` ships as
+  # `packages/designer` actually built first — `designer-contrast-check` ships as
   # `dist/tokens/contrast-cli.js`, gitignored until `tsc` runs — which is
   # the one thing `release-readiness` (pure git-history diffing) never
   # needed and this job does.
@@ -470,7 +497,7 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - run: npm run build --workspace=packages/ui
+      - run: npm run build --workspace=packages/designer
       - run: npm run check:contrast
 
   # Neither check here reads the denylist — both derive everything (package
@@ -551,6 +578,16 @@ jobs:
       # than a silent "no declaration" pass.
       - name: Repository profile
         run: npm run check:repository-profile
+      # One vocabulary, two packages, no import between them (#443). The
+      # duplicate is deliberate and observer's own header argues for it --
+      # observer ships zero runtime dependencies, and builder's
+      # collapse-into-a-re-export precedent worked only because builder
+      # already depended on controller. What was missing was not
+      # deduplication but verification: the two copies were "kept in sync by
+      # hand", with a code comment as the review step. Lives in this job
+      # because it imports both packages' built dist/.
+      - name: Shared vocabularies agree across packages
+        run: npm run check:shared-vocabularies
       # Asks each package's own tsc which files it actually compiles, then
       # fails if a @ts-expect-error/@ts-ignore/expectTypeOf/assertType lives
       # outside that set — i.e. in a *.test.ts(x) file, where it would be
@@ -569,6 +606,19 @@ jobs:
       # should fail this job before merge, not only be discovered after.
       - name: Observation bundle unit tests
         run: node --test scripts/observation-bundle.test.mjs
+      # scripts/gate-run-history.test.mjs is here rather than in `check:gates`
+      # for the same reason: it imports @vespeneventures/observer from its
+      # BUILD OUTPUT, deliberately -- it is a caller of the published contract,
+      # and running it against src/ would prove something consumers never get.
+      # `check:gates` runs in the dependency-free `safety` job, which has no
+      # `npm ci` and no build, so a suite that needs either belongs here.
+      #
+      # This is a defect caught by #473 rather than avoided: all ten suites in
+      # `check:gates` were verified to import only node builtins and local
+      # scripts, and then this eleventh one was added to that list, breaking
+      # the property the verification had established.
+      - name: Gate run-history reader
+        run: node --test scripts/gate-run-history.test.mjs
       # Publishes this repository's own half of the observation-bundle
       # transport this repository's own packages/builder ships
       # (writeObservationBundle) and packages/controller ships
