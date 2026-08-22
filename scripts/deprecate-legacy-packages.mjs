@@ -156,6 +156,46 @@ function deprecationFor(packageName, version, registry) {
   return npm(["view", `${packageName}@${version}`, "deprecated", `--registry=${registry}`], { allowEmpty: true });
 }
 
+function versionDocumentIdFor(packageName, version, registry) {
+  let id;
+  try {
+    id = JSON.parse(npm(["view", `${packageName}@${version}`, "_id", "--json", `--registry=${registry}`]));
+  } catch {
+    throw new Error(`legacy deprecation: registry returned no readable version identity for ${packageName}@${version}`);
+  }
+  return id;
+}
+
+/**
+ * `npm deprecate` does not have a dedicated registry endpoint. It reads the
+ * package's mutable packument, changes the selected versions' `deprecated`
+ * values, then overwrites that document with PUT. That makes a persistent
+ * identity for every version a capability prerequisite, not optional prose.
+ *
+ * GitHub Packages currently returns an empty version identity and rejects the
+ * consequent PUT with `version.ID cannot be empty`. Do not try to manufacture
+ * an identity or send a hand-built packument: neither is registry authority,
+ * and a guessed overwrite is a worse irreversible mutation than a clear
+ * blocker. The caller supplies the identity reader so this decision stays
+ * directly testable without touching a registry.
+ */
+export function assertRegistryCanApplyDeprecation(state, versionDocumentId) {
+  for (const entry of state) {
+    for (const version of entry.versions) {
+      const id = versionDocumentId(entry.packageName, version.version);
+      if (typeof id !== "string" || id.trim().length === 0) {
+        throw new Error(
+          `legacy deprecation: registry cannot apply an npm deprecation notice to ${entry.packageName}@${version.version} ` +
+            `because it returned no persistent version identity. npm deprecate would overwrite the packument and this registry ` +
+            `rejects that write with \"version.ID cannot be empty\". Refusing before mutation; no registry metadata changed. ` +
+            `Keep the documented migration and time-bounded retention in force, then remove the donor only after a reviewed ` +
+            `fleet un-pinning measurement confirms that no consumer still needs it.`,
+        );
+      }
+    }
+  }
+}
+
 
 function readRegistryState(plan, registry) {
   return plan.map((entry) => ({
@@ -228,6 +268,7 @@ function main() {
     console.log("dry-run: no registry metadata changed");
     return;
   }
+  assertRegistryCanApplyDeprecation(before, (packageName, version) => versionDocumentIdFor(packageName, version, registry));
   for (const entry of before) {
     for (const { version } of entry.versions) {
       npm(["deprecate", deprecationTarget(entry.packageName, version), entry.message, `--registry=${registry}`], { allowEmpty: true });

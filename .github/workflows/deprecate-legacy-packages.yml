@@ -1,13 +1,14 @@
 name: Deprecate legacy packages
 
 # Registry deprecation is an irreversible consumer-facing lifecycle signal.
-# It is deliberately manual-only and can act only on the fixed compatibility
-# wrapper map in scripts/deprecate-legacy-packages.mjs.
+# It is deliberately manual-only. GitHub Packages currently rejects npm's
+# packument overwrite when its version identity is empty, so apply first runs
+# an exact-version capability preflight and refuses before any mutation.
 on:
   workflow_dispatch:
     inputs:
       mode:
-        description: Report the fixed plan, or apply and verify the fixed notices
+        description: Report the derived plan, or preflight then apply and verify exact notices
         required: true
         default: dry-run
         type: choice
