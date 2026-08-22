@@ -280,6 +280,32 @@ jobs:
           node-version: 20
       - run: node scripts/check-root-entry-policy.mjs
 
+  # scripts/check-package-programs.mjs grades docs/contracts/package-programs.json
+  # -- where every package stands on the seven-state ladder in docs/LIFECYCLE.md,
+  # and what is missing below the state it claims. Fails when a declared position
+  # runs ahead of the evidence this repository can actually see: a package
+  # directory, the count of dist-path invocation sites across package.json,
+  # scripts/ and .github/workflows/, and the lifecycle contract's status.
+  #
+  # Same shallow-checkout shape as the gates above and no build needed: it reads
+  # the tree as text and never imports a package it grades. That independence is
+  # deliberate -- a gate that had to build the packages it measures could not
+  # report on one whose build is broken, which is exactly when the report
+  # matters.
+  #
+  # NOT added to `main-required-checks` by this change, same as the jobs above: a
+  # status context with no reporting history wedges a repository if it lands
+  # straight into `required_status_checks`.
+  package-programs:
+    name: package programme state (declared vs. evidence)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+      - run: node scripts/check-package-programs.mjs
+
   # Three gates over this repository's own tree that had never been invoked
   # by any workflow before this change, and that share one requirement: a
   # BUILT @vespeneventures/controller (issue #414's wider finding — six

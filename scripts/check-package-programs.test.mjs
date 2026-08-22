@@ -1,0 +1,216 @@
+import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import test from "node:test";
+
+import {
+  DERIVABLE_STATES,
+  STATES,
+  evaluatePrograms,
+  isFailureFinding,
+  readLifecycleStatuses,
+  readWorkspacePackages,
+  scanInvocationSites,
+  stateIndex,
+} from "./check-package-programs.mjs";
+
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const script = join(repoRoot, "scripts/check-package-programs.mjs");
+
+// Two layers, matching this repo's existing split: the pure evaluator is
+// exercised with hand-built observations so a verdict is testable without a
+// filesystem, and the CLI is exercised end-to-end so the exit contract and
+// the real contract in docs/contracts are both covered.
+
+const P = "@vespeneventures/thing";
+
+function grade(entry, { sites = [], bins = [], status = "published", inWorkspace = true, programs } = {}) {
+  return evaluatePrograms({
+    contract: {
+      programs: programs ?? { operation: { packages: [P], donors: [] } },
+      packages: [entry],
+    },
+    distSites: new Map([[P, sites]]),
+    binSites: new Map([[P, bins]]),
+    lifecycleStatuses: new Map(status ? [[P, status]] : []),
+    workspacePackages: new Set(inWorkspace ? [P] : []),
+  });
+}
+
+const rules = (r) => r.findings.filter(isFailureFinding).map((f) => f.rule);
+
+test("the ladder is ordered and its derivable states are a prefix of it", () => {
+  assert.deepEqual(STATES, ["designed", "implemented", "staged", "published", "adopted", "grounded", "closed"]);
+  assert.equal(stateIndex("staged") < stateIndex("published"), true);
+  for (const s of DERIVABLE_STATES) assert.equal(STATES.includes(s), true);
+  // grounded and closed must NOT be derivable here: observer measures them,
+  // and a package cannot ground itself.
+  assert.equal(DERIVABLE_STATES.has("grounded"), false);
+  assert.equal(DERIVABLE_STATES.has("closed"), false);
+});
+
+test("a published package with no invocation site and no gap is a violation", () => {
+  assert.deepEqual(rules(grade({ name: P, state: "published" })), ["state-ahead-of-evidence"]);
+});
+
+test("the same package passes once the shortfall is acknowledged", () => {
+  const r = grade({ name: P, state: "published", gaps: [{ state: "staged", reason: "zero invocation sites anywhere in this repository", issue: 466 }] });
+  assert.deepEqual(rules(r), []);
+});
+
+test("invocation sites alone never satisfy staged — a recorded failing run is required", () => {
+  // The whole point: a gate that has only ever run green has been shown to
+  // run, not to work.
+  assert.deepEqual(rules(grade({ name: P, state: "published" }, { sites: ["ci.yml:10"] })), ["state-ahead-of-evidence"]);
+  const withRun = grade(
+    { name: P, state: "published", stagedBy: { run: "https://example/run/1", defect: "#12" } },
+    { sites: ["ci.yml:10"] },
+  );
+  assert.deepEqual(rules(withRun), []);
+});
+
+test("an acknowledgement that outlives its reason is a violation", () => {
+  const r = grade(
+    { name: P, state: "published", stagedBy: { run: "https://example/run/1", defect: "#12" }, gaps: [{ state: "staged", reason: "no invocation site exists yet at all", issue: 466 }] },
+    { sites: ["ci.yml:10"] },
+  );
+  assert.deepEqual(rules(r), ["stale-gap"]);
+});
+
+test("a gap needs both a substantive reason and an issue", () => {
+  assert.deepEqual(rules(grade({ name: P, state: "published", gaps: [{ state: "staged", reason: "todo", issue: 466 }] })), [
+    "gap-without-reason",
+    "state-ahead-of-evidence",
+  ]);
+  assert.deepEqual(rules(grade({ name: P, state: "published", gaps: [{ state: "staged", reason: "zero invocation sites anywhere here", issue: "466" }] })), [
+    "gap-without-issue",
+    "state-ahead-of-evidence",
+  ]);
+});
+
+test("a state this repository cannot derive is never assumed satisfied", () => {
+  // adopted, grounded and closed all need the consumer's tree or observer's
+  // output. Silence about them must fail, not pass.
+  for (const state of ["adopted", "grounded", "closed"]) {
+    const r = grade({ name: P, state, gaps: [{ state: "staged", reason: "zero invocation sites anywhere here", issue: 466 }] });
+    assert.equal(rules(r).includes("state-ahead-of-evidence"), true, `${state} was allowed through`);
+  }
+});
+
+test("a retired package has left the ladder and is not graded for stopping", () => {
+  // Supersession is a parallel axis, not a stage. Grading a retired package
+  // against `published` would report it as running ahead of its evidence for
+  // having been deliberately retired, which inverts the finding's meaning.
+  const r = grade({ name: P, state: "published" }, { status: "retired" });
+  assert.deepEqual(rules(r), []);
+  assert.equal(r.results[0].supersession, "retired");
+});
+
+test("a retired package still carrying gaps is told to drop them", () => {
+  // The gap list is a countdown. A gap on a retired package tracks work that
+  // will never be done, which is how an acknowledgement outlives its reason.
+  const r = grade(
+    { name: P, state: "published", gaps: [{ state: "staged", reason: "zero invocation sites anywhere here", issue: 466 }] },
+    { status: "retired" },
+  );
+  assert.deepEqual(rules(r), ["gap-on-a-retired-package"]);
+  assert.deepEqual(r.results[0].acknowledgedGaps, []);
+});
+
+test("a deprecated package is still on the ladder, because it is still installable", () => {
+  assert.deepEqual(rules(grade({ name: P, state: "published" }, { status: "deprecated" })), ["state-ahead-of-evidence"]);
+  const ok = grade({ name: P, state: "published", gaps: [{ state: "staged", reason: "zero invocation sites anywhere here", issue: 466 }] }, { status: "deprecated" });
+  assert.deepEqual(rules(ok), []);
+  assert.equal(ok.results[0].supersession, "deprecated");
+});
+
+test("a bin-name invocation is reported and is not evidence of staging", () => {
+  const r = grade({ name: P, state: "published" }, { bins: ["ci.yml:44"] });
+  assert.equal(rules(r).includes("state-ahead-of-evidence"), true);
+  assert.equal(r.findings.some((f) => f.rule === "invocation-by-bin-name" && f.severity === "note"), true);
+});
+
+test("a donor is a member of the programme retiring it", () => {
+  const r = grade(
+    { name: P, state: "published", gaps: [{ state: "staged", reason: "zero invocation sites anywhere here", issue: 466 }] },
+    { programs: { expression: { packages: [], donors: [P] } } },
+  );
+  assert.deepEqual(rules(r), []);
+  assert.equal(r.results[0].role, "donor");
+});
+
+test("a package in no programme, and a workspace package in no contract, both fail", () => {
+  assert.equal(
+    rules(grade({ name: P, state: "published", gaps: [{ state: "staged", reason: "zero invocation sites anywhere here", issue: 466 }] }, { programs: { operation: { packages: [], donors: [] } } })).includes("package-in-no-program"),
+    true,
+  );
+  const r = evaluatePrograms({
+    contract: { programs: { operation: { packages: [], donors: [] } }, packages: [] },
+    distSites: new Map(),
+    binSites: new Map(),
+    lifecycleStatuses: new Map(),
+    workspacePackages: new Set([P]),
+  });
+  assert.deepEqual(rules(r), ["undeclared-package"]);
+});
+
+test("an unparseable contract yields one finding and no results, never a pass", () => {
+  for (const contract of [null, {}, { programs: {} }, { programs: {}, packages: {} }]) {
+    const r = evaluatePrograms({ contract, distSites: new Map(), binSites: new Map(), lifecycleStatuses: new Map(), workspacePackages: new Set() });
+    assert.equal(r.findings.length >= 1, true);
+    assert.deepEqual(r.results, []);
+  }
+});
+
+test("the scan finds a dist-path invocation and ignores a commented one", () => {
+  const dir = mkdtempSync(join(tmpdir(), "programs-scan-"));
+  try {
+    mkdirSync(join(dir, "packages/thing"), { recursive: true });
+    mkdirSync(join(dir, "scripts"), { recursive: true });
+    writeFileSync(join(dir, "packages/thing/package.json"), JSON.stringify({ name: P, bin: { "thing-check": "./dist/cli.js" } }));
+    writeFileSync(join(dir, "package.json"), JSON.stringify({ scripts: { check: "node packages/thing/dist/cli.js ." } }));
+    writeFileSync(join(dir, "scripts/x.mjs"), "// node packages/thing/dist/cli.js -- a comment, not a site\nrun('thing-check');\n");
+
+    const { distSites, binSites } = scanInvocationSites(dir, [P]);
+    assert.deepEqual(distSites.get(P), ["package.json:1"]);
+    assert.deepEqual(binSites.get(P), ["scripts/x.mjs:2"]);
+    assert.deepEqual([...readWorkspacePackages(dir)], [P]);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("lifecycle statuses are read by name", () => {
+  const s = readLifecycleStatuses({ packages: [{ name: P, status: "deprecated" }, { name: "x" }, "nope"] });
+  assert.equal(s.get(P), "deprecated");
+  assert.equal(s.size, 1);
+});
+
+test("this repository's own contract passes, and exits 0/1/2 correctly", () => {
+  const out = execFileSync(process.execPath, [script, "--json"], { cwd: repoRoot, encoding: "utf8" });
+  const { results, findings } = JSON.parse(out);
+  assert.equal(results.length > 0, true);
+  assert.deepEqual(findings.filter(isFailureFinding), []);
+
+  // Every workspace package is graded, so the picture cannot be partial.
+  for (const name of readWorkspacePackages(repoRoot)) {
+    assert.equal(results.some((r) => r.package === name), true, `${name} is ungraded`);
+  }
+
+  // A positive control: the gate must actually fail on the defect it exists
+  // for, not merely pass on a clean tree.
+  const dir = mkdtempSync(join(tmpdir(), "programs-cli-"));
+  try {
+    const contract = JSON.parse(execFileSync(process.execPath, ["-e", "process.stdout.write(require('fs').readFileSync('docs/contracts/package-programs.json','utf8'))"], { cwd: repoRoot, encoding: "utf8" }));
+    for (const p of contract.packages) if (p.name === "@vespeneventures/observer") delete p.gaps;
+    const broken = join(dir, "broken.json");
+    writeFileSync(broken, JSON.stringify(contract));
+    assert.throws(() => execFileSync(process.execPath, [script, broken, repoRoot], { cwd: repoRoot, stdio: "pipe" }), (e) => e.status === 1);
+    assert.throws(() => execFileSync(process.execPath, [script, join(dir, "absent.json"), repoRoot], { cwd: repoRoot, stdio: "pipe" }), (e) => e.status === 2);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
