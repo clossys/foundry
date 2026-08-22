@@ -59,12 +59,13 @@
     },
     {
       "name": "@vespeneventures/deployment",
-      "status": "deprecated",
+      "status": "retired",
       "replacement": {
         "name": "@vespeneventures/builder",
         "range": "^0.1.0"
       },
       "deprecatedOn": "2026-08-18",
+      "retiredOn": "2026-08-21",
       "decision": "docs/DECISIONS.md#9-recutting-the-workspace-surface-into-six-job-shaped-packages",
       "migration": "packages/builder/README.md",
       "forwardsToReplacement": false
@@ -103,12 +104,13 @@
     },
     {
       "name": "@vespeneventures/governance",
-      "status": "deprecated",
+      "status": "retired",
       "replacement": {
         "name": "@vespeneventures/controller",
         "range": "^0.1.0"
       },
       "deprecatedOn": "2026-08-18",
+      "retiredOn": "2026-08-21",
       "decision": "docs/DECISIONS.md#9-recutting-the-workspace-surface-into-six-job-shaped-packages",
       "migration": "packages/controller/README.md",
       "forwardsToReplacement": false
@@ -143,12 +145,13 @@
     },
     {
       "name": "@vespeneventures/policy",
-      "status": "deprecated",
+      "status": "retired",
       "replacement": {
         "name": "@vespeneventures/controller",
         "range": "^0.1.0"
       },
       "deprecatedOn": "2026-08-18",
+      "retiredOn": "2026-08-21",
       "decision": "docs/DECISIONS.md#9-recutting-the-workspace-surface-into-six-job-shaped-packages",
       "migration": "packages/controller/README.md",
       "forwardsToReplacement": false
@@ -219,12 +222,13 @@
     },
     {
       "name": "@vespeneventures/secrets",
-      "status": "deprecated",
+      "status": "retired",
       "replacement": {
         "name": "@vespeneventures/locksmith",
         "range": "^0.1.0"
       },
       "deprecatedOn": "2026-08-18",
+      "retiredOn": "2026-08-21",
       "decision": "docs/DECISIONS.md#9-recutting-the-workspace-surface-into-six-job-shaped-packages",
       "migration": "packages/locksmith/README.md",
       "forwardsToReplacement": false
@@ -283,12 +287,13 @@
     },
     {
       "name": "@vespeneventures/verify-standards",
-      "status": "deprecated",
+      "status": "retired",
       "replacement": {
         "name": "@vespeneventures/inspector",
         "range": "^0.1.0"
       },
       "deprecatedOn": "2026-08-18",
+      "retiredOn": "2026-08-21",
       "decision": "docs/DECISIONS.md#9-recutting-the-workspace-surface-into-six-job-shaped-packages",
       "migration": "packages/inspector/README.md",
       "forwardsToReplacement": false
