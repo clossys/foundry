@@ -1,0 +1,81 @@
+{
+  "$comment": "Declares which program each packages/* package belongs to, who that program addresses, and which packages are primitives that deliberately ship no gate. See docs/DECISIONS.md#11-a-gate-behind-a-bin-or-a-declared-primitive, which this file is the machine-readable half of. The rule: a program package names a doer, answers one question only it answers, and ships a gate behind a `bin`; a primitive declares that it ships none, and why. No gate reads this file yet, deliberately -- the mechanical check it enables (every non-primitive package.json exposes a `bin`) would today fail on @vespeneventures/auth, @vespeneventures/comms and @vespeneventures/consent, whose gates are known-missing rather than exempt, so the declaration is written before the gate that will enforce it. Deprecated donor packages are not listed here; they are declared in package-retention.json against the decision that superseded them.",
+  "schemaVersion": 1,
+  "programs": [
+    {
+      "name": "operation",
+      "addresses": "a repository",
+      "status": "cut",
+      "decision": "docs/DECISIONS.md#9-recutting-the-workspace-surface-into-six-job-shaped-packages",
+      "packages": [
+        "@vespeneventures/builder",
+        "@vespeneventures/controller",
+        "@vespeneventures/inspector",
+        "@vespeneventures/integrator",
+        "@vespeneventures/locksmith",
+        "@vespeneventures/observer"
+      ]
+    },
+    {
+      "name": "expression",
+      "addresses": "an audience",
+      "status": "cut",
+      "decision": "docs/DECISIONS.md#10-recutting-the-expression-surface-into-role-shaped-packages",
+      "packages": [
+        "@vespeneventures/designer",
+        "@vespeneventures/publisher",
+        "@vespeneventures/strategist",
+        "@vespeneventures/writer"
+      ]
+    },
+    {
+      "name": "interaction",
+      "addresses": "one person",
+      "status": "not cut",
+      "decision": "docs/DECISIONS.md#11-a-gate-behind-a-bin-or-a-declared-primitive",
+      "packages": [],
+      "roles": [
+        {
+          "name": "bouncer",
+          "about": "who you are, what you can do, how that changes",
+          "question": "Is this actor who they claim, and is this inside what they were granted?"
+        },
+        {
+          "name": "butler",
+          "about": "what you want -- now, and standing",
+          "question": "Do we have what this person wants, in their own confirmation, and still current?"
+        },
+        {
+          "name": "giver",
+          "about": "what you get -- asked for, and owed",
+          "question": "Did they get what they asked for, a reason, or a human -- and everything owed, on time?"
+        },
+        {
+          "name": "keeper",
+          "about": "what you gave us, and what we understand from it",
+          "question": "Does everything we hold trace to something they did, and can they see and correct it?"
+        }
+      ],
+      "donors": [
+        "@vespeneventures/auth",
+        "@vespeneventures/comms",
+        "@vespeneventures/consent"
+      ],
+      "$comment": "The roles are named and their questions fixed; none is cut, and no package here corresponds to one yet. The three donors are the packages the gate rule currently finds without a `bin`. They are not primitives -- they address one person, so they owe a gate that nobody has built."
+    },
+    {
+      "name": "transaction",
+      "addresses": "an organisation under agreement",
+      "status": "not cut",
+      "packages": [],
+      "$comment": "Named so that its absence is a decision rather than an oversight. Nothing in this repository waits on it."
+    }
+  ],
+  "primitives": [
+    {
+      "name": "@vespeneventures/domain",
+      "shipsGate": false,
+      "reason": "No addressee, therefore no role, therefore no question only it answers. It defines identifiers, typed fields, closed vocabularies and relations and ships no values, storage, authorization, provenance or lifecycle of its own, so the only thing a gate of its own could judge is the consumer's model -- which is the consumer's judgment to make, not this package's. Its checkers are library functions a consumer's own gate calls, not a command this package installs."
+    }
+  ]
+}

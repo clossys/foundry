@@ -26,6 +26,13 @@ A public package whose dependency is private is broken for everyone outside.
       neither resolves for a normal external installer. Pin real semver
       ranges.
 - [ ] The licence is MIT and matches the repository `LICENSE`.
+- [ ] The package is declared in `docs/contracts/package-tier.json` — either
+      under the program it belongs to, in which case it ships a gate behind a
+      `bin`, or in the primitive tier, in which case it declares that it ships
+      none and why. See
+      [DECISIONS.md 11](DECISIONS.md#11-a-gate-behind-a-bin-or-a-declared-primitive).
+      An undeclared package is indistinguishable from one whose gate nobody
+      remembered to build.
 
 ### Runtime dependency order
 
