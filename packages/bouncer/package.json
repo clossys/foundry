@@ -1,0 +1,121 @@
+{
+  "name": "@vespeneventures/bouncer",
+  "version": "0.1.0",
+  "private": false,
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./agent": {
+      "types": "./dist/agent/index.d.ts",
+      "import": "./dist/agent/index.js"
+    },
+    "./providers/clerk": {
+      "types": "./dist/providers/clerk/index.d.ts",
+      "import": "./dist/providers/clerk/index.js"
+    },
+    "./providers/clerk/web": {
+      "types": "./dist/providers/clerk/web/index.d.ts",
+      "import": "./dist/providers/clerk/web/index.js"
+    },
+    "./providers/clerk/web/client": {
+      "types": "./dist/providers/clerk/web/client-index.d.ts",
+      "import": "./dist/providers/clerk/web/client-index.js"
+    },
+    "./providers/clerk/web/server": {
+      "types": "./dist/providers/clerk/web/server.d.ts",
+      "import": "./dist/providers/clerk/web/server.js"
+    },
+    "./providers/clerk/web/proxy": {
+      "types": "./dist/providers/clerk/web/proxy-entry.d.ts",
+      "import": "./dist/providers/clerk/web/proxy-entry.js"
+    }
+  },
+  "bin": {
+    "bouncer-check": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/**/*.test.ts",
+    "!src/**/*.test.tsx",
+    "CHANGELOG.md",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "description": "The bouncer role: is this actor who they claim, and is what they are doing still inside what they were granted? Dependency-free machinery for a consumer's own authority records: a closed consumer-declared role hierarchy, a fail-closed session predicate, external-membership reconciliation against a provider of record, a strict redirect allowlist, an isolated ./agent subpath for delegated machine actors, provider adapters isolated behind ./providers/* so the root stays provider-neutral, a runtime verdict that is a ternary — authorized, denied, unverifiable — because a provider that did not answer is neither of the other two, and three gates behind one bouncer-check bin: authority-reconciliation, which fails when a live grant is revoked upstream, is not backed by its provider of record at all, or has passed its own declared expiry, and which exits 2 rather than 0 when a provider could not be reached; delegation-ceiling, which fails when a machine actor has no declared spend ceiling, has an undeclared unlimited one, has an amount with no currency or a currency with no amount, names no responsible human, or has an empty tool scope; and provider-contract, which fails when an adapter reads a field or recognises an event the provider no longer declares, requires a field the provider only sometimes sends, or ignores an event the provider does emit. Ships the schema and the checkers; every consumer authors its own values.",
+  "keywords": [
+    "authorization",
+    "identity",
+    "entitlement",
+    "delegation",
+    "reconciliation",
+    "gate",
+    "typescript"
+  ],
+  "author": "Calvin Hung",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vespeneventures/foundry.git",
+    "directory": "packages/bouncer"
+  },
+  "bugs": {
+    "url": "https://github.com/vespeneventures/foundry/issues"
+  },
+  "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/bouncer#readme",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "node ../../scripts/check-name-collision.mjs . && npm run build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "@clerk/nextjs": ">=7 <8",
+    "next": ">=16 <17",
+    "react": ">=19 <20",
+    "react-dom": ">=19 <20",
+    "svix": "^1.96.0"
+  },
+  "peerDependenciesMeta": {
+    "@clerk/nextjs": { "optional": true },
+    "next": { "optional": true },
+    "react": { "optional": true },
+    "react-dom": { "optional": true },
+    "svix": { "optional": true }
+  },
+  "devDependencies": {
+    "@clerk/nextjs": "7.7.5",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "next": "16.3.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "svix": "^1.96.0",
+    "typescript": "~6.0.0",
+    "vitest": "^4.1.9"
+  },
+  "foundryReleaseVerification": {
+    "next": {
+      "clientSubpaths": [
+        "./providers/clerk/web",
+        "./providers/clerk/web/client"
+      ],
+      "serverSubpaths": ["./providers/clerk/web/server"],
+      "proxySubpaths": ["./providers/clerk/web/proxy"]
+    }
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  }
+}

@@ -6,6 +6,10 @@
       "status": "published"
     },
     {
+      "name": "@vespeneventures/bouncer",
+      "status": "published"
+    },
+    {
       "name": "@vespeneventures/builder",
       "status": "published"
     },
@@ -109,6 +113,10 @@
       "decision": "docs/DECISIONS.md#9-recutting-the-workspace-surface-into-six-job-shaped-packages",
       "migration": "packages/controller/README.md",
       "forwardsToReplacement": false
+    },
+    {
+      "name": "@vespeneventures/giver",
+      "status": "published"
     },
     {
       "name": "@vespeneventures/governance",

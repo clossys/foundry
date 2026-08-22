@@ -7,6 +7,10 @@
       "intendedVisibility": "public"
     },
     {
+      "name": "@vespeneventures/bouncer",
+      "intendedVisibility": "public"
+    },
+    {
       "name": "@vespeneventures/builder",
       "intendedVisibility": "public"
     },
@@ -36,6 +40,10 @@
     },
     {
       "name": "@vespeneventures/domain",
+      "intendedVisibility": "public"
+    },
+    {
+      "name": "@vespeneventures/giver",
       "intendedVisibility": "public"
     },
     {
