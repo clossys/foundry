@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 import {
+  DEFECT_ORIGINS,
   DERIVABLE_STATES,
   STATES,
   evaluatePrograms,
@@ -66,15 +67,78 @@ test("invocation sites alone never satisfy staged — a recorded failing run is 
   // run, not to work.
   assert.deepEqual(rules(grade({ name: P, state: "published" }, { sites: ["ci.yml:10"] })), ["state-ahead-of-evidence"]);
   const withRun = grade(
-    { name: P, state: "published", stagedBy: { run: "https://example/run/1", defect: "#12" } },
+    { name: P, state: "published", stagedBy: { run: "https://example/run/1", defectOrigin: "injected", defect: "set the ink token equal to the surface token", control: "the dark theme stayed clean in the same run" } },
     { sites: ["ci.yml:10"] },
   );
   assert.deepEqual(rules(withRun), []);
 });
 
+test("a stagedBy record must name a run, an origin, the defect, and the control", () => {
+  // The gate checks the PRESENCE of this record, never its truth. That is why
+  // every field names something a reader can go and check.
+  const complete = { run: "https://example/run/1", defectOrigin: "injected", defect: "set the ink token equal to the surface token", control: "the dark theme stayed clean in the same run" };
+  assert.deepEqual(rules(grade({ name: P, state: "published", stagedBy: complete }, { sites: ["ci.yml:10"] })), []);
+
+  // `{}` used to satisfy staged outright.
+  const empty = rules(grade({ name: P, state: "published", stagedBy: {} }, { sites: ["ci.yml:10"] }));
+  assert.deepEqual(empty.slice(0, 4), [
+    "staged-by-without-run",
+    "staged-by-without-origin",
+    "staged-by-without-defect",
+    "staged-by-without-control",
+  ]);
+});
+
+test("a local run counts as `run` when it carries its own reproduction", () => {
+  // Requiring a CI URL would make `staged` unreachable for any gate whose CI
+  // job is a REQUIRED status context: the only ways to make it go red are a
+  // pull request that then carries a failing required check, or a push to the
+  // default branch (this repository's ci.yml is `push: branches: [main]`, so
+  // there is no scratch-branch path). A state reachable only by damaging
+  // branch protection is not a state — the same argument state 3 already
+  // accepts for injected defects.
+  const base = { defectOrigin: "injected", defect: "set the ink token equal to the surface token", control: "the dark theme stayed clean in the same run" };
+  const accepts = (run) => rules(grade({ name: P, state: "published", stagedBy: { ...base, run } }, { sites: ["ci.yml:10"] }));
+
+  // Deliberately not a github.com slug: this repository must never name an
+  // account or repository other than its own, and check-foreign-references
+  // cannot tell an invented placeholder slug from a real peer — it caught
+  // exactly this line.
+  assert.deepEqual(accepts("https://example.invalid/actions/runs/1"), []);
+  assert.deepEqual(
+    accepts("LOCAL, no Actions URL exists. Reproduce: set --color-ink-primary equal to --color-surface-base in tokens.css, then run the contrast CLI over it; exits 1 with three findings."),
+    [],
+  );
+  // A claim with nothing a reader could check is refused.
+  assert.equal(accepts("it went red locally").includes("staged-by-without-run"), true);
+  assert.equal(accepts("").includes("staged-by-without-run"), true);
+});
+
+test("a record with no control is refused, because a red alone proves nothing", () => {
+  // The field most likely to be left out, and the one that carries the proof:
+  // a gate that fails on ANY input is not a working gate, and a red run alone
+  // cannot tell the two apart.
+  const { control, ...noControl } = { run: "https://example/run/1", defectOrigin: "injected", defect: "set the ink token equal to the surface token", control: "the dark theme stayed clean in the same run" };
+  const found = rules(grade({ name: P, state: "published", stagedBy: noControl }, { sites: ["ci.yml:10"] }));
+  assert.equal(found.includes("staged-by-without-control"), true);
+  assert.equal(found.includes("state-ahead-of-evidence"), true);
+});
+
+test("both defect origins are acceptable evidence; an unstated one is not", () => {
+  // An injected violation is real in KIND, which is what state 3 requires.
+  // Requiring natural origin would make staged reachable only by luck.
+  assert.deepEqual([...DEFECT_ORIGINS].sort(), ["injected", "natural"]);
+  for (const defectOrigin of DEFECT_ORIGINS) {
+    const stagedBy = { ...{ run: "https://example/run/1", defectOrigin: "injected", defect: "set the ink token equal to the surface token", control: "the dark theme stayed clean in the same run" }, defectOrigin };
+    assert.deepEqual(rules(grade({ name: P, state: "published", stagedBy }, { sites: ["ci.yml:10"] })), [], defectOrigin);
+  }
+  const vague = { ...{ run: "https://example/run/1", defectOrigin: "injected", defect: "set the ink token equal to the surface token", control: "the dark theme stayed clean in the same run" }, defectOrigin: "probably real" };
+  assert.equal(rules(grade({ name: P, state: "published", stagedBy: vague }, { sites: ["ci.yml:10"] })).includes("staged-by-without-origin"), true);
+});
+
 test("an acknowledgement that outlives its reason is a violation", () => {
   const r = grade(
-    { name: P, state: "published", stagedBy: { run: "https://example/run/1", defect: "#12" }, gaps: [{ state: "staged", reason: "no invocation site exists yet at all", issue: 466 }] },
+    { name: P, state: "published", stagedBy: { run: "https://example/run/1", defectOrigin: "injected", defect: "set the ink token equal to the surface token", control: "the dark theme stayed clean in the same run" }, gaps: [{ state: "staged", reason: "no invocation site exists yet at all", issue: 466 }] },
     { sites: ["ci.yml:10"] },
   );
   assert.deepEqual(rules(r), ["stale-gap"]);
@@ -178,6 +242,27 @@ test("the scan finds a dist-path invocation and ignores a commented one", () => 
     assert.deepEqual(distSites.get(P), ["package.json:1"]);
     assert.deepEqual(binSites.get(P), ["scripts/x.mjs:2"]);
     assert.deepEqual([...readWorkspacePackages(dir)], [P]);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("a package NAME used as test-fixture data is not an invocation site", () => {
+  // The scanner's first extension counted any quoted occurrence of a package
+  // name and reported six invocation sites for `auth`, all of them strings
+  // like `entry("auth", "@vespeneventures/auth", "0.2.4")` inside another
+  // script's tests. Naming a package is not using one.
+  const dir = mkdtempSync(join(tmpdir(), "programs-fixture-"));
+  try {
+    mkdirSync(join(dir, "packages/thing"), { recursive: true });
+    mkdirSync(join(dir, "scripts"), { recursive: true });
+    writeFileSync(join(dir, "packages/thing/package.json"), JSON.stringify({ name: P }));
+    writeFileSync(join(dir, "package.json"), "{}");
+    writeFileSync(join(dir, "scripts/a.test.mjs"), `const row = entry("thing", "${P}", "1.0.0");\n`);
+    writeFileSync(join(dir, "scripts/b.mjs"), `import { thing } from "${P}";\n`);
+
+    const { distSites } = scanInvocationSites(dir, [P]);
+    assert.deepEqual(distSites.get(P), ["scripts/b.mjs:1"]);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

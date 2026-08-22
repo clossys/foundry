@@ -1,0 +1,74 @@
+# gate-efficacy — what this repository's own gates actually did, computed by
+# @vespeneventures/observer from GitHub Actions run history.
+#
+# SCHEDULED, NOT A PULL-REQUEST GATE, and the distinction is deliberate.
+# #472 drew it: a LIVE run that needs a credential to read a provider's API
+# cannot gate a fork pull request, and pretending otherwise produces a check
+# that is `indeterminate` for every outside contributor. A TEST of that same
+# script is offline and deterministic, and `scripts/gate-run-history.test.mjs`
+# does gate every pull request through `check:gates`.
+#
+# This job REPORTS. It is not a gate on a change and must not become one: the
+# thing it measures is whether the other gates were worth having, and a
+# measurer that can block the changes it measures is back to grading its own
+# homework -- the exact failure `observer` exists as a separate package to
+# refuse.
+#
+# WHAT IT CAN AND CANNOT CONCLUDE
+# --------------------------------
+# It supplies the run-history half honestly: per gate, how many times it ran,
+# how many times it was skipped, and its own verdicts tallied verbatim.
+#
+# It cannot supply the escape rate, because `LandedChangeOutcome.violation`
+# must be an INDEPENDENT judgment that a landed change really violated the
+# rule -- never the gate's own verdict -- and nothing in this repository
+# produces one yet. Every landed change therefore reports `could-not-read`,
+# the rate is a lower bound of zero, and the command says so in those words
+# rather than printing a zero that reads like good news. `docs/LIFECYCLE.md`'s
+# `grounded` state stays unreached until that source exists (#484).
+name: Gate efficacy
+
+on:
+  schedule:
+    # Weekly. Run history changes slowly and this reads two full pages of the
+    # Actions API plus one jobs call per run; a daily cadence would spend real
+    # rate limit to re-report a number that barely moved.
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  # The whole point: read this repository's own run history. Nothing here
+  # writes, and nothing here needs package or PR scope.
+  actions: read
+
+jobs:
+  gate-efficacy:
+    name: gate efficacy (run history, escape rate)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+      - run: npm ci
+      # observer is imported from its build output, not its source: this is a
+      # caller of the published contract, and running it against `src/` would
+      # prove something the package's consumers never get.
+      - run: npm run build --workspace=packages/observer
+      - name: check-gate-efficacy
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          node scripts/check-gate-efficacy.mjs --runs 100 | tee "$RUNNER_TEMP/gate-efficacy.txt"
+          cat "$RUNNER_TEMP/gate-efficacy.txt" >> "$GITHUB_STEP_SUMMARY"
+      # Keeping the report is what makes a disputed number re-checkable later,
+      # and what lets a future run say whether the rate MOVED -- which is the
+      # actual close condition, not any single reading.
+      - name: Upload the report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: gate-efficacy-report
+          path: ${{ runner.temp }}/gate-efficacy.txt
+          if-no-files-found: warn
