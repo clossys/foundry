@@ -100,7 +100,11 @@ test("a local run counts as `run` when it carries its own reproduction", () => {
   const base = { defectOrigin: "injected", defect: "set the ink token equal to the surface token", control: "the dark theme stayed clean in the same run" };
   const accepts = (run) => rules(grade({ name: P, state: "published", stagedBy: { ...base, run } }, { sites: ["ci.yml:10"] }));
 
-  assert.deepEqual(accepts("https://github.com/o/r/actions/runs/1"), []);
+  // Deliberately not a github.com slug: this repository must never name an
+  // account or repository other than its own, and check-foreign-references
+  // cannot tell an invented placeholder slug from a real peer — it caught
+  // exactly this line.
+  assert.deepEqual(accepts("https://example.invalid/actions/runs/1"), []);
   assert.deepEqual(
     accepts("LOCAL, no Actions URL exists. Reproduce: set --color-ink-primary equal to --color-surface-base in tokens.css, then run the contrast CLI over it; exits 1 with three findings."),
     [],
