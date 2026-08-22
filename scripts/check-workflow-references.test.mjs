@@ -36,11 +36,54 @@ const workflowsDir = join(repoRoot, ".github", "workflows");
 const MJS_PATTERN = /scripts\/[A-Za-z0-9._-]+\.mjs\b/g;
 const DIST_JS_PATTERN = /packages\/[A-Za-z0-9._/-]+\.js\b/g;
 
-function candidateTokensFor(scriptName, scriptValue) {
-  const tokens = new Set([scriptName]);
+function fileTokensFor(scriptValue) {
+  const tokens = new Set();
   for (const match of scriptValue.matchAll(MJS_PATTERN)) tokens.add(match[0]);
   for (const match of scriptValue.matchAll(DIST_JS_PATTERN)) tokens.add(match[0]);
-  return tokens;
+  return [...tokens];
+}
+
+function escapeForRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Is this script INVOKED by a workflow, as opposed to merely mentioned?
+ *
+ * `npm run check:x` runs the whole compound, so one invocation vouches for
+ * every command inside it. A bare substring match does not: `check:gates`
+ * appears in this repository's workflows only inside two COMMENTS explaining
+ * why something else is kept out of it, and that was enough to satisfy the
+ * previous rule. The negative lookahead stops `check:safety` from being
+ * satisfied by `npm run check:safety:strict`.
+ */
+export function isInvokedByWorkflow(scriptName, workflowText) {
+  return new RegExp(`npm run (--silent )?${escapeForRegExp(scriptName)}(?![A-Za-z0-9:_-])`).test(workflowText);
+}
+
+/**
+ * Decide whether a `check:*` script actually reaches CI.
+ *
+ * Two ways, and the disjunction is load-bearing in both directions:
+ *
+ *   invoked   -- a workflow runs `npm run <name>`, which runs everything in it.
+ *   allFiles  -- EVERY file the script invokes is referenced somewhere. Not
+ *                any file. `check:gates` is `node scripts/test-gates.mjs &&
+ *                node --test <ten suites>`; only the first is in a workflow,
+ *                and under the previous `.some` rule that one token vouched
+ *                for the other ten. Nine of those ten ran in no workflow at
+ *                all, and #468 shipped green and turned main red as a direct
+ *                result.
+ *
+ * Requiring `allFiles` alone would be wrong the other way: five scripts here
+ * are invoked as `npm run check:x` in a workflow while their inner paths
+ * never appear as text, and they are correctly wired. Demanding the paths
+ * too would fail all five.
+ */
+export function reachesCI(scriptName, scriptValue, workflowText) {
+  if (isInvokedByWorkflow(scriptName, workflowText)) return true;
+  const files = fileTokensFor(scriptValue);
+  return files.length > 0 && files.every((token) => workflowText.includes(token));
 }
 
 test("every check:* script in the root manifest is referenced by at least one workflow", () => {
@@ -52,17 +95,13 @@ test("every check:* script in the root manifest is referenced by at least one wo
   assert.ok(workflowFiles.length > 0, "expected at least one workflow file under .github/workflows");
   const workflowText = workflowFiles.map((file) => readFileSync(join(workflowsDir, file), "utf8")).join("\n");
 
-  const unreferenced = checkScripts
-    .filter(([name, value]) => {
-      const tokens = candidateTokensFor(name, value);
-      return ![...tokens].some((token) => workflowText.includes(token));
-    })
-    .map(([name]) => name);
+  const unreferenced = checkScripts.filter(([name, value]) => !reachesCI(name, value, workflowText)).map(([name]) => name);
 
   assert.deepEqual(
     unreferenced,
     [],
     `check:* script(s) in package.json with no workflow reference (npm run name, scripts/*.mjs, or packages/*/dist/*.js all absent from every .github/workflows/*.yml): ${unreferenced.join(", ")}. ` +
-      "A script that is only ever in the local `npm run check` aggregate and never a workflow is a gate that never runs in CI (#414) — wire it into a workflow, or if it genuinely cannot run there, keep it out of `check:*` and document why.",
+      "A script that is only ever in the local `npm run check` aggregate and never a workflow is a gate that never runs in CI (#414) — wire it into a workflow, or if it genuinely cannot run there, keep it out of `check:*` and document why. " +
+      "A COMPOUND script needs every file it runs referenced, or one `npm run <name>` invocation that runs all of them: one wired command does not vouch for its siblings (#472).",
   );
 });
