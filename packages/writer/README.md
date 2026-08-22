@@ -466,6 +466,80 @@ since the two gates' natural test fixtures are structurally incompatible (a
 literal traceability needs to prove a registry match is exactly a literal
 addressability cannot confirm is safe).
 
+## The passage layer — the missing middle between an entry and a document
+
+`@vespeneventures/copy` (now `writer`) has terms (a glossary) and entries
+(single addressable strings) and nothing between them. `@vespeneventures/designer`
+has tokens, atoms, **and blocks**. In practice nobody reuses one string —
+they reuse a whole empty-state (title + body + action), a whole FAQ item
+(question + answer), a whole error (message + recovery). `Passage`
+(`passage.ts`) is that missing middle: it composes entry/term REFERENCES
+the way a block composes atoms, never a raw sentence of its own. Terms ≈
+tokens, entries ≈ atoms, passages ≈ blocks; documents (a later,
+composition-layer concern, mirroring how a view composes blocks) are out
+of scope here — see [issue #373](https://github.com/vespeneventures/foundry/issues/373).
+
+```ts
+import { checkPassageComposition, readPassageRecord } from "@vespeneventures/writer";
+
+const read = readPassageRecord("passages.json");
+if (read.complete && read.record) {
+  const result = checkPassageComposition(read.record);
+  // result.verdict: "satisfied" | "violated" | "indeterminate"
+}
+```
+
+A `Passage` has a stable, dot-separated `id`, a required `context` (an
+unlocatable passage is not reviewable — the same rule `CopyEntry.context`
+already enforces one layer down), and `fields`: named slots, each of which
+should hold a `PassageReference` — `{ ref: "entry", id }` or `{ ref: "term",
+term }` — never a literal string, and never a pointer into another
+passage's own fields (`{ ref: "passage", ... }`).
+
+**The gate, with the ternary:**
+
+- **`0` (satisfied)** — every passage references only entries and terms,
+  at least one passage evaluated.
+- **`1` (violated)** — a passage inlines a literal string instead of
+  referencing an entry (the verbal equivalent of a hardcoded value instead
+  of a token), or references another passage's own internals. Wins over an
+  incomplete picture in the same run — the same "a real violation must
+  outrank an incomplete scan" precedence `checkAddressability` settled on
+  for issue #407/#433, applied here from the start rather than discovered
+  later.
+- **`2` (indeterminate)** — the registry could not be
+  read/parsed/validated, zero passages were registered, or a field's value
+  could not be confidently classified, with zero violations found. Fails
+  CLOSED with a machine-readable reason (`PassageGateResult.reasons`);
+  never a silent pass.
+
+**What this gate deliberately does not do**: verify a referenced entry id
+or term actually EXISTS in a real `CopyRecord`/glossary. That is a
+different, weaker question ("does this id resolve") than the one this gate
+answers ("is this field a reference at all, or a smuggled-in literal") —
+the same split `checkAddressability` already draws from
+`checkCopyTraceability`. `passage.adversarial.test.ts` proves the
+separation directly: a weaker tool that only checks "every referenced
+entry id exists" passes a passage built entirely from inline literals
+(zero references means nothing to check), while `writer-check passages`,
+spawned as the compiled CLI exactly the way this repository invokes every
+gate, correctly exits `1` on the identical fixture — plus the sanity check
+that the weak tool is not simply broken (both agree when references
+genuinely are valid).
+
+**Not ported**: `@vespeneventures/designer/tokens`' `brandable` boolean. In
+tokens, `brandable` marks a subset WITHIN one namespace (154 ship, 42 are
+brandable). The voice record's own consumer/machinery split runs between
+FILES instead — forcing a boolean into a `Passage` field here would be
+false symmetry with a split that does not exist at this layer. This
+package mirrors the LADDER (terms/entries/passages/documents), never the
+binding mechanism.
+
+`writer-check passages <registry-file>` (see `cli.ts` — a subcommand of the
+same `writer-check` bin, dispatched on `argv[0] === "passages"`, the same
+fully-separate dispatch `addressability` already uses) exits `0` satisfied
+/ `1` violated / `2` indeterminate.
+
 ## API
 
 The root entry point exports the copy registry and traceability surface:
@@ -502,6 +576,15 @@ The root entry point exports the copy registry and traceability surface:
 - Locale-coverage governance: `checkLocaleCoverage`, `LocaleCoverageFinding`,
   `LocaleCoverageReport`, `LocaleCoverageSkip`, and
   `LocaleCoverageSkipReason` — see "Where this package sits on i18n" above.
+- The passage layer (see above): `checkPassageComposition`,
+  `classifyPassageField`, `parsePassageRecord`, `readPassageRecord`,
+  `validatePassageRecordShape`, `Passage`, `PassageEntryReference`,
+  `PassageFieldClassification`, `PassageFinding`, `PassageGateResult`,
+  `PassageId`, `PassageRecord`, `PassageReference`,
+  `PassageRegistryReadIssue`, `PassageRegistryReadIssueReason`,
+  `PassageRegistryReadResult`, `PassageTermReference`,
+  `PassageUnclassifiedItem`, `PassageVerdict`, `PassageViolation`, and
+  `PassageViolationRule`.
 
 The voice names described under Public entry points are re-exported from the
 root and from `@vespeneventures/writer/voice`, including the rule-vocabulary

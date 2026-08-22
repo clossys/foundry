@@ -3,6 +3,73 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.0] - 2026-08-21
+
+### Added — the passage layer (issue #373)
+
+**A `Passage` composes `CopyEntry`/glossary-term REFERENCES the way a UI
+block composes atoms.** `@vespeneventures/writer` already had terms (a
+glossary) and entries (single addressable strings) and nothing between
+them — in practice nobody reuses one string; they reuse a whole
+empty-state (title + body + action), a whole FAQ item (question + answer),
+a whole error (message + recovery). This release adds that missing
+middle: terms ≈ tokens, entries ≈ atoms, passages ≈ blocks. Documents
+(the composition layer, mirroring how a view composes blocks) remain out
+of scope for this release — see the issue.
+
+- **`PassageRecord`/`Passage`** (`passage.ts`): a `Passage` has a stable
+  dot-separated `id`, a required `context` (an unlocatable passage is not
+  reviewable, mirroring `CopyEntry.context`'s own rule), and `fields` — a
+  set of named slots (`title`, `body`, `action`, ...) each of which should
+  hold a `PassageReference`: `{ ref: "entry", id }` or `{ ref: "term",
+  term }`.
+- **`validatePassageRecordShape`/`parsePassageRecord`** — structural
+  validation, in the same dependency-free, accumulate-and-keep-going style
+  every other schema in this package uses. Deliberately does NOT validate
+  a field's own value shape (whether it's a literal or a reference) — see
+  below.
+- **`readPassageRecord`** — the one place in `passage.ts` that touches a
+  filesystem; never throws, mirrors `registry.ts`'s `readCopyRecord`
+  exactly.
+- **`classifyPassageField`/`checkPassageComposition`** — the passage
+  COMPOSITION gate, wired to a new CLI subcommand, `writer-check passages
+  <registry-file>`, dispatched the identical way `writer-check
+  addressability` already is (a fully separate top-level branch, its own
+  exported `mainPassagesCheck`, never folded through `main()`). THE
+  TERNARY:
+  - **`0` (satisfied)** — every passage references only entries and
+    terms, at least one passage evaluated.
+  - **`1` (violated)** — a passage inlines a literal string instead of
+    referencing an entry (the verbal equivalent of a hardcoded value
+    instead of a token), or references another passage's own internals
+    (`{ ref: "passage", ... }`) rather than composing entries/terms the
+    way a block composes atoms. Wins over an incomplete picture in the
+    same run — the identical "a real violation must outrank an incomplete
+    scan" precedence this package's own `addressability` gate settled on
+    for issue #407/#433, applied here from the start.
+  - **`2` (indeterminate)** — the registry could not be
+    read/parsed/validated, zero passages were registered, or a field's
+    value could not be confidently classified, with zero violations found.
+    Fails CLOSED with a machine-readable reason; never a silent pass.
+- **What this gate deliberately does not do**: verify a referenced entry
+  id or term actually exists in a real `CopyRecord`/glossary. That is a
+  different, weaker question than the one this gate answers (composition
+  purity: is this field a reference at all, never mind whether it
+  resolves) — the same split `addressability.ts` already draws from
+  `copy-gate.ts`'s traceability check. See
+  `passage.adversarial.test.ts` for the proof: a weaker
+  "every referenced entry id exists" tool passes a passage built entirely
+  from inline literals (it has zero references to check), while
+  `writer-check passages`, spawned as the compiled CLI, correctly exits 1
+  on the identical fixture.
+- Not ported from `@vespeneventures/designer/tokens`: the `brandable` boolean.
+  See `passage.ts`'s own top doc comment, "WHERE THE MIRROR STOPS", for
+  why forcing that field into this layer would be false symmetry.
+
+`checkPassageComposition`, `classifyPassageField`, `parsePassageRecord`,
+`readPassageRecord`, `validatePassageRecordShape`, and every associated
+type are exported from this package's root entry point.
+
 ## [0.2.0] - 2026-08-21
 
 ### Changed — BEHAVIOURAL, read this before upgrading (issue #407)
