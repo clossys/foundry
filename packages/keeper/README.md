@@ -132,7 +132,7 @@ the first argument matching a gate name exactly.
 
 ```bash
 keeper-check attribution ./items.json ./source-events.json
-keeper-check visibility ./items.json ./disclosures.json
+keeper-check visibility ./items.json ./disclosures.json ./retained-grounds.json
 keeper-check disposal ./items.json ./retention-schedule.json ./deletions.json --at 2026-08-22T12:00:00.000Z
 ```
 
@@ -160,10 +160,17 @@ which exits `2`.
 
 ### `visibility`
 
-Every held item is reachable by the person it is about, and correctable by
-them. It fails on an item with no disclosure route at all, on one every route
-reports hidden, on one whose only routes belong to somebody else, and on one
-that can be read but not changed.
+Every held item, plus every decision ground retained in `giver`'s declared
+`retained-grounds.json` document, is reachable by the person it is about and
+correctable by them. It fails on material with no disclosure route at all, on
+material every route reports hidden, on material whose only routes belong to
+somebody else, and on material that can be read but not changed.
+
+The grounds remain owned by `giver`; they are not copied into this package's
+holding store. `keeper` independently validates the versioned JSON shape and
+joins it to disclosure routes. `retained-ground-unreachable` is distinct from
+an ordinary unreachable holding, so the report names which register needs a
+route. The packages do not import one another.
 
 The join is on the **subject**, not just the item. A route for an item that
 points at a different person is reported as `disclosed-to-another-subject`
@@ -254,7 +261,7 @@ Everything below is exported from the package root.
 | Export | What it does |
 | --- | --- |
 | `checkAttribution` | Gate 1, over held items and the source events the consumer still retains. |
-| `checkVisibility` | Gate 2, over held items and the disclosure routes that reach them. |
+| `checkVisibility` | Gate 2, over held items, `giver`'s retained-grounds document, and the disclosure routes that reach both. |
 | `checkDisposal` | Gate 3, over held items, the consumer's declared retention schedule, the deletions recorded against them, and the instant to judge at. |
 
 ### Validators and guards
@@ -268,6 +275,7 @@ Everything below is exported from the package root.
 | `validateDisclosureRecords` | Validates an untyped array of disclosure routes. |
 | `validateRetentionRules` | Validates an untyped array of the consumer's own retention rules. |
 | `validateDeletionRecords` | Validates an untyped array of deletion records. |
+| `validateGiverRetainedGroundsDocument` | Independently validates the versioned JSON document read from `giver`'s declared retained-grounds path. |
 | `isHeldItem` | Boolean guard over `validateHeldItem`. |
 | `isSourceEvent` | Boolean guard over `validateSourceEvent`. |
 
@@ -282,6 +290,9 @@ Everything below is exported from the package root.
 the closed lists a caller validating untyped input, or deriving an exit code,
 needs.
 
+`GIVER_RETAINED_GROUNDS_SCHEMA_VERSION` is the document version this package
+can read across the `giver` seam.
+
 `disposal` has **two** violation reasons — `items-retained-past-schedule` and
 `deletions-left-residue` — and they are kept apart deliberately. A set whose
 only fault is erasure residue did not outlive its schedule, and reporting it
@@ -292,7 +303,8 @@ under that name would send a reader to inspect a schedule that is working.
 The record types are `HeldItem`, `HoldingOrigin`, `Provenance`,
 `InferredBelief`, `BeliefUse`, `BeliefConfirmation`, `SourceEvent`,
 `DisclosureRecord`, `DisclosureReach`, `RetentionRule`, `DeletionRecord` and
-`DeletionEffect`.
+`DeletionEffect`. The external seam types are `GiverRetainedGround` and
+`GiverRetainedGroundsDocument`.
 
 The host-supplied ports are `HoldingStore`, `DisclosureDirectory` and
 `SourceEventLedger`. All three are interfaces; no implementation ships here.

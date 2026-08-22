@@ -60,7 +60,7 @@ const handoff = {
 const placement = { handoffId: "handoff-1", placedWithActorId: "human-1", placedAt: "2026-08-22T10:30:00.000Z" };
 
 const groundCitation = { groundId: "ground-1", citedAt: AT };
-const retainedGround = { groundId: "ground-1", retainedAt: "2026-08-22T09:00:00.000Z" };
+const retainedGround = { groundId: "ground-1", subjectId: "subject-1", retainedAt: "2026-08-22T09:00:00.000Z" };
 const deliveredAnswer = {
   requestId: "req-1",
   subjectId: "subject-1",

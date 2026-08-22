@@ -62,6 +62,7 @@ import type {
   RetentionRule,
   SourceEvent,
 } from "./schema.js";
+import type { GiverRetainedGroundsDocument } from "./giver-record.js";
 
 const MILLISECONDS_PER_DAY = 86_400_000;
 
@@ -622,7 +623,11 @@ export type VisibilityFindingKind =
   /** A route names an item that is not in the set being checked. */
   | "disclosure-without-item"
   /** Nobody could establish whether the item is reachable. Indeterminate, never a pass. */
-  | "reach-unverifiable";
+  | "reach-unverifiable"
+  /** A retained grounds record in giver's register has no route by which the person it concerns can reach and correct it. */
+  | "retained-ground-unreachable"
+  /** A retained grounds record's route could not establish its reach. Indeterminate, never a pass. */
+  | "retained-ground-reach-unverifiable";
 
 export interface VisibilityFinding {
   kind: VisibilityFindingKind;
@@ -633,7 +638,7 @@ export interface VisibilityFinding {
 }
 
 /** The one indeterminate finding kind. Kept as a list so the CLI derives its exit code rather than restating the rule. */
-export const INDETERMINATE_VISIBILITY_FINDING_KINDS: readonly VisibilityFindingKind[] = ["reach-unverifiable"];
+export const INDETERMINATE_VISIBILITY_FINDING_KINDS: readonly VisibilityFindingKind[] = ["reach-unverifiable", "retained-ground-reach-unverifiable"];
 
 export type VisibilityFailureReason = "holdings-unreachable" | "visibility-unverifiable" | "no-items-provided";
 
@@ -641,6 +646,8 @@ export interface VisibilityResult {
   ok: boolean;
   reason?: VisibilityFailureReason;
   itemsChecked: number;
+  /** Retained decision grounds checked from giver's declared JSON document. */
+  groundsChecked: number;
   disclosuresChecked: number;
   /** Reachable by the person it is about, and correctable by them. Both, or it does not count. */
   reachable: number;
@@ -648,7 +655,8 @@ export interface VisibilityResult {
 }
 
 /**
- * GATE 2 — every held item is reachable by the person it is about, and
+ * GATE 2 — every held item, and every retained decision ground in giver's
+ * declared JSON document, is reachable by the person it is about and
  * correctable by them.
  *
  * Pure, no I/O. This is the observation step of the loop, and it is the step
@@ -671,9 +679,13 @@ export interface VisibilityResult {
  * whose reach nobody could establish is a route nobody checked — and
  * `cli.ts` maps it to `2`, as it does `"no-items-provided"`.
  */
-export function checkVisibility(items: readonly HeldItem[], disclosures: readonly DisclosureRecord[]): VisibilityResult {
-  const base = { itemsChecked: items.length, disclosuresChecked: disclosures.length };
-  if (items.length === 0) {
+export function checkVisibility(
+  items: readonly HeldItem[],
+  disclosures: readonly DisclosureRecord[],
+  giverGrounds: GiverRetainedGroundsDocument,
+): VisibilityResult {
+  const base = { itemsChecked: items.length, groundsChecked: giverGrounds.grounds.length, disclosuresChecked: disclosures.length };
+  if (items.length === 0 && giverGrounds.grounds.length === 0) {
     return { ok: false, reason: "no-items-provided", ...base, reachable: 0, findings: [] };
   }
 
@@ -683,7 +695,7 @@ export function checkVisibility(items: readonly HeldItem[], disclosures: readonl
     if (existing === undefined) byItemId.set(disclosure.itemId, [disclosure]);
     else existing.push(disclosure);
   }
-  const knownItemIds = new Set(items.map((item) => item.itemId));
+  const knownItemIds = new Set([...items.map((item) => item.itemId), ...giverGrounds.grounds.map((ground) => ground.groundId)]);
 
   const findings: VisibilityFinding[] = [];
   let reachable = 0;
@@ -735,6 +747,60 @@ export function checkVisibility(items: readonly HeldItem[], disclosures: readonl
       ...where,
       kind: "item-hidden",
       message: `${own.length} route(s) exist for the person it is about and every one of them reports it hidden`,
+    });
+  }
+
+  // Grounds are not keeper holdings: their register remains in giver. They
+  // are nevertheless person-facing material, so visibility joins the
+  // declared JSON document to the same disclosure routes. Their findings are
+  // deliberately distinct from ordinary holdings so a reader knows which
+  // register needs a disclosure route.
+  for (const ground of giverGrounds.grounds) {
+    const where = { itemId: ground.groundId, subjectId: ground.subjectId };
+    const routes = byItemId.get(ground.groundId) ?? [];
+    if (routes.length === 0) {
+      findings.push({
+        ...where,
+        kind: "retained-ground-unreachable",
+        message: `retained since ${ground.retainedAt} with no disclosure route at all: the person it explains a decision about has no way to see it`,
+      });
+      continue;
+    }
+
+    const own = routes.filter((route) => route.subjectId === ground.subjectId);
+    if (own.length === 0) {
+      findings.push({
+        ...where,
+        kind: "retained-ground-unreachable",
+        message: `${routes.length} disclosure route(s) exist for this retained ground and none belong to the person it explains a decision about`,
+      });
+      continue;
+    }
+    if (own.some((route) => route.reach === "visible" && route.correctable)) {
+      reachable += 1;
+      continue;
+    }
+    if (own.some((route) => route.reach === "visible")) {
+      const surface = own.find((route) => route.reach === "visible")?.surface ?? "(unnamed surface)";
+      findings.push({
+        ...where,
+        kind: "retained-ground-unreachable",
+        message: `reachable on "${surface}" and not correctable there: reading decision grounds is not contesting them`,
+      });
+      continue;
+    }
+    if (own.some((route) => route.reach === "unknown")) {
+      findings.push({
+        ...where,
+        kind: "retained-ground-reach-unverifiable",
+        message: "no route reports this retained ground as visible and at least one could not say either way",
+      });
+      continue;
+    }
+    findings.push({
+      ...where,
+      kind: "retained-ground-unreachable",
+      message: `${own.length} route(s) exist for the person this retained ground explains a decision about and every one reports it hidden`,
     });
   }
 

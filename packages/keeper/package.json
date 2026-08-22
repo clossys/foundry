@@ -1,6 +1,6 @@
 {
   "name": "@vespeneventures/keeper",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -29,7 +29,7 @@
     "LICENSE"
   ],
   "sideEffects": false,
-  "description": "The keeper role: does everything we hold about this person trace to something they did, and can they see it and correct it? Dependency-free machinery for a consumer's own holding records: every held item carries the source event it came from, an inferred belief carries the behaviour it was inferred from, a runtime verdict that is a ternary (held/forgotten/unjustifiable) in which every basis for keeping something names a source event and no basis means \"we could not tell\", the boundary rule that an understanding only informs while an instruction constrains, host-supplied store and disclosure ports because git cannot delete and this role must, an optional ./web subpath whose React peer is asserted at import time, and three gates behind one keeper-check bin — attribution, which fails when a held item names no source event, when an inferred belief has none, when a named event is not retained or belongs to another subject or postdates the holding, and when a belief constrains behaviour with no confirmation from the person; visibility, which fails when a held item has no disclosure route, when it is hidden, when it is reachable only by someone else, or when it can be read but not corrected; and disposal, which fails when an item outlives the retention its own class declared, when a recorded erasure left the item still held, and when a deletion failed — with an item whose class the schedule never declared reported as unverifiable rather than clean. Ships the schema and the checkers; every consumer authors its own values.",
+  "description": "The keeper role: does everything we hold about this person trace to something they did, and can they see it and correct it? Dependency-free machinery for a consumer's own holding records: every held item carries the source event it came from, an inferred belief carries the behaviour it was inferred from, a runtime verdict that is a ternary (held/forgotten/unjustifiable) in which every basis for keeping something names a source event and no basis means \"we could not tell\", the boundary rule that an understanding only informs while an instruction constrains, host-supplied store and disclosure ports because git cannot delete and this role must, an optional ./web subpath whose React peer is asserted at import time, and three gates behind one keeper-check bin — attribution, which fails when a held item names no source event, when an inferred belief has none, when a named event is not retained or belongs to another subject or postdates the holding, and when a belief constrains behaviour with no confirmation from the person; visibility, which reads giver's versioned retained-grounds document without importing it and fails when a held item or decision ground has no disclosure route, is hidden, is reachable only by someone else, or can be read but not corrected; and disposal, which fails when an item outlives the retention its own class declared, when a recorded erasure left the item still held, and when a deletion failed — with an item whose class the schedule never declared reported as unverifiable rather than clean. Ships the schema and the checkers; every consumer authors its own values.",
   "keywords": [
     "keeper",
     "retention",
@@ -64,8 +64,12 @@
     "react-dom": ">=18"
   },
   "peerDependenciesMeta": {
-    "react": { "optional": true },
-    "react-dom": { "optional": true }
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@testing-library/react": "^16.3.2",

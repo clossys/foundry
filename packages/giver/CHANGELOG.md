@@ -3,6 +3,17 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.1] - 2026-08-22
+
+Pre-publication contract correction. No `0.1.0` tarball reached the registry.
+
+### Changed
+
+- The versioned `./record` surface now also declares the retained decision
+  grounds document. Each ground names the opaque subject it concerns,
+  allowing `keeper` to prove the person can reach it without importing
+  `giver` or duplicating the record.
+
 ## [0.1.0] - 2026-08-22
 
 First release. This package is the giver role: everything about what you

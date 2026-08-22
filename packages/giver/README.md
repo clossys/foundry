@@ -112,6 +112,20 @@ A document announcing a `schemaVersion` this reader does not know is
 refused, not read optimistically. Two independently-maintained copies of a
 vocabulary agree only by luck, so the seam declares what it agreed on.
 
+## The `keeper` seam is a document owned here
+
+The grounds retained behind a refusal remain a `giver` record, because this
+is the role that requires them. `keeper` does not duplicate or import that
+record; its visibility gate reads the versioned JSON document at
+`RETAINED_GROUNDS_DOCUMENT_FILENAME` (`retained-grounds.json`, relative to
+the consumer-nominated directory). Each ground carries the opaque
+`subjectId` of the person the decision concerns, which lets a disclosure
+route be checked without putting the grounds into `keeper`'s holding store.
+
+`RetainedGroundsDocument`, `RETAINED_GROUNDS_SCHEMA_VERSION`, and
+`validateRetainedGroundsDocument` are exported from `./record`. An unknown
+version or a ground with no subject is unreadable, never silently visible.
+
 ## Install
 
 ```bash
@@ -289,13 +303,17 @@ Validation surfaces `ValidationIssue`, `ValidationResult` and `Validator`.
 
 Two things live here, and they are the same idea from both ends.
 
-The **document seam** described above: `STANDING_DECISIONS_DOCUMENT_FILENAME`,
+The **document seams** described above: `STANDING_DECISIONS_DOCUMENT_FILENAME`,
 `STANDING_DECISIONS_SCHEMA_VERSION`, `STANDING_DECISION_STATUSES`,
 `validateStandingDecisionDocument`, `readStandingDecision`, and
 `unreadableStandingDecision`. A subject with no entry reads `absent`, which
 is indeterminate and routes to a person — never a grant, and never a
 refusal either. "Nobody ever asked them" and "they said no" stay different
-answers all the way through.
+answers all the way through. The same subpath exports
+`RETAINED_GROUNDS_DOCUMENT_FILENAME`, `RETAINED_GROUNDS_SCHEMA_VERSION`,
+`RetainedGroundsDocument`, and `validateRetainedGroundsDocument` for the
+person-facing grounds register that `keeper` reads without importing this
+package.
 
 The **emitters**: `answerRecordFor` and `handoffRecordFor` turn one verdict
 into exactly the records the gates read back. They exist so the decision

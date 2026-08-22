@@ -3,6 +3,16 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.1] - 2026-08-22
+
+Pre-publication contract correction. No `0.1.0` tarball reached the registry.
+
+### Changed
+
+- Visibility now reads `giver`'s versioned retained-grounds JSON document
+  across a document seam. Grounds stay owned by `giver`; an unreachable one
+  has its own finding kind, and neither package imports the other.
+
 ## [0.1.0] - 2026-08-22
 
 First release. This package is the keeper role: everything about what you gave

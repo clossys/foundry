@@ -50,10 +50,12 @@
 import type { Verdict } from "./contract.js";
 import {
   readPolicyVersion,
+  validateRetainedGrounds,
   type AnswerRecord,
   type GroundCitation,
   type HandoffRecord,
   type PolicyVersion,
+  type RetainedGround,
   type StandingRead,
 } from "./schema.js";
 import {
@@ -78,6 +80,51 @@ import {
  * describing someone else's machine.
  */
 export const STANDING_DECISIONS_DOCUMENT_FILENAME = "standing-decisions.json";
+
+/**
+ * The declared record path for the grounds a refusal retains, relative to
+ * the directory the consumer nominates. This is a contract for readers in
+ * other roles, not a convention inferred from the grounding CLI.
+ */
+export const RETAINED_GROUNDS_DOCUMENT_FILENAME = "retained-grounds.json";
+
+/** The only `schemaVersion` the retained-grounds document publishes. */
+export const RETAINED_GROUNDS_SCHEMA_VERSION = 1;
+
+/**
+ * The person-facing grounds register. It is owned here because a refusal is
+ * required here to retain its grounds; another role may read this JSON
+ * document, but must not import this package or take ownership of the record.
+ */
+export interface RetainedGroundsDocument {
+  schemaVersion: number;
+  producedAt: string;
+  grounds: RetainedGround[];
+}
+
+/**
+ * Validates the grounds register at its declared seam. An unknown version is
+ * rejected rather than read optimistically: the consumer and any independent
+ * reader must agree on the record they are joining.
+ */
+export function validateRetainedGroundsDocument(value: unknown): ValidationResult<RetainedGroundsDocument> {
+  const issues: ValidationIssue[] = [];
+  if (!isPlainObject(value)) {
+    pushIssue(issues, "(root)", "must be an object with schemaVersion, producedAt and grounds");
+    return { ok: false, issues };
+  }
+  const schemaVersion = requireNumber(value.schemaVersion, "(root).schemaVersion", issues, { integer: true, min: 0 });
+  if (schemaVersion !== undefined && schemaVersion !== RETAINED_GROUNDS_SCHEMA_VERSION) {
+    pushIssue(issues, "(root).schemaVersion", `must be ${RETAINED_GROUNDS_SCHEMA_VERSION}, got ${schemaVersion}`);
+  }
+  const producedAt = requireTimestamp(value.producedAt, "(root).producedAt", issues);
+  const groundsResult = validateRetainedGrounds(value.grounds);
+  if (!groundsResult.ok) {
+    for (const issue of groundsResult.issues) pushIssue(issues, issue.path.replace("(root)", "(root).grounds"), issue.message);
+  }
+  if (issues.length > 0 || schemaVersion === undefined || producedAt === undefined || !groundsResult.ok) return { ok: false, issues };
+  return { ok: true, value: { schemaVersion, producedAt, grounds: groundsResult.value } };
+}
 
 /** The only `schemaVersion` this reader accepts. A document announcing any other version is refused, not read optimistically. */
 export const STANDING_DECISIONS_SCHEMA_VERSION = 1;

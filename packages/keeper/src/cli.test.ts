@@ -87,6 +87,8 @@ const disclosure = {
   observedAt: "2026-08-02T00:00:00.000Z",
 };
 
+const giverGroundsDocument = { schemaVersion: 1, producedAt: AT, grounds: [] };
+
 const retentionRule = { holdingClass: "authored-notes", days: 90 };
 const deletionRecord = { itemId: "item_1", subjectId: "sub_1", actorId: "actor_1", deletedAt: "2026-08-10T00:00:00.000Z", effect: "erased" };
 
@@ -213,49 +215,65 @@ describe("visibility", () => {
   it("exits 0 when every item is reachable and correctable by the person it is about", () => {
     const items = write("items.json", [heldItem]);
     const disclosures = write("disclosures.json", [disclosure]);
-    expect(main(["visibility", items, disclosures])).toBe(0);
+    const grounds = write("grounds.json", giverGroundsDocument);
+    expect(main(["visibility", items, disclosures, grounds])).toBe(0);
   });
 
   it("exits 1 on an item with no disclosure route at all", () => {
     const items = write("items.json", [heldItem]);
     const disclosures = write("disclosures.json", []);
-    expect(main(["visibility", items, disclosures])).toBe(1);
+    const grounds = write("grounds.json", giverGroundsDocument);
+    expect(main(["visibility", items, disclosures, grounds])).toBe(1);
   });
 
   it("exits 1 on an item a person can read but not correct", () => {
     const items = write("items.json", [heldItem]);
     const disclosures = write("disclosures.json", [{ ...disclosure, correctable: false }]);
-    expect(main(["visibility", items, disclosures])).toBe(1);
+    const grounds = write("grounds.json", giverGroundsDocument);
+    expect(main(["visibility", items, disclosures, grounds])).toBe(1);
   });
 
   it("exits 1 when the only route belongs to a different person", () => {
     const items = write("items.json", [heldItem]);
     const disclosures = write("disclosures.json", [{ ...disclosure, subjectId: "sub_other" }]);
-    expect(main(["visibility", items, disclosures])).toBe(1);
+    const grounds = write("grounds.json", giverGroundsDocument);
+    expect(main(["visibility", items, disclosures, grounds])).toBe(1);
   });
 
   it("exits 2 — never 0 — on a route that could not say whether the person can see it", () => {
     const items = write("items.json", [heldItem]);
     const disclosures = write("disclosures.json", [{ ...disclosure, reach: "unknown" }]);
-    expect(main(["visibility", items, disclosures])).toBe(2);
+    const grounds = write("grounds.json", giverGroundsDocument);
+    expect(main(["visibility", items, disclosures, grounds])).toBe(2);
   });
 
   it("exits 2 on an unreadable store, a store that does not validate, and an empty holding set", () => {
     const disclosures = write("disclosures.json", [disclosure]);
-    expect(main(["visibility", join(dir, "missing.json"), disclosures])).toBe(2);
+    const grounds = write("grounds.json", giverGroundsDocument);
+    expect(main(["visibility", join(dir, "missing.json"), disclosures, grounds])).toBe(2);
 
     const invalidRoutes = write("bad-routes.json", [{ ...disclosure, reach: "shown" }]);
     const items = write("items.json", [heldItem]);
-    expect(main(["visibility", items, invalidRoutes])).toBe(2);
+    expect(main(["visibility", items, invalidRoutes, grounds])).toBe(2);
 
     const none = write("none.json", []);
-    expect(main(["visibility", none, disclosures])).toBe(2);
+    expect(main(["visibility", none, disclosures, grounds])).toBe(2);
   });
 
-  it("requires both files", () => {
+  it("requires all three files", () => {
     const items = write("items.json", [heldItem]);
     expect(() => main(["visibility"])).toThrow(/items-file is required/);
     expect(() => main(["visibility", items])).toThrow(/disclosures-file is required/);
+    expect(() => main(["visibility", items, write("disclosures.json", [disclosure])])).toThrow(/giver-retained-grounds-file is required/);
+  });
+
+  it("exits 1 with a distinct grounds finding when giver's retained record has no disclosure route", () => {
+    const items = write("items.json", [heldItem]);
+    const disclosures = write("disclosures.json", [disclosure]);
+    const grounds = write("grounds.json", { ...giverGroundsDocument, grounds: [{ groundId: "ground_1", subjectId: "sub_1", retainedAt: AT }] });
+    expect(main(["visibility", items, disclosures, grounds])).toBe(1);
+    const printed = vi.mocked(console.log).mock.calls.map((call) => String(call[0])).join("\n");
+    expect(printed).toContain("[retained-ground-unreachable] ground_1");
   });
 });
 
@@ -424,7 +442,8 @@ describe("direct-path reachability — the real compiled dist/cli.js", () => {
   it("node dist/cli.js visibility exits 1 on an item nobody can reach", () => {
     const items = write("items.json", [heldItem]);
     const disclosures = write("disclosures.json", []);
-    const result = runCli(cliPath, ["visibility", items, disclosures]);
+    const grounds = write("grounds.json", giverGroundsDocument);
+    const result = runCli(cliPath, ["visibility", items, disclosures, grounds]);
     expect(result.stdout).toContain("[item-not-disclosed] item_1");
     expect(result.status).toBe(1);
   });
@@ -527,7 +546,7 @@ describe("the house exit-code contract, against the pinned controls", () => {
     const missing = join(dir, "does-not-exist.json");
     const empty = write("empty.json", []);
     expect(runCli(cliPath, ["attribution", missing, empty]).status).toBe(2);
-    expect(runCli(cliPath, ["visibility", missing, empty]).status).toBe(2);
+    expect(runCli(cliPath, ["visibility", missing, empty, empty]).status).toBe(2);
     expect(runCli(cliPath, ["disposal", missing, empty, empty, "--at", AT]).status).toBe(2);
   });
 });

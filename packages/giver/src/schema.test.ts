@@ -169,7 +169,7 @@ describe("validateAnswerRecord", () => {
 
 describe("validateRetainedGrounds", () => {
   it("accepts well-formed grounds and refuses one with no id", () => {
-    expect(validateRetainedGrounds([{ groundId: "g", retainedAt: AT }]).ok).toBe(true);
+    expect(validateRetainedGrounds([{ groundId: "g", subjectId: "s", retainedAt: AT }]).ok).toBe(true);
     expect(validateRetainedGrounds([{ groundId: "", retainedAt: AT }]).ok).toBe(false);
   });
 

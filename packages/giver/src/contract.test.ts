@@ -413,7 +413,7 @@ describe("checkHandoffPlacement", () => {
 
 // -------------------------------------------------------------- gate 2: grounding
 
-const ground: RetainedGround = { groundId: "ground-1", retainedAt: "2026-08-22T09:00:00.000Z" };
+const ground: RetainedGround = { groundId: "ground-1", subjectId: "subject-1", retainedAt: "2026-08-22T09:00:00.000Z" };
 
 function answer(outcome: AnswerRecord["outcome"], overrides: Partial<AnswerRecord> = {}): AnswerRecord {
   return { requestId: "req-1", subjectId: "subject-1", actorId: "actor-1", receivedAt: "2026-08-22T09:59:00.000Z", outcome, ...overrides };
