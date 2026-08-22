@@ -473,6 +473,38 @@ test("CLI --declarations-only: runs with NO token and passes when every publishe
   });
 });
 
+test("CLI --declarations-only: a benign not-published result is labelled SKIP, and a passing run prints NO FIND line", () => {
+  // The gate was always sound here: a deprecated package that still carries a
+  // visibility declaration is expected, produces status "not-published", and
+  // correctly does not affect the exit code. What was broken was the LABEL --
+  // the offline reporter printed everything that was not "error" as "FIND ",
+  // so five routine lines rendered as faults immediately above
+  // "DECLARATIONS OK". Read literally, that output says the gate found five
+  // problems and passed anyway.
+  //
+  // That is worth a test rather than a tidy-up because a signal that fires
+  // when nothing is wrong stops being read, and then is not read on the day
+  // something is. The invariant asserted here is the one that cannot be
+  // argued with: a run that reports OK must not print a single FIND line.
+  withDir((root) => {
+    writeFixture(root, {
+      lifecycle: lifecycleWith([
+        { name: "@fixture/a", status: "published" },
+        { name: "@fixture/retiring", status: "deprecated" },
+      ]),
+      visibility: visibilityWith([
+        { name: "@fixture/a", intendedVisibility: "public" },
+        { name: "@fixture/retiring", intendedVisibility: "public" },
+      ]),
+    });
+    const r = run(["--declarations-only"], { cwd: root, env: { GH_PACKAGES_TOKEN: "" } });
+    assert.equal(r.code, 0, `a not-published declaration must not fail the gate, got ${r.code}: ${r.out}`);
+    assert.match(r.out, /DECLARATIONS OK/);
+    assert.match(r.out, /\[SKIP \] @fixture\/retiring/, "a benign not-published result must be labelled SKIP");
+    assert.doesNotMatch(r.out, /\[FIND \]/, "a passing run must never print a FIND line — that is what made this unreadable");
+  });
+});
+
 test("CLI --declarations-only: an undeclared published entry exits 1 — the secret-scan omission, caught offline", () => {
   withDir((root) => {
     writeFixture(root, {

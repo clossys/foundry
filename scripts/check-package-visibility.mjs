@@ -173,6 +173,14 @@ import { fileURLToPath } from "node:url";
 const DEFAULT_LIFECYCLE_PATH = "docs/contracts/package-lifecycle.json";
 const DEFAULT_VISIBILITY_PATH = "docs/contracts/package-visibility.json";
 const DEFAULT_RETENTION_PATH = "docs/contracts/package-retention.json";
+
+// One label per status, shared by BOTH report paths. "not-published" is a
+// benign, expected outcome -- a deprecated package that still declares an
+// intended visibility -- and labelling it FIND made five routine lines read
+// as faults on every pull request, directly above "DECLARATIONS OK". The
+// gate was always sound; the display was not. Kept in one place so the two
+// paths cannot drift into disagreeing about what a status is called.
+const STATUS_LABELS = { pass: "PASS ", finding: "FIND ", error: "ERROR", "not-published": "SKIP " };
 const DEFAULT_SCOPE_PATH = "package-scope.json";
 const GITHUB_API = "https://api.github.com";
 const VALID_VISIBILITIES = new Set(["public", "private"]);
@@ -818,7 +826,7 @@ async function main() {
     if (json) {
       console.log(JSON.stringify({ mode: "declarations-only", declared: declared.length, results }, null, 2));
     } else {
-      for (const r of results) console.log(`  [${r.status === "error" ? "ERROR" : "FIND "}] ${r.package} — ${r.detail}`);
+      for (const r of results) console.log(`  [${STATUS_LABELS[r.status]}] ${r.package} — ${r.detail}`);
       if (findings.length === 0) {
         console.log(`PACKAGE VISIBILITY DECLARATIONS OK — all ${declared.length} "published" packages declare an intended visibility.`);
         console.log("Live registry visibility is NOT checked here; that half needs a credential and runs post-publish.");
@@ -882,8 +890,7 @@ async function main() {
   if (json) {
     console.log(JSON.stringify({ results: allResults, registryPackagesEnumerated }, null, 2));
   } else {
-    const labels = { pass: "PASS ", finding: "FIND ", error: "ERROR", "not-published": "SKIP " };
-    for (const r of allResults) console.log(`  [${labels[r.status]}] ${r.package} — ${r.detail}`);
+    for (const r of allResults) console.log(`  [${STATUS_LABELS[r.status]}] ${r.package} — ${r.detail}`);
   }
 
   if (!json) {
