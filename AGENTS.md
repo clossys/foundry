@@ -135,7 +135,22 @@ or publish packages.
   the same owner, and the gate remains the proof that none owns the candidate
   package name.
 
+## The package lifecycle
+
+[`docs/LIFECYCLE.md`](docs/LIFECYCLE.md) is the standing contract for how a
+package moves from designed to closed, and this repository adheres to it. Its
+one rule is that a package's state is **derived from evidence, never
+declared** — a state claimed ahead of its evidence is a defect, not a plan.
+
+Two consequences bind agent work here. Do not report a package as further
+along than its evidence supports: "wired" is not "staged", an install is not
+an adoption, and a gate that has only ever run green has been shown to run,
+not to work. And when you record a position, record the measurement that
+produced it — the command and its output — not a summary of it.
+
 ## Adding a package
 
 Follow [`docs/PUBLISHING.md`](docs/PUBLISHING.md). It is written as a checklist
 because the failure mode — publishing something private — is not reversible.
+It is state 4 of the seven; the surrounding six are in
+[`docs/LIFECYCLE.md`](docs/LIFECYCLE.md).
