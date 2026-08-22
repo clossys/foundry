@@ -475,7 +475,7 @@ describe("dist/cli.js — reachable by direct compiled-path invocation, this rep
   beforeEach(() => {
     if (!existsSync(DIST_CLI)) {
       throw new Error(
-        `${DIST_CLI} does not exist — run "npm run build" in packages/copy before running this test file. ` +
+        `${DIST_CLI} does not exist — run "npm run build" in packages/writer before running this test file. ` +
           `This suite proves the gate is reachable the way this repository's own CI invokes it (by compiled path), which is only meaningful against the real compiled output, never a mock of it.`,
       );
     }
