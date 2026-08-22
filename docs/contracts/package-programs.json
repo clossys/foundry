@@ -244,7 +244,7 @@
     },
     {
       "name": "@vespeneventures/giver",
-      "state": "designed"
+      "state": "implemented"
     },
     {
       "name": "@vespeneventures/keeper",
