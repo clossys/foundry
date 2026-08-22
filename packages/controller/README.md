@@ -1673,7 +1673,7 @@ mismatch (or another binding finding), `2` when it could not run. Use
 | `PACKAGE_LIFECYCLE_VERSION` | constant | Supported lifecycle schema version, currently `1`. |
 | `planNewPackage(input)` | function | Returns a deterministic, no-write private starter or repository-profiled package plan. |
 | `validatePackageLifecycle(value)` | function | Purely validates a lifecycle document without workspace I/O. |
-| `evaluateLifecycleCoverage(value, packageNames)` | function | Validates a lifecycle document and checks it names exactly the supplied packages. |
+| `evaluateLifecycleCoverage(value, packageNames, packageVersions?)` | function | Validates a lifecycle document, checks it names exactly the supplied packages, and — when `packageVersions` is supplied — flags a terminal entry whose declared `replacement.range` no longer covers the replacement's actual version. |
 | `runGovernanceCheck(root, lifecycle, options?)` | function | Composes the existing foundation check and build order with lifecycle coverage. |
 | `preflightGovernedPackage(root, packageDir, lifecycle, options?)` | function | Combines `release`'s existing package preflight with a governance report. |
 | `PackageLifecycleDocument` / `PackageLifecycleEntry` / `PackageLifecycleStatus` | types | Consumer-owned maturity registry, one lifecycle entry, and its status vocabulary. |
