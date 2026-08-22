@@ -280,6 +280,28 @@ jobs:
           node-version: 20
       - run: node scripts/check-root-entry-policy.mjs
 
+  # Every live package under packages/ is classified exactly once in
+  # docs/contracts/package-tier.json — in a program, in the primitive tier,
+  # or in awaitingProgram (published, no program yet, gate known-missing).
+  # See docs/DECISIONS.md 11 and the script's own header, including what it
+  # deliberately does NOT check yet. One JSON read plus a directory scan, no
+  # build and no credential, so it takes the same shallow-checkout shape as
+  # `root-entry` above.
+  #
+  # NOT added to `main-required-checks` by this change, same reasoning as
+  # `root-entry` and `prepublish-hook` above: a status context with no
+  # reporting history wedges a repository if it lands straight into
+  # `required_status_checks`.
+  package-tier:
+    name: package tier classification
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+      - run: node scripts/check-package-tier.mjs
+
   # Three gates over this repository's own tree that had never been invoked
   # by any workflow before this change, and that share one requirement: a
   # BUILT @vespeneventures/controller (issue #414's wider finding — six

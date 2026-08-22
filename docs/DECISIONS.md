@@ -412,9 +412,10 @@ published yet".
 **Status:** the rule below governs every package in `packages/`. The programs,
 their addressees, and the primitive tier are declared in
 [`docs/contracts/package-tier.json`](contracts/package-tier.json), with
-`domain` as the primitive tier's first member. Program C's four roles are named
-and their questions fixed here; none of them is cut, and this decision creates
-no package.
+`domain` as the primitive tier's first member, and
+`scripts/check-package-tier.mjs` fails when a live package is classified
+nowhere in it. Program C's four roles are named and their questions fixed here;
+none of them is cut, and this decision creates no package.
 
 Decisions 9 and 10 wrote down half of what every package here is actually held
 to: it names a doer rather than a thing, and answers one question only it can
@@ -460,9 +461,14 @@ values, storage, authorization, provenance or lifecycle of its own. What a
 right is the consumer's judgment, not this package's.
 
 Membership is declared, never inferred from a missing `bin`. `auth`, `comms`
-and `consent` are not primitives: they address one person, they belong to
-interaction, and their missing gates are the failure below rather than an
-exemption from it.
+and `consent` are not primitives: they address one person, and their missing
+gates are the failure below rather than an exemption from it. Nor are they
+interaction's packages — they are its donors, and none of them is one of its
+four roles. They are declared in a third state, `awaitingProgram`: published,
+in no program yet, gate known-missing, each with a named resolution. The three
+packages this decision is derived from have to be visible in its
+machine-readable half; a decision whose motivating case is absent from its own
+contract describes an aspiration rather than the tree.
 
 ### Program C's four roles
 
@@ -509,10 +515,15 @@ whether it is a tier or a special case wearing a general name. It is recorded
 as a tier because the alternative, an exemption field on `domain` alone, is the
 standing exemption with no expiry that the retention contract already refuses.
 
-No gate reads the tier declaration yet. A mechanical check — every
-non-primitive package exposes a `bin` — would today fail on `auth`, `comms` and
-`consent`, which are known-missing rather than exempt, so the declaration is
-written first and the gate follows the packages that satisfy it.
+The rule's own `bin` half is not yet enforced mechanically. Every live package
+being classified exactly once in the tier contract is —
+`scripts/check-package-tier.mjs` runs in `npm run check` and in CI, and fails
+when a package is added and classified nowhere, which is the drift that turns a
+contract file into decoration. The stronger check, that every non-primitive
+exposes a `bin`, would today go red on three known-missing gates rather than on
+drift, and a gate whose first act is to fail on a state its own decision
+already records is a gate someone switches off. It follows the packages that
+can satisfy it.
 
 Where a message-transport and contact-coordinate substrate belongs is also
 open. It carries messages and identities and decides nothing about what either
