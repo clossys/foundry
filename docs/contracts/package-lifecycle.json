@@ -10,7 +10,7 @@
       },
       "deprecatedOn": "2026-08-22",
       "decision": "https://github.com/vespeneventures/foundry/issues/458",
-      "migration": "packages/auth/README.md#migration",
+      "migration": "docs/DECISIONS.md#program-c-donor-migration",
       "forwardsToReplacement": false
     },
     {
@@ -51,7 +51,7 @@
       },
       "deprecatedOn": "2026-08-22",
       "decision": "https://github.com/vespeneventures/foundry/issues/458",
-      "migration": "packages/consent/README.md#migration",
+      "migration": "docs/DECISIONS.md#program-c-donor-migration",
       "forwardsToReplacement": false
     },
     {

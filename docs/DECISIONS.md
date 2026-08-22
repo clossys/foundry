@@ -481,6 +481,19 @@ permanent claim from a package that belongs to a programme.
 Order is the request path: `bouncer`, then `butler`, then `giver`, with
 `keeper` read throughout.
 
+### Program C donor migration
+
+`auth` is deprecated in favour of `@vespeneventures/bouncer` at `^0.1.0`.
+Replace its imports deliberately and preserve the provider boundary documented
+by `bouncer`; no forwarding package keeps the old name alive.
+
+`consent` is deprecated across two explicit destinations. Move consent records
+and current standing instructions to `@vespeneventures/butler` at `^0.1.0`;
+move enforcement and proof of owed delivery to `@vespeneventures/giver` at
+`^0.1.1`. No forwarding package hides that split. Existing published donor
+versions remain resolvable during migration, subject to the time-bounded
+retention entries in `docs/contracts/package-retention.json`.
+
 ### The failure this rule is derived from
 
 Measurable in this repository, not argued from taste.
