@@ -62,6 +62,91 @@ function validSemverRange(value: string): boolean {
   return /^(?:[~^]|>=?|<=?)?\s*\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\s+(?:-|\|\||[~^]|>=?|<=?)?\s*\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)*$/.test(value.trim());
 }
 
+// ---------------------------------------------------- replacement-range coverage
+
+interface SemverBound {
+  major: number;
+  minor: number;
+  patch: number;
+}
+
+/** Strict x.y.z only — same shape as internal/peer-version.ts's own parseVersion(). */
+function parseStrictVersion(value: string): SemverBound | null {
+  const m = /^(\d+)\.(\d+)\.(\d+)$/.exec(String(value).trim());
+  if (!m) return null;
+  return { major: Number(m[1]), minor: Number(m[2]), patch: Number(m[3]) };
+}
+
+function compareSemver(a: SemverBound, b: SemverBound): number {
+  return a.major - b.major || a.minor - b.minor || a.patch - b.patch;
+}
+
+/**
+ * Same ported algorithm as `internal/peer-version.ts`'s
+ * `parsePinCaretTilde`/`parseGteForm` (itself ported from
+ * `scripts/check-workspace-links.mjs`): an exact pin, a caret/tilde range
+ * against a plain x.y.z — `0.y.z` minor-locks BOTH `^` and `~`, matching
+ * this repository's own 0.x contract (see
+ * `packages/consent/src/web/internal/peer-version.ts`'s `parsePinCaretTilde`)
+ * — or a bounded/unbounded `>=` range.
+ *
+ * A second, independent copy rather than an import of that module:
+ * `internal/peer-version.ts` is a RUNTIME peer guard that deliberately
+ * fails OPEN on a version string it cannot parse (see that file's own
+ * header, #389) — proceed silently, because a consumer's build must not
+ * crash over a string this package merely failed to read. This function
+ * backs a STATIC DOCUMENT check instead, where the matching discipline is
+ * the opposite: fail CLOSED. An unparseable declared range already has its
+ * own `replacement-range` finding above; an unparseable range or
+ * replacement version here simply means `rangeCoversVersion` returns
+ * `null` — "no opinion", not "covered" — so the caller never treats
+ * "could not tell" as a clean pass.
+ */
+function parseRangeBounds(range: string): { lower: SemverBound; upper: SemverBound | null } | null {
+  const pinCaretTilde = /^(\^|~)?(\d+)\.(\d+)\.(\d+)$/.exec(String(range).trim());
+  if (pinCaretTilde) {
+    const prefix = pinCaretTilde[1] ?? "";
+    const major = Number(pinCaretTilde[2]);
+    const minor = Number(pinCaretTilde[3]);
+    const patch = Number(pinCaretTilde[4]);
+    if (prefix === "") return { lower: { major, minor, patch }, upper: { major, minor, patch: patch + 1 } };
+    if (major === 0) return { lower: { major, minor, patch }, upper: { major, minor: minor + 1, patch: 0 } };
+    if (prefix === "^") return { lower: { major, minor, patch }, upper: { major: major + 1, minor: 0, patch: 0 } };
+    return { lower: { major, minor, patch }, upper: { major, minor: minor + 1, patch: 0 } }; // "~"
+  }
+  const trimmed = String(range).trim();
+  const segment = "(\\d+)(?:\\.(\\d+))?(?:\\.(\\d+))?";
+  const bounded = new RegExp(`^>=\\s*${segment}\\s+<\\s*${segment}$`).exec(trimmed);
+  if (bounded) {
+    const [, lMaj, lMin, lPat, uMaj, uMin, uPat] = bounded;
+    return {
+      lower: { major: Number(lMaj), minor: Number(lMin ?? "0"), patch: Number(lPat ?? "0") },
+      upper: { major: Number(uMaj), minor: Number(uMin ?? "0"), patch: Number(uPat ?? "0") },
+    };
+  }
+  const unbounded = new RegExp(`^>=\\s*${segment}$`).exec(trimmed);
+  if (unbounded) {
+    const [, maj, min, pat] = unbounded;
+    return { lower: { major: Number(maj), minor: Number(min ?? "0"), patch: Number(pat ?? "0") }, upper: null };
+  }
+  return null;
+}
+
+/**
+ * `true`/`false` once both `range` and `version` parsed cleanly; `null` —
+ * never assumed covered — when either side is a form `parseRangeBounds`/
+ * `parseStrictVersion` does not understand.
+ */
+function rangeCoversVersion(range: string, version: string): boolean | null {
+  const bounds = parseRangeBounds(range);
+  if (!bounds) return null;
+  const parsedVersion = parseStrictVersion(version);
+  if (!parsedVersion) return null;
+  const geLower = compareSemver(parsedVersion, bounds.lower) >= 0;
+  const ltUpper = bounds.upper === null ? true : compareSemver(parsedVersion, bounds.upper) < 0;
+  return geLower && ltUpper;
+}
+
 function sortFindings(findings: LifecycleFinding[]): LifecycleFinding[] {
   return findings.sort((left, right) => left.path.localeCompare(right.path) || left.rule.localeCompare(right.rule) || left.message.localeCompare(right.message));
 }
@@ -323,8 +408,20 @@ export function evaluateDependencyInstallability(value: unknown, edges: readonly
   return sortFindings(findings);
 }
 
-/** Validates that a lifecycle registry names exactly the supplied package names. */
-export function evaluateLifecycleCoverage(value: unknown, packageNames: readonly string[]): LifecycleFinding[] {
+/**
+ * Validates that a lifecycle registry names exactly the supplied package
+ * names, and — when `packageVersions` is supplied — that every terminal
+ * entry's `replacement.range` actually covers its replacement's real
+ * current version. `packageVersions` is optional and keyed by package
+ * name: a caller with only a name list (no catalog `version` field handy)
+ * still gets the existing coverage checks, just not the range-staleness
+ * one, rather than being forced to fabricate versions to call this at all.
+ */
+export function evaluateLifecycleCoverage(
+  value: unknown,
+  packageNames: readonly string[],
+  packageVersions?: ReadonlyMap<string, string>,
+): LifecycleFinding[] {
   const findings = validatePackageLifecycle(value);
   if (!isRecord(value)) return findings;
   const packagesValue = ownDataValue(value, "packages");
@@ -340,6 +437,29 @@ export function evaluateLifecycleCoverage(value: unknown, packageNames: readonly
     // their workspace package directory.
     if (!TERMINAL_STATUSES.has(String(status)) && !packageNames.includes(name)) {
       findings.push(finding("catalog-package-missing", `packages[${index}].name`, `Lifecycle entry "${name}" is not present in the workspace catalog.`));
+    }
+    // A migration pointer that resolves to a range covering only a long-
+    // superseded version of the replacement is worse than no pointer at
+    // all: it reads as current guidance while installing something that
+    // cannot resolve to what the package actually ships today. Checked
+    // only once the range and replacement version are both known-good
+    // shapes — an invalid range already has its own `replacement-range`
+    // finding above, and a replacement absent from the catalog already has
+    // its own `replacement-missing` finding in `validatePackageLifecycle`.
+    if (packageVersions && TERMINAL_STATUSES.has(String(status))) {
+      const replacementValue = isRecord(entry) ? ownDataValue(entry, "replacement").value : undefined;
+      const replacementName = isRecord(replacementValue) ? ownDataValue(replacementValue, "name").value : undefined;
+      const replacementRange = isRecord(replacementValue) ? ownDataValue(replacementValue, "range").value : undefined;
+      if (typeof replacementName === "string" && typeof replacementRange === "string") {
+        const actualVersion = packageVersions.get(replacementName);
+        if (actualVersion !== undefined && rangeCoversVersion(replacementRange, actualVersion) === false) {
+          findings.push(finding(
+            "replacement-range-stale",
+            `packages[${index}].replacement.range`,
+            `Replacement "${replacementName}"'s declared range "${replacementRange}" does not cover its actual current version ${actualVersion}.`,
+          ));
+        }
+      }
     }
   });
   for (const packageName of [...packageNames].sort()) {

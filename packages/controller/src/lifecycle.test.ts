@@ -263,6 +263,71 @@ describe("validatePackageLifecycle", () => {
       ],
     }, ["@example/current"])).toEqual([]);
   });
+
+  it("flags a replacement range that does not cover the replacement's actual current version", () => {
+    const lifecycle = {
+      schemaVersion: 1,
+      packages: [
+        { name: "@example/current", status: "published" },
+        {
+          name: "@example/old",
+          status: "deprecated",
+          replacement: { name: "@example/current", range: "^0.1.0" },
+          deprecatedOn: "2026-08-11",
+          decision: "https://example.invalid/decisions/old",
+          migration: "https://example.invalid/migrations/old",
+          forwardsToReplacement: false,
+        },
+      ],
+    };
+    const findings = evaluateLifecycleCoverage(lifecycle, ["@example/current"], new Map([["@example/current", "0.3.0"]]));
+    expect(findings.map((finding) => finding.rule)).toEqual(["replacement-range-stale"]);
+    expect(findings[0]?.message).toContain('"@example/current"');
+    expect(findings[0]?.message).toContain("0.3.0");
+
+    // No `packageVersions` map at all: the existing coverage checks still
+    // run, but the range-staleness check is simply not evaluated rather
+    // than forcing every caller to fabricate versions to call this at all.
+    expect(evaluateLifecycleCoverage(lifecycle, ["@example/current"])).toEqual([]);
+  });
+
+  it("passes a replacement range that does cover the replacement's actual current version", () => {
+    const lifecycle = {
+      schemaVersion: 1,
+      packages: [
+        { name: "@example/current", status: "published" },
+        {
+          name: "@example/old",
+          status: "deprecated",
+          replacement: { name: "@example/current", range: "^0.3.0" },
+          deprecatedOn: "2026-08-11",
+          decision: "https://example.invalid/decisions/old",
+          migration: "https://example.invalid/migrations/old",
+          forwardsToReplacement: false,
+        },
+      ],
+    };
+    expect(evaluateLifecycleCoverage(lifecycle, ["@example/current"], new Map([["@example/current", "0.3.0"]]))).toEqual([]);
+  });
+
+  it("does not flag replacement-range-stale when the replacement's version is unknown or the range is unparseable", () => {
+    const unknownVersion = {
+      schemaVersion: 1,
+      packages: [
+        { name: "@example/current", status: "published" },
+        {
+          name: "@example/old",
+          status: "deprecated",
+          replacement: { name: "@example/current", range: "^0.1.0" },
+          deprecatedOn: "2026-08-11",
+          decision: "https://example.invalid/decisions/old",
+          migration: "https://example.invalid/migrations/old",
+          forwardsToReplacement: false,
+        },
+      ],
+    };
+    expect(evaluateLifecycleCoverage(unknownVersion, ["@example/current"], new Map())).toEqual([]);
+  });
 });
 
 // ---------------------------------------------------------------------

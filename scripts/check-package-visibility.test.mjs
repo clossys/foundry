@@ -13,6 +13,7 @@ import {
   fetchPackageVisibility,
   fetchRegistryPackages,
   isBlindCredential,
+  isFailureStatus,
   isRetentionExpired,
   normalizeRegistryName,
   reconcileRegistryAgainstLifecycle,
@@ -471,6 +472,55 @@ test("CLI --declarations-only: runs with NO token and passes when every publishe
     // answer is the failure mode this repo keeps rediscovering.
     assert.match(r.out, /Live registry visibility is NOT checked here/);
   });
+});
+
+test("CLI --declarations-only: a benign not-published result is labelled SKIP, and a passing run prints NO FIND line", () => {
+  // The gate was always sound here: a deprecated package that still carries a
+  // visibility declaration is expected, produces status "not-published", and
+  // correctly does not affect the exit code. What was broken was the LABEL --
+  // the offline reporter printed everything that was not "error" as "FIND ",
+  // so five routine lines rendered as faults immediately above
+  // "DECLARATIONS OK". Read literally, that output says the gate found five
+  // problems and passed anyway.
+  //
+  // That is worth a test rather than a tidy-up because a signal that fires
+  // when nothing is wrong stops being read, and then is not read on the day
+  // something is. The invariant asserted here is the one that cannot be
+  // argued with: a run that reports OK must not print a single FIND line.
+  withDir((root) => {
+    writeFixture(root, {
+      lifecycle: lifecycleWith([
+        { name: "@fixture/a", status: "published" },
+        { name: "@fixture/retiring", status: "deprecated" },
+      ]),
+      visibility: visibilityWith([
+        { name: "@fixture/a", intendedVisibility: "public" },
+        { name: "@fixture/retiring", intendedVisibility: "public" },
+      ]),
+    });
+    const r = run(["--declarations-only"], { cwd: root, env: { GH_PACKAGES_TOKEN: "" } });
+    assert.equal(r.code, 0, `a not-published declaration must not fail the gate, got ${r.code}: ${r.out}`);
+    assert.match(r.out, /DECLARATIONS OK/);
+    assert.match(r.out, /\[SKIP \] @fixture\/retiring/, "a benign not-published result must be labelled SKIP");
+    assert.doesNotMatch(r.out, /\[FIND \]/, "a passing run must never print a FIND line — that is what made this unreadable");
+  });
+});
+
+test("an unrecognised status fails closed rather than falling through to a pass", () => {
+  // Both classifiers used to enumerate the FAILURE statuses positively, so a
+  // status outside {finding, error} fell through to "not a failure" and the
+  // gate exited 0. A status added later to mean something bad would have
+  // shipped as a PASS -- silently, since the exit code is what CI reads.
+  //
+  // Asserted here as a property of the classifier rather than through the
+  // CLI, because the defect is that an UNKNOWN status is possible at all:
+  // no fixture can produce one until someone adds it, which is precisely
+  // when this must already be in place.
+  assert.equal(isFailureStatus("pass"), false);
+  assert.equal(isFailureStatus("not-published"), false, "a deprecated package with a declaration is benign");
+  assert.equal(isFailureStatus("finding"), true);
+  assert.equal(isFailureStatus("error"), true);
+  assert.equal(isFailureStatus("some-status-nobody-has-written-yet"), true, "unknown must fail closed, never pass");
 });
 
 test("CLI --declarations-only: an undeclared published entry exits 1 — the secret-scan omission, caught offline", () => {

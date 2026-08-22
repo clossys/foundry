@@ -5,6 +5,7 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+<<<<<<< HEAD
 ## [0.8.8] - 2026-08-21
 
 ### Added
@@ -17,6 +18,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   cannot break, since nothing can install either. Verified against the real
   tree — 0 findings as-is, 2 on a subset retirement that would break an
   install, 0 when the affected packages are retired together.
+=======
+## [0.8.8] - 2026-08-22
+
+### Changed
+
+- `evaluateLifecycleCoverage` now accepts an optional `packageVersions` map
+  (keyed by package name) and, when supplied, emits a new
+  `replacement-range-stale` finding whenever a terminal lifecycle entry's
+  `replacement.range` does not cover the replacement's actual current
+  version. Previously the `replacement-range` finding only checked that
+  the declared range was syntactically valid semver, never that it still
+  covered the replacement package it named — a range could go stale as
+  the replacement kept shipping and nothing caught it. Omitting
+  `packageVersions` keeps the prior behavior exactly, so this is additive.
+>>>>>>> origin/main
 
 ## [0.8.7] - 2026-08-21
 
