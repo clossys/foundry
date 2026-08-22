@@ -134,6 +134,14 @@ never that it is *true*:
 }
 ```
 
+`run` may be a CI run URL **or** a local run described in enough detail to
+reproduce — the input, the command, and what it printed. Requiring a URL would
+make this state unreachable for any gate whose CI job is a *required status
+context*: the only ways to make one go red are a pull request that then
+carries a failing required check, or a push to the default branch. A state
+reachable only by damaging the branch protection the gate exists to serve is
+not a state, which is the same argument that settles origin above.
+
 `control` is the field most likely to be left out and the one that carries the
 proof. The first real candidate in this repository *had* a control — a second
 theme that stayed clean while the injected one failed — and its author had not

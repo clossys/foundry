@@ -89,6 +89,27 @@ test("a stagedBy record must name a run, an origin, the defect, and the control"
   ]);
 });
 
+test("a local run counts as `run` when it carries its own reproduction", () => {
+  // Requiring a CI URL would make `staged` unreachable for any gate whose CI
+  // job is a REQUIRED status context: the only ways to make it go red are a
+  // pull request that then carries a failing required check, or a push to the
+  // default branch (this repository's ci.yml is `push: branches: [main]`, so
+  // there is no scratch-branch path). A state reachable only by damaging
+  // branch protection is not a state — the same argument state 3 already
+  // accepts for injected defects.
+  const base = { defectOrigin: "injected", defect: "set the ink token equal to the surface token", control: "the dark theme stayed clean in the same run" };
+  const accepts = (run) => rules(grade({ name: P, state: "published", stagedBy: { ...base, run } }, { sites: ["ci.yml:10"] }));
+
+  assert.deepEqual(accepts("https://github.com/o/r/actions/runs/1"), []);
+  assert.deepEqual(
+    accepts("LOCAL, no Actions URL exists. Reproduce: set --color-ink-primary equal to --color-surface-base in tokens.css, then run the contrast CLI over it; exits 1 with three findings."),
+    [],
+  );
+  // A claim with nothing a reader could check is refused.
+  assert.equal(accepts("it went red locally").includes("staged-by-without-run"), true);
+  assert.equal(accepts("").includes("staged-by-without-run"), true);
+});
+
 test("a record with no control is refused, because a red alone proves nothing", () => {
   // The field most likely to be left out, and the one that carries the proof:
   // a gate that fails on ANY input is not a working gate, and a red run alone

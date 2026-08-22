@@ -239,6 +239,9 @@ export function readLifecycleStatuses(document) {
 }
 
 /** The two origins a recorded red run can have. Both are acceptable; being unable to tell them apart is not. */
+/** A local run stands in for a URL only if it carries enough for a reader to reproduce it. */
+const MIN_REPRODUCTION_LENGTH = 60;
+
 export const DEFECT_ORIGINS = new Set(["injected", "natural"]);
 
 /**
@@ -272,8 +275,30 @@ export function validateStagedBy(value, name, findings) {
     return false;
   }
   let ok = true;
-  if (typeof value.run !== "string" || value.run.trim() === "") {
-    findings.push(finding("staged-by-without-run", name, "`stagedBy.run` must name the recorded run, so a reader can go and look at it"));
+  // `run` must let a READER VERIFY THE CLAIM, which a URL does by inspection
+  // and a local run does by reproduction. Both are acceptable, and requiring a
+  // CI URL would be wrong: for a gate whose CI job is a REQUIRED status
+  // context, the only ways to make it go red are a pull request that then
+  // carries a failing required check, or a push to the default branch. This
+  // repository's ci.yml is `push: branches: [main]`, so there is no
+  // scratch-branch path either. Demanding a URL would make `staged` reachable
+  // only by damaging the branch protection the gate exists to serve -- the
+  // same shape as demanding a natural defect, which state 3 already rejects.
+  //
+  // Unlike `defectOrigin`, this needs no field of its own: which kind it is
+  // can be read off the value. An unverifiable claim needs a declared field; a
+  // derivable one does not.
+  const run = typeof value.run === "string" ? value.run.trim() : "";
+  const isUrl = /^https?:\/\//.test(run);
+  if (run === "" || (!isUrl && run.length < MIN_REPRODUCTION_LENGTH)) {
+    findings.push(
+      finding(
+        "staged-by-without-run",
+        name,
+        "`stagedBy.run` must be either a URL to the recorded run, or -- when the gate's CI job is a required status context and " +
+          "no such URL can exist without breaking it -- a local run described in enough detail to reproduce: the input, the command, and what it printed",
+      ),
+    );
     ok = false;
   }
   if (!DEFECT_ORIGINS.has(value.defectOrigin)) {
