@@ -188,6 +188,16 @@ const STATUS_LABELS = { pass: "PASS ", finding: "FIND ", error: "ERROR", "not-pu
 // line rather than "[undefined]". A reporter that renders garbage is a
 // reporter people stop reading, which is the failure this whole change is
 // about.
+// The ONLY statuses that mean "nothing is wrong". Enumerated negatively on
+// purpose: a status this file does not recognise must fail closed rather than
+// fall through to a pass, which is the inverse of enumerating the failure
+// cases and letting everything else through.
+const BENIGN_STATUSES = new Set(["pass", "not-published"]);
+
+export function isFailureStatus(status) {
+  return !BENIGN_STATUSES.has(status);
+}
+
 function statusLabel(status) {
   return STATUS_LABELS[status] ?? String(status).toUpperCase();
 }
@@ -758,7 +768,15 @@ export async function checkAllPackageVisibility({ lifecycle, visibility, retenti
   // dominates a finding, which dominates a clean pass or a not-yet-
   // published report. Same aggregation check-workspace-links.mjs and
   // check-release-readiness.mjs already use.
-  const code = allResults.reduce((acc, r) => (r.status === "error" ? 2 : r.status === "finding" && acc !== 2 ? 1 : acc), 0);
+  // An UNRECOGNISED status is treated as `error`, not as benign. Both this
+  // reducer and the offline filter below used to enumerate the failure
+  // statuses positively, so anything outside {finding, error} fell through to
+  // "not a failure" and the gate exited 0. A status added later to mean
+  // something bad would therefore have shipped as a PASS. That is the same
+  // rule this file already applies to unparseable input -- it refuses to
+  // report a result it did not earn -- and an unclassifiable status is data
+  // it cannot interpret.
+  const code = allResults.reduce((acc, r) => (isFailureStatus(r.status) && r.status !== "finding" ? 2 : r.status === "finding" && acc !== 2 ? 1 : acc), 0);
 
   return { fatal: null, code, results: allResults, lookups, registryPackagesEnumerated: registryResult.packages.length };
 }
@@ -832,7 +850,8 @@ async function main() {
     const { declared, results, fatal } = selectDeclaredPackages(lifecycle, visibility);
     if (fatal) die(fatal);
 
-    const findings = results.filter((r) => r.status === "finding" || r.status === "error");
+    // Unrecognised statuses count as failures -- see isFailureStatus.
+    const findings = results.filter((r) => isFailureStatus(r.status));
     if (json) {
       console.log(JSON.stringify({ mode: "declarations-only", declared: declared.length, results }, null, 2));
     } else {

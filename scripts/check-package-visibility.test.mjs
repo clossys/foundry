@@ -13,6 +13,7 @@ import {
   fetchPackageVisibility,
   fetchRegistryPackages,
   isBlindCredential,
+  isFailureStatus,
   isRetentionExpired,
   normalizeRegistryName,
   reconcileRegistryAgainstLifecycle,
@@ -503,6 +504,23 @@ test("CLI --declarations-only: a benign not-published result is labelled SKIP, a
     assert.match(r.out, /\[SKIP \] @fixture\/retiring/, "a benign not-published result must be labelled SKIP");
     assert.doesNotMatch(r.out, /\[FIND \]/, "a passing run must never print a FIND line — that is what made this unreadable");
   });
+});
+
+test("an unrecognised status fails closed rather than falling through to a pass", () => {
+  // Both classifiers used to enumerate the FAILURE statuses positively, so a
+  // status outside {finding, error} fell through to "not a failure" and the
+  // gate exited 0. A status added later to mean something bad would have
+  // shipped as a PASS -- silently, since the exit code is what CI reads.
+  //
+  // Asserted here as a property of the classifier rather than through the
+  // CLI, because the defect is that an UNKNOWN status is possible at all:
+  // no fixture can produce one until someone adds it, which is precisely
+  // when this must already be in place.
+  assert.equal(isFailureStatus("pass"), false);
+  assert.equal(isFailureStatus("not-published"), false, "a deprecated package with a declaration is benign");
+  assert.equal(isFailureStatus("finding"), true);
+  assert.equal(isFailureStatus("error"), true);
+  assert.equal(isFailureStatus("some-status-nobody-has-written-yet"), true, "unknown must fail closed, never pass");
 });
 
 test("CLI --declarations-only: an undeclared published entry exits 1 — the secret-scan omission, caught offline", () => {
