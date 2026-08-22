@@ -55,6 +55,10 @@
       "intendedVisibility": "public"
     },
     {
+      "name": "@vespeneventures/keeper",
+      "intendedVisibility": "public"
+    },
+    {
       "name": "@vespeneventures/ledger",
       "intendedVisibility": "public"
     },
