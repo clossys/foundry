@@ -3,6 +3,20 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.3] - 2026-08-21
+
+### Changed
+
+- Widened the declared `@vespeneventures/writer` dependency range from
+  `^0.2.0` to `^0.3.0`. `writer` 0.3.0 (issue #373) added the passage
+  layer — `checkPassageComposition`, `readPassageRecord`, the
+  `writer-check passages` CLI subcommand, and their supporting types — a
+  purely additive feature, not a patch; `^0.2.0` does not resolve `0.3.0`
+  (0.x ranges are minor-locked), so the old declared range would have kept
+  this package pinned to the superseded release. No source in this
+  package imports the new passage-layer surface; this is purely picking
+  up the new range.
+
 ## [0.1.2] - 2026-08-21
 
 ### Changed

@@ -1128,7 +1128,7 @@ import-free of each other under one version.
 ## Requirements and version coupling
 
 Node 20+. This package's own `package.json` declares runtime dependencies on
-`@vespeneventures/writer` (`^0.2.0`), `@vespeneventures/designer`
+`@vespeneventures/writer` (`^0.3.0`), `@vespeneventures/designer`
 (`^0.2.0`), and `@vespeneventures/controller` (`~0.8.0`) — of which this
 package only imports the `./policy` subpath, `@vespeneventures/controller/policy`,
 never `controller`'s other exports. `writer` and `designer` are caret
