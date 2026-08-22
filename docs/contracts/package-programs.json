@@ -126,24 +126,22 @@
     {
       "name": "@vespeneventures/strategist",
       "state": "published",
-      "gaps": [
-        {
-          "state": "staged",
-          "reason": "zero dist-path invocation sites in this repository: this package has never been executed against a real tree by its own author",
-          "issue": 466
-        }
-      ]
+      "stagedBy": {
+        "run": "LOCAL fixture run, not a CI run — reproduce with `npm run stage:program-b` after checkout. It creates temporary facts and prose inputs, runs `node packages/strategist/dist/cli.js` against an unregistered numerical claim (exit 1, finding(s)), then against the registered value (exit 0, No findings). This proves the compiled CLI discriminates; it does not wire it to a real Foundry facts subject, which remains #500. 2026-08-22.",
+        "defectOrigin": "injected",
+        "defect": "A temporary fixture announcement claimed 9 customers while its fixture facts registry contained only 3 customers. The compiled strategist CLI's own traceability scan produced exit 1 and finding output; no exit code was forced.",
+        "control": "In the same fixture command, the identical temporary registry was scanned against an announcement claiming its registered 3 customers value. The compiled CLI exited 0 with No findings, proving discrimination within the fixture rather than real author-subject wiring."
+      }
     },
     {
       "name": "@vespeneventures/writer",
       "state": "published",
-      "gaps": [
-        {
-          "state": "staged",
-          "reason": "zero dist-path invocation sites in this repository: this package has never been executed against a real tree by its own author",
-          "issue": 466
-        }
-      ]
+      "stagedBy": {
+        "run": "LOCAL fixture run, not a CI run — reproduce with `npm run stage:program-b` after checkout. It creates temporary copy-record and source-tree inputs, runs `node packages/writer/dist/cli.js` against an unregistered user-facing string (exit 1, finding(s)), then against a registered string (exit 0, No findings). This proves the compiled CLI discriminates; choosing and wiring writer's real Foundry subject remains #501. 2026-08-22.",
+        "defectOrigin": "injected",
+        "defect": "A temporary source fixture contained the user-facing literal Unregistered result while its fixture copy record registered only No results. The compiled writer CLI's own scanner and traceability judgment produced exit 1 and finding output; the harness did not force its exit code.",
+        "control": "In the same fixture command, the same temporary copy record was scanned against a source file containing its registered No results string. The compiled CLI exited 0 with No findings, proving discrimination within the fixture rather than a decision about Foundry's real author subject."
+      }
     },
     {
       "name": "@vespeneventures/designer",
@@ -158,13 +156,12 @@
     {
       "name": "@vespeneventures/publisher",
       "state": "published",
-      "gaps": [
-        {
-          "state": "staged",
-          "reason": "zero dist-path invocation sites in this repository: this package has never been executed against a real tree by its own author",
-          "issue": 466
-        }
-      ]
+      "stagedBy": {
+        "run": "LOCAL fixture run, not a CI run — reproduce with `npm run stage:program-b` after checkout. It runs both compiled publisher CLIs: media coverage on an unregistered asset reference (exit 1) and its registered control (exit 0), then record drift on a changed cited fact (exit 1) and its matching control (exit 0). This proves fixture discrimination only; it does not reconcile a ledger emitted by Foundry's publish path against an independent record, which remains #502. 2026-08-22.",
+        "defectOrigin": "injected",
+        "defect": "The temporary media fixture referenced a missing asset id, and the temporary ledger fixture supplied a current fact value different from its recorded content-addressed citation. The compiled media and record CLIs respectively produced their own exit-1 findings for coverage failure and fact drift.",
+        "control": "In the same fixture command, the media fixture referenced its registered asset and the temporary ledger supplied its exact cited fact value. Both compiled publisher CLIs exited 0 with No findings; this does not establish the independent publish-path reconciliation #502 requires."
+      }
     },
     {
       "name": "@vespeneventures/strategy",

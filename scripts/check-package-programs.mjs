@@ -716,7 +716,13 @@ export function replaceLifecyclePositionTable(document, rendered) {
     throw new Error(`missing ${LIFECYCLE_POSITION_START} / ${LIFECYCLE_POSITION_END} markers`);
   }
   const afterEnd = end + LIFECYCLE_POSITION_END.length;
-  return `${document.slice(0, start)}${rendered}${document.slice(afterEnd)}`;
+  // `rendered` owns the marker and its terminating newline. Canonicalize the
+  // boundary that follows it too: a write must not preserve (and therefore
+  // accumulate) blank lines left by an earlier generated block. One blank
+  // line is the document's canonical separation before the next prose.
+  const replacement = `${rendered.replace(/\n*$/, "\n")}`;
+  const following = document.slice(afterEnd).replace(/^\n+/, "");
+  return `${document.slice(0, start)}${replacement}${following === "" ? "" : `\n${following}`}`;
 }
 
 export function readWorkspacePackages(repoRoot) {

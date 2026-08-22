@@ -390,12 +390,13 @@ test("the lifecycle position renderer derives rows and never invents grounded ev
   assert.match(rendered, /<!-- lifecycle-position-table:end -->/);
 });
 
-test("replacing the generated lifecycle block preserves surrounding prose and refuses missing markers", () => {
+test("replacing the generated lifecycle block preserves surrounding prose, canonicalizes its boundary, and is idempotent", () => {
   const rendered = "<!-- lifecycle-position-table:start -->\nnew table\n<!-- lifecycle-position-table:end -->\n";
-  assert.equal(
-    replaceLifecyclePositionTable("before\n<!-- lifecycle-position-table:start -->\nold\n<!-- lifecycle-position-table:end -->\nafter\n", rendered),
-    "before\n<!-- lifecycle-position-table:start -->\nnew table\n<!-- lifecycle-position-table:end -->\n\nafter\n",
-  );
+  const source = "before\n<!-- lifecycle-position-table:start -->\nold\n<!-- lifecycle-position-table:end -->\n\n\n\nafter\n";
+  const expected = "before\n<!-- lifecycle-position-table:start -->\nnew table\n<!-- lifecycle-position-table:end -->\n\nafter\n";
+  const replaced = replaceLifecyclePositionTable(source, rendered);
+  assert.equal(replaced, expected);
+  assert.equal(replaceLifecyclePositionTable(replaced, rendered), replaced);
   assert.throws(() => replaceLifecyclePositionTable("no markers", rendered), /missing/);
 });
 
@@ -415,7 +416,14 @@ test("this repository's own contract passes, and exits 0/1/2 correctly", () => {
   const dir = mkdtempSync(join(tmpdir(), "programs-cli-"));
   try {
     const contract = JSON.parse(execFileSync(process.execPath, ["-e", "process.stdout.write(require('fs').readFileSync('docs/contracts/package-programs.json','utf8'))"], { cwd: repoRoot, encoding: "utf8" }));
-    for (const p of contract.packages) if (p.name === "@vespeneventures/strategist") delete p.gaps;
+    for (const p of contract.packages) {
+      if (p.name !== "@vespeneventures/strategist") continue;
+      // The real contract may acknowledge a staging shortfall with `gaps`,
+      // or support it with a recorded red/control `stagedBy` run. Remove
+      // both forms so this remains a positive control for missing evidence.
+      delete p.gaps;
+      delete p.stagedBy;
+    }
     const broken = join(dir, "broken.json");
     writeFileSync(broken, JSON.stringify(contract));
     assert.throws(() => execFileSync(process.execPath, [script, broken, repoRoot], { cwd: repoRoot, stdio: "pipe" }), (e) => e.status === 1);

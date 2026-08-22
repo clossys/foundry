@@ -270,10 +270,10 @@ fails when the committed copy drifts from the derived one — #493.
 | A — operation | `@vespeneventures/locksmith` | role | published | yes | unknown — #484 |
 | A — operation | `@vespeneventures/integrator` | role | published | yes | unknown — #484 |
 | A — operation | `@vespeneventures/observer` | role | published | yes | unknown — #484 |
-| B — expression | `@vespeneventures/strategist` | role | published | not yet | unknown — #484 |
-| B — expression | `@vespeneventures/writer` | role | published | not yet | unknown — #484 |
+| B — expression | `@vespeneventures/strategist` | role | published | yes | unknown — #484 |
+| B — expression | `@vespeneventures/writer` | role | published | yes | unknown — #484 |
 | B — expression | `@vespeneventures/designer` | role | published | yes | unknown — #484 |
-| B — expression | `@vespeneventures/publisher` | role | published | not yet | unknown — #484 |
+| B — expression | `@vespeneventures/publisher` | role | published | yes | unknown — #484 |
 | B — expression | `@vespeneventures/strategy` | donor | published | yes | unknown — #484 |
 | B — expression | `@vespeneventures/copy` | donor | published | yes | unknown — #484 |
 | B — expression | `@vespeneventures/ui` | donor | published | yes | unknown — #484 |
@@ -289,7 +289,6 @@ fails when the committed copy drifts from the derived one — #493.
 | C — interaction | `@vespeneventures/keeper` | role | published | not yet | unknown — #484 |
 
 <!-- lifecycle-position-table:end -->
-
 
 Two claims about position are structural rather than counted, and survive:
 
