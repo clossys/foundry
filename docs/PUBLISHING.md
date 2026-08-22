@@ -332,8 +332,11 @@ manifest. See `docs/DECISIONS.md` for why GitHub Packages is canonical.
 
 ### Package visibility
 
-New packages publish **private** by default (visible only to accounts with
-explicit access), even though this repository itself is public.
+Do not infer a new package's visibility from the repository or from a
+successful upload. GitHub has created new npm packages as private in some
+contexts and as public in others. Treat the package settings page and the
+authenticated visibility report as the evidence for the package that was
+actually created.
 
 **There is no API to change a GitHub Packages npm package's visibility.**
 This was verified directly against the real API: a `PATCH` to
@@ -342,14 +345,15 @@ even with a full-permission PAT, while `GET` on that same path works fine.
 Changing visibility is a web-UI-only operation; no token scope or workflow
 permission makes it possible another way.
 
-Once a package has passed a real consumer qualification, an owner makes it
-public manually:
+Once a package has passed a real consumer qualification, an owner verifies its
+visibility and makes it public manually when it is not already public:
 
 1. Visit `https://github.com/orgs/<org>/packages/npm/<name>/settings` — for
    a package owned by a personal account rather than an organization, GitHub
    exposes the equivalent settings page under that account's own packages
    tab instead.
-2. Under **Danger Zone**, change the package's visibility to Public.
+2. Under **Danger Zone**, read the current visibility. If it is not Public,
+   use **Change visibility** to make it Public.
 
 Dispatching **Publish** with its package directory and `visibility_only:
 true` runs the workflow's `visibility` job as a convenience, but that job

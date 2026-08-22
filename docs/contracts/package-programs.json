@@ -254,19 +254,47 @@
     },
     {
       "name": "@vespeneventures/bouncer",
-      "state": "implemented"
+      "state": "published",
+      "gaps": [
+        {
+          "state": "staged",
+          "reason": "This package has never been executed against a real tree by its own author",
+          "issue": 507
+        }
+      ]
     },
     {
       "name": "@vespeneventures/butler",
-      "state": "implemented"
+      "state": "published",
+      "gaps": [
+        {
+          "state": "staged",
+          "reason": "This package has never been executed against a real tree by its own author",
+          "issue": 507
+        }
+      ]
     },
     {
       "name": "@vespeneventures/giver",
-      "state": "implemented"
+      "state": "published",
+      "gaps": [
+        {
+          "state": "staged",
+          "reason": "This package has never been executed against a real tree by its own author",
+          "issue": 507
+        }
+      ]
     },
     {
       "name": "@vespeneventures/keeper",
-      "state": "implemented"
+      "state": "published",
+      "gaps": [
+        {
+          "state": "staged",
+          "reason": "This package has never been executed against a real tree by its own author",
+          "issue": 507
+        }
+      ]
     }
   ]
 }
