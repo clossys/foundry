@@ -246,46 +246,42 @@
     {
       "name": "@vespeneventures/bouncer",
       "state": "published",
-      "gaps": [
-        {
-          "state": "staged",
-          "reason": "This package has never been executed against a real tree by its own author",
-          "issue": 507
-        }
-      ]
+      "stagedBy": {
+        "run": "LOCAL fixture run, not a CI run — reproduce with `npm run stage:program-c` after checkout. It creates temporary synthetic records and runs all three `node packages/bouncer/dist/cli.js` gates: authority-reconciliation (upstream-revoked / active), delegation-ceiling (unbounded / bounded), and provider-contract (undeclared field / declared field). Every red exits 1 with its violated report and each adjacent control exits 0 with its satisfied report. This proves compiled CLI discrimination only; real product wiring, adoption, and #507 remain distinct. 2026-08-22.",
+        "defectOrigin": "injected",
+        "defect": "The three synthetic violations are a live grant revoked upstream, a machine actor with no declared spending ceiling, and an adapter reading a provider field the declared shape lacks. The compiled bouncer CLI produced each normal exit-1 violation; the harness did not force an exit code.",
+        "control": "Each matching fixture control marks the authority active, declares a bounded actor, or aligns the adapter field with the provider shape. All three compiled CLI controls exit 0 with their satisfied reports, proving only fixture discrimination."
+      }
     },
     {
       "name": "@vespeneventures/butler",
       "state": "published",
-      "gaps": [
-        {
-          "state": "staged",
-          "reason": "This package has never been executed against a real tree by its own author",
-          "issue": 507
-        }
-      ]
+      "stagedBy": {
+        "run": "LOCAL fixture run, not a CI run — reproduce with `npm run stage:program-c` after checkout. It creates temporary synthetic records and runs all three `node packages/butler/dist/cli.js` gates: confirmation-completeness (unconfirmed / confirmed), currency (superseded policy / current policy), and withdrawal-parity (harder withdrawal / equal route). Every red exits 1 with its violated report and each adjacent control exits 0 with its satisfied report. This proves compiled CLI discrimination only; real product wiring, adoption, and #507 remain distinct. 2026-08-22.",
+        "defectOrigin": "injected",
+        "defect": "The three synthetic violations are an acted-on intent with no confirmation, a standing instruction used after its policy version changed, and a withdrawal route that costs more than its grant route. The compiled butler CLI produced each normal exit-1 violation; the harness did not force an exit code.",
+        "control": "Each matching fixture control supplies a confirmation, retains the current policy version, or makes withdrawal no harder than grant. All three compiled CLI controls exit 0 with their satisfied reports, proving only fixture discrimination."
+      }
     },
     {
       "name": "@vespeneventures/giver",
       "state": "published",
-      "gaps": [
-        {
-          "state": "staged",
-          "reason": "This package has never been executed against a real tree by its own author",
-          "issue": 507
-        }
-      ]
+      "stagedBy": {
+        "run": "LOCAL fixture run, not a CI run — reproduce with `npm run stage:program-c` after checkout. It creates temporary synthetic records and runs all three `node packages/giver/dist/cli.js` gates: obligation-discharge (failed / delivered), handoff-placement (unplaced / placed), and grounding (uncited / retained-ground citation). Every red exits 1 with its violated report and each adjacent control exits 0 with its satisfied report. This proves compiled CLI discrimination only; real product wiring, adoption, and #507 remain distinct. 2026-08-22.",
+        "defectOrigin": "injected",
+        "defect": "The three synthetic violations are a failed delivery proof for a due obligation, an expired handoff with no placement, and a delivered answer with no retained-ground citation. The compiled giver CLI produced each normal exit-1 violation; the harness did not force an exit code.",
+        "control": "Each matching fixture control supplies a delivered proof, a timely handoff placement, or a citation to the retained ground. All three compiled CLI controls exit 0 with their satisfied reports, proving only fixture discrimination."
+      }
     },
     {
       "name": "@vespeneventures/keeper",
       "state": "published",
-      "gaps": [
-        {
-          "state": "staged",
-          "reason": "This package has never been executed against a real tree by its own author",
-          "issue": 507
-        }
-      ]
+      "stagedBy": {
+        "run": "LOCAL fixture run, not a CI run — reproduce with `npm run stage:program-c` after checkout. It creates temporary synthetic records and runs all three `node packages/keeper/dist/cli.js` gates: visibility (no disclosure / visible and correctable), attribution (no source / retained source event), and disposal (expired retention / current retention). Every red exits 1 with its violated report and each adjacent control exits 0 with its satisfied report. This proves compiled CLI discrimination only; real product wiring, adoption, and #507 remain distinct. 2026-08-22.",
+        "defectOrigin": "injected",
+        "defect": "The three synthetic violations are a held item with no disclosure route, a held item with no source event, and a held item outliving its declared retention. The compiled keeper CLI produced each normal exit-1 violation; the harness did not force an exit code.",
+        "control": "Each matching fixture control supplies a visible correctable route, a retained matching source event, or a current retention rule. All three compiled CLI controls exit 0 with their satisfied reports, proving only fixture discrimination."
+      }
     }
   ]
 }

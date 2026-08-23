@@ -283,10 +283,10 @@ fails when the committed copy drifts from the derived one — #493.
 | C — interaction | `@vespeneventures/consent` | donor | published | not yet | unknown — #484 |
 | C — interaction | `@vespeneventures/comms` | donor | published | not yet | unknown — #484 |
 | - — foundation | `@vespeneventures/domain` | role | published | not yet | unknown — #484 |
-| C — interaction | `@vespeneventures/bouncer` | role | published | not yet | unknown — #484 |
-| C — interaction | `@vespeneventures/butler` | role | published | not yet | unknown — #484 |
-| C — interaction | `@vespeneventures/giver` | role | published | not yet | unknown — #484 |
-| C — interaction | `@vespeneventures/keeper` | role | published | not yet | unknown — #484 |
+| C — interaction | `@vespeneventures/bouncer` | role | published | yes | unknown — #484 |
+| C — interaction | `@vespeneventures/butler` | role | published | yes | unknown — #484 |
+| C — interaction | `@vespeneventures/giver` | role | published | yes | unknown — #484 |
+| C — interaction | `@vespeneventures/keeper` | role | published | yes | unknown — #484 |
 
 <!-- lifecycle-position-table:end -->
 
