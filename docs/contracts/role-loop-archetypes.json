@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "loopGrammar": [
+    "subjectOrAddressee",
+    "authoritativeSetpoint",
+    "actualObservation",
+    "ternaryJudgment",
+    "correctionOrHandoff",
+    "independentOutcome",
+    "cadenceAndCloseCondition"
+  ],
+  "archetypes": {
+    "conformance-gate": {
+      "purpose": "Judge a candidate against an authoritative setpoint and improve that setpoint from independent outcomes.",
+      "phases": [
+        "load setpoint",
+        "observe candidate",
+        "judge",
+        "block-or-allow",
+        "sample outcomes",
+        "revise setpoint"
+      ]
+    },
+    "reconciliation": {
+      "purpose": "Reduce a measurable difference between declared desired state and independently observed actual state.",
+      "phases": [
+        "declare desired",
+        "observe actual",
+        "diff",
+        "correct-or-handoff",
+        "reobserve",
+        "close-on-zero-delta"
+      ]
+    },
+    "actuation-provisioning": {
+      "purpose": "Make an accepted intent real and close only when its actual outcome has been observed.",
+      "phases": [
+        "accept intent",
+        "validate preconditions",
+        "act",
+        "confirm actual outcome",
+        "compensate-retry-or-handoff",
+        "close-on-observed-outcome"
+      ]
+    },
+    "confirmation-interaction": {
+      "purpose": "Handle a person or actor request with authorization, read-back, and reconciliation of later change or withdrawal.",
+      "phases": [
+        "receive actor/subject request",
+        "authorize",
+        "record intent",
+        "act-or-refuse",
+        "confirm/read-back",
+        "reconcile change-or-withdrawal"
+      ]
+    },
+    "custody-lifecycle": {
+      "purpose": "Keep custody accountable from inventory through justified protection, correction, disposal, and verification.",
+      "phases": [
+        "inventory",
+        "justify",
+        "protect",
+        "disclose-or-correct",
+        "dispose",
+        "verify-disposal-or-reopen"
+      ]
+    },
+    "observation-learning": {
+      "purpose": "Learn from independent signals by measuring, reporting, adjusting, and measuring again.",
+      "phases": [
+        "declare coverage/question",
+        "collect independent signals",
+        "normalize",
+        "measure",
+        "report",
+        "adjust-and-remeasure"
+      ]
+    }
+  },
+  "roles": {
+    "@vespeneventures/controller": {
+      "primary": "reconciliation"
+    },
+    "@vespeneventures/inspector": {
+      "primary": "conformance-gate"
+    },
+    "@vespeneventures/builder": {
+      "primary": "actuation-provisioning",
+      "secondary": [
+        "reconciliation"
+      ]
+    },
+    "@vespeneventures/locksmith": {
+      "primary": "custody-lifecycle"
+    },
+    "@vespeneventures/integrator": {
+      "primary": "reconciliation"
+    },
+    "@vespeneventures/observer": {
+      "primary": "observation-learning"
+    },
+    "@vespeneventures/strategist": {
+      "primary": "conformance-gate"
+    },
+    "@vespeneventures/writer": {
+      "primary": "conformance-gate"
+    },
+    "@vespeneventures/designer": {
+      "primary": "conformance-gate"
+    },
+    "@vespeneventures/publisher": {
+      "primary": "actuation-provisioning",
+      "secondary": [
+        "reconciliation"
+      ]
+    },
+    "@vespeneventures/bouncer": {
+      "primary": "reconciliation",
+      "secondary": [
+        "confirmation-interaction"
+      ]
+    },
+    "@vespeneventures/butler": {
+      "primary": "confirmation-interaction"
+    },
+    "@vespeneventures/giver": {
+      "primary": "actuation-provisioning",
+      "secondary": [
+        "confirmation-interaction"
+      ]
+    },
+    "@vespeneventures/keeper": {
+      "primary": "custody-lifecycle"
+    }
+  }
+}
