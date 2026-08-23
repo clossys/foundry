@@ -53,12 +53,12 @@ second person could reproduce without asking the first.
 
 | # | state | the question it answers | evidence that ends it |
 | --- | --- | --- | --- |
-| 1 | **designed** | Is there a job here, and can it be graded? | The loop declaration parses: a named job, one metric, the five verbs, and a close condition grounded in a measurement outside the package. |
+| 1 | **designed** | Is there a job here, and can it be graded? | The versioned [role-loop contract](contracts/role-loop-archetypes.json) parses: the seven ordered loop elements and one primary archetype, with a close condition grounded in a measurement outside the package. |
 | 2 | **implemented** | Does it build and hold its own contracts? | `npm run check` and release readiness, both green. |
 | 3 | **staged** | Has the author's own repository run it? | An executable invocation site here, **and a recorded run in which the gate went red on a genuine violation, alongside a control that stayed green**. |
 | 4 | **published** | Can someone else install exactly this? | A registry artifact, a lifecycle entry, a clear name-collision check, and a declared visibility. |
 | 5 | **adopted** | Does it block in a consumer's tree? | Installed at the current version, invoked by dist path, in blocking position, proven by a deliberate failure — and the consumer's hand-written equivalent deleted. |
-| 6 | **grounded** | Is the gate worth having? | `observer` computes its efficacy and escape rate from landed-change outcomes, and the number moves in response to a real change. |
+| 6 | **grounded** | Is the loop worth having? | An independent measurer reads host-owned outcome records, and a metric outside the package demonstrably moves in response to a real change. Conformance gates may use `observer` catch and escape outcomes; other loop shapes may use an externally produced standing count or observed outcome. |
 | 7 | **closed** | Is the loop done? | The close condition, as written in the package's own README, reads satisfied. Revocable. |
 
 An eighth value is not a state but a verdict a cell may carry:
@@ -69,8 +69,13 @@ targets must not grade identically to one fully covered.
 ### 1. designed
 
 A package named for a thing has no natural metric, so nothing ever says
-whether it is working. A package named for a job has one by construction.
-That is the test this state applies.
+whether it is working. A package named for a job has a control loop by
+construction. That is the test this state applies. The seven ordered elements
+and one primary archetype are normalized in
+[`contracts/role-loop-archetypes.json`](contracts/role-loop-archetypes.json);
+[`LOOPS.md`](LOOPS.md) explains the shared grammar and distinct control
+shapes. Consumer repositories supply the concrete subjects, setpoints, and
+independent measurements.
 
 The close condition must name a measurement **outside the package**. "Our
 tests pass" is not a close condition; it is the system grading its own
@@ -185,14 +190,19 @@ ladder would lose the exact rung that caught that.
 
 ### 6. grounded
 
-A gate that has never gone red is either perfectly effective or completely
-broken, and its run history looks identical in both cases. Only a catch rate
-separates them.
+A loop's outcome cannot be graded by the package that produced it. The metric
+must live outside that package, be read by an independent measurer from
+host-owned outcome records, and demonstrably move in response to a real
+change. A self-produced test result or run history is not independent
+grounding.
 
-This state is where that number exists. It cannot be computed by the package
-being measured: a measurer that is also the measured reproduces the exact
-failure this catalogue was recut to remove. `observer` therefore never
-imports what it measures.
+Conformance gates may ground in `observer`'s catch and escape outcomes: a
+gate that has never gone red is either perfectly effective or completely
+broken, and its run history looks identical in both cases. Reconciliation,
+interaction, custody, and actuation loops may instead ground in an externally
+produced standing count or observed outcome. The control shapes differ; the
+no-self-grading rule does not. An independent measurer must never become the
+thing it measures.
 
 ### 7. closed
 
@@ -230,9 +240,12 @@ is therefore not a stage a package passes through once — the thing being
 normalised against keeps moving. Two obligations run continuously rather than
 in sequence:
 
-- **One grammar for the loop declaration.** Every package states a metric, a
-  loop and a close condition, and they are currently stated in several
-  different prose shapes. Nothing can read them, so nothing can check them.
+- **One grammar for the loop declaration.** Every role package declares the
+  seven ordered elements — subject or addressee, authoritative setpoint,
+  actual observation, ternary judgment, correction or handoff, independent
+  outcome, cadence and close condition — plus one primary archetype in
+  [`contracts/role-loop-archetypes.json`](contracts/role-loop-archetypes.json).
+  The checker reads this normalized declaration rather than relying on prose.
 - **One vocabulary per shared concept.** A live-state vocabulary declared
   twice agrees only by luck.
 
@@ -292,11 +305,12 @@ fails when the committed copy drifts from the derived one — #493.
 
 Two claims about position are structural rather than counted, and survive:
 
-**No package in any program has an escape rate.** *Grounded* is not merely
-zero, it is unmeasured: `observer` ships the readers and this repository emits
-an observation bundle on every CI run, and the two have never been connected
-to a source of independent landed-change outcomes. A rate that reads zero
-because nothing could be read is not a rate (#484).
+**No package in any program has independent grounding evidence.** *Grounded*
+is not merely zero, it is unmeasured: this repository has not connected an
+independent measurer to host-owned outcome records. `observer` can read
+conformance catch and escape outcomes, while other control shapes need their
+own externally produced standing count or observed outcome. A rate or count
+that reads zero because nothing could be read is not a measurement (#484).
 
 **Nothing in this catalogue has reached *closed*.**
 
@@ -380,7 +394,10 @@ The derivable half is now derived. The rest is not, and is declared:
   wired in blocking position and whether its hand-written equivalent was
   deleted. Absence is what has to be proven, and only that repository can
   prove it.
-- **`grounded`** needs `observer` to have an input.
+- **`grounded`** needs an independent measurer to read host-owned outcome
+  records. `observer` can supply conformance catch and escape outcomes; other
+  loop shapes may need an externally produced standing count or observed
+  outcome.
 
 Two instances of exactly the drift this gate exists to stop were found while
 writing this document, in prose the gate does not read: this

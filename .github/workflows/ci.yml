@@ -324,6 +324,21 @@ jobs:
           node-version: 20
       - run: node scripts/check-package-programs.mjs
 
+  # The normalized role-loop declaration is intentionally separate from the
+  # lifecycle position record above: it checks the common seven-element
+  # grammar, the six control shapes, and exactly the role packages Programs
+  # A, B, and C declare. It reads contracts only, so it belongs in the same
+  # dependency-free, shallow-checkout class as package-programs.
+  role-loop-archetypes:
+    name: role-loop archetypes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+      - run: node scripts/check-role-loop-archetypes.mjs
+
   # Three gates over this repository's own tree that had never been invoked
   # by any workflow before this change, and that share one requirement: a
   # BUILT @vespeneventures/controller (issue #414's wider finding — six
