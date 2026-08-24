@@ -5,10 +5,9 @@
 | Owner | Responsibility |
 | --- | --- |
 | `@vespeneventures/butler` | Admission and confirmation of inbound person requests and standing instructions. |
-| `@vespeneventures/messenger` | Incubating source for authorized finished-message transport, explicit provider acceptance, signed delivery-status normalization, and timely verified delivery assessment. It is not published. |
+| `@vespeneventures/messenger` | Published role for authorized finished-message transport, explicit provider acceptance, signed delivery-status normalization, and timely verified delivery assessment. |
 | `@vespeneventures/messenger/providers/resend` | Provider mapping, idempotency constraints, strict error normalization, signature verification, and delivery-status event mapping. |
 | `@vespeneventures/giver` | Whether an answer, refusal, handoff, or delivery discharged the semantic obligation owed to the person. |
-| `@vespeneventures/comms` | Published, not-deprecated transport donor. Existing consumers keep their exact version until messenger is published and migration is proved. |
 | Host application | Authorization evidence, recipients and personal data, templates/localization, sender identity, consent/preferences, suppression decisions, credentials, durable stores, routes, retention, logging, provider endpoint registration, domain configuration, and deployment settings. |
 
 The role boundary is semantic, not a repository or provider boundary. Butler
@@ -149,23 +148,23 @@ host-only and adapters must not transmit it implicitly.
   a real template contract. Brand copy and visual defaults never belong in the
   transport packages.
 
-## Publication-first migration
+## Replacement-only migration
 
 Source parity is not adoption. The migration order is:
 
-1. Publish messenger and prove its exact registry version installs with its
-   root, provider, and CLI surfaces.
-2. Inventory each consumer's comms imports, direct provider calls, webhook
+`@vespeneventures/messenger@0.1.0` is public and its root, provider, and CLI
+surfaces passed an isolated registry install. The `comms` donor is retired and
+absent from both this source tree and GitHub Packages. Consumer work is now:
+
+1. Inventory each consumer's former comms imports, direct provider calls, webhook
    handling, durable dispatch state, and inbound admission.
-3. Move only authorized finished-message transport and delivery-status
+2. Move only authorized finished-message transport and delivery-status
    verification to messenger. Move inbound person-request admission to butler;
    keep semantic obligation checks with giver.
-4. Preserve provider configuration, identities, templates, routes, durable
+3. Preserve provider configuration, identities, templates, routes, durable
    storage, and credentials while proving dispatch and event correlation.
-5. Only after the replacement is published and the direct cutover is proved,
-   record comms as deprecated and add the supersession check.
-6. Measure every consumer unpinned from comms with a positive control proving
-   the inventory can detect a retained pin before any retirement decision.
+4. Prove the consumer inventory can detect and eliminate every retained donor
+   pin before claiming the installed Messenger position is current.
 
 Live-send tests remain opt-in and host-owned. Package tests inject a narrow
 client and never contact a provider.

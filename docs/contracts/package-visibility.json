@@ -7,10 +7,6 @@
       "intendedVisibility": "public"
     },
     {
-      "name": "@vespeneventures/auth",
-      "intendedVisibility": "public"
-    },
-    {
       "name": "@vespeneventures/bouncer",
       "intendedVisibility": "public"
     },
@@ -23,14 +19,6 @@
       "intendedVisibility": "public"
     },
     {
-      "name": "@vespeneventures/comms",
-      "intendedVisibility": "public"
-    },
-    {
-      "name": "@vespeneventures/consent",
-      "intendedVisibility": "public"
-    },
-    {
       "name": "@vespeneventures/controller",
       "intendedVisibility": "public"
     },
@@ -40,10 +28,6 @@
     },
     {
       "name": "@vespeneventures/designer",
-      "intendedVisibility": "public"
-    },
-    {
-      "name": "@vespeneventures/domain",
       "intendedVisibility": "public"
     },
     {

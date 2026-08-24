@@ -290,11 +290,11 @@ fails when the committed copy drifts from the derived one — #493.
 | `@vespeneventures/ui` | published | yes | unknown — #484 |
 | `@vespeneventures/surface` | published | yes | unknown — #484 |
 | `@vespeneventures/ledger` | published | yes | unknown — #484 |
-| `@vespeneventures/auth` | published | not yet | unknown — #484 |
-| `@vespeneventures/consent` | published | not yet | unknown — #484 |
-| `@vespeneventures/comms` | published | not yet | unknown — #484 |
+| `@vespeneventures/auth` | published | yes | unknown — #484 |
+| `@vespeneventures/consent` | published | yes | unknown — #484 |
+| `@vespeneventures/comms` | published | yes | unknown — #484 |
 | `@vespeneventures/messenger` | staged | yes | unknown — #484 |
-| `@vespeneventures/domain` | published | not yet | unknown — #484 |
+| `@vespeneventures/domain` | published | yes | unknown — #484 |
 | `@vespeneventures/bouncer` | published | yes | unknown — #484 |
 | `@vespeneventures/butler` | published | yes | unknown — #484 |
 | `@vespeneventures/giver` | published | yes | unknown — #484 |

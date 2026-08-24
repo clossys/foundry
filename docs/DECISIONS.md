@@ -797,6 +797,44 @@ own L3 metric node and causal hypothesis. The durable package remains unchanged
 when one consumer uses Influencer to improve end-customer growth and another
 uses it to improve installation growth.
 
+## 16. Completing the role-donor cutover
+
+### Measurement before the decision
+
+Architect, Messenger, and Influencer each passed FULL public-safety preflight,
+a protected dry-run, and a protected first publish of `0.1.0`. Each publish job
+packed the selected source, installed it into an isolated consumer, uploaded
+it, fetched the registry tarball, and repeated the isolated install/import
+proof. The GitHub Packages API then reported one public version associated
+with this repository for each package.
+
+That evidence closes the producer-side publication dependency that kept
+`domain` and `comms` live. Bouncer, Butler, and Giver were already public and
+own the role loops that replaced `auth` and `consent`. The four donor packages
+had no role charter or controllable metric of their own.
+
+### Decision
+
+Retire `auth`, `consent`, `comms`, and `domain` on 2026-08-24, remove their
+source, retention, and visibility declarations, and delete their GitHub
+Packages records. No forwarding stub or permanent primitive exemption ships.
+The accepted cutover may temporarily break consumers that still pin a donor;
+consumer repositories migrate in their own scoped work rather than preserving
+the wrong public package boundary here.
+
+The authoritative replacements are:
+
+- `auth` -> `bouncer@^0.1.0`;
+- `consent` -> `butler@^0.1.0`, with Giver owning the distinct owed-delivery
+  loop rather than being hidden inside the lifecycle replacement field;
+- `comms` -> `messenger@^0.1.0`, while Butler owns inbound request admission;
+- `domain` -> `architect@^0.1.0`.
+
+The older retired `domain-model` record points directly to Architect so the
+lifecycle graph contains no retired-to-retired replacement chain. Historical
+decisions and evidence remain measurements of what existed; live source and
+catalogue surfaces contain only the qualified role packages.
+
 ## Settled
 
 **Author attribution — keep a real name in the `"author"` field.** A real
