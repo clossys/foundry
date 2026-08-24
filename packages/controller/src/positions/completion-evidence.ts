@@ -203,7 +203,11 @@ export function validateCompletionEvidence(evidence: unknown, ledger: unknown): 
     const before = validateObservation(outcome.before, "outcome.before", findings);
     const after = validateObservation(outcome.after, "outcome.after", findings);
     outcomeVerdict = outcome.verdict as string;
-    if (outcome.sourceOwner === packageName || outcome.sourceOwner === positionId) {
+    const normalizedSourceOwner = typeof outcome.sourceOwner === "string" ? outcome.sourceOwner.trim() : "";
+    if (normalizedSourceOwner !== outcome.sourceOwner) {
+      fail(findings, "noncanonical-outcome-owner", "outcome.sourceOwner", "must not contain surrounding whitespace");
+    }
+    if (normalizedSourceOwner === packageName || normalizedSourceOwner === positionId) {
       fail(findings, "non-independent-outcome-owner", "outcome.sourceOwner", "must identify an outcome owner other than the measured package or position");
     }
     if (outcome.metric !== linkedMetricName) {

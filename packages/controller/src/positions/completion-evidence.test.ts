@@ -95,6 +95,12 @@ describe("completion evidence", () => {
     (selfMeasured.outcome as Record<string, unknown>).sourceOwner = selfMeasured.package;
     expect(validateCompletionEvidence(selfMeasured, ledger()).result).toMatchObject({ verdict: "indeterminate", reason: "unreadable-or-incomplete-evidence" });
 
+    for (const paddedOwner of [` ${String(selfMeasured.package)} `, " fixture-integrator "]) {
+      const paddedSelfMeasurement = evidence();
+      (paddedSelfMeasurement.outcome as Record<string, unknown>).sourceOwner = paddedOwner;
+      expect(validateCompletionEvidence(paddedSelfMeasurement, ledger()).result).toMatchObject({ verdict: "indeterminate", reason: "unreadable-or-incomplete-evidence" });
+    }
+
     const selfCertifiedFailure = evidence();
     (selfCertifiedFailure.outcome as Record<string, unknown>).verdict = "violated";
     expect(validateCompletionEvidence(selfCertifiedFailure, ledger()).result).toMatchObject({ verdict: "violated" });
