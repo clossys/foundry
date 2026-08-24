@@ -5,6 +5,17 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.11] - 2026-08-24
+
+### Added
+
+- `@vespeneventures/controller/positions` and `foundry-position-check`: a
+  pure validator for consumer-owned installed-position ledgers. Every active
+  role receives an explicit `open` or `not-applicable` disposition; open roles
+  cite complete positions with first-day assessment and all five loop-stage
+  bindings. The validator reads caller-supplied records only and never infers
+  adoption, independent grounding, or closure.
+
 ## [0.8.10] - 2026-08-22
 
 ### Fixed

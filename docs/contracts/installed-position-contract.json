@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "kind": "foundry-installed-position-ledger",
+  "roleDisposition": {
+    "fields": ["package", "disposition", "reason", "positionIds"],
+    "dispositions": ["open", "not-applicable"],
+    "rule": "Every active role receives exactly one disposition. An open role cites one or more complete position records; a not-applicable role has no positions and states why."
+  },
+  "position": {
+    "fields": ["id", "package", "businessMetricPath", "causalHypothesis", "baseline", "setpoint", "operatingScope", "authority", "evidenceSource", "cadence", "budget", "guardrails", "escalationPath", "workerComponents", "stageBindings", "firstDayAssessment"],
+    "workerComponentKinds": ["deterministic", "model", "human", "vendor"],
+    "setpointValueShapes": {
+      "increase": "number",
+      "decrease": "number",
+      "maintain": "number",
+      "target-range": "ordered two-number array"
+    },
+    "firstDayAssessmentFields": ["gaps", "target", "openQuestions", "criticalPath", "deferredWork", "recommendation", "evidenceRefs"],
+    "recommendations": ["install", "defer", "decline", "escalate"],
+    "setpointValueRule": "Inherit the role charter metric direction: target-range uses an ordered two-number [minimum, maximum] value; increase, decrease, and maintain use one finite number."
+  }
+}

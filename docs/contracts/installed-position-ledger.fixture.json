@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "dispositions": [
+    { "package": "@vespeneventures/controller", "disposition": "not-applicable", "reason": "Synthetic schema fixture; no consumer decision.", "positionIds": [] },
+    { "package": "@vespeneventures/architect", "disposition": "not-applicable", "reason": "Synthetic schema fixture; no consumer decision.", "positionIds": [] },
+    { "package": "@vespeneventures/inspector", "disposition": "not-applicable", "reason": "Synthetic schema fixture; no consumer decision.", "positionIds": [] },
+    { "package": "@vespeneventures/builder", "disposition": "not-applicable", "reason": "Synthetic schema fixture; no consumer decision.", "positionIds": [] },
+    { "package": "@vespeneventures/locksmith", "disposition": "not-applicable", "reason": "Synthetic schema fixture; no consumer decision.", "positionIds": [] },
+    { "package": "@vespeneventures/integrator", "disposition": "open", "reason": "Synthetic schema fixture; exercises a complete open position.", "positionIds": ["fixture-integrator"] },
+    { "package": "@vespeneventures/observer", "disposition": "not-applicable", "reason": "Synthetic schema fixture; no consumer decision.", "positionIds": [] },
+    { "package": "@vespeneventures/strategist", "disposition": "not-applicable", "reason": "Synthetic schema fixture; no consumer decision.", "positionIds": [] },
+    { "package": "@vespeneventures/writer", "disposition": "not-applicable", "reason": "Synthetic schema fixture; no consumer decision.", "positionIds": [] },
+    { "package": "@vespeneventures/designer", "disposition": "not-applicable", "reason": "Synthetic schema fixture; no consumer decision.", "positionIds": [] },
+    { "package": "@vespeneventures/publisher", "disposition": "not-applicable", "reason": "Synthetic schema fixture; no consumer decision.", "positionIds": [] },
+    { "package": "@vespeneventures/influencer", "disposition": "not-applicable", "reason": "Synthetic schema fixture; no consumer decision.", "positionIds": [] },
+    { "package": "@vespeneventures/bouncer", "disposition": "not-applicable", "reason": "Synthetic schema fixture; no consumer decision.", "positionIds": [] },
+    { "package": "@vespeneventures/butler", "disposition": "not-applicable", "reason": "Synthetic schema fixture; no consumer decision.", "positionIds": [] },
+    { "package": "@vespeneventures/messenger", "disposition": "not-applicable", "reason": "Synthetic schema fixture; no consumer decision.", "positionIds": [] },
+    { "package": "@vespeneventures/giver", "disposition": "not-applicable", "reason": "Synthetic schema fixture; no consumer decision.", "positionIds": [] },
+    { "package": "@vespeneventures/keeper", "disposition": "not-applicable", "reason": "Synthetic schema fixture; no consumer decision.", "positionIds": [] }
+  ],
+  "positions": [
+    {
+      "id": "fixture-integrator",
+      "package": "@vespeneventures/integrator",
+      "businessMetricPath": { "l1": "synthetic value", "l2": "synthetic northstar", "l3": "synthetic operating metric" },
+      "causalHypothesis": "Synthetic fixture only; it establishes no consumer hypothesis.",
+      "baseline": { "value": 0.5, "observedAt": "fixture", "evidenceRefs": ["fixture-baseline"] },
+      "setpoint": { "value": 1, "evidenceRefs": ["fixture-setpoint"] },
+      "operatingScope": { "description": "Synthetic fixture scope.", "included": ["fixture input"], "excluded": ["provider mutation"] },
+      "authority": { "decisionOwner": "fixture owner", "actionAuthority": "fixture automation" },
+      "evidenceSource": { "description": "Synthetic fixture evidence.", "locator": "fixture" },
+      "cadence": { "measure": "fixture", "review": "fixture" },
+      "budget": { "amount": 0, "unit": "currency", "period": "fixture" },
+      "guardrails": ["No live action."],
+      "escalationPath": ["Fixture escalation only."],
+      "workerComponents": [{ "kind": "deterministic", "responsibility": "Validate fixture syntax." }],
+      "stageBindings": { "sense": "Read fixture evidence.", "judge": "Compare fixture values.", "act": "Report fixture result.", "verify": "Re-read fixture evidence.", "learnOrEscalate": "Escalate fixture failure." },
+      "firstDayAssessment": { "gaps": [], "target": "Synthetic target state.", "openQuestions": [], "criticalPath": ["Validate the fixture."], "deferredWork": [], "recommendation": "install", "evidenceRefs": ["fixture-baseline", "fixture-setpoint"] }
+    }
+  ]
+}

@@ -589,6 +589,8 @@ jobs:
       # every package has zero internal dependencies, and silently stops
       # working the moment one gains its first -- so build stays first.
       - run: npm run build
+      - name: Installed position ledger fixture
+        run: npm run check:installed-positions
       - name: Package lifecycle governance
         run: npm run check:package-governance
       # This repository's own repository-profile declaration (issue #317),

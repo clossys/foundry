@@ -19,14 +19,20 @@ import { fileURLToPath } from "node:url";
 export const UNIVERSAL_STAGES = ["sense", "judge", "act", "verify", "learnOrEscalate"];
 
 export const CONSUMER_BINDINGS = [
-  "businessMetricNode",
+  "businessMetricPath",
   "causalHypothesis",
+  "baseline",
   "setpoint",
+  "operatingScope",
   "authority",
   "evidenceSource",
+  "cadence",
   "budget",
   "guardrails",
   "escalationPath",
+  "workerComponents",
+  "stageBindings",
+  "firstDayAssessment",
 ];
 
 export const MODE_NAMES = [
@@ -39,10 +45,10 @@ export const MODE_NAMES = [
 ];
 
 export const METRIC_UNITS = ["ratio", "count", "duration", "currency", "rate"];
-export const METRIC_DIRECTIONS = ["increase", "decrease"];
+export const METRIC_DIRECTIONS = ["increase", "decrease", "maintain", "target-range"];
 export const QUALIFICATION_VERDICTS = ["create", "extend", "compose", "reject"];
 
-const ROLE_FIELDS = ["jobQuestion", "metric", "primaryMode", "secondaryModes", "boundary"];
+const ROLE_FIELDS = ["jobQuestion", "metric", "primaryMode", "secondaryModes", "boundary", "closeCondition"];
 const METRIC_FIELDS = ["name", "formula", "unit", "direction"];
 const BOUNDARY_FIELDS = ["owns", "excludes"];
 const COVERAGE_FIELDS = ["role", "jobEvidence", "metricEvidence", "loopClosureEvidence"];
@@ -85,6 +91,9 @@ function validateRoleDeclaration({ declaration, subject, modes, metricUnits, met
 
   if (!isNonemptyString(declaration.jobQuestion) || !declaration.jobQuestion.trim().endsWith("?")) {
     findings.push(finding("invalid-job-question", subject, "jobQuestion must be a nonempty question ending in `?`"));
+  }
+  if (!isNonemptyString(declaration.closeCondition)) {
+    findings.push(finding("invalid-close-condition", subject, "closeCondition must name an external measurement that ends the role's loop"));
   }
 
   if (!sameKeys(declaration.metric, METRIC_FIELDS)) {
@@ -136,8 +145,8 @@ export function evaluateRoleLoopArchetypes({ contract }) {
     findings.push(finding("unreadable-role-loop-contract", "docs/contracts/role-loop-archetypes.json", "the contract must contain exactly `schemaVersion`, `universalStages`, `consumerBindings`, `modes`, `metricVocabulary`, `qualificationVerdicts`, and `roles`", true));
     return { findings };
   }
-  if (contract.schemaVersion !== 3 || !Array.isArray(contract.universalStages) || !Array.isArray(contract.consumerBindings) || !isRecord(contract.modes) || !isRecord(contract.roles)) {
-    findings.push(finding("unreadable-role-loop-contract", "docs/contracts/role-loop-archetypes.json", "schema version 3 requires arrays `universalStages` and `consumerBindings`, and objects `modes` and `roles`", true));
+  if (contract.schemaVersion !== 4 || !Array.isArray(contract.universalStages) || !Array.isArray(contract.consumerBindings) || !isRecord(contract.modes) || !isRecord(contract.roles)) {
+    findings.push(finding("unreadable-role-loop-contract", "docs/contracts/role-loop-archetypes.json", "schema version 4 requires arrays `universalStages` and `consumerBindings`, and objects `modes` and `roles`", true));
     return { findings };
   }
 

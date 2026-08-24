@@ -621,8 +621,11 @@ export function renderLifecyclePositionTable({ contract, results }) {
   ];
   for (const result of results) {
     const staged = result.acknowledgedGaps.includes("staged") ? "not yet" : "yes";
+    // Retirement is the current position, not the last evidence rung the
+    // package happened to reach before it left the active catalogue.
+    const displayState = result.supersession === RETIRED_STATUS ? RETIRED_STATUS : result.state;
     rows.push(
-      `| \`${markdownCell(result.package)}\` | ${markdownCell(result.state)} | ${staged} | unknown — #484 |`,
+      `| \`${markdownCell(result.package)}\` | ${markdownCell(displayState)} | ${staged} | unknown — #484 |`,
     );
   }
   rows.push("", LIFECYCLE_POSITION_END);

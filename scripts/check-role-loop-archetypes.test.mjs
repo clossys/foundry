@@ -35,6 +35,7 @@ function candidateAssessment(overrides = {}) {
     candidate: {
       name: "@example/operator",
       jobQuestion: "Did the proposed operation move its one owned metric?",
+      closeCondition: "Independent consumer evidence shows the owned metric meets the declared setpoint over the review cadence.",
       metric: {
         name: "verified operation rate",
         formula: "verified qualified outcomes / all eligible opportunities",
@@ -65,10 +66,10 @@ function coverage(role) {
 
 test("the canonical stages, bindings, modes, metric vocabulary, and verdict vocabulary are finite", () => {
   assert.deepEqual(UNIVERSAL_STAGES, ["sense", "judge", "act", "verify", "learnOrEscalate"]);
-  assert.deepEqual(CONSUMER_BINDINGS, ["businessMetricNode", "causalHypothesis", "setpoint", "authority", "evidenceSource", "budget", "guardrails", "escalationPath"]);
+  assert.deepEqual(CONSUMER_BINDINGS, ["businessMetricPath", "causalHypothesis", "baseline", "setpoint", "operatingScope", "authority", "evidenceSource", "cadence", "budget", "guardrails", "escalationPath", "workerComponents", "stageBindings", "firstDayAssessment"]);
   assert.deepEqual(MODE_NAMES, ["assure", "reconcile", "fulfill", "interact", "steward", "optimize"]);
   assert.deepEqual(METRIC_UNITS, ["ratio", "count", "duration", "currency", "rate"]);
-  assert.deepEqual(METRIC_DIRECTIONS, ["increase", "decrease"]);
+  assert.deepEqual(METRIC_DIRECTIONS, ["increase", "decrease", "maintain", "target-range"]);
   assert.deepEqual(QUALIFICATION_VERDICTS, ["create", "extend", "compose", "reject"]);
 });
 
@@ -88,8 +89,12 @@ test("the repository contract passes and rejects incomplete or duplicate role ch
   emptyFormula.roles["@vespeneventures/architect"].metric.formula = "";
   assert.equal(rules(evaluateRoleLoopArchetypes({ contract: emptyFormula })).includes("invalid-metric-formula"), true);
 
+  const noCloseCondition = structuredClone(contract);
+  noCloseCondition.roles["@vespeneventures/architect"].closeCondition = "";
+  assert.equal(rules(evaluateRoleLoopArchetypes({ contract: noCloseCondition })).includes("invalid-close-condition"), true);
+
   const invalidDirection = structuredClone(contract);
-  invalidDirection.roles["@vespeneventures/architect"].metric.direction = "maintain";
+  invalidDirection.roles["@vespeneventures/architect"].metric.direction = "halt";
   assert.equal(rules(evaluateRoleLoopArchetypes({ contract: invalidDirection })).includes("invalid-metric-direction"), true);
 
   const duplicateMetric = structuredClone(contract);

@@ -23,3 +23,10 @@ export { validatePackageLifecycle, evaluateDependencyInstallability,
 export { planNewPackage } from "./scaffold.js";
 export { runGovernanceCheck } from "./governance.js";
 export { preflightGovernedPackage } from "./preflight.js";
+export {
+  POSITION_FIELDS,
+  POSITION_RECOMMENDATIONS,
+  WORKER_COMPONENT_KINDS,
+  validateInstalledPositionLedger,
+} from "./positions/index.js";
+export type { InstalledPositionFinding, InstalledPositionLedgerReport } from "./positions/index.js";
