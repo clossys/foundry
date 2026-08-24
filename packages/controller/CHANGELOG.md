@@ -5,6 +5,23 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.14] - 2026-08-24
+
+### Added
+
+- `@vespeneventures/controller/positions` now ships the versioned,
+  consumer-owned completion-evidence contract and
+  `foundry-completion-evidence-check`. It links one open position to exact
+  package/install proof, invocation and placement, red/green control,
+  duplicate removal, rollback, recurring-run evidence, and independent
+  before/after outcome and close-window verdicts. Unreadable evidence remains
+  indeterminate; the reported outcome is checked against the shipped role's
+  metric direction and the linked position's setpoint rather than trusted as a
+  caller label. Outcome-owner identifiers must be canonical printable ASCII,
+  self-source comparison is case-insensitive, and a caller cannot hide a
+  readable measurement behind an indeterminate label. The package does not
+  read providers, credentials, or make a central adoption decision.
+
 ## [0.8.13] - 2026-08-24
 
 ### Fixed

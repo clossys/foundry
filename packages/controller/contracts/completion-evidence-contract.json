@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "kind": "foundry-consumer-completion-evidence",
+  "fields": ["schemaVersion", "positionId", "package", "artifact", "invocation", "placement", "control", "maintenance", "cadence", "outcome", "closeWindow"],
+  "verdicts": ["satisfied", "violated", "indeterminate"],
+  "invocationKinds": ["cli", "export"],
+  "placementModes": ["blocking", "not-applicable"],
+  "duplicateStates": ["removed", "not-applicable"],
+  "rule": "One record supplies consumer-owned completion evidence for one open position. The outcome owner is a canonical printable-ASCII identifier that differs case-insensitively from the measured package and position. A readable outcome verdict is derived from the role metric direction and position setpoint; indeterminate is reserved for unreadable observations. References identify consumer-retained evidence and must never contain credentials, provider values, or a central adoption decision. Missing or unreadable evidence is indeterminate, never satisfied."
+}

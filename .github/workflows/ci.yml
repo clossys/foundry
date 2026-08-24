@@ -591,6 +591,8 @@ jobs:
       - run: npm run build
       - name: Installed position ledger fixture
         run: npm run check:installed-positions
+      - name: Consumer completion evidence fixture
+        run: npm run check:completion-evidence
       - name: Package lifecycle governance
         run: npm run check:package-governance
       # This repository's own repository-profile declaration (issue #317),

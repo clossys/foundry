@@ -7,3 +7,4 @@ function readSnapshot(name: string): unknown {
 
 export function readCanonicalRoleLoopContract(): unknown { return readSnapshot("role-loop-archetypes.json"); }
 export function readInstalledPositionContract(): unknown { return readSnapshot("installed-position-contract.json"); }
+export function readCompletionEvidenceContract(): unknown { return readSnapshot("completion-evidence-contract.json"); }
