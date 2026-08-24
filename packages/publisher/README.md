@@ -399,7 +399,7 @@ source, and resolved entry identifier. It intentionally excludes rendered
 text and `CopyRef.values`, which can contain audience language or
 request-specific data. Both helpers describe artifact paths and media types
 but never write or upload files. Strategy provenance stays structural, so
-this package never imports or depends on the strategy package.
+this package never imports or depends on the Strategist package.
 
 The package test suite includes a product-neutral reference pipeline fixture:
 an approved, versioned `CopyRegistry` resolves all content; flowed web/email
@@ -792,9 +792,10 @@ Concretely:
   seam `@vespeneventures/writer/voice`'s `Claim.factRef`,
   `@vespeneventures/writer`'s `CopyEntry.factRef`, and
   `@vespeneventures/strategist`'s own `Market.factRefs`/`Audience.factRefs`
-  already use one layer up. `strategy` is not in this package's
+  already use one layer up. `@vespeneventures/strategist` is not in this package's
   `dependencies`, and nothing in `src/` imports it. Resolving a `factRef`
-  against a real fact registry — reading `strategy`'s `readStrategy` bundle
+  against a real fact registry — reading `@vespeneventures/strategist`'s
+  `readStrategy` bundle
   and reducing it to `{ [fact.key]: fact.value }` — is a caller's job,
   happening in code this package has no visibility into.
 - **`checkLedgerDrift` has no opinion about whether an outcome is good.** There is no
