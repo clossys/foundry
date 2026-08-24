@@ -121,8 +121,11 @@ corresponding field vocabularies: `POSITION_FIELDS`,
 `CompletionEvidenceFinding`, `CompletionEvidenceIndeterminateReason`, and
 `CompletionEvidenceReport` expose pure results. Completion evidence reuses the
 shared `satisfied` / `violated` / `indeterminate` result grammar: it validates
-the shape and linkage of consumer-retained evidence but never claims the
-evidence is true, installs a package, or measures a provider itself.
+the shape and linkage of consumer-retained evidence, refuses the measured
+package or position as its own outcome owner, and derives the outcome verdict
+from the shipped role's metric direction plus the linked position's setpoint.
+It never claims a provider observation is true, installs a package, or
+measures a provider itself.
 
 ### `./artifacts`: governed artifact verification
 

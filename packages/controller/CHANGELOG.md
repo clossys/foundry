@@ -15,7 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   package/install proof, invocation and placement, red/green control,
   duplicate removal, rollback, recurring-run evidence, and independent
   before/after outcome and close-window verdicts. Unreadable evidence remains
-  indeterminate; the package does not read providers, credentials, or make a
+  indeterminate; the reported outcome is checked against the shipped role's
+  metric direction and the linked position's setpoint rather than trusted as a
+  caller label. The package does not read providers, credentials, or make a
   central adoption decision.
 
 ## [0.8.13] - 2026-08-24

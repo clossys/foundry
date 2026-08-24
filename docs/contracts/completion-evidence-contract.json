@@ -6,5 +6,5 @@
   "invocationKinds": ["cli", "export"],
   "placementModes": ["blocking", "not-applicable"],
   "duplicateStates": ["removed", "not-applicable"],
-  "rule": "One record supplies consumer-owned completion evidence for one open position. References identify consumer-retained evidence and must never contain credentials, provider values, or a central adoption decision. Missing or unreadable evidence is indeterminate, never satisfied."
+  "rule": "One record supplies consumer-owned completion evidence for one open position. The outcome owner differs from the measured package and position, and the outcome verdict is derived from the role metric direction and position setpoint. References identify consumer-retained evidence and must never contain credentials, provider values, or a central adoption decision. Missing or unreadable evidence is indeterminate, never satisfied."
 }

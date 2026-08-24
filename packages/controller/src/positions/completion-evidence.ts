@@ -5,7 +5,7 @@
  * absence for a completed position.
  */
 import { createGateReasons, gateSatisfied, gateViolated, type GateResult } from "../gates/result.js";
-import { readCompletionEvidenceContract } from "./canonical.js";
+import { readCanonicalRoleLoopContract, readCompletionEvidenceContract } from "./canonical.js";
 import { validateInstalledPositionLedger, type InstalledPositionFinding } from "./index.js";
 
 export const COMPLETION_EVIDENCE_FIELDS = Object.freeze([
@@ -46,6 +46,17 @@ function canonical(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(canonical).join(",")}]`;
   if (record(value)) return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonical(value[key])}`).join(",")}}`;
   return JSON.stringify(value);
+}
+
+function meetsSetpoint(direction: unknown, value: number, setpoint: unknown): boolean | undefined {
+  if (direction === "increase" && typeof setpoint === "number") return value >= setpoint;
+  if (direction === "decrease" && typeof setpoint === "number") return value <= setpoint;
+  if (direction === "maintain" && typeof setpoint === "number") return value === setpoint;
+  if (direction === "target-range" && Array.isArray(setpoint) && setpoint.length === 2) {
+    const [minimum, maximum] = setpoint;
+    if (typeof minimum === "number" && typeof maximum === "number") return value >= minimum && value <= maximum;
+  }
+  return undefined;
 }
 
 /** Validates the immutable public contract shipped by this package. */
@@ -92,6 +103,7 @@ function validateObservation(value: unknown, path: string, findings: CompletionE
  */
 export function validateCompletionEvidence(evidence: unknown, ledger: unknown): CompletionEvidenceReport {
   const findings: CompletionEvidenceFinding[] = [...validateCompletionEvidenceContract()];
+  const semanticViolations: CompletionEvidenceFinding[] = [];
   const ledgerReport = validateInstalledPositionLedger(ledger);
   if (!ledgerReport.ok) {
     return { result: completionReasons.indeterminate("invalid-position-ledger", "The supplied consumer position ledger did not validate."), findings: ledgerReport.findings, positionId: record(evidence) && text(evidence.positionId) ? evidence.positionId : undefined, package: record(evidence) && text(evidence.package) ? evidence.package : undefined };
@@ -109,6 +121,23 @@ export function validateCompletionEvidence(evidence: unknown, ledger: unknown): 
   const linkedPosition = positions.find((position) => record(position) && position.id === positionId);
   if (!linkedPosition) fail(findings, "unknown-position", "positionId", "must identify a complete position in the supplied consumer ledger");
   else if (linkedPosition.package !== packageName) fail(findings, "position-package-mismatch", "package", "must equal the role package bound to positionId in the supplied consumer ledger");
+
+  let linkedMetricName: unknown;
+  let linkedMetricDirection: unknown;
+  let linkedSetpoint: unknown;
+  if (record(linkedPosition) && packageName) {
+    linkedSetpoint = record(linkedPosition.setpoint) ? linkedPosition.setpoint.value : undefined;
+    try {
+      const roleContract = readCanonicalRoleLoopContract();
+      const roles = record(roleContract) && record(roleContract.roles) ? roleContract.roles : undefined;
+      const declaration = roles && record(roles[packageName]) ? roles[packageName] : undefined;
+      const metric = declaration && record(declaration.metric) ? declaration.metric : undefined;
+      linkedMetricName = metric?.name;
+      linkedMetricDirection = metric?.direction;
+    } catch (error) {
+      fail(findings, "canonical-role-contract-unavailable", "contracts/role-loop-archetypes.json", error instanceof Error ? error.message : String(error));
+    }
+  }
 
   const artifact = evidence.artifact;
   if (!keys(artifact, ["version", "manifestRef", "lockfileRef", "cleanInstallRef"]) || !text(artifact.version) || !exactVersion.test(artifact.version) || !text(artifact.manifestRef) || !text(artifact.lockfileRef) || !text(artifact.cleanInstallRef)) {
@@ -174,10 +203,27 @@ export function validateCompletionEvidence(evidence: unknown, ledger: unknown): 
     const before = validateObservation(outcome.before, "outcome.before", findings);
     const after = validateObservation(outcome.after, "outcome.after", findings);
     outcomeVerdict = outcome.verdict as string;
+    if (outcome.sourceOwner === packageName || outcome.sourceOwner === positionId) {
+      fail(findings, "non-independent-outcome-owner", "outcome.sourceOwner", "must identify an outcome owner other than the measured package or position");
+    }
+    if (outcome.metric !== linkedMetricName) {
+      fail(findings, "outcome-metric-mismatch", "outcome.metric", "must equal the owned metric in the linked role charter");
+    }
     if (outcome.verdict === "indeterminate") {
       if (!text(outcome.reason)) fail(findings, "missing-outcome-reason", "outcome.reason", "an indeterminate outcome needs a machine-retained reason");
     } else if (before !== "observed" || after !== "observed" || outcome.reason !== "") {
       fail(findings, "incomplete-independent-outcome", "outcome", "a satisfied or violated outcome needs readable independent before/after observations and an empty reason");
+    } else if (record(outcome.after) && typeof outcome.after.value === "number") {
+      const reachedSetpoint = meetsSetpoint(linkedMetricDirection, outcome.after.value, linkedSetpoint);
+      if (reachedSetpoint === undefined) {
+        fail(findings, "unreadable-linked-setpoint", "outcome.after.value", "the linked role direction and position setpoint must support an independent comparison");
+      } else {
+        const derivedVerdict = reachedSetpoint ? "satisfied" : "violated";
+        if (outcome.verdict !== derivedVerdict) {
+          semanticViolations.push({ rule: "outcome-verdict-setpoint-mismatch", path: "outcome.verdict", message: `the caller-supplied ${String(outcome.verdict)} verdict disagrees with the linked role direction and position setpoint` });
+        }
+        outcomeVerdict = derivedVerdict;
+      }
     }
   }
 
@@ -188,12 +234,12 @@ export function validateCompletionEvidence(evidence: unknown, ledger: unknown): 
   } else {
     closeVerdict = closeWindow.verdict as string;
     if (closeWindow.verdict === "indeterminate" ? !text(closeWindow.reason) : closeWindow.reason !== "") fail(findings, "invalid-close-window-reason", "closeWindow.reason", "indeterminate needs a reason; evaluated close-window verdicts need an empty reason");
-    if (closeWindow.verdict === "satisfied" && outcomeVerdict !== "satisfied") fail(findings, "close-window-outcome-mismatch", "closeWindow.verdict", "cannot be satisfied unless the independent outcome is satisfied");
+    if (closeWindow.verdict === "satisfied" && outcomeVerdict !== "satisfied") semanticViolations.push({ rule: "close-window-outcome-mismatch", path: "closeWindow.verdict", message: "cannot be satisfied unless the independently derived outcome is satisfied" });
   }
 
   if (findings.length > 0) return { result: completionReasons.indeterminate("unreadable-or-incomplete-evidence", `${findings.length} completion-evidence requirement(s) could not be validated.`), findings, positionId, package: packageName };
   if (outcomeVerdict === "indeterminate" || closeVerdict === "indeterminate") return { result: completionReasons.indeterminate("outcome-indeterminate", "The independent outcome or close-window verdict is indeterminate."), findings, positionId, package: packageName };
-  const violations: CompletionEvidenceFinding[] = [];
+  const violations: CompletionEvidenceFinding[] = [...semanticViolations];
   if (!hasSatisfiedCadenceRun) violations.push({ rule: "no-satisfied-cadence-run", path: "cadence.runs", message: "no actual cadence run reached a satisfied verdict" });
   if (outcomeVerdict === "violated") violations.push({ rule: "outcome-violated", path: "outcome.verdict", message: "the independent before/after outcome did not meet its consumer-owned setpoint" });
   if (closeVerdict === "violated") violations.push({ rule: "close-window-violated", path: "closeWindow.verdict", message: "the close condition did not hold over the declared review window" });

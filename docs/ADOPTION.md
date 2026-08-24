@@ -174,10 +174,13 @@ duplicate removal, rollback, cadence runs, and independently sourced before and
 after outcome observations with a close-window verdict.
 
 The references are consumer-retained identifiers, not provider values or
-credentials. The validator is intentionally structural: it can verify that a
-consumer has supplied each evidence class and that the position linkage is
-consistent, but cannot certify a provider observation or make a central
-adoption decision. Unreadable/incomplete evidence and an unreadable independent
-outcome return `indeterminate`; a measured miss returns `violated`; only a
-complete, independently measured, close-window-satisfied record returns
-`satisfied`.
+credentials. The validator verifies that a consumer supplied each evidence
+class, that the position linkage and owned metric agree with the shipped role
+charter, that the outcome owner is not the measured package or position, and
+that the independently observed after-value actually meets the linked
+position's setpoint under that role's metric direction. It cannot
+certify the provider observation itself or make a central adoption decision.
+Unreadable/incomplete evidence and an unreadable independent outcome return
+`indeterminate`; a measured miss or contradictory claimed verdict returns
+`violated`; only a complete, independently measured,
+close-window-satisfied record returns `satisfied`.

@@ -79,4 +79,24 @@ describe("completion evidence", () => {
     (violated.closeWindow as Record<string, unknown>).verdict = "violated";
     expect(validateCompletionEvidence(violated, ledger()).result).toMatchObject({ verdict: "violated" });
   });
+
+  it("derives the outcome from the linked role metric direction and position setpoint", () => {
+    const selfCertifiedMiss = evidence();
+    ((selfCertifiedMiss.outcome as Record<string, Record<string, unknown>>).after).value = 0;
+    const missReport = validateCompletionEvidence(selfCertifiedMiss, ledger());
+    expect(missReport.result).toMatchObject({ verdict: "violated" });
+    expect(missReport.findings.some((finding) => finding.rule === "outcome-verdict-setpoint-mismatch")).toBe(true);
+
+    const wrongMetric = evidence();
+    (wrongMetric.outcome as Record<string, unknown>).metric = "a caller-selected metric";
+    expect(validateCompletionEvidence(wrongMetric, ledger()).result).toMatchObject({ verdict: "indeterminate", reason: "unreadable-or-incomplete-evidence" });
+
+    const selfMeasured = evidence();
+    (selfMeasured.outcome as Record<string, unknown>).sourceOwner = selfMeasured.package;
+    expect(validateCompletionEvidence(selfMeasured, ledger()).result).toMatchObject({ verdict: "indeterminate", reason: "unreadable-or-incomplete-evidence" });
+
+    const selfCertifiedFailure = evidence();
+    (selfCertifiedFailure.outcome as Record<string, unknown>).verdict = "violated";
+    expect(validateCompletionEvidence(selfCertifiedFailure, ledger()).result).toMatchObject({ verdict: "violated" });
+  });
 });
