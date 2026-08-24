@@ -3,7 +3,7 @@
   "packages": [
     {
       "name": "@vespeneventures/architect",
-      "status": "incubating"
+      "status": "published"
     },
     {
       "name": "@vespeneventures/auth",
@@ -161,7 +161,7 @@
     },
     {
       "name": "@vespeneventures/influencer",
-      "status": "incubating"
+      "status": "published"
     },
     {
       "name": "@vespeneventures/keeper",
@@ -186,7 +186,7 @@
     },
     {
       "name": "@vespeneventures/messenger",
-      "status": "incubating"
+      "status": "published"
     },
     {
       "name": "@vespeneventures/observer",
