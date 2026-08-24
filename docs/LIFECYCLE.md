@@ -91,10 +91,10 @@ section had cleared it.
 
 ### 3. staged
 
-The author's own repository is a consumer, and it is the cheapest one: no
-cross-repository coordination, no pin to move, no second party to schedule.
-It is also the last chance to make a package fail before anyone else
-installs it.
+The author's own repository is the producer's staging site, and it is the
+cheapest one: no cross-repository coordination, no pin to move, no second
+party to schedule. It is also the last chance to make a package fail before
+anyone else installs it. Staging here never makes the author a consumer.
 
 The evidence is deliberately not "it is wired". A gate that has run green
 since the day it was added has not been shown to work — it has been shown to
@@ -187,6 +187,11 @@ receipts — three operation packages passed every check here while having
 never been executed by anything. If this repository could grade itself as a
 consumer, *staged* and *adopted* would collapse into one measurement and the
 ladder would lose the exact rung that caught that.
+
+Adoption evidence is therefore authored by the direct consuming repository.
+An account workspace may read and aggregate that repository's published
+self-observation, but the aggregation does not transfer authorship or let the
+workspace claim adoption on the repository's behalf.
 
 ### 6. grounded
 

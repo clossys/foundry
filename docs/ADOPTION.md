@@ -1,10 +1,11 @@
 # Consumer adoption
 
 Foundry ships durable **role packages**. A consumer hires one by creating an
-**installed position** for a specific business outcome. The package charter
-and the consumer position are the only authorities: package READMEs explain
-APIs, and this document explains the adoption flow; neither creates a second
-portfolio record.
+**installed position** for a specific business outcome. The package charter is
+the authority for the durable role definition; each consumer position is the
+authority for that direct installation. Package READMEs explain APIs, and this
+document explains the adoption flow; neither creates a second portfolio
+record or overrides the other scoped authorities below.
 
 An install is not adoption. A valid position is not independent grounding.
 No package reaches `grounded` or `closed` until an independent observer reads
@@ -41,6 +42,32 @@ Every consumer ledger explicitly marks all active roles `open` or
 not-applicable roles require a reason. The producer fixture only validates the
 contract and is not consumer evidence.
 
+## Authority and evidence across a plane
+
+Adoption crosses repositories without transferring authority between them.
+The same package may be installed in an account workspace and in one or more
+sister repositories, but each installation is a separate consumer position.
+
+| Surface | Owns | Cannot prove or do |
+| --- | --- | --- |
+| Foundry | The durable role charter, public artifact, compatibility contract, producer-side staging, and evidence-derived package lifecycle. | Decide a plane's entitlement, install into a consumer, supply consumer authority, or claim adoption or grounding. |
+| Account workspace | Its repository inventory; plane-level entitlements and reasoned opt-outs; its own positions when it is a direct consumer; rollout coordination, currency expectations, and aggregation of repository-published observations. | Mutate a sister repository, author that repository's position or observation, or turn an aggregate result into evidence that an unobserved repository adopted a package. |
+| Consuming repository | Its role dispositions and installed positions; exact dependency pin and lockfile; direct invocation and CI placement; deliberate-failure proof; duplicate removal; rollback; and its own self-observation. | Claim another repository's adoption or replace independent outcome measurement with its own run history. |
+| Independent observer | Host-owned outcome measurement against the position's metric and close condition. | Infer an outcome from package tests, provider acceptance, activity, or a missing observation. |
+
+Applicability is always scoped. An account workspace records whether the plane
+is entitled to a package and any plane-level opt-out. Each direct consumer
+separately records whether the role is `open` or `not-applicable` in its own
+complete ledger. A workspace can coordinate those decisions, but it cannot
+make a sister repository's disposition by editing or replacing that ledger.
+
+Diagnosis may begin in Foundry, an account workspace, or a consuming
+repository. There is no mandatory "workspace first" installation hop: the
+repository with the real job and direct consumer opens the position. If the
+account workspace also consumes the package for its own control plane, that is
+a second position with its own wiring and evidence, not a proxy adoption for
+the rest of the plane.
+
 ## Active role packages
 
 Every row below is a current role package. New consumers use these names only;
@@ -62,6 +89,12 @@ evidence contracts are the current source for publish status and maturity:
 
 ## Adoption flow
 
+The unit of rollout is **one package × one direct consumer × one evidenced
+position**. Work on several units may proceed in parallel only when their
+mutation surfaces, direct consumers, and evidence paths are independent.
+Package availability, a plane-wide inventory, or the historical A/B/C delivery
+cohorts never authorize a bulk installation.
+
 1. **Diagnose and open a position.** Run an evidence-based first-day
    assessment. If the business metric tree or causal hypothesis is unresolved,
    resolve that work before choosing an operating role. Do not install a
@@ -71,7 +104,7 @@ evidence contracts are the current source for publish status and maturity:
    have multiple positions across consumers; a consumer may have multiple
    positions for one role when their scopes and outcomes differ.
 3. **Install the exact public artifact.** Configure the consumer's registry
-   access, install the selected version into its own manifest and lockfile,
+   access, install the selected exact version into its own manifest and lockfile,
    and prove the export or CLI it actually uses from a clean install. Registry
    credentials and configuration remain consumer-local.
 4. **Wire the loop.** Connect the position's evidence source to its role's
@@ -101,3 +134,30 @@ resources, secret values, routes, customer data, approval decisions, or live
 mutations. Those belong in the consumer's own workspace and position record.
 The role package supplies the reusable judgment and loop mechanism; the
 consumer supplies the business context and authority to use it.
+
+## Inverse observation handoff
+
+Fleet visibility is inverted from a central scanner. Each consuming
+repository runs its own gates against its own tree, retains the run evidence,
+and publishes one observation bundle containing its reported results. The
+account workspace reads and aggregates those supplied observations against its
+inventory and freshness expectations; it does not rerun the gates by reaching
+into sister checkouts.
+
+Builder's observation-bundle transport supplies the generic write, validation,
+aggregation, and freshness primitives. It deliberately supplies no storage,
+scheduler, fetch mechanism, repository registry, or authority to mutate a
+consumer. Its validator establishes the bundle's structure, not the truth of a
+caller-supplied result or its opaque repository ref. Those choices and proofs
+belong to the plane and its repositories. Missing, stale, duplicate, or
+malformed evidence stays `indeterminate`; aggregation must never translate
+absence into a clean result.
+
+A position-ledger result in such a bundle reports that the repository's gate
+concluded its ledger conformed to the installed-position contract. The bundle
+transport does not prove that conclusion or bind it to the reported ref; the
+repository's retained gate-run evidence must do that. Neither record by itself
+proves the exact artifact was invoked, a deliberate failure reached the gate,
+a local duplicate was removed, or the owned metric moved. Those are separate
+adoption and grounding measurements and must remain so in both repository
+reports and workspace aggregates.

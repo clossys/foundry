@@ -8,9 +8,10 @@ owned metric, one durable boundary, and one job question. The checker is
 `npm run check:role-loop-archetypes`.
 
 Package READMEs explain APIs and implementation detail. The contract is the
-source of truth for role qualification, and the lifecycle contracts are the
-sources of evidence-derived maturity. Historical delivery groupings remain
-historical context only; they are not live package authority.
+source of truth for role qualification. The lifecycle and package-evidence
+contracts remain the sources of evidence-derived maturity. Historical delivery
+groupings remain context in the decision record only; they are not live package
+authority.
 
 ## One loop, six modes
 
