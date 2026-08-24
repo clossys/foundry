@@ -161,3 +161,23 @@ proves the exact artifact was invoked, a deliberate failure reached the gate,
 a local duplicate was removed, or the owned metric moved. Those are separate
 adoption and grounding measurements and must remain so in both repository
 reports and workspace aggregates.
+
+## Completion evidence exchange
+
+`@vespeneventures/controller/positions` ships the versioned
+`completion-evidence-contract.json` and
+`foundry-completion-evidence-check <completion-evidence.json> <position-ledger.json>`.
+One record binds an open, consumer-owned position to its exact package version,
+manifest/lockfile/clean-install references, real CLI or export invocation,
+blocking placement where applicable, adjacent deliberate red and green control,
+duplicate removal, rollback, cadence runs, and independently sourced before and
+after outcome observations with a close-window verdict.
+
+The references are consumer-retained identifiers, not provider values or
+credentials. The validator is intentionally structural: it can verify that a
+consumer has supplied each evidence class and that the position linkage is
+consistent, but cannot certify a provider observation or make a central
+adoption decision. Unreadable/incomplete evidence and an unreadable independent
+outcome return `indeterminate`; a measured miss returns `violated`; only a
+complete, independently measured, close-window-satisfied record returns
+`satisfied`.

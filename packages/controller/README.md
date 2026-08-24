@@ -99,7 +99,7 @@ separately versioned packages.
 | `@vespeneventures/controller/gates/secrets` | Source-aware secret-surface gates: credential inventory, provider-resource naming, local secret files, and raw-secret-read AST detection. Requires `typescript` — install it to use this subpath; `./gates` itself does not need it. **Breaking change from earlier versions:** these exports used to live on `./gates` directly; import them from here instead. |
 | `@vespeneventures/controller/release` | Isolated packed-artifact and installed-import proof. |
 | `@vespeneventures/controller/repository` | Consumer-owned repository profiles, upward requirements, exact-root declarations, pure evaluation, `repository-check`, and the full runner (`runRepositoryProfileCheck` / `repository-profile-check`). |
-| `@vespeneventures/controller/positions` | Pure installed-position ledger validation. `foundry-position-check <ledger.json> [role-contract.json]` defaults to the immutable shipped role contract and rejects a supplied contract that differs. It requires an explicit `open` or `not-applicable` disposition for every active role, complete records for open positions, and one consumer activity for each loop stage. A setpoint inherits its role metric direction: `target-range` uses an ordered numeric pair; every other direction uses one finite number. It infers no adoption, grounding, or closure. |
+| `@vespeneventures/controller/positions` | Pure installed-position ledger and completion-evidence validation. `foundry-position-check <ledger.json> [role-contract.json]` validates positions only. `foundry-completion-evidence-check <completion-evidence.json> <position-ledger.json>` binds one open consumer position to an exact artifact/install proof, real invocation and placement, red/green control, duplicate removal and rollback, cadence evidence, and independently sourced before/after outcome and close-window verdicts. Missing or unreadable evidence is `indeterminate`, never clean. It reads no registry, provider, credentials, or central adoption authority. |
 | `@vespeneventures/controller/review` | Provider-neutral review evidence contracts, validation, and `review-check`. |
 | `@vespeneventures/controller/review/github` | Pure normalization of caller-provided GitHub-shaped review evidence. |
 | `@vespeneventures/controller/artifacts` | Deterministic, fail-closed verification for a consumer-owned governed artifact: declared kind + schema version, exact-content checksum, and structural provenance. |
@@ -112,10 +112,17 @@ separately versioned packages.
 
 `@vespeneventures/controller/positions` exports
 `validateInstalledPositionLedger`, `validateInstalledPositionContract`,
-`POSITION_FIELDS`, `POSITION_RECOMMENDATIONS`, and `WORKER_COMPONENT_KINDS`.
-Its
-`InstalledPositionFinding` and `InstalledPositionLedgerReport` types expose a
-pure result: callers decide how to store, render, or act on it.
+`validateCompletionEvidence`, `validateCompletionEvidenceContract`, and the
+corresponding field vocabularies: `POSITION_FIELDS`,
+`POSITION_RECOMMENDATIONS`, `WORKER_COMPONENT_KINDS`,
+`COMPLETION_EVIDENCE_FIELDS`, `COMPLETION_EVIDENCE_INDETERMINATE_REASONS`,
+`COMPLETION_VERDICTS`, `DUPLICATE_STATES`, `INVOCATION_KINDS`, and
+`PLACEMENT_MODES`. `InstalledPositionFinding`, `InstalledPositionLedgerReport`,
+`CompletionEvidenceFinding`, `CompletionEvidenceIndeterminateReason`, and
+`CompletionEvidenceReport` expose pure results. Completion evidence reuses the
+shared `satisfied` / `violated` / `indeterminate` result grammar: it validates
+the shape and linkage of consumer-retained evidence but never claims the
+evidence is true, installs a package, or measures a provider itself.
 
 ### `./artifacts`: governed artifact verification
 

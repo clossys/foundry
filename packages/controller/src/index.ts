@@ -27,7 +27,15 @@ export {
   POSITION_FIELDS,
   POSITION_RECOMMENDATIONS,
   WORKER_COMPONENT_KINDS,
+  COMPLETION_EVIDENCE_FIELDS,
+  COMPLETION_EVIDENCE_INDETERMINATE_REASONS,
+  COMPLETION_VERDICTS,
+  DUPLICATE_STATES,
+  INVOCATION_KINDS,
+  PLACEMENT_MODES,
+  validateCompletionEvidence,
+  validateCompletionEvidenceContract,
   validateInstalledPositionContract,
   validateInstalledPositionLedger,
 } from "./positions/index.js";
-export type { InstalledPositionFinding, InstalledPositionLedgerReport } from "./positions/index.js";
+export type { CompletionEvidenceFinding, CompletionEvidenceIndeterminateReason, CompletionEvidenceReport, InstalledPositionFinding, InstalledPositionLedgerReport } from "./positions/index.js";

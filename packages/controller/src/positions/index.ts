@@ -133,3 +133,19 @@ export function validateInstalledPositionLedger(ledger: unknown, roleContract: u
   for (const id of positionIds) if (!cited.has(id)) fail(findings, "uncited-position", id, "every position must be owned by its open role disposition");
   return { ok: findings.length === 0, findings, openRoles: [...dispositions.values()].filter((item) => item.disposition === "open").length, positions: positionIds.size };
 }
+
+export {
+  COMPLETION_EVIDENCE_FIELDS,
+  COMPLETION_EVIDENCE_INDETERMINATE_REASONS,
+  COMPLETION_VERDICTS,
+  DUPLICATE_STATES,
+  INVOCATION_KINDS,
+  PLACEMENT_MODES,
+  validateCompletionEvidence,
+  validateCompletionEvidenceContract,
+} from "./completion-evidence.js";
+export type {
+  CompletionEvidenceFinding,
+  CompletionEvidenceIndeterminateReason,
+  CompletionEvidenceReport,
+} from "./completion-evidence.js";

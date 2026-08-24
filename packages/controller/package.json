@@ -1,6 +1,6 @@
 {
   "name": "@vespeneventures/controller",
-  "version": "0.8.13",
+  "version": "0.8.14",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -67,7 +67,8 @@
       "import": "./dist/positions/index.js"
     },
     "./contracts/role-loop-archetypes.json": "./contracts/role-loop-archetypes.json",
-    "./contracts/installed-position-contract.json": "./contracts/installed-position-contract.json"
+    "./contracts/installed-position-contract.json": "./contracts/installed-position-contract.json",
+    "./contracts/completion-evidence-contract.json": "./contracts/completion-evidence-contract.json"
   },
   "bin": {
     "foundry-governance": "./dist/cli.js",
@@ -75,7 +76,8 @@
     "repository-check": "./dist/repository/bin.js",
     "repository-profile-check": "./dist/repository/run-bin.js",
     "review-check": "./dist/review/cli.js",
-    "foundry-position-check": "./dist/positions/bin.js"
+    "foundry-position-check": "./dist/positions/bin.js",
+    "foundry-completion-evidence-check": "./dist/positions/completion-evidence-bin.js"
   },
   "files": [
     "dist",
