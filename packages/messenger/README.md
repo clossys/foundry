@@ -49,6 +49,10 @@ The universal loop is concrete here:
 npm install @vespeneventures/messenger
 ```
 
+The package is published to GitHub Packages, so consumers must map the
+`@vespeneventures` scope and provide a token with `read:packages` — see the
+repository root README.
+
 The provider-neutral root has no runtime dependencies. The optional
 `./providers/resend` subpath requires a consumer-installed `resend@^6.19.0`
 peer. Importing the root does not import that SDK.
