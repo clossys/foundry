@@ -9,6 +9,7 @@
   "position": {
     "fields": ["id", "package", "businessMetricPath", "causalHypothesis", "baseline", "setpoint", "operatingScope", "authority", "evidenceSource", "cadence", "budget", "guardrails", "escalationPath", "workerComponents", "stageBindings", "firstDayAssessment"],
     "workerComponentKinds": ["deterministic", "model", "human", "vendor"],
+    "stageBindingStages": ["sense", "judge", "act", "verify", "learnOrEscalate"],
     "setpointValueShapes": {
       "increase": "number",
       "decrease": "number",

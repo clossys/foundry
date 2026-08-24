@@ -347,6 +347,7 @@ test("the lifecycle position renderer derives rows and never invents grounded ev
     ],
   });
   assert.match(rendered, /<!-- lifecycle-position-table:start -->/);
+  assert.match(rendered, /\| package \| current position \| staged here \| grounded \|/);
   assert.match(rendered, /\| `@vespeneventures\/thing` \| published \| yes \| unknown — #484 \|/);
   assert.match(rendered, /@vespeneventures\/not-yet.*\| not yet \| unknown — #484/);
   assert.match(rendered, /@vespeneventures\/retired.*\| retired \| yes \| unknown — #484/);

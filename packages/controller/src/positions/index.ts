@@ -1,9 +1,13 @@
 /** Consumer-owned installed-position ledger validation. No provider I/O. */
-import { readCanonicalRoleLoopContract } from "./canonical.js";
+import { readCanonicalRoleLoopContract, readInstalledPositionContract } from "./canonical.js";
 
 export const POSITION_FIELDS = ["id", "package", "businessMetricPath", "causalHypothesis", "baseline", "setpoint", "operatingScope", "authority", "evidenceSource", "cadence", "budget", "guardrails", "escalationPath", "workerComponents", "stageBindings", "firstDayAssessment"] as const;
 export const WORKER_COMPONENT_KINDS = ["deterministic", "model", "human", "vendor"] as const;
 export const POSITION_RECOMMENDATIONS = ["install", "defer", "decline", "escalate"] as const;
+export const ROLE_DISPOSITIONS = ["open", "not-applicable"] as const;
+export const ROLE_DISPOSITION_RULE = "Every active role receives exactly one disposition. An open role cites one or more complete position records; a not-applicable role has no positions and states why.";
+export const SETPOINT_VALUE_RULE = "Inherit the role charter metric direction: target-range uses an ordered two-number [minimum, maximum] value; increase, decrease, and maintain use one finite number.";
+export const SETPOINT_VALUE_SHAPES = { increase: "number", decrease: "number", maintain: "number", "target-range": "ordered two-number array" } as const;
 
 export interface InstalledPositionFinding { readonly rule: string; readonly path: string; readonly message: string; }
 export interface InstalledPositionLedgerReport { readonly ok: boolean; readonly findings: readonly InstalledPositionFinding[]; readonly openRoles: number; readonly positions: number; }
@@ -32,8 +36,23 @@ function canonical(value: unknown): string {
   return JSON.stringify(value);
 }
 
+/** Validates the machine-readable position contract against this package's one code vocabulary. */
+export function validateInstalledPositionContract(contract: unknown = readInstalledPositionContract()): readonly InstalledPositionFinding[] {
+  const findings: InstalledPositionFinding[] = [];
+  let snapshot: unknown;
+  try { snapshot = readInstalledPositionContract(); }
+  catch (error) { return [{ rule: "installed-position-contract-unavailable", path: "contracts/installed-position-contract.json", message: error instanceof Error ? error.message : String(error) }]; }
+  if (canonical(contract) !== canonical(snapshot)) return [{ rule: "noncanonical-installed-position-contract", path: "installedPositionContract", message: "must exactly match the immutable installed-position-contract snapshot shipped by @vespeneventures/controller" }];
+  if (!keys(contract, ["schemaVersion", "kind", "roleDisposition", "position"]) || contract.schemaVersion !== 1 || contract.kind !== "foundry-installed-position-ledger" || !keys(contract.roleDisposition, ["fields", "dispositions", "rule"]) || !keys(contract.position, ["fields", "workerComponentKinds", "stageBindingStages", "setpointValueShapes", "firstDayAssessmentFields", "recommendations", "setpointValueRule"])) return [{ rule: "invalid-installed-position-contract", path: "installedPositionContract", message: "must be the complete schemaVersion 1 installed-position contract" }];
+  const position = contract.position;
+  if (canonical(contract.roleDisposition.fields) !== canonical(dispositionFields) || canonical(contract.roleDisposition.dispositions) !== canonical(ROLE_DISPOSITIONS) || contract.roleDisposition.rule !== ROLE_DISPOSITION_RULE || canonical(position.fields) !== canonical(POSITION_FIELDS) || canonical(position.workerComponentKinds) !== canonical(WORKER_COMPONENT_KINDS) || canonical(position.stageBindingStages) !== canonical(universalStages) || canonical(position.setpointValueShapes) !== canonical(SETPOINT_VALUE_SHAPES) || canonical(position.firstDayAssessmentFields) !== canonical(firstDayFields) || canonical(position.recommendations) !== canonical(POSITION_RECOMMENDATIONS) || position.setpointValueRule !== SETPOINT_VALUE_RULE) findings.push({ rule: "installed-position-contract-vocabulary-drift", path: "installedPositionContract", message: "fields, dispositions, worker kinds, stage bindings, setpoint shapes and rule, first-day fields, and recommendations must match the validator constants" });
+  return findings;
+}
+
 export function validateInstalledPositionLedger(ledger: unknown, roleContract: unknown = readCanonicalRoleLoopContract()): InstalledPositionLedgerReport {
   const findings: InstalledPositionFinding[] = [];
+  findings.push(...validateInstalledPositionContract());
+  if (findings.length > 0) return { ok: false, findings, openRoles: 0, positions: 0 };
   let canonicalContract: unknown;
   try { canonicalContract = readCanonicalRoleLoopContract(); }
   catch (error) { return { ok: false, findings: [{ rule: "canonical-role-contract-unavailable", path: "contracts/role-loop-archetypes.json", message: error instanceof Error ? error.message : String(error) }], openRoles: 0, positions: 0 }; }
@@ -59,7 +78,7 @@ export function validateInstalledPositionLedger(ledger: unknown, roleContract: u
     if (!keys(item, dispositionFields)) { fail(findings, "invalid-role-disposition", path, `must contain exactly: ${dispositionFields.join(", ")}`); continue; }
     const packageName = item.package;
     if (!text(packageName) || !roleName.test(packageName) || !roles.has(packageName)) { fail(findings, "unknown-disposition-role", path, "package must name an active role"); continue; }
-    if (item.disposition !== "open" && item.disposition !== "not-applicable") fail(findings, "invalid-role-disposition", path, "disposition must be open or not-applicable");
+    if (!ROLE_DISPOSITIONS.includes(item.disposition as never)) fail(findings, "invalid-role-disposition", path, "disposition must be open or not-applicable");
     if (!text(item.reason)) fail(findings, "missing-disposition-reason", path, "reason must be a nonempty decision rationale");
     if (!strings(item.positionIds, item.disposition === "open" ? 1 : 0)) fail(findings, "invalid-disposition-position-ids", path, "positionIds must be unique nonempty IDs; open requires one or more");
     if (item.disposition === "not-applicable" && Array.isArray(item.positionIds) && item.positionIds.length !== 0) fail(findings, "not-applicable-has-positions", path, "not-applicable must cite no positions");

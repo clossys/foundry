@@ -5,6 +5,15 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.12] - 2026-08-24
+
+### Fixed
+
+- Installed-position validation now verifies the complete shipped
+  `installed-position-contract` vocabulary against its implementation before
+  accepting a consumer ledger. The role contract and position contract are
+  both immutable packaged snapshots; vocabulary drift now fails closed.
+
 ## [0.8.11] - 2026-08-24
 
 ### Added

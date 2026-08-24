@@ -271,7 +271,7 @@ fails when the committed copy drifts from the derived one — #493.
 
 <!-- lifecycle-position-table:start -->
 
-| package | declared state | staged here | grounded |
+| package | current position | staged here | grounded |
 | --- | --- | --- | --- |
 | `@vespeneventures/controller` | published | yes | unknown — #484 |
 | `@vespeneventures/architect` | published | yes | unknown — #484 |
