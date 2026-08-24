@@ -762,7 +762,7 @@ rendering the TOC itself is left to the caller).
 record of what was published, to which channel, when, derived from which
 revision of strategy, citing which facts — and a drift checker that answers
 whether a cited fact still holds, without ever depending on
-`@vespeneventures/strategy`. It ships in the same install as the composer
+`@vespeneventures/strategist`. It ships in the same install as the composer
 half above — see "Why `publisher` is one package, not two," above — so there
 is no separate `npm install` line here.
 
@@ -787,11 +787,11 @@ about it, more than any function signature below:
 
 Concretely:
 
-- **This package does not depend on `@vespeneventures/strategy`.** Every fact
+- **This package does not depend on `@vespeneventures/strategist`.** Every fact
   a `PublicationEntry` cites is a plain, opaque `factRef` string — the same
   seam `@vespeneventures/writer/voice`'s `Claim.factRef`,
   `@vespeneventures/writer`'s `CopyEntry.factRef`, and
-  `@vespeneventures/strategy`'s own `Market.factRefs`/`Audience.factRefs`
+  `@vespeneventures/strategist`'s own `Market.factRefs`/`Audience.factRefs`
   already use one layer up. `strategy` is not in this package's
   `dependencies`, and nothing in `src/` imports it. Resolving a `factRef`
   against a real fact registry — reading `strategy`'s `readStrategy` bundle
@@ -836,7 +836,7 @@ ledger = appendEntry(ledger, entry); // returns a NEW, deep-frozen ledger
 
 ```ts
 import { checkLedgerDrift } from "@vespeneventures/publisher/record";
-// readStrategy comes from @vespeneventures/strategy — the caller's job, not this package's
+// readStrategy comes from @vespeneventures/strategist — the caller's job, not this package's
 
 const currentValues = { "active-customers": 5000 }; // read from the caller's own facts.json, not from this package
 
@@ -943,7 +943,7 @@ partial result, visible in the counts, not an all-or-nothing gate.
 - **No fact registry.** This package never resolves a `factRef` against
   anything. It does not know what a real fact is, does not validate that a
   `factRef` names one that exists, and does not import
-  `@vespeneventures/strategy` to find out. See "Why this package exists"
+  `@vespeneventures/strategist` to find out. See "Why this package exists"
   above.
 - **No judgement.** `checkLedgerDrift` reports drift; it does not decide
   whether drift matters, does not retract anything, does not notify
@@ -970,15 +970,15 @@ partial result, visible in the counts, not an all-or-nothing gate.
 | `citeFact(factRef, value, algorithm?)` | function | Builds a `FactCitation`: computes `canonicalizeValue(value)`'s digest under `algorithm` (default `"sha256"`) via `@vespeneventures/controller/policy`'s own `computeDigest`, and returns `{ factRef, valueBinding: { policyId: factRef, digestAlgorithm, digest } }`. This package's first real use of `@vespeneventures/controller/policy` outside `policy` itself. Throws on an empty `factRef` or a `value` `canonicalizeValue` cannot handle. |
 | `appendEntry(ledger, entry)` | function | The one sanctioned way to grow a `Ledger`. Throws (never returns a `LedgerFinding[]`) on a malformed `entry` or an `entry.id` that already exists in `ledger` — both are caller programming errors at the point of the call, the same distinction `computeDigest` draws. Returns a **new**, deep-frozen `Ledger`; `ledger` itself, and every entry already in it, is left completely untouched. |
 | `checkAppendOnly(previous, next)` | function | The at-rest complement to `appendEntry`. Pure diff between two `unknown` values, each validated with `validateLedger` first. Reports `"entry-removed"`, `"entry-reordered"`, or `"entry-mutated"` (compared via `canonicalizeValue`, so a harmless JSON-key-order round-trip is never mistaken for a real change) for anything in `previous` that `next` fails to preserve exactly, in the same position; `"entries-removed"` once, up front, if `next` has fewer entries than `previous`. An empty return means `next` is a valid append-only evolution of `previous`. |
-| `checkLedgerDrift(ledger, currentValues)` | function | The drift checker: for each `FactCitation` in `ledger`, compares its recorded `valueBinding` against `currentValues[citation.factRef]` (canonicalized, then run through `@vespeneventures/controller/policy`'s own `verifyBinding` — no digest-comparison logic reimplemented here) and reports a `"fact-drift"` finding on mismatch. `currentValues` is a plain `factRef -> value` map — this function never reads a real fact registry or depends on `@vespeneventures/strategy`. Fails closed on an invalid ledger, an empty ledger, or a non-empty ledger where nothing ends up checked — see "Why the drift checker fails closed". |
+| `checkLedgerDrift(ledger, currentValues)` | function | The drift checker: for each `FactCitation` in `ledger`, compares its recorded `valueBinding` against `currentValues[citation.factRef]` (canonicalized, then run through `@vespeneventures/controller/policy`'s own `verifyBinding` — no digest-comparison logic reimplemented here) and reports a `"fact-drift"` finding on mismatch. `currentValues` is a plain `factRef -> value` map — this function never reads a real fact registry or depends on `@vespeneventures/strategist`. Fails closed on an invalid ledger, an empty ledger, or a non-empty ledger where nothing ends up checked — see "Why the drift checker fails closed". |
 | `JoinKeyReport` | type | What `checkJoinKeyCompleteness` returns: `ok`, `liveEntriesChecked`, `completeLiveEntries`, `incompleteLiveEntries`, `identities: JoinKeyIdentity[]`, `findings: LedgerFinding[]`. Mirrors `DriftReport`'s counted shape for the same reason — "checked nothing" and "checked everything and it held" must never print as the same result. |
 | `JoinKeyIdentity` | type | `{ contentId: string; windows: Array<{ entryId, publishedAt, supersededAt? }> }` — one content identity with every window it has been published under, in `publishedAt` order. Exposed on the report so a caller can assert on the grouping directly rather than infer it from a pass or fail. |
 | `checkJoinKeyCompleteness(ledger)` | function | For everything the ledger currently says is live, is enough recorded here for someone else — an observer-shaped tier holding external engagement signals, never this package — to attribute a signal to the right revision of the right surface? Reports `"join-key-missing-identity"` (a live entry with no `contentId`), `"join-key-window-invalid"` (a `supersededAt` that does not actually close a window), and the cross-entry `"join-key-identity-churn"`. Emits and checks for a KEY only, never a verdict about whether a signal is good — see "Why this package exists". Fails closed on an invalid ledger, an empty ledger, or a ledger with zero live entries. |
 
 `publisher-record-check` (the CLI, installed as a `bin` when this package is
 installed — its argv-handling `cli.ts` is deliberately not part of the
-exports above, the same convention `@vespeneventures/strategy`'s
-`strategy-facts-check` and `@vespeneventures/writer`'s `copy-check` already
+exports above, the same convention `@vespeneventures/strategist`'s
+`strategist-check` and `@vespeneventures/writer`'s `writer-check` already
 set) has two invocations, dispatched on the literal first `argv` token —
 never on the invoked binary's path or filename, since this repository
 always invokes a gate by its compiled path (`node .../dist/cli.js`), and a

@@ -3,6 +3,13 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.1] - 2026-08-24
+
+### Fixed
+
+- Updated README references to active Designer, Writer, and Controller
+  subpaths after the predecessor packages retired.
+
 ## [0.1.0] - 2026-08-20
 
 First release. This package is the strategist role, recut from
@@ -46,6 +53,10 @@ reader who arrives at this package first.
   would have made the diff unreviewable while changing no behaviour.
 
 ### Not included
+
+> **Current lifecycle note:** `@vespeneventures/strategy` is now retired.
+> This release note records its state at 0.1.0; the lifecycle contract is the
+> authority for current availability.
 
 - **No forwarding stub in the donor.** `@vespeneventures/strategy` is
   deprecated-and-retained: still installable for a consumer already pinned to

@@ -3,6 +3,13 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.4] - 2026-08-24
+
+### Fixed
+
+- Updated README references to the active Strategist package and corrected
+  historical donor availability with a lifecycle note.
+
 ## [0.1.3] - 2026-08-21
 
 ### Changed
@@ -174,6 +181,11 @@ imports.
   TypeScript import this package has no reason to take on.
 
 ### On the donors, and why neither is deprecated yet
+
+> **Current lifecycle note:** `@vespeneventures/surface` and
+> `@vespeneventures/ledger` are now retired. This release note records their
+> state at 0.1.0; the lifecycle contract is the authority for current
+> availability.
 
 `@vespeneventures/surface` and `@vespeneventures/ledger` both stay
 `published` for now. Neither can be marked deprecated while nothing else in

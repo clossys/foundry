@@ -147,9 +147,9 @@ reason is the only thing that turns an absence into a decision.
 ## Installed-inventory reader
 
 `readInstalledInventory` reads a plane's manifest and an **npm** lockfile
-through an injected `InventoryFileSystemPort`, following
-[`@vespeneventures/provisioning`](https://github.com/vespeneventures/foundry/tree/main/packages/provisioning)'s
-injected-port pattern — this package never opens a file itself.
+through an injected `InventoryFileSystemPort`, following the injected-port
+pattern retained by [`@vespeneventures/builder`](../builder)'s current
+workspace package — this package never opens a file itself.
 `createNodeInventoryFileSystem()` is the default, real-filesystem adapter; a
 test, or a caller reading from somewhere other than disk, supplies its own.
 It throws `IntegratorValidationError` on anything it cannot trust — a

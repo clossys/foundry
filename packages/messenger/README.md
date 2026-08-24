@@ -1,8 +1,7 @@
 # `@vespeneventures/messenger`
 
 Messenger delivers authorized, finished communications and closes the loop on
-independently observed outcomes. This package is currently **source-only and
-unpublished**.
+independently observed outcomes.
 
 The durable role charter is deliberately narrower than any one installation:
 
@@ -45,8 +44,6 @@ The universal loop is concrete here:
    installation can retry, reroute, change policy, or escalate.
 
 ## Install
-
-Once published:
 
 ```bash
 npm install @vespeneventures/messenger

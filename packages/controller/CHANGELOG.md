@@ -5,6 +5,13 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.13] - 2026-08-24
+
+### Fixed
+
+- Corrected current README guidance after former Controller package names were
+  retired; new integrations use Controller subpaths directly.
+
 ## [0.8.12] - 2026-08-24
 
 ### Fixed
@@ -656,6 +663,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New subpaths: `./conventions` (governance's own `./gates`, `./repository`,
   etc. carry over unchanged), `./conventions/documents/*`,
   `./conventions/adapters/*`, and `./policy`.
+> **Current lifecycle note:** the predecessor packages named below are now
+> retired. This release entry records their state at the time of 0.1.0; the
+> lifecycle contract is authoritative for current availability.
+
 - `@vespeneventures/governance`, `@vespeneventures/conventions`, and
   `@vespeneventures/policy` are deprecated. `governance` and `policy` remain
   published as thin compatibility stubs forwarding here (their own
