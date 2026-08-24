@@ -26,7 +26,7 @@ break a seam this package depends on to stay dependency-free.
 
 The seam: `BrandDerivation` names token slots (`"--color-accent-primary"`)
 and voice rules by **plain string only**, never by a typed import of
-`@vespeneventures/ui/tokens` or `@vespeneventures/copy/voice` — the exact
+`@vespeneventures/designer/tokens` or `@vespeneventures/writer/voice` — the exact
 discipline `Market.factRefs`/`Audience.factRefs` already use elsewhere in
 this package (see `brand-derivation.ts`'s header comment). That name-only
 seam is what lets this package ship with **zero runtime dependencies**:
@@ -39,7 +39,7 @@ brand lives here, not in its own package" below for the full account.
 
 ## What this package is, and is not
 
-The split here mirrors `@vespeneventures/ui/tokens`' own README ("The
+The split here mirrors `@vespeneventures/designer/tokens`' own README ("The
 three-layer contract"): that package ships a greyscale token contract and
 lets each consumer bind its own brand on top; this package ships an entity
 schema and a checker, and lets each consumer author its own strategy
@@ -59,12 +59,12 @@ trace back to a real fact, and a brand-coverage checker
 account for a consumer's brandable token slots, in both directions.
 
 Validation here is hand-rolled on purpose, not built on a schema library:
-`@vespeneventures/catalog`, `@vespeneventures/policy`, and
-`@vespeneventures/ui/tokens` all ship with **zero** runtime dependencies, and
+`@vespeneventures/controller/catalog`, `@vespeneventures/controller/policy`, and
+`@vespeneventures/designer/tokens` all ship with **zero** runtime dependencies, and
 this package's own pitch — "pure data + validation, safe to install" — is
 only really true if installing it doesn't also mean resolving a schema
 library's own major version into a consumer's tree. `validation.ts` follows
-`@vespeneventures/policy`'s own `validate.ts` precedent: plain type guards
+`@vespeneventures/controller/policy`'s own `validate.ts` precedent: plain type guards
 over `unknown`, an accumulated issue list, never throws.
 
 ## Governed strategy contract
@@ -210,7 +210,7 @@ console.log(bundle.facts.length, "facts loaded");
 `readStrategy` never throws. Anything that could not be turned into usable
 data — a missing `facts.json`, invalid JSON, a shape violation — is
 recorded into `bundle.issues` and reflected in `bundle.complete`, the same
-discipline `@vespeneventures/catalog`'s `buildCatalog` holds to for its own
+discipline `@vespeneventures/controller/catalog`'s `buildCatalog` holds to for its own
 `Catalog.skipped`. `complete` is `true` only when `facts.json` itself
 validated AND every other file that exists on disk also validated — the
 three brand files included: an absent `brand-essence.json`/
@@ -353,7 +353,7 @@ Options:
   --help         Print this message and exit 0.
 ```
 
-Exit codes — the same three-state contract `@vespeneventures/gates`'
+Exit codes — the same three-state contract `@vespeneventures/controller/gates`'
 `foundry-check` uses:
 
 | Code | Meaning |
@@ -374,7 +374,7 @@ same in a report).
 `checkBrandCoverage` (below) is a library function — it was reachable only
 by writing TypeScript against this package, unlike the facts gate above,
 which ships as an installable CLI. This subcommand closes that gap without
-adding a second `bin` entry or importing `@vespeneventures/ui/tokens`:
+adding a second `bin` entry or importing `@vespeneventures/designer/tokens`:
 
 ```bash
 npx strategist-check brand-coverage ./brand-derivations.json ./brandable-slots.json
@@ -395,7 +395,7 @@ Options:
 `brand-derivations.json`. `brandable-slots-file` is a plain JSON array of
 non-empty strings: the caller-supplied `brandableSlots` list
 `checkBrandCoverage` takes as its seam (this package still never imports
-`@vespeneventures/ui/tokens` — a consumer collects that list itself, e.g.
+`@vespeneventures/designer/tokens` — a consumer collects that list itself, e.g.
 `Object.values(TOKENS).filter(t => t.brandable).map(t => t.property)`, and
 writes it to a file this subcommand reads).
 
@@ -476,7 +476,7 @@ pattern, a founder's stated rule — whatever actually makes the attribute
 true. It's required because an attribute with no basis at all is exactly a
 vibe: a word chosen because it sounds good. `evidence.factRef` is an
 optional, opaque string naming a `Fact.key` — the same seam
-`@vespeneventures/copy/voice`'s `Claim.factRef` and this package's own
+`@vespeneventures/writer/voice`'s `Claim.factRef` and this package's own
 `Market.factRefs`/`Audience.factRefs` already use: a plain string, never
 validated against a real `facts.json` here, never a typed import.
 
@@ -537,7 +537,7 @@ cross-package gate with visibility into both — is the one place that can
 close it for real.
 
 The check itself runs in **both directions**, exactly like
-`@vespeneventures/ui/tokens`' own `brand-coverage.test.ts`:
+`@vespeneventures/designer/tokens`' own `brand-coverage.test.ts`:
 
 1. Every slot in `brandableSlots` is named by at least one derivation's
    `tokenSlots` (`result.slotsMissingDerivation` otherwise).
@@ -682,7 +682,7 @@ them throw.
 | `validateMarket(value)` / `validateMarkets(value)` | function | One market / an array of markets. `factRefs?: string[]` names `Fact.key`s this market's sizing claims trace to (not cross-checked against a live facts set here). |
 | `validateAudience(value)` / `validateAudiences(value)` | function | One audience / an array of audiences. `painPoints?: string[]`, `factRefs?: string[]`. |
 | `validateRoadmapItem(value)` / `validateRoadmapItems(value)` | function | One roadmap item / an array of them. `status` is the closed vocabulary in `ROADMAP_STATUSES`. |
-| `ROADMAP_STATUSES` | const | `readonly RoadmapStatus[]` — `["now", "next", "later", "shipped"]`, in the order a new status would be added. Mirrors `@vespeneventures/policy`'s own `DIGEST_ALGORITHMS`. |
+| `ROADMAP_STATUSES` | const | `readonly RoadmapStatus[]` — `["now", "next", "later", "shipped"]`, in the order a new status would be added. Mirrors `@vespeneventures/controller/policy`'s own `DIGEST_ALGORITHMS`. |
 | `validateBrandEssence(value)` | function | `{ statement }` — the irreducible one-line statement of what the brand is. |
 | `validateBrandAttribute(value)` / `validateBrandAttributes(value)` | function | One brand attribute / an array of them. `evidence: { basis: string; factRef?: string }` — see "The brand layer" above for why both fields exist. |
 | `validateDirectionEntity(value)` / `validateDirectionEntities(value)` | function | One `DirectionEntity` / an array of them, additionally rejecting a duplicate `id`. `id`, `kind`, `statement`, `rationale`, `decidedOn`, optional `supersedes`, `derivesFrom: string[]` — see "The direction layer" above. |
@@ -764,14 +764,14 @@ it" — nothing about how a fact should be rendered, translated, or
 formatted for any particular surface (a homepage, a pitch deck, a press
 kit). That is a presentation concern for whatever a consumer builds on top;
 `checkFactsTraceability` deliberately stops at "traced or not", the same
-way `@vespeneventures/policy`'s `verifyBinding` stops at "matches or not"
+way `@vespeneventures/controller/policy`'s `verifyBinding` stops at "matches or not"
 without ever deciding what should happen next.
 
 `checkBrandCoverage` draws the identical line: it answers "does a
 derivation exist for this slot, and does every named slot actually exist"
 — nothing about whether a `tokenSlots` name is spelled correctly against a
-REAL `@vespeneventures/ui/tokens` release, whether a `voiceRules` id resolves
-to a real `@vespeneventures/copy/voice` glossary entry, or what value either
+REAL `@vespeneventures/designer/tokens` release, whether a `voiceRules` id resolves
+to a real `@vespeneventures/writer/voice` glossary entry, or what value either
 should actually be bound to. Resolving those names against the real
 packages they name is a later, cross-package gate's job — one with
 visibility into `tokens` and/or `voice` that this package deliberately does

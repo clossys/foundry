@@ -1,8 +1,7 @@
 # `@vespeneventures/messenger`
 
 Messenger delivers authorized, finished communications and closes the loop on
-independently observed outcomes. This package is currently **source-only and
-unpublished**.
+independently observed outcomes.
 
 The durable role charter is deliberately narrower than any one installation:
 
@@ -46,11 +45,13 @@ The universal loop is concrete here:
 
 ## Install
 
-Once published:
-
 ```bash
 npm install @vespeneventures/messenger
 ```
+
+The package is published to GitHub Packages, so consumers must map the
+`@vespeneventures` scope and provide a token with `read:packages` — see the
+repository root README.
 
 The provider-neutral root has no runtime dependencies. The optional
 `./providers/resend` subpath requires a consumer-installed `resend@^6.19.0`

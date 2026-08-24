@@ -25,7 +25,7 @@ tokens → icons → atoms → blocks
 this package, so it sits even more foundational than `atoms` itself, the
 same way `tokens` sits below all of `ui`). See "Placement rules" below for
 what distinguishes reusable atoms and blocks. Whole-page compositions are
-surfaces and live in `@vespeneventures/surface/web`.
+surfaces and live in `@vespeneventures/publisher/web`.
 
 - **`icons`** — glyph data only, no components: 32 `IconNode` exports
   (`AlertTriangle`, `BookOpen`, `Box`, `Building2`, `Calendar`, `Check`,
@@ -119,8 +119,8 @@ smallest stable subpath that owns what you need:
 `ui` never exports page views, routes, metadata, strategy facts, or copy.
 Components receive resolved `ReactNode`s, labels, data, callbacks, and URLs
 through props. Product/page composition belongs to
-`@vespeneventures/surface`; audience-facing words belong to
-`@vespeneventures/copy`.
+`@vespeneventures/publisher`; audience-facing words belong to
+`@vespeneventures/writer`.
 
 ### Token-only use
 
@@ -397,7 +397,7 @@ this package's own CI today.
 | `@vespeneventures/tokens/tokens.css` | `@vespeneventures/designer/tokens.css` |
 | `@vespeneventures/tokens/theme.css` | `@vespeneventures/designer/theme.css` |
 | `@vespeneventures/tokens/brand-template.css` | `@vespeneventures/designer/brand-template.css` |
-| `@vespeneventures/designer/views` | `@vespeneventures/surface/web` for generic rendered views, or compose UI primitives in a surface. |
+| `@vespeneventures/designer/views` | `@vespeneventures/publisher/web` for generic rendered views, or compose UI primitives in a Publisher surface. |
 
 `atoms`, `blocks`, `icons`, `charts`, `shell`, and `gate` retain their UI
 subpaths. There is no compatibility root barrel: importing the owning
@@ -2342,7 +2342,7 @@ optional prop the consumer supplies. Every example below uses obviously-
 structural placeholder text ("Heading text", "Body copy goes here") for
 exactly that reason: this package owns visual vocabulary, never copy (see
 "Public contract" above — audience-facing words belong to
-`@vespeneventures/copy`).
+`@vespeneventures/writer`).
 
 ### `Hero`
 
@@ -2590,7 +2590,7 @@ descendant-selector Tailwind variants (`[&_h2]:text-h2`, ...), nothing
 more. A product-neutral structured-document contract — parsing a content
 shape into these elements in the first place — is explicitly out of scope
 here and belongs to a separate, already-filed proposal in
-`@vespeneventures/surface` instead.
+`@vespeneventures/publisher` instead.
 
 Content is constrained to this package's own `--ui-width-prose-max` token
 (48rem default) — the same "case 2, no Tailwind namespace" raw `var()`
@@ -2644,7 +2644,7 @@ function MarketingPage() {
 
 Page-level views are documented here because they are built entirely from
 this visual vocabulary, but they are exported by
-`@vespeneventures/surface/web`. UI stops at reusable primitives; surface owns
+`@vespeneventures/publisher/web`. UI stops at reusable primitives; Publisher owns
 the page composition and renderer.
 
 A view is a whole PAGE's composition — test 3 from "Placement rules" above,
@@ -2690,7 +2690,7 @@ assuming one.
 ### `ErrorView`
 
 ```tsx
-// ErrorView is exported by @vespeneventures/surface/web.
+// ErrorView is exported by @vespeneventures/publisher/web.
 import { Button } from "@vespeneventures/designer/atoms";
 
 function NotFoundPage() {
@@ -2772,7 +2772,7 @@ own title region rather than repeating the same text twice.
 ### `AuthView`
 
 ```tsx
-// AuthView is exported by @vespeneventures/surface/web.
+// AuthView is exported by @vespeneventures/publisher/web.
 import { Link } from "@vespeneventures/designer/atoms";
 
 function SignInPage() {
@@ -4047,7 +4047,7 @@ three tests are worth calling out specifically:
 
 ## Token-purity gate (`@vespeneventures/designer/gate`, `designer-token-check`)
 
-`@vespeneventures/copy` ships a scanner gate that proves every user-facing
+`@vespeneventures/writer` ships a scanner gate that proves every user-facing
 string in a source tree is registered. Before this release, this package
 had no equivalent for the VISUAL half of the same contract: a hardcoded
 `#3b82f6` or `padding: 13px` anywhere in `ui` was invisible in exactly the
@@ -4065,7 +4065,7 @@ its own subpath and an installable CLI:
   Tailwind TOKEN class (`text-ink-primary`, `bg-surface-base`, `p-4`,
   `z-10`, `rounded-control`) is never a candidate — it carries a NAME, not
   a hardcoded value, so it never matches any extraction pattern in the
-  first place. Zero runtime dependencies, matching `@vespeneventures/copy`'s
+  first place. Zero runtime dependencies, matching `@vespeneventures/writer`'s
   own scanner (this repository's CI `safety` job runs gate scripts with no
   `npm ci`) — see `src/style-scan.ts`'s own header for the full boundary
   reasoning, including exactly what is reported as `unchecked` rather than
@@ -4340,7 +4340,7 @@ what a filter bar contains — a consumer composes filter controls from
 this package's own atoms (`Select`, `TextField`, `Popover`) directly into
 whichever slot fits.
 
-**Views:** `ErrorView` and `AuthView` moved to `@vespeneventures/surface/web`; the list is meant to stay
+**Views:** `ErrorView` and `AuthView` moved to `@vespeneventures/publisher/web`; the list is meant to stay
 this short — see "Views" above for the full reasoning. `ListView`,
 `FormView`, and `DashboardView` are deliberately NOT here: by test 3, a
 page can hold two lists, two forms, or several summary panels at once, so

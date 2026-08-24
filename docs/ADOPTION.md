@@ -1,10 +1,11 @@
 # Consumer adoption
 
 Foundry ships durable **role packages**. A consumer hires one by creating an
-**installed position** for a specific business outcome. The package charter
-and the consumer position are the only authorities: package READMEs explain
-APIs, and this document explains the adoption flow; neither creates a second
-portfolio record.
+**installed position** for a specific business outcome. The package charter is
+the authority for the durable role definition; each consumer position is the
+authority for that direct installation. Package READMEs explain APIs, and this
+document explains the adoption flow; neither creates a second portfolio
+record or overrides the other scoped authorities below.
 
 An install is not adoption. A valid position is not independent grounding.
 No package reaches `grounded` or `closed` until an independent observer reads
@@ -137,21 +138,26 @@ consumer supplies the business context and authority to use it.
 ## Inverse observation handoff
 
 Fleet visibility is inverted from a central scanner. Each consuming
-repository runs its own gates against its own tree and publishes one validated
-self-observation. The account workspace reads and aggregates those observations
-against its inventory and freshness expectations; it does not rerun the gates
-by reaching into sister checkouts.
+repository runs its own gates against its own tree, retains the run evidence,
+and publishes one observation bundle containing its reported results. The
+account workspace reads and aggregates those supplied observations against its
+inventory and freshness expectations; it does not rerun the gates by reaching
+into sister checkouts.
 
 Builder's observation-bundle transport supplies the generic write, validation,
 aggregation, and freshness primitives. It deliberately supplies no storage,
 scheduler, fetch mechanism, repository registry, or authority to mutate a
-consumer. Those choices belong to the plane and its repositories. Missing,
-stale, duplicate, or malformed evidence stays `indeterminate`; aggregation
-must never translate absence into a clean result.
+consumer. Its validator establishes the bundle's structure, not the truth of a
+caller-supplied result or its opaque repository ref. Those choices and proofs
+belong to the plane and its repositories. Missing, stale, duplicate, or
+malformed evidence stays `indeterminate`; aggregation must never translate
+absence into a clean result.
 
-A position-ledger gate in such a bundle proves only that the repository's
-ledger conformed to the installed-position contract at the reported ref. It
-does not by itself prove the exact artifact was invoked, a deliberate failure
-reached the gate, a local duplicate was removed, or the owned metric moved.
-Those are separate adoption and grounding measurements and must remain so in
-both repository reports and workspace aggregates.
+A position-ledger result in such a bundle reports that the repository's gate
+concluded its ledger conformed to the installed-position contract. The bundle
+transport does not prove that conclusion or bind it to the reported ref; the
+repository's retained gate-run evidence must do that. Neither record by itself
+proves the exact artifact was invoked, a deliberate failure reached the gate,
+a local duplicate was removed, or the owned metric moved. Those are separate
+adoption and grounding measurements and must remain so in both repository
+reports and workspace aggregates.

@@ -49,9 +49,9 @@ consumers needed had no other way to express itself, and the expectation is
 that the next gap of that shape surfaces the same way — as a filed axis, not
 a private workaround living outside this package.
 
-This is a rename and a merge, not a rewrite: every subpath reachable under
-the three former package names resolves, unchanged in shape, under this one.
-See "Migrating from compatibility packages" below.
+This is a rename and a merge, not a rewrite: the former package surfaces are
+now provided by this package's subpaths. The former package names are retired;
+new integrations use the current subpaths directly.
 
 ```bash
 npm install @vespeneventures/controller
@@ -247,7 +247,7 @@ holds), `violated` (evaluated, condition does not hold), or `indeterminate`
 reason). This is not new: `foundry-check`'s own CLI already ships this
 ternary as its 0/1/2 exit-code contract, `evaluateRatchet`'s `status: "clean"
 | "regression" | "invalid"` is the identical three states under different
-names, and `@vespeneventures/ui`/`copy`/`strategy` each independently
+names, and Designer, Writer, and Strategist each independently
 reinvented a third shape (`unchecked: UncheckedItem[]`, non-empty meaning
 "cannot vouch for this scan"). `GateResult` is that shape, named once, so
 the next gate reuses it instead of reinventing it a fifth time.
@@ -1452,39 +1452,11 @@ that decision belongs to whatever calls it, most likely `./gates`.
 | `PolicyBinding` / `Finding` | types | The binding shape and this subpath's own finding shape — not borrowed from any sibling subpath. |
 | `OWN_LICENSE_BINDING` | constant | A self-hosting example bound to this package's own MIT licence, verified by a test against the real committed `LICENSE` bytes. |
 
-## Migrating from compatibility packages
+## Former package names
 
-The previous standalone package names remain published — some as
-compatibility packages that forward here, one retired outright — while
-consumers migrate. New integrations use the subpaths below directly. Root
-imports and CLI command names remain compatible during the transition for
-every package that still forwards.
-
-| Deprecated package | Supported import |
-| --- | --- |
-| `@vespeneventures/governance` | `@vespeneventures/controller` |
-| `@vespeneventures/catalog` | `@vespeneventures/controller/catalog` |
-| `@vespeneventures/gates` | `@vespeneventures/controller/gates` |
-| `@vespeneventures/release` | `@vespeneventures/controller/release` |
-| `@vespeneventures/repository` | `@vespeneventures/controller/repository` |
-| `@vespeneventures/review` | `@vespeneventures/controller/review` |
-| `@vespeneventures/review/github` | `@vespeneventures/controller/review/github` |
-| `@vespeneventures/policy` | `@vespeneventures/controller/policy` |
-| `@vespeneventures/conventions` | `@vespeneventures/controller/conventions` |
-
-`@vespeneventures/governance` and `@vespeneventures/policy` remain published
-as thin compatibility packages that forward every export to the matching
-subpath above (`forwardsToReplacement: true` in the lifecycle registry) —
-`catalog`, `gates`, `release`, `repository`, and `review` already depended
-on `governance` directly, and, outside this program,
-`@vespeneventures/ledger` and `@vespeneventures/verify-standards` depend on
-`policy` (and `verify-standards` also depends on `governance`); unpublishing
-either outright would strand those real consumers. `@vespeneventures/conventions`
-had no installed consumer in this workspace and is retired outright — no
-compatibility stub, `forwardsToReplacement: false` — its source is gone, so
-importing it is a hard break, not a deprecation warning. Issue #288 removes
-the `governance` and `policy` compatibility packages once the migration
-window closes.
+Former package names are retired and do not forward. For a current mapping,
+use the lifecycle contract; new integrations import the Controller subpath
+that owns the needed capability directly.
 
 ## Lifecycle registry
 
@@ -1570,13 +1542,10 @@ so a reader of the registry — not just of prose in a decision doc — can tell
 "deprecated, but the old import path still resolves to working code" apart
 from "deprecated, and importing it is now a hard break requiring a
 rewrite" without opening the package's source. `true` means the deprecated
-package still ships a real compatibility re-export to its replacement (as
-`@vespeneventures/catalog` does, forwarding to
-`@vespeneventures/controller/catalog`); `false` means it does not (as
-`@vespeneventures/tokens` and `@vespeneventures/voice` do not — their
-consolidation removed the source package entirely with no re-export left
-behind, so importing either name is an immediate break, not a deprecation
-warning). A `retired` entry may also declare it — always `false`, since a
+package still ships a real compatibility re-export to its replacement;
+`false` means it does not, so importing the old name is an immediate break,
+not a deprecation warning. A `retired` entry may also declare it — always
+`false`, since a
 retired package is by definition no longer installable from this workspace —
 but is not required to, since that is already implied by the status itself.
 It is rejected on any non-terminal status; declaring it early makes no sense
@@ -1703,8 +1672,8 @@ subpath, so there is nothing left outside this package to depend on.
 TypeScript is declared an **optional** peer dependency again
 (`peerDependencies: { typescript: "~6.0.0" }` +
 `peerDependenciesMeta: { typescript: { optional: true } }`) — the same
-shape `@vespeneventures/auth` uses for its own optional peers such as
-`svix`. This flag has flipped twice, and both changes were correct for
+shape the former `@vespeneventures/auth` package used for optional peers such
+as `svix`. This flag has flipped twice, and both changes were correct for
 their own moment:
 
 - It was originally optional. Issue #411 found that flag dishonest:
@@ -1736,11 +1705,8 @@ manifest declaration.
 A plain `import "@vespeneventures/controller"` (the root entry) still never
 loads TypeScript at runtime: `runGovernanceCheck` and
 `preflightGovernedPackage` import the specific foundation/build-order
-functions they need directly, never a barrel. Each of the five
-compatibility shims that depend on `@vespeneventures/governance` (which
-forwards here — see "Migrating from compatibility packages" above) and only
-ever touch the root install and run without a compiler on their account, as
-they always have. **Breaking change:** if you were importing the
+functions they need directly, never a barrel. **Breaking change:** if you
+were importing the
 source-aware secret-surface checks (`checkCredentialInventory`,
 `checkSecretReadiness`, `checkLocalSecretFiles`, `checkValueFreeSecretCatalog`,
 `checkProviderResourceNames`, `checkSecretName`, `detectRawSecretReads`,
