@@ -616,7 +616,7 @@ export function renderLifecyclePositionTable({ contract, results }) {
   const rows = [
     LIFECYCLE_POSITION_START,
     "",
-    "| package | declared state | staged here | grounded |",
+    "| package | current position | staged here | grounded |",
     "| --- | --- | --- | --- |",
   ];
   for (const result of results) {

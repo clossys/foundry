@@ -27,6 +27,7 @@ export {
   POSITION_FIELDS,
   POSITION_RECOMMENDATIONS,
   WORKER_COMPONENT_KINDS,
+  validateInstalledPositionContract,
   validateInstalledPositionLedger,
 } from "./positions/index.js";
 export type { InstalledPositionFinding, InstalledPositionLedgerReport } from "./positions/index.js";

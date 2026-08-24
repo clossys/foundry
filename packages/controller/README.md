@@ -111,8 +111,9 @@ separately versioned packages.
 | `@vespeneventures/controller/policy` | The content-addressed `PolicyBinding` primitive: compute a digest, validate a binding's shape, verify a binding against materialized content. Zero I/O, zero dependency of its own — the primitive `./gates` and `./artifacts` bind rules and artifacts to documents with, without ever committing the document itself. |
 
 `@vespeneventures/controller/positions` exports
-`validateInstalledPositionLedger`, `POSITION_FIELDS`,
-`POSITION_RECOMMENDATIONS`, and `WORKER_COMPONENT_KINDS`. Its
+`validateInstalledPositionLedger`, `validateInstalledPositionContract`,
+`POSITION_FIELDS`, `POSITION_RECOMMENDATIONS`, and `WORKER_COMPONENT_KINDS`.
+Its
 `InstalledPositionFinding` and `InstalledPositionLedgerReport` types expose a
 pure result: callers decide how to store, render, or act on it.
 
