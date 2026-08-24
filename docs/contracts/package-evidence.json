@@ -14,7 +14,7 @@
     },
     {
       "name": "@vespeneventures/architect",
-      "state": "staged",
+      "state": "published",
       "stagedBy": {
         "run": "LOCAL fixture run, not a CI run — after building `packages/architect`, `node scripts/stage-architect.mjs` ran the compiled CLI. The topology red exited 1 violated and its control exited 0 satisfied; the exception red exited 1 violated, its control exited 0 satisfied, and the no-observation case exited 2 indeterminate. The script finished `Architect fixture evidence: topology and exception judgments discriminated, and absent evidence stayed indeterminate.` 2026-08-23.",
         "defectOrigin": "injected",
@@ -114,7 +114,7 @@
     },
     {
       "name": "@vespeneventures/influencer",
-      "state": "staged",
+      "state": "published",
       "stagedBy": {
         "run": "LOCAL fixture run, not a CI run — after `npm run build --workspace=packages/influencer`, `node scripts/stage-influencer.mjs` ran the compiled `response-yield` CLI. One qualified response from 2,000 eligible exposures exited 1 violated at a setpoint of 2 per thousand; five responses from the same exposure count exited 0 satisfied; and an unreadable response source exited 2 indeterminate. The script finished `Influencer fixture evidence: response yield discriminated, and unreadable outcome evidence stayed indeterminate.` 2026-08-23.",
         "defectOrigin": "injected",
@@ -156,7 +156,7 @@
     },
     {
       "name": "@vespeneventures/messenger",
-      "state": "staged",
+      "state": "published",
       "stagedBy": {
         "run": "LOCAL fixture run, not a CI run — after `npm run build --workspace=packages/messenger`, `node scripts/stage-messenger.mjs` ran the compiled `delivery-closure` CLI. A due sample with one missing outcome exited 1 violated, its otherwise equivalent fully delivered control exited 0 satisfied, and a nonempty sample with no intent due exited 2 indeterminate. The script finished `Messenger fixture evidence: delivery closure discriminated, and no due intent stayed indeterminate.` 2026-08-23.",
         "defectOrigin": "injected",

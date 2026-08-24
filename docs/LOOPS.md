@@ -2,7 +2,7 @@
 
 The canonical role-package matrix is
 [`contracts/role-loop-archetypes.json`](contracts/role-loop-archetypes.json).
-Despite its retained filename, schema version 3 has no separate archetype
+Despite its retained filename, schema version 4 has no separate archetype
 concept. A role declares one primary **mode**, optional secondary modes, one
 owned metric, one durable boundary, and one job question. The checker is
 `npm run check:role-loop-archetypes`.
@@ -42,28 +42,39 @@ The package charter is durable. It answers:
 - which one controllable metric it owns, including formula, unit and direction;
 - which loop mode is primary;
 - which responsibilities the package owns and explicitly excludes.
+- which external measurement satisfies its `closeCondition`.
 
-An installation binds that charter to one consumer. Every consumer supplies:
+An installed position binds that charter to one consumer. Every consumer
+supplies, in its own position record:
 
-1. `businessMetricNode`
+1. `businessMetricPath` — explicit L1 business value, L2 northstar, and L3
+   operating metric;
 2. `causalHypothesis`
-3. `setpoint`
-4. `authority`
-5. `evidenceSource`
-6. `budget`
-7. `guardrails`
-8. `escalationPath`
+3. `baseline`
+4. `setpoint`
+5. `operatingScope`
+6. `authority`
+7. `evidenceSource`
+8. `cadence`
+9. `budget`
+10. `guardrails`
+11. `escalationPath`
+12. `workerComponents`
+13. `stageBindings` — one consumer activity for each universal loop stage.
 
-Installing a package does not supply these values and does not prove adoption.
-The runtime worker may combine deterministic code, model decisions, human
-approval, and provider integrations; that mix is an implementation choice
-inside the installed position, not another package classification.
+The joined first-day assessment records the position's baseline once plus its
+gaps, target state, open questions, critical path, deferred work,
+recommendation, and evidence references. Installing a package does not supply
+these values and does not prove adoption. The runtime worker may combine
+deterministic code, model decisions, human approval, and provider
+integrations; that mix is an implementation choice inside the installed
+position, not another package classification.
 
 ## One owned metric
 
 Every role entry has exactly one `metric` object. The finite unit vocabulary is
 `ratio`, `count`, `duration`, `currency`, and `rate`; the direction is exactly
-`increase` or `decrease`. Diagnostic measurements may still exist in package
+`increase`, `decrease`, `maintain`, or `target-range`. Diagnostic measurements may still exist in package
 APIs, but they do not become second owned metrics. Metric names must be unique
 across roles so two packages cannot silently claim the same operating outcome.
 

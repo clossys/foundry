@@ -8,12 +8,7 @@ The architect role for provider-neutral operating architecture. It answers:
 The package defines business and portfolio scopes, systems, responsibilities,
 authoritative ownership, systems of record, and directional interfaces. It
 then assesses independent change observations against that declared topology.
-It performs no network I/O and has no runtime dependencies. Version `0.1.0`
-is currently an incubating source package in this repository; it is not yet a
-published install target.
-
-After the package completes its release evidence and is published, install it
-with:
+It performs no network I/O and has no runtime dependencies. Install it with:
 
 ```bash
 npm install @vespeneventures/architect

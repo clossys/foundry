@@ -99,6 +99,7 @@ separately versioned packages.
 | `@vespeneventures/controller/gates/secrets` | Source-aware secret-surface gates: credential inventory, provider-resource naming, local secret files, and raw-secret-read AST detection. Requires `typescript` — install it to use this subpath; `./gates` itself does not need it. **Breaking change from earlier versions:** these exports used to live on `./gates` directly; import them from here instead. |
 | `@vespeneventures/controller/release` | Isolated packed-artifact and installed-import proof. |
 | `@vespeneventures/controller/repository` | Consumer-owned repository profiles, upward requirements, exact-root declarations, pure evaluation, `repository-check`, and the full runner (`runRepositoryProfileCheck` / `repository-profile-check`). |
+| `@vespeneventures/controller/positions` | Pure installed-position ledger validation. `foundry-position-check <ledger.json> [role-contract.json]` defaults to the immutable shipped role contract and rejects a supplied contract that differs. It requires an explicit `open` or `not-applicable` disposition for every active role, complete records for open positions, and one consumer activity for each loop stage. A setpoint inherits its role metric direction: `target-range` uses an ordered numeric pair; every other direction uses one finite number. It infers no adoption, grounding, or closure. |
 | `@vespeneventures/controller/review` | Provider-neutral review evidence contracts, validation, and `review-check`. |
 | `@vespeneventures/controller/review/github` | Pure normalization of caller-provided GitHub-shaped review evidence. |
 | `@vespeneventures/controller/artifacts` | Deterministic, fail-closed verification for a consumer-owned governed artifact: declared kind + schema version, exact-content checksum, and structural provenance. |
@@ -108,6 +109,12 @@ separately versioned packages.
 | `@vespeneventures/controller/conventions/documents/*` | The shipped convention documents themselves (`branch-provenance.md`, `skill-grammar.md`, `agent-interoperability.md`, `routine-declaration.md`, `schedule-declaration.md`, `live-state-reconciliation.md`, `skill-registry.md`, `machine-guidance.md`, `machine-baseline.md`, `gate-naming.md`, `runner-conventions.md`) as real files a provisioning step can copy or template onto a machine. |
 | `@vespeneventures/controller/conventions/adapters/*` | The shipped adapter files (`agent-policy.rules`, `shell-integration.zsh`, `branch-provenance-hook.sh`, `heavy-cmd-hook.sh`, `scoped-main-push.sh`, `workspace-shell.zsh`) as real files, same shape as the documents above. |
 | `@vespeneventures/controller/policy` | The content-addressed `PolicyBinding` primitive: compute a digest, validate a binding's shape, verify a binding against materialized content. Zero I/O, zero dependency of its own — the primitive `./gates` and `./artifacts` bind rules and artifacts to documents with, without ever committing the document itself. |
+
+`@vespeneventures/controller/positions` exports
+`validateInstalledPositionLedger`, `POSITION_FIELDS`,
+`POSITION_RECOMMENDATIONS`, and `WORKER_COMPONENT_KINDS`. Its
+`InstalledPositionFinding` and `InstalledPositionLedgerReport` types expose a
+pure result: callers decide how to store, render, or act on it.
 
 ### `./artifacts`: governed artifact verification
 

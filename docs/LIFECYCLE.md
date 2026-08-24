@@ -274,7 +274,7 @@ fails when the committed copy drifts from the derived one — #493.
 | package | declared state | staged here | grounded |
 | --- | --- | --- | --- |
 | `@vespeneventures/controller` | published | yes | unknown — #484 |
-| `@vespeneventures/architect` | staged | yes | unknown — #484 |
+| `@vespeneventures/architect` | published | yes | unknown — #484 |
 | `@vespeneventures/inspector` | published | yes | unknown — #484 |
 | `@vespeneventures/builder` | published | yes | unknown — #484 |
 | `@vespeneventures/locksmith` | published | yes | unknown — #484 |
@@ -284,17 +284,17 @@ fails when the committed copy drifts from the derived one — #493.
 | `@vespeneventures/writer` | published | yes | unknown — #484 |
 | `@vespeneventures/designer` | published | yes | unknown — #484 |
 | `@vespeneventures/publisher` | published | yes | unknown — #484 |
-| `@vespeneventures/influencer` | staged | yes | unknown — #484 |
-| `@vespeneventures/strategy` | published | yes | unknown — #484 |
-| `@vespeneventures/copy` | published | yes | unknown — #484 |
-| `@vespeneventures/ui` | published | yes | unknown — #484 |
-| `@vespeneventures/surface` | published | yes | unknown — #484 |
-| `@vespeneventures/ledger` | published | yes | unknown — #484 |
-| `@vespeneventures/auth` | published | yes | unknown — #484 |
-| `@vespeneventures/consent` | published | yes | unknown — #484 |
-| `@vespeneventures/comms` | published | yes | unknown — #484 |
-| `@vespeneventures/messenger` | staged | yes | unknown — #484 |
-| `@vespeneventures/domain` | published | yes | unknown — #484 |
+| `@vespeneventures/influencer` | published | yes | unknown — #484 |
+| `@vespeneventures/strategy` | retired | yes | unknown — #484 |
+| `@vespeneventures/copy` | retired | yes | unknown — #484 |
+| `@vespeneventures/ui` | retired | yes | unknown — #484 |
+| `@vespeneventures/surface` | retired | yes | unknown — #484 |
+| `@vespeneventures/ledger` | retired | yes | unknown — #484 |
+| `@vespeneventures/auth` | retired | yes | unknown — #484 |
+| `@vespeneventures/consent` | retired | yes | unknown — #484 |
+| `@vespeneventures/comms` | retired | yes | unknown — #484 |
+| `@vespeneventures/messenger` | published | yes | unknown — #484 |
+| `@vespeneventures/domain` | retired | yes | unknown — #484 |
 | `@vespeneventures/bouncer` | published | yes | unknown — #484 |
 | `@vespeneventures/butler` | published | yes | unknown — #484 |
 | `@vespeneventures/giver` | published | yes | unknown — #484 |
@@ -304,7 +304,7 @@ fails when the committed copy drifts from the derived one — #493.
 
 Two claims about position are structural rather than counted, and survive:
 
-**No package in any program has independent grounding evidence.** *Grounded*
+**No package in this catalogue has independent grounding evidence.** *Grounded*
 is not merely zero, it is unmeasured: this repository has not connected an
 independent measurer to host-owned outcome records. `observer` can read
 conformance catch and escape outcomes, while other control shapes need their
