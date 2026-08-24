@@ -7,14 +7,15 @@
     },
     {
       "name": "@vespeneventures/auth",
-      "status": "deprecated",
+      "status": "retired",
       "replacement": {
         "name": "@vespeneventures/bouncer",
         "range": "^0.1.0"
       },
       "deprecatedOn": "2026-08-22",
-      "decision": "https://github.com/vespeneventures/foundry/issues/458",
-      "migration": "docs/DECISIONS.md#program-c-donor-migration",
+      "retiredOn": "2026-08-24",
+      "decision": "https://github.com/vespeneventures/foundry/issues/464",
+      "migration": "docs/DECISIONS.md#16-completing-the-role-donor-cutover",
       "forwardsToReplacement": false
     },
     {
@@ -44,18 +45,28 @@
     },
     {
       "name": "@vespeneventures/comms",
-      "status": "published"
+      "status": "retired",
+      "replacement": {
+        "name": "@vespeneventures/messenger",
+        "range": "^0.1.0"
+      },
+      "deprecatedOn": "2026-08-24",
+      "retiredOn": "2026-08-24",
+      "decision": "https://github.com/vespeneventures/foundry/issues/464",
+      "migration": "docs/DECISIONS.md#16-completing-the-role-donor-cutover",
+      "forwardsToReplacement": false
     },
     {
       "name": "@vespeneventures/consent",
-      "status": "deprecated",
+      "status": "retired",
       "replacement": {
         "name": "@vespeneventures/butler",
         "range": "^0.1.0"
       },
       "deprecatedOn": "2026-08-22",
-      "decision": "https://github.com/vespeneventures/foundry/issues/458",
-      "migration": "docs/DECISIONS.md#program-c-donor-migration",
+      "retiredOn": "2026-08-24",
+      "decision": "https://github.com/vespeneventures/foundry/issues/464",
+      "migration": "docs/DECISIONS.md#16-completing-the-role-donor-cutover",
       "forwardsToReplacement": false
     },
     {
@@ -107,19 +118,28 @@
     },
     {
       "name": "@vespeneventures/domain",
-      "status": "published"
+      "status": "retired",
+      "replacement": {
+        "name": "@vespeneventures/architect",
+        "range": "^0.1.0"
+      },
+      "deprecatedOn": "2026-08-24",
+      "retiredOn": "2026-08-24",
+      "decision": "https://github.com/vespeneventures/foundry/issues/464",
+      "migration": "docs/DECISIONS.md#16-completing-the-role-donor-cutover",
+      "forwardsToReplacement": false
     },
     {
       "name": "@vespeneventures/domain-model",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/domain",
-        "range": "^0.2.0"
+        "name": "@vespeneventures/architect",
+        "range": "^0.1.0"
       },
       "deprecatedOn": "2026-08-11",
       "retiredOn": "2026-08-11",
       "decision": "docs/DECISIONS.md",
-      "migration": "packages/domain/README.md#migration"
+      "migration": "packages/architect/README.md"
     },
     {
       "name": "@vespeneventures/gates",

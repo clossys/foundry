@@ -144,48 +144,15 @@
     },
     {
       "name": "@vespeneventures/auth",
-      "state": "published",
-      "shipsNoGate": {
-        "issue": 464,
-        "reason": "Deprecated donor to the published `bouncer` role -- who you are, what you can do, and how that changes. The role now owns the gate; this retained package has none and remains installable only while consumers migrate under issue #464."
-      },
-      "gaps": [
-        {
-          "state": "staged",
-          "reason": "zero dist-path invocation sites in this repository: this package has never been executed against a real tree by its own author",
-          "issue": 466
-        }
-      ]
+      "state": "published"
     },
     {
       "name": "@vespeneventures/consent",
-      "state": "published",
-      "shipsNoGate": {
-        "issue": 464,
-        "reason": "Deprecated donor to the published `butler` and `giver` roles. The roles now own the gate and enforcement split; this retained package has none and remains installable only while consumers migrate under issue #464."
-      },
-      "gaps": [
-        {
-          "state": "staged",
-          "reason": "zero dist-path invocation sites in this repository: this package has never been executed against a real tree by its own author",
-          "issue": 466
-        }
-      ]
+      "state": "published"
     },
     {
       "name": "@vespeneventures/comms",
-      "state": "published",
-      "shipsNoGate": {
-        "issue": 464,
-        "reason": "Published donor to the incubating `messenger` transport role, with inbound person-request admission owned by `butler`. It has no command of its own; issue #464 tracks publication-first migration and measured consumer unpinning."
-      },
-      "gaps": [
-        {
-          "state": "staged",
-          "reason": "zero dist-path invocation sites in this repository: the published donor has never been executed against a real tree by its own author, and its replacement role is separate source",
-          "issue": 464
-        }
-      ]
+      "state": "published"
     },
     {
       "name": "@vespeneventures/messenger",
@@ -199,18 +166,7 @@
     },
     {
       "name": "@vespeneventures/domain",
-      "state": "published",
-      "shipsNoGate": {
-        "issue": 527,
-        "reason": "Published ontology donor retained while consumers move to the unpublished `architect` role. It has no command of its own; issue #527 tracks the role recut and migration rather than granting a permanent exemption."
-      },
-      "gaps": [
-        {
-          "state": "staged",
-          "reason": "zero dist-path invocation sites in this repository: the published donor has never been executed against a real tree by its own author, and the replacement role is separate source",
-          "issue": 527
-        }
-      ]
+      "state": "published"
     },
     {
       "name": "@vespeneventures/bouncer",

@@ -31,12 +31,12 @@ registry-side gap, not a defect in what these packages publish — see
 confirming evidence and [docs/DECISIONS.md](DECISIONS.md#a-standing-property-of-that-registry-optional-peers-install-as-required)
 for the decision to document rather than restructure packages around it.
 
-Six packages are affected, all six in the table below: `ui` (six
-optional peers), `auth` (five), `surface` (`react`/`react-dom`), `comms`
-(`resend`), `controller` (`typescript`), and `consent`
+Seven active packages are affected: `bouncer` (five optional peers), `butler`
+(`react`/`react-dom`), `controller` (`typescript`), `designer` (six), `keeper`
+(`react`/`react-dom`), `messenger` (`resend`), and `publisher`
 (`react`/`react-dom`). Installing any one of them pulls
 in its full declared peer set, regardless of which subpath is actually
-imported — a consumer wanting only `ui`'s token CSS, or only `comms`'s
+imported — a consumer wanting only designer's token CSS, or only messenger's
 provider-neutral root, gets React, Tailwind, or `resend` installed anyway.
 Each affected package's own README states the consequence specific to that
 package; this entry exists so the pattern is visible before an install is
@@ -53,26 +53,16 @@ registry and is closed. After qualification,
 a consumer installs only the subset it needs through authenticated GitHub
 Packages access.
 
-`@vespeneventures/architect` is not in this table because it is incubating
-source, not a published adoption target. Its `./ontology` surface is the
-planned home of the current domain API; consumers continue to install
-`@vespeneventures/domain` until an exact published replacement and migration
-are proved. The donor is not deprecated merely because equivalent replacement
-source exists; publication comes before direct migration.
-
-`@vespeneventures/messenger` is likewise incubating source rather than a
-published adoption target. Consumers keep their exact
-`@vespeneventures/comms` version and existing transport wiring until messenger
-is published first and the direct migration is proved. Source availability is
-not authorization to deprecate the donor.
+Architect, Messenger, and Influencer are public at `0.1.0`. The former `domain`
+and `comms` donors have been retired; adoption targets the role packages only.
 
 | Capability | Package or subpath | Consumer-owned remainder |
 | --- | --- | --- |
-| Authorization primitives | `@vespeneventures/auth` | Principals, grants, policy values, provider clients, and enforcement wiring. |
+| Authorization judgment | `@vespeneventures/bouncer` | Principals, grants, policy values, provider clients, and enforcement wiring. |
 | Rule grammar and package-process governance | `@vespeneventures/controller` and its focused subpaths | Bound documents, storage, and materialization; plane overlays, prefixes, repository inventory, skill bodies, and routine tempo; profile, requirement, preference, supply, decision, exception, scope, provenance, and effective values; all discovery, provider I/O, and any resulting machine mutation. |
-| Published ontology donor | `@vespeneventures/domain` | Product-owned types, vocabularies, relations, and migrations; architect publication and direct migration remain issue #527 work. |
+| Business ontology and repository topology | `@vespeneventures/architect` | Product-owned entities, relations, migration authority, provider topology, and implementation approval. |
 | Manifest, deployment, and toolchain reconciliation | `@vespeneventures/builder` | Installation manifest, destinations, adapters, and mutation approval; provider credentials, topology, environment choices, and remediation. |
-| Finished-message transport donor | `@vespeneventures/comms` | Existing consumers retain their exact version; messenger publication, direct migration, and measured unpinning remain issue #464 work. Recipients, sender identity, templates, authorization, storage, routes, and provider configuration remain consumer-owned. |
+| Finished-message transport | `@vespeneventures/messenger` | Recipients, sender identity, templates, authorization, storage, routes, and provider configuration remain consumer-owned. |
 | Key custody and rotation | `@vespeneventures/locksmith` | Secret catalog, aliases, provider resources, credential references, grants, rotation policy, and any actual key rotation or revocation call. |
 | Change verdict and secret scanning | `@vespeneventures/inspector` | CI workflow wiring, required-check configuration, and any resulting branch-protection action. |
 | Visual system | `@vespeneventures/ui` | Product theme choices, compositions, and application wiring. |
@@ -80,7 +70,7 @@ not authorization to deprecate the donor.
 | Copy validation | `@vespeneventures/copy` | Voice, glossary, claims, templates, and approved words. |
 | Channel surfaces | `@vespeneventures/surface` | Routes, build adapters, deployment, and publishing. |
 | Outcome ledger | `@vespeneventures/ledger` | Durable storage, current fact values, channel delivery, and operational follow-up. |
-| Consent record core | `@vespeneventures/consent` | Cookie or localStorage adapters, a database client, analytics or tag-manager integration, jurisdiction logic, and banner copy or legal compliance decisions. |
+| Current person instructions and owed delivery | `@vespeneventures/butler` and `@vespeneventures/giver` | Storage adapters, analytics integration, jurisdiction logic, content, and legal decisions remain consumer-owned. |
 | Plane self-entitlement reconciliation | `@vespeneventures/integrator` | Entitlement declaration, manifest and lockfile content, registry transport, and any resulting install or removal action. |
 | Telemetry and gate-efficacy measurement | `@vespeneventures/observer` | Event log storage, provider transport, gate wiring, and any resulting branch-protection action. |
 
