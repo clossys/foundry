@@ -3,6 +3,13 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.1] - 2026-08-24
+
+### Fixed
+
+- Updated README guidance to active Publisher and Writer packages after the
+  predecessor packages retired.
+
 ## [0.2.0] - 2026-08-21
 
 ### Added
@@ -110,6 +117,10 @@ reader who arrives at this package first.
   is unchanged from the donor.
 
 ### Not included
+
+> **Current lifecycle note:** `@vespeneventures/ui` is now retired. This
+> release note records its state at 0.1.0; the lifecycle contract is the
+> authority for current availability.
 
 - **No forwarding stub in the donor.** `@vespeneventures/ui` is
   deprecated-and-retained: still installable for a consumer already pinned to

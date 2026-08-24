@@ -764,7 +764,7 @@ four times across this account family with no channel between the copies —
 a fix discovered in one copy had no way to reach the other three. #257 asks
 for that mechanism to live in one place, shipped as **importable machinery a
 consumer's own thin workflow invokes** — the shape
-`@vespeneventures/verify-standards` already proves — rather than as a
+`@vespeneventures/inspector` now provides — rather than as a
 cross-repository reusable workflow reference. A `uses:` pointing at another
 account's workflow or action is not the sanctioned exception this account
 family's cross-account boundary rule allows; a downstream package depending
@@ -774,7 +774,7 @@ on an upstream package is, and that is what this subpath ships.
 values into one `0`/`1`/`2` exit-code verdict (`foldLiveStateReports`), plus a
 minimum-safe-version staleness floor (`checkVersionFloor`) that gives a caller
 running a pre-fix build the same "you are behind" signal
-`@vespeneventures/verify-standards` already ships, not merely a changelog
+`@vespeneventures/inspector` provides, not merely a changelog
 entry someone may or may not read — and the concrete gate built on both:
 `builder-verify-toolchain`, an installed CLI a consuming repository's own
 thin GitHub Actions workflow runs. See

@@ -1,8 +1,7 @@
 # `@vespeneventures/influencer`
 
 Influencer operates a declared organization or product presence and improves
-independently verified qualified audience response. This package is currently
-**source-only and unpublished**.
+independently verified qualified audience response.
 
 The durable job question is:
 

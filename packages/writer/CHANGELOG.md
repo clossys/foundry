@@ -3,6 +3,12 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.1] - 2026-08-24
+
+### Fixed
+
+- Added a current lifecycle note to the historical donor availability record.
+
 ## [0.3.0] - 2026-08-21
 
 ### Added — the passage layer (issue #373)
@@ -160,6 +166,11 @@ a reader who arrives at this package first.
   self-references to `@vespeneventures/strategy`.
 
 ### On the donor, and why it is not deprecated yet
+
+> **Current lifecycle note:** `@vespeneventures/copy` and
+> `@vespeneventures/surface` are now retired. This release note records their
+> state at 0.1.0; the lifecycle contract is the authority for current
+> availability.
 
 `@vespeneventures/copy` stays `published` for now. It cannot be marked
 deprecated while `@vespeneventures/surface` still declares it as a runtime
