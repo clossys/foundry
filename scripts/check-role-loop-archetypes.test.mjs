@@ -6,88 +6,179 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
-import { ARCHETYPES, LOOP_GRAMMAR, ROLE_ARCHETYPES, deriveRolePackages, evaluateRoleLoopArchetypes } from "./check-role-loop-archetypes.mjs";
+import {
+  CONSUMER_BINDINGS,
+  METRIC_DIRECTIONS,
+  METRIC_UNITS,
+  MODE_NAMES,
+  QUALIFICATION_VERDICTS,
+  UNIVERSAL_STAGES,
+  evaluateRoleLoopArchetypes,
+  qualifyRoleCandidate,
+} from "./check-role-loop-archetypes.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const script = join(repoRoot, "scripts/check-role-loop-archetypes.mjs");
 const roleContractPath = join(repoRoot, "docs/contracts/role-loop-archetypes.json");
-const programsContractPath = join(repoRoot, "docs/contracts/package-programs.json");
 
 function read(path) {
   return JSON.parse(execFileSync(process.execPath, ["-e", `process.stdout.write(require('fs').readFileSync(${JSON.stringify(path)}, 'utf8'))`], { encoding: "utf8" }));
 }
 
 function rules(result) {
-  return result.findings.map((finding) => finding.rule);
+  return result.findings.map((item) => item.rule);
 }
 
-test("the normalized grammar, archetypes, and expected role mapping are fixed", () => {
-  assert.deepEqual(LOOP_GRAMMAR, [
-    "subjectOrAddressee",
-    "authoritativeSetpoint",
-    "actualObservation",
-    "ternaryJudgment",
-    "correctionOrHandoff",
-    "independentOutcome",
-    "cadenceAndCloseCondition",
-  ]);
-  assert.deepEqual(Object.keys(ARCHETYPES), ["conformance-gate", "reconciliation", "actuation-provisioning", "confirmation-interaction", "custody-lifecycle", "observation-learning"]);
-  assert.equal(Object.keys(ROLE_ARCHETYPES).length, 14);
+function candidateAssessment(overrides = {}) {
+  return {
+    schemaVersion: 1,
+    candidate: {
+      name: "@example/operator",
+      jobQuestion: "Did the proposed operation move its one owned metric?",
+      metric: {
+        name: "verified operation rate",
+        formula: "verified qualified outcomes / all eligible opportunities",
+        unit: "rate",
+        direction: "increase",
+      },
+      primaryMode: "optimize",
+      secondaryModes: ["fulfill"],
+      boundary: {
+        owns: "One bounded outcome loop.",
+        excludes: ["adjacent worker capabilities", "self-authorized mutation"],
+      },
+    },
+    sameJobMetricLoopCoverage: [],
+    rejectionReasons: [],
+    ...overrides,
+  };
+}
+
+function coverage(role) {
+  return {
+    role,
+    jobEvidence: "The current role already answers the same material job question.",
+    metricEvidence: "The current role already owns the same metric and direction.",
+    loopClosureEvidence: "The current role already senses, judges, acts, verifies, and learns or escalates for this outcome.",
+  };
+}
+
+test("the canonical stages, bindings, modes, metric vocabulary, and verdict vocabulary are finite", () => {
+  assert.deepEqual(UNIVERSAL_STAGES, ["sense", "judge", "act", "verify", "learnOrEscalate"]);
+  assert.deepEqual(CONSUMER_BINDINGS, ["businessMetricNode", "causalHypothesis", "setpoint", "authority", "evidenceSource", "budget", "guardrails", "escalationPath"]);
+  assert.deepEqual(MODE_NAMES, ["assure", "reconcile", "fulfill", "interact", "steward", "optimize"]);
+  assert.deepEqual(METRIC_UNITS, ["ratio", "count", "duration", "currency", "rate"]);
+  assert.deepEqual(METRIC_DIRECTIONS, ["increase", "decrease"]);
+  assert.deepEqual(QUALIFICATION_VERDICTS, ["create", "extend", "compose", "reject"]);
 });
 
-test("Programs A, B, and C derive exactly the 14 roles, excluding donors and foundation", () => {
-  const { packages, findings } = deriveRolePackages(read(programsContractPath));
-  assert.deepEqual(findings, []);
-  assert.deepEqual([...packages].sort(), Object.keys(ROLE_ARCHETYPES).sort());
-});
-
-test("the repository contract passes, while order, archetype, role, and secondary defects fail", () => {
+test("the repository contract passes and rejects incomplete or duplicate role charters", () => {
   const contract = read(roleContractPath);
-  const programsContract = read(programsContractPath);
-  assert.deepEqual(rules(evaluateRoleLoopArchetypes({ contract, programsContract })), []);
+  assert.deepEqual(rules(evaluateRoleLoopArchetypes({ contract })), []);
 
-  const wrongGrammar = structuredClone(contract);
-  wrongGrammar.loopGrammar.reverse();
-  assert.equal(rules(evaluateRoleLoopArchetypes({ contract: wrongGrammar, programsContract })).includes("loop-grammar-mismatch"), true);
+  const wrongBindings = structuredClone(contract);
+  wrongBindings.consumerBindings.reverse();
+  assert.equal(rules(evaluateRoleLoopArchetypes({ contract: wrongBindings })).includes("consumer-bindings-mismatch"), true);
 
-  const wrongPhases = structuredClone(contract);
-  wrongPhases.archetypes.reconciliation.phases.reverse();
-  assert.equal(rules(evaluateRoleLoopArchetypes({ contract: wrongPhases, programsContract })).includes("archetype-phases-mismatch"), true);
+  const missingStage = structuredClone(contract);
+  delete missingStage.modes.optimize.stageActivities.verify;
+  assert.equal(rules(evaluateRoleLoopArchetypes({ contract: missingStage })).includes("mode-stage-coverage"), true);
 
-  const missingRole = structuredClone(contract);
-  delete missingRole.roles["@vespeneventures/keeper"];
-  assert.equal(rules(evaluateRoleLoopArchetypes({ contract: missingRole, programsContract })).includes("role-coverage-mismatch"), true);
+  const emptyFormula = structuredClone(contract);
+  emptyFormula.roles["@vespeneventures/architect"].metric.formula = "";
+  assert.equal(rules(evaluateRoleLoopArchetypes({ contract: emptyFormula })).includes("invalid-metric-formula"), true);
 
-  const duplicateSecondary = structuredClone(contract);
-  duplicateSecondary.roles["@vespeneventures/builder"].secondary = ["reconciliation", "reconciliation"];
-  const duplicateRules = rules(evaluateRoleLoopArchetypes({ contract: duplicateSecondary, programsContract }));
-  assert.equal(duplicateRules.includes("duplicate-secondary-archetype"), true);
-  assert.equal(duplicateRules.includes("secondary-mapping-mismatch"), true);
+  const invalidDirection = structuredClone(contract);
+  invalidDirection.roles["@vespeneventures/architect"].metric.direction = "maintain";
+  assert.equal(rules(evaluateRoleLoopArchetypes({ contract: invalidDirection })).includes("invalid-metric-direction"), true);
+
+  const duplicateMetric = structuredClone(contract);
+  duplicateMetric.roles["@vespeneventures/controller"].metric.name = duplicateMetric.roles["@vespeneventures/architect"].metric.name;
+  assert.equal(rules(evaluateRoleLoopArchetypes({ contract: duplicateMetric })).includes("duplicate-owned-metric"), true);
+
+  const unknownMode = structuredClone(contract);
+  unknownMode.roles["@vespeneventures/controller"].primaryMode = "advice";
+  assert.equal(rules(evaluateRoleLoopArchetypes({ contract: unknownMode })).includes("invalid-primary-mode"), true);
 });
 
-test("the CLI fails closed for unreadable data and exits 1 for readable contract defects", () => {
-  const dir = mkdtempSync(join(tmpdir(), "role-loops-"));
+test("candidate qualification returns create, extend, compose, and reject without inferring composition from adjacency", () => {
+  const contract = read(roleContractPath);
+
+  const create = qualifyRoleCandidate({ assessment: candidateAssessment(), contract });
+  assert.deepEqual(create, { verdict: "create", validAssessment: true, relatedRoles: [], reasons: [] });
+
+  const extend = qualifyRoleCandidate({
+    assessment: candidateAssessment({ sameJobMetricLoopCoverage: [coverage("@vespeneventures/observer")] }),
+    contract,
+  });
+  assert.equal(extend.verdict, "extend");
+
+  const compose = qualifyRoleCandidate({
+    assessment: candidateAssessment({
+      sameJobMetricLoopCoverage: [coverage("@vespeneventures/observer"), coverage("@vespeneventures/publisher")],
+    }),
+    contract,
+  });
+  assert.equal(compose.verdict, "compose");
+
+  const rejectedByJudgment = qualifyRoleCandidate({
+    assessment: candidateAssessment({ rejectionReasons: ["The proposed boundary gives the package authority to grade its own evidence."] }),
+    contract,
+  });
+  assert.equal(rejectedByJudgment.verdict, "reject");
+  assert.equal(rejectedByJudgment.validAssessment, true);
+
+  const structurallyRejected = candidateAssessment();
+  structurallyRejected.candidate.metric.formula = "";
+  const reject = qualifyRoleCandidate({ assessment: structurallyRejected, contract });
+  assert.equal(reject.verdict, "reject");
+  assert.equal(reject.validAssessment, false);
+});
+
+test("same-job coverage requires job, metric, and loop-closure evidence from current roles", () => {
+  const contract = read(roleContractPath);
+  const assessment = candidateAssessment({
+    sameJobMetricLoopCoverage: [{
+      role: "@vespeneventures/observer",
+      jobEvidence: "Observer is adjacent and may supply evidence.",
+      metricEvidence: "",
+      loopClosureEvidence: "",
+    }],
+  });
+  const result = qualifyRoleCandidate({ assessment, contract });
+  assert.equal(result.verdict, "reject");
+  assert.equal(result.validAssessment, false);
+  assert.equal(result.reasons.some((reason) => reason.includes("invalid-same-job-coverage")), true);
+});
+
+test("the CLI fails closed for unreadable data and exits 1 for readable defects", () => {
+  const dir = mkdtempSync(join(tmpdir(), "role-qualification-"));
   try {
     assert.throws(
-      () => execFileSync(process.execPath, [script, join(dir, "missing.json"), programsContractPath], { cwd: repoRoot, stdio: "pipe" }),
+      () => execFileSync(process.execPath, [script, join(dir, "missing.json")], { cwd: repoRoot, stdio: "pipe" }),
       (error) => error.status === 2,
     );
 
     const malformed = join(dir, "malformed.json");
-    writeFileSync(malformed, JSON.stringify({ schemaVersion: 1 }));
+    writeFileSync(malformed, JSON.stringify({ schemaVersion: 3 }));
     assert.throws(
-      () => execFileSync(process.execPath, [script, malformed, programsContractPath], { cwd: repoRoot, stdio: "pipe" }),
+      () => execFileSync(process.execPath, [script, malformed], { cwd: repoRoot, stdio: "pipe" }),
       (error) => error.status === 2,
     );
 
     const wrong = read(roleContractPath);
-    wrong.roles["@vespeneventures/controller"].primary = "conformance-gate";
+    wrong.roles["@vespeneventures/controller"].metric.direction = "hold";
     const wrongPath = join(dir, "wrong.json");
     writeFileSync(wrongPath, JSON.stringify(wrong));
     assert.throws(
-      () => execFileSync(process.execPath, [script, wrongPath, programsContractPath], { cwd: repoRoot, stdio: "pipe" }),
+      () => execFileSync(process.execPath, [script, wrongPath], { cwd: repoRoot, stdio: "pipe" }),
       (error) => error.status === 1,
     );
+
+    const candidatePath = join(dir, "candidate.json");
+    writeFileSync(candidatePath, JSON.stringify(candidateAssessment()));
+    const output = execFileSync(process.execPath, [script, roleContractPath, candidatePath], { cwd: repoRoot, encoding: "utf8" });
+    assert.match(output, /ROLE CANDIDATE CREATE/);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

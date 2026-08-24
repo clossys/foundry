@@ -2,6 +2,10 @@
   "schemaVersion": 1,
   "packages": [
     {
+      "name": "@vespeneventures/architect",
+      "status": "incubating"
+    },
+    {
       "name": "@vespeneventures/auth",
       "status": "deprecated",
       "replacement": {
@@ -156,6 +160,10 @@
       "status": "published"
     },
     {
+      "name": "@vespeneventures/influencer",
+      "status": "incubating"
+    },
+    {
       "name": "@vespeneventures/keeper",
       "status": "published"
     },
@@ -175,6 +183,10 @@
     {
       "name": "@vespeneventures/locksmith",
       "status": "published"
+    },
+    {
+      "name": "@vespeneventures/messenger",
+      "status": "incubating"
     },
     {
       "name": "@vespeneventures/observer",

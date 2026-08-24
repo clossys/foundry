@@ -1,0 +1,68 @@
+{
+  "name": "@vespeneventures/architect",
+  "version": "0.1.0",
+  "private": false,
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./ontology": {
+      "types": "./dist/ontology/index.d.ts",
+      "import": "./dist/ontology/index.js"
+    }
+  },
+  "bin": {
+    "architect-check": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/**/*.test.ts",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "description": "The architect role: provider-neutral operating topology, ontology, authority and interface contracts, plus evidence-based architecture exception assessment.",
+  "keywords": [
+    "architecture",
+    "ontology",
+    "operating-model",
+    "topology",
+    "validation",
+    "typescript"
+  ],
+  "author": "Calvin Hung",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vespeneventures/foundry.git",
+    "directory": "packages/architect"
+  },
+  "bugs": {
+    "url": "https://github.com/vespeneventures/foundry/issues"
+  },
+  "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/architect#readme",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "node ../../scripts/check-name-collision.mjs . && npm run build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "~6.0.0",
+    "vitest": "^4.1.9"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  }
+}

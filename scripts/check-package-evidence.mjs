@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-// check-package-programs — fail when a package is declared further along its
+// check-package-evidence — fail when a package is declared further along its
 // lifecycle than its evidence supports.
 //
-//   node scripts/check-package-programs.mjs [contractPath] [--json]
+//   node scripts/check-package-evidence.mjs [contractPath] [--json]
 //
 // docs/LIFECYCLE.md states seven states and one rule: a package's state is
 // DERIVED FROM EVIDENCE, NEVER DECLARED. This gate is that rule made
@@ -88,22 +88,19 @@
 // THE GATE RULE (docs/DECISIONS.md 11)
 // -------------------------------------
 // Separate from the ladder, and graded here because this is the file that
-// already knows every package's programme and lifecycle status: a package in
-// a programme ships a gate behind a `bin`, or it declares `shipsNoGate` with
-// a reason — and a package that ships none permanently is only possible in
-// the primitive tier, a programme marked `"tier": "primitive"`, whose members
-// have no addressee and therefore no question a gate could judge.
+// already knows every package's lifecycle status: every active package ships
+// a gate behind a `bin`. A package with no role-shaped question does not
+// belong in the active package set.
 //
 // The rule turns an absent `bin` from an absence into a decision. Before it,
-// `domain` (a primitive that correctly ships no gate) and `auth`, `comms` and
-// `consent` (three published packages whose gate nobody has built) were
+// `domain`, `auth`, `comms`, and `consent` (published packages whose role gate
+// nobody had built) were
 // indistinguishable from outside: all four simply had no `bin`. The second
 // case is why `packages/comms/src/dispatcher.ts` can treat an unwired policy
 // as `allow` with no CLI anywhere that could fail on it.
 //
-// A non-primitive declaration therefore requires an integer `issue`: it is a
-// countdown, exactly like `gaps`. A primitive declaration requires
-// `permanent: true` and takes no issue, because there is no work to track. A
+// A declaration therefore requires an integer `issue`: it is a countdown,
+// exactly like `gaps`. No active package may claim a permanent exemption. A
 // package that ships a `bin` and still declares `shipsNoGate` is a stale
 // declaration and fails, for the same reason a `gaps` entry that outlived its
 // reason does. Retired packages are exempt: they have left the ladder.
@@ -365,7 +362,7 @@ export function validateStagedBy(value, name, findings) {
  * have. Returns findings only — a package that ships a `bin` and declares
  * nothing is the ordinary, silent pass.
  */
-export function evaluateGateRule({ name, entry, bins, isPrimitive }) {
+export function evaluateGateRule({ name, entry, bins }) {
   const findings = [];
   const declaration = entry.shipsNoGate;
   const shipsGate = bins.length > 0;
@@ -382,15 +379,6 @@ export function evaluateGateRule({ name, entry, bins, isPrimitive }) {
           "stale-no-gate-declaration",
           name,
           `declares it ships no gate, but its manifest exposes ${bins.length} bin entry point(s) (${bins.join(", ")}) — remove the declaration`,
-        ),
-      );
-    }
-    if (isPrimitive) {
-      findings.push(
-        finding(
-          "primitive-ships-a-gate",
-          name,
-          "belongs to the primitive tier but exposes a `bin` — a package with a question to judge has an addressee, and therefore belongs to a programme",
         ),
       );
     }
@@ -413,30 +401,12 @@ export function evaluateGateRule({ name, entry, bins, isPrimitive }) {
     findings.push(finding("no-gate-without-reason", name, "`shipsNoGate` needs a reason saying why this package judges nothing"));
   }
 
-  if (isPrimitive) {
-    if (declaration.permanent !== true) {
-      findings.push(
-        finding(
-          "no-gate-without-permanence",
-          name,
-          "belongs to the primitive tier, so its `shipsNoGate` must declare `permanent: true` — the tier is the claim that no gate will ever be owed",
-        ),
-      );
-    }
-    if (declaration.issue !== undefined) {
-      findings.push(
-        finding("no-gate-with-both", name, "a permanent declaration tracks no issue: there is no work to close"),
-      );
-    }
-    return { findings, shipsGate };
-  }
-
   if (declaration.permanent === true) {
     findings.push(
       finding(
         "no-gate-claimed-permanent",
         name,
-        "claims it will never owe a gate, but belongs to a programme rather than the primitive tier — a package with an addressee owes a question only it answers",
+        "claims it will never owe a gate — active packages may only use temporary, issue-backed compatibility exceptions",
       ),
     );
   } else if (!Number.isInteger(declaration.issue)) {
@@ -444,7 +414,7 @@ export function evaluateGateRule({ name, entry, bins, isPrimitive }) {
       finding(
         "no-gate-without-issue",
         name,
-        "`shipsNoGate` outside the primitive tier needs an integer `issue`: it is a countdown, like `gaps`, not a standing exemption",
+        "`shipsNoGate` needs an integer `issue`: it is a countdown, like `gaps`, not a standing exemption",
       ),
     );
   }
@@ -459,47 +429,11 @@ export function evaluatePrograms({ contract, distSites, binSites, lifecycleStatu
   if (!isRecord(contract)) {
     return { findings: [finding("unreadable-contract", "(contract)", "the contract is not an object")], results };
   }
-  if (!isRecord(contract.programs)) {
-    return { findings: [finding("unreadable-contract", "(contract)", "`programs` must be an object")], results };
-  }
   if (!Array.isArray(contract.packages)) {
     return { findings: [finding("unreadable-contract", "(contract)", "`packages` must be an array")], results };
   }
 
   const declaredNames = new Set();
-  const membership = new Map();
-  const primitivePrograms = new Set();
-  for (const [programId, program] of Object.entries(contract.programs)) {
-    if (!isRecord(program) || !Array.isArray(program.packages)) {
-      findings.push(finding("unreadable-contract", programId, "a program must declare a `packages` array"));
-      continue;
-    }
-    // "primitive" is the only tier there is: a programme addresses somebody,
-    // and the tier is what a package belongs to when nobody is addressed. Any
-    // other value is a typo pretending to be a category.
-    if (program.tier !== undefined) {
-      if (program.tier === "primitive") primitivePrograms.add(programId);
-      else findings.push(finding("unreadable-contract", programId, '`tier`, when present, must be "primitive"'));
-    }
-    // A donor a programme is retiring is as much a member of it as the role
-    // that replaces it. Supersession runs in parallel with the ladder rather
-    // than after it, so a donor must not fall out of the picture the moment
-    // its replacement ships -- that is exactly how five compatibility
-    // packages sat deprecated with nothing noticing.
-    for (const [role, names] of [["role", program.packages], ["donor", program.donors ?? []]]) {
-      if (!Array.isArray(names)) {
-        findings.push(finding("unreadable-contract", programId, "`donors` must be an array when present"));
-        continue;
-      }
-      for (const name of names) {
-        if (membership.has(name)) {
-          findings.push(finding("package-in-two-programs", name, `declared by both "${membership.get(name).program}" and "${programId}"`));
-        }
-        membership.set(name, { program: programId, role });
-      }
-    }
-  }
-
   for (const entry of contract.packages) {
     if (!isRecord(entry) || typeof entry.name !== "string") {
       findings.push(finding("unreadable-contract", "(packages)", "every package entry needs a string `name`"));
@@ -508,9 +442,6 @@ export function evaluatePrograms({ contract, distSites, binSites, lifecycleStatu
     const { name } = entry;
     declaredNames.add(name);
 
-    if (!membership.has(name)) {
-      findings.push(finding("package-in-no-program", name, "declared a state but belongs to no program"));
-    }
     if (typeof entry.state !== "string" || stateIndex(entry.state) === -1) {
       findings.push(finding("unknown-state", name, `state must be one of: ${STATES.join(", ")}`));
       continue;
@@ -536,8 +467,6 @@ export function evaluatePrograms({ contract, distSites, binSites, lifecycleStatu
       }
       results.push({
         package: name,
-        program: membership.get(name)?.program ?? null,
-        role: membership.get(name)?.role ?? null,
         state: entry.state,
         supersession: RETIRED_STATUS,
         invocationSites: sites.length,
@@ -644,7 +573,6 @@ export function evaluatePrograms({ contract, distSites, binSites, lifecycleStatu
         name,
         entry,
         bins: workspaceBins.get(name) ?? [],
-        isPrimitive: primitivePrograms.has(membership.get(name)?.program),
       });
       findings.push(...gate.findings);
       shipsGate = gate.shipsGate;
@@ -652,8 +580,6 @@ export function evaluatePrograms({ contract, distSites, binSites, lifecycleStatu
 
     results.push({
       package: name,
-      program: membership.get(name)?.program ?? null,
-      role: membership.get(name)?.role ?? null,
       state: entry.state,
       supersession: lifecycleStatus === "deprecated" ? "deprecated" : null,
       invocationSites: sites.length,
@@ -687,22 +613,16 @@ function markdownCell(value) {
  * an apparent zero escape rate would be a measurement gap, not a result.
  */
 export function renderLifecyclePositionTable({ contract, results }) {
-  const programLabels = new Map(
-    Object.entries(contract.programs ?? {}).map(([id, program]) => [
-      id,
-      program?.letter ? `${program.letter} — ${id}` : id,
-    ]),
-  );
   const rows = [
     LIFECYCLE_POSITION_START,
     "",
-    "| program | package | membership | declared state | staged here | grounded |",
-    "| --- | --- | --- | --- | --- | --- |",
+    "| package | declared state | staged here | grounded |",
+    "| --- | --- | --- | --- |",
   ];
   for (const result of results) {
     const staged = result.acknowledgedGaps.includes("staged") ? "not yet" : "yes";
     rows.push(
-      `| ${markdownCell(programLabels.get(result.program) ?? "unassigned")} | \`${markdownCell(result.package)}\` | ${markdownCell(result.role ?? "unknown")} | ${markdownCell(result.state)} | ${staged} | unknown — #484 |`,
+      `| \`${markdownCell(result.package)}\` | ${markdownCell(result.state)} | ${staged} | unknown — #484 |`,
     );
   }
   rows.push("", LIFECYCLE_POSITION_END);
@@ -779,7 +699,7 @@ export function readWorkspaceBins(repoRoot) {
 }
 
 function die(message) {
-  console.error(`check-package-programs: ${message}`);
+  console.error(`check-package-evidence: ${message}`);
   process.exit(2);
 }
 
@@ -791,7 +711,7 @@ async function main() {
   if (render && write) die("--render-lifecycle-position and --write-lifecycle-position cannot be used together");
   const positional = argv.filter((a) => !a.startsWith("--"));
   const repoRoot = resolve(positional[1] ?? ".");
-  const contractPath = resolve(positional[0] ?? join(repoRoot, "docs/contracts/package-programs.json"));
+  const contractPath = resolve(positional[0] ?? join(repoRoot, "docs/contracts/package-evidence.json"));
 
   let contract;
   try {
@@ -815,6 +735,23 @@ async function main() {
 
   const workspaceBins = readWorkspaceBins(repoRoot);
   const { findings, results } = evaluatePrograms({ contract, distSites, binSites, lifecycleStatuses, workspacePackages, workspaceBins });
+  let roleNames;
+  try {
+    const roleDocument = JSON.parse(readFileSync(join(repoRoot, "docs/contracts/role-loop-archetypes.json"), "utf8"));
+    if (!isRecord(roleDocument.roles)) throw new Error("`roles` must be an object");
+    roleNames = new Set(Object.keys(roleDocument.roles));
+  } catch (error) {
+    findings.push(finding("role-inventory-unreadable", "docs/contracts/role-loop-archetypes.json", `${error instanceof Error ? error.message : String(error)}`));
+    roleNames = new Set();
+  }
+  for (const role of roleNames) {
+    if (!workspacePackages.has(role)) findings.push(finding("role-package-missing", role, "has a durable role charter but no workspace package"));
+  }
+  for (const name of workspacePackages) {
+    if ((workspaceBins.get(name) ?? []).length > 0 && !roleNames.has(name)) {
+      findings.push(finding("unqualified-role-package", name, "ships a role gate but has no durable charter in the role-loop contract"));
+    }
+  }
   const lifecycleDocumentPath = join(repoRoot, "docs/LIFECYCLE.md");
   const renderedPosition = renderLifecyclePositionTable({ contract, results });
 
@@ -828,13 +765,13 @@ async function main() {
     lifecycleDocument = readFileSync(lifecycleDocumentPath, "utf8");
     if (write) {
       writeFileSync(lifecycleDocumentPath, replaceLifecyclePositionTable(lifecycleDocument, renderedPosition));
-      console.log(`Updated ${relative(repoRoot, lifecycleDocumentPath)} from docs/contracts/package-programs.json.`);
+      console.log(`Updated ${relative(repoRoot, lifecycleDocumentPath)} from docs/contracts/package-evidence.json.`);
     } else if (!lifecycleDocument.includes(renderedPosition)) {
       findings.push(
         finding(
           "lifecycle-position-table-drift",
           "docs/LIFECYCLE.md",
-          "the generated lifecycle position table does not match docs/contracts/package-programs.json; regenerate it with `node scripts/check-package-programs.mjs --write-lifecycle-position`",
+          "the generated lifecycle position table does not match docs/contracts/package-evidence.json; regenerate it with `node scripts/check-package-evidence.mjs --write-lifecycle-position`",
         ),
       );
     }
@@ -847,7 +784,7 @@ async function main() {
   } else {
     for (const r of results) {
       console.log(
-        `  [${String(r.state).padEnd(11)}] ${r.package.padEnd(32)} ${String(r.role ?? "?").padEnd(5)} ${r.shipsGate ? "gate" : "----"} sites=${String(r.invocationSites).padStart(2)}` +
+        `  [${String(r.state).padEnd(11)}] ${r.package.padEnd(32)} ${r.shipsGate ? "gate" : "----"} sites=${String(r.invocationSites).padStart(2)}` +
           (r.acknowledgedGaps.length > 0 ? `  gaps: ${r.acknowledgedGaps.join(", ")}` : ""),
       );
     }
@@ -860,8 +797,8 @@ async function main() {
     console.log("");
     console.log(
       errors.length === 0
-        ? `PACKAGE PROGRAMS OK — ${results.length} package(s) graded; every declared position is supported by evidence or acknowledged with a reason and an issue.`
-        : `PACKAGE PROGRAMS FAIL — ${errors.length} position(s) run ahead of their evidence. See docs/LIFECYCLE.md for what each state requires; a shortfall that is real and tracked belongs in the package's \`gaps\` with a reason and an issue, not left implicit.`,
+        ? `PACKAGE EVIDENCE OK — ${results.length} package(s) graded; every declared position is supported by evidence or acknowledged with a reason and an issue.`
+        : `PACKAGE EVIDENCE FAIL — ${errors.length} position(s) run ahead of their evidence. See docs/LIFECYCLE.md for what each state requires; a shortfall that is real and tracked belongs in the package's \`gaps\` with a reason and an issue, not left implicit.`,
     );
   }
   process.exit(errors.length === 0 ? 0 : 1);

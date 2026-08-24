@@ -1,70 +1,104 @@
-# Role loops
+# Role package qualification
 
-The fourteen role packages in Programs A, B, and C use one loop grammar and
-different control shapes. The versioned declaration is
-[`contracts/role-loop-archetypes.json`](contracts/role-loop-archetypes.json);
-`npm run check:role-loop-archetypes` keeps it complete and machine-readable.
+The canonical role-package matrix is
+[`contracts/role-loop-archetypes.json`](contracts/role-loop-archetypes.json).
+Despite its retained filename, schema version 3 has no separate archetype
+concept. A role declares one primary **mode**, optional secondary modes, one
+owned metric, one durable boundary, and one job question. The checker is
+`npm run check:role-loop-archetypes`.
 
-## Shared grammar
+Package READMEs explain APIs and implementation detail. The contract is the
+source of truth for role qualification; lifecycle and Program contracts remain
+the sources of evidence-derived maturity and historical grouping.
 
-Every role loop has these elements, in order:
+## One loop, six modes
 
-1. `subjectOrAddressee`
-2. `authoritativeSetpoint`
-3. `actualObservation`
-4. `ternaryJudgment`
-5. `correctionOrHandoff`
-6. `independentOutcome`
-7. `cadenceAndCloseCondition`
+Every mode executes the same five stages:
 
-An archetype is not a partial module or permission for open-loop tooling.
-Each package remains a full closed-loop system. Its primary archetype defines
-the dominant correction cycle; an optional secondary archetype describes an
-internal mechanism, not a second or weaker package.
+1. `sense`
+2. `judge`
+3. `act`
+4. `verify`
+5. `learnOrEscalate`
 
-Applicability lives in consumer repositories. Installing a package is not
-adoption, and self-produced metrics are not independent grounding. Consumers
-supply the concrete subjects, setpoints, observations, and evidence that make
-a loop applicable and closeable in their own context.
+The mode changes the activity inside each stage. The definitive modes are:
 
-## Independent grounding
+- `assure` — judge a candidate against authoritative rules;
+- `reconcile` — reduce a delta between declared and actual state;
+- `fulfill` — make an accepted intent real and verify its outcome;
+- `interact` — confirm and reconcile a person or actor request;
+- `steward` — keep custody accountable through its lifecycle; and
+- `optimize` — learn from independent signals and remeasure after adjustment.
 
-Grounding is measured by someone other than the package author, reading
-host-owned outcome records. The metric lives outside the package and must
-demonstrably move when a real change occurs; a package's own test or run
-history cannot grade itself.
+The machine-readable mode declarations give every universal stage one
+nonempty activity. A secondary mode is an internal control shape, not another
+job or a partial permission for open-loop tooling.
 
-For a conformance gate, `observer` may read catch and escape outcomes. For
-reconciliation, interaction, custody, and actuation loops, grounding may use
-an externally produced standing count or an observed outcome instead. The
-form differs with the control shape, but the no-self-grading rule does not.
+## Charter and installation are different records
 
-## Role mapping
+The package charter is durable. It answers:
 
-| Program | Role | Primary archetype | Secondary archetype |
-| --- | --- | --- | --- |
-| A | controller | reconciliation | — |
-| A | inspector | conformance-gate | — |
-| A | builder | actuation-provisioning | reconciliation |
-| A | locksmith | custody-lifecycle | — |
-| A | integrator | reconciliation | — |
-| A | observer | observation-learning | — |
-| B | strategist | conformance-gate | — |
-| B | writer | conformance-gate | — |
-| B | designer | conformance-gate | — |
-| B | publisher | actuation-provisioning | reconciliation |
-| C | bouncer | reconciliation | confirmation-interaction |
-| C | butler | confirmation-interaction | — |
-| C | giver | actuation-provisioning | confirmation-interaction |
-| C | keeper | custody-lifecycle | — |
+- what material job question only this role answers;
+- which one controllable metric it owns, including formula, unit and direction;
+- which loop mode is primary;
+- which responsibilities the package owns and explicitly excludes.
 
-## Archetype phases
+An installation binds that charter to one consumer. Every consumer supplies:
 
-| Archetype | Purpose | Ordered phases |
-| --- | --- | --- |
-| conformance-gate | Judge a candidate against a setpoint and improve that setpoint from outcomes. | load setpoint → observe candidate → judge → block-or-allow → sample outcomes → revise setpoint |
-| reconciliation | Reduce the difference between desired and actual state. | declare desired → observe actual → diff → correct-or-handoff → reobserve → close-on-zero-delta |
-| actuation-provisioning | Make accepted intent real and close on an observed outcome. | accept intent → validate preconditions → act → confirm actual outcome → compensate-retry-or-handoff → close-on-observed-outcome |
-| confirmation-interaction | Handle a request with authorization, read-back, and later reconciliation. | receive actor/subject request → authorize → record intent → act-or-refuse → confirm/read-back → reconcile change-or-withdrawal |
-| custody-lifecycle | Account for custody through protection, correction, disposal, and verification. | inventory → justify → protect → disclose-or-correct → dispose → verify-disposal-or-reopen |
-| observation-learning | Learn from independent signals and remeasure after adjustment. | declare coverage/question → collect independent signals → normalize → measure → report → adjust-and-remeasure |
+1. `businessMetricNode`
+2. `causalHypothesis`
+3. `setpoint`
+4. `authority`
+5. `evidenceSource`
+6. `budget`
+7. `guardrails`
+8. `escalationPath`
+
+Installing a package does not supply these values and does not prove adoption.
+The runtime worker may combine deterministic code, model decisions, human
+approval, and provider integrations; that mix is an implementation choice
+inside the installed position, not another package classification.
+
+## One owned metric
+
+Every role entry has exactly one `metric` object. The finite unit vocabulary is
+`ratio`, `count`, `duration`, `currency`, and `rate`; the direction is exactly
+`increase` or `decrease`. Diagnostic measurements may still exist in package
+APIs, but they do not become second owned metrics. Metric names must be unique
+across roles so two packages cannot silently claim the same operating outcome.
+
+Grounding is measured by someone other than the package author from host-owned
+outcome records. A package's tests and staging fixtures can prove its judgment
+discriminates; they cannot prove the owned metric moved in a real installation.
+
+## Candidate qualification
+
+The qualification vocabulary is deliberately small:
+
+- `create` — the complete charter identifies a job and metric loop no current
+  role owns;
+- `extend` — one current role already owns and closes the same job and metric
+  loop;
+- `compose` — two or more current roles collectively already own and close that
+  same job and metric loop;
+- `reject` — the candidate lacks a coherent job, one controllable metric, a
+  closed loop, a durable boundary, or acceptable guardrails.
+
+Dependencies and adjacent workers are not coverage. A candidate may depend on
+several existing roles and still qualify as `create` when none owns its job and
+metric. Each `sameJobMetricLoopCoverage` citation therefore requires separate
+job, metric, and loop-closure evidence.
+
+The checker can qualify a caller-authored candidate assessment without writing
+anything:
+
+```bash
+node scripts/check-role-loop-archetypes.mjs \
+  docs/contracts/role-loop-archetypes.json \
+  ./candidate-assessment.json
+```
+
+The verdict is a design decision only. It never inserts a candidate into
+`package-evidence.json`, advances lifecycle maturity, or claims evidence.
+After a `create` decision, `controller`'s `planNewPackage` may plan a no-write
+starter; it is not part of qualification and does not create the package.

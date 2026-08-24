@@ -53,13 +53,26 @@ registry and is closed. After qualification,
 a consumer installs only the subset it needs through authenticated GitHub
 Packages access.
 
+`@vespeneventures/architect` is not in this table because it is incubating
+source, not a published adoption target. Its `./ontology` surface is the
+planned home of the current domain API; consumers continue to install
+`@vespeneventures/domain` until an exact published replacement and migration
+are proved. The donor is not deprecated merely because equivalent replacement
+source exists; publication comes before direct migration.
+
+`@vespeneventures/messenger` is likewise incubating source rather than a
+published adoption target. Consumers keep their exact
+`@vespeneventures/comms` version and existing transport wiring until messenger
+is published first and the direct migration is proved. Source availability is
+not authorization to deprecate the donor.
+
 | Capability | Package or subpath | Consumer-owned remainder |
 | --- | --- | --- |
 | Authorization primitives | `@vespeneventures/auth` | Principals, grants, policy values, provider clients, and enforcement wiring. |
 | Rule grammar and package-process governance | `@vespeneventures/controller` and its focused subpaths | Bound documents, storage, and materialization; plane overlays, prefixes, repository inventory, skill bodies, and routine tempo; profile, requirement, preference, supply, decision, exception, scope, provenance, and effective values; all discovery, provider I/O, and any resulting machine mutation. |
-| Domain machinery | `@vespeneventures/domain` | Product-owned types, vocabularies, relations, and migrations. |
+| Published ontology donor | `@vespeneventures/domain` | Product-owned types, vocabularies, relations, and migrations; architect publication and direct migration remain issue #527 work. |
 | Manifest, deployment, and toolchain reconciliation | `@vespeneventures/builder` | Installation manifest, destinations, adapters, and mutation approval; provider credentials, topology, environment choices, and remediation. |
-| Communication contracts | `@vespeneventures/comms` | Recipients, sender identity, templates, consent policy, storage, routes, and provider configuration. |
+| Finished-message transport donor | `@vespeneventures/comms` | Existing consumers retain their exact version; messenger publication, direct migration, and measured unpinning remain issue #464 work. Recipients, sender identity, templates, authorization, storage, routes, and provider configuration remain consumer-owned. |
 | Key custody and rotation | `@vespeneventures/locksmith` | Secret catalog, aliases, provider resources, credential references, grants, rotation policy, and any actual key rotation or revocation call. |
 | Change verdict and secret scanning | `@vespeneventures/inspector` | CI workflow wiring, required-check configuration, and any resulting branch-protection action. |
 | Visual system | `@vespeneventures/ui` | Product theme choices, compositions, and application wiring. |

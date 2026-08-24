@@ -18,10 +18,10 @@ import {
   replaceLifecyclePositionTable,
   scanInvocationSites,
   stateIndex,
-} from "./check-package-programs.mjs";
+} from "./check-package-evidence.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const script = join(repoRoot, "scripts/check-package-programs.mjs");
+const script = join(repoRoot, "scripts/check-package-evidence.mjs");
 
 // Two layers, matching this repo's existing split: the pure evaluator is
 // exercised with hand-built observations so a verdict is testable without a
@@ -36,11 +36,10 @@ const P = "@vespeneventures/thing";
 // free of a rule they are not about.
 function grade(
   entry,
-  { sites = [], bins = [], status = "published", inWorkspace = true, programs, manifestBins = ["thing-check"] } = {},
+  { sites = [], bins = [], status = "published", inWorkspace = true, manifestBins = ["thing-check"] } = {},
 ) {
   return evaluatePrograms({
     contract: {
-      programs: programs ?? { operation: { packages: [P], donors: [] } },
       packages: [entry],
     },
     distSites: new Map([[P, sites]]),
@@ -207,22 +206,9 @@ test("a bin-name invocation is reported and is not evidence of staging", () => {
   assert.equal(r.findings.some((f) => f.rule === "invocation-by-bin-name" && f.severity === "note"), true);
 });
 
-test("a donor is a member of the programme retiring it", () => {
-  const r = grade(
-    { name: P, state: "published", gaps: [{ state: "staged", reason: "zero invocation sites anywhere here", issue: 466 }] },
-    { programs: { expression: { packages: [], donors: [P] } } },
-  );
-  assert.deepEqual(rules(r), []);
-  assert.equal(r.results[0].role, "donor");
-});
-
-test("a package in no programme, and a workspace package in no contract, both fail", () => {
-  assert.equal(
-    rules(grade({ name: P, state: "published", gaps: [{ state: "staged", reason: "zero invocation sites anywhere here", issue: 466 }] }, { programs: { operation: { packages: [], donors: [] } } })).includes("package-in-no-program"),
-    true,
-  );
+test("a workspace package missing from the evidence contract fails", () => {
   const r = evaluatePrograms({
-    contract: { programs: { operation: { packages: [], donors: [] } }, packages: [] },
+    contract: { packages: [] },
     distSites: new Map(),
     binSites: new Map(),
     lifecycleStatuses: new Map(),
@@ -255,7 +241,7 @@ test("declaring it, with a reason and an issue, passes", () => {
   assert.equal(r.results[0].shipsGate, false);
 });
 
-test("outside the primitive tier the declaration is a countdown: reason and issue both required", () => {
+test("a no-gate declaration is a countdown: reason and issue are required, and permanence is forbidden", () => {
   assert.deepEqual(
     rules(grade({ name: P, state: "published", gaps: [staged], shipsNoGate: { reason: "short", issue: 458 } }, noGate)),
     ["no-gate-without-reason"],
@@ -275,29 +261,6 @@ test("outside the primitive tier the declaration is a countdown: reason and issu
   );
 });
 
-test("permanence is available only in the primitive tier, and takes no issue", () => {
-  const tier = { programs: { foundation: { tier: "primitive", packages: [P], donors: [] } } };
-  const ok = grade(
-    { name: P, state: "published", gaps: [staged], shipsNoGate: { reason: "no addressee, therefore no question to judge", permanent: true } },
-    { ...noGate, programs: tier.programs },
-  );
-  assert.deepEqual(rules(ok), []);
-
-  const notPermanent = grade(
-    { name: P, state: "published", gaps: [staged], shipsNoGate: { reason: "no addressee, therefore no question to judge", issue: 458 } },
-    { ...noGate, programs: tier.programs },
-  );
-  assert.deepEqual(rules(notPermanent).sort(), ["no-gate-with-both", "no-gate-without-permanence"]);
-});
-
-test("a primitive that ships a gate is a contradiction, not a bonus", () => {
-  const r = grade(
-    { name: P, state: "published", gaps: [staged] },
-    { programs: { foundation: { tier: "primitive", packages: [P], donors: [] } } },
-  );
-  assert.deepEqual(rules(r), ["primitive-ships-a-gate"]);
-});
-
 test("a declaration that outlived the gate it excused is stale, like a gap", () => {
   const r = grade({
     name: P,
@@ -308,12 +271,10 @@ test("a declaration that outlived the gate it excused is stale, like a gap", () 
   assert.deepEqual(rules(r), ["stale-no-gate-declaration"]);
 });
 
-test("an unreadable declaration is a finding, and a tier that is not `primitive` is a typo", () => {
+test("an unreadable no-gate declaration is a finding", () => {
   assert.deepEqual(rules(grade({ name: P, state: "published", gaps: [staged], shipsNoGate: "yes" }, noGate)), [
     "unreadable-no-gate",
   ]);
-  const r = grade({ name: P, state: "published", gaps: [staged] }, { programs: { x: { tier: "core", packages: [P], donors: [] } } });
-  assert.equal(rules(r).includes("unreadable-contract"), true);
 });
 
 test("a designed package has no manifest to grade, and a retired one has left the ladder", () => {
@@ -324,7 +285,7 @@ test("a designed package has no manifest to grade, and a retired one has left th
 });
 
 test("an unparseable contract yields one finding and no results, never a pass", () => {
-  for (const contract of [null, {}, { programs: {} }, { programs: {}, packages: {} }]) {
+  for (const contract of [null, {}, { packages: {} }]) {
     const r = evaluatePrograms({ contract, distSites: new Map(), binSites: new Map(), lifecycleStatuses: new Map(), workspacePackages: new Set() });
     assert.equal(r.findings.length >= 1, true);
     assert.deepEqual(r.results, []);
@@ -332,7 +293,7 @@ test("an unparseable contract yields one finding and no results, never a pass", 
 });
 
 test("the scan finds a dist-path invocation and ignores a commented one", () => {
-  const dir = mkdtempSync(join(tmpdir(), "programs-scan-"));
+  const dir = mkdtempSync(join(tmpdir(), "evidence-scan-"));
   try {
     mkdirSync(join(dir, "packages/thing"), { recursive: true });
     mkdirSync(join(dir, "scripts"), { recursive: true });
@@ -354,7 +315,7 @@ test("a package NAME used as test-fixture data is not an invocation site", () =>
   // name and reported six invocation sites for `auth`, all of them strings
   // like `entry("auth", "@vespeneventures/auth", "0.2.4")` inside another
   // script's tests. Naming a package is not using one.
-  const dir = mkdtempSync(join(tmpdir(), "programs-fixture-"));
+  const dir = mkdtempSync(join(tmpdir(), "evidence-fixture-"));
   try {
     mkdirSync(join(dir, "packages/thing"), { recursive: true });
     mkdirSync(join(dir, "scripts"), { recursive: true });
@@ -378,14 +339,14 @@ test("lifecycle statuses are read by name", () => {
 
 test("the lifecycle position renderer derives rows and never invents grounded evidence", () => {
   const rendered = renderLifecyclePositionTable({
-    contract: { programs: { operation: { letter: "A" } } },
+    contract: {},
     results: [
-      { program: "operation", package: P, role: "role", state: "published", acknowledgedGaps: [] },
-      { program: "operation", package: "@vespeneventures/not-yet", role: "role", state: "published", acknowledgedGaps: ["staged"] },
+      { package: P, state: "published", acknowledgedGaps: [] },
+      { package: "@vespeneventures/not-yet", state: "published", acknowledgedGaps: ["staged"] },
     ],
   });
   assert.match(rendered, /<!-- lifecycle-position-table:start -->/);
-  assert.match(rendered, /\| A — operation \| `@vespeneventures\/thing` \| role \| published \| yes \| unknown — #484 \|/);
+  assert.match(rendered, /\| `@vespeneventures\/thing` \| published \| yes \| unknown — #484 \|/);
   assert.match(rendered, /@vespeneventures\/not-yet.*\| not yet \| unknown — #484/);
   assert.match(rendered, /<!-- lifecycle-position-table:end -->/);
 });
@@ -413,9 +374,9 @@ test("this repository's own contract passes, and exits 0/1/2 correctly", () => {
 
   // A positive control: the gate must actually fail on the defect it exists
   // for, not merely pass on a clean tree.
-  const dir = mkdtempSync(join(tmpdir(), "programs-cli-"));
+  const dir = mkdtempSync(join(tmpdir(), "evidence-cli-"));
   try {
-    const contract = JSON.parse(execFileSync(process.execPath, ["-e", "process.stdout.write(require('fs').readFileSync('docs/contracts/package-programs.json','utf8'))"], { cwd: repoRoot, encoding: "utf8" }));
+    const contract = JSON.parse(execFileSync(process.execPath, ["-e", "process.stdout.write(require('fs').readFileSync('docs/contracts/package-evidence.json','utf8'))"], { cwd: repoRoot, encoding: "utf8" }));
     for (const p of contract.packages) {
       if (p.name !== "@vespeneventures/strategist") continue;
       // The real contract may acknowledge a staging shortfall with `gaps`,
@@ -432,8 +393,8 @@ test("this repository's own contract passes, and exits 0/1/2 correctly", () => {
     // display label leaves the lifecycle evaluation clean, but must still
     // make the normal check refuse a stale rendered block and point at the
     // explicit (never automatic) regeneration command.
-    const drifted = JSON.parse(execFileSync(process.execPath, ["-e", "process.stdout.write(require('fs').readFileSync('docs/contracts/package-programs.json','utf8'))"], { cwd: repoRoot, encoding: "utf8" }));
-    drifted.programs.operation.letter = "Z";
+    const drifted = JSON.parse(execFileSync(process.execPath, ["-e", "process.stdout.write(require('fs').readFileSync('docs/contracts/package-evidence.json','utf8'))"], { cwd: repoRoot, encoding: "utf8" }));
+    drifted.packages.find((entry) => entry.name === "@vespeneventures/controller").state = "implemented";
     const driftedPath = join(dir, "drifted.json");
     writeFileSync(driftedPath, JSON.stringify(drifted));
     assert.throws(
@@ -444,13 +405,13 @@ test("this repository's own contract passes, and exits 0/1/2 correctly", () => {
 
     // The same control for the gate rule, against the real tree: drop the
     // primitive's declaration and the absent `bin` must stop being excused.
-    const stripped = JSON.parse(execFileSync(process.execPath, ["-e", "process.stdout.write(require('fs').readFileSync('docs/contracts/package-programs.json','utf8'))"], { cwd: repoRoot, encoding: "utf8" }));
-    for (const p of stripped.packages) if (p.name === "@vespeneventures/domain") delete p.shipsNoGate;
+    const stripped = JSON.parse(execFileSync(process.execPath, ["-e", "process.stdout.write(require('fs').readFileSync('docs/contracts/package-evidence.json','utf8'))"], { cwd: repoRoot, encoding: "utf8" }));
+    for (const p of stripped.packages) if (p.name === "@vespeneventures/controller") p.shipsNoGate = { reason: "A stale declaration on a package that now ships a gate.", issue: 1 };
     const undeclared = join(dir, "undeclared-gate.json");
     writeFileSync(undeclared, JSON.stringify(stripped));
     assert.throws(
       () => execFileSync(process.execPath, [script, undeclared, repoRoot], { cwd: repoRoot, stdio: "pipe" }),
-      (e) => e.status === 1 && `${e.stdout}`.includes("gate-not-declared"),
+      (e) => e.status === 1 && `${e.stdout}`.includes("stale-no-gate-declaration"),
     );
   } finally {
     rmSync(dir, { recursive: true, force: true });

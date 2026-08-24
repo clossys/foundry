@@ -1,19 +1,25 @@
 # Communications architecture
 
-## Decision
-
-Foundry owns one package with provider subpaths:
+## Role ownership and current lifecycle
 
 | Owner | Responsibility |
 | --- | --- |
-| `@vespeneventures/comms` | Finished message contract, validation, consent/policy seam, atomic dispatch claim with an opaque lease, explicit provider-acceptance outcome, normalized delivery/inbound events, and durable ledger ports. |
-| `@vespeneventures/comms/resend` | Resend SDK mapping, provider idempotency and tag constraints, strict error normalization, exact raw-body Svix verification, and Resend event mapping. |
-| Host application | Product events, recipients and personal data, templates/localization, sender identity, consent/preferences, suppression decisions, credentials, database adapters, route/bootstrap code, retention, logging, provider endpoint registration, domain configuration and deployment settings. |
+| `@vespeneventures/butler` | Admission and confirmation of inbound person requests and standing instructions. |
+| `@vespeneventures/messenger` | Incubating source for authorized finished-message transport, explicit provider acceptance, signed delivery-status normalization, and timely verified delivery assessment. It is not published. |
+| `@vespeneventures/messenger/providers/resend` | Provider mapping, idempotency constraints, strict error normalization, signature verification, and delivery-status event mapping. |
+| `@vespeneventures/giver` | Whether an answer, refusal, handoff, or delivery discharged the semantic obligation owed to the person. |
+| `@vespeneventures/comms` | Published, not-deprecated transport donor. Existing consumers keep their exact version until messenger is published and migration is proved. |
+| Host application | Authorization evidence, recipients and personal data, templates/localization, sender identity, consent/preferences, suppression decisions, credentials, durable stores, routes, retention, logging, provider endpoint registration, domain configuration, and deployment settings. |
 
-The root/subpath boundary keeps a provider migration from changing the
-product-level contract without making consumers coordinate separate package
-versions. The package owns no provider configuration or environment reads and
-avoids an untyped metadata bag that only one provider can interpret.
+The role boundary is semantic, not a repository or provider boundary. Butler
+owns inbound admission, messenger owns transport and delivery-status evidence,
+and giver owns obligation discharge. Provider acceptance never proves either
+delivery or semantic discharge.
+
+The following mechanics describe the transport behavior preserved by the
+target role. Exact source APIs live in the package README rather than being
+restated here. The package owns no provider configuration or environment
+reads.
 
 ## Pipeline
 
@@ -21,18 +27,23 @@ avoids an untyped metadata bag that only one provider can interpret.
 product event
   -> host recipient lookup + policy inputs
   -> host template/rendering
-  -> one finished channel message
-  -> policy decision
+  -> one finished channel message + bound authorization evidence
   -> atomic dispatch claim (opaque lease)
+  -> current authorization policy decision
+  -> durable skipped completion if denied
   -> provider adapter
   -> provider acceptance result
   -> durable dispatch completion
 
-provider webhook (exact raw body)
+delivery-status webhook (exact raw body)
   -> provider signature verification
-  -> normalized delivery or inbound signal
+  -> normalized delivery-status signal
   -> host's one-operation durable apply
   -> suppression, retry and operator workflows
+
+inbound person request
+  -> butler admission and confirmation
+  -> authorized downstream work
 ```
 
 Provider acceptance is intentionally named `accepted`, never `sent` or
@@ -43,7 +54,7 @@ event.
 
 ### `dispatch()` never rejects on transport failure
 
-`CommunicationDispatcher.dispatch` resolves for every outcome, including a
+`Messenger.dispatch` resolves for every outcome, including a
 genuine send failure, as `state: "failed"` with a populated `failure`. This
 is intentional: a rejected promise would force every caller into a
 try/catch just to reach the same discriminated union `dispatch` already
@@ -69,11 +80,12 @@ must atomically grant one worker an opaque lease; `complete` receives that
 lease so stale workers cannot overwrite a newer attempt. Implementations own
 claim expiry, failed-attempt retry and abandoned-work recovery.
 
-`complete` runs on every claimed attempt, including failed ones — the
-dispatcher passes it the full `CommunicationDispatchResult`, so
+`complete` runs on every claimed attempt that reaches a dispatch result,
+including denied and failed ones — the dispatcher passes it the full
+`DispatchResult`, so
 `result.failure.retryable` is available at that hook and the ledger contract
-depends on it: only a terminal outcome (`accepted`, `skipped`, `duplicate`,
-or `failed` with `retryable: false`) may be recorded as permanently
+depends on it: only a terminal outcome (`accepted`, `skipped`, or `failed`
+with `retryable: false`) may be recorded as permanently
 complete. A `failed` result with `retryable: true` must leave the id
 reclaimable by a future `claim()`. Recording a retryable failure the same
 way as a terminal one silently and permanently blocks that message from
@@ -82,6 +94,11 @@ ever being retried, because `claim`'s own dedup check will report it as
 recovers abandoned work; picking a TTL that is too short for the retry path
 races the in-flight retry and re-strands the claim into a second, duplicate
 attempt instead of a clean single retry.
+
+A denied intent is durably completed as `skipped`; it is not merely reported
+through best-effort observability. If a later policy change authorizes the
+work, the host creates a new stable intent id and new bound authorization
+evidence rather than reopening a terminal denial under the old identity.
 
 The Resend adapter additionally forwards the stable message id as the provider
 idempotency key. That is a bounded provider-window defense for ambiguous
@@ -119,12 +136,12 @@ host-only and adapters must not transmit it implicitly.
 
 ## Future extensions
 
-- A future `@vespeneventures/comms/twilio` subpath should introduce an `SmsMessage` in the core
+- A future `@vespeneventures/messenger/providers/twilio` subpath should introduce an `SmsMessage` in the core
   and implement the same adapter/error/event boundaries. Provider account
   configuration stays in each host.
-- Inbound email currently maps to a privacy-minimal signal containing provider
-  ids and time. Content retrieval, parsing, storage and retention wait for a
-  concrete cross-host requirement.
+- Inbound email admission does not belong in messenger. A provider-specific
+  receiver may normalize transport evidence, but person-request admission and
+  confirmation remain with butler.
 - A database-specific ledger package should only be added if multiple hosts
   truly share one storage engine and migration lifecycle. Until then, ledger
   adapters remain host-owned.
@@ -132,28 +149,23 @@ host-only and adapters must not transmit it implicitly.
   a real template contract. Brand copy and visual defaults never belong in the
   transport packages.
 
-## Adoption plan
+## Publication-first migration
 
-No provider cutover is required to adopt these packages.
+Source parity is not adoption. The migration order is:
 
-1. Inventory each host's direct SDK calls and wrappers. Freeze existing sender,
-   recipient, template and deployment behavior.
-2. Convert one rendered transactional email into `EmailMessage`; preserve its
-   existing stable occurrence id or introduce one without using body content or
-   personal data.
-3. Implement the durable dispatch ledger and policy seam in the host. Exercise
-   that host's own unit and contract fixtures against the public interfaces.
-4. Replace the wrapper with `createResendAdapter` behind the existing call
-   boundary. Keep provider dashboard, DNS, domains, credentials and deployment
-   variables unchanged.
-5. Add a raw-body webhook route that calls `verifyResendWebhook`, then atomically
-   applies delivery events. Initially observe only; introduce suppression and
-   retry actions under host policy after the ledger is proven.
-6. Migrate remaining email paths one at a time. Delete a legacy wrapper only
-   after parity tests cover payload, idempotency, failures and webhook
-   correlation.
-7. Adopt SMS later through a separate adapter and independently typed message,
-   not through Resend-specific fields or a generic metadata bag.
+1. Publish messenger and prove its exact registry version installs with its
+   root, provider, and CLI surfaces.
+2. Inventory each consumer's comms imports, direct provider calls, webhook
+   handling, durable dispatch state, and inbound admission.
+3. Move only authorized finished-message transport and delivery-status
+   verification to messenger. Move inbound person-request admission to butler;
+   keep semantic obligation checks with giver.
+4. Preserve provider configuration, identities, templates, routes, durable
+   storage, and credentials while proving dispatch and event correlation.
+5. Only after the replacement is published and the direct cutover is proved,
+   record comms as deprecated and add the supersession check.
+6. Measure every consumer unpinned from comms with a positive control proving
+   the inventory can detect a retained pin before any retirement decision.
 
 Live-send tests remain opt-in and host-owned. Package tests inject a narrow
 client and never contact a provider.

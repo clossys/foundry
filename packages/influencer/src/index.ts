@@ -1,0 +1,42 @@
+export { InfluencerActionError, InfluencerValidationError } from "./errors.js";
+export { createInfluencer } from "./influencer.js";
+export { checkResponseYield, validateResponseYieldInput } from "./response-yield.js";
+export {
+  PRESENCE_ACTION_KINDS,
+  PRESENCE_SUBJECT_KINDS,
+  assertValidPresenceActionIntent,
+  validatePresenceActionIntent,
+  validatePresenceExperiment,
+  validatePresenceInstallation,
+} from "./validation.js";
+export type {
+  AudienceResponseEvent,
+  CompletedPresenceActionResult,
+  ConfigurePresenceIntent,
+  CountObservation,
+  Influencer,
+  InfluencerConfig,
+  PresenceActionClaim,
+  PresenceActionDuplicate,
+  PresenceActionFailure,
+  PresenceActionIntent,
+  PresenceActionKind,
+  PresenceActionLedger,
+  PresenceActionReceipt,
+  PresenceActionResult,
+  PresenceActuator,
+  PresenceAuthorityDecision,
+  PresenceAuthorityEvidence,
+  PresenceAuthorityPolicy,
+  PresenceChannelBinding,
+  PresenceExperiment,
+  PresenceInstallation,
+  PresenceSubjectKind,
+  PublishIntent,
+  ReplyIntent,
+  ResponseObservation,
+  ResponseYieldInput,
+  ResponseYieldRecord,
+  ResponseYieldResult,
+  ValidationFinding,
+} from "./types.js";
