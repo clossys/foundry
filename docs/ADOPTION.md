@@ -176,9 +176,12 @@ after outcome observations with a close-window verdict.
 The references are consumer-retained identifiers, not provider values or
 credentials. The validator verifies that a consumer supplied each evidence
 class, that the position linkage and owned metric agree with the shipped role
-charter, that the outcome owner is not the measured package or position, and
-that the independently observed after-value actually meets the linked
-position's setpoint under that role's metric direction. It cannot
+charter, that the outcome owner is a canonical printable-ASCII identifier and
+not a case variant of the measured package or position, and that the
+independently observed after-value actually meets the linked position's
+setpoint under that role's metric direction. A caller may report an outcome as
+`indeterminate` only while a before or after observation is unreadable; a
+readable measurement is always evaluated against the setpoint. It cannot
 certify the provider observation itself or make a central adoption decision.
 Unreadable/incomplete evidence and an unreadable independent outcome return
 `indeterminate`; a measured miss or contradictory claimed verdict returns

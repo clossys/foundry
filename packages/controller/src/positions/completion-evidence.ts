@@ -35,6 +35,7 @@ type RecordValue = Record<string, unknown>;
 const completionReasons = createGateReasons(COMPLETION_EVIDENCE_INDETERMINATE_REASONS);
 const roleName = /^@[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/;
 const exactVersion = /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
+const canonicalOwner = /^[\x21-\x7e](?:[\x20-\x7e]*[\x21-\x7e])?$/;
 
 function record(value: unknown): value is RecordValue { return typeof value === "object" && value !== null && !Array.isArray(value); }
 function text(value: unknown): value is string { return typeof value === "string" && value.trim() !== ""; }
@@ -204,20 +205,22 @@ export function validateCompletionEvidence(evidence: unknown, ledger: unknown): 
     const after = validateObservation(outcome.after, "outcome.after", findings);
     outcomeVerdict = outcome.verdict as string;
     const normalizedSourceOwner = typeof outcome.sourceOwner === "string" ? outcome.sourceOwner.trim() : "";
-    if (normalizedSourceOwner !== outcome.sourceOwner) {
-      fail(findings, "noncanonical-outcome-owner", "outcome.sourceOwner", "must not contain surrounding whitespace");
+    if (normalizedSourceOwner !== outcome.sourceOwner || !canonicalOwner.test(normalizedSourceOwner)) {
+      fail(findings, "noncanonical-outcome-owner", "outcome.sourceOwner", "must be a printable ASCII identifier with no surrounding whitespace");
     }
-    if (normalizedSourceOwner === packageName || normalizedSourceOwner === positionId) {
+    const ownerIdentity = normalizedSourceOwner.toLowerCase();
+    if (ownerIdentity === packageName?.toLowerCase() || ownerIdentity === positionId?.toLowerCase()) {
       fail(findings, "non-independent-outcome-owner", "outcome.sourceOwner", "must identify an outcome owner other than the measured package or position");
     }
     if (outcome.metric !== linkedMetricName) {
       fail(findings, "outcome-metric-mismatch", "outcome.metric", "must equal the owned metric in the linked role charter");
     }
-    if (outcome.verdict === "indeterminate") {
-      if (!text(outcome.reason)) fail(findings, "missing-outcome-reason", "outcome.reason", "an indeterminate outcome needs a machine-retained reason");
-    } else if (before !== "observed" || after !== "observed" || outcome.reason !== "") {
+    if (outcome.verdict === "indeterminate" && (before !== "observed" || after !== "observed")) {
+      if (!text(outcome.reason)) fail(findings, "missing-outcome-reason", "outcome.reason", "an unreadable indeterminate outcome needs a machine-retained reason");
+    } else if (outcome.verdict !== "indeterminate" && (before !== "observed" || after !== "observed" || outcome.reason !== "")) {
       fail(findings, "incomplete-independent-outcome", "outcome", "a satisfied or violated outcome needs readable independent before/after observations and an empty reason");
-    } else if (record(outcome.after) && typeof outcome.after.value === "number") {
+    }
+    if (before === "observed" && after === "observed" && record(outcome.after) && typeof outcome.after.value === "number") {
       const reachedSetpoint = meetsSetpoint(linkedMetricDirection, outcome.after.value, linkedSetpoint);
       if (reachedSetpoint === undefined) {
         fail(findings, "unreadable-linked-setpoint", "outcome.after.value", "the linked role direction and position setpoint must support an independent comparison");

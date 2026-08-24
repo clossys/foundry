@@ -101,6 +101,20 @@ describe("completion evidence", () => {
       expect(validateCompletionEvidence(paddedSelfMeasurement, ledger()).result).toMatchObject({ verdict: "indeterminate", reason: "unreadable-or-incomplete-evidence" });
     }
 
+    for (const disguisedOwner of [`\u200B${String(selfMeasured.package)}`, String(selfMeasured.package).toUpperCase()]) {
+      const disguisedSelfMeasurement = evidence();
+      (disguisedSelfMeasurement.outcome as Record<string, unknown>).sourceOwner = disguisedOwner;
+      expect(validateCompletionEvidence(disguisedSelfMeasurement, ledger()).result).toMatchObject({ verdict: "indeterminate", reason: "unreadable-or-incomplete-evidence" });
+    }
+
+    const hiddenMeasuredMiss = evidence();
+    ((hiddenMeasuredMiss.outcome as Record<string, Record<string, unknown>>).after).value = 0;
+    (hiddenMeasuredMiss.outcome as Record<string, unknown>).verdict = "indeterminate";
+    (hiddenMeasuredMiss.outcome as Record<string, unknown>).reason = "Caller says the readable outcome is unknown.";
+    const hiddenMissReport = validateCompletionEvidence(hiddenMeasuredMiss, ledger());
+    expect(hiddenMissReport.result).toMatchObject({ verdict: "violated" });
+    expect(hiddenMissReport.findings.some((finding) => finding.rule === "outcome-verdict-setpoint-mismatch")).toBe(true);
+
     const selfCertifiedFailure = evidence();
     (selfCertifiedFailure.outcome as Record<string, unknown>).verdict = "violated";
     expect(validateCompletionEvidence(selfCertifiedFailure, ledger()).result).toMatchObject({ verdict: "violated" });
