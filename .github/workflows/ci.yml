@@ -298,7 +298,7 @@ jobs:
           node-version: 20
       - run: node scripts/check-root-entry-policy.mjs
 
-  # scripts/check-package-programs.mjs grades docs/contracts/package-programs.json
+  # scripts/check-package-evidence.mjs grades docs/contracts/package-evidence.json
   # -- where every package stands on the seven-state ladder in docs/LIFECYCLE.md,
   # and what is missing below the state it claims. Fails when a declared position
   # runs ahead of the evidence this repository can actually see: a package
@@ -314,21 +314,21 @@ jobs:
   # NOT added to `main-required-checks` by this change, same as the jobs above: a
   # status context with no reporting history wedges a repository if it lands
   # straight into `required_status_checks`.
-  package-programs:
-    name: package programme state (declared vs. evidence)
+  package-evidence:
+    name: package state (declared vs. evidence)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 20
-      - run: node scripts/check-package-programs.mjs
+      - run: node scripts/check-package-evidence.mjs
 
   # The normalized role-loop declaration is intentionally separate from the
   # lifecycle position record above: it checks the common seven-element
-  # grammar, the six control shapes, and exactly the role packages Programs
-  # A, B, and C declare. It reads contracts only, so it belongs in the same
-  # dependency-free, shallow-checkout class as package-programs.
+  # grammar, the six control shapes, and exactly the active lifecycle role
+  # packages. It reads contracts only, so it belongs in the same
+  # dependency-free, shallow-checkout class as package-evidence.
   role-loop-archetypes:
     name: role-loop archetypes
     runs-on: ubuntu-latest
@@ -600,7 +600,7 @@ jobs:
       # than a silent "no declaration" pass.
       - name: Repository profile
         run: npm run check:repository-profile
-      # Program A staging: these are author-side invocations of the built
+      # Author-side staging: these are invocations of the built
       # locksmith and integrator artifacts. They stay after `npm run build`
       # and outside publish.yml's bootstrap discovery (#494, #495).
       - name: Locksmith value-free catalogue

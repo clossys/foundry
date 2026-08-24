@@ -1,7 +1,11 @@
 {
-  "$comment": "Declares the INTENDED GitHub Packages visibility for every package.json/contracts/package-lifecycle.json entry whose status is \"published\". This is a separate small file rather than a new field on package-lifecycle.json entries on purpose: package-lifecycle.json's schema is owned and exhaustively validated by the published @vespeneventures/governance package (packages/governance/src/lifecycle.ts's ENTRY_KEYS allowlist rejects any field it does not recognise), so adding a field there would force a governance version bump and rewritten test fixtures for what is really repository-tooling metadata, not package lifecycle maturity. See scripts/check-package-visibility.mjs, which joins this file against package-lifecycle.json's \"published\" entries and is deliberately NOT part of `npm run check` (see that script's own header for why) and deliberately DOES NOT invent a default: a \"published\" lifecycle entry with no matching entry here, or a malformed one, is a gate finding, not a silent pass.",
+  "$comment": "Declares intended GitHub Packages visibility. Every package whose lifecycle status is \"published\" must appear; an incubating package may appear early to record publication intent, but the declarations-only checker skips it until registry evidence supports publication. This is a separate small file rather than a field on package-lifecycle.json because visibility intent is repository-tooling metadata, not lifecycle maturity. See scripts/check-package-visibility.mjs, which joins this file against package-lifecycle.json and invents no default: a published lifecycle entry with no matching declaration, or a malformed declaration, is a gate finding.",
   "schemaVersion": 1,
   "packages": [
+    {
+      "name": "@vespeneventures/architect",
+      "intendedVisibility": "public"
+    },
     {
       "name": "@vespeneventures/auth",
       "intendedVisibility": "public"
@@ -55,6 +59,10 @@
       "intendedVisibility": "public"
     },
     {
+      "name": "@vespeneventures/influencer",
+      "intendedVisibility": "public"
+    },
+    {
       "name": "@vespeneventures/keeper",
       "intendedVisibility": "public"
     },
@@ -64,6 +72,10 @@
     },
     {
       "name": "@vespeneventures/locksmith",
+      "intendedVisibility": "public"
+    },
+    {
+      "name": "@vespeneventures/messenger",
       "intendedVisibility": "public"
     },
     {

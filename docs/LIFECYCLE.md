@@ -53,7 +53,7 @@ second person could reproduce without asking the first.
 
 | # | state | the question it answers | evidence that ends it |
 | --- | --- | --- | --- |
-| 1 | **designed** | Is there a job here, and can it be graded? | The versioned [role-loop contract](contracts/role-loop-archetypes.json) parses: the seven ordered loop elements and one primary archetype, with a close condition grounded in a measurement outside the package. |
+| 1 | **designed** | Is there a job here, and can it be graded? | The versioned [role-package contract](contracts/role-loop-archetypes.json) parses with one job question, one owned metric, one primary mode, a durable boundary, and the universal consumer-binding requirements. |
 | 2 | **implemented** | Does it build and hold its own contracts? | `npm run check` and release readiness, both green. |
 | 3 | **staged** | Has the author's own repository run it? | An executable invocation site here, **and a recorded run in which the gate went red on a genuine violation, alongside a control that stayed green**. |
 | 4 | **published** | Can someone else install exactly this? | A registry artifact, a lifecycle entry, a clear name-collision check, and a declared visibility. |
@@ -70,12 +70,12 @@ targets must not grade identically to one fully covered.
 
 A package named for a thing has no natural metric, so nothing ever says
 whether it is working. A package named for a job has a control loop by
-construction. That is the test this state applies. The seven ordered elements
-and one primary archetype are normalized in
+construction. That is the test this state applies. The job question, one owned
+metric, primary and secondary modes, durable boundary, and required consumer
+bindings are normalized in
 [`contracts/role-loop-archetypes.json`](contracts/role-loop-archetypes.json);
-[`LOOPS.md`](LOOPS.md) explains the shared grammar and distinct control
-shapes. Consumer repositories supply the concrete subjects, setpoints, and
-independent measurements.
+[`LOOPS.md`](LOOPS.md) explains how the durable charter differs from a
+consumer installation.
 
 The close condition must name a measurement **outside the package**. "Our
 tests pass" is not a close condition; it is the system grading its own
@@ -235,17 +235,16 @@ catalogue reporting it.
 
 ## Standing obligations
 
-Three programs run concurrently in this repository. Normalisation across them
-is therefore not a stage a package passes through once — the thing being
-normalised against keeps moving. Two obligations run continuously rather than
-in sequence:
+The portfolio and its evidence evolve continuously, so normalisation is not a
+stage a package passes through once. Two obligations run continuously rather
+than in sequence:
 
-- **One grammar for the loop declaration.** Every role package declares the
-  seven ordered elements — subject or addressee, authoritative setpoint,
-  actual observation, ternary judgment, correction or handoff, independent
-  outcome, cadence and close condition — plus one primary archetype in
+- **One role-package contract.** Every role package declares one job question,
+  one owned metric, one primary mode, optional secondary modes, and one durable
+  boundary in
   [`contracts/role-loop-archetypes.json`](contracts/role-loop-archetypes.json).
-  The checker reads this normalized declaration rather than relying on prose.
+  The same contract fixes the universal stages and required consumer bindings;
+  the checker reads it rather than relying on prose.
 - **One vocabulary per shared concept.** A live-state vocabulary declared
   twice agrees only by luck.
 
@@ -254,52 +253,52 @@ in sequence:
 This section used to carry a table of positions measured by hand on
 2026-08-22. It has been deleted, and the deletion is the point.
 
-Within a day it disagreed with the contract in four places at once: it
-counted three programs where there are four, nineteen packages short of
-*staged* where there are thirteen, fifteen packages with no invocation site
-where there are nine, and one *staged* package in program A where the gate
-grades none. Nothing was wrong with the measurement — it was correct when
-taken, and it was a declaration by the following morning. That is the failure
-this document describes, committed by this document.
+Within a day it disagreed with the evidence contract in several package counts,
+states, and invocation totals. Nothing was wrong with the measurement — it was
+correct when taken, and it was a declaration by the following morning. That is
+the failure this document describes, committed by this document.
 
 Refreshing the numbers would have re-committed it with fresher digits. So the
 position is not written here. It is read:
 
 ```bash
-node scripts/check-package-programs.mjs
+node scripts/check-package-evidence.mjs
 ```
 
-`docs/contracts/package-programs.json` is the record and that command is its
+`docs/contracts/package-evidence.json` is the record and that command is its
 reader. A prose table returns here only once it is generated and the gate
 fails when the committed copy drifts from the derived one — #493.
 
 <!-- lifecycle-position-table:start -->
 
-| program | package | membership | declared state | staged here | grounded |
-| --- | --- | --- | --- | --- | --- |
-| A — operation | `@vespeneventures/controller` | role | published | yes | unknown — #484 |
-| A — operation | `@vespeneventures/inspector` | role | published | yes | unknown — #484 |
-| A — operation | `@vespeneventures/builder` | role | published | yes | unknown — #484 |
-| A — operation | `@vespeneventures/locksmith` | role | published | yes | unknown — #484 |
-| A — operation | `@vespeneventures/integrator` | role | published | yes | unknown — #484 |
-| A — operation | `@vespeneventures/observer` | role | published | yes | unknown — #484 |
-| B — expression | `@vespeneventures/strategist` | role | published | yes | unknown — #484 |
-| B — expression | `@vespeneventures/writer` | role | published | yes | unknown — #484 |
-| B — expression | `@vespeneventures/designer` | role | published | yes | unknown — #484 |
-| B — expression | `@vespeneventures/publisher` | role | published | yes | unknown — #484 |
-| B — expression | `@vespeneventures/strategy` | donor | published | yes | unknown — #484 |
-| B — expression | `@vespeneventures/copy` | donor | published | yes | unknown — #484 |
-| B — expression | `@vespeneventures/ui` | donor | published | yes | unknown — #484 |
-| B — expression | `@vespeneventures/surface` | donor | published | yes | unknown — #484 |
-| B — expression | `@vespeneventures/ledger` | donor | published | yes | unknown — #484 |
-| C — interaction | `@vespeneventures/auth` | donor | published | not yet | unknown — #484 |
-| C — interaction | `@vespeneventures/consent` | donor | published | not yet | unknown — #484 |
-| C — interaction | `@vespeneventures/comms` | donor | published | not yet | unknown — #484 |
-| - — foundation | `@vespeneventures/domain` | role | published | not yet | unknown — #484 |
-| C — interaction | `@vespeneventures/bouncer` | role | published | yes | unknown — #484 |
-| C — interaction | `@vespeneventures/butler` | role | published | yes | unknown — #484 |
-| C — interaction | `@vespeneventures/giver` | role | published | yes | unknown — #484 |
-| C — interaction | `@vespeneventures/keeper` | role | published | yes | unknown — #484 |
+| package | declared state | staged here | grounded |
+| --- | --- | --- | --- |
+| `@vespeneventures/controller` | published | yes | unknown — #484 |
+| `@vespeneventures/architect` | staged | yes | unknown — #484 |
+| `@vespeneventures/inspector` | published | yes | unknown — #484 |
+| `@vespeneventures/builder` | published | yes | unknown — #484 |
+| `@vespeneventures/locksmith` | published | yes | unknown — #484 |
+| `@vespeneventures/integrator` | published | yes | unknown — #484 |
+| `@vespeneventures/observer` | published | yes | unknown — #484 |
+| `@vespeneventures/strategist` | published | yes | unknown — #484 |
+| `@vespeneventures/writer` | published | yes | unknown — #484 |
+| `@vespeneventures/designer` | published | yes | unknown — #484 |
+| `@vespeneventures/publisher` | published | yes | unknown — #484 |
+| `@vespeneventures/influencer` | staged | yes | unknown — #484 |
+| `@vespeneventures/strategy` | published | yes | unknown — #484 |
+| `@vespeneventures/copy` | published | yes | unknown — #484 |
+| `@vespeneventures/ui` | published | yes | unknown — #484 |
+| `@vespeneventures/surface` | published | yes | unknown — #484 |
+| `@vespeneventures/ledger` | published | yes | unknown — #484 |
+| `@vespeneventures/auth` | published | not yet | unknown — #484 |
+| `@vespeneventures/consent` | published | not yet | unknown — #484 |
+| `@vespeneventures/comms` | published | not yet | unknown — #484 |
+| `@vespeneventures/messenger` | staged | yes | unknown — #484 |
+| `@vespeneventures/domain` | published | not yet | unknown — #484 |
+| `@vespeneventures/bouncer` | published | yes | unknown — #484 |
+| `@vespeneventures/butler` | published | yes | unknown — #484 |
+| `@vespeneventures/giver` | published | yes | unknown — #484 |
+| `@vespeneventures/keeper` | published | yes | unknown — #484 |
 
 <!-- lifecycle-position-table:end -->
 
@@ -316,12 +315,12 @@ that reads zero because nothing could be read is not a measurement (#484).
 
 ## How this is enforced
 
-This document is not the record. `docs/contracts/package-programs.json` is,
-and `scripts/check-package-programs.mjs` grades it on every run of
+This document is not the record. `docs/contracts/package-evidence.json` is,
+and `scripts/check-package-evidence.mjs` grades it on every run of
 `npm run check`:
 
 ```bash
-npm run check:package-programs
+npm run check:package-evidence
 ```
 
 Every package in the workspace must declare a position. The gate derives what
@@ -369,11 +368,11 @@ gate silently unreachable in this fleet.
 
 One further rule is graded here that is not a rung on this ladder at all.
 [DECISIONS.md 11](DECISIONS.md#11-a-gate-behind-a-bin-or-a-declared-primitive)
-states that a package in a programme ships a gate behind a `bin`, or declares
-`shipsNoGate` with a reason — permanently, which only the primitive tier (the
-`foundation` programme, marked `"tier": "primitive"`) may claim, or with an
-issue, which is a countdown like `gaps`. It lives in this gate because this is
-the file that already knows each package's programme and lifecycle status, and
+states that an active role package ships a gate behind a `bin`. A temporary
+compatibility package may declare `shipsNoGate` with a reason and an issue,
+which is a countdown like `gaps`; no package may claim permanent exemption.
+The rule lives in this gate because this is
+the file that already knows each package's lifecycle status, and
 a rule needing a second copy of that data belongs beside the first. Shipping a
 `bin` is the weaker, earlier question than `staged`: whether a consumer could
 run anything at all, not whether what they ran has ever caught a defect.
@@ -385,9 +384,9 @@ never a pass it did not earn.
 
 The derivable half is now derived. The rest is not, and is declared:
 
-- **`designed`** is not graded at all. The loop declaration exists in all
-  fourteen role packages but in several different prose shapes, so nothing
-  can parse it. A grammar has to come first.
+- **`designed`** is graded structurally by the normalized loop declaration for
+  all seventeen roles. That proves a parseable charter shape, not applicability
+  in a consumer or independent grounding.
 - **`staged`'s** second half — the recorded failing run — is a pointer this
   gate checks the presence of, not the truth of.
 - **`adopted`** needs each consuming repository to report whether the gate is
@@ -410,11 +409,10 @@ else, and only a reader catches it.
 
 ## Related documents
 
-- [DECISIONS.md](DECISIONS.md) — decisions 9 and 10 define the operation and
-  expression programs and why each package is named for a job; decision 11
-  states the gate rule this contract also carries, and declares the primitive
-  tier.
+- [DECISIONS.md](DECISIONS.md) — decisions 9 through 14 preserve the historical
+  delivery recuts and role qualifications; decision 15 removes their A/B/C
+  cohorts from the live operating model.
 - [PUBLISHING.md](PUBLISHING.md) — state 4 in full.
 - [ADOPTION.md](ADOPTION.md) — state 5, from the consumer's side.
-- `docs/contracts/package-programs.json` — the record this document
+- `docs/contracts/package-evidence.json` — the record this document
   describes, and the thing that is actually enforced.

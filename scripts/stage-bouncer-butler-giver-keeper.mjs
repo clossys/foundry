@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Reproducible author-side staging evidence for Program C.
+ * Reproducible author-side staging evidence for bouncer, butler, giver, and keeper.
  *
  * Each case invokes one compiled role CLI through its dist path, first on a
  * synthetic consumer-shaped violation and then on its clean control. The
@@ -15,7 +15,7 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = resolve(fileURLToPath(new URL("..", import.meta.url)));
-const stageDir = mkdtempSync(join(tmpdir(), "foundry-program-c-stage-"));
+const stageDir = mkdtempSync(join(tmpdir(), "foundry-interaction-role-stage-"));
 const at = "2026-08-22T12:00:00.000Z";
 
 function fixtureDir(name) {
@@ -145,7 +145,7 @@ try {
   run("keeper disposal red", keeperCli, ["disposal", keeperItems, keeperRedSchedule, keeperDeletions, "--at", at], 1, "Disposal: violated (items-retained-past-schedule).");
   run("keeper disposal control", keeperCli, ["disposal", keeperItems, keeperControlSchedule, keeperDeletions, "--at", at], 0, "Disposal: satisfied.");
 
-  console.log("Program C fixture evidence: all deliberate reds and controls behaved as expected.");
+  console.log("Bouncer, butler, giver, and keeper fixture evidence: all deliberate reds and controls behaved as expected.");
 } finally {
   rmSync(stageDir, { recursive: true, force: true });
 }

@@ -1,60 +1,59 @@
 #!/usr/bin/env node
-// check-role-loop-archetypes — keep the role-loop taxonomy complete,
-// machine-readable, and closed-loop.
+// check-role-loop-archetypes — keep the role-package qualification matrix
+// complete, machine-readable, and closed-loop.
 //
-//   node scripts/check-role-loop-archetypes.mjs [roleContractPath] [programsContractPath]
+//   node scripts/check-role-loop-archetypes.mjs [roleContractPath] [candidateAssessmentPath]
 //
-// The role contract is deliberately a normalized declaration, not a claim
-// that a package has adopted a loop in any particular consumer. Its grammar
-// and archetypes make the control shape inspectable; the consumer supplies
-// concrete subjects, setpoints, observations, and independent outcomes.
+// The contract is a durable job charter, not evidence that any consumer has
+// installed or adopted a role. Optional candidate assessment is pure and
+// no-write; its verdict never changes package-program or lifecycle records.
 //
-// Exit 0 = valid contract. Exit 1 = readable contract violates this taxonomy.
-// Exit 2 = either input cannot be read or has an unusable structural shape.
-// A malformed input must never be treated as an empty, passing declaration.
+// Exit 0 = valid contract (and, if supplied, valid candidate assessment).
+// Exit 1 = readable contract or candidate assessment violates the schema.
+// Exit 2 = an input cannot be read or has an unusable top-level shape.
 
 import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-export const LOOP_GRAMMAR = [
-  "subjectOrAddressee",
-  "authoritativeSetpoint",
-  "actualObservation",
-  "ternaryJudgment",
-  "correctionOrHandoff",
-  "independentOutcome",
-  "cadenceAndCloseCondition",
+export const UNIVERSAL_STAGES = ["sense", "judge", "act", "verify", "learnOrEscalate"];
+
+export const CONSUMER_BINDINGS = [
+  "businessMetricNode",
+  "causalHypothesis",
+  "setpoint",
+  "authority",
+  "evidenceSource",
+  "budget",
+  "guardrails",
+  "escalationPath",
 ];
 
-export const ARCHETYPES = {
-  "conformance-gate": ["load setpoint", "observe candidate", "judge", "block-or-allow", "sample outcomes", "revise setpoint"],
-  reconciliation: ["declare desired", "observe actual", "diff", "correct-or-handoff", "reobserve", "close-on-zero-delta"],
-  "actuation-provisioning": ["accept intent", "validate preconditions", "act", "confirm actual outcome", "compensate-retry-or-handoff", "close-on-observed-outcome"],
-  "confirmation-interaction": ["receive actor/subject request", "authorize", "record intent", "act-or-refuse", "confirm/read-back", "reconcile change-or-withdrawal"],
-  "custody-lifecycle": ["inventory", "justify", "protect", "disclose-or-correct", "dispose", "verify-disposal-or-reopen"],
-  "observation-learning": ["declare coverage/question", "collect independent signals", "normalize", "measure", "report", "adjust-and-remeasure"],
-};
+export const MODE_NAMES = [
+  "assure",
+  "reconcile",
+  "fulfill",
+  "interact",
+  "steward",
+  "optimize",
+];
 
-export const ROLE_ARCHETYPES = {
-  "@vespeneventures/controller": { primary: "reconciliation" },
-  "@vespeneventures/inspector": { primary: "conformance-gate" },
-  "@vespeneventures/builder": { primary: "actuation-provisioning", secondary: ["reconciliation"] },
-  "@vespeneventures/locksmith": { primary: "custody-lifecycle" },
-  "@vespeneventures/integrator": { primary: "reconciliation" },
-  "@vespeneventures/observer": { primary: "observation-learning" },
-  "@vespeneventures/strategist": { primary: "conformance-gate" },
-  "@vespeneventures/writer": { primary: "conformance-gate" },
-  "@vespeneventures/designer": { primary: "conformance-gate" },
-  "@vespeneventures/publisher": { primary: "actuation-provisioning", secondary: ["reconciliation"] },
-  "@vespeneventures/bouncer": { primary: "reconciliation", secondary: ["confirmation-interaction"] },
-  "@vespeneventures/butler": { primary: "confirmation-interaction" },
-  "@vespeneventures/giver": { primary: "actuation-provisioning", secondary: ["confirmation-interaction"] },
-  "@vespeneventures/keeper": { primary: "custody-lifecycle" },
-};
+export const METRIC_UNITS = ["ratio", "count", "duration", "currency", "rate"];
+export const METRIC_DIRECTIONS = ["increase", "decrease"];
+export const QUALIFICATION_VERDICTS = ["create", "extend", "compose", "reject"];
+
+const ROLE_FIELDS = ["jobQuestion", "metric", "primaryMode", "secondaryModes", "boundary"];
+const METRIC_FIELDS = ["name", "formula", "unit", "direction"];
+const BOUNDARY_FIELDS = ["owns", "excludes"];
+const COVERAGE_FIELDS = ["role", "jobEvidence", "metricEvidence", "loopClosureEvidence"];
+const SCOPED_PACKAGE_NAME = /^@[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/;
 
 function isRecord(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isNonemptyString(value) {
+  return typeof value === "string" && value.trim() !== "";
 }
 
 function sameArray(left, right) {
@@ -62,125 +61,213 @@ function sameArray(left, right) {
 }
 
 function sameKeys(value, expected) {
-  return sameArray(Object.keys(value).sort(), [...expected].sort());
+  return isRecord(value) && sameArray(Object.keys(value).sort(), [...expected].sort());
 }
 
 function finding(rule, subject, message, fatal = false) {
   return { rule, subject, message, fatal };
 }
 
-/** Read role package names from exactly Programs A, B, and C, never donors. */
-export function deriveRolePackages(programsContract) {
-  if (!isRecord(programsContract) || !isRecord(programsContract.programs)) {
-    return { packages: new Set(), findings: [finding("unreadable-package-programs", "docs/contracts/package-programs.json", "`programs` must be an object", true)] };
+function validateUniqueNonemptyStrings(value, { rule, subject, label }, findings) {
+  if (!Array.isArray(value) || value.some((item) => !isNonemptyString(item))) {
+    findings.push(finding(rule, subject, `${label} must be an array of nonempty strings`, true));
+    return false;
+  }
+  if (new Set(value).size !== value.length) findings.push(finding(rule, subject, `${label} may not contain duplicates`));
+  return true;
+}
+
+function validateRoleDeclaration({ declaration, subject, modes, metricUnits, metricDirections }, findings) {
+  if (!sameKeys(declaration, ROLE_FIELDS)) {
+    findings.push(finding("unreadable-role-declaration", subject, `must contain exactly: ${ROLE_FIELDS.join(", ")}`, true));
+    return;
   }
 
-  const packages = new Set();
-  const findings = [];
-  const requiredLetters = new Set(["A", "B", "C"]);
-  const foundLetters = new Set();
-  for (const [programId, program] of Object.entries(programsContract.programs)) {
-    if (!isRecord(program) || typeof program.letter !== "string") {
-      findings.push(finding("unreadable-package-programs", programId, "every program must be an object with a string `letter`", true));
-      continue;
+  if (!isNonemptyString(declaration.jobQuestion) || !declaration.jobQuestion.trim().endsWith("?")) {
+    findings.push(finding("invalid-job-question", subject, "jobQuestion must be a nonempty question ending in `?`"));
+  }
+
+  if (!sameKeys(declaration.metric, METRIC_FIELDS)) {
+    findings.push(finding("unreadable-owned-metric", subject, `metric must contain exactly: ${METRIC_FIELDS.join(", ")}`, true));
+  } else {
+    if (!isNonemptyString(declaration.metric.name)) findings.push(finding("invalid-metric-name", subject, "metric.name must be a nonempty string"));
+    if (!isNonemptyString(declaration.metric.formula)) findings.push(finding("invalid-metric-formula", subject, "metric.formula must be a nonempty string"));
+    if (!metricUnits.has(declaration.metric.unit)) findings.push(finding("invalid-metric-unit", subject, `metric.unit must name one of: ${[...metricUnits].join(", ")}`));
+    if (!metricDirections.has(declaration.metric.direction)) findings.push(finding("invalid-metric-direction", subject, `metric.direction must name one of: ${[...metricDirections].join(", ")}`));
+  }
+
+  if (!modes.has(declaration.primaryMode)) {
+    findings.push(finding("invalid-primary-mode", subject, `primaryMode must name one of: ${[...modes].join(", ")}`));
+  }
+  if (validateUniqueNonemptyStrings(declaration.secondaryModes, {
+    rule: "unreadable-secondary-modes",
+    subject,
+    label: "secondaryModes",
+  }, findings)) {
+    if (declaration.secondaryModes.some((mode) => !modes.has(mode))) {
+      findings.push(finding("invalid-secondary-mode", subject, "every secondary mode must be declared in `modes`"));
     }
-    if (!requiredLetters.has(program.letter)) continue;
-    if (!Array.isArray(program.packages)) {
-      findings.push(finding("unreadable-package-programs", programId, `Program ${program.letter} must declare a packages array`, true));
-      continue;
-    }
-    foundLetters.add(program.letter);
-    for (const name of program.packages) {
-      if (typeof name !== "string" || name.trim() === "") {
-        findings.push(finding("unreadable-package-programs", programId, `Program ${program.letter} has a package name that is not a nonempty string`, true));
-      } else if (packages.has(name)) {
-        findings.push(finding("duplicate-program-role", name, "appears more than once across Programs A, B, and C", true));
-      } else {
-        packages.add(name);
-      }
+    if (declaration.secondaryModes.includes(declaration.primaryMode)) {
+      findings.push(finding("secondary-matches-primary", subject, "secondaryModes must be distinct from primaryMode"));
     }
   }
-  for (const letter of requiredLetters) {
-    if (!foundLetters.has(letter)) findings.push(finding("unreadable-package-programs", "docs/contracts/package-programs.json", `Program ${letter} is required to derive role coverage`, true));
+
+  if (!sameKeys(declaration.boundary, BOUNDARY_FIELDS)) {
+    findings.push(finding("unreadable-role-boundary", subject, `boundary must contain exactly: ${BOUNDARY_FIELDS.join(", ")}`, true));
+  } else {
+    if (!isNonemptyString(declaration.boundary.owns)) findings.push(finding("invalid-boundary-owner", subject, "boundary.owns must be a nonempty string"));
+    if (validateUniqueNonemptyStrings(declaration.boundary.excludes, {
+      rule: "invalid-boundary-exclusions",
+      subject,
+      label: "boundary.excludes",
+    }, findings) && declaration.boundary.excludes.length === 0) {
+      findings.push(finding("invalid-boundary-exclusions", subject, "boundary.excludes must name at least one excluded responsibility"));
+    }
   }
-  if (packages.size === 0) findings.push(finding("unreadable-package-programs", "docs/contracts/package-programs.json", "Programs A, B, and C produced no role packages", true));
-  return { packages, findings };
 }
 
 /** Pure validator so focused tests can exercise both data and the CLI separately. */
-export function evaluateRoleLoopArchetypes({ contract, programsContract }) {
-  const { packages: rolePackages, findings } = deriveRolePackages(programsContract);
+export function evaluateRoleLoopArchetypes({ contract }) {
+  const findings = [];
   if (!isRecord(contract)) {
     return { findings: [...findings, finding("unreadable-role-loop-contract", "docs/contracts/role-loop-archetypes.json", "the contract must be an object", true)] };
   }
-  if (!sameKeys(contract, ["schemaVersion", "loopGrammar", "archetypes", "roles"])) {
-    findings.push(finding("unreadable-role-loop-contract", "docs/contracts/role-loop-archetypes.json", "the contract must contain exactly `schemaVersion`, `loopGrammar`, `archetypes`, and `roles`", true));
+  if (!sameKeys(contract, ["schemaVersion", "universalStages", "consumerBindings", "modes", "metricVocabulary", "qualificationVerdicts", "roles"])) {
+    findings.push(finding("unreadable-role-loop-contract", "docs/contracts/role-loop-archetypes.json", "the contract must contain exactly `schemaVersion`, `universalStages`, `consumerBindings`, `modes`, `metricVocabulary`, `qualificationVerdicts`, and `roles`", true));
     return { findings };
   }
-  if (contract.schemaVersion !== 1 || !Array.isArray(contract.loopGrammar) || !isRecord(contract.archetypes) || !isRecord(contract.roles)) {
-    findings.push(finding("unreadable-role-loop-contract", "docs/contracts/role-loop-archetypes.json", "schema version 1 requires an array `loopGrammar` and object `archetypes` and `roles`", true));
+  if (contract.schemaVersion !== 3 || !Array.isArray(contract.universalStages) || !Array.isArray(contract.consumerBindings) || !isRecord(contract.modes) || !isRecord(contract.roles)) {
+    findings.push(finding("unreadable-role-loop-contract", "docs/contracts/role-loop-archetypes.json", "schema version 3 requires arrays `universalStages` and `consumerBindings`, and objects `modes` and `roles`", true));
     return { findings };
   }
 
-  if (!sameArray(contract.loopGrammar, LOOP_GRAMMAR)) {
-    findings.push(finding("loop-grammar-mismatch", "loopGrammar", `must be exactly: ${LOOP_GRAMMAR.join(", ")}`));
+  if (!sameArray(contract.universalStages, UNIVERSAL_STAGES)) {
+    findings.push(finding("universal-stages-mismatch", "universalStages", `must be exactly: ${UNIVERSAL_STAGES.join(", ")}`));
+  }
+  if (!sameArray(contract.consumerBindings, CONSUMER_BINDINGS)) {
+    findings.push(finding("consumer-bindings-mismatch", "consumerBindings", `must be exactly: ${CONSUMER_BINDINGS.join(", ")}`));
   }
 
-  const expectedArchetypeNames = Object.keys(ARCHETYPES);
-  if (!sameKeys(contract.archetypes, expectedArchetypeNames)) {
-    findings.push(finding("archetype-coverage-mismatch", "archetypes", `must define exactly: ${expectedArchetypeNames.join(", ")}`));
+  if (!sameKeys(contract.modes, MODE_NAMES)) {
+    findings.push(finding("mode-vocabulary-mismatch", "modes", `must define exactly: ${MODE_NAMES.join(", ")}`));
   }
-  for (const [name, expectedPhases] of Object.entries(ARCHETYPES)) {
-    const archetype = contract.archetypes[name];
-    if (!isRecord(archetype) || !sameKeys(archetype, ["purpose", "phases"]) || typeof archetype.purpose !== "string" || archetype.purpose.trim() === "" || !Array.isArray(archetype.phases)) {
-      findings.push(finding("unreadable-archetype", name, "must contain exactly a nonempty string `purpose` and array `phases`", true));
+  for (const [modeName, mode] of Object.entries(contract.modes)) {
+    if (!sameKeys(mode, ["objective", "stageActivities"]) || !isNonemptyString(mode.objective) || !isRecord(mode.stageActivities)) {
+      findings.push(finding("unreadable-mode", modeName, "must contain exactly a nonempty `objective` and object `stageActivities`", true));
       continue;
     }
-    if (!sameArray(archetype.phases, expectedPhases)) {
-      findings.push(finding("archetype-phases-mismatch", name, `phases must be exactly: ${expectedPhases.join(" -> ")}`));
+    if (!sameKeys(mode.stageActivities, UNIVERSAL_STAGES) || Object.values(mode.stageActivities).some((activity) => !isNonemptyString(activity))) {
+      findings.push(finding("mode-stage-coverage", modeName, `stageActivities must contain one nonempty activity for each universal stage: ${UNIVERSAL_STAGES.join(", ")}`));
     }
   }
 
-  const roleNames = Object.keys(contract.roles);
-  const missingRoles = [...rolePackages].filter((name) => !roleNames.includes(name));
-  const extraRoles = roleNames.filter((name) => !rolePackages.has(name));
-  if (missingRoles.length > 0 || extraRoles.length > 0) {
-    findings.push(finding("role-coverage-mismatch", "roles", `must cover each Program A/B/C role once; missing: ${missingRoles.join(", ") || "none"}; unexpected: ${extraRoles.join(", ") || "none"}`));
+  const vocabulary = contract.metricVocabulary;
+  if (!sameKeys(vocabulary, ["units", "directions"]) || !sameArray(vocabulary.units, METRIC_UNITS) || !sameArray(vocabulary.directions, METRIC_DIRECTIONS)) {
+    findings.push(finding("metric-vocabulary-mismatch", "metricVocabulary", `units must be ${METRIC_UNITS.join(", ")}; directions must be ${METRIC_DIRECTIONS.join(", ")}`));
+  }
+  const verdicts = contract.qualificationVerdicts;
+  if (!sameKeys(verdicts, QUALIFICATION_VERDICTS) || Object.values(verdicts).some((meaning) => !isNonemptyString(meaning))) {
+    findings.push(finding("qualification-vocabulary-mismatch", "qualificationVerdicts", `must define nonempty meanings for exactly: ${QUALIFICATION_VERDICTS.join(", ")}`));
+  }
+  if (!isRecord(contract.roles)) {
+    findings.push(finding("unreadable-role-packages", "roles", "must be an object", true));
+    return { findings };
   }
 
-  const knownArchetypes = new Set(expectedArchetypeNames);
+  const declaredRoleNames = Object.keys(contract.roles);
+  const knownModes = new Set(Object.keys(contract.modes));
+  const metricUnits = new Set(Array.isArray(vocabulary?.units) ? vocabulary.units : []);
+  const metricDirections = new Set(Array.isArray(vocabulary?.directions) ? vocabulary.directions : []);
+  const metricOwners = new Map();
   for (const [role, declaration] of Object.entries(contract.roles)) {
-    if (!isRecord(declaration) || ![1, 2].includes(Object.keys(declaration).length) || !Object.hasOwn(declaration, "primary") || Object.keys(declaration).some((key) => key !== "primary" && key !== "secondary")) {
-      findings.push(finding("unreadable-role-declaration", role, "must contain `primary` and optional `secondary` only", true));
-      continue;
-    }
-    if (!knownArchetypes.has(declaration.primary)) {
-      findings.push(finding("invalid-primary-archetype", role, `primary must name one of: ${expectedArchetypeNames.join(", ")}`));
-    }
-    if (declaration.secondary !== undefined) {
-      if (!Array.isArray(declaration.secondary)) {
-        findings.push(finding("unreadable-secondary-archetypes", role, "secondary must be an array when present", true));
+    validateRoleDeclaration({ declaration, subject: role, modes: knownModes, metricUnits, metricDirections }, findings);
+    const metricName = declaration?.metric?.name;
+    if (isNonemptyString(metricName)) {
+      if (metricOwners.has(metricName)) {
+        findings.push(finding("duplicate-owned-metric", role, `metric “${metricName}” is already owned by ${metricOwners.get(metricName)}`));
       } else {
-        const duplicate = new Set(declaration.secondary).size !== declaration.secondary.length;
-        if (declaration.secondary.some((name) => !knownArchetypes.has(name))) {
-          findings.push(finding("invalid-secondary-archetype", role, "every secondary archetype must be declared"));
-        }
-        if (declaration.secondary.includes(declaration.primary)) {
-          findings.push(finding("secondary-matches-primary", role, "secondary archetypes must be distinct from primary"));
-        }
-        if (duplicate) findings.push(finding("duplicate-secondary-archetype", role, "secondary archetypes may not repeat"));
+        metricOwners.set(metricName, role);
       }
     }
-
-    const expected = ROLE_ARCHETYPES[role];
-    if (expected && declaration.primary !== expected.primary) {
-      findings.push(finding("primary-mapping-mismatch", role, `primary must be ${expected.primary}`));
-    }
-    if (expected && !sameArray(declaration.secondary ?? [], expected.secondary ?? [])) {
-      findings.push(finding("secondary-mapping-mismatch", role, `secondary must be ${expected.secondary?.join(", ") ?? "absent"}`));
-    }
   }
-  return { findings };
+  return { findings, roleCount: declaredRoleNames.length };
+}
+
+/**
+ * Qualify a proposed role without writing it into lifecycle or Program state.
+ * `sameJobMetricLoopCoverage` is deliberately stronger than dependency or
+ * adjacency: every cited role needs evidence that it already owns and closes
+ * the candidate's same job, metric, and loop.
+ */
+export function qualifyRoleCandidate({ assessment, contract }) {
+  const findings = [];
+  if (!isRecord(assessment) || !sameKeys(assessment, ["schemaVersion", "candidate", "sameJobMetricLoopCoverage", "rejectionReasons"]) || assessment.schemaVersion !== 1) {
+    return {
+      verdict: "reject",
+      validAssessment: false,
+      relatedRoles: [],
+      reasons: ["candidate assessment must be schemaVersion 1 with candidate, sameJobMetricLoopCoverage, and rejectionReasons"],
+    };
+  }
+  const packages = contract?.roles;
+  const vocabulary = contract?.metricVocabulary;
+  const modes = contract?.modes;
+  if (!isRecord(packages) || !isRecord(vocabulary) || !isRecord(modes)) {
+    return { verdict: "reject", validAssessment: false, relatedRoles: [], reasons: ["role contract is not usable for qualification"] };
+  }
+
+  const candidate = assessment.candidate;
+  if (!isRecord(candidate) || !sameKeys(candidate, ["name", ...ROLE_FIELDS]) || !isNonemptyString(candidate.name) || !SCOPED_PACKAGE_NAME.test(candidate.name)) {
+    findings.push(finding("invalid-candidate", "candidate", "must contain a scoped package name and exactly one role charter"));
+  } else {
+    const declaration = Object.fromEntries(ROLE_FIELDS.map((field) => [field, candidate[field]]));
+    validateRoleDeclaration({
+      declaration,
+      subject: candidate.name,
+      modes: new Set(Object.keys(modes)),
+      metricUnits: new Set(Array.isArray(vocabulary.units) ? vocabulary.units : []),
+      metricDirections: new Set(Array.isArray(vocabulary.directions) ? vocabulary.directions : []),
+    }, findings);
+  }
+
+  const coverage = assessment.sameJobMetricLoopCoverage;
+  const relatedRoles = [];
+  if (!Array.isArray(coverage)) {
+    findings.push(finding("invalid-same-job-coverage", "sameJobMetricLoopCoverage", "must be an array", true));
+  } else {
+    for (const [index, item] of coverage.entries()) {
+      const subject = `sameJobMetricLoopCoverage[${index}]`;
+      if (!sameKeys(item, COVERAGE_FIELDS) || !isNonemptyString(item.role) || !isNonemptyString(item.jobEvidence) || !isNonemptyString(item.metricEvidence) || !isNonemptyString(item.loopClosureEvidence)) {
+        findings.push(finding("invalid-same-job-coverage", subject, `must contain nonempty ${COVERAGE_FIELDS.join(", ")}`));
+        continue;
+      }
+      if (!Object.hasOwn(packages, item.role)) {
+        findings.push(finding("unknown-covered-role", subject, `${item.role} is not a current role in the contract`));
+      }
+      relatedRoles.push(item.role);
+    }
+    if (new Set(relatedRoles).size !== relatedRoles.length) findings.push(finding("duplicate-covered-role", "sameJobMetricLoopCoverage", "a current role may be cited only once"));
+  }
+
+  const rejectionReasons = assessment.rejectionReasons;
+  if (!Array.isArray(rejectionReasons) || rejectionReasons.some((reason) => !isNonemptyString(reason))) {
+    findings.push(finding("invalid-rejection-reasons", "rejectionReasons", "must be an array of nonempty strings"));
+  }
+
+  if (findings.length > 0) {
+    return {
+      verdict: "reject",
+      validAssessment: false,
+      relatedRoles,
+      reasons: findings.map((item) => `${item.rule}: ${item.message}`),
+    };
+  }
+  if (rejectionReasons.length > 0) {
+    return { verdict: "reject", validAssessment: true, relatedRoles, reasons: [...rejectionReasons] };
+  }
+  if (relatedRoles.length === 0) return { verdict: "create", validAssessment: true, relatedRoles, reasons: [] };
+  if (relatedRoles.length === 1) return { verdict: "extend", validAssessment: true, relatedRoles, reasons: [] };
+  return { verdict: "compose", validAssessment: true, relatedRoles, reasons: [] };
 }
 
 function die(message) {
@@ -197,22 +284,28 @@ function readJson(path, label) {
 }
 
 async function main() {
-  const [roleContractArg, programsContractArg, ...extra] = process.argv.slice(2);
-  if (extra.length > 0) die("accepts at most a role-loop contract path and package-programs contract path");
+  const [roleContractArg, candidateAssessmentArg, ...extra] = process.argv.slice(2);
+  if (extra.length > 0) die("accepts at most a role contract and candidate assessment path");
   const repoRoot = resolve(fileURLToPath(new URL("..", import.meta.url)));
   const roleContractPath = resolve(roleContractArg ?? join(repoRoot, "docs/contracts/role-loop-archetypes.json"));
-  const programsContractPath = resolve(programsContractArg ?? join(repoRoot, "docs/contracts/package-programs.json"));
-  const { findings } = evaluateRoleLoopArchetypes({
-    contract: readJson(roleContractPath, "the role-loop contract"),
-    programsContract: readJson(programsContractPath, "the package-programs contract"),
+  const contract = readJson(roleContractPath, "the role contract");
+  const result = evaluateRoleLoopArchetypes({
+    contract,
   });
 
-  for (const item of findings) console.log(`  FAIL  ${item.rule}  ${item.subject} — ${item.message}`);
-  if (findings.length === 0) {
-    console.log(`ROLE LOOP ARCHETYPES OK — ${Object.keys(ROLE_ARCHETYPES).length} role package(s) covered by one primary archetype.`);
-    process.exit(0);
+  for (const item of result.findings) console.log(`  FAIL  ${item.rule}  ${item.subject} — ${item.message}`);
+  if (result.findings.length > 0) process.exit(result.findings.some((item) => item.fatal) ? 2 : 1);
+
+  console.log(`ROLE PACKAGE QUALIFICATION OK — ${result.roleCount} role package(s), one owned metric and one primary loop mode each.`);
+  if (candidateAssessmentArg !== undefined) {
+    const qualification = qualifyRoleCandidate({
+      assessment: readJson(resolve(candidateAssessmentArg), "the candidate assessment"),
+      contract,
+    });
+    console.log(`ROLE CANDIDATE ${qualification.verdict.toUpperCase()}${qualification.relatedRoles.length > 0 ? ` — ${qualification.relatedRoles.join(", ")}` : ""}`);
+    for (const reason of qualification.reasons) console.log(`  ${reason}`);
+    if (!qualification.validAssessment) process.exit(1);
   }
-  process.exit(findings.some((item) => item.fatal) ? 2 : 1);
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

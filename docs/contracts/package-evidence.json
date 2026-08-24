@@ -1,67 +1,6 @@
 {
   "schemaVersion": 1,
-  "$comment": "Where every package stands on the seven-state ladder in docs/LIFECYCLE.md, and what is missing below the state it claims. Graded by scripts/check-package-programs.mjs, wired as `npm run check:package-programs`. The one rule: a state is derived from evidence, never declared. A shortfall below a declared state must be acknowledged here with a reason and an issue -- an unacknowledged one fails the gate, and an acknowledgement that outlives its reason fails it too. The `gaps` list is a countdown, not a baseline: it is meant to shrink, and the gate refuses to let it go stale.",
-  "programs": {
-    "operation": {
-      "letter": "A",
-      "question": "Does the workspace do what it says it does?",
-      "decision": "docs/DECISIONS.md#9-recutting-the-workspace-surface-into-six-job-shaped-packages",
-      "packages": [
-        "@vespeneventures/controller",
-        "@vespeneventures/inspector",
-        "@vespeneventures/builder",
-        "@vespeneventures/locksmith",
-        "@vespeneventures/integrator",
-        "@vespeneventures/observer"
-      ],
-      "donors": []
-    },
-    "expression": {
-      "letter": "B",
-      "question": "Is what we put out true, well said, well made, and provable?",
-      "decision": "docs/DECISIONS.md#10-recutting-the-expression-surface-into-role-shaped-packages",
-      "packages": [
-        "@vespeneventures/strategist",
-        "@vespeneventures/writer",
-        "@vespeneventures/designer",
-        "@vespeneventures/publisher"
-      ],
-      "donors": [
-        "@vespeneventures/strategy",
-        "@vespeneventures/copy",
-        "@vespeneventures/ui",
-        "@vespeneventures/surface",
-        "@vespeneventures/ledger"
-      ]
-    },
-    "interaction": {
-      "letter": "C",
-      "question": "Is everything we do with one identified person accounted for?",
-      "decision": "https://github.com/vespeneventures/foundry/issues/458",
-      "packages": [
-        "@vespeneventures/bouncer",
-        "@vespeneventures/butler",
-        "@vespeneventures/giver",
-        "@vespeneventures/keeper"
-      ],
-      "donors": [
-        "@vespeneventures/auth",
-        "@vespeneventures/consent",
-        "@vespeneventures/comms"
-      ]
-    },
-    "foundation": {
-      "letter": "-",
-      "tier": "primitive",
-      "question": "Not a programme. Packages that predate the three recuts and belong to no role.",
-      "decision": "docs/DECISIONS.md#11-a-gate-behind-a-bin-or-a-declared-primitive",
-      "$comment": "The primitive tier, per decision 11: no addressee, therefore no role, therefore no question only it answers, therefore nothing for a gate to judge. Membership is a declaration and never a fallback -- a member must declare `shipsNoGate` with `permanent: true` and a reason, and exposing a `bin` from here is itself a finding. `packages/domain/README.md` is what the tier's one member does; this decision is why it owes no gate for doing it.",
-      "packages": [
-        "@vespeneventures/domain"
-      ],
-      "donors": []
-    }
-  },
+  "$comment": "Where every package stands on the seven-state ladder in docs/LIFECYCLE.md, and what is missing below the state it claims. Graded by scripts/check-package-evidence.mjs, wired as `npm run check:package-evidence`. This is lifecycle evidence, not a portfolio grouping: A/B/C were temporary delivery cohorts and are not part of the package model. A state is derived from evidence, never declared. A shortfall below a declared state must be acknowledged here with a reason and an issue -- an unacknowledged one fails the gate, and an acknowledgement that outlives its reason fails it too. The `gaps` list is a countdown, not a baseline: it is meant to shrink, and the gate refuses to let it go stale.",
   "packages": [
     {
       "name": "@vespeneventures/controller",
@@ -71,6 +10,16 @@
         "defectOrigin": "injected",
         "defect": "A consumer pointing the governance CLI at a package directory instead of its repository root is a real catalog defect. The built controller gate discovered no packages directory and named every lifecycle package the incomplete catalog omitted; the gate itself produced exit 1.",
         "control": "The same compiled CLI, lifecycle contract, and scope against this repository root stayed GREEN in the same session: 18 packages, zero foundation findings, zero lifecycle findings, and exit 0."
+      }
+    },
+    {
+      "name": "@vespeneventures/architect",
+      "state": "staged",
+      "stagedBy": {
+        "run": "LOCAL fixture run, not a CI run — after building `packages/architect`, `node scripts/stage-architect.mjs` ran the compiled CLI. The topology red exited 1 violated and its control exited 0 satisfied; the exception red exited 1 violated, its control exited 0 satisfied, and the no-observation case exited 2 indeterminate. The script finished `Architect fixture evidence: topology and exception judgments discriminated, and absent evidence stayed indeterminate.` 2026-08-23.",
+        "defectOrigin": "injected",
+        "defect": "The topology fixture omitted the authority for its product responsibility, and the exception fixture observed a material crossing opposite the declared interface direction. The compiled architect CLI produced its own violated judgments and exit 1 for both defects.",
+        "control": "In the same fixture run, the complete authority mapping and direction-matching crossing each stayed satisfied with exit 0. An empty observation set stayed indeterminate with exit 2 instead of becoming a false zero exception rate."
       }
     },
     {
@@ -127,7 +76,7 @@
       "name": "@vespeneventures/strategist",
       "state": "published",
       "stagedBy": {
-        "run": "LOCAL fixture run, not a CI run — reproduce with `npm run stage:program-b` after checkout. It creates temporary facts and prose inputs, runs `node packages/strategist/dist/cli.js` against an unregistered numerical claim (exit 1, finding(s)), then against the registered value (exit 0, No findings). This proves the compiled CLI discriminates; it does not wire it to a real Foundry facts subject, which remains #500. 2026-08-22.",
+        "run": "LOCAL fixture run, not a CI run — reproduce with `npm run stage:strategist-writer-publisher` after checkout. It creates temporary facts and prose inputs, runs `node packages/strategist/dist/cli.js` against an unregistered numerical claim (exit 1, finding(s)), then against the registered value (exit 0, No findings). This proves the compiled CLI discriminates; it does not wire it to a real Foundry facts subject, which remains #500. 2026-08-22.",
         "defectOrigin": "injected",
         "defect": "A temporary fixture announcement claimed 9 customers while its fixture facts registry contained only 3 customers. The compiled strategist CLI's own traceability scan produced exit 1 and finding output; no exit code was forced.",
         "control": "In the same fixture command, the identical temporary registry was scanned against an announcement claiming its registered 3 customers value. The compiled CLI exited 0 with No findings, proving discrimination within the fixture rather than real author-subject wiring."
@@ -137,7 +86,7 @@
       "name": "@vespeneventures/writer",
       "state": "published",
       "stagedBy": {
-        "run": "LOCAL fixture run, not a CI run — reproduce with `npm run stage:program-b` after checkout. It creates temporary copy-record and source-tree inputs, runs `node packages/writer/dist/cli.js` against an unregistered user-facing string (exit 1, finding(s)), then against a registered string (exit 0, No findings). This proves the compiled CLI discriminates; choosing and wiring writer's real Foundry subject remains #501. 2026-08-22.",
+        "run": "LOCAL fixture run, not a CI run — reproduce with `npm run stage:strategist-writer-publisher` after checkout. It creates temporary copy-record and source-tree inputs, runs `node packages/writer/dist/cli.js` against an unregistered user-facing string (exit 1, finding(s)), then against a registered string (exit 0, No findings). This proves the compiled CLI discriminates; choosing and wiring writer's real Foundry subject remains #501. 2026-08-22.",
         "defectOrigin": "injected",
         "defect": "A temporary source fixture contained the user-facing literal Unregistered result while its fixture copy record registered only No results. The compiled writer CLI's own scanner and traceability judgment produced exit 1 and finding output; the harness did not force its exit code.",
         "control": "In the same fixture command, the same temporary copy record was scanned against a source file containing its registered No results string. The compiled CLI exited 0 with No findings, proving discrimination within the fixture rather than a decision about Foundry's real author subject."
@@ -157,10 +106,20 @@
       "name": "@vespeneventures/publisher",
       "state": "published",
       "stagedBy": {
-        "run": "LOCAL fixture run, not a CI run — reproduce with `npm run stage:program-b` after checkout. It runs both compiled publisher CLIs: media coverage on an unregistered asset reference (exit 1) and its registered control (exit 0), then record drift on a changed cited fact (exit 1) and its matching control (exit 0). This proves fixture discrimination only; it does not reconcile a ledger emitted by Foundry's publish path against an independent record, which remains #502. 2026-08-22.",
+        "run": "LOCAL fixture run, not a CI run — reproduce with `npm run stage:strategist-writer-publisher` after checkout. It runs both compiled publisher CLIs: media coverage on an unregistered asset reference (exit 1) and its registered control (exit 0), then record drift on a changed cited fact (exit 1) and its matching control (exit 0). This proves fixture discrimination only; it does not reconcile a ledger emitted by Foundry's publish path against an independent record, which remains #502. 2026-08-22.",
         "defectOrigin": "injected",
         "defect": "The temporary media fixture referenced a missing asset id, and the temporary ledger fixture supplied a current fact value different from its recorded content-addressed citation. The compiled media and record CLIs respectively produced their own exit-1 findings for coverage failure and fact drift.",
         "control": "In the same fixture command, the media fixture referenced its registered asset and the temporary ledger supplied its exact cited fact value. Both compiled publisher CLIs exited 0 with No findings; this does not establish the independent publish-path reconciliation #502 requires."
+      }
+    },
+    {
+      "name": "@vespeneventures/influencer",
+      "state": "staged",
+      "stagedBy": {
+        "run": "LOCAL fixture run, not a CI run — after `npm run build --workspace=packages/influencer`, `node scripts/stage-influencer.mjs` ran the compiled `response-yield` CLI. One qualified response from 2,000 eligible exposures exited 1 violated at a setpoint of 2 per thousand; five responses from the same exposure count exited 0 satisfied; and an unreadable response source exited 2 indeterminate. The script finished `Influencer fixture evidence: response yield discriminated, and unreadable outcome evidence stayed indeterminate.` 2026-08-23.",
+        "defectOrigin": "injected",
+        "defect": "One synthetic governed publication produced one independently observed qualified response from 2,000 eligible exposures. The compiled influencer CLI calculated 0.5 per thousand against the declared setpoint of 2, emitted its own violated judgment, and exited 1.",
+        "control": "In the same author-produced fixture, five otherwise identical unique qualified responses from 2,000 exposures calculated 2.5 per thousand and exited 0 satisfied. An unreadable response evidence source exited 2 indeterminate rather than becoming a measured zero."
       }
     },
     {
@@ -218,28 +177,38 @@
       "state": "published",
       "shipsNoGate": {
         "issue": 464,
-        "reason": "Program C donor whose `./inbound` surface overlaps the published `butler` role. The package still has no `bin`; issue #464 tracks removal of that overlap, while the remaining transport surface awaits a separate role decision rather than being declared a permanent primitive."
+        "reason": "Published donor to the incubating `messenger` transport role, with inbound person-request admission owned by `butler`. It has no command of its own; issue #464 tracks publication-first migration and measured consumer unpinning."
       },
       "gaps": [
         {
           "state": "staged",
-          "reason": "zero dist-path invocation sites in this repository: this package has never been executed against a real tree by its own author",
-          "issue": 466
+          "reason": "zero dist-path invocation sites in this repository: the published donor has never been executed against a real tree by its own author, and its replacement role is separate source",
+          "issue": 464
         }
       ]
+    },
+    {
+      "name": "@vespeneventures/messenger",
+      "state": "staged",
+      "stagedBy": {
+        "run": "LOCAL fixture run, not a CI run — after `npm run build --workspace=packages/messenger`, `node scripts/stage-messenger.mjs` ran the compiled `delivery-closure` CLI. A due sample with one missing outcome exited 1 violated, its otherwise equivalent fully delivered control exited 0 satisfied, and a nonempty sample with no intent due exited 2 indeterminate. The script finished `Messenger fixture evidence: delivery closure discriminated, and no due intent stayed indeterminate.` 2026-08-23.",
+        "defectOrigin": "injected",
+        "defect": "Two authorized message intents were due at a setpoint of one, but only one synthetic record carried a timely delivery observation. The compiled messenger CLI computed one of two, named the missing intent, emitted its own violated result, and exited 1.",
+        "control": "In the same author-produced fixture, both otherwise identical due intents carried delivery observations inside their inclusive windows and exited 0 satisfied. A nonempty not-yet-due sample exited 2 indeterminate instead of becoming a false perfect rate."
+      }
     },
     {
       "name": "@vespeneventures/domain",
       "state": "published",
       "shipsNoGate": {
-        "permanent": true,
-        "reason": "The primitive tier's first declared member. It defines identifiers, typed fields, closed vocabularies and relations and ships no values, storage, authorization, provenance or lifecycle of its own, so the only thing a gate of its own could judge is the consumer's model -- which is the consumer's judgment to make, not this package's. Its checkers are library functions a consumer's own gate calls, not a command this package installs."
+        "issue": 527,
+        "reason": "Published ontology donor retained while consumers move to the unpublished `architect` role. It has no command of its own; issue #527 tracks the role recut and migration rather than granting a permanent exemption."
       },
       "gaps": [
         {
           "state": "staged",
-          "reason": "zero dist-path invocation sites in this repository: this package has never been executed against a real tree by its own author",
-          "issue": 466
+          "reason": "zero dist-path invocation sites in this repository: the published donor has never been executed against a real tree by its own author, and the replacement role is separate source",
+          "issue": 527
         }
       ]
     },
@@ -247,7 +216,7 @@
       "name": "@vespeneventures/bouncer",
       "state": "published",
       "stagedBy": {
-        "run": "LOCAL fixture run, not a CI run — reproduce with `npm run stage:program-c` after checkout. It creates temporary synthetic records and runs all three `node packages/bouncer/dist/cli.js` gates: authority-reconciliation (upstream-revoked / active), delegation-ceiling (unbounded / bounded), and provider-contract (undeclared field / declared field). Every red exits 1 with its violated report and each adjacent control exits 0 with its satisfied report. This proves compiled CLI discrimination only; real product wiring, adoption, and #507 remain distinct. 2026-08-22.",
+        "run": "LOCAL fixture run, not a CI run — reproduce with `npm run stage:bouncer-butler-giver-keeper` after checkout. It creates temporary synthetic records and runs all three `node packages/bouncer/dist/cli.js` gates: authority-reconciliation (upstream-revoked / active), delegation-ceiling (unbounded / bounded), and provider-contract (undeclared field / declared field). Every red exits 1 with its violated report and each adjacent control exits 0 with its satisfied report. This proves compiled CLI discrimination only; real product wiring, adoption, and #507 remain distinct. 2026-08-22.",
         "defectOrigin": "injected",
         "defect": "The three synthetic violations are a live grant revoked upstream, a machine actor with no declared spending ceiling, and an adapter reading a provider field the declared shape lacks. The compiled bouncer CLI produced each normal exit-1 violation; the harness did not force an exit code.",
         "control": "Each matching fixture control marks the authority active, declares a bounded actor, or aligns the adapter field with the provider shape. All three compiled CLI controls exit 0 with their satisfied reports, proving only fixture discrimination."
@@ -257,7 +226,7 @@
       "name": "@vespeneventures/butler",
       "state": "published",
       "stagedBy": {
-        "run": "LOCAL fixture run, not a CI run — reproduce with `npm run stage:program-c` after checkout. It creates temporary synthetic records and runs all three `node packages/butler/dist/cli.js` gates: confirmation-completeness (unconfirmed / confirmed), currency (superseded policy / current policy), and withdrawal-parity (harder withdrawal / equal route). Every red exits 1 with its violated report and each adjacent control exits 0 with its satisfied report. This proves compiled CLI discrimination only; real product wiring, adoption, and #507 remain distinct. 2026-08-22.",
+        "run": "LOCAL fixture run, not a CI run — reproduce with `npm run stage:bouncer-butler-giver-keeper` after checkout. It creates temporary synthetic records and runs all three `node packages/butler/dist/cli.js` gates: confirmation-completeness (unconfirmed / confirmed), currency (superseded policy / current policy), and withdrawal-parity (harder withdrawal / equal route). Every red exits 1 with its violated report and each adjacent control exits 0 with its satisfied report. This proves compiled CLI discrimination only; real product wiring, adoption, and #507 remain distinct. 2026-08-22.",
         "defectOrigin": "injected",
         "defect": "The three synthetic violations are an acted-on intent with no confirmation, a standing instruction used after its policy version changed, and a withdrawal route that costs more than its grant route. The compiled butler CLI produced each normal exit-1 violation; the harness did not force an exit code.",
         "control": "Each matching fixture control supplies a confirmation, retains the current policy version, or makes withdrawal no harder than grant. All three compiled CLI controls exit 0 with their satisfied reports, proving only fixture discrimination."
@@ -267,7 +236,7 @@
       "name": "@vespeneventures/giver",
       "state": "published",
       "stagedBy": {
-        "run": "LOCAL fixture run, not a CI run — reproduce with `npm run stage:program-c` after checkout. It creates temporary synthetic records and runs all three `node packages/giver/dist/cli.js` gates: obligation-discharge (failed / delivered), handoff-placement (unplaced / placed), and grounding (uncited / retained-ground citation). Every red exits 1 with its violated report and each adjacent control exits 0 with its satisfied report. This proves compiled CLI discrimination only; real product wiring, adoption, and #507 remain distinct. 2026-08-22.",
+        "run": "LOCAL fixture run, not a CI run — reproduce with `npm run stage:bouncer-butler-giver-keeper` after checkout. It creates temporary synthetic records and runs all three `node packages/giver/dist/cli.js` gates: obligation-discharge (failed / delivered), handoff-placement (unplaced / placed), and grounding (uncited / retained-ground citation). Every red exits 1 with its violated report and each adjacent control exits 0 with its satisfied report. This proves compiled CLI discrimination only; real product wiring, adoption, and #507 remain distinct. 2026-08-22.",
         "defectOrigin": "injected",
         "defect": "The three synthetic violations are a failed delivery proof for a due obligation, an expired handoff with no placement, and a delivered answer with no retained-ground citation. The compiled giver CLI produced each normal exit-1 violation; the harness did not force an exit code.",
         "control": "Each matching fixture control supplies a delivered proof, a timely handoff placement, or a citation to the retained ground. All three compiled CLI controls exit 0 with their satisfied reports, proving only fixture discrimination."
@@ -277,7 +246,7 @@
       "name": "@vespeneventures/keeper",
       "state": "published",
       "stagedBy": {
-        "run": "LOCAL fixture run, not a CI run — reproduce with `npm run stage:program-c` after checkout. It creates temporary synthetic records and runs all three `node packages/keeper/dist/cli.js` gates: visibility (no disclosure / visible and correctable), attribution (no source / retained source event), and disposal (expired retention / current retention). Every red exits 1 with its violated report and each adjacent control exits 0 with its satisfied report. This proves compiled CLI discrimination only; real product wiring, adoption, and #507 remain distinct. 2026-08-22.",
+        "run": "LOCAL fixture run, not a CI run — reproduce with `npm run stage:bouncer-butler-giver-keeper` after checkout. It creates temporary synthetic records and runs all three `node packages/keeper/dist/cli.js` gates: visibility (no disclosure / visible and correctable), attribution (no source / retained source event), and disposal (expired retention / current retention). Every red exits 1 with its violated report and each adjacent control exits 0 with its satisfied report. This proves compiled CLI discrimination only; real product wiring, adoption, and #507 remain distinct. 2026-08-22.",
         "defectOrigin": "injected",
         "defect": "The three synthetic violations are a held item with no disclosure route, a held item with no source event, and a held item outliving its declared retention. The compiled keeper CLI produced each normal exit-1 violation; the harness did not force an exit code.",
         "control": "Each matching fixture control supplies a visible correctable route, a retained matching source event, or a current retention rule. All three compiled CLI controls exit 0 with their satisfied reports, proving only fixture discrimination."

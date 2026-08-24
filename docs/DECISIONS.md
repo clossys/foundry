@@ -409,10 +409,16 @@ published yet".
 
 ## 11. A gate behind a `bin`, or a declared primitive
 
-**Status:** the rule below governs every package in `packages/`. It is declared
-in [`docs/contracts/package-programs.json`](contracts/package-programs.json) —
-the primitive tier is the `foundation` programme, marked `"tier": "primitive"`,
-with `domain` as its first member — and graded by
+> **Partially superseded by [decision 12](#12-promoting-domain-machinery-into-the-architect-role)
+> and [decision 13](#13-recutting-finished-message-transport-into-the-messenger-role).**
+> The gate rule remains. Decision 12 replaces the `domain` primitive
+> conclusion; decision 13 resolves the transport role and expands Program C.
+
+**Historical status:** the gate rule below still governs every package in
+`packages/`. When this decision was recorded, the contract declared a
+`foundation` programme marked `"tier": "primitive"`, with `domain` as its
+first member. Decision 12 removes that membership while retaining the rule.
+The rule is graded by
 `scripts/check-package-programs.mjs`, which already owned every package's
 programme membership and lifecycle state. Program C's four roles are named and
 their questions fixed here; all four are now published, and this decision
@@ -423,9 +429,9 @@ to: it names a doer rather than a thing, and answers one question only it can
 answer. The other half was never written down and is near-universal in the code
 anyway — a role package ships a gate behind a `bin`, so a consumer's own CI can
 fail on it. The retained donors `auth`, `comms` and `consent` do not; their
-Program C replacements own the gates. `domain` does not, because the current
-contract declares it a primitive. From outside the tree those two situations
-are the same thing: an absent `bin`.
+Program C replacements own the gates. At the time, `domain` did not because
+the contract declared it a primitive. From outside the tree those two
+situations were the same thing: an absent `bin`.
 
 > A package either belongs to a program — in which case it names a doer,
 > answers one question only it answers, and ships a gate behind a `bin` — or it
@@ -450,11 +456,12 @@ cut; a fourth is named so its absence is a decision rather than an oversight.
 | interaction | one person | `bouncer`, `butler`, `giver`, `keeper` (issue #458) |
 | transaction | an organisation under agreement | not cut, and nothing here waits on it |
 
-### The primitive tier
+### The historical primitive conclusion (superseded)
 
-A primitive has no addressee. With no addressee there is no role, with no role
-there is no question only it answers, and with no such question there is
-nothing for a gate to judge. `domain` is the first declared member: it defines
+The decision reasoned that a primitive has no addressee. With no addressee
+there is no role, with no role there is no question only it answers, and with
+no such question there is
+nothing for a gate to judge. It declared `domain` the first member because it defines
 identifiers, typed fields, closed vocabularies and relations, and ships no
 values, storage, authorization, provenance or lifecycle of its own. What a
 `domain` gate would check is the consumer's model, and whether that model is
@@ -462,14 +469,14 @@ right is the consumer's judgment, not this package's.
 
 Membership is declared, never inferred from a missing `bin`, and the two kinds
 of declaration are deliberately not interchangeable. A primitive declares
-`shipsNoGate` with `permanent: true`: there is no work to track. `auth` and
-`consent` now declare the same field with their retirement issue because they
-are deprecated donors whose Program C replacements own the gates. `comms`
-remains a donor with an issue while its split is unresolved. These countdowns
-remain distinct from a permanent primitive claim, and the gate refuses a
-permanent claim from a package that belongs to a programme.
+`shipsNoGate` with `permanent: true`: there is no work to track. At the time,
+`auth` and `consent` declared the same field with their retirement issue
+because their Program C replacements owned the gates, while `comms` remained a
+donor with an unresolved split. These countdowns remain distinct from a
+permanent primitive claim, and the gate refuses a permanent claim from a
+package that belongs to a programme.
 
-### Program C's four roles
+### Program C's historical four roles (expanded by decision 13)
 
 | role | everything about | the question only it answers |
 | --- | --- | --- |
@@ -534,16 +541,16 @@ here. Nor does shipping a `bin` mean the gate works: that is what
 deliberately the weaker, earlier question of whether a consumer could run
 anything at all.
 
-The primitive tier has exactly one declared member, which is too few to know
-whether it is a tier or a special case wearing a general name. It is recorded
-as a tier because the alternative, an exemption field on `domain` alone, is the
+At the time, the primitive tier had exactly one declared member, which was too
+few to know whether it is a tier or a special case wearing a general name. It
+was recorded as a tier because the alternative, an exemption field on `domain`
+alone, is the
 standing exemption with no expiry that the retention contract already refuses.
 
-Where a message-transport and contact-coordinate substrate belongs is also
-open. It carries messages and identities and decides nothing about what either
-means, so it answers to no addressee and fails every program's test, including
-interaction's. That is recorded as unowned rather than defaulted into the
-nearest program.
+At the time, where a message-transport and contact-coordinate substrate
+belonged was open. Decision 13 resolves finished-message transport into
+`messenger`, while inbound admission stays with `butler` and semantic
+obligation discharge stays with `giver`.
 
 ### Why this rule has no contract file of its own
 
@@ -556,6 +563,239 @@ The parallel pair was deleted rather than reconciled later, and the rule was
 folded into the contract that already knew each package's programme, donors and
 lifecycle state. A rule that needs a second copy of that data to be checked is a
 rule that belongs next to the first copy.
+
+## 12. Promoting domain machinery into the architect role
+
+### Measurement before the decision
+
+`@vespeneventures/domain` is a published, dependency-free ontology library.
+It defines and compares consumer-owned models, but it has no addressee, no
+installed command, no authority or system-of-record mapping, no topology
+assessment, and no closed-loop metric. This repository has no recorded
+dist-path invocation or independent grounding for it. Those facts support a
+useful mechanism; they do not support a permanent role or exemption.
+
+The `architect` source package is new and not published. Its lifecycle status
+is `incubating`; neither source, tests, nor a fixture run would establish a
+registry release, consumer adoption, or independent grounding.
+
+### Decision
+
+`architect` joins Program A as the role that asks:
+
+> Do declared operating boundaries match how material changes actually cross
+> systems?
+
+Its mode is **optimize**. Its primary metric is architecture exception rate:
+
+```text
+material changes with at least one undeclared boundary crossing
+----------------------------------------------------------------
+                 all observed material changes
+```
+
+No observed material changes produces an indeterminate result, never a zero.
+The role senses actual changes and declared architecture, judges their
+alignment, proposes an authorized contract change, verifies the resulting
+boundary, and learns or escalates. `optimize` is its primary loop mode;
+`assure` is secondary and judges candidate topology declarations. These are
+the canonical mode names, not a prose label over a separate archetype.
+
+The package owns provider-neutral operating architecture: scopes, systems,
+responsibilities, ownership and systems of record, and declared interfaces.
+It may assess and propose. It does not self-authorize a topology change and
+does not create, transfer, split, or merge provider resources. A consumer
+supplies its business metric node, setpoint, authority, evidence, budget,
+guardrails, and escalation path; an approved materializer performs any later
+mutation.
+
+### Donor and migration position
+
+`domain` moves from the empty foundation classification to Program A as
+`architect`'s donor. The ontology API remains installable under its published
+name while `architect` is only source. No forwarding release is required when
+API parity is proved; consumers can migrate directly after publication.
+`domain` is not declared deprecated and `architect` is not declared its
+registry replacement until all of these are true:
+
+1. `architect` is published with the donor API available through its declared
+   ontology surface;
+2. an exact-version migration is documented and proved;
+3. consumers can move without losing an API they use; and
+4. the lifecycle record is changed from measured registry evidence.
+
+Issue #527 is the countdown for the recut and consumer migration. The existing
+gate rule still applies: a role owes a runnable judgment, while a donor with no
+gate needs a temporary issue-backed declaration. No provider organization,
+repository, package, deprecation, or registry state is changed by this
+decision.
+
+## 13. Recutting finished-message transport into the messenger role
+
+### Measurement before the decision
+
+`@vespeneventures/comms` is published and remains installable. It contains a
+provider-neutral finished-message contract, dispatch mechanics, delivery
+events, a provider adapter, and an inbound surface. It exposes no command and
+has never been staged against a real tree by its author. Its inbound surface
+overlaps the already-published `butler` role, while provider acceptance and a
+later delivery event remain distinct states.
+
+The `messenger` package is new incubating source. A compiled fixture can prove
+its gate discriminates synthetic inputs, but cannot prove publication,
+consumer adoption, delivery efficacy, or independent grounding.
+
+### Decision and role boundary
+
+`messenger` joins Program C and asks:
+
+> Did each authorized, finished communication reach its transport destination
+> within its declared window, according to independently observed evidence?
+
+Its mode is **fulfill**. Its primary metric is **timely verified delivery
+rate**:
+
+```text
+authorized due intents independently observed delivered within their window
+--------------------------------------------------------------------------
+      all authorized intents whose declared delivery window has closed
+```
+
+The window is inclusive. With no due intents, the result is indeterminate,
+never a perfect rate. Provider acceptance is not verified delivery.
+
+`fulfill` is the primary loop mode: messenger accepts an authorized
+finished-message intent, validates its preconditions, transports it, and
+closes only on observed outcome evidence. `optimize` is secondary because
+later independently sourced delivery-status events supply the metric and
+inform correction or escalation. `reconcile` is not secondary: messenger does
+not own a durable desired-state inventory that converges to zero drift; it owns
+discrete message outcomes and learns across them.
+
+The boundary among the three adjacent roles is explicit:
+
+- `butler` admits and confirms an inbound person request;
+- `messenger` transports an already authorized finished message and verifies
+  delivery-status evidence; and
+- `giver` judges whether the resulting answer or delivery discharged the
+  semantic obligation owed to the person.
+
+Messenger does not create authorization, choose recipients or content, admit
+inbound requests, or declare an obligation discharged. Provider credentials,
+routes, storage, policy, identities, and message content remain host-owned.
+
+### Publication-first migration
+
+`comms` becomes messenger's published donor in the Program C contract, but is
+not deprecated by source availability. The direct migration sequence is:
+
+1. publish and verify an exact messenger version;
+2. document and prove the consumer import and runtime cutover;
+3. then record `comms` as deprecated with messenger as its replacement and a
+   time-bounded retention decision;
+4. migrate consumers without a forwarding package; and
+5. measure fleet-wide unpinning, including a positive control proving the
+   inventory would detect a retained pin, before any reviewed retirement.
+
+Issue #464 owns that countdown. Until the first two steps have evidence,
+`messenger` remains `incubating`, `comms` remains `published`, and no
+supersession pair is declared. This decision changes no provider organization,
+registry package, visibility, deprecation, or consumer installation.
+
+## 14. Qualifying outbound-presence optimization as the influencer role
+
+### Measurement before the decision
+
+The current expression roles own strategy evidence, approved language, design
+conformance, and provable publication. `messenger` owns directed transport;
+`observer` owns independent measurement mechanics. None owns the complete job
+of choosing bounded channel and cadence experiments, acting through an
+authorized presence, and learning from qualified audience response yield.
+Those roles are collaborators, not evidence that they already close the same
+job and metric loop.
+
+The candidate was assessed with no current role cited as owning the same job,
+metric, and loop. Under the schema-version-3 role contract, that produces
+`create`, not `compose`. This is a qualification decision; the source package
+and author fixture do not prove publication, consumer adoption, independent
+grounding, or metric movement in a real installation.
+
+### Decision
+
+`influencer` joins Program B and asks:
+
+> Is this governed outbound presence producing qualified audience responses at
+> the declared rate?
+
+Its primary mode is **optimize** and its secondary mode is **fulfill**. It owns
+**qualified response yield per thousand**:
+
+```text
+1,000 × independently observed qualified audience responses
+------------------------------------------------------------
+       independently observed eligible exposures
+```
+
+The desired direction is increase. A readable response source with no events
+is a measured zero. No due window, insufficient exposure, unreadable evidence,
+or invalid joins produces an indeterminate result rather than a pass.
+
+The package owns governed organization or product presence, bounded channel
+and cadence experiments, authorized publication and reply actions through an
+injected actuator, and learning from the resulting metric. It does not define
+audience strategy, decide what qualifies as a response, generate or approve
+content, render publications, transport directed messages, admit inbound
+requests, hold credentials, or authorize itself.
+
+An installed position supplies the business metric node, causal hypothesis,
+setpoint, authority, evidence sources, budget, guardrails, and escalation path.
+Its worker may combine deterministic validation, model judgment, human
+approval, and provider integrations without changing the durable package
+charter. V1 permits only organization or product subjects, requires an explicit
+anti-impersonation guardrail, and fixes paid spend to zero. Paid media would
+change the authority, budget, and likely metric ownership enough to require a
+new qualification decision.
+
+Influencer has no donor. Its author fixture establishes only staged
+discrimination: one qualified response from 2,000 eligible exposures violates
+a setpoint of 2 per thousand, five satisfies it, and an unreadable response
+source remains indeterminate.
+
+## 15. Removing delivery cohorts from the operating model
+
+### Measurement before the decision
+
+The A/B/C letters grouped three focused delivery recuts: operation,
+expression, and interaction. They helped sequence implementation, but they do
+not describe a durable package property. The same role can support different
+business metric branches in different consumers, while package lifecycle,
+consumer position, and worker assignment change independently. Keeping the
+letters in the enforced inventory therefore made a temporary work plan look
+like ontology.
+
+The repository already has separate authoritative facts: the role-loop
+contract defines durable job charters, the lifecycle contract records registry
+and supersession status, and package evidence records measured ladder
+positions. Consumer values do not belong in this public repository.
+
+### Decision
+
+A/B/C remain historical names for the recuts recorded in decisions 9 through
+14. They are removed from live contracts, generated tables, checker coverage,
+workflow names, and staging commands. No replacement department or universal
+portfolio grouping is introduced.
+
+`docs/contracts/role-loop-archetypes.json` is the active package-charter
+matrix: one job question, one controllable metric, canonical loop mode, and
+boundary per role. `docs/contracts/package-evidence.json` contains only
+evidence-derived lifecycle positions and gaps. Active portfolio completeness
+is derived from the lifecycle contract; retired donors have left it.
+
+Business grouping belongs to a consumer installation. A consumer may bind
+several positions to an L2 branch such as Growth, but each binding names its
+own L3 metric node and causal hypothesis. The durable package remains unchanged
+when one consumer uses Influencer to improve end-customer growth and another
+uses it to improve installation growth.
 
 ## Settled
 

@@ -1,136 +1,440 @@
 {
-  "schemaVersion": 1,
-  "loopGrammar": [
-    "subjectOrAddressee",
-    "authoritativeSetpoint",
-    "actualObservation",
-    "ternaryJudgment",
-    "correctionOrHandoff",
-    "independentOutcome",
-    "cadenceAndCloseCondition"
+  "schemaVersion": 3,
+  "universalStages": [
+    "sense",
+    "judge",
+    "act",
+    "verify",
+    "learnOrEscalate"
   ],
-  "archetypes": {
-    "conformance-gate": {
-      "purpose": "Judge a candidate against an authoritative setpoint and improve that setpoint from independent outcomes.",
-      "phases": [
-        "load setpoint",
-        "observe candidate",
-        "judge",
-        "block-or-allow",
-        "sample outcomes",
-        "revise setpoint"
-      ]
+  "consumerBindings": [
+    "businessMetricNode",
+    "causalHypothesis",
+    "setpoint",
+    "authority",
+    "evidenceSource",
+    "budget",
+    "guardrails",
+    "escalationPath"
+  ],
+  "modes": {
+    "assure": {
+      "objective": "Keep candidates inside an authoritative rule set and improve the rules from independent outcomes.",
+      "stageActivities": {
+        "sense": "Load the applicable setpoint and observe the candidate.",
+        "judge": "Compare the candidate with every applicable rule and preserve indeterminacy.",
+        "act": "Block, allow, or hand off according to the judgment.",
+        "verify": "Observe independent downstream outcomes after the decision.",
+        "learnOrEscalate": "Revise an ineffective rule or escalate an unresolved evidence gap."
+      }
     },
-    "reconciliation": {
-      "purpose": "Reduce a measurable difference between declared desired state and independently observed actual state.",
-      "phases": [
-        "declare desired",
-        "observe actual",
-        "diff",
-        "correct-or-handoff",
-        "reobserve",
-        "close-on-zero-delta"
-      ]
+    "reconcile": {
+      "objective": "Reduce a measurable difference between declared desired state and independently observed actual state.",
+      "stageActivities": {
+        "sense": "Read declared desired state and independently observe actual state.",
+        "judge": "Classify the delta without treating an unreadable observation as agreement.",
+        "act": "Correct the delta or hand it to the declared authority.",
+        "verify": "Reobserve actual state after correction.",
+        "learnOrEscalate": "Close on the setpoint, revise a faulty declaration, or escalate a persistent delta."
+      }
     },
-    "actuation-provisioning": {
-      "purpose": "Make an accepted intent real and close only when its actual outcome has been observed.",
-      "phases": [
-        "accept intent",
-        "validate preconditions",
-        "act",
-        "confirm actual outcome",
-        "compensate-retry-or-handoff",
-        "close-on-observed-outcome"
-      ]
+    "fulfill": {
+      "objective": "Make an accepted intent real and close only when its actual outcome has been observed.",
+      "stageActivities": {
+        "sense": "Receive an intent and the observations needed to evaluate its preconditions.",
+        "judge": "Validate the intent, authority, budget, and guardrails.",
+        "act": "Materialize the authorized intent through the configured mechanism.",
+        "verify": "Observe the actual outcome rather than provider acceptance alone.",
+        "learnOrEscalate": "Retry, compensate, adjust, or escalate when the outcome misses its setpoint."
+      }
     },
-    "confirmation-interaction": {
-      "purpose": "Handle a person or actor request with authorization, read-back, and reconciliation of later change or withdrawal.",
-      "phases": [
-        "receive actor/subject request",
-        "authorize",
-        "record intent",
-        "act-or-refuse",
-        "confirm/read-back",
-        "reconcile change-or-withdrawal"
-      ]
+    "interact": {
+      "objective": "Handle a person or actor request with authorization, read-back, and reconciliation of later change or withdrawal.",
+      "stageActivities": {
+        "sense": "Receive the request and current standing instructions.",
+        "judge": "Authorize the request and confirm the intended meaning.",
+        "act": "Fulfil, refuse, or hand off the confirmed intent.",
+        "verify": "Read the interpretation or outcome back to the subject.",
+        "learnOrEscalate": "Reconcile change or withdrawal, or escalate an unresolved request."
+      }
     },
-    "custody-lifecycle": {
-      "purpose": "Keep custody accountable from inventory through justified protection, correction, disposal, and verification.",
-      "phases": [
-        "inventory",
-        "justify",
-        "protect",
-        "disclose-or-correct",
-        "dispose",
-        "verify-disposal-or-reopen"
-      ]
+    "steward": {
+      "objective": "Keep custody accountable from inventory through justified protection, correction, disposal, and verification.",
+      "stageActivities": {
+        "sense": "Inventory the held resource and its provenance, owner, and lifecycle state.",
+        "judge": "Evaluate whether custody remains justified, current, and inside policy.",
+        "act": "Protect, correct, rotate, disclose, revoke, or dispose as authorized.",
+        "verify": "Observe the resulting custody or disposal state independently.",
+        "learnOrEscalate": "Update the lifecycle rule or escalate an unresolved custody gap."
+      }
     },
-    "observation-learning": {
-      "purpose": "Learn from independent signals by measuring, reporting, adjusting, and measuring again.",
-      "phases": [
-        "declare coverage/question",
-        "collect independent signals",
-        "normalize",
-        "measure",
-        "report",
-        "adjust-and-remeasure"
-      ]
+    "optimize": {
+      "objective": "Learn from independent signals by measuring, reporting, adjusting, and measuring again.",
+      "stageActivities": {
+        "sense": "Collect independent signals for the declared question and coverage.",
+        "judge": "Normalize the signals and compare the metric with its setpoint.",
+        "act": "Report the measured result and propose the bounded adjustment.",
+        "verify": "Measure again after the adjustment using the declared evidence source.",
+        "learnOrEscalate": "Update the model or escalate a persistent blind spot or miss."
+      }
     }
   },
+  "metricVocabulary": {
+    "units": [
+      "ratio",
+      "count",
+      "duration",
+      "currency",
+      "rate"
+    ],
+    "directions": [
+      "increase",
+      "decrease"
+    ]
+  },
+  "qualificationVerdicts": {
+    "create": "Create a role package only when the charter is complete and no current role owns and closes its metric loop.",
+    "extend": "Extend one current role when that role already owns and closes the candidate's same job and metric loop.",
+    "compose": "Compose current roles when two or more existing roles collectively already own and close the candidate's same job and metric loop.",
+    "reject": "Reject a candidate that has no coherent job, one controllable metric, closed loop, durable boundary, or acceptable guardrails."
+  },
   "roles": {
-    "@vespeneventures/controller": {
-      "primary": "reconciliation"
-    },
-    "@vespeneventures/inspector": {
-      "primary": "conformance-gate"
-    },
-    "@vespeneventures/builder": {
-      "primary": "actuation-provisioning",
-      "secondary": [
-        "reconciliation"
-      ]
-    },
-    "@vespeneventures/locksmith": {
-      "primary": "custody-lifecycle"
-    },
-    "@vespeneventures/integrator": {
-      "primary": "reconciliation"
-    },
-    "@vespeneventures/observer": {
-      "primary": "observation-learning"
-    },
-    "@vespeneventures/strategist": {
-      "primary": "conformance-gate"
-    },
-    "@vespeneventures/writer": {
-      "primary": "conformance-gate"
-    },
-    "@vespeneventures/designer": {
-      "primary": "conformance-gate"
-    },
-    "@vespeneventures/publisher": {
-      "primary": "actuation-provisioning",
-      "secondary": [
-        "reconciliation"
-      ]
-    },
-    "@vespeneventures/bouncer": {
-      "primary": "reconciliation",
-      "secondary": [
-        "confirmation-interaction"
-      ]
-    },
-    "@vespeneventures/butler": {
-      "primary": "confirmation-interaction"
-    },
-    "@vespeneventures/giver": {
-      "primary": "actuation-provisioning",
-      "secondary": [
-        "confirmation-interaction"
-      ]
-    },
-    "@vespeneventures/keeper": {
-      "primary": "custody-lifecycle"
-    }
+      "@vespeneventures/controller": {
+        "jobQuestion": "Are the business's operating rules expressible, current, and followed?",
+        "metric": {
+          "name": "rule conformance rate",
+          "formula": "declared rules independently observed well-formed and followed / all declared rules evaluated",
+          "unit": "ratio",
+          "direction": "increase"
+        },
+        "primaryMode": "reconcile",
+        "secondaryModes": [],
+        "boundary": {
+          "owns": "Operating-rule grammar, identity, lifecycle, and content binding.",
+          "excludes": [
+            "judging a proposed change",
+            "materializing declared state",
+            "authorizing provider mutations"
+          ]
+        }
+      },
+      "@vespeneventures/architect": {
+        "jobQuestion": "Do the business ontology and operating boundaries match how material work actually crosses the business?",
+        "metric": {
+          "name": "architecture exception rate",
+          "formula": "observed material changes with at least one undeclared boundary crossing / all observed material changes",
+          "unit": "ratio",
+          "direction": "decrease"
+        },
+        "primaryMode": "optimize",
+        "secondaryModes": [
+          "assure"
+        ],
+        "boundary": {
+          "owns": "Provider-neutral operating topology, boundary design, and architecture-exception diagnosis.",
+          "excludes": [
+            "authorizing topology changes",
+            "creating provider resources",
+            "moving repositories or accounts"
+          ]
+        }
+      },
+      "@vespeneventures/inspector": {
+        "jobQuestion": "Does this change satisfy every applicable rule before it lands?",
+        "metric": {
+          "name": "change escape rate",
+          "formula": "landed changes independently found to violate an applicable rule / all landed changes evaluated",
+          "unit": "ratio",
+          "direction": "decrease"
+        },
+        "primaryMode": "assure",
+        "secondaryModes": [],
+        "boundary": {
+          "owns": "Pre-landing change judgment against caller-supplied rules and evidence.",
+          "excludes": [
+            "authoring operating rules",
+            "measuring its own historical efficacy",
+            "mutating the candidate change"
+          ]
+        }
+      },
+      "@vespeneventures/builder": {
+        "jobQuestion": "Does independently observed live state match the declared state after authorized action?",
+        "metric": {
+          "name": "desired-state realization rate",
+          "formula": "declared live-state subjects independently verified at their desired state / all declared live-state subjects evaluated",
+          "unit": "ratio",
+          "direction": "increase"
+        },
+        "primaryMode": "fulfill",
+        "secondaryModes": [
+          "reconcile"
+        ],
+        "boundary": {
+          "owns": "Authorized materialization and reconciliation of declared machine, platform, pipeline, and deployment state.",
+          "excludes": [
+            "inventing desired state",
+            "granting its own mutation authority",
+            "treating an offline declaration check as live proof"
+          ]
+        }
+      },
+      "@vespeneventures/locksmith": {
+        "jobQuestion": "Is every live key owned, current, correctly distributed, and revocable?",
+        "metric": {
+          "name": "controlled key rate",
+          "formula": "declared live keys independently observed owned, current, correctly distributed, and revocable / all declared live keys evaluated",
+          "unit": "ratio",
+          "direction": "increase"
+        },
+        "primaryMode": "steward",
+        "secondaryModes": [],
+        "boundary": {
+          "owns": "Key custody, distribution, rotation, revocation, and value-safe resolution contracts.",
+          "excludes": [
+            "reading or retaining secret values",
+            "inventing rotation policy",
+            "self-authorizing replacement or revocation"
+          ]
+        }
+      },
+      "@vespeneventures/integrator": {
+        "jobQuestion": "Does this consuming plane hold what it declared it should hold, and is it current?",
+        "metric": {
+          "name": "package currency rate",
+          "formula": "entitled packages installed at the current published version / all entitled packages evaluated",
+          "unit": "ratio",
+          "direction": "increase"
+        },
+        "primaryMode": "reconcile",
+        "secondaryModes": [],
+        "boundary": {
+          "owns": "Caller-owned entitlement and installed-inventory reconciliation.",
+          "excludes": [
+            "maintaining a registry of consumers",
+            "deciding a plane's entitlements",
+            "publishing or installing packages"
+          ]
+        }
+      },
+      "@vespeneventures/observer": {
+        "jobQuestion": "Can independent evidence show what happened and whether the operating loops are observable?",
+        "metric": {
+          "name": "unobserved outcome rate",
+          "formula": "declared outcome subjects with no readable independent observation / all declared outcome subjects evaluated",
+          "unit": "ratio",
+          "direction": "decrease"
+        },
+        "primaryMode": "optimize",
+        "secondaryModes": [],
+        "boundary": {
+          "owns": "Independent telemetry coverage, outcome measurement, and gate-efficacy measurement.",
+          "excludes": [
+            "judging the change it measures",
+            "acting on behalf of another role",
+            "using a measured role's own verdict as ground truth"
+          ]
+        }
+      },
+      "@vespeneventures/strategist": {
+        "jobQuestion": "Is the business direction true, current, and recognizably ours?",
+        "metric": {
+          "name": "strategy traceability rate",
+          "formula": "material strategy and brand claims with current evidence, derivation, and approval / all material strategy and brand claims evaluated",
+          "unit": "ratio",
+          "direction": "increase"
+        },
+        "primaryMode": "assure",
+        "secondaryModes": [],
+        "boundary": {
+          "owns": "Evidence-backed strategy records, direction currency, and brand derivation.",
+          "excludes": [
+            "supplying a consumer's strategy values",
+            "authoring product copy",
+            "rendering or publishing surfaces"
+          ]
+        }
+      },
+      "@vespeneventures/writer": {
+        "jobQuestion": "Is audience-facing language approved, traceable, and well said?",
+        "metric": {
+          "name": "approved copy coverage rate",
+          "formula": "shipped audience-facing copy resolved from approved traceable registry entries / all shipped audience-facing copy evaluated",
+          "unit": "ratio",
+          "direction": "increase"
+        },
+        "primaryMode": "assure",
+        "secondaryModes": [],
+        "boundary": {
+          "owns": "Copy registry, voice conformance, addressability, and language traceability.",
+          "excludes": [
+            "inventing strategy facts",
+            "designing interface primitives",
+            "transporting or publishing messages"
+          ]
+        }
+      },
+      "@vespeneventures/designer": {
+        "jobQuestion": "Is the product interface well made against its declared design and accessibility constraints?",
+        "metric": {
+          "name": "design conformance rate",
+          "formula": "evaluated interface surfaces satisfying declared token, brand, structure, and accessibility constraints / all interface surfaces evaluated",
+          "unit": "ratio",
+          "direction": "increase"
+        },
+        "primaryMode": "assure",
+        "secondaryModes": [],
+        "boundary": {
+          "owns": "Reusable design vocabulary and conformance of tokens, components, structure, and accessibility constraints.",
+          "excludes": [
+            "authoring product strategy or copy",
+            "selecting page intent",
+            "publishing or transporting rendered output"
+          ]
+        }
+      },
+      "@vespeneventures/publisher": {
+        "jobQuestion": "Did an approved surface reach its audience, and can the exact shipped result be proved?",
+        "metric": {
+          "name": "verified publication rate",
+          "formula": "due publication intents with independently observed audience release and matching immutable publication record / all due publication intents evaluated",
+          "unit": "ratio",
+          "direction": "increase"
+        },
+        "primaryMode": "fulfill",
+        "secondaryModes": [
+          "reconcile"
+        ],
+        "boundary": {
+          "owns": "Rendering approved named surfaces for channels and proving the exact audience release.",
+          "excludes": [
+            "selecting a template from business intent",
+            "authoring strategy or copy",
+            "transporting person-addressed messages"
+          ]
+        }
+      },
+      "@vespeneventures/influencer": {
+        "jobQuestion": "Is this governed outbound presence producing qualified audience responses at the declared rate?",
+        "metric": {
+          "name": "qualified response yield per thousand",
+          "formula": "1000 * independently observed qualified audience responses / independently observed eligible exposures",
+          "unit": "rate",
+          "direction": "increase"
+        },
+        "primaryMode": "optimize",
+        "secondaryModes": [
+          "fulfill"
+        ],
+        "boundary": {
+          "owns": "Governed organization or product presence, channel and cadence experiments, bounded audience engagement, and response-yield learning.",
+          "excludes": [
+            "defining audience strategy or qualified-response meaning",
+            "generating or approving content",
+            "holding credentials, impersonating a person, or buying paid media"
+          ]
+        }
+      },
+      "@vespeneventures/bouncer": {
+        "jobQuestion": "Is this actor who they claim, and is what they are doing still inside what they were granted?",
+        "metric": {
+          "name": "unreconciled grant rate",
+          "formula": "live grants not independently backed by their current provider of record / all live grants evaluated",
+          "unit": "ratio",
+          "direction": "decrease"
+        },
+        "primaryMode": "reconcile",
+        "secondaryModes": [
+          "interact"
+        ],
+        "boundary": {
+          "owns": "Actor identity, current authority, delegated ceilings, and provider reconciliation.",
+          "excludes": [
+            "deciding what a person wants",
+            "transporting a finished message",
+            "deciding semantic obligation discharge"
+          ]
+        }
+      },
+      "@vespeneventures/butler": {
+        "jobQuestion": "Do we have this person's confirmed current request and standing instructions?",
+        "metric": {
+          "name": "confirmed current intent rate",
+          "formula": "evaluated acted requests and standing-instruction uses backed by current subject confirmation / all acted requests and standing-instruction uses evaluated",
+          "unit": "ratio",
+          "direction": "increase"
+        },
+        "primaryMode": "interact",
+        "secondaryModes": [],
+        "boundary": {
+          "owns": "Inbound person-request admission, intent confirmation, and standing-instruction currency.",
+          "excludes": [
+            "transporting finished outbound messages",
+            "deciding semantic obligation discharge",
+            "holding inferred beliefs about a person"
+          ]
+        }
+      },
+      "@vespeneventures/messenger": {
+        "jobQuestion": "Did each authorized finished communication reach its transport destination within its declared window?",
+        "metric": {
+          "name": "timely verified delivery rate",
+          "formula": "authorized delivery intents due and independently observed delivered within their declared window / all authorized delivery intents due",
+          "unit": "ratio",
+          "direction": "increase"
+        },
+        "primaryMode": "fulfill",
+        "secondaryModes": [
+          "optimize"
+        ],
+        "boundary": {
+          "owns": "Authorized finished-message transport, retry-safe dispatch, and normalized delivery-status evidence.",
+          "excludes": [
+            "admitting inbound person requests",
+            "composing or selecting message meaning",
+            "deciding semantic obligation discharge"
+          ]
+        }
+      },
+      "@vespeneventures/giver": {
+        "jobQuestion": "Did this person get what they asked for, or a reason, or a human, and everything owed on time?",
+        "metric": {
+          "name": "timely semantic closure rate",
+          "formula": "due requests and obligations with independently verified delivery, refusal, or placed handoff inside the declared window / all due requests and obligations evaluated",
+          "unit": "ratio",
+          "direction": "increase"
+        },
+        "primaryMode": "fulfill",
+        "secondaryModes": [
+          "interact"
+        ],
+        "boundary": {
+          "owns": "Semantic request and obligation discharge, refusal grounds, and human handoff placement.",
+          "excludes": [
+            "admitting or interpreting an inbound request",
+            "implementing provider transport",
+            "storing person-attributable holdings"
+          ]
+        }
+      },
+      "@vespeneventures/keeper": {
+        "jobQuestion": "Does everything held about this person trace to something they did, and can they see and correct it?",
+        "metric": {
+          "name": "justified visible holding rate",
+          "formula": "held items with valid attribution, a subject-visible correctable route, and current retention basis / all held items evaluated",
+          "unit": "ratio",
+          "direction": "increase"
+        },
+        "primaryMode": "steward",
+        "secondaryModes": [],
+        "boundary": {
+          "owns": "Attribution, subject visibility and correction, retention judgment, and verified disposal contracts for held information.",
+          "excludes": [
+            "writing person-attributable records to git",
+            "owning host storage",
+            "turning inferred beliefs into standing instructions"
+          ]
+        }
+      }
   }
 }
