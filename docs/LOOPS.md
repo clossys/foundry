@@ -61,13 +61,13 @@ supplies, in its own position record:
 11. `escalationPath`
 12. `workerComponents`
 13. `stageBindings` — one consumer activity for each universal loop stage.
-14. `firstDayAssessment` — the joined baseline, gaps, target state, open
-    questions, critical path, deferred work, recommendation, and evidence.
+14. `firstDayAssessment` — gaps, target state, open questions, critical path,
+    deferred work, recommendation, and evidence.
 
-The joined first-day assessment records the position's baseline once plus its
-gaps, target state, open questions, critical path, deferred work,
-recommendation, and evidence references. Installing a package does not supply
-these values and does not prove adoption. The runtime worker may combine
+The position records its baseline once as the top-level `baseline`; the joined
+first-day assessment records its gaps, target state, open questions, critical
+path, deferred work, recommendation, and evidence references. Installing a
+package does not supply these values and does not prove adoption. The runtime worker may combine
 deterministic code, model decisions, human approval, and provider
 integrations; that mix is an implementation choice inside the installed
 position, not another package classification.

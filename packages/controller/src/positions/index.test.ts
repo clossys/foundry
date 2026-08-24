@@ -4,7 +4,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { readCanonicalRoleLoopContract, readInstalledPositionContract } from "./canonical.js";
-import { validateInstalledPositionContract, validateInstalledPositionLedger } from "./index.js";
+import { POSITION_FIELDS, POSITION_RECOMMENDATIONS, ROLE_DISPOSITIONS, SETPOINT_VALUE_SHAPES, WORKER_COMPONENT_KINDS, validateInstalledPositionContract, validateInstalledPositionLedger } from "./index.js";
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const repoRoot = resolve(packageRoot, "../..");
@@ -43,6 +43,9 @@ describe("installed positions", () => {
   });
 
   it("keeps every installed-position contract vocabulary tied to the validator", () => {
+    for (const collection of [POSITION_FIELDS, WORKER_COMPONENT_KINDS, POSITION_RECOMMENDATIONS, ROLE_DISPOSITIONS, SETPOINT_VALUE_SHAPES]) {
+      expect(Object.isFrozen(collection)).toBe(true);
+    }
     assert.deepEqual(validateInstalledPositionContract(readInstalledPositionContract()), []);
     const drifted = structuredClone(readInstalledPositionContract()) as Record<string, Record<string, unknown>>;
     ((drifted.position!.fields as string[]).pop());

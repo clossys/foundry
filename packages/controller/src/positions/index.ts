@@ -1,13 +1,13 @@
 /** Consumer-owned installed-position ledger validation. No provider I/O. */
 import { readCanonicalRoleLoopContract, readInstalledPositionContract } from "./canonical.js";
 
-export const POSITION_FIELDS = ["id", "package", "businessMetricPath", "causalHypothesis", "baseline", "setpoint", "operatingScope", "authority", "evidenceSource", "cadence", "budget", "guardrails", "escalationPath", "workerComponents", "stageBindings", "firstDayAssessment"] as const;
-export const WORKER_COMPONENT_KINDS = ["deterministic", "model", "human", "vendor"] as const;
-export const POSITION_RECOMMENDATIONS = ["install", "defer", "decline", "escalate"] as const;
-export const ROLE_DISPOSITIONS = ["open", "not-applicable"] as const;
+export const POSITION_FIELDS = Object.freeze(["id", "package", "businessMetricPath", "causalHypothesis", "baseline", "setpoint", "operatingScope", "authority", "evidenceSource", "cadence", "budget", "guardrails", "escalationPath", "workerComponents", "stageBindings", "firstDayAssessment"] as const);
+export const WORKER_COMPONENT_KINDS = Object.freeze(["deterministic", "model", "human", "vendor"] as const);
+export const POSITION_RECOMMENDATIONS = Object.freeze(["install", "defer", "decline", "escalate"] as const);
+export const ROLE_DISPOSITIONS = Object.freeze(["open", "not-applicable"] as const);
 export const ROLE_DISPOSITION_RULE = "Every active role receives exactly one disposition. An open role cites one or more complete position records; a not-applicable role has no positions and states why.";
 export const SETPOINT_VALUE_RULE = "Inherit the role charter metric direction: target-range uses an ordered two-number [minimum, maximum] value; increase, decrease, and maintain use one finite number.";
-export const SETPOINT_VALUE_SHAPES = { increase: "number", decrease: "number", maintain: "number", "target-range": "ordered two-number array" } as const;
+export const SETPOINT_VALUE_SHAPES = Object.freeze({ increase: "number", decrease: "number", maintain: "number", "target-range": "ordered two-number array" } as const);
 
 export interface InstalledPositionFinding { readonly rule: string; readonly path: string; readonly message: string; }
 export interface InstalledPositionLedgerReport { readonly ok: boolean; readonly findings: readonly InstalledPositionFinding[]; readonly openRoles: number; readonly positions: number; }

@@ -12,7 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Installed-position validation now verifies the complete shipped
   `installed-position-contract` vocabulary against its implementation before
   accepting a consumer ledger. The role contract and position contract are
-  both immutable packaged snapshots; vocabulary drift now fails closed.
+  both immutable packaged snapshots; exported vocabulary collections are
+  frozen at runtime and vocabulary drift now fails closed.
 
 ## [0.8.11] - 2026-08-24
 
