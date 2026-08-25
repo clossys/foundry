@@ -105,7 +105,10 @@ describe("first-wave and pre-work gates", () => {
     const mismatched = { ...prework("artifact-mismatched", "artifact-access", "repo-one", "indeterminate"), addressesReadinessCriteria: ["immutable-artifact-access" as const] };
     expect(validateAdvisorAssessmentInput(input({ prerequisiteObservations: readiness, preWorkItems: [...input().preWorkItems, mismatched] })).map((entry) => entry.rule)).toContain("readiness-pre-work");
     const artifact = { ...prework("artifact", "artifact-access", "repo-one", "unresolved"), addressesReadinessCriteria: ["immutable-artifact-access" as const] };
-    expect(assessAdvisorEngagement(input({ prerequisiteObservations: readiness, preWorkItems: [...input().preWorkItems, artifact] })).firstWavePlan.steps).toEqual(expect.arrayContaining([expect.objectContaining({ blockedBy: ["artifact"], nextAction: artifact.nextAction })]));
+    const report = assessAdvisorEngagement(input({ prerequisiteObservations: readiness, preWorkItems: [...input().preWorkItems, artifact] }));
+    expect(report.state).toBe("violated");
+    expect(report.findings.map((entry) => entry.rule)).not.toContain("readiness-pre-work");
+    expect(report.firstWavePlan.steps).toEqual(expect.arrayContaining([expect.objectContaining({ blockedBy: ["artifact"], nextAction: artifact.nextAction })]));
   });
   it("rejects a HOLD-shaped nine-repository assessment, then treats its explicit unresolved conversion as stabilize-first", () => {
     const initiatives = Array.from({ length: 9 }, (_, index) => initiative(String(index + 1), `repo-${index + 1}`));
