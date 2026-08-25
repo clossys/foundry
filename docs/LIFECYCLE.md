@@ -278,7 +278,7 @@ fails when the committed copy drifts from the derived one — #493.
 
 | package | current position | staged here | grounded |
 | --- | --- | --- | --- |
-| `@vespeneventures/advisor` | staged | yes | unknown — #484 |
+| `@vespeneventures/advisor` | published | yes | unknown — #484 |
 | `@vespeneventures/controller` | published | yes | unknown — #484 |
 | `@vespeneventures/architect` | published | yes | unknown — #484 |
 | `@vespeneventures/inspector` | published | yes | unknown — #484 |
