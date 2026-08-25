@@ -1,53 +1,24 @@
 # @vespeneventures/controller
 
-**The job.** Controller owns every rule. Not the checking of rules — that is
-a consuming inspector's job — the rules themselves: their grammar, their
-lifecycle, their identity, and the primitive that binds a rule to a document
-without disclosing the document. It is the merge of three formerly separate
-packages that all turned out to describe the same job (issue #282, program
-issue #281): `@vespeneventures/governance` (package-creation, maintenance,
-review, release-readiness, and retirement records; the package-process
-catalog, gates, release, repository-profile, review-evidence, and
-workspace-cleanup-classification subpaths), `@vespeneventures/conventions`
-(account-neutral agent conventions two parties can share without either
-owning the other — branch provenance, skill naming, agent interoperability,
-routine and schedule declarations, CI gate naming, and the capability-first
-skill registry), and `@vespeneventures/policy` (the content-addressed
-digest-binding primitive that lets a rule bind to a document without ever
-committing the document itself).
+<!-- controller-role-contract:start -->
+## Control-loop contract
 
-**Metric.** Rule conformance: the share of declared rules that are both
-well-formed and followed, measured across every plane that installs this
-package.
+This block is derived from the schema-v4 role contract shipped with this
+package. The consumer (the client operating the loop) owns its concrete
+setpoint and review cadence; Controller supplies neither.
 
-**Loop.**
+**Job.** Are the business's operating rules expressible, current, and followed?
 
-- **aim** — every rule is expressible in one grammar.
-- **sense** — parse declarations from consuming planes.
-- **judge** — well-formed / malformed / unparseable (three states, never
-  two — the same fail-closed discipline `./gates`' `GateResult` ternary and
-  `./catalog`'s `CatalogSkip.kind` already use elsewhere in this package).
-- **act** — emit the normalized rule set plus its digest (`./policy`'s
-  `computeDigest`/`PolicyBinding`).
-- **learn** — a rule that no consumer can express is a grammar gap, filed as
-  such rather than worked around downstream.
+**Metric.** rule conformance rate: declared rules independently observed well-formed and followed / all declared rules evaluated (ratio; increase).
 
-**Close condition:** for the `./repository` runner specifically, this loop
-closes when a consuming repository's `repository-profile-check` (or
-`runRepositoryProfileCheck` wired into an equivalent CI step) is a required
-status check that has actually proven it blocks — a schema-invalid
-declaration reaching `indeterminate` and failing the check in a real run,
-not a green history nobody has seen turn red — and no hand-written evaluator
-survives beside it duplicating the same judgment. A consumer that still
-maintains its own parallel runner has not closed this loop no matter how
-clean its own runs report; that was the exact failure five hand-written
-runners repeated independently before this one shipped. The loop reopens on
-any contract gap a caller files for a check not covered by the two
-built-in axes: `customAxes` (issue #324) exists precisely as the extension
-point beyond them, because a derived cross-reference check two real
-consumers needed had no other way to express itself, and the expectation is
-that the next gap of that shape surfaces the same way — as a filed axis, not
-a private workaround living outside this package.
+**Mode.** reconcile.
+
+**Stages.** `sense` → `judge` → `act` → `verify` → `learnOrEscalate`.
+
+**Boundary.** Owns Operating-rule grammar, identity, lifecycle, and content binding. It excludes `judging a proposed change`, `materializing declared state`, `authorizing provider mutations`.
+
+**Close condition.** Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.
+<!-- controller-role-contract:end -->
 
 This is a rename and a merge, not a rewrite: the former package surfaces are
 now provided by this package's subpaths. The former package names are retired;
@@ -88,9 +59,12 @@ caller owns all of those actions and values.
 ## Package-process subpaths
 
 Install `@vespeneventures/controller` once and import the focused capability
-you need. The root remains lifecycle and scaffold planning; the subpaths keep
-their established contracts separate without making consumers select many
-separately versioned packages.
+you need. The root exposes lifecycle-registry validation and package-scaffold
+planning APIs; it does not declare that a package has completed the
+repository's seven-state evidence ladder. That ladder is derived separately
+from recorded producer and consumer evidence. The subpaths keep their
+established contracts separate without making consumers select many separately
+versioned packages.
 
 | Subpath | Includes |
 | --- | --- |

@@ -5,6 +5,18 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.16] - 2026-08-25
+
+### Fixed
+
+- Aligned Controller's public role charter with the shipped schema-v4 contract:
+  its reconcile mode, five universal loop stages, rule-conformance metric,
+  consumer-owned setpoint and cadence, boundary, and independent close
+  condition now have one generated README representation. The repository now
+  fails when that representation drifts from the canonical role contract.
+- Clarified that the root lifecycle-registry API is distinct from the
+  repository's seven-state, evidence-derived package lifecycle ladder.
+
 ## [0.8.15] - 2026-08-24
 
 ### Added
