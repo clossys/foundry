@@ -22,6 +22,26 @@ test("SEPARATING FIXTURE: a plausible README block with stale loop stages is rej
   });
 });
 
+test("REVIEWER PROOF: an added canonical secondary mode cannot pass against a README that declares none", () => {
+  const withSecondaryMode = structuredClone(contract);
+  withSecondaryMode.roles["@vespeneventures/controller"].secondaryModes = ["assure"];
+  assert.deepEqual(checkControllerRoleReadme({ contract: withSecondaryMode, readme }), {
+    ok: false,
+    reason: "README Controller role-contract block differs from docs/contracts/role-loop-archetypes.json",
+  });
+});
+
+test("secondary modes preserve the contract's declared order", () => {
+  const withSecondaryModes = structuredClone(contract);
+  withSecondaryModes.roles["@vespeneventures/controller"].secondaryModes = ["assure", "steward"];
+  const canonicalReadme = renderControllerRoleBlock(withSecondaryModes);
+  assert.deepEqual(checkControllerRoleReadme({ contract: withSecondaryModes, readme: canonicalReadme }), { ok: true });
+  assert.deepEqual(checkControllerRoleReadme({ contract: withSecondaryModes, readme: canonicalReadme.replace("`assure`, `steward`", "`steward`, `assure`") }), {
+    ok: false,
+    reason: "README Controller role-contract block differs from docs/contracts/role-loop-archetypes.json",
+  });
+});
+
 test("a missing client-owned setpoint or cadence is not rendered from an unreadable contract", () => {
   const withoutCadence = structuredClone(contract);
   withoutCadence.consumerBindings = withoutCadence.consumerBindings.filter((binding) => binding !== "cadence");

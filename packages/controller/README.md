@@ -13,6 +13,8 @@ setpoint and review cadence; Controller supplies neither.
 
 **Mode.** reconcile.
 
+**Secondary modes.** None.
+
 **Stages.** `sense` → `judge` → `act` → `verify` → `learnOrEscalate`.
 
 **Boundary.** Owns Operating-rule grammar, identity, lifecycle, and content binding. It excludes `judging a proposed change`, `materializing declared state`, `authorizing provider mutations`.

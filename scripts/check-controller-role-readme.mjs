@@ -43,6 +43,7 @@ export function renderControllerRoleBlock(contract) {
   const unit = requiredString(metric?.unit, "controller metric.unit");
   const direction = requiredString(metric?.direction, "controller metric.direction");
   const primaryMode = requiredString(role.primaryMode, "controller primaryMode");
+  const secondaryModes = requiredArray(role.secondaryModes, "controller secondaryModes");
   const owns = requiredString(role.boundary?.owns, "controller boundary.owns");
   const excludes = requiredArray(role.boundary?.excludes, "controller boundary.excludes");
   const closeCondition = requiredString(role.closeCondition, "controller closeCondition");
@@ -59,6 +60,8 @@ setpoint and review cadence; Controller supplies neither.
 **Metric.** ${metricName}: ${formula} (${unit}; ${direction}).
 
 **Mode.** ${primaryMode}.
+
+**Secondary modes.** ${secondaryModes.length === 0 ? "None." : `${secondaryModes.map((mode) => `\`${mode}\``).join(", ")}.`}
 
 **Stages.** ${stages.map((stage) => `\`${stage}\``).join(" → ")}.
 
@@ -98,7 +101,7 @@ function main() {
       process.exitCode = 1;
       return;
     }
-    console.log("CONTROLLER README ROLE PARITY OK — job, metric, mode, stages, boundary, and independent close condition match schema v4.");
+    console.log("CONTROLLER README ROLE PARITY OK — job, metric, primary and secondary modes, stages, boundary, and independent close condition match schema v4.");
   } catch (error) {
     console.error(`CONTROLLER README ROLE PARITY INDETERMINATE — ${error instanceof Error ? error.message : String(error)}`);
     process.exitCode = 2;

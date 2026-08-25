@@ -10,8 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Aligned Controller's public role charter with the shipped schema-v4 contract:
-  its reconcile mode, five universal loop stages, rule-conformance metric,
-  consumer-owned setpoint and cadence, boundary, and independent close
+  its primary and secondary modes, five universal loop stages, rule-conformance
+  metric, consumer-owned setpoint and cadence, boundary, and independent close
   condition now have one generated README representation. The repository now
   fails when that representation drifts from the canonical role contract.
 - Clarified that the root lifecycle-registry API is distinct from the
