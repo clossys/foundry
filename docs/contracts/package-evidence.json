@@ -6,10 +6,10 @@
       "name": "@vespeneventures/advisor",
       "state": "published",
       "stagedBy": {
-        "run": "LOCAL fixture run — reproduce with `npm run stage:advisor` after checkout. It builds `packages/advisor`, then runs `node packages/advisor/dist/cli.js` against a temporary assessment with unresolved pre-work (exit 1, `state: violated`), the otherwise equivalent cleared control (exit 0, `state: satisfied`), and an unknown readiness observation (exit 2, `state: indeterminate`). The script finishes `Advisor fixture evidence: unresolved pre-work violated, the cleared control satisfied, and unknown readiness stayed indeterminate.`",
+        "run": "LOCAL fixture run — reproduce with `npm run stage:advisor` after checkout. It builds `packages/advisor`, then runs `node packages/advisor/dist/cli.js` against a temporary assessment with unresolved pre-work (exit 1, `state: violated`), the otherwise equivalent cleared control (exit 0, `state: satisfied`), and an unknown readiness observation paired with owned indeterminate pre-work (exit 2, `state: indeterminate`). The script finishes `Advisor fixture evidence: unresolved pre-work violated, the cleared control satisfied, and unknown readiness stayed indeterminate.`",
         "defectOrigin": "injected",
         "defect": "The temporary assessment leaves a first-wave baseline pre-work item unresolved. Advisor's compiled CLI produces its own violated state and exit 1 rather than allowing execution readiness through an uncleared prerequisite.",
-        "control": "In the same fixture run, the otherwise equivalent assessment clears the baseline and conflict pre-work and exits 0 satisfied; an unknown readiness observation exits 2 indeterminate rather than becoming a pass."
+        "control": "In the same fixture run, the otherwise equivalent assessment clears the baseline and conflict pre-work and exits 0 satisfied; an unknown readiness observation with matching owned indeterminate pre-work exits 2 rather than becoming a pass."
       }
     },
     {

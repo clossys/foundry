@@ -68,6 +68,9 @@ describe("first-wave and pre-work gates", () => {
     expect(assessAdvisorEngagement(shortDigest).findings.map((entry) => entry.rule)).toContain("work-item-package");
     const selfOutcome = input(); selfOutcome.firstWave.workItems[0] = { ...selfOutcome.firstWave.workItems[0] as FirstWaveWorkItem, completion: { ...selfOutcome.firstWave.workItems[0]?.completion as NonNullable<FirstWaveWorkItem["completion"]>, independentOutcomeOwnerRef: "delivery-one" } };
     expect(assessAdvisorEngagement(selfOutcome).findings.map((entry) => entry.rule)).toContain("work-item-self-outcome");
+    const caseOnlyOutcome = input(); caseOnlyOutcome.firstWave.workItems[0] = { ...caseOnlyOutcome.firstWave.workItems[0] as FirstWaveWorkItem, completion: { ...caseOnlyOutcome.firstWave.workItems[0]?.completion as NonNullable<FirstWaveWorkItem["completion"]>, independentOutcomeOwnerRef: "DELIVERY-ONE" } };
+    expect(assessAdvisorEngagement(caseOnlyOutcome).findings.map((entry) => entry.rule)).toContain("work-item-self-outcome");
+    expect(assessAdvisorEngagement(input()).findings.map((entry) => entry.rule)).not.toContain("work-item-self-outcome");
   });
   it("rejects an extra repository target that its selected initiative never declared", () => {
     const value = input(); const declared = value.firstWave.workItems[0] as FirstWaveWorkItem;
@@ -86,11 +89,26 @@ describe("first-wave and pre-work gates", () => {
     const changed = input(); changed.preWorkItems[1] = prework("conflict-one", "conflict", "repo-one", "unresolved");
     expect(assessAdvisorEngagement(changed)).toMatchObject({ state: "violated", firstWavePlan: { state: "stabilize-first", steps: [expect.objectContaining({ nextAction: expect.objectContaining({ ownerRef: "work-owner-conflict-one" }) })] } });
   });
+  it("requires every unknown readiness result to become owned indeterminate pre-work", () => {
+    const readiness = input().prerequisiteObservations.map((item) => item.id === "authority-approval" ? { ...item, state: "unknown" as const, evidence: [] } : item);
+    expect(validateAdvisorAssessmentInput(input({ prerequisiteObservations: readiness })).map((entry) => entry.rule)).toContain("readiness-pre-work");
+    const mismatched = { ...prework("authority", "authority", "repo-one", "unresolved"), addressesReadinessCriteria: ["authority-approval" as const] };
+    expect(validateAdvisorAssessmentInput(input({ prerequisiteObservations: readiness, preWorkItems: [...input().preWorkItems, mismatched] })).map((entry) => entry.rule)).toContain("readiness-pre-work");
+    const authority = { ...prework("authority", "authority", "repo-one", "indeterminate"), addressesReadinessCriteria: ["authority-approval" as const] };
+    const report = assessAdvisorEngagement(input({ prerequisiteObservations: readiness, preWorkItems: [...input().preWorkItems, authority] }));
+    expect(report).toMatchObject({ state: "indeterminate", firstWavePlan: { state: "indeterminate" }, blockers: expect.arrayContaining([expect.objectContaining({ id: "authority" })]) });
+    expect(report.findings.map((entry) => entry.rule)).not.toContain("readiness-pre-work");
+  });
   it("requires every violated readiness result to become owned unresolved pre-work", () => {
     const readiness = input().prerequisiteObservations.map((item) => item.id === "immutable-artifact-access" ? { ...item, state: "violated" as const } : item);
     expect(assessAdvisorEngagement(input({ prerequisiteObservations: readiness })).findings.map((entry) => entry.rule)).toContain("readiness-pre-work");
+    const mismatched = { ...prework("artifact-mismatched", "artifact-access", "repo-one", "indeterminate"), addressesReadinessCriteria: ["immutable-artifact-access" as const] };
+    expect(validateAdvisorAssessmentInput(input({ prerequisiteObservations: readiness, preWorkItems: [...input().preWorkItems, mismatched] })).map((entry) => entry.rule)).toContain("readiness-pre-work");
     const artifact = { ...prework("artifact", "artifact-access", "repo-one", "unresolved"), addressesReadinessCriteria: ["immutable-artifact-access" as const] };
-    expect(assessAdvisorEngagement(input({ prerequisiteObservations: readiness, preWorkItems: [...input().preWorkItems, artifact] })).firstWavePlan.steps).toEqual(expect.arrayContaining([expect.objectContaining({ blockedBy: ["artifact"], nextAction: artifact.nextAction })]));
+    const report = assessAdvisorEngagement(input({ prerequisiteObservations: readiness, preWorkItems: [...input().preWorkItems, artifact] }));
+    expect(report.state).toBe("violated");
+    expect(report.findings.map((entry) => entry.rule)).not.toContain("readiness-pre-work");
+    expect(report.firstWavePlan.steps).toEqual(expect.arrayContaining([expect.objectContaining({ blockedBy: ["artifact"], nextAction: artifact.nextAction })]));
   });
   it("rejects a HOLD-shaped nine-repository assessment, then treats its explicit unresolved conversion as stabilize-first", () => {
     const initiatives = Array.from({ length: 9 }, (_, index) => initiative(String(index + 1), `repo-${index + 1}`));
