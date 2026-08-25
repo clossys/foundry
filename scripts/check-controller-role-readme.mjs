@@ -29,6 +29,9 @@ function requiredArray(value, name) {
 
 /** Render the README block from the canonical, shipped role charter. */
 export function renderControllerRoleBlock(contract) {
+  if (!Number.isInteger(contract?.schemaVersion) || contract.schemaVersion !== 4) {
+    throw new Error("schemaVersion must be exactly 4");
+  }
   const role = contract?.roles?.[ROLE];
   if (!role || typeof role !== "object") throw new Error(`${ROLE} is missing from roles`);
   const stages = requiredArray(contract.universalStages, "universalStages");
