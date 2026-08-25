@@ -1,5 +1,5 @@
 import { assessAdvisorEngagement } from "./assessment.js";
-import { validateExecutionAuthorization } from "./session.js";
+import { validateExecutionAuthorization } from "./authorization.js";
 import type { AdvisorFinding, AssessmentBasis, EngagementActionDisposition, EngagementDecisionCurrencyAssessment, EngagementDecisionCurrencyInput, EngagementRecord } from "./types.js";
 
 const BASIS_FIELDS = ["snapshotDigest", "grantDigest", "catalogDigest", "planDigest", "blockerDigest", "clearanceDigest", "conflictDigest", "baselineDigest", "completionDefinitionDigest", "assessedAt", "freshUntil"] as const;
