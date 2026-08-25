@@ -46,6 +46,8 @@ export interface PreWorkItem {
   nextAction: EngagementNextAction;
   dependencySurfaces: readonly string[];
   mutationSurfaces: readonly string[];
+  /** Exact initiative pair when this item owns a derived overlap. */
+  initiativeOverlapIds?: readonly string[];
   clearance?: AuthorityClearance;
 }
 

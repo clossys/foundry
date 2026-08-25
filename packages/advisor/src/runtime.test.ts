@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ADVISOR_CHARTER, REQUIRED_FIT_CRITERIA, REQUIRED_READINESS_CRITERIA, SPONSOR_ENTRY_PROMPT, advanceAdvisorSession, assessAdvisorEngagement, assessEngagementDecisionCurrency, createAdvisorSession, resolveEngagementActionDisposition, validateAdvisorAssessmentInput } from "./index.js";
+import { ADVISOR_CHARTER, REQUIRED_FIT_CRITERIA, REQUIRED_READINESS_CRITERIA, SPONSOR_ENTRY_PROMPT, advanceAdvisorSession, assessAdvisorEngagement, assessEngagementDecisionCurrency, createAdvisorSession, handleAdvisorTool, resolveEngagementActionDisposition, validateAdvisorAssessmentInput } from "./index.js";
 import type { AdvisorAssessmentInput, AssessmentBasis, EngagementNextAction, FirstWaveWorkItem, Initiative, PreWorkItem } from "./types.js";
 
 const hash = (letter: string) => `sha256:${letter.repeat(64)}`;
@@ -10,6 +10,7 @@ function proof(id: string) { return { id, description: `Independent evidence for
 function initiative(id: string, repository = `repo-${id}`, shared: Partial<Initiative> = {}): Initiative { return { id, status: "candidate", targetRepositoryIds: [repository], workstreamConflictKeys: [`workstream-${id}`], dependencyConflictKeys: [`dependency-${id}`], mutationConflictKeys: [`mutation-${id}`], authorityConflictKeys: [`authority-${id}`], scheduleConflictKeys: [`schedule-${id}`], dataOutcomeMetricConflictKeys: [`metric-${id}`], ...shared }; }
 function work(item: Initiative): FirstWaveWorkItem { return { id: `work-${item.id}`, initiativeId: item.id, targetRepositoryId: item.targetRepositoryIds[0] as string, deliveryOwnerRef: `delivery-${item.id}`, package: { name: `package-${item.id}`, version: "1.2.3", integrity: integrity() }, invocation: "invoke through an approved connector", placement: "declared placement", baseline: { metricRef: `metric-${item.id}`, value: 0, observedAt: "2026-08-24T12:00:00Z", evidence: proof(`baseline-${item.id}`) }, completion: { definition: "Outcome moves in the declared direction.", independentOutcomeOwnerRef: `outcome-${item.id}`, evidenceSource: "independent-measurement", direction: "increase", setpoint: 1, windowDays: 14 }, rollback: { procedure: "Use the approved rollback procedure.", evidenceSource: "rollback-record" }, mutationSurfaces: [`mutation-${item.id}`] }; }
 function prework(id: string, kind: PreWorkItem["kind"], repository: string, status: PreWorkItem["status"] = "satisfied"): PreWorkItem { const value: PreWorkItem = { id, kind, status, addressesReadinessCriteria: [kind === "baseline" ? "baseline" : "initiative-mutation-dependency-inventory"], targetRepositoryIds: [repository], ownerRef: `work-owner-${id}`, impact: "Affects the first-wave decision.", evidence: [proof(`observed-${id}`)], nextAction: { ...nextAction, ownerRef: `work-owner-${id}` }, dependencySurfaces: ["dependency-surface"], mutationSurfaces: ["mutation-surface"] }; if (status === "satisfied") value.clearance = { authorityOwnerRef: `authority-owner-${id}`, evidence: [proof(`clearance-${id}`)] }; return value; }
+function overlapPrework(first: Initiative, second: Initiative): PreWorkItem { return { ...prework(`overlap-${first.id}-${second.id}`, "conflict", first.targetRepositoryIds[0] as string, "unresolved"), initiativeOverlapIds: [first.id, second.id] }; }
 function input(overrides: Partial<AdvisorAssessmentInput> = {}): AdvisorAssessmentInput { const one = initiative("one"); const two = initiative("two"); return { id: "assessment-one", asOf: "2026-08-24T13:00:00Z", engagement: { id: "engagement-one", status: "active", nextAction, assessmentBasis: basis() }, fitSignals: REQUIRED_FIT_CRITERIA.map((criterion) => ({ id: criterion.id as never, state: "supported" as const, evidence: [proof(`fit-${criterion.id}`)] })), prerequisiteObservations: REQUIRED_READINESS_CRITERIA.map((criterion) => ({ id: criterion.id as never, state: "satisfied" as const, evidence: [proof(`readiness-${criterion.id}`)] })), initiatives: [one, two], firstWave: { initiativeIds: [one.id], objectives: ["A bounded first outcome."], workItems: [work(one)] }, preWorkItems: [prework("baseline-one", "baseline", "repo-one"), prework("conflict-one", "conflict", "repo-one")], reassessment: { cadenceDays: 7, triggers: ["evidence-change", "sponsor-request"] }, ...overrides }; }
 
 describe("programmatic standards and reconciliation", () => {
@@ -40,9 +41,15 @@ describe("programmatic standards and reconciliation", () => {
     const dimensions = ["workstreamConflictKeys", "dependencyConflictKeys", "mutationConflictKeys", "authorityConflictKeys", "scheduleConflictKeys", "dataOutcomeMetricConflictKeys"] as const;
     for (const dimension of dimensions) {
       const one = initiative("one"); const two = initiative("two", "repo-two", { [dimension]: one[dimension] });
-      const report = assessAdvisorEngagement(input({ initiatives: [one, two], firstWave: { initiativeIds: [one.id], objectives: ["objective"], workItems: [work(one)] } }));
-      expect(report).toMatchObject({ initiativeOverlap: { state: "violated", overlaps: [expect.objectContaining({ [dimension]: one[dimension] })] }, firstWavePlan: { state: "stabilize-first" } });
+      const blocker = overlapPrework(one, two); const report = assessAdvisorEngagement(input({ initiatives: [one, two], firstWave: { initiativeIds: [one.id], objectives: ["objective"], workItems: [work(one)] }, preWorkItems: [...input().preWorkItems, blocker] }));
+      expect(report).toMatchObject({ initiativeOverlap: { state: "violated", overlaps: [expect.objectContaining({ [dimension]: one[dimension] })] }, firstWavePlan: { state: "stabilize-first", steps: expect.arrayContaining([expect.objectContaining({ blockedBy: [blocker.id], nextAction: blocker.nextAction })]) } });
     }
+  });
+  it("requires every derived initiative collision to become linked owned pre-work", () => {
+    const one = initiative("one"); const two = initiative("two", "repo-two", { mutationConflictKeys: one.mutationConflictKeys });
+    const report = assessAdvisorEngagement(input({ initiatives: [one, two], firstWave: { initiativeIds: [one.id], objectives: ["objective"], workItems: [work(one)] } }));
+    expect(report).toMatchObject({ state: "indeterminate", firstWavePlan: { state: "indeterminate" } });
+    expect(report.findings.map((entry) => entry.rule)).toContain("initiative-overlap-pre-work");
   });
   it("does not invent a collision from a shared repository when exclusive keys are disjoint", () => {
     const one = initiative("one", "same-target"); const two = initiative("two", "same-target");
@@ -106,6 +113,12 @@ describe("freshness, authorization, and action-bearing sessions", () => {
       expect(result.findings.map((entry) => entry.rule)).toContain("assessment-basis-stale");
     }
   });
+  it("never uses another engagement's assessment even when basis digests match", () => {
+    const assessmentInput = input(); const other = { ...assessmentInput.engagement, id: "engagement-two" };
+    const result = assessEngagementDecisionCurrency({ asOf: "2026-08-24T13:00:00Z", engagements: [other], assessmentInputs: [assessmentInput], elapsedDaysByEngagement: { [other.id]: 2 } });
+    expect(result).toMatchObject({ state: "violated", rate: 0 });
+    expect(result.findings.map((entry) => entry.rule)).toContain("assessment-basis-current");
+  });
   it("requires exact sponsor authorization scope and expiry", () => {
     const assessmentInput = input(); const report = assessAdvisorEngagement(assessmentInput); const session = advanceAdvisorSession(createAdvisorSession("session", nextAction), { type: "assessment-recorded", assessmentInput, nextAction }).session;
     const exact = { planDigest: report.firstWavePlan.basis?.planDigest as string, assessmentBasis: report.firstWavePlan.basis as AssessmentBasis, sponsorRef: "sponsor", permittedRepositoryIds: ["repo-one"], permittedPackages: [work(initiative("one")).package], permittedMutationSurfaces: ["mutation-one"], grantedAt: "2026-08-24T13:00:00Z", expiresAt: "2026-08-25T13:00:00Z" };
@@ -136,5 +149,14 @@ describe("freshness, authorization, and action-bearing sessions", () => {
     const repeated = advanceAdvisorSession(closed, { type: "close", reason: "Overwrite attempted.", evidence: [proof("replacement")] });
     expect(repeated.findings.map((entry) => entry.rule)).toContain("session-closed");
     expect(repeated.session).toBe(closed);
+  });
+  it("fails malformed connector JSON closed instead of throwing", () => {
+    expect(handleAdvisorTool(null)).toMatchObject({ state: "indeterminate", output: null, findings: [expect.objectContaining({ rule: "tool-input" })] });
+    expect(handleAdvisorTool({ name: "advance_advisor_session", input: { session: null, event: null } })).toMatchObject({ state: "indeterminate", output: null, findings: [expect.objectContaining({ rule: "tool-input" })] });
+    const assessmentInput = input(); const session = advanceAdvisorSession(createAdvisorSession("session", nextAction), { type: "assessment-recorded", assessmentInput, nextAction }).session;
+    const malformed = handleAdvisorTool({ name: "advance_advisor_session", input: { session, event: { type: "sponsor-approved", authorization: null, asOf: "2026-08-24T14:00:00Z", nextAction } } });
+    expect(malformed).toMatchObject({ state: "indeterminate", findings: [expect.objectContaining({ rule: "execution-authorization-shape" })] });
+    const report = assessAdvisorEngagement(assessmentInput); const packageMalformed = { planDigest: report.firstWavePlan.basis?.planDigest, assessmentBasis: report.firstWavePlan.basis, sponsorRef: "sponsor", permittedRepositoryIds: ["repo-one"], permittedPackages: [null], permittedMutationSurfaces: ["mutation-one"], grantedAt: "2026-08-24T13:00:00Z", expiresAt: "2026-08-25T13:00:00Z" };
+    expect(advanceAdvisorSession(session, { type: "sponsor-approved", authorization: packageMalformed as never, asOf: "2026-08-24T14:00:00Z", nextAction }).findings.map((entry) => entry.rule)).toContain("execution-authorization-packages");
   });
 });
