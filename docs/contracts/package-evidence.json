@@ -4,7 +4,7 @@
   "packages": [
     {
       "name": "@vespeneventures/advisor",
-      "state": "staged",
+      "state": "published",
       "stagedBy": {
         "run": "LOCAL fixture run — reproduce with `npm run stage:advisor` after checkout. It builds `packages/advisor`, then runs `node packages/advisor/dist/cli.js` against a temporary assessment with unresolved pre-work (exit 1, `state: violated`), the otherwise equivalent cleared control (exit 0, `state: satisfied`), and an unknown readiness observation (exit 2, `state: indeterminate`). The script finishes `Advisor fixture evidence: unresolved pre-work violated, the cleared control satisfied, and unknown readiness stayed indeterminate.`",
         "defectOrigin": "injected",
