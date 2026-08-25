@@ -55,6 +55,10 @@ describe("first-wave and pre-work gates", () => {
   it("requires exact package, placement, baseline, outcome, window, and rollback bindings", () => {
     const invalid = input(); invalid.firstWave.workItems[0] = { ...invalid.firstWave.workItems[0] as FirstWaveWorkItem, package: { name: "package", version: "latest", integrity: hash("4") } };
     expect(assessAdvisorEngagement(invalid).findings.map((entry) => entry.rule)).toContain("work-item-package");
+    const leadingZero = input(); leadingZero.firstWave.workItems[0] = { ...leadingZero.firstWave.workItems[0] as FirstWaveWorkItem, package: { name: "package", version: "01.2.3", integrity: integrity() } };
+    expect(assessAdvisorEngagement(leadingZero).findings.map((entry) => entry.rule)).toContain("work-item-package");
+    const shortDigest = input(); shortDigest.firstWave.workItems[0] = { ...shortDigest.firstWave.workItems[0] as FirstWaveWorkItem, package: { name: "package", version: "1.2.3", integrity: "sha512-a" } };
+    expect(assessAdvisorEngagement(shortDigest).findings.map((entry) => entry.rule)).toContain("work-item-package");
     const selfOutcome = input(); selfOutcome.firstWave.workItems[0] = { ...selfOutcome.firstWave.workItems[0] as FirstWaveWorkItem, completion: { ...selfOutcome.firstWave.workItems[0]?.completion as NonNullable<FirstWaveWorkItem["completion"]>, independentOutcomeOwnerRef: "delivery-one" } };
     expect(assessAdvisorEngagement(selfOutcome).findings.map((entry) => entry.rule)).toContain("work-item-self-outcome");
   });
@@ -90,18 +94,31 @@ describe("freshness, authorization, and action-bearing sessions", () => {
   it("rejects stale basis shapes and calculates current decision currency", () => {
     const stale = input(); stale.engagement = { ...stale.engagement, assessmentBasis: { ...stale.engagement.assessmentBasis, freshUntil: "2026-08-24T12:30:00Z" } };
     expect(assessAdvisorEngagement(stale).findings.map((entry) => entry.rule)).toContain("assessment-basis-stale");
-    const report = assessAdvisorEngagement(input()); const engagement = input().engagement;
-    expect(assessEngagementDecisionCurrency({ asOf: "2026-08-24T13:00:00Z", engagements: [engagement], assessments: [report], elapsedDaysByEngagement: { [engagement.id]: 2 } }).state).toBe("satisfied");
+    const assessmentInput = input(); const engagement = assessmentInput.engagement;
+    expect(assessEngagementDecisionCurrency({ asOf: "2026-08-24T13:00:00Z", engagements: [engagement], assessmentInputs: [assessmentInput], elapsedDaysByEngagement: { [engagement.id]: 2 } }).state).toBe("satisfied");
     expect(resolveEngagementActionDisposition(engagement, "2026-09-02T12:00:00Z")).toBe("reassess-required");
   });
   it("requires exact sponsor authorization scope and expiry", () => {
-    const report = assessAdvisorEngagement(input()); const session = advanceAdvisorSession(createAdvisorSession("session", nextAction), { type: "assessment-recorded", assessment: report, nextAction }).session;
+    const assessmentInput = input(); const report = assessAdvisorEngagement(assessmentInput); const session = advanceAdvisorSession(createAdvisorSession("session", nextAction), { type: "assessment-recorded", assessmentInput, nextAction }).session;
     const exact = { planDigest: report.firstWavePlan.basis?.planDigest as string, assessmentBasis: report.firstWavePlan.basis as AssessmentBasis, sponsorRef: "sponsor", permittedRepositoryIds: ["repo-one"], permittedPackages: [work(initiative("one")).package], permittedMutationSurfaces: ["mutation-one"], grantedAt: "2026-08-24T13:00:00Z", expiresAt: "2026-08-25T13:00:00Z" };
     expect(advanceAdvisorSession(session, { type: "sponsor-approved", authorization: { ...exact, permittedRepositoryIds: [] }, asOf: "2026-08-24T14:00:00Z", nextAction }).findings.map((entry) => entry.rule)).toContain("execution-authorization-repositories");
     expect(advanceAdvisorSession(session, { type: "sponsor-approved", authorization: { ...exact, expiresAt: "2026-08-24T13:30:00Z" }, asOf: "2026-08-24T14:00:00Z", nextAction }).findings.map((entry) => entry.rule)).toContain("execution-authorization-expiry");
     expect(advanceAdvisorSession(session, { type: "sponsor-approved", authorization: { ...exact, sponsorRef: "advisor" }, asOf: "2026-08-24T14:00:00Z", nextAction }).findings.map((entry) => entry.rule)).toContain("execution-authorization-sponsor");
     expect(advanceAdvisorSession(session, { type: "sponsor-approved", authorization: { ...exact, expiresAt: "2026-09-02T13:00:00Z" }, asOf: "2026-08-24T14:00:00Z", nextAction }).findings.map((entry) => entry.rule)).toContain("execution-authorization-expiry");
     expect(advanceAdvisorSession(session, { type: "sponsor-approved", authorization: exact, asOf: "2026-08-24T14:00:00Z", nextAction }).session.state).toBe("ready-for-execution");
+  });
+  it("recomputes readiness from retained evidence and rejects fabricated assessment state", () => {
+    const report = assessAdvisorEngagement(input());
+    const forged = { ...createAdvisorSession("session", nextAction), state: "ready-for-sponsor-approval" as const, lastAssessment: report, lastAssessmentInput: {} };
+    const authorization = { planDigest: report.firstWavePlan.basis?.planDigest as string, assessmentBasis: report.firstWavePlan.basis as AssessmentBasis, sponsorRef: "sponsor", permittedRepositoryIds: ["repo-one"], permittedPackages: [work(initiative("one")).package], permittedMutationSurfaces: ["mutation-one"], grantedAt: "2026-08-24T13:00:00Z", expiresAt: "2026-08-25T13:00:00Z" };
+    expect(advanceAdvisorSession(forged, { type: "sponsor-approved", authorization, asOf: "2026-08-24T14:00:00Z", nextAction }).findings.map((entry) => entry.rule)).toContain("execution-not-ready");
+  });
+  it("uses the same strict authorization contract for decision currency", () => {
+    const report = assessAdvisorEngagement(input()); const engagement = input().engagement;
+    const authorization = { planDigest: report.firstWavePlan.basis?.planDigest as string, assessmentBasis: report.firstWavePlan.basis as AssessmentBasis, sponsorRef: "advisor", permittedRepositoryIds: ["repo-one"], permittedPackages: [work(initiative("one")).package], permittedMutationSurfaces: ["mutation-one"], grantedAt: "2026-08-20T13:00:00Z", expiresAt: "2026-09-30T13:00:00Z" };
+    const result = assessEngagementDecisionCurrency({ asOf: "2026-08-24T14:00:00Z", engagements: [{ ...engagement, executionAuthorization: authorization }], assessmentInputs: [input()], elapsedDaysByEngagement: { [engagement.id]: 2 } });
+    expect(result).toMatchObject({ state: "violated", rate: 0 });
+    expect(result.findings.map((entry) => entry.rule)).toEqual(expect.arrayContaining(["execution-authorization-sponsor", "execution-authorization-expiry"]));
   });
   it("has no pause parking and needs closure evidence", () => {
     const session = createAdvisorSession("session", nextAction);

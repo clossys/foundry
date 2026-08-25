@@ -24,8 +24,10 @@ const INITIATIVE_STATUSES = new Set(["candidate", "active", "completed"]);
 const PRE_WORK_KINDS = new Set(["baseline", "conflict", "prerequisite", "authority", "artifact-access", "mutation-conflict", "independent-outcome"]);
 const PRE_WORK_STATUSES = new Set(["satisfied", "unresolved", "indeterminate"]);
 const DIGEST = /^sha256:[a-f0-9]{64}$/;
-const PACKAGE_INTEGRITY = /^sha512-[A-Za-z0-9+/]+={0,2}$/;
-const EXACT_SEMVER = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
+const PACKAGE_INTEGRITY = /^sha512-[A-Za-z0-9+/]{86}==$/;
+const SEMVER_NUMERIC = "(?:0|[1-9]\\d*)";
+const SEMVER_PRERELEASE_ID = "(?:0|[1-9]\\d*|\\d*[A-Za-z-][0-9A-Za-z-]*)";
+const EXACT_SEMVER = new RegExp(`^${SEMVER_NUMERIC}\\.${SEMVER_NUMERIC}\\.${SEMVER_NUMERIC}(?:-${SEMVER_PRERELEASE_ID}(?:\\.${SEMVER_PRERELEASE_ID})*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$`);
 const RESERVED_ADVISOR_OWNERS = new Set(["advisor", "@vespeneventures/advisor"]);
 function record(value: unknown): value is UnknownRecord { return typeof value === "object" && value !== null && !Array.isArray(value); }
 function text(value: unknown): value is string { return typeof value === "string" && value.trim().length > 0; }

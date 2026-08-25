@@ -28,7 +28,7 @@ Advisor reconciles caller-declared exclusive conflict keys across workstream, de
 
 Every nonterminal session has one valid accountable next action. There is no pause or HOLD parking state. Closure requires an explicit reason and evidence.
 
-`ExecutionAuthorization` must bind the exact plan and assessment basis, an accountable sponsor reference, approved repository/package/mutation scope, and a valid expiry. `advanceAdvisorSession()` validates all of that before moving to `ready-for-execution`.
+`ExecutionAuthorization` must bind the exact plan and assessment basis, an accountable sponsor reference, approved repository/package/mutation scope, and a valid expiry. `advanceAdvisorSession()` recomputes the assessment from the session's retained input and validates all of that before moving to `ready-for-execution`; a caller-supplied assessment result is never trusted as readiness. `validateExecutionAuthorization()` is the shared validator used by both session transitions and decision-currency measurement.
 
 ## Usage
 
@@ -46,11 +46,11 @@ const session = createAdvisorSession("opaque-session-id", nextAction);
 
 `ADVISOR_TOOL_CONTRACTS` and `handleAdvisorTool()` provide pure, connector-facing contracts. They do not themselves authenticate, persist, or contact providers.
 
-The remaining top-level runtime API is `ADVISOR_CHARTER`, `SPONSOR_ENTRY_PROMPT`, `validateAdvisorAssessmentInput()`, `shouldReassess()`, `advanceAdvisorSession()`, `assessEngagementDecisionCurrency()`, and `resolveEngagementActionDisposition()`. Exported TypeScript contracts include `AdvisorAssessmentInput`, `AdvisorAssessment`, `AssessmentBasis`, `BaselineDefinition`, `FirstWaveWorkItem`, `PreWorkItem`, `Initiative`, `ExecutionAuthorization`, and their supporting state and finding types.
+The remaining top-level runtime API is `ADVISOR_CHARTER`, `SPONSOR_ENTRY_PROMPT`, `validateAdvisorAssessmentInput()`, `shouldReassess()`, `advanceAdvisorSession()`, `validateExecutionAuthorization()`, `assessEngagementDecisionCurrency()`, and `resolveEngagementActionDisposition()`. Exported TypeScript contracts include `AdvisorAssessmentInput`, `AdvisorAssessment`, `AssessmentBasis`, `BaselineDefinition`, `FirstWaveWorkItem`, `PreWorkItem`, `Initiative`, `ExecutionAuthorization`, and their supporting state and finding types.
 
 ## Engagement decision currency
 
-The primary metric, computed by `assessEngagementDecisionCurrency()`, is:
+The primary metric, computed by `assessEngagementDecisionCurrency()`, re-derives each assessment from supplied evidence input rather than trusting a caller-created assessment result. It is:
 
 ```text
 active engagements with a fresh assessment basis, one accountable and due
