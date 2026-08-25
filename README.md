@@ -18,6 +18,7 @@ for the full account.
 
 | Package | What it does |
 | --- | --- |
+| [`@vespeneventures/advisor`](packages/advisor) | The Advisor role — does each active engagement have a current, evidence-backed, authority-bound next decision or action? Provider-neutral sponsor dialogue, engagement-state reconciliation, offering-fit and readiness assessment, blocker and initiative-collision detection, bounded first-wave recommendations, required next actions, reassessment triggers, and an execution gate that never treats unresolved pre-work as passive HOLD. |
 | [`@vespeneventures/architect`](packages/architect) | The architect role — do declared operating boundaries match how material changes actually cross systems? Provider-neutral topology contracts, the ontology API under `./ontology`, compatibility comparison, and architecture-exception assessment behind `architect-check`. It proposes changes but does not authorize or materialize provider resources. |
 | [`@vespeneventures/bouncer`](packages/bouncer) | The bouncer role — is this actor who they claim, and is what they are doing still inside what they were granted? A grant and provider-observation schema in which a session proves nothing, a runtime verdict that is a ternary (`authorized` / `denied` / `unverifiable`, because a provider that did not answer is neither of the other two), an isolated `./agent` subpath for delegated machine actors, provider adapters isolated behind `./providers/clerk` and its web/client/server/proxy subpaths so the root stays provider-neutral, and three gates behind one `bouncer-check` bin: authority reconciliation, delegation ceiling, and provider contract. An unreachable provider exits `2`, never `0`. Recut from `auth` (issue #458). |
 | [`@vespeneventures/controller`](packages/controller) | Owns every rule: package lifecycle records and no-write starter planning at its root; focused subpaths provide workspace catalog, gates, release proof, caller-owned repository profiles and requirements evaluation, pure caller-supplied cross-plane composition, review evidence, workspace-cleanup classification, account-neutral agent conventions, and the content-addressed policy-binding primitive. Formed by merging `governance`, `conventions`, and `policy` into one package (issue #282). |
@@ -134,7 +135,7 @@ declaring both the scope and the registry, and
 CI as `registry drift`) fails if any package's declared
 `publishConfig.registry` drifts from it. That gate matters more under a
 settled registry than it did under a pending migration — it is what keeps
-twenty-one packages agreeing on one answer.
+every package agreeing on one answer.
 
 ### pnpm: a misleading "not found" when the auth token is unset
 

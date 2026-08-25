@@ -45,6 +45,10 @@ controller ── governance
 controller ── policy
 ```
 
+`@vespeneventures/advisor` is dependency-free and does not add an edge to the
+runtime publication graph. Its connector, sponsor identity, evidence store,
+and any repository or provider adapters remain consumer-owned.
+
 `controller` (issue #282 — formerly three separate packages: `governance`,
 `conventions`, and `policy`) owns the catalog, composition, gates, release,
 repository, review, conventions, and policy subpaths, with no runtime
@@ -475,8 +479,8 @@ default answer is also no" exists to refuse.
   `node scripts/set-registry.mjs --check` (`npm run check:registry`, CI job
   `registry drift`) still fails if any package's `publishConfig.registry`
   drifts from it. That gate matters *more* under a settled registry than it
-  did under a pending migration — it is what keeps twenty-one packages agreeing
-  on one answer.
+  did under a pending migration — it is what keeps every package agreeing on
+  one answer.
 - `scripts/check-name-collision.mjs` still runs before every publish. Its
   reason is GitHub Packages' own owner-scoped namespace and the silent
   version-append failure that namespace allows — unrelated to which

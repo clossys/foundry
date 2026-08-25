@@ -3,6 +3,16 @@
   "$comment": "Where every package stands on the seven-state ladder in docs/LIFECYCLE.md, and what is missing below the state it claims. Graded by scripts/check-package-evidence.mjs, wired as `npm run check:package-evidence`. This is lifecycle evidence, not a portfolio grouping: A/B/C were temporary delivery cohorts and are not part of the package model. A state is derived from evidence, never declared. A shortfall below a declared state must be acknowledged here with a reason and an issue -- an unacknowledged one fails the gate, and an acknowledgement that outlives its reason fails it too. The `gaps` list is a countdown, not a baseline: it is meant to shrink, and the gate refuses to let it go stale.",
   "packages": [
     {
+      "name": "@vespeneventures/advisor",
+      "state": "staged",
+      "stagedBy": {
+        "run": "LOCAL fixture run — reproduce with `npm run stage:advisor` after checkout. It builds `packages/advisor`, then runs `node packages/advisor/dist/cli.js` against a temporary assessment with unresolved pre-work (exit 1, `state: violated`), the otherwise equivalent cleared control (exit 0, `state: satisfied`), and an unknown readiness observation (exit 2, `state: indeterminate`). The script finishes `Advisor fixture evidence: unresolved pre-work violated, the cleared control satisfied, and unknown readiness stayed indeterminate.`",
+        "defectOrigin": "injected",
+        "defect": "The temporary assessment leaves a first-wave baseline pre-work item unresolved. Advisor's compiled CLI produces its own violated state and exit 1 rather than allowing execution readiness through an uncleared prerequisite.",
+        "control": "In the same fixture run, the otherwise equivalent assessment clears the baseline and conflict pre-work and exits 0 satisfied; an unknown readiness observation exits 2 indeterminate rather than becoming a pass."
+      }
+    },
+    {
       "name": "@vespeneventures/controller",
       "state": "published",
       "stagedBy": {

@@ -835,6 +835,64 @@ lifecycle graph contains no retired-to-retired replacement chain. Historical
 decisions and evidence remain measurements of what existed; live source and
 catalogue surfaces contain only the qualified role packages.
 
+## 17. Qualifying the Advisor role as the engagement decision gate
+
+### Measurement before the decision
+
+The existing roles can judge rules, topology, changes, package currency, and
+individual delivery outcomes, but none owns the complete engagement question:
+whether an active engagement has a current, evidence-backed,
+authority-bound next decision or action. Sponsor dialogue, offering fit,
+readiness, live state, pre-work blockers, and concurrent-initiative collisions
+must be reconciled before an operating first wave is allowed to proceed.
+
+### Decision
+
+`advisor` is a provider-neutral role with primary mode **reconcile** and
+secondary mode **interact**. It asks:
+
+> Does each active engagement have a current, evidence-backed,
+> authority-bound next decision or action?
+
+Its owned metric is **engagement decision currency rate**:
+
+```text
+active engagements whose assessment basis is fresh, whose next required action
+has an accountable owner and due date, and whose execution authorization if any
+matches the exact plan and basis
+-------------------------------------------------------------------------------
+                          active engagements evaluated
+```
+
+The direction is increase. The assessment basis, action ownership, due date,
+and authorization-to-plan match are consumer-supplied evidence; Advisor never
+turns missing evidence into currency or into a passive `HOLD` state.
+
+Advisor owns normalized engagement state, sponsor dialogue, offering-fit and
+readiness reconciliation, blocker and collision reconciliation, bounded
+recommendations, and required-next-action issuance. It excludes sponsor or
+producer facts, authority and entitlement decisions, repository or provider
+mutations, package installation, live-state changes, and self-measurement.
+
+Advisor is the prerequisite assessment position before Controller or any
+first-wave operating position is opened. It must establish the baseline and
+clear or explicitly escalate each conflict, prerequisite, and other pre-work
+blocker with an accountable owner, next action, and follow-up. It does not
+authorize execution; the consumer remains the authority for installation,
+position binding, approval, mutation, and independent outcome evidence.
+
+This is a durable role qualification, not a delivery cohort or portfolio
+grouping. It has no donor package and introduces no provider-specific
+integration or account-specific installation state.
+
+The package is the versioned, provider-neutral decision engine, not the
+sponsor's launch surface. A Claude-first sponsor experience requires a
+separately deployed remote connector that owns product registration, OAuth,
+read-only repository observation, durable engagement state, and explicit
+mutation approval. It loads an immutable Advisor and catalogue release. The
+entry workflow is not installed as a machine-wide skill and public `main`
+never substitutes for a trusted package release.
+
 ## Settled
 
 **Author attribution — keep a real name in the `"author"` field.** A real

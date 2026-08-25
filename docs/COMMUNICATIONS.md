@@ -4,6 +4,7 @@
 
 | Owner | Responsibility |
 | --- | --- |
+| `@vespeneventures/advisor` | Sponsor dialogue and engagement-decision reconciliation; current basis, required next action, and pre-work or collision status. It does not transport finished messages or discharge semantic obligations. |
 | `@vespeneventures/butler` | Admission and confirmation of inbound person requests and standing instructions. |
 | `@vespeneventures/messenger` | Published role for authorized finished-message transport, explicit provider acceptance, signed delivery-status normalization, and timely verified delivery assessment. |
 | `@vespeneventures/messenger/providers/resend` | Provider mapping, idempotency constraints, strict error normalization, signature verification, and delivery-status event mapping. |
