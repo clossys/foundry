@@ -85,6 +85,22 @@ function preWork(status = "satisfied") {
   ];
 }
 
+function readinessPreWork(status, criterion, kind) {
+  return {
+    id: `${kind}-${status}`,
+    kind,
+    status,
+    addressesReadinessCriteria: [criterion],
+    targetRepositoryIds: ["repository-a"],
+    ownerRef: "consumer-owner",
+    impact: `The readiness criterion ${criterion} remains unresolved.`,
+    evidence,
+    nextAction: { kind: "resolve-readiness", ownerRef: "consumer-owner", dueAt: "2026-09-01T00:00:00Z", escalationRef: "sponsor" },
+    dependencySurfaces: ["assessment-input"],
+    mutationSurfaces: ["consumer-position"],
+  };
+}
+
 function assessment(overrides = {}) {
   return {
     id: "assessment-1",
@@ -127,7 +143,7 @@ function assessment(overrides = {}) {
 try {
   const control = writeJson("assessment-control.json", assessment());
   const red = writeJson("assessment-red.json", assessment({ preWorkItems: preWork("unresolved") }));
-  const indeterminate = writeJson("assessment-indeterminate.json", assessment({ prerequisiteObservations: readinessCriteria.map((id) => ({ id, state: id === "immutable-artifact-access" ? "unknown" : "satisfied", evidence })) }));
+  const indeterminate = writeJson("assessment-indeterminate.json", assessment({ prerequisiteObservations: readinessCriteria.map((id) => ({ id, state: id === "immutable-artifact-access" ? "unknown" : "satisfied", evidence })), preWorkItems: [...preWork(), readinessPreWork("indeterminate", "immutable-artifact-access", "artifact-access")] }));
 
   run("advisor pre-work red", [red], 1, '"state": "violated"');
   run("advisor control", [control], 0, '"state": "satisfied"');
