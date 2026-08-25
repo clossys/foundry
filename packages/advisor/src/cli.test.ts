@@ -1,9 +1,10 @@
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdtempSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { REQUIRED_FIT_CRITERIA, REQUIRED_READINESS_CRITERIA } from "./assessment.js";
-import { AdvisorCliInputError, main } from "./cli.js";
+import { fileURLToPath } from "node:url";
+import { AdvisorCliInputError, isDirectInvocation, main } from "./cli.js";
 
 let root: string;
 const hash = `sha256:${"a".repeat(64)}`;
@@ -29,5 +30,11 @@ describe("advisor-check", () => {
     expect(() => main([join(root, "missing.json")])).toThrow(AdvisorCliInputError);
     expect(main(["--help"])).toBe(0);
     expect(console.log).toHaveBeenCalledWith(expect.stringContaining("0 = satisfied, 1 = violated, 2 = indeterminate"));
+  });
+  it("recognizes invocation through an installed-style POSIX bin symlink", () => {
+    const sourceUrl = new URL("./cli.ts", import.meta.url);
+    const binPath = join(root, "advisor-check");
+    symlinkSync(fileURLToPath(sourceUrl), binPath);
+    expect(isDirectInvocation(sourceUrl.href, binPath)).toBe(true);
   });
 });

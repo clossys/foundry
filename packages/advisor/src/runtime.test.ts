@@ -98,6 +98,14 @@ describe("freshness, authorization, and action-bearing sessions", () => {
     expect(assessEngagementDecisionCurrency({ asOf: "2026-08-24T13:00:00Z", engagements: [engagement], assessmentInputs: [assessmentInput], elapsedDaysByEngagement: { [engagement.id]: 2 } }).state).toBe("satisfied");
     expect(resolveEngagementActionDisposition(engagement, "2026-09-02T12:00:00Z")).toBe("reassess-required");
   });
+  it("marks invalid and inverted decision-currency basis windows stale", () => {
+    for (const assessmentBasis of [{ ...basis(), assessedAt: "not-a-time" }, { ...basis(), assessedAt: "2026-09-01T12:00:00Z", freshUntil: "2026-08-31T12:00:00Z" }]) {
+      const assessmentInput = input(); assessmentInput.engagement = { ...assessmentInput.engagement, assessmentBasis };
+      const result = assessEngagementDecisionCurrency({ asOf: "2026-08-24T13:00:00Z", engagements: [assessmentInput.engagement], assessmentInputs: [assessmentInput], elapsedDaysByEngagement: { [assessmentInput.engagement.id]: 2 } });
+      expect(result).toMatchObject({ state: "violated", rate: 0 });
+      expect(result.findings.map((entry) => entry.rule)).toContain("assessment-basis-stale");
+    }
+  });
   it("requires exact sponsor authorization scope and expiry", () => {
     const assessmentInput = input(); const report = assessAdvisorEngagement(assessmentInput); const session = advanceAdvisorSession(createAdvisorSession("session", nextAction), { type: "assessment-recorded", assessmentInput, nextAction }).session;
     const exact = { planDigest: report.firstWavePlan.basis?.planDigest as string, assessmentBasis: report.firstWavePlan.basis as AssessmentBasis, sponsorRef: "sponsor", permittedRepositoryIds: ["repo-one"], permittedPackages: [work(initiative("one")).package], permittedMutationSurfaces: ["mutation-one"], grantedAt: "2026-08-24T13:00:00Z", expiresAt: "2026-08-25T13:00:00Z" };
@@ -123,6 +131,10 @@ describe("freshness, authorization, and action-bearing sessions", () => {
   it("has no pause parking and needs closure evidence", () => {
     const session = createAdvisorSession("session", nextAction);
     expect(advanceAdvisorSession(session, { type: "close", reason: "", evidence: [] }).findings.map((entry) => entry.rule)).toContain("session-closure");
-    expect(advanceAdvisorSession(session, { type: "close", reason: "Decision recorded.", evidence: [proof("closure")] }).session.state).toBe("closed");
+    const closed = advanceAdvisorSession(session, { type: "close", reason: "Decision recorded.", evidence: [proof("closure")] }).session;
+    expect(closed.state).toBe("closed");
+    const repeated = advanceAdvisorSession(closed, { type: "close", reason: "Overwrite attempted.", evidence: [proof("replacement")] });
+    expect(repeated.findings.map((entry) => entry.rule)).toContain("session-closed");
+    expect(repeated.session).toBe(closed);
   });
 });
