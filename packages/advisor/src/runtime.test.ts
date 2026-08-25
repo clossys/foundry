@@ -135,6 +135,19 @@ describe("freshness, authorization, and action-bearing sessions", () => {
     expect(advanceAdvisorSession(session, { type: "sponsor-approved", authorization: { ...exact, expiresAt: "2026-09-02T13:00:00Z" }, asOf: "2026-08-24T14:00:00Z", nextAction }).findings.map((entry) => entry.rule)).toContain("execution-authorization-expiry");
     expect(advanceAdvisorSession(session, { type: "sponsor-approved", authorization: exact, asOf: "2026-08-24T14:00:00Z", nextAction }).session.state).toBe("ready-for-execution");
   });
+  it("fails recurring assessment closed when a retained authorization is malformed or no longer bound to its plan", () => {
+    const source = input(); const report = assessAdvisorEngagement(source);
+    const exact = { planDigest: report.firstWavePlan.basis?.planDigest as string, assessmentBasis: report.firstWavePlan.basis as AssessmentBasis, sponsorRef: "sponsor", permittedRepositoryIds: ["repo-one"], permittedPackages: [work(initiative("one")).package], permittedMutationSurfaces: ["mutation-one"], grantedAt: "2026-08-24T13:00:00Z", expiresAt: "2026-08-25T13:00:00Z" };
+    expect(validateAdvisorAssessmentInput({ ...source, engagement: { ...source.engagement, executionAuthorization: exact } })).toEqual([]);
+    expect(assessAdvisorEngagement({ ...source, engagement: { ...source.engagement, executionAuthorization: exact } })).toMatchObject({ state: "satisfied" });
+    expect(validateAdvisorAssessmentInput({ ...source, engagement: { ...source.engagement, executionAuthorization: null } }).map((entry) => entry.rule)).toContain("execution-authorization-shape");
+    const malformed = assessAdvisorEngagement({ ...source, engagement: { ...source.engagement, executionAuthorization: null } });
+    expect(malformed).toMatchObject({ state: "indeterminate" });
+    expect(malformed.findings.map((entry) => entry.rule)).toContain("execution-authorization-shape");
+    const mismatched = assessAdvisorEngagement({ ...source, engagement: { ...source.engagement, executionAuthorization: { ...exact, planDigest: "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" } } });
+    expect(mismatched).toMatchObject({ state: "indeterminate" });
+    expect(mismatched.findings.map((entry) => entry.rule)).toContain("execution-authorization-basis");
+  });
   it("recomputes readiness from retained evidence and rejects fabricated assessment state", () => {
     const report = assessAdvisorEngagement(input());
     const forged = { ...createAdvisorSession("session", nextAction), state: "ready-for-sponsor-approval" as const, lastAssessment: report, lastAssessmentInput: {} };

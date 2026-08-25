@@ -16,6 +16,11 @@ function valid(): Record<string, unknown> {
   const initiative = { id: "initiative", status: "candidate", targetRepositoryIds: ["repo"], workstreamConflictKeys: ["stream"], dependencyConflictKeys: ["dependency"], mutationConflictKeys: ["mutation"], authorityConflictKeys: ["authority"], scheduleConflictKeys: ["schedule"], dataOutcomeMetricConflictKeys: ["metric"] };
   return { id: "assessment", asOf: "2026-08-24T12:00:00Z", engagement: { id: "engagement", status: "active", nextAction: action, assessmentBasis }, fitSignals: REQUIRED_FIT_CRITERIA.map(({ id }) => ({ id, state: "supported", evidence: evidence(`fit-${id}`) })), prerequisiteObservations: REQUIRED_READINESS_CRITERIA.map(({ id }) => ({ id, state: "satisfied", evidence: evidence(`ready-${id}`) })), initiatives: [initiative], firstWave: { initiativeIds: ["initiative"], objectives: ["objective"], workItems: [{ id: "work", initiativeId: "initiative", targetRepositoryId: "repo", deliveryOwnerRef: "delivery", package: { name: "package", version: "1.0.0", integrity }, invocation: "invoke", placement: "placement", baseline: { metricRef: "metric", value: 0, observedAt: "2026-08-24T00:00:00Z", evidence: { id: "baseline", description: "Baseline." } }, completion: { definition: "definition", independentOutcomeOwnerRef: "outcome", evidenceSource: "measurement", direction: "increase", setpoint: 1, windowDays: 7 }, rollback: { procedure: "rollback", evidenceSource: "record" }, mutationSurfaces: ["mutation"] }] }, preWorkItems: ["baseline", "conflict"].map((kind) => ({ id: kind, kind, status: "satisfied", addressesReadinessCriteria: [kind === "baseline" ? "baseline" : "initiative-mutation-dependency-inventory"], targetRepositoryIds: ["repo"], ownerRef: `${kind}-owner`, impact: "impact", evidence: evidence(`${kind}-evidence`), nextAction: { ...action, ownerRef: `${kind}-owner` }, dependencySurfaces: ["dependency"], mutationSurfaces: ["mutation"], clearance: { authorityOwnerRef: `${kind}-authority`, evidence: evidence(`${kind}-clearance`) } })), reassessment: { cadenceDays: 7, triggers: ["evidence-change"] } };
 }
+function authorization(assessment: Record<string, unknown>): Record<string, unknown> {
+  const engagement = assessment.engagement as Record<string, unknown>;
+  const assessmentBasis = engagement.assessmentBasis as Record<string, unknown>;
+  return { planDigest: assessmentBasis.planDigest, assessmentBasis, sponsorRef: "sponsor", permittedRepositoryIds: ["repo"], permittedPackages: [{ name: "package", version: "1.0.0", integrity }], permittedMutationSurfaces: ["mutation"], grantedAt: "2026-08-24T12:00:00Z", expiresAt: "2026-08-25T12:00:00Z" };
+}
 function write(value: unknown): string { const path = join(root, "assessment.json"); writeFileSync(path, JSON.stringify(value)); return path; }
 beforeEach(() => { root = mkdtempSync(join(tmpdir(), "advisor-cli-")); vi.spyOn(console, "log").mockImplementation(() => {}); });
 describe("advisor-check", () => {
@@ -30,6 +35,12 @@ describe("advisor-check", () => {
     expect(() => main([join(root, "missing.json")])).toThrow(AdvisorCliInputError);
     expect(main(["--help"])).toBe(0);
     expect(console.log).toHaveBeenCalledWith(expect.stringContaining("0 = satisfied, 1 = violated, 2 = indeterminate"));
+  });
+  it("never exits 0 for malformed or mismatched retained authorization", () => {
+    const assessment = valid(); const engagement = assessment.engagement as Record<string, unknown>;
+    expect(main([write({ ...assessment, engagement: { ...engagement, executionAuthorization: authorization(assessment) } })])).toBe(0);
+    expect(main([write({ ...assessment, engagement: { ...engagement, executionAuthorization: null } })])).toBe(2);
+    expect(main([write({ ...assessment, engagement: { ...engagement, executionAuthorization: { ...authorization(assessment), planDigest: "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" } } })])).toBe(2);
   });
   it("recognizes invocation through an installed-style POSIX bin symlink", () => {
     const sourceUrl = new URL("./cli.ts", import.meta.url);
