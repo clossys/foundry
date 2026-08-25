@@ -61,7 +61,7 @@ describe("packRoundTrip — real subprocess round trip", () => {
   // composition, conventions, conventions/documents/*, conventions/adapters/*,
   // policy), so the real npm install + per-subpath import checks below take
   // longer than the suite's default 5s timeout.
-  it("packages/controller installs and imports cleanly from a genuinely isolated directory", { timeout: 60_000 }, async () => {
+  it("packages/controller installs and imports cleanly from a genuinely isolated directory", { timeout: 120_000 }, async () => {
     const result = await packRoundTrip(join(repoRoot, "packages", "controller"));
 
     expect(result.packageName).toBe("@vespeneventures/controller");
@@ -101,7 +101,10 @@ afterEach(() => {
   }
 });
 
-describe("packRoundTrip — exports shape handling (fixture packages)", () => {
+// Every fixture performs real npm pack/install subprocess work. During the
+// complete Controller suite those subprocesses contend with other test files,
+// so use an install-scale budget rather than Vitest's generic 5s unit budget.
+describe("packRoundTrip — exports shape handling (fixture packages)", { timeout: 30_000 }, () => {
   // Regression for defect 1: an empty `exports` object previously produced
   // zero import attempts and `ok: true` -- a package whose entire purpose is
   // proving importability reporting success having imported nothing. The

@@ -10,6 +10,7 @@ function validAction(value: EngagementNextAction): boolean { return nonEmpty(val
 function sameBasis(left: AssessmentBasis, right: AssessmentBasis): boolean { return BASIS_FIELDS.every((field) => left[field] === right[field]); }
 function sameStrings(left: readonly string[], right: readonly string[]): boolean { return left.length === right.length && [...left].sort().every((item, index) => item === [...right].sort()[index]); }
 function packageKey(item: ImmutablePackageRef): string { return `${item.name}@${item.version}#${item.integrity}`; }
+function snapshotAssessmentInput(value: unknown): unknown { try { return structuredClone(value); } catch { return null; } }
 /** Validates execution authority against the exact evidence-derived ready plan. */
 export function validateExecutionAuthorization(authorization: ExecutionAuthorization, assessment: AdvisorAssessment, asOf: string): AdvisorFinding[] {
   const findings: AdvisorFinding[] = []; const plan = assessment.firstWavePlan; const basis = plan.basis;
@@ -35,11 +36,11 @@ export function advanceAdvisorSession(session: AdvisorSession, event: AdvisorSes
   if (session.state === "closed") return { session, findings: [finding("session-closed", "A closed session cannot be advanced; start a new assessment session.")] };
   if (event.type === "close") { if (!nonEmpty(event.reason) || !Array.isArray(event.evidence) || event.evidence.length === 0 || event.evidence.some((item) => !nonEmpty(item.id) || !nonEmpty(item.description))) return { session, findings: [finding("session-closure", "Closure requires an explicit reason and evidence.")] }; return { session: { id: session.id, state: "closed", lastAssessmentInput: session.lastAssessmentInput, lastAssessment: session.lastAssessment, closure: { reason: event.reason, evidence: event.evidence } }, findings: [] }; }
   if (!validAction(event.nextAction)) return { session, findings: [finding("session-next-action", "Every nonterminal transition requires one valid accountable nextAction.")] };
-  if (event.type === "assessment-recorded") { const assessment = assessAdvisorEngagement(event.assessmentInput); return { session: { ...session, state: stateForAssessment(assessment), lastAssessmentInput: event.assessmentInput, lastAssessment: assessment, nextAction: event.nextAction }, findings: assessment.findings }; }
+  if (event.type === "assessment-recorded") { const assessmentInput = snapshotAssessmentInput(event.assessmentInput); const assessment = assessAdvisorEngagement(assessmentInput); return { session: { ...session, state: stateForAssessment(assessment), lastAssessmentInput: assessmentInput, lastAssessment: assessment, nextAction: event.nextAction }, findings: assessment.findings }; }
   if (event.type === "reassess") return { session: { ...session, state: "assessing", lastAssessmentInput: null, lastAssessment: null, nextAction: event.nextAction }, findings: [] };
-  const assessment = assessAdvisorEngagement(session.lastAssessmentInput);
+  const assessmentInput = snapshotAssessmentInput(session.lastAssessmentInput); const assessment = assessAdvisorEngagement(assessmentInput);
   if (session.state !== "ready-for-sponsor-approval" || assessment.preWork.state !== "satisfied" || assessment.firstWavePlan.state !== "ready-for-sponsor-approval") return { session, findings: [finding("execution-not-ready", "Sponsor approval cannot create execution readiness until current evidence derives satisfied pre-work and a ready first-wave plan.")] };
   const findings = validateExecutionAuthorization(event.authorization, assessment, event.asOf);
   if (findings.length > 0) return { session, findings };
-  return { session: { ...session, state: "ready-for-execution", nextAction: event.nextAction }, findings: [] };
+  return { session: { ...session, state: "ready-for-execution", lastAssessmentInput: assessmentInput, lastAssessment: assessment, nextAction: event.nextAction }, findings: [] };
 }

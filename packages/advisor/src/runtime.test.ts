@@ -69,6 +69,13 @@ describe("first-wave and pre-work gates", () => {
     const selfOutcome = input(); selfOutcome.firstWave.workItems[0] = { ...selfOutcome.firstWave.workItems[0] as FirstWaveWorkItem, completion: { ...selfOutcome.firstWave.workItems[0]?.completion as NonNullable<FirstWaveWorkItem["completion"]>, independentOutcomeOwnerRef: "delivery-one" } };
     expect(assessAdvisorEngagement(selfOutcome).findings.map((entry) => entry.rule)).toContain("work-item-self-outcome");
   });
+  it("rejects an extra repository target that its selected initiative never declared", () => {
+    const value = input(); const declared = value.firstWave.workItems[0] as FirstWaveWorkItem;
+    value.firstWave.workItems = [declared, { ...declared, id: "work-extra", targetRepositoryId: "repo-extra" }];
+    const report = assessAdvisorEngagement(value);
+    expect(report).toMatchObject({ state: "indeterminate", firstWavePlan: { state: "indeterminate" } });
+    expect(report.findings.map((entry) => entry.rule)).toContain("first-wave-work-item-target");
+  });
   it("requires authority-owned clearance and prohibits self or unearned clearance", () => {
     const self = input(); self.preWorkItems[0] = { ...self.preWorkItems[0] as PreWorkItem, clearance: { authorityOwnerRef: self.preWorkItems[0]?.ownerRef as string, evidence: [proof("self")] } };
     expect(assessAdvisorEngagement(self).findings.map((entry) => entry.rule)).toContain("pre-work-self-clearance");
@@ -133,6 +140,17 @@ describe("freshness, authorization, and action-bearing sessions", () => {
     const forged = { ...createAdvisorSession("session", nextAction), state: "ready-for-sponsor-approval" as const, lastAssessment: report, lastAssessmentInput: {} };
     const authorization = { planDigest: report.firstWavePlan.basis?.planDigest as string, assessmentBasis: report.firstWavePlan.basis as AssessmentBasis, sponsorRef: "sponsor", permittedRepositoryIds: ["repo-one"], permittedPackages: [work(initiative("one")).package], permittedMutationSurfaces: ["mutation-one"], grantedAt: "2026-08-24T13:00:00Z", expiresAt: "2026-08-25T13:00:00Z" };
     expect(advanceAdvisorSession(forged, { type: "sponsor-approved", authorization, asOf: "2026-08-24T14:00:00Z", nextAction }).findings.map((entry) => entry.rule)).toContain("execution-not-ready");
+  });
+  it("snapshots recorded input and keeps approved input synchronized with its recomputed assessment", () => {
+    const original = input(); const recorded = advanceAdvisorSession(createAdvisorSession("session", nextAction), { type: "assessment-recorded", assessmentInput: original, nextAction }).session;
+    original.firstWave.objectives[0] = "Caller mutation after recording.";
+    expect((recorded.lastAssessmentInput as AdvisorAssessmentInput).firstWave.objectives[0]).toBe("A bounded first outcome.");
+    const retained = recorded.lastAssessmentInput as AdvisorAssessmentInput; const changedWork = { ...retained.firstWave.workItems[0] as FirstWaveWorkItem, package: { name: "package-reassessed", version: "1.2.3", integrity: integrity() } }; retained.firstWave.workItems[0] = changedWork;
+    const recomputed = assessAdvisorEngagement(retained); const authorization = { planDigest: recomputed.firstWavePlan.basis?.planDigest as string, assessmentBasis: recomputed.firstWavePlan.basis as AssessmentBasis, sponsorRef: "sponsor", permittedRepositoryIds: ["repo-one"], permittedPackages: [changedWork.package], permittedMutationSurfaces: ["mutation-one"], grantedAt: "2026-08-24T13:00:00Z", expiresAt: "2026-08-25T13:00:00Z" };
+    const approved = advanceAdvisorSession(recorded, { type: "sponsor-approved", authorization, asOf: "2026-08-24T14:00:00Z", nextAction }).session;
+    expect(approved.state).toBe("ready-for-execution");
+    expect(approved.lastAssessmentInput).not.toBe(retained);
+    expect(approved.lastAssessment).toEqual(assessAdvisorEngagement(approved.lastAssessmentInput));
   });
   it("uses the same strict authorization contract for decision currency", () => {
     const report = assessAdvisorEngagement(input()); const engagement = input().engagement;
