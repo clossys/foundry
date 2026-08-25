@@ -2,6 +2,10 @@
   "schemaVersion": 1,
   "packages": [
     {
+      "name": "@vespeneventures/advisor",
+      "status": "incubating"
+    },
+    {
       "name": "@vespeneventures/architect",
       "status": "published"
     },

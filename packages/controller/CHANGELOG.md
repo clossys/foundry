@@ -5,6 +5,15 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.15] - 2026-08-24
+
+### Added
+
+- Extended the shipped schema-version-4 role-loop contract with the
+  provider-neutral `@vespeneventures/advisor` role and its engagement decision
+  currency metric. Consumer position validation now recognizes Advisor as an
+  active role.
+
 ## [0.8.14] - 2026-08-24
 
 ### Added

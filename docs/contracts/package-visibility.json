@@ -3,6 +3,10 @@
   "schemaVersion": 1,
   "packages": [
     {
+      "name": "@vespeneventures/advisor",
+      "intendedVisibility": "public"
+    },
+    {
       "name": "@vespeneventures/architect",
       "intendedVisibility": "public"
     },

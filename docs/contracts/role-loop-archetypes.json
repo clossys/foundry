@@ -107,6 +107,30 @@
     "reject": "Reject a candidate that has no coherent job, one controllable metric, closed loop, durable boundary, or acceptable guardrails."
   },
   "roles": {
+      "@vespeneventures/advisor": {
+        "jobQuestion": "Does each active engagement have a current, evidence-backed, authority-bound next decision or action?",
+        "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
+        "metric": {
+          "name": "engagement decision currency rate",
+          "formula": "active engagements whose assessment basis is fresh, whose next required action has an accountable owner and due date, and whose execution authorization if any matches the exact plan and basis / active engagements evaluated",
+          "unit": "ratio",
+          "direction": "increase"
+        },
+        "primaryMode": "reconcile",
+        "secondaryModes": [
+          "interact"
+        ],
+        "boundary": {
+          "owns": "Normalized engagement state, sponsor dialogue, offering-fit/readiness/blocker/collision reconciliation, bounded recommendations, and required-next-action issuance.",
+          "excludes": [
+            "supplying sponsor or producer facts",
+            "granting authority or deciding consumer entitlement",
+            "mutating repositories or provider resources",
+            "installing packages or changing live state",
+            "measuring its own outcomes"
+          ]
+        }
+      },
       "@vespeneventures/controller": {
         "jobQuestion": "Are the business's operating rules expressible, current, and followed?",
         "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",

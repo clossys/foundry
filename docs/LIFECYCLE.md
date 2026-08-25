@@ -278,6 +278,7 @@ fails when the committed copy drifts from the derived one — #493.
 
 | package | current position | staged here | grounded |
 | --- | --- | --- | --- |
+| `@vespeneventures/advisor` | staged | yes | unknown — #484 |
 | `@vespeneventures/controller` | published | yes | unknown — #484 |
 | `@vespeneventures/architect` | published | yes | unknown — #484 |
 | `@vespeneventures/inspector` | published | yes | unknown — #484 |
@@ -390,7 +391,7 @@ never a pass it did not earn.
 The derivable half is now derived. The rest is not, and is declared:
 
 - **`designed`** is graded structurally by the normalized loop declaration for
-  all seventeen roles. That proves a parseable charter shape, not applicability
+  all eighteen roles. That proves a parseable charter shape, not applicability
   in a consumer or independent grounding.
 - **`staged`'s** second half — the recorded failing run — is a pointer this
   gate checks the presence of, not the truth of.

@@ -75,6 +75,7 @@ retired donor and compatibility names are not adoption targets.
 
 | Operating area | Role packages | Consumer job |
 | --- | --- | --- |
+| Engagement direction | `advisor` | Reconcile each active engagement to a current, evidence-backed, authority-bound next decision or action. |
 | Operating control | `controller`, `architect`, `inspector`, `builder`, `locksmith`, `integrator`, `observer` | Define rules and topology; judge changes; reconcile machine and package state; steward keys; independently measure outcomes. |
 | Strategy and expression | `strategist`, `writer`, `designer`, `publisher`, `influencer` | Trace strategy, govern copy and design, verify publication, and learn from audience response. |
 | Agreements and custody | `bouncer`, `butler`, `messenger`, `giver`, `keeper` | Reconcile authority, confirm intent, transport messages, close obligations, and steward held information. |
@@ -95,26 +96,34 @@ mutation surfaces, direct consumers, and evidence paths are independent.
 Package availability, a plane-wide inventory, or the historical A/B/C delivery
 cohorts never authorize a bulk installation.
 
-1. **Diagnose and open a position.** Run an evidence-based first-day
+1. **Open Advisor first.** For a new or continuing engagement, create or
+   reassess the Advisor position before opening a Controller or first-wave
+   operating position. Advisor reconciles sponsor intent, offering fit,
+   readiness, live state, constraints, concurrent initiatives, and every
+   baseline, conflict, or prerequisite needed by the proposed first wave.
+   An unresolved or indeterminate pre-work item is an actionable blocker with
+   an owner, next action, and follow-up; it is never a passive `HOLD` and does
+   not authorize execution.
+2. **Diagnose and open a position.** Run an evidence-based first-day
    assessment. If the business metric tree or causal hypothesis is unresolved,
    resolve that work before choosing an operating role. Do not install a
    package just because it exists.
-2. **Bind the position.** Record every required field in the consumer-owned
+3. **Bind the position.** Record every required field in the consumer-owned
    ledger, including the baseline and first-day recommendation. A package may
    have multiple positions across consumers; a consumer may have multiple
    positions for one role when their scopes and outcomes differ.
-3. **Install the exact public artifact.** Configure the consumer's registry
+4. **Install the exact public artifact.** Configure the consumer's registry
    access, install the selected exact version into its own manifest and lockfile,
    and prove the export or CLI it actually uses from a clean install. Registry
    credentials and configuration remain consumer-local.
-4. **Wire the loop.** Connect the position's evidence source to its role's
+5. **Wire the loop.** Connect the position's evidence source to its role's
    `sense → judge → act → verify → learnOrEscalate` loop. The consumer decides
    blocking placement, approval boundaries, provider configuration, and every
    live mutation.
-5. **Measure independently.** Record host-owned outcomes and give `observer`
+6. **Measure independently.** Record host-owned outcomes and give `observer`
    an independent measurement path. A green package test, provider acceptance,
    or a scheduled routine is not outcome evidence.
-6. **Learn or escalate.** Re-measure after a bounded adjustment, revise the
+7. **Learn or escalate.** Re-measure after a bounded adjustment, revise the
    causal hypothesis only with evidence, or follow the recorded escalation
    path. Update the position record rather than creating parallel status docs.
 

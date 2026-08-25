@@ -1,6 +1,7 @@
 {
   "schemaVersion": 1,
   "dispositions": [
+    { "package": "@vespeneventures/advisor", "disposition": "not-applicable", "reason": "Synthetic schema fixture; no consumer decision.", "positionIds": [] },
     { "package": "@vespeneventures/controller", "disposition": "not-applicable", "reason": "Synthetic schema fixture; no consumer decision.", "positionIds": [] },
     { "package": "@vespeneventures/architect", "disposition": "not-applicable", "reason": "Synthetic schema fixture; no consumer decision.", "positionIds": [] },
     { "package": "@vespeneventures/inspector", "disposition": "not-applicable", "reason": "Synthetic schema fixture; no consumer decision.", "positionIds": [] },
