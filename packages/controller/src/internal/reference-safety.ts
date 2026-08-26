@@ -17,9 +17,9 @@ export const MAX_REFERENCE_CODE_UNITS = 65_536;
 const specialAuthoritySchemes = new Set(["ftp", "http", "https", "ws", "wss"]);
 const defaultIgnorable = /[\0\p{Default_Ignorable_Code_Point}]/u;
 const unicodeWhitespace = /\p{White_Space}/u;
-const rootWrappers = new Set(["(", "[", "{", "<", "\"", "'", "“", "”", "‘", "’", "–", "—"]);
+const rootWrappers = new Set(["(", "[", "{", "<", "\"", "'", "`", "“", "”", "‘", "’", "–", "—"]);
 const postAuthorityWrappers = new Set([...rootWrappers, ",", ";", ")", "]", "}", ">"]);
-const openingValueWrappers = new Set(["(", "[", "{", "<", "\"", "'", "“", "‘"]);
+const openingValueWrappers = new Set(["(", "[", "{", "<", "\"", "'", "`", "“", "‘"]);
 
 interface Atom { readonly value: string; readonly protected: boolean; }
 interface Layer { readonly atoms: Atom[]; }

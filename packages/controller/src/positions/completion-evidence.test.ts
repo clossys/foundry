@@ -508,7 +508,7 @@ describe("completion evidence", () => {
   });
 
   it("does not let wrapper boundaries hide authority userinfo or a second URL", () => {
-    const openingWrappers = ["(", "[", "{", "<", "\"", "'", "“", "‘", "–", "—"];
+    const openingWrappers = ["(", "[", "{", "<", "\"", "'", "`", "“", "‘", "–", "—"];
     const postAuthority = [",", ";", ")", "]", "}", ">", "\"", "'", "”", "’", ...openingWrappers];
     const authorityPrefixes = ["https://", "custom://", "//"];
     const encodeLayers = (value: string): readonly string[] => [value, encodeURIComponent(value), encodeURIComponent(encodeURIComponent(value))];
@@ -529,6 +529,24 @@ describe("completion evidence", () => {
     expect(validateInstalledPositionLedger(unsafeLedger).findings).toContainEqual(expect.objectContaining({ rule: "unsafe-evidence-reference", path: "positions[0].evidenceSource.locator" }));
     const unsafeEvidence = evidence();
     (unsafeEvidence.artifact as Record<string, unknown>).manifestRef = `https://safe.invalid—https://reader:secret${at}host.invalid/evidence`;
+    const unsafeReport = validateCompletionEvidence(unsafeEvidence, ledger());
+    expect(unsafeReport.result).toMatchObject({ verdict: "indeterminate", reason: "unreadable-or-incomplete-evidence" });
+    expect(unsafeReport.findings).toContainEqual(expect.objectContaining({ rule: "unsafe-evidence-reference", path: "artifact.manifestRef" }));
+  });
+
+  it("recognizes backticks as root, authority, and query value wrappers", () => {
+    const encodeLayers = (value: string): readonly string[] => [value, encodeURIComponent(value), encodeURIComponent(encodeURIComponent(value))];
+    const wrappedAuthority = `\`https://reader:secret${at}host.invalid/evidence\``;
+    const afterSafeAuthority = `https://safe.invalid\`https://reader:secret${at}host.invalid/evidence\``;
+    const wrappedQueryValue = `https://outer.invalid/?next=\`https://reader:secret${at}host.invalid/evidence\``;
+    for (const reference of [wrappedAuthority, afterSafeAuthority, wrappedQueryValue]) for (const encoded of encodeLayers(reference)) expect(isValueSafeReference(encoded), encoded).toBe(false);
+    for (const reference of [`https://host.invalid/files/\`archive\`//reader${at}host.invalid`, `urn:example,\`//reader${at}v1\``, `fixture/\`reader${at}host.invalid\``]) expect(isValueSafeReference(reference), reference).toBe(true);
+
+    const unsafeLedger = ledger();
+    (((unsafeLedger.positions as Array<Record<string, Record<string, string>>>)[0]!.evidenceSource).locator) = wrappedAuthority;
+    expect(validateInstalledPositionLedger(unsafeLedger).findings).toContainEqual(expect.objectContaining({ rule: "unsafe-evidence-reference", path: "positions[0].evidenceSource.locator" }));
+    const unsafeEvidence = evidence();
+    (unsafeEvidence.artifact as Record<string, unknown>).manifestRef = afterSafeAuthority;
     const unsafeReport = validateCompletionEvidence(unsafeEvidence, ledger());
     expect(unsafeReport.result).toMatchObject({ verdict: "indeterminate", reason: "unreadable-or-incomplete-evidence" });
     expect(unsafeReport.findings).toContainEqual(expect.objectContaining({ rule: "unsafe-evidence-reference", path: "artifact.manifestRef" }));
