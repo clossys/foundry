@@ -25,6 +25,9 @@ interface Atom { readonly value: string; readonly protected: boolean; }
 interface Layer { readonly atoms: Atom[]; }
 type CandidateScope = "root" | "query";
 type ParseResult = { readonly unsafe: boolean; readonly end: number; readonly queryAt?: number; readonly bareBoundary: boolean };
+type SchemeEnds = readonly number[];
+interface ScanWork { units: number; }
+function scanned(work: ScanWork | undefined): void { if (work) work.units += 1; }
 
 function whiteSpace(value: string): boolean { return unicodeWhitespace.test(value); }
 function asciiLetter(value: string | undefined): boolean { return value !== undefined && value >= "a" && value <= "z"; }
@@ -91,17 +94,42 @@ function rootStart(atoms: readonly Atom[], index: number, rootAtomStart: boolean
   const previous = atoms[index - 1]?.value;
   return previous !== undefined && afterBareAuthority && postAuthorityWrappers.has(previous);
 }
-function schemeAt(atoms: readonly Atom[], index: number): { readonly name: string; readonly afterColon: number } | undefined {
+function schemeEnds(atoms: readonly Atom[], work?: ScanWork): SchemeEnds {
+  const ends = new Array<number>(atoms.length);
+  let end = atoms.length;
+  for (let index = atoms.length - 1; index >= 0; index -= 1) {
+    scanned(work);
+    if (!atoms[index]!.protected && schemeCharacter(atoms[index]!.value)) {
+      end = index + 1 < atoms.length && !atoms[index + 1]!.protected && schemeCharacter(atoms[index + 1]!.value) ? ends[index + 1]! : index + 1;
+      ends[index] = end;
+    } else {
+      end = index;
+      ends[index] = index;
+    }
+  }
+  return ends;
+}
+function specialSchemeAt(atoms: readonly Atom[], start: number, end: number): boolean {
+  for (const name of specialAuthoritySchemes) {
+    if (name.length !== end - start) continue;
+    let matches = true;
+    for (let offset = 0; offset < name.length; offset += 1) if (atoms[start + offset]!.value !== name[offset]) { matches = false; break; }
+    if (matches) return true;
+  }
+  return false;
+}
+function schemeAt(atoms: readonly Atom[], index: number, ends: SchemeEnds, work?: ScanWork): { readonly special: boolean; readonly afterColon: number } | undefined {
+  scanned(work);
   if (atoms[index]?.protected || !asciiLetter(atoms[index]?.value)) return undefined;
-  let cursor = index;
-  while (!atoms[cursor]?.protected && schemeCharacter(atoms[cursor]?.value)) cursor += 1;
-  return !atoms[cursor]?.protected && literal(atoms, cursor, ":") ? { name: join(atoms, index, cursor), afterColon: cursor + 1 } : undefined;
+  const end = ends[index]!;
+  return !atoms[end]?.protected && literal(atoms, end, ":") ? { special: specialSchemeAt(atoms, index, end), afterColon: end + 1 } : undefined;
 }
 function protocolRelativeAt(atoms: readonly Atom[], index: number): boolean { return !atoms[index]?.protected && !atoms[index + 1]?.protected && literal(atoms, index, "/") && literal(atoms, index + 1, "/"); }
 function mark(atoms: Atom[], start: number, end: number): void { for (let index = start; index < end; index += 1) { const atom = atoms[index]!; if (!atom.protected) atoms[index] = { value: atom.value, protected: true }; } }
-function protectPath(atoms: Atom[], start: number): { readonly end: number; readonly queryAt?: number } {
+function protectPath(atoms: Atom[], start: number, work?: ScanWork): { readonly end: number; readonly queryAt?: number } {
   let cursor = start;
   while (cursor < atoms.length) {
+    scanned(work);
     const atom = atoms[cursor]!;
     const value = atom.value;
     if (atom.protected) { cursor += 1; continue; }
@@ -160,18 +188,19 @@ function actualAtBeforeDelimiter(atoms: readonly Atom[], start: number, special:
   }
   return false;
 }
-function protectOpaque(atoms: Atom[], start: number, remainingDepth: number): { readonly end: number; readonly queryAt?: number } {
+function protectOpaque(atoms: Atom[], start: number, remainingDepth: number, work?: ScanWork): { readonly end: number; readonly queryAt?: number } {
   let cursor = start;
-  while (cursor < atoms.length && atoms[cursor]!.value !== "?" && atoms[cursor]!.value !== "#" && !whiteSpace(atoms[cursor]!.value) && !(remainingDepth > 0 && futureStructureAt(atoms, cursor))) cursor += 1;
+  while (cursor < atoms.length && atoms[cursor]!.value !== "?" && atoms[cursor]!.value !== "#" && !whiteSpace(atoms[cursor]!.value) && !(remainingDepth > 0 && futureStructureAt(atoms, cursor))) { scanned(work); cursor += 1; }
   mark(atoms, start, cursor);
   if (cursor < atoms.length && remainingDepth > 0 && futureStructureAt(atoms, cursor)) return { end: deferredEnd(atoms, cursor) };
   return cursor < atoms.length ? { end: cursor, queryAt: cursor } : { end: cursor };
 }
-function scanAuthority(atoms: Atom[], start: number, special: boolean, remainingDepth: number, sourceAtomStarts?: readonly boolean[]): ParseResult {
+function scanAuthority(atoms: Atom[], start: number, special: boolean, remainingDepth: number, sourceAtomStarts: readonly boolean[] | undefined, ends: SchemeEnds, work?: ScanWork): ParseResult {
   let cursor = start;
   while (cursor < atoms.length) {
+    scanned(work);
     if (cursor > start && sourceAtomStarts?.[cursor]) {
-      const nested = parseCandidate(atoms, cursor, remainingDepth, sourceAtomStarts);
+      const nested = parseCandidate(atoms, cursor, remainingDepth, sourceAtomStarts, ends, work);
       if (nested !== undefined) return nested;
     }
     const atom = atoms[cursor]!;
@@ -182,7 +211,7 @@ function scanAuthority(atoms: Atom[], start: number, special: boolean, remaining
     if (value === "/" || value === "?" || value === "#" || (special && value === "\\")) {
       if (authoritySensitiveAssignment.test(join(atoms, start, cursor))) return { unsafe: true, end: cursor, bareBoundary: false };
       if (value === "?" || value === "#") return { unsafe: false, end: cursor, queryAt: cursor, bareBoundary: false };
-      const path = protectPath(atoms, cursor); return { unsafe: false, end: path.end, queryAt: path.queryAt, bareBoundary: false };
+      const path = protectPath(atoms, cursor, work); return { unsafe: false, end: path.end, queryAt: path.queryAt, bareBoundary: false };
     }
     if (whiteSpace(value)) return { unsafe: false, end: cursor, bareBoundary: false };
     if (postAuthorityWrappers.has(value)) return { unsafe: false, end: cursor, bareBoundary: true };
@@ -190,19 +219,18 @@ function scanAuthority(atoms: Atom[], start: number, special: boolean, remaining
   }
   return { unsafe: false, end: cursor, bareBoundary: true };
 }
-function parseCandidate(atoms: Atom[], index: number, remainingDepth: number, sourceAtomStarts?: readonly boolean[]): ParseResult | undefined {
-  const scheme = schemeAt(atoms, index);
+function parseCandidate(atoms: Atom[], index: number, remainingDepth: number, sourceAtomStarts: readonly boolean[] | undefined, ends: SchemeEnds, work?: ScanWork): ParseResult | undefined {
+  const scheme = schemeAt(atoms, index, ends, work);
   if (scheme !== undefined) {
-    const special = specialAuthoritySchemes.has(scheme.name);
-    if (special) {
+    if (scheme.special) {
       let start = scheme.afterColon;
       while (!atoms[start]?.protected && (literal(atoms, start, "/") || literal(atoms, start, "\\") || (literal(atoms, start, ":") && (literal(atoms, start + 1, "/") || literal(atoms, start + 1, "\\"))))) start += 1;
-      return scanAuthority(atoms, start, true, remainingDepth, sourceAtomStarts);
+      return scanAuthority(atoms, start, true, remainingDepth, sourceAtomStarts, ends, work);
     }
-    if (protocolRelativeAt(atoms, scheme.afterColon)) return scanAuthority(atoms, scheme.afterColon + 2, false, remainingDepth, sourceAtomStarts);
-    const opaque = protectOpaque(atoms, scheme.afterColon, remainingDepth); return { unsafe: false, end: opaque.end, queryAt: opaque.queryAt, bareBoundary: false };
+    if (protocolRelativeAt(atoms, scheme.afterColon)) return scanAuthority(atoms, scheme.afterColon + 2, false, remainingDepth, sourceAtomStarts, ends, work);
+    const opaque = protectOpaque(atoms, scheme.afterColon, remainingDepth, work); return { unsafe: false, end: opaque.end, queryAt: opaque.queryAt, bareBoundary: false };
   }
-  return protocolRelativeAt(atoms, index) ? scanAuthority(atoms, index + 2, false, remainingDepth, sourceAtomStarts) : undefined;
+  return protocolRelativeAt(atoms, index) ? scanAuthority(atoms, index + 2, false, remainingDepth, sourceAtomStarts, ends, work) : undefined;
 }
 function skipQuotedJsonKey(atoms: readonly Atom[], index: number): number | undefined {
   const quote = atoms[index]?.value;
@@ -216,15 +244,25 @@ function skipQuotedJsonKey(atoms: readonly Atom[], index: number): number | unde
   return undefined;
 }
 /** Marks literal path/opaque regions while looking for authority candidates in one structural view. */
-function structuralScan(layer: Layer, stripUrlWhitespace: boolean, remainingDepth: number): boolean {
+function structuralScan(layer: Layer, stripUrlWhitespace: boolean, remainingDepth: number, work?: ScanWork): boolean {
   const source = layer.atoms;
-  const indexes = source.flatMap((atom, index) => stripUrlWhitespace && (atom.value === "\t" || atom.value === "\r" || atom.value === "\n") ? [] : [index]);
+  const indexes: number[] = [];
+  const sourceAtomStarts: boolean[] = [];
+  let removedWhitespace = false;
+  for (let index = 0; index < source.length; index += 1) {
+    scanned(work);
+    const atom = source[index]!;
+    if (stripUrlWhitespace && (atom.value === "\t" || atom.value === "\r" || atom.value === "\n")) { removedWhitespace ||= whiteSpace(atom.value); continue; }
+    indexes.push(index);
+    sourceAtomStarts.push(index === 0 || removedWhitespace);
+    removedWhitespace = false;
+  }
   // A removed URL-style whitespace atom still begins the next source atom for
   // candidate extraction; only its delimiter role is removed from this view.
-  const sourceAtomStarts = indexes.map((sourceIndex, position) => sourceIndex === 0 || source.slice((indexes[position - 1] ?? -1) + 1, sourceIndex).some((atom) => whiteSpace(atom.value)));
   // The view has its own contiguous atoms.  Its marks are mapped back below,
   // rather than letting a removed TAB/CR/LF remain structural by accident.
   const atoms = indexes.map((index) => ({ ...source[index]! }));
+  const ends = schemeEnds(atoms, work);
   let scope: CandidateScope = "root";
   let valueStart = false;
   let rootAtomStart = true;
@@ -236,11 +274,12 @@ function structuralScan(layer: Layer, stripUrlWhitespace: boolean, remainingDept
   let jsonEscape = false;
   let jsonStringAtomStart = false;
   for (let position = 0; position < indexes.length;) {
+    scanned(work);
     const index = position;
     const value = atoms[index]!.value;
     if (scope === "root") {
       if (rootStart(atoms, index, rootAtomStart || sourceAtomStarts[position]!, afterBareAuthority)) {
-        const parsed = parseCandidate(atoms, index, remainingDepth, sourceAtomStarts);
+        const parsed = parseCandidate(atoms, index, remainingDepth, sourceAtomStarts, ends, work);
         if (parsed !== undefined) {
           if (parsed.unsafe) return true;
           afterBareAuthority = parsed.bareBoundary;
@@ -252,7 +291,7 @@ function structuralScan(layer: Layer, stripUrlWhitespace: boolean, remainingDept
       // A literal relative-path slash establishes path context for the rest
       // of this atom. Its later-decoded whitespace or scheme text is data.
       if (!atoms[index]!.protected && value === "/" && !protocolRelativeAt(atoms, index) && !literal(atoms, index - 1, "/") && !rootHasFutureStructure && !rootHasPercentEscape) {
-        const path = protectPath(atoms, index);
+        const path = protectPath(atoms, index, work);
         while (position < atoms.length && position < path.end) position += 1;
         continue;
       }
@@ -270,7 +309,7 @@ function structuralScan(layer: Layer, stripUrlWhitespace: boolean, remainingDept
       else if (value === jsonQuote) jsonQuote = undefined;
       else {
         if (jsonStringAtomStart) {
-          const parsed = parseCandidate(atoms, index, remainingDepth, sourceAtomStarts);
+          const parsed = parseCandidate(atoms, index, remainingDepth, sourceAtomStarts, ends, work);
           if (parsed?.unsafe) return true;
         }
         jsonStringAtomStart = whiteSpace(value) || (jsonStringAtomStart && rootWrappers.has(value));
@@ -285,7 +324,7 @@ function structuralScan(layer: Layer, stripUrlWhitespace: boolean, remainingDept
         const keyEnd = jsonContainers.length > 0 ? skipQuotedJsonKey(atoms, index) : undefined;
         if (keyEnd !== undefined) { valueStart = true; while (position < atoms.length && position < keyEnd) position += 1; continue; }
         if (jsonContainers.length > 0 && (value === "\"" || value === "'")) {
-          const quoted = parseCandidate(atoms, index + 1, remainingDepth, sourceAtomStarts);
+          const quoted = parseCandidate(atoms, index + 1, remainingDepth, sourceAtomStarts, ends, work);
           if (quoted?.unsafe) return true;
           jsonQuote = value;
           jsonStringAtomStart = true;
@@ -295,7 +334,7 @@ function structuralScan(layer: Layer, stripUrlWhitespace: boolean, remainingDept
         }
         position += 1; continue;
       }
-      const parsed = parseCandidate(atoms, index, remainingDepth, sourceAtomStarts);
+      const parsed = parseCandidate(atoms, index, remainingDepth, sourceAtomStarts, ends, work);
       valueStart = false;
       if (parsed !== undefined) {
         if (parsed.unsafe) return true;
@@ -314,20 +353,27 @@ function structuralScan(layer: Layer, stripUrlWhitespace: boolean, remainingDept
   for (let index = 0; index < atoms.length; index += 1) if (atoms[index]!.protected && !source[indexes[index]!]!.protected) source[indexes[index]!] = { value: source[indexes[index]!]!.value, protected: true };
   return false;
 }
-function hasAuthorityUserinfo(layer: Layer, remainingDepth: number): boolean { return structuralScan(layer, false, remainingDepth) || structuralScan(layer, true, remainingDepth); }
+function hasAuthorityUserinfo(layer: Layer, remainingDepth: number, work?: ScanWork): boolean { return structuralScan(layer, false, remainingDepth, work) || structuralScan(layer, true, remainingDepth, work); }
 function hasSensitiveAssignment(layer: Layer): boolean {
   const value = join(layer.atoms);
   return equalsAssignment.test(value) || segmentColonAssignment.test(value) || spacedColonAssignment.test(value) || unspacedColonAssignment.test(value) || quotedColonAssignment.test(value) || formEqualsAssignment.test(value) || formColonAssignment.test(value);
 }
-export function referenceSafetyIssue(value: string): ReferenceSafetyIssue | undefined {
+function evaluateReferenceSafety(value: string, work?: ScanWork): ReferenceSafetyIssue | undefined {
   let layer = initialLayer(value);
   if (layer === null) return "reference-length-exceeded";
   for (let depth = 0; depth <= 2; depth += 1) {
-    if (hasAuthorityUserinfo(layer, 2 - depth) || hasSensitiveAssignment(layer)) return "unsafe-evidence-reference";
+    if (hasAuthorityUserinfo(layer, 2 - depth, work) || hasSensitiveAssignment(layer)) return "unsafe-evidence-reference";
     if (depth === 2) break;
     layer = decodePercentLayer(layer);
     if (layer === null) return "reference-length-exceeded";
   }
   return undefined;
+}
+export function referenceSafetyIssue(value: string): ReferenceSafetyIssue | undefined { return evaluateReferenceSafety(value); }
+/** Internal deterministic scanner-work observation for bounded-input regression tests. */
+export function referenceSafetyOperationCount(value: string): number {
+  const work: ScanWork = { units: 0 };
+  evaluateReferenceSafety(value, work);
+  return work.units;
 }
 export function isValueSafeReference(value: string): boolean { return referenceSafetyIssue(value) === undefined; }

@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { readCompletionEvidenceContract } from "./canonical.js";
 import { COMPLETION_EVIDENCE_FIELDS, COMPLETION_EVIDENCE_INDETERMINATE_REASONS, COMPLETION_VERDICTS, DUPLICATE_STATES, INVOCATION_KINDS, PLACEMENT_MODES, validateCompletionEvidence, validateCompletionEvidenceContract } from "./completion-evidence.js";
-import { isValueSafeReference, MAX_REFERENCE_CODE_UNITS } from "../internal/reference-safety.js";
+import { isValueSafeReference, MAX_REFERENCE_CODE_UNITS, referenceSafetyOperationCount } from "../internal/reference-safety.js";
 import { ADVISOR_CHARTER } from "@vespeneventures/advisor";
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
@@ -503,6 +503,11 @@ describe("completion evidence", () => {
     expect(isValueSafeReference("a".repeat(MAX_REFERENCE_CODE_UNITS + 1))).toBe(false);
     expect(isValueSafeReference(`https:${"/".repeat(20_000)}`)).toBe(true);
     expect(isValueSafeReference("https://safe.invalid then ".repeat(2_000))).toBe(true);
+    const compactViewNearMiss = "https://x" + "\ta".repeat(16_000);
+    expect(isValueSafeReference(compactViewNearMiss)).toBe(true);
+    // Every fixed decoder/view pass may visit each scalar a constant number of
+    // times. This exact compact-view shape used to rescan every later `a`.
+    expect(referenceSafetyOperationCount(compactViewNearMiss)).toBeLessThanOrEqual(compactViewNearMiss.length * 64);
     expect(isValueSafeReference(`https://outer.invalid/?${"a=1&".repeat(13_000)}safe`)).toBe(true);
     let deepNestedQuery = "fixture/terminal.json";
     for (let depth = 0; depth < 2_400; depth += 1) deepNestedQuery = `https://safe.invalid/?next=${deepNestedQuery}`;
