@@ -56,15 +56,17 @@ describe("installed positions", () => {
       `https://\u200b${at}host.invalid/evidence`,
       `https://ref%ZZ${at}host.invalid/evidence`,
       `https://ref%${at}host.invalid/evidence`,
-      `https://ref ${at}host.invalid/evidence`,
       `https:reader:reference${at}host.invalid/evidence`, `https:/reader:reference${at}host.invalid/evidence`, `https:\\\\reader:reference${at}host.invalid/evidence`, `ftp:reader:reference${at}host.invalid/evidence`,
       "https%3Areader%3Areference%40host.invalid/evidence", "https%253Areader%253Areference%2540host.invalid/evidence",
-      `https://outer.invalid/?next=https://reader:reference${at}host.invalid/evidence`, `https://outer.invalid/?next=//reader:reference${at}host.invalid/evidence`, `https://outer.invalid/?next=https%253Areader%253Areference%2540host.invalid/evidence`, `audit, https://reader:reference${at}host.invalid/evidence`, `“https://reader:reference${at}host.invalid/evidence`, `—https://reader:reference${at}host.invalid/evidence`,
-      `https://outer.invalid/#next=https://reader:reference${at}host.invalid/evidence`,
+      `https://outer.invalid/?next=https://reader:reference${at}host.invalid/evidence`, `https://outer.invalid/?next=//reader:reference${at}host.invalid/evidence`, `https://outer.invalid/?https://reader:reference${at}host.invalid/evidence`, `https://outer.invalid/?a=1&next=https://reader:reference${at}host.invalid/evidence`, `https://outer.invalid/?next=https%253Areader%253Areference%2540host.invalid/evidence`, `audit, https://reader:reference${at}host.invalid/evidence`,
+      `https://outer.invalid/#next=https://reader:reference${at}host.invalid/evidence`, `https://outer.invalid/#//reader:reference${at}host.invalid/evidence`,
       `https://safe.invalid then https://reader:reference${at}host.invalid/evidence`, `https://safe.invalid,https://reader:reference${at}host.invalid/evidence`, `https://safe.invalid //reader:reference${at}host.invalid/evidence`, `custom://safe.invalid then https://reader:reference${at}host.invalid/evidence`,
       `https://host.invalid/a https://reader:reference${at}host.invalid/evidence`, `https://host.invalid/a //reader:reference${at}host.invalid/evidence`,
       `https:///reader:reference${at}host.invalid/evidence`,
       `https://reader:\nreference${at}host.invalid/evidence`,
+      `urn:example?next=https://reader:reference${at}host.invalid/evidence`, `urn:example#next=//reader:reference${at}host.invalid/evidence`, `mailto:reader${at}host.invalid?next=https://reader:reference${at}host.invalid/evidence`,
+      `https://host.invalid/path\u2028https://reader:reference${at}host.invalid/evidence`, `/path\u2029//reader:reference${at}host.invalid/evidence`,
+      `https%3a//reader:reference${at}host.invalid/evidence`, `https://reader:reference%40host.invalid/evidence`, `//reader:reference%40host.invalid/evidence`,
     ];
     for (const [path, mutate] of [
       ["positions[0].baseline.evidenceRefs[0]", (ledger: Record<string, unknown>, value: string) => { ((ledger.positions as Array<Record<string, Record<string, string[]>>>)[0]!.baseline).evidenceRefs[0] = value; }],
@@ -80,7 +82,7 @@ describe("installed positions", () => {
         expect(report.findings).toContainEqual(expect.objectContaining({ rule: "unsafe-evidence-reference", path }));
       }
     }
-    const benignPath = `https://host.invalid/files/(archive)//reader:reference${at}v1`;
+    const benignPath = `https%253A%252F%252Fhost.invalid%253Fpath%2540v1`;
     for (const [path, mutate] of [
       ["positions[0].baseline.evidenceRefs[0]", (ledger: Record<string, unknown>, value: string) => { ((ledger.positions as Array<Record<string, Record<string, string[]>>>)[0]!.baseline).evidenceRefs[0] = value; }],
       ["positions[0].setpoint.evidenceRefs[0]", (ledger: Record<string, unknown>, value: string) => { ((ledger.positions as Array<Record<string, Record<string, string[]>>>)[0]!.setpoint).evidenceRefs[0] = value; }],

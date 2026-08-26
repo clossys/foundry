@@ -110,10 +110,23 @@ satisfied one. It validates supplied consumer-retained records only; it does
 not infer a provider observation from them.
 
 Reference safety is a lexical backstop, not a secret scanner: a reference has
-a 65,536-code-unit cap; after bounded percent decoding plus NFKC, case,
-default-ignorable, and form-style `+` normalization in root/query/fragment
-assignment contexts, with a separate URL-style tab/CR/LF authority scan, it rejects only
-explicit sensitive-category labels carrying a nonempty `:` or `=` payload.
+a 65,536-code-unit cap and is examined as the original plus two bounded
+percent-decoded NFKC/case/default-ignorable-normalized layers. It rejects
+explicit sensitive-category labels (including form-style `+` label-separator
+variants) carrying a nonempty `:` or `=` payload. Its URL-authority check uses
+only literal delimiters realized in a layer, scans preserved and TAB/CR/LF-
+stripped structural views, and considers candidates only at a standalone root
+atom or a query/fragment value (including bracketed, quoted, and JSON values).
+Path and opaque portions are protected scalar by scalar before the next layer;
+literal or unprotected realized encoded Unicode whitespace reopens prose, while
+encoded delimiters inside an established protected path remain data. A scheme-looking substring inside an
+opaque bare token is not a URL candidate.
+When a remaining decode can still establish an authority, query, fragment, or
+relative-path boundary, the scanner defers that suffix to the next layer rather
+than projecting a premature protected path; on the final bounded layer, actual
+delimiters and authority userinfo take precedence. JSON string values admit only their
+leading-wrapper and whitespace-delimited URL candidates; JSON punctuation inside
+the string remains ordinary text.
 Ordinary identifiers that merely contain those
 words remain valid. Unicode default-ignorables are removed for this lexical
 check and for linked position/action-authority identity comparison; no

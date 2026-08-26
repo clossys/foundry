@@ -21,9 +21,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   evidence is indeterminate rather than a false completion. Retained reference
   and locator strings now fail closed when they carry credential, provider-value,
   or central-adoption-decision payload assignments or URL authority userinfo,
-  including bounded URL-style authority normalization and a 65,536-code-unit
-  reference cap;
-  ordinary identifiers are not treated as values.
+  through three bounded normalization layers. URL parsing uses actual
+  delimiters in preserved and TAB/CR/LF-stripped views; candidates are scoped
+  to standalone root atoms and query/fragment values, while path and opaque
+  protection projects scalar by scalar to the next layer. A 65,536-code-unit
+  reference cap applies; ordinary identifiers are not treated as values.
 - Aligned the schema-v4 Advisor owned-metric identity to Advisor 0.1.2's
   published `engagement-decision-currency-rate` literal, so its exact
   completion evidence binds to the same role metric.

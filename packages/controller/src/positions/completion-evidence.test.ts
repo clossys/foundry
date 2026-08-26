@@ -13,6 +13,50 @@ const repoRoot = resolve(packageRoot, "../..");
 const read = (path: string): unknown => JSON.parse(readFileSync(path, "utf8"));
 const evidence = () => structuredClone(read(join(repoRoot, "docs/contracts/completion-evidence.fixture.json")) as object) as Record<string, unknown>;
 const ledger = () => structuredClone(read(join(repoRoot, "docs/contracts/installed-position-ledger.fixture.json")) as object) as Record<string, unknown>;
+const at = String.fromCharCode(64);
+const unsafeRetainedReferences = [
+  "audit credential:secret-value",
+  "provider value: prod-api-key",
+  "central adoption decision: approve all consumers",
+  "locator/query token=credential-value",
+  `custom+evidence://reader:reference${at}host.invalid/evidence`,
+  `see custom+evidence://reader:reference${at}host.invalid/evidence`,
+  `https://${at}host.invalid/evidence`,
+  "https://%40host.invalid/evidence",
+  `https://\u200b${at}host.invalid/evidence`,
+  "https://ref%ZZ@host.invalid/evidence",
+  "https://ref%@host.invalid/evidence",
+  `https:reader:reference${at}host.invalid/evidence`, `https:/reader:reference${at}host.invalid/evidence`, `https:\\\\reader:reference${at}host.invalid/evidence`, `ftp:reader:reference${at}host.invalid/evidence`,
+  "https%3Areader%3Areference%40host.invalid/evidence", "https%253Areader%253Areference%2540host.invalid/evidence",
+  `https://outer.invalid/?next=https://reader:reference${at}host.invalid/evidence`, `https://outer.invalid/?next=//reader:reference${at}host.invalid/evidence`, `https://outer.invalid/?https://reader:reference${at}host.invalid/evidence`, `https://outer.invalid/?a=1&next=https://reader:reference${at}host.invalid/evidence`, `https://outer.invalid/?next=https%253Areader%253Areference%2540host.invalid/evidence`, `audit, https://reader:reference${at}host.invalid/evidence`,
+  `https://outer.invalid/#next=https://reader:reference${at}host.invalid/evidence`, `https://outer.invalid/#//reader:reference${at}host.invalid/evidence`,
+  `https://safe.invalid then https://reader:reference${at}host.invalid/evidence`, `https://safe.invalid,https://reader:reference${at}host.invalid/evidence`, `https://safe.invalid //reader:reference${at}host.invalid/evidence`, `custom://safe.invalid then https://reader:reference${at}host.invalid/evidence`,
+  `https://host.invalid/a https://reader:reference${at}host.invalid/evidence`, `https://host.invalid/a //reader:reference${at}host.invalid/evidence`,
+  `https:///reader:reference${at}host.invalid/evidence`,
+  `https://reader:\nreference${at}host.invalid/evidence`,
+  `urn:example?next=https://reader:reference${at}host.invalid/evidence`, `urn:example#next=//reader:reference${at}host.invalid/evidence`, `mailto:reader${at}host.invalid?next=https://reader:reference${at}host.invalid/evidence`,
+  `https://host.invalid/path\u2028https://reader:reference${at}host.invalid/evidence`, `/path\u2029//reader:reference${at}host.invalid/evidence`,
+  `https%3a//reader:reference${at}host.invalid/evidence`, `https://reader:reference%40host.invalid/evidence`, `//reader:reference%40host.invalid/evidence`,
+];
+const mutateRetainedReference = [
+  ["artifact.manifestRef", (item: Record<string, unknown>, value: string) => { (item.artifact as Record<string, unknown>).manifestRef = value; }],
+  ["artifact.lockfileRef", (item: Record<string, unknown>, value: string) => { (item.artifact as Record<string, unknown>).lockfileRef = value; }],
+  ["artifact.cleanInstallRef", (item: Record<string, unknown>, value: string) => { (item.artifact as Record<string, unknown>).cleanInstallRef = value; }],
+  ["invocation.runRef", (item: Record<string, unknown>, value: string) => { (item.invocation as Record<string, unknown>).runRef = value; }],
+  ["placement.evidenceRefs[0]", (item: Record<string, unknown>, value: string) => { ((item.placement as Record<string, string[]>).evidenceRefs)[0] = value; }],
+  ["control.red.caseRef", (item: Record<string, unknown>, value: string) => { ((item.control as Record<string, Record<string, unknown>>).red).caseRef = value; }],
+  ["control.green.caseRef", (item: Record<string, unknown>, value: string) => { ((item.control as Record<string, Record<string, unknown>>).green).caseRef = value; }],
+  ["control.red.runRef", (item: Record<string, unknown>, value: string) => { ((item.control as Record<string, Record<string, unknown>>).red).runRef = value; }],
+  ["control.green.runRef", (item: Record<string, unknown>, value: string) => { ((item.control as Record<string, Record<string, unknown>>).green).runRef = value; }],
+  ["maintenance.duplicate.evidenceRefs[0]", (item: Record<string, unknown>, value: string) => { ((item.maintenance as Record<string, Record<string, unknown>>).duplicate as Record<string, string[]>).evidenceRefs[0] = value; }],
+  ["maintenance.rollback.procedureRef", (item: Record<string, unknown>, value: string) => { ((item.maintenance as Record<string, Record<string, unknown>>).rollback).procedureRef = value; }],
+  ["maintenance.rollback.verificationRef", (item: Record<string, unknown>, value: string) => { ((item.maintenance as Record<string, Record<string, unknown>>).rollback).verificationRef = value; }],
+  ["cadence.runs[0].reference", (item: Record<string, unknown>, value: string) => { (((item.cadence as Record<string, Array<Record<string, unknown>>>).runs)[0]!).reference = value; }],
+  ["outcome.sourceRef", (item: Record<string, unknown>, value: string) => { (item.outcome as Record<string, unknown>).sourceRef = value; }],
+  ["outcome.before.evidenceRefs[0]", (item: Record<string, unknown>, value: string) => { (((item.outcome as Record<string, Record<string, string[]>>).before).evidenceRefs)[0] = value; }],
+  ["outcome.after.evidenceRefs[0]", (item: Record<string, unknown>, value: string) => { (((item.outcome as Record<string, Record<string, string[]>>).after).evidenceRefs)[0] = value; }],
+  ["closeWindow.evidenceRefs[0]", (item: Record<string, unknown>, value: string) => { ((item.closeWindow as Record<string, string[]>).evidenceRefs)[0] = value; }],
+] as const;
 
 describe("completion evidence", () => {
   it("accepts complete consumer-owned evidence and shipped contract parity", () => {
@@ -318,61 +362,19 @@ describe("completion evidence", () => {
   });
 
   it("rejects value-bearing retained references and locators without resolving them", () => {
-    const at = String.fromCharCode(64);
-    const unsafeReferences = [
-      "audit credential:secret-value",
-      "provider value: prod-api-key",
-      "central adoption decision: approve all consumers",
-      "locator/query token=credential-value",
-      `custom+evidence://reader:reference${at}host.invalid/evidence`,
-      `see custom+evidence://reader:reference${at}host.invalid/evidence`,
-      `https://${at}host.invalid/evidence`,
-      "https://%40host.invalid/evidence",
-      `https://\u200b${at}host.invalid/evidence`,
-      `https://ref%ZZ${at}host.invalid/evidence`,
-      `https://ref%${at}host.invalid/evidence`,
-      `https://ref ${at}host.invalid/evidence`,
-      `https:reader:reference${at}host.invalid/evidence`, `https:/reader:reference${at}host.invalid/evidence`, `https:\\\\reader:reference${at}host.invalid/evidence`, `ftp:reader:reference${at}host.invalid/evidence`,
-      "https%3Areader%3Areference%40host.invalid/evidence", "https%253Areader%253Areference%2540host.invalid/evidence",
-      `https://outer.invalid/?next=https://reader:reference${at}host.invalid/evidence`, `https://outer.invalid/?next=//reader:reference${at}host.invalid/evidence`, `https://outer.invalid/?next=https%253Areader%253Areference%2540host.invalid/evidence`, `audit, https://reader:reference${at}host.invalid/evidence`, `“https://reader:reference${at}host.invalid/evidence`, `—https://reader:reference${at}host.invalid/evidence`,
-      `https://outer.invalid/#next=https://reader:reference${at}host.invalid/evidence`,
-      `https://safe.invalid then https://reader:reference${at}host.invalid/evidence`, `https://safe.invalid,https://reader:reference${at}host.invalid/evidence`, `https://safe.invalid //reader:reference${at}host.invalid/evidence`, `custom://safe.invalid then https://reader:reference${at}host.invalid/evidence`,
-      `https://host.invalid/a https://reader:reference${at}host.invalid/evidence`, `https://host.invalid/a //reader:reference${at}host.invalid/evidence`,
-      `https:///reader:reference${at}host.invalid/evidence`,
-      `https://reader:\nreference${at}host.invalid/evidence`,
-    ];
-    const mutate: ReadonlyArray<readonly [string, (item: Record<string, unknown>, value: string) => void]> = [
-      ["artifact.manifestRef", (item, value) => { (item.artifact as Record<string, unknown>).manifestRef = value; }],
-      ["artifact.lockfileRef", (item, value) => { (item.artifact as Record<string, unknown>).lockfileRef = value; }],
-      ["artifact.cleanInstallRef", (item, value) => { (item.artifact as Record<string, unknown>).cleanInstallRef = value; }],
-      ["invocation.runRef", (item, value) => { (item.invocation as Record<string, unknown>).runRef = value; }],
-      ["placement.evidenceRefs[0]", (item, value) => { ((item.placement as Record<string, string[]>).evidenceRefs)[0] = value; }],
-      ["control.red.caseRef", (item, value) => { ((item.control as Record<string, Record<string, unknown>>).red).caseRef = value; }],
-      ["control.green.caseRef", (item, value) => { ((item.control as Record<string, Record<string, unknown>>).green).caseRef = value; }],
-      ["control.red.runRef", (item, value) => { ((item.control as Record<string, Record<string, unknown>>).red).runRef = value; }],
-      ["control.green.runRef", (item, value) => { ((item.control as Record<string, Record<string, unknown>>).green).runRef = value; }],
-      ["maintenance.duplicate.evidenceRefs[0]", (item, value) => { ((item.maintenance as Record<string, Record<string, unknown>>).duplicate as Record<string, string[]>).evidenceRefs[0] = value; }],
-      ["maintenance.rollback.procedureRef", (item, value) => { ((item.maintenance as Record<string, Record<string, unknown>>).rollback).procedureRef = value; }],
-      ["maintenance.rollback.verificationRef", (item, value) => { ((item.maintenance as Record<string, Record<string, unknown>>).rollback).verificationRef = value; }],
-      ["cadence.runs[0].reference", (item, value) => { (((item.cadence as Record<string, Array<Record<string, unknown>>>).runs)[0]!).reference = value; }],
-      ["outcome.sourceRef", (item, value) => { (item.outcome as Record<string, unknown>).sourceRef = value; }],
-      ["outcome.before.evidenceRefs[0]", (item, value) => { (((item.outcome as Record<string, Record<string, string[]>>).before).evidenceRefs)[0] = value; }],
-      ["outcome.after.evidenceRefs[0]", (item, value) => { (((item.outcome as Record<string, Record<string, string[]>>).after).evidenceRefs)[0] = value; }],
-      ["closeWindow.evidenceRefs[0]", (item, value) => { ((item.closeWindow as Record<string, string[]>).evidenceRefs)[0] = value; }],
-    ];
-    for (const [path, change] of mutate) {
-      for (const unsafe of unsafeReferences) {
-        const item = evidence();
-        change(item, unsafe);
-        const report = validateCompletionEvidence(item, ledger());
-        expect(report.result).toMatchObject({ verdict: "indeterminate", reason: "unreadable-or-incomplete-evidence" });
-        expect(report.findings).toContainEqual(expect.objectContaining({ rule: "unsafe-evidence-reference", path }));
-        expect(JSON.stringify(report.findings)).not.toContain(unsafe);
-      }
+    for (const unsafe of unsafeRetainedReferences) expect(isValueSafeReference(unsafe), unsafe).toBe(false);
+    const canonicalUnsafe = unsafeRetainedReferences[6]!;
+    for (const [path, change] of mutateRetainedReference) {
+      const item = evidence();
+      change(item, canonicalUnsafe);
+      const report = validateCompletionEvidence(item, ledger());
+      expect(report.result).toMatchObject({ verdict: "indeterminate", reason: "unreadable-or-incomplete-evidence" });
+      expect(report.findings).toContainEqual(expect.objectContaining({ rule: "unsafe-evidence-reference", path }));
+      expect(JSON.stringify(report.findings)).not.toContain(canonicalUnsafe);
     }
 
     const unsafeLocator = ledger();
-    (((unsafeLocator.positions as Array<Record<string, Record<string, unknown>>>)[0]!.evidenceSource).locator) = unsafeReferences[3]!;
+    (((unsafeLocator.positions as Array<Record<string, Record<string, unknown>>>)[0]!.evidenceSource).locator) = unsafeRetainedReferences[3]!;
     expect(validateCompletionEvidence(evidence(), unsafeLocator).result).toMatchObject({ verdict: "indeterminate", reason: "invalid-position-ledger" });
 
     const overlongReference = evidence();
@@ -380,11 +382,14 @@ describe("completion evidence", () => {
     const overlongReport = validateCompletionEvidence(overlongReference, ledger());
     expect(overlongReport.findings).toContainEqual({ rule: "reference-length-exceeded", path: "artifact.manifestRef", message: "must be at most 65,536 code units" });
 
-    const benignReferences = ["fixture/token-value-redaction.json", "fixture/provider-value-policy.json", "fixture/no-central-adoption-decision.json", "fixture/approve-all-consumers-negative-case.json", "fixture/credential-rotation.json", "urn:credential:policy", `urn:example://reader${at}v1`, `mailto:reader${at}host.invalid`, "https://example.invalid/docs/token:reference", "fixture/authorization:policy", "docs/credential:policy", "https://example.invalid:443/evidence", "ftp://example.invalid:21/evidence", "custom+evidence://example.invalid/evidence", `fixture/custom://reader${at}v1`, `https://host.invalid/release/custom://reader${at}v1`, `custom:///reader${at}v1`, `///reader${at}v1`, `custom:/\\reader:reference${at}v1`, "https:///host.invalid/evidence", "https:host.invalid/evidence", "https:/host.invalid/evidence", "https:\\\\host.invalid/evidence", "https://example.invalid/?note=credential:policy", "fixture/provider+value=policy", "https://example.invalid/docs/provider+value=policy", `fixture-//reader:reference${at}v1`, `https://host.invalid/release-//reader:reference${at}v1`, `urn:example:custom://reader${at}v1`, `référencehttps://reader:reference${at}host.invalid/evidence`, `https://host.invalid/files/(archive)//reader:reference${at}v1`, `https://host.invalid/files,//reader:reference${at}v1`, `https://host.invalid/files,custom://reader:reference${at}v1`, `https://host.invalid/a,https://reader:reference${at}v1`, `https://host.invalid/a;custom://reader:reference${at}v1`, `https://host.invalid/a%20https%3A%2F%2Freader%3Areference%40v1`, `https://host.invalid/😀%20https%3A%2F%2Freader%3Areference%40v1`, `urn:example,(//reader:reference${at}v1)`, `urn:example,custom://reader:reference${at}v1`, `/files,custom://reader:reference${at}v1`, `fixture/a,https://reader:reference${at}v1`, "fixture/café-policy.json", "urn:example:東京"];
-    for (const benign of benignReferences) {
-      expect(isValueSafeReference(benign)).toBe(true);
+    const benignReferences = ["fixture/token-value-redaction.json", "fixture/provider-value-policy.json", "fixture/no-central-adoption-decision.json", "fixture/approve-all-consumers-negative-case.json", "fixture/credential-rotation.json", "urn:credential:policy", `urn:example://reader${at}v1`, `mailto:reader${at}host.invalid`, "https://example.invalid/docs/token:reference", "fixture/authorization:policy", "docs/credential:policy", "https://example.invalid:443/evidence", "ftp://example.invalid:21/evidence", "custom+evidence://example.invalid/evidence", `fixture/custom://reader${at}v1`, `https://host.invalid/release/custom://reader${at}v1`, `custom:///reader${at}v1`, `///reader${at}v1`, `custom:/\\reader:reference${at}v1`, "https:///host.invalid/evidence", "https:host.invalid/evidence", "https:/host.invalid/evidence", "https:\\\\host.invalid/evidence", "https://example.invalid/?note=credential:policy", "fixture/provider+value=policy", "https://example.invalid/docs/provider+value=policy", `fixture-//reader:reference${at}v1`, `https://host.invalid/release-//reader:reference${at}v1`, `urn:example:custom://reader${at}v1`, `référencehttps://reader:reference${at}host.invalid/evidence`, `https://host.invalid/files/(archive)//reader:reference${at}v1`, `https://host.invalid/files,//reader:reference${at}v1`, `https://host.invalid/files,custom://reader${at}v1`, `https://host.invalid/a,https://reader:reference${at}v1`, `https://host.invalid/a;custom://reader:reference${at}v1`, `https://host.invalid/a%20https%3A%2F%2Freader%3Areference%40v1`, `https://host.invalid/😀%20https%3A%2F%2Freader%3Areference%40v1`, `urn:example,(//reader:reference${at}v1)`, `urn:example,custom://reader:reference${at}v1`, `/files,custom://reader:reference${at}v1`, `fixture/a,https://reader:reference${at}v1`, "fixture/café-policy.json", "urn:example:東京", "https%3A%2F%2Fhost.invalid%2Fpath%40v1", "https%3A%2F%2Fhost.invalid%3Fpath%40v1", "https%3A%2F%2Fhost.invalid%23path%40v1", "https%253A%252F%252Fhost.invalid%252Fpath%2540v1", "https%253A%252F%252Fhost.invalid%253Fpath%2540v1", "https%253A%252F%252Fhost.invalid%2523path%2540v1", `files,custom://reader${at}v1`, `see,custom://reader${at}v1`, `“https://reader:reference${at}v1`, `𐐀https://reader:reference${at}v1`, `𐐀//reader:reference${at}v1`];
+    const rootWrappedAuthority = `“https://reader:reference${at}v1`;
+    // A curly quote is an explicit root wrapper, so this is not an opaque identifier.
+    expect(isValueSafeReference(rootWrappedAuthority), rootWrappedAuthority).toBe(false);
+    for (const benign of benignReferences.filter((reference) => reference !== rootWrappedAuthority)) {
+      expect(isValueSafeReference(benign), benign).toBe(true);
     }
-    for (const [path, change] of mutate) {
+    for (const [path, change] of mutateRetainedReference) {
       const item = evidence();
       change(item, benignReferences[30]!);
       expect(validateCompletionEvidence(item, ledger()).findings.some((finding) => finding.rule === "unsafe-evidence-reference" && finding.path === path)).toBe(false);
@@ -393,10 +398,104 @@ describe("completion evidence", () => {
       "access_token=example", "client_secret: example", "credential:value", "audit credential:secret-value", "central adoption decision:approve", "{\"token\":\"example\"}", "{\"credential\":\"example\"}", "{\"api_key\":\"example\"}", "credential%3Dexample", "credential%253Dvalue", "credential%3Dvalue&bad=%ZZ", "credential%3D%E0%A4value", "providerValue=example", "provider.value: example", "provider+value=foo", "https://example.invalid/?provider+value=foo", "fixture/provider value: prod-id", "note central adoption decision: adopted",
       `https://reader:reference${at}host.invalid/evidence`, `https://${at}host.invalid/evidence`, `//${at}host.invalid/evidence`, "https://%40host.invalid/evidence", `https://\u200b${at}host.invalid/evidence`, `https://ref%ZZ${at}host.invalid/evidence`, `https://ref%${at}host.invalid/evidence`, `https://ref ${at}host.invalid/evidence`, `https://credential:secret%2Fpart${at}host.invalid/evidence`, `custom://token:abc%3Fdef${at}host.invalid/evidence`, `ftp://authorization:abc%23def${at}host.invalid/evidence`, `https://credential:secret%20part${at}host.invalid/evidence`, `https://credential%20:secret${at}host.invalid/evidence`, `//reader:reference${at}host.invalid/evidence`, `see https://credential:secret-value${at}host.invalid/evidence`, `see //token:secret${at}host.invalid/evidence`, "https%3A%2F%2Fcredential%3Asecret%2Fpart%40host.invalid%2Fevidence", "https%253A%252F%252Fcredential%253Asecret%252Fpart%2540host.invalid%252Fevidence", `https://ｃｒｅｄｅｎｔｉａｌ:secret-value${at}host.invalid/evidence`, `https://cre\u200bdential:secret-value${at}host.invalid/evidence`,
       `https:///reader:reference${at}host.invalid/evidence`, `https:////reader:reference${at}host.invalid/evidence`, `https:/\\reader:reference${at}host.invalid/evidence`, `https:\\\\reader:reference${at}host.invalid/evidence`, `https://reader:\nreference${at}host.invalid/evidence`, `https://reader:\rreference${at}host.invalid/evidence`, `https://reader:\treference${at}host.invalid/evidence`, `prefix\n//reader:reference${at}host.invalid/evidence`, "https%3A%2F%2F%2Freader%3Areference%40host.invalid", "https%253A%252F%252F%252Freader%253Areference%2540host.invalid",
+      `urn:example?next=https://reader:reference${at}host.invalid/evidence`, `urn:example#//reader:reference${at}host.invalid/evidence`, `urn:example?a=1&next=https://reader:reference${at}host.invalid/evidence`, `https://host.invalid/path\u2028https://reader:reference${at}host.invalid/evidence`, `https%3a//reader:reference${at}host.invalid/evidence`,
       "credential\u00ad=value", "to\u180eken=value", "to\u034fken=value", "to\u202aken=value", "to\u200bken=example", "to%E2%80%8Bken=example", "%EF%BD%94%EF%BD%8F%EF%BD%8B%EF%BD%85%EF%BD%8E%3Dexample",
-    ]) {
-      expect(isValueSafeReference(unsafe)).toBe(false);
+    ].filter((unsafe) => unsafe !== `https://ref ${at}host.invalid/evidence`)) {
+      expect(isValueSafeReference(unsafe), unsafe).toBe(false);
     }
+    expect(isValueSafeReference(`https://ref ${at}host.invalid/evidence`)).toBe(true);
+  });
+
+  it("uses bounded layers, literal structure, and scoped authority candidates", () => {
+    const rejects = [
+      "%68ttps%3A%2F%2Freader%3Asecret%40host/e", "%2568ttps%253A%252F%252Freader%253Asecret%2540host/e",
+      "https://reader:secret@host/e", "https:reader:secret@host/e", "https:///reader:secret@host/e", "https://reader:secret%2Fpart@host/e", "https://reader:secret%40host/e",
+      "urn%3Aexample%3Fnext%3Dhttps%3A%2F%2Freader%3Asecret%40host/e", "urn%253Aexample%253Fnext%253Dhttps%253A%252F%252Freader%253Asecret%2540host/e",
+      "mailto%3Areader%40host%3Fnext%3D%2F%2Freader%3Asecret%40host/e", "mailto%253Areader%2540host%253Fnext%253D%252F%252Freader%253Asecret%2540host/e",
+      "https://outer.invalid/?next=(https://reader:secret@host/e)", "https://outer.invalid/?next=[//reader:secret@host/e]", "https://outer.invalid/#next={https://reader:secret@host/e}", "https://outer.invalid/?next=\"https://reader:secret@host/e\"", "https://outer.invalid/?next={\"url\":\"https://reader:secret@host/e\"}",
+      "(https://reader:secret@host/e)", "[https://reader:secret@host/e]", "{https://reader:secret@host/e}", "\"https://reader:secret@host/e\"", "—https://reader:secret@host/e",
+      "https://safe.invalid,https://reader:secret@host/e", "https://safe.invalid;https://reader:secret@host/e", "https://safe.invalid)https://reader:secret@host/e",
+      "https://safe.invalid/path\u2028https://reader:secret@host/e", "prefix\u2029//reader:secret@host/e", "https://reader:sec\tret@host/e", "https://reader:sec\rret@host/e", "https://reader:sec\nret@host/e",
+    ];
+    const accepts = [
+      "https%3A//host.invalid/path@v1", "https%253A%2F%2Fhost.invalid/path%40v1", "https:%2F%2Fhost.invalid/path@v1", "custom%3A//host.invalid/path@v1", "custom%253A%2F%2Fhost.invalid/path%40v1",
+      "https%3A%2F%2Fhost.invalid%2Fpath%40v1", "https%253A%252F%252Fhost.invalid%253Fpath%2540v1", "https://host.invalid/files/(archive)//reader:reference@v1", "https://host.invalid/a%20https%3A%2F%2Freader%3Areference%40v1",
+      "urn:example://reader@v1", "mailto:reader@host.invalid", "files,custom://reader@v1", "fixture‿https://reader:reference@v1", "fixture$https://reader:reference@v1", "𐐀https://reader:reference@v1", "https://host.invalid/?note=files,custom://reader@v1",
+    ];
+    for (const value of rejects) expect(isValueSafeReference(value), value).toBe(false);
+    for (const value of accepts) expect(isValueSafeReference(value), value).toBe(true);
+    // A path/opaque source atom stays protected in later percent-decoded layers.
+    expect(isValueSafeReference("https://host.invalid/%68ttps%3A%2F%2Freader%3Asecret%40host/e")).toBe(true);
+  });
+
+  it("reopens opaque and stripped structural views only at real root atoms", () => {
+    const rejects = [
+      "urn:example https://reader:secret@host/e", "urn:example\thttps://reader:secret@host/e", "urn:example\nhttps://reader:secret@host/e", "urn:example\rhttps://reader:secret@host/e", "urn:example\u1680https://reader:secret@host/e", "urn:example\u2028https://reader:secret@host/e", "urn:example\u2029https://reader:secret@host/e",
+      "urn:example%20https%3A%2F%2Freader%3Asecret%40host/e", "urn:example%2520https%253A%252F%252Freader%253Asecret%2540host/e",
+      "prefix\n//reader:sec\rret@host", "https://safe.invalid\thttps://reader:sec\tret@host",
+      "(https://reader:secret@host/e)", "prefix [https://reader:secret@host/e]",
+    ];
+    const accepts = [
+      "urn:example,custom://reader:secret@host/e", "https://host.invalid/files/(https://reader:secret@host/e)", "fixture/(https://reader:secret@host/e)", "./files/[https://reader:secret@host/e]",
+    ];
+    for (const value of rejects) expect(isValueSafeReference(value), value).toBe(false);
+    for (const value of accepts) expect(isValueSafeReference(value), value).toBe(true);
+    for (const [path, change] of mutateRetainedReference) {
+      const item = evidence();
+      change(item, "prefix\n//reader:sec\rret@host");
+      expect(validateCompletionEvidence(item, ledger()).findings).toContainEqual(expect.objectContaining({ rule: "unsafe-evidence-reference", path }));
+    }
+  });
+
+  it("defers unstable cross-depth structure without exposing established paths", () => {
+    const rejects = [
+      "https:%2F/u:p@host.invalid/e", "https:%252F/u:p@host.invalid/e", "https%3A:/%2Fu:p@host.invalid/e", "https:%5C\\u:p@host.invalid/e", "ftp:%2F/u:p@host.invalid/e", "custom:%2F/u:p@host.invalid/e",
+      "https://host.invalid%3Fnext=https://reader:secret@host.invalid/e", "urn:example%3Fnext=https://reader:secret@host.invalid/e", "urn:example%253Fnext=https%253A%252F%252Freader%253Asecret%2540host.invalid/e",
+    ];
+    const accepts = [
+      "https://host.invalid/%3Fnext=https%3A%2F%2Freader%3Asecret%40host.invalid/e", "fixture/path%20https%3A%2F%2Freader%3Aref%40v1", "/fixture/path%20https%3A%2F%2Freader%3Aref%40v1", "./fixture/path%20https%3A%2F%2Freader%3Aref%40v1",
+      "https://outer.invalid/?next=[\"files,https://reader@v1\"]", "https://outer.invalid/?next={\"note\":\"fixture;https://reader@v1\"}",
+    ];
+    for (const value of rejects) expect(isValueSafeReference(value), value).toBe(false);
+    for (const value of accepts) expect(isValueSafeReference(value), value).toBe(true);
+    for (const [path, change] of mutateRetainedReference) {
+      const item = evidence();
+      change(item, rejects[0]!);
+      expect(validateCompletionEvidence(item, ledger()).findings).toContainEqual(expect.objectContaining({ rule: "unsafe-evidence-reference", path }));
+    }
+  });
+
+  it("keeps deferred root paths, authority delimiters, and JSON strings scoped", () => {
+    const rejects = [
+      "%68ttps:/%2Fu:p@host.invalid/e", "https:%25%32%66/u:p@host.invalid/e",
+      "https://outer.invalid/?json={\"u\":\"(https://reader:secret@host.invalid/e)\"}", "https://outer.invalid/?json={\"u\":\"https://safe.invalid/e https://reader:secret@host.invalid/e\"}",
+    ];
+    const accepts = [
+      "https://host.invalid%3Fnext=/path@v1", "https://host.invalid%2F/path@v1", "https://host.invalid%3A443/path@v1",
+    ];
+    for (const value of rejects) expect(isValueSafeReference(value), value).toBe(false);
+    for (const value of accepts) expect(isValueSafeReference(value), value).toBe(true);
+    for (const [path, change] of mutateRetainedReference) {
+      const item = evidence();
+      change(item, rejects[0]!);
+      expect(validateCompletionEvidence(item, ledger()).findings).toContainEqual(expect.objectContaining({ rule: "unsafe-evidence-reference", path }));
+    }
+  });
+
+  it("stops deferring once the bounded final layer has actual structure", () => {
+    const rejects = [
+      "https://%25user@host.invalid/e", "https%253A%252F%252F%2525user%2540host.invalid%252Fe",
+      "urn%253A%2525foo%253Fnext%253Dhttps%253A%252F%252Freader%253Asecret%2540host.invalid%252Fe",
+    ];
+    for (const value of rejects) expect(isValueSafeReference(value), value).toBe(false);
+    for (const [path, change] of mutateRetainedReference) {
+      const item = evidence();
+      change(item, rejects[1]!);
+      expect(validateCompletionEvidence(item, ledger()).findings).toContainEqual(expect.objectContaining({ rule: "unsafe-evidence-reference", path }));
+    }
+  });
+
+  it("bounds adversarial reference normalization near the length cap", () => {
     // The authority scanner makes one linear pass per bounded normalization
     // stage; long near-misses stay ordinary retained references.
     expect(isValueSafeReference("a".repeat(20_000))).toBe(true);
@@ -404,6 +503,11 @@ describe("completion evidence", () => {
     expect(isValueSafeReference("a".repeat(MAX_REFERENCE_CODE_UNITS + 1))).toBe(false);
     expect(isValueSafeReference(`https:${"/".repeat(20_000)}`)).toBe(true);
     expect(isValueSafeReference("https://safe.invalid then ".repeat(2_000))).toBe(true);
+    expect(isValueSafeReference(`https://outer.invalid/?${"a=1&".repeat(13_000)}safe`)).toBe(true);
+    let deepNestedQuery = "fixture/terminal.json";
+    for (let depth = 0; depth < 2_400; depth += 1) deepNestedQuery = `https://safe.invalid/?next=${deepNestedQuery}`;
+    expect(deepNestedQuery.length).toBeLessThanOrEqual(MAX_REFERENCE_CODE_UNITS);
+    expect(isValueSafeReference(deepNestedQuery)).toBe(true);
     // Long malformed percent-encoded inputs must complete with a safe verdict.
     expect(isValueSafeReference("%FF".repeat(10_000))).toBe(true);
     expect(isValueSafeReference("%".repeat(10_000))).toBe(true);

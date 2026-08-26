@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "kind": "foundry-installed-position-ledger",
-  "referenceRule": "Evidence references and locators reject explicit inline credential, provider-value, and central-adoption-decision payload assignments and URL authority userinfo under bounded 65,536-code-unit reference normalization; this lexical check neither authenticates a pointer nor proves every secret absent.",
+  "referenceRule": "Evidence references and locators reject explicit inline credential, provider-value, and central-adoption-decision payload assignments and actual URL authority userinfo under three bounded 65,536-code-unit normalization layers, literal-delimiter parsing in preserved and TAB/CR/LF-stripped views, standalone root-atom and query/fragment-value candidate scope, and scalar-projected path/opaque protection; this lexical check neither authenticates a pointer nor proves every secret absent.",
   "roleDisposition": {
     "fields": ["package", "disposition", "reason", "positionIds"],
     "dispositions": ["open", "not-applicable"],
