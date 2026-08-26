@@ -12,6 +12,7 @@ const quotedColonAssignment = new RegExp("(?:^|[^a-z0-9])[\"']" + sensitiveLabel
 const formEqualsAssignment = new RegExp("(?:^|[?&#])" + formSensitiveLabel + "\\b[\"']?\\s*=\\s*" + nonemptyValue, "iu");
 const formColonAssignment = new RegExp("(?:^|[?&#])" + formSensitiveLabel + "\\b\\s*:\\s*" + nonemptyValue, "iu");
 const authoritySensitiveAssignment = new RegExp("^" + sensitiveLabel + "\\b\\s*:\\s*" + nonemptyValue, "iu");
+const MAX_SENSITIVE_ASSIGNMENT_LOOKAHEAD = 96;
 
 export const MAX_REFERENCE_CODE_UNITS = 65_536;
 const specialAuthoritySchemes = new Set(["ftp", "http", "https", "ws", "wss"]);
@@ -26,7 +27,7 @@ interface Layer { readonly atoms: Atom[]; }
 type CandidateScope = "root" | "query";
 type ParseResult = { readonly unsafe: boolean; readonly end: number; readonly queryAt?: number; readonly bareBoundary: boolean };
 type SchemeEnds = readonly number[];
-type CandidateDescriptor = { readonly kind: "authority"; readonly start: number; readonly special: boolean } | { readonly kind: "opaque"; readonly start: number };
+type CandidateDescriptor = { readonly kind: "authority"; readonly start: number; readonly special: boolean } | { readonly kind: "opaque"; readonly start: number } | { readonly kind: "deferred"; readonly end: number };
 interface ScanWork { units: number; }
 function scanned(work: ScanWork | undefined): void { if (work) work.units += 1; }
 
@@ -34,6 +35,13 @@ function whiteSpace(value: string): boolean { return unicodeWhitespace.test(valu
 function asciiLetter(value: string | undefined): boolean { return value !== undefined && value >= "a" && value <= "z"; }
 function schemeCharacter(value: string | undefined): boolean { return asciiLetter(value) || (value !== undefined && value >= "0" && value <= "9") || value === "+" || value === "-" || value === "."; }
 function hex(value: string | undefined): boolean { return value !== undefined && /^[0-9a-f]$/iu.test(value); }
+function hexNibble(value: string | undefined): number | undefined {
+  if (value === undefined || value.length !== 1) return undefined;
+  const code = value.charCodeAt(0);
+  if (code >= 0x30 && code <= 0x39) return code - 0x30;
+  if (code >= 0x61 && code <= 0x66) return code - 0x61 + 10;
+  return undefined;
+}
 function literal(atoms: readonly Atom[], index: number, value: string): boolean { return atoms[index]?.value === value; }
 function join(atoms: readonly Atom[], start = 0, end = atoms.length): string { return atoms.slice(start, end).map((atom) => atom.value).join(""); }
 
@@ -176,6 +184,64 @@ function futureStructureAt(atoms: readonly Atom[], index: number): boolean {
     return scalar !== undefined && whiteSpace(scalar);
   })());
 }
+/**
+ * Projects one scalar through the remaining bounded percent-decoding layers
+ * without allocating a decoded suffix.  The span remains in this layer, so a
+ * caller can continue monotonically after recognising future punctuation.
+ */
+function decodedScalarAt(atoms: readonly Atom[], index: number): { readonly value: string; readonly span: number } | undefined {
+  const atom = atoms[index];
+  if (atom === undefined) return undefined;
+  // This projection deliberately avoids slices, suffixes, and arrays: every
+  // inspected escape belongs to this one scalar and has a constant span.
+  const projectedByteAt = (offset: number): number | undefined => {
+    const start = index + offset * 3;
+    if (!literal(atoms, start, "%")) return undefined;
+    const high = hexNibble(atoms[start + 1]?.value);
+    const low = hexNibble(atoms[start + 2]?.value);
+    return high === undefined || low === undefined ? undefined : high * 16 + low;
+  };
+  const byte = projectedByteAt(0);
+  if (byte === undefined) return { value: atom.value, span: 1 };
+  if (byte < 0x80) return { value: String.fromCharCode(byte), span: 3 };
+  const width = utf8Width(byte);
+  if (width !== undefined) {
+    const second = projectedByteAt(1);
+    const third = width >= 3 ? projectedByteAt(2) : undefined;
+    const fourth = width === 4 ? projectedByteAt(3) : undefined;
+    const continuation = (candidate: number | undefined): candidate is number => candidate !== undefined && (candidate & 0xc0) === 0x80;
+    const valid = width === 2 ? continuation(second)
+      : width === 3 ? continuation(second) && continuation(third) && !(byte === 0xe0 && second < 0xa0) && !(byte === 0xed && second >= 0xa0)
+        : continuation(second) && continuation(third) && continuation(fourth) && !(byte === 0xf0 && second < 0x90) && !(byte === 0xf4 && second >= 0x90);
+    if (valid && second !== undefined) {
+      const point = width === 2 ? ((byte & 0x1f) << 6) | (second & 0x3f)
+        : width === 3 ? ((byte & 0x0f) << 12) | ((second & 0x3f) << 6) | (third! & 0x3f)
+          : ((byte & 0x07) << 18) | ((second & 0x3f) << 12) | ((third! & 0x3f) << 6) | (fourth! & 0x3f);
+      return { value: String.fromCodePoint(point), span: width * 3 };
+    }
+  }
+  return { value: atom.value, span: 1 };
+}
+function projectedScalarAt(atoms: readonly Atom[], index: number, remainingDepth: number): { readonly value: string; readonly span: number } | undefined {
+  const first = decodedScalarAt(atoms, index);
+  if (first === undefined || remainingDepth < 2 || first.value !== "%") return first;
+  const high = decodedScalarAt(atoms, index + first.span);
+  const low = high === undefined ? undefined : decodedScalarAt(atoms, index + first.span + high.span);
+  if (high === undefined || low === undefined || !hex(high.value) || !hex(low.value)) return first;
+  return { value: String.fromCharCode(Number.parseInt(`${high.value}${low.value}`, 16)), span: first.span + high.span + low.span };
+}
+function projectedAuthorityMarkerAt(atoms: readonly Atom[], index: number, remainingDepth: number): number | undefined {
+  if (remainingDepth === 0) return undefined;
+  const first = projectedScalarAt(atoms, index, remainingDepth);
+  if (first?.value !== "/") return undefined;
+  const second = projectedScalarAt(atoms, index + first.span, remainingDepth);
+  return second?.value === "/" ? first.span + second.span : undefined;
+}
+function futureAuthorityWrapperAt(atoms: readonly Atom[], index: number, remainingDepth: number): boolean {
+  if (remainingDepth === 0) return false;
+  const projected = projectedScalarAt(atoms, index, remainingDepth);
+  return projected !== undefined && projected.span > 1 && postAuthorityWrappers.has(projected.value);
+}
 function deferredEnd(atoms: readonly Atom[], start: number): number {
   let cursor = start;
   while (cursor < atoms.length && !whiteSpace(atoms[cursor]!.value)) cursor += 1;
@@ -192,6 +258,40 @@ function actualAtBeforeDelimiter(atoms: readonly Atom[], start: number, special:
 function sensitiveAuthorityAssignment(atoms: readonly Atom[], start: number, end: number): boolean {
   return authoritySensitiveAssignment.test(join(atoms, start, end));
 }
+function sensitiveLabelPrefixAt(atoms: readonly Atom[], start: number): boolean {
+  const first = atoms[start]?.value;
+  const second = atoms[start + 1]?.value;
+  return (first === "a" && (second === "c" || second === "u" || second === "p"))
+    || (first === "c" && (second === "r" || second === "l" || second === "e" || second === "o"))
+    || (first === "d" && second === "a")
+    || (first === "p" && (second === "r" || second === "a"))
+    || (first === "s" && second === "e")
+    || (first === "t" && second === "o");
+}
+/**
+ * Precompute only label starts.  Structural scanning decides which starts are
+ * eligible roots, query values, or JSON values; opaque and path atoms never
+ * consult this mask and therefore remain opaque across decode layers.
+ */
+function sensitiveColonStartMask(atoms: readonly Atom[], work?: ScanWork): Uint8Array {
+  const starts = new Uint8Array(atoms.length);
+  for (let start = 0; start < atoms.length; start += 1) {
+    // Ordinary query/path values such as `note=credential:policy` remain
+    // opaque identifiers.  This mask is deliberately the wrapper hand-off:
+    // global assignment rules cover ordinary root/prose syntax, while an
+    // opening wrapper makes the following atom an eligible structural value.
+    if (atoms[start]!.protected || (start > 0 && !rootWrappers.has(atoms[start - 1]!.value)) || !sensitiveLabelPrefixAt(atoms, start)) continue;
+    let value = "";
+    for (let cursor = start; cursor < atoms.length && value.length < MAX_SENSITIVE_ASSIGNMENT_LOOKAHEAD; cursor += 1) {
+      scanned(work);
+      const atom = atoms[cursor]!;
+      if (atom.protected || whiteSpace(atom.value)) break;
+      value += atom.value;
+    }
+    if (authoritySensitiveAssignment.test(value)) starts[start] = 1;
+  }
+  return starts;
+}
 function protectOpaque(atoms: Atom[], start: number, remainingDepth: number, work?: ScanWork): { readonly end: number; readonly queryAt?: number } {
   let cursor = start;
   while (cursor < atoms.length && atoms[cursor]!.value !== "?" && atoms[cursor]!.value !== "#" && !whiteSpace(atoms[cursor]!.value) && !(remainingDepth > 0 && futureStructureAt(atoms, cursor))) { scanned(work); cursor += 1; }
@@ -206,8 +306,9 @@ function scanAuthority(atoms: Atom[], start: number, special: boolean, remaining
   while (cursor < atoms.length) {
     scanned(work);
     if (cursor > authorityStart && sourceAtomStarts?.[cursor]) {
-      const nested = describeCandidate(atoms, cursor, ends, work);
+      const nested = describeCandidate(atoms, cursor, remainingDepth, ends, work);
       if (nested !== undefined && sensitiveAuthorityAssignment(atoms, authorityStart, cursor)) return { unsafe: true, end: cursor, bareBoundary: false };
+      if (nested?.kind === "deferred") return { unsafe: false, end: nested.end, bareBoundary: false };
       if (nested?.kind === "opaque") {
         const opaque = protectOpaque(atoms, nested.start, remainingDepth, work);
         return { unsafe: false, end: opaque.end, queryAt: opaque.queryAt, bareBoundary: false };
@@ -223,6 +324,13 @@ function scanAuthority(atoms: Atom[], start: number, special: boolean, remaining
     const atom = atoms[cursor]!;
     const value = atom.value;
     if (atom.protected) { cursor += 1; continue; }
+    // A wrapper which is only realised in a later bounded decode layer must
+    // terminate this authority now.  Otherwise a following literal slash can
+    // incorrectly establish an outer path and hide the later root candidate.
+    if (futureAuthorityWrapperAt(atoms, cursor, remainingDepth)) {
+      if (sensitiveAuthorityAssignment(atoms, authorityStart, cursor) || (cursor > authorityStart && actualAtBeforeDelimiter(atoms, cursor, authoritySpecial))) return { unsafe: true, end: cursor, bareBoundary: false };
+      return { unsafe: false, end: deferredEnd(atoms, cursor), bareBoundary: false };
+    }
     if (remainingDepth > 0 && futureStructureAt(atoms, cursor)) {
       if (sensitiveAuthorityAssignment(atoms, authorityStart, cursor) || (cursor > authorityStart && actualAtBeforeDelimiter(atoms, cursor, authoritySpecial))) return { unsafe: true, end: cursor, bareBoundary: false };
       return { unsafe: false, end: deferredEnd(atoms, cursor), bareBoundary: false };
@@ -242,7 +350,7 @@ function scanAuthority(atoms: Atom[], start: number, special: boolean, remaining
   }
   return sensitiveAuthorityAssignment(atoms, authorityStart, cursor) ? { unsafe: true, end: cursor, bareBoundary: false } : { unsafe: false, end: cursor, bareBoundary: true };
 }
-function describeCandidate(atoms: readonly Atom[], index: number, ends: SchemeEnds, work?: ScanWork): CandidateDescriptor | undefined {
+function describeCandidate(atoms: readonly Atom[], index: number, remainingDepth: number, ends: SchemeEnds, work?: ScanWork): CandidateDescriptor | undefined {
   const scheme = schemeAt(atoms, index, ends, work);
   if (scheme !== undefined) {
     if (scheme.special) {
@@ -251,13 +359,17 @@ function describeCandidate(atoms: readonly Atom[], index: number, ends: SchemeEn
       return { kind: "authority", start, special: true };
     }
     if (protocolRelativeAt(atoms, scheme.afterColon)) return { kind: "authority", start: scheme.afterColon + 2, special: false };
+    if (projectedAuthorityMarkerAt(atoms, scheme.afterColon, remainingDepth) !== undefined) return { kind: "deferred", end: deferredEnd(atoms, scheme.afterColon) };
     return { kind: "opaque", start: scheme.afterColon };
   }
-  return protocolRelativeAt(atoms, index) ? { kind: "authority", start: index + 2, special: false } : undefined;
+  if (protocolRelativeAt(atoms, index)) return { kind: "authority", start: index + 2, special: false };
+  const projected = projectedAuthorityMarkerAt(atoms, index, remainingDepth);
+  return projected === undefined ? undefined : { kind: "deferred", end: deferredEnd(atoms, index) };
 }
 function parseCandidate(atoms: Atom[], index: number, remainingDepth: number, sourceAtomStarts: readonly boolean[] | undefined, ends: SchemeEnds, work?: ScanWork): ParseResult | undefined {
-  const candidate = describeCandidate(atoms, index, ends, work);
+  const candidate = describeCandidate(atoms, index, remainingDepth, ends, work);
   if (candidate === undefined) return undefined;
+  if (candidate.kind === "deferred") return { unsafe: false, end: candidate.end, bareBoundary: false };
   if (candidate.kind === "opaque") {
     const opaque = protectOpaque(atoms, candidate.start, remainingDepth, work);
     return { unsafe: false, end: opaque.end, queryAt: opaque.queryAt, bareBoundary: false };
@@ -295,6 +407,7 @@ function structuralScan(layer: Layer, stripUrlWhitespace: boolean, remainingDept
   // rather than letting a removed TAB/CR/LF remain structural by accident.
   const atoms = indexes.map((index) => ({ ...source[index]! }));
   const ends = schemeEnds(atoms, work);
+  const sensitiveColonStarts = sensitiveColonStartMask(atoms, work);
   let scope: CandidateScope = "root";
   let valueStart = false;
   let rootAtomStart = true;
@@ -311,6 +424,7 @@ function structuralScan(layer: Layer, stripUrlWhitespace: boolean, remainingDept
     const value = atoms[index]!.value;
     if (scope === "root") {
       if (rootStart(atoms, index, rootAtomStart || sourceAtomStarts[position]!, afterBareAuthority)) {
+        if (sensitiveColonStarts[index] === 1) return true;
         const parsed = parseCandidate(atoms, index, remainingDepth, sourceAtomStarts, ends, work);
         if (parsed !== undefined) {
           if (parsed.unsafe) return true;
@@ -341,6 +455,7 @@ function structuralScan(layer: Layer, stripUrlWhitespace: boolean, remainingDept
       else if (value === jsonQuote) jsonQuote = undefined;
       else {
         if (jsonStringAtomStart) {
+          if (sensitiveColonStarts[index] === 1) return true;
           const parsed = parseCandidate(atoms, index, remainingDepth, sourceAtomStarts, ends, work);
           if (parsed?.unsafe) return true;
         }
@@ -366,6 +481,7 @@ function structuralScan(layer: Layer, stripUrlWhitespace: boolean, remainingDept
         }
         position += 1; continue;
       }
+      if (sensitiveColonStarts[index] === 1) return true;
       const parsed = parseCandidate(atoms, index, remainingDepth, sourceAtomStarts, ends, work);
       valueStart = false;
       if (parsed !== undefined) {

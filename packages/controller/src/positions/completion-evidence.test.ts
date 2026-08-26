@@ -534,6 +534,51 @@ describe("completion evidence", () => {
     expect(unsafeReport.findings).toContainEqual(expect.objectContaining({ rule: "unsafe-evidence-reference", path: "artifact.manifestRef" }));
   });
 
+  it("realizes future wrapper and authority structure only at eligible roots", () => {
+    const wrappers = ["(", "[", "{", "<", "\"", "'", "`", "“", "”", "‘", "’", "–", "—", ",", ";", ")", "]", "}", ">"];
+    const encoded = (value: string, depth: 1 | 2): string => depth === 1 ? encodeURIComponent(value) : encodeURIComponent(encodeURIComponent(value));
+    for (const wrapper of wrappers) for (const depth of [1, 2] as const) {
+      const reference = `https://safe.invalid${encoded(wrapper, depth)}https://reader:secret${at}host.invalid/evidence`;
+      expect(isValueSafeReference(reference), reference).toBe(false);
+    }
+
+    for (const marker of ["/%2f", "%2f/", "%2f%2f", "/%252f", "%252f/", "%252f%252f"]) {
+      const generic = `custom:${marker}reader:secret${at}host.invalid/evidence`;
+      const relative = `${marker}reader:secret${at}host.invalid/evidence`;
+      expect(isValueSafeReference(generic), generic).toBe(false);
+      expect(isValueSafeReference(relative), relative).toBe(false);
+    }
+
+    for (const wrapper of ["(", "[", "{", "<", "\"", "'", "`", "“", "‘", "–", "—"]) for (const depth of [0, 1, 2] as const) {
+      const literal = `${wrapper}credential:secret-value`;
+      const reference = depth === 0 ? literal : encoded(literal, depth as 1 | 2);
+      expect(isValueSafeReference(reference), reference).toBe(false);
+    }
+
+    const retainedReference = "https://safe.invalid%28https://reader:secret@host.invalid/evidence";
+    for (const [path, change] of mutateRetainedReference) {
+      const item = evidence();
+      change(item, retainedReference);
+      expect(validateCompletionEvidence(item, ledger()).findings).toContainEqual(expect.objectContaining({ rule: "unsafe-evidence-reference", path }));
+    }
+    const ledgerMutations = [
+      ["positions[0].baseline.evidenceRefs[0]", (item: Record<string, unknown>, value: string) => { (((item.positions as Array<Record<string, Record<string, string[]>>>)[0]!.baseline).evidenceRefs)[0] = value; }],
+      ["positions[0].setpoint.evidenceRefs[0]", (item: Record<string, unknown>, value: string) => { (((item.positions as Array<Record<string, Record<string, string[]>>>)[0]!.setpoint).evidenceRefs)[0] = value; }],
+      ["positions[0].evidenceSource.locator", (item: Record<string, unknown>, value: string) => { ((item.positions as Array<Record<string, Record<string, string>>>)[0]!.evidenceSource).locator = value; }],
+      ["positions[0].firstDayAssessment.evidenceRefs[0]", (item: Record<string, unknown>, value: string) => { (((item.positions as Array<Record<string, Record<string, string[]>>>)[0]!.firstDayAssessment).evidenceRefs)[0] = value; }],
+    ] as const;
+    for (const [path, change] of ledgerMutations) {
+      const item = ledger();
+      change(item, retainedReference);
+      expect(validateInstalledPositionLedger(item).findings).toContainEqual(expect.objectContaining({ rule: "unsafe-evidence-reference", path }));
+    }
+
+    for (const safe of [
+      "https://host.invalid/files/(archive)//reader@host.invalid", "/files/(archive)//reader@host.invalid", "fixture/(credential:value)",
+      "docs/token:reference", "urn:credential:policy", "https://host.invalid:443/evidence", "https://host.invalid/path@v1", "see https://host.invalid/evidence",
+    ]) expect(isValueSafeReference(safe), safe).toBe(true);
+  });
+
   it("recognizes backticks as root, authority, and query value wrappers", () => {
     const encodeLayers = (value: string): readonly string[] => [value, encodeURIComponent(value), encodeURIComponent(encodeURIComponent(value))];
     const wrappedAuthority = `\`https://reader:secret${at}host.invalid/evidence\``;
