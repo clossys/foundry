@@ -507,6 +507,33 @@ describe("completion evidence", () => {
     expect(unsafeReport.findings).toContainEqual(expect.objectContaining({ rule: "unsafe-evidence-reference", path: "artifact.manifestRef" }));
   });
 
+  it("does not let wrapper boundaries hide authority userinfo or a second URL", () => {
+    const openingWrappers = ["(", "[", "{", "<", "\"", "'", "“", "‘", "–", "—"];
+    const postAuthority = [",", ";", ")", "]", "}", ">", "\"", "'", "”", "’", ...openingWrappers];
+    const authorityPrefixes = ["https://", "custom://", "//"];
+    const encodeLayers = (value: string): readonly string[] => [value, encodeURIComponent(value), encodeURIComponent(encodeURIComponent(value))];
+    for (const wrapper of postAuthority) for (const prefix of authorityPrefixes) {
+      const reference = `${prefix}reader${wrapper}${at}host.invalid/evidence`;
+      for (const encoded of encodeLayers(reference)) expect(isValueSafeReference(encoded), encoded).toBe(false);
+    }
+    for (const wrapper of openingWrappers) {
+      const reference = `https://safe.invalid${wrapper}https://reader:secret${at}host.invalid/evidence`;
+      for (const encoded of encodeLayers(reference)) expect(isValueSafeReference(encoded), encoded).toBe(false);
+    }
+    for (const value of [
+      "https://safe.invalid—https://host.invalid/evidence", "https://safe.invalid(https://host.invalid/evidence", `https://host.invalid/files/(archive)//reader${at}host.invalid`, `fixture/(reader)${at}host.invalid`, "urn:example,(//reader@v1)",
+    ]) expect(isValueSafeReference(value), value).toBe(true);
+
+    const unsafeLedger = ledger();
+    (((unsafeLedger.positions as Array<Record<string, Record<string, string>>>)[0]!.evidenceSource).locator) = `https://reader)${at}host.invalid/evidence`;
+    expect(validateInstalledPositionLedger(unsafeLedger).findings).toContainEqual(expect.objectContaining({ rule: "unsafe-evidence-reference", path: "positions[0].evidenceSource.locator" }));
+    const unsafeEvidence = evidence();
+    (unsafeEvidence.artifact as Record<string, unknown>).manifestRef = `https://safe.invalid—https://reader:secret${at}host.invalid/evidence`;
+    const unsafeReport = validateCompletionEvidence(unsafeEvidence, ledger());
+    expect(unsafeReport.result).toMatchObject({ verdict: "indeterminate", reason: "unreadable-or-incomplete-evidence" });
+    expect(unsafeReport.findings).toContainEqual(expect.objectContaining({ rule: "unsafe-evidence-reference", path: "artifact.manifestRef" }));
+  });
+
   it("stops deferring once the bounded final layer has actual structure", () => {
     const rejects = [
       "https://%25user@host.invalid/e", "https%253A%252F%252F%2525user%2540host.invalid%252Fe",

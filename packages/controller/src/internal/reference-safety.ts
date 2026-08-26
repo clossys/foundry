@@ -18,7 +18,7 @@ const specialAuthoritySchemes = new Set(["ftp", "http", "https", "ws", "wss"]);
 const defaultIgnorable = /[\0\p{Default_Ignorable_Code_Point}]/u;
 const unicodeWhitespace = /\p{White_Space}/u;
 const rootWrappers = new Set(["(", "[", "{", "<", "\"", "'", "“", "”", "‘", "’", "–", "—"]);
-const postAuthorityWrappers = new Set([",", ";", ")", "]", "}", ">", "\"", "'", "”", "’"]);
+const postAuthorityWrappers = new Set([...rootWrappers, ",", ";", ")", "]", "}", ">"]);
 const openingValueWrappers = new Set(["(", "[", "{", "<", "\"", "'", "“", "‘"]);
 
 interface Atom { readonly value: string; readonly protected: boolean; }
@@ -234,7 +234,10 @@ function scanAuthority(atoms: Atom[], start: number, special: boolean, remaining
       const path = protectPath(atoms, cursor, work); return { unsafe: false, end: path.end, queryAt: path.queryAt, bareBoundary: false };
     }
     if (whiteSpace(value)) return sensitiveAuthorityAssignment(atoms, authorityStart, cursor) ? { unsafe: true, end: cursor, bareBoundary: false } : { unsafe: false, end: cursor, bareBoundary: false };
-    if (postAuthorityWrappers.has(value)) return sensitiveAuthorityAssignment(atoms, authorityStart, cursor) ? { unsafe: true, end: cursor, bareBoundary: false } : { unsafe: false, end: cursor, bareBoundary: true };
+    if (postAuthorityWrappers.has(value)) {
+      if (sensitiveAuthorityAssignment(atoms, authorityStart, cursor) || actualAtBeforeDelimiter(atoms, cursor, authoritySpecial)) return { unsafe: true, end: cursor, bareBoundary: false };
+      return { unsafe: false, end: cursor, bareBoundary: true };
+    }
     cursor += 1;
   }
   return sensitiveAuthorityAssignment(atoms, authorityStart, cursor) ? { unsafe: true, end: cursor, bareBoundary: false } : { unsafe: false, end: cursor, bareBoundary: true };
