@@ -9,7 +9,12 @@ const equalsAssignment = new RegExp(`(?:^|[^a-z0-9])${sensitiveLabel}\\b[\"']?\\
 const segmentColonAssignment = new RegExp(`(?:^|[?&#])${sensitiveLabel}\\b\\s*:\\s*${nonemptyValue}`, "iu");
 const spacedColonAssignment = new RegExp(`(?:^|[^a-z0-9])${sensitiveLabel}\\b\\s*:\\s+${nonemptyValue}`, "iu");
 const unspacedColonAssignment = new RegExp(`(?:^|[\\s?&#])${sensitiveLabel}\\b\\s*:\\s*${nonemptyValue}`, "iu");
-const authorityUserinfo = /(?:^|[^a-z0-9/])(?:[a-z][a-z0-9+.-]*(?::|%3a))?(?:(?:\/|%2f){2})(?:[^\s@/?#%]|%[0-9a-f]{2})+(?:@|%40)/iu;
+// Keep scheme authorities distinct from protocol-relative authorities: a `//`
+// sequence in an opaque path is not an authority unless it begins the reference
+// or follows a prose boundary. The authority body deliberately accepts malformed
+// percent text and whitespace so those cannot hide its terminating `@` marker.
+const schemeAuthorityUserinfo = /[a-z][a-z0-9+.-]*(?::|%3a)(?:(?:\/|%2f){2})[^@/?#\r\n]*(?:@|%40)/iu;
+const protocolRelativeAuthorityUserinfo = /(?:^|[\s([{'"<])(?:(?:\/|%2f){2})[^@/?#\r\n]*(?:@|%40)/iu;
 const quotedColonAssignment = new RegExp(`(?:^|[^a-z0-9])[\"']${sensitiveLabel}[\"']\\s*:\\s*${nonemptyValue}`, "iu");
 const formEqualsAssignment = new RegExp(`(?:^|[?&#])${formSensitiveLabel}\\b[\"']?\\s*=\\s*${nonemptyValue}`, "iu");
 const formColonAssignment = new RegExp(`(?:^|[?&#])${formSensitiveLabel}\\b\\s*:\\s*${nonemptyValue}`, "iu");
@@ -32,7 +37,7 @@ function normalizeStage(value: string): string { return stripDefaultIgnorables(v
 function containsAuthorityUserinfo(value: string): boolean {
   let stage = normalizeStage(value);
   for (let pass = 0; pass <= 2; pass += 1) {
-    if (authorityUserinfo.test(stage)) return true;
+    if (schemeAuthorityUserinfo.test(stage) || protocolRelativeAuthorityUserinfo.test(stage)) return true;
     if (pass < 2) stage = normalizeStage(decodePercentPass(stage));
   }
   return false;

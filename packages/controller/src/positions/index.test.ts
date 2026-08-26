@@ -43,12 +43,19 @@ describe("installed positions", () => {
   });
 
   it("rejects value-bearing evidence references and locators", () => {
+    const at = String.fromCharCode(64);
     const unsafeReferences = [
       "audit credential:secret-value",
       "provider value: prod-api-key",
       "locator/query token=credential-value",
       "central adoption decision: approve all consumers",
-      "custom+evidence://reader:reference@example.invalid/evidence",
+      `custom+evidence://reader:reference${at}host.invalid/evidence`,
+      `https://${at}host.invalid/evidence`,
+      "https://%40host.invalid/evidence",
+      `https://\u200b${at}host.invalid/evidence`,
+      `https://ref%ZZ${at}host.invalid/evidence`,
+      `https://ref%${at}host.invalid/evidence`,
+      `https://ref ${at}host.invalid/evidence`,
     ];
     for (const [path, mutate] of [
       ["positions[0].baseline.evidenceRefs[0]", (ledger: Record<string, unknown>, value: string) => { ((ledger.positions as Array<Record<string, Record<string, string[]>>>)[0]!.baseline).evidenceRefs[0] = value; }],

@@ -45,7 +45,7 @@ function reference(value: unknown): value is string { return text(value) && isVa
 function keys(value: unknown, expected: readonly string[]): value is RecordValue { return record(value) && Object.keys(value).sort().join("\0") === [...expected].sort().join("\0"); }
 function refs(value: unknown, minimum = 1): value is string[] { return Array.isArray(value) && value.length >= minimum && value.every(reference) && new Set(value).size === value.length; }
 function rejectUnsafeReference(value: unknown, path: string, findings: CompletionEvidenceFinding[]): void {
-  if (typeof value === "string" && !isValueSafeReference(value)) fail(findings, "unsafe-evidence-reference", path, "must not use explicit inline sensitive-payload syntax");
+  if (typeof value === "string" && !isValueSafeReference(value)) fail(findings, "unsafe-evidence-reference", path, "must not use explicit inline sensitive-payload syntax or URL authority userinfo");
 }
 function rejectUnsafeReferences(value: unknown, path: string, findings: CompletionEvidenceFinding[]): void {
   if (Array.isArray(value)) value.forEach((item, index) => rejectUnsafeReference(item, `${path}[${index}]`, findings));

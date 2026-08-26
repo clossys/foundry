@@ -28,7 +28,7 @@ function strings(value: unknown, minimum = 0): value is string[] { return Array.
 function references(value: unknown, minimum = 0): value is string[] { return Array.isArray(value) && value.length >= minimum && value.every((item) => text(item) && isValueSafeReference(item)) && new Set(value).size === value.length; }
 function fail(findings: InstalledPositionFinding[], rule: string, path: string, message: string): void { findings.push({ rule, path, message }); }
 function rejectUnsafeReference(value: unknown, path: string, findings: InstalledPositionFinding[]): void {
-  if (typeof value === "string" && !isValueSafeReference(value)) fail(findings, "unsafe-evidence-reference", path, "must not use explicit inline sensitive-payload syntax");
+  if (typeof value === "string" && !isValueSafeReference(value)) fail(findings, "unsafe-evidence-reference", path, "must not use explicit inline sensitive-payload syntax or URL authority userinfo");
 }
 function rejectUnsafeReferences(value: unknown, path: string, findings: InstalledPositionFinding[]): void {
   if (Array.isArray(value)) value.forEach((item, index) => rejectUnsafeReference(item, `${path}[${index}]`, findings));

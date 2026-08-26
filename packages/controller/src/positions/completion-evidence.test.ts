@@ -318,12 +318,19 @@ describe("completion evidence", () => {
   });
 
   it("rejects value-bearing retained references and locators without resolving them", () => {
+    const at = String.fromCharCode(64);
     const unsafeReferences = [
       "audit credential:secret-value",
       "provider value: prod-api-key",
       "central adoption decision: approve all consumers",
       "locator/query token=credential-value",
-      "custom+evidence://reader:reference@example.invalid/evidence",
+      `custom+evidence://reader:reference${at}host.invalid/evidence`,
+      `https://${at}host.invalid/evidence`,
+      "https://%40host.invalid/evidence",
+      `https://\u200b${at}host.invalid/evidence`,
+      `https://ref%ZZ${at}host.invalid/evidence`,
+      `https://ref%${at}host.invalid/evidence`,
+      `https://ref ${at}host.invalid/evidence`,
     ];
     const mutate: ReadonlyArray<readonly [string, (item: Record<string, unknown>, value: string) => void]> = [
       ["artifact.manifestRef", (item, value) => { (item.artifact as Record<string, unknown>).manifestRef = value; }],
@@ -359,10 +366,14 @@ describe("completion evidence", () => {
     (((unsafeLocator.positions as Array<Record<string, Record<string, unknown>>>)[0]!.evidenceSource).locator) = unsafeReferences[3]!;
     expect(validateCompletionEvidence(evidence(), unsafeLocator).result).toMatchObject({ verdict: "indeterminate", reason: "invalid-position-ledger" });
 
-    for (const benign of ["fixture/token-value-redaction.json", "fixture/provider-value-policy.json", "fixture/no-central-adoption-decision.json", "fixture/approve-all-consumers-negative-case.json", "fixture/credential-rotation.json", "urn:credential:policy", "https://example.invalid/docs/token:reference", "fixture/authorization:policy", "docs/credential:policy", "https://example.invalid:443/evidence", "ftp://example.invalid:21/evidence", "custom+evidence://example.invalid/evidence", "https://example.invalid/?note=credential:policy", "fixture/provider+value=policy", "https://example.invalid/docs/provider+value=policy", "fixture/café-policy.json", "urn:example:東京"]) {
+    for (const benign of ["fixture/token-value-redaction.json", "fixture/provider-value-policy.json", "fixture/no-central-adoption-decision.json", "fixture/approve-all-consumers-negative-case.json", "fixture/credential-rotation.json", "urn:credential:policy", "https://example.invalid/docs/token:reference", "fixture/authorization:policy", "docs/credential:policy", "https://example.invalid:443/evidence", "ftp://example.invalid:21/evidence", "custom+evidence://example.invalid/evidence", "https://example.invalid/?note=credential:policy", "fixture/provider+value=policy", "https://example.invalid/docs/provider+value=policy", `fixture-//reader:reference${at}v1`, `https://host.invalid/release-//reader:reference${at}v1`, "fixture/café-policy.json", "urn:example:東京"]) {
       expect(isValueSafeReference(benign)).toBe(true);
     }
-    for (const unsafe of ["access_token=example", "client_secret: example", "credential:value", "audit credential:secret-value", "central adoption decision:approve", "{\"token\":\"example\"}", "{\"credential\":\"example\"}", "{\"api_key\":\"example\"}", "credential%3Dexample", "credential%253Dvalue", "credential%3Dvalue&bad=%ZZ", "credential%3D%E0%A4value", "providerValue=example", "provider.value: example", "provider+value=foo", "https://example.invalid/?provider+value=foo", "fixture/provider value: prod-id", "note central adoption decision: adopted", "https://reader:reference@example.invalid/evidence", "https://credential:secret%2Fpart@example.invalid/evidence", "custom://token:abc%3Fdef@example.invalid/evidence", "ftp://authorization:abc%23def@example.invalid/evidence", "https://credential:secret%20part@example.invalid/evidence", "https://credential%20:secret@example.invalid/evidence", "//reader:reference@example.invalid/evidence", "see https://credential:secret-value@example.invalid/evidence", "see //token:secret@example.invalid/evidence", "https%3A%2F%2Fcredential%3Asecret%2Fpart%40example.invalid%2Fevidence", "https%253A%252F%252Fcredential%253Asecret%252Fpart%2540example.invalid%252Fevidence", "https://ｃｒｅｄｅｎｔｉａｌ:secret-value@example.invalid/evidence", "https://cre\u200bdential:secret-value@example.invalid/evidence", "credential\u00ad=value", "to\u180eken=value", "to\u034fken=value", "to\u202aken=value", "to\u200bken=example", "to%E2%80%8Bken=example", "%EF%BD%94%EF%BD%8F%EF%BD%8B%EF%BD%85%EF%BD%8E%3Dexample"]) {
+    for (const unsafe of [
+      "access_token=example", "client_secret: example", "credential:value", "audit credential:secret-value", "central adoption decision:approve", "{\"token\":\"example\"}", "{\"credential\":\"example\"}", "{\"api_key\":\"example\"}", "credential%3Dexample", "credential%253Dvalue", "credential%3Dvalue&bad=%ZZ", "credential%3D%E0%A4value", "providerValue=example", "provider.value: example", "provider+value=foo", "https://example.invalid/?provider+value=foo", "fixture/provider value: prod-id", "note central adoption decision: adopted",
+      `https://reader:reference${at}host.invalid/evidence`, `https://${at}host.invalid/evidence`, `//${at}host.invalid/evidence`, "https://%40host.invalid/evidence", `https://\u200b${at}host.invalid/evidence`, `https://ref%ZZ${at}host.invalid/evidence`, `https://ref%${at}host.invalid/evidence`, `https://ref ${at}host.invalid/evidence`, `https://credential:secret%2Fpart${at}host.invalid/evidence`, `custom://token:abc%3Fdef${at}host.invalid/evidence`, `ftp://authorization:abc%23def${at}host.invalid/evidence`, `https://credential:secret%20part${at}host.invalid/evidence`, `https://credential%20:secret${at}host.invalid/evidence`, `//reader:reference${at}host.invalid/evidence`, `see https://credential:secret-value${at}host.invalid/evidence`, `see //token:secret${at}host.invalid/evidence`, "https%3A%2F%2Fcredential%3Asecret%2Fpart%40host.invalid%2Fevidence", "https%253A%252F%252Fcredential%253Asecret%252Fpart%2540host.invalid%252Fevidence", `https://ｃｒｅｄｅｎｔｉａｌ:secret-value${at}host.invalid/evidence`, `https://cre\u200bdential:secret-value${at}host.invalid/evidence`,
+      "credential\u00ad=value", "to\u180eken=value", "to\u034fken=value", "to\u202aken=value", "to\u200bken=example", "to%E2%80%8Bken=example", "%EF%BD%94%EF%BD%8F%EF%BD%8B%EF%BD%85%EF%BD%8E%3Dexample",
+    ]) {
       expect(isValueSafeReference(unsafe)).toBe(false);
     }
     // Long malformed percent-encoded inputs must complete with a safe verdict.
