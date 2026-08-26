@@ -187,8 +187,8 @@ The references are consumer-retained identifiers. The validator lexically
 rejects explicit inline sensitive-payload assignments, but does not authenticate
 the pointers or prove opaque references free of other sensitive material. It verifies that a
 consumer supplied each evidence class, that the position linkage and owned
-metric agree with the shipped role charter, and that RFC3339 evidence with at
-most millisecond precision obeys
+metric agree with the shipped role charter, and that known-offset RFC3339
+evidence with at most millisecond precision obeys
 `before < invocation/red/green ≤ rollback ≤ after ≤ close start < recurrence ≤ close end`.
 The outcome must retain the linked baseline and evidence-source locator exactly,
 move from outside to inside the linked setpoint, and name neither the measured

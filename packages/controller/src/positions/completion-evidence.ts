@@ -38,6 +38,7 @@ const roleName = /^@[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/;
 const exactVersion = /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-(?:(?:0|[1-9]\d*)|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:(?:0|[1-9]\d*)|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
 const canonicalOwner = /^[\x21-\x7e](?:[\x20-\x7e]*[\x21-\x7e])?$/;
 const rfc3339Instant = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,3})?(Z|[+-]\d{2}:\d{2})$/;
+const invisibleIdentity = /[\0\u00ad\u180e\u200b\u200c\u200d\u2060﻿]/gu;
 
 function record(value: unknown): value is RecordValue { return typeof value === "object" && value !== null && !Array.isArray(value); }
 function text(value: unknown): value is string { return typeof value === "string" && value.trim() !== ""; }
@@ -69,10 +70,11 @@ function instantMillis(value: unknown): number | undefined {
   const second = Number(secondText);
   const zoneHour = zone === "Z" ? 0 : Number(zone.slice(1, 3));
   const zoneMinute = zone === "Z" ? 0 : Number(zone.slice(4, 6));
-  if (month < 1 || month > 12 || day < 1 || day > new Date(Date.UTC(year, month, 0)).getUTCDate() || hour > 23 || minute > 59 || second > 59 || zoneHour > 23 || zoneMinute > 59) return undefined;
+  if (zone === "-00:00" || month < 1 || month > 12 || day < 1 || day > new Date(Date.UTC(year, month, 0)).getUTCDate() || hour > 23 || minute > 59 || second > 59 || zoneHour > 23 || zoneMinute > 59) return undefined;
   const parsed = Date.parse(value);
   return Number.isFinite(parsed) ? parsed : undefined;
 }
+function canonicalIdentity(value: unknown): string | undefined { return typeof value === "string" ? value.replace(invisibleIdentity, "").trim().toLowerCase() : undefined; }
 function instant(value: unknown): value is string { return instantMillis(value) !== undefined; }
 function fail(findings: CompletionEvidenceFinding[], rule: string, path: string, message: string): void { findings.push({ rule, path, message }); }
 function canonical(value: unknown): string {
@@ -295,10 +297,10 @@ export function validateCompletionEvidence(evidence: unknown, ledger: unknown): 
       fail(findings, "noncanonical-outcome-owner", "outcome.sourceOwner", "must be a printable ASCII identifier with no surrounding whitespace");
     }
     const ownerIdentity = normalizedSourceOwner.toLowerCase();
-    if (ownerIdentity === packageName?.toLowerCase() || ownerIdentity === positionId?.trim().toLowerCase()) {
+    if (ownerIdentity === packageName?.toLowerCase() || ownerIdentity === canonicalIdentity(positionId)) {
       fail(findings, "non-independent-outcome-owner", "outcome.sourceOwner", "must identify an outcome owner other than the measured package or position");
     }
-    if (typeof linkedActionAuthority === "string" && ownerIdentity === linkedActionAuthority.trim().toLowerCase()) {
+    if (ownerIdentity === canonicalIdentity(linkedActionAuthority)) {
       fail(findings, "non-independent-outcome-owner", "outcome.sourceOwner", "must identify an outcome owner other than the linked position action authority");
     }
     if (outcome.metric !== linkedMetricName) {
