@@ -44,7 +44,7 @@ describe("installed positions", () => {
 
   it("rejects value-bearing evidence references and locators", () => {
     for (const [path, mutate] of [
-      ["positions[0].baseline.evidenceRefs[0]", (ledger: Record<string, unknown>) => { ((ledger.positions as Array<Record<string, Record<string, string[]>>>)[0]!.baseline).evidenceRefs[0] = "credential=secret-provider-value"; }],
+      ["positions[0].baseline.evidenceRefs[0]", (ledger: Record<string, unknown>) => { ((ledger.positions as Array<Record<string, Record<string, string[]>>>)[0]!.baseline).evidenceRefs[0] = "audit credential:secret-value"; }],
       ["positions[0].setpoint.evidenceRefs[0]", (ledger: Record<string, unknown>) => { ((ledger.positions as Array<Record<string, Record<string, string[]>>>)[0]!.setpoint).evidenceRefs[0] = "provider value: prod-api-key"; }],
       ["positions[0].evidenceSource.locator", (ledger: Record<string, unknown>) => { ((ledger.positions as Array<Record<string, Record<string, string>>>)[0]!.evidenceSource).locator = "locator/query token=credential-value"; }],
       ["positions[0].firstDayAssessment.evidenceRefs[0]", (ledger: Record<string, unknown>) => { ((ledger.positions as Array<Record<string, Record<string, string[]>>>)[0]!.firstDayAssessment).evidenceRefs[0] = "central adoption decision: approve all consumers"; }],

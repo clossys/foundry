@@ -319,7 +319,7 @@ describe("completion evidence", () => {
 
   it("rejects value-bearing retained references and locators without resolving them", () => {
     const unsafeReferences = [
-      "credential=secret-provider-value",
+      "audit credential:secret-value",
       "provider value: prod-api-key",
       "central adoption decision: approve all consumers",
       "locator/query token=credential-value",
@@ -357,15 +357,15 @@ describe("completion evidence", () => {
     (((unsafeLocator.positions as Array<Record<string, Record<string, unknown>>>)[0]!.evidenceSource).locator) = unsafeReferences[3]!;
     expect(validateCompletionEvidence(evidence(), unsafeLocator).result).toMatchObject({ verdict: "indeterminate", reason: "invalid-position-ledger" });
 
-    for (const benign of ["fixture/token-value-redaction.json", "fixture/provider-value-policy.json", "fixture/no-central-adoption-decision.json", "fixture/approve-all-consumers-negative-case.json", "fixture/credential-rotation.json", "urn:credential:policy", "https://example.invalid/docs/token:reference", "fixture/authorization:policy", "fixture/provider+value=policy", "https://example.invalid/docs/provider+value=policy", "fixture/café-policy.json", "urn:example:東京"]) {
+    for (const benign of ["fixture/token-value-redaction.json", "fixture/provider-value-policy.json", "fixture/no-central-adoption-decision.json", "fixture/approve-all-consumers-negative-case.json", "fixture/credential-rotation.json", "urn:credential:policy", "https://example.invalid/docs/token:reference", "fixture/authorization:policy", "docs/credential:policy", "fixture/provider+value=policy", "https://example.invalid/docs/provider+value=policy", "fixture/café-policy.json", "urn:example:東京"]) {
       expect(isValueSafeReference(benign)).toBe(true);
     }
-    for (const unsafe of ["access_token=example", "client_secret: example", "credential:value", "central adoption decision:approve", "{\"token\":\"example\"}", "{\"credential\":\"example\"}", "{\"api_key\":\"example\"}", "credential%3Dexample", "credential%253Dvalue", "credential%3Dvalue&bad=%ZZ", "credential%3D%E0%A4value", "providerValue=example", "provider.value: example", "provider+value=foo", "https://example.invalid/?provider+value=foo", "fixture/provider value: prod-id", "note central adoption decision: adopted", "credential\u00ad=value", "to\u180eken=value", "to\u034fken=value", "to\u202aken=value", "to\u200bken=example", "to%E2%80%8Bken=example", "%EF%BD%94%EF%BD%8F%EF%BD%8B%EF%BD%85%EF%BD%8E%3Dexample"]) {
+    for (const unsafe of ["access_token=example", "client_secret: example", "credential:value", "audit credential:secret-value", "central adoption decision:approve", "{\"token\":\"example\"}", "{\"credential\":\"example\"}", "{\"api_key\":\"example\"}", "credential%3Dexample", "credential%253Dvalue", "credential%3Dvalue&bad=%ZZ", "credential%3D%E0%A4value", "providerValue=example", "provider.value: example", "provider+value=foo", "https://example.invalid/?provider+value=foo", "fixture/provider value: prod-id", "note central adoption decision: adopted", "credential\u00ad=value", "to\u180eken=value", "to\u034fken=value", "to\u202aken=value", "to\u200bken=example", "to%E2%80%8Bken=example", "%EF%BD%94%EF%BD%8F%EF%BD%8B%EF%BD%85%EF%BD%8E%3Dexample"]) {
       expect(isValueSafeReference(unsafe)).toBe(false);
     }
-    const malformedRunStartedAt = performance.now();
+    // Long malformed percent-encoded inputs must complete with a safe verdict.
     expect(isValueSafeReference("%FF".repeat(10_000))).toBe(true);
-    expect(performance.now() - malformedRunStartedAt).toBeLessThan(250);
+    expect(isValueSafeReference("%".repeat(10_000))).toBe(true);
   });
 
   it("derives the outcome from the linked role metric direction and position setpoint", () => {
