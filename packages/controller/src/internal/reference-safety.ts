@@ -41,7 +41,9 @@ export type ReferenceSafetyIssue = "reference-length-exceeded" | "unsafe-evidenc
 function authorityBoundary(value: string, index: number): boolean {
   if (index === 0) return true;
   const previous = value[index - 1]!;
-  return /\s/u.test(previous) || "([{'\"<".includes(previous);
+  // An authority may follow query assignment or prose punctuation, but not a
+  // path, opaque URI, or identifier continuation.
+  return !/[\p{L}\p{N}\p{M}/:._+%\\-]/u.test(previous);
 }
 function encodedAt(value: string, index: number, encoded: string): boolean { return value.slice(index, index + 3) === encoded; }
 function consumeMarker(value: string, index: number, literal: string, encoded: string): number | null {

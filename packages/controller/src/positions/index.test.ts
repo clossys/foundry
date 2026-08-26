@@ -59,6 +59,7 @@ describe("installed positions", () => {
       `https://ref ${at}host.invalid/evidence`,
       `https:reader:reference${at}host.invalid/evidence`, `https:/reader:reference${at}host.invalid/evidence`, `https:\\\\reader:reference${at}host.invalid/evidence`, `ftp:reader:reference${at}host.invalid/evidence`,
       "https%3Areader%3Areference%40host.invalid/evidence", "https%253Areader%253Areference%2540host.invalid/evidence",
+      `https://outer.invalid/?next=https://reader:reference${at}host.invalid/evidence`, `https://outer.invalid/?next=//reader:reference${at}host.invalid/evidence`, `https://outer.invalid/?next=https%253Areader%253Areference%2540host.invalid/evidence`, `audit, https://reader:reference${at}host.invalid/evidence`, `“https://reader:reference${at}host.invalid/evidence`, `—https://reader:reference${at}host.invalid/evidence`,
       `https:///reader:reference${at}host.invalid/evidence`,
       `https://reader:\nreference${at}host.invalid/evidence`,
     ];
