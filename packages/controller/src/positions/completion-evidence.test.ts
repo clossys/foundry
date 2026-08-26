@@ -335,6 +335,9 @@ describe("completion evidence", () => {
       `https:reader:reference${at}host.invalid/evidence`, `https:/reader:reference${at}host.invalid/evidence`, `https:\\\\reader:reference${at}host.invalid/evidence`, `ftp:reader:reference${at}host.invalid/evidence`,
       "https%3Areader%3Areference%40host.invalid/evidence", "https%253Areader%253Areference%2540host.invalid/evidence",
       `https://outer.invalid/?next=https://reader:reference${at}host.invalid/evidence`, `https://outer.invalid/?next=//reader:reference${at}host.invalid/evidence`, `https://outer.invalid/?next=https%253Areader%253Areference%2540host.invalid/evidence`, `audit, https://reader:reference${at}host.invalid/evidence`, `“https://reader:reference${at}host.invalid/evidence`, `—https://reader:reference${at}host.invalid/evidence`,
+      `https://outer.invalid/#next=https://reader:reference${at}host.invalid/evidence`,
+      `https://safe.invalid then https://reader:reference${at}host.invalid/evidence`, `https://safe.invalid,https://reader:reference${at}host.invalid/evidence`, `https://safe.invalid //reader:reference${at}host.invalid/evidence`, `custom://safe.invalid then https://reader:reference${at}host.invalid/evidence`,
+      `https://host.invalid/a https://reader:reference${at}host.invalid/evidence`, `https://host.invalid/a //reader:reference${at}host.invalid/evidence`,
       `https:///reader:reference${at}host.invalid/evidence`,
       `https://reader:\nreference${at}host.invalid/evidence`,
     ];
@@ -377,8 +380,14 @@ describe("completion evidence", () => {
     const overlongReport = validateCompletionEvidence(overlongReference, ledger());
     expect(overlongReport.findings).toContainEqual({ rule: "reference-length-exceeded", path: "artifact.manifestRef", message: "must be at most 65,536 code units" });
 
-    for (const benign of ["fixture/token-value-redaction.json", "fixture/provider-value-policy.json", "fixture/no-central-adoption-decision.json", "fixture/approve-all-consumers-negative-case.json", "fixture/credential-rotation.json", "urn:credential:policy", `urn:example://reader${at}v1`, `mailto:reader${at}host.invalid`, "https://example.invalid/docs/token:reference", "fixture/authorization:policy", "docs/credential:policy", "https://example.invalid:443/evidence", "ftp://example.invalid:21/evidence", "custom+evidence://example.invalid/evidence", `fixture/custom://reader${at}v1`, `https://host.invalid/release/custom://reader${at}v1`, `custom:///reader${at}v1`, `///reader${at}v1`, `custom:/\\reader:reference${at}v1`, "https:///host.invalid/evidence", "https:host.invalid/evidence", "https:/host.invalid/evidence", "https:\\\\host.invalid/evidence", "https://example.invalid/?note=credential:policy", "fixture/provider+value=policy", "https://example.invalid/docs/provider+value=policy", `fixture-//reader:reference${at}v1`, `https://host.invalid/release-//reader:reference${at}v1`, `urn:example:custom://reader${at}v1`, `référencehttps://reader:reference${at}host.invalid/evidence`, "fixture/café-policy.json", "urn:example:東京"]) {
+    const benignReferences = ["fixture/token-value-redaction.json", "fixture/provider-value-policy.json", "fixture/no-central-adoption-decision.json", "fixture/approve-all-consumers-negative-case.json", "fixture/credential-rotation.json", "urn:credential:policy", `urn:example://reader${at}v1`, `mailto:reader${at}host.invalid`, "https://example.invalid/docs/token:reference", "fixture/authorization:policy", "docs/credential:policy", "https://example.invalid:443/evidence", "ftp://example.invalid:21/evidence", "custom+evidence://example.invalid/evidence", `fixture/custom://reader${at}v1`, `https://host.invalid/release/custom://reader${at}v1`, `custom:///reader${at}v1`, `///reader${at}v1`, `custom:/\\reader:reference${at}v1`, "https:///host.invalid/evidence", "https:host.invalid/evidence", "https:/host.invalid/evidence", "https:\\\\host.invalid/evidence", "https://example.invalid/?note=credential:policy", "fixture/provider+value=policy", "https://example.invalid/docs/provider+value=policy", `fixture-//reader:reference${at}v1`, `https://host.invalid/release-//reader:reference${at}v1`, `urn:example:custom://reader${at}v1`, `référencehttps://reader:reference${at}host.invalid/evidence`, `https://host.invalid/files/(archive)//reader:reference${at}v1`, `https://host.invalid/files,//reader:reference${at}v1`, `https://host.invalid/files,custom://reader:reference${at}v1`, `https://host.invalid/a,https://reader:reference${at}v1`, `https://host.invalid/a;custom://reader:reference${at}v1`, `https://host.invalid/a%20https%3A%2F%2Freader%3Areference%40v1`, `https://host.invalid/😀%20https%3A%2F%2Freader%3Areference%40v1`, `urn:example,(//reader:reference${at}v1)`, `urn:example,custom://reader:reference${at}v1`, `/files,custom://reader:reference${at}v1`, `fixture/a,https://reader:reference${at}v1`, "fixture/café-policy.json", "urn:example:東京"];
+    for (const benign of benignReferences) {
       expect(isValueSafeReference(benign)).toBe(true);
+    }
+    for (const [path, change] of mutate) {
+      const item = evidence();
+      change(item, benignReferences[30]!);
+      expect(validateCompletionEvidence(item, ledger()).findings.some((finding) => finding.rule === "unsafe-evidence-reference" && finding.path === path)).toBe(false);
     }
     for (const unsafe of [
       "access_token=example", "client_secret: example", "credential:value", "audit credential:secret-value", "central adoption decision:approve", "{\"token\":\"example\"}", "{\"credential\":\"example\"}", "{\"api_key\":\"example\"}", "credential%3Dexample", "credential%253Dvalue", "credential%3Dvalue&bad=%ZZ", "credential%3D%E0%A4value", "providerValue=example", "provider.value: example", "provider+value=foo", "https://example.invalid/?provider+value=foo", "fixture/provider value: prod-id", "note central adoption decision: adopted",
@@ -394,6 +403,7 @@ describe("completion evidence", () => {
     expect(isValueSafeReference("a".repeat(MAX_REFERENCE_CODE_UNITS))).toBe(true);
     expect(isValueSafeReference("a".repeat(MAX_REFERENCE_CODE_UNITS + 1))).toBe(false);
     expect(isValueSafeReference(`https:${"/".repeat(20_000)}`)).toBe(true);
+    expect(isValueSafeReference("https://safe.invalid then ".repeat(2_000))).toBe(true);
     // Long malformed percent-encoded inputs must complete with a safe verdict.
     expect(isValueSafeReference("%FF".repeat(10_000))).toBe(true);
     expect(isValueSafeReference("%".repeat(10_000))).toBe(true);

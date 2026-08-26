@@ -60,6 +60,9 @@ describe("installed positions", () => {
       `https:reader:reference${at}host.invalid/evidence`, `https:/reader:reference${at}host.invalid/evidence`, `https:\\\\reader:reference${at}host.invalid/evidence`, `ftp:reader:reference${at}host.invalid/evidence`,
       "https%3Areader%3Areference%40host.invalid/evidence", "https%253Areader%253Areference%2540host.invalid/evidence",
       `https://outer.invalid/?next=https://reader:reference${at}host.invalid/evidence`, `https://outer.invalid/?next=//reader:reference${at}host.invalid/evidence`, `https://outer.invalid/?next=https%253Areader%253Areference%2540host.invalid/evidence`, `audit, https://reader:reference${at}host.invalid/evidence`, `“https://reader:reference${at}host.invalid/evidence`, `—https://reader:reference${at}host.invalid/evidence`,
+      `https://outer.invalid/#next=https://reader:reference${at}host.invalid/evidence`,
+      `https://safe.invalid then https://reader:reference${at}host.invalid/evidence`, `https://safe.invalid,https://reader:reference${at}host.invalid/evidence`, `https://safe.invalid //reader:reference${at}host.invalid/evidence`, `custom://safe.invalid then https://reader:reference${at}host.invalid/evidence`,
+      `https://host.invalid/a https://reader:reference${at}host.invalid/evidence`, `https://host.invalid/a //reader:reference${at}host.invalid/evidence`,
       `https:///reader:reference${at}host.invalid/evidence`,
       `https://reader:\nreference${at}host.invalid/evidence`,
     ];
@@ -76,6 +79,17 @@ describe("installed positions", () => {
         expect(report.ok).toBe(false);
         expect(report.findings).toContainEqual(expect.objectContaining({ rule: "unsafe-evidence-reference", path }));
       }
+    }
+    const benignPath = `https://host.invalid/files/(archive)//reader:reference${at}v1`;
+    for (const [path, mutate] of [
+      ["positions[0].baseline.evidenceRefs[0]", (ledger: Record<string, unknown>, value: string) => { ((ledger.positions as Array<Record<string, Record<string, string[]>>>)[0]!.baseline).evidenceRefs[0] = value; }],
+      ["positions[0].setpoint.evidenceRefs[0]", (ledger: Record<string, unknown>, value: string) => { ((ledger.positions as Array<Record<string, Record<string, string[]>>>)[0]!.setpoint).evidenceRefs[0] = value; }],
+      ["positions[0].evidenceSource.locator", (ledger: Record<string, unknown>, value: string) => { ((ledger.positions as Array<Record<string, Record<string, string>>>)[0]!.evidenceSource).locator = value; }],
+      ["positions[0].firstDayAssessment.evidenceRefs[0]", (ledger: Record<string, unknown>, value: string) => { ((ledger.positions as Array<Record<string, Record<string, string[]>>>)[0]!.firstDayAssessment).evidenceRefs[0] = value; }],
+    ] as const) {
+      const ledger = fixture();
+      mutate(ledger, benignPath);
+      expect(validateInstalledPositionLedger(ledger).ok).toBe(true);
     }
     const tooLong = fixture();
     ((tooLong.positions as Array<Record<string, Record<string, string[]>>>)[0]!.baseline).evidenceRefs[0] = "a".repeat(65_537);

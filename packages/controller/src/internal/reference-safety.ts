@@ -16,112 +16,196 @@ const decoder = new TextDecoder("utf-8", { fatal: false });
 export const MAX_REFERENCE_CODE_UNITS = 65_536;
 const AUTHORITY_NORMALIZATION_PASSES = 2;
 const specialAuthoritySchemes = new Set(["ftp", "http", "https", "ws", "wss"]);
+const defaultIgnorable = /[\0\p{Default_Ignorable_Code_Point}]/u;
 
-function decodePercentPass(value: string): string {
-  return value.replace(/(?:%[0-9a-f]{2})+/giu, (encoded) => decoder.decode(Uint8Array.from(encoded.match(/%[0-9a-f]{2}/giu)!.map((part) => Number.parseInt(part.slice(1), 16)))));
+interface ReferenceStage {
+  readonly value: string;
+  /** True means the character came from a path or opaque URI atom. */
+  readonly protected: boolean[];
+}
+
+function normalizedStage(value: string, protectedCharacters: readonly boolean[]): ReferenceStage | null {
+  let normalized = "";
+  const marks: boolean[] = [];
+  for (let index = 0; index < value.length;) {
+    const codePoint = String.fromCodePoint(value.codePointAt(index)!);
+    const mark = protectedCharacters[index] ?? false;
+    for (const character of codePoint.normalize("NFKC").toLowerCase()) {
+      if (defaultIgnorable.test(character)) continue;
+      normalized += character;
+      marks.push(...Array(character.length).fill(mark));
+      if (normalized.length > MAX_REFERENCE_CODE_UNITS) return null;
+    }
+    index += codePoint.length;
+  }
+  return { value: normalized, protected: marks };
 }
 
 export function stripDefaultIgnorables(value: string): string { return value.normalize("NFKC").replace(invisible, ""); }
 
-function normalizeStage(value: string): string { return stripDefaultIgnorables(value).toLowerCase(); }
-function normalizedStages(value: string): string[] | null {
-  if (value.length > MAX_REFERENCE_CODE_UNITS) return null;
-  let stage = normalizeStage(value);
-  if (stage.length > MAX_REFERENCE_CODE_UNITS) return null;
-  const stages = [stage];
-  for (let pass = 0; pass < AUTHORITY_NORMALIZATION_PASSES; pass += 1) {
-    stage = normalizeStage(decodePercentPass(stage));
-    if (stage.length > MAX_REFERENCE_CODE_UNITS) return null;
-    stages.push(stage);
+function decodePercentPass(stage: ReferenceStage): ReferenceStage | null {
+  let decoded = "";
+  const marks: boolean[] = [];
+  for (let index = 0; index < stage.value.length;) {
+    if (stage.value[index] !== "%" || !/^[0-9a-f]{2}$/iu.test(stage.value.slice(index + 1, index + 3))) {
+      decoded += stage.value[index]!;
+      marks.push(stage.protected[index] ?? false);
+      index += 1;
+      continue;
+    }
+    const bytes: number[] = [];
+    let protectedCharacter = false;
+    do {
+      bytes.push(Number.parseInt(stage.value.slice(index + 1, index + 3), 16));
+      protectedCharacter ||= stage.protected[index] ?? false;
+      index += 3;
+    } while (stage.value[index] === "%" && /^[0-9a-f]{2}$/iu.test(stage.value.slice(index + 1, index + 3)));
+    const value = decoder.decode(Uint8Array.from(bytes));
+    decoded += value;
+    marks.push(...Array(value.length).fill(protectedCharacter));
+    if (decoded.length > MAX_REFERENCE_CODE_UNITS) return null;
   }
-  return stages;
+  return normalizedStage(decoded, marks);
+}
+
+function initialStage(value: string): ReferenceStage | null {
+  if (value.length > MAX_REFERENCE_CODE_UNITS) return null;
+  return normalizedStage(value, Array(value.length).fill(false));
 }
 
 export type ReferenceSafetyIssue = "reference-length-exceeded" | "unsafe-evidence-reference";
-function authorityBoundary(value: string, index: number): boolean {
+function authorityBoundary(stage: ReferenceStage, index: number): boolean {
   if (index === 0) return true;
-  const previous = value[index - 1]!;
-  // An authority may follow query assignment or prose punctuation, but not a
-  // path, opaque URI, or identifier continuation.
+  if (stage.protected[index - 1]) return false;
+  const previous = stage.value[index - 1]!;
   return !/[\p{L}\p{N}\p{M}/:._+%\\-]/u.test(previous);
 }
-function encodedAt(value: string, index: number, encoded: string): boolean { return value.slice(index, index + 3) === encoded; }
-function consumeMarker(value: string, index: number, literal: string, encoded: string): number | null {
-  if (value[index] === literal) return index + 1;
-  return encodedAt(value, index, encoded) ? index + 3 : null;
+function encodedAt(stage: ReferenceStage, index: number, encoded: string): boolean { return !stage.protected[index] && stage.value.slice(index, index + 3) === encoded; }
+function consumeMarker(stage: ReferenceStage, index: number, literal: string, encoded: string): number | null {
+  if (!stage.protected[index] && stage.value[index] === literal) return index + 1;
+  return encodedAt(stage, index, encoded) ? index + 3 : null;
 }
 function asciiLetter(value: string): boolean { return value >= "a" && value <= "z"; }
 function schemeCharacter(value: string): boolean { return asciiLetter(value) || (value >= "0" && value <= "9") || value === "+" || value === "-" || value === "."; }
-function schemeAt(value: string, index: number): { special: boolean; afterColon: number } | null {
-  if (!asciiLetter(value[index] ?? "")) return null;
+function schemeAt(stage: ReferenceStage, index: number): { special: boolean; afterColon: number } | null {
+  if (stage.protected[index] || !asciiLetter(stage.value[index] ?? "")) return null;
   const characters: string[] = [];
   let cursor = index;
-  while (schemeCharacter(value[cursor] ?? "")) {
-    characters.push(value[cursor]!);
+  while (!stage.protected[cursor] && schemeCharacter(stage.value[cursor] ?? "")) {
+    characters.push(stage.value[cursor]!);
     cursor += 1;
   }
-  const afterColon = consumeMarker(value, cursor, ":", "%3a");
+  const afterColon = consumeMarker(stage, cursor, ":", "%3a");
   return afterColon === null ? null : { special: specialAuthoritySchemes.has(characters.join("")), afterColon };
 }
-function consumeSlash(value: string, index: number, special: boolean): number | null {
-  const slash = consumeMarker(value, index, "/", "%2f");
+function consumeSlash(stage: ReferenceStage, index: number, special: boolean): number | null {
+  const slash = consumeMarker(stage, index, "/", "%2f");
   if (slash !== null) return slash;
-  return special ? consumeMarker(value, index, "\\", "%5c") : null;
+  return special ? consumeMarker(stage, index, "\\", "%5c") : null;
 }
-function authorityContainsUserinfo(value: string, start: number, special: boolean): { unsafe: boolean; end: number } | null {
+function protocolRelativeAt(stage: ReferenceStage, index: number): boolean {
+  const firstSlash = consumeSlash(stage, index, false);
+  return firstSlash !== null && consumeSlash(stage, firstSlash, false) !== null;
+}
+function authorityCandidateAt(stage: ReferenceStage, index: number): boolean {
+  return authorityBoundary(stage, index) && (schemeAt(stage, index) !== null || protocolRelativeAt(stage, index));
+}
+function protectUntilWhitespace(stage: ReferenceStage, start: number): number {
+  let cursor = start;
+  while (cursor < stage.value.length && !/[\t\r\n ]/.test(stage.value[cursor]!)) {
+    stage.protected[cursor] = true;
+    cursor += 1;
+  }
+  return cursor;
+}
+function protectPath(stage: ReferenceStage, start: number): number {
+  let cursor = start;
+  while (cursor < stage.value.length) {
+    const character = stage.value[cursor]!;
+    if (character === "?" || character === "#") return cursor + 1;
+    if (/[\t\r\n ]/.test(character)) return cursor + 1;
+    stage.protected[cursor] = true;
+    cursor += 1;
+  }
+  return cursor;
+}
+function authorityContainsUserinfo(stage: ReferenceStage, start: number, special: boolean): { unsafe: boolean; end: number } {
   let cursor = start;
   if (special) {
     while (true) {
-      const slash = consumeSlash(value, cursor, true);
+      const slash = consumeSlash(stage, cursor, true);
       if (slash === null) break;
       cursor = slash;
     }
   } else {
-    const firstSlash = consumeSlash(value, cursor, false);
-    if (firstSlash === null) return null;
+    const firstSlash = consumeSlash(stage, cursor, false);
+    if (firstSlash === null) return { unsafe: false, end: cursor };
     cursor = firstSlash;
-    const secondSlash = consumeSlash(value, cursor, false);
-    if (secondSlash === null) return null;
+    const secondSlash = consumeSlash(stage, cursor, false);
+    if (secondSlash === null) return { unsafe: false, end: cursor };
     cursor = secondSlash;
-    const thirdSlash = consumeSlash(value, cursor, false);
-    if (thirdSlash !== null) return { unsafe: false, end: thirdSlash };
+    if (consumeSlash(stage, cursor, false) !== null) return { unsafe: false, end: protectPath(stage, cursor) };
   }
-  while (cursor < value.length) {
-    const at = consumeMarker(value, cursor, "@", "%40");
+  while (cursor < stage.value.length) {
+    if (cursor > start && authorityCandidateAt(stage, cursor)) return { unsafe: false, end: cursor };
+    const at = consumeMarker(stage, cursor, "@", "%40");
     if (at !== null) return { unsafe: true, end: at };
-    const character = value[cursor]!;
-    if (character === "/" || character === "?" || character === "#" || (special && character === "\\")) return { unsafe: false, end: cursor + 1 };
+    const character = stage.value[cursor]!;
+    if (character === "/" || character === "?" || character === "#" || (special && character === "\\")) return { unsafe: false, end: protectPath(stage, cursor) };
     cursor += 1;
   }
   return { unsafe: false, end: cursor };
 }
-function containsAuthorityUserinfoInStage(value: string): boolean {
-  for (let index = 0; index < value.length;) {
-    if (!authorityBoundary(value, index)) { index += 1; continue; }
-    const scheme = schemeAt(value, index);
-    if (scheme) {
-      const authority = authorityContainsUserinfo(value, scheme.afterColon, scheme.special);
-      if (authority?.unsafe) return true;
-      if (authority) { index = Math.max(index + 1, authority.end); continue; }
+function containsAuthorityUserinfoInStage(stage: ReferenceStage): boolean {
+  for (let index = 0; index < stage.value.length;) {
+    if (stage.protected[index]) { index += 1; continue; }
+    if (!authorityBoundary(stage, index)) {
+      if (stage.value[index] === "/") { index = protectPath(stage, index); continue; }
+      index += 1;
+      continue;
     }
-    const protocolRelative = authorityContainsUserinfo(value, index, false);
-    if (protocolRelative?.unsafe) return true;
-    if (protocolRelative) { index = Math.max(index + 1, protocolRelative.end); continue; }
+    const scheme = schemeAt(stage, index);
+    if (scheme) {
+      if (!scheme.special && !protocolRelativeAt(stage, scheme.afterColon)) { index = protectUntilWhitespace(stage, index); continue; }
+      const authority = authorityContainsUserinfo(stage, scheme.afterColon, scheme.special);
+      if (authority.unsafe) return true;
+      index = Math.max(index + 1, authority.end);
+      continue;
+    }
+    if (protocolRelativeAt(stage, index)) {
+      const authority = authorityContainsUserinfo(stage, index, false);
+      if (authority.unsafe) return true;
+      index = Math.max(index + 1, authority.end);
+      continue;
+    }
+    if (stage.value[index] === "/") { index = protectPath(stage, index); continue; }
     index += 1;
   }
   return false;
 }
+function withoutUrlWhitespace(stage: ReferenceStage): ReferenceStage {
+  let value = "";
+  const protectedCharacters: boolean[] = [];
+  for (let index = 0; index < stage.value.length; index += 1) {
+    if (/[\t\r\n]/.test(stage.value[index]!)) continue;
+    value += stage.value[index]!;
+    protectedCharacters.push(stage.protected[index] ?? false);
+  }
+  return { value, protected: protectedCharacters };
+}
 
 export function referenceSafetyIssue(value: string): ReferenceSafetyIssue | undefined {
-  const stages = normalizedStages(value);
-  if (stages === null) return "reference-length-exceeded";
-  const normalized = stages[stages.length - 1]!;
-  for (const stage of stages) {
+  let stage = initialStage(value);
+  if (stage === null) return "reference-length-exceeded";
+  for (let pass = 0; pass <= AUTHORITY_NORMALIZATION_PASSES; pass += 1) {
     if (containsAuthorityUserinfoInStage(stage)) return "unsafe-evidence-reference";
-    const urlWhitespaceNormalized = stage.replace(/[\t\r\n]/g, "");
-    if (urlWhitespaceNormalized !== stage && containsAuthorityUserinfoInStage(urlWhitespaceNormalized)) return "unsafe-evidence-reference";
+    const compact = withoutUrlWhitespace(stage);
+    if (compact.value !== stage.value && containsAuthorityUserinfoInStage(compact)) return "unsafe-evidence-reference";
+    if (pass === AUTHORITY_NORMALIZATION_PASSES) break;
+    stage = decodePercentPass(stage);
+    if (stage === null) return "reference-length-exceeded";
   }
-  return equalsAssignment.test(normalized) || segmentColonAssignment.test(normalized) || spacedColonAssignment.test(normalized) || unspacedColonAssignment.test(normalized) || quotedColonAssignment.test(normalized) || formEqualsAssignment.test(normalized) || formColonAssignment.test(normalized)
+  return equalsAssignment.test(stage.value) || segmentColonAssignment.test(stage.value) || spacedColonAssignment.test(stage.value) || unspacedColonAssignment.test(stage.value) || quotedColonAssignment.test(stage.value) || formEqualsAssignment.test(stage.value) || formColonAssignment.test(stage.value)
     ? "unsafe-evidence-reference"
     : undefined;
 }
