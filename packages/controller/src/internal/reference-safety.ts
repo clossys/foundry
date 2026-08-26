@@ -159,10 +159,17 @@ function structuralByte(byte: number): boolean { return whitespaceByte(byte) || 
 function futureStructureAt(atoms: readonly Atom[], index: number, remainingDepth: number, work?: ScanWork): boolean {
   const projected = projectedScalarWithDepth(atoms, index, remainingDepth, work);
   if (projected === undefined || projected.depth === 0) return false;
+  // Removing a future default-ignorable can make the next already-realized
+  // slash/backslash adjacent to the authority.  Defer at the removed source
+  // atom so the following layer sees the same stream as normalization.
+  if (projected.values.length === 0) {
+    const next = firstProjectedEmission(atoms, index, remainingDepth, work);
+    return next !== undefined && (next.value === "/" || next.value === ":" || next.value === "?" || next.value === "#" || next.value === "\\" || whiteSpace(next.value));
+  }
   // A materialised percent can form an independent escape one layer later;
   // all other structure is classified only after the same normalization used
   // by decodePercentLayer + normalizeAtoms.
-  return projected.value === "%" || Array.from(projected.value).some((value) => value === "/" || value === ":" || value === "?" || value === "#" || value === "\\" || whiteSpace(value));
+  return projected.values.some((value) => value === "%" || value === "/" || value === ":" || value === "?" || value === "#" || value === "\\" || whiteSpace(value));
 }
 /**
  * Projects one scalar through the remaining bounded percent-decoding layers
@@ -263,21 +270,42 @@ function projectedScalarWithDepth(atoms: readonly Atom[], index: number, remaini
   const values = normalizedProjectedValues(decoded);
   return { value: values.join(""), values, span, depth: 2 };
 }
-function projectedScalarAt(atoms: readonly Atom[], index: number, remainingDepth: number, work?: ScanWork): { readonly value: string; readonly span: number } | undefined {
-  const scalar = projectedScalarWithDepth(atoms, index, remainingDepth, work);
-  return scalar === undefined ? undefined : { value: scalar.value, span: scalar.span };
+type ProjectedEmission = ProjectedScalar & { readonly start: number; readonly subscalar: number };
+/**
+ * Iterates the normalized scalar stream projected from the current source
+ * layer.  Empty normalized emissions (for example default ignorables) are
+ * skipped, while compatibility expansions retain their source span and exact
+ * subscalar order for structural comparisons.
+ */
+function firstProjectedEmission(atoms: readonly Atom[], index: number, remainingDepth: number, work?: ScanWork): ProjectedEmission | undefined {
+  for (let start = index; start < atoms.length;) {
+    const scalar = projectedScalarWithDepth(atoms, start, remainingDepth, work);
+    if (scalar === undefined) return undefined;
+    if (scalar.values.length > 0) return { ...scalar, value: scalar.values[0]!, start, subscalar: 0 };
+    if (scalar.span <= 0) return undefined;
+    start += scalar.span;
+  }
+  return undefined;
+}
+function nextProjectedEmission(atoms: readonly Atom[], emission: ProjectedEmission, remainingDepth: number, work?: ScanWork): ProjectedEmission | undefined {
+  const subscalar = emission.subscalar + 1;
+  if (subscalar < emission.values.length) return { ...emission, value: emission.values[subscalar]!, subscalar };
+  return firstProjectedEmission(atoms, emission.start + emission.span, remainingDepth, work);
+}
+function projectedSourceEnd(emission: ProjectedEmission): number {
+  return emission.subscalar + 1 < emission.values.length ? emission.start : emission.start + emission.span;
 }
 function projectedAuthorityMarkerAt(atoms: readonly Atom[], index: number, remainingDepth: number, work?: ScanWork): number | undefined {
   if (remainingDepth === 0) return undefined;
-  const first = projectedScalarAt(atoms, index, remainingDepth, work);
+  const first = firstProjectedEmission(atoms, index, remainingDepth, work);
   if (first?.value !== "/") return undefined;
-  const second = projectedScalarAt(atoms, index + first.span, remainingDepth, work);
-  return second?.value === "/" ? first.span + second.span : undefined;
+  const second = nextProjectedEmission(atoms, first, remainingDepth, work);
+  return second?.value === "/" ? projectedSourceEnd(second) : undefined;
 }
 function futureAuthorityWrapperAt(atoms: readonly Atom[], index: number, remainingDepth: number, work?: ScanWork): boolean {
   if (remainingDepth === 0) return false;
-  const projected = projectedScalarAt(atoms, index, remainingDepth, work);
-  return projected !== undefined && projected.span > 1 && postAuthorityWrappers.has(projected.value);
+  const projected = projectedScalarWithDepth(atoms, index, remainingDepth, work);
+  return projected !== undefined && projected.depth > 0 && projected.values.some((value) => postAuthorityWrappers.has(value));
 }
 function deferredEnd(atoms: readonly Atom[], start: number): number {
   let cursor = start;
@@ -285,21 +313,18 @@ function deferredEnd(atoms: readonly Atom[], start: number): number {
   return cursor;
 }
 function authorityAtBeforeDelimiter(atoms: readonly Atom[], start: number, special: boolean, remainingDepth: number, work?: ScanWork): boolean {
-  let delimiter: { readonly depth: number; readonly position: number } | undefined;
-  let userinfo: { readonly depth: number; readonly position: number } | undefined;
-  const before = (left: { readonly depth: number; readonly position: number }, right: { readonly depth: number; readonly position: number }): boolean => left.depth < right.depth || (left.depth === right.depth && left.position < right.position);
-  for (let cursor = start; cursor < atoms.length;) {
-    const atom = atoms[cursor]!;
-    if (atom.protected) { cursor += 1; continue; }
-    const projected = projectedScalarWithDepth(atoms, cursor, remainingDepth, work);
-    if (projected === undefined) return false;
+  type Ordered = { readonly depth: number; readonly position: number; readonly subscalar: number };
+  let delimiter: Ordered | undefined;
+  let userinfo: Ordered | undefined;
+  const before = (left: Ordered, right: Ordered): boolean => left.depth < right.depth || (left.depth === right.depth && (left.position < right.position || (left.position === right.position && left.subscalar < right.subscalar)));
+  for (let projected = firstProjectedEmission(atoms, start, remainingDepth, work); projected !== undefined; projected = nextProjectedEmission(atoms, projected, remainingDepth, work)) {
+    if (atoms[projected.start]?.protected) continue;
     const isDelimiter = whiteSpace(projected.value) || projected.value === "/" || projected.value === "?" || projected.value === "#" || (special && projected.value === "\\");
-    const candidate = { depth: projected.depth, position: cursor };
+    const candidate: Ordered = { depth: projected.depth, position: projected.start, subscalar: projected.subscalar };
     if (isDelimiter && (delimiter === undefined || before(candidate, delimiter))) delimiter = candidate;
     if (projected.value === "@" && (userinfo === undefined || before(candidate, userinfo))) userinfo = candidate;
     // A literal delimiter cannot be displaced by any later projected token.
     if (isDelimiter && projected.depth === 0) break;
-    cursor += projected.span;
   }
   return userinfo !== undefined && (delimiter === undefined || before(userinfo, delimiter));
 }

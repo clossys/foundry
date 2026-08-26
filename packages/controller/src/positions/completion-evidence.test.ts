@@ -586,7 +586,6 @@ describe("completion evidence", () => {
       change(item, retainedReference);
       expect(validateInstalledPositionLedger(item).findings).toContainEqual(expect.objectContaining({ rule: "unsafe-evidence-reference", path }));
     }
-
     for (const safe of [
       "https://host.invalid/files/(archive)//reader@host.invalid", "/files/(archive)//reader@host.invalid", "fixture/(credential:value)",
       "docs/token:reference", "urn:credential:policy", "https://host.invalid:443/evidence", "https://host.invalid/path@v1", "see https://host.invalid/evidence",
@@ -691,23 +690,36 @@ describe("completion evidence", () => {
     for (const safe of [
       "https://reader)%C2%A0path%2540host.invalid",
       "https://reader)%252540host.invalid",
+      "https://reader)%E2%84%80path%40v1",
+      "https://reader)%E2%81%87path%40v1",
+      "https://reader)%25E2%2584%2580path%2540v1",
+      "https://reader)%25E2%2581%2587path%2540v1",
       "custom:%25252f%25252freader%252540host.invalid",
       triple("https://safe.invalid(https://reader:secret@host.invalid/e"),
       triple("(credential:secret-value)"),
     ]) expect(isValueSafeReference(safe), safe).toBe(true);
 
-    const tripleEncodedUserinfo = "https://reader)%252540host.invalid";
-    const safeLedger = ledger();
-    (((safeLedger.positions as Array<Record<string, Record<string, string>>>)[0]!.evidenceSource).locator) = tripleEncodedUserinfo;
-    expect(validateInstalledPositionLedger(safeLedger).ok).toBe(true);
-    const safeEvidence = evidence();
-    (safeEvidence.artifact as Record<string, unknown>).manifestRef = tripleEncodedUserinfo;
-    expect(validateCompletionEvidence(safeEvidence, ledger()).result).toEqual({ verdict: "satisfied", evaluated: 1 });
+    const ignoredSplitMarkers = [
+      "/%E2%80%8B%2Freader:secret@host.invalid",
+      "/%25E2%2580%258B%252Freader%253Asecret%2540host.invalid",
+      "custom:/%E2%80%8B%2Freader:secret@host.invalid",
+      "custom:/%25E2%2580%258B%252Freader%253Asecret%2540host.invalid",
+      "custom:/%25E2%2580%258B%2Freader:secret@host.invalid",
+      "https:/%E2%80%8B\\reader:secret@host.invalid",
+      "https:/%25E2%2580%258B%255Creader%253Asecret%2540host.invalid",
+    ];
+    for (const reference of ignoredSplitMarkers) expect(isValueSafeReference(reference), reference).toBe(false);
 
+    const tripleEncodedUserinfo = "https://reader)%252540host.invalid";
     const retainedReference = unicodeUnsafe[0]!;
     for (const [path, change] of mutateRetainedReference) {
       const item = evidence();
       change(item, retainedReference);
+      expect(validateCompletionEvidence(item, ledger()).findings).toContainEqual(expect.objectContaining({ rule: "unsafe-evidence-reference", path }));
+    }
+    for (const [path, change] of mutateRetainedReference) {
+      const item = evidence();
+      change(item, ignoredSplitMarkers[2]!);
       expect(validateCompletionEvidence(item, ledger()).findings).toContainEqual(expect.objectContaining({ rule: "unsafe-evidence-reference", path }));
     }
     const ledgerMutations = [
@@ -719,6 +731,11 @@ describe("completion evidence", () => {
     for (const [path, change] of ledgerMutations) {
       const item = ledger();
       change(item, retainedReference);
+      expect(validateInstalledPositionLedger(item).findings).toContainEqual(expect.objectContaining({ rule: "unsafe-evidence-reference", path }));
+    }
+    for (const [path, change] of ledgerMutations) {
+      const item = ledger();
+      change(item, ignoredSplitMarkers[2]!);
       expect(validateInstalledPositionLedger(item).findings).toContainEqual(expect.objectContaining({ rule: "unsafe-evidence-reference", path }));
     }
     for (const safe of ["https://host.invalid/path%EF%BC%8Freader@host.invalid", "fixture/(credential:value)", "urn:credential:policy"]) expect(isValueSafeReference(safe), safe).toBe(true);
