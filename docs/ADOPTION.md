@@ -210,9 +210,10 @@ check: its linked baseline must be exactly retained by a readable outcome
 observation whose RFC3339 instant has at most millisecond precision before the
 record can satisfy.
 
-Reference safety is deliberately narrow: after bounded percent decoding plus
-NFKC, case, invisible-character, and form-style `+` normalization in
-root/query/fragment assignment contexts, the
+Reference safety is deliberately narrow: a reference has a 65,536-code-unit
+cap; after bounded percent decoding plus NFKC, case, default-ignorable, and
+form-style `+` normalization in root/query/fragment assignment contexts,
+with a separate URL-style tab/CR/LF authority scan, the
 validators reject an explicit sensitive-category label followed by a nonempty
 `:` or `=` payload. They allow ordinary identifiers containing those words,
 ignore Unicode default-ignorables for that lexical and linked-identity

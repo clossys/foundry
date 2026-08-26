@@ -50,12 +50,15 @@ describe("installed positions", () => {
       "locator/query token=credential-value",
       "central adoption decision: approve all consumers",
       `custom+evidence://reader:reference${at}host.invalid/evidence`,
+      `see custom+evidence://reader:reference${at}host.invalid/evidence`,
       `https://${at}host.invalid/evidence`,
       "https://%40host.invalid/evidence",
       `https://\u200b${at}host.invalid/evidence`,
       `https://ref%ZZ${at}host.invalid/evidence`,
       `https://ref%${at}host.invalid/evidence`,
       `https://ref ${at}host.invalid/evidence`,
+      `https:///reader:reference${at}host.invalid/evidence`,
+      `https://reader:\nreference${at}host.invalid/evidence`,
     ];
     for (const [path, mutate] of [
       ["positions[0].baseline.evidenceRefs[0]", (ledger: Record<string, unknown>, value: string) => { ((ledger.positions as Array<Record<string, Record<string, string[]>>>)[0]!.baseline).evidenceRefs[0] = value; }],

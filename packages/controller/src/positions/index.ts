@@ -8,7 +8,7 @@ export const POSITION_RECOMMENDATIONS = Object.freeze(["install", "defer", "decl
 export const ROLE_DISPOSITIONS = Object.freeze(["open", "not-applicable"] as const);
 export const ROLE_DISPOSITION_RULE = "Every active role receives exactly one disposition. An open role cites one or more complete position records; a not-applicable role has no positions and states why.";
 export const SETPOINT_VALUE_RULE = "Inherit the role charter metric direction: target-range uses an ordered two-number [minimum, maximum] value; increase, decrease, and maintain use one finite number.";
-export const REFERENCE_VALUE_RULE = "Evidence references and locators reject explicit inline credential, provider-value, and central-adoption-decision payload assignments and URL authority userinfo; this lexical check neither authenticates a pointer nor proves every secret absent.";
+export const REFERENCE_VALUE_RULE = "Evidence references and locators reject explicit inline credential, provider-value, and central-adoption-decision payload assignments and URL authority userinfo under bounded 65,536-code-unit reference normalization; this lexical check neither authenticates a pointer nor proves every secret absent.";
 export const SETPOINT_VALUE_SHAPES = Object.freeze({ increase: "number", decrease: "number", maintain: "number", "target-range": "ordered two-number array" } as const);
 
 export interface InstalledPositionFinding { readonly rule: string; readonly path: string; readonly message: string; }

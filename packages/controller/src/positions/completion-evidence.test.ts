@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { readCompletionEvidenceContract } from "./canonical.js";
 import { COMPLETION_EVIDENCE_FIELDS, COMPLETION_EVIDENCE_INDETERMINATE_REASONS, COMPLETION_VERDICTS, DUPLICATE_STATES, INVOCATION_KINDS, PLACEMENT_MODES, validateCompletionEvidence, validateCompletionEvidenceContract } from "./completion-evidence.js";
-import { isValueSafeReference } from "../internal/reference-safety.js";
+import { isValueSafeReference, MAX_REFERENCE_CODE_UNITS } from "../internal/reference-safety.js";
 import { ADVISOR_CHARTER } from "@vespeneventures/advisor";
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
@@ -325,12 +325,15 @@ describe("completion evidence", () => {
       "central adoption decision: approve all consumers",
       "locator/query token=credential-value",
       `custom+evidence://reader:reference${at}host.invalid/evidence`,
+      `see custom+evidence://reader:reference${at}host.invalid/evidence`,
       `https://${at}host.invalid/evidence`,
       "https://%40host.invalid/evidence",
       `https://\u200b${at}host.invalid/evidence`,
       `https://ref%ZZ${at}host.invalid/evidence`,
       `https://ref%${at}host.invalid/evidence`,
       `https://ref ${at}host.invalid/evidence`,
+      `https:///reader:reference${at}host.invalid/evidence`,
+      `https://reader:\nreference${at}host.invalid/evidence`,
     ];
     const mutate: ReadonlyArray<readonly [string, (item: Record<string, unknown>, value: string) => void]> = [
       ["artifact.manifestRef", (item, value) => { (item.artifact as Record<string, unknown>).manifestRef = value; }],
@@ -366,16 +369,23 @@ describe("completion evidence", () => {
     (((unsafeLocator.positions as Array<Record<string, Record<string, unknown>>>)[0]!.evidenceSource).locator) = unsafeReferences[3]!;
     expect(validateCompletionEvidence(evidence(), unsafeLocator).result).toMatchObject({ verdict: "indeterminate", reason: "invalid-position-ledger" });
 
-    for (const benign of ["fixture/token-value-redaction.json", "fixture/provider-value-policy.json", "fixture/no-central-adoption-decision.json", "fixture/approve-all-consumers-negative-case.json", "fixture/credential-rotation.json", "urn:credential:policy", "https://example.invalid/docs/token:reference", "fixture/authorization:policy", "docs/credential:policy", "https://example.invalid:443/evidence", "ftp://example.invalid:21/evidence", "custom+evidence://example.invalid/evidence", "https://example.invalid/?note=credential:policy", "fixture/provider+value=policy", "https://example.invalid/docs/provider+value=policy", `fixture-//reader:reference${at}v1`, `https://host.invalid/release-//reader:reference${at}v1`, "fixture/café-policy.json", "urn:example:東京"]) {
+    for (const benign of ["fixture/token-value-redaction.json", "fixture/provider-value-policy.json", "fixture/no-central-adoption-decision.json", "fixture/approve-all-consumers-negative-case.json", "fixture/credential-rotation.json", "urn:credential:policy", `urn:example://reader${at}v1`, `mailto:reader${at}host.invalid`, "https://example.invalid/docs/token:reference", "fixture/authorization:policy", "docs/credential:policy", "https://example.invalid:443/evidence", "ftp://example.invalid:21/evidence", "custom+evidence://example.invalid/evidence", `fixture/custom://reader${at}v1`, `https://host.invalid/release/custom://reader${at}v1`, `custom:///reader${at}v1`, `///reader${at}v1`, `custom:/\\reader:reference${at}v1`, "https:///host.invalid/evidence", "https://example.invalid/?note=credential:policy", "fixture/provider+value=policy", "https://example.invalid/docs/provider+value=policy", `fixture-//reader:reference${at}v1`, `https://host.invalid/release-//reader:reference${at}v1`, "fixture/café-policy.json", "urn:example:東京"]) {
       expect(isValueSafeReference(benign)).toBe(true);
     }
     for (const unsafe of [
       "access_token=example", "client_secret: example", "credential:value", "audit credential:secret-value", "central adoption decision:approve", "{\"token\":\"example\"}", "{\"credential\":\"example\"}", "{\"api_key\":\"example\"}", "credential%3Dexample", "credential%253Dvalue", "credential%3Dvalue&bad=%ZZ", "credential%3D%E0%A4value", "providerValue=example", "provider.value: example", "provider+value=foo", "https://example.invalid/?provider+value=foo", "fixture/provider value: prod-id", "note central adoption decision: adopted",
       `https://reader:reference${at}host.invalid/evidence`, `https://${at}host.invalid/evidence`, `//${at}host.invalid/evidence`, "https://%40host.invalid/evidence", `https://\u200b${at}host.invalid/evidence`, `https://ref%ZZ${at}host.invalid/evidence`, `https://ref%${at}host.invalid/evidence`, `https://ref ${at}host.invalid/evidence`, `https://credential:secret%2Fpart${at}host.invalid/evidence`, `custom://token:abc%3Fdef${at}host.invalid/evidence`, `ftp://authorization:abc%23def${at}host.invalid/evidence`, `https://credential:secret%20part${at}host.invalid/evidence`, `https://credential%20:secret${at}host.invalid/evidence`, `//reader:reference${at}host.invalid/evidence`, `see https://credential:secret-value${at}host.invalid/evidence`, `see //token:secret${at}host.invalid/evidence`, "https%3A%2F%2Fcredential%3Asecret%2Fpart%40host.invalid%2Fevidence", "https%253A%252F%252Fcredential%253Asecret%252Fpart%2540host.invalid%252Fevidence", `https://ｃｒｅｄｅｎｔｉａｌ:secret-value${at}host.invalid/evidence`, `https://cre\u200bdential:secret-value${at}host.invalid/evidence`,
+      `https:///reader:reference${at}host.invalid/evidence`, `https:////reader:reference${at}host.invalid/evidence`, `https:/\\reader:reference${at}host.invalid/evidence`, `https:\\\\reader:reference${at}host.invalid/evidence`, `https://reader:\nreference${at}host.invalid/evidence`, `https://reader:\rreference${at}host.invalid/evidence`, `https://reader:\treference${at}host.invalid/evidence`, `prefix\n//reader:reference${at}host.invalid/evidence`, "https%3A%2F%2F%2Freader%3Areference%40host.invalid", "https%253A%252F%252F%252Freader%253Areference%2540host.invalid",
       "credential\u00ad=value", "to\u180eken=value", "to\u034fken=value", "to\u202aken=value", "to\u200bken=example", "to%E2%80%8Bken=example", "%EF%BD%94%EF%BD%8F%EF%BD%8B%EF%BD%85%EF%BD%8E%3Dexample",
     ]) {
       expect(isValueSafeReference(unsafe)).toBe(false);
     }
+    // The authority scanner makes one linear pass per bounded normalization
+    // stage; long near-misses stay ordinary retained references.
+    expect(isValueSafeReference("a".repeat(20_000))).toBe(true);
+    expect(isValueSafeReference("a".repeat(MAX_REFERENCE_CODE_UNITS))).toBe(true);
+    expect(isValueSafeReference("a".repeat(MAX_REFERENCE_CODE_UNITS + 1))).toBe(false);
+    expect(isValueSafeReference(`https:${"/".repeat(20_000)}`)).toBe(true);
     // Long malformed percent-encoded inputs must complete with a safe verdict.
     expect(isValueSafeReference("%FF".repeat(10_000))).toBe(true);
     expect(isValueSafeReference("%".repeat(10_000))).toBe(true);
