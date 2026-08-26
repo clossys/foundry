@@ -36,6 +36,8 @@ function normalizedStages(value: string): string[] | null {
   }
   return stages;
 }
+
+export type ReferenceSafetyIssue = "reference-length-exceeded" | "unsafe-evidence-reference";
 function authorityBoundary(value: string, index: number): boolean {
   if (index === 0) return true;
   const previous = value[index - 1]!;
@@ -66,20 +68,21 @@ function consumeSlash(value: string, index: number, special: boolean): number | 
 }
 function authorityContainsUserinfo(value: string, start: number, special: boolean): { unsafe: boolean; end: number } | null {
   let cursor = start;
-  const firstSlash = consumeSlash(value, cursor, special);
-  if (firstSlash === null) return null;
-  cursor = firstSlash;
-  const secondSlash = consumeSlash(value, cursor, special);
-  if (secondSlash === null) return null;
-  cursor = secondSlash;
   if (special) {
     while (true) {
       const slash = consumeSlash(value, cursor, true);
       if (slash === null) break;
       cursor = slash;
     }
-  } else if (consumeSlash(value, cursor, false) !== null) {
-    return { unsafe: false, end: cursor + 1 };
+  } else {
+    const firstSlash = consumeSlash(value, cursor, false);
+    if (firstSlash === null) return null;
+    cursor = firstSlash;
+    const secondSlash = consumeSlash(value, cursor, false);
+    if (secondSlash === null) return null;
+    cursor = secondSlash;
+    const thirdSlash = consumeSlash(value, cursor, false);
+    if (thirdSlash !== null) return { unsafe: false, end: thirdSlash };
   }
   while (cursor < value.length) {
     const at = consumeMarker(value, cursor, "@", "%40");
@@ -107,14 +110,20 @@ function containsAuthorityUserinfoInStage(value: string): boolean {
   return false;
 }
 
-export function isValueSafeReference(value: string): boolean {
+export function referenceSafetyIssue(value: string): ReferenceSafetyIssue | undefined {
   const stages = normalizedStages(value);
-  if (stages === null) return false;
+  if (stages === null) return "reference-length-exceeded";
   const normalized = stages[stages.length - 1]!;
   for (const stage of stages) {
-    if (containsAuthorityUserinfoInStage(stage)) return false;
+    if (containsAuthorityUserinfoInStage(stage)) return "unsafe-evidence-reference";
     const urlWhitespaceNormalized = stage.replace(/[\t\r\n]/g, "");
-    if (urlWhitespaceNormalized !== stage && containsAuthorityUserinfoInStage(urlWhitespaceNormalized)) return false;
+    if (urlWhitespaceNormalized !== stage && containsAuthorityUserinfoInStage(urlWhitespaceNormalized)) return "unsafe-evidence-reference";
   }
-  return !equalsAssignment.test(normalized) && !segmentColonAssignment.test(normalized) && !spacedColonAssignment.test(normalized) && !unspacedColonAssignment.test(normalized) && !quotedColonAssignment.test(normalized) && !formEqualsAssignment.test(normalized) && !formColonAssignment.test(normalized);
+  return equalsAssignment.test(normalized) || segmentColonAssignment.test(normalized) || spacedColonAssignment.test(normalized) || unspacedColonAssignment.test(normalized) || quotedColonAssignment.test(normalized) || formEqualsAssignment.test(normalized) || formColonAssignment.test(normalized)
+    ? "unsafe-evidence-reference"
+    : undefined;
+}
+
+export function isValueSafeReference(value: string): boolean {
+  return referenceSafetyIssue(value) === undefined;
 }

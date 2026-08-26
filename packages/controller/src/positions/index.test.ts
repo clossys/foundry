@@ -57,6 +57,8 @@ describe("installed positions", () => {
       `https://ref%ZZ${at}host.invalid/evidence`,
       `https://ref%${at}host.invalid/evidence`,
       `https://ref ${at}host.invalid/evidence`,
+      `https:reader:reference${at}host.invalid/evidence`, `https:/reader:reference${at}host.invalid/evidence`, `https:\\\\reader:reference${at}host.invalid/evidence`, `ftp:reader:reference${at}host.invalid/evidence`,
+      "https%3Areader%3Areference%40host.invalid/evidence", "https%253Areader%253Areference%2540host.invalid/evidence",
       `https:///reader:reference${at}host.invalid/evidence`,
       `https://reader:\nreference${at}host.invalid/evidence`,
     ];
@@ -74,6 +76,9 @@ describe("installed positions", () => {
         expect(report.findings).toContainEqual(expect.objectContaining({ rule: "unsafe-evidence-reference", path }));
       }
     }
+    const tooLong = fixture();
+    ((tooLong.positions as Array<Record<string, Record<string, string[]>>>)[0]!.baseline).evidenceRefs[0] = "a".repeat(65_537);
+    expect(validateInstalledPositionLedger(tooLong).findings).toContainEqual({ rule: "reference-length-exceeded", path: "positions[0].baseline.evidenceRefs[0]", message: "must be at most 65,536 code units" });
   });
 
   it("keeps every installed-position contract vocabulary tied to the validator", () => {

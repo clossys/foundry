@@ -332,6 +332,8 @@ describe("completion evidence", () => {
       `https://ref%ZZ${at}host.invalid/evidence`,
       `https://ref%${at}host.invalid/evidence`,
       `https://ref ${at}host.invalid/evidence`,
+      `https:reader:reference${at}host.invalid/evidence`, `https:/reader:reference${at}host.invalid/evidence`, `https:\\\\reader:reference${at}host.invalid/evidence`, `ftp:reader:reference${at}host.invalid/evidence`,
+      "https%3Areader%3Areference%40host.invalid/evidence", "https%253Areader%253Areference%2540host.invalid/evidence",
       `https:///reader:reference${at}host.invalid/evidence`,
       `https://reader:\nreference${at}host.invalid/evidence`,
     ];
@@ -369,7 +371,12 @@ describe("completion evidence", () => {
     (((unsafeLocator.positions as Array<Record<string, Record<string, unknown>>>)[0]!.evidenceSource).locator) = unsafeReferences[3]!;
     expect(validateCompletionEvidence(evidence(), unsafeLocator).result).toMatchObject({ verdict: "indeterminate", reason: "invalid-position-ledger" });
 
-    for (const benign of ["fixture/token-value-redaction.json", "fixture/provider-value-policy.json", "fixture/no-central-adoption-decision.json", "fixture/approve-all-consumers-negative-case.json", "fixture/credential-rotation.json", "urn:credential:policy", `urn:example://reader${at}v1`, `mailto:reader${at}host.invalid`, "https://example.invalid/docs/token:reference", "fixture/authorization:policy", "docs/credential:policy", "https://example.invalid:443/evidence", "ftp://example.invalid:21/evidence", "custom+evidence://example.invalid/evidence", `fixture/custom://reader${at}v1`, `https://host.invalid/release/custom://reader${at}v1`, `custom:///reader${at}v1`, `///reader${at}v1`, `custom:/\\reader:reference${at}v1`, "https:///host.invalid/evidence", "https://example.invalid/?note=credential:policy", "fixture/provider+value=policy", "https://example.invalid/docs/provider+value=policy", `fixture-//reader:reference${at}v1`, `https://host.invalid/release-//reader:reference${at}v1`, "fixture/café-policy.json", "urn:example:東京"]) {
+    const overlongReference = evidence();
+    (overlongReference.artifact as Record<string, unknown>).manifestRef = "a".repeat(MAX_REFERENCE_CODE_UNITS + 1);
+    const overlongReport = validateCompletionEvidence(overlongReference, ledger());
+    expect(overlongReport.findings).toContainEqual({ rule: "reference-length-exceeded", path: "artifact.manifestRef", message: "must be at most 65,536 code units" });
+
+    for (const benign of ["fixture/token-value-redaction.json", "fixture/provider-value-policy.json", "fixture/no-central-adoption-decision.json", "fixture/approve-all-consumers-negative-case.json", "fixture/credential-rotation.json", "urn:credential:policy", `urn:example://reader${at}v1`, `mailto:reader${at}host.invalid`, "https://example.invalid/docs/token:reference", "fixture/authorization:policy", "docs/credential:policy", "https://example.invalid:443/evidence", "ftp://example.invalid:21/evidence", "custom+evidence://example.invalid/evidence", `fixture/custom://reader${at}v1`, `https://host.invalid/release/custom://reader${at}v1`, `custom:///reader${at}v1`, `///reader${at}v1`, `custom:/\\reader:reference${at}v1`, "https:///host.invalid/evidence", "https:host.invalid/evidence", "https:/host.invalid/evidence", "https:\\\\host.invalid/evidence", "https://example.invalid/?note=credential:policy", "fixture/provider+value=policy", "https://example.invalid/docs/provider+value=policy", `fixture-//reader:reference${at}v1`, `https://host.invalid/release-//reader:reference${at}v1`, "fixture/café-policy.json", "urn:example:東京"]) {
       expect(isValueSafeReference(benign)).toBe(true);
     }
     for (const unsafe of [
