@@ -268,14 +268,16 @@ describe("completion evidence", () => {
     (paddedPosition.outcome as Record<string, unknown>).sourceOwner = "fixture-integrator";
     expect(validateCompletionEvidence(paddedPosition, paddedPositionLedger).result).toMatchObject({ verdict: "indeterminate", reason: "unreadable-or-incomplete-evidence" });
 
-    const invisiblePosition = evidence();
-    const invisiblePositionLedger = ledger();
-    const invisibleId = "\u200bfixture-integrator";
-    (invisiblePositionLedger.positions as Array<Record<string, unknown>>)[0]!.id = invisibleId;
-    ((invisiblePositionLedger.dispositions as Array<Record<string, unknown>>).find((item) => item.package === "@vespeneventures/integrator")!).positionIds = [invisibleId];
-    invisiblePosition.positionId = invisibleId;
-    (invisiblePosition.outcome as Record<string, unknown>).sourceOwner = "fixture-integrator";
-    expect(validateCompletionEvidence(invisiblePosition, invisiblePositionLedger).result).toMatchObject({ verdict: "indeterminate", reason: "unreadable-or-incomplete-evidence" });
+    for (const invisible of ["\u034f", "\u061c", "\u200e", "\u200f", "\u202a", "\u2069"]) {
+      const invisiblePosition = evidence();
+      const invisiblePositionLedger = ledger();
+      const invisibleId = `${invisible}fixture-integrator`;
+      (invisiblePositionLedger.positions as Array<Record<string, unknown>>)[0]!.id = invisibleId;
+      ((invisiblePositionLedger.dispositions as Array<Record<string, unknown>>).find((item) => item.package === "@vespeneventures/integrator")!).positionIds = [invisibleId];
+      invisiblePosition.positionId = invisibleId;
+      (invisiblePosition.outcome as Record<string, unknown>).sourceOwner = "fixture-integrator";
+      expect(validateCompletionEvidence(invisiblePosition, invisiblePositionLedger).result).toMatchObject({ verdict: "indeterminate", reason: "unreadable-or-incomplete-evidence" });
+    }
 
     const selfAuthority = evidence();
     (selfAuthority.outcome as Record<string, unknown>).sourceOwner = "fixture automation";
@@ -283,11 +285,13 @@ describe("completion evidence", () => {
     (((paddedAuthorityLedger.positions as Array<Record<string, Record<string, unknown>>>)[0]!.authority).actionAuthority) = " fixture automation ";
     expect(validateCompletionEvidence(selfAuthority, paddedAuthorityLedger).result).toMatchObject({ verdict: "indeterminate", reason: "unreadable-or-incomplete-evidence" });
 
-    const invisibleAuthority = evidence();
-    (invisibleAuthority.outcome as Record<string, unknown>).sourceOwner = "fixture automation";
-    const invisibleAuthorityLedger = ledger();
-    (((invisibleAuthorityLedger.positions as Array<Record<string, Record<string, unknown>>>)[0]!.authority).actionAuthority) = "\u200bfixture automation";
-    expect(validateCompletionEvidence(invisibleAuthority, invisibleAuthorityLedger).result).toMatchObject({ verdict: "indeterminate", reason: "unreadable-or-incomplete-evidence" });
+    for (const invisible of ["\u034f", "\u061c", "\u200e", "\u200f", "\u202a", "\u2069"]) {
+      const invisibleAuthority = evidence();
+      (invisibleAuthority.outcome as Record<string, unknown>).sourceOwner = "fixture automation";
+      const invisibleAuthorityLedger = ledger();
+      (((invisibleAuthorityLedger.positions as Array<Record<string, Record<string, unknown>>>)[0]!.authority).actionAuthority) = `${invisible}fixture automation`;
+      expect(validateCompletionEvidence(invisibleAuthority, invisibleAuthorityLedger).result).toMatchObject({ verdict: "indeterminate", reason: "unreadable-or-incomplete-evidence" });
+    }
 
     const wrongSchedule = evidence();
     (wrongSchedule.cadence as Record<string, unknown>).schedule = "another review";
@@ -353,10 +357,10 @@ describe("completion evidence", () => {
     (((unsafeLocator.positions as Array<Record<string, Record<string, unknown>>>)[0]!.evidenceSource).locator) = unsafeReferences[3]!;
     expect(validateCompletionEvidence(evidence(), unsafeLocator).result).toMatchObject({ verdict: "indeterminate", reason: "invalid-position-ledger" });
 
-    for (const benign of ["fixture/token-value-redaction.json", "fixture/provider-value-policy.json", "fixture/no-central-adoption-decision.json", "fixture/approve-all-consumers-negative-case.json", "fixture/credential-rotation.json", "urn:credential:policy", "https://example.invalid/docs/token:reference", "fixture/authorization:policy", "fixture/provider+value=policy", "https://example.invalid/docs/provider+value=policy"]) {
+    for (const benign of ["fixture/token-value-redaction.json", "fixture/provider-value-policy.json", "fixture/no-central-adoption-decision.json", "fixture/approve-all-consumers-negative-case.json", "fixture/credential-rotation.json", "urn:credential:policy", "https://example.invalid/docs/token:reference", "fixture/authorization:policy", "fixture/provider+value=policy", "https://example.invalid/docs/provider+value=policy", "fixture/café-policy.json", "urn:example:東京"]) {
       expect(isValueSafeReference(benign)).toBe(true);
     }
-    for (const unsafe of ["access_token=example", "client_secret: example", "credential:value", "central adoption decision:approve", "{\"token\":\"example\"}", "{\"credential\":\"example\"}", "{\"api_key\":\"example\"}", "credential%3Dexample", "credential%253Dvalue", "credential%3Dvalue&bad=%ZZ", "credential%3D%E0%A4value", "providerValue=example", "provider.value: example", "provider+value=foo", "https://example.invalid/?provider+value=foo", "fixture/provider value: prod-id", "note central adoption decision: adopted", "credential\u00ad=value", "to\u180eken=value", "to\u200bken=example", "to%E2%80%8Bken=example", "%EF%BD%94%EF%BD%8F%EF%BD%8B%EF%BD%85%EF%BD%8E%3Dexample"]) {
+    for (const unsafe of ["access_token=example", "client_secret: example", "credential:value", "central adoption decision:approve", "{\"token\":\"example\"}", "{\"credential\":\"example\"}", "{\"api_key\":\"example\"}", "credential%3Dexample", "credential%253Dvalue", "credential%3Dvalue&bad=%ZZ", "credential%3D%E0%A4value", "providerValue=example", "provider.value: example", "provider+value=foo", "https://example.invalid/?provider+value=foo", "fixture/provider value: prod-id", "note central adoption decision: adopted", "credential\u00ad=value", "to\u180eken=value", "to\u034fken=value", "to\u202aken=value", "to\u200bken=example", "to%E2%80%8Bken=example", "%EF%BD%94%EF%BD%8F%EF%BD%8B%EF%BD%85%EF%BD%8E%3Dexample"]) {
       expect(isValueSafeReference(unsafe)).toBe(false);
     }
     const malformedRunStartedAt = performance.now();

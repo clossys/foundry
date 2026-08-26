@@ -215,4 +215,5 @@ NFKC, case, invisible-character, and form-style `+` normalization in
 root/query/fragment assignment contexts, the
 validators reject an explicit sensitive-category label followed by a nonempty
 `:` or `=` payload. They allow ordinary identifiers containing those words,
-and do not resolve or authenticate any pointer.
+ignore Unicode default-ignorables for that lexical and linked-identity
+comparison, and do not resolve or authenticate any pointer.

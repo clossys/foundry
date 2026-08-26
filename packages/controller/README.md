@@ -114,7 +114,9 @@ percent decoding plus NFKC, case, invisible-character, and form-style `+`
 normalization in root/query/fragment assignment contexts, it rejects only
 explicit sensitive-category labels carrying a nonempty `:` or `=` payload.
 Ordinary identifiers that merely contain those
-words remain valid, and no reference is resolved or authenticated.
+words remain valid. Unicode default-ignorables are removed for this lexical
+check and for linked position/action-authority identity comparison; no
+reference is resolved or authenticated.
 
 The installed-position ledger keeps its schema-v1 compatibility rule that a
 baseline `observedAt` is nonempty text. Completion validation is deliberately
