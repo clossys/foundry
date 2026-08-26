@@ -42,6 +42,21 @@ describe("installed positions", () => {
     expect(result.findings.some((finding) => finding.rule === "invalid-setpoint")).toBe(true);
   });
 
+  it("rejects value-bearing evidence references and locators", () => {
+    for (const [path, mutate] of [
+      ["positions[0].baseline.evidenceRefs[0]", (ledger: Record<string, unknown>) => { ((ledger.positions as Array<Record<string, Record<string, string[]>>>)[0]!.baseline).evidenceRefs[0] = "credential=secret-provider-value"; }],
+      ["positions[0].setpoint.evidenceRefs[0]", (ledger: Record<string, unknown>) => { ((ledger.positions as Array<Record<string, Record<string, string[]>>>)[0]!.setpoint).evidenceRefs[0] = "provider value: prod-api-key"; }],
+      ["positions[0].evidenceSource.locator", (ledger: Record<string, unknown>) => { ((ledger.positions as Array<Record<string, Record<string, string>>>)[0]!.evidenceSource).locator = "locator/query token=credential-value"; }],
+      ["positions[0].firstDayAssessment.evidenceRefs[0]", (ledger: Record<string, unknown>) => { ((ledger.positions as Array<Record<string, Record<string, string[]>>>)[0]!.firstDayAssessment).evidenceRefs[0] = "central adoption decision: approve all consumers"; }],
+    ] as const) {
+      const ledger = fixture();
+      mutate(ledger);
+      const report = validateInstalledPositionLedger(ledger);
+      expect(report.ok).toBe(false);
+      expect(report.findings).toContainEqual(expect.objectContaining({ rule: "unsafe-evidence-reference", path }));
+    }
+  });
+
   it("keeps every installed-position contract vocabulary tied to the validator", () => {
     for (const collection of [POSITION_FIELDS, WORKER_COMPONENT_KINDS, POSITION_RECOMMENDATIONS, ROLE_DISPOSITIONS, SETPOINT_VALUE_SHAPES]) {
       expect(Object.isFrozen(collection)).toBe(true);

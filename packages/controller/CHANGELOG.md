@@ -5,6 +5,27 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.17] - 2026-08-25
+
+### Fixed
+
+- Completion evidence now fails closed on its consumer-owned proof: strict
+  semver/RFC3339 parsing at most millisecond precision, distinct controls,
+  an open linked position,
+  exact baseline/source/cadence linkage, setpoint transition, and derived
+  cadence aggregation all prevent internally inconsistent consumer-retained
+  records from creating a false completion. The corrected causal sequence is
+  `before < controls ≤ rollback ≤ after ≤ close start < recurrence ≤ close end`;
+  in-window violated evidence dominates indeterminate evidence, and
+  satisfaction needs a later satisfied cadence run. Malformed or incomplete
+  evidence is indeterminate rather than a false completion. Retained reference
+  and locator strings now fail closed when they carry credential, provider-value,
+  or central-adoption-decision payload assignments; ordinary identifiers are
+  not treated as values.
+- Aligned the schema-v4 Advisor owned-metric identity to Advisor 0.1.2's
+  published `engagement-decision-currency-rate` literal, so its exact
+  completion evidence binds to the same role metric.
+
 ## [0.8.16] - 2026-08-25
 
 ### Fixed

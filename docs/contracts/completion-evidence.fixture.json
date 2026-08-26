@@ -46,21 +46,21 @@
     }
   },
   "cadence": {
-    "schedule": "each merge and weekly review",
-    "runs": [{ "occurredAt": "2026-08-24T00:00:00.000Z", "reference": "fixture/recurring-run.txt", "verdict": "satisfied" }]
+    "schedule": "fixture",
+    "runs": [{ "occurredAt": "2026-08-31T00:00:00.000Z", "reference": "fixture/recurring-run.txt", "verdict": "satisfied" }]
   },
   "outcome": {
     "metric": "package currency rate",
     "sourceOwner": "consumer-owned independent measurement",
-    "sourceRef": "fixture/outcomes.json",
-    "before": { "state": "observed", "value": 0.5, "observedAt": "2026-08-17T00:00:00.000Z", "evidenceRefs": ["fixture/before.json"], "reason": "" },
+    "sourceRef": "fixture",
+    "before": { "state": "observed", "value": 0.5, "observedAt": "2026-08-17T00:00:00.000Z", "evidenceRefs": ["fixture-baseline"], "reason": "" },
     "after": { "state": "observed", "value": 1, "observedAt": "2026-08-24T00:00:00.000Z", "evidenceRefs": ["fixture/after.json"], "reason": "" },
     "verdict": "satisfied",
     "reason": ""
   },
   "closeWindow": {
-    "startedAt": "2026-08-17T00:00:00.000Z",
-    "endedAt": "2026-08-24T00:00:00.000Z",
+    "startedAt": "2026-08-24T00:00:00.000Z",
+    "endedAt": "2026-08-31T00:00:00.000Z",
     "verdict": "satisfied",
     "evidenceRefs": ["fixture/review-window.json"],
     "reason": ""

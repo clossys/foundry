@@ -1,5 +1,6 @@
 /** Consumer-owned installed-position ledger validation. No provider I/O. */
 import { readCanonicalRoleLoopContract, readInstalledPositionContract } from "./canonical.js";
+import { isValueSafeReference } from "../internal/reference-safety.js";
 
 export const POSITION_FIELDS = Object.freeze(["id", "package", "businessMetricPath", "causalHypothesis", "baseline", "setpoint", "operatingScope", "authority", "evidenceSource", "cadence", "budget", "guardrails", "escalationPath", "workerComponents", "stageBindings", "firstDayAssessment"] as const);
 export const WORKER_COMPONENT_KINDS = Object.freeze(["deterministic", "model", "human", "vendor"] as const);
@@ -7,6 +8,7 @@ export const POSITION_RECOMMENDATIONS = Object.freeze(["install", "defer", "decl
 export const ROLE_DISPOSITIONS = Object.freeze(["open", "not-applicable"] as const);
 export const ROLE_DISPOSITION_RULE = "Every active role receives exactly one disposition. An open role cites one or more complete position records; a not-applicable role has no positions and states why.";
 export const SETPOINT_VALUE_RULE = "Inherit the role charter metric direction: target-range uses an ordered two-number [minimum, maximum] value; increase, decrease, and maintain use one finite number.";
+export const REFERENCE_VALUE_RULE = "Evidence references and locators reject explicit inline credential, provider-value, and central-adoption-decision payload assignments; this lexical check neither authenticates a pointer nor proves every secret absent.";
 export const SETPOINT_VALUE_SHAPES = Object.freeze({ increase: "number", decrease: "number", maintain: "number", "target-range": "ordered two-number array" } as const);
 
 export interface InstalledPositionFinding { readonly rule: string; readonly path: string; readonly message: string; }
@@ -23,7 +25,14 @@ function record(value: unknown): value is RecordValue { return typeof value === 
 function text(value: unknown): value is string { return typeof value === "string" && value.trim() !== ""; }
 function keys(value: unknown, expected: readonly string[]): value is RecordValue { return record(value) && Object.keys(value).sort().join("\0") === [...expected].sort().join("\0"); }
 function strings(value: unknown, minimum = 0): value is string[] { return Array.isArray(value) && value.length >= minimum && value.every(text) && new Set(value).size === value.length; }
+function references(value: unknown, minimum = 0): value is string[] { return Array.isArray(value) && value.length >= minimum && value.every((item) => text(item) && isValueSafeReference(item)) && new Set(value).size === value.length; }
 function fail(findings: InstalledPositionFinding[], rule: string, path: string, message: string): void { findings.push({ rule, path, message }); }
+function rejectUnsafeReference(value: unknown, path: string, findings: InstalledPositionFinding[]): void {
+  if (typeof value === "string" && !isValueSafeReference(value)) fail(findings, "unsafe-evidence-reference", path, "must not use explicit inline sensitive-payload syntax");
+}
+function rejectUnsafeReferences(value: unknown, path: string, findings: InstalledPositionFinding[]): void {
+  if (Array.isArray(value)) value.forEach((item, index) => rejectUnsafeReference(item, `${path}[${index}]`, findings));
+}
 
 /**
  * Validates one complete consumer ledger against the role contract supplied by
@@ -43,9 +52,9 @@ export function validateInstalledPositionContract(contract: unknown = readInstal
   try { snapshot = readInstalledPositionContract(); }
   catch (error) { return [{ rule: "installed-position-contract-unavailable", path: "contracts/installed-position-contract.json", message: error instanceof Error ? error.message : String(error) }]; }
   if (canonical(contract) !== canonical(snapshot)) return [{ rule: "noncanonical-installed-position-contract", path: "installedPositionContract", message: "must exactly match the immutable installed-position-contract snapshot shipped by @vespeneventures/controller" }];
-  if (!keys(contract, ["schemaVersion", "kind", "roleDisposition", "position"]) || contract.schemaVersion !== 1 || contract.kind !== "foundry-installed-position-ledger" || !keys(contract.roleDisposition, ["fields", "dispositions", "rule"]) || !keys(contract.position, ["fields", "workerComponentKinds", "stageBindingStages", "setpointValueShapes", "firstDayAssessmentFields", "recommendations", "setpointValueRule"])) return [{ rule: "invalid-installed-position-contract", path: "installedPositionContract", message: "must be the complete schemaVersion 1 installed-position contract" }];
+  if (!keys(contract, ["schemaVersion", "kind", "referenceRule", "roleDisposition", "position"]) || contract.schemaVersion !== 1 || contract.kind !== "foundry-installed-position-ledger" || !keys(contract.roleDisposition, ["fields", "dispositions", "rule"]) || !keys(contract.position, ["fields", "workerComponentKinds", "stageBindingStages", "setpointValueShapes", "firstDayAssessmentFields", "recommendations", "setpointValueRule"])) return [{ rule: "invalid-installed-position-contract", path: "installedPositionContract", message: "must be the complete schemaVersion 1 installed-position contract" }];
   const position = contract.position;
-  if (canonical(contract.roleDisposition.fields) !== canonical(dispositionFields) || canonical(contract.roleDisposition.dispositions) !== canonical(ROLE_DISPOSITIONS) || contract.roleDisposition.rule !== ROLE_DISPOSITION_RULE || canonical(position.fields) !== canonical(POSITION_FIELDS) || canonical(position.workerComponentKinds) !== canonical(WORKER_COMPONENT_KINDS) || canonical(position.stageBindingStages) !== canonical(universalStages) || canonical(position.setpointValueShapes) !== canonical(SETPOINT_VALUE_SHAPES) || canonical(position.firstDayAssessmentFields) !== canonical(firstDayFields) || canonical(position.recommendations) !== canonical(POSITION_RECOMMENDATIONS) || position.setpointValueRule !== SETPOINT_VALUE_RULE) findings.push({ rule: "installed-position-contract-vocabulary-drift", path: "installedPositionContract", message: "fields, dispositions, worker kinds, stage bindings, setpoint shapes and rule, first-day fields, and recommendations must match the validator constants" });
+  if (contract.referenceRule !== REFERENCE_VALUE_RULE || canonical(contract.roleDisposition.fields) !== canonical(dispositionFields) || canonical(contract.roleDisposition.dispositions) !== canonical(ROLE_DISPOSITIONS) || contract.roleDisposition.rule !== ROLE_DISPOSITION_RULE || canonical(position.fields) !== canonical(POSITION_FIELDS) || canonical(position.workerComponentKinds) !== canonical(WORKER_COMPONENT_KINDS) || canonical(position.stageBindingStages) !== canonical(universalStages) || canonical(position.setpointValueShapes) !== canonical(SETPOINT_VALUE_SHAPES) || canonical(position.firstDayAssessmentFields) !== canonical(firstDayFields) || canonical(position.recommendations) !== canonical(POSITION_RECOMMENDATIONS) || position.setpointValueRule !== SETPOINT_VALUE_RULE) findings.push({ rule: "installed-position-contract-vocabulary-drift", path: "installedPositionContract", message: "reference rule, fields, dispositions, worker kinds, stage bindings, setpoint shapes and rule, first-day fields, and recommendations must match the validator constants" });
   return findings;
 }
 
@@ -101,18 +110,21 @@ export function validateInstalledPositionLedger(ledger: unknown, roleContract: u
     if (!keys(position.businessMetricPath, ["l1", "l2", "l3"]) || !text(position.businessMetricPath.l1) || !text(position.businessMetricPath.l2) || !text(position.businessMetricPath.l3)) fail(findings, "invalid-business-metric-path", path, "businessMetricPath needs nonempty l1, l2, and l3");
     if (!text(position.causalHypothesis)) fail(findings, "invalid-causal-hypothesis", path, "must be nonempty");
     const baseline = position.baseline;
-    if (!keys(baseline, ["value", "observedAt", "evidenceRefs"]) || typeof baseline.value !== "number" || !Number.isFinite(baseline.value) || !text(baseline.observedAt) || !strings(baseline.evidenceRefs, 1)) fail(findings, "invalid-baseline", path, "baseline needs a finite value, observedAt, and evidence references");
+    if (record(baseline)) rejectUnsafeReferences(baseline.evidenceRefs, `${path}.baseline.evidenceRefs`, findings);
+    if (!keys(baseline, ["value", "observedAt", "evidenceRefs"]) || typeof baseline.value !== "number" || !Number.isFinite(baseline.value) || !text(baseline.observedAt) || !references(baseline.evidenceRefs, 1)) fail(findings, "invalid-baseline", path, "baseline needs a finite value, observedAt, and value-safe evidence references");
     const setpoint = position.setpoint;
+    if (record(setpoint)) rejectUnsafeReferences(setpoint.evidenceRefs, `${path}.setpoint.evidenceRefs`, findings);
     const direction = text(position.package) ? roleDirections.get(position.package) : undefined;
     const setpointRecord = keys(setpoint, ["value", "evidenceRefs"]);
-    if (!setpointRecord || !strings(setpoint.evidenceRefs, 1)) { fail(findings, "invalid-setpoint", path, "setpoint needs evidence references"); continue; }
+    if (!setpointRecord || !references(setpoint.evidenceRefs, 1)) { fail(findings, "invalid-setpoint", path, "setpoint needs value-safe evidence references"); continue; }
     const targetValue = setpoint.value;
     const validRange = Array.isArray(targetValue) && targetValue.length === 2 && targetValue.every((value: unknown) => typeof value === "number" && Number.isFinite(value)) && (targetValue[0] as number) <= (targetValue[1] as number);
     const validScalar = typeof targetValue === "number" && Number.isFinite(targetValue);
     if (direction === "target-range" ? !validRange : !validScalar) fail(findings, "invalid-setpoint", path, direction === "target-range" ? "target-range setpoint needs an ordered two-number value and evidence references" : "setpoint needs a finite numeric value and evidence references");
     if (!keys(position.operatingScope, ["description", "included", "excluded"]) || !text(position.operatingScope.description) || !strings(position.operatingScope.included, 1) || !strings(position.operatingScope.excluded, 1)) fail(findings, "invalid-operating-scope", path, "operatingScope needs description, included, and excluded boundaries");
     if (!keys(position.authority, ["decisionOwner", "actionAuthority"]) || !text(position.authority.decisionOwner) || !text(position.authority.actionAuthority)) fail(findings, "invalid-authority", path, "authority needs decisionOwner and actionAuthority");
-    if (!keys(position.evidenceSource, ["description", "locator"]) || !text(position.evidenceSource.description) || !text(position.evidenceSource.locator)) fail(findings, "invalid-evidence-source", path, "evidenceSource needs description and locator");
+    if (record(position.evidenceSource)) rejectUnsafeReference(position.evidenceSource.locator, `${path}.evidenceSource.locator`, findings);
+    if (!keys(position.evidenceSource, ["description", "locator"]) || !text(position.evidenceSource.description) || !text(position.evidenceSource.locator) || !isValueSafeReference(position.evidenceSource.locator)) fail(findings, "invalid-evidence-source", path, "evidenceSource needs description and a value-safe locator");
     if (!keys(position.cadence, ["measure", "review"]) || !text(position.cadence.measure) || !text(position.cadence.review)) fail(findings, "invalid-cadence", path, "cadence needs measure and review");
     if (!keys(position.budget, ["amount", "unit", "period"]) || typeof position.budget.amount !== "number" || position.budget.amount < 0 || !text(position.budget.unit) || !text(position.budget.period)) fail(findings, "invalid-budget", path, "budget needs non-negative amount, unit, and period");
     if (!strings(position.guardrails, 1) || !strings(position.escalationPath, 1)) fail(findings, "invalid-constraints", path, "guardrails and escalationPath need at least one item");
@@ -121,7 +133,8 @@ export function validateInstalledPositionLedger(ledger: unknown, roleContract: u
     if (!keys(stageBindings, universalStages)) fail(findings, "invalid-stage-bindings", path, "stageBindings needs one activity for sense, judge, act, verify, and learnOrEscalate");
     else if (universalStages.some((stage) => !text(stageBindings[stage]))) fail(findings, "invalid-stage-bindings", path, "stageBindings needs one nonempty consumer activity for sense, judge, act, verify, and learnOrEscalate");
     const assessment = position.firstDayAssessment;
-    if (!keys(assessment, firstDayFields) || !strings(assessment.gaps) || !text(assessment.target) || !strings(assessment.openQuestions) || !strings(assessment.criticalPath, 1) || !strings(assessment.deferredWork) || !POSITION_RECOMMENDATIONS.includes(assessment.recommendation as never) || !strings(assessment.evidenceRefs, 1)) fail(findings, "invalid-first-day-assessment", path, "first-day assessment needs gaps, target, open questions, critical path, deferred work, recommendation, and evidence references; position.baseline is its single baseline");
+    if (record(assessment)) rejectUnsafeReferences(assessment.evidenceRefs, `${path}.firstDayAssessment.evidenceRefs`, findings);
+    if (!keys(assessment, firstDayFields) || !strings(assessment.gaps) || !text(assessment.target) || !strings(assessment.openQuestions) || !strings(assessment.criticalPath, 1) || !strings(assessment.deferredWork) || !POSITION_RECOMMENDATIONS.includes(assessment.recommendation as never) || !references(assessment.evidenceRefs, 1)) fail(findings, "invalid-first-day-assessment", path, "first-day assessment needs gaps, target, open questions, critical path, deferred work, recommendation, and value-safe evidence references; position.baseline is its single baseline");
   }
   const cited = new Set<string>();
   for (const [packageName, disposition] of dispositions) for (const id of disposition.ids) {
