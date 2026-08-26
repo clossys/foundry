@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { readCompletionEvidenceContract } from "./canonical.js";
 import { COMPLETION_EVIDENCE_FIELDS, COMPLETION_EVIDENCE_INDETERMINATE_REASONS, COMPLETION_VERDICTS, DUPLICATE_STATES, INVOCATION_KINDS, PLACEMENT_MODES, validateCompletionEvidence, validateCompletionEvidenceContract } from "./completion-evidence.js";
+import { validateInstalledPositionLedger } from "./index.js";
 import { isValueSafeReference, MAX_REFERENCE_CODE_UNITS, referenceSafetyOperationCount } from "../internal/reference-safety.js";
 import { ADVISOR_CHARTER } from "@vespeneventures/advisor";
 
@@ -482,6 +483,30 @@ describe("completion evidence", () => {
     }
   });
 
+  it("rejects sensitive authority assignments at every authority termination", () => {
+    const literal = [
+      "https://credential:secret-value", "https://credential:secret-value ", "https://credential:secret-value)",
+      "https://credential:secret-value/path", "https://credential:secret-value?next=fixture", "https://credential:secret-value#fragment", "https://credential:secret-value\\path",
+      "https://credential:secret-value%2fpath", "https://credential:secret-value%252fpath",
+    ];
+    const layerOne = [
+      "https%3a%2f%2fcredential%3asecret-value", "https%3a%2f%2fcredential%3asecret-value%20", "https%3a%2f%2fcredential%3asecret-value%29",
+      "https%3a%2f%2fcredential%3asecret-value%2fpath", "https%3a%2f%2fcredential%3asecret-value%3fnext", "https%3a%2f%2fcredential%3asecret-value%23fragment", "https%3a%2f%2fcredential%3asecret-value%5cpath",
+    ];
+    const layerTwo = ["https%253a%252f%252fcredential%253asecret-value", "https%253a%252f%252fcredential%253asecret-value%2520", "https%253a%252f%252fcredential%253asecret-value%252fpath"];
+    for (const value of [...literal, ...layerOne, ...layerTwo]) expect(isValueSafeReference(value), value).toBe(false);
+    for (const value of ["https://host:443", "https://host:443 ", "https://host:443)", "https://host:443/path", "urn:credential:policy", "fixture/credential:policy"]) expect(isValueSafeReference(value), value).toBe(true);
+
+    const unsafeLedger = ledger();
+    (((unsafeLedger.positions as Array<Record<string, Record<string, string>>>)[0]!.evidenceSource).locator) = literal[0]!;
+    expect(validateInstalledPositionLedger(unsafeLedger).findings).toContainEqual(expect.objectContaining({ rule: "unsafe-evidence-reference", path: "positions[0].evidenceSource.locator" }));
+    const unsafeEvidence = evidence();
+    (unsafeEvidence.artifact as Record<string, unknown>).manifestRef = layerTwo[0]!;
+    const unsafeReport = validateCompletionEvidence(unsafeEvidence, ledger());
+    expect(unsafeReport.result).toMatchObject({ verdict: "indeterminate", reason: "unreadable-or-incomplete-evidence" });
+    expect(unsafeReport.findings).toContainEqual(expect.objectContaining({ rule: "unsafe-evidence-reference", path: "artifact.manifestRef" }));
+  });
+
   it("stops deferring once the bounded final layer has actual structure", () => {
     const rejects = [
       "https://%25user@host.invalid/e", "https%253A%252F%252F%2525user%2540host.invalid%252Fe",
@@ -516,6 +541,37 @@ describe("completion evidence", () => {
     // Long malformed percent-encoded inputs must complete with a safe verdict.
     expect(isValueSafeReference("%FF".repeat(10_000))).toBe(true);
     expect(isValueSafeReference("%".repeat(10_000))).toBe(true);
+  });
+
+  it("iterates long source-atom authority chains without recursion", () => {
+    const safeChain = "https://a" + "\thttps://a".repeat(6_000);
+    const unsafeChain = `${safeChain}\thttps://reader:secret${at}host.invalid/evidence`;
+    expect(safeChain.length).toBeLessThanOrEqual(MAX_REFERENCE_CODE_UNITS);
+    expect(() => isValueSafeReference(safeChain)).not.toThrow();
+    expect(isValueSafeReference(safeChain)).toBe(true);
+    expect(referenceSafetyOperationCount(safeChain)).toBeLessThanOrEqual(safeChain.length * 64);
+    expect(() => isValueSafeReference(unsafeChain)).not.toThrow();
+    expect(isValueSafeReference(unsafeChain)).toBe(false);
+    expect(referenceSafetyOperationCount(unsafeChain)).toBeLessThanOrEqual(unsafeChain.length * 64);
+
+    const mixed = `https://a\tcustom://a\t//a\thttps://reader:secret${at}host.invalid/evidence`;
+    expect(isValueSafeReference(mixed)).toBe(false);
+
+    const safeLedger = ledger();
+    (((safeLedger.positions as Array<Record<string, Record<string, string>>>)[0]!.evidenceSource).locator) = safeChain;
+    expect(validateInstalledPositionLedger(safeLedger).ok).toBe(true);
+    const unsafeLedger = ledger();
+    (((unsafeLedger.positions as Array<Record<string, Record<string, string>>>)[0]!.evidenceSource).locator) = unsafeChain;
+    expect(validateInstalledPositionLedger(unsafeLedger).findings).toContainEqual(expect.objectContaining({ rule: "unsafe-evidence-reference", path: "positions[0].evidenceSource.locator" }));
+
+    const safeEvidence = evidence();
+    (safeEvidence.artifact as Record<string, unknown>).manifestRef = safeChain;
+    expect(validateCompletionEvidence(safeEvidence, ledger()).result).toEqual({ verdict: "satisfied", evaluated: 1 });
+    const unsafeEvidence = evidence();
+    (unsafeEvidence.artifact as Record<string, unknown>).manifestRef = unsafeChain;
+    const unsafeReport = validateCompletionEvidence(unsafeEvidence, ledger());
+    expect(unsafeReport.result).toMatchObject({ verdict: "indeterminate", reason: "unreadable-or-incomplete-evidence" });
+    expect(unsafeReport.findings).toContainEqual(expect.objectContaining({ rule: "unsafe-evidence-reference", path: "artifact.manifestRef" }));
   });
 
   it("derives the outcome from the linked role metric direction and position setpoint", () => {

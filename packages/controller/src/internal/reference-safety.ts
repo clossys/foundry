@@ -26,6 +26,7 @@ interface Layer { readonly atoms: Atom[]; }
 type CandidateScope = "root" | "query";
 type ParseResult = { readonly unsafe: boolean; readonly end: number; readonly queryAt?: number; readonly bareBoundary: boolean };
 type SchemeEnds = readonly number[];
+type CandidateDescriptor = { readonly kind: "authority"; readonly start: number; readonly special: boolean } | { readonly kind: "opaque"; readonly start: number };
 interface ScanWork { units: number; }
 function scanned(work: ScanWork | undefined): void { if (work) work.units += 1; }
 
@@ -188,6 +189,9 @@ function actualAtBeforeDelimiter(atoms: readonly Atom[], start: number, special:
   }
   return false;
 }
+function sensitiveAuthorityAssignment(atoms: readonly Atom[], start: number, end: number): boolean {
+  return authoritySensitiveAssignment.test(join(atoms, start, end));
+}
 function protectOpaque(atoms: Atom[], start: number, remainingDepth: number, work?: ScanWork): { readonly end: number; readonly queryAt?: number } {
   let cursor = start;
   while (cursor < atoms.length && atoms[cursor]!.value !== "?" && atoms[cursor]!.value !== "#" && !whiteSpace(atoms[cursor]!.value) && !(remainingDepth > 0 && futureStructureAt(atoms, cursor))) { scanned(work); cursor += 1; }
@@ -196,41 +200,66 @@ function protectOpaque(atoms: Atom[], start: number, remainingDepth: number, wor
   return cursor < atoms.length ? { end: cursor, queryAt: cursor } : { end: cursor };
 }
 function scanAuthority(atoms: Atom[], start: number, special: boolean, remainingDepth: number, sourceAtomStarts: readonly boolean[] | undefined, ends: SchemeEnds, work?: ScanWork): ParseResult {
+  let authorityStart = start;
+  let authoritySpecial = special;
   let cursor = start;
   while (cursor < atoms.length) {
     scanned(work);
-    if (cursor > start && sourceAtomStarts?.[cursor]) {
-      const nested = parseCandidate(atoms, cursor, remainingDepth, sourceAtomStarts, ends, work);
-      if (nested !== undefined) return nested;
+    if (cursor > authorityStart && sourceAtomStarts?.[cursor]) {
+      const nested = describeCandidate(atoms, cursor, ends, work);
+      if (nested !== undefined && sensitiveAuthorityAssignment(atoms, authorityStart, cursor)) return { unsafe: true, end: cursor, bareBoundary: false };
+      if (nested?.kind === "opaque") {
+        const opaque = protectOpaque(atoms, nested.start, remainingDepth, work);
+        return { unsafe: false, end: opaque.end, queryAt: opaque.queryAt, bareBoundary: false };
+      }
+      if (nested?.kind === "authority") {
+        if (nested.start <= cursor) return { unsafe: true, end: cursor, bareBoundary: false };
+        authorityStart = nested.start;
+        authoritySpecial = nested.special;
+        cursor = nested.start;
+        continue;
+      }
     }
     const atom = atoms[cursor]!;
     const value = atom.value;
     if (atom.protected) { cursor += 1; continue; }
-    if (remainingDepth > 0 && futureStructureAt(atoms, cursor)) return cursor > start && actualAtBeforeDelimiter(atoms, cursor, special) ? { unsafe: true, end: cursor, bareBoundary: false } : { unsafe: false, end: deferredEnd(atoms, cursor), bareBoundary: false };
+    if (remainingDepth > 0 && futureStructureAt(atoms, cursor)) {
+      if (sensitiveAuthorityAssignment(atoms, authorityStart, cursor) || (cursor > authorityStart && actualAtBeforeDelimiter(atoms, cursor, authoritySpecial))) return { unsafe: true, end: cursor, bareBoundary: false };
+      return { unsafe: false, end: deferredEnd(atoms, cursor), bareBoundary: false };
+    }
     if (value === "@") return { unsafe: true, end: cursor + 1, bareBoundary: false };
-    if (value === "/" || value === "?" || value === "#" || (special && value === "\\")) {
-      if (authoritySensitiveAssignment.test(join(atoms, start, cursor))) return { unsafe: true, end: cursor, bareBoundary: false };
+    if (value === "/" || value === "?" || value === "#" || (authoritySpecial && value === "\\")) {
+      if (sensitiveAuthorityAssignment(atoms, authorityStart, cursor)) return { unsafe: true, end: cursor, bareBoundary: false };
       if (value === "?" || value === "#") return { unsafe: false, end: cursor, queryAt: cursor, bareBoundary: false };
       const path = protectPath(atoms, cursor, work); return { unsafe: false, end: path.end, queryAt: path.queryAt, bareBoundary: false };
     }
-    if (whiteSpace(value)) return { unsafe: false, end: cursor, bareBoundary: false };
-    if (postAuthorityWrappers.has(value)) return { unsafe: false, end: cursor, bareBoundary: true };
+    if (whiteSpace(value)) return sensitiveAuthorityAssignment(atoms, authorityStart, cursor) ? { unsafe: true, end: cursor, bareBoundary: false } : { unsafe: false, end: cursor, bareBoundary: false };
+    if (postAuthorityWrappers.has(value)) return sensitiveAuthorityAssignment(atoms, authorityStart, cursor) ? { unsafe: true, end: cursor, bareBoundary: false } : { unsafe: false, end: cursor, bareBoundary: true };
     cursor += 1;
   }
-  return { unsafe: false, end: cursor, bareBoundary: true };
+  return sensitiveAuthorityAssignment(atoms, authorityStart, cursor) ? { unsafe: true, end: cursor, bareBoundary: false } : { unsafe: false, end: cursor, bareBoundary: true };
 }
-function parseCandidate(atoms: Atom[], index: number, remainingDepth: number, sourceAtomStarts: readonly boolean[] | undefined, ends: SchemeEnds, work?: ScanWork): ParseResult | undefined {
+function describeCandidate(atoms: readonly Atom[], index: number, ends: SchemeEnds, work?: ScanWork): CandidateDescriptor | undefined {
   const scheme = schemeAt(atoms, index, ends, work);
   if (scheme !== undefined) {
     if (scheme.special) {
       let start = scheme.afterColon;
       while (!atoms[start]?.protected && (literal(atoms, start, "/") || literal(atoms, start, "\\") || (literal(atoms, start, ":") && (literal(atoms, start + 1, "/") || literal(atoms, start + 1, "\\"))))) start += 1;
-      return scanAuthority(atoms, start, true, remainingDepth, sourceAtomStarts, ends, work);
+      return { kind: "authority", start, special: true };
     }
-    if (protocolRelativeAt(atoms, scheme.afterColon)) return scanAuthority(atoms, scheme.afterColon + 2, false, remainingDepth, sourceAtomStarts, ends, work);
-    const opaque = protectOpaque(atoms, scheme.afterColon, remainingDepth, work); return { unsafe: false, end: opaque.end, queryAt: opaque.queryAt, bareBoundary: false };
+    if (protocolRelativeAt(atoms, scheme.afterColon)) return { kind: "authority", start: scheme.afterColon + 2, special: false };
+    return { kind: "opaque", start: scheme.afterColon };
   }
-  return protocolRelativeAt(atoms, index) ? scanAuthority(atoms, index + 2, false, remainingDepth, sourceAtomStarts, ends, work) : undefined;
+  return protocolRelativeAt(atoms, index) ? { kind: "authority", start: index + 2, special: false } : undefined;
+}
+function parseCandidate(atoms: Atom[], index: number, remainingDepth: number, sourceAtomStarts: readonly boolean[] | undefined, ends: SchemeEnds, work?: ScanWork): ParseResult | undefined {
+  const candidate = describeCandidate(atoms, index, ends, work);
+  if (candidate === undefined) return undefined;
+  if (candidate.kind === "opaque") {
+    const opaque = protectOpaque(atoms, candidate.start, remainingDepth, work);
+    return { unsafe: false, end: opaque.end, queryAt: opaque.queryAt, bareBoundary: false };
+  }
+  return scanAuthority(atoms, candidate.start, candidate.special, remainingDepth, sourceAtomStarts, ends, work);
 }
 function skipQuotedJsonKey(atoms: readonly Atom[], index: number): number | undefined {
   const quote = atoms[index]?.value;
