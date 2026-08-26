@@ -43,17 +43,26 @@ describe("installed positions", () => {
   });
 
   it("rejects value-bearing evidence references and locators", () => {
+    const unsafeReferences = [
+      "audit credential:secret-value",
+      "provider value: prod-api-key",
+      "locator/query token=credential-value",
+      "central adoption decision: approve all consumers",
+      "https://credential:secret-value@example.invalid/evidence",
+    ];
     for (const [path, mutate] of [
-      ["positions[0].baseline.evidenceRefs[0]", (ledger: Record<string, unknown>) => { ((ledger.positions as Array<Record<string, Record<string, string[]>>>)[0]!.baseline).evidenceRefs[0] = "audit credential:secret-value"; }],
-      ["positions[0].setpoint.evidenceRefs[0]", (ledger: Record<string, unknown>) => { ((ledger.positions as Array<Record<string, Record<string, string[]>>>)[0]!.setpoint).evidenceRefs[0] = "provider value: prod-api-key"; }],
-      ["positions[0].evidenceSource.locator", (ledger: Record<string, unknown>) => { ((ledger.positions as Array<Record<string, Record<string, string>>>)[0]!.evidenceSource).locator = "locator/query token=credential-value"; }],
-      ["positions[0].firstDayAssessment.evidenceRefs[0]", (ledger: Record<string, unknown>) => { ((ledger.positions as Array<Record<string, Record<string, string[]>>>)[0]!.firstDayAssessment).evidenceRefs[0] = "central adoption decision: approve all consumers"; }],
+      ["positions[0].baseline.evidenceRefs[0]", (ledger: Record<string, unknown>, value: string) => { ((ledger.positions as Array<Record<string, Record<string, string[]>>>)[0]!.baseline).evidenceRefs[0] = value; }],
+      ["positions[0].setpoint.evidenceRefs[0]", (ledger: Record<string, unknown>, value: string) => { ((ledger.positions as Array<Record<string, Record<string, string[]>>>)[0]!.setpoint).evidenceRefs[0] = value; }],
+      ["positions[0].evidenceSource.locator", (ledger: Record<string, unknown>, value: string) => { ((ledger.positions as Array<Record<string, Record<string, string>>>)[0]!.evidenceSource).locator = value; }],
+      ["positions[0].firstDayAssessment.evidenceRefs[0]", (ledger: Record<string, unknown>, value: string) => { ((ledger.positions as Array<Record<string, Record<string, string[]>>>)[0]!.firstDayAssessment).evidenceRefs[0] = value; }],
     ] as const) {
-      const ledger = fixture();
-      mutate(ledger);
-      const report = validateInstalledPositionLedger(ledger);
-      expect(report.ok).toBe(false);
-      expect(report.findings).toContainEqual(expect.objectContaining({ rule: "unsafe-evidence-reference", path }));
+      for (const unsafe of unsafeReferences) {
+        const ledger = fixture();
+        mutate(ledger, unsafe);
+        const report = validateInstalledPositionLedger(ledger);
+        expect(report.ok).toBe(false);
+        expect(report.findings).toContainEqual(expect.objectContaining({ rule: "unsafe-evidence-reference", path }));
+      }
     }
   });
 

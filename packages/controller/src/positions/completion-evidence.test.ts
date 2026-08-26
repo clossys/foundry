@@ -323,6 +323,7 @@ describe("completion evidence", () => {
       "provider value: prod-api-key",
       "central adoption decision: approve all consumers",
       "locator/query token=credential-value",
+      "https://credential:secret-value@example.invalid/evidence",
     ];
     const mutate: ReadonlyArray<readonly [string, (item: Record<string, unknown>, value: string) => void]> = [
       ["artifact.manifestRef", (item, value) => { (item.artifact as Record<string, unknown>).manifestRef = value; }],
@@ -343,24 +344,25 @@ describe("completion evidence", () => {
       ["outcome.after.evidenceRefs[0]", (item, value) => { (((item.outcome as Record<string, Record<string, string[]>>).after).evidenceRefs)[0] = value; }],
       ["closeWindow.evidenceRefs[0]", (item, value) => { ((item.closeWindow as Record<string, string[]>).evidenceRefs)[0] = value; }],
     ];
-    for (const [index, [path, change]] of mutate.entries()) {
-      const item = evidence();
-      const unsafe = unsafeReferences[index % unsafeReferences.length]!;
-      change(item, unsafe);
-      const report = validateCompletionEvidence(item, ledger());
-      expect(report.result).toMatchObject({ verdict: "indeterminate", reason: "unreadable-or-incomplete-evidence" });
-      expect(report.findings).toContainEqual(expect.objectContaining({ rule: "unsafe-evidence-reference", path }));
-      expect(JSON.stringify(report.findings)).not.toContain(unsafe);
+    for (const [path, change] of mutate) {
+      for (const unsafe of unsafeReferences) {
+        const item = evidence();
+        change(item, unsafe);
+        const report = validateCompletionEvidence(item, ledger());
+        expect(report.result).toMatchObject({ verdict: "indeterminate", reason: "unreadable-or-incomplete-evidence" });
+        expect(report.findings).toContainEqual(expect.objectContaining({ rule: "unsafe-evidence-reference", path }));
+        expect(JSON.stringify(report.findings)).not.toContain(unsafe);
+      }
     }
 
     const unsafeLocator = ledger();
     (((unsafeLocator.positions as Array<Record<string, Record<string, unknown>>>)[0]!.evidenceSource).locator) = unsafeReferences[3]!;
     expect(validateCompletionEvidence(evidence(), unsafeLocator).result).toMatchObject({ verdict: "indeterminate", reason: "invalid-position-ledger" });
 
-    for (const benign of ["fixture/token-value-redaction.json", "fixture/provider-value-policy.json", "fixture/no-central-adoption-decision.json", "fixture/approve-all-consumers-negative-case.json", "fixture/credential-rotation.json", "urn:credential:policy", "https://example.invalid/docs/token:reference", "fixture/authorization:policy", "docs/credential:policy", "fixture/provider+value=policy", "https://example.invalid/docs/provider+value=policy", "fixture/café-policy.json", "urn:example:東京"]) {
+    for (const benign of ["fixture/token-value-redaction.json", "fixture/provider-value-policy.json", "fixture/no-central-adoption-decision.json", "fixture/approve-all-consumers-negative-case.json", "fixture/credential-rotation.json", "urn:credential:policy", "https://example.invalid/docs/token:reference", "fixture/authorization:policy", "docs/credential:policy", "https://example.invalid:443/evidence", "ftp://reader:reference@example.invalid/evidence", "custom+evidence://reader:reference@example.invalid/evidence", "https://example.invalid/?note=credential:policy", "fixture/provider+value=policy", "https://example.invalid/docs/provider+value=policy", "fixture/café-policy.json", "urn:example:東京"]) {
       expect(isValueSafeReference(benign)).toBe(true);
     }
-    for (const unsafe of ["access_token=example", "client_secret: example", "credential:value", "audit credential:secret-value", "central adoption decision:approve", "{\"token\":\"example\"}", "{\"credential\":\"example\"}", "{\"api_key\":\"example\"}", "credential%3Dexample", "credential%253Dvalue", "credential%3Dvalue&bad=%ZZ", "credential%3D%E0%A4value", "providerValue=example", "provider.value: example", "provider+value=foo", "https://example.invalid/?provider+value=foo", "fixture/provider value: prod-id", "note central adoption decision: adopted", "credential\u00ad=value", "to\u180eken=value", "to\u034fken=value", "to\u202aken=value", "to\u200bken=example", "to%E2%80%8Bken=example", "%EF%BD%94%EF%BD%8F%EF%BD%8B%EF%BD%85%EF%BD%8E%3Dexample"]) {
+    for (const unsafe of ["access_token=example", "client_secret: example", "credential:value", "audit credential:secret-value", "central adoption decision:approve", "{\"token\":\"example\"}", "{\"credential\":\"example\"}", "{\"api_key\":\"example\"}", "credential%3Dexample", "credential%253Dvalue", "credential%3Dvalue&bad=%ZZ", "credential%3D%E0%A4value", "providerValue=example", "provider.value: example", "provider+value=foo", "https://example.invalid/?provider+value=foo", "fixture/provider value: prod-id", "note central adoption decision: adopted", "https://credential:secret-value@example.invalid/evidence", "ftp://credential:secret-value@example.invalid/evidence", "custom+evidence://token:secret@example.invalid/evidence", "see https://credential:secret-value@example.invalid/evidence", "see //token:secret@example.invalid/evidence", "https%3A%2F%2Fcredential%3Asecret-value%40example.invalid%2Fevidence", "https://ｃｒｅｄｅｎｔｉａｌ:secret-value@example.invalid/evidence", "https://cre\u200bdential:secret-value@example.invalid/evidence", "credential\u00ad=value", "to\u180eken=value", "to\u034fken=value", "to\u202aken=value", "to\u200bken=example", "to%E2%80%8Bken=example", "%EF%BD%94%EF%BD%8F%EF%BD%8B%EF%BD%85%EF%BD%8E%3Dexample"]) {
       expect(isValueSafeReference(unsafe)).toBe(false);
     }
     // Long malformed percent-encoded inputs must complete with a safe verdict.

@@ -9,6 +9,7 @@ const equalsAssignment = new RegExp(`(?:^|[^a-z0-9])${sensitiveLabel}\\b[\"']?\\
 const segmentColonAssignment = new RegExp(`(?:^|[?&#])${sensitiveLabel}\\b\\s*:\\s*${nonemptyValue}`, "iu");
 const spacedColonAssignment = new RegExp(`(?:^|[^a-z0-9])${sensitiveLabel}\\b\\s*:\\s+${nonemptyValue}`, "iu");
 const unspacedColonAssignment = new RegExp(`(?:^|[\\s?&#])${sensitiveLabel}\\b\\s*:\\s*${nonemptyValue}`, "iu");
+const userinfoAssignment = new RegExp(`(?:^|[^a-z0-9/])\\/\\/${sensitiveLabel}\\b:[^\\s@/?#]+@`, "iu");
 const quotedColonAssignment = new RegExp(`(?:^|[^a-z0-9])[\"']${sensitiveLabel}[\"']\\s*:\\s*${nonemptyValue}`, "iu");
 const formEqualsAssignment = new RegExp(`(?:^|[?&#])${formSensitiveLabel}\\b[\"']?\\s*=\\s*${nonemptyValue}`, "iu");
 const formColonAssignment = new RegExp(`(?:^|[?&#])${formSensitiveLabel}\\b\\s*:\\s*${nonemptyValue}`, "iu");
@@ -28,5 +29,5 @@ export function stripDefaultIgnorables(value: string): string { return value.nor
 
 export function isValueSafeReference(value: string): boolean {
   const normalized = normalizedForDetection(value);
-  return !equalsAssignment.test(normalized) && !segmentColonAssignment.test(normalized) && !spacedColonAssignment.test(normalized) && !unspacedColonAssignment.test(normalized) && !quotedColonAssignment.test(normalized) && !formEqualsAssignment.test(normalized) && !formColonAssignment.test(normalized);
+  return !equalsAssignment.test(normalized) && !segmentColonAssignment.test(normalized) && !spacedColonAssignment.test(normalized) && !unspacedColonAssignment.test(normalized) && !userinfoAssignment.test(normalized) && !quotedColonAssignment.test(normalized) && !formEqualsAssignment.test(normalized) && !formColonAssignment.test(normalized);
 }
