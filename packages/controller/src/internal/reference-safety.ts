@@ -1,4 +1,4 @@
-/** Reject explicit inline sensitive-payload syntax in otherwise opaque references. */
+/** Reject explicit inline sensitive-payload syntax and URL authority userinfo in otherwise opaque references. */
 import { TextDecoder } from "node:util";
 
 const invisible = /[\0\p{Default_Ignorable_Code_Point}]/gu;
@@ -9,7 +9,7 @@ const equalsAssignment = new RegExp(`(?:^|[^a-z0-9])${sensitiveLabel}\\b[\"']?\\
 const segmentColonAssignment = new RegExp(`(?:^|[?&#])${sensitiveLabel}\\b\\s*:\\s*${nonemptyValue}`, "iu");
 const spacedColonAssignment = new RegExp(`(?:^|[^a-z0-9])${sensitiveLabel}\\b\\s*:\\s+${nonemptyValue}`, "iu");
 const unspacedColonAssignment = new RegExp(`(?:^|[\\s?&#])${sensitiveLabel}\\b\\s*:\\s*${nonemptyValue}`, "iu");
-const userinfoAssignment = new RegExp(`(?:^|[^a-z0-9/])\\/\\/${sensitiveLabel}\\b:[^\\s@/?#]+@`, "iu");
+const authorityUserinfo = /(?:^|[^a-z0-9/])(?:[a-z][a-z0-9+.-]*(?::|%3a))?(?:(?:\/|%2f){2})(?:[^\s@/?#%]|%[0-9a-f]{2})+(?:@|%40)/iu;
 const quotedColonAssignment = new RegExp(`(?:^|[^a-z0-9])[\"']${sensitiveLabel}[\"']\\s*:\\s*${nonemptyValue}`, "iu");
 const formEqualsAssignment = new RegExp(`(?:^|[?&#])${formSensitiveLabel}\\b[\"']?\\s*=\\s*${nonemptyValue}`, "iu");
 const formColonAssignment = new RegExp(`(?:^|[?&#])${formSensitiveLabel}\\b\\s*:\\s*${nonemptyValue}`, "iu");
@@ -20,14 +20,25 @@ function decodePercentPass(value: string): string {
 }
 
 function normalizedForDetection(value: string): string {
-  let normalized = value;
-  for (let pass = 0; pass < 2; pass += 1) normalized = decodePercentPass(normalized);
-  return stripDefaultIgnorables(normalized).toLowerCase();
+  let normalized = normalizeStage(value);
+  for (let pass = 0; pass < 2; pass += 1) normalized = normalizeStage(decodePercentPass(normalized));
+  return normalized;
 }
 
 export function stripDefaultIgnorables(value: string): string { return value.normalize("NFKC").replace(invisible, ""); }
 
+function normalizeStage(value: string): string { return stripDefaultIgnorables(value).toLowerCase(); }
+
+function containsAuthorityUserinfo(value: string): boolean {
+  let stage = normalizeStage(value);
+  for (let pass = 0; pass <= 2; pass += 1) {
+    if (authorityUserinfo.test(stage)) return true;
+    if (pass < 2) stage = normalizeStage(decodePercentPass(stage));
+  }
+  return false;
+}
+
 export function isValueSafeReference(value: string): boolean {
   const normalized = normalizedForDetection(value);
-  return !equalsAssignment.test(normalized) && !segmentColonAssignment.test(normalized) && !spacedColonAssignment.test(normalized) && !unspacedColonAssignment.test(normalized) && !userinfoAssignment.test(normalized) && !quotedColonAssignment.test(normalized) && !formEqualsAssignment.test(normalized) && !formColonAssignment.test(normalized);
+  return !containsAuthorityUserinfo(value) && !equalsAssignment.test(normalized) && !segmentColonAssignment.test(normalized) && !spacedColonAssignment.test(normalized) && !unspacedColonAssignment.test(normalized) && !quotedColonAssignment.test(normalized) && !formEqualsAssignment.test(normalized) && !formColonAssignment.test(normalized);
 }

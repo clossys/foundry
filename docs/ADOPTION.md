@@ -184,7 +184,7 @@ duplicate disposition, rollback record, cadence runs, and separately attributed
 before and after outcome observations with a close-window verdict.
 
 The references are consumer-retained identifiers. The validator lexically
-rejects explicit inline sensitive-payload assignments, but does not authenticate
+rejects explicit inline sensitive-payload assignments and URL authority userinfo, but does not authenticate
 the pointers or prove opaque references free of other sensitive material. It verifies that a
 consumer supplied each evidence class, that the position linkage and owned
 metric agree with the shipped role charter, and that known-offset RFC3339

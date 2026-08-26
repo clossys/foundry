@@ -48,7 +48,7 @@ describe("installed positions", () => {
       "provider value: prod-api-key",
       "locator/query token=credential-value",
       "central adoption decision: approve all consumers",
-      "https://credential:secret-value@example.invalid/evidence",
+      "custom+evidence://reader:reference@example.invalid/evidence",
     ];
     for (const [path, mutate] of [
       ["positions[0].baseline.evidenceRefs[0]", (ledger: Record<string, unknown>, value: string) => { ((ledger.positions as Array<Record<string, Record<string, string[]>>>)[0]!.baseline).evidenceRefs[0] = value; }],

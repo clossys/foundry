@@ -20,8 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   satisfaction needs a later satisfied cadence run. Malformed or incomplete
   evidence is indeterminate rather than a false completion. Retained reference
   and locator strings now fail closed when they carry credential, provider-value,
-  or central-adoption-decision payload assignments; ordinary identifiers are
-  not treated as values.
+  or central-adoption-decision payload assignments or URL authority userinfo;
+  ordinary identifiers are not treated as values.
 - Aligned the schema-v4 Advisor owned-metric identity to Advisor 0.1.2's
   published `engagement-decision-currency-rate` literal, so its exact
   completion evidence binds to the same role metric.
