@@ -13,7 +13,7 @@ const formEqualsAssignment = new RegExp("(?:^|[?&#])" + formSensitiveLabel + "\\
 const formColonAssignment = new RegExp("(?:^|[?&#])" + formSensitiveLabel + "\\b\\s*:\\s*" + nonemptyValue, "iu");
 const authoritySensitiveAssignment = new RegExp("^" + sensitiveLabel + "\\b\\s*:\\s*" + nonemptyValue, "iu");
 const eligibleSensitiveAssignment = new RegExp("^(?:" + formSensitiveLabel + ")\\b[\"']?\\s*(?::|=)\\s*" + nonemptyValue, "iu");
-const MAX_SENSITIVE_ASSIGNMENT_LOOKAHEAD = 96;
+const eligibleSensitiveAssignmentSearch = new RegExp(eligibleSensitiveAssignment.source.slice(1), "giu");
 
 export const MAX_REFERENCE_CODE_UNITS = 65_536;
 const specialAuthoritySchemes = new Set(["ftp", "http", "https", "ws", "wss"]);
@@ -227,13 +227,20 @@ function decodedScalarAt(atoms: readonly Atom[], index: number): { readonly valu
   }
   return { value: atom.value, span: 1 };
 }
-function projectedScalarAt(atoms: readonly Atom[], index: number, remainingDepth: number): { readonly value: string; readonly span: number } | undefined {
+type ProjectedScalar = { readonly value: string; readonly span: number; readonly depth: 0 | 1 | 2 };
+function projectedScalarWithDepth(atoms: readonly Atom[], index: number, remainingDepth: number): ProjectedScalar | undefined {
   const first = decodedScalarAt(atoms, index);
-  if (first === undefined || remainingDepth < 2 || first.value !== "%") return first;
+  if (first === undefined) return undefined;
+  if (first.span === 1 || remainingDepth === 0) return { ...first, depth: 0 };
+  if (remainingDepth < 2 || first.value !== "%") return { ...first, depth: 1 };
   const high = decodedScalarAt(atoms, index + first.span);
   const low = high === undefined ? undefined : decodedScalarAt(atoms, index + first.span + high.span);
-  if (high === undefined || low === undefined || !hex(high.value) || !hex(low.value)) return first;
-  return { value: String.fromCharCode(Number.parseInt(`${high.value}${low.value}`, 16)), span: first.span + high.span + low.span };
+  if (high === undefined || low === undefined || !hex(high.value) || !hex(low.value)) return { ...first, depth: 1 };
+  return { value: String.fromCharCode(Number.parseInt(`${high.value}${low.value}`, 16)), span: first.span + high.span + low.span, depth: 2 };
+}
+function projectedScalarAt(atoms: readonly Atom[], index: number, remainingDepth: number): { readonly value: string; readonly span: number } | undefined {
+  const scalar = projectedScalarWithDepth(atoms, index, remainingDepth);
+  return scalar === undefined ? undefined : { value: scalar.value, span: scalar.span };
 }
 function projectedAuthorityMarkerAt(atoms: readonly Atom[], index: number, remainingDepth: number): number | undefined {
   if (remainingDepth === 0) return undefined;
@@ -253,19 +260,23 @@ function deferredEnd(atoms: readonly Atom[], start: number): number {
   return cursor;
 }
 function authorityAtBeforeDelimiter(atoms: readonly Atom[], start: number, special: boolean, remainingDepth: number): boolean {
+  let delimiter: { readonly depth: number; readonly position: number } | undefined;
+  let userinfo: { readonly depth: number; readonly position: number } | undefined;
+  const before = (left: { readonly depth: number; readonly position: number }, right: { readonly depth: number; readonly position: number }): boolean => left.depth < right.depth || (left.depth === right.depth && left.position < right.position);
   for (let cursor = start; cursor < atoms.length;) {
     const atom = atoms[cursor]!;
     if (atom.protected) { cursor += 1; continue; }
-    // A delimiter is structural only after it has actually materialised in
-    // this layer.  An encoded slash must not hide a later raw/projection @ in
-    // the current authority view.
-    if (whiteSpace(atom.value) || atom.value === "/" || atom.value === "?" || atom.value === "#" || (special && atom.value === "\\")) return false;
-    const projected = projectedScalarAt(atoms, cursor, remainingDepth);
+    const projected = projectedScalarWithDepth(atoms, cursor, remainingDepth);
     if (projected === undefined) return false;
-    if (projected.value === "@") return true;
+    const isDelimiter = whiteSpace(projected.value) || projected.value === "/" || projected.value === "?" || projected.value === "#" || (special && projected.value === "\\");
+    const candidate = { depth: projected.depth, position: cursor };
+    if (isDelimiter && (delimiter === undefined || before(candidate, delimiter))) delimiter = candidate;
+    if (projected.value === "@" && (userinfo === undefined || before(candidate, userinfo))) userinfo = candidate;
+    // A literal delimiter cannot be displaced by any later projected token.
+    if (isDelimiter && projected.depth === 0) break;
     cursor += projected.span;
   }
-  return false;
+  return userinfo !== undefined && (delimiter === undefined || before(userinfo, delimiter));
 }
 function sensitiveAuthorityAssignment(atoms: readonly Atom[], start: number, end: number): boolean {
   return authoritySensitiveAssignment.test(join(atoms, start, end));
@@ -278,15 +289,32 @@ function sensitiveAuthorityAssignment(atoms: readonly Atom[], start: number, end
  */
 function sensitiveColonStartMask(atoms: readonly Atom[], work?: ScanWork): Uint8Array {
   const starts = new Uint8Array(atoms.length);
-  for (let start = 0; start < atoms.length; start += 1) {
-    if (atoms[start]!.protected) continue;
-    let value = "";
-    for (let cursor = start; cursor < atoms.length && value.length < MAX_SENSITIVE_ASSIGNMENT_LOOKAHEAD; cursor += 1) {
-      const atom = atoms[cursor]!;
-      if (atom.protected) break;
-      value += atom.value;
+  for (let start = 0; start < atoms.length;) {
+    while (start < atoms.length && atoms[start]!.protected) { scanned(work); start += 1; }
+    if (start >= atoms.length) break;
+    let end = start;
+    let text = "";
+    const atomAtCodeUnit: number[] = [];
+    while (end < atoms.length && !atoms[end]!.protected) {
+      const atom = atoms[end]!;
+      text += atom.value;
+      for (let offset = 0; offset < atom.value.length; offset += 1) atomAtCodeUnit.push(end);
+      scanned(work);
+      end += 1;
     }
-    if (eligibleSensitiveAssignment.test(value)) starts[start] = 1;
+    eligibleSensitiveAssignmentSearch.lastIndex = 0;
+    for (let match = eligibleSensitiveAssignmentSearch.exec(text); match !== null; match = eligibleSensitiveAssignmentSearch.exec(text)) {
+      const atom = atomAtCodeUnit[match.index];
+      if (atom !== undefined) starts[atom] = 1;
+      // The expression always consumes a nonempty label and value.  Keep the
+      // explicit guard for future grammar edits.
+      if (match[0].length === 0) eligibleSensitiveAssignmentSearch.lastIndex += 1;
+    }
+    // The grammar engine is a second linear pass over this bounded segment;
+    // account for it explicitly so the deterministic work hook includes the
+    // complete mask rather than only its materialization.
+    for (let index = start; index < end; index += 1) scanned(work);
+    start = end;
   }
   return starts;
 }

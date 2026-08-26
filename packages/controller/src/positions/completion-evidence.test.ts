@@ -611,6 +611,58 @@ describe("completion evidence", () => {
     expect(unsafeReport.findings).toContainEqual(expect.objectContaining({ rule: "unsafe-evidence-reference", path: "artifact.manifestRef" }));
   });
 
+  it("orders projected authority delimiters before projected userinfo", () => {
+    const encoded = (value: string, depth: 1 | 2): string => depth === 1 ? encodeURIComponent(value) : encodeURIComponent(encodeURIComponent(value));
+    const delimiters = ["/", "?", "#", " "];
+    for (const prefix of ["https://", "custom://", "//"]) for (const delimiter of delimiters) {
+      for (const delimiterDepth of [1, 2] as const) for (const userinfoDepth of [1, 2] as const) {
+        const reference = `${prefix}reader)${encoded(delimiter, delimiterDepth)}path${encoded(at, userinfoDepth)}host.invalid`;
+        const expected = userinfoDepth < delimiterDepth;
+        expect(isValueSafeReference(reference), reference).toBe(!expected);
+      }
+      const rawUserinfo = `${prefix}reader)${encoded(delimiter, 1)}path${at}host.invalid`;
+      expect(isValueSafeReference(rawUserinfo), rawUserinfo).toBe(false);
+    }
+    for (const delimiterDepth of [1, 2] as const) for (const userinfoDepth of [1, 2] as const) {
+      const reference = `https://reader)${encoded("\\", delimiterDepth)}path${encoded(at, userinfoDepth)}host.invalid`;
+      expect(isValueSafeReference(reference), reference).toBe(!(userinfoDepth < delimiterDepth));
+    }
+    for (const safe of [
+      "https%3a%2f%2fhost.invalid%2fpath%2520https%253a%252f%252freader%253areference%2540host.invalid",
+      "https%253a%252f%252fhost.invalid%252fpath%252520https%25253a%25252f%25252freader%25253areference%252540host.invalid",
+    ]) expect(isValueSafeReference(safe), safe).toBe(true);
+  });
+
+  it("does not cap whitespace before an eligible sensitive assignment", () => {
+    const prefix = "https://safe.invalid)credential";
+    const suffix = ":value";
+    const nearCap = `${prefix}${" ".repeat(MAX_REFERENCE_CODE_UNITS - prefix.length - suffix.length)}${suffix}`;
+    const encodedNearCap = (token: string): string => `${prefix}${token.repeat(Math.floor((MAX_REFERENCE_CODE_UNITS - prefix.length - suffix.length) / token.length))}${suffix}`;
+    expect(nearCap.length).toBe(MAX_REFERENCE_CODE_UNITS);
+    for (const reference of [nearCap, encodedNearCap("%20"), encodedNearCap("%2520")]) {
+      expect(reference.length).toBeLessThanOrEqual(MAX_REFERENCE_CODE_UNITS);
+      expect(isValueSafeReference(reference), reference.slice(0, 40)).toBe(false);
+    }
+    expect(referenceSafetyOperationCount(nearCap)).toBeLessThanOrEqual(nearCap.length * 64);
+    for (const [path, change] of mutateRetainedReference) {
+      const item = evidence();
+      change(item, nearCap);
+      expect(validateCompletionEvidence(item, ledger()).findings).toContainEqual(expect.objectContaining({ rule: "unsafe-evidence-reference", path }));
+    }
+    const ledgerMutations = [
+      ["positions[0].baseline.evidenceRefs[0]", (item: Record<string, unknown>, value: string) => { (((item.positions as Array<Record<string, Record<string, string[]>>>)[0]!.baseline).evidenceRefs)[0] = value; }],
+      ["positions[0].setpoint.evidenceRefs[0]", (item: Record<string, unknown>, value: string) => { (((item.positions as Array<Record<string, Record<string, string[]>>>)[0]!.setpoint).evidenceRefs)[0] = value; }],
+      ["positions[0].evidenceSource.locator", (item: Record<string, unknown>, value: string) => { ((item.positions as Array<Record<string, Record<string, string>>>)[0]!.evidenceSource).locator = value; }],
+      ["positions[0].firstDayAssessment.evidenceRefs[0]", (item: Record<string, unknown>, value: string) => { (((item.positions as Array<Record<string, Record<string, string[]>>>)[0]!.firstDayAssessment).evidenceRefs)[0] = value; }],
+    ] as const;
+    for (const [path, change] of ledgerMutations) {
+      const item = ledger();
+      change(item, nearCap);
+      expect(validateInstalledPositionLedger(item).findings).toContainEqual(expect.objectContaining({ rule: "unsafe-evidence-reference", path }));
+    }
+    for (const safe of ["fixture/(credential:value)", "urn:credential:policy", "https://host.invalid/path@v1", "https://host.invalid:443/evidence"]) expect(isValueSafeReference(safe), safe).toBe(true);
+  });
+
   it("stops deferring once the bounded final layer has actual structure", () => {
     const rejects = [
       "https://%25user@host.invalid/e", "https%253A%252F%252F%2525user%2540host.invalid%252Fe",
