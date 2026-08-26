@@ -12,15 +12,20 @@ const quotedColonAssignment = new RegExp("(?:^|[^a-z0-9])[\"']" + sensitiveLabel
 const formEqualsAssignment = new RegExp("(?:^|[?&#])" + formSensitiveLabel + "\\b[\"']?\\s*=\\s*" + nonemptyValue, "iu");
 const formColonAssignment = new RegExp("(?:^|[?&#])" + formSensitiveLabel + "\\b\\s*:\\s*" + nonemptyValue, "iu");
 const authoritySensitiveAssignment = new RegExp("^" + sensitiveLabel + "\\b\\s*:\\s*" + nonemptyValue, "iu");
+const eligibleSensitiveAssignment = new RegExp("^(?:" + formSensitiveLabel + ")\\b[\"']?\\s*(?::|=)\\s*" + nonemptyValue, "iu");
 const MAX_SENSITIVE_ASSIGNMENT_LOOKAHEAD = 96;
 
 export const MAX_REFERENCE_CODE_UNITS = 65_536;
 const specialAuthoritySchemes = new Set(["ftp", "http", "https", "ws", "wss"]);
 const defaultIgnorable = /[\0\p{Default_Ignorable_Code_Point}]/u;
 const unicodeWhitespace = /\p{White_Space}/u;
-const rootWrappers = new Set(["(", "[", "{", "<", "\"", "'", "`", "“", "”", "‘", "’", "–", "—"]);
-const postAuthorityWrappers = new Set([...rootWrappers, ",", ";", ")", "]", "}", ">"]);
-const openingValueWrappers = new Set(["(", "[", "{", "<", "\"", "'", "`", "“", "‘"]);
+// These are the only prose/value wrappers accepted by the structural lexer.
+// Keep one union so root, query, JSON, and post-authority hand-offs cannot
+// drift into different eligibility grammars.
+const wrappers = new Set(["(", "[", "{", "<", "\"", "'", "`", "“", "”", "‘", "’", "–", "—", ",", ";", ")", "]", "}", ">"]);
+const rootWrappers = wrappers;
+const postAuthorityWrappers = wrappers;
+const openingValueWrappers = wrappers;
 
 interface Atom { readonly value: string; readonly protected: boolean; }
 interface Layer { readonly atoms: Atom[]; }
@@ -247,48 +252,41 @@ function deferredEnd(atoms: readonly Atom[], start: number): number {
   while (cursor < atoms.length && !whiteSpace(atoms[cursor]!.value)) cursor += 1;
   return cursor;
 }
-function actualAtBeforeDelimiter(atoms: readonly Atom[], start: number, special: boolean): boolean {
-  for (let cursor = start; cursor < atoms.length && !whiteSpace(atoms[cursor]!.value); cursor += 1) {
-    const value = atoms[cursor]!.value;
-    if (value === "/" || value === "?" || value === "#" || (special && value === "\\")) return false;
-    if (!atoms[cursor]!.protected && value === "@") return true;
+function authorityAtBeforeDelimiter(atoms: readonly Atom[], start: number, special: boolean, remainingDepth: number): boolean {
+  for (let cursor = start; cursor < atoms.length;) {
+    const atom = atoms[cursor]!;
+    if (atom.protected) { cursor += 1; continue; }
+    // A delimiter is structural only after it has actually materialised in
+    // this layer.  An encoded slash must not hide a later raw/projection @ in
+    // the current authority view.
+    if (whiteSpace(atom.value) || atom.value === "/" || atom.value === "?" || atom.value === "#" || (special && atom.value === "\\")) return false;
+    const projected = projectedScalarAt(atoms, cursor, remainingDepth);
+    if (projected === undefined) return false;
+    if (projected.value === "@") return true;
+    cursor += projected.span;
   }
   return false;
 }
 function sensitiveAuthorityAssignment(atoms: readonly Atom[], start: number, end: number): boolean {
   return authoritySensitiveAssignment.test(join(atoms, start, end));
 }
-function sensitiveLabelPrefixAt(atoms: readonly Atom[], start: number): boolean {
-  const first = atoms[start]?.value;
-  const second = atoms[start + 1]?.value;
-  return (first === "a" && (second === "c" || second === "u" || second === "p"))
-    || (first === "c" && (second === "r" || second === "l" || second === "e" || second === "o"))
-    || (first === "d" && second === "a")
-    || (first === "p" && (second === "r" || second === "a"))
-    || (first === "s" && second === "e")
-    || (first === "t" && second === "o");
-}
 /**
- * Precompute only label starts.  Structural scanning decides which starts are
- * eligible roots, query values, or JSON values; opaque and path atoms never
- * consult this mask and therefore remain opaque across decode layers.
+ * Precompute every complete label/assignment start with the same label and
+ * separator grammar used by the public regex rules.  The lexer, not a source
+ * predecessor shortcut, decides whether an unprotected start is an eligible
+ * root, query value, or JSON value.
  */
 function sensitiveColonStartMask(atoms: readonly Atom[], work?: ScanWork): Uint8Array {
   const starts = new Uint8Array(atoms.length);
   for (let start = 0; start < atoms.length; start += 1) {
-    // Ordinary query/path values such as `note=credential:policy` remain
-    // opaque identifiers.  This mask is deliberately the wrapper hand-off:
-    // global assignment rules cover ordinary root/prose syntax, while an
-    // opening wrapper makes the following atom an eligible structural value.
-    if (atoms[start]!.protected || (start > 0 && !rootWrappers.has(atoms[start - 1]!.value)) || !sensitiveLabelPrefixAt(atoms, start)) continue;
+    if (atoms[start]!.protected) continue;
     let value = "";
     for (let cursor = start; cursor < atoms.length && value.length < MAX_SENSITIVE_ASSIGNMENT_LOOKAHEAD; cursor += 1) {
-      scanned(work);
       const atom = atoms[cursor]!;
-      if (atom.protected || whiteSpace(atom.value)) break;
+      if (atom.protected) break;
       value += atom.value;
     }
-    if (authoritySensitiveAssignment.test(value)) starts[start] = 1;
+    if (eligibleSensitiveAssignment.test(value)) starts[start] = 1;
   }
   return starts;
 }
@@ -328,11 +326,11 @@ function scanAuthority(atoms: Atom[], start: number, special: boolean, remaining
     // terminate this authority now.  Otherwise a following literal slash can
     // incorrectly establish an outer path and hide the later root candidate.
     if (futureAuthorityWrapperAt(atoms, cursor, remainingDepth)) {
-      if (sensitiveAuthorityAssignment(atoms, authorityStart, cursor) || (cursor > authorityStart && actualAtBeforeDelimiter(atoms, cursor, authoritySpecial))) return { unsafe: true, end: cursor, bareBoundary: false };
+      if (sensitiveAuthorityAssignment(atoms, authorityStart, cursor) || (cursor > authorityStart && authorityAtBeforeDelimiter(atoms, cursor, authoritySpecial, remainingDepth))) return { unsafe: true, end: cursor, bareBoundary: false };
       return { unsafe: false, end: deferredEnd(atoms, cursor), bareBoundary: false };
     }
     if (remainingDepth > 0 && futureStructureAt(atoms, cursor)) {
-      if (sensitiveAuthorityAssignment(atoms, authorityStart, cursor) || (cursor > authorityStart && actualAtBeforeDelimiter(atoms, cursor, authoritySpecial))) return { unsafe: true, end: cursor, bareBoundary: false };
+      if (sensitiveAuthorityAssignment(atoms, authorityStart, cursor) || (cursor > authorityStart && authorityAtBeforeDelimiter(atoms, cursor, authoritySpecial, remainingDepth))) return { unsafe: true, end: cursor, bareBoundary: false };
       return { unsafe: false, end: deferredEnd(atoms, cursor), bareBoundary: false };
     }
     if (value === "@") return { unsafe: true, end: cursor + 1, bareBoundary: false };
@@ -343,7 +341,7 @@ function scanAuthority(atoms: Atom[], start: number, special: boolean, remaining
     }
     if (whiteSpace(value)) return sensitiveAuthorityAssignment(atoms, authorityStart, cursor) ? { unsafe: true, end: cursor, bareBoundary: false } : { unsafe: false, end: cursor, bareBoundary: false };
     if (postAuthorityWrappers.has(value)) {
-      if (sensitiveAuthorityAssignment(atoms, authorityStart, cursor) || actualAtBeforeDelimiter(atoms, cursor, authoritySpecial)) return { unsafe: true, end: cursor, bareBoundary: false };
+      if (sensitiveAuthorityAssignment(atoms, authorityStart, cursor) || authorityAtBeforeDelimiter(atoms, cursor, authoritySpecial, remainingDepth)) return { unsafe: true, end: cursor, bareBoundary: false };
       return { unsafe: false, end: cursor, bareBoundary: true };
     }
     cursor += 1;

@@ -384,10 +384,13 @@ describe("completion evidence", () => {
     expect(overlongReport.findings).toContainEqual({ rule: "reference-length-exceeded", path: "artifact.manifestRef", message: "must be at most 65,536 code units" });
 
     const benignReferences = ["fixture/token-value-redaction.json", "fixture/provider-value-policy.json", "fixture/no-central-adoption-decision.json", "fixture/approve-all-consumers-negative-case.json", "fixture/credential-rotation.json", "urn:credential:policy", `urn:example://reader${at}v1`, `mailto:reader${at}host.invalid`, "https://example.invalid/docs/token:reference", "fixture/authorization:policy", "docs/credential:policy", "https://example.invalid:443/evidence", "ftp://example.invalid:21/evidence", "custom+evidence://example.invalid/evidence", `fixture/custom://reader${at}v1`, `https://host.invalid/release/custom://reader${at}v1`, `custom:///reader${at}v1`, `///reader${at}v1`, `custom:/\\reader:reference${at}v1`, "https:///host.invalid/evidence", "https:host.invalid/evidence", "https:/host.invalid/evidence", "https:\\\\host.invalid/evidence", "https://example.invalid/?note=credential:policy", "fixture/provider+value=policy", "https://example.invalid/docs/provider+value=policy", `fixture-//reader:reference${at}v1`, `https://host.invalid/release-//reader:reference${at}v1`, `urn:example:custom://reader${at}v1`, `référencehttps://reader:reference${at}host.invalid/evidence`, `https://host.invalid/files/(archive)//reader:reference${at}v1`, `https://host.invalid/files,//reader:reference${at}v1`, `https://host.invalid/files,custom://reader${at}v1`, `https://host.invalid/a,https://reader:reference${at}v1`, `https://host.invalid/a;custom://reader:reference${at}v1`, `https://host.invalid/a%20https%3A%2F%2Freader%3Areference%40v1`, `https://host.invalid/😀%20https%3A%2F%2Freader%3Areference%40v1`, `urn:example,(//reader:reference${at}v1)`, `urn:example,custom://reader:reference${at}v1`, `/files,custom://reader:reference${at}v1`, `fixture/a,https://reader:reference${at}v1`, "fixture/café-policy.json", "urn:example:東京", "https%3A%2F%2Fhost.invalid%2Fpath%40v1", "https%3A%2F%2Fhost.invalid%3Fpath%40v1", "https%3A%2F%2Fhost.invalid%23path%40v1", "https%253A%252F%252Fhost.invalid%252Fpath%2540v1", "https%253A%252F%252Fhost.invalid%253Fpath%2540v1", "https%253A%252F%252Fhost.invalid%2523path%2540v1", `files,custom://reader${at}v1`, `see,custom://reader${at}v1`, `“https://reader:reference${at}v1`, `𐐀https://reader:reference${at}v1`, `𐐀//reader:reference${at}v1`];
+    // An explicit label assignment in a query value is no longer treated as
+    // an opaque note; protected path and opaque policy references remain so.
+    expect(isValueSafeReference("https://example.invalid/?note=credential:policy")).toBe(false);
     const rootWrappedAuthority = `“https://reader:reference${at}v1`;
     // A curly quote is an explicit root wrapper, so this is not an opaque identifier.
     expect(isValueSafeReference(rootWrappedAuthority), rootWrappedAuthority).toBe(false);
-    for (const benign of benignReferences.filter((reference) => reference !== rootWrappedAuthority)) {
+    for (const benign of benignReferences.filter((reference) => reference !== rootWrappedAuthority && reference !== "https://example.invalid/?note=credential:policy")) {
       expect(isValueSafeReference(benign), benign).toBe(true);
     }
     for (const [path, change] of mutateRetainedReference) {
@@ -549,13 +552,24 @@ describe("completion evidence", () => {
       expect(isValueSafeReference(relative), relative).toBe(false);
     }
 
-    for (const wrapper of ["(", "[", "{", "<", "\"", "'", "`", "“", "‘", "–", "—"]) for (const depth of [0, 1, 2] as const) {
-      const literal = `${wrapper}credential:secret-value`;
-      const reference = depth === 0 ? literal : encoded(literal, depth as 1 | 2);
+    const sensitiveLabels = [
+      "credential", "credential value", "secret", "secret value", "access token", "auth token", "bearer token", "refresh token", "id token", "token", "api key", "client secret", "password", "passcode", "authorization", "private key", "connection string", "database url", "provider value", "central adoption decision", "approve all consumers",
+    ];
+    for (const wrapper of wrappers) for (const label of sensitiveLabels) for (const depth of [0, 1, 2] as const) {
+      const formLabel = label.replaceAll(" ", "+");
+      for (const literal of [`${wrapper}${label}:secret-value`, `${wrapper}${label} : secret-value`, `${wrapper}${label}=secret-value`, `${wrapper}${formLabel}=secret-value`]) {
+        const reference = depth === 0 ? literal : encoded(literal, depth as 1 | 2);
+        expect(isValueSafeReference(reference), reference).toBe(false);
+      }
+    }
+
+    const authorityPrefixes = ["https://", "custom://", "//"];
+    for (const prefix of authorityPrefixes) for (const suffix of [`reader${at}host.invalid/evidence`, "reader%40host.invalid/evidence", "reader%2540host.invalid/evidence", "reader)%40host.invalid/evidence", "reader)%2540host.invalid/evidence"]) {
+      const reference = `${prefix}${suffix}`;
       expect(isValueSafeReference(reference), reference).toBe(false);
     }
 
-    const retainedReference = "https://safe.invalid%28https://reader:secret@host.invalid/evidence";
+    const retainedReference = "https://reader)%2540host.invalid/evidence";
     for (const [path, change] of mutateRetainedReference) {
       const item = evidence();
       change(item, retainedReference);
