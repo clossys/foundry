@@ -76,9 +76,10 @@ primitives, channel surfaces, and consumer-owned publishing, see
 
 ## Installing
 
-**Installing any package here needs a credential.** Packages publish to
-**GitHub Packages**, which is the canonical and intended distribution
-lane for this repository — not a temporary staging step. GitHub Packages
+**Installing a currently published package needs a credential.** Packages
+currently publish to **GitHub Packages**, the single canonical distribution
+lane while the repository remains in its current source and registry state.
+GitHub Packages
 requires a GitHub personal access token with `read:packages` for every
 install, including for a publicly visible package version and a reader
 with no other relationship to this org — that is a GitHub Packages
@@ -86,12 +87,15 @@ platform behavior, not a permission this repository chose.
 
 The consequence is worth stating plainly rather than leaving a reader to
 discover it: a CI job, ephemeral environment, or cloud agent holding no
-credential **cannot install from here, and that is not going to change**.
-The source is public and the APIs are public; resolution is
+credential **cannot install from the current GitHub Packages lane**. The
+source is public and the APIs are public; current resolution is
 authenticated. A consumer authenticates through whichever plane owns its
-package credentials. See [issue #213](https://github.com/vespeneventures/foundry/issues/213)
-for the decision and [docs/DECISIONS.md](docs/DECISIONS.md#2-the-registry--github-packages)
-for the reasoning.
+package credentials. That remains true unless and until the post-transfer,
+whole-catalogue cutover in [decision 18](docs/DECISIONS.md#18-producer-owned-catalogue-distribution-cutover)
+passes its gates and changes the single scope/registry authority. See
+[issue #213](https://github.com/vespeneventures/foundry/issues/213) for the
+historical cancelled migration and [docs/DECISIONS.md](docs/DECISIONS.md#2-the-registry--github-packages)
+for the current reasoning.
 
 Add to your project's `.npmrc` (never commit a real one):
 
@@ -130,14 +134,14 @@ changes and the whole catalogue has passed its gates. Existing package versions
 remain immutable legacy artifacts; no current package is copied, renamed, or
 republished as a partial migration.
 
-One mechanism outlives the decision and is worth knowing about either way:
+One mechanism governs the current lane and any gated replacement:
 [`package-scope.json`](package-scope.json) remains the single file
 declaring both the scope and the registry, and
 `node scripts/set-registry.mjs --check` (`npm run check:registry`, run in
 CI as `registry drift`) fails if any package's declared
-`publishConfig.registry` drifts from it. That gate matters more under a
-settled registry than it did under a pending migration — it is what keeps
-every package agreeing on one answer.
+`publishConfig.registry` drifts from it. It keeps every current package
+agreeing on one answer, and decision 18 requires a history-aware version of
+that machinery before a later whole-catalogue recut.
 
 ### pnpm: a misleading "not found" when the auth token is unset
 

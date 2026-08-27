@@ -49,9 +49,12 @@ The trade-off, accepted deliberately rather than defaulted into:
   supersedes the migration issue (#194) and the credentialless acceptance
   criteria in its umbrella program (#196). Both are closed as not planned.
 
-  GitHub Packages is therefore the canonical adoption lane, not a staging
-  step on the way somewhere else. Consumers authenticate through whichever
-  plane owns their package credentials.
+  GitHub Packages is therefore the current canonical adoption lane.
+  Consumers authenticate through whichever plane owns their package
+  credentials. It remains the single authority unless the later, bounded
+  producer-owned cutover in decision 18 passes its transfer and
+  whole-catalogue gates; that is not a package-by-package exception to the
+  current lane.
 
   The reasoning, since "we changed our mind" is not a reason: the first
   step of that migration was verifying and, if unclaimed, **claiming
@@ -920,11 +923,15 @@ The source catalogue has nineteen current package directories. Its only
 first-party runtime edges are `builder -> controller`, `inspector ->
 controller`, and `publisher -> controller`, `designer`, and `writer`.
 Controller lists Advisor as a development dependency, not a runtime edge.
+Issue [#567](https://github.com/vespeneventures/foundry/issues/567) is the
+durable execution record for this producer catalogue, registry, and repository
+cutover. Issue #557 remains only the required consumer authority-convergence
+dependency.
 An apparent package-by-package namespace move would therefore leave Builder
 and Inspector able to bring Controller, and Publisher able to bring three
 distinct first-party packages. A successful install is not proof that those
-copies form one authority; that exact consumer-convergence question is tracked
-by [issue #557](https://github.com/vespeneventures/foundry/issues/557).
+copies form one authority; #557 supplies the required convergence declaration
+and checker for that risk.
 
 The old GitHub Packages source is public and usable today. Its published
 versions are immutable registry history, not a staging area that can be
@@ -993,14 +1000,22 @@ a replacement upload under an old name.
 | **1B — representative Trio proof** | Qualify the runtime-closed Advisor + Starter + Controller set from one exact current-source head, while the old public source remains usable. The proof is producer qualification, never consumer adoption. For Starter, it qualifies the consumer-owned trusted-base foundation/activation, `0`/`1`/`2`, and rollback path; it does not turn executable tooling into a role. | FULL preflight and isolated tarball installation/import proof for each exact candidate. Starter's **exact installed CLI** must record a satisfied (`0`), violated (`1`), and indeterminate (`2`) result from consumer-owned evidence, plus a verified rollback; raw command, inputs, exit code, and output are retained. Advisor-before-Controller is recorded as engagement sequencing, not dependency order. A workspace link does not count. |
 | **1C — transfer** | Transfer this exact source repository directly to the authorized platform destination; do not create a separate target platform repository. | 1B's exact-head evidence; a clean FULL source-tree safety result; confirmed destination ownership and transfer authority; an explicit transfer record; and #557 implemented as a machine-readable singular-authority declaration and checker with positive and negative controls. The recorded checker result must cover current and planned candidate scopes. Absence of a finding is not evidence. |
 | **1D — whole-catalogue recut** | After transfer only, change every current source package and every first-party edge to the selected public-npm scope and registry in one coherent source change. | **Before any setter runs**, scope/registry machinery is history-aware: it preserves legacy lifecycle, retention, and decision identities; regression gates prove that preservation; and the selected candidate's ownership/availability evidence is recorded. Then `set-scope --check`, registry parity, workspace-link integrity, FULL safety, build, typecheck, tests, and review all pass on the recut head. No candidate-namespace package exists yet. |
-| **1E — first public-npm publications** | Publish the runtime-closed Trio first: Advisor, then Starter, then Controller. Only after the owner-present first publish establishes the namespace/package authority, configure and prove the trusted publisher and provenance path for subsequent releases. | Per-package FULL preflight, scanned selected tarball, isolated registry install/import, registry-served digest proof, public visibility/access confirmation, and an exact-head record. Builder and Inspector wait for Controller; Publisher waits for Controller, Designer, and Writer. |
+| **1E — first public-npm publications** | Treat Advisor, Starter, and Controller as one exact Trio release cohort. Before the first irreversible publication, every candidate passes FULL preflight, selected-tarball scan, and isolated installed canary; Starter's canary includes its required exact CLI evidence. Publish Advisor first with the owner present, then verify its registry-served digest and public access. Only then configure and independently prove the trusted-publisher/provenance path before using it for Starter and Controller, in that order. | One exact-head record names all three candidates and their successful pre-publication evidence; Advisor's owner-present publication evidence precedes the trusted-publisher/provenance proof; each publication has registry-served digest and public visibility/access confirmation. If any later candidate, registry verification, or trusted-publisher/provenance proof fails after Advisor publishes, fail closed: stop the release, quarantine the incomplete cohort, never delete or reuse Advisor's immutable version, deprecate it if the registry supports that mutation (otherwise record the unsupported result and immutable disposition), issue a corrected forward version, and repeat the remaining Trio's preflight, canary, publication, and verification gates from an exact head. Builder and Inspector wait for Controller; Publisher waits for Controller, Designer, and Writer. |
 
 The first owner-present publication is intentionally not delegated to an
 ambient credential or assumed from repository transfer. It establishes the
-new public-npm publishing authority under direct owner observation. Trusted
-publisher/provenance is then configured and independently exercised before it
-becomes the normal release mechanism. Neither proof changes the requirement
-for a human to review the packed artifact before an immutable publication.
+new public-npm publishing authority under direct owner observation. The
+trusted publisher and provenance are configured only after that Advisor
+publication has been verified, then independently exercised before they are
+used for Starter or Controller. Neither path changes the requirement for a
+human to review every packed artifact before an immutable publication.
+
+An incomplete Trio is never silently treated as a successful first release.
+After Advisor has published, a later failure leaves its immutable record in
+place and blocks further Trio publication until its documented quarantine and
+corrected forward-version path has passed the stated gates. The process does
+not delete, overwrite, or reuse an immutable package version to make the
+cohort appear atomic after the fact.
 
 ### Current-source catalogue inventory and disposition
 
