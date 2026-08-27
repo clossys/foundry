@@ -451,6 +451,16 @@ describe("completion evidence", () => {
     }
   });
 
+  it("rejects compacted authority continuations without reopening their host", () => {
+    for (const boundary of ["\t", "\r", "\n", "%09", "%2509", "\u200b", "%E2%80%8B", "%25E2%2580%258B"]) {
+      const reference = `https://x${boundary}reader:secret@host.invalid/evidence`;
+      expect(isValueSafeReference(reference), JSON.stringify(reference)).toBe(false);
+      const installed = ledger();
+      (((installed.positions as Array<Record<string, Record<string, string[]>>>)[0]!.baseline).evidenceRefs)[0] = reference;
+      expect(validateInstalledPositionLedger(installed).findings).toContainEqual(expect.objectContaining({ rule: "unsafe-evidence-reference", path: "positions[0].baseline.evidenceRefs[0]" }));
+    }
+  });
+
   it("defers unstable cross-depth structure without exposing established paths", () => {
     const rejects = [
       "https:%2F/u:p@host.invalid/e", "https:%252F/u:p@host.invalid/e", "https%3A:/%2Fu:p@host.invalid/e", "https:%5C\\u:p@host.invalid/e", "ftp:%2F/u:p@host.invalid/e", "custom:%2F/u:p@host.invalid/e",

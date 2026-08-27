@@ -218,7 +218,7 @@ function scanAuthority(tokens: Tokens, start: number, special: boolean, ends: In
     const current = value(tokens, position)!; const source = tokens.indexes[position]!; scanned(work);
     if (position > start && view.layers[depth]!.rootStarts[source] === 1) {
       const nested = describeCandidate(tokens, position, ends, view, depth, work);
-      if (nested !== undefined) {
+      if (nested?.kind === "authority") {
         if (sensitiveAuthorityAssignment(tokens, start, position)) return { unsafe: true, end: position, bareBoundary: false };
         return { unsafe: false, end: position, bareBoundary: true };
       }
@@ -283,7 +283,12 @@ function structuralScan(viewLayer: ViewLayer, view: ScanView, depth: number, wor
   }
   return false;
 }
-function hasSensitiveAssignment(viewLayer: ViewLayer, work?: ScanWork): boolean { let text = ""; for (let index = 0; index < viewLayer.layer.emissions.length; index += 1) { if (viewLayer.visible[index] === 1) text += viewLayer.layer.emissions[index]!.value; scanned(work); } return equalsAssignment.test(text) || segmentColonAssignment.test(text) || spacedColonAssignment.test(text) || unspacedColonAssignment.test(text) || quotedColonAssignment.test(text) || formEqualsAssignment.test(text) || formColonAssignment.test(text); }
+function hasSensitiveAssignment(viewLayer: ViewLayer, work?: ScanWork): boolean {
+  const values: string[] = [];
+  for (let index = 0; index < viewLayer.layer.emissions.length; index += 1) { if (viewLayer.visible[index] === 1) values.push(viewLayer.layer.emissions[index]!.value); scanned(work); }
+  const text = values.join("");
+  return equalsAssignment.test(text) || segmentColonAssignment.test(text) || spacedColonAssignment.test(text) || unspacedColonAssignment.test(text) || quotedColonAssignment.test(text) || formEqualsAssignment.test(text) || formColonAssignment.test(text);
+}
 function evaluateView(view: ScanView, work?: ScanWork): boolean { for (let depth = 0; depth < view.layers.length; depth += 1) { if (depth > 0) projectProtection(view.layers[depth - 1]!, view.layers[depth]!, work); const layer = view.layers[depth]!; if (hasSensitiveAssignment(layer, work) || structuralScan(layer, view, depth, work)) return true; } return false; }
 function evaluateReferenceSafety(value: string, work?: ScanWork): ReferenceSafetyIssue | undefined {
   const graph = buildGraph(value, work); if (graph === null) return "reference-length-exceeded";
