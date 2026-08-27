@@ -138,6 +138,24 @@ provider credentials, or outcome evidence.
 
 ## Consumer-local responsibilities
 
+## Bootstrap foundation and activation
+
+`@vespeneventures/adoption-bootstrap` is executable tooling, not a role and
+not an installed position. A consumer may use its thin caller workflow to pin
+the public package, add an uncredentialed pull-request evidence snapshot, and
+install the protected-base caller with its own package-read credential. That
+is **foundation** only: the package returns indeterminate and supplies no
+claim of activation, adoption, grounding, or closure.
+
+A later consumer-owned activation change joins the protected base, authenticated
+workflow event, bounded snapshot, fixed install receipt, exact manifest/lock
+identity, runner-time Advisor readiness, and direct installed target CLI. Its
+credential belongs solely to the fixed npm or pnpm install step; the decision
+and both CLIs receive none. The workflow must retain raw `0`/`1`/`2`, never use
+`pull_request_target` to execute untrusted code, and never make an unavailable
+phase a skipped green check. The consumer still owns all position, policy,
+rollback, cadence, deliberate-control, and outcome evidence.
+
 Foundry does not own a consumer's business values, topology choices, provider
 resources, secret values, routes, customer data, approval decisions, or live
 mutations. Those belong in the consumer's own workspace and position record.

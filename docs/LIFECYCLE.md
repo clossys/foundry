@@ -278,6 +278,7 @@ fails when the committed copy drifts from the derived one — #493.
 
 | package | current position | staged here | grounded |
 | --- | --- | --- | --- |
+| `@vespeneventures/adoption-bootstrap` | implemented | yes | unknown — #484 |
 | `@vespeneventures/advisor` | published | yes | unknown — #484 |
 | `@vespeneventures/controller` | published | yes | unknown — #484 |
 | `@vespeneventures/architect` | published | yes | unknown — #484 |
@@ -372,9 +373,18 @@ Bin-name invocations are reported separately and never counted. A bin
 resolves to whatever the installer happened to link, which has already left a
 gate silently unreachable in this fleet.
 
+The evidence record also distinguishes a default **role** package from an
+explicit **executable-tooling** package. The latter is not a role: it has no
+job question, owned metric, loop mode, installed position, adoption, grounding,
+or closure claim, and it is deliberately absent from the role-loop charter.
+It still ships a `bin` and is still graded for its implemented artifact. This
+keeps reusable delivery mechanics runnable without laundering them into a
+fourth role or using `shipsNoGate` as an exemption.
+
 One further rule is graded here that is not a rung on this ladder at all.
 [DECISIONS.md 11](DECISIONS.md#11-a-gate-behind-a-bin-or-a-declared-primitive)
-states that an active role package ships a gate behind a `bin`. A temporary
+states that an active role package and explicit executable tooling ship a bin.
+A temporary
 compatibility package may declare `shipsNoGate` with a reason and an issue,
 which is a countdown like `gaps`; no package may claim permanent exemption.
 The rule lives in this gate because this is

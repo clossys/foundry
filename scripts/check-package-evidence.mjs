@@ -265,6 +265,12 @@ export function readLifecycleStatuses(document) {
 const MIN_REPRODUCTION_LENGTH = 60;
 
 export const DEFECT_ORIGINS = new Set(["injected", "natural"]);
+/**
+ * `role` is the historical default. Explicit executable tooling has a
+ * runnable contract but does not invent a job, metric, mode, or position in
+ * the role-loop charter.
+ */
+export const PACKAGE_CATEGORIES = new Set(["role", "executable-tooling"]);
 
 /**
  * Validate a `stagedBy` record — the one piece of evidence on this ladder that
@@ -442,6 +448,12 @@ export function evaluatePrograms({ contract, distSites, binSites, lifecycleStatu
     const { name } = entry;
     declaredNames.add(name);
 
+    const category = entry.category === undefined ? "role" : entry.category;
+    if (!PACKAGE_CATEGORIES.has(category)) {
+      findings.push(finding("unknown-package-category", name, `category must be one of: ${[...PACKAGE_CATEGORIES].join(", ")}`));
+      continue;
+    }
+
     if (typeof entry.state !== "string" || stateIndex(entry.state) === -1) {
       findings.push(finding("unknown-state", name, `state must be one of: ${STATES.join(", ")}`));
       continue;
@@ -467,6 +479,7 @@ export function evaluatePrograms({ contract, distSites, binSites, lifecycleStatu
       }
       results.push({
         package: name,
+        category,
         state: entry.state,
         supersession: RETIRED_STATUS,
         invocationSites: sites.length,
@@ -580,6 +593,7 @@ export function evaluatePrograms({ contract, distSites, binSites, lifecycleStatu
 
     results.push({
       package: name,
+      category,
       state: entry.state,
       supersession: lifecycleStatus === "deprecated" ? "deprecated" : null,
       invocationSites: sites.length,
@@ -750,9 +764,14 @@ async function main() {
   for (const role of roleNames) {
     if (!workspacePackages.has(role)) findings.push(finding("role-package-missing", role, "has a durable role charter but no workspace package"));
   }
+  const categoriesByName = new Map(results.map((result) => [result.package, result.category]));
   for (const name of workspacePackages) {
-    if ((workspaceBins.get(name) ?? []).length > 0 && !roleNames.has(name)) {
-      findings.push(finding("unqualified-role-package", name, "ships a role gate but has no durable charter in the role-loop contract"));
+    const category = categoriesByName.get(name);
+    if (category === "role" && !roleNames.has(name)) {
+      findings.push(finding("unqualified-role-package", name, "is classified as a role but has no durable charter in the role-loop contract"));
+    }
+    if (category === "executable-tooling" && roleNames.has(name)) {
+      findings.push(finding("role-misclassified-as-tooling", name, "has a durable role charter and cannot be classified as executable tooling"));
     }
   }
   const lifecycleDocumentPath = join(repoRoot, "docs/LIFECYCLE.md");

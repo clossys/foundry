@@ -1,0 +1,73 @@
+{
+  "name": "@vespeneventures/adoption-bootstrap",
+  "version": "0.1.0",
+  "private": false,
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./npm": {
+      "types": "./dist/npm.d.ts",
+      "import": "./dist/npm.js"
+    },
+    "./pnpm": {
+      "types": "./dist/pnpm.d.ts",
+      "import": "./dist/pnpm.js"
+    }
+  },
+  "bin": {
+    "adoption-bootstrap": "./dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "src",
+    "!src/**/*.test.ts",
+    "documents",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "description": "Credential-separated npm and pnpm installation evidence, trusted-base joins, and direct installed CLI execution for consumer-owned adoption workflows.",
+  "keywords": [
+    "adoption",
+    "github-actions",
+    "npm",
+    "pnpm",
+    "evidence",
+    "typescript"
+  ],
+  "author": "Calvin Hung",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vespeneventures/foundry.git",
+    "directory": "packages/adoption-bootstrap"
+  },
+  "bugs": {
+    "url": "https://github.com/vespeneventures/foundry/issues"
+  },
+  "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/adoption-bootstrap#readme",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "node ../../scripts/check-name-collision.mjs . && npm run build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "~6.0.0",
+    "vitest": "^4.1.9"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  }
+}

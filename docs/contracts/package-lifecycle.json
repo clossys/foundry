@@ -2,6 +2,10 @@
   "schemaVersion": 1,
   "packages": [
     {
+      "name": "@vespeneventures/adoption-bootstrap",
+      "status": "incubating"
+    },
+    {
       "name": "@vespeneventures/advisor",
       "status": "published"
     },

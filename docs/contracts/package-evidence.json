@@ -1,7 +1,12 @@
 {
   "schemaVersion": 1,
-  "$comment": "Where every package stands on the seven-state ladder in docs/LIFECYCLE.md, and what is missing below the state it claims. Graded by scripts/check-package-evidence.mjs, wired as `npm run check:package-evidence`. This is lifecycle evidence, not a portfolio grouping: A/B/C were temporary delivery cohorts and are not part of the package model. A state is derived from evidence, never declared. A shortfall below a declared state must be acknowledged here with a reason and an issue -- an unacknowledged one fails the gate, and an acknowledgement that outlives its reason fails it too. The `gaps` list is a countdown, not a baseline: it is meant to shrink, and the gate refuses to let it go stale.",
+  "$comment": "Where every package stands on the seven-state ladder in docs/LIFECYCLE.md, and what is missing below the state it claims. Graded by scripts/check-package-evidence.mjs, wired as `npm run check:package-evidence`. This is lifecycle evidence, not a portfolio grouping: A/B/C were temporary delivery cohorts and are not part of the package model. A state is derived from evidence, never declared. A shortfall below a declared state must be acknowledged here with a reason and an issue -- an unacknowledged one fails the gate, and an acknowledgement that outlives its reason fails it too. The `gaps` list is a countdown, not a baseline: it is meant to shrink, and the gate refuses to let it go stale. `category` defaults to `role` for historical role entries; a non-role executable package must explicitly use `executable-tooling`, which keeps it out of the role-loop charter while still requiring its installed bin.",
   "packages": [
+    {
+      "name": "@vespeneventures/adoption-bootstrap",
+      "category": "executable-tooling",
+      "state": "implemented"
+    },
     {
       "name": "@vespeneventures/advisor",
       "state": "published",

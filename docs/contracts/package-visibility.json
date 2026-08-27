@@ -3,6 +3,10 @@
   "schemaVersion": 1,
   "packages": [
     {
+      "name": "@vespeneventures/adoption-bootstrap",
+      "intendedVisibility": "public"
+    },
+    {
       "name": "@vespeneventures/advisor",
       "intendedVisibility": "public"
     },

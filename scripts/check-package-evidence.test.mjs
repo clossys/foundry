@@ -9,6 +9,7 @@ import test from "node:test";
 import {
   DEFECT_ORIGINS,
   DERIVABLE_STATES,
+  PACKAGE_CATEGORIES,
   STATES,
   evaluatePrograms,
   isFailureFinding,
@@ -60,6 +61,14 @@ test("the ladder is ordered and its derivable states are a prefix of it", () => 
   // and a package cannot ground itself.
   assert.equal(DERIVABLE_STATES.has("grounded"), false);
   assert.equal(DERIVABLE_STATES.has("closed"), false);
+});
+
+test("executable tooling is explicit and stays outside the role-package inference", () => {
+  assert.deepEqual([...PACKAGE_CATEGORIES].sort(), ["executable-tooling", "role"]);
+  const tooling = grade({ name: P, category: "executable-tooling", state: "implemented" });
+  assert.deepEqual(rules(tooling), []);
+  assert.equal(tooling.results[0].category, "executable-tooling");
+  assert.equal(rules(grade({ name: P, category: "remote-action", state: "implemented" })).includes("unknown-package-category"), true);
 });
 
 test("a published package with no invocation site and no gap is a violation", () => {
