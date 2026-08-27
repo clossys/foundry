@@ -290,7 +290,7 @@ function hasSensitiveAssignment(viewLayer: ViewLayer, work?: ScanWork): boolean 
   const text = values.join("");
   return equalsAssignment.test(text) || segmentColonAssignment.test(text) || spacedColonAssignment.test(text) || unspacedColonAssignment.test(text) || quotedColonAssignment.test(text) || formEqualsAssignment.test(text) || formColonAssignment.test(text);
 }
-function evaluateView(view: ScanView, work?: ScanWork): boolean { for (let depth = 0; depth < view.layers.length; depth += 1) { if (depth > 0) projectProtection(view.layers[depth - 1]!, view.layers[depth]!, work); const layer = view.layers[depth]!; if (hasSensitiveAssignment(layer, work) || structuralScan(layer, view, depth, work)) return true; } return false; }
+function evaluateView(view: ScanView, work?: ScanWork): boolean { for (let depth = 0; depth < view.layers.length; depth += 1) { if (depth > 0) projectProtection(view.layers[depth - 1]!, view.layers[depth]!, work); const layer = view.layers[depth]!; if (structuralScan(layer, view, depth, work) || hasSensitiveAssignment(layer, work)) return true; } return false; }
 function evaluateReferenceSafety(value: string, work?: ScanWork): ReferenceSafetyIssue | undefined {
   const graph = buildGraph(value, work); if (graph === null) return "reference-length-exceeded";
   // Views deliberately do not share protection: compact WHATWG parsing may

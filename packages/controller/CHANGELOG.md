@@ -5,6 +5,14 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.18] - 2026-08-26
+
+### Fixed
+
+- Sensitive-assignment scanning now accumulates normalized scalar chunks before
+  joining them, preserving its position map without quadratic work near the
+  retained-reference length cap.
+
 ## [0.8.17] - 2026-08-25
 
 ### Fixed
@@ -26,9 +34,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   to standalone root atoms and query/fragment values, while path and opaque
   protection projects scalar by scalar to the next layer. A 65,536-code-unit
   reference cap applies; ordinary identifiers are not treated as values.
-  Sensitive-assignment scanning now accumulates normalized scalar chunks before
-  joining them, preserving its position map without quadratic work near that
-  cap.
 - Aligned the schema-v4 Advisor owned-metric identity to Advisor 0.1.2's
   published `engagement-decision-currency-rate` literal, so its exact
   completion evidence binds to the same role metric.
