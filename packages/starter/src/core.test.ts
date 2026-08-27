@@ -136,6 +136,14 @@ describe("fixed install adapters", () => {
     expect(validatePnpmIdentity(manifest, lock, advisor)).toEqual([]);
     expect(validatePnpmIdentity(manifest, lock, target)).toEqual([]);
   });
+  it("accepts a peer-qualified pnpm importer resolution with an exact package entry", () => {
+    const lock = `lockfileVersion: '9.0'\nimporters:\n  .:\n    devDependencies:\n      '${advisor.name}':\n        specifier: ${advisor.version}\n        version: ${advisor.version}(typescript@6.0.3)\npackages:\n  '${advisor.name}@${advisor.version}':\n    resolution: {integrity: ${integrity}}\n`;
+    expect(validatePnpmIdentity(manifest, lock, advisor)).toEqual([]);
+  });
+  it("refuses a wrong pnpm base version hidden by a peer suffix", () => {
+    const lock = `lockfileVersion: '9.0'\nimporters:\n  .:\n    devDependencies:\n      '${advisor.name}':\n        specifier: ${advisor.version}\n        version: 0.1.2(typescript@6.0.3)\npackages:\n  '${advisor.name}@${advisor.version}':\n    resolution: {integrity: ${integrity}}\n`;
+    expect(validatePnpmIdentity(manifest, lock, advisor)).toContain(`pnpm root importer devDependencies does not pin ${advisor.name} at exact ${advisor.version}`);
+  });
   it("refuses lock drift rather than accepting an installed-looking version", () => {
     const lock = { packages: { "": manifest, [`node_modules/${advisor.name}`]: { version: advisor.version, integrity: `sha512-${"b".repeat(85)}A==` } } };
     expect(validateNpmIdentity(manifest, lock, advisor)).not.toEqual([]);

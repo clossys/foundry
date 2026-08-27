@@ -18,6 +18,13 @@ function declaredVersion(value: unknown, expected: ExactPackage): boolean {
 }
 
 function yamlValue(value: string): string { return value.trim().replace(/^['"]|['"]$/g, ""); }
+/** pnpm appends peer context to an importer resolution; its base stays exact. */
+function importerVersionMatches(value: string, expected: string): boolean {
+  const resolved = yamlValue(value);
+  if (resolved === expected) return true;
+  const peerContext = resolved.slice(expected.length);
+  return resolved.startsWith(expected) && /^(\([^()\r\n]+\))+$/.test(peerContext);
+}
 function escaped(value: string): string { return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
 function packageLine(name: string, indent = 6): RegExp { return new RegExp(`^ {${indent}}(?:['"])?${escaped(name)}(?:['"])?\\s*:$`); }
 function block(lines: readonly string[], start: number, indent: number): readonly string[] {
@@ -55,7 +62,7 @@ export function validatePnpmIdentity(manifest: unknown, lockText: unknown, expec
       const info = block(dependencyLines, dependency, 6).map((line) => line.trim());
       const specifier = info.find((line) => line.startsWith("specifier:"));
       const version = info.find((line) => line.startsWith("version:"));
-      if (yamlValue(specifier?.slice("specifier:".length) ?? "") !== expected.version || yamlValue(version?.slice("version:".length) ?? "") !== expected.version) {
+      if (yamlValue(specifier?.slice("specifier:".length) ?? "") !== expected.version || !importerVersionMatches(version?.slice("version:".length) ?? "", expected.version)) {
         findings.push(`pnpm root importer ${ROOT_DEPENDENCY_SECTION} does not pin ${expected.name} at exact ${expected.version}`);
       }
     }

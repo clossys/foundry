@@ -18,6 +18,7 @@ interface PackedPackage {
   readonly version: string;
   readonly path: string;
   readonly integrity: string;
+  readonly peerDependencies?: Readonly<Record<string, string>>;
 }
 
 function temporaryRoot(): string { const root = join(tmpdir(), `starter-pack-${Date.now()}-${Math.random().toString(16).slice(2)}`); mkdirSync(root); roots.push(root); return root; }
@@ -46,7 +47,8 @@ function pack(directory: string, destination: string, name: string, version: str
   const output = run("npm", ["pack", "--json", "--pack-destination", destination, "--ignore-scripts"], directory);
   const item = JSON.parse(output) as Array<{ filename: string }>;
   const path = join(destination, item[0]?.filename ?? "");
-  return { name, version, path, integrity: integrityFor(path) };
+  const manifest = JSON.parse(readFileSync(join(directory, "package.json"), "utf8")) as { peerDependencies?: Record<string, string> };
+  return { name, version, path, integrity: integrityFor(path), peerDependencies: manifest.peerDependencies };
 }
 
 function assessment(target: { name: string; version: string; integrity: string; bin: string }, repository: string) {
@@ -82,7 +84,7 @@ async function localRegistry(packages: readonly PackedPackage[]): Promise<{ read
     const address = server.address() as AddressInfo;
     const tarball = `http://127.0.0.1:${address.port}/tarballs/${encodeURIComponent(basename(entry.path))}`;
     response.writeHead(200, { "content-type": "application/json" });
-    response.end(JSON.stringify({ name: entry.name, "dist-tags": { latest: entry.version }, versions: { [entry.version]: { name: entry.name, version: entry.version, dist: { tarball, integrity: entry.integrity } } } }));
+    response.end(JSON.stringify({ name: entry.name, "dist-tags": { latest: entry.version }, versions: { [entry.version]: { name: entry.name, version: entry.version, ...(entry.peerDependencies === undefined ? {} : { peerDependencies: entry.peerDependencies }), dist: { tarball, integrity: entry.integrity } } } }));
   });
   await new Promise<void>((resolveListen, rejectListen) => { server.once("error", rejectListen); server.listen(0, "127.0.0.1", resolveListen); });
   const address = server.address() as AddressInfo;
@@ -136,7 +138,9 @@ async function installPnpmConsumer(root: string, registryUrl: string, installed:
   writeRegistryConfig(root, registryUrl);
   await runAsync("pnpm", ["install", "--ignore-scripts"], root);
   expect(existsSync(join(root, "package-lock.json"))).toBe(false);
-  expect(readFileSync(join(root, "pnpm-lock.yaml"), "utf8")).toContain(installed.starter.name);
+  const lock = readFileSync(join(root, "pnpm-lock.yaml"), "utf8");
+  expect(lock).toContain(installed.starter.name);
+  expect(lock).toContain(`version: ${installed.target.version}(${installed.advisor.name}@${installed.advisor.version})`);
   rmSync(join(root, "node_modules"), { recursive: true, force: true });
   await runAsync("pnpm", ["install", "--frozen-lockfile", "--ignore-scripts"], root);
 }
@@ -149,7 +153,7 @@ describe("packed installed activation canaries", () => {
     run("npm", ["run", "build", "--workspace=packages/starter"], repoRoot);
     const fixtureRoot = temporaryRoot(); const packed = join(fixtureRoot, "packed"); const targetPackage = join(fixtureRoot, "target-package");
     mkdirSync(packed); mkdirSync(join(targetPackage, "bin"), { recursive: true });
-    writeJson(join(targetPackage, "package.json"), { name: "@fixture/starter-target", version: "1.0.0", private: true, type: "module", bin: { "fixture-target-check": "./bin/check.js" }, files: ["bin"] });
+    writeJson(join(targetPackage, "package.json"), { name: "@fixture/starter-target", version: "1.0.0", private: true, type: "module", bin: { "fixture-target-check": "./bin/check.js" }, peerDependencies: { "@vespeneventures/advisor": "0.1.3" }, files: ["bin"] });
     writeFileSync(join(targetPackage, "bin", "check.js"), "#!/usr/bin/env node\nimport { readFileSync } from 'node:fs';\nconst input = JSON.parse(readFileSync(process.argv[2], 'utf8'));\nconst state = input.mode === 'violated' ? 'violated' : input.mode === 'indeterminate' ? 'indeterminate' : 'satisfied';\nconsole.log(JSON.stringify({state}));\nprocess.exit(state === 'satisfied' ? 0 : state === 'violated' ? 1 : 2);\n");
     chmodSync(join(targetPackage, "bin", "check.js"), 0o755);
     const starter = pack(join(repoRoot, "packages/starter"), packed, "@vespeneventures/starter", "0.1.0");
