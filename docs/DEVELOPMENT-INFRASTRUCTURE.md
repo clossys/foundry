@@ -73,4 +73,5 @@ decisions.
 
 The legacy standalone package names are retired historical identities, not
 compatibility entry points. Their lifecycle and registry disposition is derived
-from the current package contracts; no consumer installs them for this flow.
+from [`package-lifecycle.json`](contracts/package-lifecycle.json); no consumer
+installs them for this flow.

@@ -103,7 +103,7 @@ that consumer's adoption issue or pull request:
 
 | Record | Required evidence |
 | --- | --- |
-| Artifact | Exact installed Controller version and lockfile update. |
+| Artifact | Exact installed Controller version, tested `repository` and `review` subpaths, and lockfile update. |
 | Change identity | Adoption pull request URL and exact tested head identifier. |
 | Repository contract | Path to the consumer-owned profile and `repository-check` exit code/report. |
 | Requirements evaluation | When used, the pure evaluator report for caller-discovered declarations and normalized observations; unknown evidence must remain explicit. |
