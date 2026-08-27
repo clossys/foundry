@@ -1,6 +1,6 @@
 {
   "name": "@vespeneventures/controller",
-  "version": "0.8.18",
+  "version": "0.8.19",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -32,6 +32,8 @@
       "types": "./dist/repository/index.d.ts",
       "import": "./dist/repository/index.js"
     },
+    "./contracts/repository-package-adoption-contract.json": "./contracts/repository-package-adoption-contract.json",
+    "./contracts/repository-package-adoption.fixture.json": "./contracts/repository-package-adoption.fixture.json",
     "./review": {
       "types": "./dist/review/index.d.ts",
       "import": "./dist/review/index.js"
@@ -75,6 +77,7 @@
     "foundry-check": "./dist/gates/cli.js",
     "repository-check": "./dist/repository/bin.js",
     "repository-profile-check": "./dist/repository/run-bin.js",
+    "repository-package-adoption-check": "./dist/repository/adoption-bin.js",
     "review-check": "./dist/review/cli.js",
     "foundry-position-check": "./dist/positions/bin.js",
     "foundry-completion-evidence-check": "./dist/positions/completion-evidence-bin.js"

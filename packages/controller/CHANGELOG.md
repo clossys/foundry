@@ -5,6 +5,21 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.19] - 2026-08-27
+
+### Added
+
+- `@vespeneventures/controller/repository` now ships
+  `RepositoryPackageAdoptionV1`, its strict pure validator/evaluator,
+  candidate-only planner, versioned contract/fixture, and the installed
+  `repository-package-adoption-check` CLI. It keeps repository profiles as
+  stable structural context while one exact package follows the evidence-bound
+  foundation → post-main-canary → atomic-ruleset-cutover → activation →
+  closure prefix. Exact package/profile/head/ruleset joins fail closed;
+  closure delegates to the existing completion-evidence validator rather than
+  creating a second authority. Legacy `RepositoryProfileV1`–`V3` and
+  `repository-profile-check` behavior are unchanged.
+
 ## [0.8.18] - 2026-08-26
 
 ### Fixed

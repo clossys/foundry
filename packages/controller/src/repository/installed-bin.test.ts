@@ -87,6 +87,7 @@ describe("installed controller package", () => {
       "@vespeneventures/controller/repository",
       "./node_modules/@vespeneventures/controller/dist/repository/cli.js",
       "./node_modules/@vespeneventures/controller/dist/repository/run-cli.js",
+      "./node_modules/@vespeneventures/controller/dist/repository/adoption-cli.js",
     ], { cwd: consumer });
     const bin = join(consumer, "node_modules", ".bin", "repository-check");
     expect(lstatSync(bin).isSymbolicLink()).toBe(true);
@@ -102,5 +103,11 @@ describe("installed controller package", () => {
     expect(basename(readlinkSync(runBin))).toBe("run-bin.js");
     const runHelp = await execFile(runBin, ["--help"], { cwd: consumer });
     expect(runHelp.stdout).toContain("Usage: repository-profile-check");
+
+    const adoptionBin = join(consumer, "node_modules", ".bin", "repository-package-adoption-check");
+    expect(lstatSync(adoptionBin).isSymbolicLink()).toBe(true);
+    expect(basename(readlinkSync(adoptionBin))).toBe("adoption-bin.js");
+    const adoptionHelp = await execFile(adoptionBin, ["--help"], { cwd: consumer });
+    expect(adoptionHelp.stdout).toContain("Usage: repository-package-adoption-check");
   });
 });

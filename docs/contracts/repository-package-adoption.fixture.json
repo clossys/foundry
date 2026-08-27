@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "id": "example-repository-package-adoption",
+  "package": {
+    "name": "@example/repository-adoption",
+    "version": "1.2.3",
+    "integrity": "sha512-dGVzdA=="
+  },
+  "stableProfile": {
+    "path": "governance/repository-profile.json",
+    "sha256": "5c65a57eadea456e72af0c30b07b7b23f41e65a4f907cb394e8d4b6b9ac1c1df",
+    "requiredCoverage": [
+      "declaration",
+      "commands",
+      "protected-paths",
+      "requirements",
+      "root-entries"
+    ]
+  },
+  "events": [
+    {
+      "kind": "foundation",
+      "candidate": {
+        "name": "@example/repository-adoption",
+        "version": "1.2.3",
+        "integrity": "sha512-dGVzdA==",
+        "headSha": "0123456789abcdef0123456789abcdef01234567",
+        "baseSha": "76543210fedcba9876543210fedcba9876543210",
+        "mainSha": "89abcdef0123456789abcdef0123456789abcdef"
+      },
+      "manifestRef": "urn:example:manifest",
+      "lockfileRef": "urn:example:lockfile",
+      "cleanInstallRef": "urn:example:clean-install",
+      "reviewRef": "urn:example:review"
+    },
+    {
+      "kind": "post-main-canary",
+      "mainSha": "89abcdef0123456789abcdef0123456789abcdef",
+      "check": "repository-package-adoption",
+      "runRef": "urn:example:canary",
+      "completedAt": "2026-08-27T00:00:00.000Z",
+      "verdict": "satisfied",
+      "coverage": [
+        { "name": "declaration", "verdict": "satisfied", "evaluated": 1 },
+        { "name": "commands", "verdict": "satisfied", "evaluated": 1 },
+        { "name": "protected-paths", "verdict": "satisfied", "evaluated": 1 },
+        { "name": "requirements", "verdict": "satisfied", "evaluated": 1 },
+        { "name": "root-entries", "verdict": "satisfied", "evaluated": 1 }
+      ]
+    },
+    {
+      "kind": "atomic-ruleset-cutover",
+      "mode": "atomic",
+      "mainSha": "89abcdef0123456789abcdef0123456789abcdef",
+      "requiredCheck": "repository-package-adoption",
+      "ruleId": "main-protection",
+      "sourceRef": "urn:example:ruleset",
+      "observedAt": "2026-08-27T00:01:00.000Z"
+    },
+    {
+      "kind": "activation",
+      "package": {
+        "name": "@example/repository-adoption",
+        "version": "1.2.3",
+        "integrity": "sha512-dGVzdA=="
+      },
+      "positionId": "example-position",
+      "invocationRef": "urn:example:activation",
+      "placement": "blocking",
+      "duplicateRef": "urn:example:duplicate-removed",
+      "rollbackRef": "urn:example:rollback"
+    },
+    {
+      "kind": "closure",
+      "positionId": "example-position",
+      "completionEvidenceRef": "urn:example:completion"
+    }
+  ]
+}

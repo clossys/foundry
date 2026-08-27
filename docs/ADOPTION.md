@@ -138,6 +138,29 @@ provider credentials, or outcome evidence.
 
 ## Consumer-local responsibilities
 
+## Repository cutover evidence
+
+`repository-profile-check` is structural context only. It validates a profile
+declaration and caller-supplied observations; it does not prove package
+adoption, merge review, a post-main canary, provider enforcement, activation,
+or closure. Existing v1/v2/v3 profiles remain compatible for that purpose.
+
+When one direct consumer needs auditable package cutover evidence, it may
+retain one `RepositoryPackageAdoptionV1` record from
+`@vespeneventures/controller/repository`. The record is deliberately
+single-package and append-only: foundation, post-main canary, atomic ruleset
+cutover, activation, then closure. It binds exact semver and SRI identity, the
+canonical profile path/hash, all five profile axes, exact-head review, one
+post-main check, and a provider-neutral ruleset observation. Missing provider
+information is indeterminate; known non-enforcement is a violation. Consumers
+retain discovery and provider access; Foundry only evaluates supplied data.
+
+Activation is state-5 installation evidence, not independent outcome closure.
+Closure reuses the Controller completion-evidence validator and therefore
+requires the consumer-owned ledger and its separate outcome/cadence proof. No
+profile pass, package installation, or activation entry may be presented as
+closure.
+
 ## Foundry Starter foundation and activation
 
 Foundry Starter (`@vespeneventures/starter`) is executable tooling, not a role and

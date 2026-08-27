@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "kind": "foundry-repository-package-adoption",
+  "profilePath": "governance/repository-profile.json",
+  "profileHash": "sha256 of canonical JSON (sorted object keys, no whitespace)",
+  "requiredCoverage": [
+    "declaration",
+    "commands",
+    "protected-paths",
+    "requirements",
+    "root-entries"
+  ],
+  "events": [
+    "foundation",
+    "post-main-canary",
+    "atomic-ruleset-cutover",
+    "activation",
+    "closure"
+  ],
+  "rule": "One exact package progresses only through ordered append-only prefixes. Foundation reuses exact-head review validation; cutover requires a provider-neutral enforcement observation; closure reuses completion-evidence validation. A repository profile is stable structural context, never an adoption state machine."
+}
