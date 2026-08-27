@@ -15,7 +15,7 @@ customer values do not enter Foundry.
 
 ## Package consumption
 
-GitHub Packages is Foundry's canonical registry. A consuming plane owns its
+GitHub Packages is Foundry's current canonical registry. A consuming plane owns its
 authenticated scope mapping, credential reference, and local or CI injection;
 Foundry owns none of those values. A consumer installs only the packages its
 repository actually needs, never the full suite by default. Package
@@ -24,23 +24,23 @@ separate in [ADOPTION.md](ADOPTION.md).
 
 ## Package boundaries
 
-`@vespeneventures/governance/repository` and
-`@vespeneventures/governance/review` are paired subpaths of the same
+`@vespeneventures/controller/repository` and
+`@vespeneventures/controller/review` are paired subpaths of the same
 implementation, release, and adoption train.
 
-`@vespeneventures/governance/repository` owns a provider-neutral contract for
+`@vespeneventures/controller/repository` owns a provider-neutral contract for
 consumer-authored repository values and upward requirements. It validates
 declarations and purely evaluates caller-normalized observations without I/O.
 It does not discover repositories or machines, choose precedence or compatible
 values, install files, produce a provisioning manifest, or mutate a consumer.
 
-`@vespeneventures/governance/review` owns provider-neutral contracts and validation for
+`@vespeneventures/controller/review` owns provider-neutral contracts and validation for
 review evidence: requests, findings, dispositions, threads, checks, decisions,
 and exact-head freshness. Its root export remains vendor-neutral. Meaningful
-GitHub evidence translation belongs at `@vespeneventures/governance/review/github`; it
+GitHub evidence translation belongs at `@vespeneventures/controller/review/github`; it
 does not warrant a separate `review-github` or generic `github` package.
 
-`@vespeneventures/governance/gates` remains the orchestration subpath for
+`@vespeneventures/controller/gates` remains the orchestration subpath for
 catalog and policy checks. It is not a runtime dependency of the repository
 or review contracts, and neither contract becomes a general gate runner.
 
@@ -69,7 +69,6 @@ The paired registry-install and CLI qualification procedure is documented in
 before consumer workflow wiring, provider credentials, and consumer policy
 decisions.
 
-The legacy standalone package names are deprecated compatibility entry points.
-They require a published successor, migrated real consumers, a documented
-replacement range, and a settled public API before retirement. Package
-deletion, transfer, and registry removal are not part of this phase.
+The legacy standalone package names are retired historical identities, not
+compatibility entry points. Their lifecycle and registry disposition is derived
+from the current package contracts; no consumer installs them for this flow.

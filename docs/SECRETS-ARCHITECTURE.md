@@ -1,5 +1,12 @@
 # Secrets infrastructure architecture
 
+**Historical record — not current package architecture.** This document
+records a superseded proposal for `@vespeneventures/secrets` and
+`@vespeneventures/governance/gates`; neither is a current package install or
+publication instruction. The current catalogue and its lifecycle/registry
+dispositions are authoritative. It remains only to preserve the reasoning of
+the earlier proposal.
+
 ## Decision
 
 Foundry owns one secrets package with an explicit provider subpath and extends

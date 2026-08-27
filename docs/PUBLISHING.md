@@ -6,11 +6,10 @@ pushed to a public remote should be assumed cached and indexed even if
 deleted minutes later.
 
 One package, `@vespeneventures/contract`, was published from this
-repository and has since been removed from the codebase (see
-[docs/DECISIONS.md](DECISIONS.md) for why). Its name and every version it
-published still exist on the registry — a published name can never be
-reused for a different package, whether or not the original is still in
-the tree. Everything below is the general process for adding and
+repository and has since been removed from the codebase and current registry
+(see [docs/DECISIONS.md](DECISIONS.md) for why). Its historical name must not
+be reused for a different package, even though the deleted package now returns
+`404`. Everything below is the general process for adding and
 publishing a new package here, not a complete registry inventory.
 
 ---
