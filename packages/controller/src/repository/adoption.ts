@@ -327,6 +327,8 @@ function eventShape(event: unknown, expected: RepositoryPackageAdoptionEventKind
       finding(findings, "event-cutover-transition", `${path}.before`, "must retain a not-enforced provider-neutral observation with a safe reference and RFC3339 instant");
     } else if (instantMillis(own(before, "observedAt"))! >= instantMillis(own(event, "observedAt"))!) {
       finding(findings, "event-chronology", `${path}.before.observedAt`, "must strictly precede the enforced cutover observation");
+    } else if (instantMillis(canary?.completedAt) !== undefined && instantMillis(canary?.completedAt)! >= instantMillis(own(before, "observedAt"))!) {
+      finding(findings, "event-chronology", `${path}.before.observedAt`, "must strictly follow post-main-canary.completedAt");
     }
     if (instantMillis(own(event, "observedAt")) !== undefined && instantMillis(canary?.completedAt) !== undefined && instantMillis(canary?.completedAt)! >= instantMillis(own(event, "observedAt"))!) {
       finding(findings, "event-chronology", `${path}.observedAt`, "must strictly follow post-main-canary.completedAt");

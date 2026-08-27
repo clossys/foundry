@@ -900,7 +900,7 @@ review, but requires at least one named check, approval, or secondary review:
 an empty policy and empty evidence cannot clear it. Cutover accepts only
 `mode: "atomic"`, retains a provider-neutral `not-enforced` before observation
 and an `enforced` after observation, and requires
-`canary.completedAt < cutover.observedAt`. Both observations join exact check,
+`canary.completedAt < cutover.before.observedAt < cutover.observedAt`. Both observations join exact check,
 rule identity, main SHA, source reference, and instant. Activation binds that
 same exact package to a blocking position and is independently satisfiable;
 it does not wait for closure. Closure delegates to

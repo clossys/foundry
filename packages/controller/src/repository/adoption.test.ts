@@ -154,6 +154,8 @@ describe("RepositoryPackageAdoptionV1", () => {
     expect(validateRepositoryPackageAdoption(invalidCanaryDate).some((entry) => entry.rule === "event-shape")).toBe(true);
     const unordered = copy(fixture); unordered.events[2].observedAt = unordered.events[1].completedAt;
     expect(validateRepositoryPackageAdoption(unordered).some((entry) => entry.rule === "event-chronology")).toBe(true);
+    const beforeCanary = copy(fixture); beforeCanary.events[2].before.observedAt = beforeCanary.events[1].completedAt;
+    expect(validateRepositoryPackageAdoption(beforeCanary).some((entry) => entry.rule === "event-chronology")).toBe(true);
     const missingBefore = copy(fixture); missingBefore.events[2].before.state = "enforced";
     expect(validateRepositoryPackageAdoption(missingBefore).some((entry) => entry.rule === "event-cutover-transition")).toBe(true);
   });

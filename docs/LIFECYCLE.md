@@ -182,9 +182,10 @@ find the name.
 A repository may record the exact transition into this state with Controller's
 separate repository-package adoption contract: stable profile coverage,
 non-vacuous exact-head review, a post-main canary, an atomic provider-ruleset
-before-to-after cutover, and blocking activation are adoption evidence. The
-first three are phase-local readiness rather than an adoption claim; activation
-is independently satisfiable state-5 evidence. They do not close the loop. The
+before-to-after cutover, and blocking activation are adoption evidence.
+Foundation, post-main canary, and atomic cutover are phase-local readiness
+rather than an adoption claim; activation is independently satisfiable state-5
+evidence. They do not close the loop. The
 separate completion-evidence record still needs independently owned outcome
 and cadence evidence, exactly reconciled to the adoption artifact and retained
 operational references, before state 6 or 7 can be claimed.

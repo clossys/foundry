@@ -33,7 +33,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the same 10,000-entry collection maximum as profile validation and returns
   a fail-closed indeterminate result when bounded canonicalization cannot
   complete. Structurally rejected events no longer become authority for later
-  event joins.
+  event joins. The retained not-enforced cutover observation must now also
+  strictly follow the post-main canary.
 
 ## [0.8.18] - 2026-08-26
 

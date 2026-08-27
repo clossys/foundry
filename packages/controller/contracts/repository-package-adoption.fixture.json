@@ -51,7 +51,7 @@
       "before": {
         "state": "not-enforced",
         "sourceRef": "urn:example:ruleset-before",
-        "observedAt": "2026-08-26T23:59:00.000Z"
+        "observedAt": "2026-08-27T00:00:30.000Z"
       },
       "sourceRef": "urn:example:ruleset",
       "observedAt": "2026-08-27T00:01:00.000Z"
