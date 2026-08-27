@@ -432,7 +432,7 @@ delivery mechanics but is not a role. Such a package is absent from
 `role-loop-archetypes.json`: it does not acquire a job question, metric, mode,
 position, adoption, grounding, or closure by carrying a CLI. It must still
 ship that executable; `shipsNoGate` is not available to it. The first member,
-`adoption-bootstrap`, distributes typed fixed-install, evidence-join, and
+Foundry Starter (`@vespeneventures/starter`), distributes typed fixed-install, evidence-join, and
 direct-installed-CLI mechanics as an npm package plus a consumer-owned thin
 workflow, never as a remote composite action. This is a clarification of the
 gate rule, not a new role or an exception to it.

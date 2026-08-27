@@ -65,7 +65,7 @@ export interface CompletionDefinition { definition: string; independentOutcomeOw
 export interface RollbackDefinition { procedure: string; evidenceSource: string; }
 export interface BaselineDefinition { metricRef: string; value: number; observedAt: string; evidence: EvidenceReference; }
 /** Exact execution material for one repo/initiative pair in the first wave. */
-export interface FirstWaveWorkItem { id: string; initiativeId: string; targetRepositoryId: string; deliveryOwnerRef: string; package: ImmutablePackageRef; invocation: string; placement: string; baseline: BaselineDefinition; completion: CompletionDefinition; rollback: RollbackDefinition; mutationSurfaces: readonly string[]; }
+export interface FirstWaveWorkItem { id: string; initiativeId: string; targetRepositoryId: string; deliveryOwnerRef: string; package: ImmutablePackageRef; bin: string; invocation: string; placement: string; baseline: BaselineDefinition; completion: CompletionDefinition; rollback: RollbackDefinition; mutationSurfaces: readonly string[]; }
 export interface FirstWaveDefinition { initiativeIds: readonly string[]; objectives: readonly string[]; workItems: readonly FirstWaveWorkItem[]; }
 
 /** All material entered by a connector or other caller; it is not provider-specific. */

@@ -488,6 +488,9 @@ export function evaluatePrograms({ contract, distSites, binSites, lifecycleStatu
         // reason the ladder is not: it has left. Reported, never graded.
         shipsGate: (workspaceBins.get(name) ?? []).length > 0,
         acknowledgedGaps: [],
+        // Preserve the last recorded position evidence after retirement; this
+        // cell is descriptive and retired packages are not ladder-graded.
+        stagedHere: true,
       });
       continue;
     }
@@ -600,6 +603,7 @@ export function evaluatePrograms({ contract, distSites, binSites, lifecycleStatu
       binInvocations: bins.length,
       shipsGate,
       acknowledgedGaps: [...gaps.keys()],
+      stagedHere: evidence.get("staged") === true,
     });
   }
 
@@ -622,24 +626,31 @@ function markdownCell(value) {
 
 /**
  * The committed position table in docs/LIFECYCLE.md is generated from the
- * same evaluated results the gate prints. It deliberately reports grounded
- * as unknown: #484 has not supplied independent landed-change outcomes, so
- * an apparent zero escape rate would be a measurement gap, not a result.
+ * same evaluated results the gate prints. Executable tooling has no consumer
+ * role loop, so adoption, grounding, and closure are N/A rather than a
+ * fabricated unknown. Roles still report grounding as unknown: #484 has not
+ * supplied independent landed-change outcomes, so an apparent zero escape
+ * rate would be a measurement gap, not a result.
  */
 export function renderLifecyclePositionTable({ contract, results }) {
   const rows = [
     LIFECYCLE_POSITION_START,
     "",
-    "| package | current position | staged here | grounded |",
-    "| --- | --- | --- | --- |",
+    "| package | current position | staged here | adoption | grounding | closure |",
+    "| --- | --- | --- | --- | --- | --- |",
   ];
   for (const result of results) {
-    const staged = result.acknowledgedGaps.includes("staged") ? "not yet" : "yes";
+    const staged = result.stagedHere === true ? "yes" : "not yet";
+    const tooling = result.category === "executable-tooling";
+    const notApplicable = "N/A — executable tooling";
+    const adoption = tooling ? notApplicable : stateIndex(result.state) >= stateIndex("adopted") && !result.acknowledgedGaps.includes("adopted") ? "yes" : "not yet";
+    const grounding = tooling ? notApplicable : stateIndex(result.state) >= stateIndex("grounded") && !result.acknowledgedGaps.includes("grounded") ? "yes" : "unknown — #484";
+    const closure = tooling ? notApplicable : stateIndex(result.state) >= stateIndex("closed") && !result.acknowledgedGaps.includes("closed") ? "yes" : "not yet";
     // Retirement is the current position, not the last evidence rung the
     // package happened to reach before it left the active catalogue.
     const displayState = result.supersession === RETIRED_STATUS ? RETIRED_STATUS : result.state;
     rows.push(
-      `| \`${markdownCell(result.package)}\` | ${markdownCell(displayState)} | ${staged} | unknown — #484 |`,
+      `| \`${markdownCell(result.package)}\` | ${markdownCell(displayState)} | ${staged} | ${adoption} | ${grounding} | ${closure} |`,
     );
   }
   rows.push("", LIFECYCLE_POSITION_END);

@@ -1,5 +1,5 @@
 {
-  "name": "@vespeneventures/adoption-bootstrap",
+  "name": "@vespeneventures/starter",
   "version": "0.1.0",
   "private": false,
   "license": "MIT",
@@ -22,7 +22,7 @@
     }
   },
   "bin": {
-    "adoption-bootstrap": "./dist/cli.js"
+    "foundry-starter": "./dist/cli.js"
   },
   "files": [
     "dist",
@@ -34,7 +34,7 @@
     "LICENSE"
   ],
   "sideEffects": false,
-  "description": "Credential-separated npm and pnpm installation evidence, trusted-base joins, and direct installed CLI execution for consumer-owned adoption workflows.",
+  "description": "Foundry Starter: credential-separated npm and pnpm installation evidence, trusted-base joins, and direct installed CLI execution for consumer-owned adoption workflows.",
   "keywords": [
     "adoption",
     "github-actions",
@@ -47,12 +47,12 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/vespeneventures/foundry.git",
-    "directory": "packages/adoption-bootstrap"
+    "directory": "packages/starter"
   },
   "bugs": {
     "url": "https://github.com/vespeneventures/foundry/issues"
   },
-  "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/adoption-bootstrap#readme",
+  "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/starter#readme",
   "engines": {
     "node": ">=20"
   },

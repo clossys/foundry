@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Dependency-free, typed adoption-bootstrap decision core with exact
+- Foundry Starter's dependency-free, typed decision core with exact
   `0`/`1`/`2` result preservation.
 - Fixed npm and pnpm adapters that disable lifecycle scripts and verify exact
   manifest, lockfile, version, and integrity identity.

@@ -138,9 +138,9 @@ provider credentials, or outcome evidence.
 
 ## Consumer-local responsibilities
 
-## Bootstrap foundation and activation
+## Foundry Starter foundation and activation
 
-`@vespeneventures/adoption-bootstrap` is executable tooling, not a role and
+Foundry Starter (`@vespeneventures/starter`) is executable tooling, not a role and
 not an installed position. A consumer may use its thin caller workflow to pin
 the public package, add an uncredentialed pull-request evidence snapshot, and
 install the protected-base caller with its own package-read credential. That

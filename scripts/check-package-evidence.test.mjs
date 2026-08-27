@@ -346,20 +346,22 @@ test("lifecycle statuses are read by name", () => {
   assert.equal(s.size, 1);
 });
 
-test("the lifecycle position renderer derives rows and never invents grounded evidence", () => {
+test("the lifecycle position renderer does not promote zero-site tooling or fabricate a role loop for it", () => {
   const rendered = renderLifecyclePositionTable({
     contract: {},
     results: [
-      { package: P, state: "published", acknowledgedGaps: [] },
-      { package: "@vespeneventures/not-yet", state: "published", acknowledgedGaps: ["staged"] },
-      { package: "@vespeneventures/retired", state: "published", supersession: "retired", acknowledgedGaps: [] },
+      { package: P, category: "role", state: "published", acknowledgedGaps: [], stagedHere: true },
+      { package: "@vespeneventures/not-yet", category: "role", state: "published", acknowledgedGaps: ["staged"], stagedHere: false },
+      { package: "@vespeneventures/retired", category: "role", state: "published", supersession: "retired", acknowledgedGaps: [], stagedHere: true },
+      { package: "@vespeneventures/tool", category: "executable-tooling", state: "implemented", acknowledgedGaps: [], stagedHere: false },
     ],
   });
   assert.match(rendered, /<!-- lifecycle-position-table:start -->/);
-  assert.match(rendered, /\| package \| current position \| staged here \| grounded \|/);
-  assert.match(rendered, /\| `@vespeneventures\/thing` \| published \| yes \| unknown — #484 \|/);
-  assert.match(rendered, /@vespeneventures\/not-yet.*\| not yet \| unknown — #484/);
-  assert.match(rendered, /@vespeneventures\/retired.*\| retired \| yes \| unknown — #484/);
+  assert.match(rendered, /\| package \| current position \| staged here \| adoption \| grounding \| closure \|/);
+  assert.match(rendered, /\| `@vespeneventures\/thing` \| published \| yes \| not yet \| unknown — #484 \| not yet \|/);
+  assert.match(rendered, /@vespeneventures\/not-yet.*\| not yet \| not yet \| unknown — #484 \| not yet/);
+  assert.match(rendered, /@vespeneventures\/retired.*\| retired \| yes \| not yet \| unknown — #484 \| not yet/);
+  assert.match(rendered, /@vespeneventures\/tool.*\| implemented \| not yet \| N\/A — executable tooling \| N\/A — executable tooling \| N\/A — executable tooling/);
   assert.match(rendered, /<!-- lifecycle-position-table:end -->/);
 });
 

@@ -1,7 +1,7 @@
 /** The three outcomes retained from the installed package and Advisor CLIs. */
-export type BootstrapState = "satisfied" | "violated" | "indeterminate";
+export type StarterState = "satisfied" | "violated" | "indeterminate";
 export type PackageManager = "npm" | "pnpm";
-export type BootstrapPhase = "foundation" | "activation";
+export type StarterPhase = "foundation" | "activation";
 
 /** An exact public npm package identity; ranges, tags, and local paths have no shape here. */
 export interface ExactPackage {
@@ -17,14 +17,15 @@ export interface TargetPackage extends ExactPackage {
 }
 
 /** Consumer-owned protected-base request. It never contains a command, shell fragment, or CLI path. */
-export interface BootstrapRequest {
+export interface StarterRequest {
   readonly schemaVersion: 1;
-  readonly phase: BootstrapPhase;
+  readonly phase: StarterPhase;
   readonly packageManager: PackageManager;
   readonly snapshot: {
     readonly repository: string;
     readonly maxAgeMs: number;
   };
+  readonly starter: ExactPackage & { readonly bin: "foundry-starter" };
   readonly advisor: ExactPackage & { readonly bin: "advisor-execution-readiness" };
   readonly target: TargetPackage;
   readonly evidence: {
@@ -81,23 +82,25 @@ export interface ProcessObservation {
   readonly attempted: boolean;
   readonly exitCode: number | null;
   readonly stdout: string;
+  /** The subprocess exceeded Starter's fixed deadline; it is not a violation report. */
+  readonly timedOut?: boolean;
   readonly currentAsOf?: string;
 }
 
-export interface BootstrapFinding {
+export interface StarterFinding {
   readonly rule: string;
   readonly message: string;
 }
 
-export interface BootstrapReport {
-  readonly state: BootstrapState;
-  readonly phase: BootstrapPhase | null;
-  readonly findings: readonly BootstrapFinding[];
-  readonly advisor: BootstrapState | null;
-  readonly target: BootstrapState | null;
+export interface StarterReport {
+  readonly state: StarterState;
+  readonly phase: StarterPhase | null;
+  readonly findings: readonly StarterFinding[];
+  readonly advisor: StarterState | null;
+  readonly target: StarterState | null;
 }
 
-export interface BootstrapEvaluationInput {
+export interface StarterEvaluationInput {
   readonly request: unknown;
   readonly snapshot: unknown;
   readonly trustedEvent: unknown;
