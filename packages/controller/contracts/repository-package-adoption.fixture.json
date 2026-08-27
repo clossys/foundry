@@ -4,7 +4,7 @@
   "package": {
     "name": "@example/repository-adoption",
     "version": "1.2.3",
-    "integrity": "sha512-dGVzdA=="
+    "integrity": "sha512-rHXzLwYAzn3wjxDgVsSGvPZDaXpAsyzOWAT7oyygM/gA2eBA+MWUgdRXTo3emEtHsPx4vB6rqoRxvVU8ZJ6oDw=="
   },
   "stableProfile": {
     "path": "governance/repository-profile.json",
@@ -17,7 +17,7 @@
       "candidate": {
         "name": "@example/repository-adoption",
         "version": "1.2.3",
-        "integrity": "sha512-dGVzdA==",
+        "integrity": "sha512-rHXzLwYAzn3wjxDgVsSGvPZDaXpAsyzOWAT7oyygM/gA2eBA+MWUgdRXTo3emEtHsPx4vB6rqoRxvVU8ZJ6oDw==",
         "headSha": "0123456789abcdef0123456789abcdef01234567",
         "baseSha": "76543210fedcba9876543210fedcba9876543210",
         "mainSha": "89abcdef0123456789abcdef0123456789abcdef"
@@ -48,20 +48,27 @@
       "mainSha": "89abcdef0123456789abcdef0123456789abcdef",
       "requiredCheck": "repository-package-adoption",
       "ruleId": "main-protection",
+      "before": {
+        "state": "not-enforced",
+        "sourceRef": "urn:example:ruleset-before",
+        "observedAt": "2026-08-26T23:59:00.000Z"
+      },
       "sourceRef": "urn:example:ruleset",
       "observedAt": "2026-08-27T00:01:00.000Z"
     },
     {
       "kind": "activation",
-      "package": { "name": "@example/repository-adoption", "version": "1.2.3", "integrity": "sha512-dGVzdA==" },
+      "package": { "name": "@example/repository-adoption", "version": "1.2.3", "integrity": "sha512-rHXzLwYAzn3wjxDgVsSGvPZDaXpAsyzOWAT7oyygM/gA2eBA+MWUgdRXTo3emEtHsPx4vB6rqoRxvVU8ZJ6oDw==" },
       "positionId": "example-position",
       "invocationRef": "urn:example:activation",
       "placement": "blocking",
       "duplicateRef": "urn:example:duplicate-removed",
-      "rollbackRef": "urn:example:rollback"
+      "rollbackProcedureRef": "urn:example:rollback-procedure",
+      "rollbackVerificationRef": "urn:example:rollback-verification"
     },
     {
       "kind": "closure",
+      "package": { "name": "@example/repository-adoption", "version": "1.2.3", "integrity": "sha512-rHXzLwYAzn3wjxDgVsSGvPZDaXpAsyzOWAT7oyygM/gA2eBA+MWUgdRXTo3emEtHsPx4vB6rqoRxvVU8ZJ6oDw==" },
       "positionId": "example-position",
       "completionEvidenceRef": "urn:example:completion"
     }

@@ -16,8 +16,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   stable structural context while one exact package follows the evidence-bound
   foundation → post-main-canary → atomic-ruleset-cutover → activation →
   closure prefix. Exact package/profile/head/ruleset joins fail closed;
-  closure delegates to the existing completion-evidence validator rather than
-  creating a second authority. Legacy `RepositoryProfileV1`–`V3` and
+  SRI values must decode to their declared digest length, foundation review is
+  non-vacuous, and cutover retains a strictly ordered not-enforced-before to
+  enforced-after transition. Foundation/canary/cutover results are phase-local
+  readiness, activation is independently satisfiable, and closure delegates to
+  the existing completion-evidence validator while exactly reconciling package
+  version and duplicate artifact/install/invocation/maintenance references to
+  prevent a second authority. Legacy `RepositoryProfileV1`–`V3` and
   `repository-profile-check` behavior are unchanged.
 
 ## [0.8.18] - 2026-08-26

@@ -30,6 +30,7 @@ export type {
   RepositoryPackageAdoptionClosure,
   RepositoryPackageAdoptionCoverageAxis,
   RepositoryPackageAdoptionCoverageResult,
+  RepositoryPackageAdoptionCutover,
   RepositoryPackageAdoptionEvaluation,
   RepositoryPackageAdoptionEvaluationInput,
   RepositoryPackageAdoptionEvent,
@@ -45,6 +46,7 @@ export type {
   RepositoryPackageAdoptionProfileInput,
   RepositoryPackageAdoptionResult,
   RepositoryPackageAdoptionRulesetObservation,
+  RepositoryPackageAdoptionRulesetStateObservation,
   RepositoryPackageAdoptionStableProfile,
   RepositoryPackageAdoptionV1,
 } from "./adoption.js";

@@ -855,7 +855,7 @@ repositoryProfileValidationCoverage({ schemaVersion: 3, /* ... */ });
 | `REPOSITORY_PACKAGE_ADOPTION_VERSION` / `REPOSITORY_PACKAGE_ADOPTION_COVERAGE` / `REPOSITORY_PACKAGE_ADOPTION_EVENT_KINDS` / `REPOSITORY_PACKAGE_ADOPTION_REASONS` | constants | The closed schema, axis, event-prefix, and indeterminate-reason vocabularies. |
 | `RepositoryPackageAdoptionV1` / `RepositoryPackageAdoptionEvaluationInput` / `RepositoryPackageAdoptionResult` | types | The event-prefix record, caller-injected evidence surface, and shared ternary outcome. |
 | `RepositoryPackageAdoptionPackage` / `RepositoryPackageAdoptionStableProfile` / `RepositoryPackageAdoptionEvent` / `RepositoryPackageAdoptionEventKind` / `RepositoryPackageAdoptionFoundation` / `RepositoryPackageAdoptionCanary` / `RepositoryPackageAdoptionCutover` / `RepositoryPackageAdoptionActivation` / `RepositoryPackageAdoptionClosure` | types | Exact artifact identity, stable context, and each ordered retained event. |
-| `RepositoryPackageAdoptionCoverageAxis` / `RepositoryPackageAdoptionCoverageResult` / `RepositoryPackageAdoptionProfileInput` / `RepositoryPackageAdoptionFoundationReview` / `RepositoryPackageAdoptionRulesetObservation` / `RepositoryPackageAdoptionEvaluation` / `RepositoryPackageAdoptionFinding` / `RepositoryPackageAdoptionFindingRule` / `RepositoryPackageAdoptionIndeterminateReason` / `RepositoryPackageAdoptionPlanInput` / `RepositoryPackageAdoptionPlan` | types | Caller evidence, report, finding, and candidate-plan shapes. |
+| `RepositoryPackageAdoptionCoverageAxis` / `RepositoryPackageAdoptionCoverageResult` / `RepositoryPackageAdoptionProfileInput` / `RepositoryPackageAdoptionFoundationReview` / `RepositoryPackageAdoptionRulesetObservation` / `RepositoryPackageAdoptionRulesetStateObservation` / `RepositoryPackageAdoptionEvaluation` / `RepositoryPackageAdoptionFinding` / `RepositoryPackageAdoptionFindingRule` / `RepositoryPackageAdoptionIndeterminateReason` / `RepositoryPackageAdoptionPlanInput` / `RepositoryPackageAdoptionPlan` | types | Caller evidence, report, finding, and candidate-plan shapes. |
 | `CANONICAL_REPOSITORY_PROFILE_PATH` | constant | `"governance/repository-profile.json"` (issue #315) — the one location a declaration lives. |
 | `REPOSITORY_PROFILE_VERSION` / `PREVIOUS_REPOSITORY_PROFILE_VERSION` / `LEGACY_REPOSITORY_PROFILE_VERSION` | constants | Current `3` plus deliberately supported `2` and `1`. |
 | `REQUIREMENT_ID_CATEGORIES` | constant | `["runtime", "tool", "dependency"]` (issue #316) — the closed requirement-id category vocabulary. |
@@ -882,7 +882,8 @@ proof that a provider rule is enforced. A consumer that needs an auditable
 cutover records the separate `RepositoryPackageAdoptionV1` contract instead.
 
 One record names one exact package (`name`, exact semver `version`, one SRI
-`integrity`) and the canonical profile at
+`integrity` whose base64 decodes to the hash algorithm's exact digest length)
+and the canonical profile at
 `governance/repository-profile.json`. Its SHA-256 is over canonical JSON
 (sorted object keys and no whitespace). It always covers these axes in order:
 `declaration`, `commands`, `protected-paths`, `requirements`, and
@@ -895,12 +896,18 @@ The append-only event prefix is fixed:
 `foundation → post-main-canary → atomic-ruleset-cutover → activation → closure`.
 
 Foundation reuses `validateReviewEvidence` for exact candidate head/base
-review. Cutover accepts only `mode: "atomic"`, and compares the record with a
-provider-neutral observation (`enforced`, `not-enforced`, or `unknown`) joined
-to exact check, rule identity, main SHA, source reference, and observation
-instant. Activation binds that same exact package to a blocking position.
-Closure delegates to `validateCompletionEvidence`; it creates no competing
-closure authority.
+review, but requires at least one named check, approval, or secondary review:
+an empty policy and empty evidence cannot clear it. Cutover accepts only
+`mode: "atomic"`, retains a provider-neutral `not-enforced` before observation
+and an `enforced` after observation, and requires
+`canary.completedAt < cutover.observedAt`. Both observations join exact check,
+rule identity, main SHA, source reference, and instant. Activation binds that
+same exact package to a blocking position and is independently satisfiable;
+it does not wait for closure. Closure delegates to
+`validateCompletionEvidence`; it makes the completion artifact version and its
+manifest, lockfile, clean-install, invocation, duplicate-removal, and rollback
+references exactly match the adoption record, so those facts have no competing
+authority.
 
 ```ts
 import { evaluateRepositoryPackageAdoption } from "@vespeneventures/controller/repository";
@@ -917,9 +924,12 @@ const report = evaluateRepositoryPackageAdoption({
 ```
 
 `repository-package-adoption-check <adoption.json> <evaluation.json>` is its
-read-only wrapper: it exits `0` for satisfied, `1` for a known violation, and
-`2` when evidence is indeterminate. It does not discover a provider, change a
-ruleset, install a package, or write a consumer position.
+read-only wrapper: it exits `0` when the reported phase is satisfied, `1` for
+a known violation, and `2` when evidence is indeterminate. Its output labels
+foundation, canary, and cutover as **phase-local readiness**, never adoption,
+activation, or closure; `activated` and `closed` are separate final labels. It
+does not discover a provider, change a ruleset, install a package, or write a
+consumer position.
 `planRepositoryPackageAdoption` returns only an empty-event candidate and its
 next phase; it cannot produce activation or closure data. The versioned
 contract and fixture ship at
