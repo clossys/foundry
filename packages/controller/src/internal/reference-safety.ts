@@ -182,8 +182,9 @@ function sensitiveColonStartMask(tokens: Tokens, work?: ScanWork): Uint8Array {
   for (let start = 0; start < tokens.indexes.length;) {
     while (start < tokens.indexes.length && protectedAt(tokens, start)) { start += 1; scanned(work); }
     if (start >= tokens.indexes.length) break;
-    let end = start; let text = ""; const positions: number[] = [];
-    while (end < tokens.indexes.length && !protectedAt(tokens, end)) { const scalar = value(tokens, end)!; text += scalar; for (let offset = 0; offset < scalar.length; offset += 1) positions.push(end); end += 1; scanned(work); }
+    let end = start; const chunks: string[] = []; const positions: number[] = [];
+    while (end < tokens.indexes.length && !protectedAt(tokens, end)) { const scalar = value(tokens, end)!; chunks.push(scalar); for (let offset = 0; offset < scalar.length; offset += 1) positions.push(end); end += 1; scanned(work); }
+    const text = chunks.join("");
     eligibleSensitiveAssignmentSearch.lastIndex = 0;
     for (let match = eligibleSensitiveAssignmentSearch.exec(text); match !== null; match = eligibleSensitiveAssignmentSearch.exec(text)) { const position = positions[match.index]; if (position !== undefined) starts[position] = 1; if (match[0].length === 0) eligibleSensitiveAssignmentSearch.lastIndex += 1; }
     scanned(work, end - start); start = end;

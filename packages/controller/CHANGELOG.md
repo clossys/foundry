@@ -26,6 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   to standalone root atoms and query/fragment values, while path and opaque
   protection projects scalar by scalar to the next layer. A 65,536-code-unit
   reference cap applies; ordinary identifiers are not treated as values.
+  Sensitive-assignment scanning now accumulates normalized scalar chunks before
+  joining them, preserving its position map without quadratic work near that
+  cap.
 - Aligned the schema-v4 Advisor owned-metric identity to Advisor 0.1.2's
   published `engagement-decision-currency-rate` literal, so its exact
   completion evidence binds to the same role metric.
