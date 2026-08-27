@@ -140,6 +140,21 @@ describe("fixed install adapters", () => {
     const lock = `lockfileVersion: '9.0'\nimporters:\n  .:\n    devDependencies:\n      '${advisor.name}':\n        specifier: ${advisor.version}\n        version: ${advisor.version}(typescript@6.0.3)\npackages:\n  '${advisor.name}@${advisor.version}':\n    resolution: {integrity: ${integrity}}\n`;
     expect(validatePnpmIdentity(manifest, lock, advisor)).toEqual([]);
   });
+  it("accepts real-shaped nested balanced peer contexts while preserving the exact importer specifier", () => {
+    const lock = `lockfileVersion: '9.0'\nimporters:\n  .:\n    devDependencies:\n      '${advisor.name}':\n        specifier: '${advisor.version}'\n        version: ${advisor.version}(typescript@6.0.3(@types/node@24.0.0))(react@19.1.1)\npackages:\n  '${advisor.name}@${advisor.version}':\n    resolution: {integrity: ${integrity}}\n`;
+    expect(validatePnpmIdentity(manifest, lock, advisor)).toEqual([]);
+  });
+  it("rejects malformed or unbalanced nested peer contexts", () => {
+    for (const suffix of [
+      "(typescript@6.0.3(@types/node@24.0.0)",
+      "(typescript@6.0.3(@types/node@24.0.0)))",
+      "(typescript@6.0.3(()))",
+      "typescript@6.0.3(@types/node@24.0.0)",
+    ]) {
+      const lock = `lockfileVersion: '9.0'\nimporters:\n  .:\n    devDependencies:\n      '${advisor.name}':\n        specifier: ${advisor.version}\n        version: ${advisor.version}${suffix}\npackages:\n  '${advisor.name}@${advisor.version}':\n    resolution: {integrity: ${integrity}}\n`;
+      expect(validatePnpmIdentity(manifest, lock, advisor)).toContain(`pnpm root importer devDependencies does not pin ${advisor.name} at exact ${advisor.version}`);
+    }
+  });
   it("refuses a wrong pnpm base version hidden by a peer suffix", () => {
     const lock = `lockfileVersion: '9.0'\nimporters:\n  .:\n    devDependencies:\n      '${advisor.name}':\n        specifier: ${advisor.version}\n        version: 0.1.2(typescript@6.0.3)\npackages:\n  '${advisor.name}@${advisor.version}':\n    resolution: {integrity: ${integrity}}\n`;
     expect(validatePnpmIdentity(manifest, lock, advisor)).toContain(`pnpm root importer devDependencies does not pin ${advisor.name} at exact ${advisor.version}`);
@@ -161,5 +176,13 @@ describe("fixed install adapters", () => {
     expect(validateNpmIdentity(ranged, lock, advisor)).not.toEqual([]);
     const pnpmLock = `lockfileVersion: '9.0'\nimporters:\n  .:\n    devDependencies:\n      '${advisor.name}':\n        specifier: ^${advisor.version}\n        version: ${advisor.version}\npackages:\n  '${advisor.name}@${advisor.version}':\n    resolution: {integrity: ${integrity}}\n`;
     expect(validatePnpmIdentity(manifest, pnpmLock, advisor)).not.toEqual([]);
+  });
+  it("refuses a ranged pnpm manifest and a wrong-SRI package entry independently", () => {
+    const rangedManifest = { devDependencies: { [advisor.name]: `^${advisor.version}` } };
+    const exactImporterWrongSri = `lockfileVersion: '9.0'\nimporters:\n  .:\n    devDependencies:\n      '${advisor.name}':\n        specifier: ${advisor.version}\n        version: ${advisor.version}(typescript@6.0.3(@types/node@24.0.0))\npackages:\n  '${advisor.name}@${advisor.version}':\n    resolution: {integrity: sha512-${"b".repeat(85)}A==}\n`;
+    expect(validatePnpmIdentity(rangedManifest, exactImporterWrongSri, advisor)).toEqual(expect.arrayContaining([
+      `package.json devDependencies does not declare ${advisor.name} at exact ${advisor.version}`,
+      `pnpm package entry for ${advisor.name} does not match exact resolution integrity`,
+    ]));
   });
 });

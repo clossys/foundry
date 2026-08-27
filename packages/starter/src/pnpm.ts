@@ -17,13 +17,41 @@ function declaredVersion(value: unknown, expected: ExactPackage): boolean {
   return dependencies[expected.name] === expected.version;
 }
 
-function yamlValue(value: string): string { return value.trim().replace(/^['"]|['"]$/g, ""); }
-/** pnpm appends peer context to an importer resolution; its base stays exact. */
+function yamlValue(value: string): string {
+  const trimmed = value.trim();
+  const quote = trimmed[0];
+  return (quote === "'" || quote === '"') && trimmed.at(-1) === quote ? trimmed.slice(1, -1) : trimmed;
+}
+
+/**
+ * pnpm appends one or more peer-context groups to an importer resolution. The
+ * groups can themselves contain nested peer groups, so a flat regexp would
+ * accept neither real nested output nor reject every unbalanced variant.
+ */
+function balancedPeerContext(value: string): boolean {
+  if (!value.startsWith("(")) return false;
+  const content = [] as boolean[];
+  for (const character of value) {
+    if (character === "(") {
+      if (content.length > 0) content[content.length - 1] = true;
+      content.push(false);
+    } else if (character === ")") {
+      const hasContent = content.pop();
+      if (hasContent !== true) return false;
+    } else {
+      if (content.length === 0 || character === "\r" || character === "\n") return false;
+      content[content.length - 1] = true;
+    }
+  }
+  return content.length === 0;
+}
+
+/** The importer base must remain exact; only a completely balanced peer suffix may follow it. */
 function importerVersionMatches(value: string, expected: string): boolean {
   const resolved = yamlValue(value);
   if (resolved === expected) return true;
   const peerContext = resolved.slice(expected.length);
-  return resolved.startsWith(expected) && /^(\([^()\r\n]+\))+$/.test(peerContext);
+  return resolved.startsWith(expected) && balancedPeerContext(peerContext);
 }
 function escaped(value: string): string { return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
 function packageLine(name: string, indent = 6): RegExp { return new RegExp(`^ {${indent}}(?:['"])?${escaped(name)}(?:['"])?\\s*:$`); }
