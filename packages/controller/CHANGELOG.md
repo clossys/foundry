@@ -5,6 +5,14 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.18] - 2026-08-26
+
+### Fixed
+
+- Sensitive-assignment scanning now accumulates normalized scalar chunks before
+  joining them, preserving its position map without quadratic work near the
+  retained-reference length cap.
+
 ## [0.8.17] - 2026-08-25
 
 ### Fixed

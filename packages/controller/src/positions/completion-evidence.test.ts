@@ -58,6 +58,16 @@ const mutateRetainedReference = [
   ["outcome.after.evidenceRefs[0]", (item: Record<string, unknown>, value: string) => { (((item.outcome as Record<string, Record<string, string[]>>).after).evidenceRefs)[0] = value; }],
   ["closeWindow.evidenceRefs[0]", (item: Record<string, unknown>, value: string) => { ((item.closeWindow as Record<string, string[]>).evidenceRefs)[0] = value; }],
 ] as const;
+const nearCapPrefix = "https://safe.invalid)credential";
+const nearCapSuffix = ":value";
+const nearCap = `${nearCapPrefix}${" ".repeat(MAX_REFERENCE_CODE_UNITS - nearCapPrefix.length - nearCapSuffix.length)}${nearCapSuffix}`;
+const encodedNearCap = (token: string): string => `${nearCapPrefix}${token.repeat(Math.floor((MAX_REFERENCE_CODE_UNITS - nearCapPrefix.length - nearCapSuffix.length) / token.length))}${nearCapSuffix}`;
+const nearCapLedgerMutations = [
+  ["positions[0].baseline.evidenceRefs[0]", (item: Record<string, unknown>, value: string) => { (((item.positions as Array<Record<string, Record<string, string[]>>>)[0]!.baseline).evidenceRefs)[0] = value; }],
+  ["positions[0].setpoint.evidenceRefs[0]", (item: Record<string, unknown>, value: string) => { (((item.positions as Array<Record<string, Record<string, string[]>>>)[0]!.setpoint).evidenceRefs)[0] = value; }],
+  ["positions[0].evidenceSource.locator", (item: Record<string, unknown>, value: string) => { ((item.positions as Array<Record<string, Record<string, string>>>)[0]!.evidenceSource).locator = value; }],
+  ["positions[0].firstDayAssessment.evidenceRefs[0]", (item: Record<string, unknown>, value: string) => { (((item.positions as Array<Record<string, Record<string, string[]>>>)[0]!.firstDayAssessment).evidenceRefs)[0] = value; }],
+] as const;
 
 describe("completion evidence", () => {
   it("accepts complete consumer-owned evidence and shipped contract parity", () => {
@@ -643,33 +653,25 @@ describe("completion evidence", () => {
   });
 
   it("does not cap whitespace before an eligible sensitive assignment", () => {
-    const prefix = "https://safe.invalid)credential";
-    const suffix = ":value";
-    const nearCap = `${prefix}${" ".repeat(MAX_REFERENCE_CODE_UNITS - prefix.length - suffix.length)}${suffix}`;
-    const encodedNearCap = (token: string): string => `${prefix}${token.repeat(Math.floor((MAX_REFERENCE_CODE_UNITS - prefix.length - suffix.length) / token.length))}${suffix}`;
     expect(nearCap.length).toBe(MAX_REFERENCE_CODE_UNITS);
     for (const reference of [nearCap, encodedNearCap("%20"), encodedNearCap("%2520")]) {
       expect(reference.length).toBeLessThanOrEqual(MAX_REFERENCE_CODE_UNITS);
       expect(isValueSafeReference(reference), reference.slice(0, 40)).toBe(false);
     }
     expect(referenceSafetyOperationCount(nearCap)).toBeLessThanOrEqual(nearCap.length * 64);
-    for (const [path, change] of mutateRetainedReference) {
-      const item = evidence();
-      change(item, nearCap);
-      expect(validateCompletionEvidence(item, ledger()).findings).toContainEqual(expect.objectContaining({ rule: "unsafe-evidence-reference", path }));
-    }
-    const ledgerMutations = [
-      ["positions[0].baseline.evidenceRefs[0]", (item: Record<string, unknown>, value: string) => { (((item.positions as Array<Record<string, Record<string, string[]>>>)[0]!.baseline).evidenceRefs)[0] = value; }],
-      ["positions[0].setpoint.evidenceRefs[0]", (item: Record<string, unknown>, value: string) => { (((item.positions as Array<Record<string, Record<string, string[]>>>)[0]!.setpoint).evidenceRefs)[0] = value; }],
-      ["positions[0].evidenceSource.locator", (item: Record<string, unknown>, value: string) => { ((item.positions as Array<Record<string, Record<string, string>>>)[0]!.evidenceSource).locator = value; }],
-      ["positions[0].firstDayAssessment.evidenceRefs[0]", (item: Record<string, unknown>, value: string) => { (((item.positions as Array<Record<string, Record<string, string[]>>>)[0]!.firstDayAssessment).evidenceRefs)[0] = value; }],
-    ] as const;
-    for (const [path, change] of ledgerMutations) {
-      const item = ledger();
-      change(item, nearCap);
-      expect(validateInstalledPositionLedger(item).findings).toContainEqual(expect.objectContaining({ rule: "unsafe-evidence-reference", path }));
-    }
     for (const safe of ["fixture/(credential:value)", "urn:credential:policy", "https://host.invalid/path@v1", "https://host.invalid:443/evidence"]) expect(isValueSafeReference(safe), safe).toBe(true);
+  });
+
+  for (const [path, change] of mutateRetainedReference) it(`rejects the near-cap sensitive assignment in completion evidence at ${path}`, () => {
+    const item = evidence();
+    change(item, nearCap);
+    expect(validateCompletionEvidence(item, ledger()).findings).toContainEqual(expect.objectContaining({ rule: "unsafe-evidence-reference", path }));
+  });
+
+  for (const [path, change] of nearCapLedgerMutations) it(`rejects the near-cap sensitive assignment in installed-position evidence at ${path}`, () => {
+    const item = ledger();
+    change(item, nearCap);
+    expect(validateInstalledPositionLedger(item).findings).toContainEqual(expect.objectContaining({ rule: "unsafe-evidence-reference", path }));
   });
 
   it("stops deferring once the bounded final layer has actual structure", () => {

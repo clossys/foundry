@@ -182,8 +182,9 @@ function sensitiveColonStartMask(tokens: Tokens, work?: ScanWork): Uint8Array {
   for (let start = 0; start < tokens.indexes.length;) {
     while (start < tokens.indexes.length && protectedAt(tokens, start)) { start += 1; scanned(work); }
     if (start >= tokens.indexes.length) break;
-    let end = start; let text = ""; const positions: number[] = [];
-    while (end < tokens.indexes.length && !protectedAt(tokens, end)) { const scalar = value(tokens, end)!; text += scalar; for (let offset = 0; offset < scalar.length; offset += 1) positions.push(end); end += 1; scanned(work); }
+    let end = start; const chunks: string[] = []; const positions: number[] = [];
+    while (end < tokens.indexes.length && !protectedAt(tokens, end)) { const scalar = value(tokens, end)!; chunks.push(scalar); for (let offset = 0; offset < scalar.length; offset += 1) positions.push(end); end += 1; scanned(work); }
+    const text = chunks.join("");
     eligibleSensitiveAssignmentSearch.lastIndex = 0;
     for (let match = eligibleSensitiveAssignmentSearch.exec(text); match !== null; match = eligibleSensitiveAssignmentSearch.exec(text)) { const position = positions[match.index]; if (position !== undefined) starts[position] = 1; if (match[0].length === 0) eligibleSensitiveAssignmentSearch.lastIndex += 1; }
     scanned(work, end - start); start = end;
@@ -289,7 +290,7 @@ function hasSensitiveAssignment(viewLayer: ViewLayer, work?: ScanWork): boolean 
   const text = values.join("");
   return equalsAssignment.test(text) || segmentColonAssignment.test(text) || spacedColonAssignment.test(text) || unspacedColonAssignment.test(text) || quotedColonAssignment.test(text) || formEqualsAssignment.test(text) || formColonAssignment.test(text);
 }
-function evaluateView(view: ScanView, work?: ScanWork): boolean { for (let depth = 0; depth < view.layers.length; depth += 1) { if (depth > 0) projectProtection(view.layers[depth - 1]!, view.layers[depth]!, work); const layer = view.layers[depth]!; if (hasSensitiveAssignment(layer, work) || structuralScan(layer, view, depth, work)) return true; } return false; }
+function evaluateView(view: ScanView, work?: ScanWork): boolean { for (let depth = 0; depth < view.layers.length; depth += 1) { if (depth > 0) projectProtection(view.layers[depth - 1]!, view.layers[depth]!, work); const layer = view.layers[depth]!; if (structuralScan(layer, view, depth, work) || hasSensitiveAssignment(layer, work)) return true; } return false; }
 function evaluateReferenceSafety(value: string, work?: ScanWork): ReferenceSafetyIssue | undefined {
   const graph = buildGraph(value, work); if (graph === null) return "reference-length-exceeded";
   // Views deliberately do not share protection: compact WHATWG parsing may
