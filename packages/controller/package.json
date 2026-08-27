@@ -1,6 +1,6 @@
 {
   "name": "@vespeneventures/controller",
-  "version": "0.8.16",
+  "version": "0.8.17",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -125,6 +125,7 @@
     "test": "vitest run"
   },
   "devDependencies": {
+    "@vespeneventures/advisor": "0.1.2",
     "@types/node": "^22.10.0",
     "typescript": "~6.0.0",
     "vitest": "^4.1.9"

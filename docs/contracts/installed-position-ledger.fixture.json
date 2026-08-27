@@ -26,7 +26,7 @@
       "package": "@vespeneventures/integrator",
       "businessMetricPath": { "l1": "synthetic value", "l2": "synthetic northstar", "l3": "synthetic operating metric" },
       "causalHypothesis": "Synthetic fixture only; it establishes no consumer hypothesis.",
-      "baseline": { "value": 0.5, "observedAt": "fixture", "evidenceRefs": ["fixture-baseline"] },
+      "baseline": { "value": 0.5, "observedAt": "2026-08-17T00:00:00.000Z", "evidenceRefs": ["fixture-baseline"] },
       "setpoint": { "value": 1, "evidenceRefs": ["fixture-setpoint"] },
       "operatingScope": { "description": "Synthetic fixture scope.", "included": ["fixture input"], "excluded": ["provider mutation"] },
       "authority": { "decisionOwner": "fixture owner", "actionAuthority": "fixture automation" },

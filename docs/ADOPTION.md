@@ -176,23 +176,45 @@ reports and workspace aggregates.
 `@vespeneventures/controller/positions` ships the versioned
 `completion-evidence-contract.json` and
 `foundry-completion-evidence-check <completion-evidence.json> <position-ledger.json>`.
-One record binds an open, consumer-owned position to its exact package version,
-manifest/lockfile/clean-install references, real CLI or export invocation,
-blocking placement where applicable, adjacent deliberate red and green control,
-duplicate removal, rollback, cadence runs, and independently sourced before and
-after outcome observations with a close-window verdict.
+One record validates an open, consumer-owned position against an exact-version
+artifact declaration and consumer-retained manifest/lockfile/clean-install
+references, recorded CLI or export invocation, recorded placement where
+applicable, distinct deliberate red and green control cases in one run,
+duplicate disposition, rollback record, cadence runs, and separately attributed
+before and after outcome observations with a close-window verdict.
 
-The references are consumer-retained identifiers, not provider values or
-credentials. The validator verifies that a consumer supplied each evidence
-class, that the position linkage and owned metric agree with the shipped role
-charter, that the outcome owner is a canonical printable-ASCII identifier and
-not a case variant of the measured package or position, and that the
-independently observed after-value actually meets the linked position's
-setpoint under that role's metric direction. A caller may report an outcome as
-`indeterminate` only while a before or after observation is unreadable; a
-readable measurement is always evaluated against the setpoint. It cannot
-certify the provider observation itself or make a central adoption decision.
-Unreadable/incomplete evidence and an unreadable independent outcome return
-`indeterminate`; a measured miss or contradictory claimed verdict returns
-`violated`; only a complete, independently measured,
-close-window-satisfied record returns `satisfied`.
+The references are consumer-retained identifiers. The validator lexically
+rejects explicit inline sensitive-payload assignments and URL authority userinfo, but does not authenticate
+the pointers or prove opaque references free of other sensitive material. It verifies that a
+consumer supplied each evidence class, that the position linkage and owned
+metric agree with the shipped role charter, and that known-offset RFC3339
+evidence with at most millisecond precision obeys
+`before < invocation/red/green ≤ rollback ≤ after ≤ close start < recurrence ≤ close end`.
+The outcome must retain the linked baseline and evidence-source locator exactly,
+move from outside to inside the linked setpoint, and name neither the measured
+package, position, nor its action authority as its owner. Cadence must name the
+linked review cadence; runs outside the close window are history, while an
+in-window violation returns `violated`, an in-window indeterminate result keeps
+the record `indeterminate` unless a violation is known, and satisfaction needs
+at least one later in-window satisfied recurrence. A caller may report an
+outcome as `indeterminate` only while a before or after observation is
+unreadable; a readable measurement is always evaluated against the setpoint.
+It cannot certify a provider observation or make a central adoption decision.
+Unreadable/incomplete evidence returns `indeterminate`; a derived setpoint miss
+or contradictory claimed verdict returns `violated`; only a complete,
+structurally consistent close-window record returns `satisfied`.
+
+The installed-position ledger remains schema-v1 compatible and therefore only
+requires a nonempty baseline `observedAt`. Completion is a stricter maturity
+check: its linked baseline must be exactly retained by a readable outcome
+observation whose RFC3339 instant has at most millisecond precision before the
+record can satisfy.
+
+Reference safety is deliberately narrow: a reference has a 65,536-code-unit
+cap; after bounded percent decoding plus NFKC, case, default-ignorable, and
+form-style `+` normalization in root/query/fragment assignment contexts,
+with a separate URL-style tab/CR/LF authority scan, the
+validators reject an explicit sensitive-category label followed by a nonempty
+`:` or `=` payload. They allow ordinary identifiers containing those words,
+ignore Unicode default-ignorables for that lexical and linked-identity
+comparison, and do not resolve or authenticate any pointer.

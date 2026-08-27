@@ -75,7 +75,7 @@ versioned packages.
 | `@vespeneventures/controller/gates/secrets` | Source-aware secret-surface gates: credential inventory, provider-resource naming, local secret files, and raw-secret-read AST detection. Requires `typescript` — install it to use this subpath; `./gates` itself does not need it. **Breaking change from earlier versions:** these exports used to live on `./gates` directly; import them from here instead. |
 | `@vespeneventures/controller/release` | Isolated packed-artifact and installed-import proof. |
 | `@vespeneventures/controller/repository` | Consumer-owned repository profiles, upward requirements, exact-root declarations, pure evaluation, `repository-check`, and the full runner (`runRepositoryProfileCheck` / `repository-profile-check`). |
-| `@vespeneventures/controller/positions` | Pure installed-position ledger and completion-evidence validation. `foundry-position-check <ledger.json> [role-contract.json]` validates positions only. `foundry-completion-evidence-check <completion-evidence.json> <position-ledger.json>` binds one open consumer position to an exact artifact/install proof, real invocation and placement, red/green control, duplicate removal and rollback, cadence evidence, and independently sourced before/after outcome and close-window verdicts. Outcome-owner identity is canonical ASCII and self-source comparison is case-insensitive; readable outcomes are derived from the role metric and position setpoint, while `indeterminate` is reserved for unreadable observations. It reads no registry, provider, credentials, or central adoption authority. |
+| `@vespeneventures/controller/positions` | Pure installed-position ledger and completion-evidence validation. `foundry-position-check <ledger.json> [role-contract.json]` validates positions only. `foundry-completion-evidence-check <completion-evidence.json> <position-ledger.json>` validates one linked consumer-retained record for an open position: an exact-version artifact declaration with retained references, recorded invocation and distinct red/green controls, duplicate disposition and rollback records, linked review-cadence evidence, and separately attributed before/after outcome and close-window verdicts. Reference and locator strings have a 65,536-code-unit cap and lexically reject explicit inline sensitive-payload assignments and URL authority userinfo after bounded percent decoding plus NFKC/case/default-ignorable normalization and a separate URL-style tab/CR/LF authority scan; form-style `+` is treated as a label separator only at root/query/fragment assignment contexts. Ordinary identifiers containing those words remain valid. Evidence instants are known-offset RFC3339 with at most millisecond precision and obey `before < invocation/red/green ≤ rollback ≤ after ≤ startedAt < satisfied recurrence ≤ endedAt`. A violated or indeterminate in-window cadence result prevents satisfaction. The outcome retains the position baseline and source locator, moves into the linked setpoint, and cannot be owned by the position action authority. References, authorship, provider truth, and adoption are not authenticated or inferred. |
 | `@vespeneventures/controller/review` | Provider-neutral review evidence contracts, validation, and `review-check`. |
 | `@vespeneventures/controller/review/github` | Pure normalization of caller-provided GitHub-shaped review evidence. |
 | `@vespeneventures/controller/artifacts` | Deterministic, fail-closed verification for a consumer-owned governed artifact: declared kind + schema version, exact-content checksum, and structural provenance. |
@@ -90,7 +90,7 @@ versioned packages.
 `validateInstalledPositionLedger`, `validateInstalledPositionContract`,
 `validateCompletionEvidence`, `validateCompletionEvidenceContract`, and the
 corresponding field vocabularies: `POSITION_FIELDS`,
-`POSITION_RECOMMENDATIONS`, `WORKER_COMPONENT_KINDS`,
+`POSITION_RECOMMENDATIONS`, `WORKER_COMPONENT_KINDS`, `REFERENCE_VALUE_RULE`,
 `COMPLETION_EVIDENCE_FIELDS`, `COMPLETION_EVIDENCE_INDETERMINATE_REASONS`,
 `COMPLETION_VERDICTS`, `DUPLICATE_STATES`, `INVOCATION_KINDS`, and
 `PLACEMENT_MODES`. `InstalledPositionFinding`, `InstalledPositionLedgerReport`,
@@ -100,6 +100,43 @@ shared `satisfied` / `violated` / `indeterminate` result grammar: it validates
 the shape and linkage of consumer-retained evidence, refuses the measured
 package or position as its own outcome owner, and derives the outcome verdict
 from the shipped role's metric direction plus the linked position's setpoint.
+Its proof is fail-closed: exact semver and RFC3339 evidence (at most
+millisecond precision) must retain the
+linked open position's baseline, source locator, and review cadence;
+the outcome must move into the role setpoint; and the causal sequence is
+`before < invocation/red/green ≤ rollback ≤ after ≤ startedAt < recurrence ≤ endedAt`.
+A violated or indeterminate cadence run in that window cannot be hidden by a
+satisfied one. It validates supplied consumer-retained records only; it does
+not infer a provider observation from them.
+
+Reference safety is a lexical backstop, not a secret scanner: a reference has
+a 65,536-code-unit cap and is examined as the original plus two bounded
+percent-decoded NFKC/case/default-ignorable-normalized layers. It rejects
+explicit sensitive-category labels (including form-style `+` label-separator
+variants) carrying a nonempty `:` or `=` payload. Its URL-authority check uses
+only literal delimiters realized in a layer, scans preserved and TAB/CR/LF-
+stripped structural views, and considers candidates only at a standalone root
+atom or a query/fragment value (including bracketed, quoted, and JSON values).
+Path and opaque portions are protected scalar by scalar before the next layer;
+literal or unprotected realized encoded Unicode whitespace reopens prose, while
+encoded delimiters inside an established protected path remain data. A scheme-looking substring inside an
+opaque bare token is not a URL candidate.
+When a remaining decode can still establish an authority, query, fragment, or
+relative-path boundary, the scanner defers that suffix to the next layer rather
+than projecting a premature protected path; on the final bounded layer, actual
+delimiters and authority userinfo take precedence. JSON string values admit only their
+leading-wrapper and whitespace-delimited URL candidates; JSON punctuation inside
+the string remains ordinary text.
+Ordinary identifiers that merely contain those
+words remain valid. Unicode default-ignorables are removed for this lexical
+check and for linked position/action-authority identity comparison; no
+reference is resolved or authenticated.
+
+The installed-position ledger keeps its schema-v1 compatibility rule that a
+baseline `observedAt` is nonempty text. Completion validation is deliberately
+stricter: that linked baseline must be exactly retained by a readable outcome
+observation whose RFC3339 instant has at most millisecond precision before it
+can support a completion result.
 It never claims a provider observation is true, installs a package, or
 measures a provider itself.
 

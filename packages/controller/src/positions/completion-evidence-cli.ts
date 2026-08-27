@@ -18,7 +18,7 @@ export function main(argv = process.argv.slice(2)): number {
       console.log(`INDETERMINATE ${report.result.reason}${report.result.detail ? ` — ${report.result.detail}` : ""}`);
       for (const finding of report.findings) console.log(`FAIL ${finding.rule} ${finding.path} — ${finding.message}`);
     }
-    if (report.result.verdict === "satisfied") console.log(`COMPLETION EVIDENCE OK — ${report.package} position ${report.positionId} has consumer-owned adoption and independent outcome evidence.`);
+    if (report.result.verdict === "satisfied") console.log(`COMPLETION EVIDENCE OK — ${report.package} position ${report.positionId} has a structurally consistent linked consumer record; opaque references are not authenticated.`);
     return gateResultToExitCode(report.result);
   } catch (error) {
     console.error(`foundry-completion-evidence-check: could not read input: ${error instanceof Error ? error.message : String(error)}`);
