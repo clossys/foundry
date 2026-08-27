@@ -138,6 +138,36 @@ provider credentials, or outcome evidence.
 
 ## Consumer-local responsibilities
 
+## Repository cutover evidence
+
+`repository-profile-check` is structural context only. It validates a profile
+declaration and caller-supplied observations; it does not prove package
+adoption, merge review, a post-main canary, provider enforcement, activation,
+or closure. Existing v1/v2/v3 profiles remain compatible for that purpose.
+
+When one direct consumer needs auditable package cutover evidence, it may
+retain one `RepositoryPackageAdoptionV1` record from
+`@vespeneventures/controller/repository`. The record is deliberately
+single-package and append-only: foundation, post-main canary, atomic ruleset
+cutover, activation, then closure. It binds exact semver and a
+length-validated SRI digest, the canonical profile path/hash, all five profile
+axes, and non-vacuous exact-head review. Atomic cutover retains
+provider-neutral `not-enforced`-before and `enforced`-after observations, with
+the canary completing strictly before the after observation. Missing provider
+information is indeterminate; known non-enforcement is a violation. Consumers
+retain discovery and provider access; Foundry only evaluates supplied data.
+
+Foundation, canary, and cutover are phase-local readiness: a green result for
+any of them is not an activation or closure claim. Activation is independently
+satisfiable state-5 installation evidence, not independent outcome closure.
+Closure reuses the Controller completion-evidence validator and therefore
+requires the consumer-owned ledger and its separate outcome/cadence proof. It
+must also exactly reconcile the adoption package version and the retained
+manifest, lockfile, install, invocation, duplicate-removal, and rollback
+references, so the same operational fact cannot acquire two authorities. No
+profile pass, package installation, or activation entry may be presented as
+closure.
+
 ## Foundry Starter foundation and activation
 
 Foundry Starter (`@vespeneventures/starter`) is executable tooling, not a role and

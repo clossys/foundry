@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "kind": "foundry-repository-package-adoption",
+  "profilePath": "governance/repository-profile.json",
+  "profileHash": "sha256 of canonical JSON (sorted object keys, no whitespace)",
+  "requiredCoverage": [
+    "declaration",
+    "commands",
+    "protected-paths",
+    "requirements",
+    "root-entries"
+  ],
+  "events": [
+    "foundation",
+    "post-main-canary",
+    "atomic-ruleset-cutover",
+    "activation",
+    "closure"
+  ],
+  "rule": "One exact package progresses only through ordered append-only prefixes. Foundation requires non-vacuous exact-head review validation; cutover retains provider-neutral not-enforced-before and enforced-after observations with strict chronology; closure reuses completion-evidence validation and exactly reconciles the package version plus manifest, lockfile, install, invocation, duplicate-removal, and rollback references. Evaluation status is evidence-derived: only a satisfied phase reports readiness, activated, or closed; violated and indeterminate phases report their corresponding phase-local failure status. Foundation, canary, and cutover are phase-local readiness only; activation and closure are distinct. A repository profile is stable structural context, never an adoption state machine."
+}

@@ -74,7 +74,7 @@ versioned packages.
 | `@vespeneventures/controller/gates` | Foundation checks, deterministic build order, a ratchet primitive, override-range and dependency-scope gates, and `foundry-check`. Does **not** require `typescript` — the source-aware secret-surface gates that need it moved to `./gates/secrets` (below) as of this version; see "Requirements" for why. |
 | `@vespeneventures/controller/gates/secrets` | Source-aware secret-surface gates: credential inventory, provider-resource naming, local secret files, and raw-secret-read AST detection. Requires `typescript` — install it to use this subpath; `./gates` itself does not need it. **Breaking change from earlier versions:** these exports used to live on `./gates` directly; import them from here instead. |
 | `@vespeneventures/controller/release` | Isolated packed-artifact and installed-import proof. |
-| `@vespeneventures/controller/repository` | Consumer-owned repository profiles, upward requirements, exact-root declarations, pure evaluation, `repository-check`, and the full runner (`runRepositoryProfileCheck` / `repository-profile-check`). |
+| `@vespeneventures/controller/repository` | Consumer-owned repository profiles, upward requirements, exact-root declarations, pure evaluation, `repository-check`, the full runner (`runRepositoryProfileCheck` / `repository-profile-check`), and one-package repository adoption evidence (`RepositoryPackageAdoptionV1` / `repository-package-adoption-check`). |
 | `@vespeneventures/controller/positions` | Pure installed-position ledger and completion-evidence validation. `foundry-position-check <ledger.json> [role-contract.json]` validates positions only. `foundry-completion-evidence-check <completion-evidence.json> <position-ledger.json>` validates one linked consumer-retained record for an open position: an exact-version artifact declaration with retained references, recorded invocation and distinct red/green controls, duplicate disposition and rollback records, linked review-cadence evidence, and separately attributed before/after outcome and close-window verdicts. Reference and locator strings have a 65,536-code-unit cap and lexically reject explicit inline sensitive-payload assignments and URL authority userinfo after bounded percent decoding plus NFKC/case/default-ignorable normalization and a separate URL-style tab/CR/LF authority scan; form-style `+` is treated as a label separator only at root/query/fragment assignment contexts. Ordinary identifiers containing those words remain valid. Evidence instants are known-offset RFC3339 with at most millisecond precision and obey `before < invocation/red/green ≤ rollback ≤ after ≤ startedAt < satisfied recurrence ≤ endedAt`. A violated or indeterminate in-window cadence result prevents satisfaction. The outcome retains the position baseline and source locator, moves into the linked setpoint, and cannot be owned by the position action authority. References, authorship, provider truth, and adoption are not authenticated or inferred. |
 | `@vespeneventures/controller/review` | Provider-neutral review evidence contracts, validation, and `review-check`. |
 | `@vespeneventures/controller/review/github` | Pure normalization of caller-provided GitHub-shaped review evidence. |
@@ -851,6 +851,11 @@ repositoryProfileValidationCoverage({ schemaVersion: 3, /* ... */ });
 | `RepositoryProfileRunInput` / `RepositoryProfileRunDeclarationState` | types | Strict input to `runRepositoryProfileCheck`: the caller-resolved declaration state, injected discovery, and the optional `customAxes` list (issue #324). |
 | `RepositoryProfileRunCustomAxis` / `RepositoryProfileRunCustomFinding` | types | One caller-supplied, already-evaluated derived-check result (`{ name, result }`) and the finding shape its `violated` case may report through (issue #324). |
 | `RepositoryProfileRunResult` / `RepositoryProfileRunFinding` / `RepositoryProfileRunIndeterminateReason` | types | The runner's `GateResult` verdict, its unified finding shape (built-in and custom), and its declared indeterminate reasons. |
+| `validateRepositoryPackageAdoption` / `evaluateRepositoryPackageAdoption` / `planRepositoryPackageAdoption` | functions | Strict one-package structural validation, pure evidence evaluation, and candidate-only planning. |
+| `REPOSITORY_PACKAGE_ADOPTION_VERSION` / `REPOSITORY_PACKAGE_ADOPTION_COVERAGE` / `REPOSITORY_PACKAGE_ADOPTION_EVENT_KINDS` / `REPOSITORY_PACKAGE_ADOPTION_REASONS` | constants | The closed schema, axis, event-prefix, and indeterminate-reason vocabularies. |
+| `RepositoryPackageAdoptionV1` / `RepositoryPackageAdoptionEvaluationInput` / `RepositoryPackageAdoptionResult` | types | The event-prefix record, caller-injected evidence surface, and shared ternary outcome. |
+| `RepositoryPackageAdoptionPackage` / `RepositoryPackageAdoptionStableProfile` / `RepositoryPackageAdoptionEvent` / `RepositoryPackageAdoptionEventKind` / `RepositoryPackageAdoptionFoundation` / `RepositoryPackageAdoptionCanary` / `RepositoryPackageAdoptionCutover` / `RepositoryPackageAdoptionActivation` / `RepositoryPackageAdoptionClosure` | types | Exact artifact identity, stable context, and each ordered retained event. |
+| `RepositoryPackageAdoptionCoverageAxis` / `RepositoryPackageAdoptionCoverageResult` / `RepositoryPackageAdoptionProfileInput` / `RepositoryPackageAdoptionFoundationReview` / `RepositoryPackageAdoptionRulesetObservation` / `RepositoryPackageAdoptionRulesetStateObservation` / `RepositoryPackageAdoptionEvaluation` / `RepositoryPackageAdoptionPhase` / `RepositoryPackageAdoptionStatus` / `RepositoryPackageAdoptionFinding` / `RepositoryPackageAdoptionFindingRule` / `RepositoryPackageAdoptionIndeterminateReason` / `RepositoryPackageAdoptionPlanInput` / `RepositoryPackageAdoptionPlan` | types | Caller evidence, evidence-derived report status, finding, and candidate-plan shapes. |
 | `CANONICAL_REPOSITORY_PROFILE_PATH` | constant | `"governance/repository-profile.json"` (issue #315) — the one location a declaration lives. |
 | `REPOSITORY_PROFILE_VERSION` / `PREVIOUS_REPOSITORY_PROFILE_VERSION` / `LEGACY_REPOSITORY_PROFILE_VERSION` | constants | Current `3` plus deliberately supported `2` and `1`. |
 | `REQUIREMENT_ID_CATEGORIES` | constant | `["runtime", "tool", "dependency"]` (issue #316) — the closed requirement-id category vocabulary. |
@@ -867,6 +872,71 @@ repositoryProfileValidationCoverage({ schemaVersion: 3, /* ... */ });
 | `RepositoryProfileFinding` / `RepositoryRequirementFinding` / `RepositoryRootFinding` / `RepositoryRootFindingRule` | types | Stable structural and evaluation findings. |
 | `RepositoryProfileValidationCoverage` | type | `{ requirementsChecked, rootEntriesChecked }` (issue #309) — `repositoryProfileValidationCoverage`'s return shape. |
 | `RepositoryDeclarationLocationFinding` / `RepositoryDeclarationLocationFindingRule` | types | `declaration-not-found` and `declaration-non-canonical-location` (issue #315) plus every `RepositoryProfileFindingRule`. |
+
+#### Repository package adoption v1
+
+`RepositoryProfileV1` through `V3` are stable structural context. They remain
+backward compatible, including the optional derived `customAxes` in
+`repository-profile-check`; no profile version is an adoption state machine or
+proof that a provider rule is enforced. A consumer that needs an auditable
+cutover records the separate `RepositoryPackageAdoptionV1` contract instead.
+
+One record names one exact package (`name`, exact semver `version`, one SRI
+`integrity` whose base64 decodes to the hash algorithm's exact digest length)
+and the canonical profile at
+`governance/repository-profile.json`. Its SHA-256 is over canonical JSON
+(sorted object keys and no whitespace). It always covers these axes in order:
+`declaration`, `commands`, `protected-paths`, `requirements`, and
+`root-entries`. The post-main canary records all five successful results, and
+the evaluator requires a fresh caller-supplied result for the same five axes;
+missing coverage is indeterminate.
+
+The append-only event prefix is fixed:
+
+`foundation → post-main-canary → atomic-ruleset-cutover → activation → closure`.
+
+Foundation reuses `validateReviewEvidence` for exact candidate head/base
+review, but requires at least one named check, approval, or secondary review:
+an empty policy and empty evidence cannot clear it. Cutover accepts only
+`mode: "atomic"`, retains a provider-neutral `not-enforced` before observation
+and an `enforced` after observation, and requires
+`canary.completedAt < cutover.before.observedAt < cutover.observedAt`. Both observations join exact check,
+rule identity, main SHA, source reference, and instant. Activation binds that
+same exact package to a blocking position and is independently satisfiable;
+it does not wait for closure. Closure delegates to
+`validateCompletionEvidence`; it makes the completion artifact version and its
+manifest, lockfile, clean-install, invocation, duplicate-removal, and rollback
+references exactly match the adoption record, so those facts have no competing
+authority.
+
+```ts
+import { evaluateRepositoryPackageAdoption } from "@vespeneventures/controller/repository";
+
+const report = evaluateRepositoryPackageAdoption({
+  adoption,
+  repositoryProfile: { value: profile, path: "governance/repository-profile.json", sha256: profileHash },
+  stableProfileCoverage,
+  foundationReview: { policy: reviewPolicy, evidence: reviewEvidence },
+  rulesetObservation,
+  positionLedger,
+  completionEvidence,
+});
+```
+
+`repository-package-adoption-check <adoption.json> <evaluation.json>` is its
+read-only wrapper: it exits `0` when the reported phase is satisfied, `1` for
+a known violation, and `2` when evidence is indeterminate. Its status is
+evidence-derived: only satisfied foundation, canary, and cutover phases use
+their **phase-local readiness** labels; a violated or indeterminate phase uses
+the corresponding `*-violated` or `*-incomplete` label. `activated` and
+`closed` are therefore emitted only after their own evidence is satisfied. It
+does not discover a provider, change a ruleset, install a package, or write a
+consumer position.
+`planRepositoryPackageAdoption` returns only an empty-event candidate and its
+next phase; it cannot produce activation or closure data. The versioned
+contract and fixture ship at
+`./contracts/repository-package-adoption-contract.json` and
+`docs/contracts/repository-package-adoption.fixture.json`.
 
 ### `./composition`: pure cross-plane effective-state resolution
 

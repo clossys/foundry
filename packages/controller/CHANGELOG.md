@@ -5,6 +5,37 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.19] - 2026-08-27
+
+### Added
+
+- `@vespeneventures/controller/repository` now ships
+  `RepositoryPackageAdoptionV1`, its strict pure validator/evaluator,
+  candidate-only planner, versioned contract/fixture, and the installed
+  `repository-package-adoption-check` CLI. It keeps repository profiles as
+  stable structural context while one exact package follows the evidence-bound
+  foundation → post-main-canary → atomic-ruleset-cutover → activation →
+  closure prefix. Exact package/profile/head/ruleset joins fail closed;
+  SRI values must decode to their declared digest length, foundation review is
+  non-vacuous, and cutover retains a strictly ordered not-enforced-before to
+  enforced-after transition. Foundation/canary/cutover results are phase-local
+  readiness, activation is independently satisfiable, and closure delegates to
+  the existing completion-evidence validator while exactly reconciling package
+  version and duplicate artifact/install/invocation/maintenance references to
+  prevent a second authority. Legacy `RepositoryProfileV1`–`V3` and
+  `repository-profile-check` behavior are unchanged.
+
+### Fixed
+
+- Repository-package adoption status now follows evaluated evidence rather
+  than merely the last retained event: a violated or incomplete phase cannot
+  report ready, activated, or closed. Canonical profile hashing now accepts
+  the same 10,000-entry collection maximum as profile validation and returns
+  a fail-closed indeterminate result when bounded canonicalization cannot
+  complete. Structurally rejected events no longer become authority for later
+  event joins. The retained not-enforced cutover observation must now also
+  strictly follow the post-main canary.
+
 ## [0.8.18] - 2026-08-26
 
 ### Fixed
