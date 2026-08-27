@@ -12,6 +12,7 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const roots: string[] = [];
 const sha = (character: string) => character.repeat(64);
 const integrityFor = (path: string) => `sha512-${createHash("sha512").update(readFileSync(path)).digest("base64")}`;
+const RUNTIME_ENVIRONMENT_NAMES = ["PATH", "TMPDIR", "TMP", "TEMP", "SystemRoot", "WINDIR", "ComSpec", "PATHEXT", "LANG", "LC_ALL", "LC_CTYPE", "TZ"] as const;
 
 interface PackedPackage {
   readonly name: string;
@@ -22,14 +23,35 @@ interface PackedPackage {
 }
 
 function temporaryRoot(): string { const root = join(tmpdir(), `starter-pack-${Date.now()}-${Math.random().toString(16).slice(2)}`); mkdirSync(root); roots.push(root); return root; }
-function run(command: string, args: readonly string[], cwd: string, timeout = 30_000): string {
-  const result = spawnSync(command, args, { cwd, encoding: "utf8", timeout, maxBuffer: 4_000_000 });
+/**
+ * Starts every disposable-consumer process with only runtime necessities.
+ * The consumer, never the invoking job, owns package-manager configuration.
+ */
+function consumerEnvironment(root: string): NodeJS.ProcessEnv {
+  const environment: NodeJS.ProcessEnv = {};
+  for (const name of RUNTIME_ENVIRONMENT_NAMES) {
+    const value = process.env[name];
+    if (value !== undefined) environment[name] = value;
+  }
+  return {
+    ...environment,
+    HOME: root,
+    USERPROFILE: root,
+    XDG_CONFIG_HOME: join(root, ".config"),
+    XDG_CACHE_HOME: join(root, ".cache"),
+    NPM_CONFIG_USERCONFIG: join(root, ".npmrc"),
+    NPM_CONFIG_CACHE: join(root, ".npm-cache"),
+    PNPM_HOME: join(root, ".pnpm-home"),
+  };
+}
+function run(command: string, args: readonly string[], cwd: string, timeout = 30_000, environmentRoot = cwd): string {
+  const result = spawnSync(command, args, { cwd, encoding: "utf8", env: consumerEnvironment(environmentRoot), timeout, maxBuffer: 4_000_000 });
   if (result.error || result.status !== 0) throw new Error(`${command} ${args.join(" ")} failed (${result.status}): ${result.stderr || result.stdout || result.error?.message}`);
   return result.stdout;
 }
 function runAsync(command: string, args: readonly string[], cwd: string, timeout = 30_000): Promise<string> {
   return new Promise((resolveRun, rejectRun) => {
-    const child = spawn(command, args, { cwd, stdio: ["ignore", "pipe", "pipe"] });
+    const child = spawn(command, args, { cwd, env: consumerEnvironment(cwd), stdio: ["ignore", "pipe", "pipe"] });
     let stdout = ""; let stderr = "";
     const timer = setTimeout(() => child.kill("SIGTERM"), timeout);
     child.stdout.on("data", (chunk: Buffer) => { stdout += chunk.toString(); });
@@ -43,8 +65,8 @@ function runAsync(command: string, args: readonly string[], cwd: string, timeout
   });
 }
 function writeJson(path: string, value: unknown): void { writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`); }
-function pack(directory: string, destination: string, name: string, version: string): PackedPackage {
-  const output = run("npm", ["pack", "--json", "--pack-destination", destination, "--ignore-scripts"], directory);
+function pack(directory: string, destination: string, name: string, version: string, environmentRoot: string): PackedPackage {
+  const output = run("npm", ["pack", "--json", "--pack-destination", destination, "--ignore-scripts"], directory, 30_000, environmentRoot);
   const item = JSON.parse(output) as Array<{ filename: string }>;
   const path = join(destination, item[0]?.filename ?? "");
   const manifest = JSON.parse(readFileSync(join(directory, "package.json"), "utf8")) as { peerDependencies?: Record<string, string> };
@@ -98,6 +120,33 @@ function writeRegistryConfig(root: string, registryUrl: string): void {
   writeFileSync(join(root, ".npmrc"), `@vespeneventures:registry=${registryUrl}\n@fixture:registry=${registryUrl}\n`);
 }
 
+async function withHostilePublishEnvironment<T>(root: string, action: () => Promise<T>): Promise<T> {
+  const hostileConfig = join(root, "hostile-publish.npmrc");
+  writeFileSync(hostileConfig, "registry=http://127.0.0.1:9/\n");
+  const hostile = {
+    NPM_CONFIG_USERCONFIG: hostileConfig,
+    NPM_CONFIG_GLOBALCONFIG: hostileConfig,
+    NPM_CONFIG_CACHE: join(root, "hostile-cache"),
+    NPM_CONFIG_REGISTRY: "http://127.0.0.1:9/",
+    PNPM_HOME: join(root, "hostile-pnpm-home"),
+    PNPM_CONFIG_REGISTRY: "http://127.0.0.1:9/",
+    NODE_AUTH_TOKEN: "fixture",
+    NPM_TOKEN: "fixture",
+    GH_PACKAGES_TOKEN: "fixture",
+    GH_TOKEN: "fixture",
+    GITHUB_TOKEN: "fixture",
+  };
+  const previous = new Map(Object.keys(hostile).map((name) => [name, process.env[name]]));
+  Object.assign(process.env, hostile);
+  try { return await action(); }
+  finally {
+    for (const [name, value] of previous) {
+      if (value === undefined) delete process.env[name];
+      else process.env[name] = value;
+    }
+  }
+}
+
 function identities(starter: PackedPackage, advisor: PackedPackage, target: PackedPackage) {
   return {
     starter: { name: starter.name, version: starter.version, integrity: starter.integrity, bin: "foundry-starter" },
@@ -117,8 +166,21 @@ function invoke(root: string, packageManager: "npm" | "pnpm", installed: ReturnT
   writeJson(eventPath, { schemaVersion: 1, provider: "github-actions", eventName: "workflow_run", repository: "consumer/repository", baseSha: sha("b"), sourceWorkflowRunId: "1", sourceHeadSha: sha("c"), artifactName: "adoption-snapshot-1", sourceConclusion: "success" });
   writeJson(receiptPath, { schemaVersion: 1, packageManager, attempted: true, exitCode: 0 });
   const starterCli = join(root, "node_modules", "@vespeneventures", "starter", "dist", "cli.js");
-  const result = spawnSync(process.execPath, [starterCli, "decide", requestPath, snapshotRoot, eventPath, receiptPath], { cwd: root, encoding: "utf8", timeout: 15_000, maxBuffer: 4_000_000 });
+  const result = spawnSync(process.execPath, [starterCli, "decide", requestPath, snapshotRoot, eventPath, receiptPath], { cwd: root, encoding: "utf8", env: consumerEnvironment(root), timeout: 15_000, maxBuffer: 4_000_000 });
   return { status: result.status, report: JSON.parse(result.stdout || "{}") as { state: string } };
+}
+
+function findingRules(result: ReturnType<typeof invoke>): string {
+  const report = result.report as { findings?: unknown };
+  if (!Array.isArray(report.findings)) return "none";
+  const rules = report.findings.flatMap((entry) => typeof entry === "object" && entry !== null && "rule" in entry && typeof entry.rule === "string" && /^[a-z0-9-]+$/.test(entry.rule) ? [entry.rule] : []);
+  return rules.length === 0 ? "none" : rules.join(", ");
+}
+function expectStarterOutcome(result: ReturnType<typeof invoke>, expectedStatus: number, expectedState: string): void {
+  const state = ["satisfied", "violated", "indeterminate"].includes(result.report.state) ? result.report.state : "unreadable";
+  const diagnostic = `Starter report state=${state}; finding rules=${findingRules(result)}`;
+  expect(result.status, diagnostic).toBe(expectedStatus);
+  expect(result.report.state, diagnostic).toBe(expectedState);
 }
 
 async function installNpmConsumer(root: string, registryUrl: string, installed: ReturnType<typeof identities>): Promise<void> {
@@ -148,36 +210,37 @@ async function installPnpmConsumer(root: string, registryUrl: string, installed:
 afterEach(() => { for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true }); });
 
 describe("packed installed activation canaries", () => {
-  it("uses isolated real npm and pnpm consumers and preserves readable 0/1/2 outcomes", async () => {
-    run("npm", ["run", "build", "--workspace=packages/advisor"], repoRoot);
-    run("npm", ["run", "build", "--workspace=packages/starter"], repoRoot);
-    const fixtureRoot = temporaryRoot(); const packed = join(fixtureRoot, "packed"); const targetPackage = join(fixtureRoot, "target-package");
-    mkdirSync(packed); mkdirSync(join(targetPackage, "bin"), { recursive: true });
-    writeJson(join(targetPackage, "package.json"), { name: "@fixture/starter-target", version: "1.0.0", private: true, type: "module", bin: { "fixture-target-check": "./bin/check.js" }, peerDependencies: { "@vespeneventures/advisor": "0.1.3" }, files: ["bin"] });
-    writeFileSync(join(targetPackage, "bin", "check.js"), "#!/usr/bin/env node\nimport { readFileSync } from 'node:fs';\nconst input = JSON.parse(readFileSync(process.argv[2], 'utf8'));\nconst state = input.mode === 'violated' ? 'violated' : input.mode === 'indeterminate' ? 'indeterminate' : 'satisfied';\nconsole.log(JSON.stringify({state}));\nprocess.exit(state === 'satisfied' ? 0 : state === 'violated' ? 1 : 2);\n");
-    chmodSync(join(targetPackage, "bin", "check.js"), 0o755);
-    const starter = pack(join(repoRoot, "packages/starter"), packed, "@vespeneventures/starter", "0.1.0");
-    const advisor = pack(join(repoRoot, "packages/advisor"), packed, "@vespeneventures/advisor", "0.1.3");
-    const target = pack(targetPackage, packed, "@fixture/starter-target", "1.0.0");
-    const installed = identities(starter, advisor, target); const registry = await localRegistry([starter, advisor, target]);
-    try {
-      const npmRoot = join(fixtureRoot, "npm-consumer"); mkdirSync(npmRoot);
-      await installNpmConsumer(npmRoot, registry.url, installed);
-      const npmHelp = spawnSync(process.execPath, [join(npmRoot, "node_modules", "@vespeneventures", "starter", "dist", "cli.js"), "--help"], { cwd: npmRoot, encoding: "utf8" });
-      expect(npmHelp.status, npmHelp.stderr || npmHelp.error?.message).toBe(0); expect(npmHelp.stdout).toContain("Usage: foundry-starter decide");
-      expect(invoke(npmRoot, "npm", installed, "satisfied")).toMatchObject({ status: 0, report: { state: "satisfied" } });
-      expect(invoke(npmRoot, "npm", installed, "violated")).toMatchObject({ status: 1, report: { state: "violated" } });
-      expect(invoke(npmRoot, "npm", installed, "indeterminate")).toMatchObject({ status: 2, report: { state: "indeterminate" } });
+  it("isolates real npm and pnpm consumers from hostile publish settings and preserves 0/1/2 outcomes", async () => {
+    const fixtureRoot = temporaryRoot();
+    await withHostilePublishEnvironment(fixtureRoot, async () => {
+      run("npm", ["run", "build", "--workspace=packages/advisor"], repoRoot, 30_000, fixtureRoot);
+      run("npm", ["run", "build", "--workspace=packages/starter"], repoRoot, 30_000, fixtureRoot);
+      const packed = join(fixtureRoot, "packed"); const targetPackage = join(fixtureRoot, "target-package");
+      mkdirSync(packed); mkdirSync(join(targetPackage, "bin"), { recursive: true });
+      writeJson(join(targetPackage, "package.json"), { name: "@fixture/starter-target", version: "1.0.0", private: true, type: "module", bin: { "fixture-target-check": "./bin/check.js" }, peerDependencies: { "@vespeneventures/advisor": "0.1.3" }, files: ["bin"] });
+      writeFileSync(join(targetPackage, "bin", "check.js"), "#!/usr/bin/env node\nimport { readFileSync } from 'node:fs';\nconst input = JSON.parse(readFileSync(process.argv[2], 'utf8'));\nconst state = input.mode === 'violated' ? 'violated' : input.mode === 'indeterminate' ? 'indeterminate' : 'satisfied';\nconsole.log(JSON.stringify({state}));\nprocess.exit(state === 'satisfied' ? 0 : state === 'violated' ? 1 : 2);\n");
+      chmodSync(join(targetPackage, "bin", "check.js"), 0o755);
+      const starter = pack(join(repoRoot, "packages/starter"), packed, "@vespeneventures/starter", "0.1.0", fixtureRoot);
+      const advisor = pack(join(repoRoot, "packages/advisor"), packed, "@vespeneventures/advisor", "0.1.3", fixtureRoot);
+      const target = pack(targetPackage, packed, "@fixture/starter-target", "1.0.0", fixtureRoot);
+      const installed = identities(starter, advisor, target); const registry = await localRegistry([starter, advisor, target]);
+      try {
+        const npmRoot = join(fixtureRoot, "npm-consumer"); mkdirSync(npmRoot);
+        await installNpmConsumer(npmRoot, registry.url, installed);
+        const npmHelp = spawnSync(process.execPath, [join(npmRoot, "node_modules", "@vespeneventures", "starter", "dist", "cli.js"), "--help"], { cwd: npmRoot, encoding: "utf8", env: consumerEnvironment(npmRoot) });
+        expect(npmHelp.status, "installed npm Starter help failed").toBe(0); expect(npmHelp.stdout).toContain("Usage: foundry-starter decide");
+        expectStarterOutcome(invoke(npmRoot, "npm", installed, "satisfied"), 0, "satisfied");
+        expectStarterOutcome(invoke(npmRoot, "npm", installed, "violated"), 1, "violated");
+        expectStarterOutcome(invoke(npmRoot, "npm", installed, "indeterminate"), 2, "indeterminate");
 
-      const pnpmRoot = join(fixtureRoot, "pnpm-consumer"); mkdirSync(pnpmRoot);
-      await installPnpmConsumer(pnpmRoot, registry.url, installed);
-      const pnpmHelp = spawnSync(process.execPath, [join(pnpmRoot, "node_modules", "@vespeneventures", "starter", "dist", "cli.js"), "--help"], { cwd: pnpmRoot, encoding: "utf8" });
-      expect(pnpmHelp.status).toBe(0); expect(pnpmHelp.stdout).toContain("Usage: foundry-starter decide");
-      expect(invoke(pnpmRoot, "pnpm", installed, "satisfied")).toMatchObject({ status: 0, report: { state: "satisfied" } });
-      expect(invoke(pnpmRoot, "pnpm", installed, "violated")).toMatchObject({ status: 1, report: { state: "violated" } });
-      expect(invoke(pnpmRoot, "pnpm", installed, "indeterminate")).toMatchObject({ status: 2, report: { state: "indeterminate" } });
-    } finally {
-      await registry.close();
-    }
+        const pnpmRoot = join(fixtureRoot, "pnpm-consumer"); mkdirSync(pnpmRoot);
+        await installPnpmConsumer(pnpmRoot, registry.url, installed);
+        const pnpmHelp = spawnSync(process.execPath, [join(pnpmRoot, "node_modules", "@vespeneventures", "starter", "dist", "cli.js"), "--help"], { cwd: pnpmRoot, encoding: "utf8", env: consumerEnvironment(pnpmRoot) });
+        expect(pnpmHelp.status, "installed pnpm Starter help failed").toBe(0); expect(pnpmHelp.stdout).toContain("Usage: foundry-starter decide");
+        expectStarterOutcome(invoke(pnpmRoot, "pnpm", installed, "satisfied"), 0, "satisfied");
+        expectStarterOutcome(invoke(pnpmRoot, "pnpm", installed, "violated"), 1, "violated");
+        expectStarterOutcome(invoke(pnpmRoot, "pnpm", installed, "indeterminate"), 2, "indeterminate");
+      } finally { await registry.close(); }
+    });
   }, 90_000);
 });
