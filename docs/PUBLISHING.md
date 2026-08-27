@@ -492,9 +492,9 @@ default answer is also no" exists to refuse.
 - The documented consumer path — this file's ["Installing from GitHub
   Packages"](#installing-from-github-packages) section and
   [`README.md`'s "Installing" section](../README.md#installing) — describes
-  an authenticated install because that is what actually works. It no
-  longer describes an intended end state, because there is no longer a
-  different one pending.
+  an authenticated install because that is what actually works today. It
+  remains the current path until decision 18's evidence-gated cutover changes
+  the single scope/registry declaration.
 
 ### Current cutover constraint
 
@@ -502,10 +502,12 @@ Until decision 18 reaches 1D, GitHub Packages is the only publication and
 installation lane for this source. During 1D, the complete current catalogue
 must move together: the scope/registry declaration, every manifest and
 first-party dependency, lockfile, imports, documentation, workflow, and
-registry-specific verification. No new-namespace package may publish first,
-and old-namespace versions remain immutable legacy packages. The Trio named
-there is the required first new-namespace publication order; all later
-packages follow their dependency-closed order.
+registry-specific verification. Before that recut, history-aware scope/registry
+machinery and regression gates must preserve legacy lifecycle, retention, and
+decision identities. No candidate-namespace package may publish first, and
+old-namespace versions remain immutable legacy packages. The Trio named there
+is the required first publication order; all later packages follow their
+runtime dependency order.
 
 ## 8. Canonical registry qualification before cutover
 

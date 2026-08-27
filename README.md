@@ -124,8 +124,10 @@ the complete catalogue is recut together, and no mixed-namespace dependency
 can publish.
 
 Until then, the `.npmrc` and token requirements above are not an oversight or
-a transitional consumer configuration. Existing package versions remain
-immutable legacy artifacts; no current package is copied, renamed, or
+a current consumer configuration that may be changed piecemeal. A later
+completed cutover may replace it only after the single scope/registry authority
+changes and the whole catalogue has passed its gates. Existing package versions
+remain immutable legacy artifacts; no current package is copied, renamed, or
 republished as a partial migration.
 
 One mechanism outlives the decision and is worth knowing about either way:

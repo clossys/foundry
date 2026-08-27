@@ -917,14 +917,14 @@ never substitutes for a trusted package release.
 ### Measurement before the decision
 
 The source catalogue has nineteen current package directories. Its only
-first-party runtime edges are `controller -> advisor`, `builder -> controller`,
-`inspector -> controller`, and `publisher -> controller`, `designer`, and
-`writer`. An apparent package-by-package namespace move would therefore leave
-at least one consumer able to resolve a mixed-origin graph: Controller can
-bring Advisor, Builder and Inspector can bring Controller, and Publisher can
-bring three distinct first-party packages. A successful install is not proof
-that those copies form one authority; that exact consumer-convergence question
-is tracked by [issue #557](https://github.com/vespeneventures/foundry/issues/557).
+first-party runtime edges are `builder -> controller`, `inspector ->
+controller`, and `publisher -> controller`, `designer`, and `writer`.
+Controller lists Advisor as a development dependency, not a runtime edge.
+An apparent package-by-package namespace move would therefore leave Builder
+and Inspector able to bring Controller, and Publisher able to bring three
+distinct first-party packages. A successful install is not proof that those
+copies form one authority; that exact consumer-convergence question is tracked
+by [issue #557](https://github.com/vespeneventures/foundry/issues/557).
 
 The old GitHub Packages source is public and usable today. Its published
 versions are immutable registry history, not a staging area that can be
@@ -935,7 +935,10 @@ release controls have moved together.
 The representative Trio is **Advisor + Starter + Controller**, not an earlier
 conceptual Advisor + Builder + Controller grouping. Starter is the narrow
 trusted-base adoption/activation coordinator and is deliberately proven beside
-the two packages that establish the first dependency-closed publication path.
+the two packages that establish the first runtime-closed publication set.
+Advisor before Controller is engagement sequencing — Advisor establishes the
+assessment position before Controller's first-wave position — not a manifest
+dependency or a claim that Controller imports Advisor at runtime.
 Builder remains a separate desired-state/live-state reconciliation package:
 the Trio neither renames nor replaces it, and producer proof of the Trio does
 not claim Builder adoption, activation, or any consumer outcome.
@@ -950,17 +953,21 @@ Trio's producer qualification.
 
 ### Decision
 
-This is a producer-owned, finite cutover to the `clossys` public-npm
-namespace. It is not an authorization to publish, transfer, create a target
-repository, change `package-scope.json`, change a package manifest, or alter a
-provider in this decision commit. The current source, scope, GitHub Packages
-registry, package versions, and publish lane remain authoritative until the
-milestone that explicitly changes them.
+This is a producer-owned, finite cutover to a planned public-npm candidate.
+The candidate scope and registry are selected only after transfer, with
+ownership and availability evidence, and become active only when declared
+through the single authority, `package-scope.json`. This decision does not
+reserve or activate a future scope. It is not an authorization to publish,
+transfer, create a target repository, change `package-scope.json`, change a
+package manifest, or alter a provider in this decision commit. The current
+source, scope, GitHub Packages registry, package versions, and publish lane
+remain authoritative until the milestone that explicitly changes them.
 
-The source repository transfers directly to `clossys/platform`; no target
-platform repository is created beforehand. The old source stays usable during
-the proof period. Transfer is permitted only after the representative trio
-proof and the transfer gates below are recorded for one exact source head.
+The source repository transfers directly to the platform destination confirmed
+by the transfer authorization; no target platform repository is created
+beforehand. The old source stays usable during the proof period. Transfer is
+permitted only after the representative Trio proof and the transfer gates below
+are recorded for one exact source head.
 
 After transfer, one coherent exact-head change recuts the *whole current
 catalogue* from the old source namespace and GitHub Packages to the new public
@@ -983,10 +990,10 @@ a replacement upload under an old name.
 | Milestone | Producer-owned result | Required evidence before advancing |
 | --- | --- | --- |
 | **1A — decision and inventory** | Record this architecture, exact catalogue inventory, dependency edges, legacy dispositions, and the fixed first-publication order. No operational mutation. | This decision passes the normal repository gates in FULL safety mode. |
-| **1B — representative Trio proof** | Qualify the dependency-closed Advisor + Starter + Controller trio from one exact current-source head, while the old public source remains usable. The proof is producer qualification, never consumer adoption. For Starter, it qualifies the consumer-owned trusted-base foundation/activation, `0`/`1`/`2`, and rollback path; it does not turn executable tooling into a role. | FULL preflight and isolated tarball installation/import proof for each exact candidate; install Advisor before Controller; prove Starter independently; record the candidate head, tarball digests, and controls. A workspace link does not count. |
-| **1C — transfer** | Transfer this exact source repository directly to `clossys/platform`; do not create a separate target platform repository. | 1B's exact-head evidence; a clean FULL source-tree safety result; confirmed destination ownership and transfer authority; no unresolved authority-convergence finding for the trio; and an explicit transfer record. |
-| **1D — whole-catalogue recut** | After transfer only, change every current source package and every first-party edge to the new public-npm scope and registry in one coherent source change. | `set-scope --check`, registry parity, workspace-link integrity, FULL safety, build, typecheck, tests, and review all pass on the recut head. No new-namespace package exists yet. |
-| **1E — first public-npm publications** | Publish the dependency-closed Trio first: Advisor, then Starter, then Controller. Only after the owner-present first publish establishes the namespace/package authority, configure and prove the trusted publisher and provenance path for subsequent releases. | Per-package FULL preflight, scanned selected tarball, isolated registry install/import, registry-served digest proof, public visibility/access confirmation, and an exact-head record. Builder and Inspector wait for Controller; Publisher waits for Controller, Designer, and Writer. |
+| **1B — representative Trio proof** | Qualify the runtime-closed Advisor + Starter + Controller set from one exact current-source head, while the old public source remains usable. The proof is producer qualification, never consumer adoption. For Starter, it qualifies the consumer-owned trusted-base foundation/activation, `0`/`1`/`2`, and rollback path; it does not turn executable tooling into a role. | FULL preflight and isolated tarball installation/import proof for each exact candidate. Starter's **exact installed CLI** must record a satisfied (`0`), violated (`1`), and indeterminate (`2`) result from consumer-owned evidence, plus a verified rollback; raw command, inputs, exit code, and output are retained. Advisor-before-Controller is recorded as engagement sequencing, not dependency order. A workspace link does not count. |
+| **1C — transfer** | Transfer this exact source repository directly to the authorized platform destination; do not create a separate target platform repository. | 1B's exact-head evidence; a clean FULL source-tree safety result; confirmed destination ownership and transfer authority; an explicit transfer record; and #557 implemented as a machine-readable singular-authority declaration and checker with positive and negative controls. The recorded checker result must cover current and planned candidate scopes. Absence of a finding is not evidence. |
+| **1D — whole-catalogue recut** | After transfer only, change every current source package and every first-party edge to the selected public-npm scope and registry in one coherent source change. | **Before any setter runs**, scope/registry machinery is history-aware: it preserves legacy lifecycle, retention, and decision identities; regression gates prove that preservation; and the selected candidate's ownership/availability evidence is recorded. Then `set-scope --check`, registry parity, workspace-link integrity, FULL safety, build, typecheck, tests, and review all pass on the recut head. No candidate-namespace package exists yet. |
+| **1E — first public-npm publications** | Publish the runtime-closed Trio first: Advisor, then Starter, then Controller. Only after the owner-present first publish establishes the namespace/package authority, configure and prove the trusted publisher and provenance path for subsequent releases. | Per-package FULL preflight, scanned selected tarball, isolated registry install/import, registry-served digest proof, public visibility/access confirmation, and an exact-head record. Builder and Inspector wait for Controller; Publisher waits for Controller, Designer, and Writer. |
 
 The first owner-present publication is intentionally not delegated to an
 ambient credential or assumed from repository transfer. It establishes the
@@ -1006,12 +1013,12 @@ namespace version remains immutable legacy history in every case.
 | Current package | First-party runtime dependencies | New-namespace disposition |
 | --- | --- | --- |
 | `starter` | none | Trio first; publish independently after Advisor. |
-| `advisor` | none | Trio first; publish first. |
+| `advisor` | none | Trio first; publish first for engagement sequencing. |
 | `architect` | none | Publish only after the coherent 1D recut. |
 | `bouncer` | none | Publish only after the coherent 1D recut. |
 | `builder` | `controller` | Separate desired-state/live-state reconciliation package; wait for new Controller. It is not renamed, replaced, or claimed adopted by the Trio. |
 | `butler` | none | Publish only after the coherent 1D recut. |
-| `controller` | `advisor` | Trio first; publish after new Advisor. |
+| `controller` | none (`advisor` is development-only) | Trio first; publish after Advisor for engagement sequencing, not runtime closure. |
 | `designer` | none | Publish only after the coherent 1D recut. |
 | `giver` | none | Publish only after the coherent 1D recut. |
 | `influencer` | none | Publish only after the coherent 1D recut. |
@@ -1030,11 +1037,18 @@ have current source directories: `auth`, `catalog`, `comms`, `consent`,
 `conventions`, `copy`, `deployment`, `domain`, `domain-model`, `gates`,
 `governance`, `ledger`, `policy`, `provisioning`, `release`, `repository`,
 `review`, `secret-scan`, `secrets`, `strategy`, `surface`, `tokens`, `ui`,
-`verify-standards`, and `voice`; the earlier removed `contract` name is also
-legacy history. They receive no new-namespace counterpart. Their existing
-registry outcome remains exactly the one in the lifecycle/retention contracts:
-retained compatibility artifacts stay immutable for their recorded review
-window; retired or removed artifacts are not revived by this cutover.
+`verify-standards`, `voice`, `web-charts`, and `web-storage`; the earlier
+removed `contract` name is also legacy history. They receive no
+candidate-namespace counterpart.
+
+The executable legacy disposition for `copy`, `ledger`, `strategy`, `surface`,
+and `ui` is **retired**: `package-lifecycle.json` says so and the visibility
+gate's declarations-only mode skips their retention records because retention
+only justifies a lifecycle status of `deprecated`. The old retention entries
+were therefore stale, non-operative metadata rather than evidence that those
+names remain live. This decision removes that ambiguity by leaving the five
+names retired with no retention declaration. No retired or removed artifact is
+revived by this cutover.
 
 ### Boundary conditions
 
