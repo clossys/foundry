@@ -3,7 +3,7 @@
   "packages": [
     {
       "name": "@vespeneventures/starter",
-      "status": "incubating"
+      "status": "published"
     },
     {
       "name": "@vespeneventures/advisor",
