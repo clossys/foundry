@@ -276,48 +276,51 @@ fails when the committed copy drifts from the derived one — #493.
 
 <!-- lifecycle-position-table:start -->
 
-| package | current position | staged here | grounded |
-| --- | --- | --- | --- |
-| `@vespeneventures/advisor` | published | yes | unknown — #484 |
-| `@vespeneventures/controller` | published | yes | unknown — #484 |
-| `@vespeneventures/architect` | published | yes | unknown — #484 |
-| `@vespeneventures/inspector` | published | yes | unknown — #484 |
-| `@vespeneventures/builder` | published | yes | unknown — #484 |
-| `@vespeneventures/locksmith` | published | yes | unknown — #484 |
-| `@vespeneventures/integrator` | published | yes | unknown — #484 |
-| `@vespeneventures/observer` | published | yes | unknown — #484 |
-| `@vespeneventures/strategist` | published | yes | unknown — #484 |
-| `@vespeneventures/writer` | published | yes | unknown — #484 |
-| `@vespeneventures/designer` | published | yes | unknown — #484 |
-| `@vespeneventures/publisher` | published | yes | unknown — #484 |
-| `@vespeneventures/influencer` | published | yes | unknown — #484 |
-| `@vespeneventures/strategy` | retired | yes | unknown — #484 |
-| `@vespeneventures/copy` | retired | yes | unknown — #484 |
-| `@vespeneventures/ui` | retired | yes | unknown — #484 |
-| `@vespeneventures/surface` | retired | yes | unknown — #484 |
-| `@vespeneventures/ledger` | retired | yes | unknown — #484 |
-| `@vespeneventures/auth` | retired | yes | unknown — #484 |
-| `@vespeneventures/consent` | retired | yes | unknown — #484 |
-| `@vespeneventures/comms` | retired | yes | unknown — #484 |
-| `@vespeneventures/messenger` | published | yes | unknown — #484 |
-| `@vespeneventures/domain` | retired | yes | unknown — #484 |
-| `@vespeneventures/bouncer` | published | yes | unknown — #484 |
-| `@vespeneventures/butler` | published | yes | unknown — #484 |
-| `@vespeneventures/giver` | published | yes | unknown — #484 |
-| `@vespeneventures/keeper` | published | yes | unknown — #484 |
+| package | current position | staged here | adoption | grounding | closure |
+| --- | --- | --- | --- | --- | --- |
+| `@vespeneventures/starter` | implemented | not yet | N/A — executable tooling | N/A — executable tooling | N/A — executable tooling |
+| `@vespeneventures/advisor` | published | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/controller` | published | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/architect` | published | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/inspector` | published | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/builder` | published | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/locksmith` | published | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/integrator` | published | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/observer` | published | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/strategist` | published | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/writer` | published | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/designer` | published | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/publisher` | published | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/influencer` | published | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/strategy` | retired | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/copy` | retired | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/ui` | retired | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/surface` | retired | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/ledger` | retired | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/auth` | retired | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/consent` | retired | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/comms` | retired | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/messenger` | published | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/domain` | retired | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/bouncer` | published | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/butler` | published | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/giver` | published | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/keeper` | published | yes | not yet | unknown — #484 | not yet |
 
 <!-- lifecycle-position-table:end -->
 
 Two claims about position are structural rather than counted, and survive:
 
-**No package in this catalogue has independent grounding evidence.** *Grounded*
-is not merely zero, it is unmeasured: this repository has not connected an
-independent measurer to host-owned outcome records. `observer` can read
-conformance catch and escape outcomes, while other control shapes need their
-own externally produced standing count or observed outcome. A rate or count
-that reads zero because nothing could be read is not a measurement (#484).
+**No role package in this catalogue has independent grounding evidence.**
+*Grounded* is not merely zero, it is unmeasured: this repository has not
+connected an independent measurer to host-owned outcome records. `observer`
+can read conformance catch and escape outcomes, while other control shapes need
+their own externally produced standing count or observed outcome. A rate or
+count that reads zero because nothing could be read is not a measurement
+(#484). Explicit executable tooling has no role loop, so adoption, grounding,
+and closure are N/A rather than unknown.
 
-**Nothing in this catalogue has reached *closed*.**
+**No role package in this catalogue has reached *closed*.**
 
 ## How this is enforced
 
@@ -342,9 +345,11 @@ runs. Only a recorded run in which it failed on a real defect proves it
 works, and that record cannot be derived, so it must be declared and pointed
 at.
 
-**A state this repository cannot derive is never assumed.** `adopted`,
+**A role state this repository cannot derive is never assumed.** `adopted`,
 `grounded` and `closed` need a consumer's tree or `observer`'s output.
-Silence about them fails; it is not read as satisfied.
+Silence about them fails; it is not read as satisfied. Explicit executable
+tooling is not a role loop: those three cells are rendered N/A, not silently
+satisfied or fabricated as unknown.
 
 **A shortfall must be acknowledged, not baselined.** The states are a ladder
 and this repository published ten packages before the ladder existed. A gate
@@ -372,9 +377,18 @@ Bin-name invocations are reported separately and never counted. A bin
 resolves to whatever the installer happened to link, which has already left a
 gate silently unreachable in this fleet.
 
+The evidence record also distinguishes a default **role** package from an
+explicit **executable-tooling** package. The latter is not a role: it has no
+job question, owned metric, loop mode, installed position, adoption, grounding,
+or closure claim, and it is deliberately absent from the role-loop charter.
+It still ships a `bin` and is still graded for its implemented artifact. This
+keeps reusable delivery mechanics runnable without laundering them into a
+fourth role or using `shipsNoGate` as an exemption.
+
 One further rule is graded here that is not a rung on this ladder at all.
 [DECISIONS.md 11](DECISIONS.md#11-a-gate-behind-a-bin-or-a-declared-primitive)
-states that an active role package ships a gate behind a `bin`. A temporary
+states that an active role package and explicit executable tooling ship a bin.
+A temporary
 compatibility package may declare `shipsNoGate` with a reason and an issue,
 which is a countdown like `gaps`; no package may claim permanent exemption.
 The rule lives in this gate because this is

@@ -1,0 +1,19 @@
+# Changelog
+
+All notable changes to this package are documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.1.0] - 2026-08-27
+
+### Added
+
+- Foundry Starter's dependency-free, typed decision core with exact
+  `0`/`1`/`2` result preservation.
+- Fixed npm and pnpm adapters that disable lifecycle scripts and verify exact
+  manifest, lockfile, version, and integrity identity.
+- Protected-base snapshot/event joins, contained-evidence checks, direct
+  installed manifest/bin resolution, Advisor runner-time readiness, and
+  target output/exit consistency checks.
+- A canonical consumer-owned two-phase GitHub Actions workflow document.

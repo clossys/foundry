@@ -126,6 +126,7 @@ function assessment(overrides = {}) {
         targetRepositoryId: "repository-a",
         deliveryOwnerRef: "delivery-owner",
         package: { name: "@vespeneventures/controller", version: "0.8.15", integrity },
+        bin: "foundry-position-check",
         invocation: "foundry-position-check",
         placement: "consumer-owned required check",
         baseline: { metricRef: "decision-currency", value: 0, observedAt: "2026-08-24T00:00:00Z", evidence: evidence[0] },

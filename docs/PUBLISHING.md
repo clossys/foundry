@@ -26,7 +26,8 @@ A public package whose dependency is private is broken for everyone outside.
       neither resolves for a normal external installer. Pin real semver
       ranges.
 - [ ] The licence is MIT and matches the repository `LICENSE`.
-- [ ] The role package ships a gate behind a `bin`. A temporary compatibility
+- [ ] A role package or explicit executable-tooling package ships a runnable
+      `bin`. A temporary compatibility
       package may instead declare `shipsNoGate` in
       `docs/contracts/package-evidence.json` with a reason and an issue tracking
       the gate or retirement work. See

@@ -17,6 +17,7 @@ export { assessAdvisorEngagement, shouldReassess, validateAdvisorAssessmentInput
 export { assessEngagementDecisionCurrency, resolveEngagementActionDisposition } from "./currency.js";
 export { createAdvisorSession, advanceAdvisorSession } from "./session.js";
 export { validateExecutionAuthorization } from "./authorization.js";
+export { assessAdvisorExecutionReadiness } from "./execution-readiness.js";
 export { ADVISOR_TOOL_CONTRACTS, handleAdvisorTool } from "./tools.js";
 export type {
   AdvisorAssessment, AdvisorAssessmentInput, AdvisorCharter, AdvisorComponentAssessment, AdvisorFinding, AdvisorSession, AdvisorSessionEvent, AdvisorSessionState,
@@ -26,3 +27,4 @@ export type {
   ImmutablePackageRef, Initiative, InitiativeOverlap, InitiativeStatus, PreWorkItem, PreWorkKind, PreWorkStatus, ReadinessCriterion, ReadinessState,
   ReassessmentPolicy, ReassessmentTrigger, RequiredFitCriterionId, RequiredReadinessCriterionId, RollbackDefinition, SessionClosure, SignalState,
 } from "./types.js";
+export type { AdvisorExecutionReadiness } from "./execution-readiness.js";

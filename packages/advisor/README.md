@@ -46,7 +46,7 @@ const session = createAdvisorSession("opaque-session-id", nextAction);
 
 `ADVISOR_TOOL_CONTRACTS` and `handleAdvisorTool()` provide pure, connector-facing contracts. They do not themselves authenticate, persist, or contact providers.
 
-The remaining top-level runtime API is `ADVISOR_CHARTER`, `SPONSOR_ENTRY_PROMPT`, `validateAdvisorAssessmentInput()`, `shouldReassess()`, `advanceAdvisorSession()`, `validateExecutionAuthorization()`, `assessEngagementDecisionCurrency()`, and `resolveEngagementActionDisposition()`. Exported TypeScript contracts include `AdvisorAssessmentInput`, `AdvisorAssessment`, `AssessmentBasis`, `BaselineDefinition`, `FirstWaveWorkItem`, `PreWorkItem`, `Initiative`, `ExecutionAuthorization`, and their supporting state and finding types.
+The remaining top-level runtime API is `ADVISOR_CHARTER`, `SPONSOR_ENTRY_PROMPT`, `validateAdvisorAssessmentInput()`, `shouldReassess()`, `advanceAdvisorSession()`, `validateExecutionAuthorization()`, `assessAdvisorExecutionReadiness()`, `assessEngagementDecisionCurrency()`, and `resolveEngagementActionDisposition()`. Exported TypeScript contracts include `AdvisorAssessmentInput`, `AdvisorAssessment`, `AdvisorExecutionReadiness`, `AssessmentBasis`, `BaselineDefinition`, `FirstWaveWorkItem`, `PreWorkItem`, `Initiative`, `ExecutionAuthorization`, and their supporting state and finding types.
 
 ## Engagement decision currency
 
@@ -67,6 +67,19 @@ advisor-check assessment.json
 ```
 
 The command prints JSON and exits `0` for satisfied, `1` for violated, and `2` for indeterminate, unreadable, or invalid input.
+
+```bash
+advisor-execution-readiness assessment.json 2026-08-24T14:00:00Z
+```
+
+This execution-only command re-derives the assessment from the evidence at the
+runner-supplied current instant; it never treats `assessment.json`'s `asOf` as
+the time of execution. It exits `0` only when the derived plan is
+`ready-for-sponsor-approval`, all pre-work is satisfied, and the retained
+authorization exactly matches its plan, basis, repositories, packages, and
+mutation surfaces at that instant. It exits `1` for a concrete readiness or
+authorization violation, and `2` for unreadable, malformed, or indeterminate
+evidence.
 
 ## Evolution
 

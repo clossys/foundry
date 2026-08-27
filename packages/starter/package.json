@@ -1,6 +1,6 @@
 {
-  "name": "@vespeneventures/advisor",
-  "version": "0.1.3",
+  "name": "@vespeneventures/starter",
+  "version": "0.1.0",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -11,39 +11,48 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./npm": {
+      "types": "./dist/npm.d.ts",
+      "import": "./dist/npm.js"
+    },
+    "./pnpm": {
+      "types": "./dist/pnpm.d.ts",
+      "import": "./dist/pnpm.js"
     }
   },
   "bin": {
-    "advisor-check": "./dist/cli.js",
-    "advisor-execution-readiness": "./dist/execution-readiness-cli.js"
+    "foundry-starter": "./dist/cli.js"
   },
   "files": [
     "dist",
     "src",
     "!src/**/*.test.ts",
+    "documents",
     "README.md",
     "CHANGELOG.md",
     "LICENSE"
   ],
   "sideEffects": false,
-  "description": "Provider-neutral sponsor assessment, pre-work gating, and session contracts for Foundry engagements.",
+  "description": "Foundry Starter: credential-separated npm and pnpm installation evidence, trusted-base joins, and direct installed CLI execution for consumer-owned adoption workflows.",
   "keywords": [
-    "advisory",
-    "assessment",
-    "readiness",
-    "sponsor",
+    "adoption",
+    "github-actions",
+    "npm",
+    "pnpm",
+    "evidence",
     "typescript"
   ],
   "author": "Calvin Hung",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/vespeneventures/foundry.git",
-    "directory": "packages/advisor"
+    "directory": "packages/starter"
   },
   "bugs": {
     "url": "https://github.com/vespeneventures/foundry/issues"
   },
-  "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/advisor#readme",
+  "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/starter#readme",
   "engines": {
     "node": ">=20"
   },

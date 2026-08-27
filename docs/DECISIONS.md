@@ -424,6 +424,19 @@ programme membership and lifecycle state. Program C's four roles are named and
 their questions fixed here; all four are now published, and this decision
 creates no package.
 
+### Current executable-tooling classification
+
+`docs/contracts/package-evidence.json` now has an explicit
+`executable-tooling` category for a public package that supplies deterministic
+delivery mechanics but is not a role. Such a package is absent from
+`role-loop-archetypes.json`: it does not acquire a job question, metric, mode,
+position, adoption, grounding, or closure by carrying a CLI. It must still
+ship that executable; `shipsNoGate` is not available to it. The first member,
+Foundry Starter (`@vespeneventures/starter`), distributes typed fixed-install, evidence-join, and
+direct-installed-CLI mechanics as an npm package plus a consumer-owned thin
+workflow, never as a remote composite action. This is a clarification of the
+gate rule, not a new role or an exception to it.
+
 Decisions 9 and 10 wrote down half of what every package here is actually held
 to: it names a doer rather than a thing, and answers one question only it can
 answer. The other half was never written down and is near-universal in the code
