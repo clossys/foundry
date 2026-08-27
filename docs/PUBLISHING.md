@@ -436,11 +436,14 @@ read-only plan verification, but do not use its `apply` mode unless GitHub
 Packages documents and demonstrates support. Lifecycle records and these
 wrapper READMEs are the authoritative migration notices in the meantime.
 
-## 7. The public npm registry: considered, cancelled
+## 7. The public npm registry: historical cancellation, conditionally superseded
 
-**Status: cancelled — this is a recorded decision, not a pending task.**
-Every package here publishes to GitHub Packages, and that is the canonical
-adoption lane. Nothing in this section is work waiting to be picked up.
+**Status: historical cancellation.** This section records the previous
+decision, which remains the live operating rule until
+[DECISIONS.md 18](DECISIONS.md#18-producer-owned-catalogue-distribution-cutover)
+has passed its stated gates. Decision 18 replaces it only through its finite,
+producer-owned transfer and whole-catalogue recut; it does not restore the old
+runbook or permit a package-by-package migration.
 
 Earlier revisions of this document carried a ten-step, owner-only runbook
 for moving the canonical install source to `https://registry.npmjs.org`.
@@ -493,19 +496,24 @@ default answer is also no" exists to refuse.
   longer describes an intended end state, because there is no longer a
   different one pending.
 
-### If this is ever revisited
+### Current cutover constraint
 
-The bar is the one any speculative capability faces here: a real consumer
-that needs it, not one that might. Reopening would mean a fresh decision
-recorded in [`docs/DECISIONS.md`](DECISIONS.md#2-the-registry--github-packages),
-and a runbook rewritten against whatever npm's publishing and trusted-publisher
-surface looks like then — not this one restored from git history.
+Until decision 18 reaches 1D, GitHub Packages is the only publication and
+installation lane for this source. During 1D, the complete current catalogue
+must move together: the scope/registry declaration, every manifest and
+first-party dependency, lockfile, imports, documentation, workflow, and
+registry-specific verification. No new-namespace package may publish first,
+and old-namespace versions remain immutable legacy packages. The Trio named
+there is the required first new-namespace publication order; all later
+packages follow their dependency-closed order.
 
-## 8. Canonical registry qualification
+## 8. Canonical registry qualification before cutover
 
-GitHub Packages is the canonical publication and installation lane. Existing
-package names and versions remain there; do not unpublish, delete, copy, or
-reuse them as part of consumer adoption.
+Until decision 18's 1D recut passes, GitHub Packages is the canonical
+publication and installation lane. Existing package names and versions remain
+there; do not unpublish, delete, copy, or reuse them as part of consumer
+adoption. The decision's distinct post-transfer public-npm procedure governs
+only after that gate; it does not relax any of this source's current checks.
 
 For every package whose lifecycle status is `published`:
 

@@ -111,23 +111,22 @@ uses the protected workflow described in
 [docs/PUBLISHING.md](docs/PUBLISHING.md). The available-package and
 consumer-wiring split is tracked in [docs/ADOPTION.md](docs/ADOPTION.md).
 
-### Why not the public npm registry
+### Why this still uses GitHub Packages
 
-A migration to `registry.npmjs.org` — which would have made these packages
-installable with no `.npmrc` and no token — was planned and then
-**cancelled**. This section records that, rather than leaving the question
-open for every reader who notices the token requirement and wonders
-whether it is an oversight. It is not: it is the chosen trade.
+GitHub Packages is the current installation lane: it is the registry declared
+by `package-scope.json`, and it remains authoritative until the finite
+producer-owned cutover in
+[docs/DECISIONS.md](docs/DECISIONS.md#18-producer-owned-catalogue-distribution-cutover)
+passes its transfer and whole-catalogue gates. The earlier public-npm
+migration was cancelled; the newer decision does not restore that old plan.
+It permits a different, evidence-gated path only after this source transfers,
+the complete catalogue is recut together, and no mixed-namespace dependency
+can publish.
 
-The migration is not deferred, not blocked on anything, and not waiting
-for a contributor. Claiming a scope on a shared public namespace is a
-first-come registration with no supported way to undo it, and the value it
-buys — credential-free install for readers with no relationship to this
-org — was judged not worth that irreversible step for a repository whose
-consumers all authenticate through a plane that already holds package
-credentials. See [issue #213](https://github.com/vespeneventures/foundry/issues/213)
-for the decision, and [docs/DECISIONS.md](docs/DECISIONS.md#2-the-registry--github-packages)
-for the full reasoning.
+Until then, the `.npmrc` and token requirements above are not an oversight or
+a transitional consumer configuration. Existing package versions remain
+immutable legacy artifacts; no current package is copied, renamed, or
+republished as a partial migration.
 
 One mechanism outlives the decision and is worth knowing about either way:
 [`package-scope.json`](package-scope.json) remains the single file
