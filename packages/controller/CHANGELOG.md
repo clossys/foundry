@@ -25,6 +25,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   prevent a second authority. Legacy `RepositoryProfileV1`–`V3` and
   `repository-profile-check` behavior are unchanged.
 
+### Fixed
+
+- Repository-package adoption status now follows evaluated evidence rather
+  than merely the last retained event: a violated or incomplete phase cannot
+  report ready, activated, or closed. Canonical profile hashing now accepts
+  the same 10,000-entry collection maximum as profile validation and returns
+  a fail-closed indeterminate result when bounded canonicalization cannot
+  complete. Structurally rejected events no longer become authority for later
+  event joins.
+
 ## [0.8.18] - 2026-08-26
 
 ### Fixed

@@ -42,9 +42,9 @@ describe("repository-package-adoption-check", () => {
     violatedReview.evidence.headSha = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
     const violated = invoke({ repositoryProfile: profile, stableProfileCoverage: coverage, foundationReview: violatedReview });
     expect(violated.code).toBe(1);
-    expect(violated.output[0]).toBe("violated (foundation; phase-local)");
+    expect(violated.output[0]).toBe("foundation-violated (foundation; phase-local)");
     const indeterminate = invoke({ repositoryProfile: profile, stableProfileCoverage: [], foundationReview: review });
     expect(indeterminate.code).toBe(2);
-    expect(indeterminate.output[0]).toBe("indeterminate (foundation; phase-local)");
+    expect(indeterminate.output[0]).toBe("foundation-incomplete (foundation; phase-local)");
   });
 });

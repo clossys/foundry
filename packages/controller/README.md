@@ -855,7 +855,7 @@ repositoryProfileValidationCoverage({ schemaVersion: 3, /* ... */ });
 | `REPOSITORY_PACKAGE_ADOPTION_VERSION` / `REPOSITORY_PACKAGE_ADOPTION_COVERAGE` / `REPOSITORY_PACKAGE_ADOPTION_EVENT_KINDS` / `REPOSITORY_PACKAGE_ADOPTION_REASONS` | constants | The closed schema, axis, event-prefix, and indeterminate-reason vocabularies. |
 | `RepositoryPackageAdoptionV1` / `RepositoryPackageAdoptionEvaluationInput` / `RepositoryPackageAdoptionResult` | types | The event-prefix record, caller-injected evidence surface, and shared ternary outcome. |
 | `RepositoryPackageAdoptionPackage` / `RepositoryPackageAdoptionStableProfile` / `RepositoryPackageAdoptionEvent` / `RepositoryPackageAdoptionEventKind` / `RepositoryPackageAdoptionFoundation` / `RepositoryPackageAdoptionCanary` / `RepositoryPackageAdoptionCutover` / `RepositoryPackageAdoptionActivation` / `RepositoryPackageAdoptionClosure` | types | Exact artifact identity, stable context, and each ordered retained event. |
-| `RepositoryPackageAdoptionCoverageAxis` / `RepositoryPackageAdoptionCoverageResult` / `RepositoryPackageAdoptionProfileInput` / `RepositoryPackageAdoptionFoundationReview` / `RepositoryPackageAdoptionRulesetObservation` / `RepositoryPackageAdoptionRulesetStateObservation` / `RepositoryPackageAdoptionEvaluation` / `RepositoryPackageAdoptionFinding` / `RepositoryPackageAdoptionFindingRule` / `RepositoryPackageAdoptionIndeterminateReason` / `RepositoryPackageAdoptionPlanInput` / `RepositoryPackageAdoptionPlan` | types | Caller evidence, report, finding, and candidate-plan shapes. |
+| `RepositoryPackageAdoptionCoverageAxis` / `RepositoryPackageAdoptionCoverageResult` / `RepositoryPackageAdoptionProfileInput` / `RepositoryPackageAdoptionFoundationReview` / `RepositoryPackageAdoptionRulesetObservation` / `RepositoryPackageAdoptionRulesetStateObservation` / `RepositoryPackageAdoptionEvaluation` / `RepositoryPackageAdoptionPhase` / `RepositoryPackageAdoptionStatus` / `RepositoryPackageAdoptionFinding` / `RepositoryPackageAdoptionFindingRule` / `RepositoryPackageAdoptionIndeterminateReason` / `RepositoryPackageAdoptionPlanInput` / `RepositoryPackageAdoptionPlan` | types | Caller evidence, evidence-derived report status, finding, and candidate-plan shapes. |
 | `CANONICAL_REPOSITORY_PROFILE_PATH` | constant | `"governance/repository-profile.json"` (issue #315) — the one location a declaration lives. |
 | `REPOSITORY_PROFILE_VERSION` / `PREVIOUS_REPOSITORY_PROFILE_VERSION` / `LEGACY_REPOSITORY_PROFILE_VERSION` | constants | Current `3` plus deliberately supported `2` and `1`. |
 | `REQUIREMENT_ID_CATEGORIES` | constant | `["runtime", "tool", "dependency"]` (issue #316) — the closed requirement-id category vocabulary. |
@@ -925,9 +925,11 @@ const report = evaluateRepositoryPackageAdoption({
 
 `repository-package-adoption-check <adoption.json> <evaluation.json>` is its
 read-only wrapper: it exits `0` when the reported phase is satisfied, `1` for
-a known violation, and `2` when evidence is indeterminate. Its output labels
-foundation, canary, and cutover as **phase-local readiness**, never adoption,
-activation, or closure; `activated` and `closed` are separate final labels. It
+a known violation, and `2` when evidence is indeterminate. Its status is
+evidence-derived: only satisfied foundation, canary, and cutover phases use
+their **phase-local readiness** labels; a violated or indeterminate phase uses
+the corresponding `*-violated` or `*-incomplete` label. `activated` and
+`closed` are therefore emitted only after their own evidence is satisfied. It
 does not discover a provider, change a ruleset, install a package, or write a
 consumer position.
 `planRepositoryPackageAdoption` returns only an empty-event candidate and its

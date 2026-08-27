@@ -14,10 +14,10 @@ export function main(argv: readonly string[] = process.argv.slice(2), write: (li
     const evaluation = json(argv[1]!);
     if (typeof evaluation !== "object" || evaluation === null || Array.isArray(evaluation)) { write("evaluation JSON must be an object"); return 2; }
     const report = evaluateRepositoryPackageAdoption({ ...(evaluation as Omit<RepositoryPackageAdoptionEvaluationInput, "adoption">), adoption });
-    const scope = report.status === "foundation-ready" || report.status === "canary-ready" || report.status === "cutover-ready"
+    const scope = report.phase === "foundation" || report.phase === "post-main-canary" || report.phase === "atomic-ruleset-cutover"
       ? `${report.phase}; phase-local`
       : report.phase;
-    write(`${report.result.verdict === "satisfied" ? report.status : report.result.verdict} (${scope})`);
+    write(`${report.status} (${scope})`);
     for (const entry of report.findings) write(`${entry.rule} ${entry.path}: ${entry.message}`);
     return gateResultToExitCode(report.result);
   } catch (error) { write(error instanceof Error ? error.message : String(error)); return 2; }

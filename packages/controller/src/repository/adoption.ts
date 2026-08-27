@@ -27,7 +27,7 @@ export type RepositoryPackageAdoptionFindingRule =
   | "package-integrity" | "stable-profile" | "stable-profile-path" | "stable-profile-hash" | "stable-profile-coverage"
   | "events-shape" | "event-shape" | "event-order" | "event-duplicate" | "event-package-mismatch"
   | "event-head-mismatch" | "event-check-mismatch" | "event-position-mismatch" | "event-cutover-not-atomic"
-  | "event-reference" | "event-cutover-transition" | "event-chronology" | "profile-schema-invalid" | "profile-version" | "profile-path-mismatch" | "profile-hash-mismatch"
+  | "event-reference" | "event-cutover-transition" | "event-chronology" | "profile-schema-invalid" | "profile-version" | "profile-path-mismatch" | "profile-hash-mismatch" | "profile-hash-unavailable"
   | "profile-coverage-missing" | "profile-coverage-invalid" | "profile-coverage-violated" | "profile-coverage-indeterminate"
   | "foundation-review-missing" | "foundation-review-vacuous" | "foundation-review-invalid" | "foundation-review-stale" | "ruleset-observation-missing"
   | "ruleset-observation-invalid" | "ruleset-observation-mismatch" | "ruleset-not-enforced" | "ruleset-unknown"
@@ -172,12 +172,24 @@ export const REPOSITORY_PACKAGE_ADOPTION_REASONS = createGateReasons([
 ] as const);
 export type RepositoryPackageAdoptionIndeterminateReason = (typeof REPOSITORY_PACKAGE_ADOPTION_REASONS.reasons)[number];
 export type RepositoryPackageAdoptionResult = GateResult<RepositoryPackageAdoptionFinding, RepositoryPackageAdoptionIndeterminateReason>;
+export type RepositoryPackageAdoptionPhase = "candidate" | RepositoryPackageAdoptionEventKind;
+/**
+ * An evidence-derived verdict for the recorded phase. `*-ready`, `activated`,
+ * and `closed` are emitted only when that phase's evidence is satisfied.
+ */
+export type RepositoryPackageAdoptionStatus =
+  | "candidate-incomplete" | "candidate-violated"
+  | "foundation-ready" | "foundation-incomplete" | "foundation-violated"
+  | "canary-ready" | "canary-incomplete" | "canary-violated"
+  | "cutover-ready" | "cutover-incomplete" | "cutover-violated"
+  | "activated" | "activation-incomplete" | "activation-violated"
+  | "closed" | "closure-incomplete" | "closure-violated";
 export interface RepositoryPackageAdoptionEvaluation {
   readonly result: RepositoryPackageAdoptionResult;
   readonly findings: readonly RepositoryPackageAdoptionFinding[];
-  readonly phase: "candidate" | RepositoryPackageAdoptionEventKind;
-  /** A phase-local label. Foundation/canary/cutover readiness is not adoption. */
-  readonly status: "candidate" | "foundation-ready" | "canary-ready" | "cutover-ready" | "activated" | "closed";
+  readonly phase: RepositoryPackageAdoptionPhase;
+  /** Evidence-derived phase status. Foundation/canary/cutover readiness is not adoption. */
+  readonly status: RepositoryPackageAdoptionStatus;
 }
 
 type RecordValue = Record<string, unknown>;
@@ -200,12 +212,12 @@ function safeRecord(value: unknown): value is RecordValue {
     })());
   } catch { return false; }
 }
-function safeArray(value: unknown): value is unknown[] {
+function safeArray(value: unknown, maximumLength = 32): value is unknown[] {
   try {
     if (!Array.isArray(value) || Object.getPrototypeOf(value) !== Array.prototype) return false;
     const names = Object.getOwnPropertyNames(value);
     if (!names.every((name) => name === "length" || /^(?:0|[1-9]\d*)$/.test(name))) return false;
-    if (value.length > 32 || names.length !== value.length + 1) return false;
+    if (value.length > maximumLength || names.length !== value.length + 1) return false;
     for (let index = 0; index < value.length; index += 1) {
       const descriptor = Object.getOwnPropertyDescriptor(value, String(index));
       if (!descriptor || !("value" in descriptor)) return false;
@@ -279,6 +291,7 @@ function profileShape(value: unknown, findings: RepositoryPackageAdoptionFinding
   return findings.every((entry) => !entry.path.startsWith("stableProfile"));
 }
 function eventShape(event: unknown, expected: RepositoryPackageAdoptionEventKind, path: string, topPackage: RepositoryPackageAdoptionPackage | undefined, foundation: RepositoryPackageAdoptionFoundation | undefined, canary: RepositoryPackageAdoptionCanary | undefined, activation: RepositoryPackageAdoptionActivation | undefined, findings: RepositoryPackageAdoptionFinding[]): event is RepositoryPackageAdoptionEvent {
+  const findingsBefore = findings.length;
   if (!safeRecord(event) || own(event, "kind") !== expected) { finding(findings, "event-order", path, `must be the next ${expected} event`); return false; }
   if (expected === "foundation") {
     if (!exactKeys(event, ["kind", "candidate", "manifestRef", "lockfileRef", "cleanInstallRef", "reviewRef"])) { finding(findings, "event-shape", path, "foundation has unknown or missing fields"); return false; }
@@ -332,7 +345,7 @@ function eventShape(event: unknown, expected: RepositoryPackageAdoptionEventKind
     if (!opaque(own(event, "positionId")) || own(event, "positionId") !== activation?.positionId) finding(findings, "event-position-mismatch", `${path}.positionId`, "must exactly match the activated position");
     if (!reference(own(event, "completionEvidenceRef"))) finding(findings, "event-reference", `${path}.completionEvidenceRef`, "must be a nonempty safe completion-evidence reference");
   }
-  return true;
+  return findings.length === findingsBefore;
 }
 
 /** Strict structural validation. A valid record may be an intentionally open prefix. */
@@ -351,7 +364,8 @@ export function validateRepositoryPackageAdoption(value: unknown): readonly Repo
     let activation: RepositoryPackageAdoptionActivation | undefined;
     for (let index = 0; index < events.length; index += 1) {
       const expected = REPOSITORY_PACKAGE_ADOPTION_EVENT_KINDS[index]!;
-      eventShape(events[index], expected, `events[${index}]`, packageValid ? packageValue as RepositoryPackageAdoptionPackage : undefined, foundation, canary, activation, findings);
+      const accepted = eventShape(events[index], expected, `events[${index}]`, packageValid ? packageValue as RepositoryPackageAdoptionPackage : undefined, foundation, canary, activation, findings);
+      if (!accepted) continue;
       if (expected === "foundation") foundation = events[index] as RepositoryPackageAdoptionFoundation;
       if (expected === "post-main-canary") canary = events[index] as RepositoryPackageAdoptionCanary;
       if (expected === "activation") activation = events[index] as RepositoryPackageAdoptionActivation;
@@ -360,40 +374,74 @@ export function validateRepositoryPackageAdoption(value: unknown): readonly Repo
   return findings;
 }
 
-function canonicalJson(value: unknown): string | undefined {
+const MAX_PROFILE_CANONICAL_ARRAY_ENTRIES = 10_000;
+const MAX_PROFILE_CANONICAL_NODES = 250_000;
+const MAX_PROFILE_CANONICAL_CHARACTERS = 8_000_000;
+
+interface CanonicalBudget {
+  remainingNodes: number;
+  remainingCharacters: number;
+}
+
+function canonicalJson(value: unknown, budget: CanonicalBudget = {
+  remainingNodes: MAX_PROFILE_CANONICAL_NODES,
+  remainingCharacters: MAX_PROFILE_CANONICAL_CHARACTERS,
+}): string | undefined {
   try {
-    if (value === null || typeof value === "string" || typeof value === "boolean") return JSON.stringify(value);
-    if (typeof value === "number") return Number.isFinite(value) ? JSON.stringify(value) : undefined;
-    if (safeArray(value)) {
+    if (budget.remainingNodes-- <= 0) return undefined;
+    let rendered: string | undefined;
+    if (value === null || typeof value === "string" || typeof value === "boolean") rendered = JSON.stringify(value);
+    else if (typeof value === "number") rendered = Number.isFinite(value) ? JSON.stringify(value) : undefined;
+    else if (safeArray(value, MAX_PROFILE_CANONICAL_ARRAY_ENTRIES)) {
       const values: string[] = [];
-      for (let index = 0; index < value.length; index += 1) { const item = canonicalJson(Object.getOwnPropertyDescriptor(value, String(index))?.value); if (item === undefined) return undefined; values.push(item); }
-      return `[${values.join(",")}]`;
-    }
-    if (safeRecord(value)) {
+      for (let index = 0; index < value.length; index += 1) { const item = canonicalJson(Object.getOwnPropertyDescriptor(value, String(index))?.value, budget); if (item === undefined) return undefined; values.push(item); }
+      rendered = `[${values.join(",")}]`;
+    } else if (safeRecord(value)) {
       const parts: string[] = [];
-      for (const key of Object.keys(value).sort()) { const item = canonicalJson(own(value, key)); if (item === undefined) return undefined; parts.push(`${JSON.stringify(key)}:${item}`); }
-      return `{${parts.join(",")}}`;
+      for (const key of Object.keys(value).sort()) { const item = canonicalJson(own(value, key), budget); if (item === undefined) return undefined; parts.push(`${JSON.stringify(key)}:${item}`); }
+      rendered = `{${parts.join(",")}}`;
     }
+    if (rendered === undefined || rendered.length > budget.remainingCharacters) return undefined;
+    budget.remainingCharacters -= rendered.length;
+    return rendered;
   } catch { /* fail closed below */ }
   return undefined;
 }
-function phase(adoption: RepositoryPackageAdoptionV1): RepositoryPackageAdoptionEvaluation["phase"] { return adoption.events.length === 0 ? "candidate" : adoption.events[adoption.events.length - 1]!.kind; }
-function phaseStatus(value: RepositoryPackageAdoptionEvaluation["phase"]): RepositoryPackageAdoptionEvaluation["status"] {
-  switch (value) {
-    case "foundation": return "foundation-ready";
-    case "post-main-canary": return "canary-ready";
-    case "atomic-ruleset-cutover": return "cutover-ready";
-    case "activation": return "activated";
-    case "closure": return "closed";
-    default: return "candidate";
+function phase(adoption: RepositoryPackageAdoptionV1): RepositoryPackageAdoptionPhase { return adoption.events.length === 0 ? "candidate" : adoption.events[adoption.events.length - 1]!.kind; }
+function structuralPhase(value: unknown): RepositoryPackageAdoptionPhase {
+  if (!safeArray(value) || value.length === 0) return "candidate";
+  const last = value[value.length - 1];
+  const kind = safeRecord(last) ? own(last, "kind") : undefined;
+  return typeof kind === "string" && (REPOSITORY_PACKAGE_ADOPTION_EVENT_KINDS as readonly string[]).includes(kind)
+    ? kind as RepositoryPackageAdoptionEventKind
+    : "candidate";
+}
+function phaseStatus(phaseValue: RepositoryPackageAdoptionPhase, result: RepositoryPackageAdoptionResult): RepositoryPackageAdoptionStatus {
+  const suffix = result.verdict === "violated" ? "violated" : "incomplete";
+  if (phaseValue === "candidate") return `candidate-${suffix}`;
+  if (result.verdict === "satisfied") {
+    switch (phaseValue) {
+      case "foundation": return "foundation-ready";
+      case "post-main-canary": return "canary-ready";
+      case "atomic-ruleset-cutover": return "cutover-ready";
+      case "activation": return "activated";
+      case "closure": return "closed";
+    }
+  }
+  switch (phaseValue) {
+    case "foundation": return `foundation-${suffix}`;
+    case "post-main-canary": return `canary-${suffix}`;
+    case "atomic-ruleset-cutover": return `cutover-${suffix}`;
+    case "activation": return `activation-${suffix}`;
+    case "closure": return `closure-${suffix}`;
   }
 }
 function evaluation(
   result: RepositoryPackageAdoptionResult,
   findings: readonly RepositoryPackageAdoptionFinding[],
-  currentPhase: RepositoryPackageAdoptionEvaluation["phase"],
+  currentPhase: RepositoryPackageAdoptionPhase,
 ): RepositoryPackageAdoptionEvaluation {
-  return { result, findings, phase: currentPhase, status: phaseStatus(currentPhase) };
+  return { result, findings, phase: currentPhase, status: phaseStatus(currentPhase, result) };
 }
 function coverageResult(value: unknown): GateResult<RepositoryPackageAdoptionFinding, string> | undefined {
   if (!safeRecord(value)) return undefined;
@@ -472,8 +520,7 @@ export function evaluateRepositoryPackageAdoption(input: RepositoryPackageAdopti
   const structural = validateRepositoryPackageAdoption(rawAdoptionValue);
   const rawAdoption = safeRecord(rawAdoptionValue) ? rawAdoptionValue : undefined;
   const rawEvents = rawAdoption === undefined ? undefined : own(rawAdoption, "events");
-  const initialPhase = safeArray(rawEvents) && rawEvents.length > 0
-    ? (safeRecord(rawEvents[rawEvents.length - 1]) ? String(own(rawEvents[rawEvents.length - 1] as RecordValue, "kind")) as RepositoryPackageAdoptionEvaluation["phase"] : "candidate") : "candidate";
+  const initialPhase = structuralPhase(rawEvents);
   if (structural.length > 0) return evaluation(REPOSITORY_PACKAGE_ADOPTION_REASONS.indeterminate("adoption-invalid", "The adoption record does not satisfy the strict v1 schema."), structural, initialPhase);
   const adoption = rawAdoptionValue as RepositoryPackageAdoptionV1;
   const findings: RepositoryPackageAdoptionFinding[] = [];
@@ -489,8 +536,12 @@ export function evaluateRepositoryPackageAdoption(input: RepositoryPackageAdopti
     else if (!safeRecord(profileValue) || own(profileValue, "schemaVersion") !== REPOSITORY_PROFILE_VERSION) finding(findings, "profile-version", "repositoryProfile.value.schemaVersion", "adoption requires stable repository profile v3");
     if (profilePath !== adoption.stableProfile.path) finding(findings, "profile-path-mismatch", "repositoryProfile.path", "must exactly match the adopted canonical stable profile path");
     const canonical = canonicalJson(profileValue);
-    const computed = canonical === undefined ? undefined : computeDigest(canonical, "sha256");
-    if (typeof profileHash !== "string" || !SHA256.test(profileHash) || computed === undefined || profileHash !== computed || profileHash !== adoption.stableProfile.sha256) finding(findings, "profile-hash-mismatch", "repositoryProfile.sha256", "must exactly equal the canonical profile content hash committed by adoption");
+    if (canonical === undefined) {
+      finding(findings, "profile-hash-unavailable", "repositoryProfile.value", "canonical profile hashing exceeded safe evaluation limits");
+    } else {
+      const computed = computeDigest(canonical, "sha256");
+      if (typeof profileHash !== "string" || !SHA256.test(profileHash) || profileHash !== computed || profileHash !== adoption.stableProfile.sha256) finding(findings, "profile-hash-mismatch", "repositoryProfile.sha256", "must exactly equal the canonical profile content hash committed by adoption");
+    }
   }
   const suppliedCoverage = own(suppliedInput, "stableProfileCoverage");
   const seen = new Set<string>();
@@ -505,7 +556,7 @@ export function evaluateRepositoryPackageAdoption(input: RepositoryPackageAdopti
       else if (result.verdict === "indeterminate") finding(findings, "profile-coverage-indeterminate", `stableProfileCoverage[${index}]`, `the ${String(own(coverage, "name"))} axis is indeterminate`);
     }
   }
-  const baseIndeterminate = findings.some((entry) => ["profile-schema-invalid", "profile-version", "profile-coverage-missing", "profile-coverage-invalid", "profile-coverage-indeterminate"].includes(entry.rule));
+  const baseIndeterminate = findings.some((entry) => ["profile-schema-invalid", "profile-version", "profile-hash-unavailable", "profile-coverage-missing", "profile-coverage-invalid", "profile-coverage-indeterminate"].includes(entry.rule));
   if (baseIndeterminate) return evaluation(REPOSITORY_PACKAGE_ADOPTION_REASONS.indeterminate("profile-coverage-incomplete", "The stable profile was not completely and conclusively covered."), findings, phase(adoption));
   if (findings.length > 0) return evaluation(gateViolated(findings), findings, phase(adoption));
   const foundation = adoption.events[0] as RepositoryPackageAdoptionFoundation | undefined;

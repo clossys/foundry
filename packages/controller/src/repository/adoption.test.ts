@@ -5,6 +5,7 @@ import {
   planRepositoryPackageAdoption,
   validateRepositoryPackageAdoption,
 } from "./adoption.js";
+import { computeDigest } from "../policy/digest.js";
 
 const fixture = JSON.parse(readFileSync(new URL("../../../../docs/contracts/repository-package-adoption.fixture.json", import.meta.url), "utf8"));
 const shippedFixture = JSON.parse(readFileSync(new URL("../../contracts/repository-package-adoption.fixture.json", import.meta.url), "utf8"));
@@ -52,7 +53,7 @@ describe("RepositoryPackageAdoptionV1", () => {
     });
     expect(report.result).toEqual({ verdict: "indeterminate", reason: "closure-incomplete", detail: "Closure needs consumer ledger and completion evidence supplied to the existing validator." });
     expect(report.phase).toBe("closure");
-    expect(report.status).toBe("closed");
+    expect(report.status).toBe("closure-incomplete");
     const foundation = copy(fixture); foundation.events.length = 1;
     expect(evaluateRepositoryPackageAdoption(input(foundation))).toMatchObject({ result: { verdict: "satisfied" }, phase: "foundation", status: "foundation-ready" });
     const canary = copy(fixture); canary.events.length = 2;
@@ -86,9 +87,10 @@ describe("RepositoryPackageAdoptionV1", () => {
     empty.foundationReview.policy = { requiredChecks: [], requireApproval: false, requireSecondaryReview: false, decisionUse: "authoritative" };
     empty.foundationReview.evidence.checks = [];
     expect(evaluateRepositoryPackageAdoption(empty)).toMatchObject({ result: { verdict: "violated" }, findings: [{ rule: "foundation-review-vacuous" }] });
-    const stale = input();
+    const staleAdoption = copy(fixture); staleAdoption.events.length = 1;
+    const stale = input(staleAdoption);
     stale.foundationReview.evidence.headSha = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
-    expect(evaluateRepositoryPackageAdoption(stale).result.verdict).toBe("violated");
+    expect(evaluateRepositoryPackageAdoption(stale)).toMatchObject({ result: { verdict: "violated" }, status: "foundation-violated" });
     const canaryMismatch = copy(fixture);
     canaryMismatch.events[1].mainSha = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
     expect(validateRepositoryPackageAdoption(canaryMismatch).some((entry) => entry.rule === "event-head-mismatch")).toBe(true);
@@ -101,10 +103,10 @@ describe("RepositoryPackageAdoptionV1", () => {
     const adoption = copy(fixture); adoption.events.length = 3;
     const unknownObservation = ruleset(adoption); unknownObservation.after.state = "unknown";
     const unknown = evaluateRepositoryPackageAdoption({ ...input(adoption), rulesetObservation: unknownObservation });
-    expect(unknown.result.verdict).toBe("indeterminate");
+    expect(unknown).toMatchObject({ result: { verdict: "indeterminate" }, status: "cutover-incomplete" });
     const unenforcedObservation = ruleset(adoption); unenforcedObservation.after.state = "not-enforced";
     const unenforced = evaluateRepositoryPackageAdoption({ ...input(adoption), rulesetObservation: unenforcedObservation });
-    expect(unenforced.result.verdict).toBe("violated");
+    expect(unenforced).toMatchObject({ result: { verdict: "violated" }, status: "cutover-violated" });
     const mismatchObservation = ruleset(adoption); mismatchObservation.after.requiredCheck = "other-check";
     const mismatched = evaluateRepositoryPackageAdoption({ ...input(adoption), rulesetObservation: mismatchObservation });
     expect(mismatched.result.verdict).toBe("violated");
@@ -125,6 +127,24 @@ describe("RepositoryPackageAdoptionV1", () => {
     expect(validateRepositoryPackageAdoption(multi).length).toBeGreaterThan(0);
     const accessor = copy(fixture); Object.defineProperty(accessor, "id", { get: () => "unsafe", enumerable: true });
     expect(validateRepositoryPackageAdoption(accessor).length).toBeGreaterThan(0);
+    const malformedEvent = copy(fixture);
+    Object.defineProperty(malformedEvent.events[0], "candidate", { get: () => fixture.package, enumerable: true });
+    const malformedFindings = validateRepositoryPackageAdoption(malformedEvent);
+    expect(malformedFindings).toEqual(expect.arrayContaining([expect.objectContaining({ rule: "event-order", path: "events[0]" })]));
+    expect(malformedFindings.some((entry) => entry.rule === "adoption-shape")).toBe(false);
+    const rejectedFoundation = copy(fixture);
+    rejectedFoundation.events[0].candidate.headSha = "not-a-sha";
+    const rejectedFoundationFindings = validateRepositoryPackageAdoption(rejectedFoundation);
+    expect(rejectedFoundationFindings).toEqual(expect.arrayContaining([
+      expect.objectContaining({ rule: "event-head-mismatch", path: "events[0].candidate.headSha" }),
+      expect.objectContaining({ rule: "event-head-mismatch", path: "events[1].mainSha" }),
+    ]));
+    const unknownEventKind = copy(fixture); unknownEventKind.events.length = 1; unknownEventKind.events[0].kind = "unknown";
+    expect(evaluateRepositoryPackageAdoption(input(unknownEventKind))).toMatchObject({
+      result: { verdict: "indeterminate", reason: "adoption-invalid" },
+      phase: "candidate",
+      status: "candidate-incomplete",
+    });
     const inherited = Object.assign(Object.create({ inherited: true }), fixture);
     expect(validateRepositoryPackageAdoption(inherited).length).toBeGreaterThan(0);
   });
@@ -145,6 +165,45 @@ describe("RepositoryPackageAdoptionV1", () => {
     const indeterminateExtra = input();
     (indeterminateExtra.stableProfileCoverage[0] as { result: unknown }).result = { verdict: "indeterminate", reason: "unreadable", extra: true };
     expect(evaluateRepositoryPackageAdoption(indeterminateExtra)).toMatchObject({ result: { verdict: "indeterminate", reason: "profile-coverage-incomplete" } });
+  });
+
+  it("canonicalizes valid profile collections above the event-array cap through the validated 10,000-entry maximum", () => {
+    for (const count of [33, 10_000]) {
+      const rootEntries = Array.from({ length: count }, (_, index) => ({ name: `entry-${index}`, classification: "extension", disposition: "allowed" }));
+      const canonicalProfile = {
+        commands: [],
+        defaultBranch: "main",
+        protectedPaths: [],
+        requirements: [],
+        rootEntries: rootEntries.map(({ name }) => ({ classification: "extension", disposition: "allowed", name })),
+        schemaVersion: 3,
+      };
+      const hash = computeDigest(JSON.stringify(canonicalProfile), "sha256");
+      const adoption = copy(fixture); adoption.events.length = 1; adoption.stableProfile.sha256 = hash;
+      const report = evaluateRepositoryPackageAdoption({
+        ...input(adoption),
+        repositoryProfile: { value: { schemaVersion: 3, defaultBranch: "main", commands: [], protectedPaths: [], requirements: [], rootEntries }, path: "governance/repository-profile.json", sha256: hash },
+      });
+      expect(report).toMatchObject({ result: { verdict: "satisfied" }, status: "foundation-ready" });
+      expect(report.findings.some((entry) => entry.rule === "profile-hash-mismatch" || entry.rule === "profile-hash-unavailable")).toBe(false);
+    }
+  });
+
+  it("keeps a validated profile that exceeds bounded canonicalization indeterminate rather than calling it a hash mismatch", () => {
+    const adoption = copy(fixture); adoption.events.length = 1;
+    const bounded = input(adoption);
+    bounded.repositoryProfile.value = {
+      schemaVersion: 3,
+      defaultBranch: "a".repeat(8_000_001),
+      commands: [],
+      protectedPaths: [],
+      requirements: [],
+      rootEntries: [],
+    };
+    const report = evaluateRepositoryPackageAdoption(bounded);
+    expect(report).toMatchObject({ result: { verdict: "indeterminate", reason: "profile-coverage-incomplete" }, status: "foundation-incomplete" });
+    expect(report.findings.map((entry) => entry.rule)).toContain("profile-hash-unavailable");
+    expect(report.findings.map((entry) => entry.rule)).not.toContain("profile-hash-mismatch");
   });
 
   it("binds closure package version and duplicated evidence refs to one adoption authority", () => {
