@@ -150,6 +150,13 @@ describe("fixed install adapters", () => {
       "(typescript@6.0.3(@types/node@24.0.0)))",
       "(typescript@6.0.3(()))",
       "typescript@6.0.3(@types/node@24.0.0)",
+      "(junk)",
+      "( )",
+      "(@)",
+      "(typescript@)",
+      "(@types/node)",
+      "(typescript@6.0.3)(junk)",
+      "(typescript@6.0.3@junk)",
     ]) {
       const lock = `lockfileVersion: '9.0'\nimporters:\n  .:\n    devDependencies:\n      '${advisor.name}':\n        specifier: ${advisor.version}\n        version: ${advisor.version}${suffix}\npackages:\n  '${advisor.name}@${advisor.version}':\n    resolution: {integrity: ${integrity}}\n`;
       expect(validatePnpmIdentity(manifest, lock, advisor)).toContain(`pnpm root importer devDependencies does not pin ${advisor.name} at exact ${advisor.version}`);

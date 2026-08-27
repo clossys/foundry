@@ -23,27 +23,38 @@ function yamlValue(value: string): string {
   return (quote === "'" || quote === '"') && trimmed.at(-1) === quote ? trimmed.slice(1, -1) : trimmed;
 }
 
+const PEER_PACKAGE_NAME = "(?:@[a-z0-9][a-z0-9._-]*\\/[a-z0-9][a-z0-9._-]*|[a-z0-9][a-z0-9._-]*)";
+const PEER_ATOM = new RegExp(`^${PEER_PACKAGE_NAME}@[^@\\s()]+$`);
+
 /**
- * pnpm appends one or more peer-context groups to an importer resolution. The
- * groups can themselves contain nested peer groups, so a flat regexp would
- * accept neither real nested output nor reject every unbalanced variant.
+ * pnpm appends peer-context groups to an importer resolution. A group holds
+ * one npm package/resolution atom followed by zero or more nested groups.
+ * Parse that grammar rather than merely counting parentheses: balanced junk is
+ * not a peer context and must never make an exact importer look trustworthy.
  */
-function balancedPeerContext(value: string): boolean {
-  if (!value.startsWith("(")) return false;
-  const content = [] as boolean[];
-  for (const character of value) {
-    if (character === "(") {
-      if (content.length > 0) content[content.length - 1] = true;
-      content.push(false);
-    } else if (character === ")") {
-      const hasContent = content.pop();
-      if (hasContent !== true) return false;
-    } else {
-      if (content.length === 0 || character === "\r" || character === "\n") return false;
-      content[content.length - 1] = true;
-    }
+function peerContextEnd(value: string, start: number): number | null {
+  if (value[start] !== "(") return null;
+  let cursor = start + 1;
+  const atomStart = cursor;
+  while (cursor < value.length && value[cursor] !== "(" && value[cursor] !== ")") cursor += 1;
+  if (!PEER_ATOM.test(value.slice(atomStart, cursor))) return null;
+  while (value[cursor] === "(") {
+    const nestedEnd = peerContextEnd(value, cursor);
+    if (nestedEnd === null) return null;
+    cursor = nestedEnd;
   }
-  return content.length === 0;
+  return value[cursor] === ")" ? cursor + 1 : null;
+}
+
+function validPeerContextSuffix(value: string): boolean {
+  if (!value.startsWith("(")) return false;
+  let cursor = 0;
+  while (cursor < value.length) {
+    const end = peerContextEnd(value, cursor);
+    if (end === null) return false;
+    cursor = end;
+  }
+  return true;
 }
 
 /** The importer base must remain exact; only a completely balanced peer suffix may follow it. */
@@ -51,7 +62,7 @@ function importerVersionMatches(value: string, expected: string): boolean {
   const resolved = yamlValue(value);
   if (resolved === expected) return true;
   const peerContext = resolved.slice(expected.length);
-  return resolved.startsWith(expected) && balancedPeerContext(peerContext);
+  return resolved.startsWith(expected) && validPeerContextSuffix(peerContext);
 }
 function escaped(value: string): string { return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
 function packageLine(name: string, indent = 6): RegExp { return new RegExp(`^ {${indent}}(?:['"])?${escaped(name)}(?:['"])?\\s*:$`); }
