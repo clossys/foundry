@@ -41,6 +41,7 @@ export type {
   RepositoryPackageAdoptionFoundationReview,
   RepositoryPackageAdoptionIndeterminateReason,
   RepositoryPackageAdoptionPackage,
+  RepositoryPackageAdoptionPhase,
   RepositoryPackageAdoptionPlan,
   RepositoryPackageAdoptionPlanInput,
   RepositoryPackageAdoptionProfileInput,
@@ -48,6 +49,7 @@ export type {
   RepositoryPackageAdoptionRulesetObservation,
   RepositoryPackageAdoptionRulesetStateObservation,
   RepositoryPackageAdoptionStableProfile,
+  RepositoryPackageAdoptionStatus,
   RepositoryPackageAdoptionV1,
 } from "./adoption.js";
 export type {

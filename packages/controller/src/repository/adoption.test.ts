@@ -70,7 +70,9 @@ describe("RepositoryPackageAdoptionV1", () => {
     expect(evaluateRepositoryPackageAdoption(missing).result.verdict).toBe("indeterminate");
     const legacy = input();
     legacy.repositoryProfile.value = { schemaVersion: 1, defaultBranch: "main", commands: [], protectedPaths: [] };
-    expect(evaluateRepositoryPackageAdoption(legacy).result.verdict).toBe("indeterminate");
+    const legacyReport = evaluateRepositoryPackageAdoption(legacy);
+    expect(legacyReport.result.verdict).toBe("indeterminate");
+    expect(legacyReport.findings.some((entry) => entry.rule === "profile-version")).toBe(true);
     const v2 = input();
     (v2.repositoryProfile as { value: unknown }).value = {
       schemaVersion: 2,
@@ -79,7 +81,9 @@ describe("RepositoryPackageAdoptionV1", () => {
       protectedPaths: [],
       requirements: [],
     };
-    expect(evaluateRepositoryPackageAdoption(v2).result.verdict).toBe("indeterminate");
+    const v2Report = evaluateRepositoryPackageAdoption(v2);
+    expect(v2Report.result.verdict).toBe("indeterminate");
+    expect(v2Report.findings.some((entry) => entry.rule === "profile-version")).toBe(true);
   });
 
   it("rejects vacuous or stale review, canary/head mismatch, and check/cutover mismatch", () => {

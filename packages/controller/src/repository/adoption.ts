@@ -305,7 +305,7 @@ function eventShape(event: unknown, expected: RepositoryPackageAdoptionEventKind
     for (const key of ["manifestRef", "lockfileRef", "cleanInstallRef", "reviewRef"] as const) if (!reference(own(event, key))) finding(findings, "event-reference", `${path}.${key}`, "must be a nonempty safe retained reference");
   } else if (expected === "post-main-canary") {
     if (!exactKeys(event, ["kind", "mainSha", "check", "runRef", "completedAt", "verdict", "coverage"])) { finding(findings, "event-shape", path, "canary has unknown or missing fields"); return false; }
-    if (!sha(own(event, "mainSha")) || own(event, "mainSha") !== foundation?.candidate.mainSha) finding(findings, "event-head-mismatch", `${path}.mainSha`, "must equal foundation candidate mainSha");
+    if (!sha(own(event, "mainSha")) || own(event, "mainSha") !== foundation?.candidate?.mainSha) finding(findings, "event-head-mismatch", `${path}.mainSha`, "must equal foundation candidate mainSha");
     if (!opaque(own(event, "check"))) finding(findings, "event-check-mismatch", `${path}.check`, "must be a nonempty required check name");
     if (!reference(own(event, "runRef"))) finding(findings, "event-reference", `${path}.runRef`, "must be a nonempty safe run reference");
     if (!instant(own(event, "completedAt"))) finding(findings, "event-shape", `${path}.completedAt`, "must be an RFC3339 completion instant");
@@ -317,7 +317,7 @@ function eventShape(event: unknown, expected: RepositoryPackageAdoptionEventKind
   } else if (expected === "atomic-ruleset-cutover") {
     if (!exactKeys(event, ["kind", "mode", "mainSha", "requiredCheck", "ruleId", "before", "sourceRef", "observedAt"])) { finding(findings, "event-shape", path, "cutover has unknown or missing fields"); return false; }
     if (own(event, "mode") !== "atomic") finding(findings, "event-cutover-not-atomic", `${path}.mode`, "must be atomic");
-    if (!sha(own(event, "mainSha")) || own(event, "mainSha") !== foundation?.candidate.mainSha) finding(findings, "event-head-mismatch", `${path}.mainSha`, "must equal foundation candidate mainSha");
+    if (!sha(own(event, "mainSha")) || own(event, "mainSha") !== foundation?.candidate?.mainSha) finding(findings, "event-head-mismatch", `${path}.mainSha`, "must equal foundation candidate mainSha");
     if (!opaque(own(event, "requiredCheck")) || own(event, "requiredCheck") !== canary?.check) finding(findings, "event-check-mismatch", `${path}.requiredCheck`, "must equal the successful canary check");
     if (!opaque(own(event, "ruleId"))) finding(findings, "event-shape", `${path}.ruleId`, "must be a nonempty provider-neutral rule identity");
     if (!reference(own(event, "sourceRef"))) finding(findings, "event-reference", `${path}.sourceRef`, "must be a nonempty safe ruleset reference");
