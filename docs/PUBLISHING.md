@@ -323,8 +323,8 @@ cleanly.
 
 ### Installing from GitHub Packages
 
-Installing a package from here needs a GitHub personal access token with
-`read:packages` scope — GitHub Packages requires authentication for every
+Installing a package from here needs a GitHub **classic** personal access token
+with `read:packages` scope — GitHub Packages requires authentication for every
 install regardless of registry visibility. For a private package, the token
 must also belong to an account with access granted. Add to the consuming
 project's `.npmrc` (never commit a real one):
@@ -383,8 +383,8 @@ since `package-lifecycle.json`'s schema is owned by the published
 before issue #282) and a new field there would force a version bump for
 what is really repository-tooling metadata — against the
 package's real GitHub Packages visibility, and fails when they disagree.
-This is the gate that would have caught `@vespeneventures/ui` sitting
-private across 12 published versions.
+This is the gate that would have caught the historical
+`@vespeneventures/ui` visibility mismatch across 12 published versions.
 
 It runs in two places, never as part of local `npm run check` (it needs a
 live `read:packages` token, which ordinary local development and fork CI
@@ -492,16 +492,22 @@ default answer is also no" exists to refuse.
 
 ### Current cutover constraint
 
-Until decision 18 reaches 1D, GitHub Packages is the current sole publication
-and installation lane for this source. During 1D, the complete current catalogue
-must move together: the scope/registry declaration, every manifest and
-first-party dependency, lockfile, imports, documentation, workflow, and
-registry-specific verification. Before that recut, history-aware scope/registry
-machinery and regression gates must preserve legacy lifecycle, retention, and
-decision identities. No candidate-namespace package may publish first, and
-old-namespace versions remain immutable legacy packages. The Trio named there
-is the required first publication order; all later packages follow their
-runtime dependency order.
+Until the complete decision 18 1D whole-catalogue recut passes, GitHub
+Packages is the current sole publication and installation lane for this
+source. During 1D, the complete current catalogue must move together: the
+scope/registry declaration, every manifest and first-party dependency,
+lockfile, imports, documentation, inactive repository-source and workflow
+preparation, and registry-specific verification. Before that recut,
+history-aware scope/registry machinery and regression gates must preserve
+legacy lifecycle, retention, and decision identities. No candidate-namespace
+package may be published before the complete 1D recut passes. Old-namespace
+versions remain immutable legacy packages.
+
+After that passed recut, 1E first publishes the Advisor + Starter + Controller
+Trio in its fixed owner-present order. A later new-namespace package may
+publish only after every one of its first-party runtime dependencies is already
+published and verified in that same candidate namespace; the runtime graph
+above, not workspace order, governs the rest of the catalogue.
 
 ## 8. Canonical registry qualification before cutover
 

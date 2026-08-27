@@ -1,9 +1,8 @@
 # Repository and review first run
 
-This runbook qualifies the paired first release of
-`@vespeneventures/controller/repository` and
-`@vespeneventures/controller/review` in designated
-consumer repositories. It is deliberately a handoff guide, not an installer:
+This runbook qualifies the repository and review subpaths of one exact
+`@vespeneventures/controller` artifact in designated consumer repositories.
+It is deliberately a handoff guide, not an installer:
 Foundry provides contracts and CLIs; each consumer authors and owns its own
 values, workflow, and provider access.
 
@@ -14,7 +13,7 @@ approved a change for any consumer.
 
 ## Before the first consumer
 
-1. Complete a full package preflight for each package as specified in
+1. Complete a full package preflight for Controller as specified in
    [PUBLISHING.md](PUBLISHING.md). The package tree and packed tarball must
    both pass a FULL public-safety scan, name-collision check, build, tests, and
    isolated-install proof.
@@ -22,7 +21,7 @@ approved a change for any consumer.
    contents. Controller has no first-party runtime dependency; its repository
    and review subpaths ship from the same exact Controller artifact reviewed
    at the source head.
-3. Record the published package versions, source head, package tarball digest
+3. Record the published Controller version, source head, package tarball digest
    if the publication system reports one, and the successful preflight and
    workflow URLs in the Foundry release record.
 4. Do not start consumer adoption from an unpublished workspace link, a local
@@ -40,8 +39,8 @@ described in the repository root [README](../README.md#installing). The token
 remains in that consumer's local or CI environment; it is never committed to
 Foundry or recorded in an evidence bundle.
 
-Install the exact paired versions, rather than floating ranges, for the first
-run:
+Install the exact Controller version, rather than a floating range, for the
+first run:
 
 ```bash
 npm install --save-exact @vespeneventures/controller@0.8.19
@@ -104,7 +103,7 @@ that consumer's adoption issue or pull request:
 
 | Record | Required evidence |
 | --- | --- |
-| Artifact | Exact installed versions of both packages and lockfile update. |
+| Artifact | Exact installed Controller version and lockfile update. |
 | Change identity | Adoption pull request URL and exact tested head identifier. |
 | Repository contract | Path to the consumer-owned profile and `repository-check` exit code/report. |
 | Requirements evaluation | When used, the pure evaluator report for caller-discovered declarations and normalized observations; unknown evidence must remain explicit. |
@@ -124,7 +123,8 @@ designated consumers, using the same exact Controller version. Consumer-specific
 workflow YAML, protected paths, commands, review-policy values, branch/ruleset
 decisions, and provider invocation remain local to each consumer.
 
-The pair is ready for promotion only when all three records show a successful
-registry install, exact-head clean CLI reports, repeatable output, and passing
-consumer CI. A provider-specific review subpath is not implied by these runs;
+The Controller artifact's repository and review subpaths are ready for
+promotion only when all three records show a successful registry install,
+exact-head clean CLI reports, repeatable output, and passing consumer CI. A
+provider-specific review subpath is not implied by these runs;
 it needs separate evidence of meaningful reusable provider behavior.

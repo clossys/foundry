@@ -25,8 +25,9 @@ separate in [ADOPTION.md](ADOPTION.md).
 ## Package boundaries
 
 `@vespeneventures/controller/repository` and
-`@vespeneventures/controller/review` are paired subpaths of the same
-implementation, release, and adoption train.
+`@vespeneventures/controller/review` are subpaths of the single current
+Controller artifact. They share its implementation and release identity;
+consumers select only the subpath contracts their repository needs.
 
 `@vespeneventures/controller/repository` owns a provider-neutral contract for
 consumer-authored repository values and upward requirements. It validates
@@ -57,14 +58,15 @@ The following provider surfaces remain evidence-gated:
 This avoids both a monolithic development package and a family of empty
 provider wrappers.
 
-## Adoption and deprecation
+## Adoption and retirement
 
-The new package starts at `0.1.0` and runs in parallel with existing tooling.
-A consumer adopts it by authoring its own profile and validating that profile
-in the consumer's existing check path. No prior package is deprecated merely
-because a Foundry contract now exists.
+The current Controller artifact is `@vespeneventures/controller@0.8.19`. A
+consumer qualifies the relevant Controller subpaths by authoring its own
+profile and validating that profile in the consumer's existing check path.
+The historical standalone names are already retired; they neither run beside
+Controller nor provide current compatibility paths.
 
-The paired registry-install and CLI qualification procedure is documented in
+The single-artifact registry-install and CLI qualification procedure is documented in
 [REPOSITORY-REVIEW-FIRST-RUN.md](REPOSITORY-REVIEW-FIRST-RUN.md). It stops
 before consumer workflow wiring, provider credentials, and consumer policy
 decisions.

@@ -37,8 +37,8 @@ intermediate package, scope, registry, or source-repository change.
 
 The trade-off, accepted deliberately rather than defaulted into:
 
-- Installing needs a GitHub personal access token with `read:packages` — a
-  GitHub Packages platform behavior that applies to every registry read
+- Installing needs a GitHub **classic** personal access token with
+  `read:packages` — a GitHub Packages platform behavior that applies to every registry read
   regardless of visibility, not a permissions choice made here. Package
   visibility is a separate, per-package decision (see
   [docs/PUBLISHING.md](PUBLISHING.md#package-visibility)), not a consequence
@@ -207,6 +207,11 @@ installable compatibility surface.
 
 ## 7. Consolidating `tokens` and `voice`
 
+**Historical decision — superseded by the current lifecycle and registry
+contract.** The package names and consumer instructions in this section record
+the earlier consolidation only; they are not current installation or migration
+guidance.
+
 **Status:** `@vespeneventures/tokens` and `@vespeneventures/voice` are
 deprecated registry artifacts. Their source packages were consolidated into
 `@vespeneventures/ui` and `@vespeneventures/copy`, respectively, on
@@ -363,9 +368,10 @@ on the same rule stated more precisely:
 > If the name is a thing rather than a doer, it is an artifact — and an
 > artifact belongs inside a role.
 
-`strategy`, `copy`, `ui`, `surface` and `ledger` are all things. None of them
-names who is accountable for anything, so none of them can be asked a question
-it alone must answer. Four roles can:
+The now-retired historical package names `strategy`, `copy`, `ui`, `surface`,
+and `ledger` were all things. None named who was accountable for anything, so
+none could be asked a question it alone must answer. Their current role
+packages are:
 
 | role | from | the question only it answers |
 | --- | --- | --- |
@@ -985,9 +991,11 @@ After transfer, one coherent exact-head change recuts the *whole current
 catalogue* from the old source namespace and GitHub Packages to the new public
 npm namespace. It includes the single scope/registry declaration, every
 manifest and first-party dependency, package-lock, imports, documentation,
-publish workflow, provenance configuration, and the registry-specific gates
-that still apply. No package may be published in the new namespace before
-that complete recut passes its checks. This is deliberately a catalogue cut,
+and inactive repository-source and workflow preparation for the later publish
+lane, plus the registry-specific gates that still apply. It does not activate
+any provider-side npm trusted publisher or provenance setting. No package may
+be published in the new namespace before that complete recut passes its
+checks. This is deliberately a catalogue cut,
 not a compatibility period in which a first-party runtime edge crosses
 namespaces.
 
@@ -1004,16 +1012,17 @@ a replacement upload under an old name.
 | **1A — decision and inventory** | Record this architecture, exact catalogue inventory, dependency edges, legacy dispositions, and the fixed first-publication order. No operational mutation. | This decision passes the normal repository gates in FULL safety mode. |
 | **1B — representative Trio proof** | Qualify the runtime-closed Advisor + Starter + Controller set from one exact current-source head, while the old public source remains usable. The proof is producer qualification, never consumer adoption. For Starter, it qualifies the consumer-owned trusted-base foundation/activation, `0`/`1`/`2`, and rollback path; it does not turn executable tooling into a role. | FULL preflight and isolated tarball installation/import proof for each exact candidate. Starter's **exact installed CLI** must record a satisfied (`0`), violated (`1`), and indeterminate (`2`) result from consumer-owned evidence, plus a verified rollback; raw command, inputs, exit code, and output are retained. Advisor-before-Controller is recorded as engagement sequencing, not dependency order. A workspace link does not count. |
 | **1C — transfer** | Transfer this exact source repository directly to the authorized platform destination; do not create a separate target platform repository. | 1B's exact-head evidence; a clean FULL source-tree safety result; confirmed destination ownership and transfer authority; an explicit transfer record; and #557 implemented as a machine-readable singular-authority declaration and checker with positive and negative controls. The recorded checker result must cover current and planned candidate scopes. Absence of a finding is not evidence. |
-| **1D — whole-catalogue recut** | After transfer only, change every current source package and every first-party edge to the selected public-npm scope and registry in one coherent source change. Prepare and validate package and release mechanics, but do not configure provider trust or publish. | **Before any setter runs**, scope/registry machinery is history-aware: it preserves legacy lifecycle, retention, and decision identities; regression gates prove that preservation; and the selected candidate's ownership/availability evidence is recorded. Then `set-scope --check`, registry parity, workspace-link integrity, FULL safety, build, typecheck, tests, and review all pass on the recut head. No candidate-namespace package, trusted-publisher configuration, provenance attestation, or provider trust exists yet. |
-| **1E — first public-npm publications** | Treat Advisor, Starter, and Controller as one exact Trio release cohort. Before the first irreversible publication, every candidate passes FULL preflight, selected-tarball scan, and isolated installed canary; Starter's canary includes its required exact CLI evidence. Publish and verify Advisor, then Starter, then Controller, with the owner present for each first identity publication. Only after all three identities have registry-served digest and public visibility/access proof, configure trusted publisher and provenance and prove them through one or more later, bounded patch releases. | One exact-head record names all three candidates and their successful pre-publication evidence; every first identity publication has owner-present, registry-served digest, and public visibility/access evidence. If a later candidate, publication, or verification fails after Advisor or Starter has published, fail closed: stop the release and quarantine the incomplete Trio; inventory every already-published immutable member (name, version, digest, visibility, and disposition); invalidate the unpublished candidate artifacts; and never delete or reuse any published version. Deprecate a published member if the registry supports that mutation, otherwise record the unsupported result and its immutable disposition. A defective published member needs a corrected forward version; requalify it and every dependent or remaining candidate from an exact head. Resume only when the whole-tree authority declaration and all current cohort gates pass again. Builder and Inspector wait for Controller; Publisher waits for Controller, Designer, and Writer. |
+| **1D — whole-catalogue recut** | After transfer only, change every current source package and every first-party edge to the selected public-npm scope and registry in one coherent source change. Prepare and validate only inactive repository-source and workflow configuration for the later publish lane; do not activate provider-side npm trusted-publisher or provenance settings, and do not publish. | **Before any setter runs**, scope/registry machinery is history-aware: it preserves legacy lifecycle, retention, and decision identities; regression gates prove that preservation; and the selected candidate's ownership/availability evidence is recorded. Then `set-scope --check`, registry parity, workspace-link integrity, FULL safety, build, typecheck, tests, and review all pass on the recut head. No candidate-namespace package, provider-side npm trusted-publisher activation, provenance emission, or provider trust exists yet. |
+| **1E — first public-npm publications** | Treat Advisor, Starter, and Controller as one exact Trio release cohort. Before the first irreversible publication, every candidate passes FULL preflight, selected-tarball scan, and isolated installed canary; Starter's canary includes its required exact CLI evidence. Publish and verify Advisor, then Starter, then Controller, with the owner present for each first identity publication. Only after all three identities have registry-served digest and public visibility/access proof, activate the npm trusted publisher for each package; that activation automatically emits provenance, which is proved through one or more later, bounded patch releases. | One exact-head record names all three candidates and their successful pre-publication evidence; every first identity publication has owner-present, registry-served digest, and public visibility/access evidence. If a later candidate, publication, or verification fails after Advisor or Starter has published, fail closed: stop the release and quarantine the incomplete Trio; inventory every already-published immutable member (name, version, digest, visibility, and disposition); invalidate the unpublished candidate artifacts; and never delete or reuse any published version. Deprecate a published member if the registry supports that mutation, otherwise record the unsupported result and its immutable disposition. A defective published member needs a corrected forward version; requalify it and every dependent or remaining candidate from an exact head. Resume only when the whole-tree authority declaration and all current cohort gates pass again. Builder and Inspector wait for Controller; Publisher waits for Controller, Designer, and Writer. |
 
 The first publication of **each** Trio identity is intentionally owner-present,
 not delegated to an ambient credential or assumed from repository transfer.
 Those three verifications establish the initial public package identities.
-Only after the complete Trio has that evidence may trusted publisher and
-provenance be configured, and they are proved by a later bounded patch release
-or releases. Neither path changes the requirement for a human to review every
-packed artifact before an immutable publication.
+Only after the complete Trio has that evidence may each package's npm trusted
+publisher be activated. That provider-side activation automatically emits
+provenance; later bounded patch release or releases prove it. Neither path
+changes the requirement for a human to review every packed artifact before an
+immutable publication.
 
 An incomplete Trio is never silently treated as a successful first release.
 If Advisor alone, or Advisor and Starter, are already published when the next

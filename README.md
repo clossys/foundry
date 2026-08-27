@@ -22,7 +22,7 @@ for the full account.
 | [`@vespeneventures/advisor`](packages/advisor) | The Advisor role — does each active engagement have a current, evidence-backed, authority-bound next decision or action? Provider-neutral sponsor dialogue, engagement-state reconciliation, offering-fit and readiness assessment, blocker and initiative-collision detection, bounded first-wave recommendations, required next actions, reassessment triggers, and an execution gate that never treats unresolved pre-work as passive HOLD. |
 | [`@vespeneventures/architect`](packages/architect) | The architect role — do declared operating boundaries match how material changes actually cross systems? Provider-neutral topology contracts, the ontology API under `./ontology`, compatibility comparison, and architecture-exception assessment behind `architect-check`. It proposes changes but does not authorize or materialize provider resources. |
 | [`@vespeneventures/bouncer`](packages/bouncer) | The bouncer role — is this actor who they claim, and is what they are doing still inside what they were granted? A grant and provider-observation schema in which a session proves nothing, a runtime verdict that is a ternary (`authorized` / `denied` / `unverifiable`, because a provider that did not answer is neither of the other two), an isolated `./agent` subpath for delegated machine actors, provider adapters isolated behind `./providers/clerk` and its web/client/server/proxy subpaths so the root stays provider-neutral, and three gates behind one `bouncer-check` bin: authority reconciliation, delegation ceiling, and provider contract. An unreachable provider exits `2`, never `0`. Recut from `auth` (issue #458). |
-| [`@vespeneventures/controller`](packages/controller) | Owns every rule: package lifecycle records and no-write bootstrap planning at its root; focused subpaths provide workspace catalog, gates, release proof, caller-owned repository profiles and requirements evaluation, pure caller-supplied cross-plane composition, review evidence, workspace-cleanup classification, account-neutral agent conventions, and the content-addressed policy-binding primitive. Formed by merging `governance`, `conventions`, and `policy` into one package (issue #282). |
+| [`@vespeneventures/controller`](packages/controller) | Owns every rule: package lifecycle records and no-write bootstrap planning at its root; focused subpaths provide workspace catalog, gates, release proof, caller-owned repository profiles and requirements evaluation, pure caller-supplied cross-plane composition, review evidence, workspace-cleanup classification, account-neutral agent conventions, and the content-addressed policy-binding primitive. It is the current package; its historical consolidation of the retired `governance`, `conventions`, and `policy` package names is recorded in issue #282. |
 | [`@vespeneventures/builder`](packages/builder) | Declared reality made actual: an idempotent provisioning-manifest engine and machine verification at its root, deployment-surface contracts and read-only provider inspectors under `./deployment`, a toolchain pin (runtime, package manager, build order), the shared `liveStateSurface` reconciliation contract (`verified` / `drifted` / `could-not-verify`, with a named-blocker requirement for the last), and importable CI gate mechanics with an installed `builder-verify-toolchain` CLI under `./ci`. One runtime dependency (`@vespeneventures/controller`). |
 | [`@vespeneventures/butler`](packages/butler) | The butler role — do we have what this person wants, this request in their own confirmation and their standing instructions still current? A three-state want model (absent/denied/granted) plus a computed `stale` evaluation, so absence can never be read as permission; intents carrying a confidence read against a caller-declared floor; host-supplied storage and audit ports; an `./inbound` subpath for channel admission and an optional `./web` subpath whose React peer is asserted at import time. Three gates behind one `butler-check` bin: confirmation completeness, currency, and withdrawal parity. Carries no topics, no jurisdiction logic and no obligations, and makes no claim of legal compliance. Zero runtime dependencies. |
 | [`@vespeneventures/giver`](packages/giver) | The giver role — did this person get what they asked for, or a reason, or a human, and everything we owed them on time? A runtime verdict that is a ternary (`delivered` / `refused` / `handed off`, because a request handed to a person is not a request answered), an obligation ternary (`discharged` / `breached` / `unprovable`), and a decision core in which no collaborator is optional and no default is permissive: an indeterminate read cannot become a delivery, and cannot become a bare refusal either, because neither has a value it could be written as. Carries the precedence rule between a standing refusal and a thing we owe, reads the standing decision across a declared document seam, and owns a second versioned record of retained decision grounds that another role can inspect without importing it. Three gates behind one `giver-check` bin: hand-off placement, grounding, and obligation discharge — where a recorded send whose own state says it failed is a breach, not a delivery. Ships no obligation, no register and no jurisdiction logic; makes no claim of legal compliance. Zero runtime dependencies. |
@@ -36,7 +36,7 @@ for the full account.
 | [`@vespeneventures/designer`](packages/designer) | The designer role — is it well made? Tokens, CSS, icons, accessible primitives, blocks, shell elements and charts, with server-safe entry points for React Server Components, and three gates: `designer-token-check`, `designer-brand-check`, `designer-contrast-check`. Recut from `ui` (decision 10). |
 | [`@vespeneventures/strategist`](packages/strategist) | The strategist role — is it true, and is it us? Dependency-free validators for a consumer's own strategy records, a typed reader over a strategy directory, and three gates behind one `strategist-check` bin: facts traceability, brand coverage, and direction currency. Recut from `strategy` (decision 10). |
 | [`@vespeneventures/writer`](packages/writer) | The writer role — is it well said? A consumer-authored, versioned copy registry where only approved entries resolve, voice validation, and four gates behind one `writer-check` bin: traceability, addressability, voice-derivation coverage, and locale coverage. Recut from `copy` (decision 10). |
-| [`@vespeneventures/publisher`](packages/publisher) | The publisher role — did we put it out to an audience, and can we prove what shipped? Surface documents, page-level web views, media contracts and channel renderers (web, email, print, image, slides), plus an append-only publication record with fact-citation drift and join-key checking on its `./record` subpath. Fuses `surface` and `ledger` (decision 10); the record does not import the composer. |
+| [`@vespeneventures/publisher`](packages/publisher) | The publisher role — did we put it out to an audience, and can we prove what shipped? Page-level web views, media contracts and channel renderers (web, email, print, image, slides), plus an append-only publication record with fact-citation drift and join-key checking on its `./record` subpath. It contains the historical surface and ledger capabilities described in decision 10; the record does not import the composer. |
 
 Each package's own README has the full API and the reasoning behind it.
 
@@ -70,9 +70,10 @@ runtime siblings, and every such release is proved from an isolated install
 of its selected tarball. The required order for the core release graph is
 documented in [docs/PUBLISHING.md](docs/PUBLISHING.md).
 
-For the end-to-end boundary between governed strategy, approved copy, UI
-primitives, channel surfaces, and consumer-owned publishing, see
-[the product delivery pipeline](docs/PIPELINE.md).
+For historical background on the predecessor delivery pipeline, see
+[the archived product delivery pipeline](docs/PIPELINE.md). Current package
+boundaries are documented by the Strategist, Writer, Designer, and Publisher
+package READMEs and their lifecycle records.
 
 ## Installing
 
@@ -80,7 +81,7 @@ primitives, channel surfaces, and consumer-owned publishing, see
 currently publish to **GitHub Packages**, the single canonical distribution
 lane while the repository remains in its current source and registry state.
 GitHub Packages
-requires a GitHub personal access token with `read:packages` for every
+requires a GitHub **classic** personal access token with `read:packages` for every
 install, including for a publicly visible package version and a reader
 with no other relationship to this org — that is a GitHub Packages
 platform behavior, not a permission this repository chose.
@@ -123,9 +124,10 @@ producer-owned cutover in
 [docs/DECISIONS.md](docs/DECISIONS.md#18-producer-owned-catalogue-distribution-cutover)
 passes its transfer and whole-catalogue gates. The earlier public-npm
 migration was cancelled; the newer decision does not restore that old plan.
-It permits a different, evidence-gated path only after this source transfers,
-the complete catalogue is recut together, and no mixed-namespace dependency
-can publish.
+It permits a different, evidence-gated path only after this source transfers
+and the complete 1D whole-catalogue recut passes. No candidate-namespace
+package may publish before that complete recut passes, and no first-party
+runtime edge may cross namespaces in the later 1E publication lane.
 
 Until then, the `.npmrc` and token requirements above are not an oversight or
 a current consumer configuration that may be changed piecemeal. A later

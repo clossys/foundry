@@ -1,5 +1,11 @@
 # Product delivery pipeline
 
+**Historical record — not current package architecture or consumer
+instruction.** This document preserves the earlier `strategy`/`copy`/`ui`/
+`surface` package pipeline. Those package names are retired; the current
+catalogue, lifecycle records, and the individual Strategist, Writer, Designer,
+and Publisher package READMEs are authoritative.
+
 Foundry separates governed intent, reusable presentation, audience language,
 and publishable output. A consumer owns its records, routing, deployment, and
 runtime integrations; these packages provide the contracts and deterministic

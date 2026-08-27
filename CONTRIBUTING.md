@@ -5,8 +5,9 @@ are short for the same reason.
 
 ## Getting set up
 
-Installing a package from here needs a `.npmrc` with a GitHub `read:packages`
-token — see [README.md](README.md#installing). Working on the repository
+Installing a package from here needs a `.npmrc` with a GitHub **classic**
+personal access token carrying `read:packages` — see
+[README.md](README.md#installing). Working on the repository
 itself does not; it's a plain npm workspace.
 
 ```bash
@@ -102,10 +103,11 @@ Practically:
   without dragging in a tree. Adding a runtime dependency needs a reason in the
   pull request description.
 - **Supported configurations: the default answer is also no — be opinionated
-  about the foundation instead.** Where a package does depend on something,
-  it picks one and requires it, rather than supporting every environment an
-  adopter might have. `@vespeneventures/ui` requires Tailwind v4; that is a
-  deliberate choice, not a gap waiting to be closed.
+  about the foundation instead.** `@vespeneventures/designer` is the current
+  styling authority. Consumers choose one documented Designer entry point:
+  `tokens.css` works without Tailwind, while `theme.css` is the optional
+  Tailwind v4 wiring for a consumer-owned pipeline. Those explicit surfaces,
+  rather than a retired UI package, define the supported styling choices.
 
   This is a cost argument, not a taste argument. A second supported path is
   never one feature: it is a second test matrix, a second override-precedence
