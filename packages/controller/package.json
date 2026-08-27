@@ -125,7 +125,7 @@
     "test": "vitest run"
   },
   "devDependencies": {
-    "@vespeneventures/advisor": "0.1.2",
+    "@vespeneventures/advisor": "^0.1.2",
     "@types/node": "^22.10.0",
     "typescript": "~6.0.0",
     "vitest": "^4.1.9"

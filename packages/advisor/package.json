@@ -1,6 +1,6 @@
 {
   "name": "@vespeneventures/advisor",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -14,7 +14,8 @@
     }
   },
   "bin": {
-    "advisor-check": "./dist/cli.js"
+    "advisor-check": "./dist/cli.js",
+    "advisor-execution-readiness": "./dist/execution-readiness-cli.js"
   },
   "files": [
     "dist",
