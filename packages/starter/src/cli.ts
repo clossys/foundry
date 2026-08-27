@@ -10,8 +10,9 @@ The request has no command, shell fragment, arbitrary arguments, or CLI path:
 Advisor is invoked at a runner-supplied current instant and the target is one
 manifest-derived bin with one captured JSON input.
 
-Exit codes: 0 = satisfied, 1 = a known install/readiness/target violation,
-2 = malformed, missing, stale, untrusted, skipped, or indeterminate evidence.`;
+Exit codes after Starter begins: 0 = satisfied, 1 = a known readiness/target
+violation, 2 = malformed, missing, stale, untrusted, skipped, or indeterminate
+evidence. A failed initial native install is a pre-runtime workflow failure.`;
 
 export function main(argv: readonly string[]): number {
   if (argv.length === 1 && (argv[0] === "--help" || argv[0] === "-h")) { console.log(USAGE); return 0; }

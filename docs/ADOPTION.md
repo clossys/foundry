@@ -148,13 +148,16 @@ is **foundation** only: the package returns indeterminate and supplies no
 claim of activation, adoption, grounding, or closure.
 
 A later consumer-owned activation change joins the protected base, authenticated
-workflow event, bounded snapshot, fixed install receipt, exact manifest/lock
-identity, runner-time Advisor readiness, and direct installed target CLI. Its
-credential belongs solely to the fixed npm or pnpm install step; the decision
-and both CLIs receive none. The workflow must retain raw `0`/`1`/`2`, never use
-`pull_request_target` to execute untrusted code, and never make an unavailable
-phase a skipped green check. The consumer still owns all position, policy,
-rollback, cadence, deliberate-control, and outcome evidence.
+workflow event, bounded snapshot, successful fixed-install receipt, exact
+manifest/lock identity, runner-time Advisor readiness, and direct installed
+target CLI. Its credential belongs solely to the fixed npm or pnpm install
+step; the decision and both CLIs receive none. The workflow must retain raw
+Starter `0`/`1`/`2`, never use `pull_request_target` to execute untrusted code,
+and never make an unavailable phase a skipped green check. Artifact download
+and the initial native install happen before Starter can exist: if either fails,
+the workflow hard-fails with no Starter verdict rather than claiming Starter
+emitted `1` or `2`. The consumer still owns all position, policy, rollback,
+cadence, deliberate-control, and outcome evidence.
 
 Foundry does not own a consumer's business values, topology choices, provider
 resources, secret values, routes, customer data, approval decisions, or live

@@ -17,7 +17,7 @@ const SHA512 = /^sha512-([A-Za-z0-9+/]{86})==$/;
 const SEMVER_NUMERIC = "(?:0|[1-9]\\d*)";
 const SEMVER_PRERELEASE_ID = "(?:0|[1-9]\\d*|\\d*[A-Za-z-][0-9A-Za-z-]*)";
 const VERSION = new RegExp(`^${SEMVER_NUMERIC}\\.${SEMVER_NUMERIC}\\.${SEMVER_NUMERIC}(?:-${SEMVER_PRERELEASE_ID}(?:\\.${SEMVER_PRERELEASE_ID})*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$`);
-const SAFE_NAME = /^@vespeneventures\/[a-z0-9][a-z0-9-]*$/;
+const SAFE_NAME = /^@[a-z0-9][a-z0-9-]*\/[a-z0-9][a-z0-9-]*$/;
 const SAFE_BIN = /^[a-z0-9][a-z0-9-]*$/;
 const ALLOWED_REQUEST = new Set(["schemaVersion", "phase", "packageManager", "snapshot", "starter", "advisor", "target", "evidence"]);
 const STARTER_KEYS = new Set(["name", "version", "integrity", "bin"]);
@@ -53,7 +53,7 @@ function exactPackage(value: unknown, label: string, allowed: ReadonlySet<string
     findings.push(find("package-shape", `${label} must be an exact package identity with no extra command surface.`)); return false;
   }
   if (!SAFE_NAME.test(String(value.name)) || !VERSION.test(String(value.version)) || !validSha512Sri(value.integrity)) {
-    findings.push(find("package-identity", `${label} needs a scoped package name, exact semver version, and SHA-512 integrity.`)); return false;
+    findings.push(find("package-identity", `${label} needs a safe scoped package name, exact semver version, and SHA-512 integrity.`)); return false;
   }
   return true;
 }

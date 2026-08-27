@@ -70,14 +70,20 @@ snapshot identity, and two normalized relative evidence paths.
 
 `foundation` intentionally exits `2` after a successful fixed install: it pins
 Starter, Advisor, and the target; validates all three exact manifest, lock,
-integrity, and bin identities; and then makes no activation claim. A known
-fixed-install failure remains exit `1`; an unable or malformed install remains
-exit `2`. It cannot claim activation, adoption, grounding, or closure.
+integrity, and bin identities; and then makes no activation claim. In the
+canonical caller templates, a failed initial native install is pre-runtime: the
+workflow hard-fails before Starter exists, so no Starter `1` or `2` verdict is
+claimed. It cannot claim activation, adoption, grounding, or closure.
 `activation` can return `0` only when every join, fixed-install receipt, exact
 manifest/lock identity, contained snapshot file, Advisor result, and target
 result is satisfied. The returned `firstWavePlan.workItems` must authorize the
 same consumer repository, package version/integrity, installed bin, and fixed
 `single-json-input` invocation.
+
+The pure evaluator preserves a supplied `InstallReceipt`'s `0`/`1`/`2` state
+for integrations that have already established an exact trusted Starter
+runtime. That data contract does not turn the canonical initial install into a
+Starter verdict: its failure remains pre-runtime as described above.
 
 The only target invocation v1 supports is `single-json-input`: the path comes
 from the captured snapshot and the executable comes from the installed
@@ -108,12 +114,14 @@ Exit codes preserve the underlying ternary exactly:
 | Exit | State | Meaning |
 | --- | --- | --- |
 | `0` | `satisfied` | Fixed install, joins, readiness, and target gate all completed cleanly. |
-| `1` | `violated` | A fixed installation, Advisor readiness, or target gate reached a known violation. |
-| `2` | `indeterminate` | Input, containment, event joins, identity, output/exit consistency, freshness, timeout, or a required phase could not be established. |
+| `1` | `violated` | After Starter begins, Advisor readiness or the target gate reached a known violation. |
+| `2` | `indeterminate` | After Starter begins, input, containment, event joins, identity, output/exit consistency, freshness, timeout, or a required phase could not be established. |
 
-Do not pipe the decision command through `tee` or make it conditional with a
-GitHub Actions `if:`. Capture its output, append it after the command, and
-re-raise its status as the caller template does.
+Do not pipe the decision command through `tee` or make its job conditional with
+a GitHub Actions `if:`. Capture its output, append it after the command, and
+re-raise its status as the caller template does. A missing artifact or a failed
+initial native install is a visible pre-runtime workflow failure, not a
+synthetic Starter result.
 
 ## API
 
