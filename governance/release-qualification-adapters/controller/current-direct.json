@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "package": "@vespeneventures/controller",
+  "archetype": "current-direct",
+  "peerInstall": { "typescript": "6.0.3" },
+  "bins": { "foundry-governance": 0, "foundry-check": 0, "repository-check": 0, "repository-profile-check": 0, "repository-package-adoption-check": 0, "review-check": 0, "singular-authority-check": 0, "foundry-position-check": 2, "foundry-completion-evidence-check": 2 },
+  "fixtures": ["authority-valid-package-lock.json", "authority-duplicate-package-lock.json", "authority-indeterminate-package-lock.json", "authority-declarations.json"],
+  "cases": [
+    { "id": "authority-valid", "bin": "singular-authority-check", "fixtureArgs": ["authority-valid-package-lock.json", "authority-declarations.json"], "exitCode": 0, "group": "authority" },
+    { "id": "authority-duplicate", "bin": "singular-authority-check", "fixtureArgs": ["authority-duplicate-package-lock.json", "authority-declarations.json"], "exitCode": 1, "group": "authority" },
+    { "id": "authority-indeterminate", "bin": "singular-authority-check", "fixtureArgs": ["authority-indeterminate-package-lock.json", "authority-declarations.json"], "exitCode": 2, "group": "authority" }
+  ],
+  "dimensionEvidence": { "rollback": "restoration", "duplicate": "authority" }
+}
