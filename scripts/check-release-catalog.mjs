@@ -24,6 +24,8 @@ const PRECUTOVER_TARGET = Object.freeze({
 const CURRENT_TARGET = Object.freeze({
   id: "current-github-packages",
   status: "active",
+  scope: "@vespeneventures",
+  registry: "https://npm.pkg.github.com",
   packages: "all",
 });
 
@@ -119,6 +121,8 @@ export function loadReleaseCatalog({ path = "governance/release-catalog.json", r
   const precutover = catalog.targets.find((target) => target.id === PRECUTOVER_TARGET.id);
   if (
     current.status !== CURRENT_TARGET.status ||
+    current.scope !== CURRENT_TARGET.scope ||
+    current.registry !== CURRENT_TARGET.registry ||
     current.packages !== CURRENT_TARGET.packages ||
     catalog.defaultTarget !== CURRENT_TARGET.id
   ) {
@@ -137,7 +141,7 @@ export function loadReleaseCatalog({ path = "governance/release-catalog.json", r
 }
 
 export function readCurrentReleaseIdentity({ path = "package-scope.json", readFile = readFileSync } = {}) {
-  const identity = readJson(path, readFile);
+  const identity = readJson(path, readFile, { indeterminateInput: true });
   if (!isRecord(identity) || !SCOPE.test(identity.scope ?? "") || !validRegistry(identity.registry)) {
     fail(`${path} must declare a valid npm scope and canonical HTTPS registry URL`);
   }

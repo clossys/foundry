@@ -29,10 +29,10 @@ function load(value) {
   return loadReleaseCatalog({ path: "catalog.json", readFile: () => JSON.stringify(value) });
 }
 
-function runCli({ catalogContents, catalogPresent = true } = {}) {
+function runCli({ catalogContents, catalogPresent = true, scopeContents, scopePresent = true } = {}) {
   const root = mkdtempSync(join(tmpdir(), "release-catalog-cli-"));
   try {
-    writeFileSync(join(root, "package-scope.json"), JSON.stringify(currentIdentity));
+    if (scopePresent) writeFileSync(join(root, "package-scope.json"), scopeContents ?? JSON.stringify(currentIdentity));
     if (catalogPresent) writeFileSync(join(root, "release-catalog.json"), catalogContents ?? JSON.stringify(catalog()));
     return spawnSync(process.execPath, [catalogCli, "--catalog", join(root, "release-catalog.json"), "--scope-file", join(root, "package-scope.json")], { encoding: "utf8" });
   } finally {
@@ -103,6 +103,20 @@ test("an implicit selection resolves only the current target", () => {
   assert.throws(() => resolveReleaseTarget(document, targetIdentity), /expects @vespeneventures/);
 });
 
+test("the current target cannot be repurposed as an implicit migration lane", () => {
+  const repurposed = catalog({
+    targets: [
+      { id: "current-github-packages", status: "active", scope: targetIdentity.scope, registry: targetIdentity.registry, packages: "all" },
+      { id: "clossys-npmjs-precutover", status: "planned", scope: targetIdentity.scope, registry: targetIdentity.registry, packages: ["advisor", "starter", "controller"] },
+    ],
+  });
+  assert.throws(() => load(repurposed), /active all-package default target/);
+
+  const implicit = runCli({ catalogContents: JSON.stringify(repurposed), scopeContents: JSON.stringify(targetIdentity) });
+  assert.equal(implicit.status, 1, implicit.stderr || implicit.stdout);
+  assert.match(implicit.stderr, /active all-package default target/);
+});
+
 test("missing or malformed catalogues fail closed", () => {
   assert.throws(() => loadReleaseCatalog({ path: "missing.json", readFile: () => { const error = new Error("missing"); error.code = "ENOENT"; throw error; } }), /cannot read/);
   assert.throws(() => loadReleaseCatalog({ path: "broken.json", readFile: () => "{" }), /does not parse/);
@@ -134,6 +148,20 @@ test("catalog CLI distinguishes unreadable and malformed input from a semantic v
   const semantic = runCli({ catalogContents: JSON.stringify(catalog({ defaultTarget: "clossys-npmjs-precutover" })) });
   assert.equal(semantic.status, 1, semantic.stderr || semantic.stdout);
   assert.match(semantic.stderr, /active all-package default target/);
+});
+
+test("package-scope CLI input uses indeterminate exits while semantic identity drift remains violated", () => {
+  const missing = runCli({ scopePresent: false });
+  assert.equal(missing.status, 2, missing.stderr || missing.stdout);
+  assert.match(missing.stderr, /cannot read/);
+
+  const malformed = runCli({ scopeContents: "{" });
+  assert.equal(malformed.status, 2, malformed.stderr || malformed.stdout);
+  assert.match(malformed.stderr, /does not parse/);
+
+  const semantic = runCli({ scopeContents: JSON.stringify({ scope: "not-an-npm-scope", registry: currentIdentity.registry }) });
+  assert.equal(semantic.status, 1, semantic.stderr || semantic.stdout);
+  assert.match(semantic.stderr, /valid npm scope/);
 });
 
 test("target catalogue refuses a missing authorized package instead of silently publishing fewer packages", () => {

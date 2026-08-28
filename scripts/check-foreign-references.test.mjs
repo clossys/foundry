@@ -21,7 +21,7 @@ function catalog({ malformed = false } = {}) {
     schemaVersion: 1,
     defaultTarget: "current-github-packages",
     targets: [
-      { id: "current-github-packages", status: "active", scope: "@fixture", registry: "https://npm.pkg.github.com", packages: "all" },
+      { id: "current-github-packages", status: "active", scope: "@vespeneventures", registry: "https://npm.pkg.github.com", packages: "all" },
       { id: "clossys-npmjs-precutover", status: "planned", scope: futureScope, registry: "https://registry.npmjs.org", packages: ["advisor", "starter", "controller"] },
     ],
   });
@@ -29,8 +29,8 @@ function catalog({ malformed = false } = {}) {
 
 function fixture({ malformed = false, extraFiles = {} } = {}) {
   const root = mkdtempSync(join(tmpdir(), "foreign-release-catalog-"));
-  write(join(root, "package-scope.json"), JSON.stringify({ scope: "@fixture", registry: "https://npm.pkg.github.com" }));
-  write(join(root, "package.json"), JSON.stringify({ private: true, repository: { type: "git", url: "https://github.com/fixture/repository.git" } }));
+  write(join(root, "package-scope.json"), JSON.stringify({ scope: "@vespeneventures", registry: "https://npm.pkg.github.com" }));
+  write(join(root, "package.json"), JSON.stringify({ private: true, repository: { type: "git", url: "https://github.com/vespeneventures/foundry.git" } }));
   write(join(root, "governance/release-catalog.json"), catalog({ malformed }));
   for (const [path, contents] of Object.entries(extraFiles)) write(join(root, path), contents);
   return root;
