@@ -3,6 +3,7 @@ import { mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { join } from "node:path";
+import { performance } from "node:perf_hooks";
 import { afterEach, describe, expect, it } from "vitest";
 import { isDirectInvocation } from "./cli.js";
 import { StarterInputError, readContainedRegularFile, resolveInstalledBin, runNode } from "./node-runtime.js";
@@ -50,5 +51,17 @@ describe("direct invocation and fixed process deadline", () => {
       expect(observation.timedOut, label).toBe(true);
       expect(evaluateProcessResult(observation, label, label === "advisor" ? "2026-08-27T12:00:00.000Z" : undefined).state, label).toBe("indeterminate");
     }
+  });
+
+  it("kills a SIGTERM-ignoring child within the bounded deadline and keeps the result indeterminate", () => {
+    const directory = root(); const ignoringTerm = join(directory, "ignore-term.mjs");
+    writeFileSync(ignoringTerm, "process.on(\"SIGTERM\", () => {}); setInterval(() => {}, 1_000);\n");
+    const started = performance.now();
+    const observation = runNode(ignoringTerm, [], "2026-08-27T12:00:00.000Z", 100);
+    const elapsed = performance.now() - started;
+    expect(elapsed).toBeLessThan(1_000);
+    expect(observation.timedOut).toBe(true);
+    expect(observation.exitCode).not.toBe(0);
+    expect(evaluateProcessResult(observation, "advisor", "2026-08-27T12:00:00.000Z").state).toBe("indeterminate");
   });
 });
