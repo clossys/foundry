@@ -55,7 +55,7 @@ describe("direct invocation and fixed process deadline", () => {
 
   it("kills a SIGTERM-ignoring child within the bounded deadline and keeps the result indeterminate", () => {
     const directory = root(); const ignoringTerm = join(directory, "ignore-term.mjs");
-    writeFileSync(ignoringTerm, "process.on(\"SIGTERM\", () => {}); setInterval(() => {}, 1_000);\n");
+    writeFileSync(ignoringTerm, "process.on(\"SIGTERM\", () => {}); setTimeout(() => process.exit(0), 2_000); setInterval(() => {}, 1_000);\n");
     const started = performance.now();
     const observation = runNode(ignoringTerm, [], "2026-08-27T12:00:00.000Z", 100);
     const elapsed = performance.now() - started;
