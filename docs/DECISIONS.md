@@ -1012,26 +1012,45 @@ a replacement upload under an old name.
 | **1A — decision and inventory** | Record this architecture, exact catalogue inventory, dependency edges, legacy dispositions, and the fixed first-publication order. No operational mutation. | This decision passes the normal repository gates in FULL safety mode. |
 | **1B — representative Trio proof** | Qualify the runtime-closed Advisor + Starter + Controller set from one exact current-source head, while the old public source remains usable. The proof is producer qualification, never consumer adoption. For Starter, it qualifies the consumer-owned trusted-base foundation/activation, `0`/`1`/`2`, and rollback path; it does not turn executable tooling into a role. | FULL preflight and isolated tarball installation/import proof for each exact candidate. Starter's **exact installed CLI** must record a satisfied (`0`), violated (`1`), and indeterminate (`2`) result from consumer-owned evidence, plus a verified rollback; raw command, inputs, exit code, and output are retained. Advisor-before-Controller is recorded as engagement sequencing, not dependency order. A workspace link does not count. |
 | **1C — transfer** | Transfer this exact source repository directly to the authorized platform destination; do not create a separate target platform repository. | 1B's exact-head evidence; a clean FULL source-tree safety result; confirmed destination ownership and transfer authority; an explicit transfer record; and #557 implemented as a machine-readable singular-authority declaration and checker with positive and negative controls. The recorded checker result must cover current and planned candidate scopes. Absence of a finding is not evidence. |
-| **1D — whole-catalogue recut** | After transfer only, change every current source package and every first-party edge to the selected public-npm scope and registry in one coherent source change. Prepare and validate only inactive repository-source and workflow configuration for the later publish lane; do not activate provider-side npm trusted-publisher or provenance settings, and do not publish. | **Before any setter runs**, scope/registry machinery is history-aware: it preserves legacy lifecycle, retention, and decision identities; regression gates prove that preservation; and the selected candidate's ownership/availability evidence is recorded. Then `set-scope --check`, registry parity, workspace-link integrity, FULL safety, build, typecheck, tests, and review all pass on the recut head. No candidate-namespace package, provider-side npm trusted-publisher activation, provenance emission, or provider trust exists yet. |
-| **1E — first public-npm publications** | Treat Advisor, Starter, and Controller as one exact Trio release cohort. Before the first irreversible publication, every candidate passes FULL preflight, selected-tarball scan, and isolated installed canary; Starter's canary includes its required exact CLI evidence. Publish and verify Advisor, then Starter, then Controller, with the owner present for each first identity publication. Only after all three identities have registry-served digest and public visibility/access proof, activate the npm trusted publisher for each package. Then publish one or more later, bounded patch releases through that trusted publisher and verify the registry provenance attached to each of those releases. | One exact-head record names all three candidates and their successful pre-publication evidence; every first identity publication has owner-present, registry-served digest, and public visibility/access evidence. Each later provenance proof records its patch release, trusted-publisher execution, registry-served digest, and registry provenance verification. If a later candidate, publication, or verification fails after Advisor or Starter has published, fail closed: stop the release and quarantine the incomplete Trio; inventory every already-published immutable member (name, version, digest, visibility, and disposition); invalidate the unpublished candidate artifacts; and never delete or reuse any published version. Deprecate a published member if the registry supports that mutation, otherwise record the unsupported result and its immutable disposition. A defective published member needs a corrected forward version; requalify it and every dependent or remaining candidate from an exact head. Resume only when the whole-tree authority declaration and all current cohort gates pass again. Builder and Inspector wait for Controller; Publisher waits for Controller, Designer, and Writer. |
+| **1D — whole-catalogue recut** | After transfer only, change every current source package and every first-party edge to the selected public-npm scope and registry in one coherent source change. Prepare and validate only inactive repository-source and workflow configuration for the later publish lane; do not activate provider-side npm trusted-publisher or provenance settings, and do not publish. | **Before any setter runs**, scope/registry machinery is history-aware: it preserves legacy lifecycle, retention, and decision identities; regression gates prove that preservation; and the selected candidate's ownership/availability evidence is recorded. Then `set-scope --check`, structural registry-drift and manifest-graph checks, workspace-link integrity, FULL safety, build, typecheck, tests, and review all pass on the recut head. Live registry parity is impossible before a candidate package exists and is deferred to 1E. No candidate-namespace package, provider-side npm trusted-publisher activation, provenance emission, or provider trust exists yet. |
+| **1E — first public-npm publications** | Treat Advisor, Starter, and Controller as one exact Trio release cohort. Before the first irreversible publication, every candidate passes FULL preflight, selected-tarball scan, and isolated installed canary; Starter's canary includes its required exact CLI evidence. Publish and verify Advisor, then Starter, then Controller, with the owner present for each first identity publication. Only after all three identities have registry-served digest and public visibility/access proof, activate the npm trusted publisher for each package. Then publish one or more later, bounded patch releases through that trusted publisher and verify the registry provenance attached to each of those releases. | One exact-head record names all three candidates and their successful pre-publication evidence; every first identity publication has owner-present, registry-served digest, and public visibility/access evidence. After every Trio or later candidate publication, run and record live registry-parity verification for that published identity (manifest name/version, public visibility/access, and served digest); it is the required 1E post-publication proof, not a 1D pre-publication gate. Each later provenance proof records its patch release, trusted-publisher execution, registry-served digest, and registry provenance verification. If a later candidate, publication, or verification fails after Advisor or Starter has published, fail closed: stop the release and quarantine the incomplete Trio; inventory every already-published immutable member (name, version, digest, visibility, and disposition); invalidate the unpublished candidate artifacts; and never delete or reuse any published version. Deprecate a published member if the registry supports that mutation, otherwise record the unsupported result and its immutable disposition. A defective published member needs a corrected forward version; requalify it and every dependent or remaining candidate from an exact head. Resume only when the whole-tree authority declaration and all current cohort gates pass again. Builder and Inspector wait for Controller; Publisher waits for Controller, Designer, and Writer. |
 
-### W1D shipped-artifact correction boundary
+### W1D packed-artifact lifecycle boundary
 
-The producer cutover owner records the following pre-recut blocker in #567:
-the current Controller runner-conventions document still names the retired
-`@vespeneventures/conventions/runner` import, and Designer's `TOKENS.md`
-still contains current-tense retired Copy, Strategy, and Surface API
-references. They are defects in already-versioned legacy package artifacts,
-not permission to mutate those artifacts in 1A. The evidence is
-`npm run check:release-readiness` exiting `1` on the 1A decision diff: a
-same-version correction changes packed content and requires a release. No
-legacy version bump, republish, or mixed-namespace repair is permitted here.
+W1D is an exhaustive lifecycle gate across the npm-packed contents of all 19
+current packages, not a two-file exception. The producer cutover owner records
+the generated inventory in #567 from each package's actual
+`npm pack --dry-run --json` file list and packed-content scan. It lists every
+active retired fully-qualified package identity, import, install instruction,
+or use instruction with the package owner, source and packed paths, exact
+line/evidence, current version, and tarball digest. The current Controller
+runner-conventions reference to `@vespeneventures/conventions/runner` and
+Designer `TOKENS.md` current-tense Copy, Strategy, and Surface API references
+are known examples, not the boundary of the inventory. Explicitly historical
+references remain only when unambiguously labeled historical and
+non-instructional; no active retired identity/import/install guidance may
+remain in any packed content.
 
-The exit condition belongs to 1D: after transfer, the designated producer
-recuts the complete catalogue as one history-aware new-namespace source
-change, carries these corrections into the recut artifacts, and records the
-required FULL, preflight, canary, and review evidence before 1E. Until then,
-the immutable legacy bytes and their current lifecycle/retention records stay
+For every affected package, that inventory records one executable disposition:
+the named owner, corrected source, semver bump, owner-present public forward
+release and clean-pack proof for a legacy correction, or the planned
+new-namespace release carried by the complete 1D recut where that is the
+appropriate disposition. It also records the exact scan, preflight, canary,
+registry, and digest evidence; requalification of every dependent and
+remaining candidate; and the command/output/digest binding for each result.
+No candidate-namespace package may publish until the inventory is complete,
+every disposition is current, and a zero-residual packed-content scan proves
+the absence of active retired identity/import/install guidance.
+
+The evidence that made this a blocker is `npm run check:release-readiness`
+exiting `1` on the 1A decision diff: a same-version correction changes packed
+content and requires a release. It does not authorize a legacy version bump,
+republish, or mixed-namespace repair in 1A. The exit condition belongs to 1D:
+after transfer, the designated producer recuts the complete catalogue as one
+history-aware new-namespace source change, carries every required correction
+into the recut artifacts, and records the required FULL, clean-pack,
+preflight, canary, registry, and review evidence before 1E. Until then, the
+immutable legacy bytes and their current lifecycle/retention records stay
 unchanged.
 
 The first publication of **each** Trio identity is intentionally owner-present,
