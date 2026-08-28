@@ -235,6 +235,23 @@ after `preflight-package.mjs`, before `npm publish`.
 
 ## 6. Publish
 
+### Release target selection
+
+[`governance/release-catalog.json`](../governance/release-catalog.json) is a
+fail-closed allowlist for the publish target. Its default target is the
+existing `@vespeneventures` GitHub Packages lane and therefore preserves the
+current automatic release behavior. It is not a second source of truth for
+the current scope or registry: those remain in `package-scope.json`.
+
+The catalogue also records one **planned** `clossys-npmjs-precutover` target,
+limited to `advisor`, `starter`, and `controller`. Recording that target does
+not change the scope, registry, package names, versions, workflow defaults, or
+publish anything. A later, separately reviewed cutover must explicitly select
+that target and make `package-scope.json` match its scope and registry. Until
+then, selection fails rather than treating a scope switch as permission to
+publish the entire workspace. Manual dispatch, visibility reporting, and
+automatic discovery all use the same control.
+
 For an **existing package name**, merging a new `package.json` version to
 `main` publishes that version automatically. Push discovery selects a version
 that is absent from the registry and serializes releases through the

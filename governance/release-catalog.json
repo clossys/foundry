@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "defaultTarget": "current-github-packages",
+  "targets": [
+    {
+      "id": "current-github-packages",
+      "status": "active",
+      "scope": "@vespeneventures",
+      "registry": "https://npm.pkg.github.com",
+      "packages": "all"
+    },
+    {
+      "id": "clossys-npmjs-precutover",
+      "status": "planned",
+      "scope": "@clossys",
+      "registry": "https://registry.npmjs.org",
+      "packages": [
+        "advisor",
+        "starter",
+        "controller"
+      ]
+    }
+  ]
+}

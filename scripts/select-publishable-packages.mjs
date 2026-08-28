@@ -52,6 +52,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
+import { filterPackagesForTarget, loadReleaseCatalog, readCurrentReleaseIdentity, resolveReleaseTarget } from "./check-release-catalog.mjs";
 import { probeVersions, resolveVersionLookups } from "./registry-version-lookup.mjs";
 
 function die(msg, code = 1) {
@@ -170,17 +171,20 @@ function listPackageDirectories(packagesRoot) {
 }
 
 async function main() {
-  if (!existsSync("package-scope.json")) die("no package-scope.json found — cannot determine the registry owner/scope.");
-  let scopeDoc;
+  let identity;
   try {
-    scopeDoc = JSON.parse(readFileSync("package-scope.json", "utf8"));
+    identity = readCurrentReleaseIdentity();
   } catch (error) {
-    die(`package-scope.json does not parse as JSON: ${error.message}`);
+    die(error.message.replace(/^release catalog: /, ""));
   }
-  if (typeof scopeDoc.scope !== "string" || !scopeDoc.scope.startsWith("@")) {
-    die(`package-scope.json declares no "scope" string beginning with "@".`);
+  const owner = identity.scope.slice(1);
+
+  let releaseTarget;
+  try {
+    releaseTarget = resolveReleaseTarget(loadReleaseCatalog(), identity, process.env.PUBLISH_RELEASE_TARGET || undefined);
+  } catch (error) {
+    die(error.message.replace(/^release catalog: /, ""));
   }
-  const owner = scopeDoc.scope.slice(1);
 
   const token = process.env.GH_PACKAGES_TOKEN;
   if (!token) {
@@ -191,13 +195,20 @@ async function main() {
     );
   }
 
-  const { entries, fatal } = discoverPackageManifests({
+  const { entries: discoveredEntries, fatal } = discoverPackageManifests({
     packagesRoot: "packages",
     listDirectories: listPackageDirectories,
     manifestExists: existsSync,
     currentManifest: (path) => JSON.parse(readFileSync(path, "utf8")),
   });
   if (fatal) die(fatal);
+
+  let entries;
+  try {
+    entries = filterPackagesForTarget(discoveredEntries, releaseTarget);
+  } catch (error) {
+    die(error.message.replace(/^release catalog: /, ""));
+  }
 
   if (entries.length === 0) {
     process.stdout.write("[]\n");
