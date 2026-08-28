@@ -19,7 +19,7 @@ Configure the consumer-owned GitHub Packages mapping and credential reference,
 then pin an exact published version in that consumer's manifest and lockfile:
 
 ```bash
-npm install --save-dev --save-exact @vespeneventures/starter@0.1.0
+npm install --save-dev --save-exact @vespeneventures/starter@0.1.1
 ```
 
 The public package registry still requires the consumer's own read credential.
@@ -44,7 +44,7 @@ snapshot identity, and two normalized relative evidence paths.
   },
   "starter": {
     "name": "@vespeneventures/starter",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "integrity": "<npm-sha512-sri>",
     "bin": "foundry-starter"
   },

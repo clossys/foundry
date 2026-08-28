@@ -102,7 +102,7 @@ function credentialFindings(): StarterFinding[] {
   return CREDENTIAL_ENVIRONMENT_NAMES.filter((name) => typeof process.env[name] === "string" && process.env[name] !== "").map((name) => finding("decision-credential", `${name} is present in a decisive CLI step; credentials belong only to the fixed install step.`));
 }
 export function runNode(bin: string, args: readonly string[], currentAsOf?: string, timeout = PROCESS_TIMEOUT_MS): ProcessObservation {
-  const child = spawnSync(process.execPath, [bin, ...args], { encoding: "utf8", maxBuffer: 1_048_576, shell: false, env: sanitizedEnvironment(), timeout });
+  const child = spawnSync(process.execPath, [bin, ...args], { encoding: "utf8", maxBuffer: 1_048_576, shell: false, env: sanitizedEnvironment(), timeout, killSignal: "SIGKILL" });
   const timedOut = (child.error as NodeJS.ErrnoException | undefined)?.code === "ETIMEDOUT";
   return { attempted: child.error === undefined || timedOut, exitCode: child.status, stdout: child.stdout ?? "", timedOut, currentAsOf };
 }

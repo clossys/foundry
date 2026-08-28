@@ -220,7 +220,7 @@ describe("packed installed activation canaries", () => {
       writeJson(join(targetPackage, "package.json"), { name: "@fixture/starter-target", version: "1.0.0", private: true, type: "module", bin: { "fixture-target-check": "./bin/check.js" }, peerDependencies: { "@vespeneventures/advisor": "0.1.3" }, files: ["bin"] });
       writeFileSync(join(targetPackage, "bin", "check.js"), "#!/usr/bin/env node\nimport { readFileSync } from 'node:fs';\nconst input = JSON.parse(readFileSync(process.argv[2], 'utf8'));\nconst state = input.mode === 'violated' ? 'violated' : input.mode === 'indeterminate' ? 'indeterminate' : 'satisfied';\nconsole.log(JSON.stringify({state}));\nprocess.exit(state === 'satisfied' ? 0 : state === 'violated' ? 1 : 2);\n");
       chmodSync(join(targetPackage, "bin", "check.js"), 0o755);
-      const starter = pack(join(repoRoot, "packages/starter"), packed, "@vespeneventures/starter", "0.1.0", fixtureRoot);
+      const starter = pack(join(repoRoot, "packages/starter"), packed, "@vespeneventures/starter", "0.1.1", fixtureRoot);
       const advisor = pack(join(repoRoot, "packages/advisor"), packed, "@vespeneventures/advisor", "0.1.3", fixtureRoot);
       const target = pack(targetPackage, packed, "@fixture/starter-target", "1.0.0", fixtureRoot);
       const installed = identities(starter, advisor, target); const registry = await localRegistry([starter, advisor, target]);
