@@ -38,7 +38,10 @@ evidence/target-input.json
 ```
 
 The pull-request job writes `snapshot.json` with the GitHub event facts and
-file sizes/SHA-256 values. Starter independently checks the downloaded files
+file sizes/SHA-256 values. The GitHub base and head values are canonical
+40-character lowercase-hex Git commit SHA-1 OIDs; the snapshot and file
+commitments are distinct 64-character lowercase-hex SHA-256 digests. Starter
+independently checks the downloaded files
 for normalized paths, a regular non-symlink file, realpath containment,
 bounded size, and metadata agreement before it reads either JSON document.
 

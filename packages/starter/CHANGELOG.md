@@ -5,6 +5,14 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.2] - 2026-08-27
+
+### Fixed
+
+- Validate GitHub snapshot and trusted-event base/head fields as canonical
+  40-character Git commit SHA-1 OIDs, while retaining 64-character SHA-256
+  validation only for snapshot and evidence-file digests.
+
 ## [0.1.1] - 2026-08-27
 
 ### Fixed

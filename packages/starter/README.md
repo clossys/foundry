@@ -19,7 +19,7 @@ Configure the consumer-owned GitHub Packages mapping and credential reference,
 then pin an exact published version in that consumer's manifest and lockfile:
 
 ```bash
-npm install --save-dev --save-exact @vespeneventures/starter@0.1.1
+npm install --save-dev --save-exact @vespeneventures/starter@0.1.2
 ```
 
 The public package registry still requires the consumer's own read credential.
@@ -44,7 +44,7 @@ snapshot identity, and two normalized relative evidence paths.
   },
   "starter": {
     "name": "@vespeneventures/starter",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "integrity": "<npm-sha512-sri>",
     "bin": "foundry-starter"
   },
@@ -89,6 +89,13 @@ The only target invocation v1 supports is `single-json-input`: the path comes
 from the captured snapshot and the executable comes from the installed
 package's validated `bin` field. The caller can select neither a command nor a
 CLI path.
+
+GitHub provider facts are deliberately distinct from evidence commitments:
+`snapshot.baseSha`, `snapshot.headSha`, `trustedEvent.baseSha`, and
+`trustedEvent.sourceHeadSha` must each be a canonical 40-character lowercase
+hex Git commit SHA-1 OID. The snapshot `digest` and each file `sha256` remain
+canonical 64-character lowercase hex SHA-256 digests. A 64-character digest
+cannot stand in for a GitHub commit OID.
 
 ## CLI
 

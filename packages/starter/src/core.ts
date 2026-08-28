@@ -11,7 +11,10 @@ import type {
 } from "./types.js";
 
 type UnknownRecord = Record<string, unknown>;
-const SHA = /^[a-f0-9]{64}$/;
+/** GitHub API commit OIDs are canonical, lowercase SHA-1 hex strings. */
+const GIT_COMMIT_SHA1 = /^[a-f0-9]{40}$/;
+/** Snapshot content commitments use canonical lowercase SHA-256 hex strings. */
+const SHA256_HEX = /^[a-f0-9]{64}$/;
 /** One SHA-512 digest is exactly 64 bytes, canonically encoded as 86 base64 symbols plus ==. */
 const SHA512 = /^sha512-([A-Za-z0-9+/]{86})==$/;
 const SEMVER_NUMERIC = "(?:0|[1-9]\\d*)";
@@ -90,7 +93,7 @@ export function validateStarterRequest(value: unknown): { request: StarterReques
 
 function validateSnapshot(value: unknown, request: StarterRequest, now: string): { snapshot: SnapshotManifest | null; findings: StarterFinding[] } {
   const findings: StarterFinding[] = [];
-  if (!record(value) || !exactKeys(value, SNAPSHOT_KEYS) || value.schemaVersion !== 1 || value.provider !== "github-actions" || value.eventName !== "pull_request" || !Array.isArray(value.files) || !Number.isSafeInteger(value.pullRequestNumber) || Number(value.pullRequestNumber) <= 0 || !SHA.test(String(value.baseSha)) || !SHA.test(String(value.headSha)) || typeof value.workflowRunId !== "string" || value.workflowRunId.length === 0 || typeof value.artifactName !== "string" || value.artifactName !== `adoption-snapshot-${value.workflowRunId}` || !SHA.test(String(value.digest))) {
+  if (!record(value) || !exactKeys(value, SNAPSHOT_KEYS) || value.schemaVersion !== 1 || value.provider !== "github-actions" || value.eventName !== "pull_request" || !Array.isArray(value.files) || !Number.isSafeInteger(value.pullRequestNumber) || Number(value.pullRequestNumber) <= 0 || !GIT_COMMIT_SHA1.test(String(value.baseSha)) || !GIT_COMMIT_SHA1.test(String(value.headSha)) || typeof value.workflowRunId !== "string" || value.workflowRunId.length === 0 || typeof value.artifactName !== "string" || value.artifactName !== `adoption-snapshot-${value.workflowRunId}` || !SHA256_HEX.test(String(value.digest))) {
     return { snapshot: null, findings: [find("snapshot-shape", "snapshot manifest is unreadable or is not a pull_request GitHub Actions record.")] };
   }
   const joins: Array<[keyof StarterRequest["snapshot"], keyof SnapshotManifest]> = [["repository", "repository"]];
@@ -99,7 +102,7 @@ function validateSnapshot(value: unknown, request: StarterRequest, now: string):
   if (captured === null || at === null || at < captured || at - captured > request.snapshot.maxAgeMs) findings.push(find("snapshot-expired", "snapshot is missing, future-dated, or older than its declared maximum age."));
   const paths = new Map<string, unknown>();
   for (const entry of value.files) {
-    if (!record(entry) || !exactKeys(entry, SNAPSHOT_FILE_KEYS) || !isNormalizedRelativePath(entry.path) || !Number.isSafeInteger(entry.size) || Number(entry.size) < 0 || Number(entry.size) > 524_288 || !SHA.test(String(entry.sha256)) || paths.has(entry.path)) findings.push(find("snapshot-file", "every snapshot file must have one normalized path, bounded size, and SHA-256 digest."));
+    if (!record(entry) || !exactKeys(entry, SNAPSHOT_FILE_KEYS) || !isNormalizedRelativePath(entry.path) || !Number.isSafeInteger(entry.size) || Number(entry.size) < 0 || Number(entry.size) > 524_288 || !SHA256_HEX.test(String(entry.sha256)) || paths.has(entry.path)) findings.push(find("snapshot-file", "every snapshot file must have one normalized path, bounded size, and SHA-256 digest."));
     else paths.set(entry.path, entry);
   }
   for (const path of [request.evidence.assessment, request.evidence.targetInput]) if (!paths.has(path)) findings.push(find("snapshot-evidence-missing", `snapshot did not capture required ${path}.`));
@@ -107,7 +110,7 @@ function validateSnapshot(value: unknown, request: StarterRequest, now: string):
 }
 
 function validateTrustedEvent(value: unknown, request: StarterRequest, snapshot: SnapshotManifest): StarterFinding[] {
-  if (!record(value) || !exactKeys(value, TRUSTED_EVENT_KEYS) || value.schemaVersion !== 1 || value.provider !== "github-actions" || value.eventName !== "workflow_run") return [find("trusted-event-shape", "trusted event is unreadable or is not a GitHub workflow_run record.")];
+  if (!record(value) || !exactKeys(value, TRUSTED_EVENT_KEYS) || value.schemaVersion !== 1 || value.provider !== "github-actions" || value.eventName !== "workflow_run" || !GIT_COMMIT_SHA1.test(String(value.baseSha)) || !GIT_COMMIT_SHA1.test(String(value.sourceHeadSha))) return [find("trusted-event-shape", "trusted event is unreadable or is not a GitHub workflow_run record with canonical Git commit OIDs.")];
   const event = value as unknown as TrustedEvent;
   const findings: StarterFinding[] = [];
   if (event.repository !== request.snapshot.repository || event.sourceWorkflowRunId !== snapshot.workflowRunId || event.sourceHeadSha !== snapshot.headSha || event.baseSha !== snapshot.baseSha || event.artifactName !== snapshot.artifactName) {

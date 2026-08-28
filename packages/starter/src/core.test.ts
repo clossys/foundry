@@ -3,7 +3,8 @@ import { evaluateStarter, evaluateProcessResult, isNormalizedRelativePath, valid
 import { validateNpmIdentity } from "./npm.js";
 import { validatePnpmIdentity } from "./pnpm.js";
 
-const sha = (character = "a") => character.repeat(64);
+const gitSha = (character = "a") => character.repeat(40);
+const sha256 = (character = "a") => character.repeat(64);
 const integrity = `sha512-${"a".repeat(85)}A==`;
 const now = "2026-08-27T12:00:00.000Z";
 const starter = { name: "@vespeneventures/starter", version: "0.1.0", integrity, bin: "foundry-starter" as const };
@@ -30,20 +31,20 @@ function snapshot(overrides: Record<string, unknown> = {}) {
     eventName: "pull_request",
     repository: "consumer/repository",
     pullRequestNumber: 42,
-    baseSha: sha("b"),
-    headSha: sha("c"),
+    baseSha: gitSha("b"),
+    headSha: gitSha("c"),
     workflowRunId: "123",
     artifactName: "adoption-snapshot-123",
-    digest: sha("d"),
+    digest: sha256("d"),
     capturedAt: now,
     files: [
-      { path: "evidence/assessment.json", size: 2, sha256: sha("e") },
-      { path: "evidence/target.json", size: 2, sha256: sha("f") },
+      { path: "evidence/assessment.json", size: 2, sha256: sha256("e") },
+      { path: "evidence/target.json", size: 2, sha256: sha256("f") },
     ],
     ...overrides,
   };
 }
-function event(overrides: Record<string, unknown> = {}) { return { schemaVersion: 1, provider: "github-actions", eventName: "workflow_run", repository: "consumer/repository", baseSha: sha("b"), sourceWorkflowRunId: "123", sourceHeadSha: sha("c"), artifactName: "adoption-snapshot-123", sourceConclusion: "success", ...overrides }; }
+function event(overrides: Record<string, unknown> = {}) { return { schemaVersion: 1, provider: "github-actions", eventName: "workflow_run", repository: "consumer/repository", baseSha: gitSha("b"), sourceWorkflowRunId: "123", sourceHeadSha: gitSha("c"), artifactName: "adoption-snapshot-123", sourceConclusion: "success", ...overrides }; }
 function process(state: "satisfied" | "violated" | "indeterminate", at?: string) { return { attempted: true, exitCode: state === "satisfied" ? 0 : state === "violated" ? 1 : 2, stdout: JSON.stringify({ state }), ...(at === undefined ? {} : { currentAsOf: at }) }; }
 function input(overrides: Record<string, unknown> = {}) { return { request: request(), snapshot: snapshot(), trustedEvent: event(), install: { schemaVersion: 1, packageManager: "npm", attempted: true, exitCode: 0 }, now, advisor: process("satisfied", now), target: process("satisfied"), ...overrides }; }
 
@@ -72,6 +73,12 @@ describe("request and event boundary", () => {
     expect(unable.findings.map((entry) => entry.rule)).toContain("install-result");
   });
 
+  it("accepts real GitHub 40-hex commit OIDs for foundation-only evidence", () => {
+    const report = evaluateStarter(input({ request: request({ phase: "foundation" }) }));
+    expect(report).toMatchObject({ state: "indeterminate", phase: "foundation" });
+    expect(report.findings.map((entry) => entry.rule)).toEqual(["foundation-only"]);
+  });
+
   it("rejects traversal, absolute paths, shell commands, custom CLI paths, and custom arguments", () => {
     for (const evidence of [{ assessment: "../assessment.json", targetInput: "evidence/target.json" }, { assessment: "/assessment.json", targetInput: "evidence/target.json" }]) {
       expect(evaluateStarter(input({ request: request({ evidence }) })).state).toBe("indeterminate");
@@ -93,12 +100,24 @@ describe("request and event boundary", () => {
 
   it("refuses stale or foreign snapshots and every broken provider/event/base/head/digest join", () => {
     expect(evaluateStarter(input({ snapshot: snapshot({ capturedAt: "2026-08-27T11:58:00.000Z" }) })).findings.map((entry) => entry.rule)).toContain("snapshot-expired");
-    for (const trustedEvent of [event({ repository: "other/repository" }), event({ eventName: "pull_request" }), event({ baseSha: sha("0") }), event({ sourceHeadSha: sha("0") }), event({ artifactName: "foreign-artifact" }), event({ sourceConclusion: "skipped" })]) {
+    for (const trustedEvent of [event({ repository: "other/repository" }), event({ eventName: "pull_request" }), event({ baseSha: gitSha("0") }), event({ sourceHeadSha: gitSha("0") }), event({ artifactName: "foreign-artifact" }), event({ sourceConclusion: "skipped" })]) {
       expect(evaluateStarter(input({ trustedEvent })).state).toBe("indeterminate");
     }
     expect(evaluateStarter(input({ snapshot: snapshot({ workflowRunId: "foreign", artifactName: "adoption-snapshot-foreign" }) })).state).toBe("indeterminate");
     expect(evaluateStarter(input({ snapshot: snapshot({ ignored: "extra" }) })).state).toBe("indeterminate");
     expect(evaluateStarter(input({ trustedEvent: event({ ignored: "extra" }) })).state).toBe("indeterminate");
+  });
+
+  it("refuses non-canonical provider commit OIDs without weakening SHA-256 evidence digests", () => {
+    const invalidCommitOids = [sha256("a"), "not-a-sha", gitSha("A"), "a".repeat(39), "a".repeat(41)];
+    for (const commitOid of invalidCommitOids) {
+      expect(evaluateStarter(input({ snapshot: snapshot({ baseSha: commitOid }) })).findings.map((entry) => entry.rule)).toContain("snapshot-shape");
+      expect(evaluateStarter(input({ snapshot: snapshot({ headSha: commitOid }) })).findings.map((entry) => entry.rule)).toContain("snapshot-shape");
+      expect(evaluateStarter(input({ trustedEvent: event({ baseSha: commitOid }) })).findings.map((entry) => entry.rule)).toContain("trusted-event-shape");
+      expect(evaluateStarter(input({ trustedEvent: event({ sourceHeadSha: commitOid }) })).findings.map((entry) => entry.rule)).toContain("trusted-event-shape");
+    }
+    expect(evaluateStarter(input({ snapshot: snapshot({ digest: gitSha("d") }) })).findings.map((entry) => entry.rule)).toContain("snapshot-shape");
+    expect(evaluateStarter(input({ snapshot: snapshot({ files: [{ path: "evidence/assessment.json", size: 2, sha256: gitSha("e") }, { path: "evidence/target.json", size: 2, sha256: sha256("f") }] }) })).findings.map((entry) => entry.rule)).toContain("snapshot-file");
   });
 
   it("does not convert a supplied non-success or skipped receipt into a pass", () => {
