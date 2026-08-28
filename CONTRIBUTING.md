@@ -5,8 +5,9 @@ are short for the same reason.
 
 ## Getting set up
 
-Installing a package from here needs a `.npmrc` with a GitHub `read:packages`
-token — see [README.md](README.md#installing). Working on the repository
+Installing a package from here needs a `.npmrc` with a GitHub **classic**
+personal access token carrying `read:packages` — see
+[README.md](README.md#installing). Working on the repository
 itself does not; it's a plain npm workspace.
 
 ```bash
@@ -46,7 +47,7 @@ npm run check:typechecked-assertions
 | `typecheck` / `test` | The usual. |
 | `check-public-safety` (tree + artifact) | Refuses credential-shaped strings, committed build output, agent-instruction files, and private identity — in both the git tree and the actual packed tarball. See [SECURITY.md](SECURITY.md). |
 | `check-scope` | Every first-party package name matches the scope declared in `package-scope.json`. |
-| `check-registry` (`registry drift` in CI) | Every non-private package's `publishConfig.registry` matches the single registry declared in `package-scope.json`. Same single-source-of-truth pattern as `check-scope`, extended to the registry — see `scripts/set-registry.mjs` and [docs/PUBLISHING.md](docs/PUBLISHING.md#7-the-public-npm-registry-considered-cancelled). |
+| `check-registry` (`registry drift` in CI) | Every non-private package's `publishConfig.registry` matches the single registry declared in `package-scope.json`. Same single-source-of-truth pattern as `check-scope`, extended to the registry — see `scripts/set-registry.mjs` and [docs/PUBLISHING.md](docs/PUBLISHING.md#current-cutover-constraint). |
 | `check-gates` | Regression tests proving the safety gates still catch planted contamination. |
 | `check:foreign-references` | The inverse of `check-public-safety`. That gate is a denylist and can only refuse names someone already listed; this one admits only this repository's own account and scope — derived from `package-scope.json` and the manifests' own `repository.url` — and fails every other account-shaped reference (`@scope/name`, and `owner/repo` in a GitHub URL, a workflow `uses:`, or a `gh --repo` argument) by shape. Foundry supplies planes that do not govern each other, so it must never name a consumer, a sibling repository, or any other account. Public infrastructure and fictional placeholders are admitted explicitly, and third-party npm scopes are derived from `package-lock.json` at run time. Runs on fork pull requests too — it needs no denylist. |
 | `check:readme` / `check:contamination` | Catch README/export drift and internal-convention leakage that no denylist string-match can see. Run unconditionally in CI, including on fork pull requests, since they read only the tree itself. |
@@ -102,10 +103,11 @@ Practically:
   without dragging in a tree. Adding a runtime dependency needs a reason in the
   pull request description.
 - **Supported configurations: the default answer is also no — be opinionated
-  about the foundation instead.** Where a package does depend on something,
-  it picks one and requires it, rather than supporting every environment an
-  adopter might have. `@vespeneventures/ui` requires Tailwind v4; that is a
-  deliberate choice, not a gap waiting to be closed.
+  about the foundation instead.** `@vespeneventures/designer` is the current
+  styling authority. Consumers choose one documented Designer entry point:
+  `tokens.css` works without Tailwind, while `theme.css` is the optional
+  Tailwind v4 wiring for a consumer-owned pipeline. Those explicit surfaces,
+  rather than a retired UI package, define the supported styling choices.
 
   This is a cost argument, not a taste argument. A second supported path is
   never one feature: it is a second test matrix, a second override-precedence
@@ -117,12 +119,12 @@ Practically:
   needs: a real consumer that needs it, not a hypothetical adopter who might.
   Speculative compatibility is cheap to add and expensive to keep. The bar is
   evidence, not a permanent no: a proposal to ship a second, non-Tailwind
-  styling path for `ui` was declined while it was speculative — no real
+  styling path for Designer was declined while it was speculative — no real
   consumer needed it (#174) — then reopened once a real external consumer
   requirement existed, and shipped as a narrow, evidence-gated exception
-  rather than the original open-ended sketch: `@vespeneventures/ui/
+  rather than the original open-ended sketch: `@vespeneventures/designer/
   compiled.css`, a generated stylesheet scoped to `atoms` only (see
-  `packages/ui/README.md`'s "Framework-portable components, without
+  `packages/designer/README.md`'s "Framework-portable components, without
   Tailwind"). Declined, then reopened, then shipped narrowly — that arc, not
   the bare decline alone, is what this convention is actually asking for.
 
@@ -136,10 +138,10 @@ Practically:
   itself a defect, removed in #148.
 - **Gate CLIs exit `0` clean / `1` findings / `2` could not run — `2` is not a
   variant of failure.** Every gate CLI in this repo follows this three-state
-  contract: `packages/ui/src/cli.ts` and `packages/ui/src/token-gate.ts`
-  (returns `2` when zero files were scanned, before findings are even
-  possible), `packages/copy/src/cli.ts`, `packages/strategy/src/cli.ts`, and
-  `scripts/check-release-readiness.mjs` all agree on it. `2` means the gate
+  contract: `packages/designer/src/cli.ts` returns `2` when zero files were
+  scanned, before findings are even possible; `packages/writer/src/cli.ts`,
+  `packages/strategist/src/cli.ts`, and
+  `scripts/check-release-readiness.mjs` use the same contract. `2` means the gate
   never formed an opinion — a git or npm failure, a directory it couldn't
   read, a scan that matched nothing — and is the only thing that
   distinguishes "I checked and it's fine" from "I never checked." Collapsing
@@ -169,19 +171,19 @@ Practically:
     a written rule and not a matter of care.
 
   Reuse the existing mechanism rather than reinventing this per gate:
-  `packages/governance/src/gates/types.ts`'s `FoundationReport.complete` is
+  `packages/controller/src/gates/types.ts`'s `FoundationReport.complete` is
   `true` only when `catalog.skipped` is empty, and
-  `packages/governance/src/catalog/build.ts` pushes every unreadable or
+  `packages/controller/src/catalog/build.ts` pushes every unreadable or
   unparseable path onto `skipped` instead of dropping it — the decline case
   is data, not silence.
 - **No `workspace:*` or `catalog:` protocols.** They are unresolvable for anyone
   outside the workspace that defines them, and the safety gate rejects them.
 - **0.x dependency ranges are minor-locked — both `^` and `~`.** Packages
   here depend on each other with plain semver ranges against 0.x versions
-  (e.g. `"@vespeneventures/governance": "^0.3.0"`). Past `1.0.0`, `^` locks
+  (e.g. `"@vespeneventures/controller": "~0.8.0"`). Past `1.0.0`, `^` locks
   the major and `~` locks the minor; below `1.0.0` there is no such split —
   `^0.3.0` and `~0.3.0` both mean `>=0.3.0 <0.4.0`. Bumping a package's minor
-  (e.g. `governance` from `0.3.0` to `0.4.0`) therefore breaks every sibling
+  (e.g. `controller` from `0.8.0` to `0.9.0`) therefore breaks every sibling
   that still declares the old range, silently: npm stops linking the local
   workspace copy and resolves the sibling from the registry instead, and the
   tokenless CI job 401s trying to fetch it. If you bump a package's minor,
@@ -212,8 +214,8 @@ Practically:
   (whose own `include` globs are scoped to `*.test.ts(x)`, not `*.check.*`).
   It should never be imported by `index.ts` or any runtime code — its only
   job is to make `tsc` fail if the contract it encodes regresses. See
-  `packages/ui/src/atoms/internal/icon-contract.check.tsx` and
-  `packages/ui/src/shell/internal/shell-contract.check.tsx` for the pattern,
+  `packages/designer/src/atoms/internal/icon-contract.check.tsx` and
+  `packages/designer/src/shell/internal/shell-contract.check.tsx` for the pattern,
   and `scripts/check-typechecked-assertions.mjs` (run as
   `check:typechecked-assertions`) for the gate that fails CI if a directive
   like this ends up in a `.test.ts(x)` file anyway.

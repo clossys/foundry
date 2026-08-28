@@ -1,31 +1,5 @@
 {
-  "$comment": "Declares which \"deprecated\" docs/contracts/package-lifecycle.json packages are DELIBERATELY still live on the registry, and why. A deprecated package remaining installable is not automatically wrong -- that is the entire point of deprecation: existing consumers keep resolving it while new adoption is steered at the replacement -- but it must be a declared decision, not silent drift indistinguishable from a package nobody remembered to unpublish. See scripts/check-package-visibility.mjs, which joins this file against the registry's own package list. A \"deprecated\" package live on the registry with no entry here, or with an entry whose reviewBy date has passed, is a gate finding: either declare (or renew) the retention, or remove the package from the registry. Same reason+reviewBy shape as packages/controller's dependency-scope allowlist (see its own doc comment) -- a standing exemption with no expiry is the same failure as an absence with no declared reason, just wearing the other sign.",
+  "$comment": "Declares which \"deprecated\" docs/contracts/package-lifecycle.json packages are DELIBERATELY still live on the registry, and why. A deprecated package remaining installable is not automatically wrong -- that is the entire point of deprecation: existing consumers keep resolving it while new adoption is steered at the replacement -- but it must be a declared decision, not silent drift indistinguishable from a package nobody remembered to unpublish. See scripts/check-package-visibility.mjs, which joins this file against the registry's own package list. A \"deprecated\" package live on the registry with no entry here, or with an entry whose reviewBy date has passed, is a gate finding: either declare (or renew) the retention, or remove the package from the registry. There are currently no deprecated lifecycle entries: copy, ledger, strategy, surface, and ui are retired, so their former retention declarations were non-operative and have been removed. Same reason+reviewBy shape as packages/controller's dependency-scope allowlist (see its own doc comment) -- a standing exemption with no expiry is the same failure as an absence with no declared reason, just wearing the other sign.",
   "schemaVersion": 1,
-  "packages": [
-    {
-      "name": "@vespeneventures/copy",
-      "reason": "Deprecated into @vespeneventures/writer per docs/DECISIONS.md#10-recutting-the-expression-surface-into-role-shaped-packages. Kept live so a consumer already pinned to a published copy version keeps resolving it while migrating. No forwarding stub ships, deliberately: a stub would keep the old name importable and a supersession check could then never reach zero.",
-      "reviewBy": "2026-11-21"
-    },
-    {
-      "name": "@vespeneventures/ledger",
-      "reason": "Deprecated into @vespeneventures/publisher per docs/DECISIONS.md#10-recutting-the-expression-surface-into-role-shaped-packages. Kept live so a consumer already pinned to a published ledger version keeps resolving it while migrating. No forwarding stub ships, deliberately: a stub would keep the old name importable and a supersession check could then never reach zero.",
-      "reviewBy": "2026-11-21"
-    },
-    {
-      "name": "@vespeneventures/strategy",
-      "reason": "Deprecated into @vespeneventures/strategist per docs/DECISIONS.md#10-recutting-the-expression-surface-into-role-shaped-packages. Kept live so a consumer already pinned to a published strategy version keeps resolving it while migrating. No forwarding stub ships, deliberately: a stub would keep the old name importable and a supersession check could then never reach zero.",
-      "reviewBy": "2026-11-20"
-    },
-    {
-      "name": "@vespeneventures/surface",
-      "reason": "Deprecated into @vespeneventures/publisher per docs/DECISIONS.md#10-recutting-the-expression-surface-into-role-shaped-packages. Kept live so a consumer already pinned to a published surface version keeps resolving it while migrating. No forwarding stub ships, deliberately: a stub would keep the old name importable and a supersession check could then never reach zero.",
-      "reviewBy": "2026-11-21"
-    },
-    {
-      "name": "@vespeneventures/ui",
-      "reason": "Deprecated into @vespeneventures/designer per docs/DECISIONS.md#10-recutting-the-expression-surface-into-role-shaped-packages. Kept live so a consumer already pinned to a published ui version keeps resolving it while migrating. No forwarding stub ships, deliberately: a stub would keep the old name importable and a supersession check could then never reach zero.",
-      "reviewBy": "2026-11-21"
-    }
-  ]
+  "packages": []
 }

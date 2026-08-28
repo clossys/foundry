@@ -1,9 +1,8 @@
 # Repository and review first run
 
-This runbook qualifies the paired first release of
-`@vespeneventures/governance/repository` and
-`@vespeneventures/governance/review` in designated
-consumer repositories. It is deliberately a handoff guide, not an installer:
+This runbook qualifies the repository and review subpaths of one exact
+`@vespeneventures/controller` artifact in designated consumer repositories.
+It is deliberately a handoff guide, not an installer:
 Foundry provides contracts and CLIs; each consumer authors and owns its own
 values, workflow, and provider access.
 
@@ -14,24 +13,24 @@ approved a change for any consumer.
 
 ## Before the first consumer
 
-1. Complete a full package preflight for each package as specified in
+1. Complete a full package preflight for Controller as specified in
    [PUBLISHING.md](PUBLISHING.md). The package tree and packed tarball must
    both pass a FULL public-safety scan, name-collision check, build, tests, and
    isolated-install proof.
 2. Run the publication workflow in dry-run mode and inspect its package
-   contents. Governance's one Foundry runtime dependency, `policy`, must already
-   be available from the registry before governance is published from the
-   reviewed source head.
-3. Record the published package versions, source head, package tarball digest
+   contents. Controller has no first-party runtime dependency; its repository
+   and review subpaths ship from the same exact Controller artifact reviewed
+   at the source head.
+3. Record the published Controller version, source head, package tarball digest
    if the publication system reports one, and the successful preflight and
    workflow URLs in the Foundry release record.
 4. Do not start consumer adoption from an unpublished workspace link, a local
    tarball, or a source checkout. The point of this run is to prove the
    registry artifact a consumer will actually receive.
 
-The repository and review contracts are subpaths of governance. Consumers
-install one exact governance artifact, whose only Foundry runtime sibling is
-policy; no legacy standalone package is required.
+The repository and review contracts are subpaths of Controller. Consumers
+install one exact Controller artifact; no first-party runtime sibling or
+legacy standalone package is required.
 
 ## Consumer installation
 
@@ -40,11 +39,11 @@ described in the repository root [README](../README.md#installing). The token
 remains in that consumer's local or CI environment; it is never committed to
 Foundry or recorded in an evidence bundle.
 
-Install the exact paired versions, rather than floating ranges, for the first
-run:
+Install the exact Controller version, rather than a floating range, for the
+first run:
 
 ```bash
-npm install --save-exact @vespeneventures/governance@0.9.0
+npm install --save-exact @vespeneventures/controller@0.8.19
 ```
 
 Use the package manager that owns the consumer's lockfile. The command above
@@ -66,7 +65,7 @@ Before running either CLI, a consumer authors these values in its own change:
   change head, the complete check/review/thread snapshot, and whether
   pagination is complete.
 
-For GitHub, a consumer may use `@vespeneventures/governance/review/github` in its own
+For GitHub, a consumer may use `@vespeneventures/controller/review/github` in its own
 code to normalize a fully fetched caller-provided snapshot before writing its
 own evidence JSON. The subpath makes no request, does not discover credentials,
 and does not choose pagination or workflow behavior. Provider tokens, raw
@@ -104,7 +103,7 @@ that consumer's adoption issue or pull request:
 
 | Record | Required evidence |
 | --- | --- |
-| Artifact | Exact installed versions of both packages and lockfile update. |
+| Artifact | Exact installed Controller version, tested `repository` and `review` subpaths, and lockfile update. |
 | Change identity | Adoption pull request URL and exact tested head identifier. |
 | Repository contract | Path to the consumer-owned profile and `repository-check` exit code/report. |
 | Requirements evaluation | When used, the pure evaluator report for caller-discovered declarations and normalized observations; unknown evidence must remain explicit. |
@@ -120,11 +119,12 @@ in that consumer repository rather than copying them here.
 ## Three-consumer qualification
 
 Run the installation and smoke-test sequence independently for all three
-designated consumers, using the same exact package versions. Consumer-specific
+designated consumers, using the same exact Controller version. Consumer-specific
 workflow YAML, protected paths, commands, review-policy values, branch/ruleset
 decisions, and provider invocation remain local to each consumer.
 
-The pair is ready for promotion only when all three records show a successful
-registry install, exact-head clean CLI reports, repeatable output, and passing
-consumer CI. A provider-specific review subpath is not implied by these runs;
+The Controller artifact's repository and review subpaths are ready for
+promotion only when all three records show a successful registry install,
+exact-head clean CLI reports, repeatable output, and passing consumer CI. A
+provider-specific review subpath is not implied by these runs;
 it needs separate evidence of meaningful reusable provider behavior.

@@ -31,10 +31,6 @@
       "intendedVisibility": "public"
     },
     {
-      "name": "@vespeneventures/copy",
-      "intendedVisibility": "public"
-    },
-    {
       "name": "@vespeneventures/designer",
       "intendedVisibility": "public"
     },
@@ -59,10 +55,6 @@
       "intendedVisibility": "public"
     },
     {
-      "name": "@vespeneventures/ledger",
-      "intendedVisibility": "public"
-    },
-    {
       "name": "@vespeneventures/locksmith",
       "intendedVisibility": "public"
     },
@@ -80,18 +72,6 @@
     },
     {
       "name": "@vespeneventures/strategist",
-      "intendedVisibility": "public"
-    },
-    {
-      "name": "@vespeneventures/strategy",
-      "intendedVisibility": "public"
-    },
-    {
-      "name": "@vespeneventures/surface",
-      "intendedVisibility": "public"
-    },
-    {
-      "name": "@vespeneventures/ui",
       "intendedVisibility": "public"
     },
     {

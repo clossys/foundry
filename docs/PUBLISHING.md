@@ -6,11 +6,10 @@ pushed to a public remote should be assumed cached and indexed even if
 deleted minutes later.
 
 One package, `@vespeneventures/contract`, was published from this
-repository and has since been removed from the codebase (see
-[docs/DECISIONS.md](DECISIONS.md) for why). Its name and every version it
-published still exist on the registry — a published name can never be
-reused for a different package, whether or not the original is still in
-the tree. Everything below is the general process for adding and
+repository and has since been removed from the codebase and current registry
+(see [docs/DECISIONS.md](DECISIONS.md) for why). Its historical name must not
+be reused for a different package, even though the deleted package now returns
+`404`. Everything below is the general process for adding and
 publishing a new package here, not a complete registry inventory.
 
 ---
@@ -42,24 +41,29 @@ Publication order follows the runtime graph, not filesystem order or the
 order packages happen to appear in a workspace:
 
 ```
-controller ── governance
-controller ── policy
+builder ── controller
+inspector ── controller
+publisher ── controller
+publisher ── designer
+publisher ── writer
 ```
 
-`@vespeneventures/advisor` is dependency-free and does not add an edge to the
-runtime publication graph. Its connector, sponsor identity, evidence store,
-and any repository or provider adapters remain consumer-owned.
+These are the complete first-party runtime edges in the current manifests:
+the package on the left requires the package on the right. Every other
+current package has no first-party runtime dependency. `controller` lists
+`advisor` only as a development dependency; Advisor-before-Controller is
+engagement sequencing for the representative Trio, not a manifest edge.
+Advisor's connector, sponsor identity, evidence store, and any repository or
+provider adapters remain consumer-owned.
 
 `controller` (issue #282 — formerly three separate packages: `governance`,
 `conventions`, and `policy`) owns the catalog, composition, gates, release,
 repository, review, conventions, and policy subpaths, with no runtime
-dependency of its own. `governance` and `policy` are deprecated compatibility
-packages that forward every export to the matching `controller` subpath; the
-former standalone package names (`governance`, `policy`, `catalog`, `gates`,
-`release`, `repository`, `review`) all remain compatibility artifacts and
-must not be selected for new consumer integrations. A local workspace build
-is not evidence that this graph is closed: workspace links can satisfy a
-package that an external registry installer cannot obtain.
+dependency of its own. The former standalone names (`governance`, `policy`,
+`catalog`, `gates`, `release`, `repository`, and `review`) are historical
+retired package identities, not current wrappers or integration targets. A
+local workspace build is not evidence that this graph is closed: workspace
+links can satisfy a package that an external registry installer cannot obtain.
 
 For a dependent package, the final proof is an isolated install of the exact
 tarball that was scanned and selected for publication, after its sibling
@@ -72,8 +76,8 @@ directory. The default round trip intentionally remains an unauthenticated
 public-registry proof.
 
 `@vespeneventures/controller` is also a consumer-facing CLI (as
-`@vespeneventures/governance` was before issue #282, and still is through its
-now-deprecated forward). Before publishing it, verify an isolated
+`@vespeneventures/governance` was before issue #282). Before publishing it,
+verify an isolated
 private-registry installation can import its public API and run
 `foundry-governance` against a valid lifecycle document. It is read-only:
 package preflight is used only by the producer that intends to publish;
@@ -223,11 +227,11 @@ after `preflight-package.mjs`, before `npm publish`.
 - [ ] `npm pack --dry-run` (or the artifact-safety gate, which packs for
       real) contents are exactly what you intended. This is the last look at
       the thing that actually ships.
-- [ ] For `gates` and `release`, their already-published runtime siblings
-      have passed an explicit private-registry round trip against the exact
-      tarball selected for publication. Do not replace this with a local
-      tarball dependency or a workspace link; either would hide the graph
-      closure being proven.
+- [ ] For every package with a first-party runtime dependency, its
+      already-published runtime siblings have passed an explicit
+      private-registry round trip against the exact tarball selected for
+      publication. Do not replace this with a local tarball dependency or a
+      workspace link; either would hide the graph closure being proven.
 
 ## 6. Publish
 
@@ -319,8 +323,8 @@ cleanly.
 
 ### Installing from GitHub Packages
 
-Installing a package from here needs a GitHub personal access token with
-`read:packages` scope — GitHub Packages requires authentication for every
+Installing a package from here needs a GitHub **classic** personal access token
+with `read:packages` scope — GitHub Packages requires authentication for every
 install regardless of registry visibility. For a private package, the token
 must also belong to an account with access granted. Add to the consuming
 project's `.npmrc` (never commit a real one):
@@ -379,8 +383,8 @@ since `package-lifecycle.json`'s schema is owned by the published
 before issue #282) and a new field there would force a version bump for
 what is really repository-tooling metadata — against the
 package's real GitHub Packages visibility, and fails when they disagree.
-This is the gate that would have caught `@vespeneventures/ui` sitting
-private across 12 published versions.
+This is the gate that would have caught the historical
+`@vespeneventures/ui` visibility mismatch across 12 published versions.
 
 It runs in two places, never as part of local `npm run check` (it needs a
 live `read:packages` token, which ordinary local development and fork CI
@@ -409,38 +413,31 @@ So when *every* declared package comes back `404`, the run exits `2`
 (could-not-run) rather than `0`. A single real answer anywhere is enough to
 trust the remaining `404`s as genuine.
 
-### Deprecating compatibility packages
+### Historical compatibility-package retirements
 
 The old `catalog`, `gates`, `release`, `repository`, `review`, `governance`,
-and `policy` names are published compatibility wrappers, not new integration
-targets. After their replacement version has passed registry qualification,
-migrate to the corresponding `@vespeneventures/controller` subpath. Do not
-unpublish these names: the compatibility wrapper remains the migration path.
+and `policy` names are retired historical identities, not current wrappers or
+installable migration paths. Their authoritative disposition is the
+`retired` status in `docs/contracts/package-lifecycle.json`; the live package
+registry is exactly the file's nineteen `published` entries. There are no
+current `deprecated` lifecycle entries and
+`docs/contracts/package-retention.json` is intentionally empty. Do not
+republish, copy, reuse, or select a retired name for a new integration.
 
-A deprecated name deliberately kept live on the registry this way must carry
-a matching entry in `docs/contracts/package-retention.json` (`name`,
-`reason`, `reviewBy`) — `scripts/check-package-visibility.mjs`'s
-registry-reconciliation half treats a live `"deprecated"` package with no
-retention entry, or one whose `reviewBy` has passed, as a finding: either
-renew the entry after review, or actually remove the package from the
-registry. Not every deprecated name in this repository's history stayed
-live — some were deliberately removed — so the gate cannot infer "deprecated
-and live" as automatically fine; it has to be declared, the same way
-`package-visibility.json` declares intended visibility rather than letting
-the gate assume one.
+The manual **Deprecate legacy packages** workflow remains a historical
+read-only capability check. GitHub Packages currently rejects `npm deprecate`
+metadata writes, and no retired name is a candidate for that mutation. The
+lifecycle records and their historical decision/migration references preserve
+the prior recuts without asserting that the retired artifacts remain live.
 
-GitHub Packages currently rejects `npm deprecate` metadata writes for this
-registry (including explicit versions with the job-scoped `packages: write`
-token). The manual **Deprecate legacy packages** workflow is retained for
-read-only plan verification, but do not use its `apply` mode unless GitHub
-Packages documents and demonstrates support. Lifecycle records and these
-wrapper READMEs are the authoritative migration notices in the meantime.
+## 7. The public npm registry: historical cancellation, conditionally superseded
 
-## 7. The public npm registry: considered, cancelled
-
-**Status: cancelled — this is a recorded decision, not a pending task.**
-Every package here publishes to GitHub Packages, and that is the canonical
-adoption lane. Nothing in this section is work waiting to be picked up.
+**Status: historical cancellation.** This section records the previous
+decision, which remains the live operating rule until
+[DECISIONS.md 18](DECISIONS.md#18-producer-owned-catalogue-distribution-cutover)
+has passed its stated gates. Decision 18 replaces it only through its finite,
+producer-owned transfer and whole-catalogue recut; it does not restore the old
+runbook or permit a package-by-package migration.
 
 Earlier revisions of this document carried a ten-step, owner-only runbook
 for moving the canonical install source to `https://registry.npmjs.org`.
@@ -479,9 +476,9 @@ default answer is also no" exists to refuse.
   declaring both the scope and the registry, and
   `node scripts/set-registry.mjs --check` (`npm run check:registry`, CI job
   `registry drift`) still fails if any package's `publishConfig.registry`
-  drifts from it. That gate matters *more* under a settled registry than it
-  did under a pending migration — it is what keeps every package agreeing on
-  one answer.
+  drifts from it. It keeps every current package agreeing on one answer;
+  decision 18 requires its history-aware successor before a later
+  whole-catalogue recut.
 - `scripts/check-name-collision.mjs` still runs before every publish. Its
   reason is GitHub Packages' own owner-scoped namespace and the silent
   version-append failure that namespace allows — unrelated to which
@@ -489,23 +486,36 @@ default answer is also no" exists to refuse.
 - The documented consumer path — this file's ["Installing from GitHub
   Packages"](#installing-from-github-packages) section and
   [`README.md`'s "Installing" section](../README.md#installing) — describes
-  an authenticated install because that is what actually works. It no
-  longer describes an intended end state, because there is no longer a
-  different one pending.
+  an authenticated install because that is what actually works today. It
+  remains the current path until decision 18's evidence-gated cutover changes
+  the single scope/registry declaration.
 
-### If this is ever revisited
+### Current cutover constraint
 
-The bar is the one any speculative capability faces here: a real consumer
-that needs it, not one that might. Reopening would mean a fresh decision
-recorded in [`docs/DECISIONS.md`](DECISIONS.md#2-the-registry--github-packages),
-and a runbook rewritten against whatever npm's publishing and trusted-publisher
-surface looks like then — not this one restored from git history.
+Until the complete decision 18 1D whole-catalogue recut passes, GitHub
+Packages is the current sole publication and installation lane for this
+source. During 1D, the complete current catalogue must move together: the
+scope/registry declaration, every manifest and first-party dependency,
+lockfile, imports, documentation, inactive repository-source and workflow
+preparation, and registry-specific verification. Before that recut,
+history-aware scope/registry machinery and regression gates must preserve
+legacy lifecycle, retention, and decision identities. No candidate-namespace
+package may be published before the complete 1D recut passes. Old-namespace
+versions remain immutable legacy packages.
 
-## 8. Canonical registry qualification
+After that passed recut, 1E first publishes the Advisor + Starter + Controller
+Trio in its fixed owner-present order. A later new-namespace package may
+publish only after every one of its first-party runtime dependencies is already
+published and verified in that same candidate namespace; the runtime graph
+above, not workspace order, governs the rest of the catalogue.
 
-GitHub Packages is the canonical publication and installation lane. Existing
-package names and versions remain there; do not unpublish, delete, copy, or
-reuse them as part of consumer adoption.
+## 8. Canonical registry qualification before cutover
+
+Until decision 18's 1D recut passes, GitHub Packages is the canonical
+publication and installation lane. Existing package names and versions remain
+there; do not unpublish, delete, copy, or reuse them as part of consumer
+adoption. The decision's distinct post-transfer public-npm procedure governs
+only after that gate; it does not relax any of this source's current checks.
 
 For every package whose lifecycle status is `published`:
 
@@ -520,8 +530,9 @@ For every package whose lifecycle status is `published`:
    registry digest comparison; use `verify_only` to qualify an older existing
    registry version without publishing a duplicate.
 4. Record the package's lifecycle state and replacement guidance in
-   `docs/contracts/package-lifecycle.json`. Deprecated compatibility names
-   remain installable migration artifacts and are not new adoption targets.
+   `docs/contracts/package-lifecycle.json`. The current registry is exactly
+   its `published` entries; retired historical names are not installable
+   migration artifacts or new adoption targets.
 
 Consumers separately prove an authenticated install of each exact package they
 adopt. They own their registry mapping, credential reference, lockfile, and

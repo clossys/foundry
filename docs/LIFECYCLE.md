@@ -429,8 +429,8 @@ The derivable half is now derived. The rest is not, and is declared:
   loop shapes may need an externally produced standing count or observed
   outcome.
 
-Two instances of exactly the drift this gate exists to stop were found while
-writing this document, in prose the gate does not read: this
+**Historical note:** Two instances of exactly the drift this gate exists to
+stop were found while writing this document, in prose the gate does not read: this
 repository's own README described `builder` and `ledger` as each having one
 runtime dependency, naming `governance` and `policy` respectively. Both of
 those names are retired, and both packages actually depend on `controller`.

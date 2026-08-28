@@ -29,10 +29,16 @@ name can't drift from the declaration.
 declared together in [`package-scope.json`](../package-scope.json) — one file,
 one source of truth for both.
 
+This is the live source-of-truth until the bounded producer cutover in
+[decision 18](#18-producer-owned-catalogue-distribution-cutover) reaches its
+post-transfer recut milestone. That decision supersedes the cancelled npmjs
+migration only on its stated evidence and gates; it does not authorize an
+intermediate package, scope, registry, or source-repository change.
+
 The trade-off, accepted deliberately rather than defaulted into:
 
-- Installing needs a GitHub personal access token with `read:packages` — a
-  GitHub Packages platform behavior that applies to every registry read
+- Installing needs a GitHub **classic** personal access token with
+  `read:packages` — a GitHub Packages platform behavior that applies to every registry read
   regardless of visibility, not a permissions choice made here. Package
   visibility is a separate, per-package decision (see
   [docs/PUBLISHING.md](PUBLISHING.md#package-visibility)), not a consequence
@@ -43,9 +49,12 @@ The trade-off, accepted deliberately rather than defaulted into:
   supersedes the migration issue (#194) and the credentialless acceptance
   criteria in its umbrella program (#196). Both are closed as not planned.
 
-  GitHub Packages is therefore the canonical adoption lane, not a staging
-  step on the way somewhere else. Consumers authenticate through whichever
-  plane owns their package credentials.
+  GitHub Packages is therefore the current canonical adoption lane.
+  Consumers authenticate through whichever plane owns their package
+  credentials. It remains the single authority unless the later, bounded
+  producer-owned cutover in decision 18 passes its transfer and
+  whole-catalogue gates; that is not a package-by-package exception to the
+  current lane.
 
   The reasoning, since "we changed our mind" is not a reason: the first
   step of that migration was verifying and, if unclaimed, **claiming
@@ -161,15 +170,16 @@ The fix was not a stricter schema. It was deleting the schema and computing
 every one of its questions from data that was always real: whether a
 package's dependency actually resolves is now answered by reading its own
 `dependencies`/`peerDependencies`, not a separately-maintained declaration
-of the same fact. `@vespeneventures/catalog` answers exactly that question,
+of the same fact. `@vespeneventures/controller/catalog` answers exactly that question,
 from exactly that data — see its README. Every package remaining in this
 repository shares the same thesis: a check runs against what is actually on
 disk or actually installed, never against what a manifest claims about
 itself.
 
-A previously-published version, `@vespeneventures/contract@0.1.0`, still
-exists on the registry — see [docs/PUBLISHING.md](PUBLISHING.md) for why a
-published name can never be reused, deleted from the tree or not.
+A historical `@vespeneventures/contract@0.1.0` publication no longer appears
+in the current registry. Its removed name is nevertheless unavailable for a
+new package; see [docs/PUBLISHING.md](PUBLISHING.md) for that historical
+identity rule.
 
 ## 5. Deleting `web-charts` and `web-storage`
 
@@ -197,6 +207,11 @@ installable compatibility surface.
 
 ## 7. Consolidating `tokens` and `voice`
 
+**Historical decision — superseded by the current lifecycle and registry
+contract.** The package names and consumer instructions in this section record
+the earlier consolidation only; they are not current installation or migration
+guidance.
+
 **Status:** `@vespeneventures/tokens` and `@vespeneventures/voice` are
 deprecated registry artifacts. Their source packages were consolidated into
 `@vespeneventures/ui` and `@vespeneventures/copy`, respectively, on
@@ -214,6 +229,10 @@ handoff; no compatibility re-export is retained in this workspace.
 ---
 
 ## 8. Consolidating package-process surfaces under `governance`
+
+**Historical decision — superseded by decision 9.** The package names and
+compatibility state in this section describe the earlier recut only; the
+current lifecycle and registry contract is authoritative.
 
 **Status:** the supported package-process surface is
 `@vespeneventures/governance@^0.2.0`. Its `./catalog`, `./gates`,
@@ -349,9 +368,10 @@ on the same rule stated more precisely:
 > If the name is a thing rather than a doer, it is an artifact — and an
 > artifact belongs inside a role.
 
-`strategy`, `copy`, `ui`, `surface` and `ledger` are all things. None of them
-names who is accountable for anything, so none of them can be asked a question
-it alone must answer. Four roles can:
+The now-retired historical package names `strategy`, `copy`, `ui`, `surface`,
+and `ledger` were all things. None named who was accountable for anything, so
+none could be asked a question it alone must answer. Their current role
+packages are:
 
 | role | from | the question only it answers |
 | --- | --- | --- |
@@ -905,6 +925,217 @@ read-only repository observation, durable engagement state, and explicit
 mutation approval. It loads an immutable Advisor and catalogue release. The
 entry workflow is not installed as a machine-wide skill and public `main`
 never substitutes for a trusted package release.
+
+## 18. Producer-owned catalogue distribution cutover
+
+### Measurement before the decision
+
+The source catalogue has nineteen current package directories. Its only
+first-party runtime edges are `builder -> controller`, `inspector ->
+controller`, and `publisher -> controller`, `designer`, and `writer`.
+Controller lists Advisor as a development dependency, not a runtime edge.
+Issue [#567](https://github.com/vespeneventures/foundry/issues/567) is the
+durable execution record for this producer catalogue, registry, and repository
+cutover. Issue #557 remains only the required consumer authority-convergence
+dependency.
+An apparent package-by-package namespace move would therefore leave Builder
+and Inspector able to bring Controller, and Publisher able to bring three
+distinct first-party packages. A successful install is not proof that those
+copies form one authority; #557 supplies the required convergence declaration
+and checker for that risk.
+
+The old GitHub Packages source is public and usable today. Its published
+versions are immutable registry history, not a staging area that can be
+rewritten in place. Conversely, a destination repository created before the
+source transfer would make two producer authorities before the catalogue and
+release controls have moved together.
+
+The representative Trio is **Advisor + Starter + Controller**, not an earlier
+conceptual Advisor + Builder + Controller grouping. Starter is the narrow
+trusted-base adoption/activation coordinator and is deliberately proven beside
+the two packages that establish the first runtime-closed publication set.
+Advisor before Controller is engagement sequencing — Advisor establishes the
+assessment position before Controller's first-wave position — not a manifest
+dependency or a claim that Controller imports Advisor at runtime.
+Builder remains a separate desired-state/live-state reconciliation package:
+the Trio neither renames nor replaces it, and producer proof of the Trio does
+not claim Builder adoption, activation, or any consumer outcome.
+
+Starter is explicit executable tooling, not a role package. Its producer proof
+qualifies the trusted-base consumer foundation/activation path — including the
+consumer-owned `0`/`1`/`2` outcomes and rollback — without claiming adoption,
+grounding, or closure for Starter itself; those lifecycle cells are N/A.
+Advisor and Controller remain role packages: their later consumer adoption and
+independent outcomes are separate role-loop evidence, never an effect of the
+Trio's producer qualification.
+
+### Decision
+
+This is a producer-owned, finite cutover to a planned public-npm candidate.
+The candidate scope and registry are selected only after transfer, with
+ownership and availability evidence, and become active only when declared
+through the single authority, `package-scope.json`. This decision does not
+reserve or activate a future scope. It is not an authorization to publish,
+transfer, create a target repository, change `package-scope.json`, change a
+package manifest, or alter a provider in this decision commit. The current
+source, scope, GitHub Packages registry, package versions, and publish lane
+remain authoritative until the milestone that explicitly changes them.
+
+The source repository transfers directly to the platform destination confirmed
+by the transfer authorization; no target platform repository is created
+beforehand. The old source stays usable during the proof period. Transfer is
+permitted only after the representative Trio proof and the transfer gates below
+are recorded for one exact source head.
+
+After transfer, one coherent exact-head change recuts the *whole current
+catalogue* from the old source namespace and GitHub Packages to the new public
+npm namespace. It includes the single scope/registry declaration, every
+manifest and first-party dependency, package-lock, imports, documentation,
+and inactive repository-source and workflow preparation for the later publish
+lane, plus the registry-specific gates that still apply. It does not activate
+any provider-side npm trusted publisher or provenance setting. No package may
+be published in the new namespace before that complete recut passes its
+checks. This is deliberately a catalogue cut,
+not a compatibility period in which a first-party runtime edge crosses
+namespaces.
+
+Existing old-namespace versions remain immutable legacy packages. They are
+not republished, deleted, yanked, renamed, or made to forward to a new name.
+Their lifecycle and retention records continue to describe their registry
+disposition; a new-namespace package is a distinct future publication, never
+a replacement upload under an old name.
+
+### Milestones and gates
+
+| Milestone | Producer-owned result | Required evidence before advancing |
+| --- | --- | --- |
+| **1A — decision and inventory** | Record this architecture, exact catalogue inventory, dependency edges, legacy dispositions, and the fixed first-publication order. No operational mutation. | This decision passes the normal repository gates in FULL safety mode. |
+| **1B — representative Trio proof** | Qualify the runtime-closed Advisor + Starter + Controller set from one exact current-source head, while the old public source remains usable. The proof is producer qualification, never consumer adoption. For Starter, it qualifies the consumer-owned trusted-base foundation/activation, `0`/`1`/`2`, and rollback path; it does not turn executable tooling into a role. | FULL preflight and isolated tarball installation/import proof for each exact candidate. Starter's **exact installed CLI** must record a satisfied (`0`), violated (`1`), and indeterminate (`2`) result from consumer-owned evidence, plus a verified rollback; raw command, inputs, exit code, and output are retained. Advisor-before-Controller is recorded as engagement sequencing, not dependency order. A workspace link does not count. |
+| **1C — transfer** | Transfer this exact source repository directly to the authorized platform destination; do not create a separate target platform repository. | 1B's exact-head evidence; a clean FULL source-tree safety result; confirmed destination ownership and transfer authority; an explicit transfer record; and #557 implemented as a machine-readable singular-authority declaration and checker with positive and negative controls. The recorded checker result must cover current and planned candidate scopes. Absence of a finding is not evidence. |
+| **1D — whole-catalogue recut** | After transfer only, change every current source package and every first-party edge to the selected public-npm scope and registry in one coherent source change. Prepare and validate only inactive repository-source and workflow configuration for the later publish lane; do not activate provider-side npm trusted-publisher or provenance settings, and do not publish. | **Before any setter runs**, scope/registry machinery is history-aware: it preserves legacy lifecycle, retention, and decision identities; regression gates prove that preservation; and the selected candidate's ownership/availability evidence is recorded. Then `set-scope --check`, structural registry-drift and manifest-graph checks, workspace-link integrity, FULL safety, build, typecheck, tests, and review all pass on the recut head. Live registry parity is impossible before a candidate package exists and is deferred to 1E. No candidate-namespace package, provider-side npm trusted-publisher activation, provenance emission, or provider trust exists yet. |
+| **1E — first public-npm publications** | Treat Advisor, Starter, and Controller as one exact Trio release cohort. Before the first irreversible publication, every candidate passes FULL preflight, selected-tarball scan, and isolated installed canary; Starter's canary includes its required exact CLI evidence. Publish and verify Advisor, then Starter, then Controller, with the owner present for each first identity publication. Only after all three identities have registry-served digest and public visibility/access proof, activate the npm trusted publisher for each package. Then publish one or more later, bounded patch releases through that trusted publisher and verify the registry provenance attached to each of those releases. | One exact-head record names all three candidates and their successful pre-publication evidence; every first identity publication has owner-present, registry-served digest, and public visibility/access evidence. After every Trio or later candidate publication, run and record live registry-parity verification for that published identity (manifest name/version, public visibility/access, and served digest); it is the required 1E post-publication proof, not a 1D pre-publication gate. Each later provenance proof records its patch release, trusted-publisher execution, registry-served digest, and registry provenance verification. If a later candidate, publication, or verification fails after Advisor or Starter has published, fail closed: stop the release and quarantine the incomplete Trio; inventory every already-published immutable member (name, version, digest, visibility, and disposition); invalidate the unpublished candidate artifacts; and never delete or reuse any published version. Deprecate a published member if the registry supports that mutation, otherwise record the unsupported result and its immutable disposition. A defective published member needs a corrected forward version; requalify it and every dependent or remaining candidate from an exact head. Resume only when the whole-tree authority declaration and all current cohort gates pass again. Builder and Inspector wait for Controller; Publisher waits for Controller, Designer, and Writer. |
+
+### W1D packed-artifact lifecycle boundary
+
+W1D is an exhaustive lifecycle gate across the npm-packed contents of all 19
+current packages, not a two-file exception. The producer cutover owner records
+the generated inventory in #567 from each package's actual
+`npm pack --dry-run --json` file list and packed-content scan. It lists every
+active retired fully-qualified package identity, import, install instruction,
+or use instruction with the package owner, source and packed paths, exact
+line/evidence, current version, and tarball digest. The current Controller
+runner-conventions reference to `@vespeneventures/conventions/runner` and
+Designer `TOKENS.md` current-tense Copy, Strategy, and Surface API references
+are known examples, not the boundary of the inventory. Explicitly historical
+references remain only when unambiguously labeled historical and
+non-instructional; no active retired identity/import/install guidance may
+remain in any packed content.
+
+For every affected package, that inventory records one executable disposition:
+the named owner, corrected source, semver bump, owner-present public forward
+release and clean-pack proof for a legacy correction, or the planned
+new-namespace release carried by the complete 1D recut where that is the
+appropriate disposition. It also records the exact scan, preflight, canary,
+registry, and digest evidence; requalification of every dependent and
+remaining candidate; and the command/output/digest binding for each result.
+No candidate-namespace package may publish until the inventory is complete,
+every disposition is current, and a zero-residual packed-content scan proves
+the absence of active retired identity/import/install guidance.
+
+The evidence that made this a blocker is `npm run check:release-readiness`
+exiting `1` on the 1A decision diff: a same-version correction changes packed
+content and requires a release. It does not authorize a legacy version bump,
+republish, or mixed-namespace repair in 1A. The exit condition belongs to 1D:
+after transfer, the designated producer recuts the complete catalogue as one
+history-aware new-namespace source change, carries every required correction
+into the recut artifacts, and records the required FULL, clean-pack,
+preflight, canary, registry, and review evidence before 1E. Until then, the
+immutable legacy bytes and their current lifecycle/retention records stay
+unchanged.
+
+The first publication of **each** Trio identity is intentionally owner-present,
+not delegated to an ambient credential or assumed from repository transfer.
+Those three verifications establish the initial public package identities.
+Only after the complete Trio has that evidence may each package's npm trusted
+publisher be activated. Activation establishes trust only: a later eligible,
+bounded patch release must publish through that trusted publisher before the
+registry can emit provenance for that release. Record and verify the registry
+provenance for every such patch release. Neither path changes the requirement
+for a human to review every packed artifact before an immutable publication.
+
+An incomplete Trio is never silently treated as a successful first release.
+If Advisor alone, or Advisor and Starter, are already published when the next
+member fails, the release record inventories the published immutable member or
+members and their disposition, quarantines the entire incomplete cohort, and
+invalidates the unpublished artifacts. A published defective member is
+corrected only by a forward version; its dependents and every remaining Trio
+candidate are requalified from the new exact head. The process never deletes,
+overwrites, or reuses an immutable package version to make the cohort appear
+atomic after the fact, and it resumes only with current whole-tree authority
+and gate evidence.
+
+### Current-source catalogue inventory and disposition
+
+Every row below is a source package that exists at this decision's head. The
+dependency column is the complete first-party runtime graph read from the
+manifests; `none` means no first-party runtime dependency. Each row becomes a
+same-name package in the new public-npm namespace only after 1D. The old
+namespace version remains immutable legacy history in every case.
+
+| Current package | First-party runtime dependencies | New-namespace disposition |
+| --- | --- | --- |
+| `starter` | none | Trio first; publish independently after Advisor. |
+| `advisor` | none | Trio first; publish first for engagement sequencing. |
+| `architect` | none | Publish only after the coherent 1D recut. |
+| `bouncer` | none | Publish only after the coherent 1D recut. |
+| `builder` | `controller` | Separate desired-state/live-state reconciliation package; wait for new Controller. It is not renamed, replaced, or claimed adopted by the Trio. |
+| `butler` | none | Publish only after the coherent 1D recut. |
+| `controller` | none (`advisor` is development-only) | Trio first; publish after Advisor for engagement sequencing, not runtime closure. |
+| `designer` | none | Publish only after the coherent 1D recut. |
+| `giver` | none | Publish only after the coherent 1D recut. |
+| `influencer` | none | Publish only after the coherent 1D recut. |
+| `inspector` | `controller` | Wait for new Controller. |
+| `integrator` | none | Publish only after the coherent 1D recut. |
+| `keeper` | none | Publish only after the coherent 1D recut. |
+| `locksmith` | none | Publish only after the coherent 1D recut. |
+| `messenger` | none | Publish only after the coherent 1D recut. |
+| `observer` | none | Publish only after the coherent 1D recut. |
+| `publisher` | `controller`, `designer`, `writer` | Wait for all three new dependencies. |
+| `strategist` | none | Publish only after the coherent 1D recut. |
+| `writer` | none | Publish only after the coherent 1D recut. |
+
+The registry inventory also contains historical package names that no longer
+have current source directories: `auth`, `catalog`, `comms`, `consent`,
+`conventions`, `copy`, `deployment`, `domain`, `domain-model`, `gates`,
+`governance`, `ledger`, `policy`, `provisioning`, `release`, `repository`,
+`review`, `secret-scan`, `secrets`, `strategy`, `surface`, `tokens`, `ui`,
+`verify-standards`, `voice`, `web-charts`, and `web-storage`; the earlier
+removed `contract` name is also legacy history. They receive no
+candidate-namespace counterpart.
+
+The executable legacy disposition for `copy`, `ledger`, `strategy`, `surface`,
+and `ui` is **retired**: `package-lifecycle.json` says so and the visibility
+gate's declarations-only mode skips their retention records because retention
+only justifies a lifecycle status of `deprecated`. The old retention entries
+were therefore stale, non-operative metadata rather than evidence that those
+names remain live. This decision removes that ambiguity by leaving the five
+names retired with no retention declaration. No retired or removed artifact is
+revived by this cutover.
+
+### Boundary conditions
+
+- A package install, an isolated producer qualification, a consumer adoption,
+  and independent outcome evidence remain distinct lifecycle facts.
+- A consumer migration must not combine old- and new-namespace packages as
+  though installation success proved one authority. Issue #557 is the durable
+  convergence control for that risk; this decision neither duplicates nor
+  closes it.
+- No old-namespace version bump is a cutover mechanism. The legacy catalogue
+  remains a readable immutable record while new consumers are directed only to
+  a completed new-namespace release.
+- A failed 1B, 1C, 1D, or 1E gate leaves the then-current source and registry
+  authoritative. It does not authorize a partial retry on a second source
+  repository or a mixed-namespace publish.
 
 ## Settled
 
