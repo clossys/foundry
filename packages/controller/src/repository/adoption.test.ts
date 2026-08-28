@@ -64,6 +64,67 @@ describe("RepositoryPackageAdoptionV1", () => {
     expect(evaluateRepositoryPackageAdoption({ ...input(activation), rulesetObservation: ruleset(activation) })).toMatchObject({ result: { verdict: "satisfied" }, phase: "activation", status: "activated" });
   });
 
+  it("requires graph evidence that exactly joins an adopted singular authority", () => {
+    const ordinary = copy(fixture); ordinary.events.length = 1;
+    const foundation = copy(ordinary);
+    foundation.package.singularAuthority = "repository-adoption";
+    foundation.events[0].candidate.singularAuthority = "repository-adoption";
+    const green = {
+      lockfile: { format: "npm" as const, content: JSON.stringify({ lockfileVersion: 3, packages: {
+        "": { devDependencies: { "@example/repository-adoption": "1.2.3" } },
+        "node_modules/@example/repository-adoption": { version: "1.2.3" },
+      } }) },
+      declarations: [{ packageName: "@example/repository-adoption", authority: "repository-adoption" }],
+      target: { authority: "repository-adoption", version: "1.2.3" },
+    };
+    expect(evaluateRepositoryPackageAdoption({ ...input(foundation), singularAuthorityConvergence: green }))
+      .toMatchObject({ result: { verdict: "satisfied" }, status: "foundation-ready" });
+    const aliasWithDisposedAdoptedCopy = {
+      ...green,
+      declarations: [...green.declarations, { packageName: "@example/repository-alias", authority: "repository-adoption" }],
+      lockfile: { format: "npm" as const, content: JSON.stringify({ lockfileVersion: 3, packages: {
+        "": { dependencies: { "@example/repository-adoption": "1.1.0", "@example/repository-alias": "1.2.3" } },
+        "node_modules/@example/repository-adoption": { version: "1.1.0" },
+        "node_modules/@example/repository-alias": { version: "1.2.3" },
+      } }) },
+      dispositions: [{ authority: "repository-adoption", node: "node_modules/@example/repository-adoption", kind: "isolated-non-authoritative-helper" as const, reference: "urn:example:isolated-adopted-copy" }],
+    };
+    expect(evaluateRepositoryPackageAdoption({ ...input(foundation), singularAuthorityConvergence: aliasWithDisposedAdoptedCopy }))
+      .toMatchObject({ result: { verdict: "violated" }, findings: [{ rule: "singular-authority-convergence" }] });
+    let filterReads = 0;
+    const hostileDispositions = new Proxy([] as never[], {
+      get(target, property, receiver) {
+        if (property === "filter" && ++filterReads > 1) throw new Error("second disposition read");
+        return Reflect.get(target, property, receiver);
+      },
+    });
+    const hostileReport = evaluateRepositoryPackageAdoption({ ...input(foundation), singularAuthorityConvergence: { ...green, dispositions: hostileDispositions } });
+    expect(hostileReport).toMatchObject({ result: { verdict: "indeterminate", reason: "singular-authority-convergence-indeterminate" } });
+    expect(evaluateRepositoryPackageAdoption(input(foundation)))
+      .toMatchObject({ result: { verdict: "indeterminate", reason: "singular-authority-convergence-indeterminate" } });
+    expect(evaluateRepositoryPackageAdoption({ ...input(ordinary), singularAuthorityConvergence: green }))
+      .toMatchObject({ result: { verdict: "violated" }, findings: [{ rule: "singular-authority-convergence" }] });
+    const unrelated = { ...green, declarations: [{ packageName: "@example/other", authority: "repository-adoption" }] };
+    expect(evaluateRepositoryPackageAdoption({ ...input(foundation), singularAuthorityConvergence: unrelated }))
+      .toMatchObject({ result: { verdict: "violated" }, findings: [{ rule: "singular-authority-convergence" }] });
+    const wrongVersion = { ...green, target: { authority: "repository-adoption", version: "1.2.4" } };
+    expect(evaluateRepositoryPackageAdoption({ ...input(foundation), singularAuthorityConvergence: wrongVersion }))
+      .toMatchObject({ result: { verdict: "violated" }, findings: [{ rule: "singular-authority-convergence" }] });
+    const updateRequired = {
+      ...green,
+      lockfile: { format: "npm" as const, content: JSON.stringify({ lockfileVersion: 3, packages: {
+        "": { dependencies: { "@scope/builder": "^0.7.0", "@example/repository-adoption": "1.2.3" } },
+        "node_modules/@scope/builder": { version: "0.7.1", dependencies: { "@example/repository-adoption": "^1.3.0" } },
+        "node_modules/@example/repository-adoption": { version: "1.2.3" },
+      } }) },
+    };
+    expect(evaluateRepositoryPackageAdoption({ ...input(foundation), singularAuthorityConvergence: updateRequired }))
+      .toMatchObject({ result: { verdict: "violated" }, findings: [{ rule: "singular-authority-convergence" }] });
+    const indeterminate = { ...green, lockfile: { format: "npm" as const, content: JSON.stringify({ lockfileVersion: 1, packages: {} }) } };
+    expect(evaluateRepositoryPackageAdoption({ ...input(foundation), singularAuthorityConvergence: indeterminate }))
+      .toMatchObject({ result: { verdict: "indeterminate", reason: "singular-authority-convergence-indeterminate" } });
+  });
+
   it("requires every stable profile coverage axis and profile v3", () => {
     const missing = input();
     missing.stableProfileCoverage.pop();
@@ -127,6 +188,10 @@ describe("RepositoryPackageAdoptionV1", () => {
     expect(validateRepositoryPackageAdoption(range).some((entry) => entry.rule === "package-version")).toBe(true);
     const invalidSri = copy(fixture); invalidSri.package.integrity = "sha512-dGVzdA==";
     expect(validateRepositoryPackageAdoption(invalidSri).some((entry) => entry.rule === "package-integrity")).toBe(true);
+    const invalidAuthority = copy(fixture); invalidAuthority.package.singularAuthority = "Controller"; invalidAuthority.events[0].candidate.singularAuthority = "Controller";
+    expect(validateRepositoryPackageAdoption(invalidAuthority)).toEqual(expect.arrayContaining([expect.objectContaining({ rule: "package", path: "package.singularAuthority" })]));
+    const authorityMismatch = copy(fixture); authorityMismatch.package.singularAuthority = "controller"; authorityMismatch.events[0].candidate.singularAuthority = "other";
+    expect(validateRepositoryPackageAdoption(authorityMismatch)).toEqual(expect.arrayContaining([expect.objectContaining({ rule: "event-package-mismatch", path: "events[0].candidate" })]));
     const multi = copy(fixture); multi.packages = [multi.package];
     expect(validateRepositoryPackageAdoption(multi).length).toBeGreaterThan(0);
     const accessor = copy(fixture); Object.defineProperty(accessor, "id", { get: () => "unsafe", enumerable: true });

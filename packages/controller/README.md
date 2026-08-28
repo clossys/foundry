@@ -909,6 +909,18 @@ manifest, lockfile, clean-install, invocation, duplicate-removal, and rollback
 references exactly match the adoption record, so those facts have no competing
 authority.
 
+An adoption package identity may declare a lowercase `singularAuthority`; if
+it does, every retained event package identity must repeat it exactly. The
+evaluator then requires `singularAuthorityConvergence` as raw
+`SingularAuthorityCheckInput` for a frozen consumer lock. Its target must name
+that authority at the adoption package's exact version, and its declarations
+must map the adopted package name to that same authority. A known duplicate or
+compatibility update is a violation; unsupported, unresolved, or
+override-proof-required graph evidence (including a missing operand) is
+indeterminate. Ordinary package records omit both fields; unrelated convergence
+input cannot clear them. This is not the simulated-consumer qualification
+orchestration tracked separately in issue #556.
+
 ```ts
 import { evaluateRepositoryPackageAdoption } from "@vespeneventures/controller/repository";
 
@@ -1693,6 +1705,49 @@ const report = await preflightGovernedPackage(process.cwd(), "packages/widgets",
 });
 if (!report.ok) process.exitCode = 1;
 ```
+
+### Singular authority convergence
+
+Some packages represent one operating authority in a consumer scope. They
+declare that fact in their package manifest as
+`"foundry": { "singularAuthority": "<authority-id>" }`; Controller is the
+first pilot with `"controller"`. This is not a ban on duplicate ordinary
+libraries.
+
+Before a producer treats a frozen simulated-consumer lock as converged, collect
+the relevant exact package declarations and run the installed check against
+that lock:
+
+```bash
+singular-authority-check package-lock.json singular-authorities.json
+# or
+singular-authority-check pnpm-lock.yaml singular-authorities.json
+```
+
+`singular-authorities.json` is caller-owned `SingularAuthorityCheckInput`
+without its `lockfile` field: it supplies the declared package-to-authority
+mapping, target authority/version, and any bounded dispositions. The report
+lists each resolved version and each edge that introduced it. A compatible
+single version exits `0`; an undisposed duplicate or a required producer
+compatibility update exits `1`; unsupported lock/range shapes, a missing target,
+and an override awaiting executable compatibility proof exit `2`. A declared
+isolated non-authoritative helper may exit `0`, but is explicitly reported as a
+disposition, never as single-version convergence. This check does not execute
+the consumer or authenticate retained references, and it does not establish
+the exact-candidate qualification record, consumer adoption, grounding, or
+closure.
+
+pnpm v9 snapshot edges retain their exact resolved target but not every
+depender's declared semver range. When qualifying a target, supply a
+`dependencyConstraints` entry for each such non-helper authority edge with its
+exact parsed `from` node, dependency package, declared range, and (where
+needed) exact `to` node. The checker binds it to one real edge, rejects an
+unmatched or conflicting constraint, and never lets it replace a conflicting
+lock-carried npm range.
+
+Programmatic producer preflight can include the same caller-owned graph through
+`PreflightPackageOptions.authorityConvergence`; once supplied, a non-converged
+graph makes the preflight fail. Omitting it means no graph claim is made.
 
 ## CLI
 

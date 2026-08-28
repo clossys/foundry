@@ -53,11 +53,12 @@ describe("combinePreflightOk — exhaustive truth table (regression for a flippe
   // flipped operator. Each row below makes at least one operand the sole
   // reason the result is `false`, which a masked `true && true` never can.
   it.each([
-    [false, true, true],
-    [false, false, false],
-    [true, true, false],
-    [true, false, false],
-  ])("hasCatalogError=%s, roundTripOk=%s -> ok=%s", (hasCatalogError, roundTripOk, expected) => {
-    expect(combinePreflightOk(hasCatalogError, roundTripOk)).toBe(expected);
+    [false, true, true, true],
+    [false, true, false, false],
+    [false, false, true, false],
+    [true, true, true, false],
+    [true, false, false, false],
+  ])("hasCatalogError=%s, roundTripOk=%s, authorityOk=%s -> ok=%s", (hasCatalogError, roundTripOk, authorityOk, expected) => {
+    expect(combinePreflightOk(hasCatalogError, roundTripOk, authorityOk)).toBe(expected);
   });
 });

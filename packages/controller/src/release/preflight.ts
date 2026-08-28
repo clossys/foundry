@@ -19,6 +19,7 @@ import { join, resolve } from "node:path";
 // minimum-import-graph reasoning governance.ts gives.
 import { runFoundationCheck } from "../gates/foundation.js";
 import { packRoundTrip, type PackRoundTripOptions } from "./pack-round-trip.js";
+import { checkSingularAuthority, type SingularAuthorityCheckInput } from "./singular-authority.js";
 import type { PreflightReport } from "./types.js";
 
 /** Options for `preflightPackage`. */
@@ -29,6 +30,13 @@ export interface PreflightPackageOptions {
    * for its registry or timeout controls without weakening its environment
    * isolation. */
   roundTrip?: PackRoundTripOptions;
+  /**
+   * Optional caller-owned frozen consumer graph. When supplied, its singular
+   * authority result becomes a required preflight operand. Omitting it does
+   * not claim a simulated-consumer qualification exists; #556 owns that
+   * exact-candidate record and is intentionally separate.
+   */
+  authorityConvergence?: SingularAuthorityCheckInput;
 }
 
 /**
@@ -46,8 +54,8 @@ export interface PreflightPackageOptions {
  * disagree, or where dropping the `!` would change the answer, can catch
  * those.
  */
-export function combinePreflightOk(hasCatalogError: boolean, roundTripOk: boolean): boolean {
-  return !hasCatalogError && roundTripOk;
+export function combinePreflightOk(hasCatalogError: boolean, roundTripOk: boolean, authorityOk = true): boolean {
+  return !hasCatalogError && roundTripOk && authorityOk;
 }
 
 /**
@@ -78,8 +86,9 @@ export async function preflightPackage(
 
   const roundTrip = await packRoundTrip(absPackageDir, options?.roundTrip);
 
+  const authorityConvergence = options?.authorityConvergence ? checkSingularAuthority(options.authorityConvergence) : undefined;
   const hasCatalogError = catalogFindings.some((finding) => finding.severity === "error");
-  const ok = combinePreflightOk(hasCatalogError, roundTrip.ok);
+  const ok = combinePreflightOk(hasCatalogError, roundTrip.ok, authorityConvergence?.ok ?? true);
 
-  return { packageName, catalogFindings, roundTrip, ok };
+  return { packageName, catalogFindings, roundTrip, authorityConvergence, ok };
 }

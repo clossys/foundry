@@ -84,6 +84,27 @@ package preflight is used only by the producer that intends to publish;
 ordinary consuming workspaces run its lifecycle check without any registry
 write.
 
+### Singular authority convergence
+
+Where a candidate package declares `foundry.singularAuthority`, a producer
+simulated-consumer run must keep that authority to one resolved version or
+record a bounded disposition. Use Controller's installed
+`singular-authority-check` on the frozen npm v2/v3 or bounded pnpm v9 lock,
+with caller-supplied declarations collected from the exact candidate manifests.
+The result must retain exact resolved versions and introducing dependency edges.
+An out-of-range target says the installed depender needs a compatibility-range
+release; an override is indeterminate until executable compatibility proof;
+and an explicitly isolated non-authoritative helper is a disposition, not a
+single-authority claim. This is a graph check only. It does not substitute for
+the exact-candidate simulated-consumer qualification record, real consumer
+adoption, grounding, or closure.
+
+Because pnpm v9 snapshots retain resolved transitive targets but not every
+depender's declared range, target qualification supplies caller-retained exact
+dependency constraints bound to parsed snapshot edges. An unmatched or
+conflicting constraint, or a non-helper authority edge without an effective
+range, is indeterminate; it never becomes a compatibility pass.
+
 ## 1. Copy the source — and only the source
 
 - [ ] Copy `src/`, `tsconfig.json`, and the test config. Nothing else.

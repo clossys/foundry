@@ -5,6 +5,7 @@
  */
 
 import type { CatalogFinding, Finding } from "../gates/index.js";
+import type { SingularAuthorityReport } from "./singular-authority.js";
 
 /**
  * The outcome of checking one subpath of a package's own `exports` field,
@@ -113,6 +114,8 @@ export interface PreflightReport {
   catalogFindings: CatalogFinding[];
   /** The real `packRoundTrip` result for `packageDir`. */
   roundTrip: RoundTripResult;
-  /** `true` only if `catalogFindings` has no `"error"`-severity entry AND `roundTrip.ok` is `true`. */
+  /** Present only when the caller supplied a frozen consumer graph for authority convergence. This is graph evidence, not #556 candidate qualification evidence. */
+  authorityConvergence?: SingularAuthorityReport;
+  /** `true` only if `catalogFindings` has no `"error"`-severity entry, `roundTrip.ok` is `true`, and any supplied authority graph converges. */
   ok: boolean;
 }
