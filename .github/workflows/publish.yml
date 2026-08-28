@@ -22,6 +22,14 @@ on:
         description: Package directory under packages/
         required: true
         type: string
+      release_target:
+        description: >-
+          Optional explicit release-catalogue target. Leave empty for the
+          current declared GitHub Packages lane; a future target must be
+          separately reviewed and can authorize only its listed packages.
+        required: false
+        default: ""
+        type: string
       dry_run:
         description: Run npm publish --dry-run only
         required: true
@@ -76,6 +84,7 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
           MANUAL_PACKAGE: ${{ inputs.package }}
+          PUBLISH_RELEASE_TARGET: ${{ inputs.release_target }}
           # Read-only, the same classic read:packages token
           # scripts/check-name-collision.mjs and
           # scripts/check-package-visibility.mjs already use elsewhere in
@@ -84,6 +93,7 @@ jobs:
           GH_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
         run: |
           if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            node scripts/check-release-catalog.mjs --package "$MANUAL_PACKAGE"
             echo "matrix=$(node -e 'console.log(JSON.stringify([{ package: process.env.MANUAL_PACKAGE }]))')" >> "$GITHUB_OUTPUT"
           else
             matrix="$(node scripts/select-publishable-packages.mjs)"
@@ -118,6 +128,7 @@ jobs:
       - name: Validate package input
         env:
           PKG: ${{ matrix.package }}
+          PUBLISH_RELEASE_TARGET: ${{ inputs.release_target }}
         run: |
           if ! [[ "$PKG" =~ ^[a-zA-Z0-9_-]+$ ]]; then
             echo "::error title=Invalid package input::package must match ^[a-zA-Z0-9_-]+\$ (got: $PKG)"
@@ -127,6 +138,7 @@ jobs:
             echo "::error title=Unknown package::packages/$PKG/package.json does not exist."
             exit 1
           fi
+          node scripts/check-release-catalog.mjs --package "$PKG"
 
       - name: Report current package visibility
         env:
@@ -207,6 +219,7 @@ jobs:
           PKG: ${{ matrix.package }}
           VISIBILITY_ONLY: ${{ inputs.visibility_only }}
           VERIFY_ONLY: ${{ inputs.verify_only }}
+          PUBLISH_RELEASE_TARGET: ${{ inputs.release_target }}
         run: |
           if ! [[ "$PKG" =~ ^[a-zA-Z0-9_-]+$ ]]; then
             echo "::error title=Invalid package input::package must match ^[a-zA-Z0-9_-]+\$ (got: $PKG)"
@@ -220,6 +233,7 @@ jobs:
             echo "::error title=Conflicting release modes::visibility_only and verify_only cannot both be true."
             exit 1
           fi
+          node scripts/check-release-catalog.mjs --package "$PKG"
 
       # This is the only failure mode that damages a package OTHER than the
       # one being published. GitHub Packages namespaces by owner account, not

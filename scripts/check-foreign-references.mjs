@@ -102,7 +102,7 @@
 //
 // WHAT IS ADMITTED, AND WHY IT IS NOT A BOUNDARY LEAK
 // ---------------------------------------------------
-// Three classes, in descending order of how much of the work they do:
+// Four classes, in descending order of how much of the work they do:
 //
 //   A. THIRD-PARTY npm SCOPES, DERIVED. Every scope that package-lock.json
 //      resolves from the public npm registry is a package this repository
@@ -122,6 +122,12 @@
 //      first-party org, the security scanner CI downloads, and the fictional
 //      scopes and owners this repository's tests and documentation use as
 //      stand-ins. Declared below with a reason each.
+//
+//   D. DECLARED FUTURE PRODUCER TARGETS. A release catalogue may name a
+//      future producer scope before it becomes the live package scope. Those
+//      scopes are derived from the catalogue's strict schema, never from a
+//      handwritten peer exception, and admitted only in the finite release
+//      control surfaces below. They cannot license the same name elsewhere.
 //
 // None of B or C is a peer account: each is either a public ecosystem vendor
 // or a name that belongs to nobody. Enumerating them therefore discloses
@@ -151,6 +157,8 @@ import { existsSync, readFileSync, readdirSync, statSync, writeSync } from "node
 import { basename, dirname, extname, join, relative, resolve, sep } from "node:path";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+
+import { loadReleaseCatalog } from "./check-release-catalog.mjs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 
@@ -297,6 +305,30 @@ if (typeof ownScope !== "string" || !/^@[a-z0-9][a-z0-9._-]*$/.test(ownScope)) {
 }
 const ownScopeName = ownScope.slice(1);
 
+const releaseTargetScopes = new Map();
+const RELEASE_TARGET_SCOPE_SURFACES = new Set([
+  "governance/release-catalog.json",
+  "scripts/check-release-catalog.mjs",
+  "scripts/check-release-catalog.test.mjs",
+  "scripts/select-publishable-packages.mjs",
+  ".github/workflows/publish.yml",
+  "docs/PUBLISHING.md",
+]);
+const releaseCatalogPath = join(root, "governance", "release-catalog.json");
+if (existsSync(releaseCatalogPath)) {
+  let releaseCatalog;
+  try {
+    releaseCatalog = loadReleaseCatalog({ path: releaseCatalogPath });
+  } catch (error) {
+    die(`cannot validate ${relative(root, releaseCatalogPath)}: ${error.message}`);
+  }
+  for (const target of releaseCatalog.targets) {
+    if (target.status === "planned") {
+      releaseTargetScopes.set(target.scope.slice(1).toLowerCase(), `declared bounded producer release target "${target.id}"`);
+    }
+  }
+}
+
 // The forge identity comes from the OTHER declaration: the published manifests'
 // own repository.url. Deliberately a second, independent source — if the two
 // disagree, "own" is ambiguous and this gate refuses to pick one.
@@ -387,9 +419,10 @@ if (existsSync(lockPath)) {
   }
 }
 
-function admittedScope(name) {
+function admittedScope(name, rel) {
   const lower = name.toLowerCase();
   if (lower === ownScopeName.toLowerCase()) return "this repository's own scope";
+  if (releaseTargetScopes.has(lower) && RELEASE_TARGET_SCOPE_SURFACES.has(rel)) return releaseTargetScopes.get(lower);
   if (derivedThirdPartyScopes.has(name)) return derivedThirdPartyScopes.get(name);
   if (VENDOR_SCOPES.has(lower)) return VENDOR_SCOPES.get(lower);
   if (PLACEHOLDER_NAMES.has(lower)) return PLACEHOLDER_NAMES.get(lower);
@@ -540,11 +573,11 @@ for (const file of files) {
     };
 
     for (const match of line.matchAll(SCOPE_RE)) {
-      record("npm-scope", `@${match[1]}`, admittedScope(match[1]));
+      record("npm-scope", `@${match[1]}`, admittedScope(match[1], rel));
     }
     for (const match of line.matchAll(BARE_SCOPE_RE)) {
       if (NON_ACCOUNT_AT_TOKENS.has(match[1].toLowerCase())) continue;
-      record("bare-scope", `@${match[1]}`, admittedScope(match[1]));
+      record("bare-scope", `@${match[1]}`, admittedScope(match[1], rel));
     }
     for (const re of [FORGE_URL_RE, USES_RE, GH_CLI_RE]) {
       for (const match of line.matchAll(re)) {
