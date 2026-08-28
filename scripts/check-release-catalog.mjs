@@ -21,6 +21,18 @@ const PRECUTOVER_TARGET = Object.freeze({
   registry: "https://registry.npmjs.org",
   packages: Object.freeze(["advisor", "starter", "controller"]),
 });
+const CURRENT_TARGET = Object.freeze({
+  id: "current-github-packages",
+  status: "active",
+  packages: "all",
+});
+
+class CatalogInputError extends Error {
+  constructor(message) {
+    super(message);
+    this.exitCode = 2;
+  }
+}
 
 function fail(message) {
   throw new Error(`release catalog: ${message}`);
@@ -30,17 +42,21 @@ function isRecord(value) {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-function readJson(path, readFile) {
+function readJson(path, readFile, { indeterminateInput = false } = {}) {
   let raw;
   try {
     raw = readFile(path, "utf8");
   } catch (error) {
-    fail(`cannot read ${path}: ${error.code ?? error.message}`);
+    const message = `cannot read ${path}: ${error.code ?? error.message}`;
+    if (indeterminateInput) throw new CatalogInputError(message);
+    fail(message);
   }
   try {
     return JSON.parse(raw);
   } catch (error) {
-    fail(`${path} does not parse as JSON: ${error.message}`);
+    const message = `${path} does not parse as JSON: ${error.message}`;
+    if (indeterminateInput) throw new CatalogInputError(message);
+    fail(message);
   }
 }
 
@@ -64,7 +80,7 @@ function matchesExactArray(actual, expected) {
  * not a reason to fall back to scanning every package.
  */
 export function loadReleaseCatalog({ path = "governance/release-catalog.json", readFile = readFileSync } = {}) {
-  const catalog = readJson(path, readFile);
+  const catalog = readJson(path, readFile, { indeterminateInput: true });
   if (!isRecord(catalog) || catalog.schemaVersion !== 1 || !TARGET_ID.test(catalog.defaultTarget ?? "") || !Array.isArray(catalog.targets) || catalog.targets.length === 0) {
     fail(`${path} must be a schemaVersion 1 catalogue with defaultTarget and a non-empty targets array`);
   }
@@ -95,6 +111,26 @@ export function loadReleaseCatalog({ path = "governance/release-catalog.json", r
         );
       }
     }
+  }
+  if (catalog.targets.length !== 2 || ids.size !== 2 || !ids.has(CURRENT_TARGET.id) || !ids.has(PRECUTOVER_TARGET.id)) {
+    fail(`${path} must declare exactly the current release target and the bounded ${PRECUTOVER_TARGET.id} target`);
+  }
+  const current = catalog.targets.find((target) => target.id === CURRENT_TARGET.id);
+  const precutover = catalog.targets.find((target) => target.id === PRECUTOVER_TARGET.id);
+  if (
+    current.status !== CURRENT_TARGET.status ||
+    current.packages !== CURRENT_TARGET.packages ||
+    catalog.defaultTarget !== CURRENT_TARGET.id
+  ) {
+    fail(`${path} must retain ${CURRENT_TARGET.id} as the active all-package default target`);
+  }
+  if (
+    precutover.status !== "planned" ||
+    precutover.scope !== PRECUTOVER_TARGET.scope ||
+    precutover.registry !== PRECUTOVER_TARGET.registry ||
+    !matchesExactArray(precutover.packages, PRECUTOVER_TARGET.packages)
+  ) {
+    fail(`${path} must retain the exact planned ${PRECUTOVER_TARGET.id} Advisor, Starter, Controller npmjs precutover target`);
   }
   if (!ids.has(catalog.defaultTarget)) fail(`${path} defaultTarget "${catalog.defaultTarget}" is not declared in targets`);
   return catalog;
@@ -170,6 +206,6 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     main();
   } catch (error) {
     console.error(`check-release-catalog: ${error.message}`);
-    process.exitCode = 1;
+    process.exitCode = error.exitCode ?? 1;
   }
 }

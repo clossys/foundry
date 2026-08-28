@@ -19,9 +19,9 @@ function catalog({ malformed = false } = {}) {
   if (malformed) return "{";
   return JSON.stringify({
     schemaVersion: 1,
-    defaultTarget: "current",
+    defaultTarget: "current-github-packages",
     targets: [
-      { id: "current", status: "active", scope: "@fixture", registry: "https://npm.pkg.github.com", packages: "all" },
+      { id: "current-github-packages", status: "active", scope: "@fixture", registry: "https://npm.pkg.github.com", packages: "all" },
       { id: "clossys-npmjs-precutover", status: "planned", scope: futureScope, registry: "https://registry.npmjs.org", packages: ["advisor", "starter", "controller"] },
     ],
   });

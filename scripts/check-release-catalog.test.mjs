@@ -1,10 +1,17 @@
 import assert from "node:assert/strict";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
 import { assertPackageAuthorized, filterPackagesForTarget, loadReleaseCatalog, readCurrentReleaseIdentity, resolveReleaseTarget } from "./check-release-catalog.mjs";
 
 const currentIdentity = { scope: "@vespeneventures", registry: "https://npm.pkg.github.com" };
 const targetIdentity = { scope: "@clossys", registry: "https://registry.npmjs.org" };
+const scriptsDir = dirname(fileURLToPath(import.meta.url));
+const catalogCli = join(scriptsDir, "check-release-catalog.mjs");
 
 function catalog(overrides = {}) {
   return {
@@ -20,6 +27,17 @@ function catalog(overrides = {}) {
 
 function load(value) {
   return loadReleaseCatalog({ path: "catalog.json", readFile: () => JSON.stringify(value) });
+}
+
+function runCli({ catalogContents, catalogPresent = true } = {}) {
+  const root = mkdtempSync(join(tmpdir(), "release-catalog-cli-"));
+  try {
+    writeFileSync(join(root, "package-scope.json"), JSON.stringify(currentIdentity));
+    if (catalogPresent) writeFileSync(join(root, "release-catalog.json"), catalogContents ?? JSON.stringify(catalog()));
+    return spawnSync(process.execPath, [catalogCli, "--catalog", join(root, "release-catalog.json"), "--scope-file", join(root, "package-scope.json")], { encoding: "utf8" });
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 }
 
 test("default current release selection remains all-package GitHub Packages behavior", () => {
@@ -47,6 +65,44 @@ test("a scope switch cannot implicitly retain the current all-package target", (
   assert.equal(resolveReleaseTarget(document, targetIdentity, "clossys-npmjs-precutover").id, "clossys-npmjs-precutover");
 });
 
+test("the pre-cutover target can never be an implicit default", () => {
+  assert.throws(() => load(catalog({ defaultTarget: "clossys-npmjs-precutover" })), /active all-package default target/);
+});
+
+test("the catalog rejects active migration targets and any migration target that broadens to all packages", () => {
+  assert.throws(
+    () =>
+      load(
+        catalog({
+          targets: [
+            { id: "current-github-packages", status: "active", scope: currentIdentity.scope, registry: currentIdentity.registry, packages: "all" },
+            { id: "clossys-npmjs-precutover", status: "active", scope: targetIdentity.scope, registry: targetIdentity.registry, packages: "all" },
+          ],
+        }),
+      ),
+    /must retain the exact planned/,
+  );
+  assert.throws(
+    () =>
+      load(
+        catalog({
+          targets: [
+            { id: "current-github-packages", status: "active", scope: currentIdentity.scope, registry: currentIdentity.registry, packages: "all" },
+            { id: "migration", status: "active", scope: targetIdentity.scope, registry: targetIdentity.registry, packages: "all" },
+            { id: "clossys-npmjs-precutover", status: "planned", scope: targetIdentity.scope, registry: targetIdentity.registry, packages: ["advisor", "starter", "controller"] },
+          ],
+        }),
+      ),
+    /must declare exactly the current release target/,
+  );
+});
+
+test("an implicit selection resolves only the current target", () => {
+  const document = load(catalog());
+  assert.equal(resolveReleaseTarget(document, currentIdentity).id, "current-github-packages");
+  assert.throws(() => resolveReleaseTarget(document, targetIdentity), /expects @vespeneventures/);
+});
+
 test("missing or malformed catalogues fail closed", () => {
   assert.throws(() => loadReleaseCatalog({ path: "missing.json", readFile: () => { const error = new Error("missing"); error.code = "ENOENT"; throw error; } }), /cannot read/);
   assert.throws(() => loadReleaseCatalog({ path: "broken.json", readFile: () => "{" }), /does not parse/);
@@ -64,6 +120,20 @@ test("missing or malformed catalogues fail closed", () => {
       ),
     /planned targets must exactly declare the bounded/,
   );
+});
+
+test("catalog CLI distinguishes unreadable and malformed input from a semantic violation", () => {
+  const missing = runCli({ catalogPresent: false });
+  assert.equal(missing.status, 2, missing.stderr || missing.stdout);
+  assert.match(missing.stderr, /cannot read/);
+
+  const malformed = runCli({ catalogContents: "{" });
+  assert.equal(malformed.status, 2, malformed.stderr || malformed.stdout);
+  assert.match(malformed.stderr, /does not parse/);
+
+  const semantic = runCli({ catalogContents: JSON.stringify(catalog({ defaultTarget: "clossys-npmjs-precutover" })) });
+  assert.equal(semantic.status, 1, semantic.stderr || semantic.stdout);
+  assert.match(semantic.stderr, /active all-package default target/);
 });
 
 test("target catalogue refuses a missing authorized package instead of silently publishing fewer packages", () => {
