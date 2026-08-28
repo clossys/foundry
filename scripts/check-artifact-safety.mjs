@@ -29,17 +29,27 @@
 // `npm pack --dry-run` in the publish workflow lists filenames only; it reads no
 // contents and cannot catch any of this.
 
-import { mkdtempSync, rmSync, existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { constants, mkdtempSync, rmSync, existsSync, readdirSync, readFileSync, statSync, openSync, fstatSync, closeSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve, relative } from "node:path";
+import { basename, join, resolve, relative } from "node:path";
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { dirname } from "node:path";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const argv = process.argv.slice(2);
-const flags = new Set(argv.filter((a) => a.startsWith("--")));
-const pkgDir = argv.filter((a) => !a.startsWith("--"))[0];
+const valueFlags = new Set(["--denylist", "--tarball", "--sha1", "--sha256", "--sha512"]);
+const booleanFlags = new Set(["--require-denylist", "--json"]);
+const flags = new Set();
+let pkgDir;
+for (let index = 0; index < argv.length; index += 1) {
+  const arg = argv[index];
+  if (valueFlags.has(arg)) { if (!argv[index + 1] || argv[index + 1].startsWith("--")) { console.error("check-artifact-safety: missing flag value"); process.exit(2); } flags.add(arg); index += 1; continue; }
+  if (booleanFlags.has(arg)) { flags.add(arg); continue; }
+  if (arg.startsWith("--") || pkgDir) { console.error("check-artifact-safety: closed CLI arguments required"); process.exit(2); }
+  pkgDir = arg;
+}
 
 function flagValue(name) {
   const i = argv.indexOf(name);
@@ -62,9 +72,26 @@ function die(msg) {
   process.exit(2);
 }
 
-if (!pkgDir) die("usage: check-artifact-safety.mjs <packageDir> [--require-denylist] [--json]");
+if (!pkgDir) die("usage: check-artifact-safety.mjs <packageDir> [--tarball <path>] [--sha1 <digest>] [--sha256 <digest>] [--sha512 <digest>] [--require-denylist] [--json]");
 const absPkgDir = resolve(pkgDir);
 if (!existsSync(join(absPkgDir, "package.json"))) die(`no package.json at ${absPkgDir}`);
+
+const digestPatterns = { sha1: /^[a-f0-9]{40}$/, sha256: /^[a-f0-9]{64}$/, sha512: /^[a-f0-9]{128}$/ };
+const expectedDigests = Object.fromEntries(Object.keys(digestPatterns).map((algorithm) => [algorithm, flagValue(`--${algorithm}`)]));
+for (const [algorithm, expected] of Object.entries(expectedDigests)) {
+  if (expected !== undefined && !digestPatterns[algorithm].test(expected)) die(`invalid --${algorithm} digest`);
+}
+
+function digestsOf(bytes) {
+  return Object.fromEntries(Object.keys(digestPatterns).map((algorithm) => [algorithm, createHash(algorithm).update(bytes).digest("hex")]));
+}
+
+function validateExpectedDigests(bytes, source) {
+  const actual = digestsOf(bytes);
+  for (const [algorithm, expected] of Object.entries(expectedDigests)) {
+    if (expected !== undefined && expected !== actual[algorithm]) die(`${source} ${algorithm} mismatch (expected ${expected}, got ${actual[algorithm]})`);
+  }
+}
 
 const manifest = JSON.parse(readFileSync(join(absPkgDir, "package.json"), "utf8"));
 if (manifest.private === true) {
@@ -79,20 +106,42 @@ const structural = [];
 try {
   // 1. Pack for real. `npm pack` runs prepublishOnly, so what lands here is
   //    what a `npm publish` from the same state would upload.
-  let tarballName;
-  try {
-    const out = execFileSync("npm", ["pack", "--pack-destination", workDir], {
-      cwd: absPkgDir,
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "pipe"],
-    });
-    tarballName = out.trim().split("\n").filter(Boolean).pop();
-  } catch (error) {
-    die(`npm pack failed:\n${error.stderr ?? error.message}`);
+  let tarballName, tarballPath;
+  const suppliedTarball = flagValue("--tarball");
+  if (suppliedTarball) {
+    const sourcePath = resolve(suppliedTarball);
+    let fd;
+    let bytes;
+    let sourceError;
+    try {
+      // Open once with O_NOFOLLOW, then fstat/read the descriptor. The path may
+      // be replaced immediately after this point; all later work uses the
+      // private frozen copy below, never the caller-controlled pathname.
+      fd = openSync(sourcePath, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0));
+      const state = fstatSync(fd);
+      if (!state.isFile()) throw new Error(`tarball must be a regular non-symlink file: ${sourcePath}`);
+      bytes = readFileSync(fd);
+    } catch (error) {
+      sourceError = error instanceof Error ? error.message : String(error);
+    } finally {
+      if (fd !== undefined) closeSync(fd);
+    }
+    if (sourceError) die(sourceError);
+    try {
+      validateExpectedDigests(bytes, "supplied tarball");
+      tarballPath = join(workDir, "supplied.tgz");
+      writeFileSync(tarballPath, bytes, { mode: 0o600 });
+    } catch (error) {
+      die(error instanceof Error ? error.message : String(error));
+    }
+    tarballName = basename(sourcePath);
+  } else {
+    try { const out = execFileSync("npm", ["pack", "--pack-destination", workDir], { cwd: absPkgDir, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }); tarballName = out.trim().split("\n").filter(Boolean).pop(); }
+    catch (error) { die("npm pack failed: " + (error.stderr ?? error.message)); }
+    tarballPath = join(workDir, tarballName);
+    if (!existsSync(tarballPath)) die("npm pack reported a missing tarball");
+    if (Object.values(expectedDigests).some((value) => value !== undefined)) validateExpectedDigests(readFileSync(tarballPath), "packed tarball");
   }
-
-  const tarballPath = join(workDir, tarballName);
-  if (!existsSync(tarballPath)) die(`npm pack reported ${tarballName} but it is not at ${tarballPath}`);
 
   // 2. Extract. Everything in an npm tarball lives under `package/`.
   const extractDir = join(workDir, "extracted");
@@ -100,6 +149,9 @@ try {
   execFileSync("tar", ["-xzf", tarballPath, "-C", extractDir], { stdio: ["ignore", "pipe", "pipe"] });
   const rootDir = join(extractDir, "package");
   if (!existsSync(rootDir)) die("extracted tarball has no package/ directory");
+  let packedManifest;
+  try { packedManifest = JSON.parse(readFileSync(join(rootDir, "package.json"), "utf8")); } catch { die("packed tarball package/package.json is invalid"); }
+  if (packedManifest.name !== manifest.name || packedManifest.version !== manifest.version) die("packed tarball name/version does not match packageDir manifest");
 
   // 3. Structural assertions about the artifact itself. These are things a
   //    content scan cannot express: presence, absence, and shape.

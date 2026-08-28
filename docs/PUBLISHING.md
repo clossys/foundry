@@ -222,12 +222,12 @@ that can damage something *other* than this package — see below), denylist
 quality, gate regression, tree safety, and artifact safety (the actual packed
 tarball, not the tree).
 
-**What `npm run preflight` does *not* run: `packRoundTrip`.** Artifact safety
+**What `npm run preflight` does *not* run: consumer qualification.** Artifact safety
 (`scripts/check-artifact-safety.mjs`) packs the tarball for real and scans its
 *contents* — forbidden files, credential-shaped strings, private identity,
 structural defects such as a missing `LICENSE` — but it never installs the
-tarball or imports a single declared export. That install-and-import proof is
-a separate, genuinely distinct check (`packRoundTrip`, see
+tarball or imports a single declared export. The older manual install-and-import
+proof remains a separate, genuinely distinct check (`packRoundTrip`, see
 [`packages/controller/src/release/pack-round-trip.ts`](../packages/controller/src/release/pack-round-trip.ts)),
 and it does not run as part of `preflight-package.mjs` at all.
 
@@ -238,10 +238,10 @@ calls `packRoundTrip` itself. It is a genuinely separate command, though —
 running it is a manual, additional step, not something `npm run preflight`
 runs for you. **Wiring `packRoundTrip` into `preflight-package.mjs` itself,
 so the ordinary preflight sequence above covers it automatically, is still
-tracked as separate, future work; it is not part of what fixed the ordering
-below**, and until it lands, the only place that proof runs *automatically*
-is inside the publish workflow itself (see [6. Publish](#6-publish) below) —
-after `preflight-package.mjs`, before `npm publish`.
+tracked as separate, future work.** The publish workflow instead runs the
+package-neutral fixed candidate-qualification runner described below. That
+automatic gate covers the exact declared export/bin/adversarial surface without
+claiming that it invoked Controller's package-owned `packRoundTrip` helper.
 
 - [ ] Safety gate reports **FULL** mode and `PASS`. A `PASS (partial)` is not
       a clearance — it means identity checks never ran.
@@ -255,6 +255,39 @@ after `preflight-package.mjs`, before `npm publish`.
       workspace link; either would hide the graph closure being proven.
 
 ## 6. Publish
+
+### Exact-candidate qualification
+
+Before a future upload, Publish requires
+`governance/release-qualifications/<package>-<version>.json` to validate as
+**pre-publication** evidence for the exact package version, policy-owned
+package tree, root resolution, adapter and fixture joins, and SHA-1/SHA-256/
+SHA-512 tarball bytes. Publish packs once, scans that exact file, runs the root
+fixed-operation runner against it, and compares the fresh canonical transcript
+to the retained record before dry-run or upload. It never executes stored
+record commands. Producer policy, rather than a record, owns unsupported
+archetypes and dimensions; the runner proves the required install surface,
+native `0`/`1`/`2` outcomes, matched control, and restoration evidence.
+
+A candidate review binds its reviewed commit. Before squash, the PR tail may
+change only its versioned record; at publish, content joins and fresh tarball
+evidence are squash-safe and do not require `main` to equal the reviewed SHA.
+Final provider review remains separate evidence, not workflow authority. The
+trusted PR-side qualification workflow is deferred until the protected base
+contains this runner, so untrusted PR code never receives publish credentials.
+
+This is release qualification only. It does not claim real consumer adoption,
+provider truth, independent grounding, or closure; a provider-specific review
+reference is evidence, not workflow authority. Any changed tarball byte fails
+the digest join and requires a re-pack and new qualification.
+
+Controller 0.8.20 has a deliberately limited **post-publication bootstrap**
+record. It retains the actual registry tuple and states which consumer evidence
+was not retained, but its timing is rejected in pre-publication mode. It does
+not retroactively say that 0.8.20 was gated before publication.
+
+Its registry-backed replay is retained post-publication evidence only, not a
+retroactive gate, adoption, grounding, or release clearance.
 
 ### Release target selection
 
@@ -291,7 +324,7 @@ For a first publication, run the dispatch twice, in order:
 
 1. Set `dry_run: true`, leave `visibility_only: false` and `verify_only:
    false`, and inspect the successful run. This proves the gates, packed
-   tarball, isolated `packRoundTrip`, and npm's publish path with
+   tarball, fixed candidate-qualification runner, and npm's publish path with
    `--dry-run`; it does **not** upload a version, prove that the registry now
    serves the tarball, or establish package visibility.
 2. After the dry run succeeds, dispatch the same package with `dry_run: false`
@@ -315,9 +348,10 @@ order of operations, in full, is:**
 
 1. Pack exactly one tarball (the same bytes get inspected, round-tripped, and
    published — never a second, separate `npm pack`).
-2. **`packRoundTrip` installs that exact tarball into a genuinely isolated
-   directory and imports every subpath its `exports` field declares — before
-   anything is published.** A failure here stops the job: `npm publish` never
+2. **The fixed candidate-qualification runner installs that exact tarball into
+   a genuinely isolated directory, covers every declared export target, and
+   invokes every declared bin plus its fixed adversarial cases — before anything
+   is published.** A failure here stops the job: `npm publish` never
    runs, and nothing reaches the registry. This is the fix for the ordering
    defect issue #191 describes — this check used to run
    only *after* `npm publish`, where a registry version is already immutable
@@ -335,8 +369,8 @@ order of operations, in full, is:**
    proof against the identical local bytes already cover that; a second
    install-and-import check against bytes already proven identical would be a
    duplicate with no distinct purpose.
-5. `verify_only` is the one path that still runs `packRoundTrip` against the
-   fetched, already-published tarball — it exists specifically to qualify a
+5. `verify_only` is the one path that still runs the fixed qualification runner
+   against the fetched, already-published tarball — it exists specifically to qualify a
    version *already in the registry*, independent of whatever the current
    checkout contains (for example a version published before step 2 existed
    in this workflow, or as the "real consumer qualification" step
