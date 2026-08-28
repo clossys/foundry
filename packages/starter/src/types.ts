@@ -41,10 +41,13 @@ export interface SnapshotManifest {
   readonly eventName: "pull_request";
   readonly repository: string;
   readonly pullRequestNumber: number;
+  /** Canonical 40-lowercase-hex Git commit SHA-1 OID from GitHub. */
   readonly baseSha: string;
+  /** Canonical 40-lowercase-hex Git commit SHA-1 OID from GitHub. */
   readonly headSha: string;
   readonly workflowRunId: string;
   readonly artifactName: string;
+  /** Canonical 64-lowercase-hex SHA-256 digest of the snapshot manifest. */
   readonly digest: string;
   readonly capturedAt: string;
   readonly files: readonly SnapshotFile[];
@@ -62,8 +65,10 @@ export interface TrustedEvent {
   readonly provider: "github-actions";
   readonly eventName: "workflow_run";
   readonly repository: string;
+  /** Canonical 40-lowercase-hex Git commit SHA-1 OID from GitHub. */
   readonly baseSha: string;
   readonly sourceWorkflowRunId: string;
+  /** Canonical 40-lowercase-hex Git commit SHA-1 OID from GitHub. */
   readonly sourceHeadSha: string;
   readonly artifactName: string;
   readonly sourceConclusion: "success" | "failure" | "cancelled" | "skipped" | "timed_out" | "action_required";

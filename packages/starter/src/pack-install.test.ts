@@ -10,7 +10,8 @@ import { afterEach, describe, expect, it } from "vitest";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const roots: string[] = [];
-const sha = (character: string) => character.repeat(64);
+const sha256 = (character: string) => character.repeat(64);
+const gitSha = (character: string) => character.repeat(40);
 const integrityFor = (path: string) => `sha512-${createHash("sha512").update(readFileSync(path)).digest("base64")}`;
 const RUNTIME_ENVIRONMENT_NAMES = ["PATH", "TMPDIR", "TMP", "TEMP", "SystemRoot", "WINDIR", "ComSpec", "PATHEXT", "LANG", "LC_ALL", "LC_CTYPE", "TZ"] as const;
 
@@ -76,7 +77,7 @@ function pack(directory: string, destination: string, name: string, version: str
 function assessment(target: { name: string; version: string; integrity: string; bin: string }, repository: string) {
   const evidence = [{ id: "evidence", description: "Consumer-owned proof." }];
   const action = { kind: "reconcile", ownerRef: "consumer-owner", dueAt: "2099-01-01T00:00:00Z", escalationRef: "consumer-sponsor" };
-  const basis = { snapshotDigest: `sha256:${sha("a")}`, grantDigest: `sha256:${sha("b")}`, catalogDigest: `sha256:${sha("c")}`, planDigest: `sha256:${sha("d")}`, blockerDigest: `sha256:${sha("e")}`, clearanceDigest: `sha256:${sha("f")}`, conflictDigest: `sha256:${sha("1")}`, baselineDigest: `sha256:${sha("2")}`, completionDefinitionDigest: `sha256:${sha("3")}`, assessedAt: "2020-01-01T00:00:00Z", freshUntil: "2099-01-01T00:00:00Z" };
+  const basis = { snapshotDigest: `sha256:${sha256("a")}`, grantDigest: `sha256:${sha256("b")}`, catalogDigest: `sha256:${sha256("c")}`, planDigest: `sha256:${sha256("d")}`, blockerDigest: `sha256:${sha256("e")}`, clearanceDigest: `sha256:${sha256("f")}`, conflictDigest: `sha256:${sha256("1")}`, baselineDigest: `sha256:${sha256("2")}`, completionDefinitionDigest: `sha256:${sha256("3")}`, assessedAt: "2020-01-01T00:00:00Z", freshUntil: "2099-01-01T00:00:00Z" };
   const workItem = { id: "authorized-target", initiativeId: "initiative", targetRepositoryId: repository, deliveryOwnerRef: "delivery-owner", package: { name: target.name, version: target.version, integrity: target.integrity }, bin: target.bin, invocation: "single-json-input", placement: "consumer required check", baseline: { metricRef: "consumer-metric", value: 0, observedAt: "2020-01-01T00:00:00Z", evidence: evidence[0] }, completion: { definition: "Measure the independent consumer outcome.", independentOutcomeOwnerRef: "outcome-owner", evidenceSource: "consumer measurement", direction: "increase", setpoint: 1, windowDays: 7 }, rollback: { procedure: "Restore the prior known-good consumer lockfile.", evidenceSource: "consumer rollback record" }, mutationSurfaces: ["consumer-lockfile"] };
   const authorization = { planDigest: basis.planDigest, assessmentBasis: basis, sponsorRef: "consumer-sponsor", permittedRepositoryIds: [repository], permittedPackages: [workItem.package], permittedMutationSurfaces: ["consumer-lockfile"], grantedAt: "2020-01-01T00:00:00Z", expiresAt: "2099-01-01T00:00:00Z" };
   return {
@@ -161,9 +162,9 @@ function invoke(root: string, packageManager: "npm" | "pnpm", installed: ReturnT
   writeJson(join(snapshotRoot, "evidence", "assessment.json"), assessment(installed.target, "consumer/repository"));
   writeJson(join(snapshotRoot, "evidence", "target.json"), { mode: targetMode });
   const files = ["assessment.json", "target.json"].map((name) => { const content = readFileSync(join(snapshotRoot, "evidence", name)); return { path: `evidence/${name}`, size: content.length, sha256: createHash("sha256").update(content).digest("hex") }; });
-  writeJson(join(snapshotRoot, "snapshot.json"), { schemaVersion: 1, provider: "github-actions", eventName: "pull_request", repository: "consumer/repository", pullRequestNumber: 1, baseSha: sha("b"), headSha: sha("c"), workflowRunId: "1", artifactName: "adoption-snapshot-1", digest: sha("d"), capturedAt: new Date().toISOString(), files });
+  writeJson(join(snapshotRoot, "snapshot.json"), { schemaVersion: 1, provider: "github-actions", eventName: "pull_request", repository: "consumer/repository", pullRequestNumber: 1, baseSha: gitSha("b"), headSha: gitSha("c"), workflowRunId: "1", artifactName: "adoption-snapshot-1", digest: sha256("d"), capturedAt: new Date().toISOString(), files });
   writeJson(requestPath, { schemaVersion: 1, phase: "activation", packageManager, snapshot: { repository: "consumer/repository", maxAgeMs: 60_000 }, ...installed, evidence: { assessment: "evidence/assessment.json", targetInput: "evidence/target.json" } });
-  writeJson(eventPath, { schemaVersion: 1, provider: "github-actions", eventName: "workflow_run", repository: "consumer/repository", baseSha: sha("b"), sourceWorkflowRunId: "1", sourceHeadSha: sha("c"), artifactName: "adoption-snapshot-1", sourceConclusion: "success" });
+  writeJson(eventPath, { schemaVersion: 1, provider: "github-actions", eventName: "workflow_run", repository: "consumer/repository", baseSha: gitSha("b"), sourceWorkflowRunId: "1", sourceHeadSha: gitSha("c"), artifactName: "adoption-snapshot-1", sourceConclusion: "success" });
   writeJson(receiptPath, { schemaVersion: 1, packageManager, attempted: true, exitCode: 0 });
   const starterCli = join(root, "node_modules", "@vespeneventures", "starter", "dist", "cli.js");
   const result = spawnSync(process.execPath, [starterCli, "decide", requestPath, snapshotRoot, eventPath, receiptPath], { cwd: root, encoding: "utf8", env: consumerEnvironment(root), timeout: 15_000, maxBuffer: 4_000_000 });
@@ -220,7 +221,7 @@ describe("packed installed activation canaries", () => {
       writeJson(join(targetPackage, "package.json"), { name: "@fixture/starter-target", version: "1.0.0", private: true, type: "module", bin: { "fixture-target-check": "./bin/check.js" }, peerDependencies: { "@vespeneventures/advisor": "0.1.3" }, files: ["bin"] });
       writeFileSync(join(targetPackage, "bin", "check.js"), "#!/usr/bin/env node\nimport { readFileSync } from 'node:fs';\nconst input = JSON.parse(readFileSync(process.argv[2], 'utf8'));\nconst state = input.mode === 'violated' ? 'violated' : input.mode === 'indeterminate' ? 'indeterminate' : 'satisfied';\nconsole.log(JSON.stringify({state}));\nprocess.exit(state === 'satisfied' ? 0 : state === 'violated' ? 1 : 2);\n");
       chmodSync(join(targetPackage, "bin", "check.js"), 0o755);
-      const starter = pack(join(repoRoot, "packages/starter"), packed, "@vespeneventures/starter", "0.1.1", fixtureRoot);
+      const starter = pack(join(repoRoot, "packages/starter"), packed, "@vespeneventures/starter", "0.1.2", fixtureRoot);
       const advisor = pack(join(repoRoot, "packages/advisor"), packed, "@vespeneventures/advisor", "0.1.3", fixtureRoot);
       const target = pack(targetPackage, packed, "@fixture/starter-target", "1.0.0", fixtureRoot);
       const installed = identities(starter, advisor, target); const registry = await localRegistry([starter, advisor, target]);
