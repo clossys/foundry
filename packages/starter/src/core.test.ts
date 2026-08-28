@@ -120,6 +120,21 @@ describe("request and event boundary", () => {
     expect(evaluateStarter(input({ snapshot: snapshot({ files: [{ path: "evidence/assessment.json", size: 2, sha256: gitSha("e") }, { path: "evidence/target.json", size: 2, sha256: sha256("f") }] }) })).findings.map((entry) => entry.rule)).toContain("snapshot-file");
   });
 
+  it("refuses array and object coercion at provider and digest boundaries", () => {
+    const hostileCommitOids: unknown[] = [[gitSha("a")], { toString: () => gitSha("a") }];
+    const hostileDigests: unknown[] = [[sha256("a")], { toString: () => sha256("a") }];
+    for (const value of hostileCommitOids) {
+      expect(evaluateStarter(input({ snapshot: snapshot({ baseSha: value }) })).findings.map((entry) => entry.rule)).toContain("snapshot-shape");
+      expect(evaluateStarter(input({ snapshot: snapshot({ headSha: value }) })).findings.map((entry) => entry.rule)).toContain("snapshot-shape");
+      expect(evaluateStarter(input({ trustedEvent: event({ baseSha: value }) })).findings.map((entry) => entry.rule)).toContain("trusted-event-shape");
+      expect(evaluateStarter(input({ trustedEvent: event({ sourceHeadSha: value }) })).findings.map((entry) => entry.rule)).toContain("trusted-event-shape");
+    }
+    for (const value of hostileDigests) {
+      expect(evaluateStarter(input({ snapshot: snapshot({ digest: value }) })).findings.map((entry) => entry.rule)).toContain("snapshot-shape");
+      expect(evaluateStarter(input({ snapshot: snapshot({ files: [{ path: "evidence/assessment.json", size: 2, sha256: value }, { path: "evidence/target.json", size: 2, sha256: sha256("f") }] }) })).findings.map((entry) => entry.rule)).toContain("snapshot-file");
+    }
+  });
+
   it("does not convert a supplied non-success or skipped receipt into a pass", () => {
     expect(evaluateStarter(input({ install: { schemaVersion: 1, packageManager: "npm", attempted: true, exitCode: 1 } })).state).toBe("violated");
     const report = evaluateStarter(input({ install: { schemaVersion: 1, packageManager: "npm", attempted: false, exitCode: 0 } }));
