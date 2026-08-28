@@ -8,6 +8,7 @@ const packageJson = JSON.parse(readFileSync(join(packageRoot, "package.json"), "
   dependencies?: Record<string, string>;
   peerDependencies: Record<string, string>;
   peerDependenciesMeta?: Record<string, { optional?: boolean }>;
+  foundry?: { singularAuthority?: string };
 };
 
 /**
@@ -51,6 +52,10 @@ const packageJson = JSON.parse(readFileSync(join(packageRoot, "package.json"), "
  * shape for its genuinely optional peers such as `svix`.
  */
 describe("public contract — dependency boundary", () => {
+  it("declares Controller as a singular authority for caller-supplied consumer graph checks", () => {
+    expect(packageJson.foundry?.singularAuthority).toBe("controller");
+  });
+
   it("declares zero unconditional runtime dependencies", () => {
     expect(packageJson.dependencies ?? {}).toEqual({});
   });

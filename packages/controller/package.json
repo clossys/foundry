@@ -1,6 +1,6 @@
 {
   "name": "@vespeneventures/controller",
-  "version": "0.8.19",
+  "version": "0.8.20",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -80,7 +80,8 @@
     "repository-package-adoption-check": "./dist/repository/adoption-bin.js",
     "review-check": "./dist/review/cli.js",
     "foundry-position-check": "./dist/positions/bin.js",
-    "foundry-completion-evidence-check": "./dist/positions/completion-evidence-bin.js"
+    "foundry-completion-evidence-check": "./dist/positions/completion-evidence-bin.js",
+    "singular-authority-check": "./dist/release/singular-authority-bin.js"
   },
   "files": [
     "dist",
@@ -93,6 +94,9 @@
     "LICENSE"
   ],
   "sideEffects": false,
+  "foundry": {
+    "singularAuthority": "controller"
+  },
   "description": "Owns every rule: package lifecycle and process orchestration (catalog, composition, gates, release, repository-profile, review-evidence, workspace-cleanup), account-neutral agent conventions (branch provenance, skill naming, agent interoperability, routine and schedule declarations, CI gate naming, capability-first skill registry), and the zero-I/O content-addressed policy-binding primitive that binds a rule to a document without disclosing it.",
   "keywords": [
     "governance",

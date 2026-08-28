@@ -46,4 +46,21 @@ export type { PreflightPackageOptions } from "./preflight.js";
 
 export { verifyPublishedArtifact } from "./verify-artifact.js";
 
+export { checkSingularAuthority, singularAuthorityDeclarationFromManifest } from "./singular-authority.js";
+export type {
+  SingularAuthorityCheckInput,
+  SingularAuthorityDeclaration,
+  SingularAuthorityDependencyConstraint,
+  SingularAuthorityDisposition,
+  SingularAuthorityDispositionKind,
+  SingularAuthorityEdge,
+  SingularAuthorityFinding,
+  SingularAuthorityLockfileFormat,
+  SingularAuthorityReport,
+  SingularAuthorityResolvedVersion,
+  SingularAuthorityResult,
+  SingularAuthorityStatus,
+  SingularAuthorityTarget,
+} from "./singular-authority.js";
+
 export type { DeclarationCheck, ImportCheck, RoundTripResult, PreflightReport } from "./types.js";

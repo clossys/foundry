@@ -88,6 +88,7 @@ describe("installed controller package", () => {
       "./node_modules/@vespeneventures/controller/dist/repository/cli.js",
       "./node_modules/@vespeneventures/controller/dist/repository/run-cli.js",
       "./node_modules/@vespeneventures/controller/dist/repository/adoption-cli.js",
+      "./node_modules/@vespeneventures/controller/dist/release/singular-authority-cli.js",
     ], { cwd: consumer });
     const bin = join(consumer, "node_modules", ".bin", "repository-check");
     expect(lstatSync(bin).isSymbolicLink()).toBe(true);
@@ -109,5 +110,11 @@ describe("installed controller package", () => {
     expect(basename(readlinkSync(adoptionBin))).toBe("adoption-bin.js");
     const adoptionHelp = await execFile(adoptionBin, ["--help"], { cwd: consumer });
     expect(adoptionHelp.stdout).toContain("Usage: repository-package-adoption-check");
+
+    const singularAuthorityBin = join(consumer, "node_modules", ".bin", "singular-authority-check");
+    expect(lstatSync(singularAuthorityBin).isSymbolicLink()).toBe(true);
+    expect(basename(readlinkSync(singularAuthorityBin))).toBe("singular-authority-bin.js");
+    const singularAuthorityHelp = await execFile(singularAuthorityBin, ["--help"], { cwd: consumer });
+    expect(singularAuthorityHelp.stdout).toContain("Usage: singular-authority-check");
   });
 });

@@ -11,6 +11,7 @@ import { CANONICAL_REPOSITORY_PROFILE_PATH, REPOSITORY_PROFILE_VERSION } from ".
 import { validateReviewEvidence } from "../review/validate.js";
 import { validateCompletionEvidence } from "../positions/completion-evidence.js";
 import { isValueSafeReference } from "../internal/reference-safety.js";
+import { checkSingularAuthority, type SingularAuthorityCheckInput, type SingularAuthorityReport } from "../release/singular-authority.js";
 
 export const REPOSITORY_PACKAGE_ADOPTION_VERSION = 1 as const;
 export const REPOSITORY_PACKAGE_ADOPTION_COVERAGE = Object.freeze([
@@ -29,6 +30,7 @@ export type RepositoryPackageAdoptionFindingRule =
   | "event-head-mismatch" | "event-check-mismatch" | "event-position-mismatch" | "event-cutover-not-atomic"
   | "event-reference" | "event-cutover-transition" | "event-chronology" | "profile-schema-invalid" | "profile-version" | "profile-path-mismatch" | "profile-hash-mismatch" | "profile-hash-unavailable"
   | "profile-coverage-missing" | "profile-coverage-invalid" | "profile-coverage-violated" | "profile-coverage-indeterminate"
+  | "singular-authority-convergence"
   | "foundation-review-missing" | "foundation-review-vacuous" | "foundation-review-invalid" | "foundation-review-stale" | "ruleset-observation-missing"
   | "ruleset-observation-invalid" | "ruleset-observation-mismatch" | "ruleset-not-enforced" | "ruleset-unknown"
   | "activation-incomplete" | "closure-incomplete" | "completion-position-mismatch" | "completion-package-mismatch"
@@ -45,6 +47,8 @@ export interface RepositoryPackageAdoptionPackage {
   readonly name: string;
   readonly version: string;
   readonly integrity: string;
+  /** Optional declared authority that makes matching frozen-consumer graph evidence mandatory. */
+  readonly singularAuthority?: string;
 }
 
 export interface RepositoryPackageAdoptionStableProfile {
@@ -164,11 +168,13 @@ export interface RepositoryPackageAdoptionEvaluationInput {
   readonly rulesetObservation?: RepositoryPackageAdoptionRulesetObservation;
   readonly positionLedger?: unknown;
   readonly completionEvidence?: unknown;
+  /** Optional frozen-consumer graph input. Omission does not claim convergence. */
+  readonly singularAuthorityConvergence?: SingularAuthorityCheckInput;
 }
 
 export const REPOSITORY_PACKAGE_ADOPTION_REASONS = createGateReasons([
   "adoption-invalid", "foundation-missing", "profile-coverage-incomplete", "foundation-review-missing",
-  "ruleset-observation-missing", "ruleset-unknown", "activation-incomplete", "closure-incomplete",
+  "ruleset-observation-missing", "ruleset-unknown", "activation-incomplete", "closure-incomplete", "singular-authority-convergence-indeterminate",
 ] as const);
 export type RepositoryPackageAdoptionIndeterminateReason = (typeof REPOSITORY_PACKAGE_ADOPTION_REASONS.reasons)[number];
 export type RepositoryPackageAdoptionResult = GateResult<RepositoryPackageAdoptionFinding, RepositoryPackageAdoptionIndeterminateReason>;
@@ -199,6 +205,7 @@ const EXACT_SEMVER = /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-(?:(?:0
 const SRI = /^sha(256|384|512)-([A-Za-z0-9+/]+={0,2})$/;
 const PACKAGE = /^@[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/;
 const ID = /^[a-z][a-z0-9-]{2,127}$/;
+const SINGULAR_AUTHORITY = /^[a-z][a-z0-9-]{0,127}$/;
 const INSTANT = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,3})?(Z|[+-]\d{2}:\d{2})$/;
 
 function safeRecord(value: unknown): value is RecordValue {
@@ -255,12 +262,17 @@ function instant(value: unknown): value is string { return instantMillis(value) 
 function finding(findings: RepositoryPackageAdoptionFinding[], rule: RepositoryPackageAdoptionFindingRule, path: string, message: string): void {
   findings.push({ rule, severity: "error", path, message });
 }
+function exactPackageKeys(value: unknown, extra: readonly string[] = []): value is RecordValue {
+  if (!safeRecord(value)) return false;
+  return exactKeys(value, ["name", "version", "integrity", ...extra, ...(Object.hasOwn(value, "singularAuthority") ? ["singularAuthority"] : [])]);
+}
 function packageShape(value: unknown, path: string, findings: RepositoryPackageAdoptionFinding[]): value is RepositoryPackageAdoptionPackage {
-  if (!exactKeys(value, ["name", "version", "integrity"])) { finding(findings, "package", path, "must contain exactly name, version, and integrity"); return false; }
+  if (!exactPackageKeys(value)) { finding(findings, "package", path, "must contain exactly name, version, integrity, and optional singularAuthority"); return false; }
   const name = own(value, "name"); const version = own(value, "version"); const integrity = own(value, "integrity");
   if (typeof name !== "string" || !PACKAGE.test(name)) finding(findings, "package", `${path}.name`, "must be a scoped package name");
   if (typeof version !== "string" || !EXACT_SEMVER.test(version)) finding(findings, "package-version", `${path}.version`, "must be one exact semver, never a range or tag");
   if (!sri(integrity)) finding(findings, "package-integrity", `${path}.integrity`, "must be a canonical SRI whose decoded digest length matches sha256, sha384, or sha512");
+  if (Object.hasOwn(value, "singularAuthority") && (typeof own(value, "singularAuthority") !== "string" || !SINGULAR_AUTHORITY.test(own(value, "singularAuthority") as string))) finding(findings, "package", `${path}.singularAuthority`, "must be a lowercase singular-authority identifier");
   return findings.every((entry) => !entry.path.startsWith(path));
 }
 function sri(value: unknown): value is string {
@@ -276,7 +288,7 @@ function sri(value: unknown): value is string {
   } catch { return false; }
 }
 function samePackage(left: RepositoryPackageAdoptionPackage, right: RepositoryPackageAdoptionPackage): boolean {
-  return left.name === right.name && left.version === right.version && left.integrity === right.integrity;
+  return left.name === right.name && left.version === right.version && left.integrity === right.integrity && left.singularAuthority === right.singularAuthority;
 }
 function sha(value: unknown): value is string { return typeof value === "string" && SHA.test(value); }
 function opaque(value: unknown): value is string { return nonempty(value); }
@@ -296,9 +308,9 @@ function eventShape(event: unknown, expected: RepositoryPackageAdoptionEventKind
   if (expected === "foundation") {
     if (!exactKeys(event, ["kind", "candidate", "manifestRef", "lockfileRef", "cleanInstallRef", "reviewRef"])) { finding(findings, "event-shape", path, "foundation has unknown or missing fields"); return false; }
     const candidate = own(event, "candidate");
-    if (!exactKeys(candidate, ["name", "version", "integrity", "headSha", "baseSha", "mainSha"])) finding(findings, "event-shape", `${path}.candidate`, "must contain package identity and headSha, baseSha, mainSha");
+    if (!exactPackageKeys(candidate, ["headSha", "baseSha", "mainSha"])) finding(findings, "event-shape", `${path}.candidate`, "must contain package identity, optional singularAuthority, and headSha, baseSha, mainSha");
     else {
-      packageShape({ name: own(candidate, "name"), version: own(candidate, "version"), integrity: own(candidate, "integrity") }, `${path}.candidate`, findings);
+      packageShape({ name: own(candidate, "name"), version: own(candidate, "version"), integrity: own(candidate, "integrity"), ...(Object.hasOwn(candidate, "singularAuthority") ? { singularAuthority: own(candidate, "singularAuthority") } : {}) }, `${path}.candidate`, findings);
       for (const key of ["headSha", "baseSha", "mainSha"] as const) if (!sha(own(candidate, key))) finding(findings, "event-head-mismatch", `${path}.candidate.${key}`, "must be an exact 40-character lowercase commit sha");
       if (topPackage && !samePackage(topPackage, candidate as unknown as RepositoryPackageAdoptionPackage)) finding(findings, "event-package-mismatch", `${path}.candidate`, "must exactly match the top-level package identity");
     }
@@ -452,6 +464,7 @@ function coverageResult(value: unknown): GateResult<RepositoryPackageAdoptionFin
   if (own(value, "verdict") === "indeterminate" && (exactKeys(value, ["verdict", "reason"]) || exactKeys(value, ["verdict", "reason", "detail"])) && nonempty(own(value, "reason")) && (own(value, "detail") === undefined || nonempty(own(value, "detail")))) return { verdict: "indeterminate", reason: String(own(value, "reason")), ...(nonempty(own(value, "detail")) ? { detail: String(own(value, "detail")) } : {}) };
   return undefined;
 }
+
 function observationStateShape(value: unknown): value is RepositoryPackageAdoptionRulesetStateObservation {
   return exactKeys(value, ["state", "mainSha", "requiredCheck", "ruleId", "sourceRef", "observedAt"])
     && (own(value, "state") === "enforced" || own(value, "state") === "not-enforced" || own(value, "state") === "unknown")
@@ -506,6 +519,28 @@ function completionBindingFindings(
   return findings;
 }
 
+function matchingSingularAuthorityInput(value: unknown, adoptedPackage: RepositoryPackageAdoptionPackage): boolean {
+  if (!safeRecord(value) || adoptedPackage.singularAuthority === undefined) return false;
+  const target = own(value, "target");
+  const declarations = own(value, "declarations");
+  if (!safeRecord(target) || own(target, "authority") !== adoptedPackage.singularAuthority || own(target, "version") !== adoptedPackage.version || !safeArray(declarations, 128)) return false;
+  return declarations.some((declaration) => safeRecord(declaration) && own(declaration, "packageName") === adoptedPackage.name && own(declaration, "authority") === adoptedPackage.singularAuthority);
+}
+
+function adoptedPackageIsAuthoritative(
+  report: SingularAuthorityReport,
+  input: SingularAuthorityCheckInput,
+  adoptedPackage: RepositoryPackageAdoptionPackage,
+): boolean {
+  const result = report.results.find((candidate) => candidate.authority === adoptedPackage.singularAuthority);
+  if (!result) return false;
+  const helpers = new Set((input.dispositions ?? [])
+    .filter((disposition) => disposition.authority === adoptedPackage.singularAuthority && disposition.kind === "isolated-non-authoritative-helper")
+    .map((disposition) => disposition.node));
+  const exactCopies = result.resolved.filter((copy) => copy.packageName === adoptedPackage.name && copy.version === adoptedPackage.version);
+  return exactCopies.length > 0 && exactCopies.every((copy) => !helpers.has(copy.node));
+}
+
 /**
  * Evaluates only caller-supplied evidence. Missing evidence remains
  * indeterminate; a known enforcement mismatch is violated. No branch,
@@ -513,7 +548,7 @@ function completionBindingFindings(
  */
 export function evaluateRepositoryPackageAdoption(input: RepositoryPackageAdoptionEvaluationInput): RepositoryPackageAdoptionEvaluation {
   const suppliedInput = safeRecord(input as unknown) ? input as unknown as RecordValue : undefined;
-  const allowedInputFields = new Set(["adoption", "repositoryProfile", "stableProfileCoverage", "foundationReview", "rulesetObservation", "positionLedger", "completionEvidence"]);
+  const allowedInputFields = new Set(["adoption", "repositoryProfile", "stableProfileCoverage", "foundationReview", "rulesetObservation", "positionLedger", "completionEvidence", "singularAuthorityConvergence"]);
   if (!suppliedInput || Object.keys(suppliedInput).some((key) => !allowedInputFields.has(key))) {
     const unreadable: RepositoryPackageAdoptionFinding[] = [{ rule: "adoption-shape", severity: "error", path: "$input", message: "evaluation input must be safely readable plain data" }];
     return evaluation(REPOSITORY_PACKAGE_ADOPTION_REASONS.indeterminate("adoption-invalid", "The evaluation input must contain only documented, safely readable fields."), unreadable, "candidate");
@@ -526,6 +561,40 @@ export function evaluateRepositoryPackageAdoption(input: RepositoryPackageAdopti
   if (structural.length > 0) return evaluation(REPOSITORY_PACKAGE_ADOPTION_REASONS.indeterminate("adoption-invalid", "The adoption record does not satisfy the strict v1 schema."), structural, initialPhase);
   const adoption = rawAdoptionValue as RepositoryPackageAdoptionV1;
   const findings: RepositoryPackageAdoptionFinding[] = [];
+  const authorityConvergence = own(suppliedInput, "singularAuthorityConvergence");
+  if (adoption.package.singularAuthority === undefined) {
+    if (authorityConvergence !== undefined) {
+      finding(findings, "singular-authority-convergence", "singularAuthorityConvergence", "an ordinary package without singularAuthority cannot be cleared by unrelated convergence evidence");
+      return evaluation(gateViolated(findings), findings, phase(adoption));
+    }
+  } else {
+    if (authorityConvergence === undefined) {
+      return evaluation(REPOSITORY_PACKAGE_ADOPTION_REASONS.indeterminate("singular-authority-convergence-indeterminate", "A package declaring singularAuthority requires matching frozen-consumer convergence input."), findings, phase(adoption));
+    }
+    if (!matchingSingularAuthorityInput(authorityConvergence, adoption.package)) {
+      finding(findings, "singular-authority-convergence", "singularAuthorityConvergence", "must target the adopted package's declared singular authority and exact candidate version, with a matching declaration");
+      return evaluation(gateViolated(findings), findings, phase(adoption));
+    }
+    let report;
+    let adoptedPackageAuthoritative = false;
+    try {
+      report = checkSingularAuthority(authorityConvergence as SingularAuthorityCheckInput);
+      if (report.ok) adoptedPackageAuthoritative = adoptedPackageIsAuthoritative(report, authorityConvergence as SingularAuthorityCheckInput, adoption.package);
+    } catch {
+      return evaluation(REPOSITORY_PACKAGE_ADOPTION_REASONS.indeterminate("singular-authority-convergence-indeterminate", "The optional frozen-consumer singular-authority input could not be safely evaluated."), findings, phase(adoption));
+    }
+    if (!report.ok) {
+      if (report.results.some((result) => result.status === "unresolved-conflict" || result.status === "compatibility-update-required")) {
+        finding(findings, "singular-authority-convergence", "singularAuthorityConvergence", "the supplied frozen-consumer graph has an undisposed singular-authority conflict or a required compatibility update");
+        return evaluation(gateViolated(findings), findings, phase(adoption));
+      }
+      return evaluation(REPOSITORY_PACKAGE_ADOPTION_REASONS.indeterminate("singular-authority-convergence-indeterminate", "The optional frozen-consumer singular-authority graph is unsupported, unresolved, or requires override proof."), findings, phase(adoption));
+    }
+    if (!adoptedPackageAuthoritative) {
+      finding(findings, "singular-authority-convergence", "singularAuthorityConvergence", "must resolve the adopted package itself at its exact candidate version as an authoritative, non-helper lock node");
+      return evaluation(gateViolated(findings), findings, phase(adoption));
+    }
+  }
   const profile = own(suppliedInput, "repositoryProfile");
   if (!safeRecord(profile) || !exactKeys(profile, ["value", "path", "sha256"])) {
     finding(findings, "profile-schema-invalid", "repositoryProfile", "must contain value, path, and sha256");
