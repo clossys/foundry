@@ -1,7 +1,7 @@
 /**
  * Shared, dependency-free validation primitives for `schema.ts`. This package
  * hand-rolls its record validation rather than depending on a schema library
- * — see `schema.ts`'s own header for why, and `@vespeneventures/strategist`'s
+ * — see `schema.ts`'s own header for why, and `@clossys/strategist`'s
  * `validation.ts` for the precedent this file follows: plain type guards over
  * `unknown`, accumulating findings into an array, never throwing.
  *

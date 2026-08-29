@@ -10,7 +10,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const packageRoot = join(root, "packages/controller");
 const manifest = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8"));
 const entry = manifest.bin?.["foundry-completion-evidence-check"];
-if (typeof entry !== "string") throw new Error("@vespeneventures/controller does not declare foundry-completion-evidence-check");
+if (typeof entry !== "string") throw new Error("@clossys/controller does not declare foundry-completion-evidence-check");
 const binTarget = join(packageRoot, entry);
 if (!readFileSync(binTarget, "utf8").startsWith("#!/usr/bin/env node")) throw new Error("foundry-completion-evidence-check bin target must retain its Node shebang");
 const result = spawnSync(process.execPath, [binTarget, join(root, "docs/contracts/completion-evidence.fixture.json"), join(root, "docs/contracts/installed-position-ledger.fixture.json")], { stdio: "inherit" });

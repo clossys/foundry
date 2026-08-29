@@ -3,7 +3,7 @@
  * requirement constraint (issue #318) -- exactly enough to parse and compare
  * a value like `"20"`, `"10.33.0"`, or `"v20.11.0"` and nothing else.
  *
- * Deliberately NOT the semantic-version parser `@vespeneventures/integrator`
+ * Deliberately NOT the semantic-version parser `@clossys/integrator`
  * ships in its own `semver.ts`: this package declares no runtime
  * dependencies (see its own `package.json`), and `integrator` is a
  * consumer-facing currency package, not something `controller` should

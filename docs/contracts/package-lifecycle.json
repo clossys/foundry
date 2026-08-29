@@ -2,22 +2,110 @@
   "schemaVersion": 1,
   "packages": [
     {
-      "name": "@vespeneventures/starter",
-      "status": "published"
+      "name": "@clossys/advisor",
+      "status": "active"
+    },
+    {
+      "name": "@clossys/architect",
+      "status": "active"
+    },
+    {
+      "name": "@clossys/bouncer",
+      "status": "active"
+    },
+    {
+      "name": "@clossys/builder",
+      "status": "active"
+    },
+    {
+      "name": "@clossys/butler",
+      "status": "active"
+    },
+    {
+      "name": "@clossys/controller",
+      "status": "active"
+    },
+    {
+      "name": "@clossys/designer",
+      "status": "active"
+    },
+    {
+      "name": "@clossys/giver",
+      "status": "active"
+    },
+    {
+      "name": "@clossys/influencer",
+      "status": "active"
+    },
+    {
+      "name": "@clossys/inspector",
+      "status": "active"
+    },
+    {
+      "name": "@clossys/integrator",
+      "status": "active"
+    },
+    {
+      "name": "@clossys/keeper",
+      "status": "active"
+    },
+    {
+      "name": "@clossys/locksmith",
+      "status": "active"
+    },
+    {
+      "name": "@clossys/messenger",
+      "status": "active"
+    },
+    {
+      "name": "@clossys/observer",
+      "status": "active"
+    },
+    {
+      "name": "@clossys/publisher",
+      "status": "active"
+    },
+    {
+      "name": "@clossys/starter",
+      "status": "active"
+    },
+    {
+      "name": "@clossys/strategist",
+      "status": "active"
+    },
+    {
+      "name": "@clossys/writer",
+      "status": "active"
     },
     {
       "name": "@vespeneventures/advisor",
-      "status": "published"
+      "status": "retired",
+      "replacement": {
+        "name": "@clossys/advisor",
+        "range": "^0.1.3"
+      },
+      "retiredOn": "2026-08-29",
+      "decision": "https://github.com/clossys/platform/issues/593",
+      "migration": "docs/DECISIONS.md#19-w1d-namespace-and-registry-recut",
+      "forwardsToReplacement": false
     },
     {
       "name": "@vespeneventures/architect",
-      "status": "published"
+      "status": "retired",
+      "replacement": {
+        "name": "@clossys/architect",
+        "range": "^0.1.1"
+      },
+      "retiredOn": "2026-08-29",
+      "decision": "https://github.com/clossys/platform/issues/593",
+      "migration": "docs/DECISIONS.md#19-w1d-namespace-and-registry-recut",
+      "forwardsToReplacement": false
     },
     {
       "name": "@vespeneventures/auth",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/bouncer",
+        "name": "@clossys/bouncer",
         "range": "^0.1.0"
       },
       "deprecatedOn": "2026-08-22",
@@ -28,21 +116,45 @@
     },
     {
       "name": "@vespeneventures/bouncer",
-      "status": "published"
+      "status": "retired",
+      "replacement": {
+        "name": "@clossys/bouncer",
+        "range": "^0.1.0"
+      },
+      "retiredOn": "2026-08-29",
+      "decision": "https://github.com/clossys/platform/issues/593",
+      "migration": "docs/DECISIONS.md#19-w1d-namespace-and-registry-recut",
+      "forwardsToReplacement": false
     },
     {
       "name": "@vespeneventures/builder",
-      "status": "published"
+      "status": "retired",
+      "replacement": {
+        "name": "@clossys/builder",
+        "range": "^0.7.2"
+      },
+      "retiredOn": "2026-08-29",
+      "decision": "https://github.com/clossys/platform/issues/593",
+      "migration": "docs/DECISIONS.md#19-w1d-namespace-and-registry-recut",
+      "forwardsToReplacement": false
     },
     {
       "name": "@vespeneventures/butler",
-      "status": "published"
+      "status": "retired",
+      "replacement": {
+        "name": "@clossys/butler",
+        "range": "^0.1.0"
+      },
+      "retiredOn": "2026-08-29",
+      "decision": "https://github.com/clossys/platform/issues/593",
+      "migration": "docs/DECISIONS.md#19-w1d-namespace-and-registry-recut",
+      "forwardsToReplacement": false
     },
     {
       "name": "@vespeneventures/catalog",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/controller",
+        "name": "@clossys/controller",
         "range": "^0.8.0"
       },
       "deprecatedOn": "2026-08-18",
@@ -55,7 +167,7 @@
       "name": "@vespeneventures/comms",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/messenger",
+        "name": "@clossys/messenger",
         "range": "^0.1.0"
       },
       "deprecatedOn": "2026-08-24",
@@ -68,7 +180,7 @@
       "name": "@vespeneventures/consent",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/butler",
+        "name": "@clossys/butler",
         "range": "^0.1.0"
       },
       "deprecatedOn": "2026-08-22",
@@ -79,13 +191,21 @@
     },
     {
       "name": "@vespeneventures/controller",
-      "status": "published"
+      "status": "retired",
+      "replacement": {
+        "name": "@clossys/controller",
+        "range": "^0.8.20"
+      },
+      "retiredOn": "2026-08-29",
+      "decision": "https://github.com/clossys/platform/issues/593",
+      "migration": "docs/DECISIONS.md#19-w1d-namespace-and-registry-recut",
+      "forwardsToReplacement": false
     },
     {
       "name": "@vespeneventures/conventions",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/controller",
+        "name": "@clossys/controller",
         "range": "^0.8.0"
       },
       "deprecatedOn": "2026-08-18",
@@ -98,7 +218,7 @@
       "name": "@vespeneventures/copy",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/writer",
+        "name": "@clossys/writer",
         "range": "^0.3.0"
       },
       "deprecatedOn": "2026-08-21",
@@ -111,7 +231,7 @@
       "name": "@vespeneventures/deployment",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/builder",
+        "name": "@clossys/builder",
         "range": "^0.7.0"
       },
       "deprecatedOn": "2026-08-18",
@@ -122,13 +242,21 @@
     },
     {
       "name": "@vespeneventures/designer",
-      "status": "published"
+      "status": "retired",
+      "replacement": {
+        "name": "@clossys/designer",
+        "range": "^0.2.1"
+      },
+      "retiredOn": "2026-08-29",
+      "decision": "https://github.com/clossys/platform/issues/593",
+      "migration": "docs/DECISIONS.md#19-w1d-namespace-and-registry-recut",
+      "forwardsToReplacement": false
     },
     {
       "name": "@vespeneventures/domain",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/architect",
+        "name": "@clossys/architect",
         "range": "^0.1.0"
       },
       "deprecatedOn": "2026-08-24",
@@ -141,7 +269,7 @@
       "name": "@vespeneventures/domain-model",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/architect",
+        "name": "@clossys/architect",
         "range": "^0.1.0"
       },
       "deprecatedOn": "2026-08-11",
@@ -153,7 +281,7 @@
       "name": "@vespeneventures/gates",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/controller",
+        "name": "@clossys/controller",
         "range": "^0.8.0"
       },
       "deprecatedOn": "2026-08-18",
@@ -164,13 +292,21 @@
     },
     {
       "name": "@vespeneventures/giver",
-      "status": "published"
+      "status": "retired",
+      "replacement": {
+        "name": "@clossys/giver",
+        "range": "^0.1.1"
+      },
+      "retiredOn": "2026-08-29",
+      "decision": "https://github.com/clossys/platform/issues/593",
+      "migration": "docs/DECISIONS.md#19-w1d-namespace-and-registry-recut",
+      "forwardsToReplacement": false
     },
     {
       "name": "@vespeneventures/governance",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/controller",
+        "name": "@clossys/controller",
         "range": "^0.8.0"
       },
       "deprecatedOn": "2026-08-18",
@@ -180,26 +316,58 @@
       "forwardsToReplacement": false
     },
     {
+      "name": "@vespeneventures/influencer",
+      "status": "retired",
+      "replacement": {
+        "name": "@clossys/influencer",
+        "range": "^0.1.1"
+      },
+      "retiredOn": "2026-08-29",
+      "decision": "https://github.com/clossys/platform/issues/593",
+      "migration": "docs/DECISIONS.md#19-w1d-namespace-and-registry-recut",
+      "forwardsToReplacement": false
+    },
+    {
       "name": "@vespeneventures/inspector",
-      "status": "published"
+      "status": "retired",
+      "replacement": {
+        "name": "@clossys/inspector",
+        "range": "^0.1.15"
+      },
+      "retiredOn": "2026-08-29",
+      "decision": "https://github.com/clossys/platform/issues/593",
+      "migration": "docs/DECISIONS.md#19-w1d-namespace-and-registry-recut",
+      "forwardsToReplacement": false
     },
     {
       "name": "@vespeneventures/integrator",
-      "status": "published"
-    },
-    {
-      "name": "@vespeneventures/influencer",
-      "status": "published"
+      "status": "retired",
+      "replacement": {
+        "name": "@clossys/integrator",
+        "range": "^0.6.1"
+      },
+      "retiredOn": "2026-08-29",
+      "decision": "https://github.com/clossys/platform/issues/593",
+      "migration": "docs/DECISIONS.md#19-w1d-namespace-and-registry-recut",
+      "forwardsToReplacement": false
     },
     {
       "name": "@vespeneventures/keeper",
-      "status": "published"
+      "status": "retired",
+      "replacement": {
+        "name": "@clossys/keeper",
+        "range": "^0.1.1"
+      },
+      "retiredOn": "2026-08-29",
+      "decision": "https://github.com/clossys/platform/issues/593",
+      "migration": "docs/DECISIONS.md#19-w1d-namespace-and-registry-recut",
+      "forwardsToReplacement": false
     },
     {
       "name": "@vespeneventures/ledger",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/publisher",
+        "name": "@clossys/publisher",
         "range": "^0.1.0"
       },
       "deprecatedOn": "2026-08-21",
@@ -210,21 +378,45 @@
     },
     {
       "name": "@vespeneventures/locksmith",
-      "status": "published"
+      "status": "retired",
+      "replacement": {
+        "name": "@clossys/locksmith",
+        "range": "^0.1.3"
+      },
+      "retiredOn": "2026-08-29",
+      "decision": "https://github.com/clossys/platform/issues/593",
+      "migration": "docs/DECISIONS.md#19-w1d-namespace-and-registry-recut",
+      "forwardsToReplacement": false
     },
     {
       "name": "@vespeneventures/messenger",
-      "status": "published"
+      "status": "retired",
+      "replacement": {
+        "name": "@clossys/messenger",
+        "range": "^0.1.1"
+      },
+      "retiredOn": "2026-08-29",
+      "decision": "https://github.com/clossys/platform/issues/593",
+      "migration": "docs/DECISIONS.md#19-w1d-namespace-and-registry-recut",
+      "forwardsToReplacement": false
     },
     {
       "name": "@vespeneventures/observer",
-      "status": "published"
+      "status": "retired",
+      "replacement": {
+        "name": "@clossys/observer",
+        "range": "^0.2.2"
+      },
+      "retiredOn": "2026-08-29",
+      "decision": "https://github.com/clossys/platform/issues/593",
+      "migration": "docs/DECISIONS.md#19-w1d-namespace-and-registry-recut",
+      "forwardsToReplacement": false
     },
     {
       "name": "@vespeneventures/policy",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/controller",
+        "name": "@clossys/controller",
         "range": "^0.8.0"
       },
       "deprecatedOn": "2026-08-18",
@@ -237,7 +429,7 @@
       "name": "@vespeneventures/provisioning",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/builder",
+        "name": "@clossys/builder",
         "range": "^0.7.0"
       },
       "deprecatedOn": "2026-08-18",
@@ -248,13 +440,21 @@
     },
     {
       "name": "@vespeneventures/publisher",
-      "status": "published"
+      "status": "retired",
+      "replacement": {
+        "name": "@clossys/publisher",
+        "range": "^0.1.4"
+      },
+      "retiredOn": "2026-08-29",
+      "decision": "https://github.com/clossys/platform/issues/593",
+      "migration": "docs/DECISIONS.md#19-w1d-namespace-and-registry-recut",
+      "forwardsToReplacement": false
     },
     {
       "name": "@vespeneventures/release",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/controller",
+        "name": "@clossys/controller",
         "range": "^0.8.0"
       },
       "deprecatedOn": "2026-08-18",
@@ -267,7 +467,7 @@
       "name": "@vespeneventures/repository",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/controller",
+        "name": "@clossys/controller",
         "range": "^0.8.0"
       },
       "deprecatedOn": "2026-08-18",
@@ -280,7 +480,7 @@
       "name": "@vespeneventures/review",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/controller",
+        "name": "@clossys/controller",
         "range": "^0.8.0"
       },
       "deprecatedOn": "2026-08-18",
@@ -293,7 +493,7 @@
       "name": "@vespeneventures/secret-scan",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/inspector",
+        "name": "@clossys/inspector",
         "range": "^0.1.0"
       },
       "deprecatedOn": "2026-08-18",
@@ -306,7 +506,7 @@
       "name": "@vespeneventures/secrets",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/locksmith",
+        "name": "@clossys/locksmith",
         "range": "^0.1.0"
       },
       "deprecatedOn": "2026-08-18",
@@ -316,14 +516,34 @@
       "forwardsToReplacement": false
     },
     {
+      "name": "@vespeneventures/starter",
+      "status": "retired",
+      "replacement": {
+        "name": "@clossys/starter",
+        "range": "^0.1.2"
+      },
+      "retiredOn": "2026-08-29",
+      "decision": "https://github.com/clossys/platform/issues/593",
+      "migration": "docs/DECISIONS.md#19-w1d-namespace-and-registry-recut",
+      "forwardsToReplacement": false
+    },
+    {
       "name": "@vespeneventures/strategist",
-      "status": "published"
+      "status": "retired",
+      "replacement": {
+        "name": "@clossys/strategist",
+        "range": "^0.1.1"
+      },
+      "retiredOn": "2026-08-29",
+      "decision": "https://github.com/clossys/platform/issues/593",
+      "migration": "docs/DECISIONS.md#19-w1d-namespace-and-registry-recut",
+      "forwardsToReplacement": false
     },
     {
       "name": "@vespeneventures/strategy",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/strategist",
+        "name": "@clossys/strategist",
         "range": "^0.1.0"
       },
       "deprecatedOn": "2026-08-20",
@@ -336,7 +556,7 @@
       "name": "@vespeneventures/surface",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/publisher",
+        "name": "@clossys/publisher",
         "range": "^0.1.0"
       },
       "deprecatedOn": "2026-08-21",
@@ -349,7 +569,7 @@
       "name": "@vespeneventures/tokens",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/designer",
+        "name": "@clossys/designer",
         "range": "^0.2.0"
       },
       "deprecatedOn": "2026-08-11",
@@ -362,7 +582,7 @@
       "name": "@vespeneventures/ui",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/designer",
+        "name": "@clossys/designer",
         "range": "^0.2.0"
       },
       "deprecatedOn": "2026-08-21",
@@ -375,7 +595,7 @@
       "name": "@vespeneventures/verify-standards",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/inspector",
+        "name": "@clossys/inspector",
         "range": "^0.1.0"
       },
       "deprecatedOn": "2026-08-18",
@@ -388,7 +608,7 @@
       "name": "@vespeneventures/voice",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/writer",
+        "name": "@clossys/writer",
         "range": "^0.3.0"
       },
       "deprecatedOn": "2026-08-11",
@@ -399,7 +619,15 @@
     },
     {
       "name": "@vespeneventures/writer",
-      "status": "published"
+      "status": "retired",
+      "replacement": {
+        "name": "@clossys/writer",
+        "range": "^0.3.1"
+      },
+      "retiredOn": "2026-08-29",
+      "decision": "https://github.com/clossys/platform/issues/593",
+      "migration": "docs/DECISIONS.md#19-w1d-namespace-and-registry-recut",
+      "forwardsToReplacement": false
     }
   ]
 }

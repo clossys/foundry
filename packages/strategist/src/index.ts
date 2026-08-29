@@ -1,5 +1,5 @@
 /**
- * @vespeneventures/strategist — the machinery, not the values.
+ * @clossys/strategist — the machinery, not the values.
  *
  * This package ships four halves, and the second through fourth are what
  * justify the first:
@@ -26,9 +26,9 @@
  *      attributes must actually account for, checked in both directions —
  *      every brandable slot has a derivation, and no derivation names a
  *      slot that doesn't exist — the same two-directional discipline
- *      `@vespeneventures/ui/tokens`' own `brand-coverage.test.ts` uses. Slot
+ *      `@example/ui/tokens`' own `brand-coverage.test.ts` uses. Slot
  *      and rule names are plain strings, never a typed import of
- *      `@vespeneventures/ui/tokens` or `@vespeneventures/copy/voice` — see
+ *      `@example/ui/tokens` or `@example/copy/voice` — see
  *      `brand-derivation.ts`'s header comment for the seam.
  *
  *   4. DIRECTION INVALIDATION. Facts drift; direction — vision, mission,
@@ -46,7 +46,7 @@
  *
  * Nothing in this package's own source is a real company's mission,
  * positioning, facts, or brand — see the README's "What this package is
- * not" and `@vespeneventures/ui/tokens`' README ("The three-layer contract")
+ * not" and `@example/ui/tokens`' README ("The three-layer contract")
  * for the pattern this mirrors: a schema and a checker ship here; the
  * values live in each consumer's own repository.
  */

@@ -395,97 +395,29 @@ packages. Non-publishing account-control-plane repositories may coexist, so
 the owner-wide check still runs: the failure mode is silent and hard to undo
 cleanly.
 
-### Installing from GitHub Packages
+### Installing during W1D
 
-Installing a package from here needs a GitHub **classic** personal access token
-with `read:packages` scope — GitHub Packages requires authentication for every
-install regardless of registry visibility. For a private package, the token
-must also belong to an account with access granted. Add to the consuming
-project's `.npmrc` (never commit a real one):
+There is no supported new-namespace install yet. The source manifests are
+prepared for `@clossys` on public npm, but W1D deliberately publishes nothing.
+An install command becomes current guidance only after W1E records the exact
+registry-served identity, digest, and public-access result.
 
-```
-@vespeneventures:registry=https://npm.pkg.github.com
-//npm.pkg.github.com/:_authToken=${GH_PACKAGES_TOKEN}
-```
+No npm token belongs in a consumer `.npmrc` for a public package. The expected
+post-W1E shape is ordinary credential-free npm resolution, but the repository
+must not claim that path works before the registry does.
 
-with `GH_PACKAGES_TOKEN` set in the environment. The consuming plane owns the
-registry mapping, credential reference, and local or CI injection. Foundry
-never stores the consumer's token value or account-specific installation
-manifest. See `docs/DECISIONS.md` for why GitHub Packages is canonical.
+### Public access and parity
 
-### Package visibility
+Every W1D manifest declares `publishConfig.access: "public"`, and the release
+catalogue binds that access to the one active npmjs target. This is source
+policy, not registry evidence. W1E must still verify the served packument and
+tarball for each first publication: exact name and version, public anonymous
+access, and digest parity with the reviewed candidate. A missing package is
+the expected W1D state, never a passing parity result.
 
-Do not infer a new package's visibility from the repository or from a
-successful upload. GitHub has created new npm packages as private in some
-contexts and as public in others. Treat the package settings page and the
-authenticated visibility report as the evidence for the package that was
-actually created.
-
-**There is no API to change a GitHub Packages npm package's visibility.**
-This was verified directly against the real API: a `PATCH` to
-`/orgs/{owner}/packages/npm/{name}` with `visibility=public` returns `404`
-even with a full-permission PAT, while `GET` on that same path works fine.
-Changing visibility is a web-UI-only operation; no token scope or workflow
-permission makes it possible another way.
-
-Once a package has passed a real consumer qualification, an owner verifies its
-visibility and makes it public manually when it is not already public:
-
-1. Visit `https://github.com/orgs/<org>/packages/npm/<name>/settings` — for
-   a package owned by a personal account rather than an organization, GitHub
-   exposes the equivalent settings page under that account's own packages
-   tab instead.
-2. Under **Danger Zone**, read the current visibility. If it is not Public,
-   use **Change visibility** to make it Public.
-
-Dispatching **Publish** with its package directory and `visibility_only:
-true` runs the workflow's `visibility` job as a convenience, but that job
-only *reports* the package's current visibility (a `GET` call) and prints
-the settings URL above — it never attempts to change anything, because
-there is nothing it could call to do so.
-
-#### The automated visibility gate
-
-The manual `visibility_only` report above only runs when someone remembers
-to ask for it. `scripts/check-package-visibility.mjs` is the gate that does
-not depend on that: it compares every "published"
-[`docs/contracts/package-lifecycle.json`](contracts/package-lifecycle.json)
-entry's declared intent — recorded separately in
-[`docs/contracts/package-visibility.json`](contracts/package-visibility.json),
-since `package-lifecycle.json`'s schema is owned by the published
-`@vespeneventures/controller` package (formerly `@vespeneventures/governance`,
-before issue #282) and a new field there would force a version bump for
-what is really repository-tooling metadata — against the
-package's real GitHub Packages visibility, and fails when they disagree.
-This is the gate that would have caught the historical
-`@vespeneventures/ui` visibility mismatch across 12 published versions.
-
-It runs in two places, never as part of local `npm run check` (it needs a
-live `read:packages` token, which ordinary local development and fork CI
-should never be required to hold):
-
-- `.github/workflows/publish.yml`'s `visibility-check` job, immediately
-  after a real publish — catching a bad default the moment it is created.
-- `.github/workflows/package-visibility.yml`, on a daily schedule —
-  catching drift that happens with no publish at all (for example a manual
-  mistake in GitHub's own web UI).
-
-Like the `visibility_only` report above, it only ever detects and reports.
-There is no API to change a package's visibility, so a finding here still
-ends at the manual step described earlier in this section.
-
-One property of it is worth stating, because it is the difference between a
-gate and a green light. GitHub answers `404` — not `403` — for a package the
-caller cannot see, so that it never leaks a private package's existence to
-someone without access. "Never published" and "published, but invisible to
-this credential" are therefore the same response, and no per-package check
-can separate them. A `GH_PACKAGES_TOKEN` rotated to one missing
-`read:packages` would otherwise produce a daily green check asserting every
-package is public, having never actually seen the registry — the exact
-shape of failure this gate exists to prevent, wearing the gate's own badge.
-So when *every* declared package comes back `404`, the run exits `2`
-(could-not-run) rather than `0`. A single real answer anywhere is enough to
-trust the remaining `404`s as genuine.
+The GitHub Packages visibility machinery remains only as historical evidence
+for the immutable old namespace. It is not an npmjs visibility control and is
+not activated for the recut source state.
 
 ### Historical compatibility-package retirements
 

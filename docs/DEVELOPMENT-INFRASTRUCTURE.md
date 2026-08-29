@@ -24,24 +24,24 @@ separate in [ADOPTION.md](ADOPTION.md).
 
 ## Package boundaries
 
-`@vespeneventures/controller/repository` and
-`@vespeneventures/controller/review` are subpaths of the single current
+`@clossys/controller/repository` and
+`@clossys/controller/review` are subpaths of the single current
 Controller artifact. They share its implementation and release identity;
 consumers select only the subpath contracts their repository needs.
 
-`@vespeneventures/controller/repository` owns a provider-neutral contract for
+`@clossys/controller/repository` owns a provider-neutral contract for
 consumer-authored repository values and upward requirements. It validates
 declarations and purely evaluates caller-normalized observations without I/O.
 It does not discover repositories or machines, choose precedence or compatible
 values, install files, produce a provisioning manifest, or mutate a consumer.
 
-`@vespeneventures/controller/review` owns provider-neutral contracts and validation for
+`@clossys/controller/review` owns provider-neutral contracts and validation for
 review evidence: requests, findings, dispositions, threads, checks, decisions,
 and exact-head freshness. Its root export remains vendor-neutral. Meaningful
-GitHub evidence translation belongs at `@vespeneventures/controller/review/github`; it
+GitHub evidence translation belongs at `@clossys/controller/review/github`; it
 does not warrant a separate `review-github` or generic `github` package.
 
-`@vespeneventures/controller/gates` remains the orchestration subpath for
+`@clossys/controller/gates` remains the orchestration subpath for
 catalog and policy checks. It is not a runtime dependency of the repository
 or review contracts, and neither contract becomes a general gate runner.
 
@@ -60,7 +60,7 @@ provider wrappers.
 
 ## Adoption and retirement
 
-The current Controller artifact is `@vespeneventures/controller@0.8.19`. A
+The current Controller artifact is `@clossys/controller@0.8.19`. A
 consumer qualifies the relevant Controller subpaths by authoring its own
 profile and validating that profile in the consumer's existing check path.
 The historical standalone names are already retired; they neither run beside

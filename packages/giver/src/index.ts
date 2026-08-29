@@ -1,5 +1,5 @@
 /**
- * @vespeneventures/giver — everything about what you get: what you asked
+ * @clossys/giver — everything about what you get: what you asked
  * for, and what we owe you.
  *
  * The question this role answers, and no other role does: **did this

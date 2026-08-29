@@ -1,5 +1,5 @@
 {
-  "name": "@vespeneventures/messenger",
+  "name": "@clossys/messenger",
   "version": "0.1.1",
   "private": false,
   "license": "MIT",
@@ -40,13 +40,13 @@
   "author": "Calvin Hung",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vespeneventures/foundry.git",
+    "url": "git+https://github.com/clossys/platform.git",
     "directory": "packages/messenger"
   },
   "bugs": {
-    "url": "https://github.com/vespeneventures/foundry/issues"
+    "url": "https://github.com/clossys/platform/issues"
   },
-  "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/messenger#readme",
+  "homepage": "https://github.com/clossys/platform/tree/main/packages/messenger#readme",
   "engines": {
     "node": ">=20"
   },
@@ -66,9 +66,12 @@
     "resend": "^6.19.0"
   },
   "peerDependenciesMeta": {
-    "resend": { "optional": true }
+    "resend": {
+      "optional": true
+    }
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "registry": "https://registry.npmjs.org",
+    "access": "public"
   }
 }

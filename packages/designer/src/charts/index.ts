@@ -1,5 +1,5 @@
 /**
- * @vespeneventures/designer/charts — dependency-free SVG chart primitives. This
+ * @clossys/designer/charts — dependency-free SVG chart primitives. This
  * is a SIBLING layer to `atoms → blocks → views`, not another rung of that
  * composition ladder (the same way `shell` sits beside `views` rather than
  * above it — see this package's README, "Placement rules"): charts are a
@@ -37,7 +37,7 @@ import { REACT_DECLARED_RANGE } from "../internal/declared-peer-ranges.js";
  * do not use `react-aria-components` at all (no charting library
  * dependency, per this file's own header above), so this barrel only
  * needs the `react` guard, independent of `atoms/index.ts`'s: a consumer
- * who imports only `@vespeneventures/designer/charts` would otherwise get no
+ * who imports only `@clossys/designer/charts` would otherwise get no
  * signal at all.
  */
 assertPeerVersion({ peer: "react", declaredRange: REACT_DECLARED_RANGE, foundVersion: reactVersion });

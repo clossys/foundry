@@ -13,7 +13,7 @@ import type { DigestAlgorithm } from "../policy/index.js";
 
 /**
  * The exact-content checksum a governed artifact manifest declares.
- * `algorithm` reuses `@vespeneventures/controller/policy`'s own `DigestAlgorithm` —
+ * `algorithm` reuses `@clossys/controller/policy`'s own `DigestAlgorithm` —
  * currently just `"sha256"` — rather than declaring a second, independent
  * closed union: this contract can never claim to accept an algorithm
  * `policy` itself does not know how to verify, and it gains a new one the
@@ -85,14 +85,14 @@ export interface GovernedArtifactBatchEntry {
 
 /**
  * The rule vocabulary this module's `Finding`s use. `Finding.rule` itself
- * stays typed as plain `string` (from `@vespeneventures/controller/policy`, exactly
+ * stays typed as plain `string` (from `@clossys/controller/policy`, exactly
  * like the rest of this package's gates — see `../gates/types.ts`), so this
  * union is documentation and a convenience for a consumer that wants to
  * `switch` on `finding.rule`, never a runtime-enforced closed type.
  *
  * Rules prefixed `artifact/` are owned by this module. The four bare rules
  * at the end (`policy-id-shape`, `digest-algorithm-known`, `digest-shape`,
- * `digest-mismatch`) are NOT owned here — they are `@vespeneventures/controller/policy`'s
+ * `digest-mismatch`) are NOT owned here — they are `@clossys/controller/policy`'s
  * own rule names, passed through verbatim from `validateBindingShape` /
  * `verifyBinding` rather than re-derived, so a caller sees exactly which
  * layer actually reported the problem. See `verify.ts`.

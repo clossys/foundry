@@ -1,4 +1,4 @@
-import type { CopyResolution } from "@vespeneventures/writer";
+import type { CopyResolution } from "@clossys/writer";
 import type { ResolvedSurfaceDocument } from "./resolve-surface.js";
 import type { Channel, CopyProvenance, OutputArtifact, OutputManifest, StrategyProvenance, SurfaceDocument } from "./types.js";
 

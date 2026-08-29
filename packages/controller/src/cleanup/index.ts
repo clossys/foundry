@@ -1,5 +1,5 @@
 /**
- * `@vespeneventures/controller/cleanup` — pure workspace-cleanup
+ * `@clossys/controller/cleanup` — pure workspace-cleanup
  * classification: the deterministic decision core shared by every
  * account-plane cleanup skill (#215). This subpath performs no Git,
  * filesystem, GitHub, scheduler, credential, network, or deletion I/O, and

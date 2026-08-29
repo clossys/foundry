@@ -1,5 +1,5 @@
 /**
- * Plain TypeScript types for @vespeneventures/writer's contract: one
+ * Plain TypeScript types for @clossys/writer's contract: one
  * addressable, reviewable piece of copy (`CopyEntry`) and the record that
  * groups a consumer's whole set of them (`CopyRecord`). Pure data — no
  * validation logic lives here (see `schema.ts`) and no I/O (see
@@ -13,13 +13,13 @@
  *
  * No runtime schema library. That follows this repository's own
  * precedent, restated once more because it matters more here than
- * anywhere else: `@vespeneventures/catalog`, `@vespeneventures/policy`,
- * `@vespeneventures/ui/tokens`, and `@vespeneventures/writer/voice` all ship zero
- * runtime dependencies; only `@vespeneventures/ui` carries any, and only
+ * anywhere else: `@example/catalog`, `@example/policy`,
+ * `@example/ui/tokens`, and `@clossys/writer/voice` all ship zero
+ * runtime dependencies; only `@example/ui` carries any, and only
  * because it wraps React primitives it genuinely cannot hand-roll. This
  * package's entire job is dependency-free data shape validation — the
- * same job `@vespeneventures/strategy`'s `validation.ts` and
- * `@vespeneventures/writer/voice`'s `schema.ts` already do, in plain type
+ * same job `@example/strategy`'s `validation.ts` and
+ * `@clossys/writer/voice`'s `schema.ts` already do, in plain type
  * guards, for their own shapes. `schema.ts` follows that pattern closely
  * rather than pulling in a schema library (and its own major-version
  * churn, a real cost for a *public* package's consumers) for what one
@@ -29,8 +29,8 @@
  * here is either required-and-generic or a structural placeholder —
  * filling in an actual product's actual sentences is a consumer's job.
  * See "The single most important constraint" in the README: this package
- * is to `@vespeneventures/writer/voice` what `@vespeneventures/ui` is to
- * `@vespeneventures/ui/tokens` — a vocabulary layer over a contract layer,
+ * is to `@clossys/writer/voice` what `@example/ui` is to
+ * `@example/ui/tokens` — a vocabulary layer over a contract layer,
  * never a source of real words. If a doc comment, a test fixture, or a
  * README example in this package ever reads like something a product
  * would actually show a user, that is a bug in this package, not a
@@ -110,7 +110,7 @@ export interface CopySource {
  * anything real — every `CopyEntry` a consumer's own repository registers
  * is that repository's own words, the same way a `VoiceRecord`'s
  * `glossary` and `claims` are never this package's words either (see
- * `@vespeneventures/writer/voice`'s README, "The single most important
+ * `@clossys/writer/voice`'s README, "The single most important
  * constraint").
  */
 export interface CopyEntry {
@@ -151,8 +151,8 @@ export interface CopyEntry {
   placeholders?: string[];
   /**
    * A plain string into a consumer's own facts registry — never a typed
-   * import, never a runtime dependency on `@vespeneventures/strategy`.
-   * This mirrors exactly how `@vespeneventures/writer/voice`'s `Claim.factRef`
+   * import, never a runtime dependency on `@example/strategy`.
+   * This mirrors exactly how `@clossys/writer/voice`'s `Claim.factRef`
    * refers to a `strategy` package's facts without importing it: the
    * coupling is an opaque string convention, not a code import, so this
    * package works today, before `strategy` (or a consumer's own facts
@@ -160,7 +160,7 @@ export interface CopyEntry {
    * Resolving a `factRef` against a real facts registry is a later gate's
    * job, one with visibility into both this package's entries and that
    * registry — deliberately not this package's, and not
-   * `@vespeneventures/writer/voice`'s either. See the README, "The `factRef`
+   * `@clossys/writer/voice`'s either. See the README, "The `factRef`
    * seam", for the fuller argument (borrowed near-verbatim from that
    * package's own README section of the same name, because it is the
    * same seam, one layer over).
@@ -272,20 +272,20 @@ export interface CopyResolution {
 export type CopyResolver = (ref: CopyRef) => CopyResolution | undefined;
 
 // ---------------------------------------------------------------------------
-// CopyFinding — shared shape, mirroring @vespeneventures/writer/voice's own `VoiceFinding`
+// CopyFinding — shared shape, mirroring @clossys/writer/voice's own `VoiceFinding`
 // ---------------------------------------------------------------------------
 
 /**
  * One thing `schema.ts`'s shape validation found wrong with a candidate
  * `CopyRecord` or `CopyEntry`. Deliberately the same shape as
- * `@vespeneventures/writer/voice`'s `VoiceFinding` (itself deliberately the same
- * shape as `@vespeneventures/policy`'s `Finding`) — `rule` / `severity` /
+ * `@clossys/writer/voice`'s `VoiceFinding` (itself deliberately the same
+ * shape as `@example/policy`'s `Finding`) — `rule` / `severity` /
  * `message` / optional `path` — so a caller already handling one kind of
  * finding in this repository's ecosystem does not need a second mental
  * model for this package's. Defined fresh here, not imported: this
  * file's own zero-runtime-dependency requirement applies to
- * `@vespeneventures/writer/voice` too — `types.ts` and `schema.ts` do not import
- * from it. (`checker.ts` does depend on `@vespeneventures/writer/voice`, for
+ * `@clossys/writer/voice` too — `types.ts` and `schema.ts` do not import
+ * from it. (`checker.ts` does depend on `@clossys/writer/voice`, for
  * `checkCopy` itself — see that file's own doc comment for why that
  * dependency is confined there.)
  */

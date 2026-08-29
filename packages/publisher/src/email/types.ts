@@ -38,7 +38,7 @@ export interface RenderEmailOptions {
   /**
    * The real, positioned `LayoutSpec` this document's `template` defines —
    * the same "supply the real slot list from wherever it lives" seam
-   * `@vespeneventures/publisher/core`'s own `resolveDocument` documents (its
+   * `@clossys/publisher/core`'s own `resolveDocument` documents (its
    * `layout` argument is never read off `doc.layout`, because a
    * `channel: "email"` document is FORBIDDEN from carrying one at all —
    * see `surface/core`'s `validate.ts`, `layout-forbidden`). Omit this entirely
@@ -48,10 +48,10 @@ export interface RenderEmailOptions {
    */
   /** @deprecated Use `flow`. Retained only to preserve the former positioned-email migration path and its warnings. */
   layout?: LayoutSpec;
-  /** See `@vespeneventures/publisher/core`'s own `CopyLookup`. Omitted entirely (rather than passed as `undefined`) is treated the same as a lookup that resolves nothing — every `copyId` binding is then unresolved, which fails this function's own resolution bar (see `renderEmailDocument.ts`). */
+  /** See `@clossys/publisher/core`'s own `CopyLookup`. Omitted entirely (rather than passed as `undefined`) is treated the same as a lookup that resolves nothing — every `copyId` binding is then unresolved, which fails this function's own resolution bar (see `renderEmailDocument.ts`). */
   lookup?: CopyLookup;
   /**
-   * See `@vespeneventures/publisher/core`'s own `AssetLookup` — the identical seam
+   * See `@clossys/publisher/core`'s own `AssetLookup` — the identical seam
    * `lookup` draws for `copyId`, one binding field over. Omitted entirely is
    * treated the same as a lookup that resolves nothing — every `assetId`
    * binding is then unresolved, which is ALWAYS fatal for this channel (see
@@ -60,7 +60,7 @@ export interface RenderEmailOptions {
    * leniency to remove).
    */
   assetLookup?: AssetLookup;
-  /** A `flattenTokens` override map (`@vespeneventures/designer/tokens`' brand-override shape) — passed straight through to `internal/styles.ts`'s `buildEmailPalette`. Omit to render with the unbranded default token values. */
+  /** A `flattenTokens` override map (`@clossys/designer/tokens`' brand-override shape) — passed straight through to `internal/styles.ts`'s `buildEmailPalette`. Omit to render with the unbranded default token values. */
   brand?: Record<string, string>;
 }
 

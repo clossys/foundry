@@ -46,7 +46,7 @@
  * check, so this file never needs one. The Node-only fs-based resolver
  * (`resolveInstalledPeerVersion`) lives in its own sibling file,
  * `resolve-installed-peer-version.ts`, for parity with this same split in
- * `@vespeneventures/auth` and `@vespeneventures/surface` — there, keeping
+ * `@example/auth` and `@example/surface` — there, keeping
  * a `node:module`/`node:fs`-free `peer-version.ts` is a real correctness
  * requirement for a browser-reachable module; here it is not currently
  * load-bearing (this package is a Node CLI/gate toolkit, never bundled
@@ -277,7 +277,7 @@ export function assertPeerVersion(input: AssertPeerVersionInput): void {
     if (!warnedUnparseableVersions.has(warnKey)) {
       warnedUnparseableVersions.add(warnKey);
       console.warn(
-        `[@vespeneventures/controller] Could not verify ${peer}@${foundVersion} against this package's declared ` +
+        `[@clossys/controller] Could not verify ${peer}@${foundVersion} against this package's declared ` +
           `range "${declaredRange}": ${outcome.reason}. This is not a value that failed the check — it is a value ` +
           `assertPeerVersion could not read at all, so it is being treated as indeterminate rather than as a ` +
           `violation. Proceeding without blocking the build; if ${peer} is genuinely incompatible that will ` +

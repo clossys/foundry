@@ -1,4 +1,4 @@
-# @vespeneventures/integrator
+# @clossys/integrator
 
 The machinery a consuming plane runs against **itself** to answer one
 question: does this plane hold what it declared it holds, and is it current?
@@ -6,7 +6,7 @@ Enrollment, versions, admission, vendoring, reachability — the whole question
 of whether a plane actually has what it installed.
 
 ```bash
-npm install @vespeneventures/integrator
+npm install @clossys/integrator
 ```
 
 ## The job
@@ -90,7 +90,7 @@ import {
   upgradeSet,
   optOutGaps,
   computeCurrencyMetric,
-} from "@vespeneventures/integrator";
+} from "@clossys/integrator";
 
 // 1. What this plane is entitled to, and what it has decided not to install.
 const declaration = loadEntitlementDeclaration(JSON.parse(rawEntitlementJson));
@@ -148,7 +148,7 @@ reason is the only thing that turns an absence into a decision.
 
 `readInstalledInventory` reads a plane's manifest and an **npm** lockfile
 through an injected `InventoryFileSystemPort`, following the injected-port
-pattern retained by [`@vespeneventures/builder`](../builder)'s current
+pattern retained by [`@clossys/builder`](../builder)'s current
 workspace package — this package never opens a file itself.
 `createNodeInventoryFileSystem()` is the default, real-filesystem adapter; a
 test, or a caller reading from somewhere other than disk, supplies its own.
@@ -170,7 +170,7 @@ reports exactly why it could not, as an explicit `indeterminate` result,
 rather than throwing or silently reporting an empty inventory:
 
 ```ts
-import { createNodeInventoryFileSystem, readInstalledInventoryReport } from "@vespeneventures/integrator";
+import { createNodeInventoryFileSystem, readInstalledInventoryReport } from "@clossys/integrator";
 
 const fs = createNodeInventoryFileSystem();
 const result = readInstalledInventoryReport(fs, {
@@ -347,7 +347,7 @@ the outside and disagree underneath.
 
 Both are plain functions over this package's own types, so this package still
 ships with **no runtime dependencies**. A plane that expresses gate results
-through `@vespeneventures/controller`'s `GateResult` ternary
+through `@clossys/controller`'s `GateResult` ternary
 (`gateSatisfied` / `gateViolated` / `gateIndeterminate` / `foldGateResults`)
 can map the verdict onto it in one step; nothing here assumes it does.
 
@@ -383,7 +383,7 @@ one touched.
   still **see** the fleet's drift, but never blocking on it).
 
 ```ts
-import { foldCurrencyDelta, currencyFoldResultToExitCode } from "@vespeneventures/integrator";
+import { foldCurrencyDelta, currencyFoldResultToExitCode } from "@clossys/integrator";
 
 // Trunk / scheduled run: grade everything, right now.
 const trunkResult = foldCurrencyDelta({
@@ -509,7 +509,7 @@ string equality against `isValidPackageName`-shaped keys, the same package-
 name check every other module here already shares.
 
 ```ts
-import { detectSupersession, supersessionResultToExitCode } from "@vespeneventures/integrator";
+import { detectSupersession, supersessionResultToExitCode } from "@clossys/integrator";
 
 const result = detectSupersession(
   JSON.parse(rawManifestJson),

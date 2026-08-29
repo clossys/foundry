@@ -1,4 +1,4 @@
-# @vespeneventures/butler
+# @clossys/butler
 
 **Everything about what a person wants — now, and standing.**
 
@@ -41,14 +41,14 @@ Two rules follow, and both are structural here rather than advisory:
 ## Install
 
 ```bash
-npm install @vespeneventures/butler
+npm install @clossys/butler
 ```
 
 Installing from this registry needs a GitHub personal access token with
 `read:packages` — see the repository root README.
 
 ```ts
-import { checkCurrency, evaluateStandingInstruction } from "@vespeneventures/butler";
+import { checkCurrency, evaluateStandingInstruction } from "@clossys/butler";
 ```
 
 ## The three gates
@@ -200,7 +200,7 @@ tolerance, as a pure function of the caller's own verification result plus
 a host ledger's dedupe answer.
 
 ```ts
-import { admitInboundEvent } from "@vespeneventures/butler/inbound";
+import { admitInboundEvent } from "@clossys/butler/inbound";
 ```
 
 The decision is never a bare boolean: acknowledging and processing are two
@@ -221,7 +221,7 @@ back `stale`, so a surface rendered from it re-asks rather than quietly
 continuing.
 
 ```ts
-import { useStandingWants } from "@vespeneventures/butler/web";
+import { useStandingWants } from "@clossys/butler/web";
 ```
 
 `withdraw` shares `grant`'s and `deny`'s exact call shape — one topic, one

@@ -6,7 +6,7 @@ separate package", for the tree-shaking and upstream-churn/rename
 reasoning (this glyph set previously shipped as this scope's own standalone
 `icons` package; this notice, and the data it covers, moved into this
 package's own `./icons` subpath along with it — see CHANGELOG.md).
-The 32 glyphs at `@vespeneventures/designer/icons` are, however, **visually
+The 32 glyphs at `@clossys/designer/icons` are, however, **visually
 derived from [Lucide](https://lucide.dev)**: their SVG path data was
 copied from `lucide-react`'s published source (version 1.23.0) into
 `scripts/icon-source-data.json`, then compiled into this package's own

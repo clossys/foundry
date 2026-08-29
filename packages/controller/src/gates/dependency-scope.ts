@@ -8,7 +8,7 @@
  *
  * Deliberately scoped small. At the time this was written, EVERY runtime
  * dependency across every package in this workspace was verified by
- * inspection — not assumed — to already be `@vespeneventures/*`-scoped, so
+ * inspection — not assumed — to already be `@clossys/*`-scoped, so
  * a full dependency admission-and-retirement register would be a schema
  * with zero rows. This is the floor that actually matches what the
  * repository has today: a single flat allowlist keyed by dependency name,

@@ -1,6 +1,6 @@
 /**
  * The bindable/fixed split for `VoiceRecord` — the `TokenDefinition.brandable`
- * analog for this package. See `@vespeneventures/ui/tokens`' `src/tokens.ts` for
+ * analog for this package. See `@example/ui/tokens`' `src/tokens.ts` for
  * the model this file ports.
  *
  * WHERE THE LINE ACTUALLY FALLS (a finding, not an assumption)

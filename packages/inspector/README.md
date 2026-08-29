@@ -1,4 +1,4 @@
-# @vespeneventures/inspector
+# @clossys/inspector
 
 **Inspector judges a change before it lands.** One gate, one verdict
 grammar, one place where the answer is computed and one place where it is
@@ -85,7 +85,7 @@ never evidence this gate should start counting its own escapes.
 ## Install
 
 ```bash
-npm install --save-dev @vespeneventures/inspector
+npm install --save-dev @clossys/inspector
 ```
 
 The package is published to GitHub Packages, so a consuming project needs the
@@ -93,7 +93,7 @@ scope pointed at that registry and an authenticated `NODE_AUTH_TOKEN` before
 installing — the same setup every other package in this scope already needs.
 
 ```ts
-import { verifyStandards, checkSecretScan } from "@vespeneventures/inspector";
+import { verifyStandards, checkSecretScan } from "@clossys/inspector";
 ```
 
 ## Use it as a command
@@ -134,7 +134,7 @@ shape, see
 
 ## The ternary
 
-Every check returns `GateResult` from `@vespeneventures/controller/gates`:
+Every check returns `GateResult` from `@clossys/controller/gates`:
 
 | Verdict | Meaning | Exit |
 | --- | --- | --- |
@@ -176,7 +176,7 @@ caller's own CI can also tell an old build that it is old.
 floor exists for a released build that reported a passing verdict it should
 not have, and moving files and a package name did not do that. Whether the
 directory rename should reset the floor's *meaning* (an old caller pinned to
-`@vespeneventures/verify-standards` cannot resolve `@vespeneventures/inspector`
+`@example/verify-standards` cannot resolve `@clossys/inspector`
 at all, so the floor's own staleness signal cannot reach it through the
 version-range mechanism this section describes) is noted in this package's
 introducing pull request for a maintainer to decide; nothing here silently
@@ -271,7 +271,7 @@ named in the result rather than disappearing into a silent pass.
 ### Review evidence
 
 Delegates schema and policy validation to
-`@vespeneventures/controller/review`, then does the one thing that validator
+`@clossys/controller/review`, then does the one thing that validator
 deliberately does not: partitions its findings into "the change failed review"
 and "the evidence could not be evaluated". The partition is a total mapping
 over the rule union, so an upstream rule added without being classified is a
@@ -293,7 +293,7 @@ to be enforced, and refuses to let the first stand in for the second. An
 unreadable or partially-read live state is `indeterminate` — permanently and
 correctly so whenever the run's credential cannot read the enforcement
 surface. Content-addressed policy documents are verified through
-`@vespeneventures/controller/policy` rather than by hashing anything here.
+`@clossys/controller/policy` rather than by hashing anything here.
 
 | Export | What it is |
 | --- | --- |
@@ -327,10 +327,10 @@ import {
   resolveGitleaksRelease,
   attemptGitleaksScan,
   defaultGitleaksExecutor,
-} from "@vespeneventures/inspector/secret-scan";
+} from "@clossys/inspector/secret-scan";
 ```
 
-Formerly the whole of `@vespeneventures/secret-scan`. Two concerns, both
+Formerly the whole of `@example/secret-scan`. Two concerns, both
 real I/O, both kept out of the judge above:
 
 - **Verified acquisition** — download the `gitleaks` release asset for a
@@ -419,7 +419,7 @@ and survives across CI runs on self-hosted runners.
 ## Requirements
 
 - Node 20 or newer.
-- Runtime dependencies: `@vespeneventures/controller` (`~0.8.0`) for the
+- Runtime dependencies: `@clossys/controller` (`~0.8.0`) for the
   gate-result ternary, review-evidence validation, and (via its
   `./policy` subpath, the same single dependency, not a second one)
   content-addressed document verification, and — for the `./secret-scan`

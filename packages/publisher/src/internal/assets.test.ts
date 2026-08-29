@@ -66,7 +66,7 @@ describe("isRenderAsset", () => {
     expect(isRenderAsset({ ...REAL_ASSET, width: Number.NaN })).toBe(false);
   });
 
-  it("rejects a missing or whitespace-only alt — the identical bar @vespeneventures/publisher/media' own schema.ts holds", () => {
+  it("rejects a missing or whitespace-only alt — the identical bar @clossys/publisher/media' own schema.ts holds", () => {
     expect(isRenderAsset({ ...REAL_ASSET, alt: undefined })).toBe(false);
     expect(isRenderAsset({ ...REAL_ASSET, alt: "" })).toBe(false);
     expect(isRenderAsset({ ...REAL_ASSET, alt: "   " })).toBe(false);

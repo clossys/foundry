@@ -6,7 +6,7 @@
  * than duplicated once per channel, or left inline only in
  * `renderImageDocument.ts` for `./slides` to reach into — because the
  * resolution bar (`resolveDocument` then `resolveCopy`, never hand-rolled;
- * see this file's own logic below and `@vespeneventures/publisher/core`'s own
+ * see this file's own logic below and `@clossys/publisher/core`'s own
  * `resolve-copy.ts` doc comment, "the #43 gap") and the "never silent"
  * warning bookkeeping are identical for a single image and for one slide of
  * a deck — a slide IS a canvas, and this package's whole argument (see the
@@ -31,7 +31,7 @@
  * through both the required-slot check above AND the per-slot warning loop
  * below, returning a syntactically valid but entirely blank `<svg>` as a
  * SUCCESS. That is exactly the failure this package's own "never silent"
- * bar exists to catch — the same rule `@vespeneventures/publisher/core`'s own
+ * bar exists to catch — the same rule `@clossys/publisher/core`'s own
  * `resolveDocument` enforces by refusing `ok: true` when `resolved.length
  * === 0` (see its doc comment, "THE BAR THIS FILE IS BUILT AGAINST"):
  * "resolved nothing" and "resolved cleanly" must never look the same to a
@@ -61,7 +61,7 @@
  * legitimately `resolveCopy`'s `deferredToAssets`, never `texts`) and no
  * `layout.background` either, so this function threw `"empty-output"` for
  * a document that was never actually empty: `./image` was refusing to
- * render the exact shape of document `@vespeneventures/publisher/core` 0.3.0
+ * render the exact shape of document `@clossys/publisher/core` 0.3.0
  * exists to make possible. Fixed by checking `assetByKey.size` alongside
  * `textByKey.size` everywhere this file asks "did anything resolve" — see
  * `resolveImageDocument.test.ts`'s (and `../image/renderImageDocument.test
@@ -103,7 +103,7 @@ import { renderSlotsToSvg } from "./renderSlots.js";
 
 export interface ResolveCanvasLayoutOptions {
   resolveCopyId?: CopyLookup;
-  /** See `@vespeneventures/publisher/core`'s own `AssetLookup`. Omit when no binding in the document uses `assetId` — every `assetId` binding is then treated as unresolved, which is always fatal for this pipeline (see this file's own top comment, "Assets get a stricter bar than optional text"). */
+  /** See `@clossys/publisher/core`'s own `AssetLookup`. Omit when no binding in the document uses `assetId` — every `assetId` binding is then treated as unresolved, which is always fatal for this pipeline (see this file's own top comment, "Assets get a stricter bar than optional text"). */
   resolveAssetId?: AssetLookup;
   tokenOverrides?: Record<string, string>;
 }

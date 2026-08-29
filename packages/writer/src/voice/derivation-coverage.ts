@@ -1,5 +1,5 @@
 /**
- * `checkVoiceDerivationCoverage` — the voice half of `@vespeneventures/
+ * `checkVoiceDerivationCoverage` — the voice half of `@clossys/
  * strategy`'s `checkBrandCoverage`, which this file mirrors closely on
  * purpose. Read `packages/strategy/src/brand-derivation.ts`'s header
  * comment in full before touching this one; the design below is that
@@ -13,10 +13,10 @@
  * against a caller-supplied `brandableSlots: string[]`, in both directions.
  * It does NOT, and by its own package's constraints CANNOT, verify the
  * `voiceRules` half — `strategy` ships zero runtime dependencies and does
- * not import `@vespeneventures/writer/voice`, so it has no way to know which
+ * not import `@clossys/writer/voice`, so it has no way to know which
  * voice rule ids a real `VoiceRecord` actually declares. `strategy`'s own
  * README says this plainly: "whether a `voiceRules` id resolves to a real
- * `@vespeneventures/writer/voice` glossary entry... [is] a later,
+ * `@clossys/writer/voice` glossary entry... [is] a later,
  * cross-package gate's job — one with visibility into... `voice` that this
  * package deliberately does not have." A brand attribute can oblige a voice
  * rule that no `VoiceRecord` anywhere declares, and nothing catches it: the
@@ -31,7 +31,7 @@
  * `brandDerivedRuleIds` — the exact same discipline `BrandDerivation.
  * voiceRules` documents for itself, carried through to this side of the
  * seam, and the exact same shape `checkBrandCoverage` takes
- * `brandableSlots` in. This file does not import `@vespeneventures/
+ * `brandableSlots` in. This file does not import `@clossys/
  * strategy` or know anything about `BrandDerivation`, and it does not read
  * a `VoiceRecord` either. Earlier revisions of this function DID take a
  * `VoiceRecord` and scanned it for every glossary term, claim id, and
@@ -39,7 +39,7 @@
  * That was wrong, and it was wrong for the identical reason `strategy`
  * cannot look up `tokens`' `brandable` flag itself: EVERY field in a
  * `VoiceRecord` is consumer-authored, but authored is not the same claim as
- * brand-derived. `@vespeneventures/ui` ships 154 tokens and marks a curated
+ * brand-derived. `@example/ui` ships 154 tokens and marks a curated
  * 42 of them `brandable: true` — a deliberate subset a `BrandDerivation`'s
  * `tokenSlots` is checked against, never the full 154. `voice` has no
  * `brandable`-equivalent flag on a glossary entry or a claim, so scanning
@@ -67,7 +67,7 @@
  * flat `brandDerivedRuleIds` list this function takes, the same way a
  * caller closes `checkBrandCoverage`'s seam by passing
  * `Object.values(TOKENS).filter(t => t.brandable).map(t => t.property)`
- * from `@vespeneventures/ui/tokens`. `checkVoiceDerivationCoverage` only
+ * from `@example/ui/tokens`. `checkVoiceDerivationCoverage` only
  * ever sees the two plain lists it's handed; it has no way to tell a real,
  * current, brand-derived rule-id list from a stale or empty one, which is
  * exactly why the degenerate cases below (an empty list either way) are
@@ -80,7 +80,7 @@
  * decide what counts as a rule id — the caller does, by what it puts in
  * `brandDerivedRuleIds`. In practice that id space is still the one
  * `strategy`'s own README names for `voiceRules`: "a real
- * `@vespeneventures/writer/voice` glossary entry" — i.e. a glossary term's
+ * `@clossys/writer/voice` glossary entry" — i.e. a glossary term's
  * `term` or a claim's `id` (`types.ts`'s `GlossaryEntry`/`Claim`). Earlier
  * revisions of this file additionally counted `patterns` ids as voice rule
  * ids by auto-deriving the whole set from a record; that widened direction

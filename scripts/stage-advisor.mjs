@@ -125,7 +125,7 @@ function assessment(overrides = {}) {
         initiativeId: "initiative-a",
         targetRepositoryId: "repository-a",
         deliveryOwnerRef: "delivery-owner",
-        package: { name: "@vespeneventures/controller", version: "0.8.15", integrity },
+        package: { name: "@clossys/controller", version: "0.8.15", integrity },
         bin: "foundry-position-check",
         invocation: "foundry-position-check",
         placement: "consumer-owned required check",

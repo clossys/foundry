@@ -9,7 +9,7 @@ import {
 const validRaw = {
   schemaVersion: COVERAGE_DECLARATION_SCHEMA_VERSION,
   repository: "example-repository-id",
-  declaredAbsences: [{ package: "@vespeneventures/observer", reason: "this repository ships no telemetry lane" }],
+  declaredAbsences: [{ package: "@clossys/observer", reason: "this repository ships no telemetry lane" }],
 };
 
 describe("validateCoverageDeclarationShape", () => {
@@ -69,7 +69,7 @@ describe("validateCoverageDeclarationShape", () => {
   it("rejects an entry with a missing or empty reason -- this is the load-bearing rule", () => {
     const findings = validateCoverageDeclarationShape({
       ...validRaw,
-      declaredAbsences: [{ package: "@vespeneventures/observer", reason: "" }],
+      declaredAbsences: [{ package: "@clossys/observer", reason: "" }],
     });
     expect(findings.some((f) => f.rule === "coverage-declaration/absence-missing-reason")).toBe(true);
   });
@@ -77,7 +77,7 @@ describe("validateCoverageDeclarationShape", () => {
   it("rejects a whitespace-only reason, not just an empty string", () => {
     const findings = validateCoverageDeclarationShape({
       ...validRaw,
-      declaredAbsences: [{ package: "@vespeneventures/observer", reason: "   " }],
+      declaredAbsences: [{ package: "@clossys/observer", reason: "   " }],
     });
     expect(findings.some((f) => f.rule === "coverage-declaration/absence-missing-reason")).toBe(true);
   });
@@ -86,8 +86,8 @@ describe("validateCoverageDeclarationShape", () => {
     const findings = validateCoverageDeclarationShape({
       ...validRaw,
       declaredAbsences: [
-        { package: "@vespeneventures/observer", reason: "a" },
-        { package: "@vespeneventures/observer", reason: "b" },
+        { package: "@clossys/observer", reason: "a" },
+        { package: "@clossys/observer", reason: "b" },
       ],
     });
     expect(findings.some((f) => f.rule === "coverage-declaration/absence-duplicate-package")).toBe(true);
@@ -123,7 +123,7 @@ describe("writeCoverageDeclaration", () => {
   it("serializes a valid declaration that round-trips through parseCoverageDeclaration", () => {
     const json = writeCoverageDeclaration({
       repository: "example-repository-id",
-      declaredAbsences: [{ package: "@vespeneventures/observer", reason: "no telemetry lane here" }],
+      declaredAbsences: [{ package: "@clossys/observer", reason: "no telemetry lane here" }],
     });
     const parsed = parseCoverageDeclaration(JSON.parse(json));
     expect(parsed.ok).toBe(true);
@@ -140,7 +140,7 @@ describe("writeCoverageDeclaration", () => {
     expect(() =>
       writeCoverageDeclaration({
         repository: "example-repository-id",
-        declaredAbsences: [{ package: "@vespeneventures/observer", reason: "" }],
+        declaredAbsences: [{ package: "@clossys/observer", reason: "" }],
       }),
     ).toThrow(/absence-missing-reason/);
   });
@@ -150,8 +150,8 @@ describe("writeCoverageDeclaration", () => {
       writeCoverageDeclaration({
         repository: "example-repository-id",
         declaredAbsences: [
-          { package: "@vespeneventures/observer", reason: "a" },
-          { package: "@vespeneventures/observer", reason: "b" },
+          { package: "@clossys/observer", reason: "a" },
+          { package: "@clossys/observer", reason: "b" },
         ],
       }),
     ).toThrow(/absence-duplicate-package/);

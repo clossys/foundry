@@ -1,7 +1,7 @@
 # Repository and review first run
 
 This runbook qualifies the repository and review subpaths of one exact
-`@vespeneventures/controller` artifact in designated consumer repositories.
+`@clossys/controller` artifact in designated consumer repositories.
 It is deliberately a handoff guide, not an installer:
 Foundry provides contracts and CLIs; each consumer authors and owns its own
 values, workflow, and provider access.
@@ -43,7 +43,7 @@ Install the exact Controller version, rather than a floating range, for the
 first run:
 
 ```bash
-npm install --save-exact @vespeneventures/controller@0.8.19
+npm install --save-exact @clossys/controller@0.8.19
 ```
 
 Use the package manager that owns the consumer's lockfile. The command above
@@ -65,7 +65,7 @@ Before running either CLI, a consumer authors these values in its own change:
   change head, the complete check/review/thread snapshot, and whether
   pagination is complete.
 
-For GitHub, a consumer may use `@vespeneventures/controller/review/github` in its own
+For GitHub, a consumer may use `@clossys/controller/review/github` in its own
 code to normalize a fully fetched caller-provided snapshot before writing its
 own evidence JSON. The subpath makes no request, does not discover credentials,
 and does not choose pagination or workflow behavior. Provider tokens, raw

@@ -1,5 +1,5 @@
 /**
- * @vespeneventures/inspector — the gate that judges a change before it
+ * @clossys/inspector — the gate that judges a change before it
  * lands, published as a package so a fix reaches every consumer through the
  * same dependency machinery every other real dependency already uses.
  *
@@ -9,7 +9,7 @@
  * drift between a declared standard and the live state enforcing it. Each is
  * a pure function of observations the caller collected, each returns the
  * `satisfied` / `violated` / `indeterminate` ternary from
- * `@vespeneventures/controller/gates`, and the run folds to a `0` / `1` / `2`
+ * `@clossys/controller/gates`, and the run folds to a `0` / `1` / `2`
  * exit code that nothing can override.
  *
  * A fifth thing is checked that is not about the repository at all: whether

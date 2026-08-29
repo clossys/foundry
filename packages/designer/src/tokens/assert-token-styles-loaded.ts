@@ -93,11 +93,11 @@ export function assertTokenStylesLoaded(options: AssertTokenStylesLoadedOptions 
     return;
   }
   console.error(
-    `@vespeneventures/designer: token CSS does not appear to be loaded (missing computed property ` +
+    `@clossys/designer: token CSS does not appear to be loaded (missing computed property ` +
       `"${TOKEN_STYLES_SENTINEL_PROPERTY}"). Every class this package's components render (bg-accent, ` +
       `text-ink-primary, rounded-control, ...) is a Tailwind utility generated from ` +
-      `"@vespeneventures/designer/tokens.css"'s tokens — without it, those classes don't correspond to anything ` +
-      `and components render unstyled. Import "@vespeneventures/designer/tokens.css" (directly, or via your own ` +
+      `"@clossys/designer/tokens.css"'s tokens — without it, those classes don't correspond to anything ` +
+      `and components render unstyled. Import "@clossys/designer/tokens.css" (directly, or via your own ` +
       `brand-bound stylesheet that imports it) before rendering components. See the README's Setup section.`,
   );
 }

@@ -32,7 +32,7 @@ export interface NavShellProps extends Omit<AriaDialogTriggerProps, "children"> 
   /**
    * The drawer trigger's own visible text, shown only below the `tablet`
    * breakpoint. A real word rather than an icon-only glyph: this package's
-   * 32-glyph icon set (see `@vespeneventures/designer/icons`) ships no
+   * 32-glyph icon set (see `@clossys/designer/icons`) ships no
    * three-line "hamburger" mark, and this component's scope is site
    * chrome, not a new icon (see this package's README, "What's
    * deliberately not here" — icons are a closed, final rung).

@@ -1,5 +1,5 @@
 import { dirname, isAbsolute, join } from "node:path";
-import { CONVENTION_ADAPTERS, CONVENTION_DOCUMENTS, DOCUMENTS_ROOT, ADAPTERS_ROOT } from "@vespeneventures/controller/conventions";
+import { CONVENTION_ADAPTERS, CONVENTION_DOCUMENTS, DOCUMENTS_ROOT, ADAPTERS_ROOT } from "@clossys/controller/conventions";
 import { MACHINE_DECLARATION_SCHEMA_VERSION } from "./types.js";
 import type {
   DiscoveryPort,
@@ -16,7 +16,7 @@ import type { CopyEntry, LinkEntry, ManagedBlockEntry, Manifest } from "../types
 /**
  * Class 1: package-owned, account-neutral content — machine guidance, agent
  * policy rules, shell integration, command hooks — already shipped by
- * `@vespeneventures/controller/conventions`, composed through exactly the
+ * `@clossys/controller/conventions`, composed through exactly the
  * same `composeInstallationPlans` classes 2 (`discovery.ts`) and 3
  * (`third-party.ts`) already use. See `./types.ts`'s doc comment on
  * `MachineLayerDeclaration` for WHERE the destination map for this class
@@ -30,7 +30,7 @@ import type { CopyEntry, LinkEntry, ManagedBlockEntry, Manifest } from "../types
  *
  *   - `validateMachineLayerDeclarationShape` / `parseMachineLayerDeclaration`
  *     / `writeMachineLayerDeclaration`: pure, catalog-agnostic shape
- *     validation. These never import `@vespeneventures/controller/conventions`'s
+ *     validation. These never import `@clossys/controller/conventions`'s
  *     catalog — a declaration can be well-FORMED without every `id` it names
  *     actually existing in that catalog, which is a different question tier 2
  *     below answers.
@@ -57,7 +57,7 @@ const INSTALL_KINDS: readonly MachineLayerInstallKind[] = ["link", "copy", "mana
 
 /**
  * Where every catalog `source` this module builds resolves from — the parent
- * directory `@vespeneventures/controller/conventions`'s own `DOCUMENTS_ROOT`
+ * directory `@clossys/controller/conventions`'s own `DOCUMENTS_ROOT`
  * and `ADAPTERS_ROOT` both live under. Verified once at module load, not
  * merely assumed: if a future restructuring of `controller` ever separates
  * those two roots, this module must fail loudly here rather than silently
@@ -66,7 +66,7 @@ const INSTALL_KINDS: readonly MachineLayerInstallKind[] = ["link", "copy", "mana
 export const CLASS_ONE_SOURCE_ROOT = dirname(DOCUMENTS_ROOT);
 if (dirname(ADAPTERS_ROOT) !== CLASS_ONE_SOURCE_ROOT) {
   throw new Error(
-    "builder/machine/machine-layer: @vespeneventures/controller/conventions's DOCUMENTS_ROOT and ADAPTERS_ROOT " +
+    "builder/machine/machine-layer: @clossys/controller/conventions's DOCUMENTS_ROOT and ADAPTERS_ROOT " +
       "no longer share a parent directory — this module's shared-source-root assumption is stale and must be revisited.",
   );
 }
@@ -113,7 +113,7 @@ function hasPathTraversal(destination: string): boolean {
  * Validates that `raw` — ANY value, not necessarily one this module produced
  * — has the shape of a well-formed `MachineLayerDeclaration`. Pure, offline,
  * and catalog-agnostic: it checks structure, not whether any `id` actually
- * exists in `@vespeneventures/controller/conventions`'s catalog (that is
+ * exists in `@clossys/controller/conventions`'s catalog (that is
  * `buildClassOneManifest`'s job, deliberately kept separate — see this
  * module's header). Returns every finding, never throws.
  */
@@ -271,7 +271,7 @@ function catalogEntryFor(id: string): CatalogEntry {
     };
   }
   throw new Error(
-    `buildClassOneManifest: unknown convention id ${JSON.stringify(id)} — not one of @vespeneventures/controller/conventions's ` +
+    `buildClassOneManifest: unknown convention id ${JSON.stringify(id)} — not one of @clossys/controller/conventions's ` +
       `CONVENTION_DOCUMENTS or CONVENTION_ADAPTERS ids. Known document ids: ${CONVENTION_DOCUMENTS.map((d) => d.id).join(", ")}. ` +
       `Known adapter ids: ${CONVENTION_ADAPTERS.map((a) => a.id).join(", ")}.`,
   );
@@ -285,7 +285,7 @@ function catalogEntryFor(id: string): CatalogEntry {
  *
  * Catalog-aware and THROWS, on purpose — see this module's header. Two
  * checks only this tier can make, because they need
- * `@vespeneventures/controller/conventions`'s own catalog as ground truth:
+ * `@clossys/controller/conventions`'s own catalog as ground truth:
  * every declared `id` must exist in it, and templated content (which carries
  * `${TOKEN}` placeholders `CONVENTION_DOCUMENTS/CONVENTION_ADAPTERS` already
  * flag) must never be declared `"link"` — a reader of a linked, templated

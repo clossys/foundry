@@ -130,7 +130,7 @@ describe("checkBrandFileCoverage — fixture 3: override of a non-brandable (str
         rule: "non-brandable-override",
         slot: "--spacing-md",
         message:
-          '"--spacing-md" is a structural (non-brandable) token; overriding it is not allowed — matches @vespeneventures/surface\'s flattenTokens, which throws "non-brandable-override" for the same slot',
+          '"--spacing-md" is a structural (non-brandable) token; overriding it is not allowed — matches @example/surface\'s flattenTokens, which throws "non-brandable-override" for the same slot',
       },
     ]);
   });

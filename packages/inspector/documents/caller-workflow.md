@@ -83,12 +83,12 @@ jobs:
       - uses: actions/setup-node@<PIN_A_FULL_COMMIT_SHA>
         with:
           node-version: 20
-          registry-url: https://npm.pkg.github.com
+          registry-url: https://registry.npmjs.org
           # Required, and not a formality. With `scope` omitted, this action
           # maps the *consuming repository's own owner* to the registry above,
           # so a consumer in any other account routes this package to the
           # public registry instead and the install fails to resolve it.
-          scope: "@vespeneventures"
+          scope: "@clossys"
 
       # Installed from this repository's own lockfile, like every other
       # dependency, so the resolved version is reviewable in a diff and swept
@@ -165,7 +165,7 @@ jobs:
           status=0
           npx inspector \
             --inputs verify-inputs.json \
-            --declared-range "$(node -p "require('./package.json').devDependencies['@vespeneventures/inspector']")" \
+            --declared-range "$(node -p "require('./package.json').devDependencies['@clossys/inspector']")" \
             > "$report" || status=$?
           cat "$report"
           cat "$report" >> "$GITHUB_STEP_SUMMARY"
@@ -458,8 +458,8 @@ jobs:
       - uses: actions/setup-node@<PIN_A_FULL_COMMIT_SHA>
         with:
           node-version: 20
-          registry-url: https://npm.pkg.github.com
-          scope: "@vespeneventures"
+          registry-url: https://registry.npmjs.org
+          scope: "@clossys"
 
       - run: npm ci --ignore-scripts
         env:
@@ -476,7 +476,7 @@ jobs:
           status=0
           npx inspector \
             --inputs verify-inputs.json \
-            --declared-range "$(node -p "require('./package.json').devDependencies['@vespeneventures/inspector']")" \
+            --declared-range "$(node -p "require('./package.json').devDependencies['@clossys/inspector']")" \
             > "$report" || status=$?
           cat "$report"
           cat "$report" >> "$GITHUB_STEP_SUMMARY"
@@ -624,7 +624,7 @@ named reason rather than a partial read.
   },
 
   "reviewEvidence": {
-    // The bundle shape from `@vespeneventures/controller/review`. That
+    // The bundle shape from `@clossys/controller/review`. That
     // package's `./review/github` subpath normalizes a provider payload into
     // it without any network access of its own.
     "evidence": { "schemaVersion": 3, "headSha": "...", "baseSha": "...", "paginationComplete": true, "checks": [], "reviews": [], "threads": [] },

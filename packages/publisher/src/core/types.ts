@@ -4,8 +4,8 @@
  * every field below is load-bearing: renamed, added, or reshaped only in a
  * coordinated change, never as a local convenience.
  *
- * `surface/core` is the join point where `@vespeneventures/designer`'s visual
- * vocabulary meets `@vespeneventures/writer`'s verbal one, plus everything a
+ * `surface/core` is the join point where `@clossys/designer`'s visual
+ * vocabulary meets `@clossys/writer`'s verbal one, plus everything a
  * specific output channel needs to know: a `ComposeDocument` names a
  * template, binds its slots to copy ids or literal values, targets a
  * `Channel`, and carries that channel's own metadata. This package renders
@@ -23,14 +23,14 @@ export type Channel = "web" | "email" | "print" | "slides" | "image";
 
 /**
  * `Channel`'s own members, as a runtime array — the same "closed vocabulary
- * as both a type and a value" shape `@vespeneventures/policy`'s
+ * as both a type and a value" shape `@example/policy`'s
  * `DIGEST_ALGORITHMS` uses for `DigestAlgorithm`. Exported so a caller (or
  * this package's own `validate.ts`) can check membership or render a
  * human-readable list without re-typing the five literals by hand.
  */
 export const CHANNELS = ["web", "email", "print", "slides", "image"] as const satisfies readonly Channel[];
 
-import type { CopyRef } from "@vespeneventures/writer";
+import type { CopyRef } from "@clossys/writer";
 
 // ---------------------------------------------------------------------------
 // SlotBinding — legacy content going into a named slot
@@ -48,8 +48,8 @@ export interface SlotBinding {
   slot: string;
   /**
    * A plain string id into a `CopyRecord` — deliberately **not** an import
-   * of `@vespeneventures/writer`. Same seam as `@vespeneventures/writer/voice`'s
-   * `Claim.factRef` and `@vespeneventures/writer`'s own `CopyEntry.factRef`:
+   * of `@clossys/writer`. Same seam as `@clossys/writer/voice`'s
+   * `Claim.factRef` and `@clossys/writer`'s own `CopyEntry.factRef`:
    * the coupling is an opaque string convention, not a code import, so this
    * package works whether or not `copy` is even installed, and resolving a
    * `copyId` against a real `CopyRecord` is a later gate's job — one with
@@ -61,13 +61,13 @@ export interface SlotBinding {
   value?: string;
   /**
    * A plain string id into an `AssetRecord` — deliberately **not** an
-   * import of `@vespeneventures/publisher/media`. Added in 0.3.0 to close the gap
+   * import of `@clossys/publisher/media`. Added in 0.3.0 to close the gap
    * `ElementKind`'s `"image"`/`"logo"` members left open since this
    * package's first release: until now `SlotBinding` could only carry
    * text, so an `"image"`/`"logo"` slot could only ever render as a styled
    * word. Same seam as `copyId`, one binding field over: the coupling is
    * an opaque string convention, not a code import, so `surface/core` works
-   * whether or not `@vespeneventures/publisher/media` is even installed, and
+   * whether or not `@clossys/publisher/media` is even installed, and
    * resolving an `assetId` against a real `AssetRecord` is a later gate's
    * job — one with visibility into both sides, which this package
    * deliberately does not have. See `resolve-assets.ts`'s `resolveAssets`
@@ -227,7 +227,7 @@ export const ELEMENT_KINDS = [
 
 /**
  * Token ROLE names only — a binding never holds a hex value or a font
- * size. The token layer (`@vespeneventures/designer/tokens`, or a consumer's own
+ * size. The token layer (`@clossys/designer/tokens`, or a consumer's own
  * equivalent) owns the value; this document owns the role. This package
  * does not validate that a role name actually exists in any particular
  * token set — it only validates that, when present, each field is a
@@ -468,8 +468,8 @@ export interface OutputManifest {
 /**
  * One thing `validate.ts`'s shape validation found wrong with a candidate
  * `ComposeDocument`. Deliberately the same shape as
- * `@vespeneventures/writer`'s `CopyFinding` (itself mirroring
- * `@vespeneventures/writer/voice`'s `VoiceFinding` and `@vespeneventures/policy`'s
+ * `@clossys/writer`'s `CopyFinding` (itself mirroring
+ * `@clossys/writer/voice`'s `VoiceFinding` and `@example/policy`'s
  * `Finding`) — `rule` / `severity` / `message` / optional `path` — so a
  * caller already handling one kind of finding in this ecosystem does not
  * need a second mental model for this package's. Always `"error"` in

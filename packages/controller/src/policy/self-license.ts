@@ -4,7 +4,7 @@ import type { PolicyBinding } from "./types.js";
  * This subpath's own mechanism, demonstrated on itself: a binding to the
  * sha256 digest of `packages/controller/LICENSE` (the same LICENSE text
  * this subpath shipped as `packages/policy/LICENSE` before the `policy`
- * source moved into `@vespeneventures/controller` — the two files are
+ * source moved into `@clossys/controller` — the two files are
  * byte-identical, so the digest below did not change) as it exists in this
  * repository right now. `policyId: "self:license"` marks it as
  * self-referential rather than a binding to any external document.

@@ -9,7 +9,7 @@
  * (`./brand-derivation.ts`) in with the identical shape: parse argv, load
  * two JSON files, run the pure check, print a report, pick an exit code
  * from the same 0/1/2 contract — see `runBrandCoverage`'s own doc comment
- * below. This mirrors `@vespeneventures/copy`'s `copy-check
+ * below. This mirrors `@example/copy`'s `copy-check
  * voice-derivation-coverage` subcommand exactly. `main()` dispatches to it
  * only when `argv[0]` is exactly `"brand-coverage"`; any other first
  * argument (including every existing caller's real `strategy-dir` path)
@@ -18,7 +18,7 @@
  * `parseArgs` call so no pre-existing test needs to change.
  *
  * Exit codes — a contract a consumer's CI depends on, matching this
- * repository's `foundry-check` convention (`@vespeneventures/gates`):
+ * repository's `foundry-check` convention (`@example/gates`):
  *
  *   0 — ran cleanly, facts.json loaded, at least one file scanned, zero findings.
  *   1 — ran cleanly, at least one finding (an untraced claim or a citation to a fact key that does not exist).
@@ -83,8 +83,8 @@ Run "strategist-check brand-coverage --help" or "strategist-check direction --he
 
 const BRAND_COVERAGE_USAGE = `Usage: strategist-check brand-coverage <derivations-file> <brandable-slots-file>
 
-  derivations-file      Path to a JSON file containing an array of BrandDerivation objects (see @vespeneventures/strategist's README, "The brand layer"). Required.
-  brandable-slots-file  Path to a JSON file containing an array of brandable token-slot name strings (the thing being checked FOR — e.g. every @vespeneventures/ui/tokens entry with "brandable: true", collected by the caller since this package never imports tokens). Required.
+  derivations-file      Path to a JSON file containing an array of BrandDerivation objects (see @clossys/strategist's README, "The brand layer"). Required.
+  brandable-slots-file  Path to a JSON file containing an array of brandable token-slot name strings (the thing being checked FOR — e.g. every @example/ui/tokens entry with "brandable: true", collected by the caller since this package never imports tokens). Required.
 
 Options:
   --help                 Print this message and exit 0.
@@ -96,7 +96,7 @@ Exit codes: 0 = satisfied, 1 = violated (a real coverage gap in either direction
 
 const DIRECTION_USAGE = `Usage: strategist-check direction <direction-entities-file> <reviewed-against-file>
 
-  direction-entities-file  Path to a JSON file containing an array of DirectionEntity objects (see @vespeneventures/strategist's README, "The direction layer"). Required.
+  direction-entities-file  Path to a JSON file containing an array of DirectionEntity objects (see @clossys/strategist's README, "The direction layer"). Required.
   reviewed-against-file    Path to a JSON file containing an array of strings: one entry per derived artifact, naming the DirectionEntity id that artifact's "reviewedAgainst" points at. Required.
 
 Options:
@@ -628,7 +628,7 @@ function run(): void {
 }
 
 /**
- * Same real-path guard `@vespeneventures/gates`' `cli.ts` uses, for the same
+ * Same real-path guard `@example/gates`' `cli.ts` uses, for the same
  * reason: `npm install` publishes `bin` entries as symlinks, so comparing
  * `process.argv[1]` to `import.meta.url` without resolving symlinks on both
  * sides fails the moment this file is actually invoked the only way it

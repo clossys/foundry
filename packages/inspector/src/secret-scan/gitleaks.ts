@@ -1,7 +1,7 @@
 /**
  * Verified `gitleaks` binary acquisition — download, checksum, cache.
  *
- * Formerly the whole of `@vespeneventures/secret-scan` (see #283); every
+ * Formerly the whole of `@example/secret-scan` (see #283); every
  * export below is unchanged from that package's own shape. This module does
  * not scan anything and never did: it is pure, verified acquisition, kept
  * apart from `./attempt.ts` (which runs the binary this resolves) and from

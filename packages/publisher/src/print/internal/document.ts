@@ -23,7 +23,7 @@
  * every `.slot` child's `left`/`top`/`width`/`height` percentage (from
  * `geometry.ts`) resolves against exactly that box — which is what makes
  * `Frame`'s "0..1 fraction of the canvas" promise
- * (`@vespeneventures/publisher/core`'s own `types.ts`) true for print
+ * (`@clossys/publisher/core`'s own `types.ts`) true for print
  * specifically: the canvas IS the page's printable area, not the page
  * including its margins.
  */

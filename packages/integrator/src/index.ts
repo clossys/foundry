@@ -1,5 +1,5 @@
 /**
- * @vespeneventures/integrator
+ * @clossys/integrator
  *
  * The machinery a consuming plane runs against ITSELF to answer whether it
  * holds the catalogue it is entitled to, and whether that holding is current:

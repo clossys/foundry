@@ -1,5 +1,5 @@
 /**
- * @vespeneventures/designer/tokens — this visual system's zero-dependency token layer.
+ * @clossys/designer/tokens — this visual system's zero-dependency token layer.
  *
  * A design token is a name for a design decision — `surface-raised`, not
  * `#F2EFE6` — so that the decision can be looked up and changed in one
@@ -20,25 +20,25 @@
  * whether their own real `brand.css` actually filled in the template
  * correctly. `checkBrandFileCoverage` closes that gap, the same "self-closing
  * package" shape every sibling contract package in this repository ships
- * (`@vespeneventures/copy/voice`'s `checkCopy`, `@vespeneventures/copy`'s
- * `checkCopyTraceability`, `@vespeneventures/strategy`'s
+ * (`@example/copy/voice`'s `checkCopy`, `@example/copy`'s
+ * `checkCopyTraceability`, `@example/strategy`'s
  * `checkFactsTraceability`): given already-parsed custom-property
  * declarations (see `readBrandCss`/`parseBrandDeclarations` for how to get
  * those from a real `.css` file), it reports every brandable slot with no
  * real declaration, every declaration naming a slot this package doesn't
  * recognize (almost always a typo), and every declaration targeting a
  * structural (non-brandable) slot — the same rule
- * `@vespeneventures/surface`'s `flattenTokens` already enforces by throwing.
+ * `@example/surface`'s `flattenTokens` already enforces by throwing.
  * `designer-brand-check` (`src/cli.ts`, installed as a `bin`) wires
  * `readBrandCss` and `checkBrandFileCoverage` into a CLI with the same
  * three-state exit-code contract `copy-check`/`strategy-facts-check` use:
  * 0 clean, 1 findings, 2 could not run. `cli.ts` itself is intentionally
- * NOT re-exported here — matching `@vespeneventures/copy` and
- * `@vespeneventures/strategy`'s own `index.ts`, a CLI's `main`/argv
+ * NOT re-exported here — matching `@example/copy` and
+ * `@example/strategy`'s own `index.ts`, a CLI's `main`/argv
  * handling is not library surface, only its `bin` entry is.
  *
  * Named `checkBrandFileCoverage`, not `checkBrandCoverage` —
- * `@vespeneventures/strategy` already exports a `checkBrandCoverage`
+ * `@example/strategy` already exports a `checkBrandCoverage`
  * checking a different thing (a `BrandDerivation[]`'s coverage of token
  * slots by name, not a real CSS file's declarations); see
  * `check-brand-file-coverage.ts`'s own header comment for the full
@@ -69,7 +69,7 @@
  * `npm run check:contrast` runs it against this package's own
  * `styles/tokens.css`. See the README's "WCAG contrast gate"
  * section for the full contract, including how this differs from the
- * token-PURITY gate at `@vespeneventures/designer/gate` (a different axis
+ * token-PURITY gate at `@clossys/designer/gate` (a different axis
  * entirely: that one flags hardcoded literals against the registry; this
  * one computes luminance for declared pairs).
  *

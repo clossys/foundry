@@ -1,5 +1,5 @@
 /**
- * `@vespeneventures/designer/gate` — the public entry point for this package's
+ * `@clossys/designer/gate` — the public entry point for this package's
  * token-purity scanner/gate, kept separate from `src/index.ts` (the
  * component ladder's own internal-tooling barrel — see that file's header
  * for why it has no `"."` package export) the same way this package's
@@ -7,12 +7,12 @@
  * own barrel. `scripts/check-readme-parity.mjs` reads only `src/index.ts`
  * as this package's canonical export list, so this file is deliberately
  * NOT re-exported there — a consumer imports the scanner/gate from
- * `@vespeneventures/designer/gate` directly, never from the root ladder barrel,
+ * `@clossys/designer/gate` directly, never from the root ladder barrel,
  * the same way `designer-token-check` (see `cli.ts`) is reachable only via its
  * installed `bin` entry, not a JS import.
  *
  * Three things ship from here, mirroring the split
- * `@vespeneventures/copy`'s own `index.ts` draws:
+ * `@example/copy`'s own `index.ts` draws:
  *
  *   1. THE SCANNER. `scanStyleSources`/`extractStyleCandidates`
  *      (`style-scan.ts`) walk a real source tree and extract every
@@ -37,7 +37,7 @@
  * the same three-state exit-code contract `copy-check` uses (0
  * clean/satisfied, 1 findings/violated, 2 could not run/indeterminate).
  * Neither CLI module itself is re-exported here — matching
- * `@vespeneventures/copy`'s own `index.ts`, a CLI's `main`/argv handling
+ * `@example/copy`'s own `index.ts`, a CLI's `main`/argv handling
  * is not library surface, only its `bin` entry is.
  */
 

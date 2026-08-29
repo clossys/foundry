@@ -89,7 +89,7 @@
 // cannot tell "this version was never published" apart from "this version
 // WAS published, after these very edits landed." Those look identical from
 // inside a git checkout. This is not theoretical — it happened in this
-// repository: `@vespeneventures/comms` was bumped to 0.1.0, THEN edited
+// repository: `@example/comms` was bumped to 0.1.0, THEN edited
 // twice more (still at 0.1.0), and 0.1.0 was published to the registry only
 // AFTER those edits — so the published tarball already contains everything
 // audit mode flags. Audit mode reports `comms` as needing a bump anyway,

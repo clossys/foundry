@@ -80,7 +80,7 @@ retired donor and compatibility names are not adoption targets.
 | Strategy and expression | `strategist`, `writer`, `designer`, `publisher`, `influencer` | Trace strategy, govern copy and design, verify publication, and learn from audience response. |
 | Agreements and custody | `bouncer`, `butler`, `messenger`, `giver`, `keeper` | Reconcile authority, confirm intent, transport messages, close obligations, and steward held information. |
 
-The exact scoped identifier is `@vespeneventures/<role>`. The release and
+The exact scoped identifier is `@clossys/<role>`. The release and
 evidence contracts are the current source for publish status and maturity:
 
 - [`package-lifecycle.json`](contracts/package-lifecycle.json) records whether
@@ -147,7 +147,7 @@ or closure. Existing v1/v2/v3 profiles remain compatible for that purpose.
 
 When one direct consumer needs auditable package cutover evidence, it may
 retain one `RepositoryPackageAdoptionV1` record from
-`@vespeneventures/controller/repository`. The record is deliberately
+`@clossys/controller/repository`. The record is deliberately
 single-package and append-only: foundation, post-main canary, atomic ruleset
 cutover, activation, then closure. It binds exact semver and a
 length-validated SRI digest, the canonical profile path/hash, all five profile
@@ -170,7 +170,7 @@ closure.
 
 ## Foundry Starter foundation and activation
 
-Foundry Starter (`@vespeneventures/starter`) is executable tooling, not a role and
+Foundry Starter (`@clossys/starter`) is executable tooling, not a role and
 not an installed position. A consumer may use its thin caller workflow to pin
 the public package, add an uncredentialed pull-request evidence snapshot, and
 install the protected-base caller with its own package-read credential. That
@@ -224,7 +224,7 @@ reports and workspace aggregates.
 
 ## Completion evidence exchange
 
-`@vespeneventures/controller/positions` ships the versioned
+`@clossys/controller/positions` ships the versioned
 `completion-evidence-contract.json` and
 `foundry-completion-evidence-check <completion-evidence.json> <position-ledger.json>`.
 One record validates an open, consumer-owned position against an exact-version

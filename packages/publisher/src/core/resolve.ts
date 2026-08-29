@@ -6,7 +6,7 @@
  * `types.ts`'s `LayoutSpec` doc comment), so a caller resolving one of
  * those still needs to supply the real slot list its template defines,
  * from wherever that template's own slot shapes live (a
- * `@vespeneventures/designer` view's props, in practice) — this function has no
+ * `@clossys/designer` view's props, in practice) — this function has no
  * way to discover that on its own, and should not pretend to.
  *
  * THE BAR THIS FILE IS BUILT AGAINST: an empty `layout` (`slots: []`), an

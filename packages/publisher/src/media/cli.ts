@@ -4,23 +4,23 @@
  * parse argv, load the asset record (via the sibling `registry.ts`), load
  * the referenced-ids file, run the pure coverage check (`coverage.ts`),
  * print a report — including every accounting number, never just the
- * findings — and pick an exit code. Matches `@vespeneventures/writer`'s
- * `copy-check` and `@vespeneventures/designer/tokens`' `tokens-brand-check` shape
+ * findings — and pick an exit code. Matches `@clossys/writer`'s
+ * `copy-check` and `@clossys/designer/tokens`' `tokens-brand-check` shape
  * deliberately: same three-state exit-code contract, same `--help`, same
  * `CliInputError` split between "bad arguments" and "ran, found something
  * wrong".
  *
  * The referenced-ids file is a plain JSON array of strings — the asset ids
  * a consumer's own documents actually bind (in practice, every
- * `SlotBinding.assetId` across a set of `@vespeneventures/publisher/core`
+ * `SlotBinding.assetId` across a set of `@clossys/publisher/core`
  * documents). This package has no scanner of its own — unlike
- * `@vespeneventures/writer`'s `copy-check`, which walks real source files, a
+ * `@clossys/writer`'s `copy-check`, which walks real source files, a
  * consumer's own build is the thing that actually knows which
  * `ComposeDocument`s exist and what they bind; this CLI's job starts one
  * step later, once that list has already been gathered into a file.
  *
  * Exit codes — a contract a consumer's CI depends on, matching this
- * repository's `foundry-check` convention (`@vespeneventures/gates`):
+ * repository's `foundry-check` convention (`@example/gates`):
  *
  *   0 — ran cleanly: the asset record loaded, the referenced-ids file
  *       loaded as a well-formed array of at least one non-empty string,
@@ -48,7 +48,7 @@ import { readAssetRecord } from "./registry.js";
 
 const USAGE = `Usage: publisher-media-check <record-file> <referenced-ids-file> [options]
 
-  record-file           Path to an AssetRecord JSON file (see @vespeneventures/publisher/media). Required.
+  record-file           Path to an AssetRecord JSON file (see @clossys/publisher/media). Required.
   referenced-ids-file    Path to a JSON file containing an array of asset ids referenced by your documents (e.g. every SlotBinding.assetId). Required.
 
 Options:
@@ -237,8 +237,8 @@ function run(): void {
 }
 
 /**
- * Same real-path guard `@vespeneventures/writer`'s `cli.ts` and
- * `@vespeneventures/designer/tokens`' `cli.ts` both use, for the same reason: `npm
+ * Same real-path guard `@clossys/writer`'s `cli.ts` and
+ * `@clossys/designer/tokens`' `cli.ts` both use, for the same reason: `npm
  * install` publishes `bin` entries as symlinks, so comparing
  * `process.argv[1]` to `import.meta.url` without resolving symlinks on
  * both sides fails the moment this file is actually invoked the only way

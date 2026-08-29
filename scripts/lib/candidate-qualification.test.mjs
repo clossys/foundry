@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { cp, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { execFile as execFileCallback } from "node:child_process";
@@ -9,6 +10,29 @@ import { promisify } from "node:util";
 import { currentQualificationJoins, parseStrictJson, qualificationPath, validateCandidateQualification, validatePrepublicationPrTail } from "./candidate-qualification.mjs";
 
 const source = () => structuredClone(parseStrictJson(readFileSync("governance/release-qualifications/controller-0.8.20.json", "utf8")));
+const currentSource = () => {
+  const record = source();
+  record.candidate.name = "@clossys/controller";
+  record.transcript.candidate.name = "@clossys/controller";
+  const transcript = { ...record.transcript };
+  delete transcript.canonicalSha256;
+  record.transcript.canonicalSha256 = createHash("sha256").update(JSON.stringify(transcript)).digest("hex");
+  return record;
+};
+const bindCurrentJoins = (record, joins) => {
+  record.candidate = {
+    ...record.candidate,
+    packageTreeSha1: joins.packageTreeSha1,
+    packageManifestSha256: joins.packageManifestSha256,
+    policySha256: joins.policySha256,
+    adapterSha256: joins.adapterSha256,
+    fixtureSetSha256: joins.fixtureSetSha256,
+  };
+  record.transcript.coverage.installedManifestSha256 = joins.packageManifestSha256;
+  const transcript = { ...record.transcript };
+  delete transcript.canonicalSha256;
+  record.transcript.canonicalSha256 = createHash("sha256").update(JSON.stringify(transcript)).digest("hex");
+};
 const rules = (value, options) => validateCandidateQualification(value, options).map((item) => item.rule);
 const execFile = promisify(execFileCallback);
 async function git(root, args) { return execFile("git", args, { cwd: root }); }
@@ -23,13 +47,14 @@ async function syntheticPrepublication() {
   await cp("governance/release-qualification-adapters/controller/current-direct.json", join(root, "governance/release-qualification-adapters/controller/current-direct.json"));
   for (const name of ["authority-valid-package-lock.json", "authority-duplicate-package-lock.json", "authority-indeterminate-package-lock.json", "authority-declarations.json"]) await cp(join("governance/release-qualification-fixtures/controller/current-direct", name), join(root, "governance/release-qualification-fixtures/controller/current-direct", name));
   const reviewedCommit = await commit(root, "candidate");
-  const record = source(); const joins = currentQualificationJoins(root, record.candidate, reviewedCommit);
-  record.timing = "pre-publication"; record.reviewedCommit = reviewedCommit; record.rootPackageJsonSha256 = joins.rootPackageJsonSha256; record.rootPackageLockSha256 = joins.rootPackageLockSha256; record.candidate = { ...record.candidate, packageTreeSha1: joins.packageTreeSha1, packageManifestSha256: joins.packageManifestSha256, policySha256: joins.policySha256, adapterSha256: joins.adapterSha256, fixtureSetSha256: joins.fixtureSetSha256 }; record.candidateReview = { headSha: reviewedCommit, reference: "test-review" }; delete record.publishedCommit; delete record.registry;
+  const record = currentSource(); const joins = currentQualificationJoins(root, record.candidate, reviewedCommit);
+  bindCurrentJoins(record, joins);
+  record.timing = "pre-publication"; record.reviewedCommit = reviewedCommit; record.rootPackageJsonSha256 = joins.rootPackageJsonSha256; record.rootPackageLockSha256 = joins.rootPackageLockSha256; record.candidateReview = { headSha: reviewedCommit, reference: "test-review" }; delete record.publishedCommit; delete record.registry;
   const path = qualificationPath(root, record.candidate, reviewedCommit); await mkdir(join(root, "governance/release-qualifications"), { recursive: true }); await writeFile(join(root, path), JSON.stringify(record, null, 2)); await commit(root, "record tail");
   return { root, record, path };
 }
 test("accepts the non-authorizing v2 bootstrap record offline and rejects it for prepublish", () => {
-  const record = source();
+  const record = currentSource();
   assert.deepEqual(rules(record), []);
   assert.ok(rules(record, { mode: "prepublish" }).includes("bootstrap-timing"));
 });
@@ -75,8 +100,10 @@ test("prepublication git tail rejects substantive package, root, policy, adapter
   }
 });
 test("publish content joins do not use candidate commit ancestry", () => {
-  const record = source();
-  const expected = { name: record.candidate.name, version: record.candidate.version, ...currentQualificationJoins(process.cwd(), record.candidate) };
+  const record = currentSource();
+  const joins = currentQualificationJoins(process.cwd(), record.candidate);
+  bindCurrentJoins(record, joins);
+  const expected = { name: record.candidate.name, version: record.candidate.version, ...joins };
   const syntheticSquashCommit = "f".repeat(40);
   assert.notEqual(syntheticSquashCommit, record.publishedCommit);
   assert.deepEqual(rules(record, { mode: "prepublish", expected, freshTranscript: record.transcript }).filter((rule) => rule !== "bootstrap-timing"), []);

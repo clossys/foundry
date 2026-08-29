@@ -93,7 +93,7 @@ function getPrefersDarkServerSnapshot(): boolean {
  * your tree once, near the root, typically as a sibling of `<Shell>`:
  *
  * ```tsx
- * import { ThemeProvider } from "@vespeneventures/designer/theme";
+ * import { ThemeProvider } from "@clossys/designer/theme";
  *
  * export default function RootLayout({ children }: { children: React.ReactNode }) {
  *   return <ThemeProvider>{children}</ThemeProvider>;

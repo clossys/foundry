@@ -52,10 +52,10 @@
  * -----------------------------------------------------------------
  *   - The installed inventory is a CALLER-SUPPLIED input, structurally
  *     typed (`FleetInstalledInventory` below) to match
- *     `@vespeneventures/integrator`'s own `InstalledInventory`
+ *     `@clossys/integrator`'s own `InstalledInventory`
  *     (`packages/integrator/src/inventory.ts`) WITHOUT importing that
  *     package -- the identical "named here without depending on the gate
- *     package" move `@vespeneventures/integrator`'s own `currency.ts`
+ *     package" move `@clossys/integrator`'s own `currency.ts`
  *     already makes for the fleet verdict ternary it depends on. This
  *     package grades what it is handed; it does not go fetch, and it adds
  *     no runtime dependency to do so. A real `InstalledInventory` value
@@ -80,7 +80,7 @@ import { parseCoverageDeclaration } from "./coverage-declaration.js";
 export type CoverageCellState = "installed" | "declared-absent" | "unclassified";
 
 /**
- * Structural match for `@vespeneventures/integrator`'s `InstalledPackage`
+ * Structural match for `@clossys/integrator`'s `InstalledPackage`
  * (`packages/integrator/src/inventory.ts`), named here rather than
  * imported -- see the module header. Only the field this grader actually
  * reads is required; a real `InstalledPackage` (which also carries
@@ -91,7 +91,7 @@ export interface FleetInstalledPackage {
   readonly installedVersion?: string;
 }
 
-/** Structural match for `@vespeneventures/integrator`'s `InstalledInventory`. See `FleetInstalledPackage`. */
+/** Structural match for `@clossys/integrator`'s `InstalledInventory`. See `FleetInstalledPackage`. */
 export interface FleetInstalledInventory {
   readonly packages: readonly FleetInstalledPackage[];
 }

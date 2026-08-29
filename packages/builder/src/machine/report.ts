@@ -1,5 +1,5 @@
-import { createGateReasons, foldGateResults, gateResultToExitCode, gateSatisfied, gateViolated } from "@vespeneventures/controller/gates";
-import type { GateResult } from "@vespeneventures/controller/gates";
+import { createGateReasons, foldGateResults, gateResultToExitCode, gateSatisfied, gateViolated } from "@clossys/controller/gates";
+import type { GateResult } from "@clossys/controller/gates";
 import { DestinationCollisionError, composeInstallationPlans, diffRetiredDestinations, verifyComposedInstallation } from "../composition.js";
 import type { ComposedPlanOperation, NamedSourcePlan, RetiredDestination } from "../composition.js";
 import { createRuntimeContext, planInstallation } from "../runtime.js";

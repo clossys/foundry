@@ -37,7 +37,7 @@
  * file is intentionally small and single-purpose instead — it shares only
  * the walking/skip-file conventions (`SKIP_FILE_RE`, fail-closed on an
  * unreadable directory) rather than the extraction logic itself, mirroring
- * the exact conventions `style-scan.ts` and `@vespeneventures/copy`'s
+ * the exact conventions `style-scan.ts` and `@example/copy`'s
  * `scan.ts` already establish for this repository's scanners.
  */
 
@@ -66,7 +66,7 @@ const DEFAULT_EXTENSIONS = [".ts", ".tsx"];
  */
 const DEFAULT_SKIP_DIRS = new Set(["node_modules", ".git", "dist", "build", "coverage", "internal"]);
 
-/** Same convention `style-scan.ts` and `@vespeneventures/copy`'s `scan.ts` use: test/spec/check files and declaration files never ship, so a class literal living only in one is never a real rendered class. */
+/** Same convention `style-scan.ts` and `@example/copy`'s `scan.ts` use: test/spec/check files and declaration files never ship, so a class literal living only in one is never a real rendered class. */
 const SKIP_FILE_RE = /\.(test|spec|check)\.(ts|tsx)$|\.d\.ts$/;
 
 export interface SkippedFile {

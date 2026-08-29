@@ -9,7 +9,7 @@
 blank_issues_enabled: false
 contact_links:
   - name: Report a security vulnerability (private)
-    url: https://github.com/vespeneventures/foundry/security/advisories/new
+    url: https://github.com/clossys/platform/security/advisories/new
     about: >-
       Do not describe an unpatched vulnerability in a public issue — anyone
       can read it, including whoever would exploit it. Use GitHub's private

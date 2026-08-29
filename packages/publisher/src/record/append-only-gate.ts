@@ -30,7 +30,7 @@ import { validateLedger } from "./schema.js";
  *
  * Both arguments are `unknown` and validated with `validateLedger` before
  * anything else runs — the same "don't trust the shape of what you're
- * about to compare" discipline `@vespeneventures/controller/policy`'s `verifyBinding`
+ * about to compare" discipline `@clossys/controller/policy`'s `verifyBinding`
  * applies to a `PolicyBinding` before computing a digest against it. If
  * `previous` itself doesn't validate, there is no trustworthy history to
  * check preservation against, so this returns a single

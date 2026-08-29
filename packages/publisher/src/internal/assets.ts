@@ -2,10 +2,10 @@
  * The asset-resolution companion to `internal/tokens.ts`/`internal/
  * typography.ts` — the shared foundation every channel this package ships
  * (`./web`, `./email`, `./print`, `./image`, `./slides`) needs now that
- * `@vespeneventures/publisher/core` 0.3.0 added `SlotBinding.assetId` and
- * `@vespeneventures/publisher/media` exists to register what an `assetId` actually
+ * `@clossys/publisher/core` 0.3.0 added `SlotBinding.assetId` and
+ * `@clossys/publisher/media` exists to register what an `assetId` actually
  * points AT. Built once here, rather than reinvented (and re-drifted) five
- * times — the exact reasoning `@vespeneventures/publisher/core`'s own
+ * times — the exact reasoning `@clossys/publisher/core`'s own
  * `resolve-assets.ts` gives for shipping `resolveAssets` at all: "issue
  * #43 — a rule every renderer must independently remember is a rule one of
  * them will forget." This module is where that rule lives for THIS
@@ -13,11 +13,11 @@
  *
  * WHAT THIS MODULE ADDS ON TOP OF `resolveAssets` ITSELF
  * -----------------------------------------------------------
- * `@vespeneventures/publisher/core`'s `resolveAssets` deliberately stops one step
+ * `@clossys/publisher/core`'s `resolveAssets` deliberately stops one step
  * short of what a renderer needs: its `AssetLookup` returns `unknown` (see
  * that file's own doc comment, "why this function does not know what an
  * asset looks like" — `surface/core` has zero dependency on
- * `@vespeneventures/publisher/media`, not even for a type), so `AssetResolveResult
+ * `@clossys/publisher/media`, not even for a type), so `AssetResolveResult
  * .assets[].asset` is `unknown` too. A renderer that just assumed a shape
  * (`(asset as any).src`) and rendered it would be exactly the "silent
  * fallback" failure this whole package refuses everywhere else. So this
@@ -27,33 +27,33 @@
  * that doesn't fit that shape as its own, named failure (`invalid`) —
  * never silently coerced, never silently dropped.
  *
- * `RenderAsset` IS NOT AN IMPORT OF `@vespeneventures/publisher/media`'S `AssetEntry`
+ * `RenderAsset` IS NOT AN IMPORT OF `@clossys/publisher/media`'S `AssetEntry`
  * -----------------------------------------------------------------------------
- * `RenderAsset` below is structurally identical to `@vespeneventures/
+ * `RenderAsset` below is structurally identical to `@clossys/
  * media`'s `AssetEntry` (same discriminated `type: "image" | "video"`
  * shape, same field names) — deliberately, since a real `AssetLookup` in
  * practice wraps exactly that package's registry — but this package does
- * not import `@vespeneventures/publisher/media` to get it. Same "opaque seam,
- * not a code import" reasoning `@vespeneventures/publisher/core`'s own
- * `resolve-assets.ts` gives for `AssetLookup` itself: `@vespeneventures/
- * surface` works whether or not `@vespeneventures/publisher/media` is even
+ * not import `@clossys/publisher/media` to get it. Same "opaque seam,
+ * not a code import" reasoning `@clossys/publisher/core`'s own
+ * `resolve-assets.ts` gives for `AssetLookup` itself: `@clossys/
+ * surface` works whether or not `@clossys/publisher/media` is even
  * installed, and a caller with a completely different `assetId -> asset`
  * source (a CMS, a CDN manifest, a hand-rolled map in a test) only needs to
  * return something with the right fields — never that package's own type.
  * This is also why `RenderAsset` carries only the fields a renderer
- * actually paints and not `@vespeneventures/publisher/media`'s own
+ * actually paints and not `@clossys/publisher/media`'s own
  * `licence`/`credit` — those are registry/review metadata, not rendering
  * inputs, and reading them here would blur that this package never needs
  * them. `type` IS carried here — unlike `licence`/`credit`, a renderer
  * genuinely needs to know which of the two shapes it is looking at before
  * it can paint anything at all, which is exactly why v2 (issue #177) adds
  * the identical discriminated extension to this contract, in parallel with
- * `@vespeneventures/publisher/media`'s own — see `RenderImageAsset`/
+ * `@clossys/publisher/media`'s own — see `RenderImageAsset`/
  * `RenderVideoAsset` below.
  *
  * ALT IS REQUIRED HERE FOR THE IDENTICAL REASON IT IS REQUIRED ON `AssetEntry`
  * -------------------------------------------------------------------------------
- * `@vespeneventures/publisher/media`'s own `AssetEntryBase.alt` doc comment:
+ * `@clossys/publisher/media`'s own `AssetEntryBase.alt` doc comment:
  * "there is no later point in this pipeline where alt text can be
  * recovered from a URL and two integers." This module is that later
  * point, and it holds the identical line: a resolved asset with a missing
@@ -63,7 +63,7 @@
  *
  * VIDEO'S OWN ACCESSIBILITY BAR IS ENFORCED HERE TOO — NOT ONLY AT SCHEMA TIME
  * -------------------------------------------------------------------------------
- * `@vespeneventures/publisher/media`'s `schema.ts` refuses a `VideoAssetEntry`
+ * `@clossys/publisher/media`'s `schema.ts` refuses a `VideoAssetEntry`
  * with neither `captions` nor `transcript` before it can ever be
  * registered. But `RenderAsset` is NOT an import of `AssetEntry` (see
  * above) — a hand-rolled `AssetLookup` (a CMS, a CDN manifest, a test
@@ -98,7 +98,7 @@
  *
  * A value that does not parse as an absolute URL at all (throws inside
  * `new URL`) is treated as the "a path a consumer's own build resolves"
- * case `@vespeneventures/publisher/media`'s `ImageAssetEntry.src` doc
+ * case `@clossys/publisher/media`'s `ImageAssetEntry.src` doc
  * comment has always explicitly allowed, since v1 — a bundler-relative
  * import path (`"./hero.png"`, `"assets/hero.png"`) has no scheme to
  * check and is accepted unchanged, exactly as it always has been. This is
@@ -123,7 +123,7 @@ import type { AssetLookup, ResolveResult, SurfaceSlotSpec } from "../core/index.
 // RenderAsset — the discriminated shape every channel actually paints from
 // ─────────────────────────────────────────────────────────────────────────
 
-/** One additional resolution/format for a `RenderImageAsset` — see `@vespeneventures/publisher/media`'s `ImageSource`, which this mirrors structurally without importing it (see this file's own top comment). */
+/** One additional resolution/format for a `RenderImageAsset` — see `@clossys/publisher/media`'s `ImageSource`, which this mirrors structurally without importing it (see this file's own top comment). */
 export interface RenderImageSource {
   src: string;
   width: number;
@@ -152,13 +152,13 @@ export interface RenderImageAsset {
   sources?: RenderImageSource[];
 }
 
-/** One playable `<source>` for a `RenderVideoAsset` — see `@vespeneventures/publisher/media`'s `VideoSource`. */
+/** One playable `<source>` for a `RenderVideoAsset` — see `@clossys/publisher/media`'s `VideoSource`. */
 export interface RenderVideoSource {
   src: string;
   mimeType: string;
 }
 
-/** One `<track kind="captions">` for a `RenderVideoAsset` — see `@vespeneventures/publisher/media`'s `VideoCaption`. */
+/** One `<track kind="captions">` for a `RenderVideoAsset` — see `@clossys/publisher/media`'s `VideoCaption`. */
 export interface RenderVideoCaption {
   src: string;
   srclang: string;
@@ -169,7 +169,7 @@ export interface RenderVideoCaption {
  * What `./web` needs to paint a `<video>` — see this file's own top
  * comment, "Video's own accessibility bar is enforced here too," for why
  * `captions`/`transcript`/`reducedMotion` are checked by
- * {@link isRenderVideoAsset} even though `@vespeneventures/publisher/media`'s
+ * {@link isRenderVideoAsset} even though `@clossys/publisher/media`'s
  * `schema.ts` already checks the identical thing at registry time. Every
  * non-web channel never sees this shape directly — see
  * `toStaticRenderAsset`, below, for how each of them instead reduces a
@@ -191,7 +191,7 @@ export interface RenderVideoAsset {
   muted?: boolean;
 }
 
-/** Either shape a resolved `assetId` binding can now produce — discriminated by `type`, mirroring `@vespeneventures/publisher/media`'s own `AssetEntry` union without importing it (see this file's own top comment). */
+/** Either shape a resolved `assetId` binding can now produce — discriminated by `type`, mirroring `@clossys/publisher/media`'s own `AssetEntry` union without importing it (see this file's own top comment). */
 export type RenderAsset = RenderImageAsset | RenderVideoAsset;
 
 function isFinitePositive(value: unknown): value is number {
@@ -252,7 +252,7 @@ function isRenderImageSource(value: unknown): value is RenderImageSource {
 /**
  * Structural validation of `unknown` into a real `RenderImageAsset` —
  * hand-rolled `typeof`/shape checks, no schema library, the same
- * discipline `@vespeneventures/publisher/media`'s own `schema.ts` holds to.
+ * discipline `@clossys/publisher/media`'s own `schema.ts` holds to.
  * Every field is checked independently so a single malformed field (a
  * `width` of `0`, a blank `alt`, a `javascript:` `src`) is exactly as
  * fatal as a completely wrong-shaped value — there is no "close enough"
@@ -350,7 +350,7 @@ export interface AssetResolutionIssue {
 }
 
 /**
- * What `resolveDocumentAssets` returns — `@vespeneventures/publisher/core`'s own
+ * What `resolveDocumentAssets` returns — `@clossys/publisher/core`'s own
  * `AssetResolveResult`, with `assets` replaced by a validated, paintable
  * `byKey` map and `unresolvedAssetIds` augmented by a NEW `invalid` bucket
  * for the failure `resolveAssets` itself cannot see (it never looks inside
@@ -359,13 +359,13 @@ export interface AssetResolutionIssue {
 export interface RenderAssetResolution {
   /** Slot key -> validated, paintable `RenderAsset`. Only ever contains entries that passed {@link isRenderAsset} — never a partially-valid or coerced value. */
   byKey: Map<string, RenderAsset>;
-  /** `assetId`s `lookup` returned `undefined`/`null` for — see `AssetLookup`'s own doc comment in `@vespeneventures/publisher/core`. */
+  /** `assetId`s `lookup` returned `undefined`/`null` for — see `AssetLookup`'s own doc comment in `@clossys/publisher/core`. */
   unresolvedAssetIds: string[];
-  /** Slot keys `resolveAssets` could not even attempt to resolve — no source, an ambiguous binding, `lookup` not a function, or `lookup` threw for that slot. See `@vespeneventures/publisher/core`'s own `resolveAssets` doc comment. */
+  /** Slot keys `resolveAssets` could not even attempt to resolve — no source, an ambiguous binding, `lookup` not a function, or `lookup` threw for that slot. See `@clossys/publisher/core`'s own `resolveAssets` doc comment. */
   unchecked: string[];
   /** `assetId`s that DID resolve (via `lookup`) but to a value that fails {@link isRenderAsset} — this module's own addition; `resolveAssets` itself has no way to see this, since its `AssetLookup` return type is `unknown` on purpose. Every entry here is exactly as fatal as an unresolved one — see this file's top comment. */
   invalid: AssetResolutionIssue[];
-  /** Slot keys legitimately not this pass's job — their one source of content is `copyId`/`value`, not `assetId`. Never a failure; see `@vespeneventures/publisher/core`'s own `resolveAssets`, `deferredToCopy`. */
+  /** Slot keys legitimately not this pass's job — their one source of content is `copyId`/`value`, not `assetId`. Never a failure; see `@clossys/publisher/core`'s own `resolveAssets`, `deferredToCopy`. */
   deferredToCopy: string[];
 }
 
@@ -374,7 +374,7 @@ export interface RenderAssetResolution {
  * `lookup`, and validates each successfully-looked-up value into a real,
  * paintable `RenderAsset` — see this file's top comment for why that
  * validation step exists and why it lives here rather than in
- * `@vespeneventures/publisher/core` itself.
+ * `@clossys/publisher/core` itself.
  *
  * `lookup` is optional — omitting it (the same convention every
  * `resolveCopyId`/`CopyLookup` option in this package already uses) is
@@ -384,7 +384,7 @@ export interface RenderAssetResolution {
  * ignored.
  *
  * NEVER HAND-ROLLED: this function's whole first half IS a call to
- * `@vespeneventures/publisher/core`'s own `resolveAssets` — see this package's own
+ * `@clossys/publisher/core`'s own `resolveAssets` — see this package's own
  * task brief and issue #43 the module comment above cites. Everything this
  * function adds is the shape-validation step that function's own zero-
  * dependency design deliberately leaves to its caller.

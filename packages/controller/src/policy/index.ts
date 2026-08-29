@@ -1,7 +1,7 @@
 /**
- * `@vespeneventures/controller/policy` — the zero-I/O, zero-dependency
+ * `@clossys/controller/policy` — the zero-I/O, zero-dependency
  * content-addressed binding primitive this repository's rule-governing
- * package (`@vespeneventures/controller`) is built on.
+ * package (`@clossys/controller`) is built on.
  *
  * A `PolicyBinding` is a content-addressed commitment to a policy document:
  * a `policyId`, a hash algorithm, and a digest — never the document itself.

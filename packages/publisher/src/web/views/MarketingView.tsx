@@ -1,12 +1,12 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { mergeUiClasses } from "@vespeneventures/designer/atoms";
-import { Faq, FeatureGrid, Hero } from "@vespeneventures/designer/blocks";
-import { SiteFooter, SiteHeader } from "@vespeneventures/designer/shell";
+import { mergeUiClasses } from "@clossys/designer/atoms";
+import { Faq, FeatureGrid, Hero } from "@clossys/designer/blocks";
+import { SiteFooter, SiteHeader } from "@clossys/designer/shell";
 
 /**
  * One entry in {@link MarketingViewProps.features} — deliberately a single
  * text region (`heading` only, no `description`/`icon`), unlike
- * `@vespeneventures/designer/blocks`' own `FeatureGridItem`. This mirrors the
+ * `@clossys/designer/blocks`' own `FeatureGridItem`. This mirrors the
  * shape a `SurfaceRepeatingSlotBinding` item can actually carry: exactly
  * ONE of `copy`/`node`/`assetId` per item (`surface/core`'s own
  * `SurfaceSlotBindingItem`), never two independent text fields. See
@@ -68,7 +68,7 @@ export interface MarketingViewProps extends HTMLAttributes<HTMLDivElement> {
    * error" contract `surface/core`'s repeating bindings already hold to.
    */
   faq?: readonly MarketingFaqItem[];
-  /** The closing call-to-action band's own heading. Renders as a second `Hero`-shaped section (`headingLevel={2}`) — see `@vespeneventures/designer/blocks`' `Hero` doc comment, "a page can reasonably contain two `Hero`-shaped sections". */
+  /** The closing call-to-action band's own heading. Renders as a second `Hero`-shaped section (`headingLevel={2}`) — see `@clossys/designer/blocks`' `Hero` doc comment, "a page can reasonably contain two `Hero`-shaped sections". */
   ctaHeading: ReactNode;
   /** A line of supporting copy under the CTA heading. */
   ctaDescription?: ReactNode;
@@ -88,7 +88,7 @@ export interface MarketingViewProps extends HTMLAttributes<HTMLDivElement> {
  * composition surface (see this package's README, "Scope: this package
  * renders and validates. It does not compose").
  *
- * Composed entirely from already-shipped `@vespeneventures/designer` primitives
+ * Composed entirely from already-shipped `@clossys/designer` primitives
  * — `SiteHeader`/`SiteFooter` (persistent chrome, `ui/shell`) and
  * `Hero`/`FeatureGrid`/`Faq` (page content, `ui/blocks`) — with no styling
  * or token decisions of its own: every visual choice (spacing, color,

@@ -4,8 +4,8 @@ import { join, resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { runFoundationCheck } from "./foundation.js";
 
-// Real file I/O against a temp directory, matching @vespeneventures/catalog's
-// own build.test.ts and @vespeneventures/release's preflight/pack-round-trip
+// Real file I/O against a temp directory, matching @example/catalog's
+// own build.test.ts and @example/release's preflight/pack-round-trip
 // tests — the point here is proving that `runFoundationCheck`'s
 // `packagesDir`/`maxDepth` options actually reach `buildCatalog`, which only
 // a real filesystem fixture can prove. A test built entirely from mocks would

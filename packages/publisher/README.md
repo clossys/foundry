@@ -1,28 +1,28 @@
-# @vespeneventures/publisher
+# @clossys/publisher
 
 **The publisher role — did we put it out to an audience, and can we prove
 what shipped?** This package is named for the job, not the artifact: it is
-recut from two donor packages, `@vespeneventures/surface` (the composer half
-— eight subpaths, unchanged) and `@vespeneventures/ledger` (the record half,
+recut from two donor packages, `@example/surface` (the composer half
+— eight subpaths, unchanged) and `@example/ledger` (the record half,
 now the `./record` subpath), per
 [decision 10](../../docs/DECISIONS.md#10-recutting-the-expression-surface-into-role-shaped-packages).
 The vocabulary inside each half is unchanged: renaming the role does not
 rename what it composes or what it records.
 
 ```bash
-npm install @vespeneventures/publisher
+npm install @clossys/publisher
 ```
 
 ## Public entry points
 
 Use explicit subpaths:
 
-- `@vespeneventures/publisher/core` — canonical `SurfaceDocument` contract, validation, copy/media resolution, and output manifests.
-- `@vespeneventures/publisher/media` — media registry, reader, and coverage check.
-- `@vespeneventures/publisher/web` — web composition and head metadata.
-- `@vespeneventures/publisher/document` — the product-neutral structured-document contract (sections, paragraphs, lists, tables, callouts, safe links) and its renderer.
-- `@vespeneventures/publisher/email`, `/print`, `/image`, `/slides` — channel renderers.
-- `@vespeneventures/publisher/record` — the append-only, content-addressed publication ledger and its drift checker. See "`record` — the append-only publication ledger," below.
+- `@clossys/publisher/core` — canonical `SurfaceDocument` contract, validation, copy/media resolution, and output manifests.
+- `@clossys/publisher/media` — media registry, reader, and coverage check.
+- `@clossys/publisher/web` — web composition and head metadata.
+- `@clossys/publisher/document` — the product-neutral structured-document contract (sections, paragraphs, lists, tables, callouts, safe links) and its renderer.
+- `@clossys/publisher/email`, `/print`, `/image`, `/slides` — channel renderers.
+- `@clossys/publisher/record` — the append-only, content-addressed publication ledger and its drift checker. See "`record` — the append-only publication ledger," below.
 
 The package has no root export. `core` is deliberately framework-agnostic;
 the web and document subpaths have optional React (and, for `web`, designer)
@@ -116,7 +116,7 @@ Each item in `items` independently obeys the identical exactly-one-of
 discipline a single binding does:
 
 ```ts
-import type { SurfaceDocument } from "@vespeneventures/publisher/core";
+import type { SurfaceDocument } from "@clossys/publisher/core";
 
 const acmeCapabilities: SurfaceDocument["bindings"][number] = {
   slot: "capabilities",
@@ -173,7 +173,7 @@ that picks one — see "Scope," above: this package still does not compose.
 `ctaDescription`, `ctaAction`, and `footerSecondary` are optional flowed
 slots; `features` (required) and `faq` (optional) are **repeating** slots,
 each bound via a `SurfaceRepeatingSlotBinding` and rendered through
-`@vespeneventures/designer`'s `FeatureGrid`/`Faq` blocks respectively. An empty
+`@clossys/designer`'s `FeatureGrid`/`Faq` blocks respectively. An empty
 repeating group (`items: []`) renders that section with zero entries —
 never an error, the same "empty is a deliberate, valid choice" contract
 `SurfaceRepeatingSlotBinding` itself holds to, above; a `faq` binding that
@@ -190,9 +190,9 @@ package. A `faq` item authored via `copy`/`assetId` instead fails closed
 with `RenderError("empty-output", ...)`.
 
 ```ts
-import type { SurfaceDocument } from "@vespeneventures/publisher/core";
-import { resolveSurfaceDocument } from "@vespeneventures/publisher/core";
-import { renderWebDocument } from "@vespeneventures/publisher/web";
+import type { SurfaceDocument } from "@clossys/publisher/core";
+import { resolveSurfaceDocument } from "@clossys/publisher/core";
+import { renderWebDocument } from "@clossys/publisher/web";
 
 const ref = (id: string) => ({ id });
 
@@ -251,9 +251,9 @@ this package still renders and validates; it does not compose.
 ```ts
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import type { SurfaceDocument } from "@vespeneventures/publisher/core";
-import { resolveSurfaceDocument } from "@vespeneventures/publisher/core";
-import { createWebRenderer, defineWebTemplate } from "@vespeneventures/publisher/web";
+import type { SurfaceDocument } from "@clossys/publisher/core";
+import { resolveSurfaceDocument } from "@clossys/publisher/core";
+import { createWebRenderer, defineWebTemplate } from "@clossys/publisher/web";
 import { DashboardWidget } from "./DashboardWidget.js"; // a consumer's own component
 
 const DashboardView = defineWebTemplate({
@@ -328,7 +328,7 @@ path around validation:
 **Rich-node slots are the dangerous surface, so they are the narrow one.**
 A `"node"`-kind slot accepts a real `ReactNode` the caller's *own trusted
 code* already constructed — a composed `AuthView` form, a widget built from
-`@vespeneventures/designer` atoms, a small caller-authored component. It never
+`@clossys/designer` atoms, a small caller-authored component. It never
 accepts and never interprets a raw HTML string, and there is no
 `dangerouslySetInnerHTML` anywhere on this path — React's own
 child-rendering already escapes text/attribute values by default, and a
@@ -409,8 +409,8 @@ that draft or malformed sources fail closed.
 
 ## `media` — the asset registry contract, responsive images, and video (v2)
 
-`@vespeneventures/publisher/media` registers a consumer's own image and video
-assets under a stable `assetId`, the identical role `@vespeneventures/writer`
+`@clossys/publisher/media` registers a consumer's own image and video
+assets under a stable `assetId`, the identical role `@clossys/writer`
 plays for text: a registry, never a generation engine (it never calls an
 image/video API, never talks to a model, never transcodes or extracts a
 poster frame — see `src/media/types.ts`'s own top comment).
@@ -538,13 +538,13 @@ A help article, a policy page, a changelog entry, a long-form explainer —
 any page whose body is "read this document," not "fill in these five named
 regions" — has no shape in `SurfaceSlotBinding` (a single `CopyRef` or a
 caller-owned `node`, never an ordered sequence of headings, paragraphs,
-lists, tables, and callouts). `@vespeneventures/publisher/document` is that
+lists, tables, and callouts). `@clossys/publisher/document` is that
 shape: `StructuredDocument`, `validateStructuredDocument`, and
 `renderStructuredDocument`.
 
 ```ts
-import { validateStructuredDocument, renderStructuredDocument } from "@vespeneventures/publisher/document";
-import type { StructuredDocument } from "@vespeneventures/publisher/document";
+import { validateStructuredDocument, renderStructuredDocument } from "@clossys/publisher/document";
+import type { StructuredDocument } from "@clossys/publisher/document";
 
 const ref = (id: string) => ({ id });
 
@@ -696,7 +696,7 @@ holds between its own `<h1>` and `EmptyState`'s `<h2>`.
 
 **`resolveCopyId`'s type, and the `{ element, resolutions }` return
 shape.** `RenderStructuredDocumentOptions.resolveCopyId` is
-`@vespeneventures/writer`'s own ref-based `CopyResolver` —
+`@clossys/writer`'s own ref-based `CopyResolver` —
 `(ref: CopyRef) => CopyResolution | undefined`, the same type
 `resolveSurfaceDocument`'s own `resolver` parameter takes — **not**
 `surface/web`'s string-keyed `CopyResolver` (`(copyId: string) => string |
@@ -718,9 +718,9 @@ content specifically:
 
 ```ts
 import { createElement } from "react";
-import { defineWebTemplate, createWebRenderer } from "@vespeneventures/publisher/web";
-import { resolveSurfaceDocument } from "@vespeneventures/publisher/core";
-import type { SurfaceDocument } from "@vespeneventures/publisher/core";
+import { defineWebTemplate, createWebRenderer } from "@clossys/publisher/web";
+import { resolveSurfaceDocument } from "@clossys/publisher/core";
+import type { SurfaceDocument } from "@clossys/publisher/core";
 
 const HelpArticleView = defineWebTemplate({
   name: "HelpArticleView",
@@ -758,11 +758,11 @@ rendering the TOC itself is left to the caller).
 
 ## `record` — the append-only publication ledger
 
-`@vespeneventures/publisher/record` is the return path: an append-only
+`@clossys/publisher/record` is the return path: an append-only
 record of what was published, to which channel, when, derived from which
 revision of strategy, citing which facts — and a drift checker that answers
 whether a cited fact still holds, without ever depending on
-`@vespeneventures/strategist`. It ships in the same install as the composer
+`@clossys/strategist`. It ships in the same install as the composer
 half above — see "Why `publisher` is one package, not two," above — so there
 is no separate `npm install` line here.
 
@@ -787,14 +787,14 @@ about it, more than any function signature below:
 
 Concretely:
 
-- **This package does not depend on `@vespeneventures/strategist`.** Every fact
+- **This package does not depend on `@clossys/strategist`.** Every fact
   a `PublicationEntry` cites is a plain, opaque `factRef` string — the same
-  seam `@vespeneventures/writer/voice`'s `Claim.factRef`,
-  `@vespeneventures/writer`'s `CopyEntry.factRef`, and
-  `@vespeneventures/strategist`'s own `Market.factRefs`/`Audience.factRefs`
-  already use one layer up. `@vespeneventures/strategist` is not in this package's
+  seam `@clossys/writer/voice`'s `Claim.factRef`,
+  `@clossys/writer`'s `CopyEntry.factRef`, and
+  `@clossys/strategist`'s own `Market.factRefs`/`Audience.factRefs`
+  already use one layer up. `@clossys/strategist` is not in this package's
   `dependencies`, and nothing in `src/` imports it. Resolving a `factRef`
-  against a real fact registry — reading `@vespeneventures/strategist`'s
+  against a real fact registry — reading `@clossys/strategist`'s
   `readStrategy` bundle
   and reducing it to `{ [fact.key]: fact.value }` — is a caller's job,
   happening in code this package has no visibility into.
@@ -817,7 +817,7 @@ Concretely:
 #### Recording a publication
 
 ```ts
-import { appendEntry, citeFact, type Ledger, type PublicationEntry } from "@vespeneventures/publisher/record";
+import { appendEntry, citeFact, type Ledger, type PublicationEntry } from "@clossys/publisher/record";
 
 let ledger: Ledger = [];
 
@@ -836,8 +836,8 @@ ledger = appendEntry(ledger, entry); // returns a NEW, deep-frozen ledger
 #### Checking for drift
 
 ```ts
-import { checkLedgerDrift } from "@vespeneventures/publisher/record";
-// readStrategy comes from @vespeneventures/strategist — the caller's job, not this package's
+import { checkLedgerDrift } from "@clossys/publisher/record";
+// readStrategy comes from @clossys/strategist — the caller's job, not this package's
 
 const currentValues = { "active-customers": 5000 }; // read from the caller's own facts.json, not from this package
 
@@ -858,7 +858,7 @@ npx publisher-record-check ./ledger.json ./current-values.json
 #### Guarding storage against a hand-edit
 
 ```ts
-import { checkAppendOnly } from "@vespeneventures/publisher/record";
+import { checkAppendOnly } from "@clossys/publisher/record";
 
 const findings = checkAppendOnly(previousLedgerJson, nextLedgerJson); // e.g. base ref vs. head ref in a CI job
 if (findings.length > 0) {
@@ -944,7 +944,7 @@ partial result, visible in the counts, not an all-or-nothing gate.
 - **No fact registry.** This package never resolves a `factRef` against
   anything. It does not know what a real fact is, does not validate that a
   `factRef` names one that exists, and does not import
-  `@vespeneventures/strategist` to find out. See "Why this package exists"
+  `@clossys/strategist` to find out. See "Why this package exists"
   above.
 - **No judgement.** `checkLedgerDrift` reports drift; it does not decide
   whether drift matters, does not retract anything, does not notify
@@ -957,29 +957,29 @@ partial result, visible in the counts, not an all-or-nothing gate.
 
 | Export | Kind | Purpose |
 | --- | --- | --- |
-| `PublicationEntry` | type | One append-only record: `id`, `publishedAt` (ISO 8601 instant), `channel` (a plain string — not `@vespeneventures/publisher/core`'s closed `Channel` vocabulary; a real publication channel is broader than the composer half's five render targets), optional `url`, `strategyRevision` (an opaque string naming the revision of strategy this was derived from), `factCitations: FactCitation[]`, and an optional `contentBinding: PolicyBinding` committing to the published artifact's own bytes. No score, threshold, or verdict field — see "Why this package exists". |
-| `FactCitation` | type | `{ factRef: string; valueBinding: PolicyBinding }` — one fact a `PublicationEntry` cites, bound to that fact's value at publication time. `factRef` is opaque, the same seam `@vespeneventures/writer/voice`'s `Claim.factRef` uses. `valueBinding.policyId` always equals `factRef`, enforced by `validateEntry`'s `"citation-policy-id-mismatch"` rule and by construction in `citeFact`. |
+| `PublicationEntry` | type | One append-only record: `id`, `publishedAt` (ISO 8601 instant), `channel` (a plain string — not `@clossys/publisher/core`'s closed `Channel` vocabulary; a real publication channel is broader than the composer half's five render targets), optional `url`, `strategyRevision` (an opaque string naming the revision of strategy this was derived from), `factCitations: FactCitation[]`, and an optional `contentBinding: PolicyBinding` committing to the published artifact's own bytes. No score, threshold, or verdict field — see "Why this package exists". |
+| `FactCitation` | type | `{ factRef: string; valueBinding: PolicyBinding }` — one fact a `PublicationEntry` cites, bound to that fact's value at publication time. `factRef` is opaque, the same seam `@clossys/writer/voice`'s `Claim.factRef` uses. `valueBinding.policyId` always equals `factRef`, enforced by `validateEntry`'s `"citation-policy-id-mismatch"` rule and by construction in `citeFact`. |
 | `Ledger` | type | `readonly PublicationEntry[]` — nothing more than an ordered, append-only list. |
-| `LedgerFinding` | type | `{ rule, severity: "error" \| "warning", message, path? }` — this package's own finding shape, deliberately the same shape as `@vespeneventures/controller/policy`'s `Finding` (kept as a separate local type, never pulled in from there) and every sibling `*Finding` type across this foundation. |
+| `LedgerFinding` | type | `{ rule, severity: "error" \| "warning", message, path? }` — this package's own finding shape, deliberately the same shape as `@clossys/controller/policy`'s `Finding` (kept as a separate local type, never pulled in from there) and every sibling `*Finding` type across this foundation. |
 | `DriftReport` | type | What `checkLedgerDrift` returns: `ok`, `entriesChecked`, `citationsChecked`, `citationsUnchecked`, `citationsDrifted`, `findings: LedgerFinding[]`. See "Why the drift checker fails closed". |
-| `PolicyBinding` | type | Re-exported directly from `@vespeneventures/controller/policy`, unchanged, so a consumer never needs its own dependency on `policy` just to read the type `FactCitation.valueBinding`/`PublicationEntry.contentBinding` return. |
-| `DigestAlgorithm` | type | Re-exported from `@vespeneventures/controller/policy` — currently just `"sha256"`. |
-| `PolicyFinding` | type | `@vespeneventures/controller/policy`'s own `Finding` type, re-exported under a name that does not collide with this package's own `LedgerFinding` when both are named in one statement. |
-| `validateEntry(value, path?)` | function | Structural validation of a single `PublicationEntry`: is `id`/`channel`/`strategyRevision` a non-empty string, is `publishedAt` a full ISO 8601 UTC instant, is `url` (when present) a parseable URL, is every `factCitations[i]` a well-formed `FactCitation` (delegating the `valueBinding` shape check to `@vespeneventures/controller/policy`'s own `validateBindingShape`), is `contentBinding` (when present) a well-formed `PolicyBinding`. Returns `LedgerFinding[]`; empty means valid. Never throws. |
+| `PolicyBinding` | type | Re-exported directly from `@clossys/controller/policy`, unchanged, so a consumer never needs its own dependency on `policy` just to read the type `FactCitation.valueBinding`/`PublicationEntry.contentBinding` return. |
+| `DigestAlgorithm` | type | Re-exported from `@clossys/controller/policy` — currently just `"sha256"`. |
+| `PolicyFinding` | type | `@clossys/controller/policy`'s own `Finding` type, re-exported under a name that does not collide with this package's own `LedgerFinding` when both are named in one statement. |
+| `validateEntry(value, path?)` | function | Structural validation of a single `PublicationEntry`: is `id`/`channel`/`strategyRevision` a non-empty string, is `publishedAt` a full ISO 8601 UTC instant, is `url` (when present) a parseable URL, is every `factCitations[i]` a well-formed `FactCitation` (delegating the `valueBinding` shape check to `@clossys/controller/policy`'s own `validateBindingShape`), is `contentBinding` (when present) a well-formed `PolicyBinding`. Returns `LedgerFinding[]`; empty means valid. Never throws. |
 | `validateLedger(value)` | function | Validates a whole `Ledger`: must be an array, every element must pass `validateEntry`, every `id` must be unique across the array (`"duplicate-entry-id"` — what an attempted overwrite looks like when it bypasses `appendEntry`). An empty array is a valid *shape* — `validateLedger([])` returns `[]`; `checkLedgerDrift` is what treats an empty ledger as a failure, since "is this ledger well-formed" and "did this check verify anything" are different questions. |
-| `canonicalizeValue(value)` | function | Deterministically stringifies a JSON-serializable `value` (string, finite number, boolean, `null`, plain object, array — recursively) so that structurally equal values always canonicalize identically regardless of object-key order. Used by `citeFact` (to digest a fact's value) and `checkAppendOnly` (to compare two entries for real content equality, not just reference equality). Throws on a non-finite number, a function, or a `Symbol` — a producer-side error, the same precedent `@vespeneventures/controller/policy`'s `computeDigest` sets for an unsupported algorithm. |
-| `citeFact(factRef, value, algorithm?)` | function | Builds a `FactCitation`: computes `canonicalizeValue(value)`'s digest under `algorithm` (default `"sha256"`) via `@vespeneventures/controller/policy`'s own `computeDigest`, and returns `{ factRef, valueBinding: { policyId: factRef, digestAlgorithm, digest } }`. This package's first real use of `@vespeneventures/controller/policy` outside `policy` itself. Throws on an empty `factRef` or a `value` `canonicalizeValue` cannot handle. |
+| `canonicalizeValue(value)` | function | Deterministically stringifies a JSON-serializable `value` (string, finite number, boolean, `null`, plain object, array — recursively) so that structurally equal values always canonicalize identically regardless of object-key order. Used by `citeFact` (to digest a fact's value) and `checkAppendOnly` (to compare two entries for real content equality, not just reference equality). Throws on a non-finite number, a function, or a `Symbol` — a producer-side error, the same precedent `@clossys/controller/policy`'s `computeDigest` sets for an unsupported algorithm. |
+| `citeFact(factRef, value, algorithm?)` | function | Builds a `FactCitation`: computes `canonicalizeValue(value)`'s digest under `algorithm` (default `"sha256"`) via `@clossys/controller/policy`'s own `computeDigest`, and returns `{ factRef, valueBinding: { policyId: factRef, digestAlgorithm, digest } }`. This package's first real use of `@clossys/controller/policy` outside `policy` itself. Throws on an empty `factRef` or a `value` `canonicalizeValue` cannot handle. |
 | `appendEntry(ledger, entry)` | function | The one sanctioned way to grow a `Ledger`. Throws (never returns a `LedgerFinding[]`) on a malformed `entry` or an `entry.id` that already exists in `ledger` — both are caller programming errors at the point of the call, the same distinction `computeDigest` draws. Returns a **new**, deep-frozen `Ledger`; `ledger` itself, and every entry already in it, is left completely untouched. |
 | `checkAppendOnly(previous, next)` | function | The at-rest complement to `appendEntry`. Pure diff between two `unknown` values, each validated with `validateLedger` first. Reports `"entry-removed"`, `"entry-reordered"`, or `"entry-mutated"` (compared via `canonicalizeValue`, so a harmless JSON-key-order round-trip is never mistaken for a real change) for anything in `previous` that `next` fails to preserve exactly, in the same position; `"entries-removed"` once, up front, if `next` has fewer entries than `previous`. An empty return means `next` is a valid append-only evolution of `previous`. |
-| `checkLedgerDrift(ledger, currentValues)` | function | The drift checker: for each `FactCitation` in `ledger`, compares its recorded `valueBinding` against `currentValues[citation.factRef]` (canonicalized, then run through `@vespeneventures/controller/policy`'s own `verifyBinding` — no digest-comparison logic reimplemented here) and reports a `"fact-drift"` finding on mismatch. `currentValues` is a plain `factRef -> value` map — this function never reads a real fact registry or depends on `@vespeneventures/strategist`. Fails closed on an invalid ledger, an empty ledger, or a non-empty ledger where nothing ends up checked — see "Why the drift checker fails closed". |
+| `checkLedgerDrift(ledger, currentValues)` | function | The drift checker: for each `FactCitation` in `ledger`, compares its recorded `valueBinding` against `currentValues[citation.factRef]` (canonicalized, then run through `@clossys/controller/policy`'s own `verifyBinding` — no digest-comparison logic reimplemented here) and reports a `"fact-drift"` finding on mismatch. `currentValues` is a plain `factRef -> value` map — this function never reads a real fact registry or depends on `@clossys/strategist`. Fails closed on an invalid ledger, an empty ledger, or a non-empty ledger where nothing ends up checked — see "Why the drift checker fails closed". |
 | `JoinKeyReport` | type | What `checkJoinKeyCompleteness` returns: `ok`, `liveEntriesChecked`, `completeLiveEntries`, `incompleteLiveEntries`, `identities: JoinKeyIdentity[]`, `findings: LedgerFinding[]`. Mirrors `DriftReport`'s counted shape for the same reason — "checked nothing" and "checked everything and it held" must never print as the same result. |
 | `JoinKeyIdentity` | type | `{ contentId: string; windows: Array<{ entryId, publishedAt, supersededAt? }> }` — one content identity with every window it has been published under, in `publishedAt` order. Exposed on the report so a caller can assert on the grouping directly rather than infer it from a pass or fail. |
 | `checkJoinKeyCompleteness(ledger)` | function | For everything the ledger currently says is live, is enough recorded here for someone else — an observer-shaped tier holding external engagement signals, never this package — to attribute a signal to the right revision of the right surface? Reports `"join-key-missing-identity"` (a live entry with no `contentId`), `"join-key-window-invalid"` (a `supersededAt` that does not actually close a window), and the cross-entry `"join-key-identity-churn"`. Emits and checks for a KEY only, never a verdict about whether a signal is good — see "Why this package exists". Fails closed on an invalid ledger, an empty ledger, or a ledger with zero live entries. |
 
 `publisher-record-check` (the CLI, installed as a `bin` when this package is
 installed — its argv-handling `cli.ts` is deliberately not part of the
-exports above, the same convention `@vespeneventures/strategist`'s
-`strategist-check` and `@vespeneventures/writer`'s `writer-check` already
+exports above, the same convention `@clossys/strategist`'s
+`strategist-check` and `@clossys/writer`'s `writer-check` already
 set) has two invocations, dispatched on the literal first `argv` token —
 never on the invoked binary's path or filename, since this repository
 always invokes a gate by its compiled path (`node .../dist/cli.js`), and a
@@ -1115,7 +1115,7 @@ choice `checkLedgerDrift` makes for a citation it could not check.
   `checkLedgerDrift`, `checkJoinKeyCompleteness`, and the `PublicationEntry`,
   `FactCitation`, `Ledger`, `LedgerFinding`, `DriftReport`, `JoinKeyReport`,
   `JoinKeyIdentity` types, plus `PolicyBinding`/`DigestAlgorithm`/
-  `PolicyFinding` re-exported from `@vespeneventures/controller/policy`. The
+  `PolicyFinding` re-exported from `@clossys/controller/policy`. The
   CLI is `publisher-record-check`.
 
 Web page-level compositions belong here, not in `designer`; they consume
@@ -1129,9 +1129,9 @@ import-free of each other under one version.
 ## Requirements and version coupling
 
 Node 20+. This package's own `package.json` declares runtime dependencies on
-`@vespeneventures/writer` (`^0.3.0`), `@vespeneventures/designer`
-(`^0.2.0`), and `@vespeneventures/controller` (`~0.8.0`) — of which this
-package only imports the `./policy` subpath, `@vespeneventures/controller/policy`,
+`@clossys/writer` (`^0.3.0`), `@clossys/designer`
+(`^0.2.0`), and `@clossys/controller` (`~0.8.0`) — of which this
+package only imports the `./policy` subpath, `@clossys/controller/policy`,
 never `controller`'s other exports. `writer` and `designer` are caret
 ranges (both fresh `0.x` role packages); `controller` stays a tilde range,
 deliberately not a caret — a caret range on a `0.x` package is patch-only
@@ -1181,12 +1181,12 @@ That declaration does not reach an installer resolving against
 `peerDependenciesMeta` entirely, so both peers resolve as required
 regardless of which subpaths are actually imported. A consumer rendering
 only email, print, or `record` output still has React and React DOM
-installed. This package's own `dependencies` on `@vespeneventures/designer`
+installed. This package's own `dependencies` on `@clossys/designer`
 (`^0.2.0`) compounds it one level further: `designer` declares six of its
 own optional peers the same way, and the same registry gap applies to them
 too, so a consumer of `publisher` inherits `designer`'s full peer set
 through the same mechanism, not just `publisher`'s own two. See
-[issue #226](https://github.com/vespeneventures/foundry/issues/226) for the
+[issue #226](https://github.com/clossys/platform/issues/226) for the
 full evidence and why the declarations stay as-is.
 
 ## Licence

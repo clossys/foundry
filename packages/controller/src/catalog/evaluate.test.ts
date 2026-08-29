@@ -380,7 +380,7 @@ describe("evaluateCatalog — skipped:* ('I could not check this' is representab
   it("does not throw when catalog.skipped is absent entirely (a hand-built Catalog predating this field)", () => {
     // Catalog is a plain data shape a caller can construct directly — as,
     // for example, a consuming package's own unit tests do (see
-    // @vespeneventures/gates' build-order.test.ts, which builds Catalog
+    // @example/gates' build-order.test.ts, which builds Catalog
     // fixtures in-memory without ever calling buildCatalog). Adding
     // `skipped` to the type must not turn every such hand-built object into
     // a runtime crash.

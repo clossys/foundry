@@ -19,9 +19,9 @@
  * independently reinvented the identical three states as `status: "clean"
  * | "regression" | "invalid"`, and says so explicitly in its own doc
  * comment: "the three states map directly onto this repository's
- * three-state CLI exit contract." `checkTokenPurity` (`@vespeneventures/
- * ui`), `checkCopyTraceability` (`@vespeneventures/copy`), and
- * `checkFactsTraceability` (`@vespeneventures/strategy`) each independently
+ * three-state CLI exit contract." `checkTokenPurity` (`@clossys/
+ * ui`), `checkCopyTraceability` (`@example/copy`), and
+ * `checkFactsTraceability` (`@example/strategy`) each independently
  * reinvented a THIRD shape of the same idea — an `unchecked: UncheckedItem[]`
  * list, non-empty meaning "cannot vouch for this scan," gating a `2` before
  * findings are even counted.
@@ -49,14 +49,14 @@
  *     flattening into one opaque string.
  *
  * Still outstanding, and deliberately NOT done here: the `unchecked` lists
- * in `@vespeneventures/ui` and `@vespeneventures/copy`. Those packages
+ * in `@example/ui` and `@example/copy`. Those packages
  * declare zero dependencies, and this module lives in a package that sits
  * far above them in the build order — converging them onto this type at
  * the TYPE level would invert the dependency graph, which is an
  * architectural decision for an owner rather than a mechanical retrofit.
  * Both already implement the ternary correctly at their own exit-code
  * boundary (a non-empty `unchecked` list exits `2`, never `0`), so what is
- * missing is shared vocabulary, not correct behaviour. `@vespeneventures/
+ * missing is shared vocabulary, not correct behaviour. `@clossys/
  * strategy` was named alongside them in this comment's first version as
  * having a third `unchecked` list; it does not, and never did — see the
  * package's CHANGELOG.
@@ -217,7 +217,7 @@ export interface GateReasonVocabulary<TReasons extends readonly [string, ...stri
  * rather than quietly widening what "indeterminate" can mean for that gate.
  *
  * Mirrors `validateGateName`'s `options.verbs` escape hatch in
- * `@vespeneventures/conventions`: a small, named, per-caller-extensible
+ * `@example/conventions`: a small, named, per-caller-extensible
  * vocabulary, never a closed enum baked into this package for every
  * possible gate everywhere.
  */

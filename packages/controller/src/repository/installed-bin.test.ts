@@ -74,7 +74,7 @@ describe("installed controller package", () => {
 
     // `governance` and `repository` were separate compatibility packages
     // before issue #282's recut folded governance's source (including the
-    // `repository` subpath) directly into `@vespeneventures/controller` and
+    // `repository` subpath) directly into `@clossys/controller` and
     // deleted both standalone packages with zero consumers left behind.
     // `repository-check` (declared in controller's own package.json `bin`
     // map — verified as-is, not invented) is controller's own bin now, so
@@ -84,11 +84,11 @@ describe("installed controller package", () => {
     const consumer = join(root, "controller-consumer");
     await installTarballs(consumer, [controllerTarball]);
     await execFile("node", ["--input-type=module", "--eval", hostileImport,
-      "@vespeneventures/controller/repository",
-      "./node_modules/@vespeneventures/controller/dist/repository/cli.js",
-      "./node_modules/@vespeneventures/controller/dist/repository/run-cli.js",
-      "./node_modules/@vespeneventures/controller/dist/repository/adoption-cli.js",
-      "./node_modules/@vespeneventures/controller/dist/release/singular-authority-cli.js",
+      "@clossys/controller/repository",
+      "./node_modules/@clossys/controller/dist/repository/cli.js",
+      "./node_modules/@clossys/controller/dist/repository/run-cli.js",
+      "./node_modules/@clossys/controller/dist/repository/adoption-cli.js",
+      "./node_modules/@clossys/controller/dist/release/singular-authority-cli.js",
     ], { cwd: consumer });
     const bin = join(consumer, "node_modules", ".bin", "repository-check");
     expect(lstatSync(bin).isSymbolicLink()).toBe(true);

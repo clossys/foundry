@@ -2,7 +2,7 @@
  * `readAssetRecord` — the one place in this package that touches a
  * filesystem. Everything in `schema.ts` is pure shape; this function is
  * what turns a consumer's real asset registry file into validated data, in
- * the same gather-don't-judge spirit `@vespeneventures/writer`'s
+ * the same gather-don't-judge spirit `@clossys/writer`'s
  * `readCopyRecord` uses for a `CopyRecord` file: read what's there,
  * validate it, and record — never throw on — anything that could not be
  * turned into usable data. Judgement about what to DO with an unreadable
@@ -29,7 +29,7 @@ import type { AssetRecord } from "./types.js";
  * `AssetRecord`'s schema (a missing required field, a wrong type, a
  * duplicate id, a non-positive dimension, a whitespace-only `alt`) — see
  * `schema.ts`'s `validateAssetRecordShape` for the full list of checks
- * that can produce this. Mirrors `@vespeneventures/writer`'s
+ * that can produce this. Mirrors `@clossys/writer`'s
  * `CopyRegistryReadIssueReason` exactly.
  */
 export type AssetRegistryReadIssueReason = "unreadable" | "unparseable" | "invalid-schema";
@@ -49,8 +49,8 @@ export interface AssetRegistryReadResult {
   issues: AssetRegistryReadIssue[];
   /**
    * `true` exactly when `issues` is empty and `record` is populated.
-   * Named to match `@vespeneventures/writer`'s `CopyRegistryReadResult.complete`
-   * and `@vespeneventures/strategy`'s `StrategyBundle.complete` —
+   * Named to match `@clossys/writer`'s `CopyRegistryReadResult.complete`
+   * and `@example/strategy`'s `StrategyBundle.complete` —
    * "everything this function could have checked, it did, and it found
    * nothing wrong" is the same one-boolean-read contract across all three,
    * on purpose.

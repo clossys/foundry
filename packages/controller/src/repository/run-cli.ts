@@ -60,7 +60,7 @@
  * else.
  *
  * Exit codes — this repository's shared gate-result ternary
- * (`@vespeneventures/controller/gates`'s `GateResult`), projected by
+ * (`@clossys/controller/gates`'s `GateResult`), projected by
  * `gateResultToExitCode`:
  *
  *   0 — satisfied: the declaration is valid and canonically located, and

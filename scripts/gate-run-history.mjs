@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-// gate-run-history — a RunHistoryReader for @vespeneventures/observer, backed
+// gate-run-history — a RunHistoryReader for @clossys/observer, backed
 // by this repository's own GitHub Actions history.
 //
-// @vespeneventures/observer ships ZERO implementations of `RunHistoryReader`,
+// @clossys/observer ships ZERO implementations of `RunHistoryReader`,
 // deliberately: "a caller wires up its own reader against whatever run-history
 // source its plane actually has." This is that caller. It is the reason the
 // package's own header gives for the port existing, supplied for the first

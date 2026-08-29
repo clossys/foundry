@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "positionId": "fixture-integrator",
-  "package": "@vespeneventures/integrator",
+  "package": "@clossys/integrator",
   "artifact": {
     "version": "0.6.1",
     "manifestRef": "fixture/package.json#integrator",

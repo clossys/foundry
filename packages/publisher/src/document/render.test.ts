@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import type { CopyRef, CopyResolution } from "@vespeneventures/writer";
+import type { CopyRef, CopyResolution } from "@clossys/writer";
 import { collectCopyProvenance } from "../core/output-manifest.js";
 import { RenderError } from "../internal/errors.js";
 import { renderStructuredDocument } from "./render.js";

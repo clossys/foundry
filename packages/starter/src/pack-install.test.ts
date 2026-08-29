@@ -118,7 +118,7 @@ async function localRegistry(packages: readonly PackedPackage[]): Promise<{ read
 }
 
 function writeRegistryConfig(root: string, registryUrl: string): void {
-  writeFileSync(join(root, ".npmrc"), `@vespeneventures:registry=${registryUrl}\n@fixture:registry=${registryUrl}\n`);
+  writeFileSync(join(root, ".npmrc"), `@clossys:registry=${registryUrl}\n@fixture:registry=${registryUrl}\n`);
 }
 
 async function withHostilePublishEnvironment<T>(root: string, action: () => Promise<T>): Promise<T> {
@@ -166,7 +166,7 @@ function invoke(root: string, packageManager: "npm" | "pnpm", installed: ReturnT
   writeJson(requestPath, { schemaVersion: 1, phase: "activation", packageManager, snapshot: { repository: "consumer/repository", maxAgeMs: 60_000 }, ...installed, evidence: { assessment: "evidence/assessment.json", targetInput: "evidence/target.json" } });
   writeJson(eventPath, { schemaVersion: 1, provider: "github-actions", eventName: "workflow_run", repository: "consumer/repository", baseSha: gitSha("b"), sourceWorkflowRunId: "1", sourceHeadSha: gitSha("c"), artifactName: "adoption-snapshot-1", sourceConclusion: "success" });
   writeJson(receiptPath, { schemaVersion: 1, packageManager, attempted: true, exitCode: 0 });
-  const starterCli = join(root, "node_modules", "@vespeneventures", "starter", "dist", "cli.js");
+  const starterCli = join(root, "node_modules", "@clossys", "starter", "dist", "cli.js");
   const result = spawnSync(process.execPath, [starterCli, "decide", requestPath, snapshotRoot, eventPath, receiptPath], { cwd: root, encoding: "utf8", env: consumerEnvironment(root), timeout: 15_000, maxBuffer: 4_000_000 });
   return { status: result.status, report: JSON.parse(result.stdout || "{}") as { state: string } };
 }
@@ -218,17 +218,17 @@ describe("packed installed activation canaries", () => {
       run("npm", ["run", "build", "--workspace=packages/starter"], repoRoot, 30_000, fixtureRoot);
       const packed = join(fixtureRoot, "packed"); const targetPackage = join(fixtureRoot, "target-package");
       mkdirSync(packed); mkdirSync(join(targetPackage, "bin"), { recursive: true });
-      writeJson(join(targetPackage, "package.json"), { name: "@fixture/starter-target", version: "1.0.0", private: true, type: "module", bin: { "fixture-target-check": "./bin/check.js" }, peerDependencies: { "@vespeneventures/advisor": "0.1.3" }, files: ["bin"] });
+      writeJson(join(targetPackage, "package.json"), { name: "@fixture/starter-target", version: "1.0.0", private: true, type: "module", bin: { "fixture-target-check": "./bin/check.js" }, peerDependencies: { "@clossys/advisor": "0.1.3" }, files: ["bin"] });
       writeFileSync(join(targetPackage, "bin", "check.js"), "#!/usr/bin/env node\nimport { readFileSync } from 'node:fs';\nconst input = JSON.parse(readFileSync(process.argv[2], 'utf8'));\nconst state = input.mode === 'violated' ? 'violated' : input.mode === 'indeterminate' ? 'indeterminate' : 'satisfied';\nconsole.log(JSON.stringify({state}));\nprocess.exit(state === 'satisfied' ? 0 : state === 'violated' ? 1 : 2);\n");
       chmodSync(join(targetPackage, "bin", "check.js"), 0o755);
-      const starter = pack(join(repoRoot, "packages/starter"), packed, "@vespeneventures/starter", "0.1.2", fixtureRoot);
-      const advisor = pack(join(repoRoot, "packages/advisor"), packed, "@vespeneventures/advisor", "0.1.3", fixtureRoot);
+      const starter = pack(join(repoRoot, "packages/starter"), packed, "@clossys/starter", "0.1.2", fixtureRoot);
+      const advisor = pack(join(repoRoot, "packages/advisor"), packed, "@clossys/advisor", "0.1.3", fixtureRoot);
       const target = pack(targetPackage, packed, "@fixture/starter-target", "1.0.0", fixtureRoot);
       const installed = identities(starter, advisor, target); const registry = await localRegistry([starter, advisor, target]);
       try {
         const npmRoot = join(fixtureRoot, "npm-consumer"); mkdirSync(npmRoot);
         await installNpmConsumer(npmRoot, registry.url, installed);
-        const npmHelp = spawnSync(process.execPath, [join(npmRoot, "node_modules", "@vespeneventures", "starter", "dist", "cli.js"), "--help"], { cwd: npmRoot, encoding: "utf8", env: consumerEnvironment(npmRoot) });
+        const npmHelp = spawnSync(process.execPath, [join(npmRoot, "node_modules", "@clossys", "starter", "dist", "cli.js"), "--help"], { cwd: npmRoot, encoding: "utf8", env: consumerEnvironment(npmRoot) });
         expect(npmHelp.status, "installed npm Starter help failed").toBe(0); expect(npmHelp.stdout).toContain("Usage: foundry-starter decide");
         expectStarterOutcome(invoke(npmRoot, "npm", installed, "satisfied"), 0, "satisfied");
         expectStarterOutcome(invoke(npmRoot, "npm", installed, "violated"), 1, "violated");
@@ -236,7 +236,7 @@ describe("packed installed activation canaries", () => {
 
         const pnpmRoot = join(fixtureRoot, "pnpm-consumer"); mkdirSync(pnpmRoot);
         await installPnpmConsumer(pnpmRoot, registry.url, installed);
-        const pnpmHelp = spawnSync(process.execPath, [join(pnpmRoot, "node_modules", "@vespeneventures", "starter", "dist", "cli.js"), "--help"], { cwd: pnpmRoot, encoding: "utf8", env: consumerEnvironment(pnpmRoot) });
+        const pnpmHelp = spawnSync(process.execPath, [join(pnpmRoot, "node_modules", "@clossys", "starter", "dist", "cli.js"), "--help"], { cwd: pnpmRoot, encoding: "utf8", env: consumerEnvironment(pnpmRoot) });
         expect(pnpmHelp.status, "installed pnpm Starter help failed").toBe(0); expect(pnpmHelp.stdout).toContain("Usage: foundry-starter decide");
         expectStarterOutcome(invoke(pnpmRoot, "pnpm", installed, "satisfied"), 0, "satisfied");
         expectStarterOutcome(invoke(pnpmRoot, "pnpm", installed, "violated"), 1, "violated");

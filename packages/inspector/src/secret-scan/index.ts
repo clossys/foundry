@@ -1,10 +1,10 @@
 /**
- * The `@vespeneventures/inspector/secret-scan` subpath — the mechanism half
+ * The `@clossys/inspector/secret-scan` subpath — the mechanism half
  * of secret scanning: acquiring a verified `gitleaks` binary and, now,
  * actually running it into the shape the judge at this package's own root
  * (`checkSecretScan`, exported from `.`) evaluates.
  *
- * Everything re-exported from `./gitleaks.js` was `@vespeneventures/secret-scan`
+ * Everything re-exported from `./gitleaks.js` was `@example/secret-scan`
  * before this package absorbed it (see #283 and #281). Every one of those
  * exports is unchanged from that package's own shape — nothing here was
  * renamed, folded, or reduced. `attemptGitleaksScan` and

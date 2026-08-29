@@ -2,7 +2,7 @@
  * `Frame` -> an absolutely-positioned box, as a percentage of its
  * containing block — the one place geometry actually survives in this
  * package (see `renderPrintDocument.ts`'s own doc comment, "Geometry
- * SURVIVES here"). Built entirely on `@vespeneventures/publisher/core`'s own
+ * SURVIVES here"). Built entirely on `@clossys/publisher/core`'s own
  * `frameToPercent` — this file only formats its output for CSS and never
  * recomputes the fraction -> percentage arithmetic itself.
  */

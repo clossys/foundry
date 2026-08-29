@@ -39,7 +39,7 @@ export type RenderInspection = {
  * (`unauthorized`, `rate-limited`, an unrecognized `http` status): those are
  * the provider telling the caller something real, and stay thrown rather
  * than folded in here. See `inspector.ts`'s own header for the full
- * reasoning, mirrored from `@vespeneventures/integrator`'s
+ * reasoning, mirrored from `@clossys/integrator`'s
  * `resolveReachability`.
  */
 export type RenderInspectionIndeterminateReason = "network" | "invalid-response";

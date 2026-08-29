@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { gateResultToExitCode } from "@vespeneventures/controller/gates";
-import { computeDigest } from "@vespeneventures/controller/policy";
+import { gateResultToExitCode } from "@clossys/controller/gates";
+import { computeDigest } from "@clossys/controller/policy";
 import { checkPolicyDrift } from "./policy-drift.js";
 import type { PolicyDriftObservation } from "./policy-drift.js";
 

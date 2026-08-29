@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "protocol": "foundry-candidate-qualification-v1",
   "packages": {
-    "@vespeneventures/advisor": {
+    "@clossys/advisor": {
       "packageKey": "advisor",
       "recordStem": "advisor",
       "packageDir": "packages/advisor",
@@ -23,7 +23,7 @@
         "closeWindow": { "status": "unsupported", "reason": "Close-window evidence is not established by a disposable installation canary." }
       }
     },
-    "@vespeneventures/starter": {
+    "@clossys/starter": {
       "packageKey": "starter",
       "recordStem": "starter",
       "packageDir": "packages/starter",
@@ -44,7 +44,7 @@
         "closeWindow": { "status": "unsupported", "reason": "Close-window evidence is not established by a disposable installation canary." }
       }
     },
-    "@vespeneventures/controller": {
+    "@clossys/controller": {
       "packageKey": "controller",
       "recordStem": "controller",
       "packageDir": "packages/controller",

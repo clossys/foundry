@@ -1,12 +1,12 @@
 /**
- * `@vespeneventures/controller/artifacts` — a reusable contract for
+ * `@clossys/controller/artifacts` — a reusable contract for
  * verifying a consumer-owned governed artifact that combines a declared
  * kind + schema version, an exact-content checksum, and structural
  * source/revision provenance, in one deterministic, fail-closed order. See
  * `verify.ts` for the order itself and the package README's "Governed
  * artifact verification" section for the full contract boundary.
  *
- * Digest comparison is delegated entirely to `@vespeneventures/controller/policy`'s
+ * Digest comparison is delegated entirely to `@clossys/controller/policy`'s
  * own binding mechanism — this module hashes nothing itself.
  */
 export { verifyGovernedArtifact, verifyGovernedArtifacts } from "./verify.js";

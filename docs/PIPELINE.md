@@ -26,16 +26,16 @@ copy registry ── CopyRef ──► UI primitives + surface document
 
 ## Ownership
 
-- `@vespeneventures/strategy` governs product, audience, positioning,
+- `@example/strategy` governs product, audience, positioning,
   evidence, claims, and constraints. `createStrategyProvenance` produces the
   serialisable, dependency-free handoff attached to an output manifest.
-- `@vespeneventures/copy` owns voice validation and a consumer-authored,
+- `@example/copy` owns voice validation and a consumer-authored,
   versioned `CopyRegistry`. Only approved `CopyRef`s resolve, and resolution
   carries locale, revision, and source provenance.
-- `@vespeneventures/ui` owns tokens, CSS, icons, accessible primitives,
+- `@example/ui` owns tokens, CSS, icons, accessible primitives,
   blocks, shell elements, and visual quality gates. It intentionally does not
   own page compositions or product language.
-- `@vespeneventures/surface` owns `SurfaceDocument`, page-level web views,
+- `@example/surface` owns `SurfaceDocument`, page-level web views,
   media contracts, channel renderers, and `OutputManifest`. A resolved
   manifest carries structural strategy provenance and the registry/revision/
   locale/entry identifiers used for copy; it deliberately never stores
@@ -84,14 +84,14 @@ validated values; the adapter returns data for that consumer's own filesystem
 or deployment layer rather than making this library write anywhere.
 
 ```ts
-import { createCopyResolver, type CopyRegistry } from "@vespeneventures/copy";
-import { createStrategyProvenance, type StrategyContract } from "@vespeneventures/strategy";
+import { createCopyResolver, type CopyRegistry } from "@example/copy";
+import { createStrategyProvenance, type StrategyContract } from "@example/strategy";
 import {
   createResolvedOutputManifest,
   resolveSurfaceDocument,
   type SurfaceDocument,
-} from "@vespeneventures/surface/core";
-import { renderWebDocument } from "@vespeneventures/surface/web";
+} from "@example/surface/core";
+import { renderWebDocument } from "@example/surface/web";
 import { renderToStaticMarkup } from "react-dom/server";
 
 function buildRoute(
@@ -125,7 +125,7 @@ returned output after that boundary succeeds.
 
 - Install compatible releases of `strategy`, `copy`, `ui`, and `surface` from
   the configured registry. `surface`'s own `package.json` pins
-  `@vespeneventures/copy` and `@vespeneventures/ui` with patch-only tilde
+  `@example/copy` and `@example/ui` with patch-only tilde
   ranges (`~0.3.0` and `~0.7.0`) — this is a real version-coupling constraint
   in the dependency graph, not an install-ordering concern (a package manager
   resolves the whole graph regardless of the order packages are requested

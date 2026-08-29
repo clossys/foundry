@@ -52,7 +52,7 @@ function asRecord(value: unknown): Record<string, unknown> {
  * Validate a parsed entitlement declaration and return it in normalized form.
  * Offline: takes an already-parsed value and never reads a file, so a caller
  * can validate a declaration that came from a checkout, a request body, or a
- * test fixture, the same way `@vespeneventures/provisioning`'s `loadManifest`
+ * test fixture, the same way `@example/provisioning`'s `loadManifest`
  * does for a provisioning manifest.
  *
  * Throws on the first problem rather than collecting findings: a declaration

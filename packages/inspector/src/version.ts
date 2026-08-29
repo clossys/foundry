@@ -53,8 +53,8 @@
  * Zero I/O, like everything else in this package: every input is passed in.
  */
 
-import { createGateReasons, gateSatisfied } from "@vespeneventures/controller/gates";
-import type { GateResult } from "@vespeneventures/controller/gates";
+import { createGateReasons, gateSatisfied } from "@clossys/controller/gates";
+import type { GateResult } from "@clossys/controller/gates";
 import type { CheckFinding } from "./types.js";
 
 /**

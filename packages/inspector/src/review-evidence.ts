@@ -1,7 +1,7 @@
 /**
  * The review-evidence check.
  *
- * `@vespeneventures/controller/review` already owns the hard part: a
+ * `@clossys/controller/review` already owns the hard part: a
  * vendor-neutral evidence schema, a consumer-owned policy shape, and a
  * deterministic validator that binds every review record, check, and thread
  * to the exact head it was observed against. This module does not
@@ -29,15 +29,15 @@
  *
  * Zero I/O. Every input is caller-supplied — including the evidence bundle
  * itself, which a consumer's own workflow collects (its credentials, its
- * network) and hands over as data. `@vespeneventures/controller/review/github`
+ * network) and hands over as data. `@clossys/controller/review/github`
  * can turn a provider payload into that bundle without any network access of
  * its own.
  */
 
-import { createGateReasons, gateSatisfied, gateViolated } from "@vespeneventures/controller/gates";
-import type { GateResult } from "@vespeneventures/controller/gates";
-import { validateReviewEvidence, validateReviewPolicy } from "@vespeneventures/controller/review";
-import type { ReviewEvidenceBundle, ReviewFinding, ReviewFindingRule, ReviewPolicy } from "@vespeneventures/controller/review";
+import { createGateReasons, gateSatisfied, gateViolated } from "@clossys/controller/gates";
+import type { GateResult } from "@clossys/controller/gates";
+import { validateReviewEvidence, validateReviewPolicy } from "@clossys/controller/review";
+import type { ReviewEvidenceBundle, ReviewFinding, ReviewFindingRule, ReviewPolicy } from "@clossys/controller/review";
 import { isRecord } from "./shape.js";
 import type { CheckFinding } from "./types.js";
 

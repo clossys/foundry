@@ -9,7 +9,7 @@
  *     conventional 4:3 pixel size across the same tools).
  *
  * These are the ONLY two aspects `SlidesMeta.aspect` allows (see
- * `@vespeneventures/publisher/core`'s own `types.ts`), so this is a closed,
+ * `@clossys/publisher/core`'s own `types.ts`), so this is a closed,
  * two-entry table, not a general aspect-ratio calculator.
  */
 

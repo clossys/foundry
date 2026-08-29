@@ -1,6 +1,6 @@
 # Foundry Starter
 
-Foundry Starter (`@vespeneventures/starter`) is executable tooling for a consuming
+Foundry Starter (`@clossys/starter`) is executable tooling for a consuming
 repository's own adoption workflow. It captures no credential and makes no
 business, role, lifecycle, grounding, or completion claim. Its narrow job is
 to make a protected base join a pull-request evidence snapshot to authenticated
@@ -19,7 +19,7 @@ Configure the consumer-owned GitHub Packages mapping and credential reference,
 then pin an exact published version in that consumer's manifest and lockfile:
 
 ```bash
-npm install --save-dev --save-exact @vespeneventures/starter@0.1.2
+npm install --save-dev --save-exact @clossys/starter@0.1.2
 ```
 
 The public package registry still requires the consumer's own read credential.
@@ -43,19 +43,19 @@ snapshot identity, and two normalized relative evidence paths.
     "maxAgeMs": 3600000
   },
   "starter": {
-    "name": "@vespeneventures/starter",
+    "name": "@clossys/starter",
     "version": "0.1.2",
     "integrity": "<npm-sha512-sri>",
     "bin": "foundry-starter"
   },
   "advisor": {
-    "name": "@vespeneventures/advisor",
+    "name": "@clossys/advisor",
     "version": "0.1.3",
     "integrity": "<npm-sha512-sri>",
     "bin": "advisor-execution-readiness"
   },
   "target": {
-    "name": "@vespeneventures/advisor",
+    "name": "@clossys/advisor",
     "version": "0.1.3",
     "integrity": "<npm-sha512-sri>",
     "bin": "advisor-check",
@@ -143,9 +143,9 @@ synthetic Starter result.
 
 ## Fixed package-manager subpaths
 
-`@vespeneventures/starter/npm` exports `NPM_CI_IGNORE_SCRIPTS` and
+`@clossys/starter/npm` exports `NPM_CI_IGNORE_SCRIPTS` and
 `validateNpmIdentity()`: the fixed `npm ci --ignore-scripts` adapter and exact
-npm manifest/lock identity checker. `@vespeneventures/starter/pnpm`
+npm manifest/lock identity checker. `@clossys/starter/pnpm`
 exports `PNPM_INSTALL_FROZEN_IGNORE_SCRIPTS` and `validatePnpmIdentity()` for
 the fixed `pnpm install --frozen-lockfile --ignore-scripts` path. Neither
 subpath accepts a command, a package-manager path, or caller options.

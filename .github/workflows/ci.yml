@@ -358,7 +358,7 @@ jobs:
 
   # Three gates over this repository's own tree that had never been invoked
   # by any workflow before this change, and that share one requirement: a
-  # BUILT @vespeneventures/controller (issue #414's wider finding — six
+  # BUILT @clossys/controller (issue #414's wider finding — six
   # job-shaped packages here ship eleven bin entry points, and before this
   # change workflows invoked two). Grouped into one job, one build, rather
   # than three separate checkouts.
@@ -383,7 +383,7 @@ jobs:
       # from `check:package-governance` in the `build` job below (package
       # LIFECYCLE governance against docs/contracts/package-lifecycle.json):
       # the two share controller's compiled output but are different gates
-      # over different input. `--scope @vespeneventures` is load-bearing —
+      # over different input. `--scope @clossys` is load-bearing —
       # confirmed while wiring this in: run without it, every ordinary
       # external dependency (react, typescript, tailwindcss, ...) is
       # reported as an "internal-dep-missing" finding, because the flag is
@@ -391,7 +391,7 @@ jobs:
       # the first place. With it, this gate is clean against this
       # repository today (see #414's pull request body for the real output).
       - name: Package catalog gate (foundry-check)
-        run: node packages/controller/dist/gates/cli.js . --scope @vespeneventures
+        run: node packages/controller/dist/gates/cli.js . --scope @clossys
 
       # check-neutrality.mjs — the structural half of publish safety: an
       # absolute path or a named home directory discloses one operator's
@@ -429,7 +429,7 @@ jobs:
           node packages/controller/dist/repository/run-bin.js . --discovery "$RUNNER_TEMP/repository-profile-discovery.json"
 
   # Packages here depend on each other with 0.x ranges (e.g.
-  # `"@vespeneventures/governance": "^0.3.0"`). In 0.x semver BOTH `^` and
+  # `"@example/governance": "^0.3.0"`). In 0.x semver BOTH `^` and
   # `~` are minor-locked, so the moment a package's minor version is bumped,
   # every sibling declaring a range against the old minor stops being
   # satisfiable by the local workspace copy — npm then silently stops
@@ -508,7 +508,7 @@ jobs:
   # name), tracked separately rather than smuggled into a deletion.
   #
   # designer-contrast-check computes real WCAG contrast ratios for
-  # @vespeneventures/designer's own token registry (light AND dark) against a
+  # @clossys/designer's own token registry (light AND dark) against a
   # checked-in pair list (CONTRAST_PAIRS) and exits non-zero on a real,
   # unrelieved threshold miss. It shipped as an installed `bin` with
   # nothing anywhere actually invoking it — a gate that exists but never
@@ -657,7 +657,7 @@ jobs:
       - name: Observation bundle unit tests
         run: node --test scripts/observation-bundle.test.mjs
       # scripts/gate-run-history.test.mjs is here rather than in `check:gates`
-      # for the same reason: it imports @vespeneventures/observer from its
+      # for the same reason: it imports @clossys/observer from its
       # BUILD OUTPUT, deliberately -- it is a caller of the published contract,
       # and running it against src/ would prove something consumers never get.
       # `check:gates` runs in the dependency-free `safety` job, which has no

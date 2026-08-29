@@ -3,7 +3,7 @@
  * worth having. Pure: takes already-read file contents and an already-built
  * `FactIndex` (see `fact-index.ts`), does no I/O of its own, and never
  * throws on any input shape — the same discipline `evaluateCatalog` holds
- * to in `@vespeneventures/catalog`. `scanStrategyDirectory` (see `scan.ts`)
+ * to in `@example/catalog`. `scanStrategyDirectory` (see `scan.ts`)
  * is the I/O half that gathers `ScannedFile[]` from a real directory.
  *
  * THE RULE, in one sentence: a currency amount, percentage, multiplier, or

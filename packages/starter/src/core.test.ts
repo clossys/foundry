@@ -7,8 +7,8 @@ const gitSha = (character = "a") => character.repeat(40);
 const sha256 = (character = "a") => character.repeat(64);
 const integrity = `sha512-${"a".repeat(85)}A==`;
 const now = "2026-08-27T12:00:00.000Z";
-const starter = { name: "@vespeneventures/starter", version: "0.1.0", integrity, bin: "foundry-starter" as const };
-const advisor = { name: "@vespeneventures/advisor", version: "0.1.3", integrity, bin: "advisor-execution-readiness" as const };
+const starter = { name: "@clossys/starter", version: "0.1.0", integrity, bin: "foundry-starter" as const };
+const advisor = { name: "@clossys/advisor", version: "0.1.3", integrity, bin: "advisor-execution-readiness" as const };
 const target = { name: "@fixture/starter-target", version: "1.2.3", integrity, bin: "target-check", invocation: "single-json-input" as const };
 
 function request(overrides: Record<string, unknown> = {}) {

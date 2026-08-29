@@ -1,5 +1,5 @@
 /**
- * @vespeneventures/publisher/record — the return path.
+ * @clossys/publisher/record — the return path.
  *
  * A prior 40-package attempt at this pipeline (strategy → brand →
  * contracts → vocabulary → renderers, plus a full measurement stack built
@@ -18,10 +18,10 @@
  *
  * Concretely:
  *
- *   - This package does NOT import `@vespeneventures/strategy`. Every fact
+ *   - This package does NOT import `@example/strategy`. Every fact
  *     a `PublicationEntry` cites is a plain, opaque `factRef` string — the
- *     exact seam `@vespeneventures/writer/voice`'s `Claim.factRef` and
- *     `@vespeneventures/writer`'s `CopyEntry.factRef` already use one layer
+ *     exact seam `@clossys/writer/voice`'s `Claim.factRef` and
+ *     `@clossys/writer`'s `CopyEntry.factRef` already use one layer
  *     up. `strategy` never appears in this package's `dependencies`, and
  *     nothing in `src/` imports it — see `README.md`'s "Why this package
  *     never imports strategy" for the fuller argument.
@@ -37,7 +37,7 @@
  *     (`append-only-gate.ts`) is the complementary at-rest check for
  *     whatever storage a ledger actually lives in.
  *
- * `@vespeneventures/controller/policy`'s `PolicyBinding`/`computeDigest`/
+ * `@clossys/controller/policy`'s `PolicyBinding`/`computeDigest`/
  * `validateBindingShape`/`verifyBinding` are reused directly throughout
  * this package (`FactCitation.valueBinding`, `PublicationEntry.contentBinding`,
  * `fact.ts`'s `citeFact`, `drift.ts`'s `checkLedgerDrift`) rather than
@@ -46,7 +46,7 @@
  * a moment in time.
  */
 
-export type { DigestAlgorithm, Finding as PolicyFinding, PolicyBinding } from "@vespeneventures/controller/policy";
+export type { DigestAlgorithm, Finding as PolicyFinding, PolicyBinding } from "@clossys/controller/policy";
 
 export type { FactCitation, Ledger, LedgerFinding, PublicationEntry } from "./types.js";
 

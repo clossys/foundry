@@ -1,6 +1,6 @@
 /**
- * Page-level web surfaces owned by `@vespeneventures/publisher/web` and built
- * from reusable `@vespeneventures/designer` atoms and blocks. Most product pages
+ * Page-level web surfaces owned by `@clossys/publisher/web` and built
+ * from reusable `@clossys/designer` atoms and blocks. Most product pages
  * remain consumer-owned compositions, so this catalog is deliberately short.
  */
 

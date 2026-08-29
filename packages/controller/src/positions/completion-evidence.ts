@@ -104,7 +104,7 @@ export function validateCompletionEvidenceContract(contract: unknown = readCompl
   let snapshot: unknown;
   try { snapshot = readCompletionEvidenceContract(); }
   catch (error) { return [{ rule: "completion-evidence-contract-unavailable", path: "contracts/completion-evidence-contract.json", message: error instanceof Error ? error.message : String(error) }]; }
-  if (canonical(contract) !== canonical(snapshot)) return [{ rule: "noncanonical-completion-evidence-contract", path: "completionEvidenceContract", message: "must exactly match the immutable completion-evidence-contract snapshot shipped by @vespeneventures/controller" }];
+  if (canonical(contract) !== canonical(snapshot)) return [{ rule: "noncanonical-completion-evidence-contract", path: "completionEvidenceContract", message: "must exactly match the immutable completion-evidence-contract snapshot shipped by @clossys/controller" }];
   if (!keys(contract, ["schemaVersion", "kind", "fields", "verdicts", "invocationKinds", "placementModes", "duplicateStates", "rule"]) || contract.schemaVersion !== 1 || contract.kind !== "foundry-consumer-completion-evidence") {
     return [{ rule: "invalid-completion-evidence-contract", path: "completionEvidenceContract", message: "must be the complete schemaVersion 1 completion-evidence contract" }];
   }

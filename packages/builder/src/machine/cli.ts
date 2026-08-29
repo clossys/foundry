@@ -4,7 +4,7 @@
  * the `verify` mode issue #393 asks for "at minimum": for every managed
  * skill destination, what it resolves to and whether that matches the
  * composed manifest, on the fleet 0/1/2 exit-code ternary
- * (`@vespeneventures/controller/gates`'s `gateResultToExitCode`).
+ * (`@clossys/controller/gates`'s `gateResultToExitCode`).
  *
  * SYNCHRONOUS ON PURPOSE, same as `../ci/cli.ts`: `main` returns a number,
  * not a promise, so nothing here can leave `process.exitCode` unset on an

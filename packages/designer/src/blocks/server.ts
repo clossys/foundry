@@ -1,6 +1,6 @@
 /**
- * @vespeneventures/designer/blocks/server — the server-safe subset of
- * `@vespeneventures/designer/blocks`. See `atoms/server.ts`'s own header for the
+ * @clossys/designer/blocks/server — the server-safe subset of
+ * `@clossys/designer/blocks`. See `atoms/server.ts`'s own header for the
  * full #375 rationale this file shares: `blocks/index.ts` re-exports
  * every block eagerly from one module, so the interactive minority
  * (`DataTable`, `Form`, `ConfirmDialog`, `Toolbar`, `NavGrid`, `Faq`,

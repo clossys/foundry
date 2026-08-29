@@ -213,7 +213,7 @@ export function main(argv: string[]): number {
   }
 
   console.log(`Tokens CSS file: ${cssPath}`);
-  console.log(`Contrast policy: ${CONTRAST_PAIRS.length} pair(s) (from @vespeneventures/designer/tokens's CONTRAST_PAIRS).`);
+  console.log(`Contrast policy: ${CONTRAST_PAIRS.length} pair(s) (from @clossys/designer/tokens's CONTRAST_PAIRS).`);
 
   let lightDeclarations;
   try {

@@ -18,7 +18,7 @@
  * document that is only PARTIALLY invalid (one bad table row among ten
  * good sections) never partially renders; the whole call throws.
  *
- * `resolveCopyId`'S TYPE IS `@vespeneventures/writer`'s REF-BASED
+ * `resolveCopyId`'S TYPE IS `@clossys/writer`'s REF-BASED
  * `CopyResolver`, NOT `surface/web`'s STRING-KEYED ONE
  * -----------------------------------------------------------------
  * The originating proposal for this subpath (issue #176) describes
@@ -31,7 +31,7 @@
  * content is a `CopyRef`, not a bare `copyId` string, and this subpath's
  * own acceptance bar requires collecting a `CopyResolution[]` for
  * provenance (`collectCopyProvenance`, `surface/core`) exactly the way
- * `resolveSurfaceDocument` already does. Only `@vespeneventures/writer`'s
+ * `resolveSurfaceDocument` already does. Only `@clossys/writer`'s
  * own `CopyResolver` — `(ref: CopyRef) => CopyResolution | undefined`, the
  * same type `resolveSurfaceDocument`'s own `resolver` parameter takes —
  * can satisfy that. This file uses that type, keeping the option's NAME
@@ -60,7 +60,7 @@
 
 import type { ReactNode } from "react";
 import { createElement, Fragment, version as reactVersion } from "react";
-import type { CopyRef, CopyResolution, CopyResolver } from "@vespeneventures/writer";
+import type { CopyRef, CopyResolution, CopyResolver } from "@clossys/writer";
 import { RenderError } from "../internal/errors.js";
 import { assertPeerVersion } from "../internal/peer-version.js";
 import { validateStructuredDocument } from "./validate.js";
@@ -71,7 +71,7 @@ export const REACT_DECLARED_RANGE = ">=18";
 assertPeerVersion({ peer: "react", declaredRange: REACT_DECLARED_RANGE, foundVersion: reactVersion });
 
 export interface RenderStructuredDocumentOptions {
-  /** See this file's own top comment, "`resolveCopyId`'s type", for why this is `@vespeneventures/writer`'s ref-based `CopyResolver`, not `surface/web`'s string-keyed one. Omit only for a document with no sections at all — every other document has at least `title` to resolve. */
+  /** See this file's own top comment, "`resolveCopyId`'s type", for why this is `@clossys/writer`'s ref-based `CopyResolver`, not `surface/web`'s string-keyed one. Omit only for a document with no sections at all — every other document has at least `title` to resolve. */
   resolveCopyId?: CopyResolver;
 }
 

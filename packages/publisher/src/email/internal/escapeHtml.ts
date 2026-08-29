@@ -73,7 +73,7 @@ export function escapeHtml(text: string): string {
  * client's preview-line budget (Gmail's is the longest in common use, at
  * roughly 100–140 characters including the subject) once added to a
  * preheader already close to `EmailMeta`'s own 140-character cap enforced
- * by `@vespeneventures/publisher/core`'s `validate.ts`.
+ * by `@clossys/publisher/core`'s `validate.ts`.
  */
 const PREHEADER_FILLER_REPEATS = 20;
 

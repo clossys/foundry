@@ -4,8 +4,8 @@
  * package. `@internationalized/date`, `react`, `react-dom`,
  * `react-aria-components`, `tailwind-merge`, and `tailwindcss` are all
  * declared `peerDependenciesMeta: { optional: true }` (see package.json)
- * so a token-only consumer can install `@vespeneventures/designer` and use
- * `@vespeneventures/designer/tokens` or the CSS subpaths without installing any
+ * so a token-only consumer can install `@clossys/designer` and use
+ * `@clossys/designer/tokens` or the CSS subpaths without installing any
  * component runtime at all. But an ABSENT or OUT-OF-RANGE peer produced no
  * signal of any kind until now: a consumer on an incompatible version
  * learned about it from whatever the component happened to crash on deep
@@ -30,7 +30,7 @@
  *     `DateField.tsx`'s doc comment as something a CONSUMER constructing a
  *     `value` needs, but `DateField.tsx` itself never imports it — only
  *     its test file does, to build a fixture `DateValue`). There is
- *     nothing to guard for either — see `@vespeneventures/surface`'s own
+ *     nothing to guard for either — see `@example/surface`'s own
  *     `web/renderWebDocument.ts` for the identical `react-dom` case and its
  *     own doc comment explaining why "declared peer with no adapter import
  *     site" is a real, precedented category, not a gap.
@@ -48,7 +48,7 @@
  *     importing binding is ever called — tree-shaking runs after module
  *     resolution, not before it). So `tailwind-merge`'s guard is NOT wired
  *     automatically; it ships as `assertTailwindMergeVersion` from
- *     `@vespeneventures/designer/tokens` instead — an explicit, Node-only,
+ *     `@clossys/designer/tokens` instead — an explicit, Node-only,
  *     opt-in call, same shape as `assertTokenStylesLoaded` (this
  *     package's OTHER #182 guard) but Node-only rather than SSR-safe,
  *     because "safe to run automatically, everywhere" genuinely isn't
@@ -111,18 +111,18 @@
  * check. It is a value the checker could not form an opinion about at
  * all: `indeterminate`, never silently folded into a pass and never
  * thrown as though it were a real, actionable violation.
- * `@vespeneventures/controller`'s `gates/result.ts` already names this
+ * `@clossys/controller`'s `gates/result.ts` already names this
  * exact three-state shape (`satisfied` | `violated` | `indeterminate`),
  * and this file does not import it — DO NOT "FIX" THAT BY IMPORTING IT.
  * This is a copy that MUST stay a copy, for TWO independent reasons, and
  * both are recorded here because a reader who knows only one will "fix"
  * the other:
  *
- *   1. This package sits at or below `@vespeneventures/controller` in
+ *   1. This package sits at or below `@clossys/controller` in
  *      this repository's build order (see this package's own
  *      `package.json`, which declares no dependency on it), so importing
  *      controller's type from here would invert that graph.
- *   2. `@vespeneventures/controller` cannot import this type out of its
+ *   2. `@clossys/controller` cannot import this type out of its
  *      own `gates/result.ts` and re-export it for everyone else to share,
  *      either: `controller`'s own `gates/secret-gates.ts` already imports
  *      `internal/peer-version.js` (its OWN local mirror of this exact
@@ -357,7 +357,7 @@ export function assertPeerVersion(input: AssertPeerVersionInput): void {
     if (!warnedUnparseableVersions.has(warnKey)) {
       warnedUnparseableVersions.add(warnKey);
       console.warn(
-        `[@vespeneventures/designer] Could not verify ${peer}@${foundVersion} against this package's declared range ` +
+        `[@clossys/designer] Could not verify ${peer}@${foundVersion} against this package's declared range ` +
           `"${declaredRange}": ${outcome.reason}. This is not a value that failed the check — it is a value ` +
           `assertPeerVersion could not read at all, so it is being treated as indeterminate rather than as a ` +
           `violation. Proceeding without blocking the build; if ${peer} is genuinely incompatible that will ` +

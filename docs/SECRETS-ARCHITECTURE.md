@@ -1,8 +1,8 @@
 # Secrets infrastructure architecture
 
 **Historical record — not current package architecture.** This document
-records a superseded proposal for `@vespeneventures/secrets` and
-`@vespeneventures/governance/gates`; neither is a current package install or
+records a superseded proposal for `@example/secrets` and
+`@example/governance/gates`; neither is a current package install or
 publication instruction. The current catalogue and its lifecycle/registry
 dispositions are authoritative. It remains only to preserve the reasoning of
 the earlier proposal.
@@ -12,9 +12,9 @@ the earlier proposal.
 Foundry owns one secrets package with an explicit provider subpath and extends
 the existing gates package:
 
-1. `@vespeneventures/secrets` owns provider-neutral runtime resolution at its
-   root entry and Infisical integration at `@vespeneventures/secrets/infisical`.
-2. `@vespeneventures/governance/gates` owns pure consumer governance checks.
+1. `@example/secrets` owns provider-neutral runtime resolution at its
+   root entry and Infisical integration at `@example/secrets/infisical`.
+2. `@example/governance/gates` owns pure consumer governance checks.
 
 There is no standalone `secrets-infisical` or `secrets-cli` package. The only
 useful command-line operations in this release require Infisical configuration
@@ -30,15 +30,15 @@ in-memory adapter is small enough to remain part of the core public contract.
 
 | Existing responsibility class | Foundry owner | Remains consumer-owned |
 | --- | --- | --- |
-| Runtime `get`/`require`, process environment default, dependency injection, synchronous compatibility, test double | `@vespeneventures/secrets` root entry | Which keys an application requests and when startup requires them |
-| Provider authentication and secret resolution | `@vespeneventures/secrets/infisical` | Base URL, project, environment, folder, identity, token source, and provider-side grants |
-| Provider run/check/catalog/list/get behavior | `@vespeneventures/secrets/infisical` | The catalog file, command, environment selection, and CI identity configuration |
-| Raw sensitive environment reads | `@vespeneventures/governance/gates` | Source-file discovery and the explicit adapter exemption |
-| Secret naming | `@vespeneventures/governance/gates` | Consumer key inventory and any added exact sensitive names |
-| Credential inventory and surface drift | `@vespeneventures/governance/gates` | Credential IDs, providers, consuming surfaces, and observation collection |
-| Local secret-file prohibition | `@vespeneventures/governance/gates` | Tracked and on-disk path enumeration |
-| Value-free catalog and readiness coverage | `@vespeneventures/governance/gates` plus the provider client's readiness operation | Required/optional declarations and provider configuration |
-| Provider resource naming | `@vespeneventures/governance/gates` | Provider/kind patterns and observed resource names |
+| Runtime `get`/`require`, process environment default, dependency injection, synchronous compatibility, test double | `@example/secrets` root entry | Which keys an application requests and when startup requires them |
+| Provider authentication and secret resolution | `@example/secrets/infisical` | Base URL, project, environment, folder, identity, token source, and provider-side grants |
+| Provider run/check/catalog/list/get behavior | `@example/secrets/infisical` | The catalog file, command, environment selection, and CI identity configuration |
+| Raw sensitive environment reads | `@example/governance/gates` | Source-file discovery and the explicit adapter exemption |
+| Secret naming | `@example/governance/gates` | Consumer key inventory and any added exact sensitive names |
+| Credential inventory and surface drift | `@example/governance/gates` | Credential IDs, providers, consuming surfaces, and observation collection |
+| Local secret-file prohibition | `@example/governance/gates` | Tracked and on-disk path enumeration |
+| Value-free catalog and readiness coverage | `@example/governance/gates` plus the provider client's readiness operation | Required/optional declarations and provider configuration |
+| Provider resource naming | `@example/governance/gates` | Provider/kind patterns and observed resource names |
 | Credential issuance, revocation, principals, tokens, policies, and grants | No secrets package | Identity/access-control layer and upstream credential authority |
 | Repository scaffolding for env and auth conventions | No package in this change | Repository creator or consumer templates, using these public contracts |
 
@@ -91,7 +91,7 @@ Each adopting repository can migrate independently:
 1. Author a value-free version-1 catalog in the consumer repository. Keep all
    provider identifiers, folder choices, aliases, and environment mapping
    beside that consumer.
-2. Add `@vespeneventures/secrets`, construct a client at the composition root,
+2. Add `@example/secrets`, construct a client at the composition root,
    and pass it into application code. A temporary local wrapper may retain
    existing `getSecret`/`requireSecret` function names while call sites move.
 3. Keep synchronous call sites on `requireSync` only while using a synchronous
@@ -100,7 +100,7 @@ Each adopting repository can migrate independently:
 4. Run `detectRawSecretReads` over the consumer's real source inventory. Mark
    only the environment adapter as exempt; every other sensitive raw read is
    migrated to the injected client.
-5. Add the `@vespeneventures/secrets/infisical` subpath at the application
+5. Add the `@example/secrets/infisical` subpath at the application
    boundary. Inject base URL, project, environment, path, and token provider
    from consumer runtime configuration.
 6. Use OIDC for CI where the execution platform supplies identity tokens.
@@ -121,8 +121,8 @@ catalogs and provider bindings completely separate.
 
 The publication order is:
 
-1. `@vespeneventures/governance` version `0.2.0`
-2. `@vespeneventures/secrets` version `0.1.0`
+1. `@example/governance` version `0.2.0`
+2. `@example/secrets` version `0.1.0`
 
 The packages are not published by this change. Each package must independently
 pass the repository's FULL tree and artifact safety gates and name-collision

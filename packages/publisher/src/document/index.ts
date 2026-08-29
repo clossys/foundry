@@ -1,9 +1,9 @@
 /**
- * `@vespeneventures/publisher/document` — the product-neutral structured-
+ * `@clossys/publisher/document` — the product-neutral structured-
  * document contract: sections, paragraphs, lists, definition lists,
  * tables, callouts, and safe links, validated and rendered to semantic
  * HTML through React. Depends on `surface/core` for `ComposeFinding`
- * (validation findings) and on `@vespeneventures/writer` for `CopyRef`/
+ * (validation findings) and on `@clossys/writer` for `CopyRef`/
  * `CopyResolution`/`CopyResolver`, the same way `surface/web` already
  * does. See this package's README, "document" for the full picture,
  * including the non-goals this subpath deliberately does not cover (no
@@ -11,7 +11,7 @@
  * pagination, no automatic table-of-contents generation).
  *
  * Like `surface/web`, this subpath has an OPTIONAL `react` peer — a
- * consumer who never imports `@vespeneventures/publisher/document` never
+ * consumer who never imports `@clossys/publisher/document` never
  * needs to install it.
  */
 

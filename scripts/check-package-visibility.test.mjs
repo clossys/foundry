@@ -365,7 +365,7 @@ function writeFixture(root, { lifecycle, visibility, retention = { schemaVersion
   writeFileSync(join(root, "docs", "contracts", "package-lifecycle.json"), JSON.stringify(lifecycle, null, 2));
   writeFileSync(join(root, "docs", "contracts", "package-visibility.json"), JSON.stringify(visibility, null, 2));
   writeFileSync(join(root, "docs", "contracts", "package-retention.json"), JSON.stringify(retention, null, 2));
-  writeFileSync(join(root, "package-scope.json"), JSON.stringify({ scope, registry: "https://npm.pkg.github.com" }, null, 2));
+  writeFileSync(join(root, "package-scope.json"), JSON.stringify({ scope, registry: "https://registry.npmjs.org" }, null, 2));
 }
 
 test("CLI: a missing GH_PACKAGES_TOKEN exits 2, never 0 — and never attempts a network call", () => {
@@ -445,7 +445,7 @@ test("this repository's own real contract files join cleanly (structure only —
 //
 // The credentialed half of this gate can only run after publish.yml has
 // already uploaded a tarball, which makes it a detector rather than a gate.
-// `@vespeneventures/secret-scan` published with no visibility declaration and
+// `@example/secret-scan` published with no visibility declaration and
 // every subsequent publish run went red on a data omission that was fully
 // knowable offline, at review time. These cover the split that fixes that,
 // including the one property the split must NOT weaken: no flag, no token,

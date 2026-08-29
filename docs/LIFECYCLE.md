@@ -289,34 +289,25 @@ fails when the committed copy drifts from the derived one — #493.
 
 | package | current position | staged here | adoption | grounding | closure |
 | --- | --- | --- | --- | --- | --- |
-| `@vespeneventures/starter` | implemented | not yet | N/A — executable tooling | N/A — executable tooling | N/A — executable tooling |
-| `@vespeneventures/advisor` | published | yes | not yet | unknown — #484 | not yet |
-| `@vespeneventures/controller` | published | yes | not yet | unknown — #484 | not yet |
-| `@vespeneventures/architect` | published | yes | not yet | unknown — #484 | not yet |
-| `@vespeneventures/inspector` | published | yes | not yet | unknown — #484 | not yet |
-| `@vespeneventures/builder` | published | yes | not yet | unknown — #484 | not yet |
-| `@vespeneventures/locksmith` | published | yes | not yet | unknown — #484 | not yet |
-| `@vespeneventures/integrator` | published | yes | not yet | unknown — #484 | not yet |
-| `@vespeneventures/observer` | published | yes | not yet | unknown — #484 | not yet |
-| `@vespeneventures/strategist` | published | yes | not yet | unknown — #484 | not yet |
-| `@vespeneventures/writer` | published | yes | not yet | unknown — #484 | not yet |
-| `@vespeneventures/designer` | published | yes | not yet | unknown — #484 | not yet |
-| `@vespeneventures/publisher` | published | yes | not yet | unknown — #484 | not yet |
-| `@vespeneventures/influencer` | published | yes | not yet | unknown — #484 | not yet |
-| `@vespeneventures/strategy` | retired | yes | not yet | unknown — #484 | not yet |
-| `@vespeneventures/copy` | retired | yes | not yet | unknown — #484 | not yet |
-| `@vespeneventures/ui` | retired | yes | not yet | unknown — #484 | not yet |
-| `@vespeneventures/surface` | retired | yes | not yet | unknown — #484 | not yet |
-| `@vespeneventures/ledger` | retired | yes | not yet | unknown — #484 | not yet |
-| `@vespeneventures/auth` | retired | yes | not yet | unknown — #484 | not yet |
-| `@vespeneventures/consent` | retired | yes | not yet | unknown — #484 | not yet |
-| `@vespeneventures/comms` | retired | yes | not yet | unknown — #484 | not yet |
-| `@vespeneventures/messenger` | published | yes | not yet | unknown — #484 | not yet |
-| `@vespeneventures/domain` | retired | yes | not yet | unknown — #484 | not yet |
-| `@vespeneventures/bouncer` | published | yes | not yet | unknown — #484 | not yet |
-| `@vespeneventures/butler` | published | yes | not yet | unknown — #484 | not yet |
-| `@vespeneventures/giver` | published | yes | not yet | unknown — #484 | not yet |
-| `@vespeneventures/keeper` | published | yes | not yet | unknown — #484 | not yet |
+| `@clossys/advisor` | implemented | not yet | not yet | unknown — #484 | not yet |
+| `@clossys/architect` | implemented | not yet | not yet | unknown — #484 | not yet |
+| `@clossys/bouncer` | implemented | not yet | not yet | unknown — #484 | not yet |
+| `@clossys/builder` | implemented | not yet | not yet | unknown — #484 | not yet |
+| `@clossys/butler` | implemented | not yet | not yet | unknown — #484 | not yet |
+| `@clossys/controller` | implemented | not yet | not yet | unknown — #484 | not yet |
+| `@clossys/designer` | implemented | not yet | not yet | unknown — #484 | not yet |
+| `@clossys/giver` | implemented | not yet | not yet | unknown — #484 | not yet |
+| `@clossys/influencer` | implemented | not yet | not yet | unknown — #484 | not yet |
+| `@clossys/inspector` | implemented | not yet | not yet | unknown — #484 | not yet |
+| `@clossys/integrator` | implemented | not yet | not yet | unknown — #484 | not yet |
+| `@clossys/keeper` | implemented | not yet | not yet | unknown — #484 | not yet |
+| `@clossys/locksmith` | implemented | not yet | not yet | unknown — #484 | not yet |
+| `@clossys/messenger` | implemented | not yet | not yet | unknown — #484 | not yet |
+| `@clossys/observer` | implemented | not yet | not yet | unknown — #484 | not yet |
+| `@clossys/publisher` | implemented | not yet | not yet | unknown — #484 | not yet |
+| `@clossys/starter` | implemented | not yet | N/A — executable tooling | N/A — executable tooling | N/A — executable tooling |
+| `@clossys/strategist` | implemented | not yet | not yet | unknown — #484 | not yet |
+| `@clossys/writer` | implemented | not yet | not yet | unknown — #484 | not yet |
 
 <!-- lifecycle-position-table:end -->
 
@@ -368,7 +359,7 @@ that simply refused every unsupported position would report ten-plus
 violations on its first run and could never be wired, which makes it
 decorative. So a shortfall below a declared state is declared in that
 package's `gaps`, with prose saying what is actually missing and an issue
-tracking it — the same shape `@vespeneventures/integrator` already ships for
+tracking it — the same shape `@clossys/integrator` already ships for
 currency opt-outs, where every opt-out carries a required reason. An
 *unacknowledged* shortfall fails. So does an acknowledgement that outlives
 its reason: once the evidence exists, the gap is a `stale-gap` finding until

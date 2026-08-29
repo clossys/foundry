@@ -8,7 +8,7 @@ import { computeBuildOrder } from "./build-order.js";
 
 // Self-hosting integration test: runs runFoundationCheck/computeBuildOrder
 // against THIS repository's real packages/ directory, not a fixture — the
-// same pattern @vespeneventures/catalog's own integration test uses. Root is
+// same pattern @example/catalog's own integration test uses. Root is
 // resolved four levels up from this file (gates -> src -> controller ->
 // packages -> repo root) and verified below before anything else runs.
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "..", "..");
@@ -26,7 +26,7 @@ describe("integration: real packages/ directory", () => {
   it("resolves repoRoot to a directory that actually contains this package", () => {
     expect(existsSync(join(repoRoot, "packages"))).toBe(true);
     expect(existsSync(join(repoRoot, "package.json"))).toBe(true);
-    // `gates` is a subpath of `@vespeneventures/controller` now (issue
+    // `gates` is a subpath of `@clossys/controller` now (issue
     // #282 merged the standalone `gates` package into it with zero
     // consumers left behind), so the on-disk package that must exist is
     // `controller`, not a `gates` package directory.
@@ -50,18 +50,18 @@ describe("integration: real packages/ directory", () => {
     // `catalog`, `policy`, `governance`, `gates`, `release`, `repository`,
     // and `review` were separate, paired compatibility packages before
     // issue #282's recut folded every one of them into
-    // `@vespeneventures/controller` as subpaths and deleted the standalone
+    // `@clossys/controller` as subpaths and deleted the standalone
     // packages with zero consumers left. There is exactly one foundation
     // package left to find now.
-    expect(names).toContain("@vespeneventures/controller");
+    expect(names).toContain("@clossys/controller");
 
-    const controllerEntry = findByName(report.catalog, "@vespeneventures/controller");
+    const controllerEntry = findByName(report.catalog, "@clossys/controller");
     expect(controllerEntry).toBeDefined();
   });
 
-  it("produces zero error-severity findings for @vespeneventures/controller itself", () => {
+  it("produces zero error-severity findings for @clossys/controller itself", () => {
     const report = runFoundationCheck(repoRoot, { scope: SCOPE });
-    const controllerFindings = report.findings.filter((f) => f.package === "@vespeneventures/controller");
+    const controllerFindings = report.findings.filter((f) => f.package === "@clossys/controller");
     const controllerErrors = controllerFindings.filter((f) => f.severity === "error");
 
     expect(controllerErrors).toEqual([]);
@@ -80,7 +80,7 @@ describe("integration: real packages/ directory", () => {
     // NOT a frozen literal ordering. Issue #282's recut deleted the
     // `governance`/`policy` compatibility stubs entirely (zero consumers),
     // so there is no longer a `governance` node to route through.
-    // `@vespeneventures/controller` absorbed `catalog`, `policy`, `gates`,
+    // `@clossys/controller` absorbed `catalog`, `policy`, `gates`,
     // `release`, `repository`, and `review` as subpaths and has zero
     // internal dependencies of its own; `builder`, `inspector`, and
     // `publisher` each declare a real, direct dependency on `controller`,
@@ -104,11 +104,11 @@ describe("integration: real packages/ directory", () => {
       expect(indexOf(earlier)).toBeLessThan(indexOf(later));
     };
 
-    before("@vespeneventures/controller", "@vespeneventures/builder");
-    before("@vespeneventures/controller", "@vespeneventures/inspector");
-    before("@vespeneventures/controller", "@vespeneventures/publisher");
-    before("@vespeneventures/writer", "@vespeneventures/publisher");
-    before("@vespeneventures/designer", "@vespeneventures/publisher");
+    before("@clossys/controller", "@clossys/builder");
+    before("@clossys/controller", "@clossys/inspector");
+    before("@clossys/controller", "@clossys/publisher");
+    before("@clossys/writer", "@clossys/publisher");
+    before("@clossys/designer", "@clossys/publisher");
 
     // Every entry the catalog found appears exactly once in the order.
     expect(result.order).toHaveLength(report.catalog.entries.length);

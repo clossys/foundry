@@ -207,7 +207,7 @@ function parseJoinKeyArgs(argv: string[]): JoinKeyParsedArgs {
  * Reads `path`'s raw text, throwing `CliInputError` on anything about the
  * path itself being wrong — missing, unreadable, not a plain file. These
  * are argument-shaped problems, the same category
- * `@vespeneventures/strategy`'s `cli.ts` reserves for `requireDirectory`
+ * `@example/strategy`'s `cli.ts` reserves for `requireDirectory`
  * (a bad argument, not a fact about the file's own content), so they throw
  * the same way an unknown flag does.
  */
@@ -539,8 +539,8 @@ function run(): void {
 }
 
 /**
- * Same real-path guard `@vespeneventures/gates`' and
- * `@vespeneventures/strategy`'s `cli.ts` use, for the same reason: `npm
+ * Same real-path guard `@example/gates`' and
+ * `@example/strategy`'s `cli.ts` use, for the same reason: `npm
  * install` publishes `bin` entries as symlinks, so comparing
  * `process.argv[1]` to `import.meta.url` without resolving symlinks on
  * both sides fails the moment this file is actually invoked the only way

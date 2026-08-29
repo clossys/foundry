@@ -1,8 +1,8 @@
 /**
- * The PASSAGE LAYER — issue #373. `@vespeneventures/copy` (now `writer`,
+ * The PASSAGE LAYER — issue #373. `@example/copy` (now `writer`,
  * per issue #373's own retargeting comment) has terms (a glossary) and
  * entries (single addressable strings) and nothing between them.
- * `@vespeneventures/designer` has tokens, atoms, AND BLOCKS. This file is the
+ * `@clossys/designer` has tokens, atoms, AND BLOCKS. This file is the
  * missing middle: a `Passage` composes `CopyEntry`/glossary-term
  * REFERENCES the way a block composes atoms — never a raw sentence of its
  * own. Terms ≈ tokens, entries ≈ atoms, passages ≈ blocks, documents (a
@@ -10,7 +10,7 @@
  * ≈ views.
  *
  * WHERE THE MIRROR STOPS. This file deliberately does NOT port
- * `@vespeneventures/designer/tokens`' `brandable` boolean onto a `Passage`
+ * `@clossys/designer/tokens`' `brandable` boolean onto a `Passage`
  * field. In tokens, `brandable` marks a subset WITHIN one namespace (154
  * ship, 42 are brandable). The voice record's own consumer/machinery
  * split runs between FILES instead (a consumer's own `VoiceRecord` vs.
@@ -133,7 +133,7 @@ export interface PassageEntryReference {
   id: string;
 }
 
-/** A reference to a glossary term (see `@vespeneventures/writer/voice`'s `GlossaryEntry.term`), by its term string. */
+/** A reference to a glossary term (see `@clossys/writer/voice`'s `GlossaryEntry.term`), by its term string. */
 export interface PassageTermReference {
   ref: "term";
   term: string;

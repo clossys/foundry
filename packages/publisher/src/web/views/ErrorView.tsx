@@ -1,6 +1,6 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { mergeUiClasses } from "@vespeneventures/designer/atoms";
-import { EmptyState } from "@vespeneventures/designer/blocks";
+import { mergeUiClasses } from "@clossys/designer/atoms";
+import { EmptyState } from "@clossys/designer/blocks";
 import { UI_WIDTH_PROSE_MAX } from "./internal/view-vars.js";
 
 export interface ErrorViewProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {

@@ -1,6 +1,6 @@
 /**
  * `voice-record.template.jsonc` covers every bindable field, and nothing
- * else — the direct port of `@vespeneventures/ui/tokens`' own
+ * else — the direct port of `@example/ui/tokens`' own
  * `src/brand-coverage.test.ts`, run against `src/fields.ts`'s `VOICE_FIELDS`
  * instead of that package's `TOKENS`. See `src/fields.ts`'s header comment
  * for why every entry here is `bindable: true` and where this package's
@@ -31,7 +31,7 @@ describe("voice-record.template.jsonc covers every bindable field", () => {
     // Guards the other direction: a stale or typo'd slot in the template
     // (e.g. a renamed field whose old path was never removed) would
     // otherwise go unnoticed, since it's harmless JSON on its own — the
-    // exact failure mode `@vespeneventures/ui/tokens`' own second
+    // exact failure mode `@example/ui/tokens`' own second
     // brand-coverage test exists to catch, ported verbatim.
     const unknown = [...pathsInTemplate].filter((path) => !(path in VOICE_FIELDS));
     expect(unknown).toEqual([]);

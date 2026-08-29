@@ -1,16 +1,16 @@
 /**
- * Plain TypeScript types for @vespeneventures/writer/voice's four entities: voice
+ * Plain TypeScript types for @clossys/writer/voice's four entities: voice
  * rules, a glossary entry, a claim, and the `VoiceRecord` that binds them
  * together for one consumer. Pure data — no validation logic lives here
  * (see `schema.ts`) and no I/O.
  *
  * No runtime schema library. That follows this repository's own
- * precedent: `@vespeneventures/catalog`, `@vespeneventures/policy`, and
- * `@vespeneventures/ui/tokens` all ship zero runtime dependencies; only
- * `@vespeneventures/ui` carries any, and only because it wraps React
- * primitives it genuinely cannot hand-roll. `@vespeneventures/writer/voice`'s
+ * precedent: `@example/catalog`, `@example/policy`, and
+ * `@example/ui/tokens` all ship zero runtime dependencies; only
+ * `@example/ui` carries any, and only because it wraps React
+ * primitives it genuinely cannot hand-roll. `@clossys/writer/voice`'s
  * entire job is dependency-free data shape validation — the same job
- * `@vespeneventures/policy`'s `validate.ts` already does, in plain type
+ * `@example/policy`'s `validate.ts` already does, in plain type
  * guards, for a smaller shape. `schema.ts` follows that file's pattern
  * closely rather than pulling in a schema library (and its own major-
  * version churn, a real cost for a *public* package's consumers) for what
@@ -19,7 +19,7 @@
  * This file ships no example content of a real voice. Every field here is
  * either required-and-generic or a structural placeholder — filling in an
  * actual person rule, glossary, or claims register is a consumer's job,
- * the same split `@vespeneventures/ui/tokens` draws between `tokens.css`
+ * the same split `@example/ui/tokens` draws between `tokens.css`
  * (neutral machinery) and a consumer's own `brand.css` (real values). See
  * "The single most important constraint" in the README.
  */
@@ -33,7 +33,7 @@ export type FormalityLevel = "casual" | "neutral" | "formal";
 
 /**
  * The valid `FormalityLevel` values, in declaration order — exported as a
- * list, mirroring `@vespeneventures/policy`'s `DIGEST_ALGORITHMS`, so
+ * list, mirroring `@example/policy`'s `DIGEST_ALGORITHMS`, so
  * `schema.ts` never hardcodes them as a second, separately-maintained
  * literal check.
  */
@@ -305,17 +305,17 @@ export interface VoiceRecord {
 }
 
 // ---------------------------------------------------------------------------
-// Findings — shared shape, mirroring @vespeneventures/policy's own `Finding`
+// Findings — shared shape, mirroring @example/policy's own `Finding`
 // ---------------------------------------------------------------------------
 
 /**
  * One thing a validator or the checker found wrong (or, at `"warning"`,
- * worth a look). Deliberately the same shape as `@vespeneventures/policy`'s
+ * worth a look). Deliberately the same shape as `@example/policy`'s
  * `Finding` — `rule` / `severity` / `message` / optional `path` — so a
  * caller already handling one kind of finding in this repo's ecosystem
  * does not need a second mental model for this package's. Defined fresh
  * here, not imported: this package has zero runtime dependency on
- * `@vespeneventures/policy`, on purpose (see README, "Requirements").
+ * `@example/policy`, on purpose (see README, "Requirements").
  */
 export interface VoiceFinding {
   /** Stable identifier for the rule that produced this finding, e.g. `"glossary:forbidden-term"`. */

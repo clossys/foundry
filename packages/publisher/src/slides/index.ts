@@ -1,5 +1,5 @@
 /**
- * @vespeneventures/publisher/slides — the `slides` channel renderer. Takes a
+ * @clossys/publisher/slides — the `slides` channel renderer. Takes a
  * `SlidesDeckInput` (an ordered array of `channel: "slides"`
  * `ComposeDocument`s, plus deck-wide speaker notes) and emits one
  * self-contained SVG per slide, sharing one fixed canvas derived from

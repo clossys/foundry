@@ -59,13 +59,13 @@
  * check. It is a value the checker could not form an opinion about at
  * all: `indeterminate`, never silently folded into a pass and never
  * thrown as though it were a real, actionable violation.
- * `@vespeneventures/controller`'s `gates/result.ts` already names this
+ * `@clossys/controller`'s `gates/result.ts` already names this
  * exact three-state shape (`satisfied` | `violated` | `indeterminate`),
  * and this file does not import it: this package sits at or below
- * `@vespeneventures/controller` in this repository's build order (see
+ * `@clossys/controller` in this repository's build order (see
  * this package's own `package.json` — its `dependencies` name
- * `@vespeneventures/writer` and `@vespeneventures/designer`, never
- * `@vespeneventures/controller`), so importing controller's type from
+ * `@clossys/writer` and `@clossys/designer`, never
+ * `@clossys/controller`), so importing controller's type from
  * here would invert that graph — an architectural decision for an owner,
  * not a bug-fix detail. `assertPeerVersion` below therefore reimplements
  * the same three states as its own local control flow — but do NOT read
@@ -281,7 +281,7 @@ export function assertPeerVersion(input: AssertPeerVersionInput): void {
     if (!warnedUnparseableVersions.has(warnKey)) {
       warnedUnparseableVersions.add(warnKey);
       console.warn(
-        `[@vespeneventures/publisher] Could not verify ${peer}@${foundVersion} against this package's declared ` +
+        `[@clossys/publisher] Could not verify ${peer}@${foundVersion} against this package's declared ` +
           `range "${declaredRange}": ${outcome.reason}. This is not a value that failed the check — it is a value ` +
           `assertPeerVersion could not read at all, so it is being treated as indeterminate rather than as a ` +
           `violation. Proceeding without blocking the build; if ${peer} is genuinely incompatible that will ` +

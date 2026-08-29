@@ -1,11 +1,11 @@
 // ════════════════════════════════════════════════════════════════════════
-// @vespeneventures/writer/voice · voice-record.template.jsonc
+// @clossys/writer/voice · voice-record.template.jsonc
 // ────────────────────────────────────────────────────────────────────────
-// BINDING — the second layer, the exact peer of `@vespeneventures/ui/tokens`'
+// BINDING — the second layer, the exact peer of `@example/ui/tokens`'
 // `brand-template.css`. This is a template, not real content — copy it into
 // your own project and fill in every placeholder:
 //
-//   cp node_modules/@vespeneventures/writer/voice/voice-record.template.jsonc \
+//   cp node_modules/@clossys/writer/voice/voice-record.template.jsonc \
 //      src/voice/acme-app.voice.jsonc
 //
 // then load it (any JSON-with-comments reader, or strip comments yourself)
@@ -13,7 +13,7 @@
 // call is what turns "JSON that happens to have the right keys" into an
 // actual, validated `VoiceRecord`:
 //
-//   import { parseVoiceRecord, checkCopy } from "@vespeneventures/writer/voice";
+//   import { parseVoiceRecord, checkCopy } from "@clossys/writer/voice";
 //   const acmeVoice = parseVoiceRecord(JSON.parse(stripJsonComments(raw)));
 //   const report = checkCopy(acmeVoice, someCopy);
 //   if (!report.bound) {

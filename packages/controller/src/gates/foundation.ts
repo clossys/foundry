@@ -1,6 +1,6 @@
 /**
  * `runFoundationCheck` — orchestrated validation. Nothing new beyond calling
- * `@vespeneventures/catalog`'s own `buildCatalog` and `evaluateCatalog` in
+ * `@example/catalog`'s own `buildCatalog` and `evaluateCatalog` in
  * sequence and returning the result under one name, but it is the thing a
  * consumer of this whole foundation actually wants to call: one function,
  * one root path in, one report out.
@@ -13,7 +13,7 @@ import type { FoundationReport } from "./types.js";
 
 /**
  * Options for `runFoundationCheck`. Extends `CatalogOptions` (from
- * `@vespeneventures/catalog`) rather than redeclaring `packagesDir` and
+ * `@example/catalog`) rather than redeclaring `packagesDir` and
  * `maxDepth` by hand — this repository's convention is to export a
  * definition once and reuse it, not restate it. `packagesDir` and
  * `maxDepth` are passed straight through to `buildCatalog`.
@@ -23,7 +23,7 @@ export interface RunFoundationCheckOptions extends CatalogOptions {
    * Passed straight through to `evaluateCatalog` as `options.scope`, which
    * uses it to decide which of an entry's real `dependencies`/
    * `peerDependencies` count as internal to this catalog — see
-   * `@vespeneventures/catalog`'s `internal-dep-missing` and
+   * `@example/catalog`'s `internal-dep-missing` and
    * `dependency-cycle` rules.
    */
   scope?: string;

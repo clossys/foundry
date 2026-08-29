@@ -1,4 +1,4 @@
-# @vespeneventures/giver
+# @clossys/giver
 
 **Everything about what you get — what you asked for, and what we owe you.**
 
@@ -105,7 +105,7 @@ missing, unparseable, or does not validate becomes
 path from an unreadable document to a delivery, and no way to write one.
 
 ```ts
-import { readStandingDecision, unreadableStandingDecision, validateStandingDecisionDocument } from "@vespeneventures/giver/record";
+import { readStandingDecision, unreadableStandingDecision, validateStandingDecisionDocument } from "@clossys/giver/record";
 ```
 
 A document announcing a `schemaVersion` this reader does not know is
@@ -129,14 +129,14 @@ version or a ground with no subject is unreadable, never silently visible.
 ## Install
 
 ```bash
-npm install @vespeneventures/giver
+npm install @clossys/giver
 ```
 
 Installing from this registry needs a GitHub personal access token with
 `read:packages` — see the repository root README.
 
 ```ts
-import { checkObligationDischarge, decideOutcome } from "@vespeneventures/giver";
+import { checkObligationDischarge, decideOutcome } from "@clossys/giver";
 ```
 
 ## The three gates

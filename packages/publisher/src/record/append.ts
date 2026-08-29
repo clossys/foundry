@@ -33,7 +33,7 @@ function deepFreeze<T>(value: T): T {
  *
  * Two conditions are checked, and either one throws rather than returning
  * a `LedgerFinding[]` the way `validateEntry`/`validateLedger` do — the
- * same producer-side-error precedent `@vespeneventures/controller/policy`'s
+ * same producer-side-error precedent `@clossys/controller/policy`'s
  * `computeDigest` and this package's own `citeFact` already set: a caller
  * choosing to append a malformed entry, or an entry whose id already
  * exists, is a programming error at the point of the call, not a fact

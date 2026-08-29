@@ -13,7 +13,7 @@
  * ---------------------------
  *   1. CHANNEL CHECK — `doc.channel`/`doc.meta.channel` must both be
  *      `"email"`. Throws `RenderError("wrong-channel", ...)` otherwise.
- *   2. A REAL SLOT LIST — `@vespeneventures/publisher/core`'s own `resolveDocument`
+ *   2. A REAL SLOT LIST — `@clossys/publisher/core`'s own `resolveDocument`
  *      needs a `LayoutSpec` to match `doc.bindings` against, and an
  *      `email`-channel `ComposeDocument` is FORBIDDEN from carrying one on
  *      `doc.layout` itself (`surface/core`'s `validate.ts`, `layout-forbidden` —
@@ -25,7 +25,7 @@
  *      see that module's own doc comment for exactly what changes between
  *      the two paths, and this package's README, "The geometry problem."
  *   3. RESOLUTION — `resolveDocument(doc, layout)`, exactly the machinery
- *      `@vespeneventures/publisher/core` ships and `./web` already uses; see its
+ *      `@clossys/publisher/core` ships and `./web` already uses; see its
  *      own doc comment for what `ok: false` means. Not `ok` is a throw
  *      (`"resolution-failed"`), never a partial render.
  *   4. COPY RESOLUTION — `resolveCopy(result, lookup)`, the pass this
@@ -74,7 +74,7 @@
  *
  * IMAGES: `assetId` BINDINGS JOIN THE SAME ORDERED ROW STACK AS TEXT
  * -----------------------------------------------------------------------
- * `SlotBinding.assetId` (`@vespeneventures/publisher/core` 0.3.0) resolves via
+ * `SlotBinding.assetId` (`@clossys/publisher/core` 0.3.0) resolves via
  * `../internal/assets.ts`'s `resolveDocumentAssets` — never hand-rolled,
  * same reasoning as step 4 above, one binding field over. Email has no
  * absolute positioning at all (see step 7): an image slot is just another
@@ -82,7 +82,7 @@
  * exactly like a text row, painted as an `<img>` instead of escaped text
  * (`internal/emailDocument.ts`'s `buildRow`). Because `resolveCopy` and
  * `resolveDocumentAssets` each independently pick out only the bindings
- * that are their own job (deferring the other's — see `@vespeneventures/
+ * that are their own job (deferring the other's — see `@clossys/
  * compose`'s own `resolve-copy.ts`/`resolve-assets.ts`), the two passes'
  * result arrays are NOT the same length as `result.resolved` whenever the
  * document mixes both kinds — so this function joins them by SLOT KEY

@@ -1,7 +1,7 @@
 /**
  * Golden-output tests — the requirement this package's own delivery report
  * calls out by name. Each case here renders a REAL `ComposeDocument`
- * through the REAL `@vespeneventures/designer` views (`ErrorView`, `AuthView`,
+ * through the REAL `@clossys/designer` views (`ErrorView`, `AuthView`,
  * `MarketingView`) via `react-dom/server`'s `renderToStaticMarkup`, and
  * asserts the EXACT emitted HTML string — not "it didn't throw", not "the
  * output contains some substring somewhere", the actual bytes a browser
@@ -10,7 +10,7 @@
  * Why this matters, concretely: this is what would have caught a
  * regression where `AuthView`'s prop wiring silently swapped `heading` and
  * `description`, or where `Card`'s className stopped merging correctly, or
- * where a future `@vespeneventures/designer` bump reordered DOM nodes — none of
+ * where a future `@clossys/designer` bump reordered DOM nodes — none of
  * which a "did it throw" test or a substring match would ever notice.
  * `docs`/the task brief for this package cites the exact precedent this is
  * built against: a researched decision to adopt `react-email` in a prior

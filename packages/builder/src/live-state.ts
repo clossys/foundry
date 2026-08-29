@@ -3,9 +3,9 @@
  * deployment target are the same statement at three altitudes — *this is
  * what should exist; go and see whether it does.*
  *
- * The generic shape now lives in `@vespeneventures/controller/conventions`
+ * The generic shape now lives in `@clossys/controller/conventions`
  * (`conventions/live-state.ts` there), which this package already depends
- * on for `GateResult` (`@vespeneventures/controller/gates`) and already sits
+ * on for `GateResult` (`@clossys/controller/gates`) and already sits
  * above in the build order. This module used to carry its own full copy of
  * the vocabulary, the declaration type, its validator, and the three-state
  * constructors; it now re-exports controller's copy verbatim rather than
@@ -14,7 +14,7 @@
  * already required controller.
  *
  * Every export below keeps its existing name. A consumer already importing
- * from `@vespeneventures/builder` sees no change: `LIVE_STATE_SURFACE_
+ * from `@clossys/builder` sees no change: `LIVE_STATE_SURFACE_
  * FINDING_KINDS`, `LiveStateSurfaceDeclaration`, `validateLiveStateSurface
  * Declaration`, `reconcileLiveState`, and the three constructors
  * (`liveStateVerified` / `liveStateDrifted` / `liveStateCouldNotVerify`) are
@@ -38,7 +38,7 @@ export {
   liveStateVerified,
   reconcileLiveState,
   validateLiveStateSurfaceDeclaration,
-} from "@vespeneventures/controller/conventions";
+} from "@clossys/controller/conventions";
 export type {
   LiveStateDeclarationValue,
   LiveStateDriftKind,
@@ -50,4 +50,4 @@ export type {
   LiveStateSurfaceDeclaration,
   LiveStateSurfaceFindingKind,
   ReconcileLiveStateInput,
-} from "@vespeneventures/controller/conventions";
+} from "@clossys/controller/conventions";

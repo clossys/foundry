@@ -1,5 +1,5 @@
 /**
- * @vespeneventures/designer/shell — the persistent application frame, plus the
+ * @clossys/designer/shell — the persistent application frame, plus the
  * `Toaster` runtime service that lives in it, and the persistent chrome a
  * public SITE (as opposed to an authenticated app) needs: `SkipLink`,
  * `SiteHeader`, `NavShell`, `SiteFooter`. See this package's README for the
@@ -28,8 +28,8 @@ import { REACT_ARIA_COMPONENTS_DECLARED_RANGE, REACT_DECLARED_RANGE } from "../i
  * the full #182 rationale. This barrel needs its own guard call,
  * independent of `atoms/index.ts`'s: `Toaster.tsx`, `NavShell.tsx`, and
  * `internal/toast-queue.ts` import `react-aria-components` directly, and a
- * consumer who imports only `@vespeneventures/designer/shell` (never
- * `@vespeneventures/designer/atoms`) would otherwise get no signal at all.
+ * consumer who imports only `@clossys/designer/shell` (never
+ * `@clossys/designer/atoms`) would otherwise get no signal at all.
  */
 assertPeerVersion({ peer: "react", declaredRange: REACT_DECLARED_RANGE, foundVersion: reactVersion });
 assertPeerVersion({

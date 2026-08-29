@@ -194,7 +194,7 @@ export interface PathExclusionValidation {
  * — this is called on a TYPED `PathExclusion[]` from a TypeScript caller,
  * but re-validates every field anyway, the same defense-in-depth this
  * repository's other schema functions apply to already-typed input: see
- * `@vespeneventures/writer/voice`'s `schema.ts` header comment for why a
+ * `@clossys/writer/voice`'s `schema.ts` header comment for why a
  * plain-JS caller, or a value that merely satisfies the type at compile
  * time without conforming at runtime, is exactly the case this guards
  * against). Never throws.

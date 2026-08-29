@@ -78,11 +78,11 @@ export function validateStarterRequest(value: unknown): { request: StarterReques
       findings.push(find("snapshot-request-identity", "snapshot request needs the fixed consumer repository and a bounded maximum age."));
     }
   }
-  if (!exactPackage(value.starter, "starter", STARTER_KEYS, findings) || !record(value.starter) || value.starter.name !== "@vespeneventures/starter" || value.starter.bin !== "foundry-starter") {
-    findings.push(find("starter-contract", "starter must be @vespeneventures/starter and its fixed foundry-starter bin."));
+  if (!exactPackage(value.starter, "starter", STARTER_KEYS, findings) || !record(value.starter) || value.starter.name !== "@clossys/starter" || value.starter.bin !== "foundry-starter") {
+    findings.push(find("starter-contract", "starter must be @clossys/starter and its fixed foundry-starter bin."));
   }
-  if (!exactPackage(value.advisor, "advisor", ADVISOR_KEYS, findings) || !record(value.advisor) || value.advisor.name !== "@vespeneventures/advisor" || value.advisor.bin !== "advisor-execution-readiness") {
-    findings.push(find("advisor-contract", "advisor must be @vespeneventures/advisor and its fixed advisor-execution-readiness bin."));
+  if (!exactPackage(value.advisor, "advisor", ADVISOR_KEYS, findings) || !record(value.advisor) || value.advisor.name !== "@clossys/advisor" || value.advisor.bin !== "advisor-execution-readiness") {
+    findings.push(find("advisor-contract", "advisor must be @clossys/advisor and its fixed advisor-execution-readiness bin."));
   }
   if (!exactPackage(value.target, "target", TARGET_KEYS, findings) || !record(value.target) || !SAFE_BIN.test(String(value.target.bin)) || value.target.invocation !== "single-json-input") {
     findings.push(find("target-contract", "target needs one manifest-selected bin and the fixed single-json-input invocation; paths and arbitrary arguments are forbidden."));

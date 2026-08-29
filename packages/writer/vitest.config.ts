@@ -1,9 +1,9 @@
 import { defineConfig } from "vitest/config";
 
 /**
- * Per-package vitest config for @vespeneventures/copy.
+ * Per-package vitest config for @example/copy.
  * Plain Node environment. `types.ts` and `schema.ts` do zero I/O;
- * `checker.ts` does zero I/O either (it only calls `@vespeneventures/copy/voice`'s
+ * `checker.ts` does zero I/O either (it only calls `@example/copy/voice`'s
  * `checkCopy`, itself pure). `registry.ts` is this package's one deliberate
  * I/O surface, and its tests are hermetic for that reason: every fixture is
  * written to its own `mkdtemp` directory under the OS temp dir, never a real

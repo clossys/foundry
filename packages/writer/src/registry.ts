@@ -2,7 +2,7 @@
  * `readCopyRecord` — the one place in this package that touches a
  * filesystem. Everything in `schema.ts` is pure shape; this function is
  * what turns a consumer's real copy registry file into validated data, in
- * the same gather-don't-judge spirit `@vespeneventures/strategy`'s
+ * the same gather-don't-judge spirit `@example/strategy`'s
  * `readStrategy` uses for a `strategy/` directory: read what's there,
  * validate it, and record — never throw on — anything that could not be
  * turned into usable data. Judgement about what to DO with an unreadable
@@ -48,8 +48,8 @@ export interface CopyRegistryReadResult {
   issues: CopyRegistryReadIssue[];
   /**
    * `true` exactly when `issues` is empty and `record` is populated.
-   * Named to match `@vespeneventures/strategy`'s `StrategyBundle.complete`
-   * and `@vespeneventures/writer/voice`'s `VoiceCheckReport.complete` —
+   * Named to match `@example/strategy`'s `StrategyBundle.complete`
+   * and `@clossys/writer/voice`'s `VoiceCheckReport.complete` —
    * "everything this function could have checked, it did, and it found
    * nothing wrong" is the same one-boolean-read contract across all
    * three, on purpose.

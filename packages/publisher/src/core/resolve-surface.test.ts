@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { CopyRegistry, CopyResolver } from "@vespeneventures/writer";
-import { createCopyResolver } from "@vespeneventures/writer";
+import type { CopyRegistry, CopyResolver } from "@clossys/writer";
+import { createCopyResolver } from "@clossys/writer";
 import { collectCopyProvenance } from "./output-manifest.js";
 import { resolveSurfaceDocument, SurfaceResolutionError } from "./resolve-surface.js";
 import type { SurfaceDocument } from "./types.js";

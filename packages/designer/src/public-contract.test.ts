@@ -74,7 +74,7 @@ describe("public UI contract", () => {
 
     expect(tokens).toContain(":root {");
     expect(theme).toContain('@import "./tokens.css";');
-    expect(brand).toContain('@import "@vespeneventures/designer/tokens.css";');
+    expect(brand).toContain('@import "@clossys/designer/tokens.css";');
     expect(brand).toContain(":root[data-brand-bound]");
     expect(tokens).toContain(':root[data-theme="dark"]');
   });
@@ -82,7 +82,7 @@ describe("public UI contract", () => {
   it("does not retain page-level views or reverse runtime dependencies on product packages", () => {
     expect(existsSync(join(packageRoot, "src", "views"))).toBe(false);
 
-    const forbidden = /from\s+["']@vespeneventures\/(?:copy|strategy|surface)(?:\/|["'])/;
+    const forbidden = /from\s+["']@clossys\/(?:copy|strategy|surface)(?:\/|["'])/;
     const violations = COMPONENT_DIRS.flatMap((dir) =>
       sourceFiles(join(packageRoot, "src", dir))
         .filter((file) => forbidden.test(readFileSync(file, "utf8")))

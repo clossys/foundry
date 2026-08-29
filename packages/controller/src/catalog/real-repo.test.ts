@@ -28,7 +28,7 @@ describe("integration: real packages/ directory", () => {
   it("resolves repoRoot to a directory that actually contains a packages/ tree", () => {
     expect(existsSync(join(repoRoot, "packages"))).toBe(true);
     expect(existsSync(join(repoRoot, "package.json"))).toBe(true);
-    // `catalog` is a subpath of `@vespeneventures/controller` now (issue
+    // `catalog` is a subpath of `@clossys/controller` now (issue
     // #282 merged the standalone `catalog` package into it with zero
     // consumers left behind), so the on-disk package that must exist is
     // `controller`, not a `catalog` package directory.
@@ -51,13 +51,13 @@ describe("integration: real packages/ directory", () => {
 
     // `catalog`, `policy`, `gates`, `release`, `repository`, and `review`
     // were separate, paired compatibility packages before issue #282's
-    // recut folded every one of them into `@vespeneventures/controller` as
+    // recut folded every one of them into `@clossys/controller` as
     // subpaths and deleted the standalone packages with zero consumers
     // left. There is exactly one foundational package left to find now.
     expect(names).toContain(`${SCOPE}/controller`);
   });
 
-  it("finds this package (@vespeneventures/controller) itself, self-hosting cleanly against the real dependency graph", () => {
+  it("finds this package (@clossys/controller) itself, self-hosting cleanly against the real dependency graph", () => {
     const catalog = buildCatalog(repoRoot);
     const controllerEntry = findByName(catalog, `${SCOPE}/controller`);
 

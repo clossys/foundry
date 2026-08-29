@@ -158,7 +158,7 @@ test("default mode: passes a package that did not exist yet at --base (newly add
 });
 
 // This is the regression test for the exact false positive found in review:
-// @vespeneventures/comms was bumped, then edited twice more at the same
+// @example/comms was bumped, then edited twice more at the same
 // version, then PUBLISHED after those edits. From git history alone that
 // looks identical to PR #155's real failure (bump, edit, edit, never
 // publish) -- audit mode cannot tell them apart (see next test) and is

@@ -1,5 +1,5 @@
 /**
- * @vespeneventures/bouncer — everything about who you are, what you can do,
+ * @clossys/bouncer — everything about who you are, what you can do,
  * and how that changes over time.
  *
  * The question this role answers, and no other role does: **is this actor who

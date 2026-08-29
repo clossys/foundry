@@ -1,6 +1,6 @@
 /**
- * @vespeneventures/designer/atoms/server — the server-safe subset of
- * `@vespeneventures/designer/atoms`, re-exported from a barrel with no
+ * @clossys/designer/atoms/server — the server-safe subset of
+ * `@clossys/designer/atoms`, re-exported from a barrel with no
  * interactive member in it at all. See issue #375: `atoms/index.ts`
  * re-exports every atom EAGERLY from one module, so importing even one
  * of its interactive members (`Button`, `TextField`, ...) pulls in

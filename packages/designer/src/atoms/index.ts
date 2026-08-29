@@ -1,5 +1,5 @@
 /**
- * @vespeneventures/designer/atoms — the first rung of a three-layer component
+ * @clossys/designer/atoms — the first rung of a three-layer component
  * reusable ladder (atoms → blocks). An
  * atom is single-purpose: it either composes no other atom (`Button`,
  * `TextField`, `Badge`, `Card`, `Checkbox`, `Switch`, `Select`, `Textarea`,
@@ -13,7 +13,7 @@
  * package's README, "Placement rules", for the block/atom test this ladder
  * is built on. Anything that owns MULTIPLE NAMED regions (a title region, a
  * description region, an actions region — each different in kind, not
- * just repeated) belongs one layer up, in `@vespeneventures/designer/blocks`,
+ * just repeated) belongs one layer up, in `@clossys/designer/blocks`,
  * not here.
  *
  * `Table` is the one atom here that composes another atom of its own
@@ -35,8 +35,8 @@ import { REACT_ARIA_COMPONENTS_DECLARED_RANGE, REACT_DECLARED_RANGE } from "../i
 /**
  * `react` and `react-aria-components` are two of this package's optional
  * peers (see package.json's `peerDependenciesMeta`) — optional so a
- * token-only consumer can install `@vespeneventures/designer` and use
- * `@vespeneventures/designer/tokens` without either. Every atom in this file
+ * token-only consumer can install `@clossys/designer` and use
+ * `@clossys/designer/tokens` without either. Every atom in this file
  * needs both, so this barrel — loaded in full whenever a consumer imports
  * ANY atom, since every named export below is eagerly re-exported from
  * this one module — is where #182's guard for them is wired in. An

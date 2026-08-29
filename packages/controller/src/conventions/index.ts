@@ -1,5 +1,5 @@
 /**
- * @vespeneventures/conventions
+ * @example/conventions
  *
  * The account-neutral agent conventions two parties can share without either
  * owning the other, plus the checks that enforce their grammar.

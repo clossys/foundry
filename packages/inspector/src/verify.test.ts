@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { REVIEW_EVIDENCE_VERSION } from "@vespeneventures/controller/review";
+import { REVIEW_EVIDENCE_VERSION } from "@clossys/controller/review";
 import { VERIFY_STANDARDS_INPUTS_VERSION, verifyStandards } from "./verify.js";
 import type { VerifyStandardsInputs } from "./verify.js";
 import { STANDARDS_CHECKS } from "./types.js";

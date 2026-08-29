@@ -41,7 +41,7 @@
 // below it would report ten-plus violations on its first run and could never
 // be wired as blocking, which makes it decorative.
 //
-// The alternative taken here is the one @vespeneventures/integrator already
+// The alternative taken here is the one @clossys/integrator already
 // ships for exactly this shape: every opt-out carries a REQUIRED REASON. A
 // shortfall must be declared, with prose saying what is actually missing and
 // an issue tracking it. An UNACKNOWLEDGED shortfall is a violation. So the
@@ -228,7 +228,7 @@ export function scanInvocationSites(repoRoot, packageNames, { readFile = (p) => 
         // scripts/ imported it.
         const usesDistPath = line.includes(`packages/${bareName(name)}/dist`);
         // An IMPORT, not any quoted occurrence. A package name also appears as
-        // ordinary test-fixture data -- `entry("auth", "@vespeneventures/auth",
+        // ordinary test-fixture data -- `entry("auth", "@example/auth",
         // "0.2.4")` -- and counting those reported six invocation sites for a
         // package nothing here invokes. `from`/`require(`/`import(` is what
         // separates using a package from naming one.
@@ -786,7 +786,11 @@ async function main() {
     }
   }
   const lifecycleDocumentPath = join(repoRoot, "docs/LIFECYCLE.md");
-  const renderedPosition = renderLifecyclePositionTable({ contract, results });
+  // Terminal historical identities stay in the evidence contract, but the
+  // generated current-position view must not turn retired namespace rows
+  // into live install guidance after an identity transition.
+  const currentResults = results.filter((result) => result.supersession !== RETIRED_STATUS);
+  const renderedPosition = renderLifecyclePositionTable({ contract, results: currentResults });
 
   if (render) {
     process.stdout.write(renderedPosition);

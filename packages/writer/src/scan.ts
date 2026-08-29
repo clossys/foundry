@@ -1,6 +1,6 @@
 /**
  * `scanCopySourceTree` and `extractCopyCandidates` — the I/O half AND the
- * hard-analysis half of this gate, unlike the split `@vespeneventures/
+ * hard-analysis half of this gate, unlike the split `@clossys/
  * strategy` draws between its own `scan.ts` (dumb directory walk) and
  * `facts-gate.ts` (the matchers). Here the walk is the easy part; finding
  * which string literals in a real source file are actually user-facing
@@ -12,7 +12,7 @@
  * job: compare what this file found against a `CopyRecord` and report.
  *
  * NO PARSER LIBRARY — this repository's zero-runtime-dependency default for
- * every package here, `@vespeneventures/ui` (which wraps React) being the
+ * every package here, `@example/ui` (which wraps React) being the
  * one deliberate exception. What follows is a small hand-rolled character
  * scanner
  * that finds string/template literal BOUNDARIES correctly (the part that
@@ -149,7 +149,7 @@
  * blind to it — a gate whose entire job is "no untracked user-facing
  * copy" would report a clean pass over a file that is nothing but
  * untracked copy. This is exactly what made this scanner's own top-level
- * risk real once a JSX-heavy consumer (`@vespeneventures/ui` in this same
+ * risk real once a JSX-heavy consumer (`@example/ui` in this same
  * repo) existed: see issue #37.
  *
  * The fix stays inside "no parser library": a second, JSX-aware pass
@@ -353,7 +353,7 @@ export interface CopyCandidate {
   /**
    * Every `copy:<id>` citation found on this candidate's own source line
    * (see `CITATION_RE`) — `copy-gate.ts`'s escape hatch, mirroring
-   * `@vespeneventures/strategy`'s `fact:<key>`. Whether any of these ids
+   * `@example/strategy`'s `fact:<key>`. Whether any of these ids
    * actually exist in a real `CopyRecord` is `copy-gate.ts`'s question to
    * ask, not this scanner's — this scanner only reports what text is
    * literally present on the line.
@@ -366,7 +366,7 @@ export interface CopyCandidate {
 /**
  * One `copy:<id>` citation found anywhere in a file, independent of
  * whether any candidate happens to share its line — mirrors
- * `@vespeneventures/strategy`'s `facts-gate.ts` Pass 1, which checks every
+ * `@example/strategy`'s `facts-gate.ts` Pass 1, which checks every
  * line for a `fact:<key>` citation regardless of whether that line also
  * carries a claim, so a citation to a rotted/misspelled id is caught even
  * when it sits on a line with no traceable literal at all (e.g. a stray
@@ -381,7 +381,7 @@ export interface Citation {
 // `copy:<id>` inside an HTML comment, a block comment, a JSX comment, or a
 // line comment — deliberately loose about the closing delimiter (only the
 // opener plus "copy:<id>" is required), mirroring
-// `@vespeneventures/strategy`'s `FACT_CITATION_RE` so a stray missing
+// `@example/strategy`'s `FACT_CITATION_RE` so a stray missing
 // `-->` doesn't silently defeat the citation. `id` allows the dots
 // `CopyEntryId`'s shape requires (see `schema.ts`'s `COPY_ENTRY_ID_RE`),
 // unlike a bare fact key.
@@ -464,7 +464,7 @@ export interface ScanResult {
  * Walks `root` recursively, reads every matching file, and extracts copy
  * candidates from each (see `extractCopyCandidates`). FAILS CLOSED on an
  * unreadable directory or file — throws a plain `Error`, matching
- * `@vespeneventures/strategy`'s `scanStrategyDirectory` and this
+ * `@example/strategy`'s `scanStrategyDirectory` and this
  * repository's own `scripts/check-contamination-classes.mjs` walker: a
  * directory this function could not read might be hiding an unknown,
  * unbounded amount of unregistered copy, and reporting "0 files scanned"
@@ -1786,7 +1786,7 @@ interface ExtractResult {
  * Every `copy:<id>` citation and every `copy-gate:ignore` marker in
  * `content`, keyed by 1-indexed line number. A plain raw-line regex scan —
  * deliberately NOT tokenizer-aware, mirroring
- * `@vespeneventures/strategy`'s `facts-gate.ts`, which scans every line
+ * `@example/strategy`'s `facts-gate.ts`, which scans every line
  * for `fact:<key>`/`facts-gate:ignore` regardless of fence/comment state.
  * A citation only makes sense written inside a comment by construction
  * (the regex itself requires a comment-opening delimiter immediately

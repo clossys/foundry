@@ -4,17 +4,17 @@
  * against a REAL file on disk, not just a hand-built `Record` in a test.
  * Mirrors the split every sibling package in this repository draws between
  * a pure parser and a caller-facing file reader:
- * `@vespeneventures/copy`'s `scan.ts` (`extractCopyCandidates`, pure, then
- * `scanCopySourceTree`, I/O) and `@vespeneventures/strategy`'s
+ * `@example/copy`'s `scan.ts` (`extractCopyCandidates`, pure, then
+ * `scanCopySourceTree`, I/O) and `@example/strategy`'s
  * `reader.ts`/`registry.ts` `read*` functions.
  *
  * ZERO RUNTIME DEPENDENCIES, HAND-WRITTEN — DELIBERATELY, NOT BY DEFAULT
  * --------------------------------------------------------------------------
- * `@vespeneventures/copy`'s `scan.ts` header comment gives the reason this
+ * `@example/copy`'s `scan.ts` header comment gives the reason this
  * repository keeps making the same call: this repository's CI `safety` job
  * (`scripts/check-public-safety.mjs` et al.) runs gates with no `npm ci` —
  * a real CSS parser as a dependency would mean the gate cannot run in the
- * one place it matters most. `@vespeneventures/designer/tokens` already ships
+ * one place it matters most. `@clossys/designer/tokens` already ships
  * one small, test-only CSS reader (`internal/parse-css.ts`) — this file is
  * NOT that one, and does not extend it, for a concrete reason: that reader
  * is scoped narrowly to what this package's OWN test suite needs (exactly
@@ -79,8 +79,8 @@
  *
  * WHAT GOES TO `unchecked` — NEVER SILENTLY DROPPED
  * -----------------------------------------------------
- * Matching this repository's other scanners (`@vespeneventures/copy`'s
- * `ScanResult.unchecked`, `@vespeneventures/strategy`'s parse-failure
+ * Matching this repository's other scanners (`@example/copy`'s
+ * `ScanResult.unchecked`, `@example/strategy`'s parse-failure
  * handling): anything this reader recognizes as CSS-shaped but cannot
  * resolve is recorded, with a line number and detail, rather than being
  * quietly excluded from `declarations` with no trace:
@@ -278,7 +278,7 @@ function extractDeclarations(
     // A zero-length match (theoretically possible if a future edit loosens
     // the value/terminator groups) would spin `exec` in place forever —
     // guard defensively, matching the same discipline
-    // `@vespeneventures/copy`'s scanner uses around every `matchAll`/`exec`
+    // `@example/copy`'s scanner uses around every `matchAll`/`exec`
     // loop over untrusted text.
     if (full.length === 0) DECLARATION_RE.lastIndex++;
   }
@@ -389,13 +389,13 @@ export interface BrandCssReadResult {
   issues: BrandCssReadIssue[];
   /**
    * `true` exactly when `path` was read successfully — mirrors
-   * `@vespeneventures/copy`'s `CopyRegistryReadResult.complete` and
-   * `@vespeneventures/strategy`'s `StrategyBundle.complete`. Unlike those
+   * `@example/copy`'s `CopyRegistryReadResult.complete` and
+   * `@example/strategy`'s `StrategyBundle.complete`. Unlike those
    * two, `complete` here says nothing about whether every declaration in
    * the file was successfully classified — this reader never fails to
    * produce SOME result for readable text, it only ever accumulates
    * `unchecked` entries for the parts it could not resolve (the same
-   * reason `@vespeneventures/copy`'s `ScanResult` keeps `unchecked` as its
+   * reason `@example/copy`'s `ScanResult` keeps `unchecked` as its
    * own field rather than folding it into a boolean). A caller deciding
    * whether a read can be trusted as fully accounted for should check
    * BOTH `complete` and `unchecked.length === 0`, not `complete` alone —
@@ -408,8 +408,8 @@ export interface BrandCssReadResult {
  * Reads and parses the brand CSS file at `path`. Never throws: an
  * unreadable file (missing, a directory, permission denied) is recorded
  * into `issues` and reflected in `.complete`, the same discipline
- * `@vespeneventures/copy`'s `readCopyRecord` and
- * `@vespeneventures/strategy`'s `readStrategy` hold to for their own I/O.
+ * `@example/copy`'s `readCopyRecord` and
+ * `@example/strategy`'s `readStrategy` hold to for their own I/O.
  */
 export function readBrandCss(path: string): BrandCssReadResult {
   let raw: string;

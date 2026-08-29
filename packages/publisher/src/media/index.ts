@@ -1,7 +1,7 @@
 /**
- * @vespeneventures/publisher/media — public media-registry entry point. See
+ * @clossys/publisher/media — public media-registry entry point. See
  * README.md for the full picture: the visual-registry twin of
- * `@vespeneventures/writer`'s verbal registry), the frozen `AssetEntry`/
+ * `@clossys/writer`'s verbal registry), the frozen `AssetEntry`/
  * `AssetRecord` contract, and why generation is explicitly out of scope.
  *
  * Everything here is pure except `registry.ts`'s one deliberate I/O
@@ -12,7 +12,7 @@
  *      shape they're built from.
  *   2. VALIDATION (`schema.ts`) — `validateAssetRecordShape`/
  *      `parseAssetRecord`, hand-rolled shape validation in the style of
- *      `@vespeneventures/writer`'s own `schema.ts`.
+ *      `@clossys/writer`'s own `schema.ts`.
  *   3. THE READER (`registry.ts`) — `readAssetRecord`, the one place this
  *      package touches a filesystem.
  *   4. THE COVERAGE CHECK (`coverage.ts`) — `checkAssetCoverage`, comparing

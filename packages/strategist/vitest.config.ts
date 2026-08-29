@@ -1,7 +1,7 @@
 import { defineConfig } from "vitest/config";
 
 /**
- * Per-package vitest config for @vespeneventures/strategist.
+ * Per-package vitest config for @clossys/strategist.
  * Plain Node environment — nothing here needs jsdom. `reader.test.ts` and
  * `scan.test.ts` do real filesystem I/O, but only against a per-test
  * `mkdtemp` temp directory (see those files' own setup) — never a real

@@ -3,7 +3,7 @@
  * identical algorithm, copied rather than imported across a package boundary
  * for the structural reason that file's own header gives about its own port:
  * that package does not expose this as part of its public API surface, and
- * even if it did, `@vespeneventures/bouncer` would gain nothing by taking a
+ * even if it did, `@clossys/bouncer` would gain nothing by taking a
  * real runtime dependency on a sibling just to reach one shared utility, and
  * its "zero runtime dependencies" claim — which `public-contract.test.ts`
  * asserts directly — would then be wrong. Keep the copies in sync by hand if
@@ -74,14 +74,14 @@
  * check. It is a value the checker could not form an opinion about at
  * all: `indeterminate`, never silently folded into a pass and never
  * thrown as though it were a real, actionable violation.
- * `@vespeneventures/controller`'s `gates/result.ts` already names this
+ * `@clossys/controller`'s `gates/result.ts` already names this
  * exact three-state shape (`satisfied` | `violated` | `indeterminate`),
- * and `@vespeneventures/integrator`'s `detectSupersession` already lives
+ * and `@clossys/integrator`'s `detectSupersession` already lives
  * by it ("never throws"). This file does not import either: this package
  * declares no `dependencies` at all (see package.json — only `devDependencies`
  * and optional `peerDependencies`) and, per `gates/result.ts`'s own "Still
  * outstanding, and deliberately NOT done here" note, sits below
- * `@vespeneventures/controller` in this repository's build order.
+ * `@clossys/controller` in this repository's build order.
  * Converging onto controller's shared type at the TYPE level from here
  * would invert that graph — an architectural decision for an owner, not a
  * bug-fix detail. `assertPeerVersion` below therefore reimplements the
@@ -297,7 +297,7 @@ export function assertPeerVersion(input: AssertPeerVersionInput): void {
     if (!warnedUnparseableVersions.has(warnKey)) {
       warnedUnparseableVersions.add(warnKey);
       console.warn(
-        `[@vespeneventures/bouncer] Could not verify ${peer}@${foundVersion} against this package's declared range ` +
+        `[@clossys/bouncer] Could not verify ${peer}@${foundVersion} against this package's declared range ` +
           `"${declaredRange}": ${outcome.reason}. This is not a value that failed the check — it is a value ` +
           `assertPeerVersion could not read at all, so it is being treated as indeterminate rather than as a ` +
           `violation. Proceeding without blocking the build; if ${peer} is genuinely incompatible that will ` +

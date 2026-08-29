@@ -1,5 +1,5 @@
 /**
- * `@vespeneventures/builder/machine`
+ * `@clossys/builder/machine`
  *
  * Composing one machine from several account-owned workspace checkouts plus
  * a third-party-scoped skill source — issue #393. See the package README's

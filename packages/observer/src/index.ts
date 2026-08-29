@@ -1,5 +1,5 @@
 /**
- * @vespeneventures/observer — measures what actually happened: telemetry
+ * @clossys/observer — measures what actually happened: telemetry
  * contracts, retention, redaction, and gate efficacy. See README.md for the
  * full contract and this package's decision record for why it is a
  * separate package from any gate it measures.

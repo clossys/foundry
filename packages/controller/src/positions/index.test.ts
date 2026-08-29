@@ -23,8 +23,8 @@ describe("installed positions", () => {
   it("rejects schema, role, declaration, and vocabulary drift in a supplied contract", () => {
     for (const mutate of [
       (contract: Record<string, unknown>) => { contract.schemaVersion = 3; },
-      (contract: Record<string, unknown>) => { delete (contract.roles as Record<string, unknown>)["@vespeneventures/architect"]; },
-      (contract: Record<string, unknown>) => { ((contract.roles as Record<string, Record<string, unknown>>)["@vespeneventures/architect"] as Record<string, unknown>).closeCondition = ""; },
+      (contract: Record<string, unknown>) => { delete (contract.roles as Record<string, unknown>)["@clossys/architect"]; },
+      (contract: Record<string, unknown>) => { ((contract.roles as Record<string, Record<string, unknown>>)["@clossys/architect"] as Record<string, unknown>).closeCondition = ""; },
       (contract: Record<string, unknown>) => { ((contract.metricVocabulary as Record<string, unknown>).directions as string[]).pop(); },
     ]) {
       const contract = roleContract();

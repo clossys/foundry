@@ -21,7 +21,7 @@
  * automatic table-of-contents generation).
  */
 
-import type { CopyRef } from "@vespeneventures/writer";
+import type { CopyRef } from "@clossys/writer";
 
 // ---------------------------------------------------------------------------
 // DocumentInline — content inside a paragraph, list item, or callout

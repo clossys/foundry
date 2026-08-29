@@ -3,39 +3,40 @@
 The identity decisions below are made, not placeholders, so a future reader
 doesn't have to reconstruct the reasoning from git history.
 
-## 1. The publishing scope — `@vespeneventures`
+## 1. The publishing scope — `@clossys`
 
 **Status:** set in [`package-scope.json`](../package-scope.json).
 
-`vespeneventures` owns this repository's packages, with no relationship to a
-package published by a different producer. Foundry is the only repository under
-this owner authorized to publish packages. A private account-control-plane
-repository may coexist, but it does not publish packages or weaken Foundry's
-owner-wide name-collision gate.
+The transferred `clossys/platform` producer owns the complete nineteen-package
+source catalogue. W1D recuts that catalogue atomically; it does not publish a
+package or activate provider trust.
 
-Changing the scope, if it's ever needed, is still one command:
+The closed transition is applied only through the history-aware setter:
 
 ```bash
-node scripts/set-scope.mjs --scope @yourscope
+node scripts/set-package-identity.mjs --to-candidate
 ```
 
-which rewrites every package name and every import in docs and doc comments,
-and `node scripts/set-scope.mjs --check` runs in CI so a hand-edited package
-name can't drift from the declaration.
+It updates every manifest, first-party dependency edge, local workspace lock
+identity, repository tuple, release catalogue, and finally the single scope
+declaration. `set-scope --check` remains a structural drift check; it is not a
+second transition mechanism.
 
-## 2. The registry — GitHub Packages
+## 2. The registry — public npm source prepared, publication inactive
 
-**Status:** both the scope and the registry (`https://npm.pkg.github.com`) are
-declared together in [`package-scope.json`](../package-scope.json) — one file,
-one source of truth for both.
+**Status:** `https://registry.npmjs.org`, scope `@clossys`, and explicit public
+access are declared together in [`package-scope.json`](../package-scope.json).
+All package manifests carry the same tuple. The W1D publish workflow and OIDC
+trust are intentionally inert; W1E owns the first irreversible publication.
 
-This is the live source-of-truth until the bounded producer cutover in
-[decision 18](#18-producer-owned-catalogue-distribution-cutover) reaches its
-post-transfer recut milestone. That decision supersedes the cancelled npmjs
-migration only on its stated evidence and gates; it does not authorize an
-intermediate package, scope, registry, or source-repository change.
+The old namespace and GitHub Packages releases remain immutable historical
+evidence. They are not deleted, rewritten, forwarded, or treated as current
+installation guidance.
 
-The trade-off, accepted deliberately rather than defaulted into:
+### Historical GitHub Packages operating decision
+
+The following trade-off records the superseded operating lane and why it was
+chosen at the time. It remains evidence, not current installation guidance:
 
 - Installing needs a GitHub **classic** personal access token with
   `read:packages` — a GitHub Packages platform behavior that applies to every registry read
@@ -133,11 +134,11 @@ but non-publishing account-control-plane repositories may coexist.
 gate that only runs when someone remembers it is "probably fine" is not a gate.
 See `docs/PUBLISHING.md` for what it checks and why it is ordered first.
 
-## 3. The GitHub organization — a new, dedicated org
+## 3. The GitHub organization — transferred producer
 
-**Status:** `vespeneventures`, the owner of Foundry's packages and public
-neutral producer. Private, non-publishing account-control-plane repositories
-may coexist under the same owner.
+**Status:** `clossys/platform` is the public neutral producer. The prior
+producer and its issue/package URLs remain only where retained as exact
+historical evidence.
 
 Every published package carries `repository`, `bugs`, and `homepage` URLs
 pointing at its own repository, so the org name is unavoidably public
@@ -1022,14 +1023,13 @@ retained, singular authority is mechanically checked, and this source is now
 the transferred `clossys/platform` repository. The producer programme remains
 tracked by [#567](https://github.com/clossys/platform/issues/567).
 
-The next change is the reversible W1D prerequisite in
-[#593](https://github.com/clossys/platform/issues/593): install the closed,
-history-aware transition policy and gates while leaving the current package
-identity untouched. A later, separately reviewed W1D recut uses that machinery
-once to update all 19 current package identities and first-party edges, records
-the exact historical-line inventory, disables live publication, and proves a
-zero-residual packed-content scan. Neither change publishes a package or
-activates provider trust.
+The reversible W1D prerequisite in
+[#593](https://github.com/clossys/platform/issues/593) is merged. This recut is
+its separately reviewed execution: all 19 source identities and first-party
+edges move together, exact old-identity lines are retained only through the
+content-addressed history inventory, and publication plus provider trust stay
+disabled. Passing this change proves source readiness only; it does not create
+an npm package, adoption result, or provenance record.
 
 Only after W1D merges and the high-severity security inventory in
 [#586](https://github.com/clossys/platform/issues/586) has no unexplained item

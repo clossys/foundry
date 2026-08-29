@@ -1,18 +1,18 @@
 /**
  * `checkLedgerDrift` answers the question this whole package exists to make
- * checkable without importing `@vespeneventures/strategy`: a page was
+ * checkable without importing `@example/strategy`: a page was
  * published citing fact X — has X changed since?
  *
  * It never reads a real fact registry itself. A caller supplies
  * `currentValues`, a plain `factRef -> value` map — typically built by a
- * caller that already has `@vespeneventures/strategy`'s `readStrategy`
+ * caller that already has `@example/strategy`'s `readStrategy`
  * bundle in scope and reduces its `Fact[]` down to `{ [fact.key]:
  * fact.value }` before calling this function. That reduction step is where
  * the "return path does not import strategy" boundary actually lives: this
  * package receives plain values, never a `Fact`.
  */
 
-import { verifyBinding } from "@vespeneventures/controller/policy";
+import { verifyBinding } from "@clossys/controller/policy";
 import type { LedgerFinding, PublicationEntry } from "./types.js";
 import { canonicalizeValue } from "./fact.js";
 import { validateLedger } from "./schema.js";
@@ -42,7 +42,7 @@ export interface DriftReport {
 /**
  * Validates `ledger`, then compares every `FactCitation` it contains
  * against `currentValues[citation.factRef]` using
- * `@vespeneventures/controller/policy`'s own `verifyBinding` — no digest-comparison
+ * `@clossys/controller/policy`'s own `verifyBinding` — no digest-comparison
  * logic is reimplemented here; the current value is canonicalized with
  * this package's own `canonicalizeValue` (the same function `citeFact`
  * used to build the citation in the first place) and handed to
@@ -56,7 +56,7 @@ export interface DriftReport {
  *      `ok: false`, a `"ledger-invalid"` finding, `entriesChecked: 0`.
  *      A ledger whose own shape can't be trusted is not one a drift check
  *      against it can be trusted either — the exact same precedent
- *      `@vespeneventures/controller/policy`'s `verifyBinding` sets for a malformed
+ *      `@clossys/controller/policy`'s `verifyBinding` sets for a malformed
  *      `PolicyBinding`.
  *   2. `ledger` is a well-formed but EMPTY array — `ok: false`, an
  *      `"empty-ledger"` finding, every count `0`. This is the literal
@@ -76,7 +76,7 @@ export interface DriftReport {
  *
  * Outside those three cases, `ok` is `false` whenever `citationsDrifted >
  * 0` (an `"fact-drift"` finding per drifted citation, never naming either
- * value — the same discipline `@vespeneventures/controller/policy`'s own
+ * value — the same discipline `@clossys/controller/policy`'s own
  * `verifyBinding` mismatch message holds to) and `true` otherwise, even
  * when `citationsUnchecked > 0` — a citation with no current value
  * supplied is reported (`"fact-unchecked"`, `"warning"` severity) but does

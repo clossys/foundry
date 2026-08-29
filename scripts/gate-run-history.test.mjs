@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { isCouldNotRead, isObserved, computeGateEfficacy } from "@vespeneventures/observer";
+import { isCouldNotRead, isObserved, computeGateEfficacy } from "@clossys/observer";
 
 import { CHANGE_EVENTS, collectJobs, createGateRunHistoryReader, gatesSeen, toRunRecords, unsourcedOutcomes } from "./gate-run-history.mjs";
 import { gradeReport, rateIsUnsourced } from "./check-gate-efficacy.mjs";

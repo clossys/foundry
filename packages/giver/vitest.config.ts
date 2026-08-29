@@ -1,7 +1,7 @@
 import { defineConfig } from "vitest/config";
 
 /**
- * Per-package vitest config for @vespeneventures/giver.
+ * Per-package vitest config for @clossys/giver.
  *
  * Plain Node environment — nothing here needs jsdom, and nothing in this
  * package touches React. Every checker and every decision function in

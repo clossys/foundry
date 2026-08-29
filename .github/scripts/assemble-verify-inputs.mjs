@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-// Assembles the inputs document @vespeneventures/verify-standards decides on.
+// Assembles the inputs document @example/verify-standards decides on.
 //
 // The split is the whole point: this script COLLECTS and the package DECIDES.
 // Nothing here forms a verdict, and nothing in the package reaches for a
@@ -26,9 +26,9 @@ import {
   parseTaskReference,
   TASK_ITEM_LOOKUP_OUTCOMES,
   VERIFY_STANDARDS_INPUTS_VERSION,
-} from "@vespeneventures/inspector";
+} from "@clossys/inspector";
 
-// This import was "@vespeneventures/verify-standards" until decision 9 folded
+// This import was "@example/verify-standards" until decision 9 folded
 // that package and secret-scan into `inspector`. This file is byte-identical
 // across several consuming repositories by design; that identity is
 // deliberately broken here for the length of the migration window, because

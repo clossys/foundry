@@ -14,7 +14,7 @@
  * transports this fleet already uses elsewhere, for other purposes:
  *
  *   - The registry every package here publishes to
- *     (`https://npm.pkg.github.com`, see any package's own `publishConfig`)
+ *     (`https://registry.npmjs.org`, see any package's own `publishConfig`)
  *     is GitHub Packages, which requires an authenticated npm token to
  *     read even a PUBLIC package -- GitHub does not serve package metadata
  *     anonymously the way npmjs.org does. A declaration carried as a field
@@ -44,11 +44,11 @@
  * ALREADY-FETCHED response body -- `unknown`, exactly as a caller's own
  * script would hand back the parsed JSON of one completed GET, or the
  * parsed contents of a local checkout's copy of the same file. This is the
- * identical shape `@vespeneventures/builder`'s `observation-bundle.ts`
+ * identical shape `@clossys/builder`'s `observation-bundle.ts`
  * already established for its own self-published, provider-agnostic bundle
  * contract ("this module never fetches anything itself... no storage
  * opinion") -- reused here as a design pattern, not as a dependency: this
- * package adds no import of `@vespeneventures/builder` to get it.
+ * package adds no import of `@clossys/builder` to get it.
  */
 
 /** This contract's own schema version. Bumped only when the declaration SHAPE changes. */
@@ -74,7 +74,7 @@ export interface CoverageDeclaration {
   readonly declaredAbsences: readonly DeclaredPackageAbsence[];
 }
 
-/** One problem found validating a raw, untrusted declaration payload. Mirrors `@vespeneventures/builder`'s `observation-bundle.ts` `Finding` shape without importing it. */
+/** One problem found validating a raw, untrusted declaration payload. Mirrors `@clossys/builder`'s `observation-bundle.ts` `Finding` shape without importing it. */
 export interface CoverageDeclarationFinding {
   readonly rule: string;
   readonly message: string;
@@ -89,7 +89,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
  * Never throws -- unlike bare `JSON.stringify`, which throws on a
  * top-level `BigInt` or a circular reference, either of which is entirely
  * plausible in a stranger's raw JSON payload. See
- * `@vespeneventures/builder`'s `observation-bundle.ts`'s identical helper
+ * `@clossys/builder`'s `observation-bundle.ts`'s identical helper
  * and its doc comment for why a formatter that can throw is unsafe inside
  * a validator whose entire job is to describe untrusted input without
  * crashing on it.
@@ -213,7 +213,7 @@ export interface WriteCoverageDeclarationInput {
  * `validateCoverageDeclarationShape` -- a caller building its OWN
  * declaration and getting the shape wrong (an empty reason, a duplicate
  * package) is a programming error to catch at the call site, mirroring
- * `@vespeneventures/builder`'s `writeObservationBundle`.
+ * `@clossys/builder`'s `writeObservationBundle`.
  */
 export function writeCoverageDeclaration(input: WriteCoverageDeclarationInput): string {
   const declaration: CoverageDeclaration = {

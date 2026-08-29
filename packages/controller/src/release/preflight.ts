@@ -59,7 +59,7 @@ export function combinePreflightOk(hasCatalogError: boolean, roundTripOk: boolea
 }
 
 /**
- * Runs `runFoundationCheck(root, { scope })` (from `@vespeneventures/gates`),
+ * Runs `runFoundationCheck(root, { scope })` (from `@example/gates`),
  * filters its findings down to the ones attributed to the package at
  * `packageDir` (by matching `finding.package` against the `name` read from
  * `packageDir`'s own `package.json`), and calls `packRoundTrip(packageDir,

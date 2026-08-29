@@ -88,7 +88,7 @@ test("a version present on the registry is a pass", async () => {
     owner: OWNER,
     token: TOKEN,
     fetchImpl,
-    discovery: discovery([entry("auth", "@vespeneventures/auth", "0.2.4")]),
+    discovery: discovery([entry("auth", "@example/auth", "0.2.4")]),
   });
   assert.equal(outcome.fatal, null);
   assert.equal(outcome.code, 0);
@@ -101,7 +101,7 @@ test("a version absent from the registry is a finding — the real gap issue #41
     owner: OWNER,
     token: TOKEN,
     fetchImpl,
-    discovery: discovery([entry("auth", "@vespeneventures/auth", "0.2.4")]),
+    discovery: discovery([entry("auth", "@example/auth", "0.2.4")]),
   });
   assert.equal(outcome.code, 1);
   assert.equal(outcome.results[0].status, "finding");
@@ -114,7 +114,7 @@ test("a denied lookup is an error, never a pass and never a finding", async () =
     owner: OWNER,
     token: TOKEN,
     fetchImpl,
-    discovery: discovery([entry("auth", "@vespeneventures/auth", "0.2.4")]),
+    discovery: discovery([entry("auth", "@example/auth", "0.2.4")]),
   });
   assert.equal(outcome.code, 2);
   assert.equal(outcome.results[0].status, "error");
@@ -126,7 +126,7 @@ test("an unreachable lookup is an error", async () => {
     owner: OWNER,
     token: TOKEN,
     fetchImpl,
-    discovery: discovery([entry("auth", "@vespeneventures/auth", "0.2.4")]),
+    discovery: discovery([entry("auth", "@example/auth", "0.2.4")]),
   });
   assert.equal(outcome.code, 2);
   assert.equal(outcome.results[0].status, "error");

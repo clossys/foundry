@@ -1,9 +1,9 @@
 /**
  * `checkBrandFileCoverage` — the check every sibling contract package in
  * this repository ships and this one, until now, did not:
- * `@vespeneventures/copy/voice` has `checkCopy`, `@vespeneventures/copy` has
- * `checkCopyTraceability`, `@vespeneventures/strategy` has
- * `checkFactsTraceability`, `@vespeneventures/surface/core` has
+ * `@example/copy/voice` has `checkCopy`, `@example/copy` has
+ * `checkCopyTraceability`, `@example/strategy` has
+ * `checkFactsTraceability`, `@example/surface/core` has
  * `validateComposeDocument`. This package shipped `TOKENS` — a vocabulary —
  * and `styles/brand-template.css` — a template — with nothing that answers
  * "did a consumer's real brand.css actually fill in the template correctly,
@@ -27,26 +27,26 @@
  *      reader reports those as `unchecked`, a signal this function has no
  *      way to reconstruct from a flat `Record`. Keeping the parse and the
  *      classification as two functions, the same split
- *      `@vespeneventures/copy` draws between `scan.ts` (extraction) and
- *      `copy-gate.ts` (the pure gate), and `@vespeneventures/strategy` draws
+ *      `@example/copy` draws between `scan.ts` (extraction) and
+ *      `copy-gate.ts` (the pure gate), and `@example/strategy` draws
  *      between `scan.ts`/`reader.ts` and `facts-gate.ts`, means this
  *      function is trivially unit-testable against a hand-built object with
  *      no filesystem and no CSS syntax in the test fixtures at all.
  *   2. A `Record<string, string>` is also exactly what a consumer already
  *      has in hand in the one place most likely to want this check outside
  *      a CLI: a build script or test that already computed brand overrides
- *      as a plain object to pass to `@vespeneventures/surface`'s
+ *      as a plain object to pass to `@example/surface`'s
  *      `flattenTokens(overrides)` (see "AGREEMENT WITH `flattenTokens`"
  *      below) — the exact same shape, not a coincidence.
  *
  * WHY THIS IS `checkBrandFileCoverage`, NOT `checkBrandCoverage`
  * -------------------------------------------------------------------
- * `@vespeneventures/strategy` already exports a function literally named
+ * `@example/strategy` already exports a function literally named
  * `checkBrandCoverage`, checking a different thing: whether a
  * `BrandDerivation[]` (a strategy artifact naming token slots and voice
  * rules by plain string — see that package's `brand-derivation.ts`)
  * accounts for every brandable slot BY NAME, with no ability to look up
- * `@vespeneventures/designer/tokens` itself (this module takes zero runtime
+ * `@clossys/designer/tokens` itself (this module takes zero runtime
  * dependencies, on purpose — see its own header comment for why). This
  * function checks something one layer more concrete: whether a REAL CSS
  * file's declarations account for every brandable slot, typo-free, using
@@ -60,7 +60,7 @@
  * `strategy`'s export is unaffected — it shipped first and already has
  * consumers; this package's own export had none, so the free fix belongs
  * here. If you are looking for "does my BrandDerivation strategy account
- * for every token slot", that is `@vespeneventures/strategy`'s
+ * for every token slot", that is `@example/strategy`'s
  * `checkBrandCoverage`, not this function.
  *
  * THE THREE FINDING KINDS, AND WHY EACH ONE IS A FINDING NOT A SILENT SKIP
@@ -97,13 +97,13 @@
  * package's own `read-brand-css.ts` never produces one, since its own
  * declaration regex only ever captures that exact shape — but this
  * function does not trust its input any more than
- * `@vespeneventures/copy`'s `checkCopyRecord` trusts a typed argument it
+ * `@example/copy`'s `checkCopyRecord` trusts a typed argument it
  * did not itself produce (see that file's header comment, note #2): a key
  * this function cannot make sense of is reported, never dropped.
  *
  * AGREEMENT WITH `flattenTokens` — VERIFIED, NOT ASSUMED
  * ---------------------------------------------------------
- * `@vespeneventures/surface`'s `flattenTokens(overrides)` already enforces
+ * `@example/surface`'s `flattenTokens(overrides)` already enforces
  * the exact two directions this function's `unknown-slot` and
  * `non-brandable-override` findings check, by THROWING
  * `RenderError("unknown-token-override", ...)` and
@@ -114,7 +114,7 @@
  * function calls clean but `flattenTokens` then throws on (or vice versa)
  * is exactly the kind of drift a consumer discovers in production, not in
  * CI. `packages/surface/src/internal/tokens-brand-file-coverage-agreement.test.ts`
- * (in `@vespeneventures/surface`, not here — see that file's own header
+ * (in `@example/surface`, not here — see that file's own header
  * comment for why the cross-check has to live on that side of the
  * dependency edge) asserts this directly: for every non-brandable token and
  * for a deliberately typo'd slot name, it feeds the SAME override object to
@@ -133,7 +133,7 @@
  * "covered" would make this function report a clean pass on a file that is,
  * functionally, still the unbound template — the exact "passes while
  * asserting nothing" failure mode this repository's other gates are built
- * against (see `@vespeneventures/copy`'s `checker.ts` header comment). An
+ * against (see `@example/copy`'s `checker.ts` header comment). An
  * empty-valued declaration is still recorded as `declarationsChecked` (it
  * IS a real declaration, syntactically) and its slot name is still checked
  * for the `unknown-slot`/`non-brandable-override` classifications above —
@@ -212,7 +212,7 @@ export interface BrandFileCoverageCheckOptions {
    * exercising the real 154-entry one for every case (see this file's own
    * test suite), and a future caller checking a deliberately narrowed or
    * forked token set is not blocked from doing so. Unlike
-   * `@vespeneventures/strategy`'s own `checkBrandCoverage`, which is FORCED
+   * `@example/strategy`'s own `checkBrandCoverage`, which is FORCED
    * to take its vocabulary as a plain `string[]` because that package
    * cannot import this one at all (see that function's header comment,
    * "THE CHECKER'S SEAM"), this module lives inside the package that OWNS
@@ -231,12 +231,12 @@ const CUSTOM_PROPERTY_NAME_RE = /^--[a-zA-Z0-9-]+$/;
  * declared value text, e.g. from `read-brand-css.ts`'s `readBrandCss` or
  * `parseBrandDeclarations`, or hand-built by a caller/test — against the
  * token registry's `brandable` slots, in both directions, plus the
- * non-brandable-override rule `@vespeneventures/surface`'s `flattenTokens`
+ * non-brandable-override rule `@example/surface`'s `flattenTokens`
  * already enforces. Pure: no I/O, never throws, and makes no assumption
  * about how `declarations` was produced beyond the type signature. See
  * this file's header comment for the full design rationale, including why
  * this is named `checkBrandFileCoverage` rather than reusing
- * `@vespeneventures/strategy`'s own, differently-scoped `checkBrandCoverage`.
+ * `@example/strategy`'s own, differently-scoped `checkBrandCoverage`.
  */
 export function checkBrandFileCoverage(
   declarations: Record<string, string>,
@@ -289,7 +289,7 @@ export function checkBrandFileCoverage(
       findings.push({
         rule: "non-brandable-override",
         slot: name,
-        message: `"${name}" is a structural (non-brandable) token; overriding it is not allowed — matches @vespeneventures/surface's flattenTokens, which throws "non-brandable-override" for the same slot`,
+        message: `"${name}" is a structural (non-brandable) token; overriding it is not allowed — matches @example/surface's flattenTokens, which throws "non-brandable-override" for the same slot`,
       });
       continue;
     }

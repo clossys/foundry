@@ -2,7 +2,7 @@
  * Shared, dependency-free validation primitives for `schema.ts`. This
  * package hand-rolls its entity validation rather than depending on a
  * schema library — see `schema.ts`'s top-level doc comment for why, and
- * `@vespeneventures/policy`'s `validate.ts` for the precedent this file
+ * `@example/policy`'s `validate.ts` for the precedent this file
  * follows: plain type guards over `unknown`, accumulating findings into an
  * array, never throwing.
  *
@@ -33,7 +33,7 @@ export function isPlainObject(value: unknown): value is Record<string, unknown> 
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-/** Mirrors `@vespeneventures/policy/src/validate.ts`'s own `isOneOf` — a closed-vocabulary check with no schema-library equivalent needed. */
+/** Mirrors `@example/policy/src/validate.ts`'s own `isOneOf` — a closed-vocabulary check with no schema-library equivalent needed. */
 export function isOneOf<T extends string>(value: unknown, list: readonly T[]): value is T {
   return typeof value === "string" && (list as readonly string[]).includes(value);
 }

@@ -1,20 +1,20 @@
 /**
- * @vespeneventures/publisher/core — public composition contract. See README.md
+ * @clossys/publisher/core — public composition contract. See README.md
  * for the full picture: the join point between
- * `@vespeneventures/designer`'s visual vocabulary and `@vespeneventures/writer`'s
+ * `@clossys/designer`'s visual vocabulary and `@clossys/writer`'s
  * verbal one, plus per-channel metadata; the renderer-facing `ComposeDocument`
  * contract, and why `layout` is channel-gated.
  *
  * Everything here is pure — no I/O, no React, no schema library, and no
- * dependency on `@vespeneventures/designer` or `@vespeneventures/writer`
+ * dependency on `@clossys/designer` or `@clossys/writer`
  * themselves (see the README, "Zero runtime dependencies"). Four things
  * ship:
  *
  *   1. THE CONTRACT (`types.ts`) — `ComposeDocument` and every shape it's
  *      built from.
  *   2. VALIDATION (`validate.ts`) — `validateComposeDocument`, hand-rolled
- *      shape validation in the style of `@vespeneventures/strategy`'s
- *      `validation.ts` and `@vespeneventures/writer`'s `schema.ts`.
+ *      shape validation in the style of `@example/strategy`'s
+ *      `validation.ts` and `@clossys/writer`'s `schema.ts`.
  *   3. RESOLUTION (`resolve.ts`, `resolve-copy.ts`, `resolve-assets.ts`) —
  *      `resolveDocument`, matching a document's bindings against a real
  *      layout's slots (reusing `validate.ts`'s own binding-shape checks

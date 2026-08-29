@@ -1,12 +1,12 @@
 /**
- * @vespeneventures/builder
+ * @clossys/builder
  *
  * Declared reality made actual: a runtime pin, a machine manifest, and a
  * deployment target are the same statement at three altitudes — *this is
  * what should exist; go and see whether it does.* This root entrypoint holds
  * three things:
  *
- *   - the manifest engine (from the former `@vespeneventures/provisioning`):
+ *   - the manifest engine (from the former `@example/provisioning`):
  *     an idempotent engine for applying a provisioning manifest to a
  *     machine, and for checking afterwards whether the machine still agrees
  *     with it. Planning is pure; verification reads the machine rather than
@@ -26,7 +26,7 @@
  *     `declared-but-not-verifiable`.
  *
  * The deployment surface contract, configuration planning, and read-only
- * platform adapters (from the former `@vespeneventures/deployment`) are a
+ * platform adapters (from the former `@example/deployment`) are a
  * separate subpath, `./deployment`, preserving that package's own export
  * shape rather than flattening it in here — see that subpath's own header.
  *

@@ -1,4 +1,4 @@
-# @vespeneventures/bouncer
+# @clossys/bouncer
 
 **Everything about who you are, what you can do, and how that changes over
 time.**
@@ -44,7 +44,7 @@ still backs. `checkAuthorityReconciliation` counts it.
 ## Install
 
 ```sh
-npm install @vespeneventures/bouncer
+npm install @clossys/bouncer
 ```
 
 Nothing is required alongside it. This package declares **zero runtime
@@ -138,7 +138,7 @@ the one argument-shaped `0`: a help that was asked for did what was asked.
 
 ## Exports
 
-### Root — `@vespeneventures/bouncer`
+### Root — `@clossys/bouncer`
 
 Provider-neutral. Nothing reachable from here imports a vendor SDK, a
 framework, or React.

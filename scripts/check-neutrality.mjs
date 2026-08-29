@@ -18,10 +18,10 @@
 // the denylist. The two together are the coverage; neither alone is.
 //
 // The scan itself is not reimplemented here. It is
-// @vespeneventures/controller's own exported `scanNeutrality` (the former
-// @vespeneventures/conventions' — see issue #282, which folded conventions'
+// @clossys/controller's own exported `scanNeutrality` (the former
+// @example/conventions' — see issue #282, which folded conventions'
 // source into controller as its `./conventions` subpath, retiring
-// @vespeneventures/conventions with no compatibility stub), run against the
+// @example/conventions with no compatibility stub), run against the
 // files that subpath ships. A second copy of those regexes in this
 // repository is a second thing to keep in agreement with the first, and the
 // failure mode of a drifted copy is a gate that passes for the wrong reason.

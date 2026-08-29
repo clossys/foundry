@@ -1,15 +1,15 @@
 /* ════════════════════════════════════════════════════════════════════
- * @vespeneventures/designer · brand-template.css
+ * @clossys/designer · brand-template.css
  * ────────────────────────────────────────────────────────────────────
  * BRAND BINDING — the second of three layers. This is a template, not a
  * stylesheet — copy it into your own project and fill in every blank:
  *
- *   cp node_modules/@vespeneventures/designer/styles/brand-template.css \
+ *   cp node_modules/@clossys/designer/styles/brand-template.css \
  *      src/styles/brand.css
  *
  * Then import it after tokens.css:
  *
- *   @import "@vespeneventures/designer/tokens.css";
+ *   @import "@clossys/designer/tokens.css";
  *   @import "./brand.css";
  *
  * and set `data-brand-bound` on your root element (usually <html>) once

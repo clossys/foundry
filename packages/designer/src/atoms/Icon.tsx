@@ -44,7 +44,7 @@ export type IconAccessibilityProps =
  * the type level:
  *
  * - `glyph`: structured `[tag, attrs]` tuple DATA — the shape
- *   `@vespeneventures/designer/icons` ships (and the shape any similarly-vendored
+ *   `@clossys/designer/icons` ships (and the shape any similarly-vendored
  *   glyph set — a consumer's own copied-in icon library, a design tool's
  *   JSON export — is likely already in). Plain data: easy to store, diff,
  *   generate, and swap.
@@ -59,7 +59,7 @@ export type IconAccessibilityProps =
  *
  * Both exist because neither alone covers every real input: `glyph` is what
  * every atom/data-driven caller reaches for (including this package's own
- * `@vespeneventures/designer/icons`), and `children` is the escape hatch for
+ * `@clossys/designer/icons`), and `children` is the escape hatch for
  * markup that was never going to fit a `[tag, attrs]` tuple, or that a
  * consumer already has as JSX and shouldn't have to convert.
  */
@@ -92,7 +92,7 @@ export type IconProps = IconAccessibilityProps &
 /**
  * `size` -> this package's token-layer `--ui-icon-*` step, each carrying its
  * own literal pixel fallback (defense-in-depth for a consumer who hasn't
- * imported `@vespeneventures/designer/tokens.css` yet — the same
+ * imported `@clossys/designer/tokens.css` yet — the same
  * `var(--token, <fallback>)` shape that package's own `--ui-density-*`
  * aliases use internally, and the shape this scope's pre-merge, standalone
  * `icons` package's own `SIZE_TOKENS` used before this atom absorbed it).
@@ -134,12 +134,12 @@ const STROKE_WIDTH_VAR = "var(--ui-icon-stroke, 2)";
  *
  * A prior design shipped size/colour/accessibility bundled INSIDE a
  * separate, standalone glyph package this scope used to publish (folded
- * into this one — see `@vespeneventures/designer/icons`). That put the rendering CONTRACT
+ * into this one — see `@clossys/designer/icons`). That put the rendering CONTRACT
  * in a package whose only other job was shipping path data, and left this
  * package (`ui`) with no `Icon` atom of its own — every consumer wanting a
  * styled, accessible icon had to reach past `ui` entirely. This atom moves
  * the contract to where the rest of this package's contracts already live;
- * `@vespeneventures/designer/icons` now ships pure `[tag, attrs]` data with no
+ * `@clossys/designer/icons` now ships pure `[tag, attrs]` data with no
  * rendering logic of its own (see that subpath's own README section).
  *
  * ### No name lookup — glyph (or a custom SVG) always arrives as a slot

@@ -1,15 +1,15 @@
 /**
  * `canonicalizeValue` turns any JSON-serializable value into one
  * deterministic string, and `citeFact` uses it plus
- * `@vespeneventures/controller/policy`'s own `computeDigest` to build a `FactCitation`
+ * `@clossys/controller/policy`'s own `computeDigest` to build a `FactCitation`
  * — this package's one write path for content-addressed integrity over a
  * fact's value. See `drift.ts`'s `checkLedgerDrift` for the read path that
  * later re-canonicalizes a caller-supplied current value and compares it
  * against what a citation committed to here.
  */
 
-import { computeDigest } from "@vespeneventures/controller/policy";
-import type { DigestAlgorithm } from "@vespeneventures/controller/policy";
+import { computeDigest } from "@clossys/controller/policy";
+import type { DigestAlgorithm } from "@clossys/controller/policy";
 import type { FactCitation } from "./types.js";
 
 /**
@@ -25,7 +25,7 @@ import type { FactCitation } from "./types.js";
  * and arrays — recursively. Throws on anything else (a function, a
  * `Symbol`, a non-finite number, `undefined` inside an object/array).
  * This throws rather than reporting a `LedgerFinding` deliberately, the
- * same producer-side-error precedent `@vespeneventures/controller/policy`'s own
+ * same producer-side-error precedent `@clossys/controller/policy`'s own
  * `computeDigest` sets for an unsupported `algorithm`: a fact value that
  * cannot be canonicalized is a caller programming error at the point a
  * citation is being *produced*, not a fact about untrusted external input
@@ -55,7 +55,7 @@ export function canonicalizeValue(value: unknown): string {
 /**
  * Builds a `FactCitation`: computes `canonicalizeValue(value)`'s digest
  * under `algorithm` (default `"sha256"`, matching
- * `@vespeneventures/controller/policy`'s own default) via `computeDigest`, and returns
+ * `@clossys/controller/policy`'s own default) via `computeDigest`, and returns
  * `{ factRef, valueBinding: { policyId: factRef, digestAlgorithm, digest } }`
  * — `policyId` set to `factRef` by construction, satisfying `schema.ts`'s
  * `"citation-policy-id-mismatch"` rule by definition rather than by
@@ -64,7 +64,7 @@ export function canonicalizeValue(value: unknown): string {
  * This is the one place in this package that computes a digest FROM a real
  * value — `checkLedgerDrift` (`drift.ts`) is the one place that computes
  * one to COMPARE against an already-recorded citation, using
- * `@vespeneventures/controller/policy`'s `verifyBinding` for that half so the compare
+ * `@clossys/controller/policy`'s `verifyBinding` for that half so the compare
  * logic lives in exactly one place across this whole foundation.
  *
  * Throws (never returns a `LedgerFinding`) on an empty `factRef` or a

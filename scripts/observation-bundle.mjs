@@ -11,7 +11,7 @@
 // consuming a workspace package's compiled output: dynamically importing
 // the BUILT `dist/` entry by relative path (never a registry install of
 // this repository's own published packages, and never a bare
-// `@vespeneventures/*` specifier -- root scripts here read a package's
+// `@clossys/*` specifier -- root scripts here read a package's
 // shipped artifact directly, the same artifact a real consumer receives).
 //
 // DISCOVERY IS THIS SCRIPT'S OWN JOB. `runRepositoryProfileCheck` performs

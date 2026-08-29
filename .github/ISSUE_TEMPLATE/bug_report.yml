@@ -22,7 +22,7 @@ body:
         - The name of a private sibling repository or product — this
           repository names only itself.
         - A private npm scope or package name that isn't published from
-          this repository (check [README.md](https://github.com/vespeneventures/foundry#packages)'s package table).
+          this repository (check [README.md](https://github.com/clossys/platform#packages)'s package table).
         - A cross-repository issue/PR reference to a private repo (e.g.
           `org/private-repo#12`) — the number alone tells a reader that repo
           exists.
@@ -36,15 +36,15 @@ body:
         - A client, customer, or personal name.
 
         Reporting a **security vulnerability**? Stop here — use
-        [private vulnerability reporting](https://github.com/vespeneventures/foundry/security/advisories/new)
+        [private vulnerability reporting](https://github.com/clossys/platform/security/advisories/new)
         instead of this form. See
-        [SECURITY.md](https://github.com/vespeneventures/foundry/blob/main/SECURITY.md).
+        [SECURITY.md](https://github.com/clossys/platform/blob/main/SECURITY.md).
   - type: input
     id: package
     attributes:
       label: Package and version
-      description: e.g. "@vespeneventures/policy@0.1.0". Leave blank if this is about repository tooling rather than a published package.
-      placeholder: "@vespeneventures/xxx@0.1.0"
+      description: e.g. "@example/policy@0.1.0". Leave blank if this is about repository tooling rather than a published package.
+      placeholder: "@clossys/xxx@0.1.0"
   - type: textarea
     id: expected
     attributes:

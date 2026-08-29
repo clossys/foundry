@@ -1,7 +1,7 @@
 /**
- * @vespeneventures/writer/voice — public entry point. See README.md for the full
+ * @clossys/writer/voice — public entry point. See README.md for the full
  * picture: the machinery-vs-values split this package mirrors from
- * @vespeneventures/ui/tokens, exactly what `checkCopy` does and does not
+ * @example/ui/tokens, exactly what `checkCopy` does and does not
  * attempt, and the `factRef` seam into a separate `strategy` package this
  * package deliberately does not import from.
  */
@@ -38,7 +38,7 @@ export type {
   VoiceCheckReport,
 } from "./checker.js";
 
-// The other half of the seam `@vespeneventures/strategy`'s
+// The other half of the seam `@example/strategy`'s
 // `checkBrandCoverage` documents but cannot itself close (it does not, and
 // cannot, import this package) — see `derivation-coverage.ts`'s top-of-file
 // doc comment for the full account of the gap this closes.

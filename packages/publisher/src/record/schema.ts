@@ -1,7 +1,7 @@
 /**
  * Structural validation for `PublicationEntry` and `Ledger`. Hand-rolled,
  * deliberately, not a schema library — the same discipline
- * `@vespeneventures/controller/policy`'s `validate.ts` and `@vespeneventures/strategy`'s
+ * `@clossys/controller/policy`'s `validate.ts` and `@example/strategy`'s
  * `validation.ts` already hold this whole foundation to: plain type guards
  * over `unknown`, an accumulated `LedgerFinding[]`, never throws. A
  * validator that can crash on the exact malformed input it exists to catch
@@ -15,7 +15,7 @@
  * either, by design (see `types.ts`).
  */
 
-import { validateBindingShape } from "@vespeneventures/controller/policy";
+import { validateBindingShape } from "@clossys/controller/policy";
 import type { FactCitation, LedgerFinding, PublicationEntry } from "./types.js";
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -28,7 +28,7 @@ function isNonEmptyString(value: unknown): value is string {
 
 // A full ISO 8601 instant, UTC, optionally with fractional seconds —
 // exactly what `new Date().toISOString()` produces in every JS runtime.
-// Stricter than `@vespeneventures/strategy`'s `ISO_DATE_RE` (a bare
+// Stricter than `@example/strategy`'s `ISO_DATE_RE` (a bare
 // YYYY-MM-DD) on purpose: a ledger entry records a specific moment an
 // action happened, not a calendar day a value described "as of".
 const ISO_INSTANT_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
@@ -45,7 +45,7 @@ function isValidUrl(value: string): boolean {
 
 /**
  * Validates a single `FactCitation`: `factRef` is a non-empty string,
- * `valueBinding` passes `@vespeneventures/controller/policy`'s own
+ * `valueBinding` passes `@clossys/controller/policy`'s own
  * `validateBindingShape` unchanged (never reimplemented here), and —
  * the one rule this package adds on top — `valueBinding.policyId` must
  * equal `factRef`, by the convention `types.ts`'s `FactCitation` doc

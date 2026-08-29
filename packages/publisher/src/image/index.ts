@@ -1,5 +1,5 @@
 /**
- * @vespeneventures/publisher/image — the `image` channel renderer. Takes a
+ * @clossys/publisher/image — the `image` channel renderer. Takes a
  * `ComposeDocument` with `channel: "image"` and emits a self-contained SVG
  * string, sized and positioned from `ImageMeta`/`LayoutSpec`. See
  * `renderImageDocument.ts`'s own doc comment for the full picture, and this

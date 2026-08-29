@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { gateResultToExitCode } from "@vespeneventures/controller/gates";
+import { gateResultToExitCode } from "@clossys/controller/gates";
 import {
   MINIMUM_SAFE_VERSION,
   checkVersionFloor,

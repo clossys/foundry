@@ -8,10 +8,10 @@
  * opaque string seam on purpose (see `types.ts`'s own doc comment on
  * `SlotBinding.assetId`, and the README, "The `assetId` seam") — so this
  * file is where a caller who DOES have a real `AssetRecord` (a
- * `@vespeneventures/publisher/media` `checkAssetCoverage`-style lookup, or any
+ * `@clossys/publisher/media` `checkAssetCoverage`-style lookup, or any
  * other `assetId -> asset` function) closes the loop. This package stays
  * zero-dependency: `AssetLookup`'s return type is `unknown`, never an
- * import of `@vespeneventures/publisher/media`'s `AssetEntry` — see "Why this
+ * import of `@clossys/publisher/media`'s `AssetEntry` — see "Why this
  * function does not know what an asset looks like" below.
  *
  * SAME BAR `resolveCopy` IS BUILT AGAINST: a clean pass must mean
@@ -38,10 +38,10 @@
  * ---------------------------------------------------------------------
  * `resolveCopy`'s `CopyLookup` returns `string | undefined` because text
  * has one obvious representation. An asset does not — a caller might hand
- * back a full `@vespeneventures/publisher/media` `AssetEntry`, a bare URL string, a
+ * back a full `@clossys/publisher/media` `AssetEntry`, a bare URL string, a
  * pre-signed CDN link, or something else this package has no way to
  * anticipate, and `surface/core` has zero runtime dependencies (not even on
- * `@vespeneventures/publisher/media` itself — see the README, "Zero runtime
+ * `@clossys/publisher/media` itself — see the README, "Zero runtime
  * dependencies"). So `AssetLookup` returns `unknown`, and `resolveAssets`
  * asks only one question of it: did `lookup(assetId)` return something
  * that is not `undefined`/`null`? Anything else about the shape of what

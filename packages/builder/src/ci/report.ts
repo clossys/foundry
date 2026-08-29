@@ -12,8 +12,8 @@
  * function rather than re-deriving its own fold.
  */
 
-import { foldGateResults, gateResultToExitCode } from "@vespeneventures/controller/gates";
-import type { GateResult } from "@vespeneventures/controller/gates";
+import { foldGateResults, gateResultToExitCode } from "@clossys/controller/gates";
+import type { GateResult } from "@clossys/controller/gates";
 import type {
   LiveStateFinding,
   LiveStateReconciliationReason,

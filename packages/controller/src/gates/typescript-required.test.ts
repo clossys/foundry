@@ -43,7 +43,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("typescript", () => {
   throw new Error(
-    "Cannot find package 'typescript' imported from @vespeneventures/controller/gates/secrets (simulated absent peer, #411/#419)",
+    "Cannot find package 'typescript' imported from @clossys/controller/gates/secrets (simulated absent peer, #411/#419)",
   );
 });
 

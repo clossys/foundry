@@ -1,5 +1,5 @@
 /**
- * @vespeneventures/publisher/email — the `email` channel renderer. Takes a
+ * @clossys/publisher/email — the `email` channel renderer. Takes a
  * `ComposeDocument` with `channel: "email"` and emits a complete,
  * self-contained, table-based HTML document plus its deterministically
  * derived plain-text alternative. See `renderEmailDocument.ts`'s own doc
@@ -7,11 +7,11 @@
  * a small web page," for why the output looks the way it does.
  *
  * Unlike `./web`, this channel imports neither `react` nor
- * `@vespeneventures/designer` — email HTML is a string this package builds by
+ * `@clossys/designer` — email HTML is a string this package builds by
  * hand (see `internal/emailDocument.ts`'s own top comment) — so
- * `@vespeneventures/publisher/email` has NO extra peer dependencies beyond
- * this package's own real dependencies (`@vespeneventures/publisher/core`,
- * `@vespeneventures/designer/tokens`). A consumer who only imports this subpath
+ * `@clossys/publisher/email` has NO extra peer dependencies beyond
+ * this package's own real dependencies (`@clossys/publisher/core`,
+ * `@clossys/designer/tokens`). A consumer who only imports this subpath
  * never needs to install React at all.
  */
 
