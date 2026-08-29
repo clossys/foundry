@@ -1,9 +1,8 @@
 import { createHash } from "node:crypto";
+import { validateCandidateQualification } from "./candidate-qualification.mjs";
+import { TRIO, TRIO_COHORT_PATH, TRIO_QUARANTINE_PATH, TRIO_RELEASE, isTrioCandidate } from "./release-qualification-trio.mjs";
 
-export const TRIO = Object.freeze(["advisor", "starter", "controller"]);
-export const TRIO_RELEASE = Object.freeze({ target: "clossys-npmjs", scope: "@clossys", registry: "https://registry.npmjs.org", access: "public" });
-export const TRIO_COHORT_PATH = "governance/release-qualification-cohorts/clossys-npmjs-trio.json";
-export const TRIO_QUARANTINE_PATH = "governance/release-qualification-quarantines/clossys-npmjs-trio.json";
+export { TRIO, TRIO_COHORT_PATH, TRIO_QUARANTINE_PATH, TRIO_RELEASE, isTrioCandidate } from "./release-qualification-trio.mjs";
 
 const SHA1 = /^[a-f0-9]{40}$/;
 const SHA256 = /^[a-f0-9]{64}$/;
@@ -24,13 +23,16 @@ function release(findings, value, path) {
   if (!same(value, TRIO_RELEASE)) finding(findings, "release", `${path} must retain the exact public npm Trio release tuple.`);
 }
 function memberPath(key, version) { return `governance/release-qualifications/clossys-${key}-${version}.json`; }
+function candidateProjection(candidate) {
+  return { name: candidate?.name, version: candidate?.version, tarball: candidate?.tarball };
+}
 
 /**
  * Validate an uninstantiated, future-only atomic Trio qualification cohort.
  * The cohort contains no authority to upload: it joins three independent
  * pre-publication records only after their exact future tarball bytes exist.
  */
-export function validateTrioPrepublicationCohort(cohort, { records = new Map(), recordBytes = new Map() } = {}) {
+export function validateTrioPrepublicationCohort(cohort, { records = new Map(), recordBytes = new Map(), validatedRecordPaths = new Set() } = {}) {
   const findings = [];
   closed(findings, cohort, ["schemaVersion", "kind", "id", "release", "members"], "cohort");
   if (cohort?.schemaVersion !== 1 || cohort?.kind !== "clossys-npmjs-trio-prepublication-v1" || cohort?.id !== "clossys-npmjs-trio") finding(findings, "cohort", "closed Trio cohort identity required.");
@@ -52,7 +54,8 @@ export function validateTrioPrepublicationCohort(cohort, { records = new Map(), 
     const bytes = recordBytes.get(member?.qualificationPath);
     if (!record || typeof bytes !== "string") { finding(findings, "record", `cohort member ${key} record bytes are required.`); continue; }
     if (digest(bytes) !== member.qualificationSha256) finding(findings, "record-digest", `cohort member ${key} record digest differs from retained bytes.`);
-    if (record.timing !== "pre-publication" || !same(record.candidate, candidate)) finding(findings, "record-join", `cohort member ${key} must join one exact pre-publication record.`);
+    if (validateCandidateQualification(record).length > 0 || !(validatedRecordPaths instanceof Set) || !validatedRecordPaths.has(member.qualificationPath)) finding(findings, "record-validation", `cohort member ${key} must join one fully validated schema-v2 qualification record.`);
+    if (record.timing !== "pre-publication" || !same(candidateProjection(record.candidate), candidate)) finding(findings, "record-join", `cohort member ${key} must join the exact name/version/tarball projection of one pre-publication record.`);
   }
   return findings;
 }
@@ -70,6 +73,17 @@ export function validateTrioPartialFailureQuarantine(quarantine, { cohortBytes }
   return findings;
 }
 
-export function isTrioCandidate(candidate) {
-  return TRIO.some((key) => candidate?.name === `@clossys/${key}`);
+/** Validate every visible half of future Trio state; an orphan is never inert. */
+export function validateTrioQualificationState({ cohort = null, cohortBytes, quarantine = null, records = new Map(), recordBytes = new Map(), validatedRecordPaths = new Set() } = {}) {
+  const findings = [];
+  const trioRecords = [...records.values()].filter((record) => record?.timing === "pre-publication" && isTrioCandidate(record?.candidate));
+  if (cohort || trioRecords.length > 0) {
+    if (!cohort) finding(findings, "trio-cohort", "exact Trio pre-publication records require one cohort record.");
+    else findings.push(...validateTrioPrepublicationCohort(cohort, { records, recordBytes, validatedRecordPaths }));
+  }
+  if (quarantine) {
+    if (!cohort) finding(findings, "trio-quarantine", "a partial-failure quarantine requires its exact cohort record.");
+    else findings.push(...validateTrioPartialFailureQuarantine(quarantine, { cohortBytes }));
+  }
+  return findings;
 }

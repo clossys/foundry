@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { TRIO, TRIO_COHORT_PATH, isTrioCandidate } from "./release-qualification-cohort.mjs";
+import { TRIO, TRIO_COHORT_PATH, isTrioCandidate } from "./release-qualification-trio.mjs";
 
 export const ARCHETYPES = ["current-direct", "prior-minor", "oldest-supported", "control-plane"];
 const DIMENSIONS = ["position", "completion", "rollback", "duplicate", "cadence", "closeWindow"];

@@ -3,7 +3,7 @@ import { execFileSync } from "node:child_process";
 import { readFileSync, readdirSync } from "node:fs";
 import { currentQualificationJoins, parseStrictJson, qualificationPath, qualificationRecordHistory, validateCandidateQualification, validatePrepublicationPrTail } from "./lib/candidate-qualification.mjs";
 import { loadTransitionPolicy } from "./lib/package-identity-transition.mjs";
-import { TRIO_COHORT_PATH, TRIO_QUARANTINE_PATH, validateTrioPartialFailureQuarantine, validateTrioPrepublicationCohort } from "./lib/release-qualification-cohort.mjs";
+import { TRIO_COHORT_PATH, TRIO_QUARANTINE_PATH, validateTrioQualificationState } from "./lib/release-qualification-cohort.mjs";
 
 const transition = loadTransitionPolicy("governance/package-identity-transition.json");
 const sourceIdentity = JSON.parse(readFileSync("package-scope.json", "utf8"));
@@ -36,25 +36,7 @@ catch (error) { if (error?.code !== "ENOENT") { console.error("Cannot read " + T
 let quarantine = null;
 try { quarantine = { path: TRIO_QUARANTINE_PATH, bytes: readFileSync(TRIO_QUARANTINE_PATH, "utf8"), value: parseStrictJson(readFileSync(TRIO_QUARANTINE_PATH, "utf8")) }; }
 catch (error) { if (error?.code !== "ENOENT") { console.error("Cannot read " + TRIO_QUARANTINE_PATH + ": " + (error instanceof Error ? error.message : "unknown error")); failed = true; } }
-const trioRecords = records.map((item) => item.record).filter((record) => record?.timing === "pre-publication" && /^@clossys\/(advisor|starter|controller)$/.test(record?.candidate?.name ?? ""));
-if (trioRecords.length > 0) {
-  if (!cohort) { console.error("[trio-cohort] " + TRIO_COHORT_PATH + ": exact Trio pre-publication records require one cohort record."); failed = true; }
-  else {
-    const findings = validateTrioPrepublicationCohort(cohort.value, { records: new Map(records.map((item) => [item.path, item.record])), recordBytes: new Map(records.map((item) => [item.path, item.bytes])) });
-    for (const item of findings) console.error("[" + item.rule + "] " + cohort.path + ": " + item.message);
-    failed ||= findings.length > 0;
-    try { immutableIntroducedBytes(cohort.path); } catch (error) { console.error("[trio-cohort-history] " + cohort.path + ": " + error.message); failed = true; }
-  }
-}
-if (quarantine) {
-  if (!cohort) { console.error("[trio-quarantine] " + quarantine.path + ": a partial-failure quarantine requires its exact cohort record."); failed = true; }
-  else {
-    const findings = validateTrioPartialFailureQuarantine(quarantine.value, { cohortBytes: cohort.bytes });
-    for (const item of findings) console.error("[" + item.rule + "] " + quarantine.path + ": " + item.message);
-    failed ||= findings.length > 0;
-    try { immutableIntroducedBytes(quarantine.path); } catch (error) { console.error("[trio-quarantine-history] " + quarantine.path + ": " + error.message); failed = true; }
-  }
-}
+const recordFindings = new Map();
 for (const { path, record } of records) {
   try {
     const historical = historicalRecord(record);
@@ -64,13 +46,28 @@ for (const { path, record } of records) {
     const history = qualificationRecordHistory(process.cwd(), path, record.candidate, "HEAD", expectedPath);
     const expected = { name: record.candidate?.name, version: record.candidate?.version, ...currentQualificationJoins(process.cwd(), record.candidate, history.introductionCommit) };
     const findings = validateCandidateQualification(record, { expected });
-    if (record.timing === "pre-publication" && record.candidate?.name?.startsWith("@clossys/")) {
-      findings.push(...validatePrepublicationPrTail(record, { trioRecords, cohort: cohort?.value }));
-    }
     if (history.introducedRecordSha256 !== history.retainedRecordSha256) findings.push({ rule: "record-history-join", message: "retained record bytes differ from their exact introduction blob." });
-    for (const finding of findings) console.error("[" + finding.rule + "] " + path + ": " + finding.message);
-    failed ||= findings.length > 0;
-  } catch (error) { console.error("Cannot read " + path + ": " + (error instanceof Error ? error.message : "unknown error")); failed = true; }
+    recordFindings.set(path, findings);
+  } catch (error) { console.error("Cannot read " + path + ": " + (error instanceof Error ? error.message : "unknown error")); recordFindings.set(path, [{ rule: "record-read", message: "record validation could not run." }]); failed = true; }
+}
+const validatedRecordPaths = new Set(records.filter((item) => recordFindings.get(item.path)?.length === 0).map((item) => item.path));
+const recordMap = new Map(records.map((item) => [item.path, item.record]));
+const recordBytes = new Map(records.map((item) => [item.path, item.bytes]));
+const trioFindings = validateTrioQualificationState({ cohort: cohort?.value, cohortBytes: cohort?.bytes, quarantine: quarantine?.value, records: recordMap, recordBytes, validatedRecordPaths });
+for (const item of trioFindings) console.error("[" + item.rule + "] " + (cohort?.path ?? quarantine?.path ?? TRIO_COHORT_PATH) + ": " + item.message);
+failed ||= trioFindings.length > 0;
+if (cohort) {
+  try { immutableIntroducedBytes(cohort.path); } catch (error) { console.error("[trio-cohort-history] " + cohort.path + ": " + error.message); failed = true; }
+}
+if (quarantine) {
+  try { immutableIntroducedBytes(quarantine.path); } catch (error) { console.error("[trio-quarantine-history] " + quarantine.path + ": " + error.message); failed = true; }
+}
+const trioRecords = records.map((item) => item.record).filter((record) => record?.timing === "pre-publication" && /^@clossys\/(advisor|starter|controller)$/.test(record?.candidate?.name ?? ""));
+for (const { path, record } of records) {
+  const findings = recordFindings.get(path) ?? [];
+  if (record.timing === "pre-publication" && record.candidate?.name?.startsWith("@clossys/")) findings.push(...validatePrepublicationPrTail(record, { trioRecords, cohort: cohort?.value }));
+  for (const finding of findings) console.error("[" + finding.rule + "] " + path + ": " + finding.message);
+  failed ||= findings.length > 0;
 }
 if (failed) process.exit(1);
 console.log("CANDIDATE QUALIFICATION RECORD OK — retained evidence is not consumer adoption or sponsor authorization.");
