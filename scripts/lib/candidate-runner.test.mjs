@@ -178,10 +178,12 @@ test("tarball bytes, malformed candidate launch, and timeout outcomes fail close
 test("runner rejects escaping, unexpanded, and unsupported export mappings", async (t) => {
   const escaping = await syntheticPackage({ exports: { ".": "../outside.js" } });
   const emptyWildcard = await syntheticPackage({ exports: { "./missing/*": "./missing/*.js" } });
+  const repeatedWildcard = await syntheticPackage({ exports: { "./static/*/*": "./static/*/*.txt" } });
   const unknownCondition = await syntheticPackage({ exports: { ".": { require: "./index.js" } } });
-  t.after(() => Promise.all([escaping, emptyWildcard, unknownCondition].map((item) => rm(item.root, { recursive: true, force: true }))));
+  t.after(() => Promise.all([escaping, emptyWildcard, repeatedWildcard, unknownCondition].map((item) => rm(item.root, { recursive: true, force: true }))));
   await assert.rejects(() => runCandidateQualification(escaping), /invalid export target/);
   await assert.rejects(() => runCandidateQualification(emptyWildcard), /no packaged files/);
+  await assert.rejects(() => runCandidateQualification(repeatedWildcard), /at most one wildcard/);
   await assert.rejects(() => runCandidateQualification(unknownCondition), /unsupported export conditions/);
 });
 
