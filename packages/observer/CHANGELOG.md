@@ -3,6 +3,15 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.2] - 2026-08-29
+
+### Fixed
+
+- Hardened Observer's command-line Markdown table renderer so untrusted cell
+  text escapes existing backslashes before pipe characters and normalizes all
+  line endings without allowing a crafted value to create extra table cells or
+  rows.
+
 ## [0.2.1] - 2026-08-21
 
 ### Changed

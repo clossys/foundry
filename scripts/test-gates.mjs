@@ -337,7 +337,7 @@ try {
     mkdirSync(join(dir, "packages", "probe"), { recursive: true });
     const pkgDir = join(dir, "packages", "probe");
     cpSync(join(repoRoot, "package-scope.json"), join(dir, "package-scope.json"));
-    const scope = JSON.parse(execFileSync("cat", [join(repoRoot, "package-scope.json")], { encoding: "utf8" }));
+    const scope = JSON.parse(readFileSync(join(repoRoot, "package-scope.json"), "utf8"));
     writeFileSync(
       join(pkgDir, "package.json"),
       JSON.stringify(
@@ -392,7 +392,7 @@ try {
     const pkgDir = join(dir, "packages", "probe");
     mkdirSync(join(pkgDir, "src"), { recursive: true });
     cpSync(join(repoRoot, "package-scope.json"), join(dir, "package-scope.json"));
-    const scope = JSON.parse(execFileSync("cat", [join(repoRoot, "package-scope.json")], { encoding: "utf8" }));
+    const scope = JSON.parse(readFileSync(join(repoRoot, "package-scope.json"), "utf8"));
     writeFileSync(
       join(pkgDir, "package.json"),
       JSON.stringify(

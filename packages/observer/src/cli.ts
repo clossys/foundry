@@ -189,7 +189,21 @@ function parseCliInput(raw: unknown): FleetCoverageInput {
 }
 
 function cell(value: string): string {
-  return value.replace(/\|/g, "\\|").replace(/\n/g, " ");
+  let escaped = "";
+  let previousWasCarriageReturn = false;
+  for (const character of value) {
+    if (character === "\r") {
+      escaped += " ";
+      previousWasCarriageReturn = true;
+    } else if (character === "\n") {
+      if (!previousWasCarriageReturn) escaped += " ";
+      previousWasCarriageReturn = false;
+    } else {
+      previousWasCarriageReturn = false;
+      escaped += character === "\\" ? "\\\\" : character === "|" ? "\\|" : character;
+    }
+  }
+  return escaped;
 }
 
 /** Renders the report as a table a CI job summary can display verbatim. */
