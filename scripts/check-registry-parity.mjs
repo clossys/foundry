@@ -2,10 +2,11 @@
 // check-registry-parity — FAIL when a package's version on `main` has no
 // registry counterpart.
 //
-//   node scripts/check-registry-parity.mjs [--json]
+//   node scripts/check-registry-parity.mjs [--json] [--package <directory>]
 //
-// Exit 0 = every non-private packages/*/package.json's version was
-// confirmed present on the registry. Exit 1 = at least one package's
+// Exit 0 = every selected non-private packages/*/package.json's version was
+// confirmed present on the registry; public npmjs additionally requires the
+// served bytes, packument SRI/shasum, and packed manifest to agree. Exit 1 = at least one package's
 // version is confirmed MISSING — a real gap, most likely a publish that was
 // evicted, timed out, or failed silently (see below). Exit 2 = the check
 // could not be completed for at least one package (no token, an
@@ -63,11 +64,9 @@
 //
 // NOT WIRED INTO `npm run check`
 // -----------------------------------
-// This calls the live GitHub Packages API and needs a read:packages token,
-// exactly the reason scripts/check-package-visibility.mjs is kept out of
-// that chain too (see its own header) — wiring it in would make ordinary
-// local development, and every fork's CI, require a registry credential it
-// has no reason to hold. It is wired into
+// This calls a live registry, so it remains outside ordinary repository
+// checks. Public npmjs verification is anonymous; the historical GitHub
+// Packages lane still requires read:packages. It is wired into
 // .github/workflows/registry-parity.yml's scheduled run instead, where the
 // credential already exists for a narrower reason, and is deliberately NOT
 // a required status context (see that workflow's own header for why that
@@ -76,7 +75,8 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-import { probeVersions, resolveVersionLookups } from "./registry-version-lookup.mjs";
+import { GITHUB_PACKAGES_REGISTRY, probeVersions, resolveVersionLookups } from "./registry-version-lookup.mjs";
+import { PUBLIC_NPM_REGISTRY, verifyPublicNpmArtifact } from "./lib/public-npm-registry.mjs";
 
 const DEFAULT_SCOPE_PATH = "package-scope.json";
 
@@ -125,6 +125,14 @@ export function discoverManifests({ packagesRoot, listDirectories, manifestExist
   return { entries, fatal: null };
 }
 
+export function selectSinglePackage(entries, packageDirectory) {
+  if (packageDirectory === undefined) return { entries, fatal: null };
+  if (!/^[a-z0-9][a-z0-9-]*$/.test(packageDirectory)) return { entries: [], fatal: "--package must be a simple package directory name" };
+  const selected = entries.filter((entry) => entry.directory === packageDirectory);
+  if (selected.length !== 1) return { entries: [], fatal: `--package ${JSON.stringify(packageDirectory)} did not select exactly one discovered package` };
+  return { entries: selected, fatal: null };
+}
+
 /**
  * The whole check, as one pure-async function so it is testable end-to-end
  * with an injected `fetchImpl` — never through a spawned CLI process, which
@@ -140,7 +148,7 @@ export function discoverManifests({ packagesRoot, listDirectories, manifestExist
  *     verdict is a "finding", an `unauthenticated`/`unreachable` verdict is
  *     an "error" (never silently a pass), a `published` verdict is a "pass".
  */
-export async function checkRegistryParity({ owner, token, fetchImpl, discovery }) {
+export async function checkRegistryParity({ owner, token, registry = GITHUB_PACKAGES_REGISTRY, fetchImpl, verifyArtifactImpl = verifyPublicNpmArtifact, discovery }) {
   const { entries, fatal } = discovery;
   if (fatal) return { fatal, code: 2 };
 
@@ -148,10 +156,49 @@ export async function checkRegistryParity({ owner, token, fetchImpl, discovery }
     return { fatal: "found zero non-private packages/*/package.json to check — refusing to report a clean pass on an empty scan", code: 2 };
   }
 
-  const outcomes = await probeVersions(
-    entries.map(({ manifest }) => ({ name: manifest.name, version: manifest.version })),
-    { owner, token, fetchImpl },
-  );
+  if (registry === PUBLIC_NPM_REGISTRY) {
+    const results = await Promise.all(
+      entries.map(async ({ manifest }) => {
+        const verified = await verifyArtifactImpl({ registry, name: manifest.name, version: manifest.version, fetchImpl });
+        if (verified.kind === "verified") {
+          return {
+            package: manifest.name,
+            version: manifest.version,
+            status: "pass",
+            detail: `anonymous npmjs served-byte proof verified ${verified.evidence.integrity}, shasum ${verified.evidence.shasum}, and exact packed manifest identity.`,
+            evidence: verified.evidence,
+          };
+        }
+        if (verified.kind === "known" && verified.hasVersion === false) {
+          return {
+            package: manifest.name,
+            version: manifest.version,
+            status: "finding",
+            detail: `"${manifest.name}@${manifest.version}" has no public npmjs version counterpart. This verifier reports only; publication remains separately authorized.`,
+          };
+        }
+        if (verified.kind === "mismatch") {
+          return { package: manifest.name, version: manifest.version, status: "finding", detail: `public npmjs artifact mismatch: ${verified.detail}` };
+        }
+        return {
+          package: manifest.name,
+          version: manifest.version,
+          status: "error",
+          detail: `could not verify anonymous public npmjs artifact (lookup: "${verified.kind}")${verified.detail ? `: ${verified.detail}` : ""}.`,
+        };
+      }),
+    );
+    const code = results.reduce((acc, result) => (result.status === "error" ? 2 : result.status === "finding" && acc !== 2 ? 1 : acc), 0);
+    return { fatal: null, code, results };
+  }
+  if (registry !== GITHUB_PACKAGES_REGISTRY) return { fatal: `unsupported registry ${registry}`, code: 2 };
+
+  const outcomes = await probeVersions(entries.map(({ manifest }) => ({ name: manifest.name, version: manifest.version })), {
+    owner,
+    token,
+    registry,
+    fetchImpl,
+  });
   const verdicts = resolveVersionLookups(outcomes);
 
   const results = entries.map(({ manifest }) => {
@@ -188,14 +235,12 @@ export async function checkRegistryParity({ owner, token, fetchImpl, discovery }
 
 async function main() {
   const argv = process.argv.slice(2);
-  const json = argv.includes("--json");
-
-  const token = process.env.GH_PACKAGES_TOKEN;
-  if (!token) {
-    die(
-      "GH_PACKAGES_TOKEN is not set. This gate calls the live GitHub Packages API and needs a read:packages token " +
-        "to do it — refusing to report a pass from a check that never ran.",
-    );
+  let json = false;
+  let packageDirectory;
+  for (let index = 0; index < argv.length; index += 1) {
+    if (argv[index] === "--json") json = true;
+    else if (argv[index] === "--package" && index + 1 < argv.length) packageDirectory = argv[++index];
+    else die(`usage: check-registry-parity.mjs [--json] [--package <directory>]`);
   }
 
   if (!existsSync(DEFAULT_SCOPE_PATH)) die(`no ${DEFAULT_SCOPE_PATH} found to determine the registry owner/scope.`);
@@ -209,6 +254,21 @@ async function main() {
     die(`${DEFAULT_SCOPE_PATH} declares no "scope" string beginning with "@".`);
   }
   const owner = scopeDoc.scope.slice(1);
+  const registry = scopeDoc.registry;
+  let token;
+  if (registry === PUBLIC_NPM_REGISTRY && scopeDoc.access === "public") {
+    token = undefined;
+  } else if (registry === GITHUB_PACKAGES_REGISTRY && scopeDoc.access === undefined) {
+    token = process.env.GH_PACKAGES_TOKEN;
+    if (!token) {
+      die(
+        "GH_PACKAGES_TOKEN is not set. The historical GitHub Packages check needs read:packages; " +
+          "refusing to report a pass from a check that never ran.",
+      );
+    }
+  } else {
+    die(`unsupported release identity at ${JSON.stringify(registry)} with access=${JSON.stringify(scopeDoc.access ?? null)}`);
+  }
 
   const discovery = discoverManifests({
     packagesRoot: "packages",
@@ -217,7 +277,10 @@ async function main() {
     currentManifest: (path) => JSON.parse(readFileSync(path, "utf8")),
   });
 
-  const outcome = await checkRegistryParity({ owner, token, fetchImpl: fetch, discovery });
+  const selected = selectSinglePackage(discovery.entries, packageDirectory);
+  if (discovery.fatal) die(discovery.fatal);
+  if (selected.fatal) die(selected.fatal);
+  const outcome = await checkRegistryParity({ owner, token, registry, fetchImpl: fetch, discovery: { entries: selected.entries, fatal: null } });
   if (outcome.fatal) die(outcome.fatal, outcome.code);
 
   const { results, code: worst } = outcome;

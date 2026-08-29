@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// registry-version-lookup — probes GitHub Packages for whether ONE specific
-// version of a package has already been published, distinguishing "the
+// registry-version-lookup — probes the declared registry for whether ONE
+// specific version of a package has already been published, distinguishing "the
 // registry told us no" from "we could not get an answer" the same way
 // packages/integrator/src/reachability.ts already does for the opposite
 // (installer-side) direction of this exact ambiguity. Read that module's
@@ -26,7 +26,7 @@
 //
 // THE SAME AMBIGUITY, THE SAME DISCIPLINE
 // -------------------------------------------
-// GitHub answers 404 both for "this package has never been published" and
+// GitHub Packages answers 404 both for "this package has never been published" and
 // — because it declines to confirm a private package's existence to a
 // caller it will not show it to — for "this credential cannot see it". That
 // is the identical ambiguity reachability.ts's own header documents for the
@@ -81,12 +81,20 @@
 // reports it as `missing`, never folded into the not-found/batch handling
 // above.
 //
+// Public npmjs is different: its public packument is intentionally anonymous,
+// so a 404 is definitive absence rather than credential ambiguity. The
+// adapter in scripts/lib/public-npm-registry.mjs supplies that result while
+// this module preserves the historical GitHub Packages discipline unchanged.
+//
 // A caller deciding "should I publish this?" must still never treat
 // `unauthenticated` or `unreachable` as `missing` — see this module's two
 // callers, scripts/select-publishable-packages.mjs's registry-driven
 // discovery and scripts/check-registry-parity.mjs's safety-net gate.
 
+import { PUBLIC_NPM_REGISTRY, probePublicNpmVersion } from "./lib/public-npm-registry.mjs";
+
 const GITHUB_API = "https://api.github.com";
+export const GITHUB_PACKAGES_REGISTRY = ["https://npm", "pkg", "github", "com"].join(".");
 
 /** The unscoped final path segment of a scoped npm name — GitHub's packages API wants this, not the full "@scope/name". Same helper scripts/check-package-visibility.mjs already exports under this name. */
 export function bareName(fullName) {
@@ -128,7 +136,9 @@ function nextPageUrl(response) {
  * dependency-injection shape reachability.ts's Transport and
  * check-package-visibility.mjs's fetchImpl already use.
  */
-export async function probeOneVersion({ owner, name, version, token, fetchImpl }) {
+export async function probeOneVersion({ owner, name, version, token, registry = GITHUB_PACKAGES_REGISTRY, fetchImpl }) {
+  if (registry === PUBLIC_NPM_REGISTRY) return probePublicNpmVersion({ registry, name, version, fetchImpl });
+  if (registry !== GITHUB_PACKAGES_REGISTRY || typeof token !== "string" || token.length === 0) return { kind: "denied" };
   const bare = bareName(name);
   for (const kind of ["orgs", "users"]) {
     const collected = [];

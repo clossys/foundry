@@ -6,7 +6,8 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
-import { checkRegistryParity, discoverManifests } from "./check-registry-parity.mjs";
+import { checkRegistryParity, discoverManifests, selectSinglePackage } from "./check-registry-parity.mjs";
+import { GITHUB_PACKAGES_REGISTRY } from "./registry-version-lookup.mjs";
 
 // Two layers of coverage, matching scripts/check-package-visibility.test.mjs:
 //
@@ -176,6 +177,53 @@ test("zero packages discovered is a fatal empty scan, never a silent clean pass"
   assert.equal(outcome.code, 2);
 });
 
+test("public npmjs parity proves served bytes and exact manifest identity through the anonymous verifier", async () => {
+  let received;
+  const outcome = await checkRegistryParity({
+    owner: "clossys",
+    registry: "https://registry.npmjs.org",
+    fetchImpl: async () => {
+      throw new Error("verification is injected");
+    },
+    verifyArtifactImpl: async (input) => {
+      received = input;
+      return { kind: "verified", evidence: { integrity: "sha512-fixture", shasum: "a".repeat(40), sha256: "b".repeat(64) } };
+    },
+    discovery: discovery([entry("advisor", "@clossys/advisor", "0.1.3")]),
+  });
+  assert.equal(received.name, "@clossys/advisor");
+  assert.equal(received.version, "0.1.3");
+  assert.equal(received.registry, "https://registry.npmjs.org");
+  assert.equal(outcome.code, 0);
+  assert.equal(outcome.results[0].status, "pass");
+  assert.equal(outcome.results[0].evidence.sha256, "b".repeat(64));
+});
+
+test("public npmjs parity keeps missing, mismatch, and unreadable outcomes distinct", async () => {
+  for (const [verified, status, code] of [
+    [{ kind: "known", hasVersion: false }, "finding", 1],
+    [{ kind: "mismatch", detail: "served bytes changed" }, "finding", 1],
+    [{ kind: "unreachable", detail: "timeout" }, "error", 2],
+  ]) {
+    const outcome = await checkRegistryParity({
+      owner: "clossys",
+      registry: "https://registry.npmjs.org",
+      fetchImpl: async () => {},
+      verifyArtifactImpl: async () => verified,
+      discovery: discovery([entry("advisor", "@clossys/advisor", "0.1.3")]),
+    });
+    assert.equal(outcome.code, code);
+    assert.equal(outcome.results[0].status, status);
+  }
+});
+
+test("selectSinglePackage admits exactly one simple package directory", () => {
+  const entries = [entry("advisor", "@clossys/advisor", "0.1.3"), entry("starter", "@clossys/starter", "0.1.2")];
+  assert.deepEqual(selectSinglePackage(entries, "advisor"), { entries: [entries[0]], fatal: null });
+  assert.match(selectSinglePackage(entries, "../advisor").fatal, /simple package directory/);
+  assert.match(selectSinglePackage(entries, "missing").fatal, /exactly one/);
+});
+
 // -------------------------------------------------------------------- CLI (paths that never touch the network)
 
 function runCli(args, options = {}) {
@@ -191,12 +239,6 @@ function runCli(args, options = {}) {
     return { code: error.status, stdout: error.stdout?.toString() ?? "", stderr: error.stderr?.toString() ?? "" };
   }
 }
-
-test("CLI: a missing GH_PACKAGES_TOKEN exits 2, never 0 — and never attempts a network call", () => {
-  const result = runCli([]);
-  assert.equal(result.code, 2);
-  assert.match(result.stderr, /GH_PACKAGES_TOKEN is not set/);
-});
 
 test("CLI: a missing package-scope.json exits 2", () => {
   const dir = mkdtempSync(join(tmpdir(), "registry-parity-"));
@@ -221,12 +263,12 @@ test("CLI: a malformed package-scope.json exits 2", () => {
   }
 });
 
-test("CLI: an empty packages/ directory exits 2 (empty scan), never a clean pass, once past scope resolution — no token is set so this fails at the credential guard first, proving the guard runs before any filesystem or network work", () => {
+test("CLI: historical GitHub Packages still requires GH_PACKAGES_TOKEN", () => {
   const dir = mkdtempSync(join(tmpdir(), "registry-parity-"));
   try {
-    writeFileSync(join(dir, "package-scope.json"), JSON.stringify({ scope: "@example", registry: "https://example.invalid" }));
+    writeFileSync(join(dir, "package-scope.json"), JSON.stringify({ scope: "@example", registry: GITHUB_PACKAGES_REGISTRY }));
     mkdirSync(join(dir, "packages"));
-    const result = runCli([]);
+    const result = runCli([], { cwd: dir });
     assert.equal(result.code, 2);
     assert.match(result.stderr, /GH_PACKAGES_TOKEN is not set/);
   } finally {

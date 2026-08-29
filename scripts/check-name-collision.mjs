@@ -33,6 +33,9 @@
 import { readFileSync, existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { execFileSync } from "node:child_process";
+import { PUBLIC_NPM_REGISTRY, assessPublicNpmName } from "./lib/public-npm-registry.mjs";
+
+const GITHUB_PACKAGES_REGISTRY = ["https://npm", "pkg", "github", "com"].join(".");
 
 const argv = process.argv.slice(2);
 const flags = new Set(argv.filter((a) => a.startsWith("--")));
@@ -144,6 +147,26 @@ function listOwnerPackages(login) {
   return null;
 }
 
+function readReleaseIdentity(dir) {
+  let root;
+  try {
+    root = execFileSync("git", ["-C", resolve(dir), "rev-parse", "--show-toplevel"], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    }).trim();
+  } catch {
+    return null;
+  }
+  const path = join(root, "package-scope.json");
+  let identity;
+  try {
+    identity = JSON.parse(readFileSync(path, "utf8"));
+  } catch (error) {
+    die(`cannot read or parse ${path}: ${error.message}`);
+  }
+  return identity;
+}
+
 // A hermetic test suite cannot authenticate to GitHub, but it still needs to
 // pin the decision logic above — collision, version bump, unused name, and
 // the fail-closed path taken when listing fails — without weakening what a
@@ -153,6 +176,7 @@ function listOwnerPackages(login) {
 // call above stays the default and a real publish can only ever be cleared
 // by asking GitHub, never by a simulated answer.
 const packagesJsonPath = flagValue("--packages-json");
+const packumentJsonPath = flagValue("--packument-json");
 
 function loadPackagesFromFile(path) {
   let raw;
@@ -171,6 +195,69 @@ function loadPackagesFromFile(path) {
     die(`--packages-json file must contain a JSON array (or null), got ${typeof parsed}: ${path}`);
   }
   return parsed;
+}
+
+function fixturePackumentFetch(path) {
+  let parsed;
+  try {
+    parsed = JSON.parse(readFileSync(path, "utf8"));
+  } catch (error) {
+    die(`--packument-json file does not exist or parse as JSON: ${path} (${error.message})`);
+  }
+  if (parsed !== null && (typeof parsed !== "object" || Array.isArray(parsed))) {
+    die(`--packument-json file must contain one packument object or null: ${path}`);
+  }
+  return async () => ({
+    status: parsed === null ? 404 : 200,
+    ok: parsed !== null,
+    async json() { return parsed; },
+  });
+}
+
+if (!packagesJsonPath) {
+  const identity = readReleaseIdentity(pkgDir);
+  if (identity && identity.scope !== `@${scope}`) {
+    die(
+      `package-scope.json scope ${JSON.stringify(identity.scope)} does not match ${fullName}`,
+    );
+  }
+  if (identity?.registry === PUBLIC_NPM_REGISTRY && identity.access === "public") {
+    const assessment = await assessPublicNpmName({
+      registry: identity.registry,
+      name: fullName,
+      version: manifest.version,
+      thisRepo,
+      fetchImpl: packumentJsonPath ? fixturePackumentFetch(packumentJsonPath) : fetch,
+    });
+    if (assessment.kind === "denied" || assessment.kind === "unreachable") {
+      die(`anonymous npmjs name lookup was ${assessment.kind}${assessment.detail ? `: ${assessment.detail}` : ""}`);
+    }
+    const result = {
+      package: fullName,
+      owner,
+      thisRepo,
+      found: assessment.found,
+      existingRepo: assessment.existingRepo,
+      existingVisibility: assessment.found ? "public" : null,
+      verdict: assessment.kind,
+    };
+    if (flags.has("--json")) {
+      console.log(JSON.stringify(result, null, 2));
+    } else if (assessment.kind === "collision") {
+      console.error(
+        `check-name-collision: COLLISION — public npmjs already serves "${fullName}" for ` +
+          `${assessment.existingRepo ?? "an unverified repository"}, not ${thisRepo}.`,
+      );
+    } else if (assessment.kind === "same-repo-version-bump") {
+      console.log(`check-name-collision: OK — "${fullName}" is a public npmjs version bump owned by ${thisRepo}.`);
+    } else {
+      console.log(`check-name-collision: OK — "${fullName}" is unused on public npmjs.`);
+    }
+    process.exit(assessment.kind === "collision" ? 1 : 0);
+  }
+  if (packumentJsonPath || (identity && (identity.registry !== GITHUB_PACKAGES_REGISTRY || identity.access !== undefined))) {
+    die(`unsupported registry/access identity ${JSON.stringify(identity?.registry ?? null)} / ${JSON.stringify(identity?.access ?? null)}`);
+  }
 }
 
 const packages = packagesJsonPath ? loadPackagesFromFile(packagesJsonPath) : listOwnerPackages(owner);

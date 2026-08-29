@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { bareName, probeOneVersion, probeVersions, resolveVersionLookups } from "./registry-version-lookup.mjs";
+import { PUBLIC_NPM_REGISTRY } from "./lib/public-npm-registry.mjs";
 
 const OWNER = "gate-fixture-owner";
 const TOKEN = "test-token";
@@ -117,6 +118,28 @@ test("probeOneVersion: follows Link-header pagination to find a version on a lat
   ]);
   const outcome = await probeOneVersion({ owner: OWNER, name: "pkg", version: "0.1.0", token: TOKEN, fetchImpl });
   assert.deepEqual(outcome, { kind: "known", hasVersion: true });
+});
+
+test("probeOneVersion: public npm is anonymous and treats a package 404 as definitively missing", async () => {
+  const calls = [];
+  const outcome = await probeOneVersion({
+    owner: "ignored-for-public-npm",
+    name: "@scope/new-package",
+    version: "1.0.0",
+    registry: PUBLIC_NPM_REGISTRY,
+    fetchImpl: async (url, options) => {
+      calls.push({ url: String(url), options });
+      return jsonResponse(404, {});
+    },
+  });
+  assert.deepEqual(outcome, { kind: "known", hasVersion: false });
+  assert.deepEqual(Object.keys(calls[0].options.headers), ["Accept"]);
+  assert.doesNotMatch(JSON.stringify(calls[0].options), /authorization|token/i);
+});
+
+test("probeOneVersion: unsupported registries and missing GitHub credentials fail closed", async () => {
+  assert.deepEqual(await probeOneVersion({ owner: OWNER, name: "@scope/pkg", version: "1.0.0", registry: "https://example.test", token: TOKEN, fetchImpl: async () => { throw new Error("must not call"); } }), { kind: "denied" });
+  assert.deepEqual(await probeOneVersion({ owner: OWNER, name: "@scope/pkg", version: "1.0.0", token: "", fetchImpl: async () => { throw new Error("must not call"); } }), { kind: "denied" });
 });
 
 // -------------------------------------------------------------------- probeVersions
