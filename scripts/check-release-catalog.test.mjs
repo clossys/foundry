@@ -10,6 +10,7 @@ import { assertPackageAuthorized, filterPackagesForTarget, loadReleaseCatalog, r
 
 const currentIdentity = { scope: "@vespeneventures", registry: "https://npm.pkg.github.com" };
 const targetIdentity = { scope: "@clossys", registry: "https://registry.npmjs.org" };
+const cutoverIdentity = { ...targetIdentity, access: "public" };
 const scriptsDir = dirname(fileURLToPath(import.meta.url));
 const catalogCli = join(scriptsDir, "check-release-catalog.mjs");
 
@@ -20,6 +21,18 @@ function catalog(overrides = {}) {
     targets: [
       { id: "current-github-packages", status: "active", scope: currentIdentity.scope, registry: currentIdentity.registry, packages: "all" },
       { id: "clossys-npmjs-precutover", status: "planned", scope: targetIdentity.scope, registry: targetIdentity.registry, packages: ["advisor", "starter", "controller"] },
+    ],
+    ...overrides,
+  };
+}
+
+function cutoverCatalog(overrides = {}) {
+  return {
+    schemaVersion: 2,
+    defaultTarget: "clossys-npmjs",
+    targets: [
+      { id: "current-github-packages", status: "historical", scope: currentIdentity.scope, registry: currentIdentity.registry, packages: "all" },
+      { id: "clossys-npmjs", status: "active", scope: targetIdentity.scope, registry: targetIdentity.registry, access: "public", packages: "all" },
     ],
     ...overrides,
   };
@@ -103,6 +116,26 @@ test("an implicit selection resolves only the current target", () => {
   assert.throws(() => resolveReleaseTarget(document, targetIdentity), /expects @vespeneventures/);
 });
 
+test("the post-recut catalogue admits only the complete public all-package state", () => {
+  const document = load(cutoverCatalog());
+  const target = resolveReleaseTarget(document, cutoverIdentity);
+  assert.equal(target.id, "clossys-npmjs");
+  assert.equal(target.packages, "all");
+  assert.equal(target.access, "public");
+  assert.throws(() => resolveReleaseTarget(document, currentIdentity, "current-github-packages"), /historical/);
+});
+
+test("candidate catalogue rejects mixed access, bounded packages, old default, or retained precutover target", () => {
+  for (const document of [
+    cutoverCatalog({ targets: [cutoverCatalog().targets[0], { ...cutoverCatalog().targets[1], access: undefined }] }),
+    cutoverCatalog({ targets: [cutoverCatalog().targets[0], { ...cutoverCatalog().targets[1], packages: ["advisor", "starter", "controller"] }] }),
+    cutoverCatalog({ defaultTarget: "current-github-packages" }),
+    cutoverCatalog({ targets: [...cutoverCatalog().targets, catalog().targets[1]] }),
+  ]) {
+    assert.throws(() => load(document), /candidate state/);
+  }
+});
+
 test("the current target cannot be repurposed as an implicit migration lane", () => {
   const repurposed = catalog({
     targets: [
@@ -172,4 +205,6 @@ test("target catalogue refuses a missing authorized package instead of silently 
 test("current release identity itself is validated before a target is resolved", () => {
   assert.deepEqual(readCurrentReleaseIdentity({ path: "scope.json", readFile: () => JSON.stringify(currentIdentity) }), currentIdentity);
   assert.throws(() => readCurrentReleaseIdentity({ path: "scope.json", readFile: () => JSON.stringify({ scope: "vespeneventures", registry: currentIdentity.registry }) }), /valid npm scope/);
+  assert.deepEqual(readCurrentReleaseIdentity({ path: "scope.json", readFile: () => JSON.stringify(cutoverIdentity) }), cutoverIdentity);
+  assert.throws(() => readCurrentReleaseIdentity({ path: "scope.json", readFile: () => JSON.stringify({ ...targetIdentity, access: "restricted" }) }), /access must be/);
 });

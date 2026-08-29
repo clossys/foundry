@@ -50,6 +50,7 @@ import { fileURLToPath } from "node:url";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const configPath = join(repoRoot, "package-scope.json");
+const transitionPath = join(repoRoot, "governance", "package-identity-transition.json");
 
 let config;
 try {
@@ -57,6 +58,14 @@ try {
 } catch (error) {
   console.error(`set-registry: could not read/parse ${configPath}: ${error.message}`);
   process.exit(2);
+}
+let transition = null;
+if (existsSync(transitionPath)) {
+  try { transition = JSON.parse(readFileSync(transitionPath, "utf8")); }
+  catch (error) {
+    console.error(`set-registry: could not read/parse the package identity transition contract: ${error.message}`);
+    process.exit(2);
+  }
 }
 
 const argv = process.argv.slice(2);
@@ -82,6 +91,10 @@ try {
 const oldRegistry = config.registry;
 if (!check && (typeof oldRegistry !== "string" || oldRegistry.length === 0)) {
   console.error("set-registry: package-scope.json has no existing \"registry\" to propagate from");
+  process.exit(2);
+}
+if (!check && transition && oldRegistry === transition.current?.registry && nextRegistry === transition.candidate?.registry) {
+  console.error("set-registry: the W1D GitHub Packages -> public npm transition must use `node scripts/set-package-identity.mjs --to-candidate`; refusing a registry-only rewrite");
   process.exit(2);
 }
 
@@ -125,12 +138,16 @@ for (const name of packageDirs) {
   if (manifest.private === true) continue; // not published — nothing to pin
 
   const declaredRegistry = manifest.publishConfig?.registry;
+  const declaredAccess = manifest.publishConfig?.access;
+  const publicNpm = transition?.candidate?.registry === nextRegistry && transition?.candidate?.access === "public";
 
   if (check) {
     if (typeof declaredRegistry !== "string" || declaredRegistry.length === 0) {
       findings.push(`  ${pkgJsonRel}: has no publishConfig.registry (expected "${nextRegistry}")`);
     } else if (declaredRegistry !== nextRegistry) {
       findings.push(`  ${pkgJsonRel}: publishConfig.registry is "${declaredRegistry}", expected "${nextRegistry}"`);
+    } else if (publicNpm && declaredAccess !== "public") {
+      findings.push(`  ${pkgJsonRel}: public npm requires publishConfig.access "public" (got ${JSON.stringify(declaredAccess)})`);
     }
     continue;
   }
