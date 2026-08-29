@@ -14,7 +14,7 @@ const POST_PUBLICATION = "post-publication-bootstrap";
 
 function releaseVersion(value) {
   const parts = String(value).split(".");
-  if (parts.length !== 3 || parts.some((part) => part.length === 0 || [...part].some((character) => character < "0" || character > "9"))) return null;
+  if (parts.length !== 3 || parts.some((part) => !/^(?:0|[1-9][0-9]*)$/.test(part))) return null;
   const numbers = parts.map(Number);
   return numbers.every(Number.isSafeInteger) ? numbers : null;
 }
@@ -27,9 +27,12 @@ function compareReleaseVersions(left, right) {
 export function selectControllerQualificationRecord(entries, manifestVersion) {
   const current = releaseVersion(manifestVersion);
   if (!current) throw new Error("Controller manifest version must be an exact release version");
+  for (const entry of entries) {
+    if (!releaseVersion(entry.version)) throw new Error("Controller qualification record version must be a canonical exact release version");
+  }
   const eligible = entries.filter((entry) => {
     const version = releaseVersion(entry.version);
-    return version && compareReleaseVersions(version, current) <= 0;
+    return compareReleaseVersions(version, current) <= 0;
   }).sort((left, right) => compareReleaseVersions(releaseVersion(right.version), releaseVersion(left.version)));
   if (eligible.length === 0) throw new Error("Controller qualification record is missing");
   if (eligible[1]?.version === eligible[0].version) throw new Error("Controller qualification record is ambiguous");
@@ -112,13 +115,19 @@ test("Controller record selection separates the current candidate from retained 
   const post = (version) => ({ version, record: { timing: POST_PUBLICATION } });
   const pre = (version) => ({ version, record: { timing: "pre-publication" } });
   const records = [post("0.8.19"), post("0.8.20"), pre("0.8.21"), pre("0.8.22")];
-  assert.equal(selectControllerQualificationRecord(records, "0.8.21").version, "0.8.21");
-  assert.equal(selectControllerQualificationRecord(records, "0.8.22").version, "0.8.22");
-  assert.equal(selectControllerPostPublicationRecord(records, "0.8.21").version, "0.8.20");
+  for (const orderedRecords of [records, records.toReversed()]) {
+    assert.equal(selectControllerQualificationRecord(orderedRecords, "0.8.21").version, "0.8.21");
+    assert.equal(selectControllerQualificationRecord(orderedRecords, "0.8.22").version, "0.8.22");
+    assert.equal(selectControllerPostPublicationRecord(orderedRecords, "0.8.21").version, "0.8.20");
+  }
   assert.throws(() => selectControllerQualificationRecord([], "0.8.21"), /missing/);
   assert.throws(() => selectControllerQualificationRecord([pre("0.8.20"), pre("0.8.20")], "0.8.21"), /ambiguous/);
   assert.throws(() => selectControllerPostPublicationRecord([pre("0.8.21")], "0.8.21"), /missing/);
   assert.throws(() => selectControllerPostPublicationRecord([post("0.8.20"), post("0.8.20")], "0.8.21"), /ambiguous/);
+  for (const aliasedRecords of [[pre("0.8.020"), pre("0.8.20")], [pre("0.8.20"), pre("0.8.020")]]) {
+    assert.throws(() => selectControllerQualificationRecord(aliasedRecords, "0.8.21"), /canonical exact release version/);
+  }
+  assert.throws(() => selectControllerPostPublicationRecord([post("0.08.20"), post("0.8.20")], "0.8.21"), /canonical exact release version/);
 });
 test("prepublication PR tail accepts only an exact record-only tail", async (t) => {
   const fixture = await syntheticPrepublication(); t.after(() => rm(fixture.root, { recursive: true, force: true }));
