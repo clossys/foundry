@@ -1,5 +1,5 @@
 /**
- * `@vespeneventures/designer/tokens`'s WCAG colour math — a complete, zero-
+ * `@clossys/designer/tokens`'s WCAG colour math — a complete, zero-
  * dependency OKLCH/hex -> linear-sRGB -> relative-luminance -> contrast-
  * ratio pipeline, exported directly from `./tokens` alongside `TOKENS`
  * itself. Public, not incidental: this used to live at

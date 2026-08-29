@@ -422,6 +422,7 @@ export function evaluateLifecycleCoverage(
   value: unknown,
   packageNames: readonly string[],
   packageVersions?: ReadonlyMap<string, string>,
+  workspaceScope?: string,
 ): LifecycleFinding[] {
   const findings = validatePackageLifecycle(value);
   if (!isRecord(value)) return findings;
@@ -435,8 +436,14 @@ export function evaluateLifecycleCoverage(
     if (typeof name !== "string" || !PACKAGE_NAME.test(name)) return;
     declared.add(name);
     // Terminal entries are durable evidence and may intentionally outlive
-    // their workspace package directory.
-    if (!TERMINAL_STATUSES.has(String(status)) && !packageNames.includes(name)) {
+    // their workspace package directory. A still-published identity from a
+    // predecessor scope is also registry truth rather than current source:
+    // W1D keeps those installable names visible to the registry reconciliation
+    // while the new scope remains source-only. The exception is closed over
+    // the caller's explicit current scope; a published package missing from
+    // that same scope remains a catalogue defect.
+    const historicalPublished = status === "published" && typeof workspaceScope === "string" && !name.startsWith(`${workspaceScope}/`);
+    if (!TERMINAL_STATUSES.has(String(status)) && !historicalPublished && !packageNames.includes(name)) {
       findings.push(finding("catalog-package-missing", `packages[${index}].name`, `Lifecycle entry "${name}" is not present in the workspace catalog.`));
     }
     // A migration pointer that resolves to a range covering only a long-

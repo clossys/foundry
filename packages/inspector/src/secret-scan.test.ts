@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { assertNeverVacuouslySatisfied, gateResultToExitCode } from "@vespeneventures/controller/gates";
+import { assertNeverVacuouslySatisfied, gateResultToExitCode } from "@clossys/controller/gates";
 import { checkSecretScan } from "./secret-scan.js";
 import type { SecretScanObservation } from "./secret-scan.js";
 

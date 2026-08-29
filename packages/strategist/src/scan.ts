@@ -4,7 +4,7 @@
  * `ScannedFile[]`, which `checkFactsTraceability` (see `facts-gate.ts`,
  * pure) then evaluates. Kept as a separate function, in a separate file,
  * for the same reason `buildCatalog`/`evaluateCatalog` are split in
- * `@vespeneventures/catalog`: the gate itself must stay a pure function a
+ * `@example/catalog`: the gate itself must stay a pure function a
  * test can call directly with fixture strings, with zero real filesystem
  * involved.
  *

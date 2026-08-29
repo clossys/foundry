@@ -28,8 +28,8 @@
  * Zero I/O. Pure function of already-collected observations.
  */
 
-import { createGateReasons, gateSatisfied, gateViolated } from "@vespeneventures/controller/gates";
-import type { GateResult } from "@vespeneventures/controller/gates";
+import { createGateReasons, gateSatisfied, gateViolated } from "@clossys/controller/gates";
+import type { GateResult } from "@clossys/controller/gates";
 import { isRecord, isRecordArray } from "./shape.js";
 import type { CheckFinding } from "./types.js";
 

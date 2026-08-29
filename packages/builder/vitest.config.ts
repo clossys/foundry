@@ -1,7 +1,7 @@
 import { defineConfig } from "vitest/config";
 
 /**
- * Per-package vitest config for @vespeneventures/builder.
+ * Per-package vitest config for @clossys/builder.
  * Plain Node environment. The provisioning half of this package runs every
  * test against the in-memory FileSystemPort rather than a real home
  * directory; the CI-mechanics half injects every observation rather than

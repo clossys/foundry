@@ -145,7 +145,7 @@ export function classifyCurrencyDistance(installedVersion: string, latestVersion
 /**
  * Judge every entitled package's currency. Every entitlement is reported --
  * this never stops at the first problem, because, same as
- * `@vespeneventures/provisioning`'s `verifyInstallation`, a drift report is
+ * `@example/provisioning`'s `verifyInstallation`, a drift report is
  * only useful when it is complete.
  *
  * Absence is judged BEFORE reachability is even consulted: whether a package

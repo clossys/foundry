@@ -13,7 +13,7 @@ export type IntegratorErrorCode =
  * them validate data that arrived from outside this process -- a plane's own
  * declaration file, its own manifest, its own lockfile -- and all of them
  * throw rather than return findings, for the same reason
- * `@vespeneventures/provisioning`'s `loadManifest` does: a caller about to
+ * `@example/provisioning`'s `loadManifest` does: a caller about to
  * reconcile or admit against malformed input has no useful "continue with the
  * parts that parsed".
  */

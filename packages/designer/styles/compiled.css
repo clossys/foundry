@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════════
- * @vespeneventures/designer · compiled.css
+ * @clossys/designer · compiled.css
  * ────────────────────────────────────────────────────────────────────
  * GENERATED FILE — do not hand-edit. Produced by a real Tailwind v4
  * compile of this package's own component class candidates against this
@@ -12,13 +12,13 @@
  * `npm test` — `src/compiled-css/check.test.ts` runs the same
  * re-derive-and-diff check as part of this package's ordinary test suite.
  *
- * Scope: this file covers `@vespeneventures/designer/atoms` only — the
+ * Scope: this file covers `@clossys/designer/atoms` only — the
  * self-contained base layer that composes no other component (see
  * README.md, "Placement rules"). `blocks`, `shell`, `charts`, and
  * `theme` remain Tailwind-native only; see the introducing PR for why
  * that scope was chosen for this first framework-portable contract.
  *
- * Load this AFTER `@vespeneventures/designer/tokens.css` (never instead of it —
+ * Load this AFTER `@clossys/designer/tokens.css` (never instead of it —
  * every declaration below reads a token custom property this file does
  * NOT itself declare). Every generated rule lives inside the
  * `foundry-ui-compiled` layer, declared after `foundry-ui-tokens` — see

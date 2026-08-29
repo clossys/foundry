@@ -36,16 +36,15 @@ export function qualificationPath(root, candidate, ref = "WORKTREE") {
   const entry = selectedPolicy(root, candidate, ref);
   return `governance/release-qualifications/${entry.recordStem}-${candidate.version}.json`;
 }
-export function qualificationIntroductionCommit(root, candidate, head = "HEAD") {
-  const path = qualificationPath(root, candidate);
+export function qualificationIntroductionCommit(root, candidate, head = "HEAD", recordPath = qualificationPath(root, candidate)) {
+  const path = recordPath;
   const commits = git(root, ["log", "--full-history", "--diff-filter=A", "--format=%H", head, "--", path]).split("\n").filter(Boolean);
   if (commits.length !== 1 || !SHA1.test(commits[0])) throw new Error("qualification record must have one introduction commit");
   return commits[0];
 }
-export function qualificationRecordHistory(root, path, candidate, head = "HEAD") {
-  const expectedPath = qualificationPath(root, candidate);
+export function qualificationRecordHistory(root, path, candidate, head = "HEAD", expectedPath = qualificationPath(root, candidate)) {
   if (path !== expectedPath) throw new Error("qualification record path does not match its candidate");
-  const introductionCommit = qualificationIntroductionCommit(root, candidate, head);
+  const introductionCommit = qualificationIntroductionCommit(root, candidate, head, expectedPath);
   return {
     introductionCommit,
     introducedRecordSha256: digest(content(root, introductionCommit, path)),

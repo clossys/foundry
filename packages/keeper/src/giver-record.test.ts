@@ -17,6 +17,6 @@ describe("giver retained-grounds document seam", () => {
 
   it("does not import giver: the seam is JSON and an independently declared shape", () => {
     const source = readFileSync(fileURLToPath(new URL("./giver-record.ts", import.meta.url)), "utf8");
-    expect(source).not.toMatch(/from\s+["']@vespeneventures\/giver(?:\/|["'])/);
+    expect(source).not.toMatch(/from\s+["']@clossys\/giver(?:\/|["'])/);
   });
 });

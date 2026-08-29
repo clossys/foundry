@@ -1,11 +1,11 @@
 /**
- * @vespeneventures/writer — public entry point. See README.md for the full
+ * @clossys/writer — public entry point. See README.md for the full
  * picture: the machinery-vs-values split this package mirrors from
- * the package's voice contract (itself mirroring @vespeneventures/ui/tokens), the
+ * the package's voice contract (itself mirroring @example/ui/tokens), the
  * frozen CopyEntry/CopyRecord contract, and exactly what checkCopyRecord
  * does and does not attempt.
  *
- * Two halves ship from here, mirroring the split @vespeneventures/strategy
+ * Two halves ship from here, mirroring the split @example/strategy
  * draws between its own entity/reader half and its facts gate:
  *
  *   1. THE REGISTRY. CopyEntry/CopyRecord (`types.ts`), their validation
@@ -19,7 +19,7 @@
  *      CLI with the same three-state exit-code contract
  *      `strategy-facts-check` uses: 0 clean, 1 findings, 2 could not run.
  *      `cli.ts` itself is intentionally NOT re-exported here — matching
- *      `@vespeneventures/strategy`'s own index.ts, a CLI's `main`/argv
+ *      `@example/strategy`'s own index.ts, a CLI's `main`/argv
  *      handling is not library surface, only its `bin` entry is.
  */
 

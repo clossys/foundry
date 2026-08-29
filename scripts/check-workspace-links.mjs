@@ -17,7 +17,7 @@
 // THE DEFECT THIS EXISTS TO CATCH
 // --------------------------------
 // Packages here depend on each other with 0.x ranges — e.g.
-// `"@vespeneventures/governance": "^0.3.0"`. In 0.x semver BOTH `^` and `~`
+// `"@example/governance": "^0.3.0"`. In 0.x semver BOTH `^` and `~`
 // are minor-locked: `^0.3.0` and `~0.3.0` both mean `>=0.3.0 <0.4.0`. The
 // moment a package's minor version is bumped, every sibling that declared a
 // range against the OLD minor stops being satisfiable by the local
@@ -28,7 +28,7 @@
 // from the registry instead. In CI, the tokenless tarball-safety job then
 // fails with something like:
 //
-//   npm error 401 Unauthorized - GET https://npm.pkg.github.com/download/@vespeneventures/<pkg>/<version>/...
+//   npm error 401 Unauthorized - GET https://registry.npmjs.org/download/@clossys/<pkg>/<version>/...
 //
 // which names the symptom (no auth) and completely hides the cause (a range
 // that no longer covers the sibling's version). Worse, on a machine that IS

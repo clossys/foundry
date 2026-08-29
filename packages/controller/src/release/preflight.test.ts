@@ -11,9 +11,9 @@ import { combinePreflightOk, preflightPackage } from "./preflight.js";
 // zero-external-dependency package — the one package in the workspace whose
 // packed tarball could be installed in a genuinely isolated directory with
 // no network resolution beyond npm itself. Since issue #282 folded policy's
-// source into @vespeneventures/controller as its `./policy` subpath, the
-// deprecated `@vespeneventures/policy` compatibility stub now depends on
-// `@vespeneventures/controller` — a real dependency a truly isolated
+// source into @clossys/controller as its `./policy` subpath, the
+// deprecated `@example/policy` compatibility stub now depends on
+// `@clossys/controller` — a real dependency a truly isolated
 // install cannot resolve until controller itself is published. Controller
 // inherited the zero-external-dependency property policy used to hold this
 // place with, so this test now targets controller instead.
@@ -29,12 +29,12 @@ describe("preflightPackage — real end-to-end against packages/controller", () 
   // npm install + per-subpath import checks inside packRoundTrip (which this
   // wraps) take longer than the suite's default 5s timeout — see
   // pack-round-trip.test.ts's own equivalent test for the full list.
-  it("reports ok:true for @vespeneventures/controller given today's real repository state", { timeout: 60_000 }, async () => {
+  it("reports ok:true for @clossys/controller given today's real repository state", { timeout: 60_000 }, async () => {
     const report = await preflightPackage(repoRoot, join(repoRoot, "packages", "controller"), {
       scope: SCOPE,
     });
 
-    expect(report.packageName).toBe("@vespeneventures/controller");
+    expect(report.packageName).toBe("@clossys/controller");
     // controller has zero unconditional runtime dependencies to trip the
     // round trip, and its own dependency graph is clean, so both halves
     // pass today.

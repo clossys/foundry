@@ -30,7 +30,7 @@
  *   - `producedAt` -- when this bundle was produced, supplied by the caller
  *     (never read from the system clock -- see `writeObservationBundle`);
  *   - `gates` -- one `GateResult` per gate this repository's own CI ran,
- *     reusing `@vespeneventures/controller/gates`'s existing ternary rather
+ *     reusing `@clossys/controller/gates`'s existing ternary rather
  *     than inventing a parallel result type (this package already depends
  *     on controller for that ternary throughout `./live-state.ts` and
  *     `./toolchain.ts`);
@@ -54,7 +54,7 @@
  * caller; this module only shapes and validates what it is given.
  */
 
-import type { GateResult } from "@vespeneventures/controller/gates";
+import type { GateResult } from "@clossys/controller/gates";
 import type { Finding } from "./types.js";
 
 /** This contract's own schema version. Bumped only when the bundle SHAPE changes, never on a behavioral fix elsewhere in this package. */
@@ -72,7 +72,7 @@ export interface ObservationBundleRepository {
 export interface ObservationBundleGateEntry {
   /** Stable identifier for the gate, e.g. `"secret-scan"`, `"release-readiness"`. Non-empty, unique within one bundle -- see `validateObservationBundleShape`. */
   readonly gateId: string;
-  /** The gate's own outcome, in the shared `GateResult` ternary this package already depends on `@vespeneventures/controller/gates` for. */
+  /** The gate's own outcome, in the shared `GateResult` ternary this package already depends on `@clossys/controller/gates` for. */
   readonly result: GateResult<Finding, string>;
 }
 

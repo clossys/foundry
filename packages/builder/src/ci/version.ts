@@ -11,7 +11,7 @@
  * 2, not a silent 0 — if the installed copy is below it."
  *
  * This module is a leaner, purpose-built copy of the same mechanism
- * `@vespeneventures/verify-standards` already ships and already proved (see
+ * `@example/verify-standards` already ships and already proved (see
  * that package's own `src/version.ts` for the fuller account of why two
  * independent facts — the running build's own version, and the range a
  * caller declared for it — are both checked, and why the caller-supplied
@@ -26,8 +26,8 @@
  * Zero I/O: every input is passed in.
  */
 
-import { createGateReasons, gateSatisfied } from "@vespeneventures/controller/gates";
-import type { GateResult } from "@vespeneventures/controller/gates";
+import { createGateReasons, gateSatisfied } from "@clossys/controller/gates";
+import type { GateResult } from "@clossys/controller/gates";
 
 /**
  * The oldest build of this package's CI mechanics whose behaviour is still

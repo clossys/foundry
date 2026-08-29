@@ -123,7 +123,7 @@ describe("computeBuildOrder — genuine cycle", () => {
 describe("computeBuildOrder — self-dependency", () => {
   it("treats a package depending on itself as a cycle, not a valid order", () => {
     // A self-loop is a strongly connected component of size 1 with an edge
-    // to itself — findCyclicGroups (in @vespeneventures/catalog) reports
+    // to itself — findCyclicGroups (in @example/catalog) reports
     // this as a dependency-cycle finding, so computeBuildOrder must refuse
     // it the same way it refuses any other cycle rather than, say, treating
     // a self-edge as trivially satisfied and building the package anyway.

@@ -18,7 +18,7 @@
  *
  * THE TOKENS THIS FILE READS
  * -------------------------------
- * A small, fixed subset of `@vespeneventures/designer/tokens`' 154-entry registry —
+ * A small, fixed subset of `@clossys/designer/tokens`' 154-entry registry —
  * just the roles an email needs: ink (heading/body/muted/on-accent text),
  * surface (page/card background), line (dividers), accent (buttons,
  * eyebrows), plus the `--spacing-*` scale (already literal, e.g. `"15px"`,
@@ -31,7 +31,7 @@
  * PER-ELEMENT-KIND STYLE, WITH A PER-SLOT TYPOGRAPHY OVERRIDE
  * -----------------------------------------------------------------
  * `SlotBinding` carries only a `copyId`/`value` string — no font, no
- * color, no size (see `@vespeneventures/publisher/core`'s own README, "Only
+ * color, no size (see `@clossys/publisher/core`'s own README, "Only
  * plain text ever fills a slot", the same rule `./web`'s own
  * `renderWebDocument.ts` documents). A resolved slot's OTHER two pieces of
  * visual information are its `SlotSpec.element: ElementKind` — this file's

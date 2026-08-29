@@ -1,4 +1,4 @@
-# `@vespeneventures/influencer`
+# `@clossys/influencer`
 
 Influencer operates a declared organization or product presence and improves
 independently verified qualified audience response.
@@ -77,7 +77,7 @@ import {
   createInfluencer,
   type PresenceActionLedger,
   type PublishIntent,
-} from "@vespeneventures/influencer";
+} from "@clossys/influencer";
 
 declare const ledger: PresenceActionLedger;
 

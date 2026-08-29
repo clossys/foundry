@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { checkBrandFileCoverage, TOKENS } from "@vespeneventures/designer/tokens";
+import { checkBrandFileCoverage, TOKENS } from "@clossys/designer/tokens";
 
 import { RenderError } from "./errors.js";
 import { flattenTokens } from "./tokens.js";
 
 /**
- * `@vespeneventures/designer/tokens`' `checkBrandFileCoverage` and this package's own
+ * `@clossys/designer/tokens`' `checkBrandFileCoverage` and this package's own
  * `flattenTokens` are two independent implementations of the SAME rule —
  * a brand override may only ever target a `brandable: true` slot that
  * really exists in `TOKENS` — enforced two different ways: `flattenTokens`
@@ -19,11 +19,11 @@ import { flattenTokens } from "./tokens.js";
  * differently from what `tokens-brand-check` told a consumer in CI is
  * exactly the kind of drift that surfaces in production, not in a gate.
  *
- * This lives HERE, in `@vespeneventures/publisher` (which already depends on
- * `@vespeneventures/designer/tokens` — see `package.json`), rather than inside
- * `@vespeneventures/designer/tokens` itself, because the reverse dependency would be
- * circular: `@vespeneventures/designer/tokens` cannot import
- * `@vespeneventures/publisher` to test against `flattenTokens` without
+ * This lives HERE, in `@clossys/publisher` (which already depends on
+ * `@clossys/designer/tokens` — see `package.json`), rather than inside
+ * `@clossys/designer/tokens` itself, because the reverse dependency would be
+ * circular: `@clossys/designer/tokens` cannot import
+ * `@clossys/publisher` to test against `flattenTokens` without
  * `render` already depending on `tokens` right back (see `internal/
  * tokens.ts`'s own header comment for exactly what it imports).
  *
@@ -33,7 +33,7 @@ import { flattenTokens } from "./tokens.js";
  * package's own test suite is for) — the point here is strictly the
  * cross-package agreement.
  */
-describe("checkBrandFileCoverage (@vespeneventures/designer/tokens) agrees with flattenTokens (this package) on the non-brandable-override rule", () => {
+describe("checkBrandFileCoverage (@clossys/designer/tokens) agrees with flattenTokens (this package) on the non-brandable-override rule", () => {
   const nonBrandableSlots = Object.values(TOKENS)
     .filter((def) => !def.brandable)
     .map((def) => def.property);

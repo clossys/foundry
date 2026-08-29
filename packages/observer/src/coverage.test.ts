@@ -7,7 +7,7 @@ import {
   type FleetRepositoryCoverageInput,
 } from "./coverage.js";
 
-const PACKAGES = ["@vespeneventures/observer", "@vespeneventures/controller"] as const;
+const PACKAGES = ["@clossys/observer", "@clossys/controller"] as const;
 
 function repo(overrides: Partial<FleetRepositoryCoverageInput> & { repository: string }): FleetRepositoryCoverageInput {
   return {
@@ -24,7 +24,7 @@ describe("gradeFleetCoverage — the three-state classification", () => {
       repositories: [
         repo({
           repository: "repo-a",
-          installed: { packages: [{ name: "@vespeneventures/observer" }, { name: "@vespeneventures/controller" }] },
+          installed: { packages: [{ name: "@clossys/observer" }, { name: "@clossys/controller" }] },
         }),
       ],
     };
@@ -44,8 +44,8 @@ describe("gradeFleetCoverage — the three-state classification", () => {
             schemaVersion: COVERAGE_DECLARATION_SCHEMA_VERSION,
             repository: "repo-a",
             declaredAbsences: [
-              { package: "@vespeneventures/observer", reason: "this repository has no telemetry lane" },
-              { package: "@vespeneventures/controller", reason: "no gates run here" },
+              { package: "@clossys/observer", reason: "this repository has no telemetry lane" },
+              { package: "@clossys/controller", reason: "no gates run here" },
             ],
           },
         }),
@@ -53,7 +53,7 @@ describe("gradeFleetCoverage — the three-state classification", () => {
     };
     const report = gradeFleetCoverage(input);
     expect(report.cells.every((cell) => cell.state === "declared-absent")).toBe(true);
-    const observerCell = report.cells.find((cell) => cell.package === "@vespeneventures/observer");
+    const observerCell = report.cells.find((cell) => cell.package === "@clossys/observer");
     expect(observerCell).toMatchObject({ state: "declared-absent", reason: "this repository has no telemetry lane" });
     expect(report.countsByState).toEqual({ installed: 0, declaredAbsent: 2, unclassified: 0 });
     expect(report.result.verdict).toBe("satisfied");
@@ -91,14 +91,14 @@ describe("gradeFleetCoverage — the three-state classification", () => {
           declaration: {
             schemaVersion: COVERAGE_DECLARATION_SCHEMA_VERSION,
             repository: "repo-a",
-            declaredAbsences: [{ package: "@vespeneventures/observer", reason: "no lane" }],
+            declaredAbsences: [{ package: "@clossys/observer", reason: "no lane" }],
           },
         }),
       ],
     };
     const report = gradeFleetCoverage(input);
-    const observerCell = report.cells.find((cell) => cell.package === "@vespeneventures/observer");
-    const controllerCell = report.cells.find((cell) => cell.package === "@vespeneventures/controller");
+    const observerCell = report.cells.find((cell) => cell.package === "@clossys/observer");
+    const controllerCell = report.cells.find((cell) => cell.package === "@clossys/controller");
     expect(observerCell?.state).toBe("declared-absent");
     expect(controllerCell).toMatchObject({ state: "unclassified", reason: "installed-inventory-unreadable" });
   });
@@ -119,13 +119,13 @@ describe("gradeFleetCoverage — the three-state classification", () => {
         repo({
           repository: "repo-a",
           declaration: { garbage: true },
-          installed: { packages: [{ name: "@vespeneventures/observer" }] },
+          installed: { packages: [{ name: "@clossys/observer" }] },
         }),
       ],
     };
     const report = gradeFleetCoverage(input);
-    const observerCell = report.cells.find((cell) => cell.package === "@vespeneventures/observer");
-    const controllerCell = report.cells.find((cell) => cell.package === "@vespeneventures/controller");
+    const observerCell = report.cells.find((cell) => cell.package === "@clossys/observer");
+    const controllerCell = report.cells.find((cell) => cell.package === "@clossys/controller");
     expect(observerCell?.state).toBe("installed");
     expect(controllerCell).toMatchObject({ state: "unclassified", reason: "declaration-unreadable" });
   });
@@ -139,7 +139,7 @@ describe("gradeFleetCoverage — the three-state classification", () => {
           declaration: {
             schemaVersion: COVERAGE_DECLARATION_SCHEMA_VERSION,
             repository: "repo-a",
-            declaredAbsences: [{ package: "@vespeneventures/observer", reason: "" }],
+            declaredAbsences: [{ package: "@clossys/observer", reason: "" }],
           },
         }),
       ],
@@ -155,15 +155,15 @@ describe("gradeFleetCoverage — the three-state classification", () => {
 describe("gradeFleetCoverage — contradictions", () => {
   it("resolves a package both installed and declared-absent as installed, and records a contradiction", () => {
     const input: FleetCoverageInput = {
-      packages: ["@vespeneventures/observer"],
+      packages: ["@clossys/observer"],
       repositories: [
         repo({
           repository: "repo-a",
-          installed: { packages: [{ name: "@vespeneventures/observer" }] },
+          installed: { packages: [{ name: "@clossys/observer" }] },
           declaration: {
             schemaVersion: COVERAGE_DECLARATION_SCHEMA_VERSION,
             repository: "repo-a",
-            declaredAbsences: [{ package: "@vespeneventures/observer", reason: "believed unused" }],
+            declaredAbsences: [{ package: "@clossys/observer", reason: "believed unused" }],
           },
         }),
       ],
@@ -171,7 +171,7 @@ describe("gradeFleetCoverage — contradictions", () => {
     const report = gradeFleetCoverage(input);
     expect(report.cells[0]).toMatchObject({ state: "installed" });
     expect(report.contradictions).toEqual([
-      { package: "@vespeneventures/observer", repository: "repo-a", declaredReason: "believed unused" },
+      { package: "@clossys/observer", repository: "repo-a", declaredReason: "believed unused" },
     ]);
     expect(report.result).toEqual({ verdict: "violated", findings: report.contradictions });
   });
@@ -182,11 +182,11 @@ describe("gradeFleetCoverage — contradictions", () => {
       repositories: [
         repo({
           repository: "repo-a",
-          installed: { packages: [{ name: "@vespeneventures/observer" }] },
+          installed: { packages: [{ name: "@clossys/observer" }] },
           declaration: {
             schemaVersion: COVERAGE_DECLARATION_SCHEMA_VERSION,
             repository: "repo-a",
-            declaredAbsences: [{ package: "@vespeneventures/observer", reason: "believed unused" }],
+            declaredAbsences: [{ package: "@clossys/observer", reason: "believed unused" }],
           },
         }),
         // repo-b has an unrelated unclassified cell (no inventory).
@@ -223,7 +223,7 @@ describe("gradeFleetCoverage — caller preconditions", () => {
   it("throws on a duplicate package identifier", () => {
     expect(() =>
       gradeFleetCoverage({
-        packages: ["@vespeneventures/observer", "@vespeneventures/observer"],
+        packages: ["@clossys/observer", "@clossys/observer"],
         repositories: [repo({ repository: "repo-a" })],
       }),
     ).toThrow(/duplicate/);

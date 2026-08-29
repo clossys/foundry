@@ -80,7 +80,7 @@ export type SupersessionIndeterminateReason =
 export type SupersessionResult =
   | {
       readonly verdict: "satisfied";
-      /** How many supersession-map entries were actually evaluated against the manifest. Always a positive integer -- see `gateSatisfied`'s reasoning in `@vespeneventures/controller`, independently reinvented here for the same reason. */
+      /** How many supersession-map entries were actually evaluated against the manifest. Always a positive integer -- see `gateSatisfied`'s reasoning in `@clossys/controller`, independently reinvented here for the same reason. */
       readonly evaluated: number;
       /** Always `0` on `satisfied` -- present so a caller can chart this number over time without branching on verdict first. */
       readonly count: 0;

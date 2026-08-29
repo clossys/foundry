@@ -1,5 +1,5 @@
 {
-  "name": "@vespeneventures/bouncer",
+  "name": "@clossys/bouncer",
   "version": "0.1.0",
   "private": false,
   "license": "MIT",
@@ -63,13 +63,13 @@
   "author": "Calvin Hung",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vespeneventures/foundry.git",
+    "url": "git+https://github.com/clossys/platform.git",
     "directory": "packages/bouncer"
   },
   "bugs": {
-    "url": "https://github.com/vespeneventures/foundry/issues"
+    "url": "https://github.com/clossys/platform/issues"
   },
-  "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/bouncer#readme",
+  "homepage": "https://github.com/clossys/platform/tree/main/packages/bouncer#readme",
   "engines": {
     "node": ">=20"
   },
@@ -87,11 +87,21 @@
     "svix": "^1.96.0"
   },
   "peerDependenciesMeta": {
-    "@clerk/nextjs": { "optional": true },
-    "next": { "optional": true },
-    "react": { "optional": true },
-    "react-dom": { "optional": true },
-    "svix": { "optional": true }
+    "@clerk/nextjs": {
+      "optional": true
+    },
+    "next": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    },
+    "svix": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@clerk/nextjs": "7.7.5",
@@ -111,11 +121,16 @@
         "./providers/clerk/web",
         "./providers/clerk/web/client"
       ],
-      "serverSubpaths": ["./providers/clerk/web/server"],
-      "proxySubpaths": ["./providers/clerk/web/proxy"]
+      "serverSubpaths": [
+        "./providers/clerk/web/server"
+      ],
+      "proxySubpaths": [
+        "./providers/clerk/web/proxy"
+      ]
     }
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "registry": "https://registry.npmjs.org",
+    "access": "public"
   }
 }

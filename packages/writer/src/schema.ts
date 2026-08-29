@@ -1,8 +1,8 @@
 /**
  * Structural validation for a candidate `CopyRecord`, hand-rolled in the
  * same plain-type-guard, accumulate-and-keep-going style as
- * `@vespeneventures/strategy`'s `validation.ts` and
- * `@vespeneventures/writer/voice`'s `schema.ts` — no schema library, for the
+ * `@example/strategy`'s `validation.ts` and
+ * `@clossys/writer/voice`'s `schema.ts` — no schema library, for the
  * same reason both of those files give: this package's entire job is
  * dependency-free data validation, and a public package should not force
  * every consumer onto one schema library's major version for the sake of
@@ -111,8 +111,8 @@ function validateCopyEntryShape(value: unknown, path: string): CopyFinding[] {
     return [{ rule: "entry-shape", severity: "error", message: `${path} must be an object.`, path }];
   }
   // Snapshot every field this function reads, exactly once, before any
-  // check runs — mirroring `@vespeneventures/writer/voice`'s `schema.ts` and
-  // `@vespeneventures/policy`'s `validateBindingShape`, both of which
+  // check runs — mirroring `@clossys/writer/voice`'s `schema.ts` and
+  // `@example/policy`'s `validateBindingShape`, both of which
   // document why: a hostile or merely-badly-behaved `value` (a field
   // implemented as a getter, or a Proxy) could otherwise return a
   // different result on each property read.
@@ -198,8 +198,8 @@ function validateCopyEntryShape(value: unknown, path: string): CopyFinding[] {
  * (once defaults are applied — see `parseCopyRecord`). Never throws — any
  * input, including `null`, a string, or a wildly malformed object,
  * produces findings rather than an exception, the same discipline
- * `@vespeneventures/writer/voice`'s `validateVoiceRecordShape` and
- * `@vespeneventures/policy`'s `validateBindingShape` both hold to.
+ * `@clossys/writer/voice`'s `validateVoiceRecordShape` and
+ * `@example/policy`'s `validateBindingShape` both hold to.
  *
  * Checks, in full: `id` present and non-empty; `entries` present and an
  * array; every entry's own shape (`id` non-empty and well-formed per
@@ -446,7 +446,7 @@ export function validateCopyRegistryShape(value: unknown): CopyFinding[] {
  * — this function does no validation of its own and will throw or
  * produce garbage on unvalidated input. Only called internally, from
  * `parseCopyRecord`, immediately after that check — mirrors
- * `@vespeneventures/writer/voice`'s `buildVoiceRecord` exactly, including that
+ * `@clossys/writer/voice`'s `buildVoiceRecord` exactly, including that
  * split's reasoning: see this file's `parseCopyRecord` doc comment for
  * why this is a deliberate two-pass design.
  */
@@ -500,7 +500,7 @@ function buildCopyRegistry(value: Record<string, unknown>): CopyRegistry {
  * findings, makes one further pass over `value` (`buildCopyRecord`) to
  * apply this schema's one default (`placeholders: []`) and produce a
  * fully populated `CopyRecord`. This two-pass shape mirrors
- * `@vespeneventures/writer/voice`'s `parseVoiceRecord` — see that function's own
+ * `@clossys/writer/voice`'s `parseVoiceRecord` — see that function's own
  * doc comment for the fuller TOCTOU-safety argument for why reading twice
  * is a deliberate choice here, not an oversight, given this package's
  * actual threat model (a consumer's own in-memory config object, not a

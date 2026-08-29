@@ -1,11 +1,11 @@
 /**
- * @vespeneventures/butler/web — preference-surface state, built entirely on
+ * @clossys/butler/web — preference-surface state, built entirely on
  * the root package's pure functions.
  *
  * `react`/`react-dom` are OPTIONAL peers of this subpath specifically (see
  * package.json's `peerDependenciesMeta`) — importing
- * `@vespeneventures/butler` (the root) or `@vespeneventures/butler/inbound`
- * never pulls in React; only importing `@vespeneventures/butler/web` does.
+ * `@clossys/butler` (the root) or `@clossys/butler/inbound`
+ * never pulls in React; only importing `@clossys/butler/web` does.
  * This module asserts the installed `react` version against this package's
  * declared range at import time, so an absent or incompatible React fails
  * loudly here instead of crashing later inside a hook with no version named

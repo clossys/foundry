@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 /**
  * UI exposes reusable visual vocabulary only. Atoms are foundational;
  * blocks may compose atoms; shell and charts are sibling domains built on
- * atoms/blocks. Page-level views live in `@vespeneventures/surface/web`.
+ * atoms/blocks. Page-level views live in `@example/surface/web`.
  */
 const srcDir = dirname(fileURLToPath(import.meta.url));
 const atomsDir = join(srcDir, "atoms");

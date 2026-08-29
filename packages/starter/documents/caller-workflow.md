@@ -144,8 +144,8 @@ jobs:
       - uses: actions/setup-node@<FULL_COMMIT_SHA>
         with:
           node-version: 20
-          registry-url: https://npm.pkg.github.com
-          scope: "@vespeneventures"
+          registry-url: https://registry.npmjs.org
+          scope: "@clossys"
 
       - uses: actions/download-artifact@<FULL_COMMIT_SHA>
         with:
@@ -179,7 +179,7 @@ jobs:
           report="$RUNNER_TEMP/adoption-report.json"
           output="$RUNNER_TEMP/adoption-decision.txt"
           status=0
-          node node_modules/@vespeneventures/starter/dist/cli.js decide \
+          node node_modules/@clossys/starter/dist/cli.js decide \
             .starter/request.json \
             "$RUNNER_TEMP/adoption-snapshot" \
             "$RUNNER_TEMP/trusted-event.json" \
@@ -217,8 +217,8 @@ jobs:
       - uses: actions/setup-node@<FULL_COMMIT_SHA>
         with:
           node-version: 20
-          registry-url: https://npm.pkg.github.com
-          scope: "@vespeneventures"
+          registry-url: https://registry.npmjs.org
+          scope: "@clossys"
 
       - name: Enable pnpm
         run: corepack enable
@@ -252,7 +252,7 @@ jobs:
           report="$RUNNER_TEMP/adoption-report.json"
           output="$RUNNER_TEMP/adoption-decision.txt"
           status=0
-          node node_modules/@vespeneventures/starter/dist/cli.js decide \
+          node node_modules/@clossys/starter/dist/cli.js decide \
             .starter/request.json \
             "$RUNNER_TEMP/adoption-snapshot" \
             "$RUNNER_TEMP/trusted-event.json" \

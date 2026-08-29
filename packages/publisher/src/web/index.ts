@@ -1,12 +1,12 @@
 /**
- * @vespeneventures/publisher/web — the `web` channel renderer. Takes a
+ * @clossys/publisher/web — the `web` channel renderer. Takes a
  * `ComposeDocument` with `channel: "web"` and emits the rendered
- * `@vespeneventures/designer` view element plus framework-agnostic head
+ * `@clossys/designer` view element plus framework-agnostic head
  * metadata. See `renderWebDocument.ts`'s own doc comment for the full
  * picture, and this package's README for the peer-dependency model
- * (`react`, `react-dom`, and `@vespeneventures/designer` are all OPTIONAL peers
+ * (`react`, `react-dom`, and `@clossys/designer` are all OPTIONAL peers
  * of this subpath specifically — a consumer who never imports
- * `@vespeneventures/publisher/web` never needs to install any of them).
+ * `@clossys/publisher/web` never needs to install any of them).
  */
 
 export { renderWebDocument } from "./renderWebDocument.js";

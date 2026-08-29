@@ -15,7 +15,7 @@ import type { CliPort } from "./cli.js";
 
 /**
  * Reads this package's own version out of its own manifest. See
- * `@vespeneventures/verify-standards`'s identical helper for why
+ * `@example/verify-standards`'s identical helper for why
  * `createRequire(import.meta.url).resolve` — relative to this compiled
  * file, not the caller's working directory — is what makes this report the
  * version of the build actually executing.

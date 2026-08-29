@@ -2,5 +2,5 @@
 # not public npmjs — see docs/DECISIONS.md for why. Never commit a real .npmrc;
 # it is gitignored and the safety gate refuses it by name regardless.
 
-@vespeneventures:registry=https://npm.pkg.github.com
+@clossys:registry=https://registry.npmjs.org
 //npm.pkg.github.com/:_authToken=${GH_PACKAGES_TOKEN}

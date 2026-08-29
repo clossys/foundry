@@ -17,7 +17,7 @@
 // LATER version while an earlier one this repository still cares about
 // (because it is what `main`'s manifest declares right now) was silently
 // never uploaded at all. That is precisely what happened to
-// `@vespeneventures/auth@0.2.4`: three merges landed in sixteen minutes, the
+// `@example/auth@0.2.4`: three merges landed in sixteen minutes, the
 // middle publish run was evicted from the concurrency queue before any job
 // started, and nothing downstream ever asked the registry "did the version
 // `main` now claims actually arrive?" — only "what push introduced a
@@ -207,7 +207,7 @@ export async function probeVersions(entries, options) {
  *                                  `unreachable`, which asserted a failure
  *                                  that did not occur.
  *
- * WHY THIS MIRRORS @vespeneventures/integrator RATHER THAN IMPORTING IT
+ * WHY THIS MIRRORS @clossys/integrator RATHER THAN IMPORTING IT
  * ---------------------------------------------------------------------
  * Not preference, and not an oversight to be tidied away later. This module
  * runs from `scripts/select-publishable-packages.mjs` in publish.yml's

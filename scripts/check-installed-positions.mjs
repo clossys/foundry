@@ -11,7 +11,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const packageRoot = join(root, "packages/controller");
 const manifest = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8"));
 const entry = manifest.bin?.["foundry-position-check"];
-if (typeof entry !== "string") throw new Error("@vespeneventures/controller does not declare foundry-position-check");
+if (typeof entry !== "string") throw new Error("@clossys/controller does not declare foundry-position-check");
 const binTarget = join(packageRoot, entry);
 if (!readFileSync(binTarget, "utf8").startsWith("#!/usr/bin/env node")) {
   throw new Error("foundry-position-check bin target must retain its Node shebang");

@@ -16,7 +16,7 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", ".
 describe("packRoundTrip — real subprocess round trip", () => {
   // This used to target packages/governance, back when governance was its
   // own package with these package-process subpaths. Issue #282 folded
-  // governance's source into @vespeneventures/controller directly and
+  // governance's source into @clossys/controller directly and
   // deleted the `governance` compatibility stub with zero consumers left
   // behind, so controller is now the package that declares these subpaths
   // and must ship built files for every one of them.
@@ -47,9 +47,9 @@ describe("packRoundTrip — real subprocess round trip", () => {
 
   // This used to target packages/policy, back when policy was its own
   // zero-external-dependency package. Since issue #282 folded policy's
-  // source into @vespeneventures/controller as its `./policy` subpath, the
-  // deprecated `@vespeneventures/policy` compatibility stub now genuinely
-  // depends on `@vespeneventures/controller`, which a real isolated-install
+  // source into @clossys/controller as its `./policy` subpath, the
+  // deprecated `@example/policy` compatibility stub now genuinely
+  // depends on `@clossys/controller`, which a real isolated-install
   // round trip cannot resolve until controller is itself published.
   // Controller inherited the zero-external-dependency property that used to
   // make policy the natural fixture for this test, so this test now targets
@@ -64,7 +64,7 @@ describe("packRoundTrip — real subprocess round trip", () => {
   it("packages/controller installs and imports cleanly from a genuinely isolated directory", { timeout: 120_000 }, async () => {
     const result = await packRoundTrip(join(repoRoot, "packages", "controller"));
 
-    expect(result.packageName).toBe("@vespeneventures/controller");
+    expect(result.packageName).toBe("@clossys/controller");
     expect(result.tarballPath).not.toBe("");
     expect(result.findings).toEqual([]);
     expect(result.imports.length).toBeGreaterThan(0);

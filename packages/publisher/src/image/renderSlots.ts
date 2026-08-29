@@ -11,7 +11,7 @@
  *
  * ELEMENTKIND -> MARKUP STRATEGY
  * -------------------------------
- * `SlotBinding` carries plain text OR (since `@vespeneventures/publisher/core`
+ * `SlotBinding` carries plain text OR (since `@clossys/publisher/core`
  * 0.3.0) a real asset — see `renderImageDocument.ts`'s own doc comment —
  * so every `ElementKind` this function knows about is one of four
  * strategies:
@@ -27,7 +27,7 @@
  *     `logo`, no matching entry in `assetByKey`) — the resolved TEXT is
  *     treated as a bare URL, same as before this package's asset support
  *     existed. Kept as a fallback for a caller with no
- *     `@vespeneventures/publisher/media`-shaped registry at all, but with no `alt`
+ *     `@clossys/publisher/media`-shaped registry at all, but with no `alt`
  *     text and no aspect-ratio awareness — see {@link renderLegacyTextMediaSlot}
  *     for exactly what it does and does not guarantee, and prefer
  *     `assetId` whenever accessible, non-distorting output matters.
@@ -175,7 +175,7 @@ function renderTextSlot(
 /**
  * The pre-`assetId` fallback: a slot's resolved TEXT (from `copyId`/
  * `value`), treated as a bare image URL and emitted as `<image href=...>`.
- * Kept for a caller with no `@vespeneventures/publisher/media`-shaped registry —
+ * Kept for a caller with no `@clossys/publisher/media`-shaped registry —
  * only ever called for a MEDIA-kind slot with NO entry in `assetByKey`
  * (see `renderSlotsToSvg`'s own dispatch) — but deliberately weaker than
  * {@link renderAssetMediaSlot}: no `alt` text (this path has no asset

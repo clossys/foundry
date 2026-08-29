@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * `designer-token-check` — the CLI for `checkTokenPurity`, mirroring
- * `@vespeneventures/copy`'s `copy-check` shape as closely as this
+ * `@example/copy`'s `copy-check` shape as closely as this
  * package's own inputs allow. Presentation only: parse argv, import
  * this package's real `TOKENS` registry, walk the scan
  * directory (`style-scan.ts`), run the pure gate (`token-gate.ts`), print a
@@ -14,14 +14,14 @@
  * words). This gate's "record" is this package's `TOKENS`
  * export — a real, versioned, installable npm dependency of THIS package
  * (see `package.json`'s `dependencies`, the same tier
- * `@vespeneventures/copy/voice` sits at for `@vespeneventures/copy` — a sibling
+ * `@example/copy/voice` sits at for `@example/copy` — a sibling
  * workspace package, not a third-party runtime dependency, so this stays
  * inside this repository's zero-third-party-dependency rule for its
  * gates), imported directly rather than read from a file argument.
  *
  * Exit codes — the same three-state contract every gate CLI in this
  * repository uses (`copy-check`, `strategy-facts-check`,
- * `@vespeneventures/gates`' `foundry-check`):
+ * `@example/gates`' `foundry-check`):
  *
  *   0 — ran cleanly: at least one file was actually scanned, zero
  *       findings, zero unchecked constructs.
@@ -60,7 +60,7 @@ Options:
                      "value" string fields (this package's own
                      TokenDefinition shape — "family" and other fields are
                      optional for this purpose). Findings will name this
-                     file, not "@vespeneventures/designer/tokens", as the registry
+                     file, not "@clossys/designer/tokens", as the registry
                      that was checked.
   --help            Print this message and exit 0.
 
@@ -183,7 +183,7 @@ function requireDirectory(label: string, path: string): void {
  * reason), skipped-by-design — unconditionally, matching `copy-check`'s
  * own `printScanAccounting`: a gate that quietly narrows its own coverage
  * and reports the narrowed result as a pass is the exact failure mode this
- * whole package exists to close for `@vespeneventures/designer`.
+ * whole package exists to close for `@clossys/designer`.
  */
 function printScanAccounting(scan: StyleScanResult): void {
   console.log(
@@ -267,7 +267,7 @@ export function main(argv: string[]): number {
   // of supplying a different registry: to check consumer source against
   // consumer tokens.
   const tokens = args.tokensPath ? loadTokensFile(args.tokensPath) : TOKENS;
-  const registryLabel = args.tokensPath ? relative(process.cwd(), resolve(args.tokensPath)) : "@vespeneventures/designer/tokens";
+  const registryLabel = args.tokensPath ? relative(process.cwd(), resolve(args.tokensPath)) : "@clossys/designer/tokens";
 
   console.log(`Scan directory: ${scanDir}`);
   console.log(`Token registry: ${registryLabel} (${Object.keys(tokens).length} tokens)`);
@@ -309,7 +309,7 @@ function run(): void {
 }
 
 /**
- * Same real-path guard `@vespeneventures/copy`'s `cli.ts` uses, for the
+ * Same real-path guard `@example/copy`'s `cli.ts` uses, for the
  * same reason: `npm install` publishes `bin` entries as symlinks, so
  * comparing `process.argv[1]` to `import.meta.url` without resolving
  * symlinks on both sides fails the moment this file is actually invoked

@@ -1,4 +1,4 @@
-# @vespeneventures/writer
+# @clossys/writer
 
 **The writer role — is it well said?** This package is named for the job,
 not the artifact. The records it owns are still copy records, and the
@@ -7,25 +7,25 @@ vocabulary inside it (`CopyRegistry`, `CopyRef`, `checkCopyRecord`, the
 role owns artifacts, and renaming the role does not rename what it reasons
 about.
 
-`@vespeneventures/writer` owns the language system for a product: its voice
+`@clossys/writer` owns the language system for a product: its voice
 rules, glossary, claims register, addressable copy records, and source
 traceability checks. It ships the machinery and a deliberately unbound voice
 template; each consumer supplies its own language and facts.
 
 ```bash
-npm install @vespeneventures/writer
+npm install @clossys/writer
 ```
 
 ## Public entry points
 
-- `@vespeneventures/writer` exposes both voice and copy-record APIs.
-- `@vespeneventures/writer/voice` exposes only the voice contract:
+- `@clossys/writer` exposes both voice and copy-record APIs.
+- `@clossys/writer/voice` exposes only the voice contract:
   `checkCopy`, `auditClaimsRegister`, `isCiBlockingSeverity`,
   `checkPatternSafety`, `parseVoiceRecord`, `validateVoiceRecordShape`,
   `VOICE_FIELDS`, `VOICE_SEVERITIES`, and their types — including the rule
   vocabulary described below: `PatternRule`, `VoicePattern`, `VoiceSeverity`,
   `VoiceChannel`.
-- `@vespeneventures/writer/voice-record.template.jsonc` is an annotated,
+- `@clossys/writer/voice-record.template.jsonc` is an annotated,
   unbound template to copy into a consumer repository and fill in.
 
 ```ts
@@ -35,7 +35,7 @@ import {
   checkCopyRecord,
   type CopyRegistry,
   type VoiceRecord,
-} from "@vespeneventures/writer";
+} from "@clossys/writer";
 
 const voice: VoiceRecord = {
   id: "acme-app",
@@ -80,7 +80,7 @@ Only `approved` entries resolve. This prevents a surface manifest from claiming
 traceability for draft, retired, unversioned, or unlocalised text.
 
 ```ts
-import { createCopyResolver, type CopyRef, type CopyRegistry } from "@vespeneventures/writer";
+import { createCopyResolver, type CopyRef, type CopyRegistry } from "@clossys/writer";
 
 declare const registry: CopyRegistry;
 const ref: CopyRef = { id: "account.greeting", locale: "en", values: { name: "Ada" } };
@@ -189,7 +189,7 @@ zero declared locales, or a missing/invalid/empty source locale).
 
 ### Voice glossary vs. i18n glossary — two different axes, easy to conflate
 
-`@vespeneventures/writer/voice`'s `GlossaryEntry` (`term`/`status`/`reason`/
+`@clossys/writer/voice`'s `GlossaryEntry` (`term`/`status`/`reason`/
 `alternative`/`caseSensitive`) is a **voice** glossary: it enforces brand
 terms *within one locale* — "never say utilize, say use," checked by
 `checkCopy` against one string in one language. It has no concept of a
@@ -226,7 +226,7 @@ as it did before (see "Scope discipline" below).
 punctuation ban is just a pattern with no alternation in it:
 
 ```ts
-import { checkCopy, type VoiceRecord } from "@vespeneventures/writer/voice";
+import { checkCopy, type VoiceRecord } from "@clossys/writer/voice";
 
 const voice: VoiceRecord = {
   id: "acme-app",
@@ -352,7 +352,7 @@ that mention looks identical to real, unregistered product copy.
 surface (the walk that feeds `checkCopyTraceability`):
 
 ```ts
-import { scanCopySourceTree } from "@vespeneventures/writer";
+import { scanCopySourceTree } from "@clossys/writer";
 
 const scan = scanCopySourceTree(sourceDir, {
   pathExclusions: [
@@ -399,7 +399,7 @@ stricter question traceability does not: is this prose actually resolved
 from the registry by id? There is no citation or text-match escape hatch.
 
 ```ts
-import { scanAddressabilitySources, checkAddressability } from "@vespeneventures/writer";
+import { scanAddressabilitySources, checkAddressability } from "@clossys/writer";
 
 const scan = scanAddressabilitySources(sourceDir);
 const result = checkAddressability(scan);
@@ -468,8 +468,8 @@ addressability cannot confirm is safe).
 
 ## The passage layer — the missing middle between an entry and a document
 
-`@vespeneventures/copy` (now `writer`) has terms (a glossary) and entries
-(single addressable strings) and nothing between them. `@vespeneventures/designer`
+`@example/copy` (now `writer`) has terms (a glossary) and entries
+(single addressable strings) and nothing between them. `@clossys/designer`
 has tokens, atoms, **and blocks**. In practice nobody reuses one string —
 they reuse a whole empty-state (title + body + action), a whole FAQ item
 (question + answer), a whole error (message + recovery). `Passage`
@@ -477,10 +477,10 @@ they reuse a whole empty-state (title + body + action), a whole FAQ item
 the way a block composes atoms, never a raw sentence of its own. Terms ≈
 tokens, entries ≈ atoms, passages ≈ blocks; documents (a later,
 composition-layer concern, mirroring how a view composes blocks) are out
-of scope here — see [issue #373](https://github.com/vespeneventures/foundry/issues/373).
+of scope here — see [issue #373](https://github.com/clossys/platform/issues/373).
 
 ```ts
-import { checkPassageComposition, readPassageRecord } from "@vespeneventures/writer";
+import { checkPassageComposition, readPassageRecord } from "@clossys/writer";
 
 const read = readPassageRecord("passages.json");
 if (read.complete && read.record) {
@@ -527,7 +527,7 @@ gate, correctly exits `1` on the identical fixture — plus the sanity check
 that the weak tool is not simply broken (both agree when references
 genuinely are valid).
 
-**Not ported**: `@vespeneventures/designer/tokens`' `brandable` boolean. In
+**Not ported**: `@clossys/designer/tokens`' `brandable` boolean. In
 tokens, `brandable` marks a subset WITHIN one namespace (154 ship, 42 are
 brandable). The voice record's own consumer/machinery split runs between
 FILES instead — forcing a boolean into a `Passage` field here would be
@@ -587,7 +587,7 @@ The root entry point exports the copy registry and traceability surface:
   `PassageViolationRule`.
 
 The voice names described under Public entry points are re-exported from the
-root and from `@vespeneventures/writer/voice`, including the rule-vocabulary
+root and from `@clossys/writer/voice`, including the rule-vocabulary
 additions: `PatternRule`, `VoicePattern`, `VoiceSeverity`, `VOICE_SEVERITIES`,
 `VoiceChannel`, `isCiBlockingSeverity`, `checkPatternSafety`,
 `PatternSafetyIssue`, and `PatternSafetyResult`.

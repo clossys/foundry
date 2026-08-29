@@ -86,23 +86,23 @@ test("the repository contract passes and rejects incomplete or duplicate role ch
   assert.equal(rules(evaluateRoleLoopArchetypes({ contract: missingStage })).includes("mode-stage-coverage"), true);
 
   const emptyFormula = structuredClone(contract);
-  emptyFormula.roles["@vespeneventures/architect"].metric.formula = "";
+  emptyFormula.roles["@clossys/architect"].metric.formula = "";
   assert.equal(rules(evaluateRoleLoopArchetypes({ contract: emptyFormula })).includes("invalid-metric-formula"), true);
 
   const noCloseCondition = structuredClone(contract);
-  noCloseCondition.roles["@vespeneventures/architect"].closeCondition = "";
+  noCloseCondition.roles["@clossys/architect"].closeCondition = "";
   assert.equal(rules(evaluateRoleLoopArchetypes({ contract: noCloseCondition })).includes("invalid-close-condition"), true);
 
   const invalidDirection = structuredClone(contract);
-  invalidDirection.roles["@vespeneventures/architect"].metric.direction = "halt";
+  invalidDirection.roles["@clossys/architect"].metric.direction = "halt";
   assert.equal(rules(evaluateRoleLoopArchetypes({ contract: invalidDirection })).includes("invalid-metric-direction"), true);
 
   const duplicateMetric = structuredClone(contract);
-  duplicateMetric.roles["@vespeneventures/controller"].metric.name = duplicateMetric.roles["@vespeneventures/architect"].metric.name;
+  duplicateMetric.roles["@clossys/controller"].metric.name = duplicateMetric.roles["@clossys/architect"].metric.name;
   assert.equal(rules(evaluateRoleLoopArchetypes({ contract: duplicateMetric })).includes("duplicate-owned-metric"), true);
 
   const unknownMode = structuredClone(contract);
-  unknownMode.roles["@vespeneventures/controller"].primaryMode = "advice";
+  unknownMode.roles["@clossys/controller"].primaryMode = "advice";
   assert.equal(rules(evaluateRoleLoopArchetypes({ contract: unknownMode })).includes("invalid-primary-mode"), true);
 });
 
@@ -113,14 +113,14 @@ test("candidate qualification returns create, extend, compose, and reject withou
   assert.deepEqual(create, { verdict: "create", validAssessment: true, relatedRoles: [], reasons: [] });
 
   const extend = qualifyRoleCandidate({
-    assessment: candidateAssessment({ sameJobMetricLoopCoverage: [coverage("@vespeneventures/observer")] }),
+    assessment: candidateAssessment({ sameJobMetricLoopCoverage: [coverage("@clossys/observer")] }),
     contract,
   });
   assert.equal(extend.verdict, "extend");
 
   const compose = qualifyRoleCandidate({
     assessment: candidateAssessment({
-      sameJobMetricLoopCoverage: [coverage("@vespeneventures/observer"), coverage("@vespeneventures/publisher")],
+      sameJobMetricLoopCoverage: [coverage("@clossys/observer"), coverage("@clossys/publisher")],
     }),
     contract,
   });
@@ -144,7 +144,7 @@ test("same-job coverage requires job, metric, and loop-closure evidence from cur
   const contract = read(roleContractPath);
   const assessment = candidateAssessment({
     sameJobMetricLoopCoverage: [{
-      role: "@vespeneventures/observer",
+      role: "@clossys/observer",
       jobEvidence: "Observer is adjacent and may supply evidence.",
       metricEvidence: "",
       loopClosureEvidence: "",
@@ -172,7 +172,7 @@ test("the CLI fails closed for unreadable data and exits 1 for readable defects"
     );
 
     const wrong = read(roleContractPath);
-    wrong.roles["@vespeneventures/controller"].metric.direction = "hold";
+    wrong.roles["@clossys/controller"].metric.direction = "hold";
     const wrongPath = join(dir, "wrong.json");
     writeFileSync(wrongPath, JSON.stringify(wrong));
     assert.throws(

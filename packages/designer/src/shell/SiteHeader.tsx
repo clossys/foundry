@@ -19,7 +19,7 @@ export interface SiteHeaderProps extends Omit<HTMLAttributes<HTMLElement>, "chil
    */
   nav?: ReactNode;
   /**
-   * Trailing controls — a `ThemeToggle` (from `@vespeneventures/designer/theme`,
+   * Trailing controls — a `ThemeToggle` (from `@clossys/designer/theme`,
    * composed here rather than imported: `shell` may not depend on
    * `theme` — see `src/ladder.test.ts`), auth controls, a CTA `Button`.
    */

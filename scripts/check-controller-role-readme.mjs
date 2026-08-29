@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 
 const START = "<!-- controller-role-contract:start -->";
 const END = "<!-- controller-role-contract:end -->";
-const ROLE = "@vespeneventures/controller";
+const ROLE = "@clossys/controller";
 const REQUIRED_STAGES = ["sense", "judge", "act", "verify", "learnOrEscalate"];
 const REQUIRED_BINDINGS = ["setpoint", "cadence"];
 

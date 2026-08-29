@@ -16,7 +16,7 @@ const packageJson = JSON.parse(readFileSync(join(packageRoot, "package.json"), "
  * only by the source-aware secret-surface checks (specifically
  * `packages/controller/src/gates/secret-gates.ts`, the sole importer) — was
  * declared as an unconditional `dependencies` entry. `npm install
- * @vespeneventures/governance` (this package's former name) pulled in a
+ * @example/governance` (this package's former name) pulled in a
  * whole compiler for every consumer, including the five compatibility shims
  * that depend on it, regardless of whether they ever import anything past
  * the root lifecycle and scaffold planning entry point. The root entry,
@@ -25,7 +25,7 @@ const packageJson = JSON.parse(readFileSync(join(packageRoot, "package.json"), "
  * does, and only for that one file it carries.
  *
  * `dependencies` must be empty. The one runtime dependency this package
- * used to declare, `@vespeneventures/policy`, is no longer an external
+ * used to declare, `@example/policy`, is no longer an external
  * package at all — its source now lives inside this package as the
  * `./policy` subpath (see issue #282), so there is nothing left to declare.
  *
@@ -48,7 +48,7 @@ const packageJson = JSON.parse(readFileSync(join(packageRoot, "package.json"), "
  * genuinely optional — a consumer of `./gates` (or anything else) never
  * reaches it, and a consumer who deliberately imports `./gates/secrets`
  * still gets the same unconditional import, same `ERR_MODULE_NOT_FOUND` if
- * they skip installing the peer, matching `@vespeneventures/auth`'s own
+ * they skip installing the peer, matching `@example/auth`'s own
  * shape for its genuinely optional peers such as `svix`.
  */
 describe("public contract — dependency boundary", () => {

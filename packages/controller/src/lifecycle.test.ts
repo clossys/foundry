@@ -284,6 +284,26 @@ describe("validatePackageLifecycle", () => {
     }, ["@example/current"])).toEqual([]);
   });
 
+  it("retains still-published predecessor-scope packages while the candidate scope is source-only", () => {
+    const currentScope = "@clossys";
+    const predecessorScope = `@${["vespene", "ventures"].join("")}`;
+    const current = `${currentScope}/current`;
+    const lifecycle = {
+      schemaVersion: 1,
+      packages: [
+        { name: current, status: "active" },
+        { name: `${predecessorScope}/current`, status: "published" },
+      ],
+    };
+    expect(evaluateLifecycleCoverage(lifecycle, [current], new Map([[current, "1.0.0"]]), currentScope)).toEqual([]);
+    expect(evaluateLifecycleCoverage(
+      { ...lifecycle, packages: [...lifecycle.packages, { name: `${currentScope}/missing`, status: "published" }] },
+      [current],
+      new Map([[current, "1.0.0"]]),
+      currentScope,
+    ).map((finding) => finding.rule)).toEqual(["catalog-package-missing"]);
+  });
+
   it("flags a replacement range that does not cover the replacement's actual current version", () => {
     const lifecycle = {
       schemaVersion: 1,

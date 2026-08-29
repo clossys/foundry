@@ -18,7 +18,7 @@
  *
  * Digest algorithm/length SHAPE checking is deliberately NOT reimplemented
  * here. `checksum.algorithm`/`checksum.digest` are handed to
- * `@vespeneventures/controller/policy`'s own `validateBindingShape` (via a small
+ * `@clossys/controller/policy`'s own `validateBindingShape` (via a small
  * synthetic `PolicyBinding`) rather than this module re-deriving "which
  * algorithms are known" or "how many hex characters a digest needs for
  * one" — `policy` already owns that, and duplicating it here is exactly
@@ -103,7 +103,7 @@ function isValidTimestamp(value: string): boolean {
  * plain-object snapshot of exactly the fields `verifyGovernedArtifact`
  * needs, copied out once during validation so later stages never have to
  * read the original (possibly hostile, possibly Proxy-backed) `value`
- * again. This mirrors `@vespeneventures/controller/policy`'s own `verifyBinding`,
+ * again. This mirrors `@clossys/controller/policy`'s own `verifyBinding`,
  * which snapshots its `binding` argument for the identical reason before
  * ever comparing a digest against it.
  */

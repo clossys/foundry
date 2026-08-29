@@ -19,7 +19,7 @@
  * registered-text match needs to exist for traceability to prove anything
  * is exactly a literal addressability cannot confirm is safe) rather than
  * genuinely complementary. A SEPARATE `bin` entry pointing at this same
- * compiled file was rejected for the identical reason `@vespeneventures/ui`
+ * compiled file was rejected for the identical reason `@example/ui`
  * never does that: this repository's own root `package.json` invokes every
  * gate by its COMPILED PATH (`node packages/ui/dist/tokens/contrast-cli.js`,
  * `node packages/controller/dist/cli.js`, ...), never by installed `bin`
@@ -31,7 +31,7 @@
  * gates, both still print every skip/exclusion count unconditionally, and
  * both still use the identical three-state exit-code contract described
  * below — same shape, same file, same bin, two subcommands, two numbers,
- * matching `@vespeneventures/strategy`'s `strategy-facts-check` shape
+ * matching `@example/strategy`'s `strategy-facts-check` shape
  * closely, deliberately: same argument order (the thing being checked
  * FOR, then the thing being checked, where applicable), same `--help`,
  * same `CliInputError` split between "bad arguments" and "ran, found
@@ -77,7 +77,7 @@
  * own structure, not just in a comment.
  *
  * Exit codes — a contract a consumer's CI depends on, matching this
- * repository's `foundry-check` convention (`@vespeneventures/gates`):
+ * repository's `foundry-check` convention (`@example/gates`):
  *
  *   0 — ran cleanly: the copy record loaded, at least one file was
  *       actually scanned (successfully tokenized — see `scan.ts`'s
@@ -141,7 +141,7 @@ const USAGE = `Usage: writer-check <record-file> [scan-dir] [options]
    or: writer-check voice-derivation-coverage <obligations-file> <brand-derived-rule-ids-file> [options]
    or: writer-check locale-coverage <registries-file> <source-locale> [declared-locale...] [options]
 
-  record-file    Path to a CopyRecord JSON file (see @vespeneventures/writer's README). Required.
+  record-file    Path to a CopyRecord JSON file (see @clossys/writer's README). Required.
   scan-dir       Directory to scan for user-facing string/template literals. Defaults to the current working directory.
 
 See also "writer-check addressability [scan-dir]" and "writer-check passages
@@ -858,13 +858,13 @@ function run(): void {
 
 const PASSAGES_USAGE = `Usage: writer-check passages <registry-file> [options]
 
-  registry-file  Path to a PassageRecord JSON file: { id: string, passages: Passage[] } — see @vespeneventures/writer's passage.ts for the full shape. Required.
+  registry-file  Path to a PassageRecord JSON file: { id: string, passages: Passage[] } — see @clossys/writer's passage.ts for the full shape. Required.
 
 Checks the PASSAGE-LAYER COMPOSITION gate (issue #373): does every passage's
 every field reference a registered entry ({ ref: "entry", id }) or a
 glossary term ({ ref: "term", term }), never a literal string inlined
 directly into the field, and never a reference into another passage's own
-internals ({ ref: "passage", ... })? See @vespeneventures/writer's
+internals ({ ref: "passage", ... })? See @clossys/writer's
 passage.ts, "THE GATE", for the full ternary this subcommand exposes, and
 "WHAT THIS GATE DELIBERATELY DOES NOT DO" for why this does not verify a
 referenced entry id/term actually exists in a real CopyRecord/glossary —
@@ -1013,7 +1013,7 @@ const ADDRESSABILITY_USAGE = `Usage: writer-check addressability [scan-dir] [opt
 Checks whether user-facing prose is resolved from the copy registry by id,
 rather than typed inline in a component — a stricter, separate question
 from writer-check's default traceability command (see
-@vespeneventures/writer's addressability.ts for the full contract). Three
+@clossys/writer's addressability.ts for the full contract). Three
 positions are classified: markup text nodes and the four user-facing
 attributes (aria-label, placeholder, alt, title) are violations when they
 carry literal prose; every other string position (a template literal, an
@@ -1117,8 +1117,8 @@ function runAddressabilityCheck(argv: string[]): void {
 }
 
 /**
- * Same real-path guard `@vespeneventures/strategy`'s `cli.ts` and
- * `@vespeneventures/gates`' `cli.ts` both use, for the same reason: `npm
+ * Same real-path guard `@example/strategy`'s `cli.ts` and
+ * `@example/gates`' `cli.ts` both use, for the same reason: `npm
  * install` publishes `bin` entries as symlinks, so comparing
  * `process.argv[1]` to `import.meta.url` without resolving symlinks on
  * both sides fails the moment this file is actually invoked the only way

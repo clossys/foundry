@@ -7,7 +7,7 @@ import { CliInputError, main } from "./cli.js";
 // Hermetic: every test operates on its own `mkdtemp` directory, removed
 // afterward, and calls the exported `main(argv)` directly rather than
 // spawning the real CLI process -- the same discipline
-// @vespeneventures/ledger's and @vespeneventures/strategy's cli.test.ts use.
+// @example/ledger's and @example/strategy's cli.test.ts use.
 
 let dir: string;
 

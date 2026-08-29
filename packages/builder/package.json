@@ -1,5 +1,5 @@
 {
-  "name": "@vespeneventures/builder",
+  "name": "@clossys/builder",
   "version": "0.7.2",
   "private": false,
   "license": "MIT",
@@ -64,18 +64,18 @@
   "author": "Calvin Hung",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vespeneventures/foundry.git",
+    "url": "git+https://github.com/clossys/platform.git",
     "directory": "packages/builder"
   },
   "bugs": {
-    "url": "https://github.com/vespeneventures/foundry/issues"
+    "url": "https://github.com/clossys/platform/issues"
   },
-  "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/builder#readme",
+  "homepage": "https://github.com/clossys/platform/tree/main/packages/builder#readme",
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
-    "@vespeneventures/controller": "~0.8.0"
+    "@clossys/controller": "~0.8.0"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -89,6 +89,7 @@
     "vitest": "^4.1.9"
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "registry": "https://registry.npmjs.org",
+    "access": "public"
   }
 }

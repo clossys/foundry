@@ -34,7 +34,7 @@ test("SEPARATING FIXTURE: a plausible README block with stale loop stages is rej
 
 test("REVIEWER PROOF: an added canonical secondary mode cannot pass against a README that declares none", () => {
   const withSecondaryMode = structuredClone(contract);
-  withSecondaryMode.roles["@vespeneventures/controller"].secondaryModes = ["assure"];
+  withSecondaryMode.roles["@clossys/controller"].secondaryModes = ["assure"];
   assert.deepEqual(checkControllerRoleReadme({ contract: withSecondaryMode, readme }), {
     ok: false,
     reason: "README Controller role-contract block differs from docs/contracts/role-loop-archetypes.json",
@@ -43,7 +43,7 @@ test("REVIEWER PROOF: an added canonical secondary mode cannot pass against a RE
 
 test("secondary modes preserve the contract's declared order", () => {
   const withSecondaryModes = structuredClone(contract);
-  withSecondaryModes.roles["@vespeneventures/controller"].secondaryModes = ["assure", "steward"];
+  withSecondaryModes.roles["@clossys/controller"].secondaryModes = ["assure", "steward"];
   const canonicalReadme = renderControllerRoleBlock(withSecondaryModes);
   assert.deepEqual(checkControllerRoleReadme({ contract: withSecondaryModes, readme: canonicalReadme }), { ok: true });
   assert.deepEqual(checkControllerRoleReadme({ contract: withSecondaryModes, readme: canonicalReadme.replace("`assure`, `steward`", "`steward`, `assure`") }), {

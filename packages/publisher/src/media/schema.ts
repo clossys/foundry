@@ -1,7 +1,7 @@
 /**
  * Structural validation for a candidate `AssetRecord`, hand-rolled in the
  * same plain-type-guard, accumulate-and-keep-going style as
- * `@vespeneventures/writer`'s `schema.ts` — no schema library, for the same
+ * `@clossys/writer`'s `schema.ts` — no schema library, for the same
  * reason that file gives: this package's entire job is dependency-free data
  * validation, and a public package should not force every consumer onto one
  * schema library's major version for the sake of shape-checking a handful
@@ -15,7 +15,7 @@
  *
  *   - **`alt-not-whitespace-only`.** A whitespace-only `alt` (`"   "`)
  *     passes a naive `.length > 0` check while rendering as no alt text at
- *     all — the exact gap `@vespeneventures/publisher/core`'s `validate.ts` had to
+ *     all — the exact gap `@clossys/publisher/core`'s `validate.ts` had to
  *     add a SECOND, stricter check for (`binding-value-shape`, over and
  *     above `isNonEmptyString`) after a whitespace-only `SlotBinding.value`
  *     slipped past the first one. This package holds that same stricter
@@ -28,7 +28,7 @@
  *     this record by id (`registry.ts`, `coverage.ts`, a future renderer),
  *     so which asset a given `assetId` actually resolves to becomes
  *     order-dependent and unreviewable. Checked at the record level, the
- *     same way `@vespeneventures/writer`'s `schema.ts` checks
+ *     same way `@clossys/writer`'s `schema.ts` checks
  *     `CopyEntryId` uniqueness.
  *   - **`video-caption-or-transcript-required`.** A `VideoAssetEntry`
  *     schema that PERMITS omitting both `captions` and `transcript` would
@@ -83,7 +83,7 @@ function isPositiveFiniteNumber(value: unknown): value is number {
   return isFiniteNumber(value) && value > 0;
 }
 
-/** A short, readable description of an arbitrary value for an error message — mirrors `@vespeneventures/publisher/core`'s `validate.ts`'s `describe` and `@vespeneventures/strategy`'s `validation.ts`'s `describeValue`. */
+/** A short, readable description of an arbitrary value for an error message — mirrors `@clossys/publisher/core`'s `validate.ts`'s `describe` and `@example/strategy`'s `validation.ts`'s `describeValue`. */
 function describe(value: unknown): string {
   if (value === undefined) return "undefined";
   if (value === null) return "null";
@@ -98,7 +98,7 @@ function describe(value: unknown): string {
  * `AssetEntryId` shape: dot-separated, lowercase, kebab-case within each
  * segment, at least one dot (i.e. at least two segments) — e.g.
  * `"marketing.hero-banner"`. Identical pattern to
- * `@vespeneventures/writer`'s own `COPY_ENTRY_ID_RE` — see `types.ts`'s doc
+ * `@clossys/writer`'s own `COPY_ENTRY_ID_RE` — see `types.ts`'s doc
  * comment on `AssetEntryId` for why a bare, unnamespaced id is rejected
  * rather than merely discouraged.
  */
@@ -530,8 +530,8 @@ function validateAssetEntryShape(value: unknown, path: string): AssetFinding[] {
   }
 
   // Snapshot every field this function reads, exactly once, before any
-  // check runs — mirroring @vespeneventures/writer's schema.ts and
-  // @vespeneventures/publisher/core's validate.ts, both of which document why: a
+  // check runs — mirroring @clossys/writer's schema.ts and
+  // @clossys/publisher/core's validate.ts, both of which document why: a
   // hostile or merely-badly-behaved `value` (a field implemented as a
   // getter, or a Proxy) could otherwise return a different result on each
   // property read.
@@ -567,7 +567,7 @@ function validateAssetEntryShape(value: unknown, path: string): AssetFinding[] {
  *
  * `entries` being present but empty (`[]`) is a well-formed, zero-finding
  * `AssetRecord` as far as THIS function is concerned — the same judgment
- * call `@vespeneventures/writer`'s `validateCopyRecordShape` makes about a
+ * call `@clossys/writer`'s `validateCopyRecordShape` makes about a
  * `CopyRecord` with zero entries: whether zero entries is itself a problem
  * is for a caller with more context than a shape validator has. Unlike
  * `copy`'s own `checkCopyRecord`, this package's coverage check
@@ -606,7 +606,7 @@ export function validateAssetRecordShape(value: unknown): AssetFinding[] {
     entries.forEach((entry, i) => findings.push(...validateAssetEntryShape(entry, `entries.${i}`)));
 
     // Uniqueness is a whole-record property, not a per-entry one — mirrors
-    // @vespeneventures/writer's schema.ts id-uniqueness check exactly. Only
+    // @clossys/writer's schema.ts id-uniqueness check exactly. Only
     // entries that already passed their own id-shape check contribute a
     // value to compare.
     const seen = new Map<AssetEntryId, number>(); // id -> first index seen at
@@ -637,7 +637,7 @@ export function validateAssetRecordShape(value: unknown): AssetFinding[] {
  * this function does no validation of its own and will throw or produce
  * garbage on unvalidated input. Only called internally, from
  * `parseAssetRecord`, immediately after that check — mirrors
- * `@vespeneventures/writer`'s `buildCopyRecord` exactly.
+ * `@clossys/writer`'s `buildCopyRecord` exactly.
  */
 function buildAssetEntry(raw: Record<string, unknown>): AssetEntry {
   const base = {
@@ -697,7 +697,7 @@ function buildAssetRecord(value: Record<string, unknown>): AssetRecord {
  * problem and keep going" shape. The thrown message includes every issue
  * `validateAssetRecordShape` would have reported, joined, so nothing is
  * lost by throwing instead of returning. Mirrors
- * `@vespeneventures/writer`'s `parseCopyRecord` exactly, including that
+ * `@clossys/writer`'s `parseCopyRecord` exactly, including that
  * function's TOCTOU-safety reasoning for validating twice (see that
  * function's own doc comment) — this package's own threat model is
  * identical: a consumer's own in-memory config object, not a value

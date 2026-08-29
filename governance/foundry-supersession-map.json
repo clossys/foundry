@@ -1,20 +1,20 @@
 {
   "version": 1,
   "supersededBy": {
-    "@vespeneventures/auth": {
-      "replacement": "@vespeneventures/bouncer",
+    "@example/auth": {
+      "replacement": "@clossys/bouncer",
       "since": "0.1.0"
     },
-    "@vespeneventures/consent": {
-      "replacement": "@vespeneventures/butler",
+    "@example/consent": {
+      "replacement": "@clossys/butler",
       "since": "0.1.0"
     },
-    "@vespeneventures/comms": {
-      "replacement": "@vespeneventures/messenger",
+    "@example/comms": {
+      "replacement": "@clossys/messenger",
       "since": "0.1.0"
     },
-    "@vespeneventures/domain": {
-      "replacement": "@vespeneventures/architect",
+    "@example/domain": {
+      "replacement": "@clossys/architect",
       "since": "0.1.0"
     }
   }

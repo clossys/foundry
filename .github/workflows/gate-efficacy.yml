@@ -1,5 +1,5 @@
 # gate-efficacy — what this repository's own gates actually did, computed by
-# @vespeneventures/observer from GitHub Actions run history.
+# @clossys/observer from GitHub Actions run history.
 #
 # SCHEDULED, NOT A PULL-REQUEST GATE, and the distinction is deliberate.
 # #472 drew it: a LIVE run that needs a credential to read a provider's API

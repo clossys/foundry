@@ -1,7 +1,7 @@
 {
   "$comment": [
     "This repository's own values for the task-record check in",
-    "@vespeneventures/verify-standards. The package holds the grammar and the",
+    "@example/verify-standards. The package holds the grammar and the",
     "decisions; every value below is a choice this repository makes and can",
     "change without waiting for a package release.",
     "",

@@ -4,8 +4,8 @@
  * a web page built from it needs:
  *
  *   1. THE RENDERED VIEW (`element`) — `doc.template` names a
- *      `@vespeneventures/designer` view (`AuthView`, `ErrorView`); `doc.bindings`
- *      are resolved into that view's own slots via `@vespeneventures/
+ *      `@clossys/designer` view (`AuthView`, `ErrorView`); `doc.bindings`
+ *      are resolved into that view's own slots via `@clossys/
  *      compose`'s `resolveDocument`, using this package's own
  *      `internal/webTemplates.ts` registry as the "real slot list" every
  *      web/email document needs supplied from outside `surface/core` — see
@@ -31,7 +31,7 @@
  * `doc.bindings`'s plain text/asset, the same as before this option
  * existed; a consumer with a genuinely bespoke composition need — one
  * that isn't a named, registered `WebTemplate` slot at all — still
- * composes `@vespeneventures/designer`'s views directly, outside this document
+ * composes `@clossys/designer`'s views directly, outside this document
  * pipeline entirely, the same "this package's job ends where a richer
  * composition begins" boundary `surface/core`'s own README draws for
  * `template` and `copyId`.
@@ -61,7 +61,7 @@
  * IMAGES: A SLOT CAN NOW RESOLVE TO A REAL `<img>` (OR `<picture>`), NOT
  * JUST STYLED TEXT
  * -------------------------------------------------------------------------
- * `SlotBinding.assetId` (`@vespeneventures/publisher/core` 0.3.0) is this
+ * `SlotBinding.assetId` (`@clossys/publisher/core` 0.3.0) is this
  * package's second content source, alongside `copyId`/`value` — see
  * `../internal/assets.ts` for the shared resolution/validation machinery
  * every channel uses. A slot bound via `assetId` never falls through to
@@ -100,7 +100,7 @@
  *
  * REDUCED MOTION IS A RENDERING-TIME DECISION, NOT A BUILD-TIME ONE
  * -------------------------------------------------------------------------
- * `VideoAssetEntry.reducedMotion` (`@vespeneventures/publisher/media`) is
+ * `VideoAssetEntry.reducedMotion` (`@clossys/publisher/media`) is
  * required, not a styling suggestion — but THIS package has no `window`/DOM
  * access at the point `renderWebDocument` runs (it may run on a server, in
  * a build step, or in a browser — see this file's own React-peer-version
@@ -128,7 +128,7 @@
  *   - `true` and `reducedMotion` is `"static-poster"` — NO `<video>`
  *     element is emitted at all; a static `<img>` built from the entry's
  *     own (schema-required, for this value) `poster` renders instead —
- *     see `@vespeneventures/publisher/media`'s
+ *     see `@clossys/publisher/media`'s
  *     `"video-static-poster-requires-poster"` schema rule.
  *
  * This is a real, testable contract — `renderWebDocument.test.ts` exercises
@@ -191,7 +191,7 @@ import type { RenderWebOptions, RenderWebResult } from "./types.js";
 /**
  * `react` is this subpath's optional peer (see package.json's
  * `peerDependenciesMeta`) — optional so a consumer can install
- * `@vespeneventures/publisher` and use `./core`, `./media`, `./email`,
+ * `@clossys/publisher` and use `./core`, `./media`, `./email`,
  * `./print`, `./image`, or `./slides` without ever installing React; only
  * `./web` (this file, and `./internal/webTemplates.js`, which it already
  * imports and which transitively covers that file's own `react` usage

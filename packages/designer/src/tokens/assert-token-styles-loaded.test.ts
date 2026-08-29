@@ -43,7 +43,7 @@ describe("assertTokenStylesLoaded", () => {
 
     expect(errorSpy).toHaveBeenCalledTimes(1);
     expect(errorSpy.mock.calls[0]?.[0]).toContain(TOKEN_STYLES_SENTINEL_PROPERTY);
-    expect(errorSpy.mock.calls[0]?.[0]).toContain("@vespeneventures/designer/tokens.css");
+    expect(errorSpy.mock.calls[0]?.[0]).toContain("@clossys/designer/tokens.css");
   });
 
   it("calls a caller-supplied onMissing instead of console.error when given one", () => {

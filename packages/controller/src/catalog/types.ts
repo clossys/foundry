@@ -1,5 +1,5 @@
 /**
- * Types for @vespeneventures/catalog. See the package README for the full
+ * Types for @example/catalog. See the package README for the full
  * gather/judge split this package implements: `buildCatalog` walks disk and
  * records what is there; `evaluateCatalog` judges it, computing the
  * dependency graph from each entry's own `dependencies`/`peerDependencies`

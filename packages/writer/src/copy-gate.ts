@@ -3,7 +3,7 @@
  * worth having. Pure: takes already-extracted `CopyCandidate[]`/
  * `Citation[]` (see `scan.ts`) and an already-loaded `CopyRecord` (see
  * `./types.js`), does no I/O of its own, and never throws on any input
- * shape — the same discipline `@vespeneventures/strategy`'s
+ * shape — the same discipline `@example/strategy`'s
  * `checkFactsTraceability` holds to in `facts-gate.ts`. `scanCopySourceTree`
  * (see `scan.ts`) is the half that gathers candidates/citations from a
  * real directory; `cli.ts` is what loads a real `CopyRecord` from disk
@@ -17,7 +17,7 @@
  * expression content and a registered entry's placeholder NAMES never
  * need to agree) or be annotated with a `copy:<id>` comment citing a real
  * entry in the record on the same line — anything else is reported as
- * untraced. This is `@vespeneventures/strategy`'s `fact:<key>` citation
+ * untraced. This is `@example/strategy`'s `fact:<key>` citation
  * pattern, applied to copy instead of facts.
  *
  * WHAT THIS DELIBERATELY DOES NOT DO, and why:
@@ -45,7 +45,7 @@
  *     exit-code discipline).
  *   - It does not resolve a `CopyEntry.factRef` against a real facts
  *     registry — the exact same deliberately-left-open seam
- *     `@vespeneventures/writer/voice`'s `Claim.factRef` and this package's own
+ *     `@clossys/writer/voice`'s `Claim.factRef` and this package's own
  *     `CopyEntry.factRef` both describe in their doc comments. A gate with
  *     visibility into both a `CopyRecord` and a real facts registry is a
  *     different, later gate.
@@ -58,7 +58,7 @@ export type CopyGateRule = "unregistered-copy" | "unknown-copy-citation";
 
 export interface CopyGateFinding {
   rule: CopyGateRule;
-  /** Always `"error"` — the same single-severity design `@vespeneventures/strategy`'s `FactsGateFinding` uses: a piece of copy is either traced to a registered entry or it isn't. */
+  /** Always `"error"` — the same single-severity design `@example/strategy`'s `FactsGateFinding` uses: a piece of copy is either traced to a registered entry or it isn't. */
   severity: "error";
   file: string;
   line: number;
@@ -151,7 +151,7 @@ export function checkCopyTraceability(
   // Pass 1: citations to a copy id that does not exist — checked over
   // EVERY citation found anywhere in the scanned tree, independent of
   // whether a candidate happens to share its line, mirroring
-  // `@vespeneventures/strategy`'s `facts-gate.ts` Pass 1 (see `scan.ts`'s
+  // `@example/strategy`'s `facts-gate.ts` Pass 1 (see `scan.ts`'s
   // `Citation` doc comment for why).
   for (const citation of citations) {
     if (!index.byId.has(citation.id)) {

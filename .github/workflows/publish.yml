@@ -12,10 +12,6 @@ name: Publish
 # which the registry-driven discovery above deliberately never auto-selects
 # (see registry-version-lookup.mjs's header for why).
 on:
-  push:
-    branches: [main]
-    paths:
-      - "packages/*/package.json"
   workflow_dispatch:
     inputs:
       package:
@@ -150,7 +146,7 @@ jobs:
           # GitHub's package API scopes npm packages through the organization
           # (or user) path. Its {package_name} segment is the unscoped final
           # component, not the complete npm name (for example, `governance`,
-          # not `@vespeneventures/governance`).
+          # not `@example/governance`).
           name="$(node -p "require('./packages/' + process.env.PKG + '/package.json').name.split('/').at(-1)")"
           owner="$(node -p "JSON.parse(require('fs').readFileSync('package-scope.json','utf8')).scope.replace(/^@/, '')")"
           kind_user="us""ers"
@@ -338,11 +334,11 @@ jobs:
 
   publish:
     needs: [discover, qualify]
-    if: ${{ always() && needs.discover.outputs.packages != '[]' && (github.event_name != 'workflow_dispatch' || !inputs.visibility_only || inputs.verify_only) && needs.qualify.result == 'success' }}
+    # W1D prepares source only. This job remains visible for review, but cannot
+    # run until W1E deliberately restores the upload path and provider trust.
+    if: ${{ false }}
     permissions:
       contents: read
-      packages: write
-      id-token: write
     runs-on: ubuntu-latest
     # A package upload or registry-artifact qualification must pass the
     # repository's configured publish reviewers. Visibility-only changes have
@@ -598,7 +594,8 @@ jobs:
           # no workflow can police — a maintainer running `npm publish` by
           # hand from a package directory. That path is unaffected by this
           # flag, because this flag lives here, in CI.
-          npm publish "$TARBALL" --provenance --access public --ignore-scripts
+          echo "W1D source preparation only: package upload remains disabled until W1E."
+          exit 1
 
       - name: Fetch and compare published tarball
         if: ${{ github.event_name == 'push' || (!inputs.dry_run && !inputs.verify_only) }}
@@ -637,7 +634,7 @@ jobs:
 
   # GitHub Packages defaults every newly published npm package to PRIVATE,
   # per package, regardless of this repository being public — and nothing
-  # before this job re-checked that state. @vespeneventures/ui sat private
+  # before this job re-checked that state. @example/ui sat private
   # across 12 published versions, completely uninstallable by any external
   # reader, before anyone noticed; four packages were found private in
   # total. This job runs immediately after a REAL publish (never for a dry

@@ -16,8 +16,8 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import type { CopyRegistry, CopyResolver } from "@vespeneventures/writer";
-import { createCopyResolver } from "@vespeneventures/writer";
+import type { CopyRegistry, CopyResolver } from "@clossys/writer";
+import { createCopyResolver } from "@clossys/writer";
 import { resolveSurfaceDocument } from "../core/index.js";
 import type { SurfaceDocument } from "../core/index.js";
 import { RenderError } from "../internal/errors.js";

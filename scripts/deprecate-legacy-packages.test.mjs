@@ -95,9 +95,9 @@ test("only dry-run and apply are accepted", () => {
 });
 
 test("registry notices are applied per discovered version, never through a wildcard", () => {
-  assert.equal(deprecationTarget("@vespeneventures/catalog", "0.1.1"), "@vespeneventures/catalog@0.1.1");
-  assert.throws(() => deprecationTarget("@vespeneventures/catalog", "*"));
-  assert.throws(() => deprecationTarget("@vespeneventures/catalog", "0.1.1 --tag=latest"));
+  assert.equal(deprecationTarget("@example/catalog", "0.1.1"), "@example/catalog@0.1.1");
+  assert.throws(() => deprecationTarget("@example/catalog", "*"));
+  assert.throws(() => deprecationTarget("@example/catalog", "0.1.1 --tag=latest"));
 });
 
 test("apply preflight reads a persistent identity for every exact discovered version", () => {
@@ -126,7 +126,7 @@ test("integration: this repository's own real plan resolves, and every replaceme
   // reality. This asserts that against the real documents, not a fixture —
   // if a rename lands without a lifecycle record, this fails here rather
   // than at the moment someone runs an irreversible --mode=apply.
-  const plan = deprecationPlanFrom(JSON.parse(readFileSync("docs/contracts/package-lifecycle.json", "utf8")), "@vespeneventures");
+  const plan = deprecationPlanFrom(JSON.parse(readFileSync("docs/contracts/package-lifecycle.json", "utf8")), "@clossys");
   const shipped = shippedPackageNames();
   // Deliberately NOT `plan.length > 0`. This repository currently declares
   // nothing deprecated, and asserting otherwise would make a finished

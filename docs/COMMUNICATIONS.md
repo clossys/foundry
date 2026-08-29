@@ -4,11 +4,11 @@
 
 | Owner | Responsibility |
 | --- | --- |
-| `@vespeneventures/advisor` | Sponsor dialogue and engagement-decision reconciliation; current basis, required next action, and pre-work or collision status. It does not transport finished messages or discharge semantic obligations. |
-| `@vespeneventures/butler` | Admission and confirmation of inbound person requests and standing instructions. |
-| `@vespeneventures/messenger` | Published role for authorized finished-message transport, explicit provider acceptance, signed delivery-status normalization, and timely verified delivery assessment. |
-| `@vespeneventures/messenger/providers/resend` | Provider mapping, idempotency constraints, strict error normalization, signature verification, and delivery-status event mapping. |
-| `@vespeneventures/giver` | Whether an answer, refusal, handoff, or delivery discharged the semantic obligation owed to the person. |
+| `@clossys/advisor` | Sponsor dialogue and engagement-decision reconciliation; current basis, required next action, and pre-work or collision status. It does not transport finished messages or discharge semantic obligations. |
+| `@clossys/butler` | Admission and confirmation of inbound person requests and standing instructions. |
+| `@clossys/messenger` | Published role for authorized finished-message transport, explicit provider acceptance, signed delivery-status normalization, and timely verified delivery assessment. |
+| `@clossys/messenger/providers/resend` | Provider mapping, idempotency constraints, strict error normalization, signature verification, and delivery-status event mapping. |
+| `@clossys/giver` | Whether an answer, refusal, handoff, or delivery discharged the semantic obligation owed to the person. |
 | Host application | Authorization evidence, recipients and personal data, templates/localization, sender identity, consent/preferences, suppression decisions, credentials, durable stores, routes, retention, logging, provider endpoint registration, domain configuration, and deployment settings. |
 
 The role boundary is semantic, not a repository or provider boundary. Butler
@@ -119,8 +119,8 @@ package is not coupled to a web framework.
 
 ### Templates and identity
 
-Templates stay upstream. A caller may use `@vespeneventures/publisher/core` and
-`@vespeneventures/publisher/email`, a framework template system, or plain strings;
+Templates stay upstream. A caller may use `@clossys/publisher/core` and
+`@clossys/publisher/email`, a framework template system, or plain strings;
 the transport sees only a finished `EmailMessage`.
 
 Sender identities, reply paths, recipient resolution, consent and suppression
@@ -136,7 +136,7 @@ host-only and adapters must not transmit it implicitly.
 
 ## Future extensions
 
-- A future `@vespeneventures/messenger/providers/twilio` subpath should introduce an `SmsMessage` in the core
+- A future `@clossys/messenger/providers/twilio` subpath should introduce an `SmsMessage` in the core
   and implement the same adapter/error/event boundaries. Provider account
   configuration stays in each host.
 - Inbound email admission does not belong in messenger. A provider-specific
@@ -153,7 +153,7 @@ host-only and adapters must not transmit it implicitly.
 
 Source parity is not adoption. The migration order is:
 
-`@vespeneventures/messenger@0.1.0` is public and its root, provider, and CLI
+`@clossys/messenger@0.1.0` is public and its root, provider, and CLI
 surfaces passed an isolated registry install. The `comms` donor is retired and
 absent from both this source tree and GitHub Packages. Consumer work is now:
 

@@ -42,7 +42,7 @@ describe("Icon", () => {
       expect(rect).toHaveAttribute("width", "18");
     });
 
-    it("renders every one of the 32 shipped @vespeneventures/designer/icons glyphs without throwing, each carrying real markup", () => {
+    it("renders every one of the 32 shipped @clossys/designer/icons glyphs without throwing, each carrying real markup", () => {
       const glyphEntries = Object.entries(Glyphs) as [string, (typeof CIRCLE_GLYPH)][];
       expect(glyphEntries.length).toBe(32);
       for (const [name, glyph] of glyphEntries) {

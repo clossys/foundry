@@ -166,7 +166,7 @@ function mergeDomainState(previous: VercelDomainState | undefined, current: Verc
  * all). Keeping that single decision point in `inspect` is what keeps this
  * function free to throw eagerly and stay readable, exactly like
  * `parseManifestNames` throwing freely under `detectSupersession` in
- * `@vespeneventures/integrator`.
+ * `@clossys/integrator`.
  */
 async function performInspection(normalizedInput: NormalizedInput, normalizedOptions: NormalizedOptions, token: string): Promise<VercelInspection> {
   const request = async (url: URL): Promise<Response> => {
@@ -252,7 +252,7 @@ async function performInspection(normalizedInput: NormalizedInput, normalizedOpt
  * opinion about, so it is reported as `VercelInspectionIndeterminate` here,
  * never thrown out of this public entry point, and never silently folded
  * into a healthy-looking `VercelInspection`. This is the exact fold
- * `@vespeneventures/integrator`'s `resolveReachability` applies to a
+ * `@clossys/integrator`'s `resolveReachability` applies to a
  * transport failure and a malformed registry body (both `unreachable`) --
  * see that module's header for the fuller reasoning.
  *

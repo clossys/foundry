@@ -1,6 +1,6 @@
 /**
  * `checkTokenPurity` — the gate that makes `style-scan.ts`'s extraction
- * worth having, mirroring `@vespeneventures/copy`'s `copy-gate.ts` exactly:
+ * worth having, mirroring `@example/copy`'s `copy-gate.ts` exactly:
  * pure (no I/O), takes already-extracted `StyleCandidate[]` (see
  * `style-scan.ts`) plus this package's real `TOKENS` registry,
  * and never throws on any input shape. `scanStyleSources` is the half that
@@ -402,7 +402,7 @@ function findingForLiteral(
  * every test) keeps its exact current message unchanged. A caller passing
  * its OWN registry (the seam this function's `tokens` parameter exists
  * for) should pass its own label too: without this, every finding still
- * said "@vespeneventures/designer/tokens" regardless of whose registry was
+ * said "@clossys/designer/tokens" regardless of whose registry was
  * actually checked — correct for this package's own CLI, actively
  * misleading for anyone else's.
  */
@@ -411,7 +411,7 @@ export function checkTokenPurity(
   tokens: Readonly<Record<string, TokenDefinition>>,
   filesScanned: number,
   scanUnchecked: UncheckedItem[],
-  registryLabel = "@vespeneventures/designer/tokens",
+  registryLabel = "@clossys/designer/tokens",
 ): TokenGateResult {
   const tokenIndex = buildTokenIndex(tokens);
   const findings: TokenGateFinding[] = [];

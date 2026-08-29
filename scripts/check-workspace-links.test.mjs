@@ -232,7 +232,7 @@ test("lockfile check: an entry resolved from a remote registry URL is caught", (
     writeLockfile(root, ["@scope/copy", "@scope/surface"], {
       "packages/surface/node_modules/@scope/copy": {
         version: "0.3.1",
-        resolved: "https://npm.pkg.github.com/download/@scope/copy/0.3.1/deadbeef",
+        resolved: "https://registry.npmjs.org/download/@scope/copy/0.3.1/deadbeef",
         integrity: "sha512-abc",
       },
     });
@@ -245,7 +245,7 @@ test("lockfile check: an entry resolved from a remote registry URL is caught", (
     );
     assert.ok(finding, `expected a lockfile finding for @scope/copy, got ${r.out}`);
     assert.match(finding.detail, /remote registry URL/);
-    assert.match(finding.detail, /npm\.pkg\.github\.com/);
+    assert.match(finding.detail, /registry\.npmjs\.org/);
   });
 });
 

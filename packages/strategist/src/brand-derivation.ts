@@ -11,9 +11,9 @@
  * ----------------------------
  * A `BrandDerivation` names token slots (`"--color-accent-primary"`) and
  * voice rules (a plain rule id) by PLAIN STRING, never by importing
- * `@vespeneventures/ui/tokens` or `@vespeneventures/copy/voice`. This is the exact
+ * `@example/ui/tokens` or `@example/copy/voice`. This is the exact
  * discipline `Market.factRefs`/`Audience.factRefs`/`Claim.factRef` already
- * use throughout this package and `@vespeneventures/copy/voice` — a string
+ * use throughout this package and `@example/copy/voice` — a string
  * naming a thing in another package's domain, resolved (or not) by
  * whoever holds both sides, never a typed import that would make this
  * package's own dependency graph reach into either one. That is also why
@@ -31,7 +31,7 @@
  * `strategy` and `tokens`, or a later cross-package gate built with
  * visibility into both — is the one place that seam can be closed for
  * real, e.g. by passing `Object.values(TOKENS).filter(t =>
- * t.brandable).map(t => t.property)` from `@vespeneventures/ui/tokens`
+ * t.brandable).map(t => t.property)` from `@example/ui/tokens`
  * itself. `checkBrandCoverage` only ever sees the two plain lists it's
  * handed; it has no way to tell a real, current, brandable-slot list from
  * a stale or empty one, which is exactly why the degenerate cases below
@@ -40,7 +40,7 @@
  *
  * THE CHECK ITSELF — BOTH DIRECTIONS, LIKE `tokens`' OWN COVERAGE TEST
  * -----------------------------------------------------------------------
- * `@vespeneventures/ui/tokens`' `brand-coverage.test.ts` checks two
+ * `@example/ui/tokens`' `brand-coverage.test.ts` checks two
  * directions against `brand-template.css`: every brandable token appears
  * in the template (direction 1), and the template names no token this
  * package doesn't declare (direction 2). `checkBrandCoverage` is the same
@@ -106,7 +106,7 @@ export interface BrandDerivation {
   attribute: string;
   /** CSS custom property names, e.g. `"--color-accent-primary"`. Referenced by NAME ONLY — see this file's header comment. */
   tokenSlots: string[];
-  /** Voice rule ids (a consumer's own `@vespeneventures/copy/voice` glossary/claim ids). Referenced by NAME ONLY — see this file's header comment. */
+  /** Voice rule ids (a consumer's own `@example/copy/voice` glossary/claim ids). Referenced by NAME ONLY — see this file's header comment. */
   voiceRules: string[];
   /** What about the attribute forces these specific slots/rules — the actual derivation logic, in prose. */
   rationale: string;
@@ -182,7 +182,7 @@ export interface BrandCoverageResult {
  * both directions, and fails closed on either empty input. Pure — no I/O,
  * never throws. See this file's header comment for the seam
  * (`brandableSlots` is caller-supplied, since this package cannot import
- * `@vespeneventures/ui/tokens` to look it up) and for why the two degenerate
+ * `@example/ui/tokens` to look it up) and for why the two degenerate
  * inputs are failures rather than vacuous passes.
  */
 export function checkBrandCoverage(brandableSlots: string[], derivations: BrandDerivation[]): BrandCoverageResult {

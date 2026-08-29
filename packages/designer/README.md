@@ -1,4 +1,4 @@
-# @vespeneventures/designer
+# @clossys/designer
 
 **The designer role — is it well made?** This package is named for the job,
 not the artifact. What it ships is still a visual system, and the vocabulary
@@ -25,7 +25,7 @@ tokens → icons → atoms → blocks
 this package, so it sits even more foundational than `atoms` itself, the
 same way `tokens` sits below all of `ui`). See "Placement rules" below for
 what distinguishes reusable atoms and blocks. Whole-page compositions are
-surfaces and live in `@vespeneventures/publisher/web`.
+surfaces and live in `@clossys/publisher/web`.
 
 - **`icons`** — glyph data only, no components: 32 `IconNode` exports
   (`AlertTriangle`, `BookOpen`, `Box`, `Building2`, `Calendar`, `Check`,
@@ -99,39 +99,39 @@ component renders unstyled, with no error anywhere to explain why.
 
 ## Public contract
 
-There is deliberately no `@vespeneventures/designer` root export. Import the
+There is deliberately no `@clossys/designer` root export. Import the
 smallest stable subpath that owns what you need:
 
 | Subpath | Owns |
 | --- | --- |
-| `@vespeneventures/designer/tokens` | Typed `TOKENS`, brand CSS parsing, the brand-coverage gate, WCAG colour math (`contrastRatio` and friends), the contrast gate (`checkTokenContrast`, `CONTRAST_PAIRS`), and `assertTokenStylesLoaded` (dev-only token-CSS presence check — see "Setup" below). No React runtime. |
-| `@vespeneventures/designer/tokens.css` | Neutral primitive custom-property defaults; works without Tailwind. |
-| `@vespeneventures/designer/theme.css` | Optional Tailwind v4 wiring; imports `tokens.css` itself. |
-| `@vespeneventures/designer/compiled.css` | GENERATED, precompiled utility CSS for `atoms` — the framework-portable path for a consumer with no Tailwind pipeline. Imports nothing itself; load after `tokens.css`. See "Framework-portable components, without Tailwind" below. |
-| `@vespeneventures/designer/brand-template.css` | Copy-and-fill template for a consumer brand binding. |
-| `@vespeneventures/designer/icons` | Tree-shakeable glyph data. |
-| `@vespeneventures/designer/atoms`, `/blocks`, `/shell`, `/charts` | Reusable React visual primitives. |
-| `@vespeneventures/designer/atoms/server`, `/blocks/server`, `/shell/server`, `/charts/server`, `/theme/server` | The server-safe subset of each sibling subpath, importable from a React Server Component. See "Server Components" below. |
-| `@vespeneventures/designer/theme` | `getThemeInitScript`, `ThemeProvider`/`useTheme`, `ThemeToggle` — the runtime half of theming. Not to be confused with the CSS `/theme.css` subpath above. |
-| `@vespeneventures/designer/gate` | Token-purity scanner/gate and the environment-conformance gate (`checkEnvironmentConformance`). |
-| `@vespeneventures/designer/render-environment` | `RENDER_ENVIRONMENT` — a plain data declaration of every subpath's render environment (`"server-safe"` \| `"client-only"`). See "Server Components" below. |
+| `@clossys/designer/tokens` | Typed `TOKENS`, brand CSS parsing, the brand-coverage gate, WCAG colour math (`contrastRatio` and friends), the contrast gate (`checkTokenContrast`, `CONTRAST_PAIRS`), and `assertTokenStylesLoaded` (dev-only token-CSS presence check — see "Setup" below). No React runtime. |
+| `@clossys/designer/tokens.css` | Neutral primitive custom-property defaults; works without Tailwind. |
+| `@clossys/designer/theme.css` | Optional Tailwind v4 wiring; imports `tokens.css` itself. |
+| `@clossys/designer/compiled.css` | GENERATED, precompiled utility CSS for `atoms` — the framework-portable path for a consumer with no Tailwind pipeline. Imports nothing itself; load after `tokens.css`. See "Framework-portable components, without Tailwind" below. |
+| `@clossys/designer/brand-template.css` | Copy-and-fill template for a consumer brand binding. |
+| `@clossys/designer/icons` | Tree-shakeable glyph data. |
+| `@clossys/designer/atoms`, `/blocks`, `/shell`, `/charts` | Reusable React visual primitives. |
+| `@clossys/designer/atoms/server`, `/blocks/server`, `/shell/server`, `/charts/server`, `/theme/server` | The server-safe subset of each sibling subpath, importable from a React Server Component. See "Server Components" below. |
+| `@clossys/designer/theme` | `getThemeInitScript`, `ThemeProvider`/`useTheme`, `ThemeToggle` — the runtime half of theming. Not to be confused with the CSS `/theme.css` subpath above. |
+| `@clossys/designer/gate` | Token-purity scanner/gate and the environment-conformance gate (`checkEnvironmentConformance`). |
+| `@clossys/designer/render-environment` | `RENDER_ENVIRONMENT` — a plain data declaration of every subpath's render environment (`"server-safe"` \| `"client-only"`). See "Server Components" below. |
 
 `ui` never exports page views, routes, metadata, strategy facts, or copy.
 Components receive resolved `ReactNode`s, labels, data, callbacks, and URLs
 through props. Product/page composition belongs to
-`@vespeneventures/publisher`; audience-facing words belong to
-`@vespeneventures/writer`.
+`@clossys/publisher`; audience-facing words belong to
+`@clossys/writer`.
 
 ### Token-only use
 
 Tokens can be the only thing a consumer installs and imports:
 
 ```bash
-npm install @vespeneventures/designer
+npm install @clossys/designer
 ```
 
 ```css
-@import "@vespeneventures/designer/tokens.css";
+@import "@clossys/designer/tokens.css";
 ```
 
 The package has no regular runtime dependencies. React, React DOM, React
@@ -142,7 +142,7 @@ is ordinary CSS custom properties, so it has no React or Tailwind requirement.
 For React components, install the peers used by the subpaths you import:
 
 ```bash
-npm install @vespeneventures/designer react react-dom react-aria-components \
+npm install @clossys/designer react react-dom react-aria-components \
   tailwind-merge tailwindcss @internationalized/date
 ```
 
@@ -157,12 +157,12 @@ anyway.** All six peers listed in `peerDependencies` — `react`, `react-dom`,
 package publishes. It is not honored by `npm.pkg.github.com`: the registry's
 packument omits `peerDependenciesMeta` entirely, so an installer resolving
 against this registry sees six required peers, not six optional ones. In
-practice that means a consumer who runs `npm install @vespeneventures/designer` to
+practice that means a consumer who runs `npm install @clossys/designer` to
 get only `tokens.css` or `compiled.css` — the two paths that exist
 specifically so React and a Tailwind pipeline are *not* required — still has
 all six installed. There is no per-subpath way to avoid it from this side;
 the fix would have to happen registry-side. See
-[issue #226](https://github.com/vespeneventures/foundry/issues/226) for the
+[issue #226](https://github.com/clossys/platform/issues/226) for the
 full evidence and the decision to document rather than restructure around it.
 
 ### CSS layers, fallbacks, and themes
@@ -255,7 +255,7 @@ import under React's `react-server` module-resolution condition, which is
 exactly what blocks a React Server Component from reaching `Card` at all —
 not because `Card` itself is unsafe, but because of how it's packaged.
 
-Five narrower subpaths exist for exactly this: `@vespeneventures/designer/atoms/server`,
+Five narrower subpaths exist for exactly this: `@clossys/designer/atoms/server`,
 `/blocks/server`, `/shell/server`, `/charts/server`, and `/theme/server`. Each
 re-exports ONLY the members of its sibling barrel confirmed, empirically, to
 import cleanly under `--conditions=react-server` — never a name inferred from
@@ -264,18 +264,18 @@ source file's own header for the exact probe and its result). Today that's:
 
 | Subpath | Server-safe members |
 | --- | --- |
-| `@vespeneventures/designer/atoms/server` | `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Skeleton`, `Spinner`, `mergeUiClasses` |
-| `@vespeneventures/designer/blocks/server` | `ArticleBody`, `DetailView`, `EmptyState`, `FeatureGrid`, `FieldGroup`, `Hero`, `PageHeader`, `PricingTable`, `SectionHeader`, `Stat` |
-| `@vespeneventures/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
-| `@vespeneventures/designer/charts/server` | `ChartFrame`, `Sparkline` |
-| `@vespeneventures/designer/theme/server` | `getThemeInitScript` |
+| `@clossys/designer/atoms/server` | `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Skeleton`, `Spinner`, `mergeUiClasses` |
+| `@clossys/designer/blocks/server` | `ArticleBody`, `DetailView`, `EmptyState`, `FeatureGrid`, `FieldGroup`, `Hero`, `PageHeader`, `PricingTable`, `SectionHeader`, `Stat` |
+| `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
+| `@clossys/designer/charts/server` | `ChartFrame`, `Sparkline` |
+| `@clossys/designer/theme/server` | `getThemeInitScript` |
 
 Everything not listed above stays reachable only from its original barrel,
 inside a client boundary — nothing was removed, renamed, or restructured to
 create these subpaths; each is strictly additive, a second, narrower way to
 reach bindings that already ship.
 
-`@vespeneventures/designer/render-environment` exports `RENDER_ENVIRONMENT`, a
+`@clossys/designer/render-environment` exports `RENDER_ENVIRONMENT`, a
 plain `Record<string, "server-safe" | "client-only">` keyed by every
 `package.json#exports` subpath this package declares — including the CSS
 entries, which carry no JavaScript execution context and are always
@@ -303,12 +303,12 @@ not want to add one solely for this dependency — can still render this
 package's **`atoms`** with real styling, no Tailwind, no `@source`:
 
 ```css
-@import "@vespeneventures/designer/tokens.css";
-@import "@vespeneventures/designer/compiled.css";
+@import "@clossys/designer/tokens.css";
+@import "@clossys/designer/compiled.css";
 ```
 
 ```bash
-npm install @vespeneventures/designer react react-dom react-aria-components \
+npm install @clossys/designer react react-dom react-aria-components \
   tailwind-merge @internationalized/date
 # tailwindcss itself is NOT needed on this path
 ```
@@ -367,7 +367,7 @@ explicit: pick ONE path per project. There is no runtime double-load
 detector (considered and deliberately not built — there is no reliable,
 low-false-positive signal available without inspecting live CSSOM rules in a
 real browser, the same cost this repository already declined elsewhere for
-`@vespeneventures/designer`'s own test setup; see the introducing PR).
+`@clossys/designer`'s own test setup; see the introducing PR).
 
 **What is and is not verified.** `src/compiled-css/coverage.test.tsx` renders
 real atoms and cross-checks every class actually in the DOM against a fresh
@@ -393,11 +393,11 @@ this package's own CI today.
 
 | Legacy import | Use now |
 | --- | --- |
-| `@vespeneventures/tokens` | `@vespeneventures/designer/tokens` |
-| `@vespeneventures/tokens/tokens.css` | `@vespeneventures/designer/tokens.css` |
-| `@vespeneventures/tokens/theme.css` | `@vespeneventures/designer/theme.css` |
-| `@vespeneventures/tokens/brand-template.css` | `@vespeneventures/designer/brand-template.css` |
-| `@vespeneventures/designer/views` | `@vespeneventures/publisher/web` for generic rendered views, or compose UI primitives in a Publisher surface. |
+| `@example/tokens` | `@clossys/designer/tokens` |
+| `@example/tokens/tokens.css` | `@clossys/designer/tokens.css` |
+| `@example/tokens/theme.css` | `@clossys/designer/theme.css` |
+| `@example/tokens/brand-template.css` | `@clossys/designer/brand-template.css` |
+| `@clossys/designer/views` | `@clossys/publisher/web` for generic rendered views, or compose UI primitives in a Publisher surface. |
 
 `atoms`, `blocks`, `icons`, `charts`, `shell`, and `gate` retain their UI
 subpaths. There is no compatibility root barrel: importing the owning
@@ -498,7 +498,7 @@ your CSS entry point:
 ```css
 @import "tailwindcss";
 @import
-  "@vespeneventures/designer/theme.css";
+  "@clossys/designer/theme.css";
 ```
 
 (`theme.css` already pulls in the base token file, so you don't need a
@@ -513,7 +513,7 @@ as classes anyone used, so it never generates them — every atom renders with
 zero applied styling, and nothing in your build fails or warns about it.
 
 ```css
-@source "./node_modules/@vespeneventures/designer/dist";
+@source "./node_modules/@clossys/designer/dist";
 ```
 
 That exact line was compiled for real before it was written down here: a
@@ -527,10 +527,10 @@ token value with its fallback (for example
 `.bg-accent { background-color: var(--color-accent, oklch(0.4748 0 0)); }`).
 Adjust the path if your CSS entry file doesn't sit next to `node_modules` —
 the target is always this package's `dist` directory, wherever
-`node_modules/@vespeneventures/designer` resolves from where your bundler runs.
+`node_modules/@clossys/designer` resolves from where your bundler runs.
 
 If your bundler's default content scan already covers everything under
-`node_modules/@vespeneventures/designer` (some do), the `@source` line is
+`node_modules/@clossys/designer` (some do), the `@source` line is
 redundant but harmless. If you're not sure, add it — a redundant `@source`
 costs nothing; a missing one costs every component's styling.
 
@@ -539,7 +539,7 @@ costs nothing; a missing one costs every component's styling.
 Turbopack specifically when the project uses pnpm — no error, no warning,
 components just render unstyled, the same silent failure this whole section
 warns about, but with the `@source` line already present and seemingly
-correct. Their diagnosis: pnpm installs `node_modules/@vespeneventures/designer`
+correct. Their diagnosis: pnpm installs `node_modules/@clossys/designer`
 as a symlink into its content-addressable store, and Turbopack's file
 watcher/source scanner does not follow that symlink, so it never sees
 `dist/` at all. This repository has not independently reproduced that
@@ -566,11 +566,11 @@ Both steps above can silently fail to do anything (a missed import, a
 `@source` path that resolves to nothing, the Turbopack + pnpm symlink case
 just above) with no error and no warning anywhere; the result looks
 identical to "I styled this component wrong" from inside your own code.
-`assertTokenStylesLoaded`, from `@vespeneventures/designer/tokens`, tells you
+`assertTokenStylesLoaded`, from `@clossys/designer/tokens`, tells you
 which failure you actually have:
 
 ```ts
-import { assertTokenStylesLoaded } from "@vespeneventures/designer/tokens";
+import { assertTokenStylesLoaded } from "@clossys/designer/tokens";
 
 // Call once, near your app's root — never as a side effect of importing
 // the package, and never something that renders into the page.
@@ -595,7 +595,7 @@ component peer used to fail silently too — the same #182 gap
 `assertTokenStylesLoaded` closes for the token CSS, extended to
 `react`, `react-aria-components`, and `tailwindcss`. You don't call
 anything for these three: importing any component subpath
-(`@vespeneventures/designer/atoms`, `/blocks`, `/shell`, `/charts`, `/theme`) or
+(`@clossys/designer/atoms`, `/blocks`, `/shell`, `/charts`, `/theme`) or
 running `generateCompiledCss` checks the relevant peers' installed
 versions automatically, and throws a named error — which peer, the range
 this package declares, and the version actually found — the moment an
@@ -611,7 +611,7 @@ break bundling this package's components for the browser. Call
 build script, a setup step, or a test — never from component code):
 
 ```ts
-import { assertTailwindMergeVersion } from "@vespeneventures/designer/tokens";
+import { assertTailwindMergeVersion } from "@clossys/designer/tokens";
 
 assertTailwindMergeVersion();
 ```
@@ -638,7 +638,7 @@ you have.
 `tokens.css` already defines the three-state contract (see "CSS layers,
 fallbacks, and themes" above): no `data-theme` follows the OS, and
 `data-theme="light"`/`"dark"` force one regardless of the OS.
-`@vespeneventures/designer/theme` is the JavaScript that drives that attribute.
+`@clossys/designer/theme` is the JavaScript that drives that attribute.
 Three pieces, used together:
 
 **(a) The head script — before anything else in `<head>`.** A React
@@ -654,7 +654,7 @@ piece rather than something `ThemeProvider` does automatically:
 
 ```tsx
 // app/layout.tsx (Next.js App Router) — first thing in <head>
-import { getThemeInitScript } from "@vespeneventures/designer/theme";
+import { getThemeInitScript } from "@clossys/designer/theme";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -673,7 +673,7 @@ three-state preference in React state, persists it, and keeps
 `<html data-theme>`/`color-scheme` in sync as it changes:
 
 ```tsx
-import { ThemeProvider } from "@vespeneventures/designer/theme";
+import { ThemeProvider } from "@clossys/designer/theme";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return <ThemeProvider>{children}</ThemeProvider>;
@@ -685,7 +685,7 @@ Cycles System → Light → Dark → System (see `ThemeToggle.tsx`'s own doc
 comment for why a cycling control rather than a switch-plus-reset pair):
 
 ```tsx
-import { ThemeToggle } from "@vespeneventures/designer/theme";
+import { ThemeToggle } from "@clossys/designer/theme";
 
 function HeaderActions() {
   return <ThemeToggle />;
@@ -696,7 +696,7 @@ Reach for `useTheme()` directly when a component needs the current
 preference or resolved theme without rendering a toggle itself:
 
 ```tsx
-import { useTheme } from "@vespeneventures/designer/theme";
+import { useTheme } from "@clossys/designer/theme";
 
 function CurrentThemeLabel() {
   const { preference, resolvedTheme } = useTheme();
@@ -800,7 +800,7 @@ to another.
 
 These packages are optional peers so a token-only consumer installs none of
 the component runtime. A component consumer must install the matching peers
-alongside `@vespeneventures/designer`; npm can then report a missing peer instead
+alongside `@clossys/designer`; npm can then report a missing peer instead
 of allowing a hidden transitive dependency to decide the runtime version.
 
 No `class-variance-authority` or similar: each atom's variants are a plain
@@ -814,7 +814,7 @@ shown at their defaults for clarity; omitting them is equivalent.
 ### `Button`
 
 ```tsx
-import { Button } from "@vespeneventures/designer/atoms";
+import { Button } from "@clossys/designer/atoms";
 
 function SaveButton() {
   return (
@@ -833,8 +833,8 @@ prop react-aria-components' own `Button` does — `isDisabled`, `onPress`,
 ### `Icon`
 
 ```tsx
-import { Icon } from "@vespeneventures/designer/atoms";
-import { Clock } from "@vespeneventures/designer/icons";
+import { Icon } from "@clossys/designer/atoms";
+import { Clock } from "@clossys/designer/icons";
 
 function LastUpdated({ label }: { label: string }) {
   return (
@@ -850,7 +850,7 @@ function SearchTrigger() {
 ```
 
 The render CONTRACT for an icon — size, colour, accessibility — applied to
-either structured glyph DATA (`glyph`, the shape `@vespeneventures/designer/icons`
+either structured glyph DATA (`glyph`, the shape `@clossys/designer/icons`
 ships) or arbitrary `children` (raw SVG elements, or a component that
 renders them, for a one-off brand mark). Exactly one of the two is required
 at the type level; supplying both, or neither, is a compile error, not a
@@ -863,7 +863,7 @@ registry — a NAME string would itself be a mode prop in disguise, making
 same unbounded-growth failure "Placement rules" → "Slots beat mode props"
 above describes for a structural mode prop. `glyph`/`children` are ordinary
 `ReactNode`-shaped slots instead: a consumer's own glyph — vendored from
-`@vespeneventures/designer/icons`, hand-copied from a design tool, or a whole
+`@clossys/designer/icons`, hand-copied from a design tool, or a whole
 custom brand mark — is a first-class input with no extension mechanism to
 learn, the same way `Menu`'s `trigger` or `PageHeader`'s `actions` already
 are.
@@ -878,7 +878,7 @@ instead, the same mechanism `Spinner` and `Skeleton` already use above.
 this package's `--ui-icon-sm`/`-md`/`-lg` tokens (`16px`/
 `24px`/`32px` by default), each with a literal pixel fallback so `Icon`
 still renders at a sensible size even in a project that hasn't imported
-`@vespeneventures/designer/tokens.css`. **Stroke weight** reads
+`@clossys/designer/tokens.css`. **Stroke weight** reads
 `--ui-icon-stroke` (default `2`) the same way — a real brand lever (the
 token is `brandable: true`, the same category as `--radius-default`), not
 a per-instance prop: there is no `strokeWidth`/`width`/`height` prop either,
@@ -912,7 +912,7 @@ other atom's do — a consumer's value always wins on conflict.
 ### `TextField`
 
 ```tsx
-import { TextField } from "@vespeneventures/designer/atoms";
+import { TextField } from "@clossys/designer/atoms";
 
 function EmailField() {
   return (
@@ -935,7 +935,7 @@ by id — not a `placeholder` standing in for it. `description` and
 ### `Badge`
 
 ```tsx
-import { Badge } from "@vespeneventures/designer/atoms";
+import { Badge } from "@clossys/designer/atoms";
 
 function Status() {
   return <Badge variant="success">Active</Badge>;
@@ -948,7 +948,7 @@ function Status() {
 ### `Card`
 
 ```tsx
-import { Card } from "@vespeneventures/designer/atoms";
+import { Card } from "@clossys/designer/atoms";
 
 function Panel() {
   return <Card className="max-w-sm">Plain content, raised off the page.</Card>;
@@ -961,7 +961,7 @@ surface, styled with this package's elevation token.
 ### `Breadcrumb`
 
 ```tsx
-import { Breadcrumb } from "@vespeneventures/designer/atoms";
+import { Breadcrumb } from "@clossys/designer/atoms";
 
 function PromptTrail() {
   return (
@@ -1000,7 +1000,7 @@ differ in kind. See "Placement rules" above.
 ### `Link`
 
 ```tsx
-import { Link } from "@vespeneventures/designer/atoms";
+import { Link } from "@clossys/designer/atoms";
 
 function PromptsLink() {
   return (
@@ -1032,7 +1032,7 @@ this component's own:
 ### `Checkbox`
 
 ```tsx
-import { Checkbox } from "@vespeneventures/designer/atoms";
+import { Checkbox } from "@clossys/designer/atoms";
 
 function SelectAllRows({ isAllSelected, isSomeSelected, onToggle }: {
   isAllSelected: boolean;
@@ -1057,7 +1057,7 @@ reason `Checkbox` was prioritized ahead of it.
 ### `Switch`
 
 ```tsx
-import { Switch } from "@vespeneventures/designer/atoms";
+import { Switch } from "@clossys/designer/atoms";
 
 function EmailNotificationsToggle() {
   return <Switch onChange={(isOn) => save(isOn)}>Email notifications</Switch>;
@@ -1074,7 +1074,7 @@ rather than `Checkbox` with different styling.
 ### `Select`
 
 ```tsx
-import { Select } from "@vespeneventures/designer/atoms";
+import { Select } from "@clossys/designer/atoms";
 
 function FavoriteFruitField() {
   return (
@@ -1109,7 +1109,7 @@ needs.
 ### `Textarea`
 
 ```tsx
-import { Textarea } from "@vespeneventures/designer/atoms";
+import { Textarea } from "@clossys/designer/atoms";
 
 function DescriptionField() {
   return (
@@ -1134,7 +1134,7 @@ visual one (see the README's "variant rule").
 ### `Avatar`
 
 ```tsx
-import { Avatar } from "@vespeneventures/designer/atoms";
+import { Avatar } from "@clossys/designer/atoms";
 
 function UserAvatar() {
   return <Avatar src={user.imageUrl} alt={user.fullName} size="md" />;
@@ -1149,7 +1149,7 @@ markup, like `Badge`/`Card`.
 ### `Spinner`
 
 ```tsx
-import { Spinner } from "@vespeneventures/designer/atoms";
+import { Spinner } from "@clossys/designer/atoms";
 
 function LoadingPrompts() {
   return <Spinner label="Loading prompts" size="md" />;
@@ -1169,8 +1169,8 @@ then renders `aria-hidden="true"` instead.
 ### `Menu`
 
 ```tsx
-import { Menu } from "@vespeneventures/designer/atoms";
-import { Button } from "@vespeneventures/designer/atoms";
+import { Menu } from "@clossys/designer/atoms";
+import { Button } from "@clossys/designer/atoms";
 
 function RowActionsMenu() {
   return (
@@ -1231,8 +1231,8 @@ an atom here), not a layout of multiple simultaneous named regions.
 ### `Dialog`
 
 ```tsx
-import { Dialog } from "@vespeneventures/designer/atoms";
-import { Button } from "@vespeneventures/designer/atoms";
+import { Dialog } from "@clossys/designer/atoms";
+import { Button } from "@clossys/designer/atoms";
 
 function SettingsDialog() {
   return (
@@ -1300,7 +1300,7 @@ block by the same test; see "Blocks" below.
 ### `Tabs`
 
 ```tsx
-import { Tabs } from "@vespeneventures/designer/atoms";
+import { Tabs } from "@clossys/designer/atoms";
 
 function PromptSections() {
   return (
@@ -1345,7 +1345,7 @@ default, since "Tabs" describes every tab list equally badly.
 ### `Table`
 
 ```tsx
-import { Table } from "@vespeneventures/designer/atoms";
+import { Table } from "@clossys/designer/atoms";
 
 interface PromptRun {
   id: string;
@@ -1445,7 +1445,7 @@ for it.
 ### `Field`
 
 ```tsx
-import { Field } from "@vespeneventures/designer/atoms";
+import { Field } from "@clossys/designer/atoms";
 
 function SignatureField() {
   return (
@@ -1473,7 +1473,7 @@ free the way every other field atom here does.
 ### `Skeleton`
 
 ```tsx
-import { Skeleton } from "@vespeneventures/designer/atoms";
+import { Skeleton } from "@clossys/designer/atoms";
 
 function LoadingPromptCard() {
   return (
@@ -1498,7 +1498,7 @@ in for a whole loading region (not on every piece inside it) and it renders
 ### `Tooltip`
 
 ```tsx
-import { Tooltip, Button } from "@vespeneventures/designer/atoms";
+import { Tooltip, Button } from "@clossys/designer/atoms";
 
 function InfoTooltip() {
   return (
@@ -1527,7 +1527,7 @@ way.
 ### `Banner`
 
 ```tsx
-import { Banner } from "@vespeneventures/designer/atoms";
+import { Banner } from "@clossys/designer/atoms";
 
 function TrialEndingBanner({ onDismiss }: { onDismiss: () => void }) {
   return (
@@ -1538,7 +1538,7 @@ function TrialEndingBanner({ onDismiss }: { onDismiss: () => void }) {
 }
 ```
 
-A persistent inline message region — not a toast (see `@vespeneventures/designer/shell`'s
+A persistent inline message region — not a toast (see `@clossys/designer/shell`'s
 `Toaster`): this renders exactly where it sits in the page's render tree,
 not through a portal or a queue. `variant`: `"info" | "success" | "warning" |
 "danger"` (default `"info"`) — the same four status tokens `toast(...)`'s
@@ -1553,7 +1553,7 @@ stops rendering.
 ### `RadioGroup`
 
 ```tsx
-import { RadioGroup } from "@vespeneventures/designer/atoms";
+import { RadioGroup } from "@clossys/designer/atoms";
 
 function DeliverySpeedField() {
   return (
@@ -1586,7 +1586,7 @@ that reads more naturally as hand-written markup, the same reasoning
 ### `Popover`
 
 ```tsx
-import { Popover, Button } from "@vespeneventures/designer/atoms";
+import { Popover, Button } from "@clossys/designer/atoms";
 
 function FiltersPopover() {
   return (
@@ -1624,7 +1624,7 @@ general-purpose overlay primitive is not).
 ### `DateField`
 
 ```tsx
-import { DateField } from "@vespeneventures/designer/atoms";
+import { DateField } from "@clossys/designer/atoms";
 import { CalendarDate } from "@internationalized/date";
 
 function StartDateField() {
@@ -1665,7 +1665,7 @@ direct keyboard entry, no calendar — is already complete on its own.
 ### `ComboBox`
 
 ```tsx
-import { ComboBox } from "@vespeneventures/designer/atoms";
+import { ComboBox } from "@clossys/designer/atoms";
 
 function AssigneeField() {
   return (
@@ -1694,7 +1694,7 @@ its accessible name to `"Show suggestions"`, overridable via `triggerLabel`.
 ### `SearchField`
 
 ```tsx
-import { SearchField } from "@vespeneventures/designer/atoms";
+import { SearchField } from "@clossys/designer/atoms";
 
 function PromptSearch() {
   return <SearchField label="Search prompts" onChange={(value) => setQuery(value)} />;
@@ -1713,7 +1713,7 @@ the field.
 ### `FileTrigger`
 
 ```tsx
-import { FileTrigger, Button } from "@vespeneventures/designer/atoms";
+import { FileTrigger, Button } from "@clossys/designer/atoms";
 
 function AttachmentPicker() {
   return (
@@ -1744,7 +1744,7 @@ and stops there — a block built on top of this (and this package's own
 ### `Disclosure`
 
 ```tsx
-import { Disclosure } from "@vespeneventures/designer/atoms";
+import { Disclosure } from "@clossys/designer/atoms";
 
 function AdvancedOptions() {
   return (
@@ -1770,7 +1770,7 @@ The trigger is react-aria-components' own `Button`, given `slot="trigger"`
 ### `ProgressBar`
 
 ```tsx
-import { ProgressBar } from "@vespeneventures/designer/atoms";
+import { ProgressBar } from "@clossys/designer/atoms";
 
 function UploadProgress({ percentComplete }: { percentComplete: number }) {
   return <ProgressBar label="Uploading" value={percentComplete} />;
@@ -1793,7 +1793,7 @@ same way `TextField`'s own `Label` does.
 ### `Separator`
 
 ```tsx
-import { Separator } from "@vespeneventures/designer/atoms";
+import { Separator } from "@clossys/designer/atoms";
 
 function SectionDivider() {
   return <Separator />;
@@ -1819,7 +1819,7 @@ rule is needed.
 ### `Chip`
 
 ```tsx
-import { Chip } from "@vespeneventures/designer/atoms";
+import { Chip } from "@clossys/designer/atoms";
 
 function TeamFilter({ teams, onRemove }: { teams: string[]; onRemove: (team: string) => void }) {
   return (
@@ -1885,8 +1885,8 @@ for it. See "Placement rules" above ("Slots beat mode props") for why.
 ### `PageHeader`
 
 ```tsx
-import { PageHeader } from "@vespeneventures/designer/blocks";
-import { Button } from "@vespeneventures/designer/atoms";
+import { PageHeader } from "@clossys/designer/blocks";
+import { Button } from "@clossys/designer/atoms";
 
 function PromptsPageHeader() {
   return (
@@ -1907,8 +1907,8 @@ above), but any `ReactNode` works.
 ### `EmptyState`
 
 ```tsx
-import { EmptyState } from "@vespeneventures/designer/blocks";
-import { Button } from "@vespeneventures/designer/atoms";
+import { EmptyState } from "@clossys/designer/blocks";
+import { Button } from "@clossys/designer/atoms";
 
 function EmptyPromptsList() {
   return (
@@ -1931,7 +1931,7 @@ empty because there's genuinely nothing to do has nowhere to send you).
 ### `DataTable`
 
 ```tsx
-import { DataTable, Pagination, type DataTableColumn } from "@vespeneventures/designer/blocks";
+import { DataTable, Pagination, type DataTableColumn } from "@clossys/designer/blocks";
 import { useState } from "react";
 import type { Key, SortDescriptor } from "react-aria-components";
 
@@ -2012,8 +2012,8 @@ a deliberate follow-up.
 ### `Form`
 
 ```tsx
-import { Form, FieldGroup } from "@vespeneventures/designer/blocks";
-import { TextField, Button } from "@vespeneventures/designer/atoms";
+import { Form, FieldGroup } from "@clossys/designer/blocks";
+import { TextField, Button } from "@clossys/designer/atoms";
 import { useState } from "react";
 
 function ProfileForm() {
@@ -2078,8 +2078,8 @@ every one of those too.
 ### `FieldGroup`
 
 ```tsx
-import { FieldGroup } from "@vespeneventures/designer/blocks";
-import { TextField } from "@vespeneventures/designer/atoms";
+import { FieldGroup } from "@clossys/designer/blocks";
+import { TextField } from "@clossys/designer/atoms";
 
 function ShippingAddressGroup() {
   return (
@@ -2127,8 +2127,8 @@ components under this README's variant rule.
 ### `ConfirmDialog`
 
 ```tsx
-import { ConfirmDialog } from "@vespeneventures/designer/blocks";
-import { Button } from "@vespeneventures/designer/atoms";
+import { ConfirmDialog } from "@clossys/designer/blocks";
+import { Button } from "@clossys/designer/atoms";
 
 function DeletePromptButton() {
   return (
@@ -2189,8 +2189,8 @@ primary action" expectation an ordinary OK/Cancel dialog already sets.
 ### `Toolbar`
 
 ```tsx
-import { Toolbar } from "@vespeneventures/designer/blocks";
-import { Button, TextField } from "@vespeneventures/designer/atoms";
+import { Toolbar } from "@clossys/designer/blocks";
+import { Button, TextField } from "@clossys/designer/atoms";
 
 function PromptsToolbar() {
   return (
@@ -2240,7 +2240,7 @@ once the three regions no longer fit on one line.
 ### `NavGrid`
 
 ```tsx
-import { NavGrid } from "@vespeneventures/designer/blocks";
+import { NavGrid } from "@clossys/designer/blocks";
 
 function SettingsHub() {
   return (
@@ -2282,8 +2282,8 @@ state, the same pattern `DetailView`'s own responsive field grid uses.
 ### `SectionHeader`
 
 ```tsx
-import { SectionHeader } from "@vespeneventures/designer/blocks";
-import { Button } from "@vespeneventures/designer/atoms";
+import { SectionHeader } from "@clossys/designer/blocks";
+import { Button } from "@clossys/designer/atoms";
 
 function NotificationsSection() {
   return (
@@ -2342,13 +2342,13 @@ optional prop the consumer supplies. Every example below uses obviously-
 structural placeholder text ("Heading text", "Body copy goes here") for
 exactly that reason: this package owns visual vocabulary, never copy (see
 "Public contract" above — audience-facing words belong to
-`@vespeneventures/writer`).
+`@clossys/writer`).
 
 ### `Hero`
 
 ```tsx
-import { Hero } from "@vespeneventures/designer/blocks";
-import { Button } from "@vespeneventures/designer/atoms";
+import { Hero } from "@clossys/designer/blocks";
+import { Button } from "@clossys/designer/atoms";
 
 function LandingHero() {
   return (
@@ -2406,7 +2406,7 @@ documents.
 ### `FeatureGrid`
 
 ```tsx
-import { FeatureGrid } from "@vespeneventures/designer/blocks";
+import { FeatureGrid } from "@clossys/designer/blocks";
 
 function ProductFeatures() {
   return (
@@ -2444,7 +2444,7 @@ three from `desktop` — the same responsive grid `NavGrid` uses.
 ### `Faq`
 
 ```tsx
-import { Faq } from "@vespeneventures/designer/blocks";
+import { Faq } from "@clossys/designer/blocks";
 
 function ProductFaq() {
   return (
@@ -2478,8 +2478,8 @@ another, unlike a coordinated accordion.
 ### `PricingTable`
 
 ```tsx
-import { PricingTable } from "@vespeneventures/designer/blocks";
-import { Button } from "@vespeneventures/designer/atoms";
+import { PricingTable } from "@clossys/designer/blocks";
+import { Button } from "@clossys/designer/atoms";
 
 function ProductPricing() {
   return (
@@ -2529,7 +2529,7 @@ atoms (blocks may compose atoms).
 ### `Testimonial`
 
 ```tsx
-import { Testimonial } from "@vespeneventures/designer/blocks";
+import { Testimonial } from "@clossys/designer/blocks";
 
 function CustomerQuote() {
   return (
@@ -2565,7 +2565,7 @@ its own type level too.
 ### `ArticleBody`
 
 ```tsx
-import { ArticleBody } from "@vespeneventures/designer/blocks";
+import { ArticleBody } from "@clossys/designer/blocks";
 
 function ArticlePage() {
   return (
@@ -2590,7 +2590,7 @@ descendant-selector Tailwind variants (`[&_h2]:text-h2`, ...), nothing
 more. A product-neutral structured-document contract — parsing a content
 shape into these elements in the first place — is explicitly out of scope
 here and belongs to a separate, already-filed proposal in
-`@vespeneventures/publisher` instead.
+`@clossys/publisher` instead.
 
 Content is constrained to this package's own `--ui-width-prose-max` token
 (48rem default) — the same "case 2, no Tailwind namespace" raw `var()`
@@ -2607,9 +2607,9 @@ cleanly — `shell` and `blocks` are independent sibling layers built on
 so a real page just renders both together:
 
 ```tsx
-import { SiteHeader, SiteFooter } from "@vespeneventures/designer/shell";
-import { Hero, FeatureGrid } from "@vespeneventures/designer/blocks";
-import { Button, Link } from "@vespeneventures/designer/atoms";
+import { SiteHeader, SiteFooter } from "@clossys/designer/shell";
+import { Hero, FeatureGrid } from "@clossys/designer/blocks";
+import { Button, Link } from "@clossys/designer/atoms";
 
 function MarketingPage() {
   return (
@@ -2644,7 +2644,7 @@ function MarketingPage() {
 
 Page-level views are documented here because they are built entirely from
 this visual vocabulary, but they are exported by
-`@vespeneventures/publisher/web`. UI stops at reusable primitives; Publisher owns
+`@clossys/publisher/web`. UI stops at reusable primitives; Publisher owns
 the page composition and renderer.
 
 A view is a whole PAGE's composition — test 3 from "Placement rules" above,
@@ -2690,8 +2690,8 @@ assuming one.
 ### `ErrorView`
 
 ```tsx
-// ErrorView is exported by @vespeneventures/publisher/web.
-import { Button } from "@vespeneventures/designer/atoms";
+// ErrorView is exported by @clossys/publisher/web.
+import { Button } from "@clossys/designer/atoms";
 
 function NotFoundPage() {
   return (
@@ -2725,8 +2725,8 @@ not the page's primary reading order.
 ### `DetailView`
 
 ```tsx
-import { DetailView } from "@vespeneventures/designer/blocks";
-import { Badge, Button } from "@vespeneventures/designer/atoms";
+import { DetailView } from "@clossys/designer/blocks";
+import { Badge, Button } from "@clossys/designer/atoms";
 
 function OrderDetail({ order }: { order: { id: string; owner: string; status: string; notes: string } }) {
   return (
@@ -2772,8 +2772,8 @@ own title region rather than repeating the same text twice.
 ### `AuthView`
 
 ```tsx
-// AuthView is exported by @vespeneventures/publisher/web.
-import { Link } from "@vespeneventures/designer/atoms";
+// AuthView is exported by @clossys/publisher/web.
+import { Link } from "@clossys/designer/atoms";
 
 function SignInPage() {
   return (
@@ -2816,7 +2816,7 @@ a brand mark is per-product, and a pre-built one would recreate the
 ### `Pagination`
 
 ```tsx
-import { Pagination } from "@vespeneventures/designer/blocks";
+import { Pagination } from "@clossys/designer/blocks";
 import { useState } from "react";
 
 function PromptsPagination({ totalPrompts }: { totalPrompts: number }) {
@@ -2868,7 +2868,7 @@ provide both for "Showing 11–20 of 42".
 ### `Stat`
 
 ```tsx
-import { Stat } from "@vespeneventures/designer/blocks";
+import { Stat } from "@clossys/designer/blocks";
 
 function ActiveUsersStat() {
   return (
@@ -2947,8 +2947,8 @@ toast that was queued a moment before the user clicked a link.
 
 ```tsx
 // app/layout.tsx
-import { Shell } from "@vespeneventures/designer/shell";
-import { Link } from "@vespeneventures/designer/atoms";
+import { Shell } from "@clossys/designer/shell";
+import { Link } from "@clossys/designer/atoms";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -2974,7 +2974,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
 ```tsx
 // app/prompts/page.tsx — content: remounts per route, fills Shell.Main
-import { PageHeader } from "@vespeneventures/designer/blocks";
+import { PageHeader } from "@clossys/designer/blocks";
 
 export default function PromptsPage() {
   return <PageHeader title="Prompts" />;
@@ -3070,8 +3070,8 @@ own regions do, which is what puts all four here rather than in `blocks`.
 
 ```tsx
 // app/layout.tsx
-import { NavShell, SiteFooter, SiteHeader, SkipLink } from "@vespeneventures/designer/shell";
-import { Link } from "@vespeneventures/designer/atoms";
+import { NavShell, SiteFooter, SiteHeader, SkipLink } from "@clossys/designer/shell";
+import { Link } from "@clossys/designer/atoms";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -3184,7 +3184,7 @@ rendered, since it portals straight to `document.body`:
 
 ```tsx
 // app/layout.tsx
-import { Shell, Toaster } from "@vespeneventures/designer/shell";
+import { Shell, Toaster } from "@clossys/designer/shell";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -3200,7 +3200,7 @@ Then, from anywhere — an event handler, a data-fetching effect, any code
 with no JSX in it at all:
 
 ```tsx
-import { toast } from "@vespeneventures/designer/shell";
+import { toast } from "@clossys/designer/shell";
 
 async function save() {
   try {
@@ -3310,7 +3310,7 @@ chart type this package doesn't ship; `BarChart`/`LineChart`/`Sparkline`
 below are the components most consumers actually render.
 
 ```tsx
-import { ChartFrame } from "@vespeneventures/designer/charts";
+import { ChartFrame } from "@clossys/designer/charts";
 
 <ChartFrame
   title="Monthly signups"
@@ -3329,7 +3329,7 @@ Categorical magnitude — one bar per category, grouped by series when
 there's more than one:
 
 ```tsx
-import { BarChart } from "@vespeneventures/designer/charts";
+import { BarChart } from "@clossys/designer/charts";
 
 <BarChart
   title="Revenue vs. cost"
@@ -3356,7 +3356,7 @@ Change over time — one line per series, sharing one x scale and one y
 scale:
 
 ```tsx
-import { LineChart } from "@vespeneventures/designer/charts";
+import { LineChart } from "@clossys/designer/charts";
 
 <LineChart
   title="Daily active users"
@@ -3385,7 +3385,7 @@ in this layer) no hover layer, meant to sit inline in running text or a
 stat tile at a size too small for a crosshair to make sense:
 
 ```tsx
-import { Sparkline } from "@vespeneventures/designer/charts";
+import { Sparkline } from "@clossys/designer/charts";
 
 <Sparkline title="7-day signups trend" values={[12, 18, 15, 22, 19, 25, 21]} />
 ```
@@ -3429,7 +3429,7 @@ and why it's shaped the way it is.
 ### `getThemeInitScript`
 
 ```tsx
-import { getThemeInitScript } from "@vespeneventures/designer/theme";
+import { getThemeInitScript } from "@clossys/designer/theme";
 
 <script dangerouslySetInnerHTML={{ __html: getThemeInitScript() }} />
 ```
@@ -3457,7 +3457,7 @@ safe default every other decline path in this subpath resolves to.
 ### `ThemeProvider` and `useTheme`
 
 ```tsx
-import { ThemeProvider, useTheme } from "@vespeneventures/designer/theme";
+import { ThemeProvider, useTheme } from "@clossys/designer/theme";
 
 function CurrentThemeLabel() {
   const { preference, resolvedTheme, setPreference } = useTheme();
@@ -3510,7 +3510,7 @@ mount, the same tradeoff every SSR-safe theme provider makes.
 ### `ThemeToggle`
 
 ```tsx
-import { ThemeToggle } from "@vespeneventures/designer/theme";
+import { ThemeToggle } from "@clossys/designer/theme";
 
 <ThemeToggle />
 ```
@@ -3536,11 +3536,11 @@ activating the control does next, and a visually hidden
 not every screen reader/browser combination reliably re-announces an
 `aria-label` that changes on an already-focused element.
 
-## Icon glyph data (`@vespeneventures/designer/icons`)
+## Icon glyph data (`@clossys/designer/icons`)
 
 ```tsx
-import { Icon } from "@vespeneventures/designer/atoms";
-import { Search } from "@vespeneventures/designer/icons";
+import { Icon } from "@clossys/designer/atoms";
+import { Search } from "@clossys/designer/icons";
 
 <Icon glyph={Search} label="Search" />;
 ```
@@ -3562,12 +3562,12 @@ components) never had to accept `ui`'s own dependency graph
 That reasoning doesn't survive being checked against how ES module
 bundlers actually behave, once the render CONTRACT (this package's own
 `Icon` atom) is what a consumer needs alongside the data anyway: `ui` is
-`"sideEffects": false`, and `@vespeneventures/designer/icons` ships one ES module
+`"sideEffects": false`, and `@clossys/designer/icons` ships one ES module
 per glyph — importing `Search` from it bundles exactly `Search`, the same
 elimination `src/icons/tree-shake.test.ts` measures against a real
 bundler's OUTPUT, not assumed. An unimported `ui/icons` costs an unrelated
 `ui` consumer zero bytes, the identical reasoning that already justifies
-`@vespeneventures/designer/charts` living inside this package rather than as its
+`@clossys/designer/charts` living inside this package rather than as its
 own. The dependency-weight argument the standalone package's own README
 made for keeping icons separate does not hold up under that same scrutiny —
 it is not repeated here.
@@ -3742,7 +3742,7 @@ not a grab-bag).
 | `IconProps` | type | `IconAccessibilityProps & { glyph: IconNode; children?: undefined } \| { glyph?: undefined; children: ReactNode } & { size?: IconSize; className?: string; style?: CSSProperties } & Omit<SVGProps<SVGSVGElement>, ...>`. |
 | `IconSize` | type | `"sm" \| "md" \| "lg"`. |
 | `IconAccessibilityProps` | type | The `{ decorative: true } \| { label: string }` discriminated union. |
-| `IconNode` | type | `ReadonlyArray<readonly [tag: string, attrs: Record<string, string>]>` — also re-exported from `@vespeneventures/designer/icons`. |
+| `IconNode` | type | `ReadonlyArray<readonly [tag: string, attrs: Record<string, string>]>` — also re-exported from `@clossys/designer/icons`. |
 | `TextField` | component | Labeled single-line text input built on react-aria-components' `TextField` + `Label` + `Input` + `FieldError`. |
 | `TextFieldProps` | type | Props for `TextField`: `label`, `description`, `errorMessage`, `placeholder`, `className`, `inputClassName`, plus everything react-aria-components' own `TextField` accepts. |
 | `Badge` | component | Small status/label pill. Plain markup — not interactive, composes no other atom. |
@@ -4045,9 +4045,9 @@ three tests are worth calling out specifically:
   comparison, run over the identical renamed-subpath fixture in the same
   test, asserted to disagree.
 
-## Token-purity gate (`@vespeneventures/designer/gate`, `designer-token-check`)
+## Token-purity gate (`@clossys/designer/gate`, `designer-token-check`)
 
-`@vespeneventures/writer` ships a scanner gate that proves every user-facing
+`@clossys/writer` ships a scanner gate that proves every user-facing
 string in a source tree is registered. Before this release, this package
 had no equivalent for the VISUAL half of the same contract: a hardcoded
 `#3b82f6` or `padding: 13px` anywhere in `ui` was invisible in exactly the
@@ -4056,7 +4056,7 @@ deliberately kept OUT of the component ladder barrel (`src/index.ts`) and
 its `"."` export — it is tooling, not a component — reachable instead from
 its own subpath and an installable CLI:
 
-- **`scanStyleSources(root, options?)`** (from `@vespeneventures/designer/gate`)
+- **`scanStyleSources(root, options?)`** (from `@clossys/designer/gate`)
   walks a real source tree and extracts every hardcoded styling literal: a
   hex color (`#rgb`/`#rrggbb`/`#rrggbbaa`), an `rgb()`/`rgba()`/`hsl()`/
   `hsla()`/`oklch()`/`oklab()`/`lab()`/`lch()` color function, a raw CSS
@@ -4065,7 +4065,7 @@ its own subpath and an installable CLI:
   Tailwind TOKEN class (`text-ink-primary`, `bg-surface-base`, `p-4`,
   `z-10`, `rounded-control`) is never a candidate — it carries a NAME, not
   a hardcoded value, so it never matches any extraction pattern in the
-  first place. Zero runtime dependencies, matching `@vespeneventures/writer`'s
+  first place. Zero runtime dependencies, matching `@clossys/writer`'s
   own scanner (this repository's CI `safety` job runs gate scripts with no
   `npm ci`) — see `src/style-scan.ts`'s own header for the full boundary
   reasoning, including exactly what is reported as `unchecked` rather than
@@ -4106,9 +4106,9 @@ its own subpath and an installable CLI:
   instead: a JSON object mapping any key to an entry with at least string
   `property` and `value` fields. It REPLACES the default registry for the
   run rather than merging with it, and every finding's message names the
-  supplied file rather than `@vespeneventures/designer/tokens`.
+  supplied file rather than `@clossys/designer/tokens`.
 
-## WCAG contrast gate (`@vespeneventures/designer/tokens`, `designer-contrast-check`)
+## WCAG contrast gate (`@clossys/designer/tokens`, `designer-contrast-check`)
 
 The token-purity gate above and this one check two completely different
 axes, and neither substitutes for the other: `checkTokenPurity` asks "does
@@ -4128,7 +4128,7 @@ computing it lived at `tokens/internal/color.ts`, explicitly marked "not
 part of this package's public API" and reachable only by that one test.
 
 - **`contrastRatio`, `luminanceOf`, `oklchToLinearSRGB`, `hexToLinearSRGB`,
-  `relativeLuminance`, `parseOklch`** (from `@vespeneventures/designer/tokens`,
+  `relativeLuminance`, `parseOklch`** (from `@clossys/designer/tokens`,
   promoted from that internal module — no behavior change, only
   visibility) — the WCAG colour math itself, pure and zero-dependency.
 - **`CONTRAST_PAIRS`** (same subpath) — an EXPLICIT, checked-in list of 25
@@ -4234,7 +4234,7 @@ clear 3:1 on their own and carry no exception at all — if a future
 palette edit ever moved one of dark's slots under the floor, it would
 report as a genuine, unrelieved `"below-threshold"` finding.
 
-## Environment-declaration-consistency gate (`@vespeneventures/designer/gate`, `designer-environment-check`)
+## Environment-declaration-consistency gate (`@clossys/designer/gate`, `designer-environment-check`)
 
 "Server Components" above documents `RENDER_ENVIRONMENT` — a plain
 `Record<string, "server-safe" | "client-only">`, one entry per
@@ -4245,9 +4245,9 @@ ever verified this record stayed in step with the MANIFEST it describes: a
 subpath could be added to (or removed or renamed in)
 `package.json#exports` with no matching edit here, or vice versa, and
 nothing would notice. This gate closes
-[issue #405](https://github.com/vespeneventures/foundry/issues/405),
+[issue #405](https://github.com/clossys/platform/issues/405),
 narrowed by that issue's own correction comment once
-[issue #358](https://github.com/vespeneventures/foundry/issues/358)
+[issue #358](https://github.com/clossys/platform/issues/358)
 routed the FULL verification elsewhere (see the next paragraph).
 
 **What this gate checks, precisely, and what it deliberately does not —
@@ -4267,7 +4267,7 @@ says nothing about whether the declaration is true of the compiled
 output** — whether a subpath marked `"server-safe"` actually resolves
 safely under the `react-server` export condition is a genuinely different
 capability (real module-graph resolution under a declared export
-condition), and [issue #358](https://github.com/vespeneventures/foundry/issues/358)
+condition), and [issue #358](https://github.com/clossys/platform/issues/358)
 places that resolver in `builder`, shared with a second declaration shape
 (layering-seam conformance), specifically so the same resolver serves both
 rather than being built twice. This gate is not a smaller version of that
@@ -4286,7 +4286,7 @@ subpath fixture: this gate exits `1`, while a bare count comparison, run
 over the IDENTICAL fixture in the same test, exits `0`.
 
 - **`checkEnvironmentConformance(packageRoot)`** (from
-  `@vespeneventures/designer/gate`, async) — loads `packageRoot`'s
+  `@clossys/designer/gate`, async) — loads `packageRoot`'s
   `package.json#exports` subpath set and `dist/render-environment.js`'s
   `RENDER_ENVIRONMENT` key set (via a real `node` subprocess — see
   `environment-conformance-worker.ts`'s own header for why an in-process
@@ -4340,7 +4340,7 @@ what a filter bar contains — a consumer composes filter controls from
 this package's own atoms (`Select`, `TextField`, `Popover`) directly into
 whichever slot fits.
 
-**Views:** `ErrorView` and `AuthView` moved to `@vespeneventures/publisher/web`; the list is meant to stay
+**Views:** `ErrorView` and `AuthView` moved to `@clossys/publisher/web`; the list is meant to stay
 this short — see "Views" above for the full reasoning. `ListView`,
 `FormView`, and `DashboardView` are deliberately NOT here: by test 3, a
 page can hold two lists, two forms, or several summary panels at once, so

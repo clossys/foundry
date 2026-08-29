@@ -111,7 +111,7 @@ test("every suite in check:gates imports only node builtins and local scripts", 
   // no build. A suite that imports a workspace package therefore passes
   // locally and fails in CI with a module-not-found, which is exactly what
   // happened: the ten suites were verified dependency-free by hand, and an
-  // eleventh importing @vespeneventures/observer was then added to the list,
+  // eleventh importing @clossys/observer was then added to the list,
   // silently invalidating the verification that had just been done.
   //
   // A suite that genuinely needs a build belongs in the `build and test` job

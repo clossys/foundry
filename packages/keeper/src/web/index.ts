@@ -1,11 +1,11 @@
 /**
- * @vespeneventures/keeper/web — the showing step, built entirely on the root
+ * @clossys/keeper/web — the showing step, built entirely on the root
  * package's pure functions.
  *
  * `react`/`react-dom` are OPTIONAL peers of this subpath specifically (see
  * package.json's `peerDependenciesMeta`) — importing
- * `@vespeneventures/keeper` (the root) or running the `keeper-check` gates
- * never pulls in React; only importing `@vespeneventures/keeper/web` does.
+ * `@clossys/keeper` (the root) or running the `keeper-check` gates
+ * never pulls in React; only importing `@clossys/keeper/web` does.
  * This module asserts the installed `react` version against this package's
  * declared range at import time, so an absent or incompatible React fails
  * loudly here instead of crashing later inside a hook with no version named

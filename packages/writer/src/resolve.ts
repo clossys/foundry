@@ -5,7 +5,7 @@
  * support. A scanner can compare a local sentence against an unversioned
  * record; publishing a page needs stronger evidence: a locale, revision,
  * source provenance, and an approved entry. The result exposes every one of
- * those inputs so `@vespeneventures/surface` can place them in its output
+ * those inputs so `@example/surface` can place them in its output
  * manifest without knowing how a consumer stores copy.
  */
 

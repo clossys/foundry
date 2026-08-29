@@ -1,7 +1,7 @@
 import { defineConfig } from "vitest/config";
 
 /**
- * Per-package vitest config for @vespeneventures/bouncer.
+ * Per-package vitest config for @clossys/bouncer.
  *
  * Plain Node environment — nothing here needs jsdom. The one React surface
  * this package has (`providers/clerk/web/client.tsx`) is exercised by calling

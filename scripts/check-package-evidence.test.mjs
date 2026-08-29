@@ -29,7 +29,7 @@ const script = join(repoRoot, "scripts/check-package-evidence.mjs");
 // filesystem, and the CLI is exercised end-to-end so the exit contract and
 // the real contract in docs/contracts are both covered.
 
-const P = "@vespeneventures/thing";
+const P = "@clossys/thing";
 
 // `manifestBins` is what the package's own manifest exposes, which the gate
 // rule (docs/DECISIONS.md 11) grades. The default is one bin: a package that
@@ -37,7 +37,7 @@ const P = "@vespeneventures/thing";
 // free of a rule they are not about.
 function grade(
   entry,
-  { sites = [], bins = [], status = "published", inWorkspace = true, manifestBins = ["thing-check"] } = {},
+  { sites = [], bins = [], status = "published", inWorkspace = true, manifestBins = ["thing-check"], workspaceScope = "@clossys" } = {},
 ) {
   return evaluatePrograms({
     contract: {
@@ -48,6 +48,7 @@ function grade(
     lifecycleStatuses: new Map(status ? [[P, status]] : []),
     workspacePackages: new Set(inWorkspace ? [P] : []),
     workspaceBins: new Map([[P, manifestBins]]),
+    workspaceScope,
   });
 }
 
@@ -191,6 +192,25 @@ test("a retired package has left the ladder and is not graded for stopping", () 
   assert.equal(r.results[0].supersession, "retired");
 });
 
+test("a published predecessor retains implementation evidence after source moves to the current scope", () => {
+  const predecessor = `@${["vespene", "ventures"].join("")}/thing`;
+  const result = evaluatePrograms({
+    contract: { packages: [{ name: predecessor, state: "implemented" }] },
+    distSites: new Map(),
+    binSites: new Map(),
+    lifecycleStatuses: new Map([[predecessor, "published"]]),
+    workspacePackages: new Set(),
+    workspaceBins: new Map(),
+    workspaceScope: "@clossys",
+  });
+  assert.deepEqual(rules(result), []);
+
+  assert.deepEqual(
+    rules(grade({ name: P, state: "implemented" }, { inWorkspace: false, workspaceScope: "@clossys" })),
+    ["state-ahead-of-evidence"],
+  );
+});
+
 test("a retired package still carrying gaps is told to drop them", () => {
   // The gap list is a countdown. A gap on a retired package tracks work that
   // will never be done, which is how an acknowledgement outlives its reason.
@@ -322,7 +342,7 @@ test("the scan finds a dist-path invocation and ignores a commented one", () => 
 test("a package NAME used as test-fixture data is not an invocation site", () => {
   // The scanner's first extension counted any quoted occurrence of a package
   // name and reported six invocation sites for `auth`, all of them strings
-  // like `entry("auth", "@vespeneventures/auth", "0.2.4")` inside another
+  // like `entry("auth", "@example/auth", "0.2.4")` inside another
   // script's tests. Naming a package is not using one.
   const dir = mkdtempSync(join(tmpdir(), "evidence-fixture-"));
   try {
@@ -351,17 +371,17 @@ test("the lifecycle position renderer does not promote zero-site tooling or fabr
     contract: {},
     results: [
       { package: P, category: "role", state: "published", acknowledgedGaps: [], stagedHere: true },
-      { package: "@vespeneventures/not-yet", category: "role", state: "published", acknowledgedGaps: ["staged"], stagedHere: false },
-      { package: "@vespeneventures/retired", category: "role", state: "published", supersession: "retired", acknowledgedGaps: [], stagedHere: true },
-      { package: "@vespeneventures/tool", category: "executable-tooling", state: "implemented", acknowledgedGaps: [], stagedHere: false },
+      { package: "@clossys/not-yet", category: "role", state: "published", acknowledgedGaps: ["staged"], stagedHere: false },
+      { package: "@clossys/retired", category: "role", state: "published", supersession: "retired", acknowledgedGaps: [], stagedHere: true },
+      { package: "@clossys/tool", category: "executable-tooling", state: "implemented", acknowledgedGaps: [], stagedHere: false },
     ],
   });
   assert.match(rendered, /<!-- lifecycle-position-table:start -->/);
   assert.match(rendered, /\| package \| current position \| staged here \| adoption \| grounding \| closure \|/);
-  assert.match(rendered, /\| `@vespeneventures\/thing` \| published \| yes \| not yet \| unknown — #484 \| not yet \|/);
-  assert.match(rendered, /@vespeneventures\/not-yet.*\| not yet \| not yet \| unknown — #484 \| not yet/);
-  assert.match(rendered, /@vespeneventures\/retired.*\| retired \| yes \| not yet \| unknown — #484 \| not yet/);
-  assert.match(rendered, /@vespeneventures\/tool.*\| implemented \| not yet \| N\/A — executable tooling \| N\/A — executable tooling \| N\/A — executable tooling/);
+  assert.match(rendered, /\| `@clossys\/thing` \| published \| yes \| not yet \| unknown — #484 \| not yet \|/);
+  assert.match(rendered, /@clossys\/not-yet.*\| not yet \| not yet \| unknown — #484 \| not yet/);
+  assert.match(rendered, /@clossys\/retired.*\| retired \| yes \| not yet \| unknown — #484 \| not yet/);
+  assert.match(rendered, /@clossys\/tool.*\| implemented \| not yet \| N\/A — executable tooling \| N\/A — executable tooling \| N\/A — executable tooling/);
   assert.match(rendered, /<!-- lifecycle-position-table:end -->/);
 });
 
@@ -392,7 +412,8 @@ test("this repository's own contract passes, and exits 0/1/2 correctly", () => {
   try {
     const contract = JSON.parse(execFileSync(process.execPath, ["-e", "process.stdout.write(require('fs').readFileSync('docs/contracts/package-evidence.json','utf8'))"], { cwd: repoRoot, encoding: "utf8" }));
     for (const p of contract.packages) {
-      if (p.name !== "@vespeneventures/strategist") continue;
+      if (p.name !== "@clossys/strategist") continue;
+      p.state = "staged";
       // The real contract may acknowledge a staging shortfall with `gaps`,
       // or support it with a recorded red/control `stagedBy` run. Remove
       // both forms so this remains a positive control for missing evidence.
@@ -408,7 +429,7 @@ test("this repository's own contract passes, and exits 0/1/2 correctly", () => {
     // make the normal check refuse a stale rendered block and point at the
     // explicit (never automatic) regeneration command.
     const drifted = JSON.parse(execFileSync(process.execPath, ["-e", "process.stdout.write(require('fs').readFileSync('docs/contracts/package-evidence.json','utf8'))"], { cwd: repoRoot, encoding: "utf8" }));
-    drifted.packages.find((entry) => entry.name === "@vespeneventures/controller").state = "implemented";
+    drifted.packages.find((entry) => entry.name === "@clossys/controller").state = "designed";
     const driftedPath = join(dir, "drifted.json");
     writeFileSync(driftedPath, JSON.stringify(drifted));
     assert.throws(
@@ -420,7 +441,7 @@ test("this repository's own contract passes, and exits 0/1/2 correctly", () => {
     // The same control for the gate rule, against the real tree: drop the
     // primitive's declaration and the absent `bin` must stop being excused.
     const stripped = JSON.parse(execFileSync(process.execPath, ["-e", "process.stdout.write(require('fs').readFileSync('docs/contracts/package-evidence.json','utf8'))"], { cwd: repoRoot, encoding: "utf8" }));
-    for (const p of stripped.packages) if (p.name === "@vespeneventures/controller") p.shipsNoGate = { reason: "A stale declaration on a package that now ships a gate.", issue: 1 };
+    for (const p of stripped.packages) if (p.name === "@clossys/controller") p.shipsNoGate = { reason: "A stale declaration on a package that now ships a gate.", issue: 1 };
     const undeclared = join(dir, "undeclared-gate.json");
     writeFileSync(undeclared, JSON.stringify(stripped));
     assert.throws(

@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import type { SkillScope } from "@vespeneventures/controller/conventions";
+import type { SkillScope } from "@clossys/controller/conventions";
 import {
   MACHINE_DECLARATION_SCHEMA_VERSION,
   THIRD_PARTY_DECLARATION_FILENAME,
@@ -16,7 +16,7 @@ import type {
  * The concrete case this exists for: one vendored skill belonging to no
  * account, with no account workspace to live in. Every skill this resolves
  * is tagged `scope: THIRD_PARTY_SCOPE` — a value drawn directly from
- * `@vespeneventures/controller/conventions`'s own `SkillScope` union, never a
+ * `@clossys/controller/conventions`'s own `SkillScope` union, never a
  * second literal this module invented. If that union ever drops
  * `"third-party"`, `THIRD_PARTY_SCOPE`'s assignment stops compiling — this is
  * the reuse enforced at the type level, not merely by convention.

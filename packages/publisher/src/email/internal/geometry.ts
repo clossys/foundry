@@ -2,7 +2,7 @@
  * The geometry problem, and the one place it's handled.
  *
  * `LayoutSpec.slots` carries `frame: { x, y, w, h }` — ABSOLUTE fractional
- * positions on a two-dimensional canvas (see `@vespeneventures/publisher/core`'s
+ * positions on a two-dimensional canvas (see `@clossys/publisher/core`'s
  * `types.ts`, `Frame`'s own doc comment). Email cannot do absolute
  * positioning at all: every client renders a linear, top-to-bottom flow of
  * block elements, full width unless a `<table>` explicitly narrows one.
@@ -23,7 +23,7 @@
  *
  * NO LAYOUT AT ALL — THE OTHER HALF OF THE CONTRACT
  * -----------------------------------------------------
- * `@vespeneventures/publisher/core`'s own `types.ts` says a `layout` must be
+ * `@clossys/publisher/core`'s own `types.ts` says a `layout` must be
  * ABSENT from an `email`-channel `ComposeDocument` (`validate.ts`'s
  * `layout-forbidden` rule) — the same reason it's absent from `web`:
  * neither channel has a coordinate system a `Frame` could describe. So

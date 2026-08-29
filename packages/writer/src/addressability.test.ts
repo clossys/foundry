@@ -301,7 +301,7 @@ describe("defect 2 (issue #383) — a className-shaped string outside attribute 
     expect(unchecked).toEqual([]);
   });
 
-  it("a variant-map object literal of class lists (the shape @vespeneventures/ui's Button/Badge/Banner use) is fully excluded", () => {
+  it("a variant-map object literal of class lists (the shape @example/ui's Button/Badge/Banner use) is fully excluded", () => {
     const src =
       "const VARIANT_CLASSES: Record<string, string> = {\n" +
       '  danger: "border-status-danger bg-status-danger-tint text-status-danger-text",\n' +

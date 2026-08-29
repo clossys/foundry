@@ -30,7 +30,7 @@ const PACKAGE_INTEGRITY = /^sha512-[A-Za-z0-9+/]{86}==$/;
 const SEMVER_NUMERIC = "(?:0|[1-9]\\d*)";
 const SEMVER_PRERELEASE_ID = "(?:0|[1-9]\\d*|\\d*[A-Za-z-][0-9A-Za-z-]*)";
 const EXACT_SEMVER = new RegExp(`^${SEMVER_NUMERIC}\\.${SEMVER_NUMERIC}\\.${SEMVER_NUMERIC}(?:-${SEMVER_PRERELEASE_ID}(?:\\.${SEMVER_PRERELEASE_ID})*)?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$`);
-const RESERVED_ADVISOR_OWNERS = new Set(["advisor", "@vespeneventures/advisor"]);
+const RESERVED_ADVISOR_OWNERS = new Set(["advisor", "@clossys/advisor"]);
 function record(value: unknown): value is UnknownRecord { return typeof value === "object" && value !== null && !Array.isArray(value); }
 function text(value: unknown): value is string { return typeof value === "string" && value.trim().length > 0; }
 function error(rule: string, message: string, path: string): AdvisorFinding { return { rule, severity: "error", message, path }; }

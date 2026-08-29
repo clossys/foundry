@@ -1,7 +1,7 @@
 import { defineConfig } from "vitest/config";
 
 /**
- * Per-package vitest config for @vespeneventures/inspector.
+ * Per-package vitest config for @clossys/inspector.
  *
  * Plain Node environment, and deliberately nothing else. Every check in this
  * package's judge half is a pure function of already-collected observations,

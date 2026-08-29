@@ -1,5 +1,5 @@
 /**
- * @vespeneventures/designer/theme — the JavaScript half of this package's
+ * @clossys/designer/theme — the JavaScript half of this package's
  * theming contract, whose CSS half (`data-theme`, `prefers-color-scheme`)
  * already ships from `tokens.css`/`theme.css`. A SIBLING domain, like
  * `charts` and `shell`: it sits beside `atoms -> blocks`, not above or
@@ -33,7 +33,7 @@ import { REACT_DECLARED_RANGE } from "../internal/declared-peer-ranges.js";
  * (and `ThemeToggle.tsx` composes this package's own `Button`/`Icon`
  * atoms, but never imports `react-aria-components` itself), so this
  * barrel only needs the `react` guard, independent of `atoms/index.ts`'s:
- * a consumer who imports only `@vespeneventures/designer/theme` would otherwise
+ * a consumer who imports only `@clossys/designer/theme` would otherwise
  * get no signal at all.
  */
 assertPeerVersion({ peer: "react", declaredRange: REACT_DECLARED_RANGE, foundVersion: reactVersion });

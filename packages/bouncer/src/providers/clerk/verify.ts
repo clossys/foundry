@@ -7,7 +7,7 @@ import { resolveInstalledPeerVersion } from "../../internal/resolve-installed-pe
 /**
  * `svix` is one of this package's optional peers (see package.json's
  * `peerDependenciesMeta`) — optional so a consumer can install
- * `@vespeneventures/bouncer` and use the provider-neutral root or `./agent` without
+ * `@clossys/bouncer` and use the provider-neutral root or `./agent` without
  * ever installing it; only webhook signature verification needs it. This
  * is the one module that imports it, so it's the adapter entry point
  * #182 asks for: an absent or out-of-range `svix` previously surfaced as

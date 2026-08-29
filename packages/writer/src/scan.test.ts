@@ -634,7 +634,7 @@ describe("scanCopySourceTree", () => {
 
   // Fails CLOSED: an unreadable directory must throw, never be silently
   // treated as empty — see this file's top doc comment, and
-  // `@vespeneventures/strategy`'s `scan.test.ts` for the identical case.
+  // `@example/strategy`'s `scan.test.ts` for the identical case.
   // Skipped when running as root (root bypasses directory permission bits
   // entirely, which would make this assertion meaningless rather than
   // wrong).

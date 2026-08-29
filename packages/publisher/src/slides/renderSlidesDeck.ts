@@ -10,7 +10,7 @@
  * The task brief names two candidate shapes: "a single `ComposeDocument`
  * per slide with the deck as an array" or "one document with multiple
  * layouts." The second is not actually available: `ComposeDocument` has
- * exactly one `layout` field (`@vespeneventures/publisher/core`'s frozen
+ * exactly one `layout` field (`@clossys/publisher/core`'s frozen
  * `types.ts`), so "multiple layouts" would mean this package inventing a
  * new, non-`surface/core` array-of-layouts shape and hand-rolling its own
  * resolution loop over it — exactly the kind of parallel, drifting

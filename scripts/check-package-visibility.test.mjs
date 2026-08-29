@@ -87,6 +87,29 @@ test("selectDeclaredPackages: a published entry with a valid declaration is incl
   assert.equal(results.length, 0);
 });
 
+test("selectDeclaredPackages: W1D monitors predecessor publication without claiming candidate publication", () => {
+  const predecessor = `@${["vespene", "ventures"].join("")}/controller`;
+  const lifecycle = lifecycleWith([
+    { name: "@clossys/controller", status: "active" },
+    { name: predecessor, status: "published" },
+  ]);
+  const visibility = visibilityWith([{ name: predecessor, intendedVisibility: "public" }]);
+  const { declared, results } = selectDeclaredPackages(lifecycle, visibility);
+  assert.deepEqual(results, []);
+  assert.deepEqual(declared.map((entry) => entry.name), [predecessor]);
+
+  const falseCandidateClaim = visibilityWith([
+    ...visibility.packages,
+    { name: "@clossys/controller", intendedVisibility: "public" },
+  ]);
+  const candidateSelection = selectDeclaredPackages(lifecycle, falseCandidateClaim);
+  assert.equal(
+    candidateSelection.results.find((entry) => entry.package === "@clossys/controller")?.status,
+    "not-published",
+  );
+  assert.deepEqual(candidateSelection.declared.map((entry) => entry.name), [predecessor]);
+});
+
 test("selectDeclaredPackages: a published entry with NO visibility declaration is a finding, not a silent pass", () => {
   const lifecycle = lifecycleWith([{ name: "@scope/undeclared", status: "published" }]);
   const visibility = visibilityWith([]);
@@ -365,7 +388,7 @@ function writeFixture(root, { lifecycle, visibility, retention = { schemaVersion
   writeFileSync(join(root, "docs", "contracts", "package-lifecycle.json"), JSON.stringify(lifecycle, null, 2));
   writeFileSync(join(root, "docs", "contracts", "package-visibility.json"), JSON.stringify(visibility, null, 2));
   writeFileSync(join(root, "docs", "contracts", "package-retention.json"), JSON.stringify(retention, null, 2));
-  writeFileSync(join(root, "package-scope.json"), JSON.stringify({ scope, registry: "https://npm.pkg.github.com" }, null, 2));
+  writeFileSync(join(root, "package-scope.json"), JSON.stringify({ scope, registry: "https://registry.npmjs.org" }, null, 2));
 }
 
 test("CLI: a missing GH_PACKAGES_TOKEN exits 2, never 0 — and never attempts a network call", () => {
@@ -445,7 +468,7 @@ test("this repository's own real contract files join cleanly (structure only —
 //
 // The credentialed half of this gate can only run after publish.yml has
 // already uploaded a tarball, which makes it a detector rather than a gate.
-// `@vespeneventures/secret-scan` published with no visibility declaration and
+// `@example/secret-scan` published with no visibility declaration and
 // every subsequent publish run went red on a data omission that was fully
 // knowable offline, at review time. These cover the split that fixes that,
 // including the one property the split must NOT weaken: no flag, no token,

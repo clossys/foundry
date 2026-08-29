@@ -1,5 +1,5 @@
 /**
- * @vespeneventures/catalog — a zero-dependency package in this small
+ * @example/catalog — a zero-dependency package in this small
  * foundation.
  *
  * `catalog` answers the questions that need the WHOLE set of packages: what

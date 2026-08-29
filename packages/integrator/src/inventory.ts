@@ -8,7 +8,7 @@ import { parsePnpmRootImporterVersions } from "./pnpm-lockfile.js";
  * declared.
  *
  * The filesystem is injected as a port, following
- * `@vespeneventures/provisioning`'s `FileSystemPort` pattern: this module
+ * `@example/provisioning`'s `FileSystemPort` pattern: this module
  * never opens a file itself, so it is testable with no real checkout and so a
  * caller can point it at anything that looks like a manifest and a lockfile --
  * a real path on a real plane, or a fixture. It is deliberately a much

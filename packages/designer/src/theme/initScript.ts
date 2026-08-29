@@ -30,7 +30,7 @@ export interface ThemeInitScriptOptions {
  * ```tsx
  * // app/layout.tsx (Next.js App Router) — first child of <head>, before
  * // any stylesheet or other script that might paint.
- * import { getThemeInitScript } from "@vespeneventures/designer/theme";
+ * import { getThemeInitScript } from "@clossys/designer/theme";
  *
  * export default function RootLayout({ children }: { children: React.ReactNode }) {
  *   return (

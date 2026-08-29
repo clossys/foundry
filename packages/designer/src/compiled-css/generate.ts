@@ -2,7 +2,7 @@
  * `generateCompiledCss` — a REAL Tailwind v4 compile of this package's own
  * class candidates (see `class-scan.ts`), run against this package's own
  * `styles/theme.css`, producing the framework-portable stylesheet shipped
- * as `@vespeneventures/designer/compiled.css` (see `README.md`'s "Framework-
+ * as `@clossys/designer/compiled.css` (see `README.md`'s "Framework-
  * portable components, without Tailwind" section for the consumer-facing
  * contract, and the introducing PR for why this boundary was chosen over
  * the alternatives it was weighed against — issue #174).
@@ -125,7 +125,7 @@ export interface GenerateCompiledCssResult {
 }
 
 const GENERATED_FILE_HEADER = `/* ════════════════════════════════════════════════════════════════════
- * @vespeneventures/designer · compiled.css
+ * @clossys/designer · compiled.css
  * ────────────────────────────────────────────────────────────────────
  * GENERATED FILE — do not hand-edit. Produced by a real Tailwind v4
  * compile of this package's own component class candidates against this
@@ -138,13 +138,13 @@ const GENERATED_FILE_HEADER = `/* ═══════════════�
  * \`npm test\` — \`src/compiled-css/check.test.ts\` runs the same
  * re-derive-and-diff check as part of this package's ordinary test suite.
  *
- * Scope: this file covers \`@vespeneventures/designer/atoms\` only — the
+ * Scope: this file covers \`@clossys/designer/atoms\` only — the
  * self-contained base layer that composes no other component (see
  * README.md, "Placement rules"). \`blocks\`, \`shell\`, \`charts\`, and
  * \`theme\` remain Tailwind-native only; see the introducing PR for why
  * that scope was chosen for this first framework-portable contract.
  *
- * Load this AFTER \`@vespeneventures/designer/tokens.css\` (never instead of it —
+ * Load this AFTER \`@clossys/designer/tokens.css\` (never instead of it —
  * every declaration below reads a token custom property this file does
  * NOT itself declare). Every generated rule lives inside the
  * \`foundry-ui-compiled\` layer, declared after \`foundry-ui-tokens\` — see
@@ -163,7 +163,7 @@ function makeStylesheetLoader(stylesDir: string) {
       return require.resolve(subpath);
     } catch (error) {
       throw new Error(
-        `generateCompiledCss: could not resolve "${subpath}" — is "tailwindcss" installed? This generation step requires the real tailwindcss package (already a devDependency/optional peer of @vespeneventures/designer) to be present in node_modules. Original error: ${error instanceof Error ? error.message : String(error)}`,
+        `generateCompiledCss: could not resolve "${subpath}" — is "tailwindcss" installed? This generation step requires the real tailwindcss package (already a devDependency/optional peer of @clossys/designer) to be present in node_modules. Original error: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }

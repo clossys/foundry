@@ -2,7 +2,7 @@
 // also re-exported secret-gates.ts, whose own top-level `import ts from
 // "typescript"` would then load with it — this file is reachable from the
 // package ROOT (via index.ts's `runGovernanceCheck`), so importing the
-// barrel here would have meant plain `import "@vespeneventures/controller"`
+// barrel here would have meant plain `import "@clossys/controller"`
 // transitively loading the full TypeScript compiler for every consumer,
 // regardless of whether they ever call a secret-gate function. As of this
 // PR (CI failure on #419, closing the consequence of #411) the barrel no
@@ -63,6 +63,7 @@ export function runGovernanceCheck(
       lifecycle,
       foundation.catalog.entries.map((entry) => entry.name),
       new Map(foundation.catalog.entries.map((entry) => [entry.name, entry.version])),
+      options?.scope,
     ),
     // `evaluateDependencyInstallability` shipped exported, documented and
     // tested, and nothing in this repository called it -- so the one gate that

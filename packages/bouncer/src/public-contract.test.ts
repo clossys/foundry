@@ -13,7 +13,7 @@ const packageJson = JSON.parse(readFileSync(join(packageRoot, "package.json"), "
 /**
  * Guards a real reported defect, not a hypothetical: `svix` — needed only by
  * `./providers/clerk`'s webhook verification — was declared as an
- * unconditional `dependencies` entry. `npm install @vespeneventures/bouncer`
+ * unconditional `dependencies` entry. `npm install @clossys/bouncer`
  * pulled it in for every consumer regardless of whether they ever import
  * anything past the pure root primitives, which the README already claimed
  * (incorrectly, until this fix) had "no framework or provider runtime
@@ -24,7 +24,7 @@ const packageJson = JSON.parse(readFileSync(join(packageRoot, "package.json"), "
  * under the same condition — proving `svix` is genuinely still required
  * there, not accidentally removed.
  *
- * `dependencies` must be entirely absent, matching `@vespeneventures/ui`'s
+ * `dependencies` must be entirely absent, matching the retired predecessor's
  * own public-contract test for the same shape of guarantee: this package
  * has ZERO hard runtime dependencies of its own, only optional peers a
  * consumer opts into by using the subpath that needs them.

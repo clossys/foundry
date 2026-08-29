@@ -107,7 +107,7 @@
     "reject": "Reject a candidate that has no coherent job, one controllable metric, closed loop, durable boundary, or acceptable guardrails."
   },
   "roles": {
-      "@vespeneventures/advisor": {
+      "@clossys/advisor": {
         "jobQuestion": "Does each active engagement have a current, evidence-backed, authority-bound next decision or action?",
         "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
         "metric": {
@@ -131,7 +131,7 @@
           ]
         }
       },
-      "@vespeneventures/controller": {
+      "@clossys/controller": {
         "jobQuestion": "Are the business's operating rules expressible, current, and followed?",
         "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
         "metric": {
@@ -151,7 +151,7 @@
           ]
         }
       },
-      "@vespeneventures/architect": {
+      "@clossys/architect": {
         "jobQuestion": "Do the business ontology and operating boundaries match how material work actually crosses the business?",
         "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
         "metric": {
@@ -173,7 +173,7 @@
           ]
         }
       },
-      "@vespeneventures/inspector": {
+      "@clossys/inspector": {
         "jobQuestion": "Does this change satisfy every applicable rule before it lands?",
         "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
         "metric": {
@@ -193,7 +193,7 @@
           ]
         }
       },
-      "@vespeneventures/builder": {
+      "@clossys/builder": {
         "jobQuestion": "Does independently observed live state match the declared state after authorized action?",
         "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
         "metric": {
@@ -215,7 +215,7 @@
           ]
         }
       },
-      "@vespeneventures/locksmith": {
+      "@clossys/locksmith": {
         "jobQuestion": "Is every live key owned, current, correctly distributed, and revocable?",
         "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
         "metric": {
@@ -235,7 +235,7 @@
           ]
         }
       },
-      "@vespeneventures/integrator": {
+      "@clossys/integrator": {
         "jobQuestion": "Does this consuming plane hold what it declared it should hold, and is it current?",
         "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
         "metric": {
@@ -255,7 +255,7 @@
           ]
         }
       },
-      "@vespeneventures/observer": {
+      "@clossys/observer": {
         "jobQuestion": "Can independent evidence show what happened and whether the operating loops are observable?",
         "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
         "metric": {
@@ -275,7 +275,7 @@
           ]
         }
       },
-      "@vespeneventures/strategist": {
+      "@clossys/strategist": {
         "jobQuestion": "Is the business direction true, current, and recognizably ours?",
         "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
         "metric": {
@@ -295,7 +295,7 @@
           ]
         }
       },
-      "@vespeneventures/writer": {
+      "@clossys/writer": {
         "jobQuestion": "Is audience-facing language approved, traceable, and well said?",
         "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
         "metric": {
@@ -315,7 +315,7 @@
           ]
         }
       },
-      "@vespeneventures/designer": {
+      "@clossys/designer": {
         "jobQuestion": "Is the product interface well made against its declared design and accessibility constraints?",
         "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
         "metric": {
@@ -335,7 +335,7 @@
           ]
         }
       },
-      "@vespeneventures/publisher": {
+      "@clossys/publisher": {
         "jobQuestion": "Did an approved surface reach its audience, and can the exact shipped result be proved?",
         "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
         "metric": {
@@ -357,7 +357,7 @@
           ]
         }
       },
-      "@vespeneventures/influencer": {
+      "@clossys/influencer": {
         "jobQuestion": "Is this governed outbound presence producing qualified audience responses at the declared rate?",
         "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
         "metric": {
@@ -379,7 +379,7 @@
           ]
         }
       },
-      "@vespeneventures/bouncer": {
+      "@clossys/bouncer": {
         "jobQuestion": "Is this actor who they claim, and is what they are doing still inside what they were granted?",
         "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
         "metric": {
@@ -401,7 +401,7 @@
           ]
         }
       },
-      "@vespeneventures/butler": {
+      "@clossys/butler": {
         "jobQuestion": "Do we have this person's confirmed current request and standing instructions?",
         "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
         "metric": {
@@ -421,7 +421,7 @@
           ]
         }
       },
-      "@vespeneventures/messenger": {
+      "@clossys/messenger": {
         "jobQuestion": "Did each authorized finished communication reach its transport destination within its declared window?",
         "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
         "metric": {
@@ -443,7 +443,7 @@
           ]
         }
       },
-      "@vespeneventures/giver": {
+      "@clossys/giver": {
         "jobQuestion": "Did this person get what they asked for, or a reason, or a human, and everything owed on time?",
         "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
         "metric": {
@@ -465,7 +465,7 @@
           ]
         }
       },
-      "@vespeneventures/keeper": {
+      "@clossys/keeper": {
         "jobQuestion": "Does everything held about this person trace to something they did, and can they see and correct it?",
         "closeCondition": "Independent consumer evidence shows the position's owned metric meets its setpoint over the declared review cadence.",
         "metric": {

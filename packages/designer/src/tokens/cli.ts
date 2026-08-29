@@ -5,13 +5,13 @@
  * pure gate (`check-brand-file-coverage.ts`), print a report — every
  * uncovered/typo/non-brandable finding AND every unparseable region, never
  * just a pass/fail line — and pick an exit code. Matches
- * `@vespeneventures/copy`'s `copy-check` and `@vespeneventures/strategy`'s
+ * `@example/copy`'s `copy-check` and `@example/strategy`'s
  * `strategy-facts-check` shape deliberately: same three-state exit-code
  * contract, same `--help`, same `CliInputError` split between "bad
  * arguments" and "ran, found something wrong".
  *
  * Exit codes — a contract a consumer's CI depends on, matching this
- * repository's `foundry-check` convention (`@vespeneventures/gates`):
+ * repository's `foundry-check` convention (`@example/gates`):
  *
  *   0 — ran cleanly: the brand CSS file was read, every declaration in it
  *       was classified (no `unchecked` region at the file-reader level or
@@ -39,7 +39,7 @@ import { readBrandCss, type BrandCssReadResult } from "./read-brand-css.js";
 
 const USAGE = `Usage: designer-brand-check <brand-css-file> [options]
 
-  brand-css-file   Path to a brand CSS file (e.g. your project's brand.css, started from @vespeneventures/designer/brand-template.css). Required.
+  brand-css-file   Path to a brand CSS file (e.g. your project's brand.css, started from @clossys/designer/brand-template.css). Required.
 
 Options:
   --help         Print this message and exit 0.
@@ -191,8 +191,8 @@ function run(): void {
 }
 
 /**
- * Same real-path guard `@vespeneventures/copy`'s `cli.ts` and
- * `@vespeneventures/strategy`'s `cli.ts` both use, for the same reason: `npm
+ * Same real-path guard `@example/copy`'s `cli.ts` and
+ * `@example/strategy`'s `cli.ts` both use, for the same reason: `npm
  * install` publishes `bin` entries as symlinks, so comparing
  * `process.argv[1]` to `import.meta.url` without resolving symlinks on both
  * sides fails the moment this file is actually invoked the only way it

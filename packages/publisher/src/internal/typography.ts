@@ -1,12 +1,12 @@
 /**
- * `ElementKind` -> real `@vespeneventures/designer/tokens` typography, resolved to
+ * `ElementKind` -> real `@clossys/designer/tokens` typography, resolved to
  * literal values — the shared foundation every non-web channel this
  * package ships (`./email`, `./print`, `./image`, `./slides`) reads from,
  * built once here rather than reinvented (and re-drifted) four times.
  *
  * THE PROBLEM THIS FILE FIXES
  * ---------------------------
- * `@vespeneventures/designer/tokens` DOES ship a full typography scale — 13 `text`
+ * `@clossys/designer/tokens` DOES ship a full typography scale — 13 `text`
  * tokens (a size scale, `--text-caption` through `--text-display-xl`), 3
  * `font` tokens (font-family stacks), 4 `tracking` tokens (letter-spacing)
  * — see `TOKENS` and this file's own test, which asserts every role this
@@ -26,7 +26,7 @@
  *
  * THE MAPPING — ONE ROLE PER ElementKind, DOCUMENTED, TESTED
  * -------------------------------------------------------------
- * `StyleBinding` (`@vespeneventures/publisher/core`'s frozen contract) carries no
+ * `StyleBinding` (`@clossys/publisher/core`'s frozen contract) carries no
  * font information beyond a `typography` token-role-name field — no
  * numeric size, no family. A resolved slot's only OTHER visual hint is its
  * `SlotSpec.element: ElementKind`, a closed 12-member vocabulary. So this
@@ -53,10 +53,10 @@
  *     genuine code-sample slot can still reach `--font-mono` explicitly via
  *     `StyleBinding.typography` overriding the SIZE role only (this
  *     ecosystem's `StyleBinding` has no separate family-override field —
- *     see `@vespeneventures/publisher/core`'s own `types.ts`).
+ *     see `@clossys/publisher/core`'s own `types.ts`).
  *
  * Every value in both maps is asserted, in this file's own test, to be a
- * REAL key in `@vespeneventures/designer/tokens`' `TOKENS` registry — see
+ * REAL key in `@clossys/designer/tokens`' `TOKENS` registry — see
  * `typography.test.ts`, "the mapping cannot rot silently." A token rename
  * that isn't mirrored here fails that test loudly, at build/CI time,
  * rather than shipping every non-web channel a font-size of `undefined`.
@@ -190,7 +190,7 @@ export function resolveElementTypography(
   if (!flat.has(role)) {
     throw new RenderError(
       "unknown-style-role",
-      `resolveElementTypography: ${ownerDescription}'s ${style?.typography !== undefined ? "style.typography" : `ElementKind ("${element}") default typography role`} names token role "${role}", which is not a property in @vespeneventures/designer/tokens' TOKENS registry (checked after flattening — see the shared internal/tokens.ts's flattenTokens()). A role name here must be the exact token custom-property name, e.g. "--text-h1".`,
+      `resolveElementTypography: ${ownerDescription}'s ${style?.typography !== undefined ? "style.typography" : `ElementKind ("${element}") default typography role`} names token role "${role}", which is not a property in @clossys/designer/tokens' TOKENS registry (checked after flattening — see the shared internal/tokens.ts's flattenTokens()). A role name here must be the exact token custom-property name, e.g. "--text-h1".`,
     );
   }
 
@@ -231,7 +231,7 @@ export function resolveElementFontFamily(element: ElementKind, flat: ReadonlyMap
   if (!flat.has(role)) {
     throw new RenderError(
       "unknown-style-role",
-      `resolveElementFontFamily: ElementKind ("${element}") default font-family role names token role "${role}", which is not a property in @vespeneventures/designer/tokens' TOKENS registry (checked after flattening) — this is a bug in this file's own mapping, not caller input.`,
+      `resolveElementFontFamily: ElementKind ("${element}") default font-family role names token role "${role}", which is not a property in @clossys/designer/tokens' TOKENS registry (checked after flattening) — this is a bug in this file's own mapping, not caller input.`,
     );
   }
   return resolveTokenRef(`var(${role})`, flat);

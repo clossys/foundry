@@ -1,5 +1,5 @@
 /**
- * `@vespeneventures/designer/tokens`'s `TOKENS` registry, flattened to literal,
+ * `@clossys/designer/tokens`'s `TOKENS` registry, flattened to literal,
  * email-and-SVG-safe values — the shared foundation every channel this
  * package grows (`./web`, `./email`, `./print`, `./image`, `./slides`)
  * needs, built once here rather than reinvented per channel and gotten
@@ -49,7 +49,7 @@
  * signature blue rendered as black in an email client.
  */
 
-import { TOKENS } from "@vespeneventures/designer/tokens";
+import { TOKENS } from "@clossys/designer/tokens";
 
 import { RenderError } from "./errors.js";
 
@@ -291,7 +291,7 @@ function toHexChannel(c: number): string {
 // ─────────────────────────────────────────────────────────────────────────
 
 /**
- * `flattenTokens` — every entry in `@vespeneventures/designer/tokens`' `TOKENS`
+ * `flattenTokens` — every entry in `@clossys/designer/tokens`' `TOKENS`
  * registry, resolved to one literal string, ready to hand to a channel
  * that has no CSS cascade and no `oklch()` support (email, and the SVG
  * `./image`/`./slides` channels emit).
@@ -346,7 +346,7 @@ export function flattenTokens(overrides: Record<string, string> = {}): Map<strin
   if (unknownSlots.length > 0) {
     throw new RenderError(
       "unknown-token-override",
-      `flattenTokens: override(s) target token slot(s) that do not exist in @vespeneventures/designer/tokens' TOKENS registry: ${unknownSlots.join(", ")}`,
+      `flattenTokens: override(s) target token slot(s) that do not exist in @clossys/designer/tokens' TOKENS registry: ${unknownSlots.join(", ")}`,
     );
   }
 

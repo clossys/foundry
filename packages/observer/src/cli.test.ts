@@ -25,27 +25,27 @@ function memoryPort(files: Record<string, string>): CliPort & { out: string[]; e
 }
 
 const satisfiedInput = {
-  packages: ["@vespeneventures/observer"],
-  repositories: [{ repository: "repo-a", installed: { packages: [{ name: "@vespeneventures/observer" }] } }],
+  packages: ["@clossys/observer"],
+  repositories: [{ repository: "repo-a", installed: { packages: [{ name: "@clossys/observer" }] } }],
 };
 
 const violatedInput = {
-  packages: ["@vespeneventures/observer"],
+  packages: ["@clossys/observer"],
   repositories: [
     {
       repository: "repo-a",
-      installed: { packages: [{ name: "@vespeneventures/observer" }] },
+      installed: { packages: [{ name: "@clossys/observer" }] },
       declaration: {
         schemaVersion: COVERAGE_DECLARATION_SCHEMA_VERSION,
         repository: "repo-a",
-        declaredAbsences: [{ package: "@vespeneventures/observer", reason: "believed unused" }],
+        declaredAbsences: [{ package: "@clossys/observer", reason: "believed unused" }],
       },
     },
   ],
 };
 
 const indeterminateInput = {
-  packages: ["@vespeneventures/observer"],
+  packages: ["@clossys/observer"],
   repositories: [{ repository: "repo-a" }],
 };
 
@@ -173,7 +173,7 @@ describe("renderReport", () => {
       repositories: satisfiedInput.repositories,
     });
     const rendered = renderReport(report);
-    expect(rendered).toMatch(/@vespeneventures\/observer/);
+    expect(rendered).toMatch(/@clossys\/observer/);
     expect(rendered).toMatch(/installed=1/);
     expect(rendered).toMatch(/SATISFIED/);
   });

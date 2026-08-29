@@ -3,11 +3,11 @@
  * The installed executable (`bin.observer-coverage-check`). Everything it
  * does is build the one real `CliPort` `main` needs and hand over; `./cli.ts`
  * holds the logic, and is importable and testable without any of this
- * running. Mirrors `@vespeneventures/builder`'s `ci/bin.ts` split.
+ * running. Mirrors `@clossys/builder`'s `ci/bin.ts` split.
  *
  * `process.exitCode` is assigned a number, synchronously -- `main` does no
  * async work, so there is no risk of the process exiting before an async
- * write flushes (see `@vespeneventures/builder`'s own `ci/bin.ts`/`ci/cli.ts`
+ * write flushes (see `@clossys/builder`'s own `ci/bin.ts`/`ci/cli.ts`
  * headers for the full account of that defect class).
  */
 

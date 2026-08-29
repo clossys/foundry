@@ -1,5 +1,5 @@
 /**
- * @vespeneventures/designer/blocks — the second rung of a three-layer component
+ * @clossys/designer/blocks — the second rung of a three-layer component
  * reusable ladder (atoms → blocks). A block owns
  * the internal layout of MULTIPLE NAMED REGIONS — `PageHeader` (title /
  * description / actions / breadcrumb), `EmptyState` (icon / title /
@@ -25,8 +25,8 @@ import { REACT_ARIA_COMPONENTS_DECLARED_RANGE, REACT_DECLARED_RANGE } from "../i
  * own `package.json` for the other, neither touching `node:fs`). This
  * barrel needs its own guard call, independent of `atoms/index.ts`'s:
  * `Toolbar.tsx` and `DataTable.tsx` import `react-aria-components`
- * directly, and a consumer who imports only `@vespeneventures/designer/blocks`
- * (never `@vespeneventures/designer/atoms`) would otherwise get no signal at
+ * directly, and a consumer who imports only `@clossys/designer/blocks`
+ * (never `@clossys/designer/atoms`) would otherwise get no signal at
  * all.
  */
 assertPeerVersion({ peer: "react", declaredRange: REACT_DECLARED_RANGE, foundVersion: reactVersion });

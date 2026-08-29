@@ -34,7 +34,7 @@
  * `repository-check`.
  *
  * THE TERNARY IS DECIDED IN ONE PLACE. Every outcome is exactly one of
- * `satisfied` / `violated` / `indeterminate` (`@vespeneventures/controller/gates`'s
+ * `satisfied` / `violated` / `indeterminate` (`@clossys/controller/gates`'s
  * `GateResult`) — never a caller-assembled combination of a validator result
  * and an evaluator result that the caller has to fold into an exit code
  * itself. `main` in `./run-cli.ts` does nothing but call this function and

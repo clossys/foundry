@@ -1,4 +1,4 @@
-# `@vespeneventures/messenger`
+# `@clossys/messenger`
 
 Messenger delivers authorized, finished communications and closes the loop on
 independently observed outcomes.
@@ -46,11 +46,11 @@ The universal loop is concrete here:
 ## Install
 
 ```bash
-npm install @vespeneventures/messenger
+npm install @clossys/messenger
 ```
 
 The package is published to GitHub Packages, so consumers must map the
-`@vespeneventures` scope and provide a token with `read:packages` — see the
+`@clossys` scope and provide a token with `read:packages` — see the
 repository root README.
 
 The provider-neutral root has no runtime dependencies. The optional
@@ -64,7 +64,7 @@ import {
   createMessenger,
   type DispatchLedger,
   type DeliveryIntent,
-} from "@vespeneventures/messenger";
+} from "@clossys/messenger";
 
 declare const ledger: DispatchLedger;
 
@@ -170,7 +170,7 @@ import {
   createResendAdapter,
   verifyResendWebhook,
   type ResendWebhookHeaders,
-} from "@vespeneventures/messenger/providers/resend";
+} from "@clossys/messenger/providers/resend";
 ```
 
 `createResendAdapter()` accepts an explicit API key or resolver and forwards

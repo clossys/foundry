@@ -5,7 +5,7 @@
  * here). It exists solely so `src/field-coverage.test.ts` can parse the
  * template as data and check it against `src/fields.ts`'s `VOICE_FIELDS`,
  * without pulling in a real JSONC parser as a dependency this package would
- * otherwise have zero reason to carry — the same call `@vespeneventures/ui/tokens`
+ * otherwise have zero reason to carry — the same call `@example/ui/tokens`
  * makes for `src/internal/parse-css.ts`.
  */
 
@@ -81,7 +81,7 @@ export function parseTemplate(text: string): unknown {
  * more structure for this function to enumerate. See `fields.ts`'s header
  * comment, "A leaf, not a tree", for the full reasoning — this function is
  * that rule's mechanical mirror image, the same relationship
- * `findAllCustomPropertyNames` in `@vespeneventures/ui/tokens`' own
+ * `findAllCustomPropertyNames` in `@example/ui/tokens`' own
  * `internal/parse-css.ts` has to that package's `brand-template.css`.
  */
 export function extractFieldPaths(value: unknown, prefix = ""): Set<string> {

@@ -1,4 +1,4 @@
-import type { SkillScope } from "@vespeneventures/controller/conventions";
+import type { SkillScope } from "@clossys/controller/conventions";
 
 /**
  * Shared vocabulary for composing one machine from several account-owned
@@ -188,7 +188,7 @@ export interface ThirdPartySkillsResult {
  * WHAT IT DOES NOT DECLARE
  * -------------------------
  * The declaration says WHERE each catalog id (from
- * `@vespeneventures/controller/conventions`'s `CONVENTION_DOCUMENTS` /
+ * `@clossys/controller/conventions`'s `CONVENTION_DOCUMENTS` /
  * `CONVENTION_ADAPTERS`) is placed, and by which of this engine's three
  * install mechanisms (`link`, `copy`, `managed-block`) — never an absolute
  * path. Every `destination` is expressed RELATIVE TO `home`, because the
@@ -215,7 +215,7 @@ export type MachineLayerInstallKind = "link" | "copy" | "managed-block";
 
 /**
  * One catalog entry's placement on this machine. `id` names an entry in
- * `@vespeneventures/controller/conventions`'s `CONVENTION_DOCUMENTS` or
+ * `@clossys/controller/conventions`'s `CONVENTION_DOCUMENTS` or
  * `CONVENTION_ADAPTERS` — validated against that catalog by
  * `machine-layer.ts`'s `buildClassOneManifest`, not by shape validation
  * alone, because shape validation must stay usable without importing

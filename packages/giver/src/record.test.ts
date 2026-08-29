@@ -72,7 +72,7 @@ describe("the declared seam", () => {
 
   it("does not import keeper: the retained-grounds contract is a JSON document, not a package dependency", () => {
     const source = readFileSync(fileURLToPath(new URL("./record.ts", import.meta.url)), "utf8");
-    expect(source).not.toMatch(/from\s+["']@vespeneventures\/keeper(?:\/|["'])/);
+    expect(source).not.toMatch(/from\s+["']@clossys\/keeper(?:\/|["'])/);
   });
 });
 

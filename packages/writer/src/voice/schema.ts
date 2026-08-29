@@ -1,6 +1,6 @@
 /**
  * Structural validation for a candidate `VoiceRecord`, in the same plain
- * type-guard style as `@vespeneventures/policy`'s `validate.ts` — no
+ * type-guard style as `@example/policy`'s `validate.ts` — no
  * schema library. See `types.ts`'s doc comment for why: this package's
  * entire job is dependency-free data validation, and a public package
  * should not force every consumer onto one schema library's major version
@@ -369,7 +369,7 @@ function validateClaimShape(value: unknown, path: string): VoiceFinding[] {
  * (once defaults are applied — see `parseVoiceRecord`). Never throws — any
  * input, including `null`, a string, or a wildly malformed object,
  * produces findings rather than an exception, the same discipline
- * `@vespeneventures/policy`'s `validateBindingShape` holds to.
+ * `@example/policy`'s `validateBindingShape` holds to.
  *
  * `glossary`, `claims`, and `patterns` (top level) and `forbiddenPronouns`/
  * `forbiddenMarkers`/`tone`/`matchPhrases` (nested) may all be omitted —
@@ -379,7 +379,7 @@ function validateClaimShape(value: unknown, path: string): VoiceFinding[] {
  * Every object this function (and its helpers) inspects has its fields
  * read exactly once into local variables before any check runs, and only
  * those locals are used from then on — mirroring
- * `@vespeneventures/policy`'s own `validateBindingShape`. Without this, a
+ * `@example/policy`'s own `validateBindingShape`. Without this, a
  * hostile `value` (a field implemented as a getter, or a Proxy) could
  * return a different result on each property read, passing a check on one
  * read and disagreeing with itself on the next.
@@ -562,7 +562,7 @@ function buildVoiceRecord(value: Record<string, unknown>): VoiceRecord {
  * feature" apart from "declared it, empty" — see `buildVoiceRecord`) and
  * produce a fully
  * populated `VoiceRecord`. This is a deliberate two-pass design, not an
- * oversight: `@vespeneventures/policy`'s own TOCTOU-safety comments (see
+ * oversight: `@example/policy`'s own TOCTOU-safety comments (see
  * `verifyBinding`) explain why reading the same object's fields twice can
  * matter for a hostile `value` (a getter returning a different result on
  * each read). That package's shape is flat enough to snapshot once and

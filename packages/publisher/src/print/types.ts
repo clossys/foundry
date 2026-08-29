@@ -1,5 +1,5 @@
 /**
- * Public types for `@vespeneventures/publisher/print`. See
+ * Public types for `@clossys/publisher/print`. See
  * `renderPrintDocument.ts`'s own doc comment for the full picture: this
  * channel emits a deterministic, paged-media HTML+CSS document string from
  * a `channel: "print"` `ComposeDocument` — never a PDF, never via a
@@ -25,7 +25,7 @@ import type { PrintMeta } from "../core/index.js";
 
 /**
  * Resolves a `SlotBinding.copyId` into literal display text — see
- * `@vespeneventures/publisher/core`'s own README, "The `copyId` seam", for the
+ * `@clossys/publisher/core`'s own README, "The `copyId` seam", for the
  * fuller reasoning behind the seam itself. Synchronous, on the same grounds
  * `./web`'s own `CopyResolver` doc comment gives: `renderPrintDocument`
  * builds its HTML string in one pass, and an async resolver would force
@@ -45,7 +45,7 @@ export type CopyResolver = (copyId: string) => string | undefined;
  * Resolves a `SlotBinding.assetId` into a real asset — the identical seam
  * `CopyResolver` draws for `copyId`, one binding field over, and the same
  * local (not cross-channel-imported) declaration this file's own top
- * comment explains for `CopyResolver`. Same shape as `@vespeneventures/
+ * comment explains for `CopyResolver`. Same shape as `@clossys/
  * compose`'s own `AssetLookup`: returns `unknown` on purpose — whatever
  * comes back is validated into a real, paintable `RenderAsset` by
  * `../internal/assets.ts`'s `resolveDocumentAssets` before this channel
@@ -63,7 +63,7 @@ export type AssetResolver = (assetId: string) => unknown;
 /**
  * Explicit page dimensions, required by `renderPrintDocument` whenever
  * `doc.meta.pageSize === "Custom"`. `PrintMeta` itself (the frozen
- * contract — see `@vespeneventures/publisher/core`'s `types.ts`) has no
+ * contract — see `@clossys/publisher/core`'s `types.ts`) has no
  * width/height field for `"Custom"`; the only three page-size states it
  * can express are `"A4"`, `"Letter"`, and `"Custom"` with no attached
  * dimensions at all. `renderPrintDocument` refuses
@@ -91,7 +91,7 @@ export interface RenderPrintOptions {
   resolveAssetId?: AssetResolver;
   /** Required when `doc.meta.pageSize === "Custom"`; ignored otherwise. See {@link CustomPageSize}. */
   customPageSize?: CustomPageSize;
-  /** Brand token overrides, passed straight through to `@vespeneventures/designer/tokens`'s `flattenTokens(overrides)` (via the shared `internal/tokens.ts`). Omit to render with every token at its own default value. */
+  /** Brand token overrides, passed straight through to `@clossys/designer/tokens`'s `flattenTokens(overrides)` (via the shared `internal/tokens.ts`). Omit to render with every token at its own default value. */
   tokenOverrides?: Record<string, string>;
   /**
    * `SlotSpec.key`s that must start on a fresh page — emits

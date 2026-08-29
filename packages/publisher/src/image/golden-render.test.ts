@@ -13,7 +13,7 @@ import { describe, expect, it } from "vitest";
 import type { ComposeDocument } from "../core/index.js";
 import { renderImageDocument } from "./renderImageDocument.js";
 
-// `@vespeneventures/designer/tokens`' real `--font-display`/`--font-body` literals,
+// `@clossys/designer/tokens`' real `--font-display`/`--font-body` literals,
 // XML-attribute-escaped (their embedded `"Segoe UI"` double quotes become
 // `&quot;`) — see `../internal/typography.ts`'s `resolveElementFontFamily`
 // and `escapeXml`. Declared once here so a token wording change updates

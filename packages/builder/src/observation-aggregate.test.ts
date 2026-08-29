@@ -392,7 +392,7 @@ describe("checkObservationAggregateFreshness", () => {
   });
 
   it("folds with a stale-but-unanimous-pass stored overall to indeterminate, via the same foldGateResults this module already uses -- a stale verdict never silently stays satisfied", async () => {
-    const { foldGateResults } = await import("@vespeneventures/controller/gates");
+    const { foldGateResults } = await import("@clossys/controller/gates");
 
     const storedResult = aggregateObservations({
       expectedRepositories: ["repo-a"],

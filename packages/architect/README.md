@@ -1,4 +1,4 @@
-# @vespeneventures/architect
+# @clossys/architect
 
 The architect role for provider-neutral operating architecture. It answers:
 
@@ -11,7 +11,7 @@ then assesses independent change observations against that declared topology.
 It performs no network I/O and has no runtime dependencies. Install it with:
 
 ```bash
-npm install @vespeneventures/architect
+npm install @clossys/architect
 ```
 
 ## Job charter
@@ -41,7 +41,7 @@ import {
   defineOperatingTopology,
   serializeOperatingTopology,
   validateOperatingTopology,
-} from "@vespeneventures/architect";
+} from "@clossys/architect";
 
 const topology = defineOperatingTopology({
   id: "example",
@@ -125,7 +125,7 @@ indeterminate because no valid measurement can be computed.
 
 ## Ontology
 
-`@vespeneventures/architect/ontology` contains the ontology mechanism used by
+`@clossys/architect/ontology` contains the ontology mechanism used by
 the role. Its public model and snapshot API is compatible with the former
 standalone domain package.
 

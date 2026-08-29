@@ -289,7 +289,7 @@ export type ReviewFindingRule =
    * one that counts. Two situations produce this, and both are the
    * `indeterminate` half of the ternary contract every check evaluation in
    * this package follows (never pass, never fail, when the true answer is
-   * simply unknown -- see `@vespeneventures/integrator`'s
+   * simply unknown -- see `@clossys/integrator`'s
    * `classifyCurrencyDistance` doc comment (`src/currency.ts`) for the
    * canonical statement of that reasoning, applied here to check evaluation
    * instead of version comparison):

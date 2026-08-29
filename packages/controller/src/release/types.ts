@@ -1,5 +1,5 @@
 /**
- * Types for @vespeneventures/release. See the package README for the three
+ * Types for @example/release. See the package README for the three
  * capabilities these shapes support — this file is deliberately just shapes,
  * no logic.
  */

@@ -1,5 +1,5 @@
 {
-  "name": "@vespeneventures/strategist",
+  "name": "@clossys/strategist",
   "version": "0.1.1",
   "private": false,
   "license": "MIT",
@@ -25,7 +25,7 @@
     "LICENSE"
   ],
   "sideEffects": false,
-  "description": "The strategist role: is it true, and is it us? Dependency-free validators for a consumer's own strategy records (facts, mission, positioning, markets, audiences, roadmap, brand essence/attributes/derivations), a typed reader over a consumer's strategy directory, and three gates reachable from one bin \u2014 a facts-traceability gate that fails when a numeric or superlative claim cannot be traced to a facts.json entry, a brand-coverage checker over brandable token slots, and a direction-currency check that reports a derivation still citing superseded direction. Ships the schema and the checkers; every consumer authors its own values.",
+  "description": "The strategist role: is it true, and is it us? Dependency-free validators for a consumer's own strategy records (facts, mission, positioning, markets, audiences, roadmap, brand essence/attributes/derivations), a typed reader over a consumer's strategy directory, and three gates reachable from one bin — a facts-traceability gate that fails when a numeric or superlative claim cannot be traced to a facts.json entry, a brand-coverage checker over brandable token slots, and a direction-currency check that reports a derivation still citing superseded direction. Ships the schema and the checkers; every consumer authors its own values.",
   "keywords": [
     "strategist",
     "strategy",
@@ -39,13 +39,13 @@
   "author": "Calvin Hung",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vespeneventures/foundry.git",
+    "url": "git+https://github.com/clossys/platform.git",
     "directory": "packages/strategist"
   },
   "bugs": {
-    "url": "https://github.com/vespeneventures/foundry/issues"
+    "url": "https://github.com/clossys/platform/issues"
   },
-  "homepage": "https://github.com/vespeneventures/foundry/tree/main/packages/strategist#readme",
+  "homepage": "https://github.com/clossys/platform/tree/main/packages/strategist#readme",
   "engines": {
     "node": ">=20"
   },
@@ -61,6 +61,7 @@
     "vitest": "^4.1.9"
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "registry": "https://registry.npmjs.org",
+    "access": "public"
   }
 }

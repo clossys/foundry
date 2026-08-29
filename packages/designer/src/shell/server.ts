@@ -1,6 +1,6 @@
 /**
- * @vespeneventures/designer/shell/server — the server-safe subset of
- * `@vespeneventures/designer/shell`. See `atoms/server.ts`'s own header for the
+ * @clossys/designer/shell/server — the server-safe subset of
+ * `@clossys/designer/shell`. See `atoms/server.ts`'s own header for the
  * full #375 rationale this file shares: `shell/index.ts` re-exports every
  * member eagerly from one module, so the interactive minority
  * (`NavShell`, `Toaster`/`toast`) drags the whole barrel down under

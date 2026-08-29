@@ -1,7 +1,7 @@
 /**
  * `checkAssetCoverage` — compares a list of asset ids a consumer's own
  * documents actually REFERENCE (in practice, every `SlotBinding.assetId`
- * across a set of `@vespeneventures/publisher/core` documents, though this
+ * across a set of `@clossys/publisher/core` documents, though this
  * function takes a plain `string[]` and has no dependency on `surface/core`
  * itself) against a real `AssetRecord`, and reports both directions of
  * drift: a referenced id with no registered entry (an asset a renderer is
@@ -12,7 +12,7 @@
  * FIVE AGENTS FINISHED A REPAIR ROUND ON THIS REPOSITORY BEFORE THIS
  * PACKAGE WAS WRITTEN, AND EVERY ONE OF THEM SHIPPED A FIRST DRAFT THAT
  * REPRODUCED THE EXACT DEFECT IT WAS FIXING: "a check that passes while
- * asserting nothing." `@vespeneventures/writer`'s own `checker.ts` was
+ * asserting nothing." `@clossys/writer`'s own `checker.ts` was
  * written directly against that failure mode, and this file is too:
  *
  *   1. NO SILENT NARROWING. A referenced id that is not a well-formed
@@ -33,7 +33,7 @@
  *      `referencedIds` list gets `ok: false`, never a silent "0 findings"
  *      that reads identically to "checked everything, found nothing
  *      wrong". This is the same non-negotiable distinction
- *      `@vespeneventures/publisher/core`'s `resolveCopy` draws for
+ *      `@clossys/publisher/core`'s `resolveCopy` draws for
  *      `texts.length > 0`, one layer over.
  *
  * `unregistered-asset` (severity `"error"`) and `unreferenced-asset`
@@ -45,7 +45,7 @@
  * a stale entry a rename left behind, and only a human reviewing the
  * finding can tell which. `report.ok` requires BOTH lists to be empty,
  * the same "findings must be empty, full stop" reading
- * `@vespeneventures/writer`'s own `report.findings` gets, severity aside.
+ * `@clossys/writer`'s own `report.findings` gets, severity aside.
  *
  * `asset-missing-licence` (severity `"warning"`) IS V2's NEW FINDING —
  * NOT A NEW SCHEMA REQUIREMENT
@@ -104,7 +104,7 @@ export interface AssetCoverageReport {
    * `"referencedIds[2] (not a non-empty string)"`), or — if `record` itself
    * failed shape validation — every entry of `referencedIds`, each
    * described as `"<id> (record invalid)"`. MUST force `report.ok` to
-   * `false` — the same third state `@vespeneventures/publisher/core`'s
+   * `false` — the same third state `@clossys/publisher/core`'s
    * `resolveCopy`'s own `unchecked` is, deliberately distinct from both "no
    * finding" and "a finding".
    */
@@ -146,7 +146,7 @@ function countByType(entries: readonly AssetRecord["entries"][number][]): AssetT
  * Compares `referencedIds` against `record`. Never throws: an invalid
  * `record`, a non-array `referencedIds`, or malformed individual entries
  * are all recorded into `report.unchecked`/`report.findings` rather than
- * thrown — the same discipline `@vespeneventures/writer`'s `checkCopyRecord`
+ * thrown — the same discipline `@clossys/writer`'s `checkCopyRecord`
  * holds to for its own two arguments, restated here for a plain
  * `string[]` rather than a second typed record.
  */
@@ -179,7 +179,7 @@ export function checkAssetCoverage(referencedIds: unknown, record: AssetRecord):
   const referencedCount = idsArray.length;
 
   // --- fail closed: the AssetRecord itself must be well-formed -----------
-  // Mirrors @vespeneventures/writer's checkCopyRecord: an invalid record
+  // Mirrors @clossys/writer's checkCopyRecord: an invalid record
   // means there is no trustworthy registry to compare against, so every
   // referenced id is unchecked rather than silently compared to an empty
   // or partial entry list.

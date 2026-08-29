@@ -28,7 +28,7 @@
  * one entry per repository named in `expectedRepositories`, in the same
  * order, whether or not a usable bundle was ever found for it. `overall`
  * folds all of them with this package's own `foldGateResults`
- * (`@vespeneventures/controller/gates`), whose documented precedence --
+ * (`@clossys/controller/gates`), whose documented precedence --
  * indeterminate beats violated beats satisfied -- is exactly the rule that
  * keeps "2 of 5 repositories were unobserved" from silently reading as "the
  * 3 we did hear from were clean, so we're done."
@@ -40,7 +40,7 @@
  * tested for "this bundle is 40 days old" without actually waiting 40 days,
  * or without mocking a global the caller does not control either. Both
  * timestamps are compared as parsed instants, never as strings -- see this
- * repository's own `#314` fix (`@vespeneventures/controller`'s
+ * repository's own `#314` fix (`@clossys/controller`'s
  * `liveStateSurface`) for the class of bug that lexical timestamp
  * comparison produces across UTC offsets.
  *
@@ -82,8 +82,8 @@
  * `staleAfterMs`, and `maxResultAgeMs` are all supplied by the caller.
  */
 
-import { foldGateResults, gateIndeterminate, gateSatisfied } from "@vespeneventures/controller/gates";
-import type { GateResult } from "@vespeneventures/controller/gates";
+import { foldGateResults, gateIndeterminate, gateSatisfied } from "@clossys/controller/gates";
+import type { GateResult } from "@clossys/controller/gates";
 import type { Finding } from "./types.js";
 import { parseObservationBundle } from "./observation-bundle.js";
 
@@ -403,7 +403,7 @@ export interface CheckObservationAggregateFreshnessInput {
  * REASONS`'s doc comment -- the moment it is not. A caller that wants the
  * combined verdict (the stored `overall`, but never presented as current
  * past this bound) folds this result together with the stored `overall`
- * through `@vespeneventures/controller/gates`'s own `foldGateResults` --
+ * through `@clossys/controller/gates`'s own `foldGateResults` --
  * exactly the same combinator this module already uses internally, so a
  * stale-but-otherwise-satisfied stored result folds to `indeterminate`
  * rather than silently staying `satisfied`.

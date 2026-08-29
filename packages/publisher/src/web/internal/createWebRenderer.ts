@@ -52,7 +52,7 @@ import type { CreateWebRendererOptions, WebRenderer } from "../types.js";
  * `createWebRenderer` call — or the module-level built-in registry
  * `renderWebDocument`/`listWebTemplateNames`/`getWebTemplate` use — also
  * reads from. This is the identical "factory returns an isolated policy
- * object closed over its own state" shape `@vespeneventures/auth`'s
+ * object closed over its own state" shape `@example/auth`'s
  * `createAllowedOriginPolicy` already uses in this codebase
  * (`packages/auth/src/redirect.ts`) — not a new pattern introduced here,
  * this package's first use of one it already has precedent for elsewhere

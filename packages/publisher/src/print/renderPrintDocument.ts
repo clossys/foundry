@@ -22,7 +22,7 @@
  * (the page minus its margins; see `internal/document.ts`'s own doc
  * comment for exactly why that's the containing block, not the full page)
  * — becomes an absolutely-positioned percentage box via
- * `@vespeneventures/publisher/core`'s own `frameToPercent` (`internal/geometry.ts`
+ * `@clossys/publisher/core`'s own `frameToPercent` (`internal/geometry.ts`
  * is the only place that conversion happens; this file never recomputes
  * it).
  *
@@ -46,13 +46,13 @@
  * | `"wrong-channel"` | `doc.channel` (or `doc.meta.channel`) isn't `"print"`. |
  * | `"missing-layout"` | `doc.layout` is absent or malformed — print's own frozen contract requires it (see above); a stronger, earlier check than letting `resolveDocument` silently treat a missing layout as zero slots. |
  * | `"missing-custom-page-size"` | `doc.meta.pageSize === "Custom"` and `options.customPageSize` wasn't supplied (or was blank) — see `internal/page.ts`'s `resolvePageBox`. |
- * | `"resolution-failed"` | `@vespeneventures/publisher/core`'s `resolveDocument` itself reports `ok: false` — a required slot has no binding, a binding targets an unknown slot, a bound slot is itself malformed, or nothing at all matched. |
- * | `"empty-output"` | `resolveDocument` succeeded, but `@vespeneventures/publisher/core`'s `resolveCopy` reports `ok: false` — some matched slot's `copyId` never resolved to real text (no `options.resolveCopyId` was given, it returned `undefined`, or a binding had two conflicting sources). Reused from `./web`'s own vocabulary rather than invented fresh — the two situations are the same shape: a document that LOOKS resolved but produces no real content for at least one matched slot. **This is `resolveCopy`, not a hand-rolled second check** — see `@vespeneventures/publisher/core`'s own `resolve-copy.ts` doc comment and issue #43: "a rule every renderer must independently remember is a rule one of them will forget." |
- * | `"unknown-style-role"` | A `SlotSpec.style.color`/`.background`/`.typography` (or `doc.layout.background.color`/`.background`) names a token role absent from `@vespeneventures/designer/tokens`' `TOKENS` registry, or (for `.typography` specifically) a role that exists but does not resolve to a pixel font-size — see `internal/style.ts`. |
+ * | `"resolution-failed"` | `@clossys/publisher/core`'s `resolveDocument` itself reports `ok: false` — a required slot has no binding, a binding targets an unknown slot, a bound slot is itself malformed, or nothing at all matched. |
+ * | `"empty-output"` | `resolveDocument` succeeded, but `@clossys/publisher/core`'s `resolveCopy` reports `ok: false` — some matched slot's `copyId` never resolved to real text (no `options.resolveCopyId` was given, it returned `undefined`, or a binding had two conflicting sources). Reused from `./web`'s own vocabulary rather than invented fresh — the two situations are the same shape: a document that LOOKS resolved but produces no real content for at least one matched slot. **This is `resolveCopy`, not a hand-rolled second check** — see `@clossys/publisher/core`'s own `resolve-copy.ts` doc comment and issue #43: "a rule every renderer must independently remember is a rule one of them will forget." |
+ * | `"unknown-style-role"` | A `SlotSpec.style.color`/`.background`/`.typography` (or `doc.layout.background.color`/`.background`) names a token role absent from `@clossys/designer/tokens`' `TOKENS` registry, or (for `.typography` specifically) a role that exists but does not resolve to a pixel font-size — see `internal/style.ts`. |
  *
  * IMAGES: `assetId` BINDINGS PAINT AN `<img>`, POSITIONED LIKE ANY OTHER SLOT
  * -------------------------------------------------------------------------------
- * `SlotBinding.assetId` (`@vespeneventures/publisher/core` 0.3.0) resolves via the
+ * `SlotBinding.assetId` (`@clossys/publisher/core` 0.3.0) resolves via the
  * shared `../internal/assets.ts`'s `resolveDocumentAssets` — never
  * hand-rolled, the identical `resolveCopy` reuse this file's own doc
  * comment already documents for text, one binding field over. Print HAS a
@@ -125,7 +125,7 @@ export function renderPrintDocument(doc: ComposeDocument, options: RenderPrintOp
     throw new RenderError(
       "missing-layout",
       `renderPrintDocument could not render document "${doc.id}": doc.layout is required for a "print" document ` +
-        `(@vespeneventures/publisher/core's own contract — see its types.ts's LayoutSpec doc comment, "Required for ` +
+        `(@clossys/publisher/core's own contract — see its types.ts's LayoutSpec doc comment, "Required for ` +
         `print/slides/image") but was ${doc.layout === undefined ? "absent" : "not a valid LayoutSpec (slots must be an array)"}.`,
     );
   }

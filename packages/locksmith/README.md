@@ -1,4 +1,4 @@
-# @vespeneventures/locksmith
+# @clossys/locksmith
 
 Locksmith owns keys end to end: custody, distribution, rotation, revocation —
 and, unchanged from the package it renames, provider-neutral resolution.
@@ -7,7 +7,7 @@ key, so this package's job is to close that gap, not merely to fetch a
 value.
 
 ```bash
-npm install @vespeneventures/locksmith
+npm install @clossys/locksmith
 ```
 
 ## The job
@@ -71,7 +71,7 @@ import {
   createEnvSecretsAdapter,
   createSecretsClient,
   defineSecretCatalog,
-} from "@vespeneventures/locksmith";
+} from "@clossys/locksmith";
 
 const secrets = createSecretsClient(createEnvSecretsAdapter());
 const signingKey = await secrets.require("APP_SIGNING_KEY");
@@ -92,7 +92,7 @@ For dependency-injected tests:
 import {
   createSecretsClient,
   createTestSecretsAdapter,
-} from "@vespeneventures/locksmith";
+} from "@clossys/locksmith";
 
 const adapter = createTestSecretsAdapter({ APP_SIGNING_KEY: "example-value" });
 const secrets = createSecretsClient(adapter);
@@ -107,7 +107,7 @@ dumps all values.
 ### Custody
 
 ```ts
-import { custodyOf, defineKeyCustody, unownedKeys } from "@vespeneventures/locksmith";
+import { custodyOf, defineKeyCustody, unownedKeys } from "@clossys/locksmith";
 
 const custody = defineKeyCustody([
   { key: "APP_SIGNING_KEY", owner: "team-platform", store: "infisical" },
@@ -124,7 +124,7 @@ has to guess at what counts as unowned.
 ### Rotation
 
 ```ts
-import { evaluateRotation, rotationQueue, summarizeRotationMetric } from "@vespeneventures/locksmith";
+import { evaluateRotation, rotationQueue, summarizeRotationMetric } from "@clossys/locksmith";
 
 const evaluation = evaluateRotation(
   { key: "APP_SIGNING_KEY", lastRotatedAt: "2026-05-01T00:00:00.000Z" },
@@ -150,7 +150,7 @@ caller already produced elsewhere.
 ### Revocation
 
 ```ts
-import { defineRevocationPath, isRevoked, recordRevocation } from "@vespeneventures/locksmith";
+import { defineRevocationPath, isRevoked, recordRevocation } from "@clossys/locksmith";
 
 const path = defineRevocationPath({
   key: "APP_SIGNING_KEY",
@@ -177,7 +177,7 @@ this rename — this package adds the record-keeping half, not the authority.
 ### Distribution manifest
 
 ```ts
-import { defineDistributionManifest, mayResolve, principalsFor } from "@vespeneventures/locksmith";
+import { defineDistributionManifest, mayResolve, principalsFor } from "@clossys/locksmith";
 
 const distribution = defineDistributionManifest([
   { key: "APP_SIGNING_KEY", principals: ["service-api", "service-worker"] },
@@ -222,7 +222,7 @@ chosen Infisical:
 import {
   createAccessTokenProvider,
   createInfisicalClient,
-} from "@vespeneventures/locksmith/infisical";
+} from "@clossys/locksmith/infisical";
 
 const infisical = createInfisicalClient({
   baseUrl,
@@ -313,7 +313,7 @@ authority.
 | `DistributionManifest` / `DistributionEntry` | types | Distribution manifest and per-key principal-list contracts. |
 | `Principal` | type | An opaque identifier for whoever may resolve a key. |
 
-### `@vespeneventures/locksmith/infisical` API
+### `@clossys/locksmith/infisical` API
 
 | Export | Kind | Purpose |
 | --- | --- | --- |

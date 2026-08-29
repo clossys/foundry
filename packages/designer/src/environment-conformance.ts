@@ -177,7 +177,7 @@ export async function checkEnvironmentConformance(packageRoot: string): Promise<
     return indeterminate([{ code: "worker-failure", detail: error instanceof Error ? error.message : String(error) }]);
   }
   if (!existsSync(workerPath)) {
-    return indeterminate([{ code: "worker-failure", detail: `this checker's own worker "${workerPath}" does not exist — has @vespeneventures/designer itself been built ("npm run build")?` }]);
+    return indeterminate([{ code: "worker-failure", detail: `this checker's own worker "${workerPath}" does not exist — has @clossys/designer itself been built ("npm run build")?` }]);
   }
 
   // Loaded by spawning the worker (real `node`, no Vite in the loop) —

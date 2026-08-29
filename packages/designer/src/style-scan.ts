@@ -1,6 +1,6 @@
 /**
  * `scanStyleSources` and `extractStyleCandidates` — the visual mirror of
- * `@vespeneventures/copy`'s `scan.ts`. That file walks a source tree and
+ * `@example/copy`'s `scan.ts`. That file walks a source tree and
  * extracts every user-facing STRING; this file walks the same shape of
  * tree and extracts every hardcoded STYLING LITERAL — a hex color, a
  * `rgb()`/`rgba()`/`hsl()`/`hsla()`/`oklch()`/`oklab()`/`lab()`/`lch()`
@@ -8,14 +8,14 @@
  * Tailwind arbitrary-value utility class (`bg-[#3b82f6]`, `p-[13px]`,
  * `w-[var(--x,64px)]`). This package's token layer owns the CONTRACT (the
  * 154-entry `TOKENS` registry); this file, `token-gate.ts`, and `cli.ts`
- * are `@vespeneventures/designer`'s copy of `copy`/`copy-gate.ts`/`cli.ts` —
+ * are `@clossys/designer`'s copy of `copy`/`copy-gate.ts`/`cli.ts` —
  * before this package existed, `ui` shipped no gate at all: a hardcoded
  * `#3b82f6` or `padding: 13px` anywhere in this package was as invisible
  * as an unregistered string used to be before `copy` shipped its scanner.
  *
  * NO PARSER LIBRARY, same zero-runtime-dependency rule `copy/src/scan.ts`
  * states for itself — this repository's CI `safety` job runs gate scripts
- * with no `npm ci` at all, and `@vespeneventures/designer` itself is the one
+ * with no `npm ci` at all, and `@clossys/designer` itself is the one
  * package in this repo already exempted from "zero dependencies" for its
  * OWN runtime (it wraps React) — but that exemption does not extend to
  * THIS file: a scanner that a consumer might invoke standalone (via the
@@ -170,7 +170,7 @@ const DEFAULT_SKIP_DIRS = new Set(["node_modules", ".git", "dist", "build", "cov
 
 /**
  * `.test.ts(x)`, `.spec.ts(x)`, `.check.ts(x)`, and bare `.d.ts` — the
- * EXACT pattern `@vespeneventures/copy`'s `scan.ts` uses (see its own
+ * EXACT pattern `@example/copy`'s `scan.ts` uses (see its own
  * comment), reused verbatim rather than reinvented, and independently
  * justified here: `packages/ui/package.json`'s own `files` array already
  * excludes `src/**\/*.test.tsx` from what ships, so a hardcoded value that
@@ -245,7 +245,7 @@ export interface SkippedFile {
  * "WHAT THIS SCANNER DELIBERATELY DOES NOT CATCH". Never how a genuine
  * blind spot gets to stay invisible: `token-gate.ts` and `cli.ts` both
  * refuse to let a non-empty list here go unreported, mirroring
- * `@vespeneventures/copy`'s own `UncheckedItem` contract exactly.
+ * `@example/copy`'s own `UncheckedItem` contract exactly.
  */
 export interface UncheckedItem {
   file: string;
@@ -272,7 +272,7 @@ export interface StyleScanResult {
  * Walks `root` recursively, reads every matching file, and extracts style
  * candidates from each (see `extractStyleCandidates`). FAILS CLOSED on an
  * unreadable directory or file — throws a plain `Error`, matching
- * `@vespeneventures/copy`'s `scanCopySourceTree` (see that file's own
+ * `@example/copy`'s `scanCopySourceTree` (see that file's own
  * comment for why "0 files scanned" must never read as a clean pass for a
  * directory this function could not actually read). `cli.ts` is what turns
  * this thrown error into exit code 2.
@@ -393,7 +393,7 @@ const TW_ARBITRARY_OPENER_RE = /([a-zA-Z_][\w:/-]*)-\[/g;
  * INNERMOST wrapping property (`--b`), never an outer or unrelated one —
  * exactly the semantics a reader of the source text would expect, and the
  * literal-position analogue of `tokenize()`'s own "nearest enclosing call"
- * backward scan in `@vespeneventures/copy`'s `scan.ts`
+ * backward scan in `@example/copy`'s `scan.ts`
  * (`enclosingCallName`), applied here to `var(...)` specifically instead of
  * a class-name builder.
  */
@@ -467,7 +467,7 @@ function findEnclosingCall(text: string, pos: number): EnclosingCall | null {
  *      never an outer or unrelated one. This is what makes a doubly-nested
  *      chain (`var(--a, var(--b, 16px))`) resolve to `--b`, not `--a` — the
  *      literal-position analogue of `tokenize()`'s own "nearest enclosing
- *      call" backward scan in `@vespeneventures/copy`'s `scan.ts`
+ *      call" backward scan in `@example/copy`'s `scan.ts`
  *      (`enclosingCallName`), applied here to `var(...)` specifically.
  *   3. If that call's name is anything ELSE — `clamp(`, `min(`, `calc(`,
  *      `rgba(`, ... — this is NOT a decision point, it is a layer to see
@@ -567,13 +567,13 @@ export function isPureVarReference(text: string): boolean {
   return /^var\(\s*--[\w-]+\s*\)$/.test(text.trim());
 }
 
-/** `// token-gate:ignore [reason]`, `/* token-gate:ignore *\/`, or `{/* token-gate:ignore *\/}` — this scanner's escape hatch, mirroring `@vespeneventures/copy`'s `copy-gate:ignore` exactly (same requirement: explicit, on the candidate's own line, greppable — never a silent allowlist buried in config). */
+/** `// token-gate:ignore [reason]`, `/* token-gate:ignore *\/`, or `{/* token-gate:ignore *\/}` — this scanner's escape hatch, mirroring `@example/copy`'s `copy-gate:ignore` exactly (same requirement: explicit, on the candidate's own line, greppable — never a silent allowlist buried in config). */
 const IGNORE_MARKER_RE = /(?:<!--|\/\*|\{\/\*|\/\/)\s*token-gate:ignore/i;
 
 /**
  * Structural / accessibility attribute NAMES whose values this scanner
  * never treats as a styling literal, even when the value happens to be
- * hex-shaped or length-shaped — mirrors `@vespeneventures/copy`'s
+ * hex-shaped or length-shaped — mirrors `@example/copy`'s
  * `scan.ts` exclusions #4/#5 (aria/data values; a fixed denylist of
  * structural prop names), independently justified here: `viewBox`/`d`/
  * `points`/`xmlns` are SVG geometry, not color/length CSS; `href`/`src`/
@@ -597,7 +597,7 @@ interface Region {
   kind: "comment" | "regex-literal";
 }
 
-/** Keywords after which `/` cannot be a division operator — an expression is expected next, so `/` starts a regex. Same convention `@vespeneventures/copy`'s `scan.ts` uses for the identical disambiguation (`REGEX_PRECEDING_KEYWORDS`), reused independently here rather than imported, since this file has zero runtime dependencies, including on its own sibling package. */
+/** Keywords after which `/` cannot be a division operator — an expression is expected next, so `/` starts a regex. Same convention `@example/copy`'s `scan.ts` uses for the identical disambiguation (`REGEX_PRECEDING_KEYWORDS`), reused independently here rather than imported, since this file has zero runtime dependencies, including on its own sibling package. */
 const REGEX_PRECEDING_KEYWORDS = new Set([
   "return", "typeof", "instanceof", "in", "of", "new", "delete", "void", "throw", "case", "do", "else", "yield", "await",
 ]);
@@ -807,7 +807,7 @@ interface ExtractResult {
 /**
  * Extracts every style candidate from a single file's already-read
  * `content`. Pure (no I/O) and exported directly — mirrors
- * `@vespeneventures/copy`'s `extractCopyCandidates` — so a test can
+ * `@example/copy`'s `extractCopyCandidates` — so a test can
  * exercise extraction against a short in-memory string without touching a
  * real file, and so `scanStyleSources` above is left with only the
  * directory-walk half.

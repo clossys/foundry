@@ -30,7 +30,7 @@ export interface ArticleBodyProps extends HTMLAttributes<HTMLElement> {
  * descendant selectors, nothing more. A product-neutral structured-
  * document contract (parsing a content shape into these elements in the
  * first place) is explicitly out of scope here and belongs to a separate,
- * already-filed proposal in `@vespeneventures/surface` instead — building
+ * already-filed proposal in `@example/surface` instead — building
  * that here would be exactly the kind of speculative, un-asked-for scope
  * growth this repository's own contribution conventions warn against.
  *

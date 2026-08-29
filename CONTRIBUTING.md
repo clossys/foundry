@@ -138,7 +138,7 @@ Practically:
   without dragging in a tree. Adding a runtime dependency needs a reason in the
   pull request description.
 - **Supported configurations: the default answer is also no — be opinionated
-  about the foundation instead.** `@vespeneventures/designer` is the current
+  about the foundation instead.** `@clossys/designer` is the current
   styling authority. Consumers choose one documented Designer entry point:
   `tokens.css` works without Tailwind, while `theme.css` is the optional
   Tailwind v4 wiring for a consumer-owned pipeline. Those explicit surfaces,
@@ -157,7 +157,7 @@ Practically:
   styling path for Designer was declined while it was speculative — no real
   consumer needed it (#174) — then reopened once a real external consumer
   requirement existed, and shipped as a narrow, evidence-gated exception
-  rather than the original open-ended sketch: `@vespeneventures/designer/
+  rather than the original open-ended sketch: `@clossys/designer/
   compiled.css`, a generated stylesheet scoped to `atoms` only (see
   `packages/designer/README.md`'s "Framework-portable components, without
   Tailwind"). Declined, then reopened, then shipped narrowly — that arc, not
@@ -215,7 +215,7 @@ Practically:
   outside the workspace that defines them, and the safety gate rejects them.
 - **0.x dependency ranges are minor-locked — both `^` and `~`.** Packages
   here depend on each other with plain semver ranges against 0.x versions
-  (e.g. `"@vespeneventures/controller": "~0.8.0"`). Past `1.0.0`, `^` locks
+  (e.g. `"@clossys/controller": "~0.8.0"`). Past `1.0.0`, `^` locks
   the major and `~` locks the minor; below `1.0.0` there is no such split —
   `^0.3.0` and `~0.3.0` both mean `>=0.3.0 <0.4.0`. Bumping a package's minor
   (e.g. `controller` from `0.8.0` to `0.9.0`) therefore breaks every sibling

@@ -13,7 +13,7 @@ import { OWN_LICENSE_BINDING } from "./self-license.js";
 //
 // This module lives at `src/policy/self-host.test.ts` — one level deeper
 // than a package-root-level `src/self-host.test.ts` would be, since `policy`
-// is now a subpath of `@vespeneventures/controller` rather than its own
+// is now a subpath of `@clossys/controller` rather than its own
 // package root — so it takes two hops up to reach the package root and its
 // `LICENSE` file, not one.
 const licensePath = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "LICENSE");

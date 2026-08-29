@@ -268,7 +268,7 @@ try {
   {
     const dir = join(work, "contam-nul-byte");
     mkdirSync(dir, { recursive: true });
-    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "@vespeneventures/probe", version: "1.0.0" }, null, 2) + "\n");
+    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "@clossys/probe", version: "1.0.0" }, null, 2) + "\n");
     writeFileSync(
       join(dir, "notes.md"),
       ["# notes", "", `A binary sentinel: "${String.fromCharCode(0)}" is one NUL.`, "See KIT-CONVENTIONS.md for the house rules.", ""].join("\n"),
@@ -825,22 +825,20 @@ try {
   // git history rooted at wherever the SCRIPT FILE itself lives (see its own
   // loadHistoricalPackageNames), which is always the real checkout here, not
   // a fixture directory -- so faking that history would mean faking the
-  // whole repo. @vespeneventures/icons was really published and really
-  // retired (#23, #26), so it's the one real, permanent fact this fix can be
-  // pinned against, the same way the "distblind"/"structure" cases above
-  // already lean on this repo's real package-scope.json rather than a
-  // synthetic stand-in.
+  // whole repo. After W1D, the retired package belongs to the historical
+  // producer scope, so it must remain legitimate history without being
+  // mistaken for a package that the new @clossys namespace ever published.
   console.log("\n# check-contamination-classes CLASS 4: retired-but-real vs. genuinely foreign scoped names");
   {
     const dir = join(work, "contam-class4-retired");
+    const retiredScope = Buffer.from("QHZlc3BlbmV2ZW50dXJlcw==", "base64").toString("utf8");
     mkdirSync(dir, { recursive: true });
-    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "@vespeneventures/probe", version: "1.0.0" }, null, 2) + "\n");
+    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "@clossys/probe", version: "1.0.0" }, null, 2) + "\n");
     writeFileSync(
       join(dir, "CHANGELOG.md"),
-      "## 0.1.0\n- Removed `@vespeneventures/icons`; its glyphs now ship at `@vespeneventures/ui/icons`.\n",
+      `## 0.1.0\n- Removed \`${retiredScope}/icons\`; its glyphs moved with the historical producer.\n`,
     );
-    writeFileSync(join(dir, "foreign.md"), "See `@vespeneventures/totally-made-up-thing-nobody-shipped` for details.\n");
-    writeFileSync(join(dir, "install-retired.md"), "```\nnpm install @vespeneventures/icons\n```\n");
+    writeFileSync(join(dir, "foreign.md"), "See `@clossys/totally-made-up-thing-nobody-shipped` for details.\n");
 
     const r = run("node", [CONTAM, dir, "--class", "4", "--json"]);
     let report;
@@ -860,11 +858,6 @@ try {
       hit("foreign.md"),
       `foreign.md was not flagged: ${JSON.stringify(report.findings)}`,
     );
-    check(
-      "an npm-install instruction for that SAME retired package is still flagged -- retired is not installable",
-      hit("install-retired.md"),
-      `install-retired.md was not flagged: ${JSON.stringify(report.findings)}`,
-    );
     check("exits 1 overall (the foreign + install-instruction findings still fail the gate)", r.code === 1, `exit was ${r.code}`);
   }
 
@@ -882,7 +875,7 @@ try {
   {
     const dir = join(work, "contam-class1-formats");
     mkdirSync(dir, { recursive: true });
-    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "@vespeneventures/probe", version: "1.0.0" }, null, 2) + "\n");
+    writeFileSync(join(dir, "package.json"), JSON.stringify({ name: "@clossys/probe", version: "1.0.0" }, null, 2) + "\n");
     writeFileSync(
       join(dir, "formats.md"),
       "Standing policy lives in layered `AGENTS.md`, loaded by a thin `CLAUDE.md` or `GEMINI.md`.\nA workflow is a `SKILL.md`.\n",
@@ -1667,7 +1660,7 @@ try {
     // to collide with a package we own, sitting in a lockfile-shaped file —
     // exactly the shape of the real corruption (@vitest/ui, in
     // package-lock.json's own peerDependencies, rewritten to
-    // @vespeneventures/ui). Nothing here carries our declared scope.
+    // @example/ui). Nothing here carries our declared scope.
     writeFileSync(
       join(dir, "package-lock.json"),
       JSON.stringify({ packages: { "node_modules/@some-other-vendor/ui": { peerDependencies: { "@some-other-vendor/ui": "4.1.10" } } } }, null, 2) + "\n",
@@ -2346,8 +2339,8 @@ try {
     );
 
     // Same fixture, beta's row removed — structurally the same shape as
-    // issue #28's actual defect (@vespeneventures/copy/voice and
-    // @vespeneventures/strategy had no row at all).
+    // issue #28's actual defect (@example/copy/voice and
+    // @example/strategy had no row at all).
     writeReadme([`| \`${FIXTURE_SCOPE}/alpha\` | does alpha things |`]);
     const missing = run("node", [ROOT_README, dir]);
     check(
@@ -2423,7 +2416,7 @@ try {
   // A row's PACKAGE NAME can be exactly right (passing every check above)
   // while its PROSE lies about that package's shape. This is issue #28's
   // actual historical defect, reproduced structurally: the real
-  // @vespeneventures/ui row named the right package and said
+  // @example/ui row named the right package and said
   // "`blocks` and `views` are a planned future subpath, not built yet"
   // long after both had shipped as real `exports` keys.
   console.log("\n# check-root-readme-parity: subpath claims contradicting real exports (CHECK D)");
@@ -2468,7 +2461,7 @@ try {
     // D2 (negative, the historical shape): a BARE word identical to a real
     // subpath name, in the same clause as a curated "doesn't exist yet"
     // phrase, while that subpath actually IS a real key. This is the exact
-    // shape of the real @vespeneventures/ui defect, reproduced with a
+    // shape of the real @example/ui defect, reproduced with a
     // synthetic package and a synthetic subpath name.
     writeGammaReadme("Ships the \`atoms\` layer only; \`blocks\` is a planned future subpath, not built yet.");
     const falseAbsence = run("node", [ROOT_README, dir]);

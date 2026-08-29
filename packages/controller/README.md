@@ -1,4 +1,4 @@
-# @vespeneventures/controller
+# @clossys/controller
 
 <!-- controller-role-contract:start -->
 ## Control-loop contract
@@ -27,7 +27,7 @@ now provided by this package's subpaths. The former package names are retired;
 new integrations use the current subpaths directly.
 
 ```bash
-npm install @vespeneventures/controller
+npm install @clossys/controller
 ```
 
 ## Boundaries
@@ -60,7 +60,7 @@ caller owns all of those actions and values.
 
 ## Package-process subpaths
 
-Install `@vespeneventures/controller` once and import the focused capability
+Install `@clossys/controller` once and import the focused capability
 you need. The root exposes lifecycle-registry validation and package-scaffold
 planning APIs; it does not declare that a package has completed the
 repository's seven-state evidence ladder. That ladder is derived separately
@@ -70,23 +70,23 @@ versioned packages.
 
 | Subpath | Includes |
 | --- | --- |
-| `@vespeneventures/controller/catalog` | Workspace discovery and dependency-graph evaluation. |
-| `@vespeneventures/controller/gates` | Foundation checks, deterministic build order, a ratchet primitive, override-range and dependency-scope gates, and `foundry-check`. Does **not** require `typescript` — the source-aware secret-surface gates that need it moved to `./gates/secrets` (below) as of this version; see "Requirements" for why. |
-| `@vespeneventures/controller/gates/secrets` | Source-aware secret-surface gates: credential inventory, provider-resource naming, local secret files, and raw-secret-read AST detection. Requires `typescript` — install it to use this subpath; `./gates` itself does not need it. **Breaking change from earlier versions:** these exports used to live on `./gates` directly; import them from here instead. |
-| `@vespeneventures/controller/release` | Isolated packed-artifact and installed-import proof. |
-| `@vespeneventures/controller/repository` | Consumer-owned repository profiles, upward requirements, exact-root declarations, pure evaluation, `repository-check`, the full runner (`runRepositoryProfileCheck` / `repository-profile-check`), and one-package repository adoption evidence (`RepositoryPackageAdoptionV1` / `repository-package-adoption-check`). |
-| `@vespeneventures/controller/positions` | Pure installed-position ledger and completion-evidence validation. `foundry-position-check <ledger.json> [role-contract.json]` validates positions only. `foundry-completion-evidence-check <completion-evidence.json> <position-ledger.json>` validates one linked consumer-retained record for an open position: an exact-version artifact declaration with retained references, recorded invocation and distinct red/green controls, duplicate disposition and rollback records, linked review-cadence evidence, and separately attributed before/after outcome and close-window verdicts. Reference and locator strings have a 65,536-code-unit cap and lexically reject explicit inline sensitive-payload assignments and URL authority userinfo after bounded percent decoding plus NFKC/case/default-ignorable normalization and a separate URL-style tab/CR/LF authority scan; form-style `+` is treated as a label separator only at root/query/fragment assignment contexts. Ordinary identifiers containing those words remain valid. Evidence instants are known-offset RFC3339 with at most millisecond precision and obey `before < invocation/red/green ≤ rollback ≤ after ≤ startedAt < satisfied recurrence ≤ endedAt`. A violated or indeterminate in-window cadence result prevents satisfaction. The outcome retains the position baseline and source locator, moves into the linked setpoint, and cannot be owned by the position action authority. References, authorship, provider truth, and adoption are not authenticated or inferred. |
-| `@vespeneventures/controller/review` | Provider-neutral review evidence contracts, validation, and `review-check`. |
-| `@vespeneventures/controller/review/github` | Pure normalization of caller-provided GitHub-shaped review evidence. |
-| `@vespeneventures/controller/artifacts` | Deterministic, fail-closed verification for a consumer-owned governed artifact: declared kind + schema version, exact-content checksum, and structural provenance. |
-| `@vespeneventures/controller/cleanup` | Pure workspace-cleanup classification: caller-normalized inventory and observations in, a typed `owned` / `safe-candidate` / `blocked` proposal out. No I/O, no deletion API. |
-| `@vespeneventures/controller/composition` | Pure caller-owned cross-plane constraint, supply, decision, exception, and effective-value resolution. |
-| `@vespeneventures/controller/conventions` | Account-neutral agent conventions two parties can share without either owning the other: branch provenance, skill naming, agent interoperability, routine and schedule declarations, CI gate naming, and the capability-first skill registry. Ships the documents/adapters below as defaults and enforces only their grammar — never byte-identity with its own prose. |
-| `@vespeneventures/controller/conventions/documents/*` | The shipped convention documents themselves (`branch-provenance.md`, `skill-grammar.md`, `agent-interoperability.md`, `routine-declaration.md`, `schedule-declaration.md`, `live-state-reconciliation.md`, `skill-registry.md`, `machine-guidance.md`, `machine-baseline.md`, `gate-naming.md`, `runner-conventions.md`) as real files a provisioning step can copy or template onto a machine. |
-| `@vespeneventures/controller/conventions/adapters/*` | The shipped adapter files (`agent-policy.rules`, `shell-integration.zsh`, `branch-provenance-hook.sh`, `heavy-cmd-hook.sh`, `scoped-main-push.sh`, `workspace-shell.zsh`) as real files, same shape as the documents above. |
-| `@vespeneventures/controller/policy` | The content-addressed `PolicyBinding` primitive: compute a digest, validate a binding's shape, verify a binding against materialized content. Zero I/O, zero dependency of its own — the primitive `./gates` and `./artifacts` bind rules and artifacts to documents with, without ever committing the document itself. |
+| `@clossys/controller/catalog` | Workspace discovery and dependency-graph evaluation. |
+| `@clossys/controller/gates` | Foundation checks, deterministic build order, a ratchet primitive, override-range and dependency-scope gates, and `foundry-check`. Does **not** require `typescript` — the source-aware secret-surface gates that need it moved to `./gates/secrets` (below) as of this version; see "Requirements" for why. |
+| `@clossys/controller/gates/secrets` | Source-aware secret-surface gates: credential inventory, provider-resource naming, local secret files, and raw-secret-read AST detection. Requires `typescript` — install it to use this subpath; `./gates` itself does not need it. **Breaking change from earlier versions:** these exports used to live on `./gates` directly; import them from here instead. |
+| `@clossys/controller/release` | Isolated packed-artifact and installed-import proof. |
+| `@clossys/controller/repository` | Consumer-owned repository profiles, upward requirements, exact-root declarations, pure evaluation, `repository-check`, the full runner (`runRepositoryProfileCheck` / `repository-profile-check`), and one-package repository adoption evidence (`RepositoryPackageAdoptionV1` / `repository-package-adoption-check`). |
+| `@clossys/controller/positions` | Pure installed-position ledger and completion-evidence validation. `foundry-position-check <ledger.json> [role-contract.json]` validates positions only. `foundry-completion-evidence-check <completion-evidence.json> <position-ledger.json>` validates one linked consumer-retained record for an open position: an exact-version artifact declaration with retained references, recorded invocation and distinct red/green controls, duplicate disposition and rollback records, linked review-cadence evidence, and separately attributed before/after outcome and close-window verdicts. Reference and locator strings have a 65,536-code-unit cap and lexically reject explicit inline sensitive-payload assignments and URL authority userinfo after bounded percent decoding plus NFKC/case/default-ignorable normalization and a separate URL-style tab/CR/LF authority scan; form-style `+` is treated as a label separator only at root/query/fragment assignment contexts. Ordinary identifiers containing those words remain valid. Evidence instants are known-offset RFC3339 with at most millisecond precision and obey `before < invocation/red/green ≤ rollback ≤ after ≤ startedAt < satisfied recurrence ≤ endedAt`. A violated or indeterminate in-window cadence result prevents satisfaction. The outcome retains the position baseline and source locator, moves into the linked setpoint, and cannot be owned by the position action authority. References, authorship, provider truth, and adoption are not authenticated or inferred. |
+| `@clossys/controller/review` | Provider-neutral review evidence contracts, validation, and `review-check`. |
+| `@clossys/controller/review/github` | Pure normalization of caller-provided GitHub-shaped review evidence. |
+| `@clossys/controller/artifacts` | Deterministic, fail-closed verification for a consumer-owned governed artifact: declared kind + schema version, exact-content checksum, and structural provenance. |
+| `@clossys/controller/cleanup` | Pure workspace-cleanup classification: caller-normalized inventory and observations in, a typed `owned` / `safe-candidate` / `blocked` proposal out. No I/O, no deletion API. |
+| `@clossys/controller/composition` | Pure caller-owned cross-plane constraint, supply, decision, exception, and effective-value resolution. |
+| `@clossys/controller/conventions` | Account-neutral agent conventions two parties can share without either owning the other: branch provenance, skill naming, agent interoperability, routine and schedule declarations, CI gate naming, and the capability-first skill registry. Ships the documents/adapters below as defaults and enforces only their grammar — never byte-identity with its own prose. |
+| `@clossys/controller/conventions/documents/*` | The shipped convention documents themselves (`branch-provenance.md`, `skill-grammar.md`, `agent-interoperability.md`, `routine-declaration.md`, `schedule-declaration.md`, `live-state-reconciliation.md`, `skill-registry.md`, `machine-guidance.md`, `machine-baseline.md`, `gate-naming.md`, `runner-conventions.md`) as real files a provisioning step can copy or template onto a machine. |
+| `@clossys/controller/conventions/adapters/*` | The shipped adapter files (`agent-policy.rules`, `shell-integration.zsh`, `branch-provenance-hook.sh`, `heavy-cmd-hook.sh`, `scoped-main-push.sh`, `workspace-shell.zsh`) as real files, same shape as the documents above. |
+| `@clossys/controller/policy` | The content-addressed `PolicyBinding` primitive: compute a digest, validate a binding's shape, verify a binding against materialized content. Zero I/O, zero dependency of its own — the primitive `./gates` and `./artifacts` bind rules and artifacts to documents with, without ever committing the document itself. |
 
-`@vespeneventures/controller/positions` exports
+`@clossys/controller/positions` exports
 `validateInstalledPositionLedger`, `validateInstalledPositionContract`,
 `validateCompletionEvidence`, `validateCompletionEvidenceContract`, and the
 corresponding field vocabularies: `POSITION_FIELDS`,
@@ -149,8 +149,8 @@ over: a checksum could pass while the schema version was unsupported, or
 provenance could be attached without ever being checked.
 
 ```ts
-import { verifyGovernedArtifact, verifyGovernedArtifacts } from "@vespeneventures/controller/artifacts";
-import type { GovernedArtifactManifest, GovernedArtifactVerificationOptions } from "@vespeneventures/controller/artifacts";
+import { verifyGovernedArtifact, verifyGovernedArtifacts } from "@clossys/controller/artifacts";
+import type { GovernedArtifactManifest, GovernedArtifactVerificationOptions } from "@clossys/controller/artifacts";
 
 const manifest: GovernedArtifactManifest = {
   kind: "widget-catalog",
@@ -186,7 +186,7 @@ short-circuits on the first stage that reports an error:
    deliberately: this is the exact ordering #195 was opened over. An
    unsupported schema version is rejected even when the bytes match exactly.
 5. **Exact-content checksum** — delegated entirely to
-   `@vespeneventures/controller/policy`'s own `verifyBinding`; this package hashes
+   `@clossys/controller/policy`'s own `verifyBinding`; this package hashes
    nothing itself. Checked last, both because it is the most expensive
    check and because checking it last means a caller can never see a
    passing checksum for an artifact whose kind or schema version were never
@@ -223,7 +223,7 @@ identity-attestation scheme.
 
 #### Digest comparison is delegated, not reimplemented
 
-`checksum.algorithm` is typed as `@vespeneventures/controller/policy`'s own
+`checksum.algorithm` is typed as `@clossys/controller/policy`'s own
 `DigestAlgorithm` — currently just `"sha256"` — rather than a second,
 independent union, so this contract can never claim to accept an algorithm
 `policy` itself does not support. Both the digest's SHAPE (is it the right
@@ -235,11 +235,11 @@ digest should be, or how to hash anything.
 
 #### Fail-closed vocabulary
 
-Every finding is a `Finding` from `@vespeneventures/controller/policy`, shaped
+Every finding is a `Finding` from `@clossys/controller/policy`, shaped
 `{ rule, severity, message, path? }` and re-exported from this subpath.
 Rules prefixed `artifact/` are owned here; `policy-id-shape`,
 `digest-algorithm-known`, `digest-shape`, and `digest-mismatch` are
-`@vespeneventures/controller/policy`'s own rule names, passed through verbatim so a
+`@clossys/controller/policy`'s own rule names, passed through verbatim so a
 caller can see exactly which layer reported the problem. See
 `GovernedArtifactFindingRule` (documentation-only — `Finding.rule` itself
 stays plain `string`) for the full vocabulary.
@@ -282,7 +282,7 @@ import {
   gateResultToExitCode,
   gateSatisfied,
   gateViolated,
-} from "@vespeneventures/controller/gates";
+} from "@clossys/controller/gates";
 
 // A gate declares its own finite, reviewable set of indeterminate reasons.
 const reasons = createGateReasons(["missing-credential", "no-applicable-inputs"] as const);
@@ -320,7 +320,7 @@ zero (lint warnings, TODOs, `any` usages, anything), read a checked-in
 baseline, and call this with both numbers.
 
 ```ts
-import { evaluateRatchet } from "@vespeneventures/controller/gates";
+import { evaluateRatchet } from "@clossys/controller/gates";
 
 const result = evaluateRatchet(currentWarningCount, baselineFromDisk);
 if (!result.ok) process.exitCode = result.status === "invalid" ? 2 : 1;
@@ -343,7 +343,7 @@ only confirms the vulnerable version is gone, never that the replacement
 stays API-compatible with what depends on it.
 
 ```ts
-import { checkOverrideTargetRanges } from "@vespeneventures/controller/gates";
+import { checkOverrideTargetRanges } from "@clossys/controller/gates";
 
 checkOverrideTargetRanges({ "left-pad": ">=1.2.3" });
 // -> one "overrides/range-unbounded" finding
@@ -368,8 +368,8 @@ Mechanical enforcement of [CONTRIBUTING.md](../../CONTRIBUTING.md)'s
 a small, checked-in allowlist entry.
 
 ```ts
-import { buildCatalog } from "@vespeneventures/controller/catalog";
-import { checkDependencyScope } from "@vespeneventures/controller/gates";
+import { buildCatalog } from "@clossys/controller/catalog";
+import { checkDependencyScope } from "@clossys/controller/gates";
 
 const catalog = buildCatalog(process.cwd());
 const allowlist = JSON.parse(readFileSync("dependency-scope-allowlist.json", "utf8"));
@@ -390,14 +390,14 @@ A malformed allowlist document or entry is a finding
 (`"dependency-scope/allowlist-shape"` / `"dependency-scope/allowlist-entry-shape"`)
 and exempts nothing — never a silent exemption. Deliberately scoped small:
 every runtime dependency in this repository was verified by inspection to
-already be `@vespeneventures/*`-scoped, so this is a floor that matches
+already be `@clossys/*`-scoped, so this is a floor that matches
 that reality today, not a full dependency admission-and-retirement
 register; it can grow richer if a third-party runtime dependency is ever
 legitimately admitted.
 
 ### `./repository`: profiles, requirements, and exact roots
 
-`@vespeneventures/controller/repository` owns a strict grammar and pure,
+`@clossys/controller/repository` owns a strict grammar and pure,
 deterministic evaluation. It ships no profile, root entry, requirement,
 observation, repository inventory, machine value, precedence rule, retention
 decision, or default. It performs no filesystem, Git, provider, scheduler,
@@ -450,7 +450,7 @@ Repository-root vocabulary belongs here because it describes the direct
 children of one repository. Account-container discovery and composition do not:
 they coordinate multiple repositories and stay caller-owned. For that reason
 this package adds no broad top-level workspace package and no
-`@vespeneventures/controller/workspace` subpath.
+`@clossys/controller/workspace` subpath.
 
 #### Profile schema v3
 
@@ -459,7 +459,7 @@ import {
   REPOSITORY_PROFILE_VERSION,
   validateRepositoryProfile,
   type RepositoryProfileV3,
-} from "@vespeneventures/controller/repository";
+} from "@clossys/controller/repository";
 
 const profile: RepositoryProfileV3 = {
   schemaVersion: REPOSITORY_PROFILE_VERSION,
@@ -563,7 +563,7 @@ beyond combining what the declarations themselves state.
 #### Pure multi-repository evaluation
 
 ```ts
-import { evaluateRepositoryRequirements } from "@vespeneventures/controller/repository";
+import { evaluateRepositoryRequirements } from "@clossys/controller/repository";
 
 const report = evaluateRepositoryRequirements({
   declarations: [
@@ -610,7 +610,7 @@ silently.
 #### Pure exact-root evaluation
 
 ```ts
-import { evaluateRepositoryRoot } from "@vespeneventures/controller/repository";
+import { evaluateRepositoryRoot } from "@clossys/controller/repository";
 
 const rootReport = evaluateRepositoryRoot({
   rootEntries: profile.rootEntries,
@@ -660,11 +660,11 @@ above — but it does the rest: validate the declaration's schema
 unconditionally, before evaluation is even attempted; evaluate its declared
 requirements and root vocabulary against caller-injected discovery; and
 resolve everything to exactly one of this repository's shared ternary
-verdicts (`@vespeneventures/controller/gates`'s `GateResult`:
+verdicts (`@clossys/controller/gates`'s `GateResult`:
 `satisfied` / `violated` / `indeterminate`).
 
 ```ts
-import { runRepositoryProfileCheck, REPOSITORY_PROFILE_RUN_DECLARATION_SOURCE } from "@vespeneventures/controller/repository";
+import { runRepositoryProfileCheck, REPOSITORY_PROFILE_RUN_DECLARATION_SOURCE } from "@clossys/controller/repository";
 
 const result = runRepositoryProfileCheck({
   declaration: { kind: "parsed", path: "governance/repository-profile.json", canonical: true, value: profile },
@@ -827,7 +827,7 @@ answers that directly — same input, no re-validation, no I/O — returning
 which of those two checks actually ran:
 
 ```ts
-import { repositoryProfileValidationCoverage } from "@vespeneventures/controller/repository";
+import { repositoryProfileValidationCoverage } from "@clossys/controller/repository";
 
 repositoryProfileValidationCoverage({ schemaVersion: 1, /* ... */ });
 // => { requirementsChecked: false, rootEntriesChecked: false }
@@ -922,7 +922,7 @@ input cannot clear them. This is not the simulated-consumer qualification
 orchestration tracked separately in issue #556.
 
 ```ts
-import { evaluateRepositoryPackageAdoption } from "@vespeneventures/controller/repository";
+import { evaluateRepositoryPackageAdoption } from "@clossys/controller/repository";
 
 const report = evaluateRepositoryPackageAdoption({
   adoption,
@@ -952,7 +952,7 @@ contract and fixture ship at
 
 ### `./composition`: pure cross-plane effective-state resolution
 
-`@vespeneventures/controller/composition` resolves only data supplied by its
+`@clossys/controller/composition` resolves only data supplied by its
 caller. It does not inspect a filesystem, repository, account, environment,
 provider, scheduler, or machine; choose scope authority or source precedence;
 read the clock; install anything; construct a provisioning manifest; or mutate
@@ -968,7 +968,7 @@ declarations belong to the same exact scope before invoking the evaluator.
 import {
   COMPOSITION_SCHEMA_VERSION,
   evaluateComposition,
-} from "@vespeneventures/controller/composition";
+} from "@clossys/controller/composition";
 
 const machineScope = { plane: "machine", id: "member-machine" } as const;
 const result = evaluateComposition({
@@ -1038,7 +1038,7 @@ ordering is canonical and independent of input ordering. Malformed input is
 `invalid` and produces no partial resolutions.
 
 This subpath deliberately does not accept `RepositoryProfileV2` or
-`RepositoryProfileV3`. `@vespeneventures/controller/repository` continues to
+`RepositoryProfileV3`. `@clossys/controller/repository` continues to
 own repository-authored upward requirements and exact-root semantics. A caller
 may cite a validated repository result when it authors a separate composition
 declaration, but Foundry performs no implicit conversion, discovery, or
@@ -1066,7 +1066,7 @@ authority assignment between those contracts.
    published and independently qualified; never adopt from a branch, pull
    request, workspace link, or copied implementation.
 2. Validate repository profile v2/v3 declarations and exact-root observations
-   through `@vespeneventures/controller/repository` without changing their
+   through `@clossys/controller/repository` without changing their
    semantics.
 3. Outside Foundry, discover the consumer's planes and author composition
    declarations, policies, preferences, normalized supply, decisions,
@@ -1081,7 +1081,7 @@ authority assignment between those contracts.
 
 ### `./review` schema: `ReviewPolicy` and `ReviewEvidenceBundle`
 
-`@vespeneventures/controller/review` defines a provider-neutral snapshot of
+`@clossys/controller/review` defines a provider-neutral snapshot of
 evidence gathered while reviewing one proposed change, and the consumer-owned
 policy it must satisfy. `validateReviewEvidence` fails closed: incomplete
 pagination, a stale (different-head) item, an unresolved thread, or an
@@ -1093,7 +1093,7 @@ import {
   validateReviewEvidence,
   type ReviewEvidenceBundle,
   type ReviewPolicy,
-} from "@vespeneventures/controller/review";
+} from "@clossys/controller/review";
 ```
 
 `ReviewPolicy` — the consumer-owned requirement set:
@@ -1225,7 +1225,7 @@ treat revalidated evidence as current for a merge — it supplies the fact
 only, never the consequence.
 
 ```ts
-import { isRevalidatableReviewEvidence } from "@vespeneventures/controller/review";
+import { isRevalidatableReviewEvidence } from "@clossys/controller/review";
 
 if (evidence.headSha !== pullRequest.headRefOid && isRevalidatableReviewEvidence(evidence, currentPatchId)) {
   // The base advanced but the diff is byte-identical; the caller decides
@@ -1279,7 +1279,7 @@ account's own data, never foundry's.
 
 ### `./cleanup`: pure workspace-cleanup classification
 
-`@vespeneventures/controller/cleanup` is the deterministic decision core
+`@clossys/controller/cleanup` is the deterministic decision core
 shared by every account-plane cleanup skill: it turns caller-normalized
 repository inventory and observations into a typed `owned` / `safe-candidate`
 / `blocked` proposal. Registry discovery, origin verification, live task
@@ -1298,8 +1298,8 @@ list, and a second independently checks every export name against a
 deletion/removal/mutation-shaped pattern.
 
 ```ts
-import { classifyCleanupCandidate } from "@vespeneventures/controller/cleanup";
-import type { CleanupCandidate } from "@vespeneventures/controller/cleanup";
+import { classifyCleanupCandidate } from "@clossys/controller/cleanup";
+import type { CleanupCandidate } from "@clossys/controller/cleanup";
 
 const candidate: CleanupCandidate = {
   repositoryId: "example/widgets#worktree-a",
@@ -1425,7 +1425,7 @@ message matches exactly.)
 
 ### `./conventions`: account-neutral agent conventions
 
-`@vespeneventures/controller/conventions` is the account-neutral agent
+`@clossys/controller/conventions` is the account-neutral agent
 conventions two parties can share without either owning the other, plus the
 checks that enforce their grammar: branch provenance, skill naming, agent
 interoperability, routine and schedule declarations, live-state
@@ -1455,7 +1455,7 @@ import {
   validateSkillRegistry,
   documentPath,
   adapterPath,
-} from "@vespeneventures/controller/conventions";
+} from "@clossys/controller/conventions";
 
 const findings = validateBranchName("claude/fix-the-thing", { taxonomy: TAXONOMY_PREFIXES });
 ```
@@ -1474,7 +1474,7 @@ import {
   liveStateCouldNotVerify,
   reconcileLiveState,
   validateLiveStateSurfaceDeclaration,
-} from "@vespeneventures/controller/conventions";
+} from "@clossys/controller/conventions";
 
 liveStateCouldNotVerify("deployment.web", ""); // throws — never a silent pass
 
@@ -1497,8 +1497,8 @@ as its one declared reason, and the named blocker as `detail`). See
 `conventions/documents/live-state-reconciliation.md` for the shared document, and
 `routine-declaration.md` / `schedule-declaration.md` for how the two
 existing tiers specialize it without any change to their own behaviour.
-`@vespeneventures/builder` re-exports this module's exports verbatim rather
-than keeping its own copy; `@vespeneventures/observer` keeps a deliberate,
+`@clossys/builder` re-exports this module's exports verbatim rather
+than keeping its own copy; `@clossys/observer` keeps a deliberate,
 explained duplicate to preserve its own zero-runtime-dependency contract —
 see that package's own README.
 
@@ -1526,7 +1526,7 @@ adapter can find the shared guidance without duplicating it.
 
 ### `./policy`: the content-addressed binding primitive
 
-`@vespeneventures/controller/policy` is a content-addressed commitment to a
+`@clossys/controller/policy` is a content-addressed commitment to a
 policy document: a `policyId`, a hash algorithm, and a digest — never the
 document itself. A digest is safe to commit even when the document it
 points at is not: it reveals nothing about the input, but lets a later,
@@ -1535,8 +1535,8 @@ separately-obtained copy be checked against it byte-for-byte. `./gates` and
 this exact mechanism (`verifyBinding`) rather than reimplementing it.
 
 ```ts
-import { computeDigest, validateBindingShape, verifyBinding } from "@vespeneventures/controller/policy";
-import type { PolicyBinding } from "@vespeneventures/controller/policy";
+import { computeDigest, validateBindingShape, verifyBinding } from "@clossys/controller/policy";
+import type { PolicyBinding } from "@clossys/controller/policy";
 
 const binding: PolicyBinding = { policyId: "example", digestAlgorithm: "sha256", digest: computeDigest("content") };
 const findings = verifyBinding(binding, "content"); // []
@@ -1663,7 +1663,7 @@ import {
   planNewPackage,
   runGovernanceCheck,
   type PackageLifecycleDocument,
-} from "@vespeneventures/controller";
+} from "@clossys/controller";
 
 const plan = planNewPackage({
   name: "@example/widgets",
@@ -1698,7 +1698,7 @@ For a proposed release, add the isolated tarball proof already owned by
 `release`:
 
 ```ts
-import { preflightGovernedPackage } from "@vespeneventures/controller";
+import { preflightGovernedPackage } from "@clossys/controller";
 
 const report = await preflightGovernedPackage(process.cwd(), "packages/widgets", lifecycle, {
   scope: "@example",
@@ -1812,15 +1812,15 @@ mismatch (or another binding finding), `2` when it could not run. Use
 ## Requirements
 
 Node 20+. ESM only. **Zero unconditional runtime dependencies.** Before
-issue #282, this package (as `@vespeneventures/governance`) declared exactly
-one: `@vespeneventures/controller/policy`. That dependency is gone — not removed, but
+issue #282, this package (as `@example/governance`) declared exactly
+one: `@clossys/controller/policy`. That dependency is gone — not removed, but
 absorbed: `policy`'s source now lives inside this package as the `./policy`
 subpath, so there is nothing left outside this package to depend on.
 
 TypeScript is declared an **optional** peer dependency again
 (`peerDependencies: { typescript: "~6.0.0" }` +
 `peerDependenciesMeta: { typescript: { optional: true } }`) — the same
-shape the former `@vespeneventures/auth` package used for optional peers such
+shape the former `@example/auth` package used for optional peers such
 as `svix`. This flag has flipped twice, and both changes were correct for
 their own moment:
 
@@ -1850,7 +1850,7 @@ header comments for the full history, and
 absent-peer import behavior on both sides of the split, not just the
 manifest declaration.
 
-A plain `import "@vespeneventures/controller"` (the root entry) still never
+A plain `import "@clossys/controller"` (the root entry) still never
 loads TypeScript at runtime: `runGovernanceCheck` and
 `preflightGovernedPackage` import the specific foundation/build-order
 functions they need directly, never a barrel. **Breaking change:** if you
@@ -1859,8 +1859,8 @@ source-aware secret-surface checks (`checkCredentialInventory`,
 `checkSecretReadiness`, `checkLocalSecretFiles`, `checkValueFreeSecretCatalog`,
 `checkProviderResourceNames`, `checkSecretName`, `detectRawSecretReads`,
 `checkCredentialSurfaceDrift`, or their associated types) from
-`@vespeneventures/controller/gates`, that subpath no longer carries them —
-import `@vespeneventures/controller/gates/secrets` instead, and install
+`@clossys/controller/gates`, that subpath no longer carries them —
+import `@clossys/controller/gates/secrets` instead, and install
 `typescript` if you have not already.
 
 An installed-but-incompatible `typescript` is still guarded explicitly:
@@ -1871,8 +1871,8 @@ version. See `src/internal/peer-version.ts` for the guard's own contract.
 
 **Registry note:** `npm.pkg.github.com`'s packument has historically
 omitted `peerDependenciesMeta` from published metadata (see
-[issue #226](https://github.com/vespeneventures/foundry/issues/226)), so an
-installer resolving `@vespeneventures/controller` from that registry sees
+[issue #226](https://github.com/clossys/platform/issues/226)), so an
+installer resolving `@clossys/controller` from that registry sees
 `typescript` as required regardless of the `optional: true` declared here —
 a consumer who only ever imports the root or `./gates` (and never
 `./gates/secrets`) still installs a TypeScript compiler onto this package's

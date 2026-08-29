@@ -1,7 +1,7 @@
 import { defineConfig } from "vitest/config";
 
 /**
- * Per-package vitest config for @vespeneventures/keeper.
+ * Per-package vitest config for @clossys/keeper.
  *
  * Default environment is "node" — the schema, the decision core and the CLI
  * have no DOM dependency at all. Only `./web`'s hook test needs a real

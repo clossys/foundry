@@ -2,7 +2,7 @@
  * `readStrategy` — the one place in this package that touches a filesystem.
  * Everything in `schema.ts` is pure shape; this function is what turns a
  * consumer's real `strategy/` directory into validated data, in the same
- * gather-don't-judge spirit `@vespeneventures/catalog`'s `buildCatalog`
+ * gather-don't-judge spirit `@example/catalog`'s `buildCatalog`
  * uses for a `packages/` directory: read what's there, validate it, and
  * record — never throw on — anything that could not be turned into usable
  * data. Judgement about what to DO with an incomplete bundle (fail a build,

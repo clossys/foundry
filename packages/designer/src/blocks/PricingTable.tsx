@@ -34,7 +34,7 @@ export interface PricingTier {
    * `isHighlighted` tier. A plain optional `ReactNode`, not a built-in
    * default string: this package ships no copy of its own (see this
    * package's README, "Public contract" — audience-facing words belong to
-   * `@vespeneventures/copy`), so there is nothing sensible to default this
+   * `@example/copy`), so there is nothing sensible to default this
    * to. Rendered regardless of `isHighlighted` if supplied — the two are
    * independent props, not a discriminated pair, so a tier can carry a
    * badge without the accent-border emphasis or vice versa if a consumer's

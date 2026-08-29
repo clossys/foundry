@@ -13,8 +13,8 @@
  * rather than re-derived here.
  */
 
-import { createGateReasons, foldGateResults, gateResultToExitCode } from "@vespeneventures/controller/gates";
-import type { GateResult } from "@vespeneventures/controller/gates";
+import { createGateReasons, foldGateResults, gateResultToExitCode } from "@clossys/controller/gates";
+import type { GateResult } from "@clossys/controller/gates";
 import type { LiveStateFinding, LiveStateReconciliationReason } from "../live-state.js";
 import { validateToolchainDeclaration, reconcileToolchain } from "../toolchain.js";
 import type { ToolchainDeclaration, ToolchainObservation } from "../toolchain.js";

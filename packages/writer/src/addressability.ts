@@ -28,7 +28,7 @@
  * and `path-exclusions.ts`'s `validatePathExclusions`/`matchesPathExclusion`
  * for the file-scope exclusion mechanism, exactly the way `scan.ts` itself
  * does. This file's own walker (`scanAddressabilitySources`) mirrors
- * `scan.ts`'s `scanCopySourceTree` and `@vespeneventures/ui`'s
+ * `scan.ts`'s `scanCopySourceTree` and `@example/ui`'s
  * `style-scan.ts`'s `scanStyleSources` closely (same extensions/skipDirs
  * defaults, same `SKIP_FILE_RE`, same fail-closed-on-unreadable-directory
  * contract) — a thin per-file dispatch loop, not a second tokenizer: the
@@ -187,7 +187,7 @@ export interface AddressabilityScanOptions {
 const DEFAULT_EXTENSIONS = [".ts", ".tsx", ".js", ".jsx"];
 const DEFAULT_SKIP_DIRS = new Set(["node_modules", ".git", "dist", "build", "coverage"]);
 
-/** `.test.ts(x)`, `.spec.ts(x)`, `.check.ts(x)`, and bare `.d.ts` — the identical pattern `scan.ts` and `@vespeneventures/ui`'s `style-scan.ts` both use, reused verbatim rather than reinvented (not exported by `scan.ts`, so redefined locally here — the same precedent `style-scan.ts` sets for its own copy of this constant). */
+/** `.test.ts(x)`, `.spec.ts(x)`, `.check.ts(x)`, and bare `.d.ts` — the identical pattern `scan.ts` and `@example/ui`'s `style-scan.ts` both use, reused verbatim rather than reinvented (not exported by `scan.ts`, so redefined locally here — the same precedent `style-scan.ts` sets for its own copy of this constant). */
 const SKIP_FILE_RE = /\.(test|spec|check)\.(ts|tsx|js|jsx)$|\.d\.ts$/;
 
 export type AddressabilityPosition = "markup-text" | "user-facing-attribute";

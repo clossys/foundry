@@ -7,7 +7,7 @@ import { promisify } from "node:util";
 import { afterEach, describe, expect, it } from "vitest";
 
 // Real subprocess tests against the BUILT dist/cli.js, matching
-// @vespeneventures/release's own subprocess-testing style (pack-round-trip.ts,
+// @example/release's own subprocess-testing style (pack-round-trip.ts,
 // preflight.test.ts): the whole point of this file is proving what a real
 // `node dist/cli.js` invocation does — exit code and stdout/stderr — which a
 // direct in-process call to main() could never prove, since it would bypass

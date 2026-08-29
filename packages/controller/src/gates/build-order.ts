@@ -6,7 +6,7 @@
  * `catalog`. This is that layer.
  *
  * Pure, no I/O: takes an already-built `Catalog` (from
- * `@vespeneventures/catalog`'s `buildCatalog`) and returns a build order
+ * `@example/catalog`'s `buildCatalog`) and returns a build order
  * without ever touching disk itself.
  */
 
@@ -18,10 +18,10 @@ import type { BuildOrderResult } from "./types.js";
 export interface ComputeBuildOrderOptions {
   /**
    * Passed straight through to `evaluateCatalog` and to
-   * `internalDependencyNamesOf` (both from `@vespeneventures/catalog`) —
+   * `internalDependencyNamesOf` (both from `@example/catalog`) —
    * restricts which of an entry's real `dependencies`/`peerDependencies`
    * count as edges in the graph this function sorts. See
-   * `@vespeneventures/catalog`'s `EvaluateCatalogOptions.scope` for the exact
+   * `@example/catalog`'s `EvaluateCatalogOptions.scope` for the exact
    * filtering rule.
    */
   scope?: string;
@@ -35,7 +35,7 @@ export interface ComputeBuildOrderOptions {
  * edges — i.e. decrement the in-degree of everything that depends on it.
  *
  * Cycle detection is NOT reimplemented here. `evaluateCatalog` (from
- * `@vespeneventures/catalog`) already finds cycles in exactly this graph via
+ * `@example/catalog`) already finds cycles in exactly this graph via
  * its own `dependency-cycle` rule; this function calls it first, and if it
  * reports any `dependency-cycle` finding, returns those findings as the
  * failure instead of attempting a sort on a graph already known to have a

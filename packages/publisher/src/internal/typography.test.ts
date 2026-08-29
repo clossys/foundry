@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { TOKENS } from "@vespeneventures/designer/tokens";
+import { TOKENS } from "@clossys/designer/tokens";
 import { ELEMENT_KINDS } from "../core/index.js";
 import { RenderError } from "./errors.js";
 import { flattenTokens } from "./tokens.js";
@@ -21,7 +21,7 @@ describe("ELEMENT_TYPOGRAPHY_ROLE — every entry names a real, live text-size t
       expect(role, `ELEMENT_TYPOGRAPHY_ROLE has no entry for ElementKind "${kind}"`).toBeDefined();
       expect(
         Object.prototype.hasOwnProperty.call(TOKENS, role),
-        `ELEMENT_TYPOGRAPHY_ROLE["${kind}"] = "${role}", which does not exist in @vespeneventures/designer/tokens' TOKENS registry`,
+        `ELEMENT_TYPOGRAPHY_ROLE["${kind}"] = "${role}", which does not exist in @clossys/designer/tokens' TOKENS registry`,
       ).toBe(true);
       expect(
         TOKENS[role]?.family,
@@ -46,7 +46,7 @@ describe("ELEMENT_FONT_FAMILY_ROLE — every entry names a real, live font-famil
       expect(role, `ELEMENT_FONT_FAMILY_ROLE has no entry for ElementKind "${kind}"`).toBeDefined();
       expect(
         Object.prototype.hasOwnProperty.call(TOKENS, role),
-        `ELEMENT_FONT_FAMILY_ROLE["${kind}"] = "${role}", which does not exist in @vespeneventures/designer/tokens' TOKENS registry`,
+        `ELEMENT_FONT_FAMILY_ROLE["${kind}"] = "${role}", which does not exist in @clossys/designer/tokens' TOKENS registry`,
       ).toBe(true);
       expect(TOKENS[role]?.family).toBe("font");
     }

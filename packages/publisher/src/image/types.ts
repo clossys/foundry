@@ -7,7 +7,7 @@ import type { AssetLookup, CopyLookup, ImageMeta } from "../core/index.js";
 export interface RenderImageOptions {
   /**
    * Resolves a `SlotBinding.copyId` into literal display text — the exact
-   * `CopyLookup` shape `@vespeneventures/publisher/core`'s own `resolveCopy` takes
+   * `CopyLookup` shape `@clossys/publisher/core`'s own `resolveCopy` takes
    * (see that function's doc comment). Omit when every binding in the
    * document uses `value`, never `copyId`; every `copyId` binding is then
    * treated as unresolved.
@@ -15,7 +15,7 @@ export interface RenderImageOptions {
   resolveCopyId?: CopyLookup;
   /**
    * Resolves a `SlotBinding.assetId` into a real asset — the exact
-   * `AssetLookup` shape `@vespeneventures/publisher/core`'s own `resolveAssets`
+   * `AssetLookup` shape `@clossys/publisher/core`'s own `resolveAssets`
    * takes. Omit when no binding in the document uses `assetId`; every
    * `assetId` binding is then treated as unresolved, which is ALWAYS fatal
    * for this channel (see `resolveCanvasLayout.ts`'s own doc comment,
@@ -27,7 +27,7 @@ export interface RenderImageOptions {
    * Passed straight through to `internal/tokens.ts`'s `flattenTokens` — a
    * caller with a real brand's token overrides supplies them here so every
    * `StyleBinding` color role in the document resolves against the brand's
-   * own values instead of `@vespeneventures/designer/tokens`' defaults. Omit to use
+   * own values instead of `@clossys/designer/tokens`' defaults. Omit to use
    * the un-branded defaults.
    */
   tokenOverrides?: Record<string, string>;

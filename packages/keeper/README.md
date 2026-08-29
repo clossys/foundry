@@ -1,4 +1,4 @@
-# @vespeneventures/keeper
+# @clossys/keeper
 
 **Everything about what you gave us, and what we understand from it.**
 
@@ -115,14 +115,14 @@ answer this package needs most.
 ## Install
 
 ```bash
-npm install @vespeneventures/keeper
+npm install @clossys/keeper
 ```
 
 Installing from this registry needs a GitHub personal access token with
 `read:packages` — see the repository root README.
 
 ```ts
-import { checkDisposal, decideHolding } from "@vespeneventures/keeper";
+import { checkDisposal, decideHolding } from "@clossys/keeper";
 ```
 
 ## The three gates
@@ -331,7 +331,7 @@ person through a client-shaped port, renders a verdict per item using the same
 as identically-shaped async functions on the same object.
 
 ```ts
-import { useHeldRecord } from "@vespeneventures/keeper/web";
+import { useHeldRecord } from "@clossys/keeper/web";
 ```
 
 Being forgotten is reachable through the same call shape as being shown. A

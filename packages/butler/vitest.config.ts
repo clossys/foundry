@@ -1,7 +1,7 @@
 import { defineConfig } from "vitest/config";
 
 /**
- * Per-package vitest config for @vespeneventures/butler.
+ * Per-package vitest config for @clossys/butler.
  *
  * Default environment is "node" — the core, `./inbound`, and the CLI have no
  * DOM dependency at all. Only `./web`'s hook test needs a real `document`,

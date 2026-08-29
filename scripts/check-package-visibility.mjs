@@ -27,7 +27,7 @@
 // GitHub Packages defaults every newly published npm package to PRIVATE,
 // per package (not per version), regardless of this repository being
 // public. Nothing before this gate checked the resulting state.
-// @vespeneventures/ui sat private across 12 published versions — completely
+// @example/ui sat private across 12 published versions — completely
 // uninstallable by any external reader — while its README confidently
 // documented `npm install` instructions that could not possibly work. Four
 // packages were found private in total; they were flipped public by hand
@@ -46,7 +46,7 @@
 // WHERE THE DECLARED INTENT LIVES, AND WHY NOT package-lifecycle.json
 // ----------------------------------------------------------------------
 // docs/contracts/package-lifecycle.json's schema is owned and exhaustively
-// validated by the PUBLISHED @vespeneventures/governance package —
+// validated by the PUBLISHED @example/governance package —
 // packages/controller/src/lifecycle.ts's ENTRY_KEYS allowlist rejects any
 // field it does not already recognise. Adding an `intendedVisibility` field
 // there would force a governance version bump and rewritten test fixtures
@@ -360,7 +360,7 @@ export async function fetchPackageVisibility({ owner, name, token, fetchImpl }) 
  * `scope`, which is either package-scope.json's own declared scope or, if
  * that file is unavailable, `@${owner}` — the ordinary convention this
  * workspace itself follows (`owner` "vespeneventures", `scope`
- * "@vespeneventures").
+ * "@clossys").
  */
 export function normalizeRegistryName(rawName, scope) {
   return rawName.startsWith("@") ? rawName : `${scope}/${rawName}`;
@@ -799,7 +799,7 @@ async function main() {
   // run AFTER publish.yml has already uploaded a tarball, which makes it a
   // detector rather than a gate — it reports a fault that has already shipped.
   //
-  // That is not hypothetical. `@vespeneventures/secret-scan` was published
+  // That is not hypothetical. `@example/secret-scan` was published
   // with no visibility declaration, and every subsequent publish run went red
   // on this check for a data omission that was fully knowable offline, at
   // review time, before anything reached the registry. Four consecutive runs

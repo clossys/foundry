@@ -38,7 +38,7 @@
  * This file used to carry its own `DEFAULT_FONT_SIZE_PX`/`DEFAULT_FONT_FAMILY`
  * placeholder table, with a doc comment claiming there was "no real
  * typography token to resolve instead." That claim was false —
- * `@vespeneventures/designer/tokens` ships a full `--text-*`/`--font-*` scale — and
+ * `@clossys/designer/tokens` ships a full `--text-*`/`--font-*` scale — and
  * the table has been deleted. `./renderSlots.ts` (this engine's other half)
  * now resolves real font size/family per slot via `../internal/
  * typography.ts`'s `resolveElementTypography`/`resolveElementFontFamily`,
@@ -108,12 +108,12 @@ export interface PixelRect {
  * units, which slot geometry must never know about (see
  * `computeCanvasDimensions`'s own doc comment).
  *
- * Reuses `@vespeneventures/publisher/core`'s `frameToInches` rather than
+ * Reuses `@clossys/publisher/core`'s `frameToInches` rather than
  * re-deriving the identical `fraction * dimension` multiplication by hand.
  * That function's `CanvasInches` argument is unit-agnostic in practice — it
  * is a plain `{ width, height }` multiplied straight through with no
  * inch-specific behavior anywhere in its implementation (see `frame.ts`).
- * The "Inches" in its name describes what `@vespeneventures/publisher/core`'s own
+ * The "Inches" in its name describes what `@clossys/publisher/core`'s own
  * `print` channel happens to measure that argument in; this module measures
  * the exact same shape in SVG user units (`px`-equivalent) instead, and the
  * function itself does not — and cannot — tell the difference.

@@ -29,7 +29,7 @@ describe("severityCounts — exhaustiveness over CatalogFinding.severity (B3)", 
   it("throws on an unrecognized severity rather than silently counting it as a warning", () => {
     // A finding shaped by something other than TypeScript's own checking —
     // e.g. CatalogFinding[] parsed from JSON, or a caller on a stale
-    // @vespeneventures/catalog version with a severity value this version
+    // @example/catalog version with a severity value this version
     // doesn't know about. Before this fix, severityCounts' `else` branch
     // treated ANY non-"error" severity as a warning: this exact input would
     // have silently returned `{ errors: 0, warnings: 1 }` with zero

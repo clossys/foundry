@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 
 /**
  * Guards a real disclosure that was caught by review, not by any test: a
- * bare `import "@vespeneventures/controller"` — the root entry, the one a
+ * bare `import "@clossys/controller"` — the root entry, the one a
  * consumer reaches for first — transitively loaded the full TypeScript
  * compiler. Not because the root's own code needs it, but because
  * `governance.ts` and `release/preflight.ts` each imported
@@ -179,7 +179,7 @@ function runtimeImportsOf(absPath: string): string[] {
   const specifiers: string[] = [];
   for (const m of code.matchAll(IMPORT_RE)) {
     const spec = m[1] as string;
-    if (!spec.startsWith(".")) continue; // bare specifiers (node:*, @vespeneventures/*, "typescript") are leaves, not traced further
+    if (!spec.startsWith(".")) continue; // bare specifiers (node:*, @clossys/*, "typescript") are leaves, not traced further
     specifiers.push(spec);
   }
   return specifiers.map((spec) => normalize(join(dirname(absPath), spec)).replace(/\.js$/, ".ts"));

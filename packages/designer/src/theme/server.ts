@@ -1,6 +1,6 @@
 /**
- * @vespeneventures/designer/theme/server — the server-safe subset of
- * `@vespeneventures/designer/theme`. See `atoms/server.ts`'s own header for the
+ * @clossys/designer/theme/server — the server-safe subset of
+ * `@clossys/designer/theme`. See `atoms/server.ts`'s own header for the
  * full #375 rationale this file shares: `theme/index.ts` re-exports every
  * member eagerly from one module, so `ThemeProvider` (a genuine client
  * context provider, `createContext` at module scope) and `ThemeToggle`

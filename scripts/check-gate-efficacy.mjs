@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // check-gate-efficacy — report what this repository's own gates actually did,
-// computed by @vespeneventures/observer from GitHub Actions run history.
+// computed by @clossys/observer from GitHub Actions run history.
 //
 //   node scripts/check-gate-efficacy.mjs [--runs 100] [--json]
 //
@@ -40,7 +40,7 @@
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-import { computeGateEfficacy, isCouldNotRead } from "@vespeneventures/observer";
+import { computeGateEfficacy, isCouldNotRead } from "@clossys/observer";
 
 import { collectJobs, createGateRunHistoryReader, gatesSeen, unsourcedOutcomes, toRunRecords } from "./gate-run-history.mjs";
 

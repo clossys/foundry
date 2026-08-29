@@ -1,5 +1,5 @@
 /**
- * `@vespeneventures/giver/record` — the document seam, and the emitters
+ * `@clossys/giver/record` — the document seam, and the emitters
  * that turn one verdict into the records the gates read back.
  *
  * THE SEAM IS A DOCUMENT, NOT AN IMPORT

@@ -1,4 +1,4 @@
-# This repository's own caller for @vespeneventures/verify-standards.
+# This repository's own caller for @example/verify-standards.
 #
 # The package holds the grammar and the decisions; a consuming repository
 # holds the values, the credential, and the collection. This file is the

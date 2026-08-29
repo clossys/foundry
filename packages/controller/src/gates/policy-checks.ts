@@ -3,7 +3,7 @@
  * orchestration: multiple `PolicyCheck`s in, one aggregated
  * `PolicyCheckResult[]` out, each one clearly attributable to the
  * `policyId` that produced it. Every binding is verified using
- * `@vespeneventures/controller/policy`'s own `verifyBinding` — no verification logic is
+ * `@clossys/controller/policy`'s own `verifyBinding` — no verification logic is
  * reimplemented here.
  *
  * This package invents no notion of "where a binding declaration lives" or

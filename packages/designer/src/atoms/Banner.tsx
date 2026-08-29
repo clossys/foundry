@@ -34,7 +34,7 @@ export interface BannerProps extends Omit<HTMLAttributes<HTMLDivElement>, "role"
 }
 
 /**
- * A persistent inline message region — not a toast (see `@vespeneventures/designer/shell`'s
+ * A persistent inline message region — not a toast (see `@clossys/designer/shell`'s
  * `Toaster`): this renders exactly where it sits in the page's normal render
  * tree (a page banner above a form, a persistent warning inside a card), not
  * through a portal, not queued, not auto-dismissing on a timer. Plain

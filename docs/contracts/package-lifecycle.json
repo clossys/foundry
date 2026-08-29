@@ -2,8 +2,80 @@
   "schemaVersion": 1,
   "packages": [
     {
-      "name": "@vespeneventures/starter",
-      "status": "published"
+      "name": "@clossys/advisor",
+      "status": "active"
+    },
+    {
+      "name": "@clossys/architect",
+      "status": "active"
+    },
+    {
+      "name": "@clossys/bouncer",
+      "status": "active"
+    },
+    {
+      "name": "@clossys/builder",
+      "status": "active"
+    },
+    {
+      "name": "@clossys/butler",
+      "status": "active"
+    },
+    {
+      "name": "@clossys/controller",
+      "status": "active"
+    },
+    {
+      "name": "@clossys/designer",
+      "status": "active"
+    },
+    {
+      "name": "@clossys/giver",
+      "status": "active"
+    },
+    {
+      "name": "@clossys/influencer",
+      "status": "active"
+    },
+    {
+      "name": "@clossys/inspector",
+      "status": "active"
+    },
+    {
+      "name": "@clossys/integrator",
+      "status": "active"
+    },
+    {
+      "name": "@clossys/keeper",
+      "status": "active"
+    },
+    {
+      "name": "@clossys/locksmith",
+      "status": "active"
+    },
+    {
+      "name": "@clossys/messenger",
+      "status": "active"
+    },
+    {
+      "name": "@clossys/observer",
+      "status": "active"
+    },
+    {
+      "name": "@clossys/publisher",
+      "status": "active"
+    },
+    {
+      "name": "@clossys/starter",
+      "status": "active"
+    },
+    {
+      "name": "@clossys/strategist",
+      "status": "active"
+    },
+    {
+      "name": "@clossys/writer",
+      "status": "active"
     },
     {
       "name": "@vespeneventures/advisor",
@@ -17,7 +89,7 @@
       "name": "@vespeneventures/auth",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/bouncer",
+        "name": "@clossys/bouncer",
         "range": "^0.1.0"
       },
       "deprecatedOn": "2026-08-22",
@@ -42,7 +114,7 @@
       "name": "@vespeneventures/catalog",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/controller",
+        "name": "@clossys/controller",
         "range": "^0.8.0"
       },
       "deprecatedOn": "2026-08-18",
@@ -55,7 +127,7 @@
       "name": "@vespeneventures/comms",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/messenger",
+        "name": "@clossys/messenger",
         "range": "^0.1.0"
       },
       "deprecatedOn": "2026-08-24",
@@ -68,7 +140,7 @@
       "name": "@vespeneventures/consent",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/butler",
+        "name": "@clossys/butler",
         "range": "^0.1.0"
       },
       "deprecatedOn": "2026-08-22",
@@ -85,7 +157,7 @@
       "name": "@vespeneventures/conventions",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/controller",
+        "name": "@clossys/controller",
         "range": "^0.8.0"
       },
       "deprecatedOn": "2026-08-18",
@@ -98,7 +170,7 @@
       "name": "@vespeneventures/copy",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/writer",
+        "name": "@clossys/writer",
         "range": "^0.3.0"
       },
       "deprecatedOn": "2026-08-21",
@@ -111,7 +183,7 @@
       "name": "@vespeneventures/deployment",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/builder",
+        "name": "@clossys/builder",
         "range": "^0.7.0"
       },
       "deprecatedOn": "2026-08-18",
@@ -128,7 +200,7 @@
       "name": "@vespeneventures/domain",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/architect",
+        "name": "@clossys/architect",
         "range": "^0.1.0"
       },
       "deprecatedOn": "2026-08-24",
@@ -141,7 +213,7 @@
       "name": "@vespeneventures/domain-model",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/architect",
+        "name": "@clossys/architect",
         "range": "^0.1.0"
       },
       "deprecatedOn": "2026-08-11",
@@ -153,7 +225,7 @@
       "name": "@vespeneventures/gates",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/controller",
+        "name": "@clossys/controller",
         "range": "^0.8.0"
       },
       "deprecatedOn": "2026-08-18",
@@ -170,7 +242,7 @@
       "name": "@vespeneventures/governance",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/controller",
+        "name": "@clossys/controller",
         "range": "^0.8.0"
       },
       "deprecatedOn": "2026-08-18",
@@ -178,6 +250,10 @@
       "decision": "docs/DECISIONS.md#9-recutting-the-workspace-surface-into-six-job-shaped-packages",
       "migration": "packages/controller/README.md",
       "forwardsToReplacement": false
+    },
+    {
+      "name": "@vespeneventures/influencer",
+      "status": "published"
     },
     {
       "name": "@vespeneventures/inspector",
@@ -188,10 +264,6 @@
       "status": "published"
     },
     {
-      "name": "@vespeneventures/influencer",
-      "status": "published"
-    },
-    {
       "name": "@vespeneventures/keeper",
       "status": "published"
     },
@@ -199,7 +271,7 @@
       "name": "@vespeneventures/ledger",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/publisher",
+        "name": "@clossys/publisher",
         "range": "^0.1.0"
       },
       "deprecatedOn": "2026-08-21",
@@ -224,7 +296,7 @@
       "name": "@vespeneventures/policy",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/controller",
+        "name": "@clossys/controller",
         "range": "^0.8.0"
       },
       "deprecatedOn": "2026-08-18",
@@ -237,7 +309,7 @@
       "name": "@vespeneventures/provisioning",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/builder",
+        "name": "@clossys/builder",
         "range": "^0.7.0"
       },
       "deprecatedOn": "2026-08-18",
@@ -254,7 +326,7 @@
       "name": "@vespeneventures/release",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/controller",
+        "name": "@clossys/controller",
         "range": "^0.8.0"
       },
       "deprecatedOn": "2026-08-18",
@@ -267,7 +339,7 @@
       "name": "@vespeneventures/repository",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/controller",
+        "name": "@clossys/controller",
         "range": "^0.8.0"
       },
       "deprecatedOn": "2026-08-18",
@@ -280,7 +352,7 @@
       "name": "@vespeneventures/review",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/controller",
+        "name": "@clossys/controller",
         "range": "^0.8.0"
       },
       "deprecatedOn": "2026-08-18",
@@ -293,7 +365,7 @@
       "name": "@vespeneventures/secret-scan",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/inspector",
+        "name": "@clossys/inspector",
         "range": "^0.1.0"
       },
       "deprecatedOn": "2026-08-18",
@@ -306,7 +378,7 @@
       "name": "@vespeneventures/secrets",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/locksmith",
+        "name": "@clossys/locksmith",
         "range": "^0.1.0"
       },
       "deprecatedOn": "2026-08-18",
@@ -316,6 +388,10 @@
       "forwardsToReplacement": false
     },
     {
+      "name": "@vespeneventures/starter",
+      "status": "published"
+    },
+    {
       "name": "@vespeneventures/strategist",
       "status": "published"
     },
@@ -323,7 +399,7 @@
       "name": "@vespeneventures/strategy",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/strategist",
+        "name": "@clossys/strategist",
         "range": "^0.1.0"
       },
       "deprecatedOn": "2026-08-20",
@@ -336,7 +412,7 @@
       "name": "@vespeneventures/surface",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/publisher",
+        "name": "@clossys/publisher",
         "range": "^0.1.0"
       },
       "deprecatedOn": "2026-08-21",
@@ -349,7 +425,7 @@
       "name": "@vespeneventures/tokens",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/designer",
+        "name": "@clossys/designer",
         "range": "^0.2.0"
       },
       "deprecatedOn": "2026-08-11",
@@ -362,7 +438,7 @@
       "name": "@vespeneventures/ui",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/designer",
+        "name": "@clossys/designer",
         "range": "^0.2.0"
       },
       "deprecatedOn": "2026-08-21",
@@ -375,7 +451,7 @@
       "name": "@vespeneventures/verify-standards",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/inspector",
+        "name": "@clossys/inspector",
         "range": "^0.1.0"
       },
       "deprecatedOn": "2026-08-18",
@@ -388,7 +464,7 @@
       "name": "@vespeneventures/voice",
       "status": "retired",
       "replacement": {
-        "name": "@vespeneventures/writer",
+        "name": "@clossys/writer",
         "range": "^0.3.0"
       },
       "deprecatedOn": "2026-08-11",

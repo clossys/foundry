@@ -2,7 +2,7 @@
 
 This document is the consumer-side half of `builder-verify-toolchain`, the
 first shared CI gate this package ships (#257). It is the same split
-`@vespeneventures/verify-standards` already uses, applied to a new subject:
+`@example/verify-standards` already uses, applied to a new subject:
 the package holds the grammar and the decisions; a consuming repository
 holds the values, the credentials, and the collection.
 
@@ -17,9 +17,9 @@ below is a placeholder for something the consuming repository chooses.
 repository that has, until now, only ever shipped importable TypeScript:
 
 - **Foundry hosts a reusable workflow directly**
-  (`uses: vespeneventures/foundry/.github/workflows/_gate.yml@<ref>`).
+  (`uses: clossys/platform/.github/workflows/_gate.yml@<ref>`).
 - **Foundry publishes a composite GitHub Action**
-  (`uses: vespeneventures/foundry/actions/gate@<ref>`).
+  (`uses: clossys/platform/actions/gate@<ref>`).
 - **Foundry publishes the gate's logic as an npm package; each repository
   keeps a thin workflow of its own, invoking it.**
 
@@ -36,7 +36,7 @@ The package-and-thin-workflow shape is the only one that crosses the
 boundary the way this account family already permits it to be crossed, and
 it costs nothing new to build: this package's release, versioning, and
 safety machinery already exist for every other export it ships. It is also
-already proven inside this same repository — `@vespeneventures/verify-standards`
+already proven inside this same repository — `@example/verify-standards`
 ships exactly this split for a different set of checks, and the CLI below
 reuses its exit-code contract and its staleness-floor mechanism rather than
 inventing either a second time.
@@ -87,8 +87,8 @@ jobs:
       - uses: actions/setup-node@<PIN_A_FULL_COMMIT_SHA>
         with:
           node-version: 20
-          registry-url: https://npm.pkg.github.com
-          scope: "@vespeneventures"
+          registry-url: https://registry.npmjs.org
+          scope: "@clossys"
 
       - run: npm ci --ignore-scripts
         env:
@@ -144,7 +144,7 @@ jobs:
           # `could-not-verify` (2) run renders its real verdict into the job
           # summary while the step itself goes green. This already happened
           # for real to a sibling gate in this repository (see
-          # @vespeneventures/verify-standards's own caller-workflow document)
+          # @example/verify-standards's own caller-workflow document)
           # and is not a hypothetical here either.
           #
           # Two independent guards:
@@ -159,7 +159,7 @@ jobs:
           status=0
           npx builder-verify-toolchain \
             --inputs verify-toolchain-inputs.json \
-            --declared-range "$(node -p "require('./package.json').devDependencies['@vespeneventures/builder']")" \
+            --declared-range "$(node -p "require('./package.json').devDependencies['@clossys/builder']")" \
             > "$report" || status=$?
           cat "$report"
           cat "$report" >> "$GITHUB_STEP_SUMMARY"

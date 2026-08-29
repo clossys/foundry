@@ -5,11 +5,11 @@
  * this package's own status — `gradeFleetCoverage` was invocable only by
  * someone writing TypeScript against it directly.
  *
- * PORT-INJECTED, LIKE `@vespeneventures/builder`'s `ci/cli.ts` + `ci/bin.ts`
+ * PORT-INJECTED, LIKE `@clossys/builder`'s `ci/cli.ts` + `ci/bin.ts`
  * -----------------------------------------------------------------------------
  * Everything this file touches outside itself — reading the input file,
  * writing output — goes through `CliPort`, exactly the split
- * `@vespeneventures/builder`'s `ci/cli.ts`/`ci/bin.ts` already uses: `./bin.ts`
+ * `@clossys/builder`'s `ci/cli.ts`/`ci/bin.ts` already uses: `./bin.ts`
  * is the installed executable and supplies the real port (`node:fs`,
  * `process.stdout`/`stderr`); this file exports `main(argv, port)`, testable
  * with an in-memory port and no real filesystem. `main` returns the exit
@@ -29,7 +29,7 @@
  * repository's coverage-declaration file (see `./coverage-declaration.ts`'s
  * header for the "no credentials" transport this is designed for) and
  * already computed each repository's installed inventory (for example with
- * `@vespeneventures/integrator`'s `readInstalledInventory`, run in the
+ * `@clossys/integrator`'s `readInstalledInventory`, run in the
  * CALLER's own script — this package adds no dependency on that package to
  * do so) before this command ever runs. "Wiring a caller's inventory in at
  * the call site" means exactly this: the data arrives already materialized,

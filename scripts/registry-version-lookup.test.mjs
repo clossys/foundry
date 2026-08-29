@@ -46,13 +46,13 @@ test("bareName strips the scope, leaving an unscoped name unchanged", () => {
 
 test("probeOneVersion: the exact version is present on the registry", async () => {
   const fetchImpl = queueFetch([jsonResponse(200, versionsPage(["0.2.4", "0.2.3", "0.2.2"]))]);
-  const outcome = await probeOneVersion({ owner: OWNER, name: "@vespeneventures/auth", version: "0.2.4", token: TOKEN, fetchImpl });
+  const outcome = await probeOneVersion({ owner: OWNER, name: "@example/auth", version: "0.2.4", token: TOKEN, fetchImpl });
   assert.deepEqual(outcome, { kind: "known", hasVersion: true });
 });
 
 test("probeOneVersion: the package exists but the exact version is absent — definitively publishable", async () => {
   const fetchImpl = queueFetch([jsonResponse(200, versionsPage(["0.2.3", "0.2.2"]))]);
-  const outcome = await probeOneVersion({ owner: OWNER, name: "@vespeneventures/auth", version: "0.2.4", token: TOKEN, fetchImpl });
+  const outcome = await probeOneVersion({ owner: OWNER, name: "@example/auth", version: "0.2.4", token: TOKEN, fetchImpl });
   assert.deepEqual(outcome, { kind: "known", hasVersion: false });
 });
 

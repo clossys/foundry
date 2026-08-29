@@ -29,7 +29,7 @@
  * Enforcement rules are one surface. The other is a policy *document* whose
  * content is supposed to be stable — where drift means "this file is no
  * longer the file we agreed to." That is a content-addressing problem, and
- * `@vespeneventures/controller/policy` already solves it: commit a digest, verify a
+ * `@clossys/controller/policy` already solves it: commit a digest, verify a
  * later-materialized copy against it byte-for-byte. This check accepts such
  * bindings alongside the rule comparison and uses that package rather than
  * hashing anything itself. A binding whose document was not materialized for
@@ -46,10 +46,10 @@
  * Zero I/O. Pure function of already-collected observations.
  */
 
-import { createGateReasons, gateSatisfied, gateViolated } from "@vespeneventures/controller/gates";
-import type { GateResult } from "@vespeneventures/controller/gates";
-import { validateBindingShape, verifyBinding } from "@vespeneventures/controller/policy";
-import type { PolicyBinding } from "@vespeneventures/controller/policy";
+import { createGateReasons, gateSatisfied, gateViolated } from "@clossys/controller/gates";
+import type { GateResult } from "@clossys/controller/gates";
+import { validateBindingShape, verifyBinding } from "@clossys/controller/policy";
+import type { PolicyBinding } from "@clossys/controller/policy";
 import { isRecord } from "./shape.js";
 import type { CheckFinding } from "./types.js";
 
@@ -66,7 +66,7 @@ export interface PolicyRequirement {
 
 /** A policy document whose content is expected not to change, bound by digest. */
 export interface PolicyDocumentExpectation {
-  /** The commitment, in `@vespeneventures/controller/policy`'s own shape. */
+  /** The commitment, in `@clossys/controller/policy`'s own shape. */
   readonly binding: PolicyBinding;
   /**
    * The document's content as materialized for this run. Absent means the

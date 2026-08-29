@@ -24,9 +24,9 @@ describe("filesystem containment", () => {
 });
 
 describe("manifest-derived executable", () => {
-  const expected = { name: "@vespeneventures/advisor", version: "0.1.3", integrity, bin: "advisor-check" };
+  const expected = { name: "@clossys/advisor", version: "0.1.3", integrity, bin: "advisor-check" };
   function installed(bin: string, manifest: Record<string, unknown> = {}): string {
-    const directory = root(); const packageRoot = join(directory, "node_modules", "@vespeneventures", "advisor"); mkdirSync(join(packageRoot, "dist"), { recursive: true }); writeFileSync(join(packageRoot, "dist", "cli.js"), "export {};\n"); writeFileSync(join(packageRoot, "package.json"), JSON.stringify({ name: expected.name, version: expected.version, bin: { [expected.bin]: bin }, ...manifest })); return directory;
+    const directory = root(); const packageRoot = join(directory, "node_modules", "@clossys", "advisor"); mkdirSync(join(packageRoot, "dist"), { recursive: true }); writeFileSync(join(packageRoot, "dist", "cli.js"), "export {};\n"); writeFileSync(join(packageRoot, "package.json"), JSON.stringify({ name: expected.name, version: expected.version, bin: { [expected.bin]: bin }, ...manifest })); return directory;
   }
   it("derives the clean bin from the installed manifest", () => {
     expect(resolveInstalledBin(installed("./dist/cli.js"), expected)).toContain("dist/cli.js");

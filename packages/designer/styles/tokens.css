@@ -1,5 +1,5 @@
 /* ════════════════════════════════════════════════════════════════════
- * @vespeneventures/designer · tokens.css
+ * @clossys/designer · tokens.css
  * ────────────────────────────────────────────────────────────────────
  * PRIMITIVES — the first of three layers. Every value below is a neutral
  * greyscale default — nothing here presumes a brand. That is deliberate:
@@ -10,12 +10,12 @@
  *
  * THE THREE-LAYER CONTRACT
  *
- *   @import "@vespeneventures/designer/tokens.css";   -- primitives, this file
+ *   @import "@clossys/designer/tokens.css";   -- primitives, this file
  *   @import "./brand.css";                           -- brand binding, yours
  *   @import "./extensions.css";                      -- consumer extensions, optional
  *
  * The second layer is your own file, started from
- * `@vespeneventures/designer/brand-template.css`, that overrides the tokens
+ * `@clossys/designer/brand-template.css`, that overrides the tokens
  * below under `:root[data-brand-bound]`. The third layer is anything
  * genuinely specific to your project that doesn't belong in a shared
  * vocabulary — give it its own prefix, don't smuggle it in here.
@@ -135,7 +135,7 @@
  * <html> the same way as `data-brand-bound` — in server-rendered markup,
  * not a post-hydration effect, or it still flashes once before removal. */
 html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
-  content: "No brand binding — rendering greyscale primitives. See @vespeneventures/designer/brand-template.css";
+  content: "No brand binding — rendering greyscale primitives. See @clossys/designer/brand-template.css";
   position: fixed;
   top: 0;
   right: 0;
@@ -420,9 +420,9 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --ui-density-row:                var(--spacing-3xl, 48px);
 
   /* ════════════════════════════════════════════════════════════════
-   * UI · ICON (4 · the render contract for @vespeneventures/designer's Icon
+   * UI · ICON (4 · the render contract for @clossys/designer's Icon
    * atom — no Tailwind namespace. sm/md/lg ALIAS the same three
-   * --spacing-* steps @vespeneventures/designer's own glyph data already
+   * --spacing-* steps @clossys/designer's own glyph data already
    * rendered at (16/24/32px) before this family existed — coherent with
    * the padding scale by default, the same alias-with-fallback shape
    * --ui-density-* above already uses, while still overridable
@@ -704,7 +704,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
 /* ─── TOKEN CSS PRESENCE SENTINEL — public contract ──────────────────
  * Declares exactly one custom property, read back only — never rendered,
  * never visible. Lets `assertTokenStylesLoaded`
- * (`@vespeneventures/designer/tokens`) tell, at runtime, whether THIS file was
+ * (`@clossys/designer/tokens`) tell, at runtime, whether THIS file was
  * actually imported: without it, every class this package's components
  * render (`bg-accent`, `text-ink-primary`, ...) is a Tailwind utility
  * that resolves to nothing, and every component renders unstyled with no

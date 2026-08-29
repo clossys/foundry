@@ -2,7 +2,7 @@
  * `assertPeerVersion` — the runtime half of `./web`'s "optional peer, no
  * install-time signal in either direction" problem. `react`/`react-dom` are
  * declared `peerDependenciesMeta: { optional: true }` (see package.json) so
- * a consumer can install `@vespeneventures/butler` (the root, provider-
+ * a consumer can install `@clossys/butler` (the root, provider-
  * neutral core) without ever installing React — only `./web` needs it. But
  * an ABSENT or OUT-OF-RANGE `react` produces no signal of any kind without
  * this guard: a consumer on an incompatible React version would otherwise
@@ -21,7 +21,7 @@
  * — identical algorithm, copied rather than imported across a package
  * boundary for the structural reason that file's own header gives: that
  * package does not expose this as part of its public API surface, and even
- * if it did, `@vespeneventures/butler` would gain nothing by taking a real
+ * if it did, `@clossys/butler` would gain nothing by taking a real
  * runtime dependency on a sibling just to reach one shared utility, and its
  * "zero runtime dependencies" claim would then be wrong. Keep the copies in
  * sync by hand if the ported range algorithm ever changes.

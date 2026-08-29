@@ -1,7 +1,7 @@
 import { defineConfig } from "vitest/config";
 
 /**
- * Per-package vitest config for @vespeneventures/designer.
+ * Per-package vitest config for @clossys/designer.
  * jsdom, because these tests render real React components and drive them
  * with @testing-library/react's queries and keyboard/pointer events —
  * unlike the token layer, which only parses CSS as text.

@@ -1,4 +1,4 @@
-# @vespeneventures/observer
+# @clossys/observer
 
 Telemetry contracts, redaction as a tested contract, gate efficacy measured
 from caller-supplied run history, and a fleet package-coverage grader with
@@ -6,7 +6,7 @@ a CLI. The measurer, never the measured: this package computes whether a
 gate is working and never judges a change itself.
 
 ```bash
-npm install @vespeneventures/observer
+npm install @clossys/observer
 ```
 
 ## The job
@@ -127,7 +127,7 @@ one cell is unclassified, or the matrix itself was empty — see "An empty
 matrix is never satisfied" below).
 
 The installed inventory is **caller-supplied**, on purpose: this package
-adds no dependency on `@vespeneventures/integrator` to compute it.
+adds no dependency on `@clossys/integrator` to compute it.
 `FleetInstalledInventory` is a structural match for integrator's own
 `InstalledInventory` (`packages/integrator/src/inventory.ts`), named here
 rather than imported — a real `InstalledInventory` value satisfies it
@@ -175,7 +175,7 @@ JSON file committed to a repository's own default branch at one fixed
 path, read with a bare, unauthenticated HTTP GET against the hosting
 provider's raw-content endpoint. `parseCoverageDeclaration` and
 `gradeFleetCoverage` never fetch anything themselves — they take the
-already-fetched body, exactly as `@vespeneventures/builder`'s
+already-fetched body, exactly as `@clossys/builder`'s
 `observation-bundle.ts` already does for its own self-published contract.
 
 ### An empty matrix is never `satisfied`
@@ -260,7 +260,7 @@ real secret disappears.
 green offline check is not evidence the work is live.
 
 The canonical home for this shape is
-`@vespeneventures/controller/conventions` (see `live-state-reconciliation.md`
+`@clossys/controller/conventions` (see `live-state-reconciliation.md`
 in that package's shipped convention documents). `controller` owns every
 rule this repository's tiers share and has no dependency of its own, so
 `builder` — which already depends on `controller` — re-exports its copy
@@ -307,7 +307,7 @@ import {
   serializeEventAsJSON,
   serializeEventAllForms,
   type TelemetryEvent,
-} from "@vespeneventures/observer";
+} from "@clossys/observer";
 
 const event: TelemetryEvent = {
   id: "evt-1",
@@ -327,7 +327,7 @@ serializeEventAsJSON(event); // token never appears in the output
 import {
   computeGateEfficacy,
   type RunHistoryReader,
-} from "@vespeneventures/observer";
+} from "@clossys/observer";
 
 // You supply this. observer ships no implementation and calls no API.
 const reader: RunHistoryReader = {
@@ -349,7 +349,7 @@ const report = await computeGateEfficacy("secret-scan", reader, landedChangeOutc
 import {
   computeEscapeRate,
   computeUnobservedSurface,
-} from "@vespeneventures/observer";
+} from "@clossys/observer";
 
 const escapeRate = computeEscapeRate("secret-scan", landedChangeOutcomes);
 const unobservedSurface = computeUnobservedSurface(declaredSubjects, presenceReads);
@@ -407,7 +407,7 @@ const unobservedSurface = computeUnobservedSurface(declaredSubjects, presenceRea
 | `WriteCoverageDeclarationInput` | type | `writeCoverageDeclaration`'s input: `repository`, `declaredAbsences`. |
 | `writeCoverageDeclaration(input)` | function | Builds and serializes a well-formed declaration from a `WriteCoverageDeclarationInput`. Throws on an invalid one. |
 | `CoverageCellState` | type | `"installed" \| "declared-absent" \| "unclassified"`. |
-| `FleetInstalledPackage` / `FleetInstalledInventory` | type | Structural match for `@vespeneventures/integrator`'s `InstalledPackage`/`InstalledInventory`, not imported. |
+| `FleetInstalledPackage` / `FleetInstalledInventory` | type | Structural match for `@clossys/integrator`'s `InstalledPackage`/`InstalledInventory`, not imported. |
 | `UNCLASSIFIED_REASONS` / `UnclassifiedReason` | value / type | The finite set of reasons a cell can be `unclassified` for. |
 | `CoverageCell` | type | `InstalledCoverageCell \| DeclaredAbsentCoverageCell \| UnclassifiedCoverageCell` — one graded cell. |
 | `FleetCoverageContradiction` | type | A package both installed and declared-absent for the same repository. |
@@ -433,7 +433,7 @@ const unobservedSurface = computeUnobservedSurface(declaredSubjects, presenceRea
   the gate it measures" above.
 - **`gradeFleetCoverage` never fetches a declaration or reads a manifest.**
   Both are caller-supplied — see "Fleet package coverage" above. This
-  package adds no dependency on `@vespeneventures/integrator` to compute an
+  package adds no dependency on `@clossys/integrator` to compute an
   installed inventory itself.
 
 ## Requirements

@@ -1,8 +1,8 @@
 /**
  * Structural validation for a candidate `ComposeDocument`, hand-rolled in
  * the same plain-type-guard, accumulate-and-keep-going style as
- * `@vespeneventures/strategy`'s `validation.ts`, `@vespeneventures/policy`'s
- * `validate.ts`, and `@vespeneventures/writer`'s `schema.ts` — no schema
+ * `@example/strategy`'s `validation.ts`, `@example/policy`'s
+ * `validate.ts`, and `@clossys/writer`'s `schema.ts` — no schema
  * library, for the same reason all three give: this package's entire job
  * is dependency-free data validation, and a public package four other
  * packages will depend on should not force every one of them onto one
@@ -77,7 +77,7 @@ function isFiniteNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
 
-/** A short, readable description of an arbitrary value for an error message — mirrors `@vespeneventures/strategy`'s `validation.ts`'s `describeValue`. */
+/** A short, readable description of an arbitrary value for an error message — mirrors `@example/strategy`'s `validation.ts`'s `describeValue`. */
 function describe(value: unknown): string {
   if (value === undefined) return "undefined";
   if (value === null) return "null";
@@ -132,8 +132,8 @@ function validateFrameShape(value: unknown, path: string): ComposeFinding[] {
     return [{ rule: "frame-shape", severity: "error", message: `${path} must be an object.`, path }];
   }
 
-  // Snapshot every field once — mirrors @vespeneventures/policy's
-  // validateBindingShape and @vespeneventures/writer's schema.ts, both of
+  // Snapshot every field once — mirrors @example/policy's
+  // validateBindingShape and @clossys/writer's schema.ts, both of
   // which document why: a hostile or badly-behaved `value` (a getter, a
   // Proxy) could otherwise return a different result on each read.
   const x = value.x;
@@ -225,7 +225,7 @@ function validateFrameShape(value: unknown, path: string): ComposeFinding[] {
  * -----------------------------------------------------------------
  * Before 0.3.0 this was exactly-one-of-two (`copyId`/`value`). Adding
  * `assetId` (`types.ts`'s `SlotBinding.assetId`, the seam into a
- * `@vespeneventures/publisher/media` `AssetRecord`) turned it into
+ * `@clossys/publisher/media` `AssetRecord`) turned it into
  * exactly-one-of-three, which is a strictly harder rule to get right: the
  * "both present" / "neither present" binary check above no longer covers
  * every bad combination once there are three fields, not two, to be
@@ -421,7 +421,7 @@ function validateLayoutSpecShape(value: unknown, path: string): ComposeFinding[]
   slots.forEach((slot, i) => findings.push(...validateSlotSpecShape(slot, `${path}.slots.${i}`)));
 
   // Uniqueness is a whole-layout property, not a per-slot one — mirrors
-  // @vespeneventures/writer's schema.ts id-uniqueness check exactly. Only
+  // @clossys/writer's schema.ts id-uniqueness check exactly. Only
   // slots that already passed their own key-shape check contribute a value
   // to compare.
   const seen = new Map<string, number>();

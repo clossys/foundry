@@ -58,7 +58,7 @@ Each declaring context declares a **RunnerVocabulary** and a **visibility exempt
 ### Consumer Repository Responsibility
 
 Each repository wires the pure evaluator (exported from
-`@vespeneventures/conventions/runner`) into its own CI. The evaluator takes the
+`@example/conventions/runner`) into its own CI. The evaluator takes the
 declared conventions plus the repository's parsed workflow job definitions and
 returns one of three states per job:
 

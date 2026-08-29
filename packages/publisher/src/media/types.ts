@@ -1,24 +1,24 @@
 /**
- * Plain TypeScript types for @vespeneventures/publisher/media's contract: one
+ * Plain TypeScript types for @clossys/publisher/media's contract: one
  * addressable, reviewable media asset (`AssetEntry` — an `ImageAssetEntry`
  * or a `VideoAssetEntry`) and the record that groups a consumer's whole set
  * of them (`AssetRecord`). Pure data — no validation logic lives here (see
  * `schema.ts`) and no I/O (see `registry.ts`).
  *
- * This module is to `@vespeneventures/publisher/core`'s visual half exactly what
- * `@vespeneventures/writer` is to its verbal half: `copy` registers a
+ * This module is to `@clossys/publisher/core`'s visual half exactly what
+ * `@clossys/writer` is to its verbal half: `copy` registers a
  * consumer's own words as addressable `CopyEntry`s, checkable and
  * resolvable by a stable id; `assets` registers a consumer's own images and
  * videos the same way. Where `SlotBinding.copyId` is an opaque seam into a
- * `CopyRecord`, `SlotBinding.assetId` (added in `@vespeneventures/publisher/core`
+ * `CopyRecord`, `SlotBinding.assetId` (added in `@clossys/publisher/core`
  * 0.3.0) is the identical seam into an `AssetRecord`. See that package's
  * `types.ts` doc comment for the shared reasoning; this file mirrors its
  * structure closely on purpose.
  *
  * No runtime schema library — this package's entire job is dependency-free
- * data shape validation, the same precedent `@vespeneventures/catalog`,
- * `@vespeneventures/policy`, `@vespeneventures/designer/tokens`, `@vespeneventures/writer/voice`,
- * and `@vespeneventures/writer` all hold to. `schema.ts` hand-rolls its own
+ * data shape validation, the same precedent `@example/catalog`,
+ * `@example/policy`, `@clossys/designer/tokens`, `@clossys/writer/voice`,
+ * and `@clossys/writer` all hold to. `schema.ts` hand-rolls its own
  * type guards rather than reaching for a schema library, for the same
  * reason `copy`'s own `schema.ts` gives: a public package's only consumers
  * are external installers, and a schema-library dependency would force
@@ -39,7 +39,7 @@
  * This file ships no example content of anyone's real assets. Every field
  * here is either required-and-generic or a structural placeholder — a real
  * product's real image/video ids, real URLs, and real alt text/captions are
- * a consumer's job, never this package's. See `@vespeneventures/writer`'s
+ * a consumer's job, never this package's. See `@clossys/writer`'s
  * README, "The single most important constraint" — this package holds the
  * identical line, one layer over, for media instead of words.
  *
@@ -83,7 +83,7 @@
  * Dot-separated, lowercase, kebab-case within each segment — e.g.
  * `"marketing.hero-banner"`, `"onboarding.step-2.illustration"`. At least
  * one dot is required, for the identical reason
- * `@vespeneventures/writer`'s `CopyEntryId` requires one: a bare,
+ * `@clossys/writer`'s `CopyEntryId` requires one: a bare,
  * unnamespaced id like `"hero"` is exactly the kind of id that collides the
  * moment a second feature also needs a `"hero"` asset. See `schema.ts`'s
  * `ASSET_ENTRY_ID_RE` for the exact pattern this shape is validated
@@ -117,11 +117,11 @@ interface AssetEntryBase {
    * renderer starts consuming it, produce inaccessible output for every
    * single asset it serves: there is no later point in this pipeline where
    * alt text can be recovered from a URL and two integers. The precedent is
-   * already set one layer up — `@vespeneventures/publisher/core`'s own `ImageMeta.alt`
+   * already set one layer up — `@clossys/publisher/core`'s own `ImageMeta.alt`
    * (`packages/surface/src/core/types.ts`) is required for exactly this reason,
    * and a registry that fed that contract optional alt text would just move
    * the same accessibility bug one layer earlier. Whitespace-only strings
-   * (`"   "`) are rejected the same way `@vespeneventures/publisher/core`'s
+   * (`"   "`) are rejected the same way `@clossys/publisher/core`'s
    * `validate.ts`'s `binding-value-shape` rejects a whitespace-only
    * `SlotBinding.value` — see `schema.ts` for the shared reasoning, restated
    * for this field. For a `VideoAssetEntry`, `alt` is the short, static
@@ -153,7 +153,7 @@ interface AssetEntryBase {
    * expires 2027-01-01"`. Optional, and deliberately a free-text string
    * rather than a closed enum — this package has no authority over what
    * licences a consumer's assets actually carry, the same reasoning
-   * `StyleBinding`'s token role names in `@vespeneventures/publisher/core` are
+   * `StyleBinding`'s token role names in `@clossys/publisher/core` are
    * unvalidated strings rather than a closed vocabulary. Unlike `copy`
    * text, a media asset routinely carries real usage-rights constraints a
    * reviewer must be able to see next to the id before publication — this
@@ -349,7 +349,7 @@ export type AssetEntry = ImageAssetEntry | VideoAssetEntry;
 
 /**
  * One consumer's complete, registered set of asset entries. This is the
- * "brand.css" of this package, the same role `@vespeneventures/writer`'s
+ * "brand.css" of this package, the same role `@clossys/writer`'s
  * `CopyRecord` plays for text — foundry ships the schema this conforms to
  * and the machinery to check it, never a real instance of it.
  */
@@ -359,15 +359,15 @@ export interface AssetRecord {
 }
 
 // ---------------------------------------------------------------------------
-// AssetFinding — shared shape, mirroring @vespeneventures/writer's own `CopyFinding`
+// AssetFinding — shared shape, mirroring @clossys/writer's own `CopyFinding`
 // ---------------------------------------------------------------------------
 
 /**
  * One thing `schema.ts`'s shape validation (or `coverage.ts`'s coverage
  * check) found wrong with a candidate `AssetRecord`/`AssetEntry`, or with a
  * referenced-vs-registered comparison. Deliberately the same shape as
- * `@vespeneventures/writer`'s `CopyFinding` (itself mirroring
- * `@vespeneventures/writer/voice`'s `VoiceFinding` and `@vespeneventures/policy`'s
+ * `@clossys/writer`'s `CopyFinding` (itself mirroring
+ * `@clossys/writer/voice`'s `VoiceFinding` and `@example/policy`'s
  * `Finding`) — `rule` / `severity` / `message` / optional `path` — so a
  * caller already handling one kind of finding in this ecosystem does not
  * need a second mental model for this package's.

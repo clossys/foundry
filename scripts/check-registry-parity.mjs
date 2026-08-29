@@ -18,7 +18,7 @@
 //
 // WHY THIS GATE EXISTS (issue #416)
 // -----------------------------------
-// `@vespeneventures/auth@0.2.4` was merged to `main`, changelogged, and
+// `@example/auth@0.2.4` was merged to `main`, changelogged, and
 // locked — and never published. `publish.yml`'s own
 // `concurrency: { group: publish, cancel-in-progress: false }` correctly
 // serialises publishing, but GitHub holds at most one PENDING run per
@@ -58,7 +58,7 @@
 // publish anything. A FINDING here means a human runs publish.yml's
 // `workflow_dispatch` (`package=<name>`) to publish the missing version —
 // the same sanctioned manual path issue #416 used to recover
-// `@vespeneventures/auth@0.2.4` — never an automatic, unattended publish
+// `@example/auth@0.2.4` — never an automatic, unattended publish
 // triggered by this gate.
 //
 // NOT WIRED INTO `npm run check`

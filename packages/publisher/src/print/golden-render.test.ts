@@ -11,7 +11,7 @@ import { describe, expect, it } from "vitest";
 import type { ComposeDocument } from "../core/index.js";
 import { renderPrintDocument } from "./renderPrintDocument.js";
 
-// The real `@vespeneventures/designer/tokens` `--font-display`/`--font-body`
+// The real `@clossys/designer/tokens` `--font-display`/`--font-body`
 // literals, rewritten single-quote-safe for embedding in a double-quoted
 // HTML `style="..."` attribute — see `internal/style.ts`'s own
 // `toAttributeSafeCss`.

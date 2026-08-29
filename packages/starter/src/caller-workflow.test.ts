@@ -22,7 +22,7 @@ describe("canonical caller workflow templates", () => {
     for (const workflow of [npmWorkflow, pnpmWorkflow]) {
       expect(workflow).toContain("workflow_run:");
       expect(workflow).toContain("Fixed");
-      expect(workflow).toContain("node node_modules/@vespeneventures/starter/dist/cli.js decide");
+      expect(workflow).toContain("node node_modules/@clossys/starter/dist/cli.js decide");
       expect(workflow).toContain("exit \"$status\"");
     }
     expect(npmWorkflow).toContain("npm ci --ignore-scripts");

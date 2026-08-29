@@ -11,7 +11,7 @@ import type { PublicationEntry } from "./types.js";
 // Hermetic: every test operates on its own `mkdtemp` directory, removed
 // afterward, and calls the exported `main(argv)` directly rather than
 // spawning the real CLI process — the same discipline
-// @vespeneventures/strategy's cli.test.ts uses.
+// @example/strategy's cli.test.ts uses.
 
 let dir: string;
 

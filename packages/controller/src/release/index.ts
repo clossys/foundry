@@ -1,5 +1,5 @@
 /**
- * @vespeneventures/release — layer 3, the top of a small foundation.
+ * @example/release — layer 3, the top of a small foundation.
  *
  * Every layer below this one reasons about DECLARED shape: a manifest says
  * what it depends on, a catalog says whether that declaration is internally
@@ -21,10 +21,10 @@
  *     an expected failure mode (a failed install or a failed import is a
  *     finding, not an exception).
  *   - `preflightPackage` — combines this package's own catalog findings
- *     (via `@vespeneventures/gates`'s `runFoundationCheck`) with a real
+ *     (via `@example/gates`'s `runFoundationCheck`) with a real
  *     `packRoundTrip` result, aggregated into one report.
  *   - `verifyPublishedArtifact` — a thin wrapper around
- *     `@vespeneventures/controller/policy`'s own `verifyBinding`, for checking already-
+ *     `@clossys/controller/policy`'s own `verifyBinding`, for checking already-
  *     fetched published content against an expected digest.
  *
  * NON-GOAL: this package does not publish anything and does not fetch
@@ -33,7 +33,7 @@
  * package's own declared dependencies require to resolve, no credentials.
  * `verifyPublishedArtifact` takes already-fetched content as a plain
  * argument; where that content came from is entirely the caller's problem,
- * deliberately, the same way `@vespeneventures/controller/policy` never reads a file
+ * deliberately, the same way `@clossys/controller/policy` never reads a file
  * itself. See the README for the full picture, including what this
  * mechanism found when pointed at this repository's own packages today.
  */

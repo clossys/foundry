@@ -1,5 +1,5 @@
-import { createCopyResolver, validateCopyRegistryShape } from "@vespeneventures/writer";
-import type { CopyRegistry } from "@vespeneventures/writer";
+import { createCopyResolver, validateCopyRegistryShape } from "@clossys/writer";
+import type { CopyRegistry } from "@clossys/writer";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { createResolvedOutputManifest } from "./core/output-manifest.js";

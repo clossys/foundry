@@ -1,6 +1,6 @@
-# @vespeneventures/advisor
+# @clossys/advisor
 
-`@vespeneventures/advisor` is a zero-runtime-dependency, provider-neutral engine for the human sponsor of a Foundry engagement. Its primary mode is **reconcile**; a consumer connector may use it to interact, and it assures only when supplied evidence justifies the result.
+`@clossys/advisor` is a zero-runtime-dependency, provider-neutral engine for the human sponsor of a Foundry engagement. Its primary mode is **reconcile**; a consumer connector may use it to interact, and it assures only when supplied evidence justifies the result.
 
 It does not register or launch any conversational product, obtain OAuth, access providers or repositories, install packages, clear authority blockers, or mutate customer state. Those operations remain consumer-owned integrations. The package is pure TypeScript: no network or filesystem I/O.
 
@@ -38,7 +38,7 @@ import {
   createAdvisorSession,
   REQUIRED_FIT_CRITERIA,
   REQUIRED_READINESS_CRITERIA,
-} from "@vespeneventures/advisor";
+} from "@clossys/advisor";
 
 const report = assessAdvisorEngagement(connectorSuppliedEvidence);
 const session = createAdvisorSession("opaque-session-id", nextAction);

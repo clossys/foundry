@@ -29,13 +29,13 @@
  *      copied from the template. See "The unbound signal" below.
  *
  * `report.complete` is `true` exactly when `skipped` is empty — mirroring
- * `@vespeneventures/gates`' `FoundationReport.complete` — so a caller can
+ * `@example/gates`' `FoundationReport.complete` — so a caller can
  * ask "did this report actually check everything it could have" with one
  * boolean read. `report.bound` is the analogous read for #3.
  *
  * THE UNBOUND SIGNAL
  * -------------------
- * `@vespeneventures/ui/tokens` has a visual answer to "did anyone bind this
+ * `@example/ui/tokens` has a visual answer to "did anyone bind this
  * yet": import only `tokens.css` and the page renders in visible grey, plus
  * a literal dev-mode badge, until `data-brand-bound` is set. Text has no
  * pixels to fall back to — there is no "render this copy in grey" — so the
@@ -299,7 +299,7 @@ export function auditClaimsRegister(claims: Claim[]): VoiceFinding[] {
  *
  * Throws a plain `Error` (not a finding) for caller-input problems that are
  * not this function's job to interpret as data: `copy` not a string, or
- * `record` not an object. This mirrors `@vespeneventures/gates`'
+ * `record` not an object. This mirrors `@example/gates`'
  * `runFoundationCheck`, which treats a malformed call the same way — a hard
  * upfront rejection, not a soft finding that could be mistaken for
  * something the checker discovered about the copy itself.

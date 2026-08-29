@@ -1,4 +1,4 @@
-import type { CopyRef, CopyResolution, CopyResolver } from "@vespeneventures/writer";
+import type { CopyRef, CopyResolution, CopyResolver } from "@clossys/writer";
 import { isSurfaceRepeatingSlotBinding, validateSurfaceDocument } from "./validate.js";
 import type { ComposeDocument, SlotBinding, SurfaceChannelMeta, SurfaceDocument, SurfaceRepeatingSlotBinding, SurfaceSlotBindingItem } from "./types.js";
 
@@ -58,7 +58,7 @@ export interface ResolvedSurfaceNode {
  * value on a SINGLE (non-repeating) binding — the opt-in that turns
  * `resolveSurfaceDocument`'s formerly-unconditional `unsupported-node`
  * refusal into a per-slot check. `core` has no concept of a "template" or
- * a "slot kind" of its own — those are `@vespeneventures/publisher/web`
+ * a "slot kind" of its own — those are `@clossys/publisher/web`
  * concepts (`WebTemplate.slotKinds`, `defineWebTemplate`). This option is
  * deliberately the narrowest possible seam between the two: a plain set of
  * slot keys, supplied by whatever caller already knows which of its own
@@ -193,7 +193,7 @@ export function resolveSurfaceDocument(surface: SurfaceDocument, resolver: CopyR
     if (!nodeSlots.has(binding.slot)) {
       throw new SurfaceResolutionError(
         "unsupported-node",
-        `resolveSurfaceDocument cannot lower caller-owned node binding at bindings.${index} (slot "${binding.slot}"); pass { nodeSlots: [...] } naming this slot (see a template's own node-kind slots, e.g. @vespeneventures/publisher/web's defineWebTemplate/WebTemplate.slotKinds), or render that web node through a direct surface-web composition.`,
+        `resolveSurfaceDocument cannot lower caller-owned node binding at bindings.${index} (slot "${binding.slot}"); pass { nodeSlots: [...] } naming this slot (see a template's own node-kind slots, e.g. @clossys/publisher/web's defineWebTemplate/WebTemplate.slotKinds), or render that web node through a direct surface-web composition.`,
       );
     }
     nodes.push({ slot: binding.slot, node: binding.node as object });

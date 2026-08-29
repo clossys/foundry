@@ -7,7 +7,7 @@ import { readCompletionEvidenceContract } from "./canonical.js";
 import { COMPLETION_EVIDENCE_FIELDS, COMPLETION_EVIDENCE_INDETERMINATE_REASONS, COMPLETION_VERDICTS, DUPLICATE_STATES, INVOCATION_KINDS, PLACEMENT_MODES, validateCompletionEvidence, validateCompletionEvidenceContract } from "./completion-evidence.js";
 import { validateInstalledPositionLedger } from "./index.js";
 import { isValueSafeReference, MAX_REFERENCE_CODE_UNITS, referenceSafetyOperationCount } from "../internal/reference-safety.js";
-import { ADVISOR_CHARTER } from "@vespeneventures/advisor";
+import { ADVISOR_CHARTER } from "@clossys/advisor";
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const repoRoot = resolve(packageRoot, "../..");
@@ -81,17 +81,17 @@ describe("completion evidence", () => {
     const advisorLedger = ledger();
     const advisorEvidence = evidence();
     const dispositions = advisorLedger.dispositions as Array<Record<string, unknown>>;
-    const advisorDisposition = dispositions.find((item) => item.package === "@vespeneventures/advisor")!;
-    const integratorDisposition = dispositions.find((item) => item.package === "@vespeneventures/integrator")!;
+    const advisorDisposition = dispositions.find((item) => item.package === "@clossys/advisor")!;
+    const integratorDisposition = dispositions.find((item) => item.package === "@clossys/integrator")!;
     advisorDisposition.disposition = "open";
     advisorDisposition.positionIds = ["fixture-advisor"];
     integratorDisposition.disposition = "not-applicable";
     integratorDisposition.positionIds = [];
     const position = (advisorLedger.positions as Array<Record<string, unknown>>)[0]!;
     position.id = "fixture-advisor";
-    position.package = "@vespeneventures/advisor";
+    position.package = "@clossys/advisor";
     advisorEvidence.positionId = "fixture-advisor";
-    advisorEvidence.package = "@vespeneventures/advisor";
+    advisorEvidence.package = "@clossys/advisor";
     (advisorEvidence.artifact as Record<string, unknown>).version = "0.1.2";
     (advisorEvidence.outcome as Record<string, unknown>).metric = ADVISOR_CHARTER.primaryMetric;
     expect(validateCompletionEvidence(advisorEvidence, advisorLedger).result).toEqual({ verdict: "satisfied", evaluated: 1 });
@@ -328,7 +328,7 @@ describe("completion evidence", () => {
     const paddedPositionLedger = ledger();
     const paddedId = " fixture-integrator ";
     (paddedPositionLedger.positions as Array<Record<string, unknown>>)[0]!.id = paddedId;
-    ((paddedPositionLedger.dispositions as Array<Record<string, unknown>>).find((item) => item.package === "@vespeneventures/integrator")!).positionIds = [paddedId];
+    ((paddedPositionLedger.dispositions as Array<Record<string, unknown>>).find((item) => item.package === "@clossys/integrator")!).positionIds = [paddedId];
     paddedPosition.positionId = paddedId;
     (paddedPosition.outcome as Record<string, unknown>).sourceOwner = "fixture-integrator";
     expect(validateCompletionEvidence(paddedPosition, paddedPositionLedger).result).toMatchObject({ verdict: "indeterminate", reason: "unreadable-or-incomplete-evidence" });
@@ -338,7 +338,7 @@ describe("completion evidence", () => {
       const invisiblePositionLedger = ledger();
       const invisibleId = `${invisible}fixture-integrator`;
       (invisiblePositionLedger.positions as Array<Record<string, unknown>>)[0]!.id = invisibleId;
-      ((invisiblePositionLedger.dispositions as Array<Record<string, unknown>>).find((item) => item.package === "@vespeneventures/integrator")!).positionIds = [invisibleId];
+      ((invisiblePositionLedger.dispositions as Array<Record<string, unknown>>).find((item) => item.package === "@clossys/integrator")!).positionIds = [invisibleId];
       invisiblePosition.positionId = invisibleId;
       (invisiblePosition.outcome as Record<string, unknown>).sourceOwner = "fixture-integrator";
       expect(validateCompletionEvidence(invisiblePosition, invisiblePositionLedger).result).toMatchObject({ verdict: "indeterminate", reason: "unreadable-or-incomplete-evidence" });

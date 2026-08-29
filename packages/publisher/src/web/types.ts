@@ -11,7 +11,7 @@ import type { ComposeDocument, FlowLayoutSpec, ResolvedSurfaceGroup, ResolvedSur
  * `copyId` seam" — and neither does this package resolve it against any
  * particular copy source. This function type IS the decision this package
  * makes about that seam: a caller who has already loaded a
- * `@vespeneventures/writer` registry (or any other copy source) supplies a
+ * `@clossys/writer` registry (or any other copy source) supplies a
  * synchronous lookup from id to resolved text; a caller with nothing to
  * resolve against simply omits `resolveCopyId`, and every `copyId` binding
  * is then treated as unresolved (see `renderWebDocument`'s own doc comment
@@ -24,7 +24,7 @@ import type { ComposeDocument, FlowLayoutSpec, ResolvedSurfaceGroup, ResolvedSur
  * page, or a request that already fetched its `CopyRecord` before calling
  * this function). A caller with a genuinely async copy source resolves
  * every `copyId` a document needs up front and closes over the results in
- * a synchronous function, the same pattern `@vespeneventures/writer`'s own
+ * a synchronous function, the same pattern `@clossys/writer`'s own
  * README recommends for its registry reader.
  *
  * Returns `undefined` for an id the resolver has no text for — treated
@@ -41,7 +41,7 @@ export type CopyResolver = (copyId: string) => string | undefined;
 /**
  * Resolves a `SlotBinding.assetId` into a real asset — the identical seam
  * `CopyResolver` draws for `copyId`, one binding field over. Same shape as
- * `@vespeneventures/publisher/core`'s own `AssetLookup` (`(assetId: string) =>
+ * `@clossys/publisher/core`'s own `AssetLookup` (`(assetId: string) =>
  * unknown`), declared locally here rather than imported, for the same
  * reason `CopyResolver` is its own local declaration and not `surface/core`'s
  * `CopyLookup` — see `RenderWebOptions`'s own doc comment history for why
@@ -49,7 +49,7 @@ export type CopyResolver = (copyId: string) => string | undefined;
  * declarations rather than a cross-channel import.
  *
  * Returns `unknown` on purpose: a caller might hand back a real
- * `@vespeneventures/publisher/media` `AssetEntry`, a bare object literal built for a
+ * `@clossys/publisher/media` `AssetEntry`, a bare object literal built for a
  * test, or anything else with the right shape — `renderWebDocument` (via
  * `../internal/assets.ts`'s `resolveDocumentAssets`) validates whatever
  * comes back into a real, paintable `RenderAsset` (`src`/`width`/`height`/
@@ -106,7 +106,7 @@ export interface RenderWebOptions {
    * Whether THIS render should treat `prefers-reduced-motion: reduce` as
    * active — governs autoplay for every `VideoAssetEntry`-sourced
    * `<video>` this render produces (see `VideoAssetEntry.reducedMotion`,
-   * `@vespeneventures/publisher/media`). Omitted (the default) means "unknown/
+   * `@clossys/publisher/media`). Omitted (the default) means "unknown/
    * not reduced" — every video's own `autoplay` is honoured exactly as
    * authored, the same regression-safe default `resolveCopyId`/
    * `resolveAssetId` already use for "caller didn't wire this up."
@@ -128,7 +128,7 @@ export interface RenderWebOptions {
 
 /** What `renderWebDocument` returns: the two things a web `ComposeDocument` renders to. See `renderWebDocument.ts`'s own doc comment. */
 export interface RenderWebResult {
-  /** The composed `@vespeneventures/designer` view element — the `ComposeDocument.template` view with its bindings resolved into its slots. Render this with your own React tree (or `react-dom/server`) however your app already does. */
+  /** The composed `@clossys/designer` view element — the `ComposeDocument.template` view with its bindings resolved into its slots. Render this with your own React tree (or `react-dom/server`) however your app already does. */
   element: ReactNode;
   /** The document's head metadata, as a plain serialisable object — see {@link WebHeadMetadata}. */
   head: WebHeadMetadata;
@@ -195,7 +195,7 @@ export interface WebTwitterMetadata {
  *     rendered as a real `<img>`.
  *   - `"node"` — a caller-owned `ReactNode` the caller's OWN trusted code
  *     already constructed (a composed `AuthView` form, a widget built from
- *     `@vespeneventures/designer` atoms, a small caller-authored component) —
+ *     `@clossys/designer` atoms, a small caller-authored component) —
  *     never a raw HTML string, never audience-supplied or copy-registry
  *     content. This is the dangerous one: see `renderWebDocument.ts`'s own
  *     doc comment, "RICH-NODE SLOTS", for exactly what a `"node"`-kind slot
@@ -238,7 +238,7 @@ export interface RepeatingWebSlotSpec {
  * consumer's own `defineWebTemplate`-built entries share. `flow` is
  * handed to the shared `resolveDocument(doc, flow)` resolver exactly as
  * every existing template already uses it; `build` turns resolved slot
- * content into the real `@vespeneventures/designer`-composed element. See
+ * content into the real `@clossys/designer`-composed element. See
  * `defineWebTemplate` for the validated, frozen way to construct one of
  * these — constructing a `WebTemplate` object literal by hand bypasses
  * that validation, the same way constructing a `SurfaceDocument` by hand

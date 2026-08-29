@@ -1,4 +1,4 @@
-# @vespeneventures/designer/tokens
+# @clossys/designer/tokens
 
 Design tokens for web interfaces: CSS custom properties for color, type,
 spacing, motion, and layout, plus the same values as typed JS/TS data. The
@@ -8,7 +8,7 @@ one used for buttons, nobody remembers which, and fixing it means grepping
 for hex codes across a whole codebase.
 
 ```bash
-npm install @vespeneventures/designer
+npm install @clossys/designer
 ```
 
 ## Import order
@@ -18,7 +18,7 @@ files matter in this order:
 
 ```css
 /* 1. the tokens themselves — required */
-@import "@vespeneventures/designer/tokens.css";
+@import "@clossys/designer/tokens.css";
 
 /* 2. your brand, started from the template below — required to look branded */
 @import "./brand.css";
@@ -30,14 +30,14 @@ files matter in this order:
 ```css
 /* optional 4th import, ONLY if your project uses Tailwind v4 — see
    "Tailwind is optional" below */
-@import "@vespeneventures/designer/theme.css";
+@import "@clossys/designer/theme.css";
 ```
 
 A note on `@import`, because it trips people up: CSS `@import` is resolved
 by PostCSS or Tailwind's own resolver at build time, and that resolver does
 **not** read your `tsconfig.json` `paths`/aliases — those are a TypeScript-only
 concept. Every `@import` in your own CSS needs a real, resolvable specifier:
-either a package name (`@vespeneventures/designer/tokens.css`, resolved through
+either a package name (`@clossys/designer/tokens.css`, resolved through
 `node_modules` the same way a JS `import` would be) or a genuine relative
 path (`./brand.css`). A `@/tokens.css`-style TS alias will not resolve inside
 a `.css` file, even if your bundler understands it inside `.ts`.
@@ -55,7 +55,7 @@ bug, it's the package refusing to let an unbranded render pass as finished.
 To brand it:
 
 ```bash
-cp node_modules/@vespeneventures/designer/styles/brand-template.css src/styles/brand.css
+cp node_modules/@clossys/designer/styles/brand-template.css src/styles/brand.css
 ```
 
 Open `src/styles/brand.css`, fill in every required slot (your page ground
@@ -491,7 +491,7 @@ wants a token's name or default value without parsing CSS.
 | `ContrastGateFailureReason` | type | `"nothing-to-check" \| "contrast-gap"` — why `ContrastGateResult.ok` is `false`, when it is. |
 
 ```ts
-import { TOKENS } from "@vespeneventures/designer/tokens";
+import { TOKENS } from "@clossys/designer/tokens";
 
 const surfaceRaised = TOKENS["--color-surface-raised"];
 console.log(surfaceRaised.value, surfaceRaised.brandable); // "oklch(1 0 0)" true
@@ -503,12 +503,12 @@ console.log(surfaceRaised.value, surfaceRaised.brandable); // "oklch(1 0 0)" tru
 neither one can tell you whether your OWN `brand.css` actually filled the
 template in correctly, or whether a slot name got typo'd along the way. This
 package ships the check that closes that gap, the same shape every sibling
-contract package in this ecosystem ships (`@vespeneventures/copy/voice`'s
-`checkCopy`, `@vespeneventures/copy`'s `checkCopyTraceability`,
-`@vespeneventures/strategy`'s `checkFactsTraceability`):
+contract package in this ecosystem ships (`@example/copy/voice`'s
+`checkCopy`, `@example/copy`'s `checkCopyTraceability`,
+`@example/strategy`'s `checkFactsTraceability`):
 
 ```ts
-import { checkBrandFileCoverage, readBrandCss } from "@vespeneventures/designer/tokens";
+import { checkBrandFileCoverage, readBrandCss } from "@clossys/designer/tokens";
 
 const { declarations, unchecked } = readBrandCss("src/styles/brand.css");
 const report = checkBrandFileCoverage(declarations);
@@ -520,7 +520,7 @@ console.log(report.ok); // true only if every brandable slot has a real value, n
 slot with no real (non-empty) declared value, every declaration naming a
 slot this package does not recognize (almost always a typo), and every
 declaration targeting a structural (`brandable: false`) slot, which
-`@vespeneventures/surface`'s `flattenTokens` already refuses by throwing — plus
+`@example/surface`'s `flattenTokens` already refuses by throwing — plus
 an `unchecked` list for anything it was handed but could not even classify.
 `ok` is `true` only when something was actually checked AND the result is
 completely clean; a `declarations` object with zero entries can never read as
@@ -534,7 +534,7 @@ would treat as swallowing everything after it) is reported in `unchecked`, a
 line and a detail, never silently dropped and never allowed to produce a
 false pass.
 
-Not to be confused with `@vespeneventures/strategy`'s own, differently-scoped
+Not to be confused with `@example/strategy`'s own, differently-scoped
 `checkBrandCoverage`, which checks whether a `BrandDerivation[]` (a strategy
 artifact) accounts for every brandable slot BY NAME — a layer up from this
 one, which checks a real CSS FILE's actual declarations. See

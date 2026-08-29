@@ -1,5 +1,5 @@
 /**
- * Types for @vespeneventures/gates. See the package README for the three
+ * Types for @example/gates. See the package README for the three
  * capabilities these shapes support — one call each, no logic lives here.
  */
 

@@ -10,7 +10,7 @@
 // `concurrency: { group: publish, cancel-in-progress: false }` block means
 // it is sometimes the wrong one to ask: GitHub holds at most one PENDING run
 // per concurrency group, and a third arrival EVICTS the pending one before
-// any job starts. `@vespeneventures/auth@0.2.4` was merged, changelogged,
+// any job starts. `@example/auth@0.2.4` was merged, changelogged,
 // and locked, and its publish run was evicted this way — it reports
 // `cancelled`, not `failure`, so nothing goes red. No later run could ever
 // pick it up either: a diff against a LATER push's own before/head never

@@ -1,7 +1,7 @@
 /**
  * The `liveStateSurface` shape from issue #255: declared intent and live
  * state are one contract, not a detail rewritten per subsystem. The
- * canonical home for this shape is `@vespeneventures/controller/
+ * canonical home for this shape is `@clossys/controller/
  * conventions` (`conventions/live-state.ts` there) — it owns every rule
  * this repository's tiers share and has no dependency of its own, so
  * `builder` re-exports controller's copy rather than keeping one, and any
@@ -11,7 +11,7 @@
  * leaving a reader to notice the duplication and wonder why it wasn't
  * cleaned up: this package's own contract is zero runtime dependencies
  * (see README.md's Requirements section) — no dependency on
- * `@vespeneventures/controller`, or on anything else, so that a caller
+ * `@clossys/controller`, or on anything else, so that a caller
  * measuring gate efficacy or handling telemetry never inherits a governance
  * package's own dependency surface just to do it. Adding controller as a
  * dependency to remove five frozen strings and one small interface would
@@ -62,7 +62,7 @@ export interface LiveStateSurface {
  * surface — that requires the live probe, which is exactly what `observer`
  * does not perform on its own (see `gate-efficacy.ts`'s header). The
  * vocabulary is exported as data, for a caller's own reconciliation surface
- * to report against, the same way `@vespeneventures/controller/conventions`
+ * to report against, the same way `@clossys/controller/conventions`
  * exports `reconciliationFindingKinds` and `scheduleReconciliationFindingKinds`
  * rather than implementing the probes itself.
  */

@@ -36,8 +36,8 @@
  * rather than an opaque crash deep inside the compiler API.
  *
  * BREAKING CHANGE: a consumer who imported any of these names from
- * `@vespeneventures/controller/gates` must now import them from
- * `@vespeneventures/controller/gates/secrets` instead. `./gates` no longer
+ * `@clossys/controller/gates` must now import them from
+ * `@clossys/controller/gates/secrets` instead. `./gates` no longer
  * re-exports them at all.
  */
 export {

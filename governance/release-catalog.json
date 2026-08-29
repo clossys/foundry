@@ -1,24 +1,21 @@
 {
-  "schemaVersion": 1,
-  "defaultTarget": "current-github-packages",
+  "schemaVersion": 2,
+  "defaultTarget": "clossys-npmjs",
   "targets": [
     {
       "id": "current-github-packages",
-      "status": "active",
+      "status": "historical",
       "scope": "@vespeneventures",
       "registry": "https://npm.pkg.github.com",
       "packages": "all"
     },
     {
-      "id": "clossys-npmjs-precutover",
-      "status": "planned",
+      "id": "clossys-npmjs",
+      "status": "active",
       "scope": "@clossys",
       "registry": "https://registry.npmjs.org",
-      "packages": [
-        "advisor",
-        "starter",
-        "controller"
-      ]
+      "access": "public",
+      "packages": "all"
     }
   ]
 }

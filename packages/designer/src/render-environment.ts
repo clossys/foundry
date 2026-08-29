@@ -1,5 +1,5 @@
 /**
- * @vespeneventures/designer/render-environment — a plain, machine-readable
+ * @clossys/designer/render-environment — a plain, machine-readable
  * declaration of which render environment each of this package's
  * `package.json#exports` subpaths is safe for.
  *

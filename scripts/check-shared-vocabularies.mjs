@@ -2,7 +2,7 @@
  * check-shared-vocabularies — one vocabulary, two packages, no import
  * between them (#443).
  *
- * `@vespeneventures/controller/conventions` and `@vespeneventures/observer`
+ * `@clossys/controller/conventions` and `@clossys/observer`
  * both freeze the same five live-state finding kinds. They agree today.
  * Nothing proved they would keep agreeing.
  *
@@ -42,8 +42,8 @@ export const SHARED_VOCABULARIES = Object.freeze([
   Object.freeze({
     name: "live-state finding kinds",
     sources: Object.freeze([
-      Object.freeze({ label: "@vespeneventures/controller/conventions", dist: "packages/controller/dist/conventions/index.js", exportName: "LIVE_STATE_SURFACE_FINDING_KINDS" }),
-      Object.freeze({ label: "@vespeneventures/observer", dist: "packages/observer/dist/index.js", exportName: "liveStateFindingKinds" }),
+      Object.freeze({ label: "@clossys/controller/conventions", dist: "packages/controller/dist/conventions/index.js", exportName: "LIVE_STATE_SURFACE_FINDING_KINDS" }),
+      Object.freeze({ label: "@clossys/observer", dist: "packages/observer/dist/index.js", exportName: "liveStateFindingKinds" }),
     ]),
   }),
 ]);

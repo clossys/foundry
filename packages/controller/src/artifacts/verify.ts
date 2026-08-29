@@ -24,7 +24,7 @@
  *    (`readGovernedArtifactManifest`). Every later stage reads specific
  *    manifest fields (`kind`, `schemaVersion`, `checksum.algorithm`,
  *    `checksum.digest`); reading them off a value not yet known to be
- *    sound is exactly the precondition mistake `@vespeneventures/controller/policy`'s
+ *    sound is exactly the precondition mistake `@clossys/controller/policy`'s
  *    own `verifyBinding` refuses to make — see its doc comment — and this
  *    module holds itself to the same discipline. Provenance is validated
  *    HERE, inside the one mandatory structural stage every successful
@@ -43,7 +43,7 @@
  *    BEFORE the checksum means an unsupported-version artifact is never
  *    reported "verified" merely because its bytes happen to match.
  * 5. **Exact-content checksum**, delegated entirely to
- *    `@vespeneventures/controller/policy`'s `verifyBinding` — no hashing and no digest
+ *    `@clossys/controller/policy`'s `verifyBinding` — no hashing and no digest
  *    comparison of this module's own (its SHAPE was already delegated to
  *    `policy` one stage earlier, in `readGovernedArtifactManifest`; see
  *    `validate.ts`). Checked last for two reasons: it is the most
@@ -99,7 +99,7 @@ function hasErrorFinding(findings: readonly Finding[]): boolean {
  * comes from parsing untrusted, consumer-supplied JSON, and this function
  * validates it rather than trusting its shape. `content` is the artifact's
  * exact bytes — a `string` is hashed as UTF-8, a `Uint8Array` byte-for-byte
- * (matching `@vespeneventures/controller/policy`'s own `computeDigest` contract). This
+ * (matching `@clossys/controller/policy`'s own `computeDigest` contract). This
  * function does not parse, reserialize, or canonicalize `content` in any
  * way; a caller that needs canonical JSON must produce those exact bytes
  * itself before calling this function.

@@ -1,5 +1,5 @@
 /**
- * @vespeneventures/butler — everything about what a person wants, now and
+ * @clossys/butler — everything about what a person wants, now and
  * standing.
  *
  * The question this role answers, and no other role does: **do we have what

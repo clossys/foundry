@@ -1,5 +1,5 @@
 /**
- * @vespeneventures/keeper — everything about what you gave us, and what we
+ * @clossys/keeper — everything about what you gave us, and what we
  * understand from it.
  *
  * The question this role answers, and no other role does: **does everything

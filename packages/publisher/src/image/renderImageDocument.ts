@@ -23,7 +23,7 @@
  * ---------------------------------------------------------
  * The actual "resolve `doc.bindings` against `doc.layout`, via
  * `resolveDocument` then `resolveCopy`/`resolveDocumentAssets` (never
- * hand-rolled — see `@vespeneventures/publisher/core`'s own `resolve-copy.ts`,
+ * hand-rolled — see `@clossys/publisher/core`'s own `resolve-copy.ts`,
  * "the #43 gap", and this package's own `../internal/assets.ts`), then
  * paint every resolvable slot" pipeline lives in `resolveCanvasLayout.ts`,
  * shared verbatim with `./slides` (a slide is the same kind of canvas,
@@ -56,7 +56,7 @@ export function renderImageDocument(doc: ComposeDocument, options: RenderImageOp
   }
   const meta = doc.meta as ImageMeta;
 
-  // `ComposeDocument.layout` is typed optional (see @vespeneventures/
+  // `ComposeDocument.layout` is typed optional (see @clossys/
   // surface/core's own `types.ts`) because it's forbidden for web/email —
   // `validateComposeDocument` already enforces it's REQUIRED for `image`,
   // but this function does not assume its caller ran that validation

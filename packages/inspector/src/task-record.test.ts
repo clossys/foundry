@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { gateResultToExitCode } from "@vespeneventures/controller/gates";
+import { gateResultToExitCode } from "@clossys/controller/gates";
 import { checkTaskRecord, extractTaskReferenceText, parseTaskReference } from "./task-record.js";
 import type { TaskRecordObservation, TaskRecordPolicy } from "./task-record.js";
 

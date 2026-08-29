@@ -83,7 +83,7 @@ if (!check && transition && oldScope === transition.current?.scope && nextScope 
 // untouched." That reasoning had it backwards — a package NAME is not ours
 // to claim, a SCOPE is. `@vitest/ui` matched that regex, because `ui` also
 // happens to be the name of a package we own, and got rewritten to
-// `@vespeneventures/ui` inside package-lock.json — inside vitest's own
+// `@example/ui` inside package-lock.json — inside vitest's own
 // peerDependencies, at a version that does not exist under our scope. Worse,
 // `--check` then re-read the already-corrupted file, found nothing left that
 // disagreed with its own (wrong) rule, and passed: the gate confirmed its
@@ -259,9 +259,9 @@ for (const name of packageDirs) {
 // and would catch a typo'd or stale internal reference. Tried it, and threw
 // it out on real evidence, not speculation: it flagged
 // `packages/catalog/src/types.ts`'s own doc comment
-// (`@vespeneventures/catalog.` — a sentence-ending period the name-char
+// (`@example/catalog.` — a sentence-ending period the name-char
 // class happily consumed) and, more importantly, docs/DECISIONS.md's
-// section 4, which *deliberately* documents `@vespeneventures/contract` —
+// section 4, which *deliberately* documents `@clossys/contract` —
 // a package removed on purpose, discussed by name on purpose, as the
 // worked example of exactly this failure mode ("a check that can never
 // fail is not a check"). A gate that can't tell a live typo from

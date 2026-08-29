@@ -6,7 +6,7 @@ import { CliInputError, main } from "./cli.js";
 
 // Hermetic: every test operates on its own `mkdtemp` scan directory,
 // removed afterward, and calls the exported `main(argv)` directly rather
-// than spawning the real CLI process — matching @vespeneventures/copy's
+// than spawning the real CLI process — matching @example/copy's
 // own `cli.test.ts`. Nothing here touches this repository's own source or
 // the network. Unlike copy-check, there is no record-file argument: the
 // token registry comes from the real local token-layer import
@@ -119,7 +119,7 @@ describe("main — --tokens (a consumer's own registry, not this package's)", ()
   it("without --tokens: an arbitrary literal is raw-value-no-token-backing against this package's own registry", () => {
     writeFileSync(join(scanDir, "about.ts"), 'export const BRAND = "#123456";\n');
     expect(main([scanDir])).toBe(1);
-    expect(loggedText()).toContain('no matching entry in the "@vespeneventures/designer/tokens" TOKENS registry');
+    expect(loggedText()).toContain('no matching entry in the "@clossys/designer/tokens" TOKENS registry');
   });
 
   it("...but is hardcodes-token-value, attributed to the SUPPLIED registry, once --tokens actually backs that value", () => {

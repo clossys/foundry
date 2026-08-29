@@ -1,7 +1,7 @@
 /**
  * `StyleBinding` -> literal CSS. Colour (`.color`/`.background`) resolves
  * directly against the shared `internal/tokens.ts`'s `flattenTokens()`
- * output, i.e. a role name IS the exact `@vespeneventures/designer/tokens`
+ * output, i.e. a role name IS the exact `@clossys/designer/tokens`
  * custom-property name (`"--color-ink-primary"`, not `"ink-primary"`) — the
  * same map `flattenTokens` itself is keyed by. Typography (font size and
  * family) resolves through the shared `../../internal/typography.ts`
@@ -55,7 +55,7 @@ function resolveRole(
     throw new RenderError(
       "unknown-style-role",
       `renderPrintDocument: ${ownerDescription}'s style.${field} names token role "${role}", which is not a ` +
-        `property in @vespeneventures/designer/tokens' TOKENS registry (checked after flattening — see the shared ` +
+        `property in @clossys/designer/tokens' TOKENS registry (checked after flattening — see the shared ` +
         `internal/tokens.ts's flattenTokens()). A role name here must be the exact token custom-property name, ` +
         `e.g. "--color-ink-primary".`,
     );

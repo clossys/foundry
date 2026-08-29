@@ -192,7 +192,7 @@ describe.each(THEMES)("contrast — $name theme", (theme) => {
      * paste: slots 3/4/5 (aqua/yellow/magenta) sit below the 3:1 mark-
      * contrast floor on the LIGHT chart surface specifically — a known,
      * accepted WARN under the palette method's "relief rule" (legal only
-     * because @vespeneventures/designer's chart layer ships mandatory direct
+     * because @clossys/designer's chart layer ships mandatory direct
      * labels/legend + a table-view fallback for every chart, never color
      * alone). The dark palette's steps were chosen to clear 3:1 outright,
      * so it has no WARN slots. If a future edit moves a slot in/out of

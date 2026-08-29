@@ -41,7 +41,7 @@
 // below it would report ten-plus violations on its first run and could never
 // be wired as blocking, which makes it decorative.
 //
-// The alternative taken here is the one @vespeneventures/integrator already
+// The alternative taken here is the one @clossys/integrator already
 // ships for exactly this shape: every opt-out carries a REQUIRED REASON. A
 // shortfall must be declared, with prose saying what is actually missing and
 // an issue tracking it. An UNACKNOWLEDGED shortfall is a violation. So the
@@ -57,7 +57,12 @@
 // WHAT IS DERIVED AND WHAT IS NOT
 // --------------------------------
 // Derived here, from this repository's own tree:
-//   implemented — the package directory exists and carries a manifest.
+//   implemented — the current package directory exists and carries a
+//                 manifest. A published predecessor outside the current
+//                 workspace scope also retains this lower-rung evidence:
+//                 publication could not have occurred without an
+//                 implementation, and a namespace transition must not erase
+//                 that historical fact merely because current source moved.
 //   staged      — the count of DIST-PATH invocation sites across
 //                 package.json scripts, scripts/, and .github/workflows/.
 //   published   — the package's status in the lifecycle contract.
@@ -228,7 +233,7 @@ export function scanInvocationSites(repoRoot, packageNames, { readFile = (p) => 
         // scripts/ imported it.
         const usesDistPath = line.includes(`packages/${bareName(name)}/dist`);
         // An IMPORT, not any quoted occurrence. A package name also appears as
-        // ordinary test-fixture data -- `entry("auth", "@vespeneventures/auth",
+        // ordinary test-fixture data -- `entry("auth", "@example/auth",
         // "0.2.4")` -- and counting those reported six invocation sites for a
         // package nothing here invokes. `from`/`require(`/`import(` is what
         // separates using a package from naming one.
@@ -428,7 +433,15 @@ export function evaluateGateRule({ name, entry, bins }) {
   return { findings, shipsGate };
 }
 
-export function evaluatePrograms({ contract, distSites, binSites, lifecycleStatuses, workspacePackages, workspaceBins = new Map() }) {
+export function evaluatePrograms({
+  contract,
+  distSites,
+  binSites,
+  lifecycleStatuses,
+  workspacePackages,
+  workspaceBins = new Map(),
+  workspaceScope,
+}) {
   const findings = [];
   const results = [];
 
@@ -497,7 +510,12 @@ export function evaluatePrograms({ contract, distSites, binSites, lifecycleStatu
 
     // What the tree actually supports, independent of what was declared.
     const evidence = new Map();
-    evidence.set("implemented", workspacePackages.has(name));
+    const publishedPredecessor =
+      typeof workspaceScope === "string" &&
+      workspaceScope.startsWith("@") &&
+      !name.startsWith(`${workspaceScope}/`) &&
+      PUBLISHED_STATUSES.has(lifecycleStatus ?? "");
+    evidence.set("implemented", workspacePackages.has(name) || publishedPredecessor);
     // Sites prove the gate RUNS. Only a recorded red run proves it WORKS, and
     // that cannot be derived here — so staged is never satisfied by scan alone.
     const stagedByOk = validateStagedBy(entry.stagedBy, name, findings);
@@ -755,6 +773,17 @@ async function main() {
     die(`could not read the lifecycle contract: ${error?.message ?? error}`);
   }
 
+  let workspaceScope;
+  try {
+    const scopeDocument = JSON.parse(readFileSync(join(repoRoot, "package-scope.json"), "utf8"));
+    if (typeof scopeDocument.scope !== "string" || !/^@[a-z0-9][a-z0-9-]*$/.test(scopeDocument.scope)) {
+      throw new Error("`scope` must be an npm scope");
+    }
+    workspaceScope = scopeDocument.scope;
+  } catch (error) {
+    die(`could not read the package scope: ${error?.message ?? error}`);
+  }
+
   const workspacePackages = readWorkspacePackages(repoRoot);
   if (workspacePackages.size === 0) die(`no readable packages under ${join(repoRoot, "packages")} — refusing to grade an empty workspace`);
 
@@ -762,7 +791,15 @@ async function main() {
   const { distSites, binSites } = scanInvocationSites(repoRoot, [...new Set([...declared, ...workspacePackages])]);
 
   const workspaceBins = readWorkspaceBins(repoRoot);
-  const { findings, results } = evaluatePrograms({ contract, distSites, binSites, lifecycleStatuses, workspacePackages, workspaceBins });
+  const { findings, results } = evaluatePrograms({
+    contract,
+    distSites,
+    binSites,
+    lifecycleStatuses,
+    workspacePackages,
+    workspaceBins,
+    workspaceScope,
+  });
   let roleNames;
   try {
     const roleDocument = JSON.parse(readFileSync(join(repoRoot, "docs/contracts/role-loop-archetypes.json"), "utf8"));
@@ -786,7 +823,11 @@ async function main() {
     }
   }
   const lifecycleDocumentPath = join(repoRoot, "docs/LIFECYCLE.md");
-  const renderedPosition = renderLifecyclePositionTable({ contract, results });
+  // Terminal historical identities stay in the evidence contract, but the
+  // generated current-position view must not turn retired namespace rows
+  // into live install guidance after an identity transition.
+  const currentResults = results.filter((result) => result.supersession !== RETIRED_STATUS);
+  const renderedPosition = renderLifecyclePositionTable({ contract, results: currentResults });
 
   if (render) {
     process.stdout.write(renderedPosition);

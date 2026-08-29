@@ -46,7 +46,7 @@ import { TOKENS } from "../tokens/index.js";
  * class is real, by literally compiling it — `tailwindcss`'s own
  * `__unstable__loadDesignSystem` JS API (a `devDependency` of this
  * package already), fed this package's own token CSS
- * (`@vespeneventures/designer/theme.css`), the same way a consumer's real
+ * (`@clossys/designer/theme.css`), the same way a consumer's real
  * build would. `designSystem.candidatesToCss(candidates)` returns, per
  * candidate, either a real CSS rule or `null` for "Tailwind has no idea
  * what this is" — variants (`hover:`, `not-last:`, custom breakpoints like
@@ -326,7 +326,7 @@ const VAR_RE = /var\(\s*(--[a-zA-Z0-9-]+)\s*(?:,|\))/g;
 // through that package's own `exports` map's `style` CONDITION, which
 // Node's plain CJS `require.resolve` (no loader for a `style` export
 // condition exists) can't follow on its own — every other specifier this
-// package imports (`@vespeneventures/designer/theme.css`, and that file's own
+// package imports (`@clossys/designer/theme.css`, and that file's own
 // relative `./tokens.css`) already names its `.css` file explicitly, so no
 // such rewrite is needed for them.
 const require = createRequire(import.meta.url);
@@ -345,7 +345,7 @@ async function loadStylesheet(id: string, base: string) {
 
 const TOKEN_CSS_ENTRY = [
   '@import "tailwindcss";',
-  '@import "@vespeneventures/designer/theme.css";',
+  '@import "@clossys/designer/theme.css";',
 ].join("\n");
 
 // One compile for the whole file, not one per class: `candidatesToCss`
@@ -388,7 +388,7 @@ for (const file of sourceFiles) {
         file: relFile,
         kind: "var",
         text: property,
-        reason: `"${property}" is not a token in @vespeneventures/designer/tokens' TOKENS export`,
+        reason: `"${property}" is not a token in @clossys/designer/tokens' TOKENS export`,
       });
     }
   }

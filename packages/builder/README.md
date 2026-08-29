@@ -1,4 +1,4 @@
-# @vespeneventures/builder
+# @clossys/builder
 
 Declared reality made actual. A runtime pin, a machine manifest, and a
 deployment target are the same statement at three altitudes — *this is what
@@ -11,7 +11,7 @@ observes its own compliance in its own CI, and a plane aggregates what got
 published.
 
 ```bash
-npm install @vespeneventures/builder
+npm install @clossys/builder
 ```
 
 ## The job
@@ -33,13 +33,13 @@ health, a toolchain's runtime — turn out to share one structure:
   for the whole answer.
 
 The canonical implementation of this shape now lives in
-`@vespeneventures/controller/conventions` — it owns every rule this
+`@clossys/controller/conventions` — it owns every rule this
 repository's tiers share and has no dependency of its own, so this package
 (which already depended on controller for `GateResult`) re-exports its copy
 rather than keeping a second one. Every name below is unchanged for a
-consumer of `@vespeneventures/builder`: this is a consolidation of where the
+consumer of `@clossys/builder`: this is a consolidation of where the
 code lives, not a change to what it does. See
-`@vespeneventures/controller`'s own shipped documents,
+`@clossys/controller`'s own shipped documents,
 `live-state-reconciliation.md` for the shared document and
 `routine-declaration.md` / `schedule-declaration.md` for the two tiers that
 motivated generalizing this shape in the first place.
@@ -48,7 +48,7 @@ motivated generalizing this shape in the first place.
 tiers that motivated this contract already used in practice:
 
 ```ts
-import { validateLiveStateSurfaceDeclaration } from "@vespeneventures/builder";
+import { validateLiveStateSurfaceDeclaration } from "@clossys/builder";
 
 const findings = validateLiveStateSurfaceDeclaration({
   store: "the GitHub Actions branch-protection API",
@@ -67,7 +67,7 @@ evidence the declared thing is live.
 ### The finding-kind vocabulary, all five
 
 ```ts
-import { LIVE_STATE_SURFACE_FINDING_KINDS } from "@vespeneventures/builder";
+import { LIVE_STATE_SURFACE_FINDING_KINDS } from "@clossys/builder";
 // [
 //   "declared-but-not-live",
 //   "live-but-not-declared",
@@ -94,13 +94,13 @@ a silent pass.
 
 `reconcileLiveState` returns exactly one of `verified` / `drifted` /
 `could-not-verify` — never a boolean, and never a fourth state. This reuses
-`@vespeneventures/controller/gates`'s `GateResult` ternary rather than
+`@clossys/controller/gates`'s `GateResult` ternary rather than
 inventing a fifth shape of the same idea inside this package. The
 `could-not-verify` constructor enforces the "named blocker" rule at
 construction time, not merely by convention:
 
 ```ts
-import { liveStateCouldNotVerify, reconcileLiveState } from "@vespeneventures/builder";
+import { liveStateCouldNotVerify, reconcileLiveState } from "@clossys/builder";
 
 liveStateCouldNotVerify("deployment.web", ""); // throws — never a silent pass
 
@@ -144,7 +144,7 @@ reads — with everything else left for a real second consumer to motivate.
 ### Writing one repository's observation
 
 ```ts
-import { writeObservationBundle } from "@vespeneventures/builder";
+import { writeObservationBundle } from "@clossys/builder";
 
 const serialized = writeObservationBundle({
   repository: { id: "example-org/example-app", ref: "a1b2c3d" },
@@ -165,14 +165,14 @@ const serialized = writeObservationBundle({
 bundle out. It never reads a clock and never touches the network or the
 filesystem — `producedAt` is the caller's own timestamp, supplied
 explicitly, exactly like `liveStateSurface`'s `declaredAt`/`liveObservedAt`
-above. Each gate's `result` reuses `@vespeneventures/controller/gates`'s
+above. Each gate's `result` reuses `@clossys/controller/gates`'s
 `GateResult` ternary directly rather than a parallel shape — this package
 already depends on `controller` for it throughout.
 
 ### Aggregating N repositories' observations
 
 ```ts
-import { aggregateObservations } from "@vespeneventures/builder";
+import { aggregateObservations } from "@clossys/builder";
 
 // `bundles` is already-fetched data -- the plane's own CI did the fetching.
 // This function never fetches anything itself.
@@ -204,7 +204,7 @@ resolved by picking one and discarding the rest ("last-write-wins"):
 | `stale-observation` | The bundle's `producedAt` is older than `staleAfterMs` relative to `now`. |
 
 `report.overall` folds every `report.repositories[].result` with this
-package's own `foldGateResults` (`@vespeneventures/controller/gates`),
+package's own `foldGateResults` (`@clossys/controller/gates`),
 whose documented precedence — indeterminate beats violated beats satisfied
 — is exactly what keeps "2 of 5 repositories were unobserved" from
 silently reading as "the 3 we heard from were clean, so we're done."
@@ -258,7 +258,7 @@ read time, to ask the question `aggregateObservations` cannot ask of its own
 output:
 
 ```ts
-import { checkObservationAggregateFreshness } from "@vespeneventures/builder";
+import { checkObservationAggregateFreshness } from "@clossys/builder";
 
 // `storedReport` was read back from wherever the previous run persisted it --
 // not produced by the same call as the freshness check below.
@@ -271,7 +271,7 @@ const freshness = checkObservationAggregateFreshness({
 // A stale but otherwise-unanimous-pass stored report must never silently
 // stay satisfied: fold the stored verdict together with the freshness check
 // through any GateResult fold, including this package's own dependency,
-// `@vespeneventures/controller/gates`'s `foldGateResults` -- the same
+// `@clossys/controller/gates`'s `foldGateResults` -- the same
 // combinator `aggregateObservations` already uses internally.
 const effective = freshness.verdict === "satisfied" ? storedReport.overall : freshness;
 ```
@@ -295,7 +295,7 @@ npx builder-verify-toolchain check-observation-freshness --inputs ./check-observ
 # Exit codes for both: 0 = satisfied, 1 = violated, 2 = indeterminate/could not run.
 ```
 
-## Manifest engine (formerly `@vespeneventures/provisioning`)
+## Manifest engine (formerly `@example/provisioning`)
 
 An idempotent engine for applying a provisioning manifest to a machine, and
 for checking afterwards whether the machine still agrees with it. The engine
@@ -310,7 +310,7 @@ import {
   loadManifest,
   planInstallation,
   verifyInstallation,
-} from "@vespeneventures/builder";
+} from "@clossys/builder";
 
 const manifest = loadManifest(JSON.parse(rawManifestJson));
 const runtime = createRuntimeContext(manifest, { home: os.homedir(), sourceRoot: myCanonicalCheckout });
@@ -362,7 +362,7 @@ import {
   loadManifest,
   planInstallation,
   verifyComposedInstallation,
-} from "@vespeneventures/builder";
+} from "@clossys/builder";
 
 const namedPlans = sources.map(({ name, sourceRoot, manifest }) => ({
   source: name,
@@ -451,7 +451,7 @@ worked with what this package already ships.
 
 ### Decision 1: builder owns the mechanism, not controller
 
-`@vespeneventures/controller/conventions` already ships the account-neutral,
+`@clossys/controller/conventions` already ships the account-neutral,
 package-owned content itself — five documents plus a managed shell
 block — and #393 leaves every one of those files exactly where they are,
 untouched. What is missing is not content; it is a mechanism to *place*
@@ -465,7 +465,7 @@ actual: toolchain, pipeline shape, machines, platforms" — already names
 "machines" as a first-class subject; controller's does not. So: **builder
 owns the mechanism, controller keeps owning the content.** A caller composing
 a real machine imports package-owned entries from controller's
-`CONVENTION_DOCUMENTS` / `CONVENTION_ADAPTERS` catalog (`@vespeneventures/
+`CONVENTION_DOCUMENTS` / `CONVENTION_ADAPTERS` catalog (`@clossys/
 controller/conventions`) as one more source alongside the account and
 third-party sources this subpath discovers — this package does not fold that
 catalog into a manifest itself, because doing so would mean hard-coding one
@@ -508,7 +508,7 @@ were on the table:
 #393 named three classes of source; the two above are classes 2 and 3.
 Class 1 — machine guidance, agent policy rules, shell integration, command
 hooks — is not new content. It already ships in
-`@vespeneventures/controller/conventions`'s `CONVENTION_DOCUMENTS` and
+`@clossys/controller/conventions`'s `CONVENTION_DOCUMENTS` and
 `CONVENTION_ADAPTERS` catalogs, and the retiring account repository was only
 ever the placement mechanism for it. What was missing was not the content; it
 was **where the mapping from that content to real machine destinations
@@ -646,7 +646,7 @@ unreadable declared skill tree, two workspaces claiming the same account — is
 `indeterminate`, always present in the result, never dropped. `./third-party.ts`'s
 `loadThirdPartySkills` is the third-party-scoped mirror of the same
 ternary, keyed off `SkillScope`'s own `"third-party"` value
-(`@vespeneventures/controller/conventions`) rather than a second vocabulary —
+(`@clossys/controller/conventions`) rather than a second vocabulary —
 `THIRD_PARTY_SCOPE`'s assignment stops compiling if that union ever drops the
 value.
 
@@ -660,8 +660,8 @@ partially-composed machine reported as satisfied because the sources that DID
 resolve happened to verify clean.
 
 ```ts
-import { verifyMachine, createNodeDiscoveryPort } from "@vespeneventures/builder/machine";
-import { createNodeFileSystem } from "@vespeneventures/builder";
+import { verifyMachine, createNodeDiscoveryPort } from "@clossys/builder/machine";
+import { createNodeFileSystem } from "@clossys/builder";
 
 const report = verifyMachine(createNodeDiscoveryPort(), createNodeFileSystem(), {
   schemaVersion: 1,
@@ -682,7 +682,7 @@ npx builder-verify-machine --inputs machine-verify-inputs.json
 #             2 = could not verify (an unresolvable source, or bad input).
 ```
 
-## Deployment (`./deployment` subpath, formerly `@vespeneventures/deployment`)
+## Deployment (`./deployment` subpath, formerly `@example/deployment`)
 
 Dependency-free deployment surface contracts, configuration planning, health
 evaluation, and read-only Vercel and Render adapters — preserved as a
@@ -694,9 +694,9 @@ import {
   defineDeploymentManifest,
   evaluateDeploymentHealth,
   validateDeploymentManifest,
-} from "@vespeneventures/builder/deployment";
-import { createVercelInspector, renderVercelConfiguration } from "@vespeneventures/builder/deployment/vercel";
-import { createRenderInspector, renderRenderConfiguration } from "@vespeneventures/builder/deployment/render";
+} from "@clossys/builder/deployment";
+import { createVercelInspector, renderVercelConfiguration } from "@clossys/builder/deployment/vercel";
+import { createRenderInspector, renderRenderConfiguration } from "@clossys/builder/deployment/render";
 
 const manifest = defineDeploymentManifest({
   schemaVersion: "1",
@@ -712,7 +712,7 @@ The provider adapters make GET requests only, obtain a bearer token from a
 caller-injected provider at inspection time, and never read a secret store or
 process environment. See the module doc comments under `src/deployment/`
 for the full contract each subpath ships — the shape is unchanged from
-`@vespeneventures/deployment`'s own README, which this package's history
+`@example/deployment`'s own README, which this package's history
 carries forward.
 
 `evaluateDeploymentHealth` is also reachable from the shell, via the same
@@ -735,7 +735,7 @@ for why guessing at range syntax this module does not parse would be worse
 than refusing to.
 
 ```ts
-import { reconcileToolchain, validateToolchainDeclaration } from "@vespeneventures/builder";
+import { reconcileToolchain, validateToolchainDeclaration } from "@clossys/builder";
 
 const declaration = {
   runtime: { name: "node", version: "20.11.1" },
@@ -764,7 +764,7 @@ four times across this account family with no channel between the copies —
 a fix discovered in one copy had no way to reach the other three. #257 asks
 for that mechanism to live in one place, shipped as **importable machinery a
 consumer's own thin workflow invokes** — the shape
-`@vespeneventures/inspector` now provides — rather than as a
+`@clossys/inspector` now provides — rather than as a
 cross-repository reusable workflow reference. A `uses:` pointing at another
 account's workflow or action is not the sanctioned exception this account
 family's cross-account boundary rule allows; a downstream package depending
@@ -774,7 +774,7 @@ on an upstream package is, and that is what this subpath ships.
 values into one `0`/`1`/`2` exit-code verdict (`foldLiveStateReports`), plus a
 minimum-safe-version staleness floor (`checkVersionFloor`) that gives a caller
 running a pre-fix build the same "you are behind" signal
-`@vespeneventures/inspector` provides, not merely a changelog
+`@clossys/inspector` provides, not merely a changelog
 entry someone may or may not read — and the concrete gate built on both:
 `builder-verify-toolchain`, an installed CLI a consuming repository's own
 thin GitHub Actions workflow runs. See
@@ -794,7 +794,7 @@ a different subject that wants this package's mechanics without shelling out
 to the installed binary:
 
 ```ts
-import { checkVersionFloor, foldLiveStateReports } from "@vespeneventures/builder/ci";
+import { checkVersionFloor, foldLiveStateReports } from "@clossys/builder/ci";
 ```
 
 Every check here is hermetic: `src/ci/*.test.ts` injects every declaration,
@@ -896,7 +896,7 @@ above.
 
 ## Requirements
 
-Node.js >= 20, ESM. Runtime dependency: `@vespeneventures/controller` (`~0.8.0`), for the `GateResult` ternary the `liveStateSurface` and CI-mechanics modules build on rather than reinvent.
+Node.js >= 20, ESM. Runtime dependency: `@clossys/controller` (`~0.8.0`), for the `GateResult` ternary the `liveStateSurface` and CI-mechanics modules build on rather than reinvent.
 
 ## Licence
 

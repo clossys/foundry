@@ -7,7 +7,7 @@
  * `uses: <owner>/<repo>/.github/workflows/...@<ref>` — is the one this
  * account family's own cross-account boundary rule permits.
  *
- * Exit codes — the same contract `@vespeneventures/verify-standards` already
+ * Exit codes — the same contract `@example/verify-standards` already
  * publishes, reused rather than reinvented:
  *
  *   0 — every row evaluated and was verified.
@@ -20,7 +20,7 @@
  * There is no flag that turns a `2` into a `0`. Whether a `2` blocks a merge
  * is a repository's own branch-protection decision, made in that repository.
  *
- * SYNCHRONOUS ON PURPOSE — see `@vespeneventures/verify-standards`'s own
+ * SYNCHRONOUS ON PURPOSE — see `@example/verify-standards`'s own
  * `cli.ts` header for the full account of why an async `main()` assigned to
  * `process.exitCode` is a real, already-shipped defect class: `main` here
  * returns a number, not a promise, and does no async work at all.
@@ -50,8 +50,8 @@
  * commands, including the pre-existing no-subcommand path unchanged.
  */
 
-import { gateResultToExitCode } from "@vespeneventures/controller/gates";
-import type { GateResult } from "@vespeneventures/controller/gates";
+import { gateResultToExitCode } from "@clossys/controller/gates";
+import type { GateResult } from "@clossys/controller/gates";
 import type { DeploymentHealthSummary, DeploymentObservation } from "../deployment/types.js";
 import { evaluateDeploymentHealth } from "../deployment/health.js";
 import type { AggregateObservationsInput, AggregateObservationsResult, CheckObservationAggregateFreshnessInput, ObservationAggregateResultIndeterminateReason } from "../observation-aggregate.js";
@@ -88,7 +88,7 @@ const AGGREGATE_OBSERVATIONS_USAGE = `Usage: builder-verify-toolchain aggregate-
                     { expectedRepositories: string[], bundles: unknown[], now: string (ISO 8601),
                       staleAfterMs: number, maxResultAgeMs: number }. bundles is already-fetched
                     data -- this command performs no fetching of its own; see
-                    "@vespeneventures/builder"'s aggregateObservations doc comment.
+                    "@clossys/builder"'s aggregateObservations doc comment.
   --format <text|json>   Output format. Defaults to text.
   --help                 Print this message and exit 0.
 
@@ -114,7 +114,7 @@ const CHECK_OBSERVATION_FRESHNESS_USAGE = `Usage: builder-verify-toolchain check
 
 Answers the question aggregate-observations cannot ask of its own output: is a previously computed,
 persisted result still recent enough to be presented as current -- see checkObservationAggregate
-Freshness's own doc comment ("@vespeneventures/builder"'s observation-aggregate.ts).
+Freshness's own doc comment ("@clossys/builder"'s observation-aggregate.ts).
 
 Exit codes: 0 = the result is within its declared maxResultAgeMs; 1 = never produced by this
 command -- staleness has no "violated" state, only "still current" or "could not vouch for"; 2 =
@@ -128,12 +128,12 @@ const DEPLOYMENT_HEALTH_USAGE = `Usage: builder-verify-toolchain deployment-heal
                     DeploymentObservation is { surfaceId: string, status: "healthy" | "degraded" |
                     "unhealthy" | "unknown" }. This command performs no inspection of its own --
                     observations are supplied by the caller, typically read back from the
-                    "@vespeneventures/builder/deployment" provider adapters.
+                    "@clossys/builder/deployment" provider adapters.
   --format <text|json>   Output format. Defaults to text.
   --help                 Print this message and exit 0.
 
 Folds every surface's own status into one DeploymentHealthSummary -- see evaluateDeploymentHealth's
-own doc comment ("@vespeneventures/builder/deployment"'s health.ts).
+own doc comment ("@clossys/builder/deployment"'s health.ts).
 
 Exit codes: 0 = every recognized observation is healthy (no degraded, unhealthy, or unknown surface);
 1 = at least one surface is degraded or unhealthy -- a real finding; 2 = could not evaluate (bad
@@ -576,7 +576,7 @@ export function main(argv: readonly string[], port: CliPort): 0 | 1 | 2 {
 
   // Every check turns a data problem into a verdict rather than an
   // exception. This catch is the backstop for the case where one of them is
-  // wrong — see `@vespeneventures/verify-standards`'s own `cli.ts` for why
+  // wrong — see `@example/verify-standards`'s own `cli.ts` for why
   // this must only ever be able to produce a `2`, never accidentally read
   // as a `1` at the process boundary.
   let report: ToolchainVerifyReport;

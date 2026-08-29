@@ -216,8 +216,8 @@ function run(): void {
 }
 
 /**
- * Same real-path guard `@vespeneventures/gates`', `@vespeneventures/strategy`'s
- * and `@vespeneventures/ledger`'s `cli.ts` use, for the same reason: `npm
+ * Same real-path guard `@example/gates`', `@example/strategy`'s
+ * and `@example/ledger`'s `cli.ts` use, for the same reason: `npm
  * install` publishes `bin` entries as symlinks, so comparing
  * `process.argv[1]` to `import.meta.url` without resolving symlinks on both
  * sides fails the moment this file is actually invoked the only way it

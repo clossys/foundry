@@ -1,7 +1,7 @@
 /**
  * This file is NOT a public entry point — `package.json` deliberately
- * declares no `"."` export. Import from `@vespeneventures/designer/atoms` or
- * `@vespeneventures/designer/blocks` instead; see the README for why the ladder
+ * declares no `"."` export. Import from `@clossys/designer/atoms` or
+ * `@clossys/designer/blocks` instead; see the README for why the ladder
  * (atoms → blocks, with shell, charts, and theme as sibling layers) is kept explicit at the import site rather than
  * flattened through a root barrel. This barrel exists only so the same
  * names are reachable from one place for internal tooling (see
