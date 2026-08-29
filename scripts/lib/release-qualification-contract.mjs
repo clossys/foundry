@@ -40,7 +40,8 @@ export function validateReleaseQualificationPolicy(policy) {
   const seen = { packageKey: new Set(), recordStem: new Set(), packageDir: new Set(), adapterPath: new Set(), fixturePath: new Set() };
   for (const [name, entry] of Object.entries(policy.packages)) {
     closed(findings, entry, ["packageKey", "recordStem", "packageDir", "adapterPath", "fixturePath", "archetypes", "dimensions"], `policy.packages.${name}`);
-    if (!PACKAGE.test(name) || !PACKAGE_KEY.test(entry?.packageKey) || entry?.recordStem !== entry?.packageKey || entry?.packageDir !== `packages/${entry?.packageKey}` || !REPOSITORY_PATH.test(entry?.adapterPath) || !REPOSITORY_PATH.test(entry?.fixturePath) || !entry.adapterPath.endsWith(".json") || entry.fixturePath.endsWith(".json")) finding(findings, "package-policy", `exact package bindings required for ${name}.`);
+    const scope = /^@([a-z0-9][a-z0-9._-]{0,213})\//.exec(name)?.[1];
+    if (!PACKAGE.test(name) || !scope || !PACKAGE_KEY.test(entry?.packageKey) || entry?.recordStem !== `${scope}-${entry?.packageKey}` || entry?.packageDir !== `packages/${entry?.packageKey}` || !REPOSITORY_PATH.test(entry?.adapterPath) || !REPOSITORY_PATH.test(entry?.fixturePath) || !entry.adapterPath.endsWith(".json") || entry.fixturePath.endsWith(".json")) finding(findings, "package-policy", `exact namespace-qualified package bindings required for ${name}.`);
     for (const key of Object.keys(seen)) {
       const value = entry?.[key];
       if (typeof value !== "string" || seen[key].has(value)) finding(findings, "package-policy-unique", `${key} must be unique.`);

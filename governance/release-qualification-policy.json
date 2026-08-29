@@ -4,7 +4,7 @@
   "packages": {
     "@clossys/advisor": {
       "packageKey": "advisor",
-      "recordStem": "advisor",
+      "recordStem": "clossys-advisor",
       "packageDir": "packages/advisor",
       "adapterPath": "governance/release-qualification-adapters/advisor/current-direct.json",
       "fixturePath": "governance/release-qualification-fixtures/advisor/current-direct",
@@ -25,7 +25,7 @@
     },
     "@clossys/starter": {
       "packageKey": "starter",
-      "recordStem": "starter",
+      "recordStem": "clossys-starter",
       "packageDir": "packages/starter",
       "adapterPath": "governance/release-qualification-adapters/starter/current-direct.json",
       "fixturePath": "governance/release-qualification-fixtures/starter/current-direct",
@@ -46,7 +46,7 @@
     },
     "@clossys/controller": {
       "packageKey": "controller",
-      "recordStem": "controller",
+      "recordStem": "clossys-controller",
       "packageDir": "packages/controller",
       "adapterPath": "governance/release-qualification-adapters/controller/current-direct.json",
       "fixturePath": "governance/release-qualification-fixtures/controller/current-direct",

@@ -12,7 +12,9 @@ import {
   fetchPublicNpmPackument,
   probePublicNpmVersion,
   publicNpmPackageUrl,
+  publicNpmRegistryProof,
   repositoryIdentityFromPackument,
+  validatePublicNpmRegistryProof,
   verifyPublicNpmArtifact,
 } from "./public-npm-registry.mjs";
 
@@ -129,6 +131,17 @@ test("served artifact proof binds packument digests, exact bytes, and packed man
   assert.equal(result.evidence.shasum, createHash("sha1").update(bytes).digest("hex"));
   assert.equal(result.evidence.sha256, createHash("sha256").update(bytes).digest("hex"));
   assert.deepEqual(Object.keys(observations[1].options.headers), ["Accept"]);
+  assert.deepEqual(validatePublicNpmRegistryProof(publicNpmRegistryProof(result.evidence), { name: NAME, version: VERSION, bytes }), []);
+});
+
+test("retained anonymous proof rejects changed identity, URLs, digest, packed manifest, or candidate bytes", async () => {
+  const bytes = tarball();
+  const result = await verifyPublicNpmArtifact({ registry: PUBLIC_NPM_REGISTRY, name: NAME, version: VERSION, fetchImpl: queueFetch([response(200, metadata(bytes)), response(200, bytes)]) });
+  for (const mutate of [(proof) => { proof.evidence.name = "@fixture/other"; }, (proof) => { proof.evidence.packumentUrl = `${PUBLIC_NPM_REGISTRY}/fixture/probe`; }, (proof) => { proof.evidence.sha256 = "0".repeat(64); }, (proof) => { proof.evidence.packedManifestSha256 = "0".repeat(64); }, (proof) => { proof.evidence.access = "token"; }]) {
+    const proof = publicNpmRegistryProof(structuredClone(result.evidence)); mutate(proof);
+    assert.ok(validatePublicNpmRegistryProof(proof, { name: NAME, version: VERSION, bytes }).length > 0);
+  }
+  assert.ok(validatePublicNpmRegistryProof(publicNpmRegistryProof(result.evidence), { name: NAME, version: VERSION, bytes: Buffer.concat([bytes, Buffer.from("x")] ) }).some((item) => item.rule === "proof-digest"));
 });
 
 test("served artifact proof rejects changed bytes and a substituted packed manifest", async () => {
