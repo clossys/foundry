@@ -53,7 +53,8 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 import { filterPackagesForTarget, loadReleaseCatalog, readCurrentReleaseIdentity, resolveReleaseTarget } from "./check-release-catalog.mjs";
-import { probeVersions, resolveVersionLookups } from "./registry-version-lookup.mjs";
+import { GITHUB_PACKAGES_REGISTRY, probeVersions, resolveVersionLookups } from "./registry-version-lookup.mjs";
+import { PUBLIC_NPM_REGISTRY } from "./lib/public-npm-registry.mjs";
 
 function die(msg, code = 1) {
   console.error(`select-publishable-packages: ${msg}`);
@@ -133,6 +134,34 @@ export function selectMissingPackages(manifestEntries, verdicts) {
 }
 
 /**
+ * Derive only the credentials that the declared registry actually needs.
+ * Public npm packuments are intentionally anonymous; the historical GitHub
+ * Packages lane retains its explicit read-token requirement.
+ */
+export function registryProbeOptions(identity, env = process.env) {
+  const owner = identity.scope.slice(1);
+  if (identity.registry === PUBLIC_NPM_REGISTRY && identity.access === "public") {
+    return { owner, registry: identity.registry };
+  }
+  if (identity.registry === GITHUB_PACKAGES_REGISTRY && identity.access === undefined) {
+    const token = env.GH_PACKAGES_TOKEN;
+    if (typeof token !== "string" || token.length === 0) {
+      return {
+        fatal:
+          "GH_PACKAGES_TOKEN is not set. The historical GitHub Packages lookup needs read:packages; " +
+          "refusing to emit a matrix from a scan that never authenticated.",
+      };
+    }
+    return { owner, registry: identity.registry, token };
+  }
+  return {
+    fatal:
+      `unsupported release identity ${identity.scope} at ${identity.registry} ` +
+      `(access=${JSON.stringify(identity.access ?? null)}); only exact public npmjs and the historical GitHub Packages lane are admitted.`,
+  };
+}
+
+/**
  * Orders `entries` (`{ directory, manifest }`) so a package always appears
  * after every first-party dependency also present in the set — unchanged
  * from this script's pre-#416 topological sort, just decoupled from HOW the
@@ -177,22 +206,14 @@ async function main() {
   } catch (error) {
     die(error.message.replace(/^release catalog: /, ""));
   }
-  const owner = identity.scope.slice(1);
+  const probeOptions = registryProbeOptions(identity);
+  if (probeOptions.fatal) die(probeOptions.fatal);
 
   let releaseTarget;
   try {
     releaseTarget = resolveReleaseTarget(loadReleaseCatalog(), identity, process.env.PUBLISH_RELEASE_TARGET || undefined);
   } catch (error) {
     die(error.message.replace(/^release catalog: /, ""));
-  }
-
-  const token = process.env.GH_PACKAGES_TOKEN;
-  if (!token) {
-    die(
-      "GH_PACKAGES_TOKEN is not set. Selecting publishable packages now means asking the registry which versions " +
-        "already exist, which needs a read:packages token — refusing to emit a matrix (empty or otherwise) from a " +
-        "step that never actually asked.",
-    );
   }
 
   const { entries: discoveredEntries, fatal } = discoverPackageManifests({
@@ -217,18 +238,21 @@ async function main() {
 
   const outcomes = await probeVersions(
     entries.map(({ manifest }) => ({ name: manifest.name, version: manifest.version })),
-    { owner, token, fetchImpl: fetch },
+    { ...probeOptions, fetchImpl: fetch },
   );
   const verdicts = resolveVersionLookups(outcomes);
   const { missing, inconclusive, anyKnown } = selectMissingPackages(entries, verdicts);
 
   if (!anyKnown) {
     const kinds = [...new Set(inconclusive.map((item) => item.kind))].join('", "');
+    const remediation =
+      identity.registry === GITHUB_PACKAGES_REGISTRY
+        ? "Confirm GH_PACKAGES_TOKEN's scope, then re-run."
+        : "Confirm anonymous npmjs reachability and the exact public packument response, then re-run.";
     die(
       `could not confirm ANY of ${entries.length} package(s) against the registry — every lookup came back "${kinds}". ` +
-        "GitHub returns 404 identically for a package that was never published and for one this credential cannot see, " +
-        "so a total miss cannot be trusted either way. Refusing to emit a publish matrix (empty or otherwise) from a scan " +
-        "that never proved it could see the registry at all. Confirm GH_PACKAGES_TOKEN's scope, then re-run.",
+        "Refusing to emit a publish matrix (empty or otherwise) from a scan that never proved a definitive registry answer. " +
+        remediation,
     );
   }
 

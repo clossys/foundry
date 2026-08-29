@@ -74,6 +74,8 @@ const SYNTH_DENYLIST = {
 const SAFETY = join(scriptDir, "check-public-safety.mjs");
 const ARTIFACT = join(scriptDir, "check-artifact-safety.mjs");
 const COLLISION = join(scriptDir, "check-name-collision.mjs");
+const PUBLIC_NPM_REGISTRY_LIB = join(scriptDir, "lib", "public-npm-registry.mjs");
+const LEGACY_PACKAGE_REGISTRY = ["https://npm", "pkg", "github", "com"].join(".");
 const CONTAM = join(scriptDir, "check-contamination-classes.mjs");
 const QUALITY = join(scriptDir, "check-denylist-quality.mjs");
 const SET_SCOPE = join(scriptDir, "set-scope.mjs");
@@ -2203,8 +2205,11 @@ try {
     const binDir = join(dir, "bin");
     mkdirSync(binDir, { recursive: true });
     mkdirSync(join(dir, "scripts"), { recursive: true });
+    mkdirSync(join(dir, "scripts", "lib"), { recursive: true });
     mkdirSync(join(dir, "packages", "probe"), { recursive: true });
     cpSync(COLLISION, join(dir, "scripts", "check-name-collision.mjs"));
+    cpSync(PUBLIC_NPM_REGISTRY_LIB, join(dir, "scripts", "lib", "public-npm-registry.mjs"));
+    writeFileSync(join(dir, "package-scope.json"), JSON.stringify({ scope: "@gate-fixture", registry: LEGACY_PACKAGE_REGISTRY }));
 
     // A fixture `gh` on PATH ahead of the real one. It answers exactly the
     // one call check-name-collision.mjs makes (`gh api <path> --paginate`)

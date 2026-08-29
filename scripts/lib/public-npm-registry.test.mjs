@@ -1,0 +1,189 @@
+import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import test from "node:test";
+
+import {
+  PUBLIC_NPM_REGISTRY,
+  assessPublicNpmName,
+  fetchPublicNpmPackument,
+  probePublicNpmVersion,
+  publicNpmPackageUrl,
+  repositoryIdentityFromPackument,
+  verifyPublicNpmArtifact,
+} from "./public-npm-registry.mjs";
+
+const NAME = "@fixture/probe";
+const VERSION = "1.2.3";
+
+function response(status, body, headers = {}) {
+  const bytes = Buffer.isBuffer(body) ? body : Buffer.from(JSON.stringify(body));
+  return {
+    status,
+    ok: status >= 200 && status < 300,
+    headers: { get: (name) => headers[name.toLowerCase()] ?? null },
+    async json() { return JSON.parse(bytes.toString("utf8")); },
+    async arrayBuffer() { return bytes; },
+  };
+}
+
+function queueFetch(entries, observations = []) {
+  let index = 0;
+  return async (url, options) => {
+    observations.push({ url: String(url), options });
+    const entry = entries[index++];
+    if (entry instanceof Error) throw entry;
+    if (!entry) throw new Error("unexpected extra fetch");
+    return entry;
+  };
+}
+
+function tarball() {
+  const root = mkdtempSync(join(tmpdir(), "public-npm-registry-"));
+  try {
+    mkdirSync(join(root, "package"));
+    writeFileSync(join(root, "package", "package.json"), `${JSON.stringify({ name: NAME, version: VERSION, type: "module" })}\n`);
+    writeFileSync(join(root, "package", "index.js"), "export const ok = true;\n");
+    const path = join(root, "candidate.tgz");
+    execFileSync("tar", ["-czf", path, "-C", root, "package"]);
+    return Buffer.from(readFileSync(path));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+}
+
+function metadata(bytes, overrides = {}) {
+  const sha1 = createHash("sha1").update(bytes).digest("hex");
+  const integrity = `sha512-${createHash("sha512").update(bytes).digest("base64")}`;
+  return {
+    name: NAME,
+    versions: {
+      [VERSION]: {
+        name: NAME,
+        version: VERSION,
+        repository: { type: "git", url: "git+https://github.com/fixture/platform.git" },
+        dist: {
+          tarball: `${PUBLIC_NPM_REGISTRY}/@fixture/probe/-/probe-${VERSION}.tgz`,
+          shasum: sha1,
+          integrity,
+          ...overrides,
+        },
+      },
+    },
+  };
+}
+
+test("public npm package URLs are exact and reject alternate registries", () => {
+  assert.equal(publicNpmPackageUrl(PUBLIC_NPM_REGISTRY, NAME), `${PUBLIC_NPM_REGISTRY}/%40fixture%2Fprobe`);
+  assert.throws(() => publicNpmPackageUrl("https://registry.example.test", NAME), /supports only/);
+  assert.throws(() => publicNpmPackageUrl(PUBLIC_NPM_REGISTRY, "unscoped"), /scoped/);
+});
+
+test("anonymous packument fetch sends no credential-bearing header", async () => {
+  const observations = [];
+  const result = await fetchPublicNpmPackument({ registry: PUBLIC_NPM_REGISTRY, name: NAME, fetchImpl: queueFetch([response(200, metadata(tarball()))], observations) });
+  assert.equal(result.kind, "found");
+  assert.deepEqual(Object.keys(observations[0].options.headers), ["Accept"]);
+  assert.equal(observations[0].options.redirect, "error");
+});
+
+test("public npm 404 is a definitive missing version while denial and transport failure remain distinct", async () => {
+  const missing = await probePublicNpmVersion({ registry: PUBLIC_NPM_REGISTRY, name: NAME, version: VERSION, fetchImpl: queueFetch([response(404, {})]) });
+  assert.deepEqual(missing, { kind: "known", hasVersion: false });
+  const absentVersion = await probePublicNpmVersion({ registry: PUBLIC_NPM_REGISTRY, name: NAME, version: "9.9.9", fetchImpl: queueFetch([response(200, metadata(tarball()))]) });
+  assert.deepEqual(absentVersion, { kind: "known", hasVersion: false });
+  assert.deepEqual(await probePublicNpmVersion({ registry: PUBLIC_NPM_REGISTRY, name: NAME, version: VERSION, fetchImpl: queueFetch([response(403, {})]) }), { kind: "denied" });
+  assert.deepEqual(await probePublicNpmVersion({ registry: PUBLIC_NPM_REGISTRY, name: NAME, version: VERSION, fetchImpl: queueFetch([response(429, {})]) }), { kind: "unreachable" });
+  assert.deepEqual(await probePublicNpmVersion({ registry: PUBLIC_NPM_REGISTRY, name: NAME, version: VERSION, fetchImpl: queueFetch([new TypeError("offline")]) }), { kind: "unreachable" });
+});
+
+test("exact version metadata fails closed on malformed identity, SRI, shasum, and tarball origin", async () => {
+  const bytes = tarball();
+  for (const document of [
+    { ...metadata(bytes), name: "@fixture/other" },
+    metadata(bytes, { integrity: "sha256-not-enough" }),
+    metadata(bytes, { shasum: "not-a-sha1" }),
+    metadata(bytes, { tarball: "https://example.test/probe.tgz" }),
+  ]) {
+    const result = await probePublicNpmVersion({ registry: PUBLIC_NPM_REGISTRY, name: NAME, version: VERSION, fetchImpl: queueFetch([response(200, document)]) });
+    assert.deepEqual(result, { kind: "unreachable" });
+  }
+});
+
+test("served artifact proof binds packument digests, exact bytes, and packed manifest", async () => {
+  const bytes = tarball();
+  const observations = [];
+  const result = await verifyPublicNpmArtifact({
+    registry: PUBLIC_NPM_REGISTRY,
+    name: NAME,
+    version: VERSION,
+    fetchImpl: queueFetch([response(200, metadata(bytes)), response(200, bytes, { "content-length": String(bytes.length) })], observations),
+  });
+  assert.equal(result.kind, "verified");
+  assert.equal(result.evidence.access, "anonymous");
+  assert.equal(result.evidence.name, NAME);
+  assert.equal(result.evidence.version, VERSION);
+  assert.equal(result.evidence.shasum, createHash("sha1").update(bytes).digest("hex"));
+  assert.equal(result.evidence.sha256, createHash("sha256").update(bytes).digest("hex"));
+  assert.deepEqual(Object.keys(observations[1].options.headers), ["Accept"]);
+});
+
+test("served artifact proof rejects changed bytes and a substituted packed manifest", async () => {
+  const bytes = tarball();
+  const changed = Buffer.concat([bytes, Buffer.from("changed")]);
+  const digestMismatch = await verifyPublicNpmArtifact({ registry: PUBLIC_NPM_REGISTRY, name: NAME, version: VERSION, fetchImpl: queueFetch([response(200, metadata(bytes)), response(200, changed)]) });
+  assert.equal(digestMismatch.kind, "mismatch");
+
+  const root = mkdtempSync(join(tmpdir(), "public-npm-registry-wrong-"));
+  let wrong;
+  try {
+    mkdirSync(join(root, "package"));
+    writeFileSync(join(root, "package", "package.json"), JSON.stringify({ name: "@fixture/other", version: VERSION }));
+    const path = join(root, "wrong.tgz");
+    execFileSync("tar", ["-czf", path, "-C", root, "package"]);
+    wrong = readFileSync(path);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+  const manifestMismatch = await verifyPublicNpmArtifact({ registry: PUBLIC_NPM_REGISTRY, name: NAME, version: VERSION, fetchImpl: queueFetch([response(200, metadata(wrong)), response(200, wrong)]) });
+  assert.equal(manifestMismatch.kind, "mismatch");
+  assert.match(manifestMismatch.detail, /manifest/);
+});
+
+test("repository identity is derived only from canonical GitHub repository metadata", () => {
+  const document = metadata(tarball());
+  assert.equal(repositoryIdentityFromPackument(document, VERSION), "fixture/platform");
+  document.versions[VERSION].repository.url = "https://example.test/fixture/platform";
+  assert.equal(repositoryIdentityFromPackument(document, VERSION), null);
+});
+
+test("public npm name ownership distinguishes unused, same-repository, foreign, and unreadable names", async () => {
+  const thisRepo = "fixture/platform";
+  assert.deepEqual(
+    await assessPublicNpmName({ registry: PUBLIC_NPM_REGISTRY, name: NAME, version: VERSION, thisRepo, fetchImpl: async () => response(404, {}) }),
+    { kind: "safe", found: false, existingRepo: null },
+  );
+  for (const [repository, kind] of [
+    ["git+https://github.com/fixture/platform.git", "same-repo-version-bump"],
+    ["https://github.com/other/project.git", "collision"],
+    [undefined, "collision"],
+  ]) {
+    const document = metadata(tarball());
+    document.versions[VERSION].repository = repository === undefined ? undefined : { url: repository };
+    const result = await assessPublicNpmName({
+      registry: PUBLIC_NPM_REGISTRY,
+      name: NAME,
+      version: VERSION,
+      thisRepo,
+      fetchImpl: async () => response(200, document),
+    });
+    assert.equal(result.kind, kind);
+  }
+  assert.equal(
+    (await assessPublicNpmName({ registry: PUBLIC_NPM_REGISTRY, name: NAME, version: VERSION, thisRepo, fetchImpl: async () => response(403, {}) })).kind,
+    "denied",
+  );
+});

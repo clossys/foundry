@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { discoverPackageManifests, orderByDependency, selectMissingPackages } from "./select-publishable-packages.mjs";
+import { discoverPackageManifests, orderByDependency, registryProbeOptions, selectMissingPackages } from "./select-publishable-packages.mjs";
+import { GITHUB_PACKAGES_REGISTRY } from "./registry-version-lookup.mjs";
 
 function discover({ directories, current = {} }) {
   return discoverPackageManifests({
@@ -127,6 +128,30 @@ test("selectMissingPackages: no verdict at all for a package is inconclusive, ne
   assert.equal(inconclusive.length, 1);
   assert.equal(inconclusive[0].name, "@example/app");
   assert.equal(anyKnown, false);
+});
+
+// -------------------------------------------------------------------- registryProbeOptions
+
+test("registryProbeOptions: public npmjs is anonymous only for the exact public identity", () => {
+  assert.deepEqual(registryProbeOptions({ scope: "@clossys", registry: "https://registry.npmjs.org", access: "public" }, {}), {
+    owner: "clossys",
+    registry: "https://registry.npmjs.org",
+  });
+  assert.match(
+    registryProbeOptions({ scope: "@clossys", registry: "https://registry.npmjs.org" }, {}).fatal,
+    /unsupported release identity/,
+  );
+});
+
+test("registryProbeOptions: GitHub Packages preserves its credential requirement", () => {
+  assert.match(
+    registryProbeOptions({ scope: "@example", registry: GITHUB_PACKAGES_REGISTRY }, {}).fatal,
+    /GH_PACKAGES_TOKEN is not set/,
+  );
+  assert.deepEqual(
+    registryProbeOptions({ scope: "@example", registry: GITHUB_PACKAGES_REGISTRY }, { GH_PACKAGES_TOKEN: "fixture-token" }),
+    { owner: "example", registry: GITHUB_PACKAGES_REGISTRY, token: "fixture-token" },
+  );
 });
 
 // -------------------------------------------------------------------- orderByDependency
