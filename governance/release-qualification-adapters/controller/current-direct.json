@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "package": "@vespeneventures/controller",
+  "package": "@clossys/controller",
   "archetype": "current-direct",
   "peerInstall": { "typescript": "6.0.3" },
   "bins": { "foundry-governance": 0, "foundry-check": 0, "repository-check": 0, "repository-profile-check": 0, "repository-package-adoption-check": 0, "review-check": 0, "singular-authority-check": 0, "foundry-position-check": 2, "foundry-completion-evidence-check": 2 },

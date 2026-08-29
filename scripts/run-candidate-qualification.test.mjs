@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { execFile as execFileCallback } from "node:child_process";
+import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { promisify } from "node:util";
@@ -19,4 +20,47 @@ test("CLI rejects unknown, duplicate, missing, and path-traversal package flags 
 });
 test("CLI rejects a credential-bearing parent before it can inspect a candidate", async () => {
   await assert.rejects(() => execFile(process.execPath, [cli, "--package", "controller", "--tarball", "candidate.tgz", "--output", "out.json"], { env: { PATH: process.env.PATH, NODE_AUTH_TOKEN: "secret" } }), /credential-bearing/);
+});
+
+async function repositoryJson(path) {
+  return JSON.parse(await readFile(new URL(`../${path}`, import.meta.url), "utf8"));
+}
+
+test("repository Trio policy, adapters, and current-candidate fixtures bind the selected @clossys identities", async () => {
+  const policy = await repositoryJson("governance/release-qualification-policy.json");
+  const expected = [
+    ["advisor", "@clossys/advisor", "0.1.3"],
+    ["starter", "@clossys/starter", "0.1.2"],
+    ["controller", "@clossys/controller", "0.8.21"],
+  ];
+
+  for (const [key, name, version] of expected) {
+    const manifest = await repositoryJson(`packages/${key}/package.json`);
+    const entry = policy.packages[name];
+    const adapter = await repositoryJson(entry.adapterPath);
+    assert.equal(entry.packageKey, key);
+    assert.deepEqual([manifest.name, manifest.version], [name, version]);
+    assert.equal(adapter.package, name);
+  }
+
+  for (const state of ["satisfied", "violated", "indeterminate"]) {
+    const request = await repositoryJson(`governance/release-qualification-fixtures/starter/current-direct/request-${state}.json`);
+    assert.deepEqual([request.advisor.name, request.advisor.version], ["@clossys/advisor", "0.1.3"]);
+  }
+  const starterManifest = await repositoryJson("governance/release-qualification-fixtures/starter/current-direct/overlay/package.json");
+  const starterLock = await repositoryJson("governance/release-qualification-fixtures/starter/current-direct/overlay/package-lock.json");
+  const advisorManifest = await repositoryJson("governance/release-qualification-fixtures/starter/current-direct/overlay/advisor-package.json");
+  assert.equal(starterManifest.devDependencies["@clossys/advisor"], "0.1.3");
+  assert.equal(starterLock.packages[""].devDependencies["@clossys/advisor"], "0.1.3");
+  assert.equal(starterLock.packages["node_modules/@clossys/advisor"].version, "0.1.3");
+  assert.deepEqual([advisorManifest.name, advisorManifest.version], ["@clossys/advisor", "0.1.3"]);
+
+  const declarations = await repositoryJson("governance/release-qualification-fixtures/controller/current-direct/authority-declarations.json");
+  const validLock = await repositoryJson("governance/release-qualification-fixtures/controller/current-direct/authority-valid-package-lock.json");
+  const duplicateLock = await repositoryJson("governance/release-qualification-fixtures/controller/current-direct/authority-duplicate-package-lock.json");
+  assert.deepEqual(declarations.declarations, [{ packageName: "@clossys/controller", authority: "controller" }]);
+  assert.deepEqual(declarations.target, { authority: "controller", version: "0.8.21" });
+  assert.equal(validLock.packages["node_modules/@clossys/controller"].version, "0.8.21");
+  assert.equal(duplicateLock.packages["node_modules/@clossys/controller"].version, "0.8.21");
+  assert.equal(duplicateLock.packages["node_modules/@example/consumer/node_modules/@clossys/controller"].version, "0.8.20");
 });

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "package": "@vespeneventures/starter",
+  "package": "@clossys/starter",
   "archetype": "current-direct",
   "bins": { "foundry-starter": 0 },
   "fixtures": [
@@ -13,8 +13,8 @@
   "consumerOverlay": [
     { "fixture": "overlay/package.json", "target": "package.json" },
     { "fixture": "overlay/package-lock.json", "target": "package-lock.json" },
-    { "fixture": "overlay/advisor-package.json", "target": "node_modules/@vespeneventures/advisor/package.json" },
-    { "fixture": "overlay/advisor-cli.js", "target": "node_modules/@vespeneventures/advisor/dist/execution-readiness-cli.js" },
+    { "fixture": "overlay/advisor-package.json", "target": "node_modules/@clossys/advisor/package.json" },
+    { "fixture": "overlay/advisor-cli.js", "target": "node_modules/@clossys/advisor/dist/execution-readiness-cli.js" },
     { "fixture": "overlay/target-package.json", "target": "node_modules/@fixture/qualification-target/package.json" },
     { "fixture": "overlay/target-cli.js", "target": "node_modules/@fixture/qualification-target/dist/check.js" }
   ],
