@@ -12,6 +12,18 @@ function job(name) {
   return workflow.slice(start, next === -1 ? workflow.length : start + 1 + next);
 }
 
+test("W1D keeps upload disabled and has no automatic publication trigger", () => {
+  assert.doesNotMatch(workflow, /^\s+push:/m);
+  assert.match(job("publish"), /^  publish:\n[\s\S]*?\n    if: \$\{\{ false \}\}/m);
+  assert.match(job("publish"), /W1D prepares source only/);
+});
+
+test("every package-capable job checks the closed release catalogue", () => {
+  assert.equal((workflow.match(/node scripts\/check-release-catalog\.mjs --package "\$PKG"/g) ?? []).length, 3);
+  assert.equal((workflow.match(/node scripts\/check-release-catalog\.mjs --package "\$MANUAL_PACKAGE"/g) ?? []).length, 1);
+  assert.match(workflow, /current exact Advisor, Starter, Controller public-npm launch target/);
+});
+
 test("publish packs one candidate and hands off exact bytes", () => {
   assert.equal((workflow.match(/npm pack --ignore-scripts --json --pack-destination/g) ?? []).length, 1);
   assert.equal(workflow.includes("packRoundTrip"), false);

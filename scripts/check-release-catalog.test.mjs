@@ -11,6 +11,7 @@ import { assertPackageAuthorized, filterPackagesForTarget, loadReleaseCatalog, r
 const currentIdentity = { scope: "@vespeneventures", registry: "https://npm.pkg.github.com" };
 const targetIdentity = { scope: "@clossys", registry: "https://registry.npmjs.org" };
 const cutoverIdentity = { ...targetIdentity, access: "public" };
+const launchPackages = ["advisor", "starter", "controller"];
 const scriptsDir = dirname(fileURLToPath(import.meta.url));
 const catalogCli = join(scriptsDir, "check-release-catalog.mjs");
 
@@ -32,7 +33,7 @@ function cutoverCatalog(overrides = {}) {
     defaultTarget: "clossys-npmjs",
     targets: [
       { id: "current-github-packages", status: "historical", scope: currentIdentity.scope, registry: currentIdentity.registry, packages: "all" },
-      { id: "clossys-npmjs", status: "active", scope: targetIdentity.scope, registry: targetIdentity.registry, access: "public", packages: "all" },
+      { id: "clossys-npmjs", status: "active", scope: targetIdentity.scope, registry: targetIdentity.registry, access: "public", packages: [...launchPackages] },
     ],
     ...overrides,
   };
@@ -116,24 +117,48 @@ test("an implicit selection resolves only the current target", () => {
   assert.throws(() => resolveReleaseTarget(document, targetIdentity), /expects @vespeneventures/);
 });
 
-test("the post-recut catalogue admits only the complete public all-package state", () => {
+test("the post-recut catalogue defaults to only the exact public-npm launch Trio", () => {
   const document = load(cutoverCatalog());
   const target = resolveReleaseTarget(document, cutoverIdentity);
   assert.equal(target.id, "clossys-npmjs");
-  assert.equal(target.packages, "all");
+  assert.deepEqual(target.packages, launchPackages);
   assert.equal(target.access, "public");
+  const entries = ["advisor", "architect", "starter", "controller"].map((directory) => ({ directory }));
+  assert.deepEqual(filterPackagesForTarget(entries, target).map((entry) => entry.directory), launchPackages);
+  assert.throws(() => assertPackageAuthorized(target, "architect"), /not authorized/);
   assert.throws(() => resolveReleaseTarget(document, currentIdentity, "current-github-packages"), /historical/);
 });
 
-test("candidate catalogue rejects mixed access, bounded packages, old default, or retained precutover target", () => {
+test("the launch target emits declared Trio order rather than caller inventory order", () => {
+  const target = resolveReleaseTarget(load(cutoverCatalog()), cutoverIdentity);
+  const entries = ["controller", "architect", "advisor", "starter"].map((directory) => ({ directory }));
+  assert.deepEqual(filterPackagesForTarget(entries, target).map((entry) => entry.directory), launchPackages);
+});
+
+test("candidate catalogue rejects mixed access, broadened or changed launch packages, old default, or retained precutover target", () => {
   for (const document of [
     cutoverCatalog({ targets: [cutoverCatalog().targets[0], { ...cutoverCatalog().targets[1], access: undefined }] }),
-    cutoverCatalog({ targets: [cutoverCatalog().targets[0], { ...cutoverCatalog().targets[1], packages: ["advisor", "starter", "controller"] }] }),
+    cutoverCatalog({ targets: [cutoverCatalog().targets[0], { ...cutoverCatalog().targets[1], packages: "all" }] }),
+    cutoverCatalog({ targets: [cutoverCatalog().targets[0], { ...cutoverCatalog().targets[1], packages: ["starter", "advisor", "controller"] }] }),
+    cutoverCatalog({ targets: [cutoverCatalog().targets[0], { ...cutoverCatalog().targets[1], packages: ["advisor", "starter"] }] }),
+    cutoverCatalog({ targets: [cutoverCatalog().targets[0], { ...cutoverCatalog().targets[1], packages: ["advisor", "starter", "controller", "architect"] }] }),
     cutoverCatalog({ defaultTarget: "current-github-packages" }),
     cutoverCatalog({ targets: [...cutoverCatalog().targets, catalog().targets[1]] }),
   ]) {
     assert.throws(() => load(document), /candidate state/);
   }
+  assert.throws(
+    () =>
+      load(
+        cutoverCatalog({
+          targets: [
+            cutoverCatalog().targets[0],
+            { ...cutoverCatalog().targets[1], packages: ["advisor", "advisor", "controller"] },
+          ],
+        }),
+      ),
+    /non-empty unique package-directory list/,
+  );
 });
 
 test("the current target cannot be repurposed as an implicit migration lane", () => {
@@ -200,6 +225,14 @@ test("package-scope CLI input uses indeterminate exits while semantic identity d
 test("target catalogue refuses a missing authorized package instead of silently publishing fewer packages", () => {
   const target = resolveReleaseTarget(load(catalog()), targetIdentity, "clossys-npmjs-precutover");
   assert.throws(() => filterPackagesForTarget([{ directory: "advisor" }, { directory: "controller" }], target), /authorizes missing packages\/starter/);
+});
+
+test("the active launch target refuses a missing Trio member rather than selecting a partial cohort", () => {
+  const target = resolveReleaseTarget(load(cutoverCatalog()), cutoverIdentity);
+  assert.throws(
+    () => filterPackagesForTarget([{ directory: "advisor" }, { directory: "controller" }, { directory: "architect" }], target),
+    /authorizes missing packages\/starter/,
+  );
 });
 
 test("current release identity itself is validated before a target is resolved", () => {

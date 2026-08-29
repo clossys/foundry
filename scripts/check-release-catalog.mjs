@@ -3,11 +3,10 @@
 //
 // `package-scope.json` remains the single source of truth for the CURRENT
 // scope and registry. This separate document is an allowlist for a named
-// release target. Its default target preserves the current GitHub Packages
-// lane; a future target must be selected explicitly and must match the scope
-// and registry already declared by package-scope.json. That makes a scope
-// switch fail closed instead of discovering and publishing every workspace
-// package under the new identity.
+// release target. Its default target must match the scope and registry already
+// declared by package-scope.json, while its package list remains an exact,
+// reviewed launch allowlist. That makes a scope switch fail closed instead of
+// discovering and publishing every workspace package under the new identity.
 
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -34,7 +33,7 @@ const CUTOVER_TARGET = Object.freeze({
   scope: "@clossys",
   registry: "https://registry.npmjs.org",
   access: "public",
-  packages: "all",
+  packages: Object.freeze(["advisor", "starter", "controller"]),
 });
 
 class CatalogInputError extends Error {
@@ -142,8 +141,15 @@ export function loadReleaseCatalog({ path = "governance/release-catalog.json", r
     if (current.status !== "historical" || current.scope !== CURRENT_TARGET.scope || current.registry !== CURRENT_TARGET.registry || current.packages !== "all" || current.access !== undefined) {
       fail(`${path} candidate state must preserve the exact historical GitHub Packages identity`);
     }
-    if (cutover.status !== CUTOVER_TARGET.status || cutover.scope !== CUTOVER_TARGET.scope || cutover.registry !== CUTOVER_TARGET.registry || cutover.access !== CUTOVER_TARGET.access || cutover.packages !== "all" || catalog.defaultTarget !== CUTOVER_TARGET.id) {
-      fail(`${path} candidate state must activate the exact all-package public-npm target`);
+    if (
+      cutover.status !== CUTOVER_TARGET.status ||
+      cutover.scope !== CUTOVER_TARGET.scope ||
+      cutover.registry !== CUTOVER_TARGET.registry ||
+      cutover.access !== CUTOVER_TARGET.access ||
+      !matchesExactArray(cutover.packages, CUTOVER_TARGET.packages) ||
+      catalog.defaultTarget !== CUTOVER_TARGET.id
+    ) {
+      fail(`${path} candidate state must activate the exact Advisor, Starter, Controller public-npm launch target`);
     }
   }
   if (!ids.has(catalog.defaultTarget)) fail(`${path} defaultTarget "${catalog.defaultTarget}" is not declared in targets`);
@@ -186,11 +192,11 @@ export function assertPackageAuthorized(target, packageDirectory) {
 
 export function filterPackagesForTarget(entries, target) {
   if (target.packages === "all") return entries;
-  const available = new Set(entries.map((entry) => entry.directory));
+  const available = new Map(entries.map((entry) => [entry.directory, entry]));
   for (const directory of target.packages) {
     if (!available.has(directory)) fail(`target "${target.id}" authorizes missing packages/${directory}/package.json`);
   }
-  return entries.filter((entry) => target.packages.includes(entry.directory));
+  return target.packages.map((directory) => available.get(directory));
 }
 
 function parseArgs(argv) {
