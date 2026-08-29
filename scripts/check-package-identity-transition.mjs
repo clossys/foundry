@@ -114,14 +114,36 @@ function checkCandidateHistory(policy) {
   return findings;
 }
 
-function checkCandidatePublishInert() {
-  const path = join(root, ".github", "workflows", "publish.yml");
-  const source = readFileSync(path, "utf8");
+function workflowPaths(workflowsRoot, current = workflowsRoot, paths = []) {
+  for (const entry of readdirSync(current, { withFileTypes: true }).sort((left, right) => left.name.localeCompare(right.name))) {
+    const path = join(current, entry.name);
+    if (entry.isDirectory()) workflowPaths(workflowsRoot, path, paths);
+    else if (entry.isFile() && /\.ya?ml$/.test(entry.name)) paths.push(path);
+    else if (entry.isSymbolicLink()) throw new Error(`workflow inventory contains a symbolic link: ${relative(workflowsRoot, path)}`);
+  }
+  return paths;
+}
+
+export function checkCandidatePublishInert(repositoryRoot = root) {
+  const workflowsRoot = join(repositoryRoot, ".github", "workflows");
+  if (!existsSync(workflowsRoot)) return [".github/workflows is missing during W1D"];
   const findings = [];
-  if (/^\s{2}push:\s*$/m.test(source)) findings.push("publish.yml: push publication trigger is forbidden during W1D");
-  const livePublishes = source.split(/\r?\n/).filter((line) => /\bnpm publish\b/.test(line) && !/--dry-run/.test(line) && !/^\s*#/.test(line));
-  if (livePublishes.length) findings.push("publish.yml: real npm publish command is forbidden during W1D");
-  if (/\bid-token:\s*write\b/.test(source)) findings.push("publish.yml: provider trust must remain inactive during W1D");
+  const paths = workflowPaths(workflowsRoot);
+  if (paths.length === 0) return [".github/workflows contains no workflow documents during W1D"];
+  for (const path of paths) {
+    const rel = relative(repositoryRoot, path).split("\\").join("/");
+    const source = readFileSync(path, "utf8");
+    const activeLines = source.split(/\r?\n/).filter((line) => !/^\s*#/.test(line));
+    if (rel === ".github/workflows/publish.yml" && activeLines.some((line) => /^\s{2}push:\s*(?:#.*)?$/.test(line))) {
+      findings.push(`${rel}: push publication trigger is forbidden during W1D`);
+    }
+    if (activeLines.some((line) => /\bnpm\s+publish\b/.test(line) && !/\bnpm\s+publish\b.*--dry-run\b/.test(line))) {
+      findings.push(`${rel}: real npm publish command is forbidden during W1D`);
+    }
+    if (activeLines.some((line) => /(?:["']?id-token["']?)\s*:\s*["']?write["']?(?:\s|,|}|$)/.test(line))) {
+      findings.push(`${rel}: provider trust must remain inactive during W1D`);
+    }
+  }
   return findings;
 }
 

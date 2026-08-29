@@ -201,10 +201,12 @@ function validateCandidateStructuredState(root, policy, readFile) {
   const directories = packageDirectories(root);
   const names = new Set(directories);
   const candidateNames = new Set(directories.map((directory) => `${policy.candidate.scope}/${directory}`));
+  const manifests = new Map();
 
   for (const directory of directories) {
     const path = join(root, "packages", directory, "package.json");
     const manifest = JSON.parse(readFile(path, "utf8"));
+    manifests.set(directory, manifest);
     try {
       transitionManifest(manifest, directory, policy.candidate, policy.candidate, names);
     } catch (error) {
@@ -235,11 +237,20 @@ function validateCandidateStructuredState(root, policy, readFile) {
       }
     }
     for (const directory of directories) {
-      if (lock.packages[`packages/${directory}`]?.name !== `${policy.candidate.scope}/${directory}`) {
+      const workspace = lock.packages[`packages/${directory}`];
+      if (workspace?.name !== `${policy.candidate.scope}/${directory}`) {
         findings.push(`package-lock.json workspace identity mismatch for packages/${directory}`);
       }
       if (lock.packages[`node_modules/${policy.candidate.scope}/${directory}`]?.link !== true) {
         findings.push(`package-lock.json is missing the exact candidate local link for ${directory}`);
+      }
+      const manifest = manifests.get(directory);
+      for (const field of ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"]) {
+        const manifestMap = manifest?.[field] ?? {};
+        const lockMap = workspace?.[field] ?? {};
+        if (!object(manifestMap) || !object(lockMap) || !sameJson(manifestMap, lockMap)) {
+          findings.push(`packages/${directory}/package.json ${field} must exactly match package-lock.json workspace ${field}`);
+        }
       }
     }
     if (!sameJson(lock, transitionLock(lock, directories, policy.candidate, policy.candidate))) {
@@ -292,8 +303,11 @@ export function applyPlanAtomically(changes, writeFile) {
   const written = [];
   try {
     for (const change of changes) {
-      writeFile(change.path, change.after);
+      // A filesystem adapter may truncate or replace bytes and only then
+      // report failure. Enrol the current target in rollback before calling
+      // it so even that partial-write shape is restored.
       written.push(change);
+      writeFile(change.path, change.after);
     }
   } catch (error) {
     const rollbackFailures = [];

@@ -14,6 +14,7 @@ import {
   planIdentityTransition,
   validateHistoryInventory,
 } from "./lib/package-identity-transition.mjs";
+import { checkCandidatePublishInert } from "./check-package-identity-transition.mjs";
 
 const policy = loadTransitionPolicy(new URL("../governance/package-identity-transition.json", import.meta.url));
 
@@ -137,6 +138,21 @@ test("a candidate declaration alone cannot falsely report a complete candidate s
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
+test("candidate idempotence rejects a manifest and workspace-lock dependency mismatch", () => {
+  const { root } = fixture();
+  try {
+    applyPlanAtomically(planIdentityTransition({ root, policy }), writeFileSync);
+    const path = join(root, "packages", "alpha", "package.json");
+    const value = JSON.parse(readFileSync(path, "utf8"));
+    delete value.dependencies["@clossys/beta"];
+    writeFileSync(path, json(value));
+    assert.throws(
+      () => planIdentityTransition({ root, policy }),
+      /dependencies must exactly match package-lock\.json workspace dependencies/,
+    );
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
 test("mixed source state is rejected before a plan can write anything", () => {
   const { root } = fixture();
   try {
@@ -165,6 +181,39 @@ test("a write failure rolls every already-written file back byte-for-byte", () =
   );
   assert.ok(writes >= 4);
   assert.deepEqual(Object.fromEntries(files), { a: "old-a", b: "old-b", c: "old-c" });
+});
+
+test("a writer that mutates bytes before throwing still rolls the current target back", () => {
+  const files = new Map([["a", "old-a"], ["b", "old-b"]]);
+  assert.throws(
+    () => applyPlanAtomically(
+      [...files].map(([path, before]) => ({ path, before, after: `new-${path}` })),
+      (path, bytes) => {
+        files.set(path, bytes);
+        if (path === "b" && bytes === "new-b") throw new Error("failure after mutation");
+      },
+    ),
+    /was rolled back/,
+  );
+  assert.deepEqual(Object.fromEntries(files), { a: "old-a", b: "old-b" });
+});
+
+test("candidate publication and provider trust are forbidden across the complete workflow inventory", () => {
+  const root = mkdtempSync(join(tmpdir(), "package-identity-workflows-"));
+  try {
+    const workflows = join(root, ".github", "workflows");
+    mkdirSync(workflows, { recursive: true });
+    writeFileSync(join(workflows, "publish.yml"), "name: inert\non:\n  workflow_dispatch:\njobs: {}\n");
+    writeFileSync(join(workflows, "checks.yaml"), "name: checks\non:\n  pull_request:\njobs: {}\n");
+    assert.deepEqual(checkCandidatePublishInert(root), []);
+
+    writeFileSync(join(workflows, "alternate.yml"), "name: hostile\non:\n  push:\njobs:\n  publish:\n    steps:\n      - run: npm publish\n");
+    assert.match(checkCandidatePublishInert(root).join("\n"), /alternate\.yml: real npm publish command/);
+    rmSync(join(workflows, "alternate.yml"));
+
+    writeFileSync(join(workflows, "trust.yml"), "name: trust\non: workflow_dispatch\npermissions: { contents: read, \"id-token\": write }\njobs: {}\n");
+    assert.match(checkCandidatePublishInert(root).join("\n"), /trust\.yml: provider trust must remain inactive/);
+  } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
 test("historical exceptions are exact line digests on closed path classes", () => {
