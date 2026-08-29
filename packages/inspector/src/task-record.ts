@@ -263,7 +263,13 @@ function extractTaskReferenceCandidates(description: string, recordLabels: reado
       const match = pattern.exec(line);
       const captured = match?.[1];
       if (captured === undefined) continue;
-      const trimmed = captured.replace(/[.,;:)\]]+$/, "");
+      let end = captured.length;
+      while (end > 0) {
+        const character = captured[end - 1];
+        if (character === undefined || !".,;:)]".includes(character)) break;
+        end -= 1;
+      }
+      const trimmed = captured.slice(0, end);
       if (trimmed !== "") candidates.push(trimmed);
     }
   }
@@ -297,8 +303,17 @@ const SHAPE_PROBE_SCOPE = "scope-probe/scope-probe";
  * behind any candidate that carries that punctuation.
  */
 function isNakedNumericCandidate(candidate: string): boolean {
-  const unspanned = candidate.replace(/^`+/, "").replace(/`+$/, "");
+  const unspanned = stripCodeSpanDelimiters(candidate);
   return /^\d+$/.test(unspanned);
+}
+
+/** Removes Markdown code-span delimiters with a bounded linear scan. */
+function stripCodeSpanDelimiters(value: string): string {
+  let start = 0;
+  let end = value.length;
+  while (start < end && value[start] === "`") start += 1;
+  while (end > start && value[end - 1] === "`") end -= 1;
+  return value.slice(start, end);
 }
 
 /**
@@ -381,11 +396,7 @@ export function extractTaskReferenceText(description: string, recordLabels: read
  */
 export function parseTaskReference(raw: string, defaultScope: string): ParsedTaskReference | undefined {
   if (typeof raw !== "string") return undefined;
-  let start = 0;
-  let end = raw.length;
-  while (start < end && raw[start] === "`") start += 1;
-  while (end > start && raw[end - 1] === "`") end -= 1;
-  const unspanned = raw.slice(start, end);
+  const unspanned = stripCodeSpanDelimiters(raw);
 
   const isDigits = (value: string): boolean => {
     if (value.length === 0) return false;

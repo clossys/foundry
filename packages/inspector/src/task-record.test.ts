@@ -174,6 +174,22 @@ describe("extractTaskReferenceText", () => {
     const description = `<!--${"x".repeat(250_000)}\nWork item: #12`;
     expect(extractTaskReferenceText(description, ["Work item"])).toBe("#12");
   });
+
+  it("trims a long trailing punctuation run without regex backtracking", () => {
+    const description = `Work item: #12${".,;:)]".repeat(50_000)}`;
+    expect(extractTaskReferenceText(description, ["Work item"])).toBe("#12");
+  });
+
+  it("does not trim punctuation that is not at the token edge", () => {
+    const suffix = `${")".repeat(200_000)}x`;
+    expect(extractTaskReferenceText(`Work item: #12${suffix}`, ["Work item"])).toBe(`#12${suffix}`);
+  });
+
+  it("classifies a long code-spanned numeric candidate without regex backtracking", () => {
+    const delimiters = "`".repeat(125_000);
+    const description = `Refs: ${delimiters}12${delimiters}\nRefs: #9`;
+    expect(extractTaskReferenceText(description, ["Refs"])).toBe("#9");
+  });
 });
 
 describe("parseTaskReference", () => {
