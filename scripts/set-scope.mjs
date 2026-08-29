@@ -35,6 +35,15 @@ import { execFileSync } from "node:child_process";
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const configPath = join(repoRoot, "package-scope.json");
 const config = JSON.parse(readFileSync(configPath, "utf8"));
+const transitionPath = join(repoRoot, "governance", "package-identity-transition.json");
+let transition = null;
+if (existsSync(transitionPath)) {
+  try { transition = JSON.parse(readFileSync(transitionPath, "utf8")); }
+  catch (error) {
+    console.error(`set-scope: could not read/parse the package identity transition contract: ${error.message}`);
+    process.exit(2);
+  }
+}
 
 const argv = process.argv.slice(2);
 const check = argv.includes("--check");
@@ -55,6 +64,16 @@ function escapeRegExp(str) {
 // invocation's --scope (if any) changes it. Every first-party reference in
 // the tree is expected to already carry exactly this scope.
 const oldScope = config.scope;
+
+// Decision 18's W1D transition is intentionally not a tree-wide replacement:
+// exact old-namespace lifecycle and qualification evidence must remain old.
+// The atomic structured setter plus reviewed historical line inventory owns
+// that one transition. Refuse the legacy broad rewrite before it can falsify
+// history or skip the .github surfaces this script deliberately omits.
+if (!check && transition && oldScope === transition.current?.scope && nextScope === transition.candidate?.scope) {
+  console.error("set-scope: the closed W1D scope transition must use `node scripts/set-package-identity.mjs --to-candidate`; refusing the legacy broad rewrite");
+  process.exit(2);
+}
 
 // This is a scope RENAME (@oldscope/pkg -> @newscope/pkg), not a scope
 // CAPTURE (@anything/pkg -> @newscope/pkg). An earlier version of this

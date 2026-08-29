@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -27,7 +27,7 @@ function gitCommit(dir, message) {
 }
 
 function readManifest(pkgDir) {
-  return JSON.parse(execFileSync("cat", [join(pkgDir, "package.json")], { encoding: "utf8" }));
+  return JSON.parse(readFileSync(join(pkgDir, "package.json"), "utf8"));
 }
 
 function writeManifest(pkgDir, manifest) {

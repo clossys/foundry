@@ -159,6 +159,13 @@ import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 import { loadReleaseCatalog } from "./check-release-catalog.mjs";
+import {
+  identityState,
+  isIdentityTransitionControlSurface,
+  lineDigest,
+  loadTransitionPolicy,
+  validateHistoryInventory,
+} from "./lib/package-identity-transition.mjs";
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 
@@ -305,9 +312,36 @@ if (typeof ownScope !== "string" || !/^@[a-z0-9][a-z0-9._-]*$/.test(ownScope)) {
 }
 const ownScopeName = ownScope.slice(1);
 
+// The identity-transition contract is optional for generic fixtures and older
+// trees, but closed and fail-closed whenever it is present. In the candidate
+// state it supplies two deliberately different admissions:
+//   1. finite transition-control files may name both sides of the transition;
+//   2. historical prose may name the retired side only when the exact line is
+//      content-addressed in the reviewed history inventory.
+// Neither admission is a path-only exception for arbitrary current prose.
+const transitionPolicyPath = join(root, "governance", "package-identity-transition.json");
+let transitionPolicy = null;
+let transitionState = null;
+let historicalLineKeys = new Set();
+if (existsSync(transitionPolicyPath)) {
+  try {
+    transitionPolicy = loadTransitionPolicy(transitionPolicyPath);
+    transitionState = identityState(scopeConfig, transitionPolicy);
+    if (transitionState === null) die("package-scope.json is neither a complete current nor complete candidate identity state");
+    const inventoryPath = join(root, transitionPolicy.historyInventory);
+    const inventory = JSON.parse(readFileSync(inventoryPath, "utf8"));
+    const failures = validateHistoryInventory(inventory, transitionPolicy);
+    if (failures.length) die(`cannot validate ${transitionPolicy.historyInventory}: ${failures.join("; ")}`);
+    historicalLineKeys = new Set(inventory.references.map((item) => `${item.path}\0${item.lineSha256}`));
+  } catch (error) {
+    die(`cannot validate package identity transition inputs: ${error.message}`);
+  }
+}
+
 const releaseTargetScopes = new Map();
 const RELEASE_TARGET_SCOPE_SURFACES = new Set([
   "governance/release-catalog.json",
+  "governance/package-identity-transition.json",
   "scripts/check-release-catalog.mjs",
   "scripts/check-release-catalog.test.mjs",
   "scripts/select-publishable-packages.mjs",
@@ -429,10 +463,17 @@ function admittedScope(name, rel) {
   return null;
 }
 
-function admittedForgeSlug(owner, repo) {
+function admittedForgeSlug(owner, repo, rel) {
   const lowerOwner = owner.toLowerCase();
   if (lowerOwner === ownAccount.toLowerCase()) {
     return repo.toLowerCase() === ownRepo.toLowerCase() ? "this repository" : null;
+  }
+  if (transitionPolicy && isIdentityTransitionControlSurface(rel)) {
+    const candidate = transitionPolicy.candidate.repository.toLowerCase();
+    const current = transitionPolicy.current.repository.toLowerCase();
+    if (`${lowerOwner}/${repo.toLowerCase()}` === candidate || `${lowerOwner}/${repo.toLowerCase()}` === current) {
+      return "closed package-identity transition control";
+    }
   }
   if (INFRASTRUCTURE_FORGE_OWNERS.has(lowerOwner)) return INFRASTRUCTURE_FORGE_OWNERS.get(lowerOwner);
   if (PLACEHOLDER_NAMES.has(lowerOwner)) return PLACEHOLDER_NAMES.get(lowerOwner);
@@ -569,6 +610,26 @@ for (const file of files) {
     const record = (kind, reference, name) => {
       referenceCount++;
       if (name !== null) return;
+      if (transitionPolicy && isIdentityTransitionControlSurface(rel)) {
+        const oldScope = transitionPolicy.current.scope.toLowerCase();
+        const newScope = transitionPolicy.candidate.scope.toLowerCase();
+        const normalized = reference.toLowerCase();
+        if ((kind === "npm-scope" || kind === "bare-scope") && (normalized === oldScope || normalized === newScope)) return;
+      }
+      if (transitionPolicy && kind === "forge-slug" && rel === "docs/DECISIONS.md") {
+        const candidateRepository = transitionPolicy.candidate.repository.toLowerCase();
+        const trackerPrefix = `https://github.com/${transitionPolicy.candidate.repository}/issues/`;
+        if (reference.toLowerCase() === candidateRepository && line.includes(trackerPrefix) && /\/issues\/[1-9][0-9]*/.test(line)) return;
+      }
+      if (transitionState === "candidate") {
+        const oldScope = transitionPolicy.current.scope.toLowerCase();
+        const oldRepository = transitionPolicy.current.repository.toLowerCase();
+        const normalized = reference.toLowerCase();
+        const isRetiredIdentity =
+          ((kind === "npm-scope" || kind === "bare-scope") && normalized === oldScope) ||
+          (kind === "forge-slug" && normalized === oldRepository);
+        if (isRetiredIdentity && historicalLineKeys.has(`${rel}\0${lineDigest(line)}`)) return;
+      }
       findings.push({ file: rel, line: index + 1, kind, reference, text: line.trim().slice(0, 200) });
     };
 
@@ -582,7 +643,7 @@ for (const file of files) {
     for (const re of [FORGE_URL_RE, USES_RE, GH_CLI_RE]) {
       for (const match of line.matchAll(re)) {
         const repo = normalizeRepo(match[2]);
-        record("forge-slug", `${match[1]}/${repo}`, admittedForgeSlug(match[1], repo));
+        record("forge-slug", `${match[1]}/${repo}`, admittedForgeSlug(match[1], repo, rel));
       }
     }
   });

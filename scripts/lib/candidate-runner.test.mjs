@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { promisify } from "node:util";
-import { assertCredentialFree, installNpmrc, runCandidateQualification, runProcess } from "./candidate-runner.mjs";
+import { assertCredentialFree, installNpmrc, runCandidateQualification, runProcess, wildcardCapture } from "./candidate-runner.mjs";
 
 const execFile = promisify(execFileCallback);
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");
@@ -183,6 +183,15 @@ test("runner rejects escaping, unexpanded, and unsupported export mappings", asy
   await assert.rejects(() => runCandidateQualification(escaping), /invalid export target/);
   await assert.rejects(() => runCandidateQualification(emptyWildcard), /no packaged files/);
   await assert.rejects(() => runCandidateQualification(unknownCondition), /unsupported export conditions/);
+});
+
+test("wildcard matching is literal, bounded, and independent of regular-expression metacharacters", () => {
+  assert.equal(wildcardCapture("./static+[/*.txt", "./static+[/name[0]+.txt"), "name[0]+");
+  assert.equal(wildcardCapture("./static/*.txt", "./static/name.txt.extra.txt"), "name.txt.extra");
+  assert.equal(wildcardCapture("./static/*.txt", "./static/name.js"), null);
+  assert.equal(wildcardCapture("./static/*.txt", `${"x".repeat(200_000)}.txt`), null);
+  assert.throws(() => wildcardCapture("./static/no-wildcard.txt", "./static/no-wildcard.txt"), /exactly one wildcard/);
+  assert.throws(() => wildcardCapture("./static/**.txt", "./static/name.txt"), /exactly one wildcard/);
 });
 
 test("optional peer runtime exports stay red until an exact compatible peer is installed", async (t) => {

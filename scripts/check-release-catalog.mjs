@@ -28,6 +28,14 @@ const CURRENT_TARGET = Object.freeze({
   registry: "https://npm.pkg.github.com",
   packages: "all",
 });
+const CUTOVER_TARGET = Object.freeze({
+  id: "clossys-npmjs",
+  status: "active",
+  scope: "@clossys",
+  registry: "https://registry.npmjs.org",
+  access: "public",
+  packages: "all",
+});
 
 class CatalogInputError extends Error {
   constructor(message) {
@@ -83,8 +91,8 @@ function matchesExactArray(actual, expected) {
  */
 export function loadReleaseCatalog({ path = "governance/release-catalog.json", readFile = readFileSync } = {}) {
   const catalog = readJson(path, readFile, { indeterminateInput: true });
-  if (!isRecord(catalog) || catalog.schemaVersion !== 1 || !TARGET_ID.test(catalog.defaultTarget ?? "") || !Array.isArray(catalog.targets) || catalog.targets.length === 0) {
-    fail(`${path} must be a schemaVersion 1 catalogue with defaultTarget and a non-empty targets array`);
+  if (!isRecord(catalog) || ![1, 2].includes(catalog.schemaVersion) || !TARGET_ID.test(catalog.defaultTarget ?? "") || !Array.isArray(catalog.targets) || catalog.targets.length === 0) {
+    fail(`${path} must be a supported catalogue with defaultTarget and a non-empty targets array`);
   }
 
   const ids = new Set();
@@ -93,7 +101,7 @@ export function loadReleaseCatalog({ path = "governance/release-catalog.json", r
       fail(`${path} has a target with a missing, invalid, or duplicate id`);
     }
     ids.add(target.id);
-    if (!["active", "planned"].includes(target.status) || !SCOPE.test(target.scope ?? "") || !validRegistry(target.registry)) {
+    if (!["active", "planned", "historical"].includes(target.status) || !SCOPE.test(target.scope ?? "") || !validRegistry(target.registry)) {
       fail(`${path} target "${target.id}" must declare status, an npm scope, and a canonical HTTPS registry URL`);
     }
     if (target.packages !== "all") {
@@ -101,7 +109,7 @@ export function loadReleaseCatalog({ path = "governance/release-catalog.json", r
         fail(`${path} target "${target.id}" must authorize "all" or a non-empty unique package-directory list`);
       }
     }
-    if (target.status === "planned") {
+    if (catalog.schemaVersion === 1 && target.status === "planned") {
       if (
         target.id !== PRECUTOVER_TARGET.id ||
         target.scope !== PRECUTOVER_TARGET.scope ||
@@ -114,27 +122,29 @@ export function loadReleaseCatalog({ path = "governance/release-catalog.json", r
       }
     }
   }
-  if (catalog.targets.length !== 2 || ids.size !== 2 || !ids.has(CURRENT_TARGET.id) || !ids.has(PRECUTOVER_TARGET.id)) {
-    fail(`${path} must declare exactly the current release target and the bounded ${PRECUTOVER_TARGET.id} target`);
-  }
   const current = catalog.targets.find((target) => target.id === CURRENT_TARGET.id);
   const precutover = catalog.targets.find((target) => target.id === PRECUTOVER_TARGET.id);
-  if (
-    current.status !== CURRENT_TARGET.status ||
-    current.scope !== CURRENT_TARGET.scope ||
-    current.registry !== CURRENT_TARGET.registry ||
-    current.packages !== CURRENT_TARGET.packages ||
-    catalog.defaultTarget !== CURRENT_TARGET.id
-  ) {
-    fail(`${path} must retain ${CURRENT_TARGET.id} as the active all-package default target`);
-  }
-  if (
-    precutover.status !== "planned" ||
-    precutover.scope !== PRECUTOVER_TARGET.scope ||
-    precutover.registry !== PRECUTOVER_TARGET.registry ||
-    !matchesExactArray(precutover.packages, PRECUTOVER_TARGET.packages)
-  ) {
-    fail(`${path} must retain the exact planned ${PRECUTOVER_TARGET.id} Advisor, Starter, Controller npmjs precutover target`);
+  const cutover = catalog.targets.find((target) => target.id === CUTOVER_TARGET.id);
+  if (catalog.schemaVersion === 1) {
+    if (catalog.targets.length !== 2 || ids.size !== 2 || !current || !precutover) {
+      fail(`${path} current state must declare exactly the current release target and bounded ${PRECUTOVER_TARGET.id} target`);
+    }
+    if (current.status !== CURRENT_TARGET.status || current.scope !== CURRENT_TARGET.scope || current.registry !== CURRENT_TARGET.registry || current.packages !== CURRENT_TARGET.packages || current.access !== undefined || catalog.defaultTarget !== CURRENT_TARGET.id) {
+      fail(`${path} must retain ${CURRENT_TARGET.id} as the active all-package default target`);
+    }
+    if (precutover.status !== "planned" || precutover.scope !== PRECUTOVER_TARGET.scope || precutover.registry !== PRECUTOVER_TARGET.registry || precutover.access !== undefined || !matchesExactArray(precutover.packages, PRECUTOVER_TARGET.packages)) {
+      fail(`${path} must retain the exact planned ${PRECUTOVER_TARGET.id} Advisor, Starter, Controller npmjs precutover target`);
+    }
+  } else {
+    if (catalog.targets.length !== 2 || ids.size !== 2 || !current || !cutover || precutover) {
+      fail(`${path} candidate state must declare exactly historical ${CURRENT_TARGET.id} and active ${CUTOVER_TARGET.id}`);
+    }
+    if (current.status !== "historical" || current.scope !== CURRENT_TARGET.scope || current.registry !== CURRENT_TARGET.registry || current.packages !== "all" || current.access !== undefined) {
+      fail(`${path} candidate state must preserve the exact historical GitHub Packages identity`);
+    }
+    if (cutover.status !== CUTOVER_TARGET.status || cutover.scope !== CUTOVER_TARGET.scope || cutover.registry !== CUTOVER_TARGET.registry || cutover.access !== CUTOVER_TARGET.access || cutover.packages !== "all" || catalog.defaultTarget !== CUTOVER_TARGET.id) {
+      fail(`${path} candidate state must activate the exact all-package public-npm target`);
+    }
   }
   if (!ids.has(catalog.defaultTarget)) fail(`${path} defaultTarget "${catalog.defaultTarget}" is not declared in targets`);
   return catalog;
@@ -145,7 +155,8 @@ export function readCurrentReleaseIdentity({ path = "package-scope.json", readFi
   if (!isRecord(identity) || !SCOPE.test(identity.scope ?? "") || !validRegistry(identity.registry)) {
     fail(`${path} must declare a valid npm scope and canonical HTTPS registry URL`);
   }
-  return { scope: identity.scope, registry: identity.registry };
+  if (identity.access !== undefined && identity.access !== "public") fail(`${path} access must be "public" when declared`);
+  return { scope: identity.scope, registry: identity.registry, ...(identity.access === undefined ? {} : { access: identity.access }) };
 }
 
 /** Resolve a target only when it is compatible with the declared live lane. */
@@ -154,7 +165,8 @@ export function resolveReleaseTarget(catalog, identity, targetId = undefined) {
   if (typeof selectedId !== "string" || !TARGET_ID.test(selectedId)) fail("target must be a non-empty lowercase release-target id");
   const target = catalog.targets.find((candidate) => candidate.id === selectedId);
   if (!target) fail(`target "${selectedId}" is not authorized by the release catalogue`);
-  if (target.scope !== identity.scope || target.registry !== identity.registry) {
+  if (target.status === "historical") fail(`target "${selectedId}" is historical and cannot authorize a release`);
+  if (target.scope !== identity.scope || target.registry !== identity.registry || (target.access ?? undefined) !== (identity.access ?? undefined)) {
     fail(
       `target "${selectedId}" expects ${target.scope} at ${target.registry}, but package-scope.json declares ${identity.scope} at ${identity.registry}. ` +
         "Select a matching explicit target only in its separately reviewed cutover change.",

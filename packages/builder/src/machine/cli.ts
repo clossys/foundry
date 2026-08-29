@@ -92,7 +92,21 @@ export function parseArgs(argv: readonly string[]): ParsedArgs {
 }
 
 function cell(value: string): string {
-  return value.replace(/\|/g, "\\|").replace(/\n/g, " ");
+  let escaped = "";
+  let previousWasCarriageReturn = false;
+  for (const character of value) {
+    if (character === "\r") {
+      escaped += " ";
+      previousWasCarriageReturn = true;
+    } else if (character === "\n") {
+      if (!previousWasCarriageReturn) escaped += " ";
+      previousWasCarriageReturn = false;
+    } else {
+      previousWasCarriageReturn = false;
+      escaped += character === "\\" ? "\\\\" : character === "|" ? "\\|" : character;
+    }
+  }
+  return escaped;
 }
 
 function verdictLabel(result: MachineVerifyReport["rows"][number]["result"]): string {

@@ -1015,6 +1015,32 @@ a replacement upload under an old name.
 | **1D — whole-catalogue recut** | After transfer only, change every current source package and every first-party edge to the selected public-npm scope and registry in one coherent source change. Prepare and validate only inactive repository-source and workflow configuration for the later publish lane; do not activate provider-side npm trusted-publisher or provenance settings, and do not publish. | **Before any setter runs**, scope/registry machinery is history-aware: it preserves legacy lifecycle, retention, and decision identities; regression gates prove that preservation; and the selected candidate's ownership/availability evidence is recorded. Then `set-scope --check`, structural registry-drift and manifest-graph checks, workspace-link integrity, FULL safety, build, typecheck, tests, and review all pass on the recut head. Live registry parity is impossible before a candidate package exists and is deferred to 1E. No candidate-namespace package, provider-side npm trusted-publisher activation, provenance emission, or provider trust exists yet. |
 | **1E — first public-npm publications** | Treat Advisor, Starter, and Controller as one exact Trio release cohort. Before the first irreversible publication, every candidate passes FULL preflight, selected-tarball scan, and isolated installed canary; Starter's canary includes its required exact CLI evidence. Publish and verify Advisor, then Starter, then Controller, with the owner present for each first identity publication. Only after all three identities have registry-served digest and public visibility/access proof, activate the npm trusted publisher for each package. Then publish one or more later, bounded patch releases through that trusted publisher and verify the registry provenance attached to each of those releases. | One exact-head record names all three candidates and their successful pre-publication evidence; every first identity publication has owner-present, registry-served digest, and public visibility/access evidence. After every Trio or later candidate publication, run and record live registry-parity verification for that published identity (manifest name/version, public visibility/access, and served digest); it is the required 1E post-publication proof, not a 1D pre-publication gate. Each later provenance proof records its patch release, trusted-publisher execution, registry-served digest, and registry provenance verification. If a later candidate, publication, or verification fails after Advisor or Starter has published, fail closed: stop the release and quarantine the incomplete Trio; inventory every already-published immutable member (name, version, digest, visibility, and disposition); invalidate the unpublished candidate artifacts; and never delete or reuse any published version. Deprecate a published member if the registry supports that mutation, otherwise record the unsupported result and its immutable disposition. A defective published member needs a corrected forward version; requalify it and every dependent or remaining candidate from an exact head. Resume only when the whole-tree authority declaration and all current cohort gates pass again. Builder and Inspector wait for Controller; Publisher waits for Controller, Designer, and Writer. |
 
+### Current execution status and remaining sequence (2026-08-29)
+
+W1A through W1C are complete: the decision and representative evidence are
+retained, singular authority is mechanically checked, and this source is now
+the transferred `clossys/platform` repository. The producer programme remains
+tracked by [#567](https://github.com/clossys/platform/issues/567).
+
+The next change is the reversible W1D prerequisite in
+[#593](https://github.com/clossys/platform/issues/593): install the closed,
+history-aware transition policy and gates while leaving the current package
+identity untouched. A later, separately reviewed W1D recut uses that machinery
+once to update all 19 current package identities and first-party edges, records
+the exact historical-line inventory, disables live publication, and proves a
+zero-residual packed-content scan. Neither change publishes a package or
+activates provider trust.
+
+Only after W1D merges and the high-severity security inventory in
+[#586](https://github.com/clossys/platform/issues/586) has no unexplained item
+does W1E [#594](https://github.com/clossys/platform/issues/594) begin. W1E is
+the first irreversible operation: owner-present Trio publication and public
+registry digest/access/parity proof, followed by trusted-publisher activation
+and bounded provenance-bearing forward releases. The remaining catalogue then
+scales from that evidence in declared dependency order. This sequence keeps
+source preparation, first publication, provider trust, and consumer adoption
+as separate facts.
+
 ### W1D packed-artifact lifecycle boundary
 
 W1D is an exhaustive lifecycle gate across the npm-packed contents of all 19

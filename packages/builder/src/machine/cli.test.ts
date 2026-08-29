@@ -191,4 +191,13 @@ describe("renderReport", () => {
     };
     expect(renderReport(report)).toContain("Overall: INDETERMINATE (exit 2)");
   });
+
+  it("escapes a pre-escaped pipe and flattens CRLF inside a table cell", () => {
+    const report = {
+      rows: [{ row: "destination\\|name\r\nnext", result: { verdict: "satisfied" as const, evaluated: 1 } }],
+      overall: { verdict: "satisfied" as const, evaluated: 1 },
+      exitCode: 0 as const,
+    };
+    expect(renderReport(report)).toContain("destination\\\\\\|name next");
+  });
 });
