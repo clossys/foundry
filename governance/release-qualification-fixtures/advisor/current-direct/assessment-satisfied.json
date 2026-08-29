@@ -1,0 +1,74 @@
+{
+  "id": "qualification-assessment",
+  "asOf": "2026-08-24T12:00:00Z",
+  "engagement": {
+    "id": "qualification-engagement",
+    "status": "active",
+    "nextAction": { "kind": "reconcile", "ownerRef": "fixture-owner", "dueAt": "2099-01-01T00:00:00Z", "escalationRef": "fixture-route" },
+    "assessmentBasis": {
+      "snapshotDigest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "grantDigest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "catalogDigest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "planDigest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "blockerDigest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "clearanceDigest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "conflictDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+      "baselineDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+      "completionDefinitionDigest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+      "assessedAt": "2026-08-24T00:00:00Z",
+      "freshUntil": "2099-01-01T00:00:00Z"
+    }
+  },
+  "fitSignals": [
+    { "id": "sponsor-mandate", "state": "supported", "evidence": [{ "id": "fit-1", "description": "Fixture evidence." }] },
+    { "id": "material-need", "state": "supported", "evidence": [{ "id": "fit-2", "description": "Fixture evidence." }] },
+    { "id": "offering-operating-compatibility", "state": "supported", "evidence": [{ "id": "fit-3", "description": "Fixture evidence." }] },
+    { "id": "expected-value-burden", "state": "supported", "evidence": [{ "id": "fit-4", "description": "Fixture evidence." }] },
+    { "id": "adoption-capacity", "state": "supported", "evidence": [{ "id": "fit-5", "description": "Fixture evidence." }] },
+    { "id": "legal-ethical-safety", "state": "supported", "evidence": [{ "id": "fit-6", "description": "Fixture evidence." }] }
+  ],
+  "prerequisiteObservations": [
+    { "id": "scope-repository-inventory", "state": "satisfied", "evidence": [{ "id": "ready-1", "description": "Fixture evidence." }] },
+    { "id": "read-access", "state": "satisfied", "evidence": [{ "id": "ready-2", "description": "Fixture evidence." }] },
+    { "id": "authority-approval", "state": "satisfied", "evidence": [{ "id": "ready-3", "description": "Fixture evidence." }] },
+    { "id": "initiative-mutation-dependency-inventory", "state": "satisfied", "evidence": [{ "id": "ready-4", "description": "Fixture evidence." }] },
+    { "id": "immutable-artifact-access", "state": "satisfied", "evidence": [{ "id": "ready-5", "description": "Fixture evidence." }] },
+    { "id": "baseline", "state": "satisfied", "evidence": [{ "id": "ready-6", "description": "Fixture evidence." }] },
+    { "id": "independent-outcome-owner", "state": "satisfied", "evidence": [{ "id": "ready-7", "description": "Fixture evidence." }] },
+    { "id": "rollback-review-window", "state": "satisfied", "evidence": [{ "id": "ready-8", "description": "Fixture evidence." }] }
+  ],
+  "initiatives": [{
+    "id": "fixture-initiative",
+    "status": "candidate",
+    "targetRepositoryIds": ["fixture-repository"],
+    "workstreamConflictKeys": ["fixture-workstream"],
+    "dependencyConflictKeys": ["fixture-dependency"],
+    "mutationConflictKeys": ["fixture-mutation"],
+    "authorityConflictKeys": ["fixture-authority"],
+    "scheduleConflictKeys": ["fixture-schedule"],
+    "dataOutcomeMetricConflictKeys": ["fixture-metric"]
+  }],
+  "firstWave": {
+    "initiativeIds": ["fixture-initiative"],
+    "objectives": ["Exercise the package contract."],
+    "workItems": [{
+      "id": "fixture-work",
+      "initiativeId": "fixture-initiative",
+      "targetRepositoryId": "fixture-repository",
+      "deliveryOwnerRef": "fixture-delivery-owner",
+      "package": { "name": "@fixture/qualification-target", "version": "1.0.0", "integrity": "sha512-AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ==" },
+      "bin": "qualification-target-check",
+      "invocation": "single-json-input",
+      "placement": "Disposable qualification consumer.",
+      "baseline": { "metricRef": "fixture-metric", "value": 0, "observedAt": "2026-08-24T00:00:00Z", "evidence": { "id": "baseline", "description": "Fixture baseline." } },
+      "completion": { "definition": "Fixture target reports the requested state.", "independentOutcomeOwnerRef": "fixture-outcome-owner", "evidenceSource": "fixture-output", "direction": "increase", "setpoint": 1, "windowDays": 7 },
+      "rollback": { "procedure": "Restore the disposable manifest and lock.", "evidenceSource": "qualification transcript" },
+      "mutationSurfaces": ["fixture-lock"]
+    }]
+  },
+  "preWorkItems": [
+    { "id": "fixture-baseline", "kind": "baseline", "status": "satisfied", "addressesReadinessCriteria": ["baseline"], "targetRepositoryIds": ["fixture-repository"], "ownerRef": "fixture-baseline-owner", "impact": "Fixture impact.", "evidence": [{ "id": "baseline-evidence", "description": "Fixture evidence." }], "nextAction": { "kind": "reconcile", "ownerRef": "fixture-baseline-owner", "dueAt": "2099-01-01T00:00:00Z", "escalationRef": "fixture-route" }, "dependencySurfaces": ["fixture-dependency"], "mutationSurfaces": ["fixture-lock"], "clearance": { "authorityOwnerRef": "fixture-baseline-authority", "evidence": [{ "id": "baseline-clearance", "description": "Fixture clearance." }] } },
+    { "id": "fixture-conflict", "kind": "conflict", "status": "satisfied", "addressesReadinessCriteria": ["initiative-mutation-dependency-inventory"], "targetRepositoryIds": ["fixture-repository"], "ownerRef": "fixture-conflict-owner", "impact": "Fixture impact.", "evidence": [{ "id": "conflict-evidence", "description": "Fixture evidence." }], "nextAction": { "kind": "reconcile", "ownerRef": "fixture-conflict-owner", "dueAt": "2099-01-01T00:00:00Z", "escalationRef": "fixture-route" }, "dependencySurfaces": ["fixture-dependency"], "mutationSurfaces": ["fixture-lock"], "clearance": { "authorityOwnerRef": "fixture-conflict-authority", "evidence": [{ "id": "conflict-clearance", "description": "Fixture clearance." }] } }
+  ],
+  "reassessment": { "cadenceDays": 7, "triggers": ["evidence-change"] }
+}

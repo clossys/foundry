@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "provider": "github-actions",
+  "eventName": "pull_request",
+  "repository": "fixture/repository",
+  "pullRequestNumber": 1,
+  "baseSha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "headSha": "cccccccccccccccccccccccccccccccccccccccc",
+  "workflowRunId": "1",
+  "artifactName": "adoption-snapshot-1",
+  "digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "capturedAt": "{{NOW}}",
+  "files": [
+    { "path": "evidence/assessment.json", "size": 326, "sha256": "76803f0313ee3f6dece803dbcea2571be613b7fabf43068ef4c6d7019b193648" },
+    { "path": "evidence/target-satisfied.json", "size": 21, "sha256": "cb653a8697300b97f940a0b7fccdeac4190ae49407c1a2e6746f094cbd2956d6" },
+    { "path": "evidence/target-violated.json", "size": 20, "sha256": "0d9711a9b9ee37779c48a9ad998f61e22aa14b773ec07b1a1feaf1596b4d2ed8" },
+    { "path": "evidence/target-indeterminate.json", "size": 25, "sha256": "5637a5af0c3a897e33be95bc72ed24f4525d4b6d5364c24d5f7d0403d11f1d65" }
+  ]
+}

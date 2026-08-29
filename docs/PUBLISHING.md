@@ -281,10 +281,12 @@ provider truth, independent grounding, or closure; a provider-specific review
 reference is evidence, not workflow authority. Any changed tarball byte fails
 the digest join and requires a re-pack and new qualification.
 
-Controller 0.8.20 has a deliberately limited **post-publication bootstrap**
-record. It retains the actual registry tuple and states which consumer evidence
-was not retained, but its timing is rejected in pre-publication mode. It does
-not retroactively say that 0.8.20 was gated before publication.
+Advisor 0.1.3, Starter 0.1.2, and Controller 0.8.20 have deliberately limited
+**post-publication bootstrap** records. Each retains the actual registry tuple
+and package-owned current-direct evidence while giving unsupported archetypes
+and lifecycle dimensions explicit policy-owned dispositions. Their timing is
+rejected in pre-publication mode; they do not retroactively say that any of
+these releases was gated before publication.
 
 Its registry-backed replay is retained post-publication evidence only, not a
 retroactive gate, adoption, grounding, or release clearance.

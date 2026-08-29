@@ -6,6 +6,27 @@ const entry = { packageKey: "x", recordStem: "x", packageDir: "packages/x", adap
 const policy = { schemaVersion: 1, protocol: "foundry-candidate-qualification-v1", packages: { "@example/x": entry } };
 const input = () => ({ policy: structuredClone(policy), adapter: structuredClone(adapter), fixtures: Object.fromEntries(adapter.fixtures.map((name) => [name, { type: "file", symlink: false, tracked: true, size: 2 }])), manifestBins: { check: "dist/check.js" }, peerDependencies: { typescript: "~6.0.0", required: "^1.0.0" }, peerDependenciesMeta: { typescript: { optional: true } } });
 test("accepts closed required policy and fixed adapter", () => assert.deepEqual(validateReleaseQualificationContract(input()), []));
+test("accepts only data-bound literal, file, directory, and temporary consumer overlay operations", () => {
+  const value = input();
+  value.adapter.fixtures = ["request.json", "snapshot/snapshot.json", "overlay/package.json"];
+  value.fixtures = Object.fromEntries(value.adapter.fixtures.map((name) => [name, { type: "file", symlink: false, tracked: true, size: 2 }]));
+  value.adapter.consumerOverlay = [{ fixture: "overlay/package.json", target: "package.json" }];
+  value.adapter.cases = [
+    { id: "green", bin: "check", args: [{ literal: "decide" }, { fixture: "request.json" }, { fixtureDirectory: "snapshot" }], exitCode: 0, group: "g" },
+    { id: "red", bin: "check", args: [{ fixture: "request.json" }], exitCode: 1, group: "g" },
+    { id: "unknown", bin: "check", args: [{ fixture: "request.json" }], exitCode: 2, group: "g" },
+  ];
+  assert.deepEqual(validateReleaseQualificationContract(value), []);
+  for (const mutate of [
+    (copy) => { copy.adapter.cases[0].args[0] = { literal: "$(command)" }; },
+    (copy) => { copy.adapter.cases[0].args[2] = { fixtureDirectory: "missing" }; },
+    (copy) => { copy.adapter.consumerOverlay[0].target = "../package.json"; },
+    (copy) => { copy.adapter.consumerOverlay[0].target = "node_modules/@example/x/package.json"; },
+  ]) {
+    const red = structuredClone(value); mutate(red);
+    assert.ok(validateReleaseQualificationContract(red).some((item) => ["case", "consumer-overlay"].includes(item.rule)));
+  }
+});
 test("rejects waivers, forbidden fields, unsafe fixtures, unknown bins, and missing controls", () => { const value = input(); value.policy.packages["@example/x"].archetypes["current-direct"] = { status: "unsupported", reason: "no" }; value.adapter.command = "sh"; value.adapter.fixtures[0] = "../a.json"; value.adapter.cases.pop(); value.adapter.bins.unknown = 0; const rules = validateReleaseQualificationContract(value).map((x) => x.rule); for (const rule of ["archetype-policy", "forbidden-field", "fixture", "bin", "exit-coverage"]) assert.ok(rules.includes(rule)); });
 test("allows only exact compatible optional peers", () => {
   const green = input(); green.adapter.peerInstall = { typescript: "6.0.3" };

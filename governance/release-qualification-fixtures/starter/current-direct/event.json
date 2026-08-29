@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "provider": "github-actions",
+  "eventName": "workflow_run",
+  "repository": "fixture/repository",
+  "baseSha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "sourceWorkflowRunId": "1",
+  "sourceHeadSha": "cccccccccccccccccccccccccccccccccccccccc",
+  "artifactName": "adoption-snapshot-1",
+  "sourceConclusion": "success"
+}

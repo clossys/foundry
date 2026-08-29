@@ -8,7 +8,7 @@ import { selectPolicyPackage, validateReleaseQualificationContract, validateRele
 
 const ROOT = resolve(".");
 const PACKAGE_KEY = /^[a-z0-9][a-z0-9-]{0,63}$/;
-const FIXTURE_NAME = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}\.json$/;
+const FIXTURE_PATH = /^(?!.*(?:^|\/)\.\.?(?:\/|$))[A-Za-z0-9][A-Za-z0-9._/-]{0,239}$/;
 const usage = "Usage: --package <package-key> --tarball <tgz> --output <path>";
 
 function parseArgs(argv) {
@@ -30,7 +30,7 @@ function repositoryPath(value) {
 
 function fixtureObservations(adapter, fixtureRoot) {
   return Object.fromEntries(adapter.fixtures.map((name) => {
-    if (!FIXTURE_NAME.test(name)) throw new Error("adapter fixture name is unsafe");
+    if (!FIXTURE_PATH.test(name)) throw new Error("adapter fixture path is unsafe");
     const path = resolve(fixtureRoot, name);
     if (relative(fixtureRoot, path).startsWith("..")) throw new Error("adapter fixture escapes fixture root");
     const stat = lstatSync(path); let tracked = true;

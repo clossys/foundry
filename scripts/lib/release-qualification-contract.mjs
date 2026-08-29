@@ -4,7 +4,9 @@ const DIMENSIONS = ["position", "completion", "rollback", "duplicate", "cadence"
 const object = (value) => value && typeof value === "object" && !Array.isArray(value);
 const nonempty = (value) => typeof value === "string" && value.trim().length > 0;
 const BIN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
-const BASENAME = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}\.json$/;
+const FIXTURE_PATH = /^(?:[A-Za-z0-9][A-Za-z0-9._-]{0,127}\/)*[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
+const LITERAL_ARG = /^[A-Za-z0-9][A-Za-z0-9._:+-]{0,127}$/;
+const OVERLAY_PATH = /^(?:package(?:-lock)?\.json|node_modules\/(?:@[a-z0-9][a-z0-9._-]{0,63}\/[a-z0-9][a-z0-9._-]{0,63}|[a-z0-9][a-z0-9._-]{0,63})\/(?:package\.json|dist\/[a-z0-9][a-z0-9._-]{0,127}\.js))$/;
 const PACKAGE = /^(?:@[a-z0-9][a-z0-9._-]{0,213}\/[a-z0-9][a-z0-9._-]{0,213}|[a-z0-9][a-z0-9._-]{0,213})$/;
 const VERSION = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 const PACKAGE_KEY = /^[a-z0-9][a-z0-9-]{0,63}$/;
@@ -64,7 +66,7 @@ export function validateReleaseQualificationContract({ policy, adapter, fixtures
   for (const archetype of ARCHETYPES) { const item = selected?.archetypes?.[archetype]; closed(findings, item, ["status", "reason"], `policy.archetypes.${archetype}`); const allowed = archetype === "current-direct" ? ["required"] : ["unsupported"]; if (!allowed.includes(item?.status) || (item?.status === "unsupported" && !nonempty(item.reason)) || (item?.status === "required" && item.reason !== undefined)) finding(findings, "archetype-policy", `${archetype} policy invalid.`); }
   closed(findings, selected?.dimensions, DIMENSIONS, "policy.dimensions");
   for (const dimension of DIMENSIONS) { const item = selected?.dimensions?.[dimension]; closed(findings, item, ["status", "reason"], `policy.dimensions.${dimension}`); const allowed = ["rollback", "duplicate"].includes(dimension) ? ["required", "unsupported"] : ["unsupported"]; if (!allowed.includes(item?.status) || (item?.status === "unsupported" && !nonempty(item.reason))) finding(findings, "dimension-policy", `${dimension} policy invalid.`); }
-  closed(findings, adapter, ["schemaVersion", "package", "archetype", "bins", "fixtures", "cases", "dimensionEvidence", "peerInstall"], "adapter");
+  closed(findings, adapter, ["schemaVersion", "package", "archetype", "bins", "fixtures", "cases", "dimensionEvidence", "peerInstall", "consumerOverlay"], "adapter");
   if (adapter?.schemaVersion !== 1 || !nonempty(adapter?.package) || adapter?.archetype !== "current-direct") finding(findings, "adapter-shape", "adapter must be schema 1 current-direct data.");
   closed(findings, adapter?.bins, Object.keys(adapter?.bins ?? {}), "adapter.bins");
   for (const [bin, exit] of Object.entries(adapter?.bins ?? {})) if (!BIN.test(bin) || ![0, 2].includes(exit) || !Object.prototype.hasOwnProperty.call(manifestBins ?? {}, bin)) finding(findings, "bin", `invalid or undeclared bin ${bin}.`);
@@ -77,9 +79,21 @@ export function validateReleaseQualificationContract({ policy, adapter, fixtures
     if (!PACKAGE.test(name) || !VERSION.test(version) || typeof declaredRange !== "string" || !optional || !satisfiesSimpleRange(version, declaredRange)) finding(findings, "peer-install", `invalid optional peer install ${name}.`);
   }
   if (!Array.isArray(adapter?.fixtures) || adapter.fixtures.length > 64) finding(findings, "fixtures", "bounded fixture list required.");
-  else for (const name of adapter.fixtures) { const observed = fixtures?.[name]; if (!BASENAME.test(name) || !object(observed) || observed.type !== "file" || observed.symlink || observed.tracked !== true || !Number.isSafeInteger(observed.size) || observed.size < 1 || observed.size > 65536) finding(findings, "fixture", `unsafe fixture ${name}.`); }
+  else for (const name of adapter.fixtures) { const observed = fixtures?.[name]; if (!FIXTURE_PATH.test(name) || name.split("/").includes("..") || !object(observed) || observed.type !== "file" || observed.symlink || observed.tracked !== true || !Number.isSafeInteger(observed.size) || observed.size < 1 || observed.size > 65536) finding(findings, "fixture", `unsafe fixture ${name}.`); }
+  if (adapter?.consumerOverlay !== undefined) {
+    if (!Array.isArray(adapter.consumerOverlay) || adapter.consumerOverlay.length > 64) finding(findings, "consumer-overlay", "consumerOverlay must be a bounded array.");
+    else {
+      const targets = new Set();
+      for (const item of adapter.consumerOverlay) {
+        closed(findings, item, ["fixture", "target"], "adapter.consumerOverlay");
+        const candidateRoot = `node_modules/${adapter.package}/`;
+        if (!FIXTURE_PATH.test(item?.fixture) || !adapter.fixtures?.includes(item.fixture) || !OVERLAY_PATH.test(item?.target) || item.target.startsWith(candidateRoot) || targets.has(item.target)) finding(findings, "consumer-overlay", "overlay entries must bind unique declared fixtures to safe non-candidate consumer paths.");
+        targets.add(item?.target);
+      }
+    }
+  }
   if (!Array.isArray(adapter?.cases) || adapter.cases.length > 64) finding(findings, "cases", "bounded cases required.");
-  else { const ids = new Set(), groups = new Map(), exits = new Set(); for (const item of adapter.cases) { closed(findings, item, ["id", "bin", "fixtureArgs", "exitCode", "group"], "adapter.case"); if (!nonempty(item?.id) || ids.has(item.id) || !BIN.test(item.bin) || !Object.prototype.hasOwnProperty.call(adapter.bins ?? {}, item.bin) || !Array.isArray(item.fixtureArgs) || item.fixtureArgs.length > 8 || !item.fixtureArgs.every((arg) => adapter.fixtures?.includes(arg) && BASENAME.test(arg)) || ![0, 1, 2].includes(item.exitCode) || !nonempty(item.group)) finding(findings, "case", "invalid case."); ids.add(item?.id); exits.add(item?.exitCode); const key = `${item?.bin}\0${item?.group}`; groups.set(key, [...(groups.get(key) ?? []), item?.exitCode]); } for (const exit of [0, 1, 2]) if (!exits.has(exit)) finding(findings, "exit-coverage", `missing ${exit}.`); if (![...groups.values()].some((values) => values.includes(0) && values.includes(1))) finding(findings, "matched-control", "same bin/group red and green required."); }
+  else { const ids = new Set(), groups = new Map(), exits = new Set(); for (const item of adapter.cases) { closed(findings, item, ["id", "bin", "fixtureArgs", "args", "exitCode", "group"], "adapter.case"); const legacyArgs = Array.isArray(item.fixtureArgs) && item.args === undefined && item.fixtureArgs.length <= 8 && item.fixtureArgs.every((arg) => adapter.fixtures?.includes(arg) && FIXTURE_PATH.test(arg)); const describedArgs = item.fixtureArgs === undefined && Array.isArray(item.args) && item.args.length <= 8 && item.args.every((arg) => { if (!object(arg) || Object.keys(arg).length !== 1) return false; if (typeof arg.literal === "string") return LITERAL_ARG.test(arg.literal); if (typeof arg.fixture === "string") return adapter.fixtures?.includes(arg.fixture) && FIXTURE_PATH.test(arg.fixture); if (typeof arg.fixtureDirectory === "string") return FIXTURE_PATH.test(arg.fixtureDirectory) && adapter.fixtures?.some((fixture) => fixture.startsWith(`${arg.fixtureDirectory}/`)); return false; }); if (!nonempty(item?.id) || ids.has(item.id) || !BIN.test(item.bin) || !Object.prototype.hasOwnProperty.call(adapter.bins ?? {}, item.bin) || (!legacyArgs && !describedArgs) || ![0, 1, 2].includes(item.exitCode) || !nonempty(item.group)) finding(findings, "case", "invalid case."); ids.add(item?.id); exits.add(item?.exitCode); const key = `${item?.bin}\0${item?.group}`; groups.set(key, [...(groups.get(key) ?? []), item?.exitCode]); } for (const exit of [0, 1, 2]) if (!exits.has(exit)) finding(findings, "exit-coverage", `missing ${exit}.`); if (![...groups.values()].some((values) => values.includes(0) && values.includes(1))) finding(findings, "matched-control", "same bin/group red and green required."); }
   closed(findings, adapter?.dimensionEvidence, ["rollback", "duplicate"], "adapter.dimensionEvidence");
   if (adapter?.dimensionEvidence?.rollback !== "restoration") finding(findings, "dimension-evidence", "rollback must use built-in restoration evidence.");
   const duplicateGroup = adapter?.dimensionEvidence?.duplicate;
