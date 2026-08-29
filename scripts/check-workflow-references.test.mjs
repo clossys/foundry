@@ -86,6 +86,23 @@ export function reachesCI(scriptName, scriptValue, workflowText) {
   return files.length > 0 && files.every((token) => workflowText.includes(token));
 }
 
+function workflowJob(workflowText, name) {
+  const start = workflowText.indexOf(`  ${name}:\n`);
+  assert.notEqual(start, -1, `workflow is missing ${name} job`);
+  const rest = workflowText.slice(start + 1);
+  const next = rest.search(/^  [a-z][a-z0-9-]*:\n/m);
+  return workflowText.slice(start, next === -1 ? workflowText.length : start + 1 + next);
+}
+
+export function candidateQualificationCiFailures(workflowText) {
+  const build = workflowJob(workflowText, "build");
+  const failures = [];
+  if (!/^  build:\n\s+name: build and test$/m.test(build)) failures.push("required-build-context");
+  if (!/- uses: actions\/checkout@[^\n]+\n[ \t]+with:\n(?:[ \t]+#[^\n]+\n)*[ \t]+fetch-depth: 0\b/.test(build)) failures.push("full-history-checkout");
+  if (!/^\s+- name: Candidate qualification records\n\s+run: npm run check:candidate-qualification$/m.test(build)) failures.push("candidate-invocation");
+  return failures;
+}
+
 test("every check:* script in the root manifest is referenced by at least one workflow", () => {
   const rootManifest = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8"));
   const checkScripts = Object.entries(rootManifest.scripts ?? {}).filter(([name]) => name.startsWith("check:"));
@@ -104,6 +121,21 @@ test("every check:* script in the root manifest is referenced by at least one wo
       "A script that is only ever in the local `npm run check` aggregate and never a workflow is a gate that never runs in CI (#414) — wire it into a workflow, or if it genuinely cannot run there, keep it out of `check:*` and document why. " +
       "A COMPOUND script needs every file it runs referenced, or one `npm run <name>` invocation that runs all of them: one wired command does not vouch for its siblings (#472).",
   );
+});
+
+test("the required build context fails closed on candidate qualification records with full history", () => {
+  const workflow = readFileSync(join(workflowsDir, "ci.yml"), "utf8");
+  assert.deepEqual(candidateQualificationCiFailures(workflow), []);
+  const build = workflowJob(workflow, "build");
+
+  const withoutInvocation = build.replace(
+    "      - name: Candidate qualification records\n        run: npm run check:candidate-qualification\n",
+    "",
+  );
+  assert.deepEqual(candidateQualificationCiFailures(withoutInvocation), ["candidate-invocation"]);
+
+  const shallow = build.replace("          fetch-depth: 0\n", "          fetch-depth: 1\n");
+  assert.deepEqual(candidateQualificationCiFailures(shallow), ["full-history-checkout"]);
 });
 
 test("every suite in check:gates imports only node builtins and local scripts", () => {
