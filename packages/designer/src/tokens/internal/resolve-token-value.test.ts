@@ -90,6 +90,24 @@ describe("resolveTokenValue", () => {
     expect(result.chain).toEqual(["--ui-ring-focus"]);
   });
 
+  it("handles attacker-sized whole-value alias fallbacks without regex backtracking", () => {
+    const spaces = " ".repeat(200_000);
+    const valid: Readonly<Record<string, TokenDefinition>> = {
+      "--a": def("--a", `var(---,${spaces}fallback)`),
+    };
+    expect(resolveTokenValue("--a", valid)).toMatchObject({
+      value: undefined,
+      missingProperty: "---",
+      chain: ["--a", "---"],
+    });
+
+    const invalidValue = `var(---,${spaces}fallback`;
+    const invalid: Readonly<Record<string, TokenDefinition>> = {
+      "--a": def("--a", invalidValue),
+    };
+    expect(resolveTokenValue("--a", invalid)).toMatchObject({ value: invalidValue, chain: ["--a"] });
+  });
+
   it("resolves every real chart-chrome alias in this package's own TOKENS to a literal, never a missing/cyclic result", () => {
     for (const property of ["--color-chart-surface", "--color-chart-axis", "--color-chart-axis-label"]) {
       const result = resolveTokenValue(property, TOKENS);

@@ -90,8 +90,46 @@
 
 import type { TokenDefinition } from "../tokens.js";
 
-/** Matches a `.value` that is nothing BUT one `var(--property, ...)` call — see this file's header, "WHAT COUNTS AS A WHOLE-VALUE ALIAS". Captures the referenced `--property` name. */
-const WHOLE_VALUE_VAR_RE = /^var\(\s*(--[A-Za-z0-9_-]+)\s*(?:,\s*[\s\S]*)?\)$/;
+function isWhitespaceCode(code: number): boolean {
+  return code === 0x0009 || code === 0x000a || code === 0x000b || code === 0x000c || code === 0x000d ||
+    code === 0x0020 || code === 0x00a0 || code === 0x1680 ||
+    (code >= 0x2000 && code <= 0x200a) || code === 0x2028 || code === 0x2029 ||
+    code === 0x202f || code === 0x205f || code === 0x3000 || code === 0xfeff;
+}
+
+function skipWhitespace(value: string, from: number): number {
+  let index = from;
+  while (index < value.length && isWhitespaceCode(value.charCodeAt(index))) index++;
+  return index;
+}
+
+function isPropertyCharacter(code: number): boolean {
+  return (code >= 0x30 && code <= 0x39) || (code >= 0x41 && code <= 0x5a) ||
+    code === 0x5f || code === 0x2d || (code >= 0x61 && code <= 0x7a);
+}
+
+/**
+ * Parses a value that is nothing but one `var(--property, ...)` call.
+ * The fallback remains opaque, matching the old contract, but the prefix is
+ * consumed exactly once with no regex backtracking over attacker-sized text.
+ */
+function wholeValueAlias(value: string): string | undefined {
+  const text = value.trim();
+  if (!text.startsWith("var(")) return undefined;
+  let index = skipWhitespace(text, 4);
+  const propertyStart = index;
+  if (text[index] !== "-" || text[index + 1] !== "-") return undefined;
+  index += 2;
+  const suffixStart = index;
+  while (index < text.length && isPropertyCharacter(text.charCodeAt(index))) index++;
+  if (index === suffixStart) return undefined;
+  const property = text.slice(propertyStart, index);
+  index = skipWhitespace(text, index);
+  if (text[index] === ")" && index === text.length - 1) return property;
+  if (text[index] !== ",") return undefined;
+  index = skipWhitespace(text, index + 1);
+  return text.endsWith(")") && index <= text.length - 1 ? property : undefined;
+}
 
 export interface ResolvedTokenValue {
   /** The starting property this resolution was requested for. */
@@ -141,12 +179,14 @@ export function resolveTokenValue(
   tokens: Readonly<Record<string, TokenDefinition>>,
 ): ResolvedTokenValue {
   const chain: string[] = [];
+  const seen = new Set<string>();
   let current = property;
 
   for (;;) {
-    if (chain.includes(current)) {
+    if (seen.has(current)) {
       return { requested: property, value: undefined, chain, cycle: current };
     }
+    seen.add(current);
     chain.push(current);
 
     const entry = Object.prototype.hasOwnProperty.call(tokens, current) ? tokens[current] : undefined;
@@ -154,11 +194,11 @@ export function resolveTokenValue(
       return { requested: property, value: undefined, chain, missingProperty: current };
     }
 
-    const match = WHOLE_VALUE_VAR_RE.exec(entry.value.trim());
-    if (!match) {
+    const alias = wholeValueAlias(entry.value);
+    if (alias === undefined) {
       return { requested: property, value: entry.value, chain };
     }
 
-    current = match[1] as string;
+    current = alias;
   }
 }
