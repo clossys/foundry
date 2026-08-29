@@ -17,6 +17,7 @@
     "build": "set -- packages/*/; [ -d \"$1\" ] || exit 0; npm run build --workspace=packages/controller --if-present && npm run build --workspace=packages/designer --if-present && npm run build --workspace=packages/writer --if-present && npm run build --workspace=packages/locksmith --if-present && npm run build --workspaces --if-present",
     "test": "set -- packages/*/; [ -d \"$1\" ] || exit 0; npm run test --workspaces --if-present",
     "typecheck": "set -- packages/*/; [ -d \"$1\" ] || exit 0; npm run typecheck --workspaces --if-present",
+    "check:dependency-audit": "npm audit --audit-level=high",
     "check:safety": "node scripts/check-public-safety.mjs . --allow-changelogs",
     "check:safety:strict": "node scripts/check-public-safety.mjs . --allow-changelogs --require-denylist",
     "check:scope": "node scripts/set-scope.mjs --check",
@@ -82,7 +83,7 @@
     "check:conflict-markers": "node scripts/check-conflict-markers.mjs"
   },
   "devDependencies": {
-    "pnpm": "10.33.0",
+    "pnpm": "10.34.5",
     "typescript": "~6.0.0"
   }
 }
