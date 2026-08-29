@@ -38,7 +38,7 @@ export function qualificationPath(root, candidate, ref = "WORKTREE") {
 }
 export function qualificationIntroductionCommit(root, candidate, head = "HEAD") {
   const path = qualificationPath(root, candidate);
-  const commits = git(root, ["log", "--diff-filter=A", "--format=%H", head, "--", path]).split("\n").filter(Boolean);
+  const commits = git(root, ["log", "--full-history", "--diff-filter=A", "--format=%H", head, "--", path]).split("\n").filter(Boolean);
   if (commits.length !== 1 || !SHA1.test(commits[0])) throw new Error("qualification record must have one introduction commit");
   return commits[0];
 }

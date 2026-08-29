@@ -83,6 +83,24 @@ async function syntheticRetainedRecord() {
   await writeFile(join(root, path), JSON.stringify(record, null, 2)); await commit(root, "introduce retained record");
   return { root, record, path };
 }
+async function syntheticIndependentRecordIntroductions() {
+  const root = await mkdtemp(join(tmpdir(), "qualification-merge-history-"));
+  await git(root, ["init"]); await git(root, ["config", "user.email", "test@example.invalid"]); await git(root, ["config", "user.name", "Qualification Test"]);
+  await mkdir(join(root, CONTROLLER_RECORD_DIRECTORY), { recursive: true });
+  await writeFile(join(root, "governance/release-qualification-policy.json"), readFileSync("governance/release-qualification-policy.json"));
+  const record = bootstrapSource(); const path = qualificationPath(root, record.candidate);
+  const base = await commit(root, "base policy");
+  await git(root, ["checkout", "-b", "left", base]);
+  await mkdir(join(root, CONTROLLER_RECORD_DIRECTORY), { recursive: true });
+  await writeFile(join(root, path), JSON.stringify(record, null, 2)); const left = await commit(root, "left introduction");
+  await git(root, ["checkout", "-b", "right", base]);
+  await mkdir(join(root, CONTROLLER_RECORD_DIRECTORY), { recursive: true });
+  await writeFile(join(root, path), JSON.stringify(record, null, 2)); const right = await commit(root, "right introduction");
+  const tree = (await git(root, ["rev-parse", `${left}^{tree}`])).stdout.trim();
+  assert.equal(tree, (await git(root, ["rev-parse", `${right}^{tree}`])).stdout.trim());
+  const merge = async (first, second) => (await git(root, ["commit-tree", tree, "-m", "merge independent introductions", "-p", first, "-p", second])).stdout.trim();
+  return { root, record, heads: [await merge(left, right), await merge(right, left)] };
+}
 async function syntheticPrepublication() {
   const root = await mkdtemp(join(tmpdir(), "qualification-tail-"));
   await git(root, ["init"]); await git(root, ["config", "user.email", "test@example.invalid"]); await git(root, ["config", "user.name", "Qualification Test"]);
@@ -158,6 +176,12 @@ test("historical qualification joins use one immutable introduction and reject m
   await rm(join(fixture.root, fixture.path)); await commit(fixture.root, "remove record");
   await writeFile(join(fixture.root, fixture.path), JSON.stringify(fixture.record, null, 2)); await commit(fixture.root, "reintroduce record");
   assert.throws(() => qualificationIntroductionCommit(fixture.root, fixture.record.candidate), /one introduction commit/);
+});
+test("full-history traversal rejects independent merge-parent introductions in either parent order", async (t) => {
+  const fixture = await syntheticIndependentRecordIntroductions(); t.after(() => rm(fixture.root, { recursive: true, force: true }));
+  for (const head of fixture.heads) {
+    assert.throws(() => qualificationIntroductionCommit(fixture.root, fixture.record.candidate, head), /one introduction commit/);
+  }
 });
 test("the history seal rejects coherent tarball, transcript, and registry rewrites", async (t) => {
   const fixture = await syntheticRetainedRecord(); t.after(() => rm(fixture.root, { recursive: true, force: true }));
