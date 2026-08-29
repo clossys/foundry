@@ -135,9 +135,20 @@ export interface ParsedBrandCss {
 
 /** Replaces every `/* ... *\/` comment's content with spaces, EXCEPT newlines, which are preserved — keeps every subsequent index/line number identical to the original source. */
 function stripCommentsPreservingLines(css: string): string {
-  return css.replace(/\/\*[\s\S]*?\*\//g, (comment) =>
-    comment.replace(/[^\n]/g, " "),
-  );
+  const stripped = css.split("");
+  let searchFrom = 0;
+  for (;;) {
+    const start = css.indexOf("/*", searchFrom);
+    if (start === -1) break;
+    const close = css.indexOf("*/", start + 2);
+    if (close === -1) break;
+    const end = close + 2;
+    for (let index = start; index < end; index++) {
+      if (stripped[index] !== "\n") stripped[index] = " ";
+    }
+    searchFrom = end;
+  }
+  return stripped.join("");
 }
 
 /**

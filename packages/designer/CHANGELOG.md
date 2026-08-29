@@ -3,6 +3,14 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.2] - 2026-08-29
+
+### Security
+
+- Replaced three backtracking token parsers with deterministic scanners so
+  hostile malformed OKLCH, token-alias, and CSS-comment input is handled in
+  linear time without changing valid parsing behavior.
+
 ## [0.2.1] - 2026-08-24
 
 ### Fixed

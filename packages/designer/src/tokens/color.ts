@@ -41,20 +41,96 @@ export interface Oklch {
   readonly A: number;
 }
 
-const OKLCH_RE = /oklch\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*(?:\/\s*([\d.]+))?\s*\)/;
+function isWhitespaceCode(code: number): boolean {
+  return code === 0x0009 || code === 0x000a || code === 0x000b || code === 0x000c || code === 0x000d ||
+    code === 0x0020 || code === 0x00a0 || code === 0x1680 ||
+    (code >= 0x2000 && code <= 0x200a) || code === 0x2028 || code === 0x2029 ||
+    code === 0x202f || code === 0x205f || code === 0x3000 || code === 0xfeff;
+}
+
+function skipWhitespace(value: string, from: number): number {
+  let index = from;
+  while (index < value.length && isWhitespaceCode(value.charCodeAt(index))) index++;
+  return index;
+}
+
+function numberEnd(value: string, from: number): number {
+  let index = from;
+  while (index < value.length) {
+    const code = value.charCodeAt(index);
+    if ((code < 0x30 || code > 0x39) && code !== 0x2e) break;
+    index++;
+  }
+  return index === from ? -1 : index;
+}
+
+interface OklchParseAttempt {
+  readonly color?: Oklch;
+  readonly resumeAt: number;
+}
+
+/** Parse one candidate without backtracking. Every successful scan advances its caller's search cursor. */
+function parseOklchAt(value: string, afterOpen: number): OklchParseAttempt {
+  let index = skipWhitespace(value, afterOpen);
+  const lStart = index;
+  index = numberEnd(value, index);
+  if (index === -1) return { resumeAt: lStart };
+  const lEnd = index;
+
+  if (index >= value.length || !isWhitespaceCode(value.charCodeAt(index))) return { resumeAt: index };
+  index = skipWhitespace(value, index);
+  const cStart = index;
+  index = numberEnd(value, index);
+  if (index === -1) return { resumeAt: cStart };
+  const cEnd = index;
+
+  if (index >= value.length || !isWhitespaceCode(value.charCodeAt(index))) return { resumeAt: index };
+  index = skipWhitespace(value, index);
+  const hStart = index;
+  index = numberEnd(value, index);
+  if (index === -1) return { resumeAt: hStart };
+  const hEnd = index;
+
+  index = skipWhitespace(value, index);
+  let alphaStart = -1;
+  let alphaEnd = -1;
+  if (value[index] === "/") {
+    index = skipWhitespace(value, index + 1);
+    alphaStart = index;
+    index = numberEnd(value, index);
+    if (index === -1) return { resumeAt: alphaStart };
+    alphaEnd = index;
+    index = skipWhitespace(value, index);
+  }
+  if (value[index] !== ")") return { resumeAt: index };
+
+  return {
+    color: {
+      L: Number(value.slice(lStart, lEnd)),
+      C: Number(value.slice(cStart, cEnd)),
+      H: Number(value.slice(hStart, hEnd)),
+      A: alphaStart === -1 ? 1 : Number(value.slice(alphaStart, alphaEnd)),
+    },
+    resumeAt: index + 1,
+  };
+}
 
 /** Parse the first `oklch(...)` function found in `value` (a token's declared CSS value, e.g. `oklch(0.6268 0 0 / 0.1)`). */
 export function parseOklch(value: string): Oklch {
-  const match = value.match(OKLCH_RE);
-  if (!match) {
-    throw new Error(`parseOklch: no oklch(...) function found in ${JSON.stringify(value)}`);
+  let searchFrom = 0;
+  for (;;) {
+    const start = value.indexOf("oklch(", searchFrom);
+    if (start === -1) {
+      throw new Error(`parseOklch: no oklch(...) function found in ${JSON.stringify(value)}`);
+    }
+    const attempt = parseOklchAt(value, start + "oklch(".length);
+    if (attempt.color !== undefined) return attempt.color;
+    // The failed attempt traversed only whitespace, digits, dots, or a slash,
+    // so none of those characters can begin the next literal
+    // `oklch(`. Resuming at the first failing character makes the whole
+    // search linear even when hostile input contains many near-matches.
+    searchFrom = Math.max(start + 1, attempt.resumeAt);
   }
-  return {
-    L: Number(match[1]),
-    C: Number(match[2]),
-    H: Number(match[3]),
-    A: match[4] !== undefined ? Number(match[4]) : 1,
-  };
 }
 
 /**
