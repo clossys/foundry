@@ -127,6 +127,31 @@ test("qualification refuses credential-bearing parents and npm configuration car
   assert.doesNotThrow(() => assertCredentialFree({}));
 });
 
+async function addConsumerOverlay(fixture, target) {
+  const name = "overlay-package.json";
+  const path = join(fixture.root, "fixtures", name);
+  const bytes = "{\"name\":\"@fixture/overlay\",\"version\":\"1.0.0\"}\n";
+  await writeFile(path, bytes);
+  fixture.adapter.fixtures.push(name);
+  fixture.fixtures[name] = { path, type: "file", symlink: false, tracked: true, size: Buffer.byteLength(bytes) };
+  fixture.adapter.consumerOverlay = [{ fixture: name, target }];
+}
+
+test("consumer overlays restore new roots and refuse to overwrite an installed optional peer", async (t) => {
+  const clean = await syntheticPackage();
+  const collision = await syntheticPackage({ runtimePeer: true, peerInstall: { typescript: "6.0.3" } });
+  t.after(() => Promise.all([clean, collision].map((item) => rm(item.root, { recursive: true, force: true }))));
+
+  await addConsumerOverlay(clean, "node_modules/@fixture/overlay/package.json");
+  assert.equal((await runCandidateQualification(clean)).ok, true);
+
+  await addConsumerOverlay(collision, "node_modules/typescript/package.json");
+  await assert.rejects(
+    () => runCandidateQualification(collision),
+    /consumer overlay refuses to overwrite: target package root already exists/,
+  );
+});
+
 test("runner collects all case observations before reporting a case mismatch", async (t) => {
   const fixture = await syntheticPackage({ mismatch: true });
   t.after(() => rm(fixture.root, { recursive: true, force: true }));

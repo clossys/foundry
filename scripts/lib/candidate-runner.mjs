@@ -90,6 +90,17 @@ function overlayPackageRoot(root, target) {
   return resolve(root, ...parts.slice(0, count));
 }
 
+export async function assertConsumerOverlayRootsAbsent(roots, phase) {
+  for (const root of roots) {
+    try {
+      await lstat(root);
+      throw new Error(`consumer overlay ${phase}: target package root already exists`);
+    } catch (error) {
+      if (error?.code !== "ENOENT") throw error;
+    }
+  }
+}
+
 export function installNpmrc(registry) {
   if (!registry || typeof registry.scope !== "string" || typeof registry.registry !== "string") throw new Error("scoped registry configuration is required");
   let url;
@@ -346,6 +357,10 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
       if (!target.startsWith(`${root}${sep}`)) throw new Error("consumer overlay escapes disposable root");
       const packageRoot = overlayPackageRoot(root, item.target);
       if (packageRoot) overlayRoots.add(packageRoot);
+    }
+    await assertConsumerOverlayRootsAbsent(overlayRoots, "refuses to overwrite");
+    for (const item of adapter.consumerOverlay ?? []) {
+      const target = resolve(root, item.target);
       await mkdir(dirname(target), { recursive: true });
       await copyFile(join(root, "fixtures", item.fixture), target);
     }
@@ -363,6 +378,7 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
     await writeFile(join(root, "package.json"), caseBase.manifest);
     await writeFile(join(root, "package-lock.json"), caseBase.lock);
     for (const packageRoot of overlayRoots) await rm(packageRoot, { recursive: true, force: true });
+    await assertConsumerOverlayRootsAbsent(overlayRoots, "post-case restoration failed");
 
     const before = { manifest: await readFile(join(root, "package.json"), "utf8"), lock: await readFile(join(root, "package-lock.json"), "utf8") };
     const uninstall = await runProcess("npm", ["uninstall", manifest.name, "--ignore-scripts"], { cwd: root, env: sanitizedEnv(root), timeout: timeoutMs });
