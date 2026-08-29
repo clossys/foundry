@@ -1,0 +1,10 @@
+{
+  "target": {
+    "name": "@fixture/qualification-target",
+    "version": "1.0.0",
+    "integrity": "sha512-AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ==",
+    "bin": "qualification-target-check",
+    "invocation": "single-json-input",
+    "repository": "fixture/repository"
+  }
+}

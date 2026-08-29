@@ -1,0 +1,8 @@
+{
+  "private": true,
+  "devDependencies": {
+    "{{CANDIDATE_NAME}}": "{{CANDIDATE_VERSION}}",
+    "@vespeneventures/advisor": "0.1.3",
+    "@fixture/qualification-target": "1.0.0"
+  }
+}

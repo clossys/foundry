@@ -2,14 +2,19 @@ import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
 import { copyFile, lstat, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { basename, join, resolve, sep } from "node:path";
+import { basename, dirname, join, resolve, sep } from "node:path";
 import { promisify } from "node:util";
 import { validateReleaseQualificationContract } from "./release-qualification-contract.mjs";
 import { parseStrictJson } from "./candidate-qualification.mjs";
 
 const exec = promisify(execFile);
 const hash = (algorithm, value) => createHash(algorithm).update(value).digest("hex");
-const streamHash = (root, value) => hash("sha256", String(value).split(root).join("$TEMP").replace(/npm notice[^\n]*\n/g, "").replace(/\b(?:added|removed|changed) \d+ packages? in \d+ms\n?/g, ""));
+const streamHash = (root, value) => hash("sha256", String(value)
+  .split(root).join("$TEMP")
+  .replace(/npm notice[^\n]*\n/g, "")
+  .replace(/\b(?:added|removed|changed) \d+ packages?(?:, and audited \d+ packages?)? in [^\n]+\n?/g, "")
+  .replace(/\n?\d+ packages? (?:are|is) looking for funding\n(?: {2}run `npm fund` for details\n)?/g, "")
+  .replace(/\n?found 0 vulnerabilities\n?/g, ""));
 const hasOwn = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
 
 function stableJson(value) {
@@ -29,6 +34,7 @@ function consumerDigest(root, value) {
 }
 
 const CREDENTIAL_ENV = ["NODE_AUTH_TOKEN", "NPM_TOKEN", "GH_PACKAGES_TOKEN", "GITHUB_TOKEN", "GH_TOKEN"];
+const TEMPLATE = /\{\{([A-Z_]+)\}\}/g;
 
 export function assertCredentialFree(env = process.env) {
   if (CREDENTIAL_ENV.some((name) => typeof env[name] === "string" && env[name].length > 0)) throw new Error("qualification runner refuses credential-bearing parent environment");
@@ -54,6 +60,45 @@ function sanitizedEnv(root) {
 function packageScope(name) {
   const match = /^(@[a-z0-9][a-z0-9._-]{0,213})\/[a-z0-9][a-z0-9._-]{0,213}$/.exec(name);
   return match?.[1] ?? null;
+}
+
+function npmIntegrity(hex) { return `sha512-${Buffer.from(hex, "hex").toString("base64")}`; }
+
+function renderFixture(value, variables) {
+  const rendered = String(value).replace(TEMPLATE, (_match, key) => {
+    if (!hasOwn(variables, key)) throw new Error(`unknown qualification fixture template ${key}`);
+    return variables[key];
+  });
+  if (/\{\{[A-Z_]+\}\}/.test(rendered)) throw new Error("unresolved qualification fixture template");
+  return rendered;
+}
+
+async function caseArgument(root, descriptor) {
+  if (typeof descriptor.literal === "string") return descriptor.literal;
+  const relative = descriptor.fixture ?? descriptor.fixtureDirectory;
+  const path = resolve(root, "fixtures", relative);
+  if (!path.startsWith(`${resolve(root, "fixtures")}${sep}`)) throw new Error("case fixture argument escapes fixture root");
+  const state = await lstat(path);
+  if (state.isSymbolicLink() || (descriptor.fixture !== undefined ? !state.isFile() : !state.isDirectory())) throw new Error("case fixture argument has the wrong filesystem type");
+  return path;
+}
+
+function overlayPackageRoot(root, target) {
+  if (!target.startsWith("node_modules/")) return null;
+  const parts = target.split("/");
+  const count = parts[1]?.startsWith("@") ? 3 : 2;
+  return resolve(root, ...parts.slice(0, count));
+}
+
+export async function assertConsumerOverlayRootsAbsent(roots, phase) {
+  for (const root of roots) {
+    try {
+      await lstat(root);
+      throw new Error(`consumer overlay ${phase}: target package root already exists`);
+    } catch (error) {
+      if (error?.code !== "ENOENT") throw error;
+    }
+  }
 }
 
 export function installNpmrc(registry) {
@@ -254,7 +299,12 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
   };
   try {
     await mkdir(join(root, "fixtures"));
-    for (const fixture of adapter.fixtures) await copyFile(fixtures[fixture].path, join(root, "fixtures", fixture));
+    const variables = { CANDIDATE_NAME: manifest.name, CANDIDATE_VERSION: manifest.version, CANDIDATE_INTEGRITY: npmIntegrity(tarballDigests.sha512), NOW: new Date().toISOString() };
+    for (const fixture of adapter.fixtures) {
+      const target = join(root, "fixtures", fixture);
+      await mkdir(dirname(target), { recursive: true });
+      await writeFile(target, renderFixture(await readFile(fixtures[fixture].path, "utf8"), variables));
+    }
     const npmrc = join(root, "npmrc");
     await writeFile(npmrc, installNpmrc(registry));
     await writeFile(join(root, "package.json"), "{\"private\":true}\n");
@@ -300,14 +350,35 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
       transcript.observations.push(observation(root, `help:${bin}`, "help", adapter.bins[bin], result));
       if (result.exitCode !== adapter.bins[bin] || result.signal || result.launchError) transcript.mismatches.push(`help:${bin}`);
     }
+    const caseBase = { manifest: await readFile(join(root, "package.json"), "utf8"), lock: await readFile(join(root, "package-lock.json"), "utf8") };
+    const overlayRoots = new Set();
+    for (const item of adapter.consumerOverlay ?? []) {
+      const target = resolve(root, item.target);
+      if (!target.startsWith(`${root}${sep}`)) throw new Error("consumer overlay escapes disposable root");
+      const packageRoot = overlayPackageRoot(root, item.target);
+      if (packageRoot) overlayRoots.add(packageRoot);
+    }
+    await assertConsumerOverlayRootsAbsent(overlayRoots, "refuses to overwrite");
+    for (const item of adapter.consumerOverlay ?? []) {
+      const target = resolve(root, item.target);
+      await mkdir(dirname(target), { recursive: true });
+      await copyFile(join(root, "fixtures", item.fixture), target);
+    }
     for (const item of adapter.cases) {
-      const args = item.fixtureArgs.map((fixture) => join(root, "fixtures", basename(fixture)));
+      const args = item.fixtureArgs
+        ? item.fixtureArgs.map((fixture) => join(root, "fixtures", fixture))
+        : await Promise.all(item.args.map((descriptor) => caseArgument(root, descriptor)));
       const result = targets[item.bin]
         ? await runProcess(process.execPath, [targets[item.bin], ...args], { cwd: root, env: sanitizedEnv(root), timeout: timeoutMs })
         : { exitCode: null, signal: null, launchError: true, stdout: "", stderr: "missing contained bin target" };
       transcript.observations.push(observation(root, `case:${item.id}`, "case", item.exitCode, result));
       if (result.exitCode !== item.exitCode || result.signal || result.launchError) transcript.mismatches.push(`case:${item.id}`);
     }
+
+    await writeFile(join(root, "package.json"), caseBase.manifest);
+    await writeFile(join(root, "package-lock.json"), caseBase.lock);
+    for (const packageRoot of overlayRoots) await rm(packageRoot, { recursive: true, force: true });
+    await assertConsumerOverlayRootsAbsent(overlayRoots, "post-case restoration failed");
 
     const before = { manifest: await readFile(join(root, "package.json"), "utf8"), lock: await readFile(join(root, "package-lock.json"), "utf8") };
     const uninstall = await runProcess("npm", ["uninstall", manifest.name, "--ignore-scripts"], { cwd: root, env: sanitizedEnv(root), timeout: timeoutMs });

@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "package": "@vespeneventures/starter",
+  "archetype": "current-direct",
+  "bins": { "foundry-starter": 0 },
+  "fixtures": [
+    "request-satisfied.json", "request-violated.json", "request-indeterminate.json",
+    "event.json", "receipt.json", "snapshot/snapshot.json", "snapshot/evidence/assessment.json",
+    "snapshot/evidence/target-satisfied.json", "snapshot/evidence/target-violated.json", "snapshot/evidence/target-indeterminate.json",
+    "overlay/package.json", "overlay/package-lock.json", "overlay/advisor-package.json", "overlay/advisor-cli.js",
+    "overlay/target-package.json", "overlay/target-cli.js"
+  ],
+  "consumerOverlay": [
+    { "fixture": "overlay/package.json", "target": "package.json" },
+    { "fixture": "overlay/package-lock.json", "target": "package-lock.json" },
+    { "fixture": "overlay/advisor-package.json", "target": "node_modules/@vespeneventures/advisor/package.json" },
+    { "fixture": "overlay/advisor-cli.js", "target": "node_modules/@vespeneventures/advisor/dist/execution-readiness-cli.js" },
+    { "fixture": "overlay/target-package.json", "target": "node_modules/@fixture/qualification-target/package.json" },
+    { "fixture": "overlay/target-cli.js", "target": "node_modules/@fixture/qualification-target/dist/check.js" }
+  ],
+  "cases": [
+    { "id": "activation-satisfied", "bin": "foundry-starter", "args": [{ "literal": "decide" }, { "fixture": "request-satisfied.json" }, { "fixtureDirectory": "snapshot" }, { "fixture": "event.json" }, { "fixture": "receipt.json" }], "exitCode": 0, "group": "activation" },
+    { "id": "activation-violated", "bin": "foundry-starter", "args": [{ "literal": "decide" }, { "fixture": "request-violated.json" }, { "fixtureDirectory": "snapshot" }, { "fixture": "event.json" }, { "fixture": "receipt.json" }], "exitCode": 1, "group": "activation" },
+    { "id": "activation-indeterminate", "bin": "foundry-starter", "args": [{ "literal": "decide" }, { "fixture": "request-indeterminate.json" }, { "fixtureDirectory": "snapshot" }, { "fixture": "event.json" }, { "fixture": "receipt.json" }], "exitCode": 2, "group": "activation" }
+  ],
+  "dimensionEvidence": { "rollback": "restoration", "duplicate": "activation" }
+}

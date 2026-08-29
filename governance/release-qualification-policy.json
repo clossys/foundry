@@ -2,6 +2,48 @@
   "schemaVersion": 1,
   "protocol": "foundry-candidate-qualification-v1",
   "packages": {
+    "@vespeneventures/advisor": {
+      "packageKey": "advisor",
+      "recordStem": "advisor",
+      "packageDir": "packages/advisor",
+      "adapterPath": "governance/release-qualification-adapters/advisor/current-direct.json",
+      "fixturePath": "governance/release-qualification-fixtures/advisor/current-direct",
+      "archetypes": {
+        "current-direct": { "status": "required" },
+        "prior-minor": { "status": "unsupported", "reason": "No supported prior-minor consumer line is declared." },
+        "oldest-supported": { "status": "unsupported", "reason": "No oldest supported migration line is declared." },
+        "control-plane": { "status": "unsupported", "reason": "Provider and repository adapters remain consumer-owned." }
+      },
+      "dimensions": {
+        "position": { "status": "unsupported", "reason": "A disposable consumer makes no installed position claim." },
+        "completion": { "status": "unsupported", "reason": "A disposable consumer makes no completion claim." },
+        "rollback": { "status": "required" },
+        "duplicate": { "status": "unsupported", "reason": "Advisor has no first-party runtime dependency graph to deduplicate." },
+        "cadence": { "status": "unsupported", "reason": "Cadence is not established by a disposable installation canary." },
+        "closeWindow": { "status": "unsupported", "reason": "Close-window evidence is not established by a disposable installation canary." }
+      }
+    },
+    "@vespeneventures/starter": {
+      "packageKey": "starter",
+      "recordStem": "starter",
+      "packageDir": "packages/starter",
+      "adapterPath": "governance/release-qualification-adapters/starter/current-direct.json",
+      "fixturePath": "governance/release-qualification-fixtures/starter/current-direct",
+      "archetypes": {
+        "current-direct": { "status": "required" },
+        "prior-minor": { "status": "unsupported", "reason": "No supported prior-minor consumer line is declared." },
+        "oldest-supported": { "status": "unsupported", "reason": "No oldest supported migration line is declared." },
+        "control-plane": { "status": "unsupported", "reason": "Consumer-owned provider workflow topology is outside producer qualification." }
+      },
+      "dimensions": {
+        "position": { "status": "unsupported", "reason": "Starter is non-role tooling and a disposable consumer makes no installed position claim." },
+        "completion": { "status": "unsupported", "reason": "Tooling conformance is not consumer completion." },
+        "rollback": { "status": "required" },
+        "duplicate": { "status": "unsupported", "reason": "Starter has no first-party runtime dependency graph to deduplicate." },
+        "cadence": { "status": "unsupported", "reason": "Cadence is not established by a disposable installation canary." },
+        "closeWindow": { "status": "unsupported", "reason": "Close-window evidence is not established by a disposable installation canary." }
+      }
+    },
     "@vespeneventures/controller": {
       "packageKey": "controller",
       "recordStem": "controller",

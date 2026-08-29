@@ -1,0 +1,6 @@
+{
+  "name": "@fixture/qualification-target",
+  "version": "1.0.0",
+  "type": "module",
+  "bin": { "qualification-target-check": "./dist/check.js" }
+}
