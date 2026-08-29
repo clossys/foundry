@@ -181,13 +181,88 @@ function jsonBytes(value) {
   return `${JSON.stringify(value, null, 2)}\n`;
 }
 
+function canonical(value) {
+  if (Array.isArray(value)) return value.map(canonical);
+  if (!object(value)) return value;
+  return Object.fromEntries(Object.keys(value).sort().map((key) => [key, canonical(value[key])]));
+}
+
+function sameJson(left, right) {
+  return JSON.stringify(canonical(left)) === JSON.stringify(canonical(right));
+}
+
+function dependencyNames(value) {
+  return ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"]
+    .flatMap((field) => Object.keys(value?.[field] ?? {}));
+}
+
+function validateCandidateStructuredState(root, policy, readFile) {
+  const findings = [];
+  const directories = packageDirectories(root);
+  const names = new Set(directories);
+  const candidateNames = new Set(directories.map((directory) => `${policy.candidate.scope}/${directory}`));
+
+  for (const directory of directories) {
+    const path = join(root, "packages", directory, "package.json");
+    const manifest = JSON.parse(readFile(path, "utf8"));
+    try {
+      transitionManifest(manifest, directory, policy.candidate, policy.candidate, names);
+    } catch (error) {
+      findings.push(error.message);
+    }
+    for (const name of dependencyNames(manifest)) {
+      if (name.startsWith(`${policy.current.scope}/`)) findings.push(`packages/${directory}/package.json retains current dependency ${name}`);
+      if (name.startsWith(`${policy.candidate.scope}/`) && !candidateNames.has(name)) {
+        findings.push(`packages/${directory}/package.json has undeclared candidate dependency ${name}`);
+      }
+    }
+  }
+
+  const lock = JSON.parse(readFile(join(root, "package-lock.json"), "utf8"));
+  if (!object(lock.packages)) {
+    findings.push("package-lock.json has no packages object");
+  } else {
+    for (const [path, entry] of Object.entries(lock.packages)) {
+      if (path.startsWith(`node_modules/${policy.current.scope}/`)) findings.push(`package-lock.json retains current path ${path}`);
+      if (typeof entry?.name === "string" && entry.name.startsWith(`${policy.current.scope}/`)) {
+        findings.push(`package-lock.json retains current package identity ${entry.name}`);
+      }
+      for (const name of dependencyNames(entry)) {
+        if (name.startsWith(`${policy.current.scope}/`)) findings.push(`package-lock.json retains current dependency ${name}`);
+        if (name.startsWith(`${policy.candidate.scope}/`) && !candidateNames.has(name)) {
+          findings.push(`package-lock.json has undeclared candidate dependency ${name}`);
+        }
+      }
+    }
+    for (const directory of directories) {
+      if (lock.packages[`packages/${directory}`]?.name !== `${policy.candidate.scope}/${directory}`) {
+        findings.push(`package-lock.json workspace identity mismatch for packages/${directory}`);
+      }
+      if (lock.packages[`node_modules/${policy.candidate.scope}/${directory}`]?.link !== true) {
+        findings.push(`package-lock.json is missing the exact candidate local link for ${directory}`);
+      }
+    }
+    if (!sameJson(lock, transitionLock(lock, directories, policy.candidate, policy.candidate))) {
+      findings.push("package-lock.json retains stale candidate workspace or local-link entries");
+    }
+  }
+
+  const catalog = JSON.parse(readFile(join(root, "governance", "release-catalog.json"), "utf8"));
+  if (!sameJson(catalog, candidateCatalog(policy))) findings.push("governance/release-catalog.json is not the complete candidate catalog");
+  return [...new Set(findings)];
+}
+
 /** Plan the structured part of W1D without touching prose or historical evidence. */
 export function planIdentityTransition({ root, policy, target = "candidate", readFile = readFileSync }) {
   if (target !== "candidate") throw new Error("only the reviewed candidate transition is supported");
   const scopePath = join(root, "package-scope.json");
   const scopeDocument = JSON.parse(readFile(scopePath, "utf8"));
   const state = identityState(scopeDocument, policy);
-  if (state === "candidate") return [];
+  if (state === "candidate") {
+    const findings = validateCandidateStructuredState(root, policy, readFile);
+    if (findings.length) throw new Error(`candidate declaration is incomplete: ${findings.join("; ")}`);
+    return [];
+  }
   if (state !== "current") throw new Error("package-scope.json is neither complete current nor complete candidate state");
   const directories = packageDirectories(root);
   const names = new Set(directories);

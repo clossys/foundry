@@ -117,6 +117,23 @@ test("the structured W1D plan is complete, candidate-public, declaration-last, a
     assert.equal(lock.packages["node_modules/@clossys/alpha"].link, true);
     assert.equal(readFileSync(join(root, "docs", "contracts", "package-lifecycle.json"), "utf8"), historyBytes);
     assert.equal(readFileSync(join(root, "governance", "release-qualifications", "alpha-0.1.0.json"), "utf8"), historyBytes);
+    assert.deepEqual(planIdentityTransition({ root, policy }), []);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test("a candidate declaration alone cannot falsely report a complete candidate state", () => {
+  const { root } = fixture();
+  try {
+    writeFileSync(join(root, "package-scope.json"), json({
+      scope: policy.candidate.scope,
+      registry: policy.candidate.registry,
+      access: policy.candidate.access,
+      status: "candidate declaration only",
+    }));
+    assert.throws(
+      () => planIdentityTransition({ root, policy }),
+      /candidate declaration is incomplete: .*package\.json.*package-lock\.json.*release-catalog\.json/s,
+    );
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
