@@ -11,6 +11,8 @@
  * shape. A guessed graph is worse than no graph for a release qualification.
  */
 
+import { isExactSemver } from "../internal/semver.js";
+
 export type SingularAuthorityLockfileFormat = "npm" | "pnpm";
 export type SingularAuthorityDispositionKind = "override" | "isolated-non-authoritative-helper";
 export type SingularAuthorityStatus =
@@ -137,7 +139,6 @@ interface Graph {
   readonly unresolved: readonly (SingularAuthorityEdge & { readonly detail: string })[];
 }
 
-const EXACT_VERSION = /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
 const IDENTIFIER = /^[a-z][a-z0-9-]{0,127}$/;
 const PACKAGE_NAME = /^(?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*$/;
 
@@ -216,7 +217,7 @@ function parseNpm(content: string): Graph | SingularAuthorityFinding[] {
     if (path === "") continue;
     if (!record(raw)) { findings.push({ code: "lockfile-unsupported", message: `npm package entry ${path} is not an object` }); continue; }
     const packageName = packageNameForNpmPath(path);
-    if (!packageName || !text(raw.version) || !EXACT_VERSION.test(raw.version)) {
+    if (!packageName || !text(raw.version) || !isExactSemver(raw.version)) {
       findings.push({ code: "lockfile-unsupported", message: `npm package entry ${path} needs a node_modules package name and exact version` });
       continue;
     }
@@ -254,37 +255,56 @@ function yamlPair(line: string): [string, string] | undefined {
   return [unquote(line.slice(0, colon)), line.slice(colon + 1).trim()];
 }
 
-const PEER_PACKAGE_NAME = "(?:@[a-z0-9][a-z0-9._-]*\\/[a-z0-9][a-z0-9._-]*|[a-z0-9][a-z0-9._-]*)";
-const PEER_ATOM = new RegExp(`^${PEER_PACKAGE_NAME}@[^@\\s()]+$`);
+const MAX_PNPM_PEER_SUFFIX_LENGTH = 65_536;
+
+function validPeerAtom(value: string): boolean {
+  const separator = value.lastIndexOf("@");
+  return separator > 0 && PACKAGE_NAME.test(value.slice(0, separator)) && isExactSemver(value.slice(separator + 1));
+}
+
+/** Finds one already-validated context boundary without recursion or backtracking. */
+function peerContextEnd(value: string, start: number): number | undefined {
+  if (value[start] !== "(" || value.length - start > MAX_PNPM_PEER_SUFFIX_LENGTH) return undefined;
+  let cursor = start;
+  let depth = 0;
+  while (cursor < value.length) {
+    if (value[cursor] === "(") {
+      depth += 1;
+      const atomStart = ++cursor;
+      while (cursor < value.length && value[cursor] !== "(" && value[cursor] !== ")") cursor += 1;
+      if (!validPeerAtom(value.slice(atomStart, cursor))) return undefined;
+      continue;
+    }
+    if (value[cursor] !== ")" || depth === 0) return undefined;
+    depth -= 1;
+    cursor += 1;
+    if (depth === 0) return cursor;
+  }
+  return undefined;
+}
 
 /**
  * pnpm peer suffixes are a recursive grammar, not arbitrary balanced text.
  * An atom may contain nested peer-context groups; anything after a completed
  * group is another group or invalid, never ignored suffix junk.
  */
-function peerContextEnd(value: string, start: number): number | undefined {
-  if (value[start] !== "(") return undefined;
-  let cursor = start + 1;
-  const atomStart = cursor;
-  while (cursor < value.length && value[cursor] !== "(" && value[cursor] !== ")") cursor += 1;
-  if (!PEER_ATOM.test(value.slice(atomStart, cursor))) return undefined;
-  while (value[cursor] === "(") {
-    const nested = peerContextEnd(value, cursor);
-    if (nested === undefined) return undefined;
-    cursor = nested;
-  }
-  return value[cursor] === ")" ? cursor + 1 : undefined;
-}
-
 function validPeerContextSuffix(value: string): boolean {
-  if (!value.startsWith("(")) return false;
+  if (!value.startsWith("(") || value.length > MAX_PNPM_PEER_SUFFIX_LENGTH) return false;
   let cursor = 0;
+  let depth = 0;
   while (cursor < value.length) {
-    const end = peerContextEnd(value, cursor);
-    if (end === undefined) return false;
-    cursor = end;
+    if (value[cursor] === "(") {
+      depth += 1;
+      const atomStart = ++cursor;
+      while (cursor < value.length && value[cursor] !== "(" && value[cursor] !== ")") cursor += 1;
+      if (!validPeerAtom(value.slice(atomStart, cursor))) return false;
+      continue;
+    }
+    if (value[cursor] !== ")" || depth === 0) return false;
+    depth -= 1;
+    cursor += 1;
   }
-  return true;
+  return depth === 0;
 }
 
 type PnpmVersion = { readonly version?: string; readonly resolved?: string; readonly error?: string };
@@ -292,11 +312,10 @@ type PnpmVersion = { readonly version?: string; readonly resolved?: string; read
 /** Returns exact semver plus a fully valid peer suffix, never a silently stripped suffix. */
 function pnpmVersion(value: string): PnpmVersion {
   const candidate = unquote(value);
-  const match = /^(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?)(.*)$/.exec(candidate);
-  if (!match) return {};
-  const version = match[1]!;
-  const suffix = match[2]!;
-  if (!EXACT_VERSION.test(version)) return { error: `invalid exact version ${candidate}` };
+  const peerStart = candidate.indexOf("(");
+  const version = peerStart === -1 ? candidate : candidate.slice(0, peerStart);
+  const suffix = peerStart === -1 ? "" : candidate.slice(peerStart);
+  if (!isExactSemver(version)) return { error: `invalid exact version ${candidate}` };
   if (suffix && !validPeerContextSuffix(suffix)) return { error: `invalid peer-context suffix ${suffix}` };
   return { version, resolved: candidate };
 }
@@ -308,13 +327,15 @@ function pnpmNameVersion(locator: string): { readonly identity?: PnpmIdentity; r
   const peerStart = clean.indexOf("(");
   const base = peerStart === -1 ? clean : clean.slice(0, peerStart);
   const suffix = peerStart === -1 ? "" : clean.slice(peerStart);
-  const match = /^(.*)@(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?)$/.exec(base);
-  if (!match) {
+  const separator = base.lastIndexOf("@");
+  if (separator < 1) {
     return clean.includes("(") || /@\d/.test(clean) ? { error: `unsupported package locator ${clean}` } : {};
   }
-  if (!PACKAGE_NAME.test(match[1]!) || !EXACT_VERSION.test(match[2]!)) return { error: `invalid package locator ${clean}` };
+  const packageName = base.slice(0, separator);
+  const version = base.slice(separator + 1);
+  if (!PACKAGE_NAME.test(packageName) || !isExactSemver(version)) return { error: `invalid package locator ${clean}` };
   if (suffix && !validPeerContextSuffix(suffix)) return { error: `invalid peer-context suffix ${suffix}` };
-  return { identity: { packageName: match[1]!, version: match[2]!, resolved: `${match[2]}${suffix}` } };
+  return { identity: { packageName, version, resolved: `${version}${suffix}` } };
 }
 
 /** Exact peer targets carried by one validated pnpm snapshot peer suffix. */
@@ -551,7 +572,7 @@ function inputFindings(input: SingularAuthorityCheckInput): SingularAuthorityFin
     } else declaredPackages.set(declaration.packageName, declaration.authority);
   }
   if (input?.target !== undefined) {
-    if (!record(input.target) || !text(input.target.authority) || !IDENTIFIER.test(input.target.authority) || !text(input.target.version) || !EXACT_VERSION.test(input.target.version)) {
+    if (!record(input.target) || !text(input.target.authority) || !IDENTIFIER.test(input.target.authority) || !text(input.target.version) || !isExactSemver(input.target.version)) {
       findings.push({ code: "input-invalid", message: "target needs a declared authority and exact semver version" });
     } else if (![...declaredPackages.values()].includes(input.target.authority)) {
       findings.push({ code: "target-undeclared", message: `target authority ${input.target.authority} has no singular-authority declaration` });
