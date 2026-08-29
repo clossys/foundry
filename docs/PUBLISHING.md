@@ -331,8 +331,11 @@ one tarball. The disabled W1D workflow cannot perform these publication steps.
    and a failure (real or a false positive in the checker itself) can only be
    reported, never prevented.
 3. A manual dry run exercises npm's own publish command against that exact
-   tarball with `--dry-run`; only a later explicitly authorized W1E run may
-   publish that same path with provenance. Either way, step 2 must pass first.
+   tarball with `--dry-run`; only a later explicitly authorized, owner-present
+   W1E run may publish that same path as a first identity. That interactive
+   first publication does not claim provenance. A later bounded patch release
+   through the proven trusted-publisher path supplies provenance evidence.
+   Either way, step 2 must pass first.
 4. After a real publish, the workflow re-fetches that exact `name@version`
    from the registry and compares its digest with the uploaded tarball — proof
    that the registry *stored and now serves back* those same bytes, which is
@@ -368,6 +371,52 @@ partial attempt is not silently retried as a cohort: it must be recorded in
 the immutable quarantine record with the completed ordered prefix and next
 failed member. These are future-only contracts; no cohort or qualification
 record is fabricated until exact candidate bytes and review evidence exist.
+
+### Owner-present first publication, then OIDC
+
+The first identity of each Trio member is an owner-present, interactive npm
+publication. It is not an npm trusted-publisher run: npm cannot bind a trusted
+publisher to a package identity that does not exist yet. The owner signs in to
+the public registry, enters npm's 2FA challenge at the terminal, and keeps the
+same reviewed tarball for publication and verification. Never put an OTP, npm
+token, or registry credential in a command, workflow, issue, or artifact.
+
+Run this handoff once per package, strictly in this order:
+
+```text
+advisor -> npm publish <advisor-tarball> --access public --registry=https://registry.npmjs.org
+           STOP; anonymously verify @clossys/advisor@<version>, served digest, and public access
+starter -> npm publish <starter-tarball> --access public --registry=https://registry.npmjs.org
+           STOP; anonymously verify @clossys/starter@<version>, served digest, and public access
+controller -> npm publish <controller-tarball> --access public --registry=https://registry.npmjs.org
+             STOP; anonymously verify @clossys/controller@<version>, served digest, and public access
+```
+
+At each stop, compare the anonymous packument and fetched tarball with the
+reviewed candidate's name, version, `dist.integrity`, SHA-1/SHA-256/SHA-512,
+packed manifest, and raw size. A failed publish or verification stops the
+handoff before the next member. Quarantine the completed ordered prefix,
+record every immutable published identity and disposition, invalidate the
+unpublished candidates, and never delete, overwrite, or reuse a published
+version. A correction is a new forward version that re-enters qualification
+with the whole cohort from one exact source head.
+
+Only after all three first identities pass those stops may the owner configure
+npm trusted publishing for each package. That is a separate provider action,
+followed by a separately reviewed workflow activation. The activation must use
+Node `>=22.14` and npm `>=11.5.1`, grant `id-token: write` only to the upload
+job, run in the protected `npm-publish` environment with a required reviewer,
+and have no `NODE_AUTH_TOKEN`, `NPM_TOKEN`, `GH_TOKEN`, or equivalent token
+environment. A bounded patch release through that OIDC path must then prove
+npm provenance and served-byte parity; configuring trust alone is not evidence
+of publication or provenance. Before activation, the owner must configure and
+verify that the GitHub `npm-publish` environment has the intended required
+reviewer; a branch policy or a workflow `environment` key is not proof of that
+provider setting. After all three OIDC patch releases and their provenance
+checks succeed, the owner must set and verify each npm package's Publishing
+access as **Require two-factor authentication and disallow tokens**. That
+removes the alternate granular bypass-2FA token path only after the trusted
+replacement has proved it works.
 
 ### Why the name-collision check runs first, always
 
@@ -442,9 +491,10 @@ evidence or permission to upload.
 
 ## 8. W1E publication and installation boundary
 
-W1E, not W1D, owns the first `@clossys` public npm publications. It must enable
-the publisher through a separately reviewed change and then, for each selected
-package:
+W1E, not W1D, owns the first `@clossys` public npm publications. First
+identities use the owner-present interactive handoff above. Only after the
+complete Trio is public and verified may W1E enable npm trusted publishing
+through a separately reviewed change. For each selected package, W1E must:
 
 1. run FULL public-safety and package preflight against the exact candidate;
 2. retain exact candidate qualification, review, and tarball digest joins;
@@ -470,6 +520,6 @@ for the capability and wiring ledger.
 | Thing | Where | Notes |
 | --- | --- | --- |
 | Denylist | `~/.config/public-safety/denylist-foundry.json` locally; `PUBLIC_SAFETY_DENYLIST_B64` repository secret in CI | Never committed here — it names exactly what must not be public. Specific to this repository — never reuse a denylist file written for a different project. |
-| W1E publish trust | Outside the W1D tree | Not active during W1D. W1E must establish and review the public npm publisher before any upload. No publish token or value is recorded here. |
+| W1E publish trust | Outside the W1D tree | Not active during W1D or the owner-present first-identity publications. Only after the complete Trio exists and verifies may W1E configure and review each npm trusted publisher, the `npm-publish` required reviewer, and the later token-disallow setting. No publish token or value is recorded here. |
 | Public npm consumer read | None | Future `@clossys` reads are anonymous. A consumer token or private-registry mapping is neither required nor supported. |
 | Predecessor GitHub Packages credentials | Historical consumer environments only | They explain immutable `@vespeneventures` evidence and must not be copied into current `@clossys` instructions or used as a fallback lane. |
