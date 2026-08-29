@@ -156,6 +156,15 @@ describe("parseBrandDeclarations — never drops what it cannot parse", () => {
     expect(declarations).toEqual({ "--color-accent": "red" });
     expect(unchecked).toEqual([]);
   });
+
+  it("strips an attacker-sized comment with repeated openers in linear time", () => {
+    const hostileComment = `/*${"a/*".repeat(100_000)}*/`;
+    const { declarations, unchecked } = parseBrandDeclarations(
+      `${hostileComment}\n:root { --color-accent: #2a78d6; }`,
+    );
+    expect(declarations).toEqual({ "--color-accent": "#2a78d6" });
+    expect(unchecked).toEqual([]);
+  });
 });
 
 describe("readBrandCss — file I/O wrapper", () => {
