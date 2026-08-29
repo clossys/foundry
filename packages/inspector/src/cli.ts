@@ -159,9 +159,23 @@ export function parseArgs(argv: readonly string[]): ParsedArgs {
   return { inputsPath, checks, minimumVersion, declaredRange, format, help };
 }
 
-/** Escapes a cell so a message containing a pipe cannot break the table it is rendered into. */
+/** Escapes Markdown control bytes before flattening physical lines into one table cell. */
 function cell(value: string): string {
-  return value.replace(/\|/g, "\\|").replace(/\n/g, " ");
+  let escaped = "";
+  let previousWasCarriageReturn = false;
+  for (const character of value) {
+    if (character === "\r") {
+      escaped += " ";
+      previousWasCarriageReturn = true;
+    } else if (character === "\n") {
+      if (!previousWasCarriageReturn) escaped += " ";
+      previousWasCarriageReturn = false;
+    } else {
+      previousWasCarriageReturn = false;
+      escaped += character === "\\" ? "\\\\" : character === "|" ? "\\|" : character;
+    }
+  }
+  return escaped;
 }
 
 function verdictLabel(report: VerifyStandardsReport["rows"][number]): string {

@@ -98,10 +98,10 @@ interface ShellResult {
   readonly stdout: string;
 }
 
-/** Runs `script` under a REAL `bash -e` subprocess — the shell Actions runs a `run:` block under. */
-function runUnderActionsShell(script: string): ShellResult {
+/** Runs a fixed script under the real Actions shell; fixture values travel only as positional argv. */
+function runUnderActionsShell(script: string, args: readonly string[]): ShellResult {
   try {
-    const stdout = execFileSync("bash", ["-e", "-c", script], { encoding: "utf8" });
+    const stdout = execFileSync("bash", ["-e", "-c", script, "inspector-actions-shell-test", ...args], { encoding: "utf8" });
     return { status: 0, stdout };
   } catch (error) {
     const err = error as { status?: number | null; stdout?: string };
@@ -112,31 +112,35 @@ function runUnderActionsShell(script: string): ShellResult {
 // The exact caller pattern documented in .github/workflows/verify-standards.yml
 // (the "DECIDE" step) and this package's own documents/caller-workflow.md's
 // template: never let the decisive command sit on the left of a pipe, capture
-// its status explicitly with `||`, `cat` the report, then `exit "$status"`.
-function safeCallerScript(cliPath: string, inputsPath: string, checks: string, reportPath: string): string {
-  return `
+// its status explicitly with `||`, consume the report, then `exit "$status"`.
+// Paths and the check name are positional parameters: no fixture- or
+// environment-derived text becomes shell source.
+const SAFE_CALLER_SCRIPT = `
     set -o pipefail
-    report="${reportPath}"
+    report="$4"
     status=0
-    node "${cliPath}" --inputs "${inputsPath}" --checks "${checks}" > "$report" || status=$?
-    cat "$report" > /dev/null
-    cat "$report" >> /dev/null
+    node "$1" --inputs "$2" --checks "$3" > "$report" || status=$?
+    while IFS= read -r line || [ -n "$line" ]; do :; done < "$report"
     exit "$status"
   `;
-}
+
+const DIRECT_CALLER_SCRIPT = 'node "$1" --inputs "$2" --checks "$3"';
+const NAIVE_PIPE_SCRIPT = 'node "$1" --inputs "$2" --checks "$3" | while IFS= read -r line || [ -n "$line" ]; do :; done';
+const PIPEFAIL_CALLER_SCRIPT = `set -o pipefail
+${NAIVE_PIPE_SCRIPT}`;
 
 describe("dist/bin.js under real Actions shell semantics (bash -e)", () => {
   it("the documented caller pattern exits 0 for a satisfied run", () => {
     const inputsPath = writeInputs("satisfied.json", satisfiedInputs);
     const reportPath = join(dir, "report-satisfied.txt");
-    const result = runUnderActionsShell(safeCallerScript(cliPath, inputsPath, "secret-scan", reportPath));
+    const result = runUnderActionsShell(SAFE_CALLER_SCRIPT, [cliPath, inputsPath, "secret-scan", reportPath]);
     expect(result.status).toBe(0);
   });
 
   it("the documented caller pattern exits 1, not 0, for a violated run", () => {
     const inputsPath = writeInputs("violated.json", violatedInputs);
     const reportPath = join(dir, "report-violated.txt");
-    const result = runUnderActionsShell(safeCallerScript(cliPath, inputsPath, "secret-scan", reportPath));
+    const result = runUnderActionsShell(SAFE_CALLER_SCRIPT, [cliPath, inputsPath, "secret-scan", reportPath]);
     expect(result.status).toBe(1);
   });
 
@@ -150,7 +154,7 @@ describe("dist/bin.js under real Actions shell semantics (bash -e)", () => {
   it("the documented caller pattern exits 2, and fails closed, for an indeterminate run", () => {
     const inputsPath = writeInputs("indeterminate.json", indeterminateInputs);
     const reportPath = join(dir, "report-indeterminate.txt");
-    const result = runUnderActionsShell(safeCallerScript(cliPath, inputsPath, "task-record", reportPath));
+    const result = runUnderActionsShell(SAFE_CALLER_SCRIPT, [cliPath, inputsPath, "task-record", reportPath]);
     expect(result.status).toBe(2);
   });
 
@@ -161,7 +165,7 @@ describe("dist/bin.js under real Actions shell semantics (bash -e)", () => {
     // is built on top of: `-e` does not need help to NOT swallow a `2`, it
     // is the pipe (or an unguarded `||`/`if`) that would.
     const inputsPath = writeInputs("indeterminate-direct.json", indeterminateInputs);
-    const result = runUnderActionsShell(`node "${cliPath}" --inputs "${inputsPath}" --checks task-record`);
+    const result = runUnderActionsShell(DIRECT_CALLER_SCRIPT, [cliPath, inputsPath, "task-record"]);
     expect(result.status).toBe(2);
     expect(result.stdout).toContain("Overall: INDETERMINATE (exit 2)");
   });
@@ -181,16 +185,14 @@ describe("dist/bin.js under real Actions shell semantics (bash -e)", () => {
       ["indeterminate", indeterminateInputs, "task-record"],
     ] as const) {
       const inputsPath = writeInputs(`naive-${name}.json`, inputs);
-      const naive = `node "${cliPath}" --inputs "${inputsPath}" --checks "${checks}" | cat > /dev/null`;
-      const result = runUnderActionsShell(naive);
+      const result = runUnderActionsShell(NAIVE_PIPE_SCRIPT, [cliPath, inputsPath, checks]);
       expect(result.status).toBe(0);
     }
   });
 
   it("the same naive pipe reports its real status once `set -o pipefail` is added — the doc's stated first guard", () => {
     const inputsPath = writeInputs("pipefail-guard.json", indeterminateInputs);
-    const guarded = `set -o pipefail\nnode "${cliPath}" --inputs "${inputsPath}" --checks task-record | cat > /dev/null`;
-    const result = runUnderActionsShell(guarded);
+    const result = runUnderActionsShell(PIPEFAIL_CALLER_SCRIPT, [cliPath, inputsPath, "task-record"]);
     expect(result.status).toBe(2);
   });
 });

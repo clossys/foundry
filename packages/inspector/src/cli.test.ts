@@ -196,7 +196,7 @@ describe("main", () => {
     expect(main(["--inputs", "in.json"], exploding)).toBe(2);
   });
 
-  it("escapes a pipe in a finding so it cannot break the rendered table", () => {
+  it("escapes backslashes before pipes and flattens every line ending in rendered findings", () => {
     const port = testPort({
       "in.json": JSON.stringify({
         schemaVersion: VERIFY_STANDARDS_INPUTS_VERSION,
@@ -208,12 +208,12 @@ describe("main", () => {
             exitCode: 1,
             scope: "working-tree",
             unitsScanned: 1,
-            hits: [{ ruleId: "r", path: "a|b.ts" }],
+            hits: [{ ruleId: "r", path: "a\\|b.ts\r\nnext.ts" }],
           },
         },
       }),
     });
     main(["--inputs", "in.json", "--checks", "secret-scan"], port);
-    expect(port.out.join("")).toContain("a\\|b.ts");
+    expect(port.out.join("")).toContain("a\\\\\\|b.ts next.ts");
   });
 });

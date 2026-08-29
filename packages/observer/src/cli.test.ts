@@ -187,6 +187,17 @@ describe("renderReport", () => {
     expect(rendered).toMatch(/Contradictions/);
     expect(rendered).toMatch(/believed unused/);
   });
+
+  it("escapes a pre-escaped pipe and flattens CRLF inside a table cell", () => {
+    const report = gradeFleetCoverage({
+      packages: violatedInput.packages,
+      repositories: [{
+        ...violatedInput.repositories[0],
+        repository: "repo\\|a\r\nnext",
+      }],
+    });
+    expect(renderReport(report)).toContain("repo\\\\\\|a next");
+  });
 });
 
 // -----------------------------------------------------------------------

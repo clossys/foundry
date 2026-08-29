@@ -127,6 +127,15 @@ describe("renderReport", () => {
     expect(text).toContain("could-not-verify");
     expect(text).toContain("is not evidence");
   });
+
+  it("escapes a pre-escaped pipe and flattens CRLF inside a table cell", () => {
+    const base = verifyToolchain(undefined, { installedVersion: MINIMUM_SAFE_VERSION });
+    const report = {
+      ...base,
+      rows: base.rows.map((row, index) => index === 0 ? { ...row, row: "row\\|name\r\nnext" } : row),
+    };
+    expect(renderReport(report)).toContain("row\\\\\\|name next");
+  });
 });
 
 // ---------------------------------------------------------------------
