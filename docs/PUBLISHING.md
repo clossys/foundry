@@ -331,8 +331,11 @@ one tarball. The disabled W1D workflow cannot perform these publication steps.
    and a failure (real or a false positive in the checker itself) can only be
    reported, never prevented.
 3. A manual dry run exercises npm's own publish command against that exact
-   tarball with `--dry-run`; only a later explicitly authorized W1E run may
-   publish that same path with provenance. Either way, step 2 must pass first.
+   tarball with `--dry-run`; only a later explicitly authorized, owner-present
+   W1E run may publish that same path as a first identity. That interactive
+   first publication does not claim provenance. A later bounded patch release
+   through the proven trusted-publisher path supplies provenance evidence.
+   Either way, step 2 must pass first.
 4. After a real publish, the workflow re-fetches that exact `name@version`
    from the registry and compares its digest with the uploaded tarball — proof
    that the registry *stored and now serves back* those same bytes, which is
@@ -406,7 +409,14 @@ job, run in the protected `npm-publish` environment with a required reviewer,
 and have no `NODE_AUTH_TOKEN`, `NPM_TOKEN`, `GH_TOKEN`, or equivalent token
 environment. A bounded patch release through that OIDC path must then prove
 npm provenance and served-byte parity; configuring trust alone is not evidence
-of publication or provenance.
+of publication or provenance. Before activation, the owner must configure and
+verify that the GitHub `npm-publish` environment has the intended required
+reviewer; a branch policy or a workflow `environment` key is not proof of that
+provider setting. After all three OIDC patch releases and their provenance
+checks succeed, the owner must set and verify each npm package's Publishing
+access as **Require two-factor authentication and disallow tokens**. That
+removes the alternate granular bypass-2FA token path only after the trusted
+replacement has proved it works.
 
 ### Why the name-collision check runs first, always
 
@@ -510,6 +520,6 @@ for the capability and wiring ledger.
 | Thing | Where | Notes |
 | --- | --- | --- |
 | Denylist | `~/.config/public-safety/denylist-foundry.json` locally; `PUBLIC_SAFETY_DENYLIST_B64` repository secret in CI | Never committed here — it names exactly what must not be public. Specific to this repository — never reuse a denylist file written for a different project. |
-| W1E publish trust | Outside the W1D tree | Not active during W1D. W1E must establish and review the public npm publisher before any upload. No publish token or value is recorded here. |
+| W1E publish trust | Outside the W1D tree | Not active during W1D or the owner-present first-identity publications. Only after the complete Trio exists and verifies may W1E configure and review each npm trusted publisher, the `npm-publish` required reviewer, and the later token-disallow setting. No publish token or value is recorded here. |
 | Public npm consumer read | None | Future `@clossys` reads are anonymous. A consumer token or private-registry mapping is neither required nor supported. |
 | Predecessor GitHub Packages credentials | Historical consumer environments only | They explain immutable `@vespeneventures` evidence and must not be copied into current `@clossys` instructions or used as a fallback lane. |
