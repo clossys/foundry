@@ -560,31 +560,31 @@
     },
     {
       "path": "docs/PUBLISHING.md",
-      "lineSha256": "sha256:1c6aa2e6b013cd4d6817a99cc28f75ef786f47c8efb2c9a2edf500a3280419f1"
+      "lineSha256": "sha256:220c98519ac5071b3734929f126eaf8d90e0b65c0871b0574c3b02a50b93ffa4"
     },
     {
       "path": "docs/PUBLISHING.md",
-      "lineSha256": "sha256:275f8aa672c29b1fc8b06f5b1212dc46d18d43dc0d866df2ea804da766f88eff"
+      "lineSha256": "sha256:7a78d818ad51d5c145b3cf0fa4d1ad4ba2007903b84b11a4d8fd2eb6e83edc6e"
     },
     {
       "path": "docs/PUBLISHING.md",
-      "lineSha256": "sha256:83378aad17d09d07d5d0dda2d257f8d12592c4292d57a80141f6acd0589c94ce"
+      "lineSha256": "sha256:7de82e902434a36689dd90780cce7da514374b5076a33b82a808680f4f29f816"
     },
     {
       "path": "docs/PUBLISHING.md",
-      "lineSha256": "sha256:d41c90acced01a273742920a477d7a03fcec6425689dc626f4db7aa6b71404b0"
+      "lineSha256": "sha256:8e4e75c2780a79d94f1732d389fc466f8ccc9fccf79438d00396f5af8ee7f1a0"
     },
     {
       "path": "docs/PUBLISHING.md",
-      "lineSha256": "sha256:d83e46eae80cf3b949a697ef143cf2688989ef659e3ece5a3c318bcb2c20ce1f"
+      "lineSha256": "sha256:d044cbed8f5ffbbe20e4329e8757e9ba9656a665bbdc166651136f1b0fa7f9e0"
     },
     {
       "path": "docs/PUBLISHING.md",
-      "lineSha256": "sha256:d9bf03575d0b8a46c2d7dd887219e49f2253a9fa17f991f1cde11d8b14053884"
+      "lineSha256": "sha256:ec136a33fc159c398638d2cd6e239418d29fa2083135be1babf76f7ee1e19d97"
     },
     {
       "path": "docs/PUBLISHING.md",
-      "lineSha256": "sha256:ded81ff43cb39341fbaa4cd6f277b681fcb17bfba084c128bb9337adbb9887e1"
+      "lineSha256": "sha256:ed5a2635a48eeb7ae1a960b59beddcd8329cfc6b8c721dc34c667acd51e0201e"
     },
     {
       "path": "governance/release-qualification-adapters/advisor/current-direct.json",
@@ -673,6 +673,14 @@
     {
       "path": "governance/release-qualifications/controller-0.8.20.json",
       "lineSha256": "sha256:6fbbf374440856870a005860cd0900150f2ae976af36e60ea2c229e4bdb2074d"
+    },
+    {
+      "path": "governance/release-qualifications/controller-0.8.21.json",
+      "lineSha256": "sha256:5641e9b52fb39e25106c000d6f71282082ac8ce786c85487d7e715d70894ef71"
+    },
+    {
+      "path": "governance/release-qualifications/controller-0.8.21.json",
+      "lineSha256": "sha256:5e04d8aead4d0ec71966b31b487c72b423773a68956b7a0d4fa70ad00ae79761"
     },
     {
       "path": "governance/release-qualifications/starter-0.1.2.json",
