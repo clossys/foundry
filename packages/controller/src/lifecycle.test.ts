@@ -104,6 +104,26 @@ describe("validatePackageLifecycle", () => {
     expect(findings.map((finding) => finding.rule)).toEqual(["deprecated-on", "replacement-range"]);
   });
 
+  it("accepts bounded prerelease/build ranges and rejects a large adversarial range", () => {
+    const lifecycle = (range: string) => ({
+      schemaVersion: 1,
+      packages: [
+        {
+          name: "@example/old",
+          status: "deprecated",
+          replacement: { name: "@example/new", range },
+          deprecatedOn: "2026-08-11",
+          decision: "https://example.invalid/decisions/old",
+          migration: "https://example.invalid/migrations/old",
+          forwardsToReplacement: false,
+        },
+        { name: "@example/new", status: "published" },
+      ],
+    });
+    expect(validatePackageLifecycle(lifecycle(">=1.2.3-rc.1+build.7 <2.0.0"))).toEqual([]);
+    expect(validatePackageLifecycle(lifecycle(`0.0.0${"--".repeat(40_000)}`)).map((entry) => entry.rule)).toContain("replacement-range");
+  });
+
   it("allows a documented terminal retirement without inventing a successor", () => {
     expect(validatePackageLifecycle({
       schemaVersion: 1,
