@@ -138,8 +138,11 @@ function runUnderActionsShell(shellCase: ActionsShellCase, args: readonly string
       break;
   }
 
+  const scriptPath = join(dir, `actions-${shellCase}.sh`);
+  writeFileSync(scriptPath, script, { encoding: "utf8", mode: 0o600 });
+
   try {
-    const stdout = execFileSync("bash", ["-e", "-c", script, "inspector-actions-shell-test", ...args], { encoding: "utf8" });
+    const stdout = execFileSync("bash", ["-e", scriptPath, ...args], { encoding: "utf8" });
     return { status: 0, stdout };
   } catch (error) {
     const err = error as { status?: number | null; stdout?: string };
