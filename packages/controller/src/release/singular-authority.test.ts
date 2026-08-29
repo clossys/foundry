@@ -309,6 +309,24 @@ describe("checkSingularAuthority — pnpm v9 bounded graph", () => {
     }
   });
 
+  it("accepts prerelease/build locators with nested peer contexts and bounds adversarial suffixes", () => {
+    const version = "0.8.20-beta.1+build.7";
+    const suffix = "(@scope/peer@1.0.0-rc.1+peer.2(child@2.0.0+build.4))";
+    const content = (locator: string) => [
+      "lockfileVersion: '9.0'", "importers:", "  .:", "    devDependencies:", "      '@scope/controller':",
+      `        specifier: ${version}`, `        version: ${locator}`, "packages:", `  '@scope/controller@${version}':`,
+      "    resolution: {integrity: sha512-controller}", "snapshots:", `  '@scope/controller@${locator}': {}`, "",
+    ].join("\n");
+    const exactTarget = { authority: "controller", version } as const;
+    const green = checkSingularAuthority({ lockfile: { format: "pnpm", content: content(`${version}${suffix}`) }, declarations, target: exactTarget });
+    expect(green.findings).toEqual([]);
+    expect(green.results[0]?.resolved).toEqual([expect.objectContaining({ version, node: `pnpm:@scope/controller@${version}${suffix}` })]);
+
+    const oversizedSuffix = `(${"(".repeat(70_000)}peer@1.0.0${")".repeat(70_001)}`;
+    const rejected = checkSingularAuthority({ lockfile: { format: "pnpm", content: content(`${version}${oversizedSuffix}`) }, declarations, target: exactTarget });
+    expect(rejected).toMatchObject({ ok: false, results: [], findings: [{ code: "lockfile-unsupported" }] });
+  });
+
   it("makes a pnpm snapshot's nested legacy authority indeterminate without its retained dependency range", () => {
     const content = [
       "lockfileVersion: '9.0'", "importers:", "  .:", "    dependencies:", "      '@scope/builder':", "        specifier: ^0.4.0", "        version: 0.4.0", "      '@scope/controller':", "        specifier: ^0.8.0", "        version: 0.8.19", "packages:", "  '@scope/builder@0.4.0':", "    resolution: {integrity: sha512-builder}", "  '@scope/controller@0.7.9':", "    resolution: {integrity: sha512-old}", "  '@scope/controller@0.8.19':", "    resolution: {integrity: sha512-current}", "snapshots:", "  '@scope/builder@0.4.0':", "    dependencies:", "      '@scope/controller': 0.7.9", "  '@scope/controller@0.7.9': {}", "  '@scope/controller@0.8.19': {}", "",

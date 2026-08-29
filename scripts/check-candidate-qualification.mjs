@@ -1,5 +1,5 @@
 import { readFileSync, readdirSync } from "node:fs";
-import { currentQualificationJoins, parseStrictJson, qualificationPath, validateCandidateQualification } from "./lib/candidate-qualification.mjs";
+import { currentQualificationJoins, parseStrictJson, qualificationRecordHistory, validateCandidateQualification } from "./lib/candidate-qualification.mjs";
 
 const directory = "governance/release-qualifications";
 let paths;
@@ -9,12 +9,13 @@ let failed = false;
 for (const path of paths) {
   try {
     const record = parseStrictJson(readFileSync(path, "utf8"));
-    const expected = { name: record.candidate?.name, version: record.candidate?.version, ...currentQualificationJoins(process.cwd(), record.candidate) };
+    const history = qualificationRecordHistory(process.cwd(), path, record.candidate);
+    const expected = { name: record.candidate?.name, version: record.candidate?.version, ...currentQualificationJoins(process.cwd(), record.candidate, history.introductionCommit) };
     const findings = validateCandidateQualification(record, { expected });
-    if (path !== qualificationPath(process.cwd(), record.candidate)) findings.push({ rule: "record-path", message: "record path does not match the policy record stem." });
+    if (history.introducedRecordSha256 !== history.retainedRecordSha256) findings.push({ rule: "record-history-join", message: "retained record bytes differ from their exact introduction blob." });
     for (const finding of findings) console.error("[" + finding.rule + "] " + path + ": " + finding.message);
     failed ||= findings.length > 0;
   } catch (error) { console.error("Cannot read " + path + ": " + (error instanceof Error ? error.message : "unknown error")); failed = true; }
 }
 if (failed) process.exit(1);
-console.log("CANDIDATE QUALIFICATION RECORD OK — bootstrap evidence is not pre-publication authorization.");
+console.log("CANDIDATE QUALIFICATION RECORD OK — retained evidence is not consumer adoption or sponsor authorization.");

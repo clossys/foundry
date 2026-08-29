@@ -12,6 +12,7 @@ import { validateReviewEvidence } from "../review/validate.js";
 import { validateCompletionEvidence } from "../positions/completion-evidence.js";
 import { isValueSafeReference } from "../internal/reference-safety.js";
 import { checkSingularAuthority, type SingularAuthorityCheckInput, type SingularAuthorityReport } from "../release/singular-authority.js";
+import { isExactSemver } from "../internal/semver.js";
 
 export const REPOSITORY_PACKAGE_ADOPTION_VERSION = 1 as const;
 export const REPOSITORY_PACKAGE_ADOPTION_COVERAGE = Object.freeze([
@@ -201,7 +202,6 @@ export interface RepositoryPackageAdoptionEvaluation {
 type RecordValue = Record<string, unknown>;
 const SHA = /^[0-9a-f]{40}$/;
 const SHA256 = /^[0-9a-f]{64}$/;
-const EXACT_SEMVER = /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-(?:(?:0|[1-9]\d*)|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:(?:0|[1-9]\d*)|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
 const SRI = /^sha(256|384|512)-([A-Za-z0-9+/]+={0,2})$/;
 const PACKAGE = /^@[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/;
 const ID = /^[a-z][a-z0-9-]{2,127}$/;
@@ -270,7 +270,7 @@ function packageShape(value: unknown, path: string, findings: RepositoryPackageA
   if (!exactPackageKeys(value)) { finding(findings, "package", path, "must contain exactly name, version, integrity, and optional singularAuthority"); return false; }
   const name = own(value, "name"); const version = own(value, "version"); const integrity = own(value, "integrity");
   if (typeof name !== "string" || !PACKAGE.test(name)) finding(findings, "package", `${path}.name`, "must be a scoped package name");
-  if (typeof version !== "string" || !EXACT_SEMVER.test(version)) finding(findings, "package-version", `${path}.version`, "must be one exact semver, never a range or tag");
+  if (typeof version !== "string" || !isExactSemver(version)) finding(findings, "package-version", `${path}.version`, "must be one exact semver, never a range or tag");
   if (!sri(integrity)) finding(findings, "package-integrity", `${path}.integrity`, "must be a canonical SRI whose decoded digest length matches sha256, sha384, or sha512");
   if (Object.hasOwn(value, "singularAuthority") && (typeof own(value, "singularAuthority") !== "string" || !SINGULAR_AUTHORITY.test(own(value, "singularAuthority") as string))) finding(findings, "package", `${path}.singularAuthority`, "must be a lowercase singular-authority identifier");
   return findings.every((entry) => !entry.path.startsWith(path));
