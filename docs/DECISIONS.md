@@ -1016,6 +1016,15 @@ a replacement upload under an old name.
 | **1D — whole-catalogue recut** | After transfer only, change every current source package and every first-party edge to the selected public-npm scope and registry in one coherent source change. Prepare and validate only inactive repository-source and workflow configuration for the later publish lane; do not activate provider-side npm trusted-publisher or provenance settings, and do not publish. | **Before any setter runs**, scope/registry machinery is history-aware: it preserves legacy lifecycle, retention, and decision identities; regression gates prove that preservation; and the selected candidate's ownership/availability evidence is recorded. Then `set-scope --check`, structural registry-drift and manifest-graph checks, workspace-link integrity, FULL safety, build, typecheck, tests, and review all pass on the recut head. Live registry parity is impossible before a candidate package exists and is deferred to 1E. No candidate-namespace package, provider-side npm trusted-publisher activation, provenance emission, or provider trust exists yet. |
 | **1E — first public-npm publications** | Treat Advisor, Starter, and Controller as one exact Trio release cohort. Before the first irreversible publication, every candidate passes FULL preflight, selected-tarball scan, and isolated installed canary; Starter's canary includes its required exact CLI evidence. Publish and verify Advisor, then Starter, then Controller, with the owner present for each first identity publication. Only after all three identities have registry-served digest and public visibility/access proof, activate the npm trusted publisher for each package. Then publish one or more later, bounded patch releases through that trusted publisher and verify the registry provenance attached to each of those releases. | One exact-head record names all three candidates and their successful pre-publication evidence; every first identity publication has owner-present, registry-served digest, and public visibility/access evidence. After every Trio or later candidate publication, run and record live registry-parity verification for that published identity (manifest name/version, public visibility/access, and served digest); it is the required 1E post-publication proof, not a 1D pre-publication gate. Each later provenance proof records its patch release, trusted-publisher execution, registry-served digest, and registry provenance verification. If a later candidate, publication, or verification fails after Advisor or Starter has published, fail closed: stop the release and quarantine the incomplete Trio; inventory every already-published immutable member (name, version, digest, visibility, and disposition); invalidate the unpublished candidate artifacts; and never delete or reuse any published version. Deprecate a published member if the registry supports that mutation, otherwise record the unsupported result and its immutable disposition. A defective published member needs a corrected forward version; requalify it and every dependent or remaining candidate from an exact head. Resume only when the whole-tree authority declaration and all current cohort gates pass again. Builder and Inspector wait for Controller; Publisher waits for Controller, Designer, and Writer. |
 
+The 1E handoff is intentionally two-phase: the owner first publishes each
+initial identity interactively with npm 2FA and verifies it anonymously before
+the next package. Only after the complete Trio is public and verified may the
+owner configure npm trusted publishing. Its later activation requires Node
+`>=22.14`, npm `>=11.5.1`, upload-job-only `id-token: write`, the protected
+`npm-publish` environment with a required reviewer, and no token environment.
+The first owner-present publication and subsequent OIDC publication are
+separate evidence events.
+
 ### Current execution status and remaining sequence (2026-08-29)
 
 W1A through W1D are complete: the decision and representative evidence are
@@ -1040,12 +1049,15 @@ The remaining critical path is deliberately narrow:
    code gate before immutable publication.
 2. Execute W1E [#594](https://github.com/clossys/platform/issues/594) with the
    owner present. Re-run exact preflights, then publish and verify **Advisor,
-   Starter, and Controller**, in that order. Retain each registry-served digest
-   and prove anonymous public metadata and install access before advancing.
-3. Only after the first Trio is public and verified, enable its npm trusted
-   publisher bindings. Prove those bindings with bounded patch releases and
-   verify npm provenance plus served-byte parity; configuring trust alone is
-   not publication evidence.
+   Starter, and Controller**, in that order, using interactive npm 2FA for each
+   first identity. Stop after every member and retain its registry-served
+   digest, public metadata, and anonymous install proof before advancing.
+3. Only after all three first identities are public and verified, enable their
+   npm trusted-publisher bindings. The later activation must satisfy the
+   protected `npm-publish` environment/reviewer, Node `>=22.14`, npm `>=11.5.1`,
+   upload-job-only `id-token: write`, and no token environment. Prove each
+   binding with a bounded patch release and verify npm provenance plus
+   served-byte parity; configuring trust alone is not publication evidence.
 4. Run one minimal credentialless consumer smoke test from a clean disposable
    project. Install the exact public Trio, exercise the qualified Advisor and
    Starter CLI controls plus Controller's selected public surface, and prove

@@ -369,6 +369,45 @@ the immutable quarantine record with the completed ordered prefix and next
 failed member. These are future-only contracts; no cohort or qualification
 record is fabricated until exact candidate bytes and review evidence exist.
 
+### Owner-present first publication, then OIDC
+
+The first identity of each Trio member is an owner-present, interactive npm
+publication. It is not an npm trusted-publisher run: npm cannot bind a trusted
+publisher to a package identity that does not exist yet. The owner signs in to
+the public registry, enters npm's 2FA challenge at the terminal, and keeps the
+same reviewed tarball for publication and verification. Never put an OTP, npm
+token, or registry credential in a command, workflow, issue, or artifact.
+
+Run this handoff once per package, strictly in this order:
+
+```text
+advisor -> npm publish <advisor-tarball> --access public --registry=https://registry.npmjs.org
+           STOP; anonymously verify @clossys/advisor@<version>, served digest, and public access
+starter -> npm publish <starter-tarball> --access public --registry=https://registry.npmjs.org
+           STOP; anonymously verify @clossys/starter@<version>, served digest, and public access
+controller -> npm publish <controller-tarball> --access public --registry=https://registry.npmjs.org
+             STOP; anonymously verify @clossys/controller@<version>, served digest, and public access
+```
+
+At each stop, compare the anonymous packument and fetched tarball with the
+reviewed candidate's name, version, `dist.integrity`, SHA-1/SHA-256/SHA-512,
+packed manifest, and raw size. A failed publish or verification stops the
+handoff before the next member. Quarantine the completed ordered prefix,
+record every immutable published identity and disposition, invalidate the
+unpublished candidates, and never delete, overwrite, or reuse a published
+version. A correction is a new forward version that re-enters qualification
+with the whole cohort from one exact source head.
+
+Only after all three first identities pass those stops may the owner configure
+npm trusted publishing for each package. That is a separate provider action,
+followed by a separately reviewed workflow activation. The activation must use
+Node `>=22.14` and npm `>=11.5.1`, grant `id-token: write` only to the upload
+job, run in the protected `npm-publish` environment with a required reviewer,
+and have no `NODE_AUTH_TOKEN`, `NPM_TOKEN`, `GH_TOKEN`, or equivalent token
+environment. A bounded patch release through that OIDC path must then prove
+npm provenance and served-byte parity; configuring trust alone is not evidence
+of publication or provenance.
+
 ### Why the name-collision check runs first, always
 
 Public npm scope ownership and existing package names must be checked before
@@ -442,9 +481,10 @@ evidence or permission to upload.
 
 ## 8. W1E publication and installation boundary
 
-W1E, not W1D, owns the first `@clossys` public npm publications. It must enable
-the publisher through a separately reviewed change and then, for each selected
-package:
+W1E, not W1D, owns the first `@clossys` public npm publications. First
+identities use the owner-present interactive handoff above. Only after the
+complete Trio is public and verified may W1E enable npm trusted publishing
+through a separately reviewed change. For each selected package, W1E must:
 
 1. run FULL public-safety and package preflight against the exact candidate;
 2. retain exact candidate qualification, review, and tarball digest joins;
