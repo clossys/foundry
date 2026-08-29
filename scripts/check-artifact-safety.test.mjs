@@ -38,6 +38,34 @@ test("default package mode still invokes npm pack", async (t) => {
   const result = await run(item, []);
   assert.equal(result.code, 2); assert.equal(existsSync(item.marker), true);
 });
+test("default package mode never exposes a private caller environment to package lifecycle scripts", async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "artifact-lifecycle-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const pkg = join(root, "pkg");
+  const marker = join(root, "lifecycle-observed-private-env");
+  await mkdir(pkg);
+  await writeFile(join(root, "package-scope.json"), JSON.stringify({ scope: "@example", registry: "https://registry.example.test" }));
+  await writeFile(join(pkg, "README.md"), "safe package\n");
+  await writeFile(join(pkg, "LICENSE"), "MIT\n");
+  await writeFile(join(pkg, "index.js"), "export const safe = true;\n");
+  await writeFile(join(pkg, "package.json"), JSON.stringify({
+    name: "@example/artifact",
+    version: "1.0.0",
+    type: "module",
+    files: ["index.js", "README.md", "LICENSE"],
+    publishConfig: { registry: "https://registry.example.test" },
+    scripts: {
+      prepack: `node -e "if (process.env.PUBLIC_SAFETY_DENYLIST) require('node:fs').writeFileSync(${JSON.stringify(marker)}, 'observed')"`,
+    },
+  }));
+
+  const result = await execFile("node", [gate, pkg], {
+    env: { ...process.env, PUBLIC_SAFETY_DENYLIST: "/private/denylist/path" },
+  }).catch((error) => ({ code: error.code, stdout: error.stdout, stderr: error.stderr }));
+
+  assert.equal(result.code ?? 0, 0, result.stderr || result.stdout);
+  assert.equal(existsSync(marker), false, "npm pack must not execute the hostile prepack hook");
+});
 test("supplied tarball manifest mismatch is rejected before any npm pack", async (t) => {
   const item = await fixture(); t.after(() => rm(item.root, { recursive: true, force: true }));
   const archiveRoot = join(item.root, "archive", "package"); await mkdir(archiveRoot, { recursive: true });
