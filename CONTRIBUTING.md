@@ -40,6 +40,42 @@ npm run check:contamination
 npm run check:typechecked-assertions
 ```
 
+## Contribution certification
+
+This project uses the [Developer Certificate of Origin 1.1](https://developercertificate.org/)
+instead of a contributor licence agreement. A human contributor certifies each
+commit by adding a `Signed-off-by` trailer with the name and email used for that
+contribution:
+
+```text
+Signed-off-by: Your Name <your-email@example.com>
+```
+
+`git commit -s` adds the trailer. Rewritten or squashed contributor commits need
+the certification on the resulting contributor commit; a maintainer's merge
+commit does not replace it. Repository-owned automation and dependency bots do
+not fabricate a human certification. A human modification to automated work is
+a human contribution and is signed in the normal way.
+
+This policy applies to contributions first submitted after it lands. It does
+not retroactively certify earlier history. Every accepted contribution remains
+licensed under this repository's MIT licence; sign-off records provenance and
+the contributor's right to submit the work, not a transfer of copyright or a
+claim of project ownership.
+
+## Project names and marks
+
+The MIT licence covers the software and documentation. It does not grant a
+separate licence to names, logos, or other marks, and this repository does not
+declare or assign ownership of any such mark.
+
+A repository or package-namespace transfer moves the approved source and its
+administration only. It does not by itself assign copyright or trademark rights,
+and it does not imply endorsement by a previous or successor maintainer. Any
+later assignment, licence, or project-specific marks policy must be an explicit,
+separately reviewed owner action; it is not inferred from a repository transfer,
+scope change, registry change, or package publication.
+
 ## What CI enforces
 
 | Check | What it means |
