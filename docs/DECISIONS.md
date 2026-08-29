@@ -1018,28 +1018,46 @@ a replacement upload under an old name.
 
 ### Current execution status and remaining sequence (2026-08-29)
 
-W1A through W1C are complete: the decision and representative evidence are
-retained, singular authority is mechanically checked, and this source is now
-the transferred `clossys/platform` repository. The producer programme remains
-tracked by [#567](https://github.com/clossys/platform/issues/567).
+W1A through W1D are complete: the decision and representative evidence are
+retained, singular authority is mechanically checked, this source is now the
+transferred `clossys/platform` repository, and all 19 source identities plus
+their first-party edges have moved together to `@clossys`. Exact predecessor
+lines remain only through the content-addressed history inventory. The
+producer programme remains tracked by
+[#567](https://github.com/clossys/platform/issues/567), with W1D's reviewed
+source result retained in
+[#593](https://github.com/clossys/platform/issues/593).
 
-The reversible W1D prerequisite in
-[#593](https://github.com/clossys/platform/issues/593) is merged. This recut is
-its separately reviewed execution: all 19 source identities and first-party
-edges move together, exact old-identity lines are retained only through the
-content-addressed history inventory, and publication plus provider trust stay
-disabled. Passing this change proves source readiness only; it does not create
-an npm package, adoption result, or provenance record.
+W1D proves reversible source readiness only. Every candidate remains
+unpublished, and npm trusted publishing remains disabled. It creates no
+install, adoption, provenance, or consumer-outcome evidence.
 
-Only after W1D merges and the high-severity security inventory in
-[#586](https://github.com/clossys/platform/issues/586) has no unexplained item
-does W1E [#594](https://github.com/clossys/platform/issues/594) begin. W1E is
-the first irreversible operation: owner-present Trio publication and public
-registry digest/access/parity proof, followed by trusted-publisher activation
-and bounded provenance-bearing forward releases. The remaining catalogue then
-scales from that evidence in declared dependency order. This sequence keeps
-source preparation, first publication, provider trust, and consumer adoption
-as separate facts.
+The remaining critical path is deliberately narrow:
+
+1. Close every actionable producer security finding tracked by
+   [#586](https://github.com/clossys/platform/issues/586) on the recut source
+   head. Warning-free CodeQL plus FULL publish safety is the final reversible
+   code gate before immutable publication.
+2. Execute W1E [#594](https://github.com/clossys/platform/issues/594) with the
+   owner present. Re-run exact preflights, then publish and verify **Advisor,
+   Starter, and Controller**, in that order. Retain each registry-served digest
+   and prove anonymous public metadata and install access before advancing.
+3. Only after the first Trio is public and verified, enable its npm trusted
+   publisher bindings. Prove those bindings with bounded patch releases and
+   verify npm provenance plus served-byte parity; configuring trust alone is
+   not publication evidence.
+4. Run one minimal credentialless consumer smoke test from a clean disposable
+   project. Install the exact public Trio, exercise the qualified Advisor and
+   Starter CLI controls plus Controller's selected public surface, and prove
+   removal/reinstall rollback. Retain commands, versions, exits, and served
+   digests under W1E.
+
+Publishing the other sixteen packages, migrating the wider consumer fleet,
+and building `apps:site`, `apps:app`, or `apps:admin` dogfood applications are
+post-cutover expansion. They scale from the Trio evidence in declared
+dependency order and do not enlarge or delay W1E. This sequence keeps source
+preparation, first publication, provider trust, consumer proof, and later
+adoption as separate facts.
 
 ### W1D packed-artifact lifecycle boundary
 
