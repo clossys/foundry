@@ -60,7 +60,7 @@ async function syntheticPackage({ mismatch = false, exports = undefined, runtime
   })));
   const policy = {
     schemaVersion: 1, protocol: "foundry-candidate-qualification-v1", packages: { "@acme/synthetic": {
-    packageKey: "synthetic", recordStem: "synthetic", packageDir: "packages/synthetic", adapterPath: "governance/release-qualification-adapters/synthetic/current-direct.json", fixturePath: "governance/release-qualification-fixtures/synthetic/current-direct", archetypes: {
+    packageKey: "synthetic", recordStem: "acme-synthetic", packageDir: "packages/synthetic", adapterPath: "governance/release-qualification-adapters/synthetic/current-direct.json", fixturePath: "governance/release-qualification-fixtures/synthetic/current-direct", archetypes: {
       "current-direct": { status: "required" },
       "prior-minor": { status: "unsupported", reason: "not supplied" },
       "oldest-supported": { status: "unsupported", reason: "not supplied" },

@@ -256,8 +256,8 @@ claiming that it invoked Controller's package-owned `packRoundTrip` helper.
 
 ### Exact-candidate qualification
 
-Before a future upload, Publish requires
-`governance/release-qualifications/<package>-<version>.json` to validate as
+Before a future upload, Publish requires a namespace-qualified current record
+under `governance/release-qualifications/clossys-<package>-<version>.json` to validate as
 **pre-publication** evidence for the exact package version, policy-owned
 package tree, root resolution, adapter and fixture joins, and SHA-1/SHA-256/
 SHA-512 tarball bytes. Publish packs once, scans that exact file, runs the root
@@ -342,7 +342,10 @@ one tarball. The disabled W1D workflow cannot perform these publication steps.
    proof against the identical local bytes already cover that; a second
    install-and-import check against bytes already proven identical would be a
    duplicate with no distinct purpose.
-5. W1E's `verify_only` path runs the fixed qualification runner
+5. W1E's `verify_only` path anonymously fetches the exact public npm tarball
+   and retains a closed proof of the packument URL, served tarball URL, public
+   access, SHA-1/SHA-256/SHA-512/integrity tuple, packed manifest digest, and
+   raw tarball size before its runner uses those bytes. It runs the fixed qualification runner
    against the fetched, already-published tarball — it exists specifically to qualify a
    version *already in the registry*, independent of whatever the current
    checkout contains (for example a version published before step 2 existed
@@ -354,6 +357,17 @@ When W1E activates the public npm publisher, reads of `@clossys` packages are
 expected to be credentialless. Publication trust and credentials remain a
 producer concern; a consumer token or private registry mapping must not be
 introduced for public-package reads.
+
+### The first public cohort
+
+The first `@clossys` release is one closed pre-publication cohort: `advisor`,
+then `starter`, then `controller`. Its namespace-qualified records join an
+immutable `clossys-npmjs-trio` cohort record by raw-byte SHA-256, exact public
+registry tuple, and each candidate's SHA-1/SHA-256/SHA-512 tarball tuple. A
+partial attempt is not silently retried as a cohort: it must be recorded in
+the immutable quarantine record with the completed ordered prefix and next
+failed member. These are future-only contracts; no cohort or qualification
+record is fabricated until exact candidate bytes and review evidence exist.
 
 ### Why the name-collision check runs first, always
 

@@ -4,6 +4,9 @@ import { spawnSync } from "node:child_process";
 export const PUBLIC_NPM_REGISTRY = "https://registry.npmjs.org";
 
 const SHA1 = /^[a-f0-9]{40}$/;
+const SHA256 = /^[a-f0-9]{64}$/;
+const SHA512 = /^[a-f0-9]{128}$/;
+const VERSION = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 const MAX_TARBALL_BYTES = 64 * 1024 * 1024;
 
 function sha(algorithm, bytes, encoding = "hex") {
@@ -181,6 +184,45 @@ export async function verifyPublicNpmArtifact({ registry, name, version, fetchIm
       size: bytes.length,
     },
   };
+}
+
+/** Serialize only the anonymous registry facts needed to revalidate an artifact handoff. */
+export function publicNpmRegistryProof(evidence) {
+  return { schemaVersion: 1, kind: "public-npm-anonymous-registry-proof-v1", evidence };
+}
+
+/** Validate a retained anonymous npm proof against exact candidate bytes. */
+export function validatePublicNpmRegistryProof(proof, { name, version, bytes } = {}) {
+  const findings = [];
+  const fail = (rule, message) => findings.push({ rule, message });
+  if (!proof || typeof proof !== "object" || Array.isArray(proof) || proof.schemaVersion !== 1 || proof.kind !== "public-npm-anonymous-registry-proof-v1" || Object.keys(proof).some((key) => !["schemaVersion", "kind", "evidence"].includes(key))) {
+    fail("proof", "closed anonymous registry proof required.");
+    return findings;
+  }
+  const evidence = proof.evidence;
+  const fields = ["registry", "access", "name", "version", "packumentUrl", "tarballUrl", "integrity", "shasum", "sha256", "sha512", "packedManifestSha256", "size"];
+  if (!evidence || typeof evidence !== "object" || Array.isArray(evidence) || Object.keys(evidence).sort().join("\0") !== fields.slice().sort().join("\0")) {
+    fail("proof", "closed anonymous registry evidence required.");
+    return findings;
+  }
+  if (evidence.registry !== PUBLIC_NPM_REGISTRY || evidence.access !== "anonymous" || evidence.name !== name || evidence.version !== version || !VERSION.test(evidence.version ?? "") || !SHA1.test(evidence.shasum ?? "") || !SHA256.test(evidence.sha256 ?? "") || !SHA512.test(evidence.sha512 ?? "") || !SHA256.test(evidence.packedManifestSha256 ?? "") || !Number.isSafeInteger(evidence.size) || evidence.size < 1 || evidence.size > MAX_TARBALL_BYTES) fail("proof", "exact anonymous registry identity/digest tuple required.");
+  if (evidence.packumentUrl !== publicNpmPackageUrl(PUBLIC_NPM_REGISTRY, name)) fail("proof-url", "registry proof must retain the exact anonymous packument URL.");
+  for (const value of [evidence.packumentUrl, evidence.tarballUrl]) {
+    try { const url = new URL(value); if (url.protocol !== "https:" || url.origin !== new URL(PUBLIC_NPM_REGISTRY).origin || url.username || url.password || url.search || url.hash) throw new Error("origin"); }
+    catch { fail("proof-url", "registry proof URL must remain an exact public npm HTTPS origin."); }
+  }
+  if (typeof evidence.integrity !== "string" || !/^sha512-[A-Za-z0-9+/]+={0,2}$/.test(evidence.integrity)) fail("proof", "canonical npm sha512 integrity required.");
+  if (!Buffer.isBuffer(bytes)) fail("bytes", "candidate bytes are required for registry-proof validation.");
+  else if (bytes.length !== evidence.size || sha("sha1", bytes) !== evidence.shasum || sha("sha256", bytes) !== evidence.sha256 || sha("sha512", bytes) !== evidence.sha512 || `sha512-${sha("sha512", bytes, "base64")}` !== evidence.integrity) fail("proof-digest", "candidate bytes differ from the anonymous registry proof.");
+  else {
+    try {
+      const packed = packedManifest(bytes);
+      if (packed.manifest?.name !== name || packed.manifest?.version !== version || sha("sha256", packed.bytes) !== evidence.packedManifestSha256) fail("proof-manifest", "candidate packed manifest differs from the anonymous registry proof.");
+    } catch (error) {
+      fail("proof-manifest", error.message);
+    }
+  }
+  return findings;
 }
 
 export function repositoryIdentityFromPackument(document, version) {

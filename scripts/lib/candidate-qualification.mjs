@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { TRIO, TRIO_COHORT_PATH, isTrioCandidate } from "./release-qualification-cohort.mjs";
 
 export const ARCHETYPES = ["current-direct", "prior-minor", "oldest-supported", "control-plane"];
 const DIMENSIONS = ["position", "completion", "rollback", "duplicate", "cadence", "closeWindow"];
@@ -96,9 +97,21 @@ export function validateCandidateQualification(r, { mode = "offline", expected, 
   if (!Array.isArray(r.findings) || r.findings.length > 64) fail(a, "findings", "findings"); else for (const f of r.findings) { closed(a, f, ["classification", "status", "reference"], "finding"); if (!["producer-package", "consumer-integration", "control-plane", "sponsor-authorization", "external-observation"].includes(f?.classification) || !["resolved", "open"].includes(f?.status) || !text(f?.reference)) fail(a, "finding", "finding"); else if (f.classification === "producer-package" && f.status !== "resolved") fail(a, "unresolved-producer-defect", "producer"); }
   return a;
 }
-export function validatePrepublicationPrTail(r, { root = process.cwd(), head = "HEAD" } = {}) {
+export function validatePrepublicationPrTail(r, { root = process.cwd(), head = "HEAD", trioRecords = [], cohort = null } = {}) {
   const a = []; if (r?.timing !== "pre-publication") return a; try { execFileSync("git", ["merge-base", "--is-ancestor", r.reviewedCommit, head], { cwd: root, stdio: "ignore" }); } catch { fail(a, "reviewed-ancestor", "not ancestor"); return a; }
-  const changed = git(root, ["diff", "--name-only", r.reviewedCommit + ".." + head]).split("\n").filter(Boolean), allowed = qualificationPath(root, r.candidate, r.reviewedCommit); if (!changed.every((p) => p === allowed)) fail(a, "pr-tail", "tail");
+  const changed = git(root, ["diff", "--name-only", r.reviewedCommit + ".." + head]).split("\n").filter(Boolean).sort();
+  let allowed = [qualificationPath(root, r.candidate, r.reviewedCommit)];
+  if (isTrioCandidate(r.candidate) && trioRecords.length > 0) {
+    const exact = TRIO.map((key) => trioRecords.find((record) => record?.candidate?.name === `@clossys/${key}`));
+    if (exact.some((record) => !record) || exact.some((record) => record.timing !== "pre-publication" || record.reviewedCommit !== r.reviewedCommit)) {
+      fail(a, "trio-tail", "Trio qualification requires all three pre-publication records at one reviewed commit.");
+    } else if (!cohort || cohort.id !== "clossys-npmjs-trio") {
+      fail(a, "trio-cohort", "Trio qualification requires its exact immutable cohort record.");
+    } else {
+      allowed = [...exact.map((record) => qualificationPath(root, record.candidate, r.reviewedCommit)), TRIO_COHORT_PATH].sort();
+    }
+  }
+  if (JSON.stringify(changed) !== JSON.stringify(allowed)) fail(a, "pr-tail", "tail");
   try { const base = currentQualificationJoins(root, r.candidate, r.reviewedCommit), now = currentQualificationJoins(root, r.candidate, head); for (const k of Object.keys(base).filter((key) => !["archetypes", "dimensions"].includes(key))) if (base[k] !== now[k] || base[k] !== (r[k] ?? r.candidate[k])) fail(a, "git-content-join", k); if (JSON.stringify(base.archetypes) !== JSON.stringify(now.archetypes) || JSON.stringify(base.archetypes) !== JSON.stringify(r.archetypes) || JSON.stringify(base.dimensions) !== JSON.stringify(now.dimensions) || JSON.stringify(base.dimensions) !== JSON.stringify(r.transcript?.dimensions)) fail(a, "git-content-join", "policy derivation"); } catch (e) { fail(a, "git-content-join", e instanceof Error ? e.message : "git"); }
   return a;
 }

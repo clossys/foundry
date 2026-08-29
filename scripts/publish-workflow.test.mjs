@@ -41,12 +41,13 @@ test("publish packs one candidate and hands off exact bytes", () => {
   ]) assert.ok(workflow.includes(text), `missing workflow assertion: ${text}`);
 });
 
-test("published verification fetch is isolated and read-only", () => {
+test("published verification fetch is anonymous, isolated, and read-only", () => {
   const fetch = job("fetch-published");
   assert.match(fetch, /if:.*inputs\.verify_only/);
-  assert.match(fetch, /permissions:\n      contents: read\n      packages: read/);
-  assert.match(fetch, /NODE_AUTH_TOKEN: \$\{\{ github\.token \}\}/);
-  assert.match(fetch, /npm pack \"\$\{package_name\}@\$\{package_version\}\"/);
+  assert.match(fetch, /permissions:\n      contents: read/);
+  assert.doesNotMatch(fetch, /packages:|NODE_AUTH_TOKEN|NPM_TOKEN|GH_PACKAGES_TOKEN|GITHUB_TOKEN|id-token:/);
+  assert.match(fetch, /fetch-public-npm-artifact\.mjs --package "\$PKG" --output "\$destination"/);
+  assert.match(fetch, /registry-proof\.json/);
   assert.match(fetch, /actions\/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a/);
   assert.doesNotMatch(fetch, /run-candidate-qualification|import\(/);
 });
@@ -60,6 +61,7 @@ test("qualification is least privilege and owns candidate execution", () => {
   assert.match(qualify, /npm ci --ignore-scripts/);
   assert.match(qualify, /npm pack --ignore-scripts --json --pack-destination/);
   assert.match(qualify, /actions\/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131/);
+  assert.match(qualify, /validate-public-npm-registry-proof\.mjs --package "\$PKG" --tarball "\$TARBALL" --proof "\$PROOF"/);
   assert.match(qualify, /run-candidate-qualification\.mjs --package \"\$PKG\" --tarball \"\$TARBALL\"/);
   assert.match(qualify, /actions\/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a/);
   assert.match(qualify, /candidate\.tgz/);
