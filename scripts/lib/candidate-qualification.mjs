@@ -42,6 +42,16 @@ export function qualificationIntroductionCommit(root, candidate, head = "HEAD") 
   if (commits.length !== 1 || !SHA1.test(commits[0])) throw new Error("qualification record must have one introduction commit");
   return commits[0];
 }
+export function qualificationRecordHistory(root, path, candidate, head = "HEAD") {
+  const expectedPath = qualificationPath(root, candidate);
+  if (path !== expectedPath) throw new Error("qualification record path does not match its candidate");
+  const introductionCommit = qualificationIntroductionCommit(root, candidate, head);
+  return {
+    introductionCommit,
+    introducedRecordSha256: digest(content(root, introductionCommit, path)),
+    retainedRecordSha256: digest(readFileSync(join(root, path))),
+  };
+}
 function fixtureDigest(root, ref, adapterPath, fixturePath) { const adapter = parseStrictJson(content(root, ref, adapterPath)); if (!Array.isArray(adapter.fixtures)) throw new Error("adapter fixtures"); return digest(JSON.stringify(adapter.fixtures.slice().sort().map((name) => ({ path: fixturePath + "/" + name, sha256: digest(content(root, ref, fixturePath + "/" + name)) })))); }
 export function currentQualificationJoins(root, candidate, ref = "WORKTREE") {
   const selected = selectedPolicy(root, candidate, ref), treeRef = ref === "WORKTREE" ? "HEAD" : ref;

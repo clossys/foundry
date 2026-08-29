@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { readFileSync, readdirSync } from "node:fs";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { execFile as execFileCallback } from "node:child_process";
@@ -6,7 +7,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { promisify } from "node:util";
-import { currentQualificationJoins, parseStrictJson, qualificationIntroductionCommit, qualificationPath, validateCandidateQualification, validatePrepublicationPrTail } from "./candidate-qualification.mjs";
+import { currentQualificationJoins, parseStrictJson, qualificationIntroductionCommit, qualificationPath, qualificationRecordHistory, validateCandidateQualification, validatePrepublicationPrTail } from "./candidate-qualification.mjs";
 
 const CONTROLLER_RECORD_DIRECTORY = "governance/release-qualifications";
 const CONTROLLER_NAME = "@vespeneventures/controller";
@@ -51,6 +52,19 @@ const rules = (value, options) => validateCandidateQualification(value, options)
 const execFile = promisify(execFileCallback);
 async function git(root, args) { return execFile("git", args, { cwd: root }); }
 async function commit(root, message) { await git(root, ["add", "."]); await git(root, ["commit", "-m", message]); return (await execFile("git", ["rev-parse", "HEAD"], { cwd: root })).stdout.trim(); }
+function refreshTranscriptDigest(record) {
+  const transcript = structuredClone(record.transcript); delete transcript.canonicalSha256;
+  record.transcript.canonicalSha256 = createHash("sha256").update(JSON.stringify(transcript)).digest("hex");
+}
+async function syntheticRetainedRecord() {
+  const root = await mkdtemp(join(tmpdir(), "qualification-history-"));
+  await git(root, ["init"]); await git(root, ["config", "user.email", "test@example.invalid"]); await git(root, ["config", "user.name", "Qualification Test"]);
+  await mkdir(join(root, CONTROLLER_RECORD_DIRECTORY), { recursive: true });
+  await writeFile(join(root, "governance/release-qualification-policy.json"), readFileSync("governance/release-qualification-policy.json"));
+  const record = source(); const path = qualificationPath(root, record.candidate);
+  await writeFile(join(root, path), JSON.stringify(record, null, 2)); await commit(root, "introduce retained record");
+  return { root, record, path };
+}
 async function syntheticPrepublication() {
   const root = await mkdtemp(join(tmpdir(), "qualification-tail-"));
   await git(root, ["init"]); await git(root, ["config", "user.email", "test@example.invalid"]); await git(root, ["config", "user.name", "Qualification Test"]);
@@ -116,6 +130,30 @@ test("historical qualification joins use one immutable introduction and reject m
   await rm(join(fixture.root, fixture.path)); await commit(fixture.root, "remove record");
   await writeFile(join(fixture.root, fixture.path), JSON.stringify(fixture.record, null, 2)); await commit(fixture.root, "reintroduce record");
   assert.throws(() => qualificationIntroductionCommit(fixture.root, fixture.record.candidate), /one introduction commit/);
+});
+test("the history seal rejects coherent tarball, transcript, and registry rewrites", async (t) => {
+  const fixture = await syntheticRetainedRecord(); t.after(() => rm(fixture.root, { recursive: true, force: true }));
+  const initial = qualificationRecordHistory(fixture.root, fixture.path, fixture.record.candidate);
+  assert.equal(initial.retainedRecordSha256, initial.introducedRecordSha256);
+  const mutations = [
+    (record) => {
+      const value = "0".repeat(64);
+      record.candidate.tarball.sha256 = value; record.transcript.tarball.sha256 = value; record.registry.sha256 = value;
+      refreshTranscriptDigest(record);
+    },
+    (record) => {
+      record.transcript.observations[0].stdoutSha256 = "1".repeat(64);
+      refreshTranscriptDigest(record);
+    },
+    (record) => { record.registry.reference = "tampered-registry-reference"; },
+  ];
+  for (const mutate of mutations) {
+    const changed = structuredClone(fixture.record); mutate(changed);
+    assert.deepEqual(rules(changed), [], "the tampering control must remain internally coherent");
+    await writeFile(join(fixture.root, fixture.path), JSON.stringify(changed, null, 2));
+    const history = qualificationRecordHistory(fixture.root, fixture.path, changed.candidate);
+    assert.notEqual(history.retainedRecordSha256, history.introducedRecordSha256);
+  }
 });
 test("prepublication PR tail accepts only an exact record-only tail", async (t) => {
   const fixture = await syntheticPrepublication(); t.after(() => rm(fixture.root, { recursive: true, force: true }));
