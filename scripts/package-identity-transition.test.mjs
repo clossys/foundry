@@ -153,6 +153,21 @@ test("candidate idempotence rejects a manifest and workspace-lock dependency mis
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
+test("current planning rejects a manifest and workspace-lock dependency mismatch before producing a plan", () => {
+  const { root } = fixture();
+  try {
+    const path = join(root, "packages", "alpha", "package.json");
+    const value = JSON.parse(readFileSync(path, "utf8"));
+    delete value.dependencies["@vespeneventures/beta"];
+    writeFileSync(path, json(value));
+    assert.throws(
+      () => planIdentityTransition({ root, policy }),
+      /current declaration is incomplete: .*dependencies must exactly match package-lock\.json workspace dependencies/,
+    );
+    assert.equal(JSON.parse(readFileSync(join(root, "package-scope.json"), "utf8")).scope, policy.current.scope);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
 test("mixed source state is rejected before a plan can write anything", () => {
   const { root } = fixture();
   try {
@@ -210,6 +225,12 @@ test("candidate publication and provider trust are forbidden across the complete
     writeFileSync(join(workflows, "alternate.yml"), "name: hostile\non:\n  push:\njobs:\n  publish:\n    steps:\n      - run: npm publish\n");
     assert.match(checkCandidatePublishInert(root).join("\n"), /alternate\.yml: real npm publish command/);
     rmSync(join(workflows, "alternate.yml"));
+
+    writeFileSync(join(workflows, "mixed.yml"), "name: mixed\non: workflow_dispatch\njobs:\n  publish:\n    steps:\n      - run: npm publish --dry-run && npm publish\n");
+    assert.match(checkCandidatePublishInert(root).join("\n"), /mixed\.yml: real npm publish command/);
+    writeFileSync(join(workflows, "mixed.yml"), "name: multiple\non: workflow_dispatch\njobs:\n  publish:\n    steps:\n      - run: npm publish --dry-run; npm publish --dry-run\n");
+    assert.match(checkCandidatePublishInert(root).join("\n"), /mixed\.yml: real npm publish command/);
+    rmSync(join(workflows, "mixed.yml"));
 
     writeFileSync(join(workflows, "trust.yml"), "name: trust\non: workflow_dispatch\npermissions: { contents: read, \"id-token\": write }\njobs: {}\n");
     assert.match(checkCandidatePublishInert(root).join("\n"), /trust\.yml: provider trust must remain inactive/);

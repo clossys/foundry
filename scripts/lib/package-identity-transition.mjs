@@ -196,6 +196,26 @@ function dependencyNames(value) {
     .flatMap((field) => Object.keys(value?.[field] ?? {}));
 }
 
+function workspaceDependencyParityFindings(directories, manifests, lock) {
+  const findings = [];
+  for (const directory of directories) {
+    const manifest = manifests.get(directory);
+    const workspace = lock?.packages?.[`packages/${directory}`];
+    if (!object(workspace)) {
+      findings.push(`package-lock.json workspace entry packages/${directory} is missing`);
+      continue;
+    }
+    for (const field of ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"]) {
+      const manifestMap = manifest?.[field] ?? {};
+      const lockMap = workspace?.[field] ?? {};
+      if (!object(manifestMap) || !object(lockMap) || !sameJson(manifestMap, lockMap)) {
+        findings.push(`packages/${directory}/package.json ${field} must exactly match package-lock.json workspace ${field}`);
+      }
+    }
+  }
+  return findings;
+}
+
 function validateCandidateStructuredState(root, policy, readFile) {
   const findings = [];
   const directories = packageDirectories(root);
@@ -244,15 +264,8 @@ function validateCandidateStructuredState(root, policy, readFile) {
       if (lock.packages[`node_modules/${policy.candidate.scope}/${directory}`]?.link !== true) {
         findings.push(`package-lock.json is missing the exact candidate local link for ${directory}`);
       }
-      const manifest = manifests.get(directory);
-      for (const field of ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"]) {
-        const manifestMap = manifest?.[field] ?? {};
-        const lockMap = workspace?.[field] ?? {};
-        if (!object(manifestMap) || !object(lockMap) || !sameJson(manifestMap, lockMap)) {
-          findings.push(`packages/${directory}/package.json ${field} must exactly match package-lock.json workspace ${field}`);
-        }
-      }
     }
+    findings.push(...workspaceDependencyParityFindings(directories, manifests, lock));
     if (!sameJson(lock, transitionLock(lock, directories, policy.candidate, policy.candidate))) {
       findings.push("package-lock.json retains stale candidate workspace or local-link entries");
     }
@@ -277,6 +290,13 @@ export function planIdentityTransition({ root, policy, target = "candidate", rea
   if (state !== "current") throw new Error("package-scope.json is neither complete current nor complete candidate state");
   const directories = packageDirectories(root);
   const names = new Set(directories);
+  const currentManifests = new Map(directories.map((directory) => {
+    const path = join(root, "packages", directory, "package.json");
+    return [directory, JSON.parse(readFile(path, "utf8"))];
+  }));
+  const currentLock = JSON.parse(readFile(join(root, "package-lock.json"), "utf8"));
+  const currentFindings = workspaceDependencyParityFindings(directories, currentManifests, currentLock);
+  if (currentFindings.length) throw new Error(`current declaration is incomplete: ${currentFindings.join("; ")}`);
   const changes = [];
   for (const directory of directories) {
     const path = join(root, "packages", directory, "package.json");

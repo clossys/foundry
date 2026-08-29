@@ -124,6 +124,17 @@ function workflowPaths(workflowsRoot, current = workflowsRoot, paths = []) {
   return paths;
 }
 
+function hasForbiddenPublish(line) {
+  const occurrences = [...line.matchAll(/\bnpm\s+publish\b/g)];
+  if (occurrences.length === 0) return false;
+  // Multiple publish commands on one line are ambiguous by construction:
+  // a dry-run segment must never bless a later real command (or vice versa).
+  if (occurrences.length !== 1) return true;
+  const tail = line.slice((occurrences[0].index ?? 0) + occurrences[0][0].length);
+  const [commandSegment] = tail.split(/&&|\|\||[;|]/, 1);
+  return !/(?:^|\s)--dry-run(?:\s|$)/.test(commandSegment);
+}
+
 export function checkCandidatePublishInert(repositoryRoot = root) {
   const workflowsRoot = join(repositoryRoot, ".github", "workflows");
   if (!existsSync(workflowsRoot)) return [".github/workflows is missing during W1D"];
@@ -137,7 +148,7 @@ export function checkCandidatePublishInert(repositoryRoot = root) {
     if (rel === ".github/workflows/publish.yml" && activeLines.some((line) => /^\s{2}push:\s*(?:#.*)?$/.test(line))) {
       findings.push(`${rel}: push publication trigger is forbidden during W1D`);
     }
-    if (activeLines.some((line) => /\bnpm\s+publish\b/.test(line) && !/\bnpm\s+publish\b.*--dry-run\b/.test(line))) {
+    if (activeLines.some(hasForbiddenPublish)) {
       findings.push(`${rel}: real npm publish command is forbidden during W1D`);
     }
     if (activeLines.some((line) => /(?:["']?id-token["']?)\s*:\s*["']?write["']?(?:\s|,|}|$)/.test(line))) {
