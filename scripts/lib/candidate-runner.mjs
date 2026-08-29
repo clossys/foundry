@@ -222,9 +222,15 @@ function targetsFromEntry(entry) {
   }));
 }
 
-function wildcardPattern(target) {
-  const [before, after] = target.split("*");
-  return { before, after, expression: new RegExp(`^${before.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(.*)${after.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`) };
+export function wildcardCapture(target, candidate) {
+  const wildcard = target.indexOf("*");
+  if (wildcard < 0 || wildcard !== target.lastIndexOf("*")) throw new Error("wildcard capture requires exactly one wildcard");
+  const before = target.slice(0, wildcard);
+  const after = target.slice(wildcard + 1);
+  if (!candidate.startsWith(before) || !candidate.endsWith(after)) return null;
+  const captureEnd = candidate.length - after.length;
+  if (captureEnd < before.length) return null;
+  return candidate.slice(before.length, captureEnd);
 }
 
 async function exportCoverage(manifest, installed, root, timeoutMs) {
@@ -238,8 +244,8 @@ async function exportCoverage(manifest, installed, root, timeoutMs) {
     const keyStars = [...entry.key].filter((character) => character === "*").length;
     if (stars !== keyStars || stars > 1) throw new Error("export wildcard shape is invalid");
     const concrete = stars === 0 ? [{ target: descriptor.target, capture: "" }] : files.map((file) => {
-      const match = wildcardPattern(descriptor.target).expression.exec(file);
-      return match ? { target: file, capture: match[1] } : null;
+      const capture = wildcardCapture(descriptor.target, file);
+      return capture === null ? null : { target: file, capture };
     }).filter(Boolean);
     if (concrete.length === 0) throw new Error("export wildcard has no packaged files");
     for (const item of concrete) {
