@@ -82,10 +82,11 @@ nothing. There is therefore no supported `npm install @clossys/...` command
 yet. A 404 from npmjs is the expected pre-publication state, not an
 authentication problem and not evidence that a consumer should add a token.
 
-W1E will make installation guidance current only after all nineteen reviewed
-tarballs are published and the registry proves anonymous public access plus
-exact digest parity. The expected post-W1E command is ordinary credential-free
-npm resolution:
+W1E will make installation guidance current first for the exact Advisor,
+Starter, and Controller launch Trio, after the registry proves anonymous public
+access plus exact digest parity for all three. The other sixteen packages are
+later catalogue expansions in dependency order. The expected post-W1E command
+is ordinary credential-free npm resolution:
 
 ```bash
 npm install @clossys/controller

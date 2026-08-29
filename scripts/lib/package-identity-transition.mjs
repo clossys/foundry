@@ -5,6 +5,7 @@ import { join, posix, relative } from "node:path";
 const SCOPE = /^@[a-z0-9][a-z0-9._-]*$/;
 const SHA256 = /^sha256:[a-f0-9]{64}$/;
 const PACKAGE_DIRECTORY = /^[a-z0-9][a-z0-9-]*$/;
+const INITIAL_PUBLICATION_PACKAGES = Object.freeze(["advisor", "starter", "controller"]);
 const IDENTITY_TRANSITION_CONTROL_SURFACES = new Set([
   "governance/package-identity-transition.json",
   "governance/release-catalog.json",
@@ -172,7 +173,14 @@ function candidateCatalog(policy) {
     defaultTarget: policy.candidate.releaseTarget,
     targets: [
       { id: policy.current.releaseTarget, status: "historical", scope: policy.current.scope, registry: policy.current.registry, packages: "all" },
-      { id: policy.candidate.releaseTarget, status: "active", scope: policy.candidate.scope, registry: policy.candidate.registry, access: policy.candidate.access, packages: "all" },
+      {
+        id: policy.candidate.releaseTarget,
+        status: "active",
+        scope: policy.candidate.scope,
+        registry: policy.candidate.registry,
+        access: policy.candidate.access,
+        packages: [...INITIAL_PUBLICATION_PACKAGES],
+      },
     ],
   };
 }
