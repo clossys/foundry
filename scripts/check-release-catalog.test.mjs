@@ -129,6 +129,12 @@ test("the post-recut catalogue defaults to only the exact public-npm launch Trio
   assert.throws(() => resolveReleaseTarget(document, currentIdentity, "current-github-packages"), /historical/);
 });
 
+test("the launch target emits declared Trio order rather than caller inventory order", () => {
+  const target = resolveReleaseTarget(load(cutoverCatalog()), cutoverIdentity);
+  const entries = ["controller", "architect", "advisor", "starter"].map((directory) => ({ directory }));
+  assert.deepEqual(filterPackagesForTarget(entries, target).map((entry) => entry.directory), launchPackages);
+});
+
 test("candidate catalogue rejects mixed access, broadened or changed launch packages, old default, or retained precutover target", () => {
   for (const document of [
     cutoverCatalog({ targets: [cutoverCatalog().targets[0], { ...cutoverCatalog().targets[1], access: undefined }] }),

@@ -192,11 +192,11 @@ export function assertPackageAuthorized(target, packageDirectory) {
 
 export function filterPackagesForTarget(entries, target) {
   if (target.packages === "all") return entries;
-  const available = new Set(entries.map((entry) => entry.directory));
+  const available = new Map(entries.map((entry) => [entry.directory, entry]));
   for (const directory of target.packages) {
     if (!available.has(directory)) fail(`target "${target.id}" authorizes missing packages/${directory}/package.json`);
   }
-  return entries.filter((entry) => target.packages.includes(entry.directory));
+  return target.packages.map((directory) => available.get(directory));
 }
 
 function parseArgs(argv) {
