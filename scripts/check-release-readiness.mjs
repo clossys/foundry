@@ -131,8 +131,16 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  identityState,
+  isIdentityTransitionControlSurface,
+  lineDigest,
+  loadTransitionPolicy,
+  planIdentityTransition,
+  validateHistoryInventory,
+} from "./lib/package-identity-transition.mjs";
 
 function git(args, cwd) {
   return execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
@@ -279,6 +287,115 @@ function diffPackedFiles(oldFiles, newFiles) {
   return changed.sort();
 }
 
+const transitionStateCache = new Map();
+
+function readJson(path) {
+  return JSON.parse(readFileSync(path, "utf8"));
+}
+
+function fileAtCommit(gitRoot, commit, path) {
+  const rel = relative(gitRoot, path).split("\\").join("/");
+  return git(["show", `${commit}:${rel}`], gitRoot);
+}
+
+function exactCandidateHistoryFindings(gitRoot, policy) {
+  const inventory = readJson(join(gitRoot, policy.historyInventory));
+  const findings = validateHistoryInventory(inventory, policy);
+  const expected = new Set(inventory.references.map((item) => `${item.path}\0${item.lineSha256}`));
+  const observed = new Set();
+  const needles = [policy.current.scope, policy.current.registry, policy.current.repository];
+  const paths = git(["ls-files", "-z"], gitRoot).split("\0").filter(Boolean);
+  for (const path of paths) {
+    if (isIdentityTransitionControlSurface(path)) continue;
+    const text = readFileSync(join(gitRoot, path), "utf8").replace(/[\u0000\u200B\u200C\u200D\u2060\u180E\u00AD\uFEFF]/g, "");
+    for (const line of text.split(/\r?\n/)) {
+      if (!needles.some((needle) => line.includes(needle))) continue;
+      const key = `${path}\0${lineDigest(line)}`;
+      observed.add(key);
+      if (!expected.has(key)) findings.push(`${path}: unclassified historical identity line`);
+    }
+  }
+  for (const key of expected) if (!observed.has(key)) findings.push(`unused historical identity record: ${key.split("\0")[0]}`);
+  return [...new Set(findings)];
+}
+
+function exactTransitionState(gitRoot, mergeBase) {
+  const cacheKey = `${gitRoot}\0${mergeBase}`;
+  if (transitionStateCache.has(cacheKey)) return transitionStateCache.get(cacheKey);
+  let result;
+  try {
+    const policyPath = join(gitRoot, "governance", "package-identity-transition.json");
+    const policy = loadTransitionPolicy(policyPath);
+    const baseScope = JSON.parse(fileAtCommit(gitRoot, mergeBase, join(gitRoot, "package-scope.json")));
+    const candidateScope = readJson(join(gitRoot, "package-scope.json"));
+    if (identityState(baseScope, policy) !== "current" || identityState(candidateScope, policy) !== "candidate" || policy.candidate.access !== "public") {
+      throw new Error("base/current package identity declarations are not the exact reviewed current-to-public-candidate tuple");
+    }
+
+    // Returning an empty plan in candidate state is itself a full structured
+    // validation: all manifests, dependency maps, lock workspace joins/local
+    // links, release catalogue, registry, repository and public-access fields
+    // must agree with the closed candidate policy.
+    if (planIdentityTransition({ root: gitRoot, policy }).length !== 0) {
+      throw new Error("candidate structured state still has unapplied transition changes");
+    }
+
+    const projected = planIdentityTransition({
+      root: gitRoot,
+      policy,
+      readFile: (path, encoding) => fileAtCommit(gitRoot, mergeBase, path),
+    });
+    const packageDirectories = readdirSync(join(gitRoot, "packages"), { withFileTypes: true })
+      .filter((entry) => entry.isDirectory() && existsSync(join(gitRoot, "packages", entry.name, "package.json")))
+      .map((entry) => entry.name)
+      .sort();
+    const required = new Set([
+      "package-scope.json",
+      "package-lock.json",
+      "governance/release-catalog.json",
+      ...packageDirectories.map((directory) => `packages/${directory}/package.json`),
+    ]);
+    const projectedPaths = new Set();
+    for (const change of projected) {
+      const rel = relative(gitRoot, change.path).split("\\").join("/");
+      projectedPaths.add(rel);
+      if (readFileSync(change.path, "utf8") !== change.after) throw new Error(`${rel} is not the exact projected candidate bytes`);
+    }
+    if (projectedPaths.size !== required.size || [...required].some((path) => !projectedPaths.has(path))) {
+      throw new Error("the transition does not project the complete manifest/lock/catalog/declaration set");
+    }
+
+    const historyFindings = exactCandidateHistoryFindings(gitRoot, policy);
+    if (historyFindings.length) throw new Error(historyFindings.join("; "));
+
+    const lifecycle = readJson(join(gitRoot, "docs", "contracts", "package-lifecycle.json"));
+    if (!Array.isArray(lifecycle.packages)) throw new Error("package lifecycle has no packages array");
+    result = { ok: true, policy, packageDirectories: new Set(packageDirectories), lifecycle };
+  } catch (error) {
+    result = { ok: false, detail: error.message };
+  }
+  transitionStateCache.set(cacheKey, result);
+  return result;
+}
+
+function exactIdentityTransitionForPackage({ gitRoot, mergeBase, relPkgDir, baseManifest, manifest }) {
+  const state = exactTransitionState(gitRoot, mergeBase);
+  if (!state.ok) return state;
+  const directory = relPkgDir.split("/").at(-1);
+  const oldName = `${state.policy.current.scope}/${directory}`;
+  const newName = `${state.policy.candidate.scope}/${directory}`;
+  if (baseManifest.name !== oldName || manifest.name !== newName || baseManifest.version !== manifest.version || manifest.publishConfig?.access !== "public") {
+    return { ok: false, detail: "package name/version/public-access tuple is not the exact W1D identity transition" };
+  }
+  const oldEntries = state.lifecycle.packages.filter((entry) => entry?.name === oldName);
+  const newEntries = state.lifecycle.packages.filter((entry) => entry?.name === newName);
+  if (oldEntries.length !== 1 || oldEntries[0].status !== "published" || Object.keys(oldEntries[0]).sort().join("\0") !== "name\0status" ||
+      newEntries.length !== 1 || newEntries[0].status !== "active" || Object.keys(newEntries[0]).sort().join("\0") !== "name\0status") {
+    return { ok: false, detail: "lifecycle must retain one exact old published identity and one exact new source-active identity" };
+  }
+  return { ok: true };
+}
+
 // Returns the oldest commit, walking back from HEAD, in the unbroken run of
 // commits whose package.json carries `currentVersion` — see the AUDIT MODE
 // header comment for why the OLDEST commit in that run, not the newest, is
@@ -407,9 +524,10 @@ function evaluatePackageDiff(pkgDir, requestedBase) {
     return { package: label, status: "pass", detail: `no common history with ${baseRef} — nothing to compare` };
   }
 
-  let baseVersion;
+  let baseManifest, baseVersion;
   try {
-    baseVersion = JSON.parse(git(["show", `${mergeBase}:${relManifestPath}`], gitRoot)).version;
+    baseManifest = JSON.parse(git(["show", `${mergeBase}:${relManifestPath}`], gitRoot));
+    baseVersion = baseManifest.version;
   } catch {
     return {
       package: label,
@@ -435,6 +553,19 @@ function evaluatePackageDiff(pkgDir, requestedBase) {
     return { package: label, status: "error", detail: error.message };
   }
 
+  let identityTransitionFailure;
+  if (baseManifest.name !== manifest.name) {
+    const transition = exactIdentityTransitionForPackage({ gitRoot, mergeBase, relPkgDir, baseManifest, manifest });
+    if (transition.ok) {
+      return {
+        package: label,
+        status: "pass",
+        detail: `exact history-aware W1D identity transition from ${baseManifest.name} to ${manifest.name}; the package version remains ${manifest.version} because this is a new npm identity, not a same-name release`,
+      };
+    }
+    identityTransitionFailure = transition.detail;
+  }
+
   if (changed.length === 0) {
     return {
       package: label,
@@ -455,7 +586,8 @@ function evaluatePackageDiff(pkgDir, requestedBase) {
   return {
     package: label,
     status: "needs-bump",
-    detail: `${changed.length} packed file(s) changed since merge-base ${mergeBase.slice(0, 12)} (base ${baseRef}) while version stayed ${manifest.version}`,
+    detail: `${changed.length} packed file(s) changed since merge-base ${mergeBase.slice(0, 12)} (base ${baseRef}) while version stayed ${manifest.version}` +
+      (identityTransitionFailure ? `; identity-transition exemption rejected: ${identityTransitionFailure}` : ""),
     changed,
   };
 }

@@ -308,6 +308,25 @@ fails when the committed copy drifts from the derived one — #493.
 | `@clossys/starter` | implemented | not yet | N/A — executable tooling | N/A — executable tooling | N/A — executable tooling |
 | `@clossys/strategist` | implemented | not yet | not yet | unknown — #484 | not yet |
 | `@clossys/writer` | implemented | not yet | not yet | unknown — #484 | not yet |
+| `@vespeneventures/advisor` | published | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/architect` | published | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/bouncer` | published | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/builder` | published | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/butler` | published | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/controller` | published | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/designer` | published | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/giver` | published | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/influencer` | published | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/inspector` | published | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/integrator` | published | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/keeper` | published | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/locksmith` | published | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/messenger` | published | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/observer` | published | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/publisher` | published | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/starter` | implemented | not yet | N/A — executable tooling | N/A — executable tooling | N/A — executable tooling |
+| `@vespeneventures/strategist` | published | yes | not yet | unknown — #484 | not yet |
+| `@vespeneventures/writer` | published | yes | not yet | unknown — #484 | not yet |
 
 <!-- lifecycle-position-table:end -->
 

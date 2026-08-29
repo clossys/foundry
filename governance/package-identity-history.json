@@ -3,6 +3,94 @@
   "schemaVersion": 1,
   "references": [
     {
+      "path": "README.md",
+      "lineSha256": "sha256:02fbc013acb16a45176177fe8e35478faf89036c3c5b97348a9c4a67cfef0962"
+    },
+    {
+      "path": "README.md",
+      "lineSha256": "sha256:683323b99aa479142e7e87d97a805ae120461e6bd4f9438559e47d7d599bf8f9"
+    },
+    {
+      "path": "README.md",
+      "lineSha256": "sha256:cbc8c202ed499a6d445fbae3064ade72d1da5c09701f54542353ef75a5540499"
+    },
+    {
+      "path": "docs/LIFECYCLE.md",
+      "lineSha256": "sha256:0781e9332a71ee4ad1c4617fd13f33ed24f10bf701d59c32efb07f196a11a79d"
+    },
+    {
+      "path": "docs/LIFECYCLE.md",
+      "lineSha256": "sha256:21e11ca7b572ad5ccc606fdbde939404f2321efe3b454d6e05309d698076afae"
+    },
+    {
+      "path": "docs/LIFECYCLE.md",
+      "lineSha256": "sha256:3a7893218e263e2a35ccfe8ff35abf638584b84dec886e9c159c07b3a899a38d"
+    },
+    {
+      "path": "docs/LIFECYCLE.md",
+      "lineSha256": "sha256:3b2e0cf925dfcb11f6746269bf92d5fa1a478c3bf0d3ad4207ecf86b3d27d3a7"
+    },
+    {
+      "path": "docs/LIFECYCLE.md",
+      "lineSha256": "sha256:48779996ee7897d7226afd676e9894744a19a686ba8dba6541b6cf1cc05f7fd6"
+    },
+    {
+      "path": "docs/LIFECYCLE.md",
+      "lineSha256": "sha256:57cb50d0f99494790ec21004e481d5400c38b0114ecb752d6e3d94d4481e76d8"
+    },
+    {
+      "path": "docs/LIFECYCLE.md",
+      "lineSha256": "sha256:599a55a19210fecf7b30f9f97ab256632fe206b5300685b403e32c53269fc864"
+    },
+    {
+      "path": "docs/LIFECYCLE.md",
+      "lineSha256": "sha256:5d906badda5c4e2d236625efd7c71fc716fc6dd63326798e4ccee44c9a7e604b"
+    },
+    {
+      "path": "docs/LIFECYCLE.md",
+      "lineSha256": "sha256:5dc9bba2e3311b41660914b82537eb7c642769dcbc12074e2e19df6ff568f127"
+    },
+    {
+      "path": "docs/LIFECYCLE.md",
+      "lineSha256": "sha256:638676fef6e5b92ff2da0f087125f69abf5fcd64d040a05a2f0035af849a96b3"
+    },
+    {
+      "path": "docs/LIFECYCLE.md",
+      "lineSha256": "sha256:77adb3565ac2a2b53af2eebabdff48984cfea4b89b863792d7b4ca4c04e79de7"
+    },
+    {
+      "path": "docs/LIFECYCLE.md",
+      "lineSha256": "sha256:798caea32d3febfd3760879bc9f53d3f082644cced151284d2b0d48d0a2362e6"
+    },
+    {
+      "path": "docs/LIFECYCLE.md",
+      "lineSha256": "sha256:93f064229b400988974f7dd0baff07b7f6a3e5bb28c816c770548509523f99be"
+    },
+    {
+      "path": "docs/LIFECYCLE.md",
+      "lineSha256": "sha256:bb5570c7b0c98bd063408d02077bb161b91513b3f8bd984137eae77737c57fef"
+    },
+    {
+      "path": "docs/LIFECYCLE.md",
+      "lineSha256": "sha256:c24ce5253502ef99ad7837edc8401f7834b875fd30aaebb835ad277d3adccabe"
+    },
+    {
+      "path": "docs/LIFECYCLE.md",
+      "lineSha256": "sha256:cf1e873fa982ca0a0b220adfeb46994b396c39c74769daccb85ccad2fd7fe0b5"
+    },
+    {
+      "path": "docs/LIFECYCLE.md",
+      "lineSha256": "sha256:e14a9f63dd88c2e1e942ac094ccb1ce4230e0b7b6b8b74cefa9929786c90bc46"
+    },
+    {
+      "path": "docs/LIFECYCLE.md",
+      "lineSha256": "sha256:e5c17b9296805c5fe3b64bcb199d74be75b6d780af1a905f63b6d6327e5287ed"
+    },
+    {
+      "path": "docs/LIFECYCLE.md",
+      "lineSha256": "sha256:f7b5b0bc907823f8825906145e5fd2e61bea3320a17f8f4c509f5ccd39e7937c"
+    },
+    {
       "path": "docs/contracts/package-evidence.json",
       "lineSha256": "sha256:038abaeec4ce5c82efd97d1f73c28efcf4cbda963f43b72dbb6f39652a913c4f"
     },

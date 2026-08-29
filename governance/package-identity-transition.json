@@ -17,7 +17,9 @@
   },
   "historyInventory": "governance/package-identity-history.json",
   "historicalPathRules": [
+    "README.md",
     "docs/DECISIONS.md",
+    "docs/LIFECYCLE.md",
     "docs/PUBLISHING.md",
     "docs/contracts/",
     "governance/release-qualification-adapters/",

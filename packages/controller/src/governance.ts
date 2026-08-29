@@ -63,6 +63,7 @@ export function runGovernanceCheck(
       lifecycle,
       foundation.catalog.entries.map((entry) => entry.name),
       new Map(foundation.catalog.entries.map((entry) => [entry.name, entry.version])),
+      options?.scope,
     ),
     // `evaluateDependencyInstallability` shipped exported, documented and
     // tested, and nothing in this repository called it -- so the one gate that

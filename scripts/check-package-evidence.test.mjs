@@ -37,7 +37,7 @@ const P = "@clossys/thing";
 // free of a rule they are not about.
 function grade(
   entry,
-  { sites = [], bins = [], status = "published", inWorkspace = true, manifestBins = ["thing-check"] } = {},
+  { sites = [], bins = [], status = "published", inWorkspace = true, manifestBins = ["thing-check"], workspaceScope = "@clossys" } = {},
 ) {
   return evaluatePrograms({
     contract: {
@@ -48,6 +48,7 @@ function grade(
     lifecycleStatuses: new Map(status ? [[P, status]] : []),
     workspacePackages: new Set(inWorkspace ? [P] : []),
     workspaceBins: new Map([[P, manifestBins]]),
+    workspaceScope,
   });
 }
 
@@ -189,6 +190,25 @@ test("a retired package has left the ladder and is not graded for stopping", () 
   const r = grade({ name: P, state: "published" }, { status: "retired" });
   assert.deepEqual(rules(r), []);
   assert.equal(r.results[0].supersession, "retired");
+});
+
+test("a published predecessor retains implementation evidence after source moves to the current scope", () => {
+  const predecessor = `@${["vespene", "ventures"].join("")}/thing`;
+  const result = evaluatePrograms({
+    contract: { packages: [{ name: predecessor, state: "implemented" }] },
+    distSites: new Map(),
+    binSites: new Map(),
+    lifecycleStatuses: new Map([[predecessor, "published"]]),
+    workspacePackages: new Set(),
+    workspaceBins: new Map(),
+    workspaceScope: "@clossys",
+  });
+  assert.deepEqual(rules(result), []);
+
+  assert.deepEqual(
+    rules(grade({ name: P, state: "implemented" }, { inWorkspace: false, workspaceScope: "@clossys" })),
+    ["state-ahead-of-evidence"],
+  );
 });
 
 test("a retired package still carrying gaps is told to drop them", () => {

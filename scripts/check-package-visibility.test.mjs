@@ -87,6 +87,29 @@ test("selectDeclaredPackages: a published entry with a valid declaration is incl
   assert.equal(results.length, 0);
 });
 
+test("selectDeclaredPackages: W1D monitors predecessor publication without claiming candidate publication", () => {
+  const predecessor = `@${["vespene", "ventures"].join("")}/controller`;
+  const lifecycle = lifecycleWith([
+    { name: "@clossys/controller", status: "active" },
+    { name: predecessor, status: "published" },
+  ]);
+  const visibility = visibilityWith([{ name: predecessor, intendedVisibility: "public" }]);
+  const { declared, results } = selectDeclaredPackages(lifecycle, visibility);
+  assert.deepEqual(results, []);
+  assert.deepEqual(declared.map((entry) => entry.name), [predecessor]);
+
+  const falseCandidateClaim = visibilityWith([
+    ...visibility.packages,
+    { name: "@clossys/controller", intendedVisibility: "public" },
+  ]);
+  const candidateSelection = selectDeclaredPackages(lifecycle, falseCandidateClaim);
+  assert.equal(
+    candidateSelection.results.find((entry) => entry.package === "@clossys/controller")?.status,
+    "not-published",
+  );
+  assert.deepEqual(candidateSelection.declared.map((entry) => entry.name), [predecessor]);
+});
+
 test("selectDeclaredPackages: a published entry with NO visibility declaration is a finding, not a silent pass", () => {
   const lifecycle = lifecycleWith([{ name: "@scope/undeclared", status: "published" }]);
   const visibility = visibilityWith([]);

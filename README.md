@@ -77,98 +77,42 @@ package READMEs and their lifecycle records.
 
 ## Installing
 
-**Installing a currently published package needs a credential.** Packages
-currently publish to **GitHub Packages**, the single canonical distribution
-lane while the repository remains in its current source and registry state.
-GitHub Packages
-requires a GitHub **classic** personal access token with `read:packages` for every
-install, including for a publicly visible package version and a reader
-with no other relationship to this org — that is a GitHub Packages
-platform behavior, not a permission this repository chose.
+The `@clossys` source catalogue is prepared for public npm, but W1D publishes
+nothing. There is therefore no supported `npm install @clossys/...` command
+yet. A 404 from npmjs is the expected pre-publication state, not an
+authentication problem and not evidence that a consumer should add a token.
 
-The consequence is worth stating plainly rather than leaving a reader to
-discover it: a CI job, ephemeral environment, or cloud agent holding no
-credential **cannot install from the current GitHub Packages lane**. The
-source is public and the APIs are public; current resolution is
-authenticated. A consumer authenticates through whichever plane owns its
-package credentials. That remains true unless and until the post-transfer,
-whole-catalogue cutover in [decision 18](docs/DECISIONS.md#18-producer-owned-catalogue-distribution-cutover)
-passes its gates and changes the single scope/registry authority. See
-[issue #213](https://github.com/clossys/platform/issues/213) for the
-historical cancelled migration and [docs/DECISIONS.md](docs/DECISIONS.md#2-the-registry--github-packages)
-for the current reasoning.
-
-Add to your project's `.npmrc` (never commit a real one):
-
-```
-@clossys:registry=https://registry.npmjs.org
-//npm.pkg.github.com/:_authToken=${GH_PACKAGES_TOKEN}
-```
-
-With `GH_PACKAGES_TOKEN` set in your environment, install a published version:
+W1E will make installation guidance current only after all nineteen reviewed
+tarballs are published and the registry proves anonymous public access plus
+exact digest parity. The expected post-W1E command is ordinary credential-free
+npm resolution:
 
 ```bash
 npm install @clossys/controller
 ```
 
-Consumer read access does not grant publish authority. Maintainer publication
-uses the protected workflow described in
-[docs/PUBLISHING.md](docs/PUBLISHING.md). The available-package and
-consumer-wiring split is tracked in [docs/ADOPTION.md](docs/ADOPTION.md).
+Do not add a token or a private registry mapping for `@clossys`. The canonical
+source tuple is declared once in [`package-scope.json`](package-scope.json),
+and publication remains disabled until the separately reviewed W1E change.
 
-### Why this still uses GitHub Packages
+### Historical `@vespeneventures` packages
 
-GitHub Packages is the current installation lane: it is the registry declared
-by `package-scope.json`, and it remains authoritative until the finite
-producer-owned cutover in
-[docs/DECISIONS.md](docs/DECISIONS.md#18-producer-owned-catalogue-distribution-cutover)
-passes its transfer and whole-catalogue gates. The earlier public-npm
-migration was cancelled; the newer decision does not restore that old plan.
-It permits a different, evidence-gated path only after this source transfers
-and the complete 1D whole-catalogue recut passes. No candidate-namespace
-package may publish before that complete recut passes, and no first-party
-runtime edge may cross namespaces in the later 1E publication lane.
+The predecessor `@vespeneventures/*` versions remain published and
+installable from GitHub Packages as immutable historical artifacts. GitHub
+Packages requires a classic personal access token with `read:packages`, even
+for a public package. A consumer that deliberately retains one of those old
+versions owns this historical configuration (never commit a real token):
 
-Until then, the `.npmrc` and token requirements above are not an oversight or
-a current consumer configuration that may be changed piecemeal. A later
-completed cutover may replace it only after the single scope/registry authority
-changes and the whole catalogue has passed its gates. Existing package versions
-remain immutable legacy artifacts; no current package is copied, renamed, or
-republished as a partial migration.
+```ini
+@vespeneventures:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=${GH_PACKAGES_TOKEN}
+```
 
-One mechanism governs the current lane and any gated replacement:
-[`package-scope.json`](package-scope.json) remains the single file
-declaring both the scope and the registry, and
-`node scripts/set-registry.mjs --check` (`npm run check:registry`, run in
-CI as `registry drift`) fails if any package's declared
-`publishConfig.registry` drifts from it. It keeps every current package
-agreeing on one answer, and decision 18 requires a history-aware version of
-that machinery before a later whole-catalogue recut.
-
-### pnpm: a misleading "not found" when the auth token is unset
-
-If you install with pnpm and the environment variable your `.npmrc` auth-token
-line references is unset — commonly `NODE_AUTH_TOKEN`, since that is the name
-several tools (including GitHub's own `actions/setup-node`) write by default,
-even if you named it `GH_PACKAGES_TOKEN` as in the example above — pnpm's
-`${VAR}` substitution on that auth-token line fails, and that failure
-**silently also disables the `@clossys:registry=` scope mapping on
-the line above it**. pnpm then falls through to the public default registry
-(`registry.npmjs.org`), which has never heard of `@clossys/*`, and
-reports a plain **404 "package not found"** — not an authentication error.
-Every fresh local clone that hasn't exported the token yet hits this. If
-`pnpm install` reports a `@clossys/<package>` package not found,
-check that the auth-token environment variable is actually set in your shell
-before assuming the package doesn't exist or isn't published.
-
-### pnpm: a same-day publish can silently stall behind a supply-chain cooldown
-
-If your `pnpm` configuration sets a supply-chain cooldown
-(`minimumReleaseAge`), installing a package published from this registry
-earlier the same day can stall silently — pnpm just waits out the cooldown
-with no error — unless `@clossys` is added to your
-`minimumReleaseAgeExclude` list. Add the scope there if you need to consume a
-release on the day it publishes.
+That authenticated lane is not current `@clossys` installation guidance and
+does not authorize mixed first-party namespaces. The lifecycle and visibility
+contracts continue monitoring those still-published old names until W1E
+records the new registry truth; they are not rewritten as retired merely
+because their source successor has a different name.
 
 ## Usage
 
