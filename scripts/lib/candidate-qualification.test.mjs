@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { cp, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { execFile as execFileCallback } from "node:child_process";
 import { tmpdir } from "node:os";
@@ -9,7 +9,62 @@ import test from "node:test";
 import { promisify } from "node:util";
 import { currentQualificationJoins, parseStrictJson, qualificationPath, validateCandidateQualification, validatePrepublicationPrTail } from "./candidate-qualification.mjs";
 
-const source = () => structuredClone(parseStrictJson(readFileSync("governance/release-qualifications/controller-0.8.20.json", "utf8")));
+const CONTROLLER_RECORD_DIRECTORY = "governance/release-qualifications";
+const CONTROLLER_NAME = Buffer.from("QHZlc3BlbmV2ZW50dXJlcy9jb250cm9sbGVy", "base64").toString("utf8");
+const POST_PUBLICATION = "post-publication-bootstrap";
+
+function releaseVersion(value) {
+  const parts = String(value).split(".");
+  if (parts.length !== 3 || parts.some((part) => !/^(?:0|[1-9][0-9]*)$/.test(part))) return null;
+  const numbers = parts.map(Number);
+  return numbers.every(Number.isSafeInteger) ? numbers : null;
+}
+
+function compareReleaseVersions(left, right) {
+  for (let index = 0; index < 3; index += 1) if (left[index] !== right[index]) return left[index] - right[index];
+  return 0;
+}
+
+export function selectControllerQualificationRecord(entries, manifestVersion) {
+  const current = releaseVersion(manifestVersion);
+  if (!current) throw new Error("Controller manifest version must be an exact release version");
+  for (const entry of entries) {
+    if (!releaseVersion(entry.version)) throw new Error("Controller qualification record version must be a canonical exact release version");
+  }
+  const eligible = entries.filter((entry) => {
+    const version = releaseVersion(entry.version);
+    return compareReleaseVersions(version, current) <= 0;
+  }).sort((left, right) => compareReleaseVersions(releaseVersion(right.version), releaseVersion(left.version)));
+  if (eligible.length === 0) throw new Error("Controller qualification record is missing");
+  if (eligible[1]?.version === eligible[0].version) throw new Error("Controller qualification record is ambiguous");
+  return eligible[0];
+}
+
+export function selectControllerPostPublicationRecord(entries, manifestVersion) {
+  return selectControllerQualificationRecord(entries.filter((entry) => entry.record?.timing === POST_PUBLICATION), manifestVersion);
+}
+
+function controllerQualificationRecords() {
+  return readdirSync(CONTROLLER_RECORD_DIRECTORY).filter((file) => file.startsWith("controller-") && file.endsWith(".json")).map((file) => {
+    const record = parseStrictJson(readFileSync(`${CONTROLLER_RECORD_DIRECTORY}/${file}`, "utf8"));
+    if (record?.candidate?.name !== CONTROLLER_NAME || file !== `controller-${record?.candidate?.version}.json`) throw new Error("Controller qualification record identity does not match its path");
+    return { file, version: record.candidate.version, record };
+  });
+}
+
+function controllerQualificationRecord(selector = selectControllerQualificationRecord) {
+  const manifest = parseStrictJson(readFileSync("packages/controller/package.json", "utf8"));
+  return selector(controllerQualificationRecords(), manifest.version).record;
+}
+
+const source = () => structuredClone(controllerQualificationRecord());
+const bootstrapSource = () => structuredClone(controllerQualificationRecord(selectControllerPostPublicationRecord));
+function asPrepublication(record) {
+  if (record.timing === "pre-publication") return record;
+  record.timing = "pre-publication"; record.reviewedCommit = record.publishedCommit; record.rootPackageJsonSha256 = "a".repeat(64); record.rootPackageLockSha256 = "b".repeat(64); record.candidateReview = { headSha: record.reviewedCommit, reference: "test" };
+  delete record.publishedCommit; delete record.registry;
+  return record;
+}
 const currentSource = () => {
   const record = source();
   record.candidate.name = "@clossys/controller";
@@ -54,7 +109,7 @@ async function syntheticPrepublication() {
   return { root, record, path };
 }
 test("accepts the non-authorizing v2 bootstrap record offline and rejects it for prepublish", () => {
-  const record = currentSource();
+  const record = bootstrapSource();
   assert.deepEqual(rules(record), []);
   assert.ok(rules(record, { mode: "prepublish" }).includes("bootstrap-timing"));
 });
@@ -69,18 +124,35 @@ test("rejects transcript, candidate join, unknown-field, and findings drift", ()
   assert.ok(rules(finding).includes("unresolved-producer-defect"));
 });
 test("prepublication review must bind the reviewed head", () => {
-  const record = source();
-  record.timing = "pre-publication"; record.reviewedCommit = record.publishedCommit; record.rootPackageJsonSha256 = "a".repeat(64); record.rootPackageLockSha256 = "b".repeat(64); record.candidateReview = { headSha: "c".repeat(40), reference: "test" };
-  delete record.publishedCommit; delete record.registry;
+  const record = asPrepublication(source());
+  record.candidateReview.headSha = "c".repeat(40);
   assert.ok(rules(record, { mode: "prepublish" }).includes("candidate-review"));
 });
 test("prepublication validation fails closed without complete current joins and a fresh transcript", () => {
-  const record = source(); record.timing = "pre-publication"; record.reviewedCommit = record.publishedCommit; record.rootPackageJsonSha256 = "a".repeat(64); record.rootPackageLockSha256 = "b".repeat(64); record.candidateReview = { headSha: record.reviewedCommit, reference: "test" }; delete record.publishedCommit; delete record.registry;
+  const record = asPrepublication(source());
   assert.ok(rules(record, { mode: "prepublish" }).includes("prepublish-evidence"));
 });
 test("strict JSON parsing rejects duplicate object keys", () => {
   assert.throws(() => parseStrictJson('{"schemaVersion":2,"schemaVersion":2}'), /duplicate JSON key/);
   assert.throws(() => parseStrictJson('{"candidate":{"name":"a","name":"b"}}'), /duplicate JSON key/);
+});
+test("Controller record selection separates the current candidate from retained post-publication bootstrap evidence", () => {
+  const post = (version) => ({ version, record: { timing: POST_PUBLICATION } });
+  const pre = (version) => ({ version, record: { timing: "pre-publication" } });
+  const records = [post("0.8.19"), post("0.8.20"), pre("0.8.21"), pre("0.8.22")];
+  for (const orderedRecords of [records, records.toReversed()]) {
+    assert.equal(selectControllerQualificationRecord(orderedRecords, "0.8.21").version, "0.8.21");
+    assert.equal(selectControllerQualificationRecord(orderedRecords, "0.8.22").version, "0.8.22");
+    assert.equal(selectControllerPostPublicationRecord(orderedRecords, "0.8.21").version, "0.8.20");
+  }
+  assert.throws(() => selectControllerQualificationRecord([], "0.8.21"), /missing/);
+  assert.throws(() => selectControllerQualificationRecord([pre("0.8.20"), pre("0.8.20")], "0.8.21"), /ambiguous/);
+  assert.throws(() => selectControllerPostPublicationRecord([pre("0.8.21")], "0.8.21"), /missing/);
+  assert.throws(() => selectControllerPostPublicationRecord([post("0.8.20"), post("0.8.20")], "0.8.21"), /ambiguous/);
+  for (const aliasedRecords of [[pre("0.8.020"), pre("0.8.20")], [pre("0.8.20"), pre("0.8.020")]]) {
+    assert.throws(() => selectControllerQualificationRecord(aliasedRecords, "0.8.21"), /canonical exact release version/);
+  }
+  assert.throws(() => selectControllerPostPublicationRecord([post("0.08.20"), post("0.8.20")], "0.8.21"), /canonical exact release version/);
 });
 test("prepublication PR tail accepts only an exact record-only tail", async (t) => {
   const fixture = await syntheticPrepublication(); t.after(() => rm(fixture.root, { recursive: true, force: true }));
