@@ -3,6 +3,14 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.5] - 2026-08-29
+
+### Security
+
+- Replaced the ambiguous OKLCH argument and numeric-token regular expressions
+  with single-pass scanners, so hostile malformed public input is rejected in
+  linear time without changing valid color conversion behavior.
+
 ## [0.1.4] - 2026-08-24
 
 ### Fixed
