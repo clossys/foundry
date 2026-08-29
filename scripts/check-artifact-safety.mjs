@@ -104,8 +104,11 @@ let exitCode = 0;
 const structural = [];
 
 try {
-  // 1. Pack for real. `npm pack` runs prepublishOnly, so what lands here is
-  //    what a `npm publish` from the same state would upload.
+  // 1. Pack the exact package contents without executing package-controlled
+  //    lifecycle scripts. The caller may hold a private denylist in its
+  //    environment, so running prepack/prepare here would expose that value to
+  //    untrusted candidate code. Build and release qualification are separate
+  //    explicit stages; this gate only inspects the artifact npm would select.
   let tarballName, tarballPath;
   const suppliedTarball = flagValue("--tarball");
   if (suppliedTarball) {
@@ -136,7 +139,7 @@ try {
     }
     tarballName = basename(sourcePath);
   } else {
-    try { const out = execFileSync("npm", ["pack", "--pack-destination", workDir], { cwd: absPkgDir, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }); tarballName = out.trim().split("\n").filter(Boolean).pop(); }
+    try { const out = execFileSync("npm", ["pack", "--ignore-scripts", "--pack-destination", workDir], { cwd: absPkgDir, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }); tarballName = out.trim().split("\n").filter(Boolean).pop(); }
     catch (error) { die("npm pack failed: " + (error.stderr ?? error.message)); }
     tarballPath = join(workDir, tarballName);
     if (!existsSync(tarballPath)) die("npm pack reported a missing tarball");
