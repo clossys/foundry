@@ -83,7 +83,7 @@
     "check:conflict-markers": "node scripts/check-conflict-markers.mjs"
   },
   "devDependencies": {
-    "pnpm": "10.34.5",
+    "pnpm": "11.24.0",
     "typescript": "~6.0.0"
   }
 }
