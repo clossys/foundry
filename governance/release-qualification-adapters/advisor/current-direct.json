@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "package": "@vespeneventures/advisor",
+  "package": "@clossys/advisor",
   "archetype": "current-direct",
   "bins": { "advisor-check": 0, "advisor-execution-readiness": 0 },
   "fixtures": ["assessment-satisfied.json", "assessment-violated.json", "assessment-indeterminate.json"],
