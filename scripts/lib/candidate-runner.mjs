@@ -254,7 +254,7 @@ async function exportCoverage(manifest, installed, root, timeoutMs) {
       coverage.concreteTargets += 1;
       if (!target) { coverage.failed += 1; continue; }
       if (descriptor.runtime) {
-        const suffix = entry.key === "." ? "" : `/${entry.key.slice(2).replace("*", item.capture)}`;
+        const suffix = entry.key === "." ? "" : `/${entry.key.slice(2).replaceAll("*", item.capture)}`;
         const result = await runProcess(process.execPath, ["--input-type=module", "--eval", `import(${JSON.stringify(`${manifest.name}${suffix}`)})`], { cwd: root, env: sanitizedEnv(root), timeout: timeoutMs });
         operations.push({ id: `import:${id}`, result });
         coverage.runtimeImports += 1;
