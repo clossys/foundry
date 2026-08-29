@@ -594,10 +594,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          # Candidate records are immutable-history joins, not current-tree
+          # assertions. A shallow checkout cannot prove one introduction or
+          # compare the retained bytes with that exact introduction blob.
+          fetch-depth: 0
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 20
           cache: npm
+      # Fail before the expensive install/build when a retained qualification
+      # record, its immutable history, or the pre-publication tail is invalid.
+      # This is deliberately in the already-required `build and test` context:
+      # a separate new job would report without blocking main until a later
+      # ruleset migration promoted its status name.
+      - name: Candidate qualification records
+        run: npm run check:candidate-qualification
       - run: npm ci
       # Build first. dist/ is gitignored, so a fresh checkout has none, and
       # a package with a real internal dependency (gates on catalog and
