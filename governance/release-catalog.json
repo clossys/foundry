@@ -15,7 +15,11 @@
       "scope": "@clossys",
       "registry": "https://registry.npmjs.org",
       "access": "public",
-      "packages": "all"
+      "packages": [
+        "advisor",
+        "starter",
+        "controller"
+      ]
     }
   ]
 }

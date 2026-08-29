@@ -296,8 +296,11 @@ retroactive gate, adoption, grounding, or release clearance.
 [`governance/release-catalog.json`](../governance/release-catalog.json) is the
 fail-closed source catalogue. After W1D its active target is `clossys-npmjs`,
 and `package-scope.json` binds the same `@clossys` scope and public npm
-registry. This is a source-state declaration only. No `@clossys` package is
-published or supported for installation during W1D.
+registry. The source tree contains nineteen packages, but the active release
+target authorizes exactly `advisor`, `starter`, and `controller`, in that
+order. A later package requires a separately reviewed catalogue expansion.
+This is a source-state declaration only. No `@clossys` package is published
+or supported for installation during W1D.
 
 The publish workflow remains reviewable scaffolding, but its upload job is
 disabled and read-only. Neither a push nor a manual dispatch can publish from

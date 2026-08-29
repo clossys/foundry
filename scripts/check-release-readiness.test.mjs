@@ -117,7 +117,7 @@ function makeIdentityTransitionFixture(root) {
     defaultTarget: candidate.releaseTarget,
     targets: [
       { id: current.releaseTarget, status: "historical", scope: current.scope, registry: current.registry, packages: "all" },
-      { id: candidate.releaseTarget, status: "active", scope: candidate.scope, registry: candidate.registry, access: candidate.access, packages: "all" },
+      { id: candidate.releaseTarget, status: "active", scope: candidate.scope, registry: candidate.registry, access: candidate.access, packages: ["advisor", "starter", "controller"] },
     ],
   };
   const lifecycle = {
