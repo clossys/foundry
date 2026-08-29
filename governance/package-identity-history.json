@@ -1,0 +1,5 @@
+{
+  "$comment": "Exact historical-reference inventory for the future W1D candidate state. Empty while the current identity remains active. W1D may add only path + lineSha256 records admitted by package-identity-transition.json; the checker rejects missing, duplicate, unused, or path-wide exemptions.",
+  "schemaVersion": 1,
+  "references": []
+}

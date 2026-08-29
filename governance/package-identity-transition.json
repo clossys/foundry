@@ -1,0 +1,28 @@
+{
+  "$comment": "Closed producer identity transition for Decision 18 W1D. The current and candidate tuples are the only accepted complete states. This file authorizes source preparation only: it does not publish a package, activate an npm trusted publisher, or change provider trust. Historical references in the candidate state require exact line-digest entries in the separate inventory; path-wide exemptions are forbidden.",
+  "schemaVersion": 1,
+  "current": {
+    "scope": "@vespeneventures",
+    "registry": "https://npm.pkg.github.com",
+    "access": null,
+    "repository": "vespeneventures/foundry",
+    "releaseTarget": "current-github-packages"
+  },
+  "candidate": {
+    "scope": "@clossys",
+    "registry": "https://registry.npmjs.org",
+    "access": "public",
+    "repository": "clossys/platform",
+    "releaseTarget": "clossys-npmjs"
+  },
+  "historyInventory": "governance/package-identity-history.json",
+  "historicalPathRules": [
+    "docs/DECISIONS.md",
+    "docs/PUBLISHING.md",
+    "docs/contracts/",
+    "governance/release-qualification-adapters/",
+    "governance/release-qualification-fixtures/",
+    "governance/release-qualifications/",
+    "packages/*/CHANGELOG.md"
+  ]
+}

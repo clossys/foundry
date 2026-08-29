@@ -250,6 +250,7 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 20
+      - run: npm run check:package-identity
       - run: node scripts/set-scope.mjs --check
 
   # package-scope.json.registry is the single declared source for which
