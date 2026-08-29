@@ -181,7 +181,23 @@ function escapeLiteral(value: string): string {
  * glued into a new false anchor by the removal itself.
  */
 function stripGeneratedRegions(description: string): string {
-  return description.replace(/<!--[\s\S]*?-->/g, "\n");
+  const retained: string[] = [];
+  let cursor = 0;
+  while (cursor < description.length) {
+    const open = description.indexOf("<!--", cursor);
+    if (open === -1) {
+      retained.push(description.slice(cursor));
+      break;
+    }
+    const close = description.indexOf("-->", open + 4);
+    if (close === -1) {
+      retained.push(description.slice(cursor));
+      break;
+    }
+    retained.push(description.slice(cursor, open), "\n");
+    cursor = close + 3;
+  }
+  return retained.join("");
 }
 
 /**
@@ -365,20 +381,71 @@ export function extractTaskReferenceText(description: string, recordLabels: read
  */
 export function parseTaskReference(raw: string, defaultScope: string): ParsedTaskReference | undefined {
   if (typeof raw !== "string") return undefined;
-  const unspanned = raw.replace(/^`+/, "").replace(/`+$/, "");
-  const match =
-    /^(?:https?:\/\/[^/\s]+\/([^/\s]+)\/([^/\s]+)\/issues\/(\d+)|([^/#\s]+)\/([^/#\s]+)#(\d+)|#?(\d+))$/.exec(
-      unspanned,
-    );
-  if (!match) return undefined;
-  const [, urlOwner, urlName, urlNumber, shortOwner, shortName, shortNumber, bareNumber] = match;
-  const scope =
-    urlOwner !== undefined && urlName !== undefined
-      ? `${urlOwner}/${urlName}`
-      : shortOwner !== undefined && shortName !== undefined
-        ? `${shortOwner}/${shortName}`
-        : defaultScope;
-  const number = urlNumber ?? shortNumber ?? bareNumber;
+  let start = 0;
+  let end = raw.length;
+  while (start < end && raw[start] === "`") start += 1;
+  while (end > start && raw[end - 1] === "`") end -= 1;
+  const unspanned = raw.slice(start, end);
+
+  const isDigits = (value: string): boolean => {
+    if (value.length === 0) return false;
+    for (let index = 0; index < value.length; index += 1) {
+      const code = value.charCodeAt(index);
+      if (code < 48 || code > 57) return false;
+    }
+    return true;
+  };
+  const hasWhitespace = (value: string): boolean => {
+    for (const character of value) {
+      if (character.trim() === "") return true;
+    }
+    return false;
+  };
+
+  let scope: string;
+  let number: string;
+  const schemeEnd = unspanned.startsWith("https://") ? 8 : unspanned.startsWith("http://") ? 7 : undefined;
+  if (schemeEnd !== undefined) {
+    const hostEnd = unspanned.indexOf("/", schemeEnd);
+    const ownerEnd = hostEnd === -1 ? -1 : unspanned.indexOf("/", hostEnd + 1);
+    const nameEnd = ownerEnd === -1 ? -1 : unspanned.indexOf("/", ownerEnd + 1);
+    if (hostEnd === -1 || ownerEnd === -1 || nameEnd === -1) return undefined;
+    const host = unspanned.slice(schemeEnd, hostEnd);
+    const owner = unspanned.slice(hostEnd + 1, ownerEnd);
+    const name = unspanned.slice(ownerEnd + 1, nameEnd);
+    const issuePrefix = "/issues/";
+    if (
+      host === "" ||
+      owner === "" ||
+      name === "" ||
+      hasWhitespace(host) ||
+      hasWhitespace(owner) ||
+      hasWhitespace(name) ||
+      !unspanned.startsWith(issuePrefix, nameEnd)
+    ) {
+      return undefined;
+    }
+    number = unspanned.slice(nameEnd + issuePrefix.length);
+    if (!isDigits(number)) return undefined;
+    scope = `${owner}/${name}`;
+  } else {
+    const slash = unspanned.indexOf("/");
+    const hash = unspanned.indexOf("#");
+    if (slash !== -1 || (hash > 0 && slash !== -1)) {
+      if (slash <= 0 || hash <= slash + 1 || unspanned.indexOf("/", slash + 1) !== -1 || unspanned.indexOf("#", hash + 1) !== -1) {
+        return undefined;
+      }
+      const owner = unspanned.slice(0, slash);
+      const name = unspanned.slice(slash + 1, hash);
+      number = unspanned.slice(hash + 1);
+      if (hasWhitespace(owner) || hasWhitespace(name) || !isDigits(number)) return undefined;
+      scope = `${owner}/${name}`;
+    } else {
+      number = unspanned.startsWith("#") ? unspanned.slice(1) : unspanned;
+      if (!isDigits(number)) return undefined;
+      scope = defaultScope;
+    }
+  }
   if (number === undefined || scope.trim() === "") return undefined;
   return { raw, scope, number };
 }

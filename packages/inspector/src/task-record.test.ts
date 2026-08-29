@@ -163,6 +163,17 @@ describe("extractTaskReferenceText", () => {
     const description = "No record from the author here.\n\n<!--\n* **Bug Fixes**\n  * Updated a dependency.\n-->";
     expect(extractTaskReferenceText(description, ["Fixes"])).toBeUndefined();
   });
+
+  it("handles long generated regions without regex backtracking", () => {
+    const generated = "x".repeat(250_000);
+    const description = `<!--${generated}Work item: #99-->\nWork item: #12`;
+    expect(extractTaskReferenceText(description, ["Work item"])).toBe("#12");
+  });
+
+  it("retains a long unterminated generated-region marker as ordinary text", () => {
+    const description = `<!--${"x".repeat(250_000)}\nWork item: #12`;
+    expect(extractTaskReferenceText(description, ["Work item"])).toBe("#12");
+  });
 });
 
 describe("parseTaskReference", () => {
@@ -201,6 +212,22 @@ describe("parseTaskReference", () => {
 
   it("still refuses a backticked value that is not a reference", () => {
     expect(parseTaskReference("`banana`", "fallback/scope")).toBeUndefined();
+  });
+
+  it("parses long valid references in linear time", () => {
+    const owner = "o".repeat(100_000);
+    const name = "n".repeat(100_000);
+    expect(parseTaskReference(`${owner}/${name}#123`, "fallback/scope")).toMatchObject({
+      scope: `${owner}/${name}`,
+      number: "123",
+    });
+  });
+
+  it("rejects long adversarial URL and qualified-reference tails without backtracking", () => {
+    const tail = "/segment".repeat(30_000);
+    expect(parseTaskReference(`https://tracker.example/owner/name/issues/12${tail}`, "fallback/scope")).toBeUndefined();
+    expect(parseTaskReference(`owner/name#${"1".repeat(200_000)}x`, "fallback/scope")).toBeUndefined();
+    expect(parseTaskReference(`x${"`".repeat(200_000)}y`, "fallback/scope")).toBeUndefined();
   });
 });
 
