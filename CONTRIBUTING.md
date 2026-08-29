@@ -40,6 +40,41 @@ npm run check:contamination
 npm run check:typechecked-assertions
 ```
 
+## Contribution authority
+
+Contributions are accepted under this repository's MIT licence: the licence
+for a contribution is the same licence under which the repository distributes
+it. This repository currently requires neither a contributor licence agreement
+nor Developer Certificate of Origin sign-off.
+
+The provider's authenticated authorship, review, and merge records retain
+contribution provenance. Do not add a `Signed-off-by` trailer containing a
+personal identity: the public-safety policy deliberately rejects personal
+identity in commit messages, just as it does elsewhere in this public tree.
+Repository-owned automation and dependency bots retain their provider identity
+and pass the same review and safety checks; they do not fabricate a human
+certification.
+
+A repository transfer does not retroactively change the licence of earlier
+contributions, create a new certification for them, or transfer their
+copyright. A later decision to adopt a DCO, a CLA, or another contribution
+grant requires a separate reviewed change that reconciles this contribution
+guide, the identity-safety boundary, and any enforcement before the new policy
+is treated as active.
+
+## Project names and marks
+
+The MIT licence covers the software and documentation. It does not grant a
+separate licence to names, logos, or other marks, and this repository does not
+declare or assign ownership of any such mark.
+
+A repository or package-namespace transfer moves the approved source and its
+administration only. It does not by itself assign copyright or trademark rights,
+and it does not imply endorsement by a previous or successor maintainer. Any
+later assignment, licence, or project-specific marks policy must be an explicit,
+separately reviewed owner action; it is not inferred from a repository transfer,
+scope change, registry change, or package publication.
+
 ## What CI enforces
 
 | Check | What it means |
