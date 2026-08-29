@@ -1,5 +1,6 @@
 import { PACKAGE_LIFECYCLE_VERSION } from "./types.js";
 import type { LifecycleFinding, LifecycleFindingRule } from "./types.js";
+import { isConservativeSemverRange } from "./internal/semver.js";
 
 const DOCUMENT_KEYS = new Set(["schemaVersion", "packages"]);
 const ENTRY_KEYS = new Set([
@@ -59,7 +60,7 @@ function isDenseArray(value: unknown[]): boolean {
 function validSemverRange(value: string): boolean {
   // A deliberately conservative subset of npm semver ranges. It accepts the
   // stable forms used in lifecycle records without accepting arbitrary prose.
-  return /^(?:[~^]|>=?|<=?)?\s*\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\s+(?:-|\|\||[~^]|>=?|<=?)?\s*\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)*$/.test(value.trim());
+  return isConservativeSemverRange(value);
 }
 
 // ---------------------------------------------------- replacement-range coverage

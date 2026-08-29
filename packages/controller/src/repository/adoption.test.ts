@@ -218,6 +218,22 @@ describe("RepositoryPackageAdoptionV1", () => {
     expect(validateRepositoryPackageAdoption(inherited).length).toBeGreaterThan(0);
   });
 
+  it("accepts exact prerelease/build package identities and rejects large adversarial versions", () => {
+    const exact = copy(fixture);
+    const version = "1.2.3-rc.1+build.7";
+    exact.package.version = version;
+    exact.events[0].candidate.version = version;
+    exact.events[3].package.version = version;
+    exact.events[4].package.version = version;
+    expect(validateRepositoryPackageAdoption(exact).filter((entry) => entry.rule === "package-version")).toEqual([]);
+
+    const adversarial = copy(fixture);
+    adversarial.package.version = `0.0.0${"--".repeat(40_000)}`;
+    expect(validateRepositoryPackageAdoption(adversarial)).toEqual(expect.arrayContaining([
+      expect.objectContaining({ rule: "package-version", path: "package.version" }),
+    ]));
+  });
+
   it("requires before-to-after atomic enforcement and strictly real ordered instants", () => {
     const invalidCanaryDate = copy(fixture); invalidCanaryDate.events[1].completedAt = "2026-02-30T00:00:00.000Z";
     expect(validateRepositoryPackageAdoption(invalidCanaryDate).some((entry) => entry.rule === "event-shape")).toBe(true);

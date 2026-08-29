@@ -136,6 +136,16 @@ describe("completion evidence", () => {
     expect(validateCompletionEvidence(absentRollback, ledger()).result.verdict).toBe("indeterminate");
   });
 
+  it("accepts exact prerelease/build artifact versions and bounds adversarial input", () => {
+    const exact = evidence();
+    (exact.artifact as Record<string, unknown>).version = "0.6.1-rc.1+build.7";
+    expect(validateCompletionEvidence(exact, ledger()).result).toEqual({ verdict: "satisfied", evaluated: 1 });
+
+    const adversarial = evidence();
+    (adversarial.artifact as Record<string, unknown>).version = `0.0.0${"--".repeat(40_000)}`;
+    expect(validateCompletionEvidence(adversarial, ledger()).result.verdict).toBe("indeterminate");
+  });
+
   it("preserves independent outcome and close-window ternaries", () => {
     const indeterminate = evidence();
     const outcome = indeterminate.outcome as Record<string, unknown>;

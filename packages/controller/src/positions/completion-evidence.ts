@@ -8,6 +8,7 @@ import { createGateReasons, gateSatisfied, gateViolated, type GateResult } from 
 import { readCanonicalRoleLoopContract, readCompletionEvidenceContract } from "./canonical.js";
 import { validateInstalledPositionLedger, type InstalledPositionFinding } from "./index.js";
 import { isValueSafeReference, referenceSafetyIssue, stripDefaultIgnorables } from "../internal/reference-safety.js";
+import { isExactSemver } from "../internal/semver.js";
 
 export const COMPLETION_EVIDENCE_FIELDS = Object.freeze([
   "schemaVersion", "positionId", "package", "artifact", "invocation", "placement", "control", "maintenance", "cadence", "outcome", "closeWindow",
@@ -35,7 +36,6 @@ export interface CompletionEvidenceReport {
 type RecordValue = Record<string, unknown>;
 const completionReasons = createGateReasons(COMPLETION_EVIDENCE_INDETERMINATE_REASONS);
 const roleName = /^@[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/;
-const exactVersion = /^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-(?:(?:0|[1-9]\d*)|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)(?:\.(?:(?:0|[1-9]\d*)|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
 const canonicalOwner = /^[\x21-\x7e](?:[\x20-\x7e]*[\x21-\x7e])?$/;
 const rfc3339Instant = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,3})?(Z|[+-]\d{2}:\d{2})$/;
 
@@ -193,7 +193,7 @@ export function validateCompletionEvidence(evidence: unknown, ledger: unknown): 
     rejectUnsafeReference(artifact.lockfileRef, "artifact.lockfileRef", findings);
     rejectUnsafeReference(artifact.cleanInstallRef, "artifact.cleanInstallRef", findings);
   }
-  if (!keys(artifact, ["version", "manifestRef", "lockfileRef", "cleanInstallRef"]) || !text(artifact.version) || !exactVersion.test(artifact.version) || !reference(artifact.manifestRef) || !reference(artifact.lockfileRef) || !reference(artifact.cleanInstallRef)) {
+  if (!keys(artifact, ["version", "manifestRef", "lockfileRef", "cleanInstallRef"]) || !text(artifact.version) || !isExactSemver(artifact.version) || !reference(artifact.manifestRef) || !reference(artifact.lockfileRef) || !reference(artifact.cleanInstallRef)) {
     fail(findings, "invalid-artifact-proof", "artifact", "needs an exact semver version plus nonempty manifest, lockfile, and clean-install references");
   }
 
