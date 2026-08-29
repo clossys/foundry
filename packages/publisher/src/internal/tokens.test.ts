@@ -62,6 +62,13 @@ describe("oklchToHex", () => {
     expect(oklchToHex("oklch(   0.5    0.1   30   )")).toBe(oklchToHex("oklch(0.5 0.1 30)"));
   });
 
+  it.each(["30/0.5", "30 /0.5", "30/ 0.5", "30 / 0.5"])(
+    "accepts the alpha separator with bounded optional whitespace: %s",
+    (suffix) => {
+      expect(oklchToHex(`oklch(0.5 0.1 ${suffix})`)).toBe(oklchToHex("oklch(0.5 0.1 30 / 0.5)"));
+    },
+  );
+
   it("returns #rrggbbaa when alpha < 1", () => {
     const hex = oklchToHex("oklch(0.5 0.1 30 / 0.5)");
     expect(hex).toHaveLength(9);
@@ -136,6 +143,16 @@ describe("oklchToHex", () => {
     }
     expect(thrown).toBeInstanceOf(RenderError);
     expect((thrown as RenderError).reason).toBe("invalid-oklch");
+  });
+
+  it("rejects a long malformed argument sequence in bounded time instead of backtracking polynomially", () => {
+    const hostile = `oklch(! ! !/${"!/!".repeat(100_000)})`;
+    expect(() => oklchToHex(hostile)).toThrow(RenderError);
+  });
+
+  it("rejects a long almost-numeric channel in bounded time instead of backtracking polynomially", () => {
+    const hostile = `oklch(${"0".repeat(200_000)}x 0 0)`;
+    expect(() => oklchToHex(hostile)).toThrow(RenderError);
   });
 });
 

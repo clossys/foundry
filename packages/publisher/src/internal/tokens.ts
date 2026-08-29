@@ -128,7 +128,7 @@ export function oklchToHex(css: string): string {
   }
 
   const argsStr = whole[1]!.trim();
-  const args = OKLCH_ARGS_RE.exec(argsStr);
+  const args = parseOklchArguments(argsStr);
   if (!args) {
     throw new RenderError(
       "invalid-oklch",
@@ -136,7 +136,7 @@ export function oklchToHex(css: string): string {
     );
   }
 
-  const [, lTok, cTok, hTok, aTok] = args as unknown as [string, string, string, string, string | undefined];
+  const [lTok, cTok, hTok, aTok] = args;
 
   const L = parseOklchChannel("oklchToHex", css, lTok, 1);
   const C = parseOklchChannel("oklchToHex", css, cTok, 0.4);
@@ -157,8 +157,80 @@ export function oklchToHex(css: string): string {
 }
 
 const OKLCH_WHOLE_RE = /^oklch\(([\s\S]*)\)$/i;
-const OKLCH_ARGS_RE = /^(\S+)\s+(\S+)\s+(\S+)(?:\s*\/\s*(\S+))?$/;
-const NUMERIC_TOKEN_RE = /^-?(\d+\.?\d*|\.\d+)$/;
+
+/**
+ * Splits the closed `L C H [ / A ]` argument grammar in one left-to-right
+ * pass. Keeping this as a scanner rather than adjacent greedy `\S+`/`\s+`
+ * regex groups prevents malformed library input from triggering polynomial
+ * backtracking before it is rejected.
+ */
+function parseOklchArguments(input: string): readonly [string, string, string, string | undefined] | undefined {
+  let cursor = 0;
+
+  const skipWhitespace = (): boolean => {
+    const start = cursor;
+    while (cursor < input.length && input[cursor]!.trim() === "") cursor++;
+    return cursor > start;
+  };
+
+  const readToken = (stopAtSlash = false): string | undefined => {
+    const start = cursor;
+    while (
+      cursor < input.length &&
+      input[cursor]!.trim() !== "" &&
+      (!stopAtSlash || input[cursor] !== "/")
+    ) {
+      cursor++;
+    }
+    return cursor === start ? undefined : input.slice(start, cursor);
+  };
+
+  const lightness = readToken();
+  if (lightness === undefined || !skipWhitespace()) return undefined;
+  const chroma = readToken();
+  if (chroma === undefined || !skipWhitespace()) return undefined;
+  const hue = readToken(true);
+  if (hue === undefined) return undefined;
+
+  skipWhitespace();
+  if (cursor === input.length) return [lightness, chroma, hue, undefined];
+  if (input[cursor] !== "/") return undefined;
+  cursor++;
+  skipWhitespace();
+
+  const alpha = readToken();
+  if (alpha === undefined || cursor !== input.length) return undefined;
+  return [lightness, chroma, hue, alpha];
+}
+
+/** Exact decimal grammar used by OKLCH channels, scanned in linear time. */
+function isNumericToken(value: string): boolean {
+  if (value.length === 0) return false;
+
+  let cursor = value[0] === "-" ? 1 : 0;
+  if (cursor === value.length) return false;
+
+  if (value[cursor] === ".") {
+    cursor++;
+    const fractionalStart = cursor;
+    while (cursor < value.length && isAsciiDigit(value.charCodeAt(cursor))) cursor++;
+    return cursor > fractionalStart && cursor === value.length;
+  }
+
+  const integerStart = cursor;
+  while (cursor < value.length && isAsciiDigit(value.charCodeAt(cursor))) cursor++;
+  if (cursor === integerStart) return false;
+  if (cursor === value.length) return true;
+  if (value[cursor] !== ".") return false;
+
+  cursor++;
+  while (cursor < value.length && isAsciiDigit(value.charCodeAt(cursor))) cursor++;
+  return cursor === value.length;
+}
+
+function isAsciiDigit(code: number): boolean {
+  return code >= 48 && code <= 57;
+}
 
 /**
  * Parses one `oklch()` channel token: `none` -> `0`; a percentage ->
@@ -177,7 +249,7 @@ function parseOklchChannel(
 
   const isPercent = token.endsWith("%");
   const numericPart = isPercent ? token.slice(0, -1) : token;
-  if (!NUMERIC_TOKEN_RE.test(numericPart)) {
+  if (!isNumericToken(numericPart)) {
     throw new RenderError(
       "invalid-oklch",
       `${fn}: not a valid number "${token}" in ${JSON.stringify(originalCss)}`,
