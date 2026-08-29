@@ -1,14 +1,52 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
-import { cp, mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { readFileSync, readdirSync } from "node:fs";
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { execFile as execFileCallback } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { promisify } from "node:util";
-import { currentQualificationJoins, parseStrictJson, qualificationPath, validateCandidateQualification, validatePrepublicationPrTail } from "./candidate-qualification.mjs";
+import { currentQualificationJoins, parseStrictJson, qualificationIntroductionCommit, qualificationPath, validateCandidateQualification, validatePrepublicationPrTail } from "./candidate-qualification.mjs";
 
-const source = () => structuredClone(parseStrictJson(readFileSync("governance/release-qualifications/controller-0.8.20.json", "utf8")));
+const CONTROLLER_RECORD_DIRECTORY = "governance/release-qualifications";
+const CONTROLLER_NAME = "@vespeneventures/controller";
+
+function releaseVersion(value) {
+  const parts = String(value).split(".");
+  if (parts.length !== 3 || parts.some((part) => part.length === 0 || [...part].some((character) => character < "0" || character > "9"))) return null;
+  const numbers = parts.map(Number);
+  return numbers.every(Number.isSafeInteger) ? numbers : null;
+}
+
+function compareReleaseVersions(left, right) {
+  for (let index = 0; index < 3; index += 1) if (left[index] !== right[index]) return left[index] - right[index];
+  return 0;
+}
+
+export function selectControllerQualificationRecord(entries, manifestVersion) {
+  const current = releaseVersion(manifestVersion);
+  if (!current) throw new Error("Controller manifest version must be an exact release version");
+  const eligible = entries.filter((entry) => {
+    const version = releaseVersion(entry.version);
+    return version && compareReleaseVersions(version, current) <= 0;
+  }).sort((left, right) => compareReleaseVersions(releaseVersion(right.version), releaseVersion(left.version)));
+  if (eligible.length === 0) throw new Error("Controller qualification record is missing");
+  if (eligible[1]?.version === eligible[0].version) throw new Error("Controller qualification record is ambiguous");
+  return eligible[0];
+}
+
+function controllerQualificationRecord() {
+  const manifest = parseStrictJson(readFileSync("packages/controller/package.json", "utf8"));
+  const entries = readdirSync(CONTROLLER_RECORD_DIRECTORY).filter((file) => file.startsWith("controller-") && file.endsWith(".json")).map((file) => {
+    const record = parseStrictJson(readFileSync(`${CONTROLLER_RECORD_DIRECTORY}/${file}`, "utf8"));
+    if (record?.candidate?.name !== CONTROLLER_NAME || file !== `controller-${record?.candidate?.version}.json`) throw new Error("Controller qualification record identity does not match its path");
+    return { file, version: record.candidate.version, record };
+  });
+  return selectControllerQualificationRecord(entries, manifest.version).record;
+}
+
+const source = () => structuredClone(controllerQualificationRecord());
+const recordCommit = (record) => qualificationIntroductionCommit(process.cwd(), record.candidate);
 const rules = (value, options) => validateCandidateQualification(value, options).map((item) => item.rule);
 const execFile = promisify(execFileCallback);
 async function git(root, args) { return execFile("git", args, { cwd: root }); }
@@ -16,14 +54,16 @@ async function commit(root, message) { await git(root, ["add", "."]); await git(
 async function syntheticPrepublication() {
   const root = await mkdtemp(join(tmpdir(), "qualification-tail-"));
   await git(root, ["init"]); await git(root, ["config", "user.email", "test@example.invalid"]); await git(root, ["config", "user.name", "Qualification Test"]);
+  const record = source(); const sourceCommit = recordCommit(record);
   for (const path of ["packages/controller", "governance/release-qualification-adapters/controller", "governance/release-qualification-fixtures/controller/current-direct"]) await mkdir(join(root, path), { recursive: true });
-  await cp("packages/controller/package.json", join(root, "packages/controller/package.json"));
-  await cp("package.json", join(root, "package.json")); await cp("package-lock.json", join(root, "package-lock.json"));
-  await cp("governance/release-qualification-policy.json", join(root, "governance/release-qualification-policy.json"));
-  await cp("governance/release-qualification-adapters/controller/current-direct.json", join(root, "governance/release-qualification-adapters/controller/current-direct.json"));
-  for (const name of ["authority-valid-package-lock.json", "authority-duplicate-package-lock.json", "authority-indeterminate-package-lock.json", "authority-declarations.json"]) await cp(join("governance/release-qualification-fixtures/controller/current-direct", name), join(root, "governance/release-qualification-fixtures/controller/current-direct", name));
+  const copyFromRecordCommit = async (path) => writeFile(join(root, path), (await execFile("git", ["show", `${sourceCommit}:${path}`])).stdout);
+  await copyFromRecordCommit("packages/controller/package.json");
+  await copyFromRecordCommit("package.json"); await copyFromRecordCommit("package-lock.json");
+  await copyFromRecordCommit("governance/release-qualification-policy.json");
+  await copyFromRecordCommit("governance/release-qualification-adapters/controller/current-direct.json");
+  for (const name of ["authority-valid-package-lock.json", "authority-duplicate-package-lock.json", "authority-indeterminate-package-lock.json", "authority-declarations.json"]) await copyFromRecordCommit(`governance/release-qualification-fixtures/controller/current-direct/${name}`);
   const reviewedCommit = await commit(root, "candidate");
-  const record = source(); const joins = currentQualificationJoins(root, record.candidate, reviewedCommit);
+  const joins = currentQualificationJoins(root, record.candidate, reviewedCommit);
   record.timing = "pre-publication"; record.reviewedCommit = reviewedCommit; record.rootPackageJsonSha256 = joins.rootPackageJsonSha256; record.rootPackageLockSha256 = joins.rootPackageLockSha256; record.candidate = { ...record.candidate, packageTreeSha1: joins.packageTreeSha1, packageManifestSha256: joins.packageManifestSha256, policySha256: joins.policySha256, adapterSha256: joins.adapterSha256, fixtureSetSha256: joins.fixtureSetSha256 }; record.candidateReview = { headSha: reviewedCommit, reference: "test-review" }; delete record.publishedCommit; delete record.registry;
   const path = qualificationPath(root, record.candidate, reviewedCommit); await mkdir(join(root, "governance/release-qualifications"), { recursive: true }); await writeFile(join(root, path), JSON.stringify(record, null, 2)); await commit(root, "record tail");
   return { root, record, path };
@@ -57,6 +97,26 @@ test("strict JSON parsing rejects duplicate object keys", () => {
   assert.throws(() => parseStrictJson('{"schemaVersion":2,"schemaVersion":2}'), /duplicate JSON key/);
   assert.throws(() => parseStrictJson('{"candidate":{"name":"a","name":"b"}}'), /duplicate JSON key/);
 });
+test("Controller qualification fixture selection advances by version and rejects missing or ambiguous records", () => {
+  const records = ["0.8.19", "0.8.20", "0.8.22"].map((version) => ({ version }));
+  assert.equal(selectControllerQualificationRecord(records, "0.8.21").version, "0.8.20");
+  assert.equal(selectControllerQualificationRecord(records, "0.8.22").version, "0.8.22");
+  assert.throws(() => selectControllerQualificationRecord([], "0.8.21"), /missing/);
+  assert.throws(() => selectControllerQualificationRecord([{ version: "0.8.20" }, { version: "0.8.20" }], "0.8.21"), /ambiguous/);
+});
+test("historical qualification joins use one immutable introduction and reject missing, ambiguous, or tampered history", async (t) => {
+  const fixture = await syntheticPrepublication(); t.after(() => rm(fixture.root, { recursive: true, force: true }));
+  const introduction = qualificationIntroductionCommit(fixture.root, fixture.record.candidate);
+  assert.equal(introduction, (await execFile("git", ["rev-parse", "HEAD"], { cwd: fixture.root })).stdout.trim());
+  const expected = { name: fixture.record.candidate.name, version: fixture.record.candidate.version, ...currentQualificationJoins(fixture.root, fixture.record.candidate, introduction) };
+  const tampered = structuredClone(fixture.record); tampered.candidate.packageManifestSha256 = "0".repeat(64);
+  assert.ok(rules(tampered, { expected }).includes("content-join"));
+  const missing = structuredClone(fixture.record.candidate); missing.version = "9.9.9";
+  assert.throws(() => qualificationIntroductionCommit(fixture.root, missing), /one introduction commit/);
+  await rm(join(fixture.root, fixture.path)); await commit(fixture.root, "remove record");
+  await writeFile(join(fixture.root, fixture.path), JSON.stringify(fixture.record, null, 2)); await commit(fixture.root, "reintroduce record");
+  assert.throws(() => qualificationIntroductionCommit(fixture.root, fixture.record.candidate), /one introduction commit/);
+});
 test("prepublication PR tail accepts only an exact record-only tail", async (t) => {
   const fixture = await syntheticPrepublication(); t.after(() => rm(fixture.root, { recursive: true, force: true }));
   assert.deepEqual(validatePrepublicationPrTail(fixture.record, { root: fixture.root }), []);
@@ -76,7 +136,7 @@ test("prepublication git tail rejects substantive package, root, policy, adapter
 });
 test("publish content joins do not use candidate commit ancestry", () => {
   const record = source();
-  const expected = { name: record.candidate.name, version: record.candidate.version, ...currentQualificationJoins(process.cwd(), record.candidate) };
+  const expected = { name: record.candidate.name, version: record.candidate.version, ...currentQualificationJoins(process.cwd(), record.candidate, recordCommit(record)) };
   const syntheticSquashCommit = "f".repeat(40);
   assert.notEqual(syntheticSquashCommit, record.publishedCommit);
   assert.deepEqual(rules(record, { mode: "prepublish", expected, freshTranscript: record.transcript }).filter((rule) => rule !== "bootstrap-timing"), []);

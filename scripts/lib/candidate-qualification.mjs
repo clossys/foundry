@@ -36,6 +36,12 @@ export function qualificationPath(root, candidate, ref = "WORKTREE") {
   const entry = selectedPolicy(root, candidate, ref);
   return `governance/release-qualifications/${entry.recordStem}-${candidate.version}.json`;
 }
+export function qualificationIntroductionCommit(root, candidate, head = "HEAD") {
+  const path = qualificationPath(root, candidate);
+  const commits = git(root, ["log", "--diff-filter=A", "--format=%H", head, "--", path]).split("\n").filter(Boolean);
+  if (commits.length !== 1 || !SHA1.test(commits[0])) throw new Error("qualification record must have one introduction commit");
+  return commits[0];
+}
 function fixtureDigest(root, ref, adapterPath, fixturePath) { const adapter = parseStrictJson(content(root, ref, adapterPath)); if (!Array.isArray(adapter.fixtures)) throw new Error("adapter fixtures"); return digest(JSON.stringify(adapter.fixtures.slice().sort().map((name) => ({ path: fixturePath + "/" + name, sha256: digest(content(root, ref, fixturePath + "/" + name)) })))); }
 export function currentQualificationJoins(root, candidate, ref = "WORKTREE") {
   const selected = selectedPolicy(root, candidate, ref), treeRef = ref === "WORKTREE" ? "HEAD" : ref;
