@@ -1,6 +1,6 @@
 {
   "name": "@clossys/advisor",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "type": "module",
   "bin": { "advisor-execution-readiness": "./dist/execution-readiness-cli.js" }
 }

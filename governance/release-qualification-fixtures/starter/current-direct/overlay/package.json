@@ -2,7 +2,7 @@
   "private": true,
   "devDependencies": {
     "{{CANDIDATE_NAME}}": "{{CANDIDATE_VERSION}}",
-    "@clossys/advisor": "0.1.4",
+    "@clossys/advisor": "0.1.5",
     "@fixture/qualification-target": "1.0.0"
   }
 }

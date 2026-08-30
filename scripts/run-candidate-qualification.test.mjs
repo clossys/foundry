@@ -32,9 +32,9 @@ async function repositoryJson(path) {
 test("repository Trio policy, adapters, and current-candidate fixtures bind the selected @clossys identities", async () => {
   const policy = await repositoryJson("governance/release-qualification-policy.json");
   const expected = [
-    ["advisor", "@clossys/advisor", "0.1.4"],
-    ["starter", "@clossys/starter", "0.1.3"],
-    ["controller", "@clossys/controller", "0.8.22"],
+    ["advisor", "@clossys/advisor", "0.1.5"],
+    ["starter", "@clossys/starter", "0.1.4"],
+    ["controller", "@clossys/controller", "0.8.23"],
   ];
 
   for (const [key, name, version] of expected) {
@@ -49,32 +49,32 @@ test("repository Trio policy, adapters, and current-candidate fixtures bind the 
 
   for (const state of ["satisfied", "violated", "indeterminate"]) {
     const request = await repositoryJson(`governance/release-qualification-fixtures/starter/current-direct/request-${state}.json`);
-    assert.deepEqual([request.advisor.name, request.advisor.version], ["@clossys/advisor", "0.1.4"]);
+    assert.deepEqual([request.advisor.name, request.advisor.version], ["@clossys/advisor", "0.1.5"]);
   }
   const starterManifest = await repositoryJson("governance/release-qualification-fixtures/starter/current-direct/overlay/package.json");
   const starterLock = await repositoryJson("governance/release-qualification-fixtures/starter/current-direct/overlay/package-lock.json");
   const advisorManifest = await repositoryJson("governance/release-qualification-fixtures/starter/current-direct/overlay/advisor-package.json");
-  assert.equal(starterManifest.devDependencies["@clossys/advisor"], "0.1.4");
-  assert.equal(starterLock.packages[""].devDependencies["@clossys/advisor"], "0.1.4");
-  assert.equal(starterLock.packages["node_modules/@clossys/advisor"].version, "0.1.4");
-  assert.deepEqual([advisorManifest.name, advisorManifest.version], ["@clossys/advisor", "0.1.4"]);
+  assert.equal(starterManifest.devDependencies["@clossys/advisor"], "0.1.5");
+  assert.equal(starterLock.packages[""].devDependencies["@clossys/advisor"], "0.1.5");
+  assert.equal(starterLock.packages["node_modules/@clossys/advisor"].version, "0.1.5");
+  assert.deepEqual([advisorManifest.name, advisorManifest.version], ["@clossys/advisor", "0.1.5"]);
 
   const declarations = await repositoryJson("governance/release-qualification-fixtures/controller/current-direct/authority-declarations.json");
   const validLock = await repositoryJson("governance/release-qualification-fixtures/controller/current-direct/authority-valid-package-lock.json");
   const duplicateLock = await repositoryJson("governance/release-qualification-fixtures/controller/current-direct/authority-duplicate-package-lock.json");
   assert.deepEqual(declarations.declarations, [{ packageName: "@clossys/controller", authority: "controller" }]);
-  assert.deepEqual(declarations.target, { authority: "controller", version: "0.8.22" });
-  assert.equal(validLock.packages["node_modules/@clossys/controller"].version, "0.8.22");
-  assert.equal(duplicateLock.packages["node_modules/@clossys/controller"].version, "0.8.22");
-  assert.equal(duplicateLock.packages["node_modules/@example/consumer/node_modules/@clossys/controller"].version, "0.8.21");
+  assert.deepEqual(declarations.target, { authority: "controller", version: "0.8.23" });
+  assert.equal(validLock.packages["node_modules/@clossys/controller"].version, "0.8.23");
+  assert.equal(duplicateLock.packages["node_modules/@clossys/controller"].version, "0.8.23");
+  assert.equal(duplicateLock.packages["node_modules/@example/consumer/node_modules/@clossys/controller"].version, "0.8.22");
 });
 
 test("all six policy entries bind their manifests, adapters, tracked fixtures, bins, and optional peers", async () => {
   const policy = await repositoryJson("governance/release-qualification-policy.json");
   const expected = {
-    "@clossys/advisor": { packageKey: "advisor", version: "0.1.4" },
-    "@clossys/starter": { packageKey: "starter", version: "0.1.3" },
-    "@clossys/controller": { packageKey: "controller", version: "0.8.22" },
+    "@clossys/advisor": { packageKey: "advisor", version: "0.1.5" },
+    "@clossys/starter": { packageKey: "starter", version: "0.1.4" },
+    "@clossys/controller": { packageKey: "controller", version: "0.8.23" },
     "@clossys/strategist": { packageKey: "strategist", version: "0.1.1" },
     "@clossys/writer": { packageKey: "writer", version: "0.3.1" },
     "@clossys/designer": { packageKey: "designer", version: "0.2.2" },
