@@ -129,6 +129,18 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      # Candidate qualification must replay on the same credential-free runtime
+      # as the OIDC upload lane. Do not inherit an ubuntu-latest ambient npm.
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24.19.0
+
+      - name: Assert replay toolchain
+        run: |
+          test "$(node --version)" = 'v24.19.0'
+          test "$(npm --version)" = '11.17.0'
+          test "$(node -p 'process.versions.zlib')" = '1.3.2.1-motley'
+
       - name: Validate package input
         env:
           PKG: ${{ matrix.package }}
@@ -256,6 +268,18 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      # Keep the OIDC upload lane on the exact runtime that qualified the
+      # immutable handoff; setup-node's bundled npm is asserted below.
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 24.19.0
+
+      - name: Assert replay toolchain
+        run: |
+          test "$(node --version)" = 'v24.19.0'
+          test "$(npm --version)" = '11.17.0'
+          test "$(node -p 'process.versions.zlib')" = '1.3.2.1-motley'
+
       - name: Download exact qualified candidate
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
@@ -271,22 +295,6 @@ jobs:
         run: |
           echo "registry=$(node -p "JSON.parse(require('fs').readFileSync('package-scope.json','utf8')).registry")" >> "$GITHUB_OUTPUT"
           echo "scope=$(node -p "JSON.parse(require('fs').readFileSync('package-scope.json','utf8')).scope")" >> "$GITHUB_OUTPUT"
-
-      # setup-node writes a scoped registry mapping when scope is supplied.
-      # That leaves the global npm registry alone for ordinary dependencies.
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-        with:
-          node-version: 24
-          registry-url: ${{ steps.scope.outputs.registry }}
-          scope: ${{ steps.scope.outputs.scope }}
-
-      - name: Assert trusted-publishing toolchain
-        run: |
-          # shellcheck disable=SC2016
-          node -e 'const [major, minor] = process.versions.node.split(".").map(Number); if (major < 22 || (major === 22 && minor < 14)) { console.error(`Node ${process.versions.node} is below the trusted-publishing floor 22.14`); process.exit(1); }'
-          npm_version="$(npm --version)"
-          # shellcheck disable=SC2016
-          node -e 'const [major, minor, patch] = process.argv[1].split(".").map(Number); if (major < 11 || (major === 11 && (minor < 5 || (minor === 5 && patch < 1)))) { console.error(`npm ${process.argv[1]} is below the trusted-publishing floor 11.5.1`); process.exit(1); }' "$npm_version"
 
       # matrix.package is either a version-selected package or the manual
       # workflow_dispatch string. Every step

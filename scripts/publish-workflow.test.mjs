@@ -14,6 +14,24 @@ function job(name) {
   return workflow.slice(start, next === -1 ? workflow.length : start + 1 + next);
 }
 
+function position(text, needle) {
+  const index = text.indexOf(needle);
+  assert.notEqual(index, -1, `missing workflow assertion: ${needle}`);
+  return index;
+}
+
+function assertPinnedReplayRuntime(selected, name, firstNpmOperation) {
+  const setup = "actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020";
+  const assertion = "- name: Assert replay toolchain";
+  assert.equal((selected.match(new RegExp(setup, "g")) ?? []).length, 1);
+  assert.match(selected, /node-version: 24\.19\.0/);
+  assert.match(selected, /test "\$\(node --version\)" = 'v24\.19\.0'/);
+  assert.match(selected, /test "\$\(npm --version\)" = '11\.17\.0'/);
+  assert.match(selected, /test "\$\(node -p 'process\.versions\.zlib'\)" = '1\.3\.2\.1-motley'/);
+  assert.ok(position(selected, setup) < position(selected, assertion), `${name} must set up Node before asserting it`);
+  assert.ok(position(selected, assertion) < position(selected, firstNpmOperation), `${name} must assert the replay runtime before npm work`);
+}
+
 test("trusted publication is manual, reviewed, and never triggered by a push", () => {
   assert.doesNotMatch(workflow, /^\s+push:/m);
   const publish = job("publish");
@@ -80,6 +98,7 @@ test("qualification is least privilege and owns candidate execution", () => {
   assert.match(qualify, /actions\/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a/);
   assert.match(qualify, /candidate\.tgz/);
   assert.match(qualify, /transcript\.json/);
+  assertPinnedReplayRuntime(qualify, "qualify", "npm ci --ignore-scripts");
 });
 
 test("OIDC publish consumes the exact handoff with upload-only trust and no token", () => {
@@ -87,10 +106,8 @@ test("OIDC publish consumes the exact handoff with upload-only trust and no toke
   assert.match(publish, /needs: \[discover, qualify\]/);
   assert.match(publish, /permissions:\n      contents: read\n      id-token: write/);
   assert.match(publish, /environment: npm-publish/);
-  assert.match(publish, /node-version: 24/);
+  assertPinnedReplayRuntime(publish, "publish", 'npm publish "$TARBALL" --provenance');
   assert.doesNotMatch(publish, /^\s+cache:/m);
-  assert.match(publish, /trusted-publishing floor 22\.14/);
-  assert.match(publish, /trusted-publishing floor 11\.5\.1/);
   assert.match(publish, /actions\/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131/);
   assert.match(publish, /check-artifact-safety\.mjs/);
   assert.match(publish, /validate-candidate-publish\.mjs/);
@@ -111,6 +128,16 @@ test("OIDC publish consumes the exact handoff with upload-only trust and no toke
   assert.match(verification, /check-public-npm-provenance\.mjs/);
   assert.match(verification, /--source-sha "\$SOURCE_SHA"/);
   assert.doesNotMatch(verification, /packages:|id-token:|NODE_AUTH_TOKEN|NPM_TOKEN|GH_PACKAGES_TOKEN|GITHUB_TOKEN|environment:/);
+});
+
+test("replay jobs reject runtime mutation instead of accepting a version floor", () => {
+  for (const [name, firstNpmOperation] of [["qualify", "npm ci --ignore-scripts"], ["publish", 'npm publish "$TARBALL" --provenance']]) {
+    const mutated = job(name)
+      .replaceAll("v24.19.0", "v24.19.1")
+      .replaceAll("11.17.0", "11.17.1")
+      .replaceAll("1.3.2.1-motley", "1.3.2.2-motley");
+    assert.throws(() => assertPinnedReplayRuntime(mutated, name, firstNpmOperation));
+  }
 });
 
 test("no predecessor registry token or visibility mode remains in the public npm workflow", () => {
