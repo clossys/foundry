@@ -31,15 +31,6 @@ on:
         required: true
         default: true
         type: boolean
-      visibility_only:
-        description: >-
-          Report an already-published package's current registry visibility
-          (read-only — there is no API to change it; see docs/PUBLISHING.md's
-          "Package visibility" section for the real manual step). Use only
-          after its release workflow has completed successfully.
-        required: true
-        default: false
-        type: boolean
       verify_only:
         description: >-
           Qualify an already-published package without uploading or changing
@@ -79,12 +70,6 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           MANUAL_PACKAGE: ${{ inputs.package }}
           PUBLISH_RELEASE_TARGET: ${{ inputs.release_target }}
-          # Read-only, the same classic read:packages token
-          # scripts/check-name-collision.mjs and
-          # scripts/check-package-visibility.mjs already use elsewhere in
-          # this workflow — needed here now too, since selection asks the
-          # registry directly instead of diffing git history.
-          GH_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
         run: |
           if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
             node scripts/check-release-catalog.mjs --package "$MANUAL_PACKAGE"
@@ -93,76 +78,6 @@ jobs:
             matrix="$(node scripts/select-publishable-packages.mjs)"
             echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
           fi
-
-  visibility:
-    needs: discover
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.visibility_only && !inputs.verify_only && needs.discover.outputs.packages != '[]' }}
-    permissions:
-      contents: read
-      packages: read
-    runs-on: ubuntu-latest
-    # REPORT-ONLY. There is no REST endpoint for changing a GitHub Packages
-    # npm package's visibility — verified directly: a PATCH to
-    # /orgs/{owner}/packages/npm/{name} with visibility=public returns 404
-    # even with a full-permission PAT, while GET on that same path works.
-    # Changing visibility is a web-UI-only operation (see docs/PUBLISHING.md's
-    # "Package visibility" section for the settings-page step). This job must
-    # never claim to have changed anything — it only reads and reports the
-    # current value, and points the operator at the real manual step.
-    strategy:
-      fail-fast: false
-      max-parallel: 1
-      matrix:
-        include: ${{ fromJSON(needs.discover.outputs.packages) }}
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
-
-      # matrix.package is either a version-selected package or the manual
-      # workflow_dispatch string, spliced into a shell command below — the
-      # same validation the publish job applies to the same untrusted input,
-      # so a bad argument fails closed here instead of surfacing as an
-      # obscure downstream error.
-      - name: Validate package input
-        env:
-          PKG: ${{ matrix.package }}
-          PUBLISH_RELEASE_TARGET: ${{ inputs.release_target }}
-        run: |
-          if ! [[ "$PKG" =~ ^[a-zA-Z0-9_-]+$ ]]; then
-            echo "::error title=Invalid package input::package must match ^[a-zA-Z0-9_-]+\$ (got: $PKG)"
-            exit 1
-          fi
-          if [ ! -f "packages/$PKG/package.json" ]; then
-            echo "::error title=Unknown package::packages/$PKG/package.json does not exist."
-            exit 1
-          fi
-          node scripts/check-release-catalog.mjs --package "$PKG"
-
-      - name: Report current package visibility
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PKG: ${{ matrix.package }}
-        run: |
-          set -euo pipefail
-          # GitHub's package API scopes npm packages through the organization
-          # (or user) path. Its {package_name} segment is the unscoped final
-          # component, not the complete npm name (for example, `governance`,
-          # not `@example/governance`).
-          name="$(node -p "require('./packages/' + process.env.PKG + '/package.json').name.split('/').at(-1)")"
-          owner="$(node -p "JSON.parse(require('fs').readFileSync('package-scope.json','utf8')).scope.replace(/^@/, '')")"
-          kind_user="us""ers"
-          # settings_url is built from $kind (not a second literal path)
-          # so the org and personal-account settings URLs share one line.
-          for kind in orgs "$kind_user"; do
-            if response="$(gh api --method GET "/${kind}/${owner}/packages/npm/${name}" 2>/dev/null)"; then
-              visibility="$(node -e 'console.log(JSON.parse(process.argv[1]).visibility)' "$response")"
-              echo "Current registry visibility of ${owner}/${name}: ${visibility}"
-              settings_url="https://github.com/${kind}/${owner}/packages/npm/${name}/settings"
-              echo "::notice title=Visibility must be changed manually::There is no API for this. To change it, visit ${settings_url} and use the Danger Zone."
-              exit 0
-            fi
-          done
-          echo "::error title=Could not read package visibility::Neither the organization nor user package API returned ${owner}/${name}. Has it been published yet?"
-          exit 1
 
   fetch-published:
     needs: discover
@@ -199,7 +114,7 @@ jobs:
 
   qualify:
     needs: [discover, fetch-published]
-    if: ${{ always() && needs.discover.outputs.packages != '[]' && (github.event_name != 'workflow_dispatch' || !inputs.visibility_only || inputs.verify_only) && (!inputs.verify_only || needs.fetch-published.result == 'success') }}
+    if: ${{ always() && needs.discover.outputs.packages != '[]' && (!inputs.verify_only || needs.fetch-published.result == 'success') }}
     permissions:
       contents: read
     runs-on: ubuntu-latest
@@ -217,7 +132,6 @@ jobs:
       - name: Validate package input
         env:
           PKG: ${{ matrix.package }}
-          VISIBILITY_ONLY: ${{ inputs.visibility_only }}
           VERIFY_ONLY: ${{ inputs.verify_only }}
           PUBLISH_RELEASE_TARGET: ${{ inputs.release_target }}
         run: |
@@ -227,10 +141,6 @@ jobs:
           fi
           if [ ! -f "packages/$PKG/package.json" ]; then
             echo "::error title=Unknown package::packages/$PKG/package.json does not exist."
-            exit 1
-          fi
-          if [ "$VISIBILITY_ONLY" = true ] && [ "$VERIFY_ONLY" = true ]; then
-            echo "::error title=Conflicting release modes::visibility_only and verify_only cannot both be true."
             exit 1
           fi
           node scripts/check-release-catalog.mjs --package "$PKG"
@@ -303,6 +213,14 @@ jobs:
           TRANSCRIPT: ${{ runner.temp }}/qualification/${{ matrix.package }}/transcript.json
         run: node scripts/run-candidate-qualification.mjs --package "$PKG" --tarball "$TARBALL" --output "$TRANSCRIPT"
 
+      - name: Exercise npm publish command without upload credentials
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && !inputs.verify_only }}
+        env:
+          TARBALL: ${{ runner.temp }}/qualification/${{ matrix.package }}/candidate.tgz
+        run: |
+          registry="$(node -p "JSON.parse(require('fs').readFileSync('package-scope.json','utf8')).registry")"
+          npm publish "$TARBALL" --dry-run --access public --ignore-scripts --registry "$registry"
+
       - name: Upload exact candidate and qualification transcript
         if: ${{ always() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -316,15 +234,16 @@ jobs:
 
   publish:
     needs: [discover, qualify]
-    # W1D prepares source only. This job remains visible for review, but cannot
-    # run until W1E deliberately restores the upload path and provider trust.
-    if: ${{ false }}
+    # Deliberately manual and non-dry-run only. A version bump cannot upload on
+    # push, and qualification still fails closed unless the exact immutable
+    # pre-publication record exists.
+    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.dry_run && !inputs.verify_only && needs.discover.outputs.packages != '[]' }}
     permissions:
       contents: read
+      id-token: write
     runs-on: ubuntu-latest
-    # A package upload or registry-artifact qualification must pass the
-    # repository's configured publish reviewers. Visibility-only changes have
-    # their own non-uploading job above and intentionally do not use it.
+    # A package upload must pass the repository's configured publish reviewer.
+    # Qualification and anonymous verification stay outside this environment.
     environment: npm-publish
     strategy:
       fail-fast: false
@@ -343,13 +262,10 @@ jobs:
           name: qualified-candidate-${{ matrix.package }}
           path: ${{ runner.temp }}/qualification/${{ matrix.package }}
 
-      # package-scope.json is the single source of truth for which registry
-      # this repo publishes to (both packages also declare it directly via
-      # publishConfig.registry). Hardcoding registry-url below would silently
-      # break auth the moment package-scope.json points elsewhere: setup-node
-      # writes the NODE_AUTH_TOKEN auth line scoped to whatever host is passed
-      # here, so a mismatch means `npm publish` gets a token for a registry it
-      # isn't talking to and fails (or worse, talks to the wrong registry).
+      # package-scope.json is the single source of truth for the exact registry
+      # and scope. The npm trusted-publisher binding is repository/workflow/
+      # environment-specific; this source tuple additionally prevents the
+      # command from being redirected to a different registry.
       - name: Read registry and scope from package-scope.json
         id: scope
         run: |
@@ -360,9 +276,17 @@ jobs:
       # That leaves the global npm registry alone for ordinary dependencies.
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: 20
+          node-version: 24
           registry-url: ${{ steps.scope.outputs.registry }}
           scope: ${{ steps.scope.outputs.scope }}
+
+      - name: Assert trusted-publishing toolchain
+        run: |
+          # shellcheck disable=SC2016
+          node -e 'const [major, minor] = process.versions.node.split(".").map(Number); if (major < 22 || (major === 22 && minor < 14)) { console.error(`Node ${process.versions.node} is below the trusted-publishing floor 22.14`); process.exit(1); }'
+          npm_version="$(npm --version)"
+          # shellcheck disable=SC2016
+          node -e 'const [major, minor, patch] = process.argv[1].split(".").map(Number); if (major < 11 || (major === 11 && (minor < 5 || (minor === 5 && patch < 1)))) { console.error(`npm ${process.argv[1]} is below the trusted-publishing floor 11.5.1`); process.exit(1); }' "$npm_version"
 
       # matrix.package is either a version-selected package or the manual
       # workflow_dispatch string. Every step
@@ -398,21 +322,6 @@ jobs:
       # negative here is unrecoverable.
       - name: name collision
         env:
-          # Lists this org's real packages via `gh api` — the ambient
-          # GITHUB_TOKEN is scoped to this repo, not the whole org, so it
-          # can't answer "does another repo already own this name" even with
-          # `packages: read` permission. This is the one step that genuinely
-          # needs a stored credential, and it needs only READ: it calls
-          # the org-level packages REST endpoint, plus its user-account fallback.
-          #
-          # GH_PACKAGES_TOKEN is a classic read:packages token —
-          # verified HTTP 200 on that exact endpoint, and it holds no `repo`
-          # scope, so a leak cannot reach any repository. It deliberately
-          # replaces NPM_TOKEN here: that token carries `repo` (GitHub force-
-          # selects it alongside write:packages on classic PATs, and
-          # fine-grained PATs expose no Packages permission at all), which on
-          # this account reaches every repository the owner can see.
-          GH_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
           PKG: ${{ matrix.package }}
         run: node scripts/check-name-collision.mjs "packages/$PKG"
 
@@ -505,86 +414,28 @@ jobs:
             exit 1
           fi
 
-      # The selected tarball is the thing that ships, but npm's own publish
-      # path has additional validation and flag handling. A requested dry run
-      # must exercise that exact path — otherwise its name claims more than it
-      # actually verifies. It still cannot mutate the registry.
-      - name: Publish (dry run)
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && !inputs.verify_only }}
-        working-directory: packages/${{ matrix.package }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TARBALL: ${{ runner.temp }}/qualification/${{ matrix.package }}/candidate.tgz
-        # --ignore-scripts keeps this invocation identical in SHAPE to the
-        # real one below. It changes nothing here on its own: measured, a
-        # --dry-run publish does NOT run prepublishOnly, while a real one
-        # does.
-        #
-        # That asymmetry is worth naming, because it is why run 32311722090
-        # broke. This step is the rehearsal for the real publish, and it does
-        # not rehearse lifecycle hooks at all — so a hook that makes
-        # publishing fail passes here every time. Every gate on #273 was
-        # green; the first execution of the changed path was production.
-        # Tracked as its own issue rather than papered over here.
-        run: npm publish "$TARBALL" --dry-run --provenance --access public --ignore-scripts
-
       - name: Publish
-        if: ${{ github.event_name == 'push' || (!inputs.dry_run && !inputs.verify_only) }}
         working-directory: packages/${{ matrix.package }}
         env:
-          # The job's own GITHUB_TOKEN, not a stored PAT. The `packages: write`
-          # permission declared at the top of this file is what lets it push to
-          # this owner's registry, and it expires when the job ends, so there is
-          # no long-lived publish credential to leak or rotate.
-          #
-          # A stored PAT is strictly worse here and cannot be made better:
-          # classic PATs force `repo` alongside write:packages (GitHub disables
-          # the checkbox), and fine-grained PATs offer no Packages permission at
-          # all — so any PAT able to publish also carries write access to every
-          # repository this account can see.
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TARBALL: ${{ runner.temp }}/qualification/${{ matrix.package }}/candidate.tgz
+          REGISTRY: ${{ steps.scope.outputs.registry }}
         run: |
           set -euo pipefail
           # The preceding exact-byte step re-hashed this artifact against the
           # credential-free qualification transcript. Publish the same path;
           # never ask npm to create another candidate.
           test -f "$TARBALL"
-          # --access public is a registry-protocol flag, not a visibility
-          # setting on GitHub Packages — it does not make the package
-          # installable without a token, and observed behaviour this repo has
-          # actually hit is that a fresh package still lands PRIVATE despite
-          # it. The real visibility lever is the opt-in step below.
-          # --ignore-scripts is REQUIRED here, and is not a weakening.
-          #
-          # `npm publish <tarball>` still runs the package's own
-          # `prepublishOnly` hook. Since #273 that hook runs
-          # check-name-collision.mjs, which needs a token that can list this
-          # owner's packages. This step deliberately carries only
-          # NODE_AUTH_TOKEN, so the hook cannot reach the registry and — being
-          # a gate that fails closed — exits 2 and takes the publish with it.
-          # That broke every job in run 32311722090.
-          #
-          # The collision question is already answered for this job by the
-          # dedicated, credentialed "name collision" step far above, which
-          # runs before anything is packed and blocks the job on a real
-          # collision. Running it a second time here, with the wrong
-          # credentials, adds no coverage and can only produce a false
-          # indeterminate.
-          #
-          # The hook is not redundant in general: it exists for the ONE path
-          # no workflow can police — a maintainer running `npm publish` by
-          # hand from a package directory. That path is unaffected by this
-          # flag, because this flag lives here, in CI.
-          echo "W1D source preparation only: package upload remains disabled until W1E."
-          exit 1
+          # npm exchanges the GitHub OIDC identity for one short-lived publish
+          # credential. No npm or GitHub token is supplied to this step.
+          # Trusted publishing adds provenance automatically; the explicit flag
+          # keeps provenance a fail-closed publication requirement.
+          npm publish "$TARBALL" --provenance --access public --ignore-scripts --registry "$REGISTRY"
 
       - name: Fetch and compare published tarball
-        if: ${{ github.event_name == 'push' || (!inputs.dry_run && !inputs.verify_only) }}
         working-directory: packages/${{ matrix.package }}
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           EXPECTED_TARBALL: ${{ runner.temp }}/qualification/${{ matrix.package }}/candidate.tgz
+          REGISTRY: ${{ steps.scope.outputs.registry }}
         run: |
           set -euo pipefail
           package_name="$(node -p "require('./package.json').name")"
@@ -592,7 +443,7 @@ jobs:
           destination="$RUNNER_TEMP/published"
           mkdir -p "$destination"
           for attempt in 1 2 3 4 5; do
-            if output="$(npm pack "${package_name}@${package_version}" --ignore-scripts --pack-destination "$destination" 2>&1)"; then
+            if output="$(npm pack "${package_name}@${package_version}" --ignore-scripts --registry "$REGISTRY" --pack-destination "$destination" 2>&1)"; then
               printf '%s\n' "$output"
               break
             fi
@@ -614,55 +465,50 @@ jobs:
             fi
           done
 
-  # GitHub Packages defaults every newly published npm package to PRIVATE,
-  # per package, regardless of this repository being public — and nothing
-  # before this job re-checked that state. @example/ui sat private
-  # across 12 published versions, completely uninstallable by any external
-  # reader, before anyone noticed; four packages were found private in
-  # total. This job runs immediately after a REAL publish (never for a dry
-  # run or a verify_only qualification, matching the "Publish" step's own
-  # condition above) and asks the registry directly whether every package
-  # this repository declares "published" is actually public — not scoped
-  # to only the package(s) this run just uploaded, since the cost of
-  # checking the rest is a handful of GET requests and doing so also
-  # catches unrelated drift on the same run. See
-  # scripts/check-package-visibility.mjs's own header for the full design
-  # and docs/contracts/package-visibility.json for the declared intent.
-  #
-  # Deliberately a SEPARATE job, not a trailing step inside `publish`
-  # above: a failure here must never be confused with, or imply a rollback
-  # of, the publish itself — that already succeeded and a registry version
-  # is immutable. This job can only ever report; there is no API to change
-  # a package's visibility (see docs/PUBLISHING.md's "Package visibility"
-  # section) so a failing check here is a page for a human to flip the
-  # setting by hand, never something a workflow can fix for itself.
-  #
-  # Not run for a fork pull request or workflow_dispatch dry run: no such
-  # trigger reaches this job's `if` at all, since only a push to main or an
-  # explicit non-dry-run, non-verify-only dispatch satisfies it — the same
-  # surface that gates `secrets.GH_PACKAGES_TOKEN` access elsewhere in this
-  # file.
-  visibility-check:
-    name: post-publish visibility check
+  # Keep registry verification separate from upload so a failed read never
+  # implies rollback of an immutable version. Public npm is read anonymously.
+  verify-published:
+    name: post-publish anonymous registry verification
     needs: [discover, publish]
-    if: ${{ always() && needs.discover.outputs.packages != '[]' && (github.event_name == 'push' || (!inputs.dry_run && !inputs.verify_only)) }}
+    if: ${{ always() && needs.publish.result == 'success' && needs.discover.outputs.packages != '[]' }}
     permissions:
       contents: read
-      packages: read
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 1
+      matrix:
+        include: ${{ fromJSON(needs.discover.outputs.packages) }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
 
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: 20
+          node-version: "24"
+          registry-url: https://registry.npmjs.org
 
-      # The same classic read:packages token the name-collision job uses
-      # above — it can only read, never write or delete, and cannot reach
-      # any other repository's contents. There is no separate credential
-      # for this narrower purpose; reusing this one avoids minting another
-      # long-lived secret for the same access level.
-      - name: check-package-visibility
+      - name: Verify exact public npm artifact anonymously
         env:
-          GH_PACKAGES_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
-        run: node scripts/check-package-visibility.mjs
+          PKG: ${{ matrix.package }}
+        run: node scripts/check-registry-parity.mjs --package "$PKG"
+
+      - name: Verify exact Sigstore and SLSA provenance anonymously
+        env:
+          PKG: ${{ matrix.package }}
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          PACKAGE_NAME=$(node -p "require('./packages/' + process.env.PKG + '/package.json').name")
+          PACKAGE_VERSION=$(node -p "require('./packages/' + process.env.PKG + '/package.json').version")
+          PROVENANCE_ROOT=$(mktemp -d)
+          trap 'rm -rf "$PROVENANCE_ROOT"' EXIT
+          cd "$PROVENANCE_ROOT"
+          npm init --yes >/dev/null
+          npm install --ignore-scripts --save-exact "$PACKAGE_NAME@$PACKAGE_VERSION"
+          npm audit signatures --json --include-attestations > audit-signatures.json
+          cd "$GITHUB_WORKSPACE"
+          node scripts/check-public-npm-provenance.mjs \
+            --package "$PKG" \
+            --audit-result "$PROVENANCE_ROOT/audit-signatures.json" \
+            --source-sha "$SOURCE_SHA"

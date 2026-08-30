@@ -215,7 +215,7 @@ test("a writer that mutates bytes before throwing still rolls the current target
   assert.deepEqual(Object.fromEntries(files), { a: "old-a", b: "old-b" });
 });
 
-test("candidate publication and provider trust are forbidden across the complete workflow inventory", () => {
+test("candidate publication and provider trust stay inert before first-publication closure", () => {
   const root = mkdtempSync(join(tmpdir(), "package-identity-workflows-"));
   try {
     const workflows = join(root, ".github", "workflows");
@@ -235,7 +235,22 @@ test("candidate publication and provider trust are forbidden across the complete
     rmSync(join(workflows, "mixed.yml"));
 
     writeFileSync(join(workflows, "trust.yml"), "name: trust\non: workflow_dispatch\npermissions: { contents: read, \"id-token\": write }\njobs: {}\n");
-    assert.match(checkCandidatePublishInert(root).join("\n"), /trust\.yml: provider trust must remain inactive/);
+    assert.match(checkCandidatePublishInert(root).join("\n"), /trust\.yml: provider trust is forbidden/);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test("closed first publication admits trust only in the exact publish workflow", () => {
+  const root = mkdtempSync(join(tmpdir(), "package-identity-trusted-publishing-"));
+  try {
+    const workflows = join(root, ".github", "workflows");
+    mkdirSync(workflows, { recursive: true });
+    writeFileSync(join(workflows, "publish.yml"), "name: publish\non: workflow_dispatch\npermissions:\n  contents: read\njobs:\n  publish:\n    permissions:\n      contents: read\n      id-token: write\n    steps:\n      - run: npm publish candidate.tgz\n");
+    assert.deepEqual(checkCandidatePublishInert(root, { trustedPublishing: true }), []);
+
+    writeFileSync(join(workflows, "alternate.yml"), "name: hostile\non: workflow_dispatch\npermissions:\n  id-token: write\njobs:\n  publish:\n    steps:\n      - run: npm publish candidate.tgz\n");
+    const findings = checkCandidatePublishInert(root, { trustedPublishing: true }).join("\n");
+    assert.match(findings, /alternate\.yml: real npm publish command/);
+    assert.match(findings, /alternate\.yml: provider trust is forbidden/);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 

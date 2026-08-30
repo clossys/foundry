@@ -1,13 +1,15 @@
 #!/usr/bin/env node
 // Fail-closed structural judge for the two complete package identity states.
 // The current state keeps GitHub Packages live. The candidate state is W1D
-// source preparation only and must keep publishing inert while preserving old
-// evidence through exact line-digest records, never path-wide exemptions.
+// source preparation only until the exact first-publication record closes.
+// After that closure, only the reviewed public-npm upload workflow may carry
+// a real publish command or OIDC trust; every other workflow remains inert.
 
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
+import { readValidatedPublishedPackages } from "./check-package-evidence.mjs";
 import { identityState, isIdentityTransitionControlSurface, lineDigest, loadTransitionPolicy, validateHistoryInventory } from "./lib/package-identity-transition.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -135,7 +137,7 @@ function hasForbiddenPublish(line) {
   return !/(?:^|\s)--dry-run(?:\s|$)/.test(commandSegment);
 }
 
-export function checkCandidatePublishInert(repositoryRoot = root) {
+export function checkCandidatePublishInert(repositoryRoot = root, { trustedPublishing = false } = {}) {
   const workflowsRoot = join(repositoryRoot, ".github", "workflows");
   if (!existsSync(workflowsRoot)) return [".github/workflows is missing during W1D"];
   const findings = [];
@@ -148,11 +150,11 @@ export function checkCandidatePublishInert(repositoryRoot = root) {
     if (rel === ".github/workflows/publish.yml" && activeLines.some((line) => /^\s{2}push:\s*(?:#.*)?$/.test(line))) {
       findings.push(`${rel}: push publication trigger is forbidden during W1D`);
     }
-    if (activeLines.some(hasForbiddenPublish)) {
-      findings.push(`${rel}: real npm publish command is forbidden during W1D`);
+    if (activeLines.some(hasForbiddenPublish) && (!trustedPublishing || rel !== ".github/workflows/publish.yml")) {
+      findings.push(`${rel}: real npm publish command is forbidden outside the closed trusted-publishing workflow`);
     }
-    if (activeLines.some((line) => /(?:["']?id-token["']?)\s*:\s*["']?write["']?(?:\s|,|}|$)/.test(line))) {
-      findings.push(`${rel}: provider trust must remain inactive during W1D`);
+    if (activeLines.some((line) => /(?:["']?id-token["']?)\s*:\s*["']?write["']?(?:\s|,|}|$)/.test(line)) && (!trustedPublishing || rel !== ".github/workflows/publish.yml")) {
+      findings.push(`${rel}: provider trust is forbidden outside the closed trusted-publishing workflow`);
     }
   }
   return findings;
@@ -167,7 +169,12 @@ export function evaluatePackageIdentity(rootOverride = root) {
   const inventory = readJson(join(root, policy.historyInventory));
   findings.push(...validateHistoryInventory(inventory, policy));
   if (state === "current" && inventory.references.length !== 0) findings.push("current state must not pre-authorize candidate historical references");
-  if (state === "candidate") findings.push(...checkCandidateHistory(policy), ...checkCandidatePublishInert());
+  if (state === "candidate") {
+    const publishedPackages = readValidatedPublishedPackages(root);
+    const trustedPublishing = ["@clossys/advisor", "@clossys/starter", "@clossys/controller"]
+      .every((name) => publishedPackages.has(name));
+    findings.push(...checkCandidateHistory(policy), ...checkCandidatePublishInert(root, { trustedPublishing }));
+  }
   return { state, findings: [...new Set(findings)] };
 }
 
