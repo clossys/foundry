@@ -14,6 +14,7 @@ import {
   publicNpmPackageUrl,
   publicNpmRegistryProof,
   repositoryIdentityFromPackument,
+  retryPostPublishPublicNpmArtifact,
   validatePublicNpmRegistryProof,
   verifyPublicNpmArtifact,
 } from "./public-npm-registry.mjs";
@@ -165,6 +166,61 @@ test("served artifact proof rejects changed bytes and a substituted packed manif
   const manifestMismatch = await verifyPublicNpmArtifact({ registry: PUBLIC_NPM_REGISTRY, name: NAME, version: VERSION, fetchImpl: queueFetch([response(200, metadata(wrong)), response(200, wrong)]) });
   assert.equal(manifestMismatch.kind, "mismatch");
   assert.match(manifestMismatch.detail, /manifest/);
+});
+
+test("post-publish visibility retries only anonymous missing-version or 404 observations within its bounded window", async () => {
+  const bytes = tarball();
+  const waits = [];
+  const result = await retryPostPublishPublicNpmArtifact({
+    registry: PUBLIC_NPM_REGISTRY,
+    name: NAME,
+    version: VERSION,
+    delays: [0, 7, 11],
+    sleep: async (milliseconds) => { waits.push(milliseconds); },
+    fetchImpl: queueFetch([
+      response(404, {}),
+      response(200, metadata(bytes)), response(404, {}),
+      response(200, metadata(bytes)), response(200, bytes),
+    ]),
+  });
+  assert.equal(result.kind, "verified");
+  assert.deepEqual(waits, [7, 11]);
+});
+
+test("post-publish visibility exhausts a missing version without treating it as a successful publication", async () => {
+  const waits = [];
+  const result = await retryPostPublishPublicNpmArtifact({
+    registry: PUBLIC_NPM_REGISTRY,
+    name: NAME,
+    version: VERSION,
+    delays: [0, 3, 5],
+    sleep: async (milliseconds) => { waits.push(milliseconds); },
+    fetchImpl: queueFetch([response(404, {}), response(404, {}), response(404, {})]),
+  });
+  assert.deepEqual(result, { kind: "known", hasVersion: false });
+  assert.deepEqual(waits, [3, 5]);
+});
+
+test("post-publish visibility never retries a wrong-digest registry response", async () => {
+  const bytes = tarball();
+  const waits = [];
+  const result = await retryPostPublishPublicNpmArtifact({
+    registry: PUBLIC_NPM_REGISTRY,
+    name: NAME,
+    version: VERSION,
+    delays: [0, 9, 12],
+    sleep: async (milliseconds) => { waits.push(milliseconds); },
+    fetchImpl: queueFetch([response(200, metadata(bytes)), response(200, Buffer.concat([bytes, Buffer.from("wrong")]))]),
+  });
+  assert.equal(result.kind, "mismatch");
+  assert.deepEqual(waits, []);
+});
+
+test("post-publish visibility refuses an unbounded retry schedule", async () => {
+  await assert.rejects(
+    retryPostPublishPublicNpmArtifact({ registry: PUBLIC_NPM_REGISTRY, name: NAME, version: VERSION, delays: [0, 180_001] }),
+    /within three minutes/,
+  );
 });
 
 test("repository identity is derived only from canonical GitHub repository metadata", () => {
