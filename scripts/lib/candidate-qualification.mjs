@@ -317,9 +317,66 @@ export function validateTrioPublicationClosure(publication, { root = process.cwd
   }
   return a;
 }
-export function validatePrepublicationPrTail(r, { root = process.cwd(), head = "HEAD", trioRecords = [], cohort = null, cohortBytes, quarantine = null, controlTailAuthorization = null, publicationClosureValid = false } = {}) {
+function sealedTrioQualificationPaths(publication) {
+  if (!Array.isArray(publication?.members) || publication.members.length !== TRIO.length) return new Set();
+  const paths = [];
+  for (let index = 0; index < TRIO.length; index += 1) {
+    const member = publication.members[index];
+    const path = member?.qualification?.path;
+    if (member?.packageKey !== TRIO[index] || typeof path !== "string") return new Set();
+    paths.push(path);
+  }
+  return new Set(paths);
+}
+function validateForwardQualificationIntroduction(r, { root, head, trioRecords, sealedPaths }) {
+  const a = [];
+  let path, introduction;
+  try {
+    path = qualificationPath(root, r.candidate, r.reviewedCommit);
+    introduction = qualificationIntroductionCommit(root, r.candidate, head, path);
+  } catch (error) {
+    fail(a, "forward-record-history", error instanceof Error ? error.message : "qualification record history could not be resolved.");
+    return a;
+  }
+
+  try {
+    const ancestry = git(root, ["rev-list", "--parents", "-n", "1", introduction]).split(/\s+/);
+    if (ancestry.length !== 2 || ancestry[0] !== introduction || ancestry[1] !== r.reviewedCommit) fail(a, "forward-record-parent", "a new qualification record must be introduced by the direct single-parent child of its reviewed commit.");
+
+    const jointPaths = [];
+    for (const record of trioRecords) {
+      if (record?.timing !== "pre-publication") continue;
+      const candidatePath = qualificationPath(root, record.candidate, record.reviewedCommit);
+      if (sealedPaths.has(candidatePath)) continue;
+      const candidateIntroduction = qualificationIntroductionCommit(root, record.candidate, head, candidatePath);
+      if (candidateIntroduction === introduction) jointPaths.push(candidatePath);
+    }
+    const exactJointPaths = [...new Set(jointPaths)].sort();
+    const changed = git(root, ["diff", "--name-only", `${r.reviewedCommit}..${introduction}`]).split("\n").filter(Boolean).sort();
+    if (exactJointPaths.length === 0 || JSON.stringify(changed) !== JSON.stringify(exactJointPaths)) fail(a, "forward-record-paths", "a new qualification introduction must change exactly the jointly introduced versioned qualification records.");
+
+    if (digest(content(root, introduction, path)) !== digest(readFileSync(join(root, path)))) fail(a, "forward-record-bytes", "a new qualification record must retain its exact introduction blob.");
+    const laterTouches = git(root, ["log", "--full-history", "--format=%H", `${introduction}..${head}`, "--", path]).split("\n").filter(Boolean);
+    if (laterTouches.length > 0) fail(a, "forward-record-touches", "a new qualification record must not be touched after its introduction.");
+
+    const expected = currentQualificationJoins(root, r.candidate, r.reviewedCommit);
+    for (const key of Object.keys(expected).filter((item) => !["archetypes", "dimensions"].includes(item))) if (expected[key] !== (r[key] ?? r.candidate?.[key])) fail(a, "forward-record-join", `qualification record does not bind ${key} at its reviewed commit.`);
+    if (JSON.stringify(expected.archetypes) !== JSON.stringify(r.archetypes) || JSON.stringify(expected.dimensions) !== JSON.stringify(r.transcript?.dimensions)) fail(a, "forward-record-join", "qualification record policy derivation does not bind its reviewed commit.");
+  } catch (error) {
+    fail(a, "forward-record-history", error instanceof Error ? error.message : "qualification record history could not be verified.");
+  }
+  return a;
+}
+export function validatePrepublicationPrTail(r, { root = process.cwd(), head = "HEAD", trioRecords = [], cohort = null, cohortBytes, quarantine = null, controlTailAuthorization = null, publication = null, publicationClosureValid = false } = {}) {
   const a = []; if (r?.timing !== "pre-publication") return a; try { execFileSync("git", ["merge-base", "--is-ancestor", r.reviewedCommit, head], { cwd: root, stdio: "ignore" }); } catch { fail(a, "reviewed-ancestor", "not ancestor"); return a; }
-  if (publicationClosureValid) return a;
+  if (publicationClosureValid) {
+    const sealedPaths = sealedTrioQualificationPaths(publication);
+    let path;
+    try { path = qualificationPath(root, r.candidate, r.reviewedCommit); }
+    catch (error) { fail(a, "forward-record-history", error instanceof Error ? error.message : "qualification record path could not be resolved."); return a; }
+    if (sealedPaths.has(path)) return a;
+    return validateForwardQualificationIntroduction(r, { root, head, trioRecords, sealedPaths });
+  }
   const changed = git(root, ["diff", "--name-only", r.reviewedCommit + ".." + head]).split("\n").filter(Boolean).sort();
   let allowed = [qualificationPath(root, r.candidate, r.reviewedCommit)];
   if (isTrioCandidate(r.candidate) && trioRecords.length > 0) {

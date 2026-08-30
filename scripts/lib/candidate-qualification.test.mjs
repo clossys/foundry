@@ -265,18 +265,21 @@ async function appendPartialFailureQuarantine(fixture, completedPackages) {
   return quarantine;
 }
 function retainedTrioControlTail(root = process.cwd()) {
-  const records = TRIO.map((key) => {
-    const files = readdirSync(join(root, CONTROLLER_RECORD_DIRECTORY)).filter((file) => file.startsWith(`clossys-${key}-`) && file.endsWith(".json"));
-    assert.equal(files.length, 1, `one retained ${key} qualification record is required`);
-    return parseStrictJson(readFileSync(join(root, CONTROLLER_RECORD_DIRECTORY, files[0]), "utf8"));
-  });
   const cohortBytes = readFileSync(join(root, TRIO_COHORT_PATH), "utf8");
+  const authorization = parseStrictJson(readFileSync(join(root, TRIO_CONTROL_TAIL_AUTHORIZATION_PATH), "utf8"));
+  const records = TRIO.map((key, index) => {
+    const path = authorization?.records?.[index]?.path;
+    assert.equal(typeof path, "string", `sealed ${key} qualification path is required`);
+    const record = parseStrictJson(readFileSync(join(root, path), "utf8"));
+    assert.equal(path, `governance/release-qualifications/clossys-${key}-${record?.candidate?.version}.json`, `sealed ${key} qualification path is required`);
+    return record;
+  });
   return {
     root,
     records,
     cohort: parseStrictJson(cohortBytes),
     cohortBytes,
-    authorization: parseStrictJson(readFileSync(join(root, TRIO_CONTROL_TAIL_AUTHORIZATION_PATH), "utf8")),
+    authorization,
   };
 }
 async function cloneRetainedTrioControlTail() {
@@ -296,9 +299,12 @@ async function clonePendingPublicationTransition({ commitTransition = true } = {
   await git(root, ["config", "user.email", "test@example.invalid"]);
   await git(root, ["config", "user.name", "Qualification Test"]);
   assert.equal((await git(root, ["rev-parse", "HEAD"])).stdout.trim(), TRIO_PUBLICATION_TRANSITION_BASE);
+  const transitionCommits = (await git(process.cwd(), ["log", "--full-history", "--diff-filter=A", "--format=%H", "HEAD", "--", TRIO_PUBLICATION_PATH])).stdout.trim().split("\n").filter(Boolean);
+  assert.equal(transitionCommits.length, 1, "one retained publication transition is required");
   for (const path of TRIO_PUBLICATION_TRANSITION_PATHS) {
     await mkdir(dirname(join(root, path)), { recursive: true });
-    await cp(join(process.cwd(), path), join(root, path));
+    const bytes = (await git(process.cwd(), ["show", `${transitionCommits[0]}:${path}`])).stdout;
+    await writeFile(join(root, path), bytes);
   }
   if (commitTransition) await commit(root, "retain exact publication transition");
   const retained = retainedTrioControlTail(root);
@@ -310,6 +316,37 @@ async function writeRetainedPartialFailureQuarantine(fixture, completedPackages 
   await writeFile(join(fixture.root, TRIO_QUARANTINE_PATH), `${JSON.stringify(quarantine, null, 2)}\n`);
   await commit(fixture.root, "retain future partial failure quarantine");
   return quarantine;
+}
+async function appendForwardTrioQualifications(fixture, { interveningPath = null, introductionExtraPath = null, corruptJoin = false } = {}) {
+  const versions = ["9.1.1", "9.1.2", "9.1.3"];
+  for (const [index, key] of TRIO.entries()) {
+    const manifestPath = join(fixture.root, `packages/${key}/package.json`);
+    const manifest = parseStrictJson(readFileSync(manifestPath, "utf8"));
+    manifest.version = versions[index];
+    await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  }
+  const reviewedCommit = await commit(fixture.root, "review future Trio candidates");
+  if (interveningPath) {
+    await writeFile(join(fixture.root, interveningPath), "intervening\n");
+    await commit(fixture.root, "intervene before qualification introduction");
+  }
+
+  const records = [];
+  for (const [index, key] of TRIO.entries()) {
+    const record = structuredClone(fixture.records[index]);
+    record.candidate.version = versions[index];
+    record.transcript.candidate.version = versions[index];
+    record.reviewedCommit = reviewedCommit;
+    record.candidateReview = { headSha: reviewedCommit, reference: "future candidate review" };
+    bindCurrentJoins(record, currentQualificationJoins(fixture.root, record.candidate, reviewedCommit));
+    if (corruptJoin && index === 0) record.candidate.packageManifestSha256 = "0".repeat(64);
+    const path = qualificationPath(fixture.root, record.candidate, reviewedCommit);
+    await writeFile(join(fixture.root, path), `${JSON.stringify(record, null, 2)}\n`);
+    records.push(record);
+  }
+  if (introductionExtraPath) await writeFile(join(fixture.root, introductionExtraPath), "unrelated\n");
+  const introductionCommit = await commit(fixture.root, "retain future Trio qualification records");
+  return { records, reviewedCommit, introductionCommit };
 }
 test("accepts the non-authorizing v2 bootstrap record offline and rejects it for prepublish", () => {
   const record = bootstrapSource();
@@ -487,19 +524,21 @@ test("Trio quarantine tail rejects malformed, reordered, next-member, cohort-dri
   await writeFile(join(fixture.root, "unrelated.txt"), "unrelated\n"); await commit(fixture.root, "unrelated fifth path");
   assert.ok(findings().includes("pr-tail"));
 });
-test("the one-time Trio control-tail authorization is exact, atomic, and cohort-bound", () => {
+test("the one-time Trio control-tail authorization is exact, atomic, and cohort-bound", async (t) => {
   const fixture = retainedTrioControlTail();
   assert.equal(fixture.authorization.baseCommit, TRIO_CONTROL_TAIL_BASE_COMMIT);
   assert.deepEqual(fixture.authorization.authorizedFiles.map((item) => item.path), TRIO_CONTROL_TAIL_PATHS);
   assert.deepEqual(validateTrioControlTailAuthorization(fixture.authorization, { root: fixture.root, head: TRIO_PUBLICATION_TRANSITION_BASE, retainedRef: TRIO_PUBLICATION_TRANSITION_BASE, trioRecords: fixture.records, cohortBytes: fixture.cohortBytes }), []);
-  for (const record of fixture.records) {
+  const retained = await cloneRetainedTrioControlTail();
+  t.after(() => rm(retained.parent, { recursive: true, force: true }));
+  for (const record of retained.records) {
     assert.deepEqual(validatePrepublicationPrTail(record, {
-      root: fixture.root,
-      trioRecords: fixture.records,
-      cohort: fixture.cohort,
-      cohortBytes: fixture.cohortBytes,
-      controlTailAuthorization: fixture.authorization,
-      publicationClosureValid: true,
+      root: retained.root,
+      head: TRIO_PUBLICATION_TRANSITION_BASE,
+      trioRecords: retained.records,
+      cohort: retained.cohort,
+      cohortBytes: retained.cohortBytes,
+      controlTailAuthorization: retained.authorization,
     }), []);
   }
 });
@@ -511,7 +550,7 @@ test("the publication transition closes the sealed tail once and permits ordinar
 
   await commit(fixture.root, "retain exact publication transition");
   assert.deepEqual(validateTrioPublicationClosure(fixture.publication, context()), []);
-  for (const record of fixture.records) assert.deepEqual(validatePrepublicationPrTail(record, { root: fixture.root, publicationClosureValid: true }), []);
+  for (const record of fixture.records) assert.deepEqual(validatePrepublicationPrTail(record, { root: fixture.root, publication: fixture.publication, publicationClosureValid: true }), []);
 
   await writeFile(join(fixture.root, "ordinary-later-change.txt"), "ordinary\n");
   await commit(fixture.root, "ordinary later evolution");
@@ -522,6 +561,100 @@ test("the publication transition closes the sealed tail once and permits ordinar
   await writeFile(publicationPath, `${retainedPublication.toString("utf8")}\n`); await commit(fixture.root, "rewrite publication record");
   await writeFile(publicationPath, retainedPublication); await commit(fixture.root, "restore publication record");
   assert.ok(validateTrioPublicationClosure(fixture.publication, context()).some((item) => item.rule === "publication-transition-record-history"));
+});
+
+test("sealed first-Trio selection remains exact when later qualification versions exist", async (t) => {
+  const fixture = await clonePendingPublicationTransition();
+  t.after(() => rm(fixture.parent, { recursive: true, force: true }));
+  const originalDigests = fixture.authorization.records.map((entry) => sha256(readFileSync(join(fixture.root, entry.path))));
+
+  for (const [index, key] of TRIO.entries()) {
+    const record = structuredClone(fixture.records[index]);
+    const version = `9.9.${index + 1}`;
+    record.candidate.version = version;
+    record.transcript.candidate.version = version;
+    refreshTranscriptDigest(record);
+    await writeFile(join(fixture.root, CONTROLLER_RECORD_DIRECTORY, `clossys-${key}-${version}.json`), `${JSON.stringify(record, null, 2)}\n`);
+  }
+  await commit(fixture.root, "retain later exact-version qualification records");
+
+  const retained = retainedTrioControlTail(fixture.root);
+  assert.deepEqual(retained.records.map((record) => record.candidate.version), ["0.1.3", "0.1.2", "0.8.21"]);
+  assert.deepEqual(retained.authorization.records.map((entry) => sha256(readFileSync(join(fixture.root, entry.path)))), originalDigests);
+  assert.deepEqual(validateTrioPublicationClosure(fixture.publication, {
+    root: fixture.root,
+    trioRecords: retained.records,
+    cohortBytes: retained.cohortBytes,
+    controlTailAuthorization: retained.authorization,
+  }), []);
+});
+
+test("post-closure qualifications enter together in one record-only child of their reviewed commit", async (t) => {
+  const fixture = await clonePendingPublicationTransition();
+  t.after(() => rm(fixture.parent, { recursive: true, force: true }));
+  const forward = await appendForwardTrioQualifications(fixture);
+  const allRecords = [...fixture.records, ...forward.records];
+
+  for (const record of fixture.records) assert.deepEqual(validatePrepublicationPrTail(record, {
+    root: fixture.root,
+    trioRecords: allRecords,
+    publication: fixture.publication,
+    publicationClosureValid: true,
+  }), []);
+  for (const record of forward.records) assert.deepEqual(validatePrepublicationPrTail(record, {
+    root: fixture.root,
+    trioRecords: allRecords,
+    publication: fixture.publication,
+    publicationClosureValid: true,
+  }), []);
+});
+
+test("post-closure qualification introduction rejects an intervening parent, an extra path, and reviewed-join drift", async (t) => {
+  for (const [options, expectedRule] of [
+    [{ interveningPath: "intervening.txt" }, "forward-record-parent"],
+    [{ introductionExtraPath: "unrelated.txt" }, "forward-record-paths"],
+    [{ corruptJoin: true }, "forward-record-join"],
+  ]) {
+    const fixture = await clonePendingPublicationTransition();
+    t.after(() => rm(fixture.parent, { recursive: true, force: true }));
+    const forward = await appendForwardTrioQualifications(fixture, options);
+    const findings = validatePrepublicationPrTail(forward.records[0], {
+      root: fixture.root,
+      trioRecords: [...fixture.records, ...forward.records],
+      publication: fixture.publication,
+      publicationClosureValid: true,
+    }).map((item) => item.rule);
+    assert.ok(findings.includes(expectedRule), `expected ${expectedRule}`);
+  }
+});
+
+test("post-closure qualification history rejects rewrite restoration and an incomplete joint record set", async (t) => {
+  const fixture = await clonePendingPublicationTransition();
+  t.after(() => rm(fixture.parent, { recursive: true, force: true }));
+  const forward = await appendForwardTrioQualifications(fixture);
+  const path = qualificationPath(fixture.root, forward.records[0].candidate, forward.reviewedCommit);
+  const retained = readFileSync(join(fixture.root, path));
+  await writeFile(join(fixture.root, path), `${retained.toString("utf8")}\n`);
+  await commit(fixture.root, "touch future qualification record");
+  await writeFile(join(fixture.root, path), retained);
+  await commit(fixture.root, "restore future qualification record");
+
+  const context = {
+    root: fixture.root,
+    publication: fixture.publication,
+    publicationClosureValid: true,
+  };
+  const touched = validatePrepublicationPrTail(forward.records[0], {
+    ...context,
+    trioRecords: [...fixture.records, ...forward.records],
+  }).map((item) => item.rule);
+  assert.ok(touched.includes("forward-record-touches"));
+
+  const incomplete = validatePrepublicationPrTail(forward.records[1], {
+    ...context,
+    trioRecords: [...fixture.records, ...forward.records.slice(0, 2)],
+  }).map((item) => item.rule);
+  assert.ok(incomplete.includes("forward-record-paths"));
 });
 
 test("publication closure rejects retained evidence rewrite and restoration", async (t) => {
