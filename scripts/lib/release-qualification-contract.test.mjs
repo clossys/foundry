@@ -56,6 +56,17 @@ test("allows only exact compatible optional peers", () => {
     assert.ok(validateReleaseQualificationContract(red).some((item) => item.rule === "peer-install"));
   }
 });
+test("accepts only a simple stable >= major or semver floor for optional peers", () => {
+  const green = input();
+  green.peerDependencies = { react: ">=18", "react-dom": ">=18.0.0" };
+  green.peerDependenciesMeta = { react: { optional: true }, "react-dom": { optional: true } };
+  green.adapter.peerInstall = { react: "18.3.1", "react-dom": "19.0.0" };
+  assert.deepEqual(validateReleaseQualificationContract(green), []);
+  for (const range of [">=18 <20", ">=18 || >=20", ">=18.0.0-beta", ">=19"]) {
+    const red = input(); red.peerDependencies = { react: range }; red.peerDependenciesMeta = { react: { optional: true } }; red.adapter.peerInstall = { react: "18.3.1" };
+    assert.ok(validateReleaseQualificationContract(red).some((item) => item.rule === "peer-install"));
+  }
+});
 test("policy package bindings are unique while same leaf scoped packages remain distinct", () => {
   const value = input();
   const second = structuredClone(entry);

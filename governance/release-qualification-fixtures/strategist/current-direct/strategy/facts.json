@@ -1,0 +1,10 @@
+[
+  {
+    "key": "active-customers",
+    "label": "Active customers",
+    "value": 3,
+    "source": "public-fixture",
+    "lastUpdatedAt": "2026-08-22",
+    "aliases": ["3 customers"]
+  }
+]

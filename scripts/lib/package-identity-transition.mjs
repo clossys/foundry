@@ -5,7 +5,10 @@ import { join, posix, relative } from "node:path";
 const SCOPE = /^@[a-z0-9][a-z0-9._-]*$/;
 const SHA256 = /^sha256:[a-f0-9]{64}$/;
 const PACKAGE_DIRECTORY = /^[a-z0-9][a-z0-9-]*$/;
-const INITIAL_PUBLICATION_PACKAGES = Object.freeze(["advisor", "starter", "controller"]);
+// This is the sealed first-publication cohort.  It is intentionally not the
+// active catalogue: later packages are reviewed additions, never a rewrite of
+// the historical Trio boundary.
+export const INITIAL_PUBLICATION_PACKAGES = Object.freeze(["advisor", "starter", "controller"]);
 const IDENTITY_TRANSITION_CONTROL_SURFACES = new Set([
   "governance/package-identity-transition.json",
   "governance/release-catalog.json",
@@ -185,6 +188,16 @@ function candidateCatalog(policy) {
   };
 }
 
+function validCandidateCatalog(catalog, policy, directories) {
+  if (!object(catalog) || catalog.schemaVersion !== 2 || catalog.defaultTarget !== policy.candidate.releaseTarget || !Array.isArray(catalog.targets) || catalog.targets.length !== 2) return false;
+  const historical = catalog.targets.find((target) => target?.id === policy.current.releaseTarget);
+  const active = catalog.targets.find((target) => target?.id === policy.candidate.releaseTarget);
+  if (!historical || !active || historical.status !== "historical" || historical.scope !== policy.current.scope || historical.registry !== policy.current.registry || historical.packages !== "all" || historical.access !== undefined) return false;
+  if (active.status !== "active" || active.scope !== policy.candidate.scope || active.registry !== policy.candidate.registry || active.access !== policy.candidate.access || !Array.isArray(active.packages) || active.packages.length < INITIAL_PUBLICATION_PACKAGES.length || new Set(active.packages).size !== active.packages.length) return false;
+  return INITIAL_PUBLICATION_PACKAGES.every((value, index) => active.packages[index] === value) &&
+    active.packages.slice(INITIAL_PUBLICATION_PACKAGES.length).every((value) => typeof value === "string" && directories.includes(value));
+}
+
 function jsonBytes(value) {
   return `${JSON.stringify(value, null, 2)}\n`;
 }
@@ -280,7 +293,7 @@ function validateCandidateStructuredState(root, policy, readFile) {
   }
 
   const catalog = JSON.parse(readFile(join(root, "governance", "release-catalog.json"), "utf8"));
-  if (!sameJson(catalog, candidateCatalog(policy))) findings.push("governance/release-catalog.json is not the complete candidate catalog");
+  if (!validCandidateCatalog(catalog, policy, directories)) findings.push("governance/release-catalog.json is not an active reviewed append-only candidate catalog with the sealed initial prefix");
   return [...new Set(findings)];
 }
 

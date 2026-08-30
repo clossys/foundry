@@ -18,7 +18,10 @@
       "packages": [
         "advisor",
         "starter",
-        "controller"
+        "controller",
+        "strategist",
+        "writer",
+        "designer"
       ]
     }
   ]
