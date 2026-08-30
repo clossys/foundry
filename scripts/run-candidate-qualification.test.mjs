@@ -41,6 +41,7 @@ test("repository Trio policy, adapters, and current-candidate fixtures bind the 
     assert.equal(entry.packageKey, key);
     assert.deepEqual([manifest.name, manifest.version], [name, version]);
     assert.equal(adapter.package, name);
+    assert.equal(adapter.retainRawCaseEvidence, key === "starter" ? true : undefined);
   }
 
   for (const state of ["satisfied", "violated", "indeterminate"]) {

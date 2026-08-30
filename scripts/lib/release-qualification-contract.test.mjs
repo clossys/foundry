@@ -6,6 +6,26 @@ const entry = { packageKey: "x", recordStem: "example-x", packageDir: "packages/
 const policy = { schemaVersion: 1, protocol: "foundry-candidate-qualification-v1", packages: { "@example/x": entry } };
 const input = () => ({ policy: structuredClone(policy), adapter: structuredClone(adapter), fixtures: Object.fromEntries(adapter.fixtures.map((name) => [name, { type: "file", symlink: false, tracked: true, size: 2 }])), manifestBins: { check: "dist/check.js" }, peerDependencies: { typescript: "~6.0.0", required: "^1.0.0" }, peerDependenciesMeta: { typescript: { optional: true } } });
 test("accepts closed required policy and fixed adapter", () => assert.deepEqual(validateReleaseQualificationContract(input()), []));
+test("raw case retention is closed to the current @clossys/starter adapter", () => {
+  const unrelated = input(); unrelated.adapter.retainRawCaseEvidence = true;
+  assert.ok(validateReleaseQualificationContract(unrelated).some((item) => item.rule === "raw-case-evidence"));
+  unrelated.adapter.retainRawCaseEvidence = false;
+  assert.ok(validateReleaseQualificationContract(unrelated).some((item) => item.rule === "raw-case-evidence"));
+  const starter = input();
+  starter.policy.packages["@clossys/starter"] = starter.policy.packages["@example/x"];
+  delete starter.policy.packages["@example/x"];
+  Object.assign(starter.policy.packages["@clossys/starter"], {
+    packageKey: "starter",
+    recordStem: "clossys-starter",
+    packageDir: "packages/starter",
+    adapterPath: "governance/release-qualification-adapters/starter/current-direct.json",
+    fixturePath: "governance/release-qualification-fixtures/starter/current-direct",
+  });
+  starter.adapter.package = "@clossys/starter";
+  assert.ok(validateReleaseQualificationContract(starter).some((item) => item.rule === "raw-case-evidence"));
+  starter.adapter.retainRawCaseEvidence = true;
+  assert.deepEqual(validateReleaseQualificationContract(starter), []);
+});
 test("accepts only data-bound literal, file, directory, and temporary consumer overlay operations", () => {
   const value = input();
   value.adapter.fixtures = ["request.json", "snapshot/snapshot.json", "overlay/package.json"];

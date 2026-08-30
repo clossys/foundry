@@ -11,7 +11,7 @@ import { assertCredentialFree, installNpmrc, runCandidateQualification, runProce
 const execFile = promisify(execFileCallback);
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");
 
-async function syntheticPackage({ mismatch = false, exports = undefined, runtimePeer = false, peerInstall = undefined } = {}) {
+async function syntheticPackage({ mismatch = false, exports = undefined, runtimePeer = false, peerInstall = undefined, rawStarter = false } = {}) {
   const root = await mkdtemp(join(tmpdir(), "foundry-runner-test-"));
   const source = join(root, "source");
   const fixturesDir = join(root, "fixtures");
@@ -19,8 +19,9 @@ async function syntheticPackage({ mismatch = false, exports = undefined, runtime
   await mkdir(source);
   await mkdir(fixturesDir);
   await mkdir(packed);
+  const packageName = rawStarter ? "@clossys/starter" : "@acme/synthetic";
   await writeFile(join(source, "package.json"), JSON.stringify({
-    name: "@acme/synthetic",
+    name: packageName,
     version: "1.0.0",
     type: "module",
     exports: exports ?? { ".": { types: "./index.d.ts", import: "./index.js" }, "./asset": "./asset.txt", "./static/*": "./static/*.txt" },
@@ -59,8 +60,8 @@ async function syntheticPackage({ mismatch = false, exports = undefined, runtime
     return [name, { path, type: "file", symlink: false, tracked: true, size: (await readFile(path)).length }];
   })));
   const policy = {
-    schemaVersion: 1, protocol: "foundry-candidate-qualification-v1", packages: { "@acme/synthetic": {
-    packageKey: "synthetic", recordStem: "acme-synthetic", packageDir: "packages/synthetic", adapterPath: "governance/release-qualification-adapters/synthetic/current-direct.json", fixturePath: "governance/release-qualification-fixtures/synthetic/current-direct", archetypes: {
+    schemaVersion: 1, protocol: "foundry-candidate-qualification-v1", packages: { [packageName]: {
+    packageKey: rawStarter ? "starter" : "synthetic", recordStem: rawStarter ? "clossys-starter" : "acme-synthetic", packageDir: rawStarter ? "packages/starter" : "packages/synthetic", adapterPath: `governance/release-qualification-adapters/${rawStarter ? "starter" : "synthetic"}/current-direct.json`, fixturePath: `governance/release-qualification-fixtures/${rawStarter ? "starter" : "synthetic"}/current-direct`, archetypes: {
       "current-direct": { status: "required" },
       "prior-minor": { status: "unsupported", reason: "not supplied" },
       "oldest-supported": { status: "unsupported", reason: "not supplied" },
@@ -71,8 +72,9 @@ async function syntheticPackage({ mismatch = false, exports = undefined, runtime
   };
   const adapter = {
     schemaVersion: 1,
-    package: "@acme/synthetic",
+    package: packageName,
     archetype: "current-direct",
+    ...(rawStarter ? { retainRawCaseEvidence: true } : {}),
     ...(peerInstall ? { peerInstall } : {}),
     bins: { "synthetic-check": 0 },
     fixtures: fixtureNames,
@@ -83,7 +85,7 @@ async function syntheticPackage({ mismatch = false, exports = undefined, runtime
     ],
     dimensionEvidence: { rollback: "restoration", duplicate: "authority" },
   };
-  return { root, source, tarball, policy, adapter, fixtures, manifestBins: { "synthetic-check": "cli.js" }, registry: { scope: "@acme", registry: "https://registry.npmjs.org/" } };
+  return { root, source, tarball, policy, adapter, fixtures, manifestBins: { "synthetic-check": "cli.js" }, registry: { scope: rawStarter ? "@clossys" : "@acme", registry: "https://registry.npmjs.org/" } };
 }
 
 test("runner isolates a packed candidate and produces a deterministic complete transcript", async (t) => {
@@ -94,7 +96,8 @@ test("runner isolates a packed candidate and produces a deterministic complete t
   const first = await runCandidateQualification(fixture);
   const second = await runCandidateQualification(fixture);
   assert.equal(first.ok, true);
-  assert.equal(first.schema, "foundry-candidate-qualification-transcript-v1");
+  assert.equal(first.schema, "foundry-candidate-qualification-transcript-v2");
+  assert.equal(first.version, 2);
   assert.deepEqual(first, second);
   assert.equal(first.coverage.lifecycleScriptsDisabled, true);
   assert.equal(first.coverage.bins, 1);
@@ -118,6 +121,28 @@ test("runner isolates a packed candidate and produces a deterministic complete t
   assert.equal(JSON.stringify(first).includes(fixture.root), false);
   const { canonicalSha256, ...canonical } = first;
   assert.equal(canonicalSha256, sha256(JSON.stringify(canonical)));
+});
+
+test("Starter v2 retains only bounded tokenized raw case commands, inputs, exits, and outputs", async (t) => {
+  const fixture = await syntheticPackage({ rawStarter: true });
+  t.after(() => rm(fixture.root, { recursive: true, force: true }));
+  const transcript = await runCandidateQualification(fixture);
+  assert.equal(transcript.ok, true);
+  assert.match(transcript.fixtureMaterializedAt, /^\d{4}-\d{2}-\d{2}T/);
+  const cases = transcript.observations.filter((item) => item.kind === "case");
+  assert.deepEqual(cases.map((item) => item.rawCaseEvidence.exitCode), [0, 1, 2]);
+  for (const item of cases) {
+    const raw = item.rawCaseEvidence;
+    assert.deepEqual(raw.argv.slice(0, 2), ["$NODE", "$TEMP/node_modules/@clossys/starter/cli.js"]);
+    assert.equal(raw.argv.some((argument) => argument.includes(fixture.root)), false);
+    assert.equal(raw.materializedInputs.length, 1);
+    assert.match(raw.materializedInputs[0].path, /^\$TEMP\/fixtures\//);
+    assert.equal(raw.materializedInputs[0].sha256, sha256(raw.materializedInputs[0].bytes));
+    assert.equal(item.stdoutSha256, sha256(raw.stdout));
+    assert.equal(item.stderrSha256, sha256(raw.stderr));
+  }
+  assert.ok(transcript.observations.filter((item) => item.kind !== "case").every((item) => !Object.hasOwn(item, "rawCaseEvidence")));
+  assert.equal(JSON.stringify(transcript).includes(fixture.root), false);
 });
 
 test("qualification refuses credential-bearing parents and npm configuration carries no credential", () => {

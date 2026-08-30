@@ -99,6 +99,46 @@ function refreshTranscriptDigest(record) {
   const transcript = structuredClone(record.transcript); delete transcript.canonicalSha256;
   record.transcript.canonicalSha256 = createHash("sha256").update(JSON.stringify(transcript)).digest("hex");
 }
+const sha256 = (value) => createHash("sha256").update(value).digest("hex");
+function rawStarterV2Record() {
+  const record = source();
+  const instant = "2026-08-29T12:00:00.000Z";
+  record.candidate.name = "@clossys/starter";
+  record.transcript.schema = "foundry-candidate-qualification-transcript-v2";
+  record.transcript.version = 2;
+  record.transcript.candidate.name = "@clossys/starter";
+  record.transcript.fixtureMaterializedAt = instant;
+  let index = 0;
+  for (const observation of record.transcript.observations) {
+    if (observation.kind !== "case") continue;
+    const bytes = `${JSON.stringify({ fixtureMaterializedAt: instant, case: index })}\n`;
+    const stdout = `${JSON.stringify({ state: observation.observedExitCode, fixtureMaterializedAt: instant })}\n`;
+    observation.stdoutSha256 = sha256(stdout);
+    observation.stderrSha256 = sha256("");
+    observation.rawCaseEvidence = {
+      argv: ["$NODE", "$TEMP/node_modules/@clossys/starter/dist/cli.js", "decide", `$TEMP/fixtures/case-${index}.json`],
+      materializedInputs: [{ path: `$TEMP/fixtures/case-${index}.json`, sha256: sha256(bytes), bytes }],
+      exitCode: observation.observedExitCode,
+      stdout,
+      stderr: "",
+    };
+    index += 1;
+  }
+  refreshTranscriptDigest(record);
+  return record;
+}
+function retimeRawTranscript(transcript, next) {
+  const prior = transcript.fixtureMaterializedAt;
+  const changed = JSON.parse(JSON.stringify(transcript).split(prior).join(next));
+  for (const observation of changed.observations.filter((item) => item.kind === "case")) {
+    for (const input of observation.rawCaseEvidence.materializedInputs) input.sha256 = sha256(input.bytes);
+    observation.stdoutSha256 = sha256(observation.rawCaseEvidence.stdout);
+    observation.stderrSha256 = sha256(observation.rawCaseEvidence.stderr);
+  }
+  delete changed.canonicalSha256;
+  changed.canonicalSha256 = sha256(JSON.stringify(changed));
+  return changed;
+}
 async function syntheticRetainedRecord() {
   const root = await mkdtemp(join(tmpdir(), "qualification-history-"));
   await git(root, ["init"]); await git(root, ["config", "user.email", "test@example.invalid"]); await git(root, ["config", "user.name", "Qualification Test"]);
@@ -146,6 +186,48 @@ test("accepts the non-authorizing v2 bootstrap record offline and rejects it for
   const record = bootstrapSource();
   assert.deepEqual(rules(record), []);
   assert.ok(rules(record, { mode: "prepublish" }).includes("bootstrap-timing"));
+});
+test("accepts immutable v1 history and closed v2 Starter raw 0/1/2 evidence", () => {
+  assert.deepEqual(rules(source()), []);
+  const record = rawStarterV2Record();
+  assert.deepEqual(rules(record), []);
+  assert.deepEqual([...new Set(record.transcript.observations.filter((item) => item.kind === "case").map((item) => item.rawCaseEvidence.exitCode))].sort(), [0, 1, 2]);
+});
+test("v2 raw evidence fails closed on missing, extra, leaking, malformed, or hash-mismatched evidence", () => {
+  const mutations = [
+    (record) => { delete record.transcript.observations.find((item) => item.kind === "case").rawCaseEvidence; },
+    (record) => { record.transcript.observations.find((item) => item.kind === "help").rawCaseEvidence = {}; },
+    (record) => { const item = record.transcript.observations.find((value) => value.kind === "case"); item.rawCaseEvidence.stdout = "/tmp/foundry-candidate-secret/output\n"; item.stdoutSha256 = sha256(item.rawCaseEvidence.stdout); },
+    (record) => { record.transcript.observations.find((item) => item.kind === "case").rawCaseEvidence.materializedInputs[0].sha256 = "0".repeat(64); },
+    (record) => { record.transcript.observations.find((item) => item.kind === "case").rawCaseEvidence.argv.push("--extra", "argument"); },
+    (record) => { const item = record.transcript.observations.find((value) => value.kind === "case"); item.rawCaseEvidence.stdout = "x".repeat(65_537); item.stdoutSha256 = sha256(item.rawCaseEvidence.stdout); },
+    (record) => { record.transcript.observations.find((item) => item.kind === "case").rawCaseEvidence.materializedInputs[0].path = "$TEMP/fixtures/unreferenced.json"; },
+    (record) => { record.transcript.observations = record.transcript.observations.filter((item) => !(item.kind === "case" && item.observedExitCode === 2)); },
+    (record) => { record.transcript.fixtureMaterializedAt = "2026-08-29T12:00:00Z"; },
+  ];
+  for (const mutate of mutations) {
+    const record = rawStarterV2Record(); mutate(record); refreshTranscriptDigest(record);
+    assert.ok(rules(record).some((rule) => rule.startsWith("raw-case") || rule === "observations" || rule === "unknown-field"));
+  }
+  const unrelated = rawStarterV2Record();
+  unrelated.candidate.name = "@clossys/controller"; unrelated.transcript.candidate.name = "@clossys/controller"; delete unrelated.transcript.fixtureMaterializedAt; refreshTranscriptDigest(unrelated);
+  assert.ok(rules(unrelated).includes("raw-case-scope"));
+});
+test("fresh v2 replay validates both transcripts and normalizes only the exact fixture instant", () => {
+  const record = rawStarterV2Record();
+  const fresh = retimeRawTranscript(record.transcript, "2026-08-29T12:01:00.000Z");
+  assert.equal(rules(record, { freshTranscript: fresh }).some((rule) => rule.startsWith("fresh-transcript")), false);
+
+  const changed = structuredClone(fresh);
+  const input = changed.observations.find((item) => item.kind === "case").rawCaseEvidence.materializedInputs[0];
+  input.bytes = input.bytes.replace('"case":0', '"case":9'); input.sha256 = sha256(input.bytes);
+  delete changed.canonicalSha256; changed.canonicalSha256 = sha256(JSON.stringify(changed));
+  assert.ok(rules(record, { freshTranscript: changed }).includes("fresh-transcript"));
+
+  const invalid = structuredClone(fresh);
+  invalid.observations.find((item) => item.kind === "case").rawCaseEvidence.materializedInputs[0].sha256 = "0".repeat(64);
+  delete invalid.canonicalSha256; invalid.canonicalSha256 = sha256(JSON.stringify(invalid));
+  assert.ok(rules(record, { freshTranscript: invalid }).includes("fresh-transcript-raw-case-input"));
 });
 test("rejects transcript, candidate join, unknown-field, and findings drift", () => {
   const transcript = source(); transcript.transcript.canonicalSha256 = "0".repeat(64);

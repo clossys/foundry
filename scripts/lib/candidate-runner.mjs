@@ -160,6 +160,54 @@ function observation(root, id, kind, expectedExitCode, result) {
   };
 }
 
+const RAW_CASE_MAX_FILES = 64;
+const RAW_CASE_MAX_FILE_BYTES = 65_536;
+const RAW_CASE_MAX_TOTAL_BYTES = 524_288;
+const RAW_CASE_MAX_STREAM_BYTES = 65_536;
+
+function tokenizedRaw(root, value) {
+  const output = String(value).split(root).join("$TEMP").split(process.execPath).join("$NODE");
+  if (output.includes(root) || output.includes(process.execPath)) throw new Error("raw case evidence contains an untokenized runtime path");
+  return output;
+}
+
+async function materializedFiles(root, target, output = []) {
+  const state = await lstat(target);
+  if (state.isSymbolicLink()) throw new Error("raw case evidence refuses symbolic-link inputs");
+  if (state.isDirectory()) {
+    for (const entry of (await readdir(target)).sort()) await materializedFiles(root, join(target, entry), output);
+    return output;
+  }
+  if (!state.isFile()) throw new Error("raw case evidence accepts only regular-file inputs");
+  const bytes = await readFile(target);
+  if (bytes.length < 1 || bytes.length > RAW_CASE_MAX_FILE_BYTES) throw new Error("raw case evidence input is outside the bounded file size");
+  const decoded = bytes.toString("utf8");
+  if (!Buffer.from(decoded, "utf8").equals(bytes) || decoded.includes("\0")) throw new Error("raw case evidence inputs must be bounded UTF-8 text");
+  output.push({ path: tokenizedRaw(root, target), sha256: hash("sha256", bytes), bytes: tokenizedRaw(root, decoded) });
+  return output;
+}
+
+async function rawCaseEvidence(root, target, args, descriptors, result) {
+  const inputs = [];
+  for (const descriptor of descriptors) {
+    if (typeof descriptor === "string") await materializedFiles(root, join(root, "fixtures", descriptor), inputs);
+    else if (typeof descriptor?.fixture === "string") await materializedFiles(root, join(root, "fixtures", descriptor.fixture), inputs);
+    else if (typeof descriptor?.fixtureDirectory === "string") await materializedFiles(root, join(root, "fixtures", descriptor.fixtureDirectory), inputs);
+  }
+  inputs.sort((left, right) => left.path.localeCompare(right.path));
+  if (inputs.length < 1 || inputs.length > RAW_CASE_MAX_FILES || new Set(inputs.map((item) => item.path)).size !== inputs.length || inputs.reduce((total, item) => total + Buffer.byteLength(item.bytes), 0) > RAW_CASE_MAX_TOTAL_BYTES) throw new Error("raw case evidence inputs exceed the closed bounds");
+  const stdout = tokenizedRaw(root, result.stdout);
+  const stderr = tokenizedRaw(root, result.stderr);
+  if (Buffer.byteLength(stdout) > RAW_CASE_MAX_STREAM_BYTES || Buffer.byteLength(stderr) > RAW_CASE_MAX_STREAM_BYTES || stdout.includes("\0") || stderr.includes("\0")) throw new Error("raw case evidence output exceeds the closed bounds");
+  return {
+    argv: ["$NODE", tokenizedRaw(root, target), ...args.map((argument) => tokenizedRaw(root, argument))],
+    materializedInputs: inputs,
+    exitCode: result.exitCode,
+    stdout,
+    stderr,
+  };
+}
+
 async function containedRegularFile(root, target) {
   const resolved = resolve(root, target);
   if (!resolved.startsWith(`${root}${sep}`)) return null;
@@ -282,9 +330,10 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
   if (!sameBinMap(packedBins, manifestBins) || !sameBinKeys(packedBins, adapter.bins)) throw new Error("adapter must probe exactly the packed manifest bin map");
 
   const packagePolicy = policy.packages[adapter.package];
+  const fixtureMaterializedAt = adapter.retainRawCaseEvidence === true ? new Date().toISOString() : null;
   const transcript = {
-    schema: "foundry-candidate-qualification-transcript-v1",
-    version: 1,
+    schema: "foundry-candidate-qualification-transcript-v2",
+    version: 2,
     candidate: { name: manifest.name, version: manifest.version },
     archetype: adapter.archetype,
     tarball: tarballDigests,
@@ -303,9 +352,10 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
     mismatches: [],
     ok: false,
   };
+  if (fixtureMaterializedAt) transcript.fixtureMaterializedAt = fixtureMaterializedAt;
   try {
     await mkdir(join(root, "fixtures"));
-    const variables = { CANDIDATE_NAME: manifest.name, CANDIDATE_VERSION: manifest.version, CANDIDATE_INTEGRITY: npmIntegrity(tarballDigests.sha512), NOW: new Date().toISOString() };
+    const variables = { CANDIDATE_NAME: manifest.name, CANDIDATE_VERSION: manifest.version, CANDIDATE_INTEGRITY: npmIntegrity(tarballDigests.sha512), NOW: fixtureMaterializedAt ?? new Date().toISOString() };
     for (const fixture of adapter.fixtures) {
       const target = join(root, "fixtures", fixture);
       await mkdir(dirname(target), { recursive: true });
@@ -377,7 +427,9 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
       const result = targets[item.bin]
         ? await runProcess(process.execPath, [targets[item.bin], ...args], { cwd: root, env: sanitizedEnv(root), timeout: timeoutMs })
         : { exitCode: null, signal: null, launchError: true, stdout: "", stderr: "missing contained bin target" };
-      transcript.observations.push(observation(root, `case:${item.id}`, "case", item.exitCode, result));
+      const observed = observation(root, `case:${item.id}`, "case", item.exitCode, result);
+      if (adapter.retainRawCaseEvidence === true && targets[item.bin]) observed.rawCaseEvidence = await rawCaseEvidence(root, targets[item.bin], args, item.fixtureArgs ?? item.args, result);
+      transcript.observations.push(observed);
       if (result.exitCode !== item.exitCode || result.signal || result.launchError) transcript.mismatches.push(`case:${item.id}`);
     }
 
