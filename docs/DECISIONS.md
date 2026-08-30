@@ -1045,15 +1045,15 @@ trusted-publisher provenance-bearing forward releases. These producer facts
 create no consumer adoption, independent grounding, closure, or
 consumer-outcome evidence.
 
-The remaining critical path is deliberately narrow:
+The completed W1E evidence is deliberately narrow:
 
 1. Retain the completed W1E [#594](https://github.com/clossys/platform/issues/594)
    evidence for the owner-present first identities and the current
    provenance-bearing Advisor 0.1.5, Starter 0.1.4, and Controller 0.8.23
    releases, including anonymous public access and served-digest parity.
-2. Confirm, without recording a credential or token value, that every current
-   Trio package's Publishing access requires 2FA and disallows traditional
-   publish tokens. This is the remaining W1E provider control.
+2. Provider state was verified without recording a credential or token value:
+   every current Trio package's Publishing access requires 2FA and disallows
+   traditional publish tokens.
 3. Treat the completed minimal credentialless Trio smoke as producer evidence
    only. Consumer adoption continues in consumer-owned changes with exact
    pins, lockfile evidence, and local checks.

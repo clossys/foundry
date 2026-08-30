@@ -96,11 +96,11 @@ entry, candidate tarball, anonymous served bytes, and publisher provenance.
 Do not add a token or a private registry mapping for `@clossys`. The canonical
 source tuple is declared once in [`package-scope.json`](package-scope.json).
 The original first identities were owner-present publications; the current Trio
-versions are the later trusted-publisher releases. The remaining provider-side
-W1E control is value-free confirmation that each package's Publishing access
-requires 2FA and disallows traditional publish tokens. Publication or
-installation does not prove consumer adoption, independent grounding, or
-closure; those require separate consumer-owned evidence.
+versions are the later trusted-publisher releases. Provider state is now
+value-free verified for each current Trio member: Publishing access requires
+2FA and disallows traditional publish tokens. Publication or installation does
+not prove consumer adoption, independent grounding, or closure; those require
+separate consumer-owned evidence.
 
 ### Historical `@vespeneventures` packages
 

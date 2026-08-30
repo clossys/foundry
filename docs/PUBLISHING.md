@@ -459,10 +459,10 @@ parity. The workflow uses Node `>=22.14` and npm `>=11.5.1`, grants
 `id-token: write` only to the upload job, runs in the protected environment,
 and has no npm or GitHub publish token environment.
 
-The remaining W1E provider control is value-free verification that each
-current Trio package's Publishing access is **Require two-factor authentication
-and disallow tokens**. That setting removes the alternate granular
-bypass-2FA token path after the trusted replacement has proved it works.
+Provider state was value-free verified for each current Trio package:
+Publishing access is **Require two-factor authentication and disallow tokens**.
+That setting removes the alternate granular bypass-2FA token path after the
+trusted replacement has proved it works.
 
 ### Why the name-collision check runs first, always
 
@@ -539,9 +539,9 @@ evidence or permission to upload.
 
 W1E, not W1D, owns the first `@clossys` public npm publications. The
 owner-present first identities and the provenance-bearing current Trio releases
-are public and anonymously verified. The remaining provider-side W1E control
-is verification of the package-level token-disallow setting. For each selected
-package, W1E requires:
+are public and anonymously verified. Every current Trio package's
+token-disallow setting is also value-free verified. For each selected package,
+W1E requires:
 
 1. run FULL public-safety and package preflight against the exact candidate;
 2. retain exact candidate qualification, review, and tarball digest joins;
@@ -567,6 +567,6 @@ for the capability and wiring ledger.
 | Thing | Where | Notes |
 | --- | --- | --- |
 | Denylist | `~/.config/public-safety/denylist-foundry.json` locally; `PUBLIC_SAFETY_DENYLIST_B64` repository secret in CI | Never committed here — it names exactly what must not be public. Specific to this repository — never reuse a denylist file written for a different project. |
-| W1E publish trust | Outside the W1D tree | Trusted publishing and the protected `npm-publish` path have proved the current Trio releases. The remaining value-free provider check is the package-level token-disallow setting. No publish token or value is recorded here. |
+| W1E publish trust | Outside the W1D tree | Trusted publishing and the protected `npm-publish` path have proved the current Trio releases. Value-free provider evidence confirms each package-level token-disallow setting. No publish token or value is recorded here. |
 | Public npm consumer read | None | Current `@clossys` reads are anonymous. A consumer token or private-registry mapping is neither required nor supported. |
 | Predecessor GitHub Packages credentials | Historical consumer environments only | They explain immutable `@vespeneventures` evidence and must not be copied into current `@clossys` instructions or used as a fallback lane. |
