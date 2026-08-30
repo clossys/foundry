@@ -322,11 +322,11 @@ jobs:
   # directory, the count of dist-path invocation sites across package.json,
   # scripts/ and .github/workflows/, and the lifecycle contract's status.
   #
-  # Same shallow-checkout shape as the gates above and no build needed: it reads
-  # the tree as text and never imports a package it grades. That independence is
-  # deliberate -- a gate that had to build the packages it measures could not
-  # report on one whose build is broken, which is exactly when the report
-  # matters.
+  # No build is needed: it reads the tree as text and never imports a package it
+  # grades. It does need full Git history because current-scope publication is
+  # derived only after the immutable publication and qualification introductions
+  # are joined. Build independence still lets this gate report when a package
+  # build itself is broken.
   #
   # NOT added to `main-required-checks` by this change, same as the jobs above: a
   # status context with no reporting history wedges a repository if it lands
@@ -336,6 +336,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          # Published state now joins the immutable first-publication record
+          # to its exact introduction and retained qualification history.
+          # A shallow checkout cannot prove those history invariants.
+          fetch-depth: 0
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 20

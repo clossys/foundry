@@ -300,7 +300,10 @@ registry. The source tree contains nineteen packages, but the active release
 target authorizes exactly `advisor`, `starter`, and `controller`, in that
 order. A later package requires a separately reviewed catalogue expansion.
 This is a source-state declaration only. No `@clossys` package is published
-or supported for installation during W1D.
+or supported for installation during W1D. W1E has since published and
+anonymously verified the first Trio identities: Advisor 0.1.3, Starter 0.1.2,
+and Controller 0.8.21. Those owner-present releases do not yet carry npm
+trusted-publisher/OIDC provenance.
 
 The publish workflow remains reviewable scaffolding, but its upload job is
 disabled and read-only. Neither a push nor a manual dispatch can publish from
@@ -369,8 +372,10 @@ immutable `clossys-npmjs-trio` cohort record by raw-byte SHA-256, exact public
 registry tuple, and each candidate's SHA-1/SHA-256/SHA-512 tarball tuple. A
 partial attempt is not silently retried as a cohort: it must be recorded in
 the immutable quarantine record with the completed ordered prefix and next
-failed member. These are future-only contracts; no cohort or qualification
-record is fabricated until exact candidate bytes and review evidence exist.
+failed member. The retained cohort and qualification records now bind the
+exact first Trio identities and their anonymously served bytes. They prove
+publication and public access only; they do not prove consumer adoption,
+independent grounding, or closure.
 
 The retained Trio records authorize one sealed control-tail correction from
 protected base `9760d6b63ce9347aa528b5ba3625b924c792f9a2`. Its immutable authorization
@@ -437,16 +442,16 @@ checks are retained only for immutable predecessor evidence; W1E must prove
 the corresponding public npm namespace facts for `@clossys` before enabling
 the new lane.
 
-### Installing during W1D
+### Installing after the first W1E cohort
 
-There is no supported new-namespace install yet. The source manifests are
-prepared for `@clossys` on public npm, but W1D deliberately publishes nothing.
-An install command becomes current guidance only after W1E records the exact
-registry-served identity, digest, and public-access result.
+The exact first Trio identities are supported through ordinary credential-free
+public npm resolution: Advisor 0.1.3, Starter 0.1.2, and Controller 0.8.21.
+Their registry-served identities, digests, and anonymous public access have
+been verified. No npm trusted-publisher/OIDC provenance has been established
+for these owner-present first releases.
 
-No npm token belongs in a consumer `.npmrc` for a public package. The expected
-post-W1E shape is ordinary credential-free npm resolution, but the repository
-must not claim that path works before the registry does.
+No npm token belongs in a consumer `.npmrc` for a public package. Public npm
+resolution is credential-free; publication trust remains producer-only.
 
 ### Public access and parity
 
@@ -501,10 +506,10 @@ evidence or permission to upload.
 
 ## 8. W1E publication and installation boundary
 
-W1E, not W1D, owns the first `@clossys` public npm publications. First
-identities use the owner-present interactive handoff above. Only after the
-complete Trio is public and verified may W1E enable npm trusted publishing
-through a separately reviewed change. For each selected package, W1E must:
+W1E, not W1D, owns the first `@clossys` public npm publications. The
+owner-present first identities are now public and anonymously verified. npm
+trusted publishing remains a separate, not-yet-proven change. For each
+selected package, W1E requires:
 
 1. run FULL public-safety and package preflight against the exact candidate;
 2. retain exact candidate qualification, review, and tarball digest joins;

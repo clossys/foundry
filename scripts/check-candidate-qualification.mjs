@@ -1,8 +1,9 @@
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { readFileSync, readdirSync } from "node:fs";
-import { currentQualificationJoins, parseStrictJson, qualificationPath, qualificationRecordHistory, validateCandidateQualification, validatePrepublicationPrTail } from "./lib/candidate-qualification.mjs";
+import { currentQualificationJoins, parseStrictJson, qualificationPath, qualificationRecordHistory, validateCandidateQualification, validatePrepublicationPrTail, validateTrioPublicationClosure } from "./lib/candidate-qualification.mjs";
 import { loadTransitionPolicy } from "./lib/package-identity-transition.mjs";
+import { TRIO_PUBLICATION_PATH, validateTrioFirstPublication } from "./lib/release-publication-cohort.mjs";
 import { TRIO_COHORT_PATH, TRIO_QUARANTINE_PATH, validateTrioQualificationState } from "./lib/release-qualification-cohort.mjs";
 import { TRIO_CONTROL_TAIL_AUTHORIZATION_PATH } from "./lib/release-qualification-trio.mjs";
 
@@ -15,6 +16,8 @@ function immutableIntroducedBytes(path) {
   const introduced = execFileSync("git", ["show", `${commits[0]}:${path}`], { encoding: "utf8" });
   const retained = readFileSync(path, "utf8");
   if (sha256(introduced) !== sha256(retained)) throw new Error("retained bytes differ from their introduction blob");
+  const laterTouches = execFileSync("git", ["log", "--full-history", "--format=%H", `${commits[0]}..HEAD`, "--", path], { encoding: "utf8" }).trim().split("\n").filter(Boolean);
+  if (laterTouches.length > 0) throw new Error("retained path was touched after its introduction");
 }
 function historicalRecord(record) {
   return sourceIdentity.scope === transition.candidate.scope &&
@@ -40,6 +43,9 @@ catch (error) { if (error?.code !== "ENOENT") { console.error("Cannot read " + T
 let controlTailAuthorization = null;
 try { controlTailAuthorization = { path: TRIO_CONTROL_TAIL_AUTHORIZATION_PATH, bytes: readFileSync(TRIO_CONTROL_TAIL_AUTHORIZATION_PATH, "utf8"), value: parseStrictJson(readFileSync(TRIO_CONTROL_TAIL_AUTHORIZATION_PATH, "utf8")) }; }
 catch (error) { if (error?.code !== "ENOENT") { console.error("Cannot read " + TRIO_CONTROL_TAIL_AUTHORIZATION_PATH + ": " + (error instanceof Error ? error.message : "unknown error")); failed = true; } }
+let publication = null;
+try { publication = { path: TRIO_PUBLICATION_PATH, bytes: readFileSync(TRIO_PUBLICATION_PATH, "utf8"), value: parseStrictJson(readFileSync(TRIO_PUBLICATION_PATH, "utf8")) }; }
+catch (error) { console.error("Cannot read " + TRIO_PUBLICATION_PATH + ": " + (error instanceof Error ? error.message : "unknown error")); failed = true; }
 const recordFindings = new Map();
 for (const { path, record } of records) {
   try {
@@ -60,6 +66,13 @@ const recordBytes = new Map(records.map((item) => [item.path, item.bytes]));
 const trioFindings = validateTrioQualificationState({ cohort: cohort?.value, cohortBytes: cohort?.bytes, quarantine: quarantine?.value, records: recordMap, recordBytes, validatedRecordPaths });
 for (const item of trioFindings) console.error("[" + item.rule + "] " + (cohort?.path ?? quarantine?.path ?? TRIO_COHORT_PATH) + ": " + item.message);
 failed ||= trioFindings.length > 0;
+const publicationFindings = publication ? validateTrioFirstPublication(publication.value, { cohort: cohort?.value, cohortBytes: cohort?.bytes, records: recordMap, recordBytes, validatedRecordPaths }) : [];
+for (const item of publicationFindings) console.error("[" + item.rule + "] " + TRIO_PUBLICATION_PATH + ": " + item.message);
+failed ||= publicationFindings.length > 0;
+const trioRecords = records.map((item) => item.record).filter((record) => record?.timing === "pre-publication" && /^@clossys\/(advisor|starter|controller)$/.test(record?.candidate?.name ?? ""));
+const publicationClosureFindings = publication ? validateTrioPublicationClosure(publication.value, { trioRecords, cohortBytes: cohort?.bytes, controlTailAuthorization: controlTailAuthorization?.value }) : [];
+for (const item of publicationClosureFindings) console.error("[" + item.rule + "] " + TRIO_PUBLICATION_PATH + ": " + item.message);
+failed ||= publicationClosureFindings.length > 0;
 if (cohort) {
   try { immutableIntroducedBytes(cohort.path); } catch (error) { console.error("[trio-cohort-history] " + cohort.path + ": " + error.message); failed = true; }
 }
@@ -69,10 +82,12 @@ if (quarantine) {
 if (controlTailAuthorization) {
   try { immutableIntroducedBytes(controlTailAuthorization.path); } catch (error) { console.error("[trio-control-tail-history] " + controlTailAuthorization.path + ": " + error.message); failed = true; }
 }
-const trioRecords = records.map((item) => item.record).filter((record) => record?.timing === "pre-publication" && /^@clossys\/(advisor|starter|controller)$/.test(record?.candidate?.name ?? ""));
+if (publication && publicationClosureFindings.length > 0) {
+  try { immutableIntroducedBytes(publication.path); } catch (error) { console.error("[trio-publication-history] " + publication.path + ": " + error.message); failed = true; }
+}
 for (const { path, record } of records) {
   const findings = recordFindings.get(path) ?? [];
-  if (record.timing === "pre-publication" && record.candidate?.name?.startsWith("@clossys/")) findings.push(...validatePrepublicationPrTail(record, { trioRecords, cohort: cohort?.value, cohortBytes: cohort?.bytes, quarantine: quarantine?.value, controlTailAuthorization: controlTailAuthorization?.value }));
+  if (record.timing === "pre-publication" && record.candidate?.name?.startsWith("@clossys/")) findings.push(...validatePrepublicationPrTail(record, { trioRecords, cohort: cohort?.value, cohortBytes: cohort?.bytes, quarantine: quarantine?.value, controlTailAuthorization: controlTailAuthorization?.value, publicationClosureValid: publicationClosureFindings.length === 0 }));
   for (const finding of findings) console.error("[" + finding.rule + "] " + path + ": " + finding.message);
   failed ||= findings.length > 0;
 }

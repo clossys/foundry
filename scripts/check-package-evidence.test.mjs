@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -13,7 +13,9 @@ import {
   STATES,
   evaluatePrograms,
   isFailureFinding,
+  packageAuthenticStarterQualificationSite,
   readLifecycleStatuses,
+  readValidatedPublishedPackages,
   readWorkspacePackages,
   renderLifecyclePositionTable,
   replaceLifecyclePositionTable,
@@ -37,7 +39,7 @@ const P = "@clossys/thing";
 // free of a rule they are not about.
 function grade(
   entry,
-  { sites = [], bins = [], status = "published", inWorkspace = true, manifestBins = ["thing-check"], workspaceScope = "@clossys" } = {},
+  { sites = [], bins = [], status = "published", inWorkspace = true, manifestBins = ["thing-check"], workspaceScope = "@clossys", publication = true } = {},
 ) {
   return evaluatePrograms({
     contract: {
@@ -49,6 +51,7 @@ function grade(
     workspacePackages: new Set(inWorkspace ? [P] : []),
     workspaceBins: new Map([[P, manifestBins]]),
     workspaceScope,
+    publishedPackages: new Set(publication ? [P] : []),
   });
 }
 
@@ -64,12 +67,45 @@ test("the ladder is ordered and its derivable states are a prefix of it", () => 
   assert.equal(DERIVABLE_STATES.has("closed"), false);
 });
 
+test("current-scope publication requires the exact validated first-publication record", () => {
+  const withoutPublication = grade(
+    { name: P, state: "published", stagedBy: { run: "https://example/run/1", defectOrigin: "injected", defect: "the installed gate observed one real fixture defect", control: "the matched control passed through the same installed gate" } },
+    { sites: ["fixture:1"], publication: false },
+  );
+  assert.ok(rules(withoutPublication).includes("state-ahead-of-evidence"));
+  assert.deepEqual([...readValidatedPublishedPackages(repoRoot)].sort(), ["@clossys/advisor", "@clossys/controller", "@clossys/starter"]);
+});
+
 test("executable tooling is explicit and stays outside the role-package inference", () => {
   assert.deepEqual([...PACKAGE_CATEGORIES].sort(), ["executable-tooling", "role"]);
   const tooling = grade({ name: P, category: "executable-tooling", state: "implemented" });
   assert.deepEqual(rules(tooling), []);
   assert.equal(tooling.results[0].category, "executable-tooling");
   assert.equal(rules(grade({ name: P, category: "remote-action", state: "implemented" })).includes("unknown-package-category"), true);
+});
+
+test("only the exact validated package-authentic Starter qualification earns a staging site", () => {
+  const adapterBytes = readFileSync(join(repoRoot, "governance/release-qualification-adapters/starter/current-direct.json"), "utf8");
+  const record = JSON.parse(readFileSync(join(repoRoot, "governance/release-qualifications/clossys-starter-0.1.2.json"), "utf8"));
+  const input = { packageName: "@clossys/starter", manifestVersion: "0.1.2", adapterBytes, record };
+  assert.equal(
+    packageAuthenticStarterQualificationSite(input),
+    "governance/release-qualifications/clossys-starter-0.1.2.json#transcript:current-direct",
+  );
+
+  assert.equal(packageAuthenticStarterQualificationSite({ ...input, packageName: "@clossys/advisor" }), null);
+  assert.equal(packageAuthenticStarterQualificationSite({ ...input, manifestVersion: "0.1.1" }), null);
+  assert.equal(packageAuthenticStarterQualificationSite({ ...input, adapterBytes: adapterBytes.replace('"current-direct"', '"prior-minor"') }), null);
+
+  const declarationOnly = structuredClone(record);
+  declarationOnly.transcript.observations = declarationOnly.transcript.observations.filter((item) => item.kind !== "case");
+  assert.equal(packageAuthenticStarterQualificationSite({ ...input, record: declarationOnly }), null);
+
+  const forcedRed = structuredClone(record);
+  const violated = forcedRed.transcript.observations.find((item) => item.id === "case:activation-violated");
+  violated.observedExitCode = 0;
+  violated.rawCaseEvidence.exitCode = 0;
+  assert.equal(packageAuthenticStarterQualificationSite({ ...input, record: forcedRed }), null);
 });
 
 test("a published package with no invocation site and no gap is a violation", () => {
