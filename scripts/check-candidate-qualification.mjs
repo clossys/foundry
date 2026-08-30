@@ -4,6 +4,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { currentQualificationJoins, parseStrictJson, qualificationPath, qualificationRecordHistory, validateCandidateQualification, validatePrepublicationPrTail } from "./lib/candidate-qualification.mjs";
 import { loadTransitionPolicy } from "./lib/package-identity-transition.mjs";
 import { TRIO_COHORT_PATH, TRIO_QUARANTINE_PATH, validateTrioQualificationState } from "./lib/release-qualification-cohort.mjs";
+import { TRIO_CONTROL_TAIL_AUTHORIZATION_PATH } from "./lib/release-qualification-trio.mjs";
 
 const transition = loadTransitionPolicy("governance/package-identity-transition.json");
 const sourceIdentity = JSON.parse(readFileSync("package-scope.json", "utf8"));
@@ -36,6 +37,9 @@ catch (error) { if (error?.code !== "ENOENT") { console.error("Cannot read " + T
 let quarantine = null;
 try { quarantine = { path: TRIO_QUARANTINE_PATH, bytes: readFileSync(TRIO_QUARANTINE_PATH, "utf8"), value: parseStrictJson(readFileSync(TRIO_QUARANTINE_PATH, "utf8")) }; }
 catch (error) { if (error?.code !== "ENOENT") { console.error("Cannot read " + TRIO_QUARANTINE_PATH + ": " + (error instanceof Error ? error.message : "unknown error")); failed = true; } }
+let controlTailAuthorization = null;
+try { controlTailAuthorization = { path: TRIO_CONTROL_TAIL_AUTHORIZATION_PATH, bytes: readFileSync(TRIO_CONTROL_TAIL_AUTHORIZATION_PATH, "utf8"), value: parseStrictJson(readFileSync(TRIO_CONTROL_TAIL_AUTHORIZATION_PATH, "utf8")) }; }
+catch (error) { if (error?.code !== "ENOENT") { console.error("Cannot read " + TRIO_CONTROL_TAIL_AUTHORIZATION_PATH + ": " + (error instanceof Error ? error.message : "unknown error")); failed = true; } }
 const recordFindings = new Map();
 for (const { path, record } of records) {
   try {
@@ -62,10 +66,13 @@ if (cohort) {
 if (quarantine) {
   try { immutableIntroducedBytes(quarantine.path); } catch (error) { console.error("[trio-quarantine-history] " + quarantine.path + ": " + error.message); failed = true; }
 }
+if (controlTailAuthorization) {
+  try { immutableIntroducedBytes(controlTailAuthorization.path); } catch (error) { console.error("[trio-control-tail-history] " + controlTailAuthorization.path + ": " + error.message); failed = true; }
+}
 const trioRecords = records.map((item) => item.record).filter((record) => record?.timing === "pre-publication" && /^@clossys\/(advisor|starter|controller)$/.test(record?.candidate?.name ?? ""));
 for (const { path, record } of records) {
   const findings = recordFindings.get(path) ?? [];
-  if (record.timing === "pre-publication" && record.candidate?.name?.startsWith("@clossys/")) findings.push(...validatePrepublicationPrTail(record, { trioRecords, cohort: cohort?.value }));
+  if (record.timing === "pre-publication" && record.candidate?.name?.startsWith("@clossys/")) findings.push(...validatePrepublicationPrTail(record, { trioRecords, cohort: cohort?.value, cohortBytes: cohort?.bytes, quarantine: quarantine?.value, controlTailAuthorization: controlTailAuthorization?.value }));
   for (const finding of findings) console.error("[" + finding.rule + "] " + path + ": " + finding.message);
   failed ||= findings.length > 0;
 }
