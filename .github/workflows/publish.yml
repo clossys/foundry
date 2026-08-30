@@ -439,39 +439,14 @@ jobs:
           # keeps provenance a fail-closed publication requirement.
           npm publish "$TARBALL" --provenance --access public --ignore-scripts --registry "$REGISTRY"
 
-      - name: Fetch and compare published tarball
-        working-directory: packages/${{ matrix.package }}
+      - name: Verify anonymous public npm visibility and exact bytes
         env:
+          PKG: ${{ matrix.package }}
+          PUBLISH_RELEASE_TARGET: ${{ inputs.release_target }}
           EXPECTED_TARBALL: ${{ runner.temp }}/qualification/${{ matrix.package }}/candidate.tgz
-          REGISTRY: ${{ steps.scope.outputs.registry }}
         run: |
           set -euo pipefail
-          package_name="$(node -p "require('./package.json').name")"
-          package_version="$(node -p "require('./package.json').version")"
-          destination="$RUNNER_TEMP/published"
-          mkdir -p "$destination"
-          for attempt in 1 2 3 4 5; do
-            if output="$(npm pack "${package_name}@${package_version}" --ignore-scripts --registry "$REGISTRY" --pack-destination "$destination" 2>&1)"; then
-              printf '%s\n' "$output"
-              break
-            fi
-            printf '%s\n' "$output" >&2
-            if [ "$attempt" = 5 ]; then
-              echo "::error title=Published package unavailable::Could not fetch ${package_name}@${package_version} after 5 attempts."
-              exit 1
-            fi
-            sleep 3
-          done
-          published="$(find "$destination" -maxdepth 1 -type f -name '*.tgz' -print -quit)"
-          [ -n "$published" ] || { echo '::error title=Missing registry artifact::npm pack returned no tarball.'; exit 1; }
-          for algorithm in sha1 sha256 sha512; do
-            expected="$(${algorithm}sum "$EXPECTED_TARBALL" | awk '{print $1}')"
-            actual="$(${algorithm}sum "$published" | awk '{print $1}')"
-            if [ "$actual" != "$expected" ]; then
-              echo "::error title=Published tarball mismatch::Registry ${algorithm} differs from the uploaded candidate."
-              exit 1
-            fi
-          done
+          node scripts/verify-post-publish-public-npm-artifact.mjs --package "$PKG" --expected-tarball "$EXPECTED_TARBALL"
 
   # Keep registry verification separate from upload so a failed read never
   # implies rollback of an immutable version. Public npm is read anonymously.

@@ -3,6 +3,20 @@ import { spawnSync } from "node:child_process";
 
 export const PUBLIC_NPM_REGISTRY = "https://registry.npmjs.org";
 
+// The registry can acknowledge an OIDC publish before its anonymous
+// packument/tarball edge is readable. This is a bounded observation window,
+// never a publication retry policy: the immutable upload has already happened.
+export const POST_PUBLISH_VISIBILITY_RETRY_DELAYS_MS = Object.freeze([
+  0,
+  5_000,
+  10_000,
+  20_000,
+  30_000,
+  45_000,
+  60_000,
+]);
+const MAX_POST_PUBLISH_VISIBILITY_RETRY_MS = 180_000;
+
 const SHA1 = /^[a-f0-9]{40}$/;
 const SHA256 = /^[a-f0-9]{64}$/;
 const SHA512 = /^[a-f0-9]{128}$/;
@@ -148,6 +162,7 @@ export async function verifyPublicNpmArtifact({ registry, name, version, fetchIm
   } catch (error) {
     return { kind: "unreachable", detail: `anonymous tarball request failed: ${error.message}` };
   }
+  if (response.status === 404) return { kind: "not-found", detail: "anonymous tarball request returned HTTP 404" };
   if (response.status === 401 || response.status === 403) return { kind: "denied" };
   if (!response.ok) return { kind: "unreachable", detail: `anonymous tarball request returned HTTP ${response.status}` };
   const length = Number(response.headers?.get?.("content-length"));
@@ -193,6 +208,35 @@ export async function verifyPublicNpmArtifact({ registry, name, version, fetchIm
       size: bytes.length,
     },
   };
+}
+
+function visibilityPending(result) {
+  return (result.kind === "known" && result.hasVersion === false) || result.kind === "not-found";
+}
+
+/**
+ * Re-read only a just-published public artifact while the anonymous registry
+ * catches up. Identity, digest, authorization, and transport failures return
+ * immediately; only an absent version or a 404 tarball is retried.
+ */
+export async function retryPostPublishPublicNpmArtifact({
+  registry,
+  name,
+  version,
+  fetchImpl = fetch,
+  delays = POST_PUBLISH_VISIBILITY_RETRY_DELAYS_MS,
+  sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds)),
+}) {
+  if (!Array.isArray(delays) || delays.length < 2 || delays[0] !== 0 || delays.some((milliseconds) => !Number.isSafeInteger(milliseconds) || milliseconds < 0) || delays.reduce((total, milliseconds) => total + milliseconds, 0) > MAX_POST_PUBLISH_VISIBILITY_RETRY_MS) {
+    throw new Error("post-publish visibility retry delays must begin with zero and remain within three minutes");
+  }
+  let result;
+  for (let attempt = 0; attempt < delays.length; attempt += 1) {
+    result = await verifyPublicNpmArtifact({ registry, name, version, fetchImpl });
+    if (!visibilityPending(result) || attempt === delays.length - 1) return result;
+    await sleep(delays[attempt + 1]);
+  }
+  return result;
 }
 
 /** Serialize only the anonymous registry facts needed to revalidate an artifact handoff. */

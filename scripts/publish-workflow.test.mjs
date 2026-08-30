@@ -14,6 +14,39 @@ function job(name) {
   return workflow.slice(start, next === -1 ? workflow.length : start + 1 + next);
 }
 
+function step(selected, name) {
+  const start = selected.indexOf(`      - name: ${name}\n`);
+  assert.notEqual(start, -1, `workflow is missing ${name} step`);
+  const rest = selected.slice(start + 1);
+  const next = rest.search(/^      - name: /m);
+  return selected.slice(start, next === -1 ? selected.length : start + 1 + next);
+}
+
+function assertPostPublishVisibilityStep(selected) {
+  const exactLines = selected.split("\n");
+  const count = (line) => exactLines.filter((candidate) => candidate === line).length;
+  assert.equal(
+    count("          PKG: ${{ matrix.package }}"),
+    1,
+    "post-publish verifier must bind exactly one matrix package",
+  );
+  assert.equal(
+    count("          PUBLISH_RELEASE_TARGET: ${{ inputs.release_target }}"),
+    1,
+    "post-publish verifier must bind exactly one release target",
+  );
+  assert.equal(
+    count("          EXPECTED_TARBALL: ${{ runner.temp }}/qualification/${{ matrix.package }}/candidate.tgz"),
+    1,
+    "post-publish verifier must bind exactly one qualified tarball",
+  );
+  assert.equal(
+    count('          node scripts/verify-post-publish-public-npm-artifact.mjs --package "$PKG" --expected-tarball "$EXPECTED_TARBALL"'),
+    1,
+    "post-publish verifier must use its closed exact command",
+  );
+}
+
 function position(text, needle) {
   const index = text.indexOf(needle);
   assert.notEqual(index, -1, `missing workflow assertion: ${needle}`);
@@ -116,9 +149,18 @@ test("OIDC publish consumes the exact handoff with upload-only trust and no toke
   assert.match(publish, /name: Verify exact tarball is unchanged/);
   assert.match(publish, /transcript\.json/);
   assert.match(publish, /npm publish "\$TARBALL" --provenance --access public --ignore-scripts --registry "\$REGISTRY"/);
-  assert.match(publish, /name: Fetch and compare published tarball/);
-  assert.match(publish, /npm pack "\$\{package_name\}@\$\{package_version\}" --ignore-scripts --registry "\$REGISTRY"/);
-  assert.match(publish, /for algorithm in sha1 sha256 sha512/);
+  const postPublishVisibility = step(publish, "Verify anonymous public npm visibility and exact bytes");
+  assertPostPublishVisibilityStep(postPublishVisibility);
+  for (const [label, search, replacement] of [
+    ["package", "          PKG: ${{ matrix.package }}\n", ""],
+    ["release target", "          PUBLISH_RELEASE_TARGET: ${{ inputs.release_target }}\n", ""],
+    ["qualified tarball", "          EXPECTED_TARBALL: ${{ runner.temp }}/qualification/${{ matrix.package }}/candidate.tgz\n", ""],
+    ["verifier command", '          node scripts/verify-post-publish-public-npm-artifact.mjs --package "$PKG" --expected-tarball "$EXPECTED_TARBALL"', '          node scripts/verify-post-publish-public-npm-artifact.mjs --package "$PKG"'],
+  ]) {
+    const mutated = postPublishVisibility.replace(search, replacement);
+    assert.throws(() => assertPostPublishVisibilityStep(mutated), `must reject deleted or substituted ${label} binding`);
+  }
+  assert.doesNotMatch(publish, /for attempt in 1 2 3 4 5|sleep 3|npm pack "\$\{package_name\}@\$\{package_version\}"/);
 
   const verification = job("verify-published");
   assert.match(verification, /needs: \[discover, publish\]/);
