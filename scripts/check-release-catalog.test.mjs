@@ -117,7 +117,7 @@ test("an implicit selection resolves only the current target", () => {
   assert.throws(() => resolveReleaseTarget(document, targetIdentity), /expects @vespeneventures/);
 });
 
-test("the post-recut catalogue defaults to only the exact public-npm launch Trio", () => {
+test("the post-recut catalogue preserves the sealed Trio as its exact ordered allowlist prefix", () => {
   const document = load(cutoverCatalog());
   const target = resolveReleaseTarget(document, cutoverIdentity);
   assert.equal(target.id, "clossys-npmjs");
@@ -135,18 +135,19 @@ test("the launch target emits declared Trio order rather than caller inventory o
   assert.deepEqual(filterPackagesForTarget(entries, target).map((entry) => entry.directory), launchPackages);
 });
 
-test("candidate catalogue rejects mixed access, broadened or changed launch packages, old default, or retained precutover target", () => {
+test("candidate catalogue rejects mixed access, all-package broadening, Trio prefix mutation, duplicates, old default, or retained precutover target", () => {
   for (const document of [
     cutoverCatalog({ targets: [cutoverCatalog().targets[0], { ...cutoverCatalog().targets[1], access: undefined }] }),
     cutoverCatalog({ targets: [cutoverCatalog().targets[0], { ...cutoverCatalog().targets[1], packages: "all" }] }),
     cutoverCatalog({ targets: [cutoverCatalog().targets[0], { ...cutoverCatalog().targets[1], packages: ["starter", "advisor", "controller"] }] }),
     cutoverCatalog({ targets: [cutoverCatalog().targets[0], { ...cutoverCatalog().targets[1], packages: ["advisor", "starter"] }] }),
-    cutoverCatalog({ targets: [cutoverCatalog().targets[0], { ...cutoverCatalog().targets[1], packages: ["advisor", "starter", "controller", "architect"] }] }),
+    cutoverCatalog({ targets: [cutoverCatalog().targets[0], { ...cutoverCatalog().targets[1], packages: ["starter", "advisor", "controller", "architect"] }] }),
     cutoverCatalog({ defaultTarget: "current-github-packages" }),
     cutoverCatalog({ targets: [...cutoverCatalog().targets, catalog().targets[1]] }),
   ]) {
     assert.throws(() => load(document), /candidate state/);
   }
+  assert.doesNotThrow(() => load(cutoverCatalog({ targets: [cutoverCatalog().targets[0], { ...cutoverCatalog().targets[1], packages: [...launchPackages, "strategist"] }] })));
   assert.throws(
     () =>
       load(

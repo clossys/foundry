@@ -155,6 +155,21 @@ test("candidate idempotence rejects a manifest and workspace-lock dependency mis
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
+test("candidate catalog rejects an appended package key without a current package directory", () => {
+  const { root } = fixture();
+  try {
+    applyPlanAtomically(planIdentityTransition({ root, policy }), writeFileSync);
+    const path = join(root, "governance", "release-catalog.json");
+    const catalog = JSON.parse(readFileSync(path, "utf8"));
+    catalog.targets.find((target) => target.status === "active").packages.push("ghost");
+    writeFileSync(path, json(catalog));
+    assert.throws(
+      () => planIdentityTransition({ root, policy }),
+      /release-catalog\.json is not an active reviewed append-only candidate catalog/,
+    );
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
 test("current planning rejects a manifest and workspace-lock dependency mismatch before producing a plan", () => {
   const { root } = fixture();
   try {

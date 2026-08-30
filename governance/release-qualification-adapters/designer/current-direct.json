@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "package": "@clossys/designer",
+  "archetype": "current-direct",
+  "peerInstall": {
+    "@internationalized/date": "3.12.3",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "react-aria-components": "1.20.0",
+    "tailwind-merge": "3.0.0",
+    "tailwindcss": "4.3.3"
+  },
+  "bins": {
+    "designer-token-check": 0,
+    "designer-brand-check": 0,
+    "designer-contrast-check": 0,
+    "designer-environment-check": 0
+  },
+  "fixtures": ["clean/View.tsx", "violated/View.ts", "indeterminate/View.tsx"],
+  "cases": [
+    { "id": "token-purity-clean", "bin": "designer-token-check", "args": [{ "fixtureDirectory": "clean" }], "exitCode": 0, "group": "token-purity" },
+    { "id": "token-purity-violated", "bin": "designer-token-check", "args": [{ "fixtureDirectory": "violated" }], "exitCode": 1, "group": "token-purity" },
+    { "id": "token-purity-indeterminate", "bin": "designer-token-check", "args": [{ "fixtureDirectory": "indeterminate" }], "exitCode": 2, "group": "token-purity" }
+  ],
+  "dimensionEvidence": { "rollback": "restoration", "duplicate": "token-purity" }
+}

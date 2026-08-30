@@ -382,7 +382,7 @@ function validateForwardQualificationIntroduction(r, { root, head, trioRecords, 
   }
   return a;
 }
-export function validatePrepublicationPrTail(r, { root = process.cwd(), head = "HEAD", recordPath = null, trioRecords = [], cohort = null, cohortBytes, quarantine = null, controlTailAuthorization = null, publication = null, publicationClosureValid = false } = {}) {
+export function validatePrepublicationPrTail(r, { root = process.cwd(), head = "HEAD", recordPath = null, trioRecords = [], forwardRecords = trioRecords, cohort = null, cohortBytes, quarantine = null, controlTailAuthorization = null, publication = null, publicationClosureValid = false } = {}) {
   const a = []; if (r?.timing !== "pre-publication") return a;
   if (publicationClosureValid) {
     let sealedPaths;
@@ -394,7 +394,7 @@ export function validatePrepublicationPrTail(r, { root = process.cwd(), head = "
     if (sealedPaths.has(path)) return a;
     try { execFileSync("git", ["merge-base", "--is-ancestor", r.reviewedCommit, head], { cwd: root, stdio: "ignore" }); }
     catch { fail(a, "reviewed-ancestor", "not ancestor"); return a; }
-    return validateForwardQualificationIntroduction(r, { root, head, trioRecords, sealedPaths });
+    return validateForwardQualificationIntroduction(r, { root, head, trioRecords: forwardRecords, sealedPaths });
   }
   try { execFileSync("git", ["merge-base", "--is-ancestor", r.reviewedCommit, head], { cwd: root, stdio: "ignore" }); }
   catch { fail(a, "reviewed-ancestor", "not ancestor"); return a; }

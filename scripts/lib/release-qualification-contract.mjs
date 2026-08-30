@@ -20,6 +20,16 @@ function compare(left, right) { for (let index = 0; index < 3; index += 1) if (l
 function satisfiesSimpleRange(version, range) {
   const candidate = versionParts(version);
   if (!candidate || typeof range !== "string") return false;
+  // The only non-exact open lower bound admitted here is a normal npm major
+  // floor (>=18) or a complete stable semver floor (>=18.0.0).  Do not grow
+  // this into a general semver parser: compound, OR, prerelease and tag
+  // ranges would make a qualification fixture mean something npm resolves
+  // differently on another host.
+  const lower = /^>=(0|[1-9]\d*)(?:\.(0|[1-9]\d*)(?:\.(0|[1-9]\d*))?)?$/.exec(range);
+  if (lower) {
+    const base = [Number(lower[1]), Number(lower[2] ?? 0), Number(lower[3] ?? 0)];
+    return compare(candidate, base) >= 0;
+  }
   const prefix = ["~", "^"].includes(range[0]) ? range[0] : "";
   const base = versionParts(prefix ? range.slice(1) : range);
   if (!base || compare(candidate, base) < 0) return false;

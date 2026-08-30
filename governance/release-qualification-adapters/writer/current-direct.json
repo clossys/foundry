@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "package": "@clossys/writer",
+  "archetype": "current-direct",
+  "bins": { "writer-check": 0 },
+  "fixtures": ["copy.json", "clean/View.ts", "violated/View.ts", "invalid-copy.json"],
+  "cases": [
+    { "id": "copy-clean", "bin": "writer-check", "args": [{ "fixture": "copy.json" }, { "fixtureDirectory": "clean" }], "exitCode": 0, "group": "copy" },
+    { "id": "copy-violated", "bin": "writer-check", "args": [{ "fixture": "copy.json" }, { "fixtureDirectory": "violated" }], "exitCode": 1, "group": "copy" },
+    { "id": "copy-indeterminate", "bin": "writer-check", "args": [{ "fixture": "invalid-copy.json" }, { "fixtureDirectory": "clean" }], "exitCode": 2, "group": "copy" }
+  ],
+  "dimensionEvidence": { "rollback": "restoration", "duplicate": "copy" }
+}
