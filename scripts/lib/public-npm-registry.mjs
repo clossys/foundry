@@ -41,7 +41,7 @@ function anonymousOptions(accept) {
   return { headers: { Accept: accept }, redirect: "error" };
 }
 
-export async function fetchPublicNpmPackument({ registry, name, fetchImpl = fetch }) {
+async function fetchPublicNpmPackumentWithAccept({ registry, name, accept, fetchImpl }) {
   let url;
   try {
     url = publicNpmPackageUrl(registry, name);
@@ -50,7 +50,7 @@ export async function fetchPublicNpmPackument({ registry, name, fetchImpl = fetc
   }
   let response;
   try {
-    response = await fetchImpl(url, anonymousOptions("application/vnd.npm.install-v1+json"));
+    response = await fetchImpl(url, anonymousOptions(accept));
   } catch (error) {
     return { kind: "unreachable", detail: `anonymous packument request failed: ${error.message}` };
   }
@@ -67,6 +67,15 @@ export async function fetchPublicNpmPackument({ registry, name, fetchImpl = fetc
     return { kind: "unreachable", detail: "anonymous packument response has no exact package identity/version map", url };
   }
   return { kind: "found", document, url };
+}
+
+export async function fetchPublicNpmPackument({ registry, name, fetchImpl = fetch }) {
+  return fetchPublicNpmPackumentWithAccept({
+    registry,
+    name,
+    accept: "application/vnd.npm.install-v1+json",
+    fetchImpl,
+  });
 }
 
 function exactVersionRecord(packument, name, version) {
@@ -226,16 +235,35 @@ export function validatePublicNpmRegistryProof(proof, { name, version, bytes } =
 }
 
 export function repositoryIdentityFromPackument(document, version) {
-  const record = document?.versions?.[version];
-  const value = record?.repository ?? document?.repository;
-  const url = typeof value === "string" ? value : value?.url;
-  if (typeof url !== "string") return null;
-  const match = url.trim().match(/^(?:git\+)?https:\/\/github\.com\/([^/]+)\/([^/#]+?)(?:\.git)?$/i);
-  return match ? `${match[1]}/${match[2]}` : null;
+  const repositories = [];
+  const values = [document?.repository];
+  const exact = document?.versions?.[version];
+  if (exact?.repository !== undefined) values.push(exact.repository);
+  for (const record of Object.values(document?.versions ?? {})) {
+    if (record?.repository !== undefined && record !== exact) values.push(record.repository);
+  }
+  for (const value of values) {
+    if (value === undefined) continue;
+    const url = typeof value === "string" ? value : value?.url;
+    if (typeof url !== "string") return null;
+    const match = url.trim().match(/^(?:git\+)?https:\/\/github\.com\/([^/]+)\/([^/#]+?)(?:\.git)?$/i);
+    if (!match) return null;
+    repositories.push(`${match[1]}/${match[2]}`);
+  }
+  const distinct = new Set(repositories.map((repository) => repository.toLowerCase()));
+  return distinct.size === 1 ? repositories[0] : null;
 }
 
 export async function assessPublicNpmName({ registry, name, version, thisRepo, fetchImpl = fetch }) {
-  const packument = await fetchPublicNpmPackument({ registry, name, fetchImpl });
+  // npm's abbreviated install packument can omit repository metadata. Name
+  // ownership therefore needs the full document; artifact probes above keep
+  // the smaller install representation because they bind version/dist bytes.
+  const packument = await fetchPublicNpmPackumentWithAccept({
+    registry,
+    name,
+    accept: "application/json",
+    fetchImpl,
+  });
   if (packument.kind === "not-found") return { kind: "safe", found: false, existingRepo: null };
   if (packument.kind !== "found") return packument;
   const existingRepo = repositoryIdentityFromPackument(packument.document, version);
