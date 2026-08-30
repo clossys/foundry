@@ -12,8 +12,8 @@ The design has two phases:
    only the evidence snapshot. It does not install packages, decide readiness,
    or receive a registry credential.
 2. A trusted `workflow_run` job checks out the immutable PR base, obtains the
-   artifact, performs one fixed credentialed native install, then runs Foundry
-   Starter, Advisor, and the target gate with no credential.
+   artifact, performs one fixed credentialless public npm install, then runs
+   Foundry Starter, Advisor, and the target gate with no registry credential.
 
 `pull_request_target` is intentionally absent. The trusted job never checks
 out or executes pull-request code.
@@ -135,7 +135,7 @@ jobs:
     timeout-minutes: 15
     steps:
       # This is the PR BASE, not the source workflow's head SHA. It is the
-      # only checkout the credentialed workflow executes.
+      # only checkout the trusted workflow executes.
       - uses: actions/checkout@<FULL_COMMIT_SHA>
         with:
           ref: ${{ github.event.workflow_run.pull_requests[0].base.sha }}
@@ -154,12 +154,11 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ github.token }}
 
-      # This is the only credentialed step. It is deliberately fixed; do not
-      # replace it with an input command, package runner, or lifecycle hooks.
-      # A failure stops the job before Starter exists: it is not a Starter 1/2.
+      # Public npm reads are credentialless. This command is deliberately
+      # fixed; do not replace it with an input command, package runner, or
+      # lifecycle hooks. A failure stops the job before Starter exists: it is
+      # not a Starter 1/2.
       - name: Fixed npm install
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN }}
         run: |
           npm ci --ignore-scripts
           node -e 'require("node:fs").writeFileSync(process.argv[1], JSON.stringify({schemaVersion:1,packageManager:"npm",attempted:true,exitCode:0}) + "\n")' "$RUNNER_TEMP/install-receipt.json"
@@ -230,11 +229,10 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ github.token }}
 
-      # This is the only credentialed step. It is deliberately fixed. A
-      # failure stops the job before Starter exists: it is not a Starter 1/2.
+      # Public npm reads are credentialless. This command is deliberately
+      # fixed. A failure stops the job before Starter exists: it is not a
+      # Starter 1/2.
       - name: Fixed pnpm install
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.PACKAGES_READ_TOKEN }}
         run: |
           pnpm install --frozen-lockfile --ignore-scripts
           node -e 'require("node:fs").writeFileSync(process.argv[1], JSON.stringify({schemaVersion:1,packageManager:"pnpm",attempted:true,exitCode:0}) + "\n")' "$RUNNER_TEMP/install-receipt.json"

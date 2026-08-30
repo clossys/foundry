@@ -31,5 +31,7 @@ describe("canonical caller workflow templates", () => {
     expect(pnpmWorkflow).toContain('packageManager:"pnpm"');
     expect(pnpmWorkflow).not.toContain("npm ci");
     expect(pnpmWorkflow).not.toContain("package-lock.json");
+    expect(document).not.toContain("PACKAGES_READ_TOKEN");
+    expect(document).not.toContain("NODE_AUTH_TOKEN");
   });
 });
