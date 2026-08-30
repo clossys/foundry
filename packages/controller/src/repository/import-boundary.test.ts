@@ -31,6 +31,7 @@ describe.each([
   ["the importable CLI module", () => import("./cli.js")],
   ["the importable full-runner CLI module", () => import("./run-cli.js")],
   ["the importable adoption CLI module", () => import("./adoption-cli.js")],
+  ["the importable singular-authority CLI module", () => import("../release/singular-authority-cli.js")],
   ["the public repository entrypoint", () => import("./index.js")],
 ])("no-I/O import boundary: %s", (_label, importModule) => {
   it("performs no filesystem I/O, output, or process-state mutation", async () => {
