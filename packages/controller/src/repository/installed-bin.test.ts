@@ -32,16 +32,11 @@ async function installTarballs(consumer: string, tarballs: readonly string[]): P
 
 const hostileImport = String.raw`
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import { syncBuiltinESMExports } from "node:module";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-let ioCalls = 0;
-for (const name of ["existsSync", "readFileSync", "realpathSync", "statSync", "writeFileSync"]) {
-  fs[name] = () => { ioCalls += 1; throw new Error("unexpected " + name + " during import"); };
-}
-syncBuiltinESMExports();
+// Package-owned filesystem proof lives in import-boundary.test. This plain
+// Node child deliberately does not replace loader-owned builtins.
 
 let outputCalls = 0;
 console.log = console.error = () => { outputCalls += 1; };
@@ -54,7 +49,6 @@ for (const target of process.argv.slice(1)) {
   await import(target.startsWith(".") ? pathToFileURL(resolve(target)).href : target);
 }
 
-assert.equal(ioCalls, 0);
 assert.equal(outputCalls, 0);
 assert.deepEqual(process.argv, argv);
 assert.deepEqual({ ...process.env }, env);
