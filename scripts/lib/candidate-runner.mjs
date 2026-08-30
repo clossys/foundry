@@ -224,7 +224,7 @@ async function materializedConsumerOverlay(root, overlay) {
   };
 }
 
-async function rawCaseEvidence(root, target, args, descriptors, consumerOverlay, result) {
+async function rawCaseInputSnapshot(root, descriptors, consumerOverlay) {
   const inputs = [];
   for (const descriptor of descriptors) {
     if (typeof descriptor === "string") await materializedFiles(root, join(root, "fixtures", descriptor), inputs);
@@ -237,17 +237,31 @@ async function rawCaseEvidence(root, target, args, descriptors, consumerOverlay,
   overlay.sort((left, right) => left.sourcePath.localeCompare(right.sourcePath));
   const retainedFiles = [...inputs, ...overlay];
   if (inputs.length < 1 || retainedFiles.length > RAW_CASE_MAX_FILES || new Set(inputs.map((item) => item.path)).size !== inputs.length || new Set(overlay.map((item) => item.sourcePath)).size !== overlay.length || new Set(overlay.map((item) => item.targetPath)).size !== overlay.length || retainedFiles.reduce((total, item) => total + Buffer.byteLength(item.bytes), 0) > RAW_CASE_MAX_TOTAL_BYTES) throw new Error("raw case evidence inputs exceed the closed bounds");
+  return { materializedInputs: inputs, consumerOverlay: overlay };
+}
+
+function rawCaseEvidence(root, target, args, snapshot, result) {
   const stdout = tokenizedRaw(root, result.stdout);
   const stderr = tokenizedRaw(root, result.stderr);
   if (Buffer.byteLength(stdout) > RAW_CASE_MAX_STREAM_BYTES || Buffer.byteLength(stderr) > RAW_CASE_MAX_STREAM_BYTES || stdout.includes("\0") || stderr.includes("\0")) throw new Error("raw case evidence output exceeds the closed bounds");
   return {
     argv: ["$NODE", tokenizedRaw(root, target), ...args.map((argument) => tokenizedRaw(root, argument))],
-    materializedInputs: inputs,
-    consumerOverlay: overlay,
+    ...snapshot,
     exitCode: result.exitCode,
     stdout,
     stderr,
   };
+}
+
+async function assertRawCaseInputsUnchanged(root, preparedCases, consumerOverlay, observedExitCode) {
+  try {
+    for (const prepared of preparedCases) {
+      const current = await rawCaseInputSnapshot(root, prepared.descriptors, consumerOverlay);
+      if (JSON.stringify(current) !== JSON.stringify(prepared.snapshot)) throw new Error("changed bytes");
+    }
+  } catch {
+    throw new Error(`candidate mutated raw case evidence inputs during execution after observed exit ${observedExitCode}`);
+  }
 }
 
 async function containedRegularFile(root, target) {
@@ -462,15 +476,23 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
       await mkdir(dirname(target), { recursive: true });
       await copyFile(join(root, "fixtures", item.fixture), target);
     }
+    const preparedCases = [];
     for (const item of adapter.cases) {
       const args = item.fixtureArgs
         ? item.fixtureArgs.map((fixture) => join(root, "fixtures", fixture))
         : await Promise.all(item.args.map((descriptor) => caseArgument(root, descriptor)));
+      const descriptors = item.fixtureArgs ?? item.args;
+      const snapshot = adapter.retainRawCaseEvidence === true ? await rawCaseInputSnapshot(root, descriptors, adapter.consumerOverlay) : null;
+      preparedCases.push({ item, args, descriptors, snapshot });
+    }
+    for (const prepared of preparedCases) {
+      const { item, args, snapshot } = prepared;
       const result = targets[item.bin]
         ? await runProcess(process.execPath, [targets[item.bin], ...args], { cwd: root, env: sanitizedEnv(root), timeout: timeoutMs })
         : { exitCode: null, signal: null, launchError: true, stdout: "", stderr: "missing contained bin target" };
+      if (adapter.retainRawCaseEvidence === true && targets[item.bin]) await assertRawCaseInputsUnchanged(root, preparedCases, adapter.consumerOverlay, result.exitCode);
       const observed = observation(root, `case:${item.id}`, "case", item.exitCode, result);
-      if (adapter.retainRawCaseEvidence === true && targets[item.bin]) observed.rawCaseEvidence = await rawCaseEvidence(root, targets[item.bin], args, item.fixtureArgs ?? item.args, adapter.consumerOverlay, result);
+      if (adapter.retainRawCaseEvidence === true && targets[item.bin]) observed.rawCaseEvidence = rawCaseEvidence(root, targets[item.bin], args, snapshot, result);
       transcript.observations.push(observed);
       if (result.exitCode !== item.exitCode || result.signal || result.launchError) transcript.mismatches.push(`case:${item.id}`);
     }

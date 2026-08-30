@@ -11,7 +11,7 @@ import { assertCredentialFree, installNpmrc, runCandidateQualification, runProce
 const execFile = promisify(execFileCallback);
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");
 
-async function syntheticPackage({ mismatch = false, exports = undefined, runtimePeer = false, peerInstall = undefined, rawStarter = false } = {}) {
+async function syntheticPackage({ mismatch = false, exports = undefined, runtimePeer = false, peerInstall = undefined, rawStarter = false, mutateCaseEvidence = null } = {}) {
   const root = await mkdtemp(join(tmpdir(), "foundry-runner-test-"));
   const source = join(root, "source");
   const fixturesDir = join(root, "fixtures");
@@ -37,11 +37,15 @@ async function syntheticPackage({ mismatch = false, exports = undefined, runtime
   await writeFile(join(source, "static", "one.txt"), "one\n");
   await writeFile(join(source, "static", "two.txt"), "two\n");
   await writeFile(join(source, "cli.js"), [
-    "import { readFileSync } from 'node:fs';",
+    "import { readFileSync, writeFileSync } from 'node:fs';",
     "const credentials = ['NODE_AUTH_TOKEN', 'NPM_TOKEN', 'GH_PACKAGES_TOKEN', 'GITHUB_TOKEN', 'GH_TOKEN'];",
     "if (credentials.some((key) => process.env[key])) process.exit(9);",
     "if (process.argv[2] === '--help') { console.log('synthetic help'); process.exit(0); }",
     "const item = JSON.parse(readFileSync(process.argv[2], 'utf8'));",
+    ...(mutateCaseEvidence === "input" ? ["writeFileSync(process.argv[2], JSON.stringify({ ...item, mutated: true }));"] : []),
+    ...(mutateCaseEvidence === "future-input" ? ["writeFileSync('fixtures/red.json', JSON.stringify({ id: 'red', actual: 1, mutated: true }));"] : []),
+    ...(mutateCaseEvidence === "overlay-source" ? ["writeFileSync('fixtures/overlay/advisor-package.json', 'mutated overlay source');"] : []),
+    ...(mutateCaseEvidence === "overlay-target" ? ["writeFileSync('node_modules/@clossys/advisor/package.json', 'mutated overlay target');"] : []),
     "if (item.mode === 'hang') setTimeout(() => process.exit(item.actual), 60_000);",
     "console.log(item.id); process.exit(item.actual);",
     "",
@@ -176,6 +180,24 @@ test("Starter v2 retains only bounded tokenized raw case commands, inputs, exits
   }
   assert.ok(transcript.observations.filter((item) => item.kind !== "case").every((item) => !Object.hasOwn(item, "rawCaseEvidence")));
   assert.equal(JSON.stringify(transcript).includes(fixture.root), false);
+});
+
+test("packed hostile Starter cases cannot rewrite command inputs or overlay bytes after reading their original IDs", async (t) => {
+  const probes = [
+    { mutation: "input", id: "green", exitCode: 0 },
+    { mutation: "future-input", id: "green", exitCode: 0 },
+    { mutation: "overlay-source", id: "red", exitCode: 1 },
+    { mutation: "overlay-target", id: "indeterminate", exitCode: 2 },
+  ];
+  for (const probe of probes) {
+    const fixture = await syntheticPackage({ rawStarter: true, mutateCaseEvidence: probe.mutation });
+    t.after(() => rm(fixture.root, { recursive: true, force: true }));
+    fixture.adapter.cases.sort((left, right) => Number(right.id === probe.id) - Number(left.id === probe.id));
+    await assert.rejects(
+      () => runCandidateQualification(fixture),
+      new RegExp(`candidate mutated raw case evidence inputs during execution after observed exit ${probe.exitCode}`),
+    );
+  }
 });
 
 test("qualification refuses credential-bearing parents and npm configuration carries no credential", () => {
