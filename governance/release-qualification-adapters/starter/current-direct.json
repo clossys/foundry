@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "package": "@clossys/starter",
   "archetype": "current-direct",
+  "retainRawCaseEvidence": true,
   "bins": { "foundry-starter": 0 },
   "fixtures": [
     "request-satisfied.json", "request-violated.json", "request-indeterminate.json",

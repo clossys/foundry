@@ -160,6 +160,110 @@ function observation(root, id, kind, expectedExitCode, result) {
   };
 }
 
+const RAW_CASE_MAX_FILES = 64;
+const RAW_CASE_MAX_FILE_BYTES = 65_536;
+const RAW_CASE_MAX_TOTAL_BYTES = 524_288;
+const RAW_CASE_MAX_STREAM_BYTES = 65_536;
+const ABSOLUTE_HOST_PATH = /(?:^|[\s"'`=(:,;\[!])(?:\/(?!\/)[^\s"'`<>{}\[\],)]*|[A-Za-z]:[\\/][^\s"'`<>{}\[\],)]*|\\\\[^\\\s"'`<>{}\[\],)]+\\[^\s"'`<>{}\[\],)]*)/m;
+
+function safeTokenizedPath(value) {
+  if (typeof value !== "string") return false;
+  const parts = value.split("/");
+  return parts[0] === "$TEMP" && parts.length > 1
+    && parts.slice(1).every((part) => /^[A-Za-z0-9@._-]+$/.test(part) && part !== "." && part !== "..");
+}
+
+function assertPublicSafeRaw(value) {
+  if (typeof value !== "string" || value.includes("\0") || ABSOLUTE_HOST_PATH.test(value)) throw new Error("raw case evidence contains an untokenized absolute host path");
+  for (const match of value.matchAll(/\$TEMP(?:\/[^\s"'`<>{}\[\],)]*)?/g)) if (!safeTokenizedPath(match[0])) throw new Error("raw case evidence contains an unsafe temporary path token");
+  const unknownTokens = value.replaceAll("$NODE", "").replaceAll("$ENV", "").replace(/\$TEMP(?:\/[A-Za-z0-9@._-]+)+/g, "");
+  if (/\$[A-Z][A-Z_]*/.test(unknownTokens)) throw new Error("raw case evidence contains an unknown path token");
+}
+
+function tokenizedRaw(root, value) {
+  const output = String(value).split(root).join("$TEMP").split(process.execPath).join("$NODE").replaceAll("/usr/bin/env", "$ENV");
+  if (output.includes(root) || output.includes(process.execPath)) throw new Error("raw case evidence contains an untokenized runtime path");
+  assertPublicSafeRaw(output);
+  return output;
+}
+
+async function materializedFiles(root, target, output = []) {
+  const state = await lstat(target);
+  if (state.isSymbolicLink()) throw new Error("raw case evidence refuses symbolic-link inputs");
+  if (state.isDirectory()) {
+    for (const entry of (await readdir(target)).sort()) await materializedFiles(root, join(target, entry), output);
+    return output;
+  }
+  if (!state.isFile()) throw new Error("raw case evidence accepts only regular-file inputs");
+  const bytes = await readFile(target);
+  if (bytes.length < 1 || bytes.length > RAW_CASE_MAX_FILE_BYTES) throw new Error("raw case evidence input is outside the bounded file size");
+  const decoded = bytes.toString("utf8");
+  if (!Buffer.from(decoded, "utf8").equals(bytes) || decoded.includes("\0")) throw new Error("raw case evidence inputs must be bounded UTF-8 text");
+  const retainedBytes = tokenizedRaw(root, decoded);
+  output.push({ path: tokenizedRaw(root, target), sha256: hash("sha256", retainedBytes), bytes: retainedBytes });
+  return output;
+}
+
+async function materializedConsumerOverlay(root, overlay) {
+  const sourcePath = resolve(root, "fixtures", overlay.fixture);
+  const targetPath = resolve(root, overlay.target);
+  if (!sourcePath.startsWith(`${resolve(root, "fixtures")}${sep}`) || !targetPath.startsWith(`${root}${sep}`)) throw new Error("raw case evidence consumer overlay escapes the disposable root");
+  const [sourceState, targetState] = await Promise.all([lstat(sourcePath), lstat(targetPath)]);
+  if (sourceState.isSymbolicLink() || targetState.isSymbolicLink() || !sourceState.isFile() || !targetState.isFile()) throw new Error("raw case evidence consumer overlay must map regular files");
+  const [sourceBytes, targetBytes] = await Promise.all([readFile(sourcePath), readFile(targetPath)]);
+  if (!sourceBytes.equals(targetBytes)) throw new Error("raw case evidence consumer overlay target differs from its materialized source");
+  if (targetBytes.length < 1 || targetBytes.length > RAW_CASE_MAX_FILE_BYTES) throw new Error("raw case evidence consumer overlay is outside the bounded file size");
+  const decoded = targetBytes.toString("utf8");
+  if (!Buffer.from(decoded, "utf8").equals(targetBytes) || decoded.includes("\0")) throw new Error("raw case evidence consumer overlay must be bounded UTF-8 text");
+  const retainedBytes = tokenizedRaw(root, decoded);
+  return {
+    sourcePath: tokenizedRaw(root, sourcePath),
+    targetPath: tokenizedRaw(root, targetPath),
+    sha256: hash("sha256", retainedBytes),
+    bytes: retainedBytes,
+  };
+}
+
+async function rawCaseInputSnapshot(root, descriptors, consumerOverlay) {
+  const inputs = [];
+  for (const descriptor of descriptors) {
+    if (typeof descriptor === "string") await materializedFiles(root, join(root, "fixtures", descriptor), inputs);
+    else if (typeof descriptor?.fixture === "string") await materializedFiles(root, join(root, "fixtures", descriptor.fixture), inputs);
+    else if (typeof descriptor?.fixtureDirectory === "string") await materializedFiles(root, join(root, "fixtures", descriptor.fixtureDirectory), inputs);
+  }
+  inputs.sort((left, right) => left.path.localeCompare(right.path));
+  const overlay = [];
+  for (const item of consumerOverlay ?? []) overlay.push(await materializedConsumerOverlay(root, item));
+  overlay.sort((left, right) => left.sourcePath.localeCompare(right.sourcePath));
+  const retainedFiles = [...inputs, ...overlay];
+  if (inputs.length < 1 || retainedFiles.length > RAW_CASE_MAX_FILES || new Set(inputs.map((item) => item.path)).size !== inputs.length || new Set(overlay.map((item) => item.sourcePath)).size !== overlay.length || new Set(overlay.map((item) => item.targetPath)).size !== overlay.length || retainedFiles.reduce((total, item) => total + Buffer.byteLength(item.bytes), 0) > RAW_CASE_MAX_TOTAL_BYTES) throw new Error("raw case evidence inputs exceed the closed bounds");
+  return { materializedInputs: inputs, consumerOverlay: overlay };
+}
+
+function rawCaseEvidence(root, target, args, snapshot, result) {
+  const stdout = tokenizedRaw(root, result.stdout);
+  const stderr = tokenizedRaw(root, result.stderr);
+  if (Buffer.byteLength(stdout) > RAW_CASE_MAX_STREAM_BYTES || Buffer.byteLength(stderr) > RAW_CASE_MAX_STREAM_BYTES || stdout.includes("\0") || stderr.includes("\0")) throw new Error("raw case evidence output exceeds the closed bounds");
+  return {
+    argv: ["$NODE", tokenizedRaw(root, target), ...args.map((argument) => tokenizedRaw(root, argument))],
+    ...snapshot,
+    exitCode: result.exitCode,
+    stdout,
+    stderr,
+  };
+}
+
+async function assertRawCaseInputsUnchanged(root, preparedCases, consumerOverlay, observedExitCode) {
+  try {
+    for (const prepared of preparedCases) {
+      const current = await rawCaseInputSnapshot(root, prepared.descriptors, consumerOverlay);
+      if (JSON.stringify(current) !== JSON.stringify(prepared.snapshot)) throw new Error("changed bytes");
+    }
+  } catch {
+    throw new Error(`candidate mutated raw case evidence inputs during execution after observed exit ${observedExitCode}`);
+  }
+}
+
 async function containedRegularFile(root, target) {
   const resolved = resolve(root, target);
   if (!resolved.startsWith(`${root}${sep}`)) return null;
@@ -282,9 +386,10 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
   if (!sameBinMap(packedBins, manifestBins) || !sameBinKeys(packedBins, adapter.bins)) throw new Error("adapter must probe exactly the packed manifest bin map");
 
   const packagePolicy = policy.packages[adapter.package];
+  const fixtureMaterializedAt = adapter.retainRawCaseEvidence === true ? new Date().toISOString() : null;
   const transcript = {
-    schema: "foundry-candidate-qualification-transcript-v1",
-    version: 1,
+    schema: "foundry-candidate-qualification-transcript-v2",
+    version: 2,
     candidate: { name: manifest.name, version: manifest.version },
     archetype: adapter.archetype,
     tarball: tarballDigests,
@@ -303,9 +408,10 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
     mismatches: [],
     ok: false,
   };
+  if (fixtureMaterializedAt) transcript.fixtureMaterializedAt = fixtureMaterializedAt;
   try {
     await mkdir(join(root, "fixtures"));
-    const variables = { CANDIDATE_NAME: manifest.name, CANDIDATE_VERSION: manifest.version, CANDIDATE_INTEGRITY: npmIntegrity(tarballDigests.sha512), NOW: new Date().toISOString() };
+    const variables = { CANDIDATE_NAME: manifest.name, CANDIDATE_VERSION: manifest.version, CANDIDATE_INTEGRITY: npmIntegrity(tarballDigests.sha512), NOW: fixtureMaterializedAt ?? new Date().toISOString() };
     for (const fixture of adapter.fixtures) {
       const target = join(root, "fixtures", fixture);
       await mkdir(dirname(target), { recursive: true });
@@ -370,14 +476,24 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
       await mkdir(dirname(target), { recursive: true });
       await copyFile(join(root, "fixtures", item.fixture), target);
     }
+    const preparedCases = [];
     for (const item of adapter.cases) {
       const args = item.fixtureArgs
         ? item.fixtureArgs.map((fixture) => join(root, "fixtures", fixture))
         : await Promise.all(item.args.map((descriptor) => caseArgument(root, descriptor)));
+      const descriptors = item.fixtureArgs ?? item.args;
+      const snapshot = adapter.retainRawCaseEvidence === true ? await rawCaseInputSnapshot(root, descriptors, adapter.consumerOverlay) : null;
+      preparedCases.push({ item, args, descriptors, snapshot });
+    }
+    for (const prepared of preparedCases) {
+      const { item, args, snapshot } = prepared;
       const result = targets[item.bin]
         ? await runProcess(process.execPath, [targets[item.bin], ...args], { cwd: root, env: sanitizedEnv(root), timeout: timeoutMs })
         : { exitCode: null, signal: null, launchError: true, stdout: "", stderr: "missing contained bin target" };
-      transcript.observations.push(observation(root, `case:${item.id}`, "case", item.exitCode, result));
+      if (adapter.retainRawCaseEvidence === true && targets[item.bin]) await assertRawCaseInputsUnchanged(root, preparedCases, adapter.consumerOverlay, result.exitCode);
+      const observed = observation(root, `case:${item.id}`, "case", item.exitCode, result);
+      if (adapter.retainRawCaseEvidence === true && targets[item.bin]) observed.rawCaseEvidence = rawCaseEvidence(root, targets[item.bin], args, snapshot, result);
+      transcript.observations.push(observed);
       if (result.exitCode !== item.exitCode || result.signal || result.launchError) transcript.mismatches.push(`case:${item.id}`);
     }
 

@@ -11,7 +11,7 @@ import { assertCredentialFree, installNpmrc, runCandidateQualification, runProce
 const execFile = promisify(execFileCallback);
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");
 
-async function syntheticPackage({ mismatch = false, exports = undefined, runtimePeer = false, peerInstall = undefined } = {}) {
+async function syntheticPackage({ mismatch = false, exports = undefined, runtimePeer = false, peerInstall = undefined, rawStarter = false, mutateCaseEvidence = null } = {}) {
   const root = await mkdtemp(join(tmpdir(), "foundry-runner-test-"));
   const source = join(root, "source");
   const fixturesDir = join(root, "fixtures");
@@ -19,8 +19,9 @@ async function syntheticPackage({ mismatch = false, exports = undefined, runtime
   await mkdir(source);
   await mkdir(fixturesDir);
   await mkdir(packed);
+  const packageName = rawStarter ? "@clossys/starter" : "@acme/synthetic";
   await writeFile(join(source, "package.json"), JSON.stringify({
-    name: "@acme/synthetic",
+    name: packageName,
     version: "1.0.0",
     type: "module",
     exports: exports ?? { ".": { types: "./index.d.ts", import: "./index.js" }, "./asset": "./asset.txt", "./static/*": "./static/*.txt" },
@@ -36,11 +37,15 @@ async function syntheticPackage({ mismatch = false, exports = undefined, runtime
   await writeFile(join(source, "static", "one.txt"), "one\n");
   await writeFile(join(source, "static", "two.txt"), "two\n");
   await writeFile(join(source, "cli.js"), [
-    "import { readFileSync } from 'node:fs';",
+    "import { readFileSync, writeFileSync } from 'node:fs';",
     "const credentials = ['NODE_AUTH_TOKEN', 'NPM_TOKEN', 'GH_PACKAGES_TOKEN', 'GITHUB_TOKEN', 'GH_TOKEN'];",
     "if (credentials.some((key) => process.env[key])) process.exit(9);",
     "if (process.argv[2] === '--help') { console.log('synthetic help'); process.exit(0); }",
     "const item = JSON.parse(readFileSync(process.argv[2], 'utf8'));",
+    ...(mutateCaseEvidence === "input" ? ["writeFileSync(process.argv[2], JSON.stringify({ ...item, mutated: true }));"] : []),
+    ...(mutateCaseEvidence === "future-input" ? ["writeFileSync('fixtures/red.json', JSON.stringify({ id: 'red', actual: 1, mutated: true }));"] : []),
+    ...(mutateCaseEvidence === "overlay-source" ? ["writeFileSync('fixtures/overlay/advisor-package.json', 'mutated overlay source');"] : []),
+    ...(mutateCaseEvidence === "overlay-target" ? ["writeFileSync('node_modules/@clossys/advisor/package.json', 'mutated overlay target');"] : []),
     "if (item.mode === 'hang') setTimeout(() => process.exit(item.actual), 60_000);",
     "console.log(item.id); process.exit(item.actual);",
     "",
@@ -51,16 +56,28 @@ async function syntheticPackage({ mismatch = false, exports = undefined, runtime
     ["indeterminate.json", { id: "indeterminate", actual: 2 }],
   ];
   for (const [name, body] of entries) await writeFile(join(fixturesDir, name), JSON.stringify(body));
+  const overlayEntries = rawStarter ? [
+    ["overlay/package.json", '{"private":true,"dependencies":{"@clossys/starter":"1.0.0"}}\n'],
+    ["overlay/package-lock.json", '{"name":"raw-starter-consumer","lockfileVersion":3,"packages":{}}\n'],
+    ["overlay/advisor-package.json", '{"name":"@clossys/advisor","version":"1.0.0","type":"module"}\n'],
+    ["overlay/advisor-cli.js", "#!/usr/bin/env node\nprocess.exit(2);\n"],
+    ["overlay/target-package.json", '{"name":"@fixture/qualification-target","version":"1.0.0","type":"module"}\n'],
+    ["overlay/target-cli.js", "#!/usr/bin/env node\nprocess.exit(0);\n"],
+  ] : [];
+  for (const [name, body] of overlayEntries) {
+    await mkdir(join(fixturesDir, "overlay"), { recursive: true });
+    await writeFile(join(fixturesDir, name), body);
+  }
   const packedResult = await execFile("npm", ["pack", "--ignore-scripts", "--json", "--pack-destination", packed], { cwd: source });
   const tarball = join(packed, JSON.parse(packedResult.stdout)[0].filename);
-  const fixtureNames = entries.map(([name]) => name);
+  const fixtureNames = [...entries, ...overlayEntries].map(([name]) => name);
   const fixtures = Object.fromEntries(await Promise.all(fixtureNames.map(async (name) => {
     const path = join(fixturesDir, name);
     return [name, { path, type: "file", symlink: false, tracked: true, size: (await readFile(path)).length }];
   })));
   const policy = {
-    schemaVersion: 1, protocol: "foundry-candidate-qualification-v1", packages: { "@acme/synthetic": {
-    packageKey: "synthetic", recordStem: "acme-synthetic", packageDir: "packages/synthetic", adapterPath: "governance/release-qualification-adapters/synthetic/current-direct.json", fixturePath: "governance/release-qualification-fixtures/synthetic/current-direct", archetypes: {
+    schemaVersion: 1, protocol: "foundry-candidate-qualification-v1", packages: { [packageName]: {
+    packageKey: rawStarter ? "starter" : "synthetic", recordStem: rawStarter ? "clossys-starter" : "acme-synthetic", packageDir: rawStarter ? "packages/starter" : "packages/synthetic", adapterPath: `governance/release-qualification-adapters/${rawStarter ? "starter" : "synthetic"}/current-direct.json`, fixturePath: `governance/release-qualification-fixtures/${rawStarter ? "starter" : "synthetic"}/current-direct`, archetypes: {
       "current-direct": { status: "required" },
       "prior-minor": { status: "unsupported", reason: "not supplied" },
       "oldest-supported": { status: "unsupported", reason: "not supplied" },
@@ -71,8 +88,19 @@ async function syntheticPackage({ mismatch = false, exports = undefined, runtime
   };
   const adapter = {
     schemaVersion: 1,
-    package: "@acme/synthetic",
+    package: packageName,
     archetype: "current-direct",
+    ...(rawStarter ? {
+      retainRawCaseEvidence: true,
+      consumerOverlay: [
+        { fixture: "overlay/package.json", target: "package.json" },
+        { fixture: "overlay/package-lock.json", target: "package-lock.json" },
+        { fixture: "overlay/advisor-package.json", target: "node_modules/@clossys/advisor/package.json" },
+        { fixture: "overlay/advisor-cli.js", target: "node_modules/@clossys/advisor/dist/execution-readiness-cli.js" },
+        { fixture: "overlay/target-package.json", target: "node_modules/@fixture/qualification-target/package.json" },
+        { fixture: "overlay/target-cli.js", target: "node_modules/@fixture/qualification-target/dist/check.js" },
+      ],
+    } : {}),
     ...(peerInstall ? { peerInstall } : {}),
     bins: { "synthetic-check": 0 },
     fixtures: fixtureNames,
@@ -83,7 +111,7 @@ async function syntheticPackage({ mismatch = false, exports = undefined, runtime
     ],
     dimensionEvidence: { rollback: "restoration", duplicate: "authority" },
   };
-  return { root, source, tarball, policy, adapter, fixtures, manifestBins: { "synthetic-check": "cli.js" }, registry: { scope: "@acme", registry: "https://registry.npmjs.org/" } };
+  return { root, source, tarball, policy, adapter, fixtures, manifestBins: { "synthetic-check": "cli.js" }, registry: { scope: rawStarter ? "@clossys" : "@acme", registry: "https://registry.npmjs.org/" } };
 }
 
 test("runner isolates a packed candidate and produces a deterministic complete transcript", async (t) => {
@@ -94,7 +122,8 @@ test("runner isolates a packed candidate and produces a deterministic complete t
   const first = await runCandidateQualification(fixture);
   const second = await runCandidateQualification(fixture);
   assert.equal(first.ok, true);
-  assert.equal(first.schema, "foundry-candidate-qualification-transcript-v1");
+  assert.equal(first.schema, "foundry-candidate-qualification-transcript-v2");
+  assert.equal(first.version, 2);
   assert.deepEqual(first, second);
   assert.equal(first.coverage.lifecycleScriptsDisabled, true);
   assert.equal(first.coverage.bins, 1);
@@ -118,6 +147,57 @@ test("runner isolates a packed candidate and produces a deterministic complete t
   assert.equal(JSON.stringify(first).includes(fixture.root), false);
   const { canonicalSha256, ...canonical } = first;
   assert.equal(canonicalSha256, sha256(JSON.stringify(canonical)));
+});
+
+test("Starter v2 retains only bounded tokenized raw case commands, inputs, exits, and outputs", async (t) => {
+  const fixture = await syntheticPackage({ rawStarter: true });
+  t.after(() => rm(fixture.root, { recursive: true, force: true }));
+  const transcript = await runCandidateQualification(fixture);
+  assert.equal(transcript.ok, true);
+  assert.match(transcript.fixtureMaterializedAt, /^\d{4}-\d{2}-\d{2}T/);
+  const cases = transcript.observations.filter((item) => item.kind === "case");
+  assert.deepEqual(cases.map((item) => item.rawCaseEvidence.exitCode), [0, 1, 2]);
+  for (const item of cases) {
+    const raw = item.rawCaseEvidence;
+    assert.deepEqual(raw.argv.slice(0, 2), ["$NODE", "$TEMP/node_modules/@clossys/starter/cli.js"]);
+    assert.equal(raw.argv.some((argument) => argument.includes(fixture.root)), false);
+    assert.equal(raw.materializedInputs.length, 1);
+    assert.match(raw.materializedInputs[0].path, /^\$TEMP\/fixtures\//);
+    assert.equal(raw.materializedInputs[0].sha256, sha256(raw.materializedInputs[0].bytes));
+    assert.deepEqual(raw.consumerOverlay.map(({ sourcePath, targetPath }) => [sourcePath, targetPath]), [
+      ["$TEMP/fixtures/overlay/advisor-cli.js", "$TEMP/node_modules/@clossys/advisor/dist/execution-readiness-cli.js"],
+      ["$TEMP/fixtures/overlay/advisor-package.json", "$TEMP/node_modules/@clossys/advisor/package.json"],
+      ["$TEMP/fixtures/overlay/package-lock.json", "$TEMP/package-lock.json"],
+      ["$TEMP/fixtures/overlay/package.json", "$TEMP/package.json"],
+      ["$TEMP/fixtures/overlay/target-cli.js", "$TEMP/node_modules/@fixture/qualification-target/dist/check.js"],
+      ["$TEMP/fixtures/overlay/target-package.json", "$TEMP/node_modules/@fixture/qualification-target/package.json"],
+    ]);
+    assert.ok(raw.consumerOverlay.every((overlay) => overlay.sha256 === sha256(overlay.bytes)));
+    assert.equal(raw.consumerOverlay.some((overlay) => overlay.bytes.includes("/usr/bin/env")), false);
+    assert.equal(raw.consumerOverlay.filter((overlay) => overlay.sourcePath.endsWith("-cli.js")).every((overlay) => overlay.bytes.includes("$ENV")), true);
+    assert.equal(item.stdoutSha256, sha256(raw.stdout));
+    assert.equal(item.stderrSha256, sha256(raw.stderr));
+  }
+  assert.ok(transcript.observations.filter((item) => item.kind !== "case").every((item) => !Object.hasOwn(item, "rawCaseEvidence")));
+  assert.equal(JSON.stringify(transcript).includes(fixture.root), false);
+});
+
+test("packed hostile Starter cases cannot rewrite command inputs or overlay bytes after reading their original IDs", async (t) => {
+  const probes = [
+    { mutation: "input", id: "green", exitCode: 0 },
+    { mutation: "future-input", id: "green", exitCode: 0 },
+    { mutation: "overlay-source", id: "red", exitCode: 1 },
+    { mutation: "overlay-target", id: "indeterminate", exitCode: 2 },
+  ];
+  for (const probe of probes) {
+    const fixture = await syntheticPackage({ rawStarter: true, mutateCaseEvidence: probe.mutation });
+    t.after(() => rm(fixture.root, { recursive: true, force: true }));
+    fixture.adapter.cases.sort((left, right) => Number(right.id === probe.id) - Number(left.id === probe.id));
+    await assert.rejects(
+      () => runCandidateQualification(fixture),
+      new RegExp(`candidate mutated raw case evidence inputs during execution after observed exit ${probe.exitCode}`),
+    );
+  }
 });
 
 test("qualification refuses credential-bearing parents and npm configuration carries no credential", () => {
