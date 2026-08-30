@@ -49,6 +49,11 @@ catch (error) { console.error("Cannot read " + TRIO_PUBLICATION_PATH + ": " + (e
 let sealedQualificationPaths = new Set();
 try { sealedQualificationPaths = sealedQualificationPathsAtTransitionBase(process.cwd()); }
 catch (error) { console.error("Cannot read sealed qualification paths: " + (error instanceof Error ? error.message : "unknown error")); failed = true; }
+for (const sealedPath of sealedQualificationPaths) {
+  if (paths.includes(sealedPath)) continue;
+  console.error("[sealed-record-set] " + sealedPath + ": transition-base predecessor record must remain present and readable.");
+  failed = true;
+}
 const recordFindings = new Map();
 for (const { path, record } of records) {
   try {

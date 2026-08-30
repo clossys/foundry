@@ -603,6 +603,14 @@ test("transition-base predecessor records survive a fresh clone without dangling
   assert.ok(sealedPaths.has(path));
   assert.deepEqual(validateRetainedCandidateQualification(record, { root, path, sealedBase: TRIO_PUBLICATION_TRANSITION_BASE }), []);
 
+  const retained = readFileSync(join(root, path));
+  await rm(join(root, path));
+  await assert.rejects(
+    execFile(process.execPath, [join(process.cwd(), "scripts/check-candidate-qualification.mjs")], { cwd: root }),
+    (error) => error?.stderr?.includes(`[sealed-record-set] ${path}`),
+  );
+  await writeFile(join(root, path), retained);
+
   const futurePath = "governance/release-qualifications/controller-9.9.9.json";
   const future = structuredClone(record);
   future.candidate.version = "9.9.9";
@@ -613,7 +621,6 @@ test("transition-base predecessor records survive a fresh clone without dangling
   assert.equal(sealedPaths.has(futurePath), false);
   assert.throws(() => validateRetainedCandidateQualification(future, { root, path: futurePath, expectedPath: futurePath }), /release-qualification-policy\.json/);
 
-  const retained = readFileSync(join(root, path));
   await writeFile(join(root, path), `${retained.toString("utf8")}\n`); await commit(root, "rewrite sealed predecessor");
   await writeFile(join(root, path), retained); await commit(root, "restore sealed predecessor");
   assert.ok(validateRetainedCandidateQualification(record, { root, path, sealedBase: TRIO_PUBLICATION_TRANSITION_BASE }).some((item) => item.rule === "sealed-record-touches"));
