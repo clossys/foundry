@@ -1,18 +1,26 @@
 #!/usr/bin/env node
 // Fail-closed structural judge for the two complete package identity states.
 // The current state keeps GitHub Packages live. The candidate state is W1D
-// source preparation only and must keep publishing inert while preserving old
-// evidence through exact line-digest records, never path-wide exemptions.
+// source preparation only until the exact first-publication record closes.
+// After that closure, only the reviewed public-npm upload workflow may carry
+// a real publish command or OIDC trust; every other workflow remains inert.
 
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
+import { readValidatedPublishedPackages } from "./check-package-evidence.mjs";
 import { identityState, isIdentityTransitionControlSurface, lineDigest, loadTransitionPolicy, validateHistoryInventory } from "./lib/package-identity-transition.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const policyPath = join(root, "governance", "package-identity-transition.json");
 const scopePath = join(root, "package-scope.json");
+const PUBLIC_HISTORY_REPOSITORY = "clossys/platform";
+const PUBLIC_HISTORY_URL = "https://github.com/clossys/platform.git";
+const PUBLIC_HISTORY_ORIGINS = new Set([PUBLIC_HISTORY_URL, PUBLIC_HISTORY_URL.slice(0, -4)]);
+const PUBLIC_HISTORY_MAIN_REF = "refs/heads/main";
+const GIT_OUTPUT_LIMIT = 64 * 1024;
+const GIT_TIMEOUT_MS = 30_000;
 
 function readJson(path) {
   try { return JSON.parse(readFileSync(path, "utf8")); }
@@ -92,6 +100,109 @@ function trackedFiles() {
   }
 }
 
+function anonymousGitEnvironment(repositoryRoot) {
+  return {
+    PATH: "/usr/bin:/bin",
+    HOME: join(repositoryRoot, ".git", "anonymous-history-home"),
+    XDG_CONFIG_HOME: join(repositoryRoot, ".git", "anonymous-history-xdg"),
+    GIT_CONFIG_NOSYSTEM: "1",
+    GIT_CONFIG_SYSTEM: "/dev/null",
+    GIT_CONFIG_GLOBAL: "/dev/null",
+    GIT_TERMINAL_PROMPT: "0",
+    GIT_ASKPASS: "/usr/bin/false",
+    SSH_ASKPASS: "/usr/bin/false",
+    LC_ALL: "C",
+  };
+}
+
+export function ensureFullGitHistory(repositoryRoot = root, {
+  environment = process.env,
+  execute = execFileSync,
+  anonymousHistoryUrl = PUBLIC_HISTORY_URL,
+} = {}) {
+  const runGit = (args) => execute("git", ["-C", repositoryRoot, ...args], {
+    encoding: "utf8",
+    env: anonymousGitEnvironment(repositoryRoot),
+    killSignal: "SIGKILL",
+    maxBuffer: GIT_OUTPUT_LIMIT,
+    stdio: ["ignore", "pipe", "pipe"],
+    timeout: GIT_TIMEOUT_MS,
+  }).trim();
+  let shallow;
+  try {
+    shallow = runGit(["rev-parse", "--is-shallow-repository"]);
+  } catch {
+    throw new Error("cannot determine whether package-identity history is complete");
+  }
+  if (shallow === "false") return false;
+  if (shallow !== "true") throw new Error("git returned an invalid shallow-repository state");
+
+  if (
+    environment.GITHUB_ACTIONS !== "true" ||
+    environment.GITHUB_REPOSITORY !== PUBLIC_HISTORY_REPOSITORY ||
+    environment.GITHUB_SERVER_URL !== "https://github.com"
+  ) {
+    throw new Error("shallow package-identity history may be hydrated only by the exact public GitHub Actions repository");
+  }
+
+  let origin;
+  let head;
+  try {
+    origin = runGit(["remote", "get-url", "origin"]);
+    head = runGit(["rev-parse", "HEAD"]);
+  } catch {
+    throw new Error("cannot bind shallow package-identity history to origin and HEAD");
+  }
+  if (!PUBLIC_HISTORY_ORIGINS.has(origin)) throw new Error("shallow package-identity history has a non-canonical origin");
+  if (!/^[a-f0-9]{40}$/.test(environment.GITHUB_SHA ?? "") || environment.GITHUB_SHA !== head) {
+    throw new Error("shallow package-identity history does not match the GitHub Actions source SHA");
+  }
+
+  let requestedRef;
+  let destinationRef;
+  if (environment.GITHUB_EVENT_NAME === "push" && environment.GITHUB_REF === PUBLIC_HISTORY_MAIN_REF) {
+    requestedRef = PUBLIC_HISTORY_MAIN_REF;
+    destinationRef = "refs/remotes/clossys-history/main";
+  } else if (
+    environment.GITHUB_EVENT_NAME === "pull_request" &&
+    environment.GITHUB_BASE_REF === "main" &&
+    /^refs\/pull\/[1-9][0-9]*\/merge$/.test(environment.GITHUB_REF ?? "")
+  ) {
+    requestedRef = environment.GITHUB_REF;
+    destinationRef = `refs/remotes/clossys-history/pull-${environment.GITHUB_REF.split("/")[2]}-merge`;
+  } else {
+    throw new Error("shallow package-identity history has an unsupported GitHub Actions event/ref tuple");
+  }
+
+  try {
+    // The scope job receives GitHub's depth-1 synthetic merge ref on pull
+    // requests and a depth-1 main head on pushes. Hydrate only that exact ref
+    // plus protected main, from a literal public URL. Clear checkout's auth
+    // header and credential helpers, prohibit prompts, and pass a minimal
+    // environment so no workflow or registry credential reaches git.
+    const refspecs = [
+      `+${PUBLIC_HISTORY_MAIN_REF}:refs/remotes/clossys-history/main`,
+      ...(requestedRef === PUBLIC_HISTORY_MAIN_REF ? [] : [`+${requestedRef}:${destinationRef}`]),
+    ];
+    runGit([
+      "-c", "credential.helper=",
+      "-c", "http.https://github.com/.extraheader=",
+      "fetch", "--unshallow", "--no-tags", "--no-recurse-submodules",
+      anonymousHistoryUrl,
+      ...refspecs,
+    ]);
+    const after = runGit(["rev-parse", "--is-shallow-repository"]);
+    if (after !== "false") throw new Error("history remains shallow after hydration");
+    if (runGit(["rev-parse", destinationRef]) !== head) throw new Error("hydrated event ref does not match the checked-out HEAD");
+    if (!/^[a-f0-9]{40}$/.test(runGit(["rev-parse", "refs/remotes/clossys-history/main"]))) {
+      throw new Error("hydrated protected-main ref is not an exact commit");
+    }
+  } catch {
+    throw new Error("cannot anonymously hydrate complete package-identity history from the public repository");
+  }
+  return true;
+}
+
 function checkCandidateHistory(policy) {
   const inventory = readJson(join(root, policy.historyInventory));
   const findings = validateHistoryInventory(inventory, policy);
@@ -135,7 +246,7 @@ function hasForbiddenPublish(line) {
   return !/(?:^|\s)--dry-run(?:\s|$)/.test(commandSegment);
 }
 
-export function checkCandidatePublishInert(repositoryRoot = root) {
+export function checkCandidatePublishInert(repositoryRoot = root, { trustedPublishing = false } = {}) {
   const workflowsRoot = join(repositoryRoot, ".github", "workflows");
   if (!existsSync(workflowsRoot)) return [".github/workflows is missing during W1D"];
   const findings = [];
@@ -148,11 +259,11 @@ export function checkCandidatePublishInert(repositoryRoot = root) {
     if (rel === ".github/workflows/publish.yml" && activeLines.some((line) => /^\s{2}push:\s*(?:#.*)?$/.test(line))) {
       findings.push(`${rel}: push publication trigger is forbidden during W1D`);
     }
-    if (activeLines.some(hasForbiddenPublish)) {
-      findings.push(`${rel}: real npm publish command is forbidden during W1D`);
+    if (activeLines.some(hasForbiddenPublish) && (!trustedPublishing || rel !== ".github/workflows/publish.yml")) {
+      findings.push(`${rel}: real npm publish command is forbidden outside the closed trusted-publishing workflow`);
     }
-    if (activeLines.some((line) => /(?:["']?id-token["']?)\s*:\s*["']?write["']?(?:\s|,|}|$)/.test(line))) {
-      findings.push(`${rel}: provider trust must remain inactive during W1D`);
+    if (activeLines.some((line) => /(?:["']?id-token["']?)\s*:\s*["']?write["']?(?:\s|,|}|$)/.test(line)) && (!trustedPublishing || rel !== ".github/workflows/publish.yml")) {
+      findings.push(`${rel}: provider trust is forbidden outside the closed trusted-publishing workflow`);
     }
   }
   return findings;
@@ -167,7 +278,13 @@ export function evaluatePackageIdentity(rootOverride = root) {
   const inventory = readJson(join(root, policy.historyInventory));
   findings.push(...validateHistoryInventory(inventory, policy));
   if (state === "current" && inventory.references.length !== 0) findings.push("current state must not pre-authorize candidate historical references");
-  if (state === "candidate") findings.push(...checkCandidateHistory(policy), ...checkCandidatePublishInert());
+  if (state === "candidate") {
+    ensureFullGitHistory(root);
+    const publishedPackages = readValidatedPublishedPackages(root);
+    const trustedPublishing = ["@clossys/advisor", "@clossys/starter", "@clossys/controller"]
+      .every((name) => publishedPackages.has(name));
+    findings.push(...checkCandidateHistory(policy), ...checkCandidatePublishInert(root, { trustedPublishing }));
+  }
   return { state, findings: [...new Set(findings)] };
 }
 

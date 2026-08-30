@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { cpSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import test from "node:test";
 
 import {
@@ -14,7 +14,7 @@ import {
   planIdentityTransition,
   validateHistoryInventory,
 } from "./lib/package-identity-transition.mjs";
-import { checkCandidatePublishInert } from "./check-package-identity-transition.mjs";
+import { checkCandidatePublishInert, ensureFullGitHistory } from "./check-package-identity-transition.mjs";
 
 const policy = loadTransitionPolicy(new URL("../governance/package-identity-transition.json", import.meta.url));
 
@@ -215,7 +215,7 @@ test("a writer that mutates bytes before throwing still rolls the current target
   assert.deepEqual(Object.fromEntries(files), { a: "old-a", b: "old-b" });
 });
 
-test("candidate publication and provider trust are forbidden across the complete workflow inventory", () => {
+test("candidate publication and provider trust stay inert before first-publication closure", () => {
   const root = mkdtempSync(join(tmpdir(), "package-identity-workflows-"));
   try {
     const workflows = join(root, ".github", "workflows");
@@ -235,8 +235,181 @@ test("candidate publication and provider trust are forbidden across the complete
     rmSync(join(workflows, "mixed.yml"));
 
     writeFileSync(join(workflows, "trust.yml"), "name: trust\non: workflow_dispatch\npermissions: { contents: read, \"id-token\": write }\njobs: {}\n");
-    assert.match(checkCandidatePublishInert(root).join("\n"), /trust\.yml: provider trust must remain inactive/);
+    assert.match(checkCandidatePublishInert(root).join("\n"), /trust\.yml: provider trust is forbidden/);
   } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test("closed first publication admits trust only in the exact publish workflow", () => {
+  const root = mkdtempSync(join(tmpdir(), "package-identity-trusted-publishing-"));
+  try {
+    const workflows = join(root, ".github", "workflows");
+    mkdirSync(workflows, { recursive: true });
+    writeFileSync(join(workflows, "publish.yml"), "name: publish\non: workflow_dispatch\npermissions:\n  contents: read\njobs:\n  publish:\n    permissions:\n      contents: read\n      id-token: write\n    steps:\n      - run: npm publish candidate.tgz\n");
+    assert.deepEqual(checkCandidatePublishInert(root, { trustedPublishing: true }), []);
+
+    writeFileSync(join(workflows, "alternate.yml"), "name: hostile\non: workflow_dispatch\npermissions:\n  id-token: write\njobs:\n  publish:\n    steps:\n      - run: npm publish candidate.tgz\n");
+    const findings = checkCandidatePublishInert(root, { trustedPublishing: true }).join("\n");
+    assert.match(findings, /alternate\.yml: real npm publish command/);
+    assert.match(findings, /alternate\.yml: provider trust is forbidden/);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test("depth-1 branch heads and synthetic merges hydrate sealed publication history before trusting publish", () => {
+  const dir = mkdtempSync(join(tmpdir(), "package-identity-shallow-history-"));
+  const source = join(dir, "source");
+  const remote = join(dir, "remote.git");
+  const checkerBytes = readFileSync(new URL("./check-package-identity-transition.mjs", import.meta.url));
+  const run = (cwd, args) => execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
+  try {
+    run(dir, ["clone", "--local", "--no-hardlinks", fileURLToPath(new URL("..", import.meta.url)), source]);
+    run(source, ["config", "user.name", "package identity fixture"]);
+    run(source, ["config", "user.email", "fixture@invalid.example"]);
+    const common = run(source, ["rev-parse", "HEAD"]);
+    run(source, ["checkout", "-B", "main", common]);
+    run(source, ["commit", "--allow-empty", "-m", "fixture: base head"]);
+    const base = run(source, ["rev-parse", "HEAD"]);
+    run(source, ["checkout", "-b", "fixture-feature"]);
+    run(source, ["commit", "--allow-empty", "-m", "fixture: branch head"]);
+    run(source, ["checkout", "main"]);
+    run(source, ["merge", "--no-ff", "fixture-feature", "-m", "fixture: synthetic merge"]);
+    const synthetic = run(source, ["rev-parse", "HEAD"]);
+    run(source, ["update-ref", "refs/pull/1/merge", synthetic]);
+    run(source, ["reset", "--hard", base]);
+    run(dir, ["clone", "--mirror", source, remote]);
+
+    for (const fixture of [
+      { name: "branch-head", environment: { GITHUB_EVENT_NAME: "push", GITHUB_REF: "refs/heads/main" }, checkout() {
+        const target = join(dir, "branch-head");
+        run(dir, ["clone", "--depth", "1", "--branch", "main", `file://${remote}`, target]);
+        return target;
+      } },
+      { name: "synthetic-merge", environment: { GITHUB_EVENT_NAME: "pull_request", GITHUB_REF: "refs/pull/1/merge", GITHUB_BASE_REF: "main" }, checkout() {
+        const target = join(dir, "synthetic-merge");
+        mkdirSync(target);
+        run(target, ["init"]);
+        run(target, ["remote", "add", "origin", `file://${remote}`]);
+        run(target, ["fetch", "--depth", "1", "origin", "refs/pull/1/merge"]);
+        run(target, ["checkout", "--detach", "FETCH_HEAD"]);
+        return target;
+      } },
+    ]) {
+      const target = fixture.checkout();
+      assert.equal(run(target, ["rev-parse", "--is-shallow-repository"]), "true");
+      run(target, ["remote", "set-url", "origin", fixture.name === "branch-head"
+        ? "https://github.com/clossys/platform"
+        : "https://github.com/clossys/platform.git"]);
+      writeFileSync(join(target, "scripts", "check-package-identity-transition.mjs"), checkerBytes);
+      const environment = {
+        GITHUB_ACTIONS: "true",
+        GITHUB_REPOSITORY: "clossys/platform",
+        GITHUB_SERVER_URL: "https://github.com",
+        GITHUB_SHA: run(target, ["rev-parse", "HEAD"]),
+        ...fixture.environment,
+      };
+      const fetches = [];
+      ensureFullGitHistory(target, {
+        anonymousHistoryUrl: `file://${remote}`,
+        environment: { ...environment, GH_TOKEN: "must-not-reach-git", NODE_AUTH_TOKEN: "must-not-reach-git" },
+        execute(command, args, options) {
+          if (args.includes("fetch")) fetches.push({ command, args, env: options.env });
+          return execFileSync(command, args, options);
+        },
+      });
+      assert.equal(fetches.length, 1);
+      assert.equal(fetches[0].args.includes("credential.helper="), true);
+      assert.equal(fetches[0].args.includes("http.https://github.com/.extraheader="), true);
+      assert.equal(fetches[0].env.GH_TOKEN, undefined);
+      assert.equal(fetches[0].env.NODE_AUTH_TOKEN, undefined);
+      assert.deepEqual(Object.keys(fetches[0].env).sort(), [
+        "GIT_ASKPASS", "GIT_CONFIG_GLOBAL", "GIT_CONFIG_NOSYSTEM", "GIT_CONFIG_SYSTEM",
+        "GIT_TERMINAL_PROMPT", "HOME", "LC_ALL", "PATH", "SSH_ASKPASS", "XDG_CONFIG_HOME",
+      ]);
+      const checkerUrl = pathToFileURL(join(target, "scripts", "check-package-identity-transition.mjs")).href;
+      const result = spawnSync(process.execPath, ["--input-type=module", "--eval", `
+        const { evaluatePackageIdentity } = await import(${JSON.stringify(checkerUrl)});
+        const result = evaluatePackageIdentity();
+        if (result.findings.length > 0) {
+          for (const finding of result.findings) console.error(finding);
+          process.exit(1);
+        }
+      `], {
+        cwd: target,
+        encoding: "utf8",
+      });
+      assert.equal(result.status, 0, result.stderr || result.stdout);
+      assert.equal(
+        run(target, ["rev-parse", "--is-shallow-repository"]),
+        "false",
+        `${fixture.name} must be fully hydrated; checker output: ${result.stdout} ${result.stderr}`,
+      );
+    }
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("shallow history fails closed for wrong CI identity, origin, source SHA, or anonymous fetch failure", () => {
+  const dir = mkdtempSync(join(tmpdir(), "package-identity-shallow-failures-"));
+  const remote = join(dir, "remote.git");
+  const source = fileURLToPath(new URL("..", import.meta.url));
+  const run = (cwd, args) => execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
+  const clone = (name) => {
+    const target = join(dir, name);
+    run(dir, ["clone", "--depth", "1", "--branch", "main", `file://${remote}`, target]);
+    run(target, ["remote", "set-url", "origin", "https://github.com/clossys/platform.git"]);
+    return target;
+  };
+  try {
+    run(dir, ["clone", "--mirror", source, remote]);
+    run(remote, ["update-ref", "refs/heads/main", run(source, ["rev-parse", "HEAD"])]);
+    const environment = (target) => ({
+      GITHUB_ACTIONS: "true",
+      GITHUB_REPOSITORY: "clossys/platform",
+      GITHUB_SERVER_URL: "https://github.com",
+      GITHUB_EVENT_NAME: "push",
+      GITHUB_REF: "refs/heads/main",
+      GITHUB_SHA: run(target, ["rev-parse", "HEAD"]),
+    });
+
+    const wrongCi = clone("wrong-ci");
+    assert.throws(() => ensureFullGitHistory(wrongCi, { environment: { ...environment(wrongCi), GITHUB_ACTIONS: "false" } }), /exact public GitHub Actions repository/);
+
+    for (const [name, origin] of [
+      ["wrong-owner", "https://github.com/example/project.git"],
+      ["userinfo", "https://user@github.com/clossys/platform"],
+      ["query", "https://github.com/clossys/platform?mirror=1"],
+      ["extra-path", "https://github.com/clossys/platform/other"],
+      ["lookalike", "https://github.com.invalid/clossys/platform"],
+      ["ssh", "git@github.com:clossys/platform.git"],
+    ]) {
+      const wrongOrigin = clone(name);
+      run(wrongOrigin, ["remote", "set-url", "origin", origin]);
+      assert.throws(() => ensureFullGitHistory(wrongOrigin, { environment: environment(wrongOrigin) }), /non-canonical origin/);
+    }
+
+    const wrongSha = clone("wrong-sha");
+    assert.throws(() => ensureFullGitHistory(wrongSha, { environment: { ...environment(wrongSha), GITHUB_SHA: "f".repeat(40) } }), /source SHA/);
+
+    const offline = clone("offline");
+    assert.throws(
+      () => ensureFullGitHistory(offline, { environment: environment(offline), anonymousHistoryUrl: `file://${join(dir, "absent.git")}` }),
+      /cannot anonymously hydrate/,
+    );
+
+    const stillShallow = clone("still-shallow");
+    assert.throws(
+      () => ensureFullGitHistory(stillShallow, {
+        environment: environment(stillShallow),
+        execute(command, args, options) {
+          if (args.includes("fetch")) return "";
+          return execFileSync(command, args, options);
+        },
+      }),
+      /cannot anonymously hydrate/,
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test("historical exceptions are exact line digests on closed path classes", () => {
