@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "kind": "clossys-npmjs-trio-prepublication-v1",
+  "id": "clossys-npmjs-trio",
+  "release": {
+    "target": "clossys-npmjs",
+    "scope": "@clossys",
+    "registry": "https://registry.npmjs.org",
+    "access": "public"
+  },
+  "members": [
+    {
+      "packageKey": "advisor",
+      "qualificationPath": "governance/release-qualifications/clossys-advisor-0.1.3.json",
+      "qualificationSha256": "3b1a762ddbafdb025b7bafa470b5f3d1d26b67bc0d11c845c030256872a375b0",
+      "candidate": {
+        "name": "@clossys/advisor",
+        "version": "0.1.3",
+        "tarball": {
+          "sha1": "963eb83f920f6d67dec62e9215b499d611484e4b",
+          "sha256": "09fafeda20800f284ec9570026bb72479c89ba40241004d932cc73e7dc1792b6",
+          "sha512": "655a1dd201bd168f5e93a26cc25cb89d15029a7dfdc84b73eaa556e8accd64921119ba2866dc0da142d282e2e18b09d2aa1493c2ae10983bcdfa6727b2fffefb"
+        }
+      }
+    },
+    {
+      "packageKey": "starter",
+      "qualificationPath": "governance/release-qualifications/clossys-starter-0.1.2.json",
+      "qualificationSha256": "9dd4fb4973c28fa937801b00e375552b9c0117352b46e2b8bbf8a70912a86ecc",
+      "candidate": {
+        "name": "@clossys/starter",
+        "version": "0.1.2",
+        "tarball": {
+          "sha1": "7222feb7c91f021e8479e720a0b8ebcce912f91b",
+          "sha256": "7690826525ff4f3fc336ba4a0bf9ffaedf265a217f5eabf369d7074fdcca6835",
+          "sha512": "fe11440f85ef69d2f66cc5a9d95673e0d5cff318392f47dd97b8c297ad0b8f7cde4622918203af2772099d67eae6889be87a15d4f0ae7ba347ce55e003acd05c"
+        }
+      }
+    },
+    {
+      "packageKey": "controller",
+      "qualificationPath": "governance/release-qualifications/clossys-controller-0.8.21.json",
+      "qualificationSha256": "d3ece5c8f100934d6e36ac96dc25ee6e2adccab5eabd8c3fbf3ed9b833614d01",
+      "candidate": {
+        "name": "@clossys/controller",
+        "version": "0.8.21",
+        "tarball": {
+          "sha1": "5bbe54d2a621cbeae9f7774e9d26eea0607edd36",
+          "sha256": "d3989fc27481519523c8663e4dc914cb896c9f182d25fb1b675ecdb5d3d5bc39",
+          "sha512": "4f37786d5453457eb449ce469a852196b3c3780e0f21dde69b624112ca3ec956b478bd7d4229c94d537b8bf8292ef8313bcee814efa5c04f05ef297922bc5c0a"
+        }
+      }
+    }
+  ]
+}
