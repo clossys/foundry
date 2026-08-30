@@ -7,7 +7,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { promisify } from "node:util";
-import { currentQualificationJoins, parseStrictJson, qualificationIntroductionCommit, qualificationPath, qualificationRecordHistory, validateCandidateQualification, validatePrepublicationPrTail } from "./candidate-qualification.mjs";
+import { currentQualificationJoins, parseStrictJson, qualificationIntroductionCommit, qualificationPath, qualificationRecordHistory, validateCandidateQualification, validatePrepublicationPrTail, validateTrioControlTailAuthorization } from "./candidate-qualification.mjs";
+import { TRIO, TRIO_COHORT_PATH, TRIO_CONTROL_TAIL_AUTHORIZATION_PATH, TRIO_CONTROL_TAIL_BASE_COMMIT, TRIO_CONTROL_TAIL_PATHS, TRIO_QUARANTINE_PATH, TRIO_RELEASE } from "./release-qualification-trio.mjs";
 
 const CONTROLLER_RECORD_DIRECTORY = "governance/release-qualifications";
 const CONTROLLER_NAME = Buffer.from("QHZlc3BlbmV2ZW50dXJlcy9jb250cm9sbGVy", "base64").toString("utf8");
@@ -194,6 +195,97 @@ async function syntheticPrepublication() {
   const path = qualificationPath(root, record.candidate, reviewedCommit); await mkdir(join(root, "governance/release-qualifications"), { recursive: true }); await writeFile(join(root, path), JSON.stringify(record, null, 2)); await commit(root, "record tail");
   return { root, record, path };
 }
+async function syntheticTrioPrepublication() {
+  const root = await mkdtemp(join(tmpdir(), "qualification-trio-tail-"));
+  await git(root, ["init"]); await git(root, ["config", "user.email", "test@example.invalid"]); await git(root, ["config", "user.name", "Qualification Test"]);
+  await cp("package.json", join(root, "package.json")); await cp("package-lock.json", join(root, "package-lock.json"));
+  await mkdir(join(root, "governance"), { recursive: true });
+  await cp("governance/release-qualification-policy.json", join(root, "governance/release-qualification-policy.json"));
+  for (const key of TRIO) {
+    await mkdir(join(root, "packages"), { recursive: true });
+    await cp(`packages/${key}`, join(root, `packages/${key}`), { recursive: true });
+    await mkdir(join(root, "governance/release-qualification-adapters"), { recursive: true });
+    await cp(`governance/release-qualification-adapters/${key}`, join(root, `governance/release-qualification-adapters/${key}`), { recursive: true });
+    await mkdir(join(root, "governance/release-qualification-fixtures"), { recursive: true });
+    await cp(`governance/release-qualification-fixtures/${key}`, join(root, `governance/release-qualification-fixtures/${key}`), { recursive: true });
+  }
+  const reviewedCommit = await commit(root, "Trio candidates");
+  const records = [];
+  await mkdir(join(root, "governance/release-qualifications"), { recursive: true });
+  for (const key of TRIO) {
+    const manifest = parseStrictJson(readFileSync(join(root, `packages/${key}/package.json`), "utf8"));
+    const candidate = { name: `@clossys/${key}`, version: manifest.version };
+    const joins = currentQualificationJoins(root, candidate, reviewedCommit);
+    const record = {
+      timing: "pre-publication",
+      reviewedCommit,
+      rootPackageJsonSha256: joins.rootPackageJsonSha256,
+      rootPackageLockSha256: joins.rootPackageLockSha256,
+      candidate: {
+        ...candidate,
+        packageTreeSha1: joins.packageTreeSha1,
+        packageManifestSha256: joins.packageManifestSha256,
+        policySha256: joins.policySha256,
+        adapterSha256: joins.adapterSha256,
+        fixtureSetSha256: joins.fixtureSetSha256,
+      },
+      archetypes: joins.archetypes,
+      transcript: { dimensions: joins.dimensions },
+      candidateReview: { headSha: reviewedCommit, reference: "fixture review" },
+    };
+    records.push(record);
+    await writeFile(join(root, qualificationPath(root, candidate, reviewedCommit)), JSON.stringify(record, null, 2));
+  }
+  const cohort = { id: "clossys-npmjs-trio" };
+  const cohortBytes = `${JSON.stringify(cohort, null, 2)}\n`;
+  await mkdir(join(root, "governance/release-qualification-cohorts"), { recursive: true });
+  await writeFile(join(root, TRIO_COHORT_PATH), cohortBytes);
+  await commit(root, "retain Trio qualification tail");
+  return { root, records, cohort, cohortBytes };
+}
+function partialFailureQuarantine(cohortBytes, completedPackages) {
+  return {
+    schemaVersion: 1,
+    kind: "clossys-npmjs-trio-partial-failure-v1",
+    cohortPath: TRIO_COHORT_PATH,
+    cohortSha256: sha256(cohortBytes),
+    release: structuredClone(TRIO_RELEASE),
+    completedPackages,
+    failedPackage: TRIO[completedPackages.length],
+    disposition: "quarantined",
+    reference: "fixture incident record",
+  };
+}
+async function appendPartialFailureQuarantine(fixture, completedPackages) {
+  const quarantine = partialFailureQuarantine(fixture.cohortBytes, completedPackages);
+  await mkdir(join(fixture.root, "governance/release-qualification-quarantines"), { recursive: true });
+  await writeFile(join(fixture.root, TRIO_QUARANTINE_PATH), `${JSON.stringify(quarantine, null, 2)}\n`);
+  await commit(fixture.root, "retain partial failure quarantine");
+  return quarantine;
+}
+function retainedTrioControlTail(root = process.cwd()) {
+  const records = TRIO.map((key) => {
+    const files = readdirSync(join(root, CONTROLLER_RECORD_DIRECTORY)).filter((file) => file.startsWith(`clossys-${key}-`) && file.endsWith(".json"));
+    assert.equal(files.length, 1, `one retained ${key} qualification record is required`);
+    return parseStrictJson(readFileSync(join(root, CONTROLLER_RECORD_DIRECTORY, files[0]), "utf8"));
+  });
+  const cohortBytes = readFileSync(join(root, TRIO_COHORT_PATH), "utf8");
+  return {
+    root,
+    records,
+    cohort: parseStrictJson(cohortBytes),
+    cohortBytes,
+    authorization: parseStrictJson(readFileSync(join(root, TRIO_CONTROL_TAIL_AUTHORIZATION_PATH), "utf8")),
+  };
+}
+async function cloneRetainedTrioControlTail() {
+  const parent = await mkdtemp(join(tmpdir(), "qualification-control-tail-"));
+  const root = join(parent, "repo");
+  await execFile("git", ["clone", "--local", "--no-hardlinks", process.cwd(), root]);
+  await git(root, ["config", "user.email", "test@example.invalid"]);
+  await git(root, ["config", "user.name", "Qualification Test"]);
+  return { parent, ...retainedTrioControlTail(root) };
+}
 test("accepts the non-authorizing v2 bootstrap record offline and rejects it for prepublish", () => {
   const record = bootstrapSource();
   assert.deepEqual(rules(record), []);
@@ -343,6 +435,92 @@ test("prepublication PR tail accepts only an exact record-only tail", async (t) 
   assert.deepEqual(rules(fixture.record, { mode: "prepublish", expected, freshTranscript: fixture.record.transcript }), []);
   fixture.record.reviewedCommit = "a".repeat(40);
   assert.ok(validatePrepublicationPrTail(fixture.record, { root: fixture.root }).some((item) => item.rule === "reviewed-ancestor"));
+});
+test("Trio prepublication tail admits only a closed exact partial-failure quarantine", async (t) => {
+  for (let completed = 0; completed < TRIO.length; completed += 1) {
+    const fixture = await syntheticTrioPrepublication(); t.after(() => rm(fixture.root, { recursive: true, force: true }));
+    const quarantine = await appendPartialFailureQuarantine(fixture, TRIO.slice(0, completed));
+    for (const record of fixture.records) {
+      assert.deepEqual(validatePrepublicationPrTail(record, { root: fixture.root, trioRecords: fixture.records, cohort: fixture.cohort, cohortBytes: fixture.cohortBytes, quarantine }), []);
+    }
+  }
+});
+test("Trio quarantine tail rejects malformed, reordered, next-member, cohort-drift, missing-path, and unrelated changes", async (t) => {
+  const fixture = await syntheticTrioPrepublication(); t.after(() => rm(fixture.root, { recursive: true, force: true }));
+  const quarantine = await appendPartialFailureQuarantine(fixture, ["advisor"]);
+  const findings = (candidate = quarantine, cohortBytes = fixture.cohortBytes) => validatePrepublicationPrTail(fixture.records[0], { root: fixture.root, trioRecords: fixture.records, cohort: fixture.cohort, cohortBytes, quarantine: candidate }).map((item) => item.rule);
+  for (const mutate of [
+    (copy) => { copy.schemaVersion = 2; },
+    (copy) => { copy.completedPackages = ["starter"]; },
+    (copy) => { copy.failedPackage = "controller"; },
+  ]) {
+    const copy = structuredClone(quarantine); mutate(copy);
+    assert.ok(findings(copy).includes("trio-quarantine"));
+  }
+  assert.ok(findings(quarantine, `${fixture.cohortBytes} `).includes("trio-quarantine"));
+  assert.ok(validatePrepublicationPrTail(fixture.records[0], { root: fixture.root, trioRecords: fixture.records, cohort: fixture.cohort, cohortBytes: fixture.cohortBytes, quarantine: null }).some((item) => item.rule === "pr-tail"));
+  await writeFile(join(fixture.root, "unrelated.txt"), "unrelated\n"); await commit(fixture.root, "unrelated fifth path");
+  assert.ok(findings().includes("pr-tail"));
+});
+test("the one-time Trio control-tail authorization is exact, atomic, and cohort-bound", () => {
+  const fixture = retainedTrioControlTail();
+  assert.equal(fixture.authorization.baseCommit, TRIO_CONTROL_TAIL_BASE_COMMIT);
+  assert.deepEqual(fixture.authorization.authorizedFiles.map((item) => item.path), TRIO_CONTROL_TAIL_PATHS);
+  assert.deepEqual(validateTrioControlTailAuthorization(fixture.authorization, { root: fixture.root, trioRecords: fixture.records, cohortBytes: fixture.cohortBytes }), []);
+  for (const record of fixture.records) {
+    assert.deepEqual(validatePrepublicationPrTail(record, {
+      root: fixture.root,
+      trioRecords: fixture.records,
+      cohort: fixture.cohort,
+      cohortBytes: fixture.cohortBytes,
+      controlTailAuthorization: fixture.authorization,
+    }), []);
+  }
+});
+test("the one-time Trio control-tail authorization rejects base, cohort, record, digest, path, order, and shape drift", () => {
+  const fixture = retainedTrioControlTail();
+  const findings = (mutate) => {
+    const authorization = structuredClone(fixture.authorization);
+    mutate(authorization);
+    return validateTrioControlTailAuthorization(authorization, { root: fixture.root, trioRecords: fixture.records, cohortBytes: fixture.cohortBytes }).map((item) => item.rule);
+  };
+  for (const [rule, mutate] of [
+    ["control-tail-authorization", (value) => { value.baseCommit = "a".repeat(40); }],
+    ["control-tail-cohort", (value) => { value.cohort.sha256 = "a".repeat(64); }],
+    ["control-tail-record-digest", (value) => { value.records[0].sha256 = "a".repeat(64); }],
+    ["control-tail-records", (value) => { value.records.reverse(); }],
+    ["control-tail-files", (value) => { value.authorizedFiles.pop(); }],
+    ["control-tail-files", (value) => { value.authorizedFiles.push({ path: "unrelated.txt", sha256: "a".repeat(64) }); }],
+    ["control-tail-files", (value) => { value.authorizedFiles.reverse(); }],
+    ["control-tail-file-digest", (value) => { value.authorizedFiles[0].sha256 = "a".repeat(64); }],
+    ["unknown-field", (value) => { value.unexpected = true; }],
+  ]) assert.ok(findings(mutate).includes(rule), `expected ${rule}`);
+});
+test("the sealed Trio control tail rejects authorization rewrites, later checker rewrites, and unrelated tails", async (t) => {
+  {
+    const fixture = await cloneRetainedTrioControlTail(); t.after(() => rm(fixture.parent, { recursive: true, force: true }));
+    const changed = structuredClone(fixture.authorization); changed.authorizedFiles[0].sha256 = "a".repeat(64);
+    await writeFile(join(fixture.root, TRIO_CONTROL_TAIL_AUTHORIZATION_PATH), `${JSON.stringify(changed, null, 2)}\n`);
+    await commit(fixture.root, "rewrite authorization");
+    assert.ok(validateTrioControlTailAuthorization(changed, { root: fixture.root, trioRecords: fixture.records, cohortBytes: fixture.cohortBytes }).some((item) => item.rule === "control-tail-history"));
+  }
+  {
+    const fixture = await cloneRetainedTrioControlTail(); t.after(() => rm(fixture.parent, { recursive: true, force: true }));
+    const checkerPath = join(fixture.root, TRIO_CONTROL_TAIL_PATHS.find((path) => path.endsWith("candidate-qualification.mjs")));
+    await writeFile(checkerPath, `${readFileSync(checkerPath, "utf8")}\n// later rewrite\n`);
+    await commit(fixture.root, "rewrite authorized checker");
+    const authorizationFindings = validateTrioControlTailAuthorization(fixture.authorization, { root: fixture.root, trioRecords: fixture.records, cohortBytes: fixture.cohortBytes }).map((item) => item.rule);
+    assert.ok(authorizationFindings.includes("control-tail-file-digest"));
+    const tailFindings = validatePrepublicationPrTail(fixture.records[0], { root: fixture.root, trioRecords: fixture.records, cohort: fixture.cohort, cohortBytes: fixture.cohortBytes, controlTailAuthorization: fixture.authorization }).map((item) => item.rule);
+    assert.ok(tailFindings.includes("trio-control-tail"));
+  }
+  {
+    const fixture = await cloneRetainedTrioControlTail(); t.after(() => rm(fixture.parent, { recursive: true, force: true }));
+    const unrelated = join(fixture.root, "governance/release-qualification-tail-authorizations/unrelated.json");
+    await writeFile(unrelated, "{}\n"); await commit(fixture.root, "unrelated tail");
+    assert.deepEqual(validateTrioControlTailAuthorization(fixture.authorization, { root: fixture.root, trioRecords: fixture.records, cohortBytes: fixture.cohortBytes }), []);
+    assert.ok(validatePrepublicationPrTail(fixture.records[0], { root: fixture.root, trioRecords: fixture.records, cohort: fixture.cohort, cohortBytes: fixture.cohortBytes, controlTailAuthorization: fixture.authorization }).some((item) => item.rule === "pr-tail"));
+  }
 });
 test("prepublication git tail rejects substantive package, root, policy, adapter, fixture, and extra-tail changes", async (t) => {
   const paths = ["packages/controller/package.json", "package.json", "package-lock.json", "governance/release-qualification-policy.json", "governance/release-qualification-adapters/controller/current-direct.json", "governance/release-qualification-fixtures/controller/current-direct/authority-valid-package-lock.json", "README.md"];
