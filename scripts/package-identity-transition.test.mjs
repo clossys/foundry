@@ -361,6 +361,7 @@ test("shallow history fails closed for wrong CI identity, origin, source SHA, or
   };
   try {
     run(dir, ["clone", "--mirror", source, remote]);
+    run(remote, ["update-ref", "refs/heads/main", run(source, ["rev-parse", "HEAD"])]);
     const environment = (target) => ({
       GITHUB_ACTIONS: "true",
       GITHUB_REPOSITORY: "clossys/platform",
