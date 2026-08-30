@@ -15,8 +15,6 @@ const SHA512 = /^[a-f0-9]{128}$/;
 const INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 const NAME = /^@[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/;
 const VERSION = /^\d+\.\d+\.\d+$/;
-const PUBLISH_WORKFLOW = ".github/workflows/publish.yml";
-const PUBLISH_RUN = /^https:\/\/github\.com\/clossys\/platform\/actions\/runs\/[1-9]\d*$/;
 const object = (value) => value && typeof value === "object" && !Array.isArray(value);
 const digest = (value) => createHash("sha256").update(value).digest("hex");
 const same = (left, right) => JSON.stringify(left) === JSON.stringify(right);
@@ -78,11 +76,9 @@ export function validateLaterPublication(record, { recordPath, recordBytes, qual
   const retainedPackages = activePackages(currentCatalog);
   if (record?.catalog?.path !== CATALOG_PATH || !SHA256.test(record?.catalog?.sha256 ?? "") || typeof catalogBytes !== "string" || digest(catalogBytes) !== record?.catalog?.sha256 || record?.catalog?.packageKey !== key || !introducedPackages?.includes(key) || !retainedPackages?.includes(key)) finding(findings, "catalog-join", "must bind its introduction catalogue bytes and remain in the current active reviewed allowlist.");
   closed(findings, record?.publication, ["mode", "publishedAt", "reference", "provenance"], "publication.publication");
-  if (!["owner-present", "trusted-publisher"].includes(record?.publication?.mode) || !canonicalInstant(record?.publication?.publishedAt) || !evidenceUrl(record?.publication?.reference)) finding(findings, "publication-evidence", "mode, canonical publication time, and a bounded HTTPS evidence reference required.");
-  if (record?.publication?.mode === "trusted-publisher") {
-    closed(findings, record?.publication?.provenance, ["provider", "workflow", "run"], "publication.publication.provenance");
-    if (record?.publication?.provenance?.provider !== "github-actions" || record?.publication?.provenance?.workflow !== PUBLISH_WORKFLOW || !PUBLISH_RUN.test(record?.publication?.provenance?.run ?? "") || record?.publication?.reference !== record?.publication?.provenance?.run) finding(findings, "trusted-publisher", "trusted-publisher mode requires the canonical publish workflow and its exact canonical Actions run as publication evidence.");
-  } else if (record?.publication?.provenance !== undefined) finding(findings, "trusted-publisher", "owner-present publication must not invent publisher provenance.");
+  if (record?.publication?.mode !== "owner-present" || !canonicalInstant(record?.publication?.publishedAt) || !evidenceUrl(record?.publication?.reference)) finding(findings, "publication-evidence", "owner-present mode, canonical publication time, and a bounded HTTPS evidence reference required.");
+  if (record?.publication?.mode === "trusted-publisher") finding(findings, "trusted-publisher-unsupported", "later-publication v1 records are owner-present only.");
+  if (record?.publication?.provenance !== undefined) finding(findings, "publication-provenance", "later-publication v1 records must not claim publisher provenance.");
   const proof = record?.registryProof?.evidence;
   closed(findings, record?.registryProof, ["schemaVersion", "kind", "evidence"], "publication.registryProof");
   closed(findings, proof, ["registry", "access", "name", "version", "packumentUrl", "tarballUrl", "integrity", "shasum", "sha256", "sha512", "packedManifestSha256", "size"], "publication.registryProof.evidence");

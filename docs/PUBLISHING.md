@@ -331,9 +331,9 @@ of the first Trio. A later package needs both its reviewed catalogue entry and
 a separately introduced immutable package-neutral publication record. That
 record joins qualification path/digest, candidate source/manifest/tarball, the
 catalogue bytes from that record's introduction commit plus its continuing
-current allowlist membership, anonymous served-byte proof, publication
-mode/time/evidence reference, and trusted-publisher provenance when that mode
-is used.
+current allowlist membership, anonymous served-byte proof, and owner-present
+publication time/evidence reference. This v1 record does not claim trusted
+publisher provenance.
 This is a source-state declaration only. No `@clossys` package is published
 or supported for installation during W1D. W1E has since published and
 anonymously verified the first Trio identities: Advisor 0.1.3, Starter 0.1.2,

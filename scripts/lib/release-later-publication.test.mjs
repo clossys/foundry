@@ -126,17 +126,29 @@ test("later-publication requires a strict qualification-introduction ancestor", 
   assert.throws(() => strictQualificationIntroductionAncestor(root, "not-a-commit", publicationIntroduction), /commit hashes/);
 });
 
-test("later-publication accepts only the canonical publish workflow and exact Actions run provenance", () => {
-  const value = source(); value.publication.mode = "trusted-publisher"; value.publication.reference = "https://github.com/clossys/platform/actions/runs/123"; value.publication.provenance = { provider: "github-actions", workflow: ".github/workflows/publish.yml", run: value.publication.reference };
-  assert.deepEqual(rules(value), []);
-  for (const mutate of [
-    (record) => { record.publication.provenance.workflow = ".github/workflows/alternate.yml"; },
-    (record) => { record.publication.provenance.run = "https://github.com/clossys/platform/actions/runs/0"; },
-    (record) => { record.publication.provenance.run = "https://github.com/other/platform/actions/runs/123"; },
-    (record) => { record.publication.reference = "https://github.com/clossys/platform/actions/runs/124"; },
-  ]) { const altered = structuredClone(value); mutate(altered); assert.ok(rules(altered).includes("trusted-publisher")); }
-  value.publication.mode = "owner-present";
-  delete value.publication.provenance;
-  value.publication.reference = "not a URL";
-  assert.ok(rules(value).includes("publication-evidence"));
+test("later-publication v1 rejects trusted-publisher labels and provenance even when all evidence strings agree", () => {
+  const trusted = source();
+  trusted.publication.mode = "trusted-publisher";
+  trusted.publication.reference = "https://github.com/clossys/platform/actions/runs/123";
+  trusted.publication.provenance = { provider: "github-actions", workflow: ".github/workflows/publish.yml", run: trusted.publication.reference };
+  assert.ok(rules(trusted).includes("trusted-publisher-unsupported"));
+  assert.ok(rules(trusted).includes("publication-provenance"));
+
+  // These fields already join the same package, source, qualification, and
+  // registry bytes. A canonical-looking workflow/run label cannot upgrade v1.
+  assert.deepEqual(trusted.candidate, qualification.candidate);
+  assert.deepEqual(trusted.source, Object.fromEntries(Object.keys(trusted.source).map((key) => [key, qualification[key]])));
+  assert.deepEqual(trusted.registryProof.evidence.name, trusted.candidate.name);
+  assert.deepEqual(trusted.registryProof.evidence.version, trusted.candidate.version);
+
+  const spoofedOwner = source();
+  spoofedOwner.publication.reference = "https://github.com/clossys/platform/actions/runs/123";
+  spoofedOwner.publication.provenance = { provider: "github-actions", workflow: ".github/workflows/publish.yml", run: spoofedOwner.publication.reference };
+  assert.ok(rules(spoofedOwner).includes("publication-provenance"));
+
+  const malformed = source();
+  malformed.publication.mode = "trusted-publisher";
+  malformed.publication.provenance = { workflow: "publish.yml", run: "not-a-run" };
+  assert.ok(rules(malformed).includes("trusted-publisher-unsupported"));
+  assert.ok(rules(malformed).includes("publication-provenance"));
 });
