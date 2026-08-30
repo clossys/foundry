@@ -4,7 +4,7 @@
   "packageManager": "npm",
   "snapshot": { "repository": "fixture/repository", "maxAgeMs": 604800000 },
   "starter": { "name": "{{CANDIDATE_NAME}}", "version": "{{CANDIDATE_VERSION}}", "integrity": "{{CANDIDATE_INTEGRITY}}", "bin": "foundry-starter" },
-  "advisor": { "name": "@clossys/advisor", "version": "0.1.4", "integrity": "sha512-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==", "bin": "advisor-execution-readiness" },
+  "advisor": { "name": "@clossys/advisor", "version": "0.1.5", "integrity": "sha512-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==", "bin": "advisor-execution-readiness" },
   "target": { "name": "@fixture/qualification-target", "version": "1.0.0", "integrity": "sha512-AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ==", "bin": "qualification-target-check", "invocation": "single-json-input" },
   "evidence": { "assessment": "evidence/assessment.json", "targetInput": "evidence/target-indeterminate.json" }
 }

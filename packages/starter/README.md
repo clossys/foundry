@@ -18,7 +18,7 @@ canonical two-phase shape.
 Pin an exact public npm version in the consumer's manifest and lockfile:
 
 ```bash
-npm install --save-dev --save-exact @clossys/starter@0.1.3
+npm install --save-dev --save-exact @clossys/starter@0.1.4
 ```
 
 Public npm reads are credentialless. Do not add a token or private registry
@@ -43,19 +43,19 @@ snapshot identity, and two normalized relative evidence paths.
   },
   "starter": {
     "name": "@clossys/starter",
-    "version": "0.1.3",
+    "version": "0.1.4",
     "integrity": "<npm-sha512-sri>",
     "bin": "foundry-starter"
   },
   "advisor": {
     "name": "@clossys/advisor",
-    "version": "0.1.4",
+    "version": "0.1.5",
     "integrity": "<npm-sha512-sri>",
     "bin": "advisor-execution-readiness"
   },
   "target": {
     "name": "@clossys/advisor",
-    "version": "0.1.4",
+    "version": "0.1.5",
     "integrity": "<npm-sha512-sri>",
     "bin": "advisor-check",
     "invocation": "single-json-input"
