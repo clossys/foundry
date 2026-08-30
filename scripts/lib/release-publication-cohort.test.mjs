@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { parseStrictJson } from "./candidate-qualification.mjs";
 import {
@@ -12,6 +14,7 @@ import {
 import { TRIO, TRIO_COHORT_PATH } from "./release-qualification-trio.mjs";
 
 const root = new URL("../../", import.meta.url);
+const rootPath = fileURLToPath(root);
 const read = (path) => readFileSync(new URL(path, root), "utf8");
 const publicationBytes = read(TRIO_PUBLICATION_PATH);
 const cohortBytes = read(TRIO_COHORT_PATH);
@@ -20,9 +23,11 @@ const cohort = parseStrictJson(cohortBytes);
 const qualificationPaths = cohort.members.map((member) => member.qualificationPath);
 const recordBytes = new Map(qualificationPaths.map((path) => [path, read(path)]));
 const records = new Map([...recordBytes].map(([path, bytes]) => [path, parseStrictJson(bytes)]));
+const transitionCommits = execFileSync("git", ["log", "--full-history", "--diff-filter=A", "--format=%H", "HEAD", "--", TRIO_PUBLICATION_PATH], { cwd: rootPath, encoding: "utf8" }).trim().split("\n").filter(Boolean);
+assert.equal(transitionCommits.length, 1, "one retained publication transition is required");
 const transitionFileBytes = new Map(TRIO_PUBLICATION_TRANSITION_PATHS
   .filter((path) => path !== TRIO_PUBLICATION_PATH)
-  .map((path) => [path, read(path)]));
+  .map((path) => [path, execFileSync("git", ["show", `${transitionCommits[0]}:${path}`], { cwd: rootPath, encoding: "utf8" })]));
 
 function context(overrides = {}) {
   return {
