@@ -312,7 +312,7 @@ retroactive gate, adoption, grounding, or release clearance.
 
 The credential-free `qualify` job and OIDC `publish` job both use the pinned
 official `actions/setup-node` runtime: Node `v24.19.0`, bundled npm `11.17.0`,
-and zlib `1.3.2.1-motley`. Each job asserts all three exact values before any
+and zlib `1.3.2.1-motley-3246f1b`. Each job asserts all three exact values before any
 npm install, pack, or publish operation. A mismatch fails closed; it may not
 reuse an ambient runner runtime or mutate the exact qualified tarball handoff.
 This invariant was added after failed workflow run `33329284276` exposed that

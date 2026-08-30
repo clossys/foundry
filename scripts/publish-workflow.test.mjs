@@ -27,7 +27,7 @@ function assertPinnedReplayRuntime(selected, name, firstNpmOperation) {
   assert.match(selected, /node-version: 24\.19\.0/);
   assert.match(selected, /test "\$\(node --version\)" = 'v24\.19\.0'/);
   assert.match(selected, /test "\$\(npm --version\)" = '11\.17\.0'/);
-  assert.match(selected, /test "\$\(node -p 'process\.versions\.zlib'\)" = '1\.3\.2\.1-motley'/);
+  assert.match(selected, /test "\$\(node -p 'process\.versions\.zlib'\)" = '1\.3\.2\.1-motley-3246f1b'/);
   assert.ok(position(selected, setup) < position(selected, assertion), `${name} must set up Node before asserting it`);
   assert.ok(position(selected, assertion) < position(selected, firstNpmOperation), `${name} must assert the replay runtime before npm work`);
 }
@@ -135,7 +135,7 @@ test("replay jobs reject runtime mutation instead of accepting a version floor",
     const mutated = job(name)
       .replaceAll("v24.19.0", "v24.19.1")
       .replaceAll("11.17.0", "11.17.1")
-      .replaceAll("1.3.2.1-motley", "1.3.2.2-motley");
+      .replaceAll("1.3.2.1-motley-3246f1b", "1.3.2.2-motley-3246f1b");
     assert.throws(() => assertPinnedReplayRuntime(mutated, name, firstNpmOperation));
   }
 });
