@@ -118,6 +118,8 @@ test("OIDC publish consumes the exact handoff with upload-only trust and no toke
   assert.match(publish, /npm publish "\$TARBALL" --provenance --access public --ignore-scripts --registry "\$REGISTRY"/);
   assert.match(publish, /name: Verify anonymous public npm visibility and exact bytes/);
   assert.match(publish, /verify-post-publish-public-npm-artifact\.mjs --package "\$PKG" --expected-tarball "\$EXPECTED_TARBALL"/);
+  assert.match(publish, /PKG: \$\{\{ matrix\.package \}\}/);
+  assert.match(publish, /PUBLISH_RELEASE_TARGET: \$\{\{ inputs\.release_target \}\}/);
   assert.doesNotMatch(publish, /for attempt in 1 2 3 4 5|sleep 3|npm pack "\$\{package_name\}@\$\{package_version\}"/);
 
   const verification = job("verify-published");

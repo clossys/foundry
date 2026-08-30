@@ -216,6 +216,30 @@ test("post-publish visibility never retries a wrong-digest registry response", a
   assert.deepEqual(waits, []);
 });
 
+test("post-publish visibility never retries denial, transport, or malformed identity responses", async () => {
+  const bytes = tarball();
+  for (const [label, entries, expectedKind] of [
+    ["401 denial", [response(401, {})], "denied"],
+    ["403 denial", [response(403, {})], "denied"],
+    ["429 transport", [response(429, {})], "unreachable"],
+    ["500 transport", [response(500, {})], "unreachable"],
+    ["thrown transport", [new TypeError("offline")], "unreachable"],
+    ["malformed identity", [response(200, { ...metadata(bytes), name: "@fixture/other" })], "unreachable"],
+  ]) {
+    const waits = [];
+    const result = await retryPostPublishPublicNpmArtifact({
+      registry: PUBLIC_NPM_REGISTRY,
+      name: NAME,
+      version: VERSION,
+      delays: [0, 9, 12],
+      sleep: async (milliseconds) => { waits.push(milliseconds); },
+      fetchImpl: queueFetch(entries),
+    });
+    assert.equal(result.kind, expectedKind, label);
+    assert.deepEqual(waits, [], label);
+  }
+});
+
 test("post-publish visibility refuses an unbounded retry schedule", async () => {
   await assert.rejects(
     retryPostPublishPublicNpmArtifact({ registry: PUBLIC_NPM_REGISTRY, name: NAME, version: VERSION, delays: [0, 180_001] }),

@@ -441,6 +441,8 @@ jobs:
 
       - name: Verify anonymous public npm visibility and exact bytes
         env:
+          PKG: ${{ matrix.package }}
+          PUBLISH_RELEASE_TARGET: ${{ inputs.release_target }}
           EXPECTED_TARBALL: ${{ runner.temp }}/qualification/${{ matrix.package }}/candidate.tgz
         run: |
           set -euo pipefail
