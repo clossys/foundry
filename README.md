@@ -81,6 +81,10 @@ The first `@clossys` public npm Trio is published and anonymously verified:
 Advisor 0.1.3, Starter 0.1.2, and Controller 0.8.21. Public packument and
 tarball access plus exact served-digest parity are retained for all three. The
 other sixteen packages remain later catalogue expansions in dependency order.
+Strategist, Writer, and Designer are reviewed qualification candidates, not
+published packages: each later publication needs its own immutable,
+package-neutral record joined to the exact qualification, catalogue entry,
+candidate tarball, anonymous served bytes, and applicable publisher provenance.
 Anonymous resolution of the exact Trio versions is proven. Consumer install
 guidance remains withheld until the disposable credentialless Trio smoke
 closes; that proof will use exact pins rather than a floating `latest` tag.

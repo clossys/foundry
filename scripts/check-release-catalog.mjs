@@ -83,6 +83,12 @@ function matchesExactArray(actual, expected) {
   return Array.isArray(actual) && actual.length === expected.length && actual.every((value, index) => value === expected[index]);
 }
 
+function hasInitialPublicationPrefix(actual) {
+  return Array.isArray(actual) && actual.length >= CUTOVER_TARGET.packages.length &&
+    CUTOVER_TARGET.packages.every((value, index) => actual[index] === value) &&
+    new Set(actual).size === actual.length;
+}
+
 /**
  * Parse and validate the durable target catalogue. This is deliberately
  * strict: an omitted or malformed catalogue is a release-control failure,
@@ -146,10 +152,10 @@ export function loadReleaseCatalog({ path = "governance/release-catalog.json", r
       cutover.scope !== CUTOVER_TARGET.scope ||
       cutover.registry !== CUTOVER_TARGET.registry ||
       cutover.access !== CUTOVER_TARGET.access ||
-      !matchesExactArray(cutover.packages, CUTOVER_TARGET.packages) ||
+      !hasInitialPublicationPrefix(cutover.packages) ||
       catalog.defaultTarget !== CUTOVER_TARGET.id
     ) {
-      fail(`${path} candidate state must activate the exact Advisor, Starter, Controller public-npm launch target`);
+      fail(`${path} candidate state must retain the ordered Advisor, Starter, Controller first-publication prefix and an explicit unique public-npm allowlist`);
     }
   }
   if (!ids.has(catalog.defaultTarget)) fail(`${path} defaultTarget "${catalog.defaultTarget}" is not declared in targets`);

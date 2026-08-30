@@ -1,9 +1,12 @@
 import assert from "node:assert/strict";
 import { execFile as execFileCallback } from "node:child_process";
 import { readFile } from "node:fs/promises";
+import { lstatSync } from "node:fs";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { promisify } from "node:util";
+import { validateReleaseQualificationContract, validateReleaseQualificationPolicy } from "./lib/release-qualification-contract.mjs";
 
 const execFile = promisify(execFileCallback);
 const cli = fileURLToPath(new URL("./run-candidate-qualification.mjs", import.meta.url));
@@ -64,4 +67,35 @@ test("repository Trio policy, adapters, and current-candidate fixtures bind the 
   assert.equal(validLock.packages["node_modules/@clossys/controller"].version, "0.8.22");
   assert.equal(duplicateLock.packages["node_modules/@clossys/controller"].version, "0.8.22");
   assert.equal(duplicateLock.packages["node_modules/@example/consumer/node_modules/@clossys/controller"].version, "0.8.21");
+});
+
+test("all six policy entries bind their manifests, adapters, tracked fixtures, bins, and optional peers", async () => {
+  const policy = await repositoryJson("governance/release-qualification-policy.json");
+  const expected = {
+    "@clossys/advisor": { packageKey: "advisor", version: "0.1.4" },
+    "@clossys/starter": { packageKey: "starter", version: "0.1.3" },
+    "@clossys/controller": { packageKey: "controller", version: "0.8.22" },
+    "@clossys/strategist": { packageKey: "strategist", version: "0.1.1" },
+    "@clossys/writer": { packageKey: "writer", version: "0.3.1" },
+    "@clossys/designer": { packageKey: "designer", version: "0.2.2" },
+  };
+  assert.deepEqual(Object.keys(policy.packages).sort(), Object.keys(expected).sort());
+  assert.deepEqual(validateReleaseQualificationPolicy(policy), []);
+  for (const [name, entry] of Object.entries(policy.packages)) {
+    const manifest = await repositoryJson(`${entry.packageDir}/package.json`);
+    const adapter = await repositoryJson(entry.adapterPath);
+    const fixtureRoot = join(process.cwd(), entry.fixturePath);
+    const fixtures = Object.fromEntries(adapter.fixtures.map((fixture) => {
+      const stat = lstatSync(join(fixtureRoot, fixture));
+      return [fixture, { type: stat.isFile() ? "file" : "other", symlink: stat.isSymbolicLink(), tracked: true, size: stat.size }];
+    }));
+    const manifestBins = typeof manifest.bin === "string" ? { [manifest.name]: manifest.bin } : manifest.bin ?? {};
+    assert.equal(entry.packageKey, expected[name].packageKey);
+    assert.deepEqual([manifest.name, manifest.version], [name, expected[name].version]);
+    assert.equal(adapter.package, name);
+    assert.deepEqual(validateReleaseQualificationContract({ policy, adapter, fixtures, manifestBins, peerDependencies: manifest.peerDependencies ?? {}, peerDependenciesMeta: manifest.peerDependenciesMeta ?? {} }), [], name);
+  }
+  const designer = policy.packages["@clossys/designer"];
+  assert.ok((await repositoryJson(designer.adapterPath)).fixtures.includes("clean/View.tsx"));
+  assert.match(await readFile(new URL(`../${designer.fixturePath}/clean/View.tsx`, import.meta.url), "utf8"), /text-\[var\(--color-ink-primary\)\]/);
 });

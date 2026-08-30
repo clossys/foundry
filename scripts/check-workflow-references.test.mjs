@@ -100,6 +100,7 @@ export function candidateQualificationCiFailures(workflowText) {
   if (!/^  build:\n\s+name: build and test$/m.test(build)) failures.push("required-build-context");
   if (!/- uses: actions\/checkout@[^\n]+\n[ \t]+with:\n(?:[ \t]+#[^\n]+\n)*[ \t]+fetch-depth: 0\b/.test(build)) failures.push("full-history-checkout");
   if (!/^\s+- name: Candidate qualification records\n\s+run: npm run check:candidate-qualification$/m.test(build)) failures.push("candidate-invocation");
+  if (!/^\s+- name: Later publication records\n\s+run: npm run check:later-publications$/m.test(build)) failures.push("later-publication-invocation");
   return failures;
 }
 
@@ -133,6 +134,12 @@ test("the required build context fails closed on candidate qualification records
     "",
   );
   assert.deepEqual(candidateQualificationCiFailures(withoutInvocation), ["candidate-invocation"]);
+
+  const withoutLaterPublication = build.replace(
+    "      - name: Later publication records\n        run: npm run check:later-publications\n",
+    "",
+  );
+  assert.deepEqual(candidateQualificationCiFailures(withoutLaterPublication), ["later-publication-invocation"]);
 
   const shallow = build.replace("          fetch-depth: 0\n", "          fetch-depth: 1\n");
   assert.deepEqual(candidateQualificationCiFailures(shallow), ["full-history-checkout"]);

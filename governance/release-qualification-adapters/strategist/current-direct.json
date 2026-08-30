@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "package": "@clossys/strategist",
+  "archetype": "current-direct",
+  "bins": { "strategist-check": 0 },
+  "fixtures": ["strategy/facts.json", "clean/announcement.md", "violated/announcement.md", "indeterminate/announcement.md"],
+  "cases": [
+    { "id": "facts-clean", "bin": "strategist-check", "args": [{ "fixtureDirectory": "strategy" }, { "fixtureDirectory": "clean" }], "exitCode": 0, "group": "facts" },
+    { "id": "facts-violated", "bin": "strategist-check", "args": [{ "fixtureDirectory": "strategy" }, { "fixtureDirectory": "violated" }], "exitCode": 1, "group": "facts" },
+    { "id": "facts-indeterminate", "bin": "strategist-check", "args": [{ "fixtureDirectory": "indeterminate" }, { "fixtureDirectory": "clean" }], "exitCode": 2, "group": "facts" }
+  ],
+  "dimensionEvidence": { "rollback": "restoration", "duplicate": "facts" }
+}

@@ -124,6 +124,7 @@ import {
 } from "./lib/candidate-qualification.mjs";
 import { TRIO_PUBLICATION_PATH, validateTrioFirstPublication } from "./lib/release-publication-cohort.mjs";
 import { TRIO_COHORT_PATH, TRIO_CONTROL_TAIL_AUTHORIZATION_PATH } from "./lib/release-qualification-trio.mjs";
+import { readValidatedLaterPublishedPackages } from "./lib/release-later-publication.mjs";
 
 export const STATES = ["designed", "implemented", "staged", "published", "adopted", "grounded", "closed"];
 export const LIFECYCLE_POSITION_START = "<!-- lifecycle-position-table:start -->";
@@ -397,7 +398,8 @@ export function readValidatedPublishedPackages(repoRoot) {
       cohortBytes,
       controlTailAuthorization,
     }).length > 0) return new Set();
-    return new Set(publication.members.map((member) => records.get(member.qualification.path)?.candidate?.name).filter(Boolean));
+    const sealed = publication.members.map((member) => records.get(member.qualification.path)?.candidate?.name).filter(Boolean);
+    return new Set([...sealed, ...readValidatedLaterPublishedPackages(repoRoot)]);
   } catch {
     return new Set();
   }

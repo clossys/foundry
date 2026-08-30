@@ -6,6 +6,7 @@ import { loadTransitionPolicy } from "./lib/package-identity-transition.mjs";
 import { TRIO_PUBLICATION_PATH, TRIO_PUBLICATION_TRANSITION_BASE, validateTrioFirstPublication } from "./lib/release-publication-cohort.mjs";
 import { TRIO_COHORT_PATH, TRIO_QUARANTINE_PATH, validateTrioQualificationState } from "./lib/release-qualification-cohort.mjs";
 import { TRIO_CONTROL_TAIL_AUTHORIZATION_PATH } from "./lib/release-qualification-trio.mjs";
+import { readValidatedLaterPublishedPackages } from "./lib/release-later-publication.mjs";
 
 const transition = loadTransitionPolicy("governance/package-identity-transition.json");
 const sourceIdentity = JSON.parse(readFileSync("package-scope.json", "utf8"));
@@ -76,6 +77,9 @@ const publicationFindings = publication ? validateTrioFirstPublication(publicati
 for (const item of publicationFindings) console.error("[" + item.rule + "] " + TRIO_PUBLICATION_PATH + ": " + item.message);
 failed ||= publicationFindings.length > 0;
 const trioRecords = records.map((item) => item.record).filter((record) => record?.timing === "pre-publication" && /^@clossys\/(advisor|starter|controller)$/.test(record?.candidate?.name ?? ""));
+const forwardRecords = records
+  .filter((item) => item.record?.timing === "pre-publication" && item.record?.candidate?.name?.startsWith(`${sourceIdentity.scope}/`) && !sealedQualificationPaths.has(item.path))
+  .map((item) => item.record);
 const sealedTrioRecords = Array.isArray(publication?.value?.members)
   ? publication.value.members.map((member) => recordMap.get(member?.qualification?.path)).filter(Boolean)
   : [];
@@ -83,6 +87,8 @@ const publicationClosureFindings = publication ? validateTrioPublicationClosure(
 for (const item of publicationClosureFindings) console.error("[" + item.rule + "] " + TRIO_PUBLICATION_PATH + ": " + item.message);
 failed ||= publicationClosureFindings.length > 0;
 const publicationStateValid = publication !== null && publicationFindings.length === 0 && publicationClosureFindings.length === 0;
+try { readValidatedLaterPublishedPackages(process.cwd()); }
+catch (error) { console.error("[later-publication-records] " + (error instanceof Error ? error.message : "unknown error")); failed = true; }
 if (cohort) {
   try { immutableIntroducedBytes(cohort.path); } catch (error) { console.error("[trio-cohort-history] " + cohort.path + ": " + error.message); failed = true; }
 }
@@ -97,7 +103,7 @@ if (publication && publicationClosureFindings.length > 0) {
 }
 for (const { path, record } of records) {
   const findings = recordFindings.get(path) ?? [];
-  if (record.timing === "pre-publication" && record.candidate?.name?.startsWith("@clossys/")) findings.push(...validatePrepublicationPrTail(record, { recordPath: path, trioRecords, cohort: cohort?.value, cohortBytes: cohort?.bytes, quarantine: quarantine?.value, controlTailAuthorization: controlTailAuthorization?.value, publication: publication?.value, publicationClosureValid: publicationStateValid }));
+  if (record.timing === "pre-publication" && record.candidate?.name?.startsWith(`${sourceIdentity.scope}/`)) findings.push(...validatePrepublicationPrTail(record, { recordPath: path, trioRecords, forwardRecords, cohort: cohort?.value, cohortBytes: cohort?.bytes, quarantine: quarantine?.value, controlTailAuthorization: controlTailAuthorization?.value, publication: publication?.value, publicationClosureValid: publicationStateValid }));
   for (const finding of findings) console.error("[" + finding.rule + "] " + path + ": " + finding.message);
   failed ||= findings.length > 0;
 }
