@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * Reproducible author-side staging evidence for strategist, writer, and publisher.
+ * Reproducible author-side staging evidence for the expression quartet:
+ * strategist, writer, designer, and publisher.
  *
  * Each case invokes the package's compiled CLI through its dist path, first
  * on a genuine consumer-shaped violation (exit 1), then on a clean control
@@ -14,7 +15,7 @@
  */
 
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -69,6 +70,19 @@ try {
   run("writer red", writerCli, [writerRecord, writerRed], 1, "finding(s)");
   run("writer control", writerCli, [writerRecord, writerControl], 0, "No findings.");
 
+  const designerCli = join(repoRoot, "packages/designer/dist/tokens/contrast-cli.js");
+  const designerTokens = readFileSync(join(repoRoot, "packages/designer/styles/tokens.css"), "utf8");
+  const designerDir = fixtureDir("designer-contrast");
+  const designerRed = writeText(
+    designerDir,
+    "tokens-red.css",
+    designerTokens.replace(/--color-ink-primary:\s*oklch\([^;]+;/, "--color-ink-primary: oklch(0.9702 0 0);"),
+  );
+  const designerIndeterminate = writeText(designerDir, "tokens-indeterminate.css", ":root { --color-ink-primary: invalid; }\n");
+  run("designer red", designerCli, [designerRed], 1, "finding(s)");
+  run("designer control", designerCli, [], 0, "[dark] No findings.");
+  run("designer indeterminate", designerCli, [designerIndeterminate], 2, "could NOT be evaluated");
+
   const publisherMediaCli = join(repoRoot, "packages/publisher/dist/media/cli.js");
   const mediaDir = fixtureDir("publisher-media");
   const assetRecord = writeJson(mediaDir, "assets.json", { id: "publisher-stage", entries: [{ id: "marketing.hero-image", type: "image", src: "/assets/hero.png", width: 1600, height: 900, alt: "Abstract illustration", licence: "CC-BY-4.0" }] });
@@ -85,7 +99,7 @@ try {
   run("publisher record red", publisherRecordCli, [ledger, recordRed], 1, "finding(s)");
   run("publisher record control", publisherRecordCli, [ledger, recordControl], 0, "No findings.");
 
-  console.log("Strategist, writer, and publisher fixture evidence: all deliberate reds and controls behaved as expected.");
+  console.log("Expression quartet fixture evidence: all deliberate reds and controls behaved as expected, and Designer's incomplete registry stayed indeterminate.");
 } finally {
   rmSync(stageDir, { recursive: true, force: true });
 }
