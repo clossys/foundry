@@ -334,18 +334,19 @@ catalogue bytes from that record's introduction commit plus its continuing
 current allowlist membership, anonymous served-byte proof, and owner-present
 publication time/evidence reference. This v1 record does not claim trusted
 publisher provenance.
-This is a source-state declaration only. No `@clossys` package is published
-or supported for installation during W1D. W1E has since published and
-anonymously verified the first Trio identities: Advisor 0.1.3, Starter 0.1.2,
-and Controller 0.8.21. Those owner-present releases do not yet carry npm
-trusted-publisher/OIDC provenance.
+This is a source-state declaration only. During W1D no `@clossys` package was
+published or supported for installation. W1E subsequently published and
+anonymously verified the owner-present first Trio identities, then published
+and verified the current trusted-publisher releases: Advisor 0.1.5, Starter
+0.1.4, and Controller 0.8.23. The current releases carry npm provenance and
+served-byte parity evidence.
 
-The publish workflow remains reviewable scaffolding, but its upload job is
-disabled and read-only. Neither a push nor a manual dispatch can publish from
-the W1D tree. W1E must separately review and activate publication, qualify the
-exact candidate tarballs, publish them in the declared dependency order, and
-verify anonymous packument and tarball access plus digest parity. Until that
-evidence exists, a version change is source preparation, not a release.
+The publish workflow is active only through its reviewed, protected publish
+path. Every future release still needs a fresh exact candidate qualification,
+FULL safety and artifact checks, immutable review evidence, anonymous
+packument/tarball verification, and—when published through trusted
+publishing—provenance verification. A version change is source preparation
+until those release facts exist.
 
 The catalogue's GitHub Packages target and the workflow behavior associated
 with it are retained as immutable predecessor history. They explain how the
@@ -451,22 +452,17 @@ unpublished candidates, and never delete, overwrite, or reuse a published
 version. A correction is a new forward version that re-enters qualification
 with the whole cohort from one exact source head.
 
-Only after all three first identities pass those stops may the owner configure
-npm trusted publishing for each package. That is a separate provider action,
-followed by a separately reviewed workflow activation. The activation must use
-Node `>=22.14` and npm `>=11.5.1`, grant `id-token: write` only to the upload
-job, run in the protected `npm-publish` environment with a required reviewer,
-and have no `NODE_AUTH_TOKEN`, `NPM_TOKEN`, `GH_TOKEN`, or equivalent token
-environment. A bounded patch release through that OIDC path must then prove
-npm provenance and served-byte parity; configuring trust alone is not evidence
-of publication or provenance. Before activation, the owner must configure and
-verify that the GitHub `npm-publish` environment has the intended required
-reviewer; a branch policy or a workflow `environment` key is not proof of that
-provider setting. After all three OIDC patch releases and their provenance
-checks succeed, the owner must set and verify each npm package's Publishing
-access as **Require two-factor authentication and disallow tokens**. That
-removes the alternate granular bypass-2FA token path only after the trusted
-replacement has proved it works.
+Only after all three first identities passed those stops was npm trusted
+publishing configured for each package. The protected `npm-publish` path then
+published the bounded current releases with npm provenance and served-byte
+parity. The workflow uses Node `>=22.14` and npm `>=11.5.1`, grants
+`id-token: write` only to the upload job, runs in the protected environment,
+and has no npm or GitHub publish token environment.
+
+Provider state was value-free verified for each current Trio package:
+Publishing access is **Require two-factor authentication and disallow tokens**.
+That setting removes the alternate granular bypass-2FA token path after the
+trusted replacement has proved it works.
 
 ### Why the name-collision check runs first, always
 
@@ -479,11 +475,11 @@ the new lane.
 
 ### Installing after the first W1E cohort
 
-The exact first Trio identities are supported through ordinary credential-free
-public npm resolution: Advisor 0.1.3, Starter 0.1.2, and Controller 0.8.21.
-Their registry-served identities, digests, and anonymous public access have
-been verified. No npm trusted-publisher/OIDC provenance has been established
-for these owner-present first releases.
+The current Trio identities are supported through ordinary credential-free
+public npm resolution: Advisor 0.1.5, Starter 0.1.4, and Controller 0.8.23.
+Their registry-served identities, digests, anonymous public access, and npm
+trusted-publisher provenance have been verified. The owner-present first
+releases remain immutable historical evidence, not current installation pins.
 
 No npm token belongs in a consumer `.npmrc` for a public package. Public npm
 resolution is credential-free; publication trust remains producer-only.
@@ -542,9 +538,10 @@ evidence or permission to upload.
 ## 8. W1E publication and installation boundary
 
 W1E, not W1D, owns the first `@clossys` public npm publications. The
-owner-present first identities are now public and anonymously verified. npm
-trusted publishing remains a separate, not-yet-proven change. For each
-selected package, W1E requires:
+owner-present first identities and the provenance-bearing current Trio releases
+are public and anonymously verified. Every current Trio package's
+token-disallow setting is also value-free verified. For each selected package,
+W1E requires:
 
 1. run FULL public-safety and package preflight against the exact candidate;
 2. retain exact candidate qualification, review, and tarball digest joins;
@@ -570,6 +567,6 @@ for the capability and wiring ledger.
 | Thing | Where | Notes |
 | --- | --- | --- |
 | Denylist | `~/.config/public-safety/denylist-foundry.json` locally; `PUBLIC_SAFETY_DENYLIST_B64` repository secret in CI | Never committed here — it names exactly what must not be public. Specific to this repository — never reuse a denylist file written for a different project. |
-| W1E publish trust | Outside the W1D tree | Not active during W1D or the owner-present first-identity publications. Only after the complete Trio exists and verifies may W1E configure and review each npm trusted publisher, the `npm-publish` required reviewer, and the later token-disallow setting. No publish token or value is recorded here. |
-| Public npm consumer read | None | Future `@clossys` reads are anonymous. A consumer token or private-registry mapping is neither required nor supported. |
+| W1E publish trust | Outside the W1D tree | Trusted publishing and the protected `npm-publish` path have proved the current Trio releases. Value-free provider evidence confirms each package-level token-disallow setting. No publish token or value is recorded here. |
+| Public npm consumer read | None | Current `@clossys` reads are anonymous. A consumer token or private-registry mapping is neither required nor supported. |
 | Predecessor GitHub Packages credentials | Historical consumer environments only | They explain immutable `@vespeneventures` evidence and must not be copied into current `@clossys` instructions or used as a fallback lane. |

@@ -15,12 +15,10 @@ customer values do not enter Foundry.
 
 ## Package consumption
 
-After W1D, `@clossys` is the source identity for this catalogue, but no
-`@clossys` package has a supported registry install yet. W1E must publish and
-verify the exact public npm artifacts before a consumer uses them. Those
-future public npm reads are credentialless; a consumer must not add a token or
-private-registry mapping for `@clossys`. A consumer will install only the
-packages its repository actually needs, never the full suite by default.
+`@clossys` is the current source identity and the public npm Trio has supported
+registry installs. Public npm reads are credentialless; a consumer must not add
+a token or private-registry mapping for `@clossys`. A consumer installs only
+the packages its repository actually needs, never the full suite by default.
 Package availability, missing reusable capability, and consumer-local wiring
 remain separate in [ADOPTION.md](ADOPTION.md).
 
@@ -66,19 +64,17 @@ provider wrappers.
 
 ## Adoption and retirement
 
-The current Controller source is `@clossys/controller@0.8.21`. It is not a
-published `@clossys` artifact and therefore is not yet available for consumer
-qualification. After W1E records the exact public npm release, a consumer may
-qualify the relevant Controller subpaths by authoring its own profile and
-validating that profile in the consumer's existing check path. The historical
-standalone names are already retired; they neither run beside Controller nor
-provide current compatibility paths.
+The current supported Controller artifact is `@clossys/controller@0.8.23` on
+public npm. A consumer may qualify the relevant Controller subpaths by
+authoring its own profile and validating that profile in the consumer's
+existing check path. The historical standalone names are retired historical
+identities; they neither run beside Controller nor provide current
+compatibility paths.
 
-The deferred single-artifact registry-install and CLI qualification procedure
-is documented in
-[REPOSITORY-REVIEW-FIRST-RUN.md](REPOSITORY-REVIEW-FIRST-RUN.md). It becomes
-operational only after W1E and stops before consumer workflow wiring, provider
-credentials, and consumer policy decisions.
+The single-artifact registry-install and CLI qualification procedure is
+documented in [REPOSITORY-REVIEW-FIRST-RUN.md](REPOSITORY-REVIEW-FIRST-RUN.md).
+It is operational for the exact current public release and stops before
+consumer workflow wiring, provider credentials, and consumer policy decisions.
 
 The legacy standalone package names are retired historical identities, not
 compatibility entry points. Their lifecycle and registry disposition is derived
