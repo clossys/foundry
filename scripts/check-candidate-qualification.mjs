@@ -1,9 +1,9 @@
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { readFileSync, readdirSync } from "node:fs";
-import { currentQualificationJoins, parseStrictJson, qualificationPath, qualificationRecordHistory, validateCandidateQualification, validatePrepublicationPrTail, validateTrioPublicationClosure } from "./lib/candidate-qualification.mjs";
+import { parseStrictJson, qualificationPath, sealedQualificationPathsAtTransitionBase, validatePrepublicationPrTail, validateRetainedCandidateQualification, validateTrioPublicationClosure } from "./lib/candidate-qualification.mjs";
 import { loadTransitionPolicy } from "./lib/package-identity-transition.mjs";
-import { TRIO_PUBLICATION_PATH, validateTrioFirstPublication } from "./lib/release-publication-cohort.mjs";
+import { TRIO_PUBLICATION_PATH, TRIO_PUBLICATION_TRANSITION_BASE, validateTrioFirstPublication } from "./lib/release-publication-cohort.mjs";
 import { TRIO_COHORT_PATH, TRIO_QUARANTINE_PATH, validateTrioQualificationState } from "./lib/release-qualification-cohort.mjs";
 import { TRIO_CONTROL_TAIL_AUTHORIZATION_PATH } from "./lib/release-qualification-trio.mjs";
 
@@ -46,18 +46,18 @@ catch (error) { if (error?.code !== "ENOENT") { console.error("Cannot read " + T
 let publication = null;
 try { publication = { path: TRIO_PUBLICATION_PATH, bytes: readFileSync(TRIO_PUBLICATION_PATH, "utf8"), value: parseStrictJson(readFileSync(TRIO_PUBLICATION_PATH, "utf8")) }; }
 catch (error) { console.error("Cannot read " + TRIO_PUBLICATION_PATH + ": " + (error instanceof Error ? error.message : "unknown error")); failed = true; }
+let sealedQualificationPaths = new Set();
+try { sealedQualificationPaths = sealedQualificationPathsAtTransitionBase(process.cwd()); }
+catch (error) { console.error("Cannot read sealed qualification paths: " + (error instanceof Error ? error.message : "unknown error")); failed = true; }
 const recordFindings = new Map();
 for (const { path, record } of records) {
   try {
     const historical = historicalRecord(record);
+    const sealedBase = sealedQualificationPaths.has(path) ? TRIO_PUBLICATION_TRANSITION_BASE : null;
     const expectedPath = historical
       ? `${directory}/${record.candidate.name.slice(record.candidate.name.indexOf("/") + 1)}-${record.candidate.version}.json`
       : qualificationPath(process.cwd(), record.candidate);
-    const history = qualificationRecordHistory(process.cwd(), path, record.candidate, "HEAD", expectedPath);
-    const joinCommit = record.timing === "pre-publication" ? record.reviewedCommit : history.introductionCommit;
-    const expected = { name: record.candidate?.name, version: record.candidate?.version, ...currentQualificationJoins(process.cwd(), record.candidate, joinCommit) };
-    const findings = validateCandidateQualification(record, { expected });
-    if (history.introducedRecordSha256 !== history.retainedRecordSha256) findings.push({ rule: "record-history-join", message: "retained record bytes differ from their exact introduction blob." });
+    const findings = validateRetainedCandidateQualification(record, { root: process.cwd(), path, expectedPath, sealedBase });
     recordFindings.set(path, findings);
   } catch (error) { console.error("Cannot read " + path + ": " + (error instanceof Error ? error.message : "unknown error")); recordFindings.set(path, [{ rule: "record-read", message: "record validation could not run." }]); failed = true; }
 }
@@ -92,7 +92,7 @@ if (publication && publicationClosureFindings.length > 0) {
 }
 for (const { path, record } of records) {
   const findings = recordFindings.get(path) ?? [];
-  if (record.timing === "pre-publication" && record.candidate?.name?.startsWith("@clossys/")) findings.push(...validatePrepublicationPrTail(record, { trioRecords, cohort: cohort?.value, cohortBytes: cohort?.bytes, quarantine: quarantine?.value, controlTailAuthorization: controlTailAuthorization?.value, publication: publication?.value, publicationClosureValid: publicationStateValid }));
+  if (record.timing === "pre-publication" && record.candidate?.name?.startsWith("@clossys/")) findings.push(...validatePrepublicationPrTail(record, { recordPath: path, trioRecords, cohort: cohort?.value, cohortBytes: cohort?.bytes, quarantine: quarantine?.value, controlTailAuthorization: controlTailAuthorization?.value, publication: publication?.value, publicationClosureValid: publicationStateValid }));
   for (const finding of findings) console.error("[" + finding.rule + "] " + path + ": " + finding.message);
   failed ||= findings.length > 0;
 }

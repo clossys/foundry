@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import test from "node:test";
 import { promisify } from "node:util";
-import { currentQualificationJoins, parseStrictJson, qualificationIntroductionCommit, qualificationPath, qualificationRecordHistory, validateCandidateQualification, validatePrepublicationPrTail, validateTrioControlTailAuthorization, validateTrioPublicationClosure } from "./candidate-qualification.mjs";
+import { currentQualificationJoins, parseStrictJson, qualificationIntroductionCommit, qualificationPath, qualificationRecordHistory, sealedQualificationPathsAtTransitionBase, validateCandidateQualification, validatePrepublicationPrTail, validateRetainedCandidateQualification, validateTrioControlTailAuthorization, validateTrioPublicationClosure } from "./candidate-qualification.mjs";
 import { TRIO_PUBLICATION_PATH, TRIO_PUBLICATION_TRANSITION_BASE, TRIO_PUBLICATION_TRANSITION_PATHS } from "./release-publication-cohort.mjs";
 import { TRIO, TRIO_COHORT_PATH, TRIO_CONTROL_TAIL_AUTHORIZATION_PATH, TRIO_CONTROL_TAIL_BASE_COMMIT, TRIO_CONTROL_TAIL_PATHS, TRIO_QUARANTINE_PATH, TRIO_RELEASE } from "./release-qualification-trio.mjs";
 
@@ -587,6 +587,45 @@ test("sealed first-Trio selection remains exact when later qualification version
     cohortBytes: retained.cohortBytes,
     controlTailAuthorization: retained.authorization,
   }), []);
+});
+
+test("transition-base predecessor records survive a fresh clone without dangling reviewed commits", async (t) => {
+  const parent = await mkdtemp(join(tmpdir(), "qualification-sealed-history-"));
+  const root = join(parent, "repo");
+  t.after(() => rm(parent, { recursive: true, force: true }));
+  await execFile("git", ["clone", "--no-local", process.cwd(), root]);
+  await git(root, ["config", "user.email", "test@example.invalid"]); await git(root, ["config", "user.name", "Qualification Test"]);
+  const path = "governance/release-qualifications/controller-0.8.21.json";
+  const record = parseStrictJson(readFileSync(join(root, path), "utf8"));
+  await assert.rejects(git(root, ["cat-file", "-e", `${record.reviewedCommit}^{commit}`]));
+  const sealedPaths = sealedQualificationPathsAtTransitionBase(root);
+  assert.equal(sealedPaths.size, 7);
+  assert.ok(sealedPaths.has(path));
+  assert.deepEqual(validateRetainedCandidateQualification(record, { root, path, sealedBase: TRIO_PUBLICATION_TRANSITION_BASE }), []);
+
+  const futurePath = "governance/release-qualifications/controller-9.9.9.json";
+  const future = structuredClone(record);
+  future.candidate.version = "9.9.9";
+  future.transcript.candidate.version = "9.9.9";
+  refreshTranscriptDigest(future);
+  await writeFile(join(root, futurePath), `${JSON.stringify(future, null, 2)}\n`);
+  await commit(root, "introduce a later legacy-shaped record");
+  assert.equal(sealedPaths.has(futurePath), false);
+  assert.throws(() => validateRetainedCandidateQualification(future, { root, path: futurePath, expectedPath: futurePath }), /release-qualification-policy\.json/);
+
+  const retained = readFileSync(join(root, path));
+  await writeFile(join(root, path), `${retained.toString("utf8")}\n`); await commit(root, "rewrite sealed predecessor");
+  await writeFile(join(root, path), retained); await commit(root, "restore sealed predecessor");
+  assert.ok(validateRetainedCandidateQualification(record, { root, path, sealedBase: TRIO_PUBLICATION_TRANSITION_BASE }).some((item) => item.rule === "sealed-record-touches"));
+
+  const drifted = structuredClone(record);
+  drifted.candidate.policySha256 = "0".repeat(64);
+  assert.ok(validateRetainedCandidateQualification(drifted, { root, path, sealedBase: TRIO_PUBLICATION_TRANSITION_BASE }).some((item) => item.rule === "content-join"));
+
+  const spoofedPublication = parseStrictJson(readFileSync(join(root, TRIO_PUBLICATION_PATH), "utf8"));
+  spoofedPublication.members[2].qualification.path = futurePath;
+  spoofedPublication.members[2].qualification.sha256 = "0".repeat(64);
+  assert.ok(validatePrepublicationPrTail(record, { root, recordPath: futurePath, publication: spoofedPublication, publicationClosureValid: true }).some((item) => item.rule === "reviewed-ancestor"));
 });
 
 test("post-closure qualifications enter together in one record-only child of their reviewed commit", async (t) => {

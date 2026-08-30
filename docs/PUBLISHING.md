@@ -280,6 +280,11 @@ publication record continues to select the qualifications it originally bound
 by their exact retained paths and digests; it does not require the directory to
 contain only one version of each package. A later release therefore adds a new
 versioned record without rewriting or replacing the first-publication evidence.
+The exact predecessor record paths present at the immutable publication-transition
+base retain their schema and introduction-time policy joins; their retained,
+introduction, and transition-base blobs must agree and they may never be touched
+after introduction. Validation therefore does not require a predecessor's
+historical reviewed commit to remain reachable.
 Its introduction is a direct, single-parent child of the reviewed candidate
 commit, and that introduction changes exactly the jointly retained new
 qualification records. Their content joins are measured at the reviewed
