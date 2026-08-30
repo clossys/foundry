@@ -9,9 +9,16 @@ const DIMENSIONS = ["position", "completion", "rollback", "duplicate", "cadence"
 const SHA1 = /^[a-f0-9]{40}$/, SHA256 = /^[a-f0-9]{64}$/, SHA512 = /^[a-f0-9]{128}$/;
 const NAME = /^(?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*$/, VERSION = /^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/;
 const CANONICAL_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
-const TOKENIZED_PATH = /^\$TEMP(?:\/[A-Za-z0-9@._-]+)+$/;
-const REAL_TEMP_PATH = /(?:\/private)?\/(?:var\/folders|tmp)\/[A-Za-z0-9._/-]*foundry-candidate-|[A-Za-z]:\\[^\r\n]*\\(?:Temp|TMP)\\/i;
+const ABSOLUTE_HOST_PATH = /(?:^|[\s"'`=(:,;\[!])(?:\/(?!\/)[^\s"'`<>{}\[\],)]*|[A-Za-z]:[\\/][^\s"'`<>{}\[\],)]*|\\\\[^\\\s"'`<>{}\[\],)]+\\[^\s"'`<>{}\[\],)]*)/m;
 const RAW_MAX_FILES = 64, RAW_MAX_FILE_BYTES = 65_536, RAW_MAX_TOTAL_BYTES = 524_288, RAW_MAX_STREAM_BYTES = 65_536;
+const STARTER_CONSUMER_OVERLAY = [
+  ["$TEMP/fixtures/overlay/package.json", "$TEMP/package.json"],
+  ["$TEMP/fixtures/overlay/package-lock.json", "$TEMP/package-lock.json"],
+  ["$TEMP/fixtures/overlay/advisor-package.json", "$TEMP/node_modules/@clossys/advisor/package.json"],
+  ["$TEMP/fixtures/overlay/advisor-cli.js", "$TEMP/node_modules/@clossys/advisor/dist/execution-readiness-cli.js"],
+  ["$TEMP/fixtures/overlay/target-package.json", "$TEMP/node_modules/@fixture/qualification-target/package.json"],
+  ["$TEMP/fixtures/overlay/target-cli.js", "$TEMP/node_modules/@fixture/qualification-target/dist/check.js"],
+].sort(([left], [right]) => left.localeCompare(right));
 const object = (v) => v && typeof v === "object" && !Array.isArray(v);
 const text = (v) => typeof v === "string" && v.trim().length > 0;
 const digest = (v) => createHash("sha256").update(v).digest("hex");
@@ -20,7 +27,18 @@ const fail = (a, rule, message) => a.push({ rule, message });
 function closed(a, v, allowed, path) { if (!object(v)) { fail(a, "shape", path); return; } for (const k of Object.keys(v)) if (!allowed.includes(k)) fail(a, "unknown-field", path + "." + k); }
 function stable(v) { if (Array.isArray(v)) return v.map(stable); if (object(v)) return Object.fromEntries(Object.keys(v).sort().map((k) => [k, stable(v[k])])); return v; }
 function canonicalInstant(value) { return typeof value === "string" && CANONICAL_INSTANT.test(value) && new Date(value).toISOString() === value; }
-function containsUnsafeRaw(value) { return typeof value !== "string" || value.includes("\0") || REAL_TEMP_PATH.test(value); }
+function tokenizedPath(value) {
+  if (typeof value !== "string") return false;
+  const parts = value.split("/");
+  return parts[0] === "$TEMP" && parts.length > 1
+    && parts.slice(1).every((part) => /^[A-Za-z0-9@._-]+$/.test(part) && part !== "." && part !== "..");
+}
+function containsUnsafeRaw(value) {
+  if (typeof value !== "string" || value.includes("\0") || ABSOLUTE_HOST_PATH.test(value)) return true;
+  for (const match of value.matchAll(/\$TEMP(?:\/[^\s"'`<>{}\[\],)]*)?/g)) if (!tokenizedPath(match[0])) return true;
+  const unknownTokens = value.replaceAll("$NODE", "").replaceAll("$ENV", "").replace(/\$TEMP(?:\/[A-Za-z0-9@._-]+)+/g, "");
+  return /\$[A-Z][A-Z_]*/.test(unknownTokens);
+}
 function normalizeFixtureInstant(value, instant) {
   if (typeof value === "string") return value.split(instant).join("$FIXTURE_MATERIALIZED_AT");
   if (Array.isArray(value)) return value.map((item) => normalizeFixtureInstant(item, instant));
@@ -35,6 +53,7 @@ function comparableTranscript(transcript) {
   for (const observation of normalized.observations ?? []) {
     if (!object(observation.rawCaseEvidence)) continue;
     for (const input of observation.rawCaseEvidence.materializedInputs ?? []) input.sha256 = digest(input.bytes);
+    for (const input of observation.rawCaseEvidence.consumerOverlay ?? []) input.sha256 = digest(input.bytes);
     observation.stdoutSha256 = digest(observation.rawCaseEvidence.stdout);
     observation.stderrSha256 = digest(observation.rawCaseEvidence.stderr);
   }
@@ -43,10 +62,10 @@ function comparableTranscript(transcript) {
 function occurrences(value, needle) { return typeof value === "string" ? value.split(needle).length - 1 : 0; }
 function checkRawCaseEvidence(a, observation, fixtureMaterializedAt) {
   const raw = observation?.rawCaseEvidence;
-  closed(a, raw, ["argv", "materializedInputs", "exitCode", "stdout", "stderr"], "transcript.observation.rawCaseEvidence");
+  closed(a, raw, ["argv", "materializedInputs", "consumerOverlay", "exitCode", "stdout", "stderr"], "transcript.observation.rawCaseEvidence");
   const argv = raw?.argv;
   const fixtureArgs = Array.isArray(argv) ? argv.slice(3) : [];
-  if (!Array.isArray(argv) || argv.length < 4 || argv.length > 12 || argv[0] !== "$NODE" || !TOKENIZED_PATH.test(argv[1] ?? "") || !argv[1].startsWith("$TEMP/node_modules/@clossys/starter/") || argv[2] !== "decide" || fixtureArgs.some((item) => !TOKENIZED_PATH.test(item ?? "") || !item.startsWith("$TEMP/fixtures/")) || argv.some(containsUnsafeRaw)) fail(a, "raw-case-argv", "raw Starter case argv must be bounded and tokenized.");
+  if (!Array.isArray(argv) || argv.length < 4 || argv.length > 12 || argv[0] !== "$NODE" || !tokenizedPath(argv[1]) || !argv[1].startsWith("$TEMP/node_modules/@clossys/starter/") || argv[2] !== "decide" || fixtureArgs.some((item) => !tokenizedPath(item) || !item.startsWith("$TEMP/fixtures/")) || argv.some(containsUnsafeRaw)) fail(a, "raw-case-argv", "raw Starter case argv must be bounded and tokenized.");
   const inputs = raw?.materializedInputs;
   let instantOccurrences = occurrences(raw?.stdout, fixtureMaterializedAt) + occurrences(raw?.stderr, fixtureMaterializedAt);
   if (!Array.isArray(inputs) || inputs.length < 1 || inputs.length > RAW_MAX_FILES) fail(a, "raw-case-inputs", "raw Starter case inputs must be bounded.");
@@ -57,11 +76,25 @@ function checkRawCaseEvidence(a, observation, fixtureMaterializedAt) {
       const size = typeof input?.bytes === "string" ? Buffer.byteLength(input.bytes) : -1;
       total += Math.max(size, 0); instantOccurrences += occurrences(input?.bytes, fixtureMaterializedAt);
       const joinedToArgument = fixtureArgs.some((argument) => input?.path === argument || input?.path?.startsWith(`${argument}/`));
-      if (!TOKENIZED_PATH.test(input?.path ?? "") || !input.path.startsWith("$TEMP/fixtures/") || !joinedToArgument || paths.has(input.path) || size < 1 || size > RAW_MAX_FILE_BYTES || containsUnsafeRaw(input.bytes) || digest(input.bytes ?? "") !== input?.sha256) fail(a, "raw-case-input", "raw Starter case input must retain unique bounded tokenized bytes and its hash.");
+      if (!tokenizedPath(input?.path) || !input.path.startsWith("$TEMP/fixtures/") || !joinedToArgument || paths.has(input.path) || size < 1 || size > RAW_MAX_FILE_BYTES || containsUnsafeRaw(input.bytes) || digest(input.bytes ?? "") !== input?.sha256) fail(a, "raw-case-input", "raw Starter case input must retain unique bounded tokenized bytes and its hash.");
       paths.add(input?.path);
     }
     const everyArgumentMaterialized = fixtureArgs.every((argument) => [...paths].some((path) => path === argument || path.startsWith(`${argument}/`)));
     if (total > RAW_MAX_TOTAL_BYTES || !everyArgumentMaterialized || JSON.stringify([...paths]) !== JSON.stringify([...paths].sort())) fail(a, "raw-case-inputs", "raw Starter case inputs must exactly cover the sorted argv inputs within the aggregate bound.");
+  }
+  const overlay = raw?.consumerOverlay;
+  if (!Array.isArray(overlay) || overlay.length !== STARTER_CONSUMER_OVERLAY.length) fail(a, "raw-case-overlay", "raw Starter case evidence must retain the exact consumer overlay.");
+  else {
+    let total = Array.isArray(inputs) ? inputs.reduce((sum, item) => sum + (typeof item?.bytes === "string" ? Buffer.byteLength(item.bytes) : 0), 0) : 0;
+    const actualMapping = [];
+    for (const item of overlay) {
+      closed(a, item, ["sourcePath", "targetPath", "sha256", "bytes"], "transcript.observation.rawCaseEvidence.consumerOverlay");
+      const size = typeof item?.bytes === "string" ? Buffer.byteLength(item.bytes) : -1;
+      total += Math.max(size, 0); instantOccurrences += occurrences(item?.bytes, fixtureMaterializedAt);
+      actualMapping.push([item?.sourcePath, item?.targetPath]);
+      if (!tokenizedPath(item?.sourcePath) || !item.sourcePath.startsWith("$TEMP/fixtures/overlay/") || !tokenizedPath(item?.targetPath) || size < 1 || size > RAW_MAX_FILE_BYTES || containsUnsafeRaw(item.bytes) || digest(item.bytes ?? "") !== item?.sha256) fail(a, "raw-case-overlay", "raw Starter consumer overlay must retain bounded public-safe bytes and their hash.");
+    }
+    if (JSON.stringify(actualMapping) !== JSON.stringify(STARTER_CONSUMER_OVERLAY) || total > RAW_MAX_TOTAL_BYTES || (Array.isArray(inputs) && inputs.length + overlay.length > RAW_MAX_FILES)) fail(a, "raw-case-overlay", "raw Starter case evidence must retain the exact sorted overlay mapping within the aggregate bound.");
   }
   if (![0, 1, 2].includes(raw?.exitCode) || raw.exitCode !== observation.observedExitCode || containsUnsafeRaw(raw?.stdout) || containsUnsafeRaw(raw?.stderr) || Buffer.byteLength(raw?.stdout ?? "") > RAW_MAX_STREAM_BYTES || Buffer.byteLength(raw?.stderr ?? "") > RAW_MAX_STREAM_BYTES || digest(raw?.stdout ?? "") !== observation.stdoutSha256 || digest(raw?.stderr ?? "") !== observation.stderrSha256) fail(a, "raw-case-result", "raw Starter case exit and output must match the hashed observation.");
   return instantOccurrences;

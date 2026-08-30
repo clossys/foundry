@@ -52,9 +52,21 @@ async function syntheticPackage({ mismatch = false, exports = undefined, runtime
     ["indeterminate.json", { id: "indeterminate", actual: 2 }],
   ];
   for (const [name, body] of entries) await writeFile(join(fixturesDir, name), JSON.stringify(body));
+  const overlayEntries = rawStarter ? [
+    ["overlay/package.json", '{"private":true,"dependencies":{"@clossys/starter":"1.0.0"}}\n'],
+    ["overlay/package-lock.json", '{"name":"raw-starter-consumer","lockfileVersion":3,"packages":{}}\n'],
+    ["overlay/advisor-package.json", '{"name":"@clossys/advisor","version":"1.0.0","type":"module"}\n'],
+    ["overlay/advisor-cli.js", "#!/usr/bin/env node\nprocess.exit(2);\n"],
+    ["overlay/target-package.json", '{"name":"@fixture/qualification-target","version":"1.0.0","type":"module"}\n'],
+    ["overlay/target-cli.js", "#!/usr/bin/env node\nprocess.exit(0);\n"],
+  ] : [];
+  for (const [name, body] of overlayEntries) {
+    await mkdir(join(fixturesDir, "overlay"), { recursive: true });
+    await writeFile(join(fixturesDir, name), body);
+  }
   const packedResult = await execFile("npm", ["pack", "--ignore-scripts", "--json", "--pack-destination", packed], { cwd: source });
   const tarball = join(packed, JSON.parse(packedResult.stdout)[0].filename);
-  const fixtureNames = entries.map(([name]) => name);
+  const fixtureNames = [...entries, ...overlayEntries].map(([name]) => name);
   const fixtures = Object.fromEntries(await Promise.all(fixtureNames.map(async (name) => {
     const path = join(fixturesDir, name);
     return [name, { path, type: "file", symlink: false, tracked: true, size: (await readFile(path)).length }];
@@ -74,7 +86,17 @@ async function syntheticPackage({ mismatch = false, exports = undefined, runtime
     schemaVersion: 1,
     package: packageName,
     archetype: "current-direct",
-    ...(rawStarter ? { retainRawCaseEvidence: true } : {}),
+    ...(rawStarter ? {
+      retainRawCaseEvidence: true,
+      consumerOverlay: [
+        { fixture: "overlay/package.json", target: "package.json" },
+        { fixture: "overlay/package-lock.json", target: "package-lock.json" },
+        { fixture: "overlay/advisor-package.json", target: "node_modules/@clossys/advisor/package.json" },
+        { fixture: "overlay/advisor-cli.js", target: "node_modules/@clossys/advisor/dist/execution-readiness-cli.js" },
+        { fixture: "overlay/target-package.json", target: "node_modules/@fixture/qualification-target/package.json" },
+        { fixture: "overlay/target-cli.js", target: "node_modules/@fixture/qualification-target/dist/check.js" },
+      ],
+    } : {}),
     ...(peerInstall ? { peerInstall } : {}),
     bins: { "synthetic-check": 0 },
     fixtures: fixtureNames,
@@ -138,6 +160,17 @@ test("Starter v2 retains only bounded tokenized raw case commands, inputs, exits
     assert.equal(raw.materializedInputs.length, 1);
     assert.match(raw.materializedInputs[0].path, /^\$TEMP\/fixtures\//);
     assert.equal(raw.materializedInputs[0].sha256, sha256(raw.materializedInputs[0].bytes));
+    assert.deepEqual(raw.consumerOverlay.map(({ sourcePath, targetPath }) => [sourcePath, targetPath]), [
+      ["$TEMP/fixtures/overlay/advisor-cli.js", "$TEMP/node_modules/@clossys/advisor/dist/execution-readiness-cli.js"],
+      ["$TEMP/fixtures/overlay/advisor-package.json", "$TEMP/node_modules/@clossys/advisor/package.json"],
+      ["$TEMP/fixtures/overlay/package-lock.json", "$TEMP/package-lock.json"],
+      ["$TEMP/fixtures/overlay/package.json", "$TEMP/package.json"],
+      ["$TEMP/fixtures/overlay/target-cli.js", "$TEMP/node_modules/@fixture/qualification-target/dist/check.js"],
+      ["$TEMP/fixtures/overlay/target-package.json", "$TEMP/node_modules/@fixture/qualification-target/package.json"],
+    ]);
+    assert.ok(raw.consumerOverlay.every((overlay) => overlay.sha256 === sha256(overlay.bytes)));
+    assert.equal(raw.consumerOverlay.some((overlay) => overlay.bytes.includes("/usr/bin/env")), false);
+    assert.equal(raw.consumerOverlay.filter((overlay) => overlay.sourcePath.endsWith("-cli.js")).every((overlay) => overlay.bytes.includes("$ENV")), true);
     assert.equal(item.stdoutSha256, sha256(raw.stdout));
     assert.equal(item.stderrSha256, sha256(raw.stderr));
   }

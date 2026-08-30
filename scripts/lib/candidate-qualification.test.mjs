@@ -100,6 +100,16 @@ function refreshTranscriptDigest(record) {
   record.transcript.canonicalSha256 = createHash("sha256").update(JSON.stringify(transcript)).digest("hex");
 }
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");
+const hostilePosixPath = (...segments) => ["", ...segments].join("/");
+const hostileWindowsPath = (...segments) => segments.join("\\");
+const rawStarterOverlay = () => [
+  ["$TEMP/fixtures/overlay/advisor-cli.js", "$TEMP/node_modules/@clossys/advisor/dist/execution-readiness-cli.js", "#!$ENV node\nprocess.exit(2);\n"],
+  ["$TEMP/fixtures/overlay/advisor-package.json", "$TEMP/node_modules/@clossys/advisor/package.json", '{"name":"@clossys/advisor","version":"1.0.0"}\n'],
+  ["$TEMP/fixtures/overlay/package-lock.json", "$TEMP/package-lock.json", '{"lockfileVersion":3,"packages":{}}\n'],
+  ["$TEMP/fixtures/overlay/package.json", "$TEMP/package.json", '{"private":true}\n'],
+  ["$TEMP/fixtures/overlay/target-cli.js", "$TEMP/node_modules/@fixture/qualification-target/dist/check.js", "#!$ENV node\nprocess.exit(0);\n"],
+  ["$TEMP/fixtures/overlay/target-package.json", "$TEMP/node_modules/@fixture/qualification-target/package.json", '{"name":"@fixture/qualification-target","version":"1.0.0"}\n'],
+].map(([sourcePath, targetPath, bytes]) => ({ sourcePath, targetPath, sha256: sha256(bytes), bytes }));
 function rawStarterV2Record() {
   const record = source();
   const instant = "2026-08-29T12:00:00.000Z";
@@ -118,6 +128,7 @@ function rawStarterV2Record() {
     observation.rawCaseEvidence = {
       argv: ["$NODE", "$TEMP/node_modules/@clossys/starter/dist/cli.js", "decide", `$TEMP/fixtures/case-${index}.json`],
       materializedInputs: [{ path: `$TEMP/fixtures/case-${index}.json`, sha256: sha256(bytes), bytes }],
+      consumerOverlay: rawStarterOverlay(),
       exitCode: observation.observedExitCode,
       stdout,
       stderr: "",
@@ -132,6 +143,7 @@ function retimeRawTranscript(transcript, next) {
   const changed = JSON.parse(JSON.stringify(transcript).split(prior).join(next));
   for (const observation of changed.observations.filter((item) => item.kind === "case")) {
     for (const input of observation.rawCaseEvidence.materializedInputs) input.sha256 = sha256(input.bytes);
+    for (const input of observation.rawCaseEvidence.consumerOverlay) input.sha256 = sha256(input.bytes);
     observation.stdoutSha256 = sha256(observation.rawCaseEvidence.stdout);
     observation.stderrSha256 = sha256(observation.rawCaseEvidence.stderr);
   }
@@ -198,10 +210,21 @@ test("v2 raw evidence fails closed on missing, extra, leaking, malformed, or has
     (record) => { delete record.transcript.observations.find((item) => item.kind === "case").rawCaseEvidence; },
     (record) => { record.transcript.observations.find((item) => item.kind === "help").rawCaseEvidence = {}; },
     (record) => { const item = record.transcript.observations.find((value) => value.kind === "case"); item.rawCaseEvidence.stdout = "/tmp/foundry-candidate-secret/output\n"; item.stdoutSha256 = sha256(item.rawCaseEvidence.stdout); },
+    (record) => { const item = record.transcript.observations.find((value) => value.kind === "case"); item.rawCaseEvidence.stdout = `${hostilePosixPath("Users", "example", "private", "workspace", "result.json")}\n`; item.stdoutSha256 = sha256(item.rawCaseEvidence.stdout); },
+    (record) => { record.transcript.observations.find((item) => item.kind === "case").rawCaseEvidence.argv[1] = "$TEMP/node_modules/@clossys/starter/../../private/evil.js"; },
+    (record) => { record.transcript.observations.find((item) => item.kind === "case").rawCaseEvidence.argv[3] = "$TEMP/fixtures/../event.json"; },
+    (record) => { const raw = record.transcript.observations.find((item) => item.kind === "case").rawCaseEvidence; raw.argv[3] = "$TEMP/fixtures/../event.json"; raw.materializedInputs[0].path = "$TEMP/fixtures/../event.json"; },
     (record) => { record.transcript.observations.find((item) => item.kind === "case").rawCaseEvidence.materializedInputs[0].sha256 = "0".repeat(64); },
+    (record) => { const input = record.transcript.observations.find((item) => item.kind === "case").rawCaseEvidence.materializedInputs[0]; input.bytes = `${JSON.stringify({ path: hostileWindowsPath("C:", "Users", "example", "private.json") })}\n`; input.sha256 = sha256(input.bytes); },
     (record) => { record.transcript.observations.find((item) => item.kind === "case").rawCaseEvidence.argv.push("--extra", "argument"); },
     (record) => { const item = record.transcript.observations.find((value) => value.kind === "case"); item.rawCaseEvidence.stdout = "x".repeat(65_537); item.stdoutSha256 = sha256(item.rawCaseEvidence.stdout); },
     (record) => { record.transcript.observations.find((item) => item.kind === "case").rawCaseEvidence.materializedInputs[0].path = "$TEMP/fixtures/unreferenced.json"; },
+    (record) => { record.transcript.observations.find((item) => item.kind === "case").rawCaseEvidence.consumerOverlay.pop(); },
+    (record) => { record.transcript.observations.find((item) => item.kind === "case").rawCaseEvidence.consumerOverlay.reverse(); },
+    (record) => { record.transcript.observations.find((item) => item.kind === "case").rawCaseEvidence.consumerOverlay[0].targetPath = "$TEMP/node_modules/@clossys/advisor/../private.js"; },
+    (record) => { record.transcript.observations.find((item) => item.kind === "case").rawCaseEvidence.consumerOverlay[0].sha256 = "0".repeat(64); },
+    (record) => { const input = record.transcript.observations.find((item) => item.kind === "case").rawCaseEvidence.consumerOverlay[0]; input.bytes = `load ${hostilePosixPath("Users", "example", "private", "advisor.js")}\n`; input.sha256 = sha256(input.bytes); },
+    (record) => { record.transcript.observations.find((item) => item.kind === "case").rawCaseEvidence.consumerOverlay[0].extra = true; },
     (record) => { record.transcript.observations = record.transcript.observations.filter((item) => !(item.kind === "case" && item.observedExitCode === 2)); },
     (record) => { record.transcript.fixtureMaterializedAt = "2026-08-29T12:00:00Z"; },
   ];
