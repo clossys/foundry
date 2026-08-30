@@ -17,7 +17,7 @@ function job(name) {
 test("trusted publication is manual, reviewed, and never triggered by a push", () => {
   assert.doesNotMatch(workflow, /^\s+push:/m);
   const publish = job("publish");
-  assert.match(publish, /if: \$\{\{ always\(\) && needs\.discover\.result == 'success' && needs\.qualify\.result == 'success' && github\.event_name == 'workflow_dispatch' && github\.ref == 'refs\/heads\/main' && !inputs\.dry_run && !inputs\.verify_only/);
+  assert.match(publish, /if: \$\{\{ always\(\) && !cancelled\(\) && needs\.discover\.result == 'success' && needs\.qualify\.result == 'success' && github\.event_name == 'workflow_dispatch' && github\.ref == 'refs\/heads\/main' && !inputs\.dry_run && !inputs\.verify_only/);
   assert.match(publish, /environment: npm-publish/);
   assert.doesNotMatch(publish, /if: \$\{\{ false \}\}|github\.event_name == 'push'/);
 });
@@ -27,7 +27,7 @@ test("publish evaluates after a skipped verify-only fetch but requires successfu
   const publish = job("publish");
 
   assert.match(qualify, /if: \$\{\{ always\(\) && needs\.discover\.outputs\.packages != '\[\]' && \(!inputs\.verify_only \|\| needs\.fetch-published\.result == 'success'\) \}\}/);
-  assert.match(publish, /if: \$\{\{ always\(\) && needs\.discover\.result == 'success' && needs\.qualify\.result == 'success' &&/);
+  assert.match(publish, /if: \$\{\{ always\(\) && !cancelled\(\) && needs\.discover\.result == 'success' && needs\.qualify\.result == 'success' &&/);
   assert.doesNotMatch(publish, /if: \$\{\{ always\(\) && needs\.discover\.outputs\.packages/);
 });
 
