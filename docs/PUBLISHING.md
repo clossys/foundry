@@ -274,6 +274,23 @@ Final provider review remains separate evidence, not workflow authority. The
 trusted PR-side qualification workflow is deferred until the protected base
 contains this runner, so untrusted PR code never receives publish credentials.
 
+Qualification records are append-only by exact version. Each retained record
+must still match the blob from its own single introduction commit. A closed
+publication record continues to select the qualifications it originally bound
+by their exact retained paths and digests; it does not require the directory to
+contain only one version of each package. A later release therefore adds a new
+versioned record without rewriting or replacing the first-publication evidence.
+The exact predecessor record paths present at the immutable publication-transition
+base retain their schema and introduction-time policy joins; their retained,
+introduction, and transition-base blobs must agree and they may never be touched
+after introduction. Validation therefore does not require a predecessor's
+historical reviewed commit to remain reachable.
+Its introduction is a direct, single-parent child of the reviewed candidate
+commit, and that introduction changes exactly the jointly retained new
+qualification records. Their content joins are measured at the reviewed
+commit; their retained bytes must remain their introduction blobs, with no
+later touch, including a rewrite followed by restoration.
+
 This is release qualification only. It does not claim real consumer adoption,
 provider truth, independent grounding, or closure; a provider-specific review
 reference is evidence, not workflow authority. Any changed tarball byte fails
