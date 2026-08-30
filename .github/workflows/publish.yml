@@ -139,7 +139,7 @@ jobs:
         run: |
           test "$(node --version)" = 'v24.19.0'
           test "$(npm --version)" = '11.17.0'
-          test "$(node -p 'process.versions.zlib')" = '1.3.2.1-motley'
+          test "$(node -p 'process.versions.zlib')" = '1.3.2.1-motley-3246f1b'
 
       - name: Validate package input
         env:
@@ -278,7 +278,7 @@ jobs:
         run: |
           test "$(node --version)" = 'v24.19.0'
           test "$(npm --version)" = '11.17.0'
-          test "$(node -p 'process.versions.zlib')" = '1.3.2.1-motley'
+          test "$(node -p 'process.versions.zlib')" = '1.3.2.1-motley-3246f1b'
 
       - name: Download exact qualified candidate
         uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
