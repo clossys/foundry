@@ -2,9 +2,9 @@
 
 A small set of TypeScript packages for validating an npm workspace against
 what is actually true of it — not against what its own packages claim about
-themselves. This repository is public and MIT licensed; published package
-versions are **public** on GitHub Packages. Some source packages have not yet
-been released (see Installing, below).
+themselves. This repository is public and MIT licensed; current `@clossys`
+package releases are **public** on npm. Some source packages have not yet been
+released (see Installing, below).
 
 **Thesis:** every check here runs against what is actually on disk or
 actually installed — never against what a manifest claims about itself. An
@@ -77,23 +77,30 @@ package READMEs and their lifecycle records.
 
 ## Installing
 
-The first `@clossys` public npm Trio is published and anonymously verified:
-Advisor 0.1.3, Starter 0.1.2, and Controller 0.8.21. Public packument and
-tarball access plus exact served-digest parity are retained for all three. The
-other sixteen packages remain later catalogue expansions in dependency order.
-Strategist, Writer, and Designer are reviewed qualification candidates, not
-published packages: each later publication needs its own immutable,
-package-neutral record joined to the exact qualification, catalogue entry,
-candidate tarball, anonymous served bytes, and applicable publisher provenance.
-Anonymous resolution of the exact Trio versions is proven. Consumer install
-guidance remains withheld until the disposable credentialless Trio smoke
-closes; that proof will use exact pins rather than a floating `latest` tag.
+The current `@clossys` public npm Trio is published and verified through npm
+trusted publishing with provenance: Advisor 0.1.5, Starter 0.1.4, and
+Controller 0.8.23. Public packument and tarball access, exact served-byte
+parity, and the immutable qualification records are retained for each current
+release. The original owner-present identities remain historical evidence; they
+are not current installation pins.
+
+Consumers may use the exact current versions through ordinary credentialless
+public npm resolution. Install only the package or packages a consumer needs,
+using exact pins rather than a floating `latest` tag. Publication and
+installation remain distinct from consumer adoption, independent grounding, or
+closure. Strategist, Writer, and Designer are reviewed qualification
+candidates, not published packages; each later publication needs its own
+immutable, package-neutral record joined to the exact qualification, catalogue
+entry, candidate tarball, anonymous served bytes, and applicable publisher
+provenance when a separately evidenced trusted-publisher release exists.
 
 Do not add a token or a private registry mapping for `@clossys`. The canonical
 source tuple is declared once in [`package-scope.json`](package-scope.json).
-These first identities were owner-present publications and do not yet carry
-npm trusted-publisher/OIDC provenance. Publication or installation does not
-prove consumer adoption, independent grounding, or closure; those require
+The original first identities were owner-present publications; the current Trio
+versions are the later trusted-publisher releases. Provider state is now
+value-free verified for each current Trio member: Publishing access requires
+2FA and disallows traditional publish tokens. Publication or installation does
+not prove consumer adoption, independent grounding, or closure; those require
 separate consumer-owned evidence.
 
 ### Historical `@vespeneventures` packages

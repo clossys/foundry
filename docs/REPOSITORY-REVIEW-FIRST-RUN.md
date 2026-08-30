@@ -1,34 +1,37 @@
 # Repository and review first run
 
-This is a **W1E-only future runbook** for qualifying the repository and review
-subpaths of one exact public npm `@clossys/controller` artifact in designated
-consumer repositories. W1D is source-only: no current `@clossys` artifact is
-supported for installation, so none of the install or CLI steps below is
-authorized yet.
+This is the W1E runbook for qualifying the repository and review subpaths of
+one exact public npm `@clossys/controller` artifact in designated consumer
+repositories. The current supported artifact is
+`@clossys/controller@0.8.23`; use that exact pin unless a later release record
+names a newer qualified version.
 It is deliberately a handoff guide, not an installer:
 Foundry provides contracts and CLIs; each consumer authors and owns its own
 values, workflow, and provider access.
 
-After W1E, the target result is evidence that the same published package versions can be
+The target result is evidence that the same published package version can be
 installed and exercised independently in each designated consumer. It is not a
 claim that Foundry has installed a workflow, selected branch protection, or
 approved a change for any consumer.
 
 ## Before the first consumer
 
-Do not begin this runbook until W1E has completed all of these prerequisites:
+Before a consumer starts this runbook, confirm all of these retained W1E facts:
 
 1. Complete a full package preflight for Controller as specified in
    [PUBLISHING.md](PUBLISHING.md). The package tree and packed tarball must
    both pass a FULL public-safety scan, name-collision check, build, tests, and
    isolated-install proof.
-2. Activate the separately reviewed W1E public npm publisher and inspect the
+2. Use the separately reviewed public npm publisher evidence and inspect the
    exact candidate contents. Controller has no first-party runtime dependency;
    its repository and review subpaths ship from the same exact Controller
    artifact reviewed at the source head.
-3. Record the published Controller version, source head, registry-served
-   tarball digest, public anonymous access result, and successful qualification
-   evidence in the Foundry release record.
+3. Confirm the published Controller version, source head, registry-served
+   tarball digest, public anonymous access result, qualification evidence, and
+   trusted-publisher provenance from retained W1E evidence. The append-only
+   source record for the later trusted-publisher releases is tracked separately
+   in [#639](https://github.com/clossys/platform/issues/639); that record work
+   does not change the public registry identity a consumer installs.
 4. Do not start consumer adoption from an unpublished workspace link, a local
    tarball, or a source checkout. The point of this run is to prove the
    registry artifact a consumer will actually receive.
@@ -40,13 +43,11 @@ legacy standalone package is required.
 ## Consumer installation
 
 Public npm reads of `@clossys` are credentialless. Do not configure a consumer
-token or private-registry mapping. After W1E has recorded an exact published
-version, install that exact version rather than a floating range. This command
-shape is intentionally non-operational until `<w1e-qualified-version>` has
-been replaced by the version in that release record:
+token or private-registry mapping. Install the exact qualified version rather
+than a floating range:
 
 ```bash
-npm install --save-exact @clossys/controller@<w1e-qualified-version>
+npm install --save-exact @clossys/controller@0.8.23
 ```
 
 Use the package manager that owns the consumer's lockfile. The command shape above
@@ -75,10 +76,10 @@ own evidence JSON. The subpath makes no request, does not discover credentials,
 and does not choose pagination or workflow behavior. Provider tokens, raw
 responses, account identities, and browser/session data stay out of Foundry.
 
-## CLI smoke test after W1E
+## CLI smoke test
 
-Only after the credentialless registry install succeeds, run both commands
-from the consumer checkout against consumer-owned files.
+After the credentialless registry install succeeds, run both commands from the
+consumer checkout against consumer-owned files.
 `repository-check` locates a declaration on its own (issue #315) — run it
 with no argument (searches the current working directory), a repository root
 directory, or an explicit file path, same as below:
