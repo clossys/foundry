@@ -372,6 +372,16 @@ the immutable quarantine record with the completed ordered prefix and next
 failed member. These are future-only contracts; no cohort or qualification
 record is fabricated until exact candidate bytes and review evidence exist.
 
+The retained Trio records authorize one sealed control-tail correction from
+protected base `9760d6b63ce9347aa528b5ba3625b924c792f9a2`. Its immutable authorization
+record binds the exact retained cohort and qualification records, the complete
+ordered correction path set, and the SHA-256 of every authorized file. The
+authorization must be introduced atomically with those exact bytes and cannot
+authorize a later rewrite, an unrelated tail path, or any other cohort. This is
+a one-time reachability repair for the already-retained records, not a general
+exception to immutable qualification evidence. After it lands, only the exact
+closed partial-failure quarantine described above may extend that sealed tail.
+
 ### Owner-present first publication, then OIDC
 
 The first identity of each Trio member is an owner-present, interactive npm
