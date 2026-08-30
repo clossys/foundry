@@ -295,7 +295,9 @@ test("depth-1 branch heads and synthetic merges hydrate sealed publication histo
     ]) {
       const target = fixture.checkout();
       assert.equal(run(target, ["rev-parse", "--is-shallow-repository"]), "true");
-      run(target, ["remote", "set-url", "origin", "https://github.com/clossys/platform.git"]);
+      run(target, ["remote", "set-url", "origin", fixture.name === "branch-head"
+        ? "https://github.com/clossys/platform"
+        : "https://github.com/clossys/platform.git"]);
       writeFileSync(join(target, "scripts", "check-package-identity-transition.mjs"), checkerBytes);
       const environment = {
         GITHUB_ACTIONS: "true",
@@ -371,9 +373,18 @@ test("shallow history fails closed for wrong CI identity, origin, source SHA, or
     const wrongCi = clone("wrong-ci");
     assert.throws(() => ensureFullGitHistory(wrongCi, { environment: { ...environment(wrongCi), GITHUB_ACTIONS: "false" } }), /exact public GitHub Actions repository/);
 
-    const wrongOrigin = clone("wrong-origin");
-    run(wrongOrigin, ["remote", "set-url", "origin", "https://github.com/example/project.git"]);
-    assert.throws(() => ensureFullGitHistory(wrongOrigin, { environment: environment(wrongOrigin) }), /non-canonical origin/);
+    for (const [name, origin] of [
+      ["wrong-owner", "https://github.com/example/project.git"],
+      ["userinfo", "https://user@github.com/clossys/platform"],
+      ["query", "https://github.com/clossys/platform?mirror=1"],
+      ["extra-path", "https://github.com/clossys/platform/other"],
+      ["lookalike", "https://github.com.invalid/clossys/platform"],
+      ["ssh", "git@github.com:clossys/platform.git"],
+    ]) {
+      const wrongOrigin = clone(name);
+      run(wrongOrigin, ["remote", "set-url", "origin", origin]);
+      assert.throws(() => ensureFullGitHistory(wrongOrigin, { environment: environment(wrongOrigin) }), /non-canonical origin/);
+    }
 
     const wrongSha = clone("wrong-sha");
     assert.throws(() => ensureFullGitHistory(wrongSha, { environment: { ...environment(wrongSha), GITHUB_SHA: "f".repeat(40) } }), /source SHA/);

@@ -17,6 +17,7 @@ const policyPath = join(root, "governance", "package-identity-transition.json");
 const scopePath = join(root, "package-scope.json");
 const PUBLIC_HISTORY_REPOSITORY = "clossys/platform";
 const PUBLIC_HISTORY_URL = "https://github.com/clossys/platform.git";
+const PUBLIC_HISTORY_ORIGINS = new Set([PUBLIC_HISTORY_URL, PUBLIC_HISTORY_URL.slice(0, -4)]);
 const PUBLIC_HISTORY_MAIN_REF = "refs/heads/main";
 const GIT_OUTPUT_LIMIT = 64 * 1024;
 const GIT_TIMEOUT_MS = 30_000;
@@ -152,7 +153,7 @@ export function ensureFullGitHistory(repositoryRoot = root, {
   } catch {
     throw new Error("cannot bind shallow package-identity history to origin and HEAD");
   }
-  if (origin !== PUBLIC_HISTORY_URL) throw new Error("shallow package-identity history has a non-canonical origin");
+  if (!PUBLIC_HISTORY_ORIGINS.has(origin)) throw new Error("shallow package-identity history has a non-canonical origin");
   if (!/^[a-f0-9]{40}$/.test(environment.GITHUB_SHA ?? "") || environment.GITHUB_SHA !== head) {
     throw new Error("shallow package-identity history does not match the GitHub Actions source SHA");
   }
