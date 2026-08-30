@@ -102,3 +102,13 @@ test("rejects a different attestation endpoint or non-unique provenance bundles"
   audit.verified[0].attestationBundles.push(audit.verified[0].attestationBundles[0]);
   assert.equal(inspectPublicNpmProvenance({ name, version, sourceSha, audit, packument }).code, 1);
 });
+
+test("rejects a foreign resolved dependency beside the exact protected main source", () => {
+  const statement = payload();
+  statement.predicate.buildDefinition.resolvedDependencies.push({
+    uri: "git+https://github.com/example/project@refs/heads/main",
+    digest: { gitCommit: "c".repeat(40) },
+  });
+  const { audit, packument } = fixture(statement);
+  assert.equal(inspectPublicNpmProvenance({ name, version, sourceSha, audit, packument }).code, 1);
+});

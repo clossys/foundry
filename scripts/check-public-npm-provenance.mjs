@@ -131,7 +131,9 @@ export function inspectPublicNpmProvenance({ name, version, sourceSha, audit, pa
         dependency?.uri === `git+${EXPECTED_REPOSITORY}${"@"}${EXPECTED_MAIN_REF}` &&
         dependency?.digest?.gitCommit === sourceSha,
     );
-    if (exactDependencies.length !== 1) failures.push("SLSA resolved dependency must bind the exact protected main source commit");
+    if (dependencies.length !== 1 || exactDependencies.length !== 1) {
+      failures.push("SLSA resolved dependencies must contain only the exact protected main source commit");
+    }
     if (statement.predicate?.runDetails?.builder?.id !== GITHUB_HOSTED_BUILDER) {
       failures.push("SLSA builder must be the GitHub-hosted Actions runner");
     }
