@@ -91,7 +91,8 @@ installation remain distinct from consumer adoption, independent grounding, or
 closure. Strategist, Writer, and Designer are reviewed qualification
 candidates, not published packages; each later publication needs its own
 immutable, package-neutral record joined to the exact qualification, catalogue
-entry, candidate tarball, anonymous served bytes, and publisher provenance.
+entry, candidate tarball, anonymous served bytes, and applicable publisher
+provenance when a separately evidenced trusted-publisher release exists.
 
 Do not add a token or a private registry mapping for `@clossys`. The canonical
 source tuple is declared once in [`package-scope.json`](package-scope.json).

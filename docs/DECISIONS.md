@@ -1048,9 +1048,11 @@ consumer-outcome evidence.
 The completed W1E evidence is deliberately narrow:
 
 1. Retain the completed W1E [#594](https://github.com/clossys/platform/issues/594)
-   evidence for the owner-present first identities and the current
-   provenance-bearing Advisor 0.1.5, Starter 0.1.4, and Controller 0.8.23
-   releases, including anonymous public access and served-digest parity.
+   evidence for the owner-present first identities and minimal credentialless
+   Trio smoke. Retain [#626](https://github.com/clossys/platform/issues/626)
+   for the current provenance-bearing Advisor 0.1.5, Starter 0.1.4, and
+   Controller 0.8.23 releases, including anonymous public access,
+   served-digest parity, and provider trust settings.
 2. Provider state was verified without recording a credential or token value:
    every current Trio package's Publishing access requires 2FA and disallows
    traditional publish tokens.
