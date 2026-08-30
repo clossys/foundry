@@ -237,7 +237,7 @@ jobs:
     # Deliberately manual and non-dry-run only. A version bump cannot upload on
     # push, and qualification still fails closed unless the exact immutable
     # pre-publication record exists.
-    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.dry_run && !inputs.verify_only && needs.discover.outputs.packages != '[]' }}
+    if: ${{ always() && !cancelled() && needs.discover.result == 'success' && needs.qualify.result == 'success' && github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && !inputs.dry_run && !inputs.verify_only && needs.discover.outputs.packages != '[]' }}
     permissions:
       contents: read
       id-token: write
