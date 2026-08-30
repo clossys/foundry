@@ -4,7 +4,13 @@
   "packages": [
     {
       "name": "@clossys/advisor",
-      "state": "implemented"
+      "state": "published",
+      "stagedBy": {
+        "run": "Retained package-authentic current-direct transcript at governance/release-qualifications/clossys-advisor-0.1.3.json; reproduce its closed joins with `npm run check:candidate-qualification`. The installed Advisor dist CLI produced native assessment exits 0, 1, and 2 from the matched fixture cases.",
+        "defectOrigin": "injected",
+        "defect": "The current-direct assessment-violated fixture carried a real unresolved Advisor pre-work condition; the installed package CLI produced its own violated report and exit 1 rather than a harness-forced result.",
+        "control": "The adjacent assessment-satisfied fixture traveled through the same installed package CLI and exited 0, while the indeterminate fixture exited 2; the retained transcript binds all outputs and restoration."
+      }
     },
     {
       "name": "@clossys/architect",
@@ -24,7 +30,13 @@
     },
     {
       "name": "@clossys/controller",
-      "state": "implemented"
+      "state": "published",
+      "stagedBy": {
+        "run": "Retained package-authentic current-direct transcript at governance/release-qualifications/clossys-controller-0.8.21.json; reproduce its closed joins with `npm run check:candidate-qualification`. The installed singular-authority dist CLI produced native authority exits 0, 1, and 2 from matched fixtures.",
+        "defectOrigin": "injected",
+        "defect": "The authority-duplicate fixture contained two installed packages declaring the same authority; the installed Controller CLI detected the real duplicate condition and emitted its normal exit 1.",
+        "control": "The matched authority-valid fixture retained one exact authority owner and exited 0 through the same installed CLI; the unsupported lock-shape fixture independently remained indeterminate at exit 2."
+      }
     },
     {
       "name": "@clossys/designer",
@@ -69,7 +81,13 @@
     {
       "name": "@clossys/starter",
       "category": "executable-tooling",
-      "state": "implemented"
+      "state": "published",
+      "stagedBy": {
+        "run": "Retained package-authentic current-direct adapter and raw transcript at governance/release-qualification-adapters/starter/current-direct.json and governance/release-qualifications/clossys-starter-0.1.2.json; reproduce their closed joins with `npm run check:candidate-qualification`. The exact installed Starter dist CLI produced native activation exits 0, 1, and 2.",
+        "defectOrigin": "injected",
+        "defect": "The activation-violated request and materialized target input caused the installed Starter CLI to execute its fixed decision path and emit its own violated exit 1; the raw retained argv, inputs, overlay, stdout, and stderr bind the package-authentic run.",
+        "control": "The matched activation-satisfied request used the same exact adapter, installed CLI, and bounded consumer overlay and exited 0; the indeterminate request exited 2, and uninstall/reinstall restored the disposable consumer."
+      }
     },
     {
       "name": "@clossys/strategist",

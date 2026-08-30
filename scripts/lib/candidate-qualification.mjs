@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { TRIO_PUBLICATION_PATH, TRIO_PUBLICATION_TRANSITION_BASE, TRIO_PUBLICATION_TRANSITION_PATHS, validateTrioPublicationTransition } from "./release-publication-cohort.mjs";
 import { TRIO, TRIO_COHORT_PATH, TRIO_CONTROL_TAIL_AUTHORIZATION_PATH, TRIO_CONTROL_TAIL_BASE_COMMIT, TRIO_CONTROL_TAIL_PATHS, TRIO_QUARANTINE_PATH, isTrioCandidate, validateTrioPartialFailureQuarantine } from "./release-qualification-trio.mjs";
 
 export const ARCHETYPES = ["current-direct", "prior-minor", "oldest-supported", "control-plane"];
@@ -192,8 +193,9 @@ export function validateCandidateQualification(r, { mode = "offline", expected, 
   if (!Array.isArray(r.findings) || r.findings.length > 64) fail(a, "findings", "findings"); else for (const f of r.findings) { closed(a, f, ["classification", "status", "reference"], "finding"); if (!["producer-package", "consumer-integration", "control-plane", "sponsor-authorization", "external-observation"].includes(f?.classification) || !["resolved", "open"].includes(f?.status) || !text(f?.reference)) fail(a, "finding", "finding"); else if (f.classification === "producer-package" && f.status !== "resolved") fail(a, "unresolved-producer-defect", "producer"); }
   return a;
 }
-export function validateTrioControlTailAuthorization(authorization, { root = process.cwd(), head = "HEAD", trioRecords = [], cohortBytes, expectedBaseCommit = TRIO_CONTROL_TAIL_BASE_COMMIT } = {}) {
+export function validateTrioControlTailAuthorization(authorization, { root = process.cwd(), head = "HEAD", retainedRef = null, trioRecords = [], cohortBytes, expectedBaseCommit = TRIO_CONTROL_TAIL_BASE_COMMIT } = {}) {
   const a = [];
+  const retained = (path) => retainedRef ? content(root, retainedRef, path) : readFileSync(join(root, path));
   closed(a, authorization, ["schemaVersion", "kind", "baseCommit", "cohort", "records", "authorizedFiles"], "controlTailAuthorization");
   if (authorization?.schemaVersion !== 1 || authorization?.kind !== "clossys-npmjs-trio-control-tail-authorization-v1" || authorization?.baseCommit !== expectedBaseCommit || !SHA1.test(authorization?.baseCommit ?? "")) fail(a, "control-tail-authorization", "one exact protected-base control-tail authorization is required.");
   const expectedRecords = TRIO.map((key) => {
@@ -208,7 +210,7 @@ export function validateTrioControlTailAuthorization(authorization, { root = pro
     if (!path || records[index]?.path !== path || !SHA256.test(records[index]?.sha256 ?? "")) fail(a, "control-tail-records", "authorization must bind the exact ordered Trio records.");
     else {
       try {
-        const current = readFileSync(join(root, path));
+        const current = retained(path);
         const retainedBase = content(root, expectedBaseCommit, path);
         if (digest(current) !== records[index].sha256 || digest(retainedBase) !== records[index].sha256) fail(a, "control-tail-record-digest", `authorization record digest drift: ${path}`);
       } catch { fail(a, "control-tail-record-digest", `authorization cannot read retained record: ${path}`); }
@@ -218,7 +220,7 @@ export function validateTrioControlTailAuthorization(authorization, { root = pro
   if (authorization?.cohort?.path !== TRIO_COHORT_PATH || !SHA256.test(authorization?.cohort?.sha256 ?? "") || typeof cohortBytes !== "string" || digest(cohortBytes) !== authorization?.cohort?.sha256) fail(a, "control-tail-cohort", "authorization must bind the exact retained Trio cohort bytes.");
   else {
     try {
-      if (digest(content(root, expectedBaseCommit, TRIO_COHORT_PATH)) !== authorization.cohort.sha256 || digest(readFileSync(join(root, TRIO_COHORT_PATH))) !== authorization.cohort.sha256) fail(a, "control-tail-cohort", "authorization must bind unchanged retained Trio cohort bytes.");
+      if (digest(content(root, expectedBaseCommit, TRIO_COHORT_PATH)) !== authorization.cohort.sha256 || digest(retained(TRIO_COHORT_PATH)) !== authorization.cohort.sha256) fail(a, "control-tail-cohort", "authorization must bind unchanged retained Trio cohort bytes.");
     } catch { fail(a, "control-tail-cohort", "authorization cannot read retained Trio cohort bytes."); }
   }
   const files = authorization?.authorizedFiles;
@@ -227,7 +229,7 @@ export function validateTrioControlTailAuthorization(authorization, { root = pro
     closed(a, files[index], ["path", "sha256"], `controlTailAuthorization.authorizedFiles[${index}]`);
     if (!SHA256.test(files[index]?.sha256 ?? "")) { fail(a, "control-tail-files", `authorization file digest is invalid: ${files[index]?.path}`); continue; }
     try {
-      if (digest(readFileSync(join(root, files[index].path))) !== files[index].sha256) fail(a, "control-tail-file-digest", `authorized control file changed: ${files[index].path}`);
+      if (digest(retained(files[index].path)) !== files[index].sha256) fail(a, "control-tail-file-digest", `authorized control file changed: ${files[index].path}`);
     } catch { fail(a, "control-tail-file-digest", `authorization cannot read control file: ${files[index].path}`); }
   }
   try {
@@ -237,10 +239,10 @@ export function validateTrioControlTailAuthorization(authorization, { root = pro
       const introduction = introductions[0];
       const parent = git(root, ["rev-parse", `${introduction}^`]);
       const introduced = content(root, introduction, TRIO_CONTROL_TAIL_AUTHORIZATION_PATH);
-      const retained = readFileSync(join(root, TRIO_CONTROL_TAIL_AUTHORIZATION_PATH));
+      const retainedAuthorization = retained(TRIO_CONTROL_TAIL_AUTHORIZATION_PATH);
       const introducedPaths = git(root, ["diff", "--name-only", `${parent}..${introduction}`]).split("\n").filter(Boolean).sort();
       const exactIntroduction = [...TRIO_CONTROL_TAIL_PATHS, TRIO_CONTROL_TAIL_AUTHORIZATION_PATH].sort();
-      if (parent !== expectedBaseCommit || digest(introduced) !== digest(retained) || JSON.stringify(introducedPaths) !== JSON.stringify(exactIntroduction)) fail(a, "control-tail-history", "authorization must be introduced immutably and atomically with only its exact control files from the protected base.");
+      if (parent !== expectedBaseCommit || digest(introduced) !== digest(retainedAuthorization) || JSON.stringify(introducedPaths) !== JSON.stringify(exactIntroduction)) fail(a, "control-tail-history", "authorization must be introduced immutably and atomically with only its exact control files from the protected base.");
       if (Array.isArray(files)) for (const file of files) {
         try {
           if (digest(content(root, introduction, file.path)) !== file.sha256) fail(a, "control-tail-introduction-digest", `authorized control file did not have its declared bytes at introduction: ${file.path}`);
@@ -254,8 +256,70 @@ export function validateTrioControlTailAuthorization(authorization, { root = pro
   } catch { fail(a, "control-tail-history", "authorization history could not be verified."); }
   return a;
 }
-export function validatePrepublicationPrTail(r, { root = process.cwd(), head = "HEAD", trioRecords = [], cohort = null, cohortBytes, quarantine = null, controlTailAuthorization = null } = {}) {
+
+/**
+ * Validate the one direct-child publication transition, or its exact pending
+ * worktree form before commit. After the transition, only the retained
+ * qualification/cohort/authorization/publication records remain immutable;
+ * ordinary repository evolution is no longer constrained by prepublication
+ * tail rules.
+ */
+export function validateTrioPublicationClosure(publication, { root = process.cwd(), head = "HEAD", trioRecords = [], cohortBytes, controlTailAuthorization = null } = {}) {
+  const a = [];
+  const headSha = git(root, ["rev-parse", head]);
+  const introductions = git(root, ["log", "--full-history", "--diff-filter=A", "--format=%H", head, "--", TRIO_PUBLICATION_PATH]).split("\n").filter(Boolean);
+  let transitionCommit = null;
+  let fileBytes;
+
+  if (introductions.length === 0 && headSha === TRIO_PUBLICATION_TRANSITION_BASE) {
+    const tracked = git(root, ["diff", "--name-only", head]).split("\n").filter(Boolean);
+    const untracked = git(root, ["ls-files", "--others", "--exclude-standard"]).split("\n").filter(Boolean);
+    const pendingPaths = [...new Set([...tracked, ...untracked])].sort();
+    if (JSON.stringify(pendingPaths) !== JSON.stringify([...TRIO_PUBLICATION_TRANSITION_PATHS].sort())) fail(a, "publication-transition-paths", "pending publication transition must contain only its exact atomic path set.");
+    fileBytes = new Map(TRIO_PUBLICATION_TRANSITION_PATHS.filter((path) => path !== TRIO_PUBLICATION_PATH).map((path) => [path, readFileSync(join(root, path), "utf8")]));
+  } else if (introductions.length === 1) {
+    transitionCommit = introductions[0];
+    const parent = git(root, ["rev-parse", `${transitionCommit}^`]);
+    const changed = git(root, ["diff", "--name-only", `${parent}..${transitionCommit}`]).split("\n").filter(Boolean).sort();
+    if (parent !== TRIO_PUBLICATION_TRANSITION_BASE) fail(a, "publication-transition-base", "publication transition must be a direct child of its exact sealed base.");
+    if (JSON.stringify(changed) !== JSON.stringify([...TRIO_PUBLICATION_TRANSITION_PATHS].sort())) fail(a, "publication-transition-paths", "publication transition introduction must contain only its exact atomic path set.");
+    fileBytes = new Map(TRIO_PUBLICATION_TRANSITION_PATHS.filter((path) => path !== TRIO_PUBLICATION_PATH).map((path) => [path, content(root, transitionCommit, path)]));
+    try {
+      if (digest(content(root, transitionCommit, TRIO_PUBLICATION_PATH)) !== digest(readFileSync(join(root, TRIO_PUBLICATION_PATH)))) fail(a, "publication-transition-record", "retained publication record differs from its introduction blob.");
+      const later = git(root, ["log", "--full-history", "--format=%H", `${transitionCommit}..${head}`, "--", TRIO_PUBLICATION_PATH]).split("\n").filter(Boolean);
+      if (later.length > 0) fail(a, "publication-transition-record-history", "publication record was touched after its introduction.");
+    } catch { fail(a, "publication-transition-record", "publication record history could not be verified."); }
+  } else {
+    fail(a, "publication-transition-history", "publication record must be pending at its exact base or have one immutable introduction commit.");
+    return a;
+  }
+
+  a.push(...validateTrioPublicationTransition(publication, { fileBytes }));
+  const exactRecords = TRIO.map((key) => trioRecords.find((record) => record?.candidate?.name === `@clossys/${key}`));
+  if (exactRecords.some((record) => !record)) fail(a, "publication-transition-records", "publication transition requires the exact retained Trio qualification records.");
+  else {
+    a.push(...validateTrioControlTailAuthorization(controlTailAuthorization, {
+      root,
+      head: TRIO_PUBLICATION_TRANSITION_BASE,
+      retainedRef: TRIO_PUBLICATION_TRANSITION_BASE,
+      trioRecords: exactRecords,
+      cohortBytes: content(root, TRIO_PUBLICATION_TRANSITION_BASE, TRIO_COHORT_PATH),
+    }));
+  }
+
+  const immutablePaths = [...exactRecords.filter(Boolean).map((record) => qualificationPath(root, record.candidate, record.reviewedCommit)), TRIO_COHORT_PATH, TRIO_CONTROL_TAIL_AUTHORIZATION_PATH];
+  for (const path of immutablePaths) {
+    try {
+      if (digest(content(root, TRIO_PUBLICATION_TRANSITION_BASE, path)) !== digest(readFileSync(join(root, path)))) fail(a, "publication-transition-evidence", `retained evidence drift: ${path}`);
+      const later = transitionCommit ? git(root, ["log", "--full-history", "--format=%H", `${TRIO_PUBLICATION_TRANSITION_BASE}..${head}`, "--", path]).split("\n").filter(Boolean) : [];
+      if (later.length > 0) fail(a, "publication-transition-evidence-history", `retained evidence was touched after the transition base: ${path}`);
+    } catch { fail(a, "publication-transition-evidence", `retained evidence could not be verified: ${path}`); }
+  }
+  return a;
+}
+export function validatePrepublicationPrTail(r, { root = process.cwd(), head = "HEAD", trioRecords = [], cohort = null, cohortBytes, quarantine = null, controlTailAuthorization = null, publicationClosureValid = false } = {}) {
   const a = []; if (r?.timing !== "pre-publication") return a; try { execFileSync("git", ["merge-base", "--is-ancestor", r.reviewedCommit, head], { cwd: root, stdio: "ignore" }); } catch { fail(a, "reviewed-ancestor", "not ancestor"); return a; }
+  if (publicationClosureValid) return a;
   const changed = git(root, ["diff", "--name-only", r.reviewedCommit + ".." + head]).split("\n").filter(Boolean).sort();
   let allowed = [qualificationPath(root, r.candidate, r.reviewedCommit)];
   if (isTrioCandidate(r.candidate) && trioRecords.length > 0) {
