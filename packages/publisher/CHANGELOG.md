@@ -3,6 +3,15 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.6] - 2026-08-30
+
+### Fixed
+
+- Corrected exact-pin consumer guidance to require Writer `0.3.x`, matching
+  this package's real `@clossys/writer ^0.3.0` runtime dependency, rather
+  than directing a clean consumer to the incompatible historical `0.2.x`
+  line.
+
 ## [0.1.5] - 2026-08-29
 
 ### Security

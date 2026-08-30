@@ -1139,21 +1139,20 @@ under semver and has broken this repository's CI before. Every declared
 range is a real constraint on the dependency graph, not an install-ordering
 concern: a package manager resolves the whole graph regardless of what order
 packages are requested in, so none of this can be worked around by
-installing things in a particular sequence. `writer`'s range moved from
-`^0.1.0` to `^0.2.0` when `writer` 0.2.0 changed `writer-check
-addressability`'s exit-code precedence (issue #407) — a behavioural
-contract change, not a patch, so the old `^0.1.0` range does not resolve it
-(0.x ranges are minor-locked). `designer`'s range moved the same way and
-for the same reason at `designer` 0.2.0, which added the
-`designer-environment-check` gate (issue #405). Both widenings landed
-independently and are carried together here; taking only one would have
-left the other range pinned to a superseded version without any gate
-failing, since an un-widened range still resolves against the older
-published release.
+installing things in a particular sequence. `writer`'s range first moved
+from `^0.1.0` to `^0.2.0` when `writer` 0.2.0 changed `writer-check
+addressability`'s exit-code precedence (issue #407), then to the current
+`^0.3.0` when Writer added its passage layer (issue #373). Both were
+additive or behavioural minor releases rather than patches, so the older
+ranges do not resolve them (0.x ranges are minor-locked). `designer`'s range
+moved from `^0.1.0` to the current `^0.2.0` when Designer added the
+`designer-environment-check` gate (issue #405). These ranges are independent;
+leaving either one behind would still resolve an older package without any
+install failure, silently withholding the newer contract.
 
 A consumer whose own policy is to pin exact versions must pin `writer` to a
-matching `0.2.x` patch release, `designer` to a matching `0.2.x` patch
-release, and `controller` to a matching `0.8.x` patch release — otherwise
+matching `0.3.x` release, `designer` to a matching `0.2.x` release, and
+`controller` to a matching `0.8.x` patch release — otherwise
 `publisher`'s declared ranges and the consumer's exact pin cannot both be
 satisfied, and the install fails with an unresolvable version conflict.
 `react` and `react-dom` are optional
