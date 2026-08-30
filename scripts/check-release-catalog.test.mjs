@@ -11,7 +11,7 @@ import { assertPackageAuthorized, filterPackagesForTarget, loadReleaseCatalog, r
 const currentIdentity = { scope: "@vespeneventures", registry: "https://npm.pkg.github.com" };
 const targetIdentity = { scope: "@clossys", registry: "https://registry.npmjs.org" };
 const cutoverIdentity = { ...targetIdentity, access: "public" };
-const launchPackages = ["advisor", "starter", "controller"];
+const launchPackages = ["advisor", "starter", "controller", "designer"];
 const scriptsDir = dirname(fileURLToPath(import.meta.url));
 const catalogCli = join(scriptsDir, "check-release-catalog.mjs");
 
@@ -117,21 +117,21 @@ test("an implicit selection resolves only the current target", () => {
   assert.throws(() => resolveReleaseTarget(document, targetIdentity), /expects @vespeneventures/);
 });
 
-test("the post-recut catalogue defaults to only the exact public-npm launch Trio", () => {
+test("the post-recut catalogue defaults to the launch Trio followed by Designer", () => {
   const document = load(cutoverCatalog());
   const target = resolveReleaseTarget(document, cutoverIdentity);
   assert.equal(target.id, "clossys-npmjs");
   assert.deepEqual(target.packages, launchPackages);
   assert.equal(target.access, "public");
-  const entries = ["advisor", "architect", "starter", "controller"].map((directory) => ({ directory }));
+  const entries = ["advisor", "architect", "starter", "controller", "designer"].map((directory) => ({ directory }));
   assert.deepEqual(filterPackagesForTarget(entries, target).map((entry) => entry.directory), launchPackages);
   assert.throws(() => assertPackageAuthorized(target, "architect"), /not authorized/);
   assert.throws(() => resolveReleaseTarget(document, currentIdentity, "current-github-packages"), /historical/);
 });
 
-test("the launch target emits declared Trio order rather than caller inventory order", () => {
+test("the launch target emits declared Trio-then-Designer order rather than caller inventory order", () => {
   const target = resolveReleaseTarget(load(cutoverCatalog()), cutoverIdentity);
-  const entries = ["controller", "architect", "advisor", "starter"].map((directory) => ({ directory }));
+  const entries = ["designer", "controller", "architect", "advisor", "starter"].map((directory) => ({ directory }));
   assert.deepEqual(filterPackagesForTarget(entries, target).map((entry) => entry.directory), launchPackages);
 });
 
@@ -142,6 +142,7 @@ test("candidate catalogue rejects mixed access, broadened or changed launch pack
     cutoverCatalog({ targets: [cutoverCatalog().targets[0], { ...cutoverCatalog().targets[1], packages: ["starter", "advisor", "controller"] }] }),
     cutoverCatalog({ targets: [cutoverCatalog().targets[0], { ...cutoverCatalog().targets[1], packages: ["advisor", "starter"] }] }),
     cutoverCatalog({ targets: [cutoverCatalog().targets[0], { ...cutoverCatalog().targets[1], packages: ["advisor", "starter", "controller", "architect"] }] }),
+    cutoverCatalog({ targets: [cutoverCatalog().targets[0], { ...cutoverCatalog().targets[1], packages: ["advisor", "starter", "controller"] }] }),
     cutoverCatalog({ defaultTarget: "current-github-packages" }),
     cutoverCatalog({ targets: [...cutoverCatalog().targets, catalog().targets[1]] }),
   ]) {
@@ -227,11 +228,11 @@ test("target catalogue refuses a missing authorized package instead of silently 
   assert.throws(() => filterPackagesForTarget([{ directory: "advisor" }, { directory: "controller" }], target), /authorizes missing packages\/starter/);
 });
 
-test("the active launch target refuses a missing Trio member rather than selecting a partial cohort", () => {
+test("the active launch target refuses a missing authorized member rather than selecting a partial set", () => {
   const target = resolveReleaseTarget(load(cutoverCatalog()), cutoverIdentity);
   assert.throws(
-    () => filterPackagesForTarget([{ directory: "advisor" }, { directory: "controller" }, { directory: "architect" }], target),
-    /authorizes missing packages\/starter/,
+    () => filterPackagesForTarget([{ directory: "advisor" }, { directory: "starter" }, { directory: "controller" }], target),
+    /authorizes missing packages\/designer/,
   );
 });
 

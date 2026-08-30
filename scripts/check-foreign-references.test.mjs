@@ -62,7 +62,7 @@ function candidateFixture({ historicalLine = "Retained @vespeneventures/advisor 
     defaultTarget: "clossys-npmjs",
     targets: [
       { id: "current-github-packages", status: "historical", scope: "@vespeneventures", registry: "https://npm.pkg.github.com", packages: "all" },
-      { id: "clossys-npmjs", status: "active", scope: futureScope, registry: "https://registry.npmjs.org", access: "public", packages: ["advisor", "starter", "controller"] },
+      { id: "clossys-npmjs", status: "active", scope: futureScope, registry: "https://registry.npmjs.org", access: "public", packages: ["advisor", "starter", "controller", "designer"] },
     ],
   }));
   write(join(root, "docs/DECISIONS.md"), `${historicalLine}\n`);

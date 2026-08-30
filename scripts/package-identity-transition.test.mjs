@@ -112,7 +112,7 @@ test("the structured W1D plan is complete, candidate-public, declaration-last, a
     assert.deepEqual(alpha.publishConfig, { registry: "https://registry.npmjs.org", access: "public" });
     assert.equal(alpha.repository.url, "git+https://github.com/clossys/platform.git");
     const catalog = JSON.parse(readFileSync(join(root, "governance", "release-catalog.json"), "utf8"));
-    assert.deepEqual(catalog.targets[1].packages, ["advisor", "starter", "controller"]);
+    assert.deepEqual(catalog.targets[1].packages, ["advisor", "starter", "controller", "designer"]);
     const lock = JSON.parse(readFileSync(join(root, "package-lock.json"), "utf8"));
     assert.equal(lock.packages["packages/stale"], undefined);
     assert.equal(lock.packages["node_modules/@vespeneventures/stale"], undefined);

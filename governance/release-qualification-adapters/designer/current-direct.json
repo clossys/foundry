@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "package": "@clossys/designer",
+  "archetype": "current-direct",
+  "peerInstall": {
+    "@internationalized/date": "3.12.3",
+    "react": "19.2.8",
+    "react-aria-components": "1.20.0",
+    "react-dom": "19.2.8",
+    "tailwind-merge": "3.0.0",
+    "tailwindcss": "4.3.3"
+  },
+  "bins": {
+    "designer-token-check": 0,
+    "designer-brand-check": 0,
+    "designer-contrast-check": 0,
+    "designer-environment-check": 0
+  },
+  "fixtures": [
+    "token-satisfied/example.tsx",
+    "token-violated/example.tsx",
+    "token-indeterminate/input.json"
+  ],
+  "cases": [
+    {
+      "id": "token-satisfied",
+      "bin": "designer-token-check",
+      "args": [{ "fixtureDirectory": "token-satisfied" }],
+      "exitCode": 0,
+      "group": "token-purity"
+    },
+    {
+      "id": "token-violated",
+      "bin": "designer-token-check",
+      "args": [{ "fixtureDirectory": "token-violated" }],
+      "exitCode": 1,
+      "group": "token-purity"
+    },
+    {
+      "id": "token-indeterminate",
+      "bin": "designer-token-check",
+      "args": [{ "fixtureDirectory": "token-indeterminate" }],
+      "exitCode": 2,
+      "group": "token-purity"
+    }
+  ],
+  "dimensionEvidence": {
+    "rollback": "restoration",
+    "duplicate": "token-purity"
+  }
+}

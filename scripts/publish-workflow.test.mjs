@@ -21,7 +21,7 @@ test("W1D keeps upload disabled and has no automatic publication trigger", () =>
 test("every package-capable job checks the closed release catalogue", () => {
   assert.equal((workflow.match(/node scripts\/check-release-catalog\.mjs --package "\$PKG"/g) ?? []).length, 3);
   assert.equal((workflow.match(/node scripts\/check-release-catalog\.mjs --package "\$MANUAL_PACKAGE"/g) ?? []).length, 1);
-  assert.match(workflow, /current exact Advisor, Starter, Controller public-npm launch target/);
+  assert.match(workflow, /current exact Advisor, Starter, Controller, then Designer public-npm target/);
 });
 
 test("publish packs one candidate and hands off exact bytes", () => {

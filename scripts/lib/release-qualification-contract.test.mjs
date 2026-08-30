@@ -48,13 +48,20 @@ test("accepts only data-bound literal, file, directory, and temporary consumer o
   }
 });
 test("rejects waivers, forbidden fields, unsafe fixtures, unknown bins, and missing controls", () => { const value = input(); value.policy.packages["@example/x"].archetypes["current-direct"] = { status: "unsupported", reason: "no" }; value.adapter.command = "sh"; value.adapter.fixtures[0] = "../a.json"; value.adapter.cases.pop(); value.adapter.bins.unknown = 0; const rules = validateReleaseQualificationContract(value).map((x) => x.rule); for (const rule of ["archetype-policy", "forbidden-field", "fixture", "bin", "exit-coverage"]) assert.ok(rules.includes(rule)); });
-test("allows only exact compatible optional peers", () => {
+test("allows only exact compatible optional peers, including bounded minimum-major declarations", () => {
   const green = input(); green.adapter.peerInstall = { typescript: "6.0.3" };
   assert.deepEqual(validateReleaseQualificationContract(green), []);
   for (const peerInstall of [{ typescript: "6.1.0" }, { typescript: "6.0" }, { unknown: "1.0.0" }, { required: "1.0.0" }]) {
     const red = input(); red.adapter.peerInstall = peerInstall;
     assert.ok(validateReleaseQualificationContract(red).some((item) => item.rule === "peer-install"));
   }
+  const minimum = input();
+  minimum.peerDependencies.react = ">=18";
+  minimum.peerDependenciesMeta.react = { optional: true };
+  minimum.adapter.peerInstall = { react: "19.2.8" };
+  assert.deepEqual(validateReleaseQualificationContract(minimum), []);
+  minimum.adapter.peerInstall.react = "17.0.2";
+  assert.ok(validateReleaseQualificationContract(minimum).some((item) => item.rule === "peer-install"));
 });
 test("policy package bindings are unique while same leaf scoped packages remain distinct", () => {
   const value = input();

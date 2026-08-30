@@ -64,6 +64,27 @@
         "cadence": { "status": "unsupported", "reason": "Cadence is not established by a disposable installation canary." },
         "closeWindow": { "status": "unsupported", "reason": "Close-window evidence is not established by a disposable installation canary." }
       }
+    },
+    "@clossys/designer": {
+      "packageKey": "designer",
+      "recordStem": "clossys-designer",
+      "packageDir": "packages/designer",
+      "adapterPath": "governance/release-qualification-adapters/designer/current-direct.json",
+      "fixturePath": "governance/release-qualification-fixtures/designer/current-direct",
+      "archetypes": {
+        "current-direct": { "status": "required" },
+        "prior-minor": { "status": "unsupported", "reason": "No supported prior-minor consumer line is declared." },
+        "oldest-supported": { "status": "unsupported", "reason": "No oldest supported migration line is declared." },
+        "control-plane": { "status": "unsupported", "reason": "Visual-system consumption has no separate control-plane topology." }
+      },
+      "dimensions": {
+        "position": { "status": "unsupported", "reason": "A disposable consumer makes no installed position claim." },
+        "completion": { "status": "unsupported", "reason": "Package qualification is not product design completion." },
+        "rollback": { "status": "required" },
+        "duplicate": { "status": "unsupported", "reason": "Designer has no first-party runtime dependency graph to deduplicate." },
+        "cadence": { "status": "unsupported", "reason": "Cadence is not established by a disposable installation canary." },
+        "closeWindow": { "status": "unsupported", "reason": "Close-window evidence is not established by a disposable installation canary." }
+      }
     }
   }
 }

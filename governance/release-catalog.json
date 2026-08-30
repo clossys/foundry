@@ -18,7 +18,8 @@
       "packages": [
         "advisor",
         "starter",
-        "controller"
+        "controller",
+        "designer"
       ]
     }
   ]

@@ -21,7 +21,7 @@ on:
       release_target:
         description: >-
           Optional explicit release-catalogue target. Leave empty for the
-          current exact Advisor, Starter, Controller public-npm launch target;
+          current exact Advisor, Starter, Controller, then Designer public-npm target;
           another target requires a separately reviewed catalogue change.
         required: false
         default: ""

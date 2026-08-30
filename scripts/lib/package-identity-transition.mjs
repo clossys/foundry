@@ -5,7 +5,7 @@ import { join, posix, relative } from "node:path";
 const SCOPE = /^@[a-z0-9][a-z0-9._-]*$/;
 const SHA256 = /^sha256:[a-f0-9]{64}$/;
 const PACKAGE_DIRECTORY = /^[a-z0-9][a-z0-9-]*$/;
-const INITIAL_PUBLICATION_PACKAGES = Object.freeze(["advisor", "starter", "controller"]);
+const AUTHORIZED_PUBLICATION_PACKAGES = Object.freeze(["advisor", "starter", "controller", "designer"]);
 const IDENTITY_TRANSITION_CONTROL_SURFACES = new Set([
   "governance/package-identity-transition.json",
   "governance/release-catalog.json",
@@ -179,7 +179,7 @@ function candidateCatalog(policy) {
         scope: policy.candidate.scope,
         registry: policy.candidate.registry,
         access: policy.candidate.access,
-        packages: [...INITIAL_PUBLICATION_PACKAGES],
+        packages: [...AUTHORIZED_PUBLICATION_PACKAGES],
       },
     ],
   };

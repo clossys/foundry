@@ -20,6 +20,11 @@ function compare(left, right) { for (let index = 0; index < 3; index += 1) if (l
 function satisfiesSimpleRange(version, range) {
   const candidate = versionParts(version);
   if (!candidate || typeof range !== "string") return false;
+  if (range.startsWith(">=")) {
+    const minimumMajor = /^(0|[1-9]\d*)$/.exec(range.slice(2));
+    const minimum = minimumMajor ? [Number(minimumMajor[1]), 0, 0] : versionParts(range.slice(2));
+    return minimum !== null && compare(candidate, minimum) >= 0;
+  }
   const prefix = ["~", "^"].includes(range[0]) ? range[0] : "";
   const base = versionParts(prefix ? range.slice(1) : range);
   if (!base || compare(candidate, base) < 0) return false;

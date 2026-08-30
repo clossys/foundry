@@ -33,7 +33,7 @@ const CUTOVER_TARGET = Object.freeze({
   scope: "@clossys",
   registry: "https://registry.npmjs.org",
   access: "public",
-  packages: Object.freeze(["advisor", "starter", "controller"]),
+  packages: Object.freeze(["advisor", "starter", "controller", "designer"]),
 });
 
 class CatalogInputError extends Error {
@@ -149,7 +149,7 @@ export function loadReleaseCatalog({ path = "governance/release-catalog.json", r
       !matchesExactArray(cutover.packages, CUTOVER_TARGET.packages) ||
       catalog.defaultTarget !== CUTOVER_TARGET.id
     ) {
-      fail(`${path} candidate state must activate the exact Advisor, Starter, Controller public-npm launch target`);
+      fail(`${path} candidate state must activate the exact launch Trio followed by the reviewed Designer expansion`);
     }
   }
   if (!ids.has(catalog.defaultTarget)) fail(`${path} defaultTarget "${catalog.defaultTarget}" is not declared in targets`);

@@ -1064,7 +1064,8 @@ The remaining critical path is deliberately narrow:
    removal/reinstall rollback. Retain commands, versions, exits, and served
    digests under W1E.
 
-Publishing the other sixteen packages, migrating the wider consumer fleet,
+Designer is the first bounded post-Trio producer qualification. Publishing the
+other fifteen packages, migrating the wider consumer fleet,
 and building `apps:site`, `apps:app`, or `apps:admin` dogfood applications are
 post-cutover expansion. They scale from the Trio evidence in declared
 dependency order and do not enlarge or delay W1E. This sequence keeps source
