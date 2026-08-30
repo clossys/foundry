@@ -89,6 +89,7 @@ test("anonymous packument fetch sends no credential-bearing header", async () =>
   const result = await fetchPublicNpmPackument({ registry: PUBLIC_NPM_REGISTRY, name: NAME, fetchImpl: queueFetch([response(200, metadata(tarball()))], observations) });
   assert.equal(result.kind, "found");
   assert.deepEqual(Object.keys(observations[0].options.headers), ["Accept"]);
+  assert.equal(observations[0].options.headers.Accept, "application/vnd.npm.install-v1+json");
   assert.equal(observations[0].options.redirect, "error");
 });
 
@@ -199,4 +200,45 @@ test("public npm name ownership distinguishes unused, same-repository, foreign, 
     (await assessPublicNpmName({ registry: PUBLIC_NPM_REGISTRY, name: NAME, version: VERSION, thisRepo, fetchImpl: async () => response(403, {}) })).kind,
     "denied",
   );
+});
+
+test("public npm name ownership requests full metadata and admits an unpublished version only for one exact repository", async () => {
+  const thisRepo = "fixture/platform";
+  const observations = [];
+  const owned = metadata(tarball());
+  owned.repository = { type: "git", url: "git+https://github.com/fixture/platform.git" };
+  delete owned.versions[VERSION].repository;
+  const result = await assessPublicNpmName({
+    registry: PUBLIC_NPM_REGISTRY,
+    name: NAME,
+    version: "1.2.4",
+    thisRepo,
+    fetchImpl: queueFetch([response(200, owned)], observations),
+  });
+  assert.deepEqual(result, { kind: "same-repo-version-bump", found: true, existingRepo: thisRepo });
+  assert.deepEqual(Object.keys(observations[0].options.headers), ["Accept"]);
+  assert.equal(observations[0].options.headers.Accept, "application/json");
+  assert.equal(observations[0].options.redirect, "error");
+});
+
+test("public npm name ownership fails closed on absent, foreign, malformed, or mixed repository identity", async () => {
+  const thisRepo = "fixture/platform";
+  const owned = "git+https://github.com/fixture/platform.git";
+  const foreign = "https://github.com/other/project.git";
+  const cases = [
+    (() => { const document = metadata(tarball()); delete document.versions[VERSION].repository; return document; })(),
+    (() => { const document = metadata(tarball()); document.repository = { url: foreign }; document.versions[VERSION].repository = { url: foreign }; return document; })(),
+    (() => { const document = metadata(tarball()); document.repository = { url: "not-a-repository" }; return document; })(),
+    (() => { const document = metadata(tarball()); document.repository = { url: owned }; document.versions[VERSION].repository = { url: foreign }; return document; })(),
+  ];
+  for (const document of cases) {
+    const result = await assessPublicNpmName({
+      registry: PUBLIC_NPM_REGISTRY,
+      name: NAME,
+      version: "1.2.4",
+      thisRepo,
+      fetchImpl: async () => response(200, document),
+    });
+    assert.equal(result.kind, "collision");
+  }
 });
