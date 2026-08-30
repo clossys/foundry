@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "kind": "clossys-npmjs-trio-control-tail-authorization-v1",
+  "baseCommit": "9760d6b63ce9347aa528b5ba3625b924c792f9a2",
+  "cohort": {
+    "path": "governance/release-qualification-cohorts/clossys-npmjs-trio.json",
+    "sha256": "37785c678a64736455324a64fda28b297981e1e6ffb36e777fe58f44d2d2dd3c"
+  },
+  "records": [
+    {
+      "path": "governance/release-qualifications/clossys-advisor-0.1.3.json",
+      "sha256": "3b1a762ddbafdb025b7bafa470b5f3d1d26b67bc0d11c845c030256872a375b0"
+    },
+    {
+      "path": "governance/release-qualifications/clossys-starter-0.1.2.json",
+      "sha256": "9dd4fb4973c28fa937801b00e375552b9c0117352b46e2b8bbf8a70912a86ecc"
+    },
+    {
+      "path": "governance/release-qualifications/clossys-controller-0.8.21.json",
+      "sha256": "d3ece5c8f100934d6e36ac96dc25ee6e2adccab5eabd8c3fbf3ed9b833614d01"
+    }
+  ],
+  "authorizedFiles": [
+    {
+      "path": "docs/PUBLISHING.md",
+      "sha256": "74f3bd654a3ba1deebd068adc68fe73b4fd265eed4fd3bd0081b1e4fe6355cbc"
+    },
+    {
+      "path": "scripts/check-candidate-qualification.mjs",
+      "sha256": "9fd38b502a36c44cb8750e9dd44821ec464f5720a7b72872cce709bba3975ffa"
+    },
+    {
+      "path": "scripts/lib/candidate-qualification.mjs",
+      "sha256": "e0a85b5f401b2993717c4a4641796b548a6341926dcda1b892b27fbf3a776cc0"
+    },
+    {
+      "path": "scripts/lib/candidate-qualification.test.mjs",
+      "sha256": "15300b10a9c289b8b53820c14a844ea63449101f3139db7860c6f7d6fd733355"
+    },
+    {
+      "path": "scripts/lib/release-qualification-cohort.mjs",
+      "sha256": "77e25e8b8f289a5b4f1edbf51b3069916bbefc5b136911500e6f83bd6752cc88"
+    },
+    {
+      "path": "scripts/lib/release-qualification-trio.mjs",
+      "sha256": "f00429d8a681b32b00d7abb765cfba2c277c43c27c3c522e2f566f28ad63286a"
+    }
+  ]
+}
