@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 1,
+  "kind": "clossys-npmjs-trio-first-publication-v1",
+  "id": "clossys-npmjs-trio",
+  "transition": {
+    "schemaVersion": 1,
+    "kind": "clossys-npmjs-trio-publication-transition-v1",
+    "baseCommit": "30519295222964c91b4f3b6af6cef8837c9c734f",
+    "reference": "https://github.com/clossys/platform/issues/594#issuecomment-5467255442",
+    "changedPaths": [
+      "README.md",
+      "docs/DECISIONS.md",
+      "docs/LIFECYCLE.md",
+      "docs/PUBLISHING.md",
+      "docs/contracts/package-evidence.json",
+      "governance/release-publications/clossys-npmjs-trio.json",
+      "package.json",
+      "scripts/check-candidate-qualification.mjs",
+      "scripts/check-package-evidence.mjs",
+      "scripts/check-package-evidence.test.mjs",
+      "scripts/lib/candidate-qualification.mjs",
+      "scripts/lib/candidate-qualification.test.mjs",
+      "scripts/lib/release-publication-cohort.mjs",
+      "scripts/lib/release-publication-cohort.test.mjs"
+    ],
+    "fileDigests": [
+      {
+        "path": "README.md",
+        "sha256": "b2ac735fb374cbde2bb1af204269d59d6b0408f98d3f24829f234165252e8526"
+      },
+      {
+        "path": "docs/DECISIONS.md",
+        "sha256": "f85ca5b495b1ba42321cab6e8c0f49deefca132d2c4cb9a6d9df23100d5a1a61"
+      },
+      {
+        "path": "docs/LIFECYCLE.md",
+        "sha256": "e4805577f6eda10419690fa6b2c663df22eeaf2d47944f3daf9a6a7dbb1faf78"
+      },
+      {
+        "path": "docs/PUBLISHING.md",
+        "sha256": "f549f23ab9f34fb0c20e338860ac178a36f4728e122dede90460992f6d0c95be"
+      },
+      {
+        "path": "docs/contracts/package-evidence.json",
+        "sha256": "22b3442a8cf892622244e456b48d956f656bb1c5cd2b818418eb7d69b2ab46df"
+      },
+      {
+        "path": "package.json",
+        "sha256": "b4aa555ff07ce49d7664209640cc720fc6efd57c0d825e0bb2104344a1eef7ed"
+      },
+      {
+        "path": "scripts/check-candidate-qualification.mjs",
+        "sha256": "e5259a95de4364c31921b7460237274226e84c0ad57bfa945cbf6327b374ee20"
+      },
+      {
+        "path": "scripts/check-package-evidence.mjs",
+        "sha256": "2afe3423a7cf9e6dc17d200966da4159eb51149d602e2252ee95803b63d7843c"
+      },
+      {
+        "path": "scripts/check-package-evidence.test.mjs",
+        "sha256": "10421a2cd12f7ac5477288c589e6c08579e95643d0bbb0f5b088394bbf8cfbb3"
+      },
+      {
+        "path": "scripts/lib/candidate-qualification.mjs",
+        "sha256": "acd014d85c7c8a48caa4256cba8ab6c47502fee8f5a86e230ea5f39c68a2ec67"
+      },
+      {
+        "path": "scripts/lib/candidate-qualification.test.mjs",
+        "sha256": "1fcd6eabe5c5be3a2c95757cc8c889dffb346f3583da60e8eae08e671b84673f"
+      },
+      {
+        "path": "scripts/lib/release-publication-cohort.mjs",
+        "sha256": "56dce288990759c478dd7d95edab4232f9c487803dbfac125ebab1080c65f46a"
+      },
+      {
+        "path": "scripts/lib/release-publication-cohort.test.mjs",
+        "sha256": "d5bd5c0dbf23a0d3489f7dc36dd0781cecdffece4c6c1b26c8e16e7e6c32b487"
+      }
+    ]
+  },
+  "release": {
+    "target": "clossys-npmjs",
+    "scope": "@clossys",
+    "registry": "https://registry.npmjs.org",
+    "access": "public"
+  },
+  "cohort": {
+    "path": "governance/release-qualification-cohorts/clossys-npmjs-trio.json",
+    "sha256": "37785c678a64736455324a64fda28b297981e1e6ffb36e777fe58f44d2d2dd3c"
+  },
+  "members": [
+    {
+      "packageKey": "advisor",
+      "qualification": {
+        "path": "governance/release-qualifications/clossys-advisor-0.1.3.json",
+        "sha256": "3b1a762ddbafdb025b7bafa470b5f3d1d26b67bc0d11c845c030256872a375b0"
+      },
+      "publication": {
+        "mode": "owner-present",
+        "publishedAt": "2026-08-30T06:31:58.838Z",
+        "reference": "https://github.com/clossys/platform/issues/594#issuecomment-5467255442",
+        "disposition": "published-verified"
+      },
+      "registryProof": {
+        "schemaVersion": 1,
+        "kind": "public-npm-anonymous-registry-proof-v1",
+        "evidence": {
+          "registry": "https://registry.npmjs.org",
+          "access": "anonymous",
+          "name": "@clossys/advisor",
+          "version": "0.1.3",
+          "packumentUrl": "https://registry.npmjs.org/%40clossys%2Fadvisor",
+          "tarballUrl": "https://registry.npmjs.org/@clossys/advisor/-/advisor-0.1.3.tgz",
+          "integrity": "sha512-ZVod0gG9Fo9ek6Jswly4nRUCmn39yEtz6qVW6KzNZJIRGbooZtwNoULSguLhiwnSqhSTwq4QmDvN+mcnsv/++w==",
+          "shasum": "963eb83f920f6d67dec62e9215b499d611484e4b",
+          "sha256": "09fafeda20800f284ec9570026bb72479c89ba40241004d932cc73e7dc1792b6",
+          "sha512": "655a1dd201bd168f5e93a26cc25cb89d15029a7dfdc84b73eaa556e8accd64921119ba2866dc0da142d282e2e18b09d2aa1493c2ae10983bcdfa6727b2fffefb",
+          "packedManifestSha256": "2746e42b49d81aae9eaf25284306a835bc2ed10737c31e88f4a88dca49b9a0d7",
+          "size": 46618
+        }
+      }
+    },
+    {
+      "packageKey": "starter",
+      "qualification": {
+        "path": "governance/release-qualifications/clossys-starter-0.1.2.json",
+        "sha256": "9dd4fb4973c28fa937801b00e375552b9c0117352b46e2b8bbf8a70912a86ecc"
+      },
+      "publication": {
+        "mode": "owner-present",
+        "publishedAt": "2026-08-30T06:35:26.755Z",
+        "reference": "https://github.com/clossys/platform/issues/594#issuecomment-5467255442",
+        "disposition": "published-verified"
+      },
+      "registryProof": {
+        "schemaVersion": 1,
+        "kind": "public-npm-anonymous-registry-proof-v1",
+        "evidence": {
+          "registry": "https://registry.npmjs.org",
+          "access": "anonymous",
+          "name": "@clossys/starter",
+          "version": "0.1.2",
+          "packumentUrl": "https://registry.npmjs.org/%40clossys%2Fstarter",
+          "tarballUrl": "https://registry.npmjs.org/@clossys/starter/-/starter-0.1.2.tgz",
+          "integrity": "sha512-/hFED4XvadL2bMWp2VZz4NXP8xg5L0fdl7jCl60Lj3zeRiKRggOvJ3IJnWfq5oib6HoV1PCue6NHzlXgA6zQXA==",
+          "shasum": "7222feb7c91f021e8479e720a0b8ebcce912f91b",
+          "sha256": "7690826525ff4f3fc336ba4a0bf9ffaedf265a217f5eabf369d7074fdcca6835",
+          "sha512": "fe11440f85ef69d2f66cc5a9d95673e0d5cff318392f47dd97b8c297ad0b8f7cde4622918203af2772099d67eae6889be87a15d4f0ae7ba347ce55e003acd05c",
+          "packedManifestSha256": "c338e0c362ee2bebb56f25310f8cce267d10c34debfa0aa1e5fbb8fd97f62884",
+          "size": 38915
+        }
+      }
+    },
+    {
+      "packageKey": "controller",
+      "qualification": {
+        "path": "governance/release-qualifications/clossys-controller-0.8.21.json",
+        "sha256": "d3ece5c8f100934d6e36ac96dc25ee6e2adccab5eabd8c3fbf3ed9b833614d01"
+      },
+      "publication": {
+        "mode": "owner-present",
+        "publishedAt": "2026-08-30T06:42:48.321Z",
+        "reference": "https://github.com/clossys/platform/issues/594#issuecomment-5467255442",
+        "disposition": "published-verified"
+      },
+      "registryProof": {
+        "schemaVersion": 1,
+        "kind": "public-npm-anonymous-registry-proof-v1",
+        "evidence": {
+          "registry": "https://registry.npmjs.org",
+          "access": "anonymous",
+          "name": "@clossys/controller",
+          "version": "0.8.21",
+          "packumentUrl": "https://registry.npmjs.org/%40clossys%2Fcontroller",
+          "tarballUrl": "https://registry.npmjs.org/@clossys/controller/-/controller-0.8.21.tgz",
+          "integrity": "sha512-Tzd4bVRTRX60Sc5GmoUhlrPDeA4PId3mm2JBEso+yVa0eL19QinJTVN7i/gpLvgxO87oFO+lwE8F7yl5IrxcCg==",
+          "shasum": "5bbe54d2a621cbeae9f7774e9d26eea0607edd36",
+          "sha256": "d3989fc27481519523c8663e4dc914cb896c9f182d25fb1b675ecdb5d3d5bc39",
+          "sha512": "4f37786d5453457eb449ce469a852196b3c3780e0f21dde69b624112ca3ec956b478bd7d4229c94d537b8bf8292ef8313bcee814efa5c04f05ef297922bc5c0a",
+          "packedManifestSha256": "7f05480153bd1914b76dbda2df23c5e50caf51015922b129ad402e399e76ac22",
+          "size": 720650
+        }
+      }
+    }
+  ]
+}

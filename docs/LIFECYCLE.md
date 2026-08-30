@@ -289,12 +289,12 @@ fails when the committed copy drifts from the derived one — #493.
 
 | package | current position | staged here | adoption | grounding | closure |
 | --- | --- | --- | --- | --- | --- |
-| `@clossys/advisor` | implemented | not yet | not yet | unknown — #484 | not yet |
+| `@clossys/advisor` | published | yes | not yet | unknown — #484 | not yet |
 | `@clossys/architect` | implemented | not yet | not yet | unknown — #484 | not yet |
 | `@clossys/bouncer` | implemented | not yet | not yet | unknown — #484 | not yet |
 | `@clossys/builder` | implemented | not yet | not yet | unknown — #484 | not yet |
 | `@clossys/butler` | implemented | not yet | not yet | unknown — #484 | not yet |
-| `@clossys/controller` | implemented | not yet | not yet | unknown — #484 | not yet |
+| `@clossys/controller` | published | yes | not yet | unknown — #484 | not yet |
 | `@clossys/designer` | implemented | not yet | not yet | unknown — #484 | not yet |
 | `@clossys/giver` | implemented | not yet | not yet | unknown — #484 | not yet |
 | `@clossys/influencer` | implemented | not yet | not yet | unknown — #484 | not yet |
@@ -305,7 +305,7 @@ fails when the committed copy drifts from the derived one — #493.
 | `@clossys/messenger` | implemented | not yet | not yet | unknown — #484 | not yet |
 | `@clossys/observer` | implemented | not yet | not yet | unknown — #484 | not yet |
 | `@clossys/publisher` | implemented | not yet | not yet | unknown — #484 | not yet |
-| `@clossys/starter` | implemented | not yet | N/A — executable tooling | N/A — executable tooling | N/A — executable tooling |
+| `@clossys/starter` | published | yes | N/A — executable tooling | N/A — executable tooling | N/A — executable tooling |
 | `@clossys/strategist` | implemented | not yet | not yet | unknown — #484 | not yet |
 | `@clossys/writer` | implemented | not yet | not yet | unknown — #484 | not yet |
 | `@vespeneventures/advisor` | published | yes | not yet | unknown — #484 | not yet |

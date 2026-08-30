@@ -110,9 +110,19 @@
 // declaration and fails, for the same reason a `gaps` entry that outlived its
 // reason does. Retired packages are exempt: they have left the ladder.
 
+import { createHash } from "node:crypto";
 import { readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  currentQualificationJoins,
+  parseStrictJson,
+  qualificationPath,
+  qualificationRecordHistory,
+  validateCandidateQualification,
+} from "./lib/candidate-qualification.mjs";
+import { TRIO_PUBLICATION_PATH, validateTrioFirstPublication } from "./lib/release-publication-cohort.mjs";
+import { TRIO_COHORT_PATH } from "./lib/release-qualification-trio.mjs";
 
 export const STATES = ["designed", "implemented", "staged", "published", "adopted", "grounded", "closed"];
 export const LIFECYCLE_POSITION_START = "<!-- lifecycle-position-table:start -->";
@@ -140,6 +150,8 @@ const RETIRED_STATUS = "retired";
 const SEARCH_ROOTS = ["scripts", ".github/workflows"];
 const SEARCH_EXTENSIONS = new Set([".mjs", ".js", ".ts", ".yml", ".yaml", ".json", ".sh"]);
 const MAX_FILE_BYTES = 2_000_000;
+const STARTER_PACKAGE = "@clossys/starter";
+const STARTER_ADAPTER_PATH = "governance/release-qualification-adapters/starter/current-direct.json";
 
 export function stateIndex(state) {
   return STATES.indexOf(state);
@@ -160,6 +172,10 @@ function finding(rule, subject, message) {
 
 function note(rule, subject, message) {
   return { rule, severity: "note", subject, message };
+}
+
+function sha256(value) {
+  return createHash("sha256").update(value).digest("hex");
 }
 
 /** Every readable text file under the repository's own automation surface. */
@@ -251,6 +267,132 @@ export function scanInvocationSites(repoRoot, packageNames, { readFile = (p) => 
     }
   }
   return { distSites, binSites };
+}
+
+/**
+ * Recognize the one data-driven staging site that an ordinary source scan
+ * cannot see: Starter's package-authentic current-direct qualification.
+ *
+ * The generic qualification runner executes the installed dist CLI from an
+ * adapter, so neither the adapter nor its transcript contains a static source
+ * import for scanInvocationSites to count. Crediting every qualification JSON
+ * would recreate the declaration-as-evidence bug this gate exists to prevent.
+ * This helper therefore admits only the exact current @clossys/starter
+ * identity, the exact retained adapter bytes, and a fully validated v2
+ * transcript whose raw package-authentic cases cover native 0/1/2 outcomes.
+ */
+export function packageAuthenticStarterQualificationSite({ packageName, manifestVersion, adapterBytes, record, expected }) {
+  if (packageName !== STARTER_PACKAGE || typeof manifestVersion !== "string") return null;
+
+  let adapter;
+  try {
+    adapter = parseStrictJson(adapterBytes);
+  } catch {
+    return null;
+  }
+  if (
+    adapter?.schemaVersion !== 1 ||
+    adapter?.package !== packageName ||
+    adapter?.archetype !== "current-direct" ||
+    adapter?.retainRawCaseEvidence !== true ||
+    sha256(adapterBytes) !== record?.candidate?.adapterSha256
+  ) {
+    return null;
+  }
+
+  const validation = validateCandidateQualification(record, expected ? { expected } : undefined);
+  const transcript = record?.transcript;
+  const caseObservations = Array.isArray(transcript?.observations)
+    ? transcript.observations.filter((observation) => observation?.kind === "case")
+    : [];
+  const adapterExits = Array.isArray(adapter?.cases) ? [...new Set(adapter.cases.map((item) => item?.exitCode))].sort() : [];
+  const transcriptExits = [...new Set(caseObservations.map((item) => item?.observedExitCode))].sort();
+  if (
+    validation.length > 0 ||
+    record?.timing !== "pre-publication" ||
+    record?.candidate?.name !== packageName ||
+    record?.candidate?.version !== manifestVersion ||
+    transcript?.schema !== "foundry-candidate-qualification-transcript-v2" ||
+    transcript?.version !== 2 ||
+    transcript?.candidate?.name !== packageName ||
+    transcript?.candidate?.version !== manifestVersion ||
+    transcript?.archetype !== "current-direct" ||
+    transcript?.ok !== true ||
+    transcript?.coverage?.installedManifestSha256 !== record?.candidate?.packageManifestSha256 ||
+    JSON.stringify(adapterExits) !== JSON.stringify([0, 1, 2]) ||
+    JSON.stringify(transcriptExits) !== JSON.stringify([0, 1, 2]) ||
+    caseObservations.some((observation) => !isRecord(observation.rawCaseEvidence))
+  ) {
+    return null;
+  }
+
+  return `governance/release-qualifications/clossys-starter-${manifestVersion}.json#transcript:current-direct`;
+}
+
+/** Resolve Starter's site from exact retained repository evidence, fail closed. */
+export function readPackageAuthenticQualificationSites(repoRoot) {
+  const sites = new Map([[STARTER_PACKAGE, []]]);
+  try {
+    const manifest = parseStrictJson(readFileSync(join(repoRoot, "packages/starter/package.json"), "utf8"));
+    if (manifest?.name !== STARTER_PACKAGE || typeof manifest?.version !== "string") return sites;
+    const candidate = { name: manifest.name, version: manifest.version };
+    const recordPath = qualificationPath(repoRoot, candidate);
+    const record = parseStrictJson(readFileSync(join(repoRoot, recordPath), "utf8"));
+    const history = qualificationRecordHistory(repoRoot, recordPath, candidate);
+    if (history.introducedRecordSha256 !== history.retainedRecordSha256) return sites;
+    const expected = { name: candidate.name, version: candidate.version, ...currentQualificationJoins(repoRoot, candidate, history.introductionCommit) };
+    const adapterBytes = readFileSync(join(repoRoot, STARTER_ADAPTER_PATH), "utf8");
+    const site = packageAuthenticStarterQualificationSite({
+      packageName: candidate.name,
+      manifestVersion: candidate.version,
+      adapterBytes,
+      record,
+      expected,
+    });
+    if (site) sites.set(STARTER_PACKAGE, [site]);
+  } catch {
+    // Absence, malformed evidence, or unverifiable Git history earns no site.
+    // The ordinary lifecycle comparison then reports the unsupported rung.
+  }
+  return sites;
+}
+
+/**
+ * Derive current-scope publication only from the exact validated first-publication
+ * record. Lifecycle status alone predates publication and cannot prove it.
+ */
+export function readValidatedPublishedPackages(repoRoot) {
+  try {
+    const publication = parseStrictJson(readFileSync(join(repoRoot, TRIO_PUBLICATION_PATH), "utf8"));
+    const cohortBytes = readFileSync(join(repoRoot, TRIO_COHORT_PATH), "utf8");
+    const cohort = parseStrictJson(cohortBytes);
+    const records = new Map();
+    const recordBytes = new Map();
+    const validatedRecordPaths = new Set();
+
+    for (const member of publication.members ?? []) {
+      const path = member?.qualification?.path;
+      if (typeof path !== "string") return new Set();
+      const bytes = readFileSync(join(repoRoot, path), "utf8");
+      const record = parseStrictJson(bytes);
+      const history = qualificationRecordHistory(repoRoot, path, record.candidate);
+      if (history.introducedRecordSha256 !== history.retainedRecordSha256) return new Set();
+      const expected = {
+        name: record.candidate?.name,
+        version: record.candidate?.version,
+        ...currentQualificationJoins(repoRoot, record.candidate, history.introductionCommit),
+      };
+      if (validateCandidateQualification(record, { expected }).length > 0) return new Set();
+      records.set(path, record);
+      recordBytes.set(path, bytes);
+      validatedRecordPaths.add(path);
+    }
+
+    if (validateTrioFirstPublication(publication, { cohort, cohortBytes, records, recordBytes, validatedRecordPaths }).length > 0) return new Set();
+    return new Set(publication.members.map((member) => records.get(member.qualification.path)?.candidate?.name).filter(Boolean));
+  } catch {
+    return new Set();
+  }
 }
 
 /** Lifecycle status per package name, from the lifecycle contract. */
@@ -441,6 +583,7 @@ export function evaluatePrograms({
   workspacePackages,
   workspaceBins = new Map(),
   workspaceScope,
+  publishedPackages = new Set(),
 }) {
   const findings = [];
   const results = [];
@@ -520,7 +663,7 @@ export function evaluatePrograms({
     // that cannot be derived here — so staged is never satisfied by scan alone.
     const stagedByOk = validateStagedBy(entry.stagedBy, name, findings);
     evidence.set("staged", sites.length > 0 && stagedByOk);
-    evidence.set("published", PUBLISHED_STATUSES.has(lifecycleStatus ?? ""));
+    evidence.set("published", PUBLISHED_STATUSES.has(lifecycleStatus ?? "") && (publishedPredecessor || publishedPackages.has(name)));
 
     const gaps = new Map();
     for (const gap of entry.gaps ?? []) {
@@ -789,8 +932,12 @@ async function main() {
 
   const declared = (contract.packages ?? []).map((p) => p?.name).filter((n) => typeof n === "string");
   const { distSites, binSites } = scanInvocationSites(repoRoot, [...new Set([...declared, ...workspacePackages])]);
+  for (const [name, sites] of readPackageAuthenticQualificationSites(repoRoot)) {
+    distSites.set(name, [...(distSites.get(name) ?? []), ...sites]);
+  }
 
   const workspaceBins = readWorkspaceBins(repoRoot);
+  const publishedPackages = readValidatedPublishedPackages(repoRoot);
   const { findings, results } = evaluatePrograms({
     contract,
     distSites,
@@ -799,6 +946,7 @@ async function main() {
     workspacePackages,
     workspaceBins,
     workspaceScope,
+    publishedPackages,
   });
   let roleNames;
   try {

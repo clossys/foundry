@@ -77,24 +77,20 @@ package READMEs and their lifecycle records.
 
 ## Installing
 
-The `@clossys` source catalogue is prepared for public npm, but W1D publishes
-nothing. There is therefore no supported `npm install @clossys/...` command
-yet. A 404 from npmjs is the expected pre-publication state, not an
-authentication problem and not evidence that a consumer should add a token.
-
-W1E will make installation guidance current first for the exact Advisor,
-Starter, and Controller launch Trio, after the registry proves anonymous public
-access plus exact digest parity for all three. The other sixteen packages are
-later catalogue expansions in dependency order. The expected post-W1E command
-is ordinary credential-free npm resolution:
-
-```bash
-npm install @clossys/controller
-```
+The first `@clossys` public npm Trio is published and anonymously verified:
+Advisor 0.1.3, Starter 0.1.2, and Controller 0.8.21. Public packument and
+tarball access plus exact served-digest parity are retained for all three. The
+other sixteen packages remain later catalogue expansions in dependency order.
+Anonymous resolution of the exact Trio versions is proven. Consumer install
+guidance remains withheld until the disposable credentialless Trio smoke
+closes; that proof will use exact pins rather than a floating `latest` tag.
 
 Do not add a token or a private registry mapping for `@clossys`. The canonical
-source tuple is declared once in [`package-scope.json`](package-scope.json),
-and publication remains disabled until the separately reviewed W1E change.
+source tuple is declared once in [`package-scope.json`](package-scope.json).
+These first identities were owner-present publications and do not yet carry
+npm trusted-publisher/OIDC provenance. Publication or installation does not
+prove consumer adoption, independent grounding, or closure; those require
+separate consumer-owned evidence.
 
 ### Historical `@vespeneventures` packages
 
