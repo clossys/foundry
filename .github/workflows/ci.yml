@@ -634,6 +634,12 @@ jobs:
       # every package has zero internal dependencies, and silently stops
       # working the moment one gains its first -- so build stays first.
       - run: npm run build
+      # Install every exact local tarball together in a credentialless,
+      # disposable consumer. This checks the packed public surface and the
+      # optional-peer omission contract; it does not claim publication or
+      # adoption.
+      - name: Packed consumer readiness
+        run: npm run check:packed-consumer
       - name: Installed position ledger fixture
         run: npm run check:installed-positions
       - name: Consumer completion evidence fixture
