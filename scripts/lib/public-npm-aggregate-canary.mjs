@@ -663,10 +663,19 @@ export async function runAggregateOptionalPeerMatrix({ consumer, matrix, env, fr
         const evaluatorRoot = await mkdtemp(join(consumer, ".foundry-aggregate-next-"));
         let result;
         try {
-          await writeFile(join(evaluatorRoot, "package.json"), '{"private":true,"type":"module"}\n');
-          await symlink(join(consumer, "node_modules"), join(evaluatorRoot, "node_modules"), "dir");
-          await writeNextFixture(evaluatorRoot, framework);
-          result = await runProcess(evaluator, ["build"], { cwd: evaluatorRoot, env: { ...env, CI: "1", NEXT_TELEMETRY_DISABLED: "1" }, timeout: peerRow.peer === "next" ? 30_000 : 120_000 });
+          if (peerRow.peer === "next") {
+            // `.bin/next` is a dangling symlink after every physical next root
+            // is hidden. Treat that physical absence as the evaluator proof;
+            // launching it would merely manufacture an ENOENT process error.
+            const remaining = await installedPackageRoots(join(consumer, "node_modules"), "next");
+            if (remaining.length) throw new Error(`${row.name} omission next remained physically installed`);
+            result = { exitCode: 1, signal: null, launchError: false, timedOut: false, stdout: "next-bin-absent", stderr: "" };
+          } else {
+            await writeFile(join(evaluatorRoot, "package.json"), '{"private":true,"type":"module"}\n');
+            await symlink(join(consumer, "node_modules"), join(evaluatorRoot, "node_modules"), "dir");
+            await writeNextFixture(evaluatorRoot, framework);
+            result = await runProcess(evaluator, ["build"], { cwd: evaluatorRoot, env: { ...env, CI: "1", NEXT_TELEMETRY_DISABLED: "1" }, timeout: 120_000 });
+          }
         } finally { await rm(evaluatorRoot, { recursive: true, force: true }); }
         const actual = result.exitCode === 0 ? "imports" : "rejects";
         if (result.timedOut || result.signal || result.launchError || result.exitCode === null || actual !== [...expected][0]) throw new Error(`${row.name} omission ${peerRow.peer} Next evaluator expected ${[...expected][0]}, received ${actual}`);
@@ -858,8 +867,8 @@ export async function runAggregatePublicNpmCanary({ root, record, set = "oidc-su
     operations.push(aggregateNpmOperation("uninstall", uninstall));
     if (uninstall.exitCode !== 0 || uninstall.timedOut || uninstall.signal || uninstall.launchError) throw new Error("aggregate npm uninstall execution failed");
     for (const entry of selected.packages) {
-      try { await lstat(join(scratch, "node_modules", ...entry.name.split("/"))); throw new Error(`${entry.name} remained installed after aggregate uninstall`); }
-      catch (error) { if (error?.code !== "ENOENT") throw error; }
+      const remaining = await installedPackageRoots(join(scratch, "node_modules"), entry.name);
+      if (remaining.length) throw new Error(`${entry.name} remained physically installed after aggregate uninstall`);
     }
     await writeFile(join(scratch, "package.json"), before.manifest);
     await writeFile(join(scratch, "package-lock.json"), before.lock);
