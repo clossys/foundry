@@ -1,7 +1,7 @@
 {
   "$comment": "Closed, value-free W1F inventory for the immutable public versions whose npm metadata contains the retired producer identity and client-local publication fields. The local path values are intentionally not retained. The replacement and retirement dispositions remain separate from Terra's append-only publication records under #639.",
-  "schemaVersion": 1,
-  "kind": "clossys-npmjs-affected-version-inventory-v1",
+  "schemaVersion": 2,
+  "kind": "clossys-npmjs-affected-version-inventory-v2",
   "issue": 651,
   "baseCommit": "811bd25d9449037728a11504c7fcf3d90723d01a",
   "repository": "clossys/foundry",
@@ -10,6 +10,14 @@
     "repositoryId": 1325931929
   },
   "observedAt": "2026-08-31T04:31:34Z",
+  "metadataCanonicalization": {
+    "source": "credentialless-public-npm-exact-version-document-v1",
+    "projection": "complete-response-json",
+    "algorithm": "recursive-key-sorted-json-v1",
+    "encoding": "utf8",
+    "trailingNewline": false,
+    "arrays": "preserve-order"
+  },
   "status": "closed",
   "rows": [
     {
