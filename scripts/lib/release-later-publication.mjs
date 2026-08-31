@@ -15,7 +15,7 @@ const SHA512 = /^[a-f0-9]{128}$/;
 const INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 const NAME = /^@[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/;
 const VERSION = /^\d+\.\d+\.\d+$/;
-const PUBLICATION_REPOSITORY = "clossys/platform";
+const PUBLICATION_REPOSITORY = "clossys/foundry";
 const object = (value) => value && typeof value === "object" && !Array.isArray(value);
 const digest = (value) => createHash("sha256").update(value).digest("hex");
 const same = (left, right) => JSON.stringify(left) === JSON.stringify(right);

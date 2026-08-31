@@ -18,6 +18,7 @@ import {
   repositoryIdentityFromPackument,
   retryPostPublishPublicNpmArtifact,
   validatePublicNpmRegistryProof,
+  verifyGithubRepositoryRedirect,
   verifyPublicNpmArtifact,
 } from "./public-npm-registry.mjs";
 
@@ -346,12 +347,11 @@ test("public npm name ownership distinguishes unused, same-repository, foreign, 
   );
 });
 
-test("public npm name ownership requests full metadata and admits an unpublished version only for one exact repository", async () => {
+test("public npm name ownership requests full metadata and accepts an unpublished candidate only when every published version is canonical", async () => {
   const thisRepo = "fixture/platform";
   const observations = [];
   const owned = metadata(tarball());
   owned.repository = { type: "git", url: "git+https://github.com/fixture/platform.git" };
-  delete owned.versions[VERSION].repository;
   const result = await assessPublicNpmName({
     registry: PUBLIC_NPM_REGISTRY,
     name: NAME,
@@ -363,6 +363,119 @@ test("public npm name ownership requests full metadata and admits an unpublished
   assert.deepEqual(Object.keys(observations[0].options.headers), ["Accept"]);
   assert.equal(observations[0].options.headers.Accept, "application/json");
   assert.equal(observations[0].options.redirect, "error");
+});
+
+test("historical npm repository metadata needs one sealed version entry and a live exact redirect proof", async () => {
+  const thisRepo = "fixture/foundry";
+  const historicalRepository = "fixture/platform";
+  const historicalRepositoryVersions = [{
+    name: NAME,
+    version: VERSION,
+    repository: historicalRepository,
+    repositoryId: 42,
+  }];
+  const oldOnly = metadata(tarball());
+  oldOnly.repository = { url: `git+https://github.com/${historicalRepository}.git` };
+  oldOnly.versions[VERSION].repository = { url: `git+https://github.com/${historicalRepository}.git` };
+  const redirects = [];
+  const result = await assessPublicNpmName({
+    registry: PUBLIC_NPM_REGISTRY,
+    name: NAME,
+    version: "1.2.4",
+    thisRepo,
+    historicalRepositoryVersions,
+    resolveRepositoryRedirect: async (input) => {
+      redirects.push(input);
+      return { kind: "verified" };
+    },
+    fetchImpl: async () => response(200, oldOnly),
+  });
+  assert.deepEqual(result, { kind: "same-repo-version-bump", found: true, existingRepo: thisRepo });
+  assert.deepEqual(redirects, [{ historicalRepository, repository: thisRepo, repositoryId: 42 }]);
+
+  const mixed = structuredClone(oldOnly);
+  mixed.versions["1.2.4"] = {
+    ...mixed.versions[VERSION],
+    version: "1.2.4",
+    repository: { url: `git+https://github.com/${thisRepo}.git` },
+  };
+  assert.equal((await assessPublicNpmName({
+    registry: PUBLIC_NPM_REGISTRY,
+    name: NAME,
+    version: "1.2.5",
+    thisRepo,
+    historicalRepositoryVersions,
+    resolveRepositoryRedirect: async () => ({ kind: "verified" }),
+    fetchImpl: async () => response(200, mixed),
+  })).kind, "same-repo-version-bump");
+
+  const oldAndForeign = structuredClone(mixed);
+  oldAndForeign.versions["1.2.4"].repository = { url: "https://github.com/other/project.git" };
+  assert.equal((await assessPublicNpmName({
+    registry: PUBLIC_NPM_REGISTRY,
+    name: NAME,
+    version: "1.2.5",
+    thisRepo,
+    historicalRepositoryVersions,
+    resolveRepositoryRedirect: async () => ({ kind: "verified" }),
+    fetchImpl: async () => response(200, oldAndForeign),
+  })).kind, "collision");
+
+  const unrelatedPackageRootAlias = structuredClone(oldOnly);
+  unrelatedPackageRootAlias.name = "@fixture/other";
+  unrelatedPackageRootAlias.versions[VERSION].name = "@fixture/other";
+  assert.equal((await assessPublicNpmName({
+    registry: PUBLIC_NPM_REGISTRY,
+    name: "@fixture/other",
+    version: "1.2.5",
+    thisRepo,
+    historicalRepositoryVersions,
+    resolveRepositoryRedirect: async () => ({ kind: "verified" }),
+    fetchImpl: async () => response(200, unrelatedPackageRootAlias),
+  })).kind, "collision");
+
+  const unlistedOld = structuredClone(oldOnly);
+  unlistedOld.versions["1.2.4"] = {
+    ...unlistedOld.versions[VERSION],
+    version: "1.2.4",
+    repository: { url: `git+https://github.com/${historicalRepository}.git` },
+  };
+  assert.equal((await assessPublicNpmName({
+    registry: PUBLIC_NPM_REGISTRY,
+    name: NAME,
+    version: "1.2.5",
+    thisRepo,
+    historicalRepositoryVersions,
+    resolveRepositoryRedirect: async () => ({ kind: "verified" }),
+    fetchImpl: async () => response(200, unlistedOld),
+  })).kind, "collision");
+
+  assert.equal((await assessPublicNpmName({
+    registry: PUBLIC_NPM_REGISTRY,
+    name: NAME,
+    version: "1.2.4",
+    thisRepo,
+    historicalRepositoryVersions,
+    resolveRepositoryRedirect: async () => ({ kind: "unreachable", detail: "provider unavailable" }),
+    fetchImpl: async () => response(200, oldOnly),
+  })).kind, "unreachable");
+});
+
+test("GitHub redirect proof requires an exact canonical full name and stable repository ID", async () => {
+  const args = { historicalRepository: "fixture/platform", repository: "fixture/foundry", repositoryId: 42 };
+  const verified = await verifyGithubRepositoryRedirect({
+    ...args,
+    fetchImpl: async () => response(200, { full_name: "fixture/foundry", id: 42 }),
+  });
+  assert.deepEqual(verified, { kind: "verified" });
+  for (const fetchImpl of [
+    async () => response(404, {}),
+    async () => response(200, { full_name: "fixture/other", id: 42 }),
+    async () => response(200, { full_name: "fixture/foundry", id: 99 }),
+    async () => { throw new TypeError("offline"); },
+  ]) {
+    assert.equal((await verifyGithubRepositoryRedirect({ ...args, fetchImpl })).kind, "unreachable");
+  }
 });
 
 test("public npm name ownership fails closed on absent, foreign, malformed, or mixed repository identity", async () => {

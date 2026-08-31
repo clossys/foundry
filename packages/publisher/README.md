@@ -1185,7 +1185,7 @@ installed. This package's own `dependencies` on `@clossys/designer`
 own optional peers the same way, and the same registry gap applies to them
 too, so a consumer of `publisher` inherits `designer`'s full peer set
 through the same mechanism, not just `publisher`'s own two. See
-[issue #226](https://github.com/clossys/platform/issues/226) for the
+[issue #226](https://github.com/clossys/foundry/issues/226) for the
 full evidence and why the declarations stay as-is.
 
 ## Licence

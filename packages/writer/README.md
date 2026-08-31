@@ -477,7 +477,7 @@ they reuse a whole empty-state (title + body + action), a whole FAQ item
 the way a block composes atoms, never a raw sentence of its own. Terms ≈
 tokens, entries ≈ atoms, passages ≈ blocks; documents (a later,
 composition-layer concern, mirroring how a view composes blocks) are out
-of scope here — see [issue #373](https://github.com/clossys/platform/issues/373).
+of scope here — see [issue #373](https://github.com/clossys/foundry/issues/373).
 
 ```ts
 import { checkPassageComposition, readPassageRecord } from "@clossys/writer";

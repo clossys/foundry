@@ -10,13 +10,20 @@ import { execFileSync } from "node:child_process";
 import { dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { readValidatedPublishedPackages } from "./check-package-evidence.mjs";
-import { identityState, isIdentityTransitionControlSurface, lineDigest, loadTransitionPolicy, validateHistoryInventory } from "./lib/package-identity-transition.mjs";
+import {
+  identityState,
+  isIdentityTransitionControlSurface,
+  lineDigest,
+  loadTransitionPolicy,
+  validateHistoricalRepositoryAliases,
+  validateHistoryInventory,
+} from "./lib/package-identity-transition.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const policyPath = join(root, "governance", "package-identity-transition.json");
 const scopePath = join(root, "package-scope.json");
-const PUBLIC_HISTORY_REPOSITORY = "clossys/platform";
-const PUBLIC_HISTORY_URL = "https://github.com/clossys/platform.git";
+const PUBLIC_HISTORY_REPOSITORY = "clossys/foundry";
+const PUBLIC_HISTORY_URL = "https://github.com/clossys/foundry.git";
 const PUBLIC_HISTORY_ORIGINS = new Set([PUBLIC_HISTORY_URL, PUBLIC_HISTORY_URL.slice(0, -4)]);
 const PUBLIC_HISTORY_MAIN_REF = "refs/heads/main";
 const GIT_OUTPUT_LIMIT = 64 * 1024;
@@ -283,7 +290,11 @@ export function evaluatePackageIdentity(rootOverride = root) {
     const publishedPackages = readValidatedPublishedPackages(root);
     const trustedPublishing = ["@clossys/advisor", "@clossys/starter", "@clossys/controller"]
       .every((name) => publishedPackages.has(name));
-    findings.push(...checkCandidateHistory(policy), ...checkCandidatePublishInert(root, { trustedPublishing }));
+    findings.push(
+      ...checkCandidateHistory(policy),
+      ...validateHistoricalRepositoryAliases(root, policy, { files: trackedFiles() }),
+      ...checkCandidatePublishInert(root, { trustedPublishing }),
+    );
   }
   return { state, findings: [...new Set(findings)] };
 }

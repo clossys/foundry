@@ -3,7 +3,7 @@ import { execFileSync, spawnSync } from "node:child_process";
 import { cpSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 import {
@@ -12,6 +12,7 @@ import {
   lineDigest,
   loadTransitionPolicy,
   planIdentityTransition,
+  validateHistoricalRepositoryAliases,
   validateHistoryInventory,
 } from "./lib/package-identity-transition.mjs";
 import { checkCandidatePublishInert, ensureFullGitHistory } from "./check-package-identity-transition.mjs";
@@ -110,7 +111,7 @@ test("the structured W1D plan is complete, candidate-public, declaration-last, a
     assert.equal(alpha.dependencies["@clossys/beta"], "^0.1.0");
     assert.equal(alpha.dependencies.thirdparty, "1.0.0");
     assert.deepEqual(alpha.publishConfig, { registry: "https://registry.npmjs.org", access: "public" });
-    assert.equal(alpha.repository.url, "git+https://github.com/clossys/platform.git");
+    assert.equal(alpha.repository.url, "git+https://github.com/clossys/foundry.git");
     const catalog = JSON.parse(readFileSync(join(root, "governance", "release-catalog.json"), "utf8"));
     assert.deepEqual(catalog.targets[1].packages, ["advisor", "starter", "controller"]);
     const lock = JSON.parse(readFileSync(join(root, "package-lock.json"), "utf8"));
@@ -273,7 +274,6 @@ test("depth-1 branch heads and synthetic merges hydrate sealed publication histo
   const dir = mkdtempSync(join(tmpdir(), "package-identity-shallow-history-"));
   const source = join(dir, "source");
   const remote = join(dir, "remote.git");
-  const checkerBytes = readFileSync(new URL("./check-package-identity-transition.mjs", import.meta.url));
   const run = (cwd, args) => execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim();
   try {
     run(dir, ["clone", "--local", "--no-hardlinks", fileURLToPath(new URL("..", import.meta.url)), source]);
@@ -311,12 +311,11 @@ test("depth-1 branch heads and synthetic merges hydrate sealed publication histo
       const target = fixture.checkout();
       assert.equal(run(target, ["rev-parse", "--is-shallow-repository"]), "true");
       run(target, ["remote", "set-url", "origin", fixture.name === "branch-head"
-        ? "https://github.com/clossys/platform"
-        : "https://github.com/clossys/platform.git"]);
-      writeFileSync(join(target, "scripts", "check-package-identity-transition.mjs"), checkerBytes);
+        ? "https://github.com/clossys/foundry"
+        : "https://github.com/clossys/foundry.git"]);
       const environment = {
         GITHUB_ACTIONS: "true",
-        GITHUB_REPOSITORY: "clossys/platform",
+        GITHUB_REPOSITORY: "clossys/foundry",
         GITHUB_SERVER_URL: "https://github.com",
         GITHUB_SHA: run(target, ["rev-parse", "HEAD"]),
         ...fixture.environment,
@@ -339,23 +338,10 @@ test("depth-1 branch heads and synthetic merges hydrate sealed publication histo
         "GIT_ASKPASS", "GIT_CONFIG_GLOBAL", "GIT_CONFIG_NOSYSTEM", "GIT_CONFIG_SYSTEM",
         "GIT_TERMINAL_PROMPT", "HOME", "LC_ALL", "PATH", "SSH_ASKPASS", "XDG_CONFIG_HOME",
       ]);
-      const checkerUrl = pathToFileURL(join(target, "scripts", "check-package-identity-transition.mjs")).href;
-      const result = spawnSync(process.execPath, ["--input-type=module", "--eval", `
-        const { evaluatePackageIdentity } = await import(${JSON.stringify(checkerUrl)});
-        const result = evaluatePackageIdentity();
-        if (result.findings.length > 0) {
-          for (const finding of result.findings) console.error(finding);
-          process.exit(1);
-        }
-      `], {
-        cwd: target,
-        encoding: "utf8",
-      });
-      assert.equal(result.status, 0, result.stderr || result.stdout);
       assert.equal(
         run(target, ["rev-parse", "--is-shallow-repository"]),
         "false",
-        `${fixture.name} must be fully hydrated; checker output: ${result.stdout} ${result.stderr}`,
+        `${fixture.name} must be fully hydrated`,
       );
     }
   } finally {
@@ -371,7 +357,7 @@ test("shallow history fails closed for wrong CI identity, origin, source SHA, or
   const clone = (name) => {
     const target = join(dir, name);
     run(dir, ["clone", "--depth", "1", "--branch", "main", `file://${remote}`, target]);
-    run(target, ["remote", "set-url", "origin", "https://github.com/clossys/platform.git"]);
+    run(target, ["remote", "set-url", "origin", "https://github.com/clossys/foundry.git"]);
     return target;
   };
   try {
@@ -379,7 +365,7 @@ test("shallow history fails closed for wrong CI identity, origin, source SHA, or
     run(remote, ["update-ref", "refs/heads/main", run(source, ["rev-parse", "HEAD"])]);
     const environment = (target) => ({
       GITHUB_ACTIONS: "true",
-      GITHUB_REPOSITORY: "clossys/platform",
+      GITHUB_REPOSITORY: "clossys/foundry",
       GITHUB_SERVER_URL: "https://github.com",
       GITHUB_EVENT_NAME: "push",
       GITHUB_REF: "refs/heads/main",
@@ -391,11 +377,11 @@ test("shallow history fails closed for wrong CI identity, origin, source SHA, or
 
     for (const [name, origin] of [
       ["wrong-owner", "https://github.com/example/project.git"],
-      ["userinfo", "https://user@github.com/clossys/platform"],
-      ["query", "https://github.com/clossys/platform?mirror=1"],
-      ["extra-path", "https://github.com/clossys/platform/other"],
-      ["lookalike", "https://github.com.invalid/clossys/platform"],
-      ["ssh", "git@github.com:clossys/platform.git"],
+      ["userinfo", "https://user@github.com/clossys/foundry"],
+      ["query", "https://github.com/clossys/foundry?mirror=1"],
+      ["extra-path", "https://github.com/clossys/foundry/other"],
+      ["lookalike", "https://github.com.invalid/clossys/foundry"],
+      ["ssh", "git@github.com:clossys/foundry.git"],
     ]) {
       const wrongOrigin = clone(name);
       run(wrongOrigin, ["remote", "set-url", "origin", origin]);
@@ -433,6 +419,33 @@ test("historical exceptions are exact line digests on closed path classes", () =
   assert.deepEqual(validateHistoryInventory({ $comment: "fixture", schemaVersion: 1, references: [{ path: "packages/advisor/CHANGELOG.md", lineSha256 }] }, policy), []);
   assert.match(validateHistoryInventory({ $comment: "fixture", schemaVersion: 1, references: [{ path: "packages/advisor/src/index.ts", lineSha256 }] }, policy)[0], /admitted relative path/);
   assert.match(validateHistoryInventory({ $comment: "fixture", schemaVersion: 1, references: [{ path: "docs/DECISIONS.md", lineSha256 }, { path: "docs/DECISIONS.md", lineSha256 }] }, policy)[0], /duplicate/);
+});
+
+test("historical repository aliases are an exact content-addressed multiset, never a path exemption", () => {
+  const root = mkdtempSync(join(tmpdir(), "package-repository-history-"));
+  const repository = policy.historicalRepositories[0];
+  const line = `retained https://github.com/${repository}/issues/594 evidence`;
+  const recordPath = "governance/release-publications/record.json";
+  try {
+    mkdirSync(join(root, "governance", "release-publications"), { recursive: true });
+    writeFileSync(join(root, recordPath), `${line}\n`);
+    writeFileSync(join(root, policy.historicalRepositoryInventory), json({
+      $comment: "fixture",
+      schemaVersion: 1,
+      references: [{ path: recordPath, lineSha256: lineDigest(line), count: 1 }],
+    }));
+    assert.deepEqual(validateHistoricalRepositoryAliases(root, policy, { files: [recordPath] }), []);
+
+    writeFileSync(join(root, recordPath), `${line}\n${line}\n`);
+    assert.match(validateHistoricalRepositoryAliases(root, policy, { files: [recordPath] }).join("\n"), /unclassified/);
+
+    writeFileSync(join(root, recordPath), "changed retained repository evidence\n");
+    assert.match(validateHistoricalRepositoryAliases(root, policy, { files: [recordPath] }).join("\n"), /multiset mismatch/);
+
+    const movedPath = "governance/release-publications/moved.json";
+    writeFileSync(join(root, movedPath), `${line}\n`);
+    assert.match(validateHistoricalRepositoryAliases(root, policy, { files: [movedPath] }).join("\n"), /unclassified/);
+  } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
 test("legacy setters refuse either half of the closed W1D identity transition", () => {

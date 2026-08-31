@@ -1,6 +1,6 @@
 {
   "name": "@clossys/designer",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -20,13 +20,13 @@
   "author": "Calvin Hung",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/clossys/platform.git",
+    "url": "git+https://github.com/clossys/foundry.git",
     "directory": "packages/designer"
   },
   "bugs": {
-    "url": "https://github.com/clossys/platform/issues"
+    "url": "https://github.com/clossys/foundry/issues"
   },
-  "homepage": "https://github.com/clossys/platform/tree/main/packages/designer#readme",
+  "homepage": "https://github.com/clossys/foundry/tree/main/packages/designer#readme",
   "engines": {
     "node": ">=20"
   },

@@ -7,7 +7,7 @@ doesn't have to reconstruct the reasoning from git history.
 
 **Status:** set in [`package-scope.json`](../package-scope.json).
 
-The transferred `clossys/platform` producer owns the complete nineteen-package
+The transferred `clossys/foundry` producer owns the complete nineteen-package
 source catalogue. W1D recuts that catalogue atomically; it does not publish a
 package or activate provider trust.
 
@@ -138,7 +138,7 @@ See `docs/PUBLISHING.md` for what it checks and why it is ordered first.
 
 ## 3. The GitHub organization — transferred producer
 
-**Status:** `clossys/platform` is the public neutral producer. The prior
+**Status:** `clossys/foundry` is the public neutral producer. The prior
 producer and its issue/package URLs remain only where retained as exact
 historical evidence.
 
@@ -1031,13 +1031,13 @@ separate evidence events.
 
 W1A through W1D are complete: the decision and representative evidence are
 retained, singular authority is mechanically checked, this source is now the
-transferred `clossys/platform` repository, and all 19 source identities plus
+transferred `clossys/foundry` repository, and all 19 source identities plus
 their first-party edges have moved together to `@clossys`. Exact predecessor
 lines remain only through the content-addressed history inventory. The
 producer programme remains tracked by
-[#567](https://github.com/clossys/platform/issues/567), with W1D's reviewed
+[#567](https://github.com/clossys/foundry/issues/567), with W1D's reviewed
 source result retained in
-[#593](https://github.com/clossys/platform/issues/593).
+[#593](https://github.com/clossys/foundry/issues/593).
 
 W1D proved reversible source readiness only. W1E has completed the first
 irreversible Trio publications, anonymous registry verification, and the
@@ -1047,9 +1047,9 @@ consumer-outcome evidence.
 
 The completed W1E evidence is deliberately narrow:
 
-1. Retain the completed W1E [#594](https://github.com/clossys/platform/issues/594)
+1. Retain the completed W1E [#594](https://github.com/clossys/foundry/issues/594)
    evidence for the owner-present first identities and minimal credentialless
-   Trio smoke. Retain [#626](https://github.com/clossys/platform/issues/626)
+   Trio smoke. Retain [#626](https://github.com/clossys/foundry/issues/626)
    for the current provenance-bearing Advisor 0.1.5, Starter 0.1.4, and
    Controller 0.8.23 releases, including anonymous public access,
    served-digest parity, and provider trust settings.

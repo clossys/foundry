@@ -15,7 +15,7 @@
 import { readFileSync } from "node:fs";
 
 const PUBLIC_REGISTRY = "https://registry.npmjs.org";
-const EXPECTED_REPOSITORY = "https://github.com/clossys/platform";
+const EXPECTED_REPOSITORY = "https://github.com/clossys/foundry";
 const EXPECTED_WORKFLOW = ".github/workflows/publish.yml";
 const SLSA_PROVENANCE = "https://slsa.dev/provenance/v1";
 const SLSA_WORKFLOW_BUILD = "https://slsa-framework.github.io/github-actions-buildtypes/workflow/v1";
@@ -120,7 +120,7 @@ export function inspectPublicNpmProvenance({ name, version, sourceSha, audit, pa
       workflow?.path !== EXPECTED_WORKFLOW ||
       workflow?.ref !== EXPECTED_MAIN_REF
     ) {
-      failures.push("SLSA build definition must bind clossys/platform main and the exact publish workflow");
+      failures.push("SLSA build definition must bind clossys/foundry main and the exact publish workflow");
     }
     if (build?.internalParameters?.github?.event_name !== "workflow_dispatch") {
       failures.push("SLSA build definition must bind a manually dispatched release");
@@ -138,8 +138,8 @@ export function inspectPublicNpmProvenance({ name, version, sourceSha, audit, pa
       failures.push("SLSA builder must be the GitHub-hosted Actions runner");
     }
     const invocation = statement.predicate?.runDetails?.metadata?.invocationId;
-    if (typeof invocation !== "string" || !/^https:\/\/github\.com\/clossys\/platform\/actions\/runs\/\d+\/attempts\/\d+$/.test(invocation)) {
-      failures.push("SLSA invocation must identify one clossys/platform Actions run attempt");
+    if (typeof invocation !== "string" || !/^https:\/\/github\.com\/clossys\/foundry\/actions\/runs\/\d+\/attempts\/\d+$/.test(invocation)) {
+      failures.push("SLSA invocation must identify one clossys/foundry Actions run attempt");
     }
   }
 

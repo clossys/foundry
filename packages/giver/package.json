@@ -1,6 +1,6 @@
 {
   "name": "@clossys/giver",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -43,13 +43,13 @@
   "author": "Calvin Hung",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/clossys/platform.git",
+    "url": "git+https://github.com/clossys/foundry.git",
     "directory": "packages/giver"
   },
   "bugs": {
-    "url": "https://github.com/clossys/platform/issues"
+    "url": "https://github.com/clossys/foundry/issues"
   },
-  "homepage": "https://github.com/clossys/platform/tree/main/packages/giver#readme",
+  "homepage": "https://github.com/clossys/foundry/tree/main/packages/giver#readme",
   "engines": {
     "node": ">=20"
   },
