@@ -123,8 +123,72 @@ test("later-publication history rejects a rewrite followed by restoration", (t) 
   writeFileSync(absolute, "original\n"); execFileSync("git", ["add", path], { cwd: root }); execFileSync("git", ["commit", "-qm", "introduce"], { cwd: root });
   assert.doesNotThrow(() => immutableSingleIntroduction(root, path));
   writeFileSync(absolute, "rewritten\n"); execFileSync("git", ["commit", "-am", "rewrite", "-q"], { cwd: root });
+  assert.throws(() => immutableSingleIntroduction(root, path), /retained bytes differ/);
   writeFileSync(absolute, "original\n"); execFileSync("git", ["commit", "-am", "restore", "-q"], { cwd: root });
   assert.throws(() => immutableSingleIntroduction(root, path), /touched after/);
+});
+
+function retainedMergeFixture(t, label) {
+  const root = mkdtempSync(join(tmpdir(), `later-publication-${label}-`));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const path = "governance/release-publications/later/strategist-0.1.1.json";
+  const absolute = join(root, path);
+  mkdirSync(join(root, "governance/release-publications/later"), { recursive: true });
+  execFileSync("git", ["init", "-q", "-b", "main"], { cwd: root });
+  execFileSync("git", ["config", "user.email", "test@example.invalid"], { cwd: root });
+  execFileSync("git", ["config", "user.name", "test"], { cwd: root });
+  writeFileSync(join(root, "base"), "base\n");
+  execFileSync("git", ["add", "."], { cwd: root });
+  execFileSync("git", ["commit", "-qm", "base"], { cwd: root });
+  execFileSync("git", ["branch", "pre-introduction"], { cwd: root });
+  writeFileSync(absolute, "original\n");
+  execFileSync("git", ["add", path], { cwd: root });
+  execFileSync("git", ["commit", "-qm", "introduce"], { cwd: root });
+  const introduction = execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim();
+  execFileSync("git", ["checkout", "-q", "pre-introduction"], { cwd: root });
+  writeFileSync(join(root, "branch"), "unrelated\n");
+  execFileSync("git", ["add", "."], { cwd: root });
+  execFileSync("git", ["commit", "-qm", "pre-introduction work"], { cwd: root });
+  return { root, path, absolute, introduction };
+}
+
+test("immutable records survive a byte-identical pre-introduction merge in either orientation", (t) => {
+  for (const orientation of ["main-first", "branch-first"]) {
+    const fixture = retainedMergeFixture(t, orientation);
+    if (orientation === "main-first") {
+      execFileSync("git", ["checkout", "-q", "main"], { cwd: fixture.root });
+      execFileSync("git", ["merge", "--no-ff", "-qm", "merge early branch", "pre-introduction"], { cwd: fixture.root });
+    } else {
+      execFileSync("git", ["merge", "--no-ff", "-qm", "merge introduction", "main"], { cwd: fixture.root });
+    }
+    assert.deepEqual(immutableSingleIntroduction(fixture.root, fixture.path), {
+      introductionCommit: fixture.introduction,
+      introducedBytes: "original\n",
+    });
+  }
+});
+
+test("immutable records reject a divergent merge parent", (t) => {
+  const fixture = retainedMergeFixture(t, "divergent-parent");
+  execFileSync("git", ["checkout", "-q", "main"], { cwd: fixture.root });
+  execFileSync("git", ["checkout", "-qb", "divergent", fixture.introduction], { cwd: fixture.root });
+  writeFileSync(fixture.absolute, "divergent\n");
+  execFileSync("git", ["commit", "-qam", "diverge retained record"], { cwd: fixture.root });
+  execFileSync("git", ["checkout", "-q", "main"], { cwd: fixture.root });
+  execFileSync("git", ["merge", "--no-ff", "-s", "ours", "-qm", "retain original", "divergent"], { cwd: fixture.root });
+  assert.throws(() => immutableSingleIntroduction(fixture.root, fixture.path), /touched after/);
+});
+
+test("immutable records reject delete-and-restore through a merge", (t) => {
+  const fixture = retainedMergeFixture(t, "delete-restore");
+  execFileSync("git", ["checkout", "-q", "main"], { cwd: fixture.root });
+  execFileSync("git", ["checkout", "-qb", "deleted", fixture.introduction], { cwd: fixture.root });
+  rmSync(fixture.absolute);
+  execFileSync("git", ["add", "-u", fixture.path], { cwd: fixture.root });
+  execFileSync("git", ["commit", "-qm", "delete retained record"], { cwd: fixture.root });
+  execFileSync("git", ["checkout", "-q", "main"], { cwd: fixture.root });
+  execFileSync("git", ["merge", "--no-ff", "-s", "ours", "-qm", "restore from main", "deleted"], { cwd: fixture.root });
+  assert.throws(() => immutableSingleIntroduction(fixture.root, fixture.path), /touched after/);
 });
 
 test("later-publication requires a strict qualification-introduction ancestor", (t) => {
