@@ -74,6 +74,7 @@ const CURRENT_PUBLISHED_PACKAGES = [
   "@clossys/locksmith",
   "@clossys/messenger",
   "@clossys/observer",
+  "@clossys/publisher",
   "@clossys/starter",
   "@clossys/strategist",
   "@clossys/writer",
