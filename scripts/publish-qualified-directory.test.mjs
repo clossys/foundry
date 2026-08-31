@@ -178,6 +178,31 @@ test("the already-required build context runs the real loopback acceptance on th
   assert.ok(build.indexOf(assertion) < build.indexOf(acceptance), "the exact runtime must be asserted before the loopback acceptance");
 });
 
+test("non-TTY interactive children use ignored stdin for BSD script compatibility", { skip: process.stdin.isTTY === true }, async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "qualified-non-tty-script-test-")), child = join(root, "bsd-script-fixture.mjs");
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await writeFile(child, [
+    "process.stdout.write('bsd script no-challenge accepted\\n');",
+  ].join("\n"));
+  const file = process.platform === "darwin" ? "/usr/bin/script" : process.execPath;
+  const args = process.platform === "darwin" ? ["-q", "/dev/null", process.execPath, child] : [child];
+  const result = await runInteractiveChild(file, args, { cwd: root, env: { PATH: process.env.PATH, HOME: root }, stdio: ["inherit", "pipe", "pipe"] });
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /bsd script no-challenge accepted/);
+});
+
+test("non-TTY owner-input prompts fail closed instead of waiting on ignored stdin", { skip: process.stdin.isTTY === true }, async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "qualified-non-tty-prompt-test-")), child = join(root, "prompt-fixture.mjs");
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await writeFile(child, [
+    "process.stdout.write('one-time password required\\n');",
+    "setInterval(() => {}, 1000);",
+  ].join("\n"));
+  const prompts = [], result = await runInteractiveChild(process.execPath, [child], { stdio: ["inherit", "pipe", "pipe"] }, createOwnerPromptRelay((line) => prompts.push(line)));
+  assert.notEqual(result.status, 0, "owner input must never succeed without a TTY");
+  assert.deepEqual(prompts, ["npm authentication requires owner input.\n"]);
+});
+
 test("a nonzero owner-present PTY session aborts before anonymous verification", async (t) => {
   const item = await fixture(t);
   let verificationCalled = false, interactiveCalls = 0;
@@ -272,7 +297,7 @@ test("owner-present wrapper runs real pinned npm publish against a loopback regi
   assert.equal(verified[0].env.HOME, undefined, "anonymous verification does not inherit the owner's npm login state");
   assert.equal(realPublishResults.length, 1, "the wrapper must start exactly one real PTY-mediated npm publish process");
   assert.equal(realPublishResults[0].status, 0, String(realPublishResults[0].stderr));
-  assert.deepEqual(publish.stdio, ["inherit", "pipe", "pipe"], "publish output must stay inside the wrapper boundary");
+  assert.deepEqual(publish.stdio, [process.stdin.isTTY === true ? "inherit" : "ignore", "pipe", "pipe"], "publish stdin is inherited only for a real owner TTY");
   const requests = JSON.parse(await readFile(loopback.capture, "utf8"));
   // This no-challenge loopback fixture proves the wrapper itself does not
   // duplicate a successful upload. npm may make prerequisite GETs, and may
