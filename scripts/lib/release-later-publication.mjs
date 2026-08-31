@@ -78,13 +78,24 @@ function trustedProvenance(value, candidate, provenanceSourceValid) {
   const exactHistorical = value.repository === HISTORICAL_PLATFORM_REPOSITORY && historical?.sourceSha === value.sourceSha && historical.invocation === value.invocation;
   return (trustedRepository || exactHistorical) && value.workflow === PUBLISH_WORKFLOW && value.ref === PUBLISH_REF && value.event === PUBLISH_EVENT && SHA1.test(value.sourceSha ?? "") && value.builder === GITHUB_HOSTED_BUILDER && exactAttestationUrl(value.attestationUrl, candidate?.name, candidate?.version);
 }
-export function trustedProvenanceSourceValid(root, candidate, qualificationIntroduction, publicationIntroduction, sourceSha, { joinsAt = currentQualificationJoins } = {}) {
+export function trustedProvenanceSourceValid(root, qualification, qualificationIntroduction, publicationIntroduction, sourceSha, { joinsAt = currentQualificationJoins } = {}) {
   if (!SHA1.test(sourceSha ?? "") || sourceSha === qualificationIntroduction || sourceSha === publicationIntroduction) return false;
   try {
     execFileSync("git", ["merge-base", "--is-ancestor", qualificationIntroduction, sourceSha], { cwd: root, stdio: "ignore" });
     execFileSync("git", ["merge-base", "--is-ancestor", sourceSha, publicationIntroduction], { cwd: root, stdio: "ignore" });
+    const candidate = qualification?.candidate;
     const joins = joinsAt(root, candidate, sourceSha);
-    return joins.packageTreeSha1 === candidate?.packageTreeSha1 && joins.packageManifestSha256 === candidate?.packageManifestSha256;
+    return [
+      ["packageTreeSha1", candidate?.packageTreeSha1],
+      ["packageManifestSha256", candidate?.packageManifestSha256],
+      ["rootPackageJsonSha256", qualification?.rootPackageJsonSha256],
+      ["rootPackageLockSha256", qualification?.rootPackageLockSha256],
+      ["policySha256", candidate?.policySha256],
+      ["adapterSha256", candidate?.adapterSha256],
+      ["fixtureSetSha256", candidate?.fixtureSetSha256],
+    ].every(([key, expected]) => joins[key] === expected)
+      && JSON.stringify(joins.archetypes) === JSON.stringify(qualification?.archetypes)
+      && JSON.stringify(joins.dimensions) === JSON.stringify(qualification?.transcript?.dimensions);
   } catch { return false; }
 }
 function exactAttestedSubject(provenance, proof, candidate) {
@@ -204,7 +215,7 @@ export function validateRetainedLaterPublications(root) {
       const introCatalog = parseStrictJson(introCatalogBytes);
       const qualificationFindings = validateCandidateQualification(qualification, { expected });
       const historical = record?.publication?.provenance?.repository === HISTORICAL_PLATFORM_REPOSITORY;
-      const sourceValid = historical || trustedProvenanceSourceValid(root, record.candidate, history.introductionCommit, introductionCommit, record?.publication?.provenance?.sourceSha);
+      const sourceValid = historical || trustedProvenanceSourceValid(root, qualification, history.introductionCommit, introductionCommit, record?.publication?.provenance?.sourceSha);
       const recordFindings = validateLaterPublication(record, { recordPath: path, recordBytes: bytes, qualification, qualificationBytes: qbytes, qualificationPath: qpath, catalogBytes: introCatalogBytes, catalog: introCatalog, currentCatalog, provenanceSourceValid: sourceValid });
       for (const item of [...qualificationFindings, ...recordFindings]) finding(findings, item.rule, `${path}: ${item.message}`);
       if (qualificationFindings.length || recordFindings.length) continue;

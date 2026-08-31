@@ -144,13 +144,18 @@ test("trusted provenance source is post-qualification, pre-publication, and cand
   const root = mkdtempSync(join(tmpdir(), "later-publication-provenance-")); t.after(() => rmSync(root, { recursive: true, force: true }));
   execFileSync("git", ["init", "-q"], { cwd: root }); execFileSync("git", ["config", "user.email", "test@example.invalid"], { cwd: root }); execFileSync("git", ["config", "user.name", "test"], { cwd: root });
   const commit = (name) => { writeFileSync(join(root, "evidence"), `${name}\n`); execFileSync("git", ["add", "."], { cwd: root }); execFileSync("git", ["commit", "-qm", name], { cwd: root }); return execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim(); };
-  const reviewed = commit("reviewed"); const qualificationIntroduction = commit("qualification"); const sourceSha = commit("publish source"); const publicationIntroduction = commit("publication");
-  const candidate = { packageTreeSha1: "a".repeat(40), packageManifestSha256: "b".repeat(64) };
-  const matching = () => ({ ...candidate });
-  assert.equal(trustedProvenanceSourceValid(root, candidate, qualificationIntroduction, publicationIntroduction, sourceSha, { joinsAt: matching }), true);
-  assert.equal(trustedProvenanceSourceValid(root, candidate, qualificationIntroduction, publicationIntroduction, qualificationIntroduction, { joinsAt: matching }), false);
-  assert.equal(trustedProvenanceSourceValid(root, candidate, qualificationIntroduction, publicationIntroduction, reviewed, { joinsAt: matching }), false);
-  assert.equal(trustedProvenanceSourceValid(root, candidate, qualificationIntroduction, publicationIntroduction, sourceSha, { joinsAt: () => ({ packageTreeSha1: "c".repeat(40), packageManifestSha256: candidate.packageManifestSha256 }) }), false);
+  const reviewed = commit("reviewed"); const qualificationIntroduction = commit("qualification"); const sourceSha = commit("publish source");
+  execFileSync("git", ["checkout", "-qb", "sibling", qualificationIntroduction], { cwd: root }); const siblingSource = commit("sibling source"); execFileSync("git", ["checkout", "-q", "-"], { cwd: root }); const publicationIntroduction = commit("publication");
+  const candidate = { packageTreeSha1: "a".repeat(40), packageManifestSha256: "b".repeat(64), policySha256: "c".repeat(64), adapterSha256: "d".repeat(64), fixtureSetSha256: "e".repeat(64) };
+  const qualification = { candidate, rootPackageJsonSha256: "f".repeat(64), rootPackageLockSha256: "1".repeat(64), archetypes: [{ kind: "current-direct", status: "qualified" }], transcript: { dimensions: [{ dimension: "rollback", status: "supported" }] } };
+  const matching = () => ({ ...candidate, rootPackageJsonSha256: qualification.rootPackageJsonSha256, rootPackageLockSha256: qualification.rootPackageLockSha256, archetypes: qualification.archetypes, dimensions: qualification.transcript.dimensions });
+  assert.equal(trustedProvenanceSourceValid(root, qualification, qualificationIntroduction, publicationIntroduction, sourceSha, { joinsAt: matching }), true);
+  assert.equal(trustedProvenanceSourceValid(root, qualification, qualificationIntroduction, publicationIntroduction, qualificationIntroduction, { joinsAt: matching }), false);
+  assert.equal(trustedProvenanceSourceValid(root, qualification, qualificationIntroduction, publicationIntroduction, reviewed, { joinsAt: matching }), false);
+  assert.equal(trustedProvenanceSourceValid(root, qualification, qualificationIntroduction, publicationIntroduction, siblingSource, { joinsAt: matching }), false);
+  for (const key of ["packageTreeSha1", "packageManifestSha256", "rootPackageJsonSha256", "rootPackageLockSha256", "policySha256", "adapterSha256", "fixtureSetSha256", "archetypes", "dimensions"]) {
+    assert.equal(trustedProvenanceSourceValid(root, qualification, qualificationIntroduction, publicationIntroduction, sourceSha, { joinsAt: () => ({ ...matching(), [key]: key === "archetypes" || key === "dimensions" ? [] : "0".repeat(64) }) }), false, key);
+  }
 });
 
 test("trusted-publication v2 binds immutable provenance to the qualified served bytes", () => {
