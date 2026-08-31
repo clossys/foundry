@@ -448,6 +448,11 @@ test("historical repository aliases are an exact content-addressed multiset, nev
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
+test("the release cleanup inventory classifies each retained historical alias line", () => {
+  const root = fileURLToPath(new URL("..", import.meta.url));
+  assert.deepEqual(validateHistoricalRepositoryAliases(root, policy), []);
+});
+
 test("legacy setters refuse either half of the closed W1D identity transition", () => {
   const root = setterFixture();
   try {
