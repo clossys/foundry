@@ -125,8 +125,12 @@ export const OPTIONAL_PEER_POLICY = {
     resend: { "@clossys/messenger": "imports", "@clossys/messenger/providers/resend": "rejects" },
   },
   "@clossys/publisher": {
+    "@internationalized/date": omissionRow(publisherExports, ["@clossys/publisher/web"]),
     react: omissionRow(publisherExports, ["@clossys/publisher/document", "@clossys/publisher/web"]),
+    "react-aria-components": omissionRow(publisherExports, ["@clossys/publisher/web"]),
     "react-dom": omissionRow(publisherExports, ["@clossys/publisher/web"]),
+    "tailwind-merge": omissionRow(publisherExports, ["@clossys/publisher/web"]),
+    tailwindcss: omissionRow(publisherExports),
   },
 };
 

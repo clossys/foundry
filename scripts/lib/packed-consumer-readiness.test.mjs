@@ -219,6 +219,29 @@ test("the repository omission matrix is closed against every current publishable
   assert.deepEqual(validateOptionalPeerPolicy(packages, OPTIONAL_PEER_POLICY), []);
 });
 
+test("Publisher's additional optional peers fail closed at exactly their web exports", () => {
+  const publisherExports = [
+    "@clossys/publisher/core",
+    "@clossys/publisher/document",
+    "@clossys/publisher/email",
+    "@clossys/publisher/image",
+    "@clossys/publisher/media",
+    "@clossys/publisher/print",
+    "@clossys/publisher/record",
+    "@clossys/publisher/slides",
+    "@clossys/publisher/web",
+  ];
+  const expected = (rejected = []) => Object.fromEntries(
+    publisherExports.map((specifier) => [specifier, rejected.includes(specifier) ? "rejects" : "imports"]),
+  );
+  const rows = OPTIONAL_PEER_POLICY["@clossys/publisher"];
+
+  assert.deepEqual(rows["@internationalized/date"], expected(["@clossys/publisher/web"]));
+  assert.deepEqual(rows["react-aria-components"], expected(["@clossys/publisher/web"]));
+  assert.deepEqual(rows["tailwind-merge"], expected(["@clossys/publisher/web"]));
+  assert.deepEqual(rows.tailwindcss, expected());
+});
+
 test("installedPackageRoots finds nested copies so a transitive peer cannot produce a false green", async (t) => {
   const root = await fixture(t);
   const top = join(root, "node_modules", "react");
