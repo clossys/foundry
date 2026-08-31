@@ -15,6 +15,7 @@ import { fetchPublicNpmArtifact } from "./fetch-public-npm-artifact.mjs";
 import { assertPackageAuthorized, loadReleaseCatalog, readCurrentReleaseIdentity, resolveReleaseTarget } from "./check-release-catalog.mjs";
 import { repositoryIdentityFromPackument, validatePublicNpmRegistryProof } from "./lib/public-npm-registry.mjs";
 import { validateLaterPublication } from "./lib/release-later-publication.mjs";
+import { assertReleaseRuntime } from "./lib/release-runtime.mjs";
 
 const KEY = /^[a-z0-9][a-z0-9-]{0,63}$/;
 const SHA1 = /^[a-f0-9]{40}$/;
@@ -242,9 +243,10 @@ export function argsFrom(argv) {
   return result;
 }
 
-export async function createLaterPublicationRecord({ root = process.cwd(), packageKey, qualificationPath: qualificationInput, candidatePath, proofPath, publicationPath, fetch: fetchEvidence = false, fetchImpl = fetch, env = process.env }) {
+export async function createLaterPublicationRecord({ root = process.cwd(), packageKey, qualificationPath: qualificationInput, candidatePath, proofPath, publicationPath, fetch: fetchEvidence = false, fetchImpl = fetch, env = process.env, releaseRuntimeRun }) {
   if (!KEY.test(packageKey ?? "")) throw new Error("package key is invalid");
   assertCredentialFree(env);
+  assertReleaseRuntime(releaseRuntimeRun ? { run: releaseRuntimeRun, env } : { env });
   const absoluteRoot = resolve(root);
   const qualificationInputFile = regularBytes(qualificationInput, "qualification record");
   const qualification = parseJson(qualificationInputFile.bytes, "qualification record");

@@ -8,10 +8,16 @@ import test from "node:test";
 
 import { argsFrom, buildLaterPublicationRecord, createLaterPublicationRecord, writeNoOverwrite } from "./record-later-publication.mjs";
 import { publicNpmVersionUrl, PUBLIC_NPM_REGISTRY } from "./lib/public-npm-registry.mjs";
+import { RELEASE_RUNTIME } from "./lib/release-runtime.mjs";
 
 const hex = (value, length) => value.repeat(length);
 const digest = (algorithm, value) => createHash(algorithm).update(value).digest("hex");
 const candidateBytes = Buffer.from("candidate bytes");
+const releaseRuntimeRun = (file, args) => {
+  if (args[0] === "--version") return { status: 0, stdout: file === process.execPath ? `${RELEASE_RUNTIME.node}\n` : `${RELEASE_RUNTIME.npm}\n`, stderr: "" };
+  if (args[0] === "-p") return { status: 0, stdout: `${RELEASE_RUNTIME.zlib}\n`, stderr: "" };
+  throw new Error(`unexpected release runtime probe ${file} ${args.join(" ")}`);
+};
 const candidate = {
   name: "@clossys/strategist", version: "0.1.1", packageTreeSha1: hex("a", 40), packageManifestSha256: hex("b", 64),
   policySha256: hex("c", 64), adapterSha256: hex("d", 64), fixtureSetSha256: hex("e", 64),
@@ -141,7 +147,7 @@ test("creator writes one canonical owner-present record in a synthetic git repos
   writeFileSync(publicationPath, `${JSON.stringify({ mode: "owner-present", publishedAt: "2026-08-31T00:00:00.000Z", reference: "https://registry.npmjs.org/%40clossys%2Fstrategist/0.1.2" }, null, 2)}\n`);
 
   const result = await createLaterPublicationRecord({
-    root, packageKey: "strategist", qualificationPath: join(root, qualificationPath), candidatePath, proofPath, publicationPath, env: {},
+    root, packageKey: "strategist", qualificationPath: join(root, qualificationPath), candidatePath, proofPath, publicationPath, env: {}, releaseRuntimeRun,
   });
   assert.equal(result.path, "governance/release-publications/later/strategist-0.1.2.json");
   assert.equal(result.record.kind, "foundry-later-publication-v1");
@@ -154,6 +160,18 @@ test("creator refuses credential-bearing environments before reading inputs", as
   await assert.rejects(
     createLaterPublicationRecord({ packageKey: "strategist", qualificationPath: "missing.json", publicationPath: "missing-publication.json", candidatePath: "missing.tgz", proofPath: "missing-proof.json", env: { NPM_TOKEN: "present" } }),
     /credential-bearing/,
+  );
+});
+
+test("creator refuses a mismatched release runtime before reading or retaining a record", async () => {
+  const mismatch = (file, args) => {
+    if (args[0] === "--version") return { status: 0, stdout: `${file === process.execPath ? RELEASE_RUNTIME.node : "11.12.0"}\n`, stderr: "" };
+    if (args[0] === "-p") return { status: 0, stdout: `${RELEASE_RUNTIME.zlib}\n`, stderr: "" };
+    throw new Error("unexpected release runtime probe");
+  };
+  await assert.rejects(
+    createLaterPublicationRecord({ packageKey: "strategist", qualificationPath: "missing.json", publicationPath: "missing-publication.json", candidatePath: "missing.tgz", proofPath: "missing-proof.json", env: {}, releaseRuntimeRun: mismatch }),
+    /observed npm 11\.12\.0/,
   );
 });
 

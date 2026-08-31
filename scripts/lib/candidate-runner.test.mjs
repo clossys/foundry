@@ -7,9 +7,15 @@ import { join } from "node:path";
 import test from "node:test";
 import { promisify } from "node:util";
 import { QUALIFICATION_PHASE_TIMEOUTS, assertCredentialFree, containedRegularFile, installNpmrc, packedFrameworkContexts, runCandidateQualification, runProcess, runtimeImportArguments, wildcardCapture } from "./candidate-runner.mjs";
+import { RELEASE_RUNTIME } from "./release-runtime.mjs";
 
 const execFile = promisify(execFileCallback);
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");
+const releaseRuntimeRun = (file, args) => {
+  if (args[0] === "--version") return { status: 0, stdout: file === process.execPath ? `${RELEASE_RUNTIME.node}\n` : `${RELEASE_RUNTIME.npm}\n`, stderr: "" };
+  if (args[0] === "-p") return { status: 0, stdout: `${RELEASE_RUNTIME.zlib}\n`, stderr: "" };
+  throw new Error(`unexpected release runtime probe ${file} ${args.join(" ")}`);
+};
 async function syntheticPackage({ mismatch = false, exports = undefined, runtimePeer = false, peerInstall = undefined, rawStarter = false, mutateCaseEvidence = null } = {}) {
   const root = await mkdtemp(join(tmpdir(), "foundry-runner-test-"));
   const source = join(root, "source");
@@ -111,7 +117,7 @@ async function syntheticPackage({ mismatch = false, exports = undefined, runtime
     ],
     dimensionEvidence: { rollback: "restoration", duplicate: "authority" },
   };
-  return { root, source, tarball, policy, adapter, fixtures, manifestBins: { "synthetic-check": "cli.js" }, registry: { scope: rawStarter ? "@clossys" : "@acme", registry: "https://registry.npmjs.org/" } };
+  return { root, source, tarball, policy, adapter, fixtures, manifestBins: { "synthetic-check": "cli.js" }, registry: { scope: rawStarter ? "@clossys" : "@acme", registry: "https://registry.npmjs.org/" }, releaseRuntimeRun };
 }
 
 test("runner isolates a packed candidate and produces a deterministic complete transcript", async (t) => {
@@ -208,6 +214,17 @@ test("qualification refuses credential-bearing parents and npm configuration car
   assert.equal(installNpmrc(registry), "@acme:registry=https://registry.example.test/npm/\n");
   assert.throws(() => assertCredentialFree({ NODE_AUTH_TOKEN: "secret" }), /credential-bearing/);
   assert.doesNotThrow(() => assertCredentialFree({}));
+});
+
+test("qualification refuses a mismatched release runtime before reading candidate bytes", async (t) => {
+  const fixture = await syntheticPackage();
+  t.after(() => rm(fixture.root, { recursive: true, force: true }));
+  const mismatch = (file, args) => {
+    if (args[0] === "--version") return { status: 0, stdout: `${file === process.execPath ? "v24.15.0" : RELEASE_RUNTIME.npm}\n`, stderr: "" };
+    if (args[0] === "-p") return { status: 0, stdout: `${RELEASE_RUNTIME.zlib}\n`, stderr: "" };
+    throw new Error("unexpected release runtime probe");
+  };
+  await assert.rejects(() => runCandidateQualification({ ...fixture, releaseRuntimeRun: mismatch, tarball: join(fixture.root, "does-not-exist.tgz") }), /observed node v24\.15\.0/);
 });
 
 test("production qualification phases use separate reviewed bounds", () => {

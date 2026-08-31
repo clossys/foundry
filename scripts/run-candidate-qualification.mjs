@@ -5,6 +5,7 @@ import { writeFile } from "node:fs/promises";
 import { assertCredentialFree, runCandidateQualification } from "./lib/candidate-runner.mjs";
 import { parseStrictJson } from "./lib/candidate-qualification.mjs";
 import { selectPolicyPackage, validateReleaseQualificationContract, validateReleaseQualificationPolicy } from "./lib/release-qualification-contract.mjs";
+import { assertReleaseRuntime } from "./lib/release-runtime.mjs";
 
 const ROOT = resolve(".");
 const PACKAGE_KEY = /^[a-z0-9][a-z0-9-]{0,63}$/;
@@ -49,6 +50,7 @@ function scopedRegistry(scopeConfig, name) {
 
 const args = parseArgs(process.argv);
 assertCredentialFree();
+assertReleaseRuntime();
 const policy = parseStrictJson(readFileSync(repositoryPath("governance/release-qualification-policy.json"), "utf8"));
 const policyFindings = validateReleaseQualificationPolicy(policy);
 if (policyFindings.length) throw new Error(`invalid qualification policy: ${policyFindings.map((item) => item.rule).join(",")}`);

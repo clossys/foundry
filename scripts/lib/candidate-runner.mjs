@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve, sep } from "node:path";
 import { validateReleaseQualificationContract } from "./release-qualification-contract.mjs";
 import { parseStrictJson } from "./candidate-qualification.mjs";
+import { assertReleaseRuntime } from "./release-runtime.mjs";
 
 const hash = (algorithm, value) => createHash(algorithm).update(value).digest("hex");
 function normalizedStream(root, value, kind) {
@@ -557,8 +558,9 @@ async function exportCoverage(manifest, installed, root) {
 }
 
 /** Execute the fixed, data-only contract against exactly one local tarball. */
-export async function runCandidateQualification({ tarball, policy, adapter, fixtures, manifestBins, registry }) {
+export async function runCandidateQualification({ tarball, policy, adapter, fixtures, manifestBins, registry, releaseRuntimeRun }) {
   assertCredentialFree();
+  assertReleaseRuntime(releaseRuntimeRun ? { run: releaseRuntimeRun } : {});
   const bytes = await readFile(tarball);
   const tarballDigests = { sha1: hash("sha1", bytes), sha256: hash("sha256", bytes), sha512: hash("sha512", bytes) };
   const root = await realpath(await mkdtemp(join(tmpdir(), "foundry-candidate-")));
