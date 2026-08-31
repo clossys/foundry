@@ -5,14 +5,49 @@ import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { execFile as execFileCallback } from "node:child_process";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import test from "node:test";
+import { once } from "node:events";
 import { promisify } from "node:util";
 
 import { argsFrom, publishQualifiedDirectory } from "./publish-qualified-directory.mjs";
 
 const execFile = promisify(execFileCallback);
 const hash = (algorithm, value) => createHash(algorithm).update(value).digest("hex");
+
+async function startLoopbackRegistry(t, root) {
+  const script = join(root, "loopback-registry.mjs"), capture = join(root, "loopback-publish.json");
+  const rawRegistryDocument = "loopback-registry-document-must-not-be-logged";
+  await writeFile(script, [
+    'import { createServer } from "node:http";',
+    'import { writeFileSync } from "node:fs";',
+    'const capture = process.argv[2];',
+    'const server = createServer(async (request, response) => {',
+    '  const chunks = []; for await (const chunk of request) chunks.push(chunk);',
+    '  writeFileSync(capture, JSON.stringify({ method: request.method, url: request.url, authorization: request.headers.authorization ?? null, body: Buffer.concat(chunks).toString("base64") }));',
+    `  response.writeHead(201, { "content-type": "application/json" }); response.end(JSON.stringify({ ok: true, diagnostic: ${JSON.stringify(rawRegistryDocument)} }));`,
+    '});',
+    'server.listen(0, "127.0.0.1", () => process.stdout.write(`${server.address().port}\\n`));',
+  ].join("\n"));
+  const child = spawn(process.execPath, [script, capture], { stdio: ["ignore", "pipe", "pipe"] });
+  const port = await new Promise((resolve, reject) => {
+    let output = "", errors = "";
+    const fail = (error) => reject(new Error(`loopback registry failed to start: ${error}${errors ? ` (${errors})` : ""}`));
+    child.once("error", fail);
+    child.stderr.on("data", (chunk) => { errors += chunk; });
+    child.stdout.on("data", (chunk) => {
+      output += chunk;
+      const line = output.split("\n")[0];
+      if (/^\d+$/.test(line)) resolve(Number(line));
+    });
+    child.once("exit", (code) => fail(`exit ${code}`));
+  });
+  t.after(async () => {
+    if (!child.killed) child.kill("SIGTERM");
+    await once(child, "exit");
+  });
+  return { registry: `http://127.0.0.1:${port}`, capture, rawRegistryDocument };
+}
 
 async function fixture(t) {
   const root = await mkdtemp(join(tmpdir(), "qualified-directory-test-"));
@@ -52,24 +87,27 @@ test("owner-present wrapper has a closed CLI", () => {
   for (const mutation of [["--otp", "123456"], ["--candidate", "https://example.test/x.tgz"], ["--unknown", "x"], ["--package", "../strategist"]]) assert.throws(() => argsFrom([...argv, ...mutation]), /Usage:/);
 });
 
-test("owner-present wrapper publishes only a clean directory with exact bytes and no transient manifest metadata", async (t) => {
+test("owner-present wrapper runs real npm publish against a loopback registry with exact clean-directory bytes", async (t) => {
   const item = await fixture(t), calls = [];
-  let packedAttachment = null;
+  const loopback = await startLoopbackRegistry(t, item.root);
+  // This fixture-only credential proves that the real npm client obtains its
+  // owner capability from HOME, not from an argument or forwarded token env.
+  // The wrapper never reads this file or prints its value.
+  await writeFile(join(item.root, ".npmrc"), `//127.0.0.1:${new URL(loopback.registry).port}/:_authToken=loopback-local-only\nalways-auth=true\n`);
+  const realPublishResults = [];
   const run = (file, args, options) => {
     calls.push({ file, args: [...args], cwd: options.cwd, env: { ...options.env } });
     if (file === process.execPath) return { status: 0, stdout: "", stderr: "" };
-    if (args[0] === "pack") {
-      const result = spawnSync(file, args, { cwd: options.cwd, env: options.env, encoding: "utf8" });
-      packedAttachment = readFileSync(join(args.at(-1), JSON.parse(result.stdout)[0].filename));
+    if (args[0] === "publish") {
+      const outboundArgs = [...args];
+      const registryIndex = outboundArgs.indexOf("--registry");
+      assert.notEqual(registryIndex, -1);
+      outboundArgs[registryIndex + 1] = loopback.registry;
+      const result = spawnSync(file, outboundArgs, { ...options, stdio: "pipe", encoding: "utf8" });
+      realPublishResults.push(result);
       return result;
     }
-    if (args[0] === "publish") {
-      const outbound = JSON.parse(readFileSync(join(options.cwd, "package.json"), "utf8"));
-      assert.equal(Object.hasOwn(outbound, "_from"), false);
-      assert.equal(Object.hasOwn(outbound, "_resolved"), false);
-      assert.equal(packedAttachment.equals(item.bytes), true, "the loopback attachment must be exactly the qualified bytes");
-    }
-    return { status: 0, stdout: "", stderr: "" };
+    return spawnSync(file, args, { ...options, encoding: "utf8" });
   };
   const verified = [];
   const result = await publishQualifiedDirectory({ root: item.root, packageKey: "strategist", candidatePath: item.candidate, recordPath: item.recordPath, env: { PATH: process.env.PATH, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist, NPM_TOKEN: "must-not-forward" }, run, verify: async (options) => { verified.push(options); } });
@@ -91,6 +129,20 @@ test("owner-present wrapper publishes only a clean directory with exact bytes an
   assert.equal(verified.length, 1);
   assert.equal(verified[0].env.NPM_TOKEN, undefined);
   assert.equal(verified[0].env.HOME, undefined, "anonymous verification does not inherit the owner's npm login state");
+  assert.equal(realPublishResults.length, 1, "the wrapper must start exactly one real npm publish process");
+  assert.equal(realPublishResults[0].status, 0, String(realPublishResults[0].stderr));
+  const request = JSON.parse(await readFile(loopback.capture, "utf8"));
+  assert.equal(request.method, "PUT");
+  assert.match(request.url, /%40clossys%2fstrategist|@clossys%2fstrategist/i);
+  assert.equal(request.authorization, "Bearer loopback-local-only");
+  const outboundDocument = JSON.parse(Buffer.from(request.body, "base64").toString("utf8"));
+  const outboundManifest = outboundDocument.versions?.["0.1.1"];
+  assert.equal(typeof outboundManifest, "object");
+  assert.equal(Object.hasOwn(outboundManifest, "_from"), false);
+  assert.equal(Object.hasOwn(outboundManifest, "_resolved"), false);
+  const attachment = Object.values(outboundDocument._attachments ?? {})[0];
+  assert.equal(Buffer.from(attachment.data, "base64").equals(item.bytes), true, "the uploaded attachment must equal the immutable qualification bytes");
+  assert.equal(`${realPublishResults[0].stdout ?? ""}${realPublishResults[0].stderr ?? ""}`.includes(loopback.rawRegistryDocument), false, "raw loopback registry documents must never enter wrapper output");
 });
 
 test("wrapper rejects transient manifest metadata, symlinks, and changed clean-directory bytes before publish", async (t) => {
