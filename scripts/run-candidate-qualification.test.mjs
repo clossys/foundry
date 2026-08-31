@@ -108,8 +108,19 @@ test("all 19 publishable packages are exact-source bound to the catalogue and qu
     assert.deepEqual(validateReleaseQualificationContract({ policy, adapter, fixtures, manifestBins, peerDependencies: manifest.peerDependencies ?? {}, peerDependenciesMeta: manifest.peerDependenciesMeta ?? {} }), [], name);
   }
   const designer = policy.packages["@clossys/designer"];
-  assert.ok((await repositoryJson(designer.adapterPath)).fixtures.includes("clean/View.tsx"));
+  const designerAdapter = await repositoryJson(designer.adapterPath);
+  assert.ok(designerAdapter.fixtures.includes("clean/View.tsx"));
   assert.match(await readFile(new URL(`../${designer.fixturePath}/clean/View.tsx`, import.meta.url), "utf8"), /text-\[var\(--color-ink-primary\)\]/);
+
+  const publisherAdapter = await repositoryJson(policy.packages["@clossys/publisher"].adapterPath);
+  assert.deepEqual(publisherAdapter.peerInstall, {
+    "@internationalized/date": designerAdapter.peerInstall["@internationalized/date"],
+    react: "19.2.8",
+    "react-aria-components": designerAdapter.peerInstall["react-aria-components"],
+    "react-dom": "19.2.8",
+    "tailwind-merge": designerAdapter.peerInstall["tailwind-merge"],
+    tailwindcss: designerAdapter.peerInstall.tailwindcss,
+  });
 });
 
 test("portfolio closure fails when policy or catalogue omits one source package", async () => {

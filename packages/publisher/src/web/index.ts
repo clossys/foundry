@@ -4,8 +4,8 @@
  * `@clossys/designer` view element plus framework-agnostic head
  * metadata. See `renderWebDocument.ts`'s own doc comment for the full
  * picture, and this package's README for the peer-dependency model
- * (`react`, `react-dom`, and `@clossys/designer` are all OPTIONAL peers
- * of this subpath specifically — a consumer who never imports
+ * (`react`, `react-dom`, and Designer's optional runtime peers are all
+ * OPTIONAL peers of this subpath specifically — a consumer who never imports
  * `@clossys/publisher/web` never needs to install any of them).
  */
 
