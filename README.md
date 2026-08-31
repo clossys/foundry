@@ -88,8 +88,9 @@ Consumers may use the exact current versions through ordinary credentialless
 public npm resolution. Install only the package or packages a consumer needs,
 using exact pins rather than a floating `latest` tag. Publication and
 installation remain distinct from consumer adoption, independent grounding, or
-closure. Strategist, Writer, and Designer are reviewed qualification
-candidates, not published packages; each later publication needs its own
+closure. Strategist 0.1.1 has owner-present first-publication evidence.
+Strategist 0.1.2, Writer, and Designer are reviewed qualification candidates,
+not published packages; each later publication needs its own
 immutable, package-neutral record joined to the exact qualification, catalogue
 entry, candidate tarball, anonymous served bytes, and applicable publisher
 provenance when a separately evidenced trusted-publisher release exists.

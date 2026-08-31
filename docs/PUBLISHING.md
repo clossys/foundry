@@ -560,11 +560,20 @@ specifier, token, OTP, or a workflow upload flag.
 `@clossys/<package>@<version>` packument and tarball, then compare its name,
 version, public access, `dist.integrity`, SHA-1/SHA-256/SHA-512, packed
 manifest, and raw size with the reviewed candidate. Do not start the next row
-until that evidence is retained. If either upload or verification fails,
-quarantine the completed ordered prefix, retain every immutable published
-identity and its disposition, invalidate the unpublished candidates, and stop
-the handoff. A published version is never deleted, unpublished, overwritten,
-or reused; a correction is a newly qualified forward version.
+until that evidence is retained. These fourteen rows are independent
+per-package transitions, not a shared quarantine: a completed and verified
+row remains that package's individual immutable record, and an untouched
+candidate remains qualified unless its bytes, source, or retained evidence
+change.
+
+If an upload or its verification fails or is uncertain, stop. Query the
+anonymous registry for that exact name and version before any retry. If it is
+absent, create no publication record and require renewed owner authorization
+before retrying. If that exact version is visibly served, retain its individual
+publication record only after the required anonymous served-byte verification;
+the already verified prefix remains valid as individual records. A published
+version is never deleted, unpublished, overwritten, or reused; a defect moves
+forward through a newly qualified version.
 
 Only after a package's first identity and anonymous served-byte verification
 are complete may its owner configure that package's npm trusted publisher and
