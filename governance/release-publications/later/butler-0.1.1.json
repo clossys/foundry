@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "kind": "foundry-later-publication-v1",
+  "qualification": {
+    "path": "governance/release-qualifications/clossys-butler-0.1.1.json",
+    "sha256": "ac75313e944b1aa683764b316044c540931b13f3e616fcbb44521eb7abda2671"
+  },
+  "candidate": {
+    "name": "@clossys/butler",
+    "version": "0.1.1",
+    "packageTreeSha1": "c5d9b12c77008ad472201e70c1ea3628d077cd7c",
+    "packageManifestSha256": "fa009f0a4ef9a48000142b02768e53a6356324555e06d3f30603effb6957517f",
+    "tarball": {
+      "sha1": "46c0a952bfbd2b8cad3a6703c5aca015de306c4b",
+      "sha256": "958cefaa44e19f4564193084cc53cb1310bcba4c9f579e5779693c1d3b3d033a",
+      "sha512": "9989b7c66ecbca8d40b03a08e51e62ff8c29bf5026aefea60e6722a1daa7478816990852841409331475f2018b444f62911ed6c5c24c7734ff2eebf132448dc0"
+    }
+  },
+  "source": {
+    "reviewedCommit": "4bd2a3ad4909409f7735ce042f2c93b23b9aedd7",
+    "rootPackageJsonSha256": "c6f5f6791c7d6e105376603da0152618ae03aa5f25a522dda0432c11999a9bf1",
+    "rootPackageLockSha256": "5f4cdde3f18ddd555680034f87ea682408f4800e189a3df8041bd3f7d500a73a",
+    "policySha256": "024a1cddbc1dac8cdb474b51fc281ec4167f0d24f069582352b85a88918b4d63",
+    "adapterSha256": "5d41a9183439ee667aa57e078c01cf4a5a63078ed67a703f86f92403fab8baab",
+    "fixtureSetSha256": "f87f9a8982c09ff93f5dba6a724ac6adc2590031474b4749b49d535c2a2562a1"
+  },
+  "catalog": {
+    "path": "governance/release-catalog.json",
+    "sha256": "3f43692f3c12dc1b21a3931fcf2abd53a68a207874b2ae2206e8e10f08b68404",
+    "packageKey": "butler"
+  },
+  "publication": {
+    "mode": "owner-present",
+    "publishedAt": "2026-08-31T17:31:10.659Z",
+    "reference": "https://www.npmjs.com/package/@clossys/butler/v/0.1.1"
+  },
+  "registryProof": {
+    "schemaVersion": 2,
+    "kind": "public-npm-anonymous-registry-proof-v2",
+    "evidence": {
+      "registry": "https://registry.npmjs.org",
+      "access": "anonymous",
+      "name": "@clossys/butler",
+      "version": "0.1.1",
+      "metadataUrl": "https://registry.npmjs.org/%40clossys%2Fbutler/0.1.1",
+      "repository": "clossys/foundry",
+      "tarballUrl": "https://registry.npmjs.org/@clossys/butler/-/butler-0.1.1.tgz",
+      "integrity": "sha512-mYm3xm7Lyo1AsDoI5R5i/4wpv1Amrv6mDmciodqnR4gWmQhShBQJMxR18gGLRE9ikR7WxcJMdzT/LuvxMkSNwA==",
+      "shasum": "46c0a952bfbd2b8cad3a6703c5aca015de306c4b",
+      "sha256": "958cefaa44e19f4564193084cc53cb1310bcba4c9f579e5779693c1d3b3d033a",
+      "sha512": "9989b7c66ecbca8d40b03a08e51e62ff8c29bf5026aefea60e6722a1daa7478816990852841409331475f2018b444f62911ed6c5c24c7734ff2eebf132448dc0",
+      "packedManifestSha256": "fa009f0a4ef9a48000142b02768e53a6356324555e06d3f30603effb6957517f",
+      "size": 74502
+    }
+  }
+}

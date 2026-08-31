@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "kind": "foundry-later-publication-v1",
+  "qualification": {
+    "path": "governance/release-qualifications/clossys-messenger-0.1.2.json",
+    "sha256": "d808335a2f82f01c58182de3f3c6230d7f081a26d5fd6b902ca4cd92ae172188"
+  },
+  "candidate": {
+    "name": "@clossys/messenger",
+    "version": "0.1.2",
+    "packageTreeSha1": "f6bcf5312f3d0d78f655b6ff0f84ff783dd58ee2",
+    "packageManifestSha256": "4a4938cf6b42eb0dd2e090d93d1fc10501128dcdc8bb5e994247f69769cdab59",
+    "tarball": {
+      "sha1": "fe80ab18c3d97ccdc4e7b42211ad7cfa4bbb6c37",
+      "sha256": "8b4b8e39c8e8bd21a7c961d87278222747e2e3e55d4d6c93c858095a87d1eebe",
+      "sha512": "76435d95fb1870689cd0bdbcdec149768ade4af7475d5eba059fed12c2dcaa591ec68679ffccab50f7b81edbd48f24fd3f7770cf0a4b7c222d0e16acdbdfd85f"
+    }
+  },
+  "source": {
+    "reviewedCommit": "4bd2a3ad4909409f7735ce042f2c93b23b9aedd7",
+    "rootPackageJsonSha256": "c6f5f6791c7d6e105376603da0152618ae03aa5f25a522dda0432c11999a9bf1",
+    "rootPackageLockSha256": "5f4cdde3f18ddd555680034f87ea682408f4800e189a3df8041bd3f7d500a73a",
+    "policySha256": "cef9de84da8023d775b2fb0afc67a2ba19732a7c3f5d4f0d0937645e47c41992",
+    "adapterSha256": "375140d9f5235fc1493869ec885676975970aad63a0a60b2164d71c925ee6b9b",
+    "fixtureSetSha256": "a13dfe7f8a1220447fd031b0ed982b79abb2acf915e318a438d0b2d372406796"
+  },
+  "catalog": {
+    "path": "governance/release-catalog.json",
+    "sha256": "3f43692f3c12dc1b21a3931fcf2abd53a68a207874b2ae2206e8e10f08b68404",
+    "packageKey": "messenger"
+  },
+  "publication": {
+    "mode": "owner-present",
+    "publishedAt": "2026-08-31T17:47:39.570Z",
+    "reference": "https://www.npmjs.com/package/@clossys/messenger/v/0.1.2"
+  },
+  "registryProof": {
+    "schemaVersion": 2,
+    "kind": "public-npm-anonymous-registry-proof-v2",
+    "evidence": {
+      "registry": "https://registry.npmjs.org",
+      "access": "anonymous",
+      "name": "@clossys/messenger",
+      "version": "0.1.2",
+      "metadataUrl": "https://registry.npmjs.org/%40clossys%2Fmessenger/0.1.2",
+      "repository": "clossys/foundry",
+      "tarballUrl": "https://registry.npmjs.org/@clossys/messenger/-/messenger-0.1.2.tgz",
+      "integrity": "sha512-dkNdlfsYcGic0L283sFJdoreSvdHXV66BZ/tEsLcqlkexoZ5/8yrUPe4HtvUjyT9P3dwzwpLfCItDhas29/YXw==",
+      "shasum": "fe80ab18c3d97ccdc4e7b42211ad7cfa4bbb6c37",
+      "sha256": "8b4b8e39c8e8bd21a7c961d87278222747e2e3e55d4d6c93c858095a87d1eebe",
+      "sha512": "76435d95fb1870689cd0bdbcdec149768ade4af7475d5eba059fed12c2dcaa591ec68679ffccab50f7b81edbd48f24fd3f7770cf0a4b7c222d0e16acdbdfd85f",
+      "packedManifestSha256": "4a4938cf6b42eb0dd2e090d93d1fc10501128dcdc8bb5e994247f69769cdab59",
+      "size": 30998
+    }
+  }
+}
