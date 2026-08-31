@@ -14,6 +14,7 @@ import { argsFrom, publishQualifiedDirectory } from "./publish-qualified-directo
 
 const execFile = promisify(execFileCallback);
 const hash = (algorithm, value) => createHash(algorithm).update(value).digest("hex");
+const hasPinnedReleaseRuntime = process.version === "v24.19.0" && process.versions.zlib === "1.3.2.1-motley-3246f1b" && spawnSync("npm", ["--version"], { env: { PATH: process.env.PATH, HOME: tmpdir() }, encoding: "utf8" }).stdout?.trim() === "11.17.0";
 
 async function startLoopbackRegistry(t, root) {
   const script = join(root, "loopback-registry.mjs"), capture = join(root, "loopback-publish.json");
@@ -22,9 +23,11 @@ async function startLoopbackRegistry(t, root) {
     'import { createServer } from "node:http";',
     'import { writeFileSync } from "node:fs";',
     'const capture = process.argv[2];',
+    'const requests = [];',
     'const server = createServer(async (request, response) => {',
     '  const chunks = []; for await (const chunk of request) chunks.push(chunk);',
-    '  writeFileSync(capture, JSON.stringify({ method: request.method, url: request.url, authorization: request.headers.authorization ?? null, body: Buffer.concat(chunks).toString("base64") }));',
+    '  requests.push({ method: request.method, url: request.url, authorization: request.headers.authorization ?? null, body: Buffer.concat(chunks).toString("base64") });',
+    '  writeFileSync(capture, JSON.stringify(requests));',
     `  response.writeHead(201, { "content-type": "application/json" }); response.end(JSON.stringify({ ok: true, diagnostic: ${JSON.stringify(rawRegistryDocument)} }));`,
     '});',
     'server.listen(0, "127.0.0.1", () => process.stdout.write(`${server.address().port}\\n`));',
@@ -87,7 +90,7 @@ test("owner-present wrapper has a closed CLI", () => {
   for (const mutation of [["--otp", "123456"], ["--candidate", "https://example.test/x.tgz"], ["--unknown", "x"], ["--package", "../strategist"]]) assert.throws(() => argsFrom([...argv, ...mutation]), /Usage:/);
 });
 
-test("owner-present wrapper runs real npm publish against a loopback registry with exact clean-directory bytes", async (t) => {
+test("owner-present wrapper runs real pinned npm publish against a loopback registry with exact clean-directory bytes", { skip: !hasPinnedReleaseRuntime }, async (t) => {
   const item = await fixture(t), calls = [];
   const loopback = await startLoopbackRegistry(t, item.root);
   // This fixture-only credential proves that the real npm client obtains its
@@ -96,7 +99,7 @@ test("owner-present wrapper runs real npm publish against a loopback registry wi
   await writeFile(join(item.root, ".npmrc"), `//127.0.0.1:${new URL(loopback.registry).port}/:_authToken=loopback-local-only\nalways-auth=true\n`);
   const realPublishResults = [];
   const run = (file, args, options) => {
-    calls.push({ file, args: [...args], cwd: options.cwd, env: { ...options.env } });
+    calls.push({ file, args: [...args], cwd: options.cwd, env: { ...options.env }, stdio: options.stdio });
     if (file === process.execPath) return { status: 0, stdout: "", stderr: "" };
     if (args[0] === "publish") {
       const outboundArgs = [...args];
@@ -122,7 +125,8 @@ test("owner-present wrapper runs real npm publish against a loopback registry wi
   assert.equal(packed.env.NPM_TOKEN, undefined);
   assert.equal(packed.env.GITHUB_TOKEN, undefined);
   assert.equal(packed.env.NPM_CONFIG_OTP, undefined);
-  assert.equal(packed.env.HOME, item.root, "the only owner capability retained for interactive npm is the login home");
+  assert.notEqual(packed.env.HOME, item.root, "clean packing must not receive the owner npm home");
+  assert.equal(packed.env.HOME.includes("clossys-qualified-publish-"), true);
   const scan = calls.find((call) => call.file === process.execPath);
   assert.deepEqual(scan.args.slice(-6), ["--artifact", "--no-gitignore", "--allow-changelogs", "--require-denylist", "--scope-config", join(item.root, "package-scope.json")]);
   assert.equal(scan.env.NPM_TOKEN, undefined, "the full scan receives only its explicit denylist capability");
@@ -131,7 +135,10 @@ test("owner-present wrapper runs real npm publish against a loopback registry wi
   assert.equal(verified[0].env.HOME, undefined, "anonymous verification does not inherit the owner's npm login state");
   assert.equal(realPublishResults.length, 1, "the wrapper must start exactly one real npm publish process");
   assert.equal(realPublishResults[0].status, 0, String(realPublishResults[0].stderr));
-  const request = JSON.parse(await readFile(loopback.capture, "utf8"));
+  assert.deepEqual(publish.stdio, ["inherit", "pipe", "pipe"], "publish output must stay inside the wrapper boundary");
+  const requests = JSON.parse(await readFile(loopback.capture, "utf8"));
+  assert.equal(requests.length, 1, "the loopback registry must receive exactly one package upload");
+  const [request] = requests;
   assert.equal(request.method, "PUT");
   assert.match(request.url, /%40clossys%2fstrategist|@clossys%2fstrategist/i);
   assert.equal(request.authorization, "Bearer loopback-local-only");
@@ -145,12 +152,32 @@ test("owner-present wrapper runs real npm publish against a loopback registry wi
   assert.equal(`${realPublishResults[0].stdout ?? ""}${realPublishResults[0].stderr ?? ""}`.includes(loopback.rawRegistryDocument), false, "raw loopback registry documents must never enter wrapper output");
 });
 
+test("wrapper refuses a non-release Node/npm runtime before scanning or publishing", async (t) => {
+  const item = await fixture(t);
+  let scanned = false;
+  const run = (file, args) => {
+    if (args[0] === "--version") return { status: 0, stdout: file === process.execPath ? "v24.15.0\n" : "11.17.0\n", stderr: "" };
+    if (args[0] === "-p") return { status: 0, stdout: "1.3.2.1-motley-3246f1b\n", stderr: "" };
+    scanned = true;
+    return { status: 0, stdout: "", stderr: "" };
+  };
+  await assert.rejects(() => publishQualifiedDirectory({ root: item.root, packageKey: "strategist", candidatePath: item.candidate, recordPath: item.recordPath, env: { PATH: process.env.PATH, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist }, run, verify: async () => {} }), /requires Node v24\.19\.0, npm 11\.17\.0, and zlib/);
+  assert.equal(scanned, false);
+});
+
 test("wrapper rejects transient manifest metadata, symlinks, and changed clean-directory bytes before publish", async (t) => {
   const item = await fixture(t);
   const original = await readFile(item.candidate);
   const run = (file, args, options) => {
+    if (args[0] === "--version") return { status: 0, stdout: file === process.execPath ? "v24.19.0\n" : "11.17.0\n", stderr: "" };
+    if (args[0] === "-p") return { status: 0, stdout: "1.3.2.1-motley-3246f1b\n", stderr: "" };
     if (file === process.execPath) return { status: 0, stdout: "", stderr: "" };
-    if (args[0] === "pack") { writeFileSync(join(args.at(-1), "candidate.tgz"), Buffer.from("different")); return { status: 0, stdout: JSON.stringify([{ filename: "candidate.tgz" }]), stderr: "" }; }
+    if (args[0] === "pack") {
+      assert.notEqual(options.env.HOME, item.root, "pack must not receive the owner npm home");
+      assert.equal(options.env.NPM_TOKEN, undefined);
+      writeFileSync(join(args.at(-1), "candidate.tgz"), Buffer.from("different"));
+      return { status: 0, stdout: JSON.stringify([{ filename: "candidate.tgz" }]), stderr: "" };
+    }
     throw new Error("publish must not be reached");
   };
   await assert.rejects(() => publishQualifiedDirectory({ root: item.root, packageKey: "strategist", candidatePath: item.candidate, recordPath: item.recordPath, env: { PATH: process.env.PATH, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist }, run, verify: async () => {} }), /differs from the immutable qualified candidate/);

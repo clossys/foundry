@@ -25,6 +25,9 @@ const TRANSIENT_MANIFEST_FIELDS = new Set(["_from", "_resolved", "_id", "_integr
 const USAGE = "Usage: --package <package-key> --candidate <qualified-candidate.tgz> --record <exact-qualification-record.json>";
 const MAX_ARCHIVE_BYTES = 64 * 1024 * 1024;
 const MAX_ARCHIVE_ENTRIES = 10_000;
+const RELEASE_NODE_VERSION = "v24.19.0";
+const RELEASE_NPM_VERSION = "11.17.0";
+const RELEASE_ZLIB_VERSION = "1.3.2.1-motley-3246f1b";
 
 const digest = (algorithm, bytes) => createHash(algorithm).update(bytes).digest("hex");
 const hashes = (bytes) => Object.fromEntries(Object.keys(SHA).map((algorithm) => [algorithm, digest(algorithm, bytes)]));
@@ -167,6 +170,14 @@ function ownerPresentEnvironment(env = process.env) {
   return Object.fromEntries(allowed.flatMap((key) => typeof env[key] === "string" ? [[key, env[key]]] : []));
 }
 
+function credentialFreeNpmEnvironment(env = process.env, home) {
+  // Packing must never consult the owner's npmrc. Use the already-private
+  // staging root as HOME so both npm configuration and any cache stay inside
+  // the directory that is removed in finally below.
+  const allowed = ["PATH", "LANG", "LC_ALL", "TMPDIR", "TMP", "TEMP"];
+  return { ...Object.fromEntries(allowed.flatMap((key) => typeof env[key] === "string" ? [[key, env[key]]] : [])), HOME: home };
+}
+
 function runChecked(run, file, args, options, label) {
   const result = run(file, args, options);
   if (result?.error || result?.signal || result?.status !== 0) throw new Error(`${label} failed`);
@@ -175,6 +186,14 @@ function runChecked(run, file, args, options, label) {
 
 function defaultRun(file, args, options) {
   return spawnSync(file, args, { ...options, stdio: options.stdio ?? "inherit", encoding: options.encoding ?? "utf8" });
+}
+
+function assertReleaseRuntime(run, env) {
+  const options = { env, stdio: "pipe", encoding: "utf8" };
+  const node = runChecked(run, process.execPath, ["--version"], options, "pinned Node runtime");
+  const npm = runChecked(run, "npm", ["--version"], options, "pinned npm runtime");
+  const zlib = runChecked(run, process.execPath, ["-p", "process.versions.zlib"], options, "pinned Node runtime");
+  if (String(node.stdout ?? "").trim() !== RELEASE_NODE_VERSION || String(npm.stdout ?? "").trim() !== RELEASE_NPM_VERSION || String(zlib.stdout ?? "").trim() !== RELEASE_ZLIB_VERSION) throw new Error(`owner-present publication requires Node ${RELEASE_NODE_VERSION}, npm ${RELEASE_NPM_VERSION}, and zlib ${RELEASE_ZLIB_VERSION}`);
 }
 
 function exactRecord({ root, packageKey, recordPath, record, manifest, candidateBytes }) {
@@ -207,6 +226,8 @@ export async function publishQualifiedDirectory({ root = process.cwd(), packageK
   const stageRoot = mkdtempSync(join(stagingParent, "clossys-qualified-publish-"));
   chmodSync(stageRoot, 0o700);
   try {
+    const credentialFreeNpm = credentialFreeNpmEnvironment(env, stageRoot);
+    assertReleaseRuntime(run, credentialFreeNpm);
     const packageRoot = writeArchive(entries, stageRoot);
     const manifest = assertStagedTree(packageRoot);
     exactRecord({ root: absoluteRoot, packageKey, recordPath: recordInput.absolute, record, manifest, candidateBytes: candidate.bytes });
@@ -217,7 +238,7 @@ export async function publishQualifiedDirectory({ root = process.cwd(), packageK
     runChecked(run, process.execPath, [join(absoluteRoot, "scripts/check-public-safety.mjs"), packageRoot, "--artifact", "--no-gitignore", "--allow-changelogs", "--require-denylist", "--scope-config", join(absoluteRoot, "package-scope.json")], { cwd: absoluteRoot, env: safetyEnv }, "FULL staged public-safety scan");
 
     const packed = join(stageRoot, "packed"); mkdirSync(packed, { mode: 0o700 });
-    const packedResult = runChecked(run, "npm", ["pack", ".", "--ignore-scripts", "--json", "--pack-destination", packed], { cwd: packageRoot, env: ownerPresentEnvironment(env), stdio: "pipe", encoding: "utf8" }, "clean-directory npm pack");
+    const packedResult = runChecked(run, "npm", ["pack", ".", "--ignore-scripts", "--json", "--pack-destination", packed], { cwd: packageRoot, env: credentialFreeNpm, stdio: "pipe", encoding: "utf8" }, "clean-directory npm pack");
     let packEntries;
     try { packEntries = JSON.parse(String(packedResult.stdout ?? "")); } catch { throw new Error("clean-directory npm pack did not return one JSON result"); }
     if (!Array.isArray(packEntries) || packEntries.length !== 1 || typeof packEntries[0]?.filename !== "string" || basename(packEntries[0].filename) !== packEntries[0].filename) throw new Error("clean-directory npm pack returned an unsafe result");
@@ -227,7 +248,7 @@ export async function publishQualifiedDirectory({ root = process.cwd(), packageK
 
     // This is intentionally the only upload command. It receives only '.',
     // never a tarball, URL, package specifier, token, OTP, or provenance flag.
-    runChecked(run, "npm", ["publish", ".", "--access", "public", "--ignore-scripts", "--registry", target.registry], { cwd: packageRoot, env: ownerPresentEnvironment(env) }, "owner-present npm publish");
+    runChecked(run, "npm", ["publish", ".", "--access", "public", "--ignore-scripts", "--registry", target.registry], { cwd: packageRoot, env: ownerPresentEnvironment(env), stdio: ["inherit", "pipe", "pipe"], encoding: "utf8" }, "owner-present npm publish");
     await verify({ root: absoluteRoot, packageKey, expectedTarball: repacked.absolute, env: anonymousEnvironment(env) });
     return { name: manifest.name, version: manifest.version, tarball: replay };
   } finally {
