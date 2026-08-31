@@ -265,7 +265,7 @@ source file's own header for the exact probe and its result). Today that's:
 | Subpath | Server-safe members |
 | --- | --- |
 | `@clossys/designer/atoms/server` | `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Skeleton`, `Spinner`, `mergeUiClasses` |
-| `@clossys/designer/blocks/server` | `ArticleBody`, `DetailView`, `EmptyState`, `FeatureGrid`, `FieldGroup`, `Hero`, `PageHeader`, `PricingTable`, `SectionHeader`, `Stat` |
+| `@clossys/designer/blocks/server` | `ArticleBody`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `PageHeader`, `PricingTable`, `SectionHeader`, `Stat` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
 | `@clossys/designer/charts/server` | `ChartFrame`, `Sparkline` |
 | `@clossys/designer/theme/server` | `getThemeInitScript` |
@@ -274,6 +274,13 @@ Everything not listed above stays reachable only from its original barrel,
 inside a client boundary — nothing was removed, renamed, or restructured to
 create these subpaths; each is strictly additive, a second, narrower way to
 reach bindings that already ship.
+
+`Faq` deliberately has two implementations behind those entry points. The
+ordinary `@clossys/designer/blocks` entry keeps the React Aria disclosure and
+its explicit trigger/panel wiring. `@clossys/designer/blocks/server` renders
+the same public props as native `details`/`summary`, preserving independent
+keyboard-operable disclosures without importing the client-only React Aria
+graph.
 
 `@clossys/designer/render-environment` exports `RENDER_ENVIRONMENT`, a
 plain `Record<string, "server-safe" | "client-only">` keyed by every

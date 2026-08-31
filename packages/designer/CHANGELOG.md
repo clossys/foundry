@@ -3,6 +3,15 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.4] - 2026-08-31
+
+### Fixed
+
+- Added `Faq` to `@clossys/designer/blocks/server` with a native
+  `details`/`summary` implementation. The ordinary blocks entry continues to
+  use React Aria, while server consumers receive the same public props without
+  reaching the client-only dependency graph.
+
 ## [0.2.3] - 2026-08-30
 
 ### Changed

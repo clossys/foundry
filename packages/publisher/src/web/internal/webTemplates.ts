@@ -40,7 +40,7 @@
 import type { ReactNode } from "react";
 import { createElement } from "react";
 import { RenderError } from "../../internal/errors.js";
-import { AuthView, ErrorView, MarketingView } from "../views/index.js";
+import { AuthView, ErrorView, MarketingView } from "#publisher-web-views";
 import type { MarketingFaqItem, MarketingFeatureItem } from "../views/index.js";
 import type { ResolvedWebGroupItem, WebSlotContentKind, WebTemplate } from "../types.js";
 

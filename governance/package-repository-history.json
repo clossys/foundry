@@ -46,6 +46,16 @@
       "path": "governance/release-publications/later/starter-0.1.4.json",
       "lineSha256": "sha256:0b10402b6aff62ad368e6afc485c0a612d12f015823fb9ebde54a49b4b1eea08",
       "count": 1
+    },
+    {
+      "path": "governance/release-cleanup/clossys-npmjs-affected.json",
+      "lineSha256": "sha256:7a2df27ed3d5c2ae6340788a7c37b6d30d640d89b27fb3fe24cc8a42feba8039",
+      "count": 1
+    },
+    {
+      "path": "governance/release-cleanup/clossys-npmjs-affected.json",
+      "lineSha256": "sha256:0e27e98048b3a2c8497f478a216a5f9dd664d6f527d60febedb8f007e618b18d",
+      "count": 7
     }
   ]
 }

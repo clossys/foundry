@@ -19,7 +19,10 @@ Use explicit subpaths:
 
 - `@clossys/publisher/core` — canonical `SurfaceDocument` contract, validation, copy/media resolution, and output manifests.
 - `@clossys/publisher/media` — media registry, reader, and coverage check.
-- `@clossys/publisher/web` — web composition and head metadata.
+- `@clossys/publisher/web` — web composition and head metadata. Under React's
+  `react-server` export condition it resolves a server-safe target with the
+  same runtime export names and Designer's server-only component barrels;
+  ordinary imports retain the interactive React Aria FAQ.
 - `@clossys/publisher/document` — the product-neutral structured-document contract (sections, paragraphs, lists, tables, callouts, safe links) and its renderer.
 - `@clossys/publisher/email`, `/print`, `/image`, `/slides` — channel renderers.
 - `@clossys/publisher/record` — the append-only, content-addressed publication ledger and its drift checker. See "`record` — the append-only publication ledger," below.
@@ -28,6 +31,13 @@ The package has no root export. `core` is deliberately framework-agnostic;
 the web and document subpaths have optional React (and, for `web`, designer)
 peers, while non-web renderers do not require them at runtime. `record` is
 pure and has no peer dependencies of its own.
+
+The web condition changes only the implementation selected for server
+rendering, not the API. `MarketingView` keeps the same props and regional
+layout; its server target uses Designer's native `details`/`summary` FAQ while
+the ordinary target keeps Designer's React Aria FAQ. `AuthView`, `ErrorView`,
+the renderer functions, template helpers, error class, and all runtime export
+names are present in both targets.
 
 ## Why `publisher` is one package, not two
 

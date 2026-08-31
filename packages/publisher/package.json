@@ -1,6 +1,6 @@
 {
   "name": "@clossys/publisher",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -46,6 +46,7 @@
     },
     "./web": {
       "types": "./dist/web/index.d.ts",
+      "react-server": "./dist/web/server.js",
       "import": "./dist/web/index.js"
     },
     "./document": {
@@ -71,6 +72,13 @@
     "./record": {
       "types": "./dist/record/index.d.ts",
       "import": "./dist/record/index.js"
+    }
+  },
+  "imports": {
+    "#publisher-web-views": {
+      "types": "./dist/web/views/index.d.ts",
+      "react-server": "./dist/web/views/server.js",
+      "default": "./dist/web/views/index.js"
     }
   },
   "bin": {

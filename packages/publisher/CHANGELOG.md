@@ -3,6 +3,16 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.8] - 2026-08-31
+
+### Fixed
+
+- Added a `react-server` target for `@clossys/publisher/web`. Its runtime
+  exports match the ordinary target, while `MarketingView`, `AuthView`, and
+  `ErrorView` resolve only Designer's server-safe barrels and the server FAQ
+  renders as native `details`/`summary`. Ordinary imports retain the React
+  Aria FAQ.
+
 ## [0.1.7] - 2026-08-30
 
 ### Changed

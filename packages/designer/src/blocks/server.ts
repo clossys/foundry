@@ -3,9 +3,9 @@
  * `@clossys/designer/blocks`. See `atoms/server.ts`'s own header for the
  * full #375 rationale this file shares: `blocks/index.ts` re-exports
  * every block eagerly from one module, so the interactive minority
- * (`DataTable`, `Form`, `ConfirmDialog`, `Toolbar`, `NavGrid`, `Faq`,
+ * (`DataTable`, `Form`, `ConfirmDialog`, `Toolbar`, `NavGrid`,
  * `Pagination`, `Testimonial`) drags the whole barrel down under React's
- * `react-server` condition even though ten individual blocks resolve
+ * `react-server` condition even though eleven individual blocks resolve
  * cleanly on their own.
  *
  * MEMBERSHIP IS EMPIRICAL — confirmed by resolving each member's own
@@ -48,6 +48,9 @@ export type { EmptyStateProps } from "./EmptyState.js";
 
 export { FeatureGrid } from "./FeatureGrid.js";
 export type { FeatureGridProps, FeatureGridItem, FeatureGridHeadingLevel } from "./FeatureGrid.js";
+
+export { Faq } from "./Faq.server.js";
+export type { FaqProps, FaqItem, FaqHeadingLevel } from "./Faq.js";
 
 export { FieldGroup } from "./FieldGroup.js";
 export type { FieldGroupProps, FieldGroupLayout } from "./FieldGroup.js";
