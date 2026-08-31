@@ -33,6 +33,25 @@ export function canonicalRedirectProjection(rows) {
 export function aggregateClosurePath(set, canonicalSha256) { return `${AGGREGATE_CLOSURE_DIRECTORY}/${set}-${canonicalSha256}.json`; }
 export function aggregateTranscriptPath(set, canonicalSha256) { return `${AGGREGATE_TRANSCRIPT_DIRECTORY}/${set}-${canonicalSha256}.json`; }
 export function isAggregateClosurePath(path) { return new RegExp(`^${AGGREGATE_CLOSURE_DIRECTORY}/(?:baseline|oidc-successor)-[a-f0-9]{64}\\.json$`).test(path ?? ""); }
+const aggregateRecordSets = ["baseline", "oidc-successor"];
+function recordSet(directory, path) { return new RegExp(`^${directory}/(baseline|oidc-successor)-[a-f0-9]{64}\\.json$`).exec(path ?? "")?.[1] ?? null; }
+export function validateAggregateRecordSets({ closureRecords = {}, transcriptRecords = {}, readTranscript = null } = {}) {
+  const findings = [];
+  const pathsFor = (records, directory, set, field) => (Array.isArray(records?.[field]) ? records[field] : []).filter((path) => recordSet(directory, path) === set);
+  for (const set of aggregateRecordSets) {
+    const introducedClosures = pathsFor(closureRecords, AGGREGATE_CLOSURE_DIRECTORY, set, "introduced"), currentClosures = pathsFor(closureRecords, AGGREGATE_CLOSURE_DIRECTORY, set, "current");
+    const introducedTranscripts = pathsFor(transcriptRecords, AGGREGATE_TRANSCRIPT_DIRECTORY, set, "introduced"), currentTranscripts = pathsFor(transcriptRecords, AGGREGATE_TRANSCRIPT_DIRECTORY, set, "current");
+    if (introducedClosures.length > 1 || currentClosures.length > 1) finding(findings, "closure-singularity", `${set} has competing immutable closure records`);
+    if (introducedTranscripts.length > 1 || currentTranscripts.length > 1) finding(findings, "transcript-singularity", `${set} has competing immutable transcript records`);
+    if (currentTranscripts.length === 0) continue;
+    if (currentClosures.length !== 1 || !readTranscript) { finding(findings, "transcript-closure", `${set} transcript requires exactly one current immutable closure record`); continue; }
+    for (const path of currentTranscripts) try {
+      const transcript = readTranscript(path);
+      if (!object(transcript) || transcript.set !== set || transcript.plan?.closurePath !== currentClosures[0]) finding(findings, "transcript-closure", `${path} must bind the sole current ${set} closure record`);
+    } catch { finding(findings, "transcript-closure", `${path} is not readable committed transcript JSON`); }
+  }
+  return findings;
+}
 
 async function containedRegularDirectory(root, relativeDirectory) {
   const canonicalRoot = await realpath(root);
