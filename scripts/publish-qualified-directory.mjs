@@ -16,6 +16,7 @@ import { basename, join, relative, resolve, sep } from "node:path";
 
 import { assertPackageAuthorized, loadReleaseCatalog, readCurrentReleaseIdentity, resolveReleaseTarget } from "./check-release-catalog.mjs";
 import { verifyPostPublishPublicNpmArtifact } from "./verify-post-publish-public-npm-artifact.mjs";
+import { assertReleaseRuntime, RELEASE_RUNTIME } from "./lib/release-runtime.mjs";
 
 const KEY = /^[a-z0-9][a-z0-9-]{0,63}$/;
 const SHA = { sha1: /^[a-f0-9]{40}$/, sha256: /^[a-f0-9]{64}$/, sha512: /^[a-f0-9]{128}$/ };
@@ -25,9 +26,6 @@ const TRANSIENT_MANIFEST_FIELDS = new Set(["_from", "_resolved", "_id", "_integr
 const USAGE = "Usage: --package <package-key> --candidate <qualified-candidate.tgz> --record <exact-qualification-record.json> [--mode owner-present|oidc] [--dry-run]";
 const MAX_ARCHIVE_BYTES = 64 * 1024 * 1024;
 const MAX_ARCHIVE_ENTRIES = 10_000;
-const RELEASE_NODE_VERSION = "v24.19.0";
-const RELEASE_NPM_VERSION = "11.17.0";
-const RELEASE_ZLIB_VERSION = "1.3.2.1-motley-3246f1b";
 const PTY_SCRIPT = "/usr/bin/script";
 
 const digest = (algorithm, bytes) => createHash(algorithm).update(bytes).digest("hex");
@@ -213,14 +211,6 @@ function defaultRun(file, args, options) {
   return spawnSync(file, args, { ...options, stdio: options.stdio ?? "inherit", encoding: options.encoding ?? "utf8" });
 }
 
-function assertReleaseRuntime(run, env) {
-  const options = { env, stdio: "pipe", encoding: "utf8" };
-  const node = runChecked(run, process.execPath, ["--version"], options, "pinned Node runtime");
-  const npm = runChecked(run, "npm", ["--version"], options, "pinned npm runtime");
-  const zlib = runChecked(run, process.execPath, ["-p", "process.versions.zlib"], options, "pinned Node runtime");
-  if (String(node.stdout ?? "").trim() !== RELEASE_NODE_VERSION || String(npm.stdout ?? "").trim() !== RELEASE_NPM_VERSION || String(zlib.stdout ?? "").trim() !== RELEASE_ZLIB_VERSION) throw new Error(`owner-present publication requires Node ${RELEASE_NODE_VERSION}, npm ${RELEASE_NPM_VERSION}, and zlib ${RELEASE_ZLIB_VERSION}`);
-}
-
 export function ownerPresentPtyArgs(registry, platform = process.platform) {
   if (registry !== "https://registry.npmjs.org") throw new Error("owner-present publication requires the exact public npm registry");
   const npm = ["npm", "publish", ".", "--access", "public", "--ignore-scripts", "--registry", registry];
@@ -323,7 +313,11 @@ export async function publishQualifiedDirectory({ root = process.cwd(), packageK
   chmodSync(stageRoot, 0o700);
   try {
     const credentialFreeNpm = credentialFreeNpmEnvironment(env, stageRoot);
-    assertReleaseRuntime(run, credentialFreeNpm);
+    try {
+      assertReleaseRuntime({ run, env: credentialFreeNpm });
+    } catch (error) {
+      throw new Error(`owner-present publication requires Node ${RELEASE_RUNTIME.node}, npm ${RELEASE_RUNTIME.npm}, and zlib ${RELEASE_RUNTIME.zlib}: ${error.message}`);
+    }
     const packageRoot = writeArchive(entries, stageRoot);
     const manifest = assertStagedTree(packageRoot);
     exactRecord({ root: absoluteRoot, packageKey, recordPath: recordInput.absolute, record, manifest, candidateBytes: candidate.bytes });

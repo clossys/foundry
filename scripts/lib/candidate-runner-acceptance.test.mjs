@@ -6,9 +6,15 @@ import { dirname, join, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
+import { RELEASE_RUNTIME } from "./release-runtime.mjs";
 import { runCandidateQualification } from "./candidate-runner.mjs";
 
 const execFile = promisify(execFileCallback);
+const releaseRuntimeRun = (file, args) => {
+  if (args[0] === "--version") return { status: 0, stdout: file === process.execPath ? `${RELEASE_RUNTIME.node}\n` : `${RELEASE_RUNTIME.npm}\n`, stderr: "" };
+  if (args[0] === "-p") return { status: 0, stdout: `${RELEASE_RUNTIME.zlib}\n`, stderr: "" };
+  throw new Error(`unexpected release runtime probe ${file} ${args.join(" ")}`);
+};
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
 test("the production runner qualifies Bouncer's four framework exports in one isolated Next build", { timeout: 600_000 }, async (t) => {
@@ -34,6 +40,7 @@ test("the production runner qualifies Bouncer's four framework exports in one is
     fixtures,
     manifestBins: manifest.bin,
     registry: { scope: "@clossys", registry: "https://registry.npmjs.org/" },
+    releaseRuntimeRun,
   });
   assert.equal(transcript.ok, true);
   assert.deepEqual(transcript.coverage, {
