@@ -203,6 +203,20 @@ test("non-TTY owner-input prompts fail closed instead of waiting on ignored stdi
   assert.deepEqual(prompts, ["npm authentication requires owner input.\n"]);
 });
 
+test("non-TTY browser authentication fails closed without relaying an opaque CLI URL", { skip: process.stdin.isTTY === true }, async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "qualified-non-tty-browser-test-")), child = join(root, "browser-fixture.mjs");
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await writeFile(child, [
+    "process.stdout.write('Authenticate your account at:\\nhttps://www.npmjs.com/auth/cli/cli_Ab9-\\nPress ENTER to open in the browser...');",
+    "setInterval(() => {}, 1000);",
+  ].join("\n"));
+  const prompts = [], relay = createOwnerPromptRelay((line) => prompts.push(line));
+  const result = await runInteractiveChild("/usr/bin/script", ["-q", "/dev/null", process.execPath, child], { cwd: root, env: { PATH: process.env.PATH, HOME: root }, stdio: ["inherit", "pipe", "pipe"] }, relay);
+  assert.notEqual(result.status, 0, "browser owner input must fail closed without a TTY");
+  assert.equal(prompts.some((line) => line.includes("/auth/cli/")), false, "opaque browser capabilities must never reach a non-TTY owner channel");
+  assert.deepEqual(prompts, ["Press ENTER to continue npm authentication.\n"]);
+});
+
 test("a nonzero owner-present PTY session aborts before anonymous verification", async (t) => {
   const item = await fixture(t);
   let verificationCalled = false, interactiveCalls = 0;

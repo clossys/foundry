@@ -245,7 +245,11 @@ export function createOwnerPromptRelay(write = (line) => process.stderr.write(li
     // must not relay a truncated browser capability.
     const browserUrl = /(?:^|[\r\n])[ \t]*https:\/\/www\.npmjs\.com\/auth\/cli\/([A-Za-z0-9_-]{1,256})[ \t]*\r?\n/i.exec(buffered);
     if (!browserUrlShown && browserUrl) {
-      write(`Open https://www.npmjs.com/auth/cli/${browserUrl[1]} to continue npm authentication.\n`);
+      // A non-TTY worker cannot hand an opaque browser capability to an owner:
+      // its input is deliberately ignored and any eventual owner prompt will
+      // fail closed. Keep the generic Enter verdict below, but never relay the
+      // one-time URL outside a real interactive terminal.
+      if (context.ownerInputAvailable !== false) write(`Open https://www.npmjs.com/auth/cli/${browserUrl[1]} to continue npm authentication.\n`);
       browserUrlShown = true;
     }
     // npm 11 uses readline.question(), whose prompt has no newline. Accept
@@ -289,6 +293,7 @@ export function runInteractiveChild(file, args, options, onOutput = () => {}) {
       if (stream === "stdout") stdout += text;
       else stderr += text;
       onOutput(chunk, {
+        ownerInputAvailable: stdinIsTTY,
         ownerInputRequested: failClosed,
         write: (input) => {
           if (!child.stdin) {
