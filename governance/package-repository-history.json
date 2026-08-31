@@ -56,6 +56,26 @@
       "path": "governance/release-cleanup/clossys-npmjs-affected.json",
       "lineSha256": "sha256:0e27e98048b3a2c8497f478a216a5f9dd664d6f527d60febedb8f007e618b18d",
       "count": 7
+    },
+    {
+      "path": "scripts/lib/public-npm-aggregate-canary.mjs",
+      "lineSha256": "sha256:ecdd6ba0dbe3177e116e9518e8c8d76291cd42277045942e3496c2156d5cad10",
+      "count": 1
+    },
+    {
+      "path": "scripts/lib/public-npm-aggregate-canary.test.mjs",
+      "lineSha256": "sha256:10d037d894e3f89d485d6cfe5a60d39f83c1d11758c9ab6c883b186614a59a2d",
+      "count": 1
+    },
+    {
+      "path": "scripts/lib/public-npm-aggregate-canary.test.mjs",
+      "lineSha256": "sha256:7988263d1367f6322d0d146f9d2d807bcd258c895886fc9bb8735a08c0d584c3",
+      "count": 2
+    },
+    {
+      "path": "scripts/lib/public-npm-aggregate-canary.test.mjs",
+      "lineSha256": "sha256:d75daba907d0eef7dd476ab06e041a5464bc58263d47692eaf74f47478051893",
+      "count": 1
     }
   ]
 }
