@@ -102,7 +102,7 @@
   },
   "dependencies": {
     "@clossys/writer": "^0.3.0",
-    "@clossys/designer": "^0.2.0",
+    "@clossys/designer": "^0.2.4",
     "@clossys/controller": "~0.8.0"
   },
   "peerDependencies": {

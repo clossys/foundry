@@ -11,7 +11,8 @@ All notable changes to this package are documented here. Format follows
   exports match the ordinary target, while `MarketingView`, `AuthView`, and
   `ErrorView` resolve only Designer's server-safe barrels and the server FAQ
   renders as native `details`/`summary`. Ordinary imports retain the React
-  Aria FAQ.
+  Aria FAQ. The runtime dependency floor is now `@clossys/designer ^0.2.4`,
+  the first release that exports `Faq` from its server-safe blocks barrel.
 
 ## [0.1.7] - 2026-08-30
 
