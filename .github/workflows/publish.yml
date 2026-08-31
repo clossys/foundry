@@ -225,13 +225,12 @@ jobs:
           TRANSCRIPT: ${{ runner.temp }}/qualification/${{ matrix.package }}/transcript.json
         run: node scripts/run-candidate-qualification.mjs --package "$PKG" --tarball "$TARBALL" --output "$TRANSCRIPT"
 
-      - name: Exercise npm publish command without upload credentials
+      - name: Exercise directory-form OIDC publish command without upload credentials
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run && !inputs.verify_only }}
-        env:
-          TARBALL: ${{ runner.temp }}/qualification/${{ matrix.package }}/candidate.tgz
+        working-directory: packages/${{ matrix.package }}
         run: |
-          registry="$(node -p "JSON.parse(require('fs').readFileSync('package-scope.json','utf8')).registry")"
-          npm publish "$TARBALL" --dry-run --access public --ignore-scripts --registry "$registry"
+          registry="$(node -p "JSON.parse(require('fs').readFileSync('../../package-scope.json','utf8')).registry")"
+          npm publish . --dry-run --provenance --access public --ignore-scripts --registry "$registry"
 
       - name: Upload exact candidate and qualification transcript
         if: ${{ always() }}
@@ -400,10 +399,6 @@ jobs:
           if [ "$VERIFY_ONLY" = true ]; then mode=bootstrap; else mode=prepublish; fi
           node scripts/validate-candidate-publish.mjs --package "$PKG" --tarball "$TARBALL" --transcript "$TRANSCRIPT" --mode "$mode"
 
-      - name: Redact denylist
-        if: always()
-        run: rm -f "$RUNNER_TEMP/denylist.json"
-
       - name: Verify exact tarball is unchanged
         if: ${{ !inputs.verify_only }}
         env:
@@ -423,21 +418,18 @@ jobs:
           fi
 
       - name: Publish
-        working-directory: packages/${{ matrix.package }}
         env:
+          PKG: ${{ matrix.package }}
           TARBALL: ${{ runner.temp }}/qualification/${{ matrix.package }}/candidate.tgz
-          REGISTRY: ${{ steps.scope.outputs.registry }}
         run: |
           set -euo pipefail
-          # The preceding exact-byte step re-hashed this artifact against the
-          # credential-free qualification transcript. Publish the same path;
-          # never ask npm to create another candidate.
           test -f "$TARBALL"
-          # npm exchanges the GitHub OIDC identity for one short-lived publish
-          # credential. No npm or GitHub token is supplied to this step.
-          # Trusted publishing adds provenance automatically; the explicit flag
-          # keeps provenance a fail-closed publication requirement.
-          npm publish "$TARBALL" --provenance --access public --ignore-scripts --registry "$REGISTRY"
+          version="$(node -p "require('./packages/' + process.env.PKG + '/package.json').version")"
+          record="governance/release-qualifications/clossys-$PKG-$version.json"
+          # The wrapper extracts and FULL-scans the qualified tarball, proves
+          # clean-directory SHA-1/SHA-256/SHA-512 parity, then invokes this
+          # trusted OIDC upload as `npm publish .` from its private stage.
+          node scripts/publish-qualified-directory.mjs --package "$PKG" --candidate "$TARBALL" --record "$record" --mode oidc
 
       - name: Verify anonymous public npm visibility and exact bytes
         env:
@@ -447,6 +439,10 @@ jobs:
         run: |
           set -euo pipefail
           node scripts/verify-post-publish-public-npm-artifact.mjs --package "$PKG" --expected-tarball "$EXPECTED_TARBALL"
+
+      - name: Redact denylist
+        if: always()
+        run: rm -f "$RUNNER_TEMP/denylist.json"
 
   # Keep registry verification separate from upload so a failed read never
   # implies rollback of an immutable version. Public npm is read anonymously.

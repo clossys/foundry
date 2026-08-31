@@ -22,7 +22,7 @@ const SHA = { sha1: /^[a-f0-9]{40}$/, sha256: /^[a-f0-9]{64}$/, sha512: /^[a-f0-
 const NAME = /^@[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/;
 const VERSION = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 const TRANSIENT_MANIFEST_FIELDS = new Set(["_from", "_resolved", "_id", "_integrity", "_location", "_requested", "_shasum", "_spec", "_where"]);
-const USAGE = "Usage: --package <package-key> --candidate <qualified-candidate.tgz> --record <exact-qualification-record.json>";
+const USAGE = "Usage: --package <package-key> --candidate <qualified-candidate.tgz> --record <exact-qualification-record.json> [--mode owner-present|oidc] [--dry-run]";
 const MAX_ARCHIVE_BYTES = 64 * 1024 * 1024;
 const MAX_ARCHIVE_ENTRIES = 10_000;
 const RELEASE_NODE_VERSION = "v24.19.0";
@@ -40,13 +40,19 @@ function anonymousEnvironment(env = process.env) {
 }
 
 export function argsFrom(argv) {
-  const result = {};
-  for (let index = 2; index < argv.length; index += 2) {
-    const key = argv[index]?.slice(2), value = argv[index + 1];
-    if (!Object.hasOwn({ package: true, candidate: true, record: true }, key) || !value || result[key] !== undefined) throw new Error(USAGE);
-    result[key] = value;
+  const result = { mode: "owner-present", dryRun: false };
+  const seen = new Set();
+  for (let index = 2; index < argv.length;) {
+    const key = argv[index]?.slice(2);
+    if (key === "dry-run") {
+      if (seen.has(key)) throw new Error(USAGE);
+      seen.add(key); result.dryRun = true; index += 1; continue;
+    }
+    const value = argv[index + 1];
+    if (!Object.hasOwn({ package: true, candidate: true, record: true, mode: true }, key) || !value || seen.has(key)) throw new Error(USAGE);
+    seen.add(key); result[key] = value; index += 2;
   }
-  if (Object.keys(result).length !== 3 || !KEY.test(result.package)) throw new Error(USAGE);
+  if (!KEY.test(result.package) || !["owner-present", "oidc"].includes(result.mode)) throw new Error(USAGE);
   return result;
 }
 
@@ -179,6 +185,24 @@ function credentialFreeNpmEnvironment(env = process.env, home) {
   return { ...Object.fromEntries(allowed.flatMap((key) => typeof env[key] === "string" ? [[key, env[key]]] : [])), HOME: home };
 }
 
+const OIDC_ENV = [
+  "ACTIONS_ID_TOKEN_REQUEST_URL", "ACTIONS_ID_TOKEN_REQUEST_TOKEN", "GITHUB_ACTIONS",
+  "GITHUB_EVENT_NAME", "GITHUB_REF", "GITHUB_REPOSITORY", "GITHUB_RUN_ATTEMPT",
+  "GITHUB_RUN_ID", "GITHUB_SHA", "GITHUB_WORKFLOW", "GITHUB_WORKFLOW_REF", "GITHUB_WORKFLOW_SHA",
+];
+
+function oidcEnvironment(env = process.env, home) {
+  // npm's trusted-publishing exchange needs GitHub's OIDC capability and the
+  // run identity it attests. Nothing from an owner login, npmrc, or a generic
+  // token environment crosses this boundary.
+  for (const key of ["ACTIONS_ID_TOKEN_REQUEST_URL", "ACTIONS_ID_TOKEN_REQUEST_TOKEN", "GITHUB_ACTIONS", "GITHUB_REPOSITORY", "GITHUB_RUN_ID", "GITHUB_WORKFLOW", "GITHUB_WORKFLOW_REF", "GITHUB_WORKFLOW_SHA"]) {
+    if (typeof env[key] !== "string" || !env[key]) throw new Error(`OIDC publication requires ${key}`);
+  }
+  if (env.GITHUB_ACTIONS !== "true") throw new Error("OIDC publication requires GitHub Actions");
+  const base = credentialFreeNpmEnvironment(env, home);
+  return { ...base, ...Object.fromEntries(OIDC_ENV.flatMap((key) => typeof env[key] === "string" && env[key] ? [[key, env[key]]] : [])) };
+}
+
 function runChecked(run, file, args, options, label) {
   const result = run(file, args, options);
   if (result?.error || result?.signal || result?.status !== 0) throw new Error(`${label} failed`);
@@ -286,8 +310,9 @@ function assertReleaseTarget(root, packageKey, manifest) {
   return target;
 }
 
-export async function publishQualifiedDirectory({ root = process.cwd(), packageKey, candidatePath, recordPath, env = process.env, run = defaultRun, interactiveRun = runInteractiveChild, verify = verifyPostPublishPublicNpmArtifact, stagingParent = tmpdir() }) {
+export async function publishQualifiedDirectory({ root = process.cwd(), packageKey, candidatePath, recordPath, mode = "owner-present", dryRun = false, env = process.env, run = defaultRun, interactiveRun = runInteractiveChild, verify = verifyPostPublishPublicNpmArtifact, stagingParent = tmpdir() }) {
   if (!KEY.test(packageKey ?? "")) throw new Error("package key is invalid");
+  if (!["owner-present", "oidc"].includes(mode) || typeof dryRun !== "boolean") throw new Error("publication mode is invalid");
   const absoluteRoot = resolve(root);
   const candidate = regularBytes(candidatePath, "qualified candidate");
   const recordInput = regularBytes(recordPath, "qualification record");
@@ -316,15 +341,19 @@ export async function publishQualifiedDirectory({ root = process.cwd(), packageK
     const original = hashes(candidate.bytes), replay = hashes(repacked.bytes);
     if (Object.keys(SHA).some((algorithm) => original[algorithm] !== replay[algorithm])) throw new Error("clean-directory npm pack differs from the immutable qualified candidate");
 
-    // This is intentionally the only upload command. It receives only '.',
-    // never a tarball, URL, package specifier, token, OTP, or provenance flag.
-    // BSD script gives npm a real terminal for its owner-present WebAuthn/OTP
-    // conversation while this parent captures both output streams.  /dev/null
-    // is its transcript destination: npm output is neither persisted nor
-    // echoed by this wrapper, and stdin remains attached to the owner.
-    const ownerSession = await interactiveRun(PTY_SCRIPT, ownerPresentPtyArgs(target.registry), { cwd: packageRoot, env: ownerPresentEnvironment(env), stdio: ["inherit", "pipe", "pipe"] }, createOwnerPromptRelay());
-    if (ownerSession?.error || ownerSession?.signal || ownerSession?.status !== 0) throw new Error("owner-present npm publish failed");
-    await verify({ root: absoluteRoot, packageKey, expectedTarball: repacked.absolute, env: anonymousEnvironment(env) });
+    if (mode === "owner-present") {
+      // This owner-present command is unchanged: it uses a PTY for WebAuthn
+      // or OTP, but always publishes the private clean directory, never the
+      // candidate tarball.
+      const ownerSession = await interactiveRun(PTY_SCRIPT, ownerPresentPtyArgs(target.registry), { cwd: packageRoot, env: ownerPresentEnvironment(env), stdio: ["inherit", "pipe", "pipe"] }, createOwnerPromptRelay());
+      if (ownerSession?.error || ownerSession?.signal || ownerSession?.status !== 0) throw new Error("owner-present npm publish failed");
+    } else {
+      const oidc = oidcEnvironment(env, stageRoot);
+      const command = ["publish", ".", "--provenance", "--access", "public", "--ignore-scripts", "--registry", target.registry];
+      if (dryRun) command.push("--dry-run");
+      runChecked(run, "npm", command, { cwd: packageRoot, env: oidc, stdio: "pipe", encoding: "utf8" }, "OIDC npm publish");
+    }
+    if (!dryRun) await verify({ root: absoluteRoot, packageKey, expectedTarball: repacked.absolute, env: anonymousEnvironment(env) });
     return { name: manifest.name, version: manifest.version, tarball: replay };
   } finally {
     rmSync(stageRoot, { recursive: true, force: true });
@@ -334,8 +363,8 @@ export async function publishQualifiedDirectory({ root = process.cwd(), packageK
 if (process.argv[1] === new URL(import.meta.url).pathname) {
   try {
     const args = argsFrom(process.argv);
-    await publishQualifiedDirectory({ packageKey: args.package, candidatePath: args.candidate, recordPath: args.record });
-    process.stdout.write("owner-present publication and anonymous served-byte verification completed.\n");
+    await publishQualifiedDirectory({ packageKey: args.package, candidatePath: args.candidate, recordPath: args.record, mode: args.mode, dryRun: args.dryRun });
+    process.stdout.write(`${args.mode} publication${args.dryRun ? " dry-run" : " and anonymous served-byte verification"} completed.\n`);
   } catch (error) {
     // Do not echo npm's output, registry documents, input paths, or an
     // interactive account context. The caller only gets the control verdict.

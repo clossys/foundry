@@ -86,8 +86,50 @@ async function fixture(t) {
 
 test("owner-present wrapper has a closed CLI", () => {
   const argv = ["node", "script", "--package", "strategist", "--candidate", "candidate.tgz", "--record", "record.json"];
-  assert.deepEqual(argsFrom(argv), { package: "strategist", candidate: "candidate.tgz", record: "record.json" });
+  assert.deepEqual(argsFrom(argv), { package: "strategist", candidate: "candidate.tgz", record: "record.json", mode: "owner-present", dryRun: false });
+  assert.deepEqual(argsFrom([...argv, "--mode", "oidc", "--dry-run"]), { package: "strategist", candidate: "candidate.tgz", record: "record.json", mode: "oidc", dryRun: true });
   for (const mutation of [["--otp", "123456"], ["--candidate", "https://example.test/x.tgz"], ["--unknown", "x"], ["--package", "../strategist"]]) assert.throws(() => argsFrom([...argv, ...mutation]), /Usage:/);
+});
+
+test("OIDC dry publication cleanly repacks the qualified bytes and forwards only GitHub OIDC/run identity", async (t) => {
+  const item = await fixture(t), calls = [];
+  const oidc = {
+    ACTIONS_ID_TOKEN_REQUEST_URL: "https://token.actions.githubusercontent.test/oidc",
+    ACTIONS_ID_TOKEN_REQUEST_TOKEN: "opaque-oidc-request-token",
+    GITHUB_ACTIONS: "true", GITHUB_EVENT_NAME: "workflow_dispatch",
+    GITHUB_REF: "refs/heads/main", GITHUB_REPOSITORY: "clossys/foundry",
+    GITHUB_RUN_ATTEMPT: "1", GITHUB_RUN_ID: "42", GITHUB_SHA: "a".repeat(40),
+    GITHUB_WORKFLOW: "Publish", GITHUB_WORKFLOW_REF: "clossys/foundry/.github/workflows/publish.yml@refs/heads/main",
+    GITHUB_WORKFLOW_SHA: "b".repeat(40),
+  };
+  const run = (file, args, options) => {
+    calls.push({ file, args: [...args], cwd: options.cwd, env: { ...options.env } });
+    if (args[0] === "--version") return { status: 0, stdout: file === process.execPath ? "v24.19.0\n" : "11.17.0\n", stderr: "" };
+    if (args[0] === "-p") return { status: 0, stdout: "1.3.2.1-motley-3246f1b\n", stderr: "" };
+    if (file === process.execPath) return { status: 0, stdout: "", stderr: "" };
+    if (args[0] === "pack") {
+      writeFileSync(join(args.at(-1), "repacked.tgz"), item.bytes);
+      return { status: 0, stdout: JSON.stringify([{ filename: "repacked.tgz" }]), stderr: "" };
+    }
+    if (args[0] === "publish") return { status: 0, stdout: "", stderr: "" };
+    throw new Error(`unexpected command ${file} ${args.join(" ")}`);
+  };
+  let verified = false;
+  await publishQualifiedDirectory({
+    root: item.root, packageKey: "strategist", candidatePath: item.candidate, recordPath: item.recordPath,
+    mode: "oidc", dryRun: true,
+    env: { ...oidc, PATH: process.env.PATH, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist, NPM_TOKEN: "must-not-forward", NODE_AUTH_TOKEN: "must-not-forward", GITHUB_TOKEN: "must-not-forward" },
+    run, interactiveRun: async () => { throw new Error("OIDC must not create an owner PTY"); }, verify: async () => { verified = true; },
+  });
+  assert.equal(verified, false, "dry OIDC publication must not perform provider/registry verification");
+  const publish = calls.find((call) => call.file === "npm" && call.args[0] === "publish");
+  assert.ok(publish, "OIDC mode must execute one directory-form npm command");
+  assert.deepEqual(publish.args, ["publish", ".", "--provenance", "--access", "public", "--ignore-scripts", "--registry", "https://registry.npmjs.org", "--dry-run"]);
+  assert.match(publish.cwd, /clossys-qualified-publish-.*\/package$/);
+  assert.notEqual(publish.env.HOME, item.root, "OIDC mode must not receive the owner HOME");
+  for (const key of ["NPM_TOKEN", "NODE_AUTH_TOKEN", "GITHUB_TOKEN", "PUBLIC_SAFETY_DENYLIST"]) assert.equal(publish.env[key], undefined, `${key} must not reach npm`);
+  for (const [key, value] of Object.entries(oidc)) assert.equal(publish.env[key], value, `${key} must survive the OIDC boundary`);
+  assert.deepEqual(Object.keys(publish.env).sort(), ["ACTIONS_ID_TOKEN_REQUEST_TOKEN", "ACTIONS_ID_TOKEN_REQUEST_URL", "GITHUB_ACTIONS", "GITHUB_EVENT_NAME", "GITHUB_REF", "GITHUB_REPOSITORY", "GITHUB_RUN_ATTEMPT", "GITHUB_RUN_ID", "GITHUB_SHA", "GITHUB_WORKFLOW", "GITHUB_WORKFLOW_REF", "GITHUB_WORKFLOW_SHA", "HOME", "PATH"].sort());
 });
 
 test("Linux PTY command returns npm's failure status rather than script's session status", () => {
