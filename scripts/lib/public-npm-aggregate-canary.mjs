@@ -444,7 +444,11 @@ function exactPathHistory(root, path, commits = reachableCommits(root)) {
     // path blob is novel against every actual parent is eligible for R/C
     // detection (and therefore for immutable-history rejection).
     const propagated = parents.length > 1 && parentBlobs.some((parent) => parent === current);
-    const renameOrCopy = propagated ? null : renamedPathStatus(root, commit, path, parents);
+    // Avoid an expensive diff-tree for the overwhelmingly common commits
+    // whose exact path blob is unchanged.  Rename/copy inspection is needed
+    // only for an ordinary path change or a novel merge result.
+    const ordinaryChanged = parents.length === 1 && parentBlobs[0] !== current;
+    const renameOrCopy = propagated || (!ordinaryChanged && parents.length <= 1) ? null : renamedPathStatus(root, commit, path, parents);
     const mutation = propagated ? null : (renameOrCopy ?? (parents.length > 1
       // A path created solely by a synthetic merge is not an introduction.
       // The immutable authority must originate in one ordinary parent commit;
