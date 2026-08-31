@@ -42,7 +42,7 @@
     "check:completion-evidence": "node scripts/check-completion-evidence.mjs",
     "check:candidate-qualification": "node scripts/check-candidate-qualification.mjs",
     "check:public-npm-aggregate-canary": "node scripts/check-public-npm-aggregate-canary.mjs && node scripts/check-public-npm-aggregate-closures.mjs && node scripts/check-public-npm-aggregate-transcripts.mjs && node --test scripts/lib/public-npm-aggregate-canary.test.mjs",
-    "check:public-npm-aggregate-canary:readiness": "node scripts/check-public-npm-aggregate-canary-readiness.mjs",
+    "public-npm-aggregate-canary:readiness": "node scripts/check-public-npm-aggregate-canary-readiness.mjs",
     "run:public-npm-aggregate-canary": "node scripts/run-public-npm-aggregate-canary.mjs",
     "check:candidate-runner-acceptance": "node --test scripts/lib/candidate-runner-acceptance.test.mjs",
     "check:packed-consumer": "node scripts/check-packed-consumer-readiness.mjs --skip-build",

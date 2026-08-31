@@ -718,7 +718,7 @@ their own anonymously verified public identities. This check is producer
 qualification only: it does not establish consumer adoption, grounding, or
 closure. Refs: #652
 
-`npm run check:public-npm-aggregate-canary:readiness` validates the separate
+`npm run public-npm-aggregate-canary:readiness` validates the separate
 immutable satisfied-record namespace and exits `2` until one exists. The live
 producer replay is deliberately separate (`npm run run:public-npm-aggregate-canary`)
 and also exits indeterminate while any exact record is held or pending. A
