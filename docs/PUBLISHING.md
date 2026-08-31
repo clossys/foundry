@@ -498,6 +498,90 @@ Publishing access is **Require two-factor authentication and disallow tokens**.
 That setting removes the alternate granular bypass-2FA token path after the
 trusted replacement has proved it works.
 
+### Current retained-candidate first-publication handoff
+
+The Trio section above is closed historical evidence. It neither publishes nor
+authorizes a first identity for another package. The following are the current
+retained candidates, not registry facts: each still needs its own
+owner-present first publication and anonymous public-registry verification.
+
+| order | retained candidate | exact qualification record |
+| --- | --- | --- |
+| 1 | `@clossys/writer@0.3.2` | `governance/release-qualifications/clossys-writer-0.3.2.json` |
+| 2 | `@clossys/designer@0.2.4` | `governance/release-qualifications/clossys-designer-0.2.4.json` |
+| 3 | `@clossys/architect@0.1.2` | `governance/release-qualifications/clossys-architect-0.1.2.json` |
+| 4 | `@clossys/bouncer@0.1.1` | `governance/release-qualifications/clossys-bouncer-0.1.1.json` |
+| 5 | `@clossys/butler@0.1.1` | `governance/release-qualifications/clossys-butler-0.1.1.json` |
+| 6 | `@clossys/giver@0.1.2` | `governance/release-qualifications/clossys-giver-0.1.2.json` |
+| 7 | `@clossys/influencer@0.1.2` | `governance/release-qualifications/clossys-influencer-0.1.2.json` |
+| 8 | `@clossys/integrator@0.6.2` | `governance/release-qualifications/clossys-integrator-0.6.2.json` |
+| 9 | `@clossys/keeper@0.1.2` | `governance/release-qualifications/clossys-keeper-0.1.2.json` |
+| 10 | `@clossys/locksmith@0.1.6` | `governance/release-qualifications/clossys-locksmith-0.1.6.json` |
+| 11 | `@clossys/messenger@0.1.2` | `governance/release-qualifications/clossys-messenger-0.1.2.json` |
+| 12 | `@clossys/observer@0.2.3` | `governance/release-qualifications/clossys-observer-0.2.3.json` |
+| 13 | `@clossys/builder@0.7.3` | `governance/release-qualifications/clossys-builder-0.7.3.json` |
+| 14 | `@clossys/inspector@0.1.18` | `governance/release-qualifications/clossys-inspector-0.1.18.json` |
+
+The ordering preserves the runtime graph: Builder and Inspector wait for the
+already-public Controller, and Publisher remains outside this list until
+Writer and Designer are public and verified. Before every row, re-run the
+required FULL preflight and exact-candidate validation; a retained record does
+not excuse a changed byte, a stale review, or a failed gate.
+
+Each first identity is an interactive owner action and requires the owner's
+npm authentication and 2FA response. From the repository root, pass only the
+retained candidate tarball named by the matching record to the existing
+qualified-directory wrapper:
+
+```text
+writer     -> node scripts/publish-qualified-directory.mjs --package writer --candidate <writer-0.3.2-qualified-candidate.tgz> --record governance/release-qualifications/clossys-writer-0.3.2.json
+designer   -> node scripts/publish-qualified-directory.mjs --package designer --candidate <designer-0.2.4-qualified-candidate.tgz> --record governance/release-qualifications/clossys-designer-0.2.4.json
+architect  -> node scripts/publish-qualified-directory.mjs --package architect --candidate <architect-0.1.2-qualified-candidate.tgz> --record governance/release-qualifications/clossys-architect-0.1.2.json
+bouncer    -> node scripts/publish-qualified-directory.mjs --package bouncer --candidate <bouncer-0.1.1-qualified-candidate.tgz> --record governance/release-qualifications/clossys-bouncer-0.1.1.json
+butler     -> node scripts/publish-qualified-directory.mjs --package butler --candidate <butler-0.1.1-qualified-candidate.tgz> --record governance/release-qualifications/clossys-butler-0.1.1.json
+giver      -> node scripts/publish-qualified-directory.mjs --package giver --candidate <giver-0.1.2-qualified-candidate.tgz> --record governance/release-qualifications/clossys-giver-0.1.2.json
+influencer -> node scripts/publish-qualified-directory.mjs --package influencer --candidate <influencer-0.1.2-qualified-candidate.tgz> --record governance/release-qualifications/clossys-influencer-0.1.2.json
+integrator -> node scripts/publish-qualified-directory.mjs --package integrator --candidate <integrator-0.6.2-qualified-candidate.tgz> --record governance/release-qualifications/clossys-integrator-0.6.2.json
+keeper     -> node scripts/publish-qualified-directory.mjs --package keeper --candidate <keeper-0.1.2-qualified-candidate.tgz> --record governance/release-qualifications/clossys-keeper-0.1.2.json
+locksmith  -> node scripts/publish-qualified-directory.mjs --package locksmith --candidate <locksmith-0.1.6-qualified-candidate.tgz> --record governance/release-qualifications/clossys-locksmith-0.1.6.json
+messenger  -> node scripts/publish-qualified-directory.mjs --package messenger --candidate <messenger-0.1.2-qualified-candidate.tgz> --record governance/release-qualifications/clossys-messenger-0.1.2.json
+observer   -> node scripts/publish-qualified-directory.mjs --package observer --candidate <observer-0.2.3-qualified-candidate.tgz> --record governance/release-qualifications/clossys-observer-0.2.3.json
+builder    -> node scripts/publish-qualified-directory.mjs --package builder --candidate <builder-0.7.3-qualified-candidate.tgz> --record governance/release-qualifications/clossys-builder-0.7.3.json
+inspector  -> node scripts/publish-qualified-directory.mjs --package inspector --candidate <inspector-0.1.18-qualified-candidate.tgz> --record governance/release-qualifications/clossys-inspector-0.1.18.json
+```
+
+The wrapper makes a private staging directory, FULL-scans its unpacked
+contents, re-packs it with lifecycle scripts disabled, and requires the
+SHA-1/SHA-256/SHA-512 tuple to match before it runs the one interactive
+`npm publish .` command. Do not replace it with a tarball, URL, package
+specifier, token, OTP, or a workflow upload flag.
+
+**Stop after every row.** Anonymously fetch the exact public
+`@clossys/<package>@<version>` packument and tarball, then compare its name,
+version, public access, `dist.integrity`, SHA-1/SHA-256/SHA-512, packed
+manifest, and raw size with the reviewed candidate. Do not start the next row
+until that evidence is retained. If either upload or verification fails,
+quarantine the completed ordered prefix, retain every immutable published
+identity and its disposition, invalidate the unpublished candidates, and stop
+the handoff. A published version is never deleted, unpublished, overwritten,
+or reused; a correction is a newly qualified forward version.
+
+Only after a package's first identity and anonymous served-byte verification
+are complete may its owner configure that package's npm trusted publisher and
+the restrictive **Require two-factor authentication and disallow tokens**
+setting. A later bounded patch through the protected `npm-publish` OIDC path
+should not need npm terminal 2FA once that trust is configured, but it can
+still pause for the required GitHub protected-environment reviewer. Neither
+the retained record nor this handoff claims that either provider setting has
+already been changed.
+
+`@clossys/publisher@0.1.8` is deliberately deferred. It has no current
+retained qualification record. Do not prepare an owner-present upload for it
+until the exact Writer and Designer identities above have passed anonymous
+served-byte verification, then create and review a fresh Publisher candidate
+qualification against those public runtime siblings before its own
+owner-present first-publication handoff.
+
 ### Why the name-collision check runs first, always
 
 Public npm scope ownership and existing package names must be checked before
