@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -68,7 +69,7 @@ test("creator rejects proof, publication, and path substitutions", () => {
 });
 
 test("output is atomic and never overwrites an existing record", () => {
-  const root = mkdtempSync(join(tmpdir(), "record-later-publication-output-"));
+  const root = realpathSync(mkdtempSync(join(tmpdir(), "record-later-publication-output-")));
   try {
     const destination = join(root, "record.json"), bytes = Buffer.from("record\n");
     writeNoOverwrite(destination, bytes);
@@ -82,6 +83,69 @@ test("output is atomic and never overwrites an existing record", () => {
     mkdirSync(directory); symlinkSync(directory, directoryLink);
     assert.throws(() => writeNoOverwrite(join(directoryLink, "record.json"), bytes), /directory/);
   } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test("creator writes one canonical owner-present record in a synthetic git repository", async (t) => {
+  const root = realpathSync(mkdtempSync(join(tmpdir(), "record-later-publication-e2e-")));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const sourceRoot = process.cwd();
+  const copied = [
+    "package.json", "package-lock.json", "package-scope.json", "governance/release-catalog.json",
+    "governance/release-qualification-policy.json", "governance/release-qualification-adapters/strategist",
+    "governance/release-qualification-fixtures/strategist", "packages/strategist",
+  ];
+  for (const path of copied) cpSync(join(sourceRoot, path), join(root, path), { recursive: true });
+  mkdirSync(join(root, "governance/release-publications/later"), { recursive: true });
+  mkdirSync(join(root, "governance/release-qualifications"), { recursive: true });
+  execFileSync("git", ["init", "-q"], { cwd: root });
+  execFileSync("git", ["config", "user.email", "test@example.invalid"], { cwd: root });
+  execFileSync("git", ["config", "user.name", "record test"], { cwd: root });
+  execFileSync("git", ["add", "."], { cwd: root });
+  execFileSync("git", ["commit", "-qm", "synthetic qualification base"], { cwd: root });
+  const base = execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim();
+
+  const packDirectory = join(root, ".pack-output");
+  mkdirSync(packDirectory);
+  execFileSync("npm", ["pack", "--ignore-scripts", "--pack-destination", packDirectory, "--workspace=packages/strategist"], { cwd: root, stdio: ["ignore", "ignore", "ignore"] });
+  const candidatePath = join(packDirectory, "clossys-strategist-0.1.2.tgz");
+  const candidateBytesForRecord = readFileSync(candidatePath);
+  const hashes = { sha1: digest("sha1", candidateBytesForRecord), sha256: digest("sha256", candidateBytesForRecord), sha512: digest("sha512", candidateBytesForRecord) };
+  const qualificationPath = "governance/release-qualifications/clossys-strategist-0.1.2.json";
+  const qualification = JSON.parse(readFileSync(join(sourceRoot, qualificationPath), "utf8"));
+  qualification.reviewedCommit = base;
+  qualification.candidateReview.headSha = base;
+  qualification.rootPackageJsonSha256 = digest("sha256", readFileSync(join(root, "package.json")));
+  qualification.candidate.tarball = hashes;
+  qualification.transcript.tarball = hashes;
+  const transcriptForDigest = { ...qualification.transcript };
+  delete transcriptForDigest.canonicalSha256;
+  qualification.transcript.canonicalSha256 = digest("sha256", JSON.stringify(transcriptForDigest));
+  writeFileSync(join(root, qualificationPath), `${JSON.stringify(qualification, null, 2)}\n`);
+  execFileSync("git", ["add", qualificationPath], { cwd: root });
+  execFileSync("git", ["commit", "-qm", "synthetic qualification record"], { cwd: root });
+
+  const manifestBytes = readFileSync(join(root, "packages/strategist/package.json"));
+  const proof = {
+    schemaVersion: 2, kind: "public-npm-anonymous-registry-proof-v2", evidence: {
+      registry: PUBLIC_NPM_REGISTRY, access: "anonymous", name: qualification.candidate.name, version: qualification.candidate.version,
+      metadataUrl: publicNpmVersionUrl(PUBLIC_NPM_REGISTRY, qualification.candidate.name, qualification.candidate.version), repository: "clossys/foundry",
+      tarballUrl: `${PUBLIC_NPM_REGISTRY}/@clossys/strategist/-/strategist-0.1.2.tgz`, integrity: `sha512-${Buffer.from(hashes.sha512, "hex").toString("base64")}`,
+      shasum: hashes.sha1, sha256: hashes.sha256, sha512: hashes.sha512, packedManifestSha256: digest("sha256", manifestBytes), size: candidateBytesForRecord.length,
+    },
+  };
+  const proofPath = join(root, "registry-proof.json");
+  writeFileSync(proofPath, `${JSON.stringify(proof, null, 2)}\n`);
+  const publicationPath = join(root, "publication-evidence.json");
+  writeFileSync(publicationPath, `${JSON.stringify({ mode: "owner-present", publishedAt: "2026-08-31T00:00:00.000Z", reference: "https://registry.npmjs.org/%40clossys%2Fstrategist/0.1.2" }, null, 2)}\n`);
+
+  const result = await createLaterPublicationRecord({
+    root, packageKey: "strategist", qualificationPath: join(root, qualificationPath), candidatePath, proofPath, publicationPath, env: {},
+  });
+  assert.equal(result.path, "governance/release-publications/later/strategist-0.1.2.json");
+  assert.equal(result.record.kind, "foundry-later-publication-v1");
+  assert.deepEqual(Object.keys(JSON.parse(readFileSync(join(root, result.path), "utf8"))), ["schemaVersion", "kind", "qualification", "candidate", "source", "catalog", "publication", "registryProof"]);
+  assert.deepEqual(readdirSync(join(root, "governance/release-publications/later")), ["strategist-0.1.2.json"]);
+  assert.deepEqual(readFileSync(join(root, result.path)), result.bytes);
 });
 
 test("creator refuses credential-bearing environments before reading inputs", async () => {

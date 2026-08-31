@@ -159,7 +159,8 @@ function validateCandidateAndProof({ root, packageKey, qualification, qualificat
   if (!object(qualification) || qualification.timing !== "pre-publication") throw new Error("qualification must be one pre-publication record");
   const candidate = qualification.candidate;
   if (!object(candidate) || candidate.name !== `${identity.scope}/${packageKey}` || typeof candidate.version !== "string") throw new Error("qualification does not bind the requested package key");
-  const expectedQualificationPath = resolve(root, qualificationPath(root, candidate));
+  const qualificationRecordPath = qualificationPath(root, candidate);
+  const expectedQualificationPath = resolve(root, qualificationRecordPath);
   if (resolve(qualificationPathInput) !== expectedQualificationPath) throw new Error("qualification path is not the canonical package/version record");
 
   const packageManifest = regularBytes(join(root, "packages", packageKey, "package.json"), "current package manifest");
@@ -178,21 +179,32 @@ function validateCandidateAndProof({ root, packageKey, qualification, qualificat
   const proofV2 = proof?.schemaVersion === 2 && proof?.kind === "public-npm-anonymous-registry-proof-v2";
   if (!proofV2) throw new Error("later publication records require anonymous registry proof v2");
 
-  const qualificationHistory = qualificationRecordHistory(root, expectedQualificationPath, candidate, "HEAD", expectedQualificationPath);
+  const qualificationHistory = qualificationRecordHistory(root, qualificationRecordPath, candidate, "HEAD", qualificationRecordPath);
   const expected = { name: candidate.name, version: candidate.version, ...currentQualificationJoins(root, candidate, qualificationHistory.introductionCommit) };
   const qualificationFindings = validateCandidateQualification(qualification, { expected });
   if (qualificationFindings.length) throw new Error(`qualification is invalid: ${qualificationFindings[0].message}`);
   if (qualificationHistory.introducedRecordSha256 !== qualificationHistory.retainedRecordSha256) throw new Error("qualification record differs from its immutable introduction blob");
 
   const recordPath = `${OUTPUT_DIRECTORY}/${packageKey}-${candidate.version}.json`;
-  const built = buildLaterPublicationRecord({ packageKey, qualificationPath: expectedQualificationPath.slice(resolve(root).length + 1), qualification, qualificationBytes, candidateBytes, proof, catalog, catalogBytes, publication, recordPath, provenanceSourceValid: prePublicationSourceValid(root, qualification, qualificationHistory.introductionCommit, publication) });
+  const built = buildLaterPublicationRecord({ packageKey, qualificationPath: qualificationRecordPath, qualification, qualificationBytes, candidateBytes, proof, catalog, catalogBytes, publication, recordPath, provenanceSourceValid: prePublicationSourceValid(root, qualification, qualificationHistory.introductionCommit, publication) });
   return { ...built, recordPath };
 }
 
 function writeNoOverwrite(path, bytes) {
   const parent = dirname(path);
-  const parentState = lstatSync(parent);
-  if (!parentState.isDirectory() || parentState.isSymbolicLink()) throw new Error("publication output directory must be a regular directory");
+  let current = resolve(parent);
+  const parents = [];
+  while (true) {
+    parents.push(current);
+    const next = dirname(current);
+    if (next === current) break;
+    current = next;
+  }
+  for (const directory of parents.reverse()) {
+    const state = lstatSync(directory);
+    if (!state.isDirectory() || state.isSymbolicLink()) throw new Error("publication output directory must be a regular directory chain");
+  }
+  const parentDescriptor = openSync(parent, constants.O_RDONLY | (constants.O_DIRECTORY ?? 0) | (constants.O_NOFOLLOW ?? 0));
   const temporary = join(parent, `.${basename(path)}.${randomUUID()}.tmp`);
   let descriptor;
   let linked = false;
@@ -203,9 +215,11 @@ function writeNoOverwrite(path, bytes) {
     closeSync(descriptor); descriptor = undefined;
     linkSync(temporary, path);
     linked = true;
+    fsyncSync(parentDescriptor);
   } finally {
     if (descriptor !== undefined) closeSync(descriptor);
     try { unlinkSync(temporary); } catch { /* the final link may already own the bytes */ }
+    closeSync(parentDescriptor);
     if (!linked) { /* an existing destination is intentionally never removed */ }
   }
 }
@@ -217,11 +231,12 @@ export function argsFrom(argv) {
     const key = argv[index]?.slice(2);
     if (key === "fetch") {
       if (seen.has(key)) throw new Error(USAGE);
-      seen.add(key); result.fetch = true; index += 1; continue;
+      seen.add(key); result.fetch = true; index += 1;
+    } else {
+      const value = argv[index + 1];
+      if (!Object.hasOwn({ package: true, qualification: true, candidate: true, proof: true, publication: true }, key) || !value || seen.has(key)) throw new Error(USAGE);
+      seen.add(key); result[key] = value; index += 2;
     }
-    const value = argv[index + 1];
-    if (!Object.hasOwn({ package: true, qualification: true, candidate: true, proof: true, publication: true }, key) || !value || seen.has(key)) throw new Error(USAGE);
-    seen.add(key); result[key] = value; index += 2;
   }
   if (!result.package || !result.qualification || !result.publication || !KEY.test(result.package) || (result.fetch && (result.candidate || result.proof)) || (!result.fetch && (!result.candidate || !result.proof))) throw new Error(USAGE);
   return result;

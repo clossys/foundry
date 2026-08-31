@@ -557,12 +557,18 @@ SHA-1/SHA-256/SHA-512 tuple to match before it runs the one interactive
 specifier, token, OTP, or a workflow upload flag.
 
 Before each wrapper invocation, run the mandatory preflight sequence against
-the exact candidate and retain its output:
+the exact candidate, produce a fresh credentialless transcript, and retain
+both outputs:
 
 ```text
 node scripts/preflight-package.mjs packages/<name> --require-denylist
-node scripts/validate-candidate-publish.mjs --package <name> --tarball <candidate.tgz> --transcript <qualification-transcript.json> --mode prepublish
+node scripts/run-candidate-qualification.mjs --package <name> --tarball <candidate.tgz> --output <fresh-transcript.json>
+node scripts/validate-candidate-publish.mjs --package <name> --tarball <candidate.tgz> --transcript <fresh-transcript.json> --mode prepublish
 ```
+
+The transcript passed to `validate-candidate-publish.mjs` must be this fresh
+file from the immediately preceding credentialless run; the embedded
+transcript in a retained qualification record is not a substitute.
 
 After the owner upload completes, perform the anonymous served-byte
 verification described below and save its exact `registry-proof.json` outside
