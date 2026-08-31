@@ -108,6 +108,35 @@ function gitBlob(root, ref, path) {
   return execFileSync("git", ["show", `${ref}:${path}`], { cwd: root, encoding: "utf8" });
 }
 
+function gitBlobOid(root, ref, path) {
+  try {
+    return execFileSync("git", ["rev-parse", "--verify", `${ref}:${path}`], {
+      cwd: root,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
+  } catch {
+    return null;
+  }
+}
+
+function hasPathHistory(root, ref, path) {
+  return execFileSync("git", ["log", "--full-history", "-1", "--format=%H", ref, "--", path], {
+    cwd: root,
+    encoding: "utf8",
+  }).trim() !== "";
+}
+
+function gitCommitParents(root, commit) {
+  const [resolved, ...parents] = execFileSync(
+    "git",
+    ["rev-list", "--parents", "-n", "1", commit],
+    { cwd: root, encoding: "utf8" },
+  ).trim().split(" ");
+  if (resolved !== commit) throw new Error("retained path history resolved an unexpected commit");
+  return parents;
+}
+
 /**
  * Validate a one-package publication after the sealed first-publication Trio.
  * `catalogBytes` is deliberately the catalogue blob from this record's one
@@ -163,7 +192,35 @@ export function immutableSingleIntroduction(root, path) {
   const introduced = gitBlob(root, commits[0], path);
   const retained = readFileSync(join(root, path), "utf8");
   if (digest(introduced) !== digest(retained)) throw new Error("retained bytes differ from their introduction blob");
-  if (execFileSync("git", ["log", "--full-history", "--format=%H", `${commits[0]}..HEAD`, "--", path], { cwd: root, encoding: "utf8" }).trim()) throw new Error("retained path was touched after its introduction");
+  const introducedBlob = gitBlobOid(root, commits[0], path);
+  const traversed = execFileSync(
+    "git",
+    // The path limiter chooses relevant commit IDs only. Asking this command
+    // for parents would return history-simplified parents, not the commit's
+    // real topology, and can collapse a two-parent synthetic merge to one.
+    ["rev-list", "--full-history", `${commits[0]}..HEAD`, "--", path],
+    { cwd: root, encoding: "utf8" },
+  ).trim().split("\n").filter(Boolean);
+  for (const commit of traversed) {
+    const parents = gitCommitParents(root, commit);
+    // Only a merge may reconcile a branch forked before the introduction.
+    // Ordinary later path touches remain forbidden even when they restore the
+    // original bytes before HEAD.
+    if (parents.length < 2 || gitBlobOid(root, commit, path) !== introducedBlob) {
+      throw new Error("retained path was touched after its introduction");
+    }
+    for (const parent of parents) {
+      const parentBlob = gitBlobOid(root, parent, path);
+      if (parentBlob !== null && parentBlob !== introducedBlob) {
+        throw new Error("retained path was touched after its introduction");
+      }
+      // A missing path is safe only for a genuinely pre-introduction branch.
+      // A parent that deleted the record is not such a branch.
+      if (parentBlob === null && hasPathHistory(root, parent, path)) {
+        throw new Error("retained path was touched after its introduction");
+      }
+    }
+  }
   return { introductionCommit: commits[0], introducedBytes: introduced };
 }
 
