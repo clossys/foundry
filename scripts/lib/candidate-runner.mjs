@@ -109,6 +109,49 @@ async function assertRestorePathContained(root, path, label) {
   return target;
 }
 
+async function ensureContainedDirectory(root, directory, label) {
+  const canonicalRoot = await realpath(root);
+  const target = resolve(directory);
+  const rel = relative(canonicalRoot, target);
+  if (!rel || rel === ".." || rel.startsWith(`..${sep}`) || isAbsolute(rel)) throw new Error(`${label} escapes the consumer root`);
+  let cursor = canonicalRoot;
+  for (const component of rel.split(sep)) {
+    cursor = join(cursor, component);
+    try {
+      const state = await lstat(cursor);
+      if (!state.isDirectory() || state.isSymbolicLink()) throw new Error(`${label} has a non-directory or symlink component`);
+    } catch (error) {
+      if (error?.code !== "ENOENT") throw error;
+      await mkdir(cursor);
+      const state = await lstat(cursor);
+      if (!state.isDirectory() || state.isSymbolicLink()) throw new Error(`${label} changed while creating its directory component`);
+    }
+  }
+  return target;
+}
+
+// Aggregate runs place each candidate beneath a private fixture namespace.
+// Being below the consumer is not sufficient: a reviewed adapter must not use
+// ../ to read a sibling candidate's fixtures (or an aggregate-owned file).
+async function assertFixturePathContained(root, fixtureRoot, path, label) {
+  const canonicalFixtureRoot = resolve(fixtureRoot);
+  const target = resolve(path);
+  const rel = relative(canonicalFixtureRoot, target);
+  if (!rel || rel === ".." || rel.startsWith(`..${sep}`) || isAbsolute(rel)) throw new Error(`${label} escapes the fixture root`);
+  await assertRestorePathContained(root, target, label);
+  return target;
+}
+
+async function prepareFixtureTarget(root, fixtureRoot, path, label) {
+  await ensureContainedDirectory(root, fixtureRoot, `${label} fixture root`);
+  const target = resolve(path);
+  const base = resolve(fixtureRoot);
+  const rel = relative(base, target);
+  if (!rel || rel === ".." || rel.startsWith(`..${sep}`) || isAbsolute(rel)) throw new Error(`${label} escapes the fixture root`);
+  await ensureContainedDirectory(root, dirname(target), `${label} parent`);
+  return assertFixturePathContained(root, fixtureRoot, target, label);
+}
+
 async function readRegularFile(root, path, label) {
   await assertRestorePathContained(root, path, label);
   const state = await lstat(path);
@@ -148,9 +191,7 @@ async function removeContainedDirectory(root, path, label) {
 async function caseArgument(root, fixtureRoot, descriptor) {
   if (typeof descriptor.literal === "string") return descriptor.literal;
   const relative = descriptor.fixture ?? descriptor.fixtureDirectory;
-  const path = resolve(fixtureRoot, relative);
-  if (!path.startsWith(`${resolve(fixtureRoot)}${sep}`)) throw new Error("case fixture argument escapes fixture root");
-  await assertRestorePathContained(root, path, "case fixture argument");
+  const path = await assertFixturePathContained(root, fixtureRoot, resolve(fixtureRoot, relative), "case fixture argument");
   const state = await lstat(path);
   if (state.isSymbolicLink() || (descriptor.fixture !== undefined ? !state.isFile() : !state.isDirectory())) throw new Error("case fixture argument has the wrong filesystem type");
   return path;
@@ -332,10 +373,9 @@ async function materializedFiles(root, target, output = []) {
 }
 
 async function materializedConsumerOverlay(root, fixtureRoot, overlay) {
-  const sourcePath = resolve(fixtureRoot, overlay.fixture);
+  const sourcePath = await assertFixturePathContained(root, fixtureRoot, resolve(fixtureRoot, overlay.fixture), "raw case evidence consumer overlay source");
   const targetPath = resolve(root, overlay.target);
-  if (!sourcePath.startsWith(`${resolve(fixtureRoot)}${sep}`) || !targetPath.startsWith(`${root}${sep}`)) throw new Error("raw case evidence consumer overlay escapes the disposable root");
-  await assertRestorePathContained(root, sourcePath, "raw case evidence consumer overlay source");
+  if (!targetPath.startsWith(`${root}${sep}`)) throw new Error("raw case evidence consumer overlay escapes the disposable root");
   await assertRestorePathContained(root, targetPath, "raw case evidence consumer overlay target");
   const [sourceState, targetState] = await Promise.all([lstat(sourcePath), lstat(targetPath)]);
   if (sourceState.isSymbolicLink() || targetState.isSymbolicLink() || !sourceState.isFile() || !targetState.isFile()) throw new Error("raw case evidence consumer overlay must map regular files");
@@ -356,9 +396,9 @@ async function materializedConsumerOverlay(root, fixtureRoot, overlay) {
 async function rawCaseInputSnapshot(root, fixtureRoot, descriptors, consumerOverlay) {
   const inputs = [];
   for (const descriptor of descriptors) {
-    if (typeof descriptor === "string") await materializedFiles(root, join(fixtureRoot, descriptor), inputs);
-    else if (typeof descriptor?.fixture === "string") await materializedFiles(root, join(fixtureRoot, descriptor.fixture), inputs);
-    else if (typeof descriptor?.fixtureDirectory === "string") await materializedFiles(root, join(fixtureRoot, descriptor.fixtureDirectory), inputs);
+    if (typeof descriptor === "string") await materializedFiles(root, await assertFixturePathContained(root, fixtureRoot, resolve(fixtureRoot, descriptor), "raw case evidence input"), inputs);
+    else if (typeof descriptor?.fixture === "string") await materializedFiles(root, await assertFixturePathContained(root, fixtureRoot, resolve(fixtureRoot, descriptor.fixture), "raw case evidence input"), inputs);
+    else if (typeof descriptor?.fixtureDirectory === "string") await materializedFiles(root, await assertFixturePathContained(root, fixtureRoot, resolve(fixtureRoot, descriptor.fixtureDirectory), "raw case evidence input"), inputs);
   }
   inputs.sort((left, right) => left.path.localeCompare(right.path));
   const overlay = [];
@@ -677,12 +717,10 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
   const aggregateFixtureBackup = new Map();
   try {
     const fixtureRoot = ownsRoot || adapter.package === "@clossys/starter" ? join(root, "fixtures") : join(root, "fixtures", adapter.package.slice(adapter.package.indexOf("/") + 1));
-    await mkdir(fixtureRoot, { recursive: true });
+    await ensureContainedDirectory(root, fixtureRoot, "fixture root");
     const variables = { CANDIDATE_NAME: manifest.name, CANDIDATE_VERSION: manifest.version, CANDIDATE_INTEGRITY: npmIntegrity(tarballDigests.sha512), NOW: fixtureMaterializedAt ?? new Date().toISOString() };
     for (const fixture of adapter.fixtures) {
-      const target = join(fixtureRoot, fixture);
-      await mkdir(dirname(target), { recursive: true });
-      await assertRestorePathContained(root, target, "materialized fixture");
+      const target = await prepareFixtureTarget(root, fixtureRoot, resolve(fixtureRoot, fixture), "materialized fixture");
       if (!ownsRoot) {
         try { aggregateFixtureBackup.set(target, await readFile(target)); }
         catch (error) { if (error?.code !== "ENOENT") throw error; aggregateFixtureBackup.set(target, null); }
@@ -772,14 +810,13 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
         try { overlayBackup.set(target, await readRegularFile(root, target, `consumer overlay ${item.target}`)); }
         catch (error) { if (error?.code !== "ENOENT") throw error; overlayBackup.set(target, null); }
       }
-      const source = join(fixtureRoot, item.fixture);
-      await assertRestorePathContained(root, source, `consumer overlay source ${item.fixture}`);
+      const source = await assertFixturePathContained(root, fixtureRoot, resolve(fixtureRoot, item.fixture), `consumer overlay source ${item.fixture}`);
       await copyFile(source, target);
     }
     const preparedCases = [];
     for (const item of adapter.cases) {
       const args = item.fixtureArgs
-        ? item.fixtureArgs.map((fixture) => join(fixtureRoot, fixture))
+        ? await Promise.all(item.fixtureArgs.map((fixture) => assertFixturePathContained(root, fixtureRoot, resolve(fixtureRoot, fixture), "case fixture argument")))
         : await Promise.all(item.args.map((descriptor) => caseArgument(root, fixtureRoot, descriptor)));
       const descriptors = item.fixtureArgs ?? item.args;
       const snapshot = adapter.retainRawCaseEvidence === true ? await rawCaseInputSnapshot(root, fixtureRoot, descriptors, adapter.consumerOverlay) : null;

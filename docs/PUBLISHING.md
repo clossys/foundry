@@ -718,10 +718,15 @@ qualification only: it does not establish consumer adoption, grounding, or
 closure. Refs: #652
 
 `npm run public-npm-aggregate-canary:readiness` validates the separate
-immutable satisfied-record namespace and exits `2` until one exists. The live
-producer replay is deliberately separate (`npm run run:public-npm-aggregate-canary`)
-and also exits indeterminate while any exact record is held or pending. A
-future satisfied run retains a single-introduction content-addressed
+immutable satisfied-record namespace and exits `2` only while no satisfied
+record exists. It exits `1` for partial, malformed, duplicate, or otherwise
+non-canonical evidence; total readiness requires exactly one content-addressed
+record for each frozen set (`baseline` and `oidc-successor`). The live
+producer replay is deliberately separate and must name one exact immutable
+closure: `npm run run:public-npm-aggregate-canary -- --set baseline --closure
+governance/public-npm-aggregate-closures/baseline-<digest>.json` (and the
+corresponding `oidc-successor` invocation). It exits indeterminate while any
+exact record is held or pending. A future satisfied run retains a single-introduction content-addressed
 transcript; it never rewrites this frozen plan. Refs: #652
 
 ## Prerequisites held outside this repository

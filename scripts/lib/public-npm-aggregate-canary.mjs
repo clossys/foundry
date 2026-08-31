@@ -118,18 +118,38 @@ export function parseAggregateCanaryCli(args) {
   if ((closurePath !== null && !isAggregateClosurePath(closurePath)) || outputDirectory !== AGGREGATE_TRANSCRIPT_DIRECTORY || !["baseline", "oidc-successor"].includes(set)) throw new Error("usage: run-public-npm-aggregate-canary.mjs [--set baseline|oidc-successor] [--closure governance/public-npm-aggregate-closures/<set>-<sha256>.json] [--output-dir governance/public-npm-aggregate-transcripts]");
   return { closurePath, set, outputDirectory };
 }
-export function assertAggregateRuntime({ node = process.version, npm = execFileSync("npm", ["--version"], { encoding: "utf8", timeout: AGGREGATE_EXTERNAL_TIMEOUT_MS }).trim(), zlib = process.versions.zlib } = {}) {
+export function assertAggregateRuntime({ node = process.version, npm = undefined, zlib = process.versions.zlib } = {}) {
+  if (npm === undefined) try { npm = execFileSync("npm", ["--version"], { encoding: "utf8", timeout: AGGREGATE_EXTERNAL_TIMEOUT_MS }).trim(); }
+  catch (error) {
+    if (error?.code === "ETIMEDOUT" || error?.signal === "SIGTERM") throw new AggregateUnavailableError("npm --version timed out");
+    throw error;
+  }
   if (node !== AGGREGATE_RUNTIME.node || npm !== AGGREGATE_RUNTIME.npm || zlib !== AGGREGATE_RUNTIME.zlib) throw new Error(`aggregate canary requires Node 24.19.0, npm 11.17.0, and zlib ${AGGREGATE_RUNTIME.zlib} (received ${node}, ${npm}, ${zlib})`);
 }
 
 async function boundedExternal(label, callback) {
+  const controller = new AbortController();
   let timer;
   try {
     return await Promise.race([
-      callback(),
-      new Promise((_, reject) => { timer = setTimeout(() => reject(new AggregateUnavailableError(`${label} timed out`)), AGGREGATE_EXTERNAL_TIMEOUT_MS); }),
+      callback(controller.signal),
+      new Promise((_, reject) => { timer = setTimeout(() => {
+        controller.abort(new AggregateUnavailableError(`${label} timed out`));
+        reject(new AggregateUnavailableError(`${label} timed out`));
+      }, AGGREGATE_EXTERNAL_TIMEOUT_MS); }),
     ]);
+  } catch (error) {
+    if (controller.signal.aborted) throw new AggregateUnavailableError(`${label} timed out`);
+    throw error;
   } finally { clearTimeout(timer); }
+}
+
+// All registry and redirect requests (including their body reads in the
+// registry helper) receive the same abort signal.  This keeps the timeout
+// meaningful for the real fetch implementation rather than merely racing a
+// promise while an open socket survives in the background.
+function abortableFetch(fetchImpl, signal) {
+  return (url, options = {}) => fetchImpl(url, { ...options, signal });
 }
 function parse(bytes, path, findings) {
   try { return JSON.parse(bytes); } catch { finding(findings, "json", `${path} is not JSON`); return null; }
@@ -388,12 +408,18 @@ function mutationStatus(current, parents) {
   return parents.every((parent) => parent === null) ? "A" : "M";
 }
 
-function renamedPathStatus(root, commit, path) {
+function renamedPathStatus(root, commit, path, parents = actualParents(root, commit)) {
   try {
-    const rows = execFileSync("git", ["diff-tree", "--root", "-r", "--name-status", "--find-renames=40%", "--find-copies=40%", "--find-copies-harder", commit], { cwd: root, encoding: "utf8" }).trim().split("\n").filter(Boolean);
-    for (const row of rows) {
-      const [rawStatus, ...paths] = row.split("\t");
-      if (paths.includes(path) && ["R", "C"].includes(rawStatus?.slice(0, 1))) return rawStatus.slice(0, 1);
+    // git log's default merge formatting omits merge diffs.  Compare the
+    // merge tree to every actual parent explicitly so a foreign rename/copy
+    // introduced only by the merge cannot masquerade as an ordinary A.
+    const comparisons = parents.length ? parents.map((parent) => ["-m", "--no-commit-id", parent, commit]) : [["--root", commit]];
+    for (const comparison of comparisons) {
+      const rows = execFileSync("git", ["diff-tree", "-r", "--name-status", "--find-renames=40%", "--find-copies=40%", "--find-copies-harder", ...comparison], { cwd: root, encoding: "utf8" }).trim().split("\n").filter(Boolean);
+      for (const row of rows) {
+        const [rawStatus, ...paths] = row.split("\t");
+        if (paths.includes(path) && ["R", "C"].includes(rawStatus?.slice(0, 1))) return rawStatus.slice(0, 1);
+      }
     }
   } catch {
     // A missing diff is treated as an ordinary exact path comparison below.
@@ -412,10 +438,19 @@ function exactPathHistory(root, path, commits = reachableCommits(root)) {
     const parents = actualParents(root, commit);
     const current = pathBlob(root, commit, path);
     const parentBlobs = parents.map((parent) => pathBlob(root, parent, path));
-    const renameOrCopy = renamedPathStatus(root, commit, path);
-    const mutation = renameOrCopy ?? (parents.length > 1
-      ? (parentBlobs.some((parent) => parent === current) ? null : mutationStatus(current, parentBlobs))
-      : (parentBlobs[0] === current ? null : mutationStatus(current, parentBlobs)));
+    // A conventional merge may simply propagate the exact path from one
+    // parent.  That is not a second introduction even if copy detection sees
+    // an identical blob elsewhere on the other parent.  Only a merge whose
+    // path blob is novel against every actual parent is eligible for R/C
+    // detection (and therefore for immutable-history rejection).
+    const propagated = parents.length > 1 && parentBlobs.some((parent) => parent === current);
+    const renameOrCopy = propagated ? null : renamedPathStatus(root, commit, path, parents);
+    const mutation = propagated ? null : (renameOrCopy ?? (parents.length > 1
+      // A path created solely by a synthetic merge is not an introduction.
+      // The immutable authority must originate in one ordinary parent commit;
+      // otherwise a merge can manufacture a single apparently-valid A.
+      ? (current === null ? "D" : "M")
+      : (parentBlobs[0] === current ? null : mutationStatus(current, parentBlobs))));
     if (!mutation) continue;
     const bytes = pathBytes(root, commit, path, current) ?? parentBlobs.map((parent, index) => pathBytes(root, parents[index], path, parent)).find((value) => value !== null) ?? Buffer.alloc(0);
     history.push({ commit, status: mutation, sha256: hash(bytes) });
@@ -509,6 +544,11 @@ export function validateSatisfiedAggregateTranscript(transcript, { plan, closure
   let selected = null;
   try { selected = resolveAggregateClosure(plan, transcript.set, closure).selected; }
   catch { finding(findings, "closure", "transcript closure cannot resolve all nineteen frozen identities"); }
+  if (qualificationContracts !== null && selected) {
+    const expectedContracts = selected.packages.map((entry) => `${entry.name}@${entry.version}`).sort();
+    const actualContracts = object(qualificationContracts) ? Object.keys(qualificationContracts).sort() : [];
+    if (JSON.stringify(actualContracts) !== JSON.stringify(expectedContracts) || actualContracts.some((identity) => !object(qualificationContracts[identity]))) finding(findings, "qualification-contract", "offline transcript validation requires one immutable qualification transcript contract for every frozen package");
+  }
   if (!selected || selected.packages?.some((entry) => !entry.qualification || !entry.publication) || !Array.isArray(transcript.packages) || transcript.packages.length !== ALL_PACKAGE_RELEASE_ORDER.length) finding(findings, "packages", "a satisfied transcript requires exactly one closed qualified publication row for every frozen package");
   else for (let index = 0; index < selected.packages.length; index += 1) {
     const expected = selected.packages[index], actual = transcript.packages[index];
@@ -523,7 +563,7 @@ export function validateSatisfiedAggregateTranscript(transcript, { plan, closure
   if (!Array.isArray(transcript.repositoryRedirects) || transcript.repositoryRedirects.some((item) => !exactKeys(item, ["historicalRepository", "repository", "repositoryId", "kind"]) || item.repository !== "clossys/foundry" || item.historicalRepository !== "clossys/platform" || item.repositoryId !== 1325931929 || item.kind !== "verified") || JSON.stringify(stable(transcript.repositoryRedirects)) !== JSON.stringify(stable(canonicalRedirectProjection(transcript.repositoryRedirects))) || (expectedRepositoryRedirects !== null && JSON.stringify(stable(transcript.repositoryRedirects)) !== JSON.stringify(stable(canonicalRedirectProjection(expectedRepositoryRedirects))))) finding(findings, "repository-redirect", "transcript must retain the exact verified sealed historical repository redirect projection");
   if (!exactKeys(transcript.peerResolution, ["requested", "actual", "disposition"]) || JSON.stringify(stable(transcript.peerResolution.requested)) !== JSON.stringify(stable(plan?.peerResolution?.requested)) || JSON.stringify(stable(transcript.peerResolution.actual)) !== JSON.stringify(stable(plan?.peerResolution?.requested)) || JSON.stringify(stable(transcript.peerResolution.disposition)) !== JSON.stringify(stable(plan?.peerResolution?.disposition))) finding(findings, "peer-resolution", "transcript must retain the exact reviewed peer request, actual resolution, and conflict disposition");
   const expectedIdentities = selected?.packages?.map((entry) => `${entry.name}@${entry.version}`) ?? [];
-  if (!exactKeys(transcript.consumer, ["manifestSha256", "lockfileSha256", "controller", "singularController", "identities", "rollback"]) || !SHA256.test(transcript.consumer.manifestSha256 ?? "") || !SHA256.test(transcript.consumer.lockfileSha256 ?? "") || transcript.consumer.singularController !== true || JSON.stringify(transcript.consumer.identities) !== JSON.stringify(expectedIdentities) || transcript.consumer.controller !== expectedIdentities.find((identity) => identity.startsWith("@clossys/controller@")) || !exactKeys(transcript.consumer.rollback, ["packageAbsenceProven", "manifestRestored", "lockfileRestored", "identitiesRestored"]) || Object.values(transcript.consumer.rollback).some((value) => value !== true)) finding(findings, "rollback", "transcript must retain exact aggregate identity and complete real rollback evidence");
+  if (!exactKeys(transcript.consumer, ["manifestSha256", "lockfileSha256", "treeSha256", "controller", "singularController", "identities", "rollback"]) || !SHA256.test(transcript.consumer.manifestSha256 ?? "") || !SHA256.test(transcript.consumer.lockfileSha256 ?? "") || !SHA256.test(transcript.consumer.treeSha256 ?? "") || transcript.consumer.singularController !== true || JSON.stringify(transcript.consumer.identities) !== JSON.stringify(expectedIdentities) || transcript.consumer.controller !== expectedIdentities.find((identity) => identity.startsWith("@clossys/controller@")) || !exactKeys(transcript.consumer.rollback, ["packageAbsenceProven", "manifestRestored", "lockfileRestored", "treeRestored", "identitiesRestored"]) || Object.values(transcript.consumer.rollback).some((value) => value !== true)) finding(findings, "rollback", "transcript must retain exact aggregate identity and complete real rollback evidence");
   const operationKeys = ["id", "expectedExitCode", "observedExitCode", "signal", "launchError", "stdoutSha256", "stderrSha256"];
   if (!Array.isArray(transcript.operations) || transcript.operations.length !== 3 || transcript.operations.map((item) => item?.id).join("\0") !== "install\0uninstall\0reinstall" || transcript.operations.some((item) => !exactKeys(item, operationKeys) || item.expectedExitCode !== 0 || item.observedExitCode !== 0 || item.signal !== null || item.launchError !== false || !SHA256.test(item.stdoutSha256 ?? "") || !SHA256.test(item.stderrSha256 ?? ""))) finding(findings, "aggregate-operations", "transcript must retain exactly one successful real aggregate install, uninstall, and reinstall operation");
   const required = ["install", "exports", "framework", "bins", "cases", "optionalPeers", "rollback"];
@@ -546,7 +586,7 @@ export function validateSatisfiedAggregateTranscript(transcript, { plan, closure
   const expectedOptional = (plan?.optionalPeerMatrix ?? []).filter((row) => row.set === transcript.set).flatMap((row) => row.peers.flatMap((peer) => Object.entries(peer.outcomes).map(([specifier, outcome]) => ({ package: row.name, version: row.version, peer: peer.peer, specifier, outcome, evaluator: frameworkSpecifiers.has(`${row.name}@${row.version}\0${specifier}`) ? (peer.peer === "next" ? "next-bin-absent" : "next-build") : "node-direct" }))));
   const optionalKey = (item) => JSON.stringify({ package: item.package, version: item.version, peer: item.peer, specifier: item.specifier, outcome: item.outcome, evaluator: item.evaluator });
   const restoration = transcript.optionalPeerObservations?.[0]?.restoration;
-  if (!Array.isArray(transcript.optionalPeerObservations) || transcript.optionalPeerObservations.some((item) => !exactKeys(item, ["package", "version", "peer", "specifier", "outcome", "evaluator", "result", "restoration"]) || !["node-direct", "next-build", "next-bin-absent"].includes(item.evaluator) || !exactKeys(item.result, ["expectedOutcome", "observedExitCode", "signal", "launchError", "timedOut", "stdoutSha256", "stderrSha256"]) || item.result.expectedOutcome !== item.outcome || !Number.isInteger(item.result.observedExitCode) || (item.outcome === "imports" ? item.result.observedExitCode !== 0 : item.result.observedExitCode === 0) || item.result.signal !== null || item.result.launchError !== false || item.result.timedOut !== false || !SHA256.test(item.result.stdoutSha256 ?? "") || !SHA256.test(item.result.stderrSha256 ?? "") || !exactKeys(item.restoration, ["manifestSha256", "lockfileSha256", "treeSha256"]) || !SHA256.test(item.restoration.manifestSha256 ?? "") || !SHA256.test(item.restoration.lockfileSha256 ?? "") || !SHA256.test(item.restoration.treeSha256 ?? "") || item.restoration.manifestSha256 !== transcript.consumer?.manifestSha256 || item.restoration.lockfileSha256 !== transcript.consumer?.lockfileSha256 || JSON.stringify(item.restoration) !== JSON.stringify(restoration)) || JSON.stringify(transcript.optionalPeerObservations.map(optionalKey).sort()) !== JSON.stringify(expectedOptional.map(optionalKey).sort())) finding(findings, "optional-peer-observations", "aggregate transcript must retain the exact unique immutable optional-peer evaluator, result, and restoration multiset");
+  if (!Array.isArray(transcript.optionalPeerObservations) || transcript.optionalPeerObservations.some((item) => !exactKeys(item, ["package", "version", "peer", "specifier", "outcome", "evaluator", "result", "restoration"]) || !["node-direct", "next-build", "next-bin-absent"].includes(item.evaluator) || !exactKeys(item.result, ["expectedOutcome", "observedExitCode", "signal", "launchError", "timedOut", "stdoutSha256", "stderrSha256"]) || item.result.expectedOutcome !== item.outcome || !Number.isInteger(item.result.observedExitCode) || (item.outcome === "imports" ? item.result.observedExitCode !== 0 : item.result.observedExitCode === 0) || item.result.signal !== null || item.result.launchError !== false || item.result.timedOut !== false || !SHA256.test(item.result.stdoutSha256 ?? "") || !SHA256.test(item.result.stderrSha256 ?? "") || !exactKeys(item.restoration, ["manifestSha256", "lockfileSha256", "treeSha256"]) || !SHA256.test(item.restoration.manifestSha256 ?? "") || !SHA256.test(item.restoration.lockfileSha256 ?? "") || !SHA256.test(item.restoration.treeSha256 ?? "") || item.restoration.manifestSha256 !== transcript.consumer?.manifestSha256 || item.restoration.lockfileSha256 !== transcript.consumer?.lockfileSha256 || item.restoration.treeSha256 !== transcript.consumer?.treeSha256 || JSON.stringify(item.restoration) !== JSON.stringify(restoration)) || JSON.stringify(transcript.optionalPeerObservations.map(optionalKey).sort()) !== JSON.stringify(expectedOptional.map(optionalKey).sort())) finding(findings, "optional-peer-observations", "aggregate transcript must retain the exact unique immutable optional-peer evaluator, result, and restoration multiset");
   const copy = structuredClone(transcript); delete copy.canonicalSha256;
   if (!SHA256.test(transcript.canonicalSha256 ?? "") || transcript.canonicalSha256 !== hash(JSON.stringify(stable(copy)))) finding(findings, "canonical", "transcript canonical digest must hash the closed content excluding itself");
   return findings;
@@ -648,8 +688,16 @@ export async function runAggregateOptionalPeerMatrix({ consumer, matrix, env, fr
     if (roots.length === 0) throw new Error(`${row.name} optional peer ${peerRow.peer} is not physically installed before omission`);
     const moved = [];
     const pending = [];
+    // Do not leave renamed package directories beneath node_modules: the
+    // physical-root scanner deliberately discovers package.json by content,
+    // so a `next.foundry-omitted` backup would invalidate its own absence
+    // proof.  This scratch directory is private to this one serial omission.
+    const omittedRoot = await mkdtemp(join(consumer, ".foundry-aggregate-omitted-"));
     try {
-      for (const root of roots.sort((a, b) => b.length - a.length)) { const hidden = `${root}.foundry-omitted`; await rename(root, hidden); moved.push([root, hidden]); }
+      for (const [index, root] of roots.sort((a, b) => b.length - a.length).entries()) {
+        const hidden = join(omittedRoot, String(index));
+        await rename(root, hidden); moved.push([root, hidden]);
+      }
       const framework = frameworkByPackage.get(`${row.name}@${row.version}`) ?? { client: [], server: [], proxy: [], all: [] };
       for (const [specifier, expected] of Object.entries(peerRow.outcomes)) {
         if (framework.all.includes(specifier)) continue;
@@ -684,7 +732,8 @@ export async function runAggregateOptionalPeerMatrix({ consumer, matrix, env, fr
         for (const specifier of framework.all) pending.push({ package: row.name, version: row.version, peer: peerRow.peer, specifier, outcome: actual, evaluator: peerRow.peer === "next" ? "next-bin-absent" : "next-build", result: { expectedOutcome: [...expected][0], observedExitCode: result.exitCode, signal: result.signal ?? null, launchError: false, timedOut: false, stdoutSha256: hash(result.stdout), stderrSha256: hash(result.stderr) } });
       }
     } finally {
-      for (const [root, hidden] of moved.reverse()) await rename(hidden, root);
+      try { for (const [root, hidden] of moved.reverse()) await rename(hidden, root); }
+      finally { await rm(omittedRoot, { recursive: true, force: true }); }
     }
     const after = { manifest: hash(await readFile(join(consumer, "package.json"))), lock: hash(await readFile(join(consumer, "package-lock.json"))), tree: await treeDigest(join(consumer, "node_modules")) };
     if (JSON.stringify(before) !== JSON.stringify(after)) throw new Error(`${row.name} omission ${peerRow.peer} did not restore aggregate consumer bytes`);
@@ -728,11 +777,11 @@ export async function runAggregatePublicNpmCanary({ root, record, set = "oidc-su
     if (historical) {
       const required = { ...historical, kind: "verified" };
       if (!requiredRepositoryRedirects.some((item) => JSON.stringify(item) === JSON.stringify(required))) requiredRepositoryRedirects.push(required);
-      const redirect = await boundedExternal(`repository redirect ${historical.historicalRepository}`, () => verifyRedirect({ ...historical, fetchImpl }));
+      const redirect = await boundedExternal(`repository redirect ${historical.historicalRepository}`, (signal) => verifyRedirect({ ...historical, fetchImpl: abortableFetch(fetchImpl, signal) }));
       if (redirect?.kind !== "verified") throw new Error(`${entry.name}@${entry.version} historical repository redirect proof did not verify`);
       if (!repositoryRedirects.some((item) => JSON.stringify(item) === JSON.stringify({ ...historical, kind: redirect.kind }))) repositoryRedirects.push({ ...historical, kind: redirect.kind });
     }
-    const result = await boundedExternal(`registry verification ${entry.name}@${entry.version}`, () => verifyArtifact({ registry: PUBLIC_NPM_REGISTRY, name: entry.name, version: entry.version, repository, fetchImpl }));
+    const result = await boundedExternal(`registry verification ${entry.name}@${entry.version}`, (signal) => verifyArtifact({ registry: PUBLIC_NPM_REGISTRY, name: entry.name, version: entry.version, repository, fetchImpl: abortableFetch(fetchImpl, signal) }));
     if (result.kind === "unreachable") throw new AggregateUnavailableError(`${entry.name}@${entry.version} anonymous registry verification is unavailable`);
     if (result.kind !== "verified") throw new Error(`${entry.name}@${entry.version} anonymous registry verification did not complete: ${result.kind}`);
     const qualification = JSON.parse(read(entry.qualification.path));
@@ -781,7 +830,8 @@ export async function runAggregatePublicNpmCanary({ root, record, set = "oidc-su
     const operations = [];
     const install = await runProcess("npm", ["install", "--ignore-scripts", "--save-exact"], { cwd: scratch, env, timeout: 180_000 });
     operations.push(aggregateNpmOperation("install", install));
-    if (install.exitCode !== 0 || install.timedOut || install.signal || install.launchError) throw new Error("aggregate npm install execution failed");
+    if (install.timedOut) throw new AggregateUnavailableError("aggregate npm install timed out");
+    if (install.exitCode !== 0 || install.signal || install.launchError) throw new Error("aggregate npm install execution failed");
     const before = { manifest: await readFile(join(scratch, "package.json"), "utf8"), lock: await readFile(join(scratch, "package-lock.json"), "utf8"), tree: await treeDigest(join(scratch, "node_modules")) };
     const declaredConsumer = JSON.parse(before.manifest);
     const installedForOptionalPolicy = [];
@@ -800,14 +850,23 @@ export async function runAggregatePublicNpmCanary({ root, record, set = "oidc-su
     }
     const actualPeerResolution = {};
     for (const [name, expectedVersion] of Object.entries(peerInstall)) {
-      const installedPeer = JSON.parse(await readFile(join(scratch, "node_modules", ...name.split("/"), "package.json"), "utf8"));
-      if (installedPeer.name !== name || installedPeer.version !== expectedVersion) throw new Error(`aggregate peer ${name} did not resolve its reviewed exact version`);
-      actualPeerResolution[name] = installedPeer.version;
+      const direct = JSON.parse(await readFile(join(scratch, "node_modules", ...name.split("/"), "package.json"), "utf8"));
+      if (direct.name !== name || direct.version !== expectedVersion) throw new Error(`aggregate peer ${name} did not resolve its reviewed exact top-level version`);
+      const roots = await installedPackageRoots(join(scratch, "node_modules"), name);
+      if (roots.length === 0) throw new Error(`aggregate peer ${name} is not physically installed`);
+      const installedPeers = await Promise.all(roots.map(async (packageRoot) => JSON.parse(await readFile(join(packageRoot, "package.json"), "utf8"))));
+      if (installedPeers.some((installedPeer) => installedPeer.name !== name || installedPeer.version !== expectedVersion)) throw new Error(`aggregate peer ${name} has a conflicting nested physical resolution`);
+      actualPeerResolution[name] = expectedVersion;
     }
     const controller = JSON.parse(await readFile(join(scratch, "node_modules", "@clossys", "controller", "package.json"), "utf8"));
     const expectedController = selected.packages.find((entry) => entry.packageKey === "controller").version;
     if (controller.name !== "@clossys/controller" || controller.version !== expectedController) throw new Error("aggregate consumer did not resolve the one exact Controller identity");
-    const dependencyTree = JSON.parse(execFileSync("npm", ["ls", "@clossys/controller", "--all", "--long", "--json"], { cwd: scratch, env, encoding: "utf8", timeout: AGGREGATE_EXTERNAL_TIMEOUT_MS }));
+    let dependencyTree;
+    try { dependencyTree = JSON.parse(execFileSync("npm", ["ls", "@clossys/controller", "--all", "--long", "--json"], { cwd: scratch, env, encoding: "utf8", timeout: AGGREGATE_EXTERNAL_TIMEOUT_MS })); }
+    catch (error) {
+      if (error?.code === "ETIMEDOUT" || error?.signal === "SIGTERM") throw new AggregateUnavailableError("aggregate npm ls timed out");
+      throw error;
+    }
     const controllers = controllerPhysicalIdentities(dependencyTree);
     if (controllers.length !== 1 || controllers[0].name !== "@clossys/controller" || controllers[0].version !== expectedController) throw new Error("aggregate consumer did not resolve one singular Controller dependency identity");
     const publisher = selected.packages.find((entry) => entry.packageKey === "publisher");
@@ -865,11 +924,20 @@ export async function runAggregatePublicNpmCanary({ root, record, set = "oidc-su
       contexts.all = [...new Set([...contexts.client, ...contexts.server, ...contexts.proxy])].sort();
       return [`${run.candidate.name}@${run.candidate.version}`, contexts];
     }));
-    const optionalPeerObservations = await executeOptionalPeers({ consumer: scratch, matrix: record.optionalPeerMatrix.filter((row) => row.set === set), env, frameworkByPackage });
+    const optionalPeerObservations = await executeOptionalPeers({ consumer: scratch, matrix: record.optionalPeerMatrix.filter((row) => row.set === set), env, frameworkByPackage, baseline: before });
+    if (!Array.isArray(optionalPeerObservations) || optionalPeerObservations.some((item) => item?.restoration?.manifestSha256 !== hash(before.manifest) || item?.restoration?.lockfileSha256 !== hash(before.lock) || item?.restoration?.treeSha256 !== before.tree)) throw new Error("optional-peer omission did not retain the exact shared consumer restoration projection");
     const uninstall = await runProcess("npm", ["uninstall", "--ignore-scripts", ...selected.packages.map((entry) => entry.name)], { cwd: scratch, env, timeout: 180_000 });
     operations.push(aggregateNpmOperation("uninstall", uninstall));
-    if (uninstall.exitCode !== 0 || uninstall.timedOut || uninstall.signal || uninstall.launchError) throw new Error("aggregate npm uninstall execution failed");
+    if (uninstall.timedOut) throw new AggregateUnavailableError("aggregate npm uninstall timed out");
+    if (uninstall.exitCode !== 0 || uninstall.signal || uninstall.launchError) throw new Error("aggregate npm uninstall execution failed");
     for (const entry of selected.packages) {
+      const direct = join(scratch, "node_modules", ...entry.name.split("/"));
+      try {
+        await lstat(direct);
+        throw new Error(`${entry.name} remained directly resolvable after aggregate uninstall`);
+      } catch (error) {
+        if (error?.code !== "ENOENT") throw error;
+      }
       const remaining = await installedPackageRoots(join(scratch, "node_modules"), entry.name);
       if (remaining.length) throw new Error(`${entry.name} remained physically installed after aggregate uninstall`);
     }
@@ -877,7 +945,8 @@ export async function runAggregatePublicNpmCanary({ root, record, set = "oidc-su
     await writeFile(join(scratch, "package-lock.json"), before.lock);
     const reinstall = await runProcess("npm", ["install", "--ignore-scripts", "--save-exact"], { cwd: scratch, env, timeout: 180_000 });
     operations.push(aggregateNpmOperation("reinstall", reinstall));
-    if (reinstall.exitCode !== 0 || reinstall.timedOut || reinstall.signal || reinstall.launchError) throw new Error("aggregate npm reinstall execution failed");
+    if (reinstall.timedOut) throw new AggregateUnavailableError("aggregate npm reinstall timed out");
+    if (reinstall.exitCode !== 0 || reinstall.signal || reinstall.launchError) throw new Error("aggregate npm reinstall execution failed");
     const after = { manifest: await readFile(join(scratch, "package.json"), "utf8"), lock: await readFile(join(scratch, "package-lock.json"), "utf8"), tree: await treeDigest(join(scratch, "node_modules")) };
     if (before.manifest !== after.manifest || before.lock !== after.lock || before.tree !== after.tree) throw new Error("aggregate uninstall/reinstall did not restore byte-identical manifest, lockfile, and dependency tree");
     for (const entry of selected.packages) {
@@ -892,7 +961,7 @@ export async function runAggregatePublicNpmCanary({ root, record, set = "oidc-su
       repositoryRedirects,
       peerResolution: { requested: record.peerResolution.requested, actual: Object.fromEntries(Object.entries(actualPeerResolution).sort()), disposition: record.peerResolution.disposition },
       operations,
-      consumer: { manifestSha256: hash(before.manifest), lockfileSha256: hash(before.lock), controller: `${controller.name}@${controller.version}`, singularController: true, identities: selected.packages.map((entry) => `${entry.name}@${entry.version}`), rollback: { packageAbsenceProven: true, manifestRestored: true, lockfileRestored: true, identitiesRestored: true } },
+      consumer: { manifestSha256: hash(before.manifest), lockfileSha256: hash(before.lock), treeSha256: before.tree, controller: `${controller.name}@${controller.version}`, singularController: true, identities: selected.packages.map((entry) => `${entry.name}@${entry.version}`), rollback: { packageAbsenceProven: true, manifestRestored: true, lockfileRestored: true, treeRestored: true, identitiesRestored: true } },
       packages: runs.map((run, index) => ({ name: artifacts[index].entry.name, version: artifacts[index].entry.version, qualification: artifacts[index].entry.qualification, publication: artifacts[index].entry.publication, served: { name: artifacts[index].entry.name, version: artifacts[index].entry.version, packageManifestSha256: artifacts[index].evidence.packedManifestSha256, tarball: { sha1: artifacts[index].evidence.shasum, sha256: artifacts[index].evidence.sha256, sha512: artifacts[index].evidence.sha512 } }, installedManifestSha256: run.coverage.installedManifestSha256, run })),
       optionalPeerObservations,
       dimensions: [

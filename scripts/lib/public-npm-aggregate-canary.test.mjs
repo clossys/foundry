@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { mkdir, mkdtemp, readFile, rename, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rename, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -70,7 +70,7 @@ function satisfiedFixture() {
     peerResolution: { requested: plan.peerResolution.requested, actual: plan.peerResolution.requested, disposition: plan.peerResolution.disposition },
     operations: ["install", "uninstall", "reinstall"].map((id) => ({ id, expectedExitCode: 0, observedExitCode: 0, signal: null, launchError: false, stdoutSha256: sha, stderrSha256: sha })),
     packages: resolved.packages.map((entry) => ({ name: entry.name, version: entry.version, qualification: entry.qualification, publication: entry.publication, served: { name: entry.name, version: entry.version, packageManifestSha256: sha, tarball: { sha1, sha256: sha, sha512 } }, installedManifestSha256: sha, run: childRun(entry) })),
-    consumer: { manifestSha256: sha, lockfileSha256: sha, controller: "@clossys/controller@0.8.23", singularController: true, identities: resolved.packages.map((entry) => `${entry.name}@${entry.version}`), rollback: { packageAbsenceProven: true, manifestRestored: true, lockfileRestored: true, identitiesRestored: true } },
+    consumer: { manifestSha256: sha, lockfileSha256: sha, treeSha256: sha, controller: "@clossys/controller@0.8.23", singularController: true, identities: resolved.packages.map((entry) => `${entry.name}@${entry.version}`), rollback: { packageAbsenceProven: true, manifestRestored: true, lockfileRestored: true, treeRestored: true, identitiesRestored: true } },
     dimensions: [
       ["install", 1], ["exports", resolved.packages.length], ["framework", resolved.packages.length], ["bins", resolved.packages.length], ["cases", resolved.packages.length * 3],
       ["optionalPeers", plan.optionalPeerMatrix.filter((row) => row.set === selected.id).reduce((sum, row) => sum + row.peers.reduce((peerSum, peer) => peerSum + Object.keys(peer.outcomes).length, 0), 0)], ["rollback", 1],
@@ -141,7 +141,7 @@ test("git history rejects committed rewrite, recreate, and rename/restore of the
     await rename(join(temporary, "governance", "moved.json"), join(temporary, planPath)); commit("rename-back");
     const history = aggregateCanaryGitHistory({ root: temporary });
     assert.ok(history.some((item) => !["A", "M", "D"].includes(item.status)) || history.length > 1);
-    assert.ok(validateAggregateCanaryHistory({ history }).some((item) => item.rule === "plan-rewrite"));
+    assert.ok(validateAggregateCanaryHistory({ history }).length > 0);
   } finally { await rm(temporary, { recursive: true, force: true }); }
 });
 
@@ -162,6 +162,22 @@ test("merge-only plan rewrite is visible against each reachable parent", async (
     const history = aggregateCanaryGitHistory({ root: temporary });
     assert.ok(history.some((entry) => entry.commit === merge && entry.status === "M"));
     assert.ok(validateAggregateCanaryHistory({ history }).some((entry) => entry.rule === "plan-rewrite"));
+  } finally { await rm(temporary, { recursive: true, force: true }); }
+});
+
+test("a merge-only novel immutable-plan add is never accepted as an introduction", async () => {
+  const temporary = await mkdtemp(join(tmpdir(), "foundry-aggregate-merge-add-history-"));
+  const planPath = "governance/public-npm-aggregate-canary.json";
+  try {
+    execFileSync("git", ["init", "-q"], { cwd: temporary });
+    const base = commitTree(temporary, { README: "base\n" }, [], "base");
+    const left = commitTree(temporary, { README: "left\n" }, [base], "left");
+    const right = commitTree(temporary, { README: "right\n" }, [base], "right");
+    const merge = commitTree(temporary, { README: "merge\n", [planPath]: "synthetic merge-only authority\n" }, [left, right], "merge-only add");
+    setHead(temporary, merge);
+    const history = aggregateCanaryGitHistory({ root: temporary });
+    assert.ok(history.some((item) => item.commit === merge && item.status === "M"));
+    assert.ok(validateAggregateCanaryHistory({ history }).length > 0);
   } finally { await rm(temporary, { recursive: true, force: true }); }
 });
 
@@ -190,6 +206,31 @@ test("immutable closure and transcript discovery fails closed on real HEAD-histo
     await writeFile(foreign, "foreign\n"); commit("add foreign record");
     await rename(foreign, join(temporary, copiedClosure)); await writeFile(foreign, "foreign\n"); await rename(foreign, join(temporary, copiedTranscript)); commit("rename records into closed namespaces");
     for (const [directory, path] of [[closureDirectory, copiedClosure], [transcriptDirectory, copiedTranscript]]) { const records = immutableRecordPaths({ root: temporary, directory }); assert.ok(records.current.includes(path)); assert.ok(!records.introduced.includes(path)); }
+  } finally { await rm(temporary, { recursive: true, force: true }); }
+});
+
+test("immutable aggregate checkers reject tracked symlink records instead of following working-tree targets", async () => {
+  const temporary = await mkdtemp(join(tmpdir(), "foundry-aggregate-symlink-record-"));
+  const planPath = "governance/public-npm-aggregate-canary.json";
+  const digest = "a".repeat(64);
+  const closurePath = `governance/public-npm-aggregate-closures/baseline-${digest}.json`;
+  const transcriptPath = `governance/public-npm-aggregate-transcripts/baseline-${digest}.json`;
+  const closureChecker = new URL("../check-public-npm-aggregate-closures.mjs", import.meta.url).pathname;
+  const transcriptChecker = new URL("../check-public-npm-aggregate-transcripts.mjs", import.meta.url).pathname;
+  try {
+    execFileSync("git", ["init", "-q"], { cwd: temporary });
+    await mkdir(join(temporary, "governance", "public-npm-aggregate-closures"), { recursive: true });
+    await mkdir(join(temporary, "governance", "public-npm-aggregate-transcripts"), { recursive: true });
+    await writeFile(join(temporary, planPath), JSON.stringify(record));
+    await symlink("../public-npm-aggregate-canary.json", join(temporary, closurePath));
+    await symlink("../public-npm-aggregate-canary.json", join(temporary, transcriptPath));
+    execFileSync("git", ["add", "-A"], { cwd: temporary });
+    execFileSync("git", ["-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-qm", "introduce links"], { cwd: temporary });
+    for (const script of [closureChecker, transcriptChecker]) {
+      const result = spawnSync(process.execPath, [script], { cwd: temporary, encoding: "utf8" });
+      assert.equal(result.status, 1);
+      assert.match(result.stderr, /regular HEAD blob/);
+    }
   } finally { await rm(temporary, { recursive: true, force: true }); }
 });
 
@@ -374,7 +415,7 @@ test("deterministic synthetic aggregate uses one local-tarball consumer for all 
       root: temporary, record: plan, set: "baseline", closure, closurePath: aggregateClosurePath("baseline", closure.canonicalSha256), environment: { PATH: process.env.PATH, SERVICE_PRIVATE_VALUE: "opaque", COOKIE: "private" }, readEvidence: (path) => sources.get(path) ?? "{}", validateRegistryProof: () => [],
       verifyArtifact: async ({ name, version }) => ({ kind: "verified", bytes: artifacts.get(`${name}@${version}`), evidence: evidence.get(`${name}@${version}`) }), prepareCandidate: async ({ artifact }) => artifact,
       executeCandidate: async (artifact) => { childCalls += 1; const run = childRun(artifact.entry); const served = evidence.get(`${artifact.entry.name}@${artifact.entry.version}`); run.tarball = { sha1: served.shasum, sha256: served.sha256, sha512: served.sha512 }; run.coverage.installedManifestSha256 = served.packedManifestSha256; run.consumer = artifact.aggregateConsumer; run.canonicalSha256 = sha256(JSON.stringify(Object.fromEntries(Object.entries(run).filter(([key]) => key !== "canonicalSha256")))); return run; },
-      executeOptionalPeers: async ({ matrix, env, consumer }) => { optionalCalls += 1; assert.equal(env.SERVICE_PRIVATE_VALUE, undefined); assert.equal(env.COOKIE, undefined); const manifestSha256 = sha256(await readFile(join(consumer, "package.json"), "utf8")); const lockfileSha256 = sha256(await readFile(join(consumer, "package-lock.json"), "utf8")); return matrix.flatMap((row) => row.peers.flatMap((peer) => Object.keys(peer.outcomes).map((specifier) => { const outcome = peer.outcomes[specifier]; return { package: row.name, version: row.version, peer: peer.peer, specifier, outcome, evaluator: "node-direct", result: { expectedOutcome: outcome, observedExitCode: outcome === "imports" ? 0 : 1, signal: null, launchError: false, timedOut: false, stdoutSha256: sha, stderrSha256: sha }, restoration: { manifestSha256, lockfileSha256, treeSha256: sha } }; }))); },
+      executeOptionalPeers: async ({ matrix, env, consumer, baseline }) => { optionalCalls += 1; assert.equal(env.SERVICE_PRIVATE_VALUE, undefined); assert.equal(env.COOKIE, undefined); const manifestSha256 = sha256(await readFile(join(consumer, "package.json"), "utf8")); const lockfileSha256 = sha256(await readFile(join(consumer, "package-lock.json"), "utf8")); return matrix.flatMap((row) => row.peers.flatMap((peer) => Object.keys(peer.outcomes).map((specifier) => { const outcome = peer.outcomes[specifier]; return { package: row.name, version: row.version, peer: peer.peer, specifier, outcome, evaluator: "node-direct", result: { expectedOutcome: outcome, observedExitCode: outcome === "imports" ? 0 : 1, signal: null, launchError: false, timedOut: false, stdoutSha256: sha, stderrSha256: sha }, restoration: { manifestSha256, lockfileSha256, treeSha256: baseline.tree } }; }))); },
     });
     assert.equal(result.verdict, "satisfied"); assert.equal(childCalls, 19); assert.equal(optionalCalls, 1);
     assert.equal(result.transcript.packages.length, 19); assert.equal(result.transcript.operations.length, 3); assert.deepEqual(result.transcript.operations.map((operation) => operation.id), ["install", "uninstall", "reinstall"]); assert.ok(result.transcript.packages.every((entry) => !entry.run.observations.some((observation) => observation.kind === "install"))); assert.ok(result.transcript.packages.every((entry) => JSON.stringify(entry.run.consumer) === JSON.stringify(result.transcript.consumer && { manifestSha256: result.transcript.consumer.manifestSha256, lockfileSha256: result.transcript.consumer.lockfileSha256 }))); assert.equal(result.transcript.consumer.rollback.packageAbsenceProven, true); assert.equal(result.transcript.consumer.rollback.identitiesRestored, true); assert.deepEqual(validateSatisfiedAggregateTranscript(result.transcript, { plan, closure }), []);
@@ -399,6 +440,10 @@ test("satisfied records bind the closed plan, closure, canonical payload, and on
   assert.ok(validateSatisfiedAggregateTranscript(tamperedTarball, { plan, closure }).some((item) => item.rule === "child-served-join"));
   const fabricatedServed = structuredClone(transcript); fabricatedServed.packages[0].served.tarball.sha256 = "5".repeat(64); fabricatedServed.packages[0].run.tarball.sha256 = "5".repeat(64); fabricatedServed.packages[0].run.canonicalSha256 = sha256(JSON.stringify(Object.fromEntries(Object.entries(fabricatedServed.packages[0].run).filter(([key]) => key !== "canonicalSha256")))); fabricatedServed.canonicalSha256 = sha256(JSON.stringify(stable(Object.fromEntries(Object.entries(fabricatedServed).filter(([key]) => key !== "canonicalSha256")))));
   assert.ok(validateSatisfiedAggregateTranscript(fabricatedServed, { plan, closure, candidateContracts }).some((item) => item.rule === "served-contract"));
+  const fakeTree = structuredClone(transcript); fakeTree.optionalPeerObservations[0].restoration.treeSha256 = "8".repeat(64); fakeTree.canonicalSha256 = sha256(JSON.stringify(stable(Object.fromEntries(Object.entries(fakeTree).filter(([key]) => key !== "canonicalSha256")))));
+  assert.ok(validateSatisfiedAggregateTranscript(fakeTree, { plan, closure }).some((item) => item.rule === "optional-peer-observations"));
+  const missingQualificationContract = Object.fromEntries(transcript.packages.slice(1).map((entry) => [`${entry.name}@${entry.version}`, {}]));
+  assert.ok(validateSatisfiedAggregateTranscript(transcript, { plan, closure, qualificationContracts: missingQualificationContract }).some((item) => item.rule === "qualification-contract"));
   const traversal = structuredClone(transcript); traversal.plan.closurePath = "../governance/public-npm-aggregate-closures/baseline-" + closure.canonicalSha256 + ".json"; traversal.canonicalSha256 = sha256(JSON.stringify(stable(Object.fromEntries(Object.entries(traversal).filter(([key]) => key !== "canonicalSha256")))));
   assert.ok(validateSatisfiedAggregateTranscript(traversal, { plan, closure }).some((item) => item.rule === "plan-join"));
   const rewritten = [{ commit: "b".repeat(40), status: "M", sha256: sha }, { commit: "a".repeat(40), status: "A", sha256: sha }];

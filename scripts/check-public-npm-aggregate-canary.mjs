@@ -23,5 +23,11 @@ if (findings.length) {
   for (const item of findings) console.error(`- [${item.rule}] ${item.message}`);
   process.exitCode = 1;
 } else {
-  console.log(`PUBLIC NPM AGGREGATE CANARY RECORD OK — ${record.sets.length} frozen 19-package identity set(s); publication closures are absent, so no live public-canary pass is claimed.`);
+  const closureCount = closureRecords.current.length, transcriptCount = transcriptRecords.current.length;
+  const state = closureCount === 0 && transcriptCount === 0
+    ? "publication closures are absent, so no live public-canary pass is claimed"
+    : transcriptCount === 0
+      ? `${closureCount} immutable publication closure(s) are present; no satisfied aggregate transcript is retained`
+      : `${closureCount} immutable closure(s) and ${transcriptCount} satisfied aggregate transcript(s) are structurally valid`;
+  console.log(`PUBLIC NPM AGGREGATE CANARY RECORD OK — ${record.sets.length} frozen 19-package identity set(s); ${state}.`);
 }

@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
 
 import { AGGREGATE_CANARY_PATH, AGGREGATE_CLOSURE_DIRECTORY, aggregateClosurePath, immutableRecordHistory, immutableRecordPaths, isAggregateClosurePath, validateAggregateClosure, validateSatisfiedTranscriptHistory } from "./lib/public-npm-aggregate-canary.mjs";
 
 const root = process.cwd();
-const plan = JSON.parse(readFileSync(join(root, AGGREGATE_CANARY_PATH), "utf8"));
+const readHead = (path) => execFileSync("git", ["show", `HEAD:${path}`], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+const regularHead = (path) => execFileSync("git", ["ls-tree", "HEAD", "--", path], { cwd: root, encoding: "utf8" }).startsWith("100644 ");
+const plan = JSON.parse(readHead(AGGREGATE_CANARY_PATH));
 const records = immutableRecordPaths({ root, directory: AGGREGATE_CLOSURE_DIRECTORY });
 const files = records.introduced;
 const findings = [];
@@ -14,9 +14,13 @@ for (const path of records.current) if (!records.introduced.includes(path)) find
 for (const path of files) {
   if (!records.current.includes(path)) { findings.push({ rule: "closure-presence", message: `${path} was introduced as immutable closure evidence but is absent at HEAD` }); continue; }
   try {
-    const closure = JSON.parse(readFileSync(join(root, path), "utf8"));
+    if (!regularHead(path)) throw new Error("immutable closure must be a regular HEAD blob");
+    const closure = JSON.parse(readHead(path));
     if (!isAggregateClosurePath(path) || path !== aggregateClosurePath(closure.set, closure.canonicalSha256)) findings.push({ rule: "closure-path", message: `${path} is not content-addressed by its closed closure digest` });
-    findings.push(...validateAggregateClosure(plan, closure, { path, read: (evidencePath) => readFileSync(join(root, evidencePath), "utf8") }));
+    findings.push(...validateAggregateClosure(plan, closure, { path, read: (evidencePath) => {
+      if (!regularHead(evidencePath)) throw new Error("immutable closure evidence must be a regular HEAD blob");
+      return readHead(evidencePath);
+    } }));
     findings.push(...validateSatisfiedTranscriptHistory({ path: path.replace(AGGREGATE_CLOSURE_DIRECTORY, "governance/public-npm-aggregate-transcripts"), history: immutableRecordHistory({ root, path }) }));
   } catch (error) { findings.push({ rule: "closure", message: `${path}: ${error.message}` }); }
 }
