@@ -139,29 +139,27 @@ test("later-publication requires a strict qualification-introduction ancestor", 
   assert.throws(() => strictQualificationIntroductionAncestor(root, "not-a-commit", publicationIntroduction), /commit hashes/);
 });
 
-test("later-publication v1 rejects trusted-publisher labels and provenance even when all evidence strings agree", () => {
+test("trusted-publication v2 binds immutable provenance to the qualified served bytes", () => {
   const trusted = source();
+  trusted.schemaVersion = 2;
+  trusted.kind = "foundry-trusted-publication-v2";
   trusted.publication.mode = "trusted-publisher";
   trusted.publication.reference = "https://github.com/clossys/foundry/actions/runs/123";
-  trusted.publication.provenance = { provider: "github-actions", workflow: ".github/workflows/publish.yml", run: trusted.publication.reference };
-  assert.ok(rules(trusted).includes("trusted-publisher-unsupported"));
-  assert.ok(rules(trusted).includes("publication-provenance"));
-
-  // These fields already join the same package, source, qualification, and
-  // registry bytes. A canonical-looking workflow/run label cannot upgrade v1.
-  assert.deepEqual(trusted.candidate, qualification.candidate);
-  assert.deepEqual(trusted.source, Object.fromEntries(Object.keys(trusted.source).map((key) => [key, qualification[key]])));
-  assert.deepEqual(trusted.registryProof.evidence.name, trusted.candidate.name);
-  assert.deepEqual(trusted.registryProof.evidence.version, trusted.candidate.version);
-
-  const spoofedOwner = source();
-  spoofedOwner.publication.reference = "https://github.com/clossys/foundry/actions/runs/123";
-  spoofedOwner.publication.provenance = { provider: "github-actions", workflow: ".github/workflows/publish.yml", run: spoofedOwner.publication.reference };
-  assert.ok(rules(spoofedOwner).includes("publication-provenance"));
-
-  const malformed = source();
-  malformed.publication.mode = "trusted-publisher";
-  malformed.publication.provenance = { workflow: "publish.yml", run: "not-a-run" };
-  assert.ok(rules(malformed).includes("trusted-publisher-unsupported"));
-  assert.ok(rules(malformed).includes("publication-provenance"));
+  trusted.publication.provenance = {
+    repository: "https://github.com/clossys/foundry", workflow: ".github/workflows/publish.yml", ref: "refs/heads/main", event: "workflow_dispatch",
+    sourceSha: "a".repeat(40), builder: "https://github.com/actions/runner/github-hosted",
+    invocation: "https://github.com/clossys/foundry/actions/runs/123/attempts/1",
+    attestationUrl: "https://registry.npmjs.org/-/npm/v1/attestations/%40clossys%2Fstrategist%400.1.1",
+  };
+  trusted.registryProof = { schemaVersion: 2, kind: "public-npm-anonymous-registry-proof-v2", evidence: {
+    ...trusted.registryProof.evidence, metadataUrl: publicNpmVersionUrl(PUBLIC_NPM_REGISTRY, candidate.name, candidate.version), repository: "clossys/foundry",
+  } };
+  delete trusted.registryProof.evidence.packumentUrl;
+  assert.deepEqual(rules(trusted), []);
+  for (const mutate of [
+    (value) => { value.publication.provenance.workflow = ".github/workflows/other.yml"; },
+    (value) => { value.publication.provenance.invocation = "https://github.com/clossys/foundry/actions/runs/123"; },
+    (value) => { value.publication.provenance.attestationUrl = "https://registry.npmjs.org/-/npm/v1/attestations/other"; },
+    (value) => { value.registryProof.evidence.repository = "clossys/other"; },
+  ]) { const value = structuredClone(trusted); mutate(value); assert.ok(rules(value).length > 0); }
 });

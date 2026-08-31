@@ -15,7 +15,11 @@ const SHA512 = /^[a-f0-9]{128}$/;
 const INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 const NAME = /^@[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/;
 const VERSION = /^\d+\.\d+\.\d+$/;
-const PUBLICATION_REPOSITORY = "clossys/foundry";
+const PUBLICATION_REPOSITORIES = new Set(["https://github.com/clossys/platform", "https://github.com/clossys/foundry"]);
+const PUBLISH_WORKFLOW = ".github/workflows/publish.yml";
+const PUBLISH_REF = "refs/heads/main";
+const PUBLISH_EVENT = "workflow_dispatch";
+const GITHUB_HOSTED_BUILDER = "https://github.com/actions/runner/github-hosted";
 const object = (value) => value && typeof value === "object" && !Array.isArray(value);
 const digest = (value) => createHash("sha256").update(value).digest("hex");
 const same = (left, right) => JSON.stringify(left) === JSON.stringify(right);
@@ -47,6 +51,20 @@ function activePackages(catalog) {
   const target = catalog?.targets?.find((item) => item?.id === catalog?.defaultTarget && item?.status === "active");
   return Array.isArray(target?.packages) ? target.packages : null;
 }
+function repositoryName(url) {
+  return typeof url === "string" && PUBLICATION_REPOSITORIES.has(url) ? url.slice("https://github.com/".length) : null;
+}
+function exactAttestationUrl(value, name, version) {
+  if (!evidenceUrl(value)) return false;
+  try { return new URL(value).href === `${PUBLIC_NPM_REGISTRY}/-/npm/v1/attestations/${encodeURIComponent(`${name}@${version}`)}`; } catch { return false; }
+}
+function trustedProvenance(value, candidate) {
+  closed([], value, [], "");
+  if (!object(value)) return false;
+  const keys = ["repository", "workflow", "ref", "event", "sourceSha", "builder", "invocation", "attestationUrl"];
+  if (Object.keys(value).some((key) => !keys.includes(key))) return false;
+  return PUBLICATION_REPOSITORIES.has(value.repository) && value.workflow === PUBLISH_WORKFLOW && value.ref === PUBLISH_REF && value.event === PUBLISH_EVENT && SHA1.test(value.sourceSha ?? "") && value.builder === GITHUB_HOSTED_BUILDER && /^https:\/\/github\.com\/clossys\/(?:platform|foundry)\/actions\/runs\/\d+\/attempts\/\d+$/.test(value.invocation ?? "") && exactAttestationUrl(value.attestationUrl, candidate?.name, candidate?.version);
+}
 function gitBlob(root, ref, path) {
   return execFileSync("git", ["show", `${ref}:${path}`], { cwd: root, encoding: "utf8" });
 }
@@ -60,7 +78,9 @@ function gitBlob(root, ref, path) {
 export function validateLaterPublication(record, { recordPath, recordBytes, qualification, qualificationBytes, qualificationPath: expectedQualificationPath, catalogBytes, catalog, currentCatalog = catalog } = {}) {
   const findings = [];
   closed(findings, record, ["schemaVersion", "kind", "qualification", "candidate", "source", "catalog", "publication", "registryProof"], "publication");
-  if (record?.schemaVersion !== 1 || record?.kind !== "foundry-later-publication-v1") finding(findings, "publication", "closed later-publication identity required.");
+  const legacy = record?.schemaVersion === 1 && record?.kind === "foundry-later-publication-v1";
+  const trusted = record?.schemaVersion === 2 && record?.kind === "foundry-trusted-publication-v2";
+  if (!legacy && !trusted) finding(findings, "publication", "closed later-publication identity required.");
   closed(findings, record?.qualification, ["path", "sha256"], "publication.qualification");
   if (record?.qualification?.path !== expectedQualificationPath || !SHA256.test(record?.qualification?.sha256 ?? "") || typeof qualificationBytes !== "string" || digest(qualificationBytes) !== record?.qualification?.sha256) finding(findings, "qualification", "must bind exact retained qualification bytes.");
   if (qualification?.timing !== "pre-publication") finding(findings, "qualification-timing", "later publication must reference a pre-publication qualification.");
@@ -69,7 +89,7 @@ export function validateLaterPublication(record, { recordPath, recordBytes, qual
   closed(findings, c?.tarball, ["sha1", "sha256", "sha512"], "publication.candidate.tarball");
   if (!NAME.test(c?.name ?? "") || !VERSION.test(c?.version ?? "") || !SHA1.test(c?.packageTreeSha1 ?? "") || !SHA256.test(c?.packageManifestSha256 ?? "") || !SHA1.test(c?.tarball?.sha1 ?? "") || !SHA256.test(c?.tarball?.sha256 ?? "") || !SHA512.test(c?.tarball?.sha512 ?? "") || !same(c, qc && { name: qc.name, version: qc.version, packageTreeSha1: qc.packageTreeSha1, packageManifestSha256: qc.packageManifestSha256, tarball: qc.tarball })) finding(findings, "candidate-join", "candidate must exactly join the qualified source, manifest, and tarball.");
   const key = packageKey(c?.name);
-  if (key && TRIO.includes(key)) finding(findings, "sealed-trio", "later-publication records cannot substitute or extend a sealed Trio member.");
+  if (legacy && key && TRIO.includes(key)) finding(findings, "sealed-trio", "later-publication records cannot substitute or extend a sealed Trio member.");
   closed(findings, record?.source, ["reviewedCommit", "rootPackageJsonSha256", "rootPackageLockSha256", "policySha256", "adapterSha256", "fixtureSetSha256"], "publication.source");
   for (const sourceKey of ["reviewedCommit", "rootPackageJsonSha256", "rootPackageLockSha256", "policySha256", "adapterSha256", "fixtureSetSha256"]) if (record?.source?.[sourceKey] !== qualification?.[sourceKey] && record?.source?.[sourceKey] !== qc?.[sourceKey]) finding(findings, "source-join", `source.${sourceKey} must join the retained qualification.`);
   closed(findings, record?.catalog, ["path", "sha256", "packageKey"], "publication.catalog");
@@ -77,9 +97,8 @@ export function validateLaterPublication(record, { recordPath, recordBytes, qual
   const retainedPackages = activePackages(currentCatalog);
   if (record?.catalog?.path !== CATALOG_PATH || !SHA256.test(record?.catalog?.sha256 ?? "") || typeof catalogBytes !== "string" || digest(catalogBytes) !== record?.catalog?.sha256 || record?.catalog?.packageKey !== key || !introducedPackages?.includes(key) || !retainedPackages?.includes(key)) finding(findings, "catalog-join", "must bind its introduction catalogue bytes and remain in the current active reviewed allowlist.");
   closed(findings, record?.publication, ["mode", "publishedAt", "reference", "provenance"], "publication.publication");
-  if (record?.publication?.mode !== "owner-present" || !canonicalInstant(record?.publication?.publishedAt) || !evidenceUrl(record?.publication?.reference)) finding(findings, "publication-evidence", "owner-present mode, canonical publication time, and a bounded HTTPS evidence reference required.");
-  if (record?.publication?.mode === "trusted-publisher") finding(findings, "trusted-publisher-unsupported", "later-publication v1 records are owner-present only.");
-  if (record?.publication?.provenance !== undefined) finding(findings, "publication-provenance", "later-publication v1 records must not claim publisher provenance.");
+  if (legacy && (record?.publication?.mode !== "owner-present" || !canonicalInstant(record?.publication?.publishedAt) || !evidenceUrl(record?.publication?.reference) || record?.publication?.provenance !== undefined)) finding(findings, "publication-evidence", "v1 records require owner-present evidence without provenance.");
+  if (trusted && (record?.publication?.mode !== "trusted-publisher" || !canonicalInstant(record?.publication?.publishedAt) || !evidenceUrl(record?.publication?.reference) || !trustedProvenance(record?.publication?.provenance, c))) finding(findings, "publication-provenance", "trusted publication must bind its exact GitHub workflow, source, invocation, and npm attestation.");
   const proof = record?.registryProof?.evidence;
   closed(findings, record?.registryProof, ["schemaVersion", "kind", "evidence"], "publication.registryProof");
   const v1 = record?.registryProof?.schemaVersion === 1 && record?.registryProof?.kind === "public-npm-anonymous-registry-proof-v1";
@@ -91,7 +110,8 @@ export function validateLaterPublication(record, { recordPath, recordBytes, qual
   let expectedMetadata = null;
   try { expectedMetadata = key ? (v1 ? publicNpmPackageUrl(PUBLIC_NPM_REGISTRY, c?.name) : publicNpmVersionUrl(PUBLIC_NPM_REGISTRY, c?.name, c?.version)) : null; } catch { /* a malformed name is a finding below */ }
   const metadataUrl = v1 ? proof?.packumentUrl : proof?.metadataUrl;
-  if ((!v1 && !v2) || proof?.registry !== PUBLIC_NPM_REGISTRY || proof?.access !== "anonymous" || proof?.name !== c?.name || proof?.version !== c?.version || metadataUrl !== expectedMetadata || (v2 && proof?.repository !== PUBLICATION_REPOSITORY) || proof?.tarballUrl !== expectedTarballUrl(c?.name, c?.version) || proof?.integrity !== integrity || proof?.shasum !== c?.tarball?.sha1 || proof?.sha256 !== c?.tarball?.sha256 || proof?.sha512 !== c?.tarball?.sha512 || proof?.packedManifestSha256 !== c?.packageManifestSha256 || !Number.isSafeInteger(proof?.size) || proof.size < 1 || proof.size > 20_000_000) finding(findings, "registry-join", "anonymous served-byte proof must exactly join the candidate tarball and manifest.");
+  const expectedRepository = trusted ? repositoryName(record?.publication?.provenance?.repository) : "clossys/foundry";
+  if ((!v1 && !v2) || proof?.registry !== PUBLIC_NPM_REGISTRY || proof?.access !== "anonymous" || proof?.name !== c?.name || proof?.version !== c?.version || metadataUrl !== expectedMetadata || (v2 && proof?.repository !== expectedRepository) || proof?.tarballUrl !== expectedTarballUrl(c?.name, c?.version) || proof?.integrity !== integrity || proof?.shasum !== c?.tarball?.sha1 || proof?.sha256 !== c?.tarball?.sha256 || proof?.sha512 !== c?.tarball?.sha512 || proof?.packedManifestSha256 !== c?.packageManifestSha256 || !Number.isSafeInteger(proof?.size) || proof.size < 1 || proof.size > 20_000_000) finding(findings, "registry-join", "anonymous served-byte proof must exactly join the candidate tarball and manifest.");
   if (typeof recordPath === "string" && typeof recordBytes === "string" && (!key || !VERSION.test(c?.version ?? "") || recordPath !== `${LATER_PUBLICATION_DIRECTORY}/${key}-${c.version}.json`)) finding(findings, "record-path", "record path must be the unique package/version identity.");
   return findings;
 }
