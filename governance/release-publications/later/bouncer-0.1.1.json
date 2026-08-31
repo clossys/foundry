@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "kind": "foundry-later-publication-v1",
+  "qualification": {
+    "path": "governance/release-qualifications/clossys-bouncer-0.1.1.json",
+    "sha256": "4e74d1430d6acf4c79c757916600dfdcfb8fa6c3e416bd168fb012afe8d6c589"
+  },
+  "candidate": {
+    "name": "@clossys/bouncer",
+    "version": "0.1.1",
+    "packageTreeSha1": "15eb31fcd575ee8a06b5c7b0c5ca18b9e2ba4b42",
+    "packageManifestSha256": "4a6e12ef7fa578da5ab72f6a4b9540b031c0ee3f6a587072255492a19ebb1e83",
+    "tarball": {
+      "sha1": "9b55cccfceb9975a12809fd1a998c508fe1d6858",
+      "sha256": "771170e269239a465437575ec5705335e2d15ee1e7491cfd6a5f519511d5dda7",
+      "sha512": "6f2ce1da1845548594a5f6b5a159d80ed65ba3ec8cc8f8af7e387944ddfb7d443d83524b94a3fb73f7e6a198ed1b876f9202fa562fb0229d86077aa08f1f1256"
+    }
+  },
+  "source": {
+    "reviewedCommit": "4bd2a3ad4909409f7735ce042f2c93b23b9aedd7",
+    "rootPackageJsonSha256": "c6f5f6791c7d6e105376603da0152618ae03aa5f25a522dda0432c11999a9bf1",
+    "rootPackageLockSha256": "5f4cdde3f18ddd555680034f87ea682408f4800e189a3df8041bd3f7d500a73a",
+    "policySha256": "a13c6c3e5072144b07ad4c9b5dc7ba19a268cb1ee4575af2bb4b94fb68d0df03",
+    "adapterSha256": "23f86bd6328c886f2b0d71de85f46e136cfdf95dd9b3c8275176ad6749f9acec",
+    "fixtureSetSha256": "cb0a6ac0e013d09f2a85aa1bcb9c2b3af9cb081fe20fc374b938fbe004bd2207"
+  },
+  "catalog": {
+    "path": "governance/release-catalog.json",
+    "sha256": "3f43692f3c12dc1b21a3931fcf2abd53a68a207874b2ae2206e8e10f08b68404",
+    "packageKey": "bouncer"
+  },
+  "publication": {
+    "mode": "owner-present",
+    "publishedAt": "2026-08-31T17:29:44.747Z",
+    "reference": "https://www.npmjs.com/package/@clossys/bouncer/v/0.1.1"
+  },
+  "registryProof": {
+    "schemaVersion": 2,
+    "kind": "public-npm-anonymous-registry-proof-v2",
+    "evidence": {
+      "registry": "https://registry.npmjs.org",
+      "access": "anonymous",
+      "name": "@clossys/bouncer",
+      "version": "0.1.1",
+      "metadataUrl": "https://registry.npmjs.org/%40clossys%2Fbouncer/0.1.1",
+      "repository": "clossys/foundry",
+      "tarballUrl": "https://registry.npmjs.org/@clossys/bouncer/-/bouncer-0.1.1.tgz",
+      "integrity": "sha512-byzh2hhFVIWUpfa1oVnYDtZbo+yMyPivfjh5RN37fUQ9g1JLlKP7c/fmoZjtG4dvkgL6Vi+wIp2GB3qgjx8SVg==",
+      "shasum": "9b55cccfceb9975a12809fd1a998c508fe1d6858",
+      "sha256": "771170e269239a465437575ec5705335e2d15ee1e7491cfd6a5f519511d5dda7",
+      "sha512": "6f2ce1da1845548594a5f6b5a159d80ed65ba3ec8cc8f8af7e387944ddfb7d443d83524b94a3fb73f7e6a198ed1b876f9202fa562fb0229d86077aa08f1f1256",
+      "packedManifestSha256": "4a6e12ef7fa578da5ab72f6a4b9540b031c0ee3f6a587072255492a19ebb1e83",
+      "size": 128291
+    }
+  }
+}
