@@ -158,7 +158,7 @@ test("owner-present wrapper runs real pinned npm publish against a loopback regi
   const run = (file, args, options) => {
     calls.push({ file, args: [...args], cwd: options.cwd, env: { ...options.env }, stdio: options.stdio });
     if (args[0] === "--version" || args[0] === "-p") return spawnSync(file, args, { ...options, encoding: "utf8" });
-    if (file === process.execPath) return { status: 0, stdout: "", stderr: "" };
+    if (file === process.execPath && args[0]?.endsWith("/scripts/check-public-safety.mjs")) return { status: 0, stdout: "", stderr: "" };
     return spawnSync(file, args, { ...options, encoding: "utf8" });
   };
   const interactiveRun = async (file, args, options, onOutput) => {
@@ -202,7 +202,8 @@ test("owner-present wrapper runs real pinned npm publish against a loopback regi
   assert.equal(packed.env.NPM_CONFIG_OTP, undefined);
   assert.notEqual(packed.env.HOME, item.root, "clean packing must not receive the owner npm home");
   assert.equal(packed.env.HOME.includes("clossys-qualified-publish-"), true);
-  const scan = calls.find((call) => call.file === process.execPath);
+  const scan = calls.find((call) => call.file === process.execPath && call.args[0]?.endsWith("/scripts/check-public-safety.mjs"));
+  assert.ok(scan, "only the intended staged safety-check executable is stubbed and captured");
   assert.deepEqual(scan.args.slice(-6), ["--artifact", "--no-gitignore", "--allow-changelogs", "--require-denylist", "--scope-config", join(item.root, "package-scope.json")]);
   assert.equal(scan.env.NPM_TOKEN, undefined, "the full scan receives only its explicit denylist capability");
   assert.equal(verified.length, 1);
