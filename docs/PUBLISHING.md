@@ -627,14 +627,19 @@ still pause for the required GitHub protected-environment reviewer. Neither
 the retained record nor this handoff claims that either provider setting has
 already been changed.
 
-`@clossys/publisher@0.1.9` is deliberately deferred. The 0.1.8 candidate was
-never published: its clean public-registry qualification correctly failed
-because Publisher did not directly propagate Designer's optional peer closure.
-Do not prepare an owner-present 0.1.9 upload until the exact Writer and Designer
-identities above have passed anonymous served-byte verification and the peer
-closure correction has merged. Then create and review a fresh Publisher
-candidate qualification against those public runtime siblings before its own
-owner-present first-publication handoff.
+`@clossys/publisher@0.1.9` is quarantined and unpublished. Its immutable
+qualification record remains retained for audit, but its candidate tarball was
+packed outside the required release runtime, so the retained bytes cannot be
+rewritten under the append-only qualification contract. No registry upload was
+performed. The Publisher source has therefore advanced to `0.1.10` as the new
+first-publication candidate; it has no qualification or publication record yet.
+
+Do not prepare an owner-present 0.1.10 upload until the exact Writer and
+Designer identities above have passed anonymous served-byte verification. Then
+pack and replay a fresh Publisher 0.1.10 candidate with the pinned release
+runtime, retain its new qualification record, and complete the required
+anonymous served-byte verification before its own owner-present handoff. A
+later trusted-publisher/OIDC successor will be `0.1.11`.
 
 ### Why the name-collision check runs first, always
 
