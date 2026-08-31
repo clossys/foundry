@@ -112,6 +112,10 @@ export function validateAggregateChildExecution(run, { name, version, qualificat
     const expectedCoverage = qualificationTranscript?.coverage;
     if (!Array.isArray(expectedObservations) || !object(expectedCoverage)) finding(findings, "qualification-contract", `${name}@${version} immutable qualification operation contract is unavailable`);
     else {
+      if (run.archetype !== qualificationTranscript.archetype || JSON.stringify(stable(run.peerInstall)) !== JSON.stringify(stable(qualificationTranscript.peerInstall))) finding(findings, "qualification-identity", `${name}@${version} child archetype and requested peer contract must exactly match immutable qualification evidence`);
+      const expectedDimensions = (qualificationTranscript.dimensions ?? []).filter((item) => item?.dimension !== "rollback");
+      const actualDimensions = run.dimensions.filter((item) => item?.dimension !== "rollback");
+      if (!Array.isArray(qualificationTranscript.dimensions) || JSON.stringify(stable(actualDimensions)) !== JSON.stringify(stable(expectedDimensions))) finding(findings, "qualification-dimensions", `${name}@${version} child non-rollback dimension evidence must exactly match immutable qualification evidence`);
       const project = (item) => ({ id: item?.id, kind: item?.kind, expectedExitCode: item?.expectedExitCode });
       const operationKinds = new Set(["import", "framework", "help", "case"]);
       const expected = expectedObservations.filter((item) => operationKinds.has(item?.kind)).map(project);

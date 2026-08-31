@@ -772,8 +772,7 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
     // raw evidence remains compatible.  Every preexisting fixture byte is
     // restored here, including failures during a case or framework build.
     for (const [target, bytes] of aggregateFixtureBackup) {
-      if (bytes === null) await rm(target, { force: true });
-      else await writeFile(target, bytes);
+      await restoreRegularFile(target, bytes, "aggregate fixture");
     }
     if (ownsRoot) await rm(root, { recursive: true, force: true });
   }
