@@ -12,6 +12,8 @@ export const AGGREGATE_CANARY_PATH = "governance/public-npm-aggregate-canary.jso
 export const AGGREGATE_TRANSCRIPT_DIRECTORY = "governance/public-npm-aggregate-transcripts";
 export const AGGREGATE_CLOSURE_DIRECTORY = "governance/public-npm-aggregate-closures";
 export const AGGREGATE_RUNTIME = Object.freeze({ node: "v24.19.0", npm: "11.17.0", zlib: "1.3.2.1-motley-3246f1b" });
+export const AGGREGATE_EXTERNAL_TIMEOUT_MS = 30_000;
+export class AggregateUnavailableError extends Error {}
 export const ALL_PACKAGE_RELEASE_ORDER = Object.freeze([
   "advisor", "starter", "controller", "strategist", "writer", "designer", "architect", "bouncer", "butler", "giver", "influencer", "integrator", "keeper", "locksmith", "messenger", "observer", "builder", "inspector", "publisher",
 ]);
@@ -116,8 +118,18 @@ export function parseAggregateCanaryCli(args) {
   if ((closurePath !== null && !isAggregateClosurePath(closurePath)) || outputDirectory !== AGGREGATE_TRANSCRIPT_DIRECTORY || !["baseline", "oidc-successor"].includes(set)) throw new Error("usage: run-public-npm-aggregate-canary.mjs [--set baseline|oidc-successor] [--closure governance/public-npm-aggregate-closures/<set>-<sha256>.json] [--output-dir governance/public-npm-aggregate-transcripts]");
   return { closurePath, set, outputDirectory };
 }
-export function assertAggregateRuntime({ node = process.version, npm = execFileSync("npm", ["--version"], { encoding: "utf8" }).trim(), zlib = process.versions.zlib } = {}) {
+export function assertAggregateRuntime({ node = process.version, npm = execFileSync("npm", ["--version"], { encoding: "utf8", timeout: AGGREGATE_EXTERNAL_TIMEOUT_MS }).trim(), zlib = process.versions.zlib } = {}) {
   if (node !== AGGREGATE_RUNTIME.node || npm !== AGGREGATE_RUNTIME.npm || zlib !== AGGREGATE_RUNTIME.zlib) throw new Error(`aggregate canary requires Node 24.19.0, npm 11.17.0, and zlib ${AGGREGATE_RUNTIME.zlib} (received ${node}, ${npm}, ${zlib})`);
+}
+
+async function boundedExternal(label, callback) {
+  let timer;
+  try {
+    return await Promise.race([
+      callback(),
+      new Promise((_, reject) => { timer = setTimeout(() => reject(new AggregateUnavailableError(`${label} timed out`)), AGGREGATE_EXTERNAL_TIMEOUT_MS); }),
+    ]);
+  } finally { clearTimeout(timer); }
 }
 function parse(bytes, path, findings) {
   try { return JSON.parse(bytes); } catch { finding(findings, "json", `${path} is not JSON`); return null; }
@@ -706,11 +718,11 @@ export async function runAggregatePublicNpmCanary({ root, record, set = "oidc-su
     if (historical) {
       const required = { ...historical, kind: "verified" };
       if (!requiredRepositoryRedirects.some((item) => JSON.stringify(item) === JSON.stringify(required))) requiredRepositoryRedirects.push(required);
-      const redirect = await verifyRedirect({ ...historical, fetchImpl });
+      const redirect = await boundedExternal(`repository redirect ${historical.historicalRepository}`, () => verifyRedirect({ ...historical, fetchImpl }));
       if (redirect?.kind !== "verified") throw new Error(`${entry.name}@${entry.version} historical repository redirect proof did not verify`);
       if (!repositoryRedirects.some((item) => JSON.stringify(item) === JSON.stringify({ ...historical, kind: redirect.kind }))) repositoryRedirects.push({ ...historical, kind: redirect.kind });
     }
-    const result = await verifyArtifact({ registry: PUBLIC_NPM_REGISTRY, name: entry.name, version: entry.version, repository, fetchImpl });
+    const result = await boundedExternal(`registry verification ${entry.name}@${entry.version}`, () => verifyArtifact({ registry: PUBLIC_NPM_REGISTRY, name: entry.name, version: entry.version, repository, fetchImpl }));
     if (result.kind !== "verified") throw new Error(`${entry.name}@${entry.version} anonymous registry verification did not complete: ${result.kind}`);
     const qualification = JSON.parse(read(entry.qualification.path));
     const expected = qualification.candidate;
@@ -758,7 +770,7 @@ export async function runAggregatePublicNpmCanary({ root, record, set = "oidc-su
     const operations = [];
     const install = await runProcess("npm", ["install", "--ignore-scripts", "--save-exact"], { cwd: scratch, env, timeout: 180_000 });
     operations.push(aggregateNpmOperation("install", install));
-    if (install.exitCode !== 0 || install.signal || install.launchError) throw new Error("aggregate npm install execution failed");
+    if (install.exitCode !== 0 || install.timedOut || install.signal || install.launchError) throw new Error("aggregate npm install execution failed");
     const before = { manifest: await readFile(join(scratch, "package.json"), "utf8"), lock: await readFile(join(scratch, "package-lock.json"), "utf8"), tree: await treeDigest(join(scratch, "node_modules")) };
     const declaredConsumer = JSON.parse(before.manifest);
     const installedForOptionalPolicy = [];
@@ -784,7 +796,7 @@ export async function runAggregatePublicNpmCanary({ root, record, set = "oidc-su
     const controller = JSON.parse(await readFile(join(scratch, "node_modules", "@clossys", "controller", "package.json"), "utf8"));
     const expectedController = selected.packages.find((entry) => entry.packageKey === "controller").version;
     if (controller.name !== "@clossys/controller" || controller.version !== expectedController) throw new Error("aggregate consumer did not resolve the one exact Controller identity");
-    const dependencyTree = JSON.parse(execFileSync("npm", ["ls", "@clossys/controller", "--all", "--long", "--json"], { cwd: scratch, env, encoding: "utf8" }));
+    const dependencyTree = JSON.parse(execFileSync("npm", ["ls", "@clossys/controller", "--all", "--long", "--json"], { cwd: scratch, env, encoding: "utf8", timeout: AGGREGATE_EXTERNAL_TIMEOUT_MS }));
     const controllers = controllerPhysicalIdentities(dependencyTree);
     if (controllers.length !== 1 || controllers[0].name !== "@clossys/controller" || controllers[0].version !== expectedController) throw new Error("aggregate consumer did not resolve one singular Controller dependency identity");
     const publisher = selected.packages.find((entry) => entry.packageKey === "publisher");
@@ -845,7 +857,7 @@ export async function runAggregatePublicNpmCanary({ root, record, set = "oidc-su
     const optionalPeerObservations = await executeOptionalPeers({ consumer: scratch, matrix: record.optionalPeerMatrix.filter((row) => row.set === set), env, frameworkByPackage });
     const uninstall = await runProcess("npm", ["uninstall", "--ignore-scripts", ...selected.packages.map((entry) => entry.name)], { cwd: scratch, env, timeout: 180_000 });
     operations.push(aggregateNpmOperation("uninstall", uninstall));
-    if (uninstall.exitCode !== 0 || uninstall.signal || uninstall.launchError) throw new Error("aggregate npm uninstall execution failed");
+    if (uninstall.exitCode !== 0 || uninstall.timedOut || uninstall.signal || uninstall.launchError) throw new Error("aggregate npm uninstall execution failed");
     for (const entry of selected.packages) {
       try { await lstat(join(scratch, "node_modules", ...entry.name.split("/"))); throw new Error(`${entry.name} remained installed after aggregate uninstall`); }
       catch (error) { if (error?.code !== "ENOENT") throw error; }
@@ -854,7 +866,7 @@ export async function runAggregatePublicNpmCanary({ root, record, set = "oidc-su
     await writeFile(join(scratch, "package-lock.json"), before.lock);
     const reinstall = await runProcess("npm", ["install", "--ignore-scripts", "--save-exact"], { cwd: scratch, env, timeout: 180_000 });
     operations.push(aggregateNpmOperation("reinstall", reinstall));
-    if (reinstall.exitCode !== 0 || reinstall.signal || reinstall.launchError) throw new Error("aggregate npm reinstall execution failed");
+    if (reinstall.exitCode !== 0 || reinstall.timedOut || reinstall.signal || reinstall.launchError) throw new Error("aggregate npm reinstall execution failed");
     const after = { manifest: await readFile(join(scratch, "package.json"), "utf8"), lock: await readFile(join(scratch, "package-lock.json"), "utf8"), tree: await treeDigest(join(scratch, "node_modules")) };
     if (before.manifest !== after.manifest || before.lock !== after.lock || before.tree !== after.tree) throw new Error("aggregate uninstall/reinstall did not restore byte-identical manifest, lockfile, and dependency tree");
     for (const entry of selected.packages) {
