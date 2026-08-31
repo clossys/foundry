@@ -266,6 +266,71 @@ test("PTY-mediated publication relays a safe owner prompt, accepts input, retrie
   assert.equal(prompts.join("").includes("retry accepted"), false, "only whitelisted prompt text reaches the owner channel");
 });
 
+test("PTY-mediated browser authentication relays only a strict npm CLI URL and Enter prompt", async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "qualified-browser-pty-test-")), bin = join(root, "bin"), driver = join(root, "pty-driver.py");
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await mkdir(bin);
+  const fakeNpm = join(bin, "npm");
+  await writeFile(fakeNpm, [
+    "#!/usr/bin/env node",
+    'process.stdout.write("Authenticate your account at:\\nhttps://www.npmjs.com/auth/cli/cli_Ab9-\\nPress ENTER to open in the browser...\\n");',
+    'process.stdin.once("data", (input) => {',
+    '  if (input.toString("utf8") !== "\\n") process.exit(1);',
+    '  process.stdout.write("npm notice browser authentication completed\\n");',
+    '  process.exit(0);',
+    '});',
+  ].join("\n"));
+  await chmod(fakeNpm, 0o700);
+  await writeFile(driver, [
+    "import json, os, pty, select, sys",
+    "pid, fd = pty.fork()",
+    "if pid == 0:",
+    "  command = ['script', '-e', '-q', '/dev/null', '-c', 'npm publish .'] if sys.platform.startswith('linux') else ['script', '-q', '/dev/null', 'npm', 'publish', '.']",
+    "  os.execv('/usr/bin/script', command)",
+    "output, inputs = b'', 0",
+    "while True:",
+    "  ready, _, _ = select.select([fd], [], [], 0.1)",
+    "  if ready:",
+    "    try: chunk = os.read(fd, 4096)",
+    "    except OSError: chunk = b''",
+    "    if chunk:",
+    "      output += chunk",
+    "      if b'press enter to open in the browser' in output.lower() and inputs == 0:",
+    "        os.write(fd, b'\\n'); inputs += 1",
+    "  finished, status = os.waitpid(pid, os.WNOHANG)",
+    "  if finished: break",
+    "print(json.dumps({'exitCode': os.waitstatus_to_exitcode(status), 'inputs': inputs, 'output': output.decode('utf8', 'replace')}))",
+  ].join("\n"));
+  const executed = await execFile("python3", [driver], { cwd: root, env: { PATH: `${bin}:${process.env.PATH}`, HOME: root } });
+  const transcript = JSON.parse(executed.stdout), raw = Buffer.from(transcript.output), prompts = [];
+  const relay = createOwnerPromptRelay((line) => prompts.push(line));
+  const split = raw.indexOf(Buffer.from("cli_")) + 3;
+  relay(raw.subarray(0, split));
+  relay(raw.subarray(split));
+  assert.equal(transcript.exitCode, 0, transcript.output);
+  assert.equal(transcript.inputs, 1, "the owner acknowledges browser auth through the same PTY session");
+  assert.deepEqual(prompts, [
+    "Open https://www.npmjs.com/auth/cli/cli_Ab9- to continue npm authentication.\n",
+    "Press ENTER to continue npm authentication.\n",
+  ]);
+  assert.equal(prompts.join("").includes("browser authentication completed"), false);
+});
+
+test("browser authentication relay rejects lookalikes, queries, fragments, controls, and injected instructions", () => {
+  const cases = [
+    "https://npmjs.com/auth/cli/cli_Ab9-\nPress ENTER to open in the browser...\n",
+    "https://www.npmjs.com/auth/cli/cli_Ab9-?x=1\nPress ENTER to open in the browser...\n",
+    "https://www.npmjs.com/auth/cli/cli_Ab9-#fragment\nPress ENTER to open in the browser...\n",
+    "https://www.npmjs.com/auth/cli/cli_Ab9-%0aother\nPress ENTER to open in the browser...\n",
+    "https://www.npmjs.com/auth/cli/cli_Ab9-;echo\nPress ENTER to open in the browser now\n",
+  ];
+  for (const value of cases) {
+    const prompts = [], relay = createOwnerPromptRelay((line) => prompts.push(line));
+    relay(Buffer.from(`Authenticate your account at:\n${value}`));
+    assert.deepEqual(prompts, [], value);
+  }
+});
+
 test("wrapper refuses a non-release Node/npm runtime before scanning or publishing", async (t) => {
   const item = await fixture(t);
   let scanned = false;

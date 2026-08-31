@@ -210,7 +210,7 @@ export function ownerPresentPtyArgs(registry, platform = process.platform) {
 }
 
 export function createOwnerPromptRelay(write = (line) => process.stderr.write(line)) {
-  let buffered = "", authPromptShown = false, loginShown = false;
+  let buffered = "", authPromptShown = false, loginShown = false, browserUrlShown = false, browserEnterShown = false;
   return (chunk) => {
     buffered = `${buffered}${Buffer.from(chunk).toString("utf8")}`.slice(-8192);
     if (!authPromptShown && /(?:one[- ]time password|\botp\b|two[- ]factor|\b2fa\b|webauthn|authentication code|enter.{0,32}(?:code|password))/i.test(buffered)) {
@@ -220,6 +220,22 @@ export function createOwnerPromptRelay(write = (line) => process.stderr.write(li
     if (!loginShown && /https:\/\/(?:www\.)?npmjs\.com\/login(?:[/?#]|$)/i.test(buffered)) {
       write("Open https://www.npmjs.com/login to continue npm authentication.\n");
       loginShown = true;
+    }
+    // npm's browser/WebAuthn flow gives the owner a one-time, opaque CLI URL.
+    // Relay only a complete URL on its own line with the canonical host and
+    // path, and reconstruct it from the safe identifier rather than relaying
+    // the process output. Query strings, fragments, controls, lookalike hosts,
+    // and any extra path content do not match this grammar.
+    // Require the line terminator too: a chunk ending halfway through an ID
+    // must not relay a truncated browser capability.
+    const browserUrl = /(?:^|[\r\n])[ \t]*https:\/\/www\.npmjs\.com\/auth\/cli\/([A-Za-z0-9_-]{1,256})[ \t]*\r?\n/i.exec(buffered);
+    if (!browserUrlShown && browserUrl) {
+      write(`Open https://www.npmjs.com/auth/cli/${browserUrl[1]} to continue npm authentication.\n`);
+      browserUrlShown = true;
+    }
+    if (browserUrlShown && !browserEnterShown && /(?:^|[\r\n])[ \t]*Press ENTER to open in the browser(?:\.\.\.|…)?[ \t]*\r?\n/i.test(buffered)) {
+      write("Press ENTER to continue npm authentication.\n");
+      browserEnterShown = true;
     }
   };
 }
