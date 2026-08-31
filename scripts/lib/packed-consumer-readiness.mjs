@@ -9,6 +9,14 @@ const CREDENTIAL_ENV = /(?:^|_)(?:AUTH|TOKEN|PASSWORD|OTP)(?:_|$)/i;
 const omissionRow = (specifiers, rejected = []) => Object.fromEntries(
   specifiers.map((specifier) => [specifier, rejected.includes(specifier) ? "rejects" : "imports"]),
 );
+const conditionOutcomes = (defaultOutcome, reactServerOutcome) => ({
+  default: defaultOutcome,
+  "react-server": reactServerOutcome,
+});
+const publisherOmissionRow = ({ rejected = [], web = "imports" } = {}) => ({
+  ...omissionRow(publisherExports, rejected),
+  "@clossys/publisher/web": typeof web === "string" ? web : conditionOutcomes(web.default, web.reactServer),
+});
 
 const bouncerExports = [
   "@clossys/bouncer",
@@ -125,12 +133,12 @@ export const OPTIONAL_PEER_POLICY = {
     resend: { "@clossys/messenger": "imports", "@clossys/messenger/providers/resend": "rejects" },
   },
   "@clossys/publisher": {
-    "@internationalized/date": omissionRow(publisherExports, ["@clossys/publisher/web"]),
-    react: omissionRow(publisherExports, ["@clossys/publisher/document", "@clossys/publisher/web"]),
-    "react-aria-components": omissionRow(publisherExports, ["@clossys/publisher/web"]),
-    "react-dom": omissionRow(publisherExports, ["@clossys/publisher/web"]),
-    "tailwind-merge": omissionRow(publisherExports, ["@clossys/publisher/web"]),
-    tailwindcss: omissionRow(publisherExports),
+    "@internationalized/date": publisherOmissionRow({ web: { default: "rejects", reactServer: "imports" } }),
+    react: publisherOmissionRow({ rejected: ["@clossys/publisher/document"], web: { default: "rejects", reactServer: "rejects" } }),
+    "react-aria-components": publisherOmissionRow({ web: { default: "rejects", reactServer: "imports" } }),
+    "react-dom": publisherOmissionRow({ web: { default: "rejects", reactServer: "imports" } }),
+    "tailwind-merge": publisherOmissionRow({ web: { default: "rejects", reactServer: "rejects" } }),
+    tailwindcss: publisherOmissionRow({ web: { default: "imports", reactServer: "imports" } }),
   },
 };
 
@@ -240,6 +248,19 @@ function runtimeTarget(target) {
   return /\.(?:c|m)?js$/i.test(target);
 }
 
+function runtimeConditionTargets(value, condition = "default", targets = []) {
+  if (typeof value === "string") {
+    if (runtimeTarget(value)) targets.push({ target: value, condition });
+  } else if (value && typeof value === "object" && !Array.isArray(value)) {
+    for (const [key, nested] of Object.entries(value)) {
+      runtimeConditionTargets(nested, key === "react-server" ? "react-server" : condition, targets);
+    }
+  } else if (Array.isArray(value)) {
+    for (const nested of value) runtimeConditionTargets(nested, condition, targets);
+  }
+  return targets;
+}
+
 function packedNextContexts(manifest, runtimeSpecifiers) {
   const verification = manifest.foundryReleaseVerification;
   if (verification === undefined) return { client: [], server: [], proxy: [], all: [] };
@@ -317,6 +338,7 @@ export async function inspectPackedExports(packageRoot, manifest) {
   const packageReal = await realpath(packageRoot);
   const allFiles = await filesBelow(packageRoot);
   const runtimeSpecifiers = new Set();
+  const runtimeTargets = new Map();
   const staticTargets = [];
 
   for (const [key, value] of exportEntries(manifest)) {
@@ -326,7 +348,11 @@ export async function inspectPackedExports(packageRoot, manifest) {
       if (stars === 0) {
         await checkedTarget(packageRoot, packageReal, target);
         staticTargets.push({ key, target });
-        if (runtimeTarget(target)) runtimeSpecifiers.add(exportSpecifier(manifest.name, key));
+        if (runtimeTarget(target)) {
+          const specifier = exportSpecifier(manifest.name, key);
+          runtimeSpecifiers.add(specifier);
+          for (const item of runtimeConditionTargets(value)) runtimeTargets.set(`${specifier}\u0000${item.condition}`, { specifier, condition: item.condition });
+        }
         continue;
       }
       if (stars !== 1 || keyStars !== 1) throw new Error(`export pattern ${key} -> ${target} must contain one wildcard`);
@@ -342,27 +368,49 @@ export async function inspectPackedExports(packageRoot, manifest) {
       if (matches.length === 0) throw new Error(`export target pattern ${target} resolves no files`);
       for (const match of matches) {
         staticTargets.push({ key, target: match.target });
-        if (runtimeTarget(match.target)) runtimeSpecifiers.add(exportSpecifier(manifest.name, key, match.substitution));
+        if (runtimeTarget(match.target)) {
+          const specifier = exportSpecifier(manifest.name, key, match.substitution);
+          runtimeSpecifiers.add(specifier);
+          for (const item of runtimeConditionTargets(value)) runtimeTargets.set(`${specifier}\u0000${item.condition}`, { specifier, condition: item.condition });
+        }
       }
     }
   }
   const allRuntimeSpecifiers = [...runtimeSpecifiers].sort();
+  const allRuntimeTargets = [...runtimeTargets.values()].sort((left, right) => (
+    left.specifier.localeCompare(right.specifier) || left.condition.localeCompare(right.condition)
+  ));
   const nextContexts = packedNextContexts(manifest, allRuntimeSpecifiers);
   return {
     runtimeSpecifiers: allRuntimeSpecifiers,
+    runtimeTargets: allRuntimeTargets,
     rawRuntimeSpecifiers: allRuntimeSpecifiers.filter((specifier) => !nextContexts.all.includes(specifier)),
+    rawRuntimeTargets: allRuntimeTargets.filter((item) => !nextContexts.all.includes(item.specifier)),
     nextContexts,
     staticTargets: staticTargets.sort((left, right) => left.target.localeCompare(right.target)),
   };
 }
 
-function declaredRuntimeSpecifiers(manifest) {
-  const specifiers = [];
+function declaredRuntimeTargets(manifest) {
+  const targets = [];
   for (const [key, value] of exportEntries(manifest)) {
     if (key.includes("*")) continue;
-    if (leafTargets(value).some(runtimeTarget)) specifiers.push(exportSpecifier(manifest.name, key));
+    const specifier = exportSpecifier(manifest.name, key);
+    for (const item of runtimeConditionTargets(value)) targets.push({ specifier, condition: item.condition });
   }
-  return specifiers.sort();
+  return targets.sort((left, right) => left.specifier.localeCompare(right.specifier) || left.condition.localeCompare(right.condition));
+}
+
+function policyOutcomeShapeFindings(manifest, peer, specifier, value, conditions) {
+  const prefix = `${manifest.name} omission row ${peer} ${specifier}`;
+  if (typeof value === "string") return ["imports", "rejects"].includes(value) ? [] : [`${prefix} has invalid outcome`];
+  if (!value || typeof value !== "object" || Array.isArray(value)) return [`${prefix} has invalid condition outcomes`];
+  const actual = Object.keys(value).sort();
+  const expected = [...conditions].sort();
+  const findings = [];
+  if (JSON.stringify(actual) !== JSON.stringify(expected)) findings.push(`${prefix} has incomplete or stale condition outcomes`);
+  for (const condition of expected) if (!['imports', 'rejects'].includes(value[condition])) findings.push(`${prefix} has invalid ${condition} outcome`);
+  return findings;
 }
 
 export function validateOptionalPeerPolicy(packages, policy, { allowUnselected = false } = {}) {
@@ -379,14 +427,16 @@ export function validateOptionalPeerPolicy(packages, policy, { allowUnselected =
     }
     for (const peer of Object.keys(rows).sort()) {
       if (!optional.includes(peer)) findings.push(`${manifest.name} omission row ${peer} is stale`);
-      const expectedSpecifiers = declaredRuntimeSpecifiers(manifest);
+      const expectedTargets = declaredRuntimeTargets(manifest);
+      const expectedSpecifiers = [...new Set(expectedTargets.map((item) => item.specifier))].sort();
+      const conditionsBySpecifier = new Map(expectedSpecifiers.map((specifier) => [specifier, new Set(expectedTargets.filter((item) => item.specifier === specifier).map((item) => item.condition))]));
       const actualSpecifiers = Object.keys(rows[peer] ?? {}).sort();
       for (const specifier of expectedSpecifiers) {
         if (!actualSpecifiers.includes(specifier)) findings.push(`${manifest.name} omission row ${peer} misses ${specifier}`);
       }
       for (const specifier of actualSpecifiers) {
         if (!expectedSpecifiers.includes(specifier)) findings.push(`${manifest.name} omission row ${peer} has stale export ${specifier}`);
-        else if (!["imports", "rejects"].includes(rows[peer][specifier])) findings.push(`${manifest.name} omission row ${peer} has invalid outcome for ${specifier}`);
+        else findings.push(...policyOutcomeShapeFindings(manifest, peer, specifier, rows[peer][specifier], conditionsBySpecifier.get(specifier)));
       }
     }
   }
@@ -532,8 +582,14 @@ async function assertIdentities(consumer, packed) {
   if (findings.length > 0) throw new Error(`installed identity check failed:\n- ${findings.join("\n- ")}`);
 }
 
-async function importSpecifier(specifier, consumer, env) {
-  return runProcess(process.execPath, ["--input-type=module", "--eval", `await import(${JSON.stringify(specifier)})`], { cwd: consumer, env });
+export async function importSpecifier(specifier, consumer, env, condition = "default") {
+  if (!["default", "react-server"].includes(condition)) throw new Error(`unsupported runtime import condition ${condition}`);
+  return runProcess(process.execPath, [
+    ...(condition === "react-server" ? ["--conditions=react-server"] : []),
+    "--input-type=module",
+    "--eval",
+    `await import(${JSON.stringify(specifier)})`,
+  ], { cwd: consumer, env });
 }
 
 function namespaceImports(specifiers) {
@@ -602,10 +658,10 @@ export async function runPackedConsumerReadiness({ root, selected, skipBuild = f
       const shape = await inspectPackedExports(await installedRoot(consumer, entry.packedManifest.name), entry.packedManifest);
       exportsByPackage.set(entry.packedManifest.name, shape);
       staticTargets += shape.staticTargets.length;
-      for (const specifier of shape.rawRuntimeSpecifiers) {
-        const result = await importSpecifier(specifier, consumer, env);
+      for (const target of shape.rawRuntimeTargets) {
+        const result = await importSpecifier(target.specifier, consumer, env, target.condition);
         if (result.exitCode !== 0 || result.timedOut || result.launchError) {
-          throw new Error(`${specifier} runtime import failed: ${result.stderr || result.stdout || result.launchError || "timed out"}`);
+          throw new Error(`${target.condition} ${target.specifier} runtime import failed: ${result.stderr || result.stdout || result.launchError || "timed out"}`);
         }
         runtimeImports += 1;
       }
@@ -654,14 +710,14 @@ export async function runPackedConsumerReadiness({ root, selected, skipBuild = f
         if ((await installedPackageRoots(join(matrixConsumer, "node_modules"), peer)).length > 0) {
           throw new Error(`${entry.packedManifest.name} omission row ${peer} is false-green: the omitted peer is installed`);
         }
-        const shape = exportsByPackage.get(entry.packedManifest.name) ?? { runtimeSpecifiers: [], rawRuntimeSpecifiers: [], nextContexts: { client: [], server: [], proxy: [], all: [] } };
+        const shape = exportsByPackage.get(entry.packedManifest.name) ?? { runtimeSpecifiers: [], runtimeTargets: [], rawRuntimeSpecifiers: [], rawRuntimeTargets: [], nextContexts: { client: [], server: [], proxy: [], all: [] } };
         const observed = new Map();
-        for (const specifier of shape.rawRuntimeSpecifiers) {
-          const result = await importSpecifier(specifier, matrixConsumer, env);
-          observed.set(specifier, result.exitCode === 0 ? "imports" : "rejects");
-          if (result.timedOut || result.launchError) throw new Error(`${entry.packedManifest.name} omission row ${peer} could not evaluate ${specifier}`);
+        for (const target of shape.rawRuntimeTargets) {
+          const result = await importSpecifier(target.specifier, matrixConsumer, env, target.condition);
+          observed.set(`${target.specifier}\u0000${target.condition}`, result.exitCode === 0 ? "imports" : "rejects");
+          if (result.timedOut || result.launchError) throw new Error(`${entry.packedManifest.name} omission row ${peer} could not evaluate ${target.condition} ${target.specifier}`);
           if (result.exitCode !== 0 && !`${result.stderr}\n${result.stdout}`.includes(peer)) {
-            throw new Error(`${entry.packedManifest.name} omission row ${peer} makes ${specifier} fail without naming the omitted peer`);
+            throw new Error(`${entry.packedManifest.name} omission row ${peer} makes ${target.condition} ${target.specifier} fail without naming the omitted peer`);
           }
         }
         if (shape.nextContexts.all.length > 0) {
@@ -670,7 +726,7 @@ export async function runPackedConsumerReadiness({ root, selected, skipBuild = f
             if (expectedFramework.size !== 1 || !expectedFramework.has("rejects")) {
               throw new Error(`${entry.packedManifest.name} omission row next must fail closed for every declared Next context`);
             }
-            for (const specifier of shape.nextContexts.all) observed.set(specifier, "rejects");
+            for (const specifier of shape.nextContexts.all) observed.set(`${specifier}\u0000default`, "rejects");
             frameworkEvaluatorOmissions.push({
               package: entry.packedManifest.name,
               peer,
@@ -688,10 +744,17 @@ export async function runPackedConsumerReadiness({ root, selected, skipBuild = f
             if (outcome === "rejects" && !`${result.stderr}\n${result.stdout}`.includes(peer)) {
               throw new Error(`${entry.packedManifest.name} omission row ${peer} makes its Next contexts fail without naming the omitted peer`);
             }
-            for (const specifier of shape.nextContexts.all) observed.set(specifier, outcome);
+            for (const specifier of shape.nextContexts.all) observed.set(`${specifier}\u0000default`, outcome);
           }
         }
-        const outcomes = Object.fromEntries(shape.runtimeSpecifiers.map((specifier) => [specifier, observed.get(specifier)]));
+        const outcomes = Object.fromEntries(shape.runtimeSpecifiers.map((specifier) => {
+          const conditions = shape.runtimeTargets.filter((item) => item.specifier === specifier).map((item) => item.condition);
+          const expectedOutcome = rows[peer]?.[specifier];
+          const values = conditions.map((condition) => [condition, observed.get(`${specifier}\u0000${condition}`)]);
+          return [specifier, typeof expectedOutcome === "string"
+            ? values.every(([, outcome]) => outcome === values[0]?.[1]) ? values[0]?.[1] : undefined
+            : Object.fromEntries(values)];
+        }));
         omission.push({ package: entry.packedManifest.name, peer, outcomes });
         const expected = rows[peer];
         if (JSON.stringify(outcomes) !== JSON.stringify(expected)) {
