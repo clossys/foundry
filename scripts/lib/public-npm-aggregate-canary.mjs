@@ -530,9 +530,11 @@ export function validateSatisfiedAggregateTranscript(transcript, { plan, closure
     };
     if (transcript.dimensions.some((entry) => entry.count !== expectedCounts[entry.dimension])) finding(findings, "dimension-count", "aggregate dimension counts must exactly project all child and immutable optional-peer execution evidence");
   }
-  const expectedOptional = (plan?.optionalPeerMatrix ?? []).filter((row) => row.set === transcript.set).flatMap((row) => row.peers.flatMap((peer) => Object.entries(peer.outcomes).map(([specifier, outcome]) => ({ package: row.name, version: row.version, peer: peer.peer, specifier, outcome }))));
-  const optionalKey = (item) => JSON.stringify({ package: item.package, version: item.version, peer: item.peer, specifier: item.specifier, outcome: item.outcome });
-  if (!Array.isArray(transcript.optionalPeerObservations) || transcript.optionalPeerObservations.some((item) => !onlyKeys(item, ["package", "version", "peer", "specifier", "outcome", "evaluator?"])) || JSON.stringify(transcript.optionalPeerObservations.map(optionalKey).sort()) !== JSON.stringify(expectedOptional.map(optionalKey).sort())) finding(findings, "optional-peer-observations", "aggregate transcript must retain the exact unique immutable optional-peer observation multiset");
+  const frameworkSpecifiers = new Set((transcript.packages ?? []).flatMap((entry) => (entry?.run?.observations ?? []).filter((item) => item?.kind === "framework").map((item) => `${entry.name}@${entry.version}\0${item.id.split(":").slice(3).join(":")}`)));
+  const expectedOptional = (plan?.optionalPeerMatrix ?? []).filter((row) => row.set === transcript.set).flatMap((row) => row.peers.flatMap((peer) => Object.entries(peer.outcomes).map(([specifier, outcome]) => ({ package: row.name, version: row.version, peer: peer.peer, specifier, outcome, evaluator: frameworkSpecifiers.has(`${row.name}@${row.version}\0${specifier}`) ? (peer.peer === "next" ? "next-bin-absent" : "next-build") : "node-direct" }))));
+  const optionalKey = (item) => JSON.stringify({ package: item.package, version: item.version, peer: item.peer, specifier: item.specifier, outcome: item.outcome, evaluator: item.evaluator });
+  const restoration = transcript.optionalPeerObservations?.[0]?.restoration;
+  if (!Array.isArray(transcript.optionalPeerObservations) || transcript.optionalPeerObservations.some((item) => !exactKeys(item, ["package", "version", "peer", "specifier", "outcome", "evaluator", "restoration"]) || !["node-direct", "next-build", "next-bin-absent"].includes(item.evaluator) || !exactKeys(item.restoration, ["manifestSha256", "lockfileSha256", "treeSha256"]) || !SHA256.test(item.restoration.manifestSha256 ?? "") || !SHA256.test(item.restoration.lockfileSha256 ?? "") || !SHA256.test(item.restoration.treeSha256 ?? "") || item.restoration.manifestSha256 !== transcript.consumer?.manifestSha256 || item.restoration.lockfileSha256 !== transcript.consumer?.lockfileSha256 || JSON.stringify(item.restoration) !== JSON.stringify(restoration)) || JSON.stringify(transcript.optionalPeerObservations.map(optionalKey).sort()) !== JSON.stringify(expectedOptional.map(optionalKey).sort())) finding(findings, "optional-peer-observations", "aggregate transcript must retain the exact unique immutable optional-peer evaluator and restoration multiset");
   const copy = structuredClone(transcript); delete copy.canonicalSha256;
   if (!SHA256.test(transcript.canonicalSha256 ?? "") || transcript.canonicalSha256 !== hash(JSON.stringify(stable(copy)))) finding(findings, "canonical", "transcript canonical digest must hash the closed content excluding itself");
   return findings;
@@ -627,12 +629,13 @@ async function treeDigest(root) {
 
 /** Run one immutable optional-peer matrix serially against an already-installed consumer. */
 export async function runAggregateOptionalPeerMatrix({ consumer, matrix, env, frameworkByPackage = new Map() }) {
-  const before = { manifest: hash(await readFile(join(consumer, "package.json"))), lock: hash(await readFile(join(consumer, "package-lock.json"))), tree: await treeDigest(join(consumer, "node_modules")) };
+  const before = { manifest: consumerDigest(consumer, await readFile(join(consumer, "package.json"))), lock: consumerDigest(consumer, await readFile(join(consumer, "package-lock.json"))), tree: await treeDigest(join(consumer, "node_modules")) };
   const observations = [];
   for (const row of matrix) for (const peerRow of row.peers) {
     const roots = await installedPackageRoots(join(consumer, "node_modules"), peerRow.peer);
     if (roots.length === 0) throw new Error(`${row.name} optional peer ${peerRow.peer} is not physically installed before omission`);
     const moved = [];
+    const pending = [];
     try {
       for (const root of roots.sort((a, b) => b.length - a.length)) { const hidden = `${root}.foundry-omitted`; await rename(root, hidden); moved.push([root, hidden]); }
       const framework = frameworkByPackage.get(`${row.name}@${row.version}`) ?? { client: [], server: [], proxy: [], all: [] };
@@ -641,7 +644,7 @@ export async function runAggregateOptionalPeerMatrix({ consumer, matrix, env, fr
         const result = await runProcess(process.execPath, ["--input-type=module", "--eval", `await import(${JSON.stringify(specifier)})`], { cwd: consumer, env, timeout: 30_000 });
         const actual = result.exitCode === 0 ? "imports" : "rejects";
         if (result.timedOut || result.launchError || actual !== expected) throw new Error(`${row.name} omission ${peerRow.peer} ${specifier} expected ${expected}, received ${actual}`);
-        observations.push({ package: row.name, version: row.version, peer: peerRow.peer, specifier, outcome: actual });
+        pending.push({ package: row.name, version: row.version, peer: peerRow.peer, specifier, outcome: actual, evaluator: "node-direct" });
       }
       if (framework.all.length > 0) {
         const expected = new Set(framework.all.map((specifier) => peerRow.outcomes[specifier]));
@@ -657,13 +660,14 @@ export async function runAggregateOptionalPeerMatrix({ consumer, matrix, env, fr
         } finally { await rm(evaluatorRoot, { recursive: true, force: true }); }
         const actual = result.exitCode === 0 ? "imports" : "rejects";
         if (result.timedOut || (peerRow.peer !== "next" && result.launchError) || actual !== [...expected][0]) throw new Error(`${row.name} omission ${peerRow.peer} Next evaluator expected ${[...expected][0]}, received ${actual}`);
-        for (const specifier of framework.all) observations.push({ package: row.name, version: row.version, peer: peerRow.peer, specifier, outcome: actual, evaluator: peerRow.peer === "next" ? "next-bin-absent" : "next-build" });
+        for (const specifier of framework.all) pending.push({ package: row.name, version: row.version, peer: peerRow.peer, specifier, outcome: actual, evaluator: peerRow.peer === "next" ? "next-bin-absent" : "next-build" });
       }
     } finally {
       for (const [root, hidden] of moved.reverse()) await rename(hidden, root);
     }
-    const after = { manifest: hash(await readFile(join(consumer, "package.json"))), lock: hash(await readFile(join(consumer, "package-lock.json"))), tree: await treeDigest(join(consumer, "node_modules")) };
+    const after = { manifest: consumerDigest(consumer, await readFile(join(consumer, "package.json"))), lock: consumerDigest(consumer, await readFile(join(consumer, "package-lock.json"))), tree: await treeDigest(join(consumer, "node_modules")) };
     if (JSON.stringify(before) !== JSON.stringify(after)) throw new Error(`${row.name} omission ${peerRow.peer} did not restore aggregate consumer bytes`);
+    observations.push(...pending.map((item) => ({ ...item, restoration: { manifestSha256: after.manifest, lockfileSha256: after.lock, treeSha256: after.tree } })));
   }
   return observations;
 }
