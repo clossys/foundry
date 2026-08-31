@@ -162,8 +162,9 @@ export function validateAggregateClosure(plan, closure, { read = null } = {}) {
     if (read) try {
       const qualification = parse(read(entry.qualification.path), entry.qualification.path, findings);
       const publication = parse(read(entry.publication.path), entry.publication.path, findings);
+      const published = publicationCandidate(publication, entry.packageKey);
       if (hash(read(entry.qualification.path)) !== entry.qualification.sha256 || qualification?.candidate?.name !== entry.name || qualification?.candidate?.version !== entry.version) finding(findings, "qualification-join", `${entry.name}@${entry.version} closure qualification does not join exact bytes`);
-      if (hash(read(entry.publication.path)) !== entry.publication.sha256 || !candidateBytesJoin(publicationCandidate(publication, entry.packageKey), publicationCandidate(publication, entry.packageKey)) || publicationCandidate(publication, entry.packageKey)?.name !== entry.name || publicationCandidate(publication, entry.packageKey)?.version !== entry.version) finding(findings, "publication-join", `${entry.name}@${entry.version} closure publication does not join exact bytes`);
+      if (hash(read(entry.publication.path)) !== entry.publication.sha256 || !published || published.name !== entry.name || published.version !== entry.version || !candidateBytesJoin(qualification?.candidate, published)) finding(findings, "publication-join", `${entry.name}@${entry.version} closure publication does not join its exact qualification candidate bytes`);
     } catch { finding(findings, "closure-read", `${entry.name}@${entry.version} closure evidence is unavailable`); }
   }
   return findings;
@@ -347,7 +348,7 @@ export async function runAggregatePublicNpmCanary({ root, record, set = "oidc-su
     if (result.kind !== "verified") throw new Error(`${entry.name}@${entry.version} anonymous registry verification did not complete: ${result.kind}`);
     const qualification = JSON.parse(read(entry.qualification.path));
     const expected = qualification.candidate;
-    if (result.evidence.sha1 !== expected.tarball.sha1 || result.evidence.sha256 !== expected.tarball.sha256 || result.evidence.sha512 !== expected.tarball.sha512 || result.evidence.packedManifestSha256 !== expected.packageManifestSha256) throw new Error(`${entry.name}@${entry.version} served bytes do not join its immutable qualification candidate`);
+    if (result.evidence.shasum !== expected.tarball.sha1 || result.evidence.sha256 !== expected.tarball.sha256 || result.evidence.sha512 !== expected.tarball.sha512 || result.evidence.packedManifestSha256 !== expected.packageManifestSha256) throw new Error(`${entry.name}@${entry.version} served bytes do not join its immutable qualification candidate`);
     if (!candidateBytesJoin({ name: entry.name, version: entry.version, packageManifestSha256: result.evidence.packedManifestSha256, tarball: result.evidence }, publishedCandidate)) throw new Error(`${entry.name}@${entry.version} served bytes do not join its immutable publication candidate`);
     const proofFindings = validatePublicNpmRegistryProof(proof, { name: entry.name, version: entry.version, repository, bytes: result.bytes });
     if (proofFindings.length) throw new Error(`${entry.name}@${entry.version} served bytes do not join its immutable publication record`);
@@ -473,7 +474,7 @@ export async function runAggregatePublicNpmCanary({ root, record, set = "oidc-su
       repositoryRedirects,
       peerResolution: { requested: record.peerResolution.requested, actual: Object.fromEntries(Object.entries(peerInstall).sort()), disposition: record.peerResolution.disposition },
       consumer: { manifestSha256: hash(before.manifest), lockfileSha256: hash(before.lock), controller: `${controller.name}@${controller.version}`, singularController: true, identities: selected.packages.map((entry) => `${entry.name}@${entry.version}`), rollback: { packageAbsenceProven: true, manifestRestored: true, lockfileRestored: true, identitiesRestored: true } },
-      packages: runs.map((run, index) => ({ name: artifacts[index].entry.name, version: artifacts[index].entry.version, qualification: artifacts[index].entry.qualification, publication: artifacts[index].entry.publication, served: { name: artifacts[index].entry.name, version: artifacts[index].entry.version, packageManifestSha256: artifacts[index].evidence.packedManifestSha256, tarball: { sha1: artifacts[index].evidence.sha1, sha256: artifacts[index].evidence.sha256, sha512: artifacts[index].evidence.sha512 } }, installedManifestSha256: run.coverage.installedManifestSha256, run })),
+      packages: runs.map((run, index) => ({ name: artifacts[index].entry.name, version: artifacts[index].entry.version, qualification: artifacts[index].entry.qualification, publication: artifacts[index].entry.publication, served: { name: artifacts[index].entry.name, version: artifacts[index].entry.version, packageManifestSha256: artifacts[index].evidence.packedManifestSha256, tarball: { sha1: artifacts[index].evidence.shasum, sha256: artifacts[index].evidence.sha256, sha512: artifacts[index].evidence.sha512 } }, installedManifestSha256: run.coverage.installedManifestSha256, run })),
       dimensions: [
         ["exports", runs.reduce((sum, run) => sum + run.coverage.declaredExportKeys, 0)],
         ["framework", runs.reduce((sum, run) => sum + run.coverage.frameworkExports, 0)],

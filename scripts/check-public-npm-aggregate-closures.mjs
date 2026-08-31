@@ -3,7 +3,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { AGGREGATE_CANARY_PATH, AGGREGATE_CLOSURE_DIRECTORY, resolveAggregateClosure, validateSatisfiedTranscriptHistory } from "./lib/public-npm-aggregate-canary.mjs";
+import { AGGREGATE_CANARY_PATH, AGGREGATE_CLOSURE_DIRECTORY, validateAggregateClosure, validateSatisfiedTranscriptHistory } from "./lib/public-npm-aggregate-canary.mjs";
 
 const root = process.cwd();
 const plan = JSON.parse(readFileSync(join(root, AGGREGATE_CANARY_PATH), "utf8"));
@@ -12,7 +12,7 @@ const findings = [];
 for (const path of files) {
   try {
     const closure = JSON.parse(readFileSync(join(root, path), "utf8"));
-    resolveAggregateClosure(plan, closure.set, closure);
+    findings.push(...validateAggregateClosure(plan, closure, { read: (evidencePath) => readFileSync(join(root, evidencePath), "utf8") }));
     const commits = execFileSync("git", ["log", "--format=%H", "--name-status", "--follow", "--", path], { cwd: root, encoding: "utf8" }).trim().split("\n").filter(Boolean);
     const history = []; let commit = null;
     for (const line of commits) {

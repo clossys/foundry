@@ -563,8 +563,12 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
   const tarballDigests = { sha1: hash("sha1", bytes), sha256: hash("sha256", bytes), sha512: hash("sha512", bytes) };
   const ownsRoot = consumerRoot === null;
   const root = ownsRoot ? await realpath(await mkdtemp(join(tmpdir(), "foundry-candidate-"))) : await realpath(consumerRoot);
-  const artifact = join(root, "artifact", "candidate.tgz");
-  await mkdir(join(root, "artifact")); await writeFile(artifact, bytes);
+  // Aggregate execution reuses one consumer root.  Each supplied tarball gets
+  // a content-addressed private path so a later candidate cannot overwrite a
+  // prior adapter's packed bytes or fail on an existing artifact directory.
+  const artifact = join(root, "artifact", `${tarballDigests.sha256}.tgz`);
+  const artifactSpec = `file:./artifact/${tarballDigests.sha256}.tgz`;
+  await mkdir(join(root, "artifact"), { recursive: true }); await writeFile(artifact, bytes, { flag: "wx" });
   const manifest = await packedManifest(artifact);
   if (adapter.package !== manifest.name) throw new Error("adapter package must equal packed manifest name");
   if (registry?.scope !== packageScope(manifest.name)) throw new Error("registry scope must match candidate package scope");
@@ -627,7 +631,7 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
     }, null, 2)}\n`);
 
     const peerArgs = Object.entries(adapter.peerInstall ?? {}).sort(([left], [right]) => left.localeCompare(right)).map(([name, version]) => `${name}@${version}`);
-    const install = ownsRoot ? await runProcess("npm", ["install", "--ignore-scripts", "--save-exact", "file:./artifact/candidate.tgz", ...peerArgs], {
+    const install = ownsRoot ? await runProcess("npm", ["install", "--ignore-scripts", "--save-exact", artifactSpec, ...peerArgs], {
       cwd: root, env: sanitizedEnv(root), timeout: QUALIFICATION_PHASE_TIMEOUTS.npm,
     }) : { exitCode: 0, signal: null, launchError: false, stdout: "aggregate preinstall", stderr: "" };
     transcript.observations.push(observation(root, "install", "install", 0, install));
@@ -731,7 +735,7 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
       const uninstall = await runProcess("npm", ["uninstall", manifest.name, "--ignore-scripts"], { cwd: root, env: sanitizedEnv(root), timeout: QUALIFICATION_PHASE_TIMEOUTS.npm });
       transcript.observations.push(observation(root, "uninstall", "uninstall", 0, uninstall));
       try { await lstat(installed); } catch { packageAbsentAfterUninstall = true; }
-      const reinstall = await runProcess("npm", ["install", "--ignore-scripts", "--save-exact", "file:./artifact/candidate.tgz"], { cwd: root, env: sanitizedEnv(root), timeout: QUALIFICATION_PHASE_TIMEOUTS.npm });
+      const reinstall = await runProcess("npm", ["install", "--ignore-scripts", "--save-exact", artifactSpec], { cwd: root, env: sanitizedEnv(root), timeout: QUALIFICATION_PHASE_TIMEOUTS.npm });
       transcript.observations.push(observation(root, "reinstall", "reinstall", 0, reinstall));
       const after = { manifest: await readFile(join(root, "package.json"), "utf8"), lock: await readFile(join(root, "package-lock.json"), "utf8") };
       restored = before.manifest === after.manifest && before.lock === after.lock;
