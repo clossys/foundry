@@ -127,19 +127,19 @@ test("qualification is least privilege and owns candidate execution", () => {
   assert.match(qualify, /actions\/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131/);
   assert.match(qualify, /validate-public-npm-registry-proof\.mjs --package "\$PKG" --tarball "\$TARBALL" --proof "\$PROOF"/);
   assert.match(qualify, /run-candidate-qualification\.mjs --package "\$PKG" --tarball "\$TARBALL"/);
-  assert.match(qualify, /npm publish "\$TARBALL" --dry-run --access public --ignore-scripts --registry "\$registry"/);
+  assert.match(qualify, /npm publish \. --dry-run --provenance --access public --ignore-scripts --registry "\$registry"/);
   assert.match(qualify, /actions\/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a/);
   assert.match(qualify, /candidate\.tgz/);
   assert.match(qualify, /transcript\.json/);
   assertPinnedReplayRuntime(qualify, "qualify", "npm ci --ignore-scripts");
 });
 
-test("OIDC publish consumes the exact handoff with upload-only trust and no token", () => {
+test("OIDC publish consumes the exact handoff through the clean-directory wrapper with upload-only trust and no token", () => {
   const publish = job("publish");
   assert.match(publish, /needs: \[discover, qualify\]/);
   assert.match(publish, /permissions:\n      contents: read\n      id-token: write/);
   assert.match(publish, /environment: npm-publish/);
-  assertPinnedReplayRuntime(publish, "publish", 'npm publish "$TARBALL" --provenance');
+  assertPinnedReplayRuntime(publish, "publish", "node scripts/publish-qualified-directory.mjs");
   assert.doesNotMatch(publish, /^\s+cache:/m);
   assert.match(publish, /actions\/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131/);
   assert.match(publish, /check-artifact-safety\.mjs/);
@@ -148,7 +148,9 @@ test("OIDC publish consumes the exact handoff with upload-only trust and no toke
   assert.doesNotMatch(publish, /NODE_AUTH_TOKEN|NPM_TOKEN|GH_PACKAGES_TOKEN|GITHUB_TOKEN|secrets\.GITHUB_TOKEN|secrets\.NPM_TOKEN/);
   assert.match(publish, /name: Verify exact tarball is unchanged/);
   assert.match(publish, /transcript\.json/);
-  assert.match(publish, /npm publish "\$TARBALL" --provenance --access public --ignore-scripts --registry "\$REGISTRY"/);
+  assert.match(publish, /node scripts\/publish-qualified-directory\.mjs --package "\$PKG" --candidate "\$TARBALL" --record "\$record" --mode oidc/);
+  assert.doesNotMatch(workflow, /npm publish "\$TARBALL"/);
+  assert.ok(position(publish, "node scripts/publish-qualified-directory.mjs") < position(publish, "- name: Redact denylist"), "the staged OIDC scan must run before denylist redaction");
   const postPublishVisibility = step(publish, "Verify anonymous public npm visibility and exact bytes");
   assertPostPublishVisibilityStep(postPublishVisibility);
   for (const [label, search, replacement] of [
@@ -173,7 +175,7 @@ test("OIDC publish consumes the exact handoff with upload-only trust and no toke
 });
 
 test("replay jobs reject runtime mutation instead of accepting a version floor", () => {
-  for (const [name, firstNpmOperation] of [["qualify", "npm ci --ignore-scripts"], ["publish", 'npm publish "$TARBALL" --provenance']]) {
+  for (const [name, firstNpmOperation] of [["qualify", "npm ci --ignore-scripts"], ["publish", "node scripts/publish-qualified-directory.mjs"]]) {
     const mutated = job(name)
       .replaceAll("v24.19.0", "v24.19.1")
       .replaceAll("11.17.0", "11.17.1")
@@ -185,5 +187,5 @@ test("replay jobs reject runtime mutation instead of accepting a version floor",
 test("no predecessor registry token or visibility mode remains in the public npm workflow", () => {
   assert.doesNotMatch(workflow, /visibility_only|GH_PACKAGES_TOKEN|check-package-visibility\.mjs/);
   assert.equal((workflow.match(/id-token:\s*write/g) ?? []).length, 1);
-  assert.equal((workflow.match(/\bnpm publish "\$TARBALL"(?! --dry-run)/g) ?? []).length, 1);
+  assert.equal((workflow.match(/\bnpm publish "\$TARBALL"/g) ?? []).length, 0);
 });
