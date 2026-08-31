@@ -275,6 +275,22 @@ test("a timed-out Unix process group cannot leave a grandchild that writes after
   await assert.rejects(() => readFile(marker), /ENOENT/);
 });
 
+test("a normally exiting Unix parent cannot leave a same-group descendant after return", { skip: process.platform === "win32" }, async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "foundry-process-tree-normal-"));
+  const marker = join(root, "descendant-wrote");
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const grandchild = `const fs=require('node:fs'); setTimeout(()=>fs.writeFileSync(${JSON.stringify(marker)},'escaped'),500); setInterval(()=>{},1000);`;
+  // stdio: ignore ensures `close` is not merely waiting on an inherited pipe;
+  // this exercises normal parent exit rather than timeout/overflow cleanup.
+  const parent = `const {spawn}=require('node:child_process'); spawn(process.execPath,['-e',${JSON.stringify(grandchild)}],{stdio:'ignore'}); process.exit(0);`;
+  const result = await runProcess(process.execPath, ["-e", parent], { timeout: 5_000 });
+  assert.equal(result.exitCode, 0);
+  assert.equal(result.signal, null);
+  assert.equal(result.launchError, false);
+  await new Promise((resolveDelay) => setTimeout(resolveDelay, 800));
+  await assert.rejects(() => readFile(marker), /ENOENT/);
+});
+
 test("runner rejects escaping, unexpanded, and unsupported export mappings", async (t) => {
   const escaping = await syntheticPackage({ exports: { ".": "../outside.js" } });
   const emptyWildcard = await syntheticPackage({ exports: { "./missing/*": "./missing/*.js" } });

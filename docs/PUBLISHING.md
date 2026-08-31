@@ -689,6 +689,50 @@ token or private-registry mapping for `@clossys`. Publication credentials and
 provider trust remain producer-only W1E concerns. See [ADOPTION.md](ADOPTION.md)
 for the capability and wiring ledger.
 
+### Aggregate public-npm clean-room canary
+
+`governance/public-npm-aggregate-canary.json` is the closed, ordered
+nineteen-package identity declaration for the initial baseline and the
+OIDC-successor set. A later, complete append-only closure supplies its exact
+qualification/publication joins; `npm run check:public-npm-aggregate-canary`
+validates both offline when present. A live replay uses only public npm, rejects credential-bearing parent
+environments, writes blank user and global npm configuration, verifies each
+anonymous exact-version metadata document and served tarball before install,
+then performs one disposable all-package install with an exact lockfile.
+
+The replay reuses the package-neutral candidate adapters: every packed export,
+declared framework context, bin, fixed `0`/`1`/`2` case, and optional-peer
+row remains covered by its existing policy rather than by an aggregate copy.
+It proves the installed Controller identity is singular, uninstalls the entire
+frozen set, proves package absence, and restores byte-identical consumer
+manifest and lockfile bytes before retaining a canonical transcript.
+
+The immutable plan contains identities only; it never records mutable
+publication status or path joins. When every join exists, a separate
+content-addressed aggregate closure binds all nineteen exact qualification and
+publication records back to this fixed plan. Until that closure exists this is
+an indeterminate producer qualification result, not a live-canary pass. In particular,
+`@clossys/publisher@0.1.8` remains deferred until Writer and Designer have
+their own anonymously verified public identities. Its separate `0.1.9` OIDC
+successor pin is future-only, never evidence that the deferred first identity
+is ready. The successor set likewise uses Advisor `0.1.6`, Starter `0.1.5`,
+Controller `0.8.24`, and Strategist `0.1.2` from their forward reviewed lanes.
+This check is producer
+qualification only: it does not establish consumer adoption, grounding, or
+closure. Refs: #652
+
+`npm run public-npm-aggregate-canary:readiness` validates the separate
+immutable satisfied-record namespace and exits `2` only while no satisfied
+record exists. It exits `1` for partial, malformed, duplicate, or otherwise
+non-canonical evidence; total readiness requires exactly one content-addressed
+record for each frozen set (`baseline` and `oidc-successor`). The live
+producer replay is deliberately separate and must name one exact immutable
+closure: `npm run run:public-npm-aggregate-canary -- --set baseline --closure
+governance/public-npm-aggregate-closures/baseline-<digest>.json` (and the
+corresponding `oidc-successor` invocation). It exits indeterminate while any
+exact record is held or pending. A future satisfied run retains a single-introduction content-addressed
+transcript; it never rewrites this frozen plan. Refs: #652
+
 ## Prerequisites held outside this repository
 
 | Thing | Where | Notes |
