@@ -114,7 +114,9 @@ test("creator writes one canonical owner-present record in a synthetic git repos
   const qualification = JSON.parse(readFileSync(join(sourceRoot, qualificationPath), "utf8"));
   qualification.reviewedCommit = base;
   qualification.candidateReview.headSha = base;
+  qualification.candidate.packageTreeSha1 = execFileSync("git", ["rev-parse", `${base}:packages/strategist`], { cwd: root, encoding: "utf8" }).trim();
   qualification.rootPackageJsonSha256 = digest("sha256", readFileSync(join(root, "package.json")));
+  qualification.rootPackageLockSha256 = digest("sha256", readFileSync(join(root, "package-lock.json")));
   qualification.candidate.tarball = hashes;
   qualification.transcript.tarball = hashes;
   const transcriptForDigest = { ...qualification.transcript };
