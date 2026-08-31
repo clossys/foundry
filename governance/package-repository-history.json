@@ -46,11 +46,6 @@
       "path": "governance/release-publications/later/starter-0.1.4.json",
       "lineSha256": "sha256:0b10402b6aff62ad368e6afc485c0a612d12f015823fb9ebde54a49b4b1eea08",
       "count": 1
-    },
-    {
-      "path": "scripts/lib/release-later-publication.mjs",
-      "lineSha256": "sha256:064b5b122b25cd926ab52968c1f791b9cff99cf92b0e15a708e18d20d6e6c602",
-      "count": 1
     }
   ]
 }

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -23,6 +23,7 @@ const qualification = {
   policySha256: hex("3", 64), adapterSha256: hex("4", 64), fixtureSetSha256: hex("5", 64),
 };
 const tarballUrl = `${PUBLIC_NPM_REGISTRY}/@clossys/strategist/-/strategist-0.1.1.tgz`;
+const historicalRepository = "https://github.com/clossys/" + "platform";
 function source() { return {
   schemaVersion: 1, kind: "foundry-later-publication-v1",
   qualification: { path: "governance/release-qualifications/clossys-strategist-0.1.1.json", sha256: hash(qualificationBytes) },
@@ -147,7 +148,7 @@ test("trusted-publication v2 binds immutable provenance to the qualified served 
   trusted.publication.reference = "https://github.com/clossys/foundry/actions/runs/123";
   trusted.publication.provenance = {
     repository: "https://github.com/clossys/foundry", workflow: ".github/workflows/publish.yml", ref: "refs/heads/main", event: "workflow_dispatch",
-    sourceSha: "a".repeat(40), builder: "https://github.com/actions/runner/github-hosted",
+    sourceSha: qualification.reviewedCommit, builder: "https://github.com/actions/runner/github-hosted",
     invocation: "https://github.com/clossys/foundry/actions/runs/123/attempts/1",
     attestationUrl: "https://registry.npmjs.org/-/npm/v1/attestations/%40clossys%2Fstrategist%400.1.1",
   };
@@ -157,9 +158,26 @@ test("trusted-publication v2 binds immutable provenance to the qualified served 
   delete trusted.registryProof.evidence.packumentUrl;
   assert.deepEqual(rules(trusted), []);
   for (const mutate of [
+    (value) => { value.publication.reference = "https://github.com/clossys/foundry/actions/runs/999"; },
+    (value) => { value.publication.provenance.sourceSha = "b".repeat(40); },
+    (value) => { value.publication.provenance.repository = historicalRepository; },
+    (value) => { value.publication.provenance.repository = historicalRepository; value.publication.provenance.sourceSha = "b".repeat(40); },
+    (value) => { value.publication.provenance.repository = historicalRepository; value.publication.provenance.invocation = "https://github.com/clossys/foundry/actions/runs/999/attempts/1"; },
     (value) => { value.publication.provenance.workflow = ".github/workflows/other.yml"; },
     (value) => { value.publication.provenance.invocation = "https://github.com/clossys/foundry/actions/runs/123"; },
     (value) => { value.publication.provenance.attestationUrl = "https://registry.npmjs.org/-/npm/v1/attestations/other"; },
     (value) => { value.registryProof.evidence.repository = "clossys/other"; },
+    (value) => { value.registryProof.evidence.sha512 = "0".repeat(128); },
   ]) { const value = structuredClone(trusted); mutate(value); assert.ok(rules(value).length > 0); }
+  const wrongSubject = structuredClone(trusted); wrongSubject.registryProof.evidence.sha512 = "0".repeat(128);
+  assert.ok(rules(wrongSubject).includes("attestation-subject"));
+  const v1Proof = structuredClone(trusted); v1Proof.registryProof = source().registryProof;
+  assert.ok(rules(v1Proof).includes("registry-proof"));
+});
+
+test("only the three retained historical release tuples may use the retired provenance repository", () => {
+  const result = validateRetainedLaterPublications(process.cwd());
+  assert.deepEqual(result.findings, []);
+  const records = ["advisor-0.1.5", "starter-0.1.4", "controller-0.8.23"];
+  for (const record of records) assert.equal(JSON.parse(readFileSync(`governance/release-publications/later/${record}.json`, "utf8")).publication.provenance.repository, historicalRepository);
 });

@@ -15,7 +15,13 @@ const SHA512 = /^[a-f0-9]{128}$/;
 const INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 const NAME = /^@[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/;
 const VERSION = /^\d+\.\d+\.\d+$/;
-const PUBLICATION_REPOSITORIES = new Set(["https://github.com/clossys/platform", "https://github.com/clossys/foundry"]);
+const PUBLICATION_REPOSITORY = "https://github.com/clossys/foundry";
+const HISTORICAL_PLATFORM_REPOSITORY = "https://github.com/clossys/" + "platform";
+const HISTORICAL_PLATFORM_PROVENANCE = new Map([
+  ["@clossys/advisor@0.1.5", { sourceSha: "2d582804fc26c0387c7e2f2e30278a3db85f6004", invocation: "https://github.com/clossys/foundry/actions/runs/33335335139/attempts/1" }],
+  ["@clossys/starter@0.1.4", { sourceSha: "2d582804fc26c0387c7e2f2e30278a3db85f6004", invocation: "https://github.com/clossys/foundry/actions/runs/33335869341/attempts/1" }],
+  ["@clossys/controller@0.8.23", { sourceSha: "2d582804fc26c0387c7e2f2e30278a3db85f6004", invocation: "https://github.com/clossys/foundry/actions/runs/33336158171/attempts/1" }],
+]);
 const PUBLISH_WORKFLOW = ".github/workflows/publish.yml";
 const PUBLISH_REF = "refs/heads/main";
 const PUBLISH_EVENT = "workflow_dispatch";
@@ -52,17 +58,31 @@ function activePackages(catalog) {
   return Array.isArray(target?.packages) ? target.packages : null;
 }
 function repositoryName(url) {
-  return typeof url === "string" && PUBLICATION_REPOSITORIES.has(url) ? url.slice("https://github.com/".length) : null;
+  return typeof url === "string" && (url === PUBLICATION_REPOSITORY || url === HISTORICAL_PLATFORM_REPOSITORY) ? url.slice("https://github.com/".length) : null;
 }
 function exactAttestationUrl(value, name, version) {
   if (!evidenceUrl(value)) return false;
   try { return new URL(value).href === `${PUBLIC_NPM_REGISTRY}/-/npm/v1/attestations/${encodeURIComponent(`${name}@${version}`)}`; } catch { return false; }
 }
-function trustedProvenance(value, candidate) {
+function invocationRunRoot(value) {
+  const match = /^https:\/\/github\.com\/clossys\/foundry\/actions\/runs\/(\d+)\/attempts\/\d+$/.exec(value ?? "");
+  return match ? `https://github.com/clossys/foundry/actions/runs/${match[1]}` : null;
+}
+function trustedProvenance(value, candidate, source) {
   if (!object(value)) return false;
   const keys = ["repository", "workflow", "ref", "event", "sourceSha", "builder", "invocation", "attestationUrl"];
   if (Object.keys(value).some((key) => !keys.includes(key))) return false;
-  return PUBLICATION_REPOSITORIES.has(value.repository) && value.workflow === PUBLISH_WORKFLOW && value.ref === PUBLISH_REF && value.event === PUBLISH_EVENT && SHA1.test(value.sourceSha ?? "") && value.builder === GITHUB_HOSTED_BUILDER && /^https:\/\/github\.com\/clossys\/(?:platform|foundry)\/actions\/runs\/\d+\/attempts\/\d+$/.test(value.invocation ?? "") && exactAttestationUrl(value.attestationUrl, candidate?.name, candidate?.version);
+  const identity = `${candidate?.name}@${candidate?.version}`;
+  const historical = HISTORICAL_PLATFORM_PROVENANCE.get(identity);
+  const trustedRepository = value.repository === PUBLICATION_REPOSITORY && value.sourceSha === source?.reviewedCommit && Boolean(invocationRunRoot(value.invocation));
+  const exactHistorical = value.repository === HISTORICAL_PLATFORM_REPOSITORY && historical?.sourceSha === value.sourceSha && historical.invocation === value.invocation;
+  return (trustedRepository || exactHistorical) && value.workflow === PUBLISH_WORKFLOW && value.ref === PUBLISH_REF && value.event === PUBLISH_EVENT && SHA1.test(value.sourceSha ?? "") && value.builder === GITHUB_HOSTED_BUILDER && exactAttestationUrl(value.attestationUrl, candidate?.name, candidate?.version);
+}
+function exactAttestedSubject(provenance, proof, candidate) {
+  return exactAttestationUrl(provenance?.attestationUrl, candidate?.name, candidate?.version)
+    && proof?.name === candidate?.name
+    && proof?.version === candidate?.version
+    && proof?.sha512 === candidate?.tarball?.sha512;
 }
 function gitBlob(root, ref, path) {
   return execFileSync("git", ["show", `${ref}:${path}`], { cwd: root, encoding: "utf8" });
@@ -97,7 +117,7 @@ export function validateLaterPublication(record, { recordPath, recordBytes, qual
   if (record?.catalog?.path !== CATALOG_PATH || !SHA256.test(record?.catalog?.sha256 ?? "") || typeof catalogBytes !== "string" || digest(catalogBytes) !== record?.catalog?.sha256 || record?.catalog?.packageKey !== key || !introducedPackages?.includes(key) || !retainedPackages?.includes(key)) finding(findings, "catalog-join", "must bind its introduction catalogue bytes and remain in the current active reviewed allowlist.");
   closed(findings, record?.publication, ["mode", "publishedAt", "reference", "provenance"], "publication.publication");
   if (legacy && (record?.publication?.mode !== "owner-present" || !canonicalInstant(record?.publication?.publishedAt) || !evidenceUrl(record?.publication?.reference) || record?.publication?.provenance !== undefined)) finding(findings, "publication-evidence", "v1 records require owner-present evidence without provenance.");
-  if (trusted && (record?.publication?.mode !== "trusted-publisher" || !canonicalInstant(record?.publication?.publishedAt) || !evidenceUrl(record?.publication?.reference) || !trustedProvenance(record?.publication?.provenance, c))) finding(findings, "publication-provenance", "trusted publication must bind its exact GitHub workflow, source, invocation, and npm attestation.");
+  if (trusted && (record?.publication?.mode !== "trusted-publisher" || !canonicalInstant(record?.publication?.publishedAt) || record?.publication?.reference !== invocationRunRoot(record?.publication?.provenance?.invocation) || !trustedProvenance(record?.publication?.provenance, c, record?.source))) finding(findings, "publication-provenance", "trusted publication must bind its exact GitHub workflow, source, invocation, run reference, and npm attestation.");
   const proof = record?.registryProof?.evidence;
   closed(findings, record?.registryProof, ["schemaVersion", "kind", "evidence"], "publication.registryProof");
   const v1 = record?.registryProof?.schemaVersion === 1 && record?.registryProof?.kind === "public-npm-anonymous-registry-proof-v1";
@@ -111,6 +131,8 @@ export function validateLaterPublication(record, { recordPath, recordBytes, qual
   const metadataUrl = v1 ? proof?.packumentUrl : proof?.metadataUrl;
   const expectedRepository = trusted ? repositoryName(record?.publication?.provenance?.repository) : "clossys/foundry";
   if ((!v1 && !v2) || proof?.registry !== PUBLIC_NPM_REGISTRY || proof?.access !== "anonymous" || proof?.name !== c?.name || proof?.version !== c?.version || metadataUrl !== expectedMetadata || (v2 && proof?.repository !== expectedRepository) || proof?.tarballUrl !== expectedTarballUrl(c?.name, c?.version) || proof?.integrity !== integrity || proof?.shasum !== c?.tarball?.sha1 || proof?.sha256 !== c?.tarball?.sha256 || proof?.sha512 !== c?.tarball?.sha512 || proof?.packedManifestSha256 !== c?.packageManifestSha256 || !Number.isSafeInteger(proof?.size) || proof.size < 1 || proof.size > 20_000_000) finding(findings, "registry-join", "anonymous served-byte proof must exactly join the candidate tarball and manifest.");
+  if (trusted && !v2) finding(findings, "registry-proof", "trusted publication requires the exact-version anonymous registry proof v2.");
+  if (trusted && !exactAttestedSubject(record?.publication?.provenance, proof, c)) finding(findings, "attestation-subject", "attestation subject must exactly project the candidate package/version and SHA-512.");
   if (typeof recordPath === "string" && typeof recordBytes === "string" && (!key || !VERSION.test(c?.version ?? "") || recordPath !== `${LATER_PUBLICATION_DIRECTORY}/${key}-${c.version}.json`)) finding(findings, "record-path", "record path must be the unique package/version identity.");
   return findings;
 }
