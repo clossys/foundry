@@ -45,6 +45,7 @@ export function consumerDigest(root, value) {
 const CREDENTIAL_ENV = ["NODE_AUTH_TOKEN", "NPM_TOKEN", "GH_PACKAGES_TOKEN", "GITHUB_TOKEN", "GH_TOKEN"];
 const TEMPLATE = /\{\{([A-Z_]+)\}\}/g;
 export const QUALIFICATION_PHASE_TIMEOUTS = Object.freeze({ npm: 180_000, framework: 120_000, probe: 30_000 });
+const TRUSTED_ROOTS = new Map();
 
 export function assertCredentialFree(env = process.env) {
   if (CREDENTIAL_ENV.some((name) => typeof env[name] === "string" && env[name].length > 0)) throw new Error("qualification runner refuses credential-bearing parent environment");
@@ -87,8 +88,25 @@ function renderFixture(value, variables) {
   return rendered;
 }
 
-async function assertRestorePathContained(root, path, label) {
+async function registerTrustedRoot(root) {
   const canonicalRoot = await realpath(root);
+  const state = await lstat(canonicalRoot);
+  if (!state.isDirectory() || state.isSymbolicLink()) throw new Error("qualification consumer root must be a regular directory");
+  TRUSTED_ROOTS.set(canonicalRoot, { dev: state.dev, ino: state.ino });
+  return canonicalRoot;
+}
+
+async function trustedRoot(root) {
+  const canonicalRoot = resolve(root);
+  const expected = TRUSTED_ROOTS.get(canonicalRoot);
+  if (!expected) throw new Error("qualification consumer root was not registered before filesystem access");
+  const state = await lstat(canonicalRoot);
+  if (!state.isDirectory() || state.isSymbolicLink() || state.dev !== expected.dev || state.ino !== expected.ino) throw new Error("qualification consumer root was replaced during qualification");
+  return canonicalRoot;
+}
+
+async function assertRestorePathContained(root, path, label) {
+  const canonicalRoot = await trustedRoot(root);
   const target = resolve(path);
   const rel = relative(canonicalRoot, target);
   if (!rel || rel === ".." || rel.startsWith(`..${sep}`) || isAbsolute(rel)) throw new Error(`${label} escapes the consumer root during restoration`);
@@ -110,10 +128,11 @@ async function assertRestorePathContained(root, path, label) {
 }
 
 async function ensureContainedDirectory(root, directory, label) {
-  const canonicalRoot = await realpath(root);
+  const canonicalRoot = await trustedRoot(root);
   const target = resolve(directory);
   const rel = relative(canonicalRoot, target);
-  if (!rel || rel === ".." || rel.startsWith(`..${sep}`) || isAbsolute(rel)) throw new Error(`${label} escapes the consumer root`);
+  if (!rel) return canonicalRoot;
+  if (rel === ".." || rel.startsWith(`..${sep}`) || isAbsolute(rel)) throw new Error(`${label} escapes the consumer root`);
   let cursor = canonicalRoot;
   for (const component of rel.split(sep)) {
     cursor = join(cursor, component);
@@ -678,13 +697,13 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
   const bytes = await readFile(tarball);
   const tarballDigests = { sha1: hash("sha1", bytes), sha256: hash("sha256", bytes), sha512: hash("sha512", bytes) };
   const ownsRoot = consumerRoot === null;
-  const root = ownsRoot ? await realpath(await mkdtemp(join(tmpdir(), "foundry-candidate-"))) : await realpath(consumerRoot);
+  const root = await registerTrustedRoot(ownsRoot ? await mkdtemp(join(tmpdir(), "foundry-candidate-")) : consumerRoot);
   // Aggregate execution reuses one consumer root.  Each supplied tarball gets
   // a content-addressed private path so a later candidate cannot overwrite a
   // prior adapter's packed bytes or fail on an existing artifact directory.
   const artifact = join(root, "artifact", `${tarballDigests.sha256}.tgz`);
   const artifactSpec = `file:./artifact/${tarballDigests.sha256}.tgz`;
-  await mkdir(join(root, "artifact"), { recursive: true }); await writeFile(artifact, bytes, { flag: "wx" });
+  await ensureContainedDirectory(root, join(root, "artifact"), "candidate artifact directory"); await writeFile(artifact, bytes, { flag: "wx" });
   const manifest = await packedManifest(artifact);
   if (adapter.package !== manifest.name) throw new Error("adapter package must equal packed manifest name");
   if (registry?.scope !== packageScope(manifest.name)) throw new Error("registry scope must match candidate package scope");
@@ -809,7 +828,7 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
     const overlayBackup = new Map();
     for (const item of adapter.consumerOverlay ?? []) {
       const target = resolve(root, item.target);
-      await mkdir(dirname(target), { recursive: true });
+      await ensureContainedDirectory(root, dirname(target), `consumer overlay ${item.target} parent`);
       await assertRestorePathContained(root, target, `consumer overlay ${item.target}`);
       if (restoreConsumerOverlay) {
         try { overlayBackup.set(target, await readRegularFile(root, target, `consumer overlay ${item.target}`)); }

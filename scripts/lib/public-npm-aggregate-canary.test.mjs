@@ -373,6 +373,8 @@ test("a later closure makes a frozen pending set runnable without rewriting its 
   assert.ok(resolved.selected.packages.every((entry) => entry.qualification && entry.publication));
   const bad = structuredClone(closure); bad.packages.pop(); bad.canonicalSha256 = sha256(JSON.stringify(stable(Object.fromEntries(Object.entries(bad).filter(([key]) => key !== "canonicalSha256")))));
   assert.throws(() => resolveAggregateClosure(record, "baseline", bad), /closed immutable join/);
+  const wrongMember = structuredClone(closure); wrongMember.packages[0].publication.member = "writer"; wrongMember.canonicalSha256 = sha256(JSON.stringify(stable(Object.fromEntries(Object.entries(wrongMember).filter(([key]) => key !== "canonicalSha256")))));
+  assert.throws(() => resolveAggregateClosure(record, "baseline", wrongMember), /does not close/);
   assert.equal(isAggregateClosurePath(aggregateClosurePath("baseline", closure.canonicalSha256)), true);
   assert.equal(isAggregateClosurePath("../governance/public-npm-aggregate-closures/baseline-" + closure.canonicalSha256 + ".json"), false);
   assert.ok(validateAggregateClosure(record, closure, { path: aggregateClosurePath("oidc-successor", closure.canonicalSha256) }).some((item) => item.rule === "closure-path"));

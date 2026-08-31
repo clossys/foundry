@@ -511,7 +511,7 @@ export function resolveAggregateClosure(plan, set, closure = null) {
   if (!SHA256.test(closure.canonicalSha256 ?? "") || closure.canonicalSha256 !== hash(JSON.stringify(stable(copy)))) throw new Error("aggregate closure canonical digest is invalid");
   const resolved = selected.packages.map((entry, index) => {
     const item = closure.packages[index];
-    if (!exactKeys(item, ["name", "version", "qualification", "publication"]) || item.name !== entry.name || item.version !== entry.version || !exactKeys(item.qualification, ["path", "sha256"]) || !exactKeys(item.publication, ["path", "sha256", "member"])) throw new Error(`aggregate closure does not close ${entry.name}@${entry.version}`);
+    if (!exactKeys(item, ["name", "version", "qualification", "publication"]) || item.name !== entry.name || item.version !== entry.version || !exactKeys(item.qualification, ["path", "sha256"]) || !exactKeys(item.publication, ["path", "sha256", "member"]) || item.publication.member !== entry.packageKey) throw new Error(`aggregate closure does not close ${entry.name}@${entry.version}`);
     return { ...entry, qualification: item.qualification, publication: item.publication };
   });
   return { selected: { ...selected, packages: resolved }, closure, incomplete: [] };
