@@ -24,7 +24,7 @@ function childRun(entry) {
 }
 
 function git(root, args, input = undefined) {
-  return execFileSync("git", args, { cwd: root, encoding: "utf8", input }).trim();
+  return execFileSync("git", ["-c", "user.name=Test", "-c", "user.email=test@example.invalid", ...args], { cwd: root, encoding: "utf8", input }).trim();
 }
 
 function commitTree(root, files, parents = [], message = "fixture") {
@@ -157,7 +157,7 @@ test("merge-only plan rewrite is visible against each reachable parent", async (
     execFileSync("git", ["checkout", "-q", "other"], { cwd: temporary }); commit("right unchanged", ["--allow-empty"]); const right = execFileSync("git", ["rev-parse", "HEAD"], { cwd: temporary, encoding: "utf8" }).trim();
     await writeFile(join(temporary, planPath), "merge-rewrite\n"); execFileSync("git", ["add", planPath], { cwd: temporary });
     const tree = execFileSync("git", ["write-tree"], { cwd: temporary, encoding: "utf8" }).trim();
-    const merge = execFileSync("git", ["commit-tree", tree, "-p", left, "-p", right], { cwd: temporary, encoding: "utf8", input: "merge-only rewrite\n" }).trim();
+    const merge = execFileSync("git", ["-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit-tree", tree, "-p", left, "-p", right], { cwd: temporary, encoding: "utf8", input: "merge-only rewrite\n" }).trim();
     execFileSync("git", ["update-ref", "HEAD", merge], { cwd: temporary });
     const history = aggregateCanaryGitHistory({ root: temporary });
     assert.ok(history.some((entry) => entry.commit === merge && entry.status === "M"));
