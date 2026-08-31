@@ -61,6 +61,31 @@ describe("evaluateCredential", () => {
     });
   });
 
+  it("requires a dense, sorted, provider-valid closed scope", () => {
+    const sparse = Array(2) as string[];
+    sparse[1] = "packages:read";
+    const decorated = ["packages:read"];
+    Object.defineProperty(decorated, "extra", { value: "contents:read" });
+
+    for (const scope of [
+      sparse,
+      decorated,
+      ["packages:write", "contents:read"],
+      ["repository:admin"],
+    ]) {
+      expect(evaluateCredential({ ...ephemeral, scope })).toMatchObject({
+        verdict: "violated",
+        exitCode: 1,
+        reasons: ["non-canonical-scope"],
+      });
+    }
+    expect(evaluateCredential({ ...manual, scope: ["id-token:write"] })).toMatchObject({
+      verdict: "violated",
+      exitCode: 1,
+      reasons: ["non-canonical-scope"],
+    });
+  });
+
   it("requires class-specific providers", () => {
     expect(evaluateCredential({ ...ephemeral, provider: "github" })).toMatchObject({
       verdict: "violated",
@@ -80,6 +105,25 @@ describe("evaluateCredential", () => {
     expect(result.reasons).toEqual(["job-expiry-semantics-unproven"]);
   });
 
+  it("distinguishes unknown expiry evidence from an explicit false assertion", () => {
+    const { expiresAtJobEnd: _omitted, ...missingExpiry } = ephemeral;
+    expect(evaluateCredential(missingExpiry)).toMatchObject({
+      verdict: "indeterminate",
+      exitCode: 2,
+      reasons: ["job-expiry-semantics-unproven"],
+    });
+    expect(evaluateCredential({ ...ephemeral, expiresAtJobEnd: "true" })).toMatchObject({
+      verdict: "indeterminate",
+      exitCode: 2,
+      reasons: ["job-expiry-semantics-unproven"],
+    });
+    expect(evaluateCredential({ ...ephemeral, expiresAtJobEnd: false })).toMatchObject({
+      verdict: "violated",
+      exitCode: 1,
+      reasons: ["job-expiry-semantics-unproven"],
+    });
+  });
+
   it("requires a complete job lifetime and never invents a rotation timestamp", () => {
     const result = evaluateCredential({ ...ephemeral, jobEndedAt: "not-a-date" });
     expect(result).toMatchObject({ verdict: "indeterminate", exitCode: 2 });
@@ -94,6 +138,11 @@ describe("evaluateCredential", () => {
     });
     expect(evaluateCredential({ ...ephemeral, jobStartedAt: "2026-08-18T00:02:00.000Z" })).toMatchObject({
       verdict: "indeterminate",
+      reasons: ["job-lifetime-unverifiable"],
+    });
+    expect(evaluateCredential({ ...ephemeral, jobEndedAt: ephemeral.jobStartedAt })).toMatchObject({
+      verdict: "indeterminate",
+      exitCode: 2,
       reasons: ["job-lifetime-unverifiable"],
     });
     expect(
@@ -128,6 +177,24 @@ describe("evaluateCredential", () => {
     expect(result.reasons).toEqual(["unsupported-fields"]);
   });
 
+  it("rejects symbol and non-enumerable own keys at both evidence levels", () => {
+    const topLevelSymbol = { ...ephemeral } as Record<PropertyKey, unknown>;
+    topLevelSymbol[Symbol("token")] = "do-not-store-this";
+    const nestedSymbol = {
+      ...manual,
+      ownerProvenance: { ...manual.ownerProvenance } as Record<PropertyKey, unknown>,
+    };
+    nestedSymbol.ownerProvenance[Symbol("token")] = "do-not-store-this";
+    const nonEnumerable = { ...ephemeral } as Record<PropertyKey, unknown>;
+    Object.defineProperty(nonEnumerable, "token", { value: "do-not-store-this" });
+
+    for (const evidence of [topLevelSymbol, nestedSymbol, nonEnumerable]) {
+      const result = evaluateCredential(evidence);
+      expect(result).toMatchObject({ verdict: "indeterminate", exitCode: 2, reasons: ["unsupported-fields"] });
+      expect(JSON.stringify(result)).not.toContain("do-not-store-this");
+    }
+  });
+
   it("returns a closed, frozen value-free evaluation", () => {
     const result: CredentialEvaluation = evaluateCredential(ephemeral);
     expect(Object.isFrozen(result)).toBe(true);
@@ -138,7 +205,7 @@ describe("evaluateCredential", () => {
 
 describe("defineCredentialEvidence", () => {
   it("freezes evidence and its nested metadata without introducing a value field", () => {
-    const evidence = defineCredentialEvidence({ ...manual, scope: ["packages:write", "contents:read"] });
+    const evidence = defineCredentialEvidence({ ...manual, scope: ["contents:read", "packages:write"] });
     expect(Object.isFrozen(evidence)).toBe(true);
     expect(Object.isFrozen(evidence.scope)).toBe(true);
     expect(evidence.scope).toEqual(["contents:read", "packages:write"]);
@@ -152,5 +219,34 @@ describe("defineCredentialEvidence", () => {
 
   it("refuses an invalid key with whitespace", () => {
     expect(() => defineCredentialEvidence({ ...manual, key: " GH_PACKAGES_TOKEN" })).toThrow(RangeError);
+  });
+
+  it("refuses non-canonical scope, expiry, chronology, and unsupported own keys while authoring", () => {
+    const topLevelSymbol = { ...manual } as Record<PropertyKey, unknown>;
+    topLevelSymbol[Symbol("token")] = "do-not-store-this";
+    const nestedSymbol = {
+      ...manual,
+      ownerProvenance: { ...manual.ownerProvenance } as Record<PropertyKey, unknown>,
+    };
+    nestedSymbol.ownerProvenance[Symbol("token")] = "do-not-store-this";
+    const sparse = Array(2) as string[];
+    sparse[1] = "packages:read";
+    const { expiresAtJobEnd: _omitted, ...missingExpiry } = ephemeral;
+
+    for (const evidence of [
+      { ...ephemeral, scope: sparse },
+      { ...ephemeral, scope: ["repository:admin"] },
+      { ...manual, scope: ["packages:write", "contents:read"] },
+      { ...manual, scope: ["packages:write", "packages:write"] },
+      { ...manual, scope: [" packages:write"] },
+      missingExpiry,
+      { ...ephemeral, expiresAtJobEnd: false },
+      { ...ephemeral, expiresAtJobEnd: "true" },
+      { ...ephemeral, jobEndedAt: ephemeral.jobStartedAt },
+      topLevelSymbol,
+      nestedSymbol,
+    ]) {
+      expect(() => defineCredentialEvidence(evidence as never)).toThrow(RangeError);
+    }
   });
 });

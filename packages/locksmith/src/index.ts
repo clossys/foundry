@@ -28,6 +28,7 @@ export type {
   CredentialExitCode,
   CredentialReason,
   CredentialProvider,
+  CredentialScope,
   CredentialVerdict,
   EphemeralJobCredentialEvidence,
   ManuallyRotatableCredentialEvidence,

@@ -167,11 +167,14 @@ evaluateCredential({
 }); // { verdict: "satisfied", exitCode: 0, ... }
 ```
 
-The ephemeral path requires the `github-actions` provider, a trimmed unique
-non-empty scope, a canonical UTC job lifetime, explicit expiry-at-job-end
+The ephemeral path requires the `github-actions` provider, a dense, sorted,
+unique scope drawn from the closed `contents:read`, `id-token:write`,
+`packages:read`, and `packages:write` vocabulary, a canonical UTC job lifetime
+whose end is strictly after its start, explicit expiry-at-job-end
 semantics, and observed scoped use; it does not invent a rotation timestamp.
 The manually rotatable path requires the explicit `github` provider and
-owner-controlled token provenance, while keeping provider metadata (including
+the same closed scope except `id-token:write`, plus owner-controlled token
+provenance, while keeping provider metadata (including
 an optional repository-secret `updatedAt`) separate. `updatedAt` alone
 therefore remains `indeterminate`, never proof of a token rotation. Unknown fields are rejected
 without being returned, so credential values cannot travel through the

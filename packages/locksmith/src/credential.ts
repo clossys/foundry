@@ -4,6 +4,17 @@ import type { SecretKey } from "./types.js";
 export type CredentialClass = "ephemeral-job" | "manually-rotatable";
 export type CredentialProvider = "github-actions" | "github";
 
+/**
+ * The closed GitHub permission vocabulary this credential lifecycle slice can
+ * currently assess. Extend it deliberately when a new consumer use case is
+ * covered; arbitrary provider strings are not evidence of bounded scope.
+ */
+export type CredentialScope =
+  | "contents:read"
+  | "id-token:write"
+  | "packages:read"
+  | "packages:write";
+
 export type CredentialVerdict = "satisfied" | "violated" | "indeterminate";
 export type CredentialExitCode = 0 | 1 | 2;
 
@@ -16,7 +27,7 @@ export interface EphemeralJobCredentialEvidence {
   readonly key: SecretKey;
   readonly credentialClass: "ephemeral-job";
   readonly provider: "github-actions";
-  readonly scope: readonly string[];
+  readonly scope: readonly CredentialScope[];
   readonly jobStartedAt: string;
   readonly jobEndedAt: string;
   readonly expiresAtJobEnd: true;
@@ -32,7 +43,7 @@ export interface ManuallyRotatableCredentialEvidence {
   readonly key: SecretKey;
   readonly credentialClass: "manually-rotatable";
   readonly provider: "github";
-  readonly scope: readonly string[];
+  readonly scope: readonly Exclude<CredentialScope, "id-token:write">[];
   readonly repositorySecretUpdatedAt?: string | null;
   readonly ownerProvenance: {
     readonly source: "owner-controlled";
@@ -100,14 +111,62 @@ function isKey(value: unknown): value is SecretKey {
   return isNonEmptyString(value) && value === value.trim();
 }
 
-function isScope(value: unknown): value is readonly string[] {
-  if (!Array.isArray(value) || value.length === 0 || !value.every(isNonEmptyString)) return false;
-  return value.every((entry, index) => entry === entry.trim() && value.indexOf(entry) === index);
+const EPHEMERAL_GITHUB_ACTIONS_SCOPES: ReadonlySet<CredentialScope> = new Set([
+  "contents:read",
+  "id-token:write",
+  "packages:read",
+  "packages:write",
+]);
+
+const MANUAL_GITHUB_SCOPES: ReadonlySet<CredentialScope> = new Set([
+  "contents:read",
+  "packages:read",
+  "packages:write",
+]);
+
+function scopeFailure(value: unknown, credentialClass: CredentialClass): CredentialReason | null {
+  if (!Array.isArray(value) || value.length === 0) return "missing-scope";
+
+  const expectedOwnKeys = new Set<PropertyKey>([
+    "length",
+    ...Array.from({ length: value.length }, (_, index) => String(index)),
+  ]);
+  const actualOwnKeys = Reflect.ownKeys(value);
+  if (
+    actualOwnKeys.length !== expectedOwnKeys.size ||
+    actualOwnKeys.some((key) => !expectedOwnKeys.has(key)) ||
+    Array.from({ length: value.length }, (_, index) => index).some(
+      (index) => !Object.prototype.hasOwnProperty.call(value, index),
+    )
+  ) {
+    return "non-canonical-scope";
+  }
+
+  const allowed =
+    credentialClass === "ephemeral-job"
+      ? EPHEMERAL_GITHUB_ACTIONS_SCOPES
+      : MANUAL_GITHUB_SCOPES;
+  if (
+    !value.every(
+      (entry) =>
+        typeof entry === "string" &&
+        entry === entry.trim() &&
+        allowed.has(entry as CredentialScope),
+    )
+  ) {
+    return "non-canonical-scope";
+  }
+
+  const sorted = [...value].sort();
+  if (new Set(value).size !== value.length || value.some((entry, index) => entry !== sorted[index])) {
+    return "non-canonical-scope";
+  }
+  return null;
 }
 
 function hasOnlyFields(value: Record<string, unknown>, fields: readonly string[]): boolean {
   const allowed = new Set(fields);
-  return Object.keys(value).every((field) => allowed.has(field));
+  return Reflect.ownKeys(value).every((field) => typeof field === "string" && allowed.has(field));
 }
 
 function keyOf(value: unknown): SecretKey | null {
@@ -164,18 +223,9 @@ export function evaluateCredential(evidence: unknown): CredentialEvaluation {
   if (!isNonEmptyString(evidence.provider)) {
     return evaluation(key, credentialClass, "violated", ["missing-provider"]);
   }
-  if (!isScope(evidence.scope)) {
-    const scope = evidence.scope;
-    return evaluation(
-      key,
-      credentialClass,
-      "violated",
-      Array.isArray(scope) && scope.some((entry) => typeof entry === "string" && entry !== entry.trim())
-        ? ["non-canonical-scope"]
-        : Array.isArray(scope) && new Set(scope).size !== scope.length
-          ? ["non-canonical-scope"]
-          : ["missing-scope"],
-    );
+  const invalidScope = scopeFailure(evidence.scope, credentialClass);
+  if (invalidScope !== null) {
+    return evaluation(key, credentialClass, "violated", [invalidScope]);
   }
 
   if (credentialClass === "ephemeral-job") {
@@ -185,11 +235,14 @@ export function evaluateCredential(evidence: unknown): CredentialEvaluation {
     if (
       !isCanonicalUtcTimestamp(evidence.jobStartedAt) ||
       !isCanonicalUtcTimestamp(evidence.jobEndedAt) ||
-      new Date(evidence.jobEndedAt) < new Date(evidence.jobStartedAt)
+      new Date(evidence.jobEndedAt) <= new Date(evidence.jobStartedAt)
     ) {
       return evaluation(key, credentialClass, "indeterminate", ["job-lifetime-unverifiable"]);
     }
-    if (evidence.expiresAtJobEnd !== true) {
+    if (typeof evidence.expiresAtJobEnd !== "boolean") {
+      return evaluation(key, credentialClass, "indeterminate", ["job-expiry-semantics-unproven"]);
+    }
+    if (!evidence.expiresAtJobEnd) {
       return evaluation(key, credentialClass, "violated", ["job-expiry-semantics-unproven"]);
     }
     if (evidence.scopedUseObserved !== true) {
@@ -231,11 +284,15 @@ export function defineCredentialEvidence(evidence: CredentialEvidence): Credenti
   if (evaluated.verdict !== "satisfied") {
     throw new RangeError(`credential evidence is ${evaluated.verdict}: ${evaluated.reasons.join(", ")}`);
   }
+  if (evidence.credentialClass === "ephemeral-job") {
+    return Object.freeze({ ...evidence, scope: Object.freeze([...evidence.scope]) });
+  }
   return Object.freeze({
     ...evidence,
-    scope: Object.freeze([...evidence.scope].sort()),
-    ...(evidence.credentialClass === "manually-rotatable" && evidence.ownerProvenance !== null
-      ? { ownerProvenance: Object.freeze({ ...evidence.ownerProvenance }) }
-      : {}),
+    scope: Object.freeze([...evidence.scope]),
+    ownerProvenance:
+      evidence.ownerProvenance === null
+        ? null
+        : Object.freeze({ ...evidence.ownerProvenance }),
   });
 }
