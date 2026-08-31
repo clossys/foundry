@@ -113,8 +113,13 @@ export function validateAggregateChildExecution(run, { name, version, qualificat
       const expected = expectedObservations.filter((item) => operationKinds.has(item?.kind)).map(project).sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
       const actual = run.observations.filter((item) => operationKinds.has(item?.kind)).map(project).sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
       if (JSON.stringify(actual) !== JSON.stringify(expected)) finding(findings, "qualification-operations", `${name}@${version} child operations do not exactly match immutable qualification IDs, kinds, and exits`);
-      const coverageKeys = ["declaredExportKeys", "concreteTargets", "runtimeImports", "reactServerImports", "staticTargets", "frameworkExports", "frameworkBuilds", "failed", "bins", "lifecycleScriptsDisabled"];
-      if (coverageKeys.some((key) => run.coverage?.[key] !== expectedCoverage[key])) finding(findings, "qualification-coverage", `${name}@${version} child coverage does not exactly match immutable qualification coverage`);
+      const retainedCoverageKeys = ["declaredExportKeys", "concreteTargets", "runtimeImports", "reactServerImports", "staticTargets", "frameworkExports", "frameworkBuilds", "failed", "bins", "lifecycleScriptsDisabled"].filter((key) => own(expectedCoverage, key));
+      const derived = {
+        reactServerImports: expected.filter((item) => item.id?.startsWith("import:react-server:")).length,
+        frameworkExports: expected.filter((item) => item.kind === "framework").length,
+      };
+      derived.frameworkBuilds = derived.frameworkExports > 0 ? 1 : 0;
+      if (retainedCoverageKeys.some((key) => run.coverage?.[key] !== expectedCoverage[key]) || ["reactServerImports", "frameworkExports", "frameworkBuilds"].filter((key) => !own(expectedCoverage, key)).some((key) => run.coverage?.[key] !== derived[key])) finding(findings, "qualification-coverage", `${name}@${version} child coverage does not exactly match retained immutable coverage and derived operation counts`);
       const expectedRaw = expectedObservations.filter((item) => item?.kind === "case" && own(item, "rawCaseEvidence"));
       const actualRaw = run.observations.filter((item) => item?.kind === "case" && own(item, "rawCaseEvidence"));
       const validRaw = (value) => object(value) && exactKeys(value, ["argv", "materializedInputs", "consumerOverlay", "exitCode", "stdout", "stderr"])
@@ -336,6 +341,7 @@ export function validateSatisfiedAggregateTranscript(transcript, { plan, closure
   if (!exactKeys(transcript.consumer, ["manifestSha256", "lockfileSha256", "controller", "singularController", "identities", "rollback"]) || !SHA256.test(transcript.consumer.manifestSha256 ?? "") || !SHA256.test(transcript.consumer.lockfileSha256 ?? "") || transcript.consumer.singularController !== true || JSON.stringify(transcript.consumer.identities) !== JSON.stringify(expectedIdentities) || transcript.consumer.controller !== expectedIdentities.find((identity) => identity.startsWith("@clossys/controller@")) || !exactKeys(transcript.consumer.rollback, ["packageAbsenceProven", "manifestRestored", "lockfileRestored", "identitiesRestored"]) || Object.values(transcript.consumer.rollback).some((value) => value !== true)) finding(findings, "rollback", "transcript must retain exact aggregate identity and complete real rollback evidence");
   const required = ["exports", "framework", "bins", "cases", "optionalPeers", "rollback"];
   if (!Array.isArray(transcript.dimensions) || transcript.dimensions.length !== required.length || transcript.dimensions.map((entry) => entry?.dimension).join("\0") !== required.join("\0") || transcript.dimensions.some((entry) => !exactKeys(entry, ["dimension", "count", "ok"]) || !Number.isSafeInteger(entry.count) || entry.count < 1 || entry.ok !== true)) finding(findings, "dimensions", "transcript must retain every aggregate execution dimension once with a positive satisfied count");
+  else if (!Array.isArray(transcript.packages) || transcript.packages.some((entry) => !object(entry?.run) || !object(entry.run.coverage) || !Array.isArray(entry.run.observations))) finding(findings, "dimension-count", "aggregate dimension projection requires well-formed child execution records");
   else {
     const actualRuns = transcript.packages.map((entry) => entry.run);
     const expectedCounts = {
