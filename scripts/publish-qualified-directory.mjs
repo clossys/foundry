@@ -197,13 +197,16 @@ function assertReleaseRuntime(run, env) {
   if (String(node.stdout ?? "").trim() !== RELEASE_NODE_VERSION || String(npm.stdout ?? "").trim() !== RELEASE_NPM_VERSION || String(zlib.stdout ?? "").trim() !== RELEASE_ZLIB_VERSION) throw new Error(`owner-present publication requires Node ${RELEASE_NODE_VERSION}, npm ${RELEASE_NPM_VERSION}, and zlib ${RELEASE_ZLIB_VERSION}`);
 }
 
-export function ownerPresentPtyArgs(registry) {
+export function ownerPresentPtyArgs(registry, platform = process.platform) {
+  if (registry !== "https://registry.npmjs.org") throw new Error("owner-present publication requires the exact public npm registry");
   const npm = ["npm", "publish", ".", "--access", "public", "--ignore-scripts", "--registry", registry];
   // macOS BSD script accepts command argv directly; util-linux script needs
-  // its closed `-c` form. `registry` has already been compared to the one
-  // literal public target before this helper is reached, so no caller text is
-  // ever interpolated into the Linux command string.
-  return process.platform === "linux" ? ["-q", "/dev/null", "-c", npm.join(" ")] : ["-q", "/dev/null", ...npm];
+  // its closed `-c` form plus `-e`, which makes the PTY utility return npm's
+  // exit status rather than its own successful session status. `registry` has
+  // already been compared to the one literal public target before this helper
+  // is reached, so no caller text is ever interpolated into the Linux command
+  // string.
+  return platform === "linux" ? ["-e", "-q", "/dev/null", "-c", npm.join(" ")] : ["-q", "/dev/null", ...npm];
 }
 
 export function createOwnerPromptRelay(write = (line) => process.stderr.write(line)) {

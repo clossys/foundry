@@ -90,6 +90,17 @@ test("owner-present wrapper has a closed CLI", () => {
   for (const mutation of [["--otp", "123456"], ["--candidate", "https://example.test/x.tgz"], ["--unknown", "x"], ["--package", "../strategist"]]) assert.throws(() => argsFrom([...argv, ...mutation]), /Usage:/);
 });
 
+test("Linux PTY command returns npm's failure status rather than script's session status", () => {
+  assert.deepEqual(ownerPresentPtyArgs("https://registry.npmjs.org", "linux"), [
+    "-e", "-q", "/dev/null", "-c",
+    "npm publish . --access public --ignore-scripts --registry https://registry.npmjs.org",
+  ]);
+  assert.deepEqual(ownerPresentPtyArgs("https://registry.npmjs.org", "darwin"), [
+    "-q", "/dev/null", "npm", "publish", ".", "--access", "public", "--ignore-scripts", "--registry", "https://registry.npmjs.org",
+  ]);
+  assert.throws(() => ownerPresentPtyArgs("https://registry.npmjs.org; printf injected", "linux"), /exact public npm registry/);
+});
+
 test("the already-required build context runs the real loopback acceptance on the exact release runtime", () => {
   const workflow = readFileSync(".github/workflows/ci.yml", "utf8");
   const buildStart = workflow.indexOf("  build:\n");
@@ -104,6 +115,36 @@ test("the already-required build context runs the real loopback acceptance on th
   assert.match(build, /test "\$\(npm --version\)" = '11\.17\.0'/);
   assert.match(build, /test "\$\(node -p 'process\.versions\.zlib'\)" = '1\.3\.2\.1-motley-3246f1b'/);
   assert.ok(build.indexOf(assertion) < build.indexOf(acceptance), "the exact runtime must be asserted before the loopback acceptance");
+});
+
+test("a nonzero owner-present PTY session aborts before anonymous verification", async (t) => {
+  const item = await fixture(t);
+  let verificationCalled = false, interactiveCalls = 0;
+  const run = (file, args) => {
+    if (args[0] === "--version") return { status: 0, stdout: file === process.execPath ? "v24.19.0\n" : "11.17.0\n", stderr: "" };
+    if (args[0] === "-p") return { status: 0, stdout: "1.3.2.1-motley-3246f1b\n", stderr: "" };
+    if (file === process.execPath) return { status: 0, stdout: "", stderr: "" };
+    if (args[0] === "pack") {
+      writeFileSync(join(args.at(-1), "repacked.tgz"), item.bytes);
+      return { status: 0, stdout: JSON.stringify([{ filename: "repacked.tgz" }]), stderr: "" };
+    }
+    throw new Error(`unexpected command ${file}`);
+  };
+  await assert.rejects(
+    () => publishQualifiedDirectory({
+      root: item.root,
+      packageKey: "strategist",
+      candidatePath: item.candidate,
+      recordPath: item.recordPath,
+      env: { PATH: process.env.PATH, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist },
+      run,
+      interactiveRun: async () => { interactiveCalls += 1; return { status: 1, signal: null, stdout: "", stderr: "" }; },
+      verify: async () => { verificationCalled = true; },
+    }),
+    /owner-present npm publish failed/,
+  );
+  assert.equal(interactiveCalls, 1, "the failed upload session is never retried by the wrapper");
+  assert.equal(verificationCalled, false, "a failed upload must not be mistaken for a pre-existing public version");
 });
 
 test("owner-present wrapper runs real pinned npm publish against a loopback registry with exact clean-directory bytes", { skip: !hasPinnedReleaseRuntime }, async (t) => {
@@ -140,7 +181,12 @@ test("owner-present wrapper runs real pinned npm publish against a loopback regi
   assert.deepEqual(publish.args, ownerPresentPtyArgs("https://registry.npmjs.org"));
   assert.equal(publish.cwd.includes("clossys-qualified-publish-"), true);
   assert.equal(publish.env.NPM_TOKEN, undefined);
-  assert.equal(publish.args.some((value, index) => value.includes(".tgz") || (value.includes("://") && publish.args[index - 1] !== "--registry") || value === "--otp" || value === "--provenance"), false);
+  if (process.platform === "linux") {
+    assert.deepEqual(publish.args, ownerPresentPtyArgs("https://registry.npmjs.org", "linux"));
+    assert.match(publish.args[4], /^npm publish \. --access public --ignore-scripts --registry https:\/\/registry\.npmjs\.org$/);
+  } else {
+    assert.equal(publish.args.some((value, index) => value.includes(".tgz") || (value.includes("://") && publish.args[index - 1] !== "--registry") || value === "--otp" || value === "--provenance"), false);
+  }
   const packed = calls.find((call) => call.file === "npm" && call.args[0] === "pack");
   assert.deepEqual(packed.args.slice(0, 4), ["pack", ".", "--ignore-scripts", "--json"]);
   assert.equal(packed.env.NPM_TOKEN, undefined);
