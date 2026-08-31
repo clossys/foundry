@@ -114,9 +114,14 @@ export function validateAggregateChildExecution(run, { name, version, qualificat
     else {
       const project = (item) => ({ id: item?.id, kind: item?.kind, expectedExitCode: item?.expectedExitCode });
       const operationKinds = new Set(["import", "framework", "help", "case"]);
-      const expected = expectedObservations.filter((item) => operationKinds.has(item?.kind)).map(project).sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
-      const actual = run.observations.filter((item) => operationKinds.has(item?.kind)).map(project).sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
-      if (JSON.stringify(actual) !== JSON.stringify(expected)) finding(findings, "qualification-operations", `${name}@${version} child operations do not exactly match immutable qualification IDs, kinds, and exits`);
+      const expected = expectedObservations.filter((item) => operationKinds.has(item?.kind)).map(project);
+      const actual = run.observations.filter((item) => operationKinds.has(item?.kind)).map(project);
+      const exactNonImports = (rows) => rows.filter((item) => item.kind !== "import").sort((left, right) => JSON.stringify(left).localeCompare(JSON.stringify(right)));
+      const expectedImports = expected.filter((item) => item.kind === "import"), actualImports = actual.filter((item) => item.kind === "import");
+      const importsMatch = qualificationTranscript.schema === "foundry-candidate-qualification-transcript-v2"
+        ? JSON.stringify(actualImports.map((item) => ({ kind: item.kind, expectedExitCode: item.expectedExitCode }))) === JSON.stringify(expectedImports.map((item) => ({ kind: item.kind, expectedExitCode: item.expectedExitCode })))
+        : JSON.stringify(actualImports) === JSON.stringify(expectedImports);
+      if (!importsMatch || JSON.stringify(exactNonImports(actual)) !== JSON.stringify(exactNonImports(expected))) finding(findings, "qualification-operations", `${name}@${version} child operations do not exactly match immutable qualification kinds, exits, and schema-appropriate identities`);
       const retainedCoverageKeys = ["declaredExportKeys", "concreteTargets", "runtimeImports", "reactServerImports", "staticTargets", "frameworkExports", "frameworkBuilds", "failed", "bins", "lifecycleScriptsDisabled"].filter((key) => own(expectedCoverage, key));
       const derived = {
         reactServerImports: expected.filter((item) => item.id?.startsWith("import:react-server:")).length,
