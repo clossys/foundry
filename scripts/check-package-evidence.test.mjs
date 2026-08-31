@@ -58,6 +58,26 @@ function grade(
 }
 
 const rules = (r) => r.findings.filter(isFailureFinding).map((f) => f.rule);
+const CURRENT_PUBLISHED_PACKAGES = [
+  "@clossys/advisor",
+  "@clossys/architect",
+  "@clossys/bouncer",
+  "@clossys/builder",
+  "@clossys/butler",
+  "@clossys/controller",
+  "@clossys/designer",
+  "@clossys/giver",
+  "@clossys/influencer",
+  "@clossys/inspector",
+  "@clossys/integrator",
+  "@clossys/keeper",
+  "@clossys/locksmith",
+  "@clossys/messenger",
+  "@clossys/observer",
+  "@clossys/starter",
+  "@clossys/strategist",
+  "@clossys/writer",
+];
 
 test("the ladder is ordered and its derivable states are a prefix of it", () => {
   assert.deepEqual(STATES, ["designed", "implemented", "staged", "published", "adopted", "grounded", "closed"]);
@@ -75,7 +95,7 @@ test("current-scope publication requires the exact validated first-publication r
     { sites: ["fixture:1"], publication: false },
   );
   assert.ok(rules(withoutPublication).includes("state-ahead-of-evidence"));
-  assert.deepEqual([...readValidatedPublishedPackages(repoRoot)].sort(), ["@clossys/advisor", "@clossys/controller", "@clossys/starter", "@clossys/strategist"]);
+  assert.deepEqual([...readValidatedPublishedPackages(repoRoot)].sort(), CURRENT_PUBLISHED_PACKAGES);
 });
 
 test("current-scope publication rejects coherent rewrites and rewrite-restore history", () => {
@@ -102,7 +122,7 @@ test("current-scope publication rejects coherent rewrites and rewrite-restore hi
     rewritten.members[0].publication.publishedAt = "2026-08-30T06:31:59.838Z";
     const rewrittenBytes = `${JSON.stringify(rewritten, null, 2)}\n`;
 
-    assert.deepEqual([...readValidatedPublishedPackages(fixtureRoot)].sort(), ["@clossys/advisor", "@clossys/controller", "@clossys/starter", "@clossys/strategist"]);
+    assert.deepEqual([...readValidatedPublishedPackages(fixtureRoot)].sort(), CURRENT_PUBLISHED_PACKAGES);
     writeFileSync(publicationPath, rewrittenBytes);
     assert.deepEqual([...readValidatedPublishedPackages(fixtureRoot)], []);
 

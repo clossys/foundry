@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "kind": "foundry-later-publication-v1",
+  "qualification": {
+    "path": "governance/release-qualifications/clossys-inspector-0.1.18.json",
+    "sha256": "bd8c5d5fe4d27e99e903f0a0477fd7f12838f7b1b7eadff8b50745baafabfb2c"
+  },
+  "candidate": {
+    "name": "@clossys/inspector",
+    "version": "0.1.18",
+    "packageTreeSha1": "22011a7795de613857cae1b69ffd5c8222e52e88",
+    "packageManifestSha256": "3127cb7b92168bca034edf7f74b7b2a4981e16fc22ae211abfce0d8afcb8557d",
+    "tarball": {
+      "sha1": "a4a2dc1f942e112a31b19ab9c0afe80c0c0660a0",
+      "sha256": "c41eed5ad1799c203dd662667c8d9a1c7346be6960414144e93553da8cdfec38",
+      "sha512": "9b0c8619bb258dc339c7decffee701a3cbc7d43d8af2e7c9059b5967f0f51f2ab98aee74aece9fc99705e9c7fdd3eb4e693545f60da2290b625df92e48ec2dc0"
+    }
+  },
+  "source": {
+    "reviewedCommit": "4bd2a3ad4909409f7735ce042f2c93b23b9aedd7",
+    "rootPackageJsonSha256": "c6f5f6791c7d6e105376603da0152618ae03aa5f25a522dda0432c11999a9bf1",
+    "rootPackageLockSha256": "5f4cdde3f18ddd555680034f87ea682408f4800e189a3df8041bd3f7d500a73a",
+    "policySha256": "92a4ec63b75655131a5eb453c393083a446a6173e06b761d872d1a7ce7cf7dad",
+    "adapterSha256": "bdec87656141a46395bacccb7f9ce0083da2f1c7c98fa425ee1ba4a0ba34ce03",
+    "fixtureSetSha256": "5b04bd878a0690d6ea3fc5e37af5406dbab716ffdc27b974210c03d6b5298136"
+  },
+  "catalog": {
+    "path": "governance/release-catalog.json",
+    "sha256": "3f43692f3c12dc1b21a3931fcf2abd53a68a207874b2ae2206e8e10f08b68404",
+    "packageKey": "inspector"
+  },
+  "publication": {
+    "mode": "owner-present",
+    "publishedAt": "2026-08-31T17:48:51.034Z",
+    "reference": "https://www.npmjs.com/package/@clossys/inspector/v/0.1.18"
+  },
+  "registryProof": {
+    "schemaVersion": 2,
+    "kind": "public-npm-anonymous-registry-proof-v2",
+    "evidence": {
+      "registry": "https://registry.npmjs.org",
+      "access": "anonymous",
+      "name": "@clossys/inspector",
+      "version": "0.1.18",
+      "metadataUrl": "https://registry.npmjs.org/%40clossys%2Finspector/0.1.18",
+      "repository": "clossys/foundry",
+      "tarballUrl": "https://registry.npmjs.org/@clossys/inspector/-/inspector-0.1.18.tgz",
+      "integrity": "sha512-mwyGGbsljcM5x97P/ucBo8vH1D2K8ufJBZtZZ/D1Hyq5iu50rs6fyZcF6cf90+tOaTVF9g2iKQtiXfkuSOwtwA==",
+      "shasum": "a4a2dc1f942e112a31b19ab9c0afe80c0c0660a0",
+      "sha256": "c41eed5ad1799c203dd662667c8d9a1c7346be6960414144e93553da8cdfec38",
+      "sha512": "9b0c8619bb258dc339c7decffee701a3cbc7d43d8af2e7c9059b5967f0f51f2ab98aee74aece9fc99705e9c7fdd3eb4e693545f60da2290b625df92e48ec2dc0",
+      "packedManifestSha256": "3127cb7b92168bca034edf7f74b7b2a4981e16fc22ae211abfce0d8afcb8557d",
+      "size": 122170
+    }
+  }
+}
