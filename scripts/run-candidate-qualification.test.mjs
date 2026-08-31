@@ -71,10 +71,32 @@ test("repository Trio policy, adapters, and current-candidate fixtures bind the 
 test("all 19 publishable packages are exact-source bound to the catalogue and qualification policy", async () => {
   const policy = await repositoryJson("governance/release-qualification-policy.json");
   const catalog = await repositoryJson("governance/release-catalog.json");
+  const expectedVersions = {
+    "@clossys/advisor": "0.1.6",
+    "@clossys/architect": "0.1.3",
+    "@clossys/bouncer": "0.1.2",
+    "@clossys/builder": "0.7.4",
+    "@clossys/butler": "0.1.2",
+    "@clossys/controller": "0.8.24",
+    "@clossys/designer": "0.2.5",
+    "@clossys/giver": "0.1.3",
+    "@clossys/influencer": "0.1.3",
+    "@clossys/inspector": "0.1.19",
+    "@clossys/integrator": "0.6.3",
+    "@clossys/keeper": "0.1.3",
+    "@clossys/locksmith": "0.1.7",
+    "@clossys/messenger": "0.1.3",
+    "@clossys/observer": "0.2.4",
+    "@clossys/publisher": "0.1.8",
+    "@clossys/starter": "0.1.5",
+    "@clossys/strategist": "0.1.2",
+    "@clossys/writer": "0.3.3",
+  };
   const packageKeys = (await readdir(new URL("../packages", import.meta.url))).sort();
   const manifests = await Promise.all(packageKeys.map((key) => repositoryJson(`packages/${key}/package.json`)));
   const target = catalog.targets.find((item) => item.id === catalog.defaultTarget);
   assert.equal(manifests.filter((manifest) => manifest.private !== true).length, 19);
+  assert.deepEqual(Object.keys(policy.packages).sort(), Object.keys(expectedVersions).sort());
   assert.deepEqual(validateReleaseQualificationPolicy(policy), []);
   assert.deepEqual(validateReleaseQualificationPortfolio({ policy, manifests, releasePackages: target.packages }), []);
   const releasePosition = new Map(target.packages.map((key, index) => [key, index]));
@@ -95,7 +117,7 @@ test("all 19 publishable packages are exact-source bound to the catalogue and qu
     const manifest = await repositoryJson(`${entry.packageDir}/package.json`);
     assert.equal(entry.packageKey, name.split("/")[1]);
     assert.equal(manifest.name, name);
-    if (name === "@clossys/locksmith") assert.equal(manifest.version, "0.1.6");
+    assert.equal(manifest.version, expectedVersions[name]);
     assert.equal(entry.archetypes["current-direct"].status, "required");
     const adapter = await repositoryJson(entry.adapterPath);
     const fixtureRoot = join(process.cwd(), entry.fixturePath);
