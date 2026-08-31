@@ -195,7 +195,7 @@ function oidcEnvironment(env = process.env, home) {
   // npm's trusted-publishing exchange needs GitHub's OIDC capability and the
   // run identity it attests. Nothing from an owner login, npmrc, or a generic
   // token environment crosses this boundary.
-  for (const key of ["ACTIONS_ID_TOKEN_REQUEST_URL", "ACTIONS_ID_TOKEN_REQUEST_TOKEN", "GITHUB_ACTIONS", "GITHUB_REPOSITORY", "GITHUB_REPOSITORY_ID", "GITHUB_REPOSITORY_OWNER_ID", "GITHUB_RUN_ID", "GITHUB_SERVER_URL", "GITHUB_WORKFLOW", "GITHUB_WORKFLOW_REF", "GITHUB_WORKFLOW_SHA", "RUNNER_ENVIRONMENT"]) {
+  for (const key of ["ACTIONS_ID_TOKEN_REQUEST_URL", "ACTIONS_ID_TOKEN_REQUEST_TOKEN", "GITHUB_ACTIONS", "GITHUB_EVENT_NAME", "GITHUB_REF", "GITHUB_REPOSITORY", "GITHUB_REPOSITORY_ID", "GITHUB_REPOSITORY_OWNER_ID", "GITHUB_RUN_ATTEMPT", "GITHUB_RUN_ID", "GITHUB_SERVER_URL", "GITHUB_SHA", "GITHUB_WORKFLOW", "GITHUB_WORKFLOW_REF", "GITHUB_WORKFLOW_SHA", "RUNNER_ENVIRONMENT"]) {
     if (typeof env[key] !== "string" || !env[key]) throw new Error(`OIDC publication requires ${key}`);
   }
   if (env.GITHUB_ACTIONS !== "true") throw new Error("OIDC publication requires GitHub Actions");

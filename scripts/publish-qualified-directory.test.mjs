@@ -140,7 +140,7 @@ test("OIDC dry publication cleanly repacks the qualified bytes and forwards only
   for (const key of ["NPM_TOKEN", "NODE_AUTH_TOKEN", "GITHUB_TOKEN", "PUBLIC_SAFETY_DENYLIST"]) assert.equal(publish.env[key], undefined, `${key} must not reach npm`);
   for (const [key, value] of Object.entries(oidc)) assert.equal(publish.env[key], value, `${key} must survive the OIDC boundary`);
   assert.deepEqual(Object.keys(publish.env).sort(), ["ACTIONS_ID_TOKEN_REQUEST_TOKEN", "ACTIONS_ID_TOKEN_REQUEST_URL", "GITHUB_ACTIONS", "GITHUB_EVENT_NAME", "GITHUB_REF", "GITHUB_REPOSITORY", "GITHUB_REPOSITORY_ID", "GITHUB_REPOSITORY_OWNER_ID", "GITHUB_RUN_ATTEMPT", "GITHUB_RUN_ID", "GITHUB_SERVER_URL", "GITHUB_SHA", "GITHUB_WORKFLOW", "GITHUB_WORKFLOW_REF", "GITHUB_WORKFLOW_SHA", "HOME", "PATH", "RUNNER_ENVIRONMENT"].sort());
-  for (const missing of ["GITHUB_SERVER_URL", "GITHUB_REPOSITORY_ID", "GITHUB_REPOSITORY_OWNER_ID", "RUNNER_ENVIRONMENT"]) {
+  for (const missing of ["GITHUB_EVENT_NAME", "GITHUB_REF", "GITHUB_REPOSITORY_ID", "GITHUB_REPOSITORY_OWNER_ID", "GITHUB_RUN_ATTEMPT", "GITHUB_SERVER_URL", "GITHUB_SHA", "RUNNER_ENVIRONMENT"]) {
     const incomplete = { ...oidc }; delete incomplete[missing];
     await assert.rejects(() => publishQualifiedDirectory({
       root: item.root, packageKey: "strategist", candidatePath: item.candidate, recordPath: item.recordPath,
