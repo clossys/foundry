@@ -77,7 +77,7 @@ test("all six policy entries bind their manifests, adapters, tracked fixtures, b
     "@clossys/controller": { packageKey: "controller", version: "0.8.24" },
     "@clossys/strategist": { packageKey: "strategist", version: "0.1.2" },
     "@clossys/writer": { packageKey: "writer", version: "0.3.2" },
-    "@clossys/designer": { packageKey: "designer", version: "0.2.3" },
+    "@clossys/designer": { packageKey: "designer", version: "0.2.4" },
   };
   assert.deepEqual(Object.keys(policy.packages).sort(), Object.keys(expected).sort());
   assert.deepEqual(validateReleaseQualificationPolicy(policy), []);

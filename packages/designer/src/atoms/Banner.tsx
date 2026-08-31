@@ -88,7 +88,7 @@ export function Banner({
           type="button"
           onClick={onDismiss}
           aria-label={dismissLabel}
-          className="shrink-0 rounded-default px-xs py-xs text-body-s outline-none hover:bg-surface-selected focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          className="shrink-0 rounded-default px-xs py-xs text-body-s hover:bg-surface-selected focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
         >
           <span aria-hidden="true">×</span>
         </button>

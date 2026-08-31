@@ -19,7 +19,10 @@ Use explicit subpaths:
 
 - `@clossys/publisher/core` — canonical `SurfaceDocument` contract, validation, copy/media resolution, and output manifests.
 - `@clossys/publisher/media` — media registry, reader, and coverage check.
-- `@clossys/publisher/web` — web composition and head metadata.
+- `@clossys/publisher/web` — web composition and head metadata. Under React's
+  `react-server` export condition it resolves a server-safe target with the
+  same runtime export names and Designer's server-only component barrels;
+  ordinary imports retain the interactive React Aria FAQ.
 - `@clossys/publisher/document` — the product-neutral structured-document contract (sections, paragraphs, lists, tables, callouts, safe links) and its renderer.
 - `@clossys/publisher/email`, `/print`, `/image`, `/slides` — channel renderers.
 - `@clossys/publisher/record` — the append-only, content-addressed publication ledger and its drift checker. See "`record` — the append-only publication ledger," below.
@@ -28,6 +31,13 @@ The package has no root export. `core` is deliberately framework-agnostic;
 the web and document subpaths have optional React (and, for `web`, designer)
 peers, while non-web renderers do not require them at runtime. `record` is
 pure and has no peer dependencies of its own.
+
+The web condition changes only the implementation selected for server
+rendering, not the API. `MarketingView` keeps the same props and regional
+layout; its server target uses Designer's native `details`/`summary` FAQ while
+the ordinary target keeps Designer's React Aria FAQ. `AuthView`, `ErrorView`,
+the renderer functions, template helpers, error class, and all runtime export
+names are present in both targets.
 
 ## Why `publisher` is one package, not two
 
@@ -1130,7 +1140,7 @@ import-free of each other under one version.
 
 Node 20+. This package's own `package.json` declares runtime dependencies on
 `@clossys/writer` (`^0.3.0`), `@clossys/designer`
-(`^0.2.0`), and `@clossys/controller` (`~0.8.0`) — of which this
+(`^0.2.4`), and `@clossys/controller` (`~0.8.0`) — of which this
 package only imports the `./policy` subpath, `@clossys/controller/policy`,
 never `controller`'s other exports. `writer` and `designer` are caret
 ranges (both fresh `0.x` role packages); `controller` stays a tilde range,
@@ -1145,13 +1155,16 @@ addressability`'s exit-code precedence (issue #407), then to the current
 `^0.3.0` when Writer added its passage layer (issue #373). Both were
 additive or behavioural minor releases rather than patches, so the older
 ranges do not resolve them (0.x ranges are minor-locked). `designer`'s range
-moved from `^0.1.0` to the current `^0.2.0` when Designer added the
-`designer-environment-check` gate (issue #405). These ranges are independent;
-leaving either one behind would still resolve an older package without any
-install failure, silently withholding the newer contract.
+first moved from `^0.1.0` to `^0.2.0` when Designer added the
+`designer-environment-check` gate (issue #405), then tightened to the current
+`^0.2.4` because Publisher's React-server target imports the server-safe `Faq`
+export introduced in Designer 0.2.4. These ranges are independent; leaving
+either one behind would still resolve an older package without any install
+failure, silently withholding a required contract.
 
 A consumer whose own policy is to pin exact versions must pin `writer` to a
-matching `0.3.x` release, `designer` to a matching `0.2.x` release, and
+matching `0.3.x` release, `designer` to `0.2.4` or a later compatible `0.2.x`
+release, and
 `controller` to a matching `0.8.x` patch release — otherwise
 `publisher`'s declared ranges and the consumer's exact pin cannot both be
 satisfied, and the install fails with an unresolvable version conflict.
@@ -1181,7 +1194,7 @@ That declaration does not reach an installer resolving against
 regardless of which subpaths are actually imported. A consumer rendering
 only email, print, or `record` output still has React and React DOM
 installed. This package's own `dependencies` on `@clossys/designer`
-(`^0.2.0`) compounds it one level further: `designer` declares six of its
+(`^0.2.4`) compounds it one level further: `designer` declares six of its
 own optional peers the same way, and the same registry gap applies to them
 too, so a consumer of `publisher` inherits `designer`'s full peer set
 through the same mechanism, not just `publisher`'s own two. See

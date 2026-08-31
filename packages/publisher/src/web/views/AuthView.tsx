@@ -1,5 +1,5 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { Card, mergeUiClasses } from "@clossys/designer/atoms";
+import { Card, mergeUiClasses } from "@clossys/designer/atoms/server";
 
 export interface AuthViewProps extends HTMLAttributes<HTMLDivElement> {
   /**

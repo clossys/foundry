@@ -1,6 +1,6 @@
 {
   "name": "@clossys/publisher",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -46,6 +46,7 @@
     },
     "./web": {
       "types": "./dist/web/index.d.ts",
+      "react-server": "./dist/web/server.js",
       "import": "./dist/web/index.js"
     },
     "./document": {
@@ -73,6 +74,13 @@
       "import": "./dist/record/index.js"
     }
   },
+  "imports": {
+    "#publisher-web-views": {
+      "types": "./dist/web/views/index.d.ts",
+      "react-server": "./dist/web/views/server.js",
+      "default": "./dist/web/views/index.js"
+    }
+  },
   "bin": {
     "publisher-media-check": "./dist/media/cli.js",
     "publisher-record-check": "./dist/record/cli.js"
@@ -94,7 +102,7 @@
   },
   "dependencies": {
     "@clossys/writer": "^0.3.0",
-    "@clossys/designer": "^0.2.0",
+    "@clossys/designer": "^0.2.4",
     "@clossys/controller": "~0.8.0"
   },
   "peerDependencies": {
