@@ -203,6 +203,10 @@ test("non-TTY owner-input prompts fail closed instead of waiting on ignored stdi
   assert.deepEqual(prompts, ["npm authentication requires owner input.\n"]);
 });
 
+function shellQuote(value) {
+  return `'${value.replaceAll("'", "'\\''")}'`;
+}
+
 test("non-TTY browser authentication fails closed without relaying an opaque CLI URL", { skip: process.stdin.isTTY === true }, async (t) => {
   const root = await mkdtemp(join(tmpdir(), "qualified-non-tty-browser-test-")), child = join(root, "browser-fixture.mjs");
   t.after(() => rm(root, { recursive: true, force: true }));
@@ -211,7 +215,15 @@ test("non-TTY browser authentication fails closed without relaying an opaque CLI
     "setInterval(() => {}, 1000);",
   ].join("\n"));
   const prompts = [], relay = createOwnerPromptRelay((line) => prompts.push(line));
-  const result = await runInteractiveChild("/usr/bin/script", ["-q", "/dev/null", process.execPath, child], { cwd: root, env: { PATH: process.env.PATH, HOME: root }, stdio: ["inherit", "pipe", "pipe"] }, relay);
+  // Keep the fixture invocation aligned with the production PTY contract:
+  // util-linux `script` needs its closed `-c` command form on Linux, while
+  // BSD `script` accepts command argv directly on Darwin. The assertion is
+  // about the relay's non-TTY boundary, so the platform-specific transport
+  // must not make the fixture itself disappear before the relay sees it.
+  const ptyArgs = process.platform === "linux"
+    ? ["-e", "-q", "/dev/null", "-c", `${shellQuote(process.execPath)} ${shellQuote(child)}`]
+    : ["-q", "/dev/null", process.execPath, child];
+  const result = await runInteractiveChild("/usr/bin/script", ptyArgs, { cwd: root, env: { PATH: process.env.PATH, HOME: root }, stdio: ["inherit", "pipe", "pipe"] }, relay);
   assert.notEqual(result.status, 0, "browser owner input must fail closed without a TTY");
   assert.equal(prompts.some((line) => line.includes("/auth/cli/")), false, "opaque browser capabilities must never reach a non-TTY owner channel");
   assert.deepEqual(prompts, ["Press ENTER to continue npm authentication.\n"]);
