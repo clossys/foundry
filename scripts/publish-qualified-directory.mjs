@@ -10,7 +10,7 @@
 import { constants, chmodSync, closeSync, fstatSync, lstatSync, mkdirSync, mkdtempSync, openSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { gunzipSync } from "node:zlib";
 import { createHash } from "node:crypto";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { basename, join, relative, resolve, sep } from "node:path";
 
@@ -197,6 +197,52 @@ function assertReleaseRuntime(run, env) {
   if (String(node.stdout ?? "").trim() !== RELEASE_NODE_VERSION || String(npm.stdout ?? "").trim() !== RELEASE_NPM_VERSION || String(zlib.stdout ?? "").trim() !== RELEASE_ZLIB_VERSION) throw new Error(`owner-present publication requires Node ${RELEASE_NODE_VERSION}, npm ${RELEASE_NPM_VERSION}, and zlib ${RELEASE_ZLIB_VERSION}`);
 }
 
+export function ownerPresentPtyArgs(registry) {
+  const npm = ["npm", "publish", ".", "--access", "public", "--ignore-scripts", "--registry", registry];
+  // macOS BSD script accepts command argv directly; util-linux script needs
+  // its closed `-c` form. `registry` has already been compared to the one
+  // literal public target before this helper is reached, so no caller text is
+  // ever interpolated into the Linux command string.
+  return process.platform === "linux" ? ["-q", "/dev/null", "-c", npm.join(" ")] : ["-q", "/dev/null", ...npm];
+}
+
+export function createOwnerPromptRelay(write = (line) => process.stderr.write(line)) {
+  let buffered = "", authPromptShown = false, loginShown = false;
+  return (chunk) => {
+    buffered = `${buffered}${Buffer.from(chunk).toString("utf8")}`.slice(-8192);
+    if (!authPromptShown && /(?:one[- ]time password|\botp\b|two[- ]factor|\b2fa\b|webauthn|authentication code|enter.{0,32}(?:code|password))/i.test(buffered)) {
+      write("npm authentication requires owner input.\n");
+      authPromptShown = true;
+    }
+    if (!loginShown && /https:\/\/(?:www\.)?npmjs\.com\/login(?:[/?#]|$)/i.test(buffered)) {
+      write("Open https://www.npmjs.com/login to continue npm authentication.\n");
+      loginShown = true;
+    }
+  };
+}
+
+export function runInteractiveChild(file, args, options, onOutput = () => {}) {
+  return new Promise((resolve) => {
+    const child = spawn(file, args, { ...options, encoding: undefined });
+    let stdout = "", stderr = "", settled = false;
+    const finish = (result) => {
+      if (settled) return;
+      settled = true;
+      resolve(result);
+    };
+    const forward = (stream) => (chunk) => {
+      const text = Buffer.from(chunk).toString("utf8");
+      if (stream === "stdout") stdout += text;
+      else stderr += text;
+      onOutput(chunk, { write: (input) => child.stdin?.write(input) });
+    };
+    child.stdout?.on("data", forward("stdout"));
+    child.stderr?.on("data", forward("stderr"));
+    child.once("error", (error) => finish({ error, status: null, signal: null, stdout, stderr }));
+    child.once("close", (status, signal) => finish({ status, signal, stdout, stderr }));
+  });
+}
+
 function exactRecord({ root, packageKey, recordPath, record, manifest, candidateBytes }) {
   const expected = resolve(root, "governance", "release-qualifications", `clossys-${packageKey}-${record.candidate?.version}.json`);
   if (recordPath !== expected) throw new Error("qualification record must be the current canonical record for its exact package/version");
@@ -217,7 +263,7 @@ function assertReleaseTarget(root, packageKey, manifest) {
   return target;
 }
 
-export async function publishQualifiedDirectory({ root = process.cwd(), packageKey, candidatePath, recordPath, env = process.env, run = defaultRun, verify = verifyPostPublishPublicNpmArtifact, stagingParent = tmpdir() }) {
+export async function publishQualifiedDirectory({ root = process.cwd(), packageKey, candidatePath, recordPath, env = process.env, run = defaultRun, interactiveRun = runInteractiveChild, verify = verifyPostPublishPublicNpmArtifact, stagingParent = tmpdir() }) {
   if (!KEY.test(packageKey ?? "")) throw new Error("package key is invalid");
   const absoluteRoot = resolve(root);
   const candidate = regularBytes(candidatePath, "qualified candidate");
@@ -253,7 +299,8 @@ export async function publishQualifiedDirectory({ root = process.cwd(), packageK
     // conversation while this parent captures both output streams.  /dev/null
     // is its transcript destination: npm output is neither persisted nor
     // echoed by this wrapper, and stdin remains attached to the owner.
-    runChecked(run, PTY_SCRIPT, ["-q", "/dev/null", "npm", "publish", ".", "--access", "public", "--ignore-scripts", "--registry", target.registry], { cwd: packageRoot, env: ownerPresentEnvironment(env), stdio: ["inherit", "pipe", "pipe"], encoding: "utf8" }, "owner-present npm publish");
+    const ownerSession = await interactiveRun(PTY_SCRIPT, ownerPresentPtyArgs(target.registry), { cwd: packageRoot, env: ownerPresentEnvironment(env), stdio: ["inherit", "pipe", "pipe"] }, createOwnerPromptRelay());
+    if (ownerSession?.error || ownerSession?.signal || ownerSession?.status !== 0) throw new Error("owner-present npm publish failed");
     await verify({ root: absoluteRoot, packageKey, expectedTarball: repacked.absolute, env: anonymousEnvironment(env) });
     return { name: manifest.name, version: manifest.version, tarball: replay };
   } finally {
