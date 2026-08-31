@@ -343,6 +343,13 @@ and closure are N/A rather than unknown.
 
 **No role package in this catalogue has reached *closed*.**
 
+The aggregate public-npm clean-room canary is producer qualification evidence
+only. Its disposable consumer may prove anonymous registry bytes, exact
+installation, declared package surfaces, and rollback restoration, but it is
+not a consumer-owned adoption measurement and cannot establish grounding or
+closure. Held or pending publication rows remain indeterminate rather than
+passing by absence. Refs: #652
+
 ## How this is enforced
 
 This document is not the record. `docs/contracts/package-evidence.json` is,

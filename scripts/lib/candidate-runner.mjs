@@ -87,11 +87,11 @@ function renderFixture(value, variables) {
   return rendered;
 }
 
-async function caseArgument(root, descriptor) {
+async function caseArgument(root, fixtureRoot, descriptor) {
   if (typeof descriptor.literal === "string") return descriptor.literal;
   const relative = descriptor.fixture ?? descriptor.fixtureDirectory;
-  const path = resolve(root, "fixtures", relative);
-  if (!path.startsWith(`${resolve(root, "fixtures")}${sep}`)) throw new Error("case fixture argument escapes fixture root");
+  const path = resolve(fixtureRoot, relative);
+  if (!path.startsWith(`${resolve(fixtureRoot)}${sep}`)) throw new Error("case fixture argument escapes fixture root");
   const state = await lstat(path);
   if (state.isSymbolicLink() || (descriptor.fixture !== undefined ? !state.isFile() : !state.isDirectory())) throw new Error("case fixture argument has the wrong filesystem type");
   return path;
@@ -271,10 +271,10 @@ async function materializedFiles(root, target, output = []) {
   return output;
 }
 
-async function materializedConsumerOverlay(root, overlay) {
-  const sourcePath = resolve(root, "fixtures", overlay.fixture);
+async function materializedConsumerOverlay(root, fixtureRoot, overlay) {
+  const sourcePath = resolve(fixtureRoot, overlay.fixture);
   const targetPath = resolve(root, overlay.target);
-  if (!sourcePath.startsWith(`${resolve(root, "fixtures")}${sep}`) || !targetPath.startsWith(`${root}${sep}`)) throw new Error("raw case evidence consumer overlay escapes the disposable root");
+  if (!sourcePath.startsWith(`${resolve(fixtureRoot)}${sep}`) || !targetPath.startsWith(`${root}${sep}`)) throw new Error("raw case evidence consumer overlay escapes the disposable root");
   const [sourceState, targetState] = await Promise.all([lstat(sourcePath), lstat(targetPath)]);
   if (sourceState.isSymbolicLink() || targetState.isSymbolicLink() || !sourceState.isFile() || !targetState.isFile()) throw new Error("raw case evidence consumer overlay must map regular files");
   const [sourceBytes, targetBytes] = await Promise.all([readFile(sourcePath), readFile(targetPath)]);
@@ -291,16 +291,16 @@ async function materializedConsumerOverlay(root, overlay) {
   };
 }
 
-async function rawCaseInputSnapshot(root, descriptors, consumerOverlay) {
+async function rawCaseInputSnapshot(root, fixtureRoot, descriptors, consumerOverlay) {
   const inputs = [];
   for (const descriptor of descriptors) {
-    if (typeof descriptor === "string") await materializedFiles(root, join(root, "fixtures", descriptor), inputs);
-    else if (typeof descriptor?.fixture === "string") await materializedFiles(root, join(root, "fixtures", descriptor.fixture), inputs);
-    else if (typeof descriptor?.fixtureDirectory === "string") await materializedFiles(root, join(root, "fixtures", descriptor.fixtureDirectory), inputs);
+    if (typeof descriptor === "string") await materializedFiles(root, join(fixtureRoot, descriptor), inputs);
+    else if (typeof descriptor?.fixture === "string") await materializedFiles(root, join(fixtureRoot, descriptor.fixture), inputs);
+    else if (typeof descriptor?.fixtureDirectory === "string") await materializedFiles(root, join(fixtureRoot, descriptor.fixtureDirectory), inputs);
   }
   inputs.sort((left, right) => left.path.localeCompare(right.path));
   const overlay = [];
-  for (const item of consumerOverlay ?? []) overlay.push(await materializedConsumerOverlay(root, item));
+  for (const item of consumerOverlay ?? []) overlay.push(await materializedConsumerOverlay(root, fixtureRoot, item));
   overlay.sort((left, right) => left.sourcePath.localeCompare(right.sourcePath));
   const retainedFiles = [...inputs, ...overlay];
   if (inputs.length < 1 || retainedFiles.length > RAW_CASE_MAX_FILES || new Set(inputs.map((item) => item.path)).size !== inputs.length || new Set(overlay.map((item) => item.sourcePath)).size !== overlay.length || new Set(overlay.map((item) => item.targetPath)).size !== overlay.length || retainedFiles.reduce((total, item) => total + Buffer.byteLength(item.bytes), 0) > RAW_CASE_MAX_TOTAL_BYTES) throw new Error("raw case evidence inputs exceed the closed bounds");
@@ -320,10 +320,10 @@ function rawCaseEvidence(root, target, args, snapshot, result) {
   };
 }
 
-async function assertRawCaseInputsUnchanged(root, preparedCases, consumerOverlay, observedExitCode) {
+async function assertRawCaseInputsUnchanged(root, fixtureRoot, preparedCases, consumerOverlay, observedExitCode) {
   try {
     for (const prepared of preparedCases) {
-      const current = await rawCaseInputSnapshot(root, prepared.descriptors, consumerOverlay);
+      const current = await rawCaseInputSnapshot(root, fixtureRoot, prepared.descriptors, consumerOverlay);
       if (JSON.stringify(current) !== JSON.stringify(prepared.snapshot)) throw new Error("changed bytes");
     }
   } catch {
@@ -480,7 +480,7 @@ function namespaceImports(specifiers) {
   return specifiers.map((specifier, index) => `import * as probe${index} from ${JSON.stringify(specifier)};\nvoid probe${index};`).join("\n");
 }
 
-async function writeNextFixture(root, contexts) {
+export async function writeNextFixture(root, contexts) {
   const app = join(root, "app");
   await mkdir(app, { recursive: true });
   await Promise.all([
@@ -557,11 +557,12 @@ async function exportCoverage(manifest, installed, root) {
 }
 
 /** Execute the fixed, data-only contract against exactly one local tarball. */
-export async function runCandidateQualification({ tarball, policy, adapter, fixtures, manifestBins, registry }) {
+export async function runCandidateQualification({ tarball, policy, adapter, fixtures, manifestBins, registry, consumerRoot = null, skipRollback = false, restoreConsumerOverlay = false }) {
   assertCredentialFree();
   const bytes = await readFile(tarball);
   const tarballDigests = { sha1: hash("sha1", bytes), sha256: hash("sha256", bytes), sha512: hash("sha512", bytes) };
-  const root = await realpath(await mkdtemp(join(tmpdir(), "foundry-candidate-")));
+  const ownsRoot = consumerRoot === null;
+  const root = ownsRoot ? await realpath(await mkdtemp(join(tmpdir(), "foundry-candidate-"))) : await realpath(consumerRoot);
   const artifact = join(root, "artifact", "candidate.tgz");
   await mkdir(join(root, "artifact")); await writeFile(artifact, bytes);
   const manifest = await packedManifest(artifact);
@@ -587,7 +588,7 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
     dimensions: ["position", "completion", "rollback", "duplicate", "cadence", "closeWindow"].map((dimension) => {
       const rule = packagePolicy.dimensions[dimension];
       if (rule.status === "unsupported") return { dimension, status: "unsupported", reason: rule.reason };
-      if (dimension === "rollback") return { dimension, status: "supported", evidence: ["uninstall", "reinstall"] };
+      if (dimension === "rollback") return { dimension, status: "supported", evidence: skipRollback ? ["aggregate-rollback-delegated"] : ["uninstall", "reinstall"] };
       const group = adapter.dimensionEvidence.duplicate;
       return { dimension, status: "supported", evidence: adapter.cases.filter((item) => item.group === group && [0, 1].includes(item.exitCode)).map((item) => "case:" + item.id) };
     }),
@@ -596,12 +597,18 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
     ok: false,
   };
   if (fixtureMaterializedAt) transcript.fixtureMaterializedAt = fixtureMaterializedAt;
+  const aggregateFixtureBackup = new Map();
   try {
-    await mkdir(join(root, "fixtures"));
+    const fixtureRoot = ownsRoot || adapter.package === "@clossys/starter" ? join(root, "fixtures") : join(root, "fixtures", adapter.package.slice(adapter.package.indexOf("/") + 1));
+    await mkdir(fixtureRoot, { recursive: true });
     const variables = { CANDIDATE_NAME: manifest.name, CANDIDATE_VERSION: manifest.version, CANDIDATE_INTEGRITY: npmIntegrity(tarballDigests.sha512), NOW: fixtureMaterializedAt ?? new Date().toISOString() };
     for (const fixture of adapter.fixtures) {
-      const target = join(root, "fixtures", fixture);
+      const target = join(fixtureRoot, fixture);
       await mkdir(dirname(target), { recursive: true });
+      if (!ownsRoot) {
+        try { aggregateFixtureBackup.set(target, await readFile(target)); }
+        catch (error) { if (error?.code !== "ENOENT") throw error; aggregateFixtureBackup.set(target, null); }
+      }
       await writeFile(target, renderFixture(await readFile(fixtures[fixture].path, "utf8"), variables));
     }
     const userNpmrc = join(root, "user-npmrc");
@@ -612,7 +619,7 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
       "@types/react": "19.2.18",
       typescript: "6.0.3",
     };
-    await writeFile(join(root, "package.json"), `${JSON.stringify({
+    if (ownsRoot) await writeFile(join(root, "package.json"), `${JSON.stringify({
       name: "foundry-candidate-consumer",
       private: true,
       type: "module",
@@ -620,9 +627,9 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
     }, null, 2)}\n`);
 
     const peerArgs = Object.entries(adapter.peerInstall ?? {}).sort(([left], [right]) => left.localeCompare(right)).map(([name, version]) => `${name}@${version}`);
-    const install = await runProcess("npm", ["install", "--ignore-scripts", "--save-exact", "file:./artifact/candidate.tgz", ...peerArgs], {
+    const install = ownsRoot ? await runProcess("npm", ["install", "--ignore-scripts", "--save-exact", "file:./artifact/candidate.tgz", ...peerArgs], {
       cwd: root, env: sanitizedEnv(root), timeout: QUALIFICATION_PHASE_TIMEOUTS.npm,
-    });
+    }) : { exitCode: 0, signal: null, launchError: false, stdout: "aggregate preinstall", stderr: "" };
     transcript.observations.push(observation(root, "install", "install", 0, install));
     if (install.exitCode !== 0 || install.signal || install.launchError) transcript.mismatches.push("install");
     // This file may temporarily contain an install credential. Candidate code sees
@@ -668,19 +675,24 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
       const packageRoot = overlayPackageRoot(root, item.target);
       if (packageRoot) overlayRoots.add(packageRoot);
     }
-    await assertConsumerOverlayRootsAbsent(overlayRoots, "refuses to overwrite");
+    if (!restoreConsumerOverlay) await assertConsumerOverlayRootsAbsent(overlayRoots, "refuses to overwrite");
+    const overlayBackup = new Map();
     for (const item of adapter.consumerOverlay ?? []) {
       const target = resolve(root, item.target);
       await mkdir(dirname(target), { recursive: true });
-      await copyFile(join(root, "fixtures", item.fixture), target);
+      if (restoreConsumerOverlay) {
+        try { overlayBackup.set(target, await readFile(target)); }
+        catch (error) { if (error?.code !== "ENOENT") throw error; overlayBackup.set(target, null); }
+      }
+      await copyFile(join(fixtureRoot, item.fixture), target);
     }
     const preparedCases = [];
     for (const item of adapter.cases) {
       const args = item.fixtureArgs
-        ? item.fixtureArgs.map((fixture) => join(root, "fixtures", fixture))
-        : await Promise.all(item.args.map((descriptor) => caseArgument(root, descriptor)));
+        ? item.fixtureArgs.map((fixture) => join(fixtureRoot, fixture))
+        : await Promise.all(item.args.map((descriptor) => caseArgument(root, fixtureRoot, descriptor)));
       const descriptors = item.fixtureArgs ?? item.args;
-      const snapshot = adapter.retainRawCaseEvidence === true ? await rawCaseInputSnapshot(root, descriptors, adapter.consumerOverlay) : null;
+      const snapshot = adapter.retainRawCaseEvidence === true ? await rawCaseInputSnapshot(root, fixtureRoot, descriptors, adapter.consumerOverlay) : null;
       preparedCases.push({ item, args, descriptors, snapshot });
     }
     for (const prepared of preparedCases) {
@@ -688,7 +700,7 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
       const result = targets[item.bin]
         ? await runProcess(process.execPath, [targets[item.bin], ...args], { cwd: root, env: sanitizedEnv(root), timeout: QUALIFICATION_PHASE_TIMEOUTS.probe })
         : { exitCode: null, signal: null, launchError: true, stdout: "", stderr: "missing contained bin target" };
-      if (adapter.retainRawCaseEvidence === true && targets[item.bin]) await assertRawCaseInputsUnchanged(root, preparedCases, adapter.consumerOverlay, result.exitCode);
+      if (adapter.retainRawCaseEvidence === true && targets[item.bin]) await assertRawCaseInputsUnchanged(root, fixtureRoot, preparedCases, adapter.consumerOverlay, result.exitCode);
       const observed = observation(root, `case:${item.id}`, "case", item.exitCode, result);
       if (adapter.retainRawCaseEvidence === true && targets[item.bin]) observed.rawCaseEvidence = rawCaseEvidence(root, targets[item.bin], args, snapshot, result);
       transcript.observations.push(observed);
@@ -697,28 +709,50 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
 
     await writeFile(join(root, "package.json"), caseBase.manifest);
     await writeFile(join(root, "package-lock.json"), caseBase.lock);
-    for (const packageRoot of overlayRoots) await rm(packageRoot, { recursive: true, force: true });
-    await assertConsumerOverlayRootsAbsent(overlayRoots, "post-case restoration failed");
+    if (restoreConsumerOverlay) {
+      for (const [target, bytes] of overlayBackup) {
+        if (bytes === null) await rm(target, { force: true });
+        else await writeFile(target, bytes);
+      }
+    } else {
+      for (const packageRoot of overlayRoots) await rm(packageRoot, { recursive: true, force: true });
+      await assertConsumerOverlayRootsAbsent(overlayRoots, "post-case restoration failed");
+    }
 
     const before = { manifest: await readFile(join(root, "package.json"), "utf8"), lock: await readFile(join(root, "package-lock.json"), "utf8") };
-    const uninstall = await runProcess("npm", ["uninstall", manifest.name, "--ignore-scripts"], { cwd: root, env: sanitizedEnv(root), timeout: QUALIFICATION_PHASE_TIMEOUTS.npm });
-    transcript.observations.push(observation(root, "uninstall", "uninstall", 0, uninstall));
     let packageAbsentAfterUninstall = false;
-    try { await lstat(installed); } catch { packageAbsentAfterUninstall = true; }
-    const reinstall = await runProcess("npm", ["install", "--ignore-scripts", "--save-exact", "file:./artifact/candidate.tgz"], { cwd: root, env: sanitizedEnv(root), timeout: QUALIFICATION_PHASE_TIMEOUTS.npm });
-    transcript.observations.push(observation(root, "reinstall", "reinstall", 0, reinstall));
-    const after = { manifest: await readFile(join(root, "package.json"), "utf8"), lock: await readFile(join(root, "package-lock.json"), "utf8") };
-    const restored = before.manifest === after.manifest && before.lock === after.lock;
-    if (uninstall.exitCode !== 0 || reinstall.exitCode !== 0 || !packageAbsentAfterUninstall || !restored) transcript.mismatches.push("restoration");
+    let restored = false;
+    if (skipRollback) {
+      // A preinstalled aggregate has one real all-package rollback.  Do not
+      // manufacture individual npm observations: the aggregate transcript
+      // owns absence and reinstall proof, while this child records delegation.
+      restored = true;
+    } else {
+      const uninstall = await runProcess("npm", ["uninstall", manifest.name, "--ignore-scripts"], { cwd: root, env: sanitizedEnv(root), timeout: QUALIFICATION_PHASE_TIMEOUTS.npm });
+      transcript.observations.push(observation(root, "uninstall", "uninstall", 0, uninstall));
+      try { await lstat(installed); } catch { packageAbsentAfterUninstall = true; }
+      const reinstall = await runProcess("npm", ["install", "--ignore-scripts", "--save-exact", "file:./artifact/candidate.tgz"], { cwd: root, env: sanitizedEnv(root), timeout: QUALIFICATION_PHASE_TIMEOUTS.npm });
+      transcript.observations.push(observation(root, "reinstall", "reinstall", 0, reinstall));
+      const after = { manifest: await readFile(join(root, "package.json"), "utf8"), lock: await readFile(join(root, "package-lock.json"), "utf8") };
+      restored = before.manifest === after.manifest && before.lock === after.lock;
+      if (uninstall.exitCode !== 0 || reinstall.exitCode !== 0 || !packageAbsentAfterUninstall || !restored) transcript.mismatches.push("restoration");
+    }
 
     transcript.consumer = { manifestSha256: consumerDigest(root, before.manifest), lockfileSha256: consumerDigest(root, before.lock) };
     transcript.coverage = { ...exported.coverage, bins: Object.keys(packedBins).length, lifecycleScriptsDisabled };
-    transcript.restoration = { manifestRestored: restored, lockfileRestored: restored, packageAbsentAfterUninstall };
+    transcript.restoration = skipRollback ? { delegatedToAggregate: true } : { manifestRestored: restored, lockfileRestored: restored, packageAbsentAfterUninstall };
     transcript.mismatches.sort();
     transcript.ok = transcript.mismatches.length === 0;
     transcript.canonicalSha256 = hash("sha256", JSON.stringify(transcript));
     return transcript;
   } finally {
-    await rm(root, { recursive: true, force: true });
+    // In aggregate mode Starter intentionally uses root/fixtures so its v3
+    // raw evidence remains compatible.  Every preexisting fixture byte is
+    // restored here, including failures during a case or framework build.
+    for (const [target, bytes] of aggregateFixtureBackup) {
+      if (bytes === null) await rm(target, { force: true });
+      else await writeFile(target, bytes);
+    }
+    if (ownsRoot) await rm(root, { recursive: true, force: true });
   }
 }

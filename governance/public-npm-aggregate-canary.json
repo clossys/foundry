@@ -1,0 +1,1042 @@
+{
+  "schemaVersion": 1,
+  "kind": "foundry-public-npm-aggregate-canary-plan-v1",
+  "registry": "https://registry.npmjs.org",
+  "peerResolution": {
+    "requested": {
+      "@clerk/nextjs": "7.7.5",
+      "@internationalized/date": "3.12.3",
+      "@types/node": "22.20.1",
+      "@types/react": "19.2.18",
+      "next": "16.3.1",
+      "react": "19.2.8",
+      "react-aria-components": "1.20.0",
+      "react-dom": "19.2.8",
+      "resend": "6.19.0",
+      "svix": "1.99.1",
+      "tailwind-merge": "3.0.0",
+      "tailwindcss": "4.3.3",
+      "typescript": "6.0.3"
+    },
+    "disposition": [
+      {
+        "name": "react",
+        "requested": [
+          "18.3.1",
+          "19.2.8"
+        ],
+        "resolved": "19.2.8",
+        "reason": "all reviewed declared ranges must accept the one aggregate React runtime"
+      },
+      {
+        "name": "react-dom",
+        "requested": [
+          "18.3.1",
+          "19.2.8"
+        ],
+        "resolved": "19.2.8",
+        "reason": "all reviewed declared ranges must accept the one aggregate React DOM runtime"
+      }
+    ]
+  },
+  "sets": [
+    {
+      "id": "baseline",
+      "packages": [
+        {
+          "packageKey": "advisor",
+          "name": "@clossys/advisor",
+          "version": "0.1.5"
+        },
+        {
+          "packageKey": "starter",
+          "name": "@clossys/starter",
+          "version": "0.1.4"
+        },
+        {
+          "packageKey": "controller",
+          "name": "@clossys/controller",
+          "version": "0.8.23"
+        },
+        {
+          "packageKey": "strategist",
+          "name": "@clossys/strategist",
+          "version": "0.1.1"
+        },
+        {
+          "packageKey": "writer",
+          "name": "@clossys/writer",
+          "version": "0.3.2"
+        },
+        {
+          "packageKey": "designer",
+          "name": "@clossys/designer",
+          "version": "0.2.4"
+        },
+        {
+          "packageKey": "architect",
+          "name": "@clossys/architect",
+          "version": "0.1.2"
+        },
+        {
+          "packageKey": "bouncer",
+          "name": "@clossys/bouncer",
+          "version": "0.1.1"
+        },
+        {
+          "packageKey": "butler",
+          "name": "@clossys/butler",
+          "version": "0.1.1"
+        },
+        {
+          "packageKey": "giver",
+          "name": "@clossys/giver",
+          "version": "0.1.2"
+        },
+        {
+          "packageKey": "influencer",
+          "name": "@clossys/influencer",
+          "version": "0.1.2"
+        },
+        {
+          "packageKey": "integrator",
+          "name": "@clossys/integrator",
+          "version": "0.6.2"
+        },
+        {
+          "packageKey": "keeper",
+          "name": "@clossys/keeper",
+          "version": "0.1.2"
+        },
+        {
+          "packageKey": "locksmith",
+          "name": "@clossys/locksmith",
+          "version": "0.1.6"
+        },
+        {
+          "packageKey": "messenger",
+          "name": "@clossys/messenger",
+          "version": "0.1.2"
+        },
+        {
+          "packageKey": "observer",
+          "name": "@clossys/observer",
+          "version": "0.2.3"
+        },
+        {
+          "packageKey": "builder",
+          "name": "@clossys/builder",
+          "version": "0.7.3"
+        },
+        {
+          "packageKey": "inspector",
+          "name": "@clossys/inspector",
+          "version": "0.1.18"
+        },
+        {
+          "packageKey": "publisher",
+          "name": "@clossys/publisher",
+          "version": "0.1.8"
+        }
+      ]
+    },
+    {
+      "id": "oidc-successor",
+      "packages": [
+        {
+          "packageKey": "advisor",
+          "name": "@clossys/advisor",
+          "version": "0.1.5"
+        },
+        {
+          "packageKey": "starter",
+          "name": "@clossys/starter",
+          "version": "0.1.4"
+        },
+        {
+          "packageKey": "controller",
+          "name": "@clossys/controller",
+          "version": "0.8.23"
+        },
+        {
+          "packageKey": "strategist",
+          "name": "@clossys/strategist",
+          "version": "0.1.1"
+        },
+        {
+          "packageKey": "writer",
+          "name": "@clossys/writer",
+          "version": "0.3.3"
+        },
+        {
+          "packageKey": "designer",
+          "name": "@clossys/designer",
+          "version": "0.2.5"
+        },
+        {
+          "packageKey": "architect",
+          "name": "@clossys/architect",
+          "version": "0.1.3"
+        },
+        {
+          "packageKey": "bouncer",
+          "name": "@clossys/bouncer",
+          "version": "0.1.2"
+        },
+        {
+          "packageKey": "butler",
+          "name": "@clossys/butler",
+          "version": "0.1.2"
+        },
+        {
+          "packageKey": "giver",
+          "name": "@clossys/giver",
+          "version": "0.1.3"
+        },
+        {
+          "packageKey": "influencer",
+          "name": "@clossys/influencer",
+          "version": "0.1.3"
+        },
+        {
+          "packageKey": "integrator",
+          "name": "@clossys/integrator",
+          "version": "0.6.3"
+        },
+        {
+          "packageKey": "keeper",
+          "name": "@clossys/keeper",
+          "version": "0.1.3"
+        },
+        {
+          "packageKey": "locksmith",
+          "name": "@clossys/locksmith",
+          "version": "0.1.7"
+        },
+        {
+          "packageKey": "messenger",
+          "name": "@clossys/messenger",
+          "version": "0.1.3"
+        },
+        {
+          "packageKey": "observer",
+          "name": "@clossys/observer",
+          "version": "0.2.4"
+        },
+        {
+          "packageKey": "builder",
+          "name": "@clossys/builder",
+          "version": "0.7.4"
+        },
+        {
+          "packageKey": "inspector",
+          "name": "@clossys/inspector",
+          "version": "0.1.19"
+        },
+        {
+          "packageKey": "publisher",
+          "name": "@clossys/publisher",
+          "version": "0.1.8"
+        }
+      ]
+    }
+  ],
+  "optionalPeerMatrix": [
+    {
+      "set": "baseline",
+      "packageKey": "advisor",
+      "name": "@clossys/advisor",
+      "version": "0.1.5",
+      "peers": []
+    },
+    {
+      "set": "baseline",
+      "packageKey": "starter",
+      "name": "@clossys/starter",
+      "version": "0.1.4",
+      "peers": []
+    },
+    {
+      "set": "baseline",
+      "packageKey": "controller",
+      "name": "@clossys/controller",
+      "version": "0.8.23",
+      "peers": [
+        {
+          "peer": "typescript",
+          "outcomes": {
+            "@clossys/controller": "imports",
+            "@clossys/controller/artifacts": "imports",
+            "@clossys/controller/catalog": "imports",
+            "@clossys/controller/cleanup": "imports",
+            "@clossys/controller/composition": "imports",
+            "@clossys/controller/conventions": "imports",
+            "@clossys/controller/gates": "imports",
+            "@clossys/controller/gates/secrets": "rejects",
+            "@clossys/controller/policy": "imports",
+            "@clossys/controller/positions": "imports",
+            "@clossys/controller/release": "imports",
+            "@clossys/controller/repository": "imports",
+            "@clossys/controller/review": "imports",
+            "@clossys/controller/review/github": "imports"
+          }
+        }
+      ]
+    },
+    {
+      "set": "baseline",
+      "packageKey": "strategist",
+      "name": "@clossys/strategist",
+      "version": "0.1.1",
+      "peers": []
+    },
+    {
+      "set": "baseline",
+      "packageKey": "writer",
+      "name": "@clossys/writer",
+      "version": "0.3.2",
+      "peers": []
+    },
+    {
+      "set": "baseline",
+      "packageKey": "designer",
+      "name": "@clossys/designer",
+      "version": "0.2.4",
+      "peers": [
+        {
+          "peer": "@internationalized/date",
+          "outcomes": {
+            "@clossys/designer/atoms": "rejects",
+            "@clossys/designer/atoms/server": "imports",
+            "@clossys/designer/blocks": "rejects",
+            "@clossys/designer/blocks/server": "imports",
+            "@clossys/designer/charts": "imports",
+            "@clossys/designer/charts/server": "imports",
+            "@clossys/designer/gate": "imports",
+            "@clossys/designer/icons": "imports",
+            "@clossys/designer/render-environment": "imports",
+            "@clossys/designer/shell": "rejects",
+            "@clossys/designer/shell/server": "imports",
+            "@clossys/designer/theme": "rejects",
+            "@clossys/designer/theme/server": "imports",
+            "@clossys/designer/tokens": "imports"
+          }
+        },
+        {
+          "peer": "react",
+          "outcomes": {
+            "@clossys/designer/atoms": "rejects",
+            "@clossys/designer/atoms/server": "rejects",
+            "@clossys/designer/blocks": "rejects",
+            "@clossys/designer/blocks/server": "rejects",
+            "@clossys/designer/charts": "rejects",
+            "@clossys/designer/charts/server": "rejects",
+            "@clossys/designer/gate": "imports",
+            "@clossys/designer/icons": "imports",
+            "@clossys/designer/render-environment": "imports",
+            "@clossys/designer/shell": "rejects",
+            "@clossys/designer/shell/server": "rejects",
+            "@clossys/designer/theme": "rejects",
+            "@clossys/designer/theme/server": "imports",
+            "@clossys/designer/tokens": "imports"
+          }
+        },
+        {
+          "peer": "react-aria-components",
+          "outcomes": {
+            "@clossys/designer/atoms": "rejects",
+            "@clossys/designer/atoms/server": "imports",
+            "@clossys/designer/blocks": "rejects",
+            "@clossys/designer/blocks/server": "imports",
+            "@clossys/designer/charts": "imports",
+            "@clossys/designer/charts/server": "imports",
+            "@clossys/designer/gate": "imports",
+            "@clossys/designer/icons": "imports",
+            "@clossys/designer/render-environment": "imports",
+            "@clossys/designer/shell": "rejects",
+            "@clossys/designer/shell/server": "imports",
+            "@clossys/designer/theme": "rejects",
+            "@clossys/designer/theme/server": "imports",
+            "@clossys/designer/tokens": "imports"
+          }
+        },
+        {
+          "peer": "react-dom",
+          "outcomes": {
+            "@clossys/designer/atoms": "rejects",
+            "@clossys/designer/atoms/server": "imports",
+            "@clossys/designer/blocks": "rejects",
+            "@clossys/designer/blocks/server": "imports",
+            "@clossys/designer/charts": "imports",
+            "@clossys/designer/charts/server": "imports",
+            "@clossys/designer/gate": "imports",
+            "@clossys/designer/icons": "imports",
+            "@clossys/designer/render-environment": "imports",
+            "@clossys/designer/shell": "rejects",
+            "@clossys/designer/shell/server": "imports",
+            "@clossys/designer/theme": "rejects",
+            "@clossys/designer/theme/server": "imports",
+            "@clossys/designer/tokens": "imports"
+          }
+        },
+        {
+          "peer": "tailwind-merge",
+          "outcomes": {
+            "@clossys/designer/atoms": "rejects",
+            "@clossys/designer/atoms/server": "rejects",
+            "@clossys/designer/blocks": "rejects",
+            "@clossys/designer/blocks/server": "rejects",
+            "@clossys/designer/charts": "rejects",
+            "@clossys/designer/charts/server": "rejects",
+            "@clossys/designer/gate": "imports",
+            "@clossys/designer/icons": "imports",
+            "@clossys/designer/render-environment": "imports",
+            "@clossys/designer/shell": "rejects",
+            "@clossys/designer/shell/server": "rejects",
+            "@clossys/designer/theme": "rejects",
+            "@clossys/designer/theme/server": "imports",
+            "@clossys/designer/tokens": "imports"
+          }
+        },
+        {
+          "peer": "tailwindcss",
+          "outcomes": {
+            "@clossys/designer/atoms": "imports",
+            "@clossys/designer/atoms/server": "imports",
+            "@clossys/designer/blocks": "imports",
+            "@clossys/designer/blocks/server": "imports",
+            "@clossys/designer/charts": "imports",
+            "@clossys/designer/charts/server": "imports",
+            "@clossys/designer/gate": "imports",
+            "@clossys/designer/icons": "imports",
+            "@clossys/designer/render-environment": "imports",
+            "@clossys/designer/shell": "imports",
+            "@clossys/designer/shell/server": "imports",
+            "@clossys/designer/theme": "imports",
+            "@clossys/designer/theme/server": "imports",
+            "@clossys/designer/tokens": "imports"
+          }
+        }
+      ]
+    },
+    {
+      "set": "baseline",
+      "packageKey": "architect",
+      "name": "@clossys/architect",
+      "version": "0.1.2",
+      "peers": []
+    },
+    {
+      "set": "baseline",
+      "packageKey": "bouncer",
+      "name": "@clossys/bouncer",
+      "version": "0.1.1",
+      "peers": [
+        {
+          "peer": "@clerk/nextjs",
+          "outcomes": {
+            "@clossys/bouncer": "imports",
+            "@clossys/bouncer/agent": "imports",
+            "@clossys/bouncer/providers/clerk": "imports",
+            "@clossys/bouncer/providers/clerk/web": "rejects",
+            "@clossys/bouncer/providers/clerk/web/client": "rejects",
+            "@clossys/bouncer/providers/clerk/web/proxy": "rejects",
+            "@clossys/bouncer/providers/clerk/web/server": "rejects"
+          }
+        },
+        {
+          "peer": "next",
+          "outcomes": {
+            "@clossys/bouncer": "imports",
+            "@clossys/bouncer/agent": "imports",
+            "@clossys/bouncer/providers/clerk": "imports",
+            "@clossys/bouncer/providers/clerk/web": "rejects",
+            "@clossys/bouncer/providers/clerk/web/client": "rejects",
+            "@clossys/bouncer/providers/clerk/web/proxy": "rejects",
+            "@clossys/bouncer/providers/clerk/web/server": "rejects"
+          }
+        },
+        {
+          "peer": "react",
+          "outcomes": {
+            "@clossys/bouncer": "imports",
+            "@clossys/bouncer/agent": "imports",
+            "@clossys/bouncer/providers/clerk": "imports",
+            "@clossys/bouncer/providers/clerk/web": "rejects",
+            "@clossys/bouncer/providers/clerk/web/client": "rejects",
+            "@clossys/bouncer/providers/clerk/web/proxy": "rejects",
+            "@clossys/bouncer/providers/clerk/web/server": "rejects"
+          }
+        },
+        {
+          "peer": "react-dom",
+          "outcomes": {
+            "@clossys/bouncer": "imports",
+            "@clossys/bouncer/agent": "imports",
+            "@clossys/bouncer/providers/clerk": "imports",
+            "@clossys/bouncer/providers/clerk/web": "rejects",
+            "@clossys/bouncer/providers/clerk/web/client": "rejects",
+            "@clossys/bouncer/providers/clerk/web/proxy": "rejects",
+            "@clossys/bouncer/providers/clerk/web/server": "rejects"
+          }
+        },
+        {
+          "peer": "svix",
+          "outcomes": {
+            "@clossys/bouncer": "imports",
+            "@clossys/bouncer/agent": "imports",
+            "@clossys/bouncer/providers/clerk": "rejects",
+            "@clossys/bouncer/providers/clerk/web": "imports",
+            "@clossys/bouncer/providers/clerk/web/client": "imports",
+            "@clossys/bouncer/providers/clerk/web/proxy": "imports",
+            "@clossys/bouncer/providers/clerk/web/server": "imports"
+          }
+        }
+      ]
+    },
+    {
+      "set": "baseline",
+      "packageKey": "butler",
+      "name": "@clossys/butler",
+      "version": "0.1.1",
+      "peers": [
+        {
+          "peer": "react",
+          "outcomes": {
+            "@clossys/butler": "imports",
+            "@clossys/butler/inbound": "imports",
+            "@clossys/butler/web": "rejects"
+          }
+        },
+        {
+          "peer": "react-dom",
+          "outcomes": {
+            "@clossys/butler": "imports",
+            "@clossys/butler/inbound": "imports",
+            "@clossys/butler/web": "imports"
+          }
+        }
+      ]
+    },
+    {
+      "set": "baseline",
+      "packageKey": "giver",
+      "name": "@clossys/giver",
+      "version": "0.1.2",
+      "peers": []
+    },
+    {
+      "set": "baseline",
+      "packageKey": "influencer",
+      "name": "@clossys/influencer",
+      "version": "0.1.2",
+      "peers": []
+    },
+    {
+      "set": "baseline",
+      "packageKey": "integrator",
+      "name": "@clossys/integrator",
+      "version": "0.6.2",
+      "peers": []
+    },
+    {
+      "set": "baseline",
+      "packageKey": "keeper",
+      "name": "@clossys/keeper",
+      "version": "0.1.2",
+      "peers": [
+        {
+          "peer": "react",
+          "outcomes": {
+            "@clossys/keeper": "imports",
+            "@clossys/keeper/web": "rejects"
+          }
+        },
+        {
+          "peer": "react-dom",
+          "outcomes": {
+            "@clossys/keeper": "imports",
+            "@clossys/keeper/web": "imports"
+          }
+        }
+      ]
+    },
+    {
+      "set": "baseline",
+      "packageKey": "locksmith",
+      "name": "@clossys/locksmith",
+      "version": "0.1.6",
+      "peers": []
+    },
+    {
+      "set": "baseline",
+      "packageKey": "messenger",
+      "name": "@clossys/messenger",
+      "version": "0.1.2",
+      "peers": [
+        {
+          "peer": "resend",
+          "outcomes": {
+            "@clossys/messenger": "imports",
+            "@clossys/messenger/providers/resend": "rejects"
+          }
+        }
+      ]
+    },
+    {
+      "set": "baseline",
+      "packageKey": "observer",
+      "name": "@clossys/observer",
+      "version": "0.2.3",
+      "peers": []
+    },
+    {
+      "set": "baseline",
+      "packageKey": "builder",
+      "name": "@clossys/builder",
+      "version": "0.7.3",
+      "peers": []
+    },
+    {
+      "set": "baseline",
+      "packageKey": "inspector",
+      "name": "@clossys/inspector",
+      "version": "0.1.18",
+      "peers": []
+    },
+    {
+      "set": "baseline",
+      "packageKey": "publisher",
+      "name": "@clossys/publisher",
+      "version": "0.1.8",
+      "peers": [
+        {
+          "peer": "react",
+          "outcomes": {
+            "@clossys/publisher/core": "imports",
+            "@clossys/publisher/document": "rejects",
+            "@clossys/publisher/email": "imports",
+            "@clossys/publisher/image": "imports",
+            "@clossys/publisher/media": "imports",
+            "@clossys/publisher/print": "imports",
+            "@clossys/publisher/record": "imports",
+            "@clossys/publisher/slides": "imports",
+            "@clossys/publisher/web": "rejects"
+          }
+        },
+        {
+          "peer": "react-dom",
+          "outcomes": {
+            "@clossys/publisher/core": "imports",
+            "@clossys/publisher/document": "imports",
+            "@clossys/publisher/email": "imports",
+            "@clossys/publisher/image": "imports",
+            "@clossys/publisher/media": "imports",
+            "@clossys/publisher/print": "imports",
+            "@clossys/publisher/record": "imports",
+            "@clossys/publisher/slides": "imports",
+            "@clossys/publisher/web": "rejects"
+          }
+        }
+      ]
+    },
+    {
+      "set": "oidc-successor",
+      "packageKey": "advisor",
+      "name": "@clossys/advisor",
+      "version": "0.1.5",
+      "peers": []
+    },
+    {
+      "set": "oidc-successor",
+      "packageKey": "starter",
+      "name": "@clossys/starter",
+      "version": "0.1.4",
+      "peers": []
+    },
+    {
+      "set": "oidc-successor",
+      "packageKey": "controller",
+      "name": "@clossys/controller",
+      "version": "0.8.23",
+      "peers": [
+        {
+          "peer": "typescript",
+          "outcomes": {
+            "@clossys/controller": "imports",
+            "@clossys/controller/artifacts": "imports",
+            "@clossys/controller/catalog": "imports",
+            "@clossys/controller/cleanup": "imports",
+            "@clossys/controller/composition": "imports",
+            "@clossys/controller/conventions": "imports",
+            "@clossys/controller/gates": "imports",
+            "@clossys/controller/gates/secrets": "rejects",
+            "@clossys/controller/policy": "imports",
+            "@clossys/controller/positions": "imports",
+            "@clossys/controller/release": "imports",
+            "@clossys/controller/repository": "imports",
+            "@clossys/controller/review": "imports",
+            "@clossys/controller/review/github": "imports"
+          }
+        }
+      ]
+    },
+    {
+      "set": "oidc-successor",
+      "packageKey": "strategist",
+      "name": "@clossys/strategist",
+      "version": "0.1.1",
+      "peers": []
+    },
+    {
+      "set": "oidc-successor",
+      "packageKey": "writer",
+      "name": "@clossys/writer",
+      "version": "0.3.3",
+      "peers": []
+    },
+    {
+      "set": "oidc-successor",
+      "packageKey": "designer",
+      "name": "@clossys/designer",
+      "version": "0.2.5",
+      "peers": [
+        {
+          "peer": "@internationalized/date",
+          "outcomes": {
+            "@clossys/designer/atoms": "rejects",
+            "@clossys/designer/atoms/server": "imports",
+            "@clossys/designer/blocks": "rejects",
+            "@clossys/designer/blocks/server": "imports",
+            "@clossys/designer/charts": "imports",
+            "@clossys/designer/charts/server": "imports",
+            "@clossys/designer/gate": "imports",
+            "@clossys/designer/icons": "imports",
+            "@clossys/designer/render-environment": "imports",
+            "@clossys/designer/shell": "rejects",
+            "@clossys/designer/shell/server": "imports",
+            "@clossys/designer/theme": "rejects",
+            "@clossys/designer/theme/server": "imports",
+            "@clossys/designer/tokens": "imports"
+          }
+        },
+        {
+          "peer": "react",
+          "outcomes": {
+            "@clossys/designer/atoms": "rejects",
+            "@clossys/designer/atoms/server": "rejects",
+            "@clossys/designer/blocks": "rejects",
+            "@clossys/designer/blocks/server": "rejects",
+            "@clossys/designer/charts": "rejects",
+            "@clossys/designer/charts/server": "rejects",
+            "@clossys/designer/gate": "imports",
+            "@clossys/designer/icons": "imports",
+            "@clossys/designer/render-environment": "imports",
+            "@clossys/designer/shell": "rejects",
+            "@clossys/designer/shell/server": "rejects",
+            "@clossys/designer/theme": "rejects",
+            "@clossys/designer/theme/server": "imports",
+            "@clossys/designer/tokens": "imports"
+          }
+        },
+        {
+          "peer": "react-aria-components",
+          "outcomes": {
+            "@clossys/designer/atoms": "rejects",
+            "@clossys/designer/atoms/server": "imports",
+            "@clossys/designer/blocks": "rejects",
+            "@clossys/designer/blocks/server": "imports",
+            "@clossys/designer/charts": "imports",
+            "@clossys/designer/charts/server": "imports",
+            "@clossys/designer/gate": "imports",
+            "@clossys/designer/icons": "imports",
+            "@clossys/designer/render-environment": "imports",
+            "@clossys/designer/shell": "rejects",
+            "@clossys/designer/shell/server": "imports",
+            "@clossys/designer/theme": "rejects",
+            "@clossys/designer/theme/server": "imports",
+            "@clossys/designer/tokens": "imports"
+          }
+        },
+        {
+          "peer": "react-dom",
+          "outcomes": {
+            "@clossys/designer/atoms": "rejects",
+            "@clossys/designer/atoms/server": "imports",
+            "@clossys/designer/blocks": "rejects",
+            "@clossys/designer/blocks/server": "imports",
+            "@clossys/designer/charts": "imports",
+            "@clossys/designer/charts/server": "imports",
+            "@clossys/designer/gate": "imports",
+            "@clossys/designer/icons": "imports",
+            "@clossys/designer/render-environment": "imports",
+            "@clossys/designer/shell": "rejects",
+            "@clossys/designer/shell/server": "imports",
+            "@clossys/designer/theme": "rejects",
+            "@clossys/designer/theme/server": "imports",
+            "@clossys/designer/tokens": "imports"
+          }
+        },
+        {
+          "peer": "tailwind-merge",
+          "outcomes": {
+            "@clossys/designer/atoms": "rejects",
+            "@clossys/designer/atoms/server": "rejects",
+            "@clossys/designer/blocks": "rejects",
+            "@clossys/designer/blocks/server": "rejects",
+            "@clossys/designer/charts": "rejects",
+            "@clossys/designer/charts/server": "rejects",
+            "@clossys/designer/gate": "imports",
+            "@clossys/designer/icons": "imports",
+            "@clossys/designer/render-environment": "imports",
+            "@clossys/designer/shell": "rejects",
+            "@clossys/designer/shell/server": "rejects",
+            "@clossys/designer/theme": "rejects",
+            "@clossys/designer/theme/server": "imports",
+            "@clossys/designer/tokens": "imports"
+          }
+        },
+        {
+          "peer": "tailwindcss",
+          "outcomes": {
+            "@clossys/designer/atoms": "imports",
+            "@clossys/designer/atoms/server": "imports",
+            "@clossys/designer/blocks": "imports",
+            "@clossys/designer/blocks/server": "imports",
+            "@clossys/designer/charts": "imports",
+            "@clossys/designer/charts/server": "imports",
+            "@clossys/designer/gate": "imports",
+            "@clossys/designer/icons": "imports",
+            "@clossys/designer/render-environment": "imports",
+            "@clossys/designer/shell": "imports",
+            "@clossys/designer/shell/server": "imports",
+            "@clossys/designer/theme": "imports",
+            "@clossys/designer/theme/server": "imports",
+            "@clossys/designer/tokens": "imports"
+          }
+        }
+      ]
+    },
+    {
+      "set": "oidc-successor",
+      "packageKey": "architect",
+      "name": "@clossys/architect",
+      "version": "0.1.3",
+      "peers": []
+    },
+    {
+      "set": "oidc-successor",
+      "packageKey": "bouncer",
+      "name": "@clossys/bouncer",
+      "version": "0.1.2",
+      "peers": [
+        {
+          "peer": "@clerk/nextjs",
+          "outcomes": {
+            "@clossys/bouncer": "imports",
+            "@clossys/bouncer/agent": "imports",
+            "@clossys/bouncer/providers/clerk": "imports",
+            "@clossys/bouncer/providers/clerk/web": "rejects",
+            "@clossys/bouncer/providers/clerk/web/client": "rejects",
+            "@clossys/bouncer/providers/clerk/web/proxy": "rejects",
+            "@clossys/bouncer/providers/clerk/web/server": "rejects"
+          }
+        },
+        {
+          "peer": "next",
+          "outcomes": {
+            "@clossys/bouncer": "imports",
+            "@clossys/bouncer/agent": "imports",
+            "@clossys/bouncer/providers/clerk": "imports",
+            "@clossys/bouncer/providers/clerk/web": "rejects",
+            "@clossys/bouncer/providers/clerk/web/client": "rejects",
+            "@clossys/bouncer/providers/clerk/web/proxy": "rejects",
+            "@clossys/bouncer/providers/clerk/web/server": "rejects"
+          }
+        },
+        {
+          "peer": "react",
+          "outcomes": {
+            "@clossys/bouncer": "imports",
+            "@clossys/bouncer/agent": "imports",
+            "@clossys/bouncer/providers/clerk": "imports",
+            "@clossys/bouncer/providers/clerk/web": "rejects",
+            "@clossys/bouncer/providers/clerk/web/client": "rejects",
+            "@clossys/bouncer/providers/clerk/web/proxy": "rejects",
+            "@clossys/bouncer/providers/clerk/web/server": "rejects"
+          }
+        },
+        {
+          "peer": "react-dom",
+          "outcomes": {
+            "@clossys/bouncer": "imports",
+            "@clossys/bouncer/agent": "imports",
+            "@clossys/bouncer/providers/clerk": "imports",
+            "@clossys/bouncer/providers/clerk/web": "rejects",
+            "@clossys/bouncer/providers/clerk/web/client": "rejects",
+            "@clossys/bouncer/providers/clerk/web/proxy": "rejects",
+            "@clossys/bouncer/providers/clerk/web/server": "rejects"
+          }
+        },
+        {
+          "peer": "svix",
+          "outcomes": {
+            "@clossys/bouncer": "imports",
+            "@clossys/bouncer/agent": "imports",
+            "@clossys/bouncer/providers/clerk": "rejects",
+            "@clossys/bouncer/providers/clerk/web": "imports",
+            "@clossys/bouncer/providers/clerk/web/client": "imports",
+            "@clossys/bouncer/providers/clerk/web/proxy": "imports",
+            "@clossys/bouncer/providers/clerk/web/server": "imports"
+          }
+        }
+      ]
+    },
+    {
+      "set": "oidc-successor",
+      "packageKey": "butler",
+      "name": "@clossys/butler",
+      "version": "0.1.2",
+      "peers": [
+        {
+          "peer": "react",
+          "outcomes": {
+            "@clossys/butler": "imports",
+            "@clossys/butler/inbound": "imports",
+            "@clossys/butler/web": "rejects"
+          }
+        },
+        {
+          "peer": "react-dom",
+          "outcomes": {
+            "@clossys/butler": "imports",
+            "@clossys/butler/inbound": "imports",
+            "@clossys/butler/web": "imports"
+          }
+        }
+      ]
+    },
+    {
+      "set": "oidc-successor",
+      "packageKey": "giver",
+      "name": "@clossys/giver",
+      "version": "0.1.3",
+      "peers": []
+    },
+    {
+      "set": "oidc-successor",
+      "packageKey": "influencer",
+      "name": "@clossys/influencer",
+      "version": "0.1.3",
+      "peers": []
+    },
+    {
+      "set": "oidc-successor",
+      "packageKey": "integrator",
+      "name": "@clossys/integrator",
+      "version": "0.6.3",
+      "peers": []
+    },
+    {
+      "set": "oidc-successor",
+      "packageKey": "keeper",
+      "name": "@clossys/keeper",
+      "version": "0.1.3",
+      "peers": [
+        {
+          "peer": "react",
+          "outcomes": {
+            "@clossys/keeper": "imports",
+            "@clossys/keeper/web": "rejects"
+          }
+        },
+        {
+          "peer": "react-dom",
+          "outcomes": {
+            "@clossys/keeper": "imports",
+            "@clossys/keeper/web": "imports"
+          }
+        }
+      ]
+    },
+    {
+      "set": "oidc-successor",
+      "packageKey": "locksmith",
+      "name": "@clossys/locksmith",
+      "version": "0.1.7",
+      "peers": []
+    },
+    {
+      "set": "oidc-successor",
+      "packageKey": "messenger",
+      "name": "@clossys/messenger",
+      "version": "0.1.3",
+      "peers": [
+        {
+          "peer": "resend",
+          "outcomes": {
+            "@clossys/messenger": "imports",
+            "@clossys/messenger/providers/resend": "rejects"
+          }
+        }
+      ]
+    },
+    {
+      "set": "oidc-successor",
+      "packageKey": "observer",
+      "name": "@clossys/observer",
+      "version": "0.2.4",
+      "peers": []
+    },
+    {
+      "set": "oidc-successor",
+      "packageKey": "builder",
+      "name": "@clossys/builder",
+      "version": "0.7.4",
+      "peers": []
+    },
+    {
+      "set": "oidc-successor",
+      "packageKey": "inspector",
+      "name": "@clossys/inspector",
+      "version": "0.1.19",
+      "peers": []
+    },
+    {
+      "set": "oidc-successor",
+      "packageKey": "publisher",
+      "name": "@clossys/publisher",
+      "version": "0.1.8",
+      "peers": [
+        {
+          "peer": "react",
+          "outcomes": {
+            "@clossys/publisher/core": "imports",
+            "@clossys/publisher/document": "rejects",
+            "@clossys/publisher/email": "imports",
+            "@clossys/publisher/image": "imports",
+            "@clossys/publisher/media": "imports",
+            "@clossys/publisher/print": "imports",
+            "@clossys/publisher/record": "imports",
+            "@clossys/publisher/slides": "imports",
+            "@clossys/publisher/web": "rejects"
+          }
+        },
+        {
+          "peer": "react-dom",
+          "outcomes": {
+            "@clossys/publisher/core": "imports",
+            "@clossys/publisher/document": "imports",
+            "@clossys/publisher/email": "imports",
+            "@clossys/publisher/image": "imports",
+            "@clossys/publisher/media": "imports",
+            "@clossys/publisher/print": "imports",
+            "@clossys/publisher/record": "imports",
+            "@clossys/publisher/slides": "imports",
+            "@clossys/publisher/web": "rejects"
+          }
+        }
+      ]
+    }
+  ]
+}
