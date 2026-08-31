@@ -35,7 +35,7 @@ test("the production runner qualifies Bouncer's four framework exports in one is
     manifestBins: manifest.bin,
     registry: { scope: "@clossys", registry: "https://registry.npmjs.org/" },
   });
-  assert.equal(transcript.ok, true);
+  assert.equal(transcript.ok, true, JSON.stringify({ mismatches: transcript.mismatches, framework: transcript.observations.filter((item) => item.kind === "framework") }, null, 2));
   assert.deepEqual(transcript.coverage, {
     declaredExportKeys: 7,
     concreteTargets: 14,

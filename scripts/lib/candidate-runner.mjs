@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
-import { copyFile, lstat, mkdir, mkdtemp, readFile, readdir, realpath, rm, writeFile } from "node:fs/promises";
+import { copyFile, lstat, mkdir, mkdtemp, readFile, readdir, realpath, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { validateReleaseQualificationContract } from "./release-qualification-contract.mjs";
@@ -651,6 +651,11 @@ async function exportCoverage(manifest, installed, root) {
     let result;
     try {
       await writeFile(join(evaluatorRoot, "package.json"), '{"private":true,"type":"module"}\n');
+      // Turbopack rejects a node_modules symlink that resolves above its
+      // inferred project root.  The evaluator is deliberately nested inside
+      // the disposable consumer, so bind its allowed root explicitly while
+      // keeping app/proxy/.next outputs private to this evaluator directory.
+      await writeFile(join(evaluatorRoot, "next.config.mjs"), `export default { turbopack: { root: ${JSON.stringify(root)} } };\n`);
       await symlink(join(root, "node_modules"), join(evaluatorRoot, "node_modules"), "dir");
       await writeNextFixture(evaluatorRoot, framework);
       result = await runProcess(join(evaluatorRoot, "node_modules", ".bin", "next"), ["build"], {
