@@ -22,12 +22,14 @@ async function fixture(t) {
   return root;
 }
 
-test("credentiallessEnv removes ambient credential-shaped variables and pins isolated npm state", () => {
+test("credentiallessEnv removes credentials and every case variant of ambient npm configuration", () => {
   const env = credentiallessEnv({
     PATH: "/bin",
     NODE_AUTH_TOKEN: "sensitive",
     GH_PACKAGES_TOKEN: "sensitive",
     npm_config_userconfig: "/ambient",
+    NPM_CONFIG_USERCONFIG: "/ambient-override",
+    NpM_CoNfIg_ReGiStRy: "https://example.invalid/",
   }, "/clean/npmrc", "/clean/cache", "/clean/global-npmrc");
   assert.equal(env.PATH, "/bin");
   assert.equal(env.NODE_AUTH_TOKEN, undefined);
@@ -37,6 +39,50 @@ test("credentiallessEnv removes ambient credential-shaped variables and pins iso
   assert.equal(env.npm_config_cache, "/clean/cache");
   assert.equal(env.npm_config_ignore_scripts, "true");
   assert.equal(env.npm_config_always_auth, "false");
+  assert.deepEqual(Object.keys(env).filter((key) => /^npm_config_/i.test(key)).sort(), [
+    "npm_config_always_auth",
+    "npm_config_audit",
+    "npm_config_cache",
+    "npm_config_fund",
+    "npm_config_globalconfig",
+    "npm_config_ignore_scripts",
+    "npm_config_registry",
+    "npm_config_userconfig",
+  ]);
+});
+
+test("real npm cannot normalize later uppercase overrides back into the credentialless config", async (t) => {
+  const root = await fixture(t);
+  const npmrc = join(root, "isolated.npmrc");
+  const globalNpmrc = join(root, "isolated-global.npmrc");
+  const hostileNpmrc = join(root, "ambient.npmrc");
+  const hostileGlobalNpmrc = join(root, "ambient-global.npmrc");
+  const cache = join(root, "cache");
+  await mkdir(cache);
+  await writeFile(npmrc, "registry=https://registry.npmjs.org/\n");
+  await writeFile(globalNpmrc, "");
+  await writeFile(hostileNpmrc, "registry=https://example.invalid/user/\n");
+  await writeFile(hostileGlobalNpmrc, "registry=https://example.invalid/global/\n");
+
+  const env = credentiallessEnv({
+    PATH: process.env.PATH,
+    npm_config_registry: "https://registry.npmjs.org/",
+    npm_config_userconfig: npmrc,
+    npm_config_globalconfig: globalNpmrc,
+    NPM_CONFIG_REGISTRY: "https://example.invalid/override/",
+    NPM_CONFIG_USERCONFIG: hostileNpmrc,
+    NPM_CONFIG_GLOBALCONFIG: hostileGlobalNpmrc,
+  }, npmrc, cache, globalNpmrc);
+
+  for (const [key, expected] of [
+    ["registry", "https://registry.npmjs.org/"],
+    ["userconfig", npmrc],
+    ["globalconfig", globalNpmrc],
+  ]) {
+    const result = await runProcess("npm", ["config", "get", key], { cwd: root, env });
+    assert.equal(result.exitCode, 0, result.stderr);
+    assert.equal(result.stdout.trim(), expected);
+  }
 });
 
 test("the CLI is closed and exposes no probe that can weaken a failure", () => {

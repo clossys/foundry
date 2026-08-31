@@ -163,7 +163,7 @@ function inside(root, path) {
 export function credentiallessEnv(base, npmrc, cache, globalConfig = npmrc) {
   const env = {};
   for (const [key, value] of Object.entries(base)) {
-    if (!CREDENTIAL_ENV.test(key)) env[key] = value;
+    if (!CREDENTIAL_ENV.test(key) && !/^npm_config_/i.test(key)) env[key] = value;
   }
   return {
     ...env,
