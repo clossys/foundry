@@ -822,7 +822,7 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
       if (uninstall.exitCode !== 0 || reinstall.exitCode !== 0 || !packageAbsentAfterUninstall || !restored) transcript.mismatches.push("restoration");
     }
 
-    transcript.consumer = { manifestSha256: consumerDigest(root, before.manifest), lockfileSha256: consumerDigest(root, before.lock) };
+    transcript.consumer = { manifestSha256: skipRollback ? hash("sha256", before.manifest) : consumerDigest(root, before.manifest), lockfileSha256: skipRollback ? hash("sha256", before.lock) : consumerDigest(root, before.lock) };
     transcript.coverage = { ...exported.coverage, bins: Object.keys(packedBins).length, lifecycleScriptsDisabled };
     transcript.restoration = skipRollback ? { delegatedToAggregate: true } : { manifestRestored: restored, lockfileRestored: restored, packageAbsentAfterUninstall };
     transcript.mismatches.sort();

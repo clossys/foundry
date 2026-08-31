@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { lstat, link, mkdir, mkdtemp, open, readFile, readdir, readlink, realpath, rename, rm, stat, symlink, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { isAbsolute, join, relative, resolve, sep } from "node:path";
+import { basename, isAbsolute, join, relative, resolve, sep } from "node:path";
 
 import { assertCredentialFree, consumerDigest, runCandidateQualification, writeNextFixture } from "./candidate-runner.mjs";
 import { installedPackageRoots, runProcess, validateOptionalPeerPolicy } from "./packed-consumer-readiness.mjs";
@@ -84,8 +84,7 @@ export async function retainAggregateTranscript({ root, transcript }) {
   if (!object(transcript) || !["baseline", "oidc-successor"].includes(transcript.set) || !SHA256.test(transcript.canonicalSha256 ?? "")) throw new Error("generated aggregate transcript has no closed identity");
   const { directory } = await containedRegularDirectory(root, AGGREGATE_TRANSCRIPT_DIRECTORY);
   const relativePath = aggregateTranscriptPath(transcript.set, transcript.canonicalSha256);
-  const target = resolve(root, relativePath);
-  if (relative(resolve(root), target) !== relativePath) throw new Error("aggregate transcript path escapes the repository root");
+  const target = join(directory, basename(relativePath));
   const temporary = join(directory, `.aggregate-${process.pid}-${Date.now()}-${Math.random().toString(16).slice(2)}.tmp`);
   const bytes = `${JSON.stringify(transcript, null, 2)}\n`;
   let handle;
@@ -629,7 +628,7 @@ async function treeDigest(root) {
 
 /** Run one immutable optional-peer matrix serially against an already-installed consumer. */
 export async function runAggregateOptionalPeerMatrix({ consumer, matrix, env, frameworkByPackage = new Map() }) {
-  const before = { manifest: consumerDigest(consumer, await readFile(join(consumer, "package.json"))), lock: consumerDigest(consumer, await readFile(join(consumer, "package-lock.json"))), tree: await treeDigest(join(consumer, "node_modules")) };
+  const before = { manifest: hash(await readFile(join(consumer, "package.json"))), lock: hash(await readFile(join(consumer, "package-lock.json"))), tree: await treeDigest(join(consumer, "node_modules")) };
   const observations = [];
   for (const row of matrix) for (const peerRow of row.peers) {
     const roots = await installedPackageRoots(join(consumer, "node_modules"), peerRow.peer);
@@ -643,7 +642,7 @@ export async function runAggregateOptionalPeerMatrix({ consumer, matrix, env, fr
         if (framework.all.includes(specifier)) continue;
         const result = await runProcess(process.execPath, ["--input-type=module", "--eval", `await import(${JSON.stringify(specifier)})`], { cwd: consumer, env, timeout: 30_000 });
         const actual = result.exitCode === 0 ? "imports" : "rejects";
-        if (result.timedOut || result.launchError || actual !== expected) throw new Error(`${row.name} omission ${peerRow.peer} ${specifier} expected ${expected}, received ${actual}`);
+        if (result.timedOut || result.signal || result.launchError || result.exitCode === null || actual !== expected) throw new Error(`${row.name} omission ${peerRow.peer} ${specifier} expected ${expected}, received ${actual}`);
         pending.push({ package: row.name, version: row.version, peer: peerRow.peer, specifier, outcome: actual, evaluator: "node-direct" });
       }
       if (framework.all.length > 0) {
@@ -659,13 +658,13 @@ export async function runAggregateOptionalPeerMatrix({ consumer, matrix, env, fr
           result = await runProcess(evaluator, ["build"], { cwd: evaluatorRoot, env: { ...env, CI: "1", NEXT_TELEMETRY_DISABLED: "1" }, timeout: peerRow.peer === "next" ? 30_000 : 120_000 });
         } finally { await rm(evaluatorRoot, { recursive: true, force: true }); }
         const actual = result.exitCode === 0 ? "imports" : "rejects";
-        if (result.timedOut || (peerRow.peer !== "next" && result.launchError) || actual !== [...expected][0]) throw new Error(`${row.name} omission ${peerRow.peer} Next evaluator expected ${[...expected][0]}, received ${actual}`);
+        if (result.timedOut || result.signal || result.launchError || result.exitCode === null || actual !== [...expected][0]) throw new Error(`${row.name} omission ${peerRow.peer} Next evaluator expected ${[...expected][0]}, received ${actual}`);
         for (const specifier of framework.all) pending.push({ package: row.name, version: row.version, peer: peerRow.peer, specifier, outcome: actual, evaluator: peerRow.peer === "next" ? "next-bin-absent" : "next-build" });
       }
     } finally {
       for (const [root, hidden] of moved.reverse()) await rename(hidden, root);
     }
-    const after = { manifest: consumerDigest(consumer, await readFile(join(consumer, "package.json"))), lock: consumerDigest(consumer, await readFile(join(consumer, "package-lock.json"))), tree: await treeDigest(join(consumer, "node_modules")) };
+    const after = { manifest: hash(await readFile(join(consumer, "package.json"))), lock: hash(await readFile(join(consumer, "package-lock.json"))), tree: await treeDigest(join(consumer, "node_modules")) };
     if (JSON.stringify(before) !== JSON.stringify(after)) throw new Error(`${row.name} omission ${peerRow.peer} did not restore aggregate consumer bytes`);
     observations.push(...pending.map((item) => ({ ...item, restoration: { manifestSha256: after.manifest, lockfileSha256: after.lock, treeSha256: after.tree } })));
   }
@@ -802,8 +801,8 @@ export async function runAggregatePublicNpmCanary({ root, record, set = "oidc-su
       await writeFile(tarball, artifact.bytes);
       if (prepareCandidate) {
         const prepared = await prepareCandidate({ artifact, tarball, scratch, entry: artifact.entry });
-        runs.push(await executeCandidate({ ...prepared, aggregateConsumer: { manifestSha256: consumerDigest(scratch, before.manifest), lockfileSha256: consumerDigest(scratch, before.lock) } }));
-        if (consumerDigest(scratch, await readFile(join(scratch, "package.json"), "utf8")) !== consumerDigest(scratch, before.manifest) || consumerDigest(scratch, await readFile(join(scratch, "package-lock.json"), "utf8")) !== consumerDigest(scratch, before.lock) || await treeDigest(join(scratch, "node_modules")) !== before.tree) throw new Error(`${artifact.entry.name} child execution did not restore the shared aggregate consumer tree`);
+        runs.push(await executeCandidate({ ...prepared, aggregateConsumer: { manifestSha256: hash(before.manifest), lockfileSha256: hash(before.lock) } }));
+        if (hash(await readFile(join(scratch, "package.json"), "utf8")) !== hash(before.manifest) || hash(await readFile(join(scratch, "package-lock.json"), "utf8")) !== hash(before.lock) || await treeDigest(join(scratch, "node_modules")) !== before.tree) throw new Error(`${artifact.entry.name} child execution did not restore the shared aggregate consumer tree`);
         continue;
       }
       const qualification = JSON.parse(read(artifact.entry.qualification.path));
@@ -831,7 +830,7 @@ export async function runAggregatePublicNpmCanary({ root, record, set = "oidc-su
       if (hash(manifestBytes) !== qualification.candidate.packageManifestSha256) throw new Error(`${artifact.entry.name} reviewed manifest does not join its qualification`);
       const manifestBins = JSON.parse(manifestBytes).bin ?? {};
       runs.push(await executeCandidate({ tarball, policy, adapter, fixtures, manifestBins, registry: { scope: "@clossys", registry: PUBLIC_NPM_REGISTRY }, consumerRoot: scratch, skipRollback: true, restoreConsumerOverlay: true }));
-      if (consumerDigest(scratch, await readFile(join(scratch, "package.json"), "utf8")) !== consumerDigest(scratch, before.manifest) || consumerDigest(scratch, await readFile(join(scratch, "package-lock.json"), "utf8")) !== consumerDigest(scratch, before.lock) || await treeDigest(join(scratch, "node_modules")) !== before.tree) throw new Error(`${artifact.entry.name} child execution did not restore the shared aggregate consumer tree`);
+      if (hash(await readFile(join(scratch, "package.json"), "utf8")) !== hash(before.manifest) || hash(await readFile(join(scratch, "package-lock.json"), "utf8")) !== hash(before.lock) || await treeDigest(join(scratch, "node_modules")) !== before.tree) throw new Error(`${artifact.entry.name} child execution did not restore the shared aggregate consumer tree`);
     }
     const frameworkByPackage = new Map(runs.map((run) => {
       const contexts = { client: [], server: [], proxy: [], all: [] };
@@ -870,7 +869,7 @@ export async function runAggregatePublicNpmCanary({ root, record, set = "oidc-su
       repositoryRedirects,
       peerResolution: { requested: record.peerResolution.requested, actual: Object.fromEntries(Object.entries(actualPeerResolution).sort()), disposition: record.peerResolution.disposition },
       operations,
-      consumer: { manifestSha256: consumerDigest(scratch, before.manifest), lockfileSha256: consumerDigest(scratch, before.lock), controller: `${controller.name}@${controller.version}`, singularController: true, identities: selected.packages.map((entry) => `${entry.name}@${entry.version}`), rollback: { packageAbsenceProven: true, manifestRestored: true, lockfileRestored: true, identitiesRestored: true } },
+      consumer: { manifestSha256: hash(before.manifest), lockfileSha256: hash(before.lock), controller: `${controller.name}@${controller.version}`, singularController: true, identities: selected.packages.map((entry) => `${entry.name}@${entry.version}`), rollback: { packageAbsenceProven: true, manifestRestored: true, lockfileRestored: true, identitiesRestored: true } },
       packages: runs.map((run, index) => ({ name: artifacts[index].entry.name, version: artifacts[index].entry.version, qualification: artifacts[index].entry.qualification, publication: artifacts[index].entry.publication, served: { name: artifacts[index].entry.name, version: artifacts[index].entry.version, packageManifestSha256: artifacts[index].evidence.packedManifestSha256, tarball: { sha1: artifacts[index].evidence.shasum, sha256: artifacts[index].evidence.sha256, sha512: artifacts[index].evidence.sha512 } }, installedManifestSha256: run.coverage.installedManifestSha256, run })),
       optionalPeerObservations,
       dimensions: [
