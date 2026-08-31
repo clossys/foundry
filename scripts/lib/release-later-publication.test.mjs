@@ -1,11 +1,11 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-import { immutableSingleIntroduction, strictQualificationIntroductionAncestor, validateLaterPublication, validateRetainedLaterPublications } from "./release-later-publication.mjs";
+import { immutableSingleIntroduction, strictQualificationIntroductionAncestor, trustedProvenanceSourceValid, validateLaterPublication, validateRetainedLaterPublications } from "./release-later-publication.mjs";
 import { publicNpmPackageUrl, publicNpmVersionUrl, PUBLIC_NPM_REGISTRY } from "./public-npm-registry.mjs";
 
 const hash = (value) => createHash("sha256").update(value).digest("hex");
@@ -23,6 +23,7 @@ const qualification = {
   policySha256: hex("3", 64), adapterSha256: hex("4", 64), fixtureSetSha256: hex("5", 64),
 };
 const tarballUrl = `${PUBLIC_NPM_REGISTRY}/@clossys/strategist/-/strategist-0.1.1.tgz`;
+const historicalRepository = "https://github.com/clossys/" + "platform";
 function source() { return {
   schemaVersion: 1, kind: "foundry-later-publication-v1",
   qualification: { path: "governance/release-qualifications/clossys-strategist-0.1.1.json", sha256: hash(qualificationBytes) },
@@ -39,7 +40,7 @@ function source() { return {
   } },
 }; }
 function context() { return { recordPath: "governance/release-publications/later/strategist-0.1.1.json", recordBytes: "record\n", qualification, qualificationBytes, qualificationPath: "governance/release-qualifications/clossys-strategist-0.1.1.json", catalogBytes, catalog: { defaultTarget: "clossys-npmjs", targets: [{ id: "clossys-npmjs", status: "active", packages: ["advisor", "starter", "controller", "strategist"] }] } }; }
-function rules(record, overrides) { return validateLaterPublication(record, { ...context(), ...overrides }).map((item) => item.rule); }
+function rules(record, overrides) { return validateLaterPublication(record, { ...context(), provenanceSourceValid: true, ...overrides }).map((item) => item.rule); }
 
 test("later-publication record binds qualified candidate, active catalogue, anonymous bytes, and owner evidence", () => {
   assert.deepEqual(rules(source()), []);
@@ -139,29 +140,64 @@ test("later-publication requires a strict qualification-introduction ancestor", 
   assert.throws(() => strictQualificationIntroductionAncestor(root, "not-a-commit", publicationIntroduction), /commit hashes/);
 });
 
-test("later-publication v1 rejects trusted-publisher labels and provenance even when all evidence strings agree", () => {
+test("trusted provenance source is post-qualification, pre-publication, and candidate-identical", (t) => {
+  const root = mkdtempSync(join(tmpdir(), "later-publication-provenance-")); t.after(() => rmSync(root, { recursive: true, force: true }));
+  execFileSync("git", ["init", "-q"], { cwd: root }); execFileSync("git", ["config", "user.email", "test@example.invalid"], { cwd: root }); execFileSync("git", ["config", "user.name", "test"], { cwd: root });
+  const commit = (name) => { writeFileSync(join(root, "evidence"), `${name}\n`); execFileSync("git", ["add", "."], { cwd: root }); execFileSync("git", ["commit", "-qm", name], { cwd: root }); return execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim(); };
+  const reviewed = commit("reviewed"); const qualificationIntroduction = commit("qualification"); const sourceSha = commit("publish source");
+  execFileSync("git", ["checkout", "-qb", "sibling", qualificationIntroduction], { cwd: root }); const siblingSource = commit("sibling source"); execFileSync("git", ["checkout", "-q", "-"], { cwd: root }); const publicationIntroduction = commit("publication");
+  const candidate = { packageTreeSha1: "a".repeat(40), packageManifestSha256: "b".repeat(64), policySha256: "c".repeat(64), adapterSha256: "d".repeat(64), fixtureSetSha256: "e".repeat(64) };
+  const qualification = { candidate, rootPackageJsonSha256: "f".repeat(64), rootPackageLockSha256: "1".repeat(64), archetypes: [{ kind: "current-direct", status: "qualified" }], transcript: { dimensions: [{ dimension: "rollback", status: "supported" }] } };
+  const matching = () => ({ ...candidate, rootPackageJsonSha256: qualification.rootPackageJsonSha256, rootPackageLockSha256: qualification.rootPackageLockSha256, archetypes: qualification.archetypes, dimensions: qualification.transcript.dimensions });
+  assert.equal(trustedProvenanceSourceValid(root, qualification, qualificationIntroduction, publicationIntroduction, sourceSha, { joinsAt: matching }), true);
+  assert.equal(trustedProvenanceSourceValid(root, qualification, qualificationIntroduction, publicationIntroduction, qualificationIntroduction, { joinsAt: matching }), false);
+  assert.equal(trustedProvenanceSourceValid(root, qualification, qualificationIntroduction, publicationIntroduction, reviewed, { joinsAt: matching }), false);
+  assert.equal(trustedProvenanceSourceValid(root, qualification, qualificationIntroduction, publicationIntroduction, siblingSource, { joinsAt: matching }), false);
+  for (const key of ["packageTreeSha1", "packageManifestSha256", "rootPackageJsonSha256", "rootPackageLockSha256", "policySha256", "adapterSha256", "fixtureSetSha256", "archetypes", "dimensions"]) {
+    assert.equal(trustedProvenanceSourceValid(root, qualification, qualificationIntroduction, publicationIntroduction, sourceSha, { joinsAt: () => ({ ...matching(), [key]: key === "archetypes" || key === "dimensions" ? [] : "0".repeat(64) }) }), false, key);
+  }
+});
+
+test("trusted-publication v2 binds immutable provenance to the qualified served bytes", () => {
   const trusted = source();
+  trusted.schemaVersion = 2;
+  trusted.kind = "foundry-trusted-publication-v2";
   trusted.publication.mode = "trusted-publisher";
   trusted.publication.reference = "https://github.com/clossys/foundry/actions/runs/123";
-  trusted.publication.provenance = { provider: "github-actions", workflow: ".github/workflows/publish.yml", run: trusted.publication.reference };
-  assert.ok(rules(trusted).includes("trusted-publisher-unsupported"));
-  assert.ok(rules(trusted).includes("publication-provenance"));
+  trusted.publication.provenance = {
+    repository: "https://github.com/clossys/foundry", workflow: ".github/workflows/publish.yml", ref: "refs/heads/main", event: "workflow_dispatch",
+    sourceSha: qualification.reviewedCommit, builder: "https://github.com/actions/runner/github-hosted",
+    invocation: "https://github.com/clossys/foundry/actions/runs/123/attempts/1",
+    attestationUrl: "https://registry.npmjs.org/-/npm/v1/attestations/%40clossys%2Fstrategist%400.1.1",
+  };
+  trusted.registryProof = { schemaVersion: 2, kind: "public-npm-anonymous-registry-proof-v2", evidence: {
+    ...trusted.registryProof.evidence, metadataUrl: publicNpmVersionUrl(PUBLIC_NPM_REGISTRY, candidate.name, candidate.version), repository: "clossys/foundry",
+  } };
+  delete trusted.registryProof.evidence.packumentUrl;
+  assert.deepEqual(rules(trusted), []);
+  for (const mutate of [
+    (value) => { value.publication.reference = "https://github.com/clossys/foundry/actions/runs/999"; },
+    (value) => { value.publication.provenance.repository = historicalRepository; },
+    (value) => { value.publication.provenance.repository = historicalRepository; value.publication.provenance.sourceSha = "b".repeat(40); },
+    (value) => { value.publication.provenance.repository = historicalRepository; value.publication.provenance.invocation = "https://github.com/clossys/foundry/actions/runs/999/attempts/1"; },
+    (value) => { value.publication.provenance.workflow = ".github/workflows/other.yml"; },
+    (value) => { value.publication.provenance.invocation = "https://github.com/clossys/foundry/actions/runs/123"; },
+    (value) => { value.publication.provenance.attestationUrl = "https://registry.npmjs.org/-/npm/v1/attestations/other"; },
+    (value) => { value.registryProof.evidence.repository = "clossys/other"; },
+    (value) => { value.registryProof.evidence.sha512 = "0".repeat(128); },
+  ]) { const value = structuredClone(trusted); mutate(value); assert.ok(rules(value, { provenanceSourceValid: value.publication.provenance.repository === historicalRepository }).length > 0); }
+  assert.ok(rules(trusted, { provenanceSourceValid: false }).includes("publication-provenance"));
+  const unrelatedSource = structuredClone(trusted); unrelatedSource.publication.provenance.sourceSha = "b".repeat(40);
+  assert.ok(rules(unrelatedSource, { provenanceSourceValid: false }).includes("publication-provenance"));
+  const wrongSubject = structuredClone(trusted); wrongSubject.registryProof.evidence.sha512 = "0".repeat(128);
+  assert.ok(rules(wrongSubject).includes("attestation-subject"));
+  const v1Proof = structuredClone(trusted); v1Proof.registryProof = source().registryProof;
+  assert.ok(rules(v1Proof).includes("registry-proof"));
+});
 
-  // These fields already join the same package, source, qualification, and
-  // registry bytes. A canonical-looking workflow/run label cannot upgrade v1.
-  assert.deepEqual(trusted.candidate, qualification.candidate);
-  assert.deepEqual(trusted.source, Object.fromEntries(Object.keys(trusted.source).map((key) => [key, qualification[key]])));
-  assert.deepEqual(trusted.registryProof.evidence.name, trusted.candidate.name);
-  assert.deepEqual(trusted.registryProof.evidence.version, trusted.candidate.version);
-
-  const spoofedOwner = source();
-  spoofedOwner.publication.reference = "https://github.com/clossys/foundry/actions/runs/123";
-  spoofedOwner.publication.provenance = { provider: "github-actions", workflow: ".github/workflows/publish.yml", run: spoofedOwner.publication.reference };
-  assert.ok(rules(spoofedOwner).includes("publication-provenance"));
-
-  const malformed = source();
-  malformed.publication.mode = "trusted-publisher";
-  malformed.publication.provenance = { workflow: "publish.yml", run: "not-a-run" };
-  assert.ok(rules(malformed).includes("trusted-publisher-unsupported"));
-  assert.ok(rules(malformed).includes("publication-provenance"));
+test("only the three retained historical release tuples may use the retired provenance repository", () => {
+  const result = validateRetainedLaterPublications(process.cwd());
+  assert.deepEqual(result.findings, []);
+  const records = ["advisor-0.1.5", "starter-0.1.4", "controller-0.8.23"];
+  for (const record of records) assert.equal(JSON.parse(readFileSync(`governance/release-publications/later/${record}.json`, "utf8")).publication.provenance.repository, historicalRepository);
 });
