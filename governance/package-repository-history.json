@@ -59,7 +59,12 @@
     },
     {
       "path": "scripts/lib/public-npm-aggregate-canary.mjs",
-      "lineSha256": "sha256:ecdd6ba0dbe3177e116e9518e8c8d76291cd42277045942e3496c2156d5cad10",
+      "lineSha256": "sha256:d2cb607086712b612c54aba091b824f432c84d9df1e34c8b03f6e4e2dd7cdf54",
+      "count": 1
+    },
+    {
+      "path": "scripts/lib/public-npm-aggregate-canary.mjs",
+      "lineSha256": "sha256:303aa920190354a2c13a9f89f18fc81c2acd394bd08d3db67e08dbfe8091ebdf",
       "count": 1
     },
     {
@@ -75,6 +80,11 @@
     {
       "path": "scripts/lib/public-npm-aggregate-canary.test.mjs",
       "lineSha256": "sha256:d75daba907d0eef7dd476ab06e041a5464bc58263d47692eaf74f47478051893",
+      "count": 1
+    },
+    {
+      "path": "scripts/lib/public-npm-aggregate-canary.test.mjs",
+      "lineSha256": "sha256:aed6ef05cb62c9898546159f092ce2b9acd5e9264147078d2a68ada0c254b7f9",
       "count": 1
     }
   ]
