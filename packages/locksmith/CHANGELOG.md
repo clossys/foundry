@@ -5,6 +5,20 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.5] - 2026-08-30
+
+### Added
+
+- Added a value-free credential lifecycle contract that distinguishes
+  provider-created ephemeral job credentials from manually rotatable secrets.
+  Ephemeral evidence validates provider, scope, job lifetime, scoped use, and
+  expiry-at-job-end semantics without inventing a rotation timestamp. Manual
+  evidence keeps repository-secret metadata separate from owner-controlled
+  token provenance, so `updatedAt` alone remains indeterminate. Results retain
+  the closed `satisfied` / `violated` / `indeterminate` and `0` / `1` / `2`
+  behavior, and unknown credential-shaped fields are rejected without echoing
+  them. This is a contract addition only; no consumer adoption is claimed.
+
 ## [0.1.4] - 2026-08-30
 
 ### Changed
