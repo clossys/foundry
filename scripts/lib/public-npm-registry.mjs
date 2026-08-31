@@ -117,7 +117,7 @@ export async function fetchPublicNpmPackument({ registry, name, fetchImpl = fetc
   });
 }
 
-async function fetchPublicNpmVersion({ registry, name, version, fetchImpl }) {
+async function fetchPublicNpmVersion({ registry, name, version, expectedRepository, fetchImpl }) {
   let url;
   try {
     url = publicNpmVersionUrl(registry, name, version);
@@ -147,6 +147,7 @@ async function fetchPublicNpmVersion({ registry, name, version, fetchImpl }) {
   }
   const repository = repositoryIdentityFromPackument({ repository: document.repository, versions: { [version]: document } }, version);
   if (!repository) return { kind: "unreachable", detail: "anonymous exact-version response has no canonical repository identity", url };
+  if (expectedRepository !== undefined && repository !== expectedRepository) return { kind: "unreachable", detail: "anonymous exact-version response repository does not match the expected repository", url };
   const exact = exactVersionRecord({ versions: { [version]: document } }, name, version);
   if (exact.kind !== "found") return { ...exact, url };
   return { kind: "found", exact: { repository, dist: exact.dist }, url };
@@ -181,8 +182,8 @@ function exactVersionRecord(packument, name, version) {
   return { kind: "found", dist: { tarball: tarball.toString(), integrity: dist.integrity, shasum: dist.shasum } };
 }
 
-export async function probePublicNpmVersion({ registry, name, version, fetchImpl = fetch }) {
-  const metadata = await fetchPublicNpmVersion({ registry, name, version, fetchImpl });
+export async function probePublicNpmVersion({ registry, name, version, repository, fetchImpl = fetch }) {
+  const metadata = await fetchPublicNpmVersion({ registry, name, version, expectedRepository: repository, fetchImpl });
   if (metadata.kind === "not-found") return { kind: "known", hasVersion: false };
   if (metadata.kind === "denied") return { kind: "denied" };
   if (metadata.kind !== "found") return { kind: "unreachable" };
@@ -206,8 +207,9 @@ function packedManifest(bytes) {
   return { manifest, bytes: Buffer.from(result.stdout) };
 }
 
-export async function verifyPublicNpmArtifact({ registry, name, version, fetchImpl = fetch }) {
-  const probe = await probePublicNpmVersion({ registry, name, version, fetchImpl });
+export async function verifyPublicNpmArtifact({ registry, name, version, repository, fetchImpl = fetch }) {
+  if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository ?? "")) return { kind: "unreachable", detail: "public npm artifact verification requires one canonical expected repository identity" };
+  const probe = await probePublicNpmVersion({ registry, name, version, repository, fetchImpl });
   if (probe.kind !== "known" || probe.hasVersion !== true) return probe;
   let response;
   try {
@@ -277,6 +279,7 @@ export async function retryPostPublishPublicNpmArtifact({
   registry,
   name,
   version,
+  repository,
   fetchImpl = fetch,
   delays = POST_PUBLISH_VISIBILITY_RETRY_DELAYS_MS,
   sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds)),
@@ -286,7 +289,7 @@ export async function retryPostPublishPublicNpmArtifact({
   }
   let result;
   for (let attempt = 0; attempt < delays.length; attempt += 1) {
-    result = await verifyPublicNpmArtifact({ registry, name, version, fetchImpl });
+    result = await verifyPublicNpmArtifact({ registry, name, version, repository, fetchImpl });
     if (!visibilityPending(result) || attempt === delays.length - 1) return result;
     await sleep(delays[attempt + 1]);
   }

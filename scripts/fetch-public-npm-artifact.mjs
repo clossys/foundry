@@ -2,7 +2,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { assertCredentialFree } from "./lib/candidate-runner.mjs";
 import { assertPackageAuthorized, loadReleaseCatalog, readCurrentReleaseIdentity, resolveReleaseTarget } from "./check-release-catalog.mjs";
-import { publicNpmRegistryProof, verifyPublicNpmArtifact } from "./lib/public-npm-registry.mjs";
+import { publicNpmRegistryProof, repositoryIdentityFromPackument, verifyPublicNpmArtifact } from "./lib/public-npm-registry.mjs";
 
 const KEY = /^[a-z0-9][a-z0-9-]{0,63}$/;
 const usage = "Usage: --package <package-key> --output <directory>";
@@ -25,7 +25,9 @@ export async function fetchPublicNpmArtifact({ root = process.cwd(), packageKey,
   assertPackageAuthorized(target, packageKey);
   if (target.registry !== "https://registry.npmjs.org" || target.access !== "public") throw new Error("verify_only requires the exact public npm release target");
   const manifest = JSON.parse(readFileSync(resolve(root, "packages", packageKey, "package.json"), "utf8"));
-  const result = await verifyPublicNpmArtifact({ registry: target.registry, name: manifest.name, version: manifest.version, fetchImpl });
+  const repository = repositoryIdentityFromPackument({ repository: manifest.repository, versions: {} }, manifest.version);
+  if (!repository) throw new Error("verify_only package manifest must retain one canonical GitHub repository identity");
+  const result = await verifyPublicNpmArtifact({ registry: target.registry, name: manifest.name, version: manifest.version, repository, fetchImpl });
   if (result.kind !== "verified") throw new Error(`anonymous public npm artifact verification did not complete: ${result.kind}`);
   const destination = resolve(output); mkdirSync(destination, { recursive: true });
   writeFileSync(resolve(destination, "candidate.tgz"), result.bytes, { flag: "wx" });

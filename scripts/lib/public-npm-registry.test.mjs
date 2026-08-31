@@ -158,6 +158,7 @@ test("served artifact proof binds packument digests, exact bytes, and packed man
     registry: PUBLIC_NPM_REGISTRY,
     name: NAME,
     version: VERSION,
+    repository: "fixture/platform",
     fetchImpl: queueFetch([response(200, exactMetadata(bytes)), response(200, bytes, { "content-length": String(bytes.length) })], observations),
   });
   assert.equal(result.kind, "verified");
@@ -172,9 +173,23 @@ test("served artifact proof binds packument digests, exact bytes, and packed man
   assert.deepEqual(validatePublicNpmRegistryProof(publicNpmRegistryProof(result.evidence), { name: NAME, version: VERSION, repository: "fixture/platform", bytes }), []);
 });
 
+test("exact-version verification binds the expected repository before fetching a tarball", async () => {
+  const bytes = tarball();
+  const observations = [];
+  const result = await verifyPublicNpmArtifact({
+    registry: PUBLIC_NPM_REGISTRY,
+    name: NAME,
+    version: VERSION,
+    repository: "fixture/platform",
+    fetchImpl: queueFetch([response(200, exactMetadata(bytes, { repository: { type: "git", url: "git+https://github.com/other/project.git" } }))], observations),
+  });
+  assert.equal(result.kind, "unreachable");
+  assert.equal(observations.length, 1);
+});
+
 test("retained anonymous proof rejects changed identity, URLs, digest, packed manifest, or candidate bytes", async () => {
   const bytes = tarball();
-  const result = await verifyPublicNpmArtifact({ registry: PUBLIC_NPM_REGISTRY, name: NAME, version: VERSION, fetchImpl: queueFetch([response(200, exactMetadata(bytes)), response(200, bytes)]) });
+  const result = await verifyPublicNpmArtifact({ registry: PUBLIC_NPM_REGISTRY, name: NAME, version: VERSION, repository: "fixture/platform", fetchImpl: queueFetch([response(200, exactMetadata(bytes)), response(200, bytes)]) });
   for (const mutate of [(proof) => { proof.evidence.name = "@fixture/other"; }, (proof) => { proof.evidence.metadataUrl = `${PUBLIC_NPM_REGISTRY}/fixture/probe/${VERSION}`; }, (proof) => { proof.evidence.repository = "other/project"; }, (proof) => { proof.evidence.sha256 = "0".repeat(64); }, (proof) => { proof.evidence.packedManifestSha256 = "0".repeat(64); }, (proof) => { proof.evidence.access = "token"; }]) {
     const proof = publicNpmRegistryProof(structuredClone(result.evidence)); mutate(proof);
     assert.ok(validatePublicNpmRegistryProof(proof, { name: NAME, version: VERSION, repository: "fixture/platform", bytes }).length > 0);
@@ -194,7 +209,7 @@ test("retained anonymous proof rejects changed identity, URLs, digest, packed ma
 test("served artifact proof rejects changed bytes and a substituted packed manifest", async () => {
   const bytes = tarball();
   const changed = Buffer.concat([bytes, Buffer.from("changed")]);
-  const digestMismatch = await verifyPublicNpmArtifact({ registry: PUBLIC_NPM_REGISTRY, name: NAME, version: VERSION, fetchImpl: queueFetch([response(200, exactMetadata(bytes)), response(200, changed)]) });
+  const digestMismatch = await verifyPublicNpmArtifact({ registry: PUBLIC_NPM_REGISTRY, name: NAME, version: VERSION, repository: "fixture/platform", fetchImpl: queueFetch([response(200, exactMetadata(bytes)), response(200, changed)]) });
   assert.equal(digestMismatch.kind, "mismatch");
 
   const root = mkdtempSync(join(tmpdir(), "public-npm-registry-wrong-"));
@@ -208,7 +223,7 @@ test("served artifact proof rejects changed bytes and a substituted packed manif
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
-  const manifestMismatch = await verifyPublicNpmArtifact({ registry: PUBLIC_NPM_REGISTRY, name: NAME, version: VERSION, fetchImpl: queueFetch([response(200, exactMetadata(wrong)), response(200, wrong)]) });
+  const manifestMismatch = await verifyPublicNpmArtifact({ registry: PUBLIC_NPM_REGISTRY, name: NAME, version: VERSION, repository: "fixture/platform", fetchImpl: queueFetch([response(200, exactMetadata(wrong)), response(200, wrong)]) });
   assert.equal(manifestMismatch.kind, "mismatch");
   assert.match(manifestMismatch.detail, /manifest/);
 });
@@ -220,6 +235,7 @@ test("post-publish visibility retries only anonymous missing-version or 404 obse
     registry: PUBLIC_NPM_REGISTRY,
     name: NAME,
     version: VERSION,
+    repository: "fixture/platform",
     delays: [0, 7, 11],
     sleep: async (milliseconds) => { waits.push(milliseconds); },
     fetchImpl: queueFetch([
@@ -238,6 +254,7 @@ test("post-publish visibility exhausts a missing version without treating it as 
     registry: PUBLIC_NPM_REGISTRY,
     name: NAME,
     version: VERSION,
+    repository: "fixture/platform",
     delays: [0, 3, 5],
     sleep: async (milliseconds) => { waits.push(milliseconds); },
     fetchImpl: queueFetch([response(404, {}), response(404, {}), response(404, {})]),
@@ -253,6 +270,7 @@ test("post-publish visibility never retries a wrong-digest registry response", a
     registry: PUBLIC_NPM_REGISTRY,
     name: NAME,
     version: VERSION,
+    repository: "fixture/platform",
     delays: [0, 9, 12],
     sleep: async (milliseconds) => { waits.push(milliseconds); },
     fetchImpl: queueFetch([response(200, exactMetadata(bytes)), response(200, Buffer.concat([bytes, Buffer.from("wrong")]))]),
@@ -276,6 +294,7 @@ test("post-publish visibility never retries denial, transport, or malformed iden
       registry: PUBLIC_NPM_REGISTRY,
       name: NAME,
       version: VERSION,
+      repository: "fixture/platform",
       delays: [0, 9, 12],
       sleep: async (milliseconds) => { waits.push(milliseconds); },
       fetchImpl: queueFetch(entries),
@@ -287,7 +306,7 @@ test("post-publish visibility never retries denial, transport, or malformed iden
 
 test("post-publish visibility refuses an unbounded retry schedule", async () => {
   await assert.rejects(
-    retryPostPublishPublicNpmArtifact({ registry: PUBLIC_NPM_REGISTRY, name: NAME, version: VERSION, delays: [0, 180_001] }),
+    retryPostPublishPublicNpmArtifact({ registry: PUBLIC_NPM_REGISTRY, name: NAME, version: VERSION, repository: "fixture/platform", delays: [0, 180_001] }),
     /within three minutes/,
   );
 });
