@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import { ALL_PACKAGE_RELEASE_ORDER, aggregateCanaryGitHistory, aggregateClosurePath, aggregatePlanSha256, assertAggregateRuntime, controllerPhysicalIdentities, immutableRecordHistory, immutableRecordPaths, isAggregateClosurePath, parseAggregateCanaryCli, resolveAggregateClosure, retainAggregateTranscript, runAggregatePublicNpmCanary, sealedHistoricalRepository, validateAggregateCanary, validateAggregateCanaryAppendOnly, validateAggregateCanaryHistory, validateAggregateChildExecution, validateAggregateClosure, validateSatisfiedAggregateTranscript, validateSatisfiedTranscriptHistory } from "./public-npm-aggregate-canary.mjs";
+import { ALL_PACKAGE_RELEASE_ORDER, aggregateCanaryGitHistory, aggregateClosurePath, aggregatePlanSha256, assertAggregateRuntime, controllerPhysicalIdentities, immutableRecordHistory, immutableRecordPaths, isAggregateClosurePath, parseAggregateCanaryCli, resolveAggregateClosure, retainAggregateTranscript, runAggregateOptionalPeerMatrix, runAggregatePublicNpmCanary, sealedHistoricalRepository, validateAggregateCanary, validateAggregateCanaryAppendOnly, validateAggregateCanaryHistory, validateAggregateChildExecution, validateAggregateClosure, validateSatisfiedAggregateTranscript, validateSatisfiedTranscriptHistory } from "./public-npm-aggregate-canary.mjs";
 
 const root = new URL("../..", import.meta.url).pathname;
 const record = JSON.parse(readFileSync(new URL("../../governance/public-npm-aggregate-canary.json", import.meta.url), "utf8"));
@@ -298,6 +298,19 @@ test("live runner makes no registry request while any frozen member is held or p
 
 test("credential-bearing parent environments are rejected before any live aggregate work", async () => {
   await assert.rejects(() => runAggregatePublicNpmCanary({ root, record, environment: { NPM_TOKEN: "test-only-credential" } }), /credential-bearing/);
+});
+
+test("optional-peer rejection must name the omitted peer and restores the hidden physical root", async () => {
+  const temporary = await mkdtemp(join(tmpdir(), "foundry-aggregate-optional-causal-"));
+  const peerRoot = join(temporary, "node_modules", "fixture-peer");
+  try {
+    await mkdir(peerRoot, { recursive: true });
+    await writeFile(join(temporary, "package.json"), '{"private":true}\n');
+    await writeFile(join(temporary, "package-lock.json"), '{"lockfileVersion":3}\n');
+    await writeFile(join(peerRoot, "package.json"), '{"name":"fixture-peer","version":"1.0.0"}\n');
+    await assert.rejects(() => runAggregateOptionalPeerMatrix({ consumer: temporary, matrix: [{ name: "@clossys/fixture", version: "1.0.0", peers: [{ peer: "fixture-peer", outcomes: { "not-a-real-module": "rejects" } }] }], env: { PATH: process.env.PATH } }), /causally attributable/);
+    assert.equal(JSON.parse(await readFile(join(peerRoot, "package.json"), "utf8")).name, "fixture-peer");
+  } finally { await rm(temporary, { recursive: true, force: true }); }
 });
 
 test("aggregate runner pins the required Node/npm/zlib tuple", () => {

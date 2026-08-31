@@ -708,6 +708,7 @@ export async function runAggregateOptionalPeerMatrix({ consumer, matrix, env, fr
         const result = await runProcess(process.execPath, ["--input-type=module", "--eval", `await import(${JSON.stringify(specifier)})`], { cwd: consumer, env, timeout: 30_000 });
         const actual = result.exitCode === 0 ? "imports" : "rejects";
         if (result.timedOut || result.signal || result.launchError || result.exitCode === null || actual !== expected) throw new Error(`${row.name} omission ${peerRow.peer} ${specifier} expected ${expected}, received ${actual}`);
+        if (actual === "rejects" && !`${result.stdout}\n${result.stderr}`.includes(peerRow.peer)) throw new Error(`${row.name} omission ${peerRow.peer} ${specifier} rejection is not causally attributable to the omitted peer`);
         pending.push({ package: row.name, version: row.version, peer: peerRow.peer, specifier, outcome: actual, evaluator: "node-direct", result: { expectedOutcome: expected, observedExitCode: result.exitCode, signal: result.signal ?? null, launchError: false, timedOut: false, stdoutSha256: hash(result.stdout), stderrSha256: hash(result.stderr) } });
       }
       if (framework.all.length > 0) {
@@ -733,6 +734,7 @@ export async function runAggregateOptionalPeerMatrix({ consumer, matrix, env, fr
         } finally { await rm(evaluatorRoot, { recursive: true, force: true }); }
         const actual = result.exitCode === 0 ? "imports" : "rejects";
         if (result.timedOut || result.signal || result.launchError || result.exitCode === null || actual !== [...expected][0]) throw new Error(`${row.name} omission ${peerRow.peer} Next evaluator expected ${[...expected][0]}, received ${actual}`);
+        if (peerRow.peer !== "next" && actual === "rejects" && !`${result.stdout}\n${result.stderr}`.includes(peerRow.peer)) throw new Error(`${row.name} omission ${peerRow.peer} Next rejection is not causally attributable to the omitted peer`);
         for (const specifier of framework.all) pending.push({ package: row.name, version: row.version, peer: peerRow.peer, specifier, outcome: actual, evaluator: peerRow.peer === "next" ? "next-bin-absent" : "next-build", result: { expectedOutcome: [...expected][0], observedExitCode: result.exitCode, signal: result.signal ?? null, launchError: false, timedOut: false, stdoutSha256: hash(result.stdout), stderrSha256: hash(result.stderr) } });
       }
     } finally {
