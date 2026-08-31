@@ -195,6 +195,40 @@ describe("evaluateCredential", () => {
     }
   });
 
+  it("rejects unsupported fields even when Array prototype helpers and iteration are polluted", () => {
+    const hostileEvidence = { ...ephemeral, token: "do-not-store-this" };
+    const everyDescriptor = Object.getOwnPropertyDescriptor(Array.prototype, "every");
+    const iteratorDescriptor = Object.getOwnPropertyDescriptor(Array.prototype, Symbol.iterator);
+    if (everyDescriptor === undefined || iteratorDescriptor === undefined) throw new Error("array builtins unavailable");
+
+    let result: CredentialEvaluation | undefined;
+    try {
+      Object.defineProperty(Array.prototype, "every", {
+        configurable: true,
+        writable: true,
+        value: () => true,
+      });
+      Object.defineProperty(Array.prototype, Symbol.iterator, {
+        configurable: true,
+        writable: true,
+        value: function* () {
+          yield "token";
+        },
+      });
+      result = evaluateCredential(hostileEvidence);
+    } finally {
+      Object.defineProperty(Array.prototype, "every", everyDescriptor);
+      Object.defineProperty(Array.prototype, Symbol.iterator, iteratorDescriptor);
+    }
+
+    expect(result).toMatchObject({
+      verdict: "indeterminate",
+      exitCode: 2,
+      reasons: ["unsupported-fields"],
+    });
+    expect(JSON.stringify(result)).not.toContain("do-not-store-this");
+  });
+
   it("rejects inherited evidence and custom prototypes at both record levels", () => {
     const inheritedEvidence = Object.create(ephemeral) as unknown;
     const inheritedOwnerProvenance = Object.create(manual.ownerProvenance) as unknown;
@@ -328,6 +362,28 @@ describe("defineCredentialEvidence", () => {
         ownerProvenance: Object.create(manual.ownerProvenance),
       } as never),
     ).toThrow(RangeError);
+  });
+
+  it("normalizes attacker-controlled RangeError text from a stateful proxy", () => {
+    const attackerText = "attacker-controlled-message";
+    let ownKeysCalls = 0;
+    const statefulEvidence = new Proxy({ ...ephemeral }, {
+      ownKeys(target) {
+        ownKeysCalls += 1;
+        if (ownKeysCalls > 1) throw new RangeError(attackerText);
+        return Reflect.ownKeys(target);
+      },
+    });
+
+    let thrown: unknown;
+    try {
+      defineCredentialEvidence(statefulEvidence as never);
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).toBeInstanceOf(RangeError);
+    expect((thrown as Error).message).toBe("credential evidence could not be inspected safely");
+    expect((thrown as Error).message).not.toContain(attackerText);
   });
 
   it("refuses an invalid key with whitespace", () => {

@@ -90,7 +90,11 @@ function evaluation(
   verdict: CredentialVerdict,
   reasons: readonly CredentialReason[],
 ): CredentialEvaluation {
-  return Object.freeze({ key, credentialClass, verdict, exitCode: EXIT_CODES[verdict], reasons: Object.freeze([...reasons]) });
+  const copiedReasons: CredentialReason[] = [];
+  for (let index = 0; index < reasons.length; index += 1) {
+    copiedReasons[index] = reasons[index] as CredentialReason;
+  }
+  return Object.freeze({ key, credentialClass, verdict, exitCode: EXIT_CODES[verdict], reasons: Object.freeze(copiedReasons) });
 }
 
 interface OwnDataRecord {
@@ -109,7 +113,8 @@ function readOwnDataRecord(value: unknown): OwnDataRecord | null {
 
   const keys = Reflect.ownKeys(value);
   const values: Record<string, unknown> = Object.create(null) as Record<string, unknown>;
-  for (const key of keys) {
+  for (let index = 0; index < keys.length; index += 1) {
+    const key = keys[index] as PropertyKey;
     const descriptor = Reflect.getOwnPropertyDescriptor(value, key);
     if (descriptor === undefined || !("value" in descriptor)) return null;
     if (typeof key === "string") values[key] = descriptor.value;
@@ -182,7 +187,8 @@ function inspectScope(value: unknown, credentialClass: CredentialClass): ScopeIn
   if (actualOwnKeys.length !== length + 1) {
     return { reason: "non-canonical-scope", values: null };
   }
-  for (const key of actualOwnKeys) {
+  for (let keyIndex = 0; keyIndex < actualOwnKeys.length; keyIndex += 1) {
+    const key = actualOwnKeys[keyIndex] as PropertyKey;
     if (key === "length") continue;
     if (typeof key !== "string" || !/^(0|[1-9]\d*)$/.test(key)) {
       return { reason: "non-canonical-scope", values: null };
@@ -209,14 +215,50 @@ function inspectScope(value: unknown, credentialClass: CredentialClass): ScopeIn
       return { reason: "non-canonical-scope", values: null };
     }
     previousAllowedIndex = allowedIndex;
-    values.push(entry as CredentialScope);
+    values[index] = entry as CredentialScope;
   }
   return { reason: null, values };
 }
 
 function hasOnlyFields(value: OwnDataRecord, fields: readonly string[]): boolean {
-  const allowed = new Set(fields);
-  return value.keys.every((field) => typeof field === "string" && allowed.has(field));
+  if (value.keys.length > fields.length) return false;
+  for (let keyIndex = 0; keyIndex < value.keys.length; keyIndex += 1) {
+    const key = value.keys[keyIndex];
+    if (typeof key !== "string") return false;
+    let matched = false;
+    for (let fieldIndex = 0; fieldIndex < fields.length; fieldIndex += 1) {
+      if (key === fields[fieldIndex]) {
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) return false;
+  }
+  return true;
+}
+
+function hasField(value: OwnDataRecord, field: string): boolean {
+  for (let index = 0; index < value.keys.length; index += 1) {
+    if (value.keys[index] === field) return true;
+  }
+  return false;
+}
+
+function freezeScopeCopy(values: readonly CredentialScope[]): readonly CredentialScope[] {
+  const copy: CredentialScope[] = [];
+  for (let index = 0; index < values.length; index += 1) {
+    copy[index] = values[index] as CredentialScope;
+  }
+  return Object.freeze(copy);
+}
+
+function reasonSummary(reasons: readonly CredentialReason[]): string {
+  let summary = "";
+  for (let index = 0; index < reasons.length; index += 1) {
+    if (index > 0) summary += ", ";
+    summary += reasons[index] as CredentialReason;
+  }
+  return summary;
 }
 
 /**
@@ -338,29 +380,35 @@ export function evaluateCredential(evidence: unknown): CredentialEvaluation {
 }
 
 /** Frozen, value-free authoring helper for callers that already have typed evidence. */
+const INVALID_DEFINITION_SNAPSHOT = Symbol("invalid credential definition snapshot");
+
+function rejectDefinitionSnapshot(): never {
+  throw INVALID_DEFINITION_SNAPSHOT;
+}
+
 export function defineCredentialEvidence(evidence: CredentialEvidence): CredentialEvidence {
   const evaluated = evaluateCredential(evidence);
   if (evaluated.verdict !== "satisfied") {
-    throw new RangeError(`credential evidence is ${evaluated.verdict}: ${evaluated.reasons.join(", ")}`);
+    throw new RangeError(`credential evidence is ${evaluated.verdict}: ${reasonSummary(evaluated.reasons)}`);
   }
 
   try {
     const record = readOwnDataRecord(evidence);
-    if (record === null) throw new RangeError("credential evidence changed while it was being inspected");
+    if (record === null) rejectDefinitionSnapshot();
     const credentialClass = record.values.credentialClass;
     const expectedFields =
       credentialClass === "ephemeral-job"
         ? ["key", "credentialClass", "provider", "scope", "jobStartedAt", "jobEndedAt", "expiresAtJobEnd", "scopedUseObserved"]
         : ["key", "credentialClass", "provider", "scope", "repositorySecretUpdatedAt", "ownerProvenance"];
     if (!hasOnlyFields(record, expectedFields)) {
-      throw new RangeError("credential evidence changed while it was being inspected");
+      rejectDefinitionSnapshot();
     }
     if (credentialClass !== "ephemeral-job" && credentialClass !== "manually-rotatable") {
-      throw new RangeError("credential evidence changed while it was being inspected");
+      rejectDefinitionSnapshot();
     }
     const scope = inspectScope(record.values.scope, credentialClass);
     if (scope.reason !== null || scope.values === null) {
-      throw new RangeError("credential evidence changed while it was being inspected");
+      rejectDefinitionSnapshot();
     }
 
     let snapshot: CredentialEvidence;
@@ -369,7 +417,7 @@ export function defineCredentialEvidence(evidence: CredentialEvidence): Credenti
         key: record.values.key as SecretKey,
         credentialClass,
         provider: record.values.provider as "github-actions",
-        scope: Object.freeze([...scope.values]),
+        scope: freezeScopeCopy(scope.values),
         jobStartedAt: record.values.jobStartedAt as string,
         jobEndedAt: record.values.jobEndedAt as string,
         expiresAtJobEnd: record.values.expiresAtJobEnd as true,
@@ -378,14 +426,14 @@ export function defineCredentialEvidence(evidence: CredentialEvidence): Credenti
     } else {
       const ownerProvenance = readOwnDataRecord(record.values.ownerProvenance);
       if (ownerProvenance === null || !hasOnlyFields(ownerProvenance, ["source", "tokenCreatedAt", "observedAt"])) {
-        throw new RangeError("credential evidence changed while it was being inspected");
+        rejectDefinitionSnapshot();
       }
       snapshot = {
         key: record.values.key as SecretKey,
         credentialClass,
         provider: record.values.provider as "github",
-        scope: Object.freeze([...scope.values]) as readonly Exclude<CredentialScope, "id-token:write">[],
-        ...(record.keys.includes("repositorySecretUpdatedAt")
+        scope: freezeScopeCopy(scope.values) as readonly Exclude<CredentialScope, "id-token:write">[],
+        ...(hasField(record, "repositorySecretUpdatedAt")
           ? { repositorySecretUpdatedAt: record.values.repositorySecretUpdatedAt as string | null | undefined }
           : {}),
         ownerProvenance: Object.freeze({
@@ -397,11 +445,13 @@ export function defineCredentialEvidence(evidence: CredentialEvidence): Credenti
     }
     const snapshotEvaluation = evaluateCredential(snapshot);
     if (snapshotEvaluation.verdict !== "satisfied") {
-      throw new RangeError("credential evidence changed while it was being inspected");
+      rejectDefinitionSnapshot();
     }
     return Object.freeze(snapshot);
   } catch (error) {
-    if (error instanceof RangeError) throw error;
+    if (error === INVALID_DEFINITION_SNAPSHOT) {
+      throw new RangeError("credential evidence changed while it was being inspected");
+    }
     throw new RangeError("credential evidence could not be inspected safely");
   }
 }
