@@ -6,12 +6,12 @@ import { dirname, join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { assertPackageAuthorized, filterPackagesForTarget, loadReleaseCatalog, readCurrentReleaseIdentity, resolveReleaseTarget } from "./check-release-catalog.mjs";
+import { ALL_PACKAGE_RELEASE_ORDER, assertPackageAuthorized, filterPackagesForTarget, loadReleaseCatalog, readCurrentReleaseIdentity, resolveReleaseTarget } from "./check-release-catalog.mjs";
 
 const currentIdentity = { scope: "@vespeneventures", registry: "https://npm.pkg.github.com" };
 const targetIdentity = { scope: "@clossys", registry: "https://registry.npmjs.org" };
 const cutoverIdentity = { ...targetIdentity, access: "public" };
-const launchPackages = ["advisor", "starter", "controller"];
+const launchPackages = [...ALL_PACKAGE_RELEASE_ORDER];
 const scriptsDir = dirname(fileURLToPath(import.meta.url));
 const catalogCli = join(scriptsDir, "check-release-catalog.mjs");
 
@@ -70,7 +70,7 @@ test("the explicit future target selects only the authorized Trio", () => {
 
 test("the future target rejects a non-catalog package rather than publishing it", () => {
   const target = resolveReleaseTarget(load(catalog()), targetIdentity, "clossys-npmjs-precutover");
-  assert.throws(() => assertPackageAuthorized(target, "architect"), /not authorized/);
+  assert.throws(() => assertPackageAuthorized(target, "not-a-package"), /not authorized/);
 });
 
 test("a scope switch cannot implicitly retain the current all-package target", () => {
@@ -117,44 +117,44 @@ test("an implicit selection resolves only the current target", () => {
   assert.throws(() => resolveReleaseTarget(document, targetIdentity), /expects @vespeneventures/);
 });
 
-test("the post-recut catalogue preserves the sealed Trio as its exact ordered allowlist prefix", () => {
+test("the post-recut catalogue preserves the sealed Trio prefix and exact dependency-ordered portfolio", () => {
   const document = load(cutoverCatalog());
   const target = resolveReleaseTarget(document, cutoverIdentity);
   assert.equal(target.id, "clossys-npmjs");
   assert.deepEqual(target.packages, launchPackages);
   assert.equal(target.access, "public");
-  const entries = ["advisor", "architect", "starter", "controller"].map((directory) => ({ directory }));
+  const entries = [...launchPackages].reverse().map((directory) => ({ directory }));
   assert.deepEqual(filterPackagesForTarget(entries, target).map((entry) => entry.directory), launchPackages);
-  assert.throws(() => assertPackageAuthorized(target, "architect"), /not authorized/);
+  assert.throws(() => assertPackageAuthorized(target, "not-a-package"), /not authorized/);
   assert.throws(() => resolveReleaseTarget(document, currentIdentity, "current-github-packages"), /historical/);
 });
 
-test("the launch target emits declared Trio order rather than caller inventory order", () => {
+test("the launch target emits declared dependency order rather than caller inventory order", () => {
   const target = resolveReleaseTarget(load(cutoverCatalog()), cutoverIdentity);
-  const entries = ["controller", "architect", "advisor", "starter"].map((directory) => ({ directory }));
+  const entries = [...launchPackages].reverse().map((directory) => ({ directory }));
   assert.deepEqual(filterPackagesForTarget(entries, target).map((entry) => entry.directory), launchPackages);
 });
 
-test("candidate catalogue rejects mixed access, all-package broadening, Trio prefix mutation, duplicates, old default, or retained precutover target", () => {
+test("candidate catalogue rejects mixed access, broadening, partial or reordered portfolios, duplicates, old default, or retained precutover target", () => {
   for (const document of [
     cutoverCatalog({ targets: [cutoverCatalog().targets[0], { ...cutoverCatalog().targets[1], access: undefined }] }),
     cutoverCatalog({ targets: [cutoverCatalog().targets[0], { ...cutoverCatalog().targets[1], packages: "all" }] }),
-    cutoverCatalog({ targets: [cutoverCatalog().targets[0], { ...cutoverCatalog().targets[1], packages: ["starter", "advisor", "controller"] }] }),
+    cutoverCatalog({ targets: [cutoverCatalog().targets[0], { ...cutoverCatalog().targets[1], packages: ["starter", ...launchPackages.filter((item) => item !== "starter")] }] }),
     cutoverCatalog({ targets: [cutoverCatalog().targets[0], { ...cutoverCatalog().targets[1], packages: ["advisor", "starter"] }] }),
-    cutoverCatalog({ targets: [cutoverCatalog().targets[0], { ...cutoverCatalog().targets[1], packages: ["starter", "advisor", "controller", "architect"] }] }),
+    cutoverCatalog({ targets: [cutoverCatalog().targets[0], { ...cutoverCatalog().targets[1], packages: [...launchPackages].reverse() }] }),
     cutoverCatalog({ defaultTarget: "current-github-packages" }),
     cutoverCatalog({ targets: [...cutoverCatalog().targets, catalog().targets[1]] }),
   ]) {
     assert.throws(() => load(document), /candidate state/);
   }
-  assert.doesNotThrow(() => load(cutoverCatalog({ targets: [cutoverCatalog().targets[0], { ...cutoverCatalog().targets[1], packages: [...launchPackages, "strategist"] }] })));
+  assert.doesNotThrow(() => load(cutoverCatalog()));
   assert.throws(
     () =>
       load(
         cutoverCatalog({
           targets: [
             cutoverCatalog().targets[0],
-            { ...cutoverCatalog().targets[1], packages: ["advisor", "advisor", "controller"] },
+            { ...cutoverCatalog().targets[1], packages: ["advisor", "advisor", ...launchPackages.slice(2)] },
           ],
         }),
       ),
@@ -228,7 +228,7 @@ test("target catalogue refuses a missing authorized package instead of silently 
   assert.throws(() => filterPackagesForTarget([{ directory: "advisor" }, { directory: "controller" }], target), /authorizes missing packages\/starter/);
 });
 
-test("the active launch target refuses a missing Trio member rather than selecting a partial cohort", () => {
+test("the active launch target refuses a missing package rather than selecting a partial portfolio", () => {
   const target = resolveReleaseTarget(load(cutoverCatalog()), cutoverIdentity);
   assert.throws(
     () => filterPackagesForTarget([{ directory: "advisor" }, { directory: "controller" }, { directory: "architect" }], target),

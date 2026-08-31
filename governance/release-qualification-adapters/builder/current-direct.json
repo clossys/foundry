@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "package": "@clossys/builder",
+  "archetype": "current-direct",
+  "bins": {
+    "builder-verify-toolchain": 0,
+    "builder-verify-machine": 0
+  },
+  "fixtures": [
+    "deployment-satisfied.json",
+    "deployment-violated.json",
+    "deployment-indeterminate.json"
+  ],
+  "cases": [
+    {
+      "id": "deployment-satisfied",
+      "bin": "builder-verify-toolchain",
+      "args": [
+        {
+          "literal": "deployment-health"
+        },
+        {
+          "literal": "--inputs"
+        },
+        {
+          "fixture": "deployment-satisfied.json"
+        }
+      ],
+      "exitCode": 0,
+      "group": "deployment-health"
+    },
+    {
+      "id": "deployment-violated",
+      "bin": "builder-verify-toolchain",
+      "args": [
+        {
+          "literal": "deployment-health"
+        },
+        {
+          "literal": "--inputs"
+        },
+        {
+          "fixture": "deployment-violated.json"
+        }
+      ],
+      "exitCode": 1,
+      "group": "deployment-health"
+    },
+    {
+      "id": "deployment-indeterminate",
+      "bin": "builder-verify-toolchain",
+      "args": [
+        {
+          "literal": "deployment-health"
+        },
+        {
+          "literal": "--inputs"
+        },
+        {
+          "fixture": "deployment-indeterminate.json"
+        }
+      ],
+      "exitCode": 2,
+      "group": "deployment-health"
+    }
+  ],
+  "dimensionEvidence": {
+    "rollback": "restoration",
+    "duplicate": "deployment-health"
+  }
+}

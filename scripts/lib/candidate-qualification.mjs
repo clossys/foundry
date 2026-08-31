@@ -9,6 +9,7 @@ export const ARCHETYPES = ["current-direct", "prior-minor", "oldest-supported", 
 const DIMENSIONS = ["position", "completion", "rollback", "duplicate", "cadence", "closeWindow"];
 const SHA1 = /^[a-f0-9]{40}$/, SHA256 = /^[a-f0-9]{64}$/, SHA512 = /^[a-f0-9]{128}$/;
 const NAME = /^(?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*$/, VERSION = /^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/;
+const FRAMEWORK_SUBPATH = /^[A-Za-z0-9@._~+-]+(?:\/[A-Za-z0-9@._~+-]+)*$/;
 const CANONICAL_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 const ABSOLUTE_HOST_PATH = /(?:^|[\s"'`=(:,;\[!])(?:\/(?!\/)[^\s"'`<>{}\[\],)]*|[A-Za-z]:[\\/][^\s"'`<>{}\[\],)]*|\\\\[^\\\s"'`<>{}\[\],)]+\\[^\s"'`<>{}\[\],)]*)/m;
 const RAW_MAX_FILES = 64, RAW_MAX_FILE_BYTES = 65_536, RAW_MAX_TOTAL_BYTES = 524_288, RAW_MAX_STREAM_BYTES = 65_536;
@@ -160,9 +161,35 @@ export function validateRetainedCandidateQualification(r, { root = process.cwd()
   return findings;
 }
 function fixtureDigest(root, ref, adapterPath, fixturePath) { const adapter = parseStrictJson(content(root, ref, adapterPath)); if (!Array.isArray(adapter.fixtures)) throw new Error("adapter fixtures"); return digest(JSON.stringify(adapter.fixtures.slice().sort().map((name) => ({ path: fixturePath + "/" + name, sha256: digest(content(root, ref, fixturePath + "/" + name)) })))); }
+function frameworkObservationIds(manifest) {
+  const verification = manifest?.foundryReleaseVerification;
+  if (verification === undefined) return [];
+  if (!object(verification) || JSON.stringify(Object.keys(verification).sort()) !== JSON.stringify(["next"]) || !object(verification.next)) throw new Error("invalid source framework verification mapping");
+  const fields = [["client", "clientSubpaths"], ["server", "serverSubpaths"], ["proxy", "proxySubpaths"]];
+  const allowed = new Set(fields.map(([, field]) => field));
+  if (Object.keys(verification.next).some((key) => !allowed.has(key))) throw new Error("invalid source framework verification row");
+  const seen = new Set();
+  const ids = [];
+  for (const [role, field] of fields) {
+    const present = own(verification.next, field);
+    const subpaths = present ? verification.next[field] : [];
+    if (!Array.isArray(subpaths) || (present && subpaths.length === 0)) throw new Error("invalid source framework verification subpaths");
+    for (const subpath of subpaths) {
+      if (typeof subpath !== "string" || !subpath.startsWith("./") || !FRAMEWORK_SUBPATH.test(subpath.slice(2))) throw new Error("invalid source framework verification subpath");
+      const specifier = `${manifest.name}/${subpath.slice(2)}`;
+      if (seen.has(specifier)) throw new Error("duplicate source framework verification subpath");
+      seen.add(specifier);
+      ids.push(`framework:next:${role}:${specifier}`);
+    }
+  }
+  if (ids.length === 0) throw new Error("empty source framework verification mapping");
+  return ids.sort();
+}
 export function currentQualificationJoins(root, candidate, ref = "WORKTREE") {
   const selected = selectedPolicy(root, candidate, ref), treeRef = ref === "WORKTREE" ? "HEAD" : ref;
   const adapter = parseStrictJson(content(root, ref, selected.adapterPath));
+  const manifestBytes = content(root, ref, selected.packageDir + "/package.json");
+  const manifest = parseStrictJson(manifestBytes);
   const duplicateGroup = adapter.dimensionEvidence?.duplicate;
   const duplicateEvidence = Array.isArray(adapter.cases) ? adapter.cases.filter((item) => item.group === duplicateGroup && [0, 1].includes(item.exitCode)).map((item) => `case:${item.id}`) : [];
   const dimensions = DIMENSIONS.map((dimension) => {
@@ -172,42 +199,132 @@ export function currentQualificationJoins(root, candidate, ref = "WORKTREE") {
     if (dimension === "duplicate") return { dimension, status: "supported", evidence: duplicateEvidence };
     throw new Error("unsupported required dimension");
   });
-  return { packageTreeSha1: git(root, ["rev-parse", treeRef + ":" + selected.packageDir]), packageManifestSha256: digest(content(root, ref, selected.packageDir + "/package.json")), rootPackageJsonSha256: digest(content(root, ref, "package.json")), rootPackageLockSha256: digest(content(root, ref, "package-lock.json")), policySha256: digest(JSON.stringify(stable(selected))), adapterSha256: digest(content(root, ref, selected.adapterPath)), fixtureSetSha256: fixtureDigest(root, ref, selected.adapterPath, selected.fixturePath), archetypes: ARCHETYPES.map((kind) => ({ kind, status: selected?.archetypes?.[kind]?.status === "required" ? "qualified" : "unsupported" })), dimensions };
+  return { packageTreeSha1: git(root, ["rev-parse", treeRef + ":" + selected.packageDir]), packageManifestSha256: digest(manifestBytes), rootPackageJsonSha256: digest(content(root, ref, "package.json")), rootPackageLockSha256: digest(content(root, ref, "package-lock.json")), policySha256: digest(JSON.stringify(stable(selected))), adapterSha256: digest(content(root, ref, selected.adapterPath)), fixtureSetSha256: fixtureDigest(root, ref, selected.adapterPath, selected.fixturePath), frameworkObservationsSha256: digest(JSON.stringify(frameworkObservationIds(manifest))), archetypes: ARCHETYPES.map((kind) => ({ kind, status: selected?.archetypes?.[kind]?.status === "required" ? "qualified" : "unsupported" })), dimensions };
 }
+function candidateExportSpecifier(specifier, candidateName) {
+  return specifier === candidateName || (specifier?.startsWith(`${candidateName}/`) && FRAMEWORK_SUBPATH.test(specifier.slice(candidateName.length + 1)));
+}
+function frameworkObservationIdentity(id, candidateName) {
+  const match = /^framework:next:(client|server|proxy):(.+)$/.exec(id ?? "");
+  return match && candidateExportSpecifier(match[2], candidateName) ? { role: match[1], specifier: match[2] } : null;
+}
+function importObservationIdentity(id, candidateName) {
+  const match = /^import:(string|import|default|react-server):(.+)$/.exec(id ?? "");
+  return match && candidateExportSpecifier(match[2], candidateName) ? { condition: match[1], specifier: match[2] } : null;
+}
+
 function checkTranscript(a, t) {
   const v1 = t?.schema === "foundry-candidate-qualification-transcript-v1" && t?.version === 1;
   const v2 = t?.schema === "foundry-candidate-qualification-transcript-v2" && t?.version === 2;
-  closed(a, t, ["schema", "version", "candidate", "archetype", "tarball", "peerInstall", "consumer", "coverage", "observations", "dimensions", "restoration", "mismatches", "ok", "canonicalSha256", ...(v2 ? ["fixtureMaterializedAt"] : [])], "transcript");
-  if ((!v1 && !v2) || !object(t?.candidate) || !NAME.test(t.candidate.name) || !VERSION.test(t.candidate.version) || !ARCHETYPES.includes(t.archetype) || t.ok !== true || !SHA256.test(t.canonicalSha256)) fail(a, "transcript", "generic transcript");
-  const rawStarter = v2 && t?.candidate?.name === "@clossys/starter";
-  if (rawStarter ? !canonicalInstant(t?.fixtureMaterializedAt) : own(t ?? {}, "fixtureMaterializedAt")) fail(a, "fixture-materialized-at", "only a v2 @clossys/starter transcript must bind one canonical fixture materialization instant.");
-  closed(a, t?.candidate, ["name", "version"], "transcript.candidate"); closed(a, t?.tarball, ["sha1", "sha256", "sha512"], "transcript.tarball"); closed(a, t?.consumer, ["manifestSha256", "lockfileSha256"], "transcript.consumer");
+  const v3 = t?.schema === "foundry-candidate-qualification-transcript-v3" && t?.version === 3;
+  closed(a, t, ["schema", "version", "candidate", "archetype", "tarball", "peerInstall", "consumer", "coverage", "observations", "dimensions", "restoration", "mismatches", "ok", "canonicalSha256", ...((v2 || v3) ? ["fixtureMaterializedAt"] : [])], "transcript");
+  if ((!v1 && !v2 && !v3) || !object(t?.candidate) || !NAME.test(t.candidate.name) || !VERSION.test(t.candidate.version) || !ARCHETYPES.includes(t.archetype) || t.ok !== true || !SHA256.test(t.canonicalSha256)) fail(a, "transcript", "generic transcript");
+  const rawStarter = (v2 || v3) && t?.candidate?.name === "@clossys/starter";
+  if (rawStarter ? !canonicalInstant(t?.fixtureMaterializedAt) : own(t ?? {}, "fixtureMaterializedAt")) fail(a, "fixture-materialized-at", "only a v2 or v3 @clossys/starter transcript must bind one canonical fixture materialization instant.");
+  closed(a, t?.candidate, ["name", "version"], "transcript.candidate");
+  closed(a, t?.tarball, ["sha1", "sha256", "sha512"], "transcript.tarball");
+  closed(a, t?.consumer, ["manifestSha256", "lockfileSha256"], "transcript.consumer");
   if (!SHA1.test(t?.tarball?.sha1) || !SHA256.test(t?.tarball?.sha256) || !SHA512.test(t?.tarball?.sha512) || !SHA256.test(t?.consumer?.manifestSha256) || !SHA256.test(t?.consumer?.lockfileSha256)) fail(a, "transcript", "bytes");
-  closed(a, t?.coverage, ["declaredExportKeys", "concreteTargets", "runtimeImports", "staticTargets", "failed", "installedManifestSha256", "bins", "lifecycleScriptsDisabled"], "transcript.coverage");
-  if (!object(t?.coverage) || !["declaredExportKeys", "concreteTargets", "runtimeImports", "staticTargets", "failed", "bins"].every((k) => Number.isSafeInteger(t.coverage[k]) && t.coverage[k] >= 0) || t.coverage.concreteTargets !== t.coverage.runtimeImports + t.coverage.staticTargets || t.coverage.failed !== 0 || !SHA256.test(t.coverage.installedManifestSha256) || t.coverage.lifecycleScriptsDisabled !== true) fail(a, "coverage", "coverage");
-  if (!Array.isArray(t?.observations) || t.observations.length < 1 || t.observations.length > 128) fail(a, "observations", "observations"); else { const ids = new Set(), count = Object.fromEntries(["install", "uninstall", "reinstall", "import", "help", "case"].map((k) => [k, 0])); let instantOccurrences = 0; for (const o of t.observations) { const allowsRaw = rawStarter && o?.kind === "case"; closed(a, o, ["id", "kind", "launch", "expectedExitCode", "observedExitCode", "signal", "launchError", "stdoutSha256", "stderrSha256", ...(allowsRaw ? ["rawCaseEvidence"] : [])], "transcript.observation"); count[o?.kind] = (count[o?.kind] || 0) + 1; if (ids.has(o?.id)) fail(a, "observation", "duplicate id"); ids.add(o?.id); const launch = ["install", "uninstall", "reinstall"].includes(o?.kind) ? "npm-fixed" : "node-direct"; if (!text(o?.id) || !text(o?.kind) || o.launch !== launch || ![0, 1, 2].includes(o.expectedExitCode) || o.observedExitCode !== o.expectedExitCode || o.signal !== null || o.launchError !== false || !SHA256.test(o.stdoutSha256) || !SHA256.test(o.stderrSha256)) fail(a, "observation", "observation");
-      if (allowsRaw) instantOccurrences += checkRawCaseEvidence(a, o, t.fixtureMaterializedAt);
-      else if (own(o ?? {}, "rawCaseEvidence")) fail(a, "raw-case-scope", "raw case evidence is allowed only on v2 @clossys/starter case observations.");
-    } if (count.install !== 1 || count.uninstall !== 1 || count.reinstall !== 1 || count.import !== t.coverage?.runtimeImports || count.help !== t.coverage?.bins || ![0, 1, 2].every((exit) => t.observations.some((o) => o.kind === "case" && o.observedExitCode === exit && (!rawStarter || object(o.rawCaseEvidence)))) || (rawStarter && instantOccurrences < 1)) fail(a, "observations", "operation coverage"); }
-  if (!Array.isArray(t?.dimensions) || JSON.stringify(t.dimensions.map((d) => d?.dimension)) !== JSON.stringify(DIMENSIONS)) fail(a, "dimensions", "dimensions"); else for (const d of t.dimensions) { closed(a, d, ["dimension", "status", "reason", "evidence"], "transcript.dimension"); if (!["supported", "unsupported"].includes(d.status) || (d.status === "unsupported" && (!text(d.reason) || own(d, "evidence"))) || (d.status === "supported" && own(d, "reason"))) fail(a, "dimensions", "dimension"); if (d.dimension === "rollback" && d.status === "supported" && JSON.stringify(d.evidence) !== JSON.stringify(["uninstall", "reinstall"])) fail(a, "dimensions", "rollback evidence"); if (d.dimension === "duplicate" && d.status === "supported" && (!Array.isArray(d.evidence) || d.evidence.length !== 2 || !d.evidence.every((id) => /^case:/.test(id)))) fail(a, "dimensions", "duplicate evidence"); }
-  closed(a, t?.restoration, ["manifestRestored", "lockfileRestored", "packageAbsentAfterUninstall"], "transcript.restoration"); if (t?.restoration?.manifestRestored !== true || t?.restoration?.lockfileRestored !== true || t?.restoration?.packageAbsentAfterUninstall !== true || !Array.isArray(t?.mismatches) || t.mismatches.length !== 0) fail(a, "restoration", "restoration");
-  const copy = { ...t }; delete copy.canonicalSha256; if (digest(JSON.stringify(copy)) !== t?.canonicalSha256) fail(a, "transcript-digest", "canonical digest");
+
+  const coverageFields = ["declaredExportKeys", "concreteTargets", "runtimeImports", ...(v3 ? ["reactServerImports"] : []), "staticTargets", ...(v3 ? ["frameworkExports", "frameworkBuilds"] : []), "failed", "installedManifestSha256", "bins", "lifecycleScriptsDisabled"];
+  const coverageNumbers = ["declaredExportKeys", "concreteTargets", "runtimeImports", ...(v3 ? ["reactServerImports"] : []), "staticTargets", ...(v3 ? ["frameworkExports", "frameworkBuilds"] : []), "failed", "bins"];
+  closed(a, t?.coverage, coverageFields, "transcript.coverage");
+  const validCoverageNumbers = object(t?.coverage) && coverageNumbers.every((key) => Number.isSafeInteger(t.coverage[key]) && t.coverage[key] >= 0);
+  const concreteTotal = (t?.coverage?.runtimeImports ?? 0) + (t?.coverage?.staticTargets ?? 0) + (v3 ? (t?.coverage?.frameworkExports ?? 0) : 0);
+  const validFrameworkBuilds = !v3 || t?.coverage?.frameworkBuilds === (t?.coverage?.frameworkExports > 0 ? 1 : 0);
+  const validReactServerImports = !v3 || t?.coverage?.reactServerImports <= t?.coverage?.runtimeImports;
+  if (!validCoverageNumbers || t?.coverage?.concreteTargets !== concreteTotal || !validFrameworkBuilds || !validReactServerImports || t?.coverage?.failed !== 0 || !SHA256.test(t?.coverage?.installedManifestSha256) || t?.coverage?.lifecycleScriptsDisabled !== true) fail(a, "coverage", "coverage");
+
+  if (!Array.isArray(t?.observations) || t.observations.length < 1 || t.observations.length > 128) fail(a, "observations", "observations");
+  else {
+    const allowedKinds = new Set(["install", "uninstall", "reinstall", "import", "help", "case", ...(v3 ? ["framework"] : [])]);
+    const ids = new Set();
+    const count = Object.fromEntries([...allowedKinds].map((kind) => [kind, 0]));
+    const frameworkResults = new Set();
+    const frameworkSpecifiers = new Set();
+    const rawImportSpecifiers = new Set();
+    const ordinaryImportSpecifiers = new Set();
+    const ordinaryConditionBySpecifier = new Map();
+    const reactServerSpecifiers = new Set();
+    let reactServerImports = 0;
+    let instantOccurrences = 0;
+    for (const observation of t.observations) {
+      const allowsRaw = rawStarter && observation?.kind === "case";
+      closed(a, observation, ["id", "kind", "launch", "expectedExitCode", "observedExitCode", "signal", "launchError", "stdoutSha256", "stderrSha256", ...(allowsRaw ? ["rawCaseEvidence"] : [])], "transcript.observation");
+      if (ids.has(observation?.id)) fail(a, "observation", "duplicate id");
+      ids.add(observation?.id);
+      const kindAllowed = allowedKinds.has(observation?.kind);
+      if (kindAllowed) count[observation.kind] += 1;
+      const launch = ["install", "uninstall", "reinstall"].includes(observation?.kind) ? "npm-fixed" : observation?.kind === "framework" ? "next-build" : "node-direct";
+      if (!text(observation?.id) || !kindAllowed || observation.launch !== launch || ![0, 1, 2].includes(observation.expectedExitCode) || observation.observedExitCode !== observation.expectedExitCode || observation.signal !== null || observation.launchError !== false || !SHA256.test(observation.stdoutSha256) || !SHA256.test(observation.stderrSha256)) fail(a, "observation", "observation");
+      if (v3 && observation?.kind === "import") {
+        const identity = importObservationIdentity(observation.id, t?.candidate?.name);
+        if (observation.expectedExitCode !== 0 || !identity) fail(a, "import-observation", "runtime import evidence must bind one exact condition and candidate export.");
+        if (identity) {
+          rawImportSpecifiers.add(identity.specifier);
+          if (identity.condition === "react-server") {
+            reactServerImports += 1;
+            reactServerSpecifiers.add(identity.specifier);
+          } else {
+            ordinaryImportSpecifiers.add(identity.specifier);
+            const prior = ordinaryConditionBySpecifier.get(identity.specifier);
+            if (prior !== undefined && prior !== identity.condition) fail(a, "import-observation", "one runtime export cannot claim multiple ordinary condition labels.");
+            ordinaryConditionBySpecifier.set(identity.specifier, identity.condition);
+          }
+        }
+      }
+      if (observation?.kind === "framework") {
+        const identity = frameworkObservationIdentity(observation.id, t?.candidate?.name);
+        if (observation.expectedExitCode !== 0 || !identity || frameworkSpecifiers.has(identity?.specifier)) fail(a, "framework-observation", "framework evidence must bind one unique exact Next role and candidate export.");
+        if (identity) frameworkSpecifiers.add(identity.specifier);
+        frameworkResults.add(JSON.stringify([observation.expectedExitCode, observation.observedExitCode, observation.signal, observation.launchError, observation.stdoutSha256, observation.stderrSha256]));
+      }
+      if (allowsRaw) instantOccurrences += checkRawCaseEvidence(a, observation, t.fixtureMaterializedAt);
+      else if (own(observation ?? {}, "rawCaseEvidence")) fail(a, "raw-case-scope", "raw case evidence is allowed only on v2 or v3 @clossys/starter case observations.");
+    }
+    const frameworkCount = v3 ? t.coverage?.frameworkExports : 0;
+    if (count.install !== 1 || count.uninstall !== 1 || count.reinstall !== 1 || count.import !== t.coverage?.runtimeImports || (count.framework ?? 0) !== frameworkCount || count.help !== t.coverage?.bins || ![0, 1, 2].every((exit) => t.observations.some((observation) => observation.kind === "case" && observation.observedExitCode === exit && (!rawStarter || object(observation.rawCaseEvidence)))) || (rawStarter && instantOccurrences < 1)) fail(a, "observations", "operation coverage");
+    if (v3 && reactServerImports !== t.coverage?.reactServerImports) fail(a, "import-observation", "react-server observations must exactly match their condition-specific coverage count.");
+    if (v3 && [...reactServerSpecifiers].some((specifier) => !ordinaryImportSpecifiers.has(specifier))) fail(a, "import-observation", "each react-server observation must pair with the same export's ordinary import observation.");
+    if (v3 && [...frameworkSpecifiers].some((specifier) => rawImportSpecifiers.has(specifier))) fail(a, "framework-observation", "framework exports cannot also be claimed as raw runtime imports.");
+    if ((frameworkCount > 0 && frameworkResults.size !== 1) || (frameworkCount === 0 && frameworkResults.size !== 0)) fail(a, "framework-observation", "all framework observations must share one real Next build result.");
+  }
+  if (!Array.isArray(t?.dimensions) || JSON.stringify(t.dimensions.map((dimension) => dimension?.dimension)) !== JSON.stringify(DIMENSIONS)) fail(a, "dimensions", "dimensions");
+  else for (const dimension of t.dimensions) {
+    closed(a, dimension, ["dimension", "status", "reason", "evidence"], "transcript.dimension");
+    if (!["supported", "unsupported"].includes(dimension.status) || (dimension.status === "unsupported" && (!text(dimension.reason) || own(dimension, "evidence"))) || (dimension.status === "supported" && own(dimension, "reason"))) fail(a, "dimensions", "dimension");
+    if (dimension.dimension === "rollback" && dimension.status === "supported" && JSON.stringify(dimension.evidence) !== JSON.stringify(["uninstall", "reinstall"])) fail(a, "dimensions", "rollback evidence");
+    if (dimension.dimension === "duplicate" && dimension.status === "supported" && (!Array.isArray(dimension.evidence) || dimension.evidence.length !== 2 || !dimension.evidence.every((id) => /^case:/.test(id)))) fail(a, "dimensions", "duplicate evidence");
+  }
+  closed(a, t?.restoration, ["manifestRestored", "lockfileRestored", "packageAbsentAfterUninstall"], "transcript.restoration");
+  if (t?.restoration?.manifestRestored !== true || t?.restoration?.lockfileRestored !== true || t?.restoration?.packageAbsentAfterUninstall !== true || !Array.isArray(t?.mismatches) || t.mismatches.length !== 0) fail(a, "restoration", "restoration");
+  const copy = { ...t };
+  delete copy.canonicalSha256;
+  if (digest(JSON.stringify(copy)) !== t?.canonicalSha256) fail(a, "transcript-digest", "canonical digest");
 }
 export function validateCandidateQualification(r, { mode = "offline", expected, freshTranscript } = {}) {
   const a = []; if (!object(r) || r.schemaVersion !== 2) { fail(a, "record-shape", "schema v2"); return a; }
   const pre = r.timing === "pre-publication", post = r.timing === "post-publication-bootstrap"; closed(a, r, pre ? ["schemaVersion", "timing", "candidate", "archetypes", "reviewedCommit", "rootPackageJsonSha256", "rootPackageLockSha256", "transcript", "candidateReview", "findings"] : ["schemaVersion", "timing", "candidate", "archetypes", "publishedCommit", "transcript", "registry", "findings"], "record");
   if (!pre && !post) fail(a, "timing", "timing"); if (mode === "prepublish" && !pre) fail(a, "bootstrap-timing", "bootstrap is not authorization");
-  if (mode === "prepublish" && (!object(expected) || !object(freshTranscript) || !["name", "version", "packageTreeSha1", "packageManifestSha256", "rootPackageJsonSha256", "rootPackageLockSha256", "policySha256", "adapterSha256", "fixtureSetSha256", "archetypes", "dimensions"].every((key) => expected[key] !== undefined))) fail(a, "prepublish-evidence", "complete current joins and a fresh transcript are required.");
+  if (mode === "prepublish" && (!object(expected) || !object(freshTranscript) || !["name", "version", "packageTreeSha1", "packageManifestSha256", "rootPackageJsonSha256", "rootPackageLockSha256", "policySha256", "adapterSha256", "fixtureSetSha256", "archetypes", "dimensions", ...(r?.transcript?.schema === "foundry-candidate-qualification-transcript-v3" ? ["frameworkObservationsSha256"] : [])].every((key) => expected[key] !== undefined))) fail(a, "prepublish-evidence", "complete current joins and a fresh transcript are required.");
   const c = r.candidate; closed(a, c, ["name", "version", "packageTreeSha1", "packageManifestSha256", "policySha256", "adapterSha256", "fixtureSetSha256", "tarball"], "candidate"); closed(a, c?.tarball, ["sha1", "sha256", "sha512"], "candidate.tarball");
   if (!Array.isArray(r.archetypes) || JSON.stringify(r.archetypes.map((x) => x?.kind)) !== JSON.stringify(ARCHETYPES) || !r.archetypes.every((x) => object(x) && ["qualified", "unsupported"].includes(x.status) && Object.keys(x).every((k) => ["kind", "status"].includes(k)))) fail(a, "archetypes", "ordered policy-derived archetypes required.");
   if (expected?.archetypes && JSON.stringify(r.archetypes) !== JSON.stringify(expected.archetypes)) fail(a, "archetypes", "archetypes differ from policy.");
   if (!NAME.test(c?.name) || !VERSION.test(c?.version) || !SHA1.test(c?.packageTreeSha1) || !["packageManifestSha256", "policySha256", "adapterSha256", "fixtureSetSha256"].every((k) => SHA256.test(c?.[k])) || !SHA1.test(c?.tarball?.sha1) || !SHA256.test(c?.tarball?.sha256) || !SHA512.test(c?.tarball?.sha512)) fail(a, "candidate", "candidate joins");
   if (expected) { for (const k of ["packageTreeSha1", "packageManifestSha256", "policySha256", "adapterSha256", "fixtureSetSha256", ...(pre ? ["rootPackageJsonSha256", "rootPackageLockSha256"] : [])]) if (expected[k] !== undefined && (r[k] ?? c?.[k]) !== expected[k]) fail(a, "content-join", k); if ((expected.name && c?.name !== expected.name) || (expected.version && c?.version !== expected.version)) fail(a, "identity-join", "identity"); }
   checkTranscript(a, r.transcript); if (r.transcript?.candidate?.name !== c?.name || r.transcript?.candidate?.version !== c?.version || ["sha1", "sha256", "sha512"].some((k) => r.transcript?.tarball?.[k] !== c?.tarball?.[k]) || r.transcript?.coverage?.installedManifestSha256 !== c?.packageManifestSha256) fail(a, "transcript-join", "transcript joins");
+  if (r.transcript?.schema === "foundry-candidate-qualification-transcript-v3" && expected?.frameworkObservationsSha256 !== undefined) {
+    const observed = Array.isArray(r.transcript.observations) ? r.transcript.observations.filter((item) => item?.kind === "framework").map((item) => item.id).sort() : [];
+    if (!SHA256.test(expected.frameworkObservationsSha256) || digest(JSON.stringify(observed)) !== expected.frameworkObservationsSha256) fail(a, "framework-source-join", "framework role and specifier evidence differs from the reviewed packed-manifest mapping.");
+  }
   if (expected?.dimensions && JSON.stringify(r.transcript?.dimensions) !== JSON.stringify(expected.dimensions)) fail(a, "dimensions", "dimensions differ from policy and adapter evidence.");
   if (freshTranscript) {
     const freshFindings = []; checkTranscript(freshFindings, freshTranscript);
     for (const finding of freshFindings) fail(a, "fresh-transcript-" + finding.rule, "fresh transcript is invalid before replay comparison");
+    if (freshTranscript?.schema === "foundry-candidate-qualification-transcript-v3" && expected?.frameworkObservationsSha256 !== undefined) {
+      const observed = Array.isArray(freshTranscript.observations) ? freshTranscript.observations.filter((item) => item?.kind === "framework").map((item) => item.id).sort() : [];
+      if (digest(JSON.stringify(observed)) !== expected.frameworkObservationsSha256) fail(a, "fresh-transcript-framework-source-join", "fresh framework evidence differs from the reviewed packed-manifest mapping.");
+    }
     if (freshFindings.length === 0 && JSON.stringify(stable(comparableTranscript(r.transcript))) !== JSON.stringify(stable(comparableTranscript(freshTranscript)))) fail(a, "fresh-transcript", "fresh transcript");
   }
   if (pre) { if (!SHA1.test(r.reviewedCommit) || !SHA256.test(r.rootPackageJsonSha256) || !SHA256.test(r.rootPackageLockSha256)) fail(a, "prepublication-join", "pre joins"); closed(a, r.candidateReview, ["headSha", "reference"], "candidateReview"); if (r.candidateReview?.headSha !== r.reviewedCommit || !text(r.candidateReview?.reference)) fail(a, "candidate-review", "review"); }
@@ -375,7 +492,7 @@ function validateForwardQualificationIntroduction(r, { root, head, trioRecords, 
     if (laterTouches.length > 0) fail(a, "forward-record-touches", "a new qualification record must not be touched after its introduction.");
 
     const expected = currentQualificationJoins(root, r.candidate, r.reviewedCommit);
-    for (const key of Object.keys(expected).filter((item) => !["archetypes", "dimensions"].includes(item))) if (expected[key] !== (r[key] ?? r.candidate?.[key])) fail(a, "forward-record-join", `qualification record does not bind ${key} at its reviewed commit.`);
+    for (const key of Object.keys(expected).filter((item) => !["archetypes", "dimensions", "frameworkObservationsSha256"].includes(item))) if (expected[key] !== (r[key] ?? r.candidate?.[key])) fail(a, "forward-record-join", `qualification record does not bind ${key} at its reviewed commit.`);
     if (JSON.stringify(expected.archetypes) !== JSON.stringify(r.archetypes) || JSON.stringify(expected.dimensions) !== JSON.stringify(r.transcript?.dimensions)) fail(a, "forward-record-join", "qualification record policy derivation does not bind its reviewed commit.");
   } catch (error) {
     fail(a, "forward-record-history", error instanceof Error ? error.message : "qualification record history could not be verified.");
@@ -440,6 +557,6 @@ export function validatePrepublicationPrTail(r, { root = process.cwd(), head = "
   if (JSON.stringify(changed) !== JSON.stringify(allowed)) fail(a, "pr-tail", "tail");
   const touched = [...new Set(git(root, ["log", "--full-history", "--format=", "--name-only", `${r.reviewedCommit}..${head}`, "--"]).split("\n").filter(Boolean))].sort();
   if (touched.some((path) => !allowed.includes(path))) fail(a, "pr-tail-history", "tail history touched a path outside the exact admitted set.");
-  try { const base = currentQualificationJoins(root, r.candidate, r.reviewedCommit), now = currentQualificationJoins(root, r.candidate, head); for (const k of Object.keys(base).filter((key) => !["archetypes", "dimensions"].includes(key))) if (base[k] !== now[k] || base[k] !== (r[k] ?? r.candidate[k])) fail(a, "git-content-join", k); if (JSON.stringify(base.archetypes) !== JSON.stringify(now.archetypes) || JSON.stringify(base.archetypes) !== JSON.stringify(r.archetypes) || JSON.stringify(base.dimensions) !== JSON.stringify(now.dimensions) || JSON.stringify(base.dimensions) !== JSON.stringify(r.transcript?.dimensions)) fail(a, "git-content-join", "policy derivation"); } catch (e) { fail(a, "git-content-join", e instanceof Error ? e.message : "git"); }
+  try { const base = currentQualificationJoins(root, r.candidate, r.reviewedCommit), now = currentQualificationJoins(root, r.candidate, head); for (const k of Object.keys(base).filter((key) => !["archetypes", "dimensions", "frameworkObservationsSha256"].includes(key))) if (base[k] !== now[k] || base[k] !== (r[k] ?? r.candidate[k])) fail(a, "git-content-join", k); if (base.frameworkObservationsSha256 !== now.frameworkObservationsSha256 || JSON.stringify(base.archetypes) !== JSON.stringify(now.archetypes) || JSON.stringify(base.archetypes) !== JSON.stringify(r.archetypes) || JSON.stringify(base.dimensions) !== JSON.stringify(now.dimensions) || JSON.stringify(base.dimensions) !== JSON.stringify(r.transcript?.dimensions)) fail(a, "git-content-join", "policy derivation"); } catch (e) { fail(a, "git-content-join", e instanceof Error ? e.message : "git"); }
   return a;
 }

@@ -11,6 +11,7 @@ import { once } from "node:events";
 import { promisify } from "node:util";
 
 import { argsFrom, createOwnerPromptRelay, ownerPresentPtyArgs, publishQualifiedDirectory, runInteractiveChild } from "./publish-qualified-directory.mjs";
+import { ALL_PACKAGE_RELEASE_ORDER } from "./check-release-catalog.mjs";
 
 const execFile = promisify(execFileCallback);
 const hash = (algorithm, value) => createHash(algorithm).update(value).digest("hex");
@@ -67,7 +68,7 @@ async function fixture(t) {
   const historicalRegistry = ["https://npm.", "pkg.github.com"].join("");
   await writeFile(join(root, "governance", "release-catalog.json"), JSON.stringify({ schemaVersion: 2, defaultTarget: "clossys-npmjs", targets: [
     { id: "current-github-packages", status: historicalStatus, scope: historicalScope, registry: historicalRegistry, packages: "all" },
-    { id: "clossys-npmjs", status: "active", scope: "@clossys", registry: "https://registry.npmjs.org", access: "public", packages: ["advisor", "starter", "controller", "strategist", "writer", "designer"] },
+    { id: "clossys-npmjs", status: "active", scope: "@clossys", registry: "https://registry.npmjs.org", access: "public", packages: [...ALL_PACKAGE_RELEASE_ORDER] },
   ] }));
   const manifest = { name: "@clossys/strategist", version: "0.1.1", type: "module", files: ["dist", "README.md", "LICENSE"], publishConfig: { registry: "https://registry.npmjs.org", access: "public" } };
   await writeFile(join(packageRoot, "package.json"), `${JSON.stringify(manifest, null, 2)}\n`);

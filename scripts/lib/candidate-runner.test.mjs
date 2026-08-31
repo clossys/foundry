@@ -1,16 +1,15 @@
 import assert from "node:assert/strict";
 import { execFile as execFileCallback } from "node:child_process";
 import { createHash } from "node:crypto";
-import { appendFile, copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { appendFile, copyFile, mkdir, mkdtemp, readFile, realpath, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { promisify } from "node:util";
-import { assertCredentialFree, installNpmrc, runCandidateQualification, runProcess, wildcardCapture } from "./candidate-runner.mjs";
+import { QUALIFICATION_PHASE_TIMEOUTS, assertCredentialFree, containedRegularFile, installNpmrc, packedFrameworkContexts, runCandidateQualification, runProcess, runtimeImportArguments, wildcardCapture } from "./candidate-runner.mjs";
 
 const execFile = promisify(execFileCallback);
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");
-
 async function syntheticPackage({ mismatch = false, exports = undefined, runtimePeer = false, peerInstall = undefined, rawStarter = false, mutateCaseEvidence = null } = {}) {
   const root = await mkdtemp(join(tmpdir(), "foundry-runner-test-"));
   const source = join(root, "source");
@@ -25,12 +24,13 @@ async function syntheticPackage({ mismatch = false, exports = undefined, runtime
     version: "1.0.0",
     type: "module",
     exports: exports ?? { ".": { types: "./index.d.ts", import: "./index.js" }, "./asset": "./asset.txt", "./static/*": "./static/*.txt" },
-    files: ["index.js", "index.d.ts", "cli.js", "asset.txt", "static"],
+    files: ["index.js", "react-server.js", "index.d.ts", "cli.js", "asset.txt", "static"],
     bin: { "synthetic-check": "cli.js" },
     scripts: { preinstall: "node -e \"require('fs').writeFileSync('preinstall-marker','ran')\"" },
     ...(runtimePeer ? { peerDependencies: { typescript: "~6.0.0" }, peerDependenciesMeta: { typescript: { optional: true } } } : {}),
   }, null, 2));
   await writeFile(join(source, "index.js"), `${runtimePeer ? "import 'typescript';\n" : ""}export const synthetic = true;\n`);
+  await writeFile(join(source, "react-server.js"), "export const synthetic = 'react-server';\n");
   await writeFile(join(source, "index.d.ts"), "export declare const synthetic: boolean;\n");
   await writeFile(join(source, "asset.txt"), "static asset\n");
   await mkdir(join(source, "static"));
@@ -122,8 +122,8 @@ test("runner isolates a packed candidate and produces a deterministic complete t
   const first = await runCandidateQualification(fixture);
   const second = await runCandidateQualification(fixture);
   assert.equal(first.ok, true);
-  assert.equal(first.schema, "foundry-candidate-qualification-transcript-v2");
-  assert.equal(first.version, 2);
+  assert.equal(first.schema, "foundry-candidate-qualification-transcript-v3");
+  assert.equal(first.version, 3);
   assert.deepEqual(first, second);
   assert.equal(first.coverage.lifecycleScriptsDisabled, true);
   assert.equal(first.coverage.bins, 1);
@@ -131,13 +131,16 @@ test("runner isolates a packed candidate and produces a deterministic complete t
   assert.equal(first.restoration.lockfileRestored, true);
   assert.equal(first.restoration.packageAbsentAfterUninstall, true);
   assert.deepEqual(first.observations.map((item) => item.id), [
-    "install", "import:0", "help:synthetic-check", "case:green", "case:red", "case:indeterminate", "uninstall", "reinstall",
+    "install", "import:import:@acme/synthetic", "help:synthetic-check", "case:green", "case:red", "case:indeterminate", "uninstall", "reinstall",
   ]);
   assert.deepEqual(first.coverage, {
     declaredExportKeys: 3,
     concreteTargets: 5,
     runtimeImports: 1,
+    reactServerImports: 0,
     staticTargets: 4,
+    frameworkExports: 0,
+    frameworkBuilds: 0,
     failed: 0,
     installedManifestSha256: first.coverage.installedManifestSha256,
     bins: 1,
@@ -149,7 +152,7 @@ test("runner isolates a packed candidate and produces a deterministic complete t
   assert.equal(canonicalSha256, sha256(JSON.stringify(canonical)));
 });
 
-test("Starter v2 retains only bounded tokenized raw case commands, inputs, exits, and outputs", async (t) => {
+test("Starter v3 retains only bounded tokenized raw case commands, inputs, exits, and outputs", async (t) => {
   const fixture = await syntheticPackage({ rawStarter: true });
   t.after(() => rm(fixture.root, { recursive: true, force: true }));
   const transcript = await runCandidateQualification(fixture);
@@ -207,6 +210,10 @@ test("qualification refuses credential-bearing parents and npm configuration car
   assert.doesNotThrow(() => assertCredentialFree({}));
 });
 
+test("production qualification phases use separate reviewed bounds", () => {
+  assert.deepEqual(QUALIFICATION_PHASE_TIMEOUTS, { npm: 180_000, framework: 120_000, probe: 30_000 });
+});
+
 async function addConsumerOverlay(fixture, target) {
   const name = "overlay-package.json";
   const path = join(fixture.root, "fixtures", name);
@@ -255,6 +262,19 @@ test("tarball bytes, malformed candidate launch, and timeout outcomes fail close
   assert.ok(timedOut.signal === "SIGKILL" || timedOut.launchError || timedOut.exitCode !== 0);
 });
 
+test("a timed-out Unix process group cannot leave a grandchild that writes after return", { skip: process.platform === "win32" }, async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "foundry-process-tree-timeout-"));
+  const marker = join(root, "descendant-wrote");
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const grandchild = `const fs=require('node:fs'); setTimeout(()=>fs.writeFileSync(${JSON.stringify(marker)},'escaped'),500); setInterval(()=>{},1000);`;
+  const parent = `const {spawn}=require('node:child_process'); spawn(process.execPath,['-e',${JSON.stringify(grandchild)}],{stdio:'ignore'}); process.stdout.write('grandchild-spawned'); setInterval(()=>{},1000);`;
+  const result = await runProcess(process.execPath, ["-e", parent], { timeout: 200 });
+  assert.equal(result.signal, "SIGKILL");
+  assert.equal(result.stdout, "grandchild-spawned");
+  await new Promise((resolveDelay) => setTimeout(resolveDelay, 800));
+  await assert.rejects(() => readFile(marker), /ENOENT/);
+});
+
 test("runner rejects escaping, unexpanded, and unsupported export mappings", async (t) => {
   const escaping = await syntheticPackage({ exports: { ".": "../outside.js" } });
   const emptyWildcard = await syntheticPackage({ exports: { "./missing/*": "./missing/*.js" } });
@@ -276,13 +296,82 @@ test("wildcard matching is literal, bounded, and independent of regular-expressi
   assert.throws(() => wildcardCapture("./static/**.txt", "./static/name.txt"), /exactly one wildcard/);
 });
 
+test("packed framework contexts are closed against exact declared runtime exports", () => {
+  const runtime = ["@example/pkg", "@example/pkg/client", "@example/pkg/proxy", "@example/pkg/server"];
+  const manifest = {
+    name: "@example/pkg",
+    foundryReleaseVerification: { next: {
+      clientSubpaths: ["./client"],
+      serverSubpaths: ["./server"],
+      proxySubpaths: ["./proxy"],
+    } },
+  };
+  assert.deepEqual(packedFrameworkContexts(manifest, runtime), {
+    client: ["@example/pkg/client"],
+    server: ["@example/pkg/server"],
+    proxy: ["@example/pkg/proxy"],
+    all: ["@example/pkg/client", "@example/pkg/proxy", "@example/pkg/server"],
+  });
+  assert.deepEqual(packedFrameworkContexts({ name: "@example/pkg" }, runtime), { client: [], server: [], proxy: [], all: [] });
+
+  const hostile = [
+    [{ next: { clientSubpaths: ["./client"] }, stale: {} }, /unsupported or missing context row/],
+    [{ next: { clientSubpaths: ["./client"], edgeSubpaths: ["./server"] } }, /unsupported context row/],
+    [{ next: { clientSubpaths: [] } }, /nonempty array/],
+    [{ next: { clientSubpaths: ["./client", "./client"] } }, /duplicates/],
+    [{ next: { clientSubpaths: ["./client"], serverSubpaths: ["./client"] } }, /duplicates/],
+    [{ next: { clientSubpaths: ["./missing"] } }, /undeclared runtime export/],
+    [{ next: { clientSubpaths: ["./client path"] } }, /exact package-relative subpath/],
+    [{ next: { clientSubpaths: ["./client"], serverSubpaths: [] } }, /nonempty array/],
+    [{ next: {} }, /declares no framework exports/],
+  ];
+  for (const [foundryReleaseVerification, expected] of hostile) {
+    assert.throws(() => packedFrameworkContexts({ name: "@example/pkg", foundryReleaseVerification }, runtime), expected);
+  }
+});
+
+test("runtime import arguments distinguish the explicit react-server condition", () => {
+  const ordinary = runtimeImportArguments("import", "@example/pkg/web", "/tmp/pkg/web.js", "/tmp/pkg");
+  assert.deepEqual(ordinary.slice(0, 2), ["--input-type=module", "--eval"]);
+  assert.match(ordinary[2], /import\.meta\.resolve/);
+  assert.match(ordinary[2], /\/tmp\/pkg\/web\.js/);
+  const reactServer = runtimeImportArguments("react-server", "@example/pkg/web", "/tmp/pkg/web.react-server.js", "/tmp/pkg");
+  assert.deepEqual(reactServer.slice(0, 3), ["--conditions=react-server", "--input-type=module", "--eval"]);
+  assert.match(reactServer[3], /import\.meta\.resolve/);
+  assert.throws(() => runtimeImportArguments("browser", "@example/pkg/web", "/tmp/pkg/web.js", "/tmp/pkg"), /unsupported runtime export condition/);
+  assert.throws(() => runtimeImportArguments("react-server", "", "/tmp/pkg/web.js", "/tmp/pkg"), /unsupported runtime export condition/);
+});
+
+test("contained executable resolution canonicalizes a root alias and rejects an escaping symlink", async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "foundry-contained-bin-"));
+  const outside = await mkdtemp(join(tmpdir(), "foundry-contained-outside-"));
+  const aliasParent = await mkdtemp(join(tmpdir(), "foundry-contained-alias-"));
+  const alias = join(aliasParent, "installed");
+  t.after(() => Promise.all([root, outside, aliasParent].map((path) => rm(path, { recursive: true, force: true }))));
+  await writeFile(join(root, "cli.js"), "export {};\n");
+  await writeFile(join(outside, "escape.js"), "export {};\n");
+  await symlink(root, alias, "dir");
+  await symlink(join(outside, "escape.js"), join(root, "escape.js"));
+  assert.equal(await containedRegularFile(alias, "cli.js"), await realpath(join(root, "cli.js")));
+  assert.equal(await containedRegularFile(alias, "escape.js"), null);
+});
+
+test("react-server qualification fails when export key order resolves the ordinary target", async (t) => {
+  const fixture = await syntheticPackage({ exports: { ".": { import: "./index.js", "react-server": "./react-server.js" } } });
+  t.after(() => rm(fixture.root, { recursive: true, force: true }));
+  const transcript = await runCandidateQualification(fixture);
+  assert.equal(transcript.ok, false);
+  assert.ok(transcript.mismatches.includes("import:react-server:@acme/synthetic"));
+  assert.equal(transcript.observations.find((item) => item.id === "import:react-server:@acme/synthetic").observedExitCode, 1);
+});
+
 test("optional peer runtime exports stay red until an exact compatible peer is installed", async (t) => {
   const absent = await syntheticPackage({ runtimePeer: true });
   const present = await syntheticPackage({ runtimePeer: true, peerInstall: { typescript: "6.0.3" } });
   t.after(() => Promise.all([absent, present].map((item) => rm(item.root, { recursive: true, force: true }))));
   const red = await runCandidateQualification(absent);
   assert.equal(red.ok, false);
-  assert.ok(red.mismatches.includes("import:0"));
+  assert.ok(red.mismatches.includes("import:import:@acme/synthetic"));
   const green = await runCandidateQualification(present);
   assert.equal(green.ok, true);
   assert.deepEqual(green.peerInstall, { typescript: "6.0.3" });

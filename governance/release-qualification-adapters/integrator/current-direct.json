@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "package": "@clossys/integrator",
+  "archetype": "current-direct",
+  "bins": {
+    "integrator-supersession-check": 0
+  },
+  "fixtures": [
+    "manifest-satisfied.json",
+    "manifest-violated.json",
+    "manifest-indeterminate.json",
+    "supersession-map.json"
+  ],
+  "cases": [
+    {
+      "id": "supersession-satisfied",
+      "bin": "integrator-supersession-check",
+      "args": [
+        {
+          "fixture": "manifest-satisfied.json"
+        },
+        {
+          "fixture": "supersession-map.json"
+        },
+        {
+          "literal": "--block"
+        }
+      ],
+      "exitCode": 0,
+      "group": "supersession"
+    },
+    {
+      "id": "supersession-violated",
+      "bin": "integrator-supersession-check",
+      "args": [
+        {
+          "fixture": "manifest-violated.json"
+        },
+        {
+          "fixture": "supersession-map.json"
+        },
+        {
+          "literal": "--block"
+        }
+      ],
+      "exitCode": 1,
+      "group": "supersession"
+    },
+    {
+      "id": "supersession-indeterminate",
+      "bin": "integrator-supersession-check",
+      "args": [
+        {
+          "fixture": "manifest-indeterminate.json"
+        },
+        {
+          "fixture": "supersession-map.json"
+        },
+        {
+          "literal": "--block"
+        }
+      ],
+      "exitCode": 2,
+      "group": "supersession"
+    }
+  ],
+  "dimensionEvidence": {
+    "rollback": "restoration",
+    "duplicate": "supersession"
+  }
+}

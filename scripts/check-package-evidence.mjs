@@ -280,7 +280,7 @@ export function scanInvocationSites(repoRoot, packageNames, { readFile = (p) => 
  * import for scanInvocationSites to count. Crediting every qualification JSON
  * would recreate the declaration-as-evidence bug this gate exists to prevent.
  * This helper therefore admits only the exact current @clossys/starter
- * identity, the exact retained adapter bytes, and a fully validated v2
+ * identity, the exact retained adapter bytes, and a fully validated v2 or v3
  * transcript whose raw package-authentic cases cover native 0/1/2 outcomes.
  */
 export function packageAuthenticStarterQualificationSite({ packageName, manifestVersion, adapterBytes, record, expected }) {
@@ -304,6 +304,8 @@ export function packageAuthenticStarterQualificationSite({ packageName, manifest
 
   const validation = validateCandidateQualification(record, expected ? { expected } : undefined);
   const transcript = record?.transcript;
+  const rawTranscript = (transcript?.schema === "foundry-candidate-qualification-transcript-v2" && transcript?.version === 2)
+    || (transcript?.schema === "foundry-candidate-qualification-transcript-v3" && transcript?.version === 3);
   const caseObservations = Array.isArray(transcript?.observations)
     ? transcript.observations.filter((observation) => observation?.kind === "case")
     : [];
@@ -314,8 +316,7 @@ export function packageAuthenticStarterQualificationSite({ packageName, manifest
     record?.timing !== "pre-publication" ||
     record?.candidate?.name !== packageName ||
     record?.candidate?.version !== manifestVersion ||
-    transcript?.schema !== "foundry-candidate-qualification-transcript-v2" ||
-    transcript?.version !== 2 ||
+    !rawTranscript ||
     transcript?.candidate?.name !== packageName ||
     transcript?.candidate?.version !== manifestVersion ||
     transcript?.archetype !== "current-direct" ||

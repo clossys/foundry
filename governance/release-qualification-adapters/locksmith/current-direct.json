@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "package": "@clossys/locksmith",
+  "archetype": "current-direct",
+  "bins": {
+    "vespene-secrets-infisical": 0
+  },
+  "fixtures": [
+    "catalog.json",
+    "available-complete.json",
+    "available-missing.json",
+    "available-malformed.json"
+  ],
+  "cases": [
+    {
+      "id": "required-names-complete",
+      "bin": "vespene-secrets-infisical",
+      "args": [
+        {
+          "literal": "qualify"
+        },
+        {
+          "literal": "--catalog"
+        },
+        {
+          "fixture": "catalog.json"
+        },
+        {
+          "literal": "--available"
+        },
+        {
+          "fixture": "available-complete.json"
+        }
+      ],
+      "exitCode": 0,
+      "group": "required-name-coverage"
+    },
+    {
+      "id": "required-name-missing",
+      "bin": "vespene-secrets-infisical",
+      "args": [
+        {
+          "literal": "qualify"
+        },
+        {
+          "literal": "--catalog"
+        },
+        {
+          "fixture": "catalog.json"
+        },
+        {
+          "literal": "--available"
+        },
+        {
+          "fixture": "available-missing.json"
+        }
+      ],
+      "exitCode": 1,
+      "group": "required-name-coverage"
+    },
+    {
+      "id": "available-snapshot-malformed",
+      "bin": "vespene-secrets-infisical",
+      "args": [
+        {
+          "literal": "qualify"
+        },
+        {
+          "literal": "--catalog"
+        },
+        {
+          "fixture": "catalog.json"
+        },
+        {
+          "literal": "--available"
+        },
+        {
+          "fixture": "available-malformed.json"
+        }
+      ],
+      "exitCode": 2,
+      "group": "required-name-coverage"
+    }
+  ],
+  "dimensionEvidence": {
+    "rollback": "restoration"
+  }
+}

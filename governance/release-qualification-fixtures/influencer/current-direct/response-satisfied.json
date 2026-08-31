@@ -1,0 +1,90 @@
+{
+  "evaluatedAt": "2026-08-23T10:12:00.000Z",
+  "setpointPerThousand": 2,
+  "minimumExposureCount": 1000,
+  "qualifiedActionKinds": [
+    "qualified-reply"
+  ],
+  "records": [
+    {
+      "intentId": "intent-one",
+      "subjectId": "product-one",
+      "actionKind": "publish",
+      "experimentId": "experiment-one",
+      "contentId": "content-one",
+      "publicationId": "publication-one",
+      "channelId": "channel-one",
+      "authority": {
+        "id": "authority-one",
+        "intentId": "intent-one",
+        "subjectId": "product-one",
+        "actorId": "agent-one",
+        "humanOwnerId": "owner-one",
+        "allowedActions": [
+          "publish"
+        ],
+        "channelIds": [
+          "channel-one"
+        ],
+        "issuedAt": "2026-08-23T09:00:00.000Z",
+        "expiresAt": "2026-08-23T11:00:00.000Z",
+        "paidSpendCeiling": 0
+      },
+      "windowOpensAt": "2026-08-23T10:00:00.000Z",
+      "windowClosesAt": "2026-08-23T10:10:00.000Z",
+      "exposures": {
+        "state": "observed",
+        "evidenceSource": "channel-report",
+        "observedAt": "2026-08-23T10:11:00.000Z",
+        "count": 2000
+      },
+      "responses": {
+        "state": "observed",
+        "evidenceSource": "response-report",
+        "observedAt": "2026-08-23T10:11:00.000Z",
+        "events": [
+          {
+            "eventId": "response-1",
+            "experimentId": "experiment-one",
+            "contentId": "content-one",
+            "publicationId": "publication-one",
+            "actionKind": "qualified-reply",
+            "occurredAt": "2026-08-23T10:05:00.000Z"
+          },
+          {
+            "eventId": "response-2",
+            "experimentId": "experiment-one",
+            "contentId": "content-one",
+            "publicationId": "publication-one",
+            "actionKind": "qualified-reply",
+            "occurredAt": "2026-08-23T10:05:00.000Z"
+          },
+          {
+            "eventId": "response-3",
+            "experimentId": "experiment-one",
+            "contentId": "content-one",
+            "publicationId": "publication-one",
+            "actionKind": "qualified-reply",
+            "occurredAt": "2026-08-23T10:05:00.000Z"
+          },
+          {
+            "eventId": "response-4",
+            "experimentId": "experiment-one",
+            "contentId": "content-one",
+            "publicationId": "publication-one",
+            "actionKind": "qualified-reply",
+            "occurredAt": "2026-08-23T10:05:00.000Z"
+          },
+          {
+            "eventId": "response-5",
+            "experimentId": "experiment-one",
+            "contentId": "content-one",
+            "publicationId": "publication-one",
+            "actionKind": "qualified-reply",
+            "occurredAt": "2026-08-23T10:05:00.000Z"
+          }
+        ]
+      }
+    }
+  ]
+}

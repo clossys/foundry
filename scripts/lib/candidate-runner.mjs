@@ -1,20 +1,29 @@
-import { execFile } from "node:child_process";
+import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
-import { copyFile, lstat, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { copyFile, lstat, mkdir, mkdtemp, readFile, readdir, realpath, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve, sep } from "node:path";
-import { promisify } from "node:util";
 import { validateReleaseQualificationContract } from "./release-qualification-contract.mjs";
 import { parseStrictJson } from "./candidate-qualification.mjs";
 
-const exec = promisify(execFile);
 const hash = (algorithm, value) => createHash(algorithm).update(value).digest("hex");
-const streamHash = (root, value) => hash("sha256", String(value)
-  .split(root).join("$TEMP")
-  .replace(/npm notice[^\n]*\n/g, "")
-  .replace(/\b(?:added|removed|changed) \d+ packages?(?:, and audited \d+ packages?)? in [^\n]+\n?/g, "")
-  .replace(/\n?\d+ packages? (?:are|is) looking for funding\n(?: {2}run `npm fund` for details\n)?/g, "")
-  .replace(/\n?found 0 vulnerabilities\n?/g, ""));
+function normalizedStream(root, value, kind) {
+  let normalized = String(value)
+    .split(root).join("$TEMP")
+    .replace(/npm notice[^\n]*\n/g, "")
+    .replace(/\b(?:added|removed|changed) \d+ packages?(?:, and audited \d+ packages?)? in [^\n]+\n?/g, "")
+    .replace(/\n?\d+ packages? (?:are|is) looking for funding\n(?: {2}run `npm fund` for details\n)?/g, "")
+    .replace(/\n?found 0 vulnerabilities\n?/g, "");
+  if (kind === "framework") {
+    // Next reports machine-speed timings and worker counts. They are useful to
+    // a human at execution time but cannot be part of replayable evidence.
+    normalized = normalized
+      .replace(/\busing \d+ workers?\b/gi, "using $WORKERS workers")
+      .replace(/\b\d+(?:\.\d+)?(?:ms|s)\b/g, "$DURATION");
+  }
+  return normalized;
+}
+const streamHash = (root, value, kind) => hash("sha256", normalizedStream(root, value, kind));
 const hasOwn = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
 
 function stableJson(value) {
@@ -35,6 +44,7 @@ function consumerDigest(root, value) {
 
 const CREDENTIAL_ENV = ["NODE_AUTH_TOKEN", "NPM_TOKEN", "GH_PACKAGES_TOKEN", "GITHUB_TOKEN", "GH_TOKEN"];
 const TEMPLATE = /\{\{([A-Z_]+)\}\}/g;
+export const QUALIFICATION_PHASE_TIMEOUTS = Object.freeze({ npm: 180_000, framework: 120_000, probe: 30_000 });
 
 export function assertCredentialFree(env = process.env) {
   if (CREDENTIAL_ENV.some((name) => typeof env[name] === "string" && env[name].length > 0)) throw new Error("qualification runner refuses credential-bearing parent environment");
@@ -48,8 +58,12 @@ function sanitizedEnv(root) {
     TMPDIR: root,
     TEMP: root,
     TMP: root,
-    npm_config_userconfig: join(root, "npmrc"),
+    npm_config_userconfig: join(root, "user-npmrc"),
+    npm_config_globalconfig: join(root, "global-npmrc"),
     npm_config_cache: join(root, "cache"),
+    npm_config_registry: "https://registry.npmjs.org/",
+    npm_config_always_auth: "false",
+    npm_config_ignore_scripts: "true",
     npm_config_audit: "false",
     npm_config_fund: "false",
     npm_config_update_notifier: "false",
@@ -111,23 +125,76 @@ export function installNpmrc(registry) {
 }
 
 export async function runProcess(file, args, options = {}) {
-  try {
-    const result = await exec(file, args, {
-      ...options,
-      timeout: options.timeout ?? 30_000,
-      killSignal: "SIGKILL",
-      maxBuffer: 1_000_000,
-    });
-    return { exitCode: 0, signal: null, launchError: false, stdout: result.stdout, stderr: result.stderr };
-  } catch (error) {
-    return {
-      exitCode: Number.isInteger(error.code) ? error.code : null,
-      signal: error.signal ?? (error.killed ? "SIGKILL" : null),
-      launchError: !Number.isInteger(error.code) && !error.signal,
-      stdout: error.stdout ?? "",
-      stderr: error.stderr ?? "",
+  const timeout = options.timeout ?? 30_000;
+  const { timeout: _ignoredTimeout, ...spawnOptions } = options;
+  const grouped = process.platform !== "win32";
+  const maxBytes = 1_000_000;
+  return new Promise((finish) => {
+    let child;
+    let settled = false;
+    let timedOut = false;
+    let overflow = false;
+    let spawnError = null;
+    let closedResult = null;
+    let terminationStarted = false;
+    let terminationComplete = false;
+    let stdout = Buffer.alloc(0);
+    let stderr = Buffer.alloc(0);
+    let timeoutTimer;
+    const maybeFinish = () => {
+      if (settled || closedResult === null || (terminationStarted && !terminationComplete)) return;
+      settled = true;
+      clearTimeout(timeoutTimer);
+      const { code, signal } = closedResult;
+      finish({
+        exitCode: timedOut || overflow ? null : Number.isInteger(code) ? code : null,
+        signal: signal ?? (terminationStarted ? "SIGKILL" : null),
+        launchError: spawnError !== null || overflow,
+        stdout: stdout.toString("utf8"),
+        stderr: stderr.toString("utf8"),
+      });
     };
-  }
+    const terminate = () => {
+      try {
+        if (grouped && Number.isInteger(child?.pid)) process.kill(-child.pid, "SIGKILL");
+        else child?.kill("SIGKILL");
+      } catch (error) {
+        if (error?.code !== "ESRCH") spawnError ??= error;
+      }
+    };
+    const beginTermination = () => {
+      if (terminationStarted) return;
+      terminationStarted = true;
+      terminate();
+      terminationComplete = true;
+      maybeFinish();
+    };
+    const append = (current, chunk) => {
+      const next = Buffer.concat([current, chunk]);
+      if (next.length <= maxBytes) return next;
+      overflow = true;
+      beginTermination();
+      return next.subarray(0, maxBytes);
+    };
+    try {
+      child = spawn(file, args, { ...spawnOptions, detached: grouped, stdio: ["ignore", "pipe", "pipe"] });
+    } catch (error) {
+      finish({ exitCode: null, signal: null, launchError: true, stdout: "", stderr: error instanceof Error ? error.message : String(error) });
+      return;
+    }
+    child.stdout.on("data", (chunk) => { stdout = append(stdout, chunk); });
+    child.stderr.on("data", (chunk) => { stderr = append(stderr, chunk); });
+    child.on("error", (error) => { spawnError = error; });
+    timeoutTimer = setTimeout(() => {
+      timedOut = true;
+      beginTermination();
+    }, timeout);
+    child.on("close", (code, signal) => {
+      closedResult = { code, signal };
+      clearTimeout(timeoutTimer);
+      maybeFinish();
+    });
+  });
 }
 
 function normalizedBins(manifest) {
@@ -150,13 +217,13 @@ function observation(root, id, kind, expectedExitCode, result) {
   return {
     id,
     kind,
-    launch: ["install", "uninstall", "reinstall"].includes(kind) ? "npm-fixed" : "node-direct",
+    launch: ["install", "uninstall", "reinstall"].includes(kind) ? "npm-fixed" : kind === "framework" ? "next-build" : "node-direct",
     expectedExitCode,
     observedExitCode: result.exitCode,
     signal: result.signal,
     launchError: result.launchError,
-    stdoutSha256: streamHash(root, result.stdout),
-    stderrSha256: streamHash(root, result.stderr),
+    stdoutSha256: streamHash(root, result.stdout, kind),
+    stderrSha256: streamHash(root, result.stderr, kind),
   };
 }
 
@@ -264,12 +331,14 @@ async function assertRawCaseInputsUnchanged(root, preparedCases, consumerOverlay
   }
 }
 
-async function containedRegularFile(root, target) {
+export async function containedRegularFile(root, target) {
   const resolved = resolve(root, target);
   if (!resolved.startsWith(`${root}${sep}`)) return null;
   try {
     const state = await lstat(resolved);
-    return state.isFile() && !state.isSymbolicLink() ? resolved : null;
+    if (!state.isFile() || state.isSymbolicLink()) return null;
+    const [canonicalRoot, canonicalTarget] = await Promise.all([realpath(root), realpath(resolved)]);
+    return canonicalTarget.startsWith(`${canonicalRoot}${sep}`) ? canonicalTarget : null;
   } catch {
     return null;
   }
@@ -286,7 +355,9 @@ async function packedManifest(tarball) {
 }
 
 const JS_TARGET = /\.(?:m?js|cjs)$/;
-const KNOWN_CONDITIONS = new Set(["types", "import", "default"]);
+const KNOWN_CONDITIONS = new Set(["types", "import", "default", "react-server"]);
+const RUNTIME_CONDITIONS = new Set(["string", "import", "default", "react-server"]);
+const FRAMEWORK_SUBPATH = /^[A-Za-z0-9@._~+-]+(?:\/[A-Za-z0-9@._~+-]+)*$/;
 
 async function packageFiles(root, current = root, output = []) {
   for (const entry of await readdir(current, { withFileTypes: true })) {
@@ -322,8 +393,31 @@ function targetsFromEntry(entry) {
   return keys.map((condition) => ({
     condition,
     target: entry.value[condition],
-    runtime: condition === "import" || (condition === "default" && !hasOwn(entry.value, "import")),
+    runtime: condition === "import" || condition === "react-server" || (condition === "default" && !hasOwn(entry.value, "import")),
   }));
+}
+
+/** Build the one fixed Node invocation that resolves and imports a declared runtime target. */
+export function runtimeImportArguments(condition, specifier, expectedTarget, packageRoot) {
+  if (!RUNTIME_CONDITIONS.has(condition) || typeof specifier !== "string" || specifier.length === 0 || typeof expectedTarget !== "string" || expectedTarget.length === 0 || typeof packageRoot !== "string" || packageRoot.length === 0) throw new Error("unsupported runtime export condition");
+  const probe = [
+    'import { realpath } from "node:fs/promises";',
+    'import { fileURLToPath } from "node:url";',
+    `const specifier = ${JSON.stringify(specifier)};`,
+    `const expectedTarget = ${JSON.stringify(expectedTarget)};`,
+    `const packageRoot = ${JSON.stringify(packageRoot)};`,
+    'const resolved = import.meta.resolve(specifier);',
+    'if (!resolved.startsWith("file:")) throw new Error("runtime export did not resolve to a file");',
+    'const [resolvedReal, expectedReal, rootReal] = await Promise.all([realpath(fileURLToPath(resolved)), realpath(expectedTarget), realpath(packageRoot)]);',
+    'if (resolvedReal !== expectedReal || !(resolvedReal.startsWith(`${rootReal}/`))) throw new Error("runtime export resolved outside its declared packed target");',
+    'await import(specifier);',
+  ].join("\n");
+  return [
+    ...(condition === "react-server" ? ["--conditions=react-server"] : []),
+    "--input-type=module",
+    "--eval",
+    probe,
+  ];
 }
 
 export function wildcardCapture(target, candidate) {
@@ -337,12 +431,71 @@ export function wildcardCapture(target, candidate) {
   return candidate.slice(before.length, captureEnd);
 }
 
-async function exportCoverage(manifest, installed, root, timeoutMs) {
+function frameworkSpecifier(packageName, subpath) {
+  if (subpath === ".") return packageName;
+  if (typeof subpath !== "string" || !subpath.startsWith("./") || !FRAMEWORK_SUBPATH.test(subpath.slice(2))) {
+    throw new Error(`${packageName} Next context must name an exact package-relative subpath`);
+  }
+  return `${packageName}/${subpath.slice(2)}`;
+}
+
+/**
+ * Interpret framework execution contexts from the packed manifest itself.
+ * This is intentionally closed in both directions: every row must be known,
+ * nonempty when present, unique across roles, and name a runtime export that
+ * the same packed manifest actually declares.
+ */
+export function packedFrameworkContexts(manifest, runtimeSpecifiers) {
+  const verification = manifest.foundryReleaseVerification;
+  if (verification === undefined) return { client: [], server: [], proxy: [], all: [] };
+  if (!verification || typeof verification !== "object" || Array.isArray(verification)) throw new Error(`${manifest.name} foundryReleaseVerification must be an object`);
+  if (JSON.stringify(Object.keys(verification).sort()) !== JSON.stringify(["next"])) throw new Error(`${manifest.name} foundryReleaseVerification has an unsupported or missing context row`);
+  const next = verification.next;
+  if (!next || typeof next !== "object" || Array.isArray(next)) throw new Error(`${manifest.name} foundryReleaseVerification.next must be an object`);
+  const fields = [["client", "clientSubpaths"], ["server", "serverSubpaths"], ["proxy", "proxySubpaths"]];
+  const allowed = new Set(fields.map(([, field]) => field));
+  if (Object.keys(next).some((key) => !allowed.has(key))) throw new Error(`${manifest.name} foundryReleaseVerification.next has an unsupported context row`);
+  const runtime = new Set(runtimeSpecifiers);
+  const contexts = {};
+  const seen = new Set();
+  for (const [role, field] of fields) {
+    const present = hasOwn(next, field);
+    const subpaths = present ? next[field] : [];
+    if (!Array.isArray(subpaths) || (present && subpaths.length === 0) || subpaths.some((subpath) => typeof subpath !== "string" || subpath.length === 0)) {
+      throw new Error(`${manifest.name} ${field} must be a nonempty array of declared runtime subpaths when present`);
+    }
+    contexts[role] = subpaths.map((subpath) => {
+      const specifier = frameworkSpecifier(manifest.name, subpath);
+      if (seen.has(specifier)) throw new Error(`${manifest.name} Next context duplicates ${subpath}`);
+      if (!runtime.has(specifier)) throw new Error(`${manifest.name} Next context names undeclared runtime export ${subpath}`);
+      seen.add(specifier);
+      return specifier;
+    });
+  }
+  if (seen.size === 0) throw new Error(`${manifest.name} foundryReleaseVerification.next declares no framework exports`);
+  return { ...contexts, all: [...seen].sort() };
+}
+
+function namespaceImports(specifiers) {
+  return specifiers.map((specifier, index) => `import * as probe${index} from ${JSON.stringify(specifier)};\nvoid probe${index};`).join("\n");
+}
+
+async function writeNextFixture(root, contexts) {
+  const app = join(root, "app");
+  await mkdir(app, { recursive: true });
+  await Promise.all([
+    writeFile(join(app, "layout.tsx"), 'import type { ReactNode } from "react";\n\nexport default function RootLayout({ children }: { children: ReactNode }) {\n  return <html><body>{children}</body></html>;\n}\n'),
+    writeFile(join(app, "client-probe.tsx"), `"use client";\n\n${namespaceImports(contexts.client)}\n\nexport function ClientProbe() {\n  return null;\n}\n`),
+    writeFile(join(app, "server-probe.ts"), `${namespaceImports(contexts.server)}\n\nexport const serverProbe = true;\n`),
+    writeFile(join(app, "page.tsx"), 'import { ClientProbe } from "./client-probe";\nimport { serverProbe } from "./server-probe";\n\nexport const dynamic = "force-dynamic";\n\nexport default function Page() {\n  void serverProbe;\n  return <ClientProbe />;\n}\n'),
+    writeFile(join(root, "proxy.ts"), `${namespaceImports(contexts.proxy)}\n\nexport function proxy() {\n  return new Response(null);\n}\n`),
+  ]);
+}
+
+async function exportCoverage(manifest, installed, root) {
   const files = await packageFiles(installed);
   const declared = entriesFromExports(manifest.exports);
-  const coverage = { declaredExportKeys: declared.length, concreteTargets: 0, runtimeImports: 0, staticTargets: 0, failed: 0, installedManifestSha256: hash("sha256", await readFile(join(installed, "package.json")) ) };
-  const operations = [];
-  let targetIndex = 0;
+  const concreteTargets = [];
   for (const entry of declared) for (const descriptor of targetsFromEntry(entry)) {
     const stars = targetShape(descriptor.target);
     const keyStars = [...entry.key].filter((character) => character === "*").length;
@@ -353,28 +506,62 @@ async function exportCoverage(manifest, installed, root, timeoutMs) {
     }).filter(Boolean);
     if (concrete.length === 0) throw new Error("export wildcard has no packaged files");
     for (const item of concrete) {
-      const target = await containedRegularFile(installed, item.target);
-      const id = targetIndex++;
-      coverage.concreteTargets += 1;
-      if (!target) { coverage.failed += 1; continue; }
-      if (descriptor.runtime) {
-        const suffix = entry.key === "." ? "" : `/${entry.key.slice(2).replaceAll("*", item.capture)}`;
-        const result = await runProcess(process.execPath, ["--input-type=module", "--eval", `import(${JSON.stringify(`${manifest.name}${suffix}`)})`], { cwd: root, env: sanitizedEnv(root), timeout: timeoutMs });
-        operations.push({ id: `import:${id}`, result });
-        coverage.runtimeImports += 1;
-        if (result.exitCode !== 0 || result.signal || result.launchError) coverage.failed += 1;
-      } else coverage.staticTargets += 1;
+      const suffix = entry.key === "." ? "" : `/${entry.key.slice(2).replaceAll("*", item.capture)}`;
+      concreteTargets.push({ condition: descriptor.condition, target: item.target, runtime: descriptor.runtime, specifier: `${manifest.name}${suffix}` });
     }
+  }
+  const runtimeSpecifiers = [...new Set(concreteTargets.filter((item) => item.runtime && item.condition !== "react-server").map((item) => item.specifier))];
+  const framework = packedFrameworkContexts(manifest, runtimeSpecifiers);
+  const frameworkRoles = new Map();
+  for (const role of ["client", "server", "proxy"]) for (const specifier of framework[role]) frameworkRoles.set(specifier, role);
+  const coverage = {
+    declaredExportKeys: declared.length,
+    concreteTargets: concreteTargets.length,
+    runtimeImports: 0,
+    reactServerImports: 0,
+    staticTargets: 0,
+    frameworkExports: 0,
+    frameworkBuilds: framework.all.length > 0 ? 1 : 0,
+    failed: 0,
+    installedManifestSha256: hash("sha256", await readFile(join(installed, "package.json"))),
+  };
+  const operations = [];
+  for (const item of concreteTargets) {
+    const target = await containedRegularFile(installed, item.target);
+    if (!item.runtime) coverage.staticTargets += 1;
+    else if (item.condition !== "react-server" && frameworkRoles.has(item.specifier)) coverage.frameworkExports += 1;
+    else {
+      coverage.runtimeImports += 1;
+      if (item.condition === "react-server") coverage.reactServerImports += 1;
+    }
+    if (!target) { coverage.failed += 1; continue; }
+    if (item.runtime && (item.condition === "react-server" || !frameworkRoles.has(item.specifier))) {
+      const result = await runProcess(process.execPath, runtimeImportArguments(item.condition, item.specifier, target, installed), { cwd: root, env: sanitizedEnv(root), timeout: QUALIFICATION_PHASE_TIMEOUTS.probe });
+      operations.push({ id: `import:${item.condition}:${item.specifier}`, kind: "import", result });
+      if (result.exitCode !== 0 || result.signal || result.launchError) coverage.failed += 1;
+    }
+  }
+  if (framework.all.length > 0) {
+    await writeNextFixture(root, framework);
+    const result = await runProcess(join(root, "node_modules", ".bin", "next"), ["build"], {
+      cwd: root,
+      env: { ...sanitizedEnv(root), CI: "1", NEXT_TELEMETRY_DISABLED: "1" },
+      timeout: QUALIFICATION_PHASE_TIMEOUTS.framework,
+    });
+    for (const role of ["client", "server", "proxy"]) for (const specifier of framework[role]) {
+      operations.push({ id: `framework:next:${role}:${specifier}`, kind: "framework", result });
+    }
+    if (result.exitCode !== 0 || result.signal || result.launchError) coverage.failed += framework.all.length;
   }
   return { coverage, operations };
 }
 
 /** Execute the fixed, data-only contract against exactly one local tarball. */
-export async function runCandidateQualification({ tarball, policy, adapter, fixtures, manifestBins, registry, timeoutMs }) {
+export async function runCandidateQualification({ tarball, policy, adapter, fixtures, manifestBins, registry }) {
   assertCredentialFree();
   const bytes = await readFile(tarball);
   const tarballDigests = { sha1: hash("sha1", bytes), sha256: hash("sha256", bytes), sha512: hash("sha512", bytes) };
-  const root = await mkdtemp(join(tmpdir(), "foundry-candidate-"));
+  const root = await realpath(await mkdtemp(join(tmpdir(), "foundry-candidate-")));
   const artifact = join(root, "artifact", "candidate.tgz");
   await mkdir(join(root, "artifact")); await writeFile(artifact, bytes);
   const manifest = await packedManifest(artifact);
@@ -388,8 +575,8 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
   const packagePolicy = policy.packages[adapter.package];
   const fixtureMaterializedAt = adapter.retainRawCaseEvidence === true ? new Date().toISOString() : null;
   const transcript = {
-    schema: "foundry-candidate-qualification-transcript-v2",
-    version: 2,
+    schema: "foundry-candidate-qualification-transcript-v3",
+    version: 3,
     candidate: { name: manifest.name, version: manifest.version },
     archetype: adapter.archetype,
     tarball: tarballDigests,
@@ -417,19 +604,30 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
       await mkdir(dirname(target), { recursive: true });
       await writeFile(target, renderFixture(await readFile(fixtures[fixture].path, "utf8"), variables));
     }
-    const npmrc = join(root, "npmrc");
-    await writeFile(npmrc, installNpmrc(registry));
-    await writeFile(join(root, "package.json"), "{\"private\":true}\n");
+    const userNpmrc = join(root, "user-npmrc");
+    const globalNpmrc = join(root, "global-npmrc");
+    await Promise.all([writeFile(userNpmrc, installNpmrc(registry)), writeFile(globalNpmrc, "")]);
+    const frameworkFixtureDevDependencies = manifest.foundryReleaseVerification === undefined ? undefined : {
+      "@types/node": "22.20.1",
+      "@types/react": "19.2.18",
+      typescript: "6.0.3",
+    };
+    await writeFile(join(root, "package.json"), `${JSON.stringify({
+      name: "foundry-candidate-consumer",
+      private: true,
+      type: "module",
+      ...(frameworkFixtureDevDependencies ? { devDependencies: frameworkFixtureDevDependencies } : {}),
+    }, null, 2)}\n`);
 
     const peerArgs = Object.entries(adapter.peerInstall ?? {}).sort(([left], [right]) => left.localeCompare(right)).map(([name, version]) => `${name}@${version}`);
     const install = await runProcess("npm", ["install", "--ignore-scripts", "--save-exact", "file:./artifact/candidate.tgz", ...peerArgs], {
-      cwd: root, env: sanitizedEnv(root), timeout: timeoutMs,
+      cwd: root, env: sanitizedEnv(root), timeout: QUALIFICATION_PHASE_TIMEOUTS.npm,
     });
     transcript.observations.push(observation(root, "install", "install", 0, install));
     if (install.exitCode !== 0 || install.signal || install.launchError) transcript.mismatches.push("install");
     // This file may temporarily contain an install credential. Candidate code sees
     // neither it nor the credential-bearing environment, even after an install error.
-    await writeFile(npmrc, "");
+    await writeFile(userNpmrc, "");
 
     const installed = join(root, "node_modules", ...manifest.name.split("/"));
     let installedManifest;
@@ -449,15 +647,15 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
       if (!target) transcript.mismatches.push(`bin:${bin}`);
       else targets[bin] = target;
     }
-    const exported = await exportCoverage(manifest, installed, root, timeoutMs);
+    const exported = await exportCoverage(manifest, installed, root);
     for (const operation of exported.operations) {
-      transcript.observations.push(observation(root, operation.id, "import", 0, operation.result));
+      transcript.observations.push(observation(root, operation.id, operation.kind, 0, operation.result));
       if (operation.result.exitCode !== 0 || operation.result.signal || operation.result.launchError) transcript.mismatches.push(operation.id);
     }
     if (exported.coverage.failed !== 0) transcript.mismatches.push("export-coverage");
     for (const bin of Object.keys(adapter.bins).sort()) {
       const result = targets[bin]
-        ? await runProcess(process.execPath, [targets[bin], "--help"], { cwd: root, env: sanitizedEnv(root), timeout: timeoutMs })
+        ? await runProcess(process.execPath, [targets[bin], "--help"], { cwd: root, env: sanitizedEnv(root), timeout: QUALIFICATION_PHASE_TIMEOUTS.probe })
         : { exitCode: null, signal: null, launchError: true, stdout: "", stderr: "missing contained bin target" };
       transcript.observations.push(observation(root, `help:${bin}`, "help", adapter.bins[bin], result));
       if (result.exitCode !== adapter.bins[bin] || result.signal || result.launchError) transcript.mismatches.push(`help:${bin}`);
@@ -488,7 +686,7 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
     for (const prepared of preparedCases) {
       const { item, args, snapshot } = prepared;
       const result = targets[item.bin]
-        ? await runProcess(process.execPath, [targets[item.bin], ...args], { cwd: root, env: sanitizedEnv(root), timeout: timeoutMs })
+        ? await runProcess(process.execPath, [targets[item.bin], ...args], { cwd: root, env: sanitizedEnv(root), timeout: QUALIFICATION_PHASE_TIMEOUTS.probe })
         : { exitCode: null, signal: null, launchError: true, stdout: "", stderr: "missing contained bin target" };
       if (adapter.retainRawCaseEvidence === true && targets[item.bin]) await assertRawCaseInputsUnchanged(root, preparedCases, adapter.consumerOverlay, result.exitCode);
       const observed = observation(root, `case:${item.id}`, "case", item.exitCode, result);
@@ -503,11 +701,11 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
     await assertConsumerOverlayRootsAbsent(overlayRoots, "post-case restoration failed");
 
     const before = { manifest: await readFile(join(root, "package.json"), "utf8"), lock: await readFile(join(root, "package-lock.json"), "utf8") };
-    const uninstall = await runProcess("npm", ["uninstall", manifest.name, "--ignore-scripts"], { cwd: root, env: sanitizedEnv(root), timeout: timeoutMs });
+    const uninstall = await runProcess("npm", ["uninstall", manifest.name, "--ignore-scripts"], { cwd: root, env: sanitizedEnv(root), timeout: QUALIFICATION_PHASE_TIMEOUTS.npm });
     transcript.observations.push(observation(root, "uninstall", "uninstall", 0, uninstall));
     let packageAbsentAfterUninstall = false;
     try { await lstat(installed); } catch { packageAbsentAfterUninstall = true; }
-    const reinstall = await runProcess("npm", ["install", "--ignore-scripts", "--save-exact", "file:./artifact/candidate.tgz"], { cwd: root, env: sanitizedEnv(root), timeout: timeoutMs });
+    const reinstall = await runProcess("npm", ["install", "--ignore-scripts", "--save-exact", "file:./artifact/candidate.tgz"], { cwd: root, env: sanitizedEnv(root), timeout: QUALIFICATION_PHASE_TIMEOUTS.npm });
     transcript.observations.push(observation(root, "reinstall", "reinstall", 0, reinstall));
     const after = { manifest: await readFile(join(root, "package.json"), "utf8"), lock: await readFile(join(root, "package-lock.json"), "utf8") };
     const restored = before.manifest === after.manifest && before.lock === after.lock;

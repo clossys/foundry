@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "package": "@clossys/architect",
+  "archetype": "current-direct",
+  "bins": {
+    "architect-check": 0
+  },
+  "fixtures": [
+    "topology.json",
+    "observations-satisfied.json",
+    "observations-violated.json",
+    "observations-indeterminate.json"
+  ],
+  "cases": [
+    {
+      "id": "exceptions-satisfied",
+      "bin": "architect-check",
+      "args": [
+        {
+          "literal": "exceptions"
+        },
+        {
+          "fixture": "topology.json"
+        },
+        {
+          "fixture": "observations-satisfied.json"
+        },
+        {
+          "literal": "--maximum-exception-rate"
+        },
+        {
+          "literal": "0"
+        }
+      ],
+      "exitCode": 0,
+      "group": "exceptions"
+    },
+    {
+      "id": "exceptions-violated",
+      "bin": "architect-check",
+      "args": [
+        {
+          "literal": "exceptions"
+        },
+        {
+          "fixture": "topology.json"
+        },
+        {
+          "fixture": "observations-violated.json"
+        },
+        {
+          "literal": "--maximum-exception-rate"
+        },
+        {
+          "literal": "0"
+        }
+      ],
+      "exitCode": 1,
+      "group": "exceptions"
+    },
+    {
+      "id": "exceptions-indeterminate",
+      "bin": "architect-check",
+      "args": [
+        {
+          "literal": "exceptions"
+        },
+        {
+          "fixture": "topology.json"
+        },
+        {
+          "fixture": "observations-indeterminate.json"
+        },
+        {
+          "literal": "--maximum-exception-rate"
+        },
+        {
+          "literal": "0"
+        }
+      ],
+      "exitCode": 2,
+      "group": "exceptions"
+    }
+  ],
+  "dimensionEvidence": {
+    "rollback": "restoration",
+    "duplicate": "exceptions"
+  }
+}

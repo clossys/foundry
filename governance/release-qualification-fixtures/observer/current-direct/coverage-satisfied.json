@@ -1,0 +1,17 @@
+{
+  "packages": [
+    "@clossys/observer"
+  ],
+  "repositories": [
+    {
+      "repository": "repo-a",
+      "installed": {
+        "packages": [
+          {
+            "name": "@clossys/observer"
+          }
+        ]
+      }
+    }
+  ]
+}

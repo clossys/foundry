@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "package": "@clossys/influencer",
+  "archetype": "current-direct",
+  "bins": {
+    "influencer-check": 0
+  },
+  "fixtures": [
+    "response-satisfied.json",
+    "response-violated.json",
+    "response-indeterminate.json"
+  ],
+  "cases": [
+    {
+      "id": "response-satisfied",
+      "bin": "influencer-check",
+      "args": [
+        {
+          "literal": "response-yield"
+        },
+        {
+          "fixture": "response-satisfied.json"
+        }
+      ],
+      "exitCode": 0,
+      "group": "response-yield"
+    },
+    {
+      "id": "response-violated",
+      "bin": "influencer-check",
+      "args": [
+        {
+          "literal": "response-yield"
+        },
+        {
+          "fixture": "response-violated.json"
+        }
+      ],
+      "exitCode": 1,
+      "group": "response-yield"
+    },
+    {
+      "id": "response-indeterminate",
+      "bin": "influencer-check",
+      "args": [
+        {
+          "literal": "response-yield"
+        },
+        {
+          "fixture": "response-indeterminate.json"
+        }
+      ],
+      "exitCode": 2,
+      "group": "response-yield"
+    }
+  ],
+  "dimensionEvidence": {
+    "rollback": "restoration",
+    "duplicate": "response-yield"
+  }
+}

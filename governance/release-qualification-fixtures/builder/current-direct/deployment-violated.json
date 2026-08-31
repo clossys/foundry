@@ -1,0 +1,12 @@
+{
+  "observations": [
+    {
+      "surfaceId": "web",
+      "status": "healthy"
+    },
+    {
+      "surfaceId": "api",
+      "status": "unhealthy"
+    }
+  ]
+}
