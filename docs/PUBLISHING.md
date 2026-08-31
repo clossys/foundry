@@ -713,7 +713,11 @@ content-addressed aggregate closure binds all nineteen exact qualification and
 publication records back to this fixed plan. Until that closure exists this is
 an indeterminate producer qualification result, not a live-canary pass. In particular,
 `@clossys/publisher@0.1.8` remains deferred until Writer and Designer have
-their own anonymously verified public identities. This check is producer
+their own anonymously verified public identities. Its separate `0.1.9` OIDC
+successor pin is future-only, never evidence that the deferred first identity
+is ready. The successor set likewise uses Advisor `0.1.6`, Starter `0.1.5`,
+Controller `0.8.24`, and Strategist `0.1.2` from their forward reviewed lanes.
+This check is producer
 qualification only: it does not establish consumer adoption, grounding, or
 closure. Refs: #652
 

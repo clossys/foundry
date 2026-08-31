@@ -146,22 +146,22 @@
         {
           "packageKey": "advisor",
           "name": "@clossys/advisor",
-          "version": "0.1.5"
+          "version": "0.1.6"
         },
         {
           "packageKey": "starter",
           "name": "@clossys/starter",
-          "version": "0.1.4"
+          "version": "0.1.5"
         },
         {
           "packageKey": "controller",
           "name": "@clossys/controller",
-          "version": "0.8.23"
+          "version": "0.8.24"
         },
         {
           "packageKey": "strategist",
           "name": "@clossys/strategist",
-          "version": "0.1.1"
+          "version": "0.1.2"
         },
         {
           "packageKey": "writer",
@@ -236,7 +236,7 @@
         {
           "packageKey": "publisher",
           "name": "@clossys/publisher",
-          "version": "0.1.8"
+          "version": "0.1.9"
         }
       ]
     }
@@ -644,21 +644,21 @@
       "set": "oidc-successor",
       "packageKey": "advisor",
       "name": "@clossys/advisor",
-      "version": "0.1.5",
+      "version": "0.1.6",
       "peers": []
     },
     {
       "set": "oidc-successor",
       "packageKey": "starter",
       "name": "@clossys/starter",
-      "version": "0.1.4",
+      "version": "0.1.5",
       "peers": []
     },
     {
       "set": "oidc-successor",
       "packageKey": "controller",
       "name": "@clossys/controller",
-      "version": "0.8.23",
+      "version": "0.8.24",
       "peers": [
         {
           "peer": "typescript",
@@ -685,7 +685,7 @@
       "set": "oidc-successor",
       "packageKey": "strategist",
       "name": "@clossys/strategist",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "peers": []
     },
     {
@@ -1006,7 +1006,7 @@
       "set": "oidc-successor",
       "packageKey": "publisher",
       "name": "@clossys/publisher",
-      "version": "0.1.8",
+      "version": "0.1.9",
       "peers": [
         {
           "peer": "react",

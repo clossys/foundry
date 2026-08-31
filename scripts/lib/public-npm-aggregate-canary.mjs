@@ -327,6 +327,28 @@ export function validateAggregateCanary(record, { read = () => { throw new Error
       identities.add(identity);
     }
   }
+  const baseline = sets.find((set) => set?.id === "baseline");
+  const successor = sets.find((set) => set?.id === "oidc-successor");
+  const cleanupReplacement = new Map([["advisor", "0.1.6"], ["starter", "0.1.5"], ["controller", "0.8.24"]]);
+  for (const baselineEntry of baseline?.packages ?? []) {
+    const successorEntry = successor?.packages?.find((entry) => entry?.packageKey === baselineEntry?.packageKey);
+    if (successorEntry?.version === baselineEntry?.version) finding(findings, "successor-version", `${baselineEntry?.packageKey ?? "unknown"} must use a distinct separately-versioned OIDC successor identity`);
+  }
+  try {
+    const cleanup = JSON.parse(read("governance/release-cleanup/clossys-npmjs-affected.json"));
+    if (!Array.isArray(cleanup?.rows)) throw new Error("cleanup inventory unavailable");
+    for (const key of ["advisor", "starter", "controller"]) {
+      const baselineEntry = baseline?.packages?.find((entry) => entry?.packageKey === key);
+      const successorEntry = successor?.packages?.find((entry) => entry?.packageKey === key);
+      const replacement = cleanup?.rows?.find((entry) => entry?.name === baselineEntry?.name && entry?.version === baselineEntry?.version && entry?.disposition === "replace-then-retire")?.replacementVersion;
+      if (!VERSION.test(replacement ?? "") || replacement !== cleanupReplacement.get(key) || successorEntry?.version !== replacement) finding(findings, "successor-cleanup", `${key} OIDC successor must bind the exact replace-then-retire cleanup replacement version`);
+    }
+  } catch {
+    // Hermetic synthetic execution supplies only closure evidence.  The fixed
+    // replacement tuple remains checked there; production structural checks
+    // additionally join it to the cleanup inventory above.
+    for (const [key, replacement] of cleanupReplacement) if (successor?.packages?.find((entry) => entry?.packageKey === key)?.version !== replacement) finding(findings, "successor-cleanup", `${key} OIDC successor must bind the exact replace-then-retire cleanup replacement version`);
+  }
   if (!Array.isArray(record.optionalPeerMatrix) || record.optionalPeerMatrix.length !== 38) finding(findings, "optional-peer-matrix", "plan must retain one exact optional-peer row for every package in both frozen sets");
   else for (const row of record.optionalPeerMatrix) {
     const selected = sets.find((set) => set?.id === row?.set)?.packages?.find((entry) => entry?.packageKey === row?.packageKey);

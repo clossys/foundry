@@ -103,6 +103,10 @@ test("aggregate record fails closed on ordering and non-identity plan rows", () 
   }
   const duplicatePeer = structuredClone(record); duplicatePeer.optionalPeerMatrix[1] = structuredClone(duplicatePeer.optionalPeerMatrix[0]);
   assert.ok(validateAggregateCanary(duplicatePeer, { read }).some((item) => item.rule === "optional-peer-duplicate"));
+  const staleSuccessor = structuredClone(record);
+  staleSuccessor.sets[1].packages.find((entry) => entry.packageKey === "strategist").version = "0.1.1";
+  staleSuccessor.optionalPeerMatrix.find((row) => row.set === "oidc-successor" && row.packageKey === "strategist").version = "0.1.1";
+  assert.ok(validateAggregateCanary(staleSuccessor, { read }).some((item) => item.rule === "successor-version"));
 });
 
 test("introduced aggregate plan is immutable", () => {
