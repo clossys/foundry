@@ -29,7 +29,7 @@
     "LICENSE"
   ],
   "sideEffects": false,
-  "description": "Key custody, rotation, revocation, and a distribution manifest, plus the provider-neutral secret resolution contracts (environment and test adapters, and an optional Infisical subpath) those verbs sit beside. Resolution is one verb of five; this package owns the other four.",
+  "description": "Key custody, distribution, rotation, revocation, credential lifecycle evaluation, and provider-neutral secret resolution through environment, test, and optional Infisical adapters.",
   "keywords": [
     "secrets",
     "custody",

@@ -195,6 +195,111 @@ describe("evaluateCredential", () => {
     }
   });
 
+  it("rejects inherited evidence and custom prototypes at both record levels", () => {
+    const inheritedEvidence = Object.create(ephemeral) as unknown;
+    const inheritedOwnerProvenance = Object.create(manual.ownerProvenance) as unknown;
+
+    expect(evaluateCredential(inheritedEvidence)).toMatchObject({
+      verdict: "indeterminate",
+      exitCode: 2,
+      reasons: ["invalid-evidence"],
+    });
+    expect(evaluateCredential({ ...manual, ownerProvenance: inheritedOwnerProvenance })).toMatchObject({
+      verdict: "indeterminate",
+      exitCode: 2,
+      reasons: ["owner-provenance-unverifiable"],
+    });
+  });
+
+  it("never invokes top-level or nested accessors", () => {
+    const topLevelAccessor = { ...ephemeral } as Record<string, unknown>;
+    Object.defineProperty(topLevelAccessor, "provider", {
+      enumerable: true,
+      get() {
+        throw new Error("must not run");
+      },
+    });
+    const nestedAccessor = { ...manual.ownerProvenance } as Record<string, unknown>;
+    Object.defineProperty(nestedAccessor, "source", {
+      enumerable: true,
+      get() {
+        throw new Error("must not run");
+      },
+    });
+
+    expect(() => evaluateCredential(topLevelAccessor)).not.toThrow();
+    expect(evaluateCredential(topLevelAccessor).verdict).toBe("indeterminate");
+    expect(() => evaluateCredential({ ...manual, ownerProvenance: nestedAccessor })).not.toThrow();
+    expect(evaluateCredential({ ...manual, ownerProvenance: nestedAccessor }).verdict).toBe("indeterminate");
+  });
+
+  it("rejects hostile scope prototypes, accessors, symbols, and forbidden entries", () => {
+    const hostilePrototype = ["packages:read", "repository:admin"];
+    Object.setPrototypeOf(hostilePrototype, {
+      every: () => true,
+      some: () => false,
+      [Symbol.iterator]: function* () {
+        yield "packages:read";
+      },
+    });
+    const accessorScope = ["packages:read"];
+    Object.defineProperty(accessorScope, "0", {
+      enumerable: true,
+      configurable: true,
+      get() {
+        throw new Error("must not run");
+      },
+    });
+    const symbolScope = ["packages:read"];
+    Object.defineProperty(symbolScope, Symbol("hidden"), { value: "repository:admin" });
+
+    for (const scope of [hostilePrototype, accessorScope, symbolScope]) {
+      expect(() => evaluateCredential({ ...ephemeral, scope })).not.toThrow();
+      expect(evaluateCredential({ ...ephemeral, scope })).toMatchObject({
+        verdict: "violated",
+        exitCode: 1,
+        reasons: ["non-canonical-scope"],
+      });
+    }
+  });
+
+  it("bounds scope length before inspecting entries or allocating from it", () => {
+    const hugeScope: string[] = [];
+    hugeScope.length = 0xffff_ffff;
+
+    expect(evaluateCredential({ ...ephemeral, scope: hugeScope })).toMatchObject({
+      verdict: "violated",
+      exitCode: 1,
+      reasons: ["non-canonical-scope"],
+    });
+  });
+
+  it("catches throwing proxy traps instead of letting them escape", () => {
+    const throwingEvidence = new Proxy({ ...ephemeral }, {
+      ownKeys() {
+        throw new Error("must not escape");
+      },
+    });
+    const throwingScope = new Proxy(["packages:read"], {
+      getOwnPropertyDescriptor() {
+        throw new Error("must not escape");
+      },
+    });
+
+    expect(() => evaluateCredential(throwingEvidence)).not.toThrow();
+    expect(evaluateCredential(throwingEvidence)).toMatchObject({
+      verdict: "indeterminate",
+      exitCode: 2,
+      reasons: ["invalid-evidence"],
+    });
+    expect(() => evaluateCredential({ ...ephemeral, scope: throwingScope })).not.toThrow();
+    expect(evaluateCredential({ ...ephemeral, scope: throwingScope })).toMatchObject({
+      verdict: "indeterminate",
+      exitCode: 2,
+      reasons: ["invalid-evidence"],
+    });
+  });
+
   it("returns a closed, frozen value-free evaluation", () => {
     const result: CredentialEvaluation = evaluateCredential(ephemeral);
     expect(Object.isFrozen(result)).toBe(true);
@@ -211,10 +316,18 @@ describe("defineCredentialEvidence", () => {
     expect(evidence.scope).toEqual(["contents:read", "packages:write"]);
     expect(evidence).not.toHaveProperty("value");
     expect(evidence).not.toHaveProperty("token");
+    expect(evaluateCredential(evidence)).toMatchObject({ verdict: "satisfied", exitCode: 0, reasons: [] });
   });
 
   it("refuses incomplete evidence instead of authoring a false satisfied record", () => {
     expect(() => defineCredentialEvidence({ ...manual, ownerProvenance: null })).toThrow(RangeError);
+    expect(() => defineCredentialEvidence(Object.create(ephemeral) as never)).toThrow(RangeError);
+    expect(() =>
+      defineCredentialEvidence({
+        ...manual,
+        ownerProvenance: Object.create(manual.ownerProvenance),
+      } as never),
+    ).toThrow(RangeError);
   });
 
   it("refuses an invalid key with whitespace", () => {

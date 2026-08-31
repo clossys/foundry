@@ -93,8 +93,28 @@ function evaluation(
   return Object.freeze({ key, credentialClass, verdict, exitCode: EXIT_CODES[verdict], reasons: Object.freeze([...reasons]) });
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+interface OwnDataRecord {
+  readonly keys: readonly PropertyKey[];
+  readonly values: Readonly<Record<string, unknown>>;
+}
+
+/**
+ * Takes a getter-free snapshot of a plain record. Evidence is a data format,
+ * not an object protocol: inherited fields, accessors, custom prototypes, and
+ * proxy traps therefore cannot participate in a verdict.
+ */
+function readOwnDataRecord(value: unknown): OwnDataRecord | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
+  if (Object.getPrototypeOf(value) !== Object.prototype) return null;
+
+  const keys = Reflect.ownKeys(value);
+  const values: Record<string, unknown> = Object.create(null) as Record<string, unknown>;
+  for (const key of keys) {
+    const descriptor = Reflect.getOwnPropertyDescriptor(value, key);
+    if (descriptor === undefined || !("value" in descriptor)) return null;
+    if (typeof key === "string") values[key] = descriptor.value;
+  }
+  return { keys, values };
 }
 
 function isCanonicalUtcTimestamp(value: unknown): value is string {
@@ -111,66 +131,92 @@ function isKey(value: unknown): value is SecretKey {
   return isNonEmptyString(value) && value === value.trim();
 }
 
-const EPHEMERAL_GITHUB_ACTIONS_SCOPES: ReadonlySet<CredentialScope> = new Set([
+const EPHEMERAL_GITHUB_ACTIONS_SCOPE_ORDER: readonly CredentialScope[] = [
   "contents:read",
   "id-token:write",
   "packages:read",
   "packages:write",
-]);
+];
 
-const MANUAL_GITHUB_SCOPES: ReadonlySet<CredentialScope> = new Set([
+const MANUAL_GITHUB_SCOPE_ORDER: readonly CredentialScope[] = [
   "contents:read",
   "packages:read",
   "packages:write",
-]);
+];
 
-function scopeFailure(value: unknown, credentialClass: CredentialClass): CredentialReason | null {
-  if (!Array.isArray(value) || value.length === 0) return "missing-scope";
+interface ScopeInspection {
+  readonly reason: CredentialReason | null;
+  readonly values: readonly CredentialScope[] | null;
+}
 
-  const expectedOwnKeys = new Set<PropertyKey>([
-    "length",
-    ...Array.from({ length: value.length }, (_, index) => String(index)),
-  ]);
-  const actualOwnKeys = Reflect.ownKeys(value);
-  if (
-    actualOwnKeys.length !== expectedOwnKeys.size ||
-    actualOwnKeys.some((key) => !expectedOwnKeys.has(key)) ||
-    Array.from({ length: value.length }, (_, index) => index).some(
-      (index) => !Object.prototype.hasOwnProperty.call(value, index),
-    )
-  ) {
-    return "non-canonical-scope";
+function allowedScopeIndex(value: string, allowed: readonly CredentialScope[]): number {
+  for (let index = 0; index < allowed.length; index += 1) {
+    if (allowed[index] === value) return index;
   }
+  return -1;
+}
+
+function inspectScope(value: unknown, credentialClass: CredentialClass): ScopeInspection {
+  if (!Array.isArray(value)) return { reason: "missing-scope", values: null };
+  if (Object.getPrototypeOf(value) !== Array.prototype) {
+    return { reason: "non-canonical-scope", values: null };
+  }
+
+  const lengthDescriptor = Reflect.getOwnPropertyDescriptor(value, "length");
+  if (lengthDescriptor === undefined || !("value" in lengthDescriptor)) {
+    return { reason: "non-canonical-scope", values: null };
+  }
+  const length = lengthDescriptor.value;
+  if (length === 0) return { reason: "missing-scope", values: null };
 
   const allowed =
     credentialClass === "ephemeral-job"
-      ? EPHEMERAL_GITHUB_ACTIONS_SCOPES
-      : MANUAL_GITHUB_SCOPES;
-  if (
-    !value.every(
-      (entry) =>
-        typeof entry === "string" &&
-        entry === entry.trim() &&
-        allowed.has(entry as CredentialScope),
-    )
-  ) {
-    return "non-canonical-scope";
+      ? EPHEMERAL_GITHUB_ACTIONS_SCOPE_ORDER
+      : MANUAL_GITHUB_SCOPE_ORDER;
+  if (typeof length !== "number" || !Number.isSafeInteger(length) || length < 1 || length > allowed.length) {
+    return { reason: "non-canonical-scope", values: null };
   }
 
-  const sorted = [...value].sort();
-  if (new Set(value).size !== value.length || value.some((entry, index) => entry !== sorted[index])) {
-    return "non-canonical-scope";
+  // The length is bounded before any length-proportional allocation or loop.
+  const actualOwnKeys = Reflect.ownKeys(value);
+  if (actualOwnKeys.length !== length + 1) {
+    return { reason: "non-canonical-scope", values: null };
   }
-  return null;
+  for (const key of actualOwnKeys) {
+    if (key === "length") continue;
+    if (typeof key !== "string" || !/^(0|[1-9]\d*)$/.test(key)) {
+      return { reason: "non-canonical-scope", values: null };
+    }
+    const index = Number(key);
+    if (!Number.isSafeInteger(index) || index < 0 || index >= length) {
+      return { reason: "non-canonical-scope", values: null };
+    }
+  }
+
+  const values: CredentialScope[] = [];
+  let previousAllowedIndex = -1;
+  for (let index = 0; index < length; index += 1) {
+    const descriptor = Reflect.getOwnPropertyDescriptor(value, String(index));
+    if (descriptor === undefined || !("value" in descriptor)) {
+      return { reason: "non-canonical-scope", values: null };
+    }
+    const entry = descriptor.value;
+    if (typeof entry !== "string" || entry !== entry.trim()) {
+      return { reason: "non-canonical-scope", values: null };
+    }
+    const allowedIndex = allowedScopeIndex(entry, allowed);
+    if (allowedIndex <= previousAllowedIndex) {
+      return { reason: "non-canonical-scope", values: null };
+    }
+    previousAllowedIndex = allowedIndex;
+    values.push(entry as CredentialScope);
+  }
+  return { reason: null, values };
 }
 
-function hasOnlyFields(value: Record<string, unknown>, fields: readonly string[]): boolean {
+function hasOnlyFields(value: OwnDataRecord, fields: readonly string[]): boolean {
   const allowed = new Set(fields);
-  return Reflect.ownKeys(value).every((field) => typeof field === "string" && allowed.has(field));
-}
-
-function keyOf(value: unknown): SecretKey | null {
-  return isRecord(value) && isKey(value.key) ? value.key : null;
+  return value.keys.every((field) => typeof field === "string" && allowed.has(field));
 }
 
 /**
@@ -178,18 +224,19 @@ function keyOf(value: unknown): SecretKey | null {
  * a credential value. Unknown fields are indeterminate, so a token or value
  * smuggled through an untyped caller cannot be silently accepted or echoed.
  */
-export function evaluateCredential(evidence: unknown): CredentialEvaluation {
-  const key = keyOf(evidence);
-  if (!isRecord(evidence)) return evaluation(null, null, "indeterminate", ["invalid-evidence"]);
+function evaluateCredentialUnchecked(evidence: unknown): CredentialEvaluation {
+  const record = readOwnDataRecord(evidence);
+  if (record === null) return evaluation(null, null, "indeterminate", ["invalid-evidence"]);
 
-  const credentialClass = evidence.credentialClass;
+  const key = isKey(record.values.key) ? record.values.key : null;
+  const credentialClass = record.values.credentialClass;
   if (credentialClass !== "ephemeral-job" && credentialClass !== "manually-rotatable") {
     return evaluation(key, null, "indeterminate", ["invalid-evidence"]);
   }
 
   if (
     credentialClass === "ephemeral-job" &&
-    !hasOnlyFields(evidence, [
+    !hasOnlyFields(record, [
       "key",
       "credentialClass",
       "provider",
@@ -205,7 +252,7 @@ export function evaluateCredential(evidence: unknown): CredentialEvaluation {
 
   if (
     credentialClass === "manually-rotatable" &&
-    !hasOnlyFields(evidence, [
+    !hasOnlyFields(record, [
       "key",
       "credentialClass",
       "provider",
@@ -217,65 +264,77 @@ export function evaluateCredential(evidence: unknown): CredentialEvaluation {
     return evaluation(key, credentialClass, "indeterminate", ["unsupported-fields"]);
   }
 
-  if (!isKey(evidence.key)) {
+  if (!isKey(record.values.key)) {
     return evaluation(key, credentialClass, "violated", ["missing-key"]);
   }
-  if (!isNonEmptyString(evidence.provider)) {
+  if (!isNonEmptyString(record.values.provider)) {
     return evaluation(key, credentialClass, "violated", ["missing-provider"]);
   }
-  const invalidScope = scopeFailure(evidence.scope, credentialClass);
-  if (invalidScope !== null) {
-    return evaluation(key, credentialClass, "violated", [invalidScope]);
+  const scope = inspectScope(record.values.scope, credentialClass);
+  if (scope.reason !== null) {
+    return evaluation(key, credentialClass, "violated", [scope.reason]);
   }
 
   if (credentialClass === "ephemeral-job") {
-    if (evidence.provider !== "github-actions") {
+    if (record.values.provider !== "github-actions") {
       return evaluation(key, credentialClass, "violated", ["unsupported-provider"]);
     }
     if (
-      !isCanonicalUtcTimestamp(evidence.jobStartedAt) ||
-      !isCanonicalUtcTimestamp(evidence.jobEndedAt) ||
-      new Date(evidence.jobEndedAt) <= new Date(evidence.jobStartedAt)
+      !isCanonicalUtcTimestamp(record.values.jobStartedAt) ||
+      !isCanonicalUtcTimestamp(record.values.jobEndedAt) ||
+      new Date(record.values.jobEndedAt) <= new Date(record.values.jobStartedAt)
     ) {
       return evaluation(key, credentialClass, "indeterminate", ["job-lifetime-unverifiable"]);
     }
-    if (typeof evidence.expiresAtJobEnd !== "boolean") {
+    if (typeof record.values.expiresAtJobEnd !== "boolean") {
       return evaluation(key, credentialClass, "indeterminate", ["job-expiry-semantics-unproven"]);
     }
-    if (!evidence.expiresAtJobEnd) {
+    if (!record.values.expiresAtJobEnd) {
       return evaluation(key, credentialClass, "violated", ["job-expiry-semantics-unproven"]);
     }
-    if (evidence.scopedUseObserved !== true) {
+    if (record.values.scopedUseObserved !== true) {
       return evaluation(key, credentialClass, "indeterminate", ["scoped-use-unproven"]);
     }
     return evaluation(key, credentialClass, "satisfied", []);
   }
 
-  if (evidence.provider !== "github") {
+  if (record.values.provider !== "github") {
     return evaluation(key, credentialClass, "violated", ["unsupported-provider"]);
   }
   if (
-    evidence.repositorySecretUpdatedAt !== undefined &&
-    evidence.repositorySecretUpdatedAt !== null &&
-    !isCanonicalUtcTimestamp(evidence.repositorySecretUpdatedAt)
+    record.values.repositorySecretUpdatedAt !== undefined &&
+    record.values.repositorySecretUpdatedAt !== null &&
+    !isCanonicalUtcTimestamp(record.values.repositorySecretUpdatedAt)
   ) {
     return evaluation(key, credentialClass, "indeterminate", ["provider-metadata-unverifiable"]);
   }
-  if (evidence.ownerProvenance === null || !isRecord(evidence.ownerProvenance)) {
+  if (record.values.ownerProvenance === null) {
     return evaluation(key, credentialClass, "indeterminate", ["owner-provenance-unverifiable"]);
   }
-  if (!hasOnlyFields(evidence.ownerProvenance, ["source", "tokenCreatedAt", "observedAt"])) {
+  const ownerProvenance = readOwnDataRecord(record.values.ownerProvenance);
+  if (ownerProvenance === null) {
+    return evaluation(key, credentialClass, "indeterminate", ["owner-provenance-unverifiable"]);
+  }
+  if (!hasOnlyFields(ownerProvenance, ["source", "tokenCreatedAt", "observedAt"])) {
     return evaluation(key, credentialClass, "indeterminate", ["unsupported-fields"]);
   }
   if (
-    evidence.ownerProvenance.source !== "owner-controlled" ||
-    !isCanonicalUtcTimestamp(evidence.ownerProvenance.tokenCreatedAt) ||
-    !isCanonicalUtcTimestamp(evidence.ownerProvenance.observedAt) ||
-    new Date(evidence.ownerProvenance.tokenCreatedAt) > new Date(evidence.ownerProvenance.observedAt)
+    ownerProvenance.values.source !== "owner-controlled" ||
+    !isCanonicalUtcTimestamp(ownerProvenance.values.tokenCreatedAt) ||
+    !isCanonicalUtcTimestamp(ownerProvenance.values.observedAt) ||
+    new Date(ownerProvenance.values.tokenCreatedAt) > new Date(ownerProvenance.values.observedAt)
   ) {
     return evaluation(key, credentialClass, "indeterminate", ["owner-provenance-unverifiable"]);
   }
   return evaluation(key, credentialClass, "satisfied", []);
+}
+
+export function evaluateCredential(evidence: unknown): CredentialEvaluation {
+  try {
+    return evaluateCredentialUnchecked(evidence);
+  } catch {
+    return evaluation(null, null, "indeterminate", ["invalid-evidence"]);
+  }
 }
 
 /** Frozen, value-free authoring helper for callers that already have typed evidence. */
@@ -284,15 +343,65 @@ export function defineCredentialEvidence(evidence: CredentialEvidence): Credenti
   if (evaluated.verdict !== "satisfied") {
     throw new RangeError(`credential evidence is ${evaluated.verdict}: ${evaluated.reasons.join(", ")}`);
   }
-  if (evidence.credentialClass === "ephemeral-job") {
-    return Object.freeze({ ...evidence, scope: Object.freeze([...evidence.scope]) });
+
+  try {
+    const record = readOwnDataRecord(evidence);
+    if (record === null) throw new RangeError("credential evidence changed while it was being inspected");
+    const credentialClass = record.values.credentialClass;
+    const expectedFields =
+      credentialClass === "ephemeral-job"
+        ? ["key", "credentialClass", "provider", "scope", "jobStartedAt", "jobEndedAt", "expiresAtJobEnd", "scopedUseObserved"]
+        : ["key", "credentialClass", "provider", "scope", "repositorySecretUpdatedAt", "ownerProvenance"];
+    if (!hasOnlyFields(record, expectedFields)) {
+      throw new RangeError("credential evidence changed while it was being inspected");
+    }
+    if (credentialClass !== "ephemeral-job" && credentialClass !== "manually-rotatable") {
+      throw new RangeError("credential evidence changed while it was being inspected");
+    }
+    const scope = inspectScope(record.values.scope, credentialClass);
+    if (scope.reason !== null || scope.values === null) {
+      throw new RangeError("credential evidence changed while it was being inspected");
+    }
+
+    let snapshot: CredentialEvidence;
+    if (credentialClass === "ephemeral-job") {
+      snapshot = {
+        key: record.values.key as SecretKey,
+        credentialClass,
+        provider: record.values.provider as "github-actions",
+        scope: Object.freeze([...scope.values]),
+        jobStartedAt: record.values.jobStartedAt as string,
+        jobEndedAt: record.values.jobEndedAt as string,
+        expiresAtJobEnd: record.values.expiresAtJobEnd as true,
+        scopedUseObserved: record.values.scopedUseObserved as true,
+      };
+    } else {
+      const ownerProvenance = readOwnDataRecord(record.values.ownerProvenance);
+      if (ownerProvenance === null || !hasOnlyFields(ownerProvenance, ["source", "tokenCreatedAt", "observedAt"])) {
+        throw new RangeError("credential evidence changed while it was being inspected");
+      }
+      snapshot = {
+        key: record.values.key as SecretKey,
+        credentialClass,
+        provider: record.values.provider as "github",
+        scope: Object.freeze([...scope.values]) as readonly Exclude<CredentialScope, "id-token:write">[],
+        ...(record.keys.includes("repositorySecretUpdatedAt")
+          ? { repositorySecretUpdatedAt: record.values.repositorySecretUpdatedAt as string | null | undefined }
+          : {}),
+        ownerProvenance: Object.freeze({
+          source: ownerProvenance.values.source as "owner-controlled",
+          tokenCreatedAt: ownerProvenance.values.tokenCreatedAt as string,
+          observedAt: ownerProvenance.values.observedAt as string,
+        }),
+      };
+    }
+    const snapshotEvaluation = evaluateCredential(snapshot);
+    if (snapshotEvaluation.verdict !== "satisfied") {
+      throw new RangeError("credential evidence changed while it was being inspected");
+    }
+    return Object.freeze(snapshot);
+  } catch (error) {
+    if (error instanceof RangeError) throw error;
+    throw new RangeError("credential evidence could not be inspected safely");
   }
-  return Object.freeze({
-    ...evidence,
-    scope: Object.freeze([...evidence.scope]),
-    ownerProvenance:
-      evidence.ownerProvenance === null
-        ? null
-        : Object.freeze({ ...evidence.ownerProvenance }),
-  });
 }
