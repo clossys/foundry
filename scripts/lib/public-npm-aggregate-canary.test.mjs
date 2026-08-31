@@ -7,6 +7,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
+import { consumerDigest } from "./candidate-runner.mjs";
 import { ALL_PACKAGE_RELEASE_ORDER, aggregateCanaryGitHistory, aggregateClosurePath, aggregatePlanSha256, assertAggregateRuntime, controllerPhysicalIdentities, immutableRecordHistory, immutableRecordPaths, isAggregateClosurePath, parseAggregateCanaryCli, resolveAggregateClosure, retainAggregateTranscript, runAggregatePublicNpmCanary, sealedHistoricalRepository, validateAggregateCanary, validateAggregateCanaryAppendOnly, validateAggregateCanaryHistory, validateAggregateChildExecution, validateAggregateClosure, validateSatisfiedAggregateTranscript, validateSatisfiedTranscriptHistory } from "./public-npm-aggregate-canary.mjs";
 
 const root = new URL("../..", import.meta.url).pathname;
@@ -75,7 +76,12 @@ function satisfiedFixture() {
       ["install", 1], ["exports", resolved.packages.length], ["framework", resolved.packages.length], ["bins", resolved.packages.length], ["cases", resolved.packages.length * 3],
       ["optionalPeers", plan.optionalPeerMatrix.filter((row) => row.set === selected.id).reduce((sum, row) => sum + row.peers.reduce((peerSum, peer) => peerSum + Object.keys(peer.outcomes).length, 0), 0)], ["rollback", 1],
     ].map(([dimension, count]) => ({ dimension, count, ok: true })),
-    optionalPeerObservations: plan.optionalPeerMatrix.filter((row) => row.set === selected.id).flatMap((row) => row.peers.flatMap((peer) => Object.entries(peer.outcomes).map(([specifier, outcome]) => ({ package: row.name, version: row.version, peer: peer.peer, specifier, outcome, evaluator: "node-direct", restoration: { manifestSha256: sha, lockfileSha256: sha, treeSha256: sha })))),
+    optionalPeerObservations: plan.optionalPeerMatrix
+      .filter((row) => row.set === selected.id)
+      .flatMap((row) => row.peers.flatMap((peer) => Object.entries(peer.outcomes).map(([specifier, outcome]) => ({
+        package: row.name, version: row.version, peer: peer.peer, specifier, outcome, evaluator: "node-direct",
+        restoration: { manifestSha256: sha, lockfileSha256: sha, treeSha256: sha },
+      })))),
   };
   transcript.canonicalSha256 = sha256(JSON.stringify(stable(transcript)));
   return { plan, closure, transcript };
@@ -369,7 +375,7 @@ test("deterministic synthetic aggregate uses one local-tarball consumer for all 
       root: temporary, record: plan, set: "baseline", closure, closurePath: aggregateClosurePath("baseline", closure.canonicalSha256), environment: { PATH: process.env.PATH, SERVICE_PRIVATE_VALUE: "opaque", COOKIE: "private" }, readEvidence: (path) => sources.get(path) ?? "{}", validateRegistryProof: () => [],
       verifyArtifact: async ({ name, version }) => ({ kind: "verified", bytes: artifacts.get(`${name}@${version}`), evidence: evidence.get(`${name}@${version}`) }), prepareCandidate: async ({ artifact }) => artifact,
       executeCandidate: async (artifact) => { childCalls += 1; const run = childRun(artifact.entry); const served = evidence.get(`${artifact.entry.name}@${artifact.entry.version}`); run.tarball = { sha1: served.shasum, sha256: served.sha256, sha512: served.sha512 }; run.coverage.installedManifestSha256 = served.packedManifestSha256; run.consumer = artifact.aggregateConsumer; run.canonicalSha256 = sha256(JSON.stringify(Object.fromEntries(Object.entries(run).filter(([key]) => key !== "canonicalSha256")))); return run; },
-      executeOptionalPeers: async ({ matrix, env, consumer }) => { optionalCalls += 1; assert.equal(env.SERVICE_PRIVATE_VALUE, undefined); assert.equal(env.COOKIE, undefined); const manifestSha256 = createHash("sha256").update(JSON.stringify(JSON.parse(await readFile(join(consumer, "package.json"), "utf8")))).digest("hex"); const lockfileSha256 = createHash("sha256").update(JSON.stringify(JSON.parse(await readFile(join(consumer, "package-lock.json"), "utf8")))).digest("hex"); return matrix.flatMap((row) => row.peers.flatMap((peer) => Object.keys(peer.outcomes).map((specifier) => ({ package: row.name, version: row.version, peer: peer.peer, specifier, outcome: peer.outcomes[specifier], evaluator: "node-direct", restoration: { manifestSha256, lockfileSha256, treeSha256: sha } })))); },
+      executeOptionalPeers: async ({ matrix, env, consumer }) => { optionalCalls += 1; assert.equal(env.SERVICE_PRIVATE_VALUE, undefined); assert.equal(env.COOKIE, undefined); const manifestSha256 = consumerDigest(consumer, await readFile(join(consumer, "package.json"), "utf8")); const lockfileSha256 = consumerDigest(consumer, await readFile(join(consumer, "package-lock.json"), "utf8")); return matrix.flatMap((row) => row.peers.flatMap((peer) => Object.keys(peer.outcomes).map((specifier) => ({ package: row.name, version: row.version, peer: peer.peer, specifier, outcome: peer.outcomes[specifier], evaluator: "node-direct", restoration: { manifestSha256, lockfileSha256, treeSha256: sha } })))); },
     });
     assert.equal(result.verdict, "satisfied"); assert.equal(childCalls, 19); assert.equal(optionalCalls, 1);
     assert.equal(result.transcript.packages.length, 19); assert.equal(result.transcript.operations.length, 3); assert.deepEqual(result.transcript.operations.map((operation) => operation.id), ["install", "uninstall", "reinstall"]); assert.ok(result.transcript.packages.every((entry) => !entry.run.observations.some((observation) => observation.kind === "install"))); assert.ok(result.transcript.packages.every((entry) => JSON.stringify(entry.run.consumer) === JSON.stringify(result.transcript.consumer && { manifestSha256: result.transcript.consumer.manifestSha256, lockfileSha256: result.transcript.consumer.lockfileSha256 }))); assert.equal(result.transcript.consumer.rollback.packageAbsenceProven, true); assert.equal(result.transcript.consumer.rollback.identitiesRestored, true); assert.deepEqual(validateSatisfiedAggregateTranscript(result.transcript, { plan, closure }), []);
