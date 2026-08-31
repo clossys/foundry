@@ -556,6 +556,49 @@ SHA-1/SHA-256/SHA-512 tuple to match before it runs the one interactive
 `npm publish .` command. Do not replace it with a tarball, URL, package
 specifier, token, OTP, or a workflow upload flag.
 
+Before each wrapper invocation, run the mandatory preflight sequence against
+the exact candidate, produce a fresh credentialless transcript, and retain
+both outputs:
+
+```text
+node scripts/preflight-package.mjs packages/<name> --require-denylist
+node scripts/run-candidate-qualification.mjs --package <name> --tarball <candidate.tgz> --output <fresh-transcript.json>
+node scripts/validate-candidate-publish.mjs --package <name> --tarball <candidate.tgz> --transcript <fresh-transcript.json> --mode prepublish
+```
+
+The transcript passed to `validate-candidate-publish.mjs` must be this fresh
+file from the immediately preceding credentialless run; the embedded
+transcript in a retained qualification record is not a substitute.
+
+After the owner upload completes, perform the anonymous served-byte
+verification described below and save its exact `registry-proof.json` outside
+the repository. Then create the one retained publication record with the
+credentialless recorder. A trusted-publisher publication uses the closed v2
+record; an owner-present publication uses the same recorder and the legacy
+owner evidence shape accepted by the validator:
+
+```text
+node scripts/record-later-publication.mjs \
+  --package <name> \
+  --qualification governance/release-qualifications/clossys-<name>-<version>.json \
+  --candidate <candidate.tgz> \
+  --proof <registry-proof.json> \
+  --publication <publication-evidence.json>
+```
+
+`publication-evidence.json` is a closed object. For trusted publication it
+must contain `mode: "trusted-publisher"`, the canonical publication time and
+run reference, plus the exact workflow provenance; for an owner-present first
+publication it contains `mode: "owner-present"`, the canonical publication
+time, and an HTTPS reference without provenance. Use `--fetch` in place of
+`--candidate` and `--proof` when the recorder should obtain both artifacts
+anonymously from public npm. The recorder writes only
+`governance/release-publications/later/<name>-<version>.json`, refuses an
+existing path (including a symlink), and self-validates the retained bytes.
+Run `npm run check:later-publications` after creation and review that one-file
+change before proceeding to the next package. Never put credentials in either
+evidence file.
+
 **Stop after every row.** Anonymously fetch the exact public
 `@clossys/<package>@<version>` packument and tarball, then compare its name,
 version, public access, `dist.integrity`, SHA-1/SHA-256/SHA-512, packed
