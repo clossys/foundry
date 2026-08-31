@@ -68,15 +68,24 @@ function invocationRunRoot(value) {
   const match = /^https:\/\/github\.com\/clossys\/foundry\/actions\/runs\/(\d+)\/attempts\/\d+$/.exec(value ?? "");
   return match ? `https://github.com/clossys/foundry/actions/runs/${match[1]}` : null;
 }
-function trustedProvenance(value, candidate, source) {
+function trustedProvenance(value, candidate, provenanceSourceValid) {
   if (!object(value)) return false;
   const keys = ["repository", "workflow", "ref", "event", "sourceSha", "builder", "invocation", "attestationUrl"];
   if (Object.keys(value).some((key) => !keys.includes(key))) return false;
   const identity = `${candidate?.name}@${candidate?.version}`;
   const historical = HISTORICAL_PLATFORM_PROVENANCE.get(identity);
-  const trustedRepository = value.repository === PUBLICATION_REPOSITORY && value.sourceSha === source?.reviewedCommit && Boolean(invocationRunRoot(value.invocation));
+  const trustedRepository = value.repository === PUBLICATION_REPOSITORY && provenanceSourceValid === true && Boolean(invocationRunRoot(value.invocation));
   const exactHistorical = value.repository === HISTORICAL_PLATFORM_REPOSITORY && historical?.sourceSha === value.sourceSha && historical.invocation === value.invocation;
   return (trustedRepository || exactHistorical) && value.workflow === PUBLISH_WORKFLOW && value.ref === PUBLISH_REF && value.event === PUBLISH_EVENT && SHA1.test(value.sourceSha ?? "") && value.builder === GITHUB_HOSTED_BUILDER && exactAttestationUrl(value.attestationUrl, candidate?.name, candidate?.version);
+}
+export function trustedProvenanceSourceValid(root, candidate, qualificationIntroduction, publicationIntroduction, sourceSha, { joinsAt = currentQualificationJoins } = {}) {
+  if (!SHA1.test(sourceSha ?? "") || sourceSha === qualificationIntroduction || sourceSha === publicationIntroduction) return false;
+  try {
+    execFileSync("git", ["merge-base", "--is-ancestor", qualificationIntroduction, sourceSha], { cwd: root, stdio: "ignore" });
+    execFileSync("git", ["merge-base", "--is-ancestor", sourceSha, publicationIntroduction], { cwd: root, stdio: "ignore" });
+    const joins = joinsAt(root, candidate, sourceSha);
+    return joins.packageTreeSha1 === candidate?.packageTreeSha1 && joins.packageManifestSha256 === candidate?.packageManifestSha256;
+  } catch { return false; }
 }
 function exactAttestedSubject(provenance, proof, candidate) {
   return exactAttestationUrl(provenance?.attestationUrl, candidate?.name, candidate?.version)
@@ -94,7 +103,7 @@ function gitBlob(root, ref, path) {
  * introduction commit. `currentCatalog` independently proves the package has
  * not fallen out of the current reviewed append-only allowlist.
  */
-export function validateLaterPublication(record, { recordPath, recordBytes, qualification, qualificationBytes, qualificationPath: expectedQualificationPath, catalogBytes, catalog, currentCatalog = catalog } = {}) {
+export function validateLaterPublication(record, { recordPath, recordBytes, qualification, qualificationBytes, qualificationPath: expectedQualificationPath, catalogBytes, catalog, currentCatalog = catalog, provenanceSourceValid: sourceValid = false } = {}) {
   const findings = [];
   closed(findings, record, ["schemaVersion", "kind", "qualification", "candidate", "source", "catalog", "publication", "registryProof"], "publication");
   const legacy = record?.schemaVersion === 1 && record?.kind === "foundry-later-publication-v1";
@@ -117,7 +126,7 @@ export function validateLaterPublication(record, { recordPath, recordBytes, qual
   if (record?.catalog?.path !== CATALOG_PATH || !SHA256.test(record?.catalog?.sha256 ?? "") || typeof catalogBytes !== "string" || digest(catalogBytes) !== record?.catalog?.sha256 || record?.catalog?.packageKey !== key || !introducedPackages?.includes(key) || !retainedPackages?.includes(key)) finding(findings, "catalog-join", "must bind its introduction catalogue bytes and remain in the current active reviewed allowlist.");
   closed(findings, record?.publication, ["mode", "publishedAt", "reference", "provenance"], "publication.publication");
   if (legacy && (record?.publication?.mode !== "owner-present" || !canonicalInstant(record?.publication?.publishedAt) || !evidenceUrl(record?.publication?.reference) || record?.publication?.provenance !== undefined)) finding(findings, "publication-evidence", "v1 records require owner-present evidence without provenance.");
-  if (trusted && (record?.publication?.mode !== "trusted-publisher" || !canonicalInstant(record?.publication?.publishedAt) || record?.publication?.reference !== invocationRunRoot(record?.publication?.provenance?.invocation) || !trustedProvenance(record?.publication?.provenance, c, record?.source))) finding(findings, "publication-provenance", "trusted publication must bind its exact GitHub workflow, source, invocation, run reference, and npm attestation.");
+  if (trusted && (record?.publication?.mode !== "trusted-publisher" || !canonicalInstant(record?.publication?.publishedAt) || record?.publication?.reference !== invocationRunRoot(record?.publication?.provenance?.invocation) || !trustedProvenance(record?.publication?.provenance, c, sourceValid))) finding(findings, "publication-provenance", "trusted publication must bind its exact GitHub workflow, post-qualification source, invocation, run reference, and npm attestation.");
   const proof = record?.registryProof?.evidence;
   closed(findings, record?.registryProof, ["schemaVersion", "kind", "evidence"], "publication.registryProof");
   const v1 = record?.registryProof?.schemaVersion === 1 && record?.registryProof?.kind === "public-npm-anonymous-registry-proof-v1";
@@ -194,7 +203,9 @@ export function validateRetainedLaterPublications(root) {
       const introCatalogBytes = gitBlob(root, introductionCommit, CATALOG_PATH);
       const introCatalog = parseStrictJson(introCatalogBytes);
       const qualificationFindings = validateCandidateQualification(qualification, { expected });
-      const recordFindings = validateLaterPublication(record, { recordPath: path, recordBytes: bytes, qualification, qualificationBytes: qbytes, qualificationPath: qpath, catalogBytes: introCatalogBytes, catalog: introCatalog, currentCatalog });
+      const historical = record?.publication?.provenance?.repository === HISTORICAL_PLATFORM_REPOSITORY;
+      const sourceValid = historical || trustedProvenanceSourceValid(root, record.candidate, history.introductionCommit, introductionCommit, record?.publication?.provenance?.sourceSha);
+      const recordFindings = validateLaterPublication(record, { recordPath: path, recordBytes: bytes, qualification, qualificationBytes: qbytes, qualificationPath: qpath, catalogBytes: introCatalogBytes, catalog: introCatalog, currentCatalog, provenanceSourceValid: sourceValid });
       for (const item of [...qualificationFindings, ...recordFindings]) finding(findings, item.rule, `${path}: ${item.message}`);
       if (qualificationFindings.length || recordFindings.length) continue;
       const identity = `${record.candidate.name}@${record.candidate.version}`;

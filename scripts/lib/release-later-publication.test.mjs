@@ -5,7 +5,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-import { immutableSingleIntroduction, strictQualificationIntroductionAncestor, validateLaterPublication, validateRetainedLaterPublications } from "./release-later-publication.mjs";
+import { immutableSingleIntroduction, strictQualificationIntroductionAncestor, trustedProvenanceSourceValid, validateLaterPublication, validateRetainedLaterPublications } from "./release-later-publication.mjs";
 import { publicNpmPackageUrl, publicNpmVersionUrl, PUBLIC_NPM_REGISTRY } from "./public-npm-registry.mjs";
 
 const hash = (value) => createHash("sha256").update(value).digest("hex");
@@ -40,7 +40,7 @@ function source() { return {
   } },
 }; }
 function context() { return { recordPath: "governance/release-publications/later/strategist-0.1.1.json", recordBytes: "record\n", qualification, qualificationBytes, qualificationPath: "governance/release-qualifications/clossys-strategist-0.1.1.json", catalogBytes, catalog: { defaultTarget: "clossys-npmjs", targets: [{ id: "clossys-npmjs", status: "active", packages: ["advisor", "starter", "controller", "strategist"] }] } }; }
-function rules(record, overrides) { return validateLaterPublication(record, { ...context(), ...overrides }).map((item) => item.rule); }
+function rules(record, overrides) { return validateLaterPublication(record, { ...context(), provenanceSourceValid: true, ...overrides }).map((item) => item.rule); }
 
 test("later-publication record binds qualified candidate, active catalogue, anonymous bytes, and owner evidence", () => {
   assert.deepEqual(rules(source()), []);
@@ -140,6 +140,19 @@ test("later-publication requires a strict qualification-introduction ancestor", 
   assert.throws(() => strictQualificationIntroductionAncestor(root, "not-a-commit", publicationIntroduction), /commit hashes/);
 });
 
+test("trusted provenance source is post-qualification, pre-publication, and candidate-identical", (t) => {
+  const root = mkdtempSync(join(tmpdir(), "later-publication-provenance-")); t.after(() => rmSync(root, { recursive: true, force: true }));
+  execFileSync("git", ["init", "-q"], { cwd: root }); execFileSync("git", ["config", "user.email", "test@example.invalid"], { cwd: root }); execFileSync("git", ["config", "user.name", "test"], { cwd: root });
+  const commit = (name) => { writeFileSync(join(root, "evidence"), `${name}\n`); execFileSync("git", ["add", "."], { cwd: root }); execFileSync("git", ["commit", "-qm", name], { cwd: root }); return execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim(); };
+  const reviewed = commit("reviewed"); const qualificationIntroduction = commit("qualification"); const sourceSha = commit("publish source"); const publicationIntroduction = commit("publication");
+  const candidate = { packageTreeSha1: "a".repeat(40), packageManifestSha256: "b".repeat(64) };
+  const matching = () => ({ ...candidate });
+  assert.equal(trustedProvenanceSourceValid(root, candidate, qualificationIntroduction, publicationIntroduction, sourceSha, { joinsAt: matching }), true);
+  assert.equal(trustedProvenanceSourceValid(root, candidate, qualificationIntroduction, publicationIntroduction, qualificationIntroduction, { joinsAt: matching }), false);
+  assert.equal(trustedProvenanceSourceValid(root, candidate, qualificationIntroduction, publicationIntroduction, reviewed, { joinsAt: matching }), false);
+  assert.equal(trustedProvenanceSourceValid(root, candidate, qualificationIntroduction, publicationIntroduction, sourceSha, { joinsAt: () => ({ packageTreeSha1: "c".repeat(40), packageManifestSha256: candidate.packageManifestSha256 }) }), false);
+});
+
 test("trusted-publication v2 binds immutable provenance to the qualified served bytes", () => {
   const trusted = source();
   trusted.schemaVersion = 2;
@@ -159,7 +172,6 @@ test("trusted-publication v2 binds immutable provenance to the qualified served 
   assert.deepEqual(rules(trusted), []);
   for (const mutate of [
     (value) => { value.publication.reference = "https://github.com/clossys/foundry/actions/runs/999"; },
-    (value) => { value.publication.provenance.sourceSha = "b".repeat(40); },
     (value) => { value.publication.provenance.repository = historicalRepository; },
     (value) => { value.publication.provenance.repository = historicalRepository; value.publication.provenance.sourceSha = "b".repeat(40); },
     (value) => { value.publication.provenance.repository = historicalRepository; value.publication.provenance.invocation = "https://github.com/clossys/foundry/actions/runs/999/attempts/1"; },
@@ -168,7 +180,10 @@ test("trusted-publication v2 binds immutable provenance to the qualified served 
     (value) => { value.publication.provenance.attestationUrl = "https://registry.npmjs.org/-/npm/v1/attestations/other"; },
     (value) => { value.registryProof.evidence.repository = "clossys/other"; },
     (value) => { value.registryProof.evidence.sha512 = "0".repeat(128); },
-  ]) { const value = structuredClone(trusted); mutate(value); assert.ok(rules(value).length > 0); }
+  ]) { const value = structuredClone(trusted); mutate(value); assert.ok(rules(value, { provenanceSourceValid: value.publication.provenance.repository === historicalRepository }).length > 0); }
+  assert.ok(rules(trusted, { provenanceSourceValid: false }).includes("publication-provenance"));
+  const unrelatedSource = structuredClone(trusted); unrelatedSource.publication.provenance.sourceSha = "b".repeat(40);
+  assert.ok(rules(unrelatedSource, { provenanceSourceValid: false }).includes("publication-provenance"));
   const wrongSubject = structuredClone(trusted); wrongSubject.registryProof.evidence.sha512 = "0".repeat(128);
   assert.ok(rules(wrongSubject).includes("attestation-subject"));
   const v1Proof = structuredClone(trusted); v1Proof.registryProof = source().registryProof;
