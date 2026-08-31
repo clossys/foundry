@@ -542,7 +542,7 @@ export function validateSatisfiedAggregateTranscript(transcript, { plan, closure
     };
     if (transcript.dimensions.some((entry) => entry.count !== expectedCounts[entry.dimension])) finding(findings, "dimension-count", "aggregate dimension counts must exactly project all child and immutable optional-peer execution evidence");
   }
-  const frameworkSpecifiers = new Set((transcript.packages ?? []).flatMap((entry) => (entry?.run?.observations ?? []).filter((item) => item?.kind === "framework").map((item) => `${entry.name}@${entry.version}\0${item.id.split(":").slice(3).join(":")}`)));
+  const frameworkSpecifiers = new Set((Array.isArray(transcript.packages) ? transcript.packages : []).flatMap((entry) => (Array.isArray(entry?.run?.observations) ? entry.run.observations : []).filter((item) => item?.kind === "framework" && typeof item.id === "string").map((item) => `${entry.name}@${entry.version}\0${item.id.split(":").slice(3).join(":")}`)));
   const expectedOptional = (plan?.optionalPeerMatrix ?? []).filter((row) => row.set === transcript.set).flatMap((row) => row.peers.flatMap((peer) => Object.entries(peer.outcomes).map(([specifier, outcome]) => ({ package: row.name, version: row.version, peer: peer.peer, specifier, outcome, evaluator: frameworkSpecifiers.has(`${row.name}@${row.version}\0${specifier}`) ? (peer.peer === "next" ? "next-bin-absent" : "next-build") : "node-direct" }))));
   const optionalKey = (item) => JSON.stringify({ package: item.package, version: item.version, peer: item.peer, specifier: item.specifier, outcome: item.outcome, evaluator: item.evaluator });
   const restoration = transcript.optionalPeerObservations?.[0]?.restoration;
