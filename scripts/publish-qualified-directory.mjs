@@ -232,7 +232,8 @@ export function createOwnerPromptRelay(write = (line) => process.stderr.write(li
       write("npm authentication requires owner input.\n");
       authPromptShown = true;
     }
-    if (!loginShown && /https:\/\/(?:www\.)?npmjs\.com\/login(?:[/?#]|$)/i.test(buffered)) {
+    if (!loginShown && /https:\/\/(?:www\.)?npmjs\.com\/login(?:[/?#]|\r?\n|$)/i.test(buffered)) {
+      if (context.ownerInputAvailable === false) context.ownerInputRequested?.();
       write("Open https://www.npmjs.com/login to continue npm authentication.\n");
       loginShown = true;
     }
@@ -249,7 +250,8 @@ export function createOwnerPromptRelay(write = (line) => process.stderr.write(li
       // its input is deliberately ignored and any eventual owner prompt will
       // fail closed. Keep the generic Enter verdict below, but never relay the
       // one-time URL outside a real interactive terminal.
-      if (context.ownerInputAvailable !== false) write(`Open https://www.npmjs.com/auth/cli/${browserUrl[1]} to continue npm authentication.\n`);
+      if (context.ownerInputAvailable === false) context.ownerInputRequested?.();
+      else write(`Open https://www.npmjs.com/auth/cli/${browserUrl[1]} to continue npm authentication.\n`);
       browserUrlShown = true;
     }
     // npm 11 uses readline.question(), whose prompt has no newline. Accept
@@ -278,7 +280,7 @@ export function runInteractiveChild(file, args, options, onOutput = () => {}) {
     let stdout = "", stderr = "", settled = false;
     let ownerInputRequested = false;
     const failClosed = () => {
-      if (stdinIsTTY) return;
+      if (stdinIsTTY || ownerInputRequested) return;
       ownerInputRequested = true;
       if (!settled) child.kill("SIGTERM");
     };

@@ -229,6 +229,34 @@ test("non-TTY browser authentication fails closed without relaying an opaque CLI
   assert.deepEqual(prompts, ["Press ENTER to continue npm authentication.\n"]);
 });
 
+test("non-TTY browser capability URL alone terminates a waiting child", { skip: process.stdin.isTTY === true }, async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "qualified-non-tty-browser-url-only-test-")), child = join(root, "browser-url-only-fixture.mjs");
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await writeFile(child, [
+    "process.stdout.write('https://www.npmjs.com/auth/cli/cli_UrlOnly-\\n');",
+    "setInterval(() => {}, 1000);",
+  ].join("\n"));
+  const prompts = [], relay = createOwnerPromptRelay((line) => prompts.push(line)), started = Date.now();
+  const result = await runInteractiveChild(process.execPath, [child], { cwd: root, env: { PATH: process.env.PATH, HOME: root }, stdio: ["inherit", "pipe", "pipe"] }, relay);
+  assert.ok(Date.now() - started < 2000, "a non-TTY browser capability must not leave the child waiting");
+  assert.notEqual(result.status, 0, "browser owner input must fail closed without a TTY");
+  assert.deepEqual(prompts, [], "a URL-only capability must not reach a non-TTY owner channel");
+});
+
+test("non-TTY npm login URL fails closed before a URL-only child can wait", { skip: process.stdin.isTTY === true }, async (t) => {
+  const root = await mkdtemp(join(tmpdir(), "qualified-non-tty-login-url-test-")), child = join(root, "login-url-fixture.mjs");
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await writeFile(child, [
+    "process.stdout.write('https://www.npmjs.com/login\\n');",
+    "setInterval(() => {}, 1000);",
+  ].join("\n"));
+  const prompts = [], relay = createOwnerPromptRelay((line) => prompts.push(line)), started = Date.now();
+  const result = await runInteractiveChild(process.execPath, [child], { cwd: root, env: { PATH: process.env.PATH, HOME: root }, stdio: ["inherit", "pipe", "pipe"] }, relay);
+  assert.ok(Date.now() - started < 2000, "a non-TTY login URL must not leave the child waiting");
+  assert.notEqual(result.status, 0, "login owner input must fail closed without a TTY");
+  assert.deepEqual(prompts, ["Open https://www.npmjs.com/login to continue npm authentication.\n"]);
+});
+
 test("a nonzero owner-present PTY session aborts before anonymous verification", async (t) => {
   const item = await fixture(t);
   let verificationCalled = false, interactiveCalls = 0;
