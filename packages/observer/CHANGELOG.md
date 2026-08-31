@@ -3,6 +3,12 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.4] - 2026-08-31
+
+### Changed
+
+- Prepared a bounded trusted-publisher patch source for provenance after the owner-present first publication and anonymous registry verification. This change does not publish the package or claim provenance.
+
 ## [0.2.3] - 2026-08-30
 
 ### Changed
