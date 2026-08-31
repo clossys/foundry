@@ -28,6 +28,7 @@ const MAX_ARCHIVE_ENTRIES = 10_000;
 const RELEASE_NODE_VERSION = "v24.19.0";
 const RELEASE_NPM_VERSION = "11.17.0";
 const RELEASE_ZLIB_VERSION = "1.3.2.1-motley-3246f1b";
+const PTY_SCRIPT = "/usr/bin/script";
 
 const digest = (algorithm, bytes) => createHash(algorithm).update(bytes).digest("hex");
 const hashes = (bytes) => Object.fromEntries(Object.keys(SHA).map((algorithm) => [algorithm, digest(algorithm, bytes)]));
@@ -248,7 +249,11 @@ export async function publishQualifiedDirectory({ root = process.cwd(), packageK
 
     // This is intentionally the only upload command. It receives only '.',
     // never a tarball, URL, package specifier, token, OTP, or provenance flag.
-    runChecked(run, "npm", ["publish", ".", "--access", "public", "--ignore-scripts", "--registry", target.registry], { cwd: packageRoot, env: ownerPresentEnvironment(env), stdio: ["inherit", "pipe", "pipe"], encoding: "utf8" }, "owner-present npm publish");
+    // BSD script gives npm a real terminal for its owner-present WebAuthn/OTP
+    // conversation while this parent captures both output streams.  /dev/null
+    // is its transcript destination: npm output is neither persisted nor
+    // echoed by this wrapper, and stdin remains attached to the owner.
+    runChecked(run, PTY_SCRIPT, ["-q", "/dev/null", "npm", "publish", ".", "--access", "public", "--ignore-scripts", "--registry", target.registry], { cwd: packageRoot, env: ownerPresentEnvironment(env), stdio: ["inherit", "pipe", "pipe"], encoding: "utf8" }, "owner-present npm publish");
     await verify({ root: absoluteRoot, packageKey, expectedTarball: repacked.absolute, env: anonymousEnvironment(env) });
     return { name: manifest.name, version: manifest.version, tarball: replay };
   } finally {

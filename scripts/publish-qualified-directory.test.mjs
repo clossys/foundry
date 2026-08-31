@@ -100,8 +100,9 @@ test("owner-present wrapper runs real pinned npm publish against a loopback regi
   const realPublishResults = [];
   const run = (file, args, options) => {
     calls.push({ file, args: [...args], cwd: options.cwd, env: { ...options.env }, stdio: options.stdio });
+    if (args[0] === "--version" || args[0] === "-p") return spawnSync(file, args, { ...options, encoding: "utf8" });
     if (file === process.execPath) return { status: 0, stdout: "", stderr: "" };
-    if (args[0] === "publish") {
+    if (file === "/usr/bin/script" && args[2] === "npm" && args[3] === "publish") {
       const outboundArgs = [...args];
       const registryIndex = outboundArgs.indexOf("--registry");
       assert.notEqual(registryIndex, -1);
@@ -115,8 +116,8 @@ test("owner-present wrapper runs real pinned npm publish against a loopback regi
   const verified = [];
   const result = await publishQualifiedDirectory({ root: item.root, packageKey: "strategist", candidatePath: item.candidate, recordPath: item.recordPath, env: { PATH: process.env.PATH, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist, NPM_TOKEN: "must-not-forward" }, run, verify: async (options) => { verified.push(options); } });
   assert.equal(result.tarball.sha256, hash("sha256", item.bytes));
-  const publish = calls.find((call) => call.file === "npm" && call.args[0] === "publish");
-  assert.deepEqual(publish.args, ["publish", ".", "--access", "public", "--ignore-scripts", "--registry", "https://registry.npmjs.org"]);
+  const publish = calls.find((call) => call.file === "/usr/bin/script" && call.args[3] === "publish");
+  assert.deepEqual(publish.args, ["-q", "/dev/null", "npm", "publish", ".", "--access", "public", "--ignore-scripts", "--registry", "https://registry.npmjs.org"]);
   assert.equal(publish.cwd.includes("clossys-qualified-publish-"), true);
   assert.equal(publish.env.NPM_TOKEN, undefined);
   assert.equal(publish.args.some((value, index) => value.includes(".tgz") || (value.includes("://") && publish.args[index - 1] !== "--registry") || value === "--otp" || value === "--provenance"), false);
@@ -133,7 +134,7 @@ test("owner-present wrapper runs real pinned npm publish against a loopback regi
   assert.equal(verified.length, 1);
   assert.equal(verified[0].env.NPM_TOKEN, undefined);
   assert.equal(verified[0].env.HOME, undefined, "anonymous verification does not inherit the owner's npm login state");
-  assert.equal(realPublishResults.length, 1, "the wrapper must start exactly one real npm publish process");
+  assert.equal(realPublishResults.length, 1, "the wrapper must start exactly one real PTY-mediated npm publish process");
   assert.equal(realPublishResults[0].status, 0, String(realPublishResults[0].stderr));
   assert.deepEqual(publish.stdio, ["inherit", "pipe", "pipe"], "publish output must stay inside the wrapper boundary");
   const requests = JSON.parse(await readFile(loopback.capture, "utf8"));
@@ -150,6 +151,29 @@ test("owner-present wrapper runs real pinned npm publish against a loopback regi
   const attachment = Object.values(outboundDocument._attachments ?? {})[0];
   assert.equal(Buffer.from(attachment.data, "base64").equals(item.bytes), true, "the uploaded attachment must equal the immutable qualification bytes");
   assert.equal(`${realPublishResults[0].stdout ?? ""}${realPublishResults[0].stderr ?? ""}`.includes(loopback.rawRegistryDocument), false, "raw loopback registry documents must never enter wrapper output");
+});
+
+test("PTY-mediated publication keeps an interactive challenge and successful retry inside one sanitized owner session", async (t) => {
+  const item = await fixture(t), calls = [];
+  const run = (file, args, options) => {
+    calls.push({ file, args: [...args], options });
+    if (args[0] === "--version") return { status: 0, stdout: file === process.execPath ? "v24.19.0\n" : "11.17.0\n", stderr: "" };
+    if (args[0] === "-p") return { status: 0, stdout: "1.3.2.1-motley-3246f1b\n", stderr: "" };
+    if (file === process.execPath) return { status: 0, stdout: "", stderr: "" };
+    if (args[0] === "pack") {
+      writeFileSync(join(args.at(-1), "candidate.tgz"), item.bytes);
+      return { status: 0, stdout: JSON.stringify([{ filename: "candidate.tgz" }]), stderr: "" };
+    }
+    if (file === "/usr/bin/script") return { status: 0, stdout: "npm notice one-time password challenge\nnpm notice owner retry accepted\nnpm notice published\n", stderr: "" };
+    throw new Error(`unexpected child ${file}`);
+  };
+  const result = await publishQualifiedDirectory({ root: item.root, packageKey: "strategist", candidatePath: item.candidate, recordPath: item.recordPath, env: { PATH: process.env.PATH, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist, NPM_TOKEN: "must-not-forward" }, run, verify: async () => {} });
+  assert.equal(result.name, "@clossys/strategist");
+  const sessions = calls.filter((call) => call.file === "/usr/bin/script");
+  assert.equal(sessions.length, 1, "a challenge/retry is one owner session, never a second upload");
+  assert.deepEqual(sessions[0].options.stdio, ["inherit", "pipe", "pipe"]);
+  assert.equal(sessions[0].options.env.NPM_TOKEN, undefined);
+  assert.equal(sessions[0].args.includes("--otp"), false);
 });
 
 test("wrapper refuses a non-release Node/npm runtime before scanning or publishing", async (t) => {
