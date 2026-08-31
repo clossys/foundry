@@ -82,6 +82,13 @@
       "name": "@clossys/starter",
       "category": "executable-tooling",
       "state": "published",
+      "gaps": [
+        {
+          "state": "staged",
+          "reason": "The repository has no first-party dist-path Starter invocation, so the retained qualification transcript is not author-side staging evidence.",
+          "issue": 647
+        }
+      ],
       "stagedBy": {
         "run": "Retained package-authentic current-direct adapter and raw transcript at governance/release-qualification-adapters/starter/current-direct.json and governance/release-qualifications/clossys-starter-0.1.2.json; reproduce their closed joins with `npm run check:candidate-qualification`. The exact installed Starter dist CLI produced native activation exits 0, 1, and 2.",
         "defectOrigin": "injected",

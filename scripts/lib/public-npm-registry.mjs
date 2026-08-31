@@ -369,7 +369,71 @@ export function repositoryIdentityFromPackument(document, version) {
   return distinct.size === 1 ? repositories[0] : null;
 }
 
-export async function assessPublicNpmName({ registry, name, version, thisRepo, fetchImpl = fetch }) {
+function repositoryIdentity(value) {
+  const url = typeof value === "string" ? value : value?.url;
+  if (typeof url !== "string") return null;
+  const match = url.trim().match(/^(?:git\+)?https:\/\/github\.com\/([^/]+)\/([^/#]+?)(?:\.git)?$/i);
+  return match ? `${match[1]}/${match[2]}` : null;
+}
+
+function packumentRepositoryMetadata(document, name) {
+  if (!document || typeof document !== "object" || Array.isArray(document) || document.name !== name || !document.versions || typeof document.versions !== "object" || Array.isArray(document.versions)) {
+    return null;
+  }
+  const records = [];
+  if (document.repository !== undefined) {
+    const repository = repositoryIdentity(document.repository);
+    if (!repository) return null;
+    records.push({ version: null, repository });
+  }
+  for (const [version, record] of Object.entries(document.versions)) {
+    const repository = repositoryIdentity(record?.repository);
+    if (!repository) return null;
+    records.push({ version, repository });
+  }
+  return records;
+}
+
+/**
+ * Prove that a historical GitHub repository slug still resolves to the exact
+ * current repository. This is deliberately a live read: a matching owner is
+ * insufficient because that owner can create an unrelated replacement repo.
+ */
+export async function verifyGithubRepositoryRedirect({ historicalRepository, repository, repositoryId, fetchImpl = fetch }) {
+  if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(historicalRepository ?? "") || !/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository ?? "")) {
+    return { kind: "unreachable", detail: "repository redirect proof requires canonical historical and current repository identities" };
+  }
+  let response;
+  try {
+    response = await fetchImpl(`https://api.github.com/repos/${historicalRepository}`, {
+      headers: { Accept: "application/vnd.github+json" },
+      redirect: "follow",
+    });
+  } catch (error) {
+    return { kind: "unreachable", detail: `GitHub repository redirect request failed: ${error.message}` };
+  }
+  if (!response.ok) return { kind: "unreachable", detail: `GitHub repository redirect request returned HTTP ${response.status}` };
+  let document;
+  try {
+    document = await response.json();
+  } catch (error) {
+    return { kind: "unreachable", detail: `GitHub repository redirect response was not JSON: ${error.message}` };
+  }
+  if (document?.full_name !== repository || document?.id !== repositoryId) {
+    return { kind: "unreachable", detail: "GitHub repository redirect did not resolve to the exact current repository" };
+  }
+  return { kind: "verified" };
+}
+
+export async function assessPublicNpmName({
+  registry,
+  name,
+  version,
+  thisRepo,
+  historicalRepositoryVersions = [],
+  resolveRepositoryRedirect = verifyGithubRepositoryRedirect,
+  fetchImpl = fetch,
+}) {
   // npm's abbreviated install packument can omit repository metadata. Name
   // ownership therefore needs the full document; artifact probes above keep
   // the smaller install representation because they bind version/dist bytes.
@@ -381,7 +445,74 @@ export async function assessPublicNpmName({ registry, name, version, thisRepo, f
   });
   if (packument.kind === "not-found") return { kind: "safe", found: false, existingRepo: null };
   if (packument.kind !== "found") return packument;
-  const existingRepo = repositoryIdentityFromPackument(packument.document, version);
-  if (existingRepo === thisRepo) return { kind: "same-repo-version-bump", found: true, existingRepo };
-  return { kind: "collision", found: true, existingRepo };
+  const records = packumentRepositoryMetadata(packument.document, name);
+  if (!records) return { kind: "collision", found: true, existingRepo: null };
+  const aliases = new Map();
+  for (const item of historicalRepositoryVersions) {
+    if (
+      !item ||
+      typeof item !== "object" ||
+      typeof item.name !== "string" ||
+      typeof item.version !== "string" ||
+      typeof item.repository !== "string" ||
+      !Number.isSafeInteger(item.repositoryId) ||
+      aliases.has(`${item.name}\0${item.version}`)
+    ) {
+      return { kind: "unreachable", detail: "historical npm repository alias policy is malformed" };
+    }
+    aliases.set(`${item.name}\0${item.version}`, item);
+  }
+  const redirectProofs = new Map();
+  for (const record of records) {
+    if (record.repository === thisRepo) continue;
+    // A root packument repository field may be the historical value only when
+    // every exact version using that value is closed below; it cannot admit a
+    // foreign repository or substitute for a version-level alias entry.
+    if (record.version === null) {
+      const rootAliases = historicalRepositoryVersions.filter((item) => item.name === name && item.repository === record.repository);
+      if (rootAliases.length === 0) {
+        return { kind: "collision", found: true, existingRepo: record.repository };
+      }
+      const repositoryId = rootAliases[0].repositoryId;
+      if (rootAliases.some((item) => item.repositoryId !== repositoryId)) {
+        return { kind: "unreachable", detail: "historical npm repository alias policy has conflicting repository IDs" };
+      }
+      const proofKey = `${record.repository}\0${repositoryId}`;
+      if (!redirectProofs.has(proofKey)) {
+        redirectProofs.set(proofKey, await resolveRepositoryRedirect({
+          historicalRepository: record.repository,
+          repository: thisRepo,
+          repositoryId,
+        }));
+      }
+      const redirect = redirectProofs.get(proofKey);
+      if (redirect?.kind !== "verified") {
+        return {
+          kind: "unreachable",
+          detail: redirect?.detail ?? "GitHub repository redirect ownership proof was unavailable",
+        };
+      }
+      continue;
+    }
+    const alias = aliases.get(`${name}\0${record.version}`);
+    if (!alias || alias.repository !== record.repository) {
+      return { kind: "collision", found: true, existingRepo: record.repository };
+    }
+    const proofKey = `${alias.repository}\0${alias.repositoryId}`;
+    if (!redirectProofs.has(proofKey)) {
+      redirectProofs.set(proofKey, await resolveRepositoryRedirect({
+        historicalRepository: alias.repository,
+        repository: thisRepo,
+        repositoryId: alias.repositoryId,
+      }));
+    }
+    const redirect = redirectProofs.get(proofKey);
+    if (redirect?.kind !== "verified") {
+      return {
+        kind: "unreachable",
+        detail: redirect?.detail ?? "GitHub repository redirect ownership proof was unavailable",
+      };
+    }
+  }
+  return { kind: "same-repo-version-bump", found: true, existingRepo: thisRepo };
 }

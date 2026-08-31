@@ -1,6 +1,6 @@
 {
   "name": "@clossys/butler",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -47,13 +47,13 @@
   "author": "Calvin Hung",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/clossys/platform.git",
+    "url": "git+https://github.com/clossys/foundry.git",
     "directory": "packages/butler"
   },
   "bugs": {
-    "url": "https://github.com/clossys/platform/issues"
+    "url": "https://github.com/clossys/foundry/issues"
   },
-  "homepage": "https://github.com/clossys/platform/tree/main/packages/butler#readme",
+  "homepage": "https://github.com/clossys/foundry/tree/main/packages/butler#readme",
   "engines": {
     "node": ">=20"
   },

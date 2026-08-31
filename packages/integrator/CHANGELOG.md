@@ -5,6 +5,12 @@ All notable changes to `@vespeneventures/integrator` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.2] - 2026-08-30
+
+### Changed
+
+- Updated the package's public repository, issue-tracker, and homepage metadata to the canonical Foundry repository. This change is not a publication or qualification claim.
+
 ## [0.6.1] - 2026-08-24
 
 ### Fixed

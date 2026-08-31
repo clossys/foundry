@@ -33,7 +33,8 @@
 import { readFileSync, existsSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { execFileSync } from "node:child_process";
-import { PUBLIC_NPM_REGISTRY, assessPublicNpmName } from "./lib/public-npm-registry.mjs";
+import { PUBLIC_NPM_REGISTRY, assessPublicNpmName, verifyGithubRepositoryRedirect } from "./lib/public-npm-registry.mjs";
+import { identityState, loadTransitionPolicy } from "./lib/package-identity-transition.mjs";
 
 const GITHUB_PACKAGES_REGISTRY = ["https://npm", "pkg", "github", "com"].join(".");
 
@@ -164,7 +165,7 @@ function readReleaseIdentity(dir) {
   } catch (error) {
     die(`cannot read or parse ${path}: ${error.message}`);
   }
-  return identity;
+  return { root, identity };
 }
 
 // A hermetic test suite cannot authenticate to GitHub, but it still needs to
@@ -177,6 +178,7 @@ function readReleaseIdentity(dir) {
 // by asking GitHub, never by a simulated answer.
 const packagesJsonPath = flagValue("--packages-json");
 const packumentJsonPath = flagValue("--packument-json");
+const githubRedirectJsonPath = flagValue("--github-redirect-json");
 
 function loadPackagesFromFile(path) {
   let raw;
@@ -214,19 +216,61 @@ function fixturePackumentFetch(path) {
   });
 }
 
+function fixtureGithubRedirectFetch(path) {
+  let fixture;
+  try {
+    fixture = JSON.parse(readFileSync(path, "utf8"));
+  } catch (error) {
+    die(`--github-redirect-json file does not exist or parse as JSON: ${path} (${error.message})`);
+  }
+  if (!fixture || typeof fixture !== "object" || Array.isArray(fixture) || !Number.isInteger(fixture.status) || !Object.hasOwn(fixture, "body")) {
+    die("--github-redirect-json must contain an exact { status, body } response fixture");
+  }
+  return async () => ({
+    status: fixture.status,
+    ok: fixture.status >= 200 && fixture.status < 300,
+    async json() { return fixture.body; },
+  });
+}
+
+function historicalRepositoryVersionsFor(identity, root) {
+  const policyPath = join(root, "governance", "package-identity-transition.json");
+  if (!existsSync(policyPath)) return [];
+  let policy;
+  try {
+    policy = loadTransitionPolicy(policyPath);
+  } catch (error) {
+    die(`cannot validate ${policyPath}: ${error.message}`);
+  }
+  if (identityState(identity, policy) !== "candidate") return [];
+  return policy.historicalRepositoryVersions.map((item) => ({
+    name: item.name,
+    version: item.version,
+    repository: policy.historicalRepositories[item.repositoryIndex],
+    repositoryId: policy.historicalRepositoryIds[item.repositoryIndex],
+  }));
+}
+
 if (!packagesJsonPath) {
-  const identity = readReleaseIdentity(pkgDir);
+  const release = readReleaseIdentity(pkgDir);
+  const identity = release?.identity;
   if (identity && identity.scope !== `@${scope}`) {
     die(
       `package-scope.json scope ${JSON.stringify(identity.scope)} does not match ${fullName}`,
     );
   }
   if (identity?.registry === PUBLIC_NPM_REGISTRY && identity.access === "public") {
+    const historicalRepositoryVersions = historicalRepositoryVersionsFor(identity, release.root);
+    const githubRedirectFetch = githubRedirectJsonPath ? fixtureGithubRedirectFetch(githubRedirectJsonPath) : fetch;
     const assessment = await assessPublicNpmName({
       registry: identity.registry,
       name: fullName,
       version: manifest.version,
       thisRepo,
+      historicalRepositoryVersions,
+      resolveRepositoryRedirect({ historicalRepository, repository, repositoryId }) {
+        return verifyGithubRepositoryRedirect({ historicalRepository, repository, repositoryId, fetchImpl: githubRedirectFetch });
+      },
       fetchImpl: packumentJsonPath ? fixturePackumentFetch(packumentJsonPath) : fetch,
     });
     if (assessment.kind === "denied" || assessment.kind === "unreachable") {

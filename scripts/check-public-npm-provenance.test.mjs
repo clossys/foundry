@@ -17,16 +17,16 @@ function payload(overrides = {}) {
       buildDefinition: {
         buildType: "https://slsa-framework.github.io/github-actions-buildtypes/workflow/v1",
         externalParameters: {
-          workflow: { ref: "refs/heads/main", repository: "https://github.com/clossys/platform", path: ".github/workflows/publish.yml" },
+          workflow: { ref: "refs/heads/main", repository: "https://github.com/clossys/foundry", path: ".github/workflows/publish.yml" },
         },
         internalParameters: { github: { event_name: "workflow_dispatch" } },
         resolvedDependencies: [
-          { uri: "git+https://github.com/clossys/platform@refs/heads/main", digest: { gitCommit: sourceSha } },
+          { uri: "git+https://github.com/clossys/foundry@refs/heads/main", digest: { gitCommit: sourceSha } },
         ],
       },
       runDetails: {
         builder: { id: "https://github.com/actions/runner/github-hosted" },
-        metadata: { invocationId: "https://github.com/clossys/platform/actions/runs/123/attempts/1" },
+        metadata: { invocationId: "https://github.com/clossys/foundry/actions/runs/123/attempts/1" },
       },
     },
     ...overrides,

@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join, posix, relative } from "node:path";
 
@@ -11,6 +12,7 @@ const PACKAGE_DIRECTORY = /^[a-z0-9][a-z0-9-]*$/;
 export const INITIAL_PUBLICATION_PACKAGES = Object.freeze(["advisor", "starter", "controller"]);
 const IDENTITY_TRANSITION_CONTROL_SURFACES = new Set([
   "governance/package-identity-transition.json",
+  "governance/package-repository-history.json",
   "governance/release-catalog.json",
   "scripts/check-foreign-references.test.mjs",
   "scripts/check-package-identity-transition.mjs",
@@ -59,13 +61,45 @@ export function loadTransitionPolicy(path, readFile = readFileSync) {
   } catch (error) {
     throw new Error(`cannot read transition policy ${path}: ${error.message}`);
   }
-  if (!exactKeys(policy, ["$comment", "schemaVersion", "current", "candidate", "historyInventory", "historicalPathRules"]) ||
-      policy.schemaVersion !== 1 || !validIdentity(policy.current) || !validIdentity(policy.candidate, { candidate: true }) ||
+  const basePolicy =
+    exactKeys(policy, ["$comment", "schemaVersion", "current", "candidate", "historyInventory", "historicalPathRules"]) &&
+    policy.schemaVersion === 1 && validIdentity(policy.current) && validIdentity(policy.candidate, { candidate: true }) &&
+    policy.current.scope !== policy.candidate.scope && policy.current.registry !== policy.candidate.registry &&
+    typeof policy.historyInventory === "string" && Array.isArray(policy.historicalPathRules) && policy.historicalPathRules.length > 0 &&
+    policy.historicalPathRules.every((item) => typeof item === "string" && item.length > 0) &&
+    new Set(policy.historicalPathRules).size === policy.historicalPathRules.length;
+  // Immutable predecessor records remain schema v1. They have no repository
+  // alias grant; only the active schema v2 policy can authorize one.
+  if (basePolicy) return policy;
+
+  const aliasVersionKeys = new Set();
+  const validHistoricalVersions = Array.isArray(policy?.historicalRepositoryVersions) && policy.historicalRepositoryVersions.length > 0 &&
+    policy.historicalRepositoryVersions.every((item) => {
+      const valid = exactKeys(item, ["name", "version", "repositoryIndex"]) &&
+        /^@[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/.test(item.name ?? "") &&
+        /^\d+\.\d+\.\d+$/.test(item.version ?? "") &&
+        Number.isSafeInteger(item.repositoryIndex) &&
+        item.repositoryIndex >= 0 &&
+        item.repositoryIndex < (policy.historicalRepositories?.length ?? 0);
+      if (valid) aliasVersionKeys.add(`${item.name}\0${item.version}`);
+      return valid;
+    }) && aliasVersionKeys.size === policy.historicalRepositoryVersions.length;
+  if (!exactKeys(policy, ["$comment", "schemaVersion", "current", "candidate", "historyInventory", "historicalRepositories", "historicalRepositoryIds", "historicalRepositoryVersions", "historicalRepositoryInventory", "historicalPathRules"]) ||
+      policy.schemaVersion !== 2 || !validIdentity(policy.current) || !validIdentity(policy.candidate, { candidate: true }) ||
       policy.current.scope === policy.candidate.scope || policy.current.registry === policy.candidate.registry ||
-      typeof policy.historyInventory !== "string" || !Array.isArray(policy.historicalPathRules) || policy.historicalPathRules.length === 0 ||
+      typeof policy.historyInventory !== "string" || typeof policy.historicalRepositoryInventory !== "string" ||
+      !Array.isArray(policy.historicalRepositories) || policy.historicalRepositories.length !== 1 ||
+      policy.historicalRepositories.some((item) => !/^[a-z0-9][a-z0-9-]*\/[a-z0-9][a-z0-9._-]*$/.test(item)) ||
+      new Set(policy.historicalRepositories).size !== policy.historicalRepositories.length ||
+      policy.historicalRepositories.includes(policy.candidate.repository) ||
+      !Array.isArray(policy.historicalRepositoryIds) ||
+      policy.historicalRepositoryIds.length !== policy.historicalRepositories.length ||
+      policy.historicalRepositoryIds.some((item) => !Number.isSafeInteger(item) || item < 1) ||
+      !validHistoricalVersions ||
+      !Array.isArray(policy.historicalPathRules) || policy.historicalPathRules.length === 0 ||
       policy.historicalPathRules.some((item) => typeof item !== "string" || item.length === 0) ||
       new Set(policy.historicalPathRules).size !== policy.historicalPathRules.length) {
-    throw new Error("transition policy must be the closed schemaVersion 1 current/candidate contract");
+    throw new Error("transition policy must be the closed schemaVersion 2 current/candidate and historical-alias contract");
   }
   return policy;
 }
@@ -390,6 +424,111 @@ export function validateHistoryInventory(inventory, policy) {
 
 export function lineDigest(line) {
   return `sha256:${createHash("sha256").update(line).digest("hex")}`;
+}
+
+export function validateHistoricalRepositoryInventory(inventory, policy) {
+  const findings = [];
+  if (
+    !exactKeys(inventory, ["$comment", "schemaVersion", "references"]) ||
+    inventory.schemaVersion !== 1 ||
+    !Array.isArray(inventory.references) ||
+    !Array.isArray(policy?.historicalRepositories) ||
+    policy.historicalRepositories.length !== 1
+  ) {
+    return ["historical repository inventory must be the closed schemaVersion 1 single-alias document"];
+  }
+  const seen = new Set();
+  for (const item of inventory.references) {
+    if (
+      !exactKeys(item, ["path", "lineSha256", "count"]) ||
+      typeof item.path !== "string" ||
+      item.path.startsWith("/") ||
+      item.path.split("/").includes("..") ||
+      !SHA256.test(item.lineSha256 ?? "") ||
+      !Number.isSafeInteger(item.count) ||
+      item.count < 1
+    ) {
+      findings.push("historical repository inventory entries must bind a contained path, line SHA-256, and positive count");
+      continue;
+    }
+    const key = `${item.path}\0${item.lineSha256}`;
+    if (seen.has(key)) findings.push(`duplicate historical repository inventory entry: ${item.path} ${item.lineSha256}`);
+    seen.add(key);
+  }
+  if (inventory.references.length === 0) findings.push("historical repository inventory must retain at least one sealed alias occurrence");
+  return findings;
+}
+
+export function historicalRepositoryAllowance(inventory, policy) {
+  const findings = validateHistoricalRepositoryInventory(inventory, policy);
+  if (findings.length) throw new Error(findings.join("; "));
+  return new Map(inventory.references.map((item) => [`${item.path}\0${item.lineSha256}`, item.count]));
+}
+
+/**
+ * A repository rename may retain only the exact immutable records named by
+ * the policy-owned content-addressed multiset. Paths do not grant permission:
+ * every occurrence consumes one reviewed line digest/count entry.
+ */
+export function validateHistoricalRepositoryAliases(root, policy, {
+  files,
+  readFile = readFileSync,
+} = {}) {
+  const findings = [];
+  let inventory;
+  try {
+    inventory = JSON.parse(readFile(join(root, policy.historicalRepositoryInventory), "utf8"));
+  } catch (error) {
+    return [`cannot read historical repository inventory: ${error.message}`];
+  }
+  let expected;
+  try {
+    expected = historicalRepositoryAllowance(inventory, policy);
+  } catch (error) {
+    return [`invalid historical repository inventory: ${error.message}`];
+  }
+  let paths = files;
+  if (paths === undefined) {
+    try {
+      paths = execFileSync("git", ["-C", root, "ls-files", "-z"], { encoding: "utf8" }).split("\0").filter(Boolean);
+    } catch (error) {
+      return [`cannot enumerate tracked files for historical repository aliases: ${error.message}`];
+    }
+  }
+  const observed = new Map();
+  for (const path of paths) {
+    // This declaration is the closed alias authority, not an occurrence it
+    // authorizes. The inventory itself names only digests, so it cannot add a
+    // second textual alias occurrence.
+    if (path === "governance/package-identity-transition.json") continue;
+    let text;
+    try {
+      text = readFile(join(root, path), "utf8").replace(/[\u0000\u200B\u200C\u200D\u2060\u180E\u00AD\uFEFF]/g, "");
+    } catch {
+      continue;
+    }
+    for (const line of text.split(/\r?\n/)) {
+      for (const repository of policy.historicalRepositories) {
+        let start = 0;
+        while (true) {
+          const index = line.indexOf(repository, start);
+          if (index < 0) break;
+          const key = `${path}\0${lineDigest(line)}`;
+          observed.set(key, (observed.get(key) ?? 0) + 1);
+          start = index + repository.length;
+        }
+      }
+    }
+  }
+  for (const [key, count] of observed) {
+    const allowed = expected.get(key) ?? 0;
+    if (count > allowed) findings.push(`unclassified historical repository alias occurrence: ${key.replace("\0", " ")} (observed ${count}, allowed ${allowed})`);
+  }
+  for (const [key, count] of expected) {
+    const actual = observed.get(key) ?? 0;
+    if (actual !== count) findings.push(`historical repository alias multiset mismatch: ${key.replace("\0", " ")} (observed ${actual}, required ${count})`);
+  }
+  return findings;
 }
 
 export function relativeChangePaths(changes, root) {

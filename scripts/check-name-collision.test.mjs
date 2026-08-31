@@ -24,7 +24,7 @@ function run(packageDirectory, packument) {
   try {
     const stdout = execFileSync(process.execPath, [script, packageDirectory, "--json", "--packument-json", path], {
       encoding: "utf8",
-      env: { ...process.env, GITHUB_REPOSITORY: "clossys/platform" },
+      env: { ...process.env, GITHUB_REPOSITORY: "clossys/foundry" },
       stdio: ["ignore", "pipe", "pipe"],
     });
     return { code: 0, stdout, stderr: "" };
@@ -42,10 +42,10 @@ test("public npmjs name collision lookup is anonymous, repository-bound, and fai
 
     const same = run(packageDirectory, {
       name: "@clossys/probe",
-      repository: { url: "git+https://github.com/clossys/platform.git" },
+      repository: { url: "git+https://github.com/clossys/foundry.git" },
       versions: {
         "1.2.2": {
-          repository: { url: "git+https://github.com/clossys/platform.git" },
+          repository: { url: "git+https://github.com/clossys/foundry.git" },
         },
       },
     });
@@ -62,7 +62,7 @@ test("public npmjs name collision lookup is anonymous, repository-bound, and fai
 
     const mixed = run(packageDirectory, {
       name: "@clossys/probe",
-      repository: { url: "git+https://github.com/clossys/platform.git" },
+      repository: { url: "git+https://github.com/clossys/foundry.git" },
       versions: {
         "1.2.2": {
           repository: { url: "https://github.com/other/project.git" },

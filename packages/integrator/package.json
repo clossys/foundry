@@ -1,6 +1,6 @@
 {
   "name": "@clossys/integrator",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -40,13 +40,13 @@
   "author": "Vespene Ventures",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/clossys/platform.git",
+    "url": "git+https://github.com/clossys/foundry.git",
     "directory": "packages/integrator"
   },
   "bugs": {
-    "url": "https://github.com/clossys/platform/issues"
+    "url": "https://github.com/clossys/foundry/issues"
   },
-  "homepage": "https://github.com/clossys/platform/tree/main/packages/integrator#readme",
+  "homepage": "https://github.com/clossys/foundry/tree/main/packages/integrator#readme",
   "engines": {
     "node": ">=20"
   },

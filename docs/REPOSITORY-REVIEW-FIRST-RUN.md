@@ -30,7 +30,7 @@ Before a consumer starts this runbook, confirm all of these retained W1E facts:
    tarball digest, public anonymous access result, qualification evidence, and
    trusted-publisher provenance from retained W1E evidence. The append-only
    source record for the later trusted-publisher releases is tracked separately
-   in [#639](https://github.com/clossys/platform/issues/639); that record work
+   in [#639](https://github.com/clossys/foundry/issues/639); that record work
    does not change the public registry identity a consumer installs.
 4. Do not start consumer adoption from an unpublished workspace link, a local
    tarball, or a source checkout. The point of this run is to prove the

@@ -1,6 +1,6 @@
 {
   "$comment": "Closed producer identity transition for Decision 18 W1D. The current and candidate tuples are the only accepted complete states. This file authorizes source preparation only: it does not publish a package, activate an npm trusted publisher, or change provider trust. Historical references in the candidate state require exact line-digest entries in the separate inventory; path-wide exemptions are forbidden.",
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "current": {
     "scope": "@vespeneventures",
     "registry": "https://npm.pkg.github.com",
@@ -12,10 +12,54 @@
     "scope": "@clossys",
     "registry": "https://registry.npmjs.org",
     "access": "public",
-    "repository": "clossys/platform",
+    "repository": "clossys/foundry",
     "releaseTarget": "clossys-npmjs"
   },
   "historyInventory": "governance/package-identity-history.json",
+  "historicalRepositories": [
+    "clossys/platform"
+  ],
+  "historicalRepositoryIds": [
+    1325931929
+  ],
+  "historicalRepositoryVersions": [
+    {
+      "name": "@clossys/advisor",
+      "version": "0.1.3",
+      "repositoryIndex": 0
+    },
+    {
+      "name": "@clossys/advisor",
+      "version": "0.1.5",
+      "repositoryIndex": 0
+    },
+    {
+      "name": "@clossys/starter",
+      "version": "0.1.2",
+      "repositoryIndex": 0
+    },
+    {
+      "name": "@clossys/starter",
+      "version": "0.1.4",
+      "repositoryIndex": 0
+    },
+    {
+      "name": "@clossys/controller",
+      "version": "0.8.21",
+      "repositoryIndex": 0
+    },
+    {
+      "name": "@clossys/controller",
+      "version": "0.8.23",
+      "repositoryIndex": 0
+    },
+    {
+      "name": "@clossys/strategist",
+      "version": "0.1.1",
+      "repositoryIndex": 0
+    }
+  ],
+  "historicalRepositoryInventory": "governance/package-repository-history.json",
   "historicalPathRules": [
     "README.md",
     "docs/DECISIONS.md",

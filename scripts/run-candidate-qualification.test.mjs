@@ -32,9 +32,9 @@ async function repositoryJson(path) {
 test("repository Trio policy, adapters, and current-candidate fixtures bind the selected @clossys identities", async () => {
   const policy = await repositoryJson("governance/release-qualification-policy.json");
   const expected = [
-    ["advisor", "@clossys/advisor", "0.1.5"],
-    ["starter", "@clossys/starter", "0.1.4"],
-    ["controller", "@clossys/controller", "0.8.23"],
+    ["advisor", "@clossys/advisor", "0.1.6"],
+    ["starter", "@clossys/starter", "0.1.5"],
+    ["controller", "@clossys/controller", "0.8.24"],
   ];
 
   for (const [key, name, version] of expected) {
@@ -72,12 +72,12 @@ test("repository Trio policy, adapters, and current-candidate fixtures bind the 
 test("all six policy entries bind their manifests, adapters, tracked fixtures, bins, and optional peers", async () => {
   const policy = await repositoryJson("governance/release-qualification-policy.json");
   const expected = {
-    "@clossys/advisor": { packageKey: "advisor", version: "0.1.5" },
-    "@clossys/starter": { packageKey: "starter", version: "0.1.4" },
-    "@clossys/controller": { packageKey: "controller", version: "0.8.23" },
-    "@clossys/strategist": { packageKey: "strategist", version: "0.1.1" },
-    "@clossys/writer": { packageKey: "writer", version: "0.3.1" },
-    "@clossys/designer": { packageKey: "designer", version: "0.2.2" },
+    "@clossys/advisor": { packageKey: "advisor", version: "0.1.6" },
+    "@clossys/starter": { packageKey: "starter", version: "0.1.5" },
+    "@clossys/controller": { packageKey: "controller", version: "0.8.24" },
+    "@clossys/strategist": { packageKey: "strategist", version: "0.1.2" },
+    "@clossys/writer": { packageKey: "writer", version: "0.3.2" },
+    "@clossys/designer": { packageKey: "designer", version: "0.2.3" },
   };
   assert.deepEqual(Object.keys(policy.packages).sort(), Object.keys(expected).sort());
   assert.deepEqual(validateReleaseQualificationPolicy(policy), []);

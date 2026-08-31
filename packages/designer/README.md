@@ -162,7 +162,7 @@ get only `tokens.css` or `compiled.css` — the two paths that exist
 specifically so React and a Tailwind pipeline are *not* required — still has
 all six installed. There is no per-subpath way to avoid it from this side;
 the fix would have to happen registry-side. See
-[issue #226](https://github.com/clossys/platform/issues/226) for the
+[issue #226](https://github.com/clossys/foundry/issues/226) for the
 full evidence and the decision to document rather than restructure around it.
 
 ### CSS layers, fallbacks, and themes
@@ -4245,9 +4245,9 @@ ever verified this record stayed in step with the MANIFEST it describes: a
 subpath could be added to (or removed or renamed in)
 `package.json#exports` with no matching edit here, or vice versa, and
 nothing would notice. This gate closes
-[issue #405](https://github.com/clossys/platform/issues/405),
+[issue #405](https://github.com/clossys/foundry/issues/405),
 narrowed by that issue's own correction comment once
-[issue #358](https://github.com/clossys/platform/issues/358)
+[issue #358](https://github.com/clossys/foundry/issues/358)
 routed the FULL verification elsewhere (see the next paragraph).
 
 **What this gate checks, precisely, and what it deliberately does not —
@@ -4267,7 +4267,7 @@ says nothing about whether the declaration is true of the compiled
 output** — whether a subpath marked `"server-safe"` actually resolves
 safely under the `react-server` export condition is a genuinely different
 capability (real module-graph resolution under a declared export
-condition), and [issue #358](https://github.com/clossys/platform/issues/358)
+condition), and [issue #358](https://github.com/clossys/foundry/issues/358)
 places that resolver in `builder`, shared with a second declaration shape
 (layering-seam conformance), specifically so the same resolver serves both
 rather than being built twice. This gate is not a smaller version of that

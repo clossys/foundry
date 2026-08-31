@@ -11,6 +11,7 @@ const scriptsDir = dirname(fileURLToPath(import.meta.url));
 const checker = join(scriptsDir, "check-foreign-references.mjs");
 const futureScope = `@${"clossys"}`;
 const transitionPolicy = readFileSync(join(scriptsDir, "..", "governance", "package-identity-transition.json"), "utf8");
+const parsedTransitionPolicy = JSON.parse(transitionPolicy);
 
 function write(path, contents) {
   mkdirSync(dirname(path), { recursive: true });
@@ -49,14 +50,25 @@ function digestLine(line) {
 function candidateFixture({ historicalLine = "Retained @vespeneventures/advisor evidence.", inventoryLine = null, extraFiles = {} } = {}) {
   const root = mkdtempSync(join(tmpdir(), "foreign-candidate-history-"));
   write(join(root, "package-scope.json"), JSON.stringify({ scope: futureScope, registry: "https://registry.npmjs.org", access: "public" }));
-  write(join(root, "package.json"), JSON.stringify({ private: true, repository: { type: "git", url: "https://github.com/clossys/platform.git" } }));
-  write(join(root, "packages/advisor/package.json"), JSON.stringify({ name: `${futureScope}/advisor`, repository: { type: "git", url: "https://github.com/clossys/platform.git" } }));
+  write(join(root, "package.json"), JSON.stringify({ private: true, repository: { type: "git", url: "https://github.com/clossys/foundry.git" } }));
+  write(join(root, "packages/advisor/package.json"), JSON.stringify({ name: `${futureScope}/advisor`, repository: { type: "git", url: "https://github.com/clossys/foundry.git" } }));
   write(join(root, "governance/package-identity-transition.json"), transitionPolicy);
   write(join(root, "governance/package-identity-history.json"), JSON.stringify({
     $comment: "fixture",
     schemaVersion: 1,
     references: [{ path: "docs/DECISIONS.md", lineSha256: digestLine(inventoryLine ?? historicalLine) }],
   }));
+  const historicalRepositoryLine = `Retained https://github.com/${parsedTransitionPolicy.historicalRepositories[0]}/issues/594 evidence.`;
+  write(join(root, "governance/package-repository-history.json"), JSON.stringify({
+    $comment: "fixture",
+    schemaVersion: 1,
+    references: [{
+      path: "governance/release-publications/record.json",
+      lineSha256: digestLine(historicalRepositoryLine),
+      count: 1,
+    }],
+  }));
+  write(join(root, "governance/release-publications/record.json"), `${historicalRepositoryLine}\n`);
   write(join(root, "governance/release-catalog.json"), JSON.stringify({
     schemaVersion: 2,
     defaultTarget: "clossys-npmjs",
@@ -74,6 +86,15 @@ function currentTransitionFixture(extraFiles = {}) {
   const root = fixture({ extraFiles });
   write(join(root, "governance/package-identity-transition.json"), transitionPolicy);
   write(join(root, "governance/package-identity-history.json"), JSON.stringify({ $comment: "fixture", schemaVersion: 1, references: [] }));
+  write(join(root, "governance/package-repository-history.json"), JSON.stringify({
+    $comment: "fixture",
+    schemaVersion: 1,
+    references: [{
+      path: "governance/release-publications/record.json",
+      lineSha256: digestLine("retained only after candidate cutover"),
+      count: 1,
+    }],
+  }));
   return root;
 }
 
@@ -136,8 +157,8 @@ test("candidate state rejects changed historical bytes and the same identity on 
 });
 
 test("the transferred repository admits exact candidate issue trackers but not candidate source references before recut", () => {
-  const tracker = currentTransitionFixture({ "docs/DECISIONS.md": "Tracked by https://github.com/clossys/platform/issues/593.\n" });
-  const source = currentTransitionFixture({ "src/current.mjs": 'export const source = "https://github.com/clossys/platform";\n' });
+  const tracker = currentTransitionFixture({ "docs/DECISIONS.md": "Tracked by https://github.com/clossys/foundry/issues/593.\n" });
+  const source = currentTransitionFixture({ "src/current.mjs": 'export const source = "https://github.com/clossys/foundry";\n' });
   try {
     const trackerResult = run(tracker);
     assert.equal(trackerResult.status, 0, trackerResult.stderr || trackerResult.stdout);

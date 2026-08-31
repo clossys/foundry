@@ -1,0 +1,21 @@
+{
+  "$comment": "Closed content-addressed multiset for repository aliases that may remain after the public producer rename. Every path, line digest, and multiplicity is required; any extra, missing, moved, or changed alias occurrence fails. The policy binds these entries to its one declared historical repository.",
+  "schemaVersion": 1,
+  "references": [
+    {
+      "path": "governance/release-publications/clossys-npmjs-trio.json",
+      "lineSha256": "sha256:e87c8e51bf7f640969668d482d84190542182acb249bfffcfc7fbc55d1a77e5e",
+      "count": 1
+    },
+    {
+      "path": "governance/release-publications/clossys-npmjs-trio.json",
+      "lineSha256": "sha256:c9b566ffec2bdb53ef3c7860ee75511537d097db805a1364b136ddee6cc4b59c",
+      "count": 3
+    },
+    {
+      "path": "scripts/lib/release-publication-cohort.mjs",
+      "lineSha256": "sha256:69d4dfa7bf24d9846eb7f44c79e898a45265fcf1992ad9a0fdcf8b16ed9ac0b6",
+      "count": 1
+    }
+  ]
+}

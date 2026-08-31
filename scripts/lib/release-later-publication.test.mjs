@@ -50,7 +50,7 @@ test("later-publication admits only the exact-version anonymous proof shape for 
   value.registryProof = { schemaVersion: 2, kind: "public-npm-anonymous-registry-proof-v2", evidence: {
     ...value.registryProof.evidence,
     metadataUrl: publicNpmVersionUrl(PUBLIC_NPM_REGISTRY, candidate.name, candidate.version),
-    repository: "clossys/platform",
+    repository: "clossys/foundry",
   } };
   delete value.registryProof.evidence.packumentUrl;
   assert.deepEqual(rules(value), []);
@@ -142,7 +142,7 @@ test("later-publication requires a strict qualification-introduction ancestor", 
 test("later-publication v1 rejects trusted-publisher labels and provenance even when all evidence strings agree", () => {
   const trusted = source();
   trusted.publication.mode = "trusted-publisher";
-  trusted.publication.reference = "https://github.com/clossys/platform/actions/runs/123";
+  trusted.publication.reference = "https://github.com/clossys/foundry/actions/runs/123";
   trusted.publication.provenance = { provider: "github-actions", workflow: ".github/workflows/publish.yml", run: trusted.publication.reference };
   assert.ok(rules(trusted).includes("trusted-publisher-unsupported"));
   assert.ok(rules(trusted).includes("publication-provenance"));
@@ -155,7 +155,7 @@ test("later-publication v1 rejects trusted-publisher labels and provenance even 
   assert.deepEqual(trusted.registryProof.evidence.version, trusted.candidate.version);
 
   const spoofedOwner = source();
-  spoofedOwner.publication.reference = "https://github.com/clossys/platform/actions/runs/123";
+  spoofedOwner.publication.reference = "https://github.com/clossys/foundry/actions/runs/123";
   spoofedOwner.publication.provenance = { provider: "github-actions", workflow: ".github/workflows/publish.yml", run: spoofedOwner.publication.reference };
   assert.ok(rules(spoofedOwner).includes("publication-provenance"));
 

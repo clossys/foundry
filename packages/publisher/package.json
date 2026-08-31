@@ -1,6 +1,6 @@
 {
   "name": "@clossys/publisher",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "private": false,
   "license": "MIT",
   "type": "module",
@@ -25,13 +25,13 @@
   "author": "Calvin Hung",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/clossys/platform.git",
+    "url": "git+https://github.com/clossys/foundry.git",
     "directory": "packages/publisher"
   },
   "bugs": {
-    "url": "https://github.com/clossys/platform/issues"
+    "url": "https://github.com/clossys/foundry/issues"
   },
-  "homepage": "https://github.com/clossys/platform/tree/main/packages/publisher#readme",
+  "homepage": "https://github.com/clossys/foundry/tree/main/packages/publisher#readme",
   "engines": {
     "node": ">=20"
   },

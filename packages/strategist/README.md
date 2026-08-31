@@ -562,7 +562,7 @@ vision becomes false on its own. It is *changed*, deliberately, by
 someone who can say when and why. Drift detection is the wrong instrument
 for that; the right one is **derivation invalidation**: when a direction
 entity changes, nothing about it is wrong, but everything built on top of
-it is now unreviewed. See [issue #374](https://github.com/clossys/platform/issues/374)
+it is now unreviewed. See [issue #374](https://github.com/clossys/foundry/issues/374)
 for the full proposal.
 
 ```ts
