@@ -12,6 +12,8 @@ import {
   fetchPublicNpmPackument,
   probePublicNpmVersion,
   publicNpmPackageUrl,
+  publicNpmTarballUrl,
+  publicNpmVersionUrl,
   publicNpmRegistryProof,
   repositoryIdentityFromPackument,
   retryPostPublishPublicNpmArtifact,
@@ -79,10 +81,25 @@ function metadata(bytes, overrides = {}) {
   };
 }
 
+function exactMetadata(bytes, overrides = {}) {
+  return { ...metadata(bytes).versions[VERSION], ...overrides };
+}
+
 test("public npm package URLs are exact and reject alternate registries", () => {
   assert.equal(publicNpmPackageUrl(PUBLIC_NPM_REGISTRY, NAME), `${PUBLIC_NPM_REGISTRY}/%40fixture%2Fprobe`);
   assert.throws(() => publicNpmPackageUrl("https://registry.example.test", NAME), /supports only/);
   assert.throws(() => publicNpmPackageUrl(PUBLIC_NPM_REGISTRY, "unscoped"), /scoped/);
+});
+
+test("exact-version metadata and tarball URLs support canonical scoped and unscoped names", () => {
+  assert.equal(publicNpmVersionUrl(PUBLIC_NPM_REGISTRY, NAME, VERSION), `${PUBLIC_NPM_REGISTRY}/%40fixture%2Fprobe/${VERSION}`);
+  assert.equal(publicNpmTarballUrl(PUBLIC_NPM_REGISTRY, NAME, VERSION), `${PUBLIC_NPM_REGISTRY}/@fixture/probe/-/probe-${VERSION}.tgz`);
+  assert.equal(publicNpmVersionUrl(PUBLIC_NPM_REGISTRY, "unscoped", VERSION), `${PUBLIC_NPM_REGISTRY}/unscoped/${VERSION}`);
+  assert.equal(publicNpmTarballUrl(PUBLIC_NPM_REGISTRY, "unscoped", VERSION), `${PUBLIC_NPM_REGISTRY}/unscoped/-/unscoped-${VERSION}.tgz`);
+  assert.equal(publicNpmVersionUrl(PUBLIC_NPM_REGISTRY, "@clossys/strategist", "0.1.1"), `${PUBLIC_NPM_REGISTRY}/%40clossys%2Fstrategist/0.1.1`);
+  for (const [name, version] of [["@fixture", VERSION], ["fixture/probe", VERSION], ["@Fixture/probe", VERSION], [NAME, "01.2.3"], [NAME, "1.2.3-beta.1"]]) {
+    assert.throws(() => publicNpmVersionUrl(PUBLIC_NPM_REGISTRY, name, version), /canonical/);
+  }
 });
 
 test("anonymous packument fetch sends no credential-bearing header", async () => {
@@ -92,12 +109,28 @@ test("anonymous packument fetch sends no credential-bearing header", async () =>
   assert.deepEqual(Object.keys(observations[0].options.headers), ["Accept"]);
   assert.equal(observations[0].options.headers.Accept, "application/vnd.npm.install-v1+json");
   assert.equal(observations[0].options.redirect, "error");
+  assert.equal(observations[0].url, `${PUBLIC_NPM_REGISTRY}/%40fixture%2Fprobe`);
+});
+
+test("exact-version verification reaches a first public scoped release even when its packument is unavailable", async () => {
+  const bytes = tarball();
+  const packument = await fetchPublicNpmPackument({ registry: PUBLIC_NPM_REGISTRY, name: NAME, fetchImpl: queueFetch([response(404, {})]) });
+  assert.equal(packument.kind, "not-found");
+  const observations = [];
+  const probe = await probePublicNpmVersion({ registry: PUBLIC_NPM_REGISTRY, name: NAME, version: VERSION, fetchImpl: queueFetch([response(200, exactMetadata(bytes))], observations) });
+  assert.equal(probe.kind, "known");
+  assert.equal(probe.hasVersion, true);
+  assert.equal(probe.metadataUrl, `${PUBLIC_NPM_REGISTRY}/%40fixture%2Fprobe/${VERSION}`);
+  assert.equal(probe.exact.repository, "fixture/platform");
+  assert.deepEqual(Object.keys(observations[0].options.headers), ["Accept"]);
+  assert.equal(observations[0].options.headers.Accept, "application/json");
+  assert.equal(observations[0].options.redirect, "error");
 });
 
 test("public npm 404 is a definitive missing version while denial and transport failure remain distinct", async () => {
   const missing = await probePublicNpmVersion({ registry: PUBLIC_NPM_REGISTRY, name: NAME, version: VERSION, fetchImpl: queueFetch([response(404, {})]) });
   assert.deepEqual(missing, { kind: "known", hasVersion: false });
-  const absentVersion = await probePublicNpmVersion({ registry: PUBLIC_NPM_REGISTRY, name: NAME, version: "9.9.9", fetchImpl: queueFetch([response(200, metadata(tarball()))]) });
+  const absentVersion = await probePublicNpmVersion({ registry: PUBLIC_NPM_REGISTRY, name: NAME, version: "9.9.9", fetchImpl: queueFetch([response(404, {})]) });
   assert.deepEqual(absentVersion, { kind: "known", hasVersion: false });
   assert.deepEqual(await probePublicNpmVersion({ registry: PUBLIC_NPM_REGISTRY, name: NAME, version: VERSION, fetchImpl: queueFetch([response(403, {})]) }), { kind: "denied" });
   assert.deepEqual(await probePublicNpmVersion({ registry: PUBLIC_NPM_REGISTRY, name: NAME, version: VERSION, fetchImpl: queueFetch([response(429, {})]) }), { kind: "unreachable" });
@@ -107,10 +140,11 @@ test("public npm 404 is a definitive missing version while denial and transport 
 test("exact version metadata fails closed on malformed identity, SRI, shasum, and tarball origin", async () => {
   const bytes = tarball();
   for (const document of [
-    { ...metadata(bytes), name: "@fixture/other" },
-    metadata(bytes, { integrity: "sha256-not-enough" }),
-    metadata(bytes, { shasum: "not-a-sha1" }),
-    metadata(bytes, { tarball: "https://example.test/probe.tgz" }),
+    exactMetadata(bytes, { name: "@fixture/other" }),
+    exactMetadata(bytes, { dist: { ...exactMetadata(bytes).dist, integrity: "sha256-not-enough" } }),
+    exactMetadata(bytes, { dist: { ...exactMetadata(bytes).dist, shasum: "not-a-sha1" } }),
+    exactMetadata(bytes, { dist: { ...exactMetadata(bytes).dist, tarball: "https://example.test/probe.tgz" } }),
+    exactMetadata(bytes, { repository: undefined }),
   ]) {
     const result = await probePublicNpmVersion({ registry: PUBLIC_NPM_REGISTRY, name: NAME, version: VERSION, fetchImpl: queueFetch([response(200, document)]) });
     assert.deepEqual(result, { kind: "unreachable" });
@@ -124,32 +158,58 @@ test("served artifact proof binds packument digests, exact bytes, and packed man
     registry: PUBLIC_NPM_REGISTRY,
     name: NAME,
     version: VERSION,
-    fetchImpl: queueFetch([response(200, metadata(bytes)), response(200, bytes, { "content-length": String(bytes.length) })], observations),
+    repository: "fixture/platform",
+    fetchImpl: queueFetch([response(200, exactMetadata(bytes)), response(200, bytes, { "content-length": String(bytes.length) })], observations),
   });
   assert.equal(result.kind, "verified");
   assert.equal(result.evidence.access, "anonymous");
   assert.equal(result.evidence.name, NAME);
   assert.equal(result.evidence.version, VERSION);
+  assert.equal(result.evidence.metadataUrl, `${PUBLIC_NPM_REGISTRY}/%40fixture%2Fprobe/${VERSION}`);
+  assert.equal(result.evidence.repository, "fixture/platform");
   assert.equal(result.evidence.shasum, createHash("sha1").update(bytes).digest("hex"));
   assert.equal(result.evidence.sha256, createHash("sha256").update(bytes).digest("hex"));
   assert.deepEqual(Object.keys(observations[1].options.headers), ["Accept"]);
-  assert.deepEqual(validatePublicNpmRegistryProof(publicNpmRegistryProof(result.evidence), { name: NAME, version: VERSION, bytes }), []);
+  assert.deepEqual(validatePublicNpmRegistryProof(publicNpmRegistryProof(result.evidence), { name: NAME, version: VERSION, repository: "fixture/platform", bytes }), []);
+});
+
+test("exact-version verification binds the expected repository before fetching a tarball", async () => {
+  const bytes = tarball();
+  const observations = [];
+  const result = await verifyPublicNpmArtifact({
+    registry: PUBLIC_NPM_REGISTRY,
+    name: NAME,
+    version: VERSION,
+    repository: "fixture/platform",
+    fetchImpl: queueFetch([response(200, exactMetadata(bytes, { repository: { type: "git", url: "git+https://github.com/other/project.git" } }))], observations),
+  });
+  assert.equal(result.kind, "unreachable");
+  assert.equal(observations.length, 1);
 });
 
 test("retained anonymous proof rejects changed identity, URLs, digest, packed manifest, or candidate bytes", async () => {
   const bytes = tarball();
-  const result = await verifyPublicNpmArtifact({ registry: PUBLIC_NPM_REGISTRY, name: NAME, version: VERSION, fetchImpl: queueFetch([response(200, metadata(bytes)), response(200, bytes)]) });
-  for (const mutate of [(proof) => { proof.evidence.name = "@fixture/other"; }, (proof) => { proof.evidence.packumentUrl = `${PUBLIC_NPM_REGISTRY}/fixture/probe`; }, (proof) => { proof.evidence.sha256 = "0".repeat(64); }, (proof) => { proof.evidence.packedManifestSha256 = "0".repeat(64); }, (proof) => { proof.evidence.access = "token"; }]) {
+  const result = await verifyPublicNpmArtifact({ registry: PUBLIC_NPM_REGISTRY, name: NAME, version: VERSION, repository: "fixture/platform", fetchImpl: queueFetch([response(200, exactMetadata(bytes)), response(200, bytes)]) });
+  for (const mutate of [(proof) => { proof.evidence.name = "@fixture/other"; }, (proof) => { proof.evidence.metadataUrl = `${PUBLIC_NPM_REGISTRY}/fixture/probe/${VERSION}`; }, (proof) => { proof.evidence.repository = "other/project"; }, (proof) => { proof.evidence.sha256 = "0".repeat(64); }, (proof) => { proof.evidence.packedManifestSha256 = "0".repeat(64); }, (proof) => { proof.evidence.access = "token"; }]) {
     const proof = publicNpmRegistryProof(structuredClone(result.evidence)); mutate(proof);
-    assert.ok(validatePublicNpmRegistryProof(proof, { name: NAME, version: VERSION, bytes }).length > 0);
+    assert.ok(validatePublicNpmRegistryProof(proof, { name: NAME, version: VERSION, repository: "fixture/platform", bytes }).length > 0);
   }
-  assert.ok(validatePublicNpmRegistryProof(publicNpmRegistryProof(result.evidence), { name: NAME, version: VERSION, bytes: Buffer.concat([bytes, Buffer.from("x")] ) }).some((item) => item.rule === "proof-digest"));
+  assert.ok(validatePublicNpmRegistryProof(publicNpmRegistryProof(result.evidence), { name: NAME, version: VERSION, repository: "fixture/platform", bytes: Buffer.concat([bytes, Buffer.from("x")] ) }).some((item) => item.rule === "proof-digest"));
+  const legacy = publicNpmRegistryProof({
+    ...result.evidence,
+    metadataUrl: undefined,
+    repository: undefined,
+    packumentUrl: publicNpmPackageUrl(PUBLIC_NPM_REGISTRY, NAME),
+  });
+  delete legacy.evidence.metadataUrl;
+  delete legacy.evidence.repository;
+  assert.deepEqual(validatePublicNpmRegistryProof(legacy, { name: NAME, version: VERSION, bytes }), []);
 });
 
 test("served artifact proof rejects changed bytes and a substituted packed manifest", async () => {
   const bytes = tarball();
   const changed = Buffer.concat([bytes, Buffer.from("changed")]);
-  const digestMismatch = await verifyPublicNpmArtifact({ registry: PUBLIC_NPM_REGISTRY, name: NAME, version: VERSION, fetchImpl: queueFetch([response(200, metadata(bytes)), response(200, changed)]) });
+  const digestMismatch = await verifyPublicNpmArtifact({ registry: PUBLIC_NPM_REGISTRY, name: NAME, version: VERSION, repository: "fixture/platform", fetchImpl: queueFetch([response(200, exactMetadata(bytes)), response(200, changed)]) });
   assert.equal(digestMismatch.kind, "mismatch");
 
   const root = mkdtempSync(join(tmpdir(), "public-npm-registry-wrong-"));
@@ -163,7 +223,7 @@ test("served artifact proof rejects changed bytes and a substituted packed manif
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
-  const manifestMismatch = await verifyPublicNpmArtifact({ registry: PUBLIC_NPM_REGISTRY, name: NAME, version: VERSION, fetchImpl: queueFetch([response(200, metadata(wrong)), response(200, wrong)]) });
+  const manifestMismatch = await verifyPublicNpmArtifact({ registry: PUBLIC_NPM_REGISTRY, name: NAME, version: VERSION, repository: "fixture/platform", fetchImpl: queueFetch([response(200, exactMetadata(wrong)), response(200, wrong)]) });
   assert.equal(manifestMismatch.kind, "mismatch");
   assert.match(manifestMismatch.detail, /manifest/);
 });
@@ -175,12 +235,13 @@ test("post-publish visibility retries only anonymous missing-version or 404 obse
     registry: PUBLIC_NPM_REGISTRY,
     name: NAME,
     version: VERSION,
+    repository: "fixture/platform",
     delays: [0, 7, 11],
     sleep: async (milliseconds) => { waits.push(milliseconds); },
     fetchImpl: queueFetch([
       response(404, {}),
-      response(200, metadata(bytes)), response(404, {}),
-      response(200, metadata(bytes)), response(200, bytes),
+      response(200, exactMetadata(bytes)), response(404, {}),
+      response(200, exactMetadata(bytes)), response(200, bytes),
     ]),
   });
   assert.equal(result.kind, "verified");
@@ -193,6 +254,7 @@ test("post-publish visibility exhausts a missing version without treating it as 
     registry: PUBLIC_NPM_REGISTRY,
     name: NAME,
     version: VERSION,
+    repository: "fixture/platform",
     delays: [0, 3, 5],
     sleep: async (milliseconds) => { waits.push(milliseconds); },
     fetchImpl: queueFetch([response(404, {}), response(404, {}), response(404, {})]),
@@ -208,9 +270,10 @@ test("post-publish visibility never retries a wrong-digest registry response", a
     registry: PUBLIC_NPM_REGISTRY,
     name: NAME,
     version: VERSION,
+    repository: "fixture/platform",
     delays: [0, 9, 12],
     sleep: async (milliseconds) => { waits.push(milliseconds); },
-    fetchImpl: queueFetch([response(200, metadata(bytes)), response(200, Buffer.concat([bytes, Buffer.from("wrong")]))]),
+    fetchImpl: queueFetch([response(200, exactMetadata(bytes)), response(200, Buffer.concat([bytes, Buffer.from("wrong")]))]),
   });
   assert.equal(result.kind, "mismatch");
   assert.deepEqual(waits, []);
@@ -224,13 +287,14 @@ test("post-publish visibility never retries denial, transport, or malformed iden
     ["429 transport", [response(429, {})], "unreachable"],
     ["500 transport", [response(500, {})], "unreachable"],
     ["thrown transport", [new TypeError("offline")], "unreachable"],
-    ["malformed identity", [response(200, { ...metadata(bytes), name: "@fixture/other" })], "unreachable"],
+    ["malformed identity", [response(200, exactMetadata(bytes, { name: "@fixture/other" }))], "unreachable"],
   ]) {
     const waits = [];
     const result = await retryPostPublishPublicNpmArtifact({
       registry: PUBLIC_NPM_REGISTRY,
       name: NAME,
       version: VERSION,
+      repository: "fixture/platform",
       delays: [0, 9, 12],
       sleep: async (milliseconds) => { waits.push(milliseconds); },
       fetchImpl: queueFetch(entries),
@@ -242,7 +306,7 @@ test("post-publish visibility never retries denial, transport, or malformed iden
 
 test("post-publish visibility refuses an unbounded retry schedule", async () => {
   await assert.rejects(
-    retryPostPublishPublicNpmArtifact({ registry: PUBLIC_NPM_REGISTRY, name: NAME, version: VERSION, delays: [0, 180_001] }),
+    retryPostPublishPublicNpmArtifact({ registry: PUBLIC_NPM_REGISTRY, name: NAME, version: VERSION, repository: "fixture/platform", delays: [0, 180_001] }),
     /within three minutes/,
   );
 });

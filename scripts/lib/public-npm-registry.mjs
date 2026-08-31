@@ -51,6 +51,31 @@ export function publicNpmPackageUrl(registry, name) {
   return `${parsed.origin}/${encodeURIComponent(name)}`;
 }
 
+function publicNpmNameParts(name) {
+  const scoped = /^@([a-z0-9][a-z0-9._-]*)\/([a-z0-9][a-z0-9._-]*)$/.exec(name);
+  if (scoped) return { scope: scoped[1], package: scoped[2] };
+  if (/^[a-z0-9][a-z0-9._-]*$/.test(name)) return { scope: null, package: name };
+  throw new Error("public npm package name must be canonical");
+}
+
+/** The exact-version document is available where a new scoped packument can still be absent. */
+export function publicNpmVersionUrl(registry, name, version) {
+  const parsed = exactPublicRegistry(registry);
+  if (!parsed) throw new Error(`anonymous npm verification supports only ${PUBLIC_NPM_REGISTRY}`);
+  publicNpmNameParts(name);
+  if (!VERSION.test(version)) throw new Error("public npm version must be canonical");
+  return `${parsed.origin}/${encodeURIComponent(name)}/${version}`;
+}
+
+export function publicNpmTarballUrl(registry, name, version) {
+  const parsed = exactPublicRegistry(registry);
+  if (!parsed) throw new Error(`anonymous npm verification supports only ${PUBLIC_NPM_REGISTRY}`);
+  const identity = publicNpmNameParts(name);
+  if (!VERSION.test(version)) throw new Error("public npm version must be canonical");
+  const path = identity.scope ? `@${identity.scope}/${identity.package}` : identity.package;
+  return `${parsed.origin}/${path}/-/${identity.package}-${version}.tgz`;
+}
+
 function anonymousOptions(accept) {
   return { headers: { Accept: accept }, redirect: "error" };
 }
@@ -92,6 +117,42 @@ export async function fetchPublicNpmPackument({ registry, name, fetchImpl = fetc
   });
 }
 
+async function fetchPublicNpmVersion({ registry, name, version, expectedRepository, fetchImpl }) {
+  let url;
+  try {
+    url = publicNpmVersionUrl(registry, name, version);
+  } catch (error) {
+    return { kind: "unreachable", detail: error.message };
+  }
+  let response;
+  try {
+    // npm's exact-version endpoint returns 406 for the abbreviated install
+    // media type. Full JSON is still anonymous and contains the immutable
+    // name/version/repository/dist fields required below.
+    response = await fetchImpl(url, anonymousOptions("application/json"));
+  } catch (error) {
+    return { kind: "unreachable", detail: `anonymous exact-version request failed: ${error.message}` };
+  }
+  if (response.status === 404) return { kind: "not-found", url };
+  if (response.status === 401 || response.status === 403) return { kind: "denied", detail: `anonymous exact-version request returned HTTP ${response.status}`, url };
+  if (!response.ok) return { kind: "unreachable", detail: `anonymous exact-version request returned HTTP ${response.status}`, url };
+  let document;
+  try {
+    document = await response.json();
+  } catch (error) {
+    return { kind: "unreachable", detail: `anonymous exact-version response was not JSON: ${error.message}`, url };
+  }
+  if (!document || typeof document !== "object" || Array.isArray(document) || document.name !== name || document.version !== version) {
+    return { kind: "unreachable", detail: "anonymous exact-version response has no exact package identity", url };
+  }
+  const repository = repositoryIdentityFromPackument({ repository: document.repository, versions: { [version]: document } }, version);
+  if (!repository) return { kind: "unreachable", detail: "anonymous exact-version response has no canonical repository identity", url };
+  if (expectedRepository !== undefined && repository !== expectedRepository) return { kind: "unreachable", detail: "anonymous exact-version response repository does not match the expected repository", url };
+  const exact = exactVersionRecord({ versions: { [version]: document } }, name, version);
+  if (exact.kind !== "found") return { ...exact, url };
+  return { kind: "found", exact: { repository, dist: exact.dist }, url };
+}
+
 function exactVersionRecord(packument, name, version) {
   const record = Object.prototype.hasOwnProperty.call(packument.versions, version) ? packument.versions[version] : undefined;
   if (record === undefined) return { kind: "missing" };
@@ -103,14 +164,10 @@ function exactVersionRecord(packument, name, version) {
     return { kind: "unreachable", detail: "exact version entry has no complete tarball/integrity/shasum tuple" };
   }
   let tarball;
-  try {
-    tarball = new URL(dist.tarball);
-  } catch {
-    return { kind: "unreachable", detail: "exact version tarball URL is invalid" };
-  }
-  if (tarball.protocol !== "https:" || tarball.origin !== new URL(PUBLIC_NPM_REGISTRY).origin || tarball.username || tarball.password || tarball.search || tarball.hash) {
-    return { kind: "unreachable", detail: "exact version tarball URL is outside the public npm registry origin" };
-  }
+  try { tarball = new URL(dist.tarball); } catch { return { kind: "unreachable", detail: "exact version tarball URL is invalid" }; }
+  let expectedTarball;
+  try { expectedTarball = publicNpmTarballUrl(PUBLIC_NPM_REGISTRY, name, version); } catch { return { kind: "unreachable", detail: "exact version tarball URL cannot be derived from its identity" }; }
+  if (tarball.toString() !== expectedTarball) return { kind: "unreachable", detail: "exact version tarball URL does not match its canonical public npm identity" };
   const integrityMatch = /^sha512-([A-Za-z0-9+/]+={0,2})$/.exec(dist.integrity);
   if (!integrityMatch) return { kind: "unreachable", detail: "exact version integrity is not one canonical sha512 SRI" };
   let integrityBytes;
@@ -122,18 +179,15 @@ function exactVersionRecord(packument, name, version) {
   if (integrityBytes.length !== 64 || integrityBytes.toString("base64") !== integrityMatch[1]) {
     return { kind: "unreachable", detail: "exact version integrity is not a canonical sha512 digest" };
   }
-  return { kind: "found", record, dist: { tarball: tarball.toString(), integrity: dist.integrity, shasum: dist.shasum } };
+  return { kind: "found", dist: { tarball: tarball.toString(), integrity: dist.integrity, shasum: dist.shasum } };
 }
 
-export async function probePublicNpmVersion({ registry, name, version, fetchImpl = fetch }) {
-  const packument = await fetchPublicNpmPackument({ registry, name, fetchImpl });
-  if (packument.kind === "not-found") return { kind: "known", hasVersion: false };
-  if (packument.kind === "denied") return { kind: "denied" };
-  if (packument.kind !== "found") return { kind: "unreachable" };
-  const exact = exactVersionRecord(packument.document, name, version);
-  if (exact.kind === "missing") return { kind: "known", hasVersion: false };
-  if (exact.kind !== "found") return { kind: "unreachable" };
-  return { kind: "known", hasVersion: true, exact, packumentUrl: packument.url };
+export async function probePublicNpmVersion({ registry, name, version, repository, fetchImpl = fetch }) {
+  const metadata = await fetchPublicNpmVersion({ registry, name, version, expectedRepository: repository, fetchImpl });
+  if (metadata.kind === "not-found") return { kind: "known", hasVersion: false };
+  if (metadata.kind === "denied") return { kind: "denied" };
+  if (metadata.kind !== "found") return { kind: "unreachable" };
+  return { kind: "known", hasVersion: true, exact: metadata.exact, metadataUrl: metadata.url };
 }
 
 function packedManifest(bytes) {
@@ -153,8 +207,9 @@ function packedManifest(bytes) {
   return { manifest, bytes: Buffer.from(result.stdout) };
 }
 
-export async function verifyPublicNpmArtifact({ registry, name, version, fetchImpl = fetch }) {
-  const probe = await probePublicNpmVersion({ registry, name, version, fetchImpl });
+export async function verifyPublicNpmArtifact({ registry, name, version, repository, fetchImpl = fetch }) {
+  if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository ?? "")) return { kind: "unreachable", detail: "public npm artifact verification requires one canonical expected repository identity" };
+  const probe = await probePublicNpmVersion({ registry, name, version, repository, fetchImpl });
   if (probe.kind !== "known" || probe.hasVersion !== true) return probe;
   let response;
   try {
@@ -198,7 +253,8 @@ export async function verifyPublicNpmArtifact({ registry, name, version, fetchIm
       access: "anonymous",
       name,
       version,
-      packumentUrl: probe.packumentUrl,
+      metadataUrl: probe.metadataUrl,
+      repository: probe.exact.repository,
       tarballUrl: probe.exact.dist.tarball,
       integrity,
       shasum: sha1,
@@ -223,6 +279,7 @@ export async function retryPostPublishPublicNpmArtifact({
   registry,
   name,
   version,
+  repository,
   fetchImpl = fetch,
   delays = POST_PUBLISH_VISIBILITY_RETRY_DELAYS_MS,
   sleep = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds)),
@@ -232,7 +289,7 @@ export async function retryPostPublishPublicNpmArtifact({
   }
   let result;
   for (let attempt = 0; attempt < delays.length; attempt += 1) {
-    result = await verifyPublicNpmArtifact({ registry, name, version, fetchImpl });
+    result = await verifyPublicNpmArtifact({ registry, name, version, repository, fetchImpl });
     if (!visibilityPending(result) || attempt === delays.length - 1) return result;
     await sleep(delays[attempt + 1]);
   }
@@ -241,26 +298,40 @@ export async function retryPostPublishPublicNpmArtifact({
 
 /** Serialize only the anonymous registry facts needed to revalidate an artifact handoff. */
 export function publicNpmRegistryProof(evidence) {
-  return { schemaVersion: 1, kind: "public-npm-anonymous-registry-proof-v1", evidence };
+  return evidence?.metadataUrl === undefined
+    ? { schemaVersion: 1, kind: "public-npm-anonymous-registry-proof-v1", evidence }
+    : { schemaVersion: 2, kind: "public-npm-anonymous-registry-proof-v2", evidence };
 }
 
 /** Validate a retained anonymous npm proof against exact candidate bytes. */
-export function validatePublicNpmRegistryProof(proof, { name, version, bytes } = {}) {
+export function validatePublicNpmRegistryProof(proof, { name, version, repository, bytes } = {}) {
   const findings = [];
   const fail = (rule, message) => findings.push({ rule, message });
-  if (!proof || typeof proof !== "object" || Array.isArray(proof) || proof.schemaVersion !== 1 || proof.kind !== "public-npm-anonymous-registry-proof-v1" || Object.keys(proof).some((key) => !["schemaVersion", "kind", "evidence"].includes(key))) {
+  const v1 = proof?.schemaVersion === 1 && proof?.kind === "public-npm-anonymous-registry-proof-v1";
+  const v2 = proof?.schemaVersion === 2 && proof?.kind === "public-npm-anonymous-registry-proof-v2";
+  if (!proof || typeof proof !== "object" || Array.isArray(proof) || (!v1 && !v2) || Object.keys(proof).some((key) => !["schemaVersion", "kind", "evidence"].includes(key))) {
     fail("proof", "closed anonymous registry proof required.");
     return findings;
   }
   const evidence = proof.evidence;
-  const fields = ["registry", "access", "name", "version", "packumentUrl", "tarballUrl", "integrity", "shasum", "sha256", "sha512", "packedManifestSha256", "size"];
+  const fields = v1
+    ? ["registry", "access", "name", "version", "packumentUrl", "tarballUrl", "integrity", "shasum", "sha256", "sha512", "packedManifestSha256", "size"]
+    : ["registry", "access", "name", "version", "metadataUrl", "repository", "tarballUrl", "integrity", "shasum", "sha256", "sha512", "packedManifestSha256", "size"];
   if (!evidence || typeof evidence !== "object" || Array.isArray(evidence) || Object.keys(evidence).sort().join("\0") !== fields.slice().sort().join("\0")) {
     fail("proof", "closed anonymous registry evidence required.");
     return findings;
   }
   if (evidence.registry !== PUBLIC_NPM_REGISTRY || evidence.access !== "anonymous" || evidence.name !== name || evidence.version !== version || !VERSION.test(evidence.version ?? "") || !SHA1.test(evidence.shasum ?? "") || !SHA256.test(evidence.sha256 ?? "") || !SHA512.test(evidence.sha512 ?? "") || !SHA256.test(evidence.packedManifestSha256 ?? "") || !Number.isSafeInteger(evidence.size) || evidence.size < 1 || evidence.size > MAX_TARBALL_BYTES) fail("proof", "exact anonymous registry identity/digest tuple required.");
-  if (evidence.packumentUrl !== publicNpmPackageUrl(PUBLIC_NPM_REGISTRY, name)) fail("proof-url", "registry proof must retain the exact anonymous packument URL.");
-  for (const value of [evidence.packumentUrl, evidence.tarballUrl]) {
+  const metadataUrl = v1 ? evidence.packumentUrl : evidence.metadataUrl;
+  try {
+    const expectedMetadata = v1 ? publicNpmPackageUrl(PUBLIC_NPM_REGISTRY, name) : publicNpmVersionUrl(PUBLIC_NPM_REGISTRY, name, version);
+    if (metadataUrl !== expectedMetadata) fail("proof-url", "registry proof must retain the exact anonymous metadata URL.");
+  } catch { fail("proof-url", "registry proof has no canonical package/version identity."); }
+  if (v2 && (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(evidence.repository ?? "") || (repository !== undefined && evidence.repository !== repository))) fail("proof", "exact anonymous registry repository identity required.");
+  let expectedTarball = null;
+  try { expectedTarball = publicNpmTarballUrl(PUBLIC_NPM_REGISTRY, name, version); } catch { fail("proof-url", "registry proof has no canonical tarball identity."); }
+  if (expectedTarball !== null && evidence.tarballUrl !== expectedTarball) fail("proof-url", "registry proof must retain the exact anonymous tarball URL.");
+  for (const value of [metadataUrl, evidence.tarballUrl]) {
     try { const url = new URL(value); if (url.protocol !== "https:" || url.origin !== new URL(PUBLIC_NPM_REGISTRY).origin || url.username || url.password || url.search || url.hash) throw new Error("origin"); }
     catch { fail("proof-url", "registry proof URL must remain an exact public npm HTTPS origin."); }
   }

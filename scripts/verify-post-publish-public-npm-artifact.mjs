@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 
 import { assertCredentialFree } from "./lib/candidate-runner.mjs";
 import { assertPackageAuthorized, loadReleaseCatalog, readCurrentReleaseIdentity, resolveReleaseTarget } from "./check-release-catalog.mjs";
-import { retryPostPublishPublicNpmArtifact } from "./lib/public-npm-registry.mjs";
+import { repositoryIdentityFromPackument, retryPostPublishPublicNpmArtifact } from "./lib/public-npm-registry.mjs";
 
 const KEY = /^[a-z0-9][a-z0-9-]{0,63}$/;
 const usage = "Usage: --package <package-key> --expected-tarball <path>";
@@ -54,8 +54,10 @@ export async function verifyPostPublishPublicNpmArtifact({
   assertPackageAuthorized(target, packageKey);
   if (target.registry !== "https://registry.npmjs.org" || target.access !== "public") throw new Error("post-publish verification requires the exact public npm release target");
   const manifest = JSON.parse(readFileSync(resolve(root, "packages", packageKey, "package.json"), "utf8"));
+  const repository = repositoryIdentityFromPackument({ repository: manifest.repository, versions: {} }, manifest.version);
+  if (!repository) throw new Error("post-publish package manifest must retain one canonical GitHub repository identity");
   const expected = exactTarballBytes(expectedTarball);
-  const result = await retryPostPublishPublicNpmArtifact({ registry: target.registry, name: manifest.name, version: manifest.version, fetchImpl, sleep });
+  const result = await retryPostPublishPublicNpmArtifact({ registry: target.registry, name: manifest.name, version: manifest.version, repository, fetchImpl, sleep });
   return assertExactPublishedBytes(result, expected);
 }
 

@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { immutableSingleIntroduction, strictQualificationIntroductionAncestor, validateLaterPublication, validateRetainedLaterPublications } from "./release-later-publication.mjs";
-import { publicNpmPackageUrl, PUBLIC_NPM_REGISTRY } from "./public-npm-registry.mjs";
+import { publicNpmPackageUrl, publicNpmVersionUrl, PUBLIC_NPM_REGISTRY } from "./public-npm-registry.mjs";
 
 const hash = (value) => createHash("sha256").update(value).digest("hex");
 const hex = (character, size) => character.repeat(size);
@@ -43,6 +43,19 @@ function rules(record, overrides) { return validateLaterPublication(record, { ..
 
 test("later-publication record binds qualified candidate, active catalogue, anonymous bytes, and owner evidence", () => {
   assert.deepEqual(rules(source()), []);
+});
+
+test("later-publication admits only the exact-version anonymous proof shape for future public releases", () => {
+  const value = source();
+  value.registryProof = { schemaVersion: 2, kind: "public-npm-anonymous-registry-proof-v2", evidence: {
+    ...value.registryProof.evidence,
+    metadataUrl: publicNpmVersionUrl(PUBLIC_NPM_REGISTRY, candidate.name, candidate.version),
+    repository: "clossys/platform",
+  } };
+  delete value.registryProof.evidence.packumentUrl;
+  assert.deepEqual(rules(value), []);
+  value.registryProof.evidence.metadataUrl = publicNpmPackageUrl(PUBLIC_NPM_REGISTRY, candidate.name);
+  assert.ok(rules(value).includes("registry-join"));
 });
 
 test("later-publication rejects source, catalog, candidate and served-byte substitution", () => {
