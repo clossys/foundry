@@ -6,6 +6,7 @@ import test from "node:test";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { tmpdir } from "node:os";
+import { ALL_PACKAGE_RELEASE_ORDER } from "./check-release-catalog.mjs";
 
 const scriptsDir = dirname(fileURLToPath(import.meta.url));
 const checker = join(scriptsDir, "check-foreign-references.mjs");
@@ -74,7 +75,7 @@ function candidateFixture({ historicalLine = "Retained @vespeneventures/advisor 
     defaultTarget: "clossys-npmjs",
     targets: [
       { id: "current-github-packages", status: "historical", scope: "@vespeneventures", registry: "https://npm.pkg.github.com", packages: "all" },
-      { id: "clossys-npmjs", status: "active", scope: futureScope, registry: "https://registry.npmjs.org", access: "public", packages: ["advisor", "starter", "controller"] },
+      { id: "clossys-npmjs", status: "active", scope: futureScope, registry: "https://registry.npmjs.org", access: "public", packages: [...ALL_PACKAGE_RELEASE_ORDER] },
     ],
   }));
   write(join(root, "docs/DECISIONS.md"), `${historicalLine}\n`);

@@ -179,3 +179,18 @@ test("every suite in check:gates imports only node builtins and local scripts", 
       "Move the suite to ci.yml's `build and test` job as its own step, next to scripts/observation-bundle.test.mjs.",
   );
 });
+
+test("real candidate framework acceptance runs only after install and build in required paths", () => {
+  const manifest = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8"));
+  assert.doesNotMatch(manifest.scripts["check:gates"], /candidate-runner-acceptance/);
+  assert.match(manifest.scripts["check:candidate-runner-acceptance"], /candidate-runner-acceptance\.test\.mjs/);
+  assert.ok(manifest.scripts.check.indexOf("npm run build") < manifest.scripts.check.indexOf("npm run check:candidate-runner-acceptance"));
+
+  const workflow = readFileSync(join(repoRoot, ".github/workflows/ci.yml"), "utf8");
+  const build = workflowJob(workflow, "build");
+  const install = build.indexOf("- run: npm ci");
+  const compile = build.indexOf("- run: npm run build");
+  const runtime = build.indexOf("- name: Assert qualified-directory release runtime");
+  const acceptance = build.indexOf("run: npm run check:candidate-runner-acceptance");
+  assert.ok(install !== -1 && install < compile && compile < runtime && runtime < acceptance);
+});

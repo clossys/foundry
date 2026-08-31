@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "package": "@clossys/inspector",
+  "archetype": "current-direct",
+  "bins": {
+    "inspector": 0
+  },
+  "fixtures": [
+    "scan-satisfied.json",
+    "scan-violated.json",
+    "scan-indeterminate.json"
+  ],
+  "cases": [
+    {
+      "id": "scan-satisfied",
+      "bin": "inspector",
+      "args": [
+        {
+          "literal": "--inputs"
+        },
+        {
+          "fixture": "scan-satisfied.json"
+        },
+        {
+          "literal": "--checks"
+        },
+        {
+          "literal": "secret-scan"
+        }
+      ],
+      "exitCode": 0,
+      "group": "secret-scan"
+    },
+    {
+      "id": "scan-violated",
+      "bin": "inspector",
+      "args": [
+        {
+          "literal": "--inputs"
+        },
+        {
+          "fixture": "scan-violated.json"
+        },
+        {
+          "literal": "--checks"
+        },
+        {
+          "literal": "secret-scan"
+        }
+      ],
+      "exitCode": 1,
+      "group": "secret-scan"
+    },
+    {
+      "id": "scan-indeterminate",
+      "bin": "inspector",
+      "args": [
+        {
+          "literal": "--inputs"
+        },
+        {
+          "fixture": "scan-indeterminate.json"
+        },
+        {
+          "literal": "--checks"
+        },
+        {
+          "literal": "secret-scan"
+        }
+      ],
+      "exitCode": 2,
+      "group": "secret-scan"
+    }
+  ],
+  "dimensionEvidence": {
+    "rollback": "restoration",
+    "duplicate": "secret-scan"
+  }
+}

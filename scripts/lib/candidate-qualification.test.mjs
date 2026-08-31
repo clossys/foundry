@@ -140,6 +140,39 @@ function rawStarterV2Record() {
   refreshTranscriptDigest(record);
   return record;
 }
+function frameworkV3Record({ exports = 1 } = {}) {
+  const record = source();
+  const transcript = record.transcript;
+  transcript.schema = "foundry-candidate-qualification-transcript-v3";
+  transcript.version = 3;
+  const packageName = transcript.candidate.name;
+  const allImports = transcript.observations.filter((item) => item.kind === "import");
+  for (const [index, observation] of allImports.entries()) observation.id = `import:import:${packageName}${index === 0 ? "" : `/test-${index}`}`;
+  const imports = allImports.slice(0, exports);
+  for (const [index, observation] of imports.entries()) {
+    observation.id = `framework:next:${index === 0 ? "server" : "client"}:${packageName}${index === 0 ? "" : "/artifacts"}`;
+    observation.kind = "framework";
+    observation.launch = "next-build";
+    if (index > 0) {
+      observation.stdoutSha256 = imports[0].stdoutSha256;
+      observation.stderrSha256 = imports[0].stderrSha256;
+    }
+  }
+  transcript.coverage.runtimeImports -= imports.length;
+  transcript.coverage.reactServerImports = 0;
+  transcript.coverage.frameworkExports = imports.length;
+  transcript.coverage.frameworkBuilds = imports.length > 0 ? 1 : 0;
+  refreshTranscriptDigest(record);
+  return record;
+}
+function runtimeConditionsV3Record() {
+  const record = frameworkV3Record({ exports: 0 });
+  const imports = record.transcript.observations.filter((item) => item.kind === "import");
+  imports[1].id = `import:react-server:${record.transcript.candidate.name}`;
+  record.transcript.coverage.reactServerImports = 1;
+  refreshTranscriptDigest(record);
+  return record;
+}
 function retimeRawTranscript(transcript, next) {
   const prior = transcript.fixtureMaterializedAt;
   const changed = JSON.parse(JSON.stringify(transcript).split(prior).join(next));
@@ -358,6 +391,103 @@ test("accepts immutable v1 history and closed v2 Starter raw 0/1/2 evidence", ()
   const record = rawStarterV2Record();
   assert.deepEqual(rules(record), []);
   assert.deepEqual([...new Set(record.transcript.observations.filter((item) => item.kind === "case").map((item) => item.rawCaseEvidence.exitCode))].sort(), [0, 1, 2]);
+});
+test("accepts v3 framework evidence while v1 and v2 remain closed to v3 fields and kinds", () => {
+  assert.deepEqual(rules(frameworkV3Record()), []);
+
+  const fields = source();
+  fields.transcript.schema = "foundry-candidate-qualification-transcript-v2";
+  fields.transcript.version = 2;
+  fields.transcript.coverage.frameworkExports = 0;
+  fields.transcript.coverage.frameworkBuilds = 0;
+  fields.transcript.coverage.reactServerImports = 0;
+  refreshTranscriptDigest(fields);
+  assert.ok(rules(fields).includes("unknown-field"));
+
+  const kind = source();
+  kind.transcript.schema = "foundry-candidate-qualification-transcript-v2";
+  kind.transcript.version = 2;
+  const observation = kind.transcript.observations.find((item) => item.kind === "import");
+  observation.kind = "framework";
+  observation.launch = "next-build";
+  observation.id = `framework:next:server:${kind.transcript.candidate.name}`;
+  refreshTranscriptDigest(kind);
+  assert.ok(rules(kind).includes("observation"));
+});
+test("v3 runtime conditions keep ordinary and react-server imports distinct and closed", () => {
+  assert.deepEqual(rules(runtimeConditionsV3Record()), []);
+  const mutations = [
+    (record) => { record.transcript.observations = record.transcript.observations.filter((item) => !item.id.startsWith("import:react-server:")); },
+    (record) => { record.transcript.observations.find((item) => item.id.startsWith("import:react-server:")).id = `import:import:${record.transcript.candidate.name}`; },
+    (record) => { record.transcript.observations.find((item) => item.id.startsWith("import:react-server:")).id = `import:browser:${record.transcript.candidate.name}`; },
+    (record) => { record.transcript.observations.find((item) => item.id.startsWith("import:react-server:")).id = "import:react-server:@clossys/other"; },
+    (record) => { record.transcript.observations.find((item) => item.id.startsWith("import:react-server:")).id = `import:react-server:${record.transcript.candidate.name}/unpaired`; },
+    (record) => { record.transcript.coverage.reactServerImports = 0; },
+    (record) => { record.transcript.coverage.reactServerImports = record.transcript.coverage.runtimeImports + 1; },
+  ];
+  for (const mutate of mutations) {
+    const record = runtimeConditionsV3Record();
+    mutate(record);
+    refreshTranscriptDigest(record);
+    assert.ok(rules(record).some((rule) => ["coverage", "observations", "observation", "import-observation"].includes(rule)));
+  }
+  for (const secondCondition of ["default", "string"]) {
+    const record = runtimeConditionsV3Record();
+    const ordinary = record.transcript.observations.find((item) => item.id.startsWith("import:import:"));
+    const duplicate = structuredClone(ordinary);
+    duplicate.id = duplicate.id.replace("import:import:", `import:${secondCondition}:`);
+    record.transcript.observations.push(duplicate);
+    record.transcript.coverage.runtimeImports += 1;
+    record.transcript.coverage.concreteTargets += 1;
+    refreshTranscriptDigest(record);
+    assert.ok(rules(record).includes("import-observation"));
+  }
+});
+test("v3 framework evidence cannot be omitted, miscounted, relabelled, duplicated, or split across build results", () => {
+  const mutations = [
+    (record) => { record.transcript.observations = record.transcript.observations.filter((item) => item.kind !== "framework"); },
+    (record) => { record.transcript.coverage.frameworkExports = 2; record.transcript.coverage.concreteTargets += 1; },
+    (record) => { record.transcript.coverage.frameworkBuilds = 0; },
+    (record) => { record.transcript.coverage.concreteTargets -= 1; },
+    (record) => { record.transcript.observations.find((item) => item.kind === "framework").id = "framework:next:edge:@clossys/controller"; },
+    (record) => { record.transcript.observations.find((item) => item.kind === "framework").id = "framework:next:server:@clossys/other"; },
+    (record) => { const item = record.transcript.observations.find((value) => value.kind === "framework"); record.transcript.observations.push(structuredClone(item)); record.transcript.coverage.frameworkExports += 1; record.transcript.coverage.concreteTargets += 1; },
+  ];
+  for (const mutate of mutations) {
+    const record = frameworkV3Record();
+    mutate(record);
+    refreshTranscriptDigest(record);
+    assert.ok(rules(record).some((rule) => ["coverage", "observations", "observation", "framework-observation"].includes(rule)));
+  }
+
+  const split = frameworkV3Record({ exports: 2 });
+  split.transcript.observations.filter((item) => item.kind === "framework")[1].stdoutSha256 = "f".repeat(64);
+  refreshTranscriptDigest(split);
+  assert.ok(rules(split).includes("framework-observation"));
+
+  const duplicateSpecifier = frameworkV3Record({ exports: 2 });
+  const framework = duplicateSpecifier.transcript.observations.filter((item) => item.kind === "framework");
+  framework[1].id = `${framework[1].id.slice(0, framework[1].id.lastIndexOf(":"))}:${duplicateSpecifier.transcript.candidate.name}`;
+  refreshTranscriptDigest(duplicateSpecifier);
+  assert.ok(rules(duplicateSpecifier).includes("framework-observation"));
+
+  const rawFrameworkReuse = frameworkV3Record();
+  const frameworkSpecifier = rawFrameworkReuse.transcript.observations.find((item) => item.kind === "framework").id.split(":").slice(3).join(":");
+  rawFrameworkReuse.transcript.observations.find((item) => item.kind === "import").id = `import:import:${frameworkSpecifier}`;
+  refreshTranscriptDigest(rawFrameworkReuse);
+  assert.ok(rules(rawFrameworkReuse).includes("framework-observation"));
+
+  const expectedIds = frameworkV3Record({ exports: 2 }).transcript.observations.filter((item) => item.kind === "framework").map((item) => item.id).sort();
+  const expected = { frameworkObservationsSha256: sha256(JSON.stringify(expectedIds)) };
+  const roleSwap = frameworkV3Record({ exports: 2 });
+  const swapped = roleSwap.transcript.observations.filter((item) => item.kind === "framework");
+  [swapped[0].id, swapped[1].id] = [swapped[0].id.replace("server", "client"), swapped[1].id.replace("client", "server")];
+  refreshTranscriptDigest(roleSwap);
+  assert.ok(rules(roleSwap, { expected }).includes("framework-source-join"));
+  const allOneRole = frameworkV3Record({ exports: 2 });
+  for (const item of allOneRole.transcript.observations.filter((value) => value.kind === "framework")) item.id = item.id.replace(/framework:next:(?:client|server|proxy):/, "framework:next:server:");
+  refreshTranscriptDigest(allOneRole);
+  assert.ok(rules(allOneRole, { expected }).includes("framework-source-join"));
 });
 test("v2 raw evidence fails closed on missing, extra, leaking, malformed, or hash-mismatched evidence", () => {
   const mutations = [

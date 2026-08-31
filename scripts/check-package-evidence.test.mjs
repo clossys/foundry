@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -136,6 +137,21 @@ test("only the exact validated package-authentic Starter qualification earns a s
   const input = { packageName: "@clossys/starter", manifestVersion: "0.1.2", adapterBytes, record };
   assert.equal(
     packageAuthenticStarterQualificationSite(input),
+    "governance/release-qualifications/clossys-starter-0.1.2.json#transcript:current-direct",
+  );
+  const v3 = structuredClone(record);
+  v3.transcript.schema = "foundry-candidate-qualification-transcript-v3";
+  v3.transcript.version = 3;
+  v3.transcript.coverage.reactServerImports = 0;
+  v3.transcript.coverage.frameworkExports = 0;
+  v3.transcript.coverage.frameworkBuilds = 0;
+  for (const [index, observation] of v3.transcript.observations.filter((item) => item.kind === "import").entries()) {
+    observation.id = `import:import:@clossys/starter${index === 0 ? "" : `/test-${index}`}`;
+  }
+  delete v3.transcript.canonicalSha256;
+  v3.transcript.canonicalSha256 = createHash("sha256").update(JSON.stringify(v3.transcript)).digest("hex");
+  assert.equal(
+    packageAuthenticStarterQualificationSite({ ...input, record: v3 }),
     "governance/release-qualifications/clossys-starter-0.1.2.json#transcript:current-direct",
   );
 

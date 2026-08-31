@@ -1,0 +1,8 @@
+[
+  {
+    "intentId": "int_1",
+    "subjectId": "sub_1",
+    "verdict": "confirmed",
+    "confirmedAt": "2026-02-01T00:01:00.000Z"
+  }
+]

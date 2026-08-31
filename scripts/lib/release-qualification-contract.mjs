@@ -5,7 +5,7 @@ const object = (value) => value && typeof value === "object" && !Array.isArray(v
 const nonempty = (value) => typeof value === "string" && value.trim().length > 0;
 const BIN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
 const FIXTURE_PATH = /^(?:[A-Za-z0-9][A-Za-z0-9._-]{0,127}\/)*[A-Za-z0-9][A-Za-z0-9._-]{0,127}$/;
-const LITERAL_ARG = /^[A-Za-z0-9][A-Za-z0-9._:+-]{0,127}$/;
+const LITERAL_ARG = /^(?:[A-Za-z0-9][A-Za-z0-9._:+-]{0,127}|--[a-z0-9][a-z0-9-]{0,63})$/;
 const OVERLAY_PATH = /^(?:package(?:-lock)?\.json|node_modules\/(?:@[a-z0-9][a-z0-9._-]{0,63}\/[a-z0-9][a-z0-9._-]{0,63}|[a-z0-9][a-z0-9._-]{0,63})\/(?:package\.json|dist\/[a-z0-9][a-z0-9._-]{0,127}\.js))$/;
 const PACKAGE = /^(?:@[a-z0-9][a-z0-9._-]{0,213}\/[a-z0-9][a-z0-9._-]{0,213}|[a-z0-9][a-z0-9._-]{0,213})$/;
 const VERSION = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
@@ -20,11 +20,16 @@ function compare(left, right) { for (let index = 0; index < 3; index += 1) if (l
 function satisfiesSimpleRange(version, range) {
   const candidate = versionParts(version);
   if (!candidate || typeof range !== "string") return false;
-  // The only non-exact open lower bound admitted here is a normal npm major
-  // floor (>=18) or a complete stable semver floor (>=18.0.0).  Do not grow
-  // this into a general semver parser: compound, OR, prerelease and tag
-  // ranges would make a qualification fixture mean something npm resolves
-  // differently on another host.
+  // Admit only a normal npm major/stable floor or one adjacent-major bounded
+  // range such as >=19 <20. Do not grow this into a general semver parser:
+  // OR, prerelease and tag ranges would make a qualification fixture mean
+  // something npm resolves differently on another host.
+  const boundedMajor = /^>=(0|[1-9]\d*) <(0|[1-9]\d*)$/.exec(range);
+  if (boundedMajor) {
+    const floor = Number(boundedMajor[1]);
+    const ceiling = Number(boundedMajor[2]);
+    return ceiling === floor + 1 && candidate[0] >= floor && candidate[0] < ceiling;
+  }
   const lower = /^>=(0|[1-9]\d*)(?:\.(0|[1-9]\d*)(?:\.(0|[1-9]\d*))?)?$/.exec(range);
   if (lower) {
     const base = [Number(lower[1]), Number(lower[2] ?? 0), Number(lower[3] ?? 0)];
@@ -51,11 +56,33 @@ export function validateReleaseQualificationPolicy(policy) {
   for (const [name, entry] of Object.entries(policy.packages)) {
     closed(findings, entry, ["packageKey", "recordStem", "packageDir", "adapterPath", "fixturePath", "archetypes", "dimensions"], `policy.packages.${name}`);
     const scope = /^@([a-z0-9][a-z0-9._-]{0,213})\//.exec(name)?.[1];
-    if (!PACKAGE.test(name) || !scope || !PACKAGE_KEY.test(entry?.packageKey) || entry?.recordStem !== `${scope}-${entry?.packageKey}` || entry?.packageDir !== `packages/${entry?.packageKey}` || !REPOSITORY_PATH.test(entry?.adapterPath) || !REPOSITORY_PATH.test(entry?.fixturePath) || !entry.adapterPath.endsWith(".json") || entry.fixturePath.endsWith(".json")) finding(findings, "package-policy", `exact namespace-qualified package bindings required for ${name}.`);
+    const currentStatus = entry?.archetypes?.["current-direct"]?.status;
+    const blocked = currentStatus === "blocked";
+    const pathsValid = blocked
+      ? entry?.adapterPath === undefined && entry?.fixturePath === undefined
+      : REPOSITORY_PATH.test(entry?.adapterPath) && REPOSITORY_PATH.test(entry?.fixturePath) && entry.adapterPath.endsWith(".json") && !entry.fixturePath.endsWith(".json");
+    if (!PACKAGE.test(name) || !scope || !PACKAGE_KEY.test(entry?.packageKey) || entry?.recordStem !== `${scope}-${entry?.packageKey}` || entry?.packageDir !== `packages/${entry?.packageKey}` || !pathsValid) finding(findings, "package-policy", `exact namespace-qualified package bindings required for ${name}.`);
     for (const key of Object.keys(seen)) {
       const value = entry?.[key];
+      if (blocked && ["adapterPath", "fixturePath"].includes(key)) continue;
       if (typeof value !== "string" || seen[key].has(value)) finding(findings, "package-policy-unique", `${key} must be unique.`);
       else seen[key].add(value);
+    }
+    const current = entry?.archetypes?.["current-direct"];
+    if (blocked && !nonempty(current?.reason)) finding(findings, "archetype-policy", `${name} blocked current-direct qualification must state the blocker.`);
+    closed(findings, entry?.archetypes, ARCHETYPES, `policy.packages.${name}.archetypes`);
+    for (const archetype of ARCHETYPES) {
+      const item = entry?.archetypes?.[archetype];
+      closed(findings, item, ["status", "reason"], `policy.packages.${name}.archetypes.${archetype}`);
+      const allowed = archetype === "current-direct" ? ["required", "blocked"] : ["unsupported"];
+      if (!allowed.includes(item?.status) || (item?.status === "required" ? item.reason !== undefined : !nonempty(item?.reason))) finding(findings, "archetype-policy", `${name} ${archetype} policy invalid.`);
+    }
+    closed(findings, entry?.dimensions, DIMENSIONS, `policy.packages.${name}.dimensions`);
+    for (const dimension of DIMENSIONS) {
+      const item = entry?.dimensions?.[dimension];
+      closed(findings, item, ["status", "reason"], `policy.packages.${name}.dimensions.${dimension}`);
+      const allowed = !blocked && ["rollback", "duplicate"].includes(dimension) ? ["required", "unsupported"] : ["unsupported"];
+      if (!allowed.includes(item?.status) || (item?.status === "unsupported" && !nonempty(item.reason))) finding(findings, "dimension-policy", `${name} ${dimension} policy invalid.`);
     }
   }
   return findings;
@@ -65,6 +92,20 @@ export function selectPolicyPackage(policy, packageKey) {
   if (!PACKAGE_KEY.test(packageKey)) return null;
   const matches = Object.entries(policy?.packages ?? {}).filter(([, entry]) => entry?.packageKey === packageKey);
   return matches.length === 1 ? { name: matches[0][0], entry: matches[0][1] } : null;
+}
+
+/** Prove the policy and release target close over the same exact source inventory. */
+export function validateReleaseQualificationPortfolio({ policy, manifests, releasePackages }) {
+  const findings = [];
+  const source = Array.isArray(manifests) ? manifests.filter((item) => item?.private !== true) : [];
+  const sourceNames = source.map((item) => item?.name).sort();
+  const policyNames = Object.keys(policy?.packages ?? {}).sort();
+  if (sourceNames.length === 0 || sourceNames.some((name) => !PACKAGE.test(name))) finding(findings, "portfolio-source", "publishable source manifests must have namespace-qualified package names.");
+  if (JSON.stringify(sourceNames) !== JSON.stringify(policyNames)) finding(findings, "portfolio-policy", "qualification policy must exactly cover every publishable source manifest.");
+  const sourceKeys = source.map((item) => item.name?.split("/")[1]).sort();
+  const targetKeys = Array.isArray(releasePackages) ? [...releasePackages].sort() : [];
+  if (JSON.stringify(sourceKeys) !== JSON.stringify(targetKeys)) finding(findings, "portfolio-catalog", "release target must exactly cover every publishable source manifest.");
+  return findings;
 }
 
 /** Pure, package-neutral validation. Fixture observations are supplied by the runner. */
@@ -110,7 +151,7 @@ export function validateReleaseQualificationContract({ policy, adapter, fixtures
   if (adapter?.dimensionEvidence?.rollback !== "restoration") finding(findings, "dimension-evidence", "rollback must use built-in restoration evidence.");
   const duplicateGroup = adapter?.dimensionEvidence?.duplicate;
   const matched = Array.isArray(adapter?.cases) && adapter.cases.some((item) => item.group === duplicateGroup && item.exitCode === 0 && adapter.cases.some((other) => other.group === duplicateGroup && other.bin === item.bin && other.exitCode === 1));
-  if (!nonempty(duplicateGroup) || !matched) finding(findings, "dimension-evidence", "duplicate must name a matched adapter control group.");
+  if (selected?.dimensions?.duplicate?.status === "required" && (!nonempty(duplicateGroup) || !matched)) finding(findings, "dimension-evidence", "required duplicate evidence must name a matched adapter control group.");
   return findings;
 }
 export { parseStrictJson };

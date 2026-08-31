@@ -85,7 +85,7 @@ test("publish evaluates after a skipped verify-only fetch but requires successfu
 test("every package-capable execution job checks the closed release catalogue", () => {
   assert.equal((workflow.match(/node scripts\/check-release-catalog\.mjs --package "\$PKG"/g) ?? []).length, 2);
   assert.equal((workflow.match(/node scripts\/check-release-catalog\.mjs --package "\$MANUAL_PACKAGE"/g) ?? []).length, 1);
-  assert.match(workflow, /current exact Advisor, Starter, Controller public-npm launch target/);
+  assert.match(workflow, /current exact all-19 @clossys public-npm launch target/);
 });
 
 test("publish packs one candidate and hands off exact bytes", () => {

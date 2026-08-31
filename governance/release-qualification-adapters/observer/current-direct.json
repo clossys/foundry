@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "package": "@clossys/observer",
+  "archetype": "current-direct",
+  "bins": {
+    "observer-coverage-check": 0
+  },
+  "fixtures": [
+    "coverage-satisfied.json",
+    "coverage-violated.json",
+    "coverage-indeterminate.json"
+  ],
+  "cases": [
+    {
+      "id": "coverage-satisfied",
+      "bin": "observer-coverage-check",
+      "args": [
+        {
+          "literal": "--input"
+        },
+        {
+          "fixture": "coverage-satisfied.json"
+        }
+      ],
+      "exitCode": 0,
+      "group": "coverage"
+    },
+    {
+      "id": "coverage-violated",
+      "bin": "observer-coverage-check",
+      "args": [
+        {
+          "literal": "--input"
+        },
+        {
+          "fixture": "coverage-violated.json"
+        }
+      ],
+      "exitCode": 1,
+      "group": "coverage"
+    },
+    {
+      "id": "coverage-indeterminate",
+      "bin": "observer-coverage-check",
+      "args": [
+        {
+          "literal": "--input"
+        },
+        {
+          "fixture": "coverage-indeterminate.json"
+        }
+      ],
+      "exitCode": 2,
+      "group": "coverage"
+    }
+  ],
+  "dimensionEvidence": {
+    "rollback": "restoration",
+    "duplicate": "coverage"
+  }
+}

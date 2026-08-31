@@ -35,6 +35,7 @@ export function validateCandidatePublish({ root = process.cwd(), args }) {
   if (policyFindings.length) throw new Error("invalid qualification policy");
   const selected = selectPolicyPackage(policy, args.package);
   if (!selected) throw new Error("package key has no unique policy entry");
+  if (selected.entry.archetypes?.["current-direct"]?.status !== "required") throw new Error("package current-direct qualification is blocked by policy");
   const transcriptPath = regular(args.transcript, "transcript"), frozen = freezeTarball(args.tarball);
   try {
     const manifest = parseStrictJson(execFileSync("tar", ["-xOf", frozen.tarball, "package/package.json"], { encoding: "utf8" }));

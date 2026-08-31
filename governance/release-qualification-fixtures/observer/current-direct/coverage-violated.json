@@ -1,0 +1,27 @@
+{
+  "packages": [
+    "@clossys/observer"
+  ],
+  "repositories": [
+    {
+      "repository": "repo-a",
+      "installed": {
+        "packages": [
+          {
+            "name": "@clossys/observer"
+          }
+        ]
+      },
+      "declaration": {
+        "schemaVersion": 1,
+        "repository": "repo-a",
+        "declaredAbsences": [
+          {
+            "package": "@clossys/observer",
+            "reason": "synthetic contradiction"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+[
+  {
+    "obligationId": "obl-1",
+    "actorId": "sender-1",
+    "state": "failed",
+    "observedAt": "2026-08-22T10:30:00.000Z",
+    "transportRef": "ref-1"
+  }
+]

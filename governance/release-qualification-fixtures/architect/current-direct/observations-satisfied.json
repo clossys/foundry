@@ -1,0 +1,14 @@
+[
+  {
+    "id": "one",
+    "observedAt": "2026-08-23T12:00:00Z",
+    "material": true,
+    "crossings": [
+      {
+        "from": "workspace",
+        "to": "product",
+        "responsibility": "product"
+      }
+    ]
+  }
+]

@@ -21,7 +21,20 @@
         "controller",
         "strategist",
         "writer",
-        "designer"
+        "designer",
+        "architect",
+        "bouncer",
+        "butler",
+        "giver",
+        "influencer",
+        "integrator",
+        "keeper",
+        "locksmith",
+        "messenger",
+        "observer",
+        "builder",
+        "inspector",
+        "publisher"
       ]
     }
   ]

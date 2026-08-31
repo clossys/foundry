@@ -127,6 +127,279 @@
         "cadence": { "status": "unsupported", "reason": "Cadence is not established by a disposable installation canary." },
         "closeWindow": { "status": "unsupported", "reason": "Close-window evidence is not established by a disposable installation canary." }
       }
+    },
+    "@clossys/architect": {
+      "packageKey": "architect",
+      "recordStem": "clossys-architect",
+      "packageDir": "packages/architect",
+      "adapterPath": "governance/release-qualification-adapters/architect/current-direct.json",
+      "fixturePath": "governance/release-qualification-fixtures/architect/current-direct",
+      "archetypes": {
+        "current-direct": { "status": "required" },
+        "prior-minor": { "status": "unsupported", "reason": "No supported prior-minor consumer line is declared." },
+        "oldest-supported": { "status": "unsupported", "reason": "No oldest supported migration line is declared." },
+        "control-plane": { "status": "unsupported", "reason": "Provider and repository topology remain consumer-owned." }
+      },
+      "dimensions": {
+        "position": { "status": "unsupported", "reason": "A disposable consumer makes no installed position claim." },
+        "completion": { "status": "unsupported", "reason": "Topology conformance is not consumer completion." },
+        "rollback": { "status": "required" },
+        "duplicate": { "status": "unsupported", "reason": "Architect has no first-party runtime dependency graph to deduplicate." },
+        "cadence": { "status": "unsupported", "reason": "Cadence is not established by a disposable installation canary." },
+        "closeWindow": { "status": "unsupported", "reason": "Close-window evidence is not established by a disposable installation canary." }
+      }
+    },
+    "@clossys/bouncer": {
+      "packageKey": "bouncer",
+      "recordStem": "clossys-bouncer",
+      "packageDir": "packages/bouncer",
+      "adapterPath": "governance/release-qualification-adapters/bouncer/current-direct.json",
+      "fixturePath": "governance/release-qualification-fixtures/bouncer/current-direct",
+      "archetypes": {
+        "current-direct": { "status": "required" },
+        "prior-minor": { "status": "unsupported", "reason": "No supported prior-minor consumer line is declared." },
+        "oldest-supported": { "status": "unsupported", "reason": "No oldest supported migration line is declared." },
+        "control-plane": { "status": "unsupported", "reason": "Identity-provider topology remains consumer-owned." }
+      },
+      "dimensions": {
+        "position": { "status": "unsupported", "reason": "A disposable consumer makes no installed position claim." },
+        "completion": { "status": "unsupported", "reason": "Authorization conformance is not consumer completion." },
+        "rollback": { "status": "required" },
+        "duplicate": { "status": "unsupported", "reason": "Peer installation does not establish consumer dependency deduplication." },
+        "cadence": { "status": "unsupported", "reason": "Cadence is not established by a disposable installation canary." },
+        "closeWindow": { "status": "unsupported", "reason": "Close-window evidence is not established by a disposable installation canary." }
+      }
+    },
+    "@clossys/builder": {
+      "packageKey": "builder",
+      "recordStem": "clossys-builder",
+      "packageDir": "packages/builder",
+      "adapterPath": "governance/release-qualification-adapters/builder/current-direct.json",
+      "fixturePath": "governance/release-qualification-fixtures/builder/current-direct",
+      "archetypes": {
+        "current-direct": { "status": "required" },
+        "prior-minor": { "status": "unsupported", "reason": "No supported prior-minor consumer line is declared." },
+        "oldest-supported": { "status": "unsupported", "reason": "No oldest supported migration line is declared." },
+        "control-plane": { "status": "unsupported", "reason": "Repository workflow topology remains consumer-owned." }
+      },
+      "dimensions": {
+        "position": { "status": "unsupported", "reason": "A disposable consumer makes no installed position claim." },
+        "completion": { "status": "unsupported", "reason": "Deployment health is not consumer completion." },
+        "rollback": { "status": "required" },
+        "duplicate": { "status": "unsupported", "reason": "CLI cases do not establish npm graph deduplication of Controller." },
+        "cadence": { "status": "unsupported", "reason": "Cadence is not established by a disposable installation canary." },
+        "closeWindow": { "status": "unsupported", "reason": "Close-window evidence is not established by a disposable installation canary." }
+      }
+    },
+    "@clossys/butler": {
+      "packageKey": "butler",
+      "recordStem": "clossys-butler",
+      "packageDir": "packages/butler",
+      "adapterPath": "governance/release-qualification-adapters/butler/current-direct.json",
+      "fixturePath": "governance/release-qualification-fixtures/butler/current-direct",
+      "archetypes": {
+        "current-direct": { "status": "required" },
+        "prior-minor": { "status": "unsupported", "reason": "No supported prior-minor consumer line is declared." },
+        "oldest-supported": { "status": "unsupported", "reason": "No oldest supported migration line is declared." },
+        "control-plane": { "status": "unsupported", "reason": "Provider and workflow topology remain consumer-owned." }
+      },
+      "dimensions": {
+        "position": { "status": "unsupported", "reason": "A disposable consumer makes no installed position claim." },
+        "completion": { "status": "unsupported", "reason": "Confirmation completeness is not consumer completion." },
+        "rollback": { "status": "required" },
+        "duplicate": { "status": "unsupported", "reason": "Peer installation does not establish consumer dependency deduplication." },
+        "cadence": { "status": "unsupported", "reason": "Cadence is not established by a disposable installation canary." },
+        "closeWindow": { "status": "unsupported", "reason": "Close-window evidence is not established by a disposable installation canary." }
+      }
+    },
+    "@clossys/giver": {
+      "packageKey": "giver",
+      "recordStem": "clossys-giver",
+      "packageDir": "packages/giver",
+      "adapterPath": "governance/release-qualification-adapters/giver/current-direct.json",
+      "fixturePath": "governance/release-qualification-fixtures/giver/current-direct",
+      "archetypes": {
+        "current-direct": { "status": "required" },
+        "prior-minor": { "status": "unsupported", "reason": "No supported prior-minor consumer line is declared." },
+        "oldest-supported": { "status": "unsupported", "reason": "No oldest supported migration line is declared." },
+        "control-plane": { "status": "unsupported", "reason": "Delivery-provider topology remains consumer-owned." }
+      },
+      "dimensions": {
+        "position": { "status": "unsupported", "reason": "A disposable consumer makes no installed position claim." },
+        "completion": { "status": "unsupported", "reason": "Obligation discharge is not consumer completion." },
+        "rollback": { "status": "required" },
+        "duplicate": { "status": "unsupported", "reason": "Giver has no first-party runtime dependency graph to deduplicate." },
+        "cadence": { "status": "unsupported", "reason": "Cadence is not established by a disposable installation canary." },
+        "closeWindow": { "status": "unsupported", "reason": "A synthetic obligation window does not establish a consumer close window." }
+      }
+    },
+    "@clossys/influencer": {
+      "packageKey": "influencer",
+      "recordStem": "clossys-influencer",
+      "packageDir": "packages/influencer",
+      "adapterPath": "governance/release-qualification-adapters/influencer/current-direct.json",
+      "fixturePath": "governance/release-qualification-fixtures/influencer/current-direct",
+      "archetypes": {
+        "current-direct": { "status": "required" },
+        "prior-minor": { "status": "unsupported", "reason": "No supported prior-minor consumer line is declared." },
+        "oldest-supported": { "status": "unsupported", "reason": "No oldest supported migration line is declared." },
+        "control-plane": { "status": "unsupported", "reason": "Channel-provider topology remains consumer-owned." }
+      },
+      "dimensions": {
+        "position": { "status": "unsupported", "reason": "A disposable consumer makes no installed position claim." },
+        "completion": { "status": "unsupported", "reason": "Response yield is not consumer completion." },
+        "rollback": { "status": "required" },
+        "duplicate": { "status": "unsupported", "reason": "Influencer has no first-party runtime dependency graph to deduplicate." },
+        "cadence": { "status": "unsupported", "reason": "Cadence is not established by a disposable installation canary." },
+        "closeWindow": { "status": "unsupported", "reason": "A synthetic response window does not establish a consumer close window." }
+      }
+    },
+    "@clossys/integrator": {
+      "packageKey": "integrator",
+      "recordStem": "clossys-integrator",
+      "packageDir": "packages/integrator",
+      "adapterPath": "governance/release-qualification-adapters/integrator/current-direct.json",
+      "fixturePath": "governance/release-qualification-fixtures/integrator/current-direct",
+      "archetypes": {
+        "current-direct": { "status": "required" },
+        "prior-minor": { "status": "unsupported", "reason": "No supported prior-minor consumer line is declared." },
+        "oldest-supported": { "status": "unsupported", "reason": "No oldest supported migration line is declared." },
+        "control-plane": { "status": "unsupported", "reason": "Consumer dependency choices remain consumer-owned." }
+      },
+      "dimensions": {
+        "position": { "status": "unsupported", "reason": "A disposable consumer makes no installed position claim." },
+        "completion": { "status": "unsupported", "reason": "Supersession conformance is not consumer completion." },
+        "rollback": { "status": "required" },
+        "duplicate": { "status": "unsupported", "reason": "Manifest cases do not establish the installed npm graph." },
+        "cadence": { "status": "unsupported", "reason": "Cadence is not established by a disposable installation canary." },
+        "closeWindow": { "status": "unsupported", "reason": "Close-window evidence is not established by a disposable installation canary." }
+      }
+    },
+    "@clossys/keeper": {
+      "packageKey": "keeper",
+      "recordStem": "clossys-keeper",
+      "packageDir": "packages/keeper",
+      "adapterPath": "governance/release-qualification-adapters/keeper/current-direct.json",
+      "fixturePath": "governance/release-qualification-fixtures/keeper/current-direct",
+      "archetypes": {
+        "current-direct": { "status": "required" },
+        "prior-minor": { "status": "unsupported", "reason": "No supported prior-minor consumer line is declared." },
+        "oldest-supported": { "status": "unsupported", "reason": "No oldest supported migration line is declared." },
+        "control-plane": { "status": "unsupported", "reason": "Holding-store topology remains consumer-owned." }
+      },
+      "dimensions": {
+        "position": { "status": "unsupported", "reason": "A disposable consumer makes no installed position claim." },
+        "completion": { "status": "unsupported", "reason": "Attribution conformance is not consumer completion." },
+        "rollback": { "status": "required" },
+        "duplicate": { "status": "unsupported", "reason": "Peer installation does not establish consumer dependency deduplication." },
+        "cadence": { "status": "unsupported", "reason": "Cadence is not established by a disposable installation canary." },
+        "closeWindow": { "status": "unsupported", "reason": "Close-window evidence is not established by a disposable installation canary." }
+      }
+    },
+    "@clossys/locksmith": {
+      "packageKey": "locksmith",
+      "recordStem": "clossys-locksmith",
+      "packageDir": "packages/locksmith",
+      "adapterPath": "governance/release-qualification-adapters/locksmith/current-direct.json",
+      "fixturePath": "governance/release-qualification-fixtures/locksmith/current-direct",
+      "archetypes": {
+        "current-direct": { "status": "required" },
+        "prior-minor": { "status": "unsupported", "reason": "No supported prior-minor consumer line is declared." },
+        "oldest-supported": { "status": "unsupported", "reason": "No oldest supported migration line is declared." },
+        "control-plane": { "status": "unsupported", "reason": "Secrets-provider topology and credentials remain consumer-owned." }
+      },
+      "dimensions": {
+        "position": { "status": "unsupported", "reason": "A catalog availability check makes no installed position claim." },
+        "completion": { "status": "unsupported", "reason": "Required-name availability is not consumer completion." },
+        "rollback": { "status": "required" },
+        "duplicate": { "status": "unsupported", "reason": "Locksmith has no first-party runtime dependency graph to deduplicate." },
+        "cadence": { "status": "unsupported", "reason": "Cadence is not established by a disposable catalog canary." },
+        "closeWindow": { "status": "unsupported", "reason": "Close-window evidence is not established by a disposable catalog canary." }
+      }
+    },
+    "@clossys/messenger": {
+      "packageKey": "messenger",
+      "recordStem": "clossys-messenger",
+      "packageDir": "packages/messenger",
+      "adapterPath": "governance/release-qualification-adapters/messenger/current-direct.json",
+      "fixturePath": "governance/release-qualification-fixtures/messenger/current-direct",
+      "archetypes": {
+        "current-direct": { "status": "required" },
+        "prior-minor": { "status": "unsupported", "reason": "No supported prior-minor consumer line is declared." },
+        "oldest-supported": { "status": "unsupported", "reason": "No oldest supported migration line is declared." },
+        "control-plane": { "status": "unsupported", "reason": "Delivery-provider topology remains consumer-owned." }
+      },
+      "dimensions": {
+        "position": { "status": "unsupported", "reason": "A disposable consumer makes no installed position claim." },
+        "completion": { "status": "unsupported", "reason": "Delivery closure is not consumer completion." },
+        "rollback": { "status": "required" },
+        "duplicate": { "status": "unsupported", "reason": "Peer installation does not establish consumer dependency deduplication." },
+        "cadence": { "status": "unsupported", "reason": "Cadence is not established by a disposable installation canary." },
+        "closeWindow": { "status": "unsupported", "reason": "A synthetic delivery window does not establish a consumer close window." }
+      }
+    },
+    "@clossys/observer": {
+      "packageKey": "observer",
+      "recordStem": "clossys-observer",
+      "packageDir": "packages/observer",
+      "adapterPath": "governance/release-qualification-adapters/observer/current-direct.json",
+      "fixturePath": "governance/release-qualification-fixtures/observer/current-direct",
+      "archetypes": {
+        "current-direct": { "status": "required" },
+        "prior-minor": { "status": "unsupported", "reason": "No supported prior-minor consumer line is declared." },
+        "oldest-supported": { "status": "unsupported", "reason": "No oldest supported migration line is declared." },
+        "control-plane": { "status": "unsupported", "reason": "Fleet observation topology remains consumer-owned." }
+      },
+      "dimensions": {
+        "position": { "status": "unsupported", "reason": "A disposable consumer makes no installed position claim." },
+        "completion": { "status": "unsupported", "reason": "Coverage classification is not consumer completion." },
+        "rollback": { "status": "required" },
+        "duplicate": { "status": "unsupported", "reason": "Observer has no first-party runtime dependency graph to deduplicate." },
+        "cadence": { "status": "unsupported", "reason": "Cadence is not established by a disposable installation canary." },
+        "closeWindow": { "status": "unsupported", "reason": "Close-window evidence is not established by a disposable installation canary." }
+      }
+    },
+    "@clossys/inspector": {
+      "packageKey": "inspector",
+      "recordStem": "clossys-inspector",
+      "packageDir": "packages/inspector",
+      "adapterPath": "governance/release-qualification-adapters/inspector/current-direct.json",
+      "fixturePath": "governance/release-qualification-fixtures/inspector/current-direct",
+      "archetypes": {
+        "current-direct": { "status": "required" },
+        "prior-minor": { "status": "unsupported", "reason": "No supported prior-minor consumer line is declared." },
+        "oldest-supported": { "status": "unsupported", "reason": "No oldest supported migration line is declared." },
+        "control-plane": { "status": "unsupported", "reason": "Repository scan topology remains consumer-owned." }
+      },
+      "dimensions": {
+        "position": { "status": "unsupported", "reason": "A disposable consumer makes no installed position claim." },
+        "completion": { "status": "unsupported", "reason": "Standards verification is not consumer completion." },
+        "rollback": { "status": "required" },
+        "duplicate": { "status": "unsupported", "reason": "CLI cases do not establish npm graph deduplication of Controller." },
+        "cadence": { "status": "unsupported", "reason": "Cadence is not established by a disposable installation canary." },
+        "closeWindow": { "status": "unsupported", "reason": "Close-window evidence is not established by a disposable installation canary." }
+      }
+    },
+    "@clossys/publisher": {
+      "packageKey": "publisher",
+      "recordStem": "clossys-publisher",
+      "packageDir": "packages/publisher",
+      "adapterPath": "governance/release-qualification-adapters/publisher/current-direct.json",
+      "fixturePath": "governance/release-qualification-fixtures/publisher/current-direct",
+      "archetypes": {
+        "current-direct": { "status": "required" },
+        "prior-minor": { "status": "unsupported", "reason": "No supported prior-minor consumer line is declared." },
+        "oldest-supported": { "status": "unsupported", "reason": "No oldest supported migration line is declared." },
+        "control-plane": { "status": "unsupported", "reason": "Publishing-provider topology remains consumer-owned." }
+      },
+      "dimensions": {
+        "position": { "status": "unsupported", "reason": "A disposable consumer makes no installed position claim." },
+        "completion": { "status": "unsupported", "reason": "Media coverage is not consumer completion." },
+        "rollback": { "status": "required" },
+        "duplicate": { "status": "unsupported", "reason": "CLI cases do not establish npm graph deduplication of first-party dependencies." },
+        "cadence": { "status": "unsupported", "reason": "Cadence is not established by a disposable installation canary." },
+        "closeWindow": { "status": "unsupported", "reason": "Close-window evidence is not established by a disposable installation canary." }
+      }
     }
   }
 }

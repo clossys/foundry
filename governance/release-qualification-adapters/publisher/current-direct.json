@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "package": "@clossys/publisher",
+  "archetype": "current-direct",
+  "peerInstall": {
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "bins": {
+    "publisher-media-check": 0,
+    "publisher-record-check": 0
+  },
+  "fixtures": [
+    "assets.json",
+    "references-satisfied.json",
+    "references-violated.json",
+    "references-indeterminate.json"
+  ],
+  "cases": [
+    {
+      "id": "media-satisfied",
+      "bin": "publisher-media-check",
+      "fixtureArgs": [
+        "assets.json",
+        "references-satisfied.json"
+      ],
+      "exitCode": 0,
+      "group": "media-coverage"
+    },
+    {
+      "id": "media-violated",
+      "bin": "publisher-media-check",
+      "fixtureArgs": [
+        "assets.json",
+        "references-violated.json"
+      ],
+      "exitCode": 1,
+      "group": "media-coverage"
+    },
+    {
+      "id": "media-indeterminate",
+      "bin": "publisher-media-check",
+      "fixtureArgs": [
+        "assets.json",
+        "references-indeterminate.json"
+      ],
+      "exitCode": 2,
+      "group": "media-coverage"
+    }
+  ],
+  "dimensionEvidence": {
+    "rollback": "restoration",
+    "duplicate": "media-coverage"
+  }
+}

@@ -1,0 +1,11 @@
+[
+  {
+    "intentId": "int_1",
+    "subjectId": "sub_1",
+    "actorId": "agent_1",
+    "interpretation": "reschedule",
+    "confidence": 0.95,
+    "observedAt": "2026-02-01T00:00:00.000Z",
+    "disposition": "acted"
+  }
+]

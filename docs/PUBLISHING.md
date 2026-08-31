@@ -266,6 +266,17 @@ to the retained record before dry-run or upload. It never executes stored
 record commands. Producer policy, rather than a record, owns unsupported
 archetypes and dimensions; the runner proves the required install surface,
 native `0`/`1`/`2` outcomes, matched control, and restoration evidence.
+New qualifications retain transcript v3. Runtime exports named by the packed
+manifest's closed `foundryReleaseVerification.next` rows are excluded from raw
+Node imports and instead resolved in their declared client, server, or proxy
+context by one real isolated Next build. The transcript records one framework
+observation per export, counts the framework exports and the single shared
+build separately, and rejects stale, duplicate, undeclared, or empty context
+rows. A packed `react-server` export condition remains a separate audited
+runtime branch: v3 records an ordinary import and an explicit
+`node --conditions=react-server` import with condition-bearing identities, and
+counts the latter as a closed subset of runtime imports. Retained v1 and v2
+transcripts remain immutable and valid under their original closed schemas.
 
 A candidate review binds its reviewed commit. Before squash, the PR tail may
 change only its versioned record; at publish, content joins and fresh tarball
@@ -323,13 +334,18 @@ replaying a release path requires an explicit runtime tuple.
 [`governance/release-catalog.json`](../governance/release-catalog.json) is the
 fail-closed source catalogue. After W1D its active target is `clossys-npmjs`,
 and `package-scope.json` binds the same `@clossys` scope and public npm
-registry. The source tree contains nineteen packages, but the active release
-target retains `advisor`, `starter`, and `controller` as a sealed ordered
-prefix, then carries the reviewed append-only allowlist for Strategist, Writer,
-and Designer. It never accepts `all`, reordering, duplication, or replacement
-of the first Trio. A later package needs both its reviewed catalogue entry and
-a separately introduced immutable package-neutral publication record. That
-record joins qualification path/digest, candidate source/manifest/tarball, the
+registry. The active release target closes over all nineteen publishable
+source manifests in a reviewed dependency order: the sealed Advisor, Starter,
+Controller prefix remains first; Builder and Inspector follow Controller; and
+Publisher follows Controller, Writer, and Designer. It never accepts `all`, a
+partial source inventory, reordering, duplication, or replacement of the first
+Trio. Catalogue membership is not qualification: to be eligible, a package
+must also have a required current-direct adapter with explicit 0/1/2 behavior.
+A blocked policy entry remains ineligible even when it appears in the catalogue;
+the current policy requires runnable adapters for all nineteen packages. Each
+release also needs a separately
+introduced immutable package-neutral publication record. That record joins
+qualification path/digest, candidate source/manifest/tarball, the
 catalogue bytes from that record's introduction commit plus its continuing
 current allowlist membership and anonymous served-byte proof. The legacy v1
 form records owner-present publication time/evidence only. The append-only v2
@@ -338,6 +354,12 @@ workflow/ref/event/source/run/builder provenance, and the registry-served
 bytes. A package may have later records at distinct versions; each record is
 uniquely bound to its exact `name@version`. These later records do not alter
 the immutable first-publication Trio evidence.
+
+Catalogue closure does not make all nineteen records producible in parallel:
+Publisher's current-direct run remains deferred until its required Writer and
+Designer versions are public and verified. A local sibling tarball or
+workspace link is diagnostic only and cannot substitute for that
+registry-backed dependency proof.
 This is a source-state declaration only. During W1D no `@clossys` package was
 published or supported for installation. W1E subsequently published and
 anonymously verified the owner-present first Trio identities, then published
@@ -367,7 +389,9 @@ one tarball. The disabled W1D workflow cannot perform these publication steps.
 2. **The fixed candidate-qualification runner installs that exact tarball into
    a genuinely isolated directory, covers every declared export target, and
    invokes every declared bin plus its fixed adversarial cases — before anything
-   is published.** A failure here stops the job: `npm publish` never
+   is published. Framework-bound runtime exports are covered by the one
+   manifest-declared real framework build rather than a context-invalid raw
+   Node import.** A failure here stops the job: `npm publish` never
    runs, and nothing reaches the registry. This is the fix for the ordering
    defect issue #191 describes — this check used to run
    only *after* `npm publish`, where a registry version is already immutable

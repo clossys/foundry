@@ -1,0 +1,14 @@
+{
+  "id": "example-app",
+  "entries": [
+    {
+      "id": "marketing.hero-banner",
+      "type": "image",
+      "src": "/images/hero-banner.png",
+      "width": 1600,
+      "height": 900,
+      "alt": "Illustration of a laptop showing a dashboard",
+      "licence": "CC-BY-4.0"
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "evaluatedAt": "2026-08-23T10:10:00.000Z",
+  "setpoint": 1,
+  "records": [
+    {
+      "intentId": "intent-1",
+      "authorization": {
+        "id": "authorization-1",
+        "intentId": "intent-1",
+        "policy": "transactional-v1",
+        "authorizedAt": "2026-08-23T09:59:00.000Z"
+      },
+      "windowOpensAt": "2026-08-23T10:00:00.000Z",
+      "windowClosesAt": "2026-08-23T10:05:00.000Z"
+    }
+  ]
+}

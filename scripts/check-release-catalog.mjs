@@ -20,6 +20,12 @@ const PRECUTOVER_TARGET = Object.freeze({
   registry: "https://registry.npmjs.org",
   packages: Object.freeze(["advisor", "starter", "controller"]),
 });
+export const ALL_PACKAGE_RELEASE_ORDER = Object.freeze([
+  "advisor", "starter", "controller", "strategist", "writer", "designer",
+  "architect", "bouncer", "butler", "giver", "influencer", "integrator",
+  "keeper", "locksmith", "messenger", "observer", "builder", "inspector",
+  "publisher",
+]);
 const CURRENT_TARGET = Object.freeze({
   id: "current-github-packages",
   status: "active",
@@ -33,7 +39,7 @@ const CUTOVER_TARGET = Object.freeze({
   scope: "@clossys",
   registry: "https://registry.npmjs.org",
   access: "public",
-  packages: Object.freeze(["advisor", "starter", "controller"]),
+  packages: ALL_PACKAGE_RELEASE_ORDER,
 });
 
 class CatalogInputError extends Error {
@@ -84,9 +90,13 @@ function matchesExactArray(actual, expected) {
 }
 
 function hasInitialPublicationPrefix(actual) {
-  return Array.isArray(actual) && actual.length >= CUTOVER_TARGET.packages.length &&
-    CUTOVER_TARGET.packages.every((value, index) => actual[index] === value) &&
+  return Array.isArray(actual) && actual.length >= PRECUTOVER_TARGET.packages.length &&
+    PRECUTOVER_TARGET.packages.every((value, index) => actual[index] === value) &&
     new Set(actual).size === actual.length;
+}
+
+function hasCompleteReleaseOrder(actual) {
+  return matchesExactArray(actual, CUTOVER_TARGET.packages);
 }
 
 /**
@@ -153,9 +163,10 @@ export function loadReleaseCatalog({ path = "governance/release-catalog.json", r
       cutover.registry !== CUTOVER_TARGET.registry ||
       cutover.access !== CUTOVER_TARGET.access ||
       !hasInitialPublicationPrefix(cutover.packages) ||
+      !hasCompleteReleaseOrder(cutover.packages) ||
       catalog.defaultTarget !== CUTOVER_TARGET.id
     ) {
-      fail(`${path} candidate state must retain the ordered Advisor, Starter, Controller first-publication prefix and an explicit unique public-npm allowlist`);
+      fail(`${path} candidate state must retain the exact dependency-ordered all-package public-npm allowlist`);
     }
   }
   if (!ids.has(catalog.defaultTarget)) fail(`${path} defaultTarget "${catalog.defaultTarget}" is not declared in targets`);
