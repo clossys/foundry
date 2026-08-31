@@ -758,6 +758,11 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
       if (packageRoot) overlayRoots.add(packageRoot);
     }
     if (!restoreConsumerOverlay) await assertConsumerOverlayRootsAbsent(overlayRoots, "refuses to overwrite");
+    const overlayRootExisted = new Map();
+    if (restoreConsumerOverlay) for (const packageRoot of overlayRoots) {
+      try { await lstat(packageRoot); overlayRootExisted.set(packageRoot, true); }
+      catch (error) { if (error?.code !== "ENOENT") throw error; overlayRootExisted.set(packageRoot, false); }
+    }
     const overlayBackup = new Map();
     for (const item of adapter.consumerOverlay ?? []) {
       const target = resolve(root, item.target);
@@ -798,6 +803,7 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
       for (const [target, bytes] of overlayBackup) {
         await restoreRegularFile(root, target, bytes, "consumer overlay");
       }
+      for (const [packageRoot, existed] of overlayRootExisted) if (!existed) await removeContainedDirectory(root, packageRoot, "consumer overlay package root");
     } else {
       for (const packageRoot of overlayRoots) await removeContainedDirectory(root, packageRoot, "consumer overlay package root");
       await assertConsumerOverlayRootsAbsent(overlayRoots, "post-case restoration failed");

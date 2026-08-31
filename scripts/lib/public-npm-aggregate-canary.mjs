@@ -412,9 +412,10 @@ function exactPathHistory(root, path, commits = reachableCommits(root)) {
     const parents = actualParents(root, commit);
     const current = pathBlob(root, commit, path);
     const parentBlobs = parents.map((parent) => pathBlob(root, parent, path));
-    const mutation = parents.length > 1
+    const renameOrCopy = renamedPathStatus(root, commit, path);
+    const mutation = renameOrCopy ?? (parents.length > 1
       ? (parentBlobs.some((parent) => parent === current) ? null : mutationStatus(current, parentBlobs))
-      : (parentBlobs[0] === current ? null : renamedPathStatus(root, commit, path) ?? mutationStatus(current, parentBlobs));
+      : (parentBlobs[0] === current ? null : mutationStatus(current, parentBlobs)));
     if (!mutation) continue;
     const bytes = pathBytes(root, commit, path, current) ?? parentBlobs.map((parent, index) => pathBytes(root, parents[index], path, parent)).find((value) => value !== null) ?? Buffer.alloc(0);
     history.push({ commit, status: mutation, sha256: hash(bytes) });
@@ -629,9 +630,10 @@ async function treeDigest(root) {
   const walk = async (directory) => {
     for (const item of await readdir(directory, { withFileTypes: true })) {
       const path = join(directory, item.name);
-      if (item.isDirectory()) await walk(path);
-      else if (item.isFile()) rows.push(["file", path.slice(root.length + 1), hash(await readFile(path))]);
-      else if (item.isSymbolicLink()) rows.push(["symlink", path.slice(root.length + 1), await readlink(path)]);
+      const mode = (await lstat(path)).mode & 0o777;
+      if (item.isDirectory()) { rows.push(["directory", path.slice(root.length + 1), String(mode)]); await walk(path); }
+      else if (item.isFile()) rows.push(["file", path.slice(root.length + 1), `${mode}:${hash(await readFile(path))}`]);
+      else if (item.isSymbolicLink()) rows.push(["symlink", path.slice(root.length + 1), `${mode}:${await readlink(path)}`]);
     }
   };
   await walk(root); return hash(JSON.stringify(rows.sort((left, right) => `${left[1]}\0${left[0]}\0${left[2]}`.localeCompare(`${right[1]}\0${right[0]}\0${right[2]}`))));
@@ -731,6 +733,7 @@ export async function runAggregatePublicNpmCanary({ root, record, set = "oidc-su
       if (!repositoryRedirects.some((item) => JSON.stringify(item) === JSON.stringify({ ...historical, kind: redirect.kind }))) repositoryRedirects.push({ ...historical, kind: redirect.kind });
     }
     const result = await boundedExternal(`registry verification ${entry.name}@${entry.version}`, () => verifyArtifact({ registry: PUBLIC_NPM_REGISTRY, name: entry.name, version: entry.version, repository, fetchImpl }));
+    if (result.kind === "unreachable") throw new AggregateUnavailableError(`${entry.name}@${entry.version} anonymous registry verification is unavailable`);
     if (result.kind !== "verified") throw new Error(`${entry.name}@${entry.version} anonymous registry verification did not complete: ${result.kind}`);
     const qualification = JSON.parse(read(entry.qualification.path));
     const expected = qualification.candidate;
