@@ -331,9 +331,13 @@ of the first Trio. A later package needs both its reviewed catalogue entry and
 a separately introduced immutable package-neutral publication record. That
 record joins qualification path/digest, candidate source/manifest/tarball, the
 catalogue bytes from that record's introduction commit plus its continuing
-current allowlist membership, anonymous served-byte proof, and owner-present
-publication time/evidence reference. This v1 record does not claim trusted
-publisher provenance.
+current allowlist membership and anonymous served-byte proof. The legacy v1
+form records owner-present publication time/evidence only. The append-only v2
+trusted-publisher form additionally binds the exact npm attestation, reviewed
+workflow/ref/event/source/run/builder provenance, and the registry-served
+bytes. A package may have later records at distinct versions; each record is
+uniquely bound to its exact `name@version`. These later records do not alter
+the immutable first-publication Trio evidence.
 This is a source-state declaration only. During W1D no `@clossys` package was
 published or supported for installation. W1E subsequently published and
 anonymously verified the owner-present first Trio identities, then published

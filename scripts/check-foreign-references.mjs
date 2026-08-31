@@ -664,20 +664,10 @@ for (const file of files) {
   });
 }
 
-if (transitionState === "candidate") {
-  for (const [key, remaining] of historicalRepositoryAllowances) {
-    if (remaining > 0) {
-      const [file] = key.split("\0");
-      findings.push({
-        file,
-        line: 0,
-        kind: "forge-slug",
-        reference: transitionPolicy.historicalRepositories[0],
-        text: `sealed historical repository alias is missing ${remaining} required occurrence(s)`,
-      });
-    }
-  }
-}
+// The package-identity transition gate validates the complete content-addressed
+// alias multiset, including bare registry repository fields. This checker sees
+// only forge URLs, so it consumes matching URL allowances without treating an
+// unscanned bare field as a missing URL occurrence.
 
 // ------------------------------------------------------------------- reporting
 
