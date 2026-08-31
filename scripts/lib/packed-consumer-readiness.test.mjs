@@ -11,6 +11,7 @@ import {
   inspectPackedExports,
   installedIdentityFindings,
   installedPackageRoots,
+  importSpecifier,
   parsePackedConsumerArgs,
   runProcess,
   validateOptionalPeerPolicy,
@@ -131,6 +132,7 @@ test("inspectPackedExports imports runtime subpaths and resolves every static ta
     },
   });
   assert.deepEqual(result.runtimeSpecifiers, ["@example/pkg"]);
+  assert.deepEqual(result.runtimeTargets, [{ specifier: "@example/pkg", condition: "default" }]);
   assert.deepEqual(result.staticTargets.map((item) => item.target), ["./assets/one.css", "./dist/index.d.ts", "./dist/index.js"]);
 
   const contextual = await inspectPackedExports(root, {
@@ -155,6 +157,17 @@ test("inspectPackedExports imports runtime subpaths and resolves every static ta
     all: ["@example/pkg/client", "@example/pkg/proxy", "@example/pkg/server"],
   });
   assert.deepEqual([...contextual.rawRuntimeSpecifiers, ...contextual.nextContexts.all].sort(), contextual.runtimeSpecifiers);
+  const conditional = await inspectPackedExports(root, {
+    name: "@example/pkg",
+    exports: {
+      "./web": { "react-server": "./dist/server.js", import: "./dist/index.js" },
+    },
+  });
+  assert.deepEqual(conditional.runtimeTargets, [
+    { specifier: "@example/pkg/web", condition: "default" },
+    { specifier: "@example/pkg/web", condition: "react-server" },
+  ]);
+  assert.deepEqual(conditional.rawRuntimeTargets, conditional.runtimeTargets);
   await assert.rejects(() => inspectPackedExports(root, {
     name: "@example/pkg",
     exports: { "./client": "./dist/client.js" },
@@ -211,12 +224,76 @@ test("optional-peer policy is closed in both directions against packed metadata"
   assert.deepEqual(validateOptionalPeerPolicy(packages, { "@example/pkg": {} }), ["@example/pkg optional peer react has no omission row"]);
   assert.ok(validateOptionalPeerPolicy(packages, { "@example/pkg": { react: {}, stale: {} } }).some((finding) => finding.includes("stale")));
   assert.deepEqual(validateOptionalPeerPolicy([], green), ["@example/pkg omission policy is stale"]);
+
+  const conditional = [{ manifest: {
+    name: "@example/conditional",
+    exports: { "./web": { "react-server": "./dist/server.js", import: "./dist/web.js" } },
+    peerDependenciesMeta: { react: { optional: true } },
+  } }];
+  const conditionAware = { "@example/conditional": { react: {
+    "@example/conditional/web": { default: "imports", "react-server": "rejects" },
+  } } };
+  assert.deepEqual(validateOptionalPeerPolicy(conditional, conditionAware), []);
+  assert.ok(validateOptionalPeerPolicy(conditional, { "@example/conditional": { react: {
+    "@example/conditional/web": { default: "imports" },
+  } } }).some((finding) => finding.includes("incomplete or stale condition outcomes")));
+  assert.ok(validateOptionalPeerPolicy(conditional, { "@example/conditional": { react: {
+    "@example/conditional/web": { default: "imports", "react-server": "imports", browser: "imports" },
+  } } }).some((finding) => finding.includes("incomplete or stale condition outcomes")));
 });
 
 test("the repository omission matrix is closed against every current publishable manifest", async () => {
   const packages = await discoverPublishablePackages(process.cwd());
   assert.equal(packages.length, 19);
   assert.deepEqual(validateOptionalPeerPolicy(packages, OPTIONAL_PEER_POLICY), []);
+});
+
+test("Publisher's optional-peer matrix binds both default and react-server web outcomes", () => {
+  const publisherExports = [
+    "@clossys/publisher/core",
+    "@clossys/publisher/document",
+    "@clossys/publisher/email",
+    "@clossys/publisher/image",
+    "@clossys/publisher/media",
+    "@clossys/publisher/print",
+    "@clossys/publisher/record",
+    "@clossys/publisher/slides",
+    "@clossys/publisher/web",
+  ];
+  const expected = (rejected = [], web = { default: "imports", "react-server": "imports" }) => ({
+    ...Object.fromEntries(
+    publisherExports.map((specifier) => [specifier, rejected.includes(specifier) ? "rejects" : "imports"]),
+    ),
+    "@clossys/publisher/web": web,
+  });
+  const rows = OPTIONAL_PEER_POLICY["@clossys/publisher"];
+
+  assert.deepEqual(rows["@internationalized/date"], expected([], { default: "rejects", "react-server": "imports" }));
+  assert.deepEqual(rows.react, expected(["@clossys/publisher/document"], { default: "rejects", "react-server": "rejects" }));
+  assert.deepEqual(rows["react-aria-components"], expected([], { default: "rejects", "react-server": "imports" }));
+  assert.deepEqual(rows["react-dom"], expected([], { default: "rejects", "react-server": "imports" }));
+  assert.deepEqual(rows["tailwind-merge"], expected([], { default: "rejects", "react-server": "rejects" }));
+  assert.deepEqual(rows.tailwindcss, expected());
+});
+
+test("condition-aware optional-peer execution launches both default and react-server imports", async (t) => {
+  const root = await fixture(t);
+  const packageRoot = join(root, "node_modules", "@example", "conditional");
+  await mkdir(join(packageRoot, "dist"), { recursive: true });
+  await writeFile(join(root, "package.json"), '{"type":"module"}\n');
+  await writeFile(join(packageRoot, "package.json"), JSON.stringify({
+    name: "@example/conditional",
+    type: "module",
+    exports: { "./web": { "react-server": "./dist/server.js", import: "./dist/default.js" } },
+  }));
+  await writeFile(join(packageRoot, "dist", "default.js"), 'throw new Error("default omission");\n');
+  await writeFile(join(packageRoot, "dist", "server.js"), 'export const condition = "react-server";\n');
+
+  const defaultResult = await importSpecifier("@example/conditional/web", root, process.env);
+  const serverResult = await importSpecifier("@example/conditional/web", root, process.env, "react-server");
+  assert.equal(defaultResult.exitCode, 1);
+  assert.match(defaultResult.stderr, /default omission/);
+  assert.equal(serverResult.exitCode, 0, serverResult.stderr);
 });
 
 test("installedPackageRoots finds nested copies so a transitive peer cannot produce a false green", async (t) => {

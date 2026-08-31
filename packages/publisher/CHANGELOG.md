@@ -3,6 +3,18 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.9] - 2026-08-31
+
+### Fixed
+
+- Declared Designer's optional `@internationalized/date`,
+  `react-aria-components`, `tailwind-merge`, and `tailwindcss` peers directly
+  and installed their exact qualification versions. A clean public-registry
+  consumer can now import both ordinary and `react-server`
+  `@clossys/publisher/web` instead of failing on Designer's absent transitive
+  optional peers. The rejected 0.1.8 candidate was never published; this
+  forward version is the next eligible first-publication identity.
+
 ## [0.1.8] - 2026-08-31
 
 ### Fixed

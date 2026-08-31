@@ -627,11 +627,13 @@ still pause for the required GitHub protected-environment reviewer. Neither
 the retained record nor this handoff claims that either provider setting has
 already been changed.
 
-`@clossys/publisher@0.1.8` is deliberately deferred. It has no current
-retained qualification record. Do not prepare an owner-present upload for it
-until the exact Writer and Designer identities above have passed anonymous
-served-byte verification, then create and review a fresh Publisher candidate
-qualification against those public runtime siblings before its own
+`@clossys/publisher@0.1.9` is deliberately deferred. The 0.1.8 candidate was
+never published: its clean public-registry qualification correctly failed
+because Publisher did not directly propagate Designer's optional peer closure.
+Do not prepare an owner-present 0.1.9 upload until the exact Writer and Designer
+identities above have passed anonymous served-byte verification and the peer
+closure correction has merged. Then create and review a fresh Publisher
+candidate qualification against those public runtime siblings before its own
 owner-present first-publication handoff.
 
 ### Why the name-collision check runs first, always

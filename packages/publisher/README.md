@@ -28,9 +28,11 @@ Use explicit subpaths:
 - `@clossys/publisher/record` — the append-only, content-addressed publication ledger and its drift checker. See "`record` — the append-only publication ledger," below.
 
 The package has no root export. `core` is deliberately framework-agnostic;
-the web and document subpaths have optional React (and, for `web`, designer)
-peers, while non-web renderers do not require them at runtime. `record` is
-pure and has no peer dependencies of its own.
+the web and document subpaths have optional React peers, while `web` also
+declares Designer's optional runtime peers directly so a public-registry
+consumer receives a complete, inspectable peer contract. Non-web renderers do
+not require them at runtime. `record` is pure and has no peer dependencies of
+its own.
 
 The web condition changes only the implementation selected for server
 rendering, not the API. `MarketingView` keeps the same props and regional
@@ -1168,9 +1170,13 @@ release, and
 `controller` to a matching `0.8.x` patch release — otherwise
 `publisher`'s declared ranges and the consumer's exact pin cannot both be
 satisfied, and the install fails with an unresolvable version conflict.
-`react` and `react-dom` are optional
-peer dependencies (`>=18`) required only by the `web` and `document`
-subpaths' renderers; `record` has no peer dependencies of its own.
+`react` and `react-dom` are optional peer dependencies (`>=18`) required only
+by the `web` and `document` subpaths' renderers. The `web` subpath also imports
+Designer surfaces, so Publisher directly repeats Designer's optional
+`@internationalized/date`, `react-aria-components`, `tailwind-merge`, and
+`tailwindcss` peer ranges. This closes the public npm consumer graph instead
+of relying on an installer to propagate a dependency's optional peers.
+`record` has no peer dependencies of its own.
 
 Marking `react` optional means npm gives no install-time signal if it's
 missing or on an incompatible version — importing `./web` or `./document`
@@ -1184,22 +1190,15 @@ own — no file in this package ever imports it directly; only your own
 either renderer returns. See `src/internal/peer-version.ts` for the
 guard's own contract.
 
-**Registry note: `react` and `react-dom` install even for a consumer using
-only the non-web renderers.** Both are declared `optional: true` in
-`peerDependenciesMeta`, correctly reflecting that `./core`, `./media`,
-`./email`, `./print`, `./image`, `./slides`, and `./record` need neither.
-That declaration does not reach an installer resolving against
-`npm.pkg.github.com`: the registry's packument omits
-`peerDependenciesMeta` entirely, so both peers resolve as required
-regardless of which subpaths are actually imported. A consumer rendering
-only email, print, or `record` output still has React and React DOM
-installed. This package's own `dependencies` on `@clossys/designer`
-(`^0.2.4`) compounds it one level further: `designer` declares six of its
-own optional peers the same way, and the same registry gap applies to them
-too, so a consumer of `publisher` inherits `designer`'s full peer set
-through the same mechanism, not just `publisher`'s own two. See
-[issue #226](https://github.com/clossys/foundry/issues/226) for the
-full evidence and why the declarations stay as-is.
+All six peers remain `optional: true` in `peerDependenciesMeta`, correctly
+reflecting that `./core`, `./media`, `./email`, `./print`, `./image`,
+`./slides`, and `./record` do not need them. A consumer of `./web` must install
+the declared peers at compatible versions; the release qualification adapter
+does so explicitly and proves both the ordinary and `react-server` entry
+points from a clean public-registry install. Historical GitHub Packages
+metadata omitted `peerDependenciesMeta`; see
+[issue #226](https://github.com/clossys/foundry/issues/226) for that retired
+registry behavior.
 
 ## Licence
 
