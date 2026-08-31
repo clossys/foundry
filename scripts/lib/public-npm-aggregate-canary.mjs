@@ -122,13 +122,25 @@ export function validateAggregateChildExecution(run, { name, version, qualificat
       if (retainedCoverageKeys.some((key) => run.coverage?.[key] !== expectedCoverage[key]) || ["reactServerImports", "frameworkExports", "frameworkBuilds"].filter((key) => !own(expectedCoverage, key)).some((key) => run.coverage?.[key] !== derived[key])) finding(findings, "qualification-coverage", `${name}@${version} child coverage does not exactly match retained immutable coverage and derived operation counts`);
       const expectedRaw = expectedObservations.filter((item) => item?.kind === "case" && own(item, "rawCaseEvidence"));
       const actualRaw = run.observations.filter((item) => item?.kind === "case" && own(item, "rawCaseEvidence"));
+      const isoInstant = /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/;
+      const retainedInstant = qualificationTranscript.fixtureMaterializedAt;
+      const childInstant = run.fixtureMaterializedAt;
+      const rebaseRaw = (value) => {
+        if (typeof value === "string") return value.split(retainedInstant).join(childInstant);
+        if (Array.isArray(value)) return value.map(rebaseRaw);
+        if (!object(value)) return value;
+        const copy = Object.fromEntries(Object.entries(value).map(([key, item]) => [key, rebaseRaw(item)]));
+        if (typeof copy.bytes === "string" && own(copy, "sha256")) copy.sha256 = hash(copy.bytes);
+        return copy;
+      };
       const validRaw = (value) => object(value) && exactKeys(value, ["argv", "materializedInputs", "consumerOverlay", "exitCode", "stdout", "stderr"])
         && Array.isArray(value.argv) && value.argv.every((item) => typeof item === "string")
         && Array.isArray(value.materializedInputs) && Array.isArray(value.consumerOverlay)
         && Number.isInteger(value.exitCode) && typeof value.stdout === "string" && typeof value.stderr === "string";
-      if (expectedRaw.length !== actualRaw.length || expectedRaw.some((item) => {
+      if (expectedRaw.length !== actualRaw.length || (expectedRaw.length > 0 && (!isoInstant.test(retainedInstant ?? "") || !isoInstant.test(childInstant ?? ""))) || expectedRaw.some((item) => {
         const actual = run.observations.find((actualItem) => actualItem?.id === item.id)?.rawCaseEvidence;
-        return !validRaw(actual) || JSON.stringify(stable(actual)) !== JSON.stringify(stable(item.rawCaseEvidence));
+        const expectedRawEvidence = rebaseRaw(item.rawCaseEvidence);
+        return !validRaw(actual) || JSON.stringify(stable(actual)) !== JSON.stringify(stable(expectedRawEvidence));
       }) || actualRaw.some((item) => !expectedRaw.some((expected) => expected.id === item.id))) finding(findings, "qualification-raw-case", `${name}@${version} child raw case evidence must exactly match the immutable argv, inputs, overlay, exit, and streams`);
     }
   }
