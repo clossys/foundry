@@ -2,7 +2,7 @@ import { lstatSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { assertCredentialFree } from "./lib/candidate-runner.mjs";
 import { parseStrictJson } from "./lib/candidate-qualification.mjs";
-import { validatePublicNpmRegistryProof } from "./lib/public-npm-registry.mjs";
+import { repositoryIdentityFromPackument, validatePublicNpmRegistryProof } from "./lib/public-npm-registry.mjs";
 
 const KEY = /^[a-z0-9][a-z0-9-]{0,63}$/;
 const usage = "Usage: --package <package-key> --tarball <file> --proof <file>";
@@ -20,8 +20,10 @@ function regular(path, label) { const resolved = resolve(path), stat = lstatSync
 export function validateProof({ root = process.cwd(), args, env = process.env }) {
   assertCredentialFree(env);
   const manifest = parseStrictJson(readFileSync(resolve(root, "packages", args.package, "package.json"), "utf8"));
+  const repository = repositoryIdentityFromPackument({ repository: manifest.repository, versions: {} }, manifest.version);
+  if (!repository) throw new Error("package manifest must retain one canonical GitHub repository identity");
   const proof = parseStrictJson(readFileSync(regular(args.proof, "proof"), "utf8"));
-  return validatePublicNpmRegistryProof(proof, { name: manifest.name, version: manifest.version, bytes: readFileSync(regular(args.tarball, "tarball")) });
+  return validatePublicNpmRegistryProof(proof, { name: manifest.name, version: manifest.version, repository, bytes: readFileSync(regular(args.tarball, "tarball")) });
 }
 if (process.argv[1] === new URL(import.meta.url).pathname) {
   const findings = validateProof({ args: argsFrom(process.argv) });
