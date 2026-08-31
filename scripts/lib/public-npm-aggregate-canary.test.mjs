@@ -148,6 +148,8 @@ test("credential-bearing parent environments are rejected before any live aggreg
 test("aggregate runner pins the required Node/npm/zlib tuple", () => {
   assert.doesNotThrow(() => assertAggregateRuntime({ node: "v24.19.0", npm: "11.17.0", zlib: "1.3.2.1-motley-3246f1b" }));
   assert.throws(() => assertAggregateRuntime({ node: "v24.15.0", npm: "11.17.0", zlib: "1.3.2.1-motley-3246f1b" }), /requires Node/);
+  assert.throws(() => assertAggregateRuntime({ node: "v24.19.0", npm: "11.17.0", zlib: "1.3.2.1-motley-3246f1" }), /requires Node/);
+  assert.throws(() => assertAggregateRuntime({ node: "v24.19.0", npm: "11.17.0", zlib: "1.3.2.1-motley-3246f1x" }), /requires Node/);
 });
 
 test("a later closure makes a frozen pending set runnable without rewriting its plan", () => {
@@ -218,10 +220,10 @@ test("deterministic synthetic aggregate uses one local-tarball consumer for all 
       root: temporary, record: plan, set: "baseline", closure, closurePath: aggregateClosurePath("baseline", closure.canonicalSha256), environment: { PATH: process.env.PATH, SERVICE_PRIVATE_VALUE: "opaque", COOKIE: "private" }, readEvidence: (path) => sources.get(path) ?? "{}", validateRegistryProof: () => [],
       verifyArtifact: async ({ name, version }) => ({ kind: "verified", bytes: artifacts.get(`${name}@${version}`), evidence: evidence.get(`${name}@${version}`) }), prepareCandidate: async ({ artifact }) => artifact,
       executeCandidate: async (artifact) => { childCalls += 1; const run = childRun(artifact.entry); const served = evidence.get(`${artifact.entry.name}@${artifact.entry.version}`); run.tarball = { sha1: served.shasum, sha256: served.sha256, sha512: served.sha512 }; run.coverage.installedManifestSha256 = served.packedManifestSha256; run.canonicalSha256 = sha256(JSON.stringify(Object.fromEntries(Object.entries(run).filter(([key]) => key !== "canonicalSha256")))); return run; },
-      executeOptionalPeers: async ({ matrix, env }) => { optionalCalls += 1; assert.equal(env.SERVICE_PRIVATE_VALUE, undefined); assert.equal(env.COOKIE, undefined); return matrix.flatMap((row) => row.peers.flatMap((peer) => Object.keys(peer.outcomes).map((specifier) => ({ package: row.name, peer: peer.peer, specifier, outcome: peer.outcomes[specifier] })))); },
+      executeOptionalPeers: async ({ matrix, env }) => { optionalCalls += 1; assert.equal(env.SERVICE_PRIVATE_VALUE, undefined); assert.equal(env.COOKIE, undefined); return matrix.flatMap((row) => row.peers.flatMap((peer) => Object.keys(peer.outcomes).map((specifier) => ({ package: row.name, version: row.version, peer: peer.peer, specifier, outcome: peer.outcomes[specifier] })))); },
     });
     assert.equal(result.verdict, "satisfied"); assert.equal(childCalls, 19); assert.equal(optionalCalls, 1);
-    assert.equal(result.transcript.packages.length, 19); assert.equal(result.transcript.consumer.rollback.packageAbsenceProven, true); assert.equal(result.transcript.consumer.rollback.identitiesRestored, true);
+    assert.equal(result.transcript.packages.length, 19); assert.equal(result.transcript.consumer.rollback.packageAbsenceProven, true); assert.equal(result.transcript.consumer.rollback.identitiesRestored, true); assert.deepEqual(validateSatisfiedAggregateTranscript(result.transcript, { plan, closure }), []);
   } finally { await rm(temporary, { recursive: true, force: true }); }
 });
 

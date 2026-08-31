@@ -3,7 +3,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { AGGREGATE_CANARY_PATH, AGGREGATE_TRANSCRIPT_DIRECTORY, immutableRecordHistory, immutableRecordPaths, isAggregateClosurePath, validateSatisfiedAggregateTranscript, validateSatisfiedTranscriptHistory } from "./lib/public-npm-aggregate-canary.mjs";
+import { AGGREGATE_CANARY_PATH, AGGREGATE_TRANSCRIPT_DIRECTORY, aggregateTranscriptPath, immutableRecordHistory, immutableRecordPaths, isAggregateClosurePath, validateSatisfiedAggregateTranscript, validateSatisfiedTranscriptHistory } from "./lib/public-npm-aggregate-canary.mjs";
 
 const root = process.cwd();
 const plan = JSON.parse(readFileSync(join(root, AGGREGATE_CANARY_PATH), "utf8"));
@@ -16,6 +16,7 @@ for (const path of files) {
   let transcript;
   try { transcript = JSON.parse(readFileSync(join(root, path), "utf8")); }
   catch { findings.push({ rule: "json", message: `${path} is not JSON` }); continue; }
+  if (path !== aggregateTranscriptPath(transcript.set, transcript.canonicalSha256)) findings.push({ rule: "transcript-path", message: `${path} is not content-addressed by its exact transcript canonical digest` });
   const history = immutableRecordHistory({ root, path });
   let closure = null;
   if (!transcript.plan || !isAggregateClosurePath(transcript.plan.closurePath)) findings.push({ rule: "closure-path", message: `${path} does not retain a closed immutable closure path` });
