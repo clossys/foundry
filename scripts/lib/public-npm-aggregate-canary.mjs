@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { lstat, mkdir, mkdtemp, readFile, readdir, rename, rm, stat, symlink, writeFile } from "node:fs/promises";
+import { lstat, mkdir, mkdtemp, readFile, readdir, readlink, rename, rm, stat, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -17,14 +17,17 @@ export const ALL_PACKAGE_RELEASE_ORDER = Object.freeze([
 const SHA256 = /^[a-f0-9]{64}$/;
 const VERSION = /^\d+\.\d+\.\d+$/;
 const NAME = /^@clossys\/([a-z0-9][a-z0-9-]*)$/;
-const statuses = new Set(["published", "held", "pending"]);
 const hash = (value) => createHash("sha256").update(value).digest("hex");
 const stable = (value) => Array.isArray(value) ? value.map(stable) : object(value) ? Object.fromEntries(Object.keys(value).sort().map((key) => [key, stable(value[key])])) : value;
 const object = (value) => value && typeof value === "object" && !Array.isArray(value);
 const own = (value, key) => Object.prototype.hasOwnProperty.call(value, key);
 const exactKeys = (value, keys) => object(value) && Object.keys(value).length === keys.length && keys.every((key) => own(value, key));
+const onlyKeys = (value, keys) => object(value) && Object.keys(value).every((key) => keys.includes(key) || keys.includes(`${key}?`)) && keys.filter((key) => !key.endsWith("?")).every((key) => own(value, key));
 
 function finding(findings, rule, message) { findings.push({ rule, message }); }
+export function aggregateClosurePath(set, canonicalSha256) { return `${AGGREGATE_CLOSURE_DIRECTORY}/${set}-${canonicalSha256}.json`; }
+export function aggregateTranscriptPath(set, canonicalSha256) { return `${AGGREGATE_TRANSCRIPT_DIRECTORY}/${set}-${canonicalSha256}.json`; }
+export function isAggregateClosurePath(path) { return new RegExp(`^${AGGREGATE_CLOSURE_DIRECTORY}/(?:baseline|oidc-successor)-[a-f0-9]{64}\\.json$`).test(path ?? ""); }
 export function assertAggregateRuntime({ node = process.version, npm = execFileSync("npm", ["--version"], { encoding: "utf8" }).trim(), zlib = process.versions.zlib } = {}) {
   if (node !== "v24.19.0" || npm !== "11.17.0" || !zlib?.startsWith("1.3.2.1-motley-3246f1")) throw new Error(`aggregate canary requires Node 24.19.0, npm 11.17.0, and zlib 1.3.2.1-motley-3246f1 (received ${node}, ${npm}, ${zlib})`);
 }
@@ -61,6 +64,44 @@ function candidateBytesJoin(actual, expected) {
     && actual.tarball?.sha256 === expected.tarball?.sha256
     && actual.tarball?.sha512 === expected.tarball?.sha512
     && actual.packageManifestSha256 === expected.packageManifestSha256);
+}
+
+/** Stable, typed aggregate view of one retained candidate-runner transcript. */
+export function aggregateChildExecutionProjection(run) {
+  if (!object(run)) return null;
+  const observations = Array.isArray(run.observations) ? run.observations.map((item) => ({ id: item?.id, kind: item?.kind, expectedExitCode: item?.expectedExitCode, observedExitCode: item?.observedExitCode, launchError: item?.launchError, signal: item?.signal })) : null;
+  return {
+    candidate: run.candidate,
+    tarball: run.tarball,
+    consumer: run.consumer,
+    coverage: run.coverage,
+    dimensions: run.dimensions,
+    restoration: run.restoration,
+    observations,
+    ok: run.ok,
+  };
+}
+
+export function validateAggregateChildExecution(run, { name, version } = {}) {
+  const findings = [];
+  const childKeys = ["schema", "version", "candidate", "archetype", "tarball", "peerInstall", "consumer", "coverage", "observations", "dimensions", "restoration", "mismatches", "ok", "canonicalSha256", "fixtureMaterializedAt?"];
+  if (!onlyKeys(run, childKeys) || run.schema !== "foundry-aggregate-child-execution-v1" || run.version !== 1 || !exactKeys(run.candidate, ["name", "version"]) || run.candidate.name !== name || run.candidate.version !== version || typeof run.archetype !== "string" || (own(run, "fixtureMaterializedAt") && typeof run.fixtureMaterializedAt !== "string") || !object(run.peerInstall) || !exactKeys(run.consumer, ["manifestSha256", "lockfileSha256"]) || !SHA256.test(run.consumer.manifestSha256 ?? "") || !SHA256.test(run.consumer.lockfileSha256 ?? "") || !SHA256.test(run.canonicalSha256 ?? "")) return [{ rule: "child-identity", message: `${name}@${version} aggregate child execution record is not closed` }];
+  if (!exactKeys(run.tarball, ["sha1", "sha256", "sha512"]) || !/^[a-f0-9]{40}$/.test(run.tarball.sha1 ?? "") || !SHA256.test(run.tarball.sha256 ?? "") || !/^[a-f0-9]{128}$/.test(run.tarball.sha512 ?? "")) finding(findings, "child-tarball", `${name}@${version} child tarball evidence is not closed`);
+  const copy = structuredClone(run); delete copy.canonicalSha256;
+  if (run.canonicalSha256 !== hash(JSON.stringify(copy))) finding(findings, "child-canonical", `${name}@${version} child transcript digest does not match its full retained content`);
+  const projection = aggregateChildExecutionProjection(run);
+  if (!projection || !exactKeys(projection.candidate, ["name", "version"]) || !exactKeys(projection.tarball, ["sha1", "sha256", "sha512"]) || !exactKeys(projection.consumer, ["manifestSha256", "lockfileSha256"]) || !object(projection.coverage) || !Array.isArray(projection.dimensions) || !Array.isArray(projection.observations) || projection.ok !== true) finding(findings, "child-projection", `${name}@${version} child execution projection is incomplete or unsatisfied`);
+  if (!exactKeys(run.restoration, ["delegatedToAggregate"]) || run.restoration.delegatedToAggregate !== true || !Array.isArray(run.mismatches) || run.mismatches.length !== 0 || run.observations.some((item) => ["uninstall", "reinstall"].includes(item?.kind))) finding(findings, "child-rollback", `${name}@${version} aggregate child must delegate rollback and may not fabricate individual npm observations`);
+  const observationKeys = ["id", "kind", "launch", "expectedExitCode", "observedExitCode", "signal", "launchError", "stdoutSha256", "stderrSha256", "rawCaseEvidence?"];
+  const permittedKinds = new Set(["install", "import", "framework", "help", "case"]);
+  if (run.observations.some((item) => !onlyKeys(item, observationKeys) || typeof item.id !== "string" || !permittedKinds.has(item.kind) || !Number.isInteger(item.expectedExitCode) || item.expectedExitCode !== item.observedExitCode || item.signal !== null || item.launchError !== false || !SHA256.test(item.stdoutSha256 ?? "") || !SHA256.test(item.stderrSha256 ?? ""))) finding(findings, "child-observation", `${name}@${version} child observations are incomplete or do not record successful exact execution`);
+  const cases = run.observations.filter((item) => item?.kind === "case");
+  if (cases.length > 0 && ![0, 1, 2].every((code) => cases.some((item) => item.expectedExitCode === code && item.observedExitCode === code))) finding(findings, "child-cases", `${name}@${version} child cases do not retain the required 0/1/2 observations`);
+  const coverageKeys = ["declaredExportKeys", "concreteTargets", "runtimeImports", "reactServerImports", "staticTargets", "frameworkExports", "frameworkBuilds", "failed", "installedManifestSha256", "bins", "lifecycleScriptsDisabled"];
+  if (!exactKeys(projection.coverage, coverageKeys) || coverageKeys.slice(0, 8).some((key) => !Number.isSafeInteger(projection.coverage[key]) || projection.coverage[key] < 0) || !SHA256.test(projection.coverage.installedManifestSha256 ?? "") || projection.coverage.lifecycleScriptsDisabled !== true || projection.coverage.failed !== 0 || projection.coverage.frameworkBuilds !== (projection.coverage.frameworkExports > 0 ? 1 : 0) || run.observations.filter((item) => item.kind === "import").length !== projection.coverage.runtimeImports || run.observations.filter((item) => item.kind === "framework").length !== projection.coverage.frameworkExports || run.observations.filter((item) => item.kind === "help").length !== projection.coverage.bins) finding(findings, "child-coverage", `${name}@${version} child coverage does not bind each executed dimension and installed manifest`);
+  const dimensions = ["position", "completion", "rollback", "duplicate", "cadence", "closeWindow"];
+  if (run.dimensions.length !== dimensions.length || run.dimensions.map((item) => item?.dimension).join("\0") !== dimensions.join("\0") || run.dimensions.some((item) => !onlyKeys(item, ["dimension", "status", "reason?", "evidence?"]) || !["supported", "unsupported"].includes(item.status) || (item.status === "supported" && (!Array.isArray(item.evidence) || item.evidence.length === 0)) || (item.status === "unsupported" && typeof item.reason !== "string")) || run.dimensions.find((item) => item.dimension === "rollback")?.status !== "supported" || JSON.stringify(run.dimensions.find((item) => item.dimension === "rollback")?.evidence) !== JSON.stringify(["aggregate-rollback-delegated"])) finding(findings, "child-dimensions", `${name}@${version} child dimensions must retain complete adapter coverage and aggregate rollback delegation`);
+  return findings;
 }
 
 /**
@@ -129,6 +170,78 @@ export function validateAggregateCanaryAppendOnly(record, { root, path = AGGREGA
   return findings;
 }
 
+/**
+ * Unlike the working-tree comparison above, this checks every committed path
+ * change.  A delete/recreate whose final bytes equal the first declaration is
+ * still a prohibited rewrite, so `HEAD:path` alone is not evidence of
+ * immutability.
+ */
+export function validateAggregateCanaryHistory({ path = AGGREGATE_CANARY_PATH, history }) {
+  const findings = [];
+  if (path !== AGGREGATE_CANARY_PATH) return [{ rule: "plan-path", message: "aggregate plan must use its one closed governance path" }];
+  // An untracked declaration has no committed history yet; permit the normal
+  // structural check during the introducing change. Once tracked, exactly one
+  // add is required forever.
+  if (!Array.isArray(history) || history.length === 0) return findings;
+  const valid = history.every((entry) => exactKeys(entry, ["commit", "status", "sha256"])
+    && /^[a-f0-9]{40}$/.test(entry.commit ?? "") && ["A", "M", "D"].includes(entry.status) && SHA256.test(entry.sha256 ?? ""));
+  const introductions = history.filter((entry) => entry?.status === "A");
+  if (!valid || introductions.length !== 1 || history[history.length - 1]?.status !== "A") finding(findings, "plan-history", "aggregate plan history must contain one valid introduction only");
+  if (history.length !== 1) finding(findings, "plan-rewrite", "aggregate plan may not be touched after its introduction");
+  return findings;
+}
+
+/** Return every committed mutation of the plan path, including rename/copy sides. */
+export function aggregateCanaryGitHistory({ root, path = AGGREGATE_CANARY_PATH }) {
+  // Do not give git a final pathspec here: pathspec filtering can omit one
+  // side of a rename. We scan name-status rows and explicitly inspect both
+  // old and new paths, which makes a rename-away/rename-back visible.
+  const rows = execFileSync("git", ["log", "--all", "--format=%H", "--name-status", "--find-renames=40%", "--find-copies=40%"], { cwd: root, encoding: "utf8" }).trim().split("\n").filter(Boolean);
+  const history = [];
+  let commit = null;
+  for (const row of rows) {
+    if (/^[a-f0-9]{40}$/.test(row)) { commit = row; continue; }
+    const [rawStatus, ...paths] = row.split("\t");
+    const status = rawStatus?.slice(0, 1);
+    if (commit && paths.includes(path)) history.push({ commit, status, sha256: hash(`${commit}:${rawStatus}:${paths.join("\0")}`) });
+  }
+  return history;
+}
+
+/**
+ * Discover immutable records introduced anywhere in HEAD ancestry.  We scan
+ * all name-status rows (rather than current ls-files) so deleting, moving, or
+ * recreating a record can never turn the checker into an empty success.
+ */
+export function immutableRecordPaths({ root, directory }) {
+  const rows = execFileSync("git", ["log", "HEAD", "--format=%H", "--name-status", "--find-renames=40%", "--find-copies=40%"], { cwd: root, encoding: "utf8" }).trim().split("\n").filter(Boolean);
+  const introduced = new Set(), current = new Set(execFileSync("git", ["ls-tree", "-r", "--name-only", "HEAD", "--", directory], { cwd: root, encoding: "utf8" }).trim().split("\n").filter(Boolean));
+  let commit = null;
+  for (const row of rows) {
+    if (/^[a-f0-9]{40}$/.test(row)) { commit = row; continue; }
+    const [status, ...paths] = row.split("\t");
+    if (commit && status === "A") for (const path of paths) if (path.startsWith(`${directory}/`)) introduced.add(path);
+  }
+  return { introduced: [...introduced].sort(), current: [...current].sort() };
+}
+
+/** Hash the exact blob visible at a record mutation (or its pre-delete blob). */
+export function immutableRecordHistory({ root, path }) {
+  const rows = execFileSync("git", ["log", "HEAD", "--format=%H", "--name-status", "--find-renames=40%", "--find-copies=40%"], { cwd: root, encoding: "utf8" }).trim().split("\n").filter(Boolean);
+  const history = []; let commit = null;
+  for (const row of rows) {
+    if (/^[a-f0-9]{40}$/.test(row)) { commit = row; continue; }
+    const [rawStatus, ...paths] = row.split("\t");
+    const status = rawStatus?.slice(0, 1);
+    if (!commit || !paths.includes(path)) continue;
+    let bytes;
+    try { bytes = execFileSync("git", ["show", `${commit}:${path}`], { cwd: root, encoding: "buffer", stdio: ["ignore", "pipe", "ignore"] }); }
+    catch { try { bytes = execFileSync("git", ["show", `${commit}^:${path}`], { cwd: root, encoding: "buffer", stdio: ["ignore", "pipe", "ignore"] }); } catch { bytes = Buffer.alloc(0); } }
+    history.push({ commit, status, sha256: hash(bytes) });
+  }
+  return history;
+}
+
 export function aggregatePlanSha256(plan) {
   return hash(JSON.stringify(stable({ peerResolution: plan?.peerResolution, sets: plan?.sets, optionalPeerMatrix: plan?.optionalPeerMatrix })));
 }
@@ -149,11 +262,12 @@ export function resolveAggregateClosure(plan, set, closure = null) {
   return { selected: { ...selected, packages: resolved }, closure, incomplete: [] };
 }
 
-export function validateAggregateClosure(plan, closure, { read = null } = {}) {
+export function validateAggregateClosure(plan, closure, { read = null, path = null } = {}) {
   const findings = [];
   let selected;
   try { selected = resolveAggregateClosure(plan, closure?.set, closure).selected; }
   catch (error) { return [{ rule: "closure", message: error.message }]; }
+  if (path !== null && (!isAggregateClosurePath(path) || path !== aggregateClosurePath(closure.set, closure.canonicalSha256))) finding(findings, "closure-path", "closure file must be content-addressed by its exact canonical digest in the closed namespace");
   for (const entry of selected.packages) {
     if (!/^governance\/release-qualifications\/[a-z0-9-]+-\d+\.\d+\.\d+\.json$/.test(entry.qualification.path) || !SHA256.test(entry.qualification.sha256) || !/^governance\/release-publications\/(?:later\/[a-z0-9-]+-\d+\.\d+\.\d+|clossys-npmjs-trio)\.json$/.test(entry.publication.path) || !SHA256.test(entry.publication.sha256) || entry.publication.member !== entry.packageKey) {
       finding(findings, "closure-ref", `${entry.name}@${entry.version} closure reference is outside the closed immutable evidence namespaces`);
@@ -174,21 +288,41 @@ export function validateAggregateClosure(plan, closure, { read = null } = {}) {
 export function validateSatisfiedAggregateTranscript(transcript, { plan, closure, path = AGGREGATE_CANARY_PATH } = {}) {
   const findings = [];
   const expectedSetsSha256 = hash(JSON.stringify(stable({ peerResolution: plan?.peerResolution, sets: plan?.sets, optionalPeerMatrix: plan?.optionalPeerMatrix })));
-  if (!exactKeys(transcript, ["schema", "version", "plan", "set", "repositoryRedirects", "peerResolution", "packages", "consumer", "dimensions", "canonicalSha256"])) return [{ rule: "shape", message: "closed aggregate transcript schema required" }];
-  if (transcript.schema !== "foundry-public-npm-aggregate-transcript-v1" || transcript.version !== 1 || !exactKeys(transcript.plan, ["path", "setsSha256", "closurePath", "closureSha256"]) || transcript.plan.path !== path || transcript.plan.setsSha256 !== expectedSetsSha256 || !new RegExp(`^${AGGREGATE_CLOSURE_DIRECTORY}/[a-z0-9-]+-[a-f0-9]{64}\\.json$`).test(transcript.plan.closurePath ?? "") || transcript.plan.closureSha256 !== closure?.canonicalSha256) finding(findings, "plan-join", "transcript must bind the exact frozen plan and immutable closure bytes");
+  if (!exactKeys(transcript, ["schema", "version", "plan", "set", "repositoryRedirects", "peerResolution", "packages", "consumer", "dimensions", "optionalPeerObservations", "canonicalSha256"])) return [{ rule: "shape", message: "closed aggregate transcript schema required" }];
+  if (transcript.schema !== "foundry-public-npm-aggregate-transcript-v1" || transcript.version !== 1 || !exactKeys(transcript.plan, ["path", "setsSha256", "closurePath", "closureSha256"]) || transcript.plan.path !== path || transcript.plan.setsSha256 !== expectedSetsSha256 || !isAggregateClosurePath(transcript.plan.closurePath) || transcript.plan.closurePath !== aggregateClosurePath(transcript.set, transcript.plan.closureSha256) || transcript.plan.closureSha256 !== closure?.canonicalSha256) finding(findings, "plan-join", "transcript must bind the exact frozen plan and immutable closure bytes");
   let selected = null;
   try { selected = resolveAggregateClosure(plan, transcript.set, closure).selected; }
   catch { finding(findings, "closure", "transcript closure cannot resolve all nineteen frozen identities"); }
   if (!selected || selected.packages?.some((entry) => !entry.qualification || !entry.publication) || !Array.isArray(transcript.packages) || transcript.packages.length !== ALL_PACKAGE_RELEASE_ORDER.length) finding(findings, "packages", "a satisfied transcript requires exactly one closed qualified publication row for every frozen package");
   else for (let index = 0; index < selected.packages.length; index += 1) {
     const expected = selected.packages[index], actual = transcript.packages[index];
-    if (!exactKeys(actual, ["name", "version", "qualification", "publication", "served", "installedManifestSha256", "run"]) || actual.name !== expected.name || actual.version !== expected.version || JSON.stringify(actual.qualification) !== JSON.stringify(expected.qualification) || JSON.stringify(actual.publication) !== JSON.stringify(expected.publication) || !exactKeys(actual.served, ["name", "version", "packageManifestSha256", "tarball"]) || actual.served.name !== actual.name || actual.served.version !== actual.version || !SHA256.test(actual.served.packageManifestSha256 ?? "") || !exactKeys(actual.served.tarball, ["sha1", "sha256", "sha512"]) || !/^[a-f0-9]{40}$/.test(actual.served.tarball.sha1 ?? "") || !SHA256.test(actual.served.tarball.sha256 ?? "") || !/^[a-f0-9]{128}$/.test(actual.served.tarball.sha512 ?? "") || !SHA256.test(actual.installedManifestSha256 ?? "") || !object(actual.run) || !SHA256.test(actual.run.canonicalSha256 ?? "")) finding(findings, "package-join", `transcript package row ${index} must exactly join the frozen identity, served bytes, installed manifest, and immutable records`);
+    if (!exactKeys(actual, ["name", "version", "qualification", "publication", "served", "installedManifestSha256", "run"]) || actual.name !== expected.name || actual.version !== expected.version || JSON.stringify(actual.qualification) !== JSON.stringify(expected.qualification) || JSON.stringify(actual.publication) !== JSON.stringify(expected.publication) || !exactKeys(actual.served, ["name", "version", "packageManifestSha256", "tarball"]) || actual.served.name !== actual.name || actual.served.version !== actual.version || !SHA256.test(actual.served.packageManifestSha256 ?? "") || !exactKeys(actual.served.tarball, ["sha1", "sha256", "sha512"]) || !/^[a-f0-9]{40}$/.test(actual.served.tarball.sha1 ?? "") || !SHA256.test(actual.served.tarball.sha256 ?? "") || !/^[a-f0-9]{128}$/.test(actual.served.tarball.sha512 ?? "") || !SHA256.test(actual.installedManifestSha256 ?? "")) finding(findings, "package-join", `transcript package row ${index} must exactly join the frozen identity, served bytes, installed manifest, and immutable records`);
+    findings.push(...validateAggregateChildExecution(actual?.run, actual ?? {}));
+    if (actual?.installedManifestSha256 !== actual?.run?.coverage?.installedManifestSha256) finding(findings, "child-install-join", `${actual?.name ?? index} child coverage must bind the same installed packed manifest as its aggregate row`);
+    if (!candidateBytesJoin({ name: actual?.name, version: actual?.version, packageManifestSha256: actual?.served?.packageManifestSha256, tarball: actual?.run?.tarball }, actual?.served)) finding(findings, "child-served-join", `${actual?.name ?? index} child tarball must bind the aggregate served byte evidence`);
+    if (actual?.installedManifestSha256 !== actual?.served?.packageManifestSha256) finding(findings, "installed-served-join", `${actual?.name ?? index} installed packed manifest must equal the served packed manifest`);
   }
-  if (!Array.isArray(transcript.repositoryRedirects) || transcript.repositoryRedirects.some((item) => !exactKeys(item, ["historicalRepository", "repository", "repositoryId", "kind"]) || item.repository !== "clossys/foundry" || item.historicalRepository !== "clossys/platform" || item.repositoryId !== 1325931929 || item.kind !== "verified")) finding(findings, "repository-redirect", "transcript must retain only exact verified sealed historical repository redirects");
-  if (!exactKeys(transcript.peerResolution, ["requested", "actual", "disposition"]) || !object(transcript.peerResolution.requested) || !object(transcript.peerResolution.actual) || !Array.isArray(transcript.peerResolution.disposition)) finding(findings, "peer-resolution", "transcript must retain reviewed peer request, actual resolution, and conflict disposition");
-  if (!exactKeys(transcript.consumer, ["manifestSha256", "lockfileSha256", "controller", "singularController", "identities", "rollback"]) || !SHA256.test(transcript.consumer.manifestSha256 ?? "") || !SHA256.test(transcript.consumer.lockfileSha256 ?? "") || transcript.consumer.singularController !== true || !Array.isArray(transcript.consumer.identities) || transcript.consumer.identities.length !== ALL_PACKAGE_RELEASE_ORDER.length || !exactKeys(transcript.consumer.rollback, ["packageAbsenceProven", "manifestRestored", "lockfileRestored", "identitiesRestored"]) || Object.values(transcript.consumer.rollback).some((value) => value !== true)) finding(findings, "rollback", "transcript must retain exact aggregate identity and complete real rollback evidence");
+  const historicalMembers = selected?.packages?.filter((entry) => ["advisor", "starter", "controller"].includes(entry.packageKey)) ?? [];
+  if (!Array.isArray(transcript.repositoryRedirects) || transcript.repositoryRedirects.length !== (historicalMembers.length ? 1 : 0) || transcript.repositoryRedirects.some((item) => !exactKeys(item, ["historicalRepository", "repository", "repositoryId", "kind"]) || item.repository !== "clossys/foundry" || item.historicalRepository !== "clossys/platform" || item.repositoryId !== 1325931929 || item.kind !== "verified")) finding(findings, "repository-redirect", "transcript must retain the exact verified sealed historical repository redirects required by its selected set");
+  if (!exactKeys(transcript.peerResolution, ["requested", "actual", "disposition"]) || JSON.stringify(stable(transcript.peerResolution.requested)) !== JSON.stringify(stable(plan?.peerResolution?.requested)) || JSON.stringify(stable(transcript.peerResolution.actual)) !== JSON.stringify(stable(plan?.peerResolution?.requested)) || JSON.stringify(stable(transcript.peerResolution.disposition)) !== JSON.stringify(stable(plan?.peerResolution?.disposition))) finding(findings, "peer-resolution", "transcript must retain the exact reviewed peer request, actual resolution, and conflict disposition");
+  const expectedIdentities = selected?.packages?.map((entry) => `${entry.name}@${entry.version}`) ?? [];
+  if (!exactKeys(transcript.consumer, ["manifestSha256", "lockfileSha256", "controller", "singularController", "identities", "rollback"]) || !SHA256.test(transcript.consumer.manifestSha256 ?? "") || !SHA256.test(transcript.consumer.lockfileSha256 ?? "") || transcript.consumer.singularController !== true || JSON.stringify(transcript.consumer.identities) !== JSON.stringify(expectedIdentities) || transcript.consumer.controller !== expectedIdentities.find((identity) => identity.startsWith("@clossys/controller@")) || !exactKeys(transcript.consumer.rollback, ["packageAbsenceProven", "manifestRestored", "lockfileRestored", "identitiesRestored"]) || Object.values(transcript.consumer.rollback).some((value) => value !== true)) finding(findings, "rollback", "transcript must retain exact aggregate identity and complete real rollback evidence");
   const required = ["exports", "framework", "bins", "cases", "optionalPeers", "rollback"];
   if (!Array.isArray(transcript.dimensions) || transcript.dimensions.length !== required.length || transcript.dimensions.map((entry) => entry?.dimension).join("\0") !== required.join("\0") || transcript.dimensions.some((entry) => !exactKeys(entry, ["dimension", "count", "ok"]) || !Number.isSafeInteger(entry.count) || entry.count < 1 || entry.ok !== true)) finding(findings, "dimensions", "transcript must retain every aggregate execution dimension once with a positive satisfied count");
+  else {
+    const actualRuns = transcript.packages.map((entry) => entry.run);
+    const expectedCounts = {
+      exports: actualRuns.reduce((sum, run) => sum + run.coverage.declaredExportKeys, 0),
+      framework: actualRuns.reduce((sum, run) => sum + run.coverage.frameworkExports, 0),
+      bins: actualRuns.reduce((sum, run) => sum + run.coverage.bins, 0),
+      cases: actualRuns.reduce((sum, run) => sum + run.observations.filter((item) => item.kind === "case").length, 0),
+      optionalPeers: (plan?.optionalPeerMatrix ?? []).filter((row) => row.set === transcript.set).reduce((sum, row) => sum + row.peers.reduce((peerSum, peer) => peerSum + Object.keys(peer.outcomes).length, 0), 0),
+      rollback: 1,
+    };
+    if (transcript.dimensions.some((entry) => entry.count !== expectedCounts[entry.dimension])) finding(findings, "dimension-count", "aggregate dimension counts must exactly project all child and immutable optional-peer execution evidence");
+  }
+  const expectedOptional = (plan?.optionalPeerMatrix ?? []).filter((row) => row.set === transcript.set).flatMap((row) => row.peers.flatMap((peer) => Object.entries(peer.outcomes).map(([specifier, outcome]) => ({ package: row.name, version: row.version, peer: peer.peer, specifier, outcome }))));
+  if (!Array.isArray(transcript.optionalPeerObservations) || transcript.optionalPeerObservations.length !== expectedOptional.length || transcript.optionalPeerObservations.some((item) => !onlyKeys(item, ["package", "version", "peer", "specifier", "outcome", "evaluator?"]) || !expectedOptional.some((expected) => JSON.stringify(expected) === JSON.stringify({ package: item.package, version: item.version, peer: item.peer, specifier: item.specifier, outcome: item.outcome })))) finding(findings, "optional-peer-observations", "aggregate transcript must retain one exact immutable optional-peer observation for every planned outcome");
   const copy = structuredClone(transcript); delete copy.canonicalSha256;
   if (!SHA256.test(transcript.canonicalSha256 ?? "") || transcript.canonicalSha256 !== hash(JSON.stringify(stable(copy)))) finding(findings, "canonical", "transcript canonical digest must hash the closed content excluding itself");
   return findings;
@@ -202,7 +336,7 @@ export function validateSatisfiedAggregateTranscript(transcript, { plan, closure
  */
 export function validateSatisfiedTranscriptHistory({ path, history }) {
   const findings = [];
-  if (!new RegExp(`^${AGGREGATE_TRANSCRIPT_DIRECTORY}/[a-z0-9-]+-[a-f0-9]{64}\\.json$`).test(path ?? "")) return [{ rule: "transcript-path", message: "satisfied records must use the closed immutable aggregate transcript namespace" }];
+  if (!new RegExp(`^${AGGREGATE_TRANSCRIPT_DIRECTORY}/(?:baseline|oidc-successor)-[a-f0-9]{64}\\.json$`).test(path ?? "")) return [{ rule: "transcript-path", message: "satisfied records must use the closed immutable aggregate transcript namespace" }];
   if (!Array.isArray(history) || history.length === 0) return [{ rule: "transcript-history", message: "satisfied record must have one introduction commit" }];
   const introductions = history.filter((entry) => entry?.status === "A");
   if (introductions.length !== 1 || history[history.length - 1]?.status !== "A" || history.some((entry) => !exactKeys(entry, ["commit", "status", "sha256"]) || !/^[a-f0-9]{40}$/.test(entry.commit ?? "") || !["A", "M", "D"].includes(entry.status) || !SHA256.test(entry.sha256 ?? ""))) finding(findings, "transcript-history", "satisfied record history must contain one valid introduction only");
@@ -211,8 +345,11 @@ export function validateSatisfiedTranscriptHistory({ path, history }) {
 }
 
 function credentiallessNpmEnv(base, root) {
+  // Candidate imports and framework builds inherit this object. Preserve only
+  // process-location/localisation plumbing; credentials and arbitrary service
+  // configuration must never cross this boundary by denylist accident.
   const env = {};
-  for (const [key, value] of Object.entries(base)) if (!/(?:^|_)(?:AUTH|TOKEN|PASSWORD|OTP)(?:_|$)/i.test(key) && !/^npm_config_/i.test(key)) env[key] = value;
+  for (const key of ["PATH", "TMPDIR", "TMP", "TEMP", "LANG", "LC_ALL", "LC_CTYPE", "SYSTEMROOT", "COMSPEC"]) if (typeof base[key] === "string" && base[key].length > 0) env[key] = base[key];
   return { ...env, HOME: root, npm_config_userconfig: join(root, "user.npmrc"), npm_config_globalconfig: join(root, "global.npmrc"), npm_config_cache: join(root, "cache"), npm_config_registry: `${PUBLIC_NPM_REGISTRY}/`, npm_config_always_auth: "false", npm_config_ignore_scripts: "true", npm_config_audit: "false", npm_config_fund: "false" };
 }
 
@@ -245,6 +382,17 @@ function controllerPhysicalIdentities(tree, seen = new Set(), found = []) {
 export function sealedHistoricalRepository({ entry, proof, transition }) {
   const repository = proof?.evidence?.repository;
   if (repository === transition?.candidate?.repository) return null;
+  // Early anonymous-proof v1 records did not retain a repository field. This
+  // is never a default: it is admitted only for an exact sealed historical
+  // tuple and is immediately followed by the live redirect proof.
+  const repositorylessV1 = repository === undefined && proof?.kind === "public-npm-anonymous-registry-proof-v1";
+  if (repositorylessV1) {
+    const repositoryIndex = 0;
+    const permitted = transition.historicalRepositoryVersions?.some((item) => item?.name === entry.name && item?.version === entry.version && item?.repositoryIndex === repositoryIndex);
+    const historicalRepository = transition.historicalRepositories?.[repositoryIndex], repositoryId = transition.historicalRepositoryIds?.[repositoryIndex];
+    if (!permitted || historicalRepository !== "clossys/platform" || !Number.isSafeInteger(repositoryId)) throw new Error(`${entry.name}@${entry.version} has no exact sealed repository-less v1 historical tuple`);
+    return { historicalRepository, repository: transition.candidate.repository, repositoryId };
+  }
   const repositoryIndex = transition?.historicalRepositories?.indexOf(repository);
   if (repositoryIndex === -1) throw new Error(`${entry.name}@${entry.version} publication repository is neither current nor an exact sealed historical repository`);
   const permitted = transition.historicalRepositoryVersions?.some((item) => item?.name === entry.name && item?.version === entry.version && item?.repositoryIndex === repositoryIndex);
@@ -260,7 +408,8 @@ async function treeDigest(root) {
       if (item.name === ".cache") continue;
       const path = join(directory, item.name);
       if (item.isDirectory()) await walk(path);
-      else if (item.isFile()) rows.push([path.slice(root.length + 1), hash(await readFile(path))]);
+      else if (item.isFile()) rows.push(["file", path.slice(root.length + 1), hash(await readFile(path))]);
+      else if (item.isSymbolicLink()) rows.push(["symlink", path.slice(root.length + 1), await readlink(path)]);
     }
   };
   await walk(root); return hash(JSON.stringify(rows.sort(([a], [b]) => a.localeCompare(b))));
@@ -315,19 +464,19 @@ export async function runAggregateOptionalPeerMatrix({ consumer, matrix, env, fr
  * install, then uses the current package-neutral candidate adapters for all
  * declared exports, contexts, bins, 0/1/2 cases, peers and rollback.
  */
-export async function runAggregatePublicNpmCanary({ root, record, set = "oidc-successor", closure = null, closurePath = null, requirePinnedRuntime = false, fetchImpl = fetch, verifyArtifact = verifyPublicNpmArtifact, verifyRedirect = verifyGithubRepositoryRedirect, environment = process.env } = {}) {
+export async function runAggregatePublicNpmCanary({ root, record, set = "oidc-successor", closure = null, closurePath = null, requirePinnedRuntime = false, fetchImpl = fetch, verifyArtifact = verifyPublicNpmArtifact, verifyRedirect = verifyGithubRepositoryRedirect, validateRegistryProof = validatePublicNpmRegistryProof, readEvidence = null, prepareCandidate = null, executeCandidate = runCandidateQualification, executeOptionalPeers = runAggregateOptionalPeerMatrix, environment = process.env } = {}) {
   if (requirePinnedRuntime) assertAggregateRuntime();
   assertCredentialFree(environment);
   if (Object.entries(environment).some(([key, value]) => /(?:^|_)(?:AUTH|TOKEN|PASSWORD|OTP)(?:_|$)/i.test(key) && typeof value === "string" && value.length > 0)) throw new Error("aggregate canary refuses credential-bearing parent environment");
-  const read = (path) => execFileSync("git", ["show", `HEAD:${path}`], { cwd: root, encoding: "utf8" });
+  const read = readEvidence ?? ((path) => execFileSync("git", ["show", `HEAD:${path}`], { cwd: root, encoding: "utf8" }));
   const findings = validateAggregateCanary(record, { read });
   if (findings.length) throw new Error(`aggregate record invalid: ${findings.map((item) => item.rule).join(",")}`);
   const resolved = resolveAggregateClosure(record, set, closure);
   const selected = resolved.selected;
   const incomplete = resolved.incomplete;
   if (incomplete.length) return { verdict: "indeterminate", reason: "publication-records-pending", pending: incomplete.map((entry) => `${entry.name}@${entry.version}`) };
-  if (!new RegExp(`^${AGGREGATE_CLOSURE_DIRECTORY}/[a-z0-9-]+-[a-f0-9]{64}\\.json$`).test(closurePath ?? "")) throw new Error("live aggregate canary requires one closed immutable closure path");
-  const closureFindings = validateAggregateClosure(record, closure, { read });
+  if (!isAggregateClosurePath(closurePath) || closurePath !== aggregateClosurePath(set, closure?.canonicalSha256)) throw new Error("live aggregate canary requires one closed immutable content-addressed closure path");
+  const closureFindings = validateAggregateClosure(record, closure, { read, path: closurePath });
   if (closureFindings.length) throw new Error(`aggregate closure invalid: ${closureFindings.map((item) => item.rule).join(",")}`);
   const artifacts = [];
   const transition = JSON.parse(read("governance/package-identity-transition.json"));
@@ -336,9 +485,10 @@ export async function runAggregatePublicNpmCanary({ root, record, set = "oidc-su
     const publication = JSON.parse(read(entry.publication.path));
     const proof = publicationProof(publication, entry.packageKey);
     const publishedCandidate = publicationCandidate(publication, entry.packageKey);
-    const repository = proof?.evidence?.repository;
-    if (!repository || !publishedCandidate) throw new Error(`${entry.name}@${entry.version} publication has no exact anonymous registry candidate`);
+    if (!publishedCandidate) throw new Error(`${entry.name}@${entry.version} publication has no exact anonymous registry candidate`);
     const historical = sealedHistoricalRepository({ entry, proof, transition });
+    const repository = proof?.evidence?.repository ?? historical?.historicalRepository;
+    if (!repository) throw new Error(`${entry.name}@${entry.version} publication has no exact repository provenance`);
     if (historical) {
       const redirect = await verifyRedirect({ ...historical, fetchImpl });
       if (redirect?.kind !== "verified") throw new Error(`${entry.name}@${entry.version} historical repository redirect proof did not verify`);
@@ -349,8 +499,8 @@ export async function runAggregatePublicNpmCanary({ root, record, set = "oidc-su
     const qualification = JSON.parse(read(entry.qualification.path));
     const expected = qualification.candidate;
     if (result.evidence.shasum !== expected.tarball.sha1 || result.evidence.sha256 !== expected.tarball.sha256 || result.evidence.sha512 !== expected.tarball.sha512 || result.evidence.packedManifestSha256 !== expected.packageManifestSha256) throw new Error(`${entry.name}@${entry.version} served bytes do not join its immutable qualification candidate`);
-    if (!candidateBytesJoin({ name: entry.name, version: entry.version, packageManifestSha256: result.evidence.packedManifestSha256, tarball: result.evidence }, publishedCandidate)) throw new Error(`${entry.name}@${entry.version} served bytes do not join its immutable publication candidate`);
-    const proofFindings = validatePublicNpmRegistryProof(proof, { name: entry.name, version: entry.version, repository, bytes: result.bytes });
+    if (!candidateBytesJoin({ name: entry.name, version: entry.version, packageManifestSha256: result.evidence.packedManifestSha256, tarball: { sha1: result.evidence.shasum, sha256: result.evidence.sha256, sha512: result.evidence.sha512 } }, publishedCandidate)) throw new Error(`${entry.name}@${entry.version} served bytes do not join its immutable publication candidate`);
+    const proofFindings = validateRegistryProof(proof, { name: entry.name, version: entry.version, repository, bytes: result.bytes });
     if (proofFindings.length) throw new Error(`${entry.name}@${entry.version} served bytes do not join its immutable publication record`);
     artifacts.push({ entry, bytes: result.bytes, evidence: result.evidence, qualification, publicationCandidate: publishedCandidate });
   }
@@ -363,13 +513,15 @@ export async function runAggregatePublicNpmCanary({ root, record, set = "oidc-su
     for (const artifact of artifacts) await writeFile(join(scratch, "artifacts", `${artifact.entry.packageKey}.tgz`), artifact.bytes);
     const peerInstall = {};
     const peerRequests = new Map();
-    for (const entry of selected.packages) {
-      const qualification = JSON.parse(read(entry.qualification.path));
-      const policy = JSON.parse(execFileSync("git", ["show", `${qualification.reviewedCommit}:governance/release-qualification-policy.json`], { cwd: root, encoding: "utf8" }));
-      const selectedPolicy = policy.packages[entry.name];
-      const adapter = JSON.parse(execFileSync("git", ["show", `${qualification.reviewedCommit}:${selectedPolicy.adapterPath}`], { cwd: root, encoding: "utf8" }));
-      for (const [name, version] of Object.entries(adapter.peerInstall ?? {})) {
-        const requested = peerRequests.get(name) ?? new Set(); requested.add(version); peerRequests.set(name, requested);
+    if (!prepareCandidate) {
+      for (const entry of selected.packages) {
+        const qualification = JSON.parse(read(entry.qualification.path));
+        const policy = JSON.parse(execFileSync("git", ["show", `${qualification.reviewedCommit}:governance/release-qualification-policy.json`], { cwd: root, encoding: "utf8" }));
+        const selectedPolicy = policy.packages[entry.name];
+        const adapter = JSON.parse(execFileSync("git", ["show", `${qualification.reviewedCommit}:${selectedPolicy.adapterPath}`], { cwd: root, encoding: "utf8" }));
+        for (const [name, version] of Object.entries(adapter.peerInstall ?? {})) {
+          const requested = peerRequests.get(name) ?? new Set(); requested.add(version); peerRequests.set(name, requested);
+        }
       }
     }
     for (const [name, versions] of peerRequests) {
@@ -397,6 +549,12 @@ export async function runAggregatePublicNpmCanary({ root, record, set = "oidc-su
       const installed = JSON.parse(installedBytes);
       if (declaredConsumer.dependencies?.[entry.name] !== `file:./artifacts/${entry.packageKey}.tgz` || installed.name !== entry.name || installed.version !== entry.version || hash(installedBytes) !== artifact.evidence.packedManifestSha256) throw new Error(`${entry.name} is not one exact direct aggregate identity joined to its served packed manifest`);
     }
+    const actualPeerResolution = {};
+    for (const [name, expectedVersion] of Object.entries(peerInstall)) {
+      const installedPeer = JSON.parse(await readFile(join(scratch, "node_modules", ...name.split("/"), "package.json"), "utf8"));
+      if (installedPeer.name !== name || installedPeer.version !== expectedVersion) throw new Error(`aggregate peer ${name} did not resolve its reviewed exact version`);
+      actualPeerResolution[name] = installedPeer.version;
+    }
     const controller = JSON.parse(await readFile(join(scratch, "node_modules", "@clossys", "controller", "package.json"), "utf8"));
     const expectedController = selected.packages.find((entry) => entry.packageKey === "controller").version;
     if (controller.name !== "@clossys/controller" || controller.version !== expectedController) throw new Error("aggregate consumer did not resolve the one exact Controller identity");
@@ -415,6 +573,11 @@ export async function runAggregatePublicNpmCanary({ root, record, set = "oidc-su
     for (const artifact of artifacts) {
       const tarball = join(scratch, `${artifact.entry.packageKey}-${artifact.entry.version}.tgz`);
       await writeFile(tarball, artifact.bytes);
+      if (prepareCandidate) {
+        const prepared = await prepareCandidate({ artifact, tarball, scratch, entry: artifact.entry });
+        runs.push(await executeCandidate(prepared));
+        continue;
+      }
       const qualification = JSON.parse(read(artifact.entry.qualification.path));
       const reviewed = qualification.reviewedCommit;
       if (!/^[a-f0-9]{40}$/.test(reviewed ?? "")) throw new Error(`${artifact.entry.name} qualification has no immutable reviewed commit`);
@@ -439,7 +602,7 @@ export async function runAggregatePublicNpmCanary({ root, record, set = "oidc-su
       const manifestBytes = atReviewed(`${selectedPolicy.packageDir}/package.json`);
       if (hash(manifestBytes) !== qualification.candidate.packageManifestSha256) throw new Error(`${artifact.entry.name} reviewed manifest does not join its qualification`);
       const manifestBins = JSON.parse(manifestBytes).bin ?? {};
-      runs.push(await runCandidateQualification({ tarball, policy, adapter, fixtures, manifestBins, registry: { scope: "@clossys", registry: PUBLIC_NPM_REGISTRY }, consumerRoot: scratch, skipRollback: true, restoreConsumerOverlay: true }));
+      runs.push(await executeCandidate({ tarball, policy, adapter, fixtures, manifestBins, registry: { scope: "@clossys", registry: PUBLIC_NPM_REGISTRY }, consumerRoot: scratch, skipRollback: true, restoreConsumerOverlay: true }));
     }
     const frameworkByPackage = new Map(runs.map((run) => {
       const contexts = { client: [], server: [], proxy: [], all: [] };
@@ -451,7 +614,7 @@ export async function runAggregatePublicNpmCanary({ root, record, set = "oidc-su
       contexts.all = [...new Set([...contexts.client, ...contexts.server, ...contexts.proxy])].sort();
       return [`${run.candidate.name}@${run.candidate.version}`, contexts];
     }));
-    const optionalPeerObservations = await runAggregateOptionalPeerMatrix({ consumer: scratch, matrix: record.optionalPeerMatrix.filter((row) => row.set === set), env, frameworkByPackage });
+    const optionalPeerObservations = await executeOptionalPeers({ consumer: scratch, matrix: record.optionalPeerMatrix.filter((row) => row.set === set), env, frameworkByPackage });
     execFileSync("npm", ["uninstall", "--ignore-scripts", ...selected.packages.map((entry) => entry.name)], { cwd: scratch, env, encoding: "utf8" });
     for (const entry of selected.packages) {
       try { await lstat(join(scratch, "node_modules", ...entry.name.split("/"))); throw new Error(`${entry.name} remained installed after aggregate uninstall`); }
@@ -472,9 +635,10 @@ export async function runAggregatePublicNpmCanary({ root, record, set = "oidc-su
       plan: { path: AGGREGATE_CANARY_PATH, setsSha256: aggregatePlanSha256(record), closurePath, closureSha256: closure?.canonicalSha256 },
       set,
       repositoryRedirects,
-      peerResolution: { requested: record.peerResolution.requested, actual: Object.fromEntries(Object.entries(peerInstall).sort()), disposition: record.peerResolution.disposition },
+      peerResolution: { requested: record.peerResolution.requested, actual: Object.fromEntries(Object.entries(actualPeerResolution).sort()), disposition: record.peerResolution.disposition },
       consumer: { manifestSha256: hash(before.manifest), lockfileSha256: hash(before.lock), controller: `${controller.name}@${controller.version}`, singularController: true, identities: selected.packages.map((entry) => `${entry.name}@${entry.version}`), rollback: { packageAbsenceProven: true, manifestRestored: true, lockfileRestored: true, identitiesRestored: true } },
       packages: runs.map((run, index) => ({ name: artifacts[index].entry.name, version: artifacts[index].entry.version, qualification: artifacts[index].entry.qualification, publication: artifacts[index].entry.publication, served: { name: artifacts[index].entry.name, version: artifacts[index].entry.version, packageManifestSha256: artifacts[index].evidence.packedManifestSha256, tarball: { sha1: artifacts[index].evidence.shasum, sha256: artifacts[index].evidence.sha256, sha512: artifacts[index].evidence.sha512 } }, installedManifestSha256: run.coverage.installedManifestSha256, run })),
+      optionalPeerObservations,
       dimensions: [
         ["exports", runs.reduce((sum, run) => sum + run.coverage.declaredExportKeys, 0)],
         ["framework", runs.reduce((sum, run) => sum + run.coverage.frameworkExports, 0)],

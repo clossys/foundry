@@ -580,8 +580,10 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
   const packagePolicy = policy.packages[adapter.package];
   const fixtureMaterializedAt = adapter.retainRawCaseEvidence === true ? new Date().toISOString() : null;
   const transcript = {
-    schema: "foundry-candidate-qualification-transcript-v3",
-    version: 3,
+    // Aggregate execution has one shared install/rollback. It must not claim
+    // the standalone v3's per-package rollback observations.
+    schema: skipRollback ? "foundry-aggregate-child-execution-v1" : "foundry-candidate-qualification-transcript-v3",
+    version: skipRollback ? 1 : 3,
     candidate: { name: manifest.name, version: manifest.version },
     archetype: adapter.archetype,
     tarball: tarballDigests,

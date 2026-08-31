@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 import { readFileSync } from "node:fs";
-import { AGGREGATE_CANARY_PATH, validateAggregateCanary, validateAggregateCanaryAppendOnly } from "./lib/public-npm-aggregate-canary.mjs";
+import { AGGREGATE_CANARY_PATH, aggregateCanaryGitHistory, validateAggregateCanary, validateAggregateCanaryAppendOnly, validateAggregateCanaryHistory } from "./lib/public-npm-aggregate-canary.mjs";
 
 const root = process.cwd();
 const record = JSON.parse(readFileSync(AGGREGATE_CANARY_PATH, "utf8"));
+const history = aggregateCanaryGitHistory({ root });
 const findings = [
   ...validateAggregateCanary(record, { read: (path) => readFileSync(`${root}/${path}`, "utf8") }),
   ...validateAggregateCanaryAppendOnly(record, { root }),
+  ...validateAggregateCanaryHistory({ history }),
 ];
 if (findings.length) {
   console.error("PUBLIC NPM AGGREGATE CANARY RECORD INVALID");
