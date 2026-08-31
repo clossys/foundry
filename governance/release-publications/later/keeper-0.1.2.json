@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "kind": "foundry-later-publication-v1",
+  "qualification": {
+    "path": "governance/release-qualifications/clossys-keeper-0.1.2.json",
+    "sha256": "0b059b992da05de1581350f073b20d18aa008586c5ad9fd1eae7906340603387"
+  },
+  "candidate": {
+    "name": "@clossys/keeper",
+    "version": "0.1.2",
+    "packageTreeSha1": "4e11f87437f8362365d4a615ac5bcb1b52cda3d0",
+    "packageManifestSha256": "b9175aa7cbc76ef3a9cabf67ac0c7f76f0b9fac7d585ca473d607d58701c9900",
+    "tarball": {
+      "sha1": "241d93e56a6af0e0d5781893851b39aba8eedf8c",
+      "sha256": "ad03ec77cdc2578f0e9aeb5711504f51476aea76107d5acb05416f8e71c922f8",
+      "sha512": "6c34c002cbe64925a8053ee2574b1ee54cd025331cbf40c771329284391560a6a8a897cb737200e038db033000d263c9f1f0f679b0fbd48a398e12af5da16a81"
+    }
+  },
+  "source": {
+    "reviewedCommit": "4bd2a3ad4909409f7735ce042f2c93b23b9aedd7",
+    "rootPackageJsonSha256": "c6f5f6791c7d6e105376603da0152618ae03aa5f25a522dda0432c11999a9bf1",
+    "rootPackageLockSha256": "5f4cdde3f18ddd555680034f87ea682408f4800e189a3df8041bd3f7d500a73a",
+    "policySha256": "85a97b65456d1c51fcba34954529f8962d3eb62380b84310fa624ae2fb25b2db",
+    "adapterSha256": "a1669255af74032f10201fa43139f804cbe17a672d0f3a30affe918e681f9e1f",
+    "fixtureSetSha256": "fefa4c26c79b86d6b4ce94ff0cb125c4ecaea375ef63cd9698bbb1a25bf4fac8"
+  },
+  "catalog": {
+    "path": "governance/release-catalog.json",
+    "sha256": "3f43692f3c12dc1b21a3931fcf2abd53a68a207874b2ae2206e8e10f08b68404",
+    "packageKey": "keeper"
+  },
+  "publication": {
+    "mode": "owner-present",
+    "publishedAt": "2026-08-31T17:46:46.490Z",
+    "reference": "https://www.npmjs.com/package/@clossys/keeper/v/0.1.2"
+  },
+  "registryProof": {
+    "schemaVersion": 2,
+    "kind": "public-npm-anonymous-registry-proof-v2",
+    "evidence": {
+      "registry": "https://registry.npmjs.org",
+      "access": "anonymous",
+      "name": "@clossys/keeper",
+      "version": "0.1.2",
+      "metadataUrl": "https://registry.npmjs.org/%40clossys%2Fkeeper/0.1.2",
+      "repository": "clossys/foundry",
+      "tarballUrl": "https://registry.npmjs.org/@clossys/keeper/-/keeper-0.1.2.tgz",
+      "integrity": "sha512-bDTAAsvmSSWoBT7iV0se5UzQJTMcv0DHcTKShDkVYKaoqJfLc3IA4DjbAzAA0mPJ8fD2ebD71Io5jhKvXaFqgQ==",
+      "shasum": "241d93e56a6af0e0d5781893851b39aba8eedf8c",
+      "sha256": "ad03ec77cdc2578f0e9aeb5711504f51476aea76107d5acb05416f8e71c922f8",
+      "sha512": "6c34c002cbe64925a8053ee2574b1ee54cd025331cbf40c771329284391560a6a8a897cb737200e038db033000d263c9f1f0f679b0fbd48a398e12af5da16a81",
+      "packedManifestSha256": "b9175aa7cbc76ef3a9cabf67ac0c7f76f0b9fac7d585ca473d607d58701c9900",
+      "size": 94238
+    }
+  }
+}
