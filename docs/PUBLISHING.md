@@ -638,7 +638,11 @@ runtime, and its owner-present upload now has both an immutable qualification
 record and an anonymous served-byte publication record. Publisher's npm
 trusted-publisher connection and restrictive publishing-access setting remain
 separate provider changes; after those are configured, the protected OIDC
-successor will be `0.1.11`.
+successor will be `0.1.11`. The source has advanced to that later successor;
+it has no qualification or publication record yet. Do not prepare a 0.1.11
+trusted-publisher/OIDC upload until its own fresh exact-head candidate has
+passed the required qualification, FULL release checks, and anonymous registry
+verification.
 
 ### Why the name-collision check runs first, always
 

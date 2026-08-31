@@ -3,6 +3,15 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.11] - 2026-08-31
+
+### Changed
+
+- Advanced the source to the later trusted-publisher/OIDC successor after the
+  owner-present 0.1.10 first publication. This source-only change is neither
+  qualification nor publication evidence: a future 0.1.11 candidate requires
+  fresh exact-head qualification, release checks, and registry verification.
+
 ## [0.1.10] - 2026-08-31
 
 ### Changed
