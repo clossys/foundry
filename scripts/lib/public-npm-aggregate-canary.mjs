@@ -116,7 +116,15 @@ export function validateAggregateChildExecution(run, { name, version, qualificat
       const coverageKeys = ["declaredExportKeys", "concreteTargets", "runtimeImports", "reactServerImports", "staticTargets", "frameworkExports", "frameworkBuilds", "failed", "bins", "lifecycleScriptsDisabled"];
       if (coverageKeys.some((key) => run.coverage?.[key] !== expectedCoverage[key])) finding(findings, "qualification-coverage", `${name}@${version} child coverage does not exactly match immutable qualification coverage`);
       const expectedRaw = expectedObservations.filter((item) => item?.kind === "case" && own(item, "rawCaseEvidence"));
-      if (expectedRaw.length && expectedRaw.some((item) => !object(run.observations.find((actualItem) => actualItem?.id === item.id)?.rawCaseEvidence))) finding(findings, "qualification-raw-case", `${name}@${version} child omits required immutable raw case evidence`);
+      const actualRaw = run.observations.filter((item) => item?.kind === "case" && own(item, "rawCaseEvidence"));
+      const validRaw = (value) => object(value) && exactKeys(value, ["argv", "materializedInputs", "consumerOverlay", "exitCode", "stdout", "stderr"])
+        && Array.isArray(value.argv) && value.argv.every((item) => typeof item === "string")
+        && Array.isArray(value.materializedInputs) && Array.isArray(value.consumerOverlay)
+        && Number.isInteger(value.exitCode) && typeof value.stdout === "string" && typeof value.stderr === "string";
+      if (expectedRaw.length !== actualRaw.length || expectedRaw.some((item) => {
+        const actual = run.observations.find((actualItem) => actualItem?.id === item.id)?.rawCaseEvidence;
+        return !validRaw(actual) || JSON.stringify(stable(actual)) !== JSON.stringify(stable(item.rawCaseEvidence));
+      }) || actualRaw.some((item) => !expectedRaw.some((expected) => expected.id === item.id))) finding(findings, "qualification-raw-case", `${name}@${version} child raw case evidence must exactly match the immutable argv, inputs, overlay, exit, and streams`);
     }
   }
   return findings;
