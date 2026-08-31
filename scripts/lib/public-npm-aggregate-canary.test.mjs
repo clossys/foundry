@@ -23,6 +23,39 @@ function childRun(entry) {
   return run;
 }
 
+function git(root, args, input = undefined) {
+  return execFileSync("git", args, { cwd: root, encoding: "utf8", input }).trim();
+}
+
+function commitTree(root, files, parents = [], message = "fixture") {
+  const buildTree = (entries, prefix = "") => {
+    const groups = new Map();
+    for (const [path, value] of Object.entries(entries)) {
+      if (!path.startsWith(prefix)) continue;
+      const rest = path.slice(prefix.length);
+      const slash = rest.indexOf("/");
+      const name = slash === -1 ? rest : rest.slice(0, slash);
+      const group = groups.get(name) ?? { directory: slash !== -1, values: {} };
+      if (slash === -1) group.value = value;
+      else group.values[rest.slice(slash + 1)] = value;
+      groups.set(name, group);
+    }
+    const rows = [];
+    for (const [name, group] of [...groups.entries()].sort(([left], [right]) => left.localeCompare(right))) {
+      if (group.directory) rows.push(`040000 tree ${buildTree(group.values, "")}\t${name}`);
+      else rows.push(`100644 blob ${git(root, ["hash-object", "-w", "--stdin"], group.value)}\t${name}`);
+    }
+    return rows.length === 0 ? "4b825dc642cb6eb9a060e54bf8d69288fbee4904" : git(root, ["mktree"], `${rows.join("\n")}\n`);
+  };
+  const tree = buildTree(files);
+  return git(root, ["commit-tree", tree, ...parents.flatMap((parent) => ["-p", parent])], `${message}\n`);
+}
+
+function setHead(root, commit) {
+  git(root, ["update-ref", "refs/heads/main", commit]);
+  git(root, ["symbolic-ref", "HEAD", "refs/heads/main"]);
+}
+
 function satisfiedFixture() {
   const plan = structuredClone(record);
   const selected = plan.sets[0];
@@ -131,6 +164,59 @@ test("immutable closure and transcript discovery fails closed on real HEAD-histo
     await writeFile(foreign, "foreign\n"); commit("add foreign record");
     await rename(foreign, join(temporary, copiedClosure)); await writeFile(foreign, "foreign\n"); await rename(foreign, join(temporary, copiedTranscript)); commit("rename records into closed namespaces");
     for (const [directory, path] of [[closureDirectory, copiedClosure], [transcriptDirectory, copiedTranscript]]) { const records = immutableRecordPaths({ root: temporary, directory }); assert.ok(records.current.includes(path)); assert.ok(!records.introduced.includes(path)); }
+  } finally { await rm(temporary, { recursive: true, force: true }); }
+});
+
+test("DAG history uses actual parents for merged introductions and rewrites", async () => {
+  const temporary = await mkdtemp(join(tmpdir(), "foundry-aggregate-merge-history-"));
+  const planPath = "governance/public-npm-aggregate-canary.json";
+  const recordPath = "governance/public-npm-aggregate-transcripts/baseline-" + "a".repeat(64) + ".json";
+    try {
+    execFileSync("git", ["init", "-q"], { cwd: temporary });
+    execFileSync("git", ["-c", "user.name=Test", "-c", "user.email=test@example.invalid", "config", "commit.gpgsign", "false"], { cwd: temporary });
+
+    const base = commitTree(temporary, { [planPath]: "original\n", README: "base\n" }, [], "base");
+    const mainTip = commitTree(temporary, { [planPath]: "original\n", README: "main\n" }, [base], "main side");
+    const rewritten = commitTree(temporary, { [planPath]: "rewritten\n", README: "base\n" }, [base], "unreviewed rewrite");
+    const merge = commitTree(temporary, { [planPath]: "rewritten\n", README: "main\n" }, [mainTip, rewritten], "merge rewrite");
+    setHead(temporary, merge);
+    const mergedPlan = aggregateCanaryGitHistory({ root: temporary, path: planPath });
+    assert.deepEqual(mergedPlan.map((entry) => entry.status), ["M", "A"]);
+    assert.equal(mergedPlan.filter((entry) => entry.commit === merge).length, 0, "merge propagation must not duplicate the branch rewrite");
+
+    const introduced = commitTree(temporary, { [recordPath]: "one\n" }, [merge], "introduce record");
+    const changed = commitTree(temporary, { [recordPath]: "two\n" }, [introduced], "rewrite record");
+    const deleted = commitTree(temporary, {}, [changed], "delete record");
+    const restored = commitTree(temporary, { [recordPath]: "one\n" }, [deleted], "readd record");
+    setHead(temporary, restored);
+    const recordHistory = immutableRecordHistory({ root: temporary, path: recordPath });
+    assert.deepEqual(recordHistory.map((entry) => entry.status), ["A", "D", "M", "A"]);
+    const recordPaths = immutableRecordPaths({ root: temporary, directory: "governance/public-npm-aggregate-transcripts" });
+    assert.deepEqual(recordPaths.introduced, [recordPath]);
+    assert.deepEqual(recordPaths.current, [recordPath]);
+  } finally { await rm(temporary, { recursive: true, force: true }); }
+});
+
+test("DAG history counts one branch introduction and ignores an unreachable divergent branch", async () => {
+  const temporary = await mkdtemp(join(tmpdir(), "foundry-aggregate-branch-history-"));
+  const recordPath = "governance/public-npm-aggregate-closures/baseline-" + "b".repeat(64) + ".json";
+  try {
+    execFileSync("git", ["init", "-q"], { cwd: temporary });
+    const base = commitTree(temporary, { README: "base\n" }, [], "base");
+    const mainTip = commitTree(temporary, { README: "main\n" }, [base], "main");
+    const branchAdd = commitTree(temporary, { README: "base\n", [recordPath]: "closure\n" }, [base], "branch introduction");
+    const merged = commitTree(temporary, { README: "main\n", [recordPath]: "closure\n" }, [mainTip, branchAdd], "merge branch introduction");
+    setHead(temporary, merged);
+    const mergedHistory = immutableRecordHistory({ root: temporary, path: recordPath });
+    assert.deepEqual(mergedHistory.map((entry) => entry.status), ["A"]);
+    assert.equal(mergedHistory[0].commit, branchAdd);
+
+    const unreachableRewrite = commitTree(temporary, { README: "unreachable\n", [recordPath]: "tampered\n" }, [branchAdd], "unmerged divergent rewrite");
+    void unreachableRewrite;
+    setHead(temporary, merged);
+    const reachable = immutableRecordHistory({ root: temporary, path: recordPath });
+    assert.deepEqual(reachable.map((entry) => entry.status), ["A"]);
+    assert.deepEqual(immutableRecordPaths({ root: temporary, directory: "governance/public-npm-aggregate-closures" }).introduced, [recordPath]);
   } finally { await rm(temporary, { recursive: true, force: true }); }
 });
 

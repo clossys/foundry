@@ -250,55 +250,104 @@ export function validateAggregateCanaryHistory({ path = AGGREGATE_CANARY_PATH, h
   return findings;
 }
 
-/** Return every committed mutation of the plan path, including rename/copy sides. */
-export function aggregateCanaryGitHistory({ root, path = AGGREGATE_CANARY_PATH }) {
-  // Do not give git a final pathspec here: pathspec filtering can omit one
-  // side of a rename. We scan name-status rows and explicitly inspect both
-  // old and new paths, which makes a rename-away/rename-back visible.
-  const rows = execFileSync("git", ["log", "HEAD", "--format=%H", "--name-status", "--find-renames=40%", "--find-copies=40%"], { cwd: root, encoding: "utf8" }).trim().split("\n").filter(Boolean);
+function reachableCommits(root) {
+  return execFileSync("git", ["rev-list", "--topo-order", "HEAD"], { cwd: root, encoding: "utf8" }).trim().split("\n").filter(Boolean);
+}
+
+/** Read every actual parent; no path limiter may simplify the commit graph. */
+function actualParents(root, commit) {
+  const commits = execFileSync("git", ["rev-list", "--parents", "-n", "1", commit], { cwd: root, encoding: "utf8" }).trim().split(/\s+/).filter(Boolean);
+  if (commits[0] !== commit) throw new Error(`git returned an unexpected commit while reading ${commit} parents`);
+  return commits.slice(1);
+}
+
+/** Return the exact tree entry object ID, or null when the path is absent. */
+function pathBlob(root, commit, path) {
+  try {
+    return execFileSync("git", ["rev-parse", "--verify", `${commit}:${path}`], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+  } catch {
+    return null;
+  }
+}
+
+function pathBytes(root, commit, path, oid) {
+  if (!oid) return null;
+  try { return execFileSync("git", ["cat-file", "blob", oid], { cwd: root, encoding: "buffer", stdio: ["ignore", "pipe", "ignore"] }); }
+  catch { return Buffer.from(`${commit}:${path}:${oid}`); }
+}
+
+function mutationStatus(current, parents) {
+  if (current === null) return parents.some((parent) => parent !== null) ? "D" : null;
+  return parents.every((parent) => parent === null) ? "A" : "M";
+}
+
+function renamedPathStatus(root, commit, path) {
+  try {
+    const rows = execFileSync("git", ["diff-tree", "--root", "-r", "--name-status", "--find-renames=40%", "--find-copies=40%", "--find-copies-harder", commit], { cwd: root, encoding: "utf8" }).trim().split("\n").filter(Boolean);
+    for (const row of rows) {
+      const [rawStatus, ...paths] = row.split("\t");
+      if (paths.includes(path) && ["R", "C"].includes(rawStatus?.slice(0, 1))) return rawStatus.slice(0, 1);
+    }
+  } catch {
+    // A missing diff is treated as an ordinary exact path comparison below.
+  }
+  return null;
+}
+
+/**
+ * Compare one exact path against every reachable commit's actual parents.
+ * A merge is a mutation only when its result is novel relative to every
+ * parent; otherwise the branch-side mutation is already represented once.
+ */
+function exactPathHistory(root, path, commits = reachableCommits(root)) {
   const history = [];
-  let commit = null;
-  for (const row of rows) {
-    if (/^[a-f0-9]{40}$/.test(row)) { commit = row; continue; }
-    const [rawStatus, ...paths] = row.split("\t");
-    const status = rawStatus?.slice(0, 1);
-    if (commit && paths.includes(path)) history.push({ commit, status, sha256: hash(`${commit}:${rawStatus}:${paths.join("\0")}`) });
+  for (const commit of commits) {
+    const parents = actualParents(root, commit);
+    const current = pathBlob(root, commit, path);
+    const parentBlobs = parents.map((parent) => pathBlob(root, parent, path));
+    const mutation = parents.length > 1
+      ? (parentBlobs.some((parent) => parent === current) ? null : mutationStatus(current, parentBlobs))
+      : (parentBlobs[0] === current ? null : renamedPathStatus(root, commit, path) ?? mutationStatus(current, parentBlobs));
+    if (!mutation) continue;
+    const bytes = pathBytes(root, commit, path, current) ?? parentBlobs.map((parent, index) => pathBytes(root, parents[index], path, parent)).find((value) => value !== null) ?? Buffer.alloc(0);
+    history.push({ commit, status: mutation, sha256: hash(bytes) });
   }
   return history;
 }
 
+/** Return every committed mutation of the plan path from HEAD's real DAG. */
+export function aggregateCanaryGitHistory({ root, path = AGGREGATE_CANARY_PATH }) {
+  return exactPathHistory(root, path);
+}
+
+function pathsSeenInHistory(root, directory, commits) {
+  const paths = new Set();
+  for (const commit of commits) {
+    const rows = execFileSync("git", ["ls-tree", "-r", "--name-only", commit, "--", directory], { cwd: root, encoding: "utf8" }).trim().split("\n").filter(Boolean);
+    for (const path of rows) paths.add(path);
+  }
+  return paths;
+}
+
 /**
- * Discover immutable records introduced anywhere in HEAD ancestry.  We scan
- * all name-status rows (rather than current ls-files) so deleting, moving, or
- * recreating a record can never turn the checker into an empty success.
+ * Discover immutable records introduced anywhere in HEAD ancestry. Every
+ * candidate path is checked against the complete reachable DAG, so a branch
+ * introduction brought through a merge is one A event, while an unreachable
+ * divergent branch cannot poison the result.
  */
 export function immutableRecordPaths({ root, directory }) {
-  const rows = execFileSync("git", ["log", "HEAD", "--format=%H", "--name-status", "--find-renames=40%", "--find-copies=40%"], { cwd: root, encoding: "utf8" }).trim().split("\n").filter(Boolean);
-  const introduced = new Set(), current = new Set(execFileSync("git", ["ls-tree", "-r", "--name-only", "HEAD", "--", directory], { cwd: root, encoding: "utf8" }).trim().split("\n").filter(Boolean));
-  let commit = null;
-  for (const row of rows) {
-    if (/^[a-f0-9]{40}$/.test(row)) { commit = row; continue; }
-    const [status, ...paths] = row.split("\t");
-    if (commit && status === "A") for (const path of paths) if (path.startsWith(`${directory}/`)) introduced.add(path);
+  const commits = reachableCommits(root);
+  const introduced = new Set();
+  for (const path of pathsSeenInHistory(root, directory, commits)) {
+    if (exactPathHistory(root, path, commits).some((entry) => entry.status === "A")) introduced.add(path);
   }
+  const current = new Set(execFileSync("git", ["ls-tree", "-r", "--name-only", "HEAD", "--", directory], { cwd: root, encoding: "utf8" }).trim().split("\n").filter(Boolean));
   return { introduced: [...introduced].sort(), current: [...current].sort() };
 }
 
 /** Hash the exact blob visible at a record mutation (or its pre-delete blob). */
 export function immutableRecordHistory({ root, path }) {
-  const rows = execFileSync("git", ["log", "HEAD", "--format=%H", "--name-status", "--find-renames=40%", "--find-copies=40%"], { cwd: root, encoding: "utf8" }).trim().split("\n").filter(Boolean);
-  const history = []; let commit = null;
-  for (const row of rows) {
-    if (/^[a-f0-9]{40}$/.test(row)) { commit = row; continue; }
-    const [rawStatus, ...paths] = row.split("\t");
-    const status = rawStatus?.slice(0, 1);
-    if (!commit || !paths.includes(path)) continue;
-    let bytes;
-    try { bytes = execFileSync("git", ["show", `${commit}:${path}`], { cwd: root, encoding: "buffer", stdio: ["ignore", "pipe", "ignore"] }); }
-    catch { try { bytes = execFileSync("git", ["show", `${commit}^:${path}`], { cwd: root, encoding: "buffer", stdio: ["ignore", "pipe", "ignore"] }); } catch { bytes = Buffer.alloc(0); } }
-    history.push({ commit, status, sha256: hash(bytes) });
-  }
-  return history;
+  return exactPathHistory(root, path);
 }
 
 export function aggregatePlanSha256(plan) {
