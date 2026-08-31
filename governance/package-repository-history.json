@@ -16,6 +16,41 @@
       "path": "scripts/lib/release-publication-cohort.mjs",
       "lineSha256": "sha256:69d4dfa7bf24d9846eb7f44c79e898a45265fcf1992ad9a0fdcf8b16ed9ac0b6",
       "count": 1
+    },
+    {
+      "path": "governance/release-publications/later/advisor-0.1.5.json",
+      "lineSha256": "sha256:a573b4066f58b4db75a720f70713ce5ce586648f40de27efb70e99683d3c0542",
+      "count": 1
+    },
+    {
+      "path": "governance/release-publications/later/advisor-0.1.5.json",
+      "lineSha256": "sha256:2d465d0fe470afe8096847372ced8b60a25c5ab6f39f98e38eace99bc67dc3c5",
+      "count": 1
+    },
+    {
+      "path": "governance/release-publications/later/controller-0.8.23.json",
+      "lineSha256": "sha256:49da6a936bd44e74550d3adfc0932bba8c9dfad5afac00cb71856a352170aba6",
+      "count": 1
+    },
+    {
+      "path": "governance/release-publications/later/controller-0.8.23.json",
+      "lineSha256": "sha256:68ce0fa40589fad09935848ce7feec8c5944f7fad30c9e3082c527acdfb271a2",
+      "count": 1
+    },
+    {
+      "path": "governance/release-publications/later/starter-0.1.4.json",
+      "lineSha256": "sha256:68c41b3958f322fad0ed1dacc88c1eaf3db10a219aa8d15652470776b426aa9f",
+      "count": 1
+    },
+    {
+      "path": "governance/release-publications/later/starter-0.1.4.json",
+      "lineSha256": "sha256:0b10402b6aff62ad368e6afc485c0a612d12f015823fb9ebde54a49b4b1eea08",
+      "count": 1
+    },
+    {
+      "path": "scripts/lib/release-later-publication.mjs",
+      "lineSha256": "sha256:064b5b122b25cd926ab52968c1f791b9cff99cf92b0e15a708e18d20d6e6c602",
+      "count": 1
     }
   ]
 }
