@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import { ALL_PACKAGE_RELEASE_ORDER, aggregateCanaryGitHistory, aggregateClosurePath, aggregatePlanSha256, assertAggregateRuntime, immutableRecordHistory, immutableRecordPaths, isAggregateClosurePath, resolveAggregateClosure, runAggregatePublicNpmCanary, sealedHistoricalRepository, validateAggregateCanary, validateAggregateCanaryAppendOnly, validateAggregateCanaryHistory, validateAggregateClosure, validateSatisfiedAggregateTranscript, validateSatisfiedTranscriptHistory } from "./public-npm-aggregate-canary.mjs";
+import { ALL_PACKAGE_RELEASE_ORDER, aggregateCanaryGitHistory, aggregateClosurePath, aggregatePlanSha256, assertAggregateRuntime, immutableRecordHistory, immutableRecordPaths, isAggregateClosurePath, resolveAggregateClosure, runAggregatePublicNpmCanary, sealedHistoricalRepository, validateAggregateCanary, validateAggregateCanaryAppendOnly, validateAggregateCanaryHistory, validateAggregateChildExecution, validateAggregateClosure, validateSatisfiedAggregateTranscript, validateSatisfiedTranscriptHistory } from "./public-npm-aggregate-canary.mjs";
 
 const root = new URL("../..", import.meta.url).pathname;
 const record = JSON.parse(readFileSync(new URL("../../governance/public-npm-aggregate-canary.json", import.meta.url), "utf8"));
@@ -62,6 +62,8 @@ test("aggregate record fails closed on ordering and non-identity plan rows", () 
     mutate(copy);
     assert.ok(validateAggregateCanary(copy, { read }).length > 0);
   }
+  const duplicatePeer = structuredClone(record); duplicatePeer.optionalPeerMatrix[1] = structuredClone(duplicatePeer.optionalPeerMatrix[0]);
+  assert.ok(validateAggregateCanary(duplicatePeer, { read }).some((item) => item.rule === "optional-peer-duplicate"));
 });
 
 test("introduced aggregate plan is immutable", () => {
@@ -245,4 +247,8 @@ test("satisfied records bind the closed plan, closure, canonical payload, and on
   assert.ok(validateSatisfiedAggregateTranscript(traversal, { plan, closure }).some((item) => item.rule === "plan-join"));
   const rewritten = [{ commit: "b".repeat(40), status: "M", sha256: sha }, { commit: "a".repeat(40), status: "A", sha256: sha }];
   assert.ok(validateSatisfiedTranscriptHistory({ path: `governance/public-npm-aggregate-transcripts/baseline-${transcript.canonicalSha256}.json`, history: rewritten }).some((item) => item.rule === "transcript-rewrite"));
+  const expected = structuredClone(transcript.packages[0].run);
+  const wrongOperation = structuredClone(expected); wrongOperation.observations[1].kind = "help"; wrongOperation.canonicalSha256 = sha256(JSON.stringify(Object.fromEntries(Object.entries(wrongOperation).filter(([key]) => key !== "canonicalSha256"))));
+  assert.ok(validateAggregateChildExecution(wrongOperation, { name: transcript.packages[0].name, version: transcript.packages[0].version, qualificationTranscript: expected }).some((item) => item.rule === "qualification-operations"));
+  assert.doesNotThrow(() => validateAggregateChildExecution({ schema: "foundry-aggregate-child-execution-v1", version: 1, candidate: { name: transcript.packages[0].name, version: transcript.packages[0].version }, archetype: "x", tarball: { sha1, sha256: sha, sha512 }, peerInstall: {}, consumer: { manifestSha256: sha, lockfileSha256: sha }, coverage: {}, observations: null, dimensions: null, restoration: {}, mismatches: [], ok: false, canonicalSha256: sha }, transcript.packages[0]));
 });

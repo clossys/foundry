@@ -3,7 +3,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { AGGREGATE_CANARY_PATH, AGGREGATE_TRANSCRIPT_DIRECTORY, aggregateTranscriptPath, immutableRecordHistory, immutableRecordPaths, isAggregateClosurePath, validateSatisfiedAggregateTranscript, validateSatisfiedTranscriptHistory } from "./lib/public-npm-aggregate-canary.mjs";
+import { AGGREGATE_CANARY_PATH, AGGREGATE_TRANSCRIPT_DIRECTORY, aggregateTranscriptPath, immutableRecordHistory, immutableRecordPaths, isAggregateClosurePath, sealedHistoricalRepository, validateSatisfiedAggregateTranscript, validateSatisfiedTranscriptHistory } from "./lib/public-npm-aggregate-canary.mjs";
 
 const root = process.cwd();
 const plan = JSON.parse(readFileSync(join(root, AGGREGATE_CANARY_PATH), "utf8"));
@@ -22,7 +22,19 @@ for (const path of files) {
   if (!transcript.plan || !isAggregateClosurePath(transcript.plan.closurePath)) findings.push({ rule: "closure-path", message: `${path} does not retain a closed immutable closure path` });
   else try { closure = JSON.parse(readFileSync(join(root, transcript.plan.closurePath), "utf8")); }
   catch { findings.push({ rule: "closure", message: `${path} does not retain a readable immutable closure` }); }
-  findings.push(...validateSatisfiedAggregateTranscript(transcript, { plan, closure }), ...validateSatisfiedTranscriptHistory({ path, history }));
+  const qualificationContracts = {}, expectedRepositoryRedirects = [];
+  try {
+    const transition = JSON.parse(readFileSync(join(root, "governance/package-identity-transition.json"), "utf8"));
+    for (const entry of closure?.packages ?? []) {
+      const qualification = JSON.parse(readFileSync(join(root, entry.qualification.path), "utf8"));
+      qualificationContracts[`${entry.name}@${entry.version}`] = qualification.transcript;
+      const publication = JSON.parse(readFileSync(join(root, entry.publication.path), "utf8"));
+      const proof = publication.kind === "clossys-npmjs-trio-first-publication-v1" ? publication.members?.find((member) => member?.packageKey === entry.publication.member)?.registryProof : publication.registryProof;
+      const historical = sealedHistoricalRepository({ entry, proof, transition });
+      if (historical) expectedRepositoryRedirects.push({ ...historical, kind: "verified" });
+    }
+  } catch { findings.push({ rule: "evidence", message: `${path} cannot derive immutable qualification and repository redirect contracts` }); }
+  findings.push(...validateSatisfiedAggregateTranscript(transcript, { plan, closure, qualificationContracts, expectedRepositoryRedirects }), ...validateSatisfiedTranscriptHistory({ path, history }));
 }
 if (findings.length) {
   console.error("PUBLIC NPM AGGREGATE TRANSCRIPT INVALID");

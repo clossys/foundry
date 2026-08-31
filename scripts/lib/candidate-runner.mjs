@@ -87,6 +87,23 @@ function renderFixture(value, variables) {
   return rendered;
 }
 
+async function readRegularFile(path, label) {
+  const state = await lstat(path);
+  if (!state.isFile() || state.isSymbolicLink()) throw new Error(`${label} must remain a contained regular file`);
+  return readFile(path);
+}
+
+async function restoreRegularFile(path, bytes, label) {
+  try {
+    const state = await lstat(path);
+    if (!state.isFile() || state.isSymbolicLink()) throw new Error(`${label} was replaced with a non-regular file during qualification`);
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+  }
+  if (bytes === null) { await rm(path, { force: true }); return; }
+  await writeFile(path, bytes, { flag: "w" });
+}
+
 async function caseArgument(root, fixtureRoot, descriptor) {
   if (typeof descriptor.literal === "string") return descriptor.literal;
   const relative = descriptor.fixture ?? descriptor.fixtureDirectory;
@@ -673,7 +690,7 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
       transcript.observations.push(observation(root, `help:${bin}`, "help", adapter.bins[bin], result));
       if (result.exitCode !== adapter.bins[bin] || result.signal || result.launchError) transcript.mismatches.push(`help:${bin}`);
     }
-    const caseBase = { manifest: await readFile(join(root, "package.json"), "utf8"), lock: await readFile(join(root, "package-lock.json"), "utf8") };
+    const caseBase = { manifest: await readRegularFile(join(root, "package.json"), "consumer package.json"), lock: await readRegularFile(join(root, "package-lock.json"), "consumer package-lock.json") };
     const overlayRoots = new Set();
     for (const item of adapter.consumerOverlay ?? []) {
       const target = resolve(root, item.target);
@@ -687,7 +704,7 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
       const target = resolve(root, item.target);
       await mkdir(dirname(target), { recursive: true });
       if (restoreConsumerOverlay) {
-        try { overlayBackup.set(target, await readFile(target)); }
+        try { overlayBackup.set(target, await readRegularFile(target, `consumer overlay ${item.target}`)); }
         catch (error) { if (error?.code !== "ENOENT") throw error; overlayBackup.set(target, null); }
       }
       await copyFile(join(fixtureRoot, item.fixture), target);
@@ -713,12 +730,11 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
       if (result.exitCode !== item.exitCode || result.signal || result.launchError) transcript.mismatches.push(`case:${item.id}`);
     }
 
-    await writeFile(join(root, "package.json"), caseBase.manifest);
-    await writeFile(join(root, "package-lock.json"), caseBase.lock);
+    await restoreRegularFile(join(root, "package.json"), caseBase.manifest, "consumer package.json");
+    await restoreRegularFile(join(root, "package-lock.json"), caseBase.lock, "consumer package-lock.json");
     if (restoreConsumerOverlay) {
       for (const [target, bytes] of overlayBackup) {
-        if (bytes === null) await rm(target, { force: true });
-        else await writeFile(target, bytes);
+        await restoreRegularFile(target, bytes, "consumer overlay");
       }
     } else {
       for (const packageRoot of overlayRoots) await rm(packageRoot, { recursive: true, force: true });
