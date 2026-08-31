@@ -166,8 +166,16 @@ test("owner-present wrapper runs real pinned npm publish against a loopback regi
     if (file === "/usr/bin/script") {
       const outboundArgs = [...args];
       assert.deepEqual(outboundArgs, ownerPresentPtyArgs("https://registry.npmjs.org"));
-      if (process.platform === "linux") outboundArgs[3] = outboundArgs[3].replace("https://registry.npmjs.org", loopback.registry);
-      else outboundArgs[outboundArgs.indexOf("--registry") + 1] = loopback.registry;
+      if (process.platform === "linux") {
+        const commandIndex = outboundArgs.indexOf("-c");
+        assert.notEqual(commandIndex, -1, "the tested Linux PTY tuple must use only its closed -c command form");
+        assert.match(outboundArgs[commandIndex + 1], /^npm publish \. --access public --ignore-scripts --registry https:\/\/registry\.npmjs\.org$/);
+        outboundArgs[commandIndex + 1] = outboundArgs[commandIndex + 1].replace("https://registry.npmjs.org", loopback.registry);
+      } else {
+        const registryIndex = outboundArgs.indexOf("--registry");
+        assert.notEqual(registryIndex, -1);
+        outboundArgs[registryIndex + 1] = loopback.registry;
+      }
       const result = await runInteractiveChild(file, outboundArgs, options, onOutput);
       realPublishResults.push(result);
       return result;
@@ -204,8 +212,13 @@ test("owner-present wrapper runs real pinned npm publish against a loopback regi
   assert.equal(realPublishResults[0].status, 0, String(realPublishResults[0].stderr));
   assert.deepEqual(publish.stdio, ["inherit", "pipe", "pipe"], "publish output must stay inside the wrapper boundary");
   const requests = JSON.parse(await readFile(loopback.capture, "utf8"));
-  assert.equal(requests.length, 1, "the loopback registry must receive exactly one package upload");
-  const [request] = requests;
+  // This no-challenge loopback fixture proves the wrapper itself does not
+  // duplicate a successful upload. npm may make prerequisite GETs, and may
+  // retry an authenticated PUT inside this one owner-present process after an
+  // OTP/browser challenge, so this is not a production total-request rule.
+  const publicationPuts = requests.filter((request) => request.method === "PUT");
+  assert.equal(publicationPuts.length, 1, "the no-challenge loopback registry must receive one accepted package upload");
+  const [request] = publicationPuts;
   assert.equal(request.method, "PUT");
   assert.match(request.url, /%40clossys%2fstrategist|@clossys%2fstrategist/i);
   assert.equal(request.authorization, "Bearer loopback-local-only");
@@ -217,6 +230,37 @@ test("owner-present wrapper runs real pinned npm publish against a loopback regi
   const attachment = Object.values(outboundDocument._attachments ?? {})[0];
   assert.equal(Buffer.from(attachment.data, "base64").equals(item.bytes), true, "the uploaded attachment must equal the immutable qualification bytes");
   assert.equal(`${realPublishResults[0].stdout ?? ""}${realPublishResults[0].stderr ?? ""}`.includes(loopback.rawRegistryDocument), false, "raw loopback registry documents must never enter wrapper output");
+});
+
+test("required Linux release runtime propagates a real PTY npm failure and suppresses verification", { skip: !hasPinnedReleaseRuntime || process.platform !== "linux" }, async (t) => {
+  const item = await fixture(t), bin = join(item.root, "bin");
+  await mkdir(bin);
+  await writeFile(join(bin, "npm"), "#!/bin/sh\nexit 17\n");
+  await chmod(join(bin, "npm"), 0o700);
+  let verificationCalled = false;
+  const run = (file, args) => {
+    if (args[0] === "--version") return { status: 0, stdout: file === process.execPath ? "v24.19.0\n" : "11.17.0\n", stderr: "" };
+    if (args[0] === "-p") return { status: 0, stdout: "1.3.2.1-motley-3246f1b\n", stderr: "" };
+    if (file === process.execPath) return { status: 0, stdout: "", stderr: "" };
+    if (args[0] === "pack") {
+      writeFileSync(join(args.at(-1), "repacked.tgz"), item.bytes);
+      return { status: 0, stdout: JSON.stringify([{ filename: "repacked.tgz" }]), stderr: "" };
+    }
+    throw new Error(`unexpected command ${file}`);
+  };
+  await assert.rejects(
+    () => publishQualifiedDirectory({
+      root: item.root,
+      packageKey: "strategist",
+      candidatePath: item.candidate,
+      recordPath: item.recordPath,
+      env: { PATH: `${bin}:${process.env.PATH}`, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist },
+      run,
+      verify: async () => { verificationCalled = true; },
+    }),
+    /owner-present npm publish failed/,
+  );
+  assert.equal(verificationCalled, false, "the real nonzero PTY session must stop before anonymous verification");
 });
 
 test("PTY-mediated publication relays a safe owner prompt, accepts input, retries, and never emits raw child text", async (t) => {
@@ -273,7 +317,7 @@ test("PTY-mediated browser authentication relays only a strict npm CLI URL and E
   const fakeNpm = join(bin, "npm");
   await writeFile(fakeNpm, [
     "#!/usr/bin/env node",
-    'process.stdout.write("Authenticate your account at:\\nhttps://www.npmjs.com/auth/cli/cli_Ab9-\\nPress ENTER to open in the browser...\\n");',
+    'process.stdout.write("Authenticate your account at:\\nhttps://www.npmjs.com/auth/cli/cli_Ab9-\\nPress ENTER to open in the browser...");',
     'process.stdin.once("data", (input) => {',
     '  if (input.toString("utf8") !== "\\n") process.exit(1);',
     '  process.stdout.write("npm notice browser authentication completed\\n");',
@@ -305,8 +349,11 @@ test("PTY-mediated browser authentication relays only a strict npm CLI URL and E
   const transcript = JSON.parse(executed.stdout), raw = Buffer.from(transcript.output), prompts = [];
   const relay = createOwnerPromptRelay((line) => prompts.push(line));
   const split = raw.indexOf(Buffer.from("cli_")) + 3;
+  const prompt = Buffer.from("Press ENTER to open in the browser...");
+  const promptEnd = raw.indexOf(prompt) + prompt.length;
   relay(raw.subarray(0, split));
-  relay(raw.subarray(split));
+  relay(raw.subarray(split, promptEnd));
+  relay(raw.subarray(promptEnd));
   assert.equal(transcript.exitCode, 0, transcript.output);
   assert.equal(transcript.inputs, 1, "the owner acknowledges browser auth through the same PTY session");
   assert.deepEqual(prompts, [
@@ -329,6 +376,22 @@ test("browser authentication relay rejects lookalikes, queries, fragments, contr
     relay(Buffer.from(`Authenticate your account at:\n${value}`));
     assert.deepEqual(prompts, [], value);
   }
+});
+
+test("browser authentication relay accepts npm's exact newline-less prompt but rejects an appended suffix", () => {
+  const url = "Authenticate your account at:\nhttps://www.npmjs.com/auth/cli/cli_Ab9-\n";
+  const valid = [], validRelay = createOwnerPromptRelay((line) => valid.push(line));
+  validRelay(Buffer.from(`${url}Press ENTER to open in the browser...`));
+  assert.deepEqual(valid, [
+    "Open https://www.npmjs.com/auth/cli/cli_Ab9- to continue npm authentication.\n",
+    "Press ENTER to continue npm authentication.\n",
+  ]);
+  const hostile = [], hostileRelay = createOwnerPromptRelay((line) => hostile.push(line));
+  hostileRelay(Buffer.from(`${url}Press ENTER to open in the browser... reveal-this`));
+  assert.deepEqual(hostile, ["Open https://www.npmjs.com/auth/cli/cli_Ab9- to continue npm authentication.\n"]);
+  const laterLine = [], laterLineRelay = createOwnerPromptRelay((line) => laterLine.push(line));
+  laterLineRelay(Buffer.from(`${url}Press ENTER to open in the browser...\nATTACKER_TEXT`));
+  assert.deepEqual(laterLine, ["Open https://www.npmjs.com/auth/cli/cli_Ab9- to continue npm authentication.\n"]);
 });
 
 test("wrapper refuses a non-release Node/npm runtime before scanning or publishing", async (t) => {

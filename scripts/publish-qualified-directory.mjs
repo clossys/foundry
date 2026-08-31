@@ -233,7 +233,11 @@ export function createOwnerPromptRelay(write = (line) => process.stderr.write(li
       write(`Open https://www.npmjs.com/auth/cli/${browserUrl[1]} to continue npm authentication.\n`);
       browserUrlShown = true;
     }
-    if (browserUrlShown && !browserEnterShown && /(?:^|[\r\n])[ \t]*Press ENTER to open in the browser(?:\.\.\.|…)?[ \t]*\r?\n/i.test(buffered)) {
+    // npm 11 uses readline.question(), whose prompt has no newline. Accept
+    // that exact final buffer line only after the canonical URL was accepted.
+    // Any appended non-whitespace text keeps the expression from matching;
+    // once relayed, only this generic instruction (never child text) escapes.
+    if (browserUrlShown && !browserEnterShown && /(?:^|[\r\n])[ \t]*Press ENTER to open in the browser(?:\.\.\.|…)?[ \t]*(?:\r?\n)?$/i.test(buffered)) {
       write("Press ENTER to continue npm authentication.\n");
       browserEnterShown = true;
     }
