@@ -632,14 +632,13 @@ qualification record remains retained for audit, but its candidate tarball was
 packed outside the required release runtime, so the retained bytes cannot be
 rewritten under the append-only qualification contract. No registry upload was
 performed. The Publisher source has therefore advanced to `0.1.10` as the new
-first-publication candidate; it has no qualification or publication record yet.
-
-Do not prepare an owner-present 0.1.10 upload until the exact Writer and
-Designer identities above have passed anonymous served-byte verification. Then
-pack and replay a fresh Publisher 0.1.10 candidate with the pinned release
-runtime, retain its new qualification record, and complete the required
-anonymous served-byte verification before its own owner-present handoff. A
-later trusted-publisher/OIDC successor will be `0.1.11`.
+first-publication candidate. Writer and Designer passed anonymous served-byte
+verification, Publisher 0.1.10 was packed and replayed with the pinned release
+runtime, and its owner-present upload now has both an immutable qualification
+record and an anonymous served-byte publication record. Publisher's npm
+trusted-publisher connection and restrictive publishing-access setting remain
+separate provider changes; after those are configured, the protected OIDC
+successor will be `0.1.11`.
 
 ### Why the name-collision check runs first, always
 
