@@ -59,7 +59,6 @@ function exactAttestationUrl(value, name, version) {
   try { return new URL(value).href === `${PUBLIC_NPM_REGISTRY}/-/npm/v1/attestations/${encodeURIComponent(`${name}@${version}`)}`; } catch { return false; }
 }
 function trustedProvenance(value, candidate) {
-  closed([], value, [], "");
   if (!object(value)) return false;
   const keys = ["repository", "workflow", "ref", "event", "sourceSha", "builder", "invocation", "attestationUrl"];
   if (Object.keys(value).some((key) => !keys.includes(key))) return false;
@@ -148,7 +147,7 @@ function controlledQualificationPath(root, record, introductionCommit) {
 
 /** Validate retained later-publication records without throwing on bad input. */
 export function validateRetainedLaterPublications(root) {
-  const findings = [], names = new Set();
+  const findings = [], names = new Set(), identities = new Set();
   const directory = join(root, LATER_PUBLICATION_DIRECTORY);
   if (!existsSync(directory)) return { names, findings };
   let currentCatalog;
@@ -176,8 +175,9 @@ export function validateRetainedLaterPublications(root) {
       const recordFindings = validateLaterPublication(record, { recordPath: path, recordBytes: bytes, qualification, qualificationBytes: qbytes, qualificationPath: qpath, catalogBytes: introCatalogBytes, catalog: introCatalog, currentCatalog });
       for (const item of [...qualificationFindings, ...recordFindings]) finding(findings, item.rule, `${path}: ${item.message}`);
       if (qualificationFindings.length || recordFindings.length) continue;
-      if (names.has(record.candidate.name)) finding(findings, "duplicate-package", `${path}: later publication package is duplicated.`);
-      else names.add(record.candidate.name);
+      const identity = `${record.candidate.name}@${record.candidate.version}`;
+      if (identities.has(identity)) finding(findings, "duplicate-package-version", `${path}: later publication package/version is duplicated.`);
+      else { identities.add(identity); names.add(record.candidate.name); }
     } catch (error) {
       finding(findings, "retained-record", `${path}: ${error instanceof Error ? error.message : "invalid record"}`);
     }
