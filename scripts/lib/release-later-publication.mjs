@@ -3,7 +3,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { currentQualificationJoins, parseStrictJson, qualificationPath, qualificationRecordHistory, validateCandidateQualification } from "./candidate-qualification.mjs";
-import { publicNpmPackageUrl, PUBLIC_NPM_REGISTRY } from "./public-npm-registry.mjs";
+import { publicNpmPackageUrl, publicNpmVersionUrl, PUBLIC_NPM_REGISTRY } from "./public-npm-registry.mjs";
 import { TRIO } from "./release-qualification-trio.mjs";
 
 export const LATER_PUBLICATION_DIRECTORY = "governance/release-publications/later";
@@ -15,6 +15,7 @@ const SHA512 = /^[a-f0-9]{128}$/;
 const INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 const NAME = /^@[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/;
 const VERSION = /^\d+\.\d+\.\d+$/;
+const PUBLICATION_REPOSITORY = "clossys/platform";
 const object = (value) => value && typeof value === "object" && !Array.isArray(value);
 const digest = (value) => createHash("sha256").update(value).digest("hex");
 const same = (left, right) => JSON.stringify(left) === JSON.stringify(right);
@@ -81,11 +82,16 @@ export function validateLaterPublication(record, { recordPath, recordBytes, qual
   if (record?.publication?.provenance !== undefined) finding(findings, "publication-provenance", "later-publication v1 records must not claim publisher provenance.");
   const proof = record?.registryProof?.evidence;
   closed(findings, record?.registryProof, ["schemaVersion", "kind", "evidence"], "publication.registryProof");
-  closed(findings, proof, ["registry", "access", "name", "version", "packumentUrl", "tarballUrl", "integrity", "shasum", "sha256", "sha512", "packedManifestSha256", "size"], "publication.registryProof.evidence");
+  const v1 = record?.registryProof?.schemaVersion === 1 && record?.registryProof?.kind === "public-npm-anonymous-registry-proof-v1";
+  const v2 = record?.registryProof?.schemaVersion === 2 && record?.registryProof?.kind === "public-npm-anonymous-registry-proof-v2";
+  closed(findings, proof, v1
+    ? ["registry", "access", "name", "version", "packumentUrl", "tarballUrl", "integrity", "shasum", "sha256", "sha512", "packedManifestSha256", "size"]
+    : ["registry", "access", "name", "version", "metadataUrl", "repository", "tarballUrl", "integrity", "shasum", "sha256", "sha512", "packedManifestSha256", "size"], "publication.registryProof.evidence");
   const integrity = SHA512.test(c?.tarball?.sha512 ?? "") ? `sha512-${Buffer.from(c.tarball.sha512, "hex").toString("base64")}` : null;
-  let expectedPackument = null;
-  try { expectedPackument = key ? publicNpmPackageUrl(PUBLIC_NPM_REGISTRY, c?.name) : null; } catch { /* a malformed name is a finding below */ }
-  if (record?.registryProof?.schemaVersion !== 1 || record?.registryProof?.kind !== "public-npm-anonymous-registry-proof-v1" || proof?.registry !== PUBLIC_NPM_REGISTRY || proof?.access !== "anonymous" || proof?.name !== c?.name || proof?.version !== c?.version || proof?.packumentUrl !== expectedPackument || proof?.tarballUrl !== expectedTarballUrl(c?.name, c?.version) || proof?.integrity !== integrity || proof?.shasum !== c?.tarball?.sha1 || proof?.sha256 !== c?.tarball?.sha256 || proof?.sha512 !== c?.tarball?.sha512 || proof?.packedManifestSha256 !== c?.packageManifestSha256 || !Number.isSafeInteger(proof?.size) || proof.size < 1 || proof.size > 20_000_000) finding(findings, "registry-join", "anonymous served-byte proof must exactly join the candidate tarball and manifest.");
+  let expectedMetadata = null;
+  try { expectedMetadata = key ? (v1 ? publicNpmPackageUrl(PUBLIC_NPM_REGISTRY, c?.name) : publicNpmVersionUrl(PUBLIC_NPM_REGISTRY, c?.name, c?.version)) : null; } catch { /* a malformed name is a finding below */ }
+  const metadataUrl = v1 ? proof?.packumentUrl : proof?.metadataUrl;
+  if ((!v1 && !v2) || proof?.registry !== PUBLIC_NPM_REGISTRY || proof?.access !== "anonymous" || proof?.name !== c?.name || proof?.version !== c?.version || metadataUrl !== expectedMetadata || (v2 && proof?.repository !== PUBLICATION_REPOSITORY) || proof?.tarballUrl !== expectedTarballUrl(c?.name, c?.version) || proof?.integrity !== integrity || proof?.shasum !== c?.tarball?.sha1 || proof?.sha256 !== c?.tarball?.sha256 || proof?.sha512 !== c?.tarball?.sha512 || proof?.packedManifestSha256 !== c?.packageManifestSha256 || !Number.isSafeInteger(proof?.size) || proof.size < 1 || proof.size > 20_000_000) finding(findings, "registry-join", "anonymous served-byte proof must exactly join the candidate tarball and manifest.");
   if (typeof recordPath === "string" && typeof recordBytes === "string" && (!key || !VERSION.test(c?.version ?? "") || recordPath !== `${LATER_PUBLICATION_DIRECTORY}/${key}-${c.version}.json`)) finding(findings, "record-path", "record path must be the unique package/version identity.");
   return findings;
 }
