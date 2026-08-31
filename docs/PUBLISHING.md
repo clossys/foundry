@@ -432,14 +432,20 @@ the public registry, enters npm's 2FA challenge at the terminal, and keeps the
 same reviewed tarball for publication and verification. Never put an OTP, npm
 token, or registry credential in a command, workflow, issue, or artifact.
 
-Run this handoff once per package, strictly in this order:
+Run this handoff once per package, strictly in this order. The owner-present
+wrapper accepts the qualified tarball only as immutable input; it extracts that
+candidate into private staging, FULL-scans the staged package, re-packs `.`
+with lifecycle scripts disabled, and requires SHA-1/SHA-256/SHA-512 equality
+before the one interactive upload. The actual upload is always `npm publish .`
+from that clean staging directory. Never publish a tarball, URL, package
+specifier, OTP, token, or provenance flag directly.
 
 ```text
-advisor -> npm publish <advisor-tarball> --access public --registry=https://registry.npmjs.org
+advisor -> node scripts/publish-qualified-directory.mjs --package advisor --candidate <advisor-candidate.tgz> --record <advisor-qualification.json>
            STOP; anonymously verify @clossys/advisor@<version>, served digest, and public access
-starter -> npm publish <starter-tarball> --access public --registry=https://registry.npmjs.org
+starter -> node scripts/publish-qualified-directory.mjs --package starter --candidate <starter-candidate.tgz> --record <starter-qualification.json>
            STOP; anonymously verify @clossys/starter@<version>, served digest, and public access
-controller -> npm publish <controller-tarball> --access public --registry=https://registry.npmjs.org
+controller -> node scripts/publish-qualified-directory.mjs --package controller --candidate <controller-candidate.tgz> --record <controller-qualification.json>
              STOP; anonymously verify @clossys/controller@<version>, served digest, and public access
 ```
 
