@@ -5,6 +5,18 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.6] - 2026-08-31
+
+### Added
+
+- Added `vespene-secrets-infisical qualify`, an offline readiness operation
+  that compares a strict value-free version-1 catalog with a strict
+  names-only availability snapshot. It exits `0` when every required catalog
+  name is present, `1` when a required name is missing, and `2` for malformed
+  input. The operation reads only those two files: it does not accept provider
+  configuration, read credentials, perform network access, or print a secret
+  value.
+
 ## [0.1.5] - 2026-08-30
 
 ### Added

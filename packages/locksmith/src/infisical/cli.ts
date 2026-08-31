@@ -12,6 +12,8 @@ const USAGE = `Usage: vespene-secrets-infisical <command> [options]
 
 Commands:
   catalog --catalog <file>  Validate and print value-free catalog metadata.
+  qualify --catalog <file> --available <file>
+                            Compare required catalog names with an offline name snapshot.
   check --catalog <file>    Check catalog readiness without printing values.
   list                      Print available secret names only.
   get <key>                 Report whether one key is present; never print its value.
@@ -26,6 +28,10 @@ Provider options for check, list, get, and run:
 
 Token auth reads INFISICAL_TOKEN. OIDC auth reads INFISICAL_MACHINE_IDENTITY_ID
 and INFISICAL_JWT, exchanges the JWT in memory, and never prints either token.
+
+The qualify command reads only its two JSON files. Its available snapshot must
+be {"version":1,"names":["NAME"]}; it does not read provider configuration,
+credentials, or the network.
 
 Exit codes: 0 = success, 1 = readiness/missing-key failure or child failure,
 2 = invalid input, configuration, authentication, or provider failure.
@@ -129,10 +135,38 @@ function readCatalog(args: ParsedArgs) {
   return parseValueFreeCatalog(value);
 }
 
+function readAvailableNames(args: ParsedArgs): readonly string[] {
+  const path = required(flag(args, "available"), "--available");
+  let value: unknown;
+  try {
+    value = JSON.parse(readFileSync(resolve(path), "utf8"));
+  } catch {
+    throw new CliInputError("--available must name a readable JSON file");
+  }
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return invalidAvailableNames();
+  const snapshot = value as Record<string, unknown>;
+  if (Object.keys(snapshot).some((key) => key !== "version" && key !== "names")) return invalidAvailableNames();
+  if (snapshot.version !== 1 || !Array.isArray(snapshot.names)) return invalidAvailableNames();
+
+  const names: string[] = [];
+  const seen = new Set<string>();
+  for (const name of snapshot.names) {
+    if (typeof name !== "string" || name.length === 0 || seen.has(name)) return invalidAvailableNames();
+    seen.add(name);
+    names.push(name);
+  }
+  return names;
+}
+
+function invalidAvailableNames(): never {
+  throw new CliInputError("Available secret-name snapshot must be version 1 metadata with unique names.");
+}
+
 function validateCommandArguments(args: ParsedArgs): void {
   const providerFlags = ["base-url", "project-id", "environment", "path", "auth"];
   const allowedByCommand: Record<string, readonly string[]> = {
     catalog: ["catalog"],
+    qualify: ["catalog", "available"],
     check: ["catalog", ...providerFlags],
     list: providerFlags,
     get: providerFlags,
@@ -164,6 +198,14 @@ async function main(): Promise<number> {
       const catalog = readCatalog(args);
       console.log(JSON.stringify(catalog, null, 2));
       return 0;
+    }
+    case "qualify": {
+      const available = new Set(readAvailableNames(args));
+      const missingRequired = readCatalog(args).entries
+        .filter((entry) => entry.required && !available.has(entry.key))
+        .map((entry) => entry.key);
+      console.log(JSON.stringify({ ok: missingRequired.length === 0, missingRequired }, null, 2));
+      return missingRequired.length === 0 ? 0 : 1;
     }
     case "check": {
       const report = await createInfisicalClient(clientConfig(args)).checkCatalog(readCatalog(args));

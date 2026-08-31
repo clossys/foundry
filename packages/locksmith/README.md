@@ -281,18 +281,36 @@ catalog metadata. `run()` injects values into one non-shell child process
 without writing a file or printing the environment.
 
 The package intentionally keeps the provider-specific CLI name
-`vespene-secrets-infisical` unchanged by this rename; it avoids introducing a
-misleading neutral CLI for operations that require Infisical configuration.
-Its `catalog`, `check`, `list`, `get`, and `run` commands never print secret
-values. `get` reports presence only, and the CLI exposes no mutation command.
+`vespene-secrets-infisical` unchanged by this rename. Its `catalog`, `check`,
+`list`, `get`, and `run` commands never print secret values. `get` reports
+presence only, and the CLI exposes no mutation command. `qualify` is the one
+offline readiness operation: it compares a value-free catalog to a names-only
+availability snapshot, without provider configuration, credentials, or network
+access. It exits `0` when every required name is available, `1` when one or
+more required names are missing, and `2` for malformed input.
 
 ```text
 vespene-secrets-infisical catalog --catalog ./secret-catalog.json
+vespene-secrets-infisical qualify --catalog ./secret-catalog.json --available ./available-names.json
 vespene-secrets-infisical check --catalog ./secret-catalog.json
 vespene-secrets-infisical list
 vespene-secrets-infisical get APP_SIGNING_KEY
 vespene-secrets-infisical run -- node server.js
 ```
+
+The availability snapshot is strict version-1 names-only metadata; fields
+other than `version` and `names` are rejected so a value cannot be accepted by
+mistake:
+
+```json
+{
+  "version": 1,
+  "names": ["APP_SIGNING_KEY", "OPTIONAL_WEBHOOK_KEY"]
+}
+```
+
+The `qualify` report prints only `ok` and `missingRequired`; it does not echo
+the snapshot or catalog descriptions.
 
 For maintenance, `createInfisicalMaintenanceClient(config, authorize)` is a
 separate constructor. Each replacement requires a consumer authorization
