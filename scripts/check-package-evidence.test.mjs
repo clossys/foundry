@@ -74,7 +74,7 @@ test("current-scope publication requires the exact validated first-publication r
     { sites: ["fixture:1"], publication: false },
   );
   assert.ok(rules(withoutPublication).includes("state-ahead-of-evidence"));
-  assert.deepEqual([...readValidatedPublishedPackages(repoRoot)].sort(), ["@clossys/advisor", "@clossys/controller", "@clossys/starter"]);
+  assert.deepEqual([...readValidatedPublishedPackages(repoRoot)].sort(), ["@clossys/advisor", "@clossys/controller", "@clossys/starter", "@clossys/strategist"]);
 });
 
 test("current-scope publication rejects coherent rewrites and rewrite-restore history", () => {
@@ -101,7 +101,7 @@ test("current-scope publication rejects coherent rewrites and rewrite-restore hi
     rewritten.members[0].publication.publishedAt = "2026-08-30T06:31:59.838Z";
     const rewrittenBytes = `${JSON.stringify(rewritten, null, 2)}\n`;
 
-    assert.deepEqual([...readValidatedPublishedPackages(fixtureRoot)].sort(), ["@clossys/advisor", "@clossys/controller", "@clossys/starter"]);
+    assert.deepEqual([...readValidatedPublishedPackages(fixtureRoot)].sort(), ["@clossys/advisor", "@clossys/controller", "@clossys/starter", "@clossys/strategist"]);
     writeFileSync(publicationPath, rewrittenBytes);
     assert.deepEqual([...readValidatedPublishedPackages(fixtureRoot)], []);
 
