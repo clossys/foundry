@@ -23,7 +23,7 @@ for (const path of files) {
   catch { findings.push({ rule: "closure", message: `${path} does not retain a readable immutable closure` }); }
   const qualificationContracts = {}, candidateContracts = {}, expectedRepositoryRedirects = [];
   try {
-    if (validateAggregateClosure(plan, closure).length) throw new Error("closure references are not closed");
+    if (validateAggregateClosure(plan, closure, { read: readHead, path: transcript.plan.closurePath }).length) throw new Error("closure references are not closed");
     const transition = JSON.parse(readHead("governance/package-identity-transition.json"));
     for (const entry of closure?.packages ?? []) {
       const qualification = JSON.parse(readHead(entry.qualification.path));
@@ -35,7 +35,7 @@ for (const path of files) {
       if (historical) expectedRepositoryRedirects.push({ ...historical, kind: "verified" });
     }
   } catch { findings.push({ rule: "evidence", message: `${path} cannot derive immutable qualification and repository redirect contracts` }); }
-  findings.push(...validateAggregateClosure(plan, closure), ...validateSatisfiedAggregateTranscript(transcript, { plan, closure, qualificationContracts, candidateContracts, expectedRepositoryRedirects: canonicalRedirectProjection(expectedRepositoryRedirects) }), ...validateSatisfiedTranscriptHistory({ path, history }));
+  findings.push(...validateAggregateClosure(plan, closure, { read: readHead, path: transcript.plan?.closurePath ?? null }), ...validateSatisfiedAggregateTranscript(transcript, { plan, closure, qualificationContracts, candidateContracts, expectedRepositoryRedirects: canonicalRedirectProjection(expectedRepositoryRedirects) }), ...validateSatisfiedTranscriptHistory({ path, history }));
 }
 if (findings.length) {
   console.error("PUBLIC NPM AGGREGATE TRANSCRIPT INVALID");

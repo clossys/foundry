@@ -628,7 +628,6 @@ async function treeDigest(root) {
   const rows = [];
   const walk = async (directory) => {
     for (const item of await readdir(directory, { withFileTypes: true })) {
-      if (item.name === ".cache") continue;
       const path = join(directory, item.name);
       if (item.isDirectory()) await walk(path);
       else if (item.isFile()) rows.push(["file", path.slice(root.length + 1), hash(await readFile(path))]);
