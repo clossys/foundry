@@ -125,7 +125,7 @@ describe("packed Publisher web React-server boundary", () => {
 
   it("keeps the packed native summary's package-standard focus indication", () => {
     expect(server.summaryClasses).toHaveLength(1);
-    expect(server.summaryClasses[0]).toMatch(/\boutline-none\b/);
+    expect(server.summaryClasses[0]).not.toMatch(/\boutline-none\b/);
     expect(server.summaryClasses[0]).toContain("focus-visible:outline-2");
     expect(server.summaryClasses[0]).toContain("focus-visible:outline-offset-2");
     expect(server.summaryClasses[0]).toContain("focus-visible:outline-accent");

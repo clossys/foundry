@@ -36,7 +36,7 @@ export function Faq({
             key={item.id}
             className={cx("flex flex-col", index > 0 ? "border-t border-line-base pt-xs" : undefined)}
           >
-            <summary className="w-full cursor-pointer rounded-default py-sm text-left text-body text-ink-primary outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
+            <summary className="w-full cursor-pointer rounded-default py-sm text-left text-body text-ink-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
               {item.question}
             </summary>
             <div className="pl-lg text-body-s text-ink-secondary">{item.answer}</div>

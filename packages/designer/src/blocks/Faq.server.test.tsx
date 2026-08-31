@@ -5,13 +5,13 @@ import { Faq } from "./Faq.server.js";
 const ITEMS = [{ id: "one", question: "Question one", answer: "Answer one." }];
 
 describe("Faq server-native disclosure", () => {
-  it("replaces the suppressed native outline with the package-standard focus-visible outline", () => {
+  it("uses the package-standard focus-visible outline without poisoning its compiled style", () => {
     const { container } = render(<Faq items={ITEMS} />);
     const summary = container.querySelector("details > summary");
 
     expect(summary).toBeInstanceOf(HTMLElement);
+    expect(summary).not.toHaveClass("outline-none");
     expect(summary).toHaveClass(
-      "outline-none",
       "focus-visible:outline-2",
       "focus-visible:outline-offset-2",
       "focus-visible:outline-accent",
