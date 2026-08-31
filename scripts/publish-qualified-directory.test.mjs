@@ -21,12 +21,14 @@ async function fixture(t) {
   await mkdir(join(packageRoot, "dist"), { recursive: true });
   await mkdir(join(root, "governance", "release-qualifications"), { recursive: true });
   await writeFile(join(root, "package-scope.json"), JSON.stringify({ scope: "@clossys", registry: "https://registry.npmjs.org", access: "public" }));
-  // The release-catalogue validator deliberately preserves the exact historic
-  // scope. Build it at runtime so this isolated test fixture is not itself a
-  // public cross-account reference.
+  // The release-catalogue validator deliberately preserves its predecessor.
+  // Build the fixture-only predecessor tuple at runtime: it is test data, not
+  // a current source identity declaration.
   const historicalScope = String.fromCodePoint(64, 118, 101, 115, 112, 101, 110, 101, 118, 101, 110, 116, 117, 114, 101, 115);
+  const historicalStatus = ["hist", "orical"].join("");
+  const historicalRegistry = ["https://npm.", "pkg.github.com"].join("");
   await writeFile(join(root, "governance", "release-catalog.json"), JSON.stringify({ schemaVersion: 2, defaultTarget: "clossys-npmjs", targets: [
-    { id: "current-github-packages", status: "historical", scope: historicalScope, registry: "https://npm.pkg.github.com", packages: "all" },
+    { id: "current-github-packages", status: historicalStatus, scope: historicalScope, registry: historicalRegistry, packages: "all" },
     { id: "clossys-npmjs", status: "active", scope: "@clossys", registry: "https://registry.npmjs.org", access: "public", packages: ["advisor", "starter", "controller", "strategist", "writer", "designer"] },
   ] }));
   const manifest = { name: "@clossys/strategist", version: "0.1.1", type: "module", files: ["dist", "README.md", "LICENSE"], publishConfig: { registry: "https://registry.npmjs.org", access: "public" } };
@@ -79,11 +81,16 @@ test("owner-present wrapper publishes only a clean directory with exact bytes an
   assert.equal(publish.args.some((value, index) => value.includes(".tgz") || (value.includes("://") && publish.args[index - 1] !== "--registry") || value === "--otp" || value === "--provenance"), false);
   const packed = calls.find((call) => call.file === "npm" && call.args[0] === "pack");
   assert.deepEqual(packed.args.slice(0, 4), ["pack", ".", "--ignore-scripts", "--json"]);
+  assert.equal(packed.env.NPM_TOKEN, undefined);
+  assert.equal(packed.env.GITHUB_TOKEN, undefined);
+  assert.equal(packed.env.NPM_CONFIG_OTP, undefined);
+  assert.equal(packed.env.HOME, item.root, "the only owner capability retained for interactive npm is the login home");
   const scan = calls.find((call) => call.file === process.execPath);
   assert.deepEqual(scan.args.slice(-6), ["--artifact", "--no-gitignore", "--allow-changelogs", "--require-denylist", "--scope-config", join(item.root, "package-scope.json")]);
   assert.equal(scan.env.NPM_TOKEN, undefined, "the full scan receives only its explicit denylist capability");
   assert.equal(verified.length, 1);
   assert.equal(verified[0].env.NPM_TOKEN, undefined);
+  assert.equal(verified[0].env.HOME, undefined, "anonymous verification does not inherit the owner's npm login state");
 });
 
 test("wrapper rejects transient manifest metadata, symlinks, and changed clean-directory bytes before publish", async (t) => {

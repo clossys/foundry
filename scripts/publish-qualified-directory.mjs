@@ -22,14 +22,18 @@ const SHA = { sha1: /^[a-f0-9]{40}$/, sha256: /^[a-f0-9]{64}$/, sha512: /^[a-f0-
 const NAME = /^@[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*$/;
 const VERSION = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 const TRANSIENT_MANIFEST_FIELDS = new Set(["_from", "_resolved", "_id", "_integrity", "_location", "_requested", "_shasum", "_spec", "_where"]);
-const CREDENTIAL_ENV = new Set(["NODE_AUTH_TOKEN", "NPM_TOKEN", "GH_PACKAGES_TOKEN", "GITHUB_TOKEN", "GH_TOKEN", "NPM_CONFIG_OTP"]);
 const USAGE = "Usage: --package <package-key> --candidate <qualified-candidate.tgz> --record <exact-qualification-record.json>";
 const MAX_ARCHIVE_BYTES = 64 * 1024 * 1024;
 const MAX_ARCHIVE_ENTRIES = 10_000;
 
 const digest = (algorithm, bytes) => createHash(algorithm).update(bytes).digest("hex");
 const hashes = (bytes) => Object.fromEntries(Object.keys(SHA).map((algorithm) => [algorithm, digest(algorithm, bytes)]));
-const noCredentials = (env = process.env) => Object.fromEntries(Object.entries(env).filter(([key]) => !CREDENTIAL_ENV.has(key)));
+function anonymousEnvironment(env = process.env) {
+  // The verifier uses fetch rather than npm. It needs neither the owner's
+  // npmrc nor any inherited configuration, so make the anonymous boundary
+  // literal instead of trying to enumerate every npm auth spelling.
+  return Object.fromEntries(["PATH", "LANG", "LC_ALL"].flatMap((key) => typeof env[key] === "string" ? [[key, env[key]]] : []));
+}
 
 export function argsFrom(argv) {
   const result = {};
@@ -170,7 +174,7 @@ function runChecked(run, file, args, options, label) {
 }
 
 function defaultRun(file, args, options) {
-  return spawnSync(file, args, { ...options, stdio: "inherit" });
+  return spawnSync(file, args, { ...options, stdio: options.stdio ?? "inherit", encoding: options.encoding ?? "utf8" });
 }
 
 function exactRecord({ root, packageKey, recordPath, record, manifest, candidateBytes }) {
@@ -213,7 +217,7 @@ export async function publishQualifiedDirectory({ root = process.cwd(), packageK
     runChecked(run, process.execPath, [join(absoluteRoot, "scripts/check-public-safety.mjs"), packageRoot, "--artifact", "--no-gitignore", "--allow-changelogs", "--require-denylist", "--scope-config", join(absoluteRoot, "package-scope.json")], { cwd: absoluteRoot, env: safetyEnv }, "FULL staged public-safety scan");
 
     const packed = join(stageRoot, "packed"); mkdirSync(packed, { mode: 0o700 });
-    const packedResult = runChecked(run, "npm", ["pack", ".", "--ignore-scripts", "--json", "--pack-destination", packed], { cwd: packageRoot, env: ownerPresentEnvironment(env) }, "clean-directory npm pack");
+    const packedResult = runChecked(run, "npm", ["pack", ".", "--ignore-scripts", "--json", "--pack-destination", packed], { cwd: packageRoot, env: ownerPresentEnvironment(env), stdio: "pipe", encoding: "utf8" }, "clean-directory npm pack");
     let packEntries;
     try { packEntries = JSON.parse(String(packedResult.stdout ?? "")); } catch { throw new Error("clean-directory npm pack did not return one JSON result"); }
     if (!Array.isArray(packEntries) || packEntries.length !== 1 || typeof packEntries[0]?.filename !== "string" || basename(packEntries[0].filename) !== packEntries[0].filename) throw new Error("clean-directory npm pack returned an unsafe result");
@@ -224,7 +228,7 @@ export async function publishQualifiedDirectory({ root = process.cwd(), packageK
     // This is intentionally the only upload command. It receives only '.',
     // never a tarball, URL, package specifier, token, OTP, or provenance flag.
     runChecked(run, "npm", ["publish", ".", "--access", "public", "--ignore-scripts", "--registry", target.registry], { cwd: packageRoot, env: ownerPresentEnvironment(env) }, "owner-present npm publish");
-    await verify({ root: absoluteRoot, packageKey, expectedTarball: repacked.absolute, env: noCredentials(env) });
+    await verify({ root: absoluteRoot, packageKey, expectedTarball: repacked.absolute, env: anonymousEnvironment(env) });
     return { name: manifest.name, version: manifest.version, tarball: replay };
   } finally {
     rmSync(stageRoot, { recursive: true, force: true });
