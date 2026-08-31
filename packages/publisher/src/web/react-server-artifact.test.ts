@@ -59,7 +59,7 @@ function runProbe(reactServer: boolean) {
       ],
     });
 
-    const result = { keys: Object.keys(web).sort() };
+    const result = { keys: Object.keys(web).sort(), summaryClasses: [] };
     if (${reactServer ? "true" : "false"}) {
       const tags = [];
       const text = [];
@@ -68,7 +68,10 @@ function runProbe(reactServer: boolean) {
         if (typeof node === "string" || typeof node === "number") { text.push(String(node)); return; }
         if (Array.isArray(node)) { for (const child of node) visit(child); return; }
         if (typeof node.type === "function") { visit(node.type(node.props)); return; }
-        if (typeof node.type === "string") tags.push(node.type);
+        if (typeof node.type === "string") {
+          tags.push(node.type);
+          if (node.type === "summary") result.summaryClasses.push(node.props?.className ?? "");
+        }
         visit(node.props?.children);
       };
       visit(element);
@@ -88,6 +91,7 @@ function runProbe(reactServer: boolean) {
     tags?: string[];
     text?: string[];
     html?: string;
+    summaryClasses: string[];
   };
 }
 
@@ -117,6 +121,19 @@ describe("packed Publisher web React-server boundary", () => {
     expect(server.tags).toContain("details");
     expect(server.tags).toContain("summary");
     expect(server.text).toEqual(expect.arrayContaining(["Does it render?", "Yes."]));
+  });
+
+  it("keeps the packed native summary's package-standard focus indication", () => {
+    expect(server.summaryClasses).toHaveLength(1);
+    expect(server.summaryClasses[0]).toMatch(/\boutline-none\b/);
+    expect(server.summaryClasses[0]).toContain("focus-visible:outline-2");
+    expect(server.summaryClasses[0]).toContain("focus-visible:outline-offset-2");
+    expect(server.summaryClasses[0]).toContain("focus-visible:outline-accent");
+  });
+
+  it("keeps the packed native summary's list-item disclosure marker", () => {
+    expect(server.summaryClasses).toHaveLength(1);
+    expect(server.summaryClasses[0]).not.toMatch(/\b(?:flex|inline-flex|block|list-none)\b/);
   });
 
   it("keeps the ordinary packed entry on the React Aria FAQ implementation", () => {
