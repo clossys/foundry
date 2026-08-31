@@ -168,7 +168,14 @@ async function prepareFixtureTarget(root, fixtureRoot, path, label) {
   const rel = relative(base, target);
   if (!rel || rel === ".." || rel.startsWith(`..${sep}`) || isAbsolute(rel)) throw new Error(`${label} escapes the fixture root`);
   await ensureContainedDirectory(root, dirname(target), `${label} parent`);
-  return assertFixturePathContained(root, fixtureRoot, target, label);
+  await assertFixturePathContained(root, fixtureRoot, target, label);
+  try {
+    const state = await lstat(target);
+    if (!state.isFile() || state.isSymbolicLink()) throw new Error(`${label} target was replaced with a non-regular file`);
+  } catch (error) {
+    if (error?.code !== "ENOENT") throw error;
+  }
+  return target;
 }
 
 async function readRegularFile(root, path, label) {
