@@ -168,6 +168,64 @@ test("immutable records survive a byte-identical pre-introduction merge in eithe
   }
 });
 
+test("immutable records survive GitHub's exact synthetic merge topology", (t) => {
+  const fixture = retainedMergeFixture(t, "github-synthetic");
+  execFileSync("git", ["checkout", "-q", "main"], { cwd: fixture.root });
+  execFileSync("git", ["checkout", "-qb", "pull-request-head"], { cwd: fixture.root });
+  writeFileSync(join(fixture.root, "pull-request-change"), "unrelated\n");
+  execFileSync("git", ["add", "."], { cwd: fixture.root });
+  execFileSync("git", ["commit", "-qm", "pull request head"], { cwd: fixture.root });
+  const head = execFileSync("git", ["rev-parse", "HEAD"], { cwd: fixture.root, encoding: "utf8" }).trim();
+  const tree = execFileSync("git", ["rev-parse", "HEAD^{tree}"], { cwd: fixture.root, encoding: "utf8" }).trim();
+  const synthetic = execFileSync(
+    "git",
+    ["commit-tree", tree, "-p", fixture.introduction, "-p", head, "-m", "synthetic pull request merge"],
+    { cwd: fixture.root, encoding: "utf8" },
+  ).trim();
+  execFileSync("git", ["reset", "--hard", synthetic], { cwd: fixture.root, stdio: "ignore" });
+
+  expectParents(fixture.root, synthetic, [fixture.introduction, head]);
+  assert.deepEqual(immutableSingleIntroduction(fixture.root, fixture.path), {
+    introductionCommit: fixture.introduction,
+    introducedBytes: "original\n",
+  });
+});
+
+function expectParents(root, commit, expected) {
+  const [, ...parents] = execFileSync("git", ["rev-list", "--parents", "-n", "1", commit], {
+    cwd: root,
+    encoding: "utf8",
+  }).trim().split(" ");
+  assert.deepEqual(parents, expected);
+}
+
+test("immutable records reject side-branch rewrite or delete restored before merge", (t) => {
+  for (const mutation of ["rewrite", "delete"]) {
+    const fixture = retainedMergeFixture(t, `side-${mutation}-restore`);
+    execFileSync("git", ["checkout", "-q", "main"], { cwd: fixture.root });
+    execFileSync("git", ["checkout", "-qb", `side-${mutation}`], { cwd: fixture.root });
+    if (mutation === "rewrite") {
+      writeFileSync(fixture.absolute, "divergent\n");
+      execFileSync("git", ["commit", "-qam", "rewrite retained record"], { cwd: fixture.root });
+    } else {
+      rmSync(fixture.absolute);
+      execFileSync("git", ["add", "-u", fixture.path], { cwd: fixture.root });
+      execFileSync("git", ["commit", "-qm", "delete retained record"], { cwd: fixture.root });
+    }
+    writeFileSync(fixture.absolute, "original\n");
+    execFileSync("git", ["add", fixture.path], { cwd: fixture.root });
+    execFileSync("git", ["commit", "-qm", "restore retained record"], { cwd: fixture.root });
+    execFileSync("git", ["checkout", "-q", "main"], { cwd: fixture.root });
+    execFileSync("git", ["merge", "--no-ff", "-qm", "merge restored side branch", `side-${mutation}`], {
+      cwd: fixture.root,
+    });
+    assert.throws(
+      () => immutableSingleIntroduction(fixture.root, fixture.path),
+      mutation === "delete" ? /one immutable introduction|touched after/ : /touched after/,
+    );
+  }
+});
+
 test("immutable records reject a divergent merge parent", (t) => {
   const fixture = retainedMergeFixture(t, "divergent-parent");
   execFileSync("git", ["checkout", "-q", "main"], { cwd: fixture.root });

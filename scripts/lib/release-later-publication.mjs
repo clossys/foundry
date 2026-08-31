@@ -127,6 +127,16 @@ function hasPathHistory(root, ref, path) {
   }).trim() !== "";
 }
 
+function gitCommitParents(root, commit) {
+  const [resolved, ...parents] = execFileSync(
+    "git",
+    ["rev-list", "--parents", "-n", "1", commit],
+    { cwd: root, encoding: "utf8" },
+  ).trim().split(" ");
+  if (resolved !== commit) throw new Error("retained path history resolved an unexpected commit");
+  return parents;
+}
+
 /**
  * Validate a one-package publication after the sealed first-publication Trio.
  * `catalogBytes` is deliberately the catalogue blob from this record's one
@@ -185,11 +195,14 @@ export function immutableSingleIntroduction(root, path) {
   const introducedBlob = gitBlobOid(root, commits[0], path);
   const traversed = execFileSync(
     "git",
-    ["rev-list", "--full-history", "--parents", `${commits[0]}..HEAD`, "--", path],
+    // The path limiter chooses relevant commit IDs only. Asking this command
+    // for parents would return history-simplified parents, not the commit's
+    // real topology, and can collapse a two-parent synthetic merge to one.
+    ["rev-list", "--full-history", `${commits[0]}..HEAD`, "--", path],
     { cwd: root, encoding: "utf8" },
   ).trim().split("\n").filter(Boolean);
-  for (const line of traversed) {
-    const [commit, ...parents] = line.split(" ");
+  for (const commit of traversed) {
+    const parents = gitCommitParents(root, commit);
     // Only a merge may reconcile a branch forked before the introduction.
     // Ordinary later path touches remain forbidden even when they restore the
     // original bytes before HEAD.
