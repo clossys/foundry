@@ -52,7 +52,7 @@ export function argsFrom(argv) {
     if (!Object.hasOwn({ package: true, candidate: true, record: true, mode: true }, key) || !value || seen.has(key)) throw new Error(USAGE);
     seen.add(key); result[key] = value; index += 2;
   }
-  if (!KEY.test(result.package) || !["owner-present", "oidc"].includes(result.mode)) throw new Error(USAGE);
+  if (!["package", "candidate", "record"].every((key) => seen.has(key)) || !KEY.test(result.package) || !["owner-present", "oidc"].includes(result.mode) || (result.dryRun && result.mode === "owner-present")) throw new Error(USAGE);
   return result;
 }
 
@@ -187,15 +187,15 @@ function credentialFreeNpmEnvironment(env = process.env, home) {
 
 const OIDC_ENV = [
   "ACTIONS_ID_TOKEN_REQUEST_URL", "ACTIONS_ID_TOKEN_REQUEST_TOKEN", "GITHUB_ACTIONS",
-  "GITHUB_EVENT_NAME", "GITHUB_REF", "GITHUB_REPOSITORY", "GITHUB_RUN_ATTEMPT",
-  "GITHUB_RUN_ID", "GITHUB_SHA", "GITHUB_WORKFLOW", "GITHUB_WORKFLOW_REF", "GITHUB_WORKFLOW_SHA",
+  "GITHUB_EVENT_NAME", "GITHUB_REF", "GITHUB_REPOSITORY", "GITHUB_REPOSITORY_ID", "GITHUB_REPOSITORY_OWNER_ID",
+  "GITHUB_RUN_ATTEMPT", "GITHUB_RUN_ID", "GITHUB_SERVER_URL", "GITHUB_SHA", "GITHUB_WORKFLOW", "GITHUB_WORKFLOW_REF", "GITHUB_WORKFLOW_SHA", "RUNNER_ENVIRONMENT",
 ];
 
 function oidcEnvironment(env = process.env, home) {
   // npm's trusted-publishing exchange needs GitHub's OIDC capability and the
   // run identity it attests. Nothing from an owner login, npmrc, or a generic
   // token environment crosses this boundary.
-  for (const key of ["ACTIONS_ID_TOKEN_REQUEST_URL", "ACTIONS_ID_TOKEN_REQUEST_TOKEN", "GITHUB_ACTIONS", "GITHUB_REPOSITORY", "GITHUB_RUN_ID", "GITHUB_WORKFLOW", "GITHUB_WORKFLOW_REF", "GITHUB_WORKFLOW_SHA"]) {
+  for (const key of ["ACTIONS_ID_TOKEN_REQUEST_URL", "ACTIONS_ID_TOKEN_REQUEST_TOKEN", "GITHUB_ACTIONS", "GITHUB_REPOSITORY", "GITHUB_REPOSITORY_ID", "GITHUB_REPOSITORY_OWNER_ID", "GITHUB_RUN_ID", "GITHUB_SERVER_URL", "GITHUB_WORKFLOW", "GITHUB_WORKFLOW_REF", "GITHUB_WORKFLOW_SHA", "RUNNER_ENVIRONMENT"]) {
     if (typeof env[key] !== "string" || !env[key]) throw new Error(`OIDC publication requires ${key}`);
   }
   if (env.GITHUB_ACTIONS !== "true") throw new Error("OIDC publication requires GitHub Actions");
@@ -313,6 +313,7 @@ function assertReleaseTarget(root, packageKey, manifest) {
 export async function publishQualifiedDirectory({ root = process.cwd(), packageKey, candidatePath, recordPath, mode = "owner-present", dryRun = false, env = process.env, run = defaultRun, interactiveRun = runInteractiveChild, verify = verifyPostPublishPublicNpmArtifact, stagingParent = tmpdir() }) {
   if (!KEY.test(packageKey ?? "")) throw new Error("package key is invalid");
   if (!["owner-present", "oidc"].includes(mode) || typeof dryRun !== "boolean") throw new Error("publication mode is invalid");
+  if (dryRun && mode === "owner-present") throw new Error("owner-present publication does not support dry-run");
   const absoluteRoot = resolve(root);
   const candidate = regularBytes(candidatePath, "qualified candidate");
   const recordInput = regularBytes(recordPath, "qualification record");

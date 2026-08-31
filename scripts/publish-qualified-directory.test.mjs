@@ -88,7 +88,17 @@ test("owner-present wrapper has a closed CLI", () => {
   const argv = ["node", "script", "--package", "strategist", "--candidate", "candidate.tgz", "--record", "record.json"];
   assert.deepEqual(argsFrom(argv), { package: "strategist", candidate: "candidate.tgz", record: "record.json", mode: "owner-present", dryRun: false });
   assert.deepEqual(argsFrom([...argv, "--mode", "oidc", "--dry-run"]), { package: "strategist", candidate: "candidate.tgz", record: "record.json", mode: "oidc", dryRun: true });
-  for (const mutation of [["--otp", "123456"], ["--candidate", "https://example.test/x.tgz"], ["--unknown", "x"], ["--package", "../strategist"]]) assert.throws(() => argsFrom([...argv, ...mutation]), /Usage:/);
+  for (const mutation of [["--otp", "123456"], ["--candidate", "https://example.test/x.tgz"], ["--unknown", "x"], ["--package", "../strategist"], ["--dry-run"], ["--mode", "owner-present", "--dry-run"]]) assert.throws(() => argsFrom([...argv, ...mutation]), /Usage:/);
+  for (const missing of ["--package", "strategist", "--candidate", "candidate.tgz", "--record", "record.json"]) assert.throws(() => argsFrom(argv.filter((value) => value !== missing)), /Usage:/);
+});
+
+test("owner-present publication rejects a programmatic dry-run before touching a candidate", async () => {
+  let called = false;
+  await assert.rejects(() => publishQualifiedDirectory({
+    packageKey: "strategist", candidatePath: "not-read.tgz", recordPath: "not-read.json", mode: "owner-present", dryRun: true,
+    run: () => { called = true; return { status: 0, stdout: "", stderr: "" }; },
+  }), /owner-present publication does not support dry-run/);
+  assert.equal(called, false);
 });
 
 test("OIDC dry publication cleanly repacks the qualified bytes and forwards only GitHub OIDC/run identity", async (t) => {
@@ -97,10 +107,10 @@ test("OIDC dry publication cleanly repacks the qualified bytes and forwards only
     ACTIONS_ID_TOKEN_REQUEST_URL: "https://token.actions.githubusercontent.test/oidc",
     ACTIONS_ID_TOKEN_REQUEST_TOKEN: "opaque-oidc-request-token",
     GITHUB_ACTIONS: "true", GITHUB_EVENT_NAME: "workflow_dispatch",
-    GITHUB_REF: "refs/heads/main", GITHUB_REPOSITORY: "clossys/foundry",
-    GITHUB_RUN_ATTEMPT: "1", GITHUB_RUN_ID: "42", GITHUB_SHA: "a".repeat(40),
+    GITHUB_REF: "refs/heads/main", GITHUB_REPOSITORY: "clossys/foundry", GITHUB_REPOSITORY_ID: "123",
+    GITHUB_REPOSITORY_OWNER_ID: "456", GITHUB_RUN_ATTEMPT: "1", GITHUB_RUN_ID: "42", GITHUB_SERVER_URL: "https://github.com", GITHUB_SHA: "a".repeat(40),
     GITHUB_WORKFLOW: "Publish", GITHUB_WORKFLOW_REF: "clossys/foundry/.github/workflows/publish.yml@refs/heads/main",
-    GITHUB_WORKFLOW_SHA: "b".repeat(40),
+    GITHUB_WORKFLOW_SHA: "b".repeat(40), RUNNER_ENVIRONMENT: "github-hosted",
   };
   const run = (file, args, options) => {
     calls.push({ file, args: [...args], cwd: options.cwd, env: { ...options.env } });
@@ -129,7 +139,15 @@ test("OIDC dry publication cleanly repacks the qualified bytes and forwards only
   assert.notEqual(publish.env.HOME, item.root, "OIDC mode must not receive the owner HOME");
   for (const key of ["NPM_TOKEN", "NODE_AUTH_TOKEN", "GITHUB_TOKEN", "PUBLIC_SAFETY_DENYLIST"]) assert.equal(publish.env[key], undefined, `${key} must not reach npm`);
   for (const [key, value] of Object.entries(oidc)) assert.equal(publish.env[key], value, `${key} must survive the OIDC boundary`);
-  assert.deepEqual(Object.keys(publish.env).sort(), ["ACTIONS_ID_TOKEN_REQUEST_TOKEN", "ACTIONS_ID_TOKEN_REQUEST_URL", "GITHUB_ACTIONS", "GITHUB_EVENT_NAME", "GITHUB_REF", "GITHUB_REPOSITORY", "GITHUB_RUN_ATTEMPT", "GITHUB_RUN_ID", "GITHUB_SHA", "GITHUB_WORKFLOW", "GITHUB_WORKFLOW_REF", "GITHUB_WORKFLOW_SHA", "HOME", "PATH"].sort());
+  assert.deepEqual(Object.keys(publish.env).sort(), ["ACTIONS_ID_TOKEN_REQUEST_TOKEN", "ACTIONS_ID_TOKEN_REQUEST_URL", "GITHUB_ACTIONS", "GITHUB_EVENT_NAME", "GITHUB_REF", "GITHUB_REPOSITORY", "GITHUB_REPOSITORY_ID", "GITHUB_REPOSITORY_OWNER_ID", "GITHUB_RUN_ATTEMPT", "GITHUB_RUN_ID", "GITHUB_SERVER_URL", "GITHUB_SHA", "GITHUB_WORKFLOW", "GITHUB_WORKFLOW_REF", "GITHUB_WORKFLOW_SHA", "HOME", "PATH", "RUNNER_ENVIRONMENT"].sort());
+  for (const missing of ["GITHUB_SERVER_URL", "GITHUB_REPOSITORY_ID", "GITHUB_REPOSITORY_OWNER_ID", "RUNNER_ENVIRONMENT"]) {
+    const incomplete = { ...oidc }; delete incomplete[missing];
+    await assert.rejects(() => publishQualifiedDirectory({
+      root: item.root, packageKey: "strategist", candidatePath: item.candidate, recordPath: item.recordPath,
+      mode: "oidc", dryRun: true, env: { ...incomplete, PATH: process.env.PATH, PUBLIC_SAFETY_DENYLIST: item.denylist },
+      run, interactiveRun: async () => { throw new Error("OIDC must not create an owner PTY"); }, verify: async () => {},
+    }), new RegExp(`OIDC publication requires ${missing}`));
+  }
 });
 
 test("Linux PTY command returns npm's failure status rather than script's session status", () => {
