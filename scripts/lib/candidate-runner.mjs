@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { copyFile, lstat, mkdir, mkdtemp, readFile, readdir, realpath, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { basename, dirname, join, resolve, sep } from "node:path";
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { validateReleaseQualificationContract } from "./release-qualification-contract.mjs";
 import { parseStrictJson } from "./candidate-qualification.mjs";
 
@@ -32,7 +32,7 @@ function stableJson(value) {
   return value;
 }
 
-function consumerDigest(root, value) {
+export function consumerDigest(root, value) {
   const normalized = String(value).split(root).join("$TEMP");
   try {
     const parsed = JSON.parse(normalized);
@@ -87,21 +87,62 @@ function renderFixture(value, variables) {
   return rendered;
 }
 
-async function readRegularFile(path, label) {
+async function assertRestorePathContained(root, path, label) {
+  const canonicalRoot = await realpath(root);
+  const target = resolve(path);
+  const rel = relative(canonicalRoot, target);
+  if (!rel || rel === ".." || rel.startsWith(`..${sep}`) || isAbsolute(rel)) throw new Error(`${label} escapes the consumer root during restoration`);
+  // lstat every existing parent rather than realpath(target): realpath follows
+  // an attacker-controlled parent symlink and would make an external target
+  // appear to be an ordinary file below the consumer root.
+  let cursor = canonicalRoot;
+  for (const component of rel.split(sep).slice(0, -1)) {
+    cursor = join(cursor, component);
+    let state;
+    try { state = await lstat(cursor); }
+    catch (error) {
+      if (error?.code === "ENOENT") throw new Error(`${label} parent disappeared during qualification`);
+      throw error;
+    }
+    if (!state.isDirectory() || state.isSymbolicLink()) throw new Error(`${label} parent was replaced during qualification`);
+  }
+  return target;
+}
+
+async function readRegularFile(root, path, label) {
+  await assertRestorePathContained(root, path, label);
   const state = await lstat(path);
   if (!state.isFile() || state.isSymbolicLink()) throw new Error(`${label} must remain a contained regular file`);
   return readFile(path);
 }
 
-async function restoreRegularFile(path, bytes, label) {
+async function restoreRegularFile(root, path, bytes, label) {
+  await assertRestorePathContained(root, path, label);
   try {
     const state = await lstat(path);
     if (!state.isFile() || state.isSymbolicLink()) throw new Error(`${label} was replaced with a non-regular file during qualification`);
   } catch (error) {
-    if (error?.code !== "ENOENT") throw error;
+    // A candidate deleting an original regular file is still an integrity
+    // violation. Restoring its bytes is safe only when this target was absent
+    // before the run, which is represented by a null backup.
+    if (error?.code !== "ENOENT" || bytes !== null) throw error?.code === "ENOENT"
+      ? new Error(`${label} disappeared during qualification`)
+      : error;
   }
   if (bytes === null) { await rm(path, { force: true }); return; }
   await writeFile(path, bytes, { flag: "w" });
+}
+
+async function removeContainedDirectory(root, path, label) {
+  await assertRestorePathContained(root, path, label);
+  try {
+    const state = await lstat(path);
+    if (!state.isDirectory() || state.isSymbolicLink()) throw new Error(`${label} was replaced with a non-directory during qualification`);
+  } catch (error) {
+    if (error?.code === "ENOENT") return;
+    throw error;
+  }
+  await rm(path, { recursive: true, force: true });
 }
 
 async function caseArgument(root, fixtureRoot, descriptor) {
@@ -109,6 +150,7 @@ async function caseArgument(root, fixtureRoot, descriptor) {
   const relative = descriptor.fixture ?? descriptor.fixtureDirectory;
   const path = resolve(fixtureRoot, relative);
   if (!path.startsWith(`${resolve(fixtureRoot)}${sep}`)) throw new Error("case fixture argument escapes fixture root");
+  await assertRestorePathContained(root, path, "case fixture argument");
   const state = await lstat(path);
   if (state.isSymbolicLink() || (descriptor.fixture !== undefined ? !state.isFile() : !state.isDirectory())) throw new Error("case fixture argument has the wrong filesystem type");
   return path;
@@ -272,6 +314,7 @@ function tokenizedRaw(root, value) {
 }
 
 async function materializedFiles(root, target, output = []) {
+  await assertRestorePathContained(root, target, "raw case evidence input");
   const state = await lstat(target);
   if (state.isSymbolicLink()) throw new Error("raw case evidence refuses symbolic-link inputs");
   if (state.isDirectory()) {
@@ -292,6 +335,8 @@ async function materializedConsumerOverlay(root, fixtureRoot, overlay) {
   const sourcePath = resolve(fixtureRoot, overlay.fixture);
   const targetPath = resolve(root, overlay.target);
   if (!sourcePath.startsWith(`${resolve(fixtureRoot)}${sep}`) || !targetPath.startsWith(`${root}${sep}`)) throw new Error("raw case evidence consumer overlay escapes the disposable root");
+  await assertRestorePathContained(root, sourcePath, "raw case evidence consumer overlay source");
+  await assertRestorePathContained(root, targetPath, "raw case evidence consumer overlay target");
   const [sourceState, targetState] = await Promise.all([lstat(sourcePath), lstat(targetPath)]);
   if (sourceState.isSymbolicLink() || targetState.isSymbolicLink() || !sourceState.isFile() || !targetState.isFile()) throw new Error("raw case evidence consumer overlay must map regular files");
   const [sourceBytes, targetBytes] = await Promise.all([readFile(sourcePath), readFile(targetPath)]);
@@ -559,12 +604,21 @@ async function exportCoverage(manifest, installed, root) {
     }
   }
   if (framework.all.length > 0) {
-    await writeNextFixture(root, framework);
-    const result = await runProcess(join(root, "node_modules", ".bin", "next"), ["build"], {
-      cwd: root,
-      env: { ...sanitizedEnv(root), CI: "1", NEXT_TELEMETRY_DISABLED: "1" },
-      timeout: QUALIFICATION_PHASE_TIMEOUTS.framework,
-    });
+    // A shared aggregate consumer must not retain one package's app/, proxy,
+    // or .next cache for a later adapter. Give each framework probe a private
+    // evaluator root that only symlinks the already-installed dependency tree.
+    const evaluatorRoot = await mkdtemp(join(root, ".foundry-framework-"));
+    let result;
+    try {
+      await writeFile(join(evaluatorRoot, "package.json"), '{"private":true,"type":"module"}\n');
+      await symlink(join(root, "node_modules"), join(evaluatorRoot, "node_modules"), "dir");
+      await writeNextFixture(evaluatorRoot, framework);
+      result = await runProcess(join(evaluatorRoot, "node_modules", ".bin", "next"), ["build"], {
+        cwd: evaluatorRoot,
+        env: { ...sanitizedEnv(root), CI: "1", NEXT_TELEMETRY_DISABLED: "1" },
+        timeout: QUALIFICATION_PHASE_TIMEOUTS.framework,
+      });
+    } finally { await rm(evaluatorRoot, { recursive: true, force: true }); }
     for (const role of ["client", "server", "proxy"]) for (const specifier of framework[role]) {
       operations.push({ id: `framework:next:${role}:${specifier}`, kind: "framework", result });
     }
@@ -628,6 +682,7 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
     for (const fixture of adapter.fixtures) {
       const target = join(fixtureRoot, fixture);
       await mkdir(dirname(target), { recursive: true });
+      await assertRestorePathContained(root, target, "materialized fixture");
       if (!ownsRoot) {
         try { aggregateFixtureBackup.set(target, await readFile(target)); }
         catch (error) { if (error?.code !== "ENOENT") throw error; aggregateFixtureBackup.set(target, null); }
@@ -652,9 +707,13 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
     const peerArgs = Object.entries(adapter.peerInstall ?? {}).sort(([left], [right]) => left.localeCompare(right)).map(([name, version]) => `${name}@${version}`);
     const install = ownsRoot ? await runProcess("npm", ["install", "--ignore-scripts", "--save-exact", artifactSpec, ...peerArgs], {
       cwd: root, env: sanitizedEnv(root), timeout: QUALIFICATION_PHASE_TIMEOUTS.npm,
-    }) : { exitCode: 0, signal: null, launchError: false, stdout: "aggregate preinstall", stderr: "" };
-    transcript.observations.push(observation(root, "install", "install", 0, install));
-    if (install.exitCode !== 0 || install.signal || install.launchError) transcript.mismatches.push("install");
+    }) : null;
+    // A shared aggregate root has exactly one real npm install recorded by its
+    // aggregate transcript. Never manufacture nineteen child install results.
+    if (!skipRollback) {
+      transcript.observations.push(observation(root, "install", "install", 0, install));
+      if (install.exitCode !== 0 || install.signal || install.launchError) transcript.mismatches.push("install");
+    }
     // This file may temporarily contain an install credential. Candidate code sees
     // neither it nor the credential-bearing environment, even after an install error.
     await writeFile(userNpmrc, "");
@@ -690,7 +749,7 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
       transcript.observations.push(observation(root, `help:${bin}`, "help", adapter.bins[bin], result));
       if (result.exitCode !== adapter.bins[bin] || result.signal || result.launchError) transcript.mismatches.push(`help:${bin}`);
     }
-    const caseBase = { manifest: await readRegularFile(join(root, "package.json"), "consumer package.json"), lock: await readRegularFile(join(root, "package-lock.json"), "consumer package-lock.json") };
+    const caseBase = { manifest: await readRegularFile(root, join(root, "package.json"), "consumer package.json"), lock: await readRegularFile(root, join(root, "package-lock.json"), "consumer package-lock.json") };
     const overlayRoots = new Set();
     for (const item of adapter.consumerOverlay ?? []) {
       const target = resolve(root, item.target);
@@ -703,11 +762,14 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
     for (const item of adapter.consumerOverlay ?? []) {
       const target = resolve(root, item.target);
       await mkdir(dirname(target), { recursive: true });
+      await assertRestorePathContained(root, target, `consumer overlay ${item.target}`);
       if (restoreConsumerOverlay) {
-        try { overlayBackup.set(target, await readRegularFile(target, `consumer overlay ${item.target}`)); }
+        try { overlayBackup.set(target, await readRegularFile(root, target, `consumer overlay ${item.target}`)); }
         catch (error) { if (error?.code !== "ENOENT") throw error; overlayBackup.set(target, null); }
       }
-      await copyFile(join(fixtureRoot, item.fixture), target);
+      const source = join(fixtureRoot, item.fixture);
+      await assertRestorePathContained(root, source, `consumer overlay source ${item.fixture}`);
+      await copyFile(source, target);
     }
     const preparedCases = [];
     for (const item of adapter.cases) {
@@ -730,14 +792,14 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
       if (result.exitCode !== item.exitCode || result.signal || result.launchError) transcript.mismatches.push(`case:${item.id}`);
     }
 
-    await restoreRegularFile(join(root, "package.json"), caseBase.manifest, "consumer package.json");
-    await restoreRegularFile(join(root, "package-lock.json"), caseBase.lock, "consumer package-lock.json");
+    await restoreRegularFile(root, join(root, "package.json"), caseBase.manifest, "consumer package.json");
+    await restoreRegularFile(root, join(root, "package-lock.json"), caseBase.lock, "consumer package-lock.json");
     if (restoreConsumerOverlay) {
       for (const [target, bytes] of overlayBackup) {
-        await restoreRegularFile(target, bytes, "consumer overlay");
+        await restoreRegularFile(root, target, bytes, "consumer overlay");
       }
     } else {
-      for (const packageRoot of overlayRoots) await rm(packageRoot, { recursive: true, force: true });
+      for (const packageRoot of overlayRoots) await removeContainedDirectory(root, packageRoot, "consumer overlay package root");
       await assertConsumerOverlayRootsAbsent(overlayRoots, "post-case restoration failed");
     }
 
@@ -772,7 +834,7 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
     // raw evidence remains compatible.  Every preexisting fixture byte is
     // restored here, including failures during a case or framework build.
     for (const [target, bytes] of aggregateFixtureBackup) {
-      await restoreRegularFile(target, bytes, "aggregate fixture");
+      await restoreRegularFile(root, target, bytes, "aggregate fixture");
     }
     if (ownsRoot) await rm(root, { recursive: true, force: true });
   }

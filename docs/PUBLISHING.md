@@ -707,12 +707,11 @@ It proves the installed Controller identity is singular, uninstalls the entire
 frozen set, proves package absence, and restores byte-identical consumer
 manifest and lockfile bytes before retaining a canonical transcript.
 
-The immutable plan currently contains explicit held or pending rows where a public
-publication record does not exist. Those rows are never rewritten: when every
-join exists, a separate content-addressed aggregate closure binds all nineteen
-exact qualification and publication records back to this fixed plan. Until
-then this is an indeterminate producer qualification result, not a live-canary
-pass. In particular,
+The immutable plan contains identities only; it never records mutable
+publication status or path joins. When every join exists, a separate
+content-addressed aggregate closure binds all nineteen exact qualification and
+publication records back to this fixed plan. Until that closure exists this is
+an indeterminate producer qualification result, not a live-canary pass. In particular,
 `@clossys/publisher@0.1.8` remains deferred until Writer and Designer have
 their own anonymously verified public identities. This check is producer
 qualification only: it does not establish consumer adoption, grounding, or

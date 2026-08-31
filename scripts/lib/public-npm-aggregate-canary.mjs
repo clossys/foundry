@@ -1,11 +1,11 @@
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { lstat, mkdir, mkdtemp, readFile, readdir, readlink, rename, rm, stat, symlink, writeFile } from "node:fs/promises";
+import { lstat, link, mkdir, mkdtemp, open, readFile, readdir, readlink, realpath, rename, rm, stat, symlink, unlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { isAbsolute, join, relative, resolve, sep } from "node:path";
 
-import { assertCredentialFree, runCandidateQualification, writeNextFixture } from "./candidate-runner.mjs";
-import { installedPackageRoots, runProcess } from "./packed-consumer-readiness.mjs";
+import { assertCredentialFree, consumerDigest, runCandidateQualification, writeNextFixture } from "./candidate-runner.mjs";
+import { installedPackageRoots, runProcess, validateOptionalPeerPolicy } from "./packed-consumer-readiness.mjs";
 import { PUBLIC_NPM_REGISTRY, validatePublicNpmRegistryProof, verifyGithubRepositoryRedirect, verifyPublicNpmArtifact } from "./public-npm-registry.mjs";
 
 export const AGGREGATE_CANARY_PATH = "governance/public-npm-aggregate-canary.json";
@@ -33,6 +33,71 @@ export function canonicalRedirectProjection(rows) {
 export function aggregateClosurePath(set, canonicalSha256) { return `${AGGREGATE_CLOSURE_DIRECTORY}/${set}-${canonicalSha256}.json`; }
 export function aggregateTranscriptPath(set, canonicalSha256) { return `${AGGREGATE_TRANSCRIPT_DIRECTORY}/${set}-${canonicalSha256}.json`; }
 export function isAggregateClosurePath(path) { return new RegExp(`^${AGGREGATE_CLOSURE_DIRECTORY}/(?:baseline|oidc-successor)-[a-f0-9]{64}\\.json$`).test(path ?? ""); }
+
+async function containedRegularDirectory(root, relativeDirectory) {
+  const canonicalRoot = await realpath(root);
+  const target = resolve(canonicalRoot, relativeDirectory);
+  const rel = relative(canonicalRoot, target);
+  if (!rel || rel === ".." || rel.startsWith(`..${sep}`) || isAbsolute(rel)) throw new Error("aggregate transcript directory escapes the repository root");
+  let cursor = canonicalRoot;
+  for (const component of rel.split(sep)) {
+    cursor = join(cursor, component);
+    try {
+      const state = await lstat(cursor);
+      if (!state.isDirectory() || state.isSymbolicLink()) throw new Error("aggregate transcript directory has a symlink or non-directory component");
+    } catch (error) {
+      if (error?.code !== "ENOENT") throw error;
+      await mkdir(cursor);
+      const state = await lstat(cursor);
+      if (!state.isDirectory() || state.isSymbolicLink()) throw new Error("aggregate transcript directory changed while being created");
+    }
+  }
+  return { root: canonicalRoot, directory: target };
+}
+
+/**
+ * Retain a newly satisfied transcript only at its post-run content-addressed
+ * name. A private same-directory file is fsynced, hard-linked into place with
+ * O_EXCL-equivalent no-replace semantics, then removed; an existing record or
+ * any symlinked parent is an integrity violation rather than an overwrite.
+ */
+export async function retainAggregateTranscript({ root, transcript }) {
+  if (!object(transcript) || !["baseline", "oidc-successor"].includes(transcript.set) || !SHA256.test(transcript.canonicalSha256 ?? "")) throw new Error("generated aggregate transcript has no closed identity");
+  const { directory } = await containedRegularDirectory(root, AGGREGATE_TRANSCRIPT_DIRECTORY);
+  const relativePath = aggregateTranscriptPath(transcript.set, transcript.canonicalSha256);
+  const target = resolve(root, relativePath);
+  if (relative(resolve(root), target) !== relativePath) throw new Error("aggregate transcript path escapes the repository root");
+  const temporary = join(directory, `.aggregate-${process.pid}-${Date.now()}-${Math.random().toString(16).slice(2)}.tmp`);
+  const bytes = `${JSON.stringify(transcript, null, 2)}\n`;
+  let handle;
+  try {
+    handle = await open(temporary, "wx", 0o600);
+    await handle.writeFile(bytes, "utf8");
+    await handle.sync();
+    await handle.close(); handle = null;
+    await link(temporary, target); // atomic no-overwrite: EEXIST is conclusive.
+    const directoryHandle = await open(directory, "r");
+    try { await directoryHandle.sync(); } finally { await directoryHandle.close(); }
+    return relativePath;
+  } finally {
+    try { if (handle) await handle.close(); } finally { await unlink(temporary).catch(() => {}); }
+  }
+}
+
+export function parseAggregateCanaryCli(args) {
+  if (!Array.isArray(args) || args.some((item) => typeof item !== "string")) throw new Error("usage: aggregate canary arguments must be strings");
+  const values = new Map();
+  for (let index = 0; index < args.length; index += 2) {
+    const flag = args[index], value = args[index + 1];
+    if (!['--closure', '--set', '--output-dir'].includes(flag) || value === undefined || values.has(flag)) throw new Error("usage: run-public-npm-aggregate-canary.mjs [--set baseline|oidc-successor] [--closure governance/public-npm-aggregate-closures/<set>-<sha256>.json] [--output-dir governance/public-npm-aggregate-transcripts]");
+    values.set(flag, value);
+  }
+  const closurePath = values.get("--closure") ?? null;
+  const set = values.get("--set") ?? "oidc-successor";
+  const outputDirectory = values.get("--output-dir") ?? AGGREGATE_TRANSCRIPT_DIRECTORY;
+  if ((closurePath !== null && !isAggregateClosurePath(closurePath)) || outputDirectory !== AGGREGATE_TRANSCRIPT_DIRECTORY || !["baseline", "oidc-successor"].includes(set)) throw new Error("usage: run-public-npm-aggregate-canary.mjs [--set baseline|oidc-successor] [--closure governance/public-npm-aggregate-closures/<set>-<sha256>.json] [--output-dir governance/public-npm-aggregate-transcripts]");
+  return { closurePath, set, outputDirectory };
+}
 export function assertAggregateRuntime({ node = process.version, npm = execFileSync("npm", ["--version"], { encoding: "utf8" }).trim(), zlib = process.versions.zlib } = {}) {
   if (node !== AGGREGATE_RUNTIME.node || npm !== AGGREGATE_RUNTIME.npm || zlib !== AGGREGATE_RUNTIME.zlib) throw new Error(`aggregate canary requires Node 24.19.0, npm 11.17.0, and zlib ${AGGREGATE_RUNTIME.zlib} (received ${node}, ${npm}, ${zlib})`);
 }
@@ -54,7 +119,7 @@ function publicationProof(publication, key) {
     : publication?.registryProof ?? null;
 }
 
-function publicationCandidate(publication, key) {
+export function publicationCandidate(publication, key) {
   if (publication?.kind === "clossys-npmjs-trio-first-publication-v1") {
     const proof = publicationProof(publication, key);
     const evidence = proof?.evidence;
@@ -69,6 +134,18 @@ function candidateBytesJoin(actual, expected) {
     && actual.tarball?.sha256 === expected.tarball?.sha256
     && actual.tarball?.sha512 === expected.tarball?.sha512
     && actual.packageManifestSha256 === expected.packageManifestSha256);
+}
+
+function aggregateNpmOperation(id, result) {
+  return {
+    id,
+    expectedExitCode: 0,
+    observedExitCode: result.exitCode,
+    signal: result.signal ?? null,
+    launchError: Boolean(result.launchError),
+    stdoutSha256: hash(result.stdout),
+    stderrSha256: hash(result.stderr),
+  };
 }
 
 /** Stable, typed aggregate view of one retained candidate-runner transcript. */
@@ -97,10 +174,10 @@ export function validateAggregateChildExecution(run, { name, version, qualificat
   if (run.canonicalSha256 !== hash(JSON.stringify(copy))) finding(findings, "child-canonical", `${name}@${version} child transcript digest does not match its full retained content`);
   const projection = aggregateChildExecutionProjection(run);
   if (!projection || !exactKeys(projection.candidate, ["name", "version"]) || !exactKeys(projection.tarball, ["sha1", "sha256", "sha512"]) || !exactKeys(projection.consumer, ["manifestSha256", "lockfileSha256"]) || !object(projection.coverage) || !Array.isArray(projection.dimensions) || !Array.isArray(projection.observations) || projection.ok !== true) finding(findings, "child-projection", `${name}@${version} child execution projection is incomplete or unsatisfied`);
-  if (!exactKeys(run.restoration, ["delegatedToAggregate"]) || run.restoration.delegatedToAggregate !== true || !Array.isArray(run.mismatches) || run.mismatches.length !== 0 || run.observations.some((item) => ["uninstall", "reinstall"].includes(item?.kind))) finding(findings, "child-rollback", `${name}@${version} aggregate child must delegate rollback and may not fabricate individual npm observations`);
+  if (!exactKeys(run.restoration, ["delegatedToAggregate"]) || run.restoration.delegatedToAggregate !== true || !Array.isArray(run.mismatches) || run.mismatches.length !== 0 || run.observations.some((item) => ["install", "uninstall", "reinstall"].includes(item?.kind))) finding(findings, "child-rollback", `${name}@${version} aggregate child must delegate install and rollback and may not fabricate individual npm observations`);
   const observationKeys = ["id", "kind", "launch", "expectedExitCode", "observedExitCode", "signal", "launchError", "stdoutSha256", "stderrSha256", "rawCaseEvidence?"];
-  const permittedKinds = new Set(["install", "import", "framework", "help", "case"]);
-  if (run.observations.some((item) => !onlyKeys(item, observationKeys) || typeof item.id !== "string" || !permittedKinds.has(item.kind) || !Number.isInteger(item.expectedExitCode) || item.expectedExitCode !== item.observedExitCode || item.signal !== null || item.launchError !== false || !SHA256.test(item.stdoutSha256 ?? "") || !SHA256.test(item.stderrSha256 ?? ""))) finding(findings, "child-observation", `${name}@${version} child observations are incomplete or do not record successful exact execution`);
+  const permittedKinds = new Set(["import", "framework", "help", "case"]);
+  if (run.observations.some((item) => !onlyKeys(item, observationKeys) || typeof item.id !== "string" || !permittedKinds.has(item.kind) || item.launch !== (item.kind === "framework" ? "next-build" : "node-direct") || !Number.isInteger(item.expectedExitCode) || item.expectedExitCode !== item.observedExitCode || item.signal !== null || item.launchError !== false || !SHA256.test(item.stdoutSha256 ?? "") || !SHA256.test(item.stderrSha256 ?? ""))) finding(findings, "child-observation", `${name}@${version} child observations are incomplete or do not record successful exact execution`);
   const cases = run.observations.filter((item) => item?.kind === "case");
   if (new Set(run.observations.map((item) => item?.id)).size !== run.observations.length || run.observations.some((item) => ![0, 1, 2].includes(item.expectedExitCode)) || cases.length === 0 || ![0, 1, 2].every((code) => cases.some((item) => item.expectedExitCode === code && item.observedExitCode === code))) finding(findings, "child-cases", `${name}@${version} child observations must have unique IDs and retain the required 0/1/2 cases`);
   const coverageKeys = ["declaredExportKeys", "concreteTargets", "runtimeImports", "reactServerImports", "staticTargets", "frameworkExports", "frameworkBuilds", "failed", "installedManifestSha256", "bins", "lifecycleScriptsDisabled"];
@@ -116,7 +193,7 @@ export function validateAggregateChildExecution(run, { name, version, qualificat
       const expectedDimensions = (qualificationTranscript.dimensions ?? []).filter((item) => item?.dimension !== "rollback");
       const actualDimensions = run.dimensions.filter((item) => item?.dimension !== "rollback");
       if (!Array.isArray(qualificationTranscript.dimensions) || JSON.stringify(stable(actualDimensions)) !== JSON.stringify(stable(expectedDimensions))) finding(findings, "qualification-dimensions", `${name}@${version} child non-rollback dimension evidence must exactly match immutable qualification evidence`);
-      const project = (item) => ({ id: item?.id, kind: item?.kind, expectedExitCode: item?.expectedExitCode });
+      const project = (item) => ({ id: item?.id, kind: item?.kind, launch: item?.launch, expectedExitCode: item?.expectedExitCode });
       const operationKinds = new Set(["import", "framework", "help", "case"]);
       const expected = expectedObservations.filter((item) => operationKinds.has(item?.kind)).map(project);
       const actual = run.observations.filter((item) => operationKinds.has(item?.kind)).map(project);
@@ -393,10 +470,10 @@ export function validateAggregateClosure(plan, closure, { read = null, path = nu
 }
 
 /** Validate a separately retained, satisfied aggregate execution transcript. */
-export function validateSatisfiedAggregateTranscript(transcript, { plan, closure, expectedRepositoryRedirects = null, qualificationContracts = null, path = AGGREGATE_CANARY_PATH } = {}) {
+export function validateSatisfiedAggregateTranscript(transcript, { plan, closure, expectedRepositoryRedirects = null, qualificationContracts = null, candidateContracts = null, path = AGGREGATE_CANARY_PATH } = {}) {
   const findings = [];
   const expectedSetsSha256 = hash(JSON.stringify(stable({ peerResolution: plan?.peerResolution, sets: plan?.sets, optionalPeerMatrix: plan?.optionalPeerMatrix })));
-  if (!exactKeys(transcript, ["schema", "version", "plan", "set", "repositoryRedirects", "peerResolution", "packages", "consumer", "dimensions", "optionalPeerObservations", "canonicalSha256"])) return [{ rule: "shape", message: "closed aggregate transcript schema required" }];
+  if (!exactKeys(transcript, ["schema", "version", "plan", "set", "repositoryRedirects", "peerResolution", "operations", "packages", "consumer", "dimensions", "optionalPeerObservations", "canonicalSha256"])) return [{ rule: "shape", message: "closed aggregate transcript schema required" }];
   if (transcript.schema !== "foundry-public-npm-aggregate-transcript-v1" || transcript.version !== 1 || !exactKeys(transcript.plan, ["path", "setsSha256", "closurePath", "closureSha256"]) || transcript.plan.path !== path || transcript.plan.setsSha256 !== expectedSetsSha256 || !isAggregateClosurePath(transcript.plan.closurePath) || transcript.plan.closurePath !== aggregateClosurePath(transcript.set, transcript.plan.closureSha256) || transcript.plan.closureSha256 !== closure?.canonicalSha256) finding(findings, "plan-join", "transcript must bind the exact frozen plan and immutable closure bytes");
   let selected = null;
   try { selected = resolveAggregateClosure(plan, transcript.set, closure).selected; }
@@ -406,7 +483,9 @@ export function validateSatisfiedAggregateTranscript(transcript, { plan, closure
     const expected = selected.packages[index], actual = transcript.packages[index];
     if (!exactKeys(actual, ["name", "version", "qualification", "publication", "served", "installedManifestSha256", "run"]) || actual.name !== expected.name || actual.version !== expected.version || JSON.stringify(actual.qualification) !== JSON.stringify(expected.qualification) || JSON.stringify(actual.publication) !== JSON.stringify(expected.publication) || !exactKeys(actual.served, ["name", "version", "packageManifestSha256", "tarball"]) || actual.served.name !== actual.name || actual.served.version !== actual.version || !SHA256.test(actual.served.packageManifestSha256 ?? "") || !exactKeys(actual.served.tarball, ["sha1", "sha256", "sha512"]) || !/^[a-f0-9]{40}$/.test(actual.served.tarball.sha1 ?? "") || !SHA256.test(actual.served.tarball.sha256 ?? "") || !/^[a-f0-9]{128}$/.test(actual.served.tarball.sha512 ?? "") || !SHA256.test(actual.installedManifestSha256 ?? "")) finding(findings, "package-join", `transcript package row ${index} must exactly join the frozen identity, served bytes, installed manifest, and immutable records`);
     findings.push(...validateAggregateChildExecution(actual?.run, { ...actual, qualificationTranscript: qualificationContracts?.[`${actual?.name}@${actual?.version}`] ?? null }));
-    if (actual?.installedManifestSha256 !== actual?.run?.coverage?.installedManifestSha256) finding(findings, "child-install-join", `${actual?.name ?? index} child coverage must bind the same installed packed manifest as its aggregate row`);
+    const candidateContract = candidateContracts?.[`${actual?.name}@${actual?.version}`];
+    if (candidateContracts !== null && (!candidateContract || !candidateBytesJoin(actual?.served, candidateContract.qualification) || !candidateBytesJoin(actual?.served, candidateContract.publication))) finding(findings, "served-contract", `${actual?.name ?? index} served bytes must exactly join both immutable qualification and publication candidates`);
+    if (actual?.installedManifestSha256 !== actual?.run?.coverage?.installedManifestSha256 || actual?.run?.consumer?.manifestSha256 !== transcript.consumer?.manifestSha256 || actual?.run?.consumer?.lockfileSha256 !== transcript.consumer?.lockfileSha256) finding(findings, "child-install-join", `${actual?.name ?? index} child evidence must bind the one shared aggregate consumer and installed packed manifest`);
     if (!candidateBytesJoin({ name: actual?.name, version: actual?.version, packageManifestSha256: actual?.served?.packageManifestSha256, tarball: actual?.run?.tarball }, actual?.served)) finding(findings, "child-served-join", `${actual?.name ?? index} child tarball must bind the aggregate served byte evidence`);
     if (actual?.installedManifestSha256 !== actual?.served?.packageManifestSha256) finding(findings, "installed-served-join", `${actual?.name ?? index} installed packed manifest must equal the served packed manifest`);
   }
@@ -414,7 +493,9 @@ export function validateSatisfiedAggregateTranscript(transcript, { plan, closure
   if (!exactKeys(transcript.peerResolution, ["requested", "actual", "disposition"]) || JSON.stringify(stable(transcript.peerResolution.requested)) !== JSON.stringify(stable(plan?.peerResolution?.requested)) || JSON.stringify(stable(transcript.peerResolution.actual)) !== JSON.stringify(stable(plan?.peerResolution?.requested)) || JSON.stringify(stable(transcript.peerResolution.disposition)) !== JSON.stringify(stable(plan?.peerResolution?.disposition))) finding(findings, "peer-resolution", "transcript must retain the exact reviewed peer request, actual resolution, and conflict disposition");
   const expectedIdentities = selected?.packages?.map((entry) => `${entry.name}@${entry.version}`) ?? [];
   if (!exactKeys(transcript.consumer, ["manifestSha256", "lockfileSha256", "controller", "singularController", "identities", "rollback"]) || !SHA256.test(transcript.consumer.manifestSha256 ?? "") || !SHA256.test(transcript.consumer.lockfileSha256 ?? "") || transcript.consumer.singularController !== true || JSON.stringify(transcript.consumer.identities) !== JSON.stringify(expectedIdentities) || transcript.consumer.controller !== expectedIdentities.find((identity) => identity.startsWith("@clossys/controller@")) || !exactKeys(transcript.consumer.rollback, ["packageAbsenceProven", "manifestRestored", "lockfileRestored", "identitiesRestored"]) || Object.values(transcript.consumer.rollback).some((value) => value !== true)) finding(findings, "rollback", "transcript must retain exact aggregate identity and complete real rollback evidence");
-  const required = ["exports", "framework", "bins", "cases", "optionalPeers", "rollback"];
+  const operationKeys = ["id", "expectedExitCode", "observedExitCode", "signal", "launchError", "stdoutSha256", "stderrSha256"];
+  if (!Array.isArray(transcript.operations) || transcript.operations.length !== 3 || transcript.operations.map((item) => item?.id).join("\0") !== "install\0uninstall\0reinstall" || transcript.operations.some((item) => !exactKeys(item, operationKeys) || item.expectedExitCode !== 0 || item.observedExitCode !== 0 || item.signal !== null || item.launchError !== false || !SHA256.test(item.stdoutSha256 ?? "") || !SHA256.test(item.stderrSha256 ?? ""))) finding(findings, "aggregate-operations", "transcript must retain exactly one successful real aggregate install, uninstall, and reinstall operation");
+  const required = ["install", "exports", "framework", "bins", "cases", "optionalPeers", "rollback"];
   if (!Array.isArray(transcript.dimensions) || transcript.dimensions.length !== required.length || transcript.dimensions.map((entry) => entry?.dimension).join("\0") !== required.join("\0") || transcript.dimensions.some((entry) => !exactKeys(entry, ["dimension", "count", "ok"]) || !Number.isSafeInteger(entry.count) || entry.count < 1 || entry.ok !== true)) finding(findings, "dimensions", "transcript must retain every aggregate execution dimension once with a positive satisfied count");
   else if (!Array.isArray(transcript.packages) || transcript.packages.some((entry) => !object(entry?.run) || !object(entry.run.coverage) || !Array.isArray(entry.run.observations))) finding(findings, "dimension-count", "aggregate dimension projection requires well-formed child execution records");
   else {
@@ -425,6 +506,7 @@ export function validateSatisfiedAggregateTranscript(transcript, { plan, closure
       bins: actualRuns.reduce((sum, run) => sum + run.coverage.bins, 0),
       cases: actualRuns.reduce((sum, run) => sum + run.observations.filter((item) => item.kind === "case").length, 0),
       optionalPeers: (plan?.optionalPeerMatrix ?? []).filter((row) => row.set === transcript.set).reduce((sum, row) => sum + row.peers.reduce((peerSum, peer) => peerSum + Object.keys(peer.outcomes).length, 0), 0),
+      install: 1,
       rollback: 1,
     };
     if (transcript.dimensions.some((entry) => entry.count !== expectedCounts[entry.dimension])) finding(findings, "dimension-count", "aggregate dimension counts must exactly project all child and immutable optional-peer execution evidence");
@@ -471,7 +553,7 @@ function installedControllerIdentities(tree, found = []) {
   return found;
 }
 
-function controllerPhysicalIdentities(tree, seen = new Set(), found = []) {
+export function controllerPhysicalIdentities(tree, seen = new Set(), found = []) {
   if (!object(tree)) return found;
   for (const [name, dependency] of Object.entries(tree.dependencies ?? {})) {
     if (!object(dependency)) continue;
@@ -521,7 +603,7 @@ async function treeDigest(root) {
       else if (item.isSymbolicLink()) rows.push(["symlink", path.slice(root.length + 1), await readlink(path)]);
     }
   };
-  await walk(root); return hash(JSON.stringify(rows.sort(([a], [b]) => a.localeCompare(b))));
+  await walk(root); return hash(JSON.stringify(rows.sort((left, right) => `${left[1]}\0${left[0]}\0${left[2]}`.localeCompare(`${right[1]}\0${right[0]}\0${right[2]}`))));
 }
 
 /** Run one immutable optional-peer matrix serially against an already-installed consumer. */
@@ -651,15 +733,25 @@ export async function runAggregatePublicNpmCanary({ root, record, set = "oidc-su
     await writeFile(join(scratch, "package.json"), `${JSON.stringify({ name: "foundry-public-npm-aggregate-consumer", private: true, type: "module", dependencies: { ...Object.fromEntries(selected.packages.map((entry) => [entry.name, `file:./artifacts/${entry.packageKey}.tgz`])), ...Object.fromEntries(Object.entries(peerInstall).sort()) } }, null, 2)}\n`);
     // One exact all-package install creates and retains one lockfile. The
     // individual adapter runs below are deliberately not a replacement for it.
-    const install = execFileSync("npm", ["install", "--ignore-scripts", "--save-exact"], { cwd: scratch, env, encoding: "utf8" });
-    void install;
-    const before = { manifest: await readFile(join(scratch, "package.json"), "utf8"), lock: await readFile(join(scratch, "package-lock.json"), "utf8") };
+    const operations = [];
+    const install = await runProcess("npm", ["install", "--ignore-scripts", "--save-exact"], { cwd: scratch, env, timeout: 180_000 });
+    operations.push(aggregateNpmOperation("install", install));
+    if (install.exitCode !== 0 || install.signal || install.launchError) throw new Error("aggregate npm install execution failed");
+    const before = { manifest: await readFile(join(scratch, "package.json"), "utf8"), lock: await readFile(join(scratch, "package-lock.json"), "utf8"), tree: await treeDigest(join(scratch, "node_modules")) };
     const declaredConsumer = JSON.parse(before.manifest);
+    const installedForOptionalPolicy = [];
     for (const artifact of artifacts) {
       const entry = artifact.entry;
       const installedBytes = await readFile(join(scratch, "node_modules", ...entry.name.split("/"), "package.json"));
       const installed = JSON.parse(installedBytes);
       if (declaredConsumer.dependencies?.[entry.name] !== `file:./artifacts/${entry.packageKey}.tgz` || installed.name !== entry.name || installed.version !== entry.version || hash(installedBytes) !== artifact.evidence.packedManifestSha256) throw new Error(`${entry.name} is not one exact direct aggregate identity joined to its served packed manifest`);
+      installedForOptionalPolicy.push({ manifest: installed });
+    }
+    if (!prepareCandidate) {
+      const matrixPolicy = {};
+      for (const row of record.optionalPeerMatrix.filter((row) => row.set === set)) matrixPolicy[row.name] = Object.fromEntries(row.peers.map((peer) => [peer.peer, peer.outcomes]));
+      const optionalPolicyFindings = validateOptionalPeerPolicy(installedForOptionalPolicy, matrixPolicy);
+      if (optionalPolicyFindings.length) throw new Error(`aggregate optional-peer matrix does not exactly join served manifests: ${optionalPolicyFindings.join("; ")}`);
     }
     const actualPeerResolution = {};
     for (const [name, expectedVersion] of Object.entries(peerInstall)) {
@@ -687,7 +779,8 @@ export async function runAggregatePublicNpmCanary({ root, record, set = "oidc-su
       await writeFile(tarball, artifact.bytes);
       if (prepareCandidate) {
         const prepared = await prepareCandidate({ artifact, tarball, scratch, entry: artifact.entry });
-        runs.push(await executeCandidate(prepared));
+        runs.push(await executeCandidate({ ...prepared, aggregateConsumer: { manifestSha256: consumerDigest(scratch, before.manifest), lockfileSha256: consumerDigest(scratch, before.lock) } }));
+        if (consumerDigest(scratch, await readFile(join(scratch, "package.json"), "utf8")) !== consumerDigest(scratch, before.manifest) || consumerDigest(scratch, await readFile(join(scratch, "package-lock.json"), "utf8")) !== consumerDigest(scratch, before.lock) || await treeDigest(join(scratch, "node_modules")) !== before.tree) throw new Error(`${artifact.entry.name} child execution did not restore the shared aggregate consumer tree`);
         continue;
       }
       const qualification = JSON.parse(read(artifact.entry.qualification.path));
@@ -715,6 +808,7 @@ export async function runAggregatePublicNpmCanary({ root, record, set = "oidc-su
       if (hash(manifestBytes) !== qualification.candidate.packageManifestSha256) throw new Error(`${artifact.entry.name} reviewed manifest does not join its qualification`);
       const manifestBins = JSON.parse(manifestBytes).bin ?? {};
       runs.push(await executeCandidate({ tarball, policy, adapter, fixtures, manifestBins, registry: { scope: "@clossys", registry: PUBLIC_NPM_REGISTRY }, consumerRoot: scratch, skipRollback: true, restoreConsumerOverlay: true }));
+      if (consumerDigest(scratch, await readFile(join(scratch, "package.json"), "utf8")) !== consumerDigest(scratch, before.manifest) || consumerDigest(scratch, await readFile(join(scratch, "package-lock.json"), "utf8")) !== consumerDigest(scratch, before.lock) || await treeDigest(join(scratch, "node_modules")) !== before.tree) throw new Error(`${artifact.entry.name} child execution did not restore the shared aggregate consumer tree`);
     }
     const frameworkByPackage = new Map(runs.map((run) => {
       const contexts = { client: [], server: [], proxy: [], all: [] };
@@ -727,16 +821,20 @@ export async function runAggregatePublicNpmCanary({ root, record, set = "oidc-su
       return [`${run.candidate.name}@${run.candidate.version}`, contexts];
     }));
     const optionalPeerObservations = await executeOptionalPeers({ consumer: scratch, matrix: record.optionalPeerMatrix.filter((row) => row.set === set), env, frameworkByPackage });
-    execFileSync("npm", ["uninstall", "--ignore-scripts", ...selected.packages.map((entry) => entry.name)], { cwd: scratch, env, encoding: "utf8" });
+    const uninstall = await runProcess("npm", ["uninstall", "--ignore-scripts", ...selected.packages.map((entry) => entry.name)], { cwd: scratch, env, timeout: 180_000 });
+    operations.push(aggregateNpmOperation("uninstall", uninstall));
+    if (uninstall.exitCode !== 0 || uninstall.signal || uninstall.launchError) throw new Error("aggregate npm uninstall execution failed");
     for (const entry of selected.packages) {
       try { await lstat(join(scratch, "node_modules", ...entry.name.split("/"))); throw new Error(`${entry.name} remained installed after aggregate uninstall`); }
       catch (error) { if (error?.code !== "ENOENT") throw error; }
     }
     await writeFile(join(scratch, "package.json"), before.manifest);
     await writeFile(join(scratch, "package-lock.json"), before.lock);
-    execFileSync("npm", ["install", "--ignore-scripts", "--save-exact"], { cwd: scratch, env, encoding: "utf8" });
-    const after = { manifest: await readFile(join(scratch, "package.json"), "utf8"), lock: await readFile(join(scratch, "package-lock.json"), "utf8") };
-    if (before.manifest !== after.manifest || before.lock !== after.lock) throw new Error("aggregate uninstall/reinstall did not restore byte-identical manifest and lockfile");
+    const reinstall = await runProcess("npm", ["install", "--ignore-scripts", "--save-exact"], { cwd: scratch, env, timeout: 180_000 });
+    operations.push(aggregateNpmOperation("reinstall", reinstall));
+    if (reinstall.exitCode !== 0 || reinstall.signal || reinstall.launchError) throw new Error("aggregate npm reinstall execution failed");
+    const after = { manifest: await readFile(join(scratch, "package.json"), "utf8"), lock: await readFile(join(scratch, "package-lock.json"), "utf8"), tree: await treeDigest(join(scratch, "node_modules")) };
+    if (before.manifest !== after.manifest || before.lock !== after.lock || before.tree !== after.tree) throw new Error("aggregate uninstall/reinstall did not restore byte-identical manifest, lockfile, and dependency tree");
     for (const entry of selected.packages) {
       const installed = JSON.parse(await readFile(join(scratch, "node_modules", ...entry.name.split("/"), "package.json"), "utf8"));
       if (installed.name !== entry.name || installed.version !== entry.version) throw new Error(`${entry.name} identity was not restored after aggregate reinstall`);
@@ -748,10 +846,12 @@ export async function runAggregatePublicNpmCanary({ root, record, set = "oidc-su
       set,
       repositoryRedirects,
       peerResolution: { requested: record.peerResolution.requested, actual: Object.fromEntries(Object.entries(actualPeerResolution).sort()), disposition: record.peerResolution.disposition },
-      consumer: { manifestSha256: hash(before.manifest), lockfileSha256: hash(before.lock), controller: `${controller.name}@${controller.version}`, singularController: true, identities: selected.packages.map((entry) => `${entry.name}@${entry.version}`), rollback: { packageAbsenceProven: true, manifestRestored: true, lockfileRestored: true, identitiesRestored: true } },
+      operations,
+      consumer: { manifestSha256: consumerDigest(scratch, before.manifest), lockfileSha256: consumerDigest(scratch, before.lock), controller: `${controller.name}@${controller.version}`, singularController: true, identities: selected.packages.map((entry) => `${entry.name}@${entry.version}`), rollback: { packageAbsenceProven: true, manifestRestored: true, lockfileRestored: true, identitiesRestored: true } },
       packages: runs.map((run, index) => ({ name: artifacts[index].entry.name, version: artifacts[index].entry.version, qualification: artifacts[index].entry.qualification, publication: artifacts[index].entry.publication, served: { name: artifacts[index].entry.name, version: artifacts[index].entry.version, packageManifestSha256: artifacts[index].evidence.packedManifestSha256, tarball: { sha1: artifacts[index].evidence.shasum, sha256: artifacts[index].evidence.sha256, sha512: artifacts[index].evidence.sha512 } }, installedManifestSha256: run.coverage.installedManifestSha256, run })),
       optionalPeerObservations,
       dimensions: [
+        ["install", 1],
         ["exports", runs.reduce((sum, run) => sum + run.coverage.declaredExportKeys, 0)],
         ["framework", runs.reduce((sum, run) => sum + run.coverage.frameworkExports, 0)],
         ["bins", runs.reduce((sum, run) => sum + run.coverage.bins, 0)],
@@ -762,7 +862,8 @@ export async function runAggregatePublicNpmCanary({ root, record, set = "oidc-su
     };
     transcript.canonicalSha256 = hash(JSON.stringify(stable(transcript)));
     const qualificationContracts = prepareCandidate ? null : Object.fromEntries(artifacts.map((artifact) => [`${artifact.entry.name}@${artifact.entry.version}`, artifact.qualification.transcript]));
-    const transcriptFindings = validateSatisfiedAggregateTranscript(transcript, { plan: record, closure, expectedRepositoryRedirects: canonicalRedirectProjection(requiredRepositoryRedirects), qualificationContracts });
+    const candidateContracts = Object.fromEntries(artifacts.map((artifact) => [`${artifact.entry.name}@${artifact.entry.version}`, { qualification: artifact.qualification.candidate, publication: artifact.publicationCandidate }]));
+    const transcriptFindings = validateSatisfiedAggregateTranscript(transcript, { plan: record, closure, expectedRepositoryRedirects: canonicalRedirectProjection(requiredRepositoryRedirects), qualificationContracts, candidateContracts });
     if (transcriptFindings.length) throw new Error(`generated aggregate transcript invalid: ${transcriptFindings.map((item) => item.rule).join(",")}`);
     return { verdict: runs.every((run) => run.ok) ? "satisfied" : "violated", transcript };
   } finally { await rm(scratch, { recursive: true, force: true }); }
