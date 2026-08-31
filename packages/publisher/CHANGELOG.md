@@ -3,6 +3,17 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.1.10] - 2026-08-31
+
+### Changed
+
+- Advanced the first-publication source candidate after the immutable 0.1.9
+  qualification was quarantined as unpublished: its retained tarball was
+  produced outside the required release runtime and cannot be rewritten under
+  the append-only qualification contract. This 0.1.10 source is not yet
+  qualified or published; its future candidate must be packed and replayed
+  with the pinned release runtime.
+
 ## [0.1.9] - 2026-08-31
 
 ### Fixed
@@ -12,8 +23,9 @@ All notable changes to this package are documented here. Format follows
   and installed their exact qualification versions. A clean public-registry
   consumer can now import both ordinary and `react-server`
   `@clossys/publisher/web` instead of failing on Designer's absent transitive
-  optional peers. The rejected 0.1.8 candidate was never published; this
-  forward version is the next eligible first-publication identity.
+  optional peers. The rejected 0.1.8 candidate was never published. The
+  immutable 0.1.9 qualification is retained as quarantined evidence only;
+  the source's next first-publication candidate is 0.1.10.
 
 ## [0.1.8] - 2026-08-31
 
