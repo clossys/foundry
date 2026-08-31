@@ -26,6 +26,10 @@ const exactKeys = (value, keys) => object(value) && Object.keys(value).length ==
 const onlyKeys = (value, keys) => object(value) && Object.keys(value).every((key) => keys.includes(key) || keys.includes(`${key}?`)) && keys.filter((key) => !key.endsWith("?")).every((key) => own(value, key));
 
 function finding(findings, rule, message) { findings.push({ rule, message }); }
+export function canonicalRedirectProjection(rows) {
+  if (!Array.isArray(rows)) return [];
+  return [...new Map(rows.filter(object).map((item) => [JSON.stringify(stable(item)), item])).values()].sort((left, right) => JSON.stringify(stable(left)).localeCompare(JSON.stringify(stable(right))));
+}
 export function aggregateClosurePath(set, canonicalSha256) { return `${AGGREGATE_CLOSURE_DIRECTORY}/${set}-${canonicalSha256}.json`; }
 export function aggregateTranscriptPath(set, canonicalSha256) { return `${AGGREGATE_TRANSCRIPT_DIRECTORY}/${set}-${canonicalSha256}.json`; }
 export function isAggregateClosurePath(path) { return new RegExp(`^${AGGREGATE_CLOSURE_DIRECTORY}/(?:baseline|oidc-successor)-[a-f0-9]{64}\\.json$`).test(path ?? ""); }
@@ -162,11 +166,12 @@ export function validateAggregateCanary(record, { read = () => { throw new Error
     finding(findings, "identity", "aggregate record must bind schema v1 and the one public npm registry");
   }
   if (!exactKeys(record.peerResolution, ["requested", "disposition"]) || !object(record.peerResolution.requested) || !Array.isArray(record.peerResolution.disposition) || record.peerResolution.disposition.some((item) => !exactKeys(item, ["name", "requested", "resolved", "reason"]) || !Array.isArray(item.requested) || !VERSION.test(item.resolved ?? "") || typeof item.reason !== "string")) finding(findings, "peer-resolution", "plan must retain its closed aggregate peer resolution and conflict disposition");
-  if (!Array.isArray(record.sets) || record.sets.length !== 2 || record.sets.map((set) => set?.id).join("\0") !== "baseline\0oidc-successor") {
+  const sets = Array.isArray(record.sets) ? record.sets : [];
+  if (sets.length !== 2 || sets.map((set) => set?.id).join("\0") !== "baseline\0oidc-successor") {
     finding(findings, "sets", "aggregate record must retain the exact baseline and oidc-successor sets");
   }
   const identities = new Set();
-  for (const set of record.sets ?? []) {
+  for (const set of sets) {
     if (!exactKeys(set, ["id", "packages"]) || !Array.isArray(set.packages) || set.packages.length !== ALL_PACKAGE_RELEASE_ORDER.length) {
       finding(findings, "set-shape", `${set?.id ?? "unknown"} must contain exactly 19 package rows`);
       continue;
@@ -188,10 +193,10 @@ export function validateAggregateCanary(record, { read = () => { throw new Error
   }
   if (!Array.isArray(record.optionalPeerMatrix) || record.optionalPeerMatrix.length !== 38) finding(findings, "optional-peer-matrix", "plan must retain one exact optional-peer row for every package in both frozen sets");
   else for (const row of record.optionalPeerMatrix) {
-    const selected = record.sets.find((set) => set.id === row?.set)?.packages.find((entry) => entry.packageKey === row?.packageKey);
+    const selected = sets.find((set) => set?.id === row?.set)?.packages?.find((entry) => entry?.packageKey === row?.packageKey);
     if (!selected || !exactKeys(row, ["set", "packageKey", "name", "version", "peers"]) || row.name !== selected.name || row.version !== selected.version || !Array.isArray(row.peers) || row.peers.some((peer) => !exactKeys(peer, ["peer", "outcomes"]) || typeof peer.peer !== "string" || !object(peer.outcomes) || Object.values(peer.outcomes).some((outcome) => outcome !== "imports" && outcome !== "rejects"))) finding(findings, "optional-peer-row", "optional-peer rows must be closed and exactly join one frozen package identity");
   }
-  const matrixIdentities = (record.optionalPeerMatrix ?? []).map((row) => `${row?.set}:${row?.name}@${row?.version}`);
+  const matrixIdentities = (Array.isArray(record.optionalPeerMatrix) ? record.optionalPeerMatrix : []).map((row) => `${row?.set}:${row?.name}@${row?.version}`);
   if (new Set(matrixIdentities).size !== matrixIdentities.length) finding(findings, "optional-peer-duplicate", "optional-peer matrix must not duplicate a frozen package identity");
   return findings;
 }
@@ -347,7 +352,7 @@ export function validateSatisfiedAggregateTranscript(transcript, { plan, closure
     if (!candidateBytesJoin({ name: actual?.name, version: actual?.version, packageManifestSha256: actual?.served?.packageManifestSha256, tarball: actual?.run?.tarball }, actual?.served)) finding(findings, "child-served-join", `${actual?.name ?? index} child tarball must bind the aggregate served byte evidence`);
     if (actual?.installedManifestSha256 !== actual?.served?.packageManifestSha256) finding(findings, "installed-served-join", `${actual?.name ?? index} installed packed manifest must equal the served packed manifest`);
   }
-  if (!Array.isArray(transcript.repositoryRedirects) || transcript.repositoryRedirects.some((item) => !exactKeys(item, ["historicalRepository", "repository", "repositoryId", "kind"]) || item.repository !== "clossys/foundry" || item.historicalRepository !== "clossys/platform" || item.repositoryId !== 1325931929 || item.kind !== "verified") || (expectedRepositoryRedirects !== null && JSON.stringify(stable(transcript.repositoryRedirects)) !== JSON.stringify(stable(expectedRepositoryRedirects)))) finding(findings, "repository-redirect", "transcript must retain the exact verified sealed historical repository redirect projection");
+  if (!Array.isArray(transcript.repositoryRedirects) || transcript.repositoryRedirects.some((item) => !exactKeys(item, ["historicalRepository", "repository", "repositoryId", "kind"]) || item.repository !== "clossys/foundry" || item.historicalRepository !== "clossys/platform" || item.repositoryId !== 1325931929 || item.kind !== "verified") || JSON.stringify(stable(transcript.repositoryRedirects)) !== JSON.stringify(stable(canonicalRedirectProjection(transcript.repositoryRedirects))) || (expectedRepositoryRedirects !== null && JSON.stringify(stable(transcript.repositoryRedirects)) !== JSON.stringify(stable(canonicalRedirectProjection(expectedRepositoryRedirects))))) finding(findings, "repository-redirect", "transcript must retain the exact verified sealed historical repository redirect projection");
   if (!exactKeys(transcript.peerResolution, ["requested", "actual", "disposition"]) || JSON.stringify(stable(transcript.peerResolution.requested)) !== JSON.stringify(stable(plan?.peerResolution?.requested)) || JSON.stringify(stable(transcript.peerResolution.actual)) !== JSON.stringify(stable(plan?.peerResolution?.requested)) || JSON.stringify(stable(transcript.peerResolution.disposition)) !== JSON.stringify(stable(plan?.peerResolution?.disposition))) finding(findings, "peer-resolution", "transcript must retain the exact reviewed peer request, actual resolution, and conflict disposition");
   const expectedIdentities = selected?.packages?.map((entry) => `${entry.name}@${entry.version}`) ?? [];
   if (!exactKeys(transcript.consumer, ["manifestSha256", "lockfileSha256", "controller", "singularController", "identities", "rollback"]) || !SHA256.test(transcript.consumer.manifestSha256 ?? "") || !SHA256.test(transcript.consumer.lockfileSha256 ?? "") || transcript.consumer.singularController !== true || JSON.stringify(transcript.consumer.identities) !== JSON.stringify(expectedIdentities) || transcript.consumer.controller !== expectedIdentities.find((identity) => identity.startsWith("@clossys/controller@")) || !exactKeys(transcript.consumer.rollback, ["packageAbsenceProven", "manifestRestored", "lockfileRestored", "identitiesRestored"]) || Object.values(transcript.consumer.rollback).some((value) => value !== true)) finding(findings, "rollback", "transcript must retain exact aggregate identity and complete real rollback evidence");
@@ -699,7 +704,7 @@ export async function runAggregatePublicNpmCanary({ root, record, set = "oidc-su
     };
     transcript.canonicalSha256 = hash(JSON.stringify(stable(transcript)));
     const qualificationContracts = prepareCandidate ? null : Object.fromEntries(artifacts.map((artifact) => [`${artifact.entry.name}@${artifact.entry.version}`, artifact.qualification.transcript]));
-    const transcriptFindings = validateSatisfiedAggregateTranscript(transcript, { plan: record, closure, expectedRepositoryRedirects: requiredRepositoryRedirects, qualificationContracts });
+    const transcriptFindings = validateSatisfiedAggregateTranscript(transcript, { plan: record, closure, expectedRepositoryRedirects: canonicalRedirectProjection(requiredRepositoryRedirects), qualificationContracts });
     if (transcriptFindings.length) throw new Error(`generated aggregate transcript invalid: ${transcriptFindings.map((item) => item.rule).join(",")}`);
     return { verdict: runs.every((run) => run.ok) ? "satisfied" : "violated", transcript };
   } finally { await rm(scratch, { recursive: true, force: true }); }

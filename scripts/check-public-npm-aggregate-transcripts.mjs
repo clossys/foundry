@@ -3,7 +3,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { AGGREGATE_CANARY_PATH, AGGREGATE_TRANSCRIPT_DIRECTORY, aggregateTranscriptPath, immutableRecordHistory, immutableRecordPaths, isAggregateClosurePath, sealedHistoricalRepository, validateSatisfiedAggregateTranscript, validateSatisfiedTranscriptHistory } from "./lib/public-npm-aggregate-canary.mjs";
+import { AGGREGATE_CANARY_PATH, AGGREGATE_TRANSCRIPT_DIRECTORY, aggregateTranscriptPath, canonicalRedirectProjection, immutableRecordHistory, immutableRecordPaths, isAggregateClosurePath, sealedHistoricalRepository, validateSatisfiedAggregateTranscript, validateSatisfiedTranscriptHistory } from "./lib/public-npm-aggregate-canary.mjs";
 
 const root = process.cwd();
 const plan = JSON.parse(readFileSync(join(root, AGGREGATE_CANARY_PATH), "utf8"));
@@ -34,7 +34,7 @@ for (const path of files) {
       if (historical) expectedRepositoryRedirects.push({ ...historical, kind: "verified" });
     }
   } catch { findings.push({ rule: "evidence", message: `${path} cannot derive immutable qualification and repository redirect contracts` }); }
-  findings.push(...validateSatisfiedAggregateTranscript(transcript, { plan, closure, qualificationContracts, expectedRepositoryRedirects }), ...validateSatisfiedTranscriptHistory({ path, history }));
+  findings.push(...validateSatisfiedAggregateTranscript(transcript, { plan, closure, qualificationContracts, expectedRepositoryRedirects: canonicalRedirectProjection(expectedRepositoryRedirects) }), ...validateSatisfiedTranscriptHistory({ path, history }));
 }
 if (findings.length) {
   console.error("PUBLIC NPM AGGREGATE TRANSCRIPT INVALID");
