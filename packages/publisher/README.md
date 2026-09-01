@@ -209,6 +209,33 @@ version remains `0.1.11` until the separate #663 Designer-block integration
 joins this final site-readiness unit and one exact-head `0.2.0` candidate is
 qualified. This statement plans neither a version bump nor publication.
 
+### `SectionedViewDocument` — Designer-independent long-page core
+
+`@clossys/publisher/core` now owns the closed, data-only source model for a
+long public site page: `SectionedViewDocument`. It requires one or more
+ordered sections with unique lowercase fragment-safe ids and one of five
+named kinds: `hero`, `feature-grid`, `faq`, `ordered-step-sequence`, or
+`status-list`. Grounds are the closed `base`/`sunken`/`inverse` vocabulary;
+status values are the closed `available`/`partial`/`planned` vocabulary.
+Every audience-facing label, heading, description, question, answer, ordinal,
+and status label is a `CopyRef`. There are no React nodes, render callbacks,
+router fields, locale overrides, classes, styles, arbitrary colours, or
+composition escape hatches.
+
+`validateSectionedViewDocument` reports malformed or unknown structure;
+`resolveSectionedViewDocument` resolves every CopyRef depth-first in authored
+order and returns its ordinary `CopyResolution[]`. Pass that list directly to
+`collectCopyProvenance` or existing output-manifest helpers—there is no second
+provenance format. A missing or empty resolution fails the entire document and
+names the exact authored path. This core stage intentionally imports neither
+React nor Designer and does not render a web view. The grounded web renderer
+waits for Designer `0.2.6` to land normally.
+
+`section-header` and `article-body` are intentionally not section kinds in
+this core stage: the former's action region and the latter's full structured
+document rendering need a grounded view integration to remain fully
+data-shaped and provenance-complete. They are not represented as node slots.
+
 On its own, this is a repeating-group *binding* primitive only — it says
 nothing about which template actually consumes it. `web`'s `MarketingView`
 template (below) is that consumer, closing the second and final half of
@@ -1166,7 +1193,8 @@ choice `checkLedgerDrift` makes for a citation it could not check.
   `validateSurfaceDocument`, `isSurfaceRepeatingSlotBinding`,
   `createOutputManifest`,
   `collectCopyProvenance`, `createResolvedOutputManifest`,
-  `resolveSurfaceDocument`,
+  `resolveSurfaceDocument`, `validateSectionedViewDocument`,
+  `resolveSectionedViewDocument`,
   `resolveDocument`, `resolveCopy`, `resolveAssets`, `frameToInches`,
   `frameToPercent`, `getSlotSpec`, `listSlotKeys`, `requiredSlotKeys`, and
   the `Channel`, `ChannelMeta`, `ComposeDocument`, `ComposeFinding`,
@@ -1180,8 +1208,16 @@ choice `checkLedgerDrift` makes for a citation it could not check.
   `ResolvedAsset`, `ResolvedSurfaceDocument`, `ResolvedSurfaceGroup`,
   `ResolvedSurfaceGroupField`, `ResolvedSurfaceGroupItem`, `ResolvedSurfaceNode`,
   `ResolveSurfaceDocumentOptions`, `SurfaceResolutionReason`, and
-  `CanvasInches` types. `SurfaceResolutionError` is thrown when canonical
-  resolution fails closed.
+  `CanvasInches`, `SectionedViewDocument`, `SectionedViewSection`,
+  `SectionedViewSectionKind`, `SectionedViewGround`, `SectionedViewHeroSection`,
+  `SectionedViewFeatureGridSection`, `SectionedViewFeatureItem`, `SectionedViewFaqSection`,
+  `SectionedViewFaqItem`, `SectionedViewOrderedStepSequenceSection`,
+  `SectionedViewOrderedStep`, `SectionedViewStatusListSection`,
+  `SectionedViewStatusGroup`, `SectionedViewStatusItem`, `SectionedViewStatus`,
+  `ResolvedSectionedViewDocument`, `ResolvedSectionedViewSection`, and
+  `SectionedViewResolutionReason` types. `SurfaceResolutionError` and
+  `SectionedViewResolutionError` are thrown when their canonical resolution
+  paths fail closed.
 - `media`: `parseAssetRecord`, `validateAssetRecordShape`,
   `readAssetRecord`, `checkAssetCoverage`, and the `AssetEntry`,
   `AssetEntryId`, `AssetFinding`, `AssetRecord`, `AssetRegistryReadIssue`,
