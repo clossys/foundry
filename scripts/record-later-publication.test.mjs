@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 
-import { argsFrom, buildLaterPublicationRecord, createLaterPublicationRecord, writeNoOverwrite } from "./record-later-publication.mjs";
+import { argsFrom, buildLaterPublicationRecord, createLaterPublicationRecord, credentiallessAuditEnv, verifiedAnonymousAudit, writeNoOverwrite } from "./record-later-publication.mjs";
 import { publicNpmVersionUrl, PUBLIC_NPM_REGISTRY } from "./lib/public-npm-registry.mjs";
 import { RELEASE_RUNTIME } from "./lib/release-runtime.mjs";
 
@@ -27,6 +27,7 @@ const qualification = {
   schemaVersion: 2, timing: "pre-publication", candidate,
   archetypes: ["current-direct", "prior-minor", "oldest-supported", "control-plane"].map((kind) => ({ kind, status: "unsupported" })),
   reviewedCommit: hex("3", 40), rootPackageJsonSha256: hex("4", 64), rootPackageLockSha256: hex("5", 64),
+  transcript: { canonicalSha256: hex("b", 64) },
 };
 const qualificationBytes = Buffer.from("qualification bytes\n");
 const catalogBytes = Buffer.from("catalog bytes\n");
@@ -72,6 +73,29 @@ test("creator rejects proof, publication, and path substitutions", () => {
     (value) => { value.qualificationPath = "governance/release-qualifications/../../outside.json"; return value; },
     (value) => { value.proof = { ...proof, schemaVersion: 1 }; return value; },
   ]) assert.throws(() => build(mutation({})), /invalid|unknown|canonical|proof|path/);
+});
+
+test("creator emits a v3 record only for closed replay evidence and never changes v2", () => {
+  const replay = {
+    source: {
+      reviewedCommit: qualification.reviewedCommit,
+      qualificationRoots: { packageJsonSha256: qualification.rootPackageJsonSha256, packageLockSha256: qualification.rootPackageLockSha256 },
+      publicationSource: { sha: publication.provenance.sourceSha, rootPackageJsonSha256: hex("7", 64), rootPackageLockSha256: hex("8", 64) },
+    },
+    runQualification: {
+      run: { id: 123, url: "https://github.com/clossys/foundry/actions/runs/123", headSha: publication.provenance.sourceSha, conclusion: "failure", qualificationJob: { id: 124, name: "qualify (strategist)", conclusion: "success", url: "https://github.com/clossys/foundry/actions/runs/123/job/124" } },
+      artifact: { id: 125, name: "qualified-candidate-strategist", archiveSha256: `sha256:${hex("9", 64)}`, size: 42, url: "https://api.github.com/repos/clossys/foundry/actions/artifacts/125/zip" },
+      transcript: { rawSha256: hex("a", 64), canonicalSha256: hex("b", 64), candidateTarball: structuredClone(candidate.tarball) },
+      publicationJob: { id: 126, name: "publish (strategist)", conclusion: "success", url: "https://github.com/clossys/foundry/actions/runs/123/job/126" },
+      anonymousRegistry: { packumentSha256: hex("c", 64), auditSha256: hex("d", 64), provenanceBundleSha256: hex("e", 64), signatureSha256: hex("f", 64), signatureKeyids: ["SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"], attestationUrl: publication.provenance.attestationUrl },
+    },
+    sourceEvidence: { valid: true },
+  };
+  const result = build({ replay });
+  assert.equal(result.record.schemaVersion, 3);
+  assert.equal(result.record.kind, "foundry-trusted-publication-replay-v3");
+  assert.deepEqual(Object.keys(result.record), ["schemaVersion", "kind", "qualification", "candidate", "source", "catalog", "publication", "registryProof", "runQualification"]);
+  assert.throws(() => build({ replay: { ...replay, runQualification: { ...replay.runQualification, publicationJob: { ...replay.runQualification.publicationJob, conclusion: "failure" } } } }), /invalid/);
 });
 
 test("output is atomic and never overwrites an existing record", () => {
@@ -175,6 +199,23 @@ test("creator refuses a mismatched release runtime before reading or retaining a
   );
 });
 
+test("replay signature audit never inherits a token, private registry, or npm configuration", () => {
+  const parent = { PATH: "/safe/bin", NODE_AUTH_TOKEN: "secret", NPM_CONFIG_USERCONFIG: "/private/npmrc", npm_config_registry: "https://private.example.invalid" };
+  const calls = [];
+  const run = (_file, args, options) => { calls.push({ args, env: options.env }); return args[0] === "audit" ? "{}" : ""; };
+  assert.deepEqual(verifiedAnonymousAudit("@clossys/strategist", "0.1.1", run, parent), {});
+  assert.equal(calls.length, 3);
+  for (const call of calls) {
+    assert.equal(call.env.npm_config_registry, "https://registry.npmjs.org/");
+    assert.equal(call.env.npm_config_always_auth, "false");
+    assert.equal(call.env.npm_config_ignore_scripts, "true");
+    assert.equal(call.env.NODE_AUTH_TOKEN, undefined);
+    assert.equal(call.env.NPM_CONFIG_USERCONFIG, undefined);
+    assert.equal(call.env.npm_config_userconfig.startsWith(call.env.HOME), true);
+  }
+  assert.equal(credentiallessAuditEnv("/tmp/replay", parent).PATH, "/safe/bin");
+});
+
 test("CLI rejects traversal, duplicate, credential, and mixed-fetch inputs", () => {
   const base = ["node", "script", "--package", "strategist", "--qualification", "q.json", "--publication", "p.json", "--candidate", "candidate.tgz", "--proof", "proof.json"];
   assert.deepEqual(argsFrom(base), { fetch: false, package: "strategist", qualification: "q.json", publication: "p.json", candidate: "candidate.tgz", proof: "proof.json" });
@@ -182,4 +223,6 @@ test("CLI rejects traversal, duplicate, credential, and mixed-fetch inputs", () 
     ["--package", "../strategist"], ["--otp", "123456"], ["--fetch"], ["--candidate", "https://example.invalid/candidate.tgz"],
   ]) assert.throws(() => argsFrom([...base, ...mutation]), /Usage/);
   assert.deepEqual(argsFrom(["node", "script", "--package", "strategist", "--qualification", "q.json", "--publication", "p.json", "--fetch"]), { fetch: true, package: "strategist", qualification: "q.json", publication: "p.json" });
+  assert.throws(() => argsFrom(["node", "script", "--package", "strategist", "--qualification", "q.json", "--publication", "p.json", "--fetch", "--artifact-archive", "qualified.zip"]), /Usage/);
+  assert.deepEqual(argsFrom(["node", "script", "--package", "strategist", "--qualification", "q.json", "--publication", "p.json", "--fetch", "--artifact-archive", "qualified.zip", "--replay-evidence", "provider.json"]), { fetch: true, package: "strategist", qualification: "q.json", publication: "p.json", "artifact-archive": "qualified.zip", "replay-evidence": "provider.json" });
 });
