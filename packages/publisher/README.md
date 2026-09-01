@@ -237,7 +237,38 @@ order and returns its ordinary `CopyResolution[]`. Pass that list directly to
 provenance format. A missing or empty resolution fails the entire document and
 names the exact authored path. This core stage intentionally imports neither
 React nor Designer and does not render a web view. The grounded web renderer
-waits for Designer `0.2.6` to land normally.
+uses Designer `0.2.6`'s server-safe site-block API.
+
+`SectionedView` is now the dedicated web renderer after that Designer floor is
+available. Resolve the CopyRef document first, retain its `resolutions` as the
+only publication provenance, and pass the resolved model directly:
+Here `resolveCopy` is the consumer's approved `CopyResolver`.
+
+```tsx
+import { resolveSectionedViewDocument } from "@clossys/publisher/core";
+import { SectionedView } from "@clossys/publisher/web";
+
+const resolved = resolveSectionedViewDocument({
+  id: "acme-home",
+  sections: [{
+    id: "welcome",
+    kind: "hero",
+    ground: "base",
+    heading: { id: "acme.home.heading" },
+    description: { id: "acme.home.description" },
+  }],
+}, resolveCopy);
+
+const page = <SectionedView document={resolved} />;
+// resolved.resolutions feeds collectCopyProvenance/output-manifest helpers.
+```
+
+The ordinary and `react-server` `@clossys/publisher/web` exports are aligned.
+The view owns section markup, source order, unique section ids, grounds, and
+the h1/h2/h3 outline; Designer owns visual tokens and block internals. Per
+#708, Publisher does not own locale selection, routing, or document-level
+`html`, `lang`, or `dir` attributes: the host application supplies those
+boundaries around this renderer.
 
 `section-header` and `article-body` are intentionally not section kinds in
 this core stage: the former's action region and the latter's full structured
@@ -1287,7 +1318,7 @@ import-free of each other under one version.
 
 Node 20+. This package's own `package.json` declares runtime dependencies on
 `@clossys/writer` (`^0.3.0`), `@clossys/designer`
-(`^0.2.4`), and `@clossys/controller` (`~0.8.0`) — of which this
+(`^0.2.6`), and `@clossys/controller` (`~0.8.0`) — of which this
 package only imports the `./policy` subpath, `@clossys/controller/policy`,
 never `controller`'s other exports. `writer` and `designer` are caret
 ranges (both fresh `0.x` role packages); `controller` stays a tilde range,
@@ -1304,13 +1335,14 @@ additive or behavioural minor releases rather than patches, so the older
 ranges do not resolve them (0.x ranges are minor-locked). `designer`'s range
 first moved from `^0.1.0` to `^0.2.0` when Designer added the
 `designer-environment-check` gate (issue #405), then tightened to the current
-`^0.2.4` because Publisher's React-server target imports the server-safe `Faq`
-export introduced in Designer 0.2.4. These ranges are independent; leaving
+`^0.2.6` because Publisher's React-server target imports the server-safe
+section-ground, `Faq`, ordered-step, and status-list exports introduced in
+Designer 0.2.6. These ranges are independent; leaving
 either one behind would still resolve an older package without any install
 failure, silently withholding a required contract.
 
 A consumer whose own policy is to pin exact versions must pin `writer` to a
-matching `0.3.x` release, `designer` to `0.2.4` or a later compatible `0.2.x`
+matching `0.3.x` release, `designer` to `0.2.6` or a later compatible `0.2.x`
 release, and
 `controller` to a matching `0.8.x` patch release — otherwise
 `publisher`'s declared ranges and the consumer's exact pin cannot both be

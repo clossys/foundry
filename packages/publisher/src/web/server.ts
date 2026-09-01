@@ -8,7 +8,7 @@ export { buildWebHeadMetadata } from "./headMetadata.js";
 export { listWebTemplateNames } from "./internal/webTemplates.js";
 export { defineWebTemplate } from "./internal/defineWebTemplate.js";
 export { createWebRenderer } from "./internal/createWebRenderer.js";
-export { AuthView, CaptureView, CollectionView, DocumentView, ErrorView, MarketingView } from "#publisher-web-views";
+export { AuthView, CaptureView, CollectionView, DocumentView, ErrorView, MarketingView, SectionedView } from "#publisher-web-views";
 export type {
   AuthViewProps,
   CaptureViewProps,
@@ -23,6 +23,7 @@ export type {
   MarketingFaqItem,
   MarketingFeatureItem,
   MarketingViewProps,
+  SectionedViewProps,
 } from "#publisher-web-views";
 
 export { RenderError } from "../internal/errors.js";

@@ -19,3 +19,6 @@ export type { DocumentViewEffectiveDate, DocumentViewProps } from "./DocumentVie
 
 export { CollectionView } from "./CollectionView.js";
 export type { CollectionViewEmptyState, CollectionViewEntry, CollectionViewLink, CollectionViewPagination, CollectionViewProps } from "./CollectionView.js";
+
+export { SectionedView } from "./SectionedView.server.js";
+export type { SectionedViewProps } from "./SectionedView.js";
