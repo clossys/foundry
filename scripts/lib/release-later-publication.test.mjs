@@ -401,6 +401,9 @@ test("v3 replay evidence is closed around root-only drift, exact jobs, artifact,
 test("v3 replay admits consumer-only canonical drift only with the retained comparable digest", () => {
   const exactLegacy = replayRecord();
   assert.deepEqual(rules(exactLegacy, { replaySourceEvidence: { valid: true } }), [], "old exact v3 evidence remains valid without a comparable digest");
+  const malformedExact = replayRecord();
+  malformedExact.runQualification.transcript.comparableSha256 = "not-a-digest";
+  assert.ok(rules(malformedExact, { replaySourceEvidence: { valid: true } }).includes("replay-transcript"), "a present comparable digest must be valid even when canonical evidence is exact");
 
   const drifted = replayRecord();
   drifted.runQualification.transcript.canonicalSha256 = hex("0", 64);

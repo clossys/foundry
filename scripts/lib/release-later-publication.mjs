@@ -146,11 +146,13 @@ function replayRunQualification(findings, value, candidate, sourceSha, qualifica
   }
   const canonicalValid = SHA256.test(transcript?.canonicalSha256 ?? "");
   const canonicalExact = canonicalValid && transcript.canonicalSha256 === qualificationTranscript?.canonicalSha256;
+  const comparablePresent = Object.hasOwn(transcript ?? {}, "comparableSha256");
+  const comparableValid = !comparablePresent || SHA256.test(transcript?.comparableSha256 ?? "");
   const qualificationComparableSha256 = object(qualificationTranscript) ? comparableTranscriptSha256(qualificationTranscript) : null;
   // v3 records retained before the comparable digest existed remain valid only
   // when their fresh canonical transcript is exact. Any difference must carry
   // the new digest and prove the shared consumer-neutral projection unchanged.
-  if (!canonicalValid || (!canonicalExact && (!SHA256.test(transcript?.comparableSha256 ?? "") || transcript.comparableSha256 !== qualificationComparableSha256))) {
+  if (!canonicalValid || !comparableValid || (!canonicalExact && (!comparablePresent || transcript.comparableSha256 !== qualificationComparableSha256))) {
     finding(findings, "replay-transcript", "replay transcript must exactly join the retained canonical bytes or its consumer-neutral comparable digest.");
   }
   if (!exactJob(value?.publicationJob, run?.id, `publish (${key})`)) finding(findings, "publish-job", "replay evidence must bind the exact successful publish job in the qualification run.");
