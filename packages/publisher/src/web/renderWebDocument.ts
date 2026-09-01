@@ -469,10 +469,11 @@ function validatePublicGroups(groups: unknown): ResolvedSurfaceGroup[] {
     }
 
     const items = candidate.items.map((itemCandidate, itemIndex) => {
-      const resolvedIndex = isPlainClosedObject(itemCandidate) ? itemCandidate.index : undefined;
-      if (!isPlainClosedObject(itemCandidate) || !hasOnlyOwnKeys(itemCandidate, ["index", "value", "node", "assetId", "fields"]) || !hasOwn(itemCandidate, "index") || typeof resolvedIndex !== "number" || !Number.isInteger(resolvedIndex) || resolvedIndex !== itemIndex) {
+      if (!isPlainClosedObject(itemCandidate) || !hasOnlyOwnKeys(itemCandidate, ["index", "value", "node", "assetId", "fields"]) || !hasOwn(itemCandidate, "index")) {
         invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}] must be a plain item whose index is its sequential array position and has no unknown keys.`);
       }
+      const resolvedIndex = itemCandidate.index;
+      if (typeof resolvedIndex !== "number" || !Number.isInteger(resolvedIndex) || resolvedIndex !== itemIndex) invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}] must use its sequential array position as index.`);
       const sourceKeys = ["value", "node", "assetId", "fields"].filter((key) => itemCandidate[key] !== undefined);
       if (sourceKeys.length !== 1) {
         invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}] must set exactly one of value/node/assetId/fields.`);

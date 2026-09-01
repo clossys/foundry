@@ -155,6 +155,9 @@ describe("renderWebDocument — hostile public RenderWebOptions.groups input", (
     const accessor = { slot: "faq", items: [] as unknown[] };
     Object.defineProperty(accessor, "slot", { enumerable: true, get: () => { throw new Error("getter must not run"); } });
     expectPublicGroupRefusal([{ slot: "features", items: [] }, accessor]);
+    const itemAccessor = { fields: { question: { value: "Q" }, answer: { value: "A" } } };
+    Object.defineProperty(itemAccessor, "index", { enumerable: true, get: () => { throw new Error("getter must not run"); } });
+    expectPublicGroupRefusal(groupsWith(itemAccessor));
     const symbol = { slot: "faq", items: [] as unknown[] };
     Object.defineProperty(symbol, Symbol("hidden"), { value: true, enumerable: true });
     expectPublicGroupRefusal([{ slot: "features", items: [] }, symbol]);
