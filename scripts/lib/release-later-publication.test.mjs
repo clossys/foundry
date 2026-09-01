@@ -382,6 +382,10 @@ test("v3 replay evidence is closed around root-only drift, exact jobs, artifact,
     (record) => { record.runQualification.transcript.candidateTarball.sha256 = hex("0", 64); },
     (record) => { record.runQualification.transcript.canonicalSha256 = hex("0", 64); },
     (record) => { record.runQualification.publicationJob.name = "publish (other)"; },
+    (record) => {
+      record.publication.reference = "https://github.com/clossys/foundry/actions/runs/999";
+      record.publication.provenance.invocation = "https://github.com/clossys/foundry/actions/runs/999/attempts/1";
+    },
     (record) => { record.runQualification.anonymousRegistry.attestationUrl = "https://registry.npmjs.org/-/npm/v1/attestations/other"; },
     (record) => { record.runQualification.anonymousRegistry.signatureKeyids = []; },
   ];

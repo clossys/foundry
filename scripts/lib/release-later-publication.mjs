@@ -117,13 +117,16 @@ function exactJob(value, id, name) {
     && value.url === `https://github.com/clossys/foundry/actions/runs/${id}/job/${value.id}`;
 }
 
-function replayRunQualification(findings, value, candidate, sourceSha, qualificationCanonicalSha256) {
+function replayRunQualification(findings, value, candidate, sourceSha, qualificationCanonicalSha256, publication) {
   closed(findings, value, ["run", "artifact", "transcript", "publicationJob", "anonymousRegistry"], "publication.runQualification");
   const key = packageKey(candidate?.name);
   const run = value?.run;
   closed(findings, run, ["id", "url", "headSha", "conclusion", "qualificationJob"], "publication.runQualification.run");
   if (!Number.isSafeInteger(run?.id) || run.id <= 0 || !exactJobUrl(run?.url, run?.id) || run?.headSha !== sourceSha || !["success", "failure", "cancelled", "skipped"].includes(run?.conclusion) || !exactJob(run?.qualificationJob, run?.id, `qualify (${key})`)) {
     finding(findings, "replay-run", "replay evidence must bind the exact source run and its successful qualification job.");
+  }
+  if (publication?.reference !== run?.url || invocationRunRoot(publication?.provenance?.invocation) !== run?.url) {
+    finding(findings, "replay-publication-run", "replay evidence must bind both publication run references to the exact qualified source run.");
   }
   const artifact = value?.artifact;
   closed(findings, artifact, ["id", "name", "archiveSha256", "size", "url"], "publication.runQualification.artifact");
@@ -265,7 +268,7 @@ export function validateLaterPublication(record, { recordPath, recordBytes, qual
   if (trusted && !exactAttestedSubject(record?.publication?.provenance, proof, c)) finding(findings, "attestation-subject", "attestation subject must exactly project the candidate package/version and SHA-512.");
   if (replay && !v2) finding(findings, "registry-proof", "v3 replay requires the exact-version anonymous registry proof v2.");
   if (replay && !exactAttestedSubject(record?.publication?.provenance, proof, c)) finding(findings, "attestation-subject", "v3 attestation subject must exactly project the candidate package/version and SHA-512.");
-  if (replay) replayRunQualification(findings, record?.runQualification, c, record?.source?.publicationSource?.sha, qualification?.transcript?.canonicalSha256);
+  if (replay) replayRunQualification(findings, record?.runQualification, c, record?.source?.publicationSource?.sha, qualification?.transcript?.canonicalSha256, record?.publication);
   if (typeof recordPath === "string" && typeof recordBytes === "string" && (!key || !VERSION.test(c?.version ?? "") || recordPath !== `${LATER_PUBLICATION_DIRECTORY}/${key}-${c.version}.json`)) finding(findings, "record-path", "record path must be the unique package/version identity.");
   return findings;
 }

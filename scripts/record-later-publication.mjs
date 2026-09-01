@@ -161,7 +161,7 @@ async function publicPackument(fetchImpl, name) {
   return response.json();
 }
 
-async function buildReplay({ root, packageKey, qualification, qualificationIntroduction, archiveFile, replayEvidence, proof, provider, fetchImpl, auditRun, env }) {
+async function buildReplay({ root, packageKey, qualification, qualificationIntroduction, archiveFile, replayEvidence, proof, candidateBytes, provider, fetchImpl, auditRun, env }) {
   replayEvidenceRecord(replayEvidence);
   if (!provider || provider.run?.id !== replayEvidence.runId || provider.artifact?.id !== replayEvidence.artifactId || !Array.isArray(provider.jobs)) throw new Error("GitHub provider metadata does not bind the requested run and artifact");
   const archiveDigest = `sha256:${digest("sha256", archiveFile.bytes)}`;
@@ -170,7 +170,7 @@ async function buildReplay({ root, packageKey, qualification, qualificationIntro
   if (JSON.stringify(entries) !== JSON.stringify(["candidate.tgz", "transcript.json"])) throw new Error("qualified artifact archive must contain exactly the candidate and transcript");
   const archivedCandidate = archiveEntry(archiveFile.absolute, "candidate.tgz");
   const transcriptBytes = archiveEntry(archiveFile.absolute, "transcript.json");
-  if (!archivedCandidate.equals(proof.candidateBytes)) throw new Error("qualified artifact archive does not contain the exact candidate being retained");
+  if (!archivedCandidate.equals(candidateBytes)) throw new Error("qualified artifact archive does not contain the exact candidate being retained");
   const transcript = parseJson(transcriptBytes, "fresh qualification transcript");
   const joins = currentQualificationJoins(root, qualification.candidate, provider.run.head_sha);
   const transcriptFindings = validateCandidateQualification(qualification, {
@@ -304,7 +304,7 @@ async function validateCandidateAndProof({ root, packageKey, qualification, qual
 
   const recordPath = `${OUTPUT_DIRECTORY}/${packageKey}-${candidate.version}.json`;
   const replay = archiveFile && replayEvidence
-    ? await buildReplay({ root, packageKey, qualification, qualificationIntroduction: qualificationHistory.introductionCommit, archiveFile, replayEvidence, proof: { value: proof, candidateBytes }, provider: await fetchReplayProviderMetadata(replayEvidence, fetchImpl), fetchImpl, auditRun, env })
+    ? await buildReplay({ root, packageKey, qualification, qualificationIntroduction: qualificationHistory.introductionCommit, archiveFile, replayEvidence, proof, candidateBytes, provider: await fetchReplayProviderMetadata(replayEvidence, fetchImpl), fetchImpl, auditRun, env })
     : undefined;
   if ((archiveFile || replayEvidence) && !replay) throw new Error("qualified artifact archive and provider evidence must be supplied together");
   const built = buildLaterPublicationRecord({ packageKey, qualificationPath: qualificationRecordPath, qualification, qualificationBytes, candidateBytes, proof, catalog, catalogBytes, publication, recordPath, provenanceSourceValid: prePublicationSourceValid(root, qualification, qualificationHistory.introductionCommit, publication), replay });
