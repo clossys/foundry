@@ -3,6 +3,45 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.0] - 2026-09-01
+
+### Added
+
+- Added an optional `eyebrow` `CopyRef` to the `feature-grid`, `faq`,
+  `ordered-step-sequence`, and `status-list` sections of
+  `SectionedViewDocument`. Only `hero` carried one before, so authored eyebrow
+  copy for any other section had nowhere to go.
+- Added an optional `actions` list to the `SectionedViewDocument` hero
+  section: data-only `{ id, label, href }` entries whose `href` is held to the
+  same sanctioned-target rule the other server-rendered views use, rendered
+  into the Designer `Hero` block's existing actions slot. A document could not
+  express a hero call to action at all before, even though the block beneath
+  it always had the slot.
+- Added an optional `detail` `CopyRef` to a `status-list` item, carrying that
+  row's own explanation, including the reasoning behind a `not-offered`
+  answer. That reasoning previously had to be folded into the row label or
+  left off the page.
+- Added the optional `landmark` prop to `SectionedView`. The default, `"main"`,
+  is unchanged; `"none"` renders the same sections without the view's own
+  `main` landmark, so a page can mount the subset this contract expresses and
+  keep the rest inside a landmark it owns. Partial adoption previously had to
+  choose between a second `main` landmark and leaving real content outside the
+  only one.
+
+### Changed
+
+- Raised the runtime Designer floor from `^0.2.7` to `^0.3.0`. The non-hero
+  `eyebrow` slot and the per-row `detail` slot that the new document fields
+  render into are Designer 0.3.0 additions, and 0.x caret ranges are
+  minor-locked, so the older range would resolve a Designer without them.
+
+Every one of these is optional and additive: a document that validated before
+still validates, and a document carrying none of them renders byte-for-byte
+the markup it did at 0.2.1, which is asserted against frozen captured markup
+rather than described. This is a minor rather than a patch because 0.x caret
+and tilde ranges are minor-locked, so a consumer that wants any of the four
+widens its declared range deliberately.
+
 ## [0.2.1] - 2026-09-01
 
 ### Fixed

@@ -15,6 +15,8 @@ export interface FaqItem {
 }
 
 export interface FaqProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
+  /** Small label above the block's own heading, the same slot `FeatureGrid` and `Hero` already ship. */
+  eyebrow?: ReactNode;
   /** Optional heading above the question list. */
   heading?: ReactNode;
   /** A line of supporting copy under the heading. */
@@ -69,6 +71,7 @@ export interface FaqProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> 
  * block would otherwise have to fake.
  */
 export function Faq({
+  eyebrow,
   heading,
   description,
   items,
@@ -80,12 +83,13 @@ export function Faq({
 }: FaqProps) {
   const HeadingTag = `h${headingLevel}` as `h${FaqHeadingLevel}`;
   const colors = SECTION_GROUND_CLASSES[ground];
-  const hasHeadingRegion = heading !== undefined || description !== undefined;
+  const hasHeadingRegion = eyebrow !== undefined || heading !== undefined || description !== undefined;
 
   return (
     <div {...rest} className={cx("flex flex-col gap-lg", colors.surface, className)} style={style}>
       {hasHeadingRegion ? (
         <div className="flex flex-col gap-xs">
+          {eyebrow ? <p className={cx("text-caption uppercase tracking-label", colors.muted)}>{eyebrow}</p> : null}
           {heading ? (
             <HeadingTag className={cx("text-h2 font-display", colors.primary)}>{heading}</HeadingTag>
           ) : null}

@@ -208,7 +208,7 @@ describe("packed Publisher web React-server boundary", () => {
     const legacyManifest = JSON.parse(readFileSync(legacyManifestPath, "utf8")) as {
       dependencies: Record<string, string>;
     };
-    expect(legacyManifest.dependencies["@clossys/designer"]).toBe("^0.2.7");
+    expect(legacyManifest.dependencies["@clossys/designer"]).toBe("^0.3.0");
     legacyManifest.dependencies["@clossys/designer"] = "^0.2.0";
     writeFileSync(legacyManifestPath, `${JSON.stringify(legacyManifest, null, 2)}\n`);
     const legacyPublisherTarball = packPackage(legacyPublisherRoot, join(fixtureRoot, "legacy-packed"));

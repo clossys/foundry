@@ -33,12 +33,24 @@ const copy = {
   "acme.status.item.label": "Fixture capability",
 };
 
+/** Copy used only by the optional additive fields, kept out of `copy` so the provenance fixture above keeps measuring the pre-existing document. */
+const additionalCopy = {
+  "acme.hero.action.start": "Start now",
+  "acme.hero.action.docs": "Read the docs",
+  "acme.features.eyebrow": "Capabilities",
+  "acme.faq.eyebrow": "Answers",
+  "acme.steps.eyebrow": "Process",
+  "acme.status.eyebrow": "Posture",
+  "acme.status.item.detail": "Generally available in every region.",
+  "acme.status.none.detail": "Not offered because the audit is not ours to claim.",
+};
+
 const registry: CopyRegistry = {
   id: "acme-sectioned-fixture",
   locale: "en",
   revision: "1",
   source: { kind: "consumer", reference: "fixtures/acme-sectioned" },
-  entries: Object.entries(copy).map(([id, text]) => ({ id, text, context: "fixture", status: "approved" })),
+  entries: Object.entries({ ...copy, ...additionalCopy }).map(([id, text]) => ({ id, text, context: "fixture", status: "approved" })),
 };
 const resolver = createCopyResolver(registry);
 
@@ -200,6 +212,102 @@ describe("SectionedViewDocument core contract", () => {
         expect((error as SectionedViewResolutionError).reason).toBe("unresolved-copy");
         expect((error as Error).message).toContain("CopyResolver");
       }
+    }
+  });
+});
+
+describe("SectionedViewDocument optional additive fields", () => {
+  const expressive: SectionedViewDocument = {
+    ...document,
+    sections: [
+      { ...document.sections[0], actions: [{ id: "start", label: ref("acme.hero.action.start"), href: "/start" }, { id: "docs", label: ref("acme.hero.action.docs"), href: "https://example.com/docs" }] },
+      { ...document.sections[1], eyebrow: ref("acme.features.eyebrow") },
+      { ...document.sections[2], eyebrow: ref("acme.faq.eyebrow") },
+      { ...document.sections[3], eyebrow: ref("acme.steps.eyebrow") },
+      {
+        ...document.sections[4],
+        eyebrow: ref("acme.status.eyebrow"),
+        groups: [{
+          ...document.sections[4].groups[0],
+          items: [
+            { id: "capability", label: ref("acme.status.item.label"), detail: ref("acme.status.item.detail"), state: "available" },
+            { id: "unavailable", label: ref("acme.status.item.label"), detail: ref("acme.status.none.detail"), disposition: "not-offered" },
+          ],
+        }],
+      },
+    ],
+  };
+
+  it("still accepts, unchanged, a document that carries none of them", () => {
+    expect(validateSectionedViewDocument(document)).toEqual([]);
+    const resolved = resolveSectionedViewDocument(document, resolver);
+    expect(resolved.sections[0].actions).toBeUndefined();
+    for (const section of resolved.sections.slice(1)) expect(section.eyebrow).toBeUndefined();
+    expect(resolved.sections[4].groups[0].items.every((item) => item.detail === undefined)).toBe(true);
+  });
+
+  it("accepts an eyebrow on every non-hero kind and resolves it before the section heading", () => {
+    expect(validateSectionedViewDocument(expressive)).toEqual([]);
+    const resolved = resolveSectionedViewDocument(expressive, resolver);
+    expect(resolved.sections.map((section) => section.eyebrow)).toEqual(["New", "Capabilities", "Answers", "Process", "Posture"]);
+    expect(resolved.resolutions.map((resolution) => resolution.entryId)).toEqual([
+      "acme.hero.eyebrow", "acme.hero.heading", "acme.hero.description", "acme.hero.action.start", "acme.hero.action.docs",
+      "acme.features.eyebrow", "acme.features.heading", "acme.features.description", "acme.features.one.heading", "acme.features.one.description", "acme.features.two.heading",
+      "acme.faq.eyebrow", "acme.faq.heading", "acme.faq.description", "acme.faq.one.question", "acme.faq.one.answer",
+      "acme.steps.eyebrow", "acme.steps.heading", "acme.steps.one.ordinal", "acme.steps.one.label", "acme.steps.one.heading", "acme.steps.one.description",
+      "acme.status.eyebrow", "acme.status.heading", "acme.status.available", "acme.status.partial", "acme.status.planned", "acme.status.not-offered", "acme.status.group.heading",
+      "acme.status.item.label", "acme.status.item.detail", "acme.status.item.label", "acme.status.none.detail",
+    ]);
+  });
+
+  it("carries hero actions as data and resolves their labels while the href travels unchanged", () => {
+    const resolved = resolveSectionedViewDocument(expressive, resolver);
+    expect(resolved.sections[0].actions).toEqual([
+      { id: "start", label: "Start now", href: "/start" },
+      { id: "docs", label: "Read the docs", href: "https://example.com/docs" },
+    ]);
+  });
+
+  it("carries a per-item detail on both a readiness row and an off-axis disposition row", () => {
+    const resolved = resolveSectionedViewDocument(expressive, resolver);
+    expect(resolved.sections[4].groups[0].items).toEqual([
+      { id: "capability", label: "Fixture capability", detail: "Generally available in every region.", state: "available" },
+      { id: "unavailable", label: "Fixture capability", detail: "Not offered because the audit is not ours to claim.", disposition: "not-offered" },
+    ]);
+  });
+
+  it("refuses an empty, malformed, duplicated, or unsafely targeted action", () => {
+    const empty = { ...document, sections: [{ ...document.sections[0], actions: [] }] };
+    const openKey = { ...document, sections: [{ ...document.sections[0], actions: [{ id: "x", label: ref("acme.hero.action.start"), href: "/x", onClick: () => {} }] }] };
+    const missingHref = { ...document, sections: [{ ...document.sections[0], actions: [{ id: "x", label: ref("acme.hero.action.start") }] }] };
+    const duplicate = { ...document, sections: [{ ...document.sections[0], actions: [{ id: "x", label: ref("acme.hero.action.start"), href: "/x" }, { id: "x", label: ref("acme.hero.action.docs"), href: "/y" }] }] };
+    const unsafe = ["javascript:alert(1)", "//evil.example", "data:text/html,x", " /leading-space", "http://user:pass@example.com/"].map((href) => ({ ...document, sections: [{ ...document.sections[0], actions: [{ id: "x", label: ref("acme.hero.action.start"), href }] }] }));
+
+    expect(validateSectionedViewDocument(empty).map((entry) => entry.rule)).toContain("sectioned-view-actions-shape");
+    expect(validateSectionedViewDocument(openKey).map((entry) => entry.rule)).toContain("sectioned-view-action-shape");
+    expect(validateSectionedViewDocument(missingHref).map((entry) => entry.rule)).toContain("sectioned-view-action-shape");
+    expect(validateSectionedViewDocument(duplicate).map((entry) => entry.rule)).toContain("sectioned-view-item-id-duplicate");
+    for (const candidate of unsafe) {
+      expect(validateSectionedViewDocument(candidate as unknown as SectionedViewDocument).map((entry) => entry.rule)).toContain("sectioned-view-action-href");
+      expect(() => resolveSectionedViewDocument(candidate as unknown as SectionedViewDocument, resolver)).toThrow(SectionedViewResolutionError);
+    }
+  });
+
+  it("holds an eyebrow and a status detail to the same CopyRef shape as every other audience field", () => {
+    const badEyebrow = { ...document, sections: [document.sections[0], { ...document.sections[1], eyebrow: "Capabilities" }] };
+    const badDetail = { ...document, sections: [document.sections[0], { ...document.sections[4], groups: [{ ...document.sections[4].groups[0], items: [{ id: "capability", label: ref("acme.status.item.label"), detail: { id: " " }, state: "available" as const }] }] }] };
+    expect(validateSectionedViewDocument(badEyebrow).map((entry) => entry.path)).toContain("sections.1.eyebrow");
+    expect(validateSectionedViewDocument(badDetail).map((entry) => entry.path)).toContain("sections.1.groups.0.items.0.detail");
+  });
+
+  it("fails at the authored path when new-field copy is unresolvable, leaving no partial document", () => {
+    const missing: CopyResolver = (candidate) => (candidate.id === "acme.status.item.detail" ? undefined : resolver(candidate));
+    try {
+      resolveSectionedViewDocument(expressive, missing);
+      expect.unreachable();
+    } catch (error) {
+      expect((error as SectionedViewResolutionError).reason).toBe("unresolved-copy");
+      expect((error as Error).message).toContain("sections.4.groups.0.items.0.detail");
     }
   });
 });
