@@ -256,6 +256,32 @@ test("consumer overlays restore new roots and refuse to overwrite an installed o
   );
 });
 
+test("preinstalled aggregate children run sequentially without child installs and restore Starter overlays after failure", async (t) => {
+  const starter = await syntheticPackage({ rawStarter: true });
+  const sibling = await syntheticPackage();
+  const failingStarter = await syntheticPackage({ rawStarter: true, mutateCaseEvidence: "input" });
+  const roots = [starter, sibling, failingStarter];
+  t.after(() => Promise.all(roots.map((item) => rm(item.root, { recursive: true, force: true }))));
+  const consumer = join(starter.root, "shared-consumer");
+  await mkdir(consumer);
+  await writeFile(join(consumer, "package.json"), '{"name":"shared","private":true,"type":"module"}\n');
+  await execFile("npm", ["install", "--ignore-scripts", "--save-exact", `file:${starter.tarball}`, `file:${sibling.tarball}`], { cwd: consumer });
+  const overlays = [
+    ["@clossys/advisor/package.json", "advisor-original\n"], ["@clossys/advisor/dist/execution-readiness-cli.js", "advisor-cli-original\n"],
+    ["@fixture/qualification-target/package.json", "target-original\n"], ["@fixture/qualification-target/dist/check.js", "target-cli-original\n"],
+  ];
+  for (const [path, bytes] of overlays) { await mkdir(join(consumer, "node_modules", path, ".."), { recursive: true }); await writeFile(join(consumer, "node_modules", path), bytes); }
+  const baseline = await Promise.all(["package.json", "package-lock.json", ...overlays.map(([path]) => `node_modules/${path}`)].map(async (path) => [path, await readFile(join(consumer, path), "utf8")]));
+  const aggregateArgs = (fixture) => ({ ...fixture, consumerRoot: consumer, skipRollback: true, restoreConsumerOverlay: true });
+  const first = await runCandidateQualification(aggregateArgs(starter));
+  const second = await runCandidateQualification(aggregateArgs(sibling));
+  assert.equal(first.ok, true); assert.equal(second.ok, true);
+  assert.ok([first, second].every((run) => run.observations.every((observation) => !["install", "uninstall", "reinstall"].includes(observation.kind))));
+  await writeFile(join(consumer, "node_modules", "@clossys", "starter", "cli.js"), await readFile(join(failingStarter.source, "cli.js"), "utf8"));
+  await assert.rejects(() => runCandidateQualification(aggregateArgs(failingStarter)), /candidate mutated raw case evidence/);
+  for (const [path, bytes] of baseline) assert.equal(await readFile(join(consumer, path), "utf8"), bytes, `${path} restored after aggregate child failure`);
+});
+
 test("runner collects all case observations before reporting a case mismatch", async (t) => {
   const fixture = await syntheticPackage({ mismatch: true });
   t.after(() => rm(fixture.root, { recursive: true, force: true }));

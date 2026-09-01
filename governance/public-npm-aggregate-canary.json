@@ -611,6 +611,20 @@
       "version": "0.1.10",
       "peers": [
         {
+          "peer": "@internationalized/date",
+          "outcomes": {
+            "@clossys/publisher/core": "imports",
+            "@clossys/publisher/document": "imports",
+            "@clossys/publisher/email": "imports",
+            "@clossys/publisher/image": "imports",
+            "@clossys/publisher/media": "imports",
+            "@clossys/publisher/print": "imports",
+            "@clossys/publisher/record": "imports",
+            "@clossys/publisher/slides": "imports",
+            "@clossys/publisher/web": { "default": "rejects", "react-server": "imports" }
+          }
+        },
+        {
           "peer": "react",
           "outcomes": {
             "@clossys/publisher/core": "imports",
@@ -621,7 +635,21 @@
             "@clossys/publisher/print": "imports",
             "@clossys/publisher/record": "imports",
             "@clossys/publisher/slides": "imports",
-            "@clossys/publisher/web": "rejects"
+            "@clossys/publisher/web": { "default": "rejects", "react-server": "rejects" }
+          }
+        },
+        {
+          "peer": "react-aria-components",
+          "outcomes": {
+            "@clossys/publisher/core": "imports",
+            "@clossys/publisher/document": "imports",
+            "@clossys/publisher/email": "imports",
+            "@clossys/publisher/image": "imports",
+            "@clossys/publisher/media": "imports",
+            "@clossys/publisher/print": "imports",
+            "@clossys/publisher/record": "imports",
+            "@clossys/publisher/slides": "imports",
+            "@clossys/publisher/web": { "default": "rejects", "react-server": "imports" }
           }
         },
         {
@@ -635,7 +663,35 @@
             "@clossys/publisher/print": "imports",
             "@clossys/publisher/record": "imports",
             "@clossys/publisher/slides": "imports",
-            "@clossys/publisher/web": "rejects"
+            "@clossys/publisher/web": { "default": "rejects", "react-server": "imports" }
+          }
+        },
+        {
+          "peer": "tailwind-merge",
+          "outcomes": {
+            "@clossys/publisher/core": "imports",
+            "@clossys/publisher/document": "imports",
+            "@clossys/publisher/email": "imports",
+            "@clossys/publisher/image": "imports",
+            "@clossys/publisher/media": "imports",
+            "@clossys/publisher/print": "imports",
+            "@clossys/publisher/record": "imports",
+            "@clossys/publisher/slides": "imports",
+            "@clossys/publisher/web": { "default": "rejects", "react-server": "rejects" }
+          }
+        },
+        {
+          "peer": "tailwindcss",
+          "outcomes": {
+            "@clossys/publisher/core": "imports",
+            "@clossys/publisher/document": "imports",
+            "@clossys/publisher/email": "imports",
+            "@clossys/publisher/image": "imports",
+            "@clossys/publisher/media": "imports",
+            "@clossys/publisher/print": "imports",
+            "@clossys/publisher/record": "imports",
+            "@clossys/publisher/slides": "imports",
+            "@clossys/publisher/web": { "default": "imports", "react-server": "imports" }
           }
         }
       ]
@@ -1009,6 +1065,20 @@
       "version": "0.1.11",
       "peers": [
         {
+          "peer": "@internationalized/date",
+          "outcomes": {
+            "@clossys/publisher/core": "imports",
+            "@clossys/publisher/document": "imports",
+            "@clossys/publisher/email": "imports",
+            "@clossys/publisher/image": "imports",
+            "@clossys/publisher/media": "imports",
+            "@clossys/publisher/print": "imports",
+            "@clossys/publisher/record": "imports",
+            "@clossys/publisher/slides": "imports",
+            "@clossys/publisher/web": { "default": "rejects", "react-server": "imports" }
+          }
+        },
+        {
           "peer": "react",
           "outcomes": {
             "@clossys/publisher/core": "imports",
@@ -1019,7 +1089,21 @@
             "@clossys/publisher/print": "imports",
             "@clossys/publisher/record": "imports",
             "@clossys/publisher/slides": "imports",
-            "@clossys/publisher/web": "rejects"
+            "@clossys/publisher/web": { "default": "rejects", "react-server": "rejects" }
+          }
+        },
+        {
+          "peer": "react-aria-components",
+          "outcomes": {
+            "@clossys/publisher/core": "imports",
+            "@clossys/publisher/document": "imports",
+            "@clossys/publisher/email": "imports",
+            "@clossys/publisher/image": "imports",
+            "@clossys/publisher/media": "imports",
+            "@clossys/publisher/print": "imports",
+            "@clossys/publisher/record": "imports",
+            "@clossys/publisher/slides": "imports",
+            "@clossys/publisher/web": { "default": "rejects", "react-server": "imports" }
           }
         },
         {
@@ -1033,7 +1117,35 @@
             "@clossys/publisher/print": "imports",
             "@clossys/publisher/record": "imports",
             "@clossys/publisher/slides": "imports",
-            "@clossys/publisher/web": "rejects"
+            "@clossys/publisher/web": { "default": "rejects", "react-server": "imports" }
+          }
+        },
+        {
+          "peer": "tailwind-merge",
+          "outcomes": {
+            "@clossys/publisher/core": "imports",
+            "@clossys/publisher/document": "imports",
+            "@clossys/publisher/email": "imports",
+            "@clossys/publisher/image": "imports",
+            "@clossys/publisher/media": "imports",
+            "@clossys/publisher/print": "imports",
+            "@clossys/publisher/record": "imports",
+            "@clossys/publisher/slides": "imports",
+            "@clossys/publisher/web": { "default": "rejects", "react-server": "rejects" }
+          }
+        },
+        {
+          "peer": "tailwindcss",
+          "outcomes": {
+            "@clossys/publisher/core": "imports",
+            "@clossys/publisher/document": "imports",
+            "@clossys/publisher/email": "imports",
+            "@clossys/publisher/image": "imports",
+            "@clossys/publisher/media": "imports",
+            "@clossys/publisher/print": "imports",
+            "@clossys/publisher/record": "imports",
+            "@clossys/publisher/slides": "imports",
+            "@clossys/publisher/web": { "default": "imports", "react-server": "imports" }
           }
         }
       ]

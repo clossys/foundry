@@ -763,6 +763,10 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
   };
   if (fixtureMaterializedAt) transcript.fixtureMaterializedAt = fixtureMaterializedAt;
   const aggregateFixtureBackup = new Map();
+  let caseBase = null;
+  const overlayRoots = new Set();
+  const overlayRootExisted = new Map();
+  const overlayBackup = new Map();
   try {
     const fixtureRoot = ownsRoot || adapter.package === "@clossys/starter" ? join(root, "fixtures") : join(root, "fixtures", adapter.package.slice(adapter.package.indexOf("/") + 1));
     await ensureContainedDirectory(root, fixtureRoot, "fixture root");
@@ -835,8 +839,7 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
       transcript.observations.push(observation(root, `help:${bin}`, "help", adapter.bins[bin], result));
       if (result.exitCode !== adapter.bins[bin] || result.signal || result.launchError) transcript.mismatches.push(`help:${bin}`);
     }
-    const caseBase = { manifest: await readRegularFile(root, join(root, "package.json"), "consumer package.json"), lock: await readRegularFile(root, join(root, "package-lock.json"), "consumer package-lock.json") };
-    const overlayRoots = new Set();
+    caseBase = { manifest: await readRegularFile(root, join(root, "package.json"), "consumer package.json"), lock: await readRegularFile(root, join(root, "package-lock.json"), "consumer package-lock.json") };
     for (const item of adapter.consumerOverlay ?? []) {
       const target = resolve(root, item.target);
       if (!target.startsWith(`${root}${sep}`)) throw new Error("consumer overlay escapes disposable root");
@@ -844,12 +847,10 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
       if (packageRoot) overlayRoots.add(packageRoot);
     }
     if (!restoreConsumerOverlay) await assertConsumerOverlayRootsAbsent(overlayRoots, "refuses to overwrite");
-    const overlayRootExisted = new Map();
     if (restoreConsumerOverlay) for (const packageRoot of overlayRoots) {
       try { await lstat(packageRoot); overlayRootExisted.set(packageRoot, true); }
       catch (error) { if (error?.code !== "ENOENT") throw error; overlayRootExisted.set(packageRoot, false); }
     }
-    const overlayBackup = new Map();
     for (const item of adapter.consumerOverlay ?? []) {
       const target = resolve(root, item.target);
       await ensureContainedDirectory(root, dirname(target), `consumer overlay ${item.target} parent`);
@@ -921,6 +922,19 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
     transcript.canonicalSha256 = hash("sha256", JSON.stringify(transcript));
     return transcript;
   } finally {
+    // A child can throw after materializing a shared-root overlay (for
+    // example while a Starter raw-case assertion detects a hostile rewrite).
+    // The aggregate's baseline remains authoritative even on that failure.
+    if (!ownsRoot && caseBase) {
+      await restoreRegularFile(root, join(root, "package.json"), caseBase.manifest, "consumer package.json");
+      await restoreRegularFile(root, join(root, "package-lock.json"), caseBase.lock, "consumer package-lock.json");
+      if (restoreConsumerOverlay) {
+        for (const [target, bytes] of overlayBackup) await restoreRegularFile(root, target, bytes, "consumer overlay");
+        for (const [packageRoot, existed] of overlayRootExisted) if (!existed) await removeContainedDirectory(root, packageRoot, "consumer overlay package root");
+      } else {
+        for (const packageRoot of overlayRoots) await removeContainedDirectory(root, packageRoot, "consumer overlay package root");
+      }
+    }
     // In aggregate mode Starter intentionally uses root/fixtures so its v3
     // raw evidence remains compatible.  Every preexisting fixture byte is
     // restored here, including failures during a case or framework build.

@@ -15,6 +15,9 @@ const read = (path) => readFileSync(`${root}/${path}`, "utf8");
 const sha256 = (value) => createHash("sha256").update(value).digest("hex");
 const sha1 = "1".repeat(40), sha512 = "2".repeat(128), sha = "3".repeat(64);
 const stable = (value) => Array.isArray(value) ? value.map(stable) : value && typeof value === "object" ? Object.fromEntries(Object.keys(value).sort().map((key) => [key, stable(value[key])])) : value;
+const optionalPeerOutcomeRows = (outcomes) => Object.entries(outcomes).flatMap(([specifier, outcome]) => typeof outcome === "string"
+  ? [{ specifier, condition: "default", outcome }]
+  : Object.entries(outcome).map(([condition, conditionOutcome]) => ({ specifier, condition, outcome: conditionOutcome })));
 function childRun(entry) {
   const observation = (id, kind, expectedExitCode = 0) => ({ id, kind, launch: kind === "framework" ? "next-build" : "node-direct", expectedExitCode, observedExitCode: expectedExitCode, signal: null, launchError: false, stdoutSha256: sha, stderrSha256: sha });
   const dimensions = ["position", "completion", "rollback", "duplicate", "cadence", "closeWindow"].map((dimension) => dimension === "rollback" ? { dimension, status: "supported", evidence: ["aggregate-rollback-delegated"] } : { dimension, status: "supported", evidence: ["case:0"] });
@@ -76,12 +79,12 @@ function satisfiedFixture() {
     ].map(([from, dependency, range]) => ({ from: `${from}@${selected.packages.find((entry) => entry.name === from).version}`, dependency, range, resolved: `${dependency}@${selected.packages.find((entry) => entry.name === dependency).version}`, physical: `$CONSUMER/node_modules/${dependency}` })), rollback: { packageAbsenceProven: true, manifestRestored: true, lockfileRestored: true, treeRestored: true, identitiesRestored: true } },
     dimensions: [
       ["install", 1], ["exports", resolved.packages.length], ["framework", resolved.packages.length], ["bins", resolved.packages.length], ["cases", resolved.packages.length * 3],
-      ["optionalPeers", plan.optionalPeerMatrix.filter((row) => row.set === selected.id).reduce((sum, row) => sum + row.peers.reduce((peerSum, peer) => peerSum + Object.keys(peer.outcomes).length, 0), 0)], ["rollback", 1],
+      ["optionalPeers", plan.optionalPeerMatrix.filter((row) => row.set === selected.id).reduce((sum, row) => sum + row.peers.reduce((peerSum, peer) => peerSum + optionalPeerOutcomeRows(peer.outcomes).length, 0), 0)], ["rollback", 1],
     ].map(([dimension, count]) => ({ dimension, count, ok: true })),
     optionalPeerObservations: plan.optionalPeerMatrix
       .filter((row) => row.set === selected.id)
-      .flatMap((row) => row.peers.flatMap((peer) => Object.entries(peer.outcomes).map(([specifier, outcome]) => ({
-        package: row.name, version: row.version, peer: peer.peer, specifier, outcome, evaluator: "node-direct",
+      .flatMap((row) => row.peers.flatMap((peer) => optionalPeerOutcomeRows(peer.outcomes).map(({ specifier, condition, outcome }) => ({
+        package: row.name, version: row.version, peer: peer.peer, specifier, condition, outcome, evaluator: "node-direct",
         result: { expectedOutcome: outcome, observedExitCode: outcome === "imports" ? 0 : 1, signal: null, launchError: false, timedOut: false, stdoutSha256: sha, stderrSha256: sha }, restoration: { manifestSha256: sha, lockfileSha256: sha, treeSha256: sha },
       })))),
   };
@@ -122,6 +125,20 @@ test("aggregate record fails closed on ordering and non-identity plan rows", () 
     const copy = structuredClone(record); mutate(copy);
     assert.ok(validateAggregateCanary(copy, { read }).some((item) => item.rule === "peer-resolution" || item.rule === "optional-peer-row"));
   }
+});
+
+test("aggregate optional-peer matrices reject missing relationships and collapsed react-server outcomes", () => {
+  const missing = structuredClone(record);
+  missing.optionalPeerMatrix.find((row) => row.set === "baseline" && row.packageKey === "publisher").peers.pop();
+  assert.ok(validateAggregateCanary(missing, { read }).some((item) => item.rule === "optional-peer-coverage" || item.rule === "optional-peer-manifest"));
+  const collapsed = structuredClone(record);
+  collapsed.optionalPeerMatrix.find((row) => row.set === "oidc-successor" && row.packageKey === "publisher").peers.find((peer) => peer.peer === "@internationalized/date").outcomes["@clossys/publisher/web"] = "rejects";
+  assert.ok(validateAggregateCanary(collapsed, { read }).some((item) => item.rule === "optional-peer-manifest"));
+  const { plan, closure, transcript } = satisfiedFixture();
+  const missingCondition = structuredClone(transcript);
+  missingCondition.optionalPeerObservations = missingCondition.optionalPeerObservations.filter((item) => !(item.package === "@clossys/publisher" && item.peer === "@internationalized/date" && item.specifier === "@clossys/publisher/web" && item.condition === "react-server"));
+  missingCondition.canonicalSha256 = sha256(JSON.stringify(stable(Object.fromEntries(Object.entries(missingCondition).filter(([key]) => key !== "canonicalSha256")))));
+  assert.ok(validateSatisfiedAggregateTranscript(missingCondition, { plan, closure }).some((item) => item.rule === "optional-peer-observations"));
 });
 
 test("introduced aggregate plan is immutable", () => {

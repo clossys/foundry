@@ -28,6 +28,25 @@ const object = (value) => value && typeof value === "object" && !Array.isArray(v
 const own = (value, key) => Object.prototype.hasOwnProperty.call(value, key);
 const exactKeys = (value, keys) => object(value) && Object.keys(value).length === keys.length && keys.every((key) => own(value, key));
 const onlyKeys = (value, keys) => object(value) && Object.keys(value).every((key) => keys.includes(key) || keys.includes(`${key}?`)) && keys.filter((key) => !key.endsWith("?")).every((key) => own(value, key));
+const OPTIONAL_PEER_OUTCOMES = new Set(["imports", "rejects"]);
+const OPTIONAL_PEER_CONDITIONS = new Set(["default", "react-server"]);
+function optionalPeerOutcomeRows(outcomes) {
+  if (!object(outcomes)) return [];
+  return Object.entries(outcomes).flatMap(([specifier, outcome]) => typeof outcome === "string"
+    ? [{ specifier, condition: "default", outcome }]
+    : object(outcome) ? Object.entries(outcome).map(([condition, conditionOutcome]) => ({ specifier, condition, outcome: conditionOutcome })) : []);
+}
+function optionalPeerOutcomeValid(outcome) {
+  return typeof outcome === "string"
+    ? OPTIONAL_PEER_OUTCOMES.has(outcome)
+    : object(outcome) && Object.keys(outcome).length > 0
+      && Object.entries(outcome).every(([condition, value]) => OPTIONAL_PEER_CONDITIONS.has(condition) && OPTIONAL_PEER_OUTCOMES.has(value));
+}
+function hasReactServerCondition(value) {
+  if (!object(value)) return false;
+  if (own(value, "react-server")) return true;
+  return Object.values(value).some(hasReactServerCondition);
+}
 
 function finding(findings, rule, message) { findings.push({ rule, message }); }
 export function canonicalRedirectProjection(rows) {
@@ -370,10 +389,27 @@ export function validateAggregateCanary(record, { read = () => { throw new Error
   else for (const row of record.optionalPeerMatrix) {
     const selected = sets.find((set) => set?.id === row?.set)?.packages?.find((entry) => entry?.packageKey === row?.packageKey);
     const peers = row?.peers;
-    if (!selected || !exactKeys(row, ["set", "packageKey", "name", "version", "peers"]) || row.name !== selected.name || row.version !== selected.version || !Array.isArray(peers) || new Set((peers ?? []).map((peer) => peer?.peer)).size !== (peers ?? []).length || peers.some((peer) => !exactKeys(peer, ["peer", "outcomes"]) || !NPM_PACKAGE.test(peer.peer ?? "") || !Object.hasOwn(requestedPeers ?? {}, peer.peer) || !object(peer.outcomes) || Object.keys(peer.outcomes).length === 0 || Object.entries(peer.outcomes).some(([specifier, outcome]) => !(specifier === row.name || specifier.startsWith(`${row.name}/`)) || !CLOSSID_SUBPATH.test(specifier) || outcome !== "imports" && outcome !== "rejects"))) finding(findings, "optional-peer-row", "optional-peer rows must be closed and exactly join one frozen package identity");
+    if (!selected || !exactKeys(row, ["set", "packageKey", "name", "version", "peers"]) || row.name !== selected.name || row.version !== selected.version || !Array.isArray(peers) || new Set((peers ?? []).map((peer) => peer?.peer)).size !== (peers ?? []).length || peers.some((peer) => !exactKeys(peer, ["peer", "outcomes"]) || !NPM_PACKAGE.test(peer.peer ?? "") || !Object.hasOwn(requestedPeers ?? {}, peer.peer) || !object(peer.outcomes) || Object.keys(peer.outcomes).length === 0 || Object.entries(peer.outcomes).some(([specifier, outcome]) => !(specifier === row.name || specifier.startsWith(`${row.name}/`)) || !CLOSSID_SUBPATH.test(specifier) || !optionalPeerOutcomeValid(outcome)))) finding(findings, "optional-peer-row", "optional-peer rows must be closed and exactly join one frozen package identity");
   }
   const matrixIdentities = (Array.isArray(record.optionalPeerMatrix) ? record.optionalPeerMatrix : []).map((row) => `${row?.set}:${row?.name}@${row?.version}`);
   if (new Set(matrixIdentities).size !== matrixIdentities.length) finding(findings, "optional-peer-duplicate", "optional-peer matrix must not duplicate a frozen package identity");
+  for (const set of sets) {
+    const matrix = (record.optionalPeerMatrix ?? []).filter((row) => row?.set === set?.id);
+    const relationships = matrix.reduce((total, row) => total + (Array.isArray(row?.peers) ? row.peers.length : 0), 0);
+    if (Object.keys(requestedPeers ?? {}).length > 0 && relationships !== 23) finding(findings, "optional-peer-coverage", `${set?.id ?? "unknown"} must retain all 23 reviewed optional-peer relationships`);
+    for (const row of matrix) {
+      let manifest;
+      try { manifest = JSON.parse(read(`packages/${row.packageKey}/package.json`)); } catch { continue; }
+      if (manifest?.name !== row.name) continue;
+      const policy = { [row.name]: Object.fromEntries((row.peers ?? []).map((peer) => [peer.peer, peer.outcomes])) };
+      const sourceFindings = validateOptionalPeerPolicy([{ manifest }], policy);
+      if (sourceFindings.length) finding(findings, "optional-peer-manifest", `${row.name} matrix does not close the reviewed manifest: ${sourceFindings.join("; ")}`);
+      for (const peer of row.peers ?? []) for (const [key, value] of Object.entries(manifest.exports ?? {})) {
+        const specifier = key === "." ? row.name : `${row.name}/${key.slice(2)}`;
+        if (hasReactServerCondition(value) && typeof peer.outcomes?.[specifier] === "string") finding(findings, "optional-peer-manifest", `${row.name} optional peer ${peer.peer} collapses the ${specifier} react-server outcome`);
+      }
+    }
+  }
   return findings;
 }
 
@@ -630,17 +666,17 @@ export function validateSatisfiedAggregateTranscript(transcript, { plan, closure
       framework: actualRuns.reduce((sum, run) => sum + run.coverage.frameworkExports, 0),
       bins: actualRuns.reduce((sum, run) => sum + run.coverage.bins, 0),
       cases: actualRuns.reduce((sum, run) => sum + run.observations.filter((item) => item.kind === "case").length, 0),
-      optionalPeers: (plan?.optionalPeerMatrix ?? []).filter((row) => row.set === transcript.set).reduce((sum, row) => sum + row.peers.reduce((peerSum, peer) => peerSum + Object.keys(peer.outcomes).length, 0), 0),
+      optionalPeers: (plan?.optionalPeerMatrix ?? []).filter((row) => row.set === transcript.set).reduce((sum, row) => sum + row.peers.reduce((peerSum, peer) => peerSum + optionalPeerOutcomeRows(peer.outcomes).length, 0), 0),
       install: 1,
       rollback: 1,
     };
     if (transcript.dimensions.some((entry) => entry.count !== expectedCounts[entry.dimension])) finding(findings, "dimension-count", "aggregate dimension counts must exactly project all child and immutable optional-peer execution evidence");
   }
   const frameworkSpecifiers = new Set((Array.isArray(transcript.packages) ? transcript.packages : []).flatMap((entry) => (Array.isArray(entry?.run?.observations) ? entry.run.observations : []).filter((item) => item?.kind === "framework" && typeof item.id === "string").map((item) => `${entry.name}@${entry.version}\0${item.id.split(":").slice(3).join(":")}`)));
-  const expectedOptional = (plan?.optionalPeerMatrix ?? []).filter((row) => row.set === transcript.set).flatMap((row) => row.peers.flatMap((peer) => Object.entries(peer.outcomes).map(([specifier, outcome]) => ({ package: row.name, version: row.version, peer: peer.peer, specifier, outcome, evaluator: frameworkSpecifiers.has(`${row.name}@${row.version}\0${specifier}`) ? (peer.peer === "next" ? "next-bin-absent" : "next-build") : "node-direct" }))));
-  const optionalKey = (item) => JSON.stringify({ package: item.package, version: item.version, peer: item.peer, specifier: item.specifier, outcome: item.outcome, evaluator: item.evaluator });
+  const expectedOptional = (plan?.optionalPeerMatrix ?? []).filter((row) => row.set === transcript.set).flatMap((row) => row.peers.flatMap((peer) => optionalPeerOutcomeRows(peer.outcomes).map(({ specifier, condition, outcome }) => ({ package: row.name, version: row.version, peer: peer.peer, specifier, condition, outcome, evaluator: frameworkSpecifiers.has(`${row.name}@${row.version}\0${specifier}`) ? (peer.peer === "next" ? "next-bin-absent" : "next-build") : "node-direct" }))));
+  const optionalKey = (item) => JSON.stringify({ package: item.package, version: item.version, peer: item.peer, specifier: item.specifier, condition: item.condition, outcome: item.outcome, evaluator: item.evaluator });
   const restoration = transcript.optionalPeerObservations?.[0]?.restoration;
-  if (!Array.isArray(transcript.optionalPeerObservations) || transcript.optionalPeerObservations.some((item) => !exactKeys(item, ["package", "version", "peer", "specifier", "outcome", "evaluator", "result", "restoration"]) || !["node-direct", "next-build", "next-bin-absent"].includes(item.evaluator) || !exactKeys(item.result, ["expectedOutcome", "observedExitCode", "signal", "launchError", "timedOut", "stdoutSha256", "stderrSha256"]) || item.result.expectedOutcome !== item.outcome || !Number.isInteger(item.result.observedExitCode) || (item.outcome === "imports" ? item.result.observedExitCode !== 0 : item.result.observedExitCode === 0) || item.result.signal !== null || item.result.launchError !== false || item.result.timedOut !== false || !SHA256.test(item.result.stdoutSha256 ?? "") || !SHA256.test(item.result.stderrSha256 ?? "") || !exactKeys(item.restoration, ["manifestSha256", "lockfileSha256", "treeSha256"]) || !SHA256.test(item.restoration.manifestSha256 ?? "") || !SHA256.test(item.restoration.lockfileSha256 ?? "") || !SHA256.test(item.restoration.treeSha256 ?? "") || item.restoration.manifestSha256 !== transcript.consumer?.manifestSha256 || item.restoration.lockfileSha256 !== transcript.consumer?.lockfileSha256 || item.restoration.treeSha256 !== transcript.consumer?.treeSha256 || JSON.stringify(item.restoration) !== JSON.stringify(restoration)) || JSON.stringify(transcript.optionalPeerObservations.map(optionalKey).sort()) !== JSON.stringify(expectedOptional.map(optionalKey).sort())) finding(findings, "optional-peer-observations", "aggregate transcript must retain the exact unique immutable optional-peer evaluator, result, and restoration multiset");
+  if (!Array.isArray(transcript.optionalPeerObservations) || transcript.optionalPeerObservations.some((item) => !exactKeys(item, ["package", "version", "peer", "specifier", "condition", "outcome", "evaluator", "result", "restoration"]) || !OPTIONAL_PEER_CONDITIONS.has(item.condition) || !["node-direct", "next-build", "next-bin-absent"].includes(item.evaluator) || !exactKeys(item.result, ["expectedOutcome", "observedExitCode", "signal", "launchError", "timedOut", "stdoutSha256", "stderrSha256"]) || item.result.expectedOutcome !== item.outcome || !Number.isInteger(item.result.observedExitCode) || (item.outcome === "imports" ? item.result.observedExitCode !== 0 : item.result.observedExitCode === 0) || item.result.signal !== null || item.result.launchError !== false || item.result.timedOut !== false || !SHA256.test(item.result.stdoutSha256 ?? "") || !SHA256.test(item.result.stderrSha256 ?? "") || !exactKeys(item.restoration, ["manifestSha256", "lockfileSha256", "treeSha256"]) || !SHA256.test(item.restoration.manifestSha256 ?? "") || !SHA256.test(item.restoration.lockfileSha256 ?? "") || !SHA256.test(item.restoration.treeSha256 ?? "") || item.restoration.manifestSha256 !== transcript.consumer?.manifestSha256 || item.restoration.lockfileSha256 !== transcript.consumer?.lockfileSha256 || item.restoration.treeSha256 !== transcript.consumer?.treeSha256 || JSON.stringify(item.restoration) !== JSON.stringify(restoration)) || JSON.stringify(transcript.optionalPeerObservations.map(optionalKey).sort()) !== JSON.stringify(expectedOptional.map(optionalKey).sort())) finding(findings, "optional-peer-observations", "aggregate transcript must retain the exact unique immutable optional-peer condition, evaluator, result, and restoration multiset");
   const copy = structuredClone(transcript); delete copy.canonicalSha256;
   if (!SHA256.test(transcript.canonicalSha256 ?? "") || transcript.canonicalSha256 !== hash(JSON.stringify(stable(copy)))) finding(findings, "canonical", "transcript canonical digest must hash the closed content excluding itself");
   return findings;
@@ -890,16 +926,16 @@ export async function runAggregateOptionalPeerMatrix({ consumer, matrix, env, fr
         moved.push({ root, hidden, parents, hidden: await captureDirectory(hidden, `optional peer ${peerRow.peer} backup`), source });
       }
       const framework = frameworkByPackage.get(`${row.name}@${row.version}`) ?? { client: [], server: [], proxy: [], all: [] };
-      for (const [specifier, expected] of Object.entries(peerRow.outcomes)) {
+      for (const { specifier, condition, outcome: expected } of optionalPeerOutcomeRows(peerRow.outcomes)) {
         if (framework.all.includes(specifier)) continue;
-        const result = await runProcess(process.execPath, ["--input-type=module", "--eval", `await import(${JSON.stringify(specifier)})`], { cwd: consumer, env, timeout: 30_000 });
+        const result = await runProcess(process.execPath, [...(condition === "react-server" ? ["--conditions=react-server"] : []), "--input-type=module", "--eval", `await import(${JSON.stringify(specifier)})`], { cwd: consumer, env, timeout: 30_000 });
         const actual = result.exitCode === 0 ? "imports" : "rejects";
         if (result.timedOut || result.signal || result.launchError || result.exitCode === null || actual !== expected) throw new Error(`${row.name} omission ${peerRow.peer} ${specifier} expected ${expected}, received ${actual}`);
         if (actual === "rejects" && !`${result.stdout}\n${result.stderr}`.includes(peerRow.peer)) throw new Error(`${row.name} omission ${peerRow.peer} ${specifier} rejection is not causally attributable to the omitted peer`);
-        pending.push({ package: row.name, version: row.version, peer: peerRow.peer, specifier, outcome: actual, evaluator: "node-direct", result: { expectedOutcome: expected, observedExitCode: result.exitCode, signal: result.signal ?? null, launchError: false, timedOut: false, stdoutSha256: hash(result.stdout), stderrSha256: hash(result.stderr) } });
+        pending.push({ package: row.name, version: row.version, peer: peerRow.peer, specifier, condition, outcome: actual, evaluator: "node-direct", result: { expectedOutcome: expected, observedExitCode: result.exitCode, signal: result.signal ?? null, launchError: false, timedOut: false, stdoutSha256: hash(result.stdout), stderrSha256: hash(result.stderr) } });
       }
       if (framework.all.length > 0) {
-        const expected = new Set(framework.all.map((specifier) => peerRow.outcomes[specifier]));
+        const expected = new Set(framework.all.map((specifier) => peerRow.outcomes[specifier]?.default ?? peerRow.outcomes[specifier]));
         if (expected.size !== 1 || !["imports", "rejects"].includes([...expected][0])) throw new Error(`${row.name} omission ${peerRow.peer} has incomplete framework outcome rows`);
         const evaluator = join(consumer, "node_modules", ".bin", "next");
         const evaluatorRoot = await mkdtemp(join(consumer, ".foundry-aggregate-next-"));
@@ -922,7 +958,7 @@ export async function runAggregateOptionalPeerMatrix({ consumer, matrix, env, fr
         const actual = result.exitCode === 0 ? "imports" : "rejects";
         if (result.timedOut || result.signal || result.launchError || result.exitCode === null || actual !== [...expected][0]) throw new Error(`${row.name} omission ${peerRow.peer} Next evaluator expected ${[...expected][0]}, received ${actual}`);
         if (peerRow.peer !== "next" && actual === "rejects" && !`${result.stdout}\n${result.stderr}`.includes(peerRow.peer)) throw new Error(`${row.name} omission ${peerRow.peer} Next rejection is not causally attributable to the omitted peer`);
-        for (const specifier of framework.all) pending.push({ package: row.name, version: row.version, peer: peerRow.peer, specifier, outcome: actual, evaluator: peerRow.peer === "next" ? "next-bin-absent" : "next-build", result: { expectedOutcome: [...expected][0], observedExitCode: result.exitCode, signal: result.signal ?? null, launchError: false, timedOut: false, stdoutSha256: hash(result.stdout), stderrSha256: hash(result.stderr) } });
+        for (const specifier of framework.all) pending.push({ package: row.name, version: row.version, peer: peerRow.peer, specifier, condition: "default", outcome: actual, evaluator: peerRow.peer === "next" ? "next-bin-absent" : "next-build", result: { expectedOutcome: [...expected][0], observedExitCode: result.exitCode, signal: result.signal ?? null, launchError: false, timedOut: false, stdoutSha256: hash(result.stdout), stderrSha256: hash(result.stderr) } });
       }
     } finally {
       let restoreError = null;
