@@ -176,7 +176,7 @@
  */
 
 import { resolveDocument } from "../core/index.js";
-import type { ComposeDocument, ResolvedSurfaceGroup, ResolvedSurfaceGroupItem, WebMeta } from "../core/index.js";
+import type { ComposeDocument, ResolvedSurfaceGroup, ResolvedSurfaceGroupField, ResolvedSurfaceGroupItem, WebMeta } from "../core/index.js";
 import type { ReactNode } from "react";
 import { createElement, version as reactVersion } from "react";
 import { RenderError } from "../internal/errors.js";
@@ -185,7 +185,7 @@ import type { RenderAsset, RenderImageAsset, RenderImageSource, RenderVideoAsset
 import { assertPeerVersion } from "../internal/peer-version.js";
 import { buildWebHeadMetadata } from "./headMetadata.js";
 import { defaultWebTemplateMap, slotKindsFor } from "./internal/webTemplates.js";
-import type { RepeatingWebSlotSpec, ResolvedWebGroupItem, WebTemplate } from "./types.js";
+import type { RepeatingWebSlotFieldSpec, RepeatingWebSlotSpec, ResolvedWebGroupField, ResolvedWebGroupItem, WebTemplate } from "./types.js";
 import type { RenderWebOptions, RenderWebResult } from "./types.js";
 
 /**
@@ -340,6 +340,12 @@ function buildAssetElement(asset: RenderAsset, options: Pick<RenderWebOptions, "
  * "rendered exactly as given" treatment `AuthView.form` gets.
  */
 function resolveGroupItemContent(slotKey: string, item: ResolvedSurfaceGroupItem, options: RenderWebOptions): ResolvedWebGroupItem {
+  if (item.fields !== undefined) {
+    return {
+      index: item.index,
+      fields: Object.fromEntries(Object.entries(item.fields).map(([field, binding]) => [field, resolveGroupFieldContent(slotKey, item.index, field, binding, options)])),
+    };
+  }
   if (item.value !== undefined) {
     return { index: item.index, text: item.value };
   }
@@ -372,6 +378,140 @@ function resolveGroupItemContent(slotKey: string, item: ResolvedSurfaceGroupItem
   );
 }
 
+/** Resolves one named structured field through the same copy/asset rules as a single-value group item. */
+function resolveGroupFieldContent(
+  slotKey: string,
+  itemIndex: number,
+  field: string,
+  binding: ResolvedSurfaceGroupField,
+  options: RenderWebOptions,
+): ResolvedWebGroupField {
+  if (binding.value !== undefined) return { text: binding.value };
+  if (binding.assetId !== undefined) {
+    let looked: unknown;
+    try {
+      looked = options.resolveAssetId?.(binding.assetId);
+    } catch {
+      looked = undefined;
+    }
+    if (!isRenderAsset(looked)) {
+      throw new RenderError(
+        "empty-output",
+        `renderWebDocument could not resolve repeating slot "${slotKey}" item ${itemIndex} field "${field}" assetId "${binding.assetId}" into a real asset (missing options.resolveAssetId, an unresolved id, or a value that did not match the required RenderImageAsset or RenderVideoAsset shape). Rendering would silently ship incomplete structured content, which this function refuses to do.`,
+      );
+    }
+    return { element: buildAssetElement(looked, options) };
+  }
+  throw new RenderError(
+    "empty-output",
+    `renderWebDocument found repeating slot "${slotKey}" item ${itemIndex} field "${field}" with no resolved copy or asset content, which resolveSurfaceDocument should never produce.`,
+  );
+}
+
+function isPlainClosedObject(value: unknown): value is Record<string, unknown> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+}
+
+function isNonWhitespaceString(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function hasOnlyOwnKeys(value: Record<string, unknown>, allowed: readonly string[]): boolean {
+  return Object.getOwnPropertyNames(value).every((key) => allowed.includes(key));
+}
+
+function invalidPublicGroups(message: string): never {
+  throw new RenderError("resolution-failed", `renderWebDocument refused malformed RenderWebOptions.groups: ${message}`);
+}
+
+/**
+ * `RenderWebOptions.groups` is public and may be supplied without first
+ * calling `resolveSurfaceDocument`. Validate its whole closed wire shape
+ * before template matching or resolution touches a nested property: malformed
+ * direct input must throw a `RenderError`, never leak a raw TypeError or turn
+ * an unrecognised object into editorial content.
+ */
+function validatePublicGroups(groups: unknown): ResolvedSurfaceGroup[] {
+  if (groups === undefined) return [];
+  if (!Array.isArray(groups)) invalidPublicGroups("groups must be an array when supplied.");
+
+  return groups.map((candidate, groupIndex) => {
+    if (!isPlainClosedObject(candidate) || !hasOnlyOwnKeys(candidate, ["slot", "items"]) || !isNonWhitespaceString(candidate.slot) || !Array.isArray(candidate.items)) {
+      invalidPublicGroups(`groups[${groupIndex}] must be a plain { slot, items } object with a non-whitespace slot and an items array.`);
+    }
+
+    const items = candidate.items.map((itemCandidate, itemIndex) => {
+      const resolvedIndex = isPlainClosedObject(itemCandidate) ? itemCandidate.index : undefined;
+      if (!isPlainClosedObject(itemCandidate) || !hasOnlyOwnKeys(itemCandidate, ["index", "value", "node", "assetId", "fields"]) || typeof resolvedIndex !== "number" || !Number.isInteger(resolvedIndex) || resolvedIndex !== itemIndex) {
+        invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}] must be a plain item whose index is its sequential array position and has no unknown keys.`);
+      }
+      const sourceKeys = ["value", "node", "assetId", "fields"].filter((key) => itemCandidate[key] !== undefined);
+      if (sourceKeys.length !== 1) {
+        invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}] must set exactly one of value/node/assetId/fields.`);
+      }
+      if (itemCandidate.value !== undefined && !isNonWhitespaceString(itemCandidate.value)) {
+        invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}].value must be a non-whitespace string when supplied.`);
+      }
+      if (itemCandidate.node !== undefined && (typeof itemCandidate.node !== "object" || itemCandidate.node === null)) {
+        invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}].node must be a non-null object when supplied.`);
+      }
+      if (itemCandidate.assetId !== undefined && !isNonWhitespaceString(itemCandidate.assetId)) {
+        invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}].assetId must be a non-whitespace string when supplied.`);
+      }
+      if (itemCandidate.fields !== undefined) {
+        if (!isPlainClosedObject(itemCandidate.fields) || Object.keys(itemCandidate.fields).length === 0) {
+          invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}].fields must be a non-empty plain object.`);
+        }
+        for (const [field, binding] of Object.entries(itemCandidate.fields)) {
+          if (!isNonWhitespaceString(field) || !isPlainClosedObject(binding) || !hasOnlyOwnKeys(binding, ["value", "assetId"])) {
+            invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}].fields.${field || "(empty)"} must be a plain value/assetId binding with no unknown keys.`);
+          }
+          const fieldSources = [binding.value, binding.assetId].filter((source) => source !== undefined);
+          if (fieldSources.length !== 1) {
+            invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}].fields.${field} must set exactly one of value/assetId.`);
+          }
+          if (binding.value !== undefined && !isNonWhitespaceString(binding.value)) {
+            invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}].fields.${field}.value must be a non-whitespace string when supplied.`);
+          }
+          if (binding.assetId !== undefined && !isNonWhitespaceString(binding.assetId)) {
+            invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}].fields.${field}.assetId must be a non-whitespace string when supplied.`);
+          }
+        }
+      }
+      return itemCandidate as unknown as ResolvedSurfaceGroupItem;
+    });
+    return { slot: candidate.slot, items };
+  });
+}
+
+function validateStructuredGroupItem(slotKey: string, item: ResolvedSurfaceGroupItem, fields: readonly RepeatingWebSlotFieldSpec[]): void {
+  const sourceCount = [item.value, item.node, item.assetId, item.fields].filter((source) => source !== undefined).length;
+  if (sourceCount !== 1 || item.fields === undefined || typeof item.fields !== "object" || Array.isArray(item.fields)) {
+    throw new RenderError(
+      "resolution-failed",
+      `renderWebDocument could not use repeating slot "${slotKey}" item ${item.index}: this template requires exactly one named fields map, so a malformed or legacy copy/node/assetId item is not accepted.`,
+    );
+  }
+  const itemFields = item.fields;
+  const knownFields = new Set(fields.map((field) => field.key));
+  const unknownFields = Object.keys(itemFields).filter((field) => !knownFields.has(field));
+  if (unknownFields.length > 0) {
+    throw new RenderError(
+      "resolution-failed",
+      `renderWebDocument could not use repeating slot "${slotKey}" item ${item.index}: unknown field(s) ${unknownFields.join(", ")}. Known field(s): ${fields.map((field) => field.key).join(", ")}.`,
+    );
+  }
+  const missingRequired = fields.filter((field) => field.required === true && !Object.hasOwn(itemFields, field.key)).map((field) => field.key);
+  if (missingRequired.length > 0) {
+    throw new RenderError(
+      "resolution-failed",
+      `renderWebDocument could not use repeating slot "${slotKey}" item ${item.index}: missing required field(s) ${missingRequired.join(", ")}.`,
+    );
+  }
+}
+
 /**
  * Resolves every repeating slot `template` declares against
  * `options.groups`, fails closed on the two ways that can go wrong, and
@@ -402,7 +542,7 @@ function resolveTemplateGroups(doc: ComposeDocument, template: WebTemplate, opti
   const repeatingKeys = new Set(repeatingSlots.map((spec) => spec.key));
 
   const groupsByKey = new Map<string, ResolvedSurfaceGroup>();
-  for (const group of options.groups ?? []) {
+  for (const group of validatePublicGroups(options.groups)) {
     groupsByKey.set(group.slot, group); // last one for a given slot wins, matching this file's own documented bindings policy.
   }
 
@@ -426,7 +566,16 @@ function resolveTemplateGroups(doc: ComposeDocument, template: WebTemplate, opti
   for (const spec of repeatingSlots) {
     const group = groupsByKey.get(spec.key);
     if (group === undefined) continue; // optional and never authored for this document — the slot's own build function decides what "absent" means.
-    groupsContent[spec.key] = group.items.map((item) => resolveGroupItemContent(spec.key, item, options));
+    groupsContent[spec.key] = group.items.map((item) => {
+      if (spec.fields !== undefined) validateStructuredGroupItem(spec.key, item, spec.fields);
+      else if (item.fields !== undefined) {
+        throw new RenderError(
+          "resolution-failed",
+          `renderWebDocument received a structured fields item for repeating slot "${spec.key}", but template "${doc.template}" does not declare fields for that slot.`,
+        );
+      }
+      return resolveGroupItemContent(spec.key, item, options);
+    });
   }
   return groupsContent;
 }

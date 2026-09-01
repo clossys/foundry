@@ -1,6 +1,6 @@
 import type { CopyRef, CopyResolution, CopyResolver } from "@clossys/writer";
 import { isSurfaceRepeatingSlotBinding, validateSurfaceDocument } from "./validate.js";
-import type { ComposeDocument, SlotBinding, SurfaceChannelMeta, SurfaceDocument, SurfaceRepeatingSlotBinding, SurfaceSlotBindingItem } from "./types.js";
+import type { ComposeDocument, SlotBinding, SurfaceChannelMeta, SurfaceDocument, SurfaceRepeatingSlotBinding, SurfaceRepeatingSlotFieldBinding, SurfaceSlotBindingItem } from "./types.js";
 
 export type SurfaceResolutionReason = "invalid-surface" | "unresolved-copy" | "unsupported-node";
 
@@ -17,10 +17,10 @@ export class SurfaceResolutionError extends Error {
 
 /**
  * One item inside a resolved repeating-group slot — see `types.ts`'s
- * `SurfaceRepeatingSlotBinding`. Exactly one of `value`/`node`/`assetId`
- * is set, mirroring whichever source the authored item carried (`copy`
- * resolves to `value`, the same substitution `SurfaceSlotBinding.copy`
- * gets in `document.bindings`). `index` is the item's ordinal position
+ * `SurfaceRepeatingSlotBinding`. Exactly one of legacy `value`/`node`/
+ * `assetId` or structured `fields` is set, mirroring whichever source the
+ * authored item carried (`copy` resolves to `value`, the same substitution
+ * `SurfaceSlotBinding.copy` gets in `document.bindings`). `index` is the item's ordinal position
  * within the group, in authored order — the addressing key a renderer
  * keys off, so "item 3 of 6" is always answerable without re-deriving a
  * position from array order alone.
@@ -29,6 +29,13 @@ export interface ResolvedSurfaceGroupItem {
   index: number;
   value?: string;
   node?: object;
+  assetId?: string;
+  fields?: Record<string, ResolvedSurfaceGroupField>;
+}
+
+/** One resolved named field inside a structured repeating-group item. */
+export interface ResolvedSurfaceGroupField {
+  value?: string;
   assetId?: string;
 }
 
@@ -220,12 +227,26 @@ function resolveRepeatingBindingItem(item: SurfaceSlotBindingItem, bindingIndex:
   if (item.copy !== undefined) return { index: itemIndex, value: text(item.copy, `${path}.copy`) };
   if (item.node !== undefined) return { index: itemIndex, node: item.node };
   if (item.assetId !== undefined) return { index: itemIndex, assetId: item.assetId };
+  if (item.fields !== undefined) {
+    return {
+      index: itemIndex,
+      fields: Object.fromEntries(
+        Object.entries(item.fields).map(([field, binding]) => [field, resolveRepeatingFieldBinding(binding, `${path}.fields.${field}`, text)]),
+      ),
+    };
+  }
   // Unreachable once validateSurfaceDocument has passed: every item that
   // reaches here already satisfies surface-binding-group-item-source-exclusive.
   // Kept as an explicit, attributed throw rather than a silent fallthrough —
   // this repo's own rule that a guard must state where control goes when it
   // declines applies here too.
   throw new SurfaceResolutionError("invalid-surface", `resolveSurfaceDocument found an item with no source at ${path}, which validateSurfaceDocument should already have rejected.`);
+}
+
+function resolveRepeatingFieldBinding(binding: SurfaceRepeatingSlotFieldBinding, path: string, text: (ref: CopyRef, path: string) => string): ResolvedSurfaceGroupField {
+  if (binding.copy !== undefined) return { value: text(binding.copy, `${path}.copy`) };
+  if (binding.assetId !== undefined) return { assetId: binding.assetId };
+  throw new SurfaceResolutionError("invalid-surface", `resolveSurfaceDocument found a structured repeating field with no source at ${path}, which validateSurfaceDocument should already have rejected.`);
 }
 
 function resolveMeta(meta: SurfaceChannelMeta, text: (ref: CopyRef, path: string) => string): ComposeDocument["meta"] {

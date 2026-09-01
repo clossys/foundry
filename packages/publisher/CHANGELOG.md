@@ -3,6 +3,22 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.0] - 2026-08-31
+
+### Added
+
+- Added the closed, provenance-preserving `SectionedView` web renderer for
+  resolved `SectionedViewDocument` models. It maps the five approved section
+  kinds to Designer 0.2.6's ground-aware server-safe blocks without opening a
+  caller-authored node or styling escape hatch.
+
+### Changed
+
+- Raised the runtime Designer floor to `^0.2.6`, which supplies the
+  server-safe section-ground, ordered-step, and status-list blocks required by
+  `SectionedView`. This source version is intentionally unqualified and
+  unpublished; exact-head qualification remains required.
+
 ## [0.1.11] - 2026-08-31
 
 ### Changed

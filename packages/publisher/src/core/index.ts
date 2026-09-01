@@ -60,6 +60,7 @@ export type {
   SurfaceEmailMeta,
   SurfaceImageMeta,
   SurfaceRepeatingSlotBinding,
+  SurfaceRepeatingSlotFieldBinding,
   SurfaceSlotBinding,
   SurfaceSlotBindingItem,
   SurfaceSlidesMeta,
@@ -92,4 +93,25 @@ export { getSlotSpec, listSlotKeys, requiredSlotKeys } from "./slots.js";
 export { collectCopyProvenance, createOutputManifest, createResolvedOutputManifest } from "./output-manifest.js";
 
 export { resolveSurfaceDocument, SurfaceResolutionError } from "./resolve-surface.js";
-export type { ResolvedSurfaceDocument, ResolvedSurfaceGroup, ResolvedSurfaceGroupItem, ResolvedSurfaceNode, ResolveSurfaceDocumentOptions, SurfaceResolutionReason } from "./resolve-surface.js";
+export { resolveSectionedViewDocument, SectionedViewResolutionError, validateSectionedViewDocument } from "./sectioned-view.js";
+export type {
+  ResolvedSectionedViewDocument,
+  ResolvedSectionedViewSection,
+  SectionedViewDocument,
+  SectionedViewFaqItem,
+  SectionedViewFaqSection,
+  SectionedViewFeatureGridSection,
+  SectionedViewFeatureItem,
+  SectionedViewGround,
+  SectionedViewHeroSection,
+  SectionedViewOrderedStep,
+  SectionedViewOrderedStepSequenceSection,
+  SectionedViewResolutionReason,
+  SectionedViewSection,
+  SectionedViewSectionKind,
+  SectionedViewStatus,
+  SectionedViewStatusGroup,
+  SectionedViewStatusItem,
+  SectionedViewStatusListSection,
+} from "./sectioned-view.js";
+export type { ResolvedSurfaceDocument, ResolvedSurfaceGroup, ResolvedSurfaceGroupField, ResolvedSurfaceGroupItem, ResolvedSurfaceNode, ResolveSurfaceDocumentOptions, SurfaceResolutionReason } from "./resolve-surface.js";

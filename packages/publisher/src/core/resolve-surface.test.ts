@@ -23,6 +23,8 @@ const registry: CopyRegistry = {
     { id: "acme.capability.one", text: "Capability one", context: "fixture", status: "approved" },
     { id: "acme.capability.two", text: "Capability two", context: "fixture", status: "approved" },
     { id: "acme.capability.three", text: "Capability three", context: "fixture", status: "approved" },
+    { id: "acme.faq.question", text: "Why this?", context: "fixture", status: "approved" },
+    { id: "acme.faq.answer", text: "Because it is resolved.", context: "fixture", status: "approved" },
   ],
 };
 
@@ -100,6 +102,28 @@ describe("resolveSurfaceDocument — repeating-group resolution", () => {
     };
     const resolved = resolveSurfaceDocument(withNode, resolver);
     expect(resolved.groups).toEqual([{ slot: "capabilities", items: [{ index: 0, node: { kind: "consumer-icon", name: "bolt" } }] }]);
+  });
+
+  it("resolves every structured field through the same CopyResolver and retains one provenance entry per field", () => {
+    const structured: SurfaceDocument = {
+      ...singleBindingOnly,
+      bindings: [...singleBindingOnly.bindings, { slot: "faq", items: [{ fields: { question: { copy: ref("acme.faq.question") }, answer: { copy: ref("acme.faq.answer") } } }] }],
+    };
+    const resolved = resolveSurfaceDocument(structured, resolver);
+    expect(resolved.groups).toEqual([
+      { slot: "faq", items: [{ index: 0, fields: { question: { value: "Why this?" }, answer: { value: "Because it is resolved." } } }] },
+    ]);
+    const fields = resolved.resolutions.filter((resolution) => resolution.entryId.startsWith("acme.faq."));
+    expect(fields.map((resolution) => resolution.entryId)).toEqual(["acme.faq.question", "acme.faq.answer"]);
+    expect(fields.every((resolution) => resolution.locale === "en" && resolution.recordId === "acme-fixture")).toBe(true);
+  });
+
+  it("fails the whole document and names the exact structured field when its CopyRef cannot resolve", () => {
+    const structured: SurfaceDocument = {
+      ...singleBindingOnly,
+      bindings: [...singleBindingOnly.bindings, { slot: "faq", items: [{ fields: { question: { copy: ref("acme.faq.question") }, answer: { copy: ref("acme.faq.missing") } } }] }],
+    };
+    expect(() => resolveSurfaceDocument(structured, resolver)).toThrow(/bindings\.1\.items\.0\.fields\.answer\.copy/);
   });
 
   it("resolves an explicit empty group to zero items, not an error", () => {

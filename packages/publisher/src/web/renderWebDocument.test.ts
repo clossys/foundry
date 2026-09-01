@@ -92,6 +92,63 @@ describe("renderWebDocument — refuses a document that resolves nothing", () =>
   });
 });
 
+describe("renderWebDocument — hostile public RenderWebOptions.groups input", () => {
+  const structuredGroupDoc: ComposeDocument = {
+    id: "structured-group-direct-input",
+    channel: "web",
+    template: "MarketingView",
+    meta: { channel: "web", title: "Acme", description: "Fixture." },
+    bindings: [
+      { slot: "brand", value: "Acme" },
+      { slot: "heroHeading", value: "Fixture heading" },
+      { slot: "ctaHeading", value: "Fixture CTA" },
+    ],
+  };
+  const groupsWith = (faqItem: unknown) => ([
+    { slot: "features", items: [] },
+    { slot: "faq", items: [faqItem] },
+  ]);
+
+  function expectPublicGroupRefusal(groups: unknown): void {
+    try {
+      renderWebDocument(structuredGroupDoc, { groups: groups as never });
+      expect.unreachable();
+    } catch (error) {
+      expect(error).toBeInstanceOf(RenderError);
+      expect((error as RenderError).reason).toBe("resolution-failed");
+      expect(error).not.toBeInstanceOf(TypeError);
+    }
+  }
+
+  it("rejects a non-array group input before attempting iteration", () => {
+    expectPublicGroupRefusal({ slot: "faq" });
+  });
+
+  it("rejects a non-plain fields map before Object.entries can reach it", () => {
+    expectPublicGroupRefusal(groupsWith({ index: 0, fields: new Map([['question', { value: "Q" }]]) }));
+  });
+
+  it("rejects mixed value and assetId in a structured field", () => {
+    expectPublicGroupRefusal(groupsWith({ index: 0, fields: { question: { value: "Q", assetId: "asset.question" }, answer: { value: "A" } } }));
+  });
+
+  it("rejects unknown field-binding keys and malformed asset evidence", () => {
+    expectPublicGroupRefusal(groupsWith({ index: 0, fields: { question: { value: "Q", node: {} }, answer: { assetId: "  " } } }));
+  });
+
+  it("rejects empty legacy and structured values before a template can build them", () => {
+    expectPublicGroupRefusal([
+      { slot: "features", items: [{ index: 0, value: "  " }] },
+      { slot: "faq", items: [] },
+    ]);
+    expectPublicGroupRefusal(groupsWith({ index: 0, fields: { question: { value: "  " }, answer: { value: "A" } } }));
+  });
+
+  it("requires indexes to match the resolver's contiguous source order", () => {
+    expectPublicGroupRefusal(groupsWith({ index: 1, fields: { question: { value: "Q" }, answer: { value: "A" } } }));
+  });
+});
+
 describe("renderWebDocument — assetId refusal paths (never a blank box)", () => {
   const assetDoc: ComposeDocument = {
     id: "acme-signin",
