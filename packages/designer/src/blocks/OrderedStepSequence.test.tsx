@@ -19,11 +19,18 @@ describe("OrderedStepSequence", () => {
   });
 
   it("renders labels, semantic item headings, and optional body copy", () => {
-    render(<OrderedStepSequence items={ITEMS} headingLevel={3} />);
+    render(<OrderedStepSequence heading="Process" items={ITEMS} headingLevel={3} />);
     expect(screen.getByText("First")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Discover" }).tagName).toBe("H3");
+    expect(screen.getByRole("heading", { name: "Process" }).tagName).toBe("H3");
+    expect(screen.getByRole("heading", { name: "Discover" }).tagName).toBe("H4");
     expect(screen.getByText("Understand the need.")).toBeInTheDocument();
     expect(screen.queryByText("description")).not.toBeInTheDocument();
+  });
+
+  it("caps item heading rank at h6", () => {
+    render(<OrderedStepSequence heading="Process" items={ITEMS} headingLevel={6} />);
+    expect(screen.getByRole("heading", { name: "Process" }).tagName).toBe("H6");
+    expect(screen.getByRole("heading", { name: "Discover" }).tagName).toBe("H6");
   });
 
   it("renders a connector only between adjacent items, never after the last", () => {
