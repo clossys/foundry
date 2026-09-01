@@ -6,12 +6,11 @@ import { SiteFooter, SiteHeader } from "@clossys/designer/shell";
 /**
  * One entry in {@link MarketingViewProps.features} — deliberately a single
  * text region (`heading` only, no `description`/`icon`), unlike
- * `@clossys/designer/blocks`' own `FeatureGridItem`. This mirrors the
- * shape a `SurfaceRepeatingSlotBinding` item can actually carry: exactly
- * ONE of `copy`/`node`/`assetId` per item (`surface/core`'s own
- * `SurfaceSlotBindingItem`), never two independent text fields. See
- * `internal/webTemplates.ts`'s `MARKETING_VIEW_TEMPLATE` for how a resolved
- * repeating group's items become this shape.
+ * `@clossys/designer/blocks`' own `FeatureGridItem`. The `features`
+ * repeating slot deliberately uses the legacy one-value item shape, unlike
+ * the structured `faq` slot below. See `internal/webTemplates.ts`'s
+ * `MARKETING_VIEW_TEMPLATE` for how a resolved repeating group's items
+ * become this shape.
  */
 export interface MarketingFeatureItem {
   /** Stable identifier — the React key. Synthesized from the item's resolved ordinal position, never authored. */
@@ -23,10 +22,9 @@ export interface MarketingFeatureItem {
 /**
  * One entry in {@link MarketingViewProps.faq} — unlike
  * {@link MarketingFeatureItem}, a FAQ entry genuinely needs TWO independent
- * pieces of copy (`question` and `answer`), which a single repeating-group
- * item's one resolved value cannot supply on its own. See
- * `internal/webTemplates.ts`'s own doc comment on `MARKETING_VIEW_TEMPLATE`
- * for exactly how (and the one way) a repeating `faq` item supplies both.
+ * pieces of CopyRef-resolved copy (`question` and `answer`). The template
+ * declares both fields as required, so they stay in ordinary locale, voice,
+ * and provenance handling rather than becoming a caller-authored node.
  */
 export interface MarketingFaqItem {
   /** Stable identifier — the React key. Synthesized from the item's resolved ordinal position, never authored. */

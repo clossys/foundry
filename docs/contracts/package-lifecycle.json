@@ -272,7 +272,7 @@
       "status": "retired",
       "replacement": {
         "name": "@clossys/publisher",
-        "range": "^0.1.0"
+        "range": "^0.2.0"
       },
       "deprecatedOn": "2026-08-21",
       "retiredOn": "2026-08-22",
@@ -413,7 +413,7 @@
       "status": "retired",
       "replacement": {
         "name": "@clossys/publisher",
-        "range": "^0.1.0"
+        "range": "^0.2.0"
       },
       "deprecatedOn": "2026-08-21",
       "retiredOn": "2026-08-22",

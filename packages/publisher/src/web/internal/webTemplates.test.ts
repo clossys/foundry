@@ -32,7 +32,7 @@ describe("web template registry", () => {
     const template = getWebTemplate("MarketingView")!;
     expect(template.repeatingSlots).toEqual([
       { key: "features", required: true },
-      { key: "faq" },
+      { key: "faq", fields: [{ key: "question", required: true }, { key: "answer", required: true }] },
     ]);
   });
 

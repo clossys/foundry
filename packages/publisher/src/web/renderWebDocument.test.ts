@@ -92,6 +92,82 @@ describe("renderWebDocument — refuses a document that resolves nothing", () =>
   });
 });
 
+describe("renderWebDocument — hostile public RenderWebOptions.groups input", () => {
+  const structuredGroupDoc: ComposeDocument = {
+    id: "structured-group-direct-input",
+    channel: "web",
+    template: "MarketingView",
+    meta: { channel: "web", title: "Acme", description: "Fixture." },
+    bindings: [
+      { slot: "brand", value: "Acme" },
+      { slot: "heroHeading", value: "Fixture heading" },
+      { slot: "ctaHeading", value: "Fixture CTA" },
+    ],
+  };
+  const groupsWith = (faqItem: unknown) => ([
+    { slot: "features", items: [] },
+    { slot: "faq", items: [faqItem] },
+  ]);
+
+  function expectPublicGroupRefusal(groups: unknown): void {
+    try {
+      renderWebDocument(structuredGroupDoc, { groups: groups as never });
+      expect.unreachable();
+    } catch (error) {
+      expect(error).toBeInstanceOf(RenderError);
+      expect((error as RenderError).reason).toBe("resolution-failed");
+      expect(error).not.toBeInstanceOf(TypeError);
+    }
+  }
+
+  it("rejects a non-array group input before attempting iteration", () => {
+    expectPublicGroupRefusal({ slot: "faq" });
+  });
+
+  it("rejects a non-plain fields map before Object.entries can reach it", () => {
+    expectPublicGroupRefusal(groupsWith({ index: 0, fields: new Map([['question', { value: "Q" }]]) }));
+  });
+
+  it("rejects mixed value and assetId in a structured field", () => {
+    expectPublicGroupRefusal(groupsWith({ index: 0, fields: { question: { value: "Q", assetId: "asset.question" }, answer: { value: "A" } } }));
+  });
+
+  it("rejects unknown field-binding keys and malformed asset evidence", () => {
+    expectPublicGroupRefusal(groupsWith({ index: 0, fields: { question: { value: "Q", node: {} }, answer: { assetId: "  " } } }));
+  });
+
+  it("rejects empty legacy and structured values before a template can build them", () => {
+    expectPublicGroupRefusal([{ slot: " ", items: [] }]);
+    expectPublicGroupRefusal([
+      { slot: "features", items: [{ index: 0, value: "  " }] },
+      { slot: "faq", items: [] },
+    ]);
+    expectPublicGroupRefusal(groupsWith({ index: 0, fields: { question: { value: "  " }, answer: { value: "A" } } }));
+  });
+
+  it("requires indexes to match the resolver's contiguous source order", () => {
+    expectPublicGroupRefusal(groupsWith({ index: 1, fields: { question: { value: "Q" }, answer: { value: "A" } } }));
+  });
+
+  it("rejects sparse group/item arrays and hidden, symbol, or accessor wire keys before reading them", () => {
+    const sparse = groupsWith({ index: 0, fields: { question: { value: "Q" }, answer: { value: "A" } } });
+    sparse.length = 3;
+    expectPublicGroupRefusal(sparse);
+    const accessor = { slot: "faq", items: [] as unknown[] };
+    Object.defineProperty(accessor, "slot", { enumerable: true, get: () => { throw new Error("getter must not run"); } });
+    expectPublicGroupRefusal([{ slot: "features", items: [] }, accessor]);
+    const itemAccessor = { fields: { question: { value: "Q" }, answer: { value: "A" } } };
+    Object.defineProperty(itemAccessor, "index", { enumerable: true, get: () => { throw new Error("getter must not run"); } });
+    expectPublicGroupRefusal(groupsWith(itemAccessor));
+    const symbol = { slot: "faq", items: [] as unknown[] };
+    Object.defineProperty(symbol, Symbol("hidden"), { value: true, enumerable: true });
+    expectPublicGroupRefusal([{ slot: "features", items: [] }, symbol]);
+    const nonIndex = groupsWith({ index: 0, fields: { question: { value: "Q" }, answer: { value: "A" } } });
+    Object.defineProperty(nonIndex, "map", { enumerable: true, get: () => { throw new Error("map getter must not run"); } });
+    expectPublicGroupRefusal(nonIndex);
+  });
+});
+
 describe("renderWebDocument — assetId refusal paths (never a blank box)", () => {
   const assetDoc: ComposeDocument = {
     id: "acme-signin",
@@ -296,6 +372,18 @@ describe("renderWebDocument — node-kind slots (options.nodes), via a consumer-
     const html = renderToStaticMarkup(element);
     expect(html).toContain("Acme Widget Page");
     expect(html).toContain('<button type="button">Click me</button>');
+  });
+
+  it("rejects sparse and accessor-shaped options.nodes without invoking an accessor", () => {
+    const renderer = rendererFor();
+    const sparse = new Array(1);
+    expect(() => renderer.renderWebDocument(baseWidgetDoc, { nodes: sparse as never })).toThrow(RenderError);
+
+    let accessed = false;
+    const accessorItem = { slot: "widget", node: {} };
+    Object.defineProperty(accessorItem, "node", { enumerable: true, get: () => { accessed = true; throw new Error("node getter must not run"); } });
+    expect(() => renderer.renderWebDocument(baseWidgetDoc, { nodes: [accessorItem] as never })).toThrow(RenderError);
+    expect(accessed).toBe(false);
   });
 
   it("throws RenderError('empty-output') when a required node-kind slot has no matching entry in options.nodes", () => {
