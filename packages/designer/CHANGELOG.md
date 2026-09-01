@@ -5,11 +5,11 @@ All notable changes to this package are documented here. Format follows
 
 ## [0.2.7] - 2026-09-01
 
-### Changed
+### Added
 
-- Prepared the forward release candidate after the prior candidate could not
-  satisfy the immutable qualified-tarball join. This release contains no
-  product behavior changes.
+- Added the separately closed `StatusList` `not-offered` disposition for
+  deliberate non-capabilities outside the readiness axis. It uses a neutral
+  tone rather than reading as a warning or future commitment.
 
 ## [0.2.6] - 2026-08-31
 

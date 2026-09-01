@@ -2495,18 +2495,22 @@ elements (default `2`).
 import { StatusList } from "@clossys/designer/blocks";
 
 <StatusList
-  legendLabel="Readiness"
-  labels={{ available: "Available", partial: "Partial", planned: "Planned" }}
+  legendLabel="Status"
+  labels={{ available: "Available", partial: "Partial", planned: "Planned", dispositions: { "not-offered": "Not offered" } }}
   groups={[
     { id: "coverage", heading: "Coverage", items: [{ id: "reports", label: "Reports", state: "available" }] },
   ]}
 />
 ```
 
-A grouped `<dl>` for editorial readiness statements, with one section-level
-legend whose required `legendLabel` is caller-localized, visible, and names
-the semantic legend list. State is closed to `available`, `partial`, and `planned`; the block
-maps those values to status tokens rather than accepting a color. The dot is
+A grouped `<dl>` for editorial readiness statements and deliberate
+non-capabilities, with one section-level legend whose required `legendLabel`
+is caller-localized, visible, and names the semantic legend list. The readiness
+axis is closed to `available`, `partial`, and `planned`; dispositions are
+separately closed in the `dispositions` map. Use the `not-offered` disposition only for a
+deliberate non-capability outside the readiness axis, not as another degree of
+readiness. The block maps those values to semantic tones rather than accepting
+a color. The dot is
 decorative and its adjacent state text remains ordinary reading text, so color
 never carries the meaning alone.
 `ground` uses the shared closed section-ground contract above, including the
@@ -3934,10 +3938,10 @@ not a grab-bag).
 | `SectionHeaderProps` | type | Props for `SectionHeader`: `eyebrow`, `title`, `description`, `actions`, `level`, `className`, `style`, plus every native `<div>` attribute. |
 | `SectionHeaderLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
 | `Hero` | component | Above-the-fold message: eyebrow, heading, description, actions slot, optional media slot (switches to a two-column layout when supplied). `headingLevel` picks its heading element. |
-| `SECTION_GROUND_CLASSES` | constant | Exhaustive Designer-owned surface, foreground, divider/connector, and status class policy for every `SectionGround`; base inherits its ambient surface, while sunken and inverse paint theirs; server-safe and exported from both blocks barrels. |
+| `SECTION_GROUND_CLASSES` | constant | Exhaustive Designer-owned surface, foreground, divider/connector, readiness-status, and separate neutral off-axis-mark policy for every `SectionGround`; base inherits its ambient surface, while sunken and inverse paint theirs; server-safe and exported from both blocks barrels. |
 | `SectionGround` | type | `"base" \| "sunken" \| "inverse"`. |
-| `SectionGroundClasses` | type | The complete class-map shape for one section ground. |
-| `SectionStatusTone` | type | `"success" \| "warning" \| "info"`; keys for the mapping's closed status treatment. |
+| `SectionGroundClasses` | type | The complete class-map shape for one section ground, including readiness `status` and separately named neutral `offAxis` mark. |
+| `SectionStatusTone` | type | `"success" \| "warning" \| "info"`; closed readiness-dot tones. A separate off-axis disposition uses neutral structural ink. |
 | `HeroProps` | type | Props for `Hero`: `eyebrow`, `heading`, `description`, `actions`, `media`, `headingLevel`, `ground`, `className`, `style`, plus every native `<section>` attribute. |
 | `HeroHeadingLevel` | type | `1 \| 2`. |
 | `FeatureGrid` | component | Titled collection of feature items: optional eyebrow/heading/description region, a grid of icon/heading/description items. |
@@ -3952,9 +3956,12 @@ not a grab-bag).
 | `StatusList` | component | Grouped editorial status list: one legend and a definition list per group. |
 | `StatusListProps` | type | Props for `StatusList`: `heading`, `description`, `labels`, `groups`, `legendLabel`, `headingLevel`, `ground`, `className`, `style`, plus every native `<section>` attribute. |
 | `StatusListGroup` | type | One group: `id`, `heading`, `items`. |
-| `StatusListItem` | type | One row: `id`, `label`, `state`. |
-| `StatusListLabels` | type | A label for each `StatusListState`. |
+| `StatusListItem` | type | One row: either `id`, `label`, `state`, or `id`, `label`, `disposition`. |
+| `StatusListReadinessItem` | type | A `StatusListItem` on the three-value readiness axis. |
+| `StatusListDispositionItem` | type | A `StatusListItem` with an off-axis deliberate non-capability. |
+| `StatusListLabels` | type | A label for each `StatusListState` plus a separately closed `dispositions` map. |
 | `StatusListState` | type | `"available" \| "partial" \| "planned"`. |
+| `StatusListDisposition` | type | `"not-offered"`, a deliberate non-capability outside the readiness axis. |
 | `StatusListHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
 | `Faq` | component | Expand/collapse question/answer list, under an optional heading region. Each item is this package's own `Disclosure` atom — independent, not a coordinated accordion. |
 | `FaqProps` | type | Props for `Faq`: `heading`, `description`, `items`, `headingLevel`, `ground`, `className`, `style`, plus every native `<div>` attribute. |

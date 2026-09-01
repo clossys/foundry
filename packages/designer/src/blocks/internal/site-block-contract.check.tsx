@@ -26,7 +26,7 @@ export const validGroundedBlocks = (
     <Hero heading="Hero" ground="sunken" />
     <FeatureGrid items={[]} ground="inverse" />
     <Faq items={[]} ground="sunken" />
-    <StatusList legendLabel="Readiness" labels={{ available: "Available", partial: "Partial", planned: "Planned" }} groups={[]} ground="inverse" />
+    <StatusList legendLabel="Status" labels={{ available: "Available", partial: "Partial", planned: "Planned", dispositions: { "not-offered": "Not offered" } }} groups={[]} ground="inverse" />
   </>
 );
 
@@ -40,7 +40,7 @@ export const invalidFeatureGridGround = <FeatureGrid items={[]} ground="accent" 
 export const invalidFaqGround = <Faq items={[]} ground="transparent" />;
 
 // @ts-expect-error — status foregrounds and boundaries are selected from a complete ground mapping.
-export const invalidStatusGround = <StatusList legendLabel="Readiness" labels={{ available: "Available", partial: "Partial", planned: "Planned" }} groups={[]} ground="raised" />;
+export const invalidStatusGround = <StatusList legendLabel="Status" labels={{ available: "Available", partial: "Partial", planned: "Planned", dispositions: { "not-offered": "Not offered" } }} groups={[]} ground="raised" />;
 
 export const invalidSequenceOrdinal = (
   <OrderedStepSequence
@@ -57,23 +57,66 @@ export const invalidSequenceOrdinal = (
 
 export const validStatusList = (
   <StatusList
-    legendLabel="Readiness"
-    labels={{ available: "Available", partial: "Partial", planned: "Planned" }}
-    groups={[{ id: "one", heading: "Group", items: [{ id: "row", label: "Row", state: "available" }] }]}
-  />
-);
-
-export const invalidStatusList = (
-  <StatusList
-    legendLabel="Readiness"
-    labels={{ available: "Available", partial: "Partial", planned: "Planned" }}
+    legendLabel="Status"
+    labels={{ available: "Available", partial: "Partial", planned: "Planned", dispositions: { "not-offered": "Not offered" } }}
     groups={[
       {
         id: "one",
         heading: "Group",
         items: [
-          // @ts-expect-error — arbitrary status names cannot bypass the block's token mapping.
+          { id: "row", label: "Row", state: "available" },
+          { id: "not-offered", label: "Not offered", disposition: "not-offered" },
+        ],
+      },
+    ]}
+  />
+);
+
+export const invalidStatusList = (
+  <StatusList
+    legendLabel="Status"
+    labels={{ available: "Available", partial: "Partial", planned: "Planned", dispositions: { "not-offered": "Not offered" } }}
+    groups={[
+      {
+        id: "one",
+        heading: "Group",
+        items: [
+          // @ts-expect-error — arbitrary readiness names cannot bypass the block's token mapping.
           { id: "row", label: "Row", state: "blocked" },
+        ],
+      },
+    ]}
+  />
+);
+
+export const invalidMixedStatusItem = (
+  <StatusList
+    legendLabel="Status"
+    labels={{ available: "Available", partial: "Partial", planned: "Planned", dispositions: { "not-offered": "Not offered" } }}
+    groups={[
+      {
+        id: "one",
+        heading: "Group",
+        items: [
+          // @ts-expect-error — a deliberate non-capability is off-axis, never also a readiness state.
+          { id: "row", label: "Row", state: "available", disposition: "not-offered" },
+        ],
+      },
+    ]}
+  />
+);
+
+export const invalidUnclassifiedStatusItem = (
+  <StatusList
+    legendLabel="Status"
+    labels={{ available: "Available", partial: "Partial", planned: "Planned", dispositions: { "not-offered": "Not offered" } }}
+    groups={[
+      {
+        id: "one",
+        heading: "Group",
+        items: [
+          // @ts-expect-error — every row must be either a readiness state or a closed off-axis disposition.
+          { id: "row", label: "Row" },
         ],
       },
     ]}
@@ -82,9 +125,9 @@ export const invalidStatusList = (
 
 export const incompleteStatusLabels = (
   <StatusList
-    legendLabel="Readiness"
+    legendLabel="Status"
     // @ts-expect-error — the one legend must visibly name every member of the closed state vocabulary.
-    labels={{ available: "Available", partial: "Partial" }}
+    labels={{ available: "Available", partial: "Partial", planned: "Planned", dispositions: {} }}
     groups={[]}
   />
 );

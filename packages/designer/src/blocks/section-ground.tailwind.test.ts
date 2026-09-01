@@ -26,6 +26,7 @@ describe("section-ground Tailwind output", () => {
       ".bg-status-success",
       ".bg-status-warning",
       ".bg-status-info",
+      ".bg-ink-muted",
       ".ring-ink-primary",
       ".ring-ink-on-inverse",
     ]) {
