@@ -3,6 +3,21 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.6] - 2026-08-31
+
+### Added
+
+- Added server-safe `OrderedStepSequence` and `StatusList` editorial blocks
+  with ordered and definition-list semantics, caller-localized labels,
+  closed state and ground vocabularies, accessible authored ordinals,
+  responsive decorative connectors, and explicit contrast coverage.
+
+### Fixed
+
+- Replaced the five bounded physical-direction shell patterns with logical
+  inset, border, and focus-position utilities so navigation, drawers, toasts,
+  and skip links follow the document writing direction.
+
 ## [0.2.5] - 2026-08-31
 
 ### Changed
