@@ -303,10 +303,22 @@ with a stale source link.
 | `@clossys/strategist` | 0.1.1 | 0.1.2 | **do not adopt 0.1.1**, floor `^0.1.2` |
 | `@clossys/writer` | 0.3.2 | (not affected) | floor `^0.3.2` |
 
-At the observation instant the four replacement versions were **not yet
-published**: the registry's `latest` was still the affected version in each
-case. Publication is in progress. A consumer should re-check with
-`npm view <name> version` and adopt the replacement floor once it resolves.
+At the observation instant none of the four replacement versions had been
+published: the registry's `latest` was still the affected version in each case.
+
+Since then `@clossys/advisor@0.1.6` has published, and it confirms what section
+4a describes. Read from the registry on 2026-09-01, it carries `repository`
+`git+https://github.com/clossys/foundry.git`, `bugs`
+`https://github.com/clossys/foundry/issues`, and a `homepage` under
+`clossys/foundry`, alongside the same two executables 0.1.5 ships and a
+provenance attestation. The metadata is corrected and the runtime surface is
+unchanged, which is exactly what a replacement version is supposed to be.
+
+`@clossys/controller@0.8.24`, `@clossys/starter@0.1.5`, and
+`@clossys/strategist@0.1.2` had still not published at that same reading.
+Publication is in progress. Re-check with `npm view <name> version` and adopt
+each replacement floor once it resolves. The floors in the table above do not
+change when that happens; only their availability does.
 
 ### 4c. Newly-required contract fields: what actually changed
 
