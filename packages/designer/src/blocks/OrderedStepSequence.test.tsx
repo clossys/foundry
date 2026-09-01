@@ -75,3 +75,20 @@ describe("OrderedStepSequence", () => {
     expect(root.style.marginTop).toBe("8px");
   });
 });
+
+describe("OrderedStepSequence eyebrow", () => {
+  it("renders an optional eyebrow above the heading", () => {
+    const { container } = render(<OrderedStepSequence eyebrow="Section label" heading="Process" items={ITEMS} />);
+    const region = container.querySelector("h2")?.parentElement as HTMLElement;
+    expect(region.children[0].tagName).toBe("P");
+    expect(region.children[0].textContent).toBe("Section label");
+    expect(region.children[1].tagName).toBe("H2");
+  });
+
+  it("renders no eyebrow element, and no heading region at all, when none is supplied", () => {
+    const withHeading = render(<OrderedStepSequence heading="Process" items={ITEMS} />).container;
+    expect(withHeading.querySelector("h2")?.parentElement?.children).toHaveLength(1);
+    const bare = render(<OrderedStepSequence items={ITEMS} />).container;
+    expect((bare.firstElementChild as HTMLElement).firstElementChild?.tagName).toBe("OL");
+  });
+});

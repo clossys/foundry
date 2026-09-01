@@ -95,8 +95,10 @@ export { collectCopyProvenance, createOutputManifest, createResolvedOutputManife
 export { resolveSurfaceDocument, SurfaceResolutionError } from "./resolve-surface.js";
 export { resolveSectionedViewDocument, SectionedViewResolutionError, validateSectionedViewDocument } from "./sectioned-view.js";
 export type {
+  ResolvedSectionedViewAction,
   ResolvedSectionedViewDocument,
   ResolvedSectionedViewSection,
+  SectionedViewAction,
   SectionedViewDocument,
   SectionedViewFaqItem,
   SectionedViewFaqSection,

@@ -3,6 +3,31 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- Added an optional `eyebrow` `CopyRef` to the `feature-grid`, `faq`,
+  `ordered-step-sequence`, and `status-list` sections of
+  `SectionedViewDocument`. Only `hero` carried one before, so authored eyebrow
+  copy for any other section had nowhere to go.
+- Added an optional `actions` list to the `SectionedViewDocument` hero
+  section: data-only `{ id, label, href }` entries whose `href` is held to the
+  same sanctioned-target rule the other server-rendered views use, rendered
+  into the Designer `Hero` block's existing actions slot.
+- Added an optional `detail` `CopyRef` to a `status-list` item, carrying that
+  row's own explanation, including the reasoning behind a `not-offered`
+  answer.
+- Added the `landmark` prop to `SectionedView`. The default, `"main"`, is
+  unchanged; `"none"` renders the same sections without the view's own `main`
+  landmark, so a page can mount the subset this contract expresses and keep
+  the rest inside a landmark it owns.
+
+Every one of these is optional and additive: a document that validated before
+still validates, and a document carrying none of them renders byte-for-byte
+the markup it did at 0.2.1, which is asserted against frozen captured markup
+rather than described.
+
 ## [0.2.1] - 2026-09-01
 
 ### Fixed

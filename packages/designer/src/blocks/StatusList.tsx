@@ -13,6 +13,13 @@ export interface StatusListReadinessItem {
   id: string;
   /** The thing this editorial row describes. */
   label: ReactNode;
+  /**
+   * Optional explanation for this row, rendered on its own line beneath the
+   * label as a second description of the same term. A row's reasoning is
+   * often the substance of the page it sits on, and without this slot it
+   * has nowhere to go but the label itself.
+   */
+  detail?: ReactNode;
   /** Closed readiness vocabulary; callers cannot supply an arbitrary colour. */
   state: StatusListState;
   /** A readiness item cannot also be an off-axis disposition. */
@@ -24,6 +31,12 @@ export interface StatusListDispositionItem {
   id: string;
   /** The thing this editorial row describes. */
   label: ReactNode;
+  /**
+   * Optional explanation for this row. The reasoning behind a deliberate
+   * non-capability is the part a reader most often needs, so an off-axis
+   * row carries the same slot as a readiness row.
+   */
+  detail?: ReactNode;
   /** Deliberate non-capability outside the readiness axis. */
   disposition: StatusListDisposition;
   /** An off-axis disposition cannot also claim a readiness state. */
@@ -48,6 +61,8 @@ export type StatusListLabels = Readonly<Record<StatusListState, ReactNode>> & Re
 }>;
 
 export interface StatusListProps extends Omit<HTMLAttributes<HTMLElement>, "title"> {
+  /** Small label above the block's own heading, the same slot `FeatureGrid` and `Hero` already ship. */
+  eyebrow?: ReactNode;
   /** Optional heading above the status groups. */
   heading?: ReactNode;
   /** Supporting copy under the list heading. */
@@ -94,13 +109,19 @@ function labelFor(item: StatusListItem, labels: StatusListLabels): ReactNode {
  * of the accessible name and out of the sole information channel.
  *
  * Status text uses the selected ground's primary reading ink, while the small
- * dot uses its mapped visual mark. The off-axis disposition uses neutral
+ * dot uses its mapped visual mark. A row's optional `detail` renders as a
+ * second description of the same term: another `dd` beside the status one,
+ * wrapped onto its own line, so the explanation stays inside the row's
+ * definition-list semantics instead of becoming a paragraph that only looks
+ * adjacent. A row without a `detail` renders exactly the markup it always
+ * did. The off-axis disposition uses neutral
  * structural ink rather than a readiness status token. Base marks clear their
  * checked non-text floor directly; sunken and inverse add a two-pixel boundary
  * using the ground's checked primary ink. The adjacent label remains the sole
  * meaning-bearing channel on every ground.
  */
 export function StatusList({
+  eyebrow,
   heading,
   description,
   labels,
@@ -115,12 +136,13 @@ export function StatusList({
   const HeadingTag = `h${headingLevel}` as `h${StatusListHeadingLevel}`;
   const colors = SECTION_GROUND_CLASSES[ground];
   const GroupHeadingTag = `h${Math.min(headingLevel + 1, 6)}` as `h${StatusListHeadingLevel}`;
-  const hasHeadingRegion = heading !== undefined || description !== undefined;
+  const hasHeadingRegion = eyebrow !== undefined || heading !== undefined || description !== undefined;
 
   return (
     <section {...rest} className={cx("flex flex-col gap-lg", colors.surface, className)} style={style}>
       {hasHeadingRegion ? (
         <div className="flex flex-col gap-xs">
+          {eyebrow ? <p className={cx("text-caption uppercase tracking-label", colors.muted)}>{eyebrow}</p> : null}
           {heading ? <HeadingTag className={cx("text-h2 font-display", colors.primary)}>{heading}</HeadingTag> : null}
           {description ? <p className={cx("text-body", colors.secondary)}>{description}</p> : null}
         </div>
@@ -150,7 +172,7 @@ export function StatusList({
               {group.items.map((item, index) => (
                 <div
                   key={item.id}
-                  className={cx("flex items-center justify-between gap-md py-sm", index > 0 ? cx("border-t", colors.border) : undefined)}
+                  className={cx("flex items-center justify-between gap-md py-sm", item.detail !== undefined ? "flex-wrap" : undefined, index > 0 ? cx("border-t", colors.border) : undefined)}
                 >
                   <dt className={cx("text-body", colors.primary)}>{item.label}</dt>
                   <dd className={cx("flex shrink-0 items-center gap-xs text-body-s", colors.primary)}>
@@ -163,6 +185,9 @@ export function StatusList({
                     />
                     {labelFor(item, labels)}
                   </dd>
+                  {item.detail !== undefined ? (
+                    <dd className={cx("w-full text-body-s", colors.secondary)}>{item.detail}</dd>
+                  ) : null}
                 </div>
               ))}
             </dl>

@@ -265,6 +265,82 @@ const page = <SectionedView document={resolved} />;
 // resolved.resolutions feeds collectCopyProvenance/output-manifest helpers.
 ```
 
+#### Optional fields the document may also carry
+
+Four slots are optional and additive: a document written without them
+validates and renders exactly as it did before they existed.
+
+- **`eyebrow` on every section kind.** `hero` always had one; `feature-grid`,
+  `faq`, `ordered-step-sequence`, and `status-list` now carry the same
+  optional `CopyRef`, so authored eyebrow copy is no longer dropped at
+  conversion time.
+- **`actions` on the hero section.** An optional, non-empty list of
+  `{ id, label, href }`, where `label` is a `CopyRef` and `href` must be a
+  fragment, a one-origin path, an `http(s)` URL, or a `mailto:` link. It stays
+  data: there is no node, class, or handler slot, and the view renders the
+  anchors into the Designer `Hero` block's existing `actions` slot.
+- **`detail` on a status-list item.** An optional `CopyRef` carrying that
+  row's own explanation, including the reasoning behind a `not-offered`
+  answer. It renders as a second description of the same row, so the
+  definition-list semantics stay intact.
+
+```tsx
+const resolved = resolveSectionedViewDocument({
+  id: "acme-trust",
+  sections: [
+    {
+      id: "welcome",
+      kind: "hero",
+      ground: "base",
+      heading: { id: "acme.trust.heading" },
+      actions: [{ id: "contact", label: { id: "acme.trust.contact" }, href: "/contact" }],
+    },
+    {
+      id: "posture",
+      kind: "status-list",
+      ground: "sunken",
+      eyebrow: { id: "acme.trust.eyebrow" },
+      heading: { id: "acme.trust.posture" },
+      labels: {
+        available: { id: "acme.status.available" },
+        partial: { id: "acme.status.partial" },
+        planned: { id: "acme.status.planned" },
+        dispositions: { "not-offered": { id: "acme.status.not-offered" } },
+      },
+      groups: [{
+        id: "core",
+        heading: { id: "acme.trust.core" },
+        items: [{
+          id: "audit",
+          label: { id: "acme.trust.audit.label" },
+          detail: { id: "acme.trust.audit.detail" },
+          disposition: "not-offered",
+        }],
+      }],
+    },
+  ],
+}, resolveCopy);
+```
+
+#### Mounting part of a page: the `landmark` prop
+
+`SectionedView` renders its own `main` landmark by default, which is right
+when the whole page is the document. A page that can express only some of its
+sections through this contract needs the other option, or its remaining
+content ends up outside the page's only `main`:
+
+```tsx
+<main>
+  <SectionedView document={resolved} landmark="none" />
+  <ConsumerOwnedSection />
+</main>
+```
+
+`landmark="none"` renders the same sections in a plain grouping element with
+no landmark role and no accessible name. Default behaviour is unchanged, and
+choosing it makes the surrounding page responsible for supplying exactly one
+`main` landmark containing this output.
+
 The ordinary and `react-server` `@clossys/publisher/web` exports are aligned.
 The view owns section markup, source order, unique section ids, grounds, and
 the h1/h2/h3 outline; Designer owns visual tokens and block internals. Per
@@ -1249,14 +1325,15 @@ choice `checkLedgerDrift` makes for a citation it could not check.
   `ResolvedAsset`, `ResolvedSurfaceDocument`, `ResolvedSurfaceGroup`,
   `ResolvedSurfaceGroupField`, `ResolvedSurfaceGroupItem`, `ResolvedSurfaceNode`,
   `ResolveSurfaceDocumentOptions`, `SurfaceResolutionReason`, and
-  `CanvasInches`, `SectionedViewDocument`, `SectionedViewSection`,
+  `CanvasInches`, `SectionedViewAction`, `SectionedViewDocument`, `SectionedViewSection`,
   `SectionedViewSectionKind`, `SectionedViewGround`, `SectionedViewHeroSection`,
   `SectionedViewFeatureGridSection`, `SectionedViewFeatureItem`, `SectionedViewFaqSection`,
   `SectionedViewFaqItem`, `SectionedViewOrderedStepSequenceSection`,
   `SectionedViewOrderedStep`, `SectionedViewStatusListSection`,
   `SectionedViewStatusGroup`, `SectionedViewStatusItem`, `SectionedViewStatus`,
   `SectionedViewStatusDisposition`,
-  `ResolvedSectionedViewDocument`, `ResolvedSectionedViewSection`, and
+  `ResolvedSectionedViewAction`, `ResolvedSectionedViewDocument`,
+  `ResolvedSectionedViewSection`, and
   `SectionedViewResolutionReason` types. `SurfaceResolutionError` and
   `SectionedViewResolutionError` are thrown when their canonical resolution
   paths fail closed.
@@ -1275,7 +1352,7 @@ choice `checkLedgerDrift` makes for a citation it could not check.
   `CollectionViewLink`, `CollectionViewPagination`, `CollectionViewProps`,
   `DocumentViewEffectiveDate`, `DocumentViewProps`,
   `ErrorViewProps`, `MarketingViewProps`, `MarketingFeatureItem`, `MarketingFaqItem`,
-  `SectionedViewProps`,
+  `SectionedViewLandmark`, `SectionedViewProps`,
   `RenderErrorReason`, `AssetResolver`, `CopyResolver`, `RenderWebOptions`,
   `RenderWebResult`, `RepeatingWebSlotFieldSpec`, `RepeatingWebSlotSpec`, `ResolvedWebGroupField`, `ResolvedWebGroupItem`,
   `WebSlotContentKind`, `WebTemplate`, `DefineWebTemplateOptions`,

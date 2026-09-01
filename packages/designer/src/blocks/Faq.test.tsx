@@ -128,3 +128,20 @@ describe("Faq", () => {
     expect(secondTrigger.parentElement).toHaveClass(border);
   });
 });
+
+describe("Faq eyebrow", () => {
+  it("renders an optional eyebrow above the heading", () => {
+    const { container } = render(<Faq eyebrow="Section label" heading="Process" items={ITEMS} />);
+    const region = container.querySelector("h2")?.parentElement as HTMLElement;
+    expect(region.children[0].tagName).toBe("P");
+    expect(region.children[0].textContent).toBe("Section label");
+    expect(region.children[1].tagName).toBe("H2");
+  });
+
+  it("renders no eyebrow element, and no heading region at all, when none is supplied", () => {
+    const withHeading = render(<Faq heading="Process" items={ITEMS} />).container;
+    expect(withHeading.querySelector("h2")?.parentElement?.children).toHaveLength(1);
+    const bare = render(<Faq items={ITEMS} />).container;
+    expect(bare.querySelectorAll("p")).toHaveLength(0);
+  });
+});

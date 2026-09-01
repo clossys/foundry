@@ -21,4 +21,4 @@ export { CollectionView } from "./CollectionView.js";
 export type { CollectionViewEmptyState, CollectionViewEntry, CollectionViewLink, CollectionViewPagination, CollectionViewProps } from "./CollectionView.js";
 
 export { SectionedView } from "./SectionedView.server.js";
-export type { SectionedViewProps } from "./SectionedView.js";
+export type { SectionedViewLandmark, SectionedViewProps } from "./SectionedView.js";

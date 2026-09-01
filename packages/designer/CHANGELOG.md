@@ -3,6 +3,19 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- Added an optional `detail` slot to every `StatusList` row, readiness and
+  off-axis disposition alike. It renders as a second description of the same
+  term, so a row's explanation stays inside the definition-list semantics. A
+  row without one renders exactly the markup it did before.
+- Added the optional `eyebrow` slot `Hero` and `FeatureGrid` already shipped
+  to `Faq` (both the React Aria and server-native implementations),
+  `OrderedStepSequence`, and `StatusList`. A block given no eyebrow, heading,
+  or description still renders no heading region at all.
+
 ## [0.2.7] - 2026-09-01
 
 ### Added
