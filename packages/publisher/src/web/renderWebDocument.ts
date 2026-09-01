@@ -443,8 +443,21 @@ function hasOnlyEnumerableStringDataKeys(value: Record<string, unknown>): boolea
 }
 
 function densePublicArray(value: unknown, path: string): value is unknown[] {
-  if (!Array.isArray(value)) { invalidPublicGroups(`${path} must be an array.`); }
-  for (let index = 0; index < value.length; index += 1) if (!Object.hasOwn(value, index)) invalidPublicGroups(`${path}[${index}] must not be a sparse array hole.`);
+  try {
+    if (!Array.isArray(value) || Object.getPrototypeOf(value) !== Array.prototype) invalidPublicGroups(`${path} must be a plain array.`);
+    const lengthDescriptor = Object.getOwnPropertyDescriptor(value, "length");
+    if (lengthDescriptor === undefined || !("value" in lengthDescriptor) || typeof lengthDescriptor.value !== "number") invalidPublicGroups(`${path} must have an ordinary length.`);
+    for (const key of Reflect.ownKeys(value)) {
+      if (key === "length") continue;
+      if (typeof key !== "string" || !/^(?:0|[1-9]\d*)$/.test(key) || Number(key) >= lengthDescriptor.value) invalidPublicGroups(`${path} has an unsafe non-index own key.`);
+      const descriptor = Object.getOwnPropertyDescriptor(value, key);
+      if (descriptor === undefined || !descriptor.enumerable || !("value" in descriptor)) invalidPublicGroups(`${path}[${key}] must be an enumerable data item.`);
+    }
+    for (let index = 0; index < lengthDescriptor.value; index += 1) if (!Object.hasOwn(value, index)) invalidPublicGroups(`${path}[${index}] must not be a sparse array hole.`);
+  } catch (error) {
+    if (error instanceof RenderError) throw error;
+    invalidPublicGroups(`${path} could not be inspected safely.`);
+  }
   return true;
 }
 
@@ -463,12 +476,12 @@ function validatePublicGroups(groups: unknown): ResolvedSurfaceGroup[] {
   if (groups === undefined) return [];
   if (!densePublicArray(groups, "groups")) return [];
 
-  return groups.map((candidate, groupIndex) => {
+  return Array.prototype.map.call(groups, (candidate, groupIndex) => {
     if (!isPlainClosedObject(candidate) || !hasOnlyOwnKeys(candidate, ["slot", "items"]) || !hasOwn(candidate, "slot") || !hasOwn(candidate, "items") || !isNonWhitespaceString(candidate.slot) || !densePublicArray(candidate.items, `groups[${groupIndex}].items`)) {
       invalidPublicGroups(`groups[${groupIndex}] must be a plain { slot, items } object with a non-whitespace slot and an items array.`);
     }
 
-    const items = candidate.items.map((itemCandidate, itemIndex) => {
+    const items = Array.prototype.map.call(candidate.items, (itemCandidate, itemIndex) => {
       if (!isPlainClosedObject(itemCandidate) || !hasOnlyOwnKeys(itemCandidate, ["index", "value", "node", "assetId", "fields"]) || !hasOwn(itemCandidate, "index")) {
         invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}] must be a plain item whose index is its sequential array position and has no unknown keys.`);
       }
@@ -510,7 +523,7 @@ function validatePublicGroups(groups: unknown): ResolvedSurfaceGroup[] {
       return itemCandidate as unknown as ResolvedSurfaceGroupItem;
     });
     return { slot: candidate.slot, items };
-  });
+  }) as ResolvedSurfaceGroup[];
 }
 
 function validateStructuredGroupItem(slotKey: string, item: ResolvedSurfaceGroupItem, fields: readonly RepeatingWebSlotFieldSpec[]): void {

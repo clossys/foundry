@@ -161,6 +161,9 @@ describe("renderWebDocument — hostile public RenderWebOptions.groups input", (
     const symbol = { slot: "faq", items: [] as unknown[] };
     Object.defineProperty(symbol, Symbol("hidden"), { value: true, enumerable: true });
     expectPublicGroupRefusal([{ slot: "features", items: [] }, symbol]);
+    const nonIndex = groupsWith({ index: 0, fields: { question: { value: "Q" }, answer: { value: "A" } } });
+    Object.defineProperty(nonIndex, "map", { enumerable: true, get: () => { throw new Error("map getter must not run"); } });
+    expectPublicGroupRefusal(nonIndex);
   });
 });
 

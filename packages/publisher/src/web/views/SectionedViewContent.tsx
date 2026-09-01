@@ -34,6 +34,17 @@ function closed(value: Record<string, unknown>, keys: readonly string[]): boolea
   return Reflect.ownKeys(value).every((key) => typeof key === "string" && keys.includes(key) && (() => { const descriptor = Object.getOwnPropertyDescriptor(value, key); return descriptor !== undefined && descriptor.enumerable && "value" in descriptor; })());
 }
 
+function validCopyRef(value: unknown): boolean {
+  if (!plain(value) || !closed(value, ["id", "locale", "values"]) || !Object.hasOwn(value, "id") || !nonBlank(value.id) || (value.locale !== undefined && !nonBlank(value.locale))) return false;
+  if (value.values === undefined) return true;
+  if (!plain(value.values)) return false;
+  return Reflect.ownKeys(value.values).every((key) => {
+    if (typeof key !== "string") return false;
+    const descriptor = Object.getOwnPropertyDescriptor(value.values, key);
+    return descriptor !== undefined && descriptor.enumerable && "value" in descriptor && ["string", "number", "boolean"].includes(typeof descriptor.value);
+  });
+}
+
 function dense(value: unknown, path: string): asserts value is unknown[] {
   if (!Array.isArray(value) || value.length === 0) throw new Error(`${path} must be a non-empty dense array.`);
   for (let index = 0; index < value.length; index += 1) if (!Object.hasOwn(value, index)) throw new Error(`${path}.${index} is a sparse array hole.`);
@@ -64,7 +75,7 @@ export function assertRenderableSectionedViewDocument(document: unknown): assert
   for (let index = 0; index < candidate.resolutions.length; index += 1) {
     if (!Object.hasOwn(candidate.resolutions, index)) throw new Error(`resolutions.${index} is a sparse provenance hole.`);
     const resolution = candidate.resolutions[index];
-    if (!plain(resolution) || !closed(resolution, ["ref", "text", "recordId", "revision", "locale", "source", "entryId"]) || !nonBlank(resolution.text) || !nonBlank(resolution.recordId) || !nonBlank(resolution.revision) || !nonBlank(resolution.locale) || !nonBlank(resolution.entryId) || !plain(resolution.ref) || !closed(resolution.ref, ["id", "locale", "values"]) || !nonBlank(resolution.ref.id) || (resolution.ref.locale !== undefined && !nonBlank(resolution.ref.locale)) || !plain(resolution.source) || !closed(resolution.source, ["kind", "reference"]) || !["consumer", "generated", "imported"].includes(resolution.source.kind as string) || !nonBlank(resolution.source.reference)) {
+    if (!plain(resolution) || !closed(resolution, ["ref", "text", "recordId", "revision", "locale", "source", "entryId"]) || !nonBlank(resolution.text) || !nonBlank(resolution.recordId) || !nonBlank(resolution.revision) || !nonBlank(resolution.locale) || !nonBlank(resolution.entryId) || !validCopyRef(resolution.ref) || !plain(resolution.source) || !closed(resolution.source, ["kind", "reference"]) || !["consumer", "generated", "imported"].includes(resolution.source.kind as string) || !nonBlank(resolution.source.reference)) {
       throw new Error(`resolutions.${index} must be complete CopyResolution provenance.`);
     }
   }

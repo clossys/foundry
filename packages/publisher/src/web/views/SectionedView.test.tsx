@@ -35,6 +35,7 @@ describe("SectionedView", () => {
     const missingHero = { ...document, sections: [{ ...document.sections[0], heading: undefined }] };
     const missingFaq = { ...document, sections: [document.sections[0], { ...document.sections[2], items: [{ ...document.sections[2].items[0], answer: undefined }] }] };
     const badProvenance = { ...document, resolutions: [{ ...document.resolutions[0], ref: { id: "acme.home", extra: true } }] };
-    for (const candidate of [missingHero, missingFaq, badProvenance]) expect(() => renderToStaticMarkup(<SectionedView document={candidate as unknown as ResolvedSectionedViewDocument} />)).toThrow(/invalid resolved document/);
+    const badValues = { ...document, resolutions: [{ ...document.resolutions[0], ref: { id: "acme.home", values: { count: {} } } }] };
+    for (const candidate of [missingHero, missingFaq, badProvenance, badValues]) expect(() => renderToStaticMarkup(<SectionedView document={candidate as unknown as ResolvedSectionedViewDocument} />)).toThrow(/invalid resolved document/);
   });
 });

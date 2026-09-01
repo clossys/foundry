@@ -102,6 +102,12 @@ describe("SectionedViewDocument core contract", () => {
     expect(validateSectionedViewDocument(twoHeroes).map((entry) => entry.rule)).toEqual(expect.arrayContaining(["sectioned-view-hero-position", "sectioned-view-hero-count"]));
   });
 
+  it("reports a null first section without leaking a runtime error", () => {
+    const candidate = { ...document, sections: [null] };
+    expect(validateSectionedViewDocument(candidate).map((entry) => entry.path)).toContain("sections.0.kind");
+    expect(() => resolveSectionedViewDocument(candidate as unknown as SectionedViewDocument, resolver)).toThrow(SectionedViewResolutionError);
+  });
+
   it("fails all-or-nothing at the exact authored CopyRef path", () => {
     const missing: CopyResolver = (candidate) => (candidate.id === "acme.faq.one.answer" ? undefined : resolver(candidate));
     try {
