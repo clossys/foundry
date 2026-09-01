@@ -95,6 +95,13 @@ describe("SectionedViewDocument core contract", () => {
     ]));
   });
 
+  it("requires exactly one first-position hero for the fixed document outline", () => {
+    const noFirstHero = { ...document, sections: document.sections.slice(1) };
+    const twoHeroes = { ...document, sections: [document.sections[0], { ...document.sections[0], id: "hero-two" }] };
+    expect(validateSectionedViewDocument(noFirstHero).map((entry) => entry.path)).toContain("sections.0.kind");
+    expect(validateSectionedViewDocument(twoHeroes).map((entry) => entry.rule)).toEqual(expect.arrayContaining(["sectioned-view-hero-position", "sectioned-view-hero-count"]));
+  });
+
   it("fails all-or-nothing at the exact authored CopyRef path", () => {
     const missing: CopyResolver = (candidate) => (candidate.id === "acme.faq.one.answer" ? undefined : resolver(candidate));
     try {

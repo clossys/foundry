@@ -223,6 +223,7 @@ export function validateSectionedViewDocument(value: unknown): ComposeFinding[] 
   if (!validateDenseArray(value.sections, "sections", findings, "sectioned-view-sections-shape", "sections must be a non-empty array.")) return findings;
 
   const sectionIds = new Set<string>();
+  let heroCount = 0;
   for (let sectionIndex = 0; sectionIndex < value.sections.length; sectionIndex += 1) {
     const section = value.sections[sectionIndex];
     const path = `sections.${sectionIndex}`;
@@ -237,6 +238,8 @@ export function validateSectionedViewDocument(value: unknown): ComposeFinding[] 
 
     switch (section.kind) {
       case "hero":
+        heroCount += 1;
+        if (sectionIndex !== 0) findings.push(finding("sectioned-view-hero-position", `${path}.kind`, "sections.0 must be the document's only hero section."));
         if (!hasOnlyOwnKeys(section, ["id", "kind", "ground", "eyebrow", "heading", "description"]) || !hasOwn(section, "heading")) findings.push(finding("sectioned-view-section-keys", path, `${path} has keys not allowed for hero.`));
         validateCopy(section.heading, `${path}.heading`, findings);
         if (section.eyebrow !== undefined) validateCopy(section.eyebrow, `${path}.eyebrow`, findings);
@@ -275,6 +278,8 @@ export function validateSectionedViewDocument(value: unknown): ComposeFinding[] 
         findings.push(finding("sectioned-view-section-kind", `${path}.kind`, `${path}.kind must be one of hero, feature-grid, faq, ordered-step-sequence, status-list.`));
     }
   }
+  if ((value.sections[0] as { kind?: unknown }).kind !== "hero") findings.push(finding("sectioned-view-hero-first", "sections.0.kind", "sections.0.kind must be hero so the page has one h1."));
+  if (heroCount !== 1) findings.push(finding("sectioned-view-hero-count", "sections", "A SectionedViewDocument must contain exactly one hero section."));
   return findings;
 }
 

@@ -147,6 +147,18 @@ describe("renderWebDocument — hostile public RenderWebOptions.groups input", (
   it("requires indexes to match the resolver's contiguous source order", () => {
     expectPublicGroupRefusal(groupsWith({ index: 1, fields: { question: { value: "Q" }, answer: { value: "A" } } }));
   });
+
+  it("rejects sparse group/item arrays and hidden, symbol, or accessor wire keys before reading them", () => {
+    const sparse = groupsWith({ index: 0, fields: { question: { value: "Q" }, answer: { value: "A" } } });
+    sparse.length = 3;
+    expectPublicGroupRefusal(sparse);
+    const accessor = { slot: "faq", items: [] as unknown[] };
+    Object.defineProperty(accessor, "slot", { enumerable: true, get: () => { throw new Error("getter must not run"); } });
+    expectPublicGroupRefusal([{ slot: "features", items: [] }, accessor]);
+    const symbol = { slot: "faq", items: [] as unknown[] };
+    Object.defineProperty(symbol, Symbol("hidden"), { value: true, enumerable: true });
+    expectPublicGroupRefusal([{ slot: "features", items: [] }, symbol]);
+  });
 });
 
 describe("renderWebDocument — assetId refusal paths (never a blank box)", () => {

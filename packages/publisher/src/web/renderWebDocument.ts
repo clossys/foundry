@@ -409,9 +409,11 @@ function resolveGroupFieldContent(
 }
 
 function isPlainClosedObject(value: unknown): value is Record<string, unknown> {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
-  const prototype = Object.getPrototypeOf(value);
-  return prototype === Object.prototype || prototype === null;
+  try {
+    if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+    const prototype = Object.getPrototypeOf(value);
+    return prototype === Object.prototype || prototype === null;
+  } catch { return false; }
 }
 
 function isNonWhitespaceString(value: unknown): value is string {
@@ -419,7 +421,31 @@ function isNonWhitespaceString(value: unknown): value is string {
 }
 
 function hasOnlyOwnKeys(value: Record<string, unknown>, allowed: readonly string[]): boolean {
-  return Object.getOwnPropertyNames(value).every((key) => allowed.includes(key));
+  try {
+    return Reflect.ownKeys(value).every((key) => {
+      if (typeof key !== "string" || !allowed.includes(key)) return false;
+      const descriptor = Object.getOwnPropertyDescriptor(value, key);
+      return descriptor !== undefined && descriptor.enumerable && "value" in descriptor;
+    });
+  } catch { return false; }
+}
+
+function hasOwn(value: Record<string, unknown>, key: string): boolean { return Object.hasOwn(value, key); }
+
+function hasOnlyEnumerableStringDataKeys(value: Record<string, unknown>): boolean {
+  try {
+    return Reflect.ownKeys(value).every((key) => {
+      if (typeof key !== "string") return false;
+      const descriptor = Object.getOwnPropertyDescriptor(value, key);
+      return descriptor !== undefined && descriptor.enumerable && "value" in descriptor;
+    });
+  } catch { return false; }
+}
+
+function densePublicArray(value: unknown, path: string): value is unknown[] {
+  if (!Array.isArray(value)) { invalidPublicGroups(`${path} must be an array.`); }
+  for (let index = 0; index < value.length; index += 1) if (!Object.hasOwn(value, index)) invalidPublicGroups(`${path}[${index}] must not be a sparse array hole.`);
+  return true;
 }
 
 function invalidPublicGroups(message: string): never {
@@ -435,16 +461,16 @@ function invalidPublicGroups(message: string): never {
  */
 function validatePublicGroups(groups: unknown): ResolvedSurfaceGroup[] {
   if (groups === undefined) return [];
-  if (!Array.isArray(groups)) invalidPublicGroups("groups must be an array when supplied.");
+  if (!densePublicArray(groups, "groups")) return [];
 
   return groups.map((candidate, groupIndex) => {
-    if (!isPlainClosedObject(candidate) || !hasOnlyOwnKeys(candidate, ["slot", "items"]) || !isNonWhitespaceString(candidate.slot) || !Array.isArray(candidate.items)) {
+    if (!isPlainClosedObject(candidate) || !hasOnlyOwnKeys(candidate, ["slot", "items"]) || !hasOwn(candidate, "slot") || !hasOwn(candidate, "items") || !isNonWhitespaceString(candidate.slot) || !densePublicArray(candidate.items, `groups[${groupIndex}].items`)) {
       invalidPublicGroups(`groups[${groupIndex}] must be a plain { slot, items } object with a non-whitespace slot and an items array.`);
     }
 
     const items = candidate.items.map((itemCandidate, itemIndex) => {
       const resolvedIndex = isPlainClosedObject(itemCandidate) ? itemCandidate.index : undefined;
-      if (!isPlainClosedObject(itemCandidate) || !hasOnlyOwnKeys(itemCandidate, ["index", "value", "node", "assetId", "fields"]) || typeof resolvedIndex !== "number" || !Number.isInteger(resolvedIndex) || resolvedIndex !== itemIndex) {
+      if (!isPlainClosedObject(itemCandidate) || !hasOnlyOwnKeys(itemCandidate, ["index", "value", "node", "assetId", "fields"]) || !hasOwn(itemCandidate, "index") || typeof resolvedIndex !== "number" || !Number.isInteger(resolvedIndex) || resolvedIndex !== itemIndex) {
         invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}] must be a plain item whose index is its sequential array position and has no unknown keys.`);
       }
       const sourceKeys = ["value", "node", "assetId", "fields"].filter((key) => itemCandidate[key] !== undefined);
@@ -461,7 +487,7 @@ function validatePublicGroups(groups: unknown): ResolvedSurfaceGroup[] {
         invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}].assetId must be a non-whitespace string when supplied.`);
       }
       if (itemCandidate.fields !== undefined) {
-        if (!isPlainClosedObject(itemCandidate.fields) || Object.keys(itemCandidate.fields).length === 0) {
+        if (!isPlainClosedObject(itemCandidate.fields) || !hasOnlyEnumerableStringDataKeys(itemCandidate.fields) || Object.keys(itemCandidate.fields).length === 0) {
           invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}].fields must be a non-empty plain object.`);
         }
         for (const [field, binding] of Object.entries(itemCandidate.fields)) {
