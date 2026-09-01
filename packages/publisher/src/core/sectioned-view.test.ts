@@ -106,4 +106,71 @@ describe("SectionedViewDocument core contract", () => {
       expect((error as Error).message).toContain("sections.2.items.0.answer");
     }
   });
+
+  it("rejects sparse sections, repeated items, status groups, and status items at their authored paths", () => {
+    const sparseSections = { id: document.id, sections: [document.sections[0], , document.sections[2]] };
+    const sparseItems = { id: document.id, sections: [{ ...document.sections[1], items: [document.sections[1].items[0], , document.sections[1].items[1]] }] };
+    const groups = new Array(2);
+    groups[0] = document.sections[4].groups[0];
+    const statusItems = new Array(2);
+    statusItems[0] = document.sections[4].groups[0].items[0];
+    const sparseGroups = { id: document.id, sections: [{ ...document.sections[4], groups }] };
+    const sparseStatusItems = { id: document.id, sections: [{ ...document.sections[4], groups: [{ ...document.sections[4].groups[0], items: statusItems }] }] };
+
+    expect(validateSectionedViewDocument(sparseSections).map((entry) => entry.path)).toContain("sections.1");
+    expect(validateSectionedViewDocument(sparseItems).map((entry) => entry.path)).toContain("sections.0.items.1");
+    expect(validateSectionedViewDocument(sparseGroups).map((entry) => entry.path)).toContain("sections.0.groups.1");
+    expect(validateSectionedViewDocument(sparseStatusItems).map((entry) => entry.path)).toContain("sections.0.groups.0.items.1");
+    expect(() => resolveSectionedViewDocument(sparseSections as unknown as SectionedViewDocument, resolver)).toThrow(SectionedViewResolutionError);
+  });
+
+  it("fails closed on inherited, hidden, symbol, and accessor properties", () => {
+    const inheritedDocument = Object.create({ sections: document.sections }) as { id: string };
+    inheritedDocument.id = document.id;
+    expect(validateSectionedViewDocument(inheritedDocument)).toEqual(expect.arrayContaining([expect.objectContaining({ rule: "sectioned-view-document-shape" })]));
+
+    const hiddenKey = { ...document, sections: [{ ...document.sections[0] }] };
+    Object.defineProperty(hiddenKey.sections[0], "node", { value: {}, enumerable: false });
+    const symbolKey = { ...document, sections: [{ ...document.sections[0] }] };
+    Object.defineProperty(symbolKey.sections[0], Symbol("node"), { value: {}, enumerable: true });
+    const accessorKey = { ...document, sections: [{ ...document.sections[0] }] };
+    Object.defineProperty(accessorKey.sections[0], "heading", { get: () => ref("acme.hero.heading"), enumerable: true });
+
+    for (const candidate of [hiddenKey, symbolKey, accessorKey]) {
+      expect(validateSectionedViewDocument(candidate).map((entry) => entry.rule)).toContain("sectioned-view-section-shape");
+      expect(() => resolveSectionedViewDocument(candidate as SectionedViewDocument, resolver)).toThrow(SectionedViewResolutionError);
+    }
+  });
+
+  it("requires the complete closed CopyRef wire shape before consulting a custom resolver", () => {
+    const malformed = [
+      { id: "acme.hero.heading", locale: " " },
+      { id: "acme.hero.heading", values: { count: {} } },
+      { id: "acme.hero.heading", extra: "nope" },
+    ];
+    for (const heading of malformed) {
+      const candidate = { id: document.id, sections: [{ ...document.sections[0], heading }] };
+      let calls = 0;
+      expect(validateSectionedViewDocument(candidate).map((entry) => entry.path)).toContain("sections.0.heading");
+      expect(() => resolveSectionedViewDocument(candidate as unknown as SectionedViewDocument, (() => { calls += 1; return undefined; }) as CopyResolver)).toThrow(SectionedViewResolutionError);
+      expect(calls).toBe(0);
+    }
+
+    const symbolValues = { id: "acme.hero.heading", values: {} as Record<string, string> };
+    Object.defineProperty(symbolValues.values, Symbol("hidden"), { value: "x", enumerable: true });
+    expect(validateSectionedViewDocument({ id: document.id, sections: [{ ...document.sections[0], heading: symbolValues }] }).map((entry) => entry.path)).toContain("sections.0.heading");
+  });
+
+  it("reports a missing or nonfunction resolver as an unresolved-copy error rather than leaking TypeError", () => {
+    for (const resolverCandidate of [undefined, null, {}]) {
+      try {
+        resolveSectionedViewDocument(document, resolverCandidate as CopyResolver);
+        expect.unreachable();
+      } catch (error) {
+        expect(error).toBeInstanceOf(SectionedViewResolutionError);
+        expect((error as SectionedViewResolutionError).reason).toBe("unresolved-copy");
+        expect((error as Error).message).toContain("CopyResolver");
+      }
+    }
+  });
 });

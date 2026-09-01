@@ -131,11 +131,53 @@ const STATUSES: readonly SectionedViewStatus[] = ["available", "partial", "plann
 const FRAGMENT_ID = /^[a-z][a-z0-9-]*$/;
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
 }
 
-function hasOnlyKeys(value: Record<string, unknown>, allowed: readonly string[]): boolean {
-  return Object.keys(value).every((key) => allowed.includes(key));
+/**
+ * This is a public data boundary, not a convenience object check. Every
+ * property must be an enumerable own data property so inherited values,
+ * symbols, accessors, and hidden keys cannot alter resolution after shape
+ * validation has completed.
+ */
+function hasOnlyOwnKeys(value: Record<string, unknown>, allowed: readonly string[]): boolean {
+  return hasEnumerableOwnDataKeys(value) && Reflect.ownKeys(value).every((key) => {
+    if (typeof key !== "string" || !allowed.includes(key)) return false;
+    return true;
+  });
+}
+
+function hasEnumerableOwnDataKeys(value: Record<string, unknown>): boolean {
+  return Reflect.ownKeys(value).every((key) => {
+    if (typeof key !== "string") return false;
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    return descriptor !== undefined && descriptor.enumerable && "value" in descriptor;
+  });
+}
+
+function hasOwn(value: Record<string, unknown>, key: string): boolean {
+  return Object.hasOwn(value, key);
+}
+
+function hasOwnKeys(value: Record<string, unknown>, required: readonly string[]): boolean {
+  return required.every((key) => hasOwn(value, key));
+}
+
+function validateDenseArray(value: unknown, path: string, findings: ComposeFinding[], shapeRule: string, shapeMessage: string): value is unknown[] {
+  if (!Array.isArray(value) || value.length === 0) {
+    findings.push(finding(shapeRule, path, shapeMessage));
+    return false;
+  }
+  let dense = true;
+  for (let index = 0; index < value.length; index += 1) {
+    if (!Object.hasOwn(value, index)) {
+      findings.push(finding("sectioned-view-array-hole", `${path}.${index}`, `${path}.${index} must be an authored array item; sparse arrays are not supported.`));
+      dense = false;
+    }
+  }
+  return dense;
 }
 
 function isNonWhitespaceString(value: unknown): value is string {
@@ -143,7 +185,15 @@ function isNonWhitespaceString(value: unknown): value is string {
 }
 
 function isCopyRef(value: unknown): value is CopyRef {
-  return isPlainObject(value) && isNonWhitespaceString(value.id);
+  if (!isPlainObject(value) || !hasOnlyOwnKeys(value, ["id", "locale", "values"]) || !hasOwn(value, "id") || !isNonWhitespaceString(value.id)) return false;
+  if (hasOwn(value, "locale") && !isNonWhitespaceString(value.locale)) return false;
+  if (!hasOwn(value, "values")) return true;
+  if (!isPlainObject(value.values) || !Reflect.ownKeys(value.values).every((key) => {
+    if (typeof key !== "string") return false;
+    const descriptor = Object.getOwnPropertyDescriptor(value.values, key);
+    return descriptor !== undefined && descriptor.enumerable && "value" in descriptor && ["string", "number", "boolean"].includes(typeof descriptor.value);
+  })) return false;
+  return true;
 }
 
 function finding(rule: string, path: string, message: string): ComposeFinding {
@@ -156,30 +206,29 @@ function validateCopy(value: unknown, path: string, findings: ComposeFinding[]):
 
 function validateItemIds(items: unknown[], path: string, findings: ComposeFinding[]): void {
   const ids = new Set<string>();
-  items.forEach((item, index) => {
+  for (let index = 0; index < items.length; index += 1) {
+    const item = items[index];
     const itemPath = `${path}.${index}`;
-    if (!isPlainObject(item) || !isNonWhitespaceString(item.id)) return;
+    if (!isPlainObject(item) || !hasEnumerableOwnDataKeys(item) || !isNonWhitespaceString(item.id)) return;
     if (ids.has(item.id)) findings.push(finding("sectioned-view-item-id-duplicate", `${itemPath}.id`, `${itemPath}.id duplicates another item id in ${path}.`));
     ids.add(item.id);
-  });
+  }
 }
 
 /** Validates the closed, CopyRef-only section model without importing React or Designer. */
 export function validateSectionedViewDocument(value: unknown): ComposeFinding[] {
   const findings: ComposeFinding[] = [];
-  if (!isPlainObject(value) || !hasOnlyKeys(value, ["id", "sections"])) return [finding("sectioned-view-document-shape", "$", "A SectionedViewDocument must be a plain { id, sections } object.")];
+  if (!isPlainObject(value) || !hasOnlyOwnKeys(value, ["id", "sections"]) || !hasOwnKeys(value, ["id", "sections"])) return [finding("sectioned-view-document-shape", "$", "A SectionedViewDocument must be a plain { id, sections } object.")];
   if (!isNonWhitespaceString(value.id)) findings.push(finding("sectioned-view-document-id-shape", "id", "id must be a non-whitespace string."));
-  if (!Array.isArray(value.sections) || value.sections.length === 0) {
-    findings.push(finding("sectioned-view-sections-shape", "sections", "sections must be a non-empty array."));
-    return findings;
-  }
+  if (!validateDenseArray(value.sections, "sections", findings, "sectioned-view-sections-shape", "sections must be a non-empty array.")) return findings;
 
   const sectionIds = new Set<string>();
-  value.sections.forEach((section, sectionIndex) => {
+  for (let sectionIndex = 0; sectionIndex < value.sections.length; sectionIndex += 1) {
+    const section = value.sections[sectionIndex];
     const path = `sections.${sectionIndex}`;
-    if (!isPlainObject(section) || !isNonWhitespaceString(section.kind) || !isNonWhitespaceString(section.id) || !isNonWhitespaceString(section.ground)) {
+    if (!isPlainObject(section) || !hasEnumerableOwnDataKeys(section) || !hasOwnKeys(section, ["id", "kind", "ground"]) || !isNonWhitespaceString(section.kind) || !isNonWhitespaceString(section.id) || !isNonWhitespaceString(section.ground)) {
       findings.push(finding("sectioned-view-section-shape", path, `${path} must be a section object with id, kind, and ground.`));
-      return;
+      continue;
     }
     if (!FRAGMENT_ID.test(section.id)) findings.push(finding("sectioned-view-section-id-fragment", `${path}.id`, `${path}.id must be a lowercase, fragment-safe identifier (letters, digits, and hyphens; starting with a letter).`));
     if (sectionIds.has(section.id)) findings.push(finding("sectioned-view-section-id-duplicate", `${path}.id`, `${path}.id duplicates another section id.`));
@@ -188,7 +237,7 @@ export function validateSectionedViewDocument(value: unknown): ComposeFinding[] 
 
     switch (section.kind) {
       case "hero":
-        if (!hasOnlyKeys(section, ["id", "kind", "ground", "eyebrow", "heading", "description"])) findings.push(finding("sectioned-view-section-keys", path, `${path} has keys not allowed for hero.`));
+        if (!hasOnlyOwnKeys(section, ["id", "kind", "ground", "eyebrow", "heading", "description"]) || !hasOwn(section, "heading")) findings.push(finding("sectioned-view-section-keys", path, `${path} has keys not allowed for hero.`));
         validateCopy(section.heading, `${path}.heading`, findings);
         if (section.eyebrow !== undefined) validateCopy(section.eyebrow, `${path}.eyebrow`, findings);
         if (section.description !== undefined) validateCopy(section.description, `${path}.description`, findings);
@@ -225,70 +274,68 @@ export function validateSectionedViewDocument(value: unknown): ComposeFinding[] 
       default:
         findings.push(finding("sectioned-view-section-kind", `${path}.kind`, `${path}.kind must be one of hero, feature-grid, faq, ordered-step-sequence, status-list.`));
     }
-  });
+  }
   return findings;
 }
 
 function validateRepeatedSection(section: Record<string, unknown>, path: string, sectionKeys: readonly string[], itemKeys: readonly string[], findings: ComposeFinding[], validateItem: (item: Record<string, unknown>, path: string) => void): void {
-  if (!hasOnlyKeys(section, sectionKeys)) findings.push(finding("sectioned-view-section-keys", path, `${path} has keys not allowed for ${String(section.kind)}.`));
-  if (!Array.isArray(section.items) || section.items.length === 0) {
-    findings.push(finding("sectioned-view-items-shape", `${path}.items`, `${path}.items must be a non-empty array.`));
-    return;
-  }
+  if (!hasOnlyOwnKeys(section, sectionKeys) || !hasOwnKeys(section, ["heading", "items"])) findings.push(finding("sectioned-view-section-keys", path, `${path} has keys not allowed for this section kind.`));
+  if (!validateDenseArray(section.items, `${path}.items`, findings, "sectioned-view-items-shape", `${path}.items must be a non-empty array.`)) return;
   validateItemIds(section.items, `${path}.items`, findings);
-  section.items.forEach((item, itemIndex) => {
+  for (let itemIndex = 0; itemIndex < section.items.length; itemIndex += 1) {
+    const item = section.items[itemIndex];
     const itemPath = `${path}.items.${itemIndex}`;
-    if (!isPlainObject(item) || !hasOnlyKeys(item, itemKeys) || !isNonWhitespaceString(item.id)) {
+    const requiredItemKeys = itemKeys.filter((key) => !["description", "label"].includes(key));
+    if (!isPlainObject(item) || !hasOnlyOwnKeys(item, itemKeys) || !hasOwnKeys(item, requiredItemKeys) || !isNonWhitespaceString(item.id)) {
       findings.push(finding("sectioned-view-item-shape", itemPath, `${itemPath} must be a plain item with a non-whitespace id and only its kind's fields.`));
-      return;
+      continue;
     }
     validateItem(item, itemPath);
-  });
+  }
 }
 
 function validateStatusListSection(section: Record<string, unknown>, path: string, findings: ComposeFinding[]): void {
-  if (!hasOnlyKeys(section, ["id", "kind", "ground", "heading", "description", "labels", "groups"])) findings.push(finding("sectioned-view-section-keys", path, `${path} has keys not allowed for status-list.`));
+  if (!hasOnlyOwnKeys(section, ["id", "kind", "ground", "heading", "description", "labels", "groups"]) || !hasOwnKeys(section, ["heading", "labels", "groups"])) findings.push(finding("sectioned-view-section-keys", path, `${path} has keys not allowed for status-list.`));
   validateCopy(section.heading, `${path}.heading`, findings);
   if (section.description !== undefined) validateCopy(section.description, `${path}.description`, findings);
   const labels = section.labels;
-  if (!isPlainObject(labels) || !hasOnlyKeys(labels, STATUSES) || STATUSES.some((status) => !Object.hasOwn(labels, status))) {
+  if (!isPlainObject(labels) || !hasOnlyOwnKeys(labels, STATUSES) || !hasOwnKeys(labels, STATUSES)) {
     findings.push(finding("sectioned-view-status-labels-shape", `${path}.labels`, `${path}.labels must contain exactly available, partial, and planned CopyRefs.`));
   } else {
     STATUSES.forEach((status) => validateCopy(labels[status], `${path}.labels.${status}`, findings));
   }
-  if (!Array.isArray(section.groups) || section.groups.length === 0) {
-    findings.push(finding("sectioned-view-status-groups-shape", `${path}.groups`, `${path}.groups must be a non-empty array.`));
-    return;
-  }
+  if (!validateDenseArray(section.groups, `${path}.groups`, findings, "sectioned-view-status-groups-shape", `${path}.groups must be a non-empty array.`)) return;
   validateItemIds(section.groups, `${path}.groups`, findings);
-  section.groups.forEach((group, groupIndex) => {
+  for (let groupIndex = 0; groupIndex < section.groups.length; groupIndex += 1) {
+    const group = section.groups[groupIndex];
     const groupPath = `${path}.groups.${groupIndex}`;
-    if (!isPlainObject(group) || !hasOnlyKeys(group, ["id", "heading", "items"]) || !isNonWhitespaceString(group.id)) {
+    if (!isPlainObject(group) || !hasOnlyOwnKeys(group, ["id", "heading", "items"]) || !hasOwnKeys(group, ["id", "heading", "items"]) || !isNonWhitespaceString(group.id)) {
       findings.push(finding("sectioned-view-status-group-shape", groupPath, `${groupPath} must be a plain group with id, heading, and items.`));
-      return;
+      continue;
     }
     validateCopy(group.heading, `${groupPath}.heading`, findings);
-    if (!Array.isArray(group.items) || group.items.length === 0) {
-      findings.push(finding("sectioned-view-status-items-shape", `${groupPath}.items`, `${groupPath}.items must be a non-empty array.`));
-      return;
-    }
+    if (!validateDenseArray(group.items, `${groupPath}.items`, findings, "sectioned-view-status-items-shape", `${groupPath}.items must be a non-empty array.`)) continue;
     validateItemIds(group.items, `${groupPath}.items`, findings);
-    group.items.forEach((item, itemIndex) => {
+    for (let itemIndex = 0; itemIndex < group.items.length; itemIndex += 1) {
+      const item = group.items[itemIndex];
       const itemPath = `${groupPath}.items.${itemIndex}`;
-      if (!isPlainObject(item) || !hasOnlyKeys(item, ["id", "label", "state"]) || !isNonWhitespaceString(item.id)) {
+      if (!isPlainObject(item) || !hasOnlyOwnKeys(item, ["id", "label", "state"]) || !hasOwnKeys(item, ["id", "label", "state"]) || !isNonWhitespaceString(item.id)) {
         findings.push(finding("sectioned-view-status-item-shape", itemPath, `${itemPath} must be a plain status item with id, label, and state.`));
-        return;
+        continue;
       }
       validateCopy(item.label, `${itemPath}.label`, findings);
       if (!STATUSES.includes(item.state as SectionedViewStatus)) findings.push(finding("sectioned-view-status-state", `${itemPath}.state`, `${itemPath}.state must be one of ${STATUSES.join(", ")}.`));
-    });
-  });
+    }
+  }
 }
 
 /** Resolves every audience-facing field depth-first and returns its provenance-ready CopyResolution list. */
 export function resolveSectionedViewDocument(document: SectionedViewDocument, resolver: CopyResolver): ResolvedSectionedViewDocument {
   const findings = validateSectionedViewDocument(document);
   if (findings.length > 0) throw new SectionedViewResolutionError("invalid-document", `resolveSectionedViewDocument refused invalid document: ${findings.map((entry) => entry.message).join("; ")}`);
+  if (typeof resolver !== "function") {
+    throw new SectionedViewResolutionError("unresolved-copy", `resolveSectionedViewDocument needs a CopyResolver for document "${document.id}".`);
+  }
   const resolutions: CopyResolution[] = [];
   const text = (ref: CopyRef, path: string): string => {
     const resolution = resolver(ref);

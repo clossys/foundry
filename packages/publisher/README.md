@@ -222,6 +222,14 @@ and status label is a `CopyRef`. There are no React nodes, render callbacks,
 router fields, locale overrides, classes, styles, arbitrary colours, or
 composition escape hatches.
 
+This is a closed wire model at runtime as well as in TypeScript: structural
+objects use only enumerable own data properties (no inherited, symbol, hidden,
+or accessor fields), and every ordered section, item, and status-group array
+must be dense. A `CopyRef` has only its non-empty `id`, optional non-empty
+`locale`, and an optional plain interpolation-value record whose values are
+strings, numbers, or booleans. Malformed input is rejected before a custom
+resolver is called.
+
 `validateSectionedViewDocument` reports malformed or unknown structure;
 `resolveSectionedViewDocument` resolves every CopyRef depth-first in authored
 order and returns its ordinary `CopyResolution[]`. Pass that list directly to
