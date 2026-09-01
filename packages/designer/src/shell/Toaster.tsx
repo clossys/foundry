@@ -94,7 +94,7 @@ export function Toaster({ "aria-label": ariaLabel, className }: ToasterProps) {
     <AriaToastRegion
       queue={toastQueue}
       aria-label={ariaLabel}
-      className={cx("fixed bottom-md right-md flex flex-col gap-sm", className)}
+      className={cx("fixed bottom-md end-md flex flex-col gap-sm", className)}
       style={{ zIndex: UI_Z_TOAST }}
     >
       {({ toast: queuedToast }) => <ToasterItem toast={queuedToast} />}

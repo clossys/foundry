@@ -268,6 +268,9 @@ const KNOWN_NON_CLASS_MAPS = new Set([
   // ("System"/"Light"/"Dark"), interpolated into the button's aria-label
   // and the live-region announcement text, never a Tailwind class name.
   "PREFERENCE_LABEL",
+  // blocks/StatusList.tsx — editorial readiness state -> semantic status
+  // tone key used to select SECTION_GROUND_CLASSES.status, never a class.
+  "STATE_TONES",
   // theme/ThemeToggle.tsx — ThemePreference -> IconNode glyph data
   // (Monitor/Sun/Moon), passed to Icon's `glyph` prop, never a class name.
   "PREFERENCE_GLYPH",
