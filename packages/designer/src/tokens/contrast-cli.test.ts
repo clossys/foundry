@@ -34,6 +34,7 @@ const LIGHT_PROPERTY_LINES = `  --color-ink-primary: oklch(0.2178 0 0);
   --color-ink-on-accent: oklch(0.9702 0 0);
   --color-accent: oklch(0.4748 0 0);
   --color-ink-on-inverse: oklch(0.9702 0 0);
+  --color-ink-on-inverse-muted: oklch(0.7763 0 0);
   --color-surface-inverse: oklch(0.2178 0 0);
   --color-status-success-text: oklch(0.4748 0 0);
   --color-status-success: oklch(0.6268 0 0);

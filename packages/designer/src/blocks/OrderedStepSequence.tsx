@@ -1,8 +1,9 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { cx } from "../atoms/internal/cx.js";
+import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 
 export type OrderedStepSequenceHeadingLevel = 2 | 3 | 4 | 5 | 6;
-export type OrderedStepSequenceGround = "base" | "inverse";
+export type OrderedStepSequenceGround = SectionGround;
 
 export interface OrderedStepSequenceItem {
   /** Stable identifier — the React key. */
@@ -32,24 +33,6 @@ export interface OrderedStepSequenceProps extends Omit<HTMLAttributes<HTMLElemen
   style?: CSSProperties;
 }
 
-const GROUND_CLASSES: Record<
-  OrderedStepSequenceGround,
-  { readonly primary: string; readonly secondary: string; readonly line: string; readonly ordinal: string }
-> = {
-  base: {
-    primary: "text-ink-primary",
-    secondary: "text-ink-secondary",
-    line: "bg-line-base",
-    ordinal: "border-line-base text-ink-primary",
-  },
-  inverse: {
-    primary: "text-ink-on-inverse",
-    secondary: "text-ink-on-inverse-muted",
-    line: "bg-line-on-inverse",
-    ordinal: "border-line-on-inverse text-ink-on-inverse",
-  },
-};
-
 /**
  * An editorial sequence of ordered steps, not a progress control: it has no
  * current step, completion state, or interaction. A real `<ol>` preserves
@@ -75,11 +58,11 @@ export function OrderedStepSequence({
 }: OrderedStepSequenceProps) {
   const HeadingTag = `h${headingLevel}` as `h${OrderedStepSequenceHeadingLevel}`;
   const ItemHeadingTag = `h${Math.min(headingLevel + 1, 6)}` as `h${OrderedStepSequenceHeadingLevel}`;
-  const colors = GROUND_CLASSES[ground];
+  const colors = SECTION_GROUND_CLASSES[ground];
   const hasHeadingRegion = heading !== undefined || description !== undefined;
 
   return (
-    <section {...rest} className={cx("flex flex-col gap-lg", className)} style={style}>
+    <section {...rest} className={cx("flex flex-col gap-lg", colors.surface, className)} style={style}>
       {hasHeadingRegion ? (
         <div className="flex flex-col gap-xs">
           {heading ? <HeadingTag className={cx("text-h2 font-display", colors.primary)}>{heading}</HeadingTag> : null}
@@ -93,7 +76,8 @@ export function OrderedStepSequence({
               <span
                 className={cx(
                   "flex size-xl shrink-0 items-center justify-center rounded-pill border text-body-s font-body font-medium",
-                  colors.ordinal,
+                  colors.border,
+                  colors.primary,
                 )}
               >
                 {item.ordinal}

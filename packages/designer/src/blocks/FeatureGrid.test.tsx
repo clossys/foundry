@@ -75,4 +75,15 @@ describe("FeatureGrid", () => {
     const root = container.firstElementChild as HTMLElement;
     expect(root.style.marginTop).toBe("8px");
   });
+
+  it.each([
+    ["base", "bg-surface-base", "text-ink-primary"],
+    ["sunken", "bg-surface-sunken", "text-ink-primary"],
+    ["inverse", "bg-surface-inverse", "text-ink-on-inverse"],
+  ] as const)("selects the complete %s ground policy", (ground, surface, primary) => {
+    const { container } = render(<FeatureGrid heading="Grid heading" items={ITEMS} ground={ground} />);
+    expect(container.firstElementChild).toHaveClass(surface);
+    expect(screen.getByRole("heading")).toHaveClass(primary);
+    expect(screen.getByText("Feature one heading")).toHaveClass(primary);
+  });
 });

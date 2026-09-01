@@ -11,6 +11,11 @@ All notable changes to this package are documented here. Format follows
   with ordered and definition-list semantics, caller-localized labels,
   closed state and ground vocabularies, accessible authored ordinals,
   responsive decorative connectors, and explicit contrast coverage.
+- Added the server-safe, closed `SectionGround` contract (`base`, `sunken`,
+  `inverse`) and Designer-owned class/token mapping. `Hero`, `FeatureGrid`,
+  both `Faq` implementations, `OrderedStepSequence`, and `StatusList` now
+  apply their own matching surface, foreground, divider/connector, and status
+  treatment rather than requiring a consumer to paint around them.
 
 ### Fixed
 

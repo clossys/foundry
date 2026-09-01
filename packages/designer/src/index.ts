@@ -130,8 +130,12 @@ export {
   PricingTable,
   Testimonial,
   ArticleBody,
+  SECTION_GROUND_CLASSES,
 } from "./blocks/index.js";
 export type {
+  SectionGround,
+  SectionGroundClasses,
+  SectionStatusTone,
   PageHeaderProps,
   EmptyStateProps,
   DataTableProps,
