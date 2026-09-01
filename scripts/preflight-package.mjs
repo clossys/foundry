@@ -2,7 +2,7 @@
 // preflight-package — the single command that must pass before a publish is
 // even proposed.
 //
-//   node scripts/preflight-package.mjs <packageDir> [--require-denylist]
+//   node scripts/preflight-package.mjs <packageDir> [--require-denylist] [--denylist <file>]
 //
 // Exit 0 = every gate passed. Exit 1 = at least one gate failed. Exit 2 = a gate
 // could not run (which is a failure, not a skip).
@@ -29,7 +29,9 @@
 //   7. contamination classes — the structural, non-denylist-able tells (CI's
 //                         "prose" job order: README parity, then this).
 //
-// Nothing here publishes, pushes, or mutates registry state.
+// Nothing here publishes, pushes, or mutates registry state. An explicit
+// --denylist is forwarded to every gate that reads policy, so quality,
+// tree-safety and artifact-safety cannot silently grade different files.
 
 import { existsSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
@@ -41,9 +43,13 @@ const repoRoot = join(scriptDir, "..");
 const argv = process.argv.slice(2);
 const flags = new Set(argv.filter((a) => a.startsWith("--")));
 const pkgDir = argv.filter((a) => !a.startsWith("--"))[0];
+function flagValue(name) {
+  const i = argv.indexOf(name);
+  return i >= 0 ? argv[i + 1] : undefined;
+}
 
 if (!pkgDir) {
-  console.error("usage: preflight-package.mjs <packageDir> [--require-denylist]");
+  console.error("usage: preflight-package.mjs <packageDir> [--require-denylist] [--denylist <file>]");
   process.exit(2);
 }
 const absPkgDir = resolve(pkgDir);
@@ -53,13 +59,19 @@ if (!existsSync(join(absPkgDir, "package.json"))) {
 }
 
 const strict = flags.has("--require-denylist") ? ["--require-denylist"] : [];
+const denylistPath = flagValue("--denylist");
+if (argv.includes("--denylist") && (!denylistPath || denylistPath.startsWith("--"))) {
+  console.error("usage: preflight-package.mjs <packageDir> [--require-denylist] [--denylist <file>]");
+  process.exit(2);
+}
+const denylist = denylistPath ? ["--denylist", denylistPath] : [];
 
 const gates = [
   { name: "name collision", argv: [join(scriptDir, "check-name-collision.mjs"), absPkgDir] },
-  { name: "denylist quality", argv: [join(scriptDir, "check-denylist-quality.mjs")] },
+  { name: "denylist quality", argv: [join(scriptDir, "check-denylist-quality.mjs"), ...denylist] },
   { name: "gate regression tests", argv: [join(scriptDir, "test-gates.mjs")] },
-  { name: "tree safety", argv: [join(scriptDir, "check-public-safety.mjs"), repoRoot, "--allow-changelogs", ...strict] },
-  { name: "artifact safety", argv: [join(scriptDir, "check-artifact-safety.mjs"), absPkgDir, ...strict] },
+  { name: "tree safety", argv: [join(scriptDir, "check-public-safety.mjs"), repoRoot, "--allow-changelogs", ...strict, ...denylist] },
+  { name: "artifact safety", argv: [join(scriptDir, "check-artifact-safety.mjs"), absPkgDir, ...strict, ...denylist] },
   { name: "README parity", argv: [join(scriptDir, "check-readme-parity.mjs"), absPkgDir] },
   { name: "contamination classes", argv: [join(scriptDir, "check-contamination-classes.mjs"), absPkgDir] },
 ];

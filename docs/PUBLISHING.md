@@ -220,6 +220,12 @@ that can damage something *other* than this package — see below), denylist
 quality, gate regression, tree safety, and artifact safety (the actual packed
 tarball, not the tree).
 
+The denylist may be selected explicitly with `--denylist <file>`; preflight
+forwards that same policy to denylist quality, tree safety, and artifact safety.
+This prevents a same-named file for another repository from being selected on
+a shared machine. Without the flag, the gates use `PUBLIC_SAFETY_DENYLIST`; with
+`--require-denylist`, an unselected or unreadable policy fails closed.
+
 **What `npm run preflight` does *not* run: consumer qualification.** Artifact safety
 (`scripts/check-artifact-safety.mjs`) packs the tarball for real and scans its
 *contents* — forbidden files, credential-shaped strings, private identity,
