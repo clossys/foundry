@@ -3,6 +3,14 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.7] - 2026-09-01
+
+### Added
+
+- Added the separately closed `StatusList` `not-offered` disposition for
+  deliberate non-capabilities outside the readiness axis. It uses a neutral
+  tone rather than reading as a warning or future commitment.
+
 ## [0.2.6] - 2026-08-31
 
 ### Added

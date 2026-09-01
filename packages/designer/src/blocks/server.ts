@@ -61,7 +61,17 @@ export type {
 } from "./OrderedStepSequence.js";
 
 export { StatusList } from "./StatusList.js";
-export type { StatusListProps, StatusListGroup, StatusListItem, StatusListLabels, StatusListState, StatusListHeadingLevel } from "./StatusList.js";
+export type {
+  StatusListProps,
+  StatusListGroup,
+  StatusListItem,
+  StatusListReadinessItem,
+  StatusListDispositionItem,
+  StatusListLabels,
+  StatusListState,
+  StatusListDisposition,
+  StatusListHeadingLevel,
+} from "./StatusList.js";
 
 export { Faq } from "./Faq.server.js";
 export type { FaqProps, FaqItem, FaqHeadingLevel } from "./Faq.js";

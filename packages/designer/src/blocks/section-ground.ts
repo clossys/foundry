@@ -1,6 +1,7 @@
 /** The closed set of section grounds supported by Designer-owned site blocks. */
 export type SectionGround = "base" | "sunken" | "inverse";
 
+/** The closed readiness display tones. Deliberate non-capability uses `offAxis`. */
 export type SectionStatusTone = "success" | "warning" | "info";
 
 export interface SectionGroundClasses {
@@ -11,6 +12,8 @@ export interface SectionGroundClasses {
   readonly border: string;
   readonly line: string;
   readonly status: Readonly<Record<SectionStatusTone, string>>;
+  /** Neutral structural mark for a separately modelled off-axis disposition. */
+  readonly offAxis: string;
 }
 
 /**
@@ -20,11 +23,13 @@ export interface SectionGroundClasses {
  * surface so existing compositions keep their markup and background;
  * sunken and inverse paint their semantic surfaces explicitly.
  *
- * Status dots keep the closed success/warning/info display tokens on every
- * ground. Base needs no extra boundary because all three display tokens clear
- * the checked non-text floor there. Sunken and inverse add a two-pixel ring in
- * the ground's primary ink: the display color remains visible, while the
- * checked ring/surface pair supplies a reliable boundary in both themes.
+ * Readiness dots keep the closed success/warning/info display tokens on every
+ * ground. A separately modelled off-axis disposition uses neutral structural
+ * ink, not a fourth readiness status. Base needs no extra boundary because
+ * all marks clear the checked non-text floor there. Sunken and inverse add a
+ * two-pixel ring in the ground's primary ink: the display color remains
+ * visible, while the checked ring/surface pair supplies a reliable boundary
+ * in both themes.
  */
 export const SECTION_GROUND_CLASSES = {
   base: {
@@ -39,6 +44,7 @@ export const SECTION_GROUND_CLASSES = {
       warning: "bg-status-warning",
       info: "bg-status-info",
     },
+    offAxis: "bg-ink-muted",
   },
   sunken: {
     surface: "bg-surface-sunken",
@@ -52,6 +58,7 @@ export const SECTION_GROUND_CLASSES = {
       warning: "bg-status-warning ring-2 ring-ink-primary",
       info: "bg-status-info ring-2 ring-ink-primary",
     },
+    offAxis: "bg-ink-muted ring-2 ring-ink-primary",
   },
   inverse: {
     surface: "bg-surface-inverse",
@@ -65,5 +72,6 @@ export const SECTION_GROUND_CLASSES = {
       warning: "bg-status-warning ring-2 ring-ink-on-inverse",
       info: "bg-status-info ring-2 ring-ink-on-inverse",
     },
+    offAxis: "bg-ink-muted ring-2 ring-ink-on-inverse",
   },
 } as const satisfies Readonly<Record<SectionGround, SectionGroundClasses>>;
