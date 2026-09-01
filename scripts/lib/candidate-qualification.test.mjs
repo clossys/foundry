@@ -96,6 +96,17 @@ const bindCurrentJoins = (record, joins) => {
 const rules = (value, options) => validateCandidateQualification(value, options).map((item) => item.rule);
 const execFile = promisify(execFileCallback);
 async function git(root, args) { return execFile("git", args, { cwd: root }); }
+/**
+ * Git may start automatic maintenance of its own after a commit, and a pack
+ * write still running when a short-lived fixture is torn down makes the
+ * teardown fail with ENOTEMPTY rather than anything about the test. These
+ * fixtures live for one test, so they never need maintenance: turn it off at
+ * creation, and let the removal retry briefly in case anything else is still
+ * writing. The same remedy the publish validator's own fixtures carry.
+ */
+async function disableFixtureMaintenance(root) { await git(root, ["config", "gc.auto", "0"]); await git(root, ["config", "maintenance.auto", "false"]); }
+async function initFixtureRepository(root) { await git(root, ["init"]); await disableFixtureMaintenance(root); await git(root, ["config", "user.email", "test@example.invalid"]); await git(root, ["config", "user.name", "Qualification Test"]); }
+const removeFixtureDirectory = (path) => rm(path, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 async function commit(root, message) { await git(root, ["add", "."]); await git(root, ["commit", "-m", message]); return (await execFile("git", ["rev-parse", "HEAD"], { cwd: root })).stdout.trim(); }
 function refreshTranscriptDigest(record) {
   const transcript = structuredClone(record.transcript); delete transcript.canonicalSha256;
@@ -188,7 +199,7 @@ function retimeRawTranscript(transcript, next) {
 }
 async function syntheticRetainedRecord() {
   const root = await mkdtemp(join(tmpdir(), "qualification-history-"));
-  await git(root, ["init"]); await git(root, ["config", "user.email", "test@example.invalid"]); await git(root, ["config", "user.name", "Qualification Test"]);
+  await initFixtureRepository(root);
   await mkdir(join(root, CONTROLLER_RECORD_DIRECTORY), { recursive: true });
   await writeFile(join(root, "governance/release-qualification-policy.json"), readFileSync("governance/release-qualification-policy.json"));
   const record = bootstrapSource(); const path = historicalControllerRecordPath(record);
@@ -197,7 +208,7 @@ async function syntheticRetainedRecord() {
 }
 async function syntheticIndependentRecordIntroductions() {
   const root = await mkdtemp(join(tmpdir(), "qualification-merge-history-"));
-  await git(root, ["init"]); await git(root, ["config", "user.email", "test@example.invalid"]); await git(root, ["config", "user.name", "Qualification Test"]);
+  await initFixtureRepository(root);
   await mkdir(join(root, CONTROLLER_RECORD_DIRECTORY), { recursive: true });
   await writeFile(join(root, "governance/release-qualification-policy.json"), readFileSync("governance/release-qualification-policy.json"));
   const record = bootstrapSource(); const path = historicalControllerRecordPath(record);
@@ -215,7 +226,7 @@ async function syntheticIndependentRecordIntroductions() {
 }
 async function syntheticPrepublication() {
   const root = await mkdtemp(join(tmpdir(), "qualification-tail-"));
-  await git(root, ["init"]); await git(root, ["config", "user.email", "test@example.invalid"]); await git(root, ["config", "user.name", "Qualification Test"]);
+  await initFixtureRepository(root);
   for (const path of ["packages/controller", "governance/release-qualification-adapters/controller", "governance/release-qualification-fixtures/controller/current-direct"]) await mkdir(join(root, path), { recursive: true });
   await cp("packages/controller/package.json", join(root, "packages/controller/package.json"));
   await cp("package.json", join(root, "package.json")); await cp("package-lock.json", join(root, "package-lock.json"));
@@ -231,7 +242,7 @@ async function syntheticPrepublication() {
 }
 async function syntheticTrioPrepublication() {
   const root = await mkdtemp(join(tmpdir(), "qualification-trio-tail-"));
-  await git(root, ["init"]); await git(root, ["config", "user.email", "test@example.invalid"]); await git(root, ["config", "user.name", "Qualification Test"]);
+  await initFixtureRepository(root);
   await cp("package.json", join(root, "package.json")); await cp("package-lock.json", join(root, "package-lock.json"));
   await mkdir(join(root, "governance"), { recursive: true });
   await cp("governance/release-qualification-policy.json", join(root, "governance/release-qualification-policy.json"));
@@ -320,6 +331,7 @@ async function cloneRetainedTrioControlTail() {
   const root = join(parent, "repo");
   await execFile("git", ["clone", "--local", "--no-hardlinks", process.cwd(), root]);
   await git(root, ["checkout", "--detach", TRIO_PUBLICATION_TRANSITION_BASE]);
+  await disableFixtureMaintenance(root);
   await git(root, ["config", "user.email", "test@example.invalid"]);
   await git(root, ["config", "user.name", "Qualification Test"]);
   return { parent, ...retainedTrioControlTail(root) };
@@ -329,6 +341,7 @@ async function clonePendingPublicationTransition({ commitTransition = true } = {
   const root = join(parent, "repo");
   await execFile("git", ["clone", "--local", "--no-hardlinks", process.cwd(), root]);
   await git(root, ["checkout", "--detach", TRIO_PUBLICATION_TRANSITION_BASE]);
+  await disableFixtureMaintenance(root);
   await git(root, ["config", "user.email", "test@example.invalid"]);
   await git(root, ["config", "user.name", "Qualification Test"]);
   assert.equal((await git(root, ["rev-parse", "HEAD"])).stdout.trim(), TRIO_PUBLICATION_TRANSITION_BASE);
@@ -609,7 +622,7 @@ test("Controller record selection separates the current candidate from retained 
   assert.throws(() => selectControllerPostPublicationRecord([post("0.08.20"), post("0.8.20")], "0.8.21"), /canonical exact release version/);
 });
 test("historical qualification joins use one immutable introduction and reject missing, ambiguous, or tampered history", async (t) => {
-  const fixture = await syntheticPrepublication(); t.after(() => rm(fixture.root, { recursive: true, force: true }));
+  const fixture = await syntheticPrepublication(); t.after(() => removeFixtureDirectory(fixture.root));
   const introduction = qualificationIntroductionCommit(fixture.root, fixture.record.candidate, "HEAD", fixture.path);
   assert.equal(introduction, (await execFile("git", ["rev-parse", "HEAD"], { cwd: fixture.root })).stdout.trim());
   const expected = { name: fixture.record.candidate.name, version: fixture.record.candidate.version, ...currentQualificationJoins(fixture.root, fixture.record.candidate, introduction) };
@@ -622,13 +635,18 @@ test("historical qualification joins use one immutable introduction and reject m
   assert.throws(() => qualificationIntroductionCommit(fixture.root, fixture.record.candidate, "HEAD", fixture.path), /one introduction commit/);
 });
 test("full-history traversal rejects independent merge-parent introductions in either parent order", async (t) => {
-  const fixture = await syntheticIndependentRecordIntroductions(); t.after(() => rm(fixture.root, { recursive: true, force: true }));
+  const fixture = await syntheticIndependentRecordIntroductions(); t.after(() => removeFixtureDirectory(fixture.root));
   for (const head of fixture.heads) {
     assert.throws(() => qualificationIntroductionCommit(fixture.root, fixture.record.candidate, head, historicalControllerRecordPath(fixture.record)), /one introduction commit/);
   }
 });
+test("fixture repositories disable automatic git maintenance so teardown cannot race a pack write", async (t) => {
+  const fixture = await syntheticRetainedRecord(); t.after(() => removeFixtureDirectory(fixture.root));
+  assert.equal((await git(fixture.root, ["config", "--get", "gc.auto"])).stdout.trim(), "0");
+  assert.equal((await git(fixture.root, ["config", "--get", "maintenance.auto"])).stdout.trim(), "false");
+});
 test("the history seal rejects coherent tarball, transcript, and registry rewrites", async (t) => {
-  const fixture = await syntheticRetainedRecord(); t.after(() => rm(fixture.root, { recursive: true, force: true }));
+  const fixture = await syntheticRetainedRecord(); t.after(() => removeFixtureDirectory(fixture.root));
   const initial = qualificationRecordHistory(fixture.root, fixture.path, fixture.record.candidate, "HEAD", fixture.path);
   assert.equal(initial.retainedRecordSha256, initial.introducedRecordSha256);
   const mutations = [
@@ -652,7 +670,7 @@ test("the history seal rejects coherent tarball, transcript, and registry rewrit
   }
 });
 test("prepublication PR tail accepts only an exact record-only tail", async (t) => {
-  const fixture = await syntheticPrepublication(); t.after(() => rm(fixture.root, { recursive: true, force: true }));
+  const fixture = await syntheticPrepublication(); t.after(() => removeFixtureDirectory(fixture.root));
   assert.deepEqual(validatePrepublicationPrTail(fixture.record, { root: fixture.root }), []);
   const expected = { name: fixture.record.candidate.name, version: fixture.record.candidate.version, ...currentQualificationJoins(fixture.root, fixture.record.candidate) };
   assert.deepEqual(rules(fixture.record, { mode: "prepublish", expected, freshTranscript: fixture.record.transcript }), []);
@@ -661,7 +679,7 @@ test("prepublication PR tail accepts only an exact record-only tail", async (t) 
 });
 test("Trio prepublication tail admits only a closed exact partial-failure quarantine", async (t) => {
   for (let completed = 0; completed < TRIO.length; completed += 1) {
-    const fixture = await syntheticTrioPrepublication(); t.after(() => rm(fixture.root, { recursive: true, force: true }));
+    const fixture = await syntheticTrioPrepublication(); t.after(() => removeFixtureDirectory(fixture.root));
     const quarantine = await appendPartialFailureQuarantine(fixture, TRIO.slice(0, completed));
     for (const record of fixture.records) {
       assert.deepEqual(validatePrepublicationPrTail(record, { root: fixture.root, trioRecords: fixture.records, cohort: fixture.cohort, cohortBytes: fixture.cohortBytes, quarantine }), []);
@@ -669,7 +687,7 @@ test("Trio prepublication tail admits only a closed exact partial-failure quaran
   }
 });
 test("Trio quarantine tail rejects malformed, reordered, next-member, cohort-drift, missing-path, and unrelated changes", async (t) => {
-  const fixture = await syntheticTrioPrepublication(); t.after(() => rm(fixture.root, { recursive: true, force: true }));
+  const fixture = await syntheticTrioPrepublication(); t.after(() => removeFixtureDirectory(fixture.root));
   const quarantine = await appendPartialFailureQuarantine(fixture, ["advisor"]);
   const findings = (candidate = quarantine, cohortBytes = fixture.cohortBytes) => validatePrepublicationPrTail(fixture.records[0], { root: fixture.root, trioRecords: fixture.records, cohort: fixture.cohort, cohortBytes, quarantine: candidate }).map((item) => item.rule);
   for (const mutate of [
@@ -691,7 +709,7 @@ test("the one-time Trio control-tail authorization is exact, atomic, and cohort-
   assert.deepEqual(fixture.authorization.authorizedFiles.map((item) => item.path), TRIO_CONTROL_TAIL_PATHS);
   assert.deepEqual(validateTrioControlTailAuthorization(fixture.authorization, { root: fixture.root, head: TRIO_PUBLICATION_TRANSITION_BASE, retainedRef: TRIO_PUBLICATION_TRANSITION_BASE, trioRecords: fixture.records, cohortBytes: fixture.cohortBytes }), []);
   const retained = await cloneRetainedTrioControlTail();
-  t.after(() => rm(retained.parent, { recursive: true, force: true }));
+  t.after(() => removeFixtureDirectory(retained.parent));
   for (const record of retained.records) {
     assert.deepEqual(validatePrepublicationPrTail(record, {
       root: retained.root,
@@ -705,7 +723,7 @@ test("the one-time Trio control-tail authorization is exact, atomic, and cohort-
 });
 test("the publication transition closes the sealed tail once and permits ordinary later evolution", async (t) => {
   const fixture = await clonePendingPublicationTransition({ commitTransition: false });
-  t.after(() => rm(fixture.parent, { recursive: true, force: true }));
+  t.after(() => removeFixtureDirectory(fixture.parent));
   const context = () => ({ root: fixture.root, trioRecords: fixture.records, cohortBytes: fixture.cohortBytes, controlTailAuthorization: fixture.authorization });
   assert.deepEqual(validateTrioPublicationClosure(fixture.publication, context()), []);
 
@@ -726,7 +744,7 @@ test("the publication transition closes the sealed tail once and permits ordinar
 
 test("sealed first-Trio selection remains exact when later qualification versions exist", async (t) => {
   const fixture = await clonePendingPublicationTransition();
-  t.after(() => rm(fixture.parent, { recursive: true, force: true }));
+  t.after(() => removeFixtureDirectory(fixture.parent));
   const originalDigests = fixture.authorization.records.map((entry) => sha256(readFileSync(join(fixture.root, entry.path))));
 
   for (const [index, key] of TRIO.entries()) {
@@ -753,7 +771,7 @@ test("sealed first-Trio selection remains exact when later qualification version
 test("transition-base predecessor records survive a fresh clone without dangling reviewed commits", async (t) => {
   const parent = await mkdtemp(join(tmpdir(), "qualification-sealed-history-"));
   const root = join(parent, "repo");
-  t.after(() => rm(parent, { recursive: true, force: true }));
+  t.after(() => removeFixtureDirectory(parent));
   await execFile("git", ["clone", "--no-local", process.cwd(), root]);
   await git(root, ["config", "user.email", "test@example.invalid"]); await git(root, ["config", "user.name", "Qualification Test"]);
   const path = "governance/release-qualifications/controller-0.8.21.json";
@@ -798,7 +816,7 @@ test("transition-base predecessor records survive a fresh clone without dangling
 
 test("post-closure qualifications enter together in one record-only child of their reviewed commit", async (t) => {
   const fixture = await clonePendingPublicationTransition();
-  t.after(() => rm(fixture.parent, { recursive: true, force: true }));
+  t.after(() => removeFixtureDirectory(fixture.parent));
   const forward = await appendForwardTrioQualifications(fixture);
   const allRecords = [...fixture.records, ...forward.records];
 
@@ -823,7 +841,7 @@ test("post-closure qualification introduction rejects an intervening parent, an 
     [{ corruptJoin: true }, "forward-record-join"],
   ]) {
     const fixture = await clonePendingPublicationTransition();
-    t.after(() => rm(fixture.parent, { recursive: true, force: true }));
+    t.after(() => removeFixtureDirectory(fixture.parent));
     const forward = await appendForwardTrioQualifications(fixture, options);
     const findings = validatePrepublicationPrTail(forward.records[0], {
       root: fixture.root,
@@ -837,7 +855,7 @@ test("post-closure qualification introduction rejects an intervening parent, an 
 
 test("post-closure qualification history rejects rewrite restoration and an incomplete joint record set", async (t) => {
   const fixture = await clonePendingPublicationTransition();
-  t.after(() => rm(fixture.parent, { recursive: true, force: true }));
+  t.after(() => removeFixtureDirectory(fixture.parent));
   const forward = await appendForwardTrioQualifications(fixture);
   const path = qualificationPath(fixture.root, forward.records[0].candidate, forward.reviewedCommit);
   const retained = readFileSync(join(fixture.root, path));
@@ -866,7 +884,7 @@ test("post-closure qualification history rejects rewrite restoration and an inco
 
 test("publication closure rejects retained evidence rewrite and restoration", async (t) => {
   const fixture = await clonePendingPublicationTransition();
-  t.after(() => rm(fixture.parent, { recursive: true, force: true }));
+  t.after(() => removeFixtureDirectory(fixture.parent));
   const recordPath = qualificationPath(fixture.root, fixture.records[0].candidate, fixture.records[0].reviewedCommit);
   const absolute = join(fixture.root, recordPath);
   const retained = readFileSync(absolute);
@@ -896,7 +914,7 @@ test("the one-time Trio control-tail authorization rejects base, cohort, record,
 });
 test("the sealed Trio control tail rejects wrong introduction bytes, rewrite restoration, and unrelated touch restoration", async (t) => {
   {
-    const fixture = await cloneRetainedTrioControlTail(); t.after(() => rm(fixture.parent, { recursive: true, force: true }));
+    const fixture = await cloneRetainedTrioControlTail(); t.after(() => removeFixtureDirectory(fixture.parent));
     const retained = new Map([...TRIO_CONTROL_TAIL_PATHS, TRIO_CONTROL_TAIL_AUTHORIZATION_PATH].map((path) => [path, readFileSync(join(fixture.root, path))]));
     await git(fixture.root, ["checkout", "-b", "wrong-introduction", TRIO_CONTROL_TAIL_BASE_COMMIT]);
     for (const [path, bytes] of retained) { await mkdir(dirname(join(fixture.root, path)), { recursive: true }); await writeFile(join(fixture.root, path), bytes); }
@@ -911,7 +929,7 @@ test("the sealed Trio control tail rejects wrong introduction bytes, rewrite res
     assert.ok(findings.includes("control-tail-file-history"));
   }
   {
-    const fixture = await cloneRetainedTrioControlTail(); t.after(() => rm(fixture.parent, { recursive: true, force: true }));
+    const fixture = await cloneRetainedTrioControlTail(); t.after(() => removeFixtureDirectory(fixture.parent));
     const authorizationPath = join(fixture.root, TRIO_CONTROL_TAIL_AUTHORIZATION_PATH);
     const retained = readFileSync(authorizationPath);
     const changed = structuredClone(fixture.authorization); changed.authorizedFiles[0].sha256 = "a".repeat(64);
@@ -921,7 +939,7 @@ test("the sealed Trio control tail rejects wrong introduction bytes, rewrite res
     assert.ok(validateTrioControlTailAuthorization(fixture.authorization, { root: fixture.root, trioRecords: fixture.records, cohortBytes: fixture.cohortBytes }).some((item) => item.rule === "control-tail-file-history"));
   }
   {
-    const fixture = await cloneRetainedTrioControlTail(); t.after(() => rm(fixture.parent, { recursive: true, force: true }));
+    const fixture = await cloneRetainedTrioControlTail(); t.after(() => removeFixtureDirectory(fixture.parent));
     const checkerPath = join(fixture.root, TRIO_CONTROL_TAIL_PATHS.find((path) => path.endsWith("candidate-qualification.mjs")));
     const retained = readFileSync(checkerPath);
     await writeFile(checkerPath, `${readFileSync(checkerPath, "utf8")}\n// later rewrite\n`);
@@ -933,7 +951,7 @@ test("the sealed Trio control tail rejects wrong introduction bytes, rewrite res
     assert.ok(tailFindings.includes("trio-control-tail"));
   }
   {
-    const fixture = await cloneRetainedTrioControlTail(); t.after(() => rm(fixture.parent, { recursive: true, force: true }));
+    const fixture = await cloneRetainedTrioControlTail(); t.after(() => removeFixtureDirectory(fixture.parent));
     const unrelated = join(fixture.root, "governance/release-qualification-tail-authorizations/unrelated.json");
     await writeFile(unrelated, "{}\n"); await commit(fixture.root, "unrelated tail");
     await rm(unrelated); await commit(fixture.root, "restore unrelated tail");
@@ -943,12 +961,12 @@ test("the sealed Trio control tail rejects wrong introduction bytes, rewrite res
 });
 test("future Trio quarantine must descend from the exact sealed control authorization", async (t) => {
   {
-    const fixture = await cloneRetainedTrioControlTail(); t.after(() => rm(fixture.parent, { recursive: true, force: true }));
+    const fixture = await cloneRetainedTrioControlTail(); t.after(() => removeFixtureDirectory(fixture.parent));
     const quarantine = await writeRetainedPartialFailureQuarantine(fixture);
     for (const record of fixture.records) assert.deepEqual(validatePrepublicationPrTail(record, { root: fixture.root, trioRecords: fixture.records, cohort: fixture.cohort, cohortBytes: fixture.cohortBytes, quarantine, controlTailAuthorization: fixture.authorization }), []);
   }
   {
-    const fixture = await cloneRetainedTrioControlTail(); t.after(() => rm(fixture.parent, { recursive: true, force: true }));
+    const fixture = await cloneRetainedTrioControlTail(); t.after(() => removeFixtureDirectory(fixture.parent));
     const controlHead = (await git(fixture.root, ["rev-parse", "HEAD"])).stdout.trim();
     await git(fixture.root, ["checkout", "-b", "parallel-quarantine", TRIO_CONTROL_TAIL_BASE_COMMIT]);
     const quarantine = await writeRetainedPartialFailureQuarantine(fixture);
@@ -960,7 +978,7 @@ test("future Trio quarantine must descend from the exact sealed control authoriz
     assert.ok(findings.includes("trio-quarantine-history"));
   }
   {
-    const fixture = await cloneRetainedTrioControlTail(); t.after(() => rm(fixture.parent, { recursive: true, force: true }));
+    const fixture = await cloneRetainedTrioControlTail(); t.after(() => removeFixtureDirectory(fixture.parent));
     const quarantine = await writeRetainedPartialFailureQuarantine(fixture);
     const quarantinePath = join(fixture.root, TRIO_QUARANTINE_PATH);
     const retained = readFileSync(quarantinePath);
@@ -976,7 +994,7 @@ test("future Trio quarantine must descend from the exact sealed control authoriz
 test("prepublication git tail rejects substantive package, root, policy, adapter, fixture, and extra-tail changes", async (t) => {
   const paths = ["packages/controller/package.json", "package.json", "package-lock.json", "governance/release-qualification-policy.json", "governance/release-qualification-adapters/controller/current-direct.json", "governance/release-qualification-fixtures/controller/current-direct/authority-valid-package-lock.json", "README.md"];
   for (const path of paths) {
-    const fixture = await syntheticPrepublication(); t.after(() => rm(fixture.root, { recursive: true, force: true }));
+    const fixture = await syntheticPrepublication(); t.after(() => removeFixtureDirectory(fixture.root));
     await writeFile(join(fixture.root, path), "changed\n"); await commit(fixture.root, "substantive tail");
     const findings = validatePrepublicationPrTail(fixture.record, { root: fixture.root }).map((item) => item.rule);
     assert.ok(findings.includes(path === "README.md" ? "pr-tail" : "git-content-join"));
