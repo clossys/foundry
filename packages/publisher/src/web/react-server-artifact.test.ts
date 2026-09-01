@@ -55,7 +55,7 @@ function runProbe(reactServer: boolean) {
     const { element } = web.renderWebDocument(document, {
       groups: [
         { slot: "features", items: [] },
-        { slot: "faq", items: [{ index: 0, node: { question: "Does it render?", answer: "Yes." } }] },
+        { slot: "faq", items: [{ index: 0, fields: { question: { value: "Does it render?" }, answer: { value: "Yes." } } }] },
       ],
     });
 

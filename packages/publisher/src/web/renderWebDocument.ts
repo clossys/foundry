@@ -176,7 +176,7 @@
  */
 
 import { resolveDocument } from "../core/index.js";
-import type { ComposeDocument, ResolvedSurfaceGroup, ResolvedSurfaceGroupItem, WebMeta } from "../core/index.js";
+import type { ComposeDocument, ResolvedSurfaceGroup, ResolvedSurfaceGroupField, ResolvedSurfaceGroupItem, WebMeta } from "../core/index.js";
 import type { ReactNode } from "react";
 import { createElement, version as reactVersion } from "react";
 import { RenderError } from "../internal/errors.js";
@@ -185,7 +185,7 @@ import type { RenderAsset, RenderImageAsset, RenderImageSource, RenderVideoAsset
 import { assertPeerVersion } from "../internal/peer-version.js";
 import { buildWebHeadMetadata } from "./headMetadata.js";
 import { defaultWebTemplateMap, slotKindsFor } from "./internal/webTemplates.js";
-import type { RepeatingWebSlotSpec, ResolvedWebGroupItem, WebTemplate } from "./types.js";
+import type { RepeatingWebSlotFieldSpec, RepeatingWebSlotSpec, ResolvedWebGroupField, ResolvedWebGroupItem, WebTemplate } from "./types.js";
 import type { RenderWebOptions, RenderWebResult } from "./types.js";
 
 /**
@@ -340,6 +340,12 @@ function buildAssetElement(asset: RenderAsset, options: Pick<RenderWebOptions, "
  * "rendered exactly as given" treatment `AuthView.form` gets.
  */
 function resolveGroupItemContent(slotKey: string, item: ResolvedSurfaceGroupItem, options: RenderWebOptions): ResolvedWebGroupItem {
+  if (item.fields !== undefined) {
+    return {
+      index: item.index,
+      fields: Object.fromEntries(Object.entries(item.fields).map(([field, binding]) => [field, resolveGroupFieldContent(slotKey, item.index, field, binding, options)])),
+    };
+  }
   if (item.value !== undefined) {
     return { index: item.index, text: item.value };
   }
@@ -370,6 +376,62 @@ function resolveGroupItemContent(slotKey: string, item: ResolvedSurfaceGroupItem
     "empty-output",
     `renderWebDocument found repeating slot "${slotKey}" item ${item.index} with no resolved content (none of value/assetId/node was set), which resolveSurfaceDocument should never produce.`,
   );
+}
+
+/** Resolves one named structured field through the same copy/asset rules as a single-value group item. */
+function resolveGroupFieldContent(
+  slotKey: string,
+  itemIndex: number,
+  field: string,
+  binding: ResolvedSurfaceGroupField,
+  options: RenderWebOptions,
+): ResolvedWebGroupField {
+  if (binding.value !== undefined) return { text: binding.value };
+  if (binding.assetId !== undefined) {
+    let looked: unknown;
+    try {
+      looked = options.resolveAssetId?.(binding.assetId);
+    } catch {
+      looked = undefined;
+    }
+    if (!isRenderAsset(looked)) {
+      throw new RenderError(
+        "empty-output",
+        `renderWebDocument could not resolve repeating slot "${slotKey}" item ${itemIndex} field "${field}" assetId "${binding.assetId}" into a real asset (missing options.resolveAssetId, an unresolved id, or a value that did not match the required RenderImageAsset or RenderVideoAsset shape). Rendering would silently ship incomplete structured content, which this function refuses to do.`,
+      );
+    }
+    return { element: buildAssetElement(looked, options) };
+  }
+  throw new RenderError(
+    "empty-output",
+    `renderWebDocument found repeating slot "${slotKey}" item ${itemIndex} field "${field}" with no resolved copy or asset content, which resolveSurfaceDocument should never produce.`,
+  );
+}
+
+function validateStructuredGroupItem(slotKey: string, item: ResolvedSurfaceGroupItem, fields: readonly RepeatingWebSlotFieldSpec[]): void {
+  const sourceCount = [item.value, item.node, item.assetId, item.fields].filter((source) => source !== undefined).length;
+  if (sourceCount !== 1 || item.fields === undefined || typeof item.fields !== "object" || Array.isArray(item.fields)) {
+    throw new RenderError(
+      "resolution-failed",
+      `renderWebDocument could not use repeating slot "${slotKey}" item ${item.index}: this template requires exactly one named fields map, so a malformed or legacy copy/node/assetId item is not accepted.`,
+    );
+  }
+  const itemFields = item.fields;
+  const knownFields = new Set(fields.map((field) => field.key));
+  const unknownFields = Object.keys(itemFields).filter((field) => !knownFields.has(field));
+  if (unknownFields.length > 0) {
+    throw new RenderError(
+      "resolution-failed",
+      `renderWebDocument could not use repeating slot "${slotKey}" item ${item.index}: unknown field(s) ${unknownFields.join(", ")}. Known field(s): ${fields.map((field) => field.key).join(", ")}.`,
+    );
+  }
+  const missingRequired = fields.filter((field) => field.required === true && !Object.hasOwn(itemFields, field.key)).map((field) => field.key);
+  if (missingRequired.length > 0) {
+    throw new RenderError(
+      "resolution-failed",
+      `renderWebDocument could not use repeating slot "${slotKey}" item ${item.index}: missing required field(s) ${missingRequired.join(", ")}.`,
+    );
+  }
 }
 
 /**
@@ -426,7 +488,16 @@ function resolveTemplateGroups(doc: ComposeDocument, template: WebTemplate, opti
   for (const spec of repeatingSlots) {
     const group = groupsByKey.get(spec.key);
     if (group === undefined) continue; // optional and never authored for this document — the slot's own build function decides what "absent" means.
-    groupsContent[spec.key] = group.items.map((item) => resolveGroupItemContent(spec.key, item, options));
+    groupsContent[spec.key] = group.items.map((item) => {
+      if (spec.fields !== undefined) validateStructuredGroupItem(spec.key, item, spec.fields);
+      else if (item.fields !== undefined) {
+        throw new RenderError(
+          "resolution-failed",
+          `renderWebDocument received a structured fields item for repeating slot "${spec.key}", but template "${doc.template}" does not declare fields for that slot.`,
+        );
+      }
+      return resolveGroupItemContent(spec.key, item, options);
+    });
   }
   return groupsContent;
 }

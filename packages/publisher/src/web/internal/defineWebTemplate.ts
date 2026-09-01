@@ -57,7 +57,8 @@ function fail(message: string): never {
  * a `LayoutSpec` to, applied here to a `FlowLayoutSpec` at definition time
  * instead of first render, plus the additional checks this registry's own
  * shape needs (`slotKinds` naming only real, known-kind, in-`flow` slots;
- * `repeatingSlots` never colliding with a flowed slot or with itself).
+ * `repeatingSlots` never colliding with a flowed slot or with itself, and
+ * every structured repeating field declaring one unique non-empty name).
  * Returns a FROZEN `WebTemplate` — `flow.slots`, `repeatingSlots`, and
  * `slotKinds` (and each of their own nested arrays/objects) are all
  * `Object.freeze`d, so a reference held after this call cannot be mutated
@@ -111,6 +112,24 @@ export function defineWebTemplate(options: DefineWebTemplateOptions): WebTemplat
       if (repeatingKeys.has(spec.key)) {
         fail(`repeatingSlots[${index}].key "${spec.key}" duplicates another repeating slot key.`);
       }
+      if (spec.fields !== undefined) {
+        if (!Array.isArray(spec.fields) || spec.fields.length === 0) {
+          fail(`repeatingSlots[${index}].fields must be a non-empty array when present, got ${JSON.stringify(spec.fields)}.`);
+        }
+        const fieldKeys = new Set<string>();
+        spec.fields.forEach((field, fieldIndex) => {
+          if (!isPlainObject(field) || !isNonEmptyString(field.key)) {
+            fail(`repeatingSlots[${index}].fields[${fieldIndex}] must be an object with a non-empty string "key", got ${JSON.stringify(field)}.`);
+          }
+          if (field.required !== undefined && typeof field.required !== "boolean") {
+            fail(`repeatingSlots[${index}].fields[${fieldIndex}].required must be a boolean when present, got ${JSON.stringify(field.required)}.`);
+          }
+          if (fieldKeys.has(field.key)) {
+            fail(`repeatingSlots[${index}].fields[${fieldIndex}].key "${field.key}" duplicates another field key for repeating slot "${spec.key}".`);
+          }
+          fieldKeys.add(field.key);
+        });
+      }
       repeatingKeys.add(spec.key);
     });
   }
@@ -144,7 +163,17 @@ export function defineWebTemplate(options: DefineWebTemplateOptions): WebTemplat
   }
 
   const frozenFlow = Object.freeze({ slots: Object.freeze(flowSlots.map((slot) => Object.freeze({ ...(slot as object) }))) });
-  const frozenRepeatingSlots = repeatingSlots === undefined ? undefined : Object.freeze(repeatingSlots.map((spec) => Object.freeze({ ...spec })));
+  const frozenRepeatingSlots =
+    repeatingSlots === undefined
+      ? undefined
+      : Object.freeze(
+          repeatingSlots.map((spec) =>
+            Object.freeze({
+              ...spec,
+              ...(spec.fields === undefined ? {} : { fields: Object.freeze(spec.fields.map((field) => Object.freeze({ ...field }))) }),
+            }),
+          ),
+        );
   const frozenSlotKinds =
     slotKinds === undefined ? undefined : Object.freeze(Object.fromEntries(Object.entries(slotKinds).map(([key, kinds]) => [key, Object.freeze([...kinds])])));
 

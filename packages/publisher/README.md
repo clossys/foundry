@@ -125,7 +125,11 @@ A repeating binding still names one explicit slot the consumer already
 decided exists — it does not select a template or invent a slot, the same
 boundary every other binding in this package holds to (see "Scope," above).
 Each item in `items` independently obeys the identical exactly-one-of
-discipline a single binding does:
+discipline a single binding does. For a one-value item, use `copy`, `node`,
+or `assetId` as before. For ordinary multi-field editorial content, use one
+named `fields` map instead; each field is exactly one `copy` or `assetId`
+binding. A field may never be a `node`, so structured copy cannot bypass the
+registry, voice checks, locale selection, or output provenance.
 
 ```ts
 import type { SurfaceDocument } from "@clossys/publisher/core";
@@ -139,6 +143,13 @@ const acmeCapabilities: SurfaceDocument["bindings"][number] = {
   ],
 };
 ```
+
+Templates opt into structured items by declaring their accepted field names
+and requiredness in `repeatingSlots`. At render time, an unknown field, a
+missing required field, a malformed field map, or a legacy one-value item
+against a structured slot fails closed. A field map against a slot that did
+not declare fields fails closed too. This keeps the template—not a caller's
+ad hoc object—the authority for the repeating item's shape.
 
 `items` may be an empty array. That is a deliberate choice, not an
 oversight: this package cannot tell "the consumer configured zero of these
@@ -193,13 +204,11 @@ was never authored at all omits the whole FAQ section instead, which is a
 different, equally valid outcome (see `MarketingView`'s own `faq` prop doc
 comment).
 
-Because one repeating item carries exactly one resolved value
-(`copy`/`node`/`assetId`) but a FAQ entry needs two independent ones
-(`question` and `answer`), a `faq` item must be authored via `node`,
-shaped `{ question, answer }` — the same "explicit escape hatch for
-content plain text cannot carry" `node` already is everywhere else in this
-package. A `faq` item authored via `copy`/`assetId` instead fails closed
-with `RenderError("empty-output", ...)`.
+`faq` declares two required structured fields: `question` and `answer`.
+Each resolves through the normal `CopyRef` path, so its locale, approved
+voice, and provenance stay visible alongside the rest of the page. A FAQ
+item authored as a caller-owned `node`, as a legacy single value, or with an
+unknown/missing field is refused rather than bypassing editorial governance.
 
 ```ts
 import type { SurfaceDocument } from "@clossys/publisher/core";
@@ -220,11 +229,14 @@ const acmeMarketingHome: SurfaceDocument = {
     { slot: "ctaHeading", copy: ref("acme.cta.heading") },
     // A repeating slot — one CopyRef per placeholder feature, in order.
     {
-      slot: "features",
+      slot: "faq",
       items: [
-        { copy: ref("acme.feature.one") },
-        { copy: ref("acme.feature.two") },
-        { copy: ref("acme.feature.three") },
+        {
+          fields: {
+            question: { copy: ref("acme.faq.one.question") },
+            answer: { copy: ref("acme.faq.one.answer") },
+          },
+        },
       ],
     },
   ],
@@ -232,7 +244,7 @@ const acmeMarketingHome: SurfaceDocument = {
 
 const resolved = resolveSurfaceDocument(acmeMarketingHome, myCopyResolver);
 const { element, head } = renderWebDocument(resolved.document, {
-  groups: resolved.groups, // carries "features" (and, if authored, "faq")
+  groups: resolved.groups, // carries the structured FAQ fields
 });
 ```
 
@@ -1076,11 +1088,11 @@ choice `checkLedgerDrift` makes for a citation it could not check.
   `PrintMeta`, `Rect`, `ResolvedSlot`, `ResolveResult`, `SlidesMeta`,
   `SlotBinding`, `SlotSpec`, `StyleBinding`, `SurfaceDocument`,
   `SurfaceBinding`, `SurfaceSlotBinding`, `SurfaceRepeatingSlotBinding`,
-  `SurfaceSlotBindingItem`, `SurfaceChannelMeta`, `OutputArtifact`,
+  `SurfaceRepeatingSlotFieldBinding`, `SurfaceSlotBindingItem`, `SurfaceChannelMeta`, `OutputArtifact`,
   `OutputManifest`, `StrategyProvenance`, `CopyProvenance`, `WebMeta`, `CopyLookup`,
   `CopyResolveResult`, `ResolvedText`, `AssetLookup`, `AssetResolveResult`,
   `ResolvedAsset`, `ResolvedSurfaceDocument`, `ResolvedSurfaceGroup`,
-  `ResolvedSurfaceGroupItem`, `ResolvedSurfaceNode`,
+  `ResolvedSurfaceGroupField`, `ResolvedSurfaceGroupItem`, `ResolvedSurfaceNode`,
   `ResolveSurfaceDocumentOptions`, `SurfaceResolutionReason`, and
   `CanvasInches` types. `SurfaceResolutionError` is thrown when canonical
   resolution fails closed.
@@ -1097,7 +1109,7 @@ choice `checkLedgerDrift` makes for a citation it could not check.
   `RenderError`, and the `AuthViewProps`, `ErrorViewProps`,
   `MarketingViewProps`, `MarketingFeatureItem`, `MarketingFaqItem`,
   `RenderErrorReason`, `AssetResolver`, `CopyResolver`, `RenderWebOptions`,
-  `RenderWebResult`, `RepeatingWebSlotSpec`, `ResolvedWebGroupItem`,
+  `RenderWebResult`, `RepeatingWebSlotFieldSpec`, `RepeatingWebSlotSpec`, `ResolvedWebGroupField`, `ResolvedWebGroupItem`,
   `WebSlotContentKind`, `WebTemplate`, `DefineWebTemplateOptions`,
   `CreateWebRendererOptions`, `WebRenderer`, `WebHeadMetadata`,
   `WebOpenGraphMetadata`, and `WebTwitterMetadata` types.
