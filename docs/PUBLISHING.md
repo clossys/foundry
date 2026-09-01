@@ -615,9 +615,11 @@ v1/v2 path:
   --replay-evidence <run-and-artifact-id.json>
 ```
 
-The archive is the source of the fresh transcript, candidate tarball, and
-registry proof — a separate locally generated transcript is not accepted. The
-recorder computes its archive digest, validates its exact contents against the
+The archive is the source of the fresh transcript and candidate tarball — a
+separate locally generated transcript is not accepted. The anonymous registry
+proof remains a separate `--proof` input or is fetched by the recorder's
+ordinary `--fetch` path, and must exactly join those candidate bytes. The
+recorder computes the archive digest, validates its exact contents against the
 qualification and served artifact, credential-freely re-reads the named GitHub
 run/jobs/artifact metadata, and performs its own isolated public npm install
 plus `npm audit signatures --include-attestations` verification against the
