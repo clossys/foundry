@@ -3,18 +3,28 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [0.3.0] - 2026-09-01
 
 ### Added
 
 - Added an optional `detail` slot to every `StatusList` row, readiness and
   off-axis disposition alike. It renders as a second description of the same
-  term, so a row's explanation stays inside the definition-list semantics. A
-  row without one renders exactly the markup it did before.
+  term, so a row's own explanation, including the reasoning behind a
+  `not-offered` answer, stays inside the definition-list semantics rather than
+  becoming a paragraph that only looks adjacent. A row had nowhere to put that
+  reasoning before but its own label.
 - Added the optional `eyebrow` slot `Hero` and `FeatureGrid` already shipped
   to `Faq` (both the React Aria and server-native implementations),
-  `OrderedStepSequence`, and `StatusList`. A block given no eyebrow, heading,
-  or description still renders no heading region at all.
+  `OrderedStepSequence`, and `StatusList`. A small label above the block
+  heading is now expressible on every editorial block rather than on two of
+  them. A block given no eyebrow, heading, or description still renders no
+  heading region at all.
+
+Both slots are optional and additive: a call that compiled and rendered under
+0.2.7 compiles and renders identically under 0.3.0, and a block passed neither
+slot emits the markup it always did. This is a minor rather than a patch
+because 0.x caret and tilde ranges are minor-locked, so a consumer that wants
+either slot widens its declared range deliberately.
 
 ## [0.2.7] - 2026-09-01
 

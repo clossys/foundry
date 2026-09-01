@@ -238,8 +238,9 @@ order and returns its ordinary `CopyResolution[]`. Pass that list directly to
 provenance format. A missing or empty resolution fails the entire document and
 names the exact authored path. This core stage intentionally imports neither
 React nor Designer and does not render a web view. The grounded web renderer
-uses Designer `0.2.7`'s server-safe site-block API, including the separate
-`not-offered` disposition and its caller-localized `labels.dispositions` map.
+uses Designer `0.3.0`'s server-safe site-block API, including the separate
+`not-offered` disposition and its caller-localized `labels.dispositions` map,
+the non-hero `eyebrow` slot, and the per-row `detail` slot.
 
 `SectionedView` is now the dedicated web renderer after that Designer floor is
 available. Resolve the CopyRef document first, retain its `resolutions` as the
@@ -1399,7 +1400,7 @@ import-free of each other under one version.
 
 Node 20+. This package's own `package.json` declares runtime dependencies on
 `@clossys/writer` (`^0.3.0`), `@clossys/designer`
-(`^0.2.7`), and `@clossys/controller` (`~0.8.0`) — of which this
+(`^0.3.0`), and `@clossys/controller` (`~0.8.0`), of which this
 package only imports the `./policy` subpath, `@clossys/controller/policy`,
 never `controller`'s other exports. `writer` and `designer` are caret
 ranges (both fresh `0.x` role packages); `controller` stays a tilde range,
@@ -1415,15 +1416,17 @@ addressability`'s exit-code precedence (issue #407), then to the current
 additive or behavioural minor releases rather than patches, so the older
 ranges do not resolve them (0.x ranges are minor-locked). `designer`'s range
 first moved from `^0.1.0` to `^0.2.0` when Designer added the
-`designer-environment-check` gate (issue #405), then tightened to the current
-`^0.2.7` because Publisher's React-server target imports the server-safe
+`designer-environment-check` gate (issue #405), then to `^0.2.7`
+because Publisher's React-server target imports the server-safe
 section-ground, `Faq`, ordered-step, and status-list exports, including the
-separate `not-offered` disposition, introduced in Designer 0.2.7. These ranges are independent; leaving
+separate `not-offered` disposition, introduced in Designer 0.2.7, and then to
+the current `^0.3.0` because the `eyebrow` and `actions` slots this package's
+section contract now renders into are Designer 0.3.0 additions. These ranges are independent; leaving
 either one behind would still resolve an older package without any install
 failure, silently withholding a required contract.
 
 A consumer whose own policy is to pin exact versions must pin `writer` to a
-matching `0.3.x` release, `designer` to `0.2.7` or a later compatible `0.2.x`
+matching `0.3.x` release, `designer` to `0.3.0` or a later compatible `0.3.x`
 release, and
 `controller` to a matching `0.8.x` patch release — otherwise
 `publisher`'s declared ranges and the consumer's exact pin cannot both be
