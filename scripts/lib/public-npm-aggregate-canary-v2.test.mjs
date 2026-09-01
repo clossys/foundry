@@ -13,6 +13,7 @@ import {
   AGGREGATE_V2_CLOSURE_DIRECTORY,
   AGGREGATE_V2_TRANSCRIPT_DIRECTORY,
   aggregateV2ErrorExitCode,
+  aggregateV2GitHistory,
   aggregateV2PlanSha256,
   buildAggregateV2Closure,
   canonicalJson,
@@ -111,6 +112,66 @@ test("v2 plan history refuses every post-introduction rewrite", function () {
     history: [{ commit: "c".repeat(40), status: "M", sha256: "d".repeat(64) }, ...introduction],
     parentCount: function () { return 1; },
   }).length > 0);
+});
+
+test("v2 plan history follows real merge parents to one direct introduction", async function () {
+  const makeRepository = async function (prefix) {
+    const root = await mkdtemp(join(tmpdir(), prefix));
+    for (const [command, args] of [
+      ["git", ["init", "-q", "-b", "main"]],
+      ["git", ["config", "user.email", "v2-history@example.invalid"]],
+      ["git", ["config", "user.name", "v2 history"]],
+      ["git", ["commit", "--allow-empty", "-qm", "root"]],
+    ]) execFileSync(command, args, { cwd: root });
+    return root;
+  };
+  const commit = async function (root, path, bytes, message) {
+    await mkdir(join(root, dirname(path)), { recursive: true });
+    await writeFile(join(root, path), bytes);
+    execFileSync("git", ["add", path], { cwd: root });
+    execFileSync("git", ["commit", "-qm", message], { cwd: root });
+    return execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim();
+  };
+  const parents = function (root, revision) {
+    return execFileSync("git", ["rev-list", "--parents", "-n", "1", revision], { cwd: root, encoding: "utf8" }).trim().split(/\s+/).length - 1;
+  };
+  const preservedMerge = async function (label) {
+    const root = await makeRepository("foundry-v2-" + label + "-");
+    execFileSync("git", ["checkout", "-qb", "review-head"], { cwd: root });
+    const introduction = await commit(root, AGGREGATE_V2_CANARY_PATH, "{\"v2\":true}\n", "introduce v2 plan");
+    execFileSync("git", ["checkout", "-q", "main"], { cwd: root });
+    await commit(root, "governance/unrelated-" + label + ".txt", label + "\n", "target change");
+    execFileSync("git", ["merge", "--no-ff", "-qm", label + " merge", "review-head"], { cwd: root });
+    const history = aggregateV2GitHistory({ root });
+    assert.deepEqual(history.map(function (entry) { return [entry.commit, entry.status]; }), [[introduction, "A"]]);
+    assert.deepEqual(validateAggregateV2PlanHistory({ history, parentCount: function (revision) { return parents(root, revision); } }), []);
+  };
+  await preservedMerge("github-synthetic");
+  await preservedMerge("content-preserving");
+
+  const hostile = await makeRepository("foundry-v2-history-hostile-");
+  execFileSync("git", ["checkout", "-qb", "rewrite"], { cwd: hostile });
+  await commit(hostile, AGGREGATE_V2_CANARY_PATH, "{\"v2\":true}\n", "introduce v2 plan");
+  await commit(hostile, AGGREGATE_V2_CANARY_PATH, "{\"v2\":false}\n", "rewrite v2 plan");
+  execFileSync("git", ["checkout", "-q", "main"], { cwd: hostile });
+  await commit(hostile, "governance/target.txt", "target\n", "target change");
+  execFileSync("git", ["merge", "--no-ff", "-qm", "merge conflicting parent", "rewrite"], { cwd: hostile });
+  let history = aggregateV2GitHistory({ root: hostile });
+  assert.ok(history.some(function (entry) { return entry.status === "M"; }));
+  assert.ok(validateAggregateV2PlanHistory({ history, parentCount: function (revision) { return parents(hostile, revision); } }).length > 0);
+
+  const deleted = await makeRepository("foundry-v2-history-delete-");
+  const introduction = await commit(deleted, AGGREGATE_V2_CANARY_PATH, "{\"v2\":true}\n", "introduce v2 plan");
+  execFileSync("git", ["checkout", "-qb", "delete-path"], { cwd: deleted });
+  execFileSync("git", ["rm", "-q", AGGREGATE_V2_CANARY_PATH], { cwd: deleted });
+  execFileSync("git", ["commit", "-qm", "delete v2 plan"], { cwd: deleted });
+  execFileSync("git", ["checkout", "-q", "main"], { cwd: deleted });
+  await commit(deleted, "governance/target.txt", "target\n", "target change");
+  execFileSync("git", ["merge", "--no-ff", "-qm", "merge deleted parent", "delete-path"], { cwd: deleted });
+  history = aggregateV2GitHistory({ root: deleted });
+  assert.ok(history.some(function (entry) { return entry.status === "D"; }));
+  assert.ok(history.some(function (entry) { return entry.commit === introduction && entry.status === "A"; }));
+  assert.ok(validateAggregateV2PlanHistory({ history, parentCount: function (revision) { return parents(deleted, revision); } }).length > 0);
 });
 
 test("v2 committed reads ignore a hostile working-tree mutation", async function () {

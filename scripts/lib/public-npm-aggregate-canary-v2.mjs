@@ -8,6 +8,7 @@ import {
   AGGREGATE_EXTERNAL_TIMEOUT_MS,
   AggregateUnavailableError,
   assertAggregateRuntime,
+  aggregateCanaryGitHistory,
   containedRegularDirectory,
   immutableRecordHistory,
   immutableRecordPaths,
@@ -300,21 +301,7 @@ export function validateAggregateV2PlanHistory({ history, parentCount = function
 }
 
 export function aggregateV2GitHistory({ root }) {
-  try {
-    const commits = execFileSync("git", ["log", "--full-history", "--format=%H", "--", AGGREGATE_V2_CANARY_PATH], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim().split("\n").filter(Boolean);
-    if (commits.length === 0) return [];
-    if (commits.length === 1) {
-      const commit = commits[0];
-      const parents = execFileSync("git", ["rev-list", "--parents", "-n", "1", commit], { cwd: root, encoding: "utf8" }).trim().split(/\s+/).slice(1);
-      const existingParent = parents.some(function (parent) {
-        try { execFileSync("git", ["cat-file", "-e", parent + ":" + AGGREGATE_V2_CANARY_PATH], { cwd: root, stdio: "ignore" }); return true; }
-        catch { return false; }
-      });
-      const bytes = execFileSync("git", ["show", commit + ":" + AGGREGATE_V2_CANARY_PATH], { cwd: root, encoding: "buffer" });
-      return [{ commit, status: existingParent || parents.length !== 1 ? "M" : "A", sha256: hash(bytes) }];
-    }
-  } catch { /* the check below fails closed when history is malformed */ }
-  return [{ commit: "0".repeat(40), status: "M", sha256: "0".repeat(64) }];
+  return aggregateCanaryGitHistory({ root, path: AGGREGATE_V2_CANARY_PATH });
 }
 
 export function aggregateV2RecordPaths({ root, directory }) { return immutableRecordPaths({ root, directory }); }
