@@ -47,7 +47,12 @@ function normalizeFixtureInstant(value, instant) {
   if (object(value)) return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, normalizeFixtureInstant(item, instant)]));
   return value;
 }
-function comparableTranscript(transcript) {
+/**
+ * Project a transcript into the portion that can be compared across disposable
+ * consumer installations. The consumer itself remains evidence: only npm's
+ * generated manifest and lockfile digests are excluded.
+ */
+export function comparableTranscriptProjection(transcript) {
   const copy = structuredClone(transcript);
   delete copy.canonicalSha256;
   // npm owns the disposable consumer manifest and lock bytes.  They remain
@@ -55,7 +60,10 @@ function comparableTranscript(transcript) {
   // runtime update can rewrite their generated representation while the exact
   // candidate, installed manifest, operations, and rollback evidence remain
   // unchanged.
-  delete copy.consumer;
+  if (object(copy.consumer)) {
+    delete copy.consumer.manifestSha256;
+    delete copy.consumer.lockfileSha256;
+  }
   if (!transcript?.fixtureMaterializedAt) return copy;
   const normalized = normalizeFixtureInstant(copy, transcript.fixtureMaterializedAt);
   for (const observation of normalized.observations ?? []) {
@@ -66,6 +74,9 @@ function comparableTranscript(transcript) {
     observation.stderrSha256 = digest(observation.rawCaseEvidence.stderr);
   }
   return normalized;
+}
+export function comparableTranscriptSha256(transcript) {
+  return digest(JSON.stringify(stable(comparableTranscriptProjection(transcript))));
 }
 function occurrences(value, needle) { return typeof value === "string" ? value.split(needle).length - 1 : 0; }
 function checkRawCaseEvidence(a, observation, fixtureMaterializedAt) {
@@ -331,7 +342,7 @@ export function validateCandidateQualification(r, { mode = "offline", expected, 
       const observed = Array.isArray(freshTranscript.observations) ? freshTranscript.observations.filter((item) => item?.kind === "framework").map((item) => item.id).sort() : [];
       if (digest(JSON.stringify(observed)) !== expected.frameworkObservationsSha256) fail(a, "fresh-transcript-framework-source-join", "fresh framework evidence differs from the reviewed packed-manifest mapping.");
     }
-    if (freshFindings.length === 0 && JSON.stringify(stable(comparableTranscript(r.transcript))) !== JSON.stringify(stable(comparableTranscript(freshTranscript)))) fail(a, "fresh-transcript", "fresh transcript");
+    if (freshFindings.length === 0 && comparableTranscriptSha256(r.transcript) !== comparableTranscriptSha256(freshTranscript)) fail(a, "fresh-transcript", "fresh transcript");
   }
   if (pre) { if (!SHA1.test(r.reviewedCommit) || !SHA256.test(r.rootPackageJsonSha256) || !SHA256.test(r.rootPackageLockSha256)) fail(a, "prepublication-join", "pre joins"); closed(a, r.candidateReview, ["headSha", "reference"], "candidateReview"); if (r.candidateReview?.headSha !== r.reviewedCommit || !text(r.candidateReview?.reference)) fail(a, "candidate-review", "review"); }
   if (post) { if (!SHA1.test(r.publishedCommit)) fail(a, "published-commit", "published"); closed(a, r.registry, ["reference", "sha1", "sha256", "sha512"], "registry"); if (!text(r.registry?.reference) || ["sha1", "sha256", "sha512"].some((k) => r.registry?.[k] !== c?.tarball?.[k])) fail(a, "registry", "registry"); }

@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import test from "node:test";
 import { promisify } from "node:util";
-import { currentQualificationJoins, parseStrictJson, qualificationIntroductionCommit, qualificationPath, qualificationRecordHistory, sealedQualificationPathsAtTransitionBase, validateCandidateQualification, validatePrepublicationPrTail, validateRetainedCandidateQualification, validateTrioControlTailAuthorization, validateTrioPublicationClosure } from "./candidate-qualification.mjs";
+import { comparableTranscriptProjection, comparableTranscriptSha256, currentQualificationJoins, parseStrictJson, qualificationIntroductionCommit, qualificationPath, qualificationRecordHistory, sealedQualificationPathsAtTransitionBase, validateCandidateQualification, validatePrepublicationPrTail, validateRetainedCandidateQualification, validateTrioControlTailAuthorization, validateTrioPublicationClosure } from "./candidate-qualification.mjs";
 import { TRIO_PUBLICATION_PATH, TRIO_PUBLICATION_TRANSITION_BASE, TRIO_PUBLICATION_TRANSITION_PATHS } from "./release-publication-cohort.mjs";
 import { TRIO, TRIO_COHORT_PATH, TRIO_CONTROL_TAIL_AUTHORIZATION_PATH, TRIO_CONTROL_TAIL_BASE_COMMIT, TRIO_CONTROL_TAIL_PATHS, TRIO_QUARANTINE_PATH, TRIO_RELEASE } from "./release-qualification-trio.mjs";
 
@@ -541,12 +541,26 @@ test("fresh replay ignores only generated consumer digest drift", () => {
   const fresh = structuredClone(record.transcript);
   fresh.consumer = { manifestSha256: "1".repeat(64), lockfileSha256: "2".repeat(64) };
   delete fresh.canonicalSha256; fresh.canonicalSha256 = sha256(JSON.stringify(fresh));
+  assert.equal(comparableTranscriptSha256(record.transcript), comparableTranscriptSha256(fresh));
+  assert.deepEqual(comparableTranscriptProjection(fresh).consumer, {});
   assert.equal(rules(record, { freshTranscript: fresh }).some((rule) => rule.startsWith("fresh-transcript")), false);
 
-  const changed = structuredClone(fresh);
-  changed.observations.find((item) => item.kind === "case").stdoutSha256 = "3".repeat(64);
-  delete changed.canonicalSha256; changed.canonicalSha256 = sha256(JSON.stringify(changed));
-  assert.ok(rules(record, { freshTranscript: changed }).some((rule) => rule.startsWith("fresh-transcript")));
+  const rejectDrift = (mutate, label) => {
+    const changed = structuredClone(fresh);
+    mutate(changed);
+    delete changed.canonicalSha256; changed.canonicalSha256 = sha256(JSON.stringify(changed));
+    assert.notEqual(comparableTranscriptSha256(record.transcript), comparableTranscriptSha256(changed), `${label} must remain in the comparable projection`);
+    assert.ok(rules(record, { freshTranscript: changed }).some((rule) => rule.startsWith("fresh-transcript")), `${label} must reject fresh replay`);
+  };
+  rejectDrift((value) => {
+    const observation = value.observations.find((item) => item.kind === "case");
+    observation.rawCaseEvidence.stdout = `${observation.rawCaseEvidence.stdout}changed\n`;
+    observation.stdoutSha256 = sha256(observation.rawCaseEvidence.stdout);
+  }, "observation");
+  rejectDrift((value) => { value.coverage.bins += 1; }, "coverage");
+  rejectDrift((value) => { value.candidate.version = "9.9.9"; }, "candidate");
+  rejectDrift((value) => { value.restoration.manifestRestored = false; }, "rollback");
+  rejectDrift((value) => { value.dimensions.find((item) => item.dimension === "rollback").evidence = ["uninstall"]; }, "operation");
 
   const invalid = structuredClone(fresh);
   invalid.consumer.manifestSha256 = "not-a-digest";

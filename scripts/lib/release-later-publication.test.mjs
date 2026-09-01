@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { immutableSingleIntroduction, strictQualificationIntroductionAncestor, trustedProvenanceSourceValid, trustedReplaySourceEvidence, validateLaterPublication, validateRetainedLaterPublications } from "./release-later-publication.mjs";
+import { comparableTranscriptSha256 } from "./candidate-qualification.mjs";
 import { publicNpmPackageUrl, publicNpmVersionUrl, PUBLIC_NPM_REGISTRY } from "./public-npm-registry.mjs";
 
 const hash = (value) => createHash("sha256").update(value).digest("hex");
@@ -395,6 +396,26 @@ test("v3 replay evidence is closed around root-only drift, exact jobs, artifact,
   ];
   for (const [index, attack] of attacks.entries()) { const hostile = replayRecord(); attack(hostile); assert.ok(rules(hostile, { replaySourceEvidence: { valid: true } }).length > 0, `attack ${index}`); }
   assert.ok(rules(value).includes("replay-source"));
+});
+
+test("v3 replay admits consumer-only canonical drift only with the retained comparable digest", () => {
+  const exactLegacy = replayRecord();
+  assert.deepEqual(rules(exactLegacy, { replaySourceEvidence: { valid: true } }), [], "old exact v3 evidence remains valid without a comparable digest");
+  const malformedExact = replayRecord();
+  malformedExact.runQualification.transcript.comparableSha256 = "not-a-digest";
+  assert.ok(rules(malformedExact, { replaySourceEvidence: { valid: true } }).includes("replay-transcript"), "a present comparable digest must be valid even when canonical evidence is exact");
+
+  const drifted = replayRecord();
+  drifted.runQualification.transcript.canonicalSha256 = hex("0", 64);
+  drifted.runQualification.transcript.comparableSha256 = comparableTranscriptSha256(qualification.transcript);
+  assert.deepEqual(rules(drifted, { replaySourceEvidence: { valid: true } }), [], "consumer-only drift must join the retained comparable projection");
+
+  for (const comparable of [undefined, "not-a-digest", hex("1", 64)]) {
+    const hostile = structuredClone(drifted);
+    if (comparable === undefined) delete hostile.runQualification.transcript.comparableSha256;
+    else hostile.runQualification.transcript.comparableSha256 = comparable;
+    assert.ok(rules(hostile, { replaySourceEvidence: { valid: true } }).includes("replay-transcript"));
+  }
 });
 
 test("only the three retained historical release tuples may use the retired provenance repository", () => {
