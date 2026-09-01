@@ -93,10 +93,10 @@
     }
   },
   "bin": {
-    "designer-token-check": "./dist/cli.js",
-    "designer-brand-check": "./dist/tokens/cli.js",
-    "designer-contrast-check": "./dist/tokens/contrast-cli.js",
-    "designer-environment-check": "./dist/environment-conformance-cli.js"
+    "designer-token-check": "dist/cli.js",
+    "designer-brand-check": "dist/tokens/cli.js",
+    "designer-contrast-check": "dist/tokens/contrast-cli.js",
+    "designer-environment-check": "dist/environment-conformance-cli.js"
   },
   "files": [
     "dist",
