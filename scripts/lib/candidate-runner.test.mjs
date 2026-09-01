@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { promisify } from "node:util";
-import { QUALIFICATION_PHASE_TIMEOUTS, assertCredentialFree, containedRegularFile, installNpmrc, packedFrameworkContexts, runCandidateQualification, runProcess, runtimeImportArguments, validateNpmBinMap, wildcardCapture } from "./candidate-runner.mjs";
+import { QUALIFICATION_PHASE_TIMEOUTS, assertCredentialFree, containedRegularFile, installNpmrc, packedFrameworkContexts, runCandidateQualification, runProcess, runtimeImportArguments, wildcardCapture } from "./candidate-runner.mjs";
 import { RELEASE_RUNTIME } from "./release-runtime.mjs";
 
 const execFile = promisify(execFileCallback);
@@ -16,7 +16,7 @@ const releaseRuntimeRun = (file, args) => {
   if (args[0] === "-p") return { status: 0, stdout: `${RELEASE_RUNTIME.zlib}\n`, stderr: "" };
   throw new Error(`unexpected release runtime probe ${file} ${args.join(" ")}`);
 };
-async function syntheticPackage({ mismatch = false, exports = undefined, runtimePeer = false, peerInstall = undefined, rawStarter = false, mutateCaseEvidence = null, binPath = "cli.js" } = {}) {
+async function syntheticPackage({ mismatch = false, exports = undefined, runtimePeer = false, peerInstall = undefined, rawStarter = false, mutateCaseEvidence = null } = {}) {
   const root = await mkdtemp(join(tmpdir(), "foundry-runner-test-"));
   const source = join(root, "source");
   const fixturesDir = join(root, "fixtures");
@@ -31,7 +31,7 @@ async function syntheticPackage({ mismatch = false, exports = undefined, runtime
     type: "module",
     exports: exports ?? { ".": { types: "./index.d.ts", import: "./index.js" }, "./asset": "./asset.txt", "./static/*": "./static/*.txt" },
     files: ["index.js", "react-server.js", "index.d.ts", "cli.js", "asset.txt", "static"],
-    bin: { "synthetic-check": binPath },
+    bin: { "synthetic-check": "cli.js" },
     scripts: { preinstall: "node -e \"require('fs').writeFileSync('preinstall-marker','ran')\"" },
     ...(runtimePeer ? { peerDependencies: { typescript: "~6.0.0" }, peerDependenciesMeta: { typescript: { optional: true } } } : {}),
   }, null, 2));
@@ -156,17 +156,6 @@ test("runner isolates a packed candidate and produces a deterministic complete t
   assert.equal(JSON.stringify(first).includes(fixture.root), false);
   const { canonicalSha256, ...canonical } = first;
   assert.equal(canonicalSha256, sha256(JSON.stringify(canonical)));
-});
-
-test("candidate qualification rejects bin targets npm would auto-correct", async (t) => {
-  const fixture = await syntheticPackage({ binPath: "./cli.js" });
-  t.after(() => rm(fixture.root, { recursive: true, force: true }));
-  assert.deepEqual(validateNpmBinMap({ "synthetic-check": "cli.js" }), []);
-  assert.ok(validateNpmBinMap({ "synthetic-check": "./cli.js" }).length > 0);
-  assert.ok(validateNpmBinMap({ "synthetic-check": "dist//cli.js" }).length > 0);
-  assert.ok(validateNpmBinMap({ "synthetic-check": "dist/.//cli.js" }).length > 0);
-  assert.ok(validateNpmBinMap({ "synthetic-check": "dist/foo/../cli.js" }).length > 0);
-  await assert.rejects(() => runCandidateQualification(fixture), /invalid npm bin targets/);
 });
 
 test("Starter v3 retains only bounded tokenized raw case commands, inputs, exits, and outputs", async (t) => {

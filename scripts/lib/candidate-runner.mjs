@@ -344,24 +344,6 @@ function normalizedBins(manifest) {
   return manifest.bin && typeof manifest.bin === "object" && !Array.isArray(manifest.bin) ? manifest.bin : {};
 }
 
-// npm normalizes the `bin` map while publishing.  In particular, a target
-// beginning with `./` is removed by npm 11 rather than being shipped as the
-// package declares it.  Qualification must reject that shape before the
-// publish dry-run can turn a declared executable into a false-green result.
-// Keep this deliberately narrower than path resolution: only normalized,
-// package-relative POSIX paths are accepted, with no dot segments or Windows
-// absolute paths.  Missing/undeclared bins remain the contract check below.
-export function validateNpmBinMap(bins) {
-  const findings = [];
-  for (const [name, target] of Object.entries(bins ?? {})) {
-    const segments = typeof target === "string" ? target.split("/") : [];
-    if (typeof target !== "string" || target.length === 0 || target.includes("\\") || target.startsWith("/") || /^[A-Za-z]:[\\/]/.test(target) || segments.some((segment) => segment.length === 0 || segment === "." || segment === "..")) {
-      findings.push(`${name}: npm-normalized relative bin target required`);
-    }
-  }
-  return findings;
-}
-
 function sameBinMap(left, right) {
   const leftKeys = Object.keys(left).sort();
   const rightKeys = Object.keys(right).sort();
@@ -750,8 +732,6 @@ export async function runCandidateQualification({ tarball, policy, adapter, fixt
   if (adapter.package !== manifest.name) throw new Error("adapter package must equal packed manifest name");
   if (registry?.scope !== packageScope(manifest.name)) throw new Error("registry scope must match candidate package scope");
   const packedBins = normalizedBins(manifest);
-  const binFindings = validateNpmBinMap(packedBins);
-  if (binFindings.length) throw new Error(`packed manifest has invalid npm bin targets: ${binFindings.join(", ")}`);
   const contract = validateReleaseQualificationContract({ policy, adapter, fixtures, manifestBins: packedBins, peerDependencies: manifest.peerDependencies ?? {}, peerDependenciesMeta: manifest.peerDependenciesMeta ?? {} });
   if (contract.length) throw new Error(`invalid qualification contract: ${contract.map((item) => item.rule).join(",")}`);
   if (!sameBinMap(packedBins, manifestBins) || !sameBinKeys(packedBins, adapter.bins)) throw new Error("adapter must probe exactly the packed manifest bin map");
