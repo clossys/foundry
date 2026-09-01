@@ -281,56 +281,53 @@ with a stale source link.
 
 ### 4b. Floors per package
 
-| Package | Published at observation | Producer replacement | Floor to adopt |
+Re-derived against the registry on 2026-09-01. Between the observation instant
+and this reading, **every one of the 19 packages published a new version**, so
+the floors below differ throughout from the affected-version table in 4a. That
+is the drift this document warned about under "Observation window and version
+drift", now demonstrated rather than predicted. Re-derive again before you pin.
+
+| Package | Latest at this reading | In the 4a affected set | Floor to adopt |
 | --- | --- | --- | --- |
-| `@clossys/advisor` | 0.1.5 | 0.1.6 | **do not adopt 0.1.5**, floor `^0.1.6` |
-| `@clossys/architect` | 0.1.2 | (not affected) | floor `^0.1.2` |
-| `@clossys/bouncer` | 0.1.1 | (not affected) | floor `^0.1.1` |
-| `@clossys/builder` | 0.7.3 | (not affected) | floor `^0.7.3` |
-| `@clossys/butler` | 0.1.1 | (not affected) | floor `^0.1.1` |
-| `@clossys/controller` | 0.8.23 | 0.8.24 | **do not adopt 0.8.23**, floor `^0.8.24` |
-| `@clossys/designer` | 0.2.4 | (not affected) | floor `^0.2.4` |
-| `@clossys/giver` | 0.1.2 | (not affected) | floor `^0.1.2` |
-| `@clossys/influencer` | 0.1.2 | (not affected) | floor `^0.1.2` |
-| `@clossys/inspector` | 0.1.18 | (not affected) | floor `^0.1.18` |
-| `@clossys/integrator` | 0.6.2 | (not affected) | floor `^0.6.2` |
-| `@clossys/keeper` | 0.1.2 | (not affected) | floor `^0.1.2` |
-| `@clossys/locksmith` | 0.1.6 | (not affected) | floor `^0.1.6` |
-| `@clossys/messenger` | 0.1.2 | (not affected) | floor `^0.1.2` |
-| `@clossys/observer` | 0.2.3 | (not affected) | floor `^0.2.3` |
-| `@clossys/publisher` | 0.1.10 | (not affected) | floor `^0.1.10` |
-| `@clossys/starter` | 0.1.4 | 0.1.5 | **do not adopt 0.1.4**, floor `^0.1.5` |
-| `@clossys/strategist` | 0.1.1 | 0.1.2 | **do not adopt 0.1.1**, floor `^0.1.2` |
-| `@clossys/writer` | 0.3.2 | (not affected) | floor `^0.3.2` |
+| `@clossys/advisor` | 0.1.6 | yes, 0.1.6 | floor `^0.1.6`, now published |
+| `@clossys/architect` | 0.1.3 | no | floor `^0.1.3` |
+| `@clossys/bouncer` | 0.1.2 | no | floor `^0.1.2` |
+| `@clossys/builder` | 0.7.4 | no | floor `^0.7.4` |
+| `@clossys/butler` | 0.1.2 | no | floor `^0.1.2` |
+| `@clossys/controller` | 0.8.24 | yes, 0.8.24 | floor `^0.8.24`, now published |
+| `@clossys/designer` | 0.2.7 | no | floor `^0.2.7` |
+| `@clossys/giver` | 0.1.3 | no | floor `^0.1.3` |
+| `@clossys/influencer` | 0.1.3 | no | floor `^0.1.3` |
+| `@clossys/inspector` | 0.1.19 | no | floor `^0.1.19` |
+| `@clossys/integrator` | 0.6.3 | no | floor `^0.6.3` |
+| `@clossys/keeper` | 0.1.3 | no | floor `^0.1.3` |
+| `@clossys/locksmith` | 0.1.7 | no | floor `^0.1.7` |
+| `@clossys/messenger` | 0.1.3 | no | floor `^0.1.3` |
+| `@clossys/observer` | 0.2.4 | no | floor `^0.2.4` |
+| `@clossys/publisher` | 0.2.1 | no | floor `^0.2.1` |
+| `@clossys/starter` | 0.1.5 | yes, 0.1.5 | floor `^0.1.5`, now published |
+| `@clossys/strategist` | 0.1.2 | yes, 0.1.2 | floor `^0.1.2`, now published |
+| `@clossys/writer` | 0.3.3 | no | floor `^0.3.3` |
 
-At the observation instant none of the four replacement versions had been
-published: the registry's `latest` was still the affected version in each case.
-Three of the four have published since, and each one behaves as section 4a says
-a replacement version should: the metadata is corrected, the runtime surface is
-untouched. Read from the registry on 2026-09-01, with the tarball SHA-512
-confirmed against `dist.integrity` in every case:
-
-| Replacement | `repository`, `bugs`, `homepage` | Executables | Provenance attestation |
-| --- | --- | --- | --- |
-| `@clossys/advisor@0.1.6` | all three point at `clossys/foundry` | 2, unchanged from 0.1.5 | yes |
-| `@clossys/controller@0.8.24` | all three point at `clossys/foundry` | 9, unchanged from 0.8.23 | yes |
-| `@clossys/strategist@0.1.2` | all three point at `clossys/foundry` | 1, unchanged from 0.1.1 | yes |
-
-`@clossys/starter@0.1.5` is the one still unpublished. Until it resolves, a
-consumer needing Starter is choosing between the affected `0.1.4` and waiting.
-Re-check with `npm view @clossys/starter version`.
+All four replacement versions named in 4a have now published, and each behaves
+as 4a says a replacement version should. Verified from the registry with the
+tarball SHA-512 confirmed against `dist.integrity`: `repository`, `bugs`, and
+`homepage` corrected to `clossys/foundry`, executable count unchanged from the
+version it replaces, provenance attestation present. That held for
+`@clossys/advisor@0.1.6`, `@clossys/controller@0.8.24`,
+`@clossys/strategist@0.1.2`, and `@clossys/starter@0.1.5`.
 
 Two claims elsewhere in this document rest on Controller specifically, and both
 were re-verified against `0.8.24` rather than assumed to carry over. The role
-catalog in section 2 is byte-identical in `0.8.24` (same SHA-256
+catalog in section 2 is byte-identical (same SHA-256
 `86f4d38599744b65b6689a47e5baa312e5f5ed538e6fcecd4d8dc67061efe3ed`, still
 `schemaVersion: 4`, still 18 roles, still a declared `exports` subpath). The
-severity vocabulary in section 8 is also unchanged: `0.8.24` still declares and
-emits `"error" | "warning"`, so that mismatch is not fixed by moving to the new
-floor.
+severity vocabulary in section 8 is unchanged, so that mismatch is not fixed by
+moving to the new floor.
 
-The floors in the table above do not change as versions publish; only their
-availability does.
+Section 3's roster was re-derived too: all 33 executable names are identical
+across the new versions, and `@clossys/locksmith@0.1.7` still installs
+`vespene-secrets-infisical`.
 
 ### 4c. Newly-required contract fields: what actually changed
 
@@ -373,8 +370,20 @@ expected: the package name string itself changed inside the tarball.
 Likewise `@clossys/controller@0.8.21` to `0.8.23` differs only in
 `CHANGELOG.md` and `package.json`, and `@clossys/starter@0.1.2` to `0.1.4`
 only in `CHANGELOG.md`, `README.md`, `documents/caller-workflow.md`, and
-`package.json`. None of the published `@clossys` version bumps to date carry a
-runtime or API change.
+`package.json`.
+
+**That is a statement about the rename, not a promise about every later
+release.** An earlier revision of this document said that no published
+`@clossys` version bump carried a runtime or API change. That was true when
+written and is no longer true, which is worth stating plainly rather than
+quietly editing, because a consumer who read it as "bumps inside this scope are
+always safe no-ops" would be wrong. `@clossys/publisher@0.2.0` added a
+`SectionedView` web renderer and a `not-offered` status disposition, and raised
+its runtime Designer floor: the installed `0.2.1` manifest depends on
+`@clossys/designer` at `^0.2.7`, where the version this document first recorded
+depended on `^0.2.4`. A consumer adopting Publisher `0.2.x` must therefore also
+carry Designer `0.2.7` or later. Treat a minor bump in this family as a real
+change and read that package's own changelog.
 
 **UNVERIFIED: the version at which `bin` first became required.** It is present
 in the earliest version reachable on `registry.npmjs.org` (`0.1.3`).
@@ -517,8 +526,10 @@ found while checking the claims in this document. It is recorded here because
 this is the document the migrating repositories are reading, and because the
 cost of rediscovering it is paid once per repository.
 
-**`@clossys/builder@0.7.3` rejects every finding `@clossys/controller`
-produces**, at both `0.8.23` and the `0.8.24` replacement floor.
+**`@clossys/builder` rejects every finding `@clossys/controller` produces**,
+at every version pair checked: Builder `0.7.3` and `0.7.4` against
+Controller `0.8.23` and `0.8.24`. Moving to the current floors does not
+resolve it.
 
 The two packages are built to interoperate. Builder's
 `ObservationBundleGateEntry.result` is typed
@@ -528,7 +539,7 @@ severity vocabulary, and they do not overlap:
 
 | Package | Location | Accepted or emitted severities |
 | --- | --- | --- |
-| `@clossys/builder@0.7.3` | `src/types.ts` `Severity`, enforced by `FINDING_SEVERITIES` in `src/observation-bundle.ts` | `high`, `medium`, `low` |
+| `@clossys/builder` `0.7.3` and `0.7.4` | `src/types.ts` `Severity`, enforced by `FINDING_SEVERITIES` in `src/observation-bundle.ts` | `high`, `medium`, `low` |
 | `@clossys/controller` `0.8.23` and `0.8.24` | `src/repository/run.ts`, `src/catalog/types.ts`, and every emitter | `error`, `warning` |
 
 So a `violated` gate result from Controller, passed into Builder's
