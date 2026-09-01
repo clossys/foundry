@@ -209,7 +209,7 @@ function validateItemIds(items: unknown[], path: string, findings: ComposeFindin
   for (let index = 0; index < items.length; index += 1) {
     const item = items[index];
     const itemPath = `${path}.${index}`;
-    if (!isPlainObject(item) || !hasEnumerableOwnDataKeys(item) || !isNonWhitespaceString(item.id)) return;
+    if (!isPlainObject(item) || !hasEnumerableOwnDataKeys(item) || !isNonWhitespaceString(item.id)) continue;
     if (ids.has(item.id)) findings.push(finding("sectioned-view-item-id-duplicate", `${itemPath}.id`, `${itemPath}.id duplicates another item id in ${path}.`));
     ids.add(item.id);
   }

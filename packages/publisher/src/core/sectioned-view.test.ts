@@ -124,6 +124,21 @@ describe("SectionedViewDocument core contract", () => {
     expect(() => resolveSectionedViewDocument(sparseSections as unknown as SectionedViewDocument, resolver)).toThrow(SectionedViewResolutionError);
   });
 
+  it("continues duplicate-id checks after a malformed repeated item", () => {
+    const candidate = {
+      id: document.id,
+      sections: [{
+        ...document.sections[1],
+        items: [null, { id: "duplicate", heading: ref("acme.features.one.heading") }, { id: "duplicate", heading: ref("acme.features.two.heading") }],
+      }],
+    };
+    const findings = validateSectionedViewDocument(candidate);
+    expect(findings).toEqual(expect.arrayContaining([
+      expect.objectContaining({ rule: "sectioned-view-item-shape", path: "sections.0.items.0" }),
+      expect.objectContaining({ rule: "sectioned-view-item-id-duplicate", path: "sections.0.items.2.id" }),
+    ]));
+  });
+
   it("fails closed on inherited, hidden, symbol, and accessor properties", () => {
     const inheritedDocument = Object.create({ sections: document.sections }) as { id: string };
     inheritedDocument.id = document.id;
