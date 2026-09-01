@@ -355,7 +355,7 @@ export function validateNpmBinMap(bins) {
   const findings = [];
   for (const [name, target] of Object.entries(bins ?? {})) {
     const segments = typeof target === "string" ? target.split("/") : [];
-    if (typeof target !== "string" || target.length === 0 || target.includes("\\") || target.startsWith("/") || /^[A-Za-z]:[\\/]/.test(target) || segments.some((segment) => segment === "." || segment === "..")) {
+    if (typeof target !== "string" || target.length === 0 || target.includes("\\") || target.startsWith("/") || /^[A-Za-z]:[\\/]/.test(target) || segments.some((segment) => segment.length === 0 || segment === "." || segment === "..")) {
       findings.push(`${name}: npm-normalized relative bin target required`);
     }
   }

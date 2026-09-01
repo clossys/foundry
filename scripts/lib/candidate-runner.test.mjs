@@ -163,6 +163,9 @@ test("candidate qualification rejects bin targets npm would auto-correct", async
   t.after(() => rm(fixture.root, { recursive: true, force: true }));
   assert.deepEqual(validateNpmBinMap({ "synthetic-check": "cli.js" }), []);
   assert.ok(validateNpmBinMap({ "synthetic-check": "./cli.js" }).length > 0);
+  assert.ok(validateNpmBinMap({ "synthetic-check": "dist//cli.js" }).length > 0);
+  assert.ok(validateNpmBinMap({ "synthetic-check": "dist/.//cli.js" }).length > 0);
+  assert.ok(validateNpmBinMap({ "synthetic-check": "dist/foo/../cli.js" }).length > 0);
   await assert.rejects(() => runCandidateQualification(fixture), /invalid npm bin targets/);
 });
 
