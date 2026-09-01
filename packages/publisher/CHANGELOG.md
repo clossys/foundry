@@ -3,6 +3,15 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.1] - 2026-09-01
+
+### Fixed
+
+- Normalized both published CLI targets so npm preserves the declared
+  `publisher-media-check` and `publisher-record-check` bin map without
+  auto-correction. The unpublished 0.2.0 dry-run candidate was rejected and
+  is not publication evidence.
+
 ## [0.2.0] - 2026-08-31
 
 ### Added

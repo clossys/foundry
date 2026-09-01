@@ -134,6 +134,18 @@ test("qualification is least privilege and owns candidate execution", () => {
   assertPinnedReplayRuntime(qualify, "qualify", "npm ci --ignore-scripts");
 });
 
+test("directory-form publish dry-run fails closed on npm manifest auto-correction", () => {
+  const qualify = job("qualify");
+  const dryRun = step(qualify, "Exercise directory-form OIDC publish command without upload credentials");
+  assert.match(dryRun, /set -euo pipefail/);
+  assert.match(dryRun, /2>&1/);
+  assert.match(dryRun, /status=0/);
+  assert.match(dryRun, /if \[ "\$status" -ne 0 \]; then/);
+  assert.match(dryRun, /npm auto-corrected/);
+  assert.ok(dryRun.includes("bin\\[[^]]+\\].*(invalid|removed)"), "the dry-run guard must catch invalid or removed bin entries");
+  assert.ok(dryRun.indexOf('npm publish . --dry-run') < dryRun.indexOf('npm auto-corrected'), "the dry-run must be executed before its output is inspected");
+});
+
 test("OIDC publish consumes the exact handoff through the clean-directory wrapper with upload-only trust and no token", () => {
   const publish = job("publish");
   assert.match(publish, /needs: \[discover, qualify\]/);
