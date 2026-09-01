@@ -19,7 +19,8 @@ Use explicit subpaths:
 
 - `@clossys/publisher/core` — canonical `SurfaceDocument` contract, validation, copy/media resolution, and output manifests.
 - `@clossys/publisher/media` — media registry, reader, and coverage check.
-- `@clossys/publisher/web` — web composition and head metadata. Under React's
+- `@clossys/publisher/web` — web composition, head metadata, and the dedicated
+  resolved-model `SectionedView` renderer. Under React's
   `react-server` export condition it resolves a server-safe target with the
   same runtime export names and Designer's server-only component barrels;
   ordinary imports retain the interactive React Aria FAQ.
@@ -203,11 +204,10 @@ fields:
 }
 ```
 
-This is a breaking contract correction, so the pending Publisher successor
-is planned as `0.2.0`; a `^0.1.x` range must not satisfy it. The package
-version remains `0.1.11` until the separate #663 Designer-block integration
-joins this final site-readiness unit and one exact-head `0.2.0` candidate is
-qualified. This statement plans neither a version bump nor publication.
+This is a breaking contract correction, so Publisher source is now the planned
+`0.2.0` successor; a `^0.1.x` range must not satisfy it. The source is neither
+qualified nor published: an exact-head candidate and public dependency
+verification remain required before any release action.
 
 ### `SectionedViewDocument` — Designer-independent long-page core
 

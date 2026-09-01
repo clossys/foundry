@@ -26,6 +26,14 @@ function nonBlank(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
 }
 
+function plain(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value) && (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null);
+}
+
+function closed(value: Record<string, unknown>, keys: readonly string[]): boolean {
+  return Reflect.ownKeys(value).every((key) => typeof key === "string" && keys.includes(key) && (() => { const descriptor = Object.getOwnPropertyDescriptor(value, key); return descriptor !== undefined && descriptor.enumerable && "value" in descriptor; })());
+}
+
 function dense(value: unknown, path: string): asserts value is unknown[] {
   if (!Array.isArray(value) || value.length === 0) throw new Error(`${path} must be a non-empty dense array.`);
   for (let index = 0; index < value.length; index += 1) if (!Object.hasOwn(value, index)) throw new Error(`${path}.${index} is a sparse array hole.`);
@@ -42,10 +50,9 @@ function itemIds(items: unknown[], path: string): void {
   }
 }
 
-function copyFields(section: Record<string, unknown>, path: string, fields: readonly string[]): void {
-  for (const field of fields) {
-    if (section[field] !== undefined && !nonBlank(section[field])) throw new Error(`${path}.${field} must be resolved non-blank copy.`);
-  }
+function copyFields(section: Record<string, unknown>, path: string, required: readonly string[], optional: readonly string[] = []): void {
+  for (const field of required) if (!nonBlank(section[field])) throw new Error(`${path}.${field} must be resolved non-blank copy.`);
+  for (const field of optional) if (section[field] !== undefined && !nonBlank(section[field])) throw new Error(`${path}.${field} must be resolved non-blank copy.`);
 }
 
 /** Validates the direct resolved-model boundary before any Designer block receives props. */
@@ -57,11 +64,12 @@ export function assertRenderableSectionedViewDocument(document: unknown): assert
   for (let index = 0; index < candidate.resolutions.length; index += 1) {
     if (!Object.hasOwn(candidate.resolutions, index)) throw new Error(`resolutions.${index} is a sparse provenance hole.`);
     const resolution = candidate.resolutions[index];
-    if (typeof resolution !== "object" || resolution === null || !nonBlank((resolution as { text?: unknown }).text) || !nonBlank((resolution as { recordId?: unknown }).recordId) || !nonBlank((resolution as { revision?: unknown }).revision) || !nonBlank((resolution as { locale?: unknown }).locale) || !nonBlank((resolution as { entryId?: unknown }).entryId)) {
+    if (!plain(resolution) || !closed(resolution, ["ref", "text", "recordId", "revision", "locale", "source", "entryId"]) || !nonBlank(resolution.text) || !nonBlank(resolution.recordId) || !nonBlank(resolution.revision) || !nonBlank(resolution.locale) || !nonBlank(resolution.entryId) || !plain(resolution.ref) || !closed(resolution.ref, ["id", "locale", "values"]) || !nonBlank(resolution.ref.id) || (resolution.ref.locale !== undefined && !nonBlank(resolution.ref.locale)) || !plain(resolution.source) || !closed(resolution.source, ["kind", "reference"]) || !["consumer", "generated", "imported"].includes(resolution.source.kind as string) || !nonBlank(resolution.source.reference)) {
       throw new Error(`resolutions.${index} must be complete CopyResolution provenance.`);
     }
   }
   const sectionIds = new Set<string>();
+  let heroCount = 0;
   for (let index = 0; index < candidate.sections.length; index += 1) {
     const path = `sections.${index}`;
     const section = candidate.sections[index];
@@ -71,8 +79,9 @@ export function assertRenderableSectionedViewDocument(document: unknown): assert
     if (sectionIds.has(record.id)) throw new Error(`${path}.id duplicates an earlier section.`);
     sectionIds.add(record.id);
     if (typeof record.kind !== "string" || !["hero", "feature-grid", "faq", "ordered-step-sequence", "status-list"].includes(record.kind)) throw new Error(`${path}.kind is not a supported SectionedView kind.`);
+    if (record.kind === "hero") heroCount += 1;
     if (!GROUNDS.includes(record.ground as SectionedViewGround)) throw new Error(`${path}.ground is not a supported section ground.`);
-    copyFields(record, path, record.kind === "hero" ? ["heading", "eyebrow", "description"] : ["heading", "description"]);
+    copyFields(record, path, ["heading"], record.kind === "hero" ? ["eyebrow", "description"] : ["description"]);
     if (record.kind === "hero") continue;
     if (record.kind === "status-list") {
       const labels = record.labels;
@@ -95,11 +104,12 @@ export function assertRenderableSectionedViewDocument(document: unknown): assert
     itemIds(record.items, `${path}.items`);
     for (let itemIndex = 0; itemIndex < record.items.length; itemIndex += 1) {
       const item = record.items[itemIndex] as Record<string, unknown>;
-      const fields = record.kind === "faq" ? ["question", "answer"] : record.kind === "ordered-step-sequence" ? ["ordinal", "label", "heading", "description"] : ["heading", "description"];
-      copyFields(item, `${path}.items.${itemIndex}`, fields);
-      if (record.kind === "ordered-step-sequence" && !nonBlank(item.ordinal)) throw new Error(`${path}.items.${itemIndex}.ordinal must be resolved non-blank copy.`);
+      const required = record.kind === "faq" ? ["question", "answer"] : record.kind === "ordered-step-sequence" ? ["ordinal", "heading"] : ["heading"];
+      const optional = record.kind === "ordered-step-sequence" ? ["label", "description"] : ["description"];
+      copyFields(item, `${path}.items.${itemIndex}`, required, optional);
     }
   }
+  if ((candidate.sections[0] as { kind?: unknown }).kind !== "hero" || heroCount !== 1) throw new Error("sections must begin with exactly one hero for the fixed h1/h2/h3 outline.");
 }
 
 export function createSectionedView(blocks: SectionedViewBlockSet) {
