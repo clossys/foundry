@@ -76,7 +76,10 @@ export function CollectionView({ brand, heading, description, entries, empty, fo
   assertLink(next, "pagination.next");
   const ids = new Set<string>();
   for (const entry of entries) {
-    if (!isPlainClosedObject(entry) || !hasOnlyOwnKeys(entry, ["id", "href", "title", "date", "summary", "tags"]) || !isNonWhitespaceString(entry.id) || !isNonWhitespaceString(entry.href) || !isNonWhitespaceString(entry.title) || !isPlainClosedObject(entry.date) || !hasOnlyOwnKeys(entry.date, ["dateTime", "text"]) || !isValidDateTime(entry.date.dateTime) || !isNonWhitespaceString(entry.date.text) || (entry.summary !== undefined && !isNonWhitespaceString(entry.summary))) {
+    if (isPlainClosedObject(entry) && !isSanctionedHref(entry.href)) {
+      throw new Error("CollectionView requires every entry href to use a sanctioned URL form.");
+    }
+    if (!isPlainClosedObject(entry) || !hasOnlyOwnKeys(entry, ["id", "href", "title", "date", "summary", "tags"]) || !isNonWhitespaceString(entry.id) || !isSanctionedHref(entry.href) || !isNonWhitespaceString(entry.title) || !isPlainClosedObject(entry.date) || !hasOnlyOwnKeys(entry.date, ["dateTime", "text"]) || !isValidDateTime(entry.date.dateTime) || !isNonWhitespaceString(entry.date.text) || (entry.summary !== undefined && !isNonWhitespaceString(entry.summary))) {
       throw new Error("CollectionView requires every entry to have non-whitespace id, href, title, and date text plus a valid date.dateTime.");
     }
     if (entry.tags !== undefined && !Array.isArray(entry.tags)) {
@@ -158,7 +161,7 @@ function isNonWhitespaceString(value: unknown): value is string {
 
 function isValidDateTime(value: unknown): value is string {
   if (!isNonWhitespaceString(value) || Number.isNaN(Date.parse(value))) return false;
-  const date = /^(\d{4})-(\d{2})-(\d{2})(?:T.*)?$/.exec(value);
+  const date = /^(\d{4})-(\d{2})-(\d{2})(?:T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2})?)?$/.exec(value);
   if (date === null) return false;
   const year = Number(date[1]);
   const month = Number(date[2]);
@@ -169,7 +172,21 @@ function isValidDateTime(value: unknown): value is string {
 
 function assertLink(link: unknown, path: string): void {
   if (link === undefined) return;
-  if (!isPlainClosedObject(link) || !hasOnlyOwnKeys(link, ["href", "label"]) || !isNonWhitespaceString(link.href) || !isNonWhitespaceString(link.label)) {
-    throw new Error(`CollectionView requires ${path} to have non-empty href and label fields.`);
+  if (!isPlainClosedObject(link) || !hasOnlyOwnKeys(link, ["href", "label"]) || !isSanctionedHref(link.href) || !isNonWhitespaceString(link.label)) {
+    throw new Error(`CollectionView requires ${path} to have a sanctioned href and non-empty label fields.`);
+  }
+}
+
+/** Only anchors, one-origin paths, HTTP(S), and explicit mail links are safe route targets for this server-rendered view. */
+function isSanctionedHref(value: unknown): value is string {
+  if (!isNonWhitespaceString(value) || value !== value.trim()) return false;
+  if (value.startsWith("#")) return true;
+  if (value.startsWith("/")) return !value.startsWith("//") && !value.startsWith("/\\");
+  if (value.toLowerCase().startsWith("mailto:")) return value.slice("mailto:".length).trim().length > 0;
+  try {
+    const protocol = new URL(value).protocol;
+    return protocol === "http:" || protocol === "https:";
+  } catch {
+    return false;
   }
 }

@@ -135,6 +135,18 @@ describe("renderWebDocument — hostile public RenderWebOptions.groups input", (
   it("rejects unknown field-binding keys and malformed asset evidence", () => {
     expectPublicGroupRefusal(groupsWith({ index: 0, fields: { question: { value: "Q", node: {} }, answer: { assetId: "  " } } }));
   });
+
+  it("rejects empty legacy and structured values before a template can build them", () => {
+    expectPublicGroupRefusal([
+      { slot: "features", items: [{ index: 0, value: "  " }] },
+      { slot: "faq", items: [] },
+    ]);
+    expectPublicGroupRefusal(groupsWith({ index: 0, fields: { question: { value: "  " }, answer: { value: "A" } } }));
+  });
+
+  it("requires indexes to match the resolver's contiguous source order", () => {
+    expectPublicGroupRefusal(groupsWith({ index: 1, fields: { question: { value: "Q" }, answer: { value: "A" } } }));
+  });
 });
 
 describe("renderWebDocument — assetId refusal paths (never a blank box)", () => {

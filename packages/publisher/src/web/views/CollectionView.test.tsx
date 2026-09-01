@@ -46,7 +46,7 @@ describe("CollectionView", () => {
 
   it("rejects whitespace content, invalid dates, malformed empty states, and invalid tags", () => {
     const validEntry = { id: "one", href: "/notes/one", title: "One", date: { dateTime: "2026-09-01", text: "September 1" } };
-    expect(() => renderToStaticMarkup(<CollectionView brand="Acme" heading="Notes" entries={[{ ...validEntry, href: "  " }]} empty={empty} />)).toThrow(/non-whitespace/);
+    expect(() => renderToStaticMarkup(<CollectionView brand="Acme" heading="Notes" entries={[{ ...validEntry, href: "  " }]} empty={empty} />)).toThrow(/sanctioned URL form/);
     expect(() => renderToStaticMarkup(<CollectionView brand="Acme" heading="Notes" entries={[{ ...validEntry, title: "  " }]} empty={empty} />)).toThrow(/non-whitespace/);
     expect(() => renderToStaticMarkup(<CollectionView brand="Acme" heading="Notes" entries={[{ ...validEntry, date: { dateTime: "2026-02-30", text: "  " } }]} empty={empty} />)).toThrow(/valid date.dateTime/);
     expect(() => renderToStaticMarkup(<CollectionView brand="Acme" heading="Notes" entries={[{ ...validEntry, date: { dateTime: "2026-09-01", text: "  " } }]} empty={empty} />)).toThrow(/date text/);
@@ -54,5 +54,14 @@ describe("CollectionView", () => {
     expect(() => renderToStaticMarkup(<CollectionView brand="Acme" heading="Notes" entries={[{ ...validEntry, tags: [42 as never] }]} empty={empty} />)).toThrow(/entry tag/);
     expect(() => renderToStaticMarkup(<CollectionView brand="Acme" heading="Notes" entries={[]} empty={{ title: "  " }} />)).toThrow(/explicit empty state/);
     expect(() => renderToStaticMarkup(<CollectionView brand="Acme" heading="Notes" entries={[]} empty={{ title: 42 } as never} />)).toThrow(/explicit empty state/);
+  });
+
+  it("rejects unsafe entry, empty-state, and pagination URL schemes", () => {
+    const validEntry = { id: "one", href: "/notes/one", title: "One", date: { dateTime: "2026-09-01", text: "September 1" } };
+    for (const href of ["javascript:alert(1)", "data:text/plain,unsafe", "vbscript:msgbox", "file:///tmp/unsafe", "//untrusted.example"]) {
+      expect(() => renderToStaticMarkup(<CollectionView brand="Acme" heading="Notes" entries={[{ ...validEntry, href }]} empty={empty} />)).toThrow(/sanctioned URL form/);
+      expect(() => renderToStaticMarkup(<CollectionView brand="Acme" heading="Notes" entries={[]} empty={{ ...empty, action: { href, label: "Continue" } }} />)).toThrow(/sanctioned href/);
+      expect(() => renderToStaticMarkup(<CollectionView brand="Acme" heading="Notes" entries={[]} empty={empty} pagination={{ next: { href, label: "Next" } }} />)).toThrow(/sanctioned href/);
+    }
   });
 });

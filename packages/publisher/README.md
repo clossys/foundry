@@ -177,6 +177,10 @@ does, so a repeating-group slot shows up in manifest provenance per item,
 not just per slot — see `output-manifest.ts`. A structured field resolved
 from `assetId` instead carries registry-validated asset evidence into the
 target renderer; it has no copy provenance because it is not copy.
+At the public `RenderWebOptions.groups` boundary, items must retain the
+resolver's contiguous source order: item `index` is exactly its zero-based
+array position. This prevents a direct caller from silently reordering,
+duplicating, or sparsifying the authored group after resolution.
 
 ### Structured repeating-item migration and planned semver boundary
 
@@ -311,7 +315,8 @@ pre-rendered article node or skip heading and in-document-fragment validation
 on this path. The document title becomes the page `h1`; optional summary and
 effective-date labels remain `CopyRef`s. An effective date is
 `{ dateTime, text }`, so its visible approved copy is paired with a semantic
-`time` value. Invalid document structure, unresolved fragments, missing copy,
+`time` value; `dateTime` must be a real ISO date or date-time, not arbitrary
+display text. Invalid document structure, unresolved fragments, missing copy,
 and malformed effective-date metadata fail closed with `RenderError`.
 
 `CollectionView` supplies an accessible collection index: each non-empty
@@ -328,7 +333,9 @@ are likewise `{ href, label }` data, not node escape hatches. Route loading,
 taxonomy, and paging state remain outside Publisher. If a router replaces collection items in place, it
 must move focus to `focusTargetId` (the focusable `PageHeader` region that
 contains the view's `h1`); ordinary links retain normal browser route focus
-handling.
+handling. Entry, empty-state, and pagination links accept only a fragment,
+a single-root-relative path (never `//`), `http(s)`, or non-empty `mailto:`;
+script, data, file, and protocol-relative URLs fail closed.
 
 There is intentionally no `EntryView`. A document-backed entry page uses
 `DocumentView`, with its optional header action linking back to the

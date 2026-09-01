@@ -49,5 +49,7 @@ describe("DocumentView", () => {
 
   it("fails closed when semantic effective-date metadata is malformed", () => {
     expect(() => renderToStaticMarkup(<DocumentView brand="Acme" document={document} resolveCopyId={resolver} effectiveDate={{ dateTime: "", text: ref("acme.document.date") }} />)).toThrow(/effectiveDate.dateTime/);
+    expect(() => renderToStaticMarkup(<DocumentView brand="Acme" document={document} resolveCopyId={resolver} effectiveDate={{ dateTime: "2026-02-30", text: ref("acme.document.date") }} />)).toThrow(/real ISO date/);
+    expect(() => renderToStaticMarkup(<DocumentView brand="Acme" document={document} resolveCopyId={resolver} effectiveDate={{ dateTime: "September 1", text: ref("acme.document.date") }} />)).toThrow(/real ISO date/);
   });
 });

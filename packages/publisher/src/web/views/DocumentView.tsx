@@ -51,8 +51,8 @@ function resolveOptionalCopy(ref: CopyRef | undefined, path: string, resolver: C
  * before an `<article>` is built.
  */
 export function DocumentView({ brand, document, resolveCopyId, summary, effectiveDate, action, footerSecondary, className, style, ...rest }: DocumentViewProps) {
-  if (effectiveDate !== undefined && (typeof effectiveDate.dateTime !== "string" || effectiveDate.dateTime.trim().length === 0)) {
-    throw new RenderError("resolution-failed", "DocumentView requires a non-empty effectiveDate.dateTime.");
+  if (effectiveDate !== undefined && !isValidDateTime(effectiveDate.dateTime)) {
+    throw new RenderError("resolution-failed", "DocumentView requires effectiveDate.dateTime to be a real ISO date or date-time.");
   }
   const rendered = renderStructuredDocument(document, { resolveCopyId });
   const title = rendered.resolutions[0]?.text;
@@ -73,4 +73,15 @@ export function DocumentView({ brand, document, resolveCopyId, summary, effectiv
       <SiteFooter secondary={footerSecondary} />
     </div>
   );
+}
+
+function isValidDateTime(value: unknown): value is string {
+  if (typeof value !== "string" || value.trim().length === 0 || Number.isNaN(Date.parse(value))) return false;
+  const date = /^(\d{4})-(\d{2})-(\d{2})(?:T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2})?)?$/.exec(value);
+  if (date === null) return false;
+  const year = Number(date[1]);
+  const month = Number(date[2]);
+  const day = Number(date[3]);
+  const parsedDate = new Date(Date.UTC(year, month - 1, day));
+  return parsedDate.getUTCFullYear() === year && parsedDate.getUTCMonth() === month - 1 && parsedDate.getUTCDate() === day;
 }

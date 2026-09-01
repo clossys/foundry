@@ -444,15 +444,15 @@ function validatePublicGroups(groups: unknown): ResolvedSurfaceGroup[] {
 
     const items = candidate.items.map((itemCandidate, itemIndex) => {
       const resolvedIndex = isPlainClosedObject(itemCandidate) ? itemCandidate.index : undefined;
-      if (!isPlainClosedObject(itemCandidate) || !hasOnlyOwnKeys(itemCandidate, ["index", "value", "node", "assetId", "fields"]) || typeof resolvedIndex !== "number" || !Number.isInteger(resolvedIndex) || resolvedIndex < 0) {
-        invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}] must be a plain item with a non-negative integer index and no unknown keys.`);
+      if (!isPlainClosedObject(itemCandidate) || !hasOnlyOwnKeys(itemCandidate, ["index", "value", "node", "assetId", "fields"]) || typeof resolvedIndex !== "number" || !Number.isInteger(resolvedIndex) || resolvedIndex !== itemIndex) {
+        invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}] must be a plain item whose index is its sequential array position and has no unknown keys.`);
       }
       const sourceKeys = ["value", "node", "assetId", "fields"].filter((key) => itemCandidate[key] !== undefined);
       if (sourceKeys.length !== 1) {
         invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}] must set exactly one of value/node/assetId/fields.`);
       }
-      if (itemCandidate.value !== undefined && typeof itemCandidate.value !== "string") {
-        invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}].value must be a string when supplied.`);
+      if (itemCandidate.value !== undefined && !isNonWhitespaceString(itemCandidate.value)) {
+        invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}].value must be a non-whitespace string when supplied.`);
       }
       if (itemCandidate.node !== undefined && (typeof itemCandidate.node !== "object" || itemCandidate.node === null)) {
         invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}].node must be a non-null object when supplied.`);
@@ -472,8 +472,8 @@ function validatePublicGroups(groups: unknown): ResolvedSurfaceGroup[] {
           if (fieldSources.length !== 1) {
             invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}].fields.${field} must set exactly one of value/assetId.`);
           }
-          if (binding.value !== undefined && typeof binding.value !== "string") {
-            invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}].fields.${field}.value must be a string when supplied.`);
+          if (binding.value !== undefined && !isNonWhitespaceString(binding.value)) {
+            invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}].fields.${field}.value must be a non-whitespace string when supplied.`);
           }
           if (binding.assetId !== undefined && !isNonWhitespaceString(binding.assetId)) {
             invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}].fields.${field}.assetId must be a non-whitespace string when supplied.`);
