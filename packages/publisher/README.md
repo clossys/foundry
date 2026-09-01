@@ -38,8 +38,9 @@ The web condition changes only the implementation selected for server
 rendering, not the API. `MarketingView` keeps the same props and regional
 layout; its server target uses Designer's native `details`/`summary` FAQ while
 the ordinary target keeps Designer's React Aria FAQ. `AuthView`, `ErrorView`,
-the renderer functions, template helpers, error class, and all runtime export
-names are present in both targets.
+`CaptureView`, `CollectionView`, `DocumentView`, the renderer functions,
+template helpers, error class, and all runtime export names are present in
+both targets.
 
 ## Why `publisher` is one package, not two
 
@@ -257,6 +258,51 @@ each declared repeating slot's resolved items onto `MarketingView`'s
 `RenderError("resolution-failed", ...)` — the same error contract a
 missing/unknown single-slot binding already produces for `AuthView`/
 `ErrorView`.
+
+### `CaptureView`, `DocumentView`, and `CollectionView` — fixed publisher page shells
+
+These exports are direct, server-safe page shells rather than new
+`SurfaceDocument.template` registrations. They deliberately do not select
+content, load a CMS, own a router, or add client state.
+
+`CaptureView` provides the site chrome, one heading, a consumer-owned form
+region, and a footer. The consumer owns form fields, submission, validation,
+and network effects. On a failed client-side submission, pass both
+`errorSummary` and `errorSummaryId`, focus that id, and keep the summary
+before the form; the view makes it a focusable `role="alert"`. On success,
+pass `submitted`: it replaces the form in the same position in a polite live
+region. `CaptureView` intentionally does not choose a form library, add spam
+handling, or model submission state.
+
+`DocumentView` accepts a `StructuredDocument` and an approved-copy resolver,
+then calls `renderStructuredDocument` itself. A caller cannot supply a
+pre-rendered article node or skip heading and in-document-fragment validation
+on this path. The document title becomes the page `h1`; optional summary and
+effective-date labels remain `CopyRef`s. An effective date is
+`{ dateTime, text }`, so its visible approved copy is paired with a semantic
+`time` value. Invalid document structure, unresolved fragments, missing copy,
+and malformed effective-date metadata fail closed with `RenderError`.
+
+`CollectionView` supplies an accessible collection index: each non-empty
+entry has a unique linked title, a semantic `time`, optional summary and tag
+list, and a navigation landmark for consumer-owned pagination. Its required
+`empty` state prevents an empty index from silently becoming a blank region.
+Entries use a deliberately small closed shape (`id`, `href`, string `title`,
+`date`, optional string `summary`/`tags`); entry copy comes from the normal
+resolved structured-field map, never a caller-authored entry node. Pagination
+and empty-state actions are likewise `{ href, label }` data, not node escape
+hatches. Route loading, taxonomy, and paging state remain outside Publisher.
+If a router replaces collection items in place, it
+must move focus to `focusTargetId` (the focusable `PageHeader` region that
+contains the view's `h1`); ordinary links retain normal browser route focus
+handling.
+
+There is intentionally no `EntryView`. A document-backed entry page uses
+`DocumentView`, with its optional header action linking back to the
+collection, rather than duplicating the validated document page contract.
+This is the narrow disposition for entry pages; it does not add CMS, parser,
+or taxonomy behavior. A future Designer-block integration is separately
+staged and is not part of these publisher shells.
 
 ### `defineWebTemplate` / `createWebRenderer` — an extensible, instance-scoped web-template registry
 
@@ -1105,9 +1151,12 @@ choice `checkLedgerDrift` makes for a citation it could not check.
   `VideoReducedMotionBehavior` types. The CLI is `publisher-media-check`.
 - `web`: `renderWebDocument`, `buildWebHeadMetadata`,
   `listWebTemplateNames`, `defineWebTemplate`, `createWebRenderer`,
-  `AuthView`, `ErrorView`, `MarketingView`,
-  `RenderError`, and the `AuthViewProps`, `ErrorViewProps`,
-  `MarketingViewProps`, `MarketingFeatureItem`, `MarketingFaqItem`,
+  `AuthView`, `CaptureView`, `CollectionView`, `DocumentView`, `ErrorView`,
+  `MarketingView`, `RenderError`, and the `AuthViewProps`,
+  `CaptureViewProps`, `CollectionViewEmptyState`, `CollectionViewEntry`,
+  `CollectionViewLink`, `CollectionViewPagination`, `CollectionViewProps`,
+  `DocumentViewEffectiveDate`, `DocumentViewProps`,
+  `ErrorViewProps`, `MarketingViewProps`, `MarketingFeatureItem`, `MarketingFaqItem`,
   `RenderErrorReason`, `AssetResolver`, `CopyResolver`, `RenderWebOptions`,
   `RenderWebResult`, `RepeatingWebSlotFieldSpec`, `RepeatingWebSlotSpec`, `ResolvedWebGroupField`, `ResolvedWebGroupItem`,
   `WebSlotContentKind`, `WebTemplate`, `DefineWebTemplateOptions`,

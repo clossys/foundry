@@ -144,6 +144,7 @@ describe("packed Publisher web React-server boundary", () => {
 
   it("exports the exact same runtime names from the ordinary and react-server targets", () => {
     expect(server.keys).toEqual(normal.keys);
+    expect(server.keys).toEqual(expect.arrayContaining(["CaptureView", "CollectionView", "DocumentView"]));
   });
 
   it("rejects a packed Designer 0.2.3 graph that the former lower bound accepted before the missing Faq fails at import", () => {

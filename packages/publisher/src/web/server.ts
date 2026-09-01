@@ -8,9 +8,17 @@ export { buildWebHeadMetadata } from "./headMetadata.js";
 export { listWebTemplateNames } from "./internal/webTemplates.js";
 export { defineWebTemplate } from "./internal/defineWebTemplate.js";
 export { createWebRenderer } from "./internal/createWebRenderer.js";
-export { AuthView, ErrorView, MarketingView } from "#publisher-web-views";
+export { AuthView, CaptureView, CollectionView, DocumentView, ErrorView, MarketingView } from "#publisher-web-views";
 export type {
   AuthViewProps,
+  CaptureViewProps,
+  CollectionViewEmptyState,
+  CollectionViewEntry,
+  CollectionViewLink,
+  CollectionViewPagination,
+  CollectionViewProps,
+  DocumentViewEffectiveDate,
+  DocumentViewProps,
   ErrorViewProps,
   MarketingFaqItem,
   MarketingFeatureItem,
