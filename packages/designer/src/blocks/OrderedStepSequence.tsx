@@ -19,6 +19,8 @@ export interface OrderedStepSequenceItem {
 }
 
 export interface OrderedStepSequenceProps extends Omit<HTMLAttributes<HTMLElement>, "title"> {
+  /** Small label above the block's own heading, the same slot `FeatureGrid` and `Hero` already ship. */
+  eyebrow?: ReactNode;
   /** Optional heading above the ordered sequence. */
   heading?: ReactNode;
   /** Supporting copy under the sequence heading. */
@@ -47,6 +49,7 @@ export interface OrderedStepSequenceProps extends Omit<HTMLAttributes<HTMLElemen
  * token when it sits on the inverse surface.
  */
 export function OrderedStepSequence({
+  eyebrow,
   heading,
   description,
   items,
@@ -59,12 +62,13 @@ export function OrderedStepSequence({
   const HeadingTag = `h${headingLevel}` as `h${OrderedStepSequenceHeadingLevel}`;
   const ItemHeadingTag = `h${Math.min(headingLevel + 1, 6)}` as `h${OrderedStepSequenceHeadingLevel}`;
   const colors = SECTION_GROUND_CLASSES[ground];
-  const hasHeadingRegion = heading !== undefined || description !== undefined;
+  const hasHeadingRegion = eyebrow !== undefined || heading !== undefined || description !== undefined;
 
   return (
     <section {...rest} className={cx("flex flex-col gap-lg", colors.surface, className)} style={style}>
       {hasHeadingRegion ? (
         <div className="flex flex-col gap-xs">
+          {eyebrow ? <p className={cx("text-caption uppercase tracking-label", colors.muted)}>{eyebrow}</p> : null}
           {heading ? <HeadingTag className={cx("text-h2 font-display", colors.primary)}>{heading}</HeadingTag> : null}
           {description ? <p className={cx("text-body", colors.secondary)}>{description}</p> : null}
         </div>

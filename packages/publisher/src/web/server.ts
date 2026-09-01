@@ -23,6 +23,7 @@ export type {
   MarketingFaqItem,
   MarketingFeatureItem,
   MarketingViewProps,
+  SectionedViewLandmark,
   SectionedViewProps,
 } from "#publisher-web-views";
 

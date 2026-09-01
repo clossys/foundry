@@ -91,3 +91,52 @@ describe("StatusList", () => {
     expect(offAxisDot).toHaveClass(offAxisBoundary);
   });
 });
+
+describe("StatusList optional slots", () => {
+  const DETAILED = [{
+    id: "coverage",
+    heading: "Coverage",
+    items: [
+      { id: "reports", label: "Reports", detail: "Available in every region today.", state: "available" as const },
+      { id: "certifications", label: "Certifications", detail: "Not offered because the audit is not ours to claim.", disposition: "not-offered" as const },
+    ],
+  }];
+
+  it("renders a row detail as a second description of the same term, keeping definition-list semantics", () => {
+    const { container } = render(<StatusList labels={LABELS} groups={DETAILED} legendLabel="Status" />);
+    const row = container.querySelector("dl > div") as HTMLElement;
+    expect(container.querySelectorAll("dt")).toHaveLength(2);
+    expect(container.querySelectorAll("dd")).toHaveLength(4);
+    expect(row.children[0].tagName).toBe("DT");
+    expect(row.children[1].tagName).toBe("DD");
+    expect(row.children[2].tagName).toBe("DD");
+    expect(row.children[2].textContent).toBe("Available in every region today.");
+    expect(screen.getByText("Not offered because the audit is not ours to claim.")).toBeTruthy();
+  });
+
+  it("leaves a row without a detail exactly as it rendered before the slot existed", () => {
+    const { container } = render(<StatusList labels={LABELS} groups={GROUPS} legendLabel="Status" />);
+    const rows = container.querySelectorAll("dl > div");
+    expect(container.querySelectorAll("dd")).toHaveLength(4);
+    for (const row of rows) {
+      expect(row.children).toHaveLength(2);
+      expect(row.className).not.toContain("flex-wrap");
+    }
+  });
+
+  it("wraps only the rows that carry a detail, so an undetailed neighbour keeps its own row layout", () => {
+    const mixed = [{ id: "mixed", heading: "Mixed", items: [{ id: "a", label: "A", detail: "Explained.", state: "available" as const }, { id: "b", label: "B", state: "planned" as const }] }];
+    const rows = render(<StatusList labels={LABELS} groups={mixed} legendLabel="Status" />).container.querySelectorAll("dl > div");
+    expect(rows[0].className).toContain("flex-wrap");
+    expect(rows[1].className).not.toContain("flex-wrap");
+  });
+
+  it("renders an optional eyebrow above the heading and nothing at all without one", () => {
+    const withEyebrow = render(<StatusList eyebrow="Posture" heading="Readiness" labels={LABELS} groups={GROUPS} legendLabel="Status" />).container;
+    expect(screen.getByText("Posture").tagName).toBe("P");
+    expect(withEyebrow.querySelector("h2")?.textContent).toBe("Readiness");
+
+    const without = render(<StatusList heading="Readiness" labels={LABELS} groups={GROUPS} legendLabel="Status" />).container;
+    expect(without.querySelector("h2")?.previousElementSibling).toBeNull();
+  });
+});

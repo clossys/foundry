@@ -238,8 +238,9 @@ order and returns its ordinary `CopyResolution[]`. Pass that list directly to
 provenance format. A missing or empty resolution fails the entire document and
 names the exact authored path. This core stage intentionally imports neither
 React nor Designer and does not render a web view. The grounded web renderer
-uses Designer `0.2.7`'s server-safe site-block API, including the separate
-`not-offered` disposition and its caller-localized `labels.dispositions` map.
+uses Designer `0.3.0`'s server-safe site-block API, including the separate
+`not-offered` disposition and its caller-localized `labels.dispositions` map,
+the non-hero `eyebrow` slot, and the per-row `detail` slot.
 
 `SectionedView` is now the dedicated web renderer after that Designer floor is
 available. Resolve the CopyRef document first, retain its `resolutions` as the
@@ -264,6 +265,82 @@ const resolved = resolveSectionedViewDocument({
 const page = <SectionedView document={resolved} />;
 // resolved.resolutions feeds collectCopyProvenance/output-manifest helpers.
 ```
+
+#### Optional fields the document may also carry
+
+Four slots are optional and additive: a document written without them
+validates and renders exactly as it did before they existed.
+
+- **`eyebrow` on every section kind.** `hero` always had one; `feature-grid`,
+  `faq`, `ordered-step-sequence`, and `status-list` now carry the same
+  optional `CopyRef`, so authored eyebrow copy is no longer dropped at
+  conversion time.
+- **`actions` on the hero section.** An optional, non-empty list of
+  `{ id, label, href }`, where `label` is a `CopyRef` and `href` must be a
+  fragment, a one-origin path, an `http(s)` URL, or a `mailto:` link. It stays
+  data: there is no node, class, or handler slot, and the view renders the
+  anchors into the Designer `Hero` block's existing `actions` slot.
+- **`detail` on a status-list item.** An optional `CopyRef` carrying that
+  row's own explanation, including the reasoning behind a `not-offered`
+  answer. It renders as a second description of the same row, so the
+  definition-list semantics stay intact.
+
+```tsx
+const resolved = resolveSectionedViewDocument({
+  id: "acme-trust",
+  sections: [
+    {
+      id: "welcome",
+      kind: "hero",
+      ground: "base",
+      heading: { id: "acme.trust.heading" },
+      actions: [{ id: "contact", label: { id: "acme.trust.contact" }, href: "/contact" }],
+    },
+    {
+      id: "posture",
+      kind: "status-list",
+      ground: "sunken",
+      eyebrow: { id: "acme.trust.eyebrow" },
+      heading: { id: "acme.trust.posture" },
+      labels: {
+        available: { id: "acme.status.available" },
+        partial: { id: "acme.status.partial" },
+        planned: { id: "acme.status.planned" },
+        dispositions: { "not-offered": { id: "acme.status.not-offered" } },
+      },
+      groups: [{
+        id: "core",
+        heading: { id: "acme.trust.core" },
+        items: [{
+          id: "audit",
+          label: { id: "acme.trust.audit.label" },
+          detail: { id: "acme.trust.audit.detail" },
+          disposition: "not-offered",
+        }],
+      }],
+    },
+  ],
+}, resolveCopy);
+```
+
+#### Mounting part of a page: the `landmark` prop
+
+`SectionedView` renders its own `main` landmark by default, which is right
+when the whole page is the document. A page that can express only some of its
+sections through this contract needs the other option, or its remaining
+content ends up outside the page's only `main`:
+
+```tsx
+<main>
+  <SectionedView document={resolved} landmark="none" />
+  <ConsumerOwnedSection />
+</main>
+```
+
+`landmark="none"` renders the same sections in a plain grouping element with
+no landmark role and no accessible name. Default behaviour is unchanged, and
+choosing it makes the surrounding page responsible for supplying exactly one
+`main` landmark containing this output.
 
 The ordinary and `react-server` `@clossys/publisher/web` exports are aligned.
 The view owns section markup, source order, unique section ids, grounds, and
@@ -1249,14 +1326,15 @@ choice `checkLedgerDrift` makes for a citation it could not check.
   `ResolvedAsset`, `ResolvedSurfaceDocument`, `ResolvedSurfaceGroup`,
   `ResolvedSurfaceGroupField`, `ResolvedSurfaceGroupItem`, `ResolvedSurfaceNode`,
   `ResolveSurfaceDocumentOptions`, `SurfaceResolutionReason`, and
-  `CanvasInches`, `SectionedViewDocument`, `SectionedViewSection`,
+  `CanvasInches`, `SectionedViewAction`, `SectionedViewDocument`, `SectionedViewSection`,
   `SectionedViewSectionKind`, `SectionedViewGround`, `SectionedViewHeroSection`,
   `SectionedViewFeatureGridSection`, `SectionedViewFeatureItem`, `SectionedViewFaqSection`,
   `SectionedViewFaqItem`, `SectionedViewOrderedStepSequenceSection`,
   `SectionedViewOrderedStep`, `SectionedViewStatusListSection`,
   `SectionedViewStatusGroup`, `SectionedViewStatusItem`, `SectionedViewStatus`,
   `SectionedViewStatusDisposition`,
-  `ResolvedSectionedViewDocument`, `ResolvedSectionedViewSection`, and
+  `ResolvedSectionedViewAction`, `ResolvedSectionedViewDocument`,
+  `ResolvedSectionedViewSection`, and
   `SectionedViewResolutionReason` types. `SurfaceResolutionError` and
   `SectionedViewResolutionError` are thrown when their canonical resolution
   paths fail closed.
@@ -1275,7 +1353,7 @@ choice `checkLedgerDrift` makes for a citation it could not check.
   `CollectionViewLink`, `CollectionViewPagination`, `CollectionViewProps`,
   `DocumentViewEffectiveDate`, `DocumentViewProps`,
   `ErrorViewProps`, `MarketingViewProps`, `MarketingFeatureItem`, `MarketingFaqItem`,
-  `SectionedViewProps`,
+  `SectionedViewLandmark`, `SectionedViewProps`,
   `RenderErrorReason`, `AssetResolver`, `CopyResolver`, `RenderWebOptions`,
   `RenderWebResult`, `RepeatingWebSlotFieldSpec`, `RepeatingWebSlotSpec`, `ResolvedWebGroupField`, `ResolvedWebGroupItem`,
   `WebSlotContentKind`, `WebTemplate`, `DefineWebTemplateOptions`,
@@ -1322,7 +1400,7 @@ import-free of each other under one version.
 
 Node 20+. This package's own `package.json` declares runtime dependencies on
 `@clossys/writer` (`^0.3.0`), `@clossys/designer`
-(`^0.2.7`), and `@clossys/controller` (`~0.8.0`) — of which this
+(`^0.3.0`), and `@clossys/controller` (`~0.8.0`), of which this
 package only imports the `./policy` subpath, `@clossys/controller/policy`,
 never `controller`'s other exports. `writer` and `designer` are caret
 ranges (both fresh `0.x` role packages); `controller` stays a tilde range,
@@ -1338,15 +1416,17 @@ addressability`'s exit-code precedence (issue #407), then to the current
 additive or behavioural minor releases rather than patches, so the older
 ranges do not resolve them (0.x ranges are minor-locked). `designer`'s range
 first moved from `^0.1.0` to `^0.2.0` when Designer added the
-`designer-environment-check` gate (issue #405), then tightened to the current
-`^0.2.7` because Publisher's React-server target imports the server-safe
+`designer-environment-check` gate (issue #405), then to `^0.2.7`
+because Publisher's React-server target imports the server-safe
 section-ground, `Faq`, ordered-step, and status-list exports, including the
-separate `not-offered` disposition, introduced in Designer 0.2.7. These ranges are independent; leaving
+separate `not-offered` disposition, introduced in Designer 0.2.7, and then to
+the current `^0.3.0` because the `eyebrow` and `actions` slots this package's
+section contract now renders into are Designer 0.3.0 additions. These ranges are independent; leaving
 either one behind would still resolve an older package without any install
 failure, silently withholding a required contract.
 
 A consumer whose own policy is to pin exact versions must pin `writer` to a
-matching `0.3.x` release, `designer` to `0.2.7` or a later compatible `0.2.x`
+matching `0.3.x` release, `designer` to `0.3.0` or a later compatible `0.3.x`
 release, and
 `controller` to a matching `0.8.x` patch release — otherwise
 `publisher`'s declared ranges and the consumer's exact pin cannot both be

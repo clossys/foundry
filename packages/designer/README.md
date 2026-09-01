@@ -2487,7 +2487,8 @@ column/connector to a horizontal row/connector at `tablet`. Set
 `ground="sunken"` or `ground="inverse"` selects the shared matching painted
 surface, ink, border, and connector policy. Base inherits its surrounding
 surface. `headingLevel` controls the real heading
-elements (default `2`).
+elements (default `2`). `eyebrow` is the same optional label slot `Hero` and
+`FeatureGrid` ship, rendered above the heading when supplied.
 
 ### `StatusList`
 
@@ -2514,7 +2515,12 @@ a color. The dot is
 decorative and its adjacent state text remains ordinary reading text, so color
 never carries the meaning alone.
 `ground` uses the shared closed section-ground contract above, including the
-ground-appropriate status-dot boundary.
+ground-appropriate status-dot boundary. A row may carry an optional `detail`,
+its own explanation, which renders as a second description of the same row so
+the explanation stays inside the definition-list semantics rather than merely
+sitting near them. `eyebrow` is the same optional label slot `Hero` and
+`FeatureGrid` ship; a block given neither an eyebrow, a heading, nor a
+description renders no heading region at all, exactly as before.
 
 ### `Faq`
 
@@ -2552,6 +2558,8 @@ another, unlike a coordinated accordion.
 Both implementations accept the same shared `ground` values and apply the
 matching surface policy, question/answer foregrounds, and dividers. Base
 inherits the ambient surface; sunken and inverse paint their own surfaces.
+Both also accept the same optional `eyebrow`, the label slot `Hero` and
+`FeatureGrid` ship, rendered above the heading when supplied.
 
 ### `PricingTable`
 
@@ -3949,14 +3957,14 @@ not a grab-bag).
 | `FeatureGridItem` | type | One item: `id`, `icon?`, `heading`, `description?`. |
 | `FeatureGridHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
 | `OrderedStepSequence` | component | Editorial ordered sequence: optional heading region, authored ordinal/label/heading/body steps, responsive decorative connectors. |
-| `OrderedStepSequenceProps` | type | Props for `OrderedStepSequence`: `heading`, `description`, `items`, `headingLevel`, `ground`, `className`, `style`, plus every native `<section>` attribute. |
+| `OrderedStepSequenceProps` | type | Props for `OrderedStepSequence`: `eyebrow`, `heading`, `description`, `items`, `headingLevel`, `ground`, `className`, `style`, plus every native `<section>` attribute. |
 | `OrderedStepSequenceItem` | type | One step: `id`, `ordinal`, `label?`, `heading`, `description?`. |
 | `OrderedStepSequenceHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
 | `OrderedStepSequenceGround` | type | Sequence-specific alias of the shared `SectionGround`: `"base" \| "sunken" \| "inverse"`. |
 | `StatusList` | component | Grouped editorial status list: one legend and a definition list per group. |
-| `StatusListProps` | type | Props for `StatusList`: `heading`, `description`, `labels`, `groups`, `legendLabel`, `headingLevel`, `ground`, `className`, `style`, plus every native `<section>` attribute. |
+| `StatusListProps` | type | Props for `StatusList`: `eyebrow`, `heading`, `description`, `labels`, `groups`, `legendLabel`, `headingLevel`, `ground`, `className`, `style`, plus every native `<section>` attribute. |
 | `StatusListGroup` | type | One group: `id`, `heading`, `items`. |
-| `StatusListItem` | type | One row: either `id`, `label`, `state`, or `id`, `label`, `disposition`. |
+| `StatusListItem` | type | One row: either `id`, `label`, `detail?`, `state`, or `id`, `label`, `detail?`, `disposition`. |
 | `StatusListReadinessItem` | type | A `StatusListItem` on the three-value readiness axis. |
 | `StatusListDispositionItem` | type | A `StatusListItem` with an off-axis deliberate non-capability. |
 | `StatusListLabels` | type | A label for each `StatusListState` plus a separately closed `dispositions` map. |
@@ -3964,7 +3972,7 @@ not a grab-bag).
 | `StatusListDisposition` | type | `"not-offered"`, a deliberate non-capability outside the readiness axis. |
 | `StatusListHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
 | `Faq` | component | Expand/collapse question/answer list, under an optional heading region. Each item is this package's own `Disclosure` atom — independent, not a coordinated accordion. |
-| `FaqProps` | type | Props for `Faq`: `heading`, `description`, `items`, `headingLevel`, `ground`, `className`, `style`, plus every native `<div>` attribute. |
+| `FaqProps` | type | Props for `Faq`: `eyebrow`, `heading`, `description`, `items`, `headingLevel`, `ground`, `className`, `style`, plus every native `<div>` attribute. |
 | `FaqItem` | type | One item: `id`, `question`, `answer`. |
 | `FaqHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
 | `PricingTable` | component | Pricing tiers under an optional heading region: name, price, feature list, CTA slot per tier, `isHighlighted` plus an optional `badge` slot to mark one as recommended. |

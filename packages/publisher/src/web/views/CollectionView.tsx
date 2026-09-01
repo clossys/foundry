@@ -2,6 +2,7 @@ import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { mergeUiClasses } from "@clossys/designer/atoms/server";
 import { EmptyState, PageHeader } from "@clossys/designer/blocks/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
+import { isSanctionedHref } from "../../internal/href.js";
 
 /** One published collection entry. Dates remain a distinct semantic field, never text folded into a summary. */
 export interface CollectionViewEntry {
@@ -204,17 +205,3 @@ function assertLink(link: unknown, path: string): void {
   }
 }
 
-/** Only anchors, one-origin paths, HTTP(S), and explicit mail links are safe route targets for this server-rendered view. */
-function isSanctionedHref(value: unknown): value is string {
-  if (!isNonWhitespaceString(value) || value !== value.trim() || /[\u0000-\u001f\u007f]/.test(value)) return false;
-  if (value.includes("\\")) return false;
-  if (value.startsWith("#")) return true;
-  if (value.startsWith("/")) return !value.startsWith("//") && !value.startsWith("/\\");
-  if (value.toLowerCase().startsWith("mailto:")) return value.slice("mailto:".length).trim().length > 0;
-  try {
-    const parsed = new URL(value);
-    return (parsed.protocol === "http:" || parsed.protocol === "https:") && parsed.username === "" && parsed.password === "";
-  } catch {
-    return false;
-  }
-}

@@ -42,3 +42,14 @@ describe("Faq server-native disclosure", () => {
     expect(container.querySelectorAll("details")[1]).toHaveClass(border);
   });
 });
+
+describe("Faq server-native eyebrow", () => {
+  it("renders an optional eyebrow above the heading and none without one", () => {
+    const region = render(<Faq eyebrow="Answers" heading="Questions" items={ITEMS} />).container.querySelector("h2")?.parentElement as HTMLElement;
+    expect(region.children[0].tagName).toBe("P");
+    expect(region.children[0].textContent).toBe("Answers");
+
+    const without = render(<Faq heading="Questions" items={ITEMS} />).container.querySelector("h2")?.parentElement as HTMLElement;
+    expect(without.children).toHaveLength(1);
+  });
+});
