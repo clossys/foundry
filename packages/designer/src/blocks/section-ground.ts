@@ -16,7 +16,9 @@ export interface SectionGroundClasses {
 /**
  * Designer's complete class/token policy for grounded site sections.
  * Consumers choose one semantic ground; they do not pair foreground,
- * divider, or status colors themselves.
+ * divider, or status colors themselves. Base inherits the ambient base
+ * surface so existing compositions keep their markup and background;
+ * sunken and inverse paint their semantic surfaces explicitly.
  *
  * Status dots keep the closed success/warning/info display tokens on every
  * ground. Base needs no extra boundary because all three display tokens clear
@@ -26,7 +28,7 @@ export interface SectionGroundClasses {
  */
 export const SECTION_GROUND_CLASSES = {
   base: {
-    surface: "bg-surface-base",
+    surface: "",
     primary: "text-ink-primary",
     secondary: "text-ink-secondary",
     muted: "text-ink-muted",

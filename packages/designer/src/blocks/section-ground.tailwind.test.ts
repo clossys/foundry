@@ -14,7 +14,6 @@ describe("section-ground Tailwind output", () => {
     });
 
     for (const selector of [
-      ".bg-surface-base",
       ".bg-surface-sunken",
       ".bg-surface-inverse",
       ".text-ink-primary",

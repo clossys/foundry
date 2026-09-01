@@ -56,12 +56,14 @@ describe("OrderedStepSequence", () => {
   });
 
   it.each([
-    ["base", "bg-surface-base", "text-ink-primary", "bg-line-base"],
+    ["base", "", "text-ink-primary", "bg-line-base"],
     ["sunken", "bg-surface-sunken", "text-ink-primary", "bg-line-base"],
     ["inverse", "bg-surface-inverse", "text-ink-on-inverse", "bg-line-on-inverse"],
   ] as const)("selects the complete %s ground policy", (ground, surface, primary, line) => {
     const { container } = render(<OrderedStepSequence items={ITEMS} ground={ground} />);
-    expect(container.querySelector("section")).toHaveClass(surface);
+    const root = container.querySelector("section") as HTMLElement;
+    if (surface) expect(root).toHaveClass(surface);
+    else expect(root.className).not.toMatch(/\bbg-surface-/);
     expect(screen.getByRole("heading", { name: "Discover" })).toHaveClass(primary);
     expect(container.querySelector('span[aria-hidden="true"]')).toHaveClass(line);
   });

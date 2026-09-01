@@ -10,7 +10,7 @@ describe("SECTION_GROUND_CLASSES", () => {
 
   it("owns the full surface, foreground, divider, connector, and status policy", () => {
     expect(SECTION_GROUND_CLASSES.base).toMatchObject({
-      surface: "bg-surface-base",
+      surface: "",
       primary: "text-ink-primary",
       secondary: "text-ink-secondary",
       border: "border-line-base",
@@ -30,6 +30,12 @@ describe("SECTION_GROUND_CLASSES", () => {
       border: "border-line-on-inverse",
       line: "bg-line-on-inverse",
     });
+  });
+
+  it("inherits the ambient surface on base while painting non-base grounds", () => {
+    expect(SECTION_GROUND_CLASSES.base.surface).toBe("");
+    expect(SECTION_GROUND_CLASSES.sunken.surface).toBe("bg-surface-sunken");
+    expect(SECTION_GROUND_CLASSES.inverse.surface).toBe("bg-surface-inverse");
   });
 
   it("keeps status display tokens on every ground and adds checked contrast boundaries off base", () => {

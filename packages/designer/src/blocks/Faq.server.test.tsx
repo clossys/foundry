@@ -27,13 +27,15 @@ describe("Faq server-native disclosure", () => {
   });
 
   it.each([
-    ["base", "bg-surface-base", "text-ink-primary", "text-ink-secondary", "border-line-base"],
+    ["base", "", "text-ink-primary", "text-ink-secondary", "border-line-base"],
     ["sunken", "bg-surface-sunken", "text-ink-primary", "text-ink-secondary", "border-line-base"],
     ["inverse", "bg-surface-inverse", "text-ink-on-inverse", "text-ink-on-inverse-muted", "border-line-on-inverse"],
   ] as const)("selects the complete %s ground policy in the server implementation", (ground, surface, primary, secondary, border) => {
     const twoItems = [...ITEMS, { id: "two", question: "Question two", answer: "Answer two." }];
     const { container } = render(<Faq heading="FAQ" items={twoItems} ground={ground} />);
-    expect(container.firstElementChild).toHaveClass(surface);
+    const root = container.firstElementChild as HTMLElement;
+    if (surface) expect(root).toHaveClass(surface);
+    else expect(root.className).not.toMatch(/\bbg-surface-/);
     expect(container.querySelector("h2")).toHaveClass(primary);
     expect(container.querySelector("summary")).toHaveClass(primary);
     expect(container.querySelector("details > div")).toHaveClass(secondary);

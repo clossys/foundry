@@ -112,12 +112,14 @@ describe("Faq", () => {
   });
 
   it.each([
-    ["base", "bg-surface-base", "text-ink-primary", "text-ink-secondary", "border-line-base"],
+    ["base", "", "text-ink-primary", "text-ink-secondary", "border-line-base"],
     ["sunken", "bg-surface-sunken", "text-ink-primary", "text-ink-secondary", "border-line-base"],
     ["inverse", "bg-surface-inverse", "text-ink-on-inverse", "text-ink-on-inverse-muted", "border-line-on-inverse"],
   ] as const)("selects the complete %s ground policy", (ground, surface, primary, secondary, border) => {
     const { container } = render(<Faq heading="FAQ heading" items={ITEMS} ground={ground} />);
-    expect(container.firstElementChild).toHaveClass(surface);
+    const root = container.firstElementChild as HTMLElement;
+    if (surface) expect(root).toHaveClass(surface);
+    else expect(root.className).not.toMatch(/\bbg-surface-/);
     expect(screen.getByRole("heading")).toHaveClass(primary);
     const firstTrigger = screen.getByRole("button", { name: "Question one text" });
     const secondTrigger = screen.getByRole("button", { name: "Question two text" });

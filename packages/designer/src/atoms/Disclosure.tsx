@@ -54,8 +54,9 @@ export function Disclosure({ title, children, className, triggerClassName, panel
           <AriaButton
             slot="trigger"
             className={cx(
-              "flex w-full items-center gap-sm rounded-default py-sm text-left text-body outline-none disabled:cursor-not-allowed",
+              "flex w-full items-center gap-sm rounded-default py-sm text-left text-body",
               triggerClassName ?? "text-ink-primary",
+              "outline-none disabled:cursor-not-allowed",
             )}
           >
             <span

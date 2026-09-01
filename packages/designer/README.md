@@ -2353,10 +2353,12 @@ exactly that reason: this package owns visual vocabulary, never copy (see
 
 `Hero`, `FeatureGrid`, `Faq` (including its server implementation),
 `OrderedStepSequence`, and `StatusList` share one closed `ground` contract:
-`"base" | "sunken" | "inverse"` (default `"base"`). Each block applies the
-surface itself and selects its foreground, divider/connector, and status
-treatment from Designer's exported `SECTION_GROUND_CLASSES`; consumers do not
-pair a surface with unrelated foreground tokens. The mapping and its
+`"base" | "sunken" | "inverse"` (default `"base"`). Base inherits the
+ambient page surface, preserving existing composition and markup, while
+sunken and inverse paint their semantic surfaces explicitly. Every ground
+selects its foreground, divider/connector, and status treatment from
+Designer's exported `SECTION_GROUND_CLASSES`; consumers do not pair a surface
+with unrelated foreground tokens. The mapping and its
 `SectionGround` type are exported from both `@clossys/designer/blocks` and
 `@clossys/designer/blocks/server`. Status dots retain the closed display-status
 colors on all three grounds; sunken and inverse add a checked, ground-specific
@@ -2422,7 +2424,8 @@ content heading; a page with its own `<h1>` elsewhere, or a second
 instead, the same document-outline reasoning `SectionHeader`'s `level`
 documents.
 Use `ground="sunken"` or `ground="inverse"` for those semantic section
-grounds; the block applies the matching surface and ink policy as one unit.
+grounds; the block applies the matching painted surface and ink policy as one
+unit. The default base ground inherits the surrounding base surface.
 
 ### `FeatureGrid`
 
@@ -2481,8 +2484,9 @@ An editorial `<ol>`, not a stepper or progress indicator. Each ordinal remains
 authored text, while decorative connectors are hidden from assistive technology
 and render only between adjacent items. The sequence changes from a vertical
 column/connector to a horizontal row/connector at `tablet`. Set
-`ground="sunken"` or `ground="inverse"` selects the shared matching surface,
-ink, border, and connector policy. `headingLevel` controls the real heading
+`ground="sunken"` or `ground="inverse"` selects the shared matching painted
+surface, ink, border, and connector policy. Base inherits its surrounding
+surface. `headingLevel` controls the real heading
 elements (default `2`).
 
 ### `StatusList`
@@ -2542,7 +2546,8 @@ INDEPENDENTLY — `Faq` holds no shared "which one is open" state and
 renders no `DisclosureGroup`, so opening one question never closes
 another, unlike a coordinated accordion.
 Both implementations accept the same shared `ground` values and apply the
-matching surface, question/answer foregrounds, and dividers.
+matching surface policy, question/answer foregrounds, and dividers. Base
+inherits the ambient surface; sunken and inverse paint their own surfaces.
 
 ### `PricingTable`
 
@@ -3929,7 +3934,7 @@ not a grab-bag).
 | `SectionHeaderProps` | type | Props for `SectionHeader`: `eyebrow`, `title`, `description`, `actions`, `level`, `className`, `style`, plus every native `<div>` attribute. |
 | `SectionHeaderLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
 | `Hero` | component | Above-the-fold message: eyebrow, heading, description, actions slot, optional media slot (switches to a two-column layout when supplied). `headingLevel` picks its heading element. |
-| `SECTION_GROUND_CLASSES` | constant | Exhaustive Designer-owned surface, foreground, divider/connector, and status class policy for every `SectionGround`; server-safe and exported from both blocks barrels. |
+| `SECTION_GROUND_CLASSES` | constant | Exhaustive Designer-owned surface, foreground, divider/connector, and status class policy for every `SectionGround`; base inherits its ambient surface, while sunken and inverse paint theirs; server-safe and exported from both blocks barrels. |
 | `SectionGround` | type | `"base" \| "sunken" \| "inverse"`. |
 | `SectionGroundClasses` | type | The complete class-map shape for one section ground. |
 | `SectionStatusTone` | type | `"success" \| "warning" \| "info"`; keys for the mapping's closed status treatment. |
