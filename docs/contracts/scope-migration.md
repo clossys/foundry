@@ -305,20 +305,32 @@ with a stale source link.
 
 At the observation instant none of the four replacement versions had been
 published: the registry's `latest` was still the affected version in each case.
+Three of the four have published since, and each one behaves as section 4a says
+a replacement version should: the metadata is corrected, the runtime surface is
+untouched. Read from the registry on 2026-09-01, with the tarball SHA-512
+confirmed against `dist.integrity` in every case:
 
-Since then `@clossys/advisor@0.1.6` has published, and it confirms what section
-4a describes. Read from the registry on 2026-09-01, it carries `repository`
-`git+https://github.com/clossys/foundry.git`, `bugs`
-`https://github.com/clossys/foundry/issues`, and a `homepage` under
-`clossys/foundry`, alongside the same two executables 0.1.5 ships and a
-provenance attestation. The metadata is corrected and the runtime surface is
-unchanged, which is exactly what a replacement version is supposed to be.
+| Replacement | `repository`, `bugs`, `homepage` | Executables | Provenance attestation |
+| --- | --- | --- | --- |
+| `@clossys/advisor@0.1.6` | all three point at `clossys/foundry` | 2, unchanged from 0.1.5 | yes |
+| `@clossys/controller@0.8.24` | all three point at `clossys/foundry` | 9, unchanged from 0.8.23 | yes |
+| `@clossys/strategist@0.1.2` | all three point at `clossys/foundry` | 1, unchanged from 0.1.1 | yes |
 
-`@clossys/controller@0.8.24`, `@clossys/starter@0.1.5`, and
-`@clossys/strategist@0.1.2` had still not published at that same reading.
-Publication is in progress. Re-check with `npm view <name> version` and adopt
-each replacement floor once it resolves. The floors in the table above do not
-change when that happens; only their availability does.
+`@clossys/starter@0.1.5` is the one still unpublished. Until it resolves, a
+consumer needing Starter is choosing between the affected `0.1.4` and waiting.
+Re-check with `npm view @clossys/starter version`.
+
+Two claims elsewhere in this document rest on Controller specifically, and both
+were re-verified against `0.8.24` rather than assumed to carry over. The role
+catalog in section 2 is byte-identical in `0.8.24` (same SHA-256
+`86f4d38599744b65b6689a47e5baa312e5f5ed538e6fcecd4d8dc67061efe3ed`, still
+`schemaVersion: 4`, still 18 roles, still a declared `exports` subpath). The
+severity vocabulary in section 8 is also unchanged: `0.8.24` still declares and
+emits `"error" | "warning"`, so that mismatch is not fixed by moving to the new
+floor.
+
+The floors in the table above do not change as versions publish; only their
+availability does.
 
 ### 4c. Newly-required contract fields: what actually changed
 
@@ -505,8 +517,8 @@ found while checking the claims in this document. It is recorded here because
 this is the document the migrating repositories are reading, and because the
 cost of rediscovering it is paid once per repository.
 
-**`@clossys/builder@0.7.3` rejects every finding `@clossys/controller@0.8.23`
-produces.**
+**`@clossys/builder@0.7.3` rejects every finding `@clossys/controller`
+produces**, at both `0.8.23` and the `0.8.24` replacement floor.
 
 The two packages are built to interoperate. Builder's
 `ObservationBundleGateEntry.result` is typed
@@ -517,7 +529,7 @@ severity vocabulary, and they do not overlap:
 | Package | Location | Accepted or emitted severities |
 | --- | --- | --- |
 | `@clossys/builder@0.7.3` | `src/types.ts` `Severity`, enforced by `FINDING_SEVERITIES` in `src/observation-bundle.ts` | `high`, `medium`, `low` |
-| `@clossys/controller@0.8.23` | `src/repository/run.ts`, `src/catalog/types.ts`, and every emitter | `error`, `warning` |
+| `@clossys/controller` `0.8.23` and `0.8.24` | `src/repository/run.ts`, `src/catalog/types.ts`, and every emitter | `error`, `warning` |
 
 So a `violated` gate result from Controller, passed into Builder's
 observation-bundle path, fails `isFindingShaped` on every finding.
