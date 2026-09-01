@@ -65,7 +65,7 @@ function runProbe(reactServer: boolean) {
         sections: [
           { id: "hero", kind: "hero", ground: "base", heading: "Server-safe sections" },
           { id: "steps", kind: "ordered-step-sequence", ground: "sunken", heading: "Steps", items: [{ id: "one", ordinal: "1", heading: "Start" }] },
-          { id: "status", kind: "status-list", ground: "inverse", heading: "Status", labels: { available: "Available", partial: "Partial", planned: "Planned" }, groups: [{ id: "core", heading: "Core", items: [{ id: "one", label: "Sections", state: "available" }] }] },
+          { id: "status", kind: "status-list", ground: "inverse", heading: "Status", labels: { available: "Available", partial: "Partial", planned: "Planned", dispositions: { "not-offered": "Not offered" } }, groups: [{ id: "core", heading: "Core", items: [{ id: "one", label: "Sections", state: "available" }] }] },
         ],
       },
     });
@@ -208,7 +208,7 @@ describe("packed Publisher web React-server boundary", () => {
     const legacyManifest = JSON.parse(readFileSync(legacyManifestPath, "utf8")) as {
       dependencies: Record<string, string>;
     };
-    expect(legacyManifest.dependencies["@clossys/designer"]).toBe("^0.2.6");
+    expect(legacyManifest.dependencies["@clossys/designer"]).toBe("^0.2.7");
     legacyManifest.dependencies["@clossys/designer"] = "^0.2.0";
     writeFileSync(legacyManifestPath, `${JSON.stringify(legacyManifest, null, 2)}\n`);
     const legacyPublisherTarball = packPackage(legacyPublisherRoot, join(fixtureRoot, "legacy-packed"));

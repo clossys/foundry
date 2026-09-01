@@ -216,7 +216,8 @@ long public site page: `SectionedViewDocument`. It requires one or more
 ordered sections with unique lowercase fragment-safe ids and one of five
 named kinds: `hero`, `feature-grid`, `faq`, `ordered-step-sequence`, or
 `status-list`. Grounds are the closed `base`/`sunken`/`inverse` vocabulary;
-status values are the closed `available`/`partial`/`planned` vocabulary.
+status values are the closed `available`/`partial`/`planned` readiness axis,
+with a separate `not-offered` disposition for deliberate non-capabilities.
 Every audience-facing label, heading, description, question, answer, ordinal,
 and status label is a `CopyRef`. There are no React nodes, render callbacks,
 router fields, locale overrides, classes, styles, arbitrary colours, or
@@ -237,7 +238,8 @@ order and returns its ordinary `CopyResolution[]`. Pass that list directly to
 provenance format. A missing or empty resolution fails the entire document and
 names the exact authored path. This core stage intentionally imports neither
 React nor Designer and does not render a web view. The grounded web renderer
-uses Designer `0.2.6`'s server-safe site-block API.
+uses Designer `0.2.7`'s server-safe site-block API, including the separate
+`not-offered` disposition and its caller-localized `labels.dispositions` map.
 
 `SectionedView` is now the dedicated web renderer after that Designer floor is
 available. Resolve the CopyRef document first, retain its `resolutions` as the
@@ -1253,6 +1255,7 @@ choice `checkLedgerDrift` makes for a citation it could not check.
   `SectionedViewFaqItem`, `SectionedViewOrderedStepSequenceSection`,
   `SectionedViewOrderedStep`, `SectionedViewStatusListSection`,
   `SectionedViewStatusGroup`, `SectionedViewStatusItem`, `SectionedViewStatus`,
+  `SectionedViewStatusDisposition`,
   `ResolvedSectionedViewDocument`, `ResolvedSectionedViewSection`, and
   `SectionedViewResolutionReason` types. `SurfaceResolutionError` and
   `SectionedViewResolutionError` are thrown when their canonical resolution
@@ -1319,7 +1322,7 @@ import-free of each other under one version.
 
 Node 20+. This package's own `package.json` declares runtime dependencies on
 `@clossys/writer` (`^0.3.0`), `@clossys/designer`
-(`^0.2.6`), and `@clossys/controller` (`~0.8.0`) — of which this
+(`^0.2.7`), and `@clossys/controller` (`~0.8.0`) — of which this
 package only imports the `./policy` subpath, `@clossys/controller/policy`,
 never `controller`'s other exports. `writer` and `designer` are caret
 ranges (both fresh `0.x` role packages); `controller` stays a tilde range,
@@ -1336,14 +1339,14 @@ additive or behavioural minor releases rather than patches, so the older
 ranges do not resolve them (0.x ranges are minor-locked). `designer`'s range
 first moved from `^0.1.0` to `^0.2.0` when Designer added the
 `designer-environment-check` gate (issue #405), then tightened to the current
-`^0.2.6` because Publisher's React-server target imports the server-safe
-section-ground, `Faq`, ordered-step, and status-list exports introduced in
-Designer 0.2.6. These ranges are independent; leaving
+`^0.2.7` because Publisher's React-server target imports the server-safe
+section-ground, `Faq`, ordered-step, and status-list exports, including the
+separate `not-offered` disposition, introduced in Designer 0.2.7. These ranges are independent; leaving
 either one behind would still resolve an older package without any install
 failure, silently withholding a required contract.
 
 A consumer whose own policy is to pin exact versions must pin `writer` to a
-matching `0.3.x` release, `designer` to `0.2.6` or a later compatible `0.2.x`
+matching `0.3.x` release, `designer` to `0.2.7` or a later compatible `0.2.x`
 release, and
 `controller` to a matching `0.8.x` patch release — otherwise
 `publisher`'s declared ranges and the consumer's exact pin cannot both be

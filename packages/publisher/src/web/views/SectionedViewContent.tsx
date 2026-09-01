@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { ResolvedSectionedViewDocument, ResolvedSectionedViewSection, SectionedViewGround, SectionedViewStatus } from "../../core/sectioned-view.js";
+import type { ResolvedSectionedViewDocument, ResolvedSectionedViewSection, SectionedViewGround, SectionedViewStatus, SectionedViewStatusDisposition } from "../../core/sectioned-view.js";
 import { RenderError } from "../../internal/errors.js";
 
 type HeadingLevel = 2 | 3 | 4 | 5 | 6;
@@ -10,7 +10,7 @@ export interface SectionedViewBlockSet {
   FeatureGrid(props: GroundProps & { items: readonly { id: string; heading: string; description?: string }[] }): ReactNode;
   Faq(props: GroundProps & { items: readonly { id: string; question: string; answer: string }[] }): ReactNode;
   OrderedStepSequence(props: GroundProps & { items: readonly { id: string; ordinal: string; label?: string; heading: string; description?: string }[] }): ReactNode;
-  StatusList(props: GroundProps & { labels: Readonly<Record<SectionedViewStatus, string>>; groups: readonly { id: string; heading: string; items: readonly { id: string; label: string; state: SectionedViewStatus }[] }[]; legendLabel: string }): ReactNode;
+  StatusList(props: GroundProps & { labels: Readonly<Record<SectionedViewStatus, string>> & { dispositions: Readonly<Record<SectionedViewStatusDisposition, string>> }; groups: readonly { id: string; heading: string; items: readonly ({ id: string; label: string; state: SectionedViewStatus; disposition?: never } | { id: string; label: string; disposition: SectionedViewStatusDisposition; state?: never })[] }[]; legendLabel: string }): ReactNode;
 }
 
 export interface SectionedViewProps {
@@ -20,6 +20,7 @@ export interface SectionedViewProps {
 
 const GROUNDS: readonly SectionedViewGround[] = ["base", "sunken", "inverse"];
 const STATUSES: readonly SectionedViewStatus[] = ["available", "partial", "planned"];
+const DISPOSITIONS: readonly SectionedViewStatusDisposition[] = ["not-offered"];
 const FRAGMENT_ID = /^[a-z][a-z0-9-]*$/;
 
 function nonBlank(value: unknown): value is string {
@@ -96,7 +97,8 @@ export function assertRenderableSectionedViewDocument(document: unknown): assert
     if (record.kind === "hero") continue;
     if (record.kind === "status-list") {
       const labels = record.labels;
-      if (typeof labels !== "object" || labels === null || STATUSES.some((status) => !nonBlank((labels as Record<string, unknown>)[status]))) throw new Error(`${path}.labels must contain resolved labels for every status.`);
+      const dispositions = plain(labels) ? labels.dispositions : undefined;
+      if (!plain(labels) || !closed(labels, [...STATUSES, "dispositions"]) || STATUSES.some((status) => !nonBlank(labels[status])) || !plain(dispositions) || !closed(dispositions, DISPOSITIONS) || DISPOSITIONS.some((disposition) => !nonBlank(dispositions[disposition]))) throw new Error(`${path}.labels must contain resolved labels for every status and disposition.`);
       dense(record.groups, `${path}.groups`);
       itemIds(record.groups, `${path}.groups`);
       for (let groupIndex = 0; groupIndex < record.groups.length; groupIndex += 1) {
@@ -106,7 +108,9 @@ export function assertRenderableSectionedViewDocument(document: unknown): assert
         itemIds(group.items, `${path}.groups.${groupIndex}.items`);
         for (let itemIndex = 0; itemIndex < group.items.length; itemIndex += 1) {
           const item = group.items[itemIndex] as Record<string, unknown>;
-          if (!nonBlank(item.label) || !STATUSES.includes(item.state as SectionedViewStatus)) throw new Error(`${path}.groups.${groupIndex}.items.${itemIndex} is not a resolved status item.`);
+          const hasState = Object.hasOwn(item, "state");
+          const hasDisposition = Object.hasOwn(item, "disposition");
+          if (!nonBlank(item.label) || hasState === hasDisposition || (hasState && !STATUSES.includes(item.state as SectionedViewStatus)) || (hasDisposition && !DISPOSITIONS.includes(item.disposition as SectionedViewStatusDisposition))) throw new Error(`${path}.groups.${groupIndex}.items.${itemIndex} is not a resolved status item or off-axis disposition.`);
         }
       }
       continue;

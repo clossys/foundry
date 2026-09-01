@@ -110,6 +110,7 @@ export type {
   SectionedViewSection,
   SectionedViewSectionKind,
   SectionedViewStatus,
+  SectionedViewStatusDisposition,
   SectionedViewStatusGroup,
   SectionedViewStatusItem,
   SectionedViewStatusListSection,

@@ -137,6 +137,7 @@ describe("renderWebDocument — hostile public RenderWebOptions.groups input", (
   });
 
   it("rejects empty legacy and structured values before a template can build them", () => {
+    expectPublicGroupRefusal([{ slot: " ", items: [] }]);
     expectPublicGroupRefusal([
       { slot: "features", items: [{ index: 0, value: "  " }] },
       { slot: "faq", items: [] },

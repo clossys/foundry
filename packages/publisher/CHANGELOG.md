@@ -9,12 +9,14 @@ All notable changes to this package are documented here. Format follows
 
 - Added the closed, provenance-preserving `SectionedView` web renderer for
   resolved `SectionedViewDocument` models. It maps the five approved section
-  kinds to Designer 0.2.6's ground-aware server-safe blocks without opening a
+  kinds to Designer 0.2.7's ground-aware server-safe blocks without opening a
   caller-authored node or styling escape hatch.
+- Added the separate `not-offered` status disposition and its localized label,
+  keeping deliberate non-capabilities outside the readiness axis.
 
 ### Changed
 
-- Raised the runtime Designer floor to `^0.2.6`, which supplies the
+- Raised the runtime Designer floor to `^0.2.7`, which supplies the
   server-safe section-ground, ordered-step, and status-list blocks required by
   `SectionedView`. This source version is intentionally unqualified and
   unpublished; exact-head qualification remains required.

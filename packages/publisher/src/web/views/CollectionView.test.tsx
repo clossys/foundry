@@ -64,4 +64,14 @@ describe("CollectionView", () => {
       expect(() => renderToStaticMarkup(<CollectionView brand="Acme" heading="Notes" entries={[]} empty={empty} pagination={{ next: { href, label: "Next" } }} />)).toThrow(/sanctioned href/);
     }
   });
+
+  it("rejects URL credentials, control characters, and accessor-shaped hrefs without invoking the accessor", () => {
+    const validEntry = { id: "one", href: "/notes/one", title: "One", date: { dateTime: "2026-09-01", text: "September 1" } };
+    for (const href of ["https://user:password@example.com/", "https:\\\\example.com", "mailto:\n@example.com", "/notes/one\nnext"]) {
+      expect(() => renderToStaticMarkup(<CollectionView brand="Acme" heading="Notes" entries={[{ ...validEntry, href }]} empty={empty} />)).toThrow(/non-whitespace id|sanctioned URL form/);
+    }
+    const accessorEntry = { ...validEntry };
+    Object.defineProperty(accessorEntry, "href", { enumerable: true, get: () => { throw new Error("href getter must not run"); } });
+    expect(() => renderToStaticMarkup(<CollectionView brand="Acme" heading="Notes" entries={[accessorEntry]} empty={empty} />)).toThrow(/non-whitespace id/);
+  });
 });

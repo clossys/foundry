@@ -64,12 +64,12 @@ export interface SectionedViewOrderedStepSequenceSection {
 }
 
 export type SectionedViewStatus = "available" | "partial" | "planned";
+/** A deliberate non-capability, kept outside the readiness axis. */
+export type SectionedViewStatusDisposition = "not-offered";
 
-export interface SectionedViewStatusItem {
-  id: string;
-  label: CopyRef;
-  state: SectionedViewStatus;
-}
+export type SectionedViewStatusItem =
+  | { id: string; label: CopyRef; state: SectionedViewStatus; disposition?: never }
+  | { id: string; label: CopyRef; disposition: SectionedViewStatusDisposition; state?: never };
 
 export interface SectionedViewStatusGroup {
   id: string;
@@ -83,7 +83,7 @@ export interface SectionedViewStatusListSection {
   ground: SectionedViewGround;
   heading: CopyRef;
   description?: CopyRef;
-  labels: Record<SectionedViewStatus, CopyRef>;
+  labels: Record<SectionedViewStatus, CopyRef> & { dispositions: Record<SectionedViewStatusDisposition, CopyRef> };
   groups: SectionedViewStatusGroup[];
 }
 
@@ -102,13 +102,16 @@ export interface SectionedViewDocument {
 }
 
 type ResolvedCopy = string;
+type ResolvedSectionedViewStatusItem =
+  | { id: string; label: ResolvedCopy; state: SectionedViewStatus; disposition?: never }
+  | { id: string; label: ResolvedCopy; disposition: SectionedViewStatusDisposition; state?: never };
 
 export type ResolvedSectionedViewSection =
   | Omit<SectionedViewHeroSection, "eyebrow" | "heading" | "description"> & { eyebrow?: ResolvedCopy; heading: ResolvedCopy; description?: ResolvedCopy }
   | Omit<SectionedViewFeatureGridSection, "heading" | "description" | "items"> & { heading: ResolvedCopy; description?: ResolvedCopy; items: Array<Omit<SectionedViewFeatureItem, "heading" | "description"> & { heading: ResolvedCopy; description?: ResolvedCopy }> }
   | Omit<SectionedViewFaqSection, "heading" | "description" | "items"> & { heading: ResolvedCopy; description?: ResolvedCopy; items: Array<Omit<SectionedViewFaqItem, "question" | "answer"> & { question: ResolvedCopy; answer: ResolvedCopy }> }
   | Omit<SectionedViewOrderedStepSequenceSection, "heading" | "description" | "items"> & { heading: ResolvedCopy; description?: ResolvedCopy; items: Array<Omit<SectionedViewOrderedStep, "ordinal" | "label" | "heading" | "description"> & { ordinal: ResolvedCopy; label?: ResolvedCopy; heading: ResolvedCopy; description?: ResolvedCopy }> }
-  | Omit<SectionedViewStatusListSection, "heading" | "description" | "labels" | "groups"> & { heading: ResolvedCopy; description?: ResolvedCopy; labels: Record<SectionedViewStatus, ResolvedCopy>; groups: Array<Omit<SectionedViewStatusGroup, "heading" | "items"> & { heading: ResolvedCopy; items: Array<Omit<SectionedViewStatusItem, "label"> & { label: ResolvedCopy }> }> };
+  | Omit<SectionedViewStatusListSection, "heading" | "description" | "labels" | "groups"> & { heading: ResolvedCopy; description?: ResolvedCopy; labels: Record<SectionedViewStatus, ResolvedCopy> & { dispositions: Record<SectionedViewStatusDisposition, ResolvedCopy> }; groups: Array<Omit<SectionedViewStatusGroup, "heading" | "items"> & { heading: ResolvedCopy; items: ResolvedSectionedViewStatusItem[] }> };
 
 export interface ResolvedSectionedViewDocument {
   id: string;
@@ -128,6 +131,7 @@ export class SectionedViewResolutionError extends Error {
 
 const GROUNDS: readonly SectionedViewGround[] = ["base", "sunken", "inverse"];
 const STATUSES: readonly SectionedViewStatus[] = ["available", "partial", "planned"];
+const DISPOSITIONS: readonly SectionedViewStatusDisposition[] = ["not-offered"];
 const FRAGMENT_ID = /^[a-z][a-z0-9-]*$/;
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -305,10 +309,17 @@ function validateStatusListSection(section: Record<string, unknown>, path: strin
   validateCopy(section.heading, `${path}.heading`, findings);
   if (section.description !== undefined) validateCopy(section.description, `${path}.description`, findings);
   const labels = section.labels;
-  if (!isPlainObject(labels) || !hasOnlyOwnKeys(labels, STATUSES) || !hasOwnKeys(labels, STATUSES)) {
-    findings.push(finding("sectioned-view-status-labels-shape", `${path}.labels`, `${path}.labels must contain exactly available, partial, and planned CopyRefs.`));
+  const labelKeys = [...STATUSES, "dispositions"];
+  if (!isPlainObject(labels) || !hasOnlyOwnKeys(labels, labelKeys) || !hasOwnKeys(labels, labelKeys)) {
+    findings.push(finding("sectioned-view-status-labels-shape", `${path}.labels`, `${path}.labels must contain exactly available, partial, planned, and dispositions CopyRefs.`));
   } else {
     STATUSES.forEach((status) => validateCopy(labels[status], `${path}.labels.${status}`, findings));
+    const dispositions = labels.dispositions;
+    if (!isPlainObject(dispositions) || !hasOnlyOwnKeys(dispositions, DISPOSITIONS) || !hasOwnKeys(dispositions, DISPOSITIONS)) {
+      findings.push(finding("sectioned-view-status-dispositions-shape", `${path}.labels.dispositions`, `${path}.labels.dispositions must contain exactly not-offered.`));
+    } else {
+      DISPOSITIONS.forEach((disposition) => validateCopy(dispositions[disposition], `${path}.labels.dispositions.${disposition}`, findings));
+    }
   }
   if (!validateDenseArray(section.groups, `${path}.groups`, findings, "sectioned-view-status-groups-shape", `${path}.groups must be a non-empty array.`)) return;
   validateItemIds(section.groups, `${path}.groups`, findings);
@@ -325,12 +336,19 @@ function validateStatusListSection(section: Record<string, unknown>, path: strin
     for (let itemIndex = 0; itemIndex < group.items.length; itemIndex += 1) {
       const item = group.items[itemIndex];
       const itemPath = `${groupPath}.items.${itemIndex}`;
-      if (!isPlainObject(item) || !hasOnlyOwnKeys(item, ["id", "label", "state"]) || !hasOwnKeys(item, ["id", "label", "state"]) || !isNonWhitespaceString(item.id)) {
-        findings.push(finding("sectioned-view-status-item-shape", itemPath, `${itemPath} must be a plain status item with id, label, and state.`));
+      if (!isPlainObject(item) || !hasOnlyOwnKeys(item, ["id", "label", "state", "disposition"]) || !hasOwn(item, "id") || !hasOwn(item, "label") || !isNonWhitespaceString(item.id)) {
+        findings.push(finding("sectioned-view-status-item-shape", itemPath, `${itemPath} must be a plain status item with id, label, and exactly one of state or disposition.`));
+        continue;
+      }
+      const hasState = hasOwn(item, "state");
+      const hasDisposition = hasOwn(item, "disposition");
+      if (hasState === hasDisposition) {
+        findings.push(finding("sectioned-view-status-item-shape", itemPath, `${itemPath} must be a plain status item with id, label, and exactly one of state or disposition.`));
         continue;
       }
       validateCopy(item.label, `${itemPath}.label`, findings);
-      if (!STATUSES.includes(item.state as SectionedViewStatus)) findings.push(finding("sectioned-view-status-state", `${itemPath}.state`, `${itemPath}.state must be one of ${STATUSES.join(", ")}.`));
+      if (hasState && !STATUSES.includes(item.state as SectionedViewStatus)) findings.push(finding("sectioned-view-status-state", `${itemPath}.state`, `${itemPath}.state must be one of ${STATUSES.join(", ")}.`));
+      if (hasDisposition && !DISPOSITIONS.includes(item.disposition as SectionedViewStatusDisposition)) findings.push(finding("sectioned-view-status-disposition", `${itemPath}.disposition`, `${itemPath}.disposition must be one of ${DISPOSITIONS.join(", ")}.`));
     }
   }
 }
@@ -371,7 +389,10 @@ function resolveSection(section: SectionedViewSection, path: string, text: (ref:
         ...section,
         heading: text(section.heading, `${path}.heading`),
         description: optional(section.description, `${path}.description`),
-        labels: Object.fromEntries(STATUSES.map((status) => [status, text(section.labels[status], `${path}.labels.${status}`)])) as Record<SectionedViewStatus, string>,
+        labels: {
+          ...Object.fromEntries(STATUSES.map((status) => [status, text(section.labels[status], `${path}.labels.${status}`)])),
+          dispositions: Object.fromEntries(DISPOSITIONS.map((disposition) => [disposition, text(section.labels.dispositions[disposition], `${path}.labels.dispositions.${disposition}`)])),
+        } as Record<SectionedViewStatus, string> & { dispositions: Record<SectionedViewStatusDisposition, string> },
         groups: section.groups.map((group, groupIndex) => ({ ...group, heading: text(group.heading, `${path}.groups.${groupIndex}.heading`), items: group.items.map((item, itemIndex) => ({ ...item, label: text(item.label, `${path}.groups.${groupIndex}.items.${itemIndex}.label`) })) })),
       };
   }

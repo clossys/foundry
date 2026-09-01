@@ -28,6 +28,7 @@ const copy = {
   "acme.status.available": "Available",
   "acme.status.partial": "Partial",
   "acme.status.planned": "Planned",
+  "acme.status.not-offered": "Not offered",
   "acme.status.group.heading": "Core",
   "acme.status.item.label": "Fixture capability",
 };
@@ -48,7 +49,7 @@ const document: SectionedViewDocument = {
     { id: "features", kind: "feature-grid", ground: "sunken", heading: ref("acme.features.heading"), description: ref("acme.features.description"), items: [{ id: "one", heading: ref("acme.features.one.heading"), description: ref("acme.features.one.description") }, { id: "two", heading: ref("acme.features.two.heading") }] },
     { id: "faq", kind: "faq", ground: "base", heading: ref("acme.faq.heading"), description: ref("acme.faq.description"), items: [{ id: "one", question: ref("acme.faq.one.question"), answer: ref("acme.faq.one.answer") }] },
     { id: "steps", kind: "ordered-step-sequence", ground: "inverse", heading: ref("acme.steps.heading"), items: [{ id: "one", ordinal: ref("acme.steps.one.ordinal"), label: ref("acme.steps.one.label"), heading: ref("acme.steps.one.heading"), description: ref("acme.steps.one.description") }] },
-    { id: "status", kind: "status-list", ground: "base", heading: ref("acme.status.heading"), labels: { available: ref("acme.status.available"), partial: ref("acme.status.partial"), planned: ref("acme.status.planned") }, groups: [{ id: "core", heading: ref("acme.status.group.heading"), items: [{ id: "capability", label: ref("acme.status.item.label"), state: "available" }] }] },
+    { id: "status", kind: "status-list", ground: "base", heading: ref("acme.status.heading"), labels: { available: ref("acme.status.available"), partial: ref("acme.status.partial"), planned: ref("acme.status.planned"), dispositions: { "not-offered": ref("acme.status.not-offered") } }, groups: [{ id: "core", heading: ref("acme.status.group.heading"), items: [{ id: "capability", label: ref("acme.status.item.label"), state: "available" }, { id: "unavailable", label: ref("acme.status.item.label"), disposition: "not-offered" }] }] },
   ],
 };
 
@@ -66,7 +67,7 @@ describe("SectionedViewDocument core contract", () => {
       "acme.features.heading", "acme.features.description", "acme.features.one.heading", "acme.features.one.description", "acme.features.two.heading",
       "acme.faq.heading", "acme.faq.description", "acme.faq.one.question", "acme.faq.one.answer",
       "acme.steps.heading", "acme.steps.one.ordinal", "acme.steps.one.label", "acme.steps.one.heading", "acme.steps.one.description",
-      "acme.status.heading", "acme.status.available", "acme.status.partial", "acme.status.planned", "acme.status.group.heading", "acme.status.item.label",
+      "acme.status.heading", "acme.status.available", "acme.status.partial", "acme.status.planned", "acme.status.not-offered", "acme.status.group.heading", "acme.status.item.label", "acme.status.item.label",
     ]);
   });
 

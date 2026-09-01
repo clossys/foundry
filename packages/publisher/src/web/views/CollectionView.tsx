@@ -76,7 +76,7 @@ export function CollectionView({ brand, heading, description, entries, empty, fo
   assertLink(next, "pagination.next");
   const ids = new Set<string>();
   for (const entry of entries) {
-    if (isPlainClosedObject(entry) && !isSanctionedHref(entry.href)) {
+    if (isPlainClosedObject(entry) && hasOnlyOwnKeys(entry, ["id", "href", "title", "date", "summary", "tags"]) && Object.hasOwn(entry, "href") && !isSanctionedHref(entry.href)) {
       throw new Error("CollectionView requires every entry href to use a sanctioned URL form.");
     }
     if (!isPlainClosedObject(entry) || !hasOnlyOwnKeys(entry, ["id", "href", "title", "date", "summary", "tags"]) || !isNonWhitespaceString(entry.id) || !isSanctionedHref(entry.href) || !isNonWhitespaceString(entry.title) || !isPlainClosedObject(entry.date) || !hasOnlyOwnKeys(entry.date, ["dateTime", "text"]) || !isValidDateTime(entry.date.dateTime) || !isNonWhitespaceString(entry.date.text) || (entry.summary !== undefined && !isNonWhitespaceString(entry.summary))) {
@@ -146,13 +146,25 @@ export function CollectionView({ brand, heading, description, entries, empty, fo
 }
 
 function isPlainClosedObject(value: unknown): value is Record<string, unknown> {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
-  const prototype = Object.getPrototypeOf(value);
-  return prototype === Object.prototype || prototype === null;
+  try {
+    if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+    const prototype = Object.getPrototypeOf(value);
+    return prototype === Object.prototype || prototype === null;
+  } catch {
+    return false;
+  }
 }
 
 function hasOnlyOwnKeys(value: Record<string, unknown>, allowed: readonly string[]): boolean {
-  return Object.keys(value).every((key) => allowed.includes(key));
+  try {
+    return Reflect.ownKeys(value).every((key) => {
+      if (typeof key !== "string" || !allowed.includes(key)) return false;
+      const descriptor = Object.getOwnPropertyDescriptor(value, key);
+      return descriptor !== undefined && descriptor.enumerable && "value" in descriptor;
+    });
+  } catch {
+    return false;
+  }
 }
 
 function isNonWhitespaceString(value: unknown): value is string {
@@ -179,13 +191,14 @@ function assertLink(link: unknown, path: string): void {
 
 /** Only anchors, one-origin paths, HTTP(S), and explicit mail links are safe route targets for this server-rendered view. */
 function isSanctionedHref(value: unknown): value is string {
-  if (!isNonWhitespaceString(value) || value !== value.trim()) return false;
+  if (!isNonWhitespaceString(value) || value !== value.trim() || /[\u0000-\u001f\u007f]/.test(value)) return false;
+  if (value.includes("\\")) return false;
   if (value.startsWith("#")) return true;
   if (value.startsWith("/")) return !value.startsWith("//") && !value.startsWith("/\\");
   if (value.toLowerCase().startsWith("mailto:")) return value.slice("mailto:".length).trim().length > 0;
   try {
-    const protocol = new URL(value).protocol;
-    return protocol === "http:" || protocol === "https:";
+    const parsed = new URL(value);
+    return (parsed.protocol === "http:" || parsed.protocol === "https:") && parsed.username === "" && parsed.password === "";
   } catch {
     return false;
   }
