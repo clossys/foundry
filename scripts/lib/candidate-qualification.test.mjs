@@ -536,6 +536,23 @@ test("fresh v2 replay validates both transcripts and normalizes only the exact f
   delete invalid.canonicalSha256; invalid.canonicalSha256 = sha256(JSON.stringify(invalid));
   assert.ok(rules(record, { freshTranscript: invalid }).includes("fresh-transcript-raw-case-input"));
 });
+test("fresh replay ignores only generated consumer digest drift", () => {
+  const record = rawStarterV2Record();
+  const fresh = structuredClone(record.transcript);
+  fresh.consumer = { manifestSha256: "1".repeat(64), lockfileSha256: "2".repeat(64) };
+  delete fresh.canonicalSha256; fresh.canonicalSha256 = sha256(JSON.stringify(fresh));
+  assert.equal(rules(record, { freshTranscript: fresh }).some((rule) => rule.startsWith("fresh-transcript")), false);
+
+  const changed = structuredClone(fresh);
+  changed.observations.find((item) => item.kind === "case").stdoutSha256 = "3".repeat(64);
+  delete changed.canonicalSha256; changed.canonicalSha256 = sha256(JSON.stringify(changed));
+  assert.ok(rules(record, { freshTranscript: changed }).some((rule) => rule.startsWith("fresh-transcript")));
+
+  const invalid = structuredClone(fresh);
+  invalid.consumer.manifestSha256 = "not-a-digest";
+  delete invalid.canonicalSha256; invalid.canonicalSha256 = sha256(JSON.stringify(invalid));
+  assert.ok(rules(record, { freshTranscript: invalid }).includes("fresh-transcript-transcript"));
+});
 test("rejects transcript, candidate join, unknown-field, and findings drift", () => {
   const transcript = source(); transcript.transcript.canonicalSha256 = "0".repeat(64);
   assert.ok(rules(transcript).includes("transcript-digest"));
