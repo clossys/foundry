@@ -26,6 +26,7 @@ const PUBLISH_WORKFLOW = ".github/workflows/publish.yml";
 const PUBLISH_REF = "refs/heads/main";
 const PUBLISH_EVENT = "workflow_dispatch";
 const GITHUB_HOSTED_BUILDER = "https://github.com/actions/runner/github-hosted";
+const REPLAY_KIND = "foundry-trusted-publication-replay-v3";
 const object = (value) => value && typeof value === "object" && !Array.isArray(value);
 const digest = (value) => createHash("sha256").update(value).digest("hex");
 const same = (left, right) => JSON.stringify(left) === JSON.stringify(right);
@@ -104,6 +105,82 @@ function exactAttestedSubject(provenance, proof, candidate) {
     && proof?.version === candidate?.version
     && proof?.sha512 === candidate?.tarball?.sha512;
 }
+
+function exactJobUrl(value, id) {
+  return Number.isSafeInteger(id) && id > 0 && value === `https://github.com/clossys/foundry/actions/runs/${id}`;
+}
+
+function exactJob(value, id, name) {
+  return object(value)
+    && Object.keys(value).every((key) => ["id", "name", "conclusion", "url"].includes(key))
+    && Number.isSafeInteger(value.id) && value.id > 0 && value.name === name && value.conclusion === "success"
+    && value.url === `https://github.com/clossys/foundry/actions/runs/${id}/job/${value.id}`;
+}
+
+function replayRunQualification(findings, value, candidate, sourceSha, qualificationCanonicalSha256, publication) {
+  closed(findings, value, ["run", "artifact", "transcript", "publicationJob", "anonymousRegistry"], "publication.runQualification");
+  const key = packageKey(candidate?.name);
+  const run = value?.run;
+  closed(findings, run, ["id", "url", "headSha", "conclusion", "qualificationJob"], "publication.runQualification.run");
+  if (!Number.isSafeInteger(run?.id) || run.id <= 0 || !exactJobUrl(run?.url, run?.id) || run?.headSha !== sourceSha || !["success", "failure", "cancelled", "skipped"].includes(run?.conclusion) || !exactJob(run?.qualificationJob, run?.id, `qualify (${key})`)) {
+    finding(findings, "replay-run", "replay evidence must bind the exact source run and its successful qualification job.");
+  }
+  if (publication?.reference !== run?.url || invocationRunRoot(publication?.provenance?.invocation) !== run?.url) {
+    finding(findings, "replay-publication-run", "replay evidence must bind both publication run references to the exact qualified source run.");
+  }
+  const artifact = value?.artifact;
+  closed(findings, artifact, ["id", "name", "archiveSha256", "size", "url"], "publication.runQualification.artifact");
+  if (!Number.isSafeInteger(artifact?.id) || artifact.id <= 0 || artifact?.name !== `qualified-candidate-${key}` || !/^sha256:[a-f0-9]{64}$/.test(artifact?.archiveSha256 ?? "") || !Number.isSafeInteger(artifact?.size) || artifact.size < 1 || artifact?.url !== `https://api.github.com/repos/clossys/foundry/actions/artifacts/${artifact?.id}/zip`) {
+    finding(findings, "replay-artifact", "replay evidence must bind one exact qualified-candidate archive and its provider digest.");
+  }
+  const transcript = value?.transcript;
+  closed(findings, transcript, ["rawSha256", "canonicalSha256", "candidateTarball"], "publication.runQualification.transcript");
+  if (!SHA256.test(transcript?.rawSha256 ?? "") || !same(transcript?.candidateTarball, candidate?.tarball)) {
+    finding(findings, "replay-transcript", "replay evidence must bind fresh raw transcript bytes and the exact candidate tarball.");
+  }
+  if (!SHA256.test(transcript?.canonicalSha256 ?? "") || transcript?.canonicalSha256 !== qualificationCanonicalSha256) finding(findings, "replay-transcript", "replay transcript canonical bytes must exactly join the retained qualification.");
+  if (!exactJob(value?.publicationJob, run?.id, `publish (${key})`)) finding(findings, "publish-job", "replay evidence must bind the exact successful publish job in the qualification run.");
+  const registry = value?.anonymousRegistry;
+  closed(findings, registry, ["packumentSha256", "auditSha256", "provenanceBundleSha256", "signatureSha256", "signatureKeyids", "attestationUrl"], "publication.runQualification.anonymousRegistry");
+  if (![registry?.packumentSha256, registry?.auditSha256, registry?.provenanceBundleSha256, registry?.signatureSha256].every((item) => SHA256.test(item ?? "")) || !Array.isArray(registry?.signatureKeyids) || registry.signatureKeyids.length < 1 || registry.signatureKeyids.some((item) => !/^SHA256:[A-Za-z0-9+/=]{16,}$/.test(item)) || JSON.stringify(registry.signatureKeyids) !== JSON.stringify(registry.signatureKeyids.slice().sort()) || !exactAttestationUrl(registry?.attestationUrl, candidate?.name, candidate?.version)) {
+    finding(findings, "anonymous-signatures", "replay evidence must retain verified anonymous signature and attestation evidence digests.");
+  }
+}
+
+/**
+ * The v3 exception is deliberately narrower than trusted v2: the selected
+ * source must be strictly between immutable qualification and publication,
+ * all package-owned joins must remain exact, and both root resolution hashes
+ * must be newly observed rather than copied from qualification.
+ */
+export function trustedReplaySourceEvidence(root, qualification, qualificationIntroduction, publicationIntroduction, source, { joinsAt = currentQualificationJoins, allowSourceAtPublication = false } = {}) {
+  const findings = [];
+  closed(findings, source, ["reviewedCommit", "qualificationRoots", "publicationSource"], "publication.source");
+  closed(findings, source?.qualificationRoots, ["packageJsonSha256", "packageLockSha256"], "publication.source.qualificationRoots");
+  closed(findings, source?.publicationSource, ["sha", "rootPackageJsonSha256", "rootPackageLockSha256"], "publication.source.publicationSource");
+  const selected = source?.publicationSource;
+  if (source?.reviewedCommit !== qualification?.reviewedCommit || source?.qualificationRoots?.packageJsonSha256 !== qualification?.rootPackageJsonSha256 || source?.qualificationRoots?.packageLockSha256 !== qualification?.rootPackageLockSha256 || !SHA1.test(selected?.sha ?? "") || !SHA256.test(selected?.rootPackageJsonSha256 ?? "") || !SHA256.test(selected?.rootPackageLockSha256 ?? "") || selected.rootPackageJsonSha256 === qualification?.rootPackageJsonSha256 || selected.rootPackageLockSha256 === qualification?.rootPackageLockSha256) {
+    finding(findings, "replay-source-roots", "v3 must retain qualification roots separately and prove both source root hashes drifted.");
+  }
+  try {
+    if (selected?.sha === qualificationIntroduction || (!allowSourceAtPublication && selected?.sha === publicationIntroduction)) throw new Error("source must strictly sit between introductions");
+    execFileSync("git", ["merge-base", "--is-ancestor", qualificationIntroduction, selected?.sha], { cwd: root, stdio: "ignore" });
+    execFileSync("git", ["merge-base", "--is-ancestor", selected?.sha, publicationIntroduction], { cwd: root, stdio: "ignore" });
+    const joins = joinsAt(root, qualification?.candidate, selected?.sha);
+    if (joins.rootPackageJsonSha256 !== selected?.rootPackageJsonSha256 || joins.rootPackageLockSha256 !== selected?.rootPackageLockSha256 || ![
+      ["packageTreeSha1", qualification?.candidate?.packageTreeSha1],
+      ["packageManifestSha256", qualification?.candidate?.packageManifestSha256],
+      ["policySha256", qualification?.candidate?.policySha256],
+      ["adapterSha256", qualification?.candidate?.adapterSha256],
+      ["fixtureSetSha256", qualification?.candidate?.fixtureSetSha256],
+    ].every(([key, expected]) => joins[key] === expected) || !same(joins.archetypes, qualification?.archetypes) || !same(joins.dimensions, qualification?.transcript?.dimensions)) {
+      finding(findings, "replay-package-joins", "only the two root resolution hashes may differ at the trusted publication source.");
+    }
+  } catch {
+    finding(findings, "replay-ancestry", "qualification introduction < source < publication introduction is required.");
+  }
+  return { valid: findings.length === 0, findings };
+}
 function gitBlob(root, ref, path) {
   return execFileSync("git", ["show", `${ref}:${path}`], { cwd: root, encoding: "utf8" });
 }
@@ -143,12 +220,15 @@ function gitCommitParents(root, commit) {
  * introduction commit. `currentCatalog` independently proves the package has
  * not fallen out of the current reviewed append-only allowlist.
  */
-export function validateLaterPublication(record, { recordPath, recordBytes, qualification, qualificationBytes, qualificationPath: expectedQualificationPath, catalogBytes, catalog, currentCatalog = catalog, provenanceSourceValid: sourceValid = false } = {}) {
+export function validateLaterPublication(record, { recordPath, recordBytes, qualification, qualificationBytes, qualificationPath: expectedQualificationPath, catalogBytes, catalog, currentCatalog = catalog, provenanceSourceValid: sourceValid = false, replaySourceEvidence = { valid: false } } = {}) {
   const findings = [];
-  closed(findings, record, ["schemaVersion", "kind", "qualification", "candidate", "source", "catalog", "publication", "registryProof"], "publication");
   const legacy = record?.schemaVersion === 1 && record?.kind === "foundry-later-publication-v1";
   const trusted = record?.schemaVersion === 2 && record?.kind === "foundry-trusted-publication-v2";
-  if (!legacy && !trusted) finding(findings, "publication", "closed later-publication identity required.");
+  const replay = record?.schemaVersion === 3 && record?.kind === REPLAY_KIND;
+  closed(findings, record, replay
+    ? ["schemaVersion", "kind", "qualification", "candidate", "source", "catalog", "publication", "registryProof", "runQualification"]
+    : ["schemaVersion", "kind", "qualification", "candidate", "source", "catalog", "publication", "registryProof"], "publication");
+  if (!legacy && !trusted && !replay) finding(findings, "publication", "closed later-publication identity required.");
   closed(findings, record?.qualification, ["path", "sha256"], "publication.qualification");
   if (record?.qualification?.path !== expectedQualificationPath || !SHA256.test(record?.qualification?.sha256 ?? "") || typeof qualificationBytes !== "string" || digest(qualificationBytes) !== record?.qualification?.sha256) finding(findings, "qualification", "must bind exact retained qualification bytes.");
   if (qualification?.timing !== "pre-publication") finding(findings, "qualification-timing", "later publication must reference a pre-publication qualification.");
@@ -158,8 +238,11 @@ export function validateLaterPublication(record, { recordPath, recordBytes, qual
   if (!NAME.test(c?.name ?? "") || !VERSION.test(c?.version ?? "") || !SHA1.test(c?.packageTreeSha1 ?? "") || !SHA256.test(c?.packageManifestSha256 ?? "") || !SHA1.test(c?.tarball?.sha1 ?? "") || !SHA256.test(c?.tarball?.sha256 ?? "") || !SHA512.test(c?.tarball?.sha512 ?? "") || !same(c, qc && { name: qc.name, version: qc.version, packageTreeSha1: qc.packageTreeSha1, packageManifestSha256: qc.packageManifestSha256, tarball: qc.tarball })) finding(findings, "candidate-join", "candidate must exactly join the qualified source, manifest, and tarball.");
   const key = packageKey(c?.name);
   if (legacy && key && TRIO.includes(key)) finding(findings, "sealed-trio", "later-publication records cannot substitute or extend a sealed Trio member.");
-  closed(findings, record?.source, ["reviewedCommit", "rootPackageJsonSha256", "rootPackageLockSha256", "policySha256", "adapterSha256", "fixtureSetSha256"], "publication.source");
-  for (const sourceKey of ["reviewedCommit", "rootPackageJsonSha256", "rootPackageLockSha256", "policySha256", "adapterSha256", "fixtureSetSha256"]) if (record?.source?.[sourceKey] !== qualification?.[sourceKey] && record?.source?.[sourceKey] !== qc?.[sourceKey]) finding(findings, "source-join", `source.${sourceKey} must join the retained qualification.`);
+  if (legacy || trusted) {
+    closed(findings, record?.source, ["reviewedCommit", "rootPackageJsonSha256", "rootPackageLockSha256", "policySha256", "adapterSha256", "fixtureSetSha256"], "publication.source");
+    for (const sourceKey of ["reviewedCommit", "rootPackageJsonSha256", "rootPackageLockSha256", "policySha256", "adapterSha256", "fixtureSetSha256"]) if (record?.source?.[sourceKey] !== qualification?.[sourceKey] && record?.source?.[sourceKey] !== qc?.[sourceKey]) finding(findings, "source-join", `source.${sourceKey} must join the retained qualification.`);
+  }
+  if (replay && replaySourceEvidence?.valid !== true) finding(findings, "replay-source", "v3 replay source must be strictly ordered and package-identical with only root hash drift.");
   closed(findings, record?.catalog, ["path", "sha256", "packageKey"], "publication.catalog");
   const introducedPackages = activePackages(catalog);
   const retainedPackages = activePackages(currentCatalog);
@@ -167,6 +250,7 @@ export function validateLaterPublication(record, { recordPath, recordBytes, qual
   closed(findings, record?.publication, ["mode", "publishedAt", "reference", "provenance"], "publication.publication");
   if (legacy && (record?.publication?.mode !== "owner-present" || !canonicalInstant(record?.publication?.publishedAt) || !evidenceUrl(record?.publication?.reference) || record?.publication?.provenance !== undefined)) finding(findings, "publication-evidence", "v1 records require owner-present evidence without provenance.");
   if (trusted && (record?.publication?.mode !== "trusted-publisher" || !canonicalInstant(record?.publication?.publishedAt) || record?.publication?.reference !== invocationRunRoot(record?.publication?.provenance?.invocation) || !trustedProvenance(record?.publication?.provenance, c, sourceValid))) finding(findings, "publication-provenance", "trusted publication must bind its exact GitHub workflow, post-qualification source, invocation, run reference, and npm attestation.");
+  if (replay && (record?.publication?.mode !== "trusted-publisher" || !canonicalInstant(record?.publication?.publishedAt) || record?.publication?.reference !== invocationRunRoot(record?.publication?.provenance?.invocation) || record?.publication?.provenance?.sourceSha !== record?.source?.publicationSource?.sha || !trustedProvenance(record?.publication?.provenance, c, true))) finding(findings, "publication-provenance", "v3 replay must retain the exact trusted-publisher provenance tuple.");
   const proof = record?.registryProof?.evidence;
   closed(findings, record?.registryProof, ["schemaVersion", "kind", "evidence"], "publication.registryProof");
   const v1 = record?.registryProof?.schemaVersion === 1 && record?.registryProof?.kind === "public-npm-anonymous-registry-proof-v1";
@@ -182,6 +266,9 @@ export function validateLaterPublication(record, { recordPath, recordBytes, qual
   if ((!v1 && !v2) || proof?.registry !== PUBLIC_NPM_REGISTRY || proof?.access !== "anonymous" || proof?.name !== c?.name || proof?.version !== c?.version || metadataUrl !== expectedMetadata || (v2 && proof?.repository !== expectedRepository) || proof?.tarballUrl !== expectedTarballUrl(c?.name, c?.version) || proof?.integrity !== integrity || proof?.shasum !== c?.tarball?.sha1 || proof?.sha256 !== c?.tarball?.sha256 || proof?.sha512 !== c?.tarball?.sha512 || proof?.packedManifestSha256 !== c?.packageManifestSha256 || !Number.isSafeInteger(proof?.size) || proof.size < 1 || proof.size > 20_000_000) finding(findings, "registry-join", "anonymous served-byte proof must exactly join the candidate tarball and manifest.");
   if (trusted && !v2) finding(findings, "registry-proof", "trusted publication requires the exact-version anonymous registry proof v2.");
   if (trusted && !exactAttestedSubject(record?.publication?.provenance, proof, c)) finding(findings, "attestation-subject", "attestation subject must exactly project the candidate package/version and SHA-512.");
+  if (replay && !v2) finding(findings, "registry-proof", "v3 replay requires the exact-version anonymous registry proof v2.");
+  if (replay && !exactAttestedSubject(record?.publication?.provenance, proof, c)) finding(findings, "attestation-subject", "v3 attestation subject must exactly project the candidate package/version and SHA-512.");
+  if (replay) replayRunQualification(findings, record?.runQualification, c, record?.source?.publicationSource?.sha, qualification?.transcript?.canonicalSha256, record?.publication);
   if (typeof recordPath === "string" && typeof recordBytes === "string" && (!key || !VERSION.test(c?.version ?? "") || recordPath !== `${LATER_PUBLICATION_DIRECTORY}/${key}-${c.version}.json`)) finding(findings, "record-path", "record path must be the unique package/version identity.");
   return findings;
 }
@@ -273,7 +360,10 @@ export function validateRetainedLaterPublications(root) {
       const qualificationFindings = validateCandidateQualification(qualification, { expected });
       const historical = record?.publication?.provenance?.repository === HISTORICAL_PLATFORM_REPOSITORY;
       const sourceValid = historical || trustedProvenanceSourceValid(root, qualification, history.introductionCommit, introductionCommit, record?.publication?.provenance?.sourceSha);
-      const recordFindings = validateLaterPublication(record, { recordPath: path, recordBytes: bytes, qualification, qualificationBytes: qbytes, qualificationPath: qpath, catalogBytes: introCatalogBytes, catalog: introCatalog, currentCatalog, provenanceSourceValid: sourceValid });
+      const replaySourceEvidence = record?.schemaVersion === 3 && record?.kind === REPLAY_KIND
+        ? trustedReplaySourceEvidence(root, qualification, history.introductionCommit, introductionCommit, record?.source)
+        : { valid: false };
+      const recordFindings = validateLaterPublication(record, { recordPath: path, recordBytes: bytes, qualification, qualificationBytes: qbytes, qualificationPath: qpath, catalogBytes: introCatalogBytes, catalog: introCatalog, currentCatalog, provenanceSourceValid: sourceValid, replaySourceEvidence });
       for (const item of [...qualificationFindings, ...recordFindings]) finding(findings, item.rule, `${path}: ${item.message}`);
       if (qualificationFindings.length || recordFindings.length) continue;
       const identity = `${record.candidate.name}@${record.candidate.version}`;

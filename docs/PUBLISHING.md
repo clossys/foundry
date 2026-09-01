@@ -284,6 +284,20 @@ runtime branch: v3 records an ordinary import and an explicit
 counts the latter as a closed subset of runtime imports. Retained v1 and v2
 transcripts remain immutable and valid under their original closed schemas.
 
+An already-public trusted release whose qualification was immutable before the
+protected publish source changed may use the separate closed **v3 replay**
+record only when both root `package.json` and `package-lock.json` hashes
+drifted and every package-owned join still matches exactly. It is not a waiver
+for a changed package, policy, adapter, fixture, archetype, dimension, manifest,
+or tarball. The record retains qualification roots and publication-source roots
+in different fields, proves strict ancestry `qualification introduction < source
+< publication record`, and binds successful qualification and publish jobs,
+the exact GitHub artifact ID/archive digest, fresh raw and canonical transcript
+digests, candidate hashes, and anonymous npm signature/attestation evidence.
+An overall workflow conclusion is never substituted for the successful publish
+job; a later verification failure remains visible. V1 and v2 cannot opt into
+this path and retain their original closed semantics.
+
 A candidate review binds its reviewed commit. Before squash, the PR tail may
 change only its versioned record; at publish, content joins and fresh tarball
 evidence are squash-safe and do not require `main` to equal the reviewed SHA.
@@ -591,6 +605,26 @@ node scripts/record-later-publication.mjs \
   --proof <registry-proof.json> \
   --publication <publication-evidence.json>
 ```
+
+The v3 replay path additionally requires both regular, non-symlink inputs;
+supplying only one fails, while omitting both continues to select the ordinary
+v1/v2 path:
+
+```text
+  --artifact-archive <qualified-candidate.zip> \
+  --replay-evidence <run-and-artifact-id.json>
+```
+
+The archive is the source of the fresh transcript and candidate tarball — a
+separate locally generated transcript is not accepted. The anonymous registry
+proof remains a separate `--proof` input or is fetched by the recorder's
+ordinary `--fetch` path, and must exactly join those candidate bytes. The
+recorder computes the archive digest, validates its exact contents against the
+qualification and served artifact, credential-freely re-reads the named GitHub
+run/jobs/artifact metadata, and performs its own isolated public npm install
+plus `npm audit signatures --include-attestations` verification against the
+exact source and served artifact before retaining the closed identities and
+SHA-256 digests.
 
 `publication-evidence.json` is a closed object. For trusted publication it
 must contain `mode: "trusted-publisher"`, the canonical publication time and

@@ -5,7 +5,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "nod
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-import { immutableSingleIntroduction, strictQualificationIntroductionAncestor, trustedProvenanceSourceValid, validateLaterPublication, validateRetainedLaterPublications } from "./release-later-publication.mjs";
+import { immutableSingleIntroduction, strictQualificationIntroductionAncestor, trustedProvenanceSourceValid, trustedReplaySourceEvidence, validateLaterPublication, validateRetainedLaterPublications } from "./release-later-publication.mjs";
 import { publicNpmPackageUrl, publicNpmVersionUrl, PUBLIC_NPM_REGISTRY } from "./public-npm-registry.mjs";
 
 const hash = (value) => createHash("sha256").update(value).digest("hex");
@@ -21,6 +21,7 @@ const qualification = {
   timing: "pre-publication",
   reviewedCommit: hex("f", 40), rootPackageJsonSha256: hex("1", 64), rootPackageLockSha256: hex("2", 64),
   policySha256: hex("3", 64), adapterSha256: hex("4", 64), fixtureSetSha256: hex("5", 64),
+  transcript: { canonicalSha256: hex("b", 64) },
 };
 const tarballUrl = `${PUBLIC_NPM_REGISTRY}/@clossys/strategist/-/strategist-0.1.1.tgz`;
 const historicalRepository = "https://github.com/clossys/" + "platform";
@@ -280,6 +281,30 @@ test("trusted provenance source is post-qualification, pre-publication, and cand
   }
 });
 
+test("v3 source evidence permits exactly root resolution drift and no package-policy substitution", (t) => {
+  const root = mkdtempSync(join(tmpdir(), "later-publication-replay-source-")); t.after(() => rmSync(root, { recursive: true, force: true }));
+  execFileSync("git", ["init", "-q"], { cwd: root }); execFileSync("git", ["config", "user.email", "test@example.invalid"], { cwd: root }); execFileSync("git", ["config", "user.name", "test"], { cwd: root });
+  const commit = (name) => { writeFileSync(join(root, "evidence"), `${name}\n`); execFileSync("git", ["add", "."], { cwd: root }); execFileSync("git", ["commit", "-qm", name], { cwd: root }); return execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim(); };
+  const qualificationIntroduction = commit("qualification"); const sourceSha = commit("source"); const publicationIntroduction = commit("publication");
+  const replayQualification = { ...qualification, candidate: { ...candidate, policySha256: hex("3", 64), adapterSha256: hex("4", 64), fixtureSetSha256: hex("5", 64) }, archetypes: [{ kind: "current-direct", status: "qualified" }], transcript: { dimensions: [{ dimension: "rollback", status: "supported" }] } };
+  const source = { reviewedCommit: replayQualification.reviewedCommit, qualificationRoots: { packageJsonSha256: replayQualification.rootPackageJsonSha256, packageLockSha256: replayQualification.rootPackageLockSha256 }, publicationSource: { sha: sourceSha, rootPackageJsonSha256: hex("7", 64), rootPackageLockSha256: hex("8", 64) } };
+  const joins = () => ({ packageTreeSha1: candidate.packageTreeSha1, packageManifestSha256: candidate.packageManifestSha256, policySha256: hex("3", 64), adapterSha256: hex("4", 64), fixtureSetSha256: hex("5", 64), rootPackageJsonSha256: hex("7", 64), rootPackageLockSha256: hex("8", 64), archetypes: replayQualification.archetypes, dimensions: replayQualification.transcript.dimensions });
+  assert.equal(trustedReplaySourceEvidence(root, replayQualification, qualificationIntroduction, publicationIntroduction, source, { joinsAt: joins }).valid, true);
+  const sourceAtHead = structuredClone(source); sourceAtHead.publicationSource.sha = publicationIntroduction;
+  assert.equal(trustedReplaySourceEvidence(root, replayQualification, qualificationIntroduction, publicationIntroduction, sourceAtHead, { joinsAt: joins, allowSourceAtPublication: true }).valid, true);
+  assert.equal(trustedReplaySourceEvidence(root, replayQualification, qualificationIntroduction, publicationIntroduction, sourceAtHead, { joinsAt: joins }).valid, false);
+  for (const mutate of [
+    (value) => { value.publicationSource.sha = qualificationIntroduction; },
+    (value) => { value.publicationSource.sha = publicationIntroduction; },
+    (value) => { value.qualificationRoots.packageJsonSha256 = hex("0", 64); },
+    (value) => { value.publicationSource.rootPackageJsonSha256 = replayQualification.rootPackageJsonSha256; },
+    (value) => { value.publicationSource.rootPackageLockSha256 = replayQualification.rootPackageLockSha256; },
+  ]) { const hostile = structuredClone(source); mutate(hostile); assert.equal(trustedReplaySourceEvidence(root, replayQualification, qualificationIntroduction, publicationIntroduction, hostile, { joinsAt: joins }).valid, false); }
+  for (const field of ["packageTreeSha1", "packageManifestSha256", "policySha256", "adapterSha256", "fixtureSetSha256", "archetypes", "dimensions"]) {
+    assert.equal(trustedReplaySourceEvidence(root, replayQualification, qualificationIntroduction, publicationIntroduction, source, { joinsAt: () => ({ ...joins(), [field]: field === "archetypes" || field === "dimensions" ? [] : hex("0", 64) }) }).valid, false, field);
+  }
+});
+
 test("trusted-publication v2 binds immutable provenance to the qualified served bytes", () => {
   const trusted = source();
   trusted.schemaVersion = 2;
@@ -315,6 +340,57 @@ test("trusted-publication v2 binds immutable provenance to the qualified served 
   assert.ok(rules(wrongSubject).includes("attestation-subject"));
   const v1Proof = structuredClone(trusted); v1Proof.registryProof = source().registryProof;
   assert.ok(rules(v1Proof).includes("registry-proof"));
+});
+
+function replayRecord() {
+  const value = source();
+  value.schemaVersion = 3;
+  value.kind = "foundry-trusted-publication-replay-v3";
+  value.publication = {
+    mode: "trusted-publisher", publishedAt: "2026-08-30T00:00:00.000Z", reference: "https://github.com/clossys/foundry/actions/runs/123",
+    provenance: {
+      repository: "https://github.com/clossys/foundry", workflow: ".github/workflows/publish.yml", ref: "refs/heads/main", event: "workflow_dispatch",
+      sourceSha: hex("6", 40), builder: "https://github.com/actions/runner/github-hosted", invocation: "https://github.com/clossys/foundry/actions/runs/123/attempts/1",
+      attestationUrl: "https://registry.npmjs.org/-/npm/v1/attestations/%40clossys%2Fstrategist%400.1.1",
+    },
+  };
+  value.registryProof = { schemaVersion: 2, kind: "public-npm-anonymous-registry-proof-v2", evidence: {
+    ...value.registryProof.evidence, metadataUrl: publicNpmVersionUrl(PUBLIC_NPM_REGISTRY, candidate.name, candidate.version), repository: "clossys/foundry",
+  } };
+  delete value.registryProof.evidence.packumentUrl;
+  value.source = {
+    reviewedCommit: qualification.reviewedCommit,
+    qualificationRoots: { packageJsonSha256: qualification.rootPackageJsonSha256, packageLockSha256: qualification.rootPackageLockSha256 },
+    publicationSource: { sha: hex("6", 40), rootPackageJsonSha256: hex("7", 64), rootPackageLockSha256: hex("8", 64) },
+  };
+  value.runQualification = {
+    run: { id: 123, url: "https://github.com/clossys/foundry/actions/runs/123", headSha: hex("6", 40), conclusion: "failure", qualificationJob: { id: 124, name: "qualify (strategist)", conclusion: "success", url: "https://github.com/clossys/foundry/actions/runs/123/job/124" } },
+    artifact: { id: 125, name: "qualified-candidate-strategist", archiveSha256: `sha256:${hex("9", 64)}`, size: 42, url: "https://api.github.com/repos/clossys/foundry/actions/artifacts/125/zip" },
+    transcript: { rawSha256: hex("a", 64), canonicalSha256: qualification.transcript?.canonicalSha256 ?? hex("b", 64), candidateTarball: structuredClone(candidate.tarball) },
+    publicationJob: { id: 126, name: "publish (strategist)", conclusion: "success", url: "https://github.com/clossys/foundry/actions/runs/123/job/126" },
+    anonymousRegistry: { packumentSha256: hex("c", 64), auditSha256: hex("d", 64), provenanceBundleSha256: hex("e", 64), signatureSha256: hex("f", 64), signatureKeyids: ["SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"], attestationUrl: "https://registry.npmjs.org/-/npm/v1/attestations/%40clossys%2Fstrategist%400.1.1" },
+  };
+  return value;
+}
+
+test("v3 replay evidence is closed around root-only drift, exact jobs, artifact, transcript, signatures, and attestation", () => {
+  const value = replayRecord();
+  assert.deepEqual(rules(value, { replaySourceEvidence: { valid: true } }), []);
+  const attacks = [
+    (record) => { record.publication.provenance.sourceSha = hex("0", 40); },
+    (record) => { record.runQualification.run.qualificationJob.conclusion = "failure"; },
+    (record) => { record.runQualification.transcript.candidateTarball.sha256 = hex("0", 64); },
+    (record) => { record.runQualification.transcript.canonicalSha256 = hex("0", 64); },
+    (record) => { record.runQualification.publicationJob.name = "publish (other)"; },
+    (record) => {
+      record.publication.reference = "https://github.com/clossys/foundry/actions/runs/999";
+      record.publication.provenance.invocation = "https://github.com/clossys/foundry/actions/runs/999/attempts/1";
+    },
+    (record) => { record.runQualification.anonymousRegistry.attestationUrl = "https://registry.npmjs.org/-/npm/v1/attestations/other"; },
+    (record) => { record.runQualification.anonymousRegistry.signatureKeyids = []; },
+  ];
+  for (const [index, attack] of attacks.entries()) { const hostile = replayRecord(); attack(hostile); assert.ok(rules(hostile, { replaySourceEvidence: { valid: true } }).length > 0, `attack ${index}`); }
+  assert.ok(rules(value).includes("replay-source"));
 });
 
 test("only the three retained historical release tuples may use the retired provenance repository", () => {
