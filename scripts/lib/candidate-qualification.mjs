@@ -50,6 +50,12 @@ function normalizeFixtureInstant(value, instant) {
 function comparableTranscript(transcript) {
   const copy = structuredClone(transcript);
   delete copy.canonicalSha256;
+  // npm owns the disposable consumer manifest and lock bytes.  They remain
+  // individually validated, but are not candidate behavior: a supported npm
+  // runtime update can rewrite their generated representation while the exact
+  // candidate, installed manifest, operations, and rollback evidence remain
+  // unchanged.
+  delete copy.consumer;
   if (!transcript?.fixtureMaterializedAt) return copy;
   const normalized = normalizeFixtureInstant(copy, transcript.fixtureMaterializedAt);
   for (const observation of normalized.observations ?? []) {

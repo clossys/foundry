@@ -14,14 +14,15 @@ import { currentQualificationJoins, parseStrictJson, qualificationPath, qualific
 import { fetchPublicNpmArtifact } from "./fetch-public-npm-artifact.mjs";
 import { assertPackageAuthorized, loadReleaseCatalog, readCurrentReleaseIdentity, resolveReleaseTarget } from "./check-release-catalog.mjs";
 import { repositoryIdentityFromPackument, validatePublicNpmRegistryProof } from "./lib/public-npm-registry.mjs";
-import { validateLaterPublication } from "./lib/release-later-publication.mjs";
+import { trustedReplaySourceEvidence, validateLaterPublication } from "./lib/release-later-publication.mjs";
+import { inspectPublicNpmProvenance } from "./check-public-npm-provenance.mjs";
 import { assertReleaseRuntime } from "./lib/release-runtime.mjs";
 
 const KEY = /^[a-z0-9][a-z0-9-]{0,63}$/;
 const SHA1 = /^[a-f0-9]{40}$/;
 const SHA256 = /^[a-f0-9]{64}$/;
 const SHA512 = /^[a-f0-9]{128}$/;
-const USAGE = "Usage: --package <key> --qualification <record.json> --publication <publication.json> (--candidate <candidate.tgz> --proof <registry-proof.json> | --fetch)";
+const USAGE = "Usage: --package <key> --qualification <record.json> --publication <publication.json> [--artifact-archive <qualified.zip> --replay-evidence <run-artifact.json>] (--candidate <candidate.tgz> --proof <registry-proof.json> | --fetch)";
 const OUTPUT_DIRECTORY = "governance/release-publications/later";
 const CATALOG_PATH = "governance/release-catalog.json";
 const PUBLICATION_FIELDS = ["mode", "publishedAt", "reference", "provenance"];
@@ -101,7 +102,120 @@ function validatePublicationInput(publication) {
   if (publication.mode === "trusted-publisher" && !object(publication.provenance)) throw new Error("trusted-publisher publication requires provenance");
 }
 
-export function buildLaterPublicationRecord({ packageKey, qualificationPath: qualificationPathInput, qualification, qualificationBytes, candidateBytes, proof, catalog, catalogBytes, publication, recordPath, provenanceSourceValid = false }) {
+function replayEvidenceRecord(value) {
+  closed(value, ["schemaVersion", "kind", "runId", "artifactId"], "replay evidence");
+  if (value.schemaVersion !== 1 || value.kind !== "foundry-trusted-publication-replay-input-v1" || !Number.isSafeInteger(value.runId) || value.runId < 1 || !Number.isSafeInteger(value.artifactId) || value.artifactId < 1) throw new Error("replay evidence must contain only one run ID and artifact ID");
+}
+
+export function credentiallessAuditEnv(directory, parent = process.env) {
+  const path = typeof parent.PATH === "string" && parent.PATH.length > 0 ? parent.PATH : "/usr/bin:/bin";
+  return {
+    PATH: path,
+    HOME: directory,
+    TMPDIR: directory,
+    npm_config_cache: join(directory, "cache"),
+    npm_config_userconfig: join(directory, "npmrc"),
+    npm_config_globalconfig: join(directory, "global-npmrc"),
+    npm_config_registry: "https://registry.npmjs.org/",
+    npm_config_always_auth: "false",
+    npm_config_ignore_scripts: "true",
+    NO_UPDATE_NOTIFIER: "1",
+    CI: "true",
+  };
+}
+
+export function verifiedAnonymousAudit(name, version, run = execFileSync, parent = process.env) {
+  const directory = mkdtempSync(join(tmpdir(), "foundry-replay-audit-"));
+  const env = credentiallessAuditEnv(directory, parent);
+  try {
+    run("npm", ["init", "--yes"], { cwd: directory, stdio: "ignore", env });
+    run("npm", ["install", "--ignore-scripts", "--save-exact", `${name}@${version}`], { cwd: directory, stdio: "ignore", env });
+    const output = run("npm", ["audit", "signatures", "--json", "--include-attestations"], { cwd: directory, encoding: "utf8", maxBuffer: 8 * 1024 * 1024, env });
+    return parseJson(Buffer.from(output), "credentialless npm audit result");
+  } finally { rmSync(directory, { recursive: true, force: true }); }
+}
+
+function archiveEntry(path, name) {
+  try { return execFileSync("unzip", ["-p", path, name], { encoding: "buffer", maxBuffer: 32 * 1024 * 1024 }); }
+  catch { throw new Error(`qualified artifact archive is missing ${name}`); }
+}
+
+async function githubJson(fetchImpl, path) {
+  const response = await fetchImpl(`https://api.github.com/repos/clossys/foundry/${path}`, { headers: { Accept: "application/vnd.github+json" } });
+  if (!response?.ok) throw new Error(`GitHub provider metadata is unavailable (${response?.status ?? "no response"})`);
+  return response.json();
+}
+
+async function fetchReplayProviderMetadata(replayEvidence, fetchImpl) {
+  const [run, artifact, jobs] = await Promise.all([
+    githubJson(fetchImpl, `actions/runs/${replayEvidence.runId}`),
+    githubJson(fetchImpl, `actions/artifacts/${replayEvidence.artifactId}`),
+    githubJson(fetchImpl, `actions/runs/${replayEvidence.runId}/jobs?per_page=100`),
+  ]);
+  return { run, artifact, jobs: jobs.jobs };
+}
+
+async function publicPackument(fetchImpl, name) {
+  const response = await fetchImpl(`https://registry.npmjs.org/${encodeURIComponent(name)}`);
+  if (!response?.ok) throw new Error(`public npm metadata is unavailable (${response?.status ?? "no response"})`);
+  return response.json();
+}
+
+async function buildReplay({ root, packageKey, qualification, qualificationIntroduction, archiveFile, replayEvidence, proof, candidateBytes, provider, fetchImpl, auditRun, env }) {
+  replayEvidenceRecord(replayEvidence);
+  if (!provider || provider.run?.id !== replayEvidence.runId || provider.artifact?.id !== replayEvidence.artifactId || !Array.isArray(provider.jobs)) throw new Error("GitHub provider metadata does not bind the requested run and artifact");
+  const archiveDigest = `sha256:${digest("sha256", archiveFile.bytes)}`;
+  if (provider.artifact.name !== `qualified-candidate-${packageKey}` || provider.artifact.digest !== archiveDigest || provider.artifact.workflow_run?.id !== provider.run.id || provider.artifact.workflow_run?.head_sha !== provider.run.head_sha) throw new Error("GitHub artifact metadata does not bind this exact archive to the replay run and source");
+  const entries = execFileSync("unzip", ["-Z1", archiveFile.absolute], { encoding: "utf8" }).trim().split("\n").filter(Boolean).sort();
+  if (JSON.stringify(entries) !== JSON.stringify(["candidate.tgz", "transcript.json"])) throw new Error("qualified artifact archive must contain exactly the candidate and transcript");
+  const archivedCandidate = archiveEntry(archiveFile.absolute, "candidate.tgz");
+  const transcriptBytes = archiveEntry(archiveFile.absolute, "transcript.json");
+  if (!archivedCandidate.equals(candidateBytes)) throw new Error("qualified artifact archive does not contain the exact candidate being retained");
+  const transcript = parseJson(transcriptBytes, "fresh qualification transcript");
+  const joins = currentQualificationJoins(root, qualification.candidate, provider.run.head_sha);
+  const transcriptFindings = validateCandidateQualification(qualification, {
+    expected: { name: qualification.candidate.name, version: qualification.candidate.version, ...currentQualificationJoins(root, qualification.candidate, qualificationIntroduction) },
+    freshTranscript: transcript,
+  });
+  if (transcriptFindings.length) throw new Error(`fresh replay transcript is invalid: ${transcriptFindings[0].message}`);
+  const source = {
+    reviewedCommit: qualification.reviewedCommit,
+    qualificationRoots: { packageJsonSha256: qualification.rootPackageJsonSha256, packageLockSha256: qualification.rootPackageLockSha256 },
+    publicationSource: { sha: provider.run.head_sha, rootPackageJsonSha256: joins.rootPackageJsonSha256, rootPackageLockSha256: joins.rootPackageLockSha256 },
+  };
+  if (provider.run.event !== "workflow_dispatch" || !["success", "failure", "cancelled", "skipped"].includes(provider.run.conclusion) || provider.run.head_sha === qualificationIntroduction || !gitAncestor(root, qualificationIntroduction, provider.run.head_sha)) throw new Error("GitHub run must be a completed manual replay after qualification; its overall result remains explicit");
+  if (joins.rootPackageJsonSha256 === qualification.rootPackageJsonSha256 || joins.rootPackageLockSha256 === qualification.rootPackageLockSha256) throw new Error("replay v3 is reserved for drift in both root resolution hashes");
+  const packument = await publicPackument(fetchImpl, qualification.candidate.name);
+  const audit = verifiedAnonymousAudit(qualification.candidate.name, qualification.candidate.version, auditRun, env);
+  const auditResult = inspectPublicNpmProvenance({ name: qualification.candidate.name, version: qualification.candidate.version, sourceSha: provider.run.head_sha, audit, packument });
+  if (auditResult.code !== 0) throw new Error(`anonymous signature and attestation evidence is invalid: ${auditResult.failures[0]}`);
+  const version = packument.versions?.[qualification.candidate.version] ?? packument;
+  const signatures = version?.dist?.signatures;
+  if (!Array.isArray(signatures) || signatures.length < 1 || signatures.some((item) => typeof item?.keyid !== "string")) throw new Error("public npm metadata must retain at least one signature");
+  const provenance = audit.verified?.find((item) => item?.name === qualification.candidate.name && item?.version === qualification.candidate.version)?.attestationBundles?.find((item) => item?.predicateType === "https://slsa.dev/provenance/v1");
+  if (!provenance) throw new Error("anonymous npm audit evidence must retain one SLSA provenance bundle");
+  const runId = provider.run.id;
+  const selected = (name) => {
+    const job = provider.jobs.find((item) => item?.name === name);
+    return job && { id: job.id, name: job.name, conclusion: job.conclusion, url: job.html_url };
+  };
+  const runQualification = {
+    run: { id: runId, url: `https://github.com/clossys/foundry/actions/runs/${runId}`, headSha: provider.run.head_sha, conclusion: provider.run.conclusion, qualificationJob: selected(`qualify (${packageKey})`) },
+    artifact: { id: provider.artifact.id, name: provider.artifact.name, archiveSha256: archiveDigest, size: provider.artifact.size_in_bytes, url: provider.artifact.archive_download_url },
+    transcript: { rawSha256: digest("sha256", transcriptBytes), canonicalSha256: transcript.canonicalSha256, candidateTarball: structuredClone(qualification.candidate.tarball) },
+    publicationJob: selected(`publish (${packageKey})`),
+    anonymousRegistry: { packumentSha256: digest("sha256", Buffer.from(JSON.stringify(packument))), auditSha256: digest("sha256", Buffer.from(JSON.stringify(audit))), provenanceBundleSha256: digest("sha256", Buffer.from(JSON.stringify(provenance))), signatureSha256: digest("sha256", Buffer.from(JSON.stringify(signatures))), signatureKeyids: signatures.map((item) => item.keyid).sort(), attestationUrl: version?.dist?.attestations?.url },
+  };
+  // The new record is not introduced yet: source may equal the caller's
+  // current HEAD at construction. Retained-history validation later supplies
+  // the actual introduction commit and restores strict source < introduction.
+  const sourceEvidence = trustedReplaySourceEvidence(root, qualification, qualificationIntroduction, "HEAD", source, { allowSourceAtPublication: true });
+  if (!sourceEvidence.valid) throw new Error(`replay source is invalid: ${sourceEvidence.findings[0].message}`);
+  if (!same(proof?.evidence?.sha512, qualification.candidate.tarball.sha512)) throw new Error("registry proof must join the replay candidate");
+  return { source, runQualification, sourceEvidence };
+}
+
+export function buildLaterPublicationRecord({ packageKey, qualificationPath: qualificationPathInput, qualification, qualificationBytes, candidateBytes, proof, catalog, catalogBytes, publication, recordPath, provenanceSourceValid = false, replay }) {
   if (!KEY.test(packageKey ?? "")) throw new Error("package key is invalid");
   validatePublicationInput(publication);
   if (!Buffer.isBuffer(candidateBytes) || candidateBytes.length === 0) throw new Error("candidate bytes are required");
@@ -124,16 +238,17 @@ export function buildLaterPublicationRecord({ packageKey, qualificationPath: qua
     packageManifestSha256: candidate?.packageManifestSha256,
     tarball: structuredClone(candidate?.tarball),
   };
-  const source = Object.fromEntries(SOURCE_FIELDS.map((key) => [key, key === "policySha256" || key === "adapterSha256" || key === "fixtureSetSha256" ? candidate[key] : qualification[key]]));
+  const source = replay ? replay.source : Object.fromEntries(SOURCE_FIELDS.map((key) => [key, key === "policySha256" || key === "adapterSha256" || key === "fixtureSetSha256" ? candidate[key] : qualification[key]]));
   const record = {
-    schemaVersion: publication.mode === "trusted-publisher" ? 2 : 1,
-    kind: publication.mode === "trusted-publisher" ? "foundry-trusted-publication-v2" : "foundry-later-publication-v1",
+    schemaVersion: replay ? 3 : publication.mode === "trusted-publisher" ? 2 : 1,
+    kind: replay ? "foundry-trusted-publication-replay-v3" : publication.mode === "trusted-publisher" ? "foundry-trusted-publication-v2" : "foundry-later-publication-v1",
     qualification: { path: qualificationPathInput, sha256: digest("sha256", qualificationBytes) },
     candidate: candidateProjection,
     source,
     catalog: { path: CATALOG_PATH, sha256: digest("sha256", catalogBytes), packageKey },
     publication: structuredClone(publication),
     registryProof: structuredClone(proof),
+    ...(replay ? { runQualification: replay.runQualification } : {}),
   };
   const recordBytes = Buffer.from(`${JSON.stringify(record, null, 2)}\n`);
   const findings = validateLaterPublication(record, {
@@ -146,12 +261,13 @@ export function buildLaterPublicationRecord({ packageKey, qualificationPath: qua
     catalog,
     currentCatalog: catalog,
     provenanceSourceValid,
+    replaySourceEvidence: replay?.sourceEvidence,
   });
   if (findings.length) throw new Error(`constructed publication record is invalid: ${findings[0].message}`);
   return { record, recordBytes };
 }
 
-function validateCandidateAndProof({ root, packageKey, qualification, qualificationPathInput, qualificationBytes, candidateBytes, proof, catalog, catalogBytes, publication }) {
+async function validateCandidateAndProof({ root, packageKey, qualification, qualificationPathInput, qualificationBytes, candidateBytes, proof, catalog, catalogBytes, publication, archiveFile, replayEvidence, fetchImpl, auditRun, env }) {
   const identity = readCurrentReleaseIdentity({ path: resolve(root, "package-scope.json") });
   const target = resolveReleaseTarget(catalog, identity);
   assertPackageAuthorized(target, packageKey);
@@ -187,7 +303,11 @@ function validateCandidateAndProof({ root, packageKey, qualification, qualificat
   if (qualificationHistory.introducedRecordSha256 !== qualificationHistory.retainedRecordSha256) throw new Error("qualification record differs from its immutable introduction blob");
 
   const recordPath = `${OUTPUT_DIRECTORY}/${packageKey}-${candidate.version}.json`;
-  const built = buildLaterPublicationRecord({ packageKey, qualificationPath: qualificationRecordPath, qualification, qualificationBytes, candidateBytes, proof, catalog, catalogBytes, publication, recordPath, provenanceSourceValid: prePublicationSourceValid(root, qualification, qualificationHistory.introductionCommit, publication) });
+  const replay = archiveFile && replayEvidence
+    ? await buildReplay({ root, packageKey, qualification, qualificationIntroduction: qualificationHistory.introductionCommit, archiveFile, replayEvidence, proof, candidateBytes, provider: await fetchReplayProviderMetadata(replayEvidence, fetchImpl), fetchImpl, auditRun, env })
+    : undefined;
+  if ((archiveFile || replayEvidence) && !replay) throw new Error("qualified artifact archive and provider evidence must be supplied together");
+  const built = buildLaterPublicationRecord({ packageKey, qualificationPath: qualificationRecordPath, qualification, qualificationBytes, candidateBytes, proof, catalog, catalogBytes, publication, recordPath, provenanceSourceValid: prePublicationSourceValid(root, qualification, qualificationHistory.introductionCommit, publication), replay });
   return { ...built, recordPath };
 }
 
@@ -235,15 +355,15 @@ export function argsFrom(argv) {
       seen.add(key); result.fetch = true; index += 1;
     } else {
       const value = argv[index + 1];
-      if (!Object.hasOwn({ package: true, qualification: true, candidate: true, proof: true, publication: true }, key) || !value || seen.has(key)) throw new Error(USAGE);
+      if (!Object.hasOwn({ package: true, qualification: true, candidate: true, proof: true, publication: true, "artifact-archive": true, "replay-evidence": true }, key) || !value || seen.has(key)) throw new Error(USAGE);
       seen.add(key); result[key] = value; index += 2;
     }
   }
-  if (!result.package || !result.qualification || !result.publication || !KEY.test(result.package) || (result.fetch && (result.candidate || result.proof)) || (!result.fetch && (!result.candidate || !result.proof))) throw new Error(USAGE);
+  if (!result.package || !result.qualification || !result.publication || !KEY.test(result.package) || (Boolean(result["artifact-archive"]) !== Boolean(result["replay-evidence"])) || (result.fetch && (result.candidate || result.proof)) || (!result.fetch && (!result.candidate || !result.proof))) throw new Error(USAGE);
   return result;
 }
 
-export async function createLaterPublicationRecord({ root = process.cwd(), packageKey, qualificationPath: qualificationInput, candidatePath, proofPath, publicationPath, fetch: fetchEvidence = false, fetchImpl = fetch, env = process.env, releaseRuntimeRun }) {
+export async function createLaterPublicationRecord({ root = process.cwd(), packageKey, qualificationPath: qualificationInput, candidatePath, proofPath, publicationPath, artifactArchivePath, replayEvidencePath, fetch: fetchEvidence = false, fetchImpl = fetch, env = process.env, releaseRuntimeRun, auditRun }) {
   if (!KEY.test(packageKey ?? "")) throw new Error("package key is invalid");
   assertCredentialFree(env);
   assertReleaseRuntime(releaseRuntimeRun ? { run: releaseRuntimeRun, env } : { env });
@@ -251,6 +371,9 @@ export async function createLaterPublicationRecord({ root = process.cwd(), packa
   const qualificationInputFile = regularBytes(qualificationInput, "qualification record");
   const qualification = parseJson(qualificationInputFile.bytes, "qualification record");
   const publication = parseJson(regularBytes(publicationPath, "publication evidence").bytes, "publication evidence");
+  const archiveFile = artifactArchivePath ? regularBytes(artifactArchivePath, "qualified artifact archive") : undefined;
+  const replayEvidenceFile = replayEvidencePath ? regularBytes(replayEvidencePath, "replay provider evidence") : undefined;
+  if (Boolean(archiveFile) !== Boolean(replayEvidenceFile)) throw new Error("qualified artifact archive and provider evidence must be supplied together");
   validatePublicationInput(publication);
   const identity = readCurrentReleaseIdentity({ path: resolve(absoluteRoot, "package-scope.json") });
   if (qualification.candidate?.name !== `${identity.scope}/${packageKey}`) throw new Error("qualification package does not match the requested package key");
@@ -269,7 +392,8 @@ export async function createLaterPublicationRecord({ root = process.cwd(), packa
     const proof = parseJson(proofFile.bytes, "anonymous registry proof");
     const catalogFile = regularBytes(resolve(absoluteRoot, CATALOG_PATH), "release catalog");
     const catalog = loadReleaseCatalog({ path: catalogFile.absolute });
-    const built = validateCandidateAndProof({ root: absoluteRoot, packageKey, qualification, qualificationPathInput: qualificationInputFile.absolute, qualificationBytes: qualificationInputFile.bytes, candidateBytes: candidateFile.bytes, proof, catalog, catalogBytes: catalogFile.bytes, publication });
+    const replayEvidence = replayEvidenceFile ? parseJson(replayEvidenceFile.bytes, "replay provider evidence") : undefined;
+    const built = await validateCandidateAndProof({ root: absoluteRoot, packageKey, qualification, qualificationPathInput: qualificationInputFile.absolute, qualificationBytes: qualificationInputFile.bytes, candidateBytes: candidateFile.bytes, proof, catalog, catalogBytes: catalogFile.bytes, publication, archiveFile, replayEvidence, fetchImpl, auditRun, env });
     const output = resolve(absoluteRoot, built.recordPath);
     writeNoOverwrite(output, built.recordBytes);
     const retained = regularBytes(output, "retained publication record");
@@ -286,7 +410,7 @@ export { writeNoOverwrite };
 if (process.argv[1] === new URL(import.meta.url).pathname) {
   try {
     const args = argsFrom(process.argv);
-    const result = await createLaterPublicationRecord({ packageKey: args.package, qualificationPath: args.qualification, candidatePath: args.candidate, proofPath: args.proof, publicationPath: args.publication, fetch: args.fetch });
+    const result = await createLaterPublicationRecord({ packageKey: args.package, qualificationPath: args.qualification, candidatePath: args.candidate, proofPath: args.proof, publicationPath: args.publication, artifactArchivePath: args["artifact-archive"], replayEvidencePath: args["replay-evidence"], fetch: args.fetch });
     process.stdout.write(`later publication record created: ${result.path}\n`);
   } catch (error) {
     console.error(`record-later-publication: ${error.message}`);
