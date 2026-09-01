@@ -29,6 +29,13 @@ describe("SectionedView", () => {
   it("fails closed before rendering malformed direct resolved models", () => {
     const malformed = { ...document, sections: [{ ...document.sections[1], items: [null] }] };
     expect(() => renderToStaticMarkup(<SectionedView document={malformed as unknown as ResolvedSectionedViewDocument} />)).toThrow(/invalid resolved document/);
+
+    const unknownSection = { ...document, sections: [{ ...document.sections[0], extra: "nope" }] };
+    const unknownItem = { ...document, sections: [{ ...document.sections[1], items: [{ ...document.sections[1].items[0], extra: "nope" }] }] };
+    const unknownDocument = { ...document, extra: "nope" };
+    for (const candidate of [unknownDocument, unknownSection, unknownItem]) {
+      expect(() => renderToStaticMarkup(<SectionedView document={candidate as unknown as ResolvedSectionedViewDocument} />)).toThrow(/invalid resolved document/);
+    }
   });
 
   it("requires every kind-specific resolved field and complete provenance before render", () => {

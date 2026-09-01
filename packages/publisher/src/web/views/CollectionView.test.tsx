@@ -56,6 +56,13 @@ describe("CollectionView", () => {
     expect(() => renderToStaticMarkup(<CollectionView brand="Acme" heading="Notes" entries={[]} empty={{ title: 42 } as never} />)).toThrow(/explicit empty state/);
   });
 
+  it("rejects sparse tag arrays without silently dropping an entry", () => {
+    const validEntry = { id: "one", href: "/notes/one", title: "One", date: { dateTime: "2026-09-01", text: "September 1" } };
+    const sparse = new Array(2);
+    sparse[0] = "valid";
+    expect(() => renderToStaticMarkup(<CollectionView brand="Acme" heading="Notes" entries={[{ ...validEntry, tags: sparse }]} empty={empty} />)).toThrow(/dense array/);
+  });
+
   it("rejects unsafe entry, empty-state, and pagination URL schemes", () => {
     const validEntry = { id: "one", href: "/notes/one", title: "One", date: { dateTime: "2026-09-01", text: "September 1" } };
     for (const href of ["javascript:alert(1)", "data:text/plain,unsafe", "vbscript:msgbox", "file:///tmp/unsafe", "//untrusted.example"]) {

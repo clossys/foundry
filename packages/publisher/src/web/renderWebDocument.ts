@@ -176,7 +176,7 @@
  */
 
 import { resolveDocument } from "../core/index.js";
-import type { ComposeDocument, ResolvedSurfaceGroup, ResolvedSurfaceGroupField, ResolvedSurfaceGroupItem, WebMeta } from "../core/index.js";
+import type { ComposeDocument, ResolvedSurfaceGroup, ResolvedSurfaceGroupField, ResolvedSurfaceGroupItem, ResolvedSurfaceNode, WebMeta } from "../core/index.js";
 import type { ReactNode } from "react";
 import { createElement, version as reactVersion } from "react";
 import { RenderError } from "../internal/errors.js";
@@ -442,18 +442,18 @@ function hasOnlyEnumerableStringDataKeys(value: Record<string, unknown>): boolea
   } catch { return false; }
 }
 
-function densePublicArray(value: unknown, path: string): value is unknown[] {
+function densePublicArray(value: unknown, path: string, reject: (message: string) => never = invalidPublicGroups): value is unknown[] {
   try {
-    if (!Array.isArray(value) || Object.getPrototypeOf(value) !== Array.prototype) invalidPublicGroups(`${path} must be a plain array.`);
+    if (!Array.isArray(value) || Object.getPrototypeOf(value) !== Array.prototype) reject(`${path} must be a plain array.`);
     const lengthDescriptor = Object.getOwnPropertyDescriptor(value, "length");
-    if (lengthDescriptor === undefined || !("value" in lengthDescriptor) || typeof lengthDescriptor.value !== "number") invalidPublicGroups(`${path} must have an ordinary length.`);
+    if (lengthDescriptor === undefined || !("value" in lengthDescriptor) || typeof lengthDescriptor.value !== "number") reject(`${path} must have an ordinary length.`);
     for (const key of Reflect.ownKeys(value)) {
       if (key === "length") continue;
-      if (typeof key !== "string" || !/^(?:0|[1-9]\d*)$/.test(key) || Number(key) >= lengthDescriptor.value) invalidPublicGroups(`${path} has an unsafe non-index own key.`);
+      if (typeof key !== "string" || !/^(?:0|[1-9]\d*)$/.test(key) || Number(key) >= lengthDescriptor.value) reject(`${path} has an unsafe non-index own key.`);
       const descriptor = Object.getOwnPropertyDescriptor(value, key);
-      if (descriptor === undefined || !descriptor.enumerable || !("value" in descriptor)) invalidPublicGroups(`${path}[${key}] must be an enumerable data item.`);
+      if (descriptor === undefined || !descriptor.enumerable || !("value" in descriptor)) reject(`${path}[${key}] must be an enumerable data item.`);
     }
-    for (let index = 0; index < lengthDescriptor.value; index += 1) if (!Object.hasOwn(value, index)) invalidPublicGroups(`${path}[${index}] must not be a sparse array hole.`);
+    for (let index = 0; index < lengthDescriptor.value; index += 1) if (!Object.hasOwn(value, index)) reject(`${path}[${index}] must not be a sparse array hole.`);
   } catch (error) {
     if (error instanceof RenderError) throw error;
     invalidPublicGroups(`${path} could not be inspected safely.`);
@@ -463,6 +463,39 @@ function densePublicArray(value: unknown, path: string): value is unknown[] {
 
 function invalidPublicGroups(message: string): never {
   throw new RenderError("resolution-failed", `renderWebDocument refused malformed RenderWebOptions.groups: ${message}`);
+}
+
+function invalidPublicNodes(message: string): never {
+  throw new RenderError("resolution-failed", `renderWebDocument refused malformed RenderWebOptions.nodes: ${message}`);
+}
+
+/**
+ * `RenderWebOptions.nodes` is a public wire boundary just like `groups`.
+ * Inspect the complete array and each item through descriptors before any
+ * caller-owned getter can run; a node value itself remains opaque and may be
+ * a React element or another consumer-owned object.
+ */
+function validatePublicNodes(nodes: unknown): ResolvedSurfaceNode[] {
+  if (nodes === undefined) return [];
+  if (!densePublicArray(nodes, "nodes", invalidPublicNodes)) return [];
+
+  const validated: ResolvedSurfaceNode[] = [];
+  for (let nodeIndex = 0; nodeIndex < nodes.length; nodeIndex += 1) {
+    const itemDescriptor = Object.getOwnPropertyDescriptor(nodes, String(nodeIndex));
+    const candidate = itemDescriptor?.value;
+    if (!isPlainClosedObject(candidate) || !hasOnlyOwnKeys(candidate, ["slot", "node"]) || !hasOwn(candidate, "slot") || !hasOwn(candidate, "node")) {
+      invalidPublicNodes(`nodes[${nodeIndex}] must be a plain { slot, node } object with no unknown keys.`);
+    }
+    const slotDescriptor = Object.getOwnPropertyDescriptor(candidate, "slot");
+    const nodeDescriptor = Object.getOwnPropertyDescriptor(candidate, "node");
+    const slot = slotDescriptor?.value;
+    const node = nodeDescriptor?.value;
+    if (slotDescriptor === undefined || nodeDescriptor === undefined || !isNonWhitespaceString(slot) || typeof node !== "object" || node === null) {
+      invalidPublicNodes(`nodes[${nodeIndex}] must contain a non-whitespace slot and a non-null object node.`);
+    }
+    validated.push({ slot, node } as ResolvedSurfaceNode);
+  }
+  return validated;
 }
 
 /**
@@ -645,6 +678,8 @@ export function renderWebDocumentAgainst(templates: ReadonlyMap<string, WebTempl
     );
   }
 
+  const nodes = validatePublicNodes(options.nodes);
+
   // A node-kind slot's content NEVER arrives through doc.bindings (see
   // this file's own top comment) — it can only ever arrive through
   // options.nodes, entirely separate from what resolveDocument inspects.
@@ -670,7 +705,7 @@ export function renderWebDocumentAgainst(templates: ReadonlyMap<string, WebTempl
   // "Nothing resolved" is only a real failure if options.nodes ALSO
   // resolved nothing — a document whose only content is a caller-owned
   // node (no copy/asset binding at all) is legitimate, not empty.
-  const nothingResolvedAtAll = result.resolved.length === 0 && (options.nodes ?? []).length === 0;
+  const nothingResolvedAtAll = result.resolved.length === 0 && nodes.length === 0;
   if (result.missingRequired.length > 0 || result.unknownBindings.length > 0 || hasBindingErrors || nothingResolvedAtAll) {
     const parts: string[] = [];
     if (result.missingRequired.length > 0) parts.push(`missing required slot(s): ${result.missingRequired.join(", ")}`);
@@ -726,7 +761,7 @@ export function renderWebDocumentAgainst(templates: ReadonlyMap<string, WebTempl
   // flowed slot on this template (never a repeating one — those go
   // through options.groups instead), and never collides with a slot a
   // copy/asset binding already filled above.
-  for (const nodeBinding of options.nodes ?? []) {
+  for (const nodeBinding of nodes) {
     const slotSpec = template.flow.slots.find((slot) => slot.key === nodeBinding.slot);
     if (slotSpec === undefined) {
       const isRepeating = (template.repeatingSlots ?? []).some((spec) => spec.key === nodeBinding.slot);

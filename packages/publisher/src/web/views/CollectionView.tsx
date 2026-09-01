@@ -82,11 +82,8 @@ export function CollectionView({ brand, heading, description, entries, empty, fo
     if (!isPlainClosedObject(entry) || !hasOnlyOwnKeys(entry, ["id", "href", "title", "date", "summary", "tags"]) || !isNonWhitespaceString(entry.id) || !isSanctionedHref(entry.href) || !isNonWhitespaceString(entry.title) || !isPlainClosedObject(entry.date) || !hasOnlyOwnKeys(entry.date, ["dateTime", "text"]) || !isValidDateTime(entry.date.dateTime) || !isNonWhitespaceString(entry.date.text) || (entry.summary !== undefined && !isNonWhitespaceString(entry.summary))) {
       throw new Error("CollectionView requires every entry to have non-whitespace id, href, title, and date text plus a valid date.dateTime.");
     }
-    if (entry.tags !== undefined && !Array.isArray(entry.tags)) {
-      throw new Error("CollectionView requires entry tags to be an array when supplied.");
-    }
-    if (entry.tags?.some((tag) => !isNonWhitespaceString(tag))) {
-      throw new Error("CollectionView requires every entry tag to be a non-whitespace string.");
+    if (entry.tags !== undefined && !isDenseNonWhitespaceStringArray(entry.tags)) {
+      throw new Error("CollectionView requires entry tags to be a dense array of non-whitespace strings when supplied.");
     }
     if (ids.has(entry.id)) throw new Error(`CollectionView received duplicate entry id "${entry.id}".`);
     ids.add(entry.id);
@@ -169,6 +166,24 @@ function hasOnlyOwnKeys(value: Record<string, unknown>, allowed: readonly string
 
 function isNonWhitespaceString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
+}
+
+function isDenseNonWhitespaceStringArray(value: unknown): value is readonly string[] {
+  try {
+    if (!Array.isArray(value) || Object.getPrototypeOf(value) !== Array.prototype) return false;
+    const lengthDescriptor = Object.getOwnPropertyDescriptor(value, "length");
+    if (lengthDescriptor === undefined || !("value" in lengthDescriptor) || typeof lengthDescriptor.value !== "number") return false;
+    for (const key of Reflect.ownKeys(value)) {
+      if (key === "length") continue;
+      if (typeof key !== "string" || !/^(?:0|[1-9]\d*)$/.test(key) || Number(key) >= lengthDescriptor.value) return false;
+      const descriptor = Object.getOwnPropertyDescriptor(value, key);
+      if (descriptor === undefined || !descriptor.enumerable || !("value" in descriptor) || !isNonWhitespaceString(descriptor.value)) return false;
+    }
+    for (let index = 0; index < lengthDescriptor.value; index += 1) if (!Object.hasOwn(value, index)) return false;
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function isValidDateTime(value: unknown): value is string {

@@ -374,6 +374,18 @@ describe("renderWebDocument — node-kind slots (options.nodes), via a consumer-
     expect(html).toContain('<button type="button">Click me</button>');
   });
 
+  it("rejects sparse and accessor-shaped options.nodes without invoking an accessor", () => {
+    const renderer = rendererFor();
+    const sparse = new Array(1);
+    expect(() => renderer.renderWebDocument(baseWidgetDoc, { nodes: sparse as never })).toThrow(RenderError);
+
+    let accessed = false;
+    const accessorItem = { slot: "widget", node: {} };
+    Object.defineProperty(accessorItem, "node", { enumerable: true, get: () => { accessed = true; throw new Error("node getter must not run"); } });
+    expect(() => renderer.renderWebDocument(baseWidgetDoc, { nodes: [accessorItem] as never })).toThrow(RenderError);
+    expect(accessed).toBe(false);
+  });
+
   it("throws RenderError('empty-output') when a required node-kind slot has no matching entry in options.nodes", () => {
     const renderer = rendererFor();
     try {

@@ -116,7 +116,7 @@ describe("SurfaceRepeatingSlotBinding", () => {
   });
 
   it("rejects a primitive item entry and a whitespace-only assetId the same way a single binding would", () => {
-    const findings = validateSurfaceDocument({ ...validWeb, bindings: [...validWeb.bindings, { slot: "capabilities", items: ["not-an-object", { assetId: "" }] }] });
+    const findings = validateSurfaceDocument({ ...validWeb, bindings: [...validWeb.bindings, { slot: "capabilities", items: ["not-an-object", { assetId: "   " }] }] });
     expect(findings.map((finding) => finding.rule)).toEqual(expect.arrayContaining(["surface-binding-group-item-shape", "binding-asset-id-shape"]));
   });
 
@@ -126,6 +126,8 @@ describe("SurfaceRepeatingSlotBinding", () => {
       bindings: [...validWeb.bindings, { slot: "faq", items: [{ fields: { question: { copy: ref("acme.faq.question") }, image: { assetId: "acme.faq.image" } } }] }],
     };
     expect(validateSurfaceDocument(structured)).toEqual([]);
+    const whitespaceAsset = { ...validWeb, bindings: [...validWeb.bindings, { slot: "faq", items: [{ fields: { image: { assetId: "   " } } }] }] };
+    expect(validateSurfaceDocument(whitespaceAsset).map((finding) => finding.rule)).toContain("binding-asset-id-shape");
   });
 
   it("fails closed on malformed structured maps, ambiguous sources, and a node hidden inside a field", () => {

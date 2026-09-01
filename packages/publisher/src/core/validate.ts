@@ -863,8 +863,8 @@ function validateSurfaceRepeatingBindingShape(binding: Record<string, unknown>, 
     if (item.node !== undefined && (typeof item.node !== "object" || item.node === null)) {
       findings.push({ rule: "surface-node-shape", severity: "error", message: `${itemPath}.node must be a non-null object; use copy for audience-facing text.`, path: `${itemPath}.node` });
     }
-    if (item.assetId !== undefined && !isNonEmptyString(item.assetId)) {
-      findings.push({ rule: "binding-asset-id-shape", severity: "error", message: `${itemPath}.assetId must be a non-empty string when present.`, path: `${itemPath}.assetId` });
+    if (item.assetId !== undefined && !isNonEmptyNonWhitespaceString(item.assetId)) {
+      findings.push({ rule: "binding-asset-id-shape", severity: "error", message: `${itemPath}.assetId must be a non-whitespace string when present.`, path: `${itemPath}.assetId` });
     }
     if (item.fields !== undefined) {
       const fieldsPath = `${itemPath}.fields`;
@@ -886,8 +886,8 @@ function validateSurfaceRepeatingBindingShape(binding: Record<string, unknown>, 
           findings.push({ rule: "surface-binding-group-item-field-source-exclusive", severity: "error", message: `${fieldPath} must set exactly one of copy/assetId; node is not permitted in a structured field.`, path: fieldPath });
         }
         if (fieldBinding.copy !== undefined) validateCopyRef(fieldBinding.copy, `${fieldPath}.copy`, findings);
-        if (fieldBinding.assetId !== undefined && !isNonEmptyString(fieldBinding.assetId)) {
-          findings.push({ rule: "binding-asset-id-shape", severity: "error", message: `${fieldPath}.assetId must be a non-empty string when present.`, path: `${fieldPath}.assetId` });
+        if (fieldBinding.assetId !== undefined && !isNonEmptyNonWhitespaceString(fieldBinding.assetId)) {
+          findings.push({ rule: "binding-asset-id-shape", severity: "error", message: `${fieldPath}.assetId must be a non-whitespace string when present.`, path: `${fieldPath}.assetId` });
         }
         if (fieldBinding.node !== undefined) {
           findings.push({ rule: "surface-binding-group-item-field-node-forbidden", severity: "error", message: `${fieldPath}.node is not permitted; structured fields must use copy or assetId.`, path: `${fieldPath}.node` });

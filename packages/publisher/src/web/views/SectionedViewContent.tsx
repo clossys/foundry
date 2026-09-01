@@ -62,6 +62,13 @@ function itemIds(items: unknown[], path: string): void {
   }
 }
 
+function closedItems(items: unknown[], path: string, keys: readonly string[]): void {
+  for (let index = 0; index < items.length; index += 1) {
+    const item = items[index];
+    if (!plain(item) || !closed(item, keys)) throw new Error(`${path}.${index} must be a closed resolved item object.`);
+  }
+}
+
 function copyFields(section: Record<string, unknown>, path: string, required: readonly string[], optional: readonly string[] = []): void {
   for (const field of required) if (!nonBlank(section[field])) throw new Error(`${path}.${field} must be resolved non-blank copy.`);
   for (const field of optional) if (section[field] !== undefined && !nonBlank(section[field])) throw new Error(`${path}.${field} must be resolved non-blank copy.`);
@@ -69,7 +76,7 @@ function copyFields(section: Record<string, unknown>, path: string, required: re
 
 /** Validates the direct resolved-model boundary before any Designer block receives props. */
 export function assertRenderableSectionedViewDocument(document: unknown): asserts document is ResolvedSectionedViewDocument {
-  if (typeof document !== "object" || document === null || !nonBlank((document as { id?: unknown }).id)) throw new Error("document.id must be a non-blank string.");
+  if (!plain(document) || !closed(document, ["id", "sections", "resolutions"]) || !Object.hasOwn(document, "id") || !Object.hasOwn(document, "sections") || !Object.hasOwn(document, "resolutions") || !nonBlank(document.id)) throw new Error("document must be a closed object with a non-blank id, sections, and resolutions.");
   const candidate = document as { sections?: unknown; resolutions?: unknown };
   dense(candidate.sections, "sections");
   if (!Array.isArray(candidate.resolutions) || candidate.resolutions.length === 0) throw new Error("resolutions must be a non-empty array carrying CopyResolution provenance.");
@@ -85,7 +92,7 @@ export function assertRenderableSectionedViewDocument(document: unknown): assert
   for (let index = 0; index < candidate.sections.length; index += 1) {
     const path = `sections.${index}`;
     const section = candidate.sections[index];
-    if (typeof section !== "object" || section === null) throw new Error(`${path} must be a resolved section object.`);
+    if (!plain(section) || !closed(section, ["id", "kind", "ground", "eyebrow", "heading", "description", "items", "labels", "groups"])) throw new Error(`${path} must be a closed resolved section object.`);
     const record = section as Record<string, unknown>;
     if (!nonBlank(record.id) || !FRAGMENT_ID.test(record.id)) throw new Error(`${path}.id must be a unique fragment-safe id.`);
     if (sectionIds.has(record.id)) throw new Error(`${path}.id duplicates an earlier section.`);
@@ -94,17 +101,24 @@ export function assertRenderableSectionedViewDocument(document: unknown): assert
     if (record.kind === "hero") heroCount += 1;
     if (!GROUNDS.includes(record.ground as SectionedViewGround)) throw new Error(`${path}.ground is not a supported section ground.`);
     copyFields(record, path, ["heading"], record.kind === "hero" ? ["eyebrow", "description"] : ["description"]);
-    if (record.kind === "hero") continue;
+    if (record.kind === "hero") {
+      if (!closed(record, ["id", "kind", "ground", "eyebrow", "heading", "description"])) throw new Error(`${path} has keys not allowed for a hero section.`);
+      continue;
+    }
     if (record.kind === "status-list") {
+      if (!closed(record, ["id", "kind", "ground", "heading", "description", "labels", "groups"])) throw new Error(`${path} has keys not allowed for a status-list section.`);
       const labels = record.labels;
-      const dispositions = plain(labels) ? labels.dispositions : undefined;
-      if (!plain(labels) || !closed(labels, [...STATUSES, "dispositions"]) || STATUSES.some((status) => !nonBlank(labels[status])) || !plain(dispositions) || !closed(dispositions, DISPOSITIONS) || DISPOSITIONS.some((disposition) => !nonBlank(dispositions[disposition]))) throw new Error(`${path}.labels must contain resolved labels for every status and disposition.`);
+      if (!plain(labels) || !closed(labels, [...STATUSES, "dispositions"])) throw new Error(`${path}.labels must contain resolved labels for every status and disposition.`);
+      const dispositions = labels.dispositions;
+      if (STATUSES.some((status) => !nonBlank(labels[status])) || !plain(dispositions) || !closed(dispositions, DISPOSITIONS) || DISPOSITIONS.some((disposition) => !nonBlank(dispositions[disposition]))) throw new Error(`${path}.labels must contain resolved labels for every status and disposition.`);
       dense(record.groups, `${path}.groups`);
+      closedItems(record.groups, `${path}.groups`, ["id", "heading", "items"]);
       itemIds(record.groups, `${path}.groups`);
       for (let groupIndex = 0; groupIndex < record.groups.length; groupIndex += 1) {
         const group = record.groups[groupIndex] as Record<string, unknown>;
         if (!nonBlank(group.heading)) throw new Error(`${path}.groups.${groupIndex}.heading must be resolved non-blank copy.`);
         dense(group.items, `${path}.groups.${groupIndex}.items`);
+        closedItems(group.items, `${path}.groups.${groupIndex}.items`, ["id", "label", "state", "disposition"]);
         itemIds(group.items, `${path}.groups.${groupIndex}.items`);
         for (let itemIndex = 0; itemIndex < group.items.length; itemIndex += 1) {
           const item = group.items[itemIndex] as Record<string, unknown>;
@@ -115,7 +129,15 @@ export function assertRenderableSectionedViewDocument(document: unknown): assert
       }
       continue;
     }
+    const sectionKeys = record.kind === "feature-grid"
+      ? ["id", "kind", "ground", "heading", "description", "items"]
+      : record.kind === "faq"
+        ? ["id", "kind", "ground", "heading", "description", "items"]
+        : ["id", "kind", "ground", "heading", "description", "items"];
+    if (!closed(record, sectionKeys)) throw new Error(`${path} has keys not allowed for its section kind.`);
     dense(record.items, `${path}.items`);
+    const itemKeys = record.kind === "faq" ? ["id", "question", "answer"] : record.kind === "ordered-step-sequence" ? ["id", "ordinal", "label", "heading", "description"] : ["id", "heading", "description"];
+    closedItems(record.items, `${path}.items`, itemKeys);
     itemIds(record.items, `${path}.items`);
     for (let itemIndex = 0; itemIndex < record.items.length; itemIndex += 1) {
       const item = record.items[itemIndex] as Record<string, unknown>;
