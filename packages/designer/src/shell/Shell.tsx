@@ -109,7 +109,7 @@ function SkipLink() {
       }}
       className={cx(
         "sr-only focus:not-sr-only",
-        "focus:fixed focus:left-sm focus:top-sm focus:rounded-control focus:bg-accent focus:px-md focus:py-sm",
+        "focus:fixed focus:start-sm focus:top-sm focus:rounded-control focus:bg-accent focus:px-md focus:py-sm",
         "focus:text-body focus:text-ink-on-accent focus:outline-none",
       )}
       style={{ zIndex: UI_Z_SKIP_LINK }}
@@ -170,7 +170,7 @@ function ShellSideNav({ children, className, style, ...rest }: ShellSideNavProps
       aria-label="Primary"
       {...rest}
       className={cx(
-        "min-h-0 overflow-y-auto overflow-x-hidden py-lg border-r border-line-base",
+        "min-h-0 overflow-y-auto overflow-x-hidden py-lg border-e border-line-base",
         // Literal arbitrary-value classes, not `shell-vars.ts` constants:
         // Tailwind's build-time scanner needs this exact text in the
         // source file to generate the `tablet:` media query; a JS
@@ -183,7 +183,7 @@ function ShellSideNav({ children, className, style, ...rest }: ShellSideNavProps
         gridArea: "sidenav",
         position: "relative",
         zIndex: UI_Z_SHELL,
-        borderRightWidth: UI_BORDER_HAIRLINE,
+        borderInlineEndWidth: UI_BORDER_HAIRLINE,
         ...style,
       }}
     >
@@ -244,7 +244,7 @@ function ShellRail({ children, className, style, ...rest }: ShellRailProps) {
     <aside
       {...rest}
       className={cx(
-        "hidden min-h-0 overflow-y-auto bg-surface-aside py-lg desktop:block border-l border-line-base",
+        "hidden min-h-0 overflow-y-auto bg-surface-aside py-lg desktop:block border-s border-line-base",
         className,
       )}
       style={{
@@ -252,7 +252,7 @@ function ShellRail({ children, className, style, ...rest }: ShellRailProps) {
         width: UI_LAYOUT_ASIDE_W,
         position: "relative",
         zIndex: UI_Z_ASIDE,
-        borderLeftWidth: UI_BORDER_HAIRLINE,
+        borderInlineStartWidth: UI_BORDER_HAIRLINE,
         ...style,
       }}
     >

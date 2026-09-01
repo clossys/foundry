@@ -46,10 +46,10 @@ surfaces and live in `@clossys/publisher/web`.
   `Separator`, `Chip`.
 - **`blocks`** — owns the internal layout of multiple named regions,
   typically by composing one or more atoms (and/or layout) into something
-  with a real job on a page. Eighteen ship: `PageHeader`, `EmptyState`,
+  with a real job on a page. Twenty ship: `PageHeader`, `EmptyState`,
   `DataTable`, `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`,
   `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`,
-  `FeatureGrid`, `Faq`, `PricingTable`, `Testimonial`, `ArticleBody` — the
+  `FeatureGrid`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`, `Testimonial`, `ArticleBody` — the
   last six are marketing/editorial content blocks, completing this layer
   (see "Blocks" below).
 - **`shell`** — the persistent frame around content (nav, layout chrome)
@@ -265,7 +265,7 @@ source file's own header for the exact probe and its result). Today that's:
 | Subpath | Server-safe members |
 | --- | --- |
 | `@clossys/designer/atoms/server` | `Badge`, `Banner`, `Card`, `Field`, `Icon`, `Skeleton`, `Spinner`, `mergeUiClasses` |
-| `@clossys/designer/blocks/server` | `ArticleBody`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `PageHeader`, `PricingTable`, `SectionHeader`, `Stat` |
+| `@clossys/designer/blocks/server` | `ArticleBody`, `DetailView`, `EmptyState`, `Faq`, `FeatureGrid`, `FieldGroup`, `Hero`, `OrderedStepSequence`, `PageHeader`, `PricingTable`, `SectionHeader`, `Stat`, `StatusList` |
 | `@clossys/designer/shell/server` | `Shell`, `SiteFooter`, `SiteHeader`, `SkipLink` |
 | `@clossys/designer/charts/server` | `ChartFrame`, `Sparkline` |
 | `@clossys/designer/theme/server` | `getThemeInitScript` |
@@ -2448,6 +2448,47 @@ same reasoning `NavGrid`'s cards apply) — the grid's own optional
 region. Items lay out one per row on narrow viewports, two from `tablet`,
 three from `desktop` — the same responsive grid `NavGrid` uses.
 
+### `OrderedStepSequence`
+
+```tsx
+import { OrderedStepSequence } from "@clossys/designer/blocks";
+
+<OrderedStepSequence
+  heading="How it works"
+  items={[
+    { id: "discover", ordinal: "01", label: "First", heading: "Discover", description: "Understand the need." },
+    { id: "decide", ordinal: "02", label: "Second", heading: "Decide", description: "Choose a path." },
+  ]}
+/>
+```
+
+An editorial `<ol>`, not a stepper or progress indicator. Each ordinal remains
+authored text, while decorative connectors are hidden from assistive technology
+and render only between adjacent items. The sequence changes from a vertical
+column/connector to a horizontal row/connector at `tablet`. Set
+`ground="inverse"` only when placing it on `surface-inverse`; this selects the
+matching inverse ink and line tokens. `headingLevel` controls the real heading
+elements (default `2`).
+
+### `StatusList`
+
+```tsx
+import { StatusList } from "@clossys/designer/blocks";
+
+<StatusList
+  labels={{ available: "Available", partial: "Partial", planned: "Planned" }}
+  groups={[
+    { id: "coverage", heading: "Coverage", items: [{ id: "reports", label: "Reports", state: "available" }] },
+  ]}
+/>
+```
+
+A grouped `<dl>` for editorial readiness statements, with one section-level
+legend. State is closed to `available`, `partial`, and `planned`; the block
+maps those values to status tokens rather than accepting a color. The dot is
+decorative and its adjacent state text remains ordinary reading text, so color
+never carries the meaning alone.
+
 ### `Faq`
 
 ```tsx
@@ -3873,6 +3914,18 @@ not a grab-bag).
 | `FeatureGridProps` | type | Props for `FeatureGrid`: `eyebrow`, `heading`, `description`, `items`, `headingLevel`, `className`, `style`, plus every native `<div>` attribute. |
 | `FeatureGridItem` | type | One item: `id`, `icon?`, `heading`, `description?`. |
 | `FeatureGridHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
+| `OrderedStepSequence` | component | Editorial ordered sequence: optional heading region, authored ordinal/label/heading/body steps, responsive decorative connectors. |
+| `OrderedStepSequenceProps` | type | Props for `OrderedStepSequence`: `heading`, `description`, `items`, `headingLevel`, `ground`, `className`, `style`, plus every native `<section>` attribute. |
+| `OrderedStepSequenceItem` | type | One step: `id`, `ordinal`, `label?`, `heading`, `description?`. |
+| `OrderedStepSequenceHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
+| `OrderedStepSequenceGround` | type | `"base" \| "inverse"`. |
+| `StatusList` | component | Grouped editorial status list: one legend and a definition list per group. |
+| `StatusListProps` | type | Props for `StatusList`: `heading`, `description`, `labels`, `groups`, `legendLabel`, `headingLevel`, `className`, `style`, plus every native `<section>` attribute. |
+| `StatusListGroup` | type | One group: `id`, `heading`, `items`. |
+| `StatusListItem` | type | One row: `id`, `label`, `state`. |
+| `StatusListLabels` | type | A label for each `StatusListState`. |
+| `StatusListState` | type | `"available" \| "partial" \| "planned"`. |
+| `StatusListHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
 | `Faq` | component | Expand/collapse question/answer list, under an optional heading region. Each item is this package's own `Disclosure` atom — independent, not a coordinated accordion. |
 | `FaqProps` | type | Props for `Faq`: `heading`, `description`, `items`, `headingLevel`, `className`, `style`, plus every native `<div>` attribute. |
 | `FaqItem` | type | One item: `id`, `question`, `answer`. |
@@ -4336,9 +4389,9 @@ speculatively, just because a related component shipped, is the exact
 un-bounded growth this package's own "variant rule" warns against one level
 up. They get added here only once something real needs them.
 
-**Blocks:** eighteen ship — `PageHeader`, `EmptyState`, `DataTable`,
+**Blocks:** twenty ship — `PageHeader`, `EmptyState`, `DataTable`,
 `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`, `ConfirmDialog`,
-`Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `FeatureGrid`, `Faq`,
+`Toolbar`, `NavGrid`, `SectionHeader`, `Hero`, `FeatureGrid`, `OrderedStepSequence`, `StatusList`, `Faq`,
 `PricingTable`, `Testimonial`, `ArticleBody` — completing this layer. No
 `FilterBar` block:
 `DataTable`'s own `toolbar` slot (and `Toolbar`'s own `search` slot) are
