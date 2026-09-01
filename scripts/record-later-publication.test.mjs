@@ -7,6 +7,7 @@ import { join } from "node:path";
 import test from "node:test";
 
 import { argsFrom, buildLaterPublicationRecord, createLaterPublicationRecord, credentiallessAuditEnv, verifiedAnonymousAudit, writeNoOverwrite } from "./record-later-publication.mjs";
+import { comparableTranscriptSha256 } from "./lib/candidate-qualification.mjs";
 import { publicNpmVersionUrl, PUBLIC_NPM_REGISTRY } from "./lib/public-npm-registry.mjs";
 import { RELEASE_RUNTIME } from "./lib/release-runtime.mjs";
 
@@ -298,6 +299,7 @@ test("creator retains one provider-bound replay record from the exact qualified 
   assert.equal(result.record.publication.reference, result.record.runQualification.run.url);
   assert.equal(result.record.runQualification.artifact.archiveSha256, `sha256:${digest("sha256", archiveBytes)}`);
   assert.equal(result.record.runQualification.transcript.rawSha256, digest("sha256", Buffer.from(`${JSON.stringify(qualification.transcript, null, 2)}\n`)));
+  assert.equal(result.record.runQualification.transcript.comparableSha256, comparableTranscriptSha256(qualification.transcript));
   assert.deepEqual(readdirSync(join(root, "governance/release-publications/later")), ["strategist-0.1.2.json"]);
 });
 
