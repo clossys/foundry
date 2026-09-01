@@ -8,7 +8,7 @@ import { parseStrictJson } from "./candidate-qualification.mjs";
 import { assertReleaseRuntime } from "./release-runtime.mjs";
 
 const hash = (algorithm, value) => createHash(algorithm).update(value).digest("hex");
-function normalizedStream(root, value, kind) {
+export function normalizedStream(root, value, kind) {
   let normalized = String(value)
     .split(root).join("$TEMP")
     .replace(/npm notice[^\n]*\n/g, "")
@@ -20,7 +20,11 @@ function normalizedStream(root, value, kind) {
     // a human at execution time but cannot be part of replayable evidence.
     normalized = normalized
       .replace(/\busing \d+ workers?\b/gi, "using $WORKERS workers")
-      .replace(/\b\d+(?:\.\d+)?(?:ms|s)\b/g, "$DURATION");
+      .replace(/\b\d+(?:\.\d+)?(?:ms|s)\b/g, "$DURATION")
+      // The framework evaluator may be a plain root (`next.config`) or an
+      // explicit module (`next.config.mjs`). Both execute the same build and
+      // must have one replay identity.
+      .replace(/✓ Running next\.config(?:\.mjs)? took \$DURATION\n/g, "✓ Running next.config took $DURATION\n");
   }
   return normalized;
 }
