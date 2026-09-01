@@ -118,6 +118,12 @@ export function aggregateV2GitHistory({ root }) {
   // once history exists, delegate to the v1 full-DAG implementation (which
   // detects deletes, rewrites, renames, copies, and merge-parent mutations).
   try {
+    const changes = execFileSync("git", ["log", "--all", "--format=%H", "--diff-filter=AMDRC", "--", AGGREGATE_V2_CANARY_PATH], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim().split("\n").filter(Boolean);
+    if (changes.length === 1) {
+      const commit = changes[0];
+      const blob = execFileSync("git", ["show", `${commit}:${AGGREGATE_V2_CANARY_PATH}`], { cwd: root, encoding: "buffer" });
+      return [{ commit, status: "A", sha256: hash(blob) }];
+    }
     const commit = execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim();
     const parent = execFileSync("git", ["rev-parse", "HEAD^"], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
     const current = execFileSync("git", ["show", `${commit}:${AGGREGATE_V2_CANARY_PATH}`], { cwd: root, encoding: "buffer" });
