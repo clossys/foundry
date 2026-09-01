@@ -50,7 +50,7 @@ surfaces and live in `@clossys/publisher/web`.
   `DataTable`, `DetailView`, `Pagination`, `Stat`, `Form`, `FieldGroup`,
   `ConfirmDialog`, `Toolbar`, `NavGrid`, `SectionHeader`, `Hero`,
   `FeatureGrid`, `OrderedStepSequence`, `StatusList`, `Faq`, `PricingTable`, `Testimonial`, `ArticleBody` — the
-  last six are marketing/editorial content blocks, completing this layer
+  last eight are marketing/editorial content blocks, completing this layer
   (see "Blocks" below).
 - **`shell`** — the persistent frame around content (nav, layout chrome)
   that provides the slots content fills. One per app; survives route
@@ -3948,7 +3948,7 @@ not a grab-bag).
 | `OrderedStepSequenceProps` | type | Props for `OrderedStepSequence`: `heading`, `description`, `items`, `headingLevel`, `ground`, `className`, `style`, plus every native `<section>` attribute. |
 | `OrderedStepSequenceItem` | type | One step: `id`, `ordinal`, `label?`, `heading`, `description?`. |
 | `OrderedStepSequenceHeadingLevel` | type | `2 \| 3 \| 4 \| 5 \| 6`. |
-| `OrderedStepSequenceGround` | type | Backward-compatible alias of `SectionGround`: `"base" \| "sunken" \| "inverse"`. |
+| `OrderedStepSequenceGround` | type | Sequence-specific alias of the shared `SectionGround`: `"base" \| "sunken" \| "inverse"`. |
 | `StatusList` | component | Grouped editorial status list: one legend and a definition list per group. |
 | `StatusListProps` | type | Props for `StatusList`: `heading`, `description`, `labels`, `groups`, `legendLabel`, `headingLevel`, `ground`, `className`, `style`, plus every native `<section>` attribute. |
 | `StatusListGroup` | type | One group: `id`, `heading`, `items`. |
