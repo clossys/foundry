@@ -497,6 +497,52 @@ Applied to a lockfile: do not hand-edit package names in
 lock entry or the lockfile, and let the package manager resolve and record the
 new integrity digests itself.
 
+## 8. A cross-package hazard, found while verifying the above
+
+This one is **not** a consequence of the scope move. It is a mismatch between
+two current published versions that a consumer wiring them together will hit,
+found while checking the claims in this document. It is recorded here because
+this is the document the migrating repositories are reading, and because the
+cost of rediscovering it is paid once per repository.
+
+**`@clossys/builder@0.7.3` rejects every finding `@clossys/controller@0.8.23`
+produces.**
+
+The two packages are built to interoperate. Builder's
+`ObservationBundleGateEntry.result` is typed
+`GateResult<Finding, string>`, importing `GateResult` from
+`@clossys/controller/gates`. But each package defines its own `Finding`
+severity vocabulary, and they do not overlap:
+
+| Package | Location | Accepted or emitted severities |
+| --- | --- | --- |
+| `@clossys/builder@0.7.3` | `src/types.ts` `Severity`, enforced by `FINDING_SEVERITIES` in `src/observation-bundle.ts` | `high`, `medium`, `low` |
+| `@clossys/controller@0.8.23` | `src/repository/run.ts`, `src/catalog/types.ts`, and every emitter | `error`, `warning` |
+
+So a `violated` gate result from Controller, passed into Builder's
+observation-bundle path, fails `isFindingShaped` on every finding.
+
+Verified by running the installed code, not by reading it. Against
+`validateObservationBundleShape` from the published
+`@clossys/builder@0.7.3` tarball, with an otherwise well-formed bundle:
+
+| Finding severity | Result |
+| --- | --- |
+| `error` (as Controller emits) | rejected: "is not a well-formed Finding" |
+| `warning` (as Controller emits) | rejected: "is not a well-formed Finding" |
+| `high` (Builder's own vocabulary) | accepted |
+
+A consumer that builds an observation bundle from a Controller gate result
+must translate the severity itself until one of the two packages changes. Note
+that Builder is not internally consistent either: its
+`src/deployment/types.ts` declares a separate `Finding` with
+`"error" | "warning"`, matching Controller. Only the observation-bundle path
+uses the three-level vocabulary.
+
+**UNVERIFIED: which package is wrong, and therefore which one changes.** That
+is a producer decision, not a consumer one. This document records the
+observable behavior and takes no position on the fix.
+
 ## What this document does not establish
 
 - It does not verify any consumer repository's state. Foundry cannot read a
