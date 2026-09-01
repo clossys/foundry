@@ -289,6 +289,14 @@ export const CONTRAST_PAIRS: readonly ContrastPair[] = [
     minimumRatio: AA,
     description: "Primary reading text on the inverse plate. Mirrors contrast.test.ts's \"ink-on-inverse / surface-inverse\".",
   },
+  {
+    id: "ink-on-inverse-muted/surface-inverse",
+    foreground: "--color-ink-on-inverse-muted",
+    background: "--color-surface-inverse",
+    level: "AA",
+    minimumRatio: AA,
+    description: "Secondary and muted site-block text on the inverse section ground.",
+  },
 
   // ── status -text on its own -tint, composited over surface-base: AA ───
   {
@@ -326,6 +334,32 @@ export const CONTRAST_PAIRS: readonly ContrastPair[] = [
     level: "AA",
     minimumRatio: AA,
     description: "An info banner/badge. Mirrors contrast.test.ts's \"info-text / info-tint\".",
+  },
+
+  // ── status dots on the page ground: WCAG non-text contrast ───────────
+  {
+    id: "status-success/surface-base",
+    foreground: "--color-status-success",
+    background: "--color-surface-base",
+    level: "AA-large",
+    minimumRatio: AA_LARGE,
+    description: "A status-list available dot on the page ground; its adjacent state label uses ink-primary rather than this display token.",
+  },
+  {
+    id: "status-warning/surface-base",
+    foreground: "--color-status-warning",
+    background: "--color-surface-base",
+    level: "AA-large",
+    minimumRatio: AA_LARGE,
+    description: "A status-list partial dot on the page ground; its adjacent state label uses ink-primary rather than this display token.",
+  },
+  {
+    id: "status-info/surface-base",
+    foreground: "--color-status-info",
+    background: "--color-surface-base",
+    level: "AA-large",
+    minimumRatio: AA_LARGE,
+    description: "A status-list planned dot on the page ground; its adjacent state label uses ink-primary rather than this display token.",
   },
 
   // ── chart chrome: axis-label text on the chart surface: AA-large ──────

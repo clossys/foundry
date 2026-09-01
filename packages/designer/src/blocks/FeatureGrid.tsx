@@ -1,5 +1,6 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { cx } from "../atoms/internal/cx.js";
+import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 
 export type FeatureGridHeadingLevel = 2 | 3 | 4 | 5 | 6;
 
@@ -32,6 +33,8 @@ export interface FeatureGridProps extends Omit<HTMLAttributes<HTMLDivElement>, "
    * @default 2
    */
   headingLevel?: FeatureGridHeadingLevel;
+  /** Semantic section ground; selects the complete matching surface and foreground policy. @default "base" */
+  ground?: SectionGround;
   className?: string;
   style?: CSSProperties;
 }
@@ -74,25 +77,27 @@ export function FeatureGrid({
   description,
   items,
   headingLevel = 2,
+  ground = "base",
   className,
   style,
   ...rest
 }: FeatureGridProps) {
   const HeadingTag = `h${headingLevel}` as `h${FeatureGridHeadingLevel}`;
+  const colors = SECTION_GROUND_CLASSES[ground];
   const hasHeadingRegion = eyebrow !== undefined || heading !== undefined || description !== undefined;
 
   return (
-    <div {...rest} className={cx("flex flex-col gap-lg", className)} style={style}>
+    <div {...rest} className={cx("flex flex-col gap-lg", colors.surface, className)} style={style}>
       {hasHeadingRegion ? (
         <div className="flex flex-col gap-xs">
           {eyebrow ? (
-            <p className="text-caption uppercase tracking-label text-ink-muted">{eyebrow}</p>
+            <p className={cx("text-caption uppercase tracking-label", colors.muted)}>{eyebrow}</p>
           ) : null}
           {heading ? (
-            <HeadingTag className="text-h2 font-display text-ink-primary">{heading}</HeadingTag>
+            <HeadingTag className={cx("text-h2 font-display", colors.primary)}>{heading}</HeadingTag>
           ) : null}
           {description ? (
-            <p className="text-body text-ink-secondary">{description}</p>
+            <p className={cx("text-body", colors.secondary)}>{description}</p>
           ) : null}
         </div>
       ) : null}
@@ -100,13 +105,13 @@ export function FeatureGrid({
         {items.map((item) => (
           <div key={item.id} className="flex flex-col items-start gap-sm">
             {item.icon ? (
-              <span aria-hidden="true" className="text-ink-muted">
+              <span aria-hidden="true" className={colors.muted}>
                 {item.icon}
               </span>
             ) : null}
-            <p className="text-body font-body font-medium text-ink-primary">{item.heading}</p>
+            <p className={cx("text-body font-body font-medium", colors.primary)}>{item.heading}</p>
             {item.description ? (
-              <p className="text-body-s text-ink-secondary">{item.description}</p>
+              <p className={cx("text-body-s", colors.secondary)}>{item.description}</p>
             ) : null}
           </div>
         ))}

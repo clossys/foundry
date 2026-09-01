@@ -1,6 +1,7 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { Disclosure } from "../atoms/Disclosure.js";
 import { cx } from "../atoms/internal/cx.js";
+import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 
 export type FaqHeadingLevel = 2 | 3 | 4 | 5 | 6;
 
@@ -14,6 +15,8 @@ export interface FaqItem {
 }
 
 export interface FaqProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> {
+  /** Small label above the block's own heading, the same slot `FeatureGrid` and `Hero` already ship. */
+  eyebrow?: ReactNode;
   /** Optional heading above the question list. */
   heading?: ReactNode;
   /** A line of supporting copy under the heading. */
@@ -26,6 +29,8 @@ export interface FaqProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> 
    * @default 2
    */
   headingLevel?: FaqHeadingLevel;
+  /** Semantic section ground; selects the complete matching surface and foreground policy. @default "base" */
+  ground?: SectionGround;
   className?: string;
   style?: CSSProperties;
 }
@@ -60,32 +65,36 @@ export interface FaqProps extends Omit<HTMLAttributes<HTMLDivElement>, "title"> 
  * at once to compare them).
  *
  * Items render inside a plain list with a hairline divider between them
- * (`border-t border-line-base` on every item after the first) — visual
+ * (a ground-matched `border-t` on every item after the first) — visual
  * grouping only; the real structure a screen reader needs comes from each
  * `Disclosure`'s own trigger/panel wiring, not from a `role="list"` this
  * block would otherwise have to fake.
  */
 export function Faq({
+  eyebrow,
   heading,
   description,
   items,
   headingLevel = 2,
+  ground = "base",
   className,
   style,
   ...rest
 }: FaqProps) {
   const HeadingTag = `h${headingLevel}` as `h${FaqHeadingLevel}`;
-  const hasHeadingRegion = heading !== undefined || description !== undefined;
+  const colors = SECTION_GROUND_CLASSES[ground];
+  const hasHeadingRegion = eyebrow !== undefined || heading !== undefined || description !== undefined;
 
   return (
-    <div {...rest} className={cx("flex flex-col gap-lg", className)} style={style}>
+    <div {...rest} className={cx("flex flex-col gap-lg", colors.surface, className)} style={style}>
       {hasHeadingRegion ? (
         <div className="flex flex-col gap-xs">
+          {eyebrow ? <p className={cx("text-caption uppercase tracking-label", colors.muted)}>{eyebrow}</p> : null}
           {heading ? (
-            <HeadingTag className="text-h2 font-display text-ink-primary">{heading}</HeadingTag>
+            <HeadingTag className={cx("text-h2 font-display", colors.primary)}>{heading}</HeadingTag>
           ) : null}
           {description ? (
-            <p className="text-body text-ink-secondary">{description}</p>
+            <p className={cx("text-body", colors.secondary)}>{description}</p>
           ) : null}
         </div>
       ) : null}
@@ -94,7 +103,9 @@ export function Faq({
           <Disclosure
             key={item.id}
             title={item.question}
-            className={index > 0 ? "border-t border-line-base pt-xs" : undefined}
+            className={index > 0 ? cx("border-t pt-xs", colors.border) : undefined}
+            triggerClassName={colors.primary}
+            panelClassName={colors.secondary}
           >
             {item.answer}
           </Disclosure>

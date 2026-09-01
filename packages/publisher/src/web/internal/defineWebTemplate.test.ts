@@ -63,6 +63,16 @@ describe("defineWebTemplate — happy path", () => {
     expect(template.repeatingSlots).toEqual([{ key: "items", required: true }, { key: "extras" }]);
   });
 
+  it("accepts and deeply freezes declared structured repeating fields", () => {
+    const template = defineWebTemplate({
+      ...minimalOptions,
+      repeatingSlots: [{ key: "faq", fields: [{ key: "question", required: true }, { key: "answer", required: true }] }],
+    });
+    expect(template.repeatingSlots).toEqual([{ key: "faq", fields: [{ key: "question", required: true }, { key: "answer", required: true }] }]);
+    expect(Object.isFrozen(template.repeatingSlots?.[0]?.fields)).toBe(true);
+    expect(Object.isFrozen(template.repeatingSlots?.[0]?.fields?.[0])).toBe(true);
+  });
+
   it("returns a frozen template — flow, flow.slots, slotKinds, and repeatingSlots cannot be mutated after the fact", () => {
     const template = defineWebTemplate({
       ...minimalOptions,
@@ -120,6 +130,13 @@ describe("defineWebTemplate — fails closed with RenderError('invalid-template-
 
   it("rejects a duplicate key within repeatingSlots itself", () => {
     expectInvalidDefinition(() => defineWebTemplate({ ...minimalOptions, repeatingSlots: [{ key: "items" }, { key: "items" }] }));
+  });
+
+  it("rejects empty, malformed, and duplicate structured field declarations", () => {
+    expectInvalidDefinition(() => defineWebTemplate({ ...minimalOptions, repeatingSlots: [{ key: "faq", fields: [] }] }));
+    expectInvalidDefinition(() => defineWebTemplate({ ...minimalOptions, repeatingSlots: [{ key: "faq", fields: [{ key: "" }] }] }));
+    expectInvalidDefinition(() => defineWebTemplate({ ...minimalOptions, repeatingSlots: [{ key: "faq", fields: [{ key: "  " }] }] }));
+    expectInvalidDefinition(() => defineWebTemplate({ ...minimalOptions, repeatingSlots: [{ key: "faq", fields: [{ key: "question" }, { key: "question" }] }] }));
   });
 
   it("rejects a non-function build", () => {

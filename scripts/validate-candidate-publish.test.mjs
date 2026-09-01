@@ -18,13 +18,18 @@ const commit = async (root, message) => {
   return (await execFile("git", ["rev-parse", "HEAD"], { cwd: root })).stdout.trim();
 };
 const gitOutput = async (root, args) => (await execFile("git", args, { cwd: root })).stdout.trim();
+const removeFixtureDirectory = (path) => rm(path, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
 
 async function validatorFixture(t) {
   const root = await mkdtemp(join(tmpdir(), "publish-validator-fixture-"));
   const tarRoot = await mkdtemp(join(tmpdir(), "publish-validator-tar-"));
   const evidenceRoot = await mkdtemp(join(tmpdir(), "publish-validator-evidence-"));
-  t.after(async () => Promise.all([rm(root, { recursive: true, force: true }), rm(tarRoot, { recursive: true, force: true }), rm(evidenceRoot, { recursive: true, force: true })]));
+  t.after(async () => Promise.all([removeFixtureDirectory(root), removeFixtureDirectory(tarRoot), removeFixtureDirectory(evidenceRoot)]));
   await execFile("git", ["init"], { cwd: root });
+  // Git may launch automatic maintenance after a commit; keep this short-lived
+  // fixture single-process so its teardown cannot race a background pack write.
+  await execFile("git", ["config", "gc.auto", "0"], { cwd: root });
+  await execFile("git", ["config", "maintenance.auto", "false"], { cwd: root });
   await execFile("git", ["config", "user.email", "test@example.invalid"], { cwd: root });
   await execFile("git", ["config", "user.name", "Validator Test"], { cwd: root });
   for (const path of ["packages/controller", "governance/release-qualification-adapters/controller", "governance/release-qualification-fixtures/controller/current-direct"]) await mkdir(join(root, path), { recursive: true });
@@ -76,6 +81,13 @@ test("publish validator has a closed CLI and rejects traversal or bootstrap auth
   assert.deepEqual(argsFrom(argv), { package: "controller", tarball: "candidate.tgz", transcript: "result.json", mode: "prepublish" });
   for (const mutation of [["--unknown", "x"], ["--package", "../controller"], ["--mode", "other"], ["--package", "again"]]) assert.throws(() => argsFrom([...argv, ...mutation]), /Usage:/);
 });
+
+test("validator fixture disables automatic git maintenance", async (t) => {
+  const fixture = await validatorFixture(t);
+  assert.equal(await gitOutput(fixture.root, ["config", "--get", "gc.auto"]), "0");
+  assert.equal(await gitOutput(fixture.root, ["config", "--get", "maintenance.auto"]), "false");
+});
+
 test("validator freezes the supplied tarball before a source path replacement", async (t) => {
   const root = await mkdtemp(join(tmpdir(), "publish-validator-test-")); t.after(() => rm(root, { recursive: true, force: true }));
   const source = join(root, "candidate.tgz"); await writeFile(source, "first bytes");

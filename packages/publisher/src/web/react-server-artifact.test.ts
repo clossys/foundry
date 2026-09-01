@@ -55,8 +55,19 @@ function runProbe(reactServer: boolean) {
     const { element } = web.renderWebDocument(document, {
       groups: [
         { slot: "features", items: [] },
-        { slot: "faq", items: [{ index: 0, node: { question: "Does it render?", answer: "Yes." } }] },
+        { slot: "faq", items: [{ index: 0, fields: { question: { value: "Does it render?" }, answer: { value: "Yes." } } }] },
       ],
+    });
+    const sectioned = web.SectionedView({
+      document: {
+        id: "sectioned-server-proof",
+        resolutions: [{ ref: { id: "sectioned.proof" }, text: "Server-safe sections", recordId: "proof", revision: "1", locale: "en", source: { kind: "consumer", reference: "fixture" }, entryId: "sectioned.proof" }],
+        sections: [
+          { id: "hero", kind: "hero", ground: "base", heading: "Server-safe sections" },
+          { id: "steps", kind: "ordered-step-sequence", ground: "sunken", heading: "Steps", items: [{ id: "one", ordinal: "1", heading: "Start" }] },
+          { id: "status", kind: "status-list", ground: "inverse", heading: "Status", labels: { available: "Available", partial: "Partial", planned: "Planned", dispositions: { "not-offered": "Not offered" } }, groups: [{ id: "core", heading: "Core", items: [{ id: "one", label: "Sections", state: "available" }] }] },
+        ],
+      },
     });
 
     const result = { keys: Object.keys(web).sort(), summaryClasses: [] };
@@ -75,11 +86,12 @@ function runProbe(reactServer: boolean) {
         visit(node.props?.children);
       };
       visit(element);
+      visit(sectioned);
       result.tags = tags;
       result.text = text;
     } else {
       const { renderToStaticMarkup } = await import("react-dom/server");
-      result.html = renderToStaticMarkup(element);
+      result.html = renderToStaticMarkup([element, sectioned]);
     }
     process.stdout.write(JSON.stringify(result));
   `;
@@ -144,10 +156,16 @@ describe("packed Publisher web React-server boundary", () => {
 
   it("exports the exact same runtime names from the ordinary and react-server targets", () => {
     expect(server.keys).toEqual(normal.keys);
+    expect(server.keys).toEqual(expect.arrayContaining(["CaptureView", "CollectionView", "DocumentView", "SectionedView"]));
   });
 
-  it("rejects a packed Designer 0.2.3 graph that the former lower bound accepted before the missing Faq fails at import", () => {
-    const adversarialRoot = join(fixtureRoot, "designer-0.2.3");
+  it("renders the packed SectionedView through server-safe ordered-step and status blocks", () => {
+    expect(server.tags).toEqual(expect.arrayContaining(["ol", "dl"]));
+    expect(server.text).toEqual(expect.arrayContaining(["Server-safe sections", "Steps", "Status"]));
+  });
+
+  it("rejects a packed Designer 0.2.5 graph that the former lower bound accepted before SectionedView's missing blocks fail at import", () => {
+    const adversarialRoot = join(fixtureRoot, "designer-0.2.5");
     mkdirSync(join(adversarialRoot, "dist", "atoms"), { recursive: true });
     mkdirSync(join(adversarialRoot, "dist", "blocks"), { recursive: true });
     mkdirSync(join(adversarialRoot, "dist", "shell"), { recursive: true });
@@ -155,7 +173,7 @@ describe("packed Publisher web React-server boundary", () => {
       join(adversarialRoot, "package.json"),
       JSON.stringify({
         name: "@clossys/designer",
-        version: "0.2.3",
+        version: "0.2.5",
         type: "module",
         exports: {
           "./atoms/server": "./dist/atoms/server.js",
@@ -190,7 +208,7 @@ describe("packed Publisher web React-server boundary", () => {
     const legacyManifest = JSON.parse(readFileSync(legacyManifestPath, "utf8")) as {
       dependencies: Record<string, string>;
     };
-    expect(legacyManifest.dependencies["@clossys/designer"]).toBe("^0.2.4");
+    expect(legacyManifest.dependencies["@clossys/designer"]).toBe("^0.3.0");
     legacyManifest.dependencies["@clossys/designer"] = "^0.2.0";
     writeFileSync(legacyManifestPath, `${JSON.stringify(legacyManifest, null, 2)}\n`);
     const legacyPublisherTarball = packPackage(legacyPublisherRoot, join(fixtureRoot, "legacy-packed"));

@@ -37,6 +37,9 @@ import { REACT_DECLARED_RANGE } from "../internal/declared-peer-ranges.js";
  */
 assertPeerVersion({ peer: "react", declaredRange: REACT_DECLARED_RANGE, foundVersion: reactVersion });
 
+export { SECTION_GROUND_CLASSES } from "./section-ground.js";
+export type { SectionGround, SectionGroundClasses, SectionStatusTone } from "./section-ground.js";
+
 export { ArticleBody } from "./ArticleBody.js";
 export type { ArticleBodyProps } from "./ArticleBody.js";
 
@@ -48,6 +51,27 @@ export type { EmptyStateProps } from "./EmptyState.js";
 
 export { FeatureGrid } from "./FeatureGrid.js";
 export type { FeatureGridProps, FeatureGridItem, FeatureGridHeadingLevel } from "./FeatureGrid.js";
+
+export { OrderedStepSequence } from "./OrderedStepSequence.js";
+export type {
+  OrderedStepSequenceProps,
+  OrderedStepSequenceItem,
+  OrderedStepSequenceHeadingLevel,
+  OrderedStepSequenceGround,
+} from "./OrderedStepSequence.js";
+
+export { StatusList } from "./StatusList.js";
+export type {
+  StatusListProps,
+  StatusListGroup,
+  StatusListItem,
+  StatusListReadinessItem,
+  StatusListDispositionItem,
+  StatusListLabels,
+  StatusListState,
+  StatusListDisposition,
+  StatusListHeadingLevel,
+} from "./StatusList.js";
 
 export { Faq } from "./Faq.server.js";
 export type { FaqProps, FaqItem, FaqHeadingLevel } from "./Faq.js";

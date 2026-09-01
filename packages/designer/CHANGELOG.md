@@ -3,6 +3,57 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.3.0] - 2026-09-01
+
+### Added
+
+- Added an optional `detail` slot to every `StatusList` row, readiness and
+  off-axis disposition alike. It renders as a second description of the same
+  term, so a row's own explanation, including the reasoning behind a
+  `not-offered` answer, stays inside the definition-list semantics rather than
+  becoming a paragraph that only looks adjacent. A row had nowhere to put that
+  reasoning before but its own label.
+- Added the optional `eyebrow` slot `Hero` and `FeatureGrid` already shipped
+  to `Faq` (both the React Aria and server-native implementations),
+  `OrderedStepSequence`, and `StatusList`. A small label above the block
+  heading is now expressible on every editorial block rather than on two of
+  them. A block given no eyebrow, heading, or description still renders no
+  heading region at all.
+
+Both slots are optional and additive: a call that compiled and rendered under
+0.2.7 compiles and renders identically under 0.3.0, and a block passed neither
+slot emits the markup it always did. This is a minor rather than a patch
+because 0.x caret and tilde ranges are minor-locked, so a consumer that wants
+either slot widens its declared range deliberately.
+
+## [0.2.7] - 2026-09-01
+
+### Added
+
+- Added the separately closed `StatusList` `not-offered` disposition for
+  deliberate non-capabilities outside the readiness axis. It uses a neutral
+  tone rather than reading as a warning or future commitment.
+
+## [0.2.6] - 2026-08-31
+
+### Added
+
+- Added server-safe `OrderedStepSequence` and `StatusList` editorial blocks
+  with ordered and definition-list semantics, caller-localized labels,
+  closed state and ground vocabularies, accessible authored ordinals,
+  responsive decorative connectors, and explicit contrast coverage.
+- Added the server-safe, closed `SectionGround` contract (`base`, `sunken`,
+  `inverse`) and Designer-owned class/token mapping. `Hero`, `FeatureGrid`,
+  both `Faq` implementations, `OrderedStepSequence`, and `StatusList` now
+  apply their own matching surface, foreground, divider/connector, and status
+  treatment rather than requiring a consumer to paint around them.
+
+### Fixed
+
+- Replaced the five bounded physical-direction shell patterns with logical
+  inset, border, and focus-position utilities so navigation, drawers, toasts,
+  and skip links follow the document writing direction.
+
 ## [0.2.5] - 2026-08-31
 
 ### Changed
