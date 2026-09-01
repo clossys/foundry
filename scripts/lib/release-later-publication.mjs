@@ -63,7 +63,13 @@ function repositoryName(url) {
 }
 function exactAttestationUrl(value, name, version) {
   if (!evidenceUrl(value)) return false;
-  try { return new URL(value).href === `${PUBLIC_NPM_REGISTRY}/-/npm/v1/attestations/${encodeURIComponent(`${name}@${version}`)}`; } catch { return false; }
+  try {
+    const parsed = new URL(value);
+    return parsed.origin === PUBLIC_NPM_REGISTRY
+      && parsed.search === ""
+      && parsed.hash === ""
+      && decodeURIComponent(parsed.pathname) === `/-/npm/v1/attestations/${name}@${version}`;
+  } catch { return false; }
 }
 function invocationRunRoot(value) {
   const match = /^https:\/\/github\.com\/clossys\/foundry\/actions\/runs\/(\d+)\/attempts\/\d+$/.exec(value ?? "");
