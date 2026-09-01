@@ -641,10 +641,12 @@ trusted publisher is now configured for `clossys/foundry` through
 allowed; npm's restrictive **Require two-factor authentication and disallow
 tokens** setting is checked. That configuration establishes publisher trust
 only: it does not qualify, publish, or registry-verify `0.1.11`. The source has
-advanced to that later protected OIDC successor; it has no qualification or
-publication record yet. Do not prepare a 0.1.11 trusted-publisher/OIDC upload
-until its own fresh exact-head candidate has passed the required qualification,
-FULL release checks, and anonymous registry verification.
+advanced to that later protected OIDC successor, and it now has its own
+immutable qualification record but no publication record. Do not prepare a
+0.1.11 trusted-publisher/OIDC upload until its fresh exact-head candidate has
+passed the required qualification and FULL release checks. After upload,
+require anonymous registry and provenance verification before treating 0.1.11
+as published.
 
 ### Why the name-collision check runs first, always
 
