@@ -3,6 +3,14 @@
 All notable changes to this package are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.7] - 2026-09-01
+
+### Changed
+
+- Prepared the forward release candidate after the prior candidate could not
+  satisfy the immutable qualified-tarball join. This release contains no
+  product behavior changes.
+
 ## [0.2.6] - 2026-08-31
 
 ### Added
