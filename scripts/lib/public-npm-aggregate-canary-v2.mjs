@@ -8,7 +8,6 @@ import {
   AGGREGATE_EXTERNAL_TIMEOUT_MS,
   AggregateUnavailableError,
   assertAggregateRuntime,
-  aggregateCanaryGitHistory,
   containedRegularDirectory,
   immutableRecordHistory,
   immutableRecordPaths,
@@ -300,8 +299,56 @@ export function validateAggregateV2PlanHistory({ history, parentCount = function
   return [];
 }
 
+function v2HistoryParents(root, commit) {
+  const [resolved, ...parents] = execFileSync("git", ["rev-list", "--parents", "-n", "1", commit], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim().split(/\s+/);
+  if (resolved !== commit) throw new Error("git returned an unexpected aggregate-v2 history commit");
+  return parents;
+}
+
+function v2HistoryBlob(root, commit) {
+  try { return execFileSync("git", ["rev-parse", "--verify", commit + ":" + AGGREGATE_V2_CANARY_PATH], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim(); }
+  catch { return null; }
+}
+
+function v2HistoryBytes(root, commit, blob) {
+  if (blob === null) return Buffer.alloc(0);
+  return execFileSync("git", ["cat-file", "blob", blob], { cwd: root, encoding: "buffer", stdio: ["ignore", "pipe", "ignore"] });
+}
+
+/**
+ * Follow every reachable commit through its real parent graph.  A GitHub
+ * synthetic merge is merely a propagated tree when one parent already owns
+ * the exact plan blob; its ordinary single-parent ancestor remains the one
+ * introduction.  A merge that manufactures a novel target blob, or a branch
+ * rewrite/delete/recreate, remains visible as a failed immutable history.
+ */
 export function aggregateV2GitHistory({ root }) {
-  return aggregateCanaryGitHistory({ root, path: AGGREGATE_V2_CANARY_PATH });
+  try {
+    // Only commits that changed the plan relative to at least one parent can
+    // carry a status: a commit TREESAME to every parent is skipped by the loop
+    // below anyway, so restricting the walk to `--full-history -- <path>` is
+    // exactly equivalent and keeps this O(commits touching the plan) instead of
+    // O(every commit in the repository).
+    const commits = execFileSync("git", ["log", "--full-history", "--topo-order", "--format=%H", "HEAD", "--", AGGREGATE_V2_CANARY_PATH], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim().split("\n").filter(Boolean);
+    const history = [];
+    for (const commit of commits) {
+      const parents = v2HistoryParents(root, commit);
+      const current = v2HistoryBlob(root, commit);
+      const parentBlobs = parents.map(function (parent) { return v2HistoryBlob(root, parent); });
+      if (parents.length > 1 && parentBlobs.includes(current)) continue;
+      let status = null;
+      if (parents.length > 1) {
+        if (current !== null || parentBlobs.some(function (blob) { return blob !== null; })) status = current === null ? "D" : "M";
+      } else if (parents.length === 0) {
+        if (current !== null) status = "A";
+      } else if (current !== parentBlobs[0]) {
+        status = current === null ? "D" : parentBlobs[0] === null ? "A" : "M";
+      }
+      if (status !== null) history.push({ commit, status, sha256: hash(v2HistoryBytes(root, commit, current)) });
+    }
+    return history;
+  } catch { /* malformed Git evidence below is fail-closed */ }
+  return [{ commit: "0".repeat(40), status: "M", sha256: "0".repeat(64) }];
 }
 
 export function aggregateV2RecordPaths({ root, directory }) { return immutableRecordPaths({ root, directory }); }

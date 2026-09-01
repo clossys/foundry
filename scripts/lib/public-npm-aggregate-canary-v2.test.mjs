@@ -149,6 +149,20 @@ test("v2 plan history follows real merge parents to one direct introduction", as
   await preservedMerge("github-synthetic");
   await preservedMerge("content-preserving");
 
+  const mergeOnly = await makeRepository("foundry-v2-history-merge-only-");
+  execFileSync("git", ["checkout", "-qb", "left"], { cwd: mergeOnly });
+  const left = await commit(mergeOnly, "governance/left.txt", "left\n", "left change");
+  execFileSync("git", ["checkout", "-q", "main"], { cwd: mergeOnly });
+  const right = await commit(mergeOnly, "governance/right.txt", "right\n", "right change");
+  await writeFile(join(mergeOnly, AGGREGATE_V2_CANARY_PATH), "{\"v2\":true}\n");
+  execFileSync("git", ["add", AGGREGATE_V2_CANARY_PATH], { cwd: mergeOnly });
+  const tree = execFileSync("git", ["write-tree"], { cwd: mergeOnly, encoding: "utf8" }).trim();
+  const synthetic = execFileSync("git", ["commit-tree", tree, "-p", left, "-p", right, "-m", "merge-only v2 plan"], { cwd: mergeOnly, encoding: "utf8" }).trim();
+  execFileSync("git", ["update-ref", "refs/heads/main", synthetic], { cwd: mergeOnly });
+  let history = aggregateV2GitHistory({ root: mergeOnly });
+  assert.deepEqual(history.map(function (entry) { return entry.status; }), ["M"]);
+  assert.ok(validateAggregateV2PlanHistory({ history, parentCount: function (revision) { return parents(mergeOnly, revision); } }).length > 0);
+
   const hostile = await makeRepository("foundry-v2-history-hostile-");
   execFileSync("git", ["checkout", "-qb", "rewrite"], { cwd: hostile });
   await commit(hostile, AGGREGATE_V2_CANARY_PATH, "{\"v2\":true}\n", "introduce v2 plan");
@@ -156,7 +170,7 @@ test("v2 plan history follows real merge parents to one direct introduction", as
   execFileSync("git", ["checkout", "-q", "main"], { cwd: hostile });
   await commit(hostile, "governance/target.txt", "target\n", "target change");
   execFileSync("git", ["merge", "--no-ff", "-qm", "merge conflicting parent", "rewrite"], { cwd: hostile });
-  let history = aggregateV2GitHistory({ root: hostile });
+  history = aggregateV2GitHistory({ root: hostile });
   assert.ok(history.some(function (entry) { return entry.status === "M"; }));
   assert.ok(validateAggregateV2PlanHistory({ history, parentCount: function (revision) { return parents(hostile, revision); } }).length > 0);
 
