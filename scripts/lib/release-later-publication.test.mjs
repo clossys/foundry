@@ -315,7 +315,9 @@ test("trusted-publication v2 binds immutable provenance to the qualified served 
     repository: "https://github.com/clossys/foundry", workflow: ".github/workflows/publish.yml", ref: "refs/heads/main", event: "workflow_dispatch",
     sourceSha: qualification.reviewedCommit, builder: "https://github.com/actions/runner/github-hosted",
     invocation: "https://github.com/clossys/foundry/actions/runs/123/attempts/1",
-    attestationUrl: "https://registry.npmjs.org/-/npm/v1/attestations/%40clossys%2Fstrategist%400.1.1",
+    // npm may render the escaped slash as lowercase `%2f`; endpoint identity
+    // is the decoded path, never the casing of percent escapes.
+    attestationUrl: "https://registry.npmjs.org/-/npm/v1/attestations/%40clossys%2fstrategist%400.1.1",
   };
   trusted.registryProof = { schemaVersion: 2, kind: "public-npm-anonymous-registry-proof-v2", evidence: {
     ...trusted.registryProof.evidence, metadataUrl: publicNpmVersionUrl(PUBLIC_NPM_REGISTRY, candidate.name, candidate.version), repository: "clossys/foundry",
@@ -330,6 +332,7 @@ test("trusted-publication v2 binds immutable provenance to the qualified served 
     (value) => { value.publication.provenance.workflow = ".github/workflows/other.yml"; },
     (value) => { value.publication.provenance.invocation = "https://github.com/clossys/foundry/actions/runs/123"; },
     (value) => { value.publication.provenance.attestationUrl = "https://registry.npmjs.org/-/npm/v1/attestations/other"; },
+    (value) => { value.publication.provenance.attestationUrl += "?different=1"; },
     (value) => { value.registryProof.evidence.repository = "clossys/other"; },
     (value) => { value.registryProof.evidence.sha512 = "0".repeat(128); },
   ]) { const value = structuredClone(trusted); mutate(value); assert.ok(rules(value, { provenanceSourceValid: value.publication.provenance.repository === historicalRepository }).length > 0); }
@@ -351,7 +354,7 @@ function replayRecord() {
     provenance: {
       repository: "https://github.com/clossys/foundry", workflow: ".github/workflows/publish.yml", ref: "refs/heads/main", event: "workflow_dispatch",
       sourceSha: hex("6", 40), builder: "https://github.com/actions/runner/github-hosted", invocation: "https://github.com/clossys/foundry/actions/runs/123/attempts/1",
-      attestationUrl: "https://registry.npmjs.org/-/npm/v1/attestations/%40clossys%2Fstrategist%400.1.1",
+      attestationUrl: "https://registry.npmjs.org/-/npm/v1/attestations/%40clossys%2fstrategist%400.1.1",
     },
   };
   value.registryProof = { schemaVersion: 2, kind: "public-npm-anonymous-registry-proof-v2", evidence: {
@@ -368,7 +371,7 @@ function replayRecord() {
     artifact: { id: 125, name: "qualified-candidate-strategist", archiveSha256: `sha256:${hex("9", 64)}`, size: 42, url: "https://api.github.com/repos/clossys/foundry/actions/artifacts/125/zip" },
     transcript: { rawSha256: hex("a", 64), canonicalSha256: qualification.transcript?.canonicalSha256 ?? hex("b", 64), candidateTarball: structuredClone(candidate.tarball) },
     publicationJob: { id: 126, name: "publish (strategist)", conclusion: "success", url: "https://github.com/clossys/foundry/actions/runs/123/job/126" },
-    anonymousRegistry: { packumentSha256: hex("c", 64), auditSha256: hex("d", 64), provenanceBundleSha256: hex("e", 64), signatureSha256: hex("f", 64), signatureKeyids: ["SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"], attestationUrl: "https://registry.npmjs.org/-/npm/v1/attestations/%40clossys%2Fstrategist%400.1.1" },
+    anonymousRegistry: { packumentSha256: hex("c", 64), auditSha256: hex("d", 64), provenanceBundleSha256: hex("e", 64), signatureSha256: hex("f", 64), signatureKeyids: ["SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"], attestationUrl: "https://registry.npmjs.org/-/npm/v1/attestations/%40clossys%2fstrategist%400.1.1" },
   };
   return value;
 }
@@ -387,6 +390,7 @@ test("v3 replay evidence is closed around root-only drift, exact jobs, artifact,
       record.publication.provenance.invocation = "https://github.com/clossys/foundry/actions/runs/999/attempts/1";
     },
     (record) => { record.runQualification.anonymousRegistry.attestationUrl = "https://registry.npmjs.org/-/npm/v1/attestations/other"; },
+    (record) => { record.runQualification.anonymousRegistry.attestationUrl += "?different=1"; },
     (record) => { record.runQualification.anonymousRegistry.signatureKeyids = []; },
   ];
   for (const [index, attack] of attacks.entries()) { const hostile = replayRecord(); attack(hostile); assert.ok(rules(hostile, { replaySourceEvidence: { valid: true } }).length > 0, `attack ${index}`); }
