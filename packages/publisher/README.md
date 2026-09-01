@@ -161,7 +161,7 @@ doc comment for the fuller reasoning.
 
 `resolveSurfaceDocument` resolves a repeating binding's items in order and
 returns them on `ResolvedSurfaceDocument.groups` — an array of
-`{ slot, items: [{ index, value? , node?, assetId? }, ...] }` — rather than
+`{ slot, items: [{ index, value?, node?, assetId?, fields? }, ...] }` — rather than
 folding them into the legacy `ComposeDocument.bindings` shape, which has no
 way to carry more than one source per slot. `groups` is omitted entirely
 (not an empty array) on a document with no repeating binding, so an existing
@@ -174,7 +174,36 @@ it does not invent a second, partial-success mode just because the content
 is array-shaped. Per-item copy resolutions flow into the same
 `resolutions`/`collectCopyProvenance` provenance path a single binding's
 does, so a repeating-group slot shows up in manifest provenance per item,
-not just per slot — see `output-manifest.ts`.
+not just per slot — see `output-manifest.ts`. A structured field resolved
+from `assetId` instead carries registry-validated asset evidence into the
+target renderer; it has no copy provenance because it is not copy.
+
+### Structured repeating-item migration and planned semver boundary
+
+Publisher `0.1.10` exposed the FAQ repeat as a legacy one-value/node-shaped
+contract. That shape cannot represent two separately governed editorial
+fields, and it is not compatible with the structured FAQ contract above.
+Migrate each FAQ item from a caller-authored node to explicit approved-copy
+fields:
+
+```ts
+// Before: legacy node-shaped FAQ item (do not carry this forward).
+{ node: { question: "...", answer: "..." } }
+
+// After: every audience-facing field is a CopyRef.
+{
+  fields: {
+    question: { copy: ref("acme.faq.question") },
+    answer: { copy: ref("acme.faq.answer") },
+  },
+}
+```
+
+This is a breaking contract correction, so the pending Publisher successor
+is planned as `0.2.0`; a `^0.1.x` range must not satisfy it. The package
+version remains `0.1.11` until the separate #663 Designer-block integration
+joins this final site-readiness unit and one exact-head `0.2.0` candidate is
+qualified. This statement plans neither a version bump nor publication.
 
 On its own, this is a repeating-group *binding* primitive only — it says
 nothing about which template actually consumes it. `web`'s `MarketingView`
@@ -228,6 +257,8 @@ const acmeMarketingHome: SurfaceDocument = {
     { slot: "heroHeading", copy: ref("acme.hero.heading") },
     { slot: "heroDescription", copy: ref("acme.hero.description") },
     { slot: "ctaHeading", copy: ref("acme.cta.heading") },
+    // Required repeating slot; an explicitly empty grid is valid.
+    { slot: "features", items: [] },
     // A repeating slot — one CopyRef per placeholder feature, in order.
     {
       slot: "faq",
@@ -288,11 +319,13 @@ entry has a unique linked title, a semantic `time`, optional summary and tag
 list, and a navigation landmark for consumer-owned pagination. Its required
 `empty` state prevents an empty index from silently becoming a blank region.
 Entries use a deliberately small closed shape (`id`, `href`, string `title`,
-`date`, optional string `summary`/`tags`); entry copy comes from the normal
-resolved structured-field map, never a caller-authored entry node. Pagination
-and empty-state actions are likewise `{ href, label }` data, not node escape
-hatches. Route loading, taxonomy, and paging state remain outside Publisher.
-If a router replaces collection items in place, it
+`date`, optional string `summary`/`tags`); its raw props are consumer-owned
+view data and do not themselves carry CopyRef provenance. Consumers that need
+editorial provenance resolve structured fields before constructing these
+strings, while Publisher's structured renderer continues to retain the
+underlying field-level copy/asset evidence. Pagination and empty-state actions
+are likewise `{ href, label }` data, not node escape hatches. Route loading,
+taxonomy, and paging state remain outside Publisher. If a router replaces collection items in place, it
 must move focus to `focusTargetId` (the focusable `PageHeader` region that
 contains the view's `h1`); ordinary links retain normal browser route focus
 handling.

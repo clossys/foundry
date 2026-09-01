@@ -24,5 +24,6 @@ describe("CaptureView", () => {
   it("fails closed when the form-state or error-focus contract is incomplete", () => {
     expect(() => renderToStaticMarkup(<CaptureView brand="Acme" heading="Keep in touch" />)).toThrow(/requires form/);
     expect(() => renderToStaticMarkup(<CaptureView brand="Acme" heading="Keep in touch" form="Fields" errorSummary="Invalid" />)).toThrow(/errorSummary and errorSummaryId together/);
+    expect(() => renderToStaticMarkup(<CaptureView brand="Acme" heading="Keep in touch" form="Fields" errorSummary="Invalid" errorSummaryId="  " />)).toThrow(/non-whitespace/);
   });
 });

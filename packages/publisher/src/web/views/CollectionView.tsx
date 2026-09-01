@@ -60,25 +60,30 @@ export function CollectionView({ brand, heading, description, entries, empty, fo
   if (!Array.isArray(entries)) {
     throw new Error("CollectionView requires entries to be an array.");
   }
-  if (!empty || typeof empty !== "object") {
-    throw new Error("CollectionView requires an explicit empty state.");
+  if (!isPlainClosedObject(empty) || !hasOnlyOwnKeys(empty, ["title", "description", "action"]) || !isNonWhitespaceString(empty.title) || (empty.description !== undefined && !isNonWhitespaceString(empty.description))) {
+    throw new Error("CollectionView requires an explicit empty state with a non-whitespace title and optional non-whitespace description.");
   }
   if (typeof focusTargetId !== "string" || focusTargetId.trim().length === 0) {
     throw new Error("CollectionView requires a non-empty focusTargetId.");
   }
   assertLink(empty.action, "empty.action");
-  if (pagination !== undefined && (!pagination || typeof pagination !== "object")) {
-    throw new Error("CollectionView requires pagination to be an object when supplied.");
+  if (pagination !== undefined && (!isPlainClosedObject(pagination) || !hasOnlyOwnKeys(pagination, ["previous", "next"]))) {
+    throw new Error("CollectionView requires pagination to be a plain object with only previous/next links when supplied.");
   }
-  assertLink(pagination?.previous, "pagination.previous");
-  assertLink(pagination?.next, "pagination.next");
+  const previous = pagination?.previous as CollectionViewLink | undefined;
+  const next = pagination?.next as CollectionViewLink | undefined;
+  assertLink(previous, "pagination.previous");
+  assertLink(next, "pagination.next");
   const ids = new Set<string>();
   for (const entry of entries) {
-    if (!entry || typeof entry.id !== "string" || entry.id.length === 0 || typeof entry.href !== "string" || entry.href.length === 0 || !entry.date || typeof entry.date.dateTime !== "string" || entry.date.dateTime.length === 0) {
-      throw new Error("CollectionView requires every entry to have non-empty id, href, and date.dateTime fields.");
+    if (!isPlainClosedObject(entry) || !hasOnlyOwnKeys(entry, ["id", "href", "title", "date", "summary", "tags"]) || !isNonWhitespaceString(entry.id) || !isNonWhitespaceString(entry.href) || !isNonWhitespaceString(entry.title) || !isPlainClosedObject(entry.date) || !hasOnlyOwnKeys(entry.date, ["dateTime", "text"]) || !isValidDateTime(entry.date.dateTime) || !isNonWhitespaceString(entry.date.text) || (entry.summary !== undefined && !isNonWhitespaceString(entry.summary))) {
+      throw new Error("CollectionView requires every entry to have non-whitespace id, href, title, and date text plus a valid date.dateTime.");
     }
     if (entry.tags !== undefined && !Array.isArray(entry.tags)) {
       throw new Error("CollectionView requires entry tags to be an array when supplied.");
+    }
+    if (entry.tags?.some((tag) => !isNonWhitespaceString(tag))) {
+      throw new Error("CollectionView requires every entry tag to be a non-whitespace string.");
     }
     if (ids.has(entry.id)) throw new Error(`CollectionView received duplicate entry id "${entry.id}".`);
     ids.add(entry.id);
@@ -127,8 +132,8 @@ export function CollectionView({ brand, heading, description, entries, empty, fo
         )}
         {pagination === undefined ? null : (
           <nav className="flex flex-wrap gap-md" aria-label="Collection pagination">
-            {pagination.previous === undefined ? null : <a href={pagination.previous.href} className="text-ink-link underline">{pagination.previous.label}</a>}
-            {pagination.next === undefined ? null : <a href={pagination.next.href} className="text-ink-link underline">{pagination.next.label}</a>}
+            {previous === undefined ? null : <a href={previous.href} className="text-ink-link underline">{previous.label}</a>}
+            {next === undefined ? null : <a href={next.href} className="text-ink-link underline">{next.label}</a>}
           </nav>
         )}
       </main>
@@ -137,9 +142,34 @@ export function CollectionView({ brand, heading, description, entries, empty, fo
   );
 }
 
-function assertLink(link: CollectionViewLink | undefined, path: string): void {
+function isPlainClosedObject(value: unknown): value is Record<string, unknown> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+}
+
+function hasOnlyOwnKeys(value: Record<string, unknown>, allowed: readonly string[]): boolean {
+  return Object.keys(value).every((key) => allowed.includes(key));
+}
+
+function isNonWhitespaceString(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function isValidDateTime(value: unknown): value is string {
+  if (!isNonWhitespaceString(value) || Number.isNaN(Date.parse(value))) return false;
+  const date = /^(\d{4})-(\d{2})-(\d{2})(?:T.*)?$/.exec(value);
+  if (date === null) return false;
+  const year = Number(date[1]);
+  const month = Number(date[2]);
+  const day = Number(date[3]);
+  const parsedDate = new Date(Date.UTC(year, month - 1, day));
+  return parsedDate.getUTCFullYear() === year && parsedDate.getUTCMonth() === month - 1 && parsedDate.getUTCDate() === day;
+}
+
+function assertLink(link: unknown, path: string): void {
   if (link === undefined) return;
-  if (!link || typeof link.href !== "string" || link.href.trim().length === 0 || typeof link.label !== "string" || link.label.trim().length === 0) {
+  if (!isPlainClosedObject(link) || !hasOnlyOwnKeys(link, ["href", "label"]) || !isNonWhitespaceString(link.href) || !isNonWhitespaceString(link.label)) {
     throw new Error(`CollectionView requires ${path} to have non-empty href and label fields.`);
   }
 }

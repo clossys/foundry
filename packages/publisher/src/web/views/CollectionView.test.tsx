@@ -37,10 +37,22 @@ describe("CollectionView", () => {
       { id: "one", href: "/notes/one", title: "One", date: { dateTime: "2026-09-01", text: "Date" } },
       { id: "one", href: "/notes/two", title: "Two", date: { dateTime: "2026-09-02", text: "Date" } },
     ];
-    expect(() => renderToStaticMarkup(<CollectionView brand="Acme" heading="Notes" entries={malformed} empty={empty} />)).toThrow(/non-empty id/);
+    expect(() => renderToStaticMarkup(<CollectionView brand="Acme" heading="Notes" entries={malformed} empty={empty} />)).toThrow(/non-whitespace id/);
     expect(() => renderToStaticMarkup(<CollectionView brand="Acme" heading="Notes" entries={duplicate} empty={empty} />)).toThrow(/duplicate entry id/);
     expect(() => renderToStaticMarkup(<CollectionView brand="Acme" heading="Notes" entries={[]} empty={null as never} />)).toThrow(/explicit empty state/);
     expect(() => renderToStaticMarkup(<CollectionView brand="Acme" heading="Notes" entries={[]} empty={empty} focusTargetId="" />)).toThrow(/focusTargetId/);
     expect(() => renderToStaticMarkup(<CollectionView brand="Acme" heading="Notes" entries={[]} empty={empty} pagination={{ next: { href: "/notes?page=2", label: "" } }} />)).toThrow(/pagination.next/);
+  });
+
+  it("rejects whitespace content, invalid dates, malformed empty states, and invalid tags", () => {
+    const validEntry = { id: "one", href: "/notes/one", title: "One", date: { dateTime: "2026-09-01", text: "September 1" } };
+    expect(() => renderToStaticMarkup(<CollectionView brand="Acme" heading="Notes" entries={[{ ...validEntry, href: "  " }]} empty={empty} />)).toThrow(/non-whitespace/);
+    expect(() => renderToStaticMarkup(<CollectionView brand="Acme" heading="Notes" entries={[{ ...validEntry, title: "  " }]} empty={empty} />)).toThrow(/non-whitespace/);
+    expect(() => renderToStaticMarkup(<CollectionView brand="Acme" heading="Notes" entries={[{ ...validEntry, date: { dateTime: "2026-02-30", text: "  " } }]} empty={empty} />)).toThrow(/valid date.dateTime/);
+    expect(() => renderToStaticMarkup(<CollectionView brand="Acme" heading="Notes" entries={[{ ...validEntry, date: { dateTime: "2026-09-01", text: "  " } }]} empty={empty} />)).toThrow(/date text/);
+    expect(() => renderToStaticMarkup(<CollectionView brand="Acme" heading="Notes" entries={[{ ...validEntry, tags: ["valid", "  "] }]} empty={empty} />)).toThrow(/entry tag/);
+    expect(() => renderToStaticMarkup(<CollectionView brand="Acme" heading="Notes" entries={[{ ...validEntry, tags: [42 as never] }]} empty={empty} />)).toThrow(/entry tag/);
+    expect(() => renderToStaticMarkup(<CollectionView brand="Acme" heading="Notes" entries={[]} empty={{ title: "  " }} />)).toThrow(/explicit empty state/);
+    expect(() => renderToStaticMarkup(<CollectionView brand="Acme" heading="Notes" entries={[]} empty={{ title: 42 } as never} />)).toThrow(/explicit empty state/);
   });
 });

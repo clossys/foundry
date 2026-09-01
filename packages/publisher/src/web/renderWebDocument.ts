@@ -408,6 +408,84 @@ function resolveGroupFieldContent(
   );
 }
 
+function isPlainClosedObject(value: unknown): value is Record<string, unknown> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+}
+
+function isNonWhitespaceString(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function hasOnlyOwnKeys(value: Record<string, unknown>, allowed: readonly string[]): boolean {
+  return Object.getOwnPropertyNames(value).every((key) => allowed.includes(key));
+}
+
+function invalidPublicGroups(message: string): never {
+  throw new RenderError("resolution-failed", `renderWebDocument refused malformed RenderWebOptions.groups: ${message}`);
+}
+
+/**
+ * `RenderWebOptions.groups` is public and may be supplied without first
+ * calling `resolveSurfaceDocument`. Validate its whole closed wire shape
+ * before template matching or resolution touches a nested property: malformed
+ * direct input must throw a `RenderError`, never leak a raw TypeError or turn
+ * an unrecognised object into editorial content.
+ */
+function validatePublicGroups(groups: unknown): ResolvedSurfaceGroup[] {
+  if (groups === undefined) return [];
+  if (!Array.isArray(groups)) invalidPublicGroups("groups must be an array when supplied.");
+
+  return groups.map((candidate, groupIndex) => {
+    if (!isPlainClosedObject(candidate) || !hasOnlyOwnKeys(candidate, ["slot", "items"]) || !isNonWhitespaceString(candidate.slot) || !Array.isArray(candidate.items)) {
+      invalidPublicGroups(`groups[${groupIndex}] must be a plain { slot, items } object with a non-whitespace slot and an items array.`);
+    }
+
+    const items = candidate.items.map((itemCandidate, itemIndex) => {
+      const resolvedIndex = isPlainClosedObject(itemCandidate) ? itemCandidate.index : undefined;
+      if (!isPlainClosedObject(itemCandidate) || !hasOnlyOwnKeys(itemCandidate, ["index", "value", "node", "assetId", "fields"]) || typeof resolvedIndex !== "number" || !Number.isInteger(resolvedIndex) || resolvedIndex < 0) {
+        invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}] must be a plain item with a non-negative integer index and no unknown keys.`);
+      }
+      const sourceKeys = ["value", "node", "assetId", "fields"].filter((key) => itemCandidate[key] !== undefined);
+      if (sourceKeys.length !== 1) {
+        invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}] must set exactly one of value/node/assetId/fields.`);
+      }
+      if (itemCandidate.value !== undefined && typeof itemCandidate.value !== "string") {
+        invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}].value must be a string when supplied.`);
+      }
+      if (itemCandidate.node !== undefined && (typeof itemCandidate.node !== "object" || itemCandidate.node === null)) {
+        invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}].node must be a non-null object when supplied.`);
+      }
+      if (itemCandidate.assetId !== undefined && !isNonWhitespaceString(itemCandidate.assetId)) {
+        invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}].assetId must be a non-whitespace string when supplied.`);
+      }
+      if (itemCandidate.fields !== undefined) {
+        if (!isPlainClosedObject(itemCandidate.fields) || Object.keys(itemCandidate.fields).length === 0) {
+          invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}].fields must be a non-empty plain object.`);
+        }
+        for (const [field, binding] of Object.entries(itemCandidate.fields)) {
+          if (!isNonWhitespaceString(field) || !isPlainClosedObject(binding) || !hasOnlyOwnKeys(binding, ["value", "assetId"])) {
+            invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}].fields.${field || "(empty)"} must be a plain value/assetId binding with no unknown keys.`);
+          }
+          const fieldSources = [binding.value, binding.assetId].filter((source) => source !== undefined);
+          if (fieldSources.length !== 1) {
+            invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}].fields.${field} must set exactly one of value/assetId.`);
+          }
+          if (binding.value !== undefined && typeof binding.value !== "string") {
+            invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}].fields.${field}.value must be a string when supplied.`);
+          }
+          if (binding.assetId !== undefined && !isNonWhitespaceString(binding.assetId)) {
+            invalidPublicGroups(`groups[${groupIndex}].items[${itemIndex}].fields.${field}.assetId must be a non-whitespace string when supplied.`);
+          }
+        }
+      }
+      return itemCandidate as unknown as ResolvedSurfaceGroupItem;
+    });
+    return { slot: candidate.slot, items };
+  });
+}
+
 function validateStructuredGroupItem(slotKey: string, item: ResolvedSurfaceGroupItem, fields: readonly RepeatingWebSlotFieldSpec[]): void {
   const sourceCount = [item.value, item.node, item.assetId, item.fields].filter((source) => source !== undefined).length;
   if (sourceCount !== 1 || item.fields === undefined || typeof item.fields !== "object" || Array.isArray(item.fields)) {
@@ -464,7 +542,7 @@ function resolveTemplateGroups(doc: ComposeDocument, template: WebTemplate, opti
   const repeatingKeys = new Set(repeatingSlots.map((spec) => spec.key));
 
   const groupsByKey = new Map<string, ResolvedSurfaceGroup>();
-  for (const group of options.groups ?? []) {
+  for (const group of validatePublicGroups(options.groups)) {
     groupsByKey.set(group.slot, group); // last one for a given slot wins, matching this file's own documented bindings policy.
   }
 

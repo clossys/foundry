@@ -60,6 +60,9 @@ export function CaptureView({
   if ((errorSummary === undefined) !== (errorSummaryId === undefined)) {
     throw new Error("CaptureView requires errorSummary and errorSummaryId together.");
   }
+  if (errorSummaryId !== undefined && (typeof errorSummaryId !== "string" || errorSummaryId.trim().length === 0)) {
+    throw new Error("CaptureView requires errorSummaryId to be a non-whitespace string.");
+  }
   if (submitted === undefined && form === undefined) {
     throw new Error("CaptureView requires form while submitted is absent.");
   }

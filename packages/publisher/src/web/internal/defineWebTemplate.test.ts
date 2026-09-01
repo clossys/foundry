@@ -135,6 +135,7 @@ describe("defineWebTemplate — fails closed with RenderError('invalid-template-
   it("rejects empty, malformed, and duplicate structured field declarations", () => {
     expectInvalidDefinition(() => defineWebTemplate({ ...minimalOptions, repeatingSlots: [{ key: "faq", fields: [] }] }));
     expectInvalidDefinition(() => defineWebTemplate({ ...minimalOptions, repeatingSlots: [{ key: "faq", fields: [{ key: "" }] }] }));
+    expectInvalidDefinition(() => defineWebTemplate({ ...minimalOptions, repeatingSlots: [{ key: "faq", fields: [{ key: "  " }] }] }));
     expectInvalidDefinition(() => defineWebTemplate({ ...minimalOptions, repeatingSlots: [{ key: "faq", fields: [{ key: "question" }, { key: "question" }] }] }));
   });
 
